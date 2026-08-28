@@ -1,0 +1,46 @@
+name: Bug report
+description: Report a reproducible GoodGood defect
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: outcome
+    attributes:
+      label: What happened?
+      description: Describe the observed behavior and the expected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      placeholder: "1. Open…\n2. Select…\n3. Observe…"
+    validations:
+      required: true
+  - type: dropdown
+    id: state
+    attributes:
+      label: Affected state
+      options:
+        - Empty
+        - Loading/generating
+        - Success/results
+        - Failure/retry
+        - Project restore
+        - Asset batch/gallery
+        - Image detail
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Browser, OS, viewport, branch/commit, and request/job ID if available.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Screenshots, screen recording, or sanitized logs. Never attach credentials or user data.

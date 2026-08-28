@@ -1,0 +1,32 @@
+name: Feature request
+description: Propose a scoped product change
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem
+      description: Describe the user and the problem without prescribing a solution.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+    validations:
+      required: true
+  - type: checkboxes
+    id: decisions
+    attributes:
+      label: Decision impact
+      options:
+        - label: This may change a product, design, route, data, error, or architecture invariant.
+        - label: I checked the relevant document under `docs/`.
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Include empty, loading, success, and failure behavior when relevant.
+    validations:
+      required: true
