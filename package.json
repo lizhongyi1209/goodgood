@@ -16,13 +16,14 @@
     "test:local": "npm run build:local && node --test tests/*.test.mjs",
     "lint": "bash scripts/sites-env.sh -- eslint . --ignore-pattern dist --ignore-pattern .next",
     "lint:local": "eslint . --ignore-pattern dist --ignore-pattern .next",
-    "check:local": "npm run lint:local && npm run test:local",
+    "typecheck": "tsc --noEmit --pretty false --incremental false",
+    "check:local": "npm run lint:local && npm run typecheck && npm run test:local",
     "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
     "@hookform/resolvers": "^5.7.1",
-    "@lobehub/icons": "^5.16.0",
+    "@lobehub/icons-static-svg": "1.94.0",
     "@shadcn/react": "^0.3.0",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
@@ -48,6 +49,7 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.37.1",
+    "@cloudflare/workers-types": "4.20260515.1",
     "@tailwindcss/postcss": "4.2.1",
     "@types/node": "22.19.19",
     "@types/react": "19.2.14",

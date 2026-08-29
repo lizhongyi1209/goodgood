@@ -14,7 +14,7 @@ const vite = await createServer({
   configFile: false,
   root,
   resolve: { alias: { "@": root } },
-  server: { middlewareMode: true },
+  server: { middlewareMode: true, hmr: false, ws: false },
 });
 
 after(async () => {
@@ -56,7 +56,7 @@ test("keeps generation retries isolated from later composer edits", async () => 
     prompt: "  保留服装结构  ",
     references: [originalReference],
     modelId: "nano-banana-2",
-    ratioIndex: 5,
+    aspectRatio: "4:5",
     resolution: "2K",
     count: 4,
   };
@@ -69,6 +69,8 @@ test("keeps generation retries isolated from later composer edits", async () => 
   assert.equal(snapshot.prompt, "保留服装结构");
   assert.equal(snapshot.references.length, 1);
   assert.equal(snapshot.references[0].name, "服装.jpg");
+  assert.equal(snapshot.aspectRatio, "4:5");
+  assert.equal("ratioIndex" in snapshot, false);
   assert.equal(snapshot.count, 4);
   assert.ok(Object.isFrozen(snapshot));
   assert.ok(Object.isFrozen(snapshot.references));

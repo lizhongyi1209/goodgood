@@ -60,7 +60,8 @@ individual icon. Upload, settings, and send align to the same 40px box.
 - Projects: Folder.
 - Assets: Images.
 - Moodboard: Layout grid.
-- Model providers: transparent `@lobehub/icons` marks only.
+- Model providers: transparent marks from the peer-free
+  `@lobehub/icons-static-svg` distribution only.
 
 ## Composer
 

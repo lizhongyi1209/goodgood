@@ -1,9 +1,9 @@
 # Production implementation plan
 
-- Last synchronized: 2026-08-29
-- Current phase: M1 is ready to start
-- Current objective: establish production-shaped domain seams without changing
-  the confirmed creation experience
+- Last synchronized: 2026-08-30
+- Current phase: M2 is ready to start
+- Current objective: establish the production-shaped local Linux container
+  foundation around the verified M1 domain seams
 
 ## Purpose and update contract
 
@@ -25,29 +25,39 @@ this file owns the current handoff state.
 
 ## Current checkpoint
 
-- The application is still an interactive frontend prototype. Generation,
-  projects, assets, and saves are simulated in React memory.
+- The application is still an interactive frontend prototype. Generation now
+  runs through typed in-memory repository/provider boundaries; projects,
+  assets, and saves remain simulated in React memory.
 - Authentication, durable persistence, object uploads, billing, the job queue,
   and the US generation API are not implemented.
-- `app/page.tsx` remains the main prototype monolith. The extraction order in
-  `PROJECT_MAP.md` is the required path out of that debt.
-- On 2026-08-29, `npm run check:local` passed on Windows with Node.js 24.12.0:
-  all 8 tests passed, including the documentation continuity guard, with 13
-  existing `@next/next/no-img-element` warnings and
-  no lint errors.
+- M1 extracted the composer, stable model/ratio/resolution contracts, immutable
+  generation snapshots, auditable job-state transitions, UI mappings, and a
+  deterministic mock repository/provider boundary. `app/page.tsx` still owns
+  prototype project, asset, and view orchestration.
+- All creation and asset imagery now uses the framework image boundary without
+  lint suppressions. Provider marks come from LobeHub's peer-free static SVG
+  distribution, so the unused LobeHub UI/Emoji peer chain is no longer part of
+  the install graph.
+- On 2026-08-30, `npm run check:local` passed on Windows with Node.js 24.12.0:
+  all 13 tests passed, including model/ratio/job mapping, mock success/failure
+  and retry, documentation continuity, render, and primitive checks. Lint and
+  the full TypeScript check passed with no warnings or errors. A locked
+  `npm ci --dry-run --ignore-scripts` also completed without dependency or peer
+  warnings.
 - Docker CLI 28.3.3 and Docker Compose 2.39.2 are installed on the primary
-  Windows workstation. Docker Desktop's Linux engine was not running at the
-  last check and must be started before container work. Its configured WSL data
-  root is `E:\Docker\disk image\DockerDesktopWSL`; the Docker VHDX files used
+  Windows workstation. Docker Desktop's Linux engine was confirmed stopped on
+  2026-08-30 and must be started before container verification. Its configured
+  WSL data root is `E:\Docker\disk image\DockerDesktopWSL`; the Docker VHDX files used
   8.095 GiB there on 2026-08-29, while Docker's C-drive configuration/log files
   used 0.045 GiB. At that check, E had 178.21 GiB free and C had about 30.52 GiB
   free.
 - No production Dockerfile, Compose stack, physical database schema, or
   production environment variables exist yet.
-- Next action: complete M1 by extracting stable model/ratio/job contracts and a
-  mocked repository/provider boundary while preserving current UI behavior.
-- Blockers: none. The existing uncommitted worktree must be inspected and
-  preserved before implementation begins.
+- Next action: begin M2 with one production Linux application image, explicit
+  web and worker process commands, and health/readiness behavior before adding
+  the Compose dependency stack.
+- Blockers: no product or architecture blocker. Local container verification
+  waits on starting Docker Desktop's Linux engine.
 
 ## Accepted delivery decisions
 
@@ -74,8 +84,8 @@ this file owns the current handoff state.
 | ID | Outcome | Status | Exit evidence |
 | --- | --- | --- | --- |
 | M0 | Decisions, delivery plan, continuity guard, and current baseline recorded | Completed | Topic docs and ADRs synchronized; documentation continuity is covered by an automated test; local quality gate passed on 2026-08-29 |
-| M1 | Domain contracts and mocked boundaries extracted from the prototype | Ready | UI behavior unchanged; model/ratio/job mapping has unit tests |
-| M2 | Production-shaped local container foundation | Pending | Clean checkout starts web, worker, PostgreSQL, Redis, object storage, and mock generation with documented commands |
+| M1 | Domain contracts and mocked boundaries extracted from the prototype | Completed | Composer and domain seams extracted; stable model/ratio/job mappings and mock repository/provider success, failure, and retry have unit tests; image/dependency warnings cleared; clean install check, lint, typecheck, build, and 13 tests passed on 2026-08-30 |
+| M2 | Production-shaped local container foundation | Ready | Clean checkout starts web, worker, PostgreSQL, Redis, object storage, and mock generation with documented commands |
 | M3 | Durable asynchronous generation vertical slice | Pending | One model and one image complete through API, job, queue, worker, storage, asset, polling, and inline failure recovery |
 | M4 | Production identity, ownership, references, and projects persist safely | Pending | Auth and ownership tests cover every read/write; signed upload validation and project restore pass |
 | M5 | US generation gateway integration and recovery | Pending | Scoped credentials, idempotency, signed callbacks/polling reconciliation, timeout, duplicate, restart, and partial-result cases pass |

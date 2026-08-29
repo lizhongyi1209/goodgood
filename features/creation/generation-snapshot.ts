@@ -1,34 +1,17 @@
-export type GenerationModelId =
-  | "nano-banana-2"
-  | "nano-banana-pro"
-  | "gpt-image-2";
+import type {
+  GenerationInputDraft,
+  GenerationInputSnapshot,
+} from "@/shared/contracts/generation";
 
-export type GenerationResolution = "1K" | "2K" | "4K";
-export type GenerationCount = 1 | 2 | 4;
-
-export type GenerationReference = Readonly<{
-  id: string;
-  url: string;
-  name: string;
-}>;
-
-export type GenerationInputDraft = {
-  prompt: string;
-  references: GenerationReference[];
-  modelId: GenerationModelId;
-  ratioIndex: number;
-  resolution: GenerationResolution;
-  count: GenerationCount;
-};
-
-export type GenerationInputSnapshot = Readonly<{
-  prompt: string;
-  references: readonly GenerationReference[];
-  modelId: GenerationModelId;
-  ratioIndex: number;
-  resolution: GenerationResolution;
-  count: GenerationCount;
-}>;
+export type {
+  GenerationAspectRatio,
+  GenerationCount,
+  GenerationInputDraft,
+  GenerationInputSnapshot,
+  GenerationModelId,
+  GenerationReference,
+  GenerationResolution,
+} from "@/shared/contracts/generation";
 
 export function createGenerationInputSnapshot(
   draft: GenerationInputDraft,
@@ -41,7 +24,7 @@ export function createGenerationInputSnapshot(
     prompt: draft.prompt.trim(),
     references: Object.freeze(references),
     modelId: draft.modelId,
-    ratioIndex: draft.ratioIndex,
+    aspectRatio: draft.aspectRatio,
     resolution: draft.resolution,
     count: draft.count,
   });
@@ -54,7 +37,7 @@ export function restoreGenerationInputSnapshot(
     prompt: snapshot.prompt,
     references: snapshot.references.map((reference) => ({ ...reference })),
     modelId: snapshot.modelId,
-    ratioIndex: snapshot.ratioIndex,
+    aspectRatio: snapshot.aspectRatio,
     resolution: snapshot.resolution,
     count: snapshot.count,
   };

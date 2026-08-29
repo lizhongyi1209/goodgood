@@ -1,16 +1,39 @@
 "use client";
 
-import { useEffect, useRef, useState, type ChangeEvent, type CSSProperties, type WheelEvent as ReactWheelEvent } from "react";
-import { Slider } from "@/components/ui/slider";
+import { useEffect, useRef, useState, type CSSProperties, type WheelEvent as ReactWheelEvent } from "react";
+import Image from "next/image";
+import { CreationComposer } from "@/features/creation/creation-composer";
+import {
+  getGenerationRatio,
+  getGenerationResolutionLabel,
+} from "@/features/creation/generation-options";
+import {
+  isGenerationJobActive,
+  toGenerationUiStage,
+} from "@/features/creation/generation-job";
+import {
+  MOCK_GENERATION_OUTPUTS,
+  createMockGenerationBoundary,
+} from "@/features/creation/mock-generation-boundary";
 import {
   createGenerationInputSnapshot,
   restoreGenerationInputSnapshot,
+} from "@/features/creation/generation-snapshot";
+import {
+  DEFAULT_GENERATION_MODEL_ID,
+  getGenerationModel,
+} from "@/features/models/catalog";
+import {
+  MAX_GENERATION_REFERENCES,
+  type GenerationAspectRatio,
   type GenerationCount,
   type GenerationInputSnapshot,
+  type GenerationJob,
   type GenerationModelId,
+  type GenerationOutput,
   type GenerationReference,
   type GenerationResolution,
-} from "@/features/creation/generation-snapshot";
+} from "@/shared/contracts/generation";
 import {
   Dialog,
   DialogDescription,
@@ -26,14 +49,12 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { Toaster } from "@/components/ui/sonner";
-import { NanoBanana, OpenAI } from "@lobehub/icons";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { toast } from "sonner";
 import {
   Bookmark,
   Brush,
   Check,
-  ChevronDown,
   CircleAlert,
   Clock3,
   Compass,
@@ -41,7 +62,6 @@ import {
   FolderOpen,
   FolderPlus,
   HelpCircle,
-  ImagePlus,
   Images,
   LayoutGrid,
   LoaderCircle,
@@ -49,68 +69,21 @@ import {
   Plus,
   RefreshCw,
   Settings2,
-  SlidersHorizontal,
   X,
 } from "lucide-react";
 
-const results = [
-  { id: "01", className: "result-card result-hero", position: "50% 48%" },
-  { id: "02", className: "result-card", position: "72% 35%" },
-  { id: "03", className: "result-card", position: "35% 68%" },
-  { id: "04", className: "result-card result-wide", position: "62% 56%" },
-];
-
-const ratioOptions = [
-  { label: "1 : 8", value: 1 / 8, sizes: { "1K": "384 × 3072", "2K": "768 × 6144", "4K": "1536 × 12288" }, mode: "portrait" },
-  { label: "1 : 4", value: 1 / 4, sizes: { "1K": "512 × 2048", "2K": "1024 × 4096", "4K": "2048 × 8192" }, mode: "portrait" },
-  { label: "9 : 16", value: 9 / 16, sizes: { "1K": "768 × 1376", "2K": "1536 × 2752", "4K": "3072 × 5504" }, mode: "portrait" },
-  { label: "2 : 3", value: 2 / 3, sizes: { "1K": "848 × 1264", "2K": "1696 × 2528", "4K": "3392 × 5056" }, mode: "portrait" },
-  { label: "3 : 4", value: 3 / 4, sizes: { "1K": "896 × 1200", "2K": "1792 × 2400", "4K": "3584 × 4800" }, mode: "portrait" },
-  { label: "4 : 5", value: 4 / 5, sizes: { "1K": "928 × 1152", "2K": "1856 × 2304", "4K": "3712 × 4608" }, mode: "portrait" },
-  { label: "1 : 1", value: 1, sizes: { "1K": "1024 × 1024", "2K": "2048 × 2048", "4K": "4096 × 4096" }, mode: "square" },
-  { label: "5 : 4", value: 5 / 4, sizes: { "1K": "1152 × 928", "2K": "2304 × 1856", "4K": "4608 × 3712" }, mode: "landscape" },
-  { label: "4 : 3", value: 4 / 3, sizes: { "1K": "1200 × 896", "2K": "2400 × 1792", "4K": "4800 × 3584" }, mode: "landscape" },
-  { label: "3 : 2", value: 3 / 2, sizes: { "1K": "1264 × 848", "2K": "2528 × 1696", "4K": "5056 × 3392" }, mode: "landscape" },
-  { label: "16 : 9", value: 16 / 9, sizes: { "1K": "1376 × 768", "2K": "2752 × 1536", "4K": "5504 × 3072" }, mode: "landscape" },
-  { label: "21 : 9", value: 21 / 9, sizes: { "1K": "1584 × 672", "2K": "3168 × 1344", "4K": "6336 × 2688" }, mode: "landscape" },
-  { label: "4 : 1", value: 4, sizes: { "1K": "2048 × 512", "2K": "4096 × 1024", "4K": "8192 × 2048" }, mode: "landscape" },
-  { label: "8 : 1", value: 8, sizes: { "1K": "3072 × 384", "2K": "6144 × 768", "4K": "12288 × 1536" }, mode: "landscape" },
-] as const;
-
-const ratioModes = [
-  ["portrait", "竖版"],
-  ["square", "方形"],
-  ["landscape", "横版"],
-] as const;
-
-const ratioDefaults = { portrait: 5, square: 6, landscape: 10 } as const;
-const resolutionOptions = [
-  { value: "1K", label: "标准" },
-  { value: "2K", label: "高清" },
-  { value: "4K", label: "超清" },
-] as const;
-type Resolution = GenerationResolution;
-
-const modelOptions = [
-  { id: "nano-banana-2", name: "Nano Banana 2", description: "快速，批量", provider: "nano", recommended: true },
-  { id: "nano-banana-pro", name: "Nano Banana Pro", description: "高质量资产，视觉优先", provider: "nano", recommended: false },
-  { id: "gpt-image-2", name: "GPT IMAGE 2", description: "高真实感，提示词遵循", provider: "openai", recommended: false },
-] as const;
-type ModelId = GenerationModelId;
-type GenerationStage = "idle" | "queued" | "rendering" | "refining" | "complete" | "failed";
-type GenerationError = { title: string; message: string; code: string };
 type ReferenceImage = GenerationReference;
 type AssetBatch = {
   id: string;
   dateLabel: string;
   time: string;
   prompt: string;
-  model: string;
-  ratio: string;
-  resolution: string;
-  count: number;
-  references: number;
-  images: typeof results;
+  modelId: GenerationModelId;
+  aspectRatio: GenerationAspectRatio;
+  resolution: GenerationResolution;
+  count: GenerationCount;
+  referenceCount: number;
+  images: readonly GenerationOutput[];
 };
 type Project = {
   id: string;
@@ -122,8 +95,8 @@ type Project = {
 type ActiveView = "create" | "projects" | "assets";
 type CreationStreamItem =
   | { kind: "skeleton"; key: string; ratio: number; index: number }
-  | { kind: "image"; key: string; ratio: number; batch: AssetBatch; image: (typeof results)[number]; index: number };
-type AssetGalleryItem = { key: string; ratio: number; batch: AssetBatch; image: (typeof results)[number]; index: number };
+  | { kind: "image"; key: string; ratio: number; batch: AssetBatch; image: GenerationOutput; index: number };
+type AssetGalleryItem = { key: string; ratio: number; batch: AssetBatch; image: GenerationOutput; index: number };
 type DetailImage = AssetGalleryItem;
 
 const defaultPrompt = "一位年轻的亚洲女性模特，身穿银灰色未来感服装，站在冷白色摄影棚中。极简构图，柔和硬光，真实皮肤质感，高级时尚摄影。";
@@ -133,24 +106,24 @@ const initialAssetBatches: AssetBatch[] = [
     dateLabel: "今天",
     time: "10:16",
     prompt: defaultPrompt,
-    model: "Nano Banana 2",
-    ratio: "4 : 5",
-    resolution: "高清",
+    modelId: "nano-banana-2",
+    aspectRatio: "4:5",
+    resolution: "2K",
     count: 4,
-    references: 0,
-    images: results,
+    referenceCount: 0,
+    images: MOCK_GENERATION_OUTPUTS,
   },
   {
     id: "GG-236814",
     dateLabel: "昨天",
     time: "20:42",
     prompt: "参考图 1 的服装轮廓与参考图 2 的光影质感，创作一组冷调高级成衣广告，保留自然皮肤纹理与真实面料细节。",
-    model: "Nano Banana Pro",
-    ratio: "1 : 1",
-    resolution: "超清",
+    modelId: "nano-banana-pro",
+    aspectRatio: "1:1",
+    resolution: "4K",
     count: 2,
-    references: 2,
-    images: results.slice(0, 2),
+    referenceCount: 2,
+    images: MOCK_GENERATION_OUTPUTS.slice(0, 2),
   },
 ];
 const initialProjects: Project[] = [
@@ -162,35 +135,9 @@ const initialProjects: Project[] = [
     batches: initialAssetBatches,
   },
 ];
-const wait = (milliseconds: number) => new Promise((resolve) => window.setTimeout(resolve, milliseconds));
-
-function ModelIcon({ provider }: { provider: "nano" | "openai" }) {
-  return <span className={`model-icon ${provider}`}>{provider === "nano" ? <NanoBanana.Color size={26} /> : <OpenAI size={25} />}</span>;
-}
-
-function getRatioFrame(ratio: number) {
-  const max = 96;
-  let width = max;
-  let height = width / ratio;
-  if (height > max) {
-    height = max;
-    width = height * ratio;
-  }
-  return {
-    x: 60 - width / 2,
-    y: 56 - height / 2,
-    width,
-    height,
-    guideX: 60 - height / 2,
-    guideY: 56 - width / 2,
-    guideWidth: height,
-    guideHeight: width,
-  };
-}
-
 function getDetailImages(batches: AssetBatch[]): DetailImage[] {
   return batches.flatMap((batch) => {
-    const batchRatio = ratioOptions.find((option) => option.label === batch.ratio) ?? ratioOptions[5];
+    const batchRatio = getGenerationRatio(batch.aspectRatio);
     return batch.images.map((image, index) => ({
       key: `${batch.id}-${image.id}`,
       ratio: batchRatio.value,
@@ -202,25 +149,20 @@ function getDetailImages(batches: AssetBatch[]): DetailImage[] {
 }
 
 export default function Home() {
-  const referenceInputRef = useRef<HTMLInputElement>(null);
-  const promptInputRef = useRef<HTMLTextAreaElement>(null);
   const referenceObjectUrlsRef = useRef(new Set<string>());
   const assetPulseTimerRef = useRef<number | null>(null);
-  const errorSimulationRef = useRef(new WeakSet<GenerationInputSnapshot>());
   const detailWheelTimerRef = useRef<number | null>(null);
   const detailThumbnailRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const [generationBoundary] = useState(createMockGenerationBoundary);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [modelMenuOpen, setModelMenuOpen] = useState(false);
-  const [selectedModel, setSelectedModel] = useState<ModelId>("nano-banana-2");
-  const [ratioIndex, setRatioIndex] = useState(5);
-  const [resolution, setResolution] = useState<Resolution>("2K");
+  const [selectedModel, setSelectedModel] = useState<GenerationModelId>(DEFAULT_GENERATION_MODEL_ID);
+  const [selectedRatio, setSelectedRatio] = useState<GenerationAspectRatio>("4:5");
+  const [resolution, setResolution] = useState<GenerationResolution>("2K");
   const [generationCount, setGenerationCount] = useState<GenerationCount>(1);
   const [prompt, setPrompt] = useState("");
   const [referenceImages, setReferenceImages] = useState<ReferenceImage[]>([]);
   const [activeView, setActiveView] = useState<ActiveView>("create");
-  const [generationStage, setGenerationStage] = useState<GenerationStage>("idle");
-  const [generationError, setGenerationError] = useState<GenerationError | null>(null);
-  const [failedGenerationSnapshot, setFailedGenerationSnapshot] = useState<GenerationInputSnapshot | null>(null);
+  const [generationJob, setGenerationJob] = useState<GenerationJob | null>(null);
   const [creationBatches, setCreationBatches] = useState<AssetBatch[]>([]);
   const [savedImages, setSavedImages] = useState<string[]>([]);
   const [newAssetCount, setNewAssetCount] = useState(0);
@@ -235,20 +177,30 @@ export default function Home() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailItems, setDetailItems] = useState<DetailImage[]>([]);
   const [detailIndex, setDetailIndex] = useState(0);
-  const [jobMeta, setJobMeta] = useState({ id: "", model: "Nano Banana 2", ratio: "4 : 5", resolution: "高清", count: 1, references: 0 });
-  const activeRatio = ratioOptions[ratioIndex];
-  const activeModel = modelOptions.find((model) => model.id === selectedModel) ?? modelOptions[0];
-  const ratioFrame = getRatioFrame(activeRatio.value);
-  const isGenerating = generationStage === "queued" || generationStage === "rendering" || generationStage === "refining";
+  const activeRatio = getGenerationRatio(selectedRatio);
+  const activeModel = getGenerationModel(selectedModel);
+  const generationStage = toGenerationUiStage(generationJob?.state ?? null);
+  const isGenerating = generationJob ? isGenerationJobActive(generationJob.state) : false;
+  const generationError = generationJob?.error ?? null;
+  const failedGenerationSnapshot = generationJob?.state === "failed" ? generationJob.input : null;
   const hasGenerationError = generationStage === "failed" && generationError !== null;
   const totalCreationImages = creationBatches.reduce((total, batch) => total + batch.images.length, 0);
   const creationDetailItems = getDetailImages(creationBatches);
   const assetDetailItems = getDetailImages(assetBatches);
   const activeDetail = detailItems[detailIndex] ?? null;
+  const activeDetailModel = activeDetail
+    ? getGenerationModel(activeDetail.batch.modelId)
+    : null;
+  const activeDetailRatio = activeDetail
+    ? getGenerationRatio(activeDetail.batch.aspectRatio)
+    : null;
+  const jobInput = generationJob?.input ?? null;
+  const jobModel = jobInput ? getGenerationModel(jobInput.modelId) : activeModel;
+  const jobRatio = jobInput ? getGenerationRatio(jobInput.aspectRatio) : activeRatio;
   const stageText = generationStage === "queued"
     ? "任务已提交，正在准备画面"
     : generationStage === "rendering"
-      ? `${jobMeta.model} 正在生成 ${jobMeta.count} 张图片`
+      ? `${jobModel.name} 正在生成 ${jobInput?.count ?? generationCount} 张图片`
       : generationStage === "refining"
         ? "正在完成细节与清晰度处理"
         : generationStage === "complete"
@@ -256,17 +208,16 @@ export default function Home() {
           : generationStage === "failed"
             ? "生成失败"
           : "根据当前提示词创建的图像";
-  const jobRatio = ratioOptions.find((option) => option.label === jobMeta.ratio)?.value ?? activeRatio.value;
   const generationItems: CreationStreamItem[] = isGenerating
-    ? Array.from({ length: jobMeta.count }, (_, index) => ({
+    ? Array.from({ length: jobInput?.count ?? generationCount }, (_, index) => ({
       kind: "skeleton" as const,
-      key: `skeleton-${jobMeta.id}-${index}`,
-      ratio: jobRatio,
+      key: `skeleton-${generationJob?.id ?? "pending"}-${index}`,
+      ratio: jobRatio.value,
       index,
     }))
     : [];
   const creationItems: CreationStreamItem[] = creationBatches.flatMap((batch) => {
-      const batchRatio = ratioOptions.find((option) => option.label === batch.ratio) ?? ratioOptions[5];
+      const batchRatio = getGenerationRatio(batch.aspectRatio);
       return batch.images.map((image, index) => ({
         kind: "image" as const,
         key: `${batch.id}-${image.id}`,
@@ -276,32 +227,6 @@ export default function Home() {
         index,
       }));
     });
-
-  const resizePromptTextarea = (element: HTMLTextAreaElement) => {
-    element.style.height = "auto";
-    const styles = window.getComputedStyle(element);
-    const lineHeight = Number.parseFloat(styles.lineHeight);
-    const verticalPadding = Number.parseFloat(styles.paddingTop) + Number.parseFloat(styles.paddingBottom);
-    const maxHeight = lineHeight * 8 + verticalPadding;
-    const nextHeight = Math.min(element.scrollHeight, maxHeight);
-    const hasOverflow = element.scrollHeight > maxHeight;
-    element.style.height = `${nextHeight}px`;
-    element.style.overflowY = hasOverflow ? "auto" : "hidden";
-    element.classList.toggle("has-overflow", hasOverflow);
-  };
-
-  useEffect(() => {
-    const element = promptInputRef.current;
-    if (!element) return;
-    const handleResize = () => resizePromptTextarea(element);
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  useEffect(() => {
-    if (promptInputRef.current) resizePromptTextarea(promptInputRef.current);
-  }, [prompt]);
 
   useEffect(() => {
     if (!detailOpen) return;
@@ -333,14 +258,12 @@ export default function Home() {
     referenceObjectUrlsRef.current.clear();
   }, []);
 
-  const handleReferenceChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? []);
+  const handleReferenceFiles = (files: readonly File[]) => {
     if (!files.length) return;
 
-    const remaining = 10 - referenceImages.length;
+    const remaining = MAX_GENERATION_REFERENCES - referenceImages.length;
     if (remaining <= 0) {
-      toast.info("最多可添加 10 张参考图");
-      event.target.value = "";
+      toast.info(`最多可添加 ${MAX_GENERATION_REFERENCES} 张参考图`);
       return;
     }
 
@@ -354,17 +277,8 @@ export default function Home() {
       };
     });
     setReferenceImages((current) => [...current, ...accepted]);
-    event.target.value = "";
-    if (files.length > remaining) toast.info(`已添加 ${accepted.length} 张，参考图最多 10 张`);
+    if (files.length > remaining) toast.info(`已添加 ${accepted.length} 张，参考图最多 ${MAX_GENERATION_REFERENCES} 张`);
     else toast.success(`已添加 ${accepted.length} 张参考图`);
-  };
-
-  const openReferencePicker = () => {
-    if (referenceImages.length >= 10) {
-      toast.info("最多可添加 10 张参考图");
-      return;
-    }
-    referenceInputRef.current?.click();
   };
 
   const removeReference = (image: ReferenceImage) => {
@@ -396,11 +310,8 @@ export default function Home() {
     setPrompt("");
     setCreationBatches([]);
     setCurrentProject(null);
-    setGenerationStage("idle");
-    setGenerationError(null);
-    setFailedGenerationSnapshot(null);
+    setGenerationJob(null);
     setDrawerOpen(false);
-    setModelMenuOpen(false);
     setActiveView("create");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -411,24 +322,11 @@ export default function Home() {
     setCreationBatches(project.batches);
     setSavedImages(project.batches.flatMap((batch) => batch.images.map((image) => `${batch.id}-${image.id}`)));
     setPrompt(latestBatch.prompt);
-    const restoredModel = modelOptions.find((model) => model.name === latestBatch.model);
-    if (restoredModel) setSelectedModel(restoredModel.id);
-    const restoredRatioIndex = ratioOptions.findIndex((option) => option.label === latestBatch.ratio);
-    if (restoredRatioIndex >= 0) setRatioIndex(restoredRatioIndex);
-    const restoredResolution = resolutionOptions.find((option) => option.label === latestBatch.resolution);
-    if (restoredResolution) setResolution(restoredResolution.value);
-    if ([1, 2, 4].includes(latestBatch.count)) setGenerationCount(latestBatch.count as GenerationCount);
-    setJobMeta({
-      id: latestBatch.id,
-      model: latestBatch.model,
-      ratio: latestBatch.ratio,
-      resolution: latestBatch.resolution,
-      count: latestBatch.count,
-      references: latestBatch.references,
-    });
-    setGenerationStage("complete");
-    setGenerationError(null);
-    setFailedGenerationSnapshot(null);
+    setSelectedModel(latestBatch.modelId);
+    setSelectedRatio(latestBatch.aspectRatio);
+    setResolution(latestBatch.resolution);
+    setGenerationCount(latestBatch.count);
+    setGenerationJob(null);
     setActiveView("create");
     toast.success("项目已恢复，可以继续创作");
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -450,7 +348,7 @@ export default function Home() {
       id,
       name,
       updated: "刚刚",
-      coverPosition: creationBatches[0]?.images[0]?.position ?? "50% 45%",
+      coverPosition: creationBatches[0]?.images[0]?.previewPosition ?? "50% 45%",
       batches: creationBatches,
     };
     setProjects((current) => [nextProject, ...current.filter((project) => project.id !== id)]);
@@ -466,65 +364,40 @@ export default function Home() {
   const runGeneration = async (snapshot: GenerationInputSnapshot) => {
     if (isGenerating) return;
 
-    const snapshotModel = modelOptions.find((model) => model.id === snapshot.modelId) ?? modelOptions[0];
-    const snapshotRatio = ratioOptions[snapshot.ratioIndex] ?? ratioOptions[5];
-    const resolutionLabel = resolutionOptions.find((option) => option.value === snapshot.resolution)?.label ?? snapshot.resolution;
-    const shouldSimulateError = /报错|error|失败/i.test(snapshot.prompt) && !errorSimulationRef.current.has(snapshot);
-    const nextJob = {
-      id: `GG-${String(Date.now()).slice(-6)}`,
-      model: snapshotModel.name,
-      ratio: snapshotRatio.label,
-      resolution: resolutionLabel,
-      count: snapshot.count,
-      references: snapshot.references.length,
-    };
-
-    setJobMeta(nextJob);
-    setFailedGenerationSnapshot(null);
-    setModelMenuOpen(false);
     setDrawerOpen(false);
-    setGenerationError(null);
-    setGenerationStage("queued");
-    await wait(650);
-    setGenerationStage("rendering");
-    await wait(1550);
-    if (shouldSimulateError) {
-      errorSimulationRef.current.add(snapshot);
-      setGenerationError({
-        title: "本次生成未完成",
-        message: "模型服务响应超时。提示词、参考图与生成参数均已保留，你可以直接重试。",
-        code: "MODEL_TIMEOUT",
-      });
-      setFailedGenerationSnapshot(snapshot);
-      setGenerationStage("failed");
-      return;
-    }
-    setGenerationStage("refining");
-    await wait(900);
-    const nextResults = results.slice(0, snapshot.count);
+    const terminalJob = await generationBoundary.service.submit(
+      snapshot,
+      setGenerationJob,
+    );
+    if (terminalJob.state !== "succeeded") return;
+
     const nextBatch: AssetBatch = {
-      ...nextJob,
+      id: terminalJob.id,
       dateLabel: "今天",
       time: new Intl.DateTimeFormat("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date()),
       prompt: snapshot.prompt,
-      images: nextResults,
+      modelId: snapshot.modelId,
+      aspectRatio: snapshot.aspectRatio,
+      resolution: snapshot.resolution,
+      count: snapshot.count,
+      referenceCount: snapshot.references.length,
+      images: terminalJob.outputs,
     };
-    setSavedImages((current) => [...current, ...nextResults.map((result) => `${nextJob.id}-${result.id}`)]);
+    setSavedImages((current) => [...current, ...terminalJob.outputs.map((result) => `${terminalJob.id}-${result.id}`)]);
     setCreationBatches((current) => {
       const nextBatches = [nextBatch, ...current];
       if (currentProject) {
         setProjects((currentProjects) => currentProjects.map((project) => project.id === currentProject.id
-          ? { ...project, updated: "刚刚", batches: nextBatches, coverPosition: nextBatch.images[0]?.position ?? project.coverPosition }
+          ? { ...project, updated: "刚刚", batches: nextBatches, coverPosition: nextBatch.images[0]?.previewPosition ?? project.coverPosition }
           : project));
       }
       return nextBatches;
     });
     setAssetBatches((current) => [nextBatch, ...current]);
-    setNewAssetCount(snapshot.count);
+    setNewAssetCount(terminalJob.outputs.length);
     setAssetPulse(true);
     if (assetPulseTimerRef.current) window.clearTimeout(assetPulseTimerRef.current);
     assetPulseTimerRef.current = window.setTimeout(() => setAssetPulse(false), 4200);
-    setGenerationStage("complete");
   };
 
   const handleGenerate = () => {
@@ -537,7 +410,7 @@ export default function Home() {
       prompt,
       references: referenceImages,
       modelId: selectedModel,
-      ratioIndex,
+      aspectRatio: selectedRatio,
       resolution,
       count: generationCount,
     });
@@ -555,13 +428,11 @@ export default function Home() {
     setPrompt(restored.prompt);
     setReferenceImages(restored.references);
     setSelectedModel(restored.modelId);
-    setRatioIndex(restored.ratioIndex);
+    setSelectedRatio(restored.aspectRatio);
     setResolution(restored.resolution);
     setGenerationCount(restored.count);
-    setModelMenuOpen(false);
     setDrawerOpen(true);
     window.requestAnimationFrame(() => {
-      if (promptInputRef.current) resizePromptTextarea(promptInputRef.current);
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
     toast.success("已恢复失败任务的原始提示词、参考图与参数");
@@ -613,6 +484,8 @@ export default function Home() {
     }
 
     const isSaved = savedImages.includes(item.key);
+    const itemModel = getGenerationModel(item.batch.modelId);
+    const itemRatio = getGenerationRatio(item.batch.aspectRatio);
     return (
       <article
         className={`creation-card creation-variant-${(item.index % 4) + 1}`}
@@ -620,7 +493,7 @@ export default function Home() {
         style={{ aspectRatio: `${item.ratio}`, "--reveal-delay": `${item.index * 70}ms` } as CSSProperties}
         role="button"
         tabIndex={0}
-        aria-label={`查看 ${item.batch.model} 生成的视觉作品 ${item.index + 1}`}
+        aria-label={`查看 ${itemModel.name} 生成的视觉作品 ${item.index + 1}`}
         onClick={() => openImageDetail(creationDetailItems, item.key)}
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") {
@@ -629,8 +502,15 @@ export default function Home() {
           }
         }}
       >
-        <img src="/nano-fashion.png" alt={`${item.batch.model} 生成的视觉作品 ${item.index + 1}`} style={{ objectPosition: item.image.position }} />
-        <span className="creation-card-meta">{item.batch.time} · {item.batch.ratio}</span>
+        <Image
+          src={item.image.previewUrl}
+          alt={`${itemModel.name} 生成的视觉作品 ${item.index + 1}`}
+          fill
+          unoptimized
+          sizes="(max-width: 760px) 50vw, 25vw"
+          style={{ objectPosition: item.image.previewPosition }}
+        />
+        <span className="creation-card-meta">{item.batch.time} · {itemRatio.label}</span>
         <div className="image-actions">
           <button className={isSaved ? "saved" : ""} aria-label={isSaved ? "从资产库移除" : "保存到资产库"} onClick={(event) => { event.stopPropagation(); toggleSave(item.key); }}><Bookmark size={15} fill={isSaved ? "currentColor" : "none"} /></button>
           <button aria-label="下载到本地" onClick={(event) => { event.stopPropagation(); downloadImage(item.batch.id, item.image.id); }}><Download size={15} /></button>
@@ -650,6 +530,8 @@ export default function Home() {
 
   const renderAssetGalleryCard = (item: AssetGalleryItem) => {
     const isSelected = selectedAssetIds.includes(item.key);
+    const itemModel = getGenerationModel(item.batch.modelId);
+    const itemRatio = getGenerationRatio(item.batch.aspectRatio);
     return (
       <article
         className={`asset-gallery-card gallery-variant-${(item.index % 4) + 1} ${isSelected ? "selected" : ""}`}
@@ -657,7 +539,7 @@ export default function Home() {
         style={{ aspectRatio: `${item.ratio}` }}
         role="button"
         tabIndex={0}
-        aria-label={`查看 ${item.batch.ratio} 图片详情`}
+        aria-label={`查看 ${itemRatio.label} 图片详情`}
         onClick={() => openImageDetail(assetDetailItems, item.key)}
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") {
@@ -666,14 +548,21 @@ export default function Home() {
           }
         }}
       >
-        <img src="/nano-fashion.png" alt={`${item.batch.id} 画廊图片 ${item.index + 1}`} style={{ objectPosition: item.image.position }} />
+        <Image
+          src={item.image.previewUrl}
+          alt={`${item.batch.id} 画廊图片 ${item.index + 1}`}
+          fill
+          unoptimized
+          sizes="(max-width: 760px) 50vw, 25vw"
+          style={{ objectPosition: item.image.previewPosition }}
+        />
         <button
           className="asset-gallery-check"
           aria-label={`${isSelected ? "取消选择" : "选择"}这张图片`}
           aria-pressed={isSelected}
           onClick={(event) => { event.stopPropagation(); toggleAssetSelection(item.key); }}
         ><Check size={12} /></button>
-        <span className="asset-gallery-caption"><strong>{item.batch.ratio}</strong><small>{item.batch.time} · {item.batch.model}</small></span>
+        <span className="asset-gallery-caption"><strong>{itemRatio.label}</strong><small>{item.batch.time} · {itemModel.name}</small></span>
       </article>
     );
   };
@@ -691,8 +580,8 @@ export default function Home() {
     <main className="app-shell">
       <aside className="sidebar">
         <div className="sidebar-brand" role="img" aria-label="GoodGood">
-          <img className="brand-mark" src="/goodgood-mark.svg" alt="" />
-          <img className="wordmark-image sidebar-wordmark" src="/goodgood-wordmark.svg" alt="" />
+          <Image className="brand-mark" src="/goodgood-mark.svg" alt="" width={29} height={22} />
+          <Image className="wordmark-image sidebar-wordmark" src="/goodgood-wordmark.svg" alt="" width={89} height={20} />
         </div>
 
         <nav className="side-nav" aria-label="主导航">
@@ -714,135 +603,35 @@ export default function Home() {
 
       <section className="main-stage">
         <header className="mobile-bar">
-          <div className="mobile-brand" role="img" aria-label="GoodGood"><img className="brand-mark" src="/goodgood-mark.svg" alt="" /><img className="wordmark-image" src="/goodgood-wordmark.svg" alt="" /></div>
+          <div className="mobile-brand" role="img" aria-label="GoodGood"><Image className="brand-mark" src="/goodgood-mark.svg" alt="" width={27} height={20} /><Image className="wordmark-image" src="/goodgood-wordmark.svg" alt="" width={84} height={19} /></div>
           <button className="top-avatar">LZ</button>
         </header>
 
         <div className={`content-wrap ${activeView !== "create" ? "asset-content-wrap" : ""}`}>
           {activeView === "create" ? <>
-          <section className={`composer ${drawerOpen ? "drawer-open" : ""} ${isGenerating ? "is-generating" : ""}`} aria-label="图像生成区域">
-            <div className="prompt-row">
-              <div className="reference-control">
-                <input ref={referenceInputRef} className="reference-input" type="file" accept="image/*" multiple disabled={referenceImages.length >= 10} onChange={handleReferenceChange} />
-                <button className="reference-button" aria-label={referenceImages.length >= 10 ? "参考图片已达到上限" : "上传参考图片，最多 10 张"} disabled={referenceImages.length >= 10} onClick={openReferencePicker}>
-                  <ImagePlus size={18} />
-                </button>
-              </div>
-              <textarea
-                ref={promptInputRef}
-                aria-label="画面描述"
-                value={prompt}
-                rows={1}
-                placeholder="描述你想创作的画面…"
-                onChange={(event) => { setPrompt(event.target.value); resizePromptTextarea(event.currentTarget); }}
-              />
-              <div className="prompt-actions">
-                <button
-                  className={`prompt-action settings-toggle ${drawerOpen ? "active" : ""}`}
-                  aria-label="展开生成参数"
-                  aria-expanded={drawerOpen}
-                  onClick={() => setDrawerOpen((value) => !value)}
-                >
-                  <SlidersHorizontal size={18} />
-                </button>
-                <button className={`send-button ${isGenerating ? "generating" : ""}`} aria-label={isGenerating ? "正在生成图片" : "生成图片"} disabled={isGenerating} onClick={handleGenerate}>
-                  <span className="feihong-icon" aria-hidden="true" />
-                </button>
-              </div>
-            </div>
-
-            {referenceImages.length > 0 && (
-              <div className="reference-tray" aria-label="已添加的参考图片">
-                <div className="reference-thumbnails">
-                  {referenceImages.map((image, index) => (
-                    <div className="reference-thumbnail" key={image.id} title={image.name}>
-                      <img src={image.url} alt={`参考图 ${index + 1}`} />
-                      <button className="reference-thumbnail-remove" aria-label={`移除参考图 ${index + 1}`} onClick={() => removeReference(image)}><X size={10} /></button>
-                    </div>
-                  ))}
-                  {referenceImages.length < 10 && <button className="reference-add-more" aria-label="继续添加参考图片" onClick={openReferencePicker}><Plus size={15} /><span>添加</span></button>}
-                </div>
-              </div>
-            )}
-
-            <div className="parameter-drawer" aria-hidden={!drawerOpen}>
-              <div className="drawer-overflow">
-                <div className="drawer-content">
-                  <div className="parameter-group model-group">
-                    <label>生成模型</label>
-                    <div className="model-selector">
-                      <button
-                        className={`model-trigger ${modelMenuOpen ? "open" : ""}`}
-                        aria-expanded={modelMenuOpen}
-                        aria-controls="model-options-drawer"
-                        onClick={() => setModelMenuOpen((value) => !value)}
-                      >
-                        <ModelIcon provider={activeModel.provider} />
-                        <span className="model-copy"><strong>{activeModel.name}</strong><small>{activeModel.description}</small></span>
-                        {activeModel.recommended && <span className="recommended">推荐</span>}
-                        <ChevronDown className="model-chevron" size={15} />
-                      </button>
-                      <div id="model-options-drawer" className={`model-select-drawer ${modelMenuOpen ? "open" : ""}`} aria-hidden={!modelMenuOpen}>
-                        <div className="model-select-overflow">
-                          <div className="model-options">
-                            {modelOptions.map((model) => (
-                              <button
-                                key={model.id}
-                                className={`model-option ${selectedModel === model.id ? "selected" : ""}`}
-                                aria-pressed={selectedModel === model.id}
-                                onClick={() => { setSelectedModel(model.id); setModelMenuOpen(false); }}
-                              >
-                                <ModelIcon provider={model.provider} />
-                                <span className="model-copy"><strong>{model.name}</strong><small>{model.description}</small></span>
-                                {model.recommended && <span className="recommended">推荐</span>}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="parameter-group ratio-group">
-                    <label>画面比例</label>
-                    <div className="ratio-control">
-                      <svg className="ratio-preview" viewBox="0 0 120 112" role="img" aria-label={`当前画面比例 ${activeRatio.label}`}>
-                        <rect x={ratioFrame.guideX} y={ratioFrame.guideY} width={ratioFrame.guideWidth} height={ratioFrame.guideHeight} rx="6" fill="none" stroke="#d6d6dc" strokeWidth="1" strokeDasharray="4 4" />
-                        <rect x={ratioFrame.x} y={ratioFrame.y} width={ratioFrame.width} height={ratioFrame.height} rx="6" fill="none" stroke="#50505a" strokeWidth="1.25" />
-                        <text x="60" y="59" textAnchor="middle" fill="#3c3c45" fontSize="10">{activeRatio.label}</text>
-                      </svg>
-                      <div className="ratio-editor">
-                        <div className="ratio-modes" aria-label="画面方向">
-                          {ratioModes.map(([mode, label]) => (
-                            <button key={mode} className={activeRatio.mode === mode ? "selected" : ""} onClick={() => setRatioIndex(ratioDefaults[mode])}>{label}</button>
-                          ))}
-                        </div>
-                        <Slider className="ratio-slider" min={0} max={ratioOptions.length - 1} step={1} value={[ratioIndex]} onValueChange={(value) => setRatioIndex(value[0])} aria-label="调整画面比例" />
-                        <div className="ratio-readout"><small>{activeRatio.sizes[resolution]}</small></div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="parameter-group output-group">
-                    <div className="output-section">
-                      <label>分辨率</label>
-                      <div className="resolution-options">
-                        {resolutionOptions.map((option) => <button key={option.value} className={resolution === option.value ? "selected" : ""} onClick={() => setResolution(option.value)}>{option.label}</button>)}
-                      </div>
-                    </div>
-                    <div className="output-section">
-                      <label>生成数量</label>
-                      <div className="choice-row compact">
-                        {([1, 2, 4] as GenerationCount[]).map((count) => <button key={count} className={generationCount === count ? "selected" : ""} aria-pressed={generationCount === count} onClick={() => setGenerationCount(count)}>{count}</button>)}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
+          <CreationComposer
+            prompt={prompt}
+            references={referenceImages}
+            modelId={selectedModel}
+            aspectRatio={selectedRatio}
+            resolution={resolution}
+            count={generationCount}
+            drawerOpen={drawerOpen}
+            isGenerating={isGenerating}
+            onPromptChange={setPrompt}
+            onReferenceFiles={handleReferenceFiles}
+            onRemoveReference={removeReference}
+            onModelChange={setSelectedModel}
+            onAspectRatioChange={setSelectedRatio}
+            onResolutionChange={setResolution}
+            onCountChange={setGenerationCount}
+            onDrawerOpenChange={setDrawerOpen}
+            onGenerate={handleGenerate}
+          />
 
           {!isGenerating && !hasGenerationError && creationBatches.length === 0 ? (
             <section className="creation-empty-state" aria-label="尚未开始创作">
-              <img src="/goodgood-mark.svg" alt="" />
+              <Image src="/goodgood-mark.svg" alt="" width={32} height={24} />
               <h2>描述你想创作的画面</h2>
               <p>输入提示词，或上传参考图片开始</p>
             </section>
@@ -872,10 +661,10 @@ export default function Home() {
                   <div className="generation-error-copy">
                     <div className="generation-error-heading">
                       <h3>{generationError.title}</h3>
-                      <span>{jobMeta.count} 张未生成</span>
+                      <span>{jobInput?.count ?? 0} 张未生成</span>
                     </div>
                     <p>{generationError.message}</p>
-                    <small>{generationError.code} · {jobMeta.id} · {jobMeta.ratio} · {jobMeta.resolution} · {jobMeta.references > 0 ? `${jobMeta.references} 张参考图` : "无参考图"}</small>
+                    <small>{generationError.code} · {generationJob?.id} · {jobRatio.label} · {jobInput ? getGenerationResolutionLabel(jobInput.resolution) : ""} · {(jobInput?.references.length ?? 0) > 0 ? `${jobInput?.references.length} 张参考图` : "无参考图"}</small>
                   </div>
                   <div className="generation-error-actions">
                     <button className="error-retry" title="使用失败任务的原始参数和参考图" onClick={retryFailedGeneration}><RefreshCw size={14} />重新生成</button>
@@ -904,7 +693,7 @@ export default function Home() {
                   return (
                     <article className="project-card" key={project.id}>
                       <button className="project-cover" onClick={() => restoreProject(project)} aria-label={`打开项目 ${project.name}`}>
-                        <img src="/nano-fashion.png" alt={`${project.name} 项目封面`} style={{ objectPosition: project.coverPosition }} />
+                        <Image src="/nano-fashion.png" alt={`${project.name} 项目封面`} fill sizes="(max-width: 760px) 100vw, (max-width: 1180px) 50vw, 33vw" style={{ objectPosition: project.coverPosition }} />
                         <span>{imageCount} 张图片</span>
                       </button>
                       <div className="project-card-footer">
@@ -935,7 +724,8 @@ export default function Home() {
                   <h2>{dateLabel}</h2>
                   <div className="asset-batch-list">
                     {assetBatches.filter((batch) => batch.dateLabel === dateLabel).map((batch) => {
-                      const batchRatio = ratioOptions.find((option) => option.label === batch.ratio) ?? ratioOptions[5];
+                      const batchRatio = getGenerationRatio(batch.aspectRatio);
+                      const batchModel = getGenerationModel(batch.modelId);
                       return (
                         <article className="asset-batch-row" key={batch.id}>
                           <div className="asset-batch-time"><strong>{batch.time}</strong><small>{batch.id}</small></div>
@@ -948,14 +738,21 @@ export default function Home() {
                                 aria-label={`查看 ${batch.id} 生成结果 ${index + 1}`}
                                 onClick={() => openImageDetail(assetDetailItems, `${batch.id}-${image.id}`)}
                               >
-                                <img src="/nano-fashion.png" alt={`${batch.id} 生成结果 ${index + 1}`} style={{ objectPosition: image.position }} />
+                                <Image
+                                  src={image.previewUrl}
+                                  alt={`${batch.id} 生成结果 ${index + 1}`}
+                                  fill
+                                  unoptimized
+                                  sizes="(max-width: 760px) 50vw, 176px"
+                                  style={{ objectPosition: image.previewPosition }}
+                                />
                               </button>
                             ))}
                           </div>
                           <div className="asset-batch-details">
                             <p>{batch.prompt}</p>
                             <div className="asset-batch-meta">
-                              <span>{batch.model}</span><span>{batch.ratio}</span><span>{batch.resolution}</span><span>{batch.count} 张</span>{batch.references > 0 && <span>{batch.references} 张参考</span>}
+                              <span>{batchModel.name}</span><span>{batchRatio.label}</span><span>{getGenerationResolutionLabel(batch.resolution)}</span><span>{batch.count} 张</span>{batch.referenceCount > 0 && <span>{batch.referenceCount} 张参考</span>}
                             </div>
                           </div>
                           <button className="asset-batch-more" aria-label="批次更多操作"><MoreHorizontal size={18} /></button>
@@ -1000,10 +797,13 @@ export default function Home() {
                   className={`image-detail-art detail-variant-${(activeDetail.index % 4) + 1}`}
                   style={{ aspectRatio: `${activeDetail.ratio}`, width: `min(calc(100% - 72px), ${activeDetail.ratio * 82}dvh)` }}
                 >
-                  <img
-                    src="/nano-fashion.png"
-                    alt={`${activeDetail.batch.model} 生成图片 ${activeDetail.index + 1}`}
-                    style={{ objectPosition: activeDetail.image.position }}
+                  <Image
+                    src={activeDetail.image.previewUrl}
+                    alt={`${activeDetailModel?.name} 生成图片 ${activeDetail.index + 1}`}
+                    fill
+                    unoptimized
+                    sizes="(max-width: 760px) 100vw, calc(100vw - 426px)"
+                    style={{ objectPosition: activeDetail.image.previewPosition }}
                   />
                 </div>
               </section>
@@ -1012,7 +812,7 @@ export default function Home() {
                 <header className="image-detail-info-header">
                   <div>
                     <small>{activeDetail.batch.dateLabel} · {activeDetail.batch.time}</small>
-                    <strong>{activeDetail.batch.model}</strong>
+                    <strong>{activeDetailModel?.name}</strong>
                   </div>
                   <div className="image-detail-actions">
                     <button
@@ -1032,11 +832,11 @@ export default function Home() {
                 <div className="image-detail-section">
                   <span>生成参数</span>
                   <dl className="image-detail-parameters">
-                    <div><dt>模型</dt><dd>{activeDetail.batch.model}</dd></div>
-                    <div><dt>画面比例</dt><dd>{activeDetail.batch.ratio}</dd></div>
-                    <div><dt>分辨率</dt><dd>{activeDetail.batch.resolution}</dd></div>
+                    <div><dt>模型</dt><dd>{activeDetailModel?.name}</dd></div>
+                    <div><dt>画面比例</dt><dd>{activeDetailRatio?.label}</dd></div>
+                    <div><dt>分辨率</dt><dd>{getGenerationResolutionLabel(activeDetail.batch.resolution)}</dd></div>
                     <div><dt>批次</dt><dd>{activeDetail.batch.count} 张</dd></div>
-                    <div><dt>参考图</dt><dd>{activeDetail.batch.references ? `${activeDetail.batch.references} 张` : "无"}</dd></div>
+                    <div><dt>参考图</dt><dd>{activeDetail.batch.referenceCount ? `${activeDetail.batch.referenceCount} 张` : "无"}</dd></div>
                     <div><dt>任务编号</dt><dd>{activeDetail.batch.id}</dd></div>
                   </dl>
                 </div>
@@ -1060,7 +860,7 @@ export default function Home() {
                       aria-current={index === detailIndex ? "true" : undefined}
                       onClick={() => setDetailIndex(index)}
                     >
-                      <img src="/nano-fashion.png" alt="" style={{ objectPosition: item.image.position }} />
+                      <Image src={item.image.previewUrl} alt="" fill unoptimized sizes="58px" style={{ objectPosition: item.image.previewPosition }} />
                       <span>{String(index + 1).padStart(2, "0")}</span>
                     </button>
                   ))}
@@ -1080,7 +880,7 @@ export default function Home() {
             </DrawerHeader>
             <div className="project-save-body">
               <div className="project-save-cover">
-                <img src="/nano-fashion.png" alt="项目封面预览" style={{ objectPosition: creationBatches[0]?.images[0]?.position ?? "50% 42%" }} />
+                <Image src={creationBatches[0]?.images[0]?.previewUrl ?? "/nano-fashion.png"} alt="项目封面预览" fill unoptimized sizes="190px" style={{ objectPosition: creationBatches[0]?.images[0]?.previewPosition ?? "50% 42%" }} />
                 <span>{totalCreationImages} 张图片 · {creationBatches.length} 个批次</span>
               </div>
               <label className="project-name-field">

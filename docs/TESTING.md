@@ -2,8 +2,10 @@
 
 ## Current baseline
 
-The starter tests validate the production build, rendered metadata, and shared
-UI primitive behavior. They do not yet prove GoodGood's product flows.
+The suite validates the production build, rendered metadata, shared UI
+primitive behavior, documentation continuity, stable model/ratio mappings,
+job-state transitions, and deterministic mock success/failure/retry behavior.
+It does not yet prove durable API, queue, storage, ownership, or billing flows.
 
 Use:
 
@@ -13,8 +15,9 @@ npm run check:local
 ```
 
 `check:local` is the cross-platform gate intended for local computers and
-GitHub Actions. The existing Sites lifecycle scripts remain available for the
-current hosted prototype.
+GitHub Actions. It runs lint, the full TypeScript check, the production build,
+and automated tests. The existing Sites lifecycle scripts remain available for
+the current hosted prototype.
 
 The timestamped result of the latest verified gate belongs in
 `IMPLEMENTATION_PLAN.md`, not in this stable strategy document.
@@ -104,7 +107,7 @@ The timestamped result of the latest verified gate belongs in
 ## Release gate
 
 - Dependency install is locked and reproducible.
-- Lint, build, and automated tests pass.
+- Lint, full TypeScript check, build, and automated tests pass.
 - No secrets or real user assets in the diff.
 - Database migrations are reviewed and have rollback/forward-fix notes.
 - Staging checks use test accounts and test buckets.

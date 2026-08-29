@@ -4,20 +4,26 @@
 
 | Path | Responsibility |
 | --- | --- |
-| `app/page.tsx` | Entire interactive prototype and mock state |
+| `app/page.tsx` | Prototype view orchestration plus in-memory project and asset state |
 | `app/globals.css` | Product tokens, layout, components, responsive styles |
 | `app/layout.tsx` | Metadata, language, favicon |
+| `features/creation/` | Composer, generation options/snapshots, job rules, and mock boundaries |
+| `features/models/` | Stable GoodGood model catalog and presentation mapping |
+| `shared/contracts/` | Provider-independent generation domain values and records |
+| `types/` | Project-level declarations for imported static assets |
 | `public/goodgood-*` | Canonical GoodGood mark and wordmark |
 | `public/feihong-send.png` | Send-action silhouette |
 | `public/nano-fashion.png` | Prototype-only representative generated image |
 | `components/ui/` | Vendored Shadcn/Radix primitives |
-| `tests/` | Build/render primitive checks inherited from the starter |
+| `tests/` | Build/render checks, documentation continuity, and M1 domain/mock tests |
 | `db/` | Empty persistence adapter and schema placeholder |
 | `worker/` | Vinext/Cloudflare worker entry for the current prototype |
+| `worker-configuration.d.ts` | Typed optional bindings for the current Cloudflare prototype |
 | `.openai/hosting.json` | Current prototype hosting identity; not an app secret |
 
-`app/page.tsx` and `app/globals.css` are intentionally documented as prototype
-debt. Do not perform a broad rewrite merely to make the tree look cleaner.
+The remaining project, asset, detail, and view orchestration in `app/page.tsx`
+and the broad `app/globals.css` stylesheet are documented prototype debt. Do
+not perform a broad rewrite merely to make the tree look cleaner.
 
 ## Target feature boundaries
 

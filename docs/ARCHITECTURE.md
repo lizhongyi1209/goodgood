@@ -2,10 +2,12 @@
 
 ## Current state
 
-The repository is an interactive prototype. All generation, projects, assets,
-and saves live in React memory and use `/public/nano-fashion.png` as simulated
-output. The empty Drizzle schema is intentional. Do not confuse UI simulation
-with production integration.
+The repository is an interactive prototype. Generation uses provider-independent
+contracts and typed in-memory repository/provider boundaries, but those mocks
+still execute in the frontend process. Projects, assets, and saves also remain
+in React memory, and `/public/nano-fashion.png` is the simulated output. The
+empty Drizzle schema is intentional. Do not confuse these M1 seams with a
+backend, durable queue, or production integration.
 
 ## Target production topology
 

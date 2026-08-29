@@ -75,7 +75,8 @@ use white, and the surrounding group uses neutral gray.
 ## 8. Support different creation intents
 
 Model choice became a collapsible selector rather than permanently visible
-cards. Provider icons are transparent, icon-only marks from `@lobehub/icons`.
+cards. Provider icons are transparent, icon-only marks from the peer-free
+`@lobehub/icons-static-svg` distribution.
 
 - Nano Banana 2: 快速，批量
 - Nano Banana Pro: 高质量资产，视觉优先
