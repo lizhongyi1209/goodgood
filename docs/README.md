@@ -5,6 +5,7 @@ describes what exists; these documents explain what must remain true and why.
 
 | Document | Use it for |
 | --- | --- |
+| `IMPLEMENTATION_PLAN.md` | Current milestone, verified status, next slice, blockers |
 | `PRODUCT.md` | Product definition, audience, terminology, scope |
 | `PRODUCT_JOURNEY.md` | From-zero rationale, confirmed and rejected directions |
 | `DESIGN_SYSTEM.md` | Brand, tokens, component sizing, layout rules |
@@ -30,3 +31,14 @@ When material conflicts, use this order:
 
 If code differs from a confirmed contract, record it as implementation debt;
 do not silently rewrite the contract to match the accident.
+
+`IMPLEMENTATION_PLAN.md` controls delivery status only. It never overrides an
+accepted ADR, product invariant, or topic contract.
+
+## Session continuity
+
+Start every development session by reading `AGENTS.md`, then
+`IMPLEMENTATION_PLAN.md`, inspecting `git status`, and loading the topic docs
+for the active task. End every code or infrastructure task by synchronizing the
+current checkpoint, verification result, next slice, and any affected topic
+docs in the same change.

@@ -18,7 +18,9 @@ changing detail in `docs/` and update the relevant document in the same change.
 ## Read before changing code
 
 1. Read this file.
-2. Read the task-specific source of truth:
+2. Read `docs/IMPLEMENTATION_PLAN.md` for the current milestone, verified
+   checkpoint, next slice, and blockers.
+3. Read the task-specific source of truth:
    - Product scope and terms: `docs/PRODUCT.md`
    - Historical rationale and rejected directions: `docs/PRODUCT_JOURNEY.md`
    - Visual/UI work: `docs/DESIGN_SYSTEM.md`
@@ -29,9 +31,9 @@ changing detail in `docs/` and update the relevant document in the same change.
    - Failures and recovery: `docs/ERROR_HANDLING.md`
    - Verification: `docs/TESTING.md`
    - Runtime/release work: `docs/DEPLOYMENT.md`
-3. Inspect the existing implementation and tests. Do not infer behavior from a
+4. Inspect the existing implementation and tests. Do not infer behavior from a
    screenshot when the code is available.
-4. State whether the request changes a confirmed decision. If it does, create
+5. State whether the request changes a confirmed decision. If it does, create
    or update an ADR under `docs/decisions/` before implementation.
 
 ## Product invariants
@@ -91,6 +93,20 @@ changing detail in `docs/` and update the relevant document in the same change.
   labels, reduced motion, and responsive behavior intact.
 - Do not add speculative routes or functionality while refactoring.
 - Update documentation, tests, and error behavior in the same change as code.
+- At the end of every code or infrastructure task, synchronize the current
+  checkpoint in `docs/IMPLEMENTATION_PLAN.md`: milestone status, completed
+  slice, verification, and next action or blocker. If the plan did not change,
+  explicitly confirm that after inspecting it rather than inventing progress.
+
+## Local development
+
+- Requires Node.js `>=22.13.0` and npm.
+- On first setup, install locked dependencies with `npm ci`.
+- Start the local development server from the repository root with
+  `npm run dev:local`; use the local URL printed by Vite and press `Ctrl+C` to
+  stop it.
+- The current prototype requires no environment variables. See
+  `docs/DEPLOYMENT.md` for environment and release details.
 
 ## Definition of done
 
@@ -100,3 +116,5 @@ changing detail in `docs/` and update the relevant document in the same change.
   applicable.
 - No secret or real user asset enters the diff.
 - Relevant docs and ADR status are current.
+- `docs/IMPLEMENTATION_PLAN.md` accurately describes the handoff state and next
+  smallest useful slice.

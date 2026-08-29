@@ -36,12 +36,16 @@ features/
   models/        catalog, capability mapping, UI copy
 server/
   api/            authenticated route handlers
-  generation/     provider adapters and orchestration
+  auth/           identity binding, authorization, ownership context
+  generation/     jobs, provider adapters, routing, reconciliation
+  billing/        price versions, entitlements, credit ledger, payments
   persistence/    repositories and transactions
   storage/        signed upload/download operations
 shared/
   contracts/      schemas and domain enums
   design/         tokens and shared product primitives
+infra/
+  container/      image, Compose, health checks, deployment helpers
 ```
 
 Extraction order for the first backend milestone:
@@ -51,6 +55,9 @@ Extraction order for the first backend milestone:
 3. Introduce domain contracts and a mocked repository boundary.
 4. Replace simulations behind that boundary with real APIs.
 5. Add addressable routes only after persistence IDs exist.
+
+Current milestone status and the next slice live only in
+`docs/IMPLEMENTATION_PLAN.md`; do not duplicate changing delivery status here.
 
 ## Ownership rules
 

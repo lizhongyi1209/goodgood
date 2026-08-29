@@ -25,6 +25,22 @@ the generation plane. Large image bytes should use signed direct object-storage
 transfer whenever possible; do not proxy completed images through the app
 server.
 
+## Initial runtime units
+
+Keep one modular codebase and one versioned application image initially. Run it
+as two independently restartable processes:
+
+- `web`: UI delivery, authenticated API, authorization, job submission,
+  projects, assets, pricing, and account-facing status;
+- `worker`: queue consumption, provider routing, polling/callback
+  reconciliation, result ingestion, and terminal settlement.
+
+PostgreSQL is authoritative for domain and ledger state. Redis-compatible
+coordination may deliver work more than once, so consumers are idempotent and
+jobs remain recoverable from PostgreSQL. Object storage owns reference and
+generated image bytes. Neither process stores durable state in memory or its
+container filesystem.
+
 ## Request boundaries
 
 1. Browser authenticates with GoodGood.
@@ -68,3 +84,19 @@ model/version and capability data. A provider adapter exposes create, status,
 cancel where supported, normalize-error, and result-ingestion behavior.
 
 Never branch UI behavior on raw provider error strings.
+
+The US service is a generation gateway, not an extension of the browser or a
+GoodGood administrator. It receives a dedicated least-privilege service
+credential. Automatic grouping may route between explicitly equivalent
+provider routes for the selected GoodGood model, but it must not silently
+change model families. Persist route version and each provider attempt so
+retries, reconciliation, cost, and support remain auditable.
+
+## Account and billing boundary
+
+GoodGood owns user identity, authorization, product entitlements, versioned
+prices, and credit accounting independently of the US generation service. The
+backend is the only authority that may reserve, settle, release, refund, grant,
+or expire credit. Payment-provider callbacks and generation completion events
+are signed and idempotent; the frontend only displays state and initiates
+authorized actions.

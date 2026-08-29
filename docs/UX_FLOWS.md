@@ -32,14 +32,26 @@ idle -> queued -> rendering -> refining -> complete
 failed -> queued (retry)
 ```
 
-- Create an immutable input snapshot at submission.
+- Create an immutable input snapshot at submission containing the prompt,
+  ordered reference identities, stable model ID, ratio, resolution, and count.
 - Insert the pending batch at the top of the current creation stream.
 - Use ratio-correct skeletons for the requested image count.
+- Render the active task skeletons separately from the completed-image masonry;
+  loading or failure must not redistribute previously generated images.
 - On success, replace skeletons with assets and prepend the completed batch to
   the asset library.
+- On full-batch failure, replace the active task area with one compact inline
+  status strip that summarizes the requested count. Do not repeat the same
+  error once per requested image.
+- If a provider returns partial results, add successful images normally, keep
+  failed outputs out of the asset library, and summarize the completed and
+  failed counts in the task strip.
 - Do not reorder an older completed batch above a newer submission merely
   because the provider completed out of order; sort by submission time.
 - On failure, keep the failed batch location and all input state.
+- `重新生成` always submits the failed immutable snapshot, even if the composer
+  has since changed. `修改设置` restores a mutable copy of that snapshot into
+  the composer before opening the parameter drawer.
 
 ## Continuous creation and projects
 

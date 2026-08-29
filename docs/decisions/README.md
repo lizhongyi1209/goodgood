@@ -15,3 +15,5 @@ Current records:
 - `0002-goodgood-visual-language.md`
 - `0003-session-batch-asset-project-model.md`
 - `0004-async-control-and-generation-planes.md`
+- `0005-local-first-container-promotion.md`
+- `0006-product-billing-and-provider-routing.md`

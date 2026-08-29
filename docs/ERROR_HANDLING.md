@@ -24,11 +24,20 @@
 
 ## Generation failure contract
 
-The failed result slot remains visible with:
+The failed batch remains visible in the active result region as a compact inline
+status strip. It does not enter or redistribute the completed-image masonry.
+The strip contains:
 
-- Short title, useful explanation, normalized error code, and job ID.
-- `重新生成` using the preserved immutable input snapshot.
-- `修改设置` returning to the parameter drawer without clearing state.
+- Short title, useful explanation, requested/failed count, normalized error
+  code, and job ID.
+- `重新生成` using the preserved immutable input snapshot rather than the
+  current composer draft.
+- `修改设置` restoring a mutable copy of that snapshot before returning to the
+  parameter drawer.
+
+For a full-batch failure, show one strip rather than one repeated error per
+requested output. If results are partial, successful assets remain available
+and the strip summarizes completed versus failed outputs.
 
 A toast may announce a transient validation problem, but must not replace this
 panel for asynchronous generation failure.

@@ -3,6 +3,15 @@
 import { useEffect, useRef, useState, type ChangeEvent, type CSSProperties, type WheelEvent as ReactWheelEvent } from "react";
 import { Slider } from "@/components/ui/slider";
 import {
+  createGenerationInputSnapshot,
+  restoreGenerationInputSnapshot,
+  type GenerationCount,
+  type GenerationInputSnapshot,
+  type GenerationModelId,
+  type GenerationReference,
+  type GenerationResolution,
+} from "@/features/creation/generation-snapshot";
+import {
   Dialog,
   DialogDescription,
   DialogOverlay,
@@ -80,18 +89,17 @@ const resolutionOptions = [
   { value: "2K", label: "高清" },
   { value: "4K", label: "超清" },
 ] as const;
-type Resolution = (typeof resolutionOptions)[number]["value"];
+type Resolution = GenerationResolution;
 
 const modelOptions = [
   { id: "nano-banana-2", name: "Nano Banana 2", description: "快速，批量", provider: "nano", recommended: true },
   { id: "nano-banana-pro", name: "Nano Banana Pro", description: "高质量资产，视觉优先", provider: "nano", recommended: false },
   { id: "gpt-image-2", name: "GPT IMAGE 2", description: "高真实感，提示词遵循", provider: "openai", recommended: false },
 ] as const;
-type ModelId = (typeof modelOptions)[number]["id"];
-type GenerationCount = 1 | 2 | 4;
+type ModelId = GenerationModelId;
 type GenerationStage = "idle" | "queued" | "rendering" | "refining" | "complete" | "failed";
 type GenerationError = { title: string; message: string; code: string };
-type ReferenceImage = { id: string; url: string; name: string };
+type ReferenceImage = GenerationReference;
 type AssetBatch = {
   id: string;
   dateLabel: string;
@@ -196,8 +204,9 @@ function getDetailImages(batches: AssetBatch[]): DetailImage[] {
 export default function Home() {
   const referenceInputRef = useRef<HTMLInputElement>(null);
   const promptInputRef = useRef<HTMLTextAreaElement>(null);
+  const referenceObjectUrlsRef = useRef(new Set<string>());
   const assetPulseTimerRef = useRef<number | null>(null);
-  const errorSimulationRef = useRef(false);
+  const errorSimulationRef = useRef(new WeakSet<GenerationInputSnapshot>());
   const detailWheelTimerRef = useRef<number | null>(null);
   const detailThumbnailRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -211,6 +220,7 @@ export default function Home() {
   const [activeView, setActiveView] = useState<ActiveView>("create");
   const [generationStage, setGenerationStage] = useState<GenerationStage>("idle");
   const [generationError, setGenerationError] = useState<GenerationError | null>(null);
+  const [failedGenerationSnapshot, setFailedGenerationSnapshot] = useState<GenerationInputSnapshot | null>(null);
   const [creationBatches, setCreationBatches] = useState<AssetBatch[]>([]);
   const [savedImages, setSavedImages] = useState<string[]>([]);
   const [newAssetCount, setNewAssetCount] = useState(0);
@@ -246,14 +256,16 @@ export default function Home() {
           : generationStage === "failed"
             ? "生成失败"
           : "根据当前提示词创建的图像";
-  const creationItems: CreationStreamItem[] = [
-    ...(isGenerating ? Array.from({ length: generationCount }, (_, index) => ({
+  const jobRatio = ratioOptions.find((option) => option.label === jobMeta.ratio)?.value ?? activeRatio.value;
+  const generationItems: CreationStreamItem[] = isGenerating
+    ? Array.from({ length: jobMeta.count }, (_, index) => ({
       kind: "skeleton" as const,
       key: `skeleton-${jobMeta.id}-${index}`,
-      ratio: activeRatio.value,
+      ratio: jobRatio,
       index,
-    })) : []),
-    ...creationBatches.flatMap((batch) => {
+    }))
+    : [];
+  const creationItems: CreationStreamItem[] = creationBatches.flatMap((batch) => {
       const batchRatio = ratioOptions.find((option) => option.label === batch.ratio) ?? ratioOptions[5];
       return batch.images.map((image, index) => ({
         kind: "image" as const,
@@ -263,8 +275,7 @@ export default function Home() {
         image,
         index,
       }));
-    }),
-  ];
+    });
 
   const resizePromptTextarea = (element: HTMLTextAreaElement) => {
     element.style.height = "auto";
@@ -317,6 +328,11 @@ export default function Home() {
     if (detailWheelTimerRef.current) window.clearTimeout(detailWheelTimerRef.current);
   }, []);
 
+  useEffect(() => () => {
+    referenceObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    referenceObjectUrlsRef.current.clear();
+  }, []);
+
   const handleReferenceChange = (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
     if (!files.length) return;
@@ -328,11 +344,15 @@ export default function Home() {
       return;
     }
 
-    const accepted = files.slice(0, remaining).map((file, index) => ({
-      id: `${Date.now()}-${index}-${file.name}`,
-      url: URL.createObjectURL(file),
-      name: file.name,
-    }));
+    const accepted = files.slice(0, remaining).map((file, index) => {
+      const url = URL.createObjectURL(file);
+      referenceObjectUrlsRef.current.add(url);
+      return {
+        id: `${Date.now()}-${index}-${file.name}`,
+        url,
+        name: file.name,
+      };
+    });
     setReferenceImages((current) => [...current, ...accepted]);
     event.target.value = "";
     if (files.length > remaining) toast.info(`已添加 ${accepted.length} 张，参考图最多 10 张`);
@@ -348,7 +368,6 @@ export default function Home() {
   };
 
   const removeReference = (image: ReferenceImage) => {
-    URL.revokeObjectURL(image.url);
     setReferenceImages((current) => current.filter((item) => item.id !== image.id));
   };
 
@@ -371,13 +390,15 @@ export default function Home() {
   };
 
   const startNewCreation = () => {
-    referenceImages.forEach((image) => URL.revokeObjectURL(image.url));
+    referenceObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    referenceObjectUrlsRef.current.clear();
     setReferenceImages([]);
     setPrompt("");
     setCreationBatches([]);
     setCurrentProject(null);
     setGenerationStage("idle");
     setGenerationError(null);
+    setFailedGenerationSnapshot(null);
     setDrawerOpen(false);
     setModelMenuOpen(false);
     setActiveView("create");
@@ -407,6 +428,7 @@ export default function Home() {
     });
     setGenerationStage("complete");
     setGenerationError(null);
+    setFailedGenerationSnapshot(null);
     setActiveView("create");
     toast.success("项目已恢复，可以继续创作");
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -441,26 +463,24 @@ export default function Home() {
     setSelectedAssetIds((current) => current.includes(assetId) ? current.filter((id) => id !== assetId) : [...current, assetId]);
   };
 
-  const handleGenerate = async () => {
-    if (!prompt.trim()) {
-      toast.error("请先输入画面描述");
-      return;
-    }
+  const runGeneration = async (snapshot: GenerationInputSnapshot) => {
     if (isGenerating) return;
 
-    const promptSnapshot = prompt.trim();
-    const shouldSimulateError = /报错|error|失败/i.test(promptSnapshot) && !errorSimulationRef.current;
-    const resolutionLabel = resolutionOptions.find((option) => option.value === resolution)?.label ?? resolution;
+    const snapshotModel = modelOptions.find((model) => model.id === snapshot.modelId) ?? modelOptions[0];
+    const snapshotRatio = ratioOptions[snapshot.ratioIndex] ?? ratioOptions[5];
+    const resolutionLabel = resolutionOptions.find((option) => option.value === snapshot.resolution)?.label ?? snapshot.resolution;
+    const shouldSimulateError = /报错|error|失败/i.test(snapshot.prompt) && !errorSimulationRef.current.has(snapshot);
     const nextJob = {
       id: `GG-${String(Date.now()).slice(-6)}`,
-      model: activeModel.name,
-      ratio: activeRatio.label,
+      model: snapshotModel.name,
+      ratio: snapshotRatio.label,
       resolution: resolutionLabel,
-      count: generationCount,
-      references: referenceImages.length,
+      count: snapshot.count,
+      references: snapshot.references.length,
     };
 
     setJobMeta(nextJob);
+    setFailedGenerationSnapshot(null);
     setModelMenuOpen(false);
     setDrawerOpen(false);
     setGenerationError(null);
@@ -469,23 +489,24 @@ export default function Home() {
     setGenerationStage("rendering");
     await wait(1550);
     if (shouldSimulateError) {
-      errorSimulationRef.current = true;
+      errorSimulationRef.current.add(snapshot);
       setGenerationError({
         title: "本次生成未完成",
         message: "模型服务响应超时。提示词、参考图与生成参数均已保留，你可以直接重试。",
         code: "MODEL_TIMEOUT",
       });
+      setFailedGenerationSnapshot(snapshot);
       setGenerationStage("failed");
       return;
     }
     setGenerationStage("refining");
     await wait(900);
-    const nextResults = results.slice(0, generationCount);
+    const nextResults = results.slice(0, snapshot.count);
     const nextBatch: AssetBatch = {
       ...nextJob,
       dateLabel: "今天",
       time: new Intl.DateTimeFormat("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date()),
-      prompt: promptSnapshot,
+      prompt: snapshot.prompt,
       images: nextResults,
     };
     setSavedImages((current) => [...current, ...nextResults.map((result) => `${nextJob.id}-${result.id}`)]);
@@ -499,11 +520,51 @@ export default function Home() {
       return nextBatches;
     });
     setAssetBatches((current) => [nextBatch, ...current]);
-    setNewAssetCount(generationCount);
+    setNewAssetCount(snapshot.count);
     setAssetPulse(true);
     if (assetPulseTimerRef.current) window.clearTimeout(assetPulseTimerRef.current);
     assetPulseTimerRef.current = window.setTimeout(() => setAssetPulse(false), 4200);
     setGenerationStage("complete");
+  };
+
+  const handleGenerate = () => {
+    if (!prompt.trim()) {
+      toast.error("请先输入画面描述");
+      return;
+    }
+
+    const snapshot = createGenerationInputSnapshot({
+      prompt,
+      references: referenceImages,
+      modelId: selectedModel,
+      ratioIndex,
+      resolution,
+      count: generationCount,
+    });
+    void runGeneration(snapshot);
+  };
+
+  const retryFailedGeneration = () => {
+    if (!failedGenerationSnapshot) return;
+    void runGeneration(failedGenerationSnapshot);
+  };
+
+  const restoreFailedGenerationSettings = () => {
+    if (!failedGenerationSnapshot) return;
+    const restored = restoreGenerationInputSnapshot(failedGenerationSnapshot);
+    setPrompt(restored.prompt);
+    setReferenceImages(restored.references);
+    setSelectedModel(restored.modelId);
+    setRatioIndex(restored.ratioIndex);
+    setResolution(restored.resolution);
+    setGenerationCount(restored.count);
+    setModelMenuOpen(false);
+    setDrawerOpen(true);
+    window.requestAnimationFrame(() => {
+      if (promptInputRef.current) resizePromptTextarea(promptInputRef.current);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+    toast.success("已恢复失败任务的原始提示词、参考图与参数");
   };
 
   const toggleSave = (assetId: string) => {
@@ -578,9 +639,9 @@ export default function Home() {
     );
   };
 
-  const renderCreationColumns = (columnCount: number) => Array.from({ length: columnCount }, (_, columnIndex) => (
-    <div className="creation-column" key={`creation-column-${columnCount}-${columnIndex}`}>
-      {creationItems.filter((_, itemIndex) => itemIndex % columnCount === columnIndex).map(renderCreationItem)}
+  const renderCreationColumns = (items: CreationStreamItem[], columnCount: number, group: "task" | "history") => Array.from({ length: columnCount }, (_, columnIndex) => (
+    <div className="creation-column" key={`${group}-column-${columnCount}-${columnIndex}`}>
+      {items.filter((_, itemIndex) => itemIndex % columnCount === columnIndex).map(renderCreationItem)}
     </div>
   ));
 
@@ -798,25 +859,37 @@ export default function Home() {
                 </div>
               </header>
 
+              {isGenerating && (
+                <div className="generation-task-frame" aria-live="polite" aria-label="当前生成任务">
+                  <div className="creation-masonry desktop-creation-masonry">{renderCreationColumns(generationItems, 4, "task")}</div>
+                  <div className="creation-masonry mobile-creation-masonry">{renderCreationColumns(generationItems, 2, "task")}</div>
+                </div>
+              )}
+
               {hasGenerationError && (
-                <div className="generation-error-panel stream-error" role="alert">
-                  <div className="generation-error-content">
-                    <span className="generation-error-icon"><CircleAlert size={21} /></span>
-                    <h3>{generationError.title}</h3>
-                    <p>{generationError.message}</p>
-                    <small>{generationError.code} · {jobMeta.id}</small>
-                    <div className="generation-error-actions">
-                      <button className="error-retry" onClick={handleGenerate}><RefreshCw size={14} />重新生成</button>
-                      <button className="error-settings" onClick={() => { setDrawerOpen(true); window.scrollTo({ top: 0, behavior: "smooth" }); }}><Settings2 size={14} />修改设置</button>
+                <div className="generation-error-strip" role="alert">
+                  <span className="generation-error-icon"><CircleAlert size={18} /></span>
+                  <div className="generation-error-copy">
+                    <div className="generation-error-heading">
+                      <h3>{generationError.title}</h3>
+                      <span>{jobMeta.count} 张未生成</span>
                     </div>
+                    <p>{generationError.message}</p>
+                    <small>{generationError.code} · {jobMeta.id} · {jobMeta.ratio} · {jobMeta.resolution} · {jobMeta.references > 0 ? `${jobMeta.references} 张参考图` : "无参考图"}</small>
+                  </div>
+                  <div className="generation-error-actions">
+                    <button className="error-retry" title="使用失败任务的原始参数和参考图" onClick={retryFailedGeneration}><RefreshCw size={14} />重新生成</button>
+                    <button className="error-settings" title="恢复失败任务的输入后调整" onClick={restoreFailedGenerationSettings}><Settings2 size={14} />修改设置</button>
                   </div>
                 </div>
               )}
 
-              <div className="creation-masonry-frame" aria-live="polite">
-                <div className="creation-masonry desktop-creation-masonry">{renderCreationColumns(4)}</div>
-                <div className="creation-masonry mobile-creation-masonry">{renderCreationColumns(2)}</div>
-              </div>
+              {creationItems.length > 0 && (
+                <div className="creation-masonry-frame" aria-live="polite">
+                  <div className="creation-masonry desktop-creation-masonry">{renderCreationColumns(creationItems, 4, "history")}</div>
+                  <div className="creation-masonry mobile-creation-masonry">{renderCreationColumns(creationItems, 2, "history")}</div>
+                </div>
+              )}
             </section>
           )}
           </> : activeView === "projects" ? (
