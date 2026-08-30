@@ -1,7 +1,16 @@
 # Data model contract
 
-The physical database schema is not implemented. These are the canonical domain
-entities that future migrations must preserve.
+The M3 PostgreSQL migration physically implements the server-owned test user,
+`GenerationBatch`, `GenerationJob`, `GenerationAttempt`, `Asset`, append-only
+job events, and the queue outbox. The Drizzle schema mirrors those tables.
+Creation sessions, references, projects, production identity, entitlements,
+pricing, credit, and payments remain canonical contracts for later migrations.
+
+`migrations/0001_m3_generation.sql` is additive and safe to rerun through the
+checksum-tracked migration runner. Rollback during local development is to stop
+the new application image and restore the pre-migration database snapshot or
+reset the explicitly disposable local volume. Deployed environments use a
+forward fix; the M3 tables are not dropped automatically.
 
 ## Entities
 
@@ -95,7 +104,9 @@ Contains ordering and membership metadata; never duplicate image bytes.
 
 - Job state: `queued | running | refining | succeeded | failed | cancelled`.
 - Job transitions are append-auditable and terminal states do not regress.
-- A retry creates a new attempt while preserving the original batch input.
+- M3 user retry creates a new batch/job linked through `retry_of_job_id` and
+  copies the failed immutable input server-side; each job keeps its own
+  attempt evidence. Later provider fallback within one job adds another attempt.
 - Provider fallback stays within explicitly equivalent routes for the selected
   GoodGood model; it never silently changes the product model family.
 - Price snapshots and settled ledger entries are immutable.

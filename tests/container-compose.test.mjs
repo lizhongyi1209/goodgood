@@ -47,6 +47,7 @@ test("compose contract pins the complete local dependency stack", async () => {
     "web",
     "worker",
     "mock-generation",
+    "migrate",
     "postgres",
     "valkey",
     "object-storage",
@@ -62,6 +63,8 @@ test("compose contract pins the complete local dependency stack", async () => {
   assert.match(compose, /^  postgres-data:$/m);
   assert.match(compose, /^  valkey-data:$/m);
   assert.match(compose, /^  object-storage-data:$/m);
+  assert.match(compose, /condition: service_completed_successfully/);
+  assert.match(compose, /OBJECT_STORAGE_PUBLIC_ENDPOINT:/);
   for (const mapping of [
     "GOODGOOD_WEB_PORT:-3000}:3000",
     "GOODGOOD_WORKER_HEALTH_PORT:-3001}:3001",

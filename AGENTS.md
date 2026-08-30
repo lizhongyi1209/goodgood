@@ -8,9 +8,9 @@ changing detail in `docs/` and update the relevant document in the same change.
 - Product: **GoodGood**, a premium, image-first AI visual creation workspace.
 - Primary task: let creators generate repeatedly, inspect results, collect
   assets, and preserve a coherent creative session as a resumable project.
-- Current state: an interactive frontend prototype with mock data and simulated
-  generation. Authentication, billing, persistence, uploads, and model APIs are
-  not production implementations.
+- Current state: an interactive frontend plus one durable local, mock-backed
+  generation slice. Authentication, billing, references/projects, uploads, and
+  the real model gateway are not production implementations.
 - Primary language today: Simplified Chinese. Keep the information architecture
   ready for later internationalization; do not hard-code backend enums from UI
   labels.

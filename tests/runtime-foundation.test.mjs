@@ -43,11 +43,11 @@ test("web exposes separate liveness and readiness responses", async () => {
     environment,
     workerContext(),
   );
-  assert.equal(ready.status, 200);
+  assert.equal(ready.status, 503);
   assert.deepEqual(await ready.json(), {
-    checks: { runtime: "ok" },
+    checks: { configuration: "missing", runtime: "ok" },
     service: "goodgood-web",
-    status: "ready",
+    status: "not_ready",
   });
 });
 
@@ -139,6 +139,9 @@ test("container image keeps one non-root runtime for both process commands", asy
   );
   assert.match(dockerfile, /^FROM node:\$\{NODE_VERSION\}-bookworm-slim AS runtime$/m);
   assert.match(dockerfile, /^USER node$/m);
+  assert.match(dockerfile, /npm run build:runtime/);
+  assert.match(dockerfile, /\/app\/migrations \.\/migrations/);
+  assert.match(dockerfile, /\/app\/runtime-bundle \.\/server\/runtime/);
   assert.match(dockerfile, /^HEALTHCHECK /m);
   assert.match(dockerfile, /^CMD \["node", "server\/runtime\/web\.mjs"\]$/m);
   assert.doesNotMatch(dockerfile, /COPY \.env/);

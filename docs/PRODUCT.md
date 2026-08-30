@@ -48,12 +48,13 @@ and a project is not simply a folder of images.
 
 ## Current prototype scope
 
-Implemented as simulated frontend behavior:
+Implemented in the interactive frontend:
 
 - Prompt and reference composer.
 - Expandable parameter settings.
-- Three model choices and generation simulation.
-- Loading, completion, and deliberate failure simulation.
+- Three visible model choices; the M3 durable local path currently accepts the
+  Nano Banana 2 / 4:5 / 2K / one-image default through the HTTP mock provider.
+- Polled loading, completion, inline failure, and retry for that M3 path.
 - Continuous creation stream, assets, gallery, projects, and image detail.
 - Responsive layout and keyboard/wheel detail navigation.
 
@@ -61,7 +62,8 @@ Not production-ready yet:
 
 - User authentication and authorization.
 - Real model API calls and provider failover.
-- Durable database/object-storage persistence.
+- Production identity-bound database/object-storage persistence beyond the
+  narrow server-owned local M3 generation records.
 - Billing, points, quotas, moderation, and abuse controls.
 - Real file upload validation and processing.
 - Search, Explore, Moodboards, collaboration, and sharing.

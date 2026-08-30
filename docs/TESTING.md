@@ -2,14 +2,19 @@
 
 ## Current baseline
 
-The suite validates the production build, rendered metadata, shared UI
+The default suite validates the production build, rendered metadata, shared UI
 primitive behavior, documentation continuity, stable model/ratio mappings,
-job-state transitions, deterministic mock success/failure/retry behavior, web
-health endpoints, worker and mock-runtime readiness transitions, the
-single-image process contract, pinned Compose topology, and host dependency
-probe success/failure behavior. The automated suite does not itself build Linux
-containers or prove durable API, queue, storage, ownership, or billing flows;
-container smoke evidence belongs in `IMPLEMENTATION_PLAN.md`.
+job-state transitions, both M1 and HTTP mock contracts, M3 input validation and
+migration structure, dependency-aware health endpoints, the single-image
+process contract, pinned Compose topology, and host probe success/failure.
+
+`GOODGOOD_M3_INTEGRATION=1 node --test tests/m3-compose-integration.test.mjs`
+is the opt-in destructive-process integration test against the disposable local
+test stack. It proves migration rerun, idempotency conflict handling, successful
+object persistence and signed read, normalized rejection and timeout, retry,
+duplicate delivery, and forced worker restart. It preserves named volumes and
+does not run as part of the fast default gate. Production identity, ownership,
+uploads, gateway callbacks, and billing remain outside M3 coverage.
 
 Use:
 
@@ -78,6 +83,11 @@ The timestamped result of the latest verified gate belongs in
   normalize to the documented recovery behavior.
 - Object storage or database failure preserves enough durable evidence for
   reconciliation.
+
+M3 accepts the first six items above for its narrow local contract. The final
+storage/database outage cases are covered structurally by outbox, lease, event,
+and non-terminal defer behavior; deliberate dependency outage automation remains
+a useful hardening slice before staging.
 
 ### Documentation continuity
 

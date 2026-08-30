@@ -2,12 +2,19 @@
 
 ## Current state
 
-The repository is an interactive prototype. Generation uses provider-independent
-contracts and typed in-memory repository/provider boundaries, but those mocks
-still execute in the frontend process. Projects, assets, and saves also remain
-in React memory, and `/public/nano-fashion.png` is the simulated output. The
-empty Drizzle schema is intentional. Do not confuse these M1 seams with a
-backend, durable queue, or production integration.
+M3 implements one production-shaped local generation path: the browser submits
+an idempotent request, PostgreSQL transactionally creates a batch, job, audit
+event, and queue outbox record, Valkey delivers it at least once, the worker
+polls the HTTP mock provider, RustFS stores the image, PostgreSQL records the
+asset, and the browser polls the job into the creation stream and asset library.
+Worker leases and PostgreSQL reconciliation recover interrupted jobs, while
+terminal writes and deterministic object keys tolerate duplicate delivery.
+
+The slice is intentionally limited to the server-owned local test identity,
+`nano-banana-2`, 4:5, 2K, one image, and no references. Production identity,
+ownership enforcement, signed reference uploads, project persistence, billing,
+and the US gateway remain unimplemented. The other prototype project and asset
+views still use React memory and representative mock data.
 
 ## Target production topology
 

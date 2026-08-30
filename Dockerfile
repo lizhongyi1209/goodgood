@@ -9,7 +9,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 
 COPY . .
-RUN npm run build:local
+RUN npm run build:local && npm run build:runtime
 
 FROM node:${NODE_VERSION}-bookworm-slim AS runtime
 ARG GOODGOOD_REVISION=development
@@ -30,7 +30,8 @@ ENV NODE_ENV=production \
 WORKDIR /app
 
 COPY --from=build --chown=node:node /app/dist/standalone/ ./
-COPY --from=build --chown=node:node /app/server/runtime ./server/runtime
+COPY --from=build --chown=node:node /app/migrations ./migrations
+COPY --from=build --chown=node:node /app/runtime-bundle ./server/runtime
 COPY --from=build --chown=node:node /app/infra/container ./infra/container
 
 USER node

@@ -44,6 +44,14 @@ export default defineConfig(async () => {
   const { cloudflare } = await import("@cloudflare/vite-plugin");
 
   return {
+    ssr: {
+      external: [
+        "@aws-sdk/client-s3",
+        "@aws-sdk/s3-request-presigner",
+        "pg",
+        "redis",
+      ],
+    },
     server: {
       host: "0.0.0.0",
       allowedHosts: ["terminal.local"],

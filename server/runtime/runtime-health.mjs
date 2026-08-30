@@ -15,6 +15,7 @@ function sendJson(response, statusCode, payload, extraHeaders = {}) {
 
 export function createRuntimeHealthServer({ host, port, service }) {
   let readiness = "starting";
+  let readinessChecks = {};
 
   const server = createServer((request, response) => {
     if (request.method !== "GET") {
@@ -45,6 +46,7 @@ export function createRuntimeHealthServer({ host, port, service }) {
       sendJson(response, ready ? 200 : 503, {
         checks: {
           runtime: ready ? "ok" : readiness,
+          ...(ready ? readinessChecks : {}),
         },
         service,
         status: ready ? "ready" : "not_ready",
@@ -92,7 +94,8 @@ export function createRuntimeHealthServer({ host, port, service }) {
     markNotReady(reason = "stopping") {
       readiness = reason;
     },
-    markReady() {
+    markReady(checks = {}) {
+      readinessChecks = checks;
       readiness = "ready";
     },
   };

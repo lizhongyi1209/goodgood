@@ -1,6 +1,8 @@
 import path from "node:path";
 import { startProdServer } from "vinext/server/prod-server";
 import { parseRuntimePort } from "./port.mjs";
+import { handleGenerationNodeApi } from "../generation/node-api.mjs";
+import { closeGenerationResources } from "../generation/resources.mjs";
 
 const host = process.env.HOST ?? "0.0.0.0";
 const port = parseRuntimePort(process.env.PORT, 3000, "PORT");
@@ -8,6 +10,30 @@ const { server } = await startProdServer({
   host,
   outDir: path.resolve(process.cwd(), "dist"),
   port,
+});
+
+const vinextRequestListeners = server.listeners("request");
+server.removeAllListeners("request");
+server.on("request", (request, response) => {
+  void handleGenerationNodeApi(request, response)
+    .then((handled) => {
+      if (handled) return;
+      for (const listener of vinextRequestListeners) {
+        listener.call(server, request, response);
+      }
+    })
+    .catch((error) => {
+      console.error(
+        JSON.stringify({
+          event: "web.node_api_failed",
+          message: error instanceof Error ? error.message : String(error),
+        }),
+      );
+      if (!response.headersSent) {
+        response.writeHead(500, { "content-type": "application/json" });
+      }
+      response.end(JSON.stringify({ error: "internal_error" }));
+    });
 });
 
 let stopping = false;
@@ -37,7 +63,7 @@ function stop(signal) {
   }, 10_000);
   forcedExit.unref();
 
-  server.close((error) => {
+  server.close(async (error) => {
     clearTimeout(forcedExit);
     if (error) {
       console.error(
@@ -49,6 +75,7 @@ function stop(signal) {
       );
       process.exitCode = 1;
     }
+    await closeGenerationResources();
   });
 }
 

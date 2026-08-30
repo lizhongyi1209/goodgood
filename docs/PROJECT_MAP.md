@@ -7,7 +7,7 @@
 | `app/page.tsx` | Prototype view orchestration plus in-memory project and asset state |
 | `app/globals.css` | Product tokens, layout, components, responsive styles |
 | `app/layout.tsx` | Metadata, language, favicon |
-| `features/creation/` | Composer, generation options/snapshots, job rules, and mock boundaries |
+| `features/creation/` | Composer, generation contracts, M1 mock boundary, and M3 HTTP polling client |
 | `features/models/` | Stable GoodGood model catalog and presentation mapping |
 | `shared/contracts/` | Provider-independent generation domain values and records |
 | `types/` | Project-level declarations for imported static assets |
@@ -15,14 +15,18 @@
 | `public/feihong-send.png` | Send-action silhouette |
 | `public/nano-fashion.png` | Prototype-only representative generated image |
 | `components/ui/` | Vendored Shadcn/Radix primitives |
-| `tests/` | Build/render checks, documentation continuity, domain/mock tests, and container/Compose contracts |
-| `db/` | Empty persistence adapter and schema placeholder |
+| `tests/` | Build/render, documentation, domain/mock, M3 runtime, and opt-in Compose integration coverage |
+| `db/` | PostgreSQL Drizzle schema and process-local database helper |
+| `migrations/` | Versioned, checksum-tracked, rerunnable PostgreSQL migrations |
 | `worker/` | Vinext/Cloudflare worker entry for the current prototype |
 | `worker-configuration.d.ts` | Typed optional bindings for the current Cloudflare prototype |
-| `server/runtime/` | Production web, worker, and mock-provider process entry points plus runtime health state |
+| `server/generation/` | Node API, persistence transactions, outbox/Valkey queue, worker orchestration, provider mock, and object storage |
+| `server/persistence/` | Versioned migration runner |
+| `server/runtime/` | Production web, worker, migration, and mock-provider process entry points plus runtime health state |
 | `infra/container/` | Image health check plus host-side Compose dependency probes |
+| `scripts/build-runtime.mjs` | Locked Node runtime bundling for the production image |
 | `Dockerfile` / `.dockerignore` | One non-root Linux application image and its build-context boundary |
-| `compose.yaml` | Pinned six-service local stack, health dependencies, loopback ports, and named volumes |
+| `compose.yaml` | Pinned web/worker/mock plus PostgreSQL, Valkey, RustFS, and one-shot migration topology |
 | `.openai/hosting.json` | Current prototype hosting identity; not an app secret |
 
 The remaining project, asset, detail, and view orchestration in `app/page.tsx`

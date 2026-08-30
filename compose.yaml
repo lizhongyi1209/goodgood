@@ -21,6 +21,7 @@ x-goodgood-environment: &goodgood-environment
   DATABASE_URL: postgresql://goodgood:${GOODGOOD_LOCAL_POSTGRES_PASSWORD:-goodgood-local-only}@postgres:5432/goodgood
   REDIS_URL: redis://valkey:6379
   OBJECT_STORAGE_ENDPOINT: http://object-storage:9000
+  OBJECT_STORAGE_PUBLIC_ENDPOINT: http://127.0.0.1:${GOODGOOD_OBJECT_STORAGE_PORT:-9000}
   OBJECT_STORAGE_BUCKET: ${OBJECT_STORAGE_BUCKET:-goodgood-local}
   OBJECT_STORAGE_REGION: ${OBJECT_STORAGE_REGION:-us-east-1}
   OBJECT_STORAGE_ACCESS_KEY_ID: ${GOODGOOD_LOCAL_OBJECT_STORAGE_ACCESS_KEY:-goodgood-local}
@@ -41,6 +42,8 @@ services:
     ports:
       - "127.0.0.1:${GOODGOOD_WEB_PORT:-3000}:3000"
     depends_on:
+      migrate:
+        condition: service_completed_successfully
       postgres:
         condition: service_healthy
       valkey:
@@ -56,11 +59,14 @@ services:
     environment:
       <<: *goodgood-environment
       GOODGOOD_PROCESS: worker
+      GENERATION_WORKER_LEASE_MS: ${GENERATION_WORKER_LEASE_MS:-3000}
       WORKER_HEALTH_HOST: 0.0.0.0
       WORKER_HEALTH_PORT: 3001
     ports:
       - "127.0.0.1:${GOODGOOD_WORKER_HEALTH_PORT:-3001}:3001"
     depends_on:
+      migrate:
+        condition: service_completed_successfully
       postgres:
         condition: service_healthy
       valkey:
@@ -74,11 +80,25 @@ services:
     <<: *goodgood-app
     command: ["node", "server/runtime/mock-generation.mjs"]
     environment:
+      GENERATION_API_KEY: ${GOODGOOD_LOCAL_GENERATION_API_KEY:-goodgood-local-only}
       GOODGOOD_PROCESS: mock-generation
       MOCK_GENERATION_HOST: 0.0.0.0
       MOCK_GENERATION_PORT: 3002
     ports:
       - "127.0.0.1:${GOODGOOD_MOCK_GENERATION_PORT:-3002}:3002"
+
+  migrate:
+    <<: *goodgood-app
+    command: ["node", "server/runtime/migrate.mjs"]
+    restart: "no"
+    healthcheck:
+      disable: true
+    environment:
+      DATABASE_URL: postgresql://goodgood:${GOODGOOD_LOCAL_POSTGRES_PASSWORD:-goodgood-local-only}@postgres:5432/goodgood
+      GOODGOOD_PROCESS: migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   postgres:
     image: postgres:17.11-bookworm@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0

@@ -6,6 +6,7 @@
 .wrangler
 coverage
 dist
+runtime-bundle
 node_modules
 *.log
 *.key

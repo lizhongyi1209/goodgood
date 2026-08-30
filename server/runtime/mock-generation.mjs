@@ -1,5 +1,5 @@
+import { createMockProviderServer } from "../generation/mock-provider-server.mjs";
 import { parseRuntimePort } from "./port.mjs";
-import { createRuntimeHealthServer } from "./runtime-health.mjs";
 
 const host = process.env.MOCK_GENERATION_HOST ?? "0.0.0.0";
 const port = parseRuntimePort(
@@ -7,14 +7,11 @@ const port = parseRuntimePort(
   3002,
   "MOCK_GENERATION_PORT",
 );
-const health = createRuntimeHealthServer({
-  host,
-  port,
-  service: "goodgood-mock-generation",
-});
+const apiKey = process.env.GENERATION_API_KEY;
+if (!apiKey) throw new Error("GENERATION_API_KEY is required.");
 
-await health.listen();
-health.markReady();
+const mock = createMockProviderServer({ apiKey, host, port });
+await mock.listen();
 
 console.log(
   JSON.stringify({
@@ -27,14 +24,10 @@ console.log(
 );
 
 let stopping = false;
-
 async function stop(signal) {
-  if (stopping) {
-    return;
-  }
-
+  if (stopping) return;
   stopping = true;
-  health.markNotReady("stopping");
+  mock.markNotReady("stopping");
   console.log(
     JSON.stringify({
       event: "mock_generation.stopping",
@@ -42,25 +35,8 @@ async function stop(signal) {
       signal,
     }),
   );
-
-  const forcedExit = setTimeout(() => {
-    console.error(
-      JSON.stringify({
-        event: "mock_generation.stop_timeout",
-        service: "goodgood-mock-generation",
-      }),
-    );
-    process.exit(1);
-  }, 10_000);
-  forcedExit.unref();
-
-  await health.close();
-  clearTimeout(forcedExit);
+  await mock.close();
 }
 
-process.once("SIGINT", () => {
-  void stop("SIGINT");
-});
-process.once("SIGTERM", () => {
-  void stop("SIGTERM");
-});
+process.once("SIGINT", () => void stop("SIGINT"));
+process.once("SIGTERM", () => void stop("SIGTERM"));

@@ -1,9 +1,9 @@
 # Production implementation plan
 
 - Last synchronized: 2026-08-30
-- Current phase: M2 is completed; M3 is next
-- Current objective: begin the durable asynchronous generation slice with a
-  physical PostgreSQL schema and rerunnable migration
+- Current phase: M3 is completed; M4 is next
+- Current objective: replace the server-owned M3 test identity with an
+  authenticated owner context and prove owner isolation before adding uploads
 
 ## Purpose and update contract
 
@@ -25,69 +25,56 @@ this file owns the current handoff state.
 
 ## Current checkpoint
 
-- The application is still an interactive frontend prototype. Generation now
-  runs through typed in-memory repository/provider boundaries; projects,
-  assets, and saves remain simulated in React memory.
-- Authentication, durable persistence, object uploads, billing, the job queue,
-  and the US generation API are not implemented.
-- M1 extracted the composer, stable model/ratio/resolution contracts, immutable
-  generation snapshots, auditable job-state transitions, UI mappings, and a
-  deterministic mock repository/provider boundary. `app/page.tsx` still owns
-  prototype project, asset, and view orchestration.
-- All creation and asset imagery now uses the framework image boundary without
-  lint suppressions. Provider marks come from LobeHub's peer-free static SVG
-  distribution, so the unused LobeHub UI/Emoji peer chain is no longer part of
-  the install graph.
+- M3 now completes the narrow production-shaped path from browser submission to
+  idempotent Node API, PostgreSQL batch/job/outbox transaction, Valkey delivery,
+  worker, authenticated HTTP mock provider, RustFS object write, Asset record,
+  signed object read, browser polling, creation stream, and asset-library cue.
+- The physical PostgreSQL schema covers the server-owned test user, generation
+  batches, jobs, attempts, assets, append-only job events, and queue outbox. The
+  versioned migration records a checksum and tolerates rerun; Compose runs it as
+  an explicit one-shot release step before web and worker start.
+- Submission idempotency is owner-scoped and rejects key reuse with a different
+  payload. Outbox dispatch may duplicate safely. Worker leases, reconciliation,
+  deterministic object keys, terminal guards, and unique asset/attempt indexes
+  tolerate duplicate delivery and resume an interrupted provider task after a
+  forced worker restart.
+- The M3 mock provider exposes deterministic success, rejection, slow, and
+  timeout outcomes. Provider responses are normalized before reaching the UI;
+  inline failure preserves the immutable snapshot. Retry copies the failed
+  snapshot server-side into a linked durable job rather than trusting changed
+  browser values.
+- M3 intentionally accepts only the local test identity, `nano-banana-2`, 4:5,
+  2K, one image, and no references. The composer retains the confirmed product
+  controls, but unsupported M3 combinations receive a local validation message.
+- Projects, reference uploads, production users/authorization, most asset
+  library state, and saves remain in React memory. Billing and the US generation
+  gateway are not implemented.
+- Web and worker readiness now check PostgreSQL, Valkey, the RustFS bucket, and
+  mock-provider access. Liveness remains dependency-independent. The production
+  Node server owns M3 TCP-backed API requests; the existing Cloudflare/Sites
+  prototype cannot host this PostgreSQL/Valkey slice and is not M3 deployment
+  evidence.
+- The production image bundles the four Node runtime entry points with locked
+  dependencies instead of copying the full root production graph. The final
+  revision-labelled `goodgood:local` image is 91,162,899 bytes, runs as the
+  non-root `node` user with a read-only root filesystem, and has no host mounts.
 - On 2026-08-30, `npm run check:local` passed on Windows with Node.js 24.12.0:
-  all 21 tests passed, including M1 domain/mock coverage, web/worker/mock health,
-  invalid runtime configuration, container process and Compose contracts,
-  host-probe success/failure behavior, documentation continuity, render, and
-  primitive checks. Lint and the full TypeScript check passed with no errors. A
-  locked `npm ci --dry-run --ignore-scripts` also completed without dependency
-  or peer warnings after Linux normalized the cross-platform lockfile.
-- Docker CLI 28.3.3, Docker Compose 2.39.2, and Docker Desktop's Linux engine
-  completed the M2 image build and smoke test on 2026-08-30. Its configured WSL
-  data root remains `E:\Docker\disk image\DockerDesktopWSL`.
-- M2 has one multi-stage production `Dockerfile` for all application roles. It
-  copies Vinext's traced standalone runtime into the final non-root image,
-  embeds a revision label, excludes local state and secrets from the build
-  context, and requires no source bind mount.
-- `npm run start:web` serves the compiled application and `npm run
-  start:worker` starts an independently restartable worker runtime shell.
-  `npm run start:mock-generation` starts the local mock-provider runtime shell.
-  All handle container termination and become unready before shutdown.
-- Web, worker, and mock liveness/readiness endpoints are separate and covered
-  by tests. Readiness intentionally proves runtime bootstrap only; dependency
-  checks enter with the M3 persistence, queue, storage, and provider adapters.
-- The Linux build produced the revision-labelled `goodgood:m2-local` image from
-  a clean `npm ci`. Web and worker containers both became `healthy`, returned
-  the documented liveness/readiness payloads, ran as UID 1000 with no host
-  mounts, and shut down on `SIGTERM`. The standalone image was 89,769,267 bytes.
-- `compose.yaml` now starts web, worker, mock generation, PostgreSQL 17.11,
-  Valkey 8.1.9, and RustFS 1.0.0-rc.3. Third-party images are pinned by exact
-  tag and digest; all host ports are loopback-only; PostgreSQL, Valkey, and
-  object storage use named volumes; application roles run read-only as UID
-  1000 with no mounts.
-- The real six-service stack reached `healthy` through `docker compose up
-  --detach --wait`. `npm run stack:verify` reached all six host endpoints using
-  temporary port overrides because port 3000 was already occupied, PostgreSQL
-  returned the expected database, and a Valkey marker survived forced container
-  replacement. The test containers, network, and named volumes were removed
-  after verification; downloaded images remain cached locally.
-- A registry audit exposed existing framework dependency advisories. Most of
-  the root graph is build-only in the standalone image, but Vinext 0.0.50 still
-  packages the vulnerable `image-size` 2.0.2 parser and no patched 2.x release
-  exists. M2 uses only trusted built-in images; resolve this through a tested
-  Vinext upgrade and add a runtime-image scan before accepting untrusted image
-  processing or staging.
-- No physical database schema or migration, persistence adapter, queue
-  consumer, object-storage adapter, or functional mock-provider HTTP contract
-  exists yet.
-- Next action: start M3 with a versioned, rerunnable PostgreSQL migration for
-  the server-owned test identity plus generation batch, job, attempt, and asset
-  records, then test initialization against the Compose database. Keep queue,
-  storage, and provider behavior out of that schema-only slice.
-- Blockers: none.
+  lint, full TypeScript check, production build, and 25 tests completed with 24
+  passing and the opt-in Compose integration test skipped by design.
+- The real Linux Compose stack reached healthy on temporary loopback ports.
+  `npm run stack:verify` passed, and the opt-in M3 integration test passed its
+  migration-rerun, success, signed asset read, idempotency conflict, duplicate
+  delivery, provider rejection, retry, timeout, and forced worker-restart cases.
+  Named test volumes remain available for continuity; they were not deleted.
+- The existing Vinext 0.0.50 `image-size` 2.0.2 advisory remains. M3 ingests only
+  the checked-in trusted mock image and validates content type/size; a tested
+  Vinext upgrade plus runtime-image scan is still required before untrusted
+  uploads or staging.
+- Next action: begin M4 with an authenticated identity adapter and owner-scoped
+  generation/asset read-write tests, replacing the fixed test-user context
+  before adding signed reference uploads or durable projects.
+- Blockers: none for the next identity-boundary slice. Production identity
+  provider selection must be recorded before M4 can be completed.
 
 ## Accepted delivery decisions
 
@@ -116,7 +103,7 @@ this file owns the current handoff state.
 | M0 | Decisions, delivery plan, continuity guard, and current baseline recorded | Completed | Topic docs and ADRs synchronized; documentation continuity is covered by an automated test; local quality gate passed on 2026-08-29 |
 | M1 | Domain contracts and mocked boundaries extracted from the prototype | Completed | Composer and domain seams extracted; stable model/ratio/job mappings and mock repository/provider success, failure, and retry have unit tests; image/dependency warnings cleared; clean install check, lint, typecheck, build, and 13 tests passed on 2026-08-30 |
 | M2 | Production-shaped local container foundation | Completed | One pinned Compose stack starts healthy web, worker, PostgreSQL, Valkey, RustFS, and mock generation with documented commands; host probes and named-volume persistence passed on 2026-08-30 |
-| M3 | Durable asynchronous generation vertical slice | Pending | One model and one image complete through API, job, queue, worker, storage, asset, polling, and inline failure recovery |
+| M3 | Durable asynchronous generation vertical slice | Completed | One model and one image pass API, PostgreSQL/outbox, Valkey, worker restart, mock provider, RustFS, Asset, polling, inline failure/retry, duplicate, and timeout tests on 2026-08-30 |
 | M4 | Production identity, ownership, references, and projects persist safely | Pending | Auth and ownership tests cover every read/write; signed upload validation and project restore pass |
 | M5 | US generation gateway integration and recovery | Pending | Scoped credentials, idempotency, signed callbacks/polling reconciliation, timeout, duplicate, restart, and partial-result cases pass |
 | M6 | Versioned pricing, credit ledger, and payment sandbox | Pending | Reserve/settle/release/refund are transactional and idempotent; browser cannot authorize its own spend |

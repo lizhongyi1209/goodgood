@@ -1,8 +1,8 @@
 # GoodGood
 
 GoodGood is an image-first AI visual creation workspace. This repository
-contains the current interactive frontend prototype and the product memory
-needed to evolve it consistently into a production application.
+contains an interactive frontend plus the first production-shaped durable
+generation slice and the product memory needed to evolve it consistently.
 
 ![GoodGood](public/goodgood-mark.svg)
 
@@ -13,12 +13,14 @@ The prototype demonstrates:
 - Prompt input with eight-line auto-growth and multi-reference upload.
 - Attached model, aspect-ratio, resolution, and output-count settings.
 - Nano Banana 2, Nano Banana Pro, and GPT IMAGE 2 selection.
-- Simulated asynchronous generation, loading, failure, retry, and asset arrival.
+- A durable local async path for Nano Banana 2, 4:5, 2K, and one image through
+  PostgreSQL, Valkey, a worker, the mock provider, RustFS, and browser polling.
 - Continuous creation sessions, resumable projects, asset batch/gallery modes,
   and a focused image-detail viewer.
 
-It does **not** yet include real generation APIs, authentication, billing,
-database persistence, or production uploads. See [Product definition](docs/PRODUCT.md).
+It does **not** yet include production identity, billing, reference uploads,
+project persistence, or the real US generation gateway. See
+[Product definition](docs/PRODUCT.md).
 
 ## Start locally
 
@@ -31,9 +33,9 @@ npm ci
 npm run dev:local
 ```
 
-The current prototype requires no environment variables. When integrations are
-added, copy `.env.example` to `.env.local` and fill values locally; never commit
-that file.
+The UI can still be inspected without environment variables. Durable generation
+uses the Compose stack below; direct process runs use the names in
+`.env.example`. Never commit a populated `.env*` file.
 
 ## Verify
 
@@ -76,8 +78,10 @@ docker run --rm --name goodgood-worker -e GOODGOOD_PROCESS=worker -p 3001:3001 g
 
 The web process exposes `/api/health/live` and `/api/health/ready` on port
 `3000`. The worker exposes `/health/live` and `/health/ready` on port `3001`.
-The worker is currently an idle M2 runtime shell; durable queue consumption is
-introduced with the asynchronous generation slice rather than simulated here.
+Readiness now verifies PostgreSQL, Valkey, RustFS, and mock-provider access. A
+one-shot `migrate` service applies the checksum-protected PostgreSQL migration
+before web and worker start. The worker consumes the durable queue and restores
+expired jobs from PostgreSQL after restart.
 
 ## AI-Native development
 

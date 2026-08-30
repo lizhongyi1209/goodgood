@@ -13,8 +13,8 @@ import {
 } from "@/features/creation/generation-job";
 import {
   MOCK_GENERATION_OUTPUTS,
-  createMockGenerationBoundary,
 } from "@/features/creation/mock-generation-boundary";
+import { createHttpGenerationBoundary } from "@/features/creation/http-generation-boundary";
 import {
   createGenerationInputSnapshot,
   restoreGenerationInputSnapshot,
@@ -153,7 +153,7 @@ export default function Home() {
   const assetPulseTimerRef = useRef<number | null>(null);
   const detailWheelTimerRef = useRef<number | null>(null);
   const detailThumbnailRefs = useRef<Array<HTMLButtonElement | null>>([]);
-  const [generationBoundary] = useState(createMockGenerationBoundary);
+  const [generationBoundary] = useState(createHttpGenerationBoundary);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState<GenerationModelId>(DEFAULT_GENERATION_MODEL_ID);
   const [selectedRatio, setSelectedRatio] = useState<GenerationAspectRatio>("4:5");
@@ -361,29 +361,21 @@ export default function Home() {
     setSelectedAssetIds((current) => current.includes(assetId) ? current.filter((id) => id !== assetId) : [...current, assetId]);
   };
 
-  const runGeneration = async (snapshot: GenerationInputSnapshot) => {
-    if (isGenerating) return;
-
-    setDrawerOpen(false);
-    const terminalJob = await generationBoundary.service.submit(
-      snapshot,
-      setGenerationJob,
-    );
-    if (terminalJob.state !== "succeeded") return;
-
+  const recordCompletedGeneration = (completedJob: GenerationJob) => {
+    const completedInput = completedJob.input;
     const nextBatch: AssetBatch = {
-      id: terminalJob.id,
+      id: completedJob.id,
       dateLabel: "今天",
       time: new Intl.DateTimeFormat("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date()),
-      prompt: snapshot.prompt,
-      modelId: snapshot.modelId,
-      aspectRatio: snapshot.aspectRatio,
-      resolution: snapshot.resolution,
-      count: snapshot.count,
-      referenceCount: snapshot.references.length,
-      images: terminalJob.outputs,
+      prompt: completedInput.prompt,
+      modelId: completedInput.modelId,
+      aspectRatio: completedInput.aspectRatio,
+      resolution: completedInput.resolution,
+      count: completedInput.count,
+      referenceCount: completedInput.references.length,
+      images: completedJob.outputs,
     };
-    setSavedImages((current) => [...current, ...terminalJob.outputs.map((result) => `${terminalJob.id}-${result.id}`)]);
+    setSavedImages((current) => [...current, ...completedJob.outputs.map((result) => `${completedJob.id}-${result.id}`)]);
     setCreationBatches((current) => {
       const nextBatches = [nextBatch, ...current];
       if (currentProject) {
@@ -394,15 +386,41 @@ export default function Home() {
       return nextBatches;
     });
     setAssetBatches((current) => [nextBatch, ...current]);
-    setNewAssetCount(terminalJob.outputs.length);
+    setNewAssetCount(completedJob.outputs.length);
     setAssetPulse(true);
     if (assetPulseTimerRef.current) window.clearTimeout(assetPulseTimerRef.current);
     assetPulseTimerRef.current = window.setTimeout(() => setAssetPulse(false), 4200);
   };
 
+  const runGeneration = async (snapshot: GenerationInputSnapshot) => {
+    if (isGenerating) return;
+
+    setDrawerOpen(false);
+    const terminalJob = await generationBoundary.service.submit(
+      snapshot,
+      setGenerationJob,
+    );
+    if (terminalJob.state === "succeeded") {
+      recordCompletedGeneration(terminalJob);
+    }
+  };
+
   const handleGenerate = () => {
     if (!prompt.trim()) {
       toast.error("请先输入画面描述");
+      return;
+    }
+    if (referenceImages.length > 0) {
+      toast.error("持久参考图上传将在下一阶段启用，请先移除参考图");
+      return;
+    }
+    if (
+      selectedModel !== "nano-banana-2" ||
+      selectedRatio !== "4:5" ||
+      resolution !== "2K" ||
+      generationCount !== 1
+    ) {
+      toast.error("当前持久生成链路支持 Nano Banana 2、4:5、高清、1 张图片");
       return;
     }
 
@@ -418,8 +436,17 @@ export default function Home() {
   };
 
   const retryFailedGeneration = () => {
-    if (!failedGenerationSnapshot) return;
-    void runGeneration(failedGenerationSnapshot);
+    if (!generationJob || generationJob.state !== "failed") return;
+    if (generationJob.id.startsWith("pending_")) {
+      void runGeneration(generationJob.input);
+      return;
+    }
+    setDrawerOpen(false);
+    void generationBoundary.retry(generationJob, setGenerationJob).then((terminalJob) => {
+      if (terminalJob.state === "succeeded") {
+        recordCompletedGeneration(terminalJob);
+      }
+    });
   };
 
   const restoreFailedGenerationSettings = () => {
@@ -444,9 +471,9 @@ export default function Home() {
     toast.success(isSaved ? "已从资产库移除" : "已重新加入资产库");
   };
 
-  const downloadImage = (batchId: string, imageId: string) => {
+  const downloadImage = (batchId: string, imageId: string, previewUrl: string) => {
     const link = document.createElement("a");
-    link.href = "/nano-fashion.png";
+    link.href = previewUrl;
     link.download = `goodgood-${batchId}-${imageId}.png`;
     document.body.appendChild(link);
     link.click();
@@ -513,7 +540,7 @@ export default function Home() {
         <span className="creation-card-meta">{item.batch.time} · {itemRatio.label}</span>
         <div className="image-actions">
           <button className={isSaved ? "saved" : ""} aria-label={isSaved ? "从资产库移除" : "保存到资产库"} onClick={(event) => { event.stopPropagation(); toggleSave(item.key); }}><Bookmark size={15} fill={isSaved ? "currentColor" : "none"} /></button>
-          <button aria-label="下载到本地" onClick={(event) => { event.stopPropagation(); downloadImage(item.batch.id, item.image.id); }}><Download size={15} /></button>
+          <button aria-label="下载到本地" onClick={(event) => { event.stopPropagation(); downloadImage(item.batch.id, item.image.id, item.image.previewUrl); }}><Download size={15} /></button>
         </div>
       </article>
     );
@@ -820,7 +847,7 @@ export default function Home() {
                       aria-label={savedImages.includes(activeDetail.key) ? "从资产库移除" : "保存到资产库"}
                       onClick={() => toggleSave(activeDetail.key)}
                     ><Bookmark size={17} fill={savedImages.includes(activeDetail.key) ? "currentColor" : "none"} /></button>
-                    <button aria-label="下载图片" onClick={() => downloadImage(activeDetail.batch.id, activeDetail.image.id)}><Download size={17} /></button>
+                    <button aria-label="下载图片" onClick={() => downloadImage(activeDetail.batch.id, activeDetail.image.id, activeDetail.image.previewUrl)}><Download size={17} /></button>
                   </div>
                 </header>
 

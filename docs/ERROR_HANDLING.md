@@ -42,6 +42,13 @@ and the strip summarizes completed versus failed outputs.
 A toast may announce a transient validation problem, but must not replace this
 panel for asynchronous generation failure.
 
+The M3 mock contract maps a provider rejection to `MODEL_REJECTED`, a bounded
+poll deadline to `MODEL_TIMEOUT`, provider reachability/capacity to
+`CAPACITY_BUSY`, and malformed provider results to `INTERNAL_ERROR`. Database,
+queue, and object-storage diagnostics remain server-side. Queue dispatch failure
+leaves the committed outbox row pending; an object-storage failure leaves the
+non-terminal job and attempt evidence recoverable for worker reconciliation.
+
 ## API error envelope
 
 Target response shape:
@@ -68,3 +75,8 @@ stable even if provider wording changes.
 - Automatic retries are bounded, exponential, and limited to retryable failures.
 - User retry creates a visible new attempt linked to the previous failure.
 - Asset and project save operations are idempotent.
+
+In the current M3 implementation, user retry is represented by a new durable
+job linked with `retry_of_job_id`; the backend copies the failed snapshot rather
+than trusting a browser-resubmitted replacement. Provider fallback within one
+job is deferred to the real gateway milestone.

@@ -25,8 +25,9 @@ resource limits, and backup restore cannot be accepted from local evidence.
 4. Run `npm run dev:local`.
 5. Before pushing, run `npm run check:local`.
 
-The current prototype needs no model or database credentials. Windows users may
-run the cross-platform local scripts directly; the original Sites lifecycle
+The UI build itself needs no credentials. Durable M3 generation uses the local
+Compose defaults or the runtime variable names in `.env.example`. Windows users
+may run the cross-platform local scripts directly; the original Sites lifecycle
 scripts require a Linux shell.
 
 ## Local production-shaped runtime
@@ -37,7 +38,7 @@ engine. The target local stack is:
 
 | Service | Local responsibility | Production direction |
 | --- | --- | --- |
-| `web` | UI and authenticated API | Hong Kong application process |
+| `web` | UI and server-owned-test-identity M3 API | Hong Kong authenticated application process |
 | `worker` | Queue consumption and generation orchestration | Independently restartable/scalable worker process |
 | PostgreSQL | Domain, job, and ledger persistence | Durable database with automated backups |
 | Redis-compatible service | Queue/job coordination | Recoverable coordination; PostgreSQL remains authoritative |
@@ -83,15 +84,20 @@ and is therefore the intentional destructive reset. The application roles run
 read-only as UID 1000 with only a temporary `/tmp` filesystem and no source bind
 mounts.
 
-The mock generation role currently exposes only liveness/readiness and graceful
-shutdown. Deterministic create/status outcomes begin in M3; the web and worker
-adapters remain deliberately disconnected in this foundation slice.
+Compose also runs a one-shot `migrate` role after PostgreSQL becomes healthy.
+It records every SQL filename and checksum in `goodgood_schema_migrations`, then
+web and worker start only after migration success. The mock generation role now
+implements authenticated, idempotent create/status behavior plus deterministic
+success, rejection, slow, and timeout paths. It serves only the checked-in test
+image; it is not a production provider.
 
 ### Application image and process commands
 
 The application image is built from the repository root and contains Vinext's
-standalone output with only its traced runtime dependencies. It runs as the
-unprivileged `node` user and does not require a source bind mount.
+standalone output plus locked, bundled Node entry points for web, worker,
+migration, and mock generation. Bundling keeps the new PostgreSQL, Valkey, and
+S3 clients without copying the full root production dependency graph. The image
+runs as the unprivileged `node` user and does not require a source bind mount.
 
 ```bash
 docker build --build-arg GOODGOOD_REVISION=local -t goodgood:local .
@@ -106,15 +112,14 @@ with `GOODGOOD_PROCESS`.
 
 | Role | Liveness | Readiness | Current readiness meaning |
 | --- | --- | --- | --- |
-| `web` | `GET /api/health/live` on `PORT` | `GET /api/health/ready` on `PORT` | The production build loaded and can serve requests |
-| `worker` | `GET /health/live` on `WORKER_HEALTH_PORT` | `GET /health/ready` on `WORKER_HEALTH_PORT` | Worker bootstrap completed and it is not shutting down |
+| `web` | `GET /api/health/live` on `PORT` | `GET /api/health/ready` on `PORT` | PostgreSQL, Valkey, RustFS bucket, and mock provider are reachable |
+| `worker` | `GET /health/live` on `WORKER_HEALTH_PORT` | `GET /health/ready` on `WORKER_HEALTH_PORT` | Queue, PostgreSQL, RustFS bucket, and provider bootstrap passed |
 | `mock-generation` | `GET /health/live` on `MOCK_GENERATION_PORT` | `GET /health/ready` on `MOCK_GENERATION_PORT` | Mock runtime bootstrap completed and it is not shutting down |
 
-Liveness never depends on PostgreSQL, Redis, object storage, or a generation
-provider. Readiness will add role-specific dependency checks when their
-adapters exist; for M2 it deliberately reports only the runtime check. The
-worker and mock-provider processes are runtime shells in this slice, not a
-claim that durable queue consumption or provider behavior already exists.
+Liveness never depends on PostgreSQL, Valkey, object storage, or a generation
+provider. M3 readiness does. A transient runtime dependency failure does not
+delete PostgreSQL evidence; the worker reconciles expired leases and pending
+outbox rows when dependencies recover.
 
 ## Source and release flow
 
