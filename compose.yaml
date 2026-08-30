@@ -1,0 +1,159 @@
+name: goodgood
+
+x-goodgood-app: &goodgood-app
+  build:
+    context: .
+    args:
+      GOODGOOD_REVISION: ${GOODGOOD_REVISION:-local}
+  image: goodgood:${GOODGOOD_IMAGE_TAG:-local}
+  init: true
+  read_only: true
+  restart: unless-stopped
+  security_opt:
+    - no-new-privileges:true
+  stop_grace_period: 10s
+  tmpfs:
+    - /tmp:size=64m,mode=1777
+  networks:
+    - goodgood-local
+
+x-goodgood-environment: &goodgood-environment
+  DATABASE_URL: postgresql://goodgood:${GOODGOOD_LOCAL_POSTGRES_PASSWORD:-goodgood-local-only}@postgres:5432/goodgood
+  REDIS_URL: redis://valkey:6379
+  OBJECT_STORAGE_ENDPOINT: http://object-storage:9000
+  OBJECT_STORAGE_BUCKET: ${OBJECT_STORAGE_BUCKET:-goodgood-local}
+  OBJECT_STORAGE_REGION: ${OBJECT_STORAGE_REGION:-us-east-1}
+  OBJECT_STORAGE_ACCESS_KEY_ID: ${GOODGOOD_LOCAL_OBJECT_STORAGE_ACCESS_KEY:-goodgood-local}
+  OBJECT_STORAGE_SECRET_ACCESS_KEY: ${GOODGOOD_LOCAL_OBJECT_STORAGE_SECRET_KEY:-goodgood-local-only}
+  OBJECT_STORAGE_FORCE_PATH_STYLE: "true"
+  GENERATION_API_BASE_URL: http://mock-generation:3002
+  GENERATION_API_KEY: ${GOODGOOD_LOCAL_GENERATION_API_KEY:-goodgood-local-only}
+
+services:
+  web:
+    <<: *goodgood-app
+    command: ["node", "server/runtime/web.mjs"]
+    environment:
+      <<: *goodgood-environment
+      GOODGOOD_PROCESS: web
+      HOST: 0.0.0.0
+      PORT: 3000
+    ports:
+      - "127.0.0.1:${GOODGOOD_WEB_PORT:-3000}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+      object-storage:
+        condition: service_healthy
+      mock-generation:
+        condition: service_healthy
+
+  worker:
+    <<: *goodgood-app
+    command: ["node", "server/runtime/worker.mjs"]
+    environment:
+      <<: *goodgood-environment
+      GOODGOOD_PROCESS: worker
+      WORKER_HEALTH_HOST: 0.0.0.0
+      WORKER_HEALTH_PORT: 3001
+    ports:
+      - "127.0.0.1:${GOODGOOD_WORKER_HEALTH_PORT:-3001}:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+      object-storage:
+        condition: service_healthy
+      mock-generation:
+        condition: service_healthy
+
+  mock-generation:
+    <<: *goodgood-app
+    command: ["node", "server/runtime/mock-generation.mjs"]
+    environment:
+      GOODGOOD_PROCESS: mock-generation
+      MOCK_GENERATION_HOST: 0.0.0.0
+      MOCK_GENERATION_PORT: 3002
+    ports:
+      - "127.0.0.1:${GOODGOOD_MOCK_GENERATION_PORT:-3002}:3002"
+
+  postgres:
+    image: postgres:17.11-bookworm@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      POSTGRES_DB: goodgood
+      POSTGRES_USER: goodgood
+      POSTGRES_PASSWORD: ${GOODGOOD_LOCAL_POSTGRES_PASSWORD:-goodgood-local-only}
+    ports:
+      - "127.0.0.1:${GOODGOOD_POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready --username \"$$POSTGRES_USER\" --dbname \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    networks:
+      - goodgood-local
+
+  valkey:
+    image: valkey/valkey:8.1.9-alpine3.24@sha256:e0eb7c480958d32bdc4357a74bdd70653ae15f2f9b4c93c4a5a9fad1dc471c84
+    command: ["valkey-server", "--appendonly", "yes", "--appendfsync", "everysec"]
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "127.0.0.1:${GOODGOOD_VALKEY_PORT:-6379}:6379"
+    volumes:
+      - valkey-data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    networks:
+      - goodgood-local
+
+  object-storage:
+    image: rustfs/rustfs:1.0.0-rc.3@sha256:800cf3f352a0a27e3275ca854a51f0027975d7acc7a0d52089a35bcc9fcbf0b5
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      RUSTFS_VOLUMES: /data
+      RUSTFS_ADDRESS: 0.0.0.0:9000
+      RUSTFS_CONSOLE_ADDRESS: 0.0.0.0:9001
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_ACCESS_KEY: ${GOODGOOD_LOCAL_OBJECT_STORAGE_ACCESS_KEY:-goodgood-local}
+      RUSTFS_SECRET_KEY: ${GOODGOOD_LOCAL_OBJECT_STORAGE_SECRET_KEY:-goodgood-local-only}
+      RUSTFS_REGION: ${OBJECT_STORAGE_REGION:-us-east-1}
+      RUSTFS_OBS_LOGGER_LEVEL: warn
+    ports:
+      - "127.0.0.1:${GOODGOOD_OBJECT_STORAGE_PORT:-9000}:9000"
+      - "127.0.0.1:${GOODGOOD_OBJECT_STORAGE_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - object-storage-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent --show-error http://127.0.0.1:9000/health/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 15s
+    networks:
+      - goodgood-local
+
+networks:
+  goodgood-local:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  valkey-data:
+  object-storage-data:

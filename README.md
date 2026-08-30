@@ -45,6 +45,40 @@ This runs lint, a production build, and the automated tests. Linux-only lifecycl
 scripts used by the existing hosted prototype remain available as `npm run
 build` and `npm test`.
 
+## Run the production-shaped application image
+
+The complete local stack includes the shared GoodGood image in web, worker, and
+mock-provider roles plus PostgreSQL, Valkey, and RustFS:
+
+```bash
+npm run stack:config
+npm run stack:up
+npm run stack:verify
+npm run stack:down
+```
+
+All published ports bind to `127.0.0.1`. Defaults are web `3000`, worker health
+`3001`, mock health `3002`, PostgreSQL `5432`, Valkey `6379`, and RustFS
+`9000`/`9001`. Override the corresponding `GOODGOOD_*_PORT` environment name
+when a local port is occupied. `stack:down` preserves the three named data
+volumes; `docker compose down --volumes` is the explicit destructive reset.
+The local defaults are development-only credentials and require no production
+secret.
+
+To exercise only the application image, build it once and start the web and
+worker roles with different commands:
+
+```bash
+docker build --build-arg GOODGOOD_REVISION=local -t goodgood:local .
+docker run --rm --name goodgood-web -p 3000:3000 goodgood:local
+docker run --rm --name goodgood-worker -e GOODGOOD_PROCESS=worker -p 3001:3001 goodgood:local node server/runtime/worker.mjs
+```
+
+The web process exposes `/api/health/live` and `/api/health/ready` on port
+`3000`. The worker exposes `/health/live` and `/health/ready` on port `3001`.
+The worker is currently an idle M2 runtime shell; durable queue consumption is
+introduced with the asynchronous generation slice rather than simulated here.
+
 ## AI-Native development
 
 Every coding agent must begin with [AGENTS.md](AGENTS.md). Claude also receives

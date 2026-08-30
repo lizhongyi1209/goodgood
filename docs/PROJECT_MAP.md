@@ -15,10 +15,14 @@
 | `public/feihong-send.png` | Send-action silhouette |
 | `public/nano-fashion.png` | Prototype-only representative generated image |
 | `components/ui/` | Vendored Shadcn/Radix primitives |
-| `tests/` | Build/render checks, documentation continuity, and M1 domain/mock tests |
+| `tests/` | Build/render checks, documentation continuity, domain/mock tests, and container/Compose contracts |
 | `db/` | Empty persistence adapter and schema placeholder |
 | `worker/` | Vinext/Cloudflare worker entry for the current prototype |
 | `worker-configuration.d.ts` | Typed optional bindings for the current Cloudflare prototype |
+| `server/runtime/` | Production web, worker, and mock-provider process entry points plus runtime health state |
+| `infra/container/` | Image health check plus host-side Compose dependency probes |
+| `Dockerfile` / `.dockerignore` | One non-root Linux application image and its build-context boundary |
+| `compose.yaml` | Pinned six-service local stack, health dependencies, loopback ports, and named volumes |
 | `.openai/hosting.json` | Current prototype hosting identity; not an app secret |
 
 The remaining project, asset, detail, and view orchestration in `app/page.tsx`

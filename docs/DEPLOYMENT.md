@@ -19,7 +19,9 @@ resource limits, and backup restore cannot be accepted from local evidence.
 
 1. Clone the private/approved GitHub repository.
 2. Install Node.js `>=22.13.0` and run `npm ci`.
-3. Create `.env.local` from `.env.example` when integrations are introduced.
+3. Create `.env.local` from `.env.example` when direct Node integrations are
+   introduced. Compose overrides may instead use shell environment variables
+   or an ignored `.env` file.
 4. Run `npm run dev:local`.
 5. Before pushing, run `npm run check:local`.
 
@@ -46,6 +48,73 @@ Use one application image for `web` and `worker` initially, with different
 commands. Keep state, uploads, logs, and secrets outside the image. A clean
 checkout must be able to start the documented local stack without relying on
 undeclared software or production credentials.
+
+### Complete Compose stack
+
+The checked-in `compose.yaml` pins every third-party image by exact tag and
+multi-platform digest. It uses PostgreSQL 17.11, Valkey 8.1.9, and RustFS
+1.0.0-rc.3. Application traffic uses service DNS on the Compose bridge; every
+host publication is loopback-only.
+
+| Service | Default host port | Persistent state |
+| --- | ---: | --- |
+| `web` | `127.0.0.1:3000` | None |
+| `worker` health | `127.0.0.1:3001` | None |
+| `mock-generation` health | `127.0.0.1:3002` | None |
+| `postgres` | `127.0.0.1:5432` | `postgres-data` |
+| `valkey` | `127.0.0.1:6379` | `valkey-data` |
+| `object-storage` API / console | `127.0.0.1:9000` / `9001` | `object-storage-data` |
+
+```bash
+npm run stack:config
+npm run stack:up
+npm run stack:verify
+npm run stack:down
+```
+
+The defaults in `compose.yaml` are explicitly local-only credentials. Override
+their documented names through the shell or an untracked `.env`; never reuse
+them outside local development. Port names are also overridable, which avoids
+stopping an unrelated local service when a default is occupied.
+
+`stack:down` removes containers and the bridge while preserving named volumes.
+`docker compose down --volumes` removes local database, queue, and object data
+and is therefore the intentional destructive reset. The application roles run
+read-only as UID 1000 with only a temporary `/tmp` filesystem and no source bind
+mounts.
+
+The mock generation role currently exposes only liveness/readiness and graceful
+shutdown. Deterministic create/status outcomes begin in M3; the web and worker
+adapters remain deliberately disconnected in this foundation slice.
+
+### Application image and process commands
+
+The application image is built from the repository root and contains Vinext's
+standalone output with only its traced runtime dependencies. It runs as the
+unprivileged `node` user and does not require a source bind mount.
+
+```bash
+docker build --build-arg GOODGOOD_REVISION=local -t goodgood:local .
+docker run --rm --name goodgood-web -p 3000:3000 goodgood:local
+docker run --rm --name goodgood-worker -e GOODGOOD_PROCESS=worker -p 3001:3001 goodgood:local node server/runtime/worker.mjs
+```
+
+The equivalent process commands outside the image are `npm run start:web`
+after `npm run build:local`, and `npm run start:worker`. Both roles handle
+`SIGTERM` for container shutdown. The image-level health check selects its role
+with `GOODGOOD_PROCESS`.
+
+| Role | Liveness | Readiness | Current readiness meaning |
+| --- | --- | --- | --- |
+| `web` | `GET /api/health/live` on `PORT` | `GET /api/health/ready` on `PORT` | The production build loaded and can serve requests |
+| `worker` | `GET /health/live` on `WORKER_HEALTH_PORT` | `GET /health/ready` on `WORKER_HEALTH_PORT` | Worker bootstrap completed and it is not shutting down |
+| `mock-generation` | `GET /health/live` on `MOCK_GENERATION_PORT` | `GET /health/ready` on `MOCK_GENERATION_PORT` | Mock runtime bootstrap completed and it is not shutting down |
+
+Liveness never depends on PostgreSQL, Redis, object storage, or a generation
+provider. Readiness will add role-specific dependency checks when their
+adapters exist; for M2 it deliberately reports only the runtime check. The
+worker and mock-provider processes are runtime shells in this slice, not a
+claim that durable queue consumption or provider behavior already exists.
 
 ## Source and release flow
 

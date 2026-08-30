@@ -1,0 +1,17 @@
+.git
+.github
+.next
+.npmrc
+.sites-runtime
+.wrangler
+coverage
+dist
+node_modules
+*.log
+*.key
+*.pem
+.env*
+data
+generated
+logs
+uploads

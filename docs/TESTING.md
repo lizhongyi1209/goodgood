@@ -4,8 +4,12 @@
 
 The suite validates the production build, rendered metadata, shared UI
 primitive behavior, documentation continuity, stable model/ratio mappings,
-job-state transitions, and deterministic mock success/failure/retry behavior.
-It does not yet prove durable API, queue, storage, ownership, or billing flows.
+job-state transitions, deterministic mock success/failure/retry behavior, web
+health endpoints, worker and mock-runtime readiness transitions, the
+single-image process contract, pinned Compose topology, and host dependency
+probe success/failure behavior. The automated suite does not itself build Linux
+containers or prove durable API, queue, storage, ownership, or billing flows;
+container smoke evidence belongs in `IMPLEMENTATION_PLAN.md`.
 
 Use:
 
@@ -63,6 +67,8 @@ The timestamped result of the latest verified gate belongs in
   Redis-compatible, object-storage, and mock-provider services.
 - The production Linux image runs without source bind mounts or undeclared host
   dependencies.
+- Host probes verify all six loopback endpoints, and named volume data survives
+  container replacement.
 - Migrations initialize an empty database and tolerate the documented rerun or
   recovery procedure.
 - Killing a worker during a job does not lose the batch or charge twice.
