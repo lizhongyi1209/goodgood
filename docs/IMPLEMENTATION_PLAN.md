@@ -1,12 +1,11 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-02
-- Current phase: M6 is complete locally; pricing, credit accounting, account
-  presentation, paid-product/order persistence, fake-sandbox settlement, and a
-  trusted manual-payment bridge are verified
-- Current objective: begin M7 staging preparation while the operator progresses
-  ICP filing/domain work; keep customer checkout disabled until domestic
-  Alipay merchant approval and sandbox credentials exist
+- Current phase: M7 is in progress; the M4-M6 baseline is committed and the
+  versioned CI/GHCR image-publication contract is implemented locally
+- Current objective: define the staging runtime configuration and secret
+  contract, then add fail-closed preflight plus deployment/rollback commands;
+  ICP filing/domain work proceeds in parallel
 
 ## Purpose and update contract
 
@@ -253,6 +252,15 @@ this file owns the current handoff state.
   revision-labelled `goodgood:draft-test` verification image is 107,538,314
   bytes, runs as the non-root `node` user with a read-only root filesystem, and
   has no host mounts.
+- M7 CI now pins GitHub and Docker actions by full commit, runs the locked
+  install plus `check:local` on pull requests and trusted main revisions, and
+  performs a real no-push Docker build for pull requests. After verification,
+  only a trusted `main` or main-branch manual run receives repository-scoped
+  `packages: write` and publishes one GHCR tag named by the full source SHA.
+  The image and workflow summary record the immutable digest, source revision,
+  latest migration filename, and checked-in runtime-configuration checksum;
+  no `latest` tag, personal registry credential, or unpinned external action is
+  accepted. The first remote workflow run remains to be observed after push.
 - On 2026-09-02, `npm run check:local` passed on Windows with Node.js 24.12.0:
   lint, full TypeScript check, production build, and 96 tests completed with 95
   passing and the opt-in Compose integration test skipped by design. The
@@ -429,8 +437,8 @@ this file owns the current handoff state.
   isolation, signed callback replay, and the exact final balance. The disposable
   containers, network, and all three named volumes were removed afterward.
 - Repository-wide verification on 2026-09-02 passed `npm run check:local` on
-  Windows: lint, full TypeScript checking, the production build, and 117 tests
-  completed with 113 passing. The opt-in full Compose test and three opt-in M6
+  Windows: lint, full TypeScript checking, the production build, and 119 tests
+  completed with 115 passing. The opt-in full Compose test and three opt-in M6
   PostgreSQL tests were skipped by the default gate; their payment/manual cases
   passed separately against the isolated database described below, while the
   ledger and Compose cases retain the passing evidence recorded above.
@@ -446,16 +454,19 @@ this file owns the current handoff state.
   `npm run check:local` gate passed lint, full TypeScript checking, the production
   build, and 98 tests with 97 passing and the opt-in Compose integration test
   skipped by design.
-- Next action: begin the M7 Hong Kong staging preparation and progress the ICP
-  filing/domain work in parallel. Keep early paid access on the documented
-  operator bridge. After the filed domain and domestic Alipay merchant sandbox
-  are available, implement the provider adapter against the existing immutable
-  order/settlement boundary and add the smallest customer checkout UI as part
-  of paid-production readiness.
+- Next action: define the staging runtime configuration/secret contract and its
+  fail-closed preflight, then add digest-pinned deployment and rollback commands.
+  Progress ICP filing/domain work in parallel and keep early paid access on the
+  documented operator bridge. After the filed domain and domestic Alipay
+  merchant sandbox are available, implement the provider adapter against the
+  existing immutable order/settlement boundary and add the smallest customer
+  checkout UI as part of paid-production readiness.
 - Blockers: domestic Alipay checkout requires the ICP-filed production domain,
   matching merchant approval, and sandbox credentials. These external items do
   not block M7 staging or trusted manual credit operation. The local fake
-  sandbox is not production payment evidence. M5 has no remaining
+  sandbox is not production payment evidence. CI publication is locally
+  implemented but its first GHCR digest requires pushing the workflow to the
+  private GitHub repository and observing the trusted `main` run. M5 has no remaining
   blocker. The deferred reverse-order association
   check needs a second
   Google-backed test address or an explicitly approved reset of the isolated
@@ -540,7 +551,7 @@ Completed real-Authing loopback checklist:
 | M4 | Production identity, ownership, references, and projects persist safely | Completed | Authing-compatible OIDC/PKCE, hashed sessions, provider-neutral ownership, signed references, cleanup, root-draft/project/asset persistence, optimistic conflict handling, cross-owner denial, and the requested real-Authing loopback matrix pass; public HTTPS proof is explicitly deferred to M7 |
 | M5 | US generation gateway integration and recovery | Completed | O1Key special-price adapter, explicit worker route, RustFS transfer, decoded output ingestion, durable-task restart, fake-server matrix, secret-file launcher, one real URL-output reference-image smoke, operator-confirmed New API charge/refund evidence, and ADR 0008's accepted at-most-once submission guard pass |
 | M6 | Versioned pricing, credit ledger, and payment sandbox | Completed | ADR 0009 launch prices, welcome grants, append-only accounting, live reserve/settle/release, account presentation, immutable CNY 10 / 500-credit product, idempotent orders, signed fake-sandbox fulfillment, dry-run-first manual paid-credit recording, isolated PostgreSQL tests, and full Compose pass |
-| M7 | Hong Kong staging | Pending | Versioned image deploys; public network, three-carrier sampling, storage, generation/auth callbacks, migrations, backup restore, and smoke tests pass with test data; payment checkout remains intentionally absent |
+| M7 | Hong Kong staging | In progress | Full-SHA GHCR publication and release-evidence workflow are implemented locally; first remote digest plus public network, three-carrier sampling, storage, generation/auth callbacks, migrations, backup restore, and smoke tests remain; payment checkout stays intentionally absent |
 | M8 | Paid production readiness | Pending | ICP/domain prerequisites and domestic Alipay sandbox/checkout pass before production payment; security/compliance review, observability, rollback, retention, support IDs, and production release gate are complete |
 
 Only mark a milestone `Completed` when its exit evidence exists. Use `Blocked`

@@ -461,6 +461,22 @@ promote the same digest from CI to staging and production. Do not use `latest`
 as a production release identity. Database migrations run as an explicit
 release step, not implicitly and concurrently in every app replica.
 
+The repository CI publishes trusted `main` revisions to GitHub Container
+Registry as `ghcr.io/<repository>:<full-git-sha>` after `check:local` passes.
+Pull requests run the same quality gate and a real image build but receive no
+registry write permission. The publish job uses only the repository-scoped
+`GITHUB_TOKEN` with `packages: write`; no personal access token or Docker Hub
+credential is required. All referenced GitHub and Docker actions are pinned to
+full commit hashes.
+
+The workflow summary records the pushed digest, source revision, latest
+migration filename, and a checksum of the checked-in runtime configuration
+contract. Image labels retain the same evidence plus the repository source.
+Deploy by digest, for example
+`ghcr.io/<repository>@sha256:<digest>`, rather than by a mutable branch tag.
+GHCR package visibility and access must remain aligned with the private source
+repository before staging receives pull credentials.
+
 ## Early infrastructure direction
 
 ADR 0010 changes the payment sequence, not the already accepted staging

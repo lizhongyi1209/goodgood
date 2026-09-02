@@ -41,6 +41,7 @@
 | `server/runtime/` | Production web, worker, migration, reference-cleanup, manual-payment, and mock-provider process entry points plus runtime health state |
 | `infra/container/` | Image health check plus host-side Compose dependency probes |
 | `scripts/build-runtime.mjs` | Locked Node runtime bundling for the production image |
+| `scripts/release-metadata.mjs` | Cross-platform GHCR image name, migration version, and runtime-configuration checksum derivation for CI |
 | `scripts/verify-authentication.mjs` | Secret-redacting Authing/OIDC staging preflight entry point |
 | `scripts/run-o1key-local.mjs` | Interactive isolated O1Key smoke launcher with a worker-only temporary secret file |
 | `Dockerfile` / `.dockerignore` | One non-root Linux application image and its build-context boundary |
