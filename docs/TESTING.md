@@ -58,6 +58,19 @@ handoff rejection. Hosted-page login methods, mail delivery,
 and cross-method subject association remain explicit manual staging evidence
 because OIDC discovery does not expose those controls.
 
+M7 release-contract tests prove that staging accepts only the GoodGood GHCR
+image pinned by digest and full CI metadata, separates release identity from
+runtime configuration, reads Authing and O1Key credentials only from mounted
+files, and never reports connection or secret values. Empty configuration,
+mutable tags, local auth, inline provider secrets, fake payment, loopback or
+insecure public storage, malformed env files, and image-label mismatch all fail
+closed. Static Compose coverage proves the staging topology has no build,
+local-auth, mock-generation, or fake-payment fallback. Deploy plans include one
+explicit forward migration before app startup; rollback plans never attempt a
+schema downgrade. Real GHCR pulls, Authing discovery, storage permissions,
+migration execution, and container readiness remain host/staging evidence rather
+than fast-suite mocks.
+
 The operator-only `npm run stack:authing-local -- --issuer <issuer>
 --client-id <application-id>` path runs the same public capability preflight,
 then mounts an invisibly entered application secret from an operating-system

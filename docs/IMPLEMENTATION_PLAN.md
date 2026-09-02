@@ -1,11 +1,11 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-02
-- Current phase: M7 is in progress; the M4-M6 baseline is committed and the
-  versioned CI/GHCR image-publication contract is implemented locally
-- Current objective: define the staging runtime configuration and secret
-  contract, then add fail-closed preflight plus deployment/rollback commands;
-  ICP filing/domain work proceeds in parallel
+- Current phase: M7 is in progress; immutable CI publication and the
+  fail-closed staging release contract are implemented
+- Current objective: provision the month-to-month Hong Kong staging host and
+  test-data dependencies, then configure public DNS/TLS and run the first
+  digest deployment; ICP filing/domain work proceeds in parallel
 
 ## Purpose and update contract
 
@@ -266,6 +266,21 @@ this file owns the current handoff state.
   Its summary recorded migration `0010_m6_payment_sandbox.sql` and runtime
   configuration contract
   `a44a7deda34a235a03be37cbf7a38509d02bfe6933d01e1bd5a6b57893c67c8a`.
+- M7 now has a separate, application-only `compose.staging.yaml` contract. It
+  accepts only the GoodGood GHCR image by exact sha256 digest, mounts Authing
+  and O1Key credentials from distinct files, keeps web/worker ports on host
+  loopback, and does not inherit a source build, local authentication, mock
+  generation, fake payment, or local dependency credentials. Non-secret release
+  identity, runtime configuration, and secret-source paths are separated.
+  `npm run staging:preflight` fails closed on mutable/mismatched release
+  metadata, unsafe transports/CORS, inline provider secrets, loopback
+  dependencies, runtime revision overrides, local/test adapters, unreadable
+  secret files, or malformed environment files without reporting secret or
+  connection values. `npm run staging:release` previews by default; explicit
+  deployment repeats the live Authing gate, verifies pulled OCI labels, runs
+  one forward migration, and waits for web/worker readiness. Rollback selects a
+  prior digest and restarts only compatible application roles; it never attempts
+  a schema downgrade.
 - On 2026-09-02, `npm run check:local` passed on Windows with Node.js 24.12.0:
   lint, full TypeScript check, production build, and 96 tests completed with 95
   passing and the opt-in Compose integration test skipped by design. The
@@ -442,11 +457,16 @@ this file owns the current handoff state.
   isolation, signed callback replay, and the exact final balance. The disposable
   containers, network, and all three named volumes were removed afterward.
 - Repository-wide verification on 2026-09-02 passed `npm run check:local` on
-  Windows: lint, full TypeScript checking, the production build, and 119 tests
-  completed with 115 passing. The opt-in full Compose test and three opt-in M6
+  Windows: lint, full TypeScript checking, the production build, and 125 tests
+  completed with 121 passing. The opt-in full Compose test and three opt-in M6
   PostgreSQL tests were skipped by the default gate; their payment/manual cases
   passed separately against the isolated database described below, while the
-  ledger and Compose cases retain the passing evidence recorded above.
+  ledger and Compose cases retain the passing evidence recorded above. The six
+  new M7 tests cover success, empty/malformed input, unsafe runtime failures,
+  secret redaction, digest deploy/rollback planning, and OCI-label mismatch.
+  Docker Compose also parsed the standalone staging topology successfully with
+  interpolation and external path resolution intentionally disabled; the first
+  real path/credential resolution remains staging-host evidence.
 - Manual-payment verification on 2026-09-02 passed all eight focused payment
   and operator tests against an isolated PostgreSQL 17 database. It proved
   preview non-mutation, paid-order/ledger atomicity, exact replay, cross-owner
@@ -459,13 +479,16 @@ this file owns the current handoff state.
   `npm run check:local` gate passed lint, full TypeScript checking, the production
   build, and 98 tests with 97 passing and the opt-in Compose integration test
   skipped by design.
-- Next action: define the staging runtime configuration/secret contract and its
-  fail-closed preflight, then add digest-pinned deployment and rollback commands.
-  Progress ICP filing/domain work in parallel and keep early paid access on the
-  documented operator bridge. After the filed domain and domestic Alipay
-  merchant sandbox are available, implement the provider adapter against the
-  existing immutable order/settlement boundary and add the smallest customer
-  checkout UI as part of paid-production readiness.
+- Next action: provision one month-to-month Hong Kong staging host and isolated
+  test-data PostgreSQL, Valkey, and object storage, then fill the external
+  release/runtime/secret files from one successful CI summary and run the
+  dry-run plus live preflight before the first digest deploy. Configure public
+  DNS/TLS and the reverse proxy before accepting callback or mainland-network
+  evidence. Progress ICP filing/domain work in parallel and keep early paid
+  access on the documented operator bridge. After the filed domain and domestic
+  Alipay merchant sandbox are available, implement the provider adapter against
+  the existing immutable order/settlement boundary and add the smallest
+  customer checkout UI as part of paid-production readiness.
 - Blockers: domestic Alipay checkout requires the ICP-filed production domain,
   matching merchant approval, and sandbox credentials. These external items do
   not block M7 staging or trusted manual credit operation. The local fake
@@ -554,7 +577,7 @@ Completed real-Authing loopback checklist:
 | M4 | Production identity, ownership, references, and projects persist safely | Completed | Authing-compatible OIDC/PKCE, hashed sessions, provider-neutral ownership, signed references, cleanup, root-draft/project/asset persistence, optimistic conflict handling, cross-owner denial, and the requested real-Authing loopback matrix pass; public HTTPS proof is explicitly deferred to M7 |
 | M5 | US generation gateway integration and recovery | Completed | O1Key special-price adapter, explicit worker route, RustFS transfer, decoded output ingestion, durable-task restart, fake-server matrix, secret-file launcher, one real URL-output reference-image smoke, operator-confirmed New API charge/refund evidence, and ADR 0008's accepted at-most-once submission guard pass |
 | M6 | Versioned pricing, credit ledger, and payment sandbox | Completed | ADR 0009 launch prices, welcome grants, append-only accounting, live reserve/settle/release, account presentation, immutable CNY 10 / 500-credit product, idempotent orders, signed fake-sandbox fulfillment, dry-run-first manual paid-credit recording, isolated PostgreSQL tests, and full Compose pass |
-| M7 | Hong Kong staging | In progress | Full-SHA GHCR publication and release-evidence workflow pass remotely with the first immutable digest recorded; public network, three-carrier sampling, storage, generation/auth callbacks, migrations, backup restore, and smoke tests remain; payment checkout stays intentionally absent |
+| M7 | Hong Kong staging | In progress | Full-SHA GHCR publication and release-evidence workflow pass remotely; the secret-redacting staging contract plus dry-run-first digest deploy/rollback tooling pass locally; host provisioning, public network, three-carrier sampling, storage, generation/auth callbacks, migrations, backup restore, and smoke tests remain; payment checkout stays intentionally absent |
 | M8 | Paid production readiness | Pending | ICP/domain prerequisites and domestic Alipay sandbox/checkout pass before production payment; security/compliance review, observability, rollback, retention, support IDs, and production release gate are complete |
 
 Only mark a milestone `Completed` when its exit evidence exists. Use `Blocked`

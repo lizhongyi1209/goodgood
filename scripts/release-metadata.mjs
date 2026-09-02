@@ -7,9 +7,15 @@ const CONFIG_CONTRACT_FILES = [
   ".env.example",
   "Dockerfile",
   "compose.yaml",
+  "compose.staging.yaml",
   "compose.authing-local.yaml",
   "compose.o1key-local.yaml",
+  "infra/staging/release.env.example",
+  "infra/staging/runtime.env.example",
   "scripts/build-runtime.mjs",
+  "scripts/run-staging-release.mjs",
+  "scripts/staging-contract.mjs",
+  "scripts/verify-staging.mjs",
 ];
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");

@@ -30,6 +30,8 @@ yarn-error.log*
 # env files; commit only the documented empty template
 .env*
 !.env.example
+/infra/staging/*.env
+/infra/staging/secrets/
 
 # vercel
 .vercel

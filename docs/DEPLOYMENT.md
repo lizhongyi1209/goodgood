@@ -477,6 +477,104 @@ Deploy by digest, for example
 GHCR package visibility and access must remain aligned with the private source
 repository before staging receives pull credentials.
 
+## Staging configuration and release commands
+
+`compose.staging.yaml` is the application-only staging topology. It never
+builds source and has no local-auth, mock-provider, or fake-payment defaults.
+It pulls one exact `ghcr.io/lizhongyi1209/goodgood@sha256:...` image for web,
+worker, migration, and maintenance roles. Web and worker health ports are bound
+to host loopback so the selected TLS reverse proxy remains the only public
+entry. PostgreSQL, the Redis-compatible queue, and S3-compatible storage may be
+managed services or separately operated same-host services, but they are not
+silently created with local credentials by this Compose file.
+
+Keep three kinds of staging material separate:
+
+| Material | Example | Rule |
+| --- | --- | --- |
+| Release identity | `infra/staging/release.env.example` | Copy one successful CI summary exactly: image digest, source SHA, migration filename, runtime-contract checksum, runtime-file path, and secret-file source paths. No credential belongs here. |
+| Runtime configuration | `infra/staging/runtime.env.example` | Store outside the checkout, mode `0600`; contains server endpoints and secret-bearing connection values. Never commit it or use the local placeholders unchanged. |
+| Mounted secrets | Authing client-secret and O1Key key files | Separate non-empty regular files, mode `0600`; Compose mounts them read-only at the exact `/run/secrets/...` paths. Do not put either value in an environment variable or command argument. |
+
+On the staging host, a conventional layout is
+`/etc/goodgood/staging/release.env`,
+`/etc/goodgood/staging/runtime.env`, and
+`/etc/goodgood/staging/secrets/`. The release and runtime examples are checked
+in, while real `.env` files and the secret directory are excluded from both Git
+and the Docker build context. Percent-encode reserved characters in connection
+URL credentials rather than relying on shell or Compose expansion.
+
+The local contract preflight rejects a tag or `latest`, malformed release
+evidence, unreadable secret files, release/runtime file mixing, a runtime
+revision override, local auth, inline Authing/O1Key secrets, mock generation,
+insecure provider/public-storage endpoints, wildcard upload CORS, loopback
+dependencies, and the fake payment sandbox. It prints only public configuration
+and check results:
+
+```bash
+npm run staging:preflight -- \
+  --release-file /etc/goodgood/staging/release.env \
+  --runtime-env-file /etc/goodgood/staging/runtime.env
+
+npm run staging:preflight -- \
+  --release-file /etc/goodgood/staging/release.env \
+  --runtime-env-file /etc/goodgood/staging/runtime.env \
+  --network
+```
+
+`--network` additionally runs the existing Authing discovery/capability gate.
+It still cannot prove hosted-page controls, email delivery, Google account
+association, storage IAM/CORS, or cross-border behavior; retain those as manual
+staging evidence. Before executing a release, authenticate Docker to GHCR with
+a package-read credential held outside the repository.
+
+The release command is dry-run by default. Review the JSON plan, then execute
+the exact same arguments with `--execute`:
+
+```bash
+npm run staging:release -- deploy \
+  --release-file /etc/goodgood/staging/release.env \
+  --runtime-env-file /etc/goodgood/staging/runtime.env
+
+npm run staging:release -- deploy \
+  --release-file /etc/goodgood/staging/release.env \
+  --runtime-env-file /etc/goodgood/staging/runtime.env \
+  --execute
+```
+
+Execution repeats the local checks, requires the live Authing preflight, checks
+Compose interpolation, pulls the digest, verifies that its OCI labels exactly
+match the release SHA/migration/configuration evidence, runs migrations once,
+and only then starts web and worker with `--wait`. It never builds on the host.
+
+Keep a read-only copy of each previously deployed release file. Rollback takes
+one selected prior file and the runtime file compatible with that release. It
+pulls and verifies the prior digest and replaces web/worker, but deliberately
+does not reverse a database migration:
+
+```bash
+npm run staging:release -- rollback \
+  --release-file /etc/goodgood/staging/releases/previous.env \
+  --runtime-env-file /etc/goodgood/staging/runtime.env
+
+npm run staging:release -- rollback \
+  --release-file /etc/goodgood/staging/releases/previous.env \
+  --runtime-env-file /etc/goodgood/staging/runtime.env \
+  --execute
+```
+
+Use rollback only when the prior application image is compatible with the
+current additive schema. For an irreversible or incompatible migration, keep
+the application on the current image and use a reviewed forward fix. The first
+single-stack staging deploy may briefly replace containers; public
+zero/low-downtime traffic switching still requires the selected reverse-proxy
+and blue/green host layout described below.
+
+The deployed maintenance role preserves the dry-run-first manual-payment
+contract. After the release is healthy, a trusted operator can invoke it with
+the same release file and the `maintenance` profile; customer checkout remains
+absent until ICP and Alipay prerequisites pass.
+
 ## Early infrastructure direction
 
 ADR 0010 changes the payment sequence, not the already accepted staging

@@ -43,9 +43,12 @@
 | `scripts/build-runtime.mjs` | Locked Node runtime bundling for the production image |
 | `scripts/release-metadata.mjs` | Cross-platform GHCR image name, migration version, and runtime-configuration checksum derivation for CI |
 | `scripts/verify-authentication.mjs` | Secret-redacting Authing/OIDC staging preflight entry point |
+| `scripts/staging-contract.mjs` / `scripts/verify-staging.mjs` | Fail-closed staging release/runtime/secret validation and secret-redacting CLI report |
+| `scripts/run-staging-release.mjs` | Dry-run-first digest deploy/rollback runner with live Authing and OCI-label verification |
 | `scripts/run-o1key-local.mjs` | Interactive isolated O1Key smoke launcher with a worker-only temporary secret file |
 | `Dockerfile` / `.dockerignore` | One non-root Linux application image and its build-context boundary |
 | `compose.yaml` | Pinned web/worker/mock plus PostgreSQL, Valkey, RustFS, one-shot migration, and opt-in maintenance topology |
+| `compose.staging.yaml` / `infra/staging/` | Digest-only app roles plus non-secret staging release/runtime templates; dependencies and real secrets remain external |
 | `compose.o1key-local.yaml` | Explicit local worker override for the O1Key route and mounted key file |
 | `.openai/hosting.json` | Current prototype hosting identity; not an app secret |
 

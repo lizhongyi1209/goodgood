@@ -1,0 +1,91 @@
+name: goodgood-staging
+
+x-goodgood-staging-app: &goodgood-staging-app
+  image: ${GOODGOOD_RELEASE_IMAGE:?Set an immutable GoodGood GHCR digest in the release file}
+  pull_policy: always
+  init: true
+  read_only: true
+  restart: unless-stopped
+  security_opt:
+    - no-new-privileges:true
+  stop_grace_period: 10s
+  tmpfs:
+    - /tmp:size=64m,mode=1777
+  env_file:
+    - ${GOODGOOD_RUNTIME_ENV_FILE:?Set an absolute staging runtime env-file path}
+  labels:
+    com.goodgood.source.revision: ${GOODGOOD_RELEASE_REVISION:?Set the CI source revision}
+    com.goodgood.migration.version: ${GOODGOOD_RELEASE_MIGRATION:?Set the CI migration version}
+    com.goodgood.runtime-config.version: ${GOODGOOD_RUNTIME_CONFIG_VERSION:?Set the CI runtime configuration version}
+  networks:
+    - goodgood-staging
+
+services:
+  web:
+    <<: *goodgood-staging-app
+    command: ["node", "server/runtime/web.mjs"]
+    environment:
+      GOODGOOD_PROCESS: web
+      HOST: 0.0.0.0
+      PORT: 3000
+    ports:
+      - "127.0.0.1:${GOODGOOD_STAGING_WEB_PORT:-3000}:3000"
+    secrets:
+      - goodgood_auth_client_secret
+      - goodgood_generation_api_key
+
+  worker:
+    <<: *goodgood-staging-app
+    command: ["node", "server/runtime/worker.mjs"]
+    environment:
+      GOODGOOD_PROCESS: worker
+      WORKER_HEALTH_HOST: 0.0.0.0
+      WORKER_HEALTH_PORT: 3001
+    ports:
+      - "127.0.0.1:${GOODGOOD_STAGING_WORKER_HEALTH_PORT:-3001}:3001"
+    secrets:
+      - goodgood_generation_api_key
+
+  migrate:
+    <<: *goodgood-staging-app
+    profiles: ["release"]
+    command: ["node", "server/runtime/migrate.mjs"]
+    restart: "no"
+    healthcheck:
+      disable: true
+    environment:
+      GOODGOOD_PROCESS: migrate
+
+  reference-cleanup:
+    <<: *goodgood-staging-app
+    profiles: ["maintenance"]
+    entrypoint: ["node", "server/runtime/reference-cleanup.mjs"]
+    command: []
+    restart: "no"
+    healthcheck:
+      disable: true
+    environment:
+      GOODGOOD_PROCESS: reference-cleanup
+    secrets:
+      - goodgood_generation_api_key
+
+  manual-payment:
+    <<: *goodgood-staging-app
+    profiles: ["maintenance"]
+    entrypoint: ["node", "server/runtime/manual-payment.mjs"]
+    command: []
+    restart: "no"
+    healthcheck:
+      disable: true
+    environment:
+      GOODGOOD_PROCESS: manual-payment
+
+secrets:
+  goodgood_auth_client_secret:
+    file: ${GOODGOOD_AUTH_CLIENT_SECRET_SOURCE_FILE:?Set an absolute Authing secret-file path}
+  goodgood_generation_api_key:
+    file: ${GOODGOOD_GENERATION_API_KEY_SOURCE_FILE:?Set an absolute O1Key secret-file path}
+
+networks:
+  goodgood-staging:
+    driver: bridge
