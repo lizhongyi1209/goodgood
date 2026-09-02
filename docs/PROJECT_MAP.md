@@ -4,29 +4,48 @@
 
 | Path | Responsibility |
 | --- | --- |
-| `app/page.tsx` | Prototype view orchestration plus in-memory project and asset state |
+| `app/page.tsx` | Shared workspace orchestration plus authenticated root-draft, durable project, and asset-library UI states |
+| `app/create/` | Canonical creation page entry reusing the shared workspace |
+| `app/projects/` | Addressable project index/detail page entries mounted into the shared workspace |
+| `app/assets/` | Addressable asset-library and stable asset-detail page entries mounted into the shared workspace |
 | `app/globals.css` | Product tokens, layout, components, responsive styles |
 | `app/layout.tsx` | Metadata, language, favicon |
 | `features/creation/` | Composer, generation contracts, M1 mock boundary, and M3 HTTP polling client |
+| `features/references/` | Browser upload-intent, signed direct PUT, completion, and per-item status boundary |
+| `features/projects/` | Browser project list, create/update, and restore HTTP boundary |
+| `features/drafts/` | Browser authenticated root-draft read/save/delete and conflict boundary |
+| `features/navigation/` | Stable workspace route parsing, URL generation, and browser-history notification |
+| `features/assets/` | Browser owner-scoped durable asset-list HTTP boundary |
+| `features/auth/` | Browser session read, login/logout redirect, and global expiry signal |
 | `features/models/` | Stable GoodGood model catalog and presentation mapping |
-| `shared/contracts/` | Provider-independent generation domain values and records |
+| `shared/contracts/` | Provider-independent generation, draft, project, pricing, and credit domain values and records |
 | `types/` | Project-level declarations for imported static assets |
 | `public/goodgood-*` | Canonical GoodGood mark and wordmark |
 | `public/feihong-send.png` | Send-action silhouette |
 | `public/nano-fashion.png` | Prototype-only representative generated image |
-| `components/ui/` | Vendored Shadcn/Radix primitives |
-| `tests/` | Build/render, documentation, domain/mock, M3 runtime, and opt-in Compose integration coverage |
+| `components/ui/` | Vendored Shadcn/Radix primitives plus the browser-direct private-object image primitive |
+| `tests/` | Build/render, documentation, domain/mock, M3/M4 runtime, and opt-in Compose integration coverage |
 | `db/` | PostgreSQL Drizzle schema and process-local database helper |
 | `migrations/` | Versioned, checksum-tracked, rerunnable PostgreSQL migrations |
 | `worker/` | Vinext/Cloudflare worker entry for the current prototype |
 | `worker-configuration.d.ts` | Typed optional bindings for the current Cloudflare prototype |
-| `server/generation/` | Node API, persistence transactions, outbox/Valkey queue, worker orchestration, provider mock, and object storage |
+| `server/generation/` | Node API, persistence transactions, outbox/Valkey queue, worker orchestration, explicit mock/O1Key routing, provider adapters, and object storage |
+| `server/auth/` | Authing-compatible OIDC/PKCE flow, hashed GoodGood sessions, provider-neutral identity mapping, local test adapter, and owner context |
+| `server/references/` | Owner-scoped upload intent, signed storage transfer, decoded validation, lifecycle persistence, cleanup policy/leases, and Node API |
+| `server/projects/` | Owner-scoped project validation, idempotent persistence, signed presentation, and Node API |
+| `server/drafts/` | One-per-owner expiring root drafts, optimistic versioning, ready-reference validation, and Node API |
+| `server/assets/` | Authenticated asset-library listing, normalized errors, and Node API |
+| `features/billing/` | Browser HTTP boundary and exact public billing-summary helpers |
+| `server/billing/` | Server-owned immutable generation/payment products, authenticated account and order boundaries, signed fake-payment callbacks, dry-run-first operator manual-payment recording, and transaction-composable credit grant/reserve/settle/release/refund persistence |
 | `server/persistence/` | Versioned migration runner |
-| `server/runtime/` | Production web, worker, migration, and mock-provider process entry points plus runtime health state |
+| `server/runtime/` | Production web, worker, migration, reference-cleanup, manual-payment, and mock-provider process entry points plus runtime health state |
 | `infra/container/` | Image health check plus host-side Compose dependency probes |
 | `scripts/build-runtime.mjs` | Locked Node runtime bundling for the production image |
+| `scripts/verify-authentication.mjs` | Secret-redacting Authing/OIDC staging preflight entry point |
+| `scripts/run-o1key-local.mjs` | Interactive isolated O1Key smoke launcher with a worker-only temporary secret file |
 | `Dockerfile` / `.dockerignore` | One non-root Linux application image and its build-context boundary |
-| `compose.yaml` | Pinned web/worker/mock plus PostgreSQL, Valkey, RustFS, and one-shot migration topology |
+| `compose.yaml` | Pinned web/worker/mock plus PostgreSQL, Valkey, RustFS, one-shot migration, and opt-in maintenance topology |
+| `compose.o1key-local.yaml` | Explicit local worker override for the O1Key route and mounted key file |
 | `.openai/hosting.json` | Current prototype hosting identity; not an app secret |
 
 The remaining project, asset, detail, and view orchestration in `app/page.tsx`

@@ -113,6 +113,17 @@ toast. It explains the recoverable cause, keeps all inputs, and provides direct
 retry and settings actions. Toasts remain appropriate for short confirmations,
 not durable task failure.
 
+## 13. Keep initial authentication passwordless and narrow
+
+The first production authentication choice is Authing-hosted OIDC with only
+Google and email verification-code login/registration. Auth0 Japan and a
+self-hosted identity service were rejected for this slice. Password, phone, and
+extra social methods add recovery, abuse, compliance, and interface work that
+the initial product does not need. GoodGood keeps its own opaque sessions and
+internal owner IDs so the provider can be changed without rewriting creative
+data. Until a filed custom domain exists, the hosted flow uses Authing's default
+application domain.
+
 ## Confirmed exclusions
 
 Do not reintroduce these without a new approved decision:

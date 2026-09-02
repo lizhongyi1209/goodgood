@@ -7,6 +7,7 @@ import type {
   GenerationInputSnapshot,
   GenerationJob,
 } from "@/shared/contracts/generation";
+import { goodGoodApiFetch } from "@/features/auth/http-auth-boundary";
 
 const POLL_INTERVAL_MS = 450;
 
@@ -31,6 +32,13 @@ const wait = (milliseconds: number) =>
 
 const createIdempotencyKey = () =>
   `web_${globalThis.crypto.randomUUID()}`;
+
+function generationRequestPayload(input: GenerationInputSnapshot) {
+  return {
+    ...input,
+    references: input.references.map((reference) => ({ id: reference.id })),
+  };
+}
 
 function fallbackError(message?: string): GenerationError {
   return Object.freeze({
@@ -77,7 +85,7 @@ async function pollJob(job: GenerationJob, observer?: GenerationJobObserver) {
     await wait(POLL_INTERVAL_MS);
     try {
       current = await parseJob(
-        await fetch(`/api/generations/${encodeURIComponent(current.id)}`, {
+        await goodGoodApiFetch(`/api/generations/${encodeURIComponent(current.id)}`, {
           cache: "no-store",
         }),
       );
@@ -114,8 +122,11 @@ async function postAndPoll({
   );
 
   try {
-    const response = await fetch(endpoint, {
-      body: endpoint === "/api/generations" ? JSON.stringify(input) : undefined,
+    const response = await goodGoodApiFetch(endpoint, {
+      body:
+        endpoint === "/api/generations"
+          ? JSON.stringify(generationRequestPayload(input))
+          : undefined,
       headers: {
         "content-type": "application/json",
         "idempotency-key": createIdempotencyKey(),

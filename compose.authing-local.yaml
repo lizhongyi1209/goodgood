@@ -1,0 +1,19 @@
+services:
+  web:
+    environment:
+      GOODGOOD_ALLOW_LOCAL_AUTH: "false"
+      GOODGOOD_AUTH_MODE: oidc
+      GOODGOOD_AUTH_ISSUER: ${GOODGOOD_AUTH_ISSUER:?Set GOODGOOD_AUTH_ISSUER through the Authing local runner}
+      GOODGOOD_AUTH_CLIENT_ID: ${GOODGOOD_AUTH_CLIENT_ID:?Set GOODGOOD_AUTH_CLIENT_ID through the Authing local runner}
+      GOODGOOD_AUTH_CLIENT_SECRET_FILE: /run/secrets/goodgood_auth_client_secret
+      GOODGOOD_AUTH_REDIRECT_URI: http://127.0.0.1:${GOODGOOD_WEB_PORT:-3000}/api/auth/callback
+      GOODGOOD_AUTH_COOKIE_NAME: goodgood_oidc_session
+      GOODGOOD_AUTH_COOKIE_SECURE: "false"
+      GOODGOOD_LOCAL_AUTH_TOKENS: ""
+      GOODGOOD_LOCAL_AUTH_DEFAULT_TOKEN: ""
+    secrets:
+      - goodgood_auth_client_secret
+
+secrets:
+  goodgood_auth_client_secret:
+    file: ${GOODGOOD_AUTH_CLIENT_SECRET_FILE:?Set GOODGOOD_AUTH_CLIENT_SECRET_FILE through the Authing local runner}

@@ -49,6 +49,7 @@ export type GenerationErrorCode =
   | "MODEL_TIMEOUT"
   | "MODEL_REJECTED"
   | "CAPACITY_BUSY"
+  | "SUBMISSION_UNKNOWN"
   | "INTERNAL_ERROR";
 
 export type GenerationError = Readonly<{
@@ -62,6 +63,8 @@ export type GenerationReference = Readonly<{
   id: string;
   url: string;
   name: string;
+  status: "uploading" | "ready" | "failed";
+  errorMessage?: string;
 }>;
 
 export type GenerationInputDraft = {
@@ -71,6 +74,7 @@ export type GenerationInputDraft = {
   aspectRatio: GenerationAspectRatio;
   resolution: GenerationResolution;
   count: GenerationCount;
+  projectId?: string | null;
 };
 
 export type GenerationInputSnapshot = Readonly<{
@@ -80,6 +84,7 @@ export type GenerationInputSnapshot = Readonly<{
   aspectRatio: GenerationAspectRatio;
   resolution: GenerationResolution;
   count: GenerationCount;
+  projectId?: string | null;
 }>;
 
 export type GenerationOutput = Readonly<{

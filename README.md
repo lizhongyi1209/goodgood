@@ -15,11 +15,25 @@ The prototype demonstrates:
 - Nano Banana 2, Nano Banana Pro, and GPT IMAGE 2 selection.
 - A durable local async path for Nano Banana 2, 4:5, 2K, and one image through
   PostgreSQL, Valkey, a worker, the mock provider, RustFS, and browser polling.
-- Continuous creation sessions, resumable projects, asset batch/gallery modes,
-  and a focused image-detail viewer.
+- A provider-neutral owner boundary with a production-shaped Authing OIDC/PKCE
+  adapter for Google or email-code login, hashed GoodGood sessions, and two
+  local-only test identities.
+- Owner-scoped reference upload intents, short-lived direct RustFS PUTs,
+  decoded JPEG/PNG/WebP validation, and up to 10 ordered references in the
+  durable generation snapshot, plus a dry-run-first bounded cleanup role that
+  protects persisted project and generation references.
+- Continuous creation sessions, resumable projects with addressable index/detail
+  routes, and an owner-scoped durable asset library with batch/gallery modes and
+  a focused image-detail viewer.
+- A canonical `/create` route sharing the same workspace and history state as
+  the compatible root entry.
+- One authenticated root creation draft per owner, with debounced
+  prompt/reference/settings persistence, 30-day expiry, and explicit stale-tab
+  conflict recovery without overwriting projects.
 
-It does **not** yet include production identity, billing, reference uploads,
-project persistence, or the real US generation gateway. See
+It does **not** yet include the complete real Authing callback/account-association
+evidence matrix, billing, production storage/scheduled-retention policy, the
+future Explore/Moodboards/Help experiences, or the real US generation gateway. See
 [Product definition](docs/PRODUCT.md).
 
 ## Start locally
@@ -47,6 +61,35 @@ This runs lint, a production build, and the automated tests. Linux-only lifecycl
 scripts used by the existing hosted prototype remain available as `npm run
 build` and `npm test`.
 
+Once an isolated Authing staging application and server-side secrets exist,
+`npm run auth:preflight` validates its public OIDC metadata, callback, PKCE,
+signing, and cookie contract without printing client credentials. The required
+hosted-page and interactive evidence is listed in
+[Development and deployment](docs/DEPLOYMENT.md#authentication-staging-preflight).
+
+For a real-tenant loopback smoke test without putting the application secret in
+the repository, shell history, Compose environment, or logs, register these
+temporary URLs in the isolated Authing application:
+
+- Login callback: `http://127.0.0.1:3000/api/auth/callback`
+- Logout callback: `http://127.0.0.1:3000/`
+
+Then run the following command with the public issuer and application ID:
+
+```bash
+npm run stack:authing-local -- --issuer https://tenant.authing.cn/oidc --client-id application-id
+```
+
+The command requests the application secret with invisible terminal input,
+stores it in a permission-restricted temporary file mounted as a Docker secret,
+runs the loopback preflight, and starts the stack. Press Enter in that terminal
+after browser testing to stop the containers, preserve the named data volumes,
+and remove the temporary secret. This proves a local callback only; public
+HTTPS staging remains a separate release gate.
+
+If port 3000 is already in use, choose a free port such as 3100, register the
+same two callback URLs with `3100`, and append `--web-port 3100` to the command.
+
 ## Run the production-shaped application image
 
 The complete local stack includes the shared GoodGood image in web, worker, and
@@ -65,7 +108,8 @@ All published ports bind to `127.0.0.1`. Defaults are web `3000`, worker health
 when a local port is occupied. `stack:down` preserves the three named data
 volumes; `docker compose down --volumes` is the explicit destructive reset.
 The local defaults are development-only credentials and require no production
-secret.
+secret. The web role issues an HttpOnly local session for the default test
+owner; API tests may use the two configured local Bearer identities directly.
 
 To exercise only the application image, build it once and start the web and
 worker roles with different commands:
@@ -82,6 +126,18 @@ Readiness now verifies PostgreSQL, Valkey, RustFS, and mock-provider access. A
 one-shot `migrate` service applies the checksum-protected PostgreSQL migration
 before web and worker start. The worker consumes the durable queue and restores
 expired jobs from PostgreSQL after restart.
+
+Reference cleanup is opt-in and defaults to a read-only preview. After reviewing
+its counts, explicit execution is available through the maintenance profile:
+
+```bash
+docker compose --profile maintenance run --rm reference-cleanup
+docker compose --profile maintenance run --rm reference-cleanup --execute
+```
+
+The second command deletes eligible private bytes; normal stack startup never
+runs it automatically. See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for policy and
+failure semantics.
 
 ## AI-Native development
 

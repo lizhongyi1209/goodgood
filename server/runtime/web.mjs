@@ -1,11 +1,52 @@
 import path from "node:path";
 import { startProdServer } from "vinext/server/prod-server";
+import { createAssetNodeApiHandler } from "../assets/node-api.mjs";
+import { createBillingNodeApiHandler } from "../billing/node-api.mjs";
+import { loadAuthenticationConfig } from "../auth/config.mjs";
+import { createAuthenticationNodeApiHandler } from "../auth/node-api.mjs";
+import { createAuthenticationOperations } from "../auth/operations.mjs";
+import {
+  createRequestAuthenticator,
+  hasLocalSessionCookie,
+  localSessionCookie,
+} from "../auth/request-authenticator.mjs";
+import { createGenerationNodeApiHandler } from "../generation/node-api.mjs";
+import { createCreationDraftNodeApiHandler } from "../drafts/node-api.mjs";
+import { createReferenceNodeApiHandler } from "../references/node-api.mjs";
+import { createProjectNodeApiHandler } from "../projects/node-api.mjs";
+import {
+  closeGenerationResources,
+  getGenerationResources,
+  prepareObjectStorage,
+} from "../generation/resources.mjs";
 import { parseRuntimePort } from "./port.mjs";
-import { handleGenerationNodeApi } from "../generation/node-api.mjs";
-import { closeGenerationResources } from "../generation/resources.mjs";
 
 const host = process.env.HOST ?? "0.0.0.0";
 const port = parseRuntimePort(process.env.PORT, 3000, "PORT");
+const authenticationConfig = loadAuthenticationConfig();
+const runtimeResources = await getGenerationResources();
+await prepareObjectStorage(runtimeResources);
+const authenticate = createRequestAuthenticator({
+  config: authenticationConfig,
+  getPool: async () => runtimeResources.pool,
+});
+const handleAuthenticationNodeApi = createAuthenticationNodeApiHandler({
+  config: authenticationConfig,
+  operations: createAuthenticationOperations({
+    authenticate,
+    config: authenticationConfig,
+    getPool: async () => runtimeResources.pool,
+  }),
+});
+const handleGenerationNodeApi = createGenerationNodeApiHandler({
+  authenticate,
+});
+const handleCreationDraftNodeApi = createCreationDraftNodeApiHandler({ authenticate });
+const handleAssetNodeApi = createAssetNodeApiHandler({ authenticate });
+const handleBillingNodeApi = createBillingNodeApiHandler({ authenticate });
+const handleReferenceNodeApi = createReferenceNodeApiHandler({ authenticate });
+const handleProjectNodeApi = createProjectNodeApiHandler({ authenticate });
+const defaultSessionCookie = localSessionCookie(authenticationConfig);
 const { server } = await startProdServer({
   host,
   outDir: path.resolve(process.cwd(), "dist"),
@@ -15,7 +56,35 @@ const { server } = await startProdServer({
 const vinextRequestListeners = server.listeners("request");
 server.removeAllListeners("request");
 server.on("request", (request, response) => {
-  void handleGenerationNodeApi(request, response)
+  const url = new URL(request.url ?? "/", "http://localhost");
+  if (
+    defaultSessionCookie &&
+    request.method === "GET" &&
+    !url.pathname.startsWith("/api/") &&
+    request.headers.accept?.includes("text/html") &&
+    !hasLocalSessionCookie(request, authenticationConfig)
+  ) {
+    response.setHeader("set-cookie", defaultSessionCookie);
+  }
+  void handleAuthenticationNodeApi(request, response)
+    .then((handled) =>
+      handled ? true : handleCreationDraftNodeApi(request, response),
+    )
+    .then((handled) =>
+      handled ? true : handleReferenceNodeApi(request, response),
+    )
+    .then((handled) =>
+      handled ? true : handleProjectNodeApi(request, response),
+    )
+    .then((handled) =>
+      handled ? true : handleAssetNodeApi(request, response),
+    )
+    .then((handled) =>
+      handled ? true : handleBillingNodeApi(request, response),
+    )
+    .then((handled) =>
+      handled ? true : handleGenerationNodeApi(request, response),
+    )
     .then((handled) => {
       if (handled) return;
       for (const listener of vinextRequestListeners) {

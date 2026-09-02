@@ -9,15 +9,15 @@ import {
 import { createMockProviderServer } from "../server/generation/mock-provider-server.mjs";
 
 const validInput = Object.freeze({
-  aspectRatio: "4:5",
+  aspectRatio: "1:1",
   count: 1,
   modelId: "nano-banana-2",
   prompt: "银灰色未来服装",
   references: [],
-  resolution: "2K",
+  resolution: "1K",
 });
 
-test("M3 validates the one-model one-image generation contract", () => {
+test("generation input keeps the M3 model slice while accepting validated reference IDs", () => {
   assert.deepEqual(validateM3GenerationInput(validInput), validInput);
   assert.equal(validateIdempotencyKey("web_12345678"), "web_12345678");
   assert.throws(
@@ -31,15 +31,18 @@ test("M3 validates the one-model one-image generation contract", () => {
       error instanceof GenerationRequestError &&
       error.code === "M3_SLICE_UNSUPPORTED",
   );
-  assert.throws(
-    () =>
-      validateM3GenerationInput({
-        ...validInput,
-        references: [{ id: "ref-1", name: "reference.png", url: "blob:test" }],
-      }),
-    (error) =>
-      error instanceof GenerationRequestError &&
-      error.code === "REFERENCES_NOT_AVAILABLE",
+  assert.deepEqual(
+    validateM3GenerationInput({
+      ...validInput,
+      references: [
+        {
+          id: "20000000-0000-4000-8000-000000000001",
+          name: "reference.png",
+          url: "blob:test",
+        },
+      ],
+    }).references,
+    [{ id: "20000000-0000-4000-8000-000000000001" }],
   );
 });
 

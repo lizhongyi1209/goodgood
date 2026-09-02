@@ -1,3 +1,5 @@
+import sharp from "sharp";
+
 export class NormalizedProviderError extends Error {
   constructor({ code, message, retryable = true, title = "本次生成未完成" }) {
     super(message);
@@ -31,7 +33,7 @@ async function providerFetch(url, options, timeoutMs = 5_000) {
   return response;
 }
 
-export async function createProviderTask({ attempt, config, job }) {
+export async function createProviderTask({ attempt, config, job, references = [] }) {
   const response = await providerFetch(
     `${config.baseUrl}/v1/generations`,
     {
@@ -41,6 +43,7 @@ export async function createProviderTask({ attempt, config, job }) {
         jobId: job.id,
         modelId: job.model_id,
         prompt: job.prompt,
+        references,
         retryOfJobId: job.retry_of_job_id,
         resolution: job.resolution,
       }),
@@ -99,7 +102,10 @@ export async function pollProviderTask({ config, onRefining, taskId }) {
 
 export async function downloadProviderOutput(output) {
   const response = await providerFetch(output.url, {}, 10_000);
-  const contentType = response.headers.get("content-type") ?? output.mimeType;
+  const contentType = (response.headers.get("content-type") ?? output.mimeType)
+    ?.split(";", 1)[0]
+    .trim()
+    .toLowerCase();
   if (!contentType?.startsWith("image/")) {
     throw new NormalizedProviderError({
       code: "INTERNAL_ERROR",
@@ -113,10 +119,46 @@ export async function downloadProviderOutput(output) {
       message: "生成结果大小异常。输入内容已保留，请重试。",
     });
   }
+  let metadata;
+  try {
+    metadata = await sharp(bytes, { failOn: "error" }).metadata();
+  } catch {
+    throw new NormalizedProviderError({
+      code: "INTERNAL_ERROR",
+      message: "生成结果无法完整解码。输入内容已保留，请重试。",
+    });
+  }
+  const decodedContentType = Object.freeze({
+    jpeg: "image/jpeg",
+    png: "image/png",
+    webp: "image/webp",
+  })[metadata.format];
+  if (
+    !decodedContentType ||
+    !Number.isInteger(metadata.width) ||
+    !Number.isInteger(metadata.height) ||
+    metadata.width <= 0 ||
+    metadata.height <= 0 ||
+    metadata.width * metadata.height > 40_000_000 ||
+    (contentType !== "application/octet-stream" && contentType !== decodedContentType)
+  ) {
+    throw new NormalizedProviderError({
+      code: "INTERNAL_ERROR",
+      message: "生成结果格式无法识别。输入内容已保留，请重试。",
+    });
+  }
+  try {
+    await sharp(bytes, { failOn: "error" }).raw().toBuffer();
+  } catch {
+    throw new NormalizedProviderError({
+      code: "INTERNAL_ERROR",
+      message: "生成结果无法完整解码。输入内容已保留，请重试。",
+    });
+  }
   return {
     bytes,
-    contentType,
-    height: output.height,
-    width: output.width,
+    contentType: decodedContentType,
+    height: metadata.height,
+    width: metadata.width,
   };
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties, type WheelEvent as ReactWheelEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type WheelEvent as ReactWheelEvent } from "react";
 import Image from "next/image";
 import { CreationComposer } from "@/features/creation/creation-composer";
 import {
@@ -15,6 +15,42 @@ import {
   MOCK_GENERATION_OUTPUTS,
 } from "@/features/creation/mock-generation-boundary";
 import { createHttpGenerationBoundary } from "@/features/creation/http-generation-boundary";
+import { uploadReferenceFiles } from "@/features/references/http-reference-upload";
+import {
+  SESSION_EXPIRED_EVENT,
+  authenticationErrorMessage,
+  beginAuthentication,
+  readAuthenticationSession,
+  signOut,
+  type AuthenticationSession,
+} from "@/features/auth/http-auth-boundary";
+import { listAssets } from "@/features/assets/http-asset-boundary";
+import {
+  availableImageCount,
+  findBillingQuote,
+  readBillingSummary,
+} from "@/features/billing/http-billing-boundary";
+import { PrivateObjectImage } from "@/components/ui/private-object-image";
+import {
+  DraftBoundaryError,
+  deleteCreationDraft,
+  readCreationDraft,
+  saveCreationDraft,
+} from "@/features/drafts/http-draft-boundary";
+import {
+  navigateWorkspace,
+  parseWorkspaceRoute,
+  WORKSPACE_NAVIGATION_EVENT,
+} from "@/features/navigation/workspace-route.mjs";
+import {
+  listProjects,
+  readProject,
+  saveProject,
+} from "@/features/projects/http-project-boundary";
+import {
+  createComposerCheckpoint,
+  hasMeaningfulUnsavedChanges,
+} from "@/features/projects/unsaved-changes.mjs";
 import {
   createGenerationInputSnapshot,
   restoreGenerationInputSnapshot,
@@ -34,6 +70,12 @@ import {
   type GenerationReference,
   type GenerationResolution,
 } from "@/shared/contracts/generation";
+import type { ProjectRecord } from "@/shared/contracts/project";
+import type { BillingSummary } from "@/shared/contracts/billing";
+import type {
+  CreationDraftRecord,
+  CreationDraftState,
+} from "@/shared/contracts/draft";
 import {
   Dialog,
   DialogDescription,
@@ -65,6 +107,8 @@ import {
   Images,
   LayoutGrid,
   LoaderCircle,
+  LogIn,
+  LogOut,
   MoreHorizontal,
   Plus,
   RefreshCw,
@@ -85,21 +129,55 @@ type AssetBatch = {
   referenceCount: number;
   images: readonly GenerationOutput[];
 };
-type Project = {
-  id: string;
-  name: string;
-  updated: string;
-  coverPosition: string;
-  batches: AssetBatch[];
-};
 type ActiveView = "create" | "projects" | "assets";
+type DestructiveCreationIntent =
+  | { kind: "new" }
+  | { kind: "project"; projectId: string; projectName: string };
+type DraftConflictState = Readonly<{
+  currentDraft: CreationDraftRecord | null;
+}>;
 type CreationStreamItem =
   | { kind: "skeleton"; key: string; ratio: number; index: number }
   | { kind: "image"; key: string; ratio: number; batch: AssetBatch; image: GenerationOutput; index: number };
 type AssetGalleryItem = { key: string; ratio: number; batch: AssetBatch; image: GenerationOutput; index: number };
 type DetailImage = AssetGalleryItem;
+type DetailSource = "creation" | "assets";
+type AssetDetailNavigationState = Readonly<{
+  returnHref: string;
+  scrollY: number;
+  source: DetailSource;
+}>;
+
+const ASSET_DETAIL_HISTORY_KEY = "goodgoodAssetDetail";
+
+function readAssetDetailNavigationState(state: unknown): AssetDetailNavigationState | null {
+  if (!state || typeof state !== "object") return null;
+  const candidate = (state as Record<string, unknown>)[ASSET_DETAIL_HISTORY_KEY];
+  if (!candidate || typeof candidate !== "object") return null;
+  const detail = candidate as Record<string, unknown>;
+  if (detail.source !== "creation" && detail.source !== "assets") return null;
+  if (
+    typeof detail.returnHref !== "string" ||
+    !detail.returnHref.startsWith("/") ||
+    detail.returnHref.startsWith("//")
+  ) return null;
+  if (typeof detail.scrollY !== "number" || !Number.isFinite(detail.scrollY) || detail.scrollY < 0) return null;
+  return {
+    returnHref: detail.returnHref,
+    scrollY: detail.scrollY,
+    source: detail.source,
+  };
+}
 
 const defaultPrompt = "一位年轻的亚洲女性模特，身穿银灰色未来感服装，站在冷白色摄影棚中。极简构图，柔和硬光，真实皮肤质感，高级时尚摄影。";
+const emptyComposerCheckpoint = createComposerCheckpoint({
+  aspectRatio: "1:1",
+  count: 1,
+  modelId: DEFAULT_GENERATION_MODEL_ID,
+  prompt: "",
+  references: [],
+  resolution: "1K",
+});
 const initialAssetBatches: AssetBatch[] = [
   {
     id: "GG-240827",
@@ -111,7 +189,10 @@ const initialAssetBatches: AssetBatch[] = [
     resolution: "2K",
     count: 4,
     referenceCount: 0,
-    images: MOCK_GENERATION_OUTPUTS,
+    images: MOCK_GENERATION_OUTPUTS.map((image) => ({
+      ...image,
+      id: `preview-GG-240827-${image.id}`,
+    })),
   },
   {
     id: "GG-236814",
@@ -123,16 +204,10 @@ const initialAssetBatches: AssetBatch[] = [
     resolution: "4K",
     count: 2,
     referenceCount: 2,
-    images: MOCK_GENERATION_OUTPUTS.slice(0, 2),
-  },
-];
-const initialProjects: Project[] = [
-  {
-    id: "project-silver-fashion",
-    name: "银色未来服装视觉",
-    updated: "今天 10:16",
-    coverPosition: "50% 38%",
-    batches: initialAssetBatches,
+    images: MOCK_GENERATION_OUTPUTS.slice(0, 2).map((image) => ({
+      ...image,
+      id: `preview-GG-236814-${image.id}`,
+    })),
   },
 ];
 function getDetailImages(batches: AssetBatch[]): DetailImage[] {
@@ -148,16 +223,78 @@ function getDetailImages(batches: AssetBatch[]): DetailImage[] {
   });
 }
 
+function generationJobToAssetBatch(job: GenerationJob): AssetBatch {
+  const createdAt = new Date(job.createdAt);
+  const today = new Date();
+  const dateLabel = createdAt.toDateString() === today.toDateString()
+    ? "今天"
+    : new Intl.DateTimeFormat("zh-CN", { month: "numeric", day: "numeric" }).format(createdAt);
+  return {
+    aspectRatio: job.input.aspectRatio,
+    count: job.input.count,
+    dateLabel,
+    id: job.id,
+    images: job.outputs,
+    modelId: job.input.modelId,
+    prompt: job.input.prompt,
+    referenceCount: job.input.references.length,
+    resolution: job.input.resolution,
+    time: new Intl.DateTimeFormat("zh-CN", {
+      hour: "2-digit",
+      hour12: false,
+      minute: "2-digit",
+    }).format(createdAt),
+  };
+}
+
+function projectAssetBatches(project: ProjectRecord) {
+  return project.batches
+    .filter((batch) => batch.state === "succeeded")
+    .map(generationJobToAssetBatch);
+}
+
+function formatProjectUpdated(updatedAt: string) {
+  const updated = new Date(updatedAt);
+  const today = new Date();
+  if (updated.toDateString() === today.toDateString()) {
+    return `今天 ${new Intl.DateTimeFormat("zh-CN", {
+      hour: "2-digit",
+      hour12: false,
+      minute: "2-digit",
+    }).format(updated)}`;
+  }
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "numeric",
+    day: "numeric",
+  }).format(updated);
+}
+
 export default function Home() {
   const referenceObjectUrlsRef = useRef(new Set<string>());
   const assetPulseTimerRef = useRef<number | null>(null);
   const detailWheelTimerRef = useRef<number | null>(null);
   const detailThumbnailRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const pendingDetailScrollRef = useRef<number | null>(null);
+  const projectRouteRequestRef = useRef(0);
+  const projectRestoreAnnouncementRef = useRef(false);
+  const loadedProjectIdRef = useRef<string | null>(null);
+  const composerEditRevisionRef = useRef(0);
+  const draftAutosaveTimerRef = useRef<number | null>(null);
+  const draftBlockedRef = useRef(false);
+  const draftMutationQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const draftSyncedCheckpointRef = useRef(emptyComposerCheckpoint);
+  const draftVersionRef = useRef<number | null>(null);
   const [generationBoundary] = useState(createHttpGenerationBoundary);
+  const [authenticationSession, setAuthenticationSession] = useState<AuthenticationSession | null | undefined>(undefined);
+  const [authenticationError, setAuthenticationError] = useState<string | null>(null);
+  const [billingSummary, setBillingSummary] = useState<BillingSummary | null>(null);
+  const [billingLoading, setBillingLoading] = useState(true);
+  const [billingError, setBillingError] = useState<string | null>(null);
+  const [billingRevision, setBillingRevision] = useState(0);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState<GenerationModelId>(DEFAULT_GENERATION_MODEL_ID);
-  const [selectedRatio, setSelectedRatio] = useState<GenerationAspectRatio>("4:5");
-  const [resolution, setResolution] = useState<GenerationResolution>("2K");
+  const [selectedRatio, setSelectedRatio] = useState<GenerationAspectRatio>("1:1");
+  const [resolution, setResolution] = useState<GenerationResolution>("1K");
   const [generationCount, setGenerationCount] = useState<GenerationCount>(1);
   const [prompt, setPrompt] = useState("");
   const [referenceImages, setReferenceImages] = useState<ReferenceImage[]>([]);
@@ -168,12 +305,36 @@ export default function Home() {
   const [newAssetCount, setNewAssetCount] = useState(0);
   const [assetPulse, setAssetPulse] = useState(false);
   const [assetBatches, setAssetBatches] = useState<AssetBatch[]>(initialAssetBatches);
+  const [assetsLoading, setAssetsLoading] = useState(true);
+  const [assetsError, setAssetsError] = useState<string | null>(null);
   const [assetMode, setAssetMode] = useState<"batches" | "gallery">("batches");
   const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>([]);
-  const [projects, setProjects] = useState<Project[]>(initialProjects);
+  const [projects, setProjects] = useState<ProjectRecord[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(true);
+  const [projectsError, setProjectsError] = useState<string | null>(null);
   const [currentProject, setCurrentProject] = useState<{ id: string; name: string } | null>(null);
   const [projectDrawerOpen, setProjectDrawerOpen] = useState(false);
   const [projectName, setProjectName] = useState("");
+  const [projectCreateKey, setProjectCreateKey] = useState<string | null>(null);
+  const [projectSaving, setProjectSaving] = useState(false);
+  const [projectSaveError, setProjectSaveError] = useState<string | null>(null);
+  const [projectRestoringId, setProjectRestoringId] = useState<string | null>(null);
+  const [routeProjectId, setRouteProjectId] = useState<string | null>(null);
+  const [projectRouteError, setProjectRouteError] = useState<string | null>(null);
+  const [projectRouteRevision, setProjectRouteRevision] = useState(0);
+  const [routeAssetId, setRouteAssetId] = useState<string | null>(null);
+  const [assetRouteError, setAssetRouteError] = useState<string | null>(null);
+  const [assetRouteRevision, setAssetRouteRevision] = useState(0);
+  const [composerCheckpoint, setComposerCheckpoint] = useState(emptyComposerCheckpoint);
+  const [destructiveCreationIntent, setDestructiveCreationIntent] = useState<DestructiveCreationIntent | null>(null);
+  const [draftConflict, setDraftConflict] = useState<DraftConflictState | null>(null);
+  const [draftHydrated, setDraftHydrated] = useState(false);
+  const [draftLoading, setDraftLoading] = useState(true);
+  const [draftRetryMode, setDraftRetryMode] = useState<"load" | "save" | null>(null);
+  const [draftSyncError, setDraftSyncError] = useState<string | null>(null);
+  const [draftSyncRevision, setDraftSyncRevision] = useState(0);
+  const [draftSyncing, setDraftSyncing] = useState(false);
+  const [draftLoadRevision, setDraftLoadRevision] = useState(0);
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailItems, setDetailItems] = useState<DetailImage[]>([]);
   const [detailIndex, setDetailIndex] = useState(0);
@@ -182,6 +343,7 @@ export default function Home() {
   const generationStage = toGenerationUiStage(generationJob?.state ?? null);
   const isGenerating = generationJob ? isGenerationJobActive(generationJob.state) : false;
   const generationError = generationJob?.error ?? null;
+  const submissionUnknown = generationError?.code === "SUBMISSION_UNKNOWN";
   const failedGenerationSnapshot = generationJob?.state === "failed" ? generationJob.input : null;
   const hasGenerationError = generationStage === "failed" && generationError !== null;
   const totalCreationImages = creationBatches.reduce((total, batch) => total + batch.images.length, 0);
@@ -208,6 +370,29 @@ export default function Home() {
           : generationStage === "failed"
             ? "生成失败"
           : "根据当前提示词创建的图像";
+  const accountEmail = authenticationSession?.user.email ?? null;
+  const accountInitials = accountEmail
+    ? accountEmail.split("@")[0].slice(0, 2).toUpperCase()
+    : "GG";
+  const activeBillingQuote = findBillingQuote(billingSummary, {
+    count: 1,
+    modelId: selectedModel,
+    resolution,
+  });
+  const launchBillingQuote = findBillingQuote(billingSummary, {
+    count: 1,
+    modelId: "nano-banana-2",
+    resolution: "1K",
+  });
+  const availableImages = availableImageCount(billingSummary, launchBillingQuote);
+  const composerBillingLabel = billingLoading
+    ? "积分读取中"
+    : activeBillingQuote
+      ? `${activeBillingQuote.creditAmount} 积分/张`
+      : "当前模型暂未定价";
+  const composerBillingDescription = activeBillingQuote && billingSummary
+    ? `每张 ${activeBillingQuote.creditAmount} 积分，当前可用 ${billingSummary.account.availableCredits} 积分`
+    : composerBillingLabel;
   const generationItems: CreationStreamItem[] = isGenerating
     ? Array.from({ length: jobInput?.count ?? generationCount }, (_, index) => ({
       kind: "skeleton" as const,
@@ -227,6 +412,336 @@ export default function Home() {
         index,
       }));
     });
+  const currentComposerCheckpoint = createComposerCheckpoint({
+    aspectRatio: selectedRatio,
+    count: generationCount,
+    modelId: selectedModel,
+    prompt,
+    references: referenceImages,
+    resolution,
+  });
+  const hasUnsavedCreationChanges = hasMeaningfulUnsavedChanges({
+    checkpoint: composerCheckpoint,
+    current: currentComposerCheckpoint,
+    hasUnprojectedWork: !currentProject && (
+      creationBatches.length > 0 || generationJob !== null
+    ),
+  });
+  const currentDraftState: CreationDraftState = {
+    aspectRatio: selectedRatio,
+    count: generationCount,
+    modelId: selectedModel,
+    prompt,
+    references: referenceImages,
+    resolution,
+  };
+  const queueDraftMutation = useCallback((mutation: () => Promise<void>) => {
+    const result = draftMutationQueueRef.current.then(mutation, mutation);
+    draftMutationQueueRef.current = result.catch(() => undefined);
+    return result;
+  }, []);
+  const applyCreationDraft = useCallback((draft: CreationDraftRecord | null) => {
+    referenceObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    referenceObjectUrlsRef.current.clear();
+    const state = draft?.state ?? {
+      aspectRatio: "1:1" as const,
+      count: 1 as const,
+      modelId: DEFAULT_GENERATION_MODEL_ID,
+      prompt: "",
+      references: [],
+      resolution: "1K" as const,
+    };
+    setPrompt(state.prompt);
+    setReferenceImages(state.references.map((reference) => ({ ...reference })));
+    setSelectedModel(state.modelId);
+    setSelectedRatio(state.aspectRatio);
+    setResolution(state.resolution);
+    setGenerationCount(state.count);
+    draftVersionRef.current = draft?.version ?? null;
+    draftSyncedCheckpointRef.current = createComposerCheckpoint(state);
+    setDraftSyncRevision((current) => current + 1);
+  }, []);
+  const blockDraftSync = useCallback((error: unknown) => {
+    draftBlockedRef.current = true;
+    if (error instanceof DraftBoundaryError && error.code === "DRAFT_CONFLICT") {
+      setDraftConflict({ currentDraft: error.currentDraft });
+      setDraftSyncError(null);
+      setDraftRetryMode(null);
+      return;
+    }
+    setDraftSyncError(
+      error instanceof Error
+        ? error.message
+        : "草稿暂时无法保存，当前内容仍保留在此页面。",
+    );
+    setDraftRetryMode("save");
+  }, []);
+  const selectDetailIndex = useCallback((nextIndex: number) => {
+    const boundedIndex = Math.max(0, Math.min(nextIndex, detailItems.length - 1));
+    const nextAssetId = detailItems[boundedIndex]?.image.id ?? null;
+    setDetailIndex(boundedIndex);
+    if (!routeAssetId || !nextAssetId || nextAssetId === routeAssetId) return;
+    setRouteAssetId(nextAssetId);
+    navigateWorkspace(
+      { kind: "asset", assetId: nextAssetId },
+      { notify: false, replace: true, state: window.history.state },
+    );
+  }, [detailItems, routeAssetId]);
+
+  useEffect(() => {
+    const applyWorkspaceRoute = (event?: Event) => {
+      if (event?.type === "popstate") {
+        projectRestoreAnnouncementRef.current = false;
+      }
+      const route = parseWorkspaceRoute(window.location.pathname);
+      projectRouteRequestRef.current += 1;
+      setProjectRouteError(null);
+      if (route.kind === "asset") {
+        const detailNavigation = readAssetDetailNavigationState(window.history.state);
+        setRouteProjectId(null);
+        setProjectRestoringId(null);
+        setRouteAssetId(route.assetId);
+        setAssetRouteError(null);
+        setAssetRouteRevision((current) => current + 1);
+        setActiveView(detailNavigation?.source === "creation" ? "create" : "assets");
+        return;
+      }
+      setRouteAssetId(null);
+      setAssetRouteError(null);
+      setDetailOpen(false);
+      if (event?.type === "popstate" && pendingDetailScrollRef.current !== null) {
+        const scrollY = pendingDetailScrollRef.current;
+        pendingDetailScrollRef.current = null;
+        window.requestAnimationFrame(() => window.scrollTo({ top: scrollY, behavior: "auto" }));
+      }
+      if (route.kind === "project") {
+        if (loadedProjectIdRef.current === route.projectId) {
+          setRouteProjectId(null);
+          setProjectRestoringId(null);
+          setActiveView("create");
+          return;
+        }
+        setRouteProjectId(route.projectId);
+        setProjectRestoringId(route.projectId);
+        setProjectRouteRevision((current) => current + 1);
+        setActiveView("create");
+        return;
+      }
+      setRouteProjectId(null);
+      setProjectRestoringId(null);
+      setActiveView(route.kind === "projects"
+        ? "projects"
+        : route.kind === "assets"
+          ? "assets"
+          : "create");
+    };
+    const applyInitialRoute = window.setTimeout(applyWorkspaceRoute, 0);
+    window.addEventListener("popstate", applyWorkspaceRoute);
+    window.addEventListener(WORKSPACE_NAVIGATION_EVENT, applyWorkspaceRoute);
+    return () => {
+      window.clearTimeout(applyInitialRoute);
+      window.removeEventListener("popstate", applyWorkspaceRoute);
+      window.removeEventListener(WORKSPACE_NAVIGATION_EVENT, applyWorkspaceRoute);
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const url = new URL(window.location.href);
+    const callbackError = authenticationErrorMessage(url.searchParams.get("authError"));
+    if (url.searchParams.has("authError")) {
+      url.searchParams.delete("authError");
+      window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+    }
+    void readAuthenticationSession()
+      .then((session) => {
+        if (!active) return;
+        setAuthenticationSession(session);
+        if (session?.preview) {
+          setProjectsLoading(false);
+          setAssetsLoading(false);
+        }
+        if (callbackError) setAuthenticationError(callbackError);
+      })
+      .catch((error) => {
+        if (!active) return;
+        setAuthenticationSession(null);
+        setAuthenticationError(
+          error instanceof Error ? error.message : "登录状态暂时无法确认，请重试。",
+        );
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      setAuthenticationSession(null);
+      setBillingSummary(null);
+      setBillingError(null);
+      setBillingLoading(false);
+      setAuthenticationError("登录状态已失效，请重新登录。当前创作内容已保留。");
+    };
+    window.addEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
+  }, []);
+
+  useEffect(() => {
+    if (authenticationSession === undefined) return;
+    if (authenticationSession === null) return;
+    let active = true;
+    void readBillingSummary()
+      .then((summary) => {
+        if (!active) return;
+        setBillingSummary(summary);
+      })
+      .catch((error) => {
+        if (!active) return;
+        setBillingError(
+          error instanceof Error
+            ? error.message
+            : "积分信息暂时无法读取，请稍后重试。",
+        );
+      })
+      .finally(() => {
+        if (active) setBillingLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [authenticationSession, billingRevision]);
+
+  useEffect(() => {
+    if (authenticationSession === undefined) return;
+    if (authenticationSession === null || authenticationSession.preview) {
+      const finishPreview = window.setTimeout(() => {
+        setDraftLoading(false);
+        setDraftHydrated(true);
+      }, 0);
+      return () => window.clearTimeout(finishPreview);
+    }
+    let active = true;
+    const editRevision = composerEditRevisionRef.current;
+    draftBlockedRef.current = false;
+    void readCreationDraft()
+      .then((draft) => {
+        if (!active) return;
+        draftVersionRef.current = draft?.version ?? null;
+        draftSyncedCheckpointRef.current = draft
+          ? createComposerCheckpoint(draft.state)
+          : emptyComposerCheckpoint;
+        const route = parseWorkspaceRoute(window.location.pathname);
+        if (route.kind !== "project" && draft) {
+          if (composerEditRevisionRef.current === editRevision) {
+            applyCreationDraft(draft);
+            toast.success("已恢复上次未保存的创作");
+          } else {
+            draftBlockedRef.current = true;
+            setDraftConflict({ currentDraft: draft });
+          }
+        }
+        setDraftHydrated(true);
+      })
+      .catch((error) => {
+        if (!active) return;
+        draftBlockedRef.current = true;
+        setDraftSyncError(
+          error instanceof Error
+            ? error.message
+            : "上次草稿暂时无法读取，当前输入不会被覆盖。",
+        );
+        setDraftRetryMode("load");
+        setDraftHydrated(true);
+      })
+      .finally(() => {
+        if (active) setDraftLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [applyCreationDraft, authenticationSession, draftLoadRevision]);
+
+  useEffect(() => {
+    if (draftAutosaveTimerRef.current) {
+      window.clearTimeout(draftAutosaveTimerRef.current);
+      draftAutosaveTimerRef.current = null;
+    }
+    if (
+      !authenticationSession ||
+      authenticationSession.preview ||
+      !draftHydrated ||
+      draftLoading ||
+      currentProject ||
+      routeProjectId ||
+      draftBlockedRef.current ||
+      referenceImages.some((reference) => reference.status !== "ready") ||
+      currentComposerCheckpoint === draftSyncedCheckpointRef.current
+    ) {
+      return;
+    }
+    const checkpoint = currentComposerCheckpoint;
+    const snapshot: CreationDraftState = {
+      aspectRatio: selectedRatio,
+      count: generationCount,
+      modelId: selectedModel,
+      prompt,
+      references: referenceImages.map((reference) => ({ ...reference })),
+      resolution,
+    };
+    draftAutosaveTimerRef.current = window.setTimeout(() => {
+      draftAutosaveTimerRef.current = null;
+      void queueDraftMutation(async () => {
+        if (draftBlockedRef.current) return;
+        setDraftSyncing(true);
+        try {
+          if (checkpoint === emptyComposerCheckpoint) {
+            if (draftVersionRef.current !== null) {
+              await deleteCreationDraft(draftVersionRef.current);
+            }
+            draftVersionRef.current = null;
+          } else {
+            const savedDraft = await saveCreationDraft(
+              snapshot,
+              draftVersionRef.current,
+            );
+            draftVersionRef.current = savedDraft.version;
+          }
+          draftSyncedCheckpointRef.current = checkpoint;
+          setDraftConflict(null);
+          setDraftRetryMode(null);
+          setDraftSyncError(null);
+        } catch (error) {
+          blockDraftSync(error);
+        } finally {
+          setDraftSyncing(false);
+          setDraftSyncRevision((current) => current + 1);
+        }
+      });
+    }, 850);
+    return () => {
+      if (draftAutosaveTimerRef.current) {
+        window.clearTimeout(draftAutosaveTimerRef.current);
+        draftAutosaveTimerRef.current = null;
+      }
+    };
+  }, [
+    authenticationSession,
+    blockDraftSync,
+    currentComposerCheckpoint,
+    currentProject,
+    draftHydrated,
+    draftLoading,
+    draftSyncRevision,
+    generationCount,
+    prompt,
+    queueDraftMutation,
+    referenceImages,
+    resolution,
+    routeProjectId,
+    selectedModel,
+    selectedRatio,
+  ]);
 
   useEffect(() => {
     if (!detailOpen) return;
@@ -238,25 +753,284 @@ export default function Home() {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "ArrowDown" || event.key === "ArrowRight") {
         event.preventDefault();
-        setDetailIndex((current) => Math.min(current + 1, detailItems.length - 1));
+        selectDetailIndex(detailIndex + 1);
       }
       if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
         event.preventDefault();
-        setDetailIndex((current) => Math.max(current - 1, 0));
+        selectDetailIndex(detailIndex - 1);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [detailItems.length, detailOpen]);
+  }, [detailIndex, detailOpen, selectDetailIndex]);
 
   useEffect(() => () => {
     if (detailWheelTimerRef.current) window.clearTimeout(detailWheelTimerRef.current);
+    if (draftAutosaveTimerRef.current) window.clearTimeout(draftAutosaveTimerRef.current);
   }, []);
 
   useEffect(() => () => {
     referenceObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
     referenceObjectUrlsRef.current.clear();
   }, []);
+
+  useEffect(() => {
+    if (authenticationSession === undefined) return;
+    if (authenticationSession === null) return;
+    if (authenticationSession.preview) return;
+    let active = true;
+    void listProjects()
+      .then((records) => {
+        if (!active) return;
+        setProjects([...records]);
+        setProjectsError(null);
+      })
+      .catch((error) => {
+        if (!active) return;
+        setProjectsError(error instanceof Error ? error.message : "项目列表暂时不可用，请重试。");
+      })
+      .finally(() => {
+        if (active) setProjectsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [authenticationSession]);
+
+  useEffect(() => {
+    if (authenticationSession === undefined || authenticationSession === null) return;
+    if (authenticationSession.preview) return;
+    let active = true;
+    void listAssets()
+      .then((records) => {
+        if (!active) return;
+        const batches = records.map(generationJobToAssetBatch);
+        setAssetBatches(batches);
+        setSavedImages(
+          batches.flatMap((batch) =>
+            batch.images.map((image) => `${batch.id}-${image.id}`),
+          ),
+        );
+        setSelectedAssetIds([]);
+        setAssetsError(null);
+      })
+      .catch((error) => {
+        if (!active) return;
+        setAssetsError(
+          error instanceof Error ? error.message : "资产库暂时无法读取，请重试。",
+        );
+      })
+      .finally(() => {
+        if (active) setAssetsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [authenticationSession]);
+
+  useEffect(() => {
+    if (!routeAssetId || authenticationSession === undefined || authenticationSession === null) return;
+    if (assetsLoading) return;
+    const applyAssetRoute = window.setTimeout(() => {
+      const detailNavigation = readAssetDetailNavigationState(window.history.state);
+      const creationScope = getDetailImages(creationBatches);
+      const assetScope = getDetailImages(assetBatches);
+      const scopes = detailNavigation?.source === "creation"
+        ? [creationScope, assetScope]
+        : [assetScope];
+      const scope = scopes.find((items) =>
+        items.some((item) => item.image.id === routeAssetId),
+      );
+      const nextIndex = scope?.findIndex((item) => item.image.id === routeAssetId) ?? -1;
+      if (scope && nextIndex >= 0) {
+        setDetailItems(scope);
+        setDetailIndex(nextIndex);
+        setDetailOpen(true);
+        setAssetRouteError(null);
+        return;
+      }
+      setDetailOpen(false);
+      setAssetRouteError(
+        assetsError ?? "这张图片不存在，或当前账号无权访问。",
+      );
+    }, 0);
+    return () => window.clearTimeout(applyAssetRoute);
+  }, [
+    assetBatches,
+    assetRouteRevision,
+    assetsError,
+    assetsLoading,
+    authenticationSession,
+    creationBatches,
+    routeAssetId,
+  ]);
+
+  useEffect(() => {
+    if (!routeProjectId) return;
+    if (authenticationSession === undefined || authenticationSession === null) return;
+    if (authenticationSession.preview) {
+      const previewFailure = window.setTimeout(() => {
+        setProjectRestoringId(null);
+        setProjectRouteError("预览模式无法读取持久化项目。");
+      }, 0);
+      return () => window.clearTimeout(previewFailure);
+    }
+    let active = true;
+    const requestId = ++projectRouteRequestRef.current;
+    void readProject(routeProjectId)
+      .then((restoredProject) => {
+        if (!active || requestId !== projectRouteRequestRef.current) return;
+        const restoredBatches = projectAssetBatches(restoredProject);
+        const latestBatch = restoredProject.batches[0] ?? null;
+        referenceObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+        referenceObjectUrlsRef.current.clear();
+        loadedProjectIdRef.current = restoredProject.id;
+        setCurrentProject({ id: restoredProject.id, name: restoredProject.name });
+        setCreationBatches(restoredBatches);
+        setSavedImages(restoredBatches.flatMap((batch) => batch.images.map((image) => `${batch.id}-${image.id}`)));
+        setPrompt(restoredProject.state.prompt);
+        setReferenceImages(restoredProject.state.references.map((reference) => ({ ...reference })));
+        setSelectedModel(restoredProject.state.modelId);
+        setSelectedRatio(restoredProject.state.aspectRatio);
+        setResolution(restoredProject.state.resolution);
+        setGenerationCount(restoredProject.state.count);
+        setGenerationJob(latestBatch?.state === "failed" ? latestBatch : null);
+        setComposerCheckpoint(createComposerCheckpoint(restoredProject.state));
+        setProjectRouteError(null);
+        if (projectRestoreAnnouncementRef.current) {
+          projectRestoreAnnouncementRef.current = false;
+          toast.success("项目已恢复，可以继续创作");
+        }
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      })
+      .catch((error) => {
+        if (!active || requestId !== projectRouteRequestRef.current) return;
+        projectRestoreAnnouncementRef.current = false;
+        setProjectRouteError(error instanceof Error ? error.message : "项目恢复失败，请重试。");
+      })
+      .finally(() => {
+        if (active && requestId === projectRouteRequestRef.current) {
+          setProjectRestoringId(null);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [authenticationSession, routeProjectId, projectRouteRevision]);
+
+  const retryDraftSync = () => {
+    setDraftSyncError(null);
+    setDraftRetryMode(null);
+    setDraftConflict(null);
+    draftBlockedRef.current = false;
+    if (draftRetryMode === "load") {
+      setDraftLoading(true);
+      setDraftLoadRevision((current) => current + 1);
+      return;
+    }
+    setDraftSyncRevision((current) => current + 1);
+  };
+
+  const keepCurrentDraft = () => {
+    if (!draftConflict || isGenerating) return;
+    if (referenceImages.some((reference) => reference.status !== "ready")) {
+      toast.info("请等待参考图上传完成或移除失败项");
+      return;
+    }
+    const expectedVersion = draftConflict.currentDraft?.version ?? null;
+    const checkpoint = currentComposerCheckpoint;
+    const snapshot: CreationDraftState = {
+      ...currentDraftState,
+      references: referenceImages.map((reference) => ({ ...reference })),
+    };
+    setDraftConflict(null);
+    setDraftSyncError(null);
+    draftBlockedRef.current = false;
+    void queueDraftMutation(async () => {
+      setDraftSyncing(true);
+      try {
+        if (checkpoint === emptyComposerCheckpoint) {
+          await deleteCreationDraft(expectedVersion);
+          draftVersionRef.current = null;
+        } else {
+          const savedDraft = await saveCreationDraft(snapshot, expectedVersion);
+          draftVersionRef.current = savedDraft.version;
+        }
+        draftSyncedCheckpointRef.current = checkpoint;
+      } catch (error) {
+        blockDraftSync(error);
+      } finally {
+        setDraftSyncing(false);
+        setDraftSyncRevision((current) => current + 1);
+      }
+    });
+  };
+
+  const restoreCloudDraft = () => {
+    if (!draftConflict || isGenerating) return;
+    applyCreationDraft(draftConflict.currentDraft);
+    setDraftConflict(null);
+    setDraftSyncError(null);
+    setDraftRetryMode(null);
+    draftBlockedRef.current = false;
+    toast.success(
+      draftConflict.currentDraft
+        ? "已恢复云端草稿"
+        : "云端草稿已清除",
+    );
+  };
+
+  const clearPersistedCreationDraft = () => {
+    if (draftAutosaveTimerRef.current) {
+      window.clearTimeout(draftAutosaveTimerRef.current);
+      draftAutosaveTimerRef.current = null;
+    }
+    draftSyncedCheckpointRef.current = emptyComposerCheckpoint;
+    const expectedVersion = draftConflict
+      ? draftConflict.currentDraft?.version ?? null
+      : draftVersionRef.current;
+    void queueDraftMutation(async () => {
+      setDraftSyncing(true);
+      try {
+        await deleteCreationDraft(expectedVersion);
+        draftVersionRef.current = null;
+        setDraftConflict(null);
+        setDraftSyncError(null);
+        setDraftRetryMode(null);
+        draftBlockedRef.current = false;
+      } catch (error) {
+        blockDraftSync(error);
+      } finally {
+        setDraftSyncing(false);
+        setDraftSyncRevision((current) => current + 1);
+      }
+    });
+  };
+
+  const handlePromptChange = (value: string) => {
+    composerEditRevisionRef.current += 1;
+    setPrompt(value);
+  };
+
+  const handleModelChange = (value: GenerationModelId) => {
+    composerEditRevisionRef.current += 1;
+    setSelectedModel(value);
+  };
+
+  const handleAspectRatioChange = (value: GenerationAspectRatio) => {
+    composerEditRevisionRef.current += 1;
+    setSelectedRatio(value);
+  };
+
+  const handleResolutionChange = (value: GenerationResolution) => {
+    composerEditRevisionRef.current += 1;
+    setResolution(value);
+  };
+
+  const handleGenerationCountChange = (value: GenerationCount) => {
+    composerEditRevisionRef.current += 1;
+    setGenerationCount(value);
+  };
 
   const handleReferenceFiles = (files: readonly File[]) => {
     if (!files.length) return;
@@ -267,69 +1041,216 @@ export default function Home() {
       return;
     }
 
-    const accepted = files.slice(0, remaining).map((file, index) => {
+    composerEditRevisionRef.current += 1;
+
+    const accepted = files.slice(0, remaining).map((file) => {
+      const clientId = globalThis.crypto.randomUUID();
       const url = URL.createObjectURL(file);
       referenceObjectUrlsRef.current.add(url);
       return {
-        id: `${Date.now()}-${index}-${file.name}`,
+        clientId,
+        file,
+        id: clientId,
         url,
         name: file.name,
+        status: "uploading" as const,
       };
     });
     setReferenceImages((current) => [...current, ...accepted]);
     if (files.length > remaining) toast.info(`已添加 ${accepted.length} 张，参考图最多 ${MAX_GENERATION_REFERENCES} 张`);
-    else toast.success(`已添加 ${accepted.length} 张参考图`);
+    void uploadReferenceFiles(
+      accepted.map(({ clientId, file }) => ({ clientId, file })),
+      (clientId, reference) => {
+        setReferenceImages((current) =>
+          current.map((item) =>
+            item.id === clientId
+              ? { ...reference, url: item.url }
+              : item,
+          ),
+        );
+      },
+    ).then((results) => {
+      const readyCount = results.filter(
+        (result) => result.reference.status === "ready",
+      ).length;
+      if (readyCount === results.length) {
+        toast.success(`已上传 ${readyCount} 张参考图`);
+      } else if (readyCount > 0) {
+        toast.warning(`${readyCount} 张上传完成，${results.length - readyCount} 张失败`);
+      } else {
+        toast.error("参考图上传失败，请移除失败项后重试");
+      }
+    });
   };
 
   const removeReference = (image: ReferenceImage) => {
+    composerEditRevisionRef.current += 1;
+    if (referenceObjectUrlsRef.current.delete(image.url)) {
+      URL.revokeObjectURL(image.url);
+    }
     setReferenceImages((current) => current.filter((item) => item.id !== image.id));
+  };
+
+  const handleLogin = () => {
+    setAuthenticationError(null);
+    beginAuthentication(`${window.location.pathname}${window.location.search}`);
+  };
+
+  const handleLogout = async () => {
+    try {
+      const redirecting = await signOut();
+      if (redirecting) return;
+      setAuthenticationSession(null);
+      setAuthenticationError(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "退出登录失败，请重试。");
+    }
+  };
+
+  const reloadAssets = async () => {
+    if (!authenticationSession) return;
+    if (authenticationSession.preview) {
+      setAssetBatches(initialAssetBatches);
+      setAssetsError(null);
+      setAssetsLoading(false);
+      return;
+    }
+    setAssetsLoading(true);
+    setAssetsError(null);
+    try {
+      const batches = (await listAssets()).map(generationJobToAssetBatch);
+      setAssetBatches(batches);
+      setSavedImages(
+        batches.flatMap((batch) =>
+          batch.images.map((image) => `${batch.id}-${image.id}`),
+        ),
+      );
+      setSelectedAssetIds([]);
+    } catch (error) {
+      setAssetsError(
+        error instanceof Error ? error.message : "资产库暂时无法读取，请重试。",
+      );
+    } finally {
+      setAssetsLoading(false);
+    }
   };
 
   const handleAssetNav = () => {
     if (assetPulseTimerRef.current) window.clearTimeout(assetPulseTimerRef.current);
     setAssetPulse(false);
     setNewAssetCount(0);
-    setActiveView("assets");
+    navigateWorkspace({ kind: "assets" });
+    void reloadAssets();
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleCreateNav = () => {
+    navigateWorkspace(currentProject
+      ? { kind: "project", projectId: currentProject.id }
+      : { kind: "create" });
     setActiveView("create");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const reloadProjects = async () => {
+    if (!authenticationSession) return;
+    if (authenticationSession.preview) {
+      setProjects([]);
+      setProjectsError(null);
+      setProjectsLoading(false);
+      return;
+    }
+    setProjectsLoading(true);
+    setProjectsError(null);
+    try {
+      setProjects([...(await listProjects())]);
+    } catch (error) {
+      setProjectsError(error instanceof Error ? error.message : "项目列表暂时不可用，请重试。");
+    } finally {
+      setProjectsLoading(false);
+    }
+  };
+
   const handleProjectsNav = () => {
-    setActiveView("projects");
+    navigateWorkspace({ kind: "projects" });
+    void reloadProjects();
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const startNewCreation = () => {
+    composerEditRevisionRef.current += 1;
+    clearPersistedCreationDraft();
     referenceObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
     referenceObjectUrlsRef.current.clear();
+    loadedProjectIdRef.current = null;
     setReferenceImages([]);
     setPrompt("");
     setCreationBatches([]);
     setCurrentProject(null);
     setGenerationJob(null);
     setDrawerOpen(false);
-    setActiveView("create");
+    setProjectSaveError(null);
+    setProjectCreateKey(null);
+    setComposerCheckpoint(emptyComposerCheckpoint);
+    setDestructiveCreationIntent(null);
+    navigateWorkspace({ kind: "create" });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const restoreProject = (project: Project) => {
-    const latestBatch = project.batches[0];
-    setCurrentProject({ id: project.id, name: project.name });
-    setCreationBatches(project.batches);
-    setSavedImages(project.batches.flatMap((batch) => batch.images.map((image) => `${batch.id}-${image.id}`)));
-    setPrompt(latestBatch.prompt);
-    setSelectedModel(latestBatch.modelId);
-    setSelectedRatio(latestBatch.aspectRatio);
-    setResolution(latestBatch.resolution);
-    setGenerationCount(latestBatch.count);
-    setGenerationJob(null);
-    setActiveView("create");
-    toast.success("项目已恢复，可以继续创作");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  const continueProjectRestore = (projectId: string) => {
+    projectRestoreAnnouncementRef.current = true;
+    navigateWorkspace({ kind: "project", projectId });
+  };
+
+  const requestNewCreation = () => {
+    if (isGenerating) {
+      toast.info("图片仍在生成，请等待当前任务完成后再新建创作");
+      return;
+    }
+    if (hasUnsavedCreationChanges) {
+      setDestructiveCreationIntent({ kind: "new" });
+      return;
+    }
+    startNewCreation();
+  };
+
+  const restoreProject = (project: ProjectRecord) => {
+    if (isGenerating) {
+      toast.info("图片仍在生成，请等待当前任务完成后再切换项目");
+      return;
+    }
+    if (loadedProjectIdRef.current === project.id) {
+      navigateWorkspace({ kind: "project", projectId: project.id });
+      return;
+    }
+    if (hasUnsavedCreationChanges) {
+      setDestructiveCreationIntent({
+        kind: "project",
+        projectId: project.id,
+        projectName: project.name,
+      });
+      return;
+    }
+    continueProjectRestore(project.id);
+  };
+
+  const confirmDestructiveCreation = () => {
+    const intent = destructiveCreationIntent;
+    if (!intent) return;
+    setDestructiveCreationIntent(null);
+    if (intent.kind === "new") {
+      startNewCreation();
+      return;
+    }
+    clearPersistedCreationDraft();
+    continueProjectRestore(intent.projectId);
+  };
+
+  const retryProjectRoute = () => {
+    if (!routeProjectId) return;
+    setProjectRouteError(null);
+    setProjectRestoringId(routeProjectId);
+    setProjectRouteRevision((current) => current + 1);
   };
 
   const openProjectDrawer = () => {
@@ -337,24 +1258,57 @@ export default function Home() {
       ? "银色未来服装视觉"
       : prompt.trim().split(/[，。,.]/)[0].slice(0, 18) || "未命名创作项目";
     setProjectName(currentProject?.name ?? suggestedName);
+    setProjectSaveError(null);
+    if (!currentProject && !projectCreateKey) {
+      setProjectCreateKey(`project_${globalThis.crypto.randomUUID()}`);
+    }
     setProjectDrawerOpen(true);
   };
 
-  const saveCurrentProject = () => {
-    if (!creationBatches.length) return;
+  const saveCurrentProject = async () => {
+    const batchIds = [...new Set([
+      ...creationBatches.map((batch) => batch.id),
+      ...(generationJob && !generationJob.id.startsWith("pending_") ? [generationJob.id] : []),
+    ])];
+    if (!batchIds.length || projectSaving) return;
     const name = projectName.trim() || "未命名创作项目";
-    const id = currentProject?.id ?? `project-${Date.now()}`;
-    const nextProject: Project = {
-      id,
-      name,
-      updated: "刚刚",
-      coverPosition: creationBatches[0]?.images[0]?.previewPosition ?? "50% 45%",
-      batches: creationBatches,
-    };
-    setProjects((current) => [nextProject, ...current.filter((project) => project.id !== id)]);
-    setCurrentProject({ id, name });
-    setProjectDrawerOpen(false);
-    toast.success("项目已保存，后续创作将自动归入此项目");
+    const idempotencyKey = projectCreateKey ?? `project_${globalThis.crypto.randomUUID()}`;
+    if (!currentProject && !projectCreateKey) setProjectCreateKey(idempotencyKey);
+    setProjectSaving(true);
+    setProjectSaveError(null);
+    const savedFromCreationDraft = currentProject === null;
+    try {
+      const savedProject = await saveProject({
+        batchIds,
+        idempotencyKey,
+        name,
+        projectId: currentProject?.id ?? null,
+        state: {
+          aspectRatio: selectedRatio,
+          count: generationCount,
+          modelId: selectedModel,
+          prompt,
+          references: referenceImages.filter((reference) => reference.status === "ready"),
+          resolution,
+        },
+      });
+      setProjects((current) => [savedProject, ...current.filter((project) => project.id !== savedProject.id)]);
+      loadedProjectIdRef.current = savedProject.id;
+      setCurrentProject({ id: savedProject.id, name: savedProject.name });
+      setComposerCheckpoint(createComposerCheckpoint(savedProject.state));
+      navigateWorkspace(
+        { kind: "project", projectId: savedProject.id },
+        { notify: false, replace: true },
+      );
+      setProjectCreateKey(null);
+      setProjectDrawerOpen(false);
+      if (savedFromCreationDraft) clearPersistedCreationDraft();
+      toast.success("项目已保存，后续创作将自动归入此项目");
+    } catch (error) {
+      setProjectSaveError(error instanceof Error ? error.message : "项目保存失败，当前创作内容已保留，请重试。");
+    } finally {
+      setProjectSaving(false);
+    }
   };
 
   const toggleAssetSelection = (assetId: string) => {
@@ -380,16 +1334,44 @@ export default function Home() {
       const nextBatches = [nextBatch, ...current];
       if (currentProject) {
         setProjects((currentProjects) => currentProjects.map((project) => project.id === currentProject.id
-          ? { ...project, updated: "刚刚", batches: nextBatches, coverPosition: nextBatch.images[0]?.previewPosition ?? project.coverPosition }
+          ? {
+              ...project,
+              batches: [completedJob, ...project.batches.filter((batch) => batch.id !== completedJob.id)],
+              state: {
+                aspectRatio: completedInput.aspectRatio,
+                count: completedInput.count,
+                modelId: completedInput.modelId,
+                prompt: completedInput.prompt,
+                references: completedInput.references,
+                resolution: completedInput.resolution,
+              },
+              updatedAt: completedJob.updatedAt,
+            }
           : project));
       }
       return nextBatches;
     });
-    setAssetBatches((current) => [nextBatch, ...current]);
+    setAssetBatches((current) => [
+      nextBatch,
+      ...current.filter((batch) => batch.id !== nextBatch.id),
+    ]);
     setNewAssetCount(completedJob.outputs.length);
     setAssetPulse(true);
     if (assetPulseTimerRef.current) window.clearTimeout(assetPulseTimerRef.current);
     assetPulseTimerRef.current = window.setTimeout(() => setAssetPulse(false), 4200);
+  };
+
+  const observeGenerationJob = (job: GenerationJob) => {
+    setGenerationJob(job);
+    if (
+      !job.id.startsWith("pending_") &&
+      (job.state === "queued" || !isGenerationJobActive(job.state))
+    ) {
+      setBillingRevision((current) => current + 1);
+    }
+    if (currentProject && !job.id.startsWith("pending_")) {
+      setComposerCheckpoint(createComposerCheckpoint(job.input));
+    }
   };
 
   const runGeneration = async (snapshot: GenerationInputSnapshot) => {
@@ -398,7 +1380,7 @@ export default function Home() {
     setDrawerOpen(false);
     const terminalJob = await generationBoundary.service.submit(
       snapshot,
-      setGenerationJob,
+      observeGenerationJob,
     );
     if (terminalJob.state === "succeeded") {
       recordCompletedGeneration(terminalJob);
@@ -410,17 +1392,21 @@ export default function Home() {
       toast.error("请先输入画面描述");
       return;
     }
-    if (referenceImages.length > 0) {
-      toast.error("持久参考图上传将在下一阶段启用，请先移除参考图");
+    if (referenceImages.some((reference) => reference.status === "uploading")) {
+      toast.info("参考图仍在上传，请稍候");
+      return;
+    }
+    if (referenceImages.some((reference) => reference.status === "failed")) {
+      toast.error("请移除上传失败的参考图后再生成");
       return;
     }
     if (
       selectedModel !== "nano-banana-2" ||
-      selectedRatio !== "4:5" ||
-      resolution !== "2K" ||
+      selectedRatio !== "1:1" ||
+      resolution !== "1K" ||
       generationCount !== 1
     ) {
-      toast.error("当前持久生成链路支持 Nano Banana 2、4:5、高清、1 张图片");
+      toast.error("当前持久生成链路支持 Nano Banana 2、1:1、标准、1 张图片");
       return;
     }
 
@@ -431,6 +1417,7 @@ export default function Home() {
       aspectRatio: selectedRatio,
       resolution,
       count: generationCount,
+      projectId: currentProject?.id ?? null,
     });
     void runGeneration(snapshot);
   };
@@ -442,7 +1429,7 @@ export default function Home() {
       return;
     }
     setDrawerOpen(false);
-    void generationBoundary.retry(generationJob, setGenerationJob).then((terminalJob) => {
+    void generationBoundary.retry(generationJob, observeGenerationJob).then((terminalJob) => {
       if (terminalJob.state === "succeeded") {
         recordCompletedGeneration(terminalJob);
       }
@@ -481,20 +1468,56 @@ export default function Home() {
     toast.success("图片已开始下载");
   };
 
-  const openImageDetail = (items: DetailImage[], imageKey: string) => {
+  const openImageDetail = (
+    items: DetailImage[],
+    imageKey: string,
+    source: DetailSource,
+  ) => {
     const nextIndex = items.findIndex((item) => item.key === imageKey);
     if (nextIndex < 0) return;
+    const nextDetail = items[nextIndex];
+    const currentHistoryState = window.history.state && typeof window.history.state === "object"
+      ? window.history.state as Record<string, unknown>
+      : {};
     setDetailItems(items);
     setDetailIndex(nextIndex);
     setDetailOpen(true);
+    navigateWorkspace(
+      { kind: "asset", assetId: nextDetail.image.id },
+      {
+        state: {
+          ...currentHistoryState,
+          [ASSET_DETAIL_HISTORY_KEY]: {
+            returnHref: `${window.location.pathname}${window.location.search}${window.location.hash}`,
+            scrollY: window.scrollY,
+            source,
+          },
+        },
+      },
+    );
+  };
+
+  const closeImageDetail = () => {
+    setDetailOpen(false);
+    const detailNavigation = readAssetDetailNavigationState(window.history.state);
+    if (routeAssetId && detailNavigation) {
+      pendingDetailScrollRef.current = detailNavigation.scrollY;
+      window.history.back();
+      return;
+    }
+    navigateWorkspace({ kind: "assets" }, { replace: true });
+  };
+
+  const retryAssetRoute = () => {
+    setAssetRouteError(null);
+    setAssetRouteRevision((current) => current + 1);
+    void reloadAssets();
   };
 
   const handleDetailWheel = (event: ReactWheelEvent<HTMLDivElement>) => {
     if (Math.abs(event.deltaY) < 18 || detailWheelTimerRef.current || detailItems.length < 2) return;
     event.preventDefault();
-    setDetailIndex((current) => event.deltaY > 0
-      ? Math.min(current + 1, detailItems.length - 1)
-      : Math.max(current - 1, 0));
+    selectDetailIndex(event.deltaY > 0 ? detailIndex + 1 : detailIndex - 1);
     detailWheelTimerRef.current = window.setTimeout(() => {
       detailWheelTimerRef.current = null;
     }, 280);
@@ -521,20 +1544,17 @@ export default function Home() {
         role="button"
         tabIndex={0}
         aria-label={`查看 ${itemModel.name} 生成的视觉作品 ${item.index + 1}`}
-        onClick={() => openImageDetail(creationDetailItems, item.key)}
+        onClick={() => openImageDetail(creationDetailItems, item.key, "creation")}
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
-            openImageDetail(creationDetailItems, item.key);
+            openImageDetail(creationDetailItems, item.key, "creation");
           }
         }}
       >
-        <Image
+        <PrivateObjectImage
           src={item.image.previewUrl}
           alt={`${itemModel.name} 生成的视觉作品 ${item.index + 1}`}
-          fill
-          unoptimized
-          sizes="(max-width: 760px) 50vw, 25vw"
           style={{ objectPosition: item.image.previewPosition }}
         />
         <span className="creation-card-meta">{item.batch.time} · {itemRatio.label}</span>
@@ -567,20 +1587,17 @@ export default function Home() {
         role="button"
         tabIndex={0}
         aria-label={`查看 ${itemRatio.label} 图片详情`}
-        onClick={() => openImageDetail(assetDetailItems, item.key)}
+        onClick={() => openImageDetail(assetDetailItems, item.key, "assets")}
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
-            openImageDetail(assetDetailItems, item.key);
+            openImageDetail(assetDetailItems, item.key, "assets");
           }
         }}
       >
-        <Image
+        <PrivateObjectImage
           src={item.image.previewUrl}
           alt={`${item.batch.id} 画廊图片 ${item.index + 1}`}
-          fill
-          unoptimized
-          sizes="(max-width: 760px) 50vw, 25vw"
           style={{ objectPosition: item.image.previewPosition }}
         />
         <button
@@ -624,18 +1641,88 @@ export default function Home() {
 
         <div className="sidebar-footer">
           <button className="side-nav-item"><HelpCircle size={17} /><span>帮助</span></button>
-          <div className="account-card"><div className="avatar">LZ</div><div><strong>Li Zhongyi</strong><small>2,480 点数</small></div><MoreHorizontal size={16} /></div>
+          {authenticationSession && (
+            <div
+              className={`sidebar-billing ${billingError ? "has-error" : ""}`}
+              role={billingError ? "alert" : "status"}
+              aria-live="polite"
+            >
+              {billingLoading ? (
+                <span className="sidebar-billing-loading"><LoaderCircle size={12} />正在读取积分</span>
+              ) : billingError ? (
+                <button onClick={() => {
+                  setBillingLoading(true);
+                  setBillingError(null);
+                  setBillingRevision((current) => current + 1);
+                }}>
+                  <CircleAlert size={12} />积分暂不可用<RefreshCw size={11} />
+                </button>
+              ) : billingSummary ? (
+                <>
+                  <div><span>积分余额</span><strong>{billingSummary.account.availableCredits}</strong></div>
+                  <small>
+                    {launchBillingQuote?.creditAmount ?? "--"} 积分/张 · 可生成 {availableImages?.toString() ?? "--"} 张
+                  </small>
+                </>
+              ) : null}
+            </div>
+          )}
+          <div className="account-card">
+            <div className="avatar">{accountInitials}</div>
+            <div>
+              <strong>{accountEmail ?? "登录 GoodGood"}</strong>
+              <small>{authenticationSession?.preview ? "本地预览" : authenticationSession ? "已登录" : "Google 或邮箱验证码"}</small>
+            </div>
+            <button
+              className="account-session-action"
+              aria-label={authenticationSession ? "退出登录" : "登录"}
+              onClick={authenticationSession ? () => void handleLogout() : handleLogin}
+            >
+              {authenticationSession ? <LogOut size={15} /> : <LogIn size={15} />}
+            </button>
+          </div>
         </div>
       </aside>
 
       <section className="main-stage">
         <header className="mobile-bar">
           <div className="mobile-brand" role="img" aria-label="GoodGood"><Image className="brand-mark" src="/goodgood-mark.svg" alt="" width={27} height={20} /><Image className="wordmark-image" src="/goodgood-wordmark.svg" alt="" width={84} height={19} /></div>
-          <button className="top-avatar">LZ</button>
+          <div className="mobile-account">
+            {authenticationSession && (
+              billingError ? (
+                <button className="mobile-credit-balance has-error" onClick={() => {
+                  setBillingLoading(true);
+                  setBillingError(null);
+                  setBillingRevision((current) => current + 1);
+                }}>积分重试</button>
+              ) : (
+                <span className="mobile-credit-balance">
+                  {billingLoading ? "--" : billingSummary?.account.availableCredits ?? "--"} 积分
+                </span>
+              )
+            )}
+            <button
+              className="top-avatar"
+              aria-label={authenticationSession ? "退出登录" : "登录"}
+              onClick={authenticationSession ? () => void handleLogout() : handleLogin}
+            >{accountInitials}</button>
+          </div>
         </header>
 
         <div className={`content-wrap ${activeView !== "create" ? "asset-content-wrap" : ""}`}>
-          {activeView === "create" ? <>
+          {activeView === "create" ? routeProjectId && projectRestoringId === routeProjectId ? (
+            <section className="project-library-state project-route-state" role="status">
+              <LoaderCircle size={18} />正在恢复项目
+            </section>
+          ) : routeProjectId && projectRouteError ? (
+            <section className="project-library-state project-library-error project-route-state" role="alert">
+              <CircleAlert size={18} />
+              <span>{projectRouteError}</span>
+              <button onClick={retryProjectRoute}><RefreshCw size={14} />重试</button>
+              <button onClick={handleProjectsNav}><FolderOpen size={14} />返回项目</button>
+              <button onClick={requestNewCreation}><Plus size={14} />新建创作</button>
+            </section>
+          ) : <>
           <CreationComposer
             prompt={prompt}
             references={referenceImages}
@@ -645,16 +1732,44 @@ export default function Home() {
             count={generationCount}
             drawerOpen={drawerOpen}
             isGenerating={isGenerating}
-            onPromptChange={setPrompt}
+            billingLabel={composerBillingLabel}
+            billingDescription={composerBillingDescription}
+            onPromptChange={handlePromptChange}
             onReferenceFiles={handleReferenceFiles}
             onRemoveReference={removeReference}
-            onModelChange={setSelectedModel}
-            onAspectRatioChange={setSelectedRatio}
-            onResolutionChange={setResolution}
-            onCountChange={setGenerationCount}
+            onModelChange={handleModelChange}
+            onAspectRatioChange={handleAspectRatioChange}
+            onResolutionChange={handleResolutionChange}
+            onCountChange={handleGenerationCountChange}
             onDrawerOpenChange={setDrawerOpen}
             onGenerate={handleGenerate}
           />
+
+          {!currentProject && draftLoading && (
+            <div className="draft-sync-state" role="status">
+              <LoaderCircle size={13} />正在恢复上次创作
+            </div>
+          )}
+          {!currentProject && !draftLoading && draftConflict && (
+            <div className="draft-sync-state draft-sync-conflict" role="alert">
+              <CircleAlert size={14} />
+              <span>另一窗口已更新草稿。当前内容尚未覆盖云端。</span>
+              <button disabled={draftSyncing || isGenerating} onClick={keepCurrentDraft}>保留当前内容</button>
+              <button disabled={draftSyncing || isGenerating} onClick={restoreCloudDraft}>恢复云端草稿</button>
+            </div>
+          )}
+          {!currentProject && !draftLoading && !draftConflict && draftSyncError && (
+            <div className="draft-sync-state draft-sync-error" role="alert">
+              <CircleAlert size={14} />
+              <span>{draftSyncError}</span>
+              <button onClick={retryDraftSync}>重试</button>
+            </div>
+          )}
+          {!currentProject && !draftLoading && !draftConflict && !draftSyncError && draftSyncing && (
+            <div className="draft-sync-state" role="status">
+              <LoaderCircle size={13} />正在保存草稿
+            </div>
+          )}
 
           {!isGenerating && !hasGenerationError && creationBatches.length === 0 ? (
             <section className="creation-empty-state" aria-label="尚未开始创作">
@@ -671,7 +1786,7 @@ export default function Home() {
                 <div className="creation-stream-actions">
                   {isGenerating && <span className="inline-generation-status" role="status"><LoaderCircle size={14} />{stageText}</span>}
                   {creationBatches.length > 0 && <button className="save-project-button" onClick={openProjectDrawer}><FolderPlus size={15} />{currentProject ? "项目设置" : "保存为项目"}</button>}
-                  {currentProject && <button className="new-session-button" aria-label="退出当前项目并开始新创作" disabled={isGenerating} onClick={startNewCreation}><Plus size={15} />新建创作</button>}
+                  {currentProject && <button className="new-session-button" aria-label="退出当前项目并开始新创作" disabled={isGenerating} onClick={requestNewCreation}><Plus size={15} />新建创作</button>}
                 </div>
               </header>
 
@@ -694,7 +1809,14 @@ export default function Home() {
                     <small>{generationError.code} · {generationJob?.id} · {jobRatio.label} · {jobInput ? getGenerationResolutionLabel(jobInput.resolution) : ""} · {(jobInput?.references.length ?? 0) > 0 ? `${jobInput?.references.length} 张参考图` : "无参考图"}</small>
                   </div>
                   <div className="generation-error-actions">
-                    <button className="error-retry" title="使用失败任务的原始参数和参考图" onClick={retryFailedGeneration}><RefreshCw size={14} />重新生成</button>
+                    <button
+                      className="error-retry"
+                      title={submissionUnknown ? "将创建新的上游任务，并可能再次计费" : "使用失败任务的原始参数和参考图"}
+                      onClick={retryFailedGeneration}
+                    >
+                      <RefreshCw size={14} />
+                      {submissionUnknown ? "再次提交（将再次计费）" : "重新生成"}
+                    </button>
                     <button className="error-settings" title="恢复失败任务的输入后调整" onClick={restoreFailedGenerationSettings}><Settings2 size={14} />修改设置</button>
                   </div>
                 </div>
@@ -712,25 +1834,44 @@ export default function Home() {
             <section className="project-library-view" aria-label="项目">
               <header className="asset-library-header project-library-header">
                 <div><small>GOODGOOD PROJECTS</small><h1>项目</h1><p>保存完整的创作过程，随时恢复并继续创作。</p></div>
-                <button className="new-creation-button" onClick={startNewCreation}><Plus size={15} />新建创作</button>
+                <button className="new-creation-button" onClick={requestNewCreation}><Plus size={15} />新建创作</button>
               </header>
-              <div className="project-grid">
-                {projects.map((project) => {
-                  const imageCount = project.batches.reduce((total, batch) => total + batch.images.length, 0);
-                  return (
-                    <article className="project-card" key={project.id}>
-                      <button className="project-cover" onClick={() => restoreProject(project)} aria-label={`打开项目 ${project.name}`}>
-                        <Image src="/nano-fashion.png" alt={`${project.name} 项目封面`} fill sizes="(max-width: 760px) 100vw, (max-width: 1180px) 50vw, 33vw" style={{ objectPosition: project.coverPosition }} />
-                        <span>{imageCount} 张图片</span>
-                      </button>
-                      <div className="project-card-footer">
-                        <div><h2>{project.name}</h2><p>{project.updated} · {project.batches.length} 个生成批次</p></div>
-                        <button onClick={() => restoreProject(project)}>继续创作</button>
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
+              {projectsLoading ? (
+                <div className="project-library-state" role="status"><LoaderCircle size={18} />正在读取项目</div>
+              ) : projectsError ? (
+                <div className="project-library-state project-library-error" role="alert">
+                  <CircleAlert size={18} />
+                  <span>{projectsError}</span>
+                  <button onClick={() => void reloadProjects()}><RefreshCw size={14} />重试</button>
+                </div>
+              ) : projects.length === 0 ? (
+                <div className="project-library-state project-library-empty">
+                  <FolderOpen size={20} />
+                  <strong>还没有保存的项目</strong>
+                  <span>完成一次生成后，即可把当前创作保存为项目。</span>
+                </div>
+              ) : (
+                <div className="project-grid">
+                  {projects.map((project) => {
+                    const batches = projectAssetBatches(project);
+                    const imageCount = batches.reduce((total, batch) => total + batch.images.length, 0);
+                    const cover = batches[0]?.images[0] ?? null;
+                    const restoring = projectRestoringId === project.id;
+                    return (
+                      <article className="project-card" key={project.id}>
+                        <button disabled={restoring} className="project-cover" onClick={() => void restoreProject(project)} aria-label={`打开项目 ${project.name}`}>
+                          <PrivateObjectImage src={cover?.previewUrl ?? "/nano-fashion.png"} alt={`${project.name} 项目封面`} style={{ objectPosition: cover?.previewPosition ?? "50% 45%" }} />
+                          <span>{imageCount} 张图片</span>
+                        </button>
+                        <div className="project-card-footer">
+                          <div><h2>{project.name}</h2><p>{formatProjectUpdated(project.updatedAt)} · {project.batches.length} 个生成批次</p></div>
+                          <button disabled={restoring} onClick={() => void restoreProject(project)}>{restoring ? "正在恢复" : "继续创作"}</button>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
             </section>
           ) : (
             <section className="asset-library-view" aria-label="资产库">
@@ -746,7 +1887,28 @@ export default function Home() {
                 </div>
               </header>
 
-              {assetMode === "batches" ? Array.from(new Set(assetBatches.map((batch) => batch.dateLabel))).map((dateLabel) => (
+              {assetRouteError ? (
+                <div className="asset-library-state asset-library-error" role="alert">
+                  <CircleAlert size={18} />
+                  <span>{assetRouteError}</span>
+                  <button onClick={retryAssetRoute}><RefreshCw size={14} />重试</button>
+                  <button onClick={() => navigateWorkspace({ kind: "assets" }, { replace: true })}><Images size={14} />返回资产库</button>
+                </div>
+              ) : assetsLoading ? (
+                <div className="asset-library-state" role="status"><LoaderCircle size={18} />正在读取资产</div>
+              ) : assetsError ? (
+                <div className="asset-library-state asset-library-error" role="alert">
+                  <CircleAlert size={18} />
+                  <span>{assetsError}</span>
+                  <button onClick={() => void reloadAssets()}><RefreshCw size={14} />重试</button>
+                </div>
+              ) : assetBatches.length === 0 ? (
+                <div className="asset-library-state asset-library-empty">
+                  <Images size={20} />
+                  <strong>资产库还是空的</strong>
+                  <span>完成一次生成后，图片会自动保存在这里。</span>
+                </div>
+              ) : assetMode === "batches" ? Array.from(new Set(assetBatches.map((batch) => batch.dateLabel))).map((dateLabel) => (
                 <section className="asset-date-group" key={dateLabel}>
                   <h2>{dateLabel}</h2>
                   <div className="asset-batch-list">
@@ -763,14 +1925,11 @@ export default function Home() {
                                 key={`${batch.id}-${image.id}`}
                                 style={{ aspectRatio: `${batchRatio.value}` }}
                                 aria-label={`查看 ${batch.id} 生成结果 ${index + 1}`}
-                                onClick={() => openImageDetail(assetDetailItems, `${batch.id}-${image.id}`)}
+                                onClick={() => openImageDetail(assetDetailItems, `${batch.id}-${image.id}`, "assets")}
                               >
-                                <Image
+                                <PrivateObjectImage
                                   src={image.previewUrl}
                                   alt={`${batch.id} 生成结果 ${index + 1}`}
-                                  fill
-                                  unoptimized
-                                  sizes="(max-width: 760px) 50vw, 176px"
                                   style={{ objectPosition: image.previewPosition }}
                                 />
                               </button>
@@ -805,7 +1964,12 @@ export default function Home() {
           )}
         </div>
       </section>
-      <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
+      <Dialog
+        open={detailOpen}
+        onOpenChange={(open) => {
+          if (!open) closeImageDetail();
+        }}
+      >
         <DialogPortal>
           <DialogOverlay />
           <DialogPrimitive.Content
@@ -818,18 +1982,16 @@ export default function Home() {
             {activeDetail && (
               <div className="image-detail-layout">
               <section className="image-detail-stage" aria-label="大图预览">
-                <button className="image-detail-close" aria-label="关闭图片详情" onClick={() => setDetailOpen(false)}><X size={20} /></button>
+                <button className="image-detail-close" aria-label="关闭图片详情" onClick={closeImageDetail}><X size={20} /></button>
                 <div className="image-detail-count">{String(detailIndex + 1).padStart(2, "0")} / {String(detailItems.length).padStart(2, "0")}</div>
                 <div
                   className={`image-detail-art detail-variant-${(activeDetail.index % 4) + 1}`}
                   style={{ aspectRatio: `${activeDetail.ratio}`, width: `min(calc(100% - 72px), ${activeDetail.ratio * 82}dvh)` }}
                 >
-                  <Image
+                  <PrivateObjectImage
                     src={activeDetail.image.previewUrl}
                     alt={`${activeDetailModel?.name} 生成图片 ${activeDetail.index + 1}`}
-                    fill
-                    unoptimized
-                    sizes="(max-width: 760px) 100vw, calc(100vw - 426px)"
+                    loading="eager"
                     style={{ objectPosition: activeDetail.image.previewPosition }}
                   />
                 </div>
@@ -885,9 +2047,9 @@ export default function Home() {
                       style={{ aspectRatio: `${item.ratio}` }}
                       aria-label={`查看第 ${index + 1} 张图片`}
                       aria-current={index === detailIndex ? "true" : undefined}
-                      onClick={() => setDetailIndex(index)}
+                      onClick={() => selectDetailIndex(index)}
                     >
-                      <Image src={item.image.previewUrl} alt="" fill unoptimized sizes="58px" style={{ objectPosition: item.image.previewPosition }} />
+                      <PrivateObjectImage src={item.image.previewUrl} alt="" style={{ objectPosition: item.image.previewPosition }} />
                       <span>{String(index + 1).padStart(2, "0")}</span>
                     </button>
                   ))}
@@ -895,6 +2057,38 @@ export default function Home() {
               </nav>
               </div>
             )}
+          </DialogPrimitive.Content>
+        </DialogPortal>
+      </Dialog>
+      <Dialog
+        open={destructiveCreationIntent !== null}
+        onOpenChange={(open) => {
+          if (!open) setDestructiveCreationIntent(null);
+        }}
+      >
+        <DialogPortal>
+          <DialogOverlay />
+          <DialogPrimitive.Content className="unsaved-changes-dialog">
+            <DialogTitle>当前修改尚未保存</DialogTitle>
+            <DialogDescription>
+              {destructiveCreationIntent?.kind === "project"
+                ? `打开“${destructiveCreationIntent.projectName}”会覆盖当前提示词、参考图和生成参数。`
+                : "新建创作会清空当前提示词、参考图和生成参数。"}
+            </DialogDescription>
+            <div className="unsaved-changes-actions">
+              <button
+                className="unsaved-changes-cancel"
+                onClick={() => setDestructiveCreationIntent(null)}
+              >继续编辑</button>
+              <button
+                className="unsaved-changes-confirm"
+                onClick={confirmDestructiveCreation}
+              >
+                {destructiveCreationIntent?.kind === "project"
+                  ? "放弃修改并打开"
+                  : "放弃修改并新建"}
+              </button>
+            </div>
           </DialogPrimitive.Content>
         </DialogPortal>
       </Dialog>
@@ -907,7 +2101,7 @@ export default function Home() {
             </DrawerHeader>
             <div className="project-save-body">
               <div className="project-save-cover">
-                <Image src={creationBatches[0]?.images[0]?.previewUrl ?? "/nano-fashion.png"} alt="项目封面预览" fill unoptimized sizes="190px" style={{ objectPosition: creationBatches[0]?.images[0]?.previewPosition ?? "50% 42%" }} />
+                <PrivateObjectImage src={creationBatches[0]?.images[0]?.previewUrl ?? "/nano-fashion.png"} alt="项目封面预览" style={{ objectPosition: creationBatches[0]?.images[0]?.previewPosition ?? "50% 42%" }} />
                 <span>{totalCreationImages} 张图片 · {creationBatches.length} 个批次</span>
               </div>
               <label className="project-name-field">
@@ -915,13 +2109,35 @@ export default function Home() {
                 <input value={projectName} onChange={(event) => setProjectName(event.target.value)} autoFocus maxLength={32} />
               </label>
             </div>
+            {projectSaveError && <p className="project-save-error" role="alert">{projectSaveError}</p>}
             <div className="project-save-actions">
-              <button className="project-save-cancel" onClick={() => setProjectDrawerOpen(false)}>取消</button>
-              <button className="project-save-confirm" onClick={saveCurrentProject}>{currentProject ? "保存更改" : "保存项目"}</button>
+              <button className="project-save-cancel" disabled={projectSaving} onClick={() => setProjectDrawerOpen(false)}>取消</button>
+              <button className="project-save-confirm" disabled={projectSaving || !projectName.trim()} onClick={() => void saveCurrentProject()}>{projectSaving ? "正在保存" : currentProject ? "保存更改" : "保存项目"}</button>
             </div>
           </div>
         </DrawerContent>
       </Drawer>
+      {authenticationSession === undefined ? (
+        <div className="authentication-gate" role="status" aria-label="正在确认登录状态">
+          <div className="authentication-card authentication-loading">
+            <LoaderCircle size={20} />
+            <span>正在确认登录状态</span>
+          </div>
+        </div>
+      ) : authenticationSession === null ? (
+        <div className="authentication-gate" role="dialog" aria-modal="true" aria-labelledby="authentication-title">
+          <div className="authentication-card">
+            <Image src="/goodgood-mark.svg" alt="" width={32} height={24} />
+            <h2 id="authentication-title">登录后继续创作</h2>
+            <p>使用 Google 账号或邮箱验证码。首次登录会自动注册，无需设置密码。</p>
+            {authenticationError && <div className="authentication-error" role="alert">{authenticationError}</div>}
+            <button className="authentication-primary" onClick={handleLogin}>
+              <LogIn size={16} />
+              Google / 邮箱验证码登录
+            </button>
+          </div>
+        </div>
+      ) : null}
       <Toaster position="bottom-center" toastOptions={{ duration: 2200 }} />
     </main>
   );

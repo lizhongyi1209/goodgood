@@ -27,6 +27,7 @@ export function createGenerationInputSnapshot(
     aspectRatio: draft.aspectRatio,
     resolution: draft.resolution,
     count: draft.count,
+    projectId: draft.projectId ?? null,
   });
 }
 
@@ -40,5 +41,6 @@ export function restoreGenerationInputSnapshot(
     aspectRatio: snapshot.aspectRatio,
     resolution: snapshot.resolution,
     count: snapshot.count,
+    projectId: snapshot.projectId ?? null,
   };
 }

@@ -1,16 +1,106 @@
 # Data model contract
 
-The M3 PostgreSQL migration physically implements the server-owned test user,
+The M3 PostgreSQL migration physically implements the initial local user,
 `GenerationBatch`, `GenerationJob`, `GenerationAttempt`, `Asset`, append-only
-job events, and the queue outbox. The Drizzle schema mirrors those tables.
-Creation sessions, references, projects, production identity, entitlements,
-pricing, credit, and payments remain canonical contracts for later migrations.
+job events, and the queue outbox. The additive M4 identity migration introduces
+`AuthIdentity` and a second local user so authenticated owner isolation can be
+proved without binding GoodGood to a production identity provider. The third M4
+migration adds owner-scoped `ReferenceAsset` upload and validation evidence.
+The fourth migration adds owner-scoped `Project` state and a nullable project
+relation on generation batches. The fifth migration adds short-lived OIDC login
+attempts and hashed, revocable GoodGood sessions. The sixth forward migration
+binds every usable login attempt to its initiating browser. The Drizzle schema
+is completed by a seventh migration that adds bounded reference-cleanup lease,
+attempt, failure, eligibility, and object-deletion evidence. An eighth migration
+adds one expiring root creation draft per owner with optimistic versioning. The
+ninth migration begins M6 with immutable generation price versions, exact
+credit-account caches, an append-only credit ledger, nullable price/reservation
+links on existing batches and jobs, the accepted Banana 2 prices, and the
+one-time welcome grant for existing owners. A tenth migration adds immutable
+payment-product versions, owner-scoped orders, append-only webhook evidence,
+and the local fake payment settlement path. The Drizzle schema mirrors all ten
+migrations. A fuller project-backed creation session record and entitlements
+remain canonical contracts for later slices.
 
 `migrations/0001_m3_generation.sql` is additive and safe to rerun through the
 checksum-tracked migration runner. Rollback during local development is to stop
 the new application image and restore the pre-migration database snapshot or
 reset the explicitly disposable local volume. Deployed environments use a
 forward fix; the M3 tables are not dropped automatically.
+
+`migrations/0002_m4_authenticated_owners.sql` is also additive and rerunnable.
+It creates the external-identity mapping and local-only owner fixtures without
+rewriting M3 records. Rollback uses the same database-snapshot or explicitly
+disposable-volume procedure; deployed environments use a forward fix.
+
+`migrations/0003_m4_reference_assets.sql` adds private object identity,
+declared and detected metadata, validation evidence, expiry, and lifecycle
+state without rewriting generation records. The same snapshot/forward-fix
+rollback rule applies; rejected upload records are evidence, not silently
+deleted rows.
+
+`migrations/0004_m4_projects.sql` adds resumable project state and the optional
+batch-to-project relation without rewriting existing generation rows. Project
+creation idempotency is unique per owner. Rollback uses the same snapshot or
+explicitly disposable-volume procedure; deployed environments keep the
+additive columns and use a forward fix.
+
+`migrations/0005_m4_oidc_sessions.sql` adds one-time OIDC state/PKCE evidence
+and server-owned sessions without rewriting users or external identities. Only
+the session-token hash is stored; provider tokens are not persisted. Expired or
+revoked rows are retained until an asynchronous retention job is introduced.
+Rollback follows the snapshot/forward-fix rule used by the other additive M4
+migrations.
+
+`migrations/0006_m4_oidc_login_binding.sql` adds a required hash of a
+short-lived browser-binding cookie to each login attempt. Any attempt created
+before this protection is marked consumed during migration, so deployment
+cannot make a legacy unbound callback usable. The migration is additive and
+uses the same forward-fix rollback rule.
+
+`migrations/0007_m4_reference_cleanup.sql` adds cleanup eligibility, lease,
+attempt, failure, and terminal object-deletion evidence to `ReferenceAsset`,
+plus a partial due-candidate index. It never drops the evidence row or rewrites
+generation/project snapshots. Rollback follows the same snapshot/forward-fix
+rule; an application rollback can leave the additive nullable columns in place.
+
+`migrations/0008_m4_creation_drafts.sql` adds one owner-keyed root draft with
+prompt, ordered ready-reference snapshot, stable generation settings,
+monotonic version, and sliding expiration. It does not rewrite projects or
+generation history. Rollback follows the additive forward-fix rule; a prior
+application can ignore the table while retained draft rows expire naturally.
+
+`migrations/0009_m6_credit_ledger.sql` is additive. It adds immutable
+`PriceVersion` rows; owner/unit `CreditAccount` caches; append-only signed
+`CreditLedgerEntry` rows; and nullable quoted-price/reservation links on
+existing generation records. It seeds version 1 of the accepted 10-credit
+Banana 2 price separately for 1K, 2K, and 4K, and appends one non-expiring
+100-credit `welcome-v1` grant for every existing owner. New owners receive the
+same idempotent grant during identity provisioning. It does not seed a payment-
+provider identifier. Database triggers reject price or ledger update/delete,
+while unique indexes enforce one reservation, one settle-or-release, and one
+full refund in the current single-output slice. Existing pre-M6 jobs remain
+valid and unmetered; every newly created job uses the live runtime meter.
+Rollback uses a database snapshot or forward fix; deployed history is never
+removed to undo a ledger change.
+
+`migrations/0010_m6_payment_sandbox.sql` is additive. It seeds version 1 of the
+accepted `credits-500-cny` product with CNY 1000 minor units and 500 credits,
+then adds `PaymentOrder` snapshots and append-only `PaymentWebhookEvent`
+evidence. Product rows and webhook events reject update/delete. Order identity,
+ownership, product, money, credit, provider, and idempotency snapshots cannot be
+rewritten or deleted; the current state machine permits only `pending -> paid`.
+A partial unique index permits one payment-authored ledger grant per public
+order. Rollback uses a snapshot or forward fix rather than deleting financial
+history.
+
+The pre-checkout manual payment command requires no additional schema. It uses
+`provider = 'manual'`, stores the independently verified receipt/reference as
+`provider_order_id`, snapshots the active immutable payment product, and links
+the paid order to one append-only operator-authored grant. The existing
+provider/order and account/idempotency constraints make exact replay a no-op and
+prevent the same receipt from funding another order. Manual payment evidence is
+an operational bridge, not a browser-writable balance or a fake provider event.
 
 ## Entities
 
@@ -20,6 +110,29 @@ Identity, locale, status, created/updated timestamps. Authentication provider
 data remains separate from product profile data. Current plan, entitlements,
 and credit are resolved through their own records rather than a browser-writable
 user balance.
+
+### AuthIdentity
+
+External issuer and subject mapped to one internal GoodGood owner, with creation
+and last-authenticated timestamps. Provider claims do not replace the internal
+user ID in domain tables. The current seeded identities are local-only fixtures;
+production identities are provisioned from the accepted Authing OIDC issuer
+only after signed-token and verified-email validation.
+
+### AuthLoginAttempt
+
+Hashed OIDC state, hash of the initiating browser's short-lived HttpOnly
+binding cookie, PKCE verifier, nonce, validated relative return path,
+expiration, consumption timestamp, and creation timestamp. State and browser
+binding must match in the same atomic one-time update before code exchange, so
+login CSRF, replay, and expired callbacks do not continue authentication.
+
+### AuthSession
+
+Owner and authentication-identity references, SHA-256 hash of an opaque
+GoodGood session token, expiration, revocation, last-seen, and creation
+timestamps. Raw session tokens and Authing/Google tokens are never stored in
+the database.
 
 ### PlanEntitlement
 
@@ -32,6 +145,9 @@ or price IDs are integration data, not GoodGood plan IDs.
 Immutable product price definition for a stable GoodGood model, resolution,
 count, plan context, and effective interval. A submitted batch stores the
 quoted price version and amount so later price changes do not rewrite history.
+When more than one immutable version is effective, the server deterministically
+quotes the latest `effective_from`, then the highest version. No price amount is
+accepted from the browser.
 
 ### CreditAccount
 
@@ -46,24 +162,66 @@ entry with owner/account, signed amount, idempotency key, reason, related job,
 payment or prior entry, actor, and timestamp. Adjustments compensate with new
 entries; existing entries are never edited or deleted.
 
+Signed amounts have one exact interpretation: `reserve` moves a negative amount
+from available to reserved; `settle` removes a negative amount from reserved;
+`release` moves a positive amount from reserved back to available; `grant` and
+`refund` add a positive amount to available. Cached balances and the append are
+one transaction. An operation hash makes same-key/same-input replay a no-op and
+same-key/different-input replay a conflict.
+
+### PaymentProductVersion
+
+Immutable stable product ID, version, currency, exact minor-unit amount, credit
+unit/amount, effective interval, and creation time. The active version is chosen
+server-side; an order request never supplies either amount.
+
 ### PaymentOrder
 
 Owner, GoodGood product/price snapshot, money amount/currency, payment provider
 and provider order ID, state, idempotency key, related ledger entries, and
-created/paid/closed timestamps. Payment webhooks are untrusted until their
-signature and replay protections pass.
+created/updated/paid timestamps. The current fake-sandbox lifecycle is
+`pending -> paid`; product and amount snapshots are immutable, reads use only
+the owner-scoped public ID, and paid credit is linked to exactly one ledger
+grant. Before public checkout, the `manual` provider uses an externally verified
+business receipt as its provider order ID; the fake sandbox and later Alipay
+adapters retain their own provider identifiers.
+
+### PaymentWebhookEvent
+
+Append-only provider/event ID, event type, exact payload hash, related order,
+whether this event applied the paid transition, and receipt time. Payment
+webhooks are untrusted until timestamp, HMAC signature, amount, currency, and
+replay protections pass.
+
+### CreationDraft
+
+One unprojected root composer draft per authenticated owner: prompt, ordered
+ready-reference snapshot, stable model/ratio/resolution/count, monotonic
+version, 30-day sliding expiry, and timestamps. The version is an optimistic
+write precondition so a stale tab cannot silently replace a newer draft.
+Unexpired reference snapshots protect their private objects from reference
+cleanup. Saving as a project or explicitly starting a clean creation removes
+the root draft without changing the saved project.
 
 ### CreationSession
 
 A temporary or project-backed creative context. Contains owner, optional
 project ID, current prompt draft, selected model/ratio/resolution/count, and
-created/updated timestamps.
+created/updated timestamps. The current local slice materializes only the
+minimal unprojected `CreationDraft` and the resumable `Project`; a fuller
+session table spanning project edits, batches, and transient generation state
+remains deferred.
 
 ### ReferenceAsset
 
-Owner, object key, MIME/type metadata, dimensions, byte size, ordinal, upload
-status, moderation status, and timestamps. Ordinal is stable within a submitted
-batch and maps to `参考图 1…10`.
+Owner, private object key, original filename, declared and decoded MIME type,
+declared and verified byte size, decoded dimensions, checksum, upload expiry,
+`pending | ready | rejected | expired` upload state, moderation state, error
+code, cleanup eligibility and lease, attempt/failure evidence, terminal private
+object deletion time, and timestamps. Ordinal is not global asset metadata:
+stable `参考图 1…10`
+order is stored in each submitted `GenerationBatch.reference_snapshot` with the
+reference ID and object key.
 
 ### GenerationJob
 
@@ -78,6 +236,10 @@ One dispatch attempt for a generation job: ordinal, route version, provider,
 provider model/version, provider task ID, state, request/result hashes,
 normalized error, estimated and actual provider cost, and timestamps. A retry
 or fallback adds an attempt; it does not overwrite prior execution evidence.
+For the non-idempotent O1Key route, `submitted` is persisted immediately before
+the generation POST. A `submitted` attempt without `provider_task_id` is
+intentionally unrecoverable and becomes `SUBMISSION_UNKNOWN`; reclaiming it
+must not create another upstream task.
 
 ### GenerationBatch
 
@@ -92,8 +254,11 @@ aspect ratio, byte size, moderation state, visibility, and timestamps.
 
 ### Project
 
-Named resumable context with owner, cover asset, latest state snapshot, status,
-and timestamps. Project batches are ordered by submission time.
+Named resumable context with owner, create idempotency key/hash, latest prompt,
+ordered ready-reference snapshot, model/ratio/resolution/count, status,
+version, and timestamps. Current covers are derived from the newest successful
+project batch rather than stored separately. Batches reference the project and
+are restored newest-first by submission time.
 
 ### ProjectAsset
 
@@ -107,19 +272,39 @@ Contains ordering and membership metadata; never duplicate image bytes.
 - M3 user retry creates a new batch/job linked through `retry_of_job_id` and
   copies the failed immutable input server-side; each job keeps its own
   attempt evidence. Later provider fallback within one job adds another attempt.
+- An explicit retry of an O1Key `SUBMISSION_UNKNOWN` job is a new upstream
+  submission and may be charged independently. New API usage records remain
+  external reconciliation evidence until M6 persists actual provider cost.
 - Provider fallback stays within explicitly equivalent routes for the selected
   GoodGood model; it never silently changes the product model family.
 - Price snapshots and settled ledger entries are immutable.
 - Generation submission reserves credit in the same logical transaction as the
   batch/job creation. Success settles, failure releases, and partial success
   follows an explicit per-output policy.
+- The M6 live path reserves 10 credits in the same transaction as a new Banana
+  2 job, settles after the accepted Asset is inserted, and releases when the
+  job reaches a no-Asset failure. `SUBMISSION_UNKNOWN` releases the customer's
+  reservation but does not infer or record an upstream refund.
+- The authenticated billing read projects cached available/reserved balances
+  and active price rows into decimal strings. Internal account, owner, ledger,
+  and provider-route identifiers never enter the browser contract; the read
+  does not create an account or grant credit.
 - Browser values and provider usage reports never directly mutate balances.
 - Ledger, payment, queue, and callback writes are idempotent.
+- Project creation is owner-scoped and idempotent; batches cannot be reassigned
+  from one project to another by a browser request.
 - Batch order is submission order, newest first in UI.
 - Asset aspect ratio and pixel dimensions are source data, not inferred from CSS.
 - Deleting a project does not automatically delete globally retained assets.
 - Object deletion is asynchronous and only occurs after authorization and
   reference checks.
+- A reference present in any generation or project snapshot is protected from
+  cleanup. Snapshot writers serialize with cleanup and revalidate readiness in
+  the same transaction so a newly referenced object cannot be claimed by a
+  concurrent cleanup run.
+- Reference cleanup deletes private bytes before setting `object_deleted_at`.
+  A failed deletion retains the evidence row and `OBJECT_DELETE_FAILED` for a
+  later bounded retry; repeated successful execution is a no-op.
 
 ## UI label mapping
 

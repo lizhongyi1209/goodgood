@@ -49,6 +49,10 @@ individual icon. Upload, settings, and send align to the same 40px box.
   light-to-deep Palace Red gradient.
 - Avoid persistent navigation shadows. Composer may use a very shallow neutral
   elevation to remain legible while sticky.
+- Authentication recovery is a compact white card over a softened canvas, not
+  a marketing hero. It uses one neutral dark primary action for the combined
+  Google / email-code hosted flow; authentication errors use restrained Palace
+  Red copy and fill.
 
 ## Brand and icons
 
@@ -71,8 +75,24 @@ individual icon. Upload, settings, and send align to the same 40px box.
   fixed while the textarea grows.
 - Reference thumbnails use a horizontal tray, 46px square crops, and individual
   removal. Do not show redundant `参考图` labels or totals.
+- Uploading and failed references reuse the thumbnail silhouette with a quiet
+  opacity treatment and centered status icon; do not introduce a detached
+  upload panel or success banner.
 - Parameter group order: model; aspect ratio; output group with resolution above
   generation count.
+- The per-image credit quote is quiet 11px metadata beside the settings/send
+  actions. It has no filled chip, border, icon, or payment emphasis.
+
+## Account credit
+
+- Desktop uses a compact two-line summary above the existing account card:
+  available credit first, launch price and approximate remaining image count
+  second. A nonzero reservation appears only as restrained processing metadata.
+- Mobile uses one small neutral balance pill in the existing top bar. It is
+  context, not a primary action.
+- Loading and retry states keep the same footprint so account chrome does not
+  jump. Do not add a wallet panel, pricing hero, or checkout treatment before
+  a real payment provider and customer checkout flow are accepted.
 
 ## Image presentation
 
@@ -83,6 +103,12 @@ individual icon. Upload, settings, and send align to the same 40px box.
 - The image group has a stable visual height within a batch; width follows ratio.
 - Object cropping is acceptable only for a deliberately fixed thumbnail surface;
   full detail must show the complete asset.
+
+## Destructive confirmation
+
+- Use one compact modal only when an in-app action would clear meaningful
+  unsaved creation state. Keep `继续编辑` visually quiet and the explicit discard
+  action Palace Red; do not use a generic browser confirmation.
 
 ## Motion
 

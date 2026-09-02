@@ -1,3 +1,4 @@
+import { inspectAuthenticationConfiguration } from "@/server/auth/config.mjs";
 import { inspectGenerationConfiguration } from "@/server/generation/config.mjs";
 import {
   getGenerationResources,
@@ -12,8 +13,9 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function GET() {
+  const authentication = inspectAuthenticationConfiguration();
   const configuration = inspectGenerationConfiguration();
-  if (!configuration.configured) {
+  if (!authentication.configured || !configuration.configured) {
     return Response.json(
       {
         checks: { configuration: "missing", runtime: "ok" },

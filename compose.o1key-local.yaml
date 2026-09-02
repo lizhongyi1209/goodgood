@@ -1,0 +1,16 @@
+services:
+  worker:
+    environment:
+      GENERATION_API_BASE_URL: https://cf-api.o1key.com
+      GENERATION_API_KEY: ""
+      GENERATION_API_KEY_FILE: /run/secrets/goodgood_o1key_api_key
+      GENERATION_PROVIDER_KIND: o1key
+      GENERATION_POLL_INTERVAL_MS: "1000"
+      GENERATION_POLL_TIMEOUT_MS: "180000"
+      GENERATION_REQUEST_TIMEOUT_MS: "30000"
+    secrets:
+      - goodgood_o1key_api_key
+
+secrets:
+  goodgood_o1key_api_key:
+    file: ${GOODGOOD_O1KEY_API_KEY_FILE:?Set GOODGOOD_O1KEY_API_KEY_FILE through the O1Key local runner}

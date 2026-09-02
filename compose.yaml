@@ -27,8 +27,10 @@ x-goodgood-environment: &goodgood-environment
   OBJECT_STORAGE_ACCESS_KEY_ID: ${GOODGOOD_LOCAL_OBJECT_STORAGE_ACCESS_KEY:-goodgood-local}
   OBJECT_STORAGE_SECRET_ACCESS_KEY: ${GOODGOOD_LOCAL_OBJECT_STORAGE_SECRET_KEY:-goodgood-local-only}
   OBJECT_STORAGE_FORCE_PATH_STYLE: "true"
+  OBJECT_STORAGE_UPLOAD_ALLOWED_ORIGINS: "http://127.0.0.1:${GOODGOOD_WEB_PORT:-3000},http://localhost:${GOODGOOD_WEB_PORT:-3000}"
   GENERATION_API_BASE_URL: http://mock-generation:3002
   GENERATION_API_KEY: ${GOODGOOD_LOCAL_GENERATION_API_KEY:-goodgood-local-only}
+  GENERATION_PROVIDER_KIND: mock
 
 services:
   web:
@@ -37,6 +39,14 @@ services:
     environment:
       <<: *goodgood-environment
       GOODGOOD_PROCESS: web
+      GOODGOOD_ALLOW_LOCAL_AUTH: "true"
+      GOODGOOD_AUTH_MODE: local
+      GOODGOOD_AUTH_ISSUER: goodgood-local
+      GOODGOOD_AUTH_COOKIE_NAME: goodgood_local_session
+      GOODGOOD_LOCAL_AUTH_TOKENS: "${GOODGOOD_LOCAL_AUTH_TOKENS:-goodgood-local-user-a-token=local-user-a,goodgood-local-user-b-token=local-user-b}"
+      GOODGOOD_LOCAL_AUTH_DEFAULT_TOKEN: "${GOODGOOD_LOCAL_AUTH_DEFAULT_TOKEN:-goodgood-local-user-a-token}"
+      GOODGOOD_FAKE_PAYMENT_ENABLED: "true"
+      GOODGOOD_FAKE_PAYMENT_WEBHOOK_SECRET: "${GOODGOOD_FAKE_PAYMENT_WEBHOOK_SECRET:-goodgood-fake-payment-local-only}"
       HOST: 0.0.0.0
       PORT: 3000
     ports:
@@ -97,6 +107,46 @@ services:
       DATABASE_URL: postgresql://goodgood:${GOODGOOD_LOCAL_POSTGRES_PASSWORD:-goodgood-local-only}@postgres:5432/goodgood
       GOODGOOD_PROCESS: migrate
     depends_on:
+      postgres:
+        condition: service_healthy
+
+  reference-cleanup:
+    <<: *goodgood-app
+    profiles: ["maintenance"]
+    entrypoint: ["node", "server/runtime/reference-cleanup.mjs"]
+    command: []
+    restart: "no"
+    healthcheck:
+      disable: true
+    environment:
+      <<: *goodgood-environment
+      GOODGOOD_PROCESS: reference-cleanup
+      REFERENCE_CLEANUP_BATCH_SIZE: ${REFERENCE_CLEANUP_BATCH_SIZE:-100}
+      REFERENCE_CLEANUP_GRACE_MINUTES: ${REFERENCE_CLEANUP_GRACE_MINUTES:-60}
+      REFERENCE_CLEANUP_LEASE_SECONDS: ${REFERENCE_CLEANUP_LEASE_SECONDS:-300}
+      REFERENCE_ORPHAN_RETENTION_DAYS: ${REFERENCE_ORPHAN_RETENTION_DAYS:-30}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      object-storage:
+        condition: service_healthy
+
+  manual-payment:
+    <<: *goodgood-app
+    profiles: ["maintenance"]
+    entrypoint: ["node", "server/runtime/manual-payment.mjs"]
+    command: []
+    restart: "no"
+    healthcheck:
+      disable: true
+    environment:
+      DATABASE_URL: postgresql://goodgood:${GOODGOOD_LOCAL_POSTGRES_PASSWORD:-goodgood-local-only}@postgres:5432/goodgood
+      GOODGOOD_PROCESS: manual-payment
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
       postgres:
         condition: service_healthy
 

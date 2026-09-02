@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import Image from "next/image";
+import { PrivateObjectImage } from "@/components/ui/private-object-image";
 
 import { Slider } from "@/components/ui/slider";
 import {
@@ -31,8 +32,10 @@ import {
 import nanoBananaIcon from "@lobehub/icons-static-svg/icons/nanobanana-color.svg";
 import openAiIcon from "@lobehub/icons-static-svg/icons/openai.svg";
 import {
+  CircleAlert,
   ChevronDown,
   ImagePlus,
+  LoaderCircle,
   Plus,
   SlidersHorizontal,
   X,
@@ -48,6 +51,8 @@ export type CreationComposerProps = Readonly<{
   count: GenerationCount;
   drawerOpen: boolean;
   isGenerating: boolean;
+  billingLabel: string;
+  billingDescription: string;
   onPromptChange: (prompt: string) => void;
   onReferenceFiles: (files: readonly File[]) => void;
   onRemoveReference: (reference: GenerationReference) => void;
@@ -98,6 +103,8 @@ export function CreationComposer({
   count,
   drawerOpen,
   isGenerating,
+  billingLabel,
+  billingDescription,
   onPromptChange,
   onReferenceFiles,
   onRemoveReference,
@@ -154,7 +161,7 @@ export function CreationComposer({
             ref={referenceInputRef}
             className="reference-input"
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp"
             multiple
             disabled={references.length >= MAX_GENERATION_REFERENCES}
             onChange={handleReferenceChange}
@@ -180,6 +187,13 @@ export function CreationComposer({
           }}
         />
         <div className="prompt-actions">
+          <span
+            className="composer-price"
+            aria-label={billingDescription}
+            title={billingDescription}
+          >
+            {billingLabel}
+          </span>
           <button
             className={`prompt-action settings-toggle ${drawerOpen ? "active" : ""}`}
             aria-label="展开生成参数"
@@ -203,8 +217,28 @@ export function CreationComposer({
         <div className="reference-tray" aria-label="已添加的参考图片">
           <div className="reference-thumbnails">
             {references.map((image, index) => (
-              <div className="reference-thumbnail" key={image.id} title={image.name}>
-                <Image src={image.url} alt={`参考图 ${index + 1}`} fill unoptimized sizes="46px" />
+              <div
+                className={`reference-thumbnail ${image.status}`}
+                key={image.id}
+                title={image.errorMessage ?? image.name}
+              >
+                <PrivateObjectImage src={image.url} alt={`参考图 ${index + 1}`} />
+                {image.status !== "ready" && (
+                  <span
+                    className="reference-thumbnail-status"
+                    aria-label={
+                      image.status === "uploading"
+                        ? `参考图 ${index + 1} 正在上传`
+                        : `参考图 ${index + 1} 上传失败`
+                    }
+                  >
+                    {image.status === "uploading" ? (
+                      <LoaderCircle size={15} />
+                    ) : (
+                      <CircleAlert size={15} />
+                    )}
+                  </span>
+                )}
                 <button
                   className="reference-thumbnail-remove"
                   aria-label={`移除参考图 ${index + 1}`}

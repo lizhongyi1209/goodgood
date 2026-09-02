@@ -53,19 +53,58 @@ Implemented in the interactive frontend:
 - Prompt and reference composer.
 - Expandable parameter settings.
 - Three visible model choices; the M3 durable local path currently accepts the
-  Nano Banana 2 / 4:5 / 2K / one-image default through the HTTP mock provider.
+  Nano Banana 2 / 1:1 / 1K / one-image default through the HTTP mock provider.
 - Polled loading, completion, inline failure, and retry for that M3 path.
+- The M4 backend boundary now authenticates a provider-neutral external
+  identity and scopes generation and generated-asset reads to its internal
+  GoodGood owner. The production-shaped adapter uses standard OIDC for an
+  Authing-hosted Google / email verification-code login and then issues a
+  revocable GoodGood session; local Compose retains explicit test identities.
+- Reference thumbnails now use an owner-scoped signed direct-upload lifecycle;
+  the local backend validates the decoded JPEG/PNG/WebP before allowing up to
+  10 ready references into the durable generation snapshot. A manual, bounded
+  cleanup role protects every project/generation snapshot and records
+  object-deletion or retry evidence without deleting database history.
+- Projects now persist in the local PostgreSQL slice with owner-scoped,
+  idempotent save; restore returns the latest prompt, ordered ready references,
+  parameters, and batches, and project continuation automatically associates
+  new batches.
+- The authenticated root creation surface now restores and debounces one
+  owner-scoped prompt/reference/settings draft. It expires after 30 days,
+  detects stale-tab writes, and never overwrites a saved project.
+- Creation, project, and asset navigation now use stable, refreshable URLs;
+  `/create` and the compatible `/` entry share one creation state, while image
+  detail preserves its creation or asset-library source scope through browser
+  back/forward navigation.
 - Continuous creation stream, assets, gallery, projects, and image detail.
 - Responsive layout and keyboard/wheel detail navigation.
+- M6 prices Nano Banana 2 at 10 credits per image for 1K, 2K, and 4K and grants
+  each owner 100 non-expiring welcome credits once. New generation jobs reserve
+  credit transactionally, accepted Assets settle it, and no-Asset failures
+  release it. The authenticated workspace now presents exact available credit,
+  reserved work, the launch quote, and approximate remaining images without
+  exposing provider channels. The accepted CNY 10 / 500-credit product,
+  idempotent owner orders, and exactly-once fake-sandbox fulfillment now work
+  locally. Before the ICP-filed domestic Alipay checkout exists, a trusted
+  server operator can record an already received payment against that same
+  immutable product/order/ledger path; there is no customer checkout or public
+  balance-mutation endpoint yet.
 
 Not production-ready yet:
 
-- User authentication and authorization.
+- Secure public-HTTPS callback/logout verification, explicitly deferred by the
+  operator to the M7 staging gate, and the separately deferred reverse
+  association order. All requested real-Authing loopback edge cases now pass.
+  Password and phone recovery are intentionally absent because those sign-in
+  methods are not offered.
 - Real model API calls and provider failover.
-- Production identity-bound database/object-storage persistence beyond the
-  narrow server-owned local M3 generation records.
-- Billing, points, quotas, moderation, and abuse controls.
-- Real file upload validation and processing.
+- A fuller creation-session policy covering project edits, active jobs, and
+  cross-device session history beyond the minimal root draft.
+- Customer checkout UI, the selected domestic Alipay sandbox and fulfillment
+  adapter after ICP filing, quotas, moderation, and abuse controls.
+- Production object-storage lifecycle alignment, moderation, approved retention
+  periods, cleanup scheduling/alerting, and staging capacity evidence beyond the
+  locally verified manual cleanup path.
 - Search, Explore, Moodboards, collaboration, and sharing.
 
 ## Product principles

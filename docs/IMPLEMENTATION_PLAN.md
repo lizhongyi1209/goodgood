@@ -1,9 +1,12 @@
 # Production implementation plan
 
-- Last synchronized: 2026-08-30
-- Current phase: M3 is completed; M4 is next
-- Current objective: replace the server-owned M3 test identity with an
-  authenticated owner context and prove owner isolation before adding uploads
+- Last synchronized: 2026-09-02
+- Current phase: M6 is complete locally; pricing, credit accounting, account
+  presentation, paid-product/order persistence, fake-sandbox settlement, and a
+  trusted manual-payment bridge are verified
+- Current objective: begin M7 staging preparation while the operator progresses
+  ICP filing/domain work; keep customer checkout disabled until domestic
+  Alipay merchant approval and sandbox credentials exist
 
 ## Purpose and update contract
 
@@ -29,10 +32,15 @@ this file owns the current handoff state.
   idempotent Node API, PostgreSQL batch/job/outbox transaction, Valkey delivery,
   worker, authenticated HTTP mock provider, RustFS object write, Asset record,
   signed object read, browser polling, creation stream, and asset-library cue.
-- The physical PostgreSQL schema covers the server-owned test user, generation
-  batches, jobs, attempts, assets, append-only job events, and queue outbox. The
-  versioned migration records a checksum and tolerates rerun; Compose runs it as
-  an explicit one-shot release step before web and worker start.
+- The physical PostgreSQL schema covers users, external auth identities,
+  one-time OIDC login attempts, hashed/revocable GoodGood sessions, reference
+  assets, generation batches, jobs, attempts, generated assets, append-only job
+  events, queue outbox, owner-scoped projects with batch association, and one
+  expiring root creation draft per owner, immutable price versions, exact
+  credit-account caches, and append-only credit entries. All ten versioned migrations
+  record checksums and tolerate rerun;
+  Compose runs them as an explicit one-shot release step before web and worker
+  start.
 - Submission idempotency is owner-scoped and rejects key reuse with a different
   payload. Outbox dispatch may duplicate safely. Worker leases, reconciliation,
   deterministic object keys, terminal guards, and unique asset/attempt indexes
@@ -43,38 +51,460 @@ this file owns the current handoff state.
   inline failure preserves the immutable snapshot. Retry copies the failed
   snapshot server-side into a linked durable job rather than trusting changed
   browser values.
-- M3 intentionally accepts only the local test identity, `nano-banana-2`, 4:5,
-  2K, one image, and no references. The composer retains the confirmed product
-  controls, but unsupported M3 combinations receive a local validation message.
-- Projects, reference uploads, production users/authorization, most asset
-  library state, and saves remain in React memory. Billing and the US generation
-  gateway are not implemented.
+- M4 now resolves a provider-neutral external `(issuer, subject)` identity to an
+  internal GoodGood owner before every generation read/write. The fixed M3
+  owner constant is gone. Local Compose has two explicit test identities and an
+  HttpOnly default local session; missing/invalid sessions return 401, disabled
+  accounts return 403, and cross-owner job/retry/asset lookups return 404. The
+  local adapter now additionally requires `GOODGOOD_ALLOW_LOCAL_AUTH=true`,
+  while OIDC mode and the staging preflight reject that switch to prevent test
+  identities from leaking into a real environment.
+- ADR 0007 selects an Authing-hosted login page with only Google and passwordless
+  email verification-code registration/login; Auth0 Japan, self-hosting,
+  passwords, phone/SMS, and other social providers are excluded. The backend
+  implements OIDC discovery and Authorization Code + PKCE with state, nonce,
+  same-browser HttpOnly binding, signed issuer/audience token validation, and a
+  required verified email. First login provisions `(issuer, subject)` to a
+  stable GoodGood owner without silent email merging, then issues an opaque
+  GoodGood session whose token is only stored as a hash. Logout revokes it;
+  provider tokens never become browser API credentials. Both production Node
+  callback entry points now expire the one-time browser-binding cookie after
+  success, cancellation, or any invalid/expired callback without clearing an
+  otherwise valid GoodGood session. HTTPS OIDC configuration now also fails at
+  process startup unless the GoodGood cookie is Secure and `__Host-` prefixed.
+- M4 now includes a secret-redacting `npm run auth:preflight` staging gate. It
+  fails closed unless real discovery proves the exact issuer, HTTPS endpoints
+  and callback, `/api/auth/callback`, Secure `__Host-` cookies, Authorization
+  Code, S256 PKCE, requested scopes, supported server-side client
+  authentication, RS256 ID-token signing, and the generated authorization
+  request contract. Missing token-endpoint authentication metadata now follows
+  the OIDC `client_secret_basic` default; unsupported methods are rejected.
+  The runtime repeats this capability gate before authorization and exchange,
+  refreshes discovery after at most five minutes, and validates discovery before
+  persisting a login attempt so provider drift cannot create unusable state.
+  Hosted-page methods, Google configuration, email delivery, and same-subject
+  cross-method association remain named manual staging evidence because
+  discovery cannot prove provider-console controls.
+- On 2026-08-31, the real isolated Authing tenant's public discovery passed the
+  GoodGood loopback preflight for exact issuer, Authorization Code, S256 PKCE,
+  requested scopes, supported server-side client authentication, RS256 support,
+  endpoint transport, authorization request parameters, and hosted logout
+  construction. The operator separately confirmed RS256 is selected in the
+  application console. A hosted-page screenshot showed only email verification
+  code and one Google button, with no password, phone, or other social method.
+  A subsequent Google-first loopback login used the real application secret and
+  completed consent, authorization-code exchange, RS256 token verification,
+  verified-email provisioning, callback, and GoodGood session issuance. A
+  redacted database check found exactly one real identity, one real owner, and
+  one active real session. The operator then logged out through GoodGood and
+  completed email verification-code login with the same address. A second
+  redacted check still found one Authing subject, one external identity, and one
+  GoodGood owner; two sessions existed with the Google session revoked and only
+  the email session active. This proves email delivery, email token exchange,
+  GoodGood logout revocation, and Google-first same-subject association.
+  At the operator's request, the reverse email-first then Google order is
+  deferred rather than counted as passing evidence.
+- The real-tenant local launcher now accepts only the public issuer, application
+  ID, and optional loopback port as command arguments. It requests the Authing
+  application secret with invisible terminal input, mounts a permission-limited
+  temporary file into only the web container, runs the OIDC preflight, and
+  removes the file when the stack stops or startup fails. The base Compose path
+  remains fixed to explicitly opted-in local identities; the separate override
+  disables them and permits an insecure cookie only for an explicitly allowed
+  loopback callback. Production HTTPS still requires `Secure` and `__Host-`.
+  The launcher cleanup reuses the same public Compose interpolation values, so
+  a failed start can stop its partial stack without requiring credentials to be
+  re-entered; named data volumes remain intact.
+- Explicit OIDC logout now revokes the hashed GoodGood session and expires its
+  cookie before returning a server-constructed Authing hosted-logout URL to the
+  browser for top-level navigation. The return target is fixed to the GoodGood
+  origin derived from the login callback; no ID Token is retained and callers
+  cannot supply a redirect. Local mode keeps its no-provider `204` behavior.
+  Real Authing session termination and its logout callback allowlist still
+  require staging evidence.
+- M4 now persists owner-scoped `ReferenceAsset` upload intents and returns
+  short-lived signed PUT URLs for direct browser-to-RustFS transfer. Completion
+  re-reads the private object and uses Sharp to verify declared size, decoded
+  JPEG/PNG/WebP type, complete pixels, 64–8192 dimensions, 40 MP, and the 20 MB
+  limit before marking it ready. Rejected uploads remain auditable; generation
+  accepts at most 10 ready references owned by the caller, snapshots their
+  stable order/object keys, and gives the worker fresh signed read URLs.
+- M4 now persists owner-scoped projects with idempotent creation. Save verifies
+  every ready reference and submitted job against the authenticated owner,
+  transactionally associates batches, and rejects reassignment. Restore returns
+  the latest prompt, ordered ready references, stable parameters, and all jobs
+  newest-first with fresh private-object signatures. Continuing generation in
+  a project verifies owner access before reference resolution and updates the
+  project snapshot in the same transaction as the new batch/job. Project list
+  loading, empty, read failure, and drawer save failure preserve useful UI
+  state; `新建创作` remains available from the project view and restored context.
+- `/projects` and `/projects/:projectId` now mount the shared workspace over the
+  owner-scoped project API. Stable IDs are encoded in URLs; direct access and
+  refresh wait for authentication before restore; native history supports
+  back/forward without discarding an untouched composer; and detail-read failure
+  retains the URL with retry, return, and `新建创作` exits. Saving a project
+  replaces the current history entry with its stable detail URL, and login keeps
+  the requested route as its validated return path. A local browser smoke passed
+  index refresh, detail refresh/failure recovery, back/forward, and preservation
+  of an unsaved prompt across project-index navigation without console errors.
+  After rebuilding the secure Authing loopback stack with its named volumes, the
+  operator opened the existing persisted project at its stable detail URL and
+  confirmed refresh plus browser back/forward all restore it correctly under the
+  real GoodGood session.
+- In-app new-session clearing and different-project restore now compare the
+  current prompt, ordered reference/status set, stable generation settings, and
+  unprojected work against the last clean or persisted composer checkpoint.
+  Meaningful differences open a compact explicit-discard dialog; `继续编辑`
+  preserves all state, confirmed discard performs the requested transition, and
+  active generation blocks it. Returning to the same loaded project does not
+  re-read over current edits. Unit coverage passes for clean, prompt, settings,
+  reference order, and unprojected work; a local browser smoke passed cancel,
+  explicit discard, clean-state bypass, URL behavior, and console-error checks.
+  On 2026-09-01, after restarting Docker Desktop and rebuilding the real Authing
+  loopback stack, the operator reported the planned prompt-edit/new-creation and
+  clean-session/project-restore confirmation smoke completed successfully.
+- The authenticated root creation surface now restores and debounces one
+  owner-scoped draft containing prompt, ordered ready references, and stable
+  settings. The row expires 30 days after its latest write and uses a monotonic
+  optimistic version. A stale tab pauses autosave and offers explicit
+  `保留当前内容` / `恢复云端草稿` recovery; project detail never hydrates from or
+  writes to the root draft, and saving as a project or confirming a clean
+  creation clears it. Load/save errors preserve the current page. Unit, browser
+  boundary, isolated PostgreSQL/RustFS integration, refresh restore, and
+  two-tab conflict/recovery smokes all passed on 2026-09-01.
+- `/create` now mounts the same shared workspace as the compatible `/` entry.
+  Product navigation and confirmed clean-creation transitions use `/create`
+  without duplicating React state; direct load, refresh, and native Back/Forward
+  preserve the composer. Route/unit coverage and a local browser smoke passed
+  with zero console errors on 2026-09-01.
+- A real-Authing-owner loopback smoke now covers one decoded and accepted
+  reference, one supported `nano-banana-2` / 4:5 / 2K / single-output batch, one
+  succeeded 100% job, one accepted private generated asset, and one active
+  project. Redacted database checks prove every record uses the same real owner,
+  the reference snapshot resolves to that owner's ready reference, generated
+  asset metadata is complete, the batch is associated to the project, and the
+  project snapshot exactly matches the immutable batch snapshot. After logout
+  and reauthentication, the browser still listed and restored the saved project.
+- The asset-library hydration defect exposed by that smoke is now implemented:
+  an authenticated `GET /api/assets` repository/API boundary requires the job,
+  batch, and accepted generated asset to share the authenticated owner, returns
+  only successful outputs newest-first, and signs private reads freshly. The
+  authenticated UI loads durable batches after session resolution and on asset
+  navigation, with explicit loading, empty, failure, and retry states. Prototype
+  fixtures remain confined to preview mode, and the in-memory completion path
+  deduplicates against a later durable reload. After rebuilding the secure
+  Authing loopback stack without deleting its named volumes, the operator
+  logged out, reauthenticated, opened the asset library, and confirmed that the
+  previously stored generated asset reappeared with its signed private read.
+- The visible asset library and image detail are now addressable at `/assets`
+  and `/assets/:assetId`. Opening detail preserves whether its rail came from
+  creation or the asset library, plus the asset mode and source scroll position;
+  wheel, arrow, and rail changes replace the stable asset-ID URL rather than
+  growing history. Close/Back restores the source, Forward and direct refresh
+  restore detail, and a missing/inaccessible ID retains its URL with retry and
+  return recovery. A 2026-09-01 preview-browser smoke passed batch-to-gallery
+  state retention, detail open, arrow-key URL replacement, close, Forward,
+  direct refresh, missing-ID recovery, and zero console errors.
+  The operator then rebuilt the real Authing loopback stack against its retained
+  named volumes and reported the persisted `/assets` and `/assets/:assetId`
+  checklist passing, including mode retention, refresh, arrow/wheel URL changes,
+  Back/Forward, and missing-ID recovery.
+- Bounded reference retention is now implemented as an opt-in one-shot
+  maintenance role. Its default is a read-only preview; only explicit
+  `--execute` stages eligible expired/rejected/old-unreferenced rows behind a
+  grace window, claims at most the configured batch with expiring leases,
+  deletes private bytes first, and then records terminal evidence. Failed
+  storage deletion keeps `OBJECT_DELETE_FAILED` retry evidence. Generation and
+  project snapshot writes share a PostgreSQL lifecycle lock with cleanup and
+  revalidate ready rows inside their write transaction; generation, project,
+  and unexpired creation-draft snapshots are checked again during staging and
+  claim. Unit and isolated PostgreSQL/RustFS
+  integration tests passed object deletion, protected-reference survival, and
+  repeated-run idempotency. Container dry-run and explicit execution entry
+  points both passed; automatic scheduling remains disabled.
+- The durable generation capability is now limited to `nano-banana-2`, 1:1,
+  1K, and one output for the faster M5 MVP, and accepts up to 10 validated
+  references. The composer shows restrained uploading/failure states and blocks
+  submission until every retained reference is ready.
+- The isolated Authing application, Google connection, hosted login controls,
+  account-association setting, and RS256 selection now exist outside the
+  repository. Google and email-code token exchange, email delivery, first-login
+  provisioning, repeat account login, Google-first same-subject association,
+  and GoodGood session revocation now pass on loopback. Email-first association
+  and public HTTPS callback/logout remain unverified. Operator-observed
+  authorization cancellation, exact callback replay rejection, expired and
+  reused email-code rejection, fresh email-code success, and Authing
+  hosted-session exit now pass on loopback. In-app destructive clearing has
+  explicit unsaved-change
+  confirmation, and authenticated unprojected prompt/reference/settings now
+  survive reload through the bounded root draft. The
+  durable asset-list boundary and its real-session reauthentication smoke now
+  pass. Customer checkout is not implemented; generation metering, credit
+  balances, and the temporary operator payment-recording path are implemented.
+  The O1Key gateway route is implemented locally and has passed one real
+  credentialed URL-output smoke.
 - Web and worker readiness now check PostgreSQL, Valkey, the RustFS bucket, and
   mock-provider access. Liveness remains dependency-independent. The production
-  Node server owns M3 TCP-backed API requests; the existing Cloudflare/Sites
-  prototype cannot host this PostgreSQL/Valkey slice and is not M3 deployment
-  evidence.
-- The production image bundles the four Node runtime entry points with locked
-  dependencies instead of copying the full root production graph. The final
-  revision-labelled `goodgood:local` image is 91,162,899 bytes, runs as the
-  non-root `node` user with a read-only root filesystem, and has no host mounts.
-- On 2026-08-30, `npm run check:local` passed on Windows with Node.js 24.12.0:
-  lint, full TypeScript check, production build, and 25 tests completed with 24
-  passing and the opt-in Compose integration test skipped by design.
+  Node server owns the TCP-backed API and authenticated owner boundary; the
+  existing Cloudflare/Sites prototype cannot host this PostgreSQL/Valkey slice
+  and is not deployment evidence for this backend.
+- The production image bundles the six Node runtime entry points with locked
+  dependencies instead of copying the full root production graph. The latest
+  revision-labelled `goodgood:draft-test` verification image is 107,538,314
+  bytes, runs as the non-root `node` user with a read-only root filesystem, and
+  has no host mounts.
+- On 2026-09-02, `npm run check:local` passed on Windows with Node.js 24.12.0:
+  lint, full TypeScript check, production build, and 96 tests completed with 95
+  passing and the opt-in Compose integration test skipped by design. The
+  2026-08-31 checkpoint separately passed both the base Compose configuration
+  and the Authing loopback override configuration. The real tenant's public discovery also
+  passed all 16 loopback preflight checks without printing either client
+  credential; the later Google and email-code loopback token exchanges both
+  passed with the operator-entered secret kept outside the repository.
+- The rebuilt final Linux image loaded its copied Sharp native dependency as
+  the non-root `node` user and decoded a generated 64×64 PNG successfully.
 - The real Linux Compose stack reached healthy on temporary loopback ports.
-  `npm run stack:verify` passed, and the opt-in M3 integration test passed its
-  migration-rerun, success, signed asset read, idempotency conflict, duplicate
-  delivery, provider rejection, retry, timeout, and forced worker-restart cases.
-  Named test volumes remain available for continuity; they were not deleted.
+  `npm run stack:verify` passed on an isolated `127.0.0.1:3100` web override,
+  and the opt-in integration test passed all eight migration reruns,
+  missing-session rejection, signed reference PUT CORS,
+  decoded-image validation/rejection evidence, two-owner reference/job
+  isolation, referenced generation, signed reference/asset reads, project create
+  idempotency, signed project restore, newest-first ordering, project
+  continuation, cross-owner project denial, generation idempotency conflict,
+  duplicate delivery, provider rejection, retry, timeout, and forced
+  worker-restart cases plus owner-isolated draft save/read/delete, stale-version
+  conflict, reference cleanup, protected snapshots, cleared-draft reference
+  eligibility, and idempotent repeated execution. The latest draft verification
+  used an isolated `127.0.0.1:3300` Compose project; its containers, network,
+  and three disposable data volumes were removed afterward. The separate real-Authing
+  loopback stack and its retained named volumes remain healthy on port 3100.
+- The same Compose integration now also proves real PostgreSQL first-login
+  provisioning, hashed-session lookup, logout revocation, same-browser login
+  binding, local session/account endpoints, and rejection after revocation. A
+  local mock OIDC issuer proves signed token verification without any real
+  Authing, Google, or email secret. Browser inspection confirmed the no-env
+  preview, account card, and unchanged quiet creation state with no console
+  errors. Authing's default application domain is the accepted no-ICP path;
+  branded custom-domain setup is deferred.
 - The existing Vinext 0.0.50 `image-size` 2.0.2 advisory remains. M3 ingests only
-  the checked-in trusted mock image and validates content type/size; a tested
-  Vinext upgrade plus runtime-image scan is still required before untrusted
-  uploads or staging.
-- Next action: begin M4 with an authenticated identity adapter and owner-scoped
-  generation/asset read-write tests, replacing the fixed test-user context
-  before adding signed reference uploads or durable projects.
-- Blockers: none for the next identity-boundary slice. Production identity
-  provider selection must be recorded before M4 can be completed.
+  the checked-in trusted mock output. Reference validation does not use that
+  package: it decodes with the directly pinned Sharp 0.34.5 dependency and the
+  Linux image test passed. A tested Vinext upgrade plus runtime-image scan is
+  still required before staging.
+- Composer removal still only detaches the item immediately; private-byte
+  cleanup follows the asynchronous server policy. Scheduling and production
+  retention periods remain deliberately unapproved until a staging dry-run,
+  storage-provider lifecycle comparison, duration metrics, and alert owner
+  exist.
+- M4 exit audit on 2026-09-01 found no remaining local implementation slice.
+  Identity/session security, owner isolation, reference upload/cleanup,
+  project persistence, durable asset reads, root drafts, unsaved-change
+  protection, and addressable routes all have automated, isolated-stack, and
+  browser evidence. All requested Authing-operated loopback checks also pass.
+  Public transport proof remains required before release but was explicitly
+  deferred by the operator to the M7 staging gate.
+- M5 now implements the documented O1Key image contract locally. Stable
+  `nano-banana-2` maps only to special-price
+  `gemini-3.1-flash-image-c-sp`; the faster MVP and durable composer contract are
+  1:1, 1K, one output. The adapter uploads validated references as ordered
+  multipart attachments, submits the returned 24-hour public HTTPS URLs as
+  explicit `fileData`, normalizes O1Key polling states and failures, bounds each
+  request and the overall poll, prevents terminal regression, and resumes a
+  durable task ID after restart. No R2 bucket is required: RustFS remains the
+  private source and destination, while O1Key temporary URLs are transfer-only.
+  The worker now selects an explicit persisted mock or O1Key route. The O1Key
+  route reads ordered private RustFS reference bytes, uploads them temporarily,
+  resumes the durable provider task, bounds and fully decodes JPEG/PNG/WebP
+  output, derives its stored extension from decoded type, and reuses the existing
+  terminal Asset/job transaction. A route mismatch defers instead of polling the
+  wrong provider. The base Compose stack remains mock-backed.
+- An isolated `npm run stack:o1key-local` launcher now requests the key through
+  invisible terminal input, writes a mode-0600 temporary file, and mounts it into
+  only the worker through `compose.o1key-local.yaml`. It uses a separate Compose
+  project, preserves named volumes on stop, and deletes the temporary key. The
+  merged Compose contract and fake O1Key path pass without a real credential.
+- On 2026-09-02, a dedicated O1Key test-token group completed one real
+  `nano-banana-2`, 1:1, 1K, single-output generation with one validated
+  non-sensitive reference. The route uploaded the reference, persisted and
+  polled the provider task to `SUCCESS`, downloaded and fully decoded a
+  1024×1024 JPEG, stored 327,299 private bytes in RustFS, committed the durable
+  Asset, and restored it through the authenticated asset API. No credential,
+  temporary provider attachment URL, or generated user bytes entered the diff.
+  The dedicated group was configured to return a URL; an earlier group returned
+  undocumented `b64_json` and was correctly rejected by the URL-only contract.
+- That smoke exposed a presentation-only defect: Vinext's `next/image` optimizer
+  rejected the intentional loopback RustFS signature as a private-IP SSRF risk,
+  leaving a gray asset frame even though generation and storage succeeded. A
+  shared private-object image primitive now keeps signed reads browser-direct
+  instead of weakening global SSRF protection. Fresh asset-library and stable
+  detail-route browser checks both decoded the JPEG at 1024×1024 with no console
+  errors.
+- A subsequent root-draft refresh exposed the same presentation defect for
+  references: the immediate `blob:` thumbnail worked, while the restored signed
+  RustFS URL was sent through the optimizer and appeared missing. The persisted
+  reference row, private object, and draft snapshot were intact. The composer now
+  uses the shared browser-direct primitive for both local upload previews and
+  restored references. A fresh `/create` browser load restored the prompt and
+  `11.jpg`, decoded its signed 2100×2800 source, and produced no console errors.
+- O1Key formally confirmed that image submission has no client idempotency key,
+  client-task lookup, or callback recovery: repeated POSTs create distinct
+  `task_id` values and charges, while `X-Oneapi-Request-Id` is trace-only. The
+  operator accepted that limitation for the MVP in ADR 0008. Browser-to-GoodGood
+  idempotency remains intact. The worker now persists the O1Key attempt as
+  `submitted` immediately before the billable POST; if recovery finds that
+  guard without a durable `task_id`, it fails as `SUBMISSION_UNKNOWN` instead of
+  silently posting again. Explicit retry is labeled as a new billable task.
+  Known tasks continue polling safely and their result data is ingested within
+  the provider's default 24-hour retention window.
+- The operator confirmed that New API usage records expose per-request charge
+  and refund outcomes for the dedicated group. That record is the accepted M5
+  operational cost evidence; no credential or exported usage record is retained
+  in the repository. GoodGood-owned pricing and ledger reconciliation remain M6.
+- M6 now has a persisted pricing and credit foundation. Immutable
+  price versions are selected by stable GoodGood model, resolution, count, plan
+  context, effective time, and version; no price or spend amount comes from the
+  browser. Each batch/job can retain its exact price snapshot and reservation.
+  Owner/unit account caches use exact integer credit and are updated in the same
+  PostgreSQL transaction as a signed append-only ledger entry. Operation hashes
+  make same-key replay a no-op and conflicting key reuse fail closed. One
+  reservation closes through either settle or release, and the current
+  single-output settlement permits one full refund. Database triggers reject
+  price and ledger update/delete. ADR 0009 records the accepted launch policy:
+  Nano Banana 2 costs 10 credits per image at 1K, 2K, or 4K; one CNY 10 paid
+  product grants 500 credits without a pack bonus; each owner receives one
+  non-expiring 100-credit welcome grant; and no higher-cost provider route may
+  silently substitute for the special-price route.
+- Migration 0009 seeds a separate version-1 price for each resolution and grants
+  all existing owners 100 credits once. New identity provisioning appends the
+  same idempotent welcome grant in its user transaction. Live job creation
+  reserves 10 credits in its batch/job transaction; accepted Asset persistence
+  settles it, and a terminal no-Asset failure releases it. This includes a
+  customer-credit release for `SUBMISSION_UNKNOWN` without claiming that New
+  API refunded the possibly charged upstream submission. Pre-M6 jobs remain
+  compatible and unmetered. An authenticated, no-store `GET /api/billing` read
+  now returns exact decimal-string available/reserved balances and all three
+  active launch quotes without internal IDs. The shared workspace presents the
+  balance on desktop and mobile, keeps `10 积分/张` beside the composer, covers
+  loading/error/retry/zero states, and refreshes after queue acceptance and
+  terminal job outcomes.
+- Migration 0010 seeds the immutable `credits-500-cny` version-1 product at CNY
+  1000 minor units for 500 credits. Authenticated order creation accepts only
+  the stable product ID and an owner-scoped idempotency key, snapshots exact
+  money/credit terms, and exposes only a public order ID. The explicitly enabled
+  local fake provider verifies a timestamped HMAC over the raw callback body.
+  Its `pending -> paid` transition, append-only event evidence, and one
+  payment-authored ledger grant commit together; identical replay is a no-op,
+  event-ID conflict and amount mismatch fail closed, and later success events
+  cannot grant again. There is no customer checkout or real provider adapter.
+- ADR 0010 selects domestic Alipay for customer checkout only after ICP filing,
+  matching merchant approval, and sandbox verification. Until then, the
+  operator-only manual-payment runtime previews by default and can explicitly
+  record an already received and independently invoiced payment. It resolves
+  one active owner by exact email, accepts only a stable server-owned product
+  plus operator/receipt evidence, creates the normal immutable PaymentOrder,
+  and settles through the same append-only ledger transaction. It accepts no
+  money or credit amount, exposes no browser administrator endpoint, treats an
+  exact receipt replay as a no-op, and rejects cross-owner or cross-product
+  receipt reuse.
+- Focused M6 verification on 2026-09-02 passed all 14 tests, including both real
+  PostgreSQL integrations and the public billing/order boundaries. The isolated
+  tests applied migrations 0009 and 0010 twice through the checksum runner and
+  proved the three launch prices, immutable CNY 10 / 500-credit product, migration and first-
+  login grants, exactly-once repeat login, live reserve/settle/release,
+  `SUBMISSION_UNKNOWN` release, rejection of stale-worker completion/failure,
+  insufficient-credit creation rollback, custom immutable price selection,
+  manual grant/refund, idempotent and conflicting replay, mutually exclusive
+  closure, exact cached balances, quote snapshots, and database rejection of
+  price/ledger/product/order/event mutation. They also proved owner-scoped order
+  idempotency, cross-owner denial, signed callback expiry/replay/conflict,
+  amount-mismatch rollback, and exactly one paid-credit grant. The disposable
+  database container was removed afterward.
+- An isolated full Compose run on 2026-09-02 passed the authenticated API,
+  PostgreSQL/outbox, Valkey, worker, mock-provider, RustFS, failure/retry, owner
+  isolation, OIDC first-login grant, and forced worker-restart paths. Its seven
+  metered owner-A jobs all retained a 10-credit quote and produced exactly seven
+  reservations, five settlements, and two releases. Authenticated billing reads
+  around one authenticated fake-sandbox purchase and those jobs proved one
+  500-credit grant, a 50-credit generation spend, zero reserved credit, owner
+  isolation, signed callback replay, and the exact final balance. The disposable
+  containers, network, and all three named volumes were removed afterward.
+- Repository-wide verification on 2026-09-02 passed `npm run check:local` on
+  Windows: lint, full TypeScript checking, the production build, and 117 tests
+  completed with 113 passing. The opt-in full Compose test and three opt-in M6
+  PostgreSQL tests were skipped by the default gate; their payment/manual cases
+  passed separately against the isolated database described below, while the
+  ledger and Compose cases retain the passing evidence recorded above.
+- Manual-payment verification on 2026-09-02 passed all eight focused payment
+  and operator tests against an isolated PostgreSQL 17 database. It proved
+  preview non-mutation, paid-order/ledger atomicity, exact replay, cross-owner
+  receipt conflict, missing-owner failure, and existing fake-sandbox behavior;
+  the disposable database container was removed afterward.
+- Verification on 2026-09-02: the real URL-output smoke passed submission,
+  polling, output ingestion, durable Asset persistence, signed direct read,
+  asset-library display, stable detail display, and draft-reference refresh.
+  The focused M5/ADR/private-object run passed all 19 tests. The repository-wide
+  `npm run check:local` gate passed lint, full TypeScript checking, the production
+  build, and 98 tests with 97 passing and the opt-in Compose integration test
+  skipped by design.
+- Next action: begin the M7 Hong Kong staging preparation and progress the ICP
+  filing/domain work in parallel. Keep early paid access on the documented
+  operator bridge. After the filed domain and domestic Alipay merchant sandbox
+  are available, implement the provider adapter against the existing immutable
+  order/settlement boundary and add the smallest customer checkout UI as part
+  of paid-production readiness.
+- Blockers: domestic Alipay checkout requires the ICP-filed production domain,
+  matching merchant approval, and sandbox credentials. These external items do
+  not block M7 staging or trusted manual credit operation. The local fake
+  sandbox is not production payment evidence. M5 has no remaining
+  blocker. The deferred reverse-order association
+  check needs a second
+  Google-backed test address or an explicitly approved reset of the isolated
+  Authing test user. The public-HTTPS callback/logout proof was skipped for M4
+  at the operator's request and must be reopened before M7 release evidence can
+  pass. The previously disclosed Google OAuth client secret must be rotated and
+  updated in Authing before further shared or staging use. The application
+  secret remains operator-supplied outside the repository by design. An ICP-filed custom
+  authentication domain is not required now because the Authing-provided
+  application domain is the accepted temporary path. The local token adapter
+  remains forbidden in staging and production.
+
+## M4 exit-evidence audit
+
+| Area | Status | Evidence or remaining proof |
+| --- | --- | --- |
+| OIDC/PKCE, signed-token validation, browser binding, hashed sessions, revocation, and normalized failures | Complete locally | Automated mock-issuer tests, HTTPS fail-closed preflight, and isolated PostgreSQL session integration pass |
+| Owner isolation across generation, references, projects, assets, and drafts | Complete locally | Two-owner route/repository tests and the isolated Compose integration pass |
+| Reference validation, snapshot safety, bounded object cleanup, and retry evidence | Complete locally | Unit plus real PostgreSQL/RustFS cleanup integration pass, including project/generation/draft protection |
+| Project restore, asset hydration/detail, root draft, unsaved-change protection, and `/create` | Complete locally and in browser | Direct load, refresh, Back/Forward, logout/reauth persistence, and conflict recovery smokes pass |
+| Hosted methods, Google/email exchange, first/repeat login, Google-first association, and GoodGood logout revocation | Passed on real loopback | Operator-confirmed Authing/Google/email-code flow and redacted database evidence |
+| Authing hosted-session exit after GoodGood logout | Passed on real loopback | Operator logged out; the latest GoodGood database session was revoked and the next login stopped at the Authing hosted surface instead of silently returning |
+| Authorization cancellation with an existing GoodGood session | Passed on real loopback | Operator cancelled authorization, retained the usable GoodGood session, then explicitly logged out; no cancellation-created session appeared and the latest database session was revoked |
+| Exact callback replay | Passed on real loopback | The same captured local callback was revisited once without exposing its query; it returned to a query-free root, preserved the existing GoodGood session, created no new session, and left the login attempt consumed |
+| Email-code expiry/reuse | Passed on real loopback | Operator confirmed an expired code was rejected, a fresh code completed login, and the already-used code was rejected without retaining the mailbox or code |
+| Email-first then Google association | Deferred by operator | Not counted as passed; do not reset the current Authing user without explicit approval |
+| Secure public callback/logout, DNS/TLS, and real network path | Deferred by operator to M7 | Not passed; reopen as a mandatory staging/release gate when a public HTTPS origin is available |
+| US gateway, billing, production storage lifecycle, and Hong Kong release operations | Later milestones | M5–M7 work, not an M4 implementation gap |
+
+Completed real-Authing loopback checklist:
+
+1. **Passed 2026-09-01.** Start login while a valid GoodGood session exists,
+   cancel at the hosted or Google authorization surface, and confirm GoodGood
+   returns a stable recovery message without invalidating the pre-existing
+   session. The operator then explicitly logged out that preserved session;
+   redacted database evidence showed no cancellation-created session and the
+   latest real session revoked.
+2. **Passed 2026-09-01.** Complete one fresh login, then revisit its callback
+   URL once using only the same local browser. The exact captured callback was
+   replayed without printing or persisting its query; it returned to a
+   query-free GoodGood root, kept the existing session usable, created no new
+   session, and left the one-time login attempt consumed.
+3. **Passed 2026-09-01.** Log out through GoodGood, confirm the prior database
+   session is revoked, then start login again and verify Authing does not
+   silently reuse the prior hosted application session.
+4. **Passed 2026-09-01.** Request an email code, confirm an expired code is
+   rejected, complete login with a fresh code, and confirm reusing that code is
+   rejected. The operator reported all three outcomes passing; no mailbox or
+   code was retained.
 
 ## Accepted delivery decisions
 
@@ -95,6 +525,9 @@ this file owns the current handoff state.
   prove.
 - Do not introduce Kubernetes or speculative microservices for the initial
   paid product.
+- Use Authing's hosted login through standard OIDC with only Google and email
+  verification code. GoodGood owns opaque sessions and internal owner IDs; use
+  the Authing-provided domain until a filed custom domain is available.
 
 ## Milestones
 
@@ -104,11 +537,11 @@ this file owns the current handoff state.
 | M1 | Domain contracts and mocked boundaries extracted from the prototype | Completed | Composer and domain seams extracted; stable model/ratio/job mappings and mock repository/provider success, failure, and retry have unit tests; image/dependency warnings cleared; clean install check, lint, typecheck, build, and 13 tests passed on 2026-08-30 |
 | M2 | Production-shaped local container foundation | Completed | One pinned Compose stack starts healthy web, worker, PostgreSQL, Valkey, RustFS, and mock generation with documented commands; host probes and named-volume persistence passed on 2026-08-30 |
 | M3 | Durable asynchronous generation vertical slice | Completed | One model and one image pass API, PostgreSQL/outbox, Valkey, worker restart, mock provider, RustFS, Asset, polling, inline failure/retry, duplicate, and timeout tests on 2026-08-30 |
-| M4 | Production identity, ownership, references, and projects persist safely | Pending | Auth and ownership tests cover every read/write; signed upload validation and project restore pass |
-| M5 | US generation gateway integration and recovery | Pending | Scoped credentials, idempotency, signed callbacks/polling reconciliation, timeout, duplicate, restart, and partial-result cases pass |
-| M6 | Versioned pricing, credit ledger, and payment sandbox | Pending | Reserve/settle/release/refund are transactional and idempotent; browser cannot authorize its own spend |
-| M7 | Hong Kong staging | Pending | Versioned image deploys; public network, three-carrier sampling, storage, callbacks, migrations, backup restore, and smoke tests pass with test data |
-| M8 | Paid production readiness | Pending | Security/compliance review, observability, rollback, retention, support IDs, and production release gate are complete |
+| M4 | Production identity, ownership, references, and projects persist safely | Completed | Authing-compatible OIDC/PKCE, hashed sessions, provider-neutral ownership, signed references, cleanup, root-draft/project/asset persistence, optimistic conflict handling, cross-owner denial, and the requested real-Authing loopback matrix pass; public HTTPS proof is explicitly deferred to M7 |
+| M5 | US generation gateway integration and recovery | Completed | O1Key special-price adapter, explicit worker route, RustFS transfer, decoded output ingestion, durable-task restart, fake-server matrix, secret-file launcher, one real URL-output reference-image smoke, operator-confirmed New API charge/refund evidence, and ADR 0008's accepted at-most-once submission guard pass |
+| M6 | Versioned pricing, credit ledger, and payment sandbox | Completed | ADR 0009 launch prices, welcome grants, append-only accounting, live reserve/settle/release, account presentation, immutable CNY 10 / 500-credit product, idempotent orders, signed fake-sandbox fulfillment, dry-run-first manual paid-credit recording, isolated PostgreSQL tests, and full Compose pass |
+| M7 | Hong Kong staging | Pending | Versioned image deploys; public network, three-carrier sampling, storage, generation/auth callbacks, migrations, backup restore, and smoke tests pass with test data; payment checkout remains intentionally absent |
+| M8 | Paid production readiness | Pending | ICP/domain prerequisites and domestic Alipay sandbox/checkout pass before production payment; security/compliance review, observability, rollback, retention, support IDs, and production release gate are complete |
 
 Only mark a milestone `Completed` when its exit evidence exists. Use `Blocked`
 only with a named external dependency or missing decision.
@@ -130,10 +563,15 @@ prompt
   -> creation stream and asset library
 ```
 
-The first slice supports one test user, one model, one image, and success,
-failure, and timeout outcomes. It must also tolerate duplicate submission,
-duplicate delivery, worker restart, and repeated completion notification before
-adding more models or payment complexity.
+That original slice supported one test user, one model, one image, and success,
+failure, and timeout outcomes. M4 supersedes its fixed identity and no-reference
+constraints: the same narrow generation path now resolves authenticated owners,
+proves cross-owner isolation, and accepts up to 10 owner-scoped validated
+references. It also persists and restores owner-scoped projects and
+automatically associates continued batches; unprojected prompt/reference/
+settings survive reload in one expiring optimistic draft per owner. Duplicate submission, duplicate
+delivery, worker restart, and repeated completion notification remain required
+before adding more models or payment complexity.
 
 ## Environment proof boundaries
 

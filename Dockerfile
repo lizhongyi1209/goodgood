@@ -30,6 +30,9 @@ ENV NODE_ENV=production \
 WORKDIR /app
 
 COPY --from=build --chown=node:node /app/dist/standalone/ ./
+COPY --from=build --chown=node:node /app/node_modules/@img ./node_modules/@img
+COPY --from=build --chown=node:node /app/node_modules/detect-libc ./node_modules/detect-libc
+COPY --from=build --chown=node:node /app/node_modules/sharp ./node_modules/sharp
 COPY --from=build --chown=node:node /app/migrations ./migrations
 COPY --from=build --chown=node:node /app/runtime-bundle ./server/runtime
 COPY --from=build --chown=node:node /app/infra/container ./infra/container

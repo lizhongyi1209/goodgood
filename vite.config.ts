@@ -44,12 +44,16 @@ export default defineConfig(async () => {
   const { cloudflare } = await import("@cloudflare/vite-plugin");
 
   return {
+    build: {
+      rollupOptions: { external: ["sharp"] },
+    },
     ssr: {
       external: [
         "@aws-sdk/client-s3",
         "@aws-sdk/s3-request-presigner",
         "pg",
         "redis",
+        "sharp",
       ],
     },
     server: {

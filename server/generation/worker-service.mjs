@@ -1,15 +1,12 @@
 import { createHash, randomUUID } from "node:crypto";
-import {
-  NormalizedProviderError,
-  createProviderTask,
-  downloadProviderOutput,
-  pollProviderTask,
-} from "./provider.mjs";
+import { NormalizedProviderError } from "./provider.mjs";
+import { createGenerationProvider } from "./provider-router.mjs";
 import {
   claimGenerationJob,
   completeGenerationJob,
   deferGenerationJob,
   failGenerationJob,
+  markProviderSubmissionStarted,
   markGenerationRefining,
   renewGenerationLease,
   saveProviderTask,
@@ -23,14 +20,33 @@ const INTERNAL_ERROR = Object.freeze({
   title: "本次生成未完成",
 });
 
+const SUBMISSION_UNKNOWN = Object.freeze({
+  code: "SUBMISSION_UNKNOWN",
+  message: "生成请求可能已被上游受理。系统不会自动重复提交；再次生成会创建新的计费任务。",
+  retryable: true,
+  title: "提交结果暂时无法确认",
+});
+
 function normalizedError(error) {
   if (error instanceof NormalizedProviderError) return error;
   return INTERNAL_ERROR;
 }
 
+function generatedObjectExtension(contentType) {
+  const extension = Object.freeze({
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+  })[contentType];
+  if (!extension) throw new Error("Unsupported decoded generated image type.");
+  return extension;
+}
+
 export async function processGenerationJob(resources, { jobId, workerId }) {
-  const { config, pool, storage } = resources;
+  const { config, pool, publicStorage, storage } = resources;
+  const provider = createGenerationProvider({ config, publicStorage, storage });
   const claim = await claimGenerationJob(pool, {
+    attemptRoute: provider.route,
     jobId,
     leaseMs: config.workerLeaseMs,
     workerId,
@@ -39,14 +55,34 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
 
   const { attempt, job } = claim;
   try {
+    provider.assertAttempt(attempt);
     let taskId = attempt.provider_task_id;
     if (!taskId) {
-      taskId = await createProviderTask({ attempt, config: config.provider, job });
+      if (
+        provider.submissionPolicy === "task-id-required" &&
+        attempt.state !== "created"
+      ) {
+        throw new NormalizedProviderError(SUBMISSION_UNKNOWN);
+      }
+      taskId = await provider.createTask({
+        attempt,
+        job,
+        onSubmissionStart:
+          provider.submissionPolicy === "task-id-required"
+            ? async () => {
+                const started = await markProviderSubmissionStarted(pool, {
+                  attemptId: attempt.id,
+                });
+                if (!started) {
+                  throw new NormalizedProviderError(SUBMISSION_UNKNOWN);
+                }
+              }
+            : undefined,
+      });
       await saveProviderTask(pool, { attemptId: attempt.id, taskId });
     }
 
-    const output = await pollProviderTask({
-      config: config.provider,
+    const output = await provider.pollTask({
       onRefining: async () => {
         await markGenerationRefining(pool, { jobId, workerId });
         await renewGenerationLease(pool, {
@@ -57,10 +93,10 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
       },
       taskId,
     });
-    const downloaded = await downloadProviderOutput(output);
+    const downloaded = await provider.downloadOutput(output);
     const checksum = createHash("sha256").update(downloaded.bytes).digest("hex");
     const assetId = randomUUID();
-    const objectKey = `generated/${job.owner_id}/${job.id}.png`;
+    const objectKey = `generated/${job.owner_id}/${job.id}.${generatedObjectExtension(downloaded.contentType)}`;
     await storeGeneratedAsset({
       bucket: config.objectStorage.bucket,
       bytes: downloaded.bytes,

@@ -3,8 +3,8 @@ import { parseRuntimePort } from "./port.mjs";
 import {
   closeGenerationResources,
   connectGenerationQueue,
-  ensureObjectStorageBucket,
   getGenerationResources,
+  prepareObjectStorage,
   probeGenerationResources,
 } from "../generation/resources.mjs";
 import {
@@ -36,10 +36,7 @@ await health.listen();
 
 const resources = await getGenerationResources();
 await connectGenerationQueue(resources);
-await ensureObjectStorageBucket(
-  resources.storage,
-  resources.config.objectStorage.bucket,
-);
+await prepareObjectStorage(resources);
 await reconcileRecoverableJobs(resources.pool);
 await dispatchPendingJobs(resources.pool, resources.redis);
 const checks = await probeGenerationResources(resources);

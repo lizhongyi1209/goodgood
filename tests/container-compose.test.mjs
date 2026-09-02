@@ -48,6 +48,7 @@ test("compose contract pins the complete local dependency stack", async () => {
     "worker",
     "mock-generation",
     "migrate",
+    "reference-cleanup",
     "postgres",
     "valkey",
     "object-storage",
@@ -65,6 +66,7 @@ test("compose contract pins the complete local dependency stack", async () => {
   assert.match(compose, /^  object-storage-data:$/m);
   assert.match(compose, /condition: service_completed_successfully/);
   assert.match(compose, /OBJECT_STORAGE_PUBLIC_ENDPOINT:/);
+  assert.match(compose, /OBJECT_STORAGE_UPLOAD_ALLOWED_ORIGINS:/);
   for (const mapping of [
     "GOODGOOD_WEB_PORT:-3000}:3000",
     "GOODGOOD_WORKER_HEALTH_PORT:-3001}:3001",
@@ -91,15 +93,41 @@ test("compose contract pins the complete local dependency stack", async () => {
     "node infra/container/verify-compose.mjs",
   );
   assert.equal(packageData.scripts["stack:down"], "docker compose down");
+  assert.equal(
+    packageData.scripts["references:cleanup"],
+    "node server/runtime/reference-cleanup.mjs",
+  );
   assert.match(dockerfile, /^EXPOSE 3000 3001 3002$/m);
+  assert.match(dockerfile, /node_modules\/sharp \.\/node_modules\/sharp/);
+  assert.match(dockerfile, /node_modules\/@img \.\/node_modules\/@img/);
+  assert.match(compose, /GOODGOOD_ALLOW_LOCAL_AUTH: "true"/);
+  assert.match(compose, /GOODGOOD_FAKE_PAYMENT_ENABLED: "true"/);
+  assert.equal(
+    (compose.match(/^\s{6}GOODGOOD_FAKE_PAYMENT_WEBHOOK_SECRET:/gm) ?? [])
+      .length,
+    1,
+  );
 
   for (const name of [
     "GOODGOOD_LOCAL_POSTGRES_PASSWORD",
     "GOODGOOD_LOCAL_OBJECT_STORAGE_ACCESS_KEY",
     "GOODGOOD_LOCAL_OBJECT_STORAGE_SECRET_KEY",
     "GOODGOOD_LOCAL_GENERATION_API_KEY",
+    "GOODGOOD_ALLOW_LOCAL_AUTH",
+    "GOODGOOD_AUTH_MODE",
+    "GOODGOOD_AUTH_ISSUER",
+    "GOODGOOD_AUTH_COOKIE_NAME",
+    "GOODGOOD_LOCAL_AUTH_TOKENS",
+    "GOODGOOD_LOCAL_AUTH_DEFAULT_TOKEN",
+    "GOODGOOD_FAKE_PAYMENT_ENABLED",
+    "GOODGOOD_FAKE_PAYMENT_WEBHOOK_SECRET",
     "OBJECT_STORAGE_REGION",
     "OBJECT_STORAGE_FORCE_PATH_STYLE",
+    "OBJECT_STORAGE_UPLOAD_ALLOWED_ORIGINS",
+    "REFERENCE_CLEANUP_BATCH_SIZE",
+    "REFERENCE_CLEANUP_GRACE_MINUTES",
+    "REFERENCE_CLEANUP_LEASE_SECONDS",
+    "REFERENCE_ORPHAN_RETENTION_DAYS",
   ]) {
     assert.ok(environmentExample.includes(`# ${name}=`));
   }
