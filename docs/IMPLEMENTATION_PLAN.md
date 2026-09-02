@@ -260,7 +260,12 @@ this file owns the current handoff state.
   The image and workflow summary record the immutable digest, source revision,
   latest migration filename, and checked-in runtime-configuration checksum;
   no `latest` tag, personal registry credential, or unpinned external action is
-  accepted. The first remote workflow run remains to be observed after push.
+  accepted. Remote CI run 33603482529 passed both jobs for revision
+  `8c404ddde09534f488682b42727cbf41d9570dae` and published
+  `ghcr.io/lizhongyi1209/goodgood@sha256:43444ff03a20fbdf3dc80cc97181b64aeda05c6b80af706ce334fcd074f374b8`.
+  Its summary recorded migration `0010_m6_payment_sandbox.sql` and runtime
+  configuration contract
+  `a44a7deda34a235a03be37cbf7a38509d02bfe6933d01e1bd5a6b57893c67c8a`.
 - On 2026-09-02, `npm run check:local` passed on Windows with Node.js 24.12.0:
   lint, full TypeScript check, production build, and 96 tests completed with 95
   passing and the opt-in Compose integration test skipped by design. The
@@ -464,9 +469,7 @@ this file owns the current handoff state.
 - Blockers: domestic Alipay checkout requires the ICP-filed production domain,
   matching merchant approval, and sandbox credentials. These external items do
   not block M7 staging or trusted manual credit operation. The local fake
-  sandbox is not production payment evidence. CI publication is locally
-  implemented but its first GHCR digest requires pushing the workflow to the
-  private GitHub repository and observing the trusted `main` run. M5 has no remaining
+  sandbox is not production payment evidence. M5 has no remaining
   blocker. The deferred reverse-order association
   check needs a second
   Google-backed test address or an explicitly approved reset of the isolated
@@ -551,7 +554,7 @@ Completed real-Authing loopback checklist:
 | M4 | Production identity, ownership, references, and projects persist safely | Completed | Authing-compatible OIDC/PKCE, hashed sessions, provider-neutral ownership, signed references, cleanup, root-draft/project/asset persistence, optimistic conflict handling, cross-owner denial, and the requested real-Authing loopback matrix pass; public HTTPS proof is explicitly deferred to M7 |
 | M5 | US generation gateway integration and recovery | Completed | O1Key special-price adapter, explicit worker route, RustFS transfer, decoded output ingestion, durable-task restart, fake-server matrix, secret-file launcher, one real URL-output reference-image smoke, operator-confirmed New API charge/refund evidence, and ADR 0008's accepted at-most-once submission guard pass |
 | M6 | Versioned pricing, credit ledger, and payment sandbox | Completed | ADR 0009 launch prices, welcome grants, append-only accounting, live reserve/settle/release, account presentation, immutable CNY 10 / 500-credit product, idempotent orders, signed fake-sandbox fulfillment, dry-run-first manual paid-credit recording, isolated PostgreSQL tests, and full Compose pass |
-| M7 | Hong Kong staging | In progress | Full-SHA GHCR publication and release-evidence workflow are implemented locally; first remote digest plus public network, three-carrier sampling, storage, generation/auth callbacks, migrations, backup restore, and smoke tests remain; payment checkout stays intentionally absent |
+| M7 | Hong Kong staging | In progress | Full-SHA GHCR publication and release-evidence workflow pass remotely with the first immutable digest recorded; public network, three-carrier sampling, storage, generation/auth callbacks, migrations, backup restore, and smoke tests remain; payment checkout stays intentionally absent |
 | M8 | Paid production readiness | Pending | ICP/domain prerequisites and domestic Alipay sandbox/checkout pass before production payment; security/compliance review, observability, rollback, retention, support IDs, and production release gate are complete |
 
 Only mark a milestone `Completed` when its exit evidence exists. Use `Blocked`
