@@ -800,6 +800,41 @@ and retain the old instance until rollback evidence is complete.
   additive migrations and forward fixes.
 - Record deployed commit, migration version, and runtime configuration version.
 
+Install the reviewed staging PostgreSQL tool without modifying the running
+dependency Compose definition:
+
+```bash
+sudo install -o root -g root -m 0755 \
+  /tmp/postgres-backup-restore.sh \
+  /usr/local/sbin/goodgood-staging-postgres
+```
+
+Create a new custom-format archive at an explicit, non-existing path, then run
+the isolated restore drill against that exact archive:
+
+```bash
+sudo /usr/local/sbin/goodgood-staging-postgres backup \
+  /var/backups/goodgood/staging-20260903T120000Z.dump
+sudo /usr/local/sbin/goodgood-staging-postgres restore-drill \
+  /var/backups/goodgood/staging-20260903T120000Z.dump
+```
+
+Replace the timestamp instead of reusing an existing filename. The tool accepts
+only `staging-*.dump` directly under `/var/backups/goodgood`, refuses symlinks
+and overwrite, and retains the archive as `root:root 0600` under a `0700`
+directory. It verifies the archive catalog before publishing the file.
+
+The restore drill requires zero active GoodGood sessions and zero active
+generation jobs so its source/restore row-count comparison cannot race customer
+writes. It starts the same immutable PostgreSQL image as a fixed-name,
+no-network, read-only container whose database, socket, and temporary files use
+bounded `tmpfs`; no port or Docker volume is created. `pg_restore` runs in one
+transaction, and the drill compares the complete public table set and every
+table's row count before reporting migration and aggregate counts. An exit trap
+removes only that fixed disposable container. It never stops, writes to, or
+restores over the running staging database. Keep retained archives out of Git
+and include them in the operator's encrypted backup retention and access policy.
+
 ## Observability
 
 Minimum production signals:

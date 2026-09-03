@@ -408,7 +408,7 @@ test("Alibaba Cloud staging bootstrap is bounded and keeps public services close
 });
 
 test("same-host staging dependencies are bounded, private, and secret-file backed", async () => {
-  const [applicationCompose, dependencyCompose, installer, releaseMetadata] =
+  const [applicationCompose, dependencyCompose, installer, backupTool, releaseMetadata] =
     await Promise.all([
       readFile(new URL("../compose.staging.yaml", import.meta.url), "utf8"),
       readFile(
@@ -418,6 +418,13 @@ test("same-host staging dependencies are bounded, private, and secret-file backe
       readFile(
         new URL(
           "../infra/staging/install-staging-dependencies.sh",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+      readFile(
+        new URL(
+          "../infra/staging/postgres-backup-restore.sh",
           import.meta.url,
         ),
         "utf8",
@@ -477,6 +484,18 @@ test("same-host staging dependencies are bounded, private, and secret-file backe
     installer,
     /8\.217\.113\.148|goodgood-local-only|rustfsadmin/,
   );
+  assert.match(backupTool, /readonly backup_root="\/var\/backups\/goodgood"/);
+  assert.match(backupTool, /refusing to overwrite/i);
+  assert.match(backupTool, /chmod 0600 "\$\{archive_path\}"/);
+  assert.match(backupTool, /pg_dump[\s\S]*--format custom/);
+  assert.match(backupTool, /pg_restore[\s\S]*--single-transaction/);
+  assert.match(backupTool, /--network none/);
+  assert.match(backupTool, /--read-only/);
+  assert.match(backupTool, /--tmpfs \/var\/lib\/postgresql\/data:/);
+  assert.match(backupTool, /POSTGRES_HOST_AUTH_METHOD=trust/);
+  assert.match(backupTool, /docker rm --force "\$\{restore_container\}"/);
+  assert.doesNotMatch(backupTool, /--publish|-p [0-9]|docker volume/);
+  assert.doesNotMatch(backupTool, /8\.217\.113\.148|database-secret|password=/i);
   assert.match(releaseMetadata, /"compose\.staging\.dependencies\.yaml"/);
   assert.match(releaseMetadata, /"infra\/staging\/install-staging-dependencies\.sh"/);
 });

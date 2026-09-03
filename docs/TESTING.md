@@ -85,6 +85,12 @@ rotation, checks Docker metadata for leaks, and makes a real loopback readiness
 request. On-host evidence additionally requires all three health checks,
 PostgreSQL `SELECT 1`, Valkey `PING`, enforced runtime limits, exact network
 membership, and an empty systemd failed-unit set.
+Static backup coverage requires a new root-only custom-format archive, refuses
+overwrite and symlinks, and confines restore to a fixed-name, no-network,
+read-only, bounded-`tmpfs` PostgreSQL container with automatic cleanup. Staging
+evidence must additionally prove a real `pg_restore`, identical public table
+sets and row counts, all migration records, no source-database mutation, and no
+leftover drill container.
 The R2 provisioning unit proves local storage still creates/configures its
 bucket, staging performs only `HeadBucket`, and a failed verification can be
 retried. Static Nginx coverage fixes the canonical hostname, Cloudflare-only
