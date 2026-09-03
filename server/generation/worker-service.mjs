@@ -54,6 +54,7 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
   if (!claim.claimed) return { outcome: claim.reason };
 
   const { attempt, job } = claim;
+  let stage = "attempt-validation";
   try {
     provider.assertAttempt(attempt);
     let taskId = attempt.provider_task_id;
@@ -64,6 +65,7 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
       ) {
         throw new NormalizedProviderError(SUBMISSION_UNKNOWN);
       }
+      stage = "provider-submission";
       taskId = await provider.createTask({
         attempt,
         job,
@@ -82,6 +84,7 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
       await saveProviderTask(pool, { attemptId: attempt.id, taskId });
     }
 
+    stage = "provider-poll";
     const output = await provider.pollTask({
       onRefining: async () => {
         await markGenerationRefining(pool, { jobId, workerId });
@@ -93,10 +96,12 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
       },
       taskId,
     });
+    stage = "output-download";
     const downloaded = await provider.downloadOutput(output);
     const checksum = createHash("sha256").update(downloaded.bytes).digest("hex");
     const assetId = randomUUID();
     const objectKey = `generated/${job.owner_id}/${job.id}.${generatedObjectExtension(downloaded.contentType)}`;
+    stage = "asset-store";
     await storeGeneratedAsset({
       bucket: config.objectStorage.bucket,
       bytes: downloaded.bytes,
@@ -105,6 +110,7 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
       key: objectKey,
       storage,
     });
+    stage = "generation-completion";
     await completeGenerationJob(pool, {
       asset: {
         aspectRatio: job.aspect_ratio,
@@ -123,7 +129,7 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
       resultHash: checksum,
       workerId,
     });
-    return { outcome: "succeeded" };
+    return { outcome: "succeeded", stage };
   } catch (error) {
     if (error instanceof NormalizedProviderError) {
       await failGenerationJob(pool, {
@@ -132,7 +138,7 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
         jobId,
         workerId,
       });
-      return { outcome: "failed" };
+      return { code: error.code, outcome: "failed", stage };
     }
 
     await deferGenerationJob(pool, {
@@ -140,7 +146,7 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
       message: error instanceof Error ? error.message : String(error),
       workerId,
     });
-    return { outcome: "deferred" };
+    return { outcome: "deferred", stage };
   }
 }
 

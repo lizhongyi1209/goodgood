@@ -66,6 +66,11 @@ terminal payloads become `INTERNAL_ERROR`; raw O1Key errors never reach the
 browser. A bounded poll deadline becomes `MODEL_TIMEOUT` even when the last
 observation was still submitted or processing. Partial-result behavior is not
 claimed for the one-output MVP, and the image API documents no callback path.
+After a durable task ID, a single `FAILURE` observation remains provisional
+until the same normalized failure repeats on consecutive polls. A later
+non-failure observation clears it. A `SUCCESS` result URL also receives a small
+bounded download retry before a persistent transfer/decode error becomes
+terminal. Neither recovery path repeats the billable generation POST.
 An interrupted generation POST, a 5xx response, or a successful response
 without a usable `task_id` becomes `SUBMISSION_UNKNOWN`. The attempt guard is
 already durable at that point, so worker recovery fails it instead of issuing a
@@ -232,6 +237,8 @@ response.
   a guarded attempt without `task_id`.
 - Polling retries are bounded. User retry creates a visible new job linked to
   the previous failure; for O1Key it is also a new billable upstream task.
+- Polling an already durable O1Key task and retrying delivery of its returned
+  URL do not create a new upstream task or charge.
 - Asset and project save operations are idempotent. Current project creation
   carries an owner-scoped idempotency key; repeating the same request returns
   the original project and conflicting key reuse returns 409.

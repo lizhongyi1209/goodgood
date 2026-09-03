@@ -70,7 +70,12 @@ export function createGenerationProvider({ config, publicStorage, storage }) {
         return task.taskId;
       },
 
-      downloadOutput: downloadProviderOutput,
+      downloadOutput(output) {
+        return downloadProviderOutput(output, {
+          maxAttempts: 5,
+          retryDelayMs: 1_000,
+        });
+      },
 
       async pollTask({ onRefining, taskId }) {
         let refiningNotified = false;

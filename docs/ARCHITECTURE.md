@@ -265,9 +265,14 @@ remains idempotent. For O1Key, the active attempt is durably moved from
 later reclaimed without a durable `task_id`, it fails as `SUBMISSION_UNKNOWN`
 instead of submitting again. An explicit user retry is a new billable request.
 Polling is the only accepted MVP status transport. Identical terminal polls are
-duplicates, conflicting terminal polls fail closed, and a new worker can resume
-after the provider task ID is durable. Successful/failed provider result data
-must be ingested within its default 24-hour retention window.
+duplicates, conflicting confirmed terminal polls fail closed, and a new worker
+can resume after the provider task ID is durable. One observed `FAILURE` is held
+as a provisional candidate and must repeat before the job becomes terminal; a
+later non-failure observation clears it. After `SUCCESS`, the returned asset URL
+has a bounded delivery-retry window before decode failure is normalized. These
+poll/download retries never repeat the paid generation POST. Successful/failed
+provider result data must be ingested within its default 24-hour retention
+window.
 
 ## Account and billing boundary
 

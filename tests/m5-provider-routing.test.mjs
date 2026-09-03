@@ -238,6 +238,42 @@ test("downloaded provider output is fully decoded instead of trusting metadata",
   assert.deepEqual(downloaded.bytes, bytes);
 });
 
+test("O1Key-style output delivery can retry a transient unavailable response", async () => {
+  const bytes = await readFile(
+    new URL("../public/nano-fashion.png", import.meta.url),
+  );
+  let attempts = 0;
+  let sleeps = 0;
+  const downloaded = await downloadProviderOutput(
+    {
+      mimeType: "image/png",
+      url: "https://assetcache.o1key.invalid/eventual-result.png",
+    },
+    {
+      fetchImplementation: async () => {
+        attempts += 1;
+        if (attempts === 1) {
+          return new Response("not ready", { status: 404 });
+        }
+        return new Response(bytes, {
+          headers: { "content-type": "image/png" },
+          status: 200,
+        });
+      },
+      maxAttempts: 3,
+      retryDelayMs: 1,
+      sleep: async () => {
+        sleeps += 1;
+      },
+    },
+  );
+
+  assert.equal(attempts, 2);
+  assert.equal(sleeps, 1);
+  assert.equal(downloaded.contentType, "image/png");
+  assert.deepEqual(downloaded.bytes, bytes);
+});
+
 test("generation configuration accepts one secret source and explicit provider kind", async (context) => {
   const directory = await mkdtemp(path.join(tmpdir(), "goodgood-m5-provider-"));
   context.after(() => rm(directory, { force: true, recursive: true }));

@@ -2,6 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-09-02
+- Amended: 2026-09-03
 
 ## Context
 
@@ -18,6 +19,14 @@ The operator accepts this duplicate-cost limitation for the narrow MVP. New
 API's usage record is the operational source for whether each upstream request
 was charged or refunded; GoodGood's own versioned prices and credit ledger are
 still deferred to M6.
+
+The first public staging generation exposed a narrower recovery race after a
+valid task ID was already durable. GoodGood observed the task processing and
+then persisted `INTERNAL_ERROR`; the same provider task subsequently returned
+`SUCCESS` with a valid 1024 x 1024 JPEG. The retained evidence cannot
+distinguish a transient `FAILURE` observation from the first result download
+being temporarily unavailable, so both boundaries need bounded stabilization
+without another generation submission.
 
 ## Decision
 
@@ -40,6 +49,14 @@ successful output within the provider's result-retention window. It must not
 infer a refund from a failed or unknown generation state; charge/refund
 reconciliation uses the New API usage record until the M6 ledger exists.
 
+After a durable `task_id`, one `FAILURE` poll is provisional: the adapter must
+confirm the same normalized failure on consecutive polls before making the job
+terminal. A later non-failure observation clears that candidate. After
+`SUCCESS`, GoodGood retries the result download a small bounded number of times
+before normalizing a persistent decode or transfer failure. These retries only
+query the existing task or fetch its returned asset URL; they never repeat
+`POST /async/v1/generateImage`.
+
 The mock route retains its provider idempotency behavior. GoodGood does not send
 undocumented O1Key fields and does not treat `X-Oneapi-Request-Id` as a recovery
 identifier.
@@ -57,5 +74,9 @@ identifier.
 - End-to-end exactly-once submission remains impossible until O1Key provides a
   client idempotency or lookup contract. That limitation no longer blocks M5,
   but it remains a production cost and support constraint.
+- A genuine provider failure takes a few additional polling intervals to become
+  visible, and a successful result may spend a few seconds retrying delivery.
+  This bounded delay is accepted to avoid discarding a paid task during normal
+  provider/CDN convergence.
 - ADR 0006 remains authoritative for GoodGood-owned pricing and ledger design;
   this decision records the narrower O1Key transport exception before M6.

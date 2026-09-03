@@ -16,6 +16,7 @@ const TERMINAL_STATES = new Set(["failed", "succeeded"]);
 const STATE_ORDER = Object.freeze({ queued: 0, running: 1, failed: 2, succeeded: 2 });
 const MAX_REFERENCE_BYTES = 20 * 1024 * 1024;
 const MAX_REFERENCES = 10;
+export const US_GATEWAY_FAILURE_CONFIRMATION_POLLS = 3;
 
 const FAILURE_COPY = Object.freeze({
   CAPACITY_BUSY: Object.freeze({
@@ -259,6 +260,7 @@ export function createUsGatewayAdapter({
   fetchImplementation = fetch,
   now = () => Date.now(),
   requestTimeoutMs = 15_000,
+  failureConfirmationPolls = US_GATEWAY_FAILURE_CONFIRMATION_POLLS,
   sleep = (milliseconds) =>
     new Promise((resolve) => setTimeout(resolve, milliseconds)),
   allowInsecureLoopback = false,
@@ -266,6 +268,9 @@ export function createUsGatewayAdapter({
   if (typeof apiKey !== "string" || !apiKey) throw new Error("Gateway API key is required.");
   if (!Number.isInteger(requestTimeoutMs) || requestTimeoutMs <= 0) {
     throw new Error("Gateway request timeout must be a positive integer.");
+  }
+  if (!Number.isInteger(failureConfirmationPolls) || failureConfirmationPolls <= 0) {
+    throw new Error("Gateway failure confirmation polls must be a positive integer.");
   }
   const origin = assertLoopbackOrHttps(baseUrl, allowInsecureLoopback);
 
@@ -365,8 +370,24 @@ export function createUsGatewayAdapter({
       }
       const deadline = now() + timeoutMs;
       let current = null;
+      let failureCandidate = null;
+      let failureObservations = 0;
       while (now() < deadline) {
         const incoming = await getTask(taskId);
+        if (incoming.state === "failed") {
+          const sameFailure =
+            failureCandidate &&
+            stableTerminalValue(failureCandidate) === stableTerminalValue(incoming);
+          failureCandidate = incoming;
+          failureObservations = sameFailure ? failureObservations + 1 : 1;
+          if (failureObservations < failureConfirmationPolls) {
+            await sleep(pollIntervalMs);
+            continue;
+          }
+        } else {
+          failureCandidate = null;
+          failureObservations = 0;
+        }
         const reconciled = reconcileUsGatewayTask(current, incoming);
         current = reconciled.task;
         if (!reconciled.duplicate) await onUpdate(current);

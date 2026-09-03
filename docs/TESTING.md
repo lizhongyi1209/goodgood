@@ -224,14 +224,15 @@ The timestamped result of the latest verified gate belongs in
   `gemini-3.1-flash-image-c-sp` with 1:1, 1K, one output, and `IMAGE` response
   modality; ordered multipart temporary uploads become explicit `fileData`
   references; polling success/failure, bounded timeout, duplicate/conflicting
-  terminal reads, HTTPS enforcement, malformed response rejection, and
-  stateless restart work without a real credential.
+  confirmed terminal reads, provisional-failure recovery to success, HTTPS
+  enforcement, malformed response rejection, and stateless restart work
+  without a real credential.
 - The M5 provider-router tests prove the worker reads ordered private RustFS
   bytes into O1Key temporary uploads, persists the selected provider route,
   rejects an active-attempt route mismatch, resumes polling, fully decodes a
-  downloaded image before storage, and loads a mutually exclusive direct or
-  file-based credential. The local launcher/Compose contract mounts its
-  temporary key into only the worker.
+  downloaded image before storage, retries bounded transient result delivery,
+  and loads a mutually exclusive direct or file-based credential. The local
+  launcher/Compose contract mounts its temporary key into only the worker.
 - The accepted O1Key at-most-once tests prove reference uploads finish before
   the billable submission guard, the guard is a one-way persisted transition,
   ambiguous transport failure becomes `SUBMISSION_UNKNOWN`, and neither the

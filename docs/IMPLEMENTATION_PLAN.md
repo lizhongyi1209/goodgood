@@ -4,11 +4,12 @@
 - Current phase: M7 is in progress; the Alibaba Cloud Hong Kong host,
   test-data dependency layer, private R2 configuration, Cloudflare Origin CA,
   host-specific Full (strict) rule, reviewed Nginx origin, Authing callbacks,
-  and all four application secrets are operational; the first digest release
-  applied all migrations and exposed the file-backed-secret group-permission
-  defect recorded by ADR 0013 before Web/Worker became healthy
-- Current objective: publish and deploy ADR 0013's dedicated secret-reader
-  group correction, then complete public auth, generation, storage-transfer,
+  all four application secrets, and ADR 0013's reader-group correction are
+  operational; the first healthy digest release is live through Cloudflare and
+  interactive Google login passes. The first public real-generation attempt
+  exposed a provider/result convergence race after its paid task ID was durable
+- Current objective: publish and deploy ADR 0008's bounded task/result
+  stabilization amendment, then complete generation, storage-transfer, logout,
   restore, and carrier evidence; ICP filing/domain work proceeds in parallel
 
 ## Purpose and update contract
@@ -566,20 +567,49 @@ this file owns the current handoff state.
   `npm run check:local` gate passed lint, full TypeScript checking, the production
   build, and 98 tests with 97 passing and the opt-in Compose integration test
   skipped by design.
-- The first application release on 2026-09-03 passed offline and live Authing
-  preflight, pulled the immutable GHCR digest, and applied migrations `0001`
+- The first application attempt on 2026-09-03 passed offline and live Authing
+  preflight, pulled an immutable GHCR digest, and applied migrations `0001`
   through `0010`. Web and Worker then restarted because Compose file-backed
-  secrets retained host `root:root 0600` ownership and the image correctly ran
-  as unprivileged UID/GID `1000:1000`. The failed containers were stopped;
-  database migration evidence remains valid. ADR 0013 accepts a dedicated
-  numeric reader-group bridge, exact `0640`/GID preflight enforcement, and no
-  membership for the SSH administrator.
-- Next action: publish the ADR 0013 correction through CI, create the dedicated
-  group on the host, change the four application secret files to that group and
-  mode `0640`, add its numeric GID to the external release file, and rerun the
-  same digest deployment workflow. Once Web/Worker are healthy, prove the exact
-  R2 signed OPTIONS/PUT/GET path, public Authing callback/logout, one real O1Key
-  generation, backup restore, and mainland carrier sampling. Progress ICP
+  secrets retained host `root:root 0600` ownership while the image correctly
+  ran as unprivileged UID/GID `1000:1000`. ADR 0013 accepts a dedicated numeric
+  reader-group bridge, exact `0640`/GID preflight enforcement, and no membership
+  for the SSH administrator. The correction passed the full 129-test local gate
+  and CI run 6, which published source revision
+  `2b18419d6576b63efb93047e83afc5ad901a6367`, image
+  `ghcr.io/lizhongyi1209/goodgood@sha256:674500400095f52fce6adde33b7991ae1a760f968e192b710ed224b3754bdcfb`,
+  migration `0010_m6_payment_sandbox.sql`, and runtime-contract checksum
+  `e68e1aff192c2b08277e53e5c2bca62c64c084742b32318158aca62297153299`.
+  The repeated preflight and release then passed: migrations remained at count
+  10, Web and Worker became healthy, loopback and public `/live`/`ready` probes
+  reported database, queue, R2, O1Key, and runtime `ok`, and the immutable
+  release file was retained root-only for rollback. Public homepage rendering
+  passed; the login boundary returned Authing's exact client/callback,
+  Authorization Code, S256 PKCE, state, nonce, and binding-cookie contract, and
+  the hosted page exposed email-code plus the configured third-party option.
+  At the healthy checkpoint the host had about 2.5 GiB available memory, unused
+  swap, and 38 GiB free disk; Web and Worker used about 73 MiB and 55 MiB.
+- Interactive Google login then completed through the public Authing callback.
+  The new GoodGood owner received exactly the one-time 100-credit welcome grant,
+  and the authenticated workspace presented `10 积分/张 · 可生成 10 张`.
+  One explicitly authorized real Nano Banana 2 1K/1:1 task reached provider
+  processing, then GoodGood persisted `INTERNAL_ERROR`, released its 10-credit
+  reservation, retained the prompt, and created no Asset. No retry was clicked.
+  The same durable provider task subsequently returned `SUCCESS`; its 444,007
+  byte JPEG downloaded and fully decoded at 1024 x 1024. This proves the paid
+  POST and provider generation worked but does not pass GoodGood ingestion or
+  private-R2 evidence. Because the retained error did not identify whether the
+  transient boundary was a task poll or first result fetch, ADR 0008 now
+  requires consecutive failure confirmation plus bounded result-download
+  retries, with neither path issuing another generation POST.
+- The stabilization amendment passed `npm run check:local`: lint, full
+  TypeScript checking, production build, and 131 tests completed with 127
+  passing and four opt-in integration tests skipped by design. Worker terminal
+  logs now retain a safe failure stage and normalized code for the next incident.
+- Next action: publish the stabilization fix through CI, deploy its exact digest,
+  and verify health. Do not create a second paid O1Key task without explicit
+  operator confirmation. Then prove one complete
+  GoodGood-to-R2 generation, the exact R2 signed OPTIONS/PUT/GET path, and
+  logout before backup restore and mainland carrier sampling. Progress ICP
   filing/domain work in parallel and keep early paid access on the documented
   operator bridge. After the filed domain and domestic Alipay merchant sandbox
   are available, implement the provider adapter against the existing immutable
@@ -673,7 +703,7 @@ Completed real-Authing loopback checklist:
 | M4 | Production identity, ownership, references, and projects persist safely | Completed | Authing-compatible OIDC/PKCE, hashed sessions, provider-neutral ownership, signed references, cleanup, root-draft/project/asset persistence, optimistic conflict handling, cross-owner denial, and the requested real-Authing loopback matrix pass; public HTTPS proof is explicitly deferred to M7 |
 | M5 | US generation gateway integration and recovery | Completed | O1Key special-price adapter, explicit worker route, RustFS transfer, decoded output ingestion, durable-task restart, fake-server matrix, secret-file launcher, one real URL-output reference-image smoke, operator-confirmed New API charge/refund evidence, and ADR 0008's accepted at-most-once submission guard pass |
 | M6 | Versioned pricing, credit ledger, and payment sandbox | Completed | ADR 0009 launch prices, welcome grants, append-only accounting, live reserve/settle/release, account presentation, immutable CNY 10 / 500-credit product, idempotent orders, signed fake-sandbox fulfillment, dry-run-first manual paid-credit recording, isolated PostgreSQL tests, and full Compose pass |
-| M7 | Hong Kong staging | In progress | ADR 0011 accepts the provisioned Alibaba Cloud Hong Kong 2 vCPU / 4 GiB staging host; its key-only non-root SSH, patched Ubuntu, bounded swap, Docker/Compose, UFW, reboot, and cloud-agent baseline pass. Digest-pinned PostgreSQL/Valkey and a non-authoritative RustFS fallback are healthy on isolated networks. ADR 0012 fixes private R2 plus `goodgood.o1key.com`; private-bucket CORS, bucket-scoped credentials, Origin CA, host-specific Strict, and the Cloudflare-only Nginx origin pass. Authing callbacks and all four external secrets pass live preflight. The first digest release applied migrations `0001`-`0010` but exposed Compose's retained `0600` bind-mount permissions before app health; ADR 0013's dedicated reader-group correction is implemented and awaits CI/redeploy. Public auth, signed R2 transfer, real generation, three-carrier sampling, backup restore, and remaining smoke tests remain; payment checkout stays intentionally absent |
+| M7 | Hong Kong staging | In progress | ADR 0011 accepts the provisioned Alibaba Cloud Hong Kong 2 vCPU / 4 GiB staging host; its key-only non-root SSH, patched Ubuntu, bounded swap, Docker/Compose, UFW, reboot, and cloud-agent baseline pass. Digest-pinned PostgreSQL/Valkey and a non-authoritative RustFS fallback are healthy on isolated networks. ADR 0012 fixes private R2 plus `goodgood.o1key.com`; private-bucket CORS, bucket-scoped credentials, Origin CA, host-specific Strict, and the Cloudflare-only Nginx origin pass. Authing callbacks and all four external secrets pass live preflight. ADR 0013 fixes retained file-secret permissions with a dedicated reader group. CI run 6's exact digest is deployed, all ten migrations are present, Web/Worker and public readiness are healthy, homepage rendering, Authing authorization, interactive Google login, and the exact one-time 100-credit grant pass. The first real O1Key task succeeded upstream but exposed a transient poll/result-ingestion race; its reservation safely released and no second paid POST was sent. ADR 0008's bounded stabilization amendment and 131-test local gate pass; CI/redeploy remain. Logout, signed R2 transfer, one complete integrated generation, three-carrier sampling, backup restore, and remaining smoke tests remain; payment checkout stays intentionally absent |
 | M8 | Paid production readiness | Pending | ICP/domain prerequisites and domestic Alipay sandbox/checkout pass before production payment; security/compliance review, observability, rollback, retention, support IDs, and production release gate are complete |
 
 Only mark a milestone `Completed` when its exit evidence exists. Use `Blocked`

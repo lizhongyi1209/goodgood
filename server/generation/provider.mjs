@@ -10,10 +10,15 @@ export class NormalizedProviderError extends Error {
   }
 }
 
-async function providerFetch(url, options, timeoutMs = 5_000) {
+async function providerFetch(
+  url,
+  options,
+  timeoutMs = 5_000,
+  fetchImplementation = fetch,
+) {
   let response;
   try {
-    response = await fetch(url, {
+    response = await fetchImplementation(url, {
       ...options,
       signal: AbortSignal.timeout(timeoutMs),
     });
@@ -100,8 +105,13 @@ export async function pollProviderTask({ config, onRefining, taskId }) {
   });
 }
 
-export async function downloadProviderOutput(output) {
-  const response = await providerFetch(output.url, {}, 10_000);
+async function downloadProviderOutputOnce(output, fetchImplementation) {
+  const response = await providerFetch(
+    output.url,
+    {},
+    10_000,
+    fetchImplementation,
+  );
   const contentType = (response.headers.get("content-type") ?? output.mimeType)
     ?.split(";", 1)[0]
     .trim()
@@ -161,4 +171,40 @@ export async function downloadProviderOutput(output) {
     height: metadata.height,
     width: metadata.width,
   };
+}
+
+export async function downloadProviderOutput(
+  output,
+  {
+    fetchImplementation = fetch,
+    maxAttempts = 1,
+    retryDelayMs = 250,
+    sleep = (milliseconds) =>
+      new Promise((resolve) => setTimeout(resolve, milliseconds)),
+  } = {},
+) {
+  if (!Number.isInteger(maxAttempts) || maxAttempts <= 0) {
+    throw new Error("Provider output attempts must be a positive integer.");
+  }
+  if (!Number.isInteger(retryDelayMs) || retryDelayMs < 0) {
+    throw new Error("Provider output retry delay must be a non-negative integer.");
+  }
+
+  let lastError;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      return await downloadProviderOutputOnce(output, fetchImplementation);
+    } catch (error) {
+      lastError = error;
+      if (
+        !(error instanceof NormalizedProviderError) ||
+        error.retryable === false ||
+        attempt === maxAttempts
+      ) {
+        throw error;
+      }
+      await sleep(retryDelayMs);
+    }
+  }
+  throw lastError;
 }

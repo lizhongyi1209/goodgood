@@ -59,7 +59,32 @@ function createFakeGateway() {
       const taskId = `task_${nextTask}`;
       nextTask += 1;
       let responses;
-      if (/reject/i.test(body.prompt)) {
+      if (/transient failure/i.test(body.prompt)) {
+        responses = [
+          { status: "SUBMITTED", task_id: taskId },
+          { progress: "70%", status: "IN_PROGRESS", task_id: taskId },
+          {
+            error: "temporary upstream failure",
+            progress: "100%",
+            status: "FAILURE",
+            task_id: taskId,
+          },
+          {
+            data: {
+              images: [
+                {
+                  mime_type: "image/png",
+                  url: "https://assetcache.o1key.invalid/result.png",
+                },
+              ],
+              model: US_GATEWAY_MVP_ROUTE.providerModel,
+            },
+            progress: "100%",
+            status: "SUCCESS",
+            task_id: taskId,
+          },
+        ];
+      } else if (/reject/i.test(body.prompt)) {
         responses = [
           { progress: "20%", status: "IN_PROGRESS", task_id: taskId },
           {
@@ -284,6 +309,22 @@ test("O1Key failure strings normalize without reaching the browser", async (cont
       }),
     (error) => error instanceof NormalizedProviderError && error.code === "INTERNAL_ERROR",
   );
+});
+
+test("one transient O1Key failure observation does not discard a later success", async (context) => {
+  const { adapter, gateway } = await withGateway(context);
+  const submitted = await adapter.submit(generationRequest("transient failure then success"));
+  const updates = [];
+  const completed = await adapter.waitForTerminal({
+    onUpdate: async (task) => updates.push(task.state),
+    pollIntervalMs: 1,
+    taskId: submitted.taskId,
+    timeoutMs: 100,
+  });
+
+  assert.equal(completed.state, "succeeded");
+  assert.deepEqual(updates, ["queued", "running", "succeeded"]);
+  assert.equal(gateway.submissions.length, 1);
 });
 
 test("bounded O1Key polling normalizes timeout", async (context) => {

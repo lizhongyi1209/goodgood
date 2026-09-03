@@ -77,6 +77,8 @@ const loop = (async () => {
             event: "worker.job_finished",
             jobId,
             outcome: result.outcome,
+            code: result.code,
+            stage: result.stage,
             workerId,
           }),
         );
