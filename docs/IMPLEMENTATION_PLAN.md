@@ -9,9 +9,10 @@
   interactive Google login passes. The first public real-generation attempt
   exposed a provider/result convergence race after its paid task ID was durable;
   ADR 0008's bounded stabilization amendment is now deployed and one complete
-  GoodGood-to-O1Key-to-R2 generation plus the signed reference transfer path pass
-- Current objective: complete public HTTPS logout, backup restore, and carrier
-  evidence; ICP filing/domain work proceeds in parallel
+  GoodGood-to-O1Key-to-R2 generation, signed reference transfer, and public
+  GoodGood/Authing logout path pass
+- Current objective: complete backup restore and carrier evidence; ICP
+  filing/domain work proceeds in parallel
 
 ## Purpose and update contract
 
@@ -236,7 +237,8 @@ this file owns the current handoff state.
   repository. Google and email-code token exchange, email delivery, first-login
   provisioning, repeat account login, Google-first same-subject association,
   and GoodGood session revocation now pass on loopback. Email-first association
-  and public HTTPS callback/logout remain unverified. Operator-observed
+  remains unverified; the public HTTPS callback/logout path now passes in Hong
+  Kong staging. Operator-observed
   authorization cancellation, exact callback replay rejection, expired and
   reused email-code rejection, fresh email-code success, and Authing
   hosted-session exit now pass on loopback. In-app destructive clearing has
@@ -635,8 +637,17 @@ this file owns the current handoff state.
   reload restored one ready reference and decoded a fresh HTTPS signed R2 read
   at the same 373 x 337 dimensions. Credit state remained 90 available and zero
   reserved; no generation request was issued.
-- Next action: test local plus Authing-hosted logout on public HTTPS, then perform
-  backup restore and mainland carrier sampling.
+- Public HTTPS logout now passes both required boundaries. Before logout the
+  workspace retained its owner draft/reference and PostgreSQL had one active
+  GoodGood session. The GoodGood logout returned the browser to the query-free
+  application root in the unauthenticated state; PostgreSQL then had zero active
+  sessions and the only session was revoked. Starting login again stopped at
+  the Authing application `/login` page with email-code and third-party entry
+  points instead of silently authenticating, proving the hosted Authing session
+  also exited. No credential, cookie, authorization query, or full test address
+  was retained.
+- Next action: perform a PostgreSQL backup restore drill, then collect mainland
+  carrier samples.
   Progress ICP
   filing/domain work in parallel and keep early paid access on the documented
   operator bridge. After the filed domain and domestic Alipay merchant sandbox
@@ -650,14 +661,12 @@ this file owns the current handoff state.
   blocker. The deferred reverse-order association
   check needs a second
   Google-backed test address or an explicitly approved reset of the isolated
-  Authing test user. The public-HTTPS callback/logout proof was skipped for M4
-  at the operator's request and must be reopened before M7 release evidence can
-  pass. The previously disclosed Google OAuth client secret must be rotated and
-  updated in Authing before further shared or staging use. The application
-  secret remains operator-supplied outside the repository by design. An ICP-filed custom
-  authentication domain is not required now because the Authing-provided
-  application domain is the accepted temporary path. The local token adapter
-  remains forbidden in staging and production.
+  Authing test user. The previously disclosed Google OAuth client secret must
+  be rotated and updated in Authing before further shared or staging use. The
+  application secret remains operator-supplied outside the repository by
+  design. An ICP-filed custom authentication domain is not required now because
+  the Authing-provided application domain is the accepted temporary path. The
+  local token adapter remains forbidden in staging and production.
 
 ## M4 exit-evidence audit
 
@@ -673,7 +682,7 @@ this file owns the current handoff state.
 | Exact callback replay | Passed on real loopback | The same captured local callback was revisited once without exposing its query; it returned to a query-free root, preserved the existing GoodGood session, created no new session, and left the login attempt consumed |
 | Email-code expiry/reuse | Passed on real loopback | Operator confirmed an expired code was rejected, a fresh code completed login, and the already-used code was rejected without retaining the mailbox or code |
 | Email-first then Google association | Deferred by operator | Not counted as passed; do not reset the current Authing user without explicit approval |
-| Secure public callback/logout, DNS/TLS, and real network path | Deferred by operator to M7 | Not passed; reopen as a mandatory staging/release gate when a public HTTPS origin is available |
+| Secure public callback/logout, DNS/TLS, and real network path | Passed in Hong Kong staging | Interactive Google login returned through the exact HTTPS callback; GoodGood logout revoked the sole active session, returned to the query-free unauthenticated root, and a fresh login stopped at Authing `/login` instead of silently authenticating |
 | US gateway, billing, production storage lifecycle, and Hong Kong release operations | Later milestones | M5–M7 work, not an M4 implementation gap |
 
 Completed real-Authing loopback checklist:
@@ -728,10 +737,10 @@ Completed real-Authing loopback checklist:
 | M1 | Domain contracts and mocked boundaries extracted from the prototype | Completed | Composer and domain seams extracted; stable model/ratio/job mappings and mock repository/provider success, failure, and retry have unit tests; image/dependency warnings cleared; clean install check, lint, typecheck, build, and 13 tests passed on 2026-08-30 |
 | M2 | Production-shaped local container foundation | Completed | One pinned Compose stack starts healthy web, worker, PostgreSQL, Valkey, RustFS, and mock generation with documented commands; host probes and named-volume persistence passed on 2026-08-30 |
 | M3 | Durable asynchronous generation vertical slice | Completed | One model and one image pass API, PostgreSQL/outbox, Valkey, worker restart, mock provider, RustFS, Asset, polling, inline failure/retry, duplicate, and timeout tests on 2026-08-30 |
-| M4 | Production identity, ownership, references, and projects persist safely | Completed | Authing-compatible OIDC/PKCE, hashed sessions, provider-neutral ownership, signed references, cleanup, root-draft/project/asset persistence, optimistic conflict handling, cross-owner denial, and the requested real-Authing loopback matrix pass; public HTTPS proof is explicitly deferred to M7 |
+| M4 | Production identity, ownership, references, and projects persist safely | Completed | Authing-compatible OIDC/PKCE, hashed sessions, provider-neutral ownership, signed references, cleanup, root-draft/project/asset persistence, optimistic conflict handling, cross-owner denial, and the requested real-Authing loopback matrix pass; public HTTPS callback/logout now also passes under M7 staging |
 | M5 | US generation gateway integration and recovery | Completed | O1Key special-price adapter, explicit worker route, RustFS transfer, decoded output ingestion, durable-task restart, fake-server matrix, secret-file launcher, one real URL-output reference-image smoke, operator-confirmed New API charge/refund evidence, and ADR 0008's accepted at-most-once submission guard pass |
 | M6 | Versioned pricing, credit ledger, and payment sandbox | Completed | ADR 0009 launch prices, welcome grants, append-only accounting, live reserve/settle/release, account presentation, immutable CNY 10 / 500-credit product, idempotent orders, signed fake-sandbox fulfillment, dry-run-first manual paid-credit recording, isolated PostgreSQL tests, and full Compose pass |
-| M7 | Hong Kong staging | In progress | ADR 0011 accepts the provisioned Alibaba Cloud Hong Kong 2 vCPU / 4 GiB staging host; its key-only non-root SSH, patched Ubuntu, bounded swap, Docker/Compose, UFW, reboot, and cloud-agent baseline pass. Digest-pinned PostgreSQL/Valkey and a non-authoritative RustFS fallback are healthy on isolated networks. ADR 0012 fixes private R2 plus `goodgood.o1key.com`; private-bucket CORS, bucket-scoped credentials, Origin CA, host-specific Strict, and the Cloudflare-only Nginx origin pass. Authing callbacks and all four external secrets pass live preflight. ADR 0013 fixes retained file-secret permissions with a dedicated reader group. All ten migrations are present; homepage rendering, Authing authorization, interactive Google login, and the exact one-time 100-credit grant pass. The first real O1Key task succeeded upstream but exposed a transient poll/result-ingestion race; its reservation safely released and no second paid POST was sent. ADR 0008's bounded stabilization amendment passed the 131-test local gate plus CI run 7 and is deployed at exact revision/digest with Web/Worker and public readiness healthy. A newly authorized task now passes one paid POST, one attempt, 10-credit settlement, private R2 Asset ingestion, signed browser decode, asset cue/library, and stable detail route. The browser reference path now also passes signed cross-origin upload, server-side validation, root-draft restore, and fresh signed R2 read without changing credit state. Public logout, three-carrier sampling, backup restore, and remaining smoke tests remain; payment checkout stays intentionally absent |
+| M7 | Hong Kong staging | In progress | ADR 0011 accepts the provisioned Alibaba Cloud Hong Kong 2 vCPU / 4 GiB staging host; its key-only non-root SSH, patched Ubuntu, bounded swap, Docker/Compose, UFW, reboot, and cloud-agent baseline pass. Digest-pinned PostgreSQL/Valkey and a non-authoritative RustFS fallback are healthy on isolated networks. ADR 0012 fixes private R2 plus `goodgood.o1key.com`; private-bucket CORS, bucket-scoped credentials, Origin CA, host-specific Strict, and the Cloudflare-only Nginx origin pass. Authing callbacks and all four external secrets pass live preflight. ADR 0013 fixes retained file-secret permissions with a dedicated reader group. All ten migrations are present; homepage rendering, Authing authorization, interactive Google login, and the exact one-time 100-credit grant pass. The first real O1Key task succeeded upstream but exposed a transient poll/result-ingestion race; its reservation safely released and no second paid POST was sent. ADR 0008's bounded stabilization amendment passed the 131-test local gate plus CI run 7 and is deployed at exact revision/digest with Web/Worker and public readiness healthy. A newly authorized task now passes one paid POST, one attempt, 10-credit settlement, private R2 Asset ingestion, signed browser decode, asset cue/library, and stable detail route. The browser reference path now also passes signed cross-origin upload, server-side validation, root-draft restore, and fresh signed R2 read without changing credit state. Public GoodGood session revocation, Authing hosted-session exit, callback return, and query-free unauthenticated recovery pass. Backup restore, three-carrier sampling, and remaining smoke tests remain; payment checkout stays intentionally absent |
 | M8 | Paid production readiness | Pending | ICP/domain prerequisites and domestic Alipay sandbox/checkout pass before production payment; security/compliance review, observability, rollback, retention, support IDs, and production release gate are complete |
 
 Only mark a milestone `Completed` when its exit evidence exists. Use `Blocked`
