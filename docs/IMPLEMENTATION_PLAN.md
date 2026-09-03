@@ -10,9 +10,11 @@
   exposed a provider/result convergence race after its paid task ID was durable;
   ADR 0008's bounded stabilization amendment is now deployed and one complete
   GoodGood-to-O1Key-to-R2 generation, signed reference transfer, and public
-  GoodGood/Authing logout path plus an isolated PostgreSQL restore drill pass
-- Current objective: collect mainland carrier evidence, then prove a compatible
-  prior-image application rollback; ICP filing/domain work proceeds in parallel
+  GoodGood/Authing logout path plus an isolated PostgreSQL restore drill and a
+  peak-time mainland three-carrier HTTP baseline pass
+- Current objective: collect full-byte upload/download throughput from real
+  mainland carrier clients, then prove a compatible prior-image application
+  rollback; ICP filing/domain work proceeds in parallel
 
 ## Purpose and update contract
 
@@ -666,8 +668,36 @@ this file owns the current handoff state.
   remained 90 available with zero reserved. The retained same-host archive is
   restore evidence, not a substitute for an automated, encrypted, off-host
   production backup policy.
-- Next action: collect mainland China Telecom, China Unicom, and China Mobile
-  samples, then run the compatible prior-image application rollback smoke.
+- A 2026-09-03 20:53-21:00 China Standard Time Globalping run reused one fixed
+  set of ten online mainland eyeball probes across China Telecom AS4134, China
+  Unicom AS4837, and China Mobile AS9808: Telecom in Dongguan, Shenzhen, and
+  Xi'an; Unicom in Changsha, Wuhan, and Xi'an; and Mobile in Guangzhou,
+  Shanghai, and Taishan. Five `/api/health/ready` rounds
+  returned HTTP 200 for all 50 samples. End-to-end p50/p95 were
+  1,458/3,156.5 ms for Telecom (15 samples), 983.5/1,310.6 ms for Unicom (20),
+  and 1,693/3,014.9 ms for Mobile (15). Three homepage rounds also returned
+  HTTP 200 for all 30 samples, with p50/p95 of 1,030/2,399.2 ms for Telecom
+  (9), 879/946.9 ms for Unicom (12), and 1,124/3,114.6 ms for Mobile (9).
+  This is a valid representative-evening API/error baseline, not a capacity or
+  end-user-browser benchmark.
+- A separate synthetic private-R2 check created one 8 MiB non-user object,
+  issued only a five-minute signed GET, and deleted the object immediately after
+  three rounds. All 27 tests whose probes remained online returned HTTP 200;
+  one Telecom probe was offline in all three rounds and is recorded as probe
+  availability rather than an application error. Globalping returned only the
+  first 10,000 body characters and physically implausible download timings, so
+  no derived Mbps value is accepted. Its HTTP contract also excludes PUT.
+  Full-byte upload/download throughput therefore still requires real browser
+  runs on the three carrier connections; no signed URL, object key, credential,
+  or synthetic object remains from this attempt.
+- After cleanup, public Web readiness and the host-loopback Web/Worker probes
+  still reported runtime, database, queue, R2, and O1Key `ok`. The complete
+  `npm run check:local` gate also passed: lint, TypeScript, production build,
+  and 131 tests completed with 127 passing and four opt-in integrations skipped
+  by design.
+- Next action: collect full-byte browser upload/download samples on mainland
+  China Telecom, China Unicom, and China Mobile connections, then run the
+  compatible prior-image application rollback smoke.
   Progress ICP
   filing/domain work in parallel and keep early paid access on the documented
   operator bridge. After the filed domain and domestic Alipay merchant sandbox
@@ -760,7 +790,7 @@ Completed real-Authing loopback checklist:
 | M4 | Production identity, ownership, references, and projects persist safely | Completed | Authing-compatible OIDC/PKCE, hashed sessions, provider-neutral ownership, signed references, cleanup, root-draft/project/asset persistence, optimistic conflict handling, cross-owner denial, and the requested real-Authing loopback matrix pass; public HTTPS callback/logout now also passes under M7 staging |
 | M5 | US generation gateway integration and recovery | Completed | O1Key special-price adapter, explicit worker route, RustFS transfer, decoded output ingestion, durable-task restart, fake-server matrix, secret-file launcher, one real URL-output reference-image smoke, operator-confirmed New API charge/refund evidence, and ADR 0008's accepted at-most-once submission guard pass |
 | M6 | Versioned pricing, credit ledger, and payment sandbox | Completed | ADR 0009 launch prices, welcome grants, append-only accounting, live reserve/settle/release, account presentation, immutable CNY 10 / 500-credit product, idempotent orders, signed fake-sandbox fulfillment, dry-run-first manual paid-credit recording, isolated PostgreSQL tests, and full Compose pass |
-| M7 | Hong Kong staging | In progress | ADR 0011 accepts the provisioned Alibaba Cloud Hong Kong 2 vCPU / 4 GiB staging host; its key-only non-root SSH, patched Ubuntu, bounded swap, Docker/Compose, UFW, reboot, and cloud-agent baseline pass. Digest-pinned PostgreSQL/Valkey and a non-authoritative RustFS fallback are healthy on isolated networks. ADR 0012 fixes private R2 plus `goodgood.o1key.com`; private-bucket CORS, bucket-scoped credentials, Origin CA, host-specific Strict, and the Cloudflare-only Nginx origin pass. Authing callbacks and all four external secrets pass live preflight. ADR 0013 fixes retained file-secret permissions with a dedicated reader group. All ten migrations are present; homepage rendering, Authing authorization, interactive Google login, and the exact one-time 100-credit grant pass. The first real O1Key task succeeded upstream but exposed a transient poll/result-ingestion race; its reservation safely released and no second paid POST was sent. ADR 0008's bounded stabilization amendment passed the 131-test local gate plus CI run 7 and is deployed at exact revision/digest with Web/Worker and public readiness healthy. A newly authorized task now passes one paid POST, one attempt, 10-credit settlement, private R2 Asset ingestion, signed browser decode, asset cue/library, and stable detail route. The browser reference path now also passes signed cross-origin upload, server-side validation, root-draft restore, and fresh signed R2 read without changing credit state. Public GoodGood session revocation, Authing hosted-session exit, callback return, and query-free unauthenticated recovery pass. A root-only custom archive restores all 20 public tables, 54 rows, and ten migrations inside a no-network, read-only, bounded-`tmpfs` PostgreSQL container without affecting the healthy source. Three-carrier sampling, compatible application rollback, and remaining smoke tests remain; payment checkout stays intentionally absent |
+| M7 | Hong Kong staging | In progress | ADR 0011 accepts the provisioned Alibaba Cloud Hong Kong 2 vCPU / 4 GiB staging host; its key-only non-root SSH, patched Ubuntu, bounded swap, Docker/Compose, UFW, reboot, and cloud-agent baseline pass. Digest-pinned PostgreSQL/Valkey and a non-authoritative RustFS fallback are healthy on isolated networks. ADR 0012 fixes private R2 plus `goodgood.o1key.com`; private-bucket CORS, bucket-scoped credentials, Origin CA, host-specific Strict, and the Cloudflare-only Nginx origin pass. Authing callbacks and all four external secrets pass live preflight. ADR 0013 fixes retained file-secret permissions with a dedicated reader group. All ten migrations are present; homepage rendering, Authing authorization, interactive Google login, and the exact one-time 100-credit grant pass. The first real O1Key task succeeded upstream but exposed a transient poll/result-ingestion race; its reservation safely released and no second paid POST was sent. ADR 0008's bounded stabilization amendment passed the 131-test local gate plus CI run 7 and is deployed at exact revision/digest with Web/Worker and public readiness healthy. A newly authorized task now passes one paid POST, one attempt, 10-credit settlement, private R2 Asset ingestion, signed browser decode, asset cue/library, and stable detail route. The browser reference path now also passes signed cross-origin upload, server-side validation, root-draft restore, and fresh signed R2 read without changing credit state. Public GoodGood session revocation, Authing hosted-session exit, callback return, and query-free unauthenticated recovery pass. A root-only custom archive restores all 20 public tables, 54 rows, and ten migrations inside a no-network, read-only, bounded-`tmpfs` PostgreSQL container without affecting the healthy source. Peak-time mainland Telecom/Unicom/Mobile API and homepage sampling now passes with zero HTTP errors, while public-probe body truncation leaves real-client upload/download throughput outstanding. Compatible application rollback and remaining smoke tests also remain; payment checkout stays intentionally absent |
 | M8 | Paid production readiness | Pending | ICP/domain prerequisites and domestic Alipay sandbox/checkout pass before production payment; security/compliance review, observability, rollback, retention, support IDs, and production release gate are complete |
 
 Only mark a milestone `Completed` when its exit evidence exists. Use `Blocked`

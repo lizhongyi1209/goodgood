@@ -346,6 +346,11 @@ outside the one-output MVP.
 - Hong Kong-to-US provider latency and failure behavior.
 - Mainland China Telecom, China Unicom, and China Mobile samples for API p50/p95,
   upload/download throughput, and error rate at representative peak times.
+  Distributed public probes may establish API latency and HTTP error baselines,
+  but throughput counts only when a real carrier client transfers and verifies
+  the complete synthetic payload. A tool that truncates the response body or
+  does not support PUT cannot satisfy the upload/download portion. Report
+  offline probe availability separately from application HTTP failures.
 - PostgreSQL backup restoration and application rollback using the prior image.
 
 ## Release gate

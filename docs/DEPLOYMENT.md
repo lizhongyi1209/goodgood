@@ -835,6 +835,25 @@ removes only that fixed disposable container. It never stops, writes to, or
 restores over the running staging database. Keep retained archives out of Git
 and include them in the operator's encrypted backup retention and access policy.
 
+## Mainland carrier measurement
+
+Measure China Telecom, China Unicom, and China Mobile during a recorded
+representative peak period. For API evidence, keep one fixed set of mainland
+eyeball probes across repeated rounds and record the carrier ASN, cities,
+successful/failed request counts, and end-to-end plus first-byte p50/p95. Treat
+a selected probe that goes offline as probe availability, not an application
+HTTP error, while still reporting it explicitly.
+
+Public distributed probes are acceptable for API reachability and latency but
+not automatically for object throughput. Upload and download evidence must come
+from a real browser on each carrier connection, transfer the complete synthetic
+non-user payload through the production-shaped signed R2 paths, and verify the
+byte count or digest before computing Mbps. Delete the synthetic object after
+the test. Never retain a signed query, object key, credential, or response body
+in the repository or operator transcript. A probe that supports only
+HEAD/GET/OPTIONS, truncates the returned body, or produces physically
+implausible timing is explicitly non-qualifying for throughput.
+
 ## Observability
 
 Minimum production signals:
