@@ -16,6 +16,8 @@ x-goodgood-staging-app: &goodgood-staging-app
   mem_reservation: 128m
   memswap_limit: 768m
   pids_limit: 256
+  group_add:
+    - "${GOODGOOD_STAGING_SECRET_GID:?Set the numeric staging secret-reader group GID}"
   env_file:
     - ${GOODGOOD_RUNTIME_ENV_FILE:?Set an absolute staging runtime env-file path}
   labels:

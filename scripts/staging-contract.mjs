@@ -25,6 +25,7 @@ const RELEASE_VARIABLES = Object.freeze([
   "GOODGOOD_GENERATION_API_KEY_SOURCE_FILE",
   "GOODGOOD_OBJECT_STORAGE_ACCESS_KEY_ID_SOURCE_FILE",
   "GOODGOOD_OBJECT_STORAGE_SECRET_ACCESS_KEY_SOURCE_FILE",
+  "GOODGOOD_STAGING_SECRET_GID",
   "GOODGOOD_STAGING_WEB_PORT",
   "GOODGOOD_STAGING_WORKER_HEALTH_PORT",
 ]);
@@ -63,7 +64,21 @@ function isLoopback(hostname) {
   );
 }
 
-function validateSecretFile(sourcePath, name) {
+function stagingSecretGroupId(release) {
+  const rawValue = required(release, "GOODGOOD_STAGING_SECRET_GID");
+  if (!/^[1-9]\d*$/.test(rawValue)) {
+    throw new Error(
+      "GOODGOOD_STAGING_SECRET_GID must be a positive numeric GID.",
+    );
+  }
+  const value = Number(rawValue);
+  if (!Number.isSafeInteger(value) || value > 2_147_483_647) {
+    throw new Error("GOODGOOD_STAGING_SECRET_GID must be a valid Linux GID.");
+  }
+  return value;
+}
+
+function validateSecretFile(sourcePath, name, secretGroupId) {
   if (!path.isAbsolute(sourcePath)) {
     throw new Error(`${name} must be an absolute host path.`);
   }
@@ -78,8 +93,17 @@ function validateSecretFile(sourcePath, name) {
   if (!stats.isFile() || !contents) {
     throw new Error(`${name} must reference a non-empty regular file.`);
   }
-  if (process.platform !== "win32" && (stats.mode & 0o077) !== 0) {
-    throw new Error(`${name} must not grant group or other permissions.`);
+  if (process.platform !== "win32") {
+    if ((stats.mode & 0o777) !== 0o640) {
+      throw new Error(
+        `${name} must grant exactly owner read/write and secret-group read permissions (0640).`,
+      );
+    }
+    if (stats.gid !== secretGroupId) {
+      throw new Error(
+        `${name} must belong to GOODGOOD_STAGING_SECRET_GID (${secretGroupId}).`,
+      );
+    }
   }
 }
 
@@ -129,24 +153,36 @@ function validateRelease(release, runtimeFilePath) {
     );
   }
 
+  const secretGroupId = stagingSecretGroupId(release);
+
   validateSecretFile(
     required(release, "GOODGOOD_AUTH_CLIENT_SECRET_SOURCE_FILE"),
     "GOODGOOD_AUTH_CLIENT_SECRET_SOURCE_FILE",
+    secretGroupId,
   );
   validateSecretFile(
     required(release, "GOODGOOD_GENERATION_API_KEY_SOURCE_FILE"),
     "GOODGOOD_GENERATION_API_KEY_SOURCE_FILE",
+    secretGroupId,
   );
   validateSecretFile(
     required(release, "GOODGOOD_OBJECT_STORAGE_ACCESS_KEY_ID_SOURCE_FILE"),
     "GOODGOOD_OBJECT_STORAGE_ACCESS_KEY_ID_SOURCE_FILE",
+    secretGroupId,
   );
   validateSecretFile(
     required(release, "GOODGOOD_OBJECT_STORAGE_SECRET_ACCESS_KEY_SOURCE_FILE"),
     "GOODGOOD_OBJECT_STORAGE_SECRET_ACCESS_KEY_SOURCE_FILE",
+    secretGroupId,
   );
 
-  return Object.freeze({ image, migration, revision, runtimeConfigVersion });
+  return Object.freeze({
+    image,
+    migration,
+    revision,
+    runtimeConfigVersion,
+    secretGroupId,
+  });
 }
 
 function validateRuntime(release, runtime) {

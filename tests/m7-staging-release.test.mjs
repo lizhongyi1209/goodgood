@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { chmod, chown, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -39,12 +39,28 @@ async function stagingFixture(context) {
   const storageSecretKeyFile = path.join(directory, "storage-secret-key");
   const releaseFile = path.join(directory, "release.env");
   const runtimeFile = path.join(directory, "runtime.env");
+  const secretGroupId =
+    process.platform === "win32"
+      ? 11000
+      : process.getgid() === 0
+        ? 11000
+        : process.getgid();
   await Promise.all([
-    writeFile(authSecretFile, `${AUTH_SECRET}\n`, { mode: 0o600 }),
-    writeFile(generationSecretFile, `${GENERATION_SECRET}\n`, { mode: 0o600 }),
-    writeFile(storageAccessKeyFile, `${STORAGE_ACCESS_KEY}\n`, { mode: 0o600 }),
-    writeFile(storageSecretKeyFile, `${STORAGE_SECRET_KEY}\n`, { mode: 0o600 }),
+    writeFile(authSecretFile, `${AUTH_SECRET}\n`, { mode: 0o640 }),
+    writeFile(generationSecretFile, `${GENERATION_SECRET}\n`, { mode: 0o640 }),
+    writeFile(storageAccessKeyFile, `${STORAGE_ACCESS_KEY}\n`, { mode: 0o640 }),
+    writeFile(storageSecretKeyFile, `${STORAGE_SECRET_KEY}\n`, { mode: 0o640 }),
   ]);
+  if (process.platform !== "win32" && process.getgid() === 0) {
+    await Promise.all(
+      [
+        authSecretFile,
+        generationSecretFile,
+        storageAccessKeyFile,
+        storageSecretKeyFile,
+      ].map((file) => chown(file, process.getuid(), secretGroupId)),
+    );
+  }
 
   const release = {
     GOODGOOD_AUTH_CLIENT_SECRET_SOURCE_FILE: authSecretFile,
@@ -56,6 +72,7 @@ async function stagingFixture(context) {
     GOODGOOD_RELEASE_REVISION: "b".repeat(40),
     GOODGOOD_RUNTIME_CONFIG_VERSION: "c".repeat(64),
     GOODGOOD_RUNTIME_ENV_FILE: runtimeFile,
+    GOODGOOD_STAGING_SECRET_GID: String(secretGroupId),
   };
   const runtime = {
     DATABASE_URL:
@@ -151,6 +168,29 @@ test("staging preflight fails closed for empty, mutable, local, and inline-secre
   });
   assert.equal(mutable.ok, false);
   assert.match(mutable.checks[0].detail, /pinned by sha256 digest/);
+
+  const invalidSecretGroup = runStagingPreflight({
+    releaseEnvironment: {
+      ...fixture.release,
+      GOODGOOD_STAGING_SECRET_GID: "not-a-gid",
+    },
+    runtimeEnvironment: fixture.runtime,
+    runtimeFilePath: fixture.runtimeFile,
+  });
+  assert.equal(invalidSecretGroup.ok, false);
+  assert.match(invalidSecretGroup.checks[0].detail, /positive numeric GID/);
+
+  if (process.platform !== "win32") {
+    await chmod(fixture.release.GOODGOOD_AUTH_CLIENT_SECRET_SOURCE_FILE, 0o600);
+    const ownerOnlySecret = runStagingPreflight({
+      releaseEnvironment: fixture.release,
+      runtimeEnvironment: fixture.runtime,
+      runtimeFilePath: fixture.runtimeFile,
+    });
+    assert.equal(ownerOnlySecret.ok, false);
+    assert.match(ownerOnlySecret.checks[0].detail, /0640/);
+    await chmod(fixture.release.GOODGOOD_AUTH_CLIENT_SECRET_SOURCE_FILE, 0o640);
+  }
 
   for (const unsafeRuntime of [
     {
@@ -317,6 +357,7 @@ test("staging Compose has no build, local auth, mock provider, or fake payment d
   assert.doesNotMatch(compose, /GOODGOOD_ALLOW_LOCAL_AUTH|mock-generation/);
   assert.doesNotMatch(compose, /GOODGOOD_FAKE_PAYMENT_ENABLED/);
   assert.match(compose, /127\.0\.0\.1:\$\{GOODGOOD_STAGING_WEB_PORT/);
+  assert.match(compose, /group_add:\n\s+- "\$\{GOODGOOD_STAGING_SECRET_GID:\?/);
   assert.match(compose, /goodgood_auth_client_secret:/);
   assert.match(compose, /goodgood_generation_api_key:/);
   assert.match(compose, /goodgood_object_storage_access_key_id:/);
@@ -346,6 +387,11 @@ test("Alibaba Cloud staging bootstrap is bounded and keeps public services close
 
   assert.match(bootstrap, /VERSION_ID:-.*24\.04/);
   assert.match(bootstrap, /readonly admin_user="goodgood"/);
+  assert.match(
+    bootstrap,
+    /readonly runtime_secrets_group="goodgood-runtime-secrets"/,
+  );
+  assert.match(bootstrap, /groupadd --system "\$\{runtime_secrets_group\}"/);
   assert.match(bootstrap, /readonly swap_size_mib="2048"/);
   assert.match(bootstrap, /apt-get upgrade --with-new-pkgs --yes/);
   assert.match(bootstrap, /https:\/\/download\.docker\.com\/linux\/ubuntu/);

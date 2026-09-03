@@ -497,7 +497,7 @@ Keep three kinds of staging material separate:
 | --- | --- | --- |
 | Release identity | `infra/staging/release.env.example` | Copy one successful CI summary exactly: image digest, source SHA, migration filename, runtime-contract checksum, runtime-file path, and secret-file source paths. No credential belongs here. |
 | Runtime configuration | `infra/staging/runtime.env.example` | Store outside the checkout, mode `0600`; contains server endpoints and secret-bearing connection values. Never commit it or use the local placeholders unchanged. |
-| Mounted secrets | Authing client-secret, O1Key key, and two R2 S3 credential files | Separate non-empty regular files, mode `0600`; Compose mounts only the roles that need each file at the exact `/run/secrets/...` paths. Do not put these values in an environment variable or command argument. |
+| Mounted secrets | Authing client-secret, O1Key key, and two R2 S3 credential files | Separate non-empty regular files, owned by `root:goodgood-runtime-secrets` with mode `0640`; Compose mounts only the roles that need each file at the exact `/run/secrets/...` paths and adds that group's numeric GID. Do not put these values in an environment variable or command argument. |
 
 On the staging host, a conventional layout is
 `/etc/goodgood/staging/release.env`,
@@ -507,13 +507,28 @@ in, while real `.env` files and the secret directory are excluded from both Git
 and the Docker build context. Percent-encode reserved characters in connection
 URL credentials rather than relying on shell or Compose expansion.
 
+`bootstrap-ubuntu-host.sh` creates the dedicated `goodgood-runtime-secrets`
+group but does not add the SSH administrator to it. Before preflight, install
+all four application secret files with that group and record its numeric GID in
+the release file:
+
+```bash
+secret_gid="$(getent group goodgood-runtime-secrets | cut -d: -f3)"
+sudo chown root:goodgood-runtime-secrets /etc/goodgood/staging/secrets/{auth-client-secret,o1key-api-key,r2-access-key-id,r2-secret-access-key}
+sudo chmod 0640 /etc/goodgood/staging/secrets/{auth-client-secret,o1key-api-key,r2-access-key-id,r2-secret-access-key}
+printf 'GOODGOOD_STAGING_SECRET_GID=%s\n' "${secret_gid}"
+```
+
+Copy the printed non-secret assignment into `release.env`. Do not use the
+host's `docker`, `sudo`, or administrator group for this purpose.
+
 The local contract preflight rejects a tag or `latest`, malformed release
-evidence, unreadable secret files, release/runtime file mixing, a runtime
-revision override, local auth, inline Authing/O1Key secrets, mock generation,
-inline R2 secrets, insecure or custom-domain storage endpoints, non-`auto` R2
-region, bucket-management mode, wildcard upload CORS, loopback dependencies,
-and the fake payment sandbox. It prints only public configuration and check
-results:
+evidence, unreadable or incorrectly grouped secret files, release/runtime file
+mixing, a runtime revision override, local auth, inline Authing/O1Key secrets,
+mock generation, inline R2 secrets, insecure or custom-domain storage
+endpoints, non-`auto` R2 region, bucket-management mode, wildcard upload CORS,
+loopback dependencies, and the fake payment sandbox. It prints only public
+configuration and check results:
 
 ```bash
 npm run staging:preflight -- \

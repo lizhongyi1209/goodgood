@@ -23,3 +23,4 @@ Current records:
 - `0010-domestic-alipay-after-icp-with-manual-credit-operations.md`
 - `0011-alibaba-cloud-hong-kong-staging-host.md`
 - `0012-private-cloudflare-r2-for-staging-assets.md`
+- `0013-staging-secret-reader-group.md`

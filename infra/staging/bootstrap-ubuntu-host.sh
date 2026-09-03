@@ -2,6 +2,7 @@
 set -euo pipefail
 
 readonly admin_user="goodgood"
+readonly runtime_secrets_group="goodgood-runtime-secrets"
 readonly swap_file="/swapfile"
 readonly swap_size_mib="2048"
 
@@ -25,6 +26,10 @@ fi
 if ! id "${admin_user}" >/dev/null 2>&1; then
   echo "Required non-root administrator ${admin_user} does not exist." >&2
   exit 78
+fi
+
+if ! getent group "${runtime_secrets_group}" >/dev/null 2>&1; then
+  groupadd --system "${runtime_secrets_group}"
 fi
 
 export DEBIAN_FRONTEND=noninteractive
