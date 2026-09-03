@@ -11,8 +11,8 @@
 Never use production credentials in local `.env` files or browser bundles.
 
 Local proves application behavior and container compatibility. Staging is a
-required delivery stage, not an optional preview: public DNS/TLS, ESA, AWS
-permissions, signed storage, callbacks, cross-border paths, payment sandboxes,
+required delivery stage, not an optional preview: public DNS/TLS, ESA, selected
+cloud permissions, signed storage, callbacks, cross-border paths, payment sandboxes,
 resource limits, and backup restore cannot be accepted from local evidence.
 
 ## Local workflow
@@ -114,13 +114,14 @@ prefer a dedicated least-privilege Bearer credential from its secret store. It
 must not enter checked-in Compose values, an image layer, browser JavaScript,
 logs, or retained test output.
 
-No Cloudflare R2 bucket is required for this MVP. The worker reads already
-validated reference bytes from private RustFS and uploads them server-to-server
-through O1Key's temporary attachment endpoint. Its returned HTTPS URL is public
-for 24 hours, must be used only for the requested model operation, and is not a
-GoodGood persistence record. Generated outputs are downloaded back into private
-GoodGood storage. Production object-storage selection remains an M7 staging
-decision rather than an implicit R2 commitment.
+M5's local acceptance required no Cloudflare R2 bucket. The worker reads
+already validated reference bytes from private RustFS and uploads them
+server-to-server through O1Key's temporary attachment endpoint. Its returned
+HTTPS URL is public for 24 hours, must be used only for the requested model
+operation, and is not a GoodGood persistence record. Generated outputs are
+downloaded back into private GoodGood storage. ADR 0012 now selects private
+Cloudflare R2 as M7 staging's authoritative object store without changing the
+local RustFS development path.
 
 O1Key generation POSTs are not idempotent: every accepted POST creates a new
 task and charge, and a lost response cannot be recovered by
@@ -138,8 +139,8 @@ Authenticated API reads return fresh private-object signatures. Restored
 reference thumbnails, generated assets, and project-cover images use native
 browser image requests for those signatures; do not route them through the
 Vinext/Next server image optimizer or enable its private-IP bypass. Local RustFS
-intentionally uses a loopback address, while the production browser endpoint
-must be the selected public HTTPS object origin.
+intentionally uses a loopback address. M7 browser signatures use the exact R2
+S3 API endpoint; the disabled public asset hostname is not a signing endpoint.
 
 For one local credentialed smoke, run from an interactive terminal:
 
@@ -328,13 +329,15 @@ hosted-session exit before starting the next login.
 Remove codes, cookies, tokens, client secrets, and full test addresses from all
 retained evidence.
 
-At startup, web and worker ensure the private RustFS bucket exists and install
-the exact browser origins from `OBJECT_STORAGE_UPLOAD_ALLOWED_ORIGINS` as its
-PUT-only CORS rule. `OBJECT_STORAGE_PUBLIC_ENDPOINT` is the browser-reachable
-endpoint used to sign short-lived direct uploads and private reads; it must not
-point at the Compose-only service hostname. Production/staging must use their
-exact HTTPS application origins rather than `*`, and must verify the selected
-provider's CORS/IAM behavior in staging.
+With `OBJECT_STORAGE_PROVISIONING_MODE=manage`, local web and worker ensure the
+private RustFS bucket exists and install the exact browser origins from
+`OBJECT_STORAGE_UPLOAD_ALLOWED_ORIGINS` as its CORS rule. M7 staging instead
+requires `OBJECT_STORAGE_PROVISIONING_MODE=verify`: startup performs only
+`HeadBucket`, while a separately reviewed Cloudflare setting owns R2 CORS.
+`OBJECT_STORAGE_PUBLIC_ENDPOINT` is the browser-reachable S3 endpoint used to
+sign short-lived direct uploads and private reads. Production/staging must use
+their exact HTTPS application origins rather than `*`, and must verify the
+selected provider's CORS/IAM behavior in staging.
 
 `stack:down` removes containers and the bridge while preserving named volumes.
 `docker compose down --volumes` removes local database, queue, and object data
@@ -436,8 +439,8 @@ with `GOODGOOD_PROCESS`.
 
 | Role | Liveness | Readiness | Current readiness meaning |
 | --- | --- | --- | --- |
-| `web` | `GET /api/health/live` on `PORT` | `GET /api/health/ready` on `PORT` | PostgreSQL, Valkey, RustFS bucket, and mock provider are reachable |
-| `worker` | `GET /health/live` on `WORKER_HEALTH_PORT` | `GET /health/ready` on `WORKER_HEALTH_PORT` | Queue, PostgreSQL, RustFS bucket, and provider bootstrap passed |
+| `web` | `GET /api/health/live` on `PORT` | `GET /api/health/ready` on `PORT` | PostgreSQL, Valkey, the selected private object bucket, and provider are reachable |
+| `worker` | `GET /health/live` on `WORKER_HEALTH_PORT` | `GET /health/ready` on `WORKER_HEALTH_PORT` | Queue, PostgreSQL, the selected private object bucket, and provider bootstrap passed |
 | `mock-generation` | `GET /health/live` on `MOCK_GENERATION_PORT` | `GET /health/ready` on `MOCK_GENERATION_PORT` | Mock runtime bootstrap completed and it is not shutting down |
 
 Liveness never depends on PostgreSQL, Valkey, object storage, or a generation
@@ -494,7 +497,7 @@ Keep three kinds of staging material separate:
 | --- | --- | --- |
 | Release identity | `infra/staging/release.env.example` | Copy one successful CI summary exactly: image digest, source SHA, migration filename, runtime-contract checksum, runtime-file path, and secret-file source paths. No credential belongs here. |
 | Runtime configuration | `infra/staging/runtime.env.example` | Store outside the checkout, mode `0600`; contains server endpoints and secret-bearing connection values. Never commit it or use the local placeholders unchanged. |
-| Mounted secrets | Authing client-secret and O1Key key files | Separate non-empty regular files, mode `0600`; Compose mounts them read-only at the exact `/run/secrets/...` paths. Do not put either value in an environment variable or command argument. |
+| Mounted secrets | Authing client-secret, O1Key key, and two R2 S3 credential files | Separate non-empty regular files, mode `0600`; Compose mounts only the roles that need each file at the exact `/run/secrets/...` paths. Do not put these values in an environment variable or command argument. |
 
 On the staging host, a conventional layout is
 `/etc/goodgood/staging/release.env`,
@@ -507,9 +510,10 @@ URL credentials rather than relying on shell or Compose expansion.
 The local contract preflight rejects a tag or `latest`, malformed release
 evidence, unreadable secret files, release/runtime file mixing, a runtime
 revision override, local auth, inline Authing/O1Key secrets, mock generation,
-insecure provider/public-storage endpoints, wildcard upload CORS, loopback
-dependencies, and the fake payment sandbox. It prints only public configuration
-and check results:
+inline R2 secrets, insecure or custom-domain storage endpoints, non-`auto` R2
+region, bucket-management mode, wildcard upload CORS, loopback dependencies,
+and the fake payment sandbox. It prints only public configuration and check
+results:
 
 ```bash
 npm run staging:preflight -- \
@@ -584,14 +588,19 @@ must be decided with the ICP filing work; Hong Kong staging alone is not ICP
 filing evidence.
 
 - Edge: Alibaba Cloud ESA.
-- Application/control plane: Hong Kong AWS/Lightsail initially.
+- Application/control plane: Alibaba Cloud Hong Kong Simple Application Server
+  for M7 staging, as accepted in ADR 0011.
 - Generation plane: existing US OVH server.
-- Images: direct object storage delivery (Tencent COS or the finalized provider).
+- Images: private Cloudflare R2 with direct presigned delivery, as accepted in
+  ADR 0012.
 - Database/queue: PostgreSQL plus Redis-compatible durable job coordination.
 
-A 2 vCPU / 4 GB Lightsail instance is acceptable for early control-plane tests
-only when builds run in CI and image bytes bypass it. Attach a static IP from
-day one.
+The purchased M7 host has 2 vCPUs, 4 GiB memory, a 50 GiB ESSD system disk, a
+fixed public IPv4 address, and a 200 Mbps peak BGP public-bandwidth
+specification. It is acceptable for early control-plane tests only when builds
+run in CI, runtime resources are bounded, and large image bytes are prepared to
+bypass the application process. The peak bandwidth is not a sustained service
+guarantee.
 
 The first Hong Kong purchase is a month-to-month staging environment with test
 accounts, test buckets, and test payment credentials. Do not purchase long-term
@@ -599,6 +608,147 @@ production capacity until the staging gate has measured mainland carrier access
 and Hong Kong-to-US behavior. An all-in-one Compose host is acceptable for
 staging test data; paid production must meet the durability, backup, and
 recovery contracts below.
+
+### Alibaba Cloud staging host baseline
+
+ADR 0011's Ubuntu 24.04 host is bootstrapped with
+`infra/staging/bootstrap-ubuntu-host.sh` only after the `goodgood` key-only sudo
+account has passed a separate SSH session and root SSH has been disabled. The
+script applies current OS packages, configures a 2 GiB low-swappiness safety
+swap, installs Docker Engine and Compose from Docker's signed apt repository,
+bounds local Docker logs, enables unattended security upgrades, and limits UFW
+ingress to SSH, HTTP, and HTTPS. It installs Nginx but leaves it stopped and
+disabled until a reviewed TLS virtual host replaces the distribution default.
+
+Docker-published ports can bypass UFW. The Alibaba Cloud firewall remains the
+outer boundary, and every database, queue, object-storage administration, web,
+and worker port must stay unexposed or bind explicitly to loopback. Only the
+reviewed Nginx origin may listen publicly on 80/443.
+
+Prepare the origin private key and CSR on the server so the private key never
+crosses an operator workstation:
+
+```bash
+sudo install -o root -g root -m 0755 \
+  /tmp/install-nginx-origin.sh \
+  /usr/local/sbin/goodgood-staging-nginx
+sudo /usr/local/sbin/goodgood-staging-nginx prepare
+```
+
+Use the resulting `/etc/goodgood/staging/tls/goodgood-origin.csr` with
+Cloudflare Origin CA for exactly `goodgood.o1key.com`, then place only the
+signed PEM certificate at `/tmp/goodgood-origin.pem`. Copy the reviewed Nginx
+site and Cloudflare allowlist to `/tmp`, then activate them:
+
+```bash
+sudo /usr/local/sbin/goodgood-staging-nginx activate \
+  /tmp/goodgood.conf \
+  /tmp/cloudflare-origin-only.conf \
+  /tmp/goodgood-origin.pem
+```
+
+Activation rejects a mismatched hostname/key, a certificate expiring within 30
+days, or an invalid Nginx configuration before enabling the service. The site
+accepts application traffic only from the checked-in Cloudflare IPv4/IPv6
+ranges, redirects HTTP to HTTPS, terminates TLS 1.2/1.3, and proxies only to
+`127.0.0.1:3000`. Re-synchronize the allowlist from Cloudflare's authoritative
+`ips-v4` and `ips-v6` lists whenever Cloudflare announces a range change. Keep
+the proxied DNS record enabled and set the Cloudflare origin mode to Full
+(strict); an Origin CA certificate is intentionally not browser-trusted when
+Cloudflare proxying is bypassed.
+
+### Same-host staging dependencies
+
+`compose.staging.dependencies.yaml` is the separately operated, test-data-only
+dependency stack accepted by ADR 0011. It pins PostgreSQL 17.11, Valkey 8.1.9,
+and the pre-ADR-0012 RustFS fallback by digest. Each service has CPU, memory,
+swap, and PID limits sized for the 2-vCPU / 4-GiB staging host. PostgreSQL and
+Valkey publish no host port. The RustFS console is disabled and its S3 API binds
+only to `127.0.0.1:9000`; it is not an Nginx route or M7's authoritative store.
+
+Dependencies share the internal Docker network
+`goodgood-staging-private`. The application topology treats that network as
+external: migration and maintenance roles join only the private network, while
+web and worker also join a separate egress bridge for Authing, R2, and O1Key.
+Use the service names `postgres` and `valkey` in the staging runtime file; do
+not replace them with host loopback addresses. Object-storage endpoints use the
+external R2 S3 API hostname fixed by ADR 0012, never `object-storage`.
+
+RustFS alone also joins `goodgood-staging-storage-origin`. Docker suppresses a
+host port published by a container attached only to an `internal` network, so
+this second bridge makes the loopback S3 binding reachable to host Nginx. The
+installer verifies that RustFS is the bridge's only member and performs a real
+loopback readiness request; PostgreSQL and Valkey remain on the internal
+network only.
+
+Install or re-verify the stack from a checksum-verified copy of the two
+repository files:
+
+```bash
+sudo install -o root -g root -m 0755 \
+  /tmp/install-staging-dependencies.sh \
+  /usr/local/sbin/goodgood-staging-dependencies
+sudo /usr/local/sbin/goodgood-staging-dependencies \
+  /tmp/compose.staging.dependencies.yaml
+```
+
+The installer creates three random credential files under
+`/etc/goodgood/staging/secrets/dependencies/` and never prints them. The
+PostgreSQL file is operator-owned mode `0600`; the two RustFS files are mode
+`0400` and owned by uid/gid `10001`, the fixed non-root identity in the pinned
+RustFS image. RustFS and PostgreSQL receive credentials through mounted files,
+not container environment values. The installer also writes the mode-`0600`
+`/etc/goodgood/staging/dependency-runtime.env` fragment containing the exact
+`DATABASE_URL` and `REDIS_URL` values needed later in `runtime.env`. Copy those
+two lines on the host without displaying their values in terminal logs; then
+add the separately supplied R2, Authing, and O1Key configuration. The installer
+is idempotent and refuses to invent replacement credentials when persistent
+data already exists.
+
+Valkey intentionally has no password in this topology because it has no host
+binding and lives only on the internal dependency network. The web and worker
+already require queue access, so a shared password would not isolate a
+compromised application container; network membership is the boundary. Do not
+attach unrelated containers to this network.
+
+This single-node RustFS instance has no storage redundancy and is not a paid-
+production design. It remains temporarily for rollback inspection only; do not
+write new staging user objects to it after the R2 cutover.
+
+### Private Cloudflare R2 staging assets
+
+ADR 0012 fixes M7 storage to the existing private `goodgood` bucket. Disable
+both its `r2.dev` public URL and direct `assets-goodgood.o1key.com` custom-domain
+access. Reserve that asset hostname for a later authenticated delivery layer.
+Both `OBJECT_STORAGE_ENDPOINT` and `OBJECT_STORAGE_PUBLIC_ENDPOINT` must be:
+
+```text
+https://3b918f80852289d9879e7f73bccc2e22.r2.cloudflarestorage.com
+```
+
+Use region `auto`, path-style addressing, and
+`OBJECT_STORAGE_PROVISIONING_MODE=verify`. Create an R2 S3 API token with
+Object Read & Write permission scoped only to the `goodgood` bucket. Store its
+Access Key ID and Secret Access Key in the two release-file-referenced host
+files; do not grant application credentials account-wide Admin permission.
+
+Configure this exact bucket CORS policy separately in the Cloudflare dashboard:
+
+```json
+[
+  {
+    "AllowedOrigins": ["https://goodgood.o1key.com"],
+    "AllowedMethods": ["GET", "PUT", "HEAD"],
+    "AllowedHeaders": ["content-type", "x-amz-*"],
+    "ExposeHeaders": ["etag"],
+    "MaxAgeSeconds": 300
+  }
+]
+```
+
+Startup deliberately verifies only `HeadBucket`; it does not own bucket
+creation or CORS. Before release, prove a browser OPTIONS/PUT from the exact app
+origin, authenticated signed GET, cross-owner denial, and lifecycle cleanup.
 
 ## Staging purchase gate
 
@@ -621,9 +771,10 @@ Create the first Hong Kong staging environment only after:
 5. Keep the prior version available for rollback.
 6. Observe errors, queue latency, and database health before cleanup.
 
-For a Lightsail size upgrade: snapshot, create a larger instance, validate, stop
-writes briefly if the database is local, move the static IP, verify, and retain
-the old instance temporarily.
+For a host size or provider migration: snapshot and back up PostgreSQL and
+private objects, create the target instance, validate it, stop writes briefly
+when persistence is local, switch the public origin only after readiness passes,
+and retain the old instance until rollback evidence is complete.
 
 ## Backups and rollback
 

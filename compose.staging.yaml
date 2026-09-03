@@ -11,6 +11,11 @@ x-goodgood-staging-app: &goodgood-staging-app
   stop_grace_period: 10s
   tmpfs:
     - /tmp:size=64m,mode=1777
+  cpus: 1.0
+  mem_limit: 640m
+  mem_reservation: 128m
+  memswap_limit: 768m
+  pids_limit: 256
   env_file:
     - ${GOODGOOD_RUNTIME_ENV_FILE:?Set an absolute staging runtime env-file path}
   labels:
@@ -18,7 +23,7 @@ x-goodgood-staging-app: &goodgood-staging-app
     com.goodgood.migration.version: ${GOODGOOD_RELEASE_MIGRATION:?Set the CI migration version}
     com.goodgood.runtime-config.version: ${GOODGOOD_RUNTIME_CONFIG_VERSION:?Set the CI runtime configuration version}
   networks:
-    - goodgood-staging
+    - goodgood-staging-private
 
 services:
   web:
@@ -30,9 +35,14 @@ services:
       PORT: 3000
     ports:
       - "127.0.0.1:${GOODGOOD_STAGING_WEB_PORT:-3000}:3000"
+    networks:
+      - goodgood-staging-private
+      - goodgood-staging-egress
     secrets:
       - goodgood_auth_client_secret
       - goodgood_generation_api_key
+      - goodgood_object_storage_access_key_id
+      - goodgood_object_storage_secret_access_key
 
   worker:
     <<: *goodgood-staging-app
@@ -43,8 +53,13 @@ services:
       WORKER_HEALTH_PORT: 3001
     ports:
       - "127.0.0.1:${GOODGOOD_STAGING_WORKER_HEALTH_PORT:-3001}:3001"
+    networks:
+      - goodgood-staging-private
+      - goodgood-staging-egress
     secrets:
       - goodgood_generation_api_key
+      - goodgood_object_storage_access_key_id
+      - goodgood_object_storage_secret_access_key
 
   migrate:
     <<: *goodgood-staging-app
@@ -68,6 +83,8 @@ services:
       GOODGOOD_PROCESS: reference-cleanup
     secrets:
       - goodgood_generation_api_key
+      - goodgood_object_storage_access_key_id
+      - goodgood_object_storage_secret_access_key
 
   manual-payment:
     <<: *goodgood-staging-app
@@ -85,7 +102,14 @@ secrets:
     file: ${GOODGOOD_AUTH_CLIENT_SECRET_SOURCE_FILE:?Set an absolute Authing secret-file path}
   goodgood_generation_api_key:
     file: ${GOODGOOD_GENERATION_API_KEY_SOURCE_FILE:?Set an absolute O1Key secret-file path}
+  goodgood_object_storage_access_key_id:
+    file: ${GOODGOOD_OBJECT_STORAGE_ACCESS_KEY_ID_SOURCE_FILE:?Set an absolute R2 access-key file path}
+  goodgood_object_storage_secret_access_key:
+    file: ${GOODGOOD_OBJECT_STORAGE_SECRET_ACCESS_KEY_SOURCE_FILE:?Set an absolute R2 secret-key file path}
 
 networks:
-  goodgood-staging:
+  goodgood-staging-private:
+    external: true
+    name: ${GOODGOOD_STAGING_PRIVATE_NETWORK_NAME:-goodgood-staging-private}
+  goodgood-staging-egress:
     driver: bridge

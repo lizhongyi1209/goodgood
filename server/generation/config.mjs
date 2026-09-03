@@ -34,24 +34,42 @@ function providerKind(value) {
   return kind;
 }
 
-function providerApiKey(environment) {
-  const direct = environment.GENERATION_API_KEY?.trim();
-  const file = environment.GENERATION_API_KEY_FILE?.trim();
+function objectStorageProvisioningMode(value) {
+  const mode = value ?? "manage";
+  if (mode !== "manage" && mode !== "verify") {
+    throw new Error(
+      "OBJECT_STORAGE_PROVISIONING_MODE must be manage or verify.",
+    );
+  }
+  return mode;
+}
+
+function secretValue(environment, directName, fileName) {
+  const direct = environment[directName]?.trim();
+  const file = environment[fileName]?.trim();
   if (direct && file) {
     throw new Error(
-      "GENERATION_API_KEY and GENERATION_API_KEY_FILE are mutually exclusive.",
+      `${directName} and ${fileName} are mutually exclusive.`,
     );
   }
   if (direct) return direct;
-  if (!file) throw new Error("GENERATION_API_KEY or GENERATION_API_KEY_FILE is required.");
+  if (!file) throw new Error(`${directName} or ${fileName} is required.`);
   let value;
   try {
     value = readFileSync(file, "utf8").trim();
   } catch {
-    throw new Error("GENERATION_API_KEY_FILE could not be read.");
+    throw new Error(`${fileName} could not be read.`);
   }
-  if (!value) throw new Error("GENERATION_API_KEY_FILE is empty.");
+  if (!value) throw new Error(`${fileName} is empty.`);
   return value;
+}
+
+function providerApiKey(environment) {
+  return secretValue(
+    environment,
+    "GENERATION_API_KEY",
+    "GENERATION_API_KEY_FILE",
+  );
 }
 
 export function loadGenerationConfig(environment = process.env) {
@@ -67,7 +85,11 @@ export function loadGenerationConfig(environment = process.env) {
     databaseUrl: required(environment, "DATABASE_URL"),
     redisUrl: required(environment, "REDIS_URL"),
     objectStorage: Object.freeze({
-      accessKeyId: required(environment, "OBJECT_STORAGE_ACCESS_KEY_ID"),
+      accessKeyId: secretValue(
+        environment,
+        "OBJECT_STORAGE_ACCESS_KEY_ID",
+        "OBJECT_STORAGE_ACCESS_KEY_ID_FILE",
+      ),
       bucket: required(environment, "OBJECT_STORAGE_BUCKET"),
       endpoint: required(environment, "OBJECT_STORAGE_ENDPOINT"),
       forcePathStyle: environment.OBJECT_STORAGE_FORCE_PATH_STYLE !== "false",
@@ -78,10 +100,14 @@ export function loadGenerationConfig(environment = process.env) {
       publicEndpoint:
         environment.OBJECT_STORAGE_PUBLIC_ENDPOINT ??
         required(environment, "OBJECT_STORAGE_ENDPOINT"),
+      provisioningMode: objectStorageProvisioningMode(
+        environment.OBJECT_STORAGE_PROVISIONING_MODE,
+      ),
       region: required(environment, "OBJECT_STORAGE_REGION"),
-      secretAccessKey: required(
+      secretAccessKey: secretValue(
         environment,
         "OBJECT_STORAGE_SECRET_ACCESS_KEY",
+        "OBJECT_STORAGE_SECRET_ACCESS_KEY_FILE",
       ),
     }),
     provider: Object.freeze({
@@ -124,11 +150,25 @@ export function inspectGenerationConfiguration(environment = process.env) {
       "OBJECT_STORAGE_ENDPOINT",
       "OBJECT_STORAGE_BUCKET",
       "OBJECT_STORAGE_REGION",
-      "OBJECT_STORAGE_ACCESS_KEY_ID",
-      "OBJECT_STORAGE_SECRET_ACCESS_KEY",
       "OBJECT_STORAGE_UPLOAD_ALLOWED_ORIGINS",
       "GENERATION_API_BASE_URL",
     ];
+    if (
+      !environment.OBJECT_STORAGE_ACCESS_KEY_ID &&
+      !environment.OBJECT_STORAGE_ACCESS_KEY_ID_FILE
+    ) {
+      names.push(
+        "OBJECT_STORAGE_ACCESS_KEY_ID or OBJECT_STORAGE_ACCESS_KEY_ID_FILE",
+      );
+    }
+    if (
+      !environment.OBJECT_STORAGE_SECRET_ACCESS_KEY &&
+      !environment.OBJECT_STORAGE_SECRET_ACCESS_KEY_FILE
+    ) {
+      names.push(
+        "OBJECT_STORAGE_SECRET_ACCESS_KEY or OBJECT_STORAGE_SECRET_ACCESS_KEY_FILE",
+      );
+    }
     if (!environment.GENERATION_API_KEY && !environment.GENERATION_API_KEY_FILE) {
       names.push("GENERATION_API_KEY or GENERATION_API_KEY_FILE");
     }

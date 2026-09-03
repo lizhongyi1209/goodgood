@@ -21,3 +21,5 @@ Current records:
 - `0008-o1key-at-most-once-submission.md`
 - `0009-banana-2-flat-credit-price.md`
 - `0010-domestic-alipay-after-icp-with-manual-credit-operations.md`
+- `0011-alibaba-cloud-hong-kong-staging-host.md`
+- `0012-private-cloudflare-r2-for-staging-assets.md`

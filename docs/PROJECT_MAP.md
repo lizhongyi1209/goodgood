@@ -48,7 +48,7 @@
 | `scripts/run-o1key-local.mjs` | Interactive isolated O1Key smoke launcher with a worker-only temporary secret file |
 | `Dockerfile` / `.dockerignore` | One non-root Linux application image and its build-context boundary |
 | `compose.yaml` | Pinned web/worker/mock plus PostgreSQL, Valkey, RustFS, one-shot migration, and opt-in maintenance topology |
-| `compose.staging.yaml` / `infra/staging/` | Digest-only app roles plus non-secret staging release/runtime templates; dependencies and real secrets remain external |
+| `compose.staging.yaml` / `compose.staging.dependencies.yaml` / `infra/staging/` | Digest-only app roles, a separately operated resource-bounded test-data dependency stack, host bootstrap/install helpers, and non-secret staging templates; real secrets remain outside the checkout |
 | `compose.o1key-local.yaml` | Explicit local worker override for the O1Key route and mounted key file |
 | `.openai/hosting.json` | Current prototype hosting identity; not an app secret |
 

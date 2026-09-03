@@ -1,11 +1,14 @@
 # Production implementation plan
 
-- Last synchronized: 2026-09-02
-- Current phase: M7 is in progress; immutable CI publication and the
-  fail-closed staging release contract are implemented
-- Current objective: provision the month-to-month Hong Kong staging host and
-  test-data dependencies, then configure public DNS/TLS and run the first
-  digest deployment; ICP filing/domain work proceeds in parallel
+- Last synchronized: 2026-09-03
+- Current phase: M7 is in progress; the Alibaba Cloud Hong Kong host,
+  test-data dependency layer, private R2 configuration, Cloudflare Origin CA,
+  host-specific Full (strict) rule, and reviewed Nginx origin are operational
+- Current objective: publish the updated configuration contract, provision the
+  remaining Authing and O1Key staging secrets outside the repository, run the
+  dry-run/live preflight and first digest deployment, then complete public auth,
+  generation, storage-transfer, restore, and carrier evidence; ICP filing/domain
+  work proceeds in parallel
 
 ## Purpose and update contract
 
@@ -281,6 +284,83 @@ this file owns the current handoff state.
   one forward migration, and waits for web/worker readiness. Rollback selects a
   prior digest and restarts only compatible application roles; it never attempts
   a schema downgrade.
+- On 2026-09-03, the purchased Alibaba Cloud Hong Kong Ubuntu 24.04 staging
+  host passed its first SSH and capacity inspection: 2 vCPUs, 3.4 GiB
+  guest-visible memory, 49 GiB root filesystem with 44 GiB initially free, and
+  only SSH listening publicly at the operating-system boundary. ADR 0011
+  records the provider change. A `goodgood` non-root sudo account received the
+  bound public key and passed an independent login plus non-interactive sudo
+  check before SSH was reloaded. Effective SSH configuration then proved
+  public-key authentication enabled and root, password, keyboard-interactive,
+  and empty-password login disabled; a fresh `goodgood` session still passed
+  while a root-key attempt failed as required. No application, dependency, or
+  live credential was installed in this slice.
+- The same host then ran the checksum-verified, repository-owned
+  `infra/staging/bootstrap-ubuntu-host.sh` and rebooted cleanly. It applied 274
+  base updates, upgraded `fwupd`, retained Alibaba's explicit `cloud-init` apt
+  hold, installed Docker Engine 29.7.2 and Compose 5.5.0 from Docker's signed
+  Ubuntu repository, enabled bounded local-container logs and live restore,
+  and gave the existing `goodgood` sudo account Docker access. A persistent 2
+  GiB swap now reports swappiness 10 and cache pressure 50. UFW permits only
+  22/80/443, Nginx 1.24 is installed but disabled/inactive pending reviewed TLS
+  configuration, and only SSH listens publicly at the host boundary. After
+  reboot, Docker/containerd, Alibaba Aegis, and Alibaba Cloud Monitor were
+  active; systemd reported no failed units, root SSH remained denied, and the
+  49 GiB root filesystem retained 41 GiB free. No GoodGood application,
+  database, queue, object data, or live credential was deployed in that slice.
+- The host now runs the separately operated
+  `compose.staging.dependencies.yaml` test-data stack: digest-pinned PostgreSQL
+  17.11, Valkey 8.1.9, and RustFS 1.0.0-rc.3 all reached healthy. PostgreSQL and
+  Valkey have no host port; RustFS has its console disabled and publishes only
+  `127.0.0.1:9000` through a one-member storage-origin bridge, while all three
+  share an internal application dependency network. The installer generated
+  credentials only on the host, mounted PostgreSQL/RustFS values from files,
+  rejected implicit rotation, and verified that no credential appears in
+  Docker metadata. Live queries returned PostgreSQL `1`, Valkey `PONG`, and a
+  RustFS ready response. Enforced limits are 768 MiB / 0.75 CPU / 256 PIDs for
+  PostgreSQL, 256 MiB / 0.25 CPU / 128 PIDs for Valkey, and 1 GiB / 0.75 CPU /
+  256 PIDs for RustFS; idle observed usage was about 70 MiB combined. The host
+  retained 40 GiB free, 2.8 GiB available memory, unused swap, and no failed
+  systemd unit after deployment. This is single-node test-data evidence, not a
+  production durability claim.
+- The operator selected `goodgood.o1key.com` as the canonical application
+  hostname and `assets-goodgood.o1key.com` as the reserved asset hostname.
+  Read-only DNS/HTTPS checks confirmed both are Cloudflare-proxied, with the app
+  returning 521 while Nginx is intentionally inactive and the asset hostname
+  exposing the R2 public custom-domain path. ADR 0012 therefore accepts the
+  existing private Cloudflare R2 `goodgood` bucket as M7's authoritative store
+  through the account S3 API endpoint and rejects direct custom-domain object
+  delivery. The staging contract now requires region `auto`, path style, exact
+  app-origin CORS, file-mounted R2 credentials, and verification-only bucket
+  startup so the application can use a bucket-scoped Object Read & Write token
+  without Admin permission. Local RustFS retains automatic provisioning; its
+  same-host staging instance is now explicitly non-authoritative. The remote
+  dependency fragment was safely regenerated with only `DATABASE_URL` and
+  `REDIS_URL`. A repository-owned Nginx installer, canonical site, and current
+  Cloudflare origin allowlist were added; the host generated a matching P-256
+  private key and CSR under `/etc/goodgood/staging/tls` and kept the key
+  root-owned mode `0600`.
+- On 2026-09-03, the signed-in Cloudflare dashboard confirmed the `goodgood`
+  bucket has neither a custom domain nor an enabled `r2.dev` URL. Its exact
+  CORS rule now permits only `https://goodgood.o1key.com` for `GET`, `PUT`, and
+  `HEAD`, with `content-type` and `x-amz-*` request headers, exposed `etag`, and
+  a 300-second maximum age. The account-level service token
+  `goodgood-staging-r2` is active with Object Read & Write permission scoped
+  only to the `goodgood` bucket. Its S3 credentials were transferred without
+  entering the repository and installed as the two root-owned mode-`0600`
+  files referenced by the release contract; workstation and remote staging
+  copies were removed after installation.
+- Cloudflare signed the on-host CSR for exactly `goodgood.o1key.com`; the
+  resulting Origin CA certificate is valid until 2041-08-30, matches the
+  on-host private key, and is installed root-owned beside it. The reviewed
+  Nginx site passed `nginx -t`, is enabled and active, and remains restricted to
+  Cloudflare source ranges with a loopback application upstream. Rather than
+  changing the zone-wide `Full` mode, active configuration rule
+  `goodgood-full-strict` sets `Strict` only when the hostname equals
+  `goodgood.o1key.com`. A public HTTPS request now reaches Cloudflare and the
+  origin and returns the expected application-upstream `502`; the previous
+  inactive-origin `521` is gone. Application health is not claimed until the
+  digest release starts the loopback web process.
 - On 2026-09-02, `npm run check:local` passed on Windows with Node.js 24.12.0:
   lint, full TypeScript check, production build, and 96 tests completed with 95
   passing and the opt-in Compose integration test skipped by design. The
@@ -456,17 +536,21 @@ this file owns the current handoff state.
   500-credit grant, a 50-credit generation spend, zero reserved credit, owner
   isolation, signed callback replay, and the exact final balance. The disposable
   containers, network, and all three named volumes were removed afterward.
-- Repository-wide verification on 2026-09-02 passed `npm run check:local` on
-  Windows: lint, full TypeScript checking, the production build, and 125 tests
-  completed with 121 passing. The opt-in full Compose test and three opt-in M6
+- Repository-wide verification on 2026-09-03 passed `npm run check:local` on
+  Windows: lint, full TypeScript checking, the production build, and 129 tests
+  completed with 125 passing. The opt-in full Compose test and three opt-in M6
   PostgreSQL tests were skipped by the default gate; their payment/manual cases
   passed separately against the isolated database described below, while the
-  ledger and Compose cases retain the passing evidence recorded above. The six
-  new M7 tests cover success, empty/malformed input, unsafe runtime failures,
-  secret redaction, digest deploy/rollback planning, and OCI-label mismatch.
-  Docker Compose also parsed the standalone staging topology successfully with
-  interpolation and external path resolution intentionally disabled; the first
-  real path/credential resolution remains staging-host evidence.
+  ledger and Compose cases retain the passing evidence recorded above. The eight
+  M7 tests cover success, empty/malformed input, unsafe runtime failures,
+  secret redaction, digest deploy/rollback planning, OCI-label mismatch, and
+  the Cloudflare-only TLS origin contract. Focused R2/runtime tests additionally
+  prove verification-only staging startup, local management, and retry after a
+  failed bucket probe.
+  Docker Compose parsed the dependency topology and a fully interpolated
+  application topology successfully. The checksum-verified dependency files
+  then resolved their real server paths and credentials on the staging host;
+  the first application release path remains staging evidence.
 - Manual-payment verification on 2026-09-02 passed all eight focused payment
   and operator tests against an isolated PostgreSQL 17 database. It proved
   preview non-mutation, paid-order/ledger atomicity, exact replay, cross-owner
@@ -479,12 +563,15 @@ this file owns the current handoff state.
   `npm run check:local` gate passed lint, full TypeScript checking, the production
   build, and 98 tests with 97 passing and the opt-in Compose integration test
   skipped by design.
-- Next action: provision one month-to-month Hong Kong staging host and isolated
-  test-data PostgreSQL, Valkey, and object storage, then fill the external
-  release/runtime/secret files from one successful CI summary and run the
-  dry-run plus live preflight before the first digest deploy. Configure public
-  DNS/TLS and the reverse proxy before accepting callback or mainland-network
-  evidence. Progress ICP filing/domain work in parallel and keep early paid
+- Next action: publish the changed runtime contract through CI, fill the
+  external release/runtime files from that successful CI summary plus the
+  server-generated database/queue fragment, and install the separately supplied
+  Authing client secret and O1Key key in their two mode-`0600` host files. Run
+  the dry-run plus live preflight before the first digest deploy, then prove the
+  exact R2 signed OPTIONS/PUT/GET path, public Authing callback/logout, one real
+  O1Key generation, migration evidence, backup restore, and mainland carrier
+  sampling. Do not reuse the previously published configuration checksum after
+  this storage/topology change. Progress ICP filing/domain work in parallel and keep early paid
   access on the documented operator bridge. After the filed domain and domestic
   Alipay merchant sandbox are available, implement the provider adapter against
   the existing immutable order/settlement boundary and add the smallest
@@ -577,7 +664,7 @@ Completed real-Authing loopback checklist:
 | M4 | Production identity, ownership, references, and projects persist safely | Completed | Authing-compatible OIDC/PKCE, hashed sessions, provider-neutral ownership, signed references, cleanup, root-draft/project/asset persistence, optimistic conflict handling, cross-owner denial, and the requested real-Authing loopback matrix pass; public HTTPS proof is explicitly deferred to M7 |
 | M5 | US generation gateway integration and recovery | Completed | O1Key special-price adapter, explicit worker route, RustFS transfer, decoded output ingestion, durable-task restart, fake-server matrix, secret-file launcher, one real URL-output reference-image smoke, operator-confirmed New API charge/refund evidence, and ADR 0008's accepted at-most-once submission guard pass |
 | M6 | Versioned pricing, credit ledger, and payment sandbox | Completed | ADR 0009 launch prices, welcome grants, append-only accounting, live reserve/settle/release, account presentation, immutable CNY 10 / 500-credit product, idempotent orders, signed fake-sandbox fulfillment, dry-run-first manual paid-credit recording, isolated PostgreSQL tests, and full Compose pass |
-| M7 | Hong Kong staging | In progress | Full-SHA GHCR publication and release-evidence workflow pass remotely; the secret-redacting staging contract plus dry-run-first digest deploy/rollback tooling pass locally; host provisioning, public network, three-carrier sampling, storage, generation/auth callbacks, migrations, backup restore, and smoke tests remain; payment checkout stays intentionally absent |
+| M7 | Hong Kong staging | In progress | ADR 0011 accepts the provisioned Alibaba Cloud Hong Kong 2 vCPU / 4 GiB staging host; its key-only non-root SSH, patched Ubuntu, bounded swap, Docker/Compose, UFW, reboot, and cloud-agent baseline pass. Digest-pinned PostgreSQL/Valkey and a non-authoritative RustFS fallback are healthy on isolated networks. ADR 0012 fixes private R2 plus `goodgood.o1key.com`; the exact private-bucket CORS, bucket-scoped Object Read & Write token, root-only R2 files, exact-host Origin CA certificate, host-specific Strict rule, and Cloudflare-only active Nginx origin now pass. Full-SHA GHCR publication and release-evidence workflow pass for the prior contract; updated image publication, first public release, signed R2 transfers, three-carrier sampling, generation/auth callbacks, migrations, backup restore, and smoke tests remain; payment checkout stays intentionally absent |
 | M8 | Paid production readiness | Pending | ICP/domain prerequisites and domestic Alipay sandbox/checkout pass before production payment; security/compliance review, observability, rollback, retention, support IDs, and production release gate are complete |
 
 Only mark a milestone `Completed` when its exit evidence exists. Use `Blocked`
@@ -614,7 +701,7 @@ before adding more models or payment complexity.
 
 | Prove locally | Prove in Hong Kong staging |
 | --- | --- |
-| Domain rules, migrations, queue consumers, storage contracts, provider mocks, retries, idempotency, ownership, ledger rules, UI states, production image startup | Public DNS/TLS, ESA behavior, AWS IAM, signed object URLs, public callbacks, US gateway connectivity, payment sandbox callbacks, resource limits, backup restore, and mainland carrier measurements |
+| Domain rules, migrations, queue consumers, storage contracts, provider mocks, retries, idempotency, ownership, ledger rules, UI states, production image startup | Public DNS/TLS, ESA behavior, Alibaba Cloud account/firewall behavior, signed object URLs, public callbacks, US gateway connectivity, payment sandbox callbacks, resource limits, backup restore, and mainland carrier measurements |
 
 Local success is necessary but never sufficient for a production release.
 

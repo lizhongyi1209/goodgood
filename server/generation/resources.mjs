@@ -40,7 +40,12 @@ export function prepareObjectStorage(resources) {
   let pending = storagePreparation.get(resources);
   if (!pending) {
     pending = (async () => {
-      const { bucket, uploadAllowedOrigins } = resources.config.objectStorage;
+      const { bucket, provisioningMode, uploadAllowedOrigins } =
+        resources.config.objectStorage;
+      if (provisioningMode === "verify") {
+        await resources.storage.send(new HeadBucketCommand({ Bucket: bucket }));
+        return;
+      }
       await ensureObjectStorageBucket(resources.storage, bucket);
       await resources.storage.send(
         new PutBucketCorsCommand({

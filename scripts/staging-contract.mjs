@@ -7,6 +7,13 @@ export const STAGING_AUTH_SECRET_PATH =
   "/run/secrets/goodgood_auth_client_secret";
 export const STAGING_GENERATION_SECRET_PATH =
   "/run/secrets/goodgood_generation_api_key";
+export const STAGING_OBJECT_STORAGE_ACCESS_KEY_PATH =
+  "/run/secrets/goodgood_object_storage_access_key_id";
+export const STAGING_OBJECT_STORAGE_SECRET_KEY_PATH =
+  "/run/secrets/goodgood_object_storage_secret_access_key";
+export const STAGING_APPLICATION_ORIGIN = "https://goodgood.o1key.com";
+export const STAGING_R2_ENDPOINT =
+  "https://3b918f80852289d9879e7f73bccc2e22.r2.cloudflarestorage.com";
 
 const RELEASE_VARIABLES = Object.freeze([
   "GOODGOOD_RELEASE_IMAGE",
@@ -16,6 +23,8 @@ const RELEASE_VARIABLES = Object.freeze([
   "GOODGOOD_RUNTIME_ENV_FILE",
   "GOODGOOD_AUTH_CLIENT_SECRET_SOURCE_FILE",
   "GOODGOOD_GENERATION_API_KEY_SOURCE_FILE",
+  "GOODGOOD_OBJECT_STORAGE_ACCESS_KEY_ID_SOURCE_FILE",
+  "GOODGOOD_OBJECT_STORAGE_SECRET_ACCESS_KEY_SOURCE_FILE",
   "GOODGOOD_STAGING_WEB_PORT",
   "GOODGOOD_STAGING_WORKER_HEALTH_PORT",
 ]);
@@ -128,6 +137,14 @@ function validateRelease(release, runtimeFilePath) {
     required(release, "GOODGOOD_GENERATION_API_KEY_SOURCE_FILE"),
     "GOODGOOD_GENERATION_API_KEY_SOURCE_FILE",
   );
+  validateSecretFile(
+    required(release, "GOODGOOD_OBJECT_STORAGE_ACCESS_KEY_ID_SOURCE_FILE"),
+    "GOODGOOD_OBJECT_STORAGE_ACCESS_KEY_ID_SOURCE_FILE",
+  );
+  validateSecretFile(
+    required(release, "GOODGOOD_OBJECT_STORAGE_SECRET_ACCESS_KEY_SOURCE_FILE"),
+    "GOODGOOD_OBJECT_STORAGE_SECRET_ACCESS_KEY_SOURCE_FILE",
+  );
 
   return Object.freeze({ image, migration, revision, runtimeConfigVersion });
 }
@@ -202,6 +219,34 @@ function validateRuntime(release, runtime) {
     );
   }
 
+  if (runtime.OBJECT_STORAGE_PROVIDER_KIND !== "r2") {
+    throw new Error("OBJECT_STORAGE_PROVIDER_KIND must be r2 in staging.");
+  }
+  if (
+    runtime.OBJECT_STORAGE_ACCESS_KEY_ID ||
+    runtime.OBJECT_STORAGE_SECRET_ACCESS_KEY
+  ) {
+    throw new Error(
+      "Inline object-storage credentials are forbidden; mount the documented secret files.",
+    );
+  }
+  if (
+    runtime.OBJECT_STORAGE_ACCESS_KEY_ID_FILE !==
+    STAGING_OBJECT_STORAGE_ACCESS_KEY_PATH
+  ) {
+    throw new Error(
+      `OBJECT_STORAGE_ACCESS_KEY_ID_FILE must be ${STAGING_OBJECT_STORAGE_ACCESS_KEY_PATH}.`,
+    );
+  }
+  if (
+    runtime.OBJECT_STORAGE_SECRET_ACCESS_KEY_FILE !==
+    STAGING_OBJECT_STORAGE_SECRET_KEY_PATH
+  ) {
+    throw new Error(
+      `OBJECT_STORAGE_SECRET_ACCESS_KEY_FILE must be ${STAGING_OBJECT_STORAGE_SECRET_KEY_PATH}.`,
+    );
+  }
+
   const authEnvironment = {
     ...runtime,
     GOODGOOD_AUTH_CLIENT_SECRET_FILE:
@@ -211,9 +256,20 @@ function validateRuntime(release, runtime) {
     ...runtime,
     GENERATION_API_KEY_FILE:
       release.GOODGOOD_GENERATION_API_KEY_SOURCE_FILE,
+    OBJECT_STORAGE_ACCESS_KEY_ID_FILE:
+      release.GOODGOOD_OBJECT_STORAGE_ACCESS_KEY_ID_SOURCE_FILE,
+    OBJECT_STORAGE_SECRET_ACCESS_KEY_FILE:
+      release.GOODGOOD_OBJECT_STORAGE_SECRET_ACCESS_KEY_SOURCE_FILE,
   };
   const auth = loadAuthenticationConfig(authEnvironment);
   loadGenerationConfig(generationEnvironment);
+  if (
+    auth.redirectUri !== `${STAGING_APPLICATION_ORIGIN}/api/auth/callback`
+  ) {
+    throw new Error(
+      `GOODGOOD_AUTH_REDIRECT_URI must use ${STAGING_APPLICATION_ORIGIN}.`,
+    );
+  }
 
   const database = parseUrl(
     required(runtime, "DATABASE_URL"),
@@ -254,6 +310,32 @@ function validateRuntime(release, runtime) {
   ) {
     throw new Error("Staging object-storage endpoints must not use host loopback.");
   }
+  if (
+    storageEndpoint.origin !== STAGING_R2_ENDPOINT ||
+    publicStorageEndpoint.origin !== STAGING_R2_ENDPOINT ||
+    storageEndpoint.pathname !== "/" ||
+    publicStorageEndpoint.pathname !== "/" ||
+    storageEndpoint.search ||
+    publicStorageEndpoint.search
+  ) {
+    throw new Error(
+      "Private R2 operations and presigned browser URLs must use the accepted R2 S3 API endpoint, never a public custom domain.",
+    );
+  }
+  if (required(runtime, "OBJECT_STORAGE_BUCKET") !== "goodgood") {
+    throw new Error("OBJECT_STORAGE_BUCKET must be goodgood in staging.");
+  }
+  if (required(runtime, "OBJECT_STORAGE_REGION") !== "auto") {
+    throw new Error("OBJECT_STORAGE_REGION must be auto for Cloudflare R2.");
+  }
+  if (runtime.OBJECT_STORAGE_PROVISIONING_MODE !== "verify") {
+    throw new Error(
+      "OBJECT_STORAGE_PROVISIONING_MODE must be verify for least-privilege Cloudflare R2 access.",
+    );
+  }
+  if (runtime.OBJECT_STORAGE_FORCE_PATH_STYLE !== "true") {
+    throw new Error("OBJECT_STORAGE_FORCE_PATH_STYLE must be true for Cloudflare R2.");
+  }
 
   const origins = required(
     runtime,
@@ -264,6 +346,7 @@ function validateRuntime(release, runtime) {
     .filter(Boolean);
   if (
     origins.length === 0 ||
+    origins.length !== 1 ||
     origins.includes("*") ||
     origins.some((origin) => {
       const url = parseUrl(origin, "OBJECT_STORAGE_UPLOAD_ALLOWED_ORIGINS", [
@@ -280,6 +363,11 @@ function validateRuntime(release, runtime) {
   ) {
     throw new Error(
       "OBJECT_STORAGE_UPLOAD_ALLOWED_ORIGINS must contain exact non-loopback HTTPS origins and never *.",
+    );
+  }
+  if (origins[0] !== STAGING_APPLICATION_ORIGIN) {
+    throw new Error(
+      `OBJECT_STORAGE_UPLOAD_ALLOWED_ORIGINS must be exactly ${STAGING_APPLICATION_ORIGIN}.`,
     );
   }
 
@@ -314,6 +402,7 @@ function validateRuntime(release, runtime) {
     authIssuer: auth.issuer,
     authRedirectUri: auth.redirectUri,
     generationProvider: "o1key",
+    objectStorageProvider: "r2",
     publicObjectStorageOrigin: publicStorageEndpoint.origin,
   });
 }
@@ -355,6 +444,10 @@ export function runtimeEnvironmentForHost(release, runtime) {
       release.GOODGOOD_AUTH_CLIENT_SECRET_SOURCE_FILE,
     GENERATION_API_KEY_FILE:
       release.GOODGOOD_GENERATION_API_KEY_SOURCE_FILE,
+    OBJECT_STORAGE_ACCESS_KEY_ID_FILE:
+      release.GOODGOOD_OBJECT_STORAGE_ACCESS_KEY_ID_SOURCE_FILE,
+    OBJECT_STORAGE_SECRET_ACCESS_KEY_FILE:
+      release.GOODGOOD_OBJECT_STORAGE_SECRET_ACCESS_KEY_SOURCE_FILE,
   });
 }
 

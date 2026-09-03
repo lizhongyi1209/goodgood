@@ -49,6 +49,15 @@ fresh signed GET URLs; the O1Key route reads the bytes server-side and creates
 temporary provider attachments. Browser blob URLs and storage credentials never
 enter the persisted generation contract.
 
+M7 keeps this S3-compatible boundary but selects the private Cloudflare R2
+`goodgood` bucket as staging's authoritative object store. Server requests and
+browser presigned PUT/GET URLs both use the account R2 S3 API endpoint; the R2
+public development URL and bucket custom domain remain disabled. The staging
+credential has object read/write permission only for that bucket, so startup
+verifies the bucket but cannot create it or rewrite CORS. The exact CORS policy
+is an independently reviewed Cloudflare setting. The existing same-host RustFS
+is a temporary non-authoritative fallback and receives no new staging objects.
+
 Reference-byte cleanup is a separate one-shot maintenance boundary, not part
 of a browser request or the continuously running worker. Its default dry-run
 reports candidates without mutation. Explicit execution first stages expired
@@ -233,12 +242,13 @@ adapter uses Bearer authentication, uploads each validated private reference to
 `POST /async/v1/generateImage`, and polls
 `GET /async/v1/tasks/{task_id}`. The temporary upload URL is publicly readable
 for 24 hours and is only an intermediate provider-transfer artifact; GoodGood's
-private RustFS object remains authoritative. Completed outputs must be
-downloaded promptly and stored in GoodGood-owned object storage.
+private object remains authoritative (RustFS locally and R2 in M7 staging).
+Completed outputs must be downloaded promptly and stored in GoodGood-owned
+object storage.
 
 Worker routing is explicit and persisted per attempt. The default Compose path
 selects the M3 mock route; the O1Key override selects the route above, reads the
-ordered RustFS reference bytes, and resumes the persisted `task_id` after a
+ordered private reference bytes, and resumes the persisted `task_id` after a
 worker restart. Downloaded JPEG, PNG, or WebP results are bounded, type-checked,
 fully decoded, and stored with a content-derived object extension before the
 existing terminal job transaction accepts them. A worker whose selected route

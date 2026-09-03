@@ -6,8 +6,12 @@ import test from "node:test";
 import {
   parseEnvironmentFile,
   runStagingPreflight,
+  STAGING_APPLICATION_ORIGIN,
   STAGING_AUTH_SECRET_PATH,
   STAGING_GENERATION_SECRET_PATH,
+  STAGING_OBJECT_STORAGE_ACCESS_KEY_PATH,
+  STAGING_OBJECT_STORAGE_SECRET_KEY_PATH,
+  STAGING_R2_ENDPOINT,
 } from "../scripts/staging-contract.mjs";
 import {
   createReleasePlan,
@@ -19,6 +23,8 @@ import { verifyStagingFiles } from "../scripts/verify-staging.mjs";
 
 const AUTH_SECRET = "auth-secret-that-must-never-be-reported";
 const GENERATION_SECRET = "generation-secret-that-must-never-be-reported";
+const STORAGE_ACCESS_KEY = "storage-access-key-that-must-never-be-reported";
+const STORAGE_SECRET_KEY = "storage-secret-key-that-must-never-be-reported";
 
 async function stagingFixture(context) {
   const directory = await mkdtemp(path.join(os.tmpdir(), "goodgood-staging-"));
@@ -29,16 +35,22 @@ async function stagingFixture(context) {
   });
   const authSecretFile = path.join(directory, "auth-secret");
   const generationSecretFile = path.join(directory, "generation-secret");
+  const storageAccessKeyFile = path.join(directory, "storage-access-key");
+  const storageSecretKeyFile = path.join(directory, "storage-secret-key");
   const releaseFile = path.join(directory, "release.env");
   const runtimeFile = path.join(directory, "runtime.env");
   await Promise.all([
     writeFile(authSecretFile, `${AUTH_SECRET}\n`, { mode: 0o600 }),
     writeFile(generationSecretFile, `${GENERATION_SECRET}\n`, { mode: 0o600 }),
+    writeFile(storageAccessKeyFile, `${STORAGE_ACCESS_KEY}\n`, { mode: 0o600 }),
+    writeFile(storageSecretKeyFile, `${STORAGE_SECRET_KEY}\n`, { mode: 0o600 }),
   ]);
 
   const release = {
     GOODGOOD_AUTH_CLIENT_SECRET_SOURCE_FILE: authSecretFile,
     GOODGOOD_GENERATION_API_KEY_SOURCE_FILE: generationSecretFile,
+    GOODGOOD_OBJECT_STORAGE_ACCESS_KEY_ID_SOURCE_FILE: storageAccessKeyFile,
+    GOODGOOD_OBJECT_STORAGE_SECRET_ACCESS_KEY_SOURCE_FILE: storageSecretKeyFile,
     GOODGOOD_RELEASE_IMAGE: `ghcr.io/lizhongyi1209/goodgood@sha256:${"a".repeat(64)}`,
     GOODGOOD_RELEASE_MIGRATION: "0010_m6_payment_sandbox.sql",
     GOODGOOD_RELEASE_REVISION: "b".repeat(40),
@@ -60,17 +72,19 @@ async function stagingFixture(context) {
     GOODGOOD_AUTH_ISSUER: "https://tenant.authing.cn/oidc",
     GOODGOOD_AUTH_MODE: "oidc",
     GOODGOOD_AUTH_REDIRECT_URI:
-      "https://staging.goodgood.test/api/auth/callback",
+      `${STAGING_APPLICATION_ORIGIN}/api/auth/callback`,
     GOODGOOD_FAKE_PAYMENT_ENABLED: "false",
     NODE_ENV: "production",
-    OBJECT_STORAGE_ACCESS_KEY_ID: "staging-access-key",
-    OBJECT_STORAGE_BUCKET: "goodgood-staging-test-data",
-    OBJECT_STORAGE_ENDPOINT: "https://private-s3.goodgood.test",
-    OBJECT_STORAGE_FORCE_PATH_STYLE: "false",
-    OBJECT_STORAGE_PUBLIC_ENDPOINT: "https://assets.goodgood.test",
-    OBJECT_STORAGE_REGION: "ap-east-1",
-    OBJECT_STORAGE_SECRET_ACCESS_KEY: "storage-secret",
-    OBJECT_STORAGE_UPLOAD_ALLOWED_ORIGINS: "https://staging.goodgood.test",
+    OBJECT_STORAGE_ACCESS_KEY_ID_FILE: STAGING_OBJECT_STORAGE_ACCESS_KEY_PATH,
+    OBJECT_STORAGE_BUCKET: "goodgood",
+    OBJECT_STORAGE_ENDPOINT: STAGING_R2_ENDPOINT,
+    OBJECT_STORAGE_FORCE_PATH_STYLE: "true",
+    OBJECT_STORAGE_PROVISIONING_MODE: "verify",
+    OBJECT_STORAGE_PROVIDER_KIND: "r2",
+    OBJECT_STORAGE_PUBLIC_ENDPOINT: STAGING_R2_ENDPOINT,
+    OBJECT_STORAGE_REGION: "auto",
+    OBJECT_STORAGE_SECRET_ACCESS_KEY_FILE: STAGING_OBJECT_STORAGE_SECRET_KEY_PATH,
+    OBJECT_STORAGE_UPLOAD_ALLOWED_ORIGINS: STAGING_APPLICATION_ORIGIN,
     REDIS_URL: "redis://staging-valkey:6379",
   };
 
@@ -105,6 +119,8 @@ test("staging preflight accepts the production contract without reporting secret
   assert.doesNotMatch(serialized, /database-secret|storage-secret/);
   assert.equal(serialized.includes(AUTH_SECRET), false);
   assert.equal(serialized.includes(GENERATION_SECRET), false);
+  assert.equal(serialized.includes(STORAGE_ACCESS_KEY), false);
+  assert.equal(serialized.includes(STORAGE_SECRET_KEY), false);
 
   const fileReport = await verifyStagingFiles({
     releaseFile: fixture.releaseFile,
@@ -147,6 +163,14 @@ test("staging preflight fails closed for empty, mutable, local, and inline-secre
     },
     {
       ...fixture.runtime,
+      OBJECT_STORAGE_ACCESS_KEY_ID: "inline-storage-access-key",
+    },
+    {
+      ...fixture.runtime,
+      OBJECT_STORAGE_SECRET_ACCESS_KEY: "inline-storage-secret-key",
+    },
+    {
+      ...fixture.runtime,
       GOODGOOD_ALLOW_LOCAL_AUTH: "true",
       GOODGOOD_AUTH_MODE: "local",
     },
@@ -157,6 +181,22 @@ test("staging preflight fails closed for empty, mutable, local, and inline-secre
     {
       ...fixture.runtime,
       OBJECT_STORAGE_PUBLIC_ENDPOINT: "http://127.0.0.1:9000",
+    },
+    {
+      ...fixture.runtime,
+      OBJECT_STORAGE_PUBLIC_ENDPOINT: "https://assets-goodgood.o1key.com",
+    },
+    {
+      ...fixture.runtime,
+      OBJECT_STORAGE_REGION: "us-east-1",
+    },
+    {
+      ...fixture.runtime,
+      OBJECT_STORAGE_FORCE_PATH_STYLE: "false",
+    },
+    {
+      ...fixture.runtime,
+      OBJECT_STORAGE_PROVISIONING_MODE: "manage",
     },
     {
       ...fixture.runtime,
@@ -279,6 +319,12 @@ test("staging Compose has no build, local auth, mock provider, or fake payment d
   assert.match(compose, /127\.0\.0\.1:\$\{GOODGOOD_STAGING_WEB_PORT/);
   assert.match(compose, /goodgood_auth_client_secret:/);
   assert.match(compose, /goodgood_generation_api_key:/);
+  assert.match(compose, /goodgood_object_storage_access_key_id:/);
+  assert.match(compose, /goodgood_object_storage_secret_access_key:/);
+  assert.doesNotMatch(
+    compose,
+    /OBJECT_STORAGE_ACCESS_KEY_ID:|OBJECT_STORAGE_SECRET_ACCESS_KEY:/,
+  );
   for (const ignore of [dockerIgnore, gitIgnore]) {
     assert.match(ignore, /infra\/staging\/\*\.env/);
     assert.match(ignore, /infra\/staging\/secrets/);
@@ -290,4 +336,141 @@ test("staging Compose has no build, local auth, mock provider, or fake payment d
   );
   assert.match(releaseMetadata, /"compose\.staging\.yaml"/);
   assert.match(releaseMetadata, /"infra\/staging\/runtime\.env\.example"/);
+});
+
+test("Alibaba Cloud staging bootstrap is bounded and keeps public services closed", async () => {
+  const bootstrap = await readFile(
+    new URL("../infra/staging/bootstrap-ubuntu-host.sh", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(bootstrap, /VERSION_ID:-.*24\.04/);
+  assert.match(bootstrap, /readonly admin_user="goodgood"/);
+  assert.match(bootstrap, /readonly swap_size_mib="2048"/);
+  assert.match(bootstrap, /apt-get upgrade --with-new-pkgs --yes/);
+  assert.match(bootstrap, /https:\/\/download\.docker\.com\/linux\/ubuntu/);
+  assert.doesNotMatch(bootstrap, /get\.docker\.com/);
+  assert.match(bootstrap, /"log-driver": "local"/);
+  assert.match(bootstrap, /"max-size": "10m"/);
+  assert.match(bootstrap, /99-zz-goodgood-host\.conf/);
+  assert.match(bootstrap, /GoodGood host swap policy/);
+  assert.match(bootstrap, /systemctl disable --now nginx/);
+  assert.match(bootstrap, /ufw allow 22\/tcp/);
+  assert.match(bootstrap, /ufw allow 80\/tcp/);
+  assert.match(bootstrap, /ufw allow 443\/tcp/);
+  assert.doesNotMatch(bootstrap, /8\.217\.113\.148|password|api[_-]?key/i);
+});
+
+test("same-host staging dependencies are bounded, private, and secret-file backed", async () => {
+  const [applicationCompose, dependencyCompose, installer, releaseMetadata] =
+    await Promise.all([
+      readFile(new URL("../compose.staging.yaml", import.meta.url), "utf8"),
+      readFile(
+        new URL("../compose.staging.dependencies.yaml", import.meta.url),
+        "utf8",
+      ),
+      readFile(
+        new URL(
+          "../infra/staging/install-staging-dependencies.sh",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+      readFile(new URL("../scripts/release-metadata.mjs", import.meta.url), "utf8"),
+    ]);
+
+  assert.match(
+    dependencyCompose,
+    /postgres:17\.11-bookworm@sha256:[a-f0-9]{64}/,
+  );
+  assert.match(
+    dependencyCompose,
+    /valkey\/valkey:8\.1\.9-alpine3\.24@sha256:[a-f0-9]{64}/,
+  );
+  assert.match(
+    dependencyCompose,
+    /rustfs\/rustfs:1\.0\.0-rc\.3@sha256:[a-f0-9]{64}/,
+  );
+  assert.equal(
+    dependencyCompose.match(/^\s+ports:/gm)?.length,
+    1,
+    "only the S3 API may publish a host port",
+  );
+  assert.match(
+    dependencyCompose,
+    /127\.0\.0\.1:9000:9000/,
+  );
+  assert.doesNotMatch(dependencyCompose, /^\s*-\s*["']?0\.0\.0\.0:/m);
+  assert.doesNotMatch(dependencyCompose, /:5432:5432|:6379:6379|:9001:9001/);
+  assert.match(dependencyCompose, /internal: true/);
+  assert.match(dependencyCompose, /goodgood-staging-storage-origin:/);
+  assert.match(dependencyCompose, /RUSTFS_ACCESS_KEY_FILE: \/run\/secrets\//);
+  assert.match(dependencyCompose, /RUSTFS_SECRET_KEY_FILE: \/run\/secrets\//);
+  assert.match(dependencyCompose, /POSTGRES_PASSWORD_FILE: \/run\/secrets\//);
+  assert.equal(dependencyCompose.match(/^\s+mem_limit:/gm)?.length, 3);
+  assert.equal(dependencyCompose.match(/^\s+pids_limit:/gm)?.length, 3);
+  assert.match(dependencyCompose, /--maxmemory-policy\n\s+- noeviction/);
+  assert.match(dependencyCompose, /goodgood-staging-postgres-data/);
+  assert.match(dependencyCompose, /goodgood-staging-valkey-data/);
+  assert.match(dependencyCompose, /goodgood-staging-object-storage-data/);
+
+  assert.match(applicationCompose, /mem_limit: 640m/);
+  assert.match(applicationCompose, /pids_limit: 256/);
+  assert.match(applicationCompose, /goodgood-staging-private:\n\s+external: true/);
+  assert.match(applicationCompose, /goodgood-staging-egress:/);
+
+  assert.match(installer, /openssl rand -hex 32/);
+  assert.match(installer, /chmod 0600/);
+  assert.match(installer, /readonly rustfs_uid="10001"/);
+  assert.match(installer, /chmod 0400/);
+  assert.match(installer, /refusing an implicit rotation/i);
+  assert.match(installer, /Docker metadata/);
+  assert.match(installer, /http:\/\/127\.0\.0\.1:9000\/health\/ready/);
+  assert.doesNotMatch(installer, /printf 'OBJECT_STORAGE_/);
+  assert.doesNotMatch(
+    installer,
+    /8\.217\.113\.148|goodgood-local-only|rustfsadmin/,
+  );
+  assert.match(releaseMetadata, /"compose\.staging\.dependencies\.yaml"/);
+  assert.match(releaseMetadata, /"infra\/staging\/install-staging-dependencies\.sh"/);
+});
+
+test("Nginx accepts only Cloudflare traffic and activates only a matching origin certificate", async () => {
+  const [configuration, allowlist, installer, releaseMetadata] =
+    await Promise.all([
+      readFile(
+        new URL("../infra/staging/nginx/goodgood.conf", import.meta.url),
+        "utf8",
+      ),
+      readFile(
+        new URL(
+          "../infra/staging/nginx/cloudflare-origin-only.conf",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+      readFile(
+        new URL("../infra/staging/install-nginx-origin.sh", import.meta.url),
+        "utf8",
+      ),
+      readFile(new URL("../scripts/release-metadata.mjs", import.meta.url), "utf8"),
+    ]);
+
+  assert.match(configuration, /server_name goodgood\.o1key\.com/);
+  assert.match(configuration, /include \/etc\/nginx\/snippets\/goodgood-cloudflare-origin-only\.conf/);
+  assert.match(configuration, /proxy_pass http:\/\/127\.0\.0\.1:3000/);
+  assert.match(configuration, /X-Real-IP \$http_cf_connecting_ip/);
+  assert.match(configuration, /ssl_protocols TLSv1\.2 TLSv1\.3/);
+  assert.doesNotMatch(configuration, /8\.217\.113\.148/);
+  assert.match(allowlist, /allow 173\.245\.48\.0\/20/);
+  assert.match(allowlist, /allow 2c0f:f248::\/32/);
+  assert.match(allowlist, /deny all/);
+  assert.match(installer, /ec_paramgen_curve:prime256v1/);
+  assert.match(installer, /openssl x509 .* -checkhost/);
+  assert.match(installer, /openssl x509 .* -checkend 2592000/);
+  assert.match(installer, /certificate_key_digest/);
+  assert.match(installer, /nginx -t/);
+  assert.match(installer, /systemctl enable --now nginx/);
+  assert.match(releaseMetadata, /"infra\/staging\/install-nginx-origin\.sh"/);
+  assert.match(releaseMetadata, /"infra\/staging\/nginx\/goodgood\.conf"/);
 });

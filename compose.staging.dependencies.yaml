@@ -1,0 +1,119 @@
+name: goodgood-staging-dependencies
+
+x-goodgood-staging-dependency: &goodgood-staging-dependency
+  init: true
+  restart: unless-stopped
+  security_opt:
+    - no-new-privileges:true
+  networks:
+    - goodgood-staging-private
+
+services:
+  postgres:
+    <<: *goodgood-staging-dependency
+    image: postgres:17.11-bookworm@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0
+    environment:
+      POSTGRES_DB: goodgood
+      POSTGRES_USER: goodgood
+      POSTGRES_PASSWORD_FILE: /run/secrets/goodgood_staging_postgres_password
+    secrets:
+      - goodgood_staging_postgres_password
+    shm_size: 128m
+    cpus: 0.75
+    mem_limit: 768m
+    mem_reservation: 256m
+    memswap_limit: 1g
+    pids_limit: 256
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready --username \"$$POSTGRES_USER\" --dbname \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 15s
+
+  valkey:
+    <<: *goodgood-staging-dependency
+    image: valkey/valkey:8.1.9-alpine3.24@sha256:e0eb7c480958d32bdc4357a74bdd70653ae15f2f9b4c93c4a5a9fad1dc471c84
+    command:
+      - valkey-server
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - everysec
+      - --maxmemory
+      - 160mb
+      - --maxmemory-policy
+      - noeviction
+    cpus: 0.25
+    mem_limit: 256m
+    mem_reservation: 64m
+    memswap_limit: 320m
+    pids_limit: 128
+    volumes:
+      - valkey-data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+
+  object-storage:
+    <<: *goodgood-staging-dependency
+    image: rustfs/rustfs:1.0.0-rc.3@sha256:800cf3f352a0a27e3275ca854a51f0027975d7acc7a0d52089a35bcc9fcbf0b5
+    environment:
+      RUSTFS_VOLUMES: /data
+      RUSTFS_ADDRESS: 0.0.0.0:9000
+      RUSTFS_CONSOLE_ENABLE: "false"
+      RUSTFS_ACCESS_KEY_FILE: /run/secrets/goodgood_staging_object_storage_access_key
+      RUSTFS_SECRET_KEY_FILE: /run/secrets/goodgood_staging_object_storage_secret_key
+      RUSTFS_REGION: us-east-1
+      RUSTFS_OBS_LOGGER_LEVEL: warn
+    secrets:
+      - goodgood_staging_object_storage_access_key
+      - goodgood_staging_object_storage_secret_key
+    cpus: 0.75
+    mem_limit: 1g
+    mem_reservation: 256m
+    memswap_limit: 1280m
+    pids_limit: 256
+    ports:
+      - "127.0.0.1:9000:9000"
+    networks:
+      - goodgood-staging-private
+      - goodgood-staging-storage-origin
+    volumes:
+      - object-storage-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent --show-error http://127.0.0.1:9000/health/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+
+secrets:
+  goodgood_staging_postgres_password:
+    file: /etc/goodgood/staging/secrets/dependencies/postgres-password
+  goodgood_staging_object_storage_access_key:
+    file: /etc/goodgood/staging/secrets/dependencies/object-storage-access-key
+  goodgood_staging_object_storage_secret_key:
+    file: /etc/goodgood/staging/secrets/dependencies/object-storage-secret-key
+
+networks:
+  goodgood-staging-private:
+    name: ${GOODGOOD_STAGING_PRIVATE_NETWORK_NAME:-goodgood-staging-private}
+    driver: bridge
+    internal: true
+  goodgood-staging-storage-origin:
+    name: goodgood-staging-storage-origin
+    driver: bridge
+
+volumes:
+  postgres-data:
+    name: goodgood-staging-postgres-data
+  valkey-data:
+    name: goodgood-staging-valkey-data
+  object-storage-data:
+    name: goodgood-staging-object-storage-data

@@ -8,6 +8,7 @@ import { loadGenerationConfig } from "../server/generation/config.mjs";
 import { downloadProviderOutput } from "../server/generation/provider.mjs";
 import { createGenerationProvider } from "../server/generation/provider-router.mjs";
 import { markProviderSubmissionStarted } from "../server/generation/repository.mjs";
+import { prepareObjectStorage } from "../server/generation/resources.mjs";
 import {
   parseArguments as parseO1KeyArguments,
   runtimeEnvironment as o1keyRuntimeEnvironment,
@@ -241,7 +242,17 @@ test("generation configuration accepts one secret source and explicit provider k
   const directory = await mkdtemp(path.join(tmpdir(), "goodgood-m5-provider-"));
   context.after(() => rm(directory, { force: true, recursive: true }));
   const keyFile = path.join(directory, "o1key-api-key");
-  await writeFile(keyFile, "file-only-test-key\n", { mode: 0o600 });
+  const storageAccessKeyFile = path.join(directory, "storage-access-key");
+  const storageSecretKeyFile = path.join(directory, "storage-secret-key");
+  await Promise.all([
+    writeFile(keyFile, "file-only-test-key\n", { mode: 0o600 }),
+    writeFile(storageAccessKeyFile, "file-only-storage-access\n", {
+      mode: 0o600,
+    }),
+    writeFile(storageSecretKeyFile, "file-only-storage-secret\n", {
+      mode: 0o600,
+    }),
+  ]);
 
   const environment = {
     ...baseEnvironment(),
@@ -249,10 +260,17 @@ test("generation configuration accepts one secret source and explicit provider k
     GENERATION_API_KEY: undefined,
     GENERATION_API_KEY_FILE: keyFile,
     GENERATION_PROVIDER_KIND: "o1key",
+    OBJECT_STORAGE_ACCESS_KEY_ID: undefined,
+    OBJECT_STORAGE_ACCESS_KEY_ID_FILE: storageAccessKeyFile,
+    OBJECT_STORAGE_SECRET_ACCESS_KEY: undefined,
+    OBJECT_STORAGE_SECRET_ACCESS_KEY_FILE: storageSecretKeyFile,
   };
   const config = loadGenerationConfig(environment);
   assert.equal(config.provider.apiKey, "file-only-test-key");
+  assert.equal(config.objectStorage.provisioningMode, "manage");
   assert.equal(config.provider.kind, "o1key");
+  assert.equal(config.objectStorage.accessKeyId, "file-only-storage-access");
+  assert.equal(config.objectStorage.secretAccessKey, "file-only-storage-secret");
   assert.throws(
     () => loadGenerationConfig({ ...environment, GENERATION_API_KEY: "duplicate" }),
     /mutually exclusive/,
@@ -261,6 +279,63 @@ test("generation configuration accepts one secret source and explicit provider k
     () => loadGenerationConfig({ ...environment, GENERATION_PROVIDER_KIND: "unknown" }),
     /must be mock or o1key/,
   );
+  assert.throws(
+    () =>
+      loadGenerationConfig({
+        ...environment,
+        OBJECT_STORAGE_ACCESS_KEY_ID: "duplicate",
+      }),
+    /OBJECT_STORAGE_ACCESS_KEY_ID and OBJECT_STORAGE_ACCESS_KEY_ID_FILE are mutually exclusive/,
+  );
+  assert.throws(
+    () =>
+      loadGenerationConfig({
+        ...environment,
+        OBJECT_STORAGE_PROVISIONING_MODE: "create-if-convenient",
+      }),
+    /OBJECT_STORAGE_PROVISIONING_MODE must be manage or verify/,
+  );
+});
+
+test("object-storage provisioning is mutable locally and verification-only in staging", async () => {
+  const commands = [];
+  const managed = {
+    config: {
+      objectStorage: {
+        bucket: "goodgood-private",
+        provisioningMode: "manage",
+        uploadAllowedOrigins: ["http://127.0.0.1:3000"],
+      },
+    },
+    storage: {
+      async send(command) {
+        commands.push(command.constructor.name);
+      },
+    },
+  };
+  await prepareObjectStorage(managed);
+  assert.deepEqual(commands, ["HeadBucketCommand", "PutBucketCorsCommand"]);
+
+  let attempts = 0;
+  const verified = {
+    config: {
+      objectStorage: {
+        bucket: "goodgood",
+        provisioningMode: "verify",
+        uploadAllowedOrigins: ["https://goodgood.o1key.com"],
+      },
+    },
+    storage: {
+      async send(command) {
+        attempts += 1;
+        assert.equal(command.constructor.name, "HeadBucketCommand");
+        if (attempts === 1) throw new Error("temporary R2 failure");
+      },
+    },
+  };
+  await assert.rejects(prepareObjectStorage(verified), /temporary R2 failure/);
+  await prepareObjectStorage(verified);
+  assert.equal(attempts, 2);
 });
 
 test("worker persists the selected provider route and exposes charged-retry recovery", async () => {
