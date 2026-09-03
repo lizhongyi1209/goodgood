@@ -8,10 +8,10 @@
   operational; the first healthy digest release is live through Cloudflare and
   interactive Google login passes. The first public real-generation attempt
   exposed a provider/result convergence race after its paid task ID was durable;
-  ADR 0008's bounded stabilization amendment is now deployed and healthy
-- Current objective: obtain explicit operator confirmation before a second paid
-  task, then complete generation, storage-transfer, logout, restore, and carrier
-  evidence; ICP filing/domain work proceeds in parallel
+  ADR 0008's bounded stabilization amendment is now deployed and one complete
+  GoodGood-to-O1Key-to-R2 generation passes
+- Current objective: complete the signed reference OPTIONS/PUT/GET path, logout,
+  restore, and carrier evidence; ICP filing/domain work proceeds in parallel
 
 ## Purpose and update contract
 
@@ -617,10 +617,18 @@ this file owns the current handoff state.
   A root-only `0400` release snapshot is stored as
   `/etc/goodgood/staging/releases/adb2a49.env`. The existing browser session
   survived replacement and still reads 100 available credits with no Asset.
-- Next action: do not create a second paid O1Key task without explicit operator
-  confirmation. Once confirmed, prove one complete GoodGood-to-R2 generation,
-  the exact R2 signed OPTIONS/PUT/GET path, and logout before backup restore and
-  mainland carrier sampling. Progress ICP
+- After explicit operator confirmation, one new Nano Banana 2 task at 1K, 1:1,
+  and one output completed through the deployed stabilization build. The latest
+  job is `succeeded` at 100 percent with one provider attempt and exactly one
+  Asset; Worker records `generation-completion`. Its reservation settled from
+  100 to 90 available credits with zero reserved credit. The browser fetched one
+  unique 467,358-byte signed R2 JPEG and decoded it at 1024 x 1024. The restrained
+  asset-navigation cue showed `+1`; `/assets` contained one decoded image, and
+  the stable asset-detail route opened the same decoded image without an error.
+  No automatic or additional user retry was issued.
+- Next action: prove the exact signed reference OPTIONS/PUT/GET path, then test
+  local plus hosted logout before backup restore and mainland carrier sampling.
+  Progress ICP
   filing/domain work in parallel and keep early paid access on the documented
   operator bridge. After the filed domain and domestic Alipay merchant sandbox
   are available, implement the provider adapter against the existing immutable
@@ -714,7 +722,7 @@ Completed real-Authing loopback checklist:
 | M4 | Production identity, ownership, references, and projects persist safely | Completed | Authing-compatible OIDC/PKCE, hashed sessions, provider-neutral ownership, signed references, cleanup, root-draft/project/asset persistence, optimistic conflict handling, cross-owner denial, and the requested real-Authing loopback matrix pass; public HTTPS proof is explicitly deferred to M7 |
 | M5 | US generation gateway integration and recovery | Completed | O1Key special-price adapter, explicit worker route, RustFS transfer, decoded output ingestion, durable-task restart, fake-server matrix, secret-file launcher, one real URL-output reference-image smoke, operator-confirmed New API charge/refund evidence, and ADR 0008's accepted at-most-once submission guard pass |
 | M6 | Versioned pricing, credit ledger, and payment sandbox | Completed | ADR 0009 launch prices, welcome grants, append-only accounting, live reserve/settle/release, account presentation, immutable CNY 10 / 500-credit product, idempotent orders, signed fake-sandbox fulfillment, dry-run-first manual paid-credit recording, isolated PostgreSQL tests, and full Compose pass |
-| M7 | Hong Kong staging | In progress | ADR 0011 accepts the provisioned Alibaba Cloud Hong Kong 2 vCPU / 4 GiB staging host; its key-only non-root SSH, patched Ubuntu, bounded swap, Docker/Compose, UFW, reboot, and cloud-agent baseline pass. Digest-pinned PostgreSQL/Valkey and a non-authoritative RustFS fallback are healthy on isolated networks. ADR 0012 fixes private R2 plus `goodgood.o1key.com`; private-bucket CORS, bucket-scoped credentials, Origin CA, host-specific Strict, and the Cloudflare-only Nginx origin pass. Authing callbacks and all four external secrets pass live preflight. ADR 0013 fixes retained file-secret permissions with a dedicated reader group. All ten migrations are present; homepage rendering, Authing authorization, interactive Google login, and the exact one-time 100-credit grant pass. The first real O1Key task succeeded upstream but exposed a transient poll/result-ingestion race; its reservation safely released and no second paid POST was sent. ADR 0008's bounded stabilization amendment passed the 131-test local gate plus CI run 7 and is deployed at exact revision/digest with Web/Worker and public readiness healthy. Logout, signed R2 transfer, one complete integrated generation, three-carrier sampling, backup restore, and remaining smoke tests remain; payment checkout stays intentionally absent |
+| M7 | Hong Kong staging | In progress | ADR 0011 accepts the provisioned Alibaba Cloud Hong Kong 2 vCPU / 4 GiB staging host; its key-only non-root SSH, patched Ubuntu, bounded swap, Docker/Compose, UFW, reboot, and cloud-agent baseline pass. Digest-pinned PostgreSQL/Valkey and a non-authoritative RustFS fallback are healthy on isolated networks. ADR 0012 fixes private R2 plus `goodgood.o1key.com`; private-bucket CORS, bucket-scoped credentials, Origin CA, host-specific Strict, and the Cloudflare-only Nginx origin pass. Authing callbacks and all four external secrets pass live preflight. ADR 0013 fixes retained file-secret permissions with a dedicated reader group. All ten migrations are present; homepage rendering, Authing authorization, interactive Google login, and the exact one-time 100-credit grant pass. The first real O1Key task succeeded upstream but exposed a transient poll/result-ingestion race; its reservation safely released and no second paid POST was sent. ADR 0008's bounded stabilization amendment passed the 131-test local gate plus CI run 7 and is deployed at exact revision/digest with Web/Worker and public readiness healthy. A newly authorized task now passes one paid POST, one attempt, 10-credit settlement, private R2 Asset ingestion, signed browser decode, asset cue/library, and stable detail route. Logout, signed reference upload, three-carrier sampling, backup restore, and remaining smoke tests remain; payment checkout stays intentionally absent |
 | M8 | Paid production readiness | Pending | ICP/domain prerequisites and domestic Alipay sandbox/checkout pass before production payment; security/compliance review, observability, rollback, retention, support IDs, and production release gate are complete |
 
 Only mark a milestone `Completed` when its exit evidence exists. Use `Blocked`
