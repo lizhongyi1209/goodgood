@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import { AuthenticationError, sessionExpiredError } from "../auth/errors.mjs";
 import { BillingPersistenceError } from "../billing/repository.mjs";
 import {
@@ -8,6 +7,7 @@ import {
 import { findReadyReferences } from "../references/repository.mjs";
 import { validateReferenceIds } from "../references/validation.mjs";
 import { findProject } from "../projects/repository.mjs";
+import { newRequestId } from "../observability/http.mjs";
 import { dispatchPendingJobs } from "./queue.mjs";
 import {
   GenerationPersistenceError,
@@ -190,8 +190,7 @@ export async function retryGeneration({ idempotencyKey, jobId, ownerContext }) {
   };
 }
 
-export function generationApiError(error, jobId = "") {
-  const requestId = `req_${randomUUID()}`;
+export function generationApiError(error, jobId = "", requestId = newRequestId()) {
   if (
     error instanceof AuthenticationError ||
     error instanceof BillingPersistenceError ||

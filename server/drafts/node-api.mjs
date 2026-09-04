@@ -4,6 +4,7 @@ import {
   readCreationDraft,
   saveCreationDraft,
 } from "./api.mjs";
+import { requestIdFor } from "../observability/http.mjs";
 
 const JSON_HEADERS = {
   "cache-control": "no-store",
@@ -65,7 +66,7 @@ export function createCreationDraftNodeApiHandler({
       sendJson(response, 405, { error: "method_not_allowed" });
       return true;
     } catch (error) {
-      const failure = creationDraftApiError(error);
+      const failure = creationDraftApiError(error, requestIdFor(request));
       sendJson(response, failure.status, failure.body);
       return true;
     }

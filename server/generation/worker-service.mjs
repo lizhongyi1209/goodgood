@@ -43,6 +43,7 @@ function generatedObjectExtension(contentType) {
 }
 
 export async function processGenerationJob(resources, { jobId, workerId }) {
+  const startedAt = Date.now();
   const { config, pool, publicStorage, storage } = resources;
   const provider = createGenerationProvider({ config, publicStorage, storage });
   const claim = await claimGenerationJob(pool, {
@@ -51,13 +52,36 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
     leaseMs: config.workerLeaseMs,
     workerId,
   });
-  if (!claim.claimed) return { outcome: claim.reason };
+  if (!claim.claimed) {
+    return {
+      durationMs: Date.now() - startedAt,
+      outcome: claim.reason,
+      provider: provider.route.provider,
+      routeVersion: provider.route.routeVersion,
+    };
+  }
 
   const { attempt, job } = claim;
   let stage = "attempt-validation";
+  let taskId = attempt.provider_task_id;
+  let providerStartedAt = null;
+  const resultContext = () => ({
+    customerCreditAmount:
+      job.quoted_credit_amount === null || job.quoted_credit_amount === undefined
+        ? undefined
+        : String(job.quoted_credit_amount),
+    customerCreditUnit: job.quoted_credit_unit ?? undefined,
+    durationMs: Date.now() - startedAt,
+    ownerId: job.owner_id,
+    provider: provider.route.provider,
+    providerLatencyMs:
+      providerStartedAt === null ? undefined : Date.now() - providerStartedAt,
+    providerTaskId: taskId ?? undefined,
+    routeVersion: provider.route.routeVersion,
+  });
   try {
     provider.assertAttempt(attempt);
-    let taskId = attempt.provider_task_id;
+    providerStartedAt = Date.now();
     if (!taskId) {
       if (
         provider.submissionPolicy === "task-id-required" &&
@@ -129,7 +153,7 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
       resultHash: checksum,
       workerId,
     });
-    return { outcome: "succeeded", stage };
+    return { ...resultContext(), outcome: "succeeded", stage };
   } catch (error) {
     if (error instanceof NormalizedProviderError) {
       await failGenerationJob(pool, {
@@ -138,7 +162,12 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
         jobId,
         workerId,
       });
-      return { code: error.code, outcome: "failed", stage };
+      return {
+        ...resultContext(),
+        code: error.code,
+        outcome: "failed",
+        stage,
+      };
     }
 
     await deferGenerationJob(pool, {
@@ -146,7 +175,7 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
       message: error instanceof Error ? error.message : String(error),
       workerId,
     });
-    return { outcome: "deferred", stage };
+    return { ...resultContext(), outcome: "deferred", stage };
   }
 }
 

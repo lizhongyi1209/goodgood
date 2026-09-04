@@ -7,6 +7,7 @@ import {
 } from "./payment-api.mjs";
 import { PaymentError } from "./payment-errors.mjs";
 import { loadFakePaymentSandboxConfig } from "./payment-sandbox.mjs";
+import { requestIdFor } from "../observability/http.mjs";
 
 const JSON_HEADERS = {
   "cache-control": "no-store",
@@ -153,7 +154,7 @@ export function createBillingNodeApiHandler({
       );
       return true;
     } catch (error) {
-      const failure = billingApiError(error);
+      const failure = billingApiError(error, requestIdFor(request));
       sendJson(response, failure.status, failure.body);
       return true;
     }

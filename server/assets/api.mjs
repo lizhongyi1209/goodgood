@@ -1,8 +1,8 @@
-import { randomUUID } from "node:crypto";
 import { AuthenticationError, sessionExpiredError } from "../auth/errors.mjs";
 import { presentGenerationJob } from "../generation/presenter.mjs";
 import { findOwnerAssetGenerationJobs } from "../generation/repository.mjs";
 import { getGenerationResources } from "../generation/resources.mjs";
+import { newRequestId } from "../observability/http.mjs";
 
 function ownerIdFromContext(ownerContext) {
   if (!ownerContext?.ownerId) throw sessionExpiredError();
@@ -20,8 +20,7 @@ export async function listAssets({ ownerContext }) {
   };
 }
 
-export function assetApiError(error) {
-  const requestId = `req_${randomUUID()}`;
+export function assetApiError(error, requestId = newRequestId()) {
   if (error instanceof AuthenticationError) {
     return {
       body: {

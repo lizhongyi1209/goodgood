@@ -8,6 +8,10 @@ import {
   getGenerationResources,
   probeGenerationResources,
 } from "./resources.mjs";
+import {
+  correlateRequest,
+  requestIdFor,
+} from "../observability/http.mjs";
 
 const JSON_HEADERS = {
   "cache-control": "no-store",
@@ -113,6 +117,7 @@ export function createGenerationNodeApiHandler({
           input: await readJson(request),
           ownerContext,
         });
+        correlateRequest(request, { jobId: result.job.id });
         sendJson(response, result.created ? 202 : 200, result.job);
         return true;
       }
@@ -122,11 +127,13 @@ export function createGenerationNodeApiHandler({
       );
       if (retryMatch && request.method === "POST") {
         jobId = decodeURIComponent(retryMatch[1]);
+        correlateRequest(request, { jobId });
         const result = await operations.retryGeneration({
           idempotencyKey: idempotencyKey(request),
           jobId,
           ownerContext,
         });
+        correlateRequest(request, { jobId: result.job.id });
         sendJson(response, result.created ? 202 : 200, result.job);
         return true;
       }
@@ -134,6 +141,7 @@ export function createGenerationNodeApiHandler({
       const jobMatch = /^\/api\/generations\/([^/]+)$/.exec(url.pathname);
       if (jobMatch && request.method === "GET") {
         jobId = decodeURIComponent(jobMatch[1]);
+        correlateRequest(request, { jobId });
         sendJson(
           response,
           200,
@@ -145,7 +153,7 @@ export function createGenerationNodeApiHandler({
       sendJson(response, 405, { error: "method_not_allowed" });
       return true;
     } catch (error) {
-      const failure = generationApiError(error, jobId);
+      const failure = generationApiError(error, jobId, requestIdFor(request));
       sendJson(response, failure.status, failure.body);
       return true;
     }

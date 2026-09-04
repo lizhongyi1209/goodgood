@@ -1,10 +1,10 @@
-import { randomUUID } from "node:crypto";
 import { AuthenticationError, sessionExpiredError } from "../auth/errors.mjs";
 import { findProjectGenerationJobs } from "../generation/repository.mjs";
 import { presentGenerationJob } from "../generation/presenter.mjs";
 import { getGenerationResources } from "../generation/resources.mjs";
 import { signAssetRead } from "../generation/storage.mjs";
 import { ReferenceRequestError } from "../references/errors.mjs";
+import { newRequestId } from "../observability/http.mjs";
 import { findReadyReferences } from "../references/repository.mjs";
 import {
   ProjectPersistenceError,
@@ -150,8 +150,11 @@ export async function updateProject({ input, ownerContext, projectId }) {
   return presentProject(resources, row);
 }
 
-export function projectApiError(error, projectId = "") {
-  const requestId = `req_${randomUUID()}`;
+export function projectApiError(
+  error,
+  projectId = "",
+  requestId = newRequestId(),
+) {
   if (
     error instanceof AuthenticationError ||
     error instanceof ProjectRequestError ||

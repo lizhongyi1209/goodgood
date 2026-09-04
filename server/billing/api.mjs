@@ -1,6 +1,6 @@
-import { randomUUID } from "node:crypto";
 import { AuthenticationError, sessionExpiredError } from "../auth/errors.mjs";
 import { getGenerationResources } from "../generation/resources.mjs";
+import { newRequestId } from "../observability/http.mjs";
 import {
   BillingPersistenceError,
   findCreditAccount,
@@ -85,8 +85,7 @@ export async function readBillingSummary({
   };
 }
 
-export function billingApiError(error) {
-  const requestId = `req_${randomUUID()}`;
+export function billingApiError(error, requestId = newRequestId()) {
   if (error instanceof AuthenticationError) {
     return {
       body: {

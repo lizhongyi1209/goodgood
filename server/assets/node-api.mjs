@@ -1,4 +1,5 @@
 import { assetApiError, listAssets } from "./api.mjs";
+import { requestIdFor } from "../observability/http.mjs";
 
 const JSON_HEADERS = {
   "cache-control": "no-store",
@@ -37,7 +38,7 @@ export function createAssetNodeApiHandler({
       );
       return true;
     } catch (error) {
-      const failure = assetApiError(error);
+      const failure = assetApiError(error, requestIdFor(request));
       sendJson(response, failure.status, failure.body);
       return true;
     }

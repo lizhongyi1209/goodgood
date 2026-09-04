@@ -5,6 +5,7 @@ import {
   resolveOwnerContext,
   resolveSessionOwnerContext,
 } from "./repository.mjs";
+import { correlateRequest } from "../observability/http.mjs";
 
 function headerValue(headers, name) {
   if (typeof headers?.get === "function") return headers.get(name);
@@ -84,7 +85,9 @@ export function createRequestAuthenticator({
     const identityAdapter = createLocalIdentityAdapter(config);
     return async function authenticateLocalRequest(request) {
       const identity = identityAdapter.authenticate(request);
-      return resolveOwnerContext(await getPool(), identity);
+      const owner = await resolveOwnerContext(await getPool(), identity);
+      correlateRequest(request, { ownerId: owner.ownerId });
+      return owner;
     };
   }
 
@@ -93,10 +96,12 @@ export function createRequestAuthenticator({
     if (!credential || credential.length < 32 || credential.length > 512) {
       throw sessionExpiredError();
     }
-    return resolveSessionOwnerContext(
+    const owner = await resolveSessionOwnerContext(
       await getPool(),
       hashAuthenticationSecret(credential),
     );
+    correlateRequest(request, { ownerId: owner.ownerId });
+    return owner;
   };
 }
 

@@ -14,6 +14,7 @@ import { createGenerationNodeApiHandler } from "../generation/node-api.mjs";
 import { createCreationDraftNodeApiHandler } from "../drafts/node-api.mjs";
 import { createReferenceNodeApiHandler } from "../references/node-api.mjs";
 import { createProjectNodeApiHandler } from "../projects/node-api.mjs";
+import { observeHttpRequest } from "../observability/http.mjs";
 import {
   closeGenerationResources,
   getGenerationResources,
@@ -56,6 +57,7 @@ const { server } = await startProdServer({
 const vinextRequestListeners = server.listeners("request");
 server.removeAllListeners("request");
 server.on("request", (request, response) => {
+  observeHttpRequest(request, response);
   const url = new URL(request.url ?? "/", "http://localhost");
   if (
     defaultSessionCookie &&
@@ -96,6 +98,7 @@ server.on("request", (request, response) => {
         JSON.stringify({
           event: "web.node_api_failed",
           message: error instanceof Error ? error.message : String(error),
+          requestId: response.getHeader("x-request-id"),
         }),
       );
       if (!response.headersSent) {

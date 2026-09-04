@@ -29,14 +29,19 @@
   standalone output during deployment; the retained prior release restored
   service without reversing migrations. The finished-image import fix and
   linked React 19.2.8 security update pass locally and in CI run 23; that exact
-  immutable image is now the promoted healthy staging release. QQ Mail is not
-  under consideration, and outbound failure notification remains part of M8's
-  unified production-observability decision.
-- Current objective: begin M8 paid-production readiness with the production
-  observability and release gate while ICP filing, the production domain, and
-  domestic Alipay merchant prerequisites progress; do not assume QQ Mail as an
-  alert transport. Full-byte real-carrier throughput remains an accepted
-  operator deferral
+  immutable image is now the promoted healthy staging release. M8 is now in
+  progress: ADR 0015 selects Grafana Cloud, a pinned Alloy collector, and one
+  native WeCom contact point; QQ Mail and staging-only SMTP are excluded. The
+  first application slice adds server-owned request/support IDs, redacted
+  structured HTTP completion events, and provider/task/timing/credit Worker
+  correlation. External telemetry ingestion and alert delivery are not yet
+  claimed.
+- Current objective: continue M8 paid-production readiness by adding the pinned
+  Alloy/host configuration, fail-closed observability preflight, dashboard and
+  alert-rule contracts, and a live staging firing/resolved proof while ICP
+  filing, the production domain, and domestic Alipay merchant prerequisites
+  progress. Full-byte real-carrier throughput remains an accepted operator
+  deferral.
 
 ## Purpose and update contract
 
@@ -851,14 +856,30 @@ this file owns the current handoff state.
   recheck, the candidate was promoted to the root-only current release file and
   an immutable read-only release snapshot with matching checksums. M7 is
   complete.
-- Next action: begin M8 with the production observability, security/compliance,
-  and release-gate slice while ICP filing/domain and domestic Alipay merchant
-  prerequisites progress. QQ Mail is explicitly not under consideration for
-  alert routing; choose the unified production transport during M8 rather than
-  adding a staging-only notifier. Keep early paid access on the documented
-  operator bridge. After the filed domain and domestic Alipay merchant sandbox
-  are available, implement the provider adapter against the existing immutable
-  order/settlement boundary and add the smallest customer checkout UI.
+- M8 has started with ADR 0015. It fixes Grafana Cloud as the external
+  metrics/logs/alert plane, a pinned Alloy agent as collector, and a native
+  WeCom contact point as the sole initial outbound route. It also fixes the
+  production PostgreSQL objective at no more than one hour RPO and four hours RTO,
+  `14 daily / 8 weekly / 12 monthly` encrypted recovery points, 30-day logs,
+  90-day metrics, alert ownership/acknowledgement, and the exact-digest
+  paid-production release gate. The production Node Web runtime now generates
+  one untrusted-input-independent request/support ID per request, returns it in
+  `X-Request-Id`, reuses it in normalized errors, and logs only a normalized
+  route, status, duration, and allowlisted correlation. Authentication adds the
+  internal owner ID; generation adds the job ID. Worker completion adds the
+  provider route/task, provider and total duration, and immutable customer
+  credit amount without presenting that value as upstream cost. On 2026-09-04,
+  `npm run check:local` passed lint, full TypeScript checking, the production
+  build, and 136 tests with 132 passing and four opt-in integration tests
+  skipped.
+- Next action: implement the pinned Alloy and host configuration plus a
+  secret-redacting observability preflight, then provision Grafana Cloud and the
+  WeCom contact point and prove one synthetic request/generation, one backup
+  failure test, and acknowledged firing/resolved notifications in staging.
+  Keep early paid access on the documented operator bridge. After the filed
+  domain and domestic Alipay merchant sandbox are available, implement the
+  provider adapter against the existing immutable order/settlement boundary and
+  add the smallest customer checkout UI.
 - Blockers: domestic Alipay checkout requires the ICP-filed production domain,
   matching merchant approval, and sandbox credentials. These external items do
   not block M7 staging or trusted manual credit operation. The local fake
@@ -868,8 +889,9 @@ this file owns the current handoff state.
   Google-backed test address or an explicitly approved reset of the isolated
   Authing test user. No disclosed-credential rotation blocker remains.
   Application secrets remain operator-supplied outside the repository by
-  design. Production alert routing,
-  retention and recovery objectives remain an M8 decision. An ICP-filed custom authentication domain is not required now because
+  design. Production alert routing, retention, and recovery objectives are now
+  decided by ADR 0015; provisioning Grafana Cloud/WeCom credentials and live
+  delivery/acknowledgement remain external evidence. An ICP-filed custom authentication domain is not required now because
   the Authing-provided application domain is the accepted temporary path. The
   local token adapter remains forbidden in staging and production.
 
@@ -946,7 +968,7 @@ Completed real-Authing loopback checklist:
 | M5 | US generation gateway integration and recovery | Completed | O1Key special-price adapter, explicit worker route, RustFS transfer, decoded output ingestion, durable-task restart, fake-server matrix, secret-file launcher, one real URL-output reference-image smoke, operator-confirmed New API charge/refund evidence, and ADR 0008's accepted at-most-once submission guard pass |
 | M6 | Versioned pricing, credit ledger, and payment sandbox | Completed | ADR 0009 launch prices, welcome grants, append-only accounting, live reserve/settle/release, account presentation, immutable CNY 10 / 500-credit product, idempotent orders, signed fake-sandbox fulfillment, dry-run-first manual paid-credit recording, isolated PostgreSQL tests, and full Compose pass |
 | M7 | Hong Kong staging | Completed | The hardened Hong Kong host, isolated dependencies, private R2, Cloudflare-only TLS origin, Authing callbacks and rotated secrets, real O1Key generation/reference ingestion, public logout recovery, rollback, mainland HTTP sampling, and all ten migrations pass. ADR 0014's separate encrypted off-host PostgreSQL repository, retention, two latest-snapshot restore drills, real systemd backup, and active persistent timer pass; outbound notification is deferred to M8 and QQ Mail is not under consideration. CI run 23 passes 133 tests, dependency and finished-image scans, and runtime import smoke after the React 19.2.8 fix. Its exact immutable digest is the promoted healthy release: Web/Worker and every dependency readiness check pass, public root/live/ready return HTTP 200, and credit state is unchanged. Full-byte real-carrier throughput remains an accepted non-blocking deferral; payment checkout stays intentionally absent until M8 |
-| M8 | Paid production readiness | Pending | ICP/domain prerequisites and domestic Alipay sandbox/checkout pass before production payment; security/compliance review, observability, rollback, retention, support IDs, and production release gate are complete |
+| M8 | Paid production readiness | In progress | ADR 0015 fixes Grafana Cloud/Alloy/WeCom, redacted support correlation, production recovery/retention objectives, alert ownership, and the exact-digest gate. Server-owned request/support IDs and structured Web/Worker correlation pass the full local gate. Alloy/preflight/dashboard/alert activation, security/compliance review, production rollback/restore evidence, ICP/domain, and domestic Alipay sandbox/checkout remain |
 
 Only mark a milestone `Completed` when its exit evidence exists. Use `Blocked`
 only with a named external dependency or missing decision.

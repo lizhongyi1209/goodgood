@@ -3,6 +3,7 @@ import {
   createReferenceUploads,
   referenceApiError,
 } from "./api.mjs";
+import { requestIdFor } from "../observability/http.mjs";
 
 const JSON_HEADERS = {
   "cache-control": "no-store",
@@ -76,7 +77,11 @@ export function createReferenceNodeApiHandler({
       sendJson(response, 405, { error: "method_not_allowed" });
       return true;
     } catch (error) {
-      const failure = referenceApiError(error, referenceId);
+      const failure = referenceApiError(
+        error,
+        referenceId,
+        requestIdFor(request),
+      );
       sendJson(response, failure.status, failure.body);
       return true;
     }

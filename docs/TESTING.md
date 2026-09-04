@@ -101,9 +101,18 @@ plaintext cleanup, latest-snapshot download into the isolated restore drill,
 and a systemd failure state whose journal exposes no secret. The installer must
 leave the timer disabled. Live evidence must prove repository initialization,
 one timer-shaped upload, full check, off-host restore equality, an active next
-timer, and no retained automatic plaintext archive or failed unit. Outbound
-failure notification is deferred to the unified M8 production-observability
-gate.
+timer, and no retained automatic plaintext archive or failed unit. M7 outbound
+failure notification remains deferred; ADR 0015 now selects Grafana Cloud and
+its WeCom contact point for the unified M8 production-observability gate.
+M8 request-correlation coverage proves the production HTTP runtime ignores an
+inbound request ID, returns one server-owned support ID in both the response
+header and normalized error envelope, normalizes identifier-bearing routes,
+omits query values and unapproved/unsafe correlation fields, and emits exactly
+one completion event. Static tests also keep Worker provider/task, duration,
+and immutable customer-credit correlation wired without treating customer
+credits as upstream provider cost. Grafana Cloud ingestion, dashboard data,
+WeCom firing/resolved delivery, alert acknowledgement, and production RPO/RTO
+remain external release evidence.
 The R2 provisioning unit proves local storage still creates/configures its
 bucket, staging performs only `HeadBucket`, and a failed verification can be
 retried. Static Nginx coverage fixes the canonical hostname, Cloudflare-only

@@ -3,6 +3,7 @@ import {
   authenticationErrorRedirect,
 } from "./operations.mjs";
 import { expiredAuthenticationLoginCookie } from "./request-authenticator.mjs";
+import { requestIdFor } from "../observability/http.mjs";
 
 const NO_STORE = { "cache-control": "no-store" };
 
@@ -37,7 +38,7 @@ export function createAuthenticationNodeApiHandler({ config, operations }) {
         const result = await operations.beginLogin(url.searchParams.get("returnTo"));
         redirect(response, 302, result.location, { "set-cookie": result.cookie });
       } catch (error) {
-        const failure = authenticationApiError(error);
+        const failure = authenticationApiError(error, requestIdFor(request));
         sendJson(response, failure.status, failure.body);
       }
       return true;
@@ -66,7 +67,7 @@ export function createAuthenticationNodeApiHandler({ config, operations }) {
         redirect(
           response,
           303,
-          authenticationErrorRedirect(error),
+          authenticationErrorRedirect(error, requestIdFor(request)),
           headers,
         );
       }
@@ -81,7 +82,7 @@ export function createAuthenticationNodeApiHandler({ config, operations }) {
       try {
         sendJson(response, 200, await operations.readSession(request));
       } catch (error) {
-        const failure = authenticationApiError(error);
+        const failure = authenticationApiError(error, requestIdFor(request));
         sendJson(response, failure.status, failure.body);
       }
       return true;
@@ -106,7 +107,7 @@ export function createAuthenticationNodeApiHandler({ config, operations }) {
           response.end();
         }
       } catch (error) {
-        const failure = authenticationApiError(error);
+        const failure = authenticationApiError(error, requestIdFor(request));
         sendJson(response, failure.status, failure.body);
       }
       return true;

@@ -66,12 +66,25 @@ application R2 credential cannot read that repository. One persistent daily
 systemd timer applies the staging-only `14 daily / 8 weekly / 3 monthly`
 policy, prunes, and verifies all encrypted repository data. A failure remains
 visible in systemd status and the root journal without automatically retrying
-or restoring; outbound alert routing is deferred to the unified M8 production
-observability boundary.
+or restoring. ADR 0015 selects Grafana Cloud plus a WeCom contact point as the
+unified M8 production-observability boundary; activation and live delivery
+remain M8 operator evidence rather than an M7 staging claim.
 The same tool can decrypt the latest off-host archive into the root-only local
 backup directory and pass it to the existing isolated restore drill. The
-transient plaintext archive is always removed. Production retention and
-recovery objectives remain a separate M8 decision.
+transient plaintext archive is always removed. ADR 0015 sets the paid-production
+database objective to at most one hour RPO and four hours RTO, with at least
+`14 daily / 8 weekly / 12 monthly` recovery points; the daily staging schedule
+does not satisfy or prove that production objective.
+
+The production Node web runtime creates one server-owned request/support ID per
+HTTP request, returns it as `X-Request-Id`, and writes one structured completion
+event with the normalized route, status, and elapsed time. It ignores inbound
+request-ID values and excludes queries, cookies, credentials, prompts, email
+addresses, signed URLs, object keys, and bodies. Successful authentication may
+add the internal owner ID, while generation work may add job and provider task
+IDs. Worker completion events also identify the provider route, end-to-end and
+provider elapsed time, and the immutable customer-credit amount; upstream cost
+continues to come from provider usage evidence rather than an invented value.
 
 Reference-byte cleanup is a separate one-shot maintenance boundary, not part
 of a browser request or the continuously running worker. Its default dry-run

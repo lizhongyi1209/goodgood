@@ -5,6 +5,7 @@ import {
   readProject,
   updateProject,
 } from "./api.mjs";
+import { requestIdFor } from "../observability/http.mjs";
 
 const JSON_HEADERS = {
   "cache-control": "no-store",
@@ -98,7 +99,11 @@ export function createProjectNodeApiHandler({
       sendJson(response, 405, { error: "method_not_allowed" });
       return true;
     } catch (error) {
-      const failure = projectApiError(error, projectId);
+      const failure = projectApiError(
+        error,
+        projectId,
+        requestIdFor(request),
+      );
       sendJson(response, failure.status, failure.body);
       return true;
     }

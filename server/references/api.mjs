@@ -1,10 +1,11 @@
-import { createHash, randomUUID } from "node:crypto";
+import { createHash } from "node:crypto";
 import { AuthenticationError, sessionExpiredError } from "../auth/errors.mjs";
 import {
   getGenerationResources,
   prepareObjectStorage,
 } from "../generation/resources.mjs";
 import { REFERENCE_LIMITS } from "./constants.mjs";
+import { newRequestId } from "../observability/http.mjs";
 import {
   ReferencePersistenceError,
   ReferenceRequestError,
@@ -141,8 +142,11 @@ export async function completeReferenceUpload({ referenceId, ownerContext }) {
   }
 }
 
-export function referenceApiError(error, referenceId = "") {
-  const requestId = `req_${randomUUID()}`;
+export function referenceApiError(
+  error,
+  referenceId = "",
+  requestId = newRequestId(),
+) {
   if (
     error instanceof AuthenticationError ||
     error instanceof ReferenceRequestError ||

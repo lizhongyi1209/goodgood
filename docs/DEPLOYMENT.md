@@ -888,8 +888,10 @@ manager; losing that password makes the client-encrypted repository
 unrecoverable. The application checkout, application containers, and
 application R2 credential must never receive the password or backup R2 secret.
 M7 intentionally adds no staging-only outbound alert channel. A failed backup
-stays failed in systemd and retains root-journal evidence; active notification
-belongs to the unified M8 production-observability design.
+stays failed in systemd and retains root-journal evidence. ADR 0015 selects
+Grafana Cloud with a native WeCom contact point for the unified M8 route; do not
+add QQ Mail or a parallel SMTP path while that route is being provisioned and
+proved.
 
 Copy the reviewed `infra/staging` directory to a temporary root-readable host
 location and install the source-owned tools and units:
@@ -991,6 +993,20 @@ implausible timing is explicitly non-qualifying for throughput.
 
 ## Observability
 
+ADR 0015 selects a pinned Grafana Alloy agent forwarding host/container metrics
+and structured JSON logs to Grafana Cloud. Grafana Alerting owns grouping,
+firing/resolved state, runbook links, and the sole initial WeCom contact point.
+Keep telemetry credentials and the contact-point secret outside Git and outside
+application containers. Do not expose a public Prometheus endpoint or include
+queries, cookies, authorization values, prompts, email addresses, signed URLs,
+object keys, or response bodies in telemetry.
+
+The production web process returns a server-owned `X-Request-Id` on every
+request and uses it as the customer support ID. Completion logs use normalized
+route templates rather than identifier-bearing paths. Provider cost comes from
+the provider usage evidence until a supported cost feed exists; customer-credit
+amounts must not be relabeled as upstream spend.
+
 Minimum production signals:
 
 - HTTP error rate and p95 latency.
@@ -999,3 +1015,27 @@ Minimum production signals:
 - Database connections/storage and Redis memory.
 - Object upload/download failures and ESA cache/origin metrics.
 - Structured logs correlated by request ID, job ID, user ID, and provider task ID.
+
+Before paid traffic, prove 30-day log and 90-day metric retention, all required
+dashboard panels, alert ownership/runbooks, and one acknowledged WeCom firing
+and resolved message. Severity 1 acknowledgement is due within 15 minutes;
+Severity 2 is due within four business hours. Preserve local journals as a
+diagnostic fallback, but do not count them as active notification.
+
+The production PostgreSQL gate requires an RPO of at most one hour, an RTO of
+at most four hours, and at least `14 daily / 8 weekly / 12 monthly` encrypted
+off-host recovery points. The M7 daily staging timer is not production evidence.
+
+### Paid-production release gate
+
+For the exact immutable candidate digest, require the repository/security/image
+gates, matching migration and runtime-contract labels, production preflight,
+fresh backup and isolated restore within RPO/RTO, live dashboards, acknowledged
+firing/resolved alert tests, separate candidate readiness, public synthetic
+checks, queue/database/credit invariants, and a compatible prior-release
+rollback rehearsal. Never downgrade the schema during rollback.
+
+Customer checkout remains disabled until ICP/domain, privacy/security review,
+support ownership, and the real domestic Alipay merchant sandbox gates pass.
+Alert failure never authorizes an automatic deploy, rollback, database restore,
+credit grant, or provider resubmission.

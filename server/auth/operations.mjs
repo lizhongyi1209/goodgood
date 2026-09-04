@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
+import { newRequestId } from "../observability/http.mjs";
 import { AuthenticationError, authenticationRequestError } from "./errors.mjs";
 import { createOidcClient } from "./oidc-client.mjs";
 import {
@@ -57,24 +58,33 @@ function safeReturnTo(value) {
   return `${parsed.pathname}${parsed.search}${parsed.hash}`;
 }
 
-export function authenticationApiError(error) {
+export function authenticationApiError(error, requestId = newRequestId()) {
   if (error instanceof AuthenticationError) {
     return {
       body: {
         error: {
           code: error.code,
           message: error.message,
+          requestId,
           retryable: error.retryable,
         },
       },
       status: error.status,
     };
   }
+  console.error(
+    JSON.stringify({
+      event: "authentication.api_failed",
+      message: error instanceof Error ? error.message : String(error),
+      requestId,
+    }),
+  );
   return {
     body: {
       error: {
         code: "INTERNAL_ERROR",
         message: "登录暂时无法完成，请稍后重试。",
+        requestId,
         retryable: true,
       },
     },
@@ -82,8 +92,8 @@ export function authenticationApiError(error) {
   };
 }
 
-export function authenticationErrorRedirect(error) {
-  const failure = authenticationApiError(error);
+export function authenticationErrorRedirect(error, requestId = newRequestId()) {
+  const failure = authenticationApiError(error, requestId);
   const code = failure.body.error.code;
   return `/?authError=${encodeURIComponent(code)}`;
 }

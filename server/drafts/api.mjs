@@ -1,7 +1,7 @@
-import { randomUUID } from "node:crypto";
 import { AuthenticationError, sessionExpiredError } from "../auth/errors.mjs";
 import { getGenerationResources } from "../generation/resources.mjs";
 import { signAssetRead } from "../generation/storage.mjs";
+import { newRequestId } from "../observability/http.mjs";
 import {
   DraftConflictError,
   DraftPersistenceError,
@@ -92,8 +92,7 @@ export async function deleteCreationDraft({ input, ownerContext }) {
   return { deleted: true };
 }
 
-export function creationDraftApiError(error) {
-  const requestId = `req_${randomUUID()}`;
+export function creationDraftApiError(error, requestId = newRequestId()) {
   if (
     error instanceof AuthenticationError ||
     error instanceof DraftRequestError ||

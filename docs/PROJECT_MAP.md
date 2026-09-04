@@ -39,6 +39,7 @@
 | `server/billing/` | Server-owned immutable generation/payment products, authenticated account and order boundaries, signed fake-payment callbacks, dry-run-first operator manual-payment recording, and transaction-composable credit grant/reserve/settle/release/refund persistence |
 | `server/persistence/` | Versioned migration runner |
 | `server/runtime/` | Production web, worker, migration, reference-cleanup, manual-payment, and mock-provider process entry points plus runtime health state |
+| `server/observability/` | Server-owned request/support IDs, approved correlation fields, normalized HTTP routes, and structured completion events |
 | `infra/container/` | Image health check plus host-side Compose dependency probes |
 | `scripts/build-runtime.mjs` | Locked Node runtime bundling for the production image |
 | `scripts/release-metadata.mjs` | Cross-platform GHCR image name, migration version, and runtime-configuration checksum derivation for CI |
