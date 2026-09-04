@@ -18,10 +18,12 @@
   or credit state. The separately disclosed Authing application and user-pool
   management secrets have also been rotated; the staging Web role now uses the
   replacement application secret and a fresh logout/login exchange passes
-- Current objective: inventory the remaining M7 operational exit evidence,
-  distinguish accepted deferrals from release-blocking gaps, and execute the
-  next smallest unmet gate; full-byte real-carrier throughput is deferred at the
-  operator's request, while ICP filing/domain work proceeds in parallel
+- Current objective: remove the vulnerable transitive `image-size@2.0.2` from
+  the production dependency graph through a tested Vinext upgrade or narrower
+  compatible remediation, add a repeatable dependency/runtime-image scan, and
+  then define the automated backup/retention gate; full-byte real-carrier
+  throughput is deferred at the operator's request, while ICP filing/domain
+  work proceeds in parallel
 
 ## Purpose and update contract
 
@@ -747,14 +749,26 @@ this file owns the current handoff state.
   authenticated owner remained 90 available / zero reserved. The user-pool
   management secret was separately rotated and revoked; repository/runtime
   inspection found no GoodGood consumer, so it required no host change.
-- Next action: perform a final M7 exit-evidence inventory, explicitly classify
-  accepted deferrals and release-blocking gaps, then execute the smallest
-  remaining operational gate. Progress ICP filing/domain work in parallel and
-  keep early paid access on the documented operator bridge. After the filed
-  domain and domestic Alipay merchant sandbox are available, implement the
-  provider adapter against the existing immutable order/settlement boundary
-  and add the smallest customer checkout UI as part of paid-production
-  readiness.
+- The follow-up M7 operational inventory found no GoodGood systemd timer for
+  PostgreSQL backups or reference cleanup, only the retained root-only local
+  restore-drill archive, and no dependency or runtime-image vulnerability scan
+  in CI. The production graph still contains `image-size@2.0.2` only through
+  `vinext@0.0.50`; OSV currently maps that version to the two GitHub-reviewed
+  high-severity infinite-loop denial-of-service advisories
+  `GHSA-5p2g-fcmc-qvqq` and `GHSA-w3rx-r6r6-pgpr`. The official npm audit
+  endpoint returned 503 during this inventory, so that failed query is not
+  treated as clean evidence. Full-byte mainland throughput remains an accepted
+  operator deferral, while domestic payment remains an M8/ICP dependency.
+- Next action: determine and apply the smallest supported Vinext/dependency
+  remediation that removes `image-size@2.0.2`, run the full local and Linux
+  runtime-image gates, and add a repeatable CI vulnerability scan. Then select
+  an encrypted off-host PostgreSQL backup destination, retention period, and
+  alert owner before enabling an automated timer. Progress ICP filing/domain
+  work in parallel and keep early paid access on the documented operator
+  bridge. After the filed domain and domestic Alipay merchant sandbox are
+  available, implement the provider adapter against the existing immutable
+  order/settlement boundary and add the smallest customer checkout UI as part
+  of paid-production readiness.
 - Blockers: domestic Alipay checkout requires the ICP-filed production domain,
   matching merchant approval, and sandbox credentials. These external items do
   not block M7 staging or trusted manual credit operation. The local fake
@@ -764,7 +778,11 @@ this file owns the current handoff state.
   Google-backed test address or an explicitly approved reset of the isolated
   Authing test user. No disclosed-credential rotation blocker remains.
   Application secrets remain operator-supplied outside the repository by
-  design. An ICP-filed custom authentication domain is not required now because
+  design. The npm audit endpoint's temporary 503 blocks a complete registry
+  audit report but does not block targeted remediation of the OSV-confirmed
+  `image-size` advisories. Automated production backup activation still needs
+  an approved encrypted off-host destination, retention period, and alert
+  owner. An ICP-filed custom authentication domain is not required now because
   the Authing-provided application domain is the accepted temporary path. The
   local token adapter remains forbidden in staging and production.
 
