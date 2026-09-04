@@ -237,10 +237,11 @@ nonzero, and leaves the service failed in systemd with root-journal evidence.
 It does not retry a database dump, weaken retention, initialize a replacement
 repository, initiate a restore, or send a staging-only outbound alert. The unit
 does not print its secret URL, R2 credential, Restic password, database content,
-or public host address. ADR 0015 selects the M8 Grafana Cloud alert plane and
-its WeCom contact point, but the existing staging unit remains unchanged until
-that external route and a firing/resolved delivery test are installed and
-acknowledged. Alerting never initiates a restore or billable retry.
+or public host address. ADR 0016 delegates the M8 monitoring platform and
+notification route to a separate agent, but the existing staging unit remains
+unchanged until the resulting external route and a firing/resolved delivery
+test are installed and acknowledged. Alerting never initiates a restore or
+billable retry.
 
 A production image that cannot resolve its packaged runtime modules fails the
 CI image-import smoke before publication. If a later staging-only dependency

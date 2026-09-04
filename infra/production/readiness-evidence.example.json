@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "release": {
+    "image": "ghcr.io/lizhongyi1209/goodgood@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "migration": "0010_m6_payment_sandbox.sql",
+    "runtimeConfigVersion": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  },
+  "evidence": [
+    { "id": "artifact-security", "status": "pending", "checkedAt": null, "reference": "pending:ci", "releaseRevision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" },
+    { "id": "production-preflight", "status": "pending", "checkedAt": null, "reference": "pending:preflight", "releaseRevision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" },
+    { "id": "secret-access-review", "status": "pending", "checkedAt": null, "reference": "pending:access-review" },
+    { "id": "privacy-data-map", "status": "pending", "checkedAt": null, "reference": "pending:privacy" },
+    { "id": "retention-deletion-policy", "status": "pending", "checkedAt": null, "reference": "pending:retention" },
+    { "id": "moderation-abuse-controls", "status": "pending", "checkedAt": null, "reference": "pending:abuse-controls" },
+    { "id": "production-backup-freshness", "status": "pending", "checkedAt": null, "reference": "pending:backup" },
+    { "id": "production-restore-drill", "status": "pending", "checkedAt": null, "reference": "pending:restore" },
+    { "id": "monitoring-handoff", "status": "pending", "checkedAt": null, "reference": "pending:monitoring-agent" },
+    { "id": "incident-support-ownership", "status": "pending", "checkedAt": null, "reference": "pending:support" },
+    { "id": "icp-production-domain", "status": "blocked", "checkedAt": null, "reference": "blocked:icp-domain" },
+    { "id": "alipay-merchant-sandbox", "status": "blocked", "checkedAt": null, "reference": "blocked:alipay" },
+    { "id": "candidate-health-invariants", "status": "pending", "checkedAt": null, "reference": "pending:candidate", "releaseRevision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" },
+    { "id": "rollback-rehearsal", "status": "pending", "checkedAt": null, "reference": "pending:rollback", "releaseRevision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" }
+  ]
+}

@@ -26,3 +26,4 @@ Current records:
 - `0013-staging-secret-reader-group.md`
 - `0014-encrypted-off-host-staging-postgres-backups.md`
 - `0015-production-observability-and-release-gate.md`
+- `0016-defer-monitoring-platform-implementation.md`

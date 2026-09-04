@@ -2,6 +2,8 @@
 
 - Status: Accepted
 - Date: 2026-09-04
+- Superseded in part by: ADR 0016 for the observability vendor, collector, and
+  notification transport
 
 ## Context
 
@@ -102,3 +104,8 @@ configuration, but cannot claim those external controls passed.
 - The existing daily M7 backup policy remains valid staging evidence but does
   not meet the one-hour production RPO. Production scheduling must be proved
   separately before paid launch.
+
+ADR 0016 later defers the Grafana Cloud, Alloy, and WeCom implementation to a
+separately assigned monitoring agent. The request/support correlation,
+recovery objectives, data exclusions, and paid-production release-gate
+requirements in this record remain accepted.

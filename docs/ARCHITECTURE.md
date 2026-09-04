@@ -66,9 +66,11 @@ application R2 credential cannot read that repository. One persistent daily
 systemd timer applies the staging-only `14 daily / 8 weekly / 3 monthly`
 policy, prunes, and verifies all encrypted repository data. A failure remains
 visible in systemd status and the root journal without automatically retrying
-or restoring. ADR 0015 selects Grafana Cloud plus a WeCom contact point as the
-unified M8 production-observability boundary; activation and live delivery
-remain M8 operator evidence rather than an M7 staging claim.
+or restoring. ADR 0016 delegates the production-monitoring platform and
+notification route to a separate agent. The application-owned correlation
+contract remains stable, while activation and live delivery enter the
+vendor-neutral production gate as external evidence rather than an M7 staging
+claim.
 The same tool can decrypt the latest off-host archive into the root-only local
 backup directory and pass it to the existing isolated restore drill. The
 transient plaintext archive is always removed. ADR 0015 sets the paid-production

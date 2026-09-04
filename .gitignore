@@ -32,6 +32,7 @@ yarn-error.log*
 !.env.example
 /infra/staging/*.env
 /infra/staging/secrets/
+/infra/production/readiness-evidence.json
 
 # vercel
 .vercel

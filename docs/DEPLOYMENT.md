@@ -888,9 +888,9 @@ manager; losing that password makes the client-encrypted repository
 unrecoverable. The application checkout, application containers, and
 application R2 credential must never receive the password or backup R2 secret.
 M7 intentionally adds no staging-only outbound alert channel. A failed backup
-stays failed in systemd and retains root-journal evidence. ADR 0015 selects
-Grafana Cloud with a native WeCom contact point for the unified M8 route; do not
-add QQ Mail or a parallel SMTP path while that route is being provisioned and
+stays failed in systemd and retains root-journal evidence. ADR 0016 delegates
+the unified M8 monitoring and notification route to a separate agent; do not add
+QQ Mail or a parallel SMTP path while that handoff is being provisioned and
 proved.
 
 Copy the reviewed `infra/staging` directory to a temporary root-readable host
@@ -993,13 +993,13 @@ implausible timing is explicitly non-qualifying for throughput.
 
 ## Observability
 
-ADR 0015 selects a pinned Grafana Alloy agent forwarding host/container metrics
-and structured JSON logs to Grafana Cloud. Grafana Alerting owns grouping,
-firing/resolved state, runbook links, and the sole initial WeCom contact point.
-Keep telemetry credentials and the contact-point secret outside Git and outside
-application containers. Do not expose a public Prometheus endpoint or include
-queries, cookies, authorization values, prompts, email addresses, signed URLs,
-object keys, or response bodies in telemetry.
+ADR 0016 delegates the monitoring platform, collector, dashboard, and
+notification-route implementation to a separate agent. GoodGood does not add a
+monitoring center or vendor configuration in this slice. Keep telemetry
+credentials and notification secrets outside Git and outside application
+containers. Do not expose a public metrics endpoint or include queries,
+cookies, authorization values, prompts, email addresses, signed URLs, object
+keys, or response bodies in telemetry.
 
 The production web process returns a server-owned `X-Request-Id` on every
 request and uses it as the customer support ID. Completion logs use normalized
@@ -1016,9 +1016,10 @@ Minimum production signals:
 - Object upload/download failures and ESA cache/origin metrics.
 - Structured logs correlated by request ID, job ID, user ID, and provider task ID.
 
-Before paid traffic, prove 30-day log and 90-day metric retention, all required
-dashboard panels, alert ownership/runbooks, and one acknowledged WeCom firing
-and resolved message. Severity 1 acknowledgement is due within 15 minutes;
+Before paid traffic, the external `monitoring-handoff` evidence must prove
+30-day log and 90-day metric retention, all required dashboard panels, alert
+ownership/runbooks, and one acknowledged firing and resolved notification.
+Severity 1 acknowledgement is due within 15 minutes;
 Severity 2 is due within four business hours. Preserve local journals as a
 diagnostic fallback, but do not count them as active notification.
 
@@ -1039,3 +1040,32 @@ Customer checkout remains disabled until ICP/domain, privacy/security review,
 support ownership, and the real domestic Alipay merchant sandbox gates pass.
 Alert failure never authorizes an automatic deploy, rollback, database restore,
 credit grant, or provider resubmission.
+
+Run the repository-owned gate against a non-secret evidence manifest:
+
+```powershell
+npm run production:gate -- --evidence-file C:\ProgramData\GoodGood\production-readiness.json
+```
+
+`infra/production/readiness-evidence.example.json` documents schema version 1
+and intentionally exits nonzero. A live manifest must pin the exact GHCR digest,
+full Git revision, migration filename, and runtime-contract checksum. Every
+required evidence ID must be present exactly once, use only a short non-secret
+reference, be `pass`, and remain within its declared freshness window.
+Artifact-security, production-preflight, candidate-health, and rollback proof
+must also bind to that same Git revision. A missing or delegated
+`monitoring-handoff`, an ICP/domain block, or an Alipay sandbox block fails the
+gate; there is no bypass flag.
+
+Passing recovery evidence records observed RPO/RTO minutes and the minimum
+`14 daily / 8 weekly / 12 monthly` recovery-point counts. Passing monitoring
+handoff evidence records a stable non-personal owner alias, 30/90-day
+log/metric retention, observed synthetic request and generation signals,
+owned alert runbooks, and acknowledged firing/resolved delivery. Incident
+ownership names distinct primary and secondary aliases and preserves the
+15-minute Severity 1 and four-business-hour Severity 2 objectives.
+
+Evidence references point to access-controlled operator records; they do not
+embed credentials, signed URLs, customer content, or entire reports. The CLI
+emits a machine-readable JSON decision suitable for a later release
+orchestrator, but this first slice does not deploy or mutate production.
