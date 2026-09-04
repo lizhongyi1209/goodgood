@@ -879,12 +879,13 @@ Object Read & Write token scoped only to this bucket. Restic needs list, read,
 create, overwrite, and delete access to apply retention and prune. Do not add a
 bucket lifecycle expiry rule over Restic's internal objects.
 
-Provision a dedicated authenticated SMTP submission account and an
-operator-owned recipient address for staging backup failures. Keep a
-second copy of the Restic password in the approved operator password manager;
-losing that password makes the client-encrypted repository unrecoverable. The
-application checkout, application containers, application R2 credential, and
-alert email must never receive the password or backup R2 secret.
+Keep a second copy of the Restic password in the approved operator password
+manager; losing that password makes the client-encrypted repository
+unrecoverable. The application checkout, application containers, and
+application R2 credential must never receive the password or backup R2 secret.
+M7 intentionally adds no staging-only outbound alert channel. A failed backup
+stays failed in systemd and retains root-journal evidence; active notification
+belongs to the unified M8 production-observability design.
 
 Copy the reviewed `infra/staging` directory to a temporary root-readable host
 location and install the source-owned tools and units:
@@ -910,31 +911,11 @@ ownership and mode `0600`:
 ```
 
 The first file must contain at least 32 random characters. The next two contain
-only the raw bucket-scoped R2 access-key ID and secret-access key. These files
-are sufficient for direct repository initialization, backup, checking, and
-restore-drill commands while email setup is deferred. Do not start the systemd
-service or enable its timer until the alert path below passes.
+only the raw bucket-scoped R2 access-key ID and secret-access key. The backup
+runner rejects extra keys, shell expansion, inline secrets, unexpected
+backup-secret paths, the application asset bucket, and non-R2 endpoints.
 
-Before service or timer activation, create these two alert files with the same
-ownership and mode:
-
-```text
-/etc/goodgood/staging/secrets/backups/alert-email
-/etc/goodgood/staging/secrets/backups/msmtp.conf
-```
-
-The first contains one recipient address. Build the second from the installed
-`/etc/goodgood/staging/postgres-backup-msmtp.conf.example` with a dedicated
-SMTP host, submission port, sender, username, and password; the reviewed
-default requires CA-validated TLS plus STARTTLS on port 587. Enter values with a
-non-echoing or direct root editor; never put them in shell history, command
-arguments, Git, release metadata, Docker environment, or an operator transcript.
-The active configurations must also be `root:root 0600`. The backup runner
-rejects extra keys, shell expansion, inline secrets, unexpected backup-secret
-paths, the application asset bucket, and non-R2 endpoints. The independent
-alert runner validates its two fixed root-only email paths when invoked.
-
-Initialize and exercise the repository directly while email remains deferred:
+Initialize and exercise the repository directly:
 
 ```bash
 sudo /usr/local/sbin/goodgood-staging-postgres-backup-automated init
@@ -949,11 +930,10 @@ and decrypts the latest snapshot to one new root-only archive, invokes the same
 no-network/read-only/`tmpfs` comparison, and removes the plaintext archive on
 success or failure. It never restores over the live database.
 
-After configuring email, prove the alert and timer-shaped service path before
-enabling the timer:
+After repository initialization and the off-host restore proof, exercise the
+timer-shaped service path before enabling the timer:
 
 ```bash
-sudo /usr/local/sbin/goodgood-staging-postgres-backup-alert manual-activation-test
 sudo systemctl start goodgood-postgres-backup.service
 sudo journalctl --unit goodgood-postgres-backup.service --since today --no-pager
 ```
@@ -966,8 +946,8 @@ local plaintext archive is transient. The timer targets 18:17 UTC (02:17 China
 Standard Time) with up to 20 minutes of random delay and catches up once after
 a missed schedule.
 
-Only after the initial backup, full check, off-host restore drill, and alert
-all pass, activate and inspect the timer:
+Only after the initial backup, full check, off-host restore drill, and
+timer-shaped service execution all pass, activate and inspect the timer:
 
 ```bash
 sudo systemctl enable --now goodgood-postgres-backup.timer
@@ -980,9 +960,8 @@ sudo find /var/backups/goodgood -maxdepth 1 -type f -name 'staging-auto-*.dump' 
 
 Passing M7 evidence records only the repository ID/snapshot prefix, timestamps,
 archive byte count/checksum, retention result, restore table/row/migration
-counts, timer next-run time, and test-email receipt. Redact credentials, SMTP
-configuration, recipient address, Restic key material, database rows, signed
-URLs, and public host address. A
+counts, and timer next-run time. Redact credentials, Restic key material,
+database rows, signed URLs, and public host address. A
 same-host archive or a successful upload without a restore drill does not pass
 the gate. This staging policy does not approve production retention or recovery
 objectives.

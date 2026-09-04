@@ -31,12 +31,9 @@ source_root="$(realpath --canonicalize-existing "${source_root}")"
 required_sources=(
   "${source_root}/postgres-backup-restore.sh"
   "${source_root}/postgres-backup-automated.sh"
-  "${source_root}/postgres-backup-alert.sh"
   "${source_root}/postgres-backup.env.example"
-  "${source_root}/postgres-backup-msmtp.conf.example"
   "${source_root}/systemd/goodgood-postgres-backup.service"
   "${source_root}/systemd/goodgood-postgres-backup.timer"
-  "${source_root}/systemd/goodgood-postgres-backup-alert@.service"
 )
 for source_path in "${required_sources[@]}"; do
   if [[ ! -f "${source_path}" || -L "${source_path}" ]]; then
@@ -47,9 +44,9 @@ done
 
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
-apt-get install --yes msmtp restic
+apt-get install --yes restic
 
-for command_name in docker flock jq msmtp restic systemctl systemd-analyze; do
+for command_name in docker flock jq restic systemctl systemd-analyze; do
   if ! command -v "${command_name}" >/dev/null 2>&1; then
     echo "Required command ${command_name} is unavailable." >&2
     exit 69
@@ -66,19 +63,12 @@ install -o root -g root -m 0755 \
 install -o root -g root -m 0755 \
   "${source_root}/postgres-backup-automated.sh" \
   /usr/local/sbin/goodgood-staging-postgres-backup-automated
-install -o root -g root -m 0755 \
-  "${source_root}/postgres-backup-alert.sh" \
-  /usr/local/sbin/goodgood-staging-postgres-backup-alert
 install -o root -g root -m 0600 \
   "${source_root}/postgres-backup.env.example" \
   "${config_root}/postgres-backup.env.example"
-install -o root -g root -m 0600 \
-  "${source_root}/postgres-backup-msmtp.conf.example" \
-  "${config_root}/postgres-backup-msmtp.conf.example"
 install -o root -g root -m 0644 \
   "${source_root}/systemd/goodgood-postgres-backup.service" \
   "${source_root}/systemd/goodgood-postgres-backup.timer" \
-  "${source_root}/systemd/goodgood-postgres-backup-alert@.service" \
   "${systemd_root}/"
 
 systemctl daemon-reload
@@ -88,4 +78,4 @@ systemd-analyze verify \
 
 printf 'backup_automation=installed\n'
 printf 'timer_enabled=false\n'
-printf 'next=configure-backup-secrets-initialize-then-configure-alert-and-enable\n'
+printf 'next=configure-backup-secrets-initialize-prove-and-enable\n'

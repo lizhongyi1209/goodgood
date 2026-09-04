@@ -64,9 +64,10 @@ archive and sends it through Restic client-side encryption to the separate
 private R2 `goodgood-postgres-backups` bucket. Application roles and the
 application R2 credential cannot read that repository. One persistent daily
 systemd timer applies the staging-only `14 daily / 8 weekly / 3 monthly`
-policy, prunes, verifies all encrypted repository data, and routes failures by
-authenticated-TLS SMTP to an operator-owned email address without automatically
-retrying or restoring.
+policy, prunes, and verifies all encrypted repository data. A failure remains
+visible in systemd status and the root journal without automatically retrying
+or restoring; outbound alert routing is deferred to the unified M8 production
+observability boundary.
 The same tool can decrypt the latest off-host archive into the root-only local
 backup directory and pass it to the existing isolated restore drill. The
 transient plaintext archive is always removed. Production retention and

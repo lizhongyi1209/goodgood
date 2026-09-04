@@ -500,25 +500,18 @@ test("same-host staging dependencies are bounded, private, and secret-file backe
   assert.match(releaseMetadata, /"infra\/staging\/install-staging-dependencies\.sh"/);
 });
 
-test("staging PostgreSQL backups are encrypted off-host, retained, restorable, and alerted", async () => {
+test("staging PostgreSQL backups are encrypted off-host, retained, restorable, and schedulable", async () => {
   const [
     automation,
-    alert,
     installer,
     configuration,
-    smtpConfiguration,
     service,
     timer,
-    alertService,
     decision,
     releaseMetadata,
   ] = await Promise.all([
     readFile(
       new URL("../infra/staging/postgres-backup-automated.sh", import.meta.url),
-      "utf8",
-    ),
-    readFile(
-      new URL("../infra/staging/postgres-backup-alert.sh", import.meta.url),
       "utf8",
     ),
     readFile(
@@ -530,13 +523,6 @@ test("staging PostgreSQL backups are encrypted off-host, retained, restorable, a
     ),
     readFile(
       new URL("../infra/staging/postgres-backup.env.example", import.meta.url),
-      "utf8",
-    ),
-    readFile(
-      new URL(
-        "../infra/staging/postgres-backup-msmtp.conf.example",
-        import.meta.url,
-      ),
       "utf8",
     ),
     readFile(
@@ -555,13 +541,6 @@ test("staging PostgreSQL backups are encrypted off-host, retained, restorable, a
     ),
     readFile(
       new URL(
-        "../infra/staging/systemd/goodgood-postgres-backup-alert@.service",
-        import.meta.url,
-      ),
-      "utf8",
-    ),
-    readFile(
-      new URL(
         "../docs/decisions/0014-encrypted-off-host-staging-postgres-backups.md",
         import.meta.url,
       ),
@@ -573,6 +552,8 @@ test("staging PostgreSQL backups are encrypted off-host, retained, restorable, a
   assert.match(decision, /Status: Accepted/);
   assert.match(decision, /goodgood-postgres-backups/);
   assert.match(decision, /14 daily \/ 8 weekly \/ 3 monthly/);
+  assert.match(decision, /M8 production-observability/);
+  assert.doesNotMatch(decision, /SMTP|test email/i);
   assert.match(configuration, /goodgood-postgres-backups/);
   assert.match(configuration, /RESTIC_PASSWORD_FILE=\/etc\/goodgood\/staging\/secrets\/backups\/restic-password/);
   assert.match(configuration, /GOODGOOD_BACKUP_R2_ACCESS_KEY_ID_FILE=/);
@@ -581,12 +562,6 @@ test("staging PostgreSQL backups are encrypted off-host, retained, restorable, a
     configuration,
     /GOODGOOD_BACKUP_ALERT_EMAIL_FILE|GOODGOOD_BACKUP_SMTP_CONFIG_FILE|aws_access_key_id|aws_secret_access_key|webhook/i,
   );
-  assert.match(smtpConfiguration, /auth on/);
-  assert.match(smtpConfiguration, /tls on/);
-  assert.match(smtpConfiguration, /tls_starttls on/);
-  assert.match(smtpConfiguration, /tls_trust_file \/etc\/ssl\/certs\/ca-certificates\.crt/);
-  assert.match(smtpConfiguration, /password REPLACE_WITH_SMTP_PASSWORD/);
-
   assert.match(automation, /owned by root:root with mode 0600/);
   assert.match(automation, /unsupported or unsafe entry/);
   assert.doesNotMatch(automation, /alert-email|msmtp\.conf/);
@@ -606,35 +581,27 @@ test("staging PostgreSQL backups are encrypted off-host, retained, restorable, a
     /(?:\d{1,3}\.){3}\d{1,3}|AWS_ACCESS_KEY_ID=[A-Za-z0-9_-]{16}|AWS_SECRET_ACCESS_KEY=[A-Za-z0-9_+/=-]{32}/,
   );
 
-  assert.match(service, /OnFailure=goodgood-postgres-backup-alert@%n\.service/);
+  assert.doesNotMatch(service, /OnFailure|alert/i);
   assert.match(service, /ProtectSystem=strict/);
   assert.match(service, /ReadWritePaths=\/run\/docker\.sock \/run\/lock \/var\/backups\/goodgood \/var\/cache\/goodgood-restic/);
   assert.match(timer, /OnCalendar=\*-\*-\* 18:17:00 UTC/);
   assert.match(timer, /RandomizedDelaySec=20m/);
   assert.match(timer, /Persistent=true/);
-  assert.match(alertService, /ExecStart=\/usr\/local\/sbin\/goodgood-staging-postgres-backup-alert %I/);
-  assert.match(alert, /msmtp --file="\$\{smtp_config_file\}"/);
-  assert.match(alert, /Content-Type: text\/plain; charset=UTF-8/);
-  assert.match(alert, /one valid email address/);
-  assert.match(alert, />\/dev\/null 2>&1/);
-  assert.doesNotMatch(alert, /curl|webhook/i);
-
-  assert.match(installer, /apt-get install --yes msmtp restic/);
+  assert.match(installer, /apt-get install --yes restic/);
+  assert.doesNotMatch(installer, /msmtp|backup-alert/);
   assert.match(installer, /systemd-analyze verify/);
   assert.match(installer, /timer_enabled=false/);
   assert.doesNotMatch(installer, /systemctl enable|systemctl start/);
   for (const relativePath of [
     "infra/staging/install-postgres-backup-automation.sh",
-    "infra/staging/postgres-backup-alert.sh",
     "infra/staging/postgres-backup-automated.sh",
     "infra/staging/postgres-backup.env.example",
-    "infra/staging/postgres-backup-msmtp.conf.example",
-    "infra/staging/systemd/goodgood-postgres-backup-alert@.service",
     "infra/staging/systemd/goodgood-postgres-backup.service",
     "infra/staging/systemd/goodgood-postgres-backup.timer",
   ]) {
     assert.match(releaseMetadata, new RegExp(JSON.stringify(relativePath)));
   }
+  assert.doesNotMatch(releaseMetadata, /backup-alert|backup-msmtp/);
 });
 
 test("Nginx accepts only Cloudflare traffic and activates only a matching origin certificate", async () => {

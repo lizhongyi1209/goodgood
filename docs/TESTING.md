@@ -91,18 +91,17 @@ read-only, bounded-`tmpfs` PostgreSQL container with automatic cleanup. Staging
 evidence must additionally prove a real `pg_restore`, identical public table
 sets and row counts, all migration records, no source-database mutation, and no
 leftover drill container. ADR 0014 coverage additionally fixes a separate
-private R2 repository, root-only password/access-key/SMTP/recipient files, path-style
-S3 access, Restic client-side encryption, one locked timer execution, an
+private R2 repository, root-only password/access-key files, path-style S3
+access, Restic client-side encryption, one locked timer execution, an
 explicit `14 daily / 8 weekly / 3 monthly` policy grouped independently of the
 timestamped archive path, full repository-data checking after prune, transient
 plaintext cleanup, latest-snapshot download into the isolated restore drill,
-and a bounded systemd `OnFailure` SMTP email alert. The installer must leave the
-timer disabled. Direct repository initialization, backup, checking, and restore
-drill may run before the independent SMTP files exist; service and timer
-activation may not. Live evidence must prove repository initialization, one
-timer-shaped upload, full check, off-host restore equality, delivered test
-test email, active next timer, and no retained automatic plaintext archive or
-failed unit.
+and a systemd failure state whose journal exposes no secret. The installer must
+leave the timer disabled. Live evidence must prove repository initialization,
+one timer-shaped upload, full check, off-host restore equality, an active next
+timer, and no retained automatic plaintext archive or failed unit. Outbound
+failure notification is deferred to the unified M8 production-observability
+gate.
 The R2 provisioning unit proves local storage still creates/configures its
 bucket, staging performs only `HeadBucket`, and a failed verification can be
 retried. Static Nginx coverage fixes the canonical hostname, Cloudflare-only

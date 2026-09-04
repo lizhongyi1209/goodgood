@@ -230,12 +230,12 @@ response.
 
 An automated PostgreSQL backup failure leaves the source database untouched,
 removes only the transient plaintext archive created by that invocation, exits
-nonzero, and triggers the bounded staging-operator email through systemd
-`OnFailure`. It does not retry a database dump, weaken retention, initialize a
-replacement repository, or initiate a restore. A failed SMTP delivery is itself a
-failed unit visible in the root journal; neither unit prints its secret URL,
-R2 credential, Restic password, SMTP credential, recipient address, database
-content, or public host address.
+nonzero, and leaves the service failed in systemd with root-journal evidence.
+It does not retry a database dump, weaken retention, initialize a replacement
+repository, initiate a restore, or send a staging-only outbound alert. The unit
+does not print its secret URL, R2 credential, Restic password, database content,
+or public host address. Active alert routing is an M8 production-observability
+decision.
 
 ## Idempotency and retries
 
