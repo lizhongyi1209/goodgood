@@ -274,6 +274,30 @@ caches discovery for no more than five minutes, so a later Authing setting
 change fails closed without requiring a fresh deploy; failed discovery does not
 persist a new state/PKCE login attempt.
 
+### Authing credential rotation
+
+Treat the Authing application secret and user-pool management secret as
+singleton credentials: rotating either one immediately revokes its predecessor.
+The application detail page masks the secret by default. The repeated mask is
+not credential material; explicitly use the adjacent reveal control and verify
+the revealed value's expected shape before installing it. Never write the
+masked display into the staging secret file.
+
+Transfer an application replacement through invisible operator input, never a
+command argument, environment variable, transcript, temporary local file, or
+Git.
+Install it at the release-file-selected source path as
+`root:goodgood-runtime-secrets` mode `0640`, verify its nonzero expected byte
+length without printing it, and recreate only the `web` role because the worker
+does not mount this secret. Then run the network staging preflight and a full
+GoodGood logout plus fresh Authing login; readiness alone and discovery
+preflight do not prove that the replacement can exchange an authorization code.
+
+GoodGood does not consume the user-pool management secret. Before rotating it,
+audit other clients of the isolated Authing tenant; after rotation, no GoodGood
+host file or process restart is required. Record only the rotation result and
+redacted verification evidence, never either secret.
+
 For an operator-run real-tenant loopback test, add exactly
 `http://127.0.0.1:3000/api/auth/callback` to Authing's login callback allowlist
 and `http://127.0.0.1:3000/` to its logout allowlist, then run:
