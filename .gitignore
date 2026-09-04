@@ -56,3 +56,5 @@ next-env.d.ts
 # local agent/editor state
 /.claude/settings.local.json
 /.cursor/
+/docs/tmp_copy.md
+/%SystemDrive%/
