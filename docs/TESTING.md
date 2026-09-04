@@ -169,13 +169,17 @@ npm run check:local
 
 `check:local` is the cross-platform gate intended for local computers and
 GitHub Actions. It runs lint, the full TypeScript check, the production build,
-and automated tests. CI uses the same pinned Node.js 24.12.0 runtime. Pull
-requests also build the production Dockerfile without registry access. A
-trusted `main` revision publishes to GHCR only after verification and records
-its immutable image digest, source revision, migration version, and runtime
+and automated tests. CI uses the same pinned Node.js 24.20.0 runtime. Pinned
+Trivy 0.70.0 scans the lockfile's production dependencies, then CI builds and
+scans the real production Docker image on pull requests, trusted `main` pushes,
+and manual runs. Both scans reject fixable `HIGH` or `CRITICAL` findings while
+reporting but not blocking findings that have no available fix. A trusted
+`main` revision publishes to GHCR only after verification and records its
+immutable image digest, source revision, migration version, and runtime
 configuration-contract checksum. Workflow tests reject floating third-party
-action references and a `latest` image tag. The existing Sites lifecycle
-scripts remain available for the current hosted prototype.
+action references, a `latest` image tag, removal of either scan, and regression
+to the removed `image-size` dependency. The existing Sites lifecycle scripts
+remain available for the current hosted prototype.
 
 The timestamped result of the latest verified gate belongs in
 `IMPLEMENTATION_PLAN.md`, not in this stable strategy document.

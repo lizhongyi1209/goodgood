@@ -18,12 +18,10 @@
   or credit state. The separately disclosed Authing application and user-pool
   management secrets have also been rotated; the staging Web role now uses the
   replacement application secret and a fresh logout/login exchange passes
-- Current objective: remove the vulnerable transitive `image-size@2.0.2` from
-  the production dependency graph through a tested Vinext upgrade or narrower
-  compatible remediation, add a repeatable dependency/runtime-image scan, and
-  then define the automated backup/retention gate; full-byte real-carrier
-  throughput is deferred at the operator's request, while ICP filing/domain
-  work proceeds in parallel
+- Current objective: define and enable the automated PostgreSQL backup and
+  retention gate now that the fixable High/Critical dependency and runtime-image
+  scan is enforced; full-byte real-carrier throughput is deferred at the
+  operator's request, while ICP filing/domain work proceeds in parallel
 
 ## Purpose and update contract
 
@@ -749,21 +747,28 @@ this file owns the current handoff state.
   authenticated owner remained 90 available / zero reserved. The user-pool
   management secret was separately rotated and revoked; repository/runtime
   inspection found no GoodGood consumer, so it required no host change.
-- The follow-up M7 operational inventory found no GoodGood systemd timer for
-  PostgreSQL backups or reference cleanup, only the retained root-only local
-  restore-drill archive, and no dependency or runtime-image vulnerability scan
-  in CI. The production graph still contains `image-size@2.0.2` only through
-  `vinext@0.0.50`; OSV currently maps that version to the two GitHub-reviewed
-  high-severity infinite-loop denial-of-service advisories
-  `GHSA-5p2g-fcmc-qvqq` and `GHSA-w3rx-r6r6-pgpr`. The official npm audit
-  endpoint returned 503 during this inventory, so that failed query is not
-  treated as clean evidence. Full-byte mainland throughput remains an accepted
+- The M7 dependency/runtime-image security gate replaces `vinext@0.0.50` with
+  `vinext@1.0.0-beta.9` and its compatible `@vitejs/plugin-rsc@0.5.34`, removing
+  `image-size@2.0.2` and both associated high-severity infinite-loop advisories
+  from the dependency graph and shipped image. The same remediation updates
+  Next.js and its ESLint configuration to 16.2.11, Sharp to 0.35.0, and pins
+  compatible fixed transitive releases for `fast-uri`, `nanoid`, and `postcss`.
+  The Linux build now uses Node.js 24.20.0 at an exact base-image digest and
+  removes runtime npm/npx. Pinned Trivy 0.70.0 scans both locked production
+  dependencies and the actually built OS/library image on every CI event,
+  failing on fixable High/Critical findings while retaining non-blocking
+  visibility for findings with no fix. Local compatibility and security
+  verification passed: Vinext reported 100% supported imports/config/libraries;
+  `npm run check:local` passed lint, full TypeScript checking, production build,
+  and 132 tests with 128 passing and four opt-in integration tests skipped; the
+  final lockfile and Linux image each reported zero matching findings; and the
+  non-root image had no npm, npx, or `image-size` while Sharp 0.35.0 decoded a
+  real 1x1 PNG. The operational inventory still finds no GoodGood systemd timer
+  for PostgreSQL backups or reference cleanup, only the retained root-only local
+  restore-drill archive. Full-byte mainland throughput remains an accepted
   operator deferral, while domestic payment remains an M8/ICP dependency.
-- Next action: determine and apply the smallest supported Vinext/dependency
-  remediation that removes `image-size@2.0.2`, run the full local and Linux
-  runtime-image gates, and add a repeatable CI vulnerability scan. Then select
-  an encrypted off-host PostgreSQL backup destination, retention period, and
-  alert owner before enabling an automated timer. Progress ICP filing/domain
+- Next action: select an encrypted off-host PostgreSQL backup destination,
+  retention period, and alert owner before enabling an automated timer. Progress ICP filing/domain
   work in parallel and keep early paid access on the documented operator
   bridge. After the filed domain and domestic Alipay merchant sandbox are
   available, implement the provider adapter against the existing immutable
@@ -778,9 +783,7 @@ this file owns the current handoff state.
   Google-backed test address or an explicitly approved reset of the isolated
   Authing test user. No disclosed-credential rotation blocker remains.
   Application secrets remain operator-supplied outside the repository by
-  design. The npm audit endpoint's temporary 503 blocks a complete registry
-  audit report but does not block targeted remediation of the OSV-confirmed
-  `image-size` advisories. Automated production backup activation still needs
+  design. Automated production backup activation still needs
   an approved encrypted off-host destination, retention period, and alert
   owner. An ICP-filed custom authentication domain is not required now because
   the Authing-provided application domain is the accepted temporary path. The
@@ -858,7 +861,7 @@ Completed real-Authing loopback checklist:
 | M4 | Production identity, ownership, references, and projects persist safely | Completed | Authing-compatible OIDC/PKCE, hashed sessions, provider-neutral ownership, signed references, cleanup, root-draft/project/asset persistence, optimistic conflict handling, cross-owner denial, and the requested real-Authing loopback matrix pass; public HTTPS callback/logout now also passes under M7 staging |
 | M5 | US generation gateway integration and recovery | Completed | O1Key special-price adapter, explicit worker route, RustFS transfer, decoded output ingestion, durable-task restart, fake-server matrix, secret-file launcher, one real URL-output reference-image smoke, operator-confirmed New API charge/refund evidence, and ADR 0008's accepted at-most-once submission guard pass |
 | M6 | Versioned pricing, credit ledger, and payment sandbox | Completed | ADR 0009 launch prices, welcome grants, append-only accounting, live reserve/settle/release, account presentation, immutable CNY 10 / 500-credit product, idempotent orders, signed fake-sandbox fulfillment, dry-run-first manual paid-credit recording, isolated PostgreSQL tests, and full Compose pass |
-| M7 | Hong Kong staging | In progress | ADR 0011 accepts the provisioned Alibaba Cloud Hong Kong 2 vCPU / 4 GiB staging host; its key-only non-root SSH, patched Ubuntu, bounded swap, Docker/Compose, UFW, reboot, and cloud-agent baseline pass. Digest-pinned PostgreSQL/Valkey and a non-authoritative RustFS fallback are healthy on isolated networks. ADR 0012 fixes private R2 plus `goodgood.o1key.com`; private-bucket CORS, bucket-scoped credentials, Origin CA, host-specific Strict, and the Cloudflare-only Nginx origin pass. Authing callbacks and all four external secrets pass live preflight. ADR 0013 fixes retained file-secret permissions with a dedicated reader group. All ten migrations are present; homepage rendering, Authing authorization, interactive Google login, and the exact one-time 100-credit grant pass. The disclosed Google OAuth secret is now revoked, exactly one replacement remains enabled, and a fresh Google/Authing/GoodGood session path preserves the existing owner and 90/0 credit balance. The separately disclosed Authing application and user-pool management secrets are also rotated; the mounted replacement passes permission, readiness, network-preflight, fresh exchange, session, and unchanged-credit evidence. The first real O1Key task succeeded upstream but exposed a transient poll/result-ingestion race; its reservation safely released and no second paid POST was sent. ADR 0008's bounded stabilization amendment passed the 131-test local gate plus CI run 7 and is deployed at exact revision/digest with Web/Worker and public readiness healthy. A newly authorized task now passes one paid POST, one attempt, 10-credit settlement, private R2 Asset ingestion, signed browser decode, asset cue/library, and stable detail route. The browser reference path now also passes signed cross-origin upload, server-side validation, root-draft restore, and fresh signed R2 read without changing credit state. Public GoodGood session revocation, Authing hosted-session exit, callback return, and query-free unauthenticated recovery pass. A root-only custom archive restores all 20 public tables, 54 rows, and ten migrations inside a no-network, read-only, bounded-`tmpfs` PostgreSQL container without affecting the healthy source. Peak-time mainland Telecom/Unicom/Mobile API and homepage sampling now passes with zero HTTP errors, while real-client upload/download throughput is explicitly deferred and remains unpassed. The compatible prior application image passed an app-only rollback and the current image passed a formal forward redeploy with unchanged data. Remaining operational audit items remain; payment checkout stays intentionally absent |
+| M7 | Hong Kong staging | In progress | ADR 0011 accepts the provisioned Alibaba Cloud Hong Kong 2 vCPU / 4 GiB staging host; its key-only non-root SSH, patched Ubuntu, bounded swap, Docker/Compose, UFW, reboot, and cloud-agent baseline pass. Digest-pinned PostgreSQL/Valkey and a non-authoritative RustFS fallback are healthy on isolated networks. ADR 0012 fixes private R2 plus `goodgood.o1key.com`; private-bucket CORS, bucket-scoped credentials, Origin CA, host-specific Strict, and the Cloudflare-only Nginx origin pass. Authing callbacks and all four external secrets pass live preflight. ADR 0013 fixes retained file-secret permissions with a dedicated reader group. All ten migrations are present; homepage rendering, Authing authorization, interactive Google login, and the exact one-time 100-credit grant pass. The disclosed Google OAuth secret is now revoked, exactly one replacement remains enabled, and a fresh Google/Authing/GoodGood session path preserves the existing owner and 90/0 credit balance. The separately disclosed Authing application and user-pool management secrets are also rotated; the mounted replacement passes permission, readiness, network-preflight, fresh exchange, session, and unchanged-credit evidence. The first real O1Key task succeeded upstream but exposed a transient poll/result-ingestion race; its reservation safely released and no second paid POST was sent. ADR 0008's bounded stabilization amendment passed the 131-test local gate plus CI run 7 and is deployed at exact revision/digest with Web/Worker and public readiness healthy. A newly authorized task now passes one paid POST, one attempt, 10-credit settlement, private R2 Asset ingestion, signed browser decode, asset cue/library, and stable detail route. The browser reference path now also passes signed cross-origin upload, server-side validation, root-draft restore, and fresh signed R2 read without changing credit state. Public GoodGood session revocation, Authing hosted-session exit, callback return, and query-free unauthenticated recovery pass. A root-only custom archive restores all 20 public tables, 54 rows, and ten migrations inside a no-network, read-only, bounded-`tmpfs` PostgreSQL container without affecting the healthy source. Peak-time mainland Telecom/Unicom/Mobile API and homepage sampling now passes with zero HTTP errors, while real-client upload/download throughput is explicitly deferred and remains unpassed. The compatible prior application image passed an app-only rollback and the current image passed a formal forward redeploy with unchanged data. The vulnerable `image-size` transitive dependency is removed, the runtime base/tooling surface is hardened, and pinned Trivy gates both locked production dependencies and the built image on fixable High/Critical findings. Automated backup/retention remains the next operational gate; payment checkout stays intentionally absent |
 | M8 | Paid production readiness | Pending | ICP/domain prerequisites and domestic Alipay sandbox/checkout pass before production payment; security/compliance review, observability, rollback, retention, support IDs, and production release gate are complete |
 
 Only mark a milestone `Completed` when its exit evidence exists. Use `Blocked`

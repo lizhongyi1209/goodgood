@@ -489,12 +489,22 @@ as a production release identity. Database migrations run as an explicit
 release step, not implicitly and concurrently in every app replica.
 
 The repository CI publishes trusted `main` revisions to GitHub Container
-Registry as `ghcr.io/<repository>:<full-git-sha>` after `check:local` passes.
-Pull requests run the same quality gate and a real image build but receive no
-registry write permission. The publish job uses only the repository-scoped
-`GITHUB_TOKEN` with `packages: write`; no personal access token or Docker Hub
-credential is required. All referenced GitHub and Docker actions are pinned to
-full commit hashes.
+Registry as `ghcr.io/<repository>:<full-git-sha>` only after `check:local` and
+both security scans pass. Pinned Trivy 0.70.0 first scans the locked production
+dependency graph, excluding generated caches and development-only packages.
+CI then builds the real production image on every event and scans its operating
+system and packaged libraries. Either scan fails for a fixable `HIGH` or
+`CRITICAL` finding; findings without an available fix remain visible but do not
+block releases. Pull requests receive no registry write permission. The publish
+job uses only the repository-scoped `GITHUB_TOKEN` with `packages: write`; no
+personal access token or Docker Hub credential is required. All referenced
+GitHub, Docker, and Aqua Security actions are pinned to full commit hashes.
+
+The runtime base is an exact Node.js version and multi-platform image digest.
+The final image removes npm and npx because every runtime role invokes Node
+directly; this prevents the package-manager build toolchain from becoming an
+unnecessary production attack surface. Refresh the version and digest together,
+then rerun both scans whenever the base image is updated.
 
 The workflow summary records the pushed digest, source revision, latest
 migration filename, and a checksum of the checked-in runtime configuration

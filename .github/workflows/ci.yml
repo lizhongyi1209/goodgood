@@ -14,13 +14,13 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: 24.12.0
+  NODE_VERSION: 24.20.0
 
 jobs:
   verify:
     name: Verify source and image
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 35
     steps:
       - name: Check out repository
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
@@ -37,13 +37,43 @@ jobs:
       - name: Run repository quality gate
         run: npm run check:local
 
-      - name: Verify pull-request image build
-        if: github.event_name == 'pull_request'
+      - name: Scan locked production dependencies
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          skip-dirs: node_modules,.sites-runtime,dist,runtime-bundle
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: library
+          severity: CRITICAL,HIGH
+          scanners: vuln
+          timeout: 10m
+          hide-progress: true
+          version: v0.70.0
+
+      - name: Build verification image
         run: >-
           docker build
           --build-arg GOODGOOD_REVISION=${{ github.sha }}
           --tag goodgood:ci-${{ github.sha }}
           .
+
+      - name: Scan verification image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: goodgood:ci-${{ github.sha }}
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
+          scanners: vuln
+          timeout: 10m
+          hide-progress: true
+          skip-setup-trivy: true
+          cache: false
 
   publish-image:
     name: Publish immutable image

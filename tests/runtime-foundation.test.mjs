@@ -137,7 +137,16 @@ test("container image keeps one non-root runtime for both process commands", asy
     packageData.scripts["start:worker"],
     "node server/runtime/worker.mjs",
   );
-  assert.match(dockerfile, /^FROM node:\$\{NODE_VERSION\}-bookworm-slim AS runtime$/m);
+  assert.match(dockerfile, /^ARG NODE_VERSION=24\.20\.0$/m);
+  assert.match(dockerfile, /^ARG NODE_IMAGE_DIGEST=sha256:[a-f0-9]{64}$/m);
+  assert.equal(
+    dockerfile.match(
+      /^FROM node:\$\{NODE_VERSION\}-bookworm-slim@\$\{NODE_IMAGE_DIGEST\} AS (?:build|runtime)$/gm,
+    )?.length,
+    2,
+  );
+  assert.match(dockerfile, /rm -rf \/usr\/local\/lib\/node_modules\/npm/);
+  assert.match(dockerfile, /rm -f \/usr\/local\/bin\/npm \/usr\/local\/bin\/npx/);
   assert.match(dockerfile, /^USER node$/m);
   assert.match(dockerfile, /npm run build:runtime/);
   assert.match(dockerfile, /\/app\/migrations \.\/migrations/);

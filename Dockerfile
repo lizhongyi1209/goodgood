@@ -1,8 +1,9 @@
 # syntax=docker/dockerfile:1
 
-ARG NODE_VERSION=24.12.0
+ARG NODE_VERSION=24.20.0
+ARG NODE_IMAGE_DIGEST=sha256:ba849c60be29959425b8734d57b8b4b7d56f98edd9504c9af091d5281095a71e
 
-FROM node:${NODE_VERSION}-bookworm-slim AS build
+FROM node:${NODE_VERSION}-bookworm-slim@${NODE_IMAGE_DIGEST} AS build
 WORKDIR /app
 
 COPY package.json package-lock.json ./
@@ -11,7 +12,7 @@ RUN npm ci --no-audit --no-fund
 COPY . .
 RUN npm run build:local && npm run build:runtime
 
-FROM node:${NODE_VERSION}-bookworm-slim AS runtime
+FROM node:${NODE_VERSION}-bookworm-slim@${NODE_IMAGE_DIGEST} AS runtime
 ARG GOODGOOD_REVISION=development
 
 LABEL org.opencontainers.image.title="GoodGood" \
@@ -28,6 +29,11 @@ ENV NODE_ENV=production \
     MOCK_GENERATION_PORT=3002
 
 WORKDIR /app
+
+# The application runtime invokes Node directly. Remove npm/npx plus their
+# build-only dependency tree from the shipped image.
+RUN rm -rf /usr/local/lib/node_modules/npm \
+    && rm -f /usr/local/bin/npm /usr/local/bin/npx
 
 COPY --from=build --chown=node:node /app/dist/standalone/ ./
 COPY --from=build --chown=node:node /app/node_modules/@img ./node_modules/@img
