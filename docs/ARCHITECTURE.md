@@ -58,6 +58,20 @@ verifies the bucket but cannot create it or rewrite CORS. The exact CORS policy
 is an independently reviewed Cloudflare setting. The existing same-host RustFS
 is a temporary non-authoritative fallback and receives no new staging objects.
 
+ADR 0014 separates database recovery from that application-object boundary.
+The root-run staging backup service creates a validated PostgreSQL custom
+archive and sends it through Restic client-side encryption to the separate
+private R2 `goodgood-postgres-backups` bucket. Application roles and the
+application R2 credential cannot read that repository. One persistent daily
+systemd timer applies the staging-only `14 daily / 8 weekly / 3 monthly`
+policy, prunes, verifies all encrypted repository data, and routes failures by
+authenticated-TLS SMTP to an operator-owned email address without automatically
+retrying or restoring.
+The same tool can decrypt the latest off-host archive into the root-only local
+backup directory and pass it to the existing isolated restore drill. The
+transient plaintext archive is always removed. Production retention and
+recovery objectives remain a separate M8 decision.
+
 Reference-byte cleanup is a separate one-shot maintenance boundary, not part
 of a browser request or the continuously running worker. Its default dry-run
 reports candidates without mutation. Explicit execution first stages expired

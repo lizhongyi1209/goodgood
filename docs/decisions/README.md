@@ -24,3 +24,4 @@ Current records:
 - `0011-alibaba-cloud-hong-kong-staging-host.md`
 - `0012-private-cloudflare-r2-for-staging-assets.md`
 - `0013-staging-secret-reader-group.md`
+- `0014-encrypted-off-host-staging-postgres-backups.md`

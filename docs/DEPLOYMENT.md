@@ -869,6 +869,124 @@ removes only that fixed disposable container. It never stops, writes to, or
 restores over the running staging database. Keep retained archives out of Git
 and include them in the operator's encrypted backup retention and access policy.
 
+### Automated encrypted staging database backups
+
+ADR 0014 selects a separate private Cloudflare R2 bucket named
+`goodgood-postgres-backups`. Do not reuse the `goodgood` application-object
+bucket or any application credential. In Cloudflare, create the bucket first,
+keep public development/custom-domain access disabled, and create a distinct
+Object Read & Write token scoped only to this bucket. Restic needs list, read,
+create, overwrite, and delete access to apply retention and prune. Do not add a
+bucket lifecycle expiry rule over Restic's internal objects.
+
+Provision a dedicated authenticated SMTP submission account and an
+operator-owned recipient address for staging backup failures. Keep a
+second copy of the Restic password in the approved operator password manager;
+losing that password makes the client-encrypted repository unrecoverable. The
+application checkout, application containers, application R2 credential, and
+alert email must never receive the password or backup R2 secret.
+
+Copy the reviewed `infra/staging` directory to a temporary root-readable host
+location and install the source-owned tools and units:
+
+```bash
+sudo bash /tmp/staging/install-postgres-backup-automation.sh /tmp/staging
+```
+
+The installer accepts only Ubuntu 24.04, installs the Ubuntu-maintained Restic
+package, installs root-owned scripts and systemd units, verifies the units, and
+deliberately leaves the timer disabled. It also reinstalls the checksum-reviewed
+manual backup/restore tool used by the automated path.
+
+Copy `/etc/goodgood/staging/postgres-backup.env.example` to
+`/etc/goodgood/staging/postgres-backup.env`, replace its R2 account-ID
+placeholder, and first create these three backup files with `root:root`
+ownership and mode `0600`:
+
+```text
+/etc/goodgood/staging/secrets/backups/restic-password
+/etc/goodgood/staging/secrets/backups/r2-access-key-id
+/etc/goodgood/staging/secrets/backups/r2-secret-access-key
+```
+
+The first file must contain at least 32 random characters. The next two contain
+only the raw bucket-scoped R2 access-key ID and secret-access key. These files
+are sufficient for direct repository initialization, backup, checking, and
+restore-drill commands while email setup is deferred. Do not start the systemd
+service or enable its timer until the alert path below passes.
+
+Before service or timer activation, create these two alert files with the same
+ownership and mode:
+
+```text
+/etc/goodgood/staging/secrets/backups/alert-email
+/etc/goodgood/staging/secrets/backups/msmtp.conf
+```
+
+The first contains one recipient address. Build the second from the installed
+`/etc/goodgood/staging/postgres-backup-msmtp.conf.example` with a dedicated
+SMTP host, submission port, sender, username, and password; the reviewed
+default requires CA-validated TLS plus STARTTLS on port 587. Enter values with a
+non-echoing or direct root editor; never put them in shell history, command
+arguments, Git, release metadata, Docker environment, or an operator transcript.
+The active configurations must also be `root:root 0600`. The backup runner
+rejects extra keys, shell expansion, inline secrets, unexpected backup-secret
+paths, the application asset bucket, and non-R2 endpoints. The independent
+alert runner validates its two fixed root-only email paths when invoked.
+
+Initialize and exercise the repository directly while email remains deferred:
+
+```bash
+sudo /usr/local/sbin/goodgood-staging-postgres-backup-automated init
+sudo /usr/local/sbin/goodgood-staging-postgres-backup-automated run
+sudo /usr/local/sbin/goodgood-staging-postgres-backup-automated check
+sudo /usr/local/sbin/goodgood-staging-postgres-backup-automated restore-latest-drill
+```
+
+Run the restore drill only after logging out all GoodGood sessions and proving
+there are no non-terminal jobs, as required by the manual drill. It downloads
+and decrypts the latest snapshot to one new root-only archive, invokes the same
+no-network/read-only/`tmpfs` comparison, and removes the plaintext archive on
+success or failure. It never restores over the live database.
+
+After configuring email, prove the alert and timer-shaped service path before
+enabling the timer:
+
+```bash
+sudo /usr/local/sbin/goodgood-staging-postgres-backup-alert manual-activation-test
+sudo systemctl start goodgood-postgres-backup.service
+sudo journalctl --unit goodgood-postgres-backup.service --since today --no-pager
+```
+
+The daily service creates a consistent PostgreSQL archive without stopping the
+database, validates its catalog, backs it up with Restic tags `automated` and
+`postgresql`, applies `14 daily / 8 weekly / 3 monthly` retention grouped by
+host and tags, prunes, and runs a full encrypted-repository data check. Its
+local plaintext archive is transient. The timer targets 18:17 UTC (02:17 China
+Standard Time) with up to 20 minutes of random delay and catches up once after
+a missed schedule.
+
+Only after the initial backup, full check, off-host restore drill, and alert
+all pass, activate and inspect the timer:
+
+```bash
+sudo systemctl enable --now goodgood-postgres-backup.timer
+sudo systemctl list-timers goodgood-postgres-backup.timer --all
+sudo systemctl is-enabled goodgood-postgres-backup.timer
+sudo systemctl is-active goodgood-postgres-backup.timer
+sudo systemctl --failed
+sudo find /var/backups/goodgood -maxdepth 1 -type f -name 'staging-auto-*.dump' -print
+```
+
+Passing M7 evidence records only the repository ID/snapshot prefix, timestamps,
+archive byte count/checksum, retention result, restore table/row/migration
+counts, timer next-run time, and test-email receipt. Redact credentials, SMTP
+configuration, recipient address, Restic key material, database rows, signed
+URLs, and public host address. A
+same-host archive or a successful upload without a restore drill does not pass
+the gate. This staging policy does not approve production retention or recovery
+objectives.
+
 ## Mainland carrier measurement
 
 Measure China Telecom, China Unicom, and China Mobile during a recorded

@@ -228,6 +228,15 @@ longer owns. Project, generation, and unexpired creation-draft snapshots remain
 authoritative protection; cleanup does not expose object keys in a user
 response.
 
+An automated PostgreSQL backup failure leaves the source database untouched,
+removes only the transient plaintext archive created by that invocation, exits
+nonzero, and triggers the bounded staging-operator email through systemd
+`OnFailure`. It does not retry a database dump, weaken retention, initialize a
+replacement repository, or initiate a restore. A failed SMTP delivery is itself a
+failed unit visible in the root journal; neither unit prints its secret URL,
+R2 credential, Restic password, SMTP credential, recipient address, database
+content, or public host address.
+
 ## Idempotency and retries
 
 - Browser-to-GoodGood submission carries an owner-scoped idempotency key, so a

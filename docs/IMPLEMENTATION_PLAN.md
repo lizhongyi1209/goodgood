@@ -17,11 +17,18 @@
   secret and the fresh exchange/session path passes without changing ownership
   or credit state. The separately disclosed Authing application and user-pool
   management secrets have also been rotated; the staging Web role now uses the
-  replacement application secret and a fresh logout/login exchange passes
-- Current objective: define and enable the automated PostgreSQL backup and
-  retention gate now that the fixable High/Critical dependency and runtime-image
-  scan is enforced; hold the new application deployment until the remaining M7
-  gates are complete, then promote the exact final CI-scanned M7 digest;
+  replacement application secret and a fresh logout/login exchange passes.
+  ADR 0014's encrypted off-host PostgreSQL backup contract is implemented and
+  locally verified, and its separate private R2 bucket plus bucket-only token
+  are provisioned and installed root-only on the staging host; the Restic
+  password is independently escrowed, and repository initialization plus the
+  first direct backup/full check and latest-snapshot off-host restore drill
+  pass. Email setup and timer activation remain open by operator deferral.
+- Current objective: finish provisioning and enable ADR 0014's separate private R2 /
+  Restic PostgreSQL backup and retention gate now that the fixable High/Critical
+  dependency and runtime-image scan is enforced; hold the new application
+  deployment until the remaining M7 gates are complete, then promote the exact
+  final CI-scanned M7 digest;
   full-byte real-carrier throughput is deferred at the operator's request,
   while ICP filing/domain work proceeds in parallel
 
@@ -775,12 +782,67 @@ this file owns the current handoff state.
   Kong host until the remaining M7 gates are complete; staging therefore stays
   on its previously verified digest, and the final M7 release must promote a
   newly verified exact digest rather than rebuilding on the host.
-  The operational inventory still finds no GoodGood systemd timer for PostgreSQL
-  backups or reference cleanup, only the retained root-only local restore-drill
-  archive. Full-byte mainland throughput remains an accepted operator deferral,
-  while domestic payment remains an M8/ICP dependency.
-- Next action: select an encrypted off-host PostgreSQL backup destination,
-  retention period, and alert owner before enabling an automated timer.
+  The PostgreSQL backup timer is now installed but remains disabled and inactive;
+  no reference-cleanup timer is installed. The retained root-only local restore-
+  drill archive and the verified encrypted off-host restore are completed backup
+  evidence. Full-byte mainland
+  throughput remains an accepted operator deferral, while domestic payment
+  remains an M8/ICP dependency.
+- ADR 0014 now selects a separate private Cloudflare R2
+  `goodgood-postgres-backups` bucket, Restic client-side encryption, a
+  staging-only `14 daily / 8 weekly / 3 monthly` policy, and an operator-owned
+  SMTP email failure-alert address. The source-owned installer leaves the persistent,
+  randomized daily systemd timer disabled until the root-only Restic password,
+  bucket-scoped R2 access-key pair, SMTP configuration, and recipient exist. The runner validates
+  configuration and secret modes, serializes operations, creates and removes a
+  transient validated archive, groups retention independently of timestamped
+  archive paths, prunes, fully checks repository data, and can feed the latest
+  off-host snapshot through the already proven isolated restore drill. Shell
+  syntax checks and the full `npm run check:local` gate pass for this slice:
+  lint, TypeScript, the production build, and 133 tests completed with 129
+  passing and four opt-in integrations skipped by design. The dedicated Standard
+  R2 bucket now exists with no location hint, custom domain, or public development
+  URL. Its permanent Object Read & Write token is restricted to that bucket and
+  has no bucket-administration permission. The operator recorded its one-time
+  access-key pair without placing it in Git or chat. The only original local SSH
+  entry proved to be an unrelated Ubuntu 22.04
+  host with no GoodGood configuration or containers. The 24.04-only installer
+  refused before changing that host, and the copied temporary source was removed.
+  The restored `goodgood-staging` alias now reaches the expected Ubuntu 24.04
+  host with the existing GoodGood configuration and five running containers.
+  Ubuntu's patched Restic 0.16.4 and msmtp 1.8.24, the checksum-matched scripts,
+  and all three systemd units are installed with reviewed ownership and modes.
+  The root-only backup configuration was derived from the existing validated R2
+  account endpoint without displaying it. Service and timer remain inactive and
+  the timer remains disabled. The operator copied the two R2 values through a
+  one-time local clipboard bridge into distinct `root:root 0600` host files; the
+  values passed format and permission validation, were not printed, and the
+  clipboard was overwritten immediately afterward. A 64-character Restic
+  password was generated on the host, installed `root:root 0600`, copied once to
+  the local clipboard for operator password-manager escrow, and then overwritten
+  after the operator confirmed storage. The operator deferred SMTP configuration
+  until after the direct backup and restore proof; the runner is decoupled
+  from the independent alert files while the timer remains disabled. No SMTP
+  account or recipient exists; the systemd service has not run and the timer
+  remains disabled. The decoupled runner revision then passed local shell syntax, the
+  complete 133-test gate with 129 passing and four opt-in integrations skipped,
+  checksum-matched host installation, and a four-key active-config check.
+  Restic repository prefix `5ef27b35` initialized successfully. The first direct
+  run created an 85,762-byte validated archive, saved snapshot `51145a6d`,
+  applied all three retention windows, read every repository pack without error,
+  and removed the plaintext archive. A separate full `check --read-data` also
+  passed. After the operator logged out, the source reached zero active sessions
+  and zero active generation jobs. The latest encrypted snapshot then restored
+  its matching archive checksum, 20 public tables, 69 rows, and ten migrations
+  through the no-network, read-only, bounded-`tmpfs` drill. Cleanup left zero
+  automatic/off-host plaintext archives and no drill container; PostgreSQL, Web,
+  and Worker remained healthy, loopback readiness returned HTTP 200, and the
+  repository still held exactly one snapshot. The backup service remains inactive
+  and its timer remains disabled and inactive.
+- Next action: when the operator resumes the explicitly deferred email work,
+  configure and prove the SMTP alert, run the timer-shaped service path,
+  enable the timer, and verify its next run with no retained automatic plaintext
+  archive or failed unit.
   After the remaining M7 gates pass, publish and deploy the exact CI-scanned M7
   digest as one consolidated staging release.
   Progress ICP filing/domain work in parallel and keep early paid access on the
@@ -797,9 +859,10 @@ this file owns the current handoff state.
   Google-backed test address or an explicitly approved reset of the isolated
   Authing test user. No disclosed-credential rotation blocker remains.
   Application secrets remain operator-supplied outside the repository by
-  design. Automated production backup activation still needs
-  an approved encrypted off-host destination, retention period, and alert
-  owner. An ICP-filed custom authentication domain is not required now because
+  design. Automated staging backup activation still needs the operator SMTP
+  email path selected by ADR 0014;
+  production
+  retention and recovery objectives remain an M8 decision. An ICP-filed custom authentication domain is not required now because
   the Authing-provided application domain is the accepted temporary path. The
   local token adapter remains forbidden in staging and production.
 
@@ -875,7 +938,7 @@ Completed real-Authing loopback checklist:
 | M4 | Production identity, ownership, references, and projects persist safely | Completed | Authing-compatible OIDC/PKCE, hashed sessions, provider-neutral ownership, signed references, cleanup, root-draft/project/asset persistence, optimistic conflict handling, cross-owner denial, and the requested real-Authing loopback matrix pass; public HTTPS callback/logout now also passes under M7 staging |
 | M5 | US generation gateway integration and recovery | Completed | O1Key special-price adapter, explicit worker route, RustFS transfer, decoded output ingestion, durable-task restart, fake-server matrix, secret-file launcher, one real URL-output reference-image smoke, operator-confirmed New API charge/refund evidence, and ADR 0008's accepted at-most-once submission guard pass |
 | M6 | Versioned pricing, credit ledger, and payment sandbox | Completed | ADR 0009 launch prices, welcome grants, append-only accounting, live reserve/settle/release, account presentation, immutable CNY 10 / 500-credit product, idempotent orders, signed fake-sandbox fulfillment, dry-run-first manual paid-credit recording, isolated PostgreSQL tests, and full Compose pass |
-| M7 | Hong Kong staging | In progress | ADR 0011 accepts the provisioned Alibaba Cloud Hong Kong 2 vCPU / 4 GiB staging host; its key-only non-root SSH, patched Ubuntu, bounded swap, Docker/Compose, UFW, reboot, and cloud-agent baseline pass. Digest-pinned PostgreSQL/Valkey and a non-authoritative RustFS fallback are healthy on isolated networks. ADR 0012 fixes private R2 plus `goodgood.o1key.com`; private-bucket CORS, bucket-scoped credentials, Origin CA, host-specific Strict, and the Cloudflare-only Nginx origin pass. Authing callbacks and all four external secrets pass live preflight. ADR 0013 fixes retained file-secret permissions with a dedicated reader group. All ten migrations are present; homepage rendering, Authing authorization, interactive Google login, and the exact one-time 100-credit grant pass. The disclosed Google OAuth secret is now revoked, exactly one replacement remains enabled, and a fresh Google/Authing/GoodGood session path preserves the existing owner and 90/0 credit balance. The separately disclosed Authing application and user-pool management secrets are also rotated; the mounted replacement passes permission, readiness, network-preflight, fresh exchange, session, and unchanged-credit evidence. The first real O1Key task succeeded upstream but exposed a transient poll/result-ingestion race; its reservation safely released and no second paid POST was sent. ADR 0008's bounded stabilization amendment passed the 131-test local gate plus CI run 7 and is deployed at exact revision/digest with Web/Worker and public readiness healthy. A newly authorized task now passes one paid POST, one attempt, 10-credit settlement, private R2 Asset ingestion, signed browser decode, asset cue/library, and stable detail route. The browser reference path now also passes signed cross-origin upload, server-side validation, root-draft restore, and fresh signed R2 read without changing credit state. Public GoodGood session revocation, Authing hosted-session exit, callback return, and query-free unauthenticated recovery pass. A root-only custom archive restores all 20 public tables, 54 rows, and ten migrations inside a no-network, read-only, bounded-`tmpfs` PostgreSQL container without affecting the healthy source. Peak-time mainland Telecom/Unicom/Mobile API and homepage sampling now passes with zero HTTP errors, while real-client upload/download throughput is explicitly deferred and remains unpassed. The compatible prior application image passed an app-only rollback and the current image passed a formal forward redeploy with unchanged data. The vulnerable `image-size` transitive dependency is removed, the runtime base/tooling surface is hardened, and pinned Trivy gates both locked production dependencies and the built image on fixable High/Critical findings. Its registry artifact is deliberately not deployed yet; the final M7 digest will be promoted after the remaining gates complete. Automated backup/retention remains the next operational gate; payment checkout stays intentionally absent |
+| M7 | Hong Kong staging | In progress | ADR 0011 accepts the provisioned Alibaba Cloud Hong Kong 2 vCPU / 4 GiB staging host; its key-only non-root SSH, patched Ubuntu, bounded swap, Docker/Compose, UFW, reboot, and cloud-agent baseline pass. Digest-pinned PostgreSQL/Valkey and a non-authoritative RustFS fallback are healthy on isolated networks. ADR 0012 fixes private R2 plus `goodgood.o1key.com`; private-bucket CORS, bucket-scoped credentials, Origin CA, host-specific Strict, and the Cloudflare-only Nginx origin pass. Authing callbacks and all four external secrets pass live preflight. ADR 0013 fixes retained file-secret permissions with a dedicated reader group. All ten migrations are present; homepage rendering, Authing authorization, interactive Google login, and the exact one-time 100-credit grant pass. The disclosed Google OAuth secret is now revoked, exactly one replacement remains enabled, and a fresh Google/Authing/GoodGood session path preserves the existing owner and 90/0 credit balance. The separately disclosed Authing application and user-pool management secrets are also rotated; the mounted replacement passes permission, readiness, network-preflight, fresh exchange, session, and unchanged-credit evidence. The first real O1Key task succeeded upstream but exposed a transient poll/result-ingestion race; its reservation safely released and no second paid POST was sent. ADR 0008's bounded stabilization amendment passed the 131-test local gate plus CI run 7 and is deployed at exact revision/digest with Web/Worker and public readiness healthy. A newly authorized task now passes one paid POST, one attempt, 10-credit settlement, private R2 Asset ingestion, signed browser decode, asset cue/library, and stable detail route. The browser reference path now also passes signed cross-origin upload, server-side validation, root-draft restore, and fresh signed R2 read without changing credit state. Public GoodGood session revocation, Authing hosted-session exit, callback return, and query-free unauthenticated recovery pass. A root-only custom archive restores all 20 public tables, 54 rows, and ten migrations inside a no-network, read-only, bounded-`tmpfs` PostgreSQL container without affecting the healthy source. Peak-time mainland Telecom/Unicom/Mobile API and homepage sampling now passes with zero HTTP errors, while real-client upload/download throughput is explicitly deferred and remains unpassed. The compatible prior application image passed an app-only rollback and the current image passed a formal forward redeploy with unchanged data. The vulnerable `image-size` transitive dependency is removed, the runtime base/tooling surface is hardened, and pinned Trivy gates both locked production dependencies and the built image on fixable High/Critical findings. ADR 0014 fixes the separate private R2/Restic backup boundary, staging retention, latest-snapshot restore drill, and SMTP email failure alert; its private Standard backup bucket and bucket-only Object Read & Write token now exist with public and administrative access disabled, its credentials and checksum-matched automation are installed root-only on the host, and shell syntax plus the 133-test local gate pass. Repository initialization, the first encrypted snapshot, retention calculation, plaintext cleanup, two full read-data checks, and the latest-snapshot off-host restore all pass; the restore reproduced its checksum, 20 tables, 69 rows, and ten migrations inside the isolated drill, then left no automatic plaintext or drill container while source health remained green. Email delivery and timer execution remain explicitly deferred, and the timer remains disabled. The security registry artifact is deliberately not deployed yet; the final M7 digest will be promoted after the remaining gates complete. Alert proof and automated backup/retention activation remain the next operational gate; payment checkout stays intentionally absent |
 | M8 | Paid production readiness | Pending | ICP/domain prerequisites and domestic Alipay sandbox/checkout pass before production payment; security/compliance review, observability, rollback, retention, support IDs, and production release gate are complete |
 
 Only mark a milestone `Completed` when its exit evidence exists. Use `Blocked`
