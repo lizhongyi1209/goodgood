@@ -60,6 +60,15 @@ jobs:
           --tag goodgood:ci-${{ github.sha }}
           .
 
+      - name: Smoke verification image runtime imports
+        run: >-
+          docker run --rm
+          --entrypoint node
+          goodgood:ci-${{ github.sha }}
+          --input-type=module
+          --eval
+          "await import('react'); await import('react-dom/server'); await import('react-server-dom-webpack/client.node'); await import('vinext/server/prod-server');"
+
       - name: Scan verification image
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:

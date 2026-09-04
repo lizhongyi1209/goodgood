@@ -68,7 +68,9 @@ env files, and image-label mismatch all fail closed. Static Compose coverage
 proves the staging topology has no build,
 local-auth, mock-generation, or fake-payment fallback. Deploy plans include one
 explicit forward migration before app startup; rollback plans never attempt a
-schema downgrade. Real GHCR pulls, Authing discovery, storage permissions,
+schema downgrade. CI must also start Node inside the finished verification image
+and import React, React DOM, the RSC client runtime, and Vinext's production
+server before that image can be scanned or published. Real GHCR pulls, Authing discovery, storage permissions,
 migration execution, and container readiness remain host/staging evidence rather
 than fast-suite mocks.
 Static host-bootstrap coverage additionally rejects a convenience Docker

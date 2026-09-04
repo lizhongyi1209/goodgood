@@ -237,6 +237,13 @@ does not print its secret URL, R2 credential, Restic password, database content,
 or public host address. Active alert routing is an M8 production-observability
 decision.
 
+A production image that cannot resolve its packaged runtime modules fails the
+CI image-import smoke before publication. If a later staging-only dependency
+or health failure still appears after label verification and migration, the
+release command exits nonzero and the operator re-applies the retained prior
+release file without reversing the additive schema. The failed candidate never
+replaces the active release record.
+
 ## Idempotency and retries
 
 - Browser-to-GoodGood submission carries an owner-scoped idempotency key, so a

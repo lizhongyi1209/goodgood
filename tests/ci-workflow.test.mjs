@@ -27,6 +27,14 @@ test("CI verifies changes and publishes one immutable main image", async () => {
     workflow,
     /- name: Build verification image\s+if:/,
   );
+  assert.match(
+    workflow,
+    /- name: Smoke verification image runtime imports[\s\S]*docker run --rm[\s\S]*--entrypoint node[\s\S]*import\('react'\)[\s\S]*import\('react-dom\/server'\)[\s\S]*import\('react-server-dom-webpack\/client\.node'\)[\s\S]*import\('vinext\/server\/prod-server'\)/,
+  );
+  assert.match(
+    workflow,
+    /Smoke verification image runtime imports[\s\S]*Scan verification image/,
+  );
 
   assert.equal(
     workflow.match(

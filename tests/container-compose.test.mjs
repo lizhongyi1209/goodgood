@@ -98,6 +98,20 @@ test("compose contract pins the complete local dependency stack", async () => {
     "node server/runtime/reference-cleanup.mjs",
   );
   assert.match(dockerfile, /^EXPOSE 3000 3001 3002$/m);
+  for (const dependency of [
+    "react",
+    "react-dom",
+    "react-server-dom-webpack",
+    "scheduler",
+    "acorn-loose",
+    "neo-async",
+    "webpack-sources",
+  ]) {
+    assert.match(
+      dockerfile,
+      new RegExp(`node_modules/${dependency} \\./node_modules/${dependency}`),
+    );
+  }
   assert.match(dockerfile, /node_modules\/sharp \.\/node_modules\/sharp/);
   assert.match(dockerfile, /node_modules\/@img \.\/node_modules\/@img/);
   assert.match(compose, /GOODGOOD_ALLOW_LOCAL_AUTH: "true"/);

@@ -36,6 +36,17 @@ RUN rm -rf /usr/local/lib/node_modules/npm \
     && rm -f /usr/local/bin/npm /usr/local/bin/npx
 
 COPY --from=build --chown=node:node /app/dist/standalone/ ./
+# Vinext 1.0 beta's standalone tracer does not currently retain its React peer
+# packages. Keep the exact locked peers and their small runtime dependency tree
+# beside Vinext so the production server can start and render without the build
+# tree.
+COPY --from=build --chown=node:node /app/node_modules/react ./node_modules/react
+COPY --from=build --chown=node:node /app/node_modules/react-dom ./node_modules/react-dom
+COPY --from=build --chown=node:node /app/node_modules/react-server-dom-webpack ./node_modules/react-server-dom-webpack
+COPY --from=build --chown=node:node /app/node_modules/scheduler ./node_modules/scheduler
+COPY --from=build --chown=node:node /app/node_modules/acorn-loose ./node_modules/acorn-loose
+COPY --from=build --chown=node:node /app/node_modules/neo-async ./node_modules/neo-async
+COPY --from=build --chown=node:node /app/node_modules/webpack-sources ./node_modules/webpack-sources
 COPY --from=build --chown=node:node /app/node_modules/@img ./node_modules/@img
 COPY --from=build --chown=node:node /app/node_modules/detect-libc ./node_modules/detect-libc
 COPY --from=build --chown=node:node /app/node_modules/sharp ./node_modules/sharp

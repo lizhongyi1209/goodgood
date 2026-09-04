@@ -442,8 +442,11 @@ migration, reference cleanup, manual payment, and mock generation. Bundling keep
 clients compact; Sharp and its platform package are copied as locked native
 runtime dependencies so the Linux image decodes untrusted reference bytes on
 Linux rather than relying on host
-binaries. The image runs as the unprivileged `node` user and does not require a
-source bind mount.
+binaries. Vinext 1.0 beta's standalone tracer currently omits its React peer
+packages, so the image explicitly copies the locked React/React DOM/RSC peers
+and their small runtime dependency tree. CI imports those modules from the
+finished image before scanning or publishing it. The image runs as the
+unprivileged `node` user and does not require a source bind mount.
 
 ```bash
 docker build --build-arg GOODGOOD_REVISION=local -t goodgood:local .
