@@ -763,14 +763,20 @@ this file owns the current handoff state.
   and 132 tests with 128 passing and four opt-in integration tests skipped; the
   final lockfile and Linux image each reported zero matching findings; and the
   non-root image had no npm, npx, or `image-size` while Sharp 0.35.0 decoded a
-  real 1x1 PNG. The operational inventory still finds no GoodGood systemd timer
-  for PostgreSQL backups or reference cleanup, only the retained root-only local
-  restore-drill archive. Full-byte mainland throughput remains an accepted
-  operator deferral, while domestic payment remains an M8/ICP dependency.
+  real 1x1 PNG. Remote CI run 33837820040 then passed the repository gate, both
+  security scans, real image build, and immutable publication for revision
+  `b21a7f427e1a3cb593892c65f3df3f7cc8007a33` as
+  `ghcr.io/lizhongyi1209/goodgood@sha256:147c903e8845ee9892dce59c483b26e4d3ed09b067e82962621f0dafeb7563d1`,
+  migration `0010_m6_payment_sandbox.sql`, and runtime-contract checksum
+  `f527747311f1d773df23c3ec6369a5198e52a15963113b0ba1ac12a8c1bd8369`.
+  The operational inventory still finds no GoodGood systemd timer for PostgreSQL
+  backups or reference cleanup, only the retained root-only local restore-drill
+  archive. Full-byte mainland throughput remains an accepted operator deferral,
+  while domestic payment remains an M8/ICP dependency.
 - Next action: select an encrypted off-host PostgreSQL backup destination,
-  retention period, and alert owner before enabling an automated timer. Progress ICP filing/domain
-  work in parallel and keep early paid access on the documented operator
-  bridge. After the filed domain and domestic Alipay merchant sandbox are
+  retention period, and alert owner before enabling an automated timer.
+  Progress ICP filing/domain work in parallel and keep early paid access on the
+  documented operator bridge. After the filed domain and domestic Alipay merchant sandbox are
   available, implement the provider adapter against the existing immutable
   order/settlement boundary and add the smallest customer checkout UI as part
   of paid-production readiness.
