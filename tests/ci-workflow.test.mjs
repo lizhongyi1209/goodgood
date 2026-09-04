@@ -93,7 +93,13 @@ test("runtime build dependencies exclude the vulnerable image-size release", asy
   );
 
   assert.equal(manifest.dependencies.next, "16.2.11");
+  assert.equal(manifest.dependencies.react, "19.2.8");
+  assert.equal(manifest.dependencies["react-dom"], "19.2.8");
   assert.equal(manifest.devDependencies.vinext, "1.0.0-beta.9");
+  assert.equal(
+    manifest.devDependencies["react-server-dom-webpack"],
+    "19.2.8",
+  );
   assert.equal(manifest.devDependencies["@vitejs/plugin-rsc"], "0.5.34");
   assert.equal(manifest.devDependencies["eslint-config-next"], "16.2.11");
   assert.equal(manifest.dependencies.sharp, "0.35.0");
@@ -104,6 +110,12 @@ test("runtime build dependencies exclude the vulnerable image-size release", asy
     sharp: "$sharp",
   });
   assert.equal(lock.packages["node_modules/vinext"].version, "1.0.0-beta.9");
+  assert.equal(lock.packages["node_modules/react"].version, "19.2.8");
+  assert.equal(lock.packages["node_modules/react-dom"].version, "19.2.8");
+  assert.equal(
+    lock.packages["node_modules/react-server-dom-webpack"].version,
+    "19.2.8",
+  );
   assert.equal(lock.packages["node_modules/sharp"].version, "0.35.0");
   assert.equal(lock.packages["node_modules/image-size"], undefined);
 

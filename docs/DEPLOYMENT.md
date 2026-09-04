@@ -444,7 +444,8 @@ runtime dependencies so the Linux image decodes untrusted reference bytes on
 Linux rather than relying on host
 binaries. Vinext 1.0 beta's standalone tracer currently omits its React peer
 packages, so the image explicitly copies the locked React/React DOM/RSC peers
-and their small runtime dependency tree. CI imports those modules from the
+and their small runtime dependency tree. Those three React packages must move
+together and currently use the patched `19.2.8` line. CI imports them from the
 finished image before scanning or publishing it. The image runs as the
 unprivileged `node` user and does not require a source bind mount.
 
