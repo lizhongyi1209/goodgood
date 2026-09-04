@@ -35,7 +35,8 @@ the host returns without synchronizing exactly with other maintenance. A failed
 service stays failed in systemd and retains root-journal evidence; M7 does not
 send an outbound notification or automatically retry or restore. Active alert
 routing belongs to the unified M8 production-observability decision instead of
-a staging-only mailbox. Logs contain no repository password, R2 credential,
+a staging-only mailbox. QQ Mail is explicitly not under consideration for that
+future routing decision. Logs contain no repository password, R2 credential,
 database content, or public host address.
 
 Activation requires an initialized private repository, one successful

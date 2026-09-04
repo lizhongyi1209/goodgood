@@ -1,7 +1,7 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-04
-- Current phase: M7 is in progress; the Alibaba Cloud Hong Kong host,
+- Current phase: M7 is completed; the Alibaba Cloud Hong Kong host,
   test-data dependency layer, private R2 configuration, Cloudflare Origin CA,
   host-specific Full (strict) rule, reviewed Nginx origin, Authing callbacks,
   all four application secrets, and ADR 0013's reader-group correction are
@@ -27,12 +27,16 @@
   service run, newest-snapshot restore, and active next timer all pass. The first
   post-amendment image passed CI but exposed a missing React peer in Vinext's
   standalone output during deployment; the retained prior release restored
-  service without reversing migrations. The finished-image import fix now passes
-  locally and awaits a new CI digest.
-- Current objective: publish and deploy the corrected exact CI-scanned M7 digest,
-  then run final public and host health verification and close M7;
-  full-byte real-carrier throughput is deferred at the operator's request,
-  while ICP filing/domain work proceeds in parallel
+  service without reversing migrations. The finished-image import fix and
+  linked React 19.2.8 security update pass locally and in CI run 23; that exact
+  immutable image is now the promoted healthy staging release. QQ Mail is not
+  under consideration, and outbound failure notification remains part of M8's
+  unified production-observability decision.
+- Current objective: begin M8 paid-production readiness with the production
+  observability and release gate while ICP filing, the production domain, and
+  domestic Alipay merchant prerequisites progress; do not assume QQ Mail as an
+  alert transport. Full-byte real-carrier throughput remains an accepted
+  operator deferral
 
 ## Purpose and update contract
 
@@ -831,17 +835,30 @@ this file owns the current handoff state.
   rebuilt Linux image, then correctly blocked publication because copying the
   RSC peer exposed fixed High-severity `CVE-2026-44907` in version 19.2.6.
   React, React DOM, and React Server DOM Webpack are now locked together at the
-  fixed 19.2.8 release for the next candidate. The rebuilt Linux image imports
+  fixed 19.2.8 release. The rebuilt Linux image imports
   all four runtime entry points successfully and the pinned Trivy 0.70.0 image
-  scan reports zero fixable High/Critical findings locally.
-- Next action: commit and push the runtime-package correction, wait for its exact
-  CI quality/security/image publication gate, deploy that immutable digest, and
-  run the final public plus host health check before marking M7 completed.
-  Progress ICP filing/domain work in parallel and keep early paid access on the
-  documented operator bridge. After the filed domain and domestic Alipay merchant sandbox are
-  available, implement the provider adapter against the existing immutable
-  order/settlement boundary and add the smallest customer checkout UI as part
-  of paid-production readiness.
+  scan reports zero fixable High/Critical findings locally. CI run 23 passed the
+  133-test repository gate, locked-dependency scan, finished-image runtime
+  smoke, image scan, and immutable publication for source `8ec46f5` as digest
+  `ecbbd4a9d9c8`, migration `0010_m6_payment_sandbox.sql`, and runtime-contract
+  checksum `565646d41af0`. The candidate dry-run and network preflight passed;
+  the formal release verified matching image labels, reran all ten migrations,
+  and started Web and Worker healthy. Loopback live/ready checks pass for both
+  roles, the public root/live/ready paths return HTTP 200, and database,
+  storage, provider, and queue dependencies report ready. PostgreSQL remains at
+  three credit accounts, 290 available credits, and zero reserved; the backup
+  timer remains enabled and active with no failed systemd units. After a stable
+  recheck, the candidate was promoted to the root-only current release file and
+  an immutable read-only release snapshot with matching checksums. M7 is
+  complete.
+- Next action: begin M8 with the production observability, security/compliance,
+  and release-gate slice while ICP filing/domain and domestic Alipay merchant
+  prerequisites progress. QQ Mail is explicitly not under consideration for
+  alert routing; choose the unified production transport during M8 rather than
+  adding a staging-only notifier. Keep early paid access on the documented
+  operator bridge. After the filed domain and domestic Alipay merchant sandbox
+  are available, implement the provider adapter against the existing immutable
+  order/settlement boundary and add the smallest customer checkout UI.
 - Blockers: domestic Alipay checkout requires the ICP-filed production domain,
   matching merchant approval, and sandbox credentials. These external items do
   not block M7 staging or trusted manual credit operation. The local fake
@@ -928,7 +945,7 @@ Completed real-Authing loopback checklist:
 | M4 | Production identity, ownership, references, and projects persist safely | Completed | Authing-compatible OIDC/PKCE, hashed sessions, provider-neutral ownership, signed references, cleanup, root-draft/project/asset persistence, optimistic conflict handling, cross-owner denial, and the requested real-Authing loopback matrix pass; public HTTPS callback/logout now also passes under M7 staging |
 | M5 | US generation gateway integration and recovery | Completed | O1Key special-price adapter, explicit worker route, RustFS transfer, decoded output ingestion, durable-task restart, fake-server matrix, secret-file launcher, one real URL-output reference-image smoke, operator-confirmed New API charge/refund evidence, and ADR 0008's accepted at-most-once submission guard pass |
 | M6 | Versioned pricing, credit ledger, and payment sandbox | Completed | ADR 0009 launch prices, welcome grants, append-only accounting, live reserve/settle/release, account presentation, immutable CNY 10 / 500-credit product, idempotent orders, signed fake-sandbox fulfillment, dry-run-first manual paid-credit recording, isolated PostgreSQL tests, and full Compose pass |
-| M7 | Hong Kong staging | In progress | ADR 0011 accepts the provisioned Alibaba Cloud Hong Kong 2 vCPU / 4 GiB staging host; its key-only non-root SSH, patched Ubuntu, bounded swap, Docker/Compose, UFW, reboot, and cloud-agent baseline pass. Digest-pinned PostgreSQL/Valkey and a non-authoritative RustFS fallback are healthy on isolated networks. ADR 0012 fixes private R2 plus `goodgood.o1key.com`; private-bucket CORS, bucket-scoped credentials, Origin CA, host-specific Strict, and the Cloudflare-only Nginx origin pass. Authing callbacks and all four external secrets pass live preflight. ADR 0013 fixes retained file-secret permissions with a dedicated reader group. All ten migrations are present; homepage rendering, Authing authorization, interactive Google login, and the exact one-time 100-credit grant pass. The disclosed Google OAuth secret is now revoked, exactly one replacement remains enabled, and a fresh Google/Authing/GoodGood session path preserves the existing owner and 90/0 credit balance. The separately disclosed Authing application and user-pool management secrets are also rotated; the mounted replacement passes permission, readiness, network-preflight, fresh exchange, session, and unchanged-credit evidence. The first real O1Key task succeeded upstream but exposed a transient poll/result-ingestion race; its reservation safely released and no second paid POST was sent. ADR 0008's bounded stabilization amendment passed the 131-test local gate plus CI run 7 and is deployed at exact revision/digest with Web/Worker and public readiness healthy. A newly authorized task now passes one paid POST, one attempt, 10-credit settlement, private R2 Asset ingestion, signed browser decode, asset cue/library, and stable detail route. The browser reference path now also passes signed cross-origin upload, server-side validation, root-draft restore, and fresh signed R2 read without changing credit state. Public GoodGood session revocation, Authing hosted-session exit, callback return, and query-free unauthenticated recovery pass. A root-only custom archive restores all 20 public tables, 54 rows, and ten migrations inside a no-network, read-only, bounded-`tmpfs` PostgreSQL container without affecting the healthy source. Peak-time mainland Telecom/Unicom/Mobile API and homepage sampling now passes with zero HTTP errors, while real-client upload/download throughput is explicitly deferred and remains unpassed. The compatible prior application image passed an app-only rollback and the current image passed a formal forward redeploy with unchanged data. The vulnerable `image-size` transitive dependency is removed, the runtime base/tooling surface is hardened, and pinned Trivy gates both locked production dependencies and the built image on fixable High/Critical findings. ADR 0014 fixes the separate private R2/Restic backup boundary, staging retention, and latest-snapshot restore drill; its amendment moves outbound failure notification to M8. Repository initialization, a direct encrypted backup, retention calculation, two full read-data checks, a real systemd service backup, plaintext cleanup, and two latest-snapshot off-host restore drills pass. The enabled persistent timer has an active randomized next run, no backup unit is failed, and source health remains green. The first amended candidate passed CI, labels, and migrations but failed Web startup due an omitted Vinext React peer; the retained prior release restored health without a schema rollback. The finished-image smoke now catches that class of failure; its first CI run then blocked a fixed RSC High vulnerability, so the linked React packages are upgraded together to 19.2.8. A clean CI-scanned immutable image and deployment remain before M7 can close. Payment checkout stays intentionally absent |
+| M7 | Hong Kong staging | Completed | The hardened Hong Kong host, isolated dependencies, private R2, Cloudflare-only TLS origin, Authing callbacks and rotated secrets, real O1Key generation/reference ingestion, public logout recovery, rollback, mainland HTTP sampling, and all ten migrations pass. ADR 0014's separate encrypted off-host PostgreSQL repository, retention, two latest-snapshot restore drills, real systemd backup, and active persistent timer pass; outbound notification is deferred to M8 and QQ Mail is not under consideration. CI run 23 passes 133 tests, dependency and finished-image scans, and runtime import smoke after the React 19.2.8 fix. Its exact immutable digest is the promoted healthy release: Web/Worker and every dependency readiness check pass, public root/live/ready return HTTP 200, and credit state is unchanged. Full-byte real-carrier throughput remains an accepted non-blocking deferral; payment checkout stays intentionally absent until M8 |
 | M8 | Paid production readiness | Pending | ICP/domain prerequisites and domestic Alipay sandbox/checkout pass before production payment; security/compliance review, observability, rollback, retention, support IDs, and production release gate are complete |
 
 Only mark a milestone `Completed` when its exit evidence exists. Use `Blocked`
