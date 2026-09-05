@@ -151,9 +151,14 @@ export function inspectProductionWorkPackage({
 
   check("fail-closed-maintenance-ingress", () => {
     const nginx = source("infra/production/nginx/goodgood.conf");
+    const originAllowlist = source(
+      "infra/production/nginx/cloudflare-origin-only.conf",
+    );
     const markerPosition = nginx.indexOf("/etc/goodgood/production/maintenance.enabled");
     const proxyPosition = nginx.indexOf("proxy_pass http://goodgood_active");
     requireCondition(markerPosition >= 0 && markerPosition < proxyPosition, "maintenance marker must be evaluated before proxying.");
+    requireText(originAllowlist, "allow 127.0.0.1;", "production origin allowlist");
+    requireText(originAllowlist, "allow ::1;", "production origin allowlist");
     for (const expected of [
       "return 503;",
       "error_page 503 =503 /__goodgood_maintenance.html;",
@@ -175,9 +180,11 @@ export function inspectProductionWorkPackage({
     }
     rejectText(control, /^\s*disable\)/m, "maintenance control");
     rejectText(control, /\brm\b|\bunlink\b/, "maintenance control");
-    const allowlist = source("infra/production/nginx/cloudflare-origin-only.conf");
-    requireCondition((allowlist.match(/^allow /gm) ?? []).length === 22, "Cloudflare allowlist must contain 22 reviewed ranges.");
-    requireText(allowlist, "deny all;", "Cloudflare allowlist");
+    requireCondition(
+      (originAllowlist.match(/^allow /gm) ?? []).length === 24,
+      "Origin allowlist must contain two loopback probes and 22 reviewed Cloudflare ranges.",
+    );
+    requireText(originAllowlist, "deny all;", "Cloudflare allowlist");
   });
 
   check("production-backup-policy", () => {

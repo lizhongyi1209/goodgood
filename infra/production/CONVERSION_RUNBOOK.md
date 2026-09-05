@@ -46,6 +46,12 @@ GoodGood 正式环境。执行窗口最多 4 小时。维护页必须先于冻�
 正式 release/runtime/backup 环境文件、凭据、证据和批准只存在主机或批准的
 异地保管位置，绝不复制到仓库或操作员电脑。
 
+`/etc/goodgood/production` 必须为 `root:root 0711`：Nginx Worker 只能穿越该
+目录并检查公开的 `0644` maintenance marker，不能列出目录；`release.env`、
+`runtime.env` 继续为 `root:root 0600`，`secrets/` 及其中凭据继续使用专用组和
+更严格的既定权限。不要把生产配置根目录设为 `0700`，否则 Worker 无法识别
+maintenance marker，静态维护门禁会失效并触发入口关闭。
+
 ## 执行前一天：无变更审阅
 
 以下任一项未通过就不预约转换：

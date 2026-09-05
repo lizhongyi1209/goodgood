@@ -121,6 +121,11 @@ test("work package contains no local/live executor or R2 deletion implementation
   assert.doesNotMatch(r2Runtime, /DeleteObjects?Command|PutObjectCommand|GetObjectCommand/);
   assert.doesNotMatch(maintenance, /^\s*disable\)/m);
   assert.match(maintenance, /systemctl stop nginx/);
+  assert.match(runbook, /Nginx Worker 只能穿越该/);
+  assert.match(
+    runbook,
+    /`\/etc\/goodgood\/production` 必须为 `root:root 0711`/,
+  );
   assert.match(runbook, /本仓库故意不提供删除执行命令/);
   assert.match(runbook, /本仓库不提供 public-open 执行命令/);
   assert.equal(

@@ -109,10 +109,20 @@
   corrected locally with fixed `production:seed-gate` and
   `production:seed-release-plan` commands. They exclude only the two paid-only
   checks, reject malformed evidence and every shared blocker, and cannot
-  execute. The original full paid commands remain unchanged. Live conversion
-  must not start against the prestaged `9673e22` candidate because the release
-  contract changed: publish the replacement immutable candidate and repeat the
-  no-traffic prestage first. Collect the security/privacy/abuse,
+  execute. The original full paid commands remain unchanged. The replacement
+  revision `3bd4ea9` has passed CI, published its immutable digest, and passed
+  artifact-security import. Its no-traffic replacement prestage and final
+  infrastructure review now pass on the Hong Kong host; the obsolete
+  `9673e22` prestage remains stopped and retained separately. The operator
+  subsequently rescheduled the conversion to an immediate four-hour window and
+  authorized C0-C6 while reserving public traffic opening for a final separate
+  confirmation. C0 is now fail-closed in public maintenance. Its first probe
+  exposed that the production config root was not traversable by Nginx, the
+  loopback origin probe was not allowlisted, and the server-scope maintenance
+  check prevented the reviewed static error page from completing its internal
+  redirect. The host is corrected under maintenance, but `3bd4ea9` is no longer
+  an exact source match; publish and prestage the repository repair before
+  freezing staging or deleting R2 objects. Collect the security/privacy/abuse,
   recovery/rollback, candidate-health, incident-ownership, and delegated
   monitoring evidence before admitting any seed user. Customer checkout,
   domestic Alipay, and the applicable ICP/domain gate remain planned in M9.
@@ -167,8 +177,8 @@ requirements are confirmed.
    reprovision every returning identity as a fresh pending GoodGood owner.
    The initial conversion stays in public maintenance for at most four hours
    and opens only after every clean-state and release check passes.
-4. **No-customer production conversion — exact candidate prestaged, local
-   secrets and backup recovery access prepared.** The
+4. **No-customer production conversion — maintenance active; replacement exact
+   candidate pending.** The
    single-host infrastructure contract, concurrent Worker, memory/disk gate,
    maintenance surface, and non-executable dry-run conversion manifest are
    implemented and tested locally. Resource-bounded production PostgreSQL/
@@ -190,11 +200,13 @@ requirements are confirmed.
    distinct production O1Key key is now installed without replacing or revoking
    the staging key; Authing and application-R2 production credentials do not
    exist yet.
-   Only after a separate live-action review may this phase freeze and archive
-   staging, create fresh production state, rotate secrets, validate the
-   executable release adapter within 2-vCPU / 4-GiB headroom, and receive the
-   delegated monitoring handoff. Every destructive step needs a separate exact-
-   target approval.
+   The operator approved an immediate four-hour conversion window. C0 now serves
+   the reviewed static 503 maintenance surface through Cloudflare; a fail-closed
+   first attempt identified and corrected Nginx marker traversal, scope, and
+   loopback-probe defects without touching staging data or R2. The matching
+   repository repair must pass CI and replace the prestaged exact candidate
+   before C1 freezes staging. Every destructive step still needs its exact-target
+   approval, and public traffic remains separately unapproved.
 5. **Exact-candidate rehearsal — pending.** Pass security/privacy/retention and
    abuse review, preflight, migration, candidate health/state invariants,
    public synthetic checks, restore drill, alert delivery, and rollback without
@@ -207,17 +219,27 @@ M9 begins only after a separate operator decision to resume payment work.
 
 ## Current checkpoint
 
-- Candidate revision `9673e2218ff3fdb25760663eba3eb06f08418ffd`, migration
-  `0011_m8_account_admission.sql`, runtime configuration
-  `0264811791e3f568b744d3804aa43bcf408017c78dd296a4d2d2573f19de33d6`,
-  and immutable image digest `6d40ecd8b3d62bdabb8b894b3a5d6c154f324d07f2cdf81f941024cbc7ac13d0`
-  are the selected exact candidate. CI run 33962350510 and artifact 9968369950
-  passed; the downloaded artifact bytes passed the repository importer. The
-  candidate source and image are prestaged on the Hong Kong host without a
-  running candidate, production volume/network, runtime file, Nginx change,
-  activated systemd unit, or Sites publication. The selected maintenance
-  window is 2026-09-06 09:00-13:00 China Standard Time, but maintenance,
-  conversion, destructive cleanup, and public-open actions remain unauthorized.
+- The operator rescheduled conversion to
+  `2026-09-05T15:25:44Z`–`2026-09-05T19:25:44Z` and authorized conversion work
+  except the final public-open action. The exact `3bd4ea9` precheck passed with
+  about 2.46 GiB available memory, 28% root-disk use, no failed unit, no active
+  staging session/job/outbox/Valkey work, and no production container, volume,
+  network, or runtime. A fresh R2 inventory still binds exactly three current
+  test objects and 576,607 bytes to
+  `addd927f5d6ecee9e0b84b6208d3267606a1edc1767a1501990eabf970bf9e0a`;
+  nothing has been deleted. C0 initially failed closed and stopped Nginx because
+  `/etc/goodgood/production` was `0700`, loopback was absent from the origin
+  allowlist, and the server-scope marker check intercepted its own maintenance
+  error-page redirect. The directory is now non-listable `0711`, only loopback
+  and the unchanged 22 Cloudflare ranges can reach the origin, and the marker
+  check is scoped before the application proxy. Nginx is active; local and
+  public root return 503, the local body is byte-identical to the reviewed asset,
+  public static structure plus no-store/Retry-After pass, and login/generation
+  paths return 503. Evidence is root-only at
+  `c0-maintenance-3bd4ea9.json`. This repository repair invalidates `3bd4ea9` as
+  the exact source candidate; CI publication, artifact import, and no-traffic
+  replacement prestage are the next action before C1. Public opening remains
+  unapproved and staging/R2 data remain unchanged.
 - On 2026-09-05 the host created independent production-only local secret
   material under a new `goodgood-production-secrets` group (numeric GID 986),
   without adding the `goodgood` SSH administrator. PostgreSQL and Restic each
@@ -296,6 +318,60 @@ M9 begins only after a separate operator decision to resume payment work.
   artifact-security evidence, and repeat the no-traffic prestage before any
   maintenance or live conversion. No server, R2 object, runtime, or traffic
   state changed during this repository fix.
+- The seed-gate fix was committed and pushed as full revision
+  `3bd4ea9a92d136f781be66a7fa1a075f078b51a1`. GitHub Actions CI run 33 passed
+  both jobs and every source-quality, dependency, verification-image,
+  published-image runtime-import, High/Critical vulnerability-scan, evidence,
+  and immutable-identity step. It published
+  `ghcr.io/lizhongyi1209/goodgood@sha256:4b8766529ee5ac3da2ea90cb7edade3ab08bfa890e13aab525b91c51f7fe26e6`
+  with migration `0011_m8_account_admission.sql` and runtime contract
+  `6e3d49a638b066cef2bd39f664bb138ccf2def62cf49a0c1f0f073c15c84d06d`.
+  GitHub lists artifact-security artifact ID `9971639738`, 1,093 bytes, with
+  archive digest
+  `sha256:76565646b9bea652d69683b11da7839f002bf50a8a4154fea29221caaf0e6d33`.
+  The public Actions API exposes that metadata but correctly returned HTTP 401
+  for the artifact bytes. The operator downloaded the unmodified 1,093-byte
+  evidence file through the authenticated GitHub UI; its local SHA-256 exactly
+  matches the workflow artifact digest. The repository importer then passed all
+  five artifact-contract, candidate-identity, GitHub-run, required-job, and
+  byte-integrity checks and emitted
+  `github:run:33973404209/artifact:9971639738`. The candidate readiness manifest
+  now binds that passing item and the seed gate reports only its eleven shared
+  outstanding evidence items, while the full gate additionally retains the two
+  paid-only blockers. Phase 1 is complete. The next action is no-traffic
+  prestage and final read-only revalidation of this exact candidate. No
+  production host, R2, runtime, or traffic state changed during phase 1.
+- Phase 2 replacement prestage is complete. The first attempt stopped before an
+  image pull or directory swap because npm's command banner made the captured
+  rehearsal output non-JSON; the cleanup hook removed the partial clone, and a
+  read-only recheck proved the old prestage, five staging containers, prepared
+  secrets, and absent production runtime/state were unchanged. The corrected
+  flow invoked the repository planner directly and then pulled the exact
+  `4b8766529ee5` digest, verified all OCI labels, platform and non-root user,
+  passed all nine non-executable work-package checks, atomically installed the
+  clean `3bd4ea9` repository and reviewed files, and retained the stopped prior
+  prestage at `/opt/goodgood-production-obsolete-9673e22`. Independent
+  verification passes source and installed-file checksums, confirms the new
+  image is not running, and proves no production container, volume, network,
+  runtime file, maintenance marker, systemd unit, Nginx switch, secret change,
+  or traffic change occurred. Root-disk use increased from 24% to 28%, still
+  below the 80% gate; available memory remained above 2.4 GiB. The exact
+  readiness manifest is installed root-only and the host-side seed CLI reports
+  the expected eleven shared pending items without ICP/Alipay, while the full
+  CLI reports thirteen including both paid-only blockers. A fresh ListObjectsV2
+  inventory at `2026-09-05T15:18:31.680Z` still finds exactly three test
+  objects, 576,607 bytes, and fingerprint
+  `addd927f5d6ecee9e0b84b6208d3267606a1edc1767a1501990eabf970bf9e0a`;
+  nothing was read or deleted. Final review
+  `final-prewindow-review-3bd4ea9.json` at `2026-09-05T15:21:09Z` also confirms
+  five healthy zero-restart staging containers, no active session/job/outbox/
+  Valkey work, readable staging backups with three automated snapshots, an
+  empty uninitialized production backup prefix, unchanged prepared credentials,
+  zero failed units, and artifact-security age of 50,243 seconds at the window
+  deadline. Phase 2 is complete with both live conversion and public traffic
+  authorization still false. The next phase is the separately approved
+  four-hour conversion window beginning no earlier than 2026-09-06 09:00 China
+  Standard Time.
 - Exact-candidate preparation had previously caught a Windows/LF
   configuration-fingerprint mismatch before any production approval. Release
   metadata now normalizes text line endings before hashing, with regression
@@ -1483,7 +1559,7 @@ Completed real-Authing loopback checklist:
 | M5 | US generation gateway integration and recovery | Completed | O1Key special-price adapter, explicit worker route, RustFS transfer, decoded output ingestion, durable-task restart, fake-server matrix, secret-file launcher, one real URL-output reference-image smoke, operator-confirmed New API charge/refund evidence, and ADR 0008's accepted at-most-once submission guard pass |
 | M6 | Versioned pricing, credit ledger, and payment sandbox | Completed | ADR 0009 launch prices, welcome grants, append-only accounting, live reserve/settle/release, account presentation, immutable CNY 10 / 500-credit product, idempotent orders, signed fake-sandbox fulfillment, dry-run-first manual paid-credit recording, isolated PostgreSQL tests, and full Compose pass |
 | M7 | Hong Kong staging | Completed | The hardened Hong Kong host, isolated dependencies, private R2, Cloudflare-only TLS origin, Authing callbacks and rotated secrets, real O1Key generation/reference ingestion, public logout recovery, rollback, mainland HTTP sampling, and all ten migrations pass. ADR 0014's separate encrypted off-host PostgreSQL repository, retention, two latest-snapshot restore drills, real systemd backup, and active persistent timer pass; outbound notification is deferred to M8 and QQ Mail is not under consideration. CI run 23 passes 133 tests, dependency and finished-image scans, and runtime import smoke after the React 19.2.8 fix. Its exact immutable digest is the promoted healthy release: Web/Worker and every dependency readiness check pass, public root/live/ready return HTTP 200, and credit state is unchanged. Full-byte real-carrier throughput remains an accepted non-blocking deferral; payment checkout stays intentionally absent until M9 |
-| M8 | Hong Kong seed production readiness | In progress | ADR 0019 selects Hong Kong and `goodgood.o1key.com`; ADR 0020 completes the unlimited-open-login, pending review, 100-credit, site-owner console, and bounded test-credit controls locally. ADR 0021 completes phase-3 requirements: clean conversion of the current 2-vCPU / 4-GiB host, local/test-only preproduction, no staging-data import, seven-day staging archive, one-hour RPO / four-hour RTO / 14 daily / 8 weekly / 12 monthly recovery, no fixed generation count/concurrency ceiling, 500-MiB memory and 80%-disk admission protection, reuse-after-cleaning of the `goodgood` R2 bucket, reuse-and-rotation of Authing, and a fail-closed four-hour maintenance window. Phase 4 now has the exact `9673e22` candidate prestaged without traffic, independent root-only production PostgreSQL/Restic passwords, a production-only reader group, a distinct backup-R2 credential whose empty `/production` prefix passes listing, an exact-match verified off-host Restic recovery copy, and a distinct production O1Key credential installed while staging remains valid. The final read-only review caught the sole-gate mismatch; the repository now implements and tests a separate fail-closed seed gate and seed-labelled plan-only release entry point that exclude only ICP/domain and Alipay while preserving the full paid gate. All 184 local tests pass or intentionally skip (180/4). Maintenance and live conversion remain unauthorized until this changed release contract is committed, published as a replacement immutable candidate, its artifact evidence is imported, and it is prestaged again. Restic initialization/write proof, Authing/application-R2 rotation, production runtime/state, security/privacy/abuse evidence, monitoring handoff, candidate health, and rollback rehearsal remain before seed admission. |
+| M8 | Hong Kong seed production readiness | In progress | ADR 0019 selects Hong Kong and `goodgood.o1key.com`; ADR 0020 completes the unlimited-open-login, pending review, 100-credit, site-owner console, and bounded test-credit controls locally. ADR 0021 completes the clean conversion requirements for the current 2-vCPU / 4-GiB host, local/test-only preproduction, no staging-data import, seven-day staging archive, one-hour RPO / four-hour RTO / 14 daily / 8 weekly / 12 monthly recovery, no fixed generation count/concurrency ceiling, 500-MiB memory and 80%-disk admission protection, reuse-after-cleaning of the `goodgood` R2 bucket, reuse-and-rotation of Authing, and a fail-closed four-hour maintenance window. The repository implements the separate fail-closed unpaid-seed gate while preserving the full paid gate. The immediate conversion window is active and C0 now serves the reviewed static 503 maintenance surface. Its fail-closed first attempt found three Nginx operational defects; the host is safely corrected under maintenance and this change records the matching source/runbook/test repair. The next action is CI publication, artifact import, and no-traffic prestage of the replacement exact candidate before staging freeze. R2 deletion and public opening remain unapproved; production state, recovery proof, Authing/application-R2 rotation, security/privacy/abuse evidence, monitoring handoff, candidate health, and rollback rehearsal remain before seed admission. |
 | M9 | Paid commercialization and domestic Alipay | Planned, deferred | Preserve ADR 0010's domestic Alipay direction and ADR 0015's fail-closed paid gate. Complete the applicable production-domain/ICP review, merchant qualification, real sandbox and callback evidence, provider adapter, refund semantics, and the smallest customer checkout UI before accepting payment. Seed launch evidence does not complete M9. |
 
 Only mark a milestone `Completed` when its exit evidence exists. Use `Blocked`
