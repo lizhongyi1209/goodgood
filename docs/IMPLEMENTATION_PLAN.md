@@ -53,9 +53,9 @@
   because the accepted Hong Kong direction cannot itself provide Alibaba
   Cloud's mainland ICP filing resource; the profile grants no purchase,
   production deployment, or executable-release authority.
-  CI run 27 passed for revision `7d576ff` and its
-  immutable artifact-security record has passed the schema-2 repository
-  importer for digest `ac9031da3bde`. External monitoring activation and delivery remain
+  CI run 29 passed for revision `05d8dd2` and its
+  immutable artifact-security record has passed the repository importer for
+  digest `195db77d74e1`. External monitoring activation and delivery remain
   required handoff evidence rather than a repository implementation claim.
 - Current objective: continue M8 paid-production readiness by collecting the
   security/compliance evidence, production recovery/rollback and candidate
@@ -983,6 +983,18 @@ this file owns the current handoff state.
   On 2026-09-05, the resulting exact source passed `npm run check:local`: lint,
   full TypeScript checking, the production build, and 160 tests with 156
   passing and four opt-in integration tests skipped.
+  Main CI run 29 then passed the same repository gate, locked dependency scan,
+  verification-image build/import/scan, immutable publication, and repeated
+  published-digest import smoke and scan for revision
+  `05d8dd2ac79675b680812f5992489458ca9fc66e`. Its exact candidate is
+  `ghcr.io/lizhongyi1209/goodgood@sha256:195db77d74e12ef779b9b6be5b5b835f6d52358b98178ef06fdd32b6370ee1f3`,
+  migration `0010_m6_payment_sandbox.sql`, and runtime-contract checksum
+  `9774716e29db`. Artifact `9962980216` is 1,091 bytes with byte-for-byte
+  SHA-256 `85def9236595`; all five repository importer checks passed and emitted
+  `github:run:33944652381/artifact:9962980216`. The outer gate accepts that
+  current exact-revision artifact evidence and continues to reject every other
+  pending or blocked requirement. No GoodGood production deployment is
+  claimed.
 - Next action: collect the external security/privacy/abuse review, delegated
   monitoring handoff, and production backup/restore, candidate-health, and
   rollback proof for the selected exact candidate.
