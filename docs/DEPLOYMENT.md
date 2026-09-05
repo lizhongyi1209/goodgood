@@ -833,6 +833,43 @@ private objects, create the target instance, validate it, stop writes briefly
 when persistence is local, switch the public origin only after readiness passes,
 and retain the old instance until rollback evidence is complete.
 
+### Selected production runtime adapter
+
+ADR 0017 selects `nginx-compose-blue-green-v1` as the initial runtime adapter.
+This fixes the release mechanics without selecting the production host region,
+capacity, or managed state products that remain coupled to ICP and capacity
+work.
+
+- Host Nginx is the only origin ingress behind Alibaba Cloud ESA.
+- Two independent application-only Compose projects use fixed loopback ports:
+  blue Web/Worker health on `3100/3101`, green on `3200/3201`.
+- PostgreSQL, Valkey, and private R2 remain outside both slots.
+- One root-owned release lock serializes changes. Root-owned release state
+  retains the active slot, exact candidate identity, and prior upstream bytes.
+- Start only the inactive Web candidate. Keep its Worker stopped until isolated
+  candidate checks and the single reviewed forward migration pass.
+- Stop the active Worker with bounded grace, start the candidate Worker, and
+  restore the prior Worker if its readiness fails. Never run both production
+  Workers intentionally as a blue/green validation mechanism.
+- Replace the Nginx upstream include atomically on the same filesystem, run
+  `nginx -t`, and reload only after validation. Restore the retained include if
+  validation fails.
+- After the switch, repeat public synthetic, queue, database, and credit
+  fingerprints. Rollback restores the prior upstream and Worker without a
+  schema downgrade.
+
+`production:release-plan` reports this adapter and ordered phases only after the
+complete gate passes. It remains non-executable and has no process-spawn or
+execution flag. Do not create live Compose/Nginx release tooling until a
+separate review has selected the production host and state services.
+
+Passing `candidate-health-invariants` evidence must set
+`runtimeAdapter: nginx-compose-blue-green-v1` and prove isolated candidate
+startup, exactly one migration, live/ready, public synthetic, queue, database,
+and credit checks. Passing `rollback-rehearsal` evidence must name a distinct
+retained prior revision and prove Web/Worker rollback, queue recovery, unchanged
+database/credit fingerprints, and `schemaDowngradeAttempted: false`.
+
 ## Backups and rollback
 
 - Automated PostgreSQL backups plus tested restore procedure.
@@ -1119,7 +1156,7 @@ Run the repository-owned gate against a non-secret evidence manifest:
 npm run production:gate -- --evidence-file C:\ProgramData\GoodGood\production-readiness.json
 ```
 
-`infra/production/readiness-evidence.example.json` documents schema version 1
+`infra/production/readiness-evidence.example.json` documents schema version 2
 and intentionally exits nonzero. A live manifest must pin the exact GHCR digest,
 full Git revision, migration filename, and runtime-contract checksum. Every
 required evidence ID must be present exactly once, use only a short non-secret
@@ -1148,10 +1185,10 @@ npm run production:release-plan -- plan `
 ```
 
 If any gate item is missing, stale, failed, or blocked, the result contains no
-plan and exits nonzero. A fully passing gate yields digest-bound abstract phases
-for retaining rollback state, isolated candidate start, one forward migration,
-health/invariant rechecks, traffic switch, and observation/rollback. The command
-always reports `executed: false` and `executionAvailable: false`; it accepts no
-execution flag and cannot change production. Implementing those phases requires
-the concrete production traffic-switch/runtime adapter and a separately
-reviewed release change.
+plan and exits nonzero. A fully passing gate yields digest-bound phases for ADR
+0017's exclusive release lock, inactive Web slot, one forward migration,
+candidate checks, single-Worker handoff, atomic Nginx switch, public invariant
+checks, and observation or slot reversion. The command always reports
+`executed: false` and `executionAvailable: false`; it accepts no execution flag
+and cannot change production. Implementing those phases still requires the
+separately reviewed host/state-service and executable release change.

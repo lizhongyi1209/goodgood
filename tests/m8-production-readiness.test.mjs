@@ -7,6 +7,7 @@ import {
   runProductionReadinessGate,
 } from "../scripts/production-readiness-contract.mjs";
 import { parseProductionReadinessArguments } from "../scripts/verify-production-readiness.mjs";
+import { PRODUCTION_RUNTIME_ADAPTER_ID } from "../scripts/production-runtime-adapter.mjs";
 
 const NOW = Date.parse("2026-09-04T14:00:00.000Z");
 const REVISION = "b".repeat(40);
@@ -19,7 +20,7 @@ const RELEASE_BOUND_IDS = new Set([
 
 function validEvidenceDocument() {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     release: {
       image: `ghcr.io/lizhongyi1209/goodgood@sha256:${"a".repeat(64)}`,
       migration: "0010_m6_payment_sandbox.sql",
@@ -63,6 +64,31 @@ function validEvidenceDocument() {
           secondaryOwner: "operator:secondary",
           severity1AckMinutes: 15,
           severity2AckBusinessMinutes: 240,
+        });
+      }
+      if (id === "candidate-health-invariants") {
+        Object.assign(item, {
+          creditInvariantPassed: true,
+          databaseInvariantPassed: true,
+          isolatedCandidatePassed: true,
+          liveReadyPassed: true,
+          migrationAppliedOnce: true,
+          publicSyntheticPassed: true,
+          queueInvariantPassed: true,
+          runtimeAdapter: PRODUCTION_RUNTIME_ADAPTER_ID,
+        });
+      }
+      if (id === "rollback-rehearsal") {
+        Object.assign(item, {
+          creditFingerprintUnchanged: true,
+          databaseFingerprintUnchanged: true,
+          priorReleaseRetained: true,
+          priorReleaseRevision: "d".repeat(40),
+          queueRecoveryPassed: true,
+          runtimeAdapter: PRODUCTION_RUNTIME_ADAPTER_ID,
+          schemaDowngradeAttempted: false,
+          webRollbackPassed: true,
+          workerRollbackPassed: true,
         });
       }
       return item;
@@ -148,6 +174,29 @@ test("production recovery and monitoring attestations must meet accepted objecti
   ]) {
     assert.equal(report.checks.find((check) => check.id === id).status, "fail");
   }
+});
+
+test("candidate and rollback evidence must prove the selected runtime adapter and invariants", () => {
+  const document = validEvidenceDocument();
+  document.evidence.find(
+    ({ id }) => id === "candidate-health-invariants",
+  ).runtimeAdapter = "unreviewed-adapter";
+  document.evidence.find(
+    ({ id }) => id === "rollback-rehearsal",
+  ).schemaDowngradeAttempted = true;
+
+  const report = reportFor(document);
+
+  assert.equal(report.ok, false);
+  assert.equal(
+    report.checks.find(({ id }) => id === "candidate-health-invariants")
+      .status,
+    "fail",
+  );
+  assert.equal(
+    report.checks.find(({ id }) => id === "rollback-rehearsal").status,
+    "fail",
+  );
 });
 
 test("production evidence contract rejects duplicate, unknown, and unsafe references", () => {

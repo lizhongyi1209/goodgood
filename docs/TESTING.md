@@ -140,8 +140,16 @@ attempt, required job steps, GitHub artifact identity, byte size, and SHA-256.
 Candidate mismatch, failed scan, malformed local data, remote failure, expired
 or modified artifact bytes produce no evidence. Production-release planning
 coverage proves the full readiness gate is evaluated first, blocked evidence
-returns no plan, passing evidence yields only digest-bound abstract phases, and
+returns no plan, passing evidence yields only digest-bound adapter phases, and
 the CLI has no execution option or child-process path.
+M8 production-runtime coverage fixes ADR 0017's Nginx/Compose blue and green
+loopback slots, external durable-state boundary, single-active-Worker handoff,
+atomic upstream-switch intent, and forward-fix-only schema rule. Passing
+candidate-health evidence must name the selected adapter and prove isolated
+startup, exactly one migration, live/ready, public synthetic, queue, database,
+and credit checks. Passing rollback evidence must retain a distinct prior
+revision and prove Web/Worker and queue recovery, unchanged database/credit
+fingerprints, and no schema downgrade. The planner remains non-executable.
 The R2 provisioning unit proves local storage still creates/configures its
 bucket, staging performs only `HeadBucket`, and a failed verification can be
 retried. Static Nginx coverage fixes the canonical hostname, Cloudflare-only

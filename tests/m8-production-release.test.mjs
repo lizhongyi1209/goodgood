@@ -7,6 +7,10 @@ import {
   parseProductionReleaseArguments,
   planProductionRelease,
 } from "../scripts/run-production-release.mjs";
+import {
+  PRODUCTION_RUNTIME_ADAPTER,
+  PRODUCTION_RUNTIME_ADAPTER_ID,
+} from "../scripts/production-runtime-adapter.mjs";
 
 const NOW = Date.parse("2026-09-05T05:00:00.000Z");
 const REVISION = "b".repeat(40);
@@ -56,6 +60,31 @@ function completeEvidenceDocument() {
           severity2AckBusinessMinutes: 240,
         });
       }
+      if (id === "candidate-health-invariants") {
+        Object.assign(item, {
+          creditInvariantPassed: true,
+          databaseInvariantPassed: true,
+          isolatedCandidatePassed: true,
+          liveReadyPassed: true,
+          migrationAppliedOnce: true,
+          publicSyntheticPassed: true,
+          queueInvariantPassed: true,
+          runtimeAdapter: PRODUCTION_RUNTIME_ADAPTER_ID,
+        });
+      }
+      if (id === "rollback-rehearsal") {
+        Object.assign(item, {
+          creditFingerprintUnchanged: true,
+          databaseFingerprintUnchanged: true,
+          priorReleaseRetained: true,
+          priorReleaseRevision: "d".repeat(40),
+          queueRecoveryPassed: true,
+          runtimeAdapter: PRODUCTION_RUNTIME_ADAPTER_ID,
+          schemaDowngradeAttempted: false,
+          webRollbackPassed: true,
+          workerRollbackPassed: true,
+        });
+      }
       return item;
     }),
     release: {
@@ -64,7 +93,7 @@ function completeEvidenceDocument() {
       revision: REVISION,
       runtimeConfigVersion: "c".repeat(64),
     },
-    schemaVersion: 1,
+    schemaVersion: 2,
   };
 }
 
@@ -75,13 +104,18 @@ test("production release planner exposes an immutable plan only after the full g
   });
 
   assert.equal(result.ok, true);
+  assert.equal(result.schemaVersion, 2);
   assert.equal(result.executed, false);
   assert.equal(result.executionAvailable, false);
   assert.equal(result.gate.ok, true);
+  assert.deepEqual(result.plan.adapter, PRODUCTION_RUNTIME_ADAPTER);
   assert.equal(result.plan.candidate.revision, REVISION);
-  assert.equal(result.plan.steps.length, 6);
-  assert.equal(result.plan.steps[0].id, "retain-prior-release");
-  assert.equal(result.plan.steps.at(-1).id, "observe-or-rollback");
+  assert.equal(result.plan.steps.length, 8);
+  assert.equal(result.plan.steps[0].id, "lock-and-snapshot-active");
+  assert.equal(result.plan.steps[1].id, "stage-inactive-web");
+  assert.equal(result.plan.steps[4].id, "handoff-single-worker");
+  assert.equal(result.plan.steps[5].id, "switch-nginx-upstream");
+  assert.equal(result.plan.steps.at(-1).id, "observe-or-revert-slot");
   assert.ok(result.plan.steps.every(({ purpose }) => !purpose.includes(":latest")));
 });
 
@@ -135,12 +169,29 @@ test("production release CLI is plan-only and has no process execution path", as
     /Usage/,
   );
 
-  const [source, packageJson, releaseMetadata] = await Promise.all([
+  const [source, adapterSource, packageJson, releaseMetadata] = await Promise.all([
     readFile(new URL("../scripts/run-production-release.mjs", import.meta.url), "utf8"),
+    readFile(new URL("../scripts/production-runtime-adapter.mjs", import.meta.url), "utf8"),
     readFile(new URL("../package.json", import.meta.url), "utf8"),
     readFile(new URL("../scripts/release-metadata.mjs", import.meta.url), "utf8"),
   ]);
   assert.doesNotMatch(source, /node:child_process|\bspawn\b|\bexecFile\b/);
+  assert.doesNotMatch(adapterSource, /node:child_process|\bspawn\b|\bexecFile\b/);
+  assert.equal(PRODUCTION_RUNTIME_ADAPTER.publicIngress, "nginx-only");
+  assert.deepEqual(
+    PRODUCTION_RUNTIME_ADAPTER.slots.map(({ webPort, workerHealthPort }) => [
+      webPort,
+      workerHealthPort,
+    ]),
+    [
+      [3100, 3101],
+      [3200, 3201],
+    ],
+  );
+  assert.equal(
+    PRODUCTION_RUNTIME_ADAPTER.schemaRollback,
+    "forbidden-forward-fix-only",
+  );
   assert.equal(
     JSON.parse(packageJson).scripts["production:release-plan"],
     "node scripts/run-production-release.mjs",
@@ -148,5 +199,9 @@ test("production release CLI is plan-only and has no process execution path", as
   assert.match(
     releaseMetadata,
     new RegExp(JSON.stringify("scripts/run-production-release.mjs")),
+  );
+  assert.match(
+    releaseMetadata,
+    new RegExp(JSON.stringify("scripts/production-runtime-adapter.mjs")),
   );
 });

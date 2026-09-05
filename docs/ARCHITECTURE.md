@@ -204,6 +204,17 @@ the generation plane. Large image bytes should use signed direct object-storage
 transfer whenever possible; do not proxy completed images through the app
 server.
 
+ADR 0017 selects the provider-neutral initial production runtime adapter without
+choosing an infrastructure SKU or changing the documented Hong Kong
+control-plane direction: Alibaba Cloud ESA targets one Linux Nginx origin with
+two loopback-only Compose application slots.
+Only one slot receives Web traffic and only one Worker consumes the production
+queue. The inactive Web candidate is checked before a bounded Worker handoff and
+an atomic Nginx upstream replacement. PostgreSQL, Valkey, and private R2 remain
+outside both slots. Rollback restores the prior Web upstream and Worker but
+never downgrades schema. The checked-in planner describes this adapter and has
+no execution path.
+
 ## Initial runtime units
 
 Keep one modular codebase and one versioned application image initially. Run it

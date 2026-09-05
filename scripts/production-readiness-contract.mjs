@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { PRODUCTION_RUNTIME_ADAPTER_ID } from "./production-runtime-adapter.mjs";
 
-export const PRODUCTION_EVIDENCE_SCHEMA_VERSION = 1;
+export const PRODUCTION_EVIDENCE_SCHEMA_VERSION = 2;
 
 export const REQUIRED_PRODUCTION_CHECKS = Object.freeze([
   Object.freeze({ id: "artifact-security", maxAgeHours: 24 }),
@@ -81,6 +82,36 @@ function validateObjectiveEvidence(id, item) {
       !validNumberAtMost(item.severity2AckBusinessMinutes, 240)
     ) {
       return "Incident evidence must name distinct primary/secondary owners and preserve the accepted acknowledgement objectives.";
+    }
+  }
+  if (id === "candidate-health-invariants") {
+    if (
+      item.runtimeAdapter !== PRODUCTION_RUNTIME_ADAPTER_ID ||
+      item.isolatedCandidatePassed !== true ||
+      item.migrationAppliedOnce !== true ||
+      item.liveReadyPassed !== true ||
+      item.publicSyntheticPassed !== true ||
+      item.queueInvariantPassed !== true ||
+      item.databaseInvariantPassed !== true ||
+      item.creditInvariantPassed !== true
+    ) {
+      return "Candidate evidence must prove the selected runtime adapter, isolated candidate, one migration, live/ready, public synthetic, queue, database, and credit invariants.";
+    }
+  }
+  if (id === "rollback-rehearsal") {
+    if (
+      item.runtimeAdapter !== PRODUCTION_RUNTIME_ADAPTER_ID ||
+      !/^[a-f0-9]{40}$/.test(item.priorReleaseRevision ?? "") ||
+      item.priorReleaseRevision === item.releaseRevision ||
+      item.priorReleaseRetained !== true ||
+      item.webRollbackPassed !== true ||
+      item.workerRollbackPassed !== true ||
+      item.queueRecoveryPassed !== true ||
+      item.databaseFingerprintUnchanged !== true ||
+      item.creditFingerprintUnchanged !== true ||
+      item.schemaDowngradeAttempted !== false
+    ) {
+      return "Rollback evidence must retain a distinct prior release and prove web/worker recovery, stable queue/database/credit state, and no schema downgrade on the selected runtime adapter.";
     }
   }
   return null;

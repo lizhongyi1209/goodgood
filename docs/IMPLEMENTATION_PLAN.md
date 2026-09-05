@@ -40,8 +40,13 @@
   checks pass. Main CI now also verifies the published digest itself and emits
   one immutable artifact-security record; the importer verifies its GitHub run,
   jobs, steps, byte count, and SHA-256 before emitting gate evidence. A
-  full-gate production release planner now returns only abstract dry-run phases
-  and has no execution path. CI run 25 passed for revision `25766a6` and its
+  full-gate production release planner now returns only non-executable dry-run
+  phases and has no execution path. ADR 0017 selects the provider-neutral
+  `nginx-compose-blue-green-v1` production adapter: two loopback-only
+  application slots behind host Nginx, external durable state, and exactly one
+  active production Worker. Candidate and rollback evidence must now prove the
+  adapter-specific health, state, Worker, and no-schema-downgrade invariants.
+  CI run 25 passed for revision `25766a6` and its
   immutable artifact-security record has passed the repository importer for
   digest `624d2061dd69`. External monitoring activation and delivery remain
   required handoff evidence rather than a repository implementation claim.
@@ -49,6 +54,8 @@
   security/compliance evidence, production recovery/rollback and candidate
   health proof, and the delegated monitoring handoff while ICP filing, the
   production domain, and domestic Alipay merchant prerequisites progress.
+  Select the concrete production host capacity/location and PostgreSQL/Valkey
+  services before reviewing an executable ADR 0017 adapter implementation.
   Full-byte real-carrier throughput remains an accepted operator deferral.
 
 ## Purpose and update contract
@@ -916,11 +923,31 @@ this file owns the current handoff state.
   2026-09-05, `npm run check:local` passed lint, full TypeScript checking, the
   production build, and 158 tests with 154 passing and four opt-in integration
   tests skipped; CI run 25 passed the same repository gate.
+- ADR 0017 now resolves the previously abstract production runtime adapter as
+  `nginx-compose-blue-green-v1` without selecting or purchasing production
+  capacity. Blue and green are independent application-only Compose slots on
+  fixed loopback Web/Worker-health ports behind one host Nginx origin; durable
+  PostgreSQL, Valkey, and private R2 stay outside both slots. Only the inactive
+  Web starts before promotion, exactly one production Worker may consume the
+  queue, and traffic changes use an atomic root-owned Nginx upstream replacement
+  after configuration validation. Rollback restores the retained Web upstream
+  and Worker and never downgrades schema. The planner reports eight concrete
+  adapter phases but still has no child-process import, execution flag, or
+  mutation path, and its output schema is now version 2. The readiness gate now
+  refuses candidate-health and rollback
+  evidence that omits the selected adapter, exact health/state checks, a
+  distinct retained prior revision, successful Web/Worker/queue recovery, or
+  the no-schema-downgrade assertion. This stricter passing contract advances
+  the non-secret readiness manifest to schema version 2; the checked-in example
+  remains intentionally blocked.
+  On 2026-09-05, the resulting exact source passed `npm run check:local`: lint,
+  full TypeScript checking, the production build, and 159 tests with 155
+  passing and four opt-in integration tests skipped.
 - Next action: collect the external security/privacy/abuse review, delegated
   monitoring handoff, and production backup/restore, candidate-health, and
   rollback proof for the selected exact candidate.
-  Select and review the concrete production traffic-switch/runtime adapter
-  before adding any executable release path.
+  Select the production host region/capacity and external PostgreSQL/Valkey
+  services before adding any executable release path for ADR 0017.
   Keep early paid access on the documented operator bridge. After the filed
   domain and domestic Alipay merchant sandbox are available, implement the
   provider adapter against the existing immutable order/settlement boundary and
@@ -1017,7 +1044,7 @@ Completed real-Authing loopback checklist:
 | M5 | US generation gateway integration and recovery | Completed | O1Key special-price adapter, explicit worker route, RustFS transfer, decoded output ingestion, durable-task restart, fake-server matrix, secret-file launcher, one real URL-output reference-image smoke, operator-confirmed New API charge/refund evidence, and ADR 0008's accepted at-most-once submission guard pass |
 | M6 | Versioned pricing, credit ledger, and payment sandbox | Completed | ADR 0009 launch prices, welcome grants, append-only accounting, live reserve/settle/release, account presentation, immutable CNY 10 / 500-credit product, idempotent orders, signed fake-sandbox fulfillment, dry-run-first manual paid-credit recording, isolated PostgreSQL tests, and full Compose pass |
 | M7 | Hong Kong staging | Completed | The hardened Hong Kong host, isolated dependencies, private R2, Cloudflare-only TLS origin, Authing callbacks and rotated secrets, real O1Key generation/reference ingestion, public logout recovery, rollback, mainland HTTP sampling, and all ten migrations pass. ADR 0014's separate encrypted off-host PostgreSQL repository, retention, two latest-snapshot restore drills, real systemd backup, and active persistent timer pass; outbound notification is deferred to M8 and QQ Mail is not under consideration. CI run 23 passes 133 tests, dependency and finished-image scans, and runtime import smoke after the React 19.2.8 fix. Its exact immutable digest is the promoted healthy release: Web/Worker and every dependency readiness check pass, public root/live/ready return HTTP 200, and credit state is unchanged. Full-byte real-carrier throughput remains an accepted non-blocking deferral; payment checkout stays intentionally absent until M8 |
-| M8 | Paid production readiness | In progress | ADR 0016 delegates monitoring-platform implementation while retaining redacted support correlation, production recovery/retention objectives, alert ownership, and mandatory live monitoring handoff evidence. Server-owned request/support IDs, structured Web/Worker correlation, the vendor-neutral exact-candidate production evidence gate, secret-redacting Linux preflight, GitHub-verified artifact-security ingestion, a live imported artifact for CI run 25, and a non-executable full-gate release planner pass. Security/compliance evidence, monitoring handoff, production rollback/restore and candidate-health evidence, the executable topology decision, ICP/domain, and domestic Alipay sandbox/checkout remain |
+| M8 | Paid production readiness | In progress | ADR 0016 delegates monitoring-platform implementation while retaining redacted support correlation, production recovery/retention objectives, alert ownership, and mandatory live monitoring handoff evidence. Server-owned request/support IDs, structured Web/Worker correlation, the vendor-neutral exact-candidate production evidence gate, secret-redacting Linux preflight, GitHub-verified artifact-security ingestion, a live imported artifact for CI run 25, and ADR 0017's tested but non-executable Nginx/Compose blue-green adapter contract pass. Security/compliance evidence, monitoring handoff, production rollback/restore and candidate-health evidence, production host/state-service selection plus executable adapter review, ICP/domain, and domestic Alipay sandbox/checkout remain |
 
 Only mark a milestone `Completed` when its exit evidence exists. Use `Blocked`
 only with a named external dependency or missing decision.

@@ -1,6 +1,7 @@
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import {
+  PRODUCTION_EVIDENCE_SCHEMA_VERSION,
   readProductionEvidence,
   runProductionReadinessGate,
 } from "./production-readiness-contract.mjs";
@@ -39,7 +40,7 @@ async function main() {
               ? error.message
               : "Production readiness verification failed.",
           ok: false,
-          schemaVersion: 1,
+          schemaVersion: PRODUCTION_EVIDENCE_SCHEMA_VERSION,
         },
         null,
         2,

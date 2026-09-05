@@ -258,6 +258,13 @@ details are reduced to non-secret check failures. The production release
 planner returns `plan: null`, `executed: false`, and a failed gate when any
 required evidence is not current. It deliberately rejects execution arguments
 and cannot pull, migrate, start, switch, or roll back production.
+Its ADR 0017 adapter permits only one active production Worker. A candidate Web
+failure leaves the active slot untouched; a candidate Worker handoff failure
+restores the prior Worker before any Nginx switch. Invalid proposed Nginx
+configuration restores the retained upstream bytes without reload. A post-switch
+failure reverts the upstream and Worker, repeats public/state fingerprints, and
+never attempts a schema downgrade. Failure to prove any of those outcomes emits
+no passing candidate-health or rollback evidence.
 
 ## Idempotency and retries
 

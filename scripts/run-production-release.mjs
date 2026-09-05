@@ -4,41 +4,12 @@ import {
   readProductionEvidence,
   runProductionReadinessGate,
 } from "./production-readiness-contract.mjs";
+import {
+  PRODUCTION_RELEASE_STEPS,
+  PRODUCTION_RUNTIME_ADAPTER,
+} from "./production-runtime-adapter.mjs";
 
-export const PRODUCTION_RELEASE_PLAN_SCHEMA_VERSION = 1;
-
-const RELEASE_STEPS = Object.freeze([
-  Object.freeze({
-    id: "retain-prior-release",
-    mutation: "production",
-    purpose: "Retain the compatible prior digest and configuration for rollback.",
-  }),
-  Object.freeze({
-    id: "start-isolated-candidate",
-    mutation: "production",
-    purpose: "Start the exact candidate away from customer traffic.",
-  }),
-  Object.freeze({
-    id: "migrate-forward-once",
-    mutation: "production",
-    purpose: "Run the reviewed forward migration exactly once.",
-  }),
-  Object.freeze({
-    id: "verify-live-ready-invariants",
-    mutation: "none",
-    purpose: "Recheck live, ready, synthetic, queue, database, and credit invariants.",
-  }),
-  Object.freeze({
-    id: "switch-traffic",
-    mutation: "production",
-    purpose: "Switch customer traffic only after every recheck passes.",
-  }),
-  Object.freeze({
-    id: "observe-or-rollback",
-    mutation: "conditional-production",
-    purpose: "Observe the promoted digest and use the retained release without schema downgrade if required.",
-  }),
-]);
+export const PRODUCTION_RELEASE_PLAN_SCHEMA_VERSION = 2;
 
 export function parseProductionReleaseArguments(argumentsList) {
   if (
@@ -61,10 +32,11 @@ export function parseProductionReleaseArguments(argumentsList) {
 export function createProductionReleasePlan({ checkedAt, release }) {
   return Object.freeze({
     action: "production-release-dry-run",
+    adapter: PRODUCTION_RUNTIME_ADAPTER,
     candidate: release,
     checkedAt,
     executionAvailable: false,
-    steps: RELEASE_STEPS,
+    steps: PRODUCTION_RELEASE_STEPS,
   });
 }
 

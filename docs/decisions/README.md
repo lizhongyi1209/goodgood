@@ -27,3 +27,4 @@ Current records:
 - `0014-encrypted-off-host-staging-postgres-backups.md`
 - `0015-production-observability-and-release-gate.md`
 - `0016-defer-monitoring-platform-implementation.md`
+- `0017-nginx-compose-blue-green-production-adapter.md`
