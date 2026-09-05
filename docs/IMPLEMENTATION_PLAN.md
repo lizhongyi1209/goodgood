@@ -46,9 +46,9 @@
   application slots behind host Nginx, external durable state, and exactly one
   active production Worker. Candidate and rollback evidence must now prove the
   adapter-specific health, state, Worker, and no-schema-downgrade invariants.
-  CI run 25 passed for revision `25766a6` and its
-  immutable artifact-security record has passed the repository importer for
-  digest `624d2061dd69`. External monitoring activation and delivery remain
+  CI run 27 passed for revision `7d576ff` and its
+  immutable artifact-security record has passed the schema-2 repository
+  importer for digest `ac9031da3bde`. External monitoring activation and delivery remain
   required handoff evidence rather than a repository implementation claim.
 - Current objective: continue M8 paid-production readiness by collecting the
   security/compliance evidence, production recovery/rollback and candidate
@@ -943,6 +943,18 @@ this file owns the current handoff state.
   On 2026-09-05, the resulting exact source passed `npm run check:local`: lint,
   full TypeScript checking, the production build, and 159 tests with 155
   passing and four opt-in integration tests skipped.
+  Main CI run 27 then passed the same repository gate, locked dependency scan,
+  verification-image build/import/scan, immutable publication, and repeated
+  published-digest import smoke and scan for revision
+  `7d576ff953a9f08ea0e518799f5c42fb50fee8f2`. Its exact candidate is
+  `ghcr.io/lizhongyi1209/goodgood@sha256:ac9031da3bdef4eacf2fecc28ebf371669386370b0a7393ad7ee2d5193abdf53`,
+  migration `0010_m6_payment_sandbox.sql`, and runtime-contract checksum
+  `1ad16ed842c2`. Artifact `9962548814` is 1,091 bytes with byte-for-byte
+  SHA-256 `8f01443f0eec`; all five importer checks passed and emitted
+  `github:run:33943246606/artifact:9962548814`. The schema-2 outer gate accepts
+  that current exact-revision artifact evidence and continues to reject every
+  other pending or blocked requirement. No GoodGood production deployment is
+  claimed.
 - Next action: collect the external security/privacy/abuse review, delegated
   monitoring handoff, and production backup/restore, candidate-health, and
   rollback proof for the selected exact candidate.
@@ -1044,7 +1056,7 @@ Completed real-Authing loopback checklist:
 | M5 | US generation gateway integration and recovery | Completed | O1Key special-price adapter, explicit worker route, RustFS transfer, decoded output ingestion, durable-task restart, fake-server matrix, secret-file launcher, one real URL-output reference-image smoke, operator-confirmed New API charge/refund evidence, and ADR 0008's accepted at-most-once submission guard pass |
 | M6 | Versioned pricing, credit ledger, and payment sandbox | Completed | ADR 0009 launch prices, welcome grants, append-only accounting, live reserve/settle/release, account presentation, immutable CNY 10 / 500-credit product, idempotent orders, signed fake-sandbox fulfillment, dry-run-first manual paid-credit recording, isolated PostgreSQL tests, and full Compose pass |
 | M7 | Hong Kong staging | Completed | The hardened Hong Kong host, isolated dependencies, private R2, Cloudflare-only TLS origin, Authing callbacks and rotated secrets, real O1Key generation/reference ingestion, public logout recovery, rollback, mainland HTTP sampling, and all ten migrations pass. ADR 0014's separate encrypted off-host PostgreSQL repository, retention, two latest-snapshot restore drills, real systemd backup, and active persistent timer pass; outbound notification is deferred to M8 and QQ Mail is not under consideration. CI run 23 passes 133 tests, dependency and finished-image scans, and runtime import smoke after the React 19.2.8 fix. Its exact immutable digest is the promoted healthy release: Web/Worker and every dependency readiness check pass, public root/live/ready return HTTP 200, and credit state is unchanged. Full-byte real-carrier throughput remains an accepted non-blocking deferral; payment checkout stays intentionally absent until M8 |
-| M8 | Paid production readiness | In progress | ADR 0016 delegates monitoring-platform implementation while retaining redacted support correlation, production recovery/retention objectives, alert ownership, and mandatory live monitoring handoff evidence. Server-owned request/support IDs, structured Web/Worker correlation, the vendor-neutral exact-candidate production evidence gate, secret-redacting Linux preflight, GitHub-verified artifact-security ingestion, a live imported artifact for CI run 25, and ADR 0017's tested but non-executable Nginx/Compose blue-green adapter contract pass. Security/compliance evidence, monitoring handoff, production rollback/restore and candidate-health evidence, production host/state-service selection plus executable adapter review, ICP/domain, and domestic Alipay sandbox/checkout remain |
+| M8 | Paid production readiness | In progress | ADR 0016 delegates monitoring-platform implementation while retaining redacted support correlation, production recovery/retention objectives, alert ownership, and mandatory live monitoring handoff evidence. Server-owned request/support IDs, structured Web/Worker correlation, the schema-2 vendor-neutral exact-candidate production evidence gate, secret-redacting Linux preflight, GitHub-verified artifact-security ingestion, a live imported artifact for CI run 27, and ADR 0017's tested but non-executable Nginx/Compose blue-green adapter contract pass. Security/compliance evidence, monitoring handoff, production rollback/restore and candidate-health evidence, production host/state-service selection plus executable adapter review, ICP/domain, and domestic Alipay sandbox/checkout remain |
 
 Only mark a milestone `Completed` when its exit evidence exists. Use `Blocked`
 only with a named external dependency or missing decision.
