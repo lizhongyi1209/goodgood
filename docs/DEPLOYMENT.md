@@ -918,11 +918,13 @@ the inactive-Web overlap and resource limits must be revalidated against the
   schema downgrade.
 
 `production:release-plan` reports this adapter, its selected infrastructure
-profile, and ordered phases only after the
-complete gate passes. It remains non-executable and has no process-spawn or
-execution flag. Do not create live Compose/Nginx release tooling until the
-current host has fresh production state, passes its no-customer conversion, and
-the executable adapter passes a separate resource-headroom review.
+profile, and ordered phases only after the complete paid-production gate passes.
+`production:seed-release-plan` reports the same phases only after the narrower
+seed-production gate passes and labels the result as a seed dry run. Both remain
+non-executable and have no process-spawn or execution flag. Do not create live
+Compose/Nginx release tooling until the current host has fresh production state,
+passes its no-customer conversion, and the executable adapter passes a separate
+resource-headroom review.
 
 Passing `candidate-health-invariants` evidence must set
 `runtimeAdapter: nginx-compose-blue-green-v1` and prove isolated candidate
@@ -1266,7 +1268,7 @@ Minimum production signals:
 - Object upload/download failures and ESA cache/origin metrics.
 - Structured logs correlated by request ID, job ID, user ID, and provider task ID.
 
-Before paid traffic, the external `monitoring-handoff` evidence must prove
+Before seed or paid traffic, the external `monitoring-handoff` evidence must prove
 30-day log and 90-day metric retention, all required dashboard panels, alert
 ownership/runbooks, and one acknowledged firing and resolved notification.
 Severity 1 acknowledgement is due within 15 minutes;
@@ -1277,7 +1279,7 @@ The production PostgreSQL gate requires an RPO of at most one hour, an RTO of
 at most four hours, and at least `14 daily / 8 weekly / 12 monthly` encrypted
 off-host recovery points. The M7 daily staging timer is not production evidence.
 
-### Paid-production release gate
+### Seed- and paid-production release gates
 
 ADR 0019 first added an earlier seed-production gate. It retains the exact
 candidate, production preflight, secrets/access, privacy/retention, abuse and
@@ -1372,7 +1374,14 @@ that object unchanged into the matching readiness manifest. API errors, a
 failed scan, a different candidate, or locally modified bytes emit no evidence
 and do not expose token or response detail.
 
-Run the repository-owned gate against a non-secret evidence manifest:
+Run the repository-owned seed gate against a non-secret evidence manifest for
+the unpaid, reviewed-account launch:
+
+```powershell
+npm run production:seed-gate -- --evidence-file C:\ProgramData\GoodGood\production-readiness.json
+```
+
+Run the unchanged full gate separately before any paid-production approval:
 
 ```powershell
 npm run production:gate -- --evidence-file C:\ProgramData\GoodGood\production-readiness.json
@@ -1381,12 +1390,16 @@ npm run production:gate -- --evidence-file C:\ProgramData\GoodGood\production-re
 `infra/production/readiness-evidence.example.json` documents schema version 2
 and intentionally exits nonzero. A live manifest must pin the exact GHCR digest,
 full Git revision, migration filename, and runtime-contract checksum. Every
-required evidence ID must be present exactly once, use only a short non-secret
-reference, be `pass`, and remain within its declared freshness window.
+evidence item present must be a known ID, appear exactly once, and use only a
+short non-secret reference. Every check required by the selected gate must be
+present, be `pass`, and remain within its declared freshness window.
 Artifact-security, production-preflight, candidate-health, and rollback proof
 must also bind to that same Git revision. A missing or delegated
-`monitoring-handoff`, an ICP/domain block, or an Alipay sandbox block fails the
-gate; there is no bypass flag.
+`monitoring-handoff` fails both gates. The seed gate alone excludes
+`icp-production-domain` and `alipay-merchant-sandbox`; those entries may remain
+`blocked` or be omitted while checkout is disabled. The full gate still requires
+both to pass. Neither command has a bypass flag, and deferred paid evidence must
+never be relabeled as passing.
 
 Passing recovery evidence records observed RPO/RTO minutes and the minimum
 `14 daily / 8 weekly / 12 monthly` recovery-point counts. Passing monitoring
@@ -1397,17 +1410,22 @@ ownership names distinct primary and secondary aliases and preserves the
 15-minute Severity 1 and four-business-hour Severity 2 objectives.
 
 Evidence references point to access-controlled operator records; they do not
-embed credentials, signed URLs, customer content, or entire reports. The CLI
-emits a machine-readable JSON decision. A read-only production orchestration
-plan can consume that exact gate:
+embed credentials, signed URLs, customer content, or entire reports. Each CLI
+emits a machine-readable JSON decision. The corresponding read-only production
+orchestration planners consume only their fixed gate:
 
 ```powershell
+npm run production:seed-release-plan -- plan `
+  --evidence-file C:\ProgramData\GoodGood\production-readiness.json
+
 npm run production:release-plan -- plan `
   --evidence-file C:\ProgramData\GoodGood\production-readiness.json
 ```
 
-If any gate item is missing, stale, failed, or blocked, the result contains no
-plan and exits nonzero. A fully passing gate yields digest-bound phases for ADR
+If any item required by the selected gate is missing, stale, failed, or blocked,
+the result contains no plan and exits nonzero. A passing seed result uses the
+distinct `seed-production-release-dry-run` action and does not represent paid
+approval. A fully passing selected gate yields digest-bound phases for ADR
 0017's exclusive release lock, inactive Web slot, one forward migration,
 candidate checks, single-Worker handoff, atomic Nginx switch, public invariant
 checks, and observation or slot reversion. The command always reports

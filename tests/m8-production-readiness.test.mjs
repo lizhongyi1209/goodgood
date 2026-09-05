@@ -3,10 +3,14 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import test from "node:test";
 import {
+  PAID_ONLY_PRODUCTION_CHECK_IDS,
   REQUIRED_PRODUCTION_CHECKS,
+  REQUIRED_SEED_PRODUCTION_CHECKS,
   runProductionReadinessGate,
+  runSeedProductionReadinessGate,
 } from "../scripts/production-readiness-contract.mjs";
 import { parseProductionReadinessArguments } from "../scripts/verify-production-readiness.mjs";
+import { parseSeedProductionReadinessArguments } from "../scripts/verify-seed-production-readiness.mjs";
 import { PRODUCTION_RUNTIME_ADAPTER_ID } from "../scripts/production-runtime-adapter.mjs";
 
 const NOW = Date.parse("2026-09-04T14:00:00.000Z");
@@ -100,6 +104,10 @@ function reportFor(document) {
   return runProductionReadinessGate(document, { now: () => NOW });
 }
 
+function seedReportFor(document) {
+  return runSeedProductionReadinessGate(document, { now: () => NOW });
+}
+
 test("production gate passes only a complete, current, exact-digest evidence set", () => {
   const report = reportFor(validEvidenceDocument());
 
@@ -107,6 +115,60 @@ test("production gate passes only a complete, current, exact-digest evidence set
   assert.equal(report.release.revision, REVISION);
   assert.equal(report.checks.length, REQUIRED_PRODUCTION_CHECKS.length + 2);
   assert.ok(report.checks.every(({ status }) => status === "pass"));
+});
+
+test("seed gate excludes only paid-only evidence while the full gate stays closed", () => {
+  const document = validEvidenceDocument();
+  for (const id of PAID_ONLY_PRODUCTION_CHECK_IDS) {
+    document.evidence.find((item) => item.id === id).status = "blocked";
+  }
+
+  const seedReport = seedReportFor(document);
+  const fullReport = reportFor(document);
+
+  assert.equal(seedReport.ok, true);
+  assert.equal(
+    seedReport.checks.length,
+    REQUIRED_SEED_PRODUCTION_CHECKS.length + 2,
+  );
+  assert.ok(
+    PAID_ONLY_PRODUCTION_CHECK_IDS.every(
+      (id) => !seedReport.checks.some((check) => check.id === id),
+    ),
+  );
+  assert.equal(fullReport.ok, false);
+  for (const id of PAID_ONLY_PRODUCTION_CHECK_IDS) {
+    assert.equal(
+      fullReport.checks.find((check) => check.id === id).status,
+      "blocked",
+    );
+  }
+});
+
+test("seed gate fails closed for shared requirements and malformed paid-only evidence", () => {
+  const blockedDocument = validEvidenceDocument();
+  blockedDocument.evidence.find(
+    ({ id }) => id === "monitoring-handoff",
+  ).status = "pending";
+
+  const blockedReport = seedReportFor(blockedDocument);
+  assert.equal(blockedReport.ok, false);
+  assert.equal(
+    blockedReport.checks.find(({ id }) => id === "monitoring-handoff").status,
+    "pending",
+  );
+
+  const malformedDocument = validEvidenceDocument();
+  malformedDocument.evidence.find(
+    ({ id }) => id === "icp-production-domain",
+  ).reference = "https://evidence.invalid/item?token=secret";
+
+  const malformedReport = seedReportFor(malformedDocument);
+  assert.equal(malformedReport.ok, false);
+  assert.equal(
+    malformedReport.checks.find(({ id }) => id === "evidence-contract").status,
+    "fail",
+  );
 });
 
 test("production gate fails closed for blockers, stale recovery, and missing monitoring handoff", () => {
@@ -225,12 +287,15 @@ test("production evidence contract rejects duplicate, unknown, and unsafe refere
 });
 
 test("checked-in example is deliberately blocked and CLI parsing is strict", async () => {
-  const example = JSON.parse(
-    await readFile(
+  const [exampleSource, packageSource, releaseMetadata] = await Promise.all([
+    readFile(
       new URL("../infra/production/readiness-evidence.example.json", import.meta.url),
       "utf8",
     ),
-  );
+    readFile(new URL("../package.json", import.meta.url), "utf8"),
+    readFile(new URL("../scripts/release-metadata.mjs", import.meta.url), "utf8"),
+  ]);
+  const example = JSON.parse(exampleSource);
 
   assert.equal(reportFor(example).ok, false);
   assert.deepEqual(
@@ -248,5 +313,39 @@ test("checked-in example is deliberately blocked and CLI parsing is strict", asy
   assert.throws(
     () => parseProductionReadinessArguments(["--evidence-file", "--bypass"]),
     /Usage/,
+  );
+  assert.deepEqual(
+    parseSeedProductionReadinessArguments([
+      "--evidence-file",
+      "infra/production/readiness-evidence.example.json",
+    ]),
+    {
+      evidenceFile: path.resolve(
+        "infra/production/readiness-evidence.example.json",
+      ),
+    },
+  );
+  assert.throws(() => parseSeedProductionReadinessArguments([]), /Usage/);
+  assert.throws(
+    () =>
+      parseSeedProductionReadinessArguments(["--evidence-file", "--bypass"]),
+    /Usage/,
+  );
+  const packageJson = JSON.parse(packageSource);
+  assert.equal(
+    packageJson.scripts["production:gate"],
+    "node scripts/verify-production-readiness.mjs",
+  );
+  assert.equal(
+    packageJson.scripts["production:seed-gate"],
+    "node scripts/verify-seed-production-readiness.mjs",
+  );
+  assert.match(
+    releaseMetadata,
+    new RegExp(JSON.stringify("scripts/verify-production-readiness.mjs")),
+  );
+  assert.match(
+    releaseMetadata,
+    new RegExp(JSON.stringify("scripts/verify-seed-production-readiness.mjs")),
   );
 });

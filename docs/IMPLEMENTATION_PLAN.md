@@ -41,7 +41,9 @@
   one immutable artifact-security record; the importer verifies its GitHub run,
   jobs, steps, byte count, and SHA-256 before emitting gate evidence. A
   full-gate production release planner now returns only non-executable dry-run
-  phases and has no execution path. ADR 0017 selects the provider-neutral
+  phases and has no execution path. ADR 0019's separate unpaid-seed gate and
+  seed-labelled, plan-only release entry point are now implemented without
+  weakening the unchanged paid gate. ADR 0017 selects the provider-neutral
   `nginx-compose-blue-green-v1` production adapter: two loopback-only
   application slots behind host Nginx, durable state outside the application
   slots, and exactly one active production Worker. Candidate and rollback evidence must now prove the
@@ -87,13 +89,30 @@
   production callbacks; all GoodGood account state still starts fresh. The
   initial conversion uses a public maintenance page and a four-hour stop limit,
   and opens only after the complete clean-state gate passes. Phase 3 requirements
-  are complete. Phase 4 local preparation and the first read-only host inventory
+  are complete. Phase 4 local preparation, read-only host inventory, exact-
+  candidate no-traffic prestage, local production-secret preparation, isolated
+  backup-R2 credential installation, Restic password escrow verification, and
+  independent production O1Key credential installation
   are complete: the selected profile now
   describes the existing host, the Worker overlaps accepted jobs without a
   fixed count ceiling and drains them on shutdown, new generation writes use a
   latched 500-MiB/80% resource gate, and the maintenance asset plus exact-target
-  conversion manifest remain non-executable. Live conversion still requires a
-  separate review and approval. Collect the security/privacy/abuse,
+  conversion manifest remain non-executable. The new production O1Key key is
+  installed while the staging key remains valid; Authing and application-R2
+  production credentials, production runtime/state, maintenance, data cleanup,
+  and traffic changes remain absent. The production backup prefix is accessible and empty but its
+  Restic repository is deliberately not initialized yet. A final read-only
+  pre-window review passed the host, candidate, staging, R2-inventory, backup,
+  and prepared-secret checks, but found that the sole machine-readable
+  `production:gate` still required ICP and Alipay evidence even though ADR 0019
+  excludes those two items from the unpaid seed gate. That mismatch is now
+  corrected locally with fixed `production:seed-gate` and
+  `production:seed-release-plan` commands. They exclude only the two paid-only
+  checks, reject malformed evidence and every shared blocker, and cannot
+  execute. The original full paid commands remain unchanged. Live conversion
+  must not start against the prestaged `9673e22` candidate because the release
+  contract changed: publish the replacement immutable candidate and repeat the
+  no-traffic prestage first. Collect the security/privacy/abuse,
   recovery/rollback, candidate-health, incident-ownership, and delegated
   monitoring evidence before admitting any seed user. Customer checkout,
   domestic Alipay, and the applicable ICP/domain gate remain planned in M9.
@@ -148,8 +167,8 @@ requirements are confirmed.
    reprovision every returning identity as a fresh pending GoodGood owner.
    The initial conversion stays in public maintenance for at most four hours
    and opens only after every clean-state and release check passes.
-4. **No-customer production conversion — exact local work package and read-only
-   inventory completed.** The
+4. **No-customer production conversion — exact candidate prestaged, local
+   secrets and backup recovery access prepared.** The
    single-host infrastructure contract, concurrent Worker, memory/disk gate,
    maintenance surface, and non-executable dry-run conversion manifest are
    implemented and tested locally. Resource-bounded production PostgreSQL/
@@ -159,8 +178,18 @@ requirements are confirmed.
    and the four-hour conversion runbook now form one deterministic local
    rehearsal. The current host, database/queue counts,
    R2 inventory summary, backup snapshots, runtime limits, Nginx boundary, and
-   public health were then inspected without mutation. No host, R2, or Authing
-   setting changed.
+   public health were then inspected without mutation. The exact candidate
+   image and reviewed package are now cached on the host without starting a
+   production container or changing Nginx. An independent production-only
+   secret-reader group plus new root-only PostgreSQL and Restic passwords are
+   also prepared. A distinct bucket-scoped backup-R2 token can list the empty
+   `goodgood-postgres-backups/production` prefix, and an in-memory exact-match
+   check proves the password-manager recovery copy matches the server Restic
+   password. The Restic repository remains uninitialized and write access is
+   not counted as proven until the separately approved initialization step. A
+   distinct production O1Key key is now installed without replacing or revoking
+   the staging key; Authing and application-R2 production credentials do not
+   exist yet.
    Only after a separate live-action review may this phase freeze and archive
    staging, create fresh production state, rotate secrets, validate the
    executable release adapter within 2-vCPU / 4-GiB headroom, and receive the
@@ -178,33 +207,107 @@ M9 begins only after a separate operator decision to resume payment work.
 
 ## Current checkpoint
 
-- The ADR 0021 production-conversion work package is now locally complete and
-  rehearsable through `npm run production:work-package -- rehearse`. It binds
-  fresh production volumes, exact slot ports, Worker drain, fail-closed public
-  maintenance, current-version R2 fingerprint/preview, the <=1h backup schedule
-  and 14 daily / 8 weekly / 12 monthly retention, Authing/secret rotation, and
-  R0-R7 rollback checkpoints. The rehearsal has no child-process, network,
-  deletion, deployment, or traffic-open path; the checked-in conversion manifest
-  remains pending. The accepted next slice is to publish this verified source
-  through the existing main-branch CI as one immutable candidate, retain its
-  exact artifact-security identity outside Git, and then ask the operator to
-  select the maintenance window; publication does not authorize a production
-  host action. Local verification on 2026-09-05 passed the nine-group work-package
-  rehearsal, shell syntax for all three production control/backup scripts,
-  dependency plus blue/green Compose parsing, least-privilege merged R2-role
-  inspection, runtime bundling, and the complete `npm run check:local` gate:
-  lint, TypeScript, production build, and 179 tests completed with 175 passing
-  and four opt-in integrations skipped. `git diff --check` also passed with only
-  the existing Windows line-ending notices. After the candidate is recorded,
-  the next smallest operator decision is the China Standard Time maintenance
-  window; no live action is authorized yet.
-- Exact-candidate preparation caught a Windows/LF configuration-fingerprint
-  mismatch before any production approval. Release metadata now normalizes text
-  line endings before hashing, with regression coverage proving CRLF, lone CR,
-  and LF checkouts produce one identity. The first published candidate is
-  superseded; only the replacement CI digest may enter window review. The
-  correction passed the complete local gate: lint, TypeScript, production build,
-  and 180 tests completed with 176 passing and four opt-in integrations skipped.
+- Candidate revision `9673e2218ff3fdb25760663eba3eb06f08418ffd`, migration
+  `0011_m8_account_admission.sql`, runtime configuration
+  `0264811791e3f568b744d3804aa43bcf408017c78dd296a4d2d2573f19de33d6`,
+  and immutable image digest `6d40ecd8b3d62bdabb8b894b3a5d6c154f324d07f2cdf81f941024cbc7ac13d0`
+  are the selected exact candidate. CI run 33962350510 and artifact 9968369950
+  passed; the downloaded artifact bytes passed the repository importer. The
+  candidate source and image are prestaged on the Hong Kong host without a
+  running candidate, production volume/network, runtime file, Nginx change,
+  activated systemd unit, or Sites publication. The selected maintenance
+  window is 2026-09-06 09:00-13:00 China Standard Time, but maintenance,
+  conversion, destructive cleanup, and public-open actions remain unauthorized.
+- On 2026-09-05 the host created independent production-only local secret
+  material under a new `goodgood-production-secrets` group (numeric GID 986),
+  without adding the `goodgood` SSH administrator. PostgreSQL and Restic each
+  have a new 64-character random value in distinct `root:root 0600` regular
+  files. A second read-only verifier proved the files are structurally valid,
+  mutually different, and different from staging while printing neither values
+  nor hashes. It also proved all five staging containers and loopback/public
+  health remain good; no production container, volume, network, runtime,
+  maintenance state, external credential file, or Sites deployment exists.
+  Host evidence reference is `production-local-secrets:9673e22`.
+- The operator created a distinct Cloudflare R2 Account API token with Object
+  Read & Write selected for only `goodgood-postgres-backups`. Its two values are
+  installed as distinct-from-staging `root:root 0600` files, and the root-only
+  production backup config fixes the repository to the `/production` prefix.
+  Two independent read-only checks passed bucket listing and proved that prefix
+  is empty without initializing Restic or writing an object; write access remains
+  unproven until repository initialization. The operator then retrieved the
+  saved `GoodGood Production Restic Recovery` password-manager item and supplied
+  it to a no-echo verifier. Its in-memory exact comparison matched the server
+  Restic password; neither value nor hash was recorded, the Windows clipboard
+  was cleared, and all temporary server scripts were removed. Evidence references
+  are `production-backup-credential-install:9673e22` and
+  `production-restic-escrow-verification:9673e22`.
+- The operator created a dedicated `GoodGood Production` O1Key credential in
+  the same provider control plane used for staging. It was transferred from the
+  Windows clipboard over standard input without entering argv, environment,
+  repository files, or logs, and installed at the fixed production source path
+  as `root:goodgood-production-secrets 0640`. Server-side comparison proves it
+  differs from the unchanged staging key. No project-defined non-billable
+  provider authentication endpoint exists, so credential acceptance is deferred
+  to the isolated candidate rehearsal rather than guessed or tested through a
+  billable generation. The clipboard secret and temporary server installer were
+  removed; five staging containers plus loopback/public health still pass.
+  Evidence reference is `production-o1key-credential-install:9673e22`. The next
+  smallest action is the final 2026-09-06 pre-window recheck and explicit live-
+  action review. Authing/application-R2 rotation, maintenance, staging freeze,
+  Restic initialization, and production state creation remain separately
+  approved conversion-window steps.
+- At 2026-09-05 22:46 China Standard Time, the final pre-window read-only review
+  again proved the exact candidate repository/image/labels, 500-MiB/80% host
+  resource gates, five healthy zero-restart staging containers, empty task/
+  outbox/Valkey queues, staging backup readability, public/loopback health, all
+  prepared production secret metadata, and an empty production-backup prefix.
+  The current-version `goodgood` R2 inventory remains exactly three test objects
+  and 576,607 bytes with unchanged fingerprint
+  `addd927f5d6ecee9e0b84b6208d3267606a1edc1767a1501990eabf970bf9e0a`;
+  no object was downloaded or deleted. The local work-package rehearsal passes
+  all nine checks with `executed:false` and `executionAvailable:false`, and the
+  artifact-security result remains younger than 24 hours through the selected
+  window deadline. The review also found a fail-closed release blocker: ADR
+  0019 defines a seed gate without ICP/Alipay, while
+  `scripts/production-readiness-contract.mjs` exposes only the full paid gate
+  and therefore reports those deferred items as blockers. Do not fabricate pass
+  evidence or start maintenance. The next smallest slice is to implement and
+  test a separate seed-production gate while preserving the full paid gate,
+  then publish and prestage a replacement exact candidate. Review reference is
+  `final-prewindow-review:20260905T144622Z`; all live and destructive approvals
+  remain false.
+- The repository mismatch found by that review is now resolved locally. The
+  fixed `production:seed-gate` excludes only `icp-production-domain` and
+  `alipay-merchant-sandbox`; the shared evidence schema still rejects unknown,
+  duplicate, and unsafe-reference items, and every shared requirement remains
+  fail-closed. `production:seed-release-plan` consumes only that fixed gate,
+  labels its non-executable result `seed-production-release-dry-run`, and still
+  reports `executed:false` and `executionAvailable:false`. The existing
+  `production:gate` and `production:release-plan` retain the complete paid gate.
+  The real prepared manifest now reports the eleven outstanding shared
+  production-evidence items under the seed gate without reporting ICP/Alipay,
+  while the full gate continues to report both paid-only blockers. The complete
+  local quality gate passes lint, typecheck, production build, and 184 tests
+  with 180 passing and four opt-in integrations skipped. The release-contract
+  checksum is now
+  `6e3d49a638b066cef2bd39f664bb138ccf2def62cf49a0c1f0f073c15c84d06d`, so
+  `9673e22` is intentionally not reusable. The next smallest action is to commit
+  and publish a replacement immutable candidate through CI, import its fresh
+  artifact-security evidence, and repeat the no-traffic prestage before any
+  maintenance or live conversion. No server, R2 object, runtime, or traffic
+  state changed during this repository fix.
+- Exact-candidate preparation had previously caught a Windows/LF
+  configuration-fingerprint mismatch before any production approval. Release
+  metadata now normalizes text line endings before hashing, with regression
+  coverage proving CRLF, lone CR, and LF checkouts produce one identity. The
+  superseding candidate passed the complete local gate: lint, TypeScript,
+  production build, and 180 tests completed with 176 passing and four opt-in
+  integrations skipped. The no-traffic prestage and host-secret preparation do
+  not rebuild or change that immutable candidate. After synchronizing this
+  operational checkpoint, `npm run check:local` passed the same 180-test gate
+  again with 176 passing, zero failures, and four opt-in integrations skipped;
+  `git diff --check` also passed with only the existing Windows line-ending
+  notice.
 - M3 now completes the narrow production-shaped path from browser submission to
   idempotent Node API, PostgreSQL batch/job/outbox transaction, Valkey delivery,
   worker, authenticated HTTP mock provider, RustFS object write, Asset record,
@@ -1012,11 +1115,13 @@ M9 begins only after a separate operator decision to resume payment work.
   internal owner ID; generation adds the job ID. Worker completion adds the
   provider route/task, provider and total duration, and immutable customer
   credit amount without presenting that value as upstream cost. The repository
-  now also owns schema-versioned production evidence validation and a
-  machine-readable `production:gate` CLI. It requires one current result for
-  every approved security, privacy, abuse, backup/restore, monitoring handoff,
-  incident ownership, ICP/domain, Alipay, health, and rollback check; it rejects
-  unknown, duplicate, stale, future-dated, or unsafe-reference evidence. The
+  now also owns schema-versioned production evidence validation and separate
+  machine-readable seed and paid CLIs. `production:seed-gate` excludes only the
+  ICP/domain and Alipay checks deferred by ADR 0019; `production:gate` continues
+  to require one current result for every approved security, privacy, abuse,
+  backup/restore, monitoring handoff, incident ownership, ICP/domain, Alipay,
+  health, and rollback check. Both reject unknown, duplicate, stale,
+  future-dated, or unsafe-reference evidence. The
   artifact, preflight, health, and rollback records must bind to the exact Git
   revision associated with the immutable candidate digest. The checked-in
   example intentionally remains blocked and cannot be mistaken for approval.
@@ -1378,7 +1483,7 @@ Completed real-Authing loopback checklist:
 | M5 | US generation gateway integration and recovery | Completed | O1Key special-price adapter, explicit worker route, RustFS transfer, decoded output ingestion, durable-task restart, fake-server matrix, secret-file launcher, one real URL-output reference-image smoke, operator-confirmed New API charge/refund evidence, and ADR 0008's accepted at-most-once submission guard pass |
 | M6 | Versioned pricing, credit ledger, and payment sandbox | Completed | ADR 0009 launch prices, welcome grants, append-only accounting, live reserve/settle/release, account presentation, immutable CNY 10 / 500-credit product, idempotent orders, signed fake-sandbox fulfillment, dry-run-first manual paid-credit recording, isolated PostgreSQL tests, and full Compose pass |
 | M7 | Hong Kong staging | Completed | The hardened Hong Kong host, isolated dependencies, private R2, Cloudflare-only TLS origin, Authing callbacks and rotated secrets, real O1Key generation/reference ingestion, public logout recovery, rollback, mainland HTTP sampling, and all ten migrations pass. ADR 0014's separate encrypted off-host PostgreSQL repository, retention, two latest-snapshot restore drills, real systemd backup, and active persistent timer pass; outbound notification is deferred to M8 and QQ Mail is not under consideration. CI run 23 passes 133 tests, dependency and finished-image scans, and runtime import smoke after the React 19.2.8 fix. Its exact immutable digest is the promoted healthy release: Web/Worker and every dependency readiness check pass, public root/live/ready return HTTP 200, and credit state is unchanged. Full-byte real-carrier throughput remains an accepted non-blocking deferral; payment checkout stays intentionally absent until M9 |
-| M8 | Hong Kong seed production readiness | In progress | ADR 0019 selects Hong Kong and `goodgood.o1key.com`; ADR 0020 completes the unlimited-open-login, pending review, 100-credit, site-owner console, and bounded test-credit controls locally. ADR 0021 completes phase-3 requirements: clean conversion of the current 2-vCPU / 4-GiB host, local/test-only preproduction, no active remote staging hostname or staging-data import, seven-day staging archive, one-hour RPO / four-hour RTO / 14 daily / 8 weekly / 12 monthly recovery, no fixed generation count/concurrency ceiling, 500-MiB memory and 80%-disk admission protection, reuse-after-cleaning of the `goodgood` R2 bucket, reuse-and-rotation of Authing, and a fail-closed four-hour maintenance window. Phase 4 local preparation implements and tests the single-host profile, concurrent Worker, resource gate, maintenance asset, and non-executable exact-target conversion plan. Its first read-only host review confirms healthy bounded staging, three matching R2 test objects, three encrypted snapshots, and no production maintenance/state boundary; it also identifies the old 0010 candidate, 10-second Worker grace, 3-monthly retention, Authing-console proof, and production rotations as unresolved. Exact conversion-work-package rehearsal, live conversion/recovery, security/privacy/abuse evidence, monitoring handoff, executable-adapter review, candidate health, and rollback rehearsal remain before seed admission. |
+| M8 | Hong Kong seed production readiness | In progress | ADR 0019 selects Hong Kong and `goodgood.o1key.com`; ADR 0020 completes the unlimited-open-login, pending review, 100-credit, site-owner console, and bounded test-credit controls locally. ADR 0021 completes phase-3 requirements: clean conversion of the current 2-vCPU / 4-GiB host, local/test-only preproduction, no staging-data import, seven-day staging archive, one-hour RPO / four-hour RTO / 14 daily / 8 weekly / 12 monthly recovery, no fixed generation count/concurrency ceiling, 500-MiB memory and 80%-disk admission protection, reuse-after-cleaning of the `goodgood` R2 bucket, reuse-and-rotation of Authing, and a fail-closed four-hour maintenance window. Phase 4 now has the exact `9673e22` candidate prestaged without traffic, independent root-only production PostgreSQL/Restic passwords, a production-only reader group, a distinct backup-R2 credential whose empty `/production` prefix passes listing, an exact-match verified off-host Restic recovery copy, and a distinct production O1Key credential installed while staging remains valid. The final read-only review caught the sole-gate mismatch; the repository now implements and tests a separate fail-closed seed gate and seed-labelled plan-only release entry point that exclude only ICP/domain and Alipay while preserving the full paid gate. All 184 local tests pass or intentionally skip (180/4). Maintenance and live conversion remain unauthorized until this changed release contract is committed, published as a replacement immutable candidate, its artifact evidence is imported, and it is prestaged again. Restic initialization/write proof, Authing/application-R2 rotation, production runtime/state, security/privacy/abuse evidence, monitoring handoff, candidate health, and rollback rehearsal remain before seed admission. |
 | M9 | Paid commercialization and domestic Alipay | Planned, deferred | Preserve ADR 0010's domestic Alipay direction and ADR 0015's fail-closed paid gate. Complete the applicable production-domain/ICP review, merchant qualification, real sandbox and callback evidence, provider adapter, refund semantics, and the smallest customer checkout UI before accepting payment. Seed launch evidence does not complete M9. |
 
 Only mark a milestone `Completed` when its exit evidence exists. Use `Blocked`

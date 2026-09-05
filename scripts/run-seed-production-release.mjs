@@ -2,16 +2,14 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import {
   readProductionEvidence,
-  runProductionReadinessGate,
+  runSeedProductionReadinessGate,
 } from "./production-readiness-contract.mjs";
 import {
-  PRODUCTION_RELEASE_STEPS,
-  PRODUCTION_RUNTIME_ADAPTER,
-} from "./production-runtime-adapter.mjs";
+  createSeedProductionReleasePlan,
+  PRODUCTION_RELEASE_PLAN_SCHEMA_VERSION,
+} from "./run-production-release.mjs";
 
-export const PRODUCTION_RELEASE_PLAN_SCHEMA_VERSION = 2;
-
-export function parseProductionReleaseArguments(argumentsList) {
+export function parseSeedProductionReleaseArguments(argumentsList) {
   if (
     argumentsList.length !== 3 ||
     argumentsList[0] !== "plan" ||
@@ -20,7 +18,7 @@ export function parseProductionReleaseArguments(argumentsList) {
     argumentsList[2].startsWith("--")
   ) {
     throw new Error(
-      "Usage: production:release-plan -- plan --evidence-file <path>",
+      "Usage: production:seed-release-plan -- plan --evidence-file <path>",
     );
   }
   return Object.freeze({
@@ -29,42 +27,17 @@ export function parseProductionReleaseArguments(argumentsList) {
   });
 }
 
-function createReleasePlan({ action, checkedAt, release }) {
-  return Object.freeze({
-    action,
-    adapter: PRODUCTION_RUNTIME_ADAPTER,
-    candidate: release,
-    checkedAt,
-    executionAvailable: false,
-    steps: PRODUCTION_RELEASE_STEPS,
-  });
-}
-
-export function createProductionReleasePlan({ checkedAt, release }) {
-  return createReleasePlan({
-    action: "production-release-dry-run",
-    checkedAt,
-    release,
-  });
-}
-
-export function createSeedProductionReleasePlan({ checkedAt, release }) {
-  return createReleasePlan({
-    action: "seed-production-release-dry-run",
-    checkedAt,
-    release,
-  });
-}
-
-export function planProductionRelease({
+export function planSeedProductionRelease({
   evidenceDocument,
   now = () => Date.now(),
 }) {
   const nowMs = now();
   if (!Number.isFinite(nowMs)) throw new Error("now must return epoch milliseconds.");
-  const gate = runProductionReadinessGate(evidenceDocument, { now: () => nowMs });
+  const gate = runSeedProductionReadinessGate(evidenceDocument, {
+    now: () => nowMs,
+  });
   const plan = gate.ok
-    ? createProductionReleasePlan({
+    ? createSeedProductionReleasePlan({
         checkedAt: new Date(nowMs).toISOString(),
         release: gate.release,
       })
@@ -79,8 +52,8 @@ export function planProductionRelease({
   });
 }
 
-export function planProductionReleaseFile({ evidenceFile, now }) {
-  return planProductionRelease({
+export function planSeedProductionReleaseFile({ evidenceFile, now }) {
+  return planSeedProductionRelease({
     evidenceDocument: readProductionEvidence(evidenceFile),
     now,
   });
@@ -88,8 +61,8 @@ export function planProductionReleaseFile({ evidenceFile, now }) {
 
 async function main() {
   try {
-    const result = planProductionReleaseFile(
-      parseProductionReleaseArguments(process.argv.slice(2)),
+    const result = planSeedProductionReleaseFile(
+      parseSeedProductionReleaseArguments(process.argv.slice(2)),
     );
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
     process.exitCode = result.ok ? 0 : 1;
@@ -100,7 +73,7 @@ async function main() {
           error:
             error instanceof Error
               ? error.message
-              : "Production release planning failed.",
+              : "Seed production release planning failed.",
           executed: false,
           executionAvailable: false,
           ok: false,

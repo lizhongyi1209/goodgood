@@ -39,10 +39,12 @@
     "production:preflight": "node scripts/verify-production-preflight.mjs",
     "production:artifact-evidence": "node scripts/import-artifact-security-evidence.mjs",
     "production:gate": "node scripts/verify-production-readiness.mjs",
+    "production:seed-gate": "node scripts/verify-seed-production-readiness.mjs",
     "production:conversion-plan": "node scripts/run-production-conversion.mjs",
     "production:r2-deletion-plan": "node scripts/run-production-r2-deletion-plan.mjs",
     "production:work-package": "node scripts/run-production-work-package.mjs",
     "production:release-plan": "node scripts/run-production-release.mjs",
+    "production:seed-release-plan": "node scripts/run-seed-production-release.mjs",
     "test:m3": "node --test tests/m3-*.test.mjs"
   },
   "dependencies": {

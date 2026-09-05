@@ -2,11 +2,18 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import test from "node:test";
-import { REQUIRED_PRODUCTION_CHECKS } from "../scripts/production-readiness-contract.mjs";
+import {
+  PAID_ONLY_PRODUCTION_CHECK_IDS,
+  REQUIRED_PRODUCTION_CHECKS,
+} from "../scripts/production-readiness-contract.mjs";
 import {
   parseProductionReleaseArguments,
   planProductionRelease,
 } from "../scripts/run-production-release.mjs";
+import {
+  parseSeedProductionReleaseArguments,
+  planSeedProductionRelease,
+} from "../scripts/run-seed-production-release.mjs";
 import {
   PRODUCTION_RUNTIME_ADAPTER,
   PRODUCTION_RUNTIME_ADAPTER_ID,
@@ -144,6 +151,45 @@ test("production release planner emits no plan when any gate evidence is blocked
     result.gate.checks.find(({ id }) => id === "monitoring-handoff").status,
     "pending",
   );
+});
+
+test("seed release planner emits a distinct plan when only paid evidence is blocked", () => {
+  const document = completeEvidenceDocument();
+  for (const id of PAID_ONLY_PRODUCTION_CHECK_IDS) {
+    document.evidence.find((item) => item.id === id).status = "blocked";
+  }
+
+  const seedResult = planSeedProductionRelease({
+    evidenceDocument: document,
+    now: () => NOW,
+  });
+  const fullResult = planProductionRelease({
+    evidenceDocument: document,
+    now: () => NOW,
+  });
+
+  assert.equal(seedResult.ok, true);
+  assert.equal(seedResult.executed, false);
+  assert.equal(seedResult.executionAvailable, false);
+  assert.equal(seedResult.plan.action, "seed-production-release-dry-run");
+  assert.equal(seedResult.plan.candidate.revision, REVISION);
+  assert.equal(fullResult.ok, false);
+  assert.equal(fullResult.plan, null);
+});
+
+test("seed release planner emits no plan when a shared requirement is blocked", () => {
+  const document = completeEvidenceDocument();
+  document.evidence.find(({ id }) => id === "monitoring-handoff").status =
+    "pending";
+
+  const result = planSeedProductionRelease({
+    evidenceDocument: document,
+    now: () => NOW,
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.executed, false);
+  assert.equal(result.plan, null);
 });
 
 test("selected production profile is the existing bounded Hong Kong seed host", () => {
@@ -285,15 +331,72 @@ test("production release CLI is plan-only and has no process execution path", as
       ]),
     /Usage/,
   );
+  assert.deepEqual(
+    parseSeedProductionReleaseArguments([
+      "plan",
+      "--evidence-file",
+      "production-readiness.json",
+    ]),
+    {
+      action: "plan",
+      evidenceFile: path.resolve("production-readiness.json"),
+    },
+  );
+  assert.throws(
+    () =>
+      parseSeedProductionReleaseArguments([
+        "deploy",
+        "--evidence-file",
+        "production-readiness.json",
+      ]),
+    /Usage/,
+  );
+  assert.throws(
+    () =>
+      parseSeedProductionReleaseArguments([
+        "plan",
+        "--evidence-file",
+        "production-readiness.json",
+        "--execute",
+      ]),
+    /Usage/,
+  );
 
-  const [source, adapterSource, profileSource, packageJson, releaseMetadata] = await Promise.all([
-    readFile(new URL("../scripts/run-production-release.mjs", import.meta.url), "utf8"),
-    readFile(new URL("../scripts/production-runtime-adapter.mjs", import.meta.url), "utf8"),
-    readFile(new URL("../scripts/production-infrastructure-profile.mjs", import.meta.url), "utf8"),
+  const [
+    source,
+    seedSource,
+    adapterSource,
+    profileSource,
+    packageJson,
+    releaseMetadata,
+  ] = await Promise.all([
+    readFile(
+      new URL("../scripts/run-production-release.mjs", import.meta.url),
+      "utf8",
+    ),
+    readFile(
+      new URL("../scripts/run-seed-production-release.mjs", import.meta.url),
+      "utf8",
+    ),
+    readFile(
+      new URL("../scripts/production-runtime-adapter.mjs", import.meta.url),
+      "utf8",
+    ),
+    readFile(
+      new URL(
+        "../scripts/production-infrastructure-profile.mjs",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
     readFile(new URL("../package.json", import.meta.url), "utf8"),
-    readFile(new URL("../scripts/release-metadata.mjs", import.meta.url), "utf8"),
+    readFile(
+      new URL("../scripts/release-metadata.mjs", import.meta.url),
+      "utf8",
+    ),
   ]);
   assert.doesNotMatch(source, /node:child_process|\bspawn\b|\bexecFile\b/);
+  assert.doesNotMatch(seedSource, /node:child_process|\bspawn\b|\bexecFile\b/);
   assert.doesNotMatch(adapterSource, /node:child_process|\bspawn\b|\bexecFile\b/);
   assert.doesNotMatch(profileSource, /node:child_process|\bspawn\b|\bexecFile\b/);
   assert.equal(PRODUCTION_RUNTIME_ADAPTER.publicIngress, "nginx-only");
@@ -320,9 +423,17 @@ test("production release CLI is plan-only and has no process execution path", as
     JSON.parse(packageJson).scripts["production:release-plan"],
     "node scripts/run-production-release.mjs",
   );
+  assert.equal(
+    JSON.parse(packageJson).scripts["production:seed-release-plan"],
+    "node scripts/run-seed-production-release.mjs",
+  );
   assert.match(
     releaseMetadata,
     new RegExp(JSON.stringify("scripts/run-production-release.mjs")),
+  );
+  assert.match(
+    releaseMetadata,
+    new RegExp(JSON.stringify("scripts/run-seed-production-release.mjs")),
   );
   assert.match(
     releaseMetadata,

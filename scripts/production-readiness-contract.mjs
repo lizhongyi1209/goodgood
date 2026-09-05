@@ -21,6 +21,19 @@ export const REQUIRED_PRODUCTION_CHECKS = Object.freeze([
   Object.freeze({ id: "rollback-rehearsal", maxAgeHours: 168 }),
 ]);
 
+export const PAID_ONLY_PRODUCTION_CHECK_IDS = Object.freeze([
+  "icp-production-domain",
+  "alipay-merchant-sandbox",
+]);
+
+const paidOnlyProductionCheckIds = new Set(PAID_ONLY_PRODUCTION_CHECK_IDS);
+
+export const REQUIRED_SEED_PRODUCTION_CHECKS = Object.freeze(
+  REQUIRED_PRODUCTION_CHECKS.filter(
+    ({ id }) => !paidOnlyProductionCheckIds.has(id),
+  ),
+);
+
 const EVIDENCE_STATUSES = new Set(["blocked", "fail", "pass", "pending"]);
 const SAFE_REFERENCE = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,199}$/;
 const SAFE_OWNER = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,99}$/;
@@ -242,9 +255,9 @@ function evaluateEvidence(requirement, item, release, nowMs) {
   );
 }
 
-export function runProductionReadinessGate(
+function runProductionReadinessGateForRequirements(
   document,
-  { now = () => Date.now() } = {},
+  { now, requirements },
 ) {
   const checks = [];
   let release = null;
@@ -294,7 +307,7 @@ export function runProductionReadinessGate(
 
   const nowMs = now();
   if (!Number.isFinite(nowMs)) throw new Error("now must return epoch milliseconds.");
-  for (const requirement of REQUIRED_PRODUCTION_CHECKS) {
+  for (const requirement of requirements) {
     checks.push(
       evaluateEvidence(requirement, evidence.get(requirement.id), release, nowMs),
     );
@@ -305,6 +318,26 @@ export function runProductionReadinessGate(
     ok: checks.every(({ status }) => status === "pass"),
     release,
     schemaVersion: PRODUCTION_EVIDENCE_SCHEMA_VERSION,
+  });
+}
+
+export function runProductionReadinessGate(
+  document,
+  { now = () => Date.now() } = {},
+) {
+  return runProductionReadinessGateForRequirements(document, {
+    now,
+    requirements: REQUIRED_PRODUCTION_CHECKS,
+  });
+}
+
+export function runSeedProductionReadinessGate(
+  document,
+  { now = () => Date.now() } = {},
+) {
+  return runProductionReadinessGateForRequirements(document, {
+    now,
+    requirements: REQUIRED_SEED_PRODUCTION_CHECKS,
   });
 }
 

@@ -139,9 +139,12 @@ importer must match the exact candidate, successful `main` workflow run and
 attempt, required job steps, GitHub artifact identity, byte size, and SHA-256.
 Candidate mismatch, failed scan, malformed local data, remote failure, expired
 or modified artifact bytes produce no evidence. Production-release planning
-coverage proves the full readiness gate is evaluated first, blocked evidence
-returns no plan, passing evidence yields only digest-bound adapter phases, and
-the CLI has no execution option or child-process path.
+coverage proves the fixed seed gate excludes only ICP/domain and Alipay evidence
+while retaining every shared safety requirement, and that the unchanged full
+gate still fails on either paid-only blocker. Missing, stale, malformed, or
+blocked evidence required by the selected gate returns no plan. Passing evidence
+yields only a distinctly labelled seed or full digest-bound adapter plan, and
+neither CLI has an execution option or child-process path.
 M8 production-runtime coverage fixes ADR 0017's Nginx/Compose blue and green
 loopback slots, external durable-state boundary, single-active-Worker handoff,
 atomic upstream-switch intent, and forward-fix-only schema rule. Passing

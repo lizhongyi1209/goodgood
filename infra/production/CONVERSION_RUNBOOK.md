@@ -246,9 +246,16 @@ OIDC discovery preflight。任何旧 callback、inline secret、错误权限或�
 - 在 green loopback 只启动 Web candidate，验证后模拟一次 blue↔green upstream
   变更和回退；Worker 必须先 drain 旧进程再启动新进程，任意时刻只有一个。
   回滚后数据库、队列和 credit fingerprints 不变，`schemaDowngradeAttempted=false`。
-- 完整 production gate、public synthetic 的预期状态、告警 firing/resolved 接手
-  证据和事件联系人均通过。维护状态下 public synthetic 的预期是受控 503；
-  应用健康只走 loopback/私有路径。
+- 执行以下固定种子门禁和只读计划；两者均通过。不得把延期的 ICP/domain 或
+  Alipay 项改写为 `pass`，也不得用完整付费门禁失败替代种子门禁结果：
+
+  ```bash
+  npm run production:seed-gate -- --evidence-file /var/lib/goodgood-production/conversion/evidence/production-readiness.json
+  npm run production:seed-release-plan -- plan --evidence-file /var/lib/goodgood-production/conversion/evidence/production-readiness.json
+  ```
+
+- public synthetic 的预期状态、告警 firing/resolved 接手证据和事件联系人均通过。
+  维护状态下 public synthetic 的预期是受控 503；应用健康只走 loopback/私有路径。
 
 检查点 R6：任何子项失败都保持维护并回到相应组件修复；不得删除新正式状态、
 不得导入测试状态、不得为了赶 4 小时跳过门禁。
@@ -259,7 +266,9 @@ OIDC discovery preflight。任何旧 callback、inline secret、错误权限或�
 `publicTrafficOpen` 批准，复核人才可通过另行审核的原子 Nginx 步骤移除 marker、
 执行 `nginx -t`、reload 并立即完成 public synthetic：
 
-- conversion manifest 无 blocker；完整 release gate 为 pass；
+- conversion manifest 无 blocker；`production:seed-gate` 与
+  `production:seed-release-plan` 均为 pass，计划 action 明确为
+  `seed-production-release-dry-run`；
 - 正式状态新鲜、R2 为空后已轮换并完成首个生产对象验证；
 - Authing、站长、pending isolation、credit、生成/读取、备份恢复、监控和回滚
   证据均绑定当前候选；
@@ -289,4 +298,4 @@ R2 对象。清理完成后再次验证正式备份、公开 health 和对象私
 立即停止并保持维护的条件包括：目标不精确、inventory hash 漂移、R2 版本范围
 未知、备份/恢复失败、Authing allowlist 漂移、旧 session 仍有效、旧数据出现、
 重复 welcome grant/ledger 不一致、真实生成或私有读取失败、第二个 Worker 启动、
-资源保护触发、Nginx 校验失败、监控无人接手、完整 gate 失败或超过四小时。
+资源保护触发、Nginx 校验失败、监控无人接手、所选种子门禁失败或超过四小时。
