@@ -73,6 +73,10 @@ const CONFIG_CONTRACT_FILES = [
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
+export function normalizeReleaseContractBytes(contents) {
+  return Buffer.from(contents.toString("utf8").replace(/\r\n?/g, "\n"), "utf8");
+}
+
 function releaseRepository(value) {
   const repository = typeof value === "string" ? value.trim().toLowerCase() : "";
   if (!/^[a-z0-9](?:[a-z0-9_.-]*[a-z0-9])?\/[a-z0-9](?:[a-z0-9_.-]*[a-z0-9])?$/.test(repository)) {
@@ -95,7 +99,9 @@ export async function deriveReleaseMetadata({
   for (const relativePath of CONFIG_CONTRACT_FILES) {
     hash.update(relativePath);
     hash.update("\0");
-    hash.update(await readFile(resolve(root, relativePath)));
+    hash.update(
+      normalizeReleaseContractBytes(await readFile(resolve(root, relativePath))),
+    );
     hash.update("\0");
   }
 

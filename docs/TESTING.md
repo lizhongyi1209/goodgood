@@ -194,6 +194,9 @@ planner that always reports `executed:false`/`executionAvailable:false`. Static
 coverage rejects child-process/live execution and any R2 delete implementation.
 Shell parsing and both production Compose slot interpolations are additionally
 checked locally without starting containers.
+Release-metadata coverage also normalizes CRLF, lone CR, and LF checkout line
+endings before hashing so a Windows review and Linux CI bind the same runtime
+configuration identity.
 
 Concurrent-Worker coverage proves one active Worker runner starts multiple
 accepted job promises without a fixed count ceiling, acknowledges each claimed

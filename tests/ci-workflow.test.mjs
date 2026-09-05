@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   deriveReleaseMetadata,
   githubOutput,
+  normalizeReleaseContractBytes,
 } from "../scripts/release-metadata.mjs";
 
 test("CI verifies changes and publishes one immutable main image", async () => {
@@ -145,4 +146,14 @@ test("release metadata is deterministic and records the current migration", asyn
       "",
     ].join("\n"),
   );
+});
+
+test("release configuration identity is stable across checkout line endings", () => {
+  const unix = normalizeReleaseContractBytes(Buffer.from("alpha\nbeta\n"));
+  const windows = normalizeReleaseContractBytes(Buffer.from("alpha\r\nbeta\r\n"));
+  const legacy = normalizeReleaseContractBytes(Buffer.from("alpha\rbeta\r"));
+
+  assert.deepEqual(unix, windows);
+  assert.deepEqual(unix, legacy);
+  assert.equal(unix.toString("utf8"), "alpha\nbeta\n");
 });

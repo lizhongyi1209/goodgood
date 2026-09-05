@@ -198,6 +198,13 @@ M9 begins only after a separate operator decision to resume payment work.
   the existing Windows line-ending notices. After the candidate is recorded,
   the next smallest operator decision is the China Standard Time maintenance
   window; no live action is authorized yet.
+- Exact-candidate preparation caught a Windows/LF configuration-fingerprint
+  mismatch before any production approval. Release metadata now normalizes text
+  line endings before hashing, with regression coverage proving CRLF, lone CR,
+  and LF checkouts produce one identity. The first published candidate is
+  superseded; only the replacement CI digest may enter window review. The
+  correction passed the complete local gate: lint, TypeScript, production build,
+  and 180 tests completed with 176 passing and four opt-in integrations skipped.
 - M3 now completes the narrow production-shaped path from browser submission to
   idempotent Node API, PostgreSQL batch/job/outbox transaction, Valkey delivery,
   worker, authenticated HTTP mock provider, RustFS object write, Asset record,
