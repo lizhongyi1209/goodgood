@@ -1,3 +1,5 @@
+import { PRODUCTION_INFRASTRUCTURE_PROFILE_ID } from "./production-infrastructure-profile.mjs";
+
 export const PRODUCTION_RUNTIME_ADAPTER_ID =
   "nginx-compose-blue-green-v1";
 
@@ -17,6 +19,7 @@ const SLOT_GREEN = Object.freeze({
 
 export const PRODUCTION_RUNTIME_ADAPTER = Object.freeze({
   id: PRODUCTION_RUNTIME_ADAPTER_ID,
+  infrastructureProfile: PRODUCTION_INFRASTRUCTURE_PROFILE_ID,
   applicationHost: "single-linux-origin",
   edge: "alibaba-esa",
   proxy: "nginx",

@@ -11,6 +11,10 @@ import {
   PRODUCTION_RUNTIME_ADAPTER,
   PRODUCTION_RUNTIME_ADAPTER_ID,
 } from "../scripts/production-runtime-adapter.mjs";
+import {
+  PRODUCTION_INFRASTRUCTURE_PROFILE,
+  PRODUCTION_INFRASTRUCTURE_PROFILE_ID,
+} from "../scripts/production-infrastructure-profile.mjs";
 
 const NOW = Date.parse("2026-09-05T05:00:00.000Z");
 const REVISION = "b".repeat(40);
@@ -109,6 +113,10 @@ test("production release planner exposes an immutable plan only after the full g
   assert.equal(result.executionAvailable, false);
   assert.equal(result.gate.ok, true);
   assert.deepEqual(result.plan.adapter, PRODUCTION_RUNTIME_ADAPTER);
+  assert.equal(
+    result.plan.adapter.infrastructureProfile,
+    PRODUCTION_INFRASTRUCTURE_PROFILE_ID,
+  );
   assert.equal(result.plan.candidate.revision, REVISION);
   assert.equal(result.plan.steps.length, 8);
   assert.equal(result.plan.steps[0].id, "lock-and-snapshot-active");
@@ -134,6 +142,50 @@ test("production release planner emits no plan when any gate evidence is blocked
   assert.equal(
     result.gate.checks.find(({ id }) => id === "monitoring-handoff").status,
     "pending",
+  );
+});
+
+test("production infrastructure profile fixes managed private state without authorizing purchase", () => {
+  assert.equal(PRODUCTION_INFRASTRUCTURE_PROFILE.status, "selected-not-provisioned");
+  assert.equal(PRODUCTION_INFRASTRUCTURE_PROFILE.region.productionRegion, null);
+  assert.equal(
+    PRODUCTION_INFRASTRUCTURE_PROFILE.region.status,
+    "blocked-on-icp-domain-placement",
+  );
+  assert.equal(
+    PRODUCTION_INFRASTRUCTURE_PROFILE.applicationHost.architecture,
+    "linux-amd64",
+  );
+  assert.ok(PRODUCTION_INFRASTRUCTURE_PROFILE.applicationHost.minimumVcpu >= 4);
+  assert.ok(
+    PRODUCTION_INFRASTRUCTURE_PROFILE.applicationHost.minimumMemoryGiB >= 16,
+  );
+  assert.equal(PRODUCTION_INFRASTRUCTURE_PROFILE.postgresql.engineVersion, "17");
+  assert.equal(
+    PRODUCTION_INFRASTRUCTURE_PROFILE.postgresql.edition,
+    "high-availability",
+  );
+  assert.equal(
+    PRODUCTION_INFRASTRUCTURE_PROFILE.postgresql.privateEndpointOnly,
+    true,
+  );
+  assert.equal(
+    PRODUCTION_INFRASTRUCTURE_PROFILE.postgresql.nativeBackupIsSoleRecoveryCopy,
+    false,
+  );
+  assert.equal(
+    PRODUCTION_INFRASTRUCTURE_PROFILE.queue.architecture,
+    "standard-master-replica",
+  );
+  assert.equal(PRODUCTION_INFRASTRUCTURE_PROFILE.queue.privateEndpointOnly, true);
+  assert.equal(PRODUCTION_INFRASTRUCTURE_PROFILE.queue.authoritativeState, false);
+  assert.equal(
+    PRODUCTION_INFRASTRUCTURE_PROFILE.authorization.purchaseAuthorized,
+    false,
+  );
+  assert.equal(
+    PRODUCTION_INFRASTRUCTURE_PROFILE.authorization.productionDeploymentAuthorized,
+    false,
   );
 });
 
@@ -169,14 +221,16 @@ test("production release CLI is plan-only and has no process execution path", as
     /Usage/,
   );
 
-  const [source, adapterSource, packageJson, releaseMetadata] = await Promise.all([
+  const [source, adapterSource, profileSource, packageJson, releaseMetadata] = await Promise.all([
     readFile(new URL("../scripts/run-production-release.mjs", import.meta.url), "utf8"),
     readFile(new URL("../scripts/production-runtime-adapter.mjs", import.meta.url), "utf8"),
+    readFile(new URL("../scripts/production-infrastructure-profile.mjs", import.meta.url), "utf8"),
     readFile(new URL("../package.json", import.meta.url), "utf8"),
     readFile(new URL("../scripts/release-metadata.mjs", import.meta.url), "utf8"),
   ]);
   assert.doesNotMatch(source, /node:child_process|\bspawn\b|\bexecFile\b/);
   assert.doesNotMatch(adapterSource, /node:child_process|\bspawn\b|\bexecFile\b/);
+  assert.doesNotMatch(profileSource, /node:child_process|\bspawn\b|\bexecFile\b/);
   assert.equal(PRODUCTION_RUNTIME_ADAPTER.publicIngress, "nginx-only");
   assert.deepEqual(
     PRODUCTION_RUNTIME_ADAPTER.slots.map(({ webPort, workerHealthPort }) => [
@@ -203,5 +257,9 @@ test("production release CLI is plan-only and has no process execution path", as
   assert.match(
     releaseMetadata,
     new RegExp(JSON.stringify("scripts/production-runtime-adapter.mjs")),
+  );
+  assert.match(
+    releaseMetadata,
+    new RegExp(JSON.stringify("scripts/production-infrastructure-profile.mjs")),
   );
 });

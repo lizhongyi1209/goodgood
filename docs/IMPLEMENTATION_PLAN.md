@@ -46,6 +46,13 @@
   application slots behind host Nginx, external durable state, and exactly one
   active production Worker. Candidate and rollback evidence must now prove the
   adapter-specific health, state, Worker, and no-schema-downgrade invariants.
+  ADR 0018 selects the non-provisioned `alibaba-managed-state-v1`
+  infrastructure profile: an x86_64 Alibaba Cloud ECS application-host floor,
+  RDS PostgreSQL 17 High-availability Edition, and private-only Tair standard
+  master-replica coordination. The exact production region remains unset
+  because the accepted Hong Kong direction cannot itself provide Alibaba
+  Cloud's mainland ICP filing resource; the profile grants no purchase,
+  production deployment, or executable-release authority.
   CI run 27 passed for revision `7d576ff` and its
   immutable artifact-security record has passed the schema-2 repository
   importer for digest `ac9031da3bde`. External monitoring activation and delivery remain
@@ -54,8 +61,10 @@
   security/compliance evidence, production recovery/rollback and candidate
   health proof, and the delegated monitoring handoff while ICP filing, the
   production domain, and domestic Alipay merchant prerequisites progress.
-  Select the concrete production host capacity/location and PostgreSQL/Valkey
-  services before reviewing an executable ADR 0017 adapter implementation.
+  Resolve the production region with the ICP-filed domain topology, then
+  revalidate regional capacity/price and provision no-customer rehearsal
+  infrastructure before reviewing an executable ADR 0017 adapter
+  implementation.
   Full-byte real-carrier throughput remains an accepted operator deferral.
 
 ## Purpose and update contract
@@ -955,11 +964,34 @@ this file owns the current handoff state.
   that current exact-revision artifact evidence and continues to reject every
   other pending or blocked requirement. No GoodGood production deployment is
   claimed.
+- ADR 0018 now selects declarative infrastructure profile
+  `alibaba-managed-state-v1` without provisioning cloud resources. ADR 0017's
+  application slots require one Ubuntu 24.04 `linux/amd64` ECS host with at
+  least 4 vCPUs, 16 GiB memory, and a 100 GiB ESSD system disk. Authoritative
+  state moves to RDS PostgreSQL 17 High-availability Edition with at least
+  2 vCPUs, 4 GiB memory, and 50 GiB ESSD; Tair Redis OSS-compatible standard
+  master-replica starts at 1 GiB as recoverable coordination. Both state
+  services are private-VPC-only, and RDS-native backup cannot replace ADR
+  0015's separately encrypted off-host recovery repository. The current
+  single-platform CI publication provides no ARM evidence, so the profile
+  fails closed on an ARM substitution. Official Alibaba Cloud documentation
+  also confirms that its regular-website ICP filing path requires a mainland
+  China resource; production region, zone pair, exact SKU, price, quota, and
+  identifiers therefore remain unset until the Hong Kong-versus-mainland
+  domain topology is explicitly resolved. The contract sets purchase,
+  production-deployment, and executable-release authorization to false.
+  On 2026-09-05, the resulting exact source passed `npm run check:local`: lint,
+  full TypeScript checking, the production build, and 160 tests with 156
+  passing and four opt-in integration tests skipped.
 - Next action: collect the external security/privacy/abuse review, delegated
   monitoring handoff, and production backup/restore, candidate-health, and
   rollback proof for the selected exact candidate.
-  Select the production host region/capacity and external PostgreSQL/Valkey
-  services before adding any executable release path for ADR 0017.
+  Resolve whether the filed paid-production domain remains on the documented
+  Hong Kong control plane or requires a mainland China control plane. Then
+  recheck current regional ECS/RDS/Tair inventory and price, prepare the exact
+  pay-as-you-go purchase request, and provision only after explicit operator
+  approval. No executable release path is added before a no-customer rehearsal
+  of the provisioned profile.
   Keep early paid access on the documented operator bridge. After the filed
   domain and domestic Alipay merchant sandbox are available, implement the
   provider adapter against the existing immutable order/settlement boundary and
@@ -976,9 +1008,12 @@ this file owns the current handoff state.
   design. ADR 0016 delegates monitoring implementation; live signal coverage,
   retention, delivery, acknowledgement, and ownership remain external
   `monitoring-handoff` evidence and cannot be bypassed. Production recovery
-  objectives remain fixed by ADR 0015. The production release planner is
-  intentionally non-executable until the concrete traffic-switch/runtime
-  adapter is selected and reviewed; a local plan is not deployment authority.
+  objectives remain fixed by ADR 0015. ADR 0018 selects the service/capacity
+  baseline but leaves production region blocked on the ICP-filed domain and
+  access topology. The production release planner is intentionally
+  non-executable until that region is resolved, the profile is provisioned for
+  no-customer rehearsal, and the executable adapter receives separate review;
+  a local plan is not deployment authority.
   An ICP-filed custom authentication domain is not required now because
   the Authing-provided application domain is the accepted temporary path. The
   local token adapter remains forbidden in staging and production.
@@ -1056,7 +1091,7 @@ Completed real-Authing loopback checklist:
 | M5 | US generation gateway integration and recovery | Completed | O1Key special-price adapter, explicit worker route, RustFS transfer, decoded output ingestion, durable-task restart, fake-server matrix, secret-file launcher, one real URL-output reference-image smoke, operator-confirmed New API charge/refund evidence, and ADR 0008's accepted at-most-once submission guard pass |
 | M6 | Versioned pricing, credit ledger, and payment sandbox | Completed | ADR 0009 launch prices, welcome grants, append-only accounting, live reserve/settle/release, account presentation, immutable CNY 10 / 500-credit product, idempotent orders, signed fake-sandbox fulfillment, dry-run-first manual paid-credit recording, isolated PostgreSQL tests, and full Compose pass |
 | M7 | Hong Kong staging | Completed | The hardened Hong Kong host, isolated dependencies, private R2, Cloudflare-only TLS origin, Authing callbacks and rotated secrets, real O1Key generation/reference ingestion, public logout recovery, rollback, mainland HTTP sampling, and all ten migrations pass. ADR 0014's separate encrypted off-host PostgreSQL repository, retention, two latest-snapshot restore drills, real systemd backup, and active persistent timer pass; outbound notification is deferred to M8 and QQ Mail is not under consideration. CI run 23 passes 133 tests, dependency and finished-image scans, and runtime import smoke after the React 19.2.8 fix. Its exact immutable digest is the promoted healthy release: Web/Worker and every dependency readiness check pass, public root/live/ready return HTTP 200, and credit state is unchanged. Full-byte real-carrier throughput remains an accepted non-blocking deferral; payment checkout stays intentionally absent until M8 |
-| M8 | Paid production readiness | In progress | ADR 0016 delegates monitoring-platform implementation while retaining redacted support correlation, production recovery/retention objectives, alert ownership, and mandatory live monitoring handoff evidence. Server-owned request/support IDs, structured Web/Worker correlation, the schema-2 vendor-neutral exact-candidate production evidence gate, secret-redacting Linux preflight, GitHub-verified artifact-security ingestion, a live imported artifact for CI run 27, and ADR 0017's tested but non-executable Nginx/Compose blue-green adapter contract pass. Security/compliance evidence, monitoring handoff, production rollback/restore and candidate-health evidence, production host/state-service selection plus executable adapter review, ICP/domain, and domestic Alipay sandbox/checkout remain |
+| M8 | Paid production readiness | In progress | ADR 0016 delegates monitoring-platform implementation while retaining redacted support correlation, production recovery/retention objectives, alert ownership, and mandatory live monitoring handoff evidence. Server-owned request/support IDs, structured Web/Worker correlation, the schema-2 vendor-neutral exact-candidate production evidence gate, secret-redacting Linux preflight, GitHub-verified artifact-security ingestion, a live imported artifact for CI run 27, ADR 0017's tested but non-executable Nginx/Compose blue-green adapter, and ADR 0018's non-provisioned ECS/RDS-HA/Tair private infrastructure baseline pass. Security/compliance evidence, monitoring handoff, production rollback/restore and candidate-health evidence, ICP-coupled production-region selection and no-customer provisioning, executable adapter review, ICP/domain, and domestic Alipay sandbox/checkout remain |
 
 Only mark a milestone `Completed` when its exit evidence exists. Use `Blocked`
 only with a named external dependency or missing decision.

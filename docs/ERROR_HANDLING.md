@@ -266,6 +266,18 @@ failure reverts the upstream and Worker, repeats public/state fingerprints, and
 never attempts a schema downgrade. Failure to prove any of those outcomes emits
 no passing candidate-health or rollback evidence.
 
+ADR 0018's production infrastructure profile fails closed before provisioning
+when the ICP/domain placement decision is unresolved or the selected region
+cannot supply an equivalent x86_64 application host, RDS PostgreSQL 17
+High-availability Edition, Tair standard master-replica, and private VPC
+connectivity. The operator must not recover availability by silently selecting
+ARM, RDS Basic Edition, a single-node queue, or a public database/queue
+endpoint. RDS-native backup success alone does not emit production recovery
+evidence; the separate encrypted recovery copy and restore drill must still
+meet ADR 0015's RPO, RTO, and retention contract. This profile has no purchase
+or deployment path, so selection failure leaves all external resources
+unchanged.
+
 ## Idempotency and retries
 
 - Browser-to-GoodGood submission carries an owner-scoped idempotency key, so a

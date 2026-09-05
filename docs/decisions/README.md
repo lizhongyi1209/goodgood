@@ -28,3 +28,4 @@ Current records:
 - `0015-production-observability-and-release-gate.md`
 - `0016-defer-monitoring-platform-implementation.md`
 - `0017-nginx-compose-blue-green-production-adapter.md`
+- `0018-alibaba-cloud-managed-production-state-baseline.md`

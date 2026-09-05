@@ -150,6 +150,14 @@ startup, exactly one migration, live/ready, public synthetic, queue, database,
 and credit checks. Passing rollback evidence must retain a distinct prior
 revision and prove Web/Worker and queue recovery, unchanged database/credit
 fingerprints, and no schema downgrade. The planner remains non-executable.
+M8 production-infrastructure coverage fixes ADR 0018's declarative
+`alibaba-managed-state-v1` profile: an x86_64 ECS application-host floor, RDS
+PostgreSQL 17 High-availability Edition, private-only Tair standard
+master-replica coordination, and the existing production RPO/RTO. It proves
+the production region is still blocked on the ICP/domain placement decision,
+RDS-native backup is not the sole recovery copy, and the profile authorizes no
+purchase, production deployment, or executable release path. The selected
+profile is part of the runtime adapter and runtime-contract checksum.
 The R2 provisioning unit proves local storage still creates/configures its
 bucket, staging performs only `HeadBucket`, and a failed verification can be
 retried. Static Nginx coverage fixes the canonical hostname, Cloudflare-only

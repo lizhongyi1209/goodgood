@@ -650,7 +650,9 @@ filing evidence.
 - Generation plane: existing US OVH server.
 - Images: private Cloudflare R2 with direct presigned delivery, as accepted in
   ADR 0012.
-- Database/queue: PostgreSQL plus Redis-compatible durable job coordination.
+- Paid-production database/queue baseline: managed ApsaraDB RDS for PostgreSQL
+  plus Tair Redis OSS-compatible coordination, as accepted in ADR 0018. The M7
+  staging dependency containers remain test-data infrastructure only.
 
 The purchased M7 host has 2 vCPUs, 4 GiB memory, a 50 GiB ESSD system disk, a
 fixed public IPv4 address, and a 200 Mbps peak BGP public-bandwidth
@@ -858,10 +860,12 @@ work.
   fingerprints. Rollback restores the prior upstream and Worker without a
   schema downgrade.
 
-`production:release-plan` reports this adapter and ordered phases only after the
+`production:release-plan` reports this adapter, its selected infrastructure
+profile, and ordered phases only after the
 complete gate passes. It remains non-executable and has no process-spawn or
-execution flag. Do not create live Compose/Nginx release tooling until a
-separate review has selected the production host and state services.
+execution flag. Do not create live Compose/Nginx release tooling until the
+blocked production region is resolved and no-customer provisioned
+infrastructure has passed a separate executable-adapter review.
 
 Passing `candidate-health-invariants` evidence must set
 `runtimeAdapter: nginx-compose-blue-green-v1` and prove isolated candidate
@@ -869,6 +873,42 @@ startup, exactly one migration, live/ready, public synthetic, queue, database,
 and credit checks. Passing `rollback-rehearsal` evidence must name a distinct
 retained prior revision and prove Web/Worker rollback, queue recovery, unchanged
 database/credit fingerprints, and `schemaDowngradeAttempted: false`.
+
+### Selected production infrastructure baseline
+
+ADR 0018 selects declarative profile `alibaba-managed-state-v1` without
+provisioning or purchase authority:
+
+- one Alibaba Cloud ECS x86_64 application host running Ubuntu 24.04 LTS, with
+  at least 4 vCPUs, 16 GiB memory, and a 100 GiB ESSD system disk. Use a
+  current-generation general-purpose x86 family and pay-as-you-go billing
+  through rehearsal; the current CI image is not a proved ARM artifact;
+- ApsaraDB RDS for PostgreSQL 17 High-availability Edition, primary/standby and
+  preferably multi-zone, with at least 2 vCPUs, 4 GiB memory, and 50 GiB ESSD.
+  RDS Basic Edition is not a production fallback;
+- a minimum 1 GiB Tair Redis OSS-compatible standard master-replica instance.
+  It delivers and coordinates work but is not authoritative state;
+- ECS, RDS, and Tair share the selected production region and VPC. RDS and Tair
+  have no public endpoint and accept only application-security-group traffic;
+- RDS data/log backup and point-in-time recovery must meet the one-hour RPO,
+  but native backups are not the sole recovery copy. Preserve ADR 0015's
+  separately encrypted off-host recovery points and prove the four-hour RTO;
+- private Cloudflare R2 continues to own user image bytes. Application slots
+  and the ECS system disk remain disposable runtime state.
+
+Exact SKU, zone pair, price, quota, network identifiers, and credentials are
+purchase-time facts and never belong in this profile. Stop if the selected
+region cannot provide an equivalent x86 host, RDS HA, Tair master-replica, and
+private connectivity; do not silently choose ARM, RDS Basic Edition, a
+single-node queue, or public state endpoints.
+
+`productionRegion` remains intentionally unset. Alibaba Cloud documents a
+mainland China server requirement for its regular-website ICP filing path;
+the accepted Hong Kong resource is therefore not itself production-domain
+filing evidence. Resolve the filed domain and access topology before purchase.
+Moving paid production to mainland China changes the documented topology and
+requires a new ADR plus repeated network, callback, security, and release
+evidence.
 
 ## Backups and rollback
 

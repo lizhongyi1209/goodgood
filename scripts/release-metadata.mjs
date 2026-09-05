@@ -32,6 +32,7 @@ const CONFIG_CONTRACT_FILES = [
   "scripts/build-runtime.mjs",
   "scripts/production-preflight-contract.mjs",
   "scripts/production-readiness-contract.mjs",
+  "scripts/production-infrastructure-profile.mjs",
   "scripts/production-runtime-adapter.mjs",
   "scripts/run-production-release.mjs",
   "scripts/verify-production-preflight.mjs",

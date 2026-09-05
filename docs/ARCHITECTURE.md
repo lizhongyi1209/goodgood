@@ -215,6 +215,23 @@ outside both slots. Rollback restores the prior Web upstream and Worker but
 never downgrades schema. The checked-in planner describes this adapter and has
 no execution path.
 
+ADR 0018 selects the non-provisioned production infrastructure profile
+`alibaba-managed-state-v1`: one Alibaba Cloud ECS `linux/amd64` application
+origin with a 4-vCPU / 16-GiB floor, ApsaraDB RDS for PostgreSQL 17
+High-availability Edition, and a Tair Redis OSS-compatible standard
+master-replica queue. ECS, RDS, and Tair must share one region/VPC and state
+services expose private endpoints only. PostgreSQL remains authoritative;
+Tair is recoverable coordination, and RDS-native backup does not replace ADR
+0015's separately encrypted recovery repository.
+
+The production region remains unset. Alibaba Cloud's regular-website ICP path
+requires a mainland China filing resource, while Hong Kong is the accepted
+staging/control-plane direction. A later region decision must reconcile the
+filed domain and network topology before purchase; moving paid production to
+mainland China requires another ADR and repeated network, callback, security,
+and release evidence. The declarative profile grants no purchase, deployment,
+or executable-release authority.
+
 ## Initial runtime units
 
 Keep one modular codebase and one versioned application image initially. Run it
@@ -270,7 +287,7 @@ container filesystem.
 
 ## Capacity posture
 
-The early Hong Kong node may begin as a 2 vCPU / 4 GB control-plane instance if
+The early Hong Kong staging node may begin as a 2 vCPU / 4 GB control-plane instance if
 builds happen in CI and image bytes bypass it. This is not a promise that one
 node can handle production persistence indefinitely. The known 50–80 async
 generation concurrency primarily belongs to the OVH generation plane.
