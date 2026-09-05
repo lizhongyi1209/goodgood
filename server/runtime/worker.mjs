@@ -17,6 +17,7 @@ import {
   createWorkerId,
   processGenerationJob,
 } from "../generation/worker-service.mjs";
+import { createConcurrentJobRunner } from "../generation/concurrent-job-runner.mjs";
 
 const host = process.env.WORKER_HEALTH_HOST ?? "0.0.0.0";
 const port = parseRuntimePort(
@@ -56,6 +57,37 @@ console.log(
 const delay = (milliseconds) =>
   new Promise((resolve) => setTimeout(resolve, milliseconds));
 
+const jobs = createConcurrentJobRunner({
+  acknowledge: (jobId) => acknowledgeQueuedJob(resources.redis, jobId),
+  observe: (entry) => {
+    const log = entry.event.endsWith("failed") || entry.event.endsWith("crashed")
+      ? console.error
+      : console.log;
+    log(JSON.stringify({ ...entry, workerId }));
+  },
+  run: async (jobId) => {
+    const result = await processGenerationJob(resources, { jobId, workerId });
+    console.log(
+      JSON.stringify({
+        event: "worker.job_finished",
+        jobId,
+        outcome: result.outcome,
+        code: result.code,
+        customerCreditAmount: result.customerCreditAmount,
+        customerCreditUnit: result.customerCreditUnit,
+        durationMs: result.durationMs,
+        stage: result.stage,
+        ownerId: result.ownerId,
+        provider: result.provider,
+        providerLatencyMs: result.providerLatencyMs,
+        providerTaskId: result.providerTaskId,
+        routeVersion: result.routeVersion,
+        workerId,
+      }),
+    );
+  },
+});
+
 const loop = (async () => {
   let lastReconciliation = 0;
   while (!stopping) {
@@ -70,38 +102,7 @@ const loop = (async () => {
         await delay(100);
         continue;
       }
-      try {
-        const result = await processGenerationJob(resources, { jobId, workerId });
-        console.log(
-          JSON.stringify({
-            event: "worker.job_finished",
-            jobId,
-            outcome: result.outcome,
-            code: result.code,
-            customerCreditAmount: result.customerCreditAmount,
-            customerCreditUnit: result.customerCreditUnit,
-            durationMs: result.durationMs,
-            stage: result.stage,
-            ownerId: result.ownerId,
-            provider: result.provider,
-            providerLatencyMs: result.providerLatencyMs,
-            providerTaskId: result.providerTaskId,
-            routeVersion: result.routeVersion,
-            workerId,
-          }),
-        );
-      } catch (error) {
-        console.error(
-          JSON.stringify({
-            event: "worker.job_crashed",
-            jobId,
-            message: error instanceof Error ? error.message : String(error),
-            workerId,
-          }),
-        );
-      } finally {
-        await acknowledgeQueuedJob(resources.redis, jobId);
-      }
+      jobs.start(jobId);
     } catch (error) {
       console.error(
         JSON.stringify({
@@ -120,21 +121,19 @@ async function stop(signal) {
   stopping = true;
   health.markNotReady("stopping");
   console.log(
-    JSON.stringify({ event: "worker.stopping", service: "goodgood-worker", signal }),
+    JSON.stringify({
+      activeJobCount: jobs.activeJobCount(),
+      event: "worker.stopping",
+      service: "goodgood-worker",
+      signal,
+    }),
   );
 
-  const forcedExit = setTimeout(() => {
-    console.error(
-      JSON.stringify({ event: "worker.stop_timeout", service: "goodgood-worker" }),
-    );
-    process.exit(1);
-  }, 10_000);
-  forcedExit.unref();
-
   await loop;
+  jobs.stopAccepting();
+  await jobs.drain();
   await closeGenerationResources();
   await health.close();
-  clearTimeout(forcedExit);
 }
 
 process.once("SIGINT", () => void stop("SIGINT"));

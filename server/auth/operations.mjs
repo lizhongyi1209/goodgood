@@ -100,12 +100,17 @@ export function authenticationErrorRedirect(error, requestId = newRequestId()) {
 
 export function createAuthenticationOperations({
   authenticate,
+  authenticateSession = authenticate,
   config,
   getPool,
   oidcClient = config.mode === "oidc" ? createOidcClient({ config }) : null,
   repository = DEFAULT_REPOSITORY,
 }) {
-  if (typeof authenticate !== "function" || typeof getPool !== "function") {
+  if (
+    typeof authenticate !== "function" ||
+    typeof authenticateSession !== "function" ||
+    typeof getPool !== "function"
+  ) {
     throw new Error("Authentication operations require authenticate and getPool.");
   }
 
@@ -187,8 +192,18 @@ export function createAuthenticationOperations({
     },
 
     async readSession(request) {
-      const owner = await authenticate(request);
+      const owner = await authenticateSession(request);
       return {
+        account: {
+          availableCredits: owner.availableCredits,
+          reservedCredits: owner.reservedCredits,
+          role: owner.systemRole,
+          tier: owner.accountTier,
+          unit: "credit",
+        },
+        access: {
+          status: owner.accessStatus,
+        },
         authenticated: true,
         user: {
           email: owner.email,

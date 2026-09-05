@@ -24,6 +24,7 @@ import {
   signOut,
   type AuthenticationSession,
 } from "@/features/auth/http-auth-boundary";
+import { AccountAccessGate } from "@/features/auth/account-access-gate";
 import { listAssets } from "@/features/assets/http-asset-boundary";
 import {
   availableImageCount,
@@ -113,6 +114,7 @@ import {
   Plus,
   RefreshCw,
   Settings2,
+  UserRoundCog,
   X,
 } from "lucide-react";
 
@@ -287,6 +289,7 @@ export default function Home() {
   const [generationBoundary] = useState(createHttpGenerationBoundary);
   const [authenticationSession, setAuthenticationSession] = useState<AuthenticationSession | null | undefined>(undefined);
   const [authenticationError, setAuthenticationError] = useState<string | null>(null);
+  const [accessStatusRefreshing, setAccessStatusRefreshing] = useState(false);
   const [billingSummary, setBillingSummary] = useState<BillingSummary | null>(null);
   const [billingLoading, setBillingLoading] = useState(true);
   const [billingError, setBillingError] = useState<string | null>(null);
@@ -589,7 +592,7 @@ export default function Home() {
 
   useEffect(() => {
     if (authenticationSession === undefined) return;
-    if (authenticationSession === null) return;
+    if (authenticationSession === null || authenticationSession.access.status !== "active") return;
     let active = true;
     void readBillingSummary()
       .then((summary) => {
@@ -614,7 +617,11 @@ export default function Home() {
 
   useEffect(() => {
     if (authenticationSession === undefined) return;
-    if (authenticationSession === null || authenticationSession.preview) {
+    if (
+      authenticationSession === null ||
+      authenticationSession.preview ||
+      authenticationSession.access.status !== "active"
+    ) {
       const finishPreview = window.setTimeout(() => {
         setDraftLoading(false);
         setDraftHydrated(true);
@@ -670,6 +677,7 @@ export default function Home() {
     if (
       !authenticationSession ||
       authenticationSession.preview ||
+      authenticationSession.access.status !== "active" ||
       !draftHydrated ||
       draftLoading ||
       currentProject ||
@@ -776,7 +784,7 @@ export default function Home() {
 
   useEffect(() => {
     if (authenticationSession === undefined) return;
-    if (authenticationSession === null) return;
+    if (authenticationSession === null || authenticationSession.access.status !== "active") return;
     if (authenticationSession.preview) return;
     let active = true;
     void listProjects()
@@ -798,7 +806,11 @@ export default function Home() {
   }, [authenticationSession]);
 
   useEffect(() => {
-    if (authenticationSession === undefined || authenticationSession === null) return;
+    if (
+      authenticationSession === undefined ||
+      authenticationSession === null ||
+      authenticationSession.access.status !== "active"
+    ) return;
     if (authenticationSession.preview) return;
     let active = true;
     void listAssets()
@@ -829,7 +841,12 @@ export default function Home() {
   }, [authenticationSession]);
 
   useEffect(() => {
-    if (!routeAssetId || authenticationSession === undefined || authenticationSession === null) return;
+    if (
+      !routeAssetId ||
+      authenticationSession === undefined ||
+      authenticationSession === null ||
+      authenticationSession.access.status !== "active"
+    ) return;
     if (assetsLoading) return;
     const applyAssetRoute = window.setTimeout(() => {
       const detailNavigation = readAssetDetailNavigationState(window.history.state);
@@ -867,7 +884,11 @@ export default function Home() {
 
   useEffect(() => {
     if (!routeProjectId) return;
-    if (authenticationSession === undefined || authenticationSession === null) return;
+    if (
+      authenticationSession === undefined ||
+      authenticationSession === null ||
+      authenticationSession.access.status !== "active"
+    ) return;
     if (authenticationSession.preview) {
       const previewFailure = window.setTimeout(() => {
         setProjectRestoringId(null);
@@ -1107,8 +1128,21 @@ export default function Home() {
     }
   };
 
+  const handleRefreshAccessStatus = async () => {
+    setAccessStatusRefreshing(true);
+    try {
+      setAuthenticationSession(await readAuthenticationSession());
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "暂时无法刷新账户状态，请稍后重试。",
+      );
+    } finally {
+      setAccessStatusRefreshing(false);
+    }
+  };
+
   const reloadAssets = async () => {
-    if (!authenticationSession) return;
+    if (!authenticationSession || authenticationSession.access.status !== "active") return;
     if (authenticationSession.preview) {
       setAssetBatches(initialAssetBatches);
       setAssetsError(null);
@@ -1153,7 +1187,7 @@ export default function Home() {
   };
 
   const reloadProjects = async () => {
-    if (!authenticationSession) return;
+    if (!authenticationSession || authenticationSession.access.status !== "active") return;
     if (authenticationSession.preview) {
       setProjects([]);
       setProjectsError(null);
@@ -1637,6 +1671,14 @@ export default function Home() {
             {newAssetCount > 0 && <em className="asset-new-count">+{newAssetCount}</em>}
           </button>
           <button className="side-nav-item"><LayoutGrid size={17} /><span>灵感板</span></button>
+          {authenticationSession?.account.role === "site_owner" && (
+            <button
+              className="side-nav-item"
+              onClick={() => window.location.assign("/admin/users")}
+            >
+              <UserRoundCog size={17} /><span>账户管理</span>
+            </button>
+          )}
         </nav>
 
         <div className="sidebar-footer">
@@ -1688,6 +1730,15 @@ export default function Home() {
         <header className="mobile-bar">
           <div className="mobile-brand" role="img" aria-label="GoodGood"><Image className="brand-mark" src="/goodgood-mark.svg" alt="" width={27} height={20} /><Image className="wordmark-image" src="/goodgood-wordmark.svg" alt="" width={84} height={19} /></div>
           <div className="mobile-account">
+            {authenticationSession?.account.role === "site_owner" && (
+              <button
+                className="top-avatar"
+                aria-label="账户管理"
+                onClick={() => window.location.assign("/admin/users")}
+              >
+                <UserRoundCog size={16} />
+              </button>
+            )}
             {authenticationSession && (
               billingError ? (
                 <button className="mobile-credit-balance has-error" onClick={() => {
@@ -2137,6 +2188,13 @@ export default function Home() {
             </button>
           </div>
         </div>
+      ) : authenticationSession.access.status !== "active" ? (
+        <AccountAccessGate
+          busy={accessStatusRefreshing}
+          onLogout={() => void handleLogout()}
+          onRefresh={() => void handleRefreshAccessStatus()}
+          session={authenticationSession}
+        />
       ) : null}
       <Toaster position="bottom-center" toastOptions={{ duration: 2200 }} />
     </main>

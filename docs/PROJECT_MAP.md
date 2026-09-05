@@ -24,13 +24,16 @@
 | `public/feihong-send.png` | Send-action silhouette |
 | `public/nano-fashion.png` | Prototype-only representative generated image |
 | `components/ui/` | Vendored Shadcn/Radix primitives plus the browser-direct private-object image primitive |
+| `features/admin/` | Site-owner account-management working surface and browser HTTP boundary |
+| `features/auth/` | Browser session boundary plus pending/suspended account gate |
 | `tests/` | Build/render, documentation, domain/mock, M3/M4 runtime, and opt-in Compose integration coverage |
 | `db/` | PostgreSQL Drizzle schema and process-local database helper |
 | `migrations/` | Versioned, checksum-tracked, rerunnable PostgreSQL migrations |
 | `worker/` | Vinext/Cloudflare worker entry for the current prototype |
 | `worker-configuration.d.ts` | Typed optional bindings for the current Cloudflare prototype |
-| `server/generation/` | Node API, persistence transactions, outbox/Valkey queue, worker orchestration, explicit mock/O1Key routing, provider adapters, and object storage |
+| `server/generation/` | Node API, persistence transactions, outbox/Valkey queue, unbounded concurrent job runner, worker orchestration, explicit mock/O1Key routing, provider adapters, and object storage |
 | `server/auth/` | Authing-compatible OIDC/PKCE flow, hashed GoodGood sessions, provider-neutral identity mapping, local test adapter, and owner context |
+| `server/admin/` | Site-owner authorization, account search/review, linked promotional-credit audit, and one-time owner bootstrap |
 | `server/references/` | Owner-scoped upload intent, signed storage transfer, decoded validation, lifecycle persistence, cleanup policy/leases, and Node API |
 | `server/projects/` | Owner-scoped project validation, idempotent persistence, signed presentation, and Node API |
 | `server/drafts/` | One-per-owner expiring root drafts, optimistic versioning, ready-reference validation, and Node API |
@@ -38,7 +41,7 @@
 | `features/billing/` | Browser HTTP boundary and exact public billing-summary helpers |
 | `server/billing/` | Server-owned immutable generation/payment products, authenticated account and order boundaries, signed fake-payment callbacks, dry-run-first operator manual-payment recording, and transaction-composable credit grant/reserve/settle/release/refund persistence |
 | `server/persistence/` | Versioned migration runner |
-| `server/runtime/` | Production web, worker, migration, reference-cleanup, manual-payment, and mock-provider process entry points plus runtime health state |
+| `server/runtime/` | Production web, concurrent worker, migration, reference-cleanup, manual-payment, site-owner-bootstrap, and mock-provider process entry points plus runtime health and host memory/disk admission protection |
 | `server/observability/` | Server-owned request/support IDs, approved correlation fields, normalized HTTP routes, and structured completion events |
 | `infra/container/` | Image health check plus host-side Compose dependency probes |
 | `scripts/build-runtime.mjs` | Locked Node runtime bundling for the production image |
@@ -49,15 +52,18 @@
 | `scripts/production-readiness-contract.mjs` / `scripts/verify-production-readiness.mjs` | Vendor-neutral, exact-candidate, fail-closed paid-production evidence gate and JSON report |
 | `scripts/production-preflight-contract.mjs` / `scripts/verify-production-preflight.mjs` | Read-only Linux-host configuration, source/image identity, secret-file, and live OIDC preflight that emits revision-bound evidence only on success |
 | `scripts/artifact-security-*.mjs` / `scripts/import-artifact-security-evidence.mjs` | Main-CI evidence creation plus GitHub run/job/artifact-digest verification that emits exact-candidate artifact evidence only on success |
-| `scripts/production-infrastructure-profile.mjs` | ADR 0018's declarative, non-provisioned ECS/RDS/Tair production capacity and private-network baseline |
+| `scripts/production-infrastructure-profile.mjs` | ADR 0021's selected existing 2-vCPU / 4-GiB / 50-GiB Hong Kong seed-host contract plus ADR 0018's separately named, unauthorized managed scale-out option |
 | `scripts/production-runtime-adapter.mjs` | ADR 0017's non-executable Nginx/Compose blue-green slot, single-Worker handoff, and traffic-switch contract |
 | `scripts/run-production-release.mjs` | Full-gate production release planner with ordered ADR 0017 adapter phases and no mutation or command-execution path |
+| `scripts/production-conversion-contract.mjs` / `scripts/run-production-conversion.mjs` | Exact-target, fail-closed initial-conversion manifest validation and dry-run planning with no execution path |
+| `scripts/production-work-package-contract.mjs` / `scripts/run-production-work-package.mjs` | Deterministic local inspection of the complete single-host conversion package; validates state, slots, maintenance, backup, R2 preview, checklists, rollback, and release binding without live execution |
+| `server/generation/r2-inventory-contract.mjs` / `server/runtime/r2-inventory.mjs` | Exact current-object metadata inventory/fingerprint and read-only R2 listing role; deletion remains an unavailable separately approved operation |
 | `scripts/run-o1key-local.mjs` | Interactive isolated O1Key smoke launcher with a worker-only temporary secret file |
 | `Dockerfile` / `.dockerignore` | One non-root Linux application image and its build-context boundary |
 | `compose.yaml` | Pinned web/worker/mock plus PostgreSQL, Valkey, RustFS, one-shot migration, and opt-in maintenance topology |
 | `compose.staging.yaml` / `compose.staging.dependencies.yaml` / `infra/staging/` | Digest-only app roles, a separately operated resource-bounded test-data dependency stack, host bootstrap/install helpers, and non-secret staging templates; real secrets remain outside the checkout |
 | `compose.o1key-local.yaml` | Explicit local worker override for the O1Key route and mounted key file |
-| `infra/production/` | Non-secret production release/runtime and readiness-evidence examples; live configuration, credentials, and operational evidence stay outside Git |
+| `compose.production*.yaml` / `infra/production/` | Resource-bounded production state and blue/green app topology, exact four-hour conversion runbook, maintenance/Nginx boundary, backup automation, slot/systemd templates, and non-secret manifests; credentials, approvals, and operational evidence stay outside Git |
 | `.openai/hosting.json` | Current prototype hosting identity; not an app secret |
 
 The remaining project, asset, detail, and view orchestration in `app/page.tsx`
@@ -73,14 +79,17 @@ app/
   create/
   projects/
   assets/
+  admin/users/    site-owner-only account management entry
 features/
   creation/      composer, settings, stream, job states
   references/    upload queue, ordering, validation
   projects/      save, restore, autosave, clean start
   assets/        batch view, gallery, selection, detail
   models/        catalog, capability mapping, UI copy
+  admin/         account review and promotional-credit browser boundary
 server/
   api/            authenticated route handlers
+  admin/          site-owner authorization, account review, and audit writes
   auth/           identity binding, authorization, ownership context
   generation/     jobs, provider adapters, routing, reconciliation
   billing/        price versions, entitlements, credit ledger, payments

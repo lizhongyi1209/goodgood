@@ -27,15 +27,75 @@ const timestamps = {
 export const users = pgTable(
   "users",
   {
+    accountTier: text("account_tier").default("seed").notNull(),
     id: uuid("id").primaryKey(),
     email: text("email").notNull(),
     locale: text("locale").default("zh-CN").notNull(),
-    status: text("status").default("active").notNull(),
+    status: text("status").default("pending").notNull(),
     ...timestamps,
   },
   (table) => [
     uniqueIndex("users_email_unique").on(table.email),
-    check("users_status_check", sql`${table.status} in ('active', 'disabled')`),
+    check(
+      "users_account_tier_check",
+      sql`${table.accountTier} in ('seed')`,
+    ),
+    check(
+      "users_status_check",
+      sql`${table.status} in ('pending', 'active', 'suspended')`,
+    ),
+  ],
+);
+
+export const systemRoleAssignments = pgTable(
+  "system_role_assignments",
+  {
+    id: uuid("id").primaryKey(),
+    ownerId: uuid("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    role: text("role").notNull(),
+    source: text("source").notNull(),
+    assignedByOperatorId: text("assigned_by_operator_id").notNull(),
+    reason: text("reason").notNull(),
+    idempotencyKey: text("idempotency_key").notNull(),
+    operationHash: text("operation_hash").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("system_role_assignments_owner_role_unique").on(
+      table.ownerId,
+      table.role,
+    ),
+    uniqueIndex("system_role_assignments_idempotency_unique").on(
+      table.idempotencyKey,
+    ),
+    check(
+      "system_role_assignments_role_check",
+      sql`${table.role} in ('site_owner')`,
+    ),
+    check(
+      "system_role_assignments_source_check",
+      sql`${table.source} in ('bootstrap')`,
+    ),
+    check(
+      "system_role_assignments_operator_check",
+      sql`length(${table.assignedByOperatorId}) between 2 and 100`,
+    ),
+    check(
+      "system_role_assignments_reason_check",
+      sql`length(${table.reason}) between 1 and 200`,
+    ),
+    check(
+      "system_role_assignments_idempotency_key_check",
+      sql`length(${table.idempotencyKey}) between 8 and 200`,
+    ),
+    check(
+      "system_role_assignments_operation_hash_check",
+      sql`length(${table.operationHash}) = 64`,
+    ),
   ],
 );
 
@@ -747,6 +807,73 @@ export const creditLedgerEntries = pgTable(
       sql`(${table.entryType} in ('settle', 'release', 'refund') and ${table.priorEntryId} is not null and ${table.relatedJobId} is not null)
         or (${table.entryType} = 'reserve' and ${table.priorEntryId} is null and ${table.relatedJobId} is not null)
         or (${table.entryType} in ('grant', 'expire', 'adjust'))`,
+    ),
+  ],
+);
+
+export const administrativeActions = pgTable(
+  "administrative_actions",
+  {
+    id: uuid("id").primaryKey(),
+    actorOwnerId: uuid("actor_owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    targetOwnerId: uuid("target_owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    actionType: text("action_type").notNull(),
+    previousStatus: text("previous_status"),
+    resultingStatus: text("resulting_status"),
+    creditAmount: bigint("credit_amount", { mode: "bigint" }),
+    creditLedgerEntryId: uuid("credit_ledger_entry_id").references(
+      () => creditLedgerEntries.id,
+      { onDelete: "restrict" },
+    ),
+    reason: text("reason").notNull(),
+    idempotencyKey: text("idempotency_key").notNull(),
+    operationHash: text("operation_hash").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("administrative_actions_actor_idempotency_unique").on(
+      table.actorOwnerId,
+      table.idempotencyKey,
+    ),
+    uniqueIndex("administrative_actions_credit_entry_unique")
+      .on(table.creditLedgerEntryId)
+      .where(sql`${table.creditLedgerEntryId} is not null`),
+    index("administrative_actions_target_created_idx").on(
+      table.targetOwnerId,
+      table.createdAt,
+      table.id,
+    ),
+    index("administrative_actions_created_idx").on(
+      table.createdAt,
+      table.id,
+    ),
+    check(
+      "administrative_actions_type_check",
+      sql`${table.actionType} in ('bootstrap_site_owner', 'approve_account', 'suspend_account', 'restore_account', 'grant_test_credits')`,
+    ),
+    check(
+      "administrative_actions_status_check",
+      sql`(${table.actionType} = 'bootstrap_site_owner' and ${table.previousStatus} in ('pending', 'active') and ${table.resultingStatus} = 'active' and ${table.creditAmount} is null and ${table.creditLedgerEntryId} is null)
+        or (${table.actionType} in ('approve_account', 'suspend_account', 'restore_account') and ${table.previousStatus} in ('pending', 'active', 'suspended') and ${table.resultingStatus} in ('active', 'suspended') and ${table.creditAmount} is null and ${table.creditLedgerEntryId} is null)
+        or (${table.actionType} = 'grant_test_credits' and ${table.previousStatus} is null and ${table.resultingStatus} is null and ${table.creditAmount} between 1 and 5000 and ${table.creditLedgerEntryId} is not null)`,
+    ),
+    check(
+      "administrative_actions_reason_check",
+      sql`length(${table.reason}) between 1 and 200`,
+    ),
+    check(
+      "administrative_actions_idempotency_key_check",
+      sql`length(${table.idempotencyKey}) between 8 and 200`,
+    ),
+    check(
+      "administrative_actions_operation_hash_check",
+      sql`length(${table.operationHash}) = 64`,
     ),
   ],
 );

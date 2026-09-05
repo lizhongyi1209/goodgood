@@ -8,6 +8,14 @@ export async function GET(request: Request) {
   if (process.env.NODE_ENV !== "production" && !process.env.GOODGOOD_AUTH_MODE) {
     return Response.json(
       {
+        account: {
+          availableCredits: "100",
+          reservedCredits: "0",
+          role: "member",
+          tier: "seed",
+          unit: "credit",
+        },
+        access: { status: "active" },
         authenticated: true,
         preview: true,
         user: { email: "preview@goodgood.local" },

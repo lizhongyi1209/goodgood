@@ -71,6 +71,7 @@ const DEFAULT_OPERATIONS = Object.freeze({
 });
 
 export function createGenerationNodeApiHandler({
+  admitGeneration = async () => {},
   authenticate,
   operations = DEFAULT_OPERATIONS,
 }) {
@@ -112,6 +113,7 @@ export function createGenerationNodeApiHandler({
     try {
       const ownerContext = await authenticate(request);
       if (url.pathname === "/api/generations" && request.method === "POST") {
+        await admitGeneration();
         const result = await operations.submitGeneration({
           idempotencyKey: idempotencyKey(request),
           input: await readJson(request),
@@ -128,6 +130,7 @@ export function createGenerationNodeApiHandler({
       if (retryMatch && request.method === "POST") {
         jobId = decodeURIComponent(retryMatch[1]);
         correlateRequest(request, { jobId });
+        await admitGeneration();
         const result = await operations.retryGeneration({
           idempotencyKey: idempotencyKey(request),
           jobId,

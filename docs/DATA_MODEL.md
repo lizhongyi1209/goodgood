@@ -18,8 +18,10 @@ credit-account caches, an append-only credit ledger, nullable price/reservation
 links on existing batches and jobs, the accepted Banana 2 prices, and the
 one-time welcome grant for existing owners. A tenth migration adds immutable
 payment-product versions, owner-scoped orders, append-only webhook evidence,
-and the local fake payment settlement path. The Drizzle schema mirrors all ten
-migrations. A fuller project-backed creation session record and entitlements
+and the local fake payment settlement path. An eleventh migration adds three-state admission, the seed
+tier projection, immutable site-owner assignment, and append-only account
+administration evidence. The Drizzle schema mirrors all eleven migrations. A
+fuller project-backed creation session record and entitlements
 remain canonical contracts for later slices.
 
 `migrations/0001_m3_generation.sql` is additive and safe to rerun through the
@@ -102,14 +104,54 @@ provider/order and account/idempotency constraints make exact replay a no-op and
 prevent the same receipt from funding another order. Manual payment evidence is
 an operational bridge, not a browser-writable balance or a fake provider event.
 
+Migration `0011_m8_account_admission.sql` separates account access, system role,
+and product tier. New-owner provisioning changes from immediate active access
+to `pending` review while preserving the idempotent 100-credit welcome grant.
+Existing `disabled` rows migrate to `suspended`; the only valid access values
+are `pending | active | suspended`, and the initial tier is `seed`. The
+migration also adds immutable site-owner assignment and administrative-action
+evidence before the browser surface can mutate access or grant test credit.
+
 ## Entities
 
 ### User
 
-Identity, locale, status, created/updated timestamps. Authentication provider
-data remains separate from product profile data. Current plan, entitlements,
-and credit are resolved through their own records rather than a browser-writable
-user balance.
+Identity, locale, `pending | active | suspended` access state, the current
+`seed` account tier, and created/updated timestamps. Authentication
+provider data remains separate from product profile data. New M8 owners default
+to pending but still receive the one-time welcome grant; creation authorization
+requires an approved access state. Current plan, entitlements, account tier,
+system role, and credit are resolved through their own records rather than a
+browser-writable user balance.
+
+### SystemRoleAssignment
+
+Owner, stable `site_owner` role, bootstrap source, external operator ID, reason,
+idempotency identity/hash, and timestamp. The initial assignment is immutable;
+ordinary owners have the implicit `member` role. Administrative authority is
+independent of account tier, credit, email domain, and registration order. The
+role is never assignable through the public browser surface.
+
+### AccountTier
+
+The current user projection stores stable tier value `seed`, presented as
+`内测用户`. Future paid product tiers and effective-interval history require a
+later additive model; no tier may imply administrative authority. Visible
+Chinese labels map from stable backend values.
+
+### AccountAccessDecision
+
+The append-only `AdministrativeAction` stores target owner, prior and resulting
+access state, site-owner actor, reason, idempotency key/hash, and timestamp for
+approval, suspension, and restoration. `User.status` caches the effective
+state; review history is never rewritten or deleted to change that projection.
+
+### AdministrativeAction
+
+Append-only audit envelope for site-owner account operations: action type,
+actor, target owner, prior/resulting state or credit amount, validated reason,
+idempotency identity/hash, and timestamp. A promotional credit action links to
+its `CreditLedgerEntry`; it never links to or creates a `PaymentOrder`.
 
 ### AuthIdentity
 
@@ -290,6 +332,13 @@ Contains ordering and membership metadata; never duplicate image bytes.
   and provider-route identifiers never enter the browser contract; the read
   does not create an account or grant credit.
 - Browser values and provider usage reports never directly mutate balances.
+- Pending accounts may hold welcome credit but cannot reserve or consume it.
+  Approval is checked at the shared server capability boundary, not inferred
+  from a visible page or a positive balance.
+- System role, account access state, and account tier are independent. Neither
+  paid tier nor credit balance confers administrative authority.
+- Account review and promotional grants are server-authorized, idempotent, and
+  append-auditable. Test grants never create payment evidence.
 - Ledger, payment, queue, and callback writes are idempotent.
 - Project creation is owner-scoped and idempotent; batches cannot be reassigned
   from one project to another by a browser request.

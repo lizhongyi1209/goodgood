@@ -43,28 +43,60 @@
   full-gate production release planner now returns only non-executable dry-run
   phases and has no execution path. ADR 0017 selects the provider-neutral
   `nginx-compose-blue-green-v1` production adapter: two loopback-only
-  application slots behind host Nginx, external durable state, and exactly one
-  active production Worker. Candidate and rollback evidence must now prove the
+  application slots behind host Nginx, durable state outside the application
+  slots, and exactly one active production Worker. Candidate and rollback evidence must now prove the
   adapter-specific health, state, Worker, and no-schema-downgrade invariants.
   ADR 0018 selects the non-provisioned `alibaba-managed-state-v1`
   infrastructure profile: an x86_64 Alibaba Cloud ECS application-host floor,
   RDS PostgreSQL 17 High-availability Edition, and private-only Tair standard
-  master-replica coordination. The exact production region remains unset
-  because the accepted Hong Kong direction cannot itself provide Alibaba
-  Cloud's mainland ICP filing resource; the profile grants no purchase,
-  production deployment, or executable-release authority.
+  master-replica coordination. ADR 0019 now selects Hong Kong for a distinct,
+  invite-only seed-production control plane without customer checkout. It keeps
+  the M7 test-data staging host separate, moves domestic Alipay and the
+  applicable ICP/domain review to a later paid-commercialization gate, and
+  grants no purchase, production deployment, or executable-release authority.
+  ADR 0021 later supersedes that immediate topology for the unpaid seed phase:
+  the current 2-vCPU / 4-GiB Hong Kong host will be cleanly converted to
+  production, local/test-only work moves to the operator workstation, and ADR
+  0018 becomes the future measured scale-out target.
   CI run 29 passed for revision `05d8dd2` and its
   immutable artifact-security record has passed the repository importer for
   digest `195db77d74e1`. External monitoring activation and delivery remain
   required handoff evidence rather than a repository implementation claim.
-- Current objective: continue M8 paid-production readiness by collecting the
-  security/compliance evidence, production recovery/rollback and candidate
-  health proof, and the delegated monitoring handoff while ICP filing, the
-  production domain, and domestic Alipay merchant prerequisites progress.
-  Resolve the production region with the ICP-filed domain topology, then
-  revalidate regional capacity/price and provision no-customer rehearsal
-  infrastructure before reviewing an executable ADR 0017 adapter
-  implementation.
+- Current objective: continue M8 reviewed seed-production readiness in
+  Alibaba Cloud Hong Kong. Phase 1 is complete: registration/login has no
+  numeric cap, every new owner starts pending with the existing 100 welcome
+  credits, only site-owner approval enables product use, routine review and
+  additional test-credit grants belong in a site-owner-only web page, and all
+  account/creative data is production data. Phase 2 is implemented locally:
+  access is exactly pending/active/suspended, role is site-owner/member, the
+  initial tier is seed, the first site owner uses a one-time audited bootstrap,
+  and `/admin/users` owns review, suspension/restoration, search, credit
+  summaries, audit history, and reasoned 1-5000 test-credit grants. Phase 3 now
+  uses the current Hong Kong server for seed production, reserves rather than
+  activates `staging-goodgood.o1key.com`, and requires a clean production
+  database and queue, an emptied and credential-rotated existing `goodgood` R2
+  bucket, a production secret set, and site-owner bootstrap. Local
+  development and test use no production data or secrets. The final staging
+  archive is retained seven days; production keeps the one-hour RPO, four-hour
+  RTO, and 14 daily / 8 weekly / 12 monthly encrypted recovery-point contract.
+  There is no fixed generation-count, queue-depth, or concurrency ceiling;
+  monitoring discovers the practical limit. Only low host memory or high disk
+  use pauses new submissions. The current Authing application and identity
+  directory are reused with a rotated application secret, fresh database-backed
+  session state, and exact
+  production callbacks; all GoodGood account state still starts fresh. The
+  initial conversion uses a public maintenance page and a four-hour stop limit,
+  and opens only after the complete clean-state gate passes. Phase 3 requirements
+  are complete. Phase 4 local preparation and the first read-only host inventory
+  are complete: the selected profile now
+  describes the existing host, the Worker overlaps accepted jobs without a
+  fixed count ceiling and drains them on shutdown, new generation writes use a
+  latched 500-MiB/80% resource gate, and the maintenance asset plus exact-target
+  conversion manifest remain non-executable. Live conversion still requires a
+  separate review and approval. Collect the security/privacy/abuse,
+  recovery/rollback, candidate-health, incident-ownership, and delegated
+  monitoring evidence before admitting any seed user. Customer checkout,
+  domestic Alipay, and the applicable ICP/domain gate remain planned in M9.
   Full-byte real-carrier throughput remains an accepted operator deferral.
 
 ## Purpose and update contract
@@ -85,8 +117,87 @@ change with:
 Do not turn this file into a commit log. Git history owns detailed history;
 this file owns the current handoff state.
 
+## M8 staged execution
+
+Advance only one stage at a time. At the end of each stage, present its result
+and unresolved choices to the operator; do not begin the next stage until those
+requirements are confirmed.
+
+1. **Launch policy and scope — completed.** Hong Kong is the production region;
+   registration/login is open without a numeric cap; new owners are pending
+   with 100 welcome credits; site-owner approval enables use; routine review
+   and additional test credit use a protected web page; seed data is durable
+   production data; M9 retains paid commercialization.
+2. **Admission and seed-credit controls — completed locally.** Access is
+   `pending | active | suspended`; role is `site_owner | member`; the initial
+   tier is `seed`. Migration 0011, the pending/suspended surface, shared active
+   capability guard, dry-run-first owner bootstrap, protected account page,
+   review audit, and non-payment ledger grant are implemented and tested.
+3. **Single-host conversion requirements — completed.** The current Hong
+   Kong host becomes production; `goodgood.o1key.com` stays canonical; no
+   permanent remote staging environment is kept. Start with fresh PostgreSQL,
+   Valkey, an inventory-cleared existing `goodgood` R2 bucket with rotated
+   credentials, production secrets, and an audited site-owner bootstrap. Import
+   no staging business data. The final staging
+   archive has a seven-day safety window; production retains at most one hour
+   RPO, at most four hours RTO, and 14 daily / 8 weekly / 12 monthly encrypted
+   recovery points. No fixed job/concurrency ceiling is imposed; new generation
+   pauses only below 500 MiB available host memory or at 80% root-disk use.
+   Reuse the current Authing application/directory, rotate its client secret,
+   import no hashed GoodGood session, keep exact production callbacks only, and
+   reprovision every returning identity as a fresh pending GoodGood owner.
+   The initial conversion stays in public maintenance for at most four hours
+   and opens only after every clean-state and release check passes.
+4. **No-customer production conversion — exact local work package and read-only
+   inventory completed.** The
+   single-host infrastructure contract, concurrent Worker, memory/disk gate,
+   maintenance surface, and non-executable dry-run conversion manifest are
+   implemented and tested locally. Resource-bounded production PostgreSQL/
+   Valkey Compose, exact blue/green slots, fail-closed maintenance activation,
+   half-hour encrypted backup plus 14/8/12 retention, read-only R2 inventory and
+   no-execution deletion preview, Authing/secret checklists, rollback checkpoints,
+   and the four-hour conversion runbook now form one deterministic local
+   rehearsal. The current host, database/queue counts,
+   R2 inventory summary, backup snapshots, runtime limits, Nginx boundary, and
+   public health were then inspected without mutation. No host, R2, or Authing
+   setting changed.
+   Only after a separate live-action review may this phase freeze and archive
+   staging, create fresh production state, rotate secrets, validate the
+   executable release adapter within 2-vCPU / 4-GiB headroom, and receive the
+   delegated monitoring handoff. Every destructive step needs a separate exact-
+   target approval.
+5. **Exact-candidate rehearsal — pending.** Pass security/privacy/retention and
+   abuse review, preflight, migration, candidate health/state invariants,
+   public synthetic checks, restore drill, alert delivery, and rollback without
+   schema downgrade.
+6. **Reviewed seed rollout — pending.** Admit accounts only through site-owner
+   review, enforce credit and rate limits, observe the agreed signals and stop
+   conditions, and keep checkout disabled. Registration has no numeric cap.
+
+M9 begins only after a separate operator decision to resume payment work.
+
 ## Current checkpoint
 
+- The ADR 0021 production-conversion work package is now locally complete and
+  rehearsable through `npm run production:work-package -- rehearse`. It binds
+  fresh production volumes, exact slot ports, Worker drain, fail-closed public
+  maintenance, current-version R2 fingerprint/preview, the <=1h backup schedule
+  and 14 daily / 8 weekly / 12 monthly retention, Authing/secret rotation, and
+  R0-R7 rollback checkpoints. The rehearsal has no child-process, network,
+  deletion, deployment, or traffic-open path; the checked-in conversion manifest
+  remains pending. The accepted next slice is to publish this verified source
+  through the existing main-branch CI as one immutable candidate, retain its
+  exact artifact-security identity outside Git, and then ask the operator to
+  select the maintenance window; publication does not authorize a production
+  host action. Local verification on 2026-09-05 passed the nine-group work-package
+  rehearsal, shell syntax for all three production control/backup scripts,
+  dependency plus blue/green Compose parsing, least-privilege merged R2-role
+  inspection, runtime bundling, and the complete `npm run check:local` gate:
+  lint, TypeScript, production build, and 179 tests completed with 175 passing
+  and four opt-in integrations skipped. `git diff --check` also passed with only
+  the existing Windows line-ending notices. After the candidate is recorded,
+  the next smallest operator decision is the China Standard Time maintenance
+  window; no live action is authorized yet.
 - M3 now completes the narrow production-shaped path from browser submission to
   idempotent Node API, PostgreSQL batch/job/outbox transaction, Valkey delivery,
   worker, authenticated HTTP mock provider, RustFS object write, Asset record,
@@ -96,7 +207,8 @@ this file owns the current handoff state.
   assets, generation batches, jobs, attempts, generated assets, append-only job
   events, queue outbox, owner-scoped projects with batch association, and one
   expiring root creation draft per owner, immutable price versions, exact
-  credit-account caches, and append-only credit entries. All ten versioned migrations
+  credit-account caches, append-only credit entries, account admission, roles,
+  and administrative audit. All eleven versioned migrations
   record checksums and tolerate rerun;
   Compose runs them as an explicit one-shot release step before web and worker
   start.
@@ -822,7 +934,7 @@ this file owns the current handoff state.
   drill archive and the verified encrypted off-host restore are completed backup
   evidence. Full-byte mainland
   throughput remains an accepted operator deferral, while domestic payment
-  remains an M8/ICP dependency.
+  is deferred to M9 and its applicable ICP/domain review.
 - ADR 0014 selects a separate private Cloudflare R2
   `goodgood-postgres-backups` bucket, Restic client-side encryption, and a
   staging-only `14 daily / 8 weekly / 3 monthly` policy. Its 2026-09-04
@@ -976,10 +1088,10 @@ this file owns the current handoff state.
   single-platform CI publication provides no ARM evidence, so the profile
   fails closed on an ARM substitution. Official Alibaba Cloud documentation
   also confirms that its regular-website ICP filing path requires a mainland
-  China resource; production region, zone pair, exact SKU, price, quota, and
-  identifiers therefore remain unset until the Hong Kong-versus-mainland
-  domain topology is explicitly resolved. The contract sets purchase,
-  production-deployment, and executable-release authorization to false.
+  China resource. ADR 0019 later resolves the invitation-only production region
+  as Hong Kong while leaving the zone pair, exact SKU, price, quota, and
+  identifiers unset. The contract still sets purchase, production-deployment,
+  and executable-release authorization to false.
   On 2026-09-05, the resulting exact source passed `npm run check:local`: lint,
   full TypeScript checking, the production build, and 160 tests with 156
   passing and four opt-in integration tests skipped.
@@ -995,19 +1107,169 @@ this file owns the current handoff state.
   current exact-revision artifact evidence and continues to reject every other
   pending or blocked requirement. No GoodGood production deployment is
   claimed.
-- Next action: collect the external security/privacy/abuse review, delegated
-  monitoring handoff, and production backup/restore, candidate-health, and
-  rollback proof for the selected exact candidate.
-  Resolve whether the filed paid-production domain remains on the documented
-  Hong Kong control plane or requires a mainland China control plane. Then
-  recheck current regional ECS/RDS/Tair inventory and price, prepare the exact
-  pay-as-you-go purchase request, and provision only after explicit operator
-  approval. No executable release path is added before a no-customer rehearsal
-  of the provisioned profile.
-  Keep early paid access on the documented operator bridge. After the filed
-  domain and domestic Alipay merchant sandbox are available, implement the
-  provider adapter against the existing immutable order/settlement boundary and
-  add the smallest customer checkout UI.
+- ADR 0019 now records the operator's Hong Kong invitation-only seed-production
+  decision and moves paid commercialization to M9 without weakening security,
+  privacy, recovery, monitoring, candidate-health, or rollback requirements.
+  The declarative production profile now reports `china-hong-kong` as selected
+  but not provisioned while retaining all three purchase/deployment/executable
+  authorization flags as false. The staged M8 handoff requires operator
+  confirmation between launch policy, admission controls, purchasing,
+  no-customer foundation, exact-candidate rehearsal, and seed rollout. The
+  existing run-29 digest remains historical evidence only: changing the runtime
+  infrastructure profile changes the runtime-contract checksum, so a later
+  exact candidate must produce fresh CI and artifact-security evidence. On
+  2026-09-05, the updated source passed `npm run check:local`: lint, full
+  TypeScript checking, the production build, and 160 tests with 156 passing and
+  four opt-in integration tests skipped. The gate also now ignores the
+  Git-ignored generated `work/` directory instead of linting a nested build
+  copy.
+- ADR 0020 completes M8 phases 1 and 2: open Authing login provisions pending
+  owners,
+  the existing 100-credit welcome grant remains, creation use requires explicit
+  site-owner approval, routine review and additional free test-credit grants
+  move to a site-owner-only account page, and every seed account and creative
+  record is production data. It also fixes the security boundary that system
+  role, access state, and account tier remain independent; no site-owner role is
+  inferred from registration order, email, tier, or balance. Migration 0011,
+  pending/suspended account surfaces, the shared active-capability guard,
+  dry-run-first site-owner bootstrap, server-authorized `/admin/users` APIs and
+  page, immutable review audit, and atomic 1-5000 test-credit grants are now
+  implemented locally. The grant path appends operator ledger evidence without
+  creating payment orders; the management page includes private POST-body
+  search, status filters, visible balances/timestamps, loading/empty/failure
+  recovery, and recent action history.
+  On 2026-09-05, `npm run check:local` passed lint, full TypeScript checking,
+  the Vinext production build, and 169 tests with 165 passing and four opt-in
+  integration tests skipped. `npm run build:runtime` bundled the Web, Worker,
+  and new bootstrap process, `npm run stack:config` accepted the Compose model,
+  and `git diff --check` found no whitespace errors. Docker Desktop's Linux
+  engine was not running, so live PostgreSQL migration/replay and browser
+  behavior remain named no-customer rehearsal evidence rather than claimed
+  local results.
+- On 2026-09-05, the operator assigned `goodgood.o1key.com` to production and
+  selected `staging-goodgood.o1key.com` as the existing test environment's
+  migration target. ADRs 0019 and 0012 plus the architecture and deployment
+  runbook now preserve the ordered DNS/TLS/Nginx/R2/Authing cutover boundary.
+  This documentation update changed no live DNS, certificate, Authing, Nginx,
+  R2 CORS, staging contract, or production environment. `npm run check:local`
+  passed lint, full TypeScript checking, the Vinext production build, and 170
+  tests with 166 passing and four opt-in integration tests skipped;
+  `git diff --check` found no whitespace errors.
+- ADR 0021 records the later capacity decision: reuse the current 2-vCPU /
+  4-GiB / 50-GiB Hong Kong server for initial unpaid seed production, keep
+  development and test on the operator workstation with local/test-only data,
+  reserve `staging-goodgood.o1key.com` without activating it, and retain ADR
+  0018's ECS/RDS/Tair profile as the measured scale-out target. The operator
+  also selected a clean production start: no staging user, credit, project,
+  generation, session, audit, queue, or object record is imported. Fresh
+  database/queue state, production R2 namespace and credentials, rotated
+  secrets, and the audited site-owner bootstrap define the boundary. This
+  documentation change connected to no server and deleted or changed no data.
+  `npm run check:local` passed lint, full TypeScript checking, the Vinext
+  production build, and 170 tests with 166 passing and four opt-in integration
+  tests skipped; `git diff --check` found no whitespace errors.
+- The operator retained ADR 0015's production recovery objectives for the
+  single-host launch: backups no more than one hour apart, restore targeted
+  within four hours, and at least 14 daily / 8 weekly / 12 monthly encrypted
+  off-host recovery points. The final verified staging archive remains isolated
+  for seven days after clean conversion, then is deleted only through a
+  separate exact-target approval. No backup schedule or live retention setting
+  was changed by this documentation decision. `npm run check:local` passed
+  lint, full TypeScript checking, the Vinext production build, and 170 tests
+  with 166 passing and four opt-in integration tests skipped.
+- The operator chose observation rather than a fixed generation limit. There
+  is no per-user pending-job cap, global queue-depth cap, fixed concurrent-job
+  ceiling, CPU rejection threshold, or automatic scale-up. The durable queue
+  remains only for correctness, crash recovery, and momentary backpressure.
+  New generation pauses when host `MemAvailable` is below 500 MiB or root-disk
+  use reaches 80%; in-flight provider work is preserved and recovery is manual.
+  Code inspection confirmed that the current Worker is serial, so concurrent
+  draining without a fixed count ceiling is a named launch implementation gap,
+  not a capability claim. Monitoring must capture active jobs, submission and
+  queue behavior, latency/failures, state pressure, restarts, memory, disk, and
+  backup freshness before a later capacity decision. `npm run check:local`
+  passed lint, full TypeScript checking, the Vinext production build, and 170
+  tests with 166 passing and four opt-in integration tests skipped.
+- The operator selected reuse of the current private Cloudflare R2 `goodgood`
+  bucket for production rather than a new bucket or prefix. The conversion must
+  inventory every object, preview and separately approve the exact deletion,
+  remove all test objects, verify the bucket is empty, and rotate its scoped
+  credentials before the first production upload. The decision itself did not
+  inspect, delete, or change any live R2 object or credential.
+  `npm run check:local` passed lint, full TypeScript checking, the Vinext
+  production build, and 170 tests with 166 passing and four opt-in integration
+  tests skipped.
+- The operator selected reuse of the current Authing application and identity
+  directory. Conversion retains the issuer, client ID, hosted Google connection,
+  passwordless email, and external identity records; it rotates the OIDC client
+  secret, imports no old hashed GoodGood sessions into fresh state, and keeps only the exact
+  `https://goodgood.o1key.com/api/auth/callback` login callback and
+  `https://goodgood.o1key.com/` logout URL. Fresh GoodGood state means every
+  returning identity provisions a new pending account with the standard welcome
+  grant and no inherited role, credit, session, or content. No Authing console,
+  identity, allowlist, or secret was read or changed by this documentation
+  decision. `npm run check:local` passed lint, full TypeScript checking, the
+  Vinext production build, and 170 tests with 166 passing and four opt-in
+  integration tests skipped.
+- The operator selected a visible public maintenance window for the initial
+  conversion with a four-hour execution limit. Production opens only after
+  fresh migrations, cleared/rotated R2, Authing rotation, site-owner bootstrap,
+  pending isolation, backup/restore, real generation/private read, candidate
+  health, and rollback all pass. At the limit or any failure, the attempt stops
+  with maintenance still active; old staging may run only privately for
+  diagnosis and is never republished or imported. This decision changed no live
+  route or maintenance state. `npm run check:local` passed lint, full
+  TypeScript checking, the Vinext production build, and 170 tests with 166
+  passing and four opt-in integration tests skipped.
+- M8 phase-4 local preparation now implements the selected
+  `alibaba-hong-kong-single-host-seed-v1` contract while retaining ADR 0018's
+  managed profile only as a separately named, unauthorized scale-out option.
+  One Worker process now starts every accepted queue item without a fixed count
+  ceiling, reports active-job count, and drains all in-flight promises before
+  closing. New Node-runtime generation submit/retry requests fail with
+  `GENERATION_CAPACITY_PROTECTED` below 500 MiB `MemAvailable`, at 80% root-disk
+  use, or when host observations fail; protection latches until operator review
+  and process restart while reads and other handlers remain outside the gate.
+  The exact-target conversion example, planner, and quiet GoodGood maintenance
+  page are checked in. The planner has no execute flag, process-spawn path, live
+  connection, or destructive filesystem operation. `npm run check:local`
+  passed lint, full TypeScript checking, the Vinext production build, and 175
+  tests with 171 passing and four opt-in integration tests skipped.
+- The first phase-4 live-action review was strictly read-only. The Ubuntu 24.04
+  x86_64 host exposes the expected 2 CPUs; Linux reports 3,583,316 KiB total and
+  2,499,112 KiB available memory, the 50-GiB root filesystem is 21% used, and
+  the 2-GiB swap is effectively unused. All five staging containers are healthy
+  with zero restarts and about 265 MiB aggregate observed memory at the sample;
+  public root/live/ready return HTTP 200. Only SSH/Nginx are public at the host,
+  application/storage health ports remain loopback, and the Nginx Cloudflare
+  allowlist ends in `deny all`. The deployed application is still migration
+  `0010_m6_payment_sandbox.sql`, both process stop timeouts are 10 seconds, and
+  the production maintenance marker/asset and production volume names are
+  absent, so no production capability is claimed.
+- The staging database is about 9.2 MiB and contains 4 test users, 7 sessions,
+  8 ledger entries, and 2 terminal generation jobs; Valkey has zero ready,
+  processing, or other keys. The private `goodgood` R2 bucket contains exactly
+  3 test objects (1 generated and 2 references), 576,607 bytes total, matching
+  the recorded application-object counts; its sorted metadata inventory hash is
+  `23f2bab02562ae57f723d954c8bff145cc2df3dad354fd0db5756f9a4c504f2f`.
+  Nothing was downloaded or deleted. The encrypted off-host repository exposes
+  3 automated PostgreSQL snapshots through a no-cache/no-lock listing, newest
+  at 2026-09-05 02:30:52 CST, while the installed retention is still 14 daily /
+  8 weekly / 3 monthly rather than production's required 12 monthly. Runtime
+  OIDC discovery, exact production login callback, secure cookie, private R2
+  verification mode, O1Key route, and disabled fake payment all pass. Authing's
+  complete console callback/logout allowlist and future production-secret
+  rotation cannot be proven from the host and remain explicit conversion gates.
+  No service, configuration, credential, traffic, database row, queue key,
+  object, archive, or repository lock changed during this inspection.
+- Next action: present the read-only inventory and gaps to the operator and
+  wait. With separate confirmation, prepare and locally rehearse the exact
+  conversion work package: bounded production PostgreSQL/Valkey topology,
+  maintenance activation/recovery, five-minute Worker drain grace, 12-monthly
+  backup retention, R2 exact-key deletion preview, Authing console checklist,
+  secret-rotation checklist, and rollback checkpoints. This next step still
+  does not change the server, delete data, rotate credentials, or switch
+  traffic. Live conversion and each destructive target retain separate approval.
 - Blockers: domestic Alipay checkout requires the ICP-filed production domain,
   matching merchant approval, and sandbox credentials. These external items do
   not block M7 staging or trusted manual credit operation. The local fake
@@ -1020,11 +1282,17 @@ this file owns the current handoff state.
   design. ADR 0016 delegates monitoring implementation; live signal coverage,
   retention, delivery, acknowledgement, and ownership remain external
   `monitoring-handoff` evidence and cannot be bypassed. Production recovery
-  objectives remain fixed by ADR 0015. ADR 0018 selects the service/capacity
-  baseline but leaves production region blocked on the ICP-filed domain and
-  access topology. The production release planner is intentionally
-  non-executable until that region is resolved, the profile is provisioned for
-  no-customer rehearsal, and the executable adapter receives separate review;
+  objectives remain fixed by ADR 0015. ADR 0019 resolves the production region
+  as Hong Kong and the production hostname as `goodgood.o1key.com` for the seed
+  launch. ADR 0021 removes the immediate infrastructure-purchase blocker by
+  accepting the current host's single-failure-domain risk; exact conversion
+  implementation, recovery evidence, and destructive approval remain pending.
+  Archive retention, recovery objectives, and resource-pressure behavior are
+  confirmed but not yet configured or proved. The remote staging hostname is
+  reserved and not activated.
+  The production release planner is intentionally non-executable until the
+  profile is provisioned for no-customer rehearsal and the executable adapter
+  receives separate review;
   a local plan is not deployment authority.
   An ICP-filed custom authentication domain is not required now because
   the Authing-provided application domain is the accepted temporary path. The
@@ -1102,8 +1370,9 @@ Completed real-Authing loopback checklist:
 | M4 | Production identity, ownership, references, and projects persist safely | Completed | Authing-compatible OIDC/PKCE, hashed sessions, provider-neutral ownership, signed references, cleanup, root-draft/project/asset persistence, optimistic conflict handling, cross-owner denial, and the requested real-Authing loopback matrix pass; public HTTPS callback/logout now also passes under M7 staging |
 | M5 | US generation gateway integration and recovery | Completed | O1Key special-price adapter, explicit worker route, RustFS transfer, decoded output ingestion, durable-task restart, fake-server matrix, secret-file launcher, one real URL-output reference-image smoke, operator-confirmed New API charge/refund evidence, and ADR 0008's accepted at-most-once submission guard pass |
 | M6 | Versioned pricing, credit ledger, and payment sandbox | Completed | ADR 0009 launch prices, welcome grants, append-only accounting, live reserve/settle/release, account presentation, immutable CNY 10 / 500-credit product, idempotent orders, signed fake-sandbox fulfillment, dry-run-first manual paid-credit recording, isolated PostgreSQL tests, and full Compose pass |
-| M7 | Hong Kong staging | Completed | The hardened Hong Kong host, isolated dependencies, private R2, Cloudflare-only TLS origin, Authing callbacks and rotated secrets, real O1Key generation/reference ingestion, public logout recovery, rollback, mainland HTTP sampling, and all ten migrations pass. ADR 0014's separate encrypted off-host PostgreSQL repository, retention, two latest-snapshot restore drills, real systemd backup, and active persistent timer pass; outbound notification is deferred to M8 and QQ Mail is not under consideration. CI run 23 passes 133 tests, dependency and finished-image scans, and runtime import smoke after the React 19.2.8 fix. Its exact immutable digest is the promoted healthy release: Web/Worker and every dependency readiness check pass, public root/live/ready return HTTP 200, and credit state is unchanged. Full-byte real-carrier throughput remains an accepted non-blocking deferral; payment checkout stays intentionally absent until M8 |
-| M8 | Paid production readiness | In progress | ADR 0016 delegates monitoring-platform implementation while retaining redacted support correlation, production recovery/retention objectives, alert ownership, and mandatory live monitoring handoff evidence. Server-owned request/support IDs, structured Web/Worker correlation, the schema-2 vendor-neutral exact-candidate production evidence gate, secret-redacting Linux preflight, GitHub-verified artifact-security ingestion, a live imported artifact for CI run 27, ADR 0017's tested but non-executable Nginx/Compose blue-green adapter, and ADR 0018's non-provisioned ECS/RDS-HA/Tair private infrastructure baseline pass. Security/compliance evidence, monitoring handoff, production rollback/restore and candidate-health evidence, ICP-coupled production-region selection and no-customer provisioning, executable adapter review, ICP/domain, and domestic Alipay sandbox/checkout remain |
+| M7 | Hong Kong staging | Completed | The hardened Hong Kong host, isolated dependencies, private R2, Cloudflare-only TLS origin, Authing callbacks and rotated secrets, real O1Key generation/reference ingestion, public logout recovery, rollback, mainland HTTP sampling, and all ten migrations pass. ADR 0014's separate encrypted off-host PostgreSQL repository, retention, two latest-snapshot restore drills, real systemd backup, and active persistent timer pass; outbound notification is deferred to M8 and QQ Mail is not under consideration. CI run 23 passes 133 tests, dependency and finished-image scans, and runtime import smoke after the React 19.2.8 fix. Its exact immutable digest is the promoted healthy release: Web/Worker and every dependency readiness check pass, public root/live/ready return HTTP 200, and credit state is unchanged. Full-byte real-carrier throughput remains an accepted non-blocking deferral; payment checkout stays intentionally absent until M9 |
+| M8 | Hong Kong seed production readiness | In progress | ADR 0019 selects Hong Kong and `goodgood.o1key.com`; ADR 0020 completes the unlimited-open-login, pending review, 100-credit, site-owner console, and bounded test-credit controls locally. ADR 0021 completes phase-3 requirements: clean conversion of the current 2-vCPU / 4-GiB host, local/test-only preproduction, no active remote staging hostname or staging-data import, seven-day staging archive, one-hour RPO / four-hour RTO / 14 daily / 8 weekly / 12 monthly recovery, no fixed generation count/concurrency ceiling, 500-MiB memory and 80%-disk admission protection, reuse-after-cleaning of the `goodgood` R2 bucket, reuse-and-rotation of Authing, and a fail-closed four-hour maintenance window. Phase 4 local preparation implements and tests the single-host profile, concurrent Worker, resource gate, maintenance asset, and non-executable exact-target conversion plan. Its first read-only host review confirms healthy bounded staging, three matching R2 test objects, three encrypted snapshots, and no production maintenance/state boundary; it also identifies the old 0010 candidate, 10-second Worker grace, 3-monthly retention, Authing-console proof, and production rotations as unresolved. Exact conversion-work-package rehearsal, live conversion/recovery, security/privacy/abuse evidence, monitoring handoff, executable-adapter review, candidate health, and rollback rehearsal remain before seed admission. |
+| M9 | Paid commercialization and domestic Alipay | Planned, deferred | Preserve ADR 0010's domestic Alipay direction and ADR 0015's fail-closed paid gate. Complete the applicable production-domain/ICP review, merchant qualification, real sandbox and callback evidence, provider adapter, refund semantics, and the smallest customer checkout UI before accepting payment. Seed launch evidence does not complete M9. |
 
 Only mark a milestone `Completed` when its exit evidence exists. Use `Blocked`
 only with a named external dependency or missing decision.

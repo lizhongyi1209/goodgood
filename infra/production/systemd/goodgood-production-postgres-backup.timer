@@ -1,0 +1,12 @@
+[Unit]
+Description=Schedule GoodGood production PostgreSQL recovery points
+
+[Timer]
+OnCalendar=*-*-* *:00,30:00 UTC
+RandomizedDelaySec=5m
+Persistent=true
+AccuracySec=1m
+Unit=goodgood-production-postgres-backup.service
+
+[Install]
+WantedBy=timers.target

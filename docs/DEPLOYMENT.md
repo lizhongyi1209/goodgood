@@ -5,15 +5,18 @@
 | Environment | Purpose | Data |
 | --- | --- | --- |
 | Local | Feature development and API contract tests | Local/test only |
-| Staging | Real network, storage, callback, and migration verification | Isolated test data |
+| Host candidate | Exact-digest, inactive-slot and no-customer release rehearsal | No imported staging data; production state invariants are read-only until the reviewed migration step |
 | Production | Customer traffic | Production data |
 
 Never use production credentials in local `.env` files or browser bundles.
 
-Local proves application behavior and container compatibility. Staging is a
-required delivery stage, not an optional preview: public DNS/TLS, ESA, selected
-cloud permissions, signed storage, callbacks, cross-border paths, payment sandboxes,
-resource limits, and backup restore cannot be accepted from local evidence.
+Local proves application behavior and container compatibility. ADR 0021 removes
+the permanent remote staging environment after M7; it does not remove
+production-shaped verification. Public DNS/TLS, ESA, selected cloud
+permissions, signed storage, callbacks, cross-border paths, resource limits,
+backup restore, and rollback cannot be accepted from local evidence. They are
+proved through a bounded no-customer conversion and exact-candidate checks on
+the Hong Kong host.
 
 ## Local workflow
 
@@ -80,8 +83,9 @@ and must not contain a secret. Exact replay is safe. Run the same bundled role
 inside the application image in deployed environments; database migrations must
 already be complete. This operator bridge collects no money and issues no
 invoice, so confirm both outside GoodGood before `--execute`. Do not add a
-browser admin endpoint until an explicit administrator identity and
-authorization milestone exists.
+browser path for this receipt operation. ADR 0020's separately authorized
+site-owner page may append free test-credit grants only; it never calls or
+reimplements manual payment.
 
 ## Local production-shaped runtime
 
@@ -95,6 +99,7 @@ engine. The target local stack is:
 | `worker` | Queue consumption and generation orchestration | Independently restartable/scalable worker process |
 | `reference-cleanup` | Opt-in, one-shot dry-run or bounded reference-byte cleanup | Scheduled maintenance only after staging policy/capacity approval |
 | `manual-payment` | Opt-in, one-shot preview or recording of an independently confirmed receipt | Temporary trusted-operator bridge until approved domestic Alipay checkout |
+| `bootstrap-site-owner` | Opt-in, dry-run-first assignment of the sole initial site owner after normal login | One-time audited production bootstrap before browser account management |
 | PostgreSQL | Domain, job, and ledger persistence | Durable database with automated backups |
 | Redis-compatible service | Queue/job coordination | Recoverable coordination; PostgreSQL remains authoritative |
 | S3-compatible object storage | References and generated asset tests | Private object storage with signed direct transfer |
@@ -248,6 +253,37 @@ shared-secret ID Token algorithm. The token endpoint may advertise
 `client_secret_basic` or `client_secret_post`. When the discovery field is
 absent, the OIDC default is `client_secret_basic`.
 
+ADR 0020 keeps that public Authing login surface but changes GoodGood admission
+for M8 production. A verified first login must create a pending owner, issue a
+limited GoodGood session, and append the existing 100-credit welcome grant
+without enabling creation APIs. Approval is a separate site-owner action; do
+not implement it as an Authing connection toggle or infer it from email,
+registration order, or balance. The production preflight and seed gate must
+prove that unapproved sessions cannot reach generation, reference, draft,
+project, asset, or credit-reservation capabilities.
+
+The site-owner role requires an explicit, audited bootstrap against an existing
+verified GoodGood owner before `/admin/users` is usable. Never make the first
+registrant the site owner automatically, hard-code the operator email in
+source, or accept a browser-supplied role. First let the intended site owner
+complete normal Authing login, then run the maintenance command without
+`--execute` and review its masked dry-run result:
+
+```bash
+docker compose --profile maintenance run --rm bootstrap-site-owner \
+  --email owner@example.com \
+  --operator initial-production-operator \
+  --reference site-owner-bootstrap-2026-09
+```
+
+Repeat the exact command with `--execute` only after the dry run identifies the
+expected account. The stable reference makes exact replay a no-op; a different
+account or reference fails after one owner exists. The transaction activates
+the account and appends immutable role plus administrative audit evidence.
+After bootstrap, routine review and promotional credit grants occur in the
+site-owner page. Test-credit grants append ledger and admin audit evidence and
+never invoke `billing:manual-payment` or create a payment order.
+
 ### Authentication staging preflight
 
 Load the staging values above through the deployment secret store, then run
@@ -298,7 +334,27 @@ audit other clients of the isolated Authing tenant; after rotation, no GoodGood
 host file or process restart is required. Record only the rotation result and
 redacted verification evidence, never either secret.
 
-For an operator-run real-tenant loopback test, add exactly
+For ADR 0021's clean production conversion, reuse the current Authing
+application and identity directory rather than creating another tenant or
+application. Rotate its OIDC client secret. GoodGood sessions use random opaque
+tokens with only their hashes in PostgreSQL, not a shared signing secret; prove
+that fresh production state imports no old `auth_sessions` row.
+Keep the existing issuer, client ID, hosted Google connection, and passwordless
+email method. Before seed admission, the GoodGood login callback allowlist must
+contain `https://goodgood.o1key.com/api/auth/callback` and the logout allowlist
+must contain `https://goodgood.o1key.com/`; remove loopback and obsolete staging
+GoodGood URLs. Do not use the production Authing application for later local
+testing.
+
+Do not delete Authing directory identities during the GoodGood data reset. The
+fresh production database contains no identity bindings or sessions, so a
+returning Authing identity provisions a new pending GoodGood owner with the
+standard welcome grant and no inherited test role, credit, or content. The
+intended site owner logs in through that same path before the dry-run-first
+bootstrap. No console or credential change is authorized by this documentation
+alone.
+
+Before conversion only, an operator-run real-tenant loopback test may add exactly
 `http://127.0.0.1:3000/api/auth/callback` to Authing's login callback allowlist
 and `http://127.0.0.1:3000/` to its logout allowlist, then run:
 
@@ -638,35 +694,36 @@ absent until ICP and Alipay prerequisites pass.
 
 ## Early infrastructure direction
 
-ADR 0010 changes the payment sequence, not the already accepted staging
-location. Hong Kong remains the first test-data staging control plane. The
-filed production-domain placement and any mainland production access topology
-must be decided with the ICP filing work; Hong Kong staging alone is not ICP
-filing evidence.
+ADR 0021 converts the purchased M7 Hong Kong host into the initial unpaid
+seed-production control plane after a clean-data, no-customer rehearsal. This
+supersedes the immediate separate ECS/RDS/Tair purchase while retaining ADR
+0018's managed topology as a future scale-out direction. The applicable
+filed-domain and mainland access questions remain part of the later
+paid-commercialization review.
 
 - Edge: Alibaba Cloud ESA.
-- Application/control plane: Alibaba Cloud Hong Kong Simple Application Server
-  for M7 staging, as accepted in ADR 0011.
+- Application/control plane: the existing Alibaba Cloud Hong Kong Simple
+  Application Server for initial unpaid seed production.
 - Generation plane: existing US OVH server.
 - Images: private Cloudflare R2 with direct presigned delivery, as accepted in
-  ADR 0012.
-- Paid-production database/queue baseline: managed ApsaraDB RDS for PostgreSQL
-  plus Tair Redis OSS-compatible coordination, as accepted in ADR 0018. The M7
-  staging dependency containers remain test-data infrastructure only.
+  ADR 0012. Reuse the existing `goodgood` bucket only after exact inventory,
+  approved test-object deletion, empty verification, and credential rotation.
+- Initial database/queue: bounded PostgreSQL and Valkey containers on the same
+  host. Managed ApsaraDB RDS plus Tair remains the future scale-out target.
 
 The purchased M7 host has 2 vCPUs, 4 GiB memory, a 50 GiB ESSD system disk, a
 fixed public IPv4 address, and a 200 Mbps peak BGP public-bandwidth
-specification. It is acceptable for early control-plane tests only when builds
-run in CI, runtime resources are bounded, and large image bytes are prepared to
-bypass the application process. The peak bandwidth is not a sustained service
-guarantee.
+specification. It is acceptable for initial seed production only when builds
+run in CI, runtime resources are bounded, large image bytes bypass the
+application process, and the accepted single-host availability risk is visible.
+The peak bandwidth is not a sustained service guarantee.
 
-The first Hong Kong purchase is a month-to-month staging environment with test
-accounts, test buckets, and test payment credentials. Do not purchase long-term
-production capacity until the staging gate has measured mainland carrier access
-and Hong Kong-to-US behavior. An all-in-one Compose host is acceptable for
-staging test data; paid production must meet the durability, backup, and
-recovery contracts below.
+M7 used this host with disposable test accounts and credentials. Before seed
+production, freeze it, record and verify an encrypted off-host archive, create
+fresh production state and object boundaries, rotate production secrets, and
+rehearse recovery and release behavior. Do not import M7 business rows or
+objects into production. No live reset or deletion is authorized merely by the
+architecture decision.
 
 ### Alibaba Cloud staging host baseline
 
@@ -838,9 +895,9 @@ and retain the old instance until rollback evidence is complete.
 ### Selected production runtime adapter
 
 ADR 0017 selects `nginx-compose-blue-green-v1` as the initial runtime adapter.
-This fixes the release mechanics without selecting the production host region,
-capacity, or managed state products that remain coupled to ICP and capacity
-work.
+ADR 0021 keeps it as the preferred adapter on the existing Hong Kong host, but
+the inactive-Web overlap and resource limits must be revalidated against the
+2-vCPU / 4-GiB boundary before an executable adapter is enabled.
 
 - Host Nginx is the only origin ingress behind Alibaba Cloud ESA.
 - Two independent application-only Compose projects use fixed loopback ports:
@@ -864,8 +921,8 @@ work.
 profile, and ordered phases only after the
 complete gate passes. It remains non-executable and has no process-spawn or
 execution flag. Do not create live Compose/Nginx release tooling until the
-blocked production region is resolved and no-customer provisioned
-infrastructure has passed a separate executable-adapter review.
+current host has fresh production state, passes its no-customer conversion, and
+the executable adapter passes a separate resource-headroom review.
 
 Passing `candidate-health-invariants` evidence must set
 `runtimeAdapter: nginx-compose-blue-green-v1` and prove isolated candidate
@@ -874,41 +931,153 @@ and credit checks. Passing `rollback-rehearsal` evidence must name a distinct
 retained prior revision and prove Web/Worker rollback, queue recovery, unchanged
 database/credit fingerprints, and `schemaDowngradeAttempted: false`.
 
-### Selected production infrastructure baseline
+The separate initial-conversion planner binds the accepted source/target volume
+names, reused `goodgood` bucket, production Authing URLs, static maintenance
+asset, approvals, and evidence references. Its checked-in example is
+intentionally unresolved and authorizes nothing:
 
-ADR 0018 selects declarative profile `alibaba-managed-state-v1` without
-provisioning or purchase authority:
+```bash
+npm run production:conversion-plan -- plan \
+  --manifest-file infra/production/conversion-manifest.example.json
+```
 
-- one Alibaba Cloud ECS x86_64 application host running Ubuntu 24.04 LTS, with
-  at least 4 vCPUs, 16 GiB memory, and a 100 GiB ESSD system disk. Use a
-  current-generation general-purpose x86 family and pay-as-you-go billing
-  through rehearsal; the current CI image is not a proved ARM artifact;
-- ApsaraDB RDS for PostgreSQL 17 High-availability Edition, primary/standby and
-  preferably multi-zone, with at least 2 vCPUs, 4 GiB memory, and 50 GiB ESSD.
-  RDS Basic Edition is not a production fallback;
-- a minimum 1 GiB Tair Redis OSS-compatible standard master-replica instance.
-  It delivers and coordinates work but is not authoritative state;
-- ECS, RDS, and Tair share the selected production region and VPC. RDS and Tair
-  have no public endpoint and accept only application-security-group traffic;
-- RDS data/log backup and point-in-time recovery must meet the one-hour RPO,
-  but native backups are not the sole recovery copy. Preserve ADR 0015's
-  separately encrypted off-host recovery points and prove the four-hour RTO;
-- private Cloudflare R2 continues to own user image bytes. Application slots
-  and the ECS system disk remain disposable runtime state.
+The expected non-zero result lists every pending item. Copy the example outside
+the checkout for a later review, replace references without adding credentials,
+and obtain exact-target approvals separately. This command has no execute flag,
+does not connect to the host, and cannot activate maintenance or delete data.
+`infra/production/maintenance/index.html` is the standalone, dependency-free
+public asset to be installed and activated only by the later reviewed runbook.
 
-Exact SKU, zone pair, price, quota, network identifiers, and credentials are
-purchase-time facts and never belong in this profile. Stop if the selected
-region cannot provide an equivalent x86 host, RDS HA, Tair master-replica, and
-private connectivity; do not silently choose ARM, RDS Basic Edition, a
-single-node queue, or public state endpoints.
+The exact local conversion work package is defined by
+`infra/production/CONVERSION_RUNBOOK.md`. It adds separate, resource-bounded
+production PostgreSQL/Valkey state; blue/green application Compose with fixed
+loopback ports and five-minute Worker drain; a fail-closed static-maintenance
+Nginx boundary; metadata-only R2 inventory and exact deletion preview; isolated
+encrypted PostgreSQL backup/restore automation; Authing and production-secret
+rotation checklists; and checkpoints before every irreversible boundary. The
+application R2 inventory covers current object versions only. The conversion
+must additionally prove in Cloudflare that no unlisted historical version or
+delete marker exists, or produce a separately reviewed all-version inventory.
 
-`productionRegion` remains intentionally unset. Alibaba Cloud documents a
-mainland China server requirement for its regular-website ICP filing path;
-the accepted Hong Kong resource is therefore not itself production-domain
-filing evidence. Resolve the filed domain and access topology before purchase.
-Moving paid production to mainland China changes the documented topology and
-requires a new ADR plus repeated network, callback, security, and release
-evidence.
+Run the deterministic repository rehearsal with:
+
+```bash
+npm run production:work-package -- rehearse
+```
+
+Success reports nine passing contract groups while retaining
+`executed:false` and `executionAvailable:false`. It parses no live credential,
+opens no network connection, runs no child process, and changes no host, R2, or
+Authing state. The package deliberately supplies neither R2 deletion nor public-
+traffic-open execution. Both require later exact-target approvals and separately
+reviewed operator actions during the four-hour maintenance window.
+
+`compose.production.dependencies.yaml` keeps PostgreSQL and Valkey on the
+internal `goodgood-production-state` network without host ports and creates only
+the production-named volumes. `compose.production.yaml` joins application slots
+to that external state network, gives network egress only to roles that require
+it, keeps the Web/Worker ports on loopback, and does not include local mock
+services. The production backup timer runs at minute 00 and 30 with no more than
+five minutes of randomized delay, retaining all points within 24 hours plus 14
+daily, 8 weekly, and 12 monthly points in the isolated Restic `/production`
+prefix. A successful off-host restore drill remains mandatory before opening.
+
+### Selected seed-production infrastructure baseline
+
+ADR 0021 selects the already purchased Ubuntu 24.04 Hong Kong Simple
+Application Server for initial unpaid seed production:
+
+- keep the existing 2-vCPU, 4-GiB, 50-GiB ESSD and 200-Mbps peak-bandwidth
+  allocation; do not infer sustained bandwidth or high availability;
+- run Nginx, Web, Worker, PostgreSQL, and Valkey on the host with explicit CPU,
+  memory, process, log, and disk bounds. PostgreSQL remains authoritative and
+  Valkey remains reconstructable coordination;
+- keep private Cloudflare R2 outside the host for image bytes. Reuse the
+  existing `goodgood` bucket only after it is inventoried, cleared of every test
+  object under exact-target approval, verified empty, and assigned rotated
+  production-only credentials;
+- keep encrypted database recovery off-host and prove restore before seed
+  admission. Single-host operation does not waive ADR 0015's recovery gate;
+- keep customer checkout disabled. Open login does not create workload because
+  pending owners cannot generate until site-owner approval.
+
+Do not configure a per-user pending-job cap, global queue-depth cap, or fixed
+generation-concurrency ceiling during the first observation period. The durable
+queue remains a recovery and momentary-backpressure mechanism. The current
+Worker starts accepted jobs concurrently without a fixed count ceiling. Each
+job still passes through the existing transactional lease, at-most-once
+provider-submission guard, and exact credit settlement. On SIGINT/SIGTERM the
+Worker stops taking queue items and waits for every in-flight promise before
+closing shared resources. The staging Worker receives five minutes of
+container stop grace for the configured three-minute provider poll timeout;
+the eventual reviewed production topology must preserve at least that relation.
+
+Reject only new generation submissions when host `MemAvailable` is below 500
+MiB or root-filesystem usage is at least 80%. Do not cancel or resubmit in-flight
+provider work. Keep non-generating surfaces available when their dependencies
+are healthy, and require an operator to clear the protection state after
+reviewing the cause. CPU use has no initial rejection threshold. Monitoring
+must record active jobs, submission rate, transient queue depth/age, application
+and provider latency/failures, PostgreSQL/Valkey pressure, restarts, host memory,
+root disk, and backup freshness so later capacity decisions use observed data.
+The Node production Web runtime reads `/proc/meminfo` and root-filesystem
+statistics immediately before submit/retry persistence. When either boundary
+trips—or those observations are unavailable—it returns the normalized
+recoverable resource-protection error and latches until the operator reviews the
+cause and restarts Web. Other healthy handlers stay available. The thresholds
+are deliberate product policy rather than environment-tunable capacity limits.
+
+ADR 0018's `alibaba-managed-state-v1` profile remains the future scale-out
+target: separate x86 ECS, RDS PostgreSQL 17 High-availability Edition, and
+private Tair standard master-replica. Capacity observations may justify
+vertical growth first, but neither a threshold nor this document authorizes a
+purchase.
+
+### Clean staging-to-production conversion
+
+There is no ongoing remote staging hostname in the selected phase.
+`staging-goodgood.o1key.com` remains reserved and inactive;
+`goodgood.o1key.com` continues on the current host and becomes production only
+after the clean conversion passes. The decision does not itself authorize a
+server connection, reset, deletion, credential change, or traffic transition.
+
+Show a public maintenance page for the entire initial conversion and impose a
+four-hour execution limit. Normal application, login, and generation traffic
+remain unavailable; expose only the private health/operator paths required by
+the reviewed runbook. If the complete gate has not passed at four hours, stop
+the attempt and keep the public site in maintenance. Restore the old staging
+stack only on a private operator path for diagnosis, never as production, then
+fix the cause and schedule another window.
+
+Execute the eventual conversion only through a reviewed runbook:
+
+1. Freeze staging writes and record the exact revision, migration and runtime
+   configuration versions, account/credit counts, and object inventory.
+2. Produce and restore-verify a final encrypted off-host staging archive. Keep
+   it for seven days after conversion passes, then delete it only through a
+   separate exact-target approval.
+3. Create fresh production PostgreSQL and Valkey state and run all migrations;
+   import no staging business or session rows.
+4. Inventory every object in the existing private `goodgood` R2 bucket, preview
+   the exact deletion set, obtain separate destructive approval, delete the test
+   objects, and verify the bucket is empty. Rotate its scoped credentials before
+   the first production upload.
+5. Rotate or replace Authing, provider, storage, backup, database, session, and
+   operational secrets for the production role.
+6. Run production preflight, then complete normal Authing login and the
+   dry-run-first audited site-owner bootstrap.
+7. Verify pending-user isolation, approval, credit, upload, generation, signed
+   read, backup/restore, candidate health, public synthetic checks, and rollback.
+8. Remove the maintenance page only when every required check passes; otherwise
+   stop at the four-hour limit without publishing either state as production.
+9. Delete old test database, queue, and object state only after a separate
+   approval names the exact targets. Delete the final encrypted archive after
+   its seven-day safety window under another exact-target approval.
+
+Local development uses local/test-only data, dependencies, and credentials.
+Never copy the production database or production secrets to the operator
+workstation. CI publishes the immutable image digest; production pulls that
+digest and never treats a local source tree as the release artifact.
 
 ## Backups and rollback
 
@@ -1109,6 +1278,19 @@ at most four hours, and at least `14 daily / 8 weekly / 12 monthly` encrypted
 off-host recovery points. The M7 daily staging timer is not production evidence.
 
 ### Paid-production release gate
+
+ADR 0019 first added an earlier seed-production gate. It retains the exact
+candidate, production preflight, secrets/access, privacy/retention, abuse and
+admission controls, production recovery, monitoring handoff, incident
+ownership, candidate-health, and rollback requirements below. It does not
+require Alipay evidence because checkout and payment collection stay disabled.
+Passing that narrower gate authorizes only reviewed seed accounts; it must not
+be reported as paid-production approval. ADR 0020 replaces a numeric cohort cap
+with reviewed admission. Authing registration may be open, but every new owner
+remains pending and cannot use production capabilities until the site owner
+approves it. Accounts and their creative content are production data from first
+login and therefore remain in the access, privacy, deletion, backup/restore,
+redaction, and incident-response scope even while pending.
 
 For the exact immutable candidate digest, require the repository/security/image
 gates, matching migration and runtime-contract labels, production preflight,

@@ -150,6 +150,23 @@ services:
       postgres:
         condition: service_healthy
 
+  bootstrap-site-owner:
+    <<: *goodgood-app
+    profiles: ["maintenance"]
+    entrypoint: ["node", "server/runtime/bootstrap-site-owner.mjs"]
+    command: []
+    restart: "no"
+    healthcheck:
+      disable: true
+    environment:
+      DATABASE_URL: postgresql://goodgood:${GOODGOOD_LOCAL_POSTGRES_PASSWORD:-goodgood-local-only}@postgres:5432/goodgood
+      GOODGOOD_PROCESS: bootstrap-site-owner
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+
   postgres:
     image: postgres:17.11-bookworm@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0
     restart: unless-stopped

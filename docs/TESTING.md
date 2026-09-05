@@ -104,7 +104,7 @@ one timer-shaped upload, full check, off-host restore equality, an active next
 timer, and no retained automatic plaintext archive or failed unit. M7 outbound
 failure notification remains deferred; ADR 0016 delegates the monitoring
 platform and notification route while keeping live handoff evidence mandatory
-in the M8 paid-production gate.
+for the M8 seed-production and later paid-production gates.
 M8 request-correlation coverage proves the production HTTP runtime ignores an
 inbound request ID, returns one server-owned support ID in both the response
 header and normalized error envelope, normalizes identifier-bearing routes,
@@ -150,14 +150,78 @@ startup, exactly one migration, live/ready, public synthetic, queue, database,
 and credit checks. Passing rollback evidence must retain a distinct prior
 revision and prove Web/Worker and queue recovery, unchanged database/credit
 fingerprints, and no schema downgrade. The planner remains non-executable.
-M8 production-infrastructure coverage fixes ADR 0018's declarative
-`alibaba-managed-state-v1` profile: an x86_64 ECS application-host floor, RDS
-PostgreSQL 17 High-availability Edition, private-only Tair standard
-master-replica coordination, and the existing production RPO/RTO. It proves
-the production region is still blocked on the ICP/domain placement decision,
-RDS-native backup is not the sole recovery copy, and the profile authorizes no
-purchase, production deployment, or executable release path. The selected
-profile is part of the runtime adapter and runtime-contract checksum.
+M8 production-infrastructure coverage fixes ADR 0021's selected
+`alibaba-hong-kong-single-host-seed-v1` profile at the existing 2-vCPU / 4-GiB /
+50-GiB Hong Kong host with colocated PostgreSQL and Valkey, private R2, and
+local/test-only preproduction. It proves exact host bounds, no managed-service
+purchase, fresh production database/queue state, no staging-data import, the
+exact `goodgood` R2 conversion prerequisites, and false live/destructive
+authorization. ADR 0018's `alibaba-managed-state-v1` contract remains a
+separately named unauthorized scale-out option. Both contracts and the local
+test matrix require no production data or secrets.
+
+Authing conversion coverage must prove the reused application has the exact
+production login/logout URLs, no loopback or obsolete staging GoodGood callback,
+a rotated client secret mounted only from its server file, and fresh PostgreSQL
+state containing no old hashed GoodGood session. Repository tests model a pre-existing Authing identity
+against fresh GoodGood state and prove it receives a new pending owner, one
+welcome grant, no inherited site-owner role or content, and no valid old
+GoodGood session. Real local Authing testing after conversion must use a
+separate test application.
+
+Conversion-manifest tests prove maintenance is the first ordered action before
+writes freeze, normal/login/generation traffic stays unavailable, and the
+four-hour deadline stops rather than bypasses the gate. The exact-target example
+starts with every approval and evidence reference pending. A syntactically
+complete review can make the dry run ready for a separate live-action review,
+but both module and CLI permanently report `executed: false` and
+`executionAvailable: false` and contain no process or destructive filesystem
+path. The last action keeps maintenance active on any failure and permits old
+staging only as a private diagnostic source.
+
+Production work-package coverage performs a deterministic, local-only rehearsal
+of the exact checked-in conversion materials. It proves production PostgreSQL
+and Valkey are resource-bounded, internally networked, production-named, and
+free of staging/RustFS bindings; blue/green Web/Worker slots have exact loopback
+ports and five-minute Worker drain; Nginx evaluates the maintenance marker
+before proxying and stops ingress when activation cannot prove HTTP 503; and
+the Cloudflare allowlist stays deny-by-default. It also fixes the half-hour
+backup schedule, isolated Restic prefix, `24h + 14/8/12` retention, no-network
+restore drill, Authing/secret checklist, four-hour rollback checkpoints, and
+release-config checksum coverage. R2 tests cover empty and sorted inventories,
+stable hash approval binding, tamper rejection, current-version scope, and a
+planner that always reports `executed:false`/`executionAvailable:false`. Static
+coverage rejects child-process/live execution and any R2 delete implementation.
+Shell parsing and both production Compose slot interpolations are additionally
+checked locally without starting containers.
+
+Concurrent-Worker coverage proves one active Worker runner starts multiple
+accepted job promises without a fixed count ceiling, acknowledges each claimed
+queue item once, reports active-job count, stops taking work, and waits for all
+in-flight promises during graceful shutdown. The existing transactional claim,
+provider-submission guard, and credit settlement remain inside each isolated
+`processGenerationJob` call. Deterministic host-resource tests accept exactly
+500 MiB / below 80%, reject below 500 MiB or at 80%, latch protection until
+operator review plus process restart, block only new submit/retry requests, and
+leave safe generation reads available. Monitoring-shape requirements still
+cover active jobs, submission rate, queue age/depth, latency/failure, state
+pressure, restarts, host memory/disk, and backup freshness without claiming a
+capacity threshold; the monitoring platform remains delegated.
+ADR 0020 account-admission coverage must prove open valid Authing login creates
+one pending owner, one welcome grant, and one safe session without enabling any
+creation capability. It covers `pending`, `active`, and `suspended`; approval
+without a second welcome grant; immediate denial
+of new mutations after access removal; and enforcement across generation/retry,
+references, drafts, projects, assets, and credit reservation. Site-owner tests
+must prove navigation and every administration API deny ordinary users before
+querying targets; account lists do not leak into URLs/logs; review actions and
+test-credit grants are idempotent and append-auditable; grant rollback is
+atomic; and no grant creates a payment order. Loading, empty, failure, retry,
+and mutation-conflict states are required for the management page. The fast
+suite also fixes the 1-5000 grant bound, CSRF-only header, server-derived actor,
+dry-run-first bootstrap parser, three-state migration, and visible
+loading/empty/failure/audit controls. Exact PostgreSQL migration/replay/rollback
+and browser behavior remain required in the no-customer rehearsal environment.
 The R2 provisioning unit proves local storage still creates/configures its
 bucket, staging performs only `HeadBucket`, and a failed verification can be
 retried. Static Nginx coverage fixes the canonical hostname, Cloudflare-only
@@ -176,7 +240,7 @@ This local flow does not replace the public HTTPS staging matrix.
 
 `GOODGOOD_M3_INTEGRATION=1 node --test tests/m3-compose-integration.test.mjs`
 is the opt-in destructive-process integration test against the disposable local
-test stack. It proves all ten migration reruns, authentication enforcement,
+test stack. It proves all eleven migration reruns, authentication enforcement,
 two-owner idempotency isolation, cross-owner reference/job denial, signed direct
 reference PUT and CORS, server-side decoded validation and rejected-record
 evidence, referenced generation, successful output persistence and signed
@@ -226,6 +290,14 @@ cross-owner receipt conflict, missing-owner failure, masked command output, and
 the absence of any browser administrator route. Its opt-in PostgreSQL case uses
 the same `GOODGOOD_M6_INTEGRATION` and isolated database contract as the payment
 sandbox test.
+
+The M8 site-owner grant is separate coverage. It must accept only the
+authenticated persisted site-owner role, a stable target owner, a bounded
+server-validated positive credit amount, a required non-secret reason, and an
+idempotency key. Tests must reject self-asserted roles, missing CSRF protection,
+ordinary users, invalid or conflicting replay, and direct balance/payment-order
+mutation while proving the linked ledger and administrative audit commit or
+roll back together.
 
 Use:
 
@@ -394,6 +466,10 @@ outside the one-output MVP.
 4. Generate multiple ratios -> batch and gallery preserve geometry.
 5. Save project -> copy detail URL -> reload -> restore -> continue -> back.
 6. Open detail from creation and assets -> navigate -> download.
+7. New login -> 100 credits waiting -> pending state cannot create -> site owner
+   approves -> the same account can create without a duplicate grant.
+8. Site owner opens account management -> grants test credit with a reason ->
+   one ledger/audit result appears -> replay does not grant twice.
 
 ### Staging-only verification
 

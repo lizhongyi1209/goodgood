@@ -29,3 +29,6 @@ Current records:
 - `0016-defer-monitoring-platform-implementation.md`
 - `0017-nginx-compose-blue-green-production-adapter.md`
 - `0018-alibaba-cloud-managed-production-state-baseline.md`
+- `0019-hong-kong-invite-only-seed-production.md`
+- `0020-owner-reviewed-accounts-and-site-owner-console.md`
+- `0021-single-host-seed-production-and-local-preproduction.md`

@@ -1,0 +1,82 @@
+name: goodgood-production-dependencies
+
+x-goodgood-production-state: &goodgood-production-state
+  init: true
+  restart: unless-stopped
+  security_opt:
+    - no-new-privileges:true
+  networks:
+    - goodgood-production-state
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: "3"
+
+services:
+  postgres:
+    <<: *goodgood-production-state
+    image: postgres:17.11-bookworm@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0
+    environment:
+      POSTGRES_DB: goodgood
+      POSTGRES_USER: goodgood
+      POSTGRES_PASSWORD_FILE: /run/secrets/goodgood_production_postgres_password
+    secrets:
+      - goodgood_production_postgres_password
+    shm_size: 128m
+    cpus: 0.75
+    mem_limit: 768m
+    mem_reservation: 256m
+    memswap_limit: 1g
+    pids_limit: 256
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready --username \"$$POSTGRES_USER\" --dbname \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 15s
+
+  valkey:
+    <<: *goodgood-production-state
+    image: valkey/valkey:8.1.9-alpine3.24@sha256:e0eb7c480958d32bdc4357a74bdd70653ae15f2f9b4c93c4a5a9fad1dc471c84
+    command:
+      - valkey-server
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - everysec
+      - --maxmemory
+      - 160mb
+      - --maxmemory-policy
+      - noeviction
+    cpus: 0.25
+    mem_limit: 256m
+    mem_reservation: 64m
+    memswap_limit: 320m
+    pids_limit: 128
+    volumes:
+      - valkey-data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+
+secrets:
+  goodgood_production_postgres_password:
+    file: /etc/goodgood/production/secrets/dependencies/postgres-password
+
+networks:
+  goodgood-production-state:
+    name: goodgood-production-state
+    driver: bridge
+    internal: true
+
+volumes:
+  postgres-data:
+    name: goodgood-production-postgres-data
+  valkey-data:
+    name: goodgood-production-valkey-data

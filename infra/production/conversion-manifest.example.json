@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "candidate": {
+    "image": "pending:immutable-ghcr-digest",
+    "revision": "pending:40-character-git-sha",
+    "migration": "pending:exact-migration-file",
+    "runtimeConfigVersion": "pending:ci-runtime-config-checksum"
+  },
+  "maintenance": {
+    "publicAsset": "infra/production/maintenance/index.html",
+    "maximumWindowMinutes": 240
+  },
+  "source": {
+    "postgresqlVolume": "goodgood-staging-postgres-data",
+    "valkeyVolume": "goodgood-staging-valkey-data",
+    "r2Bucket": "goodgood"
+  },
+  "target": {
+    "postgresqlVolume": "goodgood-production-postgres-data",
+    "valkeyVolume": "goodgood-production-valkey-data",
+    "r2Bucket": "goodgood",
+    "loginCallback": "https://goodgood.o1key.com/api/auth/callback",
+    "logoutUrl": "https://goodgood.o1key.com/"
+  },
+  "approvals": {
+    "liveConversion": false,
+    "postgresqlTargetReset": false,
+    "valkeyTargetReset": false,
+    "r2ExactObjectDeletion": false,
+    "credentialRotation": false,
+    "publicTrafficOpen": false
+  },
+  "evidence": {
+    "stagingInventory": "pending:evidence-reference",
+    "finalArchiveRestore": "pending:evidence-reference",
+    "r2DeletionPreview": "pending:evidence-reference",
+    "r2EmptyVerification": "pending:evidence-reference",
+    "authingRotation": "pending:evidence-reference",
+    "productionSecretRotation": "pending:evidence-reference",
+    "siteOwnerBootstrap": "pending:evidence-reference",
+    "pendingIsolation": "pending:evidence-reference",
+    "productionBackupRestore": "pending:evidence-reference",
+    "realGenerationAndPrivateRead": "pending:evidence-reference",
+    "candidateHealth": "pending:evidence-reference",
+    "rollbackRehearsal": "pending:evidence-reference",
+    "monitoringHandoff": "pending:evidence-reference"
+  }
+}

@@ -28,14 +28,14 @@ export const PRODUCTION_RUNTIME_ADAPTER = Object.freeze({
   releaseStateDirectory: "/var/lib/goodgood/production",
   slots: Object.freeze([SLOT_BLUE, SLOT_GREEN]),
   stateBoundary: Object.freeze([
-    "external-postgresql",
-    "external-valkey",
+    "host-colocated-postgresql",
+    "host-colocated-valkey",
     "private-r2",
   ]),
   trafficSwitch:
     "same-filesystem-atomic-nginx-upstream-replace-config-test-and-reload",
   workerHandoff:
-    "single-active-worker-stop-active-start-candidate-restore-prior-on-failure",
+    "single-active-worker-drain-in-flight-stop-active-start-candidate-restore-prior-on-failure",
   schemaRollback: "forbidden-forward-fix-only",
 });
 

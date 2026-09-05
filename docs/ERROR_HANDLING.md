@@ -30,7 +30,10 @@
 | Login callback | `AUTH_CALLBACK_INVALID` | Global sign-in state | Restart Google/email-code sign-in |
 | Login provider | `AUTH_PROVIDER_UNAVAILABLE` | Global sign-in state | Retry later |
 | Account association | `ACCOUNT_LINK_REQUIRED` | Global sign-in state | Complete provider-side account linking/support |
-| Account access | `ACCOUNT_DISABLED` | Global blocking state | Contact support |
+| Account review | `ACCOUNT_PENDING` | Authenticated review state | Refresh later or log out |
+| Account access | `ACCOUNT_SUSPENDED` | Authenticated blocking state | Contact the site owner or log out |
+| Administration | `ADMIN_ACCESS_DENIED` | Non-enumerating route recovery | Return to the workspace |
+| Administration | `ADMIN_REQUEST_INVALID` | Account row/dialog | Correct input without losing context |
 | Unknown | `INTERNAL_ERROR` | Affected operation | Retry + request ID |
 
 ## Generation failure contract
@@ -135,6 +138,16 @@ mode rejects that switch. HTTPS OIDC callbacks additionally require a Secure
 cookie whose name starts with `__Host-`. The runtime and staging preflight fail
 closed instead of falling back to local identities or contacting discovery
 with an unsafe configuration.
+
+ADR 0020 separates authentication from creation admission. A valid new Authing
+identity receives a GoodGood session and `pending` account projection rather
+than an authentication failure. Pending users receive stable review-state copy,
+may refresh that state and log out, and can see that welcome credit is waiting;
+all product capabilities reject before owner data or provider capacity is read
+or mutated. `ACCOUNT_PENDING` and `ACCOUNT_SUSPENDED` are stable 403 capability
+failures; the safe session read still allows either account to see its own
+state and log out. Approval or restoration takes effect on a fresh authorized
+request and does not require creating another external identity.
 Cross-owner job and retry requests normalize to `GENERATION_NOT_FOUND`, so one
 owner cannot use response differences to enumerate another owner's records.
 Reference completion likewise returns `REFERENCE_NOT_FOUND` across owners.
@@ -173,6 +186,20 @@ product all fail before an order or grant is written. Exact replay returns the
 already-paid order without another ledger entry. The command never accepts a
 money amount, credit amount, or browser session, and it does not reinterpret a
 failed database transaction as a successful receipt.
+
+Site-owner account-management endpoints authenticate the GoodGood session and
+authorize the persisted system role before resolving list filters or a target
+owner. A non-owner receives `ADMIN_ACCESS_DENIED` without account-list or target
+existence detail. Review and test-credit mutations require a current CSRF-safe
+request, idempotency key, target stable ID, and validated reason. Same-key/same-
+operation replay returns the recorded result; conflicting reuse fails without
+mutation. Grant failure rolls back the ledger entry and administrative audit
+together, preserves the selected account and dialog input, and returns a
+support ID. No error path falls back to a payment order, direct balance update,
+or command-line receipt semantics.
+Invalid access transitions return `ADMIN_STATUS_TRANSITION_INVALID`; a site
+owner cannot suspend their own account. Test-credit amount outside the positive
+integer range 1-5000 returns `ADMIN_CREDIT_AMOUNT_INVALID` before ledger work.
 
 Draft read, save, and delete derive the owner only from the GoodGood session.
 `DRAFT_UNAVAILABLE` never clears the current composer; the inline recovery
@@ -266,17 +293,70 @@ failure reverts the upstream and Worker, repeats public/state fingerprints, and
 never attempts a schema downgrade. Failure to prove any of those outcomes emits
 no passing candidate-health or rollback evidence.
 
-ADR 0018's production infrastructure profile fails closed before provisioning
-when the ICP/domain placement decision is unresolved or the selected region
-cannot supply an equivalent x86_64 application host, RDS PostgreSQL 17
-High-availability Edition, Tair standard master-replica, and private VPC
-connectivity. The operator must not recover availability by silently selecting
-ARM, RDS Basic Edition, a single-node queue, or a public database/queue
-endpoint. RDS-native backup success alone does not emit production recovery
-evidence; the separate encrypted recovery copy and restore drill must still
-meet ADR 0015's RPO, RTO, and retention contract. This profile has no purchase
-or deployment path, so selection failure leaves all external resources
-unchanged.
+ADR 0021's single-host seed profile fails closed before conversion when the
+existing Hong Kong host cannot prove its expected x86_64, 2-vCPU, 4-GiB,
+50-GiB, private-R2, off-host-backup, and bounded PostgreSQL/Valkey contract. It
+must also stop if a proposed reset would import staging business data, reuse a
+staging R2 credential, reclassify a non-empty `goodgood` bucket, target an
+unresolved path/volume/object, or run without an exact inventory, verified
+archive, and explicit destructive approval. Resource-headroom failure leaves
+the active release unchanged.
+
+Single-host backup success alone does not emit production recovery evidence;
+the encrypted off-host copy and isolated restore drill must still prove at most
+one hour RPO, at most four hours RTO, and 14 daily / 8 weekly / 12 monthly
+recovery points. The final staging archive is deleted only after its seven-day
+safety window and a separate exact-target approval. ADR 0018's managed
+ECS/RDS/Tair profile remains a scale-out option, never an automatic fallback or
+purchase.
+
+The initial observation phase has no fixed job-count or concurrency rejection.
+If host `MemAvailable` is below 500 MiB or root-disk use reaches 80%, reject only
+new generation submissions with the normalized inline recoverable error and a
+support ID. Never cancel, automatically retry, or resubmit existing provider
+work in response to resource pressure. Safe login, account administration, and
+asset reads remain available while their dependencies are healthy. Clearing the
+protection state requires an operator decision after inspecting monitoring;
+capacity pressure never triggers an automatic purchase or deployment.
+
+The Node production Web runtime implements this as a pre-write admission check
+for generation submission and retry. It emits
+`GENERATION_CAPACITY_PROTECTED` with HTTP 503 and `retryable: true`, records one
+redacted `generation.resource_protection_activated` event, and latches the
+process in protection after either threshold or an unreadable host-resource
+probe. A healthy observation does not clear an already latched process: the
+operator inspects the cause and restarts Web deliberately. Generation reads,
+login, site-owner administration, and other non-generation handlers do not pass
+through this check. Worker jobs already accepted continue independently.
+
+Production conversion stops before seed admission if the reused Authing
+application still allows a GoodGood loopback/obsolete staging callback, the
+production login/logout URLs differ from `goodgood.o1key.com`, the client secret
+was not rotated, it appears inline, or any old hashed GoodGood session was
+imported into fresh state.
+Never recover by importing old GoodGood identity bindings or sessions. A valid
+existing Authing identity is provisioned through the normal fresh pending-owner
+path; unexpected inherited role, credit, or content is a failed clean
+conversion.
+
+The initial conversion begins and fails closed in public maintenance mode. If
+any required clean-state, identity, storage, backup, generation, health, or
+rollback check fails—or the four-hour execution limit is reached—the public
+site remains in maintenance and the attempt stops. Do not reopen the former
+staging stack publicly, import its data, or waive a check to meet the deadline.
+It may run only on a private operator path for diagnosis before another reviewed
+window.
+
+The production maintenance controller cannot reopen traffic. It rejects a
+symbolic-link or incorrectly owned marker, validates the installed asset and
+Nginx site, and reloads only after `nginx -t`. If reload fails or the local
+origin does not return the reviewed HTTP 503 response, it stops Nginx and leaves
+the marker in place. Public opening is a separate, unimplemented approval
+boundary. The R2 inventory path is similarly read-only: malformed metadata,
+duplicate keys, summary/hash drift, a truncated page without a continuation
+token, or unknown historical-version scope stops conversion. Its deletion plan
+binds the exact current-object hash but has no execution path; a changed object
+set requires a new inventory and approval.
 
 ## Idempotency and retries
 

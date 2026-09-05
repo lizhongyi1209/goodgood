@@ -38,6 +38,23 @@ derived from the configured login callback. This clears the hosted Authing
 application session without retaining an ID Token or accepting a browser-owned
 redirect target.
 
+ADR 0020 changes account admission without weakening OIDC identity validation.
+Any verified Authing user may establish a GoodGood session, but a newly
+provisioned owner starts pending. Session resolution and creation authorization
+are separate: the pending session may read only its safe account/review state
+and logout, while a shared server capability guard blocks references, drafts,
+projects, assets, generation, retry, and credit consumption until approval.
+System role, access state, and account tier are persisted independently. A
+site-owner-only administration boundary performs account review and promotional
+credit grants with server-derived actor identity, idempotency, append-only
+ledger entries, and durable audit evidence; no browser action records payment
+or directly rewrites a balance.
+The implemented access projection uses `pending | active | suspended`; the
+initial tier is `seed`, and one immutable `site_owner` assignment is created
+only through the dry-run-first server bootstrap. The `/admin/users` browser
+boundary can approve, suspend, restore, and grant at most 5000 test credits per
+audited operation.
+
 The reference boundary is now implemented locally. The authenticated
 web API creates owner-scoped pending records and short-lived signed PUT URLs;
 the browser transfers bytes directly to RustFS. Completion re-reads and fully
@@ -215,22 +232,40 @@ outside both slots. Rollback restores the prior Web upstream and Worker but
 never downgrades schema. The checked-in planner describes this adapter and has
 no execution path.
 
-ADR 0018 selects the non-provisioned production infrastructure profile
-`alibaba-managed-state-v1`: one Alibaba Cloud ECS `linux/amd64` application
-origin with a 4-vCPU / 16-GiB floor, ApsaraDB RDS for PostgreSQL 17
-High-availability Edition, and a Tair Redis OSS-compatible standard
-master-replica queue. ECS, RDS, and Tair must share one region/VPC and state
-services expose private endpoints only. PostgreSQL remains authoritative;
-Tair is recoverable coordination, and RDS-native backup does not replace ADR
-0015's separately encrypted recovery repository.
+ADR 0021 selects the already purchased Alibaba Cloud Hong Kong Simple
+Application Server as the initial unpaid seed-production control plane. Its
+2-vCPU / 4-GiB / 50-GiB boundary temporarily holds Nginx, Web, Worker,
+PostgreSQL, and Valkey. Private Cloudflare R2 remains authoritative for image
+bytes. This is a deliberate single application/state failure domain, not a
+high-availability claim. ADR 0018's separate ECS, RDS PostgreSQL HA, and Tair
+profile remains a future scale-out direction rather than a seed-launch gate.
 
-The production region remains unset. Alibaba Cloud's regular-website ICP path
-requires a mainland China filing resource, while Hong Kong is the accepted
-staging/control-plane direction. A later region decision must reconcile the
-filed domain and network topology before purchase; moving paid production to
-mainland China requires another ADR and repeated network, callback, security,
-and release evidence. The declarative profile grants no purchase, deployment,
-or executable-release authority.
+There is no persistent remote staging environment in this phase. The operator
+workstation owns mock and production-shaped local testing with test-only data
+and credentials; CI produces the immutable candidate. The production host
+performs a bounded inactive-Web candidate check, single-Worker handoff, public
+synthetic verification, and rollback rehearsal. Local success never substitutes
+for production callback, storage, resource-headroom, recovery, or release
+evidence. `staging-goodgood.o1key.com` remains reserved and inactive.
+
+The M7 test environment becomes production infrastructure only after a clean
+conversion. No staging owner, session, credit, project, job, audit row, queue
+item, or object enters production. Fresh PostgreSQL and Valkey state, an
+inventory-cleared private `goodgood` R2 bucket with rotated credentials,
+rotated production secrets, and an audited site-owner bootstrap define the new
+boundary. `goodgood.o1key.com`
+remains the canonical application hostname. Domestic Alipay and the applicable
+ICP/domain review remain a later paid-commercialization gate. ADR 0021 grants
+no data deletion, live configuration change, or deployment authority.
+
+The current Authing application and identity directory are reused, but its OIDC
+client secret rotates at conversion. GoodGood has no shared session-signing
+secret: fresh PostgreSQL state omits every old hashed session token. Only the
+exact `goodgood.o1key.com` production callback/logout URLs remain allowed;
+local real-Authing tests may not use the production application. Authing
+identity records are not GoodGood accounts: after the clean database reset,
+any returning identity provisions a new pending owner with no inherited role,
+credit, session, or content before the normal site-owner review boundary.
 
 ## Initial runtime units
 
@@ -267,8 +302,12 @@ container filesystem.
     ID and idempotency key. A verified provider callback, or the trusted
     dry-run-first operator command for an independently confirmed receipt, may
     mark it paid and grant only the snapshotted credit.
-12. Browser receives status through polling initially; SSE/WebSocket is optional
-   only when measurement justifies it.
+12. A site-owner browser may review accounts and append promotional credit only
+    through the administrator boundary. The backend derives the actor from the
+    GoodGood session, checks the persisted role before target lookup, and writes
+    idempotent review/ledger/audit evidence without a payment order.
+13. Browser receives status through polling initially; SSE/WebSocket is optional
+    only when measurement justifies it.
 
 ## Non-negotiable security boundaries
 
@@ -281,16 +320,29 @@ container filesystem.
 - Every asset read/write is authorized against the owning user/project.
 - Every project read/write and batch association is owner-scoped.
 - Upload MIME, decoded type, size, dimensions, and count are validated server-side.
-- Job creation is idempotent and rate-limited.
+- Job creation is idempotent. The initial observation phase has no hidden
+  per-user, queue-depth, or concurrent-job count limit; later abuse controls
+  require a separate product decision.
 - Callback signatures are verified when a selected provider supports callbacks;
   polling and all provider payloads remain untrusted.
+- Administrative navigation is not authorization. Every account-list, review,
+  role, tier, and promotional-credit operation requires the persisted site-
+  owner role and append-only audit evidence.
 
 ## Capacity posture
 
-The early Hong Kong staging node may begin as a 2 vCPU / 4 GB control-plane instance if
-builds happen in CI and image bytes bypass it. This is not a promise that one
-node can handle production persistence indefinitely. The known 50–80 async
-generation concurrency primarily belongs to the OVH generation plane.
+The initial Hong Kong seed-production node is the existing 2-vCPU / 4-GiB
+control-plane host; builds happen in CI and image bytes bypass it. This is not a
+promise that one node can handle production persistence indefinitely. One
+active Worker process starts accepted jobs concurrently without a fixed count
+ceiling, while PostgreSQL claims, persisted provider-submission guards, and
+ledger transactions remain authoritative per job. SIGINT/SIGTERM stops new
+queue intake and drains in-flight work before shared resources close.
+
+Only new generation submit/retry requests pass through host admission. They
+pause below 500 MiB `MemAvailable`, at 80% root-disk use, or when those host
+observations fail. Protection remains latched until operator review and Web
+restart; safe reads and administration stay outside that boundary.
 
 Upgrade priorities:
 
@@ -391,6 +443,12 @@ receipt reference; neither money nor credit amounts are operator inputs. Exact
 replay is a no-op, and receipt reuse across an owner or product fails closed.
 Customer checkout UI and the domestic Alipay adapter remain absent pending ICP
 filing and provider evidence.
+
+ADR 0020's site-owner test-credit path is not a payment adapter. It appends a
+positive promotional `grant` and linked administrative audit record in one
+transaction, using a server-derived actor and idempotency key. Pending owners
+may receive the existing welcome grant and later promotional grants, but the
+shared admission guard prevents reservation or consumption until approval.
 
 The read side is deliberately narrower than the ledger. `GET /api/billing`
 authenticates before resolving the owner, performs no mutation, returns

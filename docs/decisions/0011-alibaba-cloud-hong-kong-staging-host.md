@@ -2,6 +2,8 @@
 
 - Status: Accepted
 - Date: 2026-09-03
+- Refined by: ADR 0021 for the clean conversion of this host from disposable
+  staging to initial unpaid seed production
 
 ## Context
 

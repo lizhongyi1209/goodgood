@@ -90,6 +90,19 @@ Implemented in the interactive frontend:
   immutable product/order/ledger path; there is no customer checkout or public
   balance-mutation endpoint yet.
 
+Implemented locally for M8 seed-production preparation:
+
+- Authing registration/login remains open. Every new GoodGood owner receives
+  the normal 100 welcome credits but starts pending; only a site-owner review
+  enables creation and credit consumption.
+- A small site-owner-only account-management page reviews access and appends
+  auditable free test-credit grants without creating payment records.
+- System role, creation-access state, and product account tier remain separate
+  concepts. Seed-user accounts and creative content are production data.
+- Access state is exactly pending, active, or suspended; the initial tier is
+  seed/内测用户. The site owner is established once with the audited bootstrap
+  command after normal login, never by registration order.
+
 Not production-ready yet:
 
 - Secure public-HTTPS callback/logout verification, explicitly deferred by the
@@ -101,7 +114,10 @@ Not production-ready yet:
 - A fuller creation-session policy covering project edits, active jobs, and
   cross-device session history beyond the minimal root draft.
 - Customer checkout UI, the selected domestic Alipay sandbox and fulfillment
-  adapter after ICP filing, quotas, moderation, and abuse controls.
+  adapter after the applicable domain/ICP review, quotas, moderation, abuse
+  controls, and server-enforced reviewed-account admission. ADRs 0019 and 0020
+  permit a Hong Kong seed-production launch only after those non-payment safety
+  controls and the separate seed release gate pass.
 - Production object-storage lifecycle alignment, moderation, approved retention
   periods, cleanup scheduling/alerting, and staging capacity evidence beyond the
   locally verified manual cleanup path.

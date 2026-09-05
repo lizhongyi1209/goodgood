@@ -1,12 +1,14 @@
 import path from "node:path";
 import { startProdServer } from "vinext/server/prod-server";
 import { createAssetNodeApiHandler } from "../assets/node-api.mjs";
+import { createAdminNodeApiHandler } from "../admin/node-api.mjs";
 import { createBillingNodeApiHandler } from "../billing/node-api.mjs";
 import { loadAuthenticationConfig } from "../auth/config.mjs";
 import { createAuthenticationNodeApiHandler } from "../auth/node-api.mjs";
 import { createAuthenticationOperations } from "../auth/operations.mjs";
 import {
   createRequestAuthenticator,
+  createSessionAuthenticator,
   hasLocalSessionCookie,
   localSessionCookie,
 } from "../auth/request-authenticator.mjs";
@@ -21,6 +23,7 @@ import {
   prepareObjectStorage,
 } from "../generation/resources.mjs";
 import { parseRuntimePort } from "./port.mjs";
+import { createHostGenerationAdmission } from "./host-resource-admission.mjs";
 
 const host = process.env.HOST ?? "0.0.0.0";
 const port = parseRuntimePort(process.env.PORT, 3000, "PORT");
@@ -31,17 +34,25 @@ const authenticate = createRequestAuthenticator({
   config: authenticationConfig,
   getPool: async () => runtimeResources.pool,
 });
+const authenticateSession = createSessionAuthenticator({
+  config: authenticationConfig,
+  getPool: async () => runtimeResources.pool,
+});
 const handleAuthenticationNodeApi = createAuthenticationNodeApiHandler({
   config: authenticationConfig,
   operations: createAuthenticationOperations({
     authenticate,
+    authenticateSession,
     config: authenticationConfig,
     getPool: async () => runtimeResources.pool,
   }),
 });
+const hostGenerationAdmission = createHostGenerationAdmission();
 const handleGenerationNodeApi = createGenerationNodeApiHandler({
+  admitGeneration: hostGenerationAdmission.admitGeneration,
   authenticate,
 });
+const handleAdminNodeApi = createAdminNodeApiHandler({ authenticate });
 const handleCreationDraftNodeApi = createCreationDraftNodeApiHandler({ authenticate });
 const handleAssetNodeApi = createAssetNodeApiHandler({ authenticate });
 const handleBillingNodeApi = createBillingNodeApiHandler({ authenticate });
@@ -69,6 +80,7 @@ server.on("request", (request, response) => {
     response.setHeader("set-cookie", defaultSessionCookie);
   }
   void handleAuthenticationNodeApi(request, response)
+    .then((handled) => (handled ? true : handleAdminNodeApi(request, response)))
     .then((handled) =>
       handled ? true : handleCreationDraftNodeApi(request, response),
     )

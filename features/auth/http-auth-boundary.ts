@@ -1,6 +1,16 @@
 export const SESSION_EXPIRED_EVENT = "goodgood:session-expired";
 
 export type AuthenticationSession = Readonly<{
+  access: Readonly<{
+    status: "pending" | "active" | "suspended";
+  }>;
+  account: Readonly<{
+    availableCredits: string;
+    reservedCredits: string;
+    role: "site_owner" | "member";
+    tier: "seed";
+    unit: "credit";
+  }>;
   authenticated: true;
   preview?: true;
   user: Readonly<{
@@ -70,6 +80,7 @@ export function authenticationErrorMessage(code: string | null) {
   if (code === "ACCOUNT_LINK_REQUIRED") {
     return "该邮箱已有登录身份，请先在登录页完成账号关联。";
   }
-  if (code === "ACCOUNT_DISABLED") return "当前账号暂不可用，请联系支持。";
+  if (code === "ACCOUNT_PENDING") return "账号正在等待审核，审核通过后即可开始创作。";
+  if (code === "ACCOUNT_SUSPENDED") return "账号已暂停使用，请联系站长。";
   return "登录没有完成，请重新使用 Google 或邮箱验证码登录。";
 }

@@ -19,6 +19,40 @@
   area and as a compact mobile balance. Initial loading stays quiet; a read
   failure keeps the workspace usable and offers a local retry. Zero is a valid
   balance, never an empty or error state.
+- Open Authing login provisions a new GoodGood owner in `pending` access state.
+  The authenticated pending surface replaces the creation workspace with one
+  compact review message, shows that the 100 welcome credits are waiting, and
+  offers status refresh plus logout. It does not render usable upload, project,
+  asset, or generation controls.
+- Approval moves the user into the normal workspace without another identity
+  registration. If access is later removed, current in-browser creative state
+  is preserved locally where safe, but new owner-scoped reads and mutations
+  fail closed and the global account-state surface replaces the workspace.
+- The only access states are `pending`, `active`, and `suspended`; there is no
+  rejected state. The normal approved workspace corresponds to `active`.
+
+### Site-owner account management
+
+- Only a persisted site-owner role sees the account-management navigation and
+  route. Direct URL or API access by every other account is rejected by the
+  backend, regardless of hidden controls.
+- The first useful view prioritizes pending accounts, with restrained loading,
+  empty, read-failure, and retry states. Search and filters must not place email
+  addresses or other personal data in the URL.
+- Review actions show the target account and resulting state explicitly.
+  Repeated submission is idempotent. A failed action keeps the current row and
+  filters intact and shows the support ID.
+- Each row shows email, registration and last-login times, role, `seed` /
+  `内测用户` tier, access state, and available/reserved credit. Valid actions
+  are approve, suspend, restore, and test-credit grant.
+- Test-credit grant is a compact dialog showing the selected account, current
+  balance, validated grant amount, required reason, and final confirmation. It
+  appends ledger/audit evidence and never looks like a customer payment.
+- The dialog provides 100/500/1000 presets and a positive-integer custom field;
+  one grant may not exceed 5000 credits.
+- Routine review and grants happen in this surface. The one-time site-owner
+  bootstrap remains an out-of-band security operation, not a public signup
+  shortcut.
 
 ## Creation surface
 

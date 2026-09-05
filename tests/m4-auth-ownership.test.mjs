@@ -104,18 +104,18 @@ test("local authentication maps bearer and HttpOnly-cookie credentials to intern
     (error) => error.code === "SESSION_EXPIRED" && error.status === 401,
   );
 
-  const authenticateDisabled = createRequestAuthenticator({
+  const authenticateSuspended = createRequestAuthenticator({
     config,
     getPool: async () =>
-      authenticationPool({ "local-user-a": "disabled" }),
+      authenticationPool({ "local-user-a": "suspended" }),
   });
   await assert.rejects(
-    authenticateDisabled({
+    authenticateSuspended({
       headers: new Headers({
         authorization: "Bearer goodgood-local-user-a-token",
       }),
     }),
-    (error) => error.code === "ACCOUNT_DISABLED" && error.status === 403,
+    (error) => error.code === "ACCOUNT_SUSPENDED" && error.status === 403,
   );
 });
 

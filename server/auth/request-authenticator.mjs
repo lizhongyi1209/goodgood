@@ -2,7 +2,9 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { loadAuthenticationConfig } from "./config.mjs";
 import { sessionExpiredError } from "./errors.mjs";
 import {
+  resolveAccountContext,
   resolveOwnerContext,
+  resolveSessionAccountContext,
   resolveSessionOwnerContext,
 } from "./repository.mjs";
 import { correlateRequest } from "../observability/http.mjs";
@@ -97,6 +99,34 @@ export function createRequestAuthenticator({
       throw sessionExpiredError();
     }
     const owner = await resolveSessionOwnerContext(
+      await getPool(),
+      hashAuthenticationSecret(credential),
+    );
+    correlateRequest(request, { ownerId: owner.ownerId });
+    return owner;
+  };
+}
+
+export function createSessionAuthenticator({
+  config = loadAuthenticationConfig(),
+  getPool,
+}) {
+  if (config.mode === "local") {
+    const identityAdapter = createLocalIdentityAdapter(config);
+    return async function authenticateLocalSession(request) {
+      const identity = identityAdapter.authenticate(request);
+      const owner = await resolveAccountContext(await getPool(), identity);
+      correlateRequest(request, { ownerId: owner.ownerId });
+      return owner;
+    };
+  }
+
+  return async function authenticateOidcSession(request) {
+    const credential = authenticationSessionCredential(request, config);
+    if (!credential || credential.length < 32 || credential.length > 512) {
+      throw sessionExpiredError();
+    }
+    const owner = await resolveSessionAccountContext(
       await getPool(),
       hashAuthenticationSecret(credential),
     );

@@ -31,6 +31,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node server/runtime/migrate.mjs",
     "billing:manual-payment": "node server/runtime/manual-payment.mjs",
+    "accounts:bootstrap-site-owner": "node server/runtime/bootstrap-site-owner.mjs",
     "references:cleanup": "node server/runtime/reference-cleanup.mjs",
     "auth:preflight": "node scripts/verify-authentication.mjs",
     "staging:preflight": "node scripts/verify-staging.mjs",
@@ -38,6 +39,9 @@
     "production:preflight": "node scripts/verify-production-preflight.mjs",
     "production:artifact-evidence": "node scripts/import-artifact-security-evidence.mjs",
     "production:gate": "node scripts/verify-production-readiness.mjs",
+    "production:conversion-plan": "node scripts/run-production-conversion.mjs",
+    "production:r2-deletion-plan": "node scripts/run-production-r2-deletion-plan.mjs",
+    "production:work-package": "node scripts/run-production-work-package.mjs",
     "production:release-plan": "node scripts/run-production-release.mjs",
     "test:m3": "node --test tests/m3-*.test.mjs"
   },

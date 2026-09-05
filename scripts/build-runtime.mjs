@@ -11,10 +11,12 @@ await build({
   },
   bundle: true,
   entryPoints: {
+    "bootstrap-site-owner": "server/runtime/bootstrap-site-owner.mjs",
     "manual-payment": "server/runtime/manual-payment.mjs",
     "mock-generation": "server/runtime/mock-generation.mjs",
     migrate: "server/runtime/migrate.mjs",
     "reference-cleanup": "server/runtime/reference-cleanup.mjs",
+    "r2-inventory": "server/runtime/r2-inventory.mjs",
     web: "server/runtime/web.mjs",
     worker: "server/runtime/worker.mjs",
   },

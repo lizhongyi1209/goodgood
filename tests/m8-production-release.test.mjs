@@ -14,6 +14,7 @@ import {
 import {
   PRODUCTION_INFRASTRUCTURE_PROFILE,
   PRODUCTION_INFRASTRUCTURE_PROFILE_ID,
+  PRODUCTION_SCALE_OUT_PROFILE,
 } from "../scripts/production-infrastructure-profile.mjs";
 
 const NOW = Date.parse("2026-09-05T05:00:00.000Z");
@@ -145,40 +146,44 @@ test("production release planner emits no plan when any gate evidence is blocked
   );
 });
 
-test("production infrastructure profile fixes managed private state without authorizing purchase", () => {
-  assert.equal(PRODUCTION_INFRASTRUCTURE_PROFILE.status, "selected-not-provisioned");
-  assert.equal(PRODUCTION_INFRASTRUCTURE_PROFILE.region.productionRegion, null);
+test("selected production profile is the existing bounded Hong Kong seed host", () => {
   assert.equal(
-    PRODUCTION_INFRASTRUCTURE_PROFILE.region.status,
-    "blocked-on-icp-domain-placement",
+    PRODUCTION_INFRASTRUCTURE_PROFILE_ID,
+    "alibaba-hong-kong-single-host-seed-v1",
+  );
+  assert.equal(PRODUCTION_INFRASTRUCTURE_PROFILE.status, "selected-existing-not-converted");
+  assert.equal(
+    PRODUCTION_INFRASTRUCTURE_PROFILE.region.productionRegion,
+    "china-hong-kong",
   );
   assert.equal(
     PRODUCTION_INFRASTRUCTURE_PROFILE.applicationHost.architecture,
     "linux-amd64",
   );
-  assert.ok(PRODUCTION_INFRASTRUCTURE_PROFILE.applicationHost.minimumVcpu >= 4);
-  assert.ok(
-    PRODUCTION_INFRASTRUCTURE_PROFILE.applicationHost.minimumMemoryGiB >= 16,
-  );
+  assert.equal(PRODUCTION_INFRASTRUCTURE_PROFILE.applicationHost.vcpu, 2);
+  assert.equal(PRODUCTION_INFRASTRUCTURE_PROFILE.applicationHost.memoryGiB, 4);
+  assert.equal(PRODUCTION_INFRASTRUCTURE_PROFILE.applicationHost.systemDiskGiB, 50);
+  assert.equal(PRODUCTION_INFRASTRUCTURE_PROFILE.applicationHost.purchaseRequired, false);
   assert.equal(PRODUCTION_INFRASTRUCTURE_PROFILE.postgresql.engineVersion, "17");
   assert.equal(
-    PRODUCTION_INFRASTRUCTURE_PROFILE.postgresql.edition,
-    "high-availability",
+    PRODUCTION_INFRASTRUCTURE_PROFILE.postgresql.service,
+    "host-colocated-container",
   );
-  assert.equal(
-    PRODUCTION_INFRASTRUCTURE_PROFILE.postgresql.privateEndpointOnly,
-    true,
-  );
-  assert.equal(
-    PRODUCTION_INFRASTRUCTURE_PROFILE.postgresql.nativeBackupIsSoleRecoveryCopy,
-    false,
-  );
-  assert.equal(
-    PRODUCTION_INFRASTRUCTURE_PROFILE.queue.architecture,
-    "standard-master-replica",
-  );
-  assert.equal(PRODUCTION_INFRASTRUCTURE_PROFILE.queue.privateEndpointOnly, true);
+  assert.equal(PRODUCTION_INFRASTRUCTURE_PROFILE.postgresql.stagingDataImportAllowed, false);
   assert.equal(PRODUCTION_INFRASTRUCTURE_PROFILE.queue.authoritativeState, false);
+  assert.equal(PRODUCTION_INFRASTRUCTURE_PROFILE.queue.fixedQueueDepthLimit, null);
+  assert.equal(PRODUCTION_INFRASTRUCTURE_PROFILE.queue.fixedConcurrentJobLimit, null);
+  assert.equal(PRODUCTION_INFRASTRUCTURE_PROFILE.objectStorage.bucket, "goodgood");
+  assert.equal(PRODUCTION_INFRASTRUCTURE_PROFILE.preproduction.remoteStagingActive, false);
+  assert.equal(
+    PRODUCTION_INFRASTRUCTURE_PROFILE.resourceAdmission.availableMemoryFloorMiB,
+    500,
+  );
+  assert.equal(
+    PRODUCTION_INFRASTRUCTURE_PROFILE.resourceAdmission.rootDiskUsageCeilingPercent,
+    80,
+  );
+  assert.equal(PRODUCTION_INFRASTRUCTURE_PROFILE.conversion.maximumWindowMinutes, 240);
   assert.equal(
     PRODUCTION_INFRASTRUCTURE_PROFILE.authorization.purchaseAuthorized,
     false,
@@ -187,6 +192,66 @@ test("production infrastructure profile fixes managed private state without auth
     PRODUCTION_INFRASTRUCTURE_PROFILE.authorization.productionDeploymentAuthorized,
     false,
   );
+  assert.equal(PRODUCTION_INFRASTRUCTURE_PROFILE.authorization.liveConversionAuthorized, false);
+  assert.equal(PRODUCTION_SCALE_OUT_PROFILE.id, "alibaba-managed-state-v1");
+  assert.equal(PRODUCTION_SCALE_OUT_PROFILE.postgresql.edition, "high-availability");
+  assert.equal(PRODUCTION_SCALE_OUT_PROFILE.authorization.purchaseAuthorized, false);
+});
+
+test("single-host seed decision keeps local data isolated and authorizes no live conversion", async () => {
+  const [decision, priorDecision, deployment, plan] = await Promise.all([
+    readFile(
+      new URL(
+        "../docs/decisions/0021-single-host-seed-production-and-local-preproduction.md",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+    readFile(
+      new URL(
+        "../docs/decisions/0019-hong-kong-invite-only-seed-production.md",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+    readFile(new URL("../docs/DEPLOYMENT.md", import.meta.url), "utf8"),
+    readFile(new URL("../docs/IMPLEMENTATION_PLAN.md", import.meta.url), "utf8"),
+  ]);
+
+  for (const source of [decision, priorDecision, deployment, plan]) {
+    assert.match(source, /goodgood\.o1key\.com/);
+    assert.match(source, /staging-goodgood\.o1key\.com/);
+  }
+  assert.match(decision, /2 vCPUs, 4 GiB memory, a 50 GiB/);
+  assert.match(decision, /must never\s+be copied into that local environment/);
+  assert.match(decision, /one hour apart/);
+  assert.match(decision, /within four\s+hours/);
+  assert.match(decision, /14 daily, 8 weekly, and 12 monthly/);
+  assert.match(decision, /Do not impose a fixed per-user pending-job limit/);
+  assert.match(decision, /current Worker awaits each job serially/);
+  assert.match(decision, /`MemAvailable` falls below 500 MiB/);
+  assert.match(decision, /root filesystem reaches 80%/);
+  assert.match(
+    decision,
+    /reuse the existing private Cloudflare R2 `goodgood` bucket/,
+  );
+  assert.match(decision, /Reuse the current Authing application and identity directory/);
+  assert.match(
+    decision,
+    /https:\/\/goodgood\.o1key\.com\/api\/auth\/callback/,
+  );
+  assert.match(decision, /Do not delete Authing identity-directory records/);
+  assert.match(
+    decision,
+    /new pending\s+GoodGood account with the standard welcome grant/,
+  );
+  assert.match(decision, /visible maintenance window with a\s+four-hour execution limit/);
+  assert.match(decision, /keep the public site in maintenance mode/);
+  assert.match(decision, /no live connection, data deletion/);
+  assert.match(deployment, /No live reset or deletion is authorized/);
+  assert.match(deployment, /seven days after conversion passes/);
+  assert.match(deployment, /verify the bucket is empty/);
+  assert.match(plan, /connected to no server and deleted or changed no data/);
 });
 
 test("production release CLI is plan-only and has no process execution path", async () => {
@@ -232,6 +297,11 @@ test("production release CLI is plan-only and has no process execution path", as
   assert.doesNotMatch(adapterSource, /node:child_process|\bspawn\b|\bexecFile\b/);
   assert.doesNotMatch(profileSource, /node:child_process|\bspawn\b|\bexecFile\b/);
   assert.equal(PRODUCTION_RUNTIME_ADAPTER.publicIngress, "nginx-only");
+  assert.deepEqual(PRODUCTION_RUNTIME_ADAPTER.stateBoundary, [
+    "host-colocated-postgresql",
+    "host-colocated-valkey",
+    "private-r2",
+  ]);
   assert.deepEqual(
     PRODUCTION_RUNTIME_ADAPTER.slots.map(({ webPort, workerHealthPort }) => [
       webPort,

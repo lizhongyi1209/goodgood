@@ -2,6 +2,10 @@
 
 - Status: Accepted
 - Date: 2026-09-05
+- Superseded in part by: ADR 0019 for the selected Hong Kong
+  `productionRegion` and invitation-only launch sequence
+- Superseded in part by: ADR 0021 for the initial unpaid seed-production
+  topology; this managed profile remains the future scale-out target
 
 ## Context
 

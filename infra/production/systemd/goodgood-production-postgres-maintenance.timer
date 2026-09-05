@@ -1,0 +1,12 @@
+[Unit]
+Description=Schedule GoodGood production backup retention and verification
+
+[Timer]
+OnCalendar=*-*-* 18:17:00 UTC
+RandomizedDelaySec=20m
+Persistent=true
+AccuracySec=1m
+Unit=goodgood-production-postgres-maintenance.service
+
+[Install]
+WantedBy=timers.target

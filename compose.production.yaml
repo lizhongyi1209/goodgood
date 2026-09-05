@@ -1,0 +1,155 @@
+name: ${GOODGOOD_PRODUCTION_COMPOSE_PROJECT:?Select the reviewed blue or green slot}
+
+x-goodgood-production-app: &goodgood-production-app
+  image: ${GOODGOOD_RELEASE_IMAGE:?Set the immutable GoodGood GHCR digest}
+  pull_policy: always
+  init: true
+  read_only: true
+  restart: unless-stopped
+  security_opt:
+    - no-new-privileges:true
+  tmpfs:
+    - /tmp:size=64m,mode=1777
+  cpus: 1.0
+  mem_limit: 640m
+  mem_reservation: 128m
+  memswap_limit: 768m
+  pids_limit: 256
+  group_add:
+    - "${GOODGOOD_PRODUCTION_SECRET_GID:?Set the numeric production secret-reader group GID}"
+  env_file:
+    - ${GOODGOOD_RUNTIME_ENV_FILE:?Set the absolute production runtime env-file path}
+  labels:
+    com.goodgood.source.revision: ${GOODGOOD_RELEASE_REVISION:?Set the CI source revision}
+    com.goodgood.migration.version: ${GOODGOOD_RELEASE_MIGRATION:?Set the CI migration version}
+    com.goodgood.runtime-config.version: ${GOODGOOD_RUNTIME_CONFIG_VERSION:?Set the CI runtime configuration version}
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: "3"
+  networks:
+    - goodgood-production-state
+
+services:
+  web:
+    <<: *goodgood-production-app
+    command: ["node", "server/runtime/web.mjs"]
+    stop_grace_period: 30s
+    environment:
+      GOODGOOD_PROCESS: web
+      HOST: 0.0.0.0
+      PORT: 3000
+    ports:
+      - "127.0.0.1:${GOODGOOD_PRODUCTION_WEB_PORT:?Select the reviewed slot web port}:3000"
+    networks:
+      - goodgood-production-state
+      - goodgood-production-egress
+    secrets:
+      - goodgood_auth_client_secret
+      - goodgood_generation_api_key
+      - goodgood_object_storage_access_key_id
+      - goodgood_object_storage_secret_access_key
+
+  worker:
+    <<: *goodgood-production-app
+    command: ["node", "server/runtime/worker.mjs"]
+    stop_grace_period: 5m
+    environment:
+      GOODGOOD_PROCESS: worker
+      WORKER_HEALTH_HOST: 0.0.0.0
+      WORKER_HEALTH_PORT: 3001
+    ports:
+      - "127.0.0.1:${GOODGOOD_PRODUCTION_WORKER_HEALTH_PORT:?Select the reviewed slot Worker health port}:3001"
+    networks:
+      - goodgood-production-state
+      - goodgood-production-egress
+    secrets:
+      - goodgood_generation_api_key
+      - goodgood_object_storage_access_key_id
+      - goodgood_object_storage_secret_access_key
+
+  migrate:
+    <<: *goodgood-production-app
+    profiles: ["release"]
+    command: ["node", "server/runtime/migrate.mjs"]
+    restart: "no"
+    healthcheck:
+      disable: true
+    environment:
+      GOODGOOD_PROCESS: migrate
+
+  bootstrap-site-owner:
+    <<: *goodgood-production-app
+    profiles: ["maintenance"]
+    entrypoint: ["node", "server/runtime/bootstrap-site-owner.mjs"]
+    command: []
+    restart: "no"
+    healthcheck:
+      disable: true
+    environment:
+      GOODGOOD_PROCESS: bootstrap-site-owner
+
+  reference-cleanup:
+    <<: *goodgood-production-app
+    profiles: ["maintenance"]
+    entrypoint: ["node", "server/runtime/reference-cleanup.mjs"]
+    command: []
+    restart: "no"
+    healthcheck:
+      disable: true
+    environment:
+      GOODGOOD_PROCESS: reference-cleanup
+    networks:
+      - goodgood-production-state
+      - goodgood-production-egress
+    secrets:
+      - goodgood_generation_api_key
+      - goodgood_object_storage_access_key_id
+      - goodgood_object_storage_secret_access_key
+
+  r2-inventory:
+    <<: *goodgood-production-app
+    profiles: ["maintenance"]
+    entrypoint: ["node", "server/runtime/r2-inventory.mjs"]
+    command: []
+    restart: "no"
+    healthcheck:
+      disable: true
+    env_file:
+      - ${GOODGOOD_R2_INVENTORY_ENV_FILE:?Set the absolute metadata-only R2 inventory env-file path}
+    environment:
+      GOODGOOD_PROCESS: r2-inventory
+    networks:
+      - goodgood-production-egress
+    secrets:
+      - goodgood_object_storage_access_key_id
+      - goodgood_object_storage_secret_access_key
+
+  manual-payment:
+    <<: *goodgood-production-app
+    profiles: ["maintenance"]
+    entrypoint: ["node", "server/runtime/manual-payment.mjs"]
+    command: []
+    restart: "no"
+    healthcheck:
+      disable: true
+    environment:
+      GOODGOOD_PROCESS: manual-payment
+
+secrets:
+  goodgood_auth_client_secret:
+    file: ${GOODGOOD_AUTH_CLIENT_SECRET_SOURCE_FILE:?Set the Authing secret-file path}
+  goodgood_generation_api_key:
+    file: ${GOODGOOD_GENERATION_API_KEY_SOURCE_FILE:?Set the O1Key secret-file path}
+  goodgood_object_storage_access_key_id:
+    file: ${GOODGOOD_OBJECT_STORAGE_ACCESS_KEY_ID_SOURCE_FILE:?Set the R2 access-key file path}
+  goodgood_object_storage_secret_access_key:
+    file: ${GOODGOOD_OBJECT_STORAGE_SECRET_ACCESS_KEY_SOURCE_FILE:?Set the R2 secret-key file path}
+
+networks:
+  goodgood-production-state:
+    external: true
+    name: goodgood-production-state
+  goodgood-production-egress:
+    driver: bridge

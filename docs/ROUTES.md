@@ -17,6 +17,7 @@ native history.
 | 灵感板 | Placeholder | No view or route yet |
 | 帮助 | Placeholder | No view or route yet |
 | 图片详情 | Implemented | `/assets/:assetId` over its preserved source scope |
+| 账户管理 | Implemented locally for M8 | `/admin/users`, visible and callable only by the site owner |
 
 Do not describe placeholders as shipped features.
 
@@ -56,11 +57,13 @@ not use a browser session. It requires the enabled fake sandbox, a current HMAC
 timestamp/signature over the exact raw body, and an exact order amount/currency.
 It must remain disabled outside explicitly local test environments.
 
-There is intentionally no browser route for manual credit. Before domestic
-Alipay checkout is enabled, a trusted server operator records an independently
-confirmed payment with the dry-run-first `billing:manual-payment` command. It
-uses the same immutable payment order and credit ledger but never exposes an
-administrator balance mutation through the customer application.
+There is intentionally no browser route for recording payment. Before domestic
+Alipay checkout is enabled, a trusted server operator may still record an
+independently confirmed payment with the dry-run-first
+`billing:manual-payment` command. It uses the same immutable payment order and
+credit ledger. ADR 0020 separately accepts a site-owner-only test-credit action
+under `/admin/users`; that action appends a promotional ledger grant and never
+creates or mutates a payment order.
 
 The visible asset library is addressable at `/assets`. Opening a generated
 image from creation or either asset mode pushes `/assets/:assetId` while
@@ -103,6 +106,7 @@ persistence and navigation behavior exist:
 | `/explore` | Future discovery experience |
 | `/moodboards` | Future moodboards |
 | `/help` | Product help and status guidance |
+| `/admin/users` | M8 site-owner-only account review, suspension/restoration, audit history, and test-credit management |
 
 The root route remains compatible for old links. Product navigation and clean
 creation transitions use `/create`; both entries mount the same component and
@@ -121,3 +125,7 @@ do not create separate draft or history state.
 - Filters, selected mode, and scroll position should survive detail close and
   browser back navigation.
 - Future URLs use stable IDs, never model names, prompts, or localized labels.
+- Administrative navigation is emitted only for the site-owner role, but route
+  and API authorization remain server-side. Search terms containing email or
+  other personal data stay in request bodies or ephemeral client state rather
+  than browser URLs or history.

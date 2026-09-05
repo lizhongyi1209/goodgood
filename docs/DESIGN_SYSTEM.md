@@ -94,6 +94,22 @@ individual icon. Upload, settings, and send align to the same 40px box.
   jump. Do not add a wallet panel, pricing hero, or checkout treatment before
   a real payment provider and customer checkout flow are accepted.
 
+## Site-owner account management
+
+- Treat `/admin/users` as a compact working surface, not a marketing page. Use
+  the existing light canvas, quiet chrome, rounded controls, and Palace Red only
+  for selection or the primary confirmed action.
+- Use no decorative imagery. Desktop favors a readable account table; narrow
+  layouts use stacked account rows without hiding status, tier, or the primary
+  review action.
+- Keep system role, access state, and account tier visually distinct. Status
+  treatments remain restrained and must not rely on color alone.
+- Use existing table, dialog, select, input, and alert-dialog primitives where
+  their semantics match. Granting credit requires an explicit confirmation and
+  never uses checkout, wallet, or payment visual language.
+- Loading, empty, failure, retry, and mutation-in-progress states retain the
+  page silhouette so rows and controls do not jump.
+
 ## Image presentation
 
 - Preserve the actual output ratio in all data and detail views.

@@ -48,6 +48,7 @@ services:
 
   worker:
     <<: *goodgood-staging-app
+    stop_grace_period: 5m
     command: ["node", "server/runtime/worker.mjs"]
     environment:
       GOODGOOD_PROCESS: worker

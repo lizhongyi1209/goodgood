@@ -6,33 +6,67 @@ import {
   sessionExpiredError,
 } from "./errors.mjs";
 
-function ownerContext(row, identity) {
+function accountContext(row, identity) {
   if (!row) throw sessionExpiredError();
-  if (row.status !== "active") {
-    throw new AuthenticationError(
-      "ACCOUNT_DISABLED",
-      "当前账号暂不可用，请联系支持。",
-      403,
-    );
-  }
   return Object.freeze({
+    accessStatus: row.status,
+    accountTier: row.account_tier,
+    availableCredits: String(row.available_balance ?? 0),
     email: row.email ?? null,
     identity: Object.freeze({ ...identity }),
     identityId: row.identity_id ?? null,
     locale: row.locale,
     ownerId: row.owner_id,
+    reservedCredits: String(row.reserved_balance ?? 0),
+    systemRole: row.is_site_owner ? "site_owner" : "member",
   });
 }
 
-export async function resolveOwnerContext(pool, identity) {
+function activeOwnerContext(row, identity) {
+  const owner = accountContext(row, identity);
+  if (owner.accessStatus === "pending") {
+    throw new AuthenticationError(
+      "ACCOUNT_PENDING",
+      "账号正在等待审核，审核通过后即可开始创作。",
+      403,
+    );
+  }
+  if (owner.accessStatus !== "active") {
+    throw new AuthenticationError(
+      "ACCOUNT_SUSPENDED",
+      "账号已暂停使用，请联系站长。",
+      403,
+    );
+  }
+  return owner;
+}
+
+async function findIdentityOwner(pool, identity) {
   const result = await pool.query(
-    `SELECT i.id AS identity_id, u.email, u.id AS owner_id, u.locale, u.status
+    `SELECT i.id AS identity_id, u.account_tier, u.email,
+            u.id AS owner_id, u.locale, u.status,
+            COALESCE(c.available_balance, 0) AS available_balance,
+            COALESCE(c.reserved_balance, 0) AS reserved_balance,
+            EXISTS (
+              SELECT 1 FROM system_role_assignments role
+               WHERE role.owner_id = u.id AND role.role = 'site_owner'
+            ) AS is_site_owner
        FROM auth_identities i
        JOIN users u ON u.id = i.owner_id
+       LEFT JOIN credit_accounts c
+         ON c.owner_id = u.id AND c.unit = 'credit'
       WHERE i.issuer = $1 AND i.subject = $2`,
     [identity.issuer, identity.subject],
   );
-  return ownerContext(result.rows[0], identity);
+  return result.rows[0];
+}
+
+export async function resolveAccountContext(pool, identity) {
+  return accountContext(await findIdentityOwner(pool, identity), identity);
+}
+
+export async function resolveOwnerContext(pool, identity) {
+  return activeOwnerContext(await findIdentityOwner(pool, identity), identity);
 }
 
 export async function createLoginAttempt(pool, attempt) {
@@ -81,9 +115,18 @@ export async function provisionOwnerIdentity(pool, claims) {
       [JSON.stringify([claims.issuer, claims.subject])],
     );
     const existing = await client.query(
-      `SELECT i.id AS identity_id, u.email, u.id AS owner_id, u.locale, u.status
+      `SELECT i.id AS identity_id, u.account_tier, u.email,
+              u.id AS owner_id, u.locale, u.status,
+              COALESCE(c.available_balance, 0) AS available_balance,
+              COALESCE(c.reserved_balance, 0) AS reserved_balance,
+              EXISTS (
+                SELECT 1 FROM system_role_assignments role
+                 WHERE role.owner_id = u.id AND role.role = 'site_owner'
+              ) AS is_site_owner
          FROM auth_identities i
          JOIN users u ON u.id = i.owner_id
+         LEFT JOIN credit_accounts c
+           ON c.owner_id = u.id AND c.unit = 'credit'
         WHERE i.issuer = $1 AND i.subject = $2
         FOR UPDATE OF i, u`,
       [claims.issuer, claims.subject],
@@ -105,8 +148,8 @@ export async function provisionOwnerIdentity(pool, claims) {
       const ownerId = randomUUID();
       const identityId = randomUUID();
       await client.query(
-        `INSERT INTO users (id, email, locale, status)
-         VALUES ($1, $2, 'zh-CN', 'active')`,
+        `INSERT INTO users (id, email, locale, status, account_tier)
+         VALUES ($1, $2, 'zh-CN', 'pending', 'seed')`,
         [ownerId, claims.email],
       );
       await client.query(
@@ -121,7 +164,11 @@ export async function provisionOwnerIdentity(pool, claims) {
         identity_id: identityId,
         locale: "zh-CN",
         owner_id: ownerId,
-        status: "active",
+        account_tier: "seed",
+        available_balance: 100,
+        reserved_balance: 0,
+        is_site_owner: false,
+        status: "pending",
       };
     } else {
       await client.query(
@@ -132,7 +179,7 @@ export async function provisionOwnerIdentity(pool, claims) {
       );
     }
     await client.query("COMMIT");
-    return ownerContext(row, {
+    return accountContext(row, {
       issuer: claims.issuer,
       subject: claims.subject,
     });
@@ -169,22 +216,42 @@ export async function createAuthenticationSession(pool, session) {
   if (result.rowCount !== 1) throw sessionExpiredError();
 }
 
-export async function resolveSessionOwnerContext(pool, tokenHash) {
+async function findSessionOwner(pool, tokenHash) {
   const result = await pool.query(
     `SELECT i.id AS identity_id, i.issuer, i.subject,
-            u.email, u.id AS owner_id, u.locale, u.status
+            u.account_tier, u.email, u.id AS owner_id, u.locale, u.status,
+            COALESCE(c.available_balance, 0) AS available_balance,
+            COALESCE(c.reserved_balance, 0) AS reserved_balance,
+            EXISTS (
+              SELECT 1 FROM system_role_assignments role
+               WHERE role.owner_id = u.id AND role.role = 'site_owner'
+            ) AS is_site_owner
        FROM auth_sessions s
        JOIN users u ON u.id = s.owner_id
        JOIN auth_identities i
          ON i.id = s.auth_identity_id AND i.owner_id = s.owner_id
+       LEFT JOIN credit_accounts c
+         ON c.owner_id = u.id AND c.unit = 'credit'
       WHERE s.token_hash = $1
         AND s.revoked_at IS NULL
         AND s.expires_at > now()
       LIMIT 1`,
     [tokenHash],
   );
-  const row = result.rows[0];
-  return ownerContext(row, {
+  return result.rows[0];
+}
+
+export async function resolveSessionAccountContext(pool, tokenHash) {
+  const row = await findSessionOwner(pool, tokenHash);
+  return accountContext(row, {
+    issuer: row?.issuer,
+    subject: row?.subject,
+  });
+}
+
+export async function resolveSessionOwnerContext(pool, tokenHash) {
+  const row = await findSessionOwner(pool, tokenHash);
+  return activeOwnerContext(row, {
     issuer: row?.issuer,
     subject: row?.subject,
   });
