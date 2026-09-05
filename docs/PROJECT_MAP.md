@@ -47,12 +47,13 @@
 | `scripts/staging-contract.mjs` / `scripts/verify-staging.mjs` | Fail-closed staging release/runtime/secret validation and secret-redacting CLI report |
 | `scripts/run-staging-release.mjs` | Dry-run-first digest deploy/rollback runner with live Authing and OCI-label verification |
 | `scripts/production-readiness-contract.mjs` / `scripts/verify-production-readiness.mjs` | Vendor-neutral, exact-candidate, fail-closed paid-production evidence gate and JSON report |
+| `scripts/production-preflight-contract.mjs` / `scripts/verify-production-preflight.mjs` | Read-only Linux-host configuration, source/image identity, secret-file, and live OIDC preflight that emits revision-bound evidence only on success |
 | `scripts/run-o1key-local.mjs` | Interactive isolated O1Key smoke launcher with a worker-only temporary secret file |
 | `Dockerfile` / `.dockerignore` | One non-root Linux application image and its build-context boundary |
 | `compose.yaml` | Pinned web/worker/mock plus PostgreSQL, Valkey, RustFS, one-shot migration, and opt-in maintenance topology |
 | `compose.staging.yaml` / `compose.staging.dependencies.yaml` / `infra/staging/` | Digest-only app roles, a separately operated resource-bounded test-data dependency stack, host bootstrap/install helpers, and non-secret staging templates; real secrets remain outside the checkout |
 | `compose.o1key-local.yaml` | Explicit local worker override for the O1Key route and mounted key file |
-| `infra/production/` | Non-secret production-readiness evidence example; live operational evidence stays outside Git |
+| `infra/production/` | Non-secret production release/runtime and readiness-evidence examples; live configuration, credentials, and operational evidence stay outside Git |
 | `.openai/hosting.json` | Current prototype hosting identity; not an app secret |
 
 The remaining project, asset, detail, and view orchestration in `app/page.tsx`

@@ -14,6 +14,8 @@ node_modules
 .env*
 infra/staging/*.env
 infra/staging/secrets
+infra/production/*.env
+infra/production/secrets
 data
 generated
 logs

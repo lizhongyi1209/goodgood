@@ -1,6 +1,6 @@
 # Production implementation plan
 
-- Last synchronized: 2026-09-04
+- Last synchronized: 2026-09-05
 - Current phase: M7 is completed; the Alibaba Cloud Hong Kong host,
   test-data dependency layer, private R2 configuration, Cloudflare Origin CA,
   host-specific Full (strict) rule, reviewed Nginx origin, Authing callbacks,
@@ -34,12 +34,14 @@
   route to a separate agent, superseding only that part of ADR 0015. The first
   application slice keeps server-owned request/support IDs, redacted structured
   HTTP completion events, and provider/task/timing/credit Worker correlation.
-  The next slice adds a vendor-neutral, exact-candidate, fail-closed production
-  readiness evidence gate; external monitoring activation and delivery remain
-  required handoff evidence rather than a repository implementation claim.
-- Current objective: continue M8 paid-production readiness with production
-  security/compliance evidence, production preflight, recovery/rollback proof,
-  and release-orchestrator integration around the new gate while ICP filing,
+  The repository now includes a vendor-neutral, exact-candidate, fail-closed
+  production readiness gate and a secret-redacting Linux production preflight
+  that emits evidence only after exact source/image/configuration and live OIDC
+  checks pass. External monitoring activation and delivery remain required
+  handoff evidence rather than a repository implementation claim.
+- Current objective: continue M8 paid-production readiness with exact-candidate
+  artifact evidence, security/compliance evidence, recovery/rollback proof, and
+  dry-run release-orchestrator integration around the gate while ICP filing,
   the production domain, and domestic Alipay merchant prerequisites progress.
   Full-byte real-carrier throughput remains an accepted operator deferral.
 
@@ -877,13 +879,22 @@ this file owns the current handoff state.
   artifact, preflight, health, and rollback records must bind to the exact Git
   revision associated with the immutable candidate digest. The checked-in
   example intentionally remains blocked and cannot be mistaken for approval.
-  On 2026-09-04, `npm run check:local` passed lint, full TypeScript checking,
-  the production build, and 142 tests with 138 passing and four opt-in
-  integration tests skipped.
-- Next action: implement the production-specific secret-redacting preflight and
-  generate exact-candidate evidence for the checks the repository can prove;
-  then collect the external monitoring handoff and production recovery/rollback
-  evidence. Keep early paid access on the documented operator bridge. After the filed
+  The production-specific preflight is now implemented as a read-only Linux-host
+  command. It requires a clean matching checkout, an already-present immutable
+  image with exact revision/migration/runtime labels, fixed root-owned
+  non-symlink release/runtime files, four distinct bounded group-readable
+  credential files, production-only auth/provider/storage/payment boundaries,
+  and live Authing discovery. Only an all-pass report emits the revision-bound
+  `production-preflight` evidence item; failed reports expose neither that item
+  nor secret values, connection URLs, client IDs, or provider responses. The
+  checked-in production environment files remain placeholder-only templates and
+  are not production evidence. On 2026-09-05, `npm run check:local` passed lint,
+  full TypeScript checking, the production build, and 149 tests with 145 passing
+  and four opt-in integration tests skipped.
+- Next action: add exact-candidate artifact-security evidence ingestion and the
+  dry-run production orchestration contract around `production:gate`, then
+  collect external monitoring handoff and production recovery/rollback evidence.
+  Keep early paid access on the documented operator bridge. After the filed
   domain and domestic Alipay merchant sandbox are available, implement the
   provider adapter against the existing immutable order/settlement boundary and
   add the smallest customer checkout UI.
@@ -976,7 +987,7 @@ Completed real-Authing loopback checklist:
 | M5 | US generation gateway integration and recovery | Completed | O1Key special-price adapter, explicit worker route, RustFS transfer, decoded output ingestion, durable-task restart, fake-server matrix, secret-file launcher, one real URL-output reference-image smoke, operator-confirmed New API charge/refund evidence, and ADR 0008's accepted at-most-once submission guard pass |
 | M6 | Versioned pricing, credit ledger, and payment sandbox | Completed | ADR 0009 launch prices, welcome grants, append-only accounting, live reserve/settle/release, account presentation, immutable CNY 10 / 500-credit product, idempotent orders, signed fake-sandbox fulfillment, dry-run-first manual paid-credit recording, isolated PostgreSQL tests, and full Compose pass |
 | M7 | Hong Kong staging | Completed | The hardened Hong Kong host, isolated dependencies, private R2, Cloudflare-only TLS origin, Authing callbacks and rotated secrets, real O1Key generation/reference ingestion, public logout recovery, rollback, mainland HTTP sampling, and all ten migrations pass. ADR 0014's separate encrypted off-host PostgreSQL repository, retention, two latest-snapshot restore drills, real systemd backup, and active persistent timer pass; outbound notification is deferred to M8 and QQ Mail is not under consideration. CI run 23 passes 133 tests, dependency and finished-image scans, and runtime import smoke after the React 19.2.8 fix. Its exact immutable digest is the promoted healthy release: Web/Worker and every dependency readiness check pass, public root/live/ready return HTTP 200, and credit state is unchanged. Full-byte real-carrier throughput remains an accepted non-blocking deferral; payment checkout stays intentionally absent until M8 |
-| M8 | Paid production readiness | In progress | ADR 0016 delegates monitoring-platform implementation while retaining redacted support correlation, production recovery/retention objectives, alert ownership, and mandatory live monitoring handoff evidence. Server-owned request/support IDs, structured Web/Worker correlation, and the vendor-neutral exact-candidate production evidence gate pass the full local gate. Production preflight/orchestration, security/compliance evidence, monitoring handoff, production rollback/restore evidence, ICP/domain, and domestic Alipay sandbox/checkout remain |
+| M8 | Paid production readiness | In progress | ADR 0016 delegates monitoring-platform implementation while retaining redacted support correlation, production recovery/retention objectives, alert ownership, and mandatory live monitoring handoff evidence. Server-owned request/support IDs, structured Web/Worker correlation, the vendor-neutral exact-candidate production evidence gate, and the secret-redacting Linux production preflight pass the full local gate. Artifact evidence and production orchestration, security/compliance evidence, monitoring handoff, production rollback/restore evidence, ICP/domain, and domestic Alipay sandbox/checkout remain |
 
 Only mark a milestone `Completed` when its exit evidence exists. Use `Blocked`
 only with a named external dependency or missing decision.

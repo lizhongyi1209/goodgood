@@ -4,6 +4,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const CONFIG_CONTRACT_FILES = [
+  ".dockerignore",
   ".env.example",
   "Dockerfile",
   "compose.yaml",
@@ -23,7 +24,11 @@ const CONFIG_CONTRACT_FILES = [
   "infra/staging/nginx/goodgood.conf",
   "infra/staging/systemd/goodgood-postgres-backup.service",
   "infra/staging/systemd/goodgood-postgres-backup.timer",
+  "infra/production/release.env.example",
+  "infra/production/runtime.env.example",
   "scripts/build-runtime.mjs",
+  "scripts/production-preflight-contract.mjs",
+  "scripts/verify-production-preflight.mjs",
   "scripts/run-staging-release.mjs",
   "scripts/staging-contract.mjs",
   "scripts/verify-staging.mjs",

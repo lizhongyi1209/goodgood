@@ -88,6 +88,15 @@ IDs. Worker completion events also identify the provider route, end-to-end and
 provider elapsed time, and the immutable customer-credit amount; upstream cost
 continues to come from provider usage evidence rather than an invented value.
 
+The M8 production preflight is a read-only Linux-host boundary. It compares one
+clean source revision and its derived configuration checksum with an immutable
+GHCR digest, the candidate's OCI labels, root-owned runtime/credential files,
+and live Authing discovery. Its public report contains only checks, release
+identity, and—only after every check passes—one revision-bound evidence item.
+It does not own deployment, migration, health promotion, monitoring, recovery,
+or checkout enablement; those remain separate evidence and orchestration
+boundaries.
+
 Reference-byte cleanup is a separate one-shot maintenance boundary, not part
 of a browser request or the continuously running worker. Its default dry-run
 reports candidates without mutation. Explicit execution first stages expired

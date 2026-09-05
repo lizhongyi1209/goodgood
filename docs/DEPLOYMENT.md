@@ -1041,6 +1041,44 @@ support ownership, and the real domestic Alipay merchant sandbox gates pass.
 Alert failure never authorizes an automatic deploy, rollback, database restore,
 credit grant, or provider resubmission.
 
+#### Production preflight evidence
+
+Use `infra/production/release.env.example` and
+`infra/production/runtime.env.example` only as templates. Install their live
+copies as `/etc/goodgood/production/release.env` and `runtime.env`, owned by
+`root:root` with mode `0600`. Install the four distinct credential files under
+`/etc/goodgood/production/secrets/` as `root:<production-secret-group>` mode
+`0640`, and record only that group's numeric GID in `release.env`. Symlinks,
+empty files, unexpected paths, oversized files, inline application credentials,
+and reused credential files fail closed.
+
+From a clean checkout at the exact candidate revision on the Linux release
+host, make the immutable digest available to Docker without rebuilding it, then
+run:
+
+```bash
+npm run production:preflight -- \
+  --release-file /etc/goodgood/production/release.env \
+  --runtime-env-file /etc/goodgood/production/runtime.env \
+  --evidence-reference preflight:CHANGE_TO_OPERATOR_RECORD
+```
+
+The command is read-only: it checks the Git revision and derived runtime
+contract, inspects the existing candidate image labels, validates the
+production origin/callback, file ownership and modes, rejects local auth, fake
+payment, loopback dependencies, mutable or mismatched candidates, placeholder
+values, non-R2 object storage, and inline Authing/O1Key/R2 credentials, then
+runs live Authing OIDC discovery. It never pulls, builds, deploys, migrates, or
+starts the candidate.
+
+Only an all-pass report contains an evidence object. Copy that object unchanged
+into the matching release's readiness manifest. The object is bound to the full
+candidate Git revision and expires after 24 hours under the outer gate. Failed
+reports contain no evidence object and never echo credential values, database
+or queue URLs, Authing client IDs, or provider responses. The reference must be
+a short non-secret operator-record identifier; do not use a signed URL or put a
+token in it.
+
 Run the repository-owned gate against a non-secret evidence manifest:
 
 ```powershell

@@ -90,6 +90,10 @@ function gateCheck(id, status, detail, reference = undefined) {
   return Object.freeze({ detail, id, reference, status });
 }
 
+export function isSafeProductionEvidenceReference(value) {
+  return SAFE_REFERENCE.test(value ?? "");
+}
+
 function safeRelease(document) {
   const release = document?.release;
   if (!release || typeof release !== "object" || Array.isArray(release)) {
@@ -137,7 +141,7 @@ function evidenceById(document) {
     if (!EVIDENCE_STATUSES.has(item.status)) {
       throw new Error(`${item.id} has an unsupported status.`);
     }
-    if (!SAFE_REFERENCE.test(item.reference ?? "")) {
+    if (!isSafeProductionEvidenceReference(item.reference)) {
       throw new Error(`${item.id} requires a safe non-secret evidence reference.`);
     }
     result.set(item.id, item);

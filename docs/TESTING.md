@@ -122,6 +122,15 @@ unsafe-reference evidence. Artifact security, production preflight, candidate
 health, and rollback evidence must name the same candidate revision. The
 checked-in example is intentionally blocked, including monitoring handoff,
 ICP/domain, and domestic Alipay prerequisites.
+
+M8 production-preflight coverage proves only a Linux release host can emit the
+preflight evidence item. It requires a clean matching checkout, exact candidate
+OCI labels, fixed root-owned non-symlink input paths, distinct bounded secret
+files, safe production-only runtime values, and successful live OIDC discovery.
+Failure, mismatch, local/fake mode, inline credentials, unsafe evidence
+references, and unsupported hosts produce no evidence item. Serialized reports
+are checked against representative Authing, provider, object-storage, and
+database secrets and must not expose their values or connection URLs.
 The R2 provisioning unit proves local storage still creates/configures its
 bucket, staging performs only `HeadBucket`, and a failed verification can be
 retried. Static Nginx coverage fixes the canonical hostname, Cloudflare-only
