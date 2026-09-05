@@ -36,7 +36,9 @@
     "staging:preflight": "node scripts/verify-staging.mjs",
     "staging:release": "node scripts/run-staging-release.mjs",
     "production:preflight": "node scripts/verify-production-preflight.mjs",
+    "production:artifact-evidence": "node scripts/import-artifact-security-evidence.mjs",
     "production:gate": "node scripts/verify-production-readiness.mjs",
+    "production:release-plan": "node scripts/run-production-release.mjs",
     "test:m3": "node --test tests/m3-*.test.mjs"
   },
   "dependencies": {

@@ -89,7 +89,7 @@ jobs:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: verify
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 40
     permissions:
       contents: read
       packages: write
@@ -131,6 +131,45 @@ jobs:
             com.goodgood.migration.version=${{ steps.release.outputs.migration-version }}
             com.goodgood.runtime-config.version=${{ steps.release.outputs.runtime-config-version }}
 
+      - name: Smoke published image runtime imports
+        run: >-
+          docker run --rm
+          --entrypoint node
+          ${{ steps.release.outputs.image-name }}@${{ steps.image.outputs.digest }}
+          --input-type=module
+          --eval
+          "await import('react'); await import('react-dom/server'); await import('react-server-dom-webpack/client.node'); await import('vinext/server/prod-server');"
+
+      - name: Scan published image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ steps.release.outputs.image-name }}@${{ steps.image.outputs.digest }}
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
+          scanners: vuln
+          timeout: 10m
+          hide-progress: true
+          cache: false
+
+      - name: Create artifact-security evidence
+        env:
+          GOODGOOD_RELEASE_IMAGE: ${{ steps.release.outputs.image-name }}@${{ steps.image.outputs.digest }}
+          GOODGOOD_RELEASE_MIGRATION: ${{ steps.release.outputs.migration-version }}
+          GOODGOOD_RUNTIME_CONFIG_VERSION: ${{ steps.release.outputs.runtime-config-version }}
+        run: node scripts/artifact-security-evidence.mjs
+
+      - name: Upload artifact-security evidence
+        id: artifact-security
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          path: work/artifact-security-evidence.json
+          archive: false
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Record immutable release identity
         shell: bash
         run: |
@@ -140,4 +179,6 @@ jobs:
             echo "- Source revision: \`${{ github.sha }}\`"
             echo "- Migration version: \`${{ steps.release.outputs.migration-version }}\`"
             echo "- Runtime configuration contract: \`${{ steps.release.outputs.runtime-config-version }}\`"
+            echo "- Artifact-security evidence ID: \`${{ steps.artifact-security.outputs.artifact-id }}\`"
+            echo "- Artifact-security evidence digest: \`${{ steps.artifact-security.outputs.artifact-digest }}\`"
           } >> "$GITHUB_STEP_SUMMARY"

@@ -37,12 +37,17 @@
   The repository now includes a vendor-neutral, exact-candidate, fail-closed
   production readiness gate and a secret-redacting Linux production preflight
   that emits evidence only after exact source/image/configuration and live OIDC
-  checks pass. External monitoring activation and delivery remain required
-  handoff evidence rather than a repository implementation claim.
-- Current objective: continue M8 paid-production readiness with exact-candidate
-  artifact evidence, security/compliance evidence, recovery/rollback proof, and
-  dry-run release-orchestrator integration around the gate while ICP filing,
-  the production domain, and domestic Alipay merchant prerequisites progress.
+  checks pass. Main CI now also verifies the published digest itself and emits
+  one immutable artifact-security record; the importer verifies its GitHub run,
+  jobs, steps, byte count, and SHA-256 before emitting gate evidence. A
+  full-gate production release planner now returns only abstract dry-run phases
+  and has no execution path. External monitoring activation and delivery remain
+  required handoff evidence rather than a repository implementation claim.
+- Current objective: continue M8 paid-production readiness by collecting a live
+  exact-candidate CI artifact record, security/compliance evidence,
+  production recovery/rollback proof, and the delegated monitoring handoff
+  while ICP filing, the production domain, and domestic Alipay merchant
+  prerequisites progress.
   Full-byte real-carrier throughput remains an accepted operator deferral.
 
 ## Purpose and update contract
@@ -888,12 +893,23 @@ this file owns the current handoff state.
   `production-preflight` evidence item; failed reports expose neither that item
   nor secret values, connection URLs, client IDs, or provider responses. The
   checked-in production environment files remain placeholder-only templates and
-  are not production evidence. On 2026-09-05, `npm run check:local` passed lint,
-  full TypeScript checking, the production build, and 149 tests with 145 passing
-  and four opt-in integration tests skipped.
-- Next action: add exact-candidate artifact-security evidence ingestion and the
-  dry-run production orchestration contract around `production:gate`, then
-  collect external monitoring handoff and production recovery/rollback evidence.
+  are not production evidence. Main CI now reruns the packaged-runtime import
+  smoke and High/Critical vulnerability scan against the published digest, then
+  uploads one uncompressed immutable JSON artifact. The read-only importer
+  requires the exact candidate plus GitHub's successful `main` run/attempt,
+  verify and publish jobs, named steps, artifact identity, byte count, and
+  SHA-256 before it emits `artifact-security` evidence. The production release
+  planner evaluates the complete existing gate and returns no plan on any
+  blocker; even after a pass it reports `executed: false` and exposes no command
+  execution path. No live artifact evidence or production deployment is claimed
+  by this local slice. On 2026-09-05, `npm run check:local` passed lint, full
+  TypeScript checking, the production build, and 158 tests with 154 passing and
+  four opt-in integration tests skipped.
+- Next action: collect the next successful `main` CI artifact-security evidence,
+  then collect the external security/privacy/abuse review, delegated monitoring
+  handoff, and production backup/restore, candidate-health, and rollback proof.
+  Select and review the concrete production traffic-switch/runtime adapter
+  before adding any executable release path.
   Keep early paid access on the documented operator bridge. After the filed
   domain and domestic Alipay merchant sandbox are available, implement the
   provider adapter against the existing immutable order/settlement boundary and
@@ -910,7 +926,10 @@ this file owns the current handoff state.
   design. ADR 0016 delegates monitoring implementation; live signal coverage,
   retention, delivery, acknowledgement, and ownership remain external
   `monitoring-handoff` evidence and cannot be bypassed. Production recovery
-  objectives remain fixed by ADR 0015. An ICP-filed custom authentication domain is not required now because
+  objectives remain fixed by ADR 0015. The production release planner is
+  intentionally non-executable until the concrete traffic-switch/runtime
+  adapter is selected and reviewed; a local plan is not deployment authority.
+  An ICP-filed custom authentication domain is not required now because
   the Authing-provided application domain is the accepted temporary path. The
   local token adapter remains forbidden in staging and production.
 
@@ -987,7 +1006,7 @@ Completed real-Authing loopback checklist:
 | M5 | US generation gateway integration and recovery | Completed | O1Key special-price adapter, explicit worker route, RustFS transfer, decoded output ingestion, durable-task restart, fake-server matrix, secret-file launcher, one real URL-output reference-image smoke, operator-confirmed New API charge/refund evidence, and ADR 0008's accepted at-most-once submission guard pass |
 | M6 | Versioned pricing, credit ledger, and payment sandbox | Completed | ADR 0009 launch prices, welcome grants, append-only accounting, live reserve/settle/release, account presentation, immutable CNY 10 / 500-credit product, idempotent orders, signed fake-sandbox fulfillment, dry-run-first manual paid-credit recording, isolated PostgreSQL tests, and full Compose pass |
 | M7 | Hong Kong staging | Completed | The hardened Hong Kong host, isolated dependencies, private R2, Cloudflare-only TLS origin, Authing callbacks and rotated secrets, real O1Key generation/reference ingestion, public logout recovery, rollback, mainland HTTP sampling, and all ten migrations pass. ADR 0014's separate encrypted off-host PostgreSQL repository, retention, two latest-snapshot restore drills, real systemd backup, and active persistent timer pass; outbound notification is deferred to M8 and QQ Mail is not under consideration. CI run 23 passes 133 tests, dependency and finished-image scans, and runtime import smoke after the React 19.2.8 fix. Its exact immutable digest is the promoted healthy release: Web/Worker and every dependency readiness check pass, public root/live/ready return HTTP 200, and credit state is unchanged. Full-byte real-carrier throughput remains an accepted non-blocking deferral; payment checkout stays intentionally absent until M8 |
-| M8 | Paid production readiness | In progress | ADR 0016 delegates monitoring-platform implementation while retaining redacted support correlation, production recovery/retention objectives, alert ownership, and mandatory live monitoring handoff evidence. Server-owned request/support IDs, structured Web/Worker correlation, the vendor-neutral exact-candidate production evidence gate, and the secret-redacting Linux production preflight pass the full local gate. Artifact evidence and production orchestration, security/compliance evidence, monitoring handoff, production rollback/restore evidence, ICP/domain, and domestic Alipay sandbox/checkout remain |
+| M8 | Paid production readiness | In progress | ADR 0016 delegates monitoring-platform implementation while retaining redacted support correlation, production recovery/retention objectives, alert ownership, and mandatory live monitoring handoff evidence. Server-owned request/support IDs, structured Web/Worker correlation, the vendor-neutral exact-candidate production evidence gate, secret-redacting Linux preflight, GitHub-verified artifact-security ingestion, and a non-executable full-gate release planner pass locally. Live artifact evidence, security/compliance evidence, monitoring handoff, production rollback/restore and candidate-health evidence, the executable topology decision, ICP/domain, and domestic Alipay sandbox/checkout remain |
 
 Only mark a milestone `Completed` when its exit evidence exists. Use `Blocked`
 only with a named external dependency or missing decision.

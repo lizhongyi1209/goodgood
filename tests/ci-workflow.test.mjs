@@ -40,7 +40,7 @@ test("CI verifies changes and publishes one immutable main image", async () => {
     workflow.match(
       /uses: aquasecurity\/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25/g,
     )?.length,
-    2,
+    3,
   );
   assert.match(workflow, /- name: Scan locked production dependencies/);
   assert.match(workflow, /scan-type: fs/);
@@ -59,7 +59,7 @@ test("CI verifies changes and publishes one immutable main image", async () => {
   assert.match(workflow, /scanners: vuln/);
 
   const actionReferences = [...workflow.matchAll(/uses: ([^\s]+)@([^\s]+)/g)];
-  assert.equal(actionReferences.length, 8);
+  assert.equal(actionReferences.length, 10);
   for (const [, action, revision] of actionReferences) {
     assert.match(action, /^(actions|aquasecurity|docker)\//);
     assert.match(revision, /^[a-f0-9]{40}$/);

@@ -131,6 +131,17 @@ Failure, mismatch, local/fake mode, inline credentials, unsafe evidence
 references, and unsupported hosts produce no evidence item. Serialized reports
 are checked against representative Authing, provider, object-storage, and
 database secrets and must not expose their values or connection URLs.
+
+M8 artifact-security coverage proves CI scans and runtime-smokes the published
+digest, creates one fixed-schema evidence file only after the verify and publish
+jobs succeed, and uploads it uncompressed with a commit-pinned action. The
+importer must match the exact candidate, successful `main` workflow run and
+attempt, required job steps, GitHub artifact identity, byte size, and SHA-256.
+Candidate mismatch, failed scan, malformed local data, remote failure, expired
+or modified artifact bytes produce no evidence. Production-release planning
+coverage proves the full readiness gate is evaluated first, blocked evidence
+returns no plan, passing evidence yields only digest-bound abstract phases, and
+the CLI has no execution option or child-process path.
 The R2 provisioning unit proves local storage still creates/configures its
 bucket, staging performs only `HeadBucket`, and a failed verification can be
 retried. Static Nginx coverage fixes the canonical hostname, Cloudflare-only

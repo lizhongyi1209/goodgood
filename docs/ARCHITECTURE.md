@@ -97,6 +97,19 @@ It does not own deployment, migration, health promotion, monitoring, recovery,
 or checkout enablement; those remain separate evidence and orchestration
 boundaries.
 
+Artifact-security ingestion is a separate read-only trust boundary. Main CI
+reruns the runtime-import smoke and High/Critical vulnerability scan against the
+published digest, then uploads one uncompressed, immutable JSON artifact. The
+importer compares the local file SHA-256 with GitHub's artifact digest and
+requires the matching successful workflow run, revision, attempt, verify job,
+publish job, and named security steps before it emits `artifact-security`
+evidence. A downloaded or locally edited JSON file is not trusted by itself.
+The production release planner consumes the same full readiness contract and
+returns no plan while any evidence is missing, stale, or blocked. Even after a
+pass it exposes only abstract ordered phases and has no command-execution path;
+production mutation remains unavailable until the concrete traffic-switch and
+runtime topology receive an accepted executable adapter.
+
 Reference-byte cleanup is a separate one-shot maintenance boundary, not part
 of a browser request or the continuously running worker. Its default dry-run
 reports candidates without mutation. Explicit execution first stages expired

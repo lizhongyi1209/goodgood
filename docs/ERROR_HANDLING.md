@@ -250,6 +250,15 @@ release command exits nonzero and the operator re-applies the retained prior
 release file without reversing the additive schema. The failed candidate never
 replaces the active release record.
 
+Artifact-security ingestion emits no evidence when the downloaded artifact is
+malformed, its bytes differ from GitHub's immutable SHA-256, the workflow is not
+a completed successful `main` run, the candidate identity differs, or any
+required verify/publish step is absent or failed. GitHub API, token, and response
+details are reduced to non-secret check failures. The production release
+planner returns `plan: null`, `executed: false`, and a failed gate when any
+required evidence is not current. It deliberately rejects execution arguments
+and cannot pull, migrate, start, switch, or roll back production.
+
 ## Idempotency and retries
 
 - Browser-to-GoodGood submission carries an owner-scoped idempotency key, so a

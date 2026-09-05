@@ -512,7 +512,11 @@ then rerun both scans whenever the base image is updated.
 
 The workflow summary records the pushed digest, source revision, latest
 migration filename, and a checksum of the checked-in runtime configuration
-contract. Image labels retain the same evidence plus the repository source.
+contract. After publication, CI runtime-smokes and scans that exact digest again
+instead of treating the separately built verification image as sufficient. It
+then uploads one uncompressed `artifact-security-evidence.json` workflow
+artifact and records its GitHub artifact ID and SHA-256. Image labels retain the
+same release evidence plus the repository source.
 Deploy by digest, for example
 `ghcr.io/<repository>@sha256:<digest>`, rather than by a mutable branch tag.
 GHCR package visibility and access must remain aligned with the private source
@@ -1079,6 +1083,36 @@ or queue URLs, Authing client IDs, or provider responses. The reference must be
 a short non-secret operator-record identifier; do not use a signed URL or put a
 token in it.
 
+#### Artifact-security evidence ingestion
+
+Use only the raw `artifact-security-evidence.json` file downloaded from the
+matching completed GitHub Actions run. The CI upload is intentionally
+uncompressed so its workflow-artifact digest covers the exact bytes passed to
+the importer. Do not recreate or edit this file locally. The artifact remains
+available for 30 days, but the outer production gate accepts its evidence for
+only 24 hours.
+
+Run the importer beside the non-secret readiness manifest. Public repositories
+need no token. For a private repository, store a read-only GitHub token in a
+small regular non-symlink file readable only by the current operator and pass
+its path; never put the token itself on the command line:
+
+```powershell
+npm run production:artifact-evidence -- `
+  --artifact-file C:\ProgramData\GoodGood\artifact-security-evidence.json `
+  --evidence-file C:\ProgramData\GoodGood\production-readiness.json `
+  --github-token-file C:\ProgramData\GoodGood\github-actions-read-token
+```
+
+The importer calls GitHub's Actions API and requires the exact repository,
+workflow, `main` revision, run attempt, successful verify/publish jobs, required
+security steps, and one non-expired artifact. It hashes the supplied bytes and
+compares the result and byte count with GitHub's immutable artifact record.
+Only an all-pass report contains an `artifact-security` evidence object. Copy
+that object unchanged into the matching readiness manifest. API errors, a
+failed scan, a different candidate, or locally modified bytes emit no evidence
+and do not expose token or response detail.
+
 Run the repository-owned gate against a non-secret evidence manifest:
 
 ```powershell
@@ -1105,5 +1139,19 @@ ownership names distinct primary and secondary aliases and preserves the
 
 Evidence references point to access-controlled operator records; they do not
 embed credentials, signed URLs, customer content, or entire reports. The CLI
-emits a machine-readable JSON decision suitable for a later release
-orchestrator, but this first slice does not deploy or mutate production.
+emits a machine-readable JSON decision. A read-only production orchestration
+plan can consume that exact gate:
+
+```powershell
+npm run production:release-plan -- plan `
+  --evidence-file C:\ProgramData\GoodGood\production-readiness.json
+```
+
+If any gate item is missing, stale, failed, or blocked, the result contains no
+plan and exits nonzero. A fully passing gate yields digest-bound abstract phases
+for retaining rollback state, isolated candidate start, one forward migration,
+health/invariant rechecks, traffic switch, and observation/rollback. The command
+always reports `executed: false` and `executionAvailable: false`; it accepts no
+execution flag and cannot change production. Implementing those phases requires
+the concrete production traffic-switch/runtime adapter and a separately
+reviewed release change.
