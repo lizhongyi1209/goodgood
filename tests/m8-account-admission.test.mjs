@@ -378,3 +378,21 @@ test("account management surface includes loading, empty, failure, audit, and gr
   assert.match(source, /Number\(amount\) > 5000/);
   assert.match(source, /x-goodgood-admin-action/);
 });
+
+test("account management timestamps use compatible Intl style options", async () => {
+  const source = await readFile(
+    new URL("../features/admin/account-management-page.tsx", import.meta.url),
+    "utf8",
+  );
+  const formatter = source.match(/function formatDate[\s\S]*?\n}/)?.[0];
+  assert.ok(formatter, "the account timestamp formatter must remain explicit");
+  assert.match(formatter, /dateStyle:\s*"medium"/);
+  assert.match(formatter, /timeStyle:\s*"short"/);
+  assert.doesNotMatch(formatter, /\b(?:hour|minute):/);
+  assert.doesNotThrow(() =>
+    new Intl.DateTimeFormat("zh-CN", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(new Date("2026-09-06T08:11:32.393Z")),
+  );
+});

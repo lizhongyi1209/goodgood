@@ -240,7 +240,10 @@ atomic; and no grant creates a payment order. Loading, empty, failure, retry,
 and mutation-conflict states are required for the management page. The fast
 suite also fixes the 1-5000 grant bound, CSRF-only header, server-derived actor,
 dry-run-first bootstrap parser, three-state migration, and visible
-loading/empty/failure/audit controls. Exact PostgreSQL migration/replay/rollback
+loading/empty/failure/audit controls. The populated management surface also
+locks timestamp formatting to compatible `dateStyle` plus `timeStyle` options;
+mixing `dateStyle` with individual `hour`/`minute` components is a production
+client-render regression. Exact PostgreSQL migration/replay/rollback
 and browser behavior remain required in the no-customer rehearsal environment.
 The R2 provisioning unit proves local storage still creates/configures its
 bucket, staging performs only `HeadBucket`, and a failed verification can be

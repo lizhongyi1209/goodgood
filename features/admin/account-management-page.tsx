@@ -83,8 +83,7 @@ function formatDate(value: string | null) {
   if (!value) return "尚未登录";
   return new Intl.DateTimeFormat("zh-CN", {
     dateStyle: "medium",
-    hour: "2-digit",
-    minute: "2-digit",
+    timeStyle: "short",
   }).format(new Date(value));
 }
 

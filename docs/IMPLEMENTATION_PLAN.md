@@ -97,10 +97,11 @@
   describes the existing host, the Worker overlaps accepted jobs without a
   fixed count ceiling and drains them on shutdown, new generation writes use a
   latched 500-MiB/80% resource gate, and the maintenance asset plus exact-target
-  conversion manifest remain non-executable. The new production O1Key key is
-  installed while the staging key remains valid; Authing and application-R2
-  production credentials, production runtime/state, maintenance, data cleanup,
-  and traffic changes remain absent. The production backup prefix is accessible and empty but its
+  conversion manifest remain non-executable. At that preparation checkpoint,
+  the first production O1Key key was installed while the staging key remained
+  valid; Authing and application-R2 production credentials, production
+  runtime/state, maintenance, data cleanup, and traffic changes were absent.
+  The production backup prefix is accessible and empty but its
   Restic repository is deliberately not initialized yet. A final read-only
   pre-window review passed the host, candidate, staging, R2-inventory, backup,
   and prepared-secret checks, but found that the sole machine-readable
@@ -167,13 +168,106 @@
   PostgreSQL rehearsal proves 12 migrations leave zero production owner,
   identity, session, credit, job, asset, role, and administration rows; the
   local seeder is idempotent at two owners/200 credits, and unexpected fixture
-  credit history makes cleanup fail and roll back. It now requires a new CI
-  candidate/digest, artifact import, prestage replacement, and another exact
-  precheck before C3 may resume. The same review found and locally corrected a
+  credit history makes cleanup fail and roll back. Replacement revision
+  `613e16b2e13e5d4f9f1383f54ba9e8aa652af0bf` passed CI Run 35 and published
+  digest `6f2d0ca099077741e823635c4ebdddedbecf9129b4b1b29d573df4ba7764ca4f`,
+  migration 0012, and runtime contract `05fc1ed4`; artifact-security ID
+  `9981719267` passed local and host import. The stopped exact candidate is now
+  prestaged with no production state, and its pre-C3 review passes. The same
+  review found and locally corrected a
   C3 ordering defect: the production restore tool now treats a genuinely
   pre-migration catalog-only database as zero tables/rows/migrations instead of
   querying absent application tables, while preserving full quiescence and
-  equality checks after C5 migration.
+  equality checks after C5 migration. The operator then explicitly approved
+  C3. Fresh resource-bounded production PostgreSQL and Valkey state is now
+  healthy on production-only volumes and the internal production network,
+  without host ports or staging attachment. PostgreSQL still has zero public
+  tables, Valkey has zero keys, and migration remains reserved for C5. The
+  isolated production Restic prefix was initialized only after that baseline
+  passed. Its first 893-byte encrypted archive has SHA-256
+  `e5e383ea6a875c172c7653adda03be9bfb4b7d09f3d12726952d3a303a0b551e`;
+  a full read-data check passed, and off-host snapshot
+  `51ea307b14c6eb6a09c8e882ce0e6f5d5e6c1d6d62b48d44bc0b9b5e6fc402bc`
+  restored as zero tables/rows/migrations in a network-none/tmpfs target in six
+  seconds. The half-hour backup and daily retention/check timers are enabled
+  and active. Independent verification reconfirmed maintenance 503, empty
+  fresh state, a recovery point younger than one hour, stopped staging apps,
+  and absent later-phase runtime files. C3 is complete; root-only evidence is
+  `c3-dependencies-613e16b.json`, `c3-backup-613e16b.json`, and
+  `c3-completion-613e16b.json`. C4 now requires a separate stage confirmation;
+  public opening remains separately unapproved. The operator approved C4. The
+  exact-candidate `release.env`, production-only `runtime.env`, and metadata-only
+  `r2-inventory.env` are now installed as `root:root 0600`, with server-local
+  database credentials, the retained non-secret Authing application identity,
+  the production R2 endpoint, exact production callback/origin, local auth off,
+  O1Key `cf-api` routing, and fake payment off. No value left the host. A
+  project-defined, non-billable missing-task check independently proves the new
+  production O1Key credential reaches the authenticated 404 boundary while an
+  unauthenticated request returns 401. The operator rotated Authing's App Secret
+  (the OIDC client secret); its replacement was transferred from the clipboard,
+  installed as a distinct `root:goodgood-production-secrets 0640` file, and
+  cleared locally without recording the value or hash. After one missing locked-
+  dependency attempt stopped before preflight, `npm ci --omit=dev
+  --ignore-scripts` installed only the exact lockfile production packages for
+  the repository-owned host tool without rebuilding the image or dirtying the
+  checkout. Production preflight then passed every source/image/file/runtime and
+  live Authing discovery check, and its 24-hour evidence is recorded in the
+  readiness manifest. C4 then waited only for explicit callback/logout allowlist
+  confirmation and revocation of the retained staging O1Key credential. The
+  operator subsequently confirmed both exact Authing allowlists and revoked
+  the old staging O1Key key while retaining the production key. An unnecessary
+  second clipboard copy of the already installed production key was cleared
+  without transfer. The C4 final verifier then stopped at its first time guard
+  because the approved window had expired; it made no provider request or
+  evidence/state change. The operator approved a new C4-C6 window from
+  `2026-09-06T06:56:29Z` through `2026-09-06T10:56:29Z`, with separate stage
+  confirmations and public opening excluded. Its precheck passed. C4 final
+  verification then proved unauthenticated and known-invalid O1Key requests
+  return 401, while both the retained staging file and installed production
+  file still reach the authenticated missing-task 404 boundary after a repeat
+  check. The reported staging revocation has therefore not affected the exact
+  retained credential; C4 remains fail-closed until the correct old key is
+  disabled or propagation is proven. The operator then reported another
+  revocation attempt but accidentally pasted the installed production O1Key key
+  into chat. That key is now treated as compromised regardless of message
+  deletion and must be revoked and replaced before further credential proof.
+  The local clipboard was immediately cleared; the exposed value was not copied
+  into a command, evidence, log, or repository. Both old files now return 401,
+  proving the retained staging key and exposed production key are revoked. A
+  fresh production replacement was transferred only over standard input,
+  atomically installed as `root:goodgood-production-secrets 0640`, and verified
+  through the non-billable authenticated missing-task 404 boundary. Its value
+  and hash were not recorded, and the clipboard and temporary receiver were
+  cleared. C4 final and independent verification pass with exact Authing
+  allowlists, rotated Authing and O1Key secrets, current production preflight,
+  zero database tables/Valkey keys, no application container or migration, and
+  public maintenance 503. Root-only evidence is
+  `c4-o1key-replacement-613e16b.json`, `c4-authing-console-613e16b.json`,
+  `c4-secret-access-review-613e16b.json`, `c4-completion-613e16b.json`, and
+  `seed-gate-post-c4-613e16b.json`. The readiness manifest now marks
+  `artifact-security`, `production-preflight`, and `secret-access-review` pass;
+  all later-phase items remain pending. The synchronized handoff passes
+  `npm run check:local`: lint, typecheck, the Vinext production build, and 185
+  tests with 181 passing and four opt-in integrations skipped. C4 is complete.
+  The operator separately approved C5. All 12 migrations applied once and
+  replayed idempotently; before the first real login every dynamic table and
+  Valkey remained empty. Blue Web passed its loopback dependency checks. The
+  private Authing login then created exactly one pending seed member, one active
+  session, and one 100-credit welcome grant. After an approved, exact-replay
+  site-owner bootstrap, the account became active with one role assignment and
+  one administrative audit, and the sole blue Worker became healthy. The first
+  populated `/admin/users` browser check exposed a client render exception:
+  its date formatter combined incompatible `Intl.DateTimeFormat` options. Per
+  checkpoint R5, blue Web and Worker are stopped, green never started, public
+  maintenance remains 503, and the production database is retained with the
+  single site owner and unchanged 100 credits for diagnosis. Root-only failure
+  evidence is `c5-isolated-candidate-failure-613e16b.json`. The forward code fix
+  uses compatible date/time style options and adds a regression test; the full
+  local gate passes 186 tests with 182 passing and four opt-in integrations
+  skipped. This is a defect correction, not a changed product decision, so no
+  ADR changes. The next action is to publish and independently import a new
+  immutable candidate before opening a new reviewed C5 window; no old C5 health
+  or artifact evidence may be reused. Public traffic remains unapproved.
   Collect the security/privacy/abuse,
   recovery/rollback, candidate-health, incident-ownership, and delegated
   monitoring evidence before admitting any seed user. Customer checkout,
@@ -229,8 +323,8 @@ requirements are confirmed.
    reprovision every returning identity as a fresh pending GoodGood owner.
    The initial conversion stays in public maintenance for at most four hours
    and opens only after every clean-state and release check passes.
-4. **No-customer production conversion — maintenance active; clean-database
-   replacement candidate pending.** The
+4. **No-customer production conversion — maintenance active; C5 candidate
+   failed and is contained pending a replacement.** The
    single-host infrastructure contract, concurrent Worker, memory/disk gate,
    maintenance surface, and non-executable dry-run conversion manifest are
    implemented and tested locally. Resource-bounded production PostgreSQL/
@@ -247,11 +341,10 @@ requirements are confirmed.
    also prepared. A distinct bucket-scoped backup-R2 token can list the empty
    `goodgood-postgres-backups/production` prefix, and an in-memory exact-match
    check proves the password-manager recovery copy matches the server Restic
-   password. The Restic repository remains uninitialized and write access is
-   not counted as proven until the separately approved initialization step. A
-   distinct production O1Key key is now installed without replacing or revoking
-   the staging key; Authing and application-R2 production credentials do not
-   exist yet.
+   password. At that preparation checkpoint the Restic repository remained
+   uninitialized and write access was not counted as proven. A distinct
+   production O1Key key was installed without replacing or revoking the staging
+   key; Authing and application-R2 rotation were still pending at that point.
    The operator approved an immediate four-hour conversion window. C0 now serves
    the reviewed static 503 maintenance surface through Cloudflare; a fail-closed
    first attempt identified and corrected Nginx marker traversal, scope, and
@@ -280,10 +373,48 @@ requirements are confirmed.
    only under the explicit local-auth opt-in. Static and real PostgreSQL checks
    plus the complete local gate pass. The recovery tool also supports the
    required C3 pre-migration zero-table restore baseline without weakening its
-   post-migration checks. Publishing and prestaging a replacement exact
-   candidate is now the blocker. Public traffic remains separately
-   unapproved.
-5. **Exact-candidate rehearsal — pending.** Pass security/privacy/retention and
+   post-migration checks. Revision `613e16b` and digest `6f2d0ca09907` pass CI,
+   artifact import, stopped prestage, and pre-C3 review. The separately approved
+   C3 created healthy private production PostgreSQL/Valkey state with zero
+   public tables/keys, then initialized the isolated encrypted Restic prefix.
+   The first backup, full read-data check, zero-table off-host restore, one-hour
+   RPO/four-hour RTO gates, active half-hour backup timer, and daily 14/8/12
+   retention/check timer all pass. C3 is complete; the next action is a separate
+   C4 confirmation for Authing and remaining production credential rotation.
+   The operator approved C4. The three production configuration files are now
+   installed root-only and structurally verified without exporting their
+   values; the new production O1Key credential also passes a non-billable
+   authenticated missing-task check. The rotated Authing App Secret is installed
+   with the reviewed ownership and production preflight passes all checks. The
+   operator then confirmed the exact Authing callback/logout allowlists and
+   reported revoking the retained staging O1Key credential. The first final
+   verifier stopped before acting because the four-hour window had expired. A
+   newly approved C4-C6 window passes its precheck, but exact dual-file provider
+   checks still authenticate both O1Key keys; C4 remains paused at the staging-
+   credential revocation boundary. A subsequent operator message exposed the
+   installed production key in chat while reporting another staging revocation.
+   Both old files later returned 401. A fresh production key was then installed
+   through the no-echo clipboard path and returns authenticated 404 for the
+   non-billable missing-task check; no value or hash was recorded. C4 final and
+   independent checks pass, its completion and secret-access evidence are
+   root-only, and the readiness item is now `pass`. PostgreSQL still has zero
+   public tables, Valkey has zero keys, no production application container has
+   started, no migration has run, and public maintenance remains 503. C4 is
+   complete. The separately approved C5 applied and replayed all 12 migrations,
+   verified an empty pre-login production state, created exactly one pending
+   Authing seed account with one 100-credit welcome grant, performed the
+   independently approved audited site-owner bootstrap, and started one healthy
+   blue Worker. The populated account-management browser check then failed in
+   client rendering because its date formatter mixed `dateStyle` with component
+   `hour`/`minute` options. R5 containment stopped blue Web and Worker, retained
+   the production database and healthy private dependencies, kept green absent,
+   and left public maintenance at 503. The local forward fix now uses
+   `dateStyle` plus `timeStyle`; its regression and complete 186-test local gate
+   pass. A new immutable CI candidate and new stage approval are required before
+   C5 can restart. Public traffic remains separately unapproved.
+5. **Exact-candidate rehearsal — pending replacement candidate.** Publish and
+   independently import the corrected exact candidate, then repeat C5 without
+   reusing the failed candidate's health evidence. Pass security/privacy/retention and
    abuse review, preflight, migration, candidate health/state invariants,
    public synthetic checks, restore drill, alert delivery, and rollback without
    schema downgrade.
@@ -320,9 +451,9 @@ M9 begins only after a separate operator decision to resume payment work.
   `c9dc4a54fc3a4eeadcfa844947455a74924562b249e43229c7015b5919ce9915`.
   Artifact-security ID `9972179514` has immutable raw-byte digest
   `6cf8354b37462917f2e8e62a99daf90da8008f8d309a02241d11acfb72c2fa36`.
-  The server now has that exact clean source and stopped image prestaged; active
-  maintenance config byte-matches it, production state remains absent, memory
-  is above 2.4 GiB, and root disk remains 28%. The prior `3bd4ea9` candidate is
+  At that checkpoint the server had that exact clean source and stopped image
+  prestaged; active maintenance config byte-matched it, production state was
+  absent, memory was above 2.4 GiB, and root disk was 28%. The prior `3bd4ea9` candidate is
   retained stopped at `/opt/goodgood-production-obsolete-3bd4ea9`. The operator
   downloaded the 1,093-byte raw artifact without editing it; its SHA-256 matched
   GitHub and both local and host importers passed artifact schema, exact
@@ -399,8 +530,110 @@ M9 begins only after a separate operator decision to resume payment work.
   an isolated PostgreSQL rehearsal proves the production-empty, local-idempotent,
   and unexpected-history rejection paths, then removes both temporary databases.
   The C3 recovery tool now handles a catalog-only source as exactly zero public
-  tables/rows/migrations and retains full checks after schema creation. A new
-  exact CI candidate is required before host conversion resumes.
+  tables/rows/migrations and retains full checks after schema creation. CI Run
+  35 passed for revision `613e16b2e13e5d4f9f1383f54ba9e8aa652af0bf`; digest
+  `6f2d0ca099077741e823635c4ebdddedbecf9129b4b1b29d573df4ba7764ca4f`,
+  migration 0012, and runtime contract `05fc1ed4` match artifact-security ID
+  `9981719267`, whose exact raw bytes pass both local and host import. The host
+  prestage and pre-C3 review pass at `2026-09-06T03:48:37Z` with maintenance
+  503, zero production state, 2.62-GiB available memory, 28% disk, and no failed
+  units. Prior revision `1368913` remains retained and stopped. The operator
+  explicitly approved C3. It completed at `2026-09-06T04:00:19Z` with healthy
+  PostgreSQL and Valkey on only the production internal network and exact
+  production volumes, no host ports, zero public database tables, zero Valkey
+  keys, and no migration. The independently isolated production Restic
+  repository contains its first encrypted snapshot
+  `51ea307b14c6eb6a09c8e882ce0e6f5d5e6c1d6d62b48d44bc0b9b5e6fc402bc`;
+  the 893-byte source archive SHA-256 is
+  `e5e383ea6a875c172c7653adda03be9bfb4b7d09f3d12726952d3a303a0b551e`.
+  A full repository read-data check passed, and the freshly downloaded archive
+  restored in six seconds to zero public tables, zero rows, and zero migrations
+  in a network-none/tmpfs container. The local archive and restore container
+  were removed. Both reviewed systemd timers are enabled and active; the first
+  independent verification measured the latest off-host recovery point at 82
+  seconds old. Staging Web/Worker remain stopped, later-phase runtime files
+  remain absent, and public maintenance remains 503. Root-only evidence is
+  `c3-dependencies-613e16b.json`, `c3-backup-613e16b.json`, and
+  `c3-completion-613e16b.json`. C3 is complete and C4 now awaits separate
+  operator confirmation; public opening remains unapproved. The operator then
+  approved C4. Exact-candidate `release.env`, production `runtime.env`, and the
+  R2 inventory role file are installed as root-only `0600`; structural checks
+  prove the production origin/callback, Authing issuer/application identity,
+  private R2, O1Key route, disabled local auth, and disabled fake payment
+  boundaries without exposing values. A read-only O1Key request returns 401
+  without credentials and authenticated 404 for a deliberately absent task
+  with the new production credential, without submitting billable generation.
+  Root-only preparation evidence is `c4-runtime-preparation-613e16b.json`.
+  The operator rotated the Authing App Secret. After two fail-closed local
+  transfer attempts wrote no credential, the corrected Python execution path
+  installed the 32-byte replacement as a regular
+  `root:goodgood-production-secrets 0640` file distinct from the retained
+  staging value; clipboard and temporary receiver are cleared, and neither
+  value nor hash is recorded. Root-only evidence is
+  `c4-auth-secret-install-613e16b.json`. A first preflight attempt stopped before
+  evaluation because the stopped candidate checkout lacked `jose`; installing
+  exact lockfile production dependencies with lifecycle scripts disabled left
+  the revision clean and did not rebuild the image. The second production
+  preflight passed every check, including source/image identity, host-file
+  security, runtime boundaries, and live Authing OIDC discovery. Its normalized
+  root-only report is `production-preflight-report-613e16b.json`, and the exact
+  evidence object now replaces only the matching pending readiness item. The
+  operator confirmed the exact console allowlists and revoked the old staging
+  O1Key credential while retaining the production key. The already installed
+  production key was copied again unnecessarily, then cleared from the local
+  clipboard without transfer. The C4 final verifier stopped at the expired-
+  window guard before issuing a provider request or writing completion/readiness
+  evidence. The operator approved a new C4-C6 window from
+  `2026-09-06T06:56:29Z` through `2026-09-06T10:56:29Z`; root-only window
+  evidence is `resumed-window-c4-613e16b.json`, later stages still require their
+  own confirmation, and public opening remains excluded. C4 final verification
+  then failed closed before evidence updates because the exact retained staging
+  key still returns authenticated 404, as does the production key, while no
+  credential and a known-invalid Bearer value each return 401. A second check
+  after propagation wait produced the same result. The exact old staging key is
+  therefore still active at the provider and must be identified and revoked
+  before C4 can complete. The operator then reported revoking it, but pasted the
+  installed production key into chat. That production key is now compromised;
+  its clipboard copy was immediately cleared without reuse, and C4 remained
+  fail-closed until the operator revoked it and created a new production key.
+  Exact dual-file checks then proved both the staging key and exposed production
+  key return 401. The fresh replacement passed authenticated missing-task 404
+  before and after atomic installation through standard input as
+  `root:goodgood-production-secrets 0640`; its clipboard copy and root-only
+  receiver were cleared, and neither a credential value nor hash was recorded.
+  Root-only replacement evidence is `c4-o1key-replacement-613e16b.json`. C4
+  finalization and an independent read-only verification then passed exact
+  candidate/configuration, Authing secret separation and allowlists, live O1Key
+  revocation/replacement boundaries, current preflight evidence, zero database
+  tables/Valkey keys, and maintenance 503. Root-only completion artifacts are
+  `c4-authing-console-613e16b.json`, `c4-secret-access-review-613e16b.json`,
+  `c4-completion-613e16b.json`, and `seed-gate-post-c4-613e16b.json`. The three
+  completed readiness items pass and every C5/C6 item remains pending. C4 is
+  complete. The operator separately approved C5. Migration applied all 12
+  versions and an exact replay applied zero; pre-login dynamic rows and Valkey
+  keys were zero. Blue Web and the later single blue Worker passed loopback
+  health and dependency checks. A private Authing login created one pending
+  seed member, one session, one credit account, and exactly one 100-credit
+  welcome ledger entry. The approved bootstrap changed only that stable owner
+  to active, added one `site_owner` role and one administrative action, and an
+  exact replay added nothing. The browser then reached `/admin/users`, received
+  HTTP 200 for its session and dashboard query, but Vinext rendered its global
+  error page when the populated UI called `Intl.DateTimeFormat` with
+  `dateStyle` plus individual `hour`/`minute` options. R5 containment stopped
+  blue Web and Worker; green never started, public maintenance remains 503, and
+  PostgreSQL/Valkey remain healthy with the single site owner, unchanged 100/0
+  credit balance, zero jobs/outbox, and zero Valkey keys. Root-only containment
+  evidence is `c5-isolated-candidate-failure-613e16b.json`. The SSH tunnel was
+  closed. A local forward fix replaces those component options with
+  `timeStyle: "short"` and adds a populated-timestamp regression. The targeted
+  account suite passes 11 tests and `npm run check:local` passes lint,
+  typecheck, the Vinext production build, and 186 tests with 182 passing and
+  four opt-in integrations skipped. No ADR changes because the product and
+  architecture decisions are unchanged. C5 is not complete. The next smallest
+  slice is to commit and publish a new immutable candidate, import its fresh
+  artifact-security evidence, and present a new exact C5 window for approval;
+  revision `613e16b` evidence cannot be reused. Public opening remains
+  unapproved.
 - On 2026-09-05 the host created independent production-only local secret
   material under a new `goodgood-production-secrets` group (numeric GID 986),
   without adding the `goodgood` SSH administrator. PostgreSQL and Restic each
@@ -1720,7 +1953,7 @@ Completed real-Authing loopback checklist:
 | M5 | US generation gateway integration and recovery | Completed | O1Key special-price adapter, explicit worker route, RustFS transfer, decoded output ingestion, durable-task restart, fake-server matrix, secret-file launcher, one real URL-output reference-image smoke, operator-confirmed New API charge/refund evidence, and ADR 0008's accepted at-most-once submission guard pass |
 | M6 | Versioned pricing, credit ledger, and payment sandbox | Completed | ADR 0009 launch prices, welcome grants, append-only accounting, live reserve/settle/release, account presentation, immutable CNY 10 / 500-credit product, idempotent orders, signed fake-sandbox fulfillment, dry-run-first manual paid-credit recording, isolated PostgreSQL tests, and full Compose pass |
 | M7 | Hong Kong staging | Completed | The hardened Hong Kong host, isolated dependencies, private R2, Cloudflare-only TLS origin, Authing callbacks and rotated secrets, real O1Key generation/reference ingestion, public logout recovery, rollback, mainland HTTP sampling, and all ten migrations pass. ADR 0014's separate encrypted off-host PostgreSQL repository, retention, two latest-snapshot restore drills, real systemd backup, and active persistent timer pass; outbound notification is deferred to M8 and QQ Mail is not under consideration. CI run 23 passes 133 tests, dependency and finished-image scans, and runtime import smoke after the React 19.2.8 fix. Its exact immutable digest is the promoted healthy release: Web/Worker and every dependency readiness check pass, public root/live/ready return HTTP 200, and credit state is unchanged. Full-byte real-carrier throughput remains an accepted non-blocking deferral; payment checkout stays intentionally absent until M9 |
-| M8 | Hong Kong seed production readiness | In progress | ADR 0019 selects Hong Kong and `goodgood.o1key.com`; ADR 0020 completes open login, pending review, 100 welcome credits, the site-owner console, and bounded test-credit grants. ADR 0021 selects the current 2-vCPU / 4-GiB host with a clean production database/queue, private R2, encrypted recovery, no fixed generation/concurrency ceiling, and 500-MiB/80%-disk admission protection. C0 maintenance, C1 staging freeze/final restore-verified archive, and C2 exact R2 cleanup plus production credential rotation are complete. Revision `1368913` remains safely stopped and public maintenance remains 503. A fresh C3-C6-only window passed precheck, then C3 stopped before creating production state because the candidate migration chain would recreate two prototype local owners and welcome-credit rows. The locally verified forward-only migration 0012 removes those rows, keeps the production path empty, and moves fixture recreation behind the explicit local-auth opt-in; a new verified digest, artifact evidence, and prestage are now required before conversion resumes. Public opening remains unapproved; recovery proof, Authing rotation, security/privacy/abuse evidence, monitoring handoff, candidate health, and rollback rehearsal remain before seed admission. |
+| M8 | Hong Kong seed production readiness | In progress | ADR 0019 selects Hong Kong and `goodgood.o1key.com`; ADR 0020 completes open login, pending review, 100 welcome credits, the site-owner console, and bounded test-credit grants. ADR 0021 selects the current 2-vCPU / 4-GiB host with a clean production database/queue, private R2, encrypted recovery, no fixed generation/concurrency ceiling, and 500-MiB/80%-disk admission protection. C0 maintenance, C1 staging freeze/final restore-verified archive, C2 exact R2 cleanup plus production credential rotation, C3 fresh private PostgreSQL/Valkey plus encrypted off-host recovery baseline, and C4 exact production configuration, credential rotation, preflight, and secret-access review are complete. A fresh C3-C6-only window found the old candidate would recreate prototype owners. The verified forward migration 0012 removes them, keeps the production path empty, and gates their recreation behind local auth. Replacement revision `613e16b`, digest `6f2d0ca09907`, runtime contract `05fc1ed4`, and artifact-security ID `9981719267` pass CI, independent import, stopped prestage, and pre-C3 review. C3 proves zero pre-migration tables/keys, full backup read-data verification, a zero-table isolated off-host restore, and active half-hour/daily timers behind maintenance 503. C4 proves exact Authing allowlists and a rotated file-backed App Secret, revocation of the retained staging and exposed production O1Key keys, a fresh root-only production replacement through authenticated non-billable 404, current full preflight, and a passed secret-access readiness item. C5 applied/replayed all migrations, created the sole pending Authing seed account and 100-credit welcome grant, executed the approved audited site-owner bootstrap, and started healthy blue Web/Worker, but the populated account page exposed an incompatible `Intl.DateTimeFormat` client-render error. R5 containment stopped both application processes, retained the production database and private dependencies, and kept public maintenance at 503. The local forward fix and regression pass the full 186-test gate; a new immutable candidate and fresh C5 approval are required. C6 security/privacy/abuse, monitoring, post-migration recovery, candidate-health, and rollback evidence remain before seed admission. Public opening remains separately unapproved. |
 | M9 | Paid commercialization and domestic Alipay | Planned, deferred | Preserve ADR 0010's domestic Alipay direction and ADR 0015's fail-closed paid gate. Complete the applicable production-domain/ICP review, merchant qualification, real sandbox and callback evidence, provider adapter, refund semantics, and the smallest customer checkout UI before accepting payment. Seed launch evidence does not complete M9. |
 
 Only mark a milestone `Completed` when its exit evidence exists. Use `Blocked`
