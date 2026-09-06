@@ -145,6 +145,20 @@ gate still fails on either paid-only blocker. Missing, stale, malformed, or
 blocked evidence required by the selected gate returns no plan. Passing evidence
 yields only a distinctly labelled seed or full digest-bound adapter plan, and
 neither CLI has an execution option or child-process path.
+
+M8 clean-database coverage proves migration 0012 targets only the two reserved
+local fixture owners, fails closed on unexpected fixture identity or credit
+history, and does not truncate or drop production tables. The local fixture
+seeder is an explicit `GOODGOOD_ALLOW_LOCAL_AUTH=true` path used by base Compose;
+the production Compose contract has no such opt-in. Production migration
+evidence must show zero user, identity, session, credit, content, and
+administrative rows before first login.
+The production restore contract separately proves that the C3 pre-migration
+catalog-only database can be backed up and restored as exactly zero public
+tables/rows/migrations; once the application schema exists, the same tool
+retains its active-session/job quiescence check and full table/row/migration
+comparison.
+
 M8 production-runtime coverage fixes ADR 0017's Nginx/Compose blue and green
 loopback slots, external durable-state boundary, single-active-Worker handoff,
 atomic upstream-switch intent, and forward-fix-only schema rule. Passing
@@ -246,7 +260,8 @@ This local flow does not replace the public HTTPS staging matrix.
 
 `GOODGOOD_M3_INTEGRATION=1 node --test tests/m3-compose-integration.test.mjs`
 is the opt-in destructive-process integration test against the disposable local
-test stack. It proves all eleven migration reruns, authentication enforcement,
+test stack. It proves all twelve migration reruns, explicit idempotent local-
+fixture seeding, authentication enforcement,
 two-owner idempotency isolation, cross-owner reference/job denial, signed direct
 reference PUT and CORS, server-side decoded validation and rejected-record
 evidence, referenced generation, successful output persistence and signed

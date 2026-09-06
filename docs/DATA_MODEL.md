@@ -20,7 +20,11 @@ one-time welcome grant for existing owners. A tenth migration adds immutable
 payment-product versions, owner-scoped orders, append-only webhook evidence,
 and the local fake payment settlement path. An eleventh migration adds three-state admission, the seed
 tier projection, immutable site-owner assignment, and append-only account
-administration evidence. The Drizzle schema mirrors all eleven migrations. A
+administration evidence. A twelfth forward migration removes the two historical
+fixed-UUID local fixtures after verifying that they have no non-fixture identity
+or credit history. Local development recreates them only through an explicit
+local-auth seeder. The Drizzle schema mirrors the durable schema across all
+twelve migrations. A
 fuller project-backed creation session record and entitlements
 remain canonical contracts for later slices.
 
@@ -111,6 +115,15 @@ Existing `disabled` rows migrate to `suspended`; the only valid access values
 are `pending | active | suspended`, and the initial tier is `seed`. The
 migration also adds immutable site-owner assignment and administrative-action
 evidence before the browser surface can mutate access or grant test credit.
+
+Migration `0012_m8_remove_legacy_local_fixtures.sql` is the forward-only boundary
+between the prototype-era fixtures and clean production state. It removes only
+the two reserved local owner UUIDs, their `goodgood-local` identities, and their
+standard welcome-credit rows. It fails closed when either reserved owner has
+unexpected identity or credit history; a disposable local database must then be
+reset instead of broadening the deletion. Production never recreates these
+records. The local Compose migration role opts in to the separate, idempotent
+`seedLocalFixtures` routine with `GOODGOOD_ALLOW_LOCAL_AUTH=true`.
 
 ## Entities
 

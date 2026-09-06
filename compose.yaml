@@ -105,6 +105,7 @@ services:
       disable: true
     environment:
       DATABASE_URL: postgresql://goodgood:${GOODGOOD_LOCAL_POSTGRES_PASSWORD:-goodgood-local-only}@postgres:5432/goodgood
+      GOODGOOD_ALLOW_LOCAL_AUTH: "true"
       GOODGOOD_PROCESS: migrate
     depends_on:
       postgres:

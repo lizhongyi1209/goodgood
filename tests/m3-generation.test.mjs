@@ -113,10 +113,19 @@ test("mock provider is idempotent and exposes success, rejection, and timeout ou
   }
 });
 
-test("M3 migration is versioned, rerunnable, and seeds only the server test identity", async () => {
-  const [migration, runner, schema] = await Promise.all([
+test("M3 migration is versioned while production removes local fixture identities", async () => {
+  const [migration, cleanup, localSeeder, runner, runtime, schema] = await Promise.all([
     readFile(new URL("../migrations/0001_m3_generation.sql", import.meta.url), "utf8"),
+    readFile(
+      new URL("../migrations/0012_m8_remove_legacy_local_fixtures.sql", import.meta.url),
+      "utf8",
+    ),
+    readFile(
+      new URL("../server/persistence/seed-local-fixtures.mjs", import.meta.url),
+      "utf8",
+    ),
     readFile(new URL("../server/persistence/migrate.mjs", import.meta.url), "utf8"),
+    readFile(new URL("../server/runtime/migrate.mjs", import.meta.url), "utf8"),
     readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
   ]);
 
@@ -134,6 +143,10 @@ test("M3 migration is versioned, rerunnable, and seeds only the server test iden
   assert.match(migration, /ON CONFLICT \(id\) DO NOTHING/);
   assert.match(runner, /goodgood_schema_migrations/);
   assert.match(runner, /different checksum/);
+  assert.match(cleanup, /DELETE FROM users/);
+  assert.match(cleanup, /m3-local@goodgood\.invalid/);
+  assert.match(localSeeder, /export async function seedLocalFixtures/);
+  assert.match(runtime, /GOODGOOD_ALLOW_LOCAL_AUTH === "true"/);
   assert.match(schema, /pgTable/);
   assert.doesNotMatch(migration, /goodgood-local-only/);
 });

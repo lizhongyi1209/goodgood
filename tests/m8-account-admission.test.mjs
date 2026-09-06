@@ -40,6 +40,33 @@ test("M8 account migration keeps exactly pending, active, and suspended access s
   assert.match(authRepository, /grantWelcomeCreditsInTransaction/);
 });
 
+test("production migration removes legacy local owners and local seeding is explicit", async () => {
+  const [cleanup, localSeeder, runtime, localCompose, productionCompose] =
+    await Promise.all([
+      readFile(
+        new URL("../migrations/0012_m8_remove_legacy_local_fixtures.sql", import.meta.url),
+        "utf8",
+      ),
+      readFile(
+        new URL("../server/persistence/seed-local-fixtures.mjs", import.meta.url),
+        "utf8",
+      ),
+      readFile(new URL("../server/runtime/migrate.mjs", import.meta.url), "utf8"),
+      readFile(new URL("../compose.yaml", import.meta.url), "utf8"),
+      readFile(new URL("../compose.production.yaml", import.meta.url), "utf8"),
+    ]);
+
+  assert.match(cleanup, /reserved local fixture owner has unexpected identity data/i);
+  assert.match(cleanup, /DISABLE TRIGGER credit_ledger_entries_append_only/);
+  assert.match(cleanup, /DELETE FROM auth_identities/);
+  assert.match(cleanup, /DELETE FROM users/);
+  assert.doesNotMatch(cleanup, /TRUNCATE|DROP TABLE/);
+  assert.match(localSeeder, /export async function seedLocalFixtures/);
+  assert.match(runtime, /GOODGOOD_ALLOW_LOCAL_AUTH === "true"/);
+  assert.match(localCompose, /GOODGOOD_ALLOW_LOCAL_AUTH: "true"/);
+  assert.doesNotMatch(productionCompose, /GOODGOOD_ALLOW_LOCAL_AUTH:\s*"true"/);
+});
+
 test("pending sessions expose only account state and waiting credits", async () => {
   let productAuthenticatorCalled = false;
   const operations = createAuthenticationOperations({

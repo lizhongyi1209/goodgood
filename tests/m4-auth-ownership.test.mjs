@@ -243,9 +243,13 @@ test("generation HTTP reads and writes require and preserve the authenticated ow
 });
 
 test("M4 migration separates external identities and internal GoodGood owners", async () => {
-  const [migration, schema] = await Promise.all([
+  const [migration, localSeeder, schema] = await Promise.all([
     readFile(
       new URL("../migrations/0002_m4_authenticated_owners.sql", import.meta.url),
+      "utf8",
+    ),
+    readFile(
+      new URL("../server/persistence/seed-local-fixtures.mjs", import.meta.url),
       "utf8",
     ),
     readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
@@ -254,7 +258,7 @@ test("M4 migration separates external identities and internal GoodGood owners", 
   assert.match(migration, /CREATE TABLE IF NOT EXISTS auth_identities/);
   assert.match(migration, /UNIQUE INDEX IF NOT EXISTS auth_identities_issuer_subject_unique/);
   assert.match(migration, /REFERENCES users\(id\) ON DELETE RESTRICT/);
-  assert.match(migration, /local-user-a/);
-  assert.match(migration, /local-user-b/);
+  assert.match(localSeeder, /local-user-a/);
+  assert.match(localSeeder, /local-user-b/);
   assert.match(schema, /export const authIdentities = pgTable/);
 });

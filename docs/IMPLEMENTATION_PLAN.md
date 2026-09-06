@@ -1,6 +1,6 @@
 # Production implementation plan
 
-- Last synchronized: 2026-09-05
+- Last synchronized: 2026-09-06
 - Current phase: M7 is completed; the Alibaba Cloud Hong Kong host,
   test-data dependency layer, private R2 configuration, Cloudflare Origin CA,
   host-specific Full (strict) rule, reviewed Nginx origin, Authing callbacks,
@@ -120,9 +120,61 @@
   exposed that the production config root was not traversable by Nginx, the
   loopback origin probe was not allowlisted, and the server-scope maintenance
   check prevented the reviewed static error page from completing its internal
-  redirect. The host is corrected under maintenance, but `3bd4ea9` is no longer
-  an exact source match; publish and prestage the repository repair before
-  freezing staging or deleting R2 objects. Collect the security/privacy/abuse,
+  redirect. The host is corrected under maintenance. Replacement revision
+  `1368913` has passed CI, published immutable digest `605cb17f686f`, and is
+  prestaged without traffic with active maintenance files byte-matching its
+  source. The operator-authenticated raw file for artifact-security ID
+  `9972179514` has passed the repository importer both locally and on the host.
+  The exact stopped candidate, active maintenance, staging quiescence, unchanged
+  R2 inventory, absent production state, and host resource gate then passed the
+  final read-only C1 review. The operator then approved C1. Staging Web and
+  Worker are stopped with zero active session, nonterminal job, pending outbox,
+  ready/processing queue, or Valkey key; the staging backup timer is disabled.
+  The final root-only archive and its encrypted off-host Restic snapshot both
+  have SHA-256 `52b8ebdfa5ac1185a976a9ba43928f3331e048bc0616f1994d1306c6d009e2ad`.
+  Local and off-host isolated restores each passed all 20 public tables, 77
+  rows, and 10 migrations. C1 evidence is root-only at
+  `c1-final-archive-1368913.json`; the staging archive, volumes, and release
+  cannot be deleted before the seven-day condition and a separate exact
+  approval. C2's metadata-only post-freeze inventory now reconfirms exactly
+  three current object versions, 576,607 bytes, and unchanged SHA-256
+  `addd927f5d6ecee9e0b84b6208d3267606a1edc1767a1501990eabf970bf9e0a`.
+  Its dry-run preview has no execution path. The operator confirmed the
+  Cloudflare console had the same three current objects and no history or delete
+  markers, then approved the exact bucket, hash, key, etag, and size binding.
+  Conditional deletion removed only those three objects and two independent
+  metadata inventories now report zero current objects, zero bytes, and the
+  empty SHA-256 `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+  A new bucket-only production application credential is installed root-only,
+  differs from staging and backup credentials, lists the same empty bucket, and
+  does not make unauthenticated bucket listing public. The operator revoked
+  `goodgood-staging-r2`; its old files now fail authentication while the new
+  production credential still lists the empty bucket. Live CORS allows the
+  exact production origin with GET/PUT/HEAD and rejects an untrusted origin.
+  The operator subsequently confirmed the post-delete Cloudflare console is
+  empty with no history/delete markers, completing C2, and authorized a fresh
+  C3-C6-only window from `2026-09-06T02:50:29Z` to
+  `2026-09-06T06:50:29Z`; public opening remains excluded. Its read-only
+  precheck passed maintenance 503, exact candidate, staging freeze, C1/C2
+  evidence, absent production state, 2.67-GiB available memory, 28% root disk,
+  and zero failed units. Before creating any production volume, C3 review found
+  that migrations 0001/0002 unconditionally create two local fixture owners and
+  migration 0009 grants them credit, violating ADR 0021's clean production
+  database boundary. No production database or Restic repository was created.
+  The forward-only repair is implemented locally as migration 0012 plus an
+  explicit local-auth-only fixture seeder. The complete local gate passes 185
+  tests (181 passing, four opt-in integrations skipped), and an isolated real
+  PostgreSQL rehearsal proves 12 migrations leave zero production owner,
+  identity, session, credit, job, asset, role, and administration rows; the
+  local seeder is idempotent at two owners/200 credits, and unexpected fixture
+  credit history makes cleanup fail and roll back. It now requires a new CI
+  candidate/digest, artifact import, prestage replacement, and another exact
+  precheck before C3 may resume. The same review found and locally corrected a
+  C3 ordering defect: the production restore tool now treats a genuinely
+  pre-migration catalog-only database as zero tables/rows/migrations instead of
+  querying absent application tables, while preserving full quiescence and
+  equality checks after C5 migration.
+  Collect the security/privacy/abuse,
   recovery/rollback, candidate-health, incident-ownership, and delegated
   monitoring evidence before admitting any seed user. Customer checkout,
   domestic Alipay, and the applicable ICP/domain gate remain planned in M9.
@@ -177,8 +229,8 @@ requirements are confirmed.
    reprovision every returning identity as a fresh pending GoodGood owner.
    The initial conversion stays in public maintenance for at most four hours
    and opens only after every clean-state and release check passes.
-4. **No-customer production conversion — maintenance active; replacement exact
-   candidate pending.** The
+4. **No-customer production conversion — maintenance active; clean-database
+   replacement candidate pending.** The
    single-host infrastructure contract, concurrent Worker, memory/disk gate,
    maintenance surface, and non-executable dry-run conversion manifest are
    implemented and tested locally. Resource-bounded production PostgreSQL/
@@ -204,9 +256,33 @@ requirements are confirmed.
    the reviewed static 503 maintenance surface through Cloudflare; a fail-closed
    first attempt identified and corrected Nginx marker traversal, scope, and
    loopback-probe defects without touching staging data or R2. The matching
-   repository repair must pass CI and replace the prestaged exact candidate
-   before C1 freezes staging. Every destructive step still needs its exact-target
-   approval, and public traffic remains separately unapproved.
+   repository repair has passed CI and replaced the prestaged exact candidate;
+   its artifact-security bytes have passed authenticated download and
+   independent local/host import. A final read-only review passed, and the
+   separately approved C1 freeze, final encrypted off-host snapshot, local
+   restore, and off-host restore all pass. Staging Web/Worker and its backup
+   timer are stopped while private dependencies, volumes, release, and the
+   root-only final archive remain retained. C2's fresh metadata-only inventory
+   and no-execution deletion preview now pass with the unchanged three-object,
+   576,607-byte fingerprint. The operator confirmed no Cloudflare history or
+   delete markers and approved the exact binding; conditional deletion and two
+   independent post-delete inventories now prove the current-version scope is
+   empty. New production application-R2 credentials are root-only, distinct
+   from staging/backup, and independently list the empty bucket while
+   unauthenticated access remains denied. The old staging credential is revoked
+   and fails authentication; the production credential remains valid and live
+   CORS accepts only the reviewed production origin. The operator confirmed the
+   post-delete console is empty with no history/delete markers, so C2 is
+   complete. A fresh C3-C6-only window passed precheck, but C3 stopped before
+   creating state because the exact candidate would seed two legacy local
+   fixture owners and credits into a fresh database. Forward-only migration
+   0012 now removes only those legacy rows, and fixture recreation is available
+   only under the explicit local-auth opt-in. Static and real PostgreSQL checks
+   plus the complete local gate pass. The recovery tool also supports the
+   required C3 pre-migration zero-table restore baseline without weakening its
+   post-migration checks. Publishing and prestaging a replacement exact
+   candidate is now the blocker. Public traffic remains separately
+   unapproved.
 5. **Exact-candidate rehearsal — pending.** Pass security/privacy/retention and
    abuse review, preflight, migration, candidate health/state invariants,
    public synthetic checks, restore drill, alert delivery, and rollback without
@@ -236,10 +312,95 @@ M9 begins only after a separate operator decision to resume payment work.
   public root return 503, the local body is byte-identical to the reviewed asset,
   public static structure plus no-store/Retry-After pass, and login/generation
   paths return 503. Evidence is root-only at
-  `c0-maintenance-3bd4ea9.json`. This repository repair invalidates `3bd4ea9` as
-  the exact source candidate; CI publication, artifact import, and no-traffic
-  replacement prestage are the next action before C1. Public opening remains
-  unapproved and staging/R2 data remain unchanged.
+  `c0-maintenance-3bd4ea9.json`. The repair was committed as full revision
+  `1368913c8ca13ee8cfa1cf5c2fff89da2e9aa20a`; CI run 34 (`33975329267`)
+  completed successfully and published
+  `ghcr.io/lizhongyi1209/goodgood@sha256:605cb17f686f4f69648937eb7182725abf21d8d8e9a69bc298d16b6eef2852be`
+  with runtime contract
+  `c9dc4a54fc3a4eeadcfa844947455a74924562b249e43229c7015b5919ce9915`.
+  Artifact-security ID `9972179514` has immutable raw-byte digest
+  `6cf8354b37462917f2e8e62a99daf90da8008f8d309a02241d11acfb72c2fa36`.
+  The server now has that exact clean source and stopped image prestaged; active
+  maintenance config byte-matches it, production state remains absent, memory
+  is above 2.4 GiB, and root disk remains 28%. The prior `3bd4ea9` candidate is
+  retained stopped at `/opt/goodgood-production-obsolete-3bd4ea9`. The operator
+  downloaded the 1,093-byte raw artifact without editing it; its SHA-256 matched
+  GitHub and both local and host importers passed artifact schema, exact
+  candidate, successful run, required jobs/steps, and immutable byte integrity.
+  Host review `pre-c1-review-1368913.json` at `2026-09-05T15:48:29Z` then
+  reconfirmed the stopped exact candidate, public 503 maintenance, five healthy
+  zero-restart staging containers, no active session/job/outbox/Valkey state,
+  the unchanged three-object R2 fingerprint, no production state, zero failed
+  units, more than 2.4 GiB available memory, and 28% root disk. The operator
+  approved C1, which completed at `2026-09-05T16:01:09Z`. Staging Web and Worker
+  are stopped after confirming zero active sessions, nonterminal jobs, pending
+  outbox rows, ready/processing queue entries, and Valkey keys. Its backup timer
+  is disabled, while PostgreSQL, Valkey, and object storage remain private,
+  healthy, zero-restart dependencies. The final root-only archive
+  `staging-final-immediate-20260905T152544Z.dump` is 86,668 bytes with SHA-256
+  `52b8ebdfa5ac1185a976a9ba43928f3331e048bc0616f1994d1306c6d009e2ad`.
+  Encrypted off-host Restic snapshot
+  `787bc98b00b1ebe16744faf2ae1d5b0b6564873bf0e336cc9a99229451e68c00`
+  passed a full repository check; both the local archive and a freshly
+  downloaded off-host copy restored 20 public tables, 77 rows, and 10
+  migrations in isolated network-none/tmpfs targets. Evidence is root-only at
+  `c1-final-archive-1368913.json`, and the archive/volumes/release are retained
+  until at least `2026-09-12T19:25:44Z`, conversion success plus seven days, and
+  separate exact cleanup approval. C2 metadata-only inventory captured at
+  `2026-09-05T16:05:09.463Z` reconfirmed exactly three current object versions,
+  576,607 bytes, and unchanged inventory SHA-256
+  `addd927f5d6ecee9e0b84b6208d3267606a1edc1767a1501990eabf970bf9e0a`.
+  Root-only evidence `r2-current-post-freeze-1368913.json`,
+  `r2-deletion-preview-post-freeze-1368913.json`, and
+  `c2-readonly-review-1368913.json` records zero downloads/deletions and an
+  intentionally unavailable execution path. The operator then confirmed the
+  Cloudflare console had exactly the same three current objects with no history
+  or delete markers and approved binding
+  `r2-goodgood-current:addd927f5d6ecee9e0b84b6208d3267606a1edc1767a1501990eabf970bf9e0a`.
+  Three fail-closed execution preparations stopped before deletion because of
+  an unbundled runtime dependency, ESM dynamic-require incompatibility, and
+  LIST-versus-HEAD timestamp precision; each was followed by a fresh inventory
+  that reconfirmed all three objects and the approved fingerprint. The corrected
+  single-file operation rechecked the full inventory plus each HEAD key/etag/
+  size and second-level modification time immediately before conditional
+  deletion. At `2026-09-05T16:17:04.351Z` it removed exactly the approved three
+  objects and 576,607 bytes. Independent immediate and follow-up metadata
+  inventories now report zero current objects, zero bytes, and empty SHA-256
+  `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+  Root-only evidence is retained in `r2-exact-deletion-1368913.json`,
+  `r2-current-post-delete-1368913-attempt4.json`,
+  `r2-current-post-delete-independent-1368913.json`, and
+  `c2-post-delete-review-1368913.json`. The operator then created a new Account
+  API token with Object Read & Write scoped only to `goodgood`; its Access Key
+  ID and Secret Access Key were transferred from the local clipboard without
+  entering chat or command arguments, installed as distinct-from-staging-and-
+  backup `root:goodgood-production-secrets 0640` files, and the clipboard was
+  cleared after each value. A dedicated inventory role using only those new
+  files reports the same empty bucket and unauthenticated bucket listing is not
+  allowed. Root-only evidence is
+  `c2-production-r2-credential-pre-revocation-1368913.json`. The operator then
+  revoked `goodgood-staging-r2`. A read-only dual check proves the staging
+  credential now fails authentication while the production credential still
+  lists zero objects. Live OPTIONS from `https://goodgood.o1key.com` returns 204
+  with GET/PUT/HEAD, the requested `content-type`/`x-amz-content-sha256`, and
+  max-age 300; an untrusted origin returns 403. Evidence is root-only at
+  `c2-credential-revocation-review-1368913.json`. The operator confirmed the
+  post-delete Cloudflare console is empty with no history/delete markers, so C2
+  is complete. A new C3-C6-only window (`2026-09-06T02:50:29Z` through
+  `2026-09-06T06:50:29Z`) passed its fail-closed precheck and is recorded as
+  `resumed-window-c3-1368913.json`; public opening is not authorized. C3 then
+  stopped before state creation because the reviewed migration chain would
+  create two prototype local owners, identities, credit accounts, and welcome
+  grants in the new production database. Production volumes and the production
+  Restic repository remain absent. The forward fix adds migration
+  `0012_m8_remove_legacy_local_fixtures.sql` and moves fixture recreation behind
+  the explicit local-auth seeder. `npm run check:local` passes 185 tests (181
+  passing and four opt-in integrations skipped); `npm run build:runtime` passes;
+  an isolated PostgreSQL rehearsal proves the production-empty, local-idempotent,
+  and unexpected-history rejection paths, then removes both temporary databases.
+  The C3 recovery tool now handles a catalog-only source as exactly zero public
+  tables/rows/migrations and retains full checks after schema creation. A new
+  exact CI candidate is required before host conversion resumes.
 - On 2026-09-05 the host created independent production-only local secret
   material under a new `goodgood-production-secrets` group (numeric GID 986),
   without adding the `goodgood` SSH administrator. PostgreSQL and Restic each
@@ -1559,7 +1720,7 @@ Completed real-Authing loopback checklist:
 | M5 | US generation gateway integration and recovery | Completed | O1Key special-price adapter, explicit worker route, RustFS transfer, decoded output ingestion, durable-task restart, fake-server matrix, secret-file launcher, one real URL-output reference-image smoke, operator-confirmed New API charge/refund evidence, and ADR 0008's accepted at-most-once submission guard pass |
 | M6 | Versioned pricing, credit ledger, and payment sandbox | Completed | ADR 0009 launch prices, welcome grants, append-only accounting, live reserve/settle/release, account presentation, immutable CNY 10 / 500-credit product, idempotent orders, signed fake-sandbox fulfillment, dry-run-first manual paid-credit recording, isolated PostgreSQL tests, and full Compose pass |
 | M7 | Hong Kong staging | Completed | The hardened Hong Kong host, isolated dependencies, private R2, Cloudflare-only TLS origin, Authing callbacks and rotated secrets, real O1Key generation/reference ingestion, public logout recovery, rollback, mainland HTTP sampling, and all ten migrations pass. ADR 0014's separate encrypted off-host PostgreSQL repository, retention, two latest-snapshot restore drills, real systemd backup, and active persistent timer pass; outbound notification is deferred to M8 and QQ Mail is not under consideration. CI run 23 passes 133 tests, dependency and finished-image scans, and runtime import smoke after the React 19.2.8 fix. Its exact immutable digest is the promoted healthy release: Web/Worker and every dependency readiness check pass, public root/live/ready return HTTP 200, and credit state is unchanged. Full-byte real-carrier throughput remains an accepted non-blocking deferral; payment checkout stays intentionally absent until M9 |
-| M8 | Hong Kong seed production readiness | In progress | ADR 0019 selects Hong Kong and `goodgood.o1key.com`; ADR 0020 completes the unlimited-open-login, pending review, 100-credit, site-owner console, and bounded test-credit controls locally. ADR 0021 completes the clean conversion requirements for the current 2-vCPU / 4-GiB host, local/test-only preproduction, no staging-data import, seven-day staging archive, one-hour RPO / four-hour RTO / 14 daily / 8 weekly / 12 monthly recovery, no fixed generation count/concurrency ceiling, 500-MiB memory and 80%-disk admission protection, reuse-after-cleaning of the `goodgood` R2 bucket, reuse-and-rotation of Authing, and a fail-closed four-hour maintenance window. The repository implements the separate fail-closed unpaid-seed gate while preserving the full paid gate. The immediate conversion window is active and C0 now serves the reviewed static 503 maintenance surface. Its fail-closed first attempt found three Nginx operational defects; the host is safely corrected under maintenance and this change records the matching source/runbook/test repair. The next action is CI publication, artifact import, and no-traffic prestage of the replacement exact candidate before staging freeze. R2 deletion and public opening remain unapproved; production state, recovery proof, Authing/application-R2 rotation, security/privacy/abuse evidence, monitoring handoff, candidate health, and rollback rehearsal remain before seed admission. |
+| M8 | Hong Kong seed production readiness | In progress | ADR 0019 selects Hong Kong and `goodgood.o1key.com`; ADR 0020 completes open login, pending review, 100 welcome credits, the site-owner console, and bounded test-credit grants. ADR 0021 selects the current 2-vCPU / 4-GiB host with a clean production database/queue, private R2, encrypted recovery, no fixed generation/concurrency ceiling, and 500-MiB/80%-disk admission protection. C0 maintenance, C1 staging freeze/final restore-verified archive, and C2 exact R2 cleanup plus production credential rotation are complete. Revision `1368913` remains safely stopped and public maintenance remains 503. A fresh C3-C6-only window passed precheck, then C3 stopped before creating production state because the candidate migration chain would recreate two prototype local owners and welcome-credit rows. The locally verified forward-only migration 0012 removes those rows, keeps the production path empty, and moves fixture recreation behind the explicit local-auth opt-in; a new verified digest, artifact evidence, and prestage are now required before conversion resumes. Public opening remains unapproved; recovery proof, Authing rotation, security/privacy/abuse evidence, monitoring handoff, candidate health, and rollback rehearsal remain before seed admission. |
 | M9 | Paid commercialization and domestic Alipay | Planned, deferred | Preserve ADR 0010's domestic Alipay direction and ADR 0015's fail-closed paid gate. Complete the applicable production-domain/ICP review, merchant qualification, real sandbox and callback evidence, provider adapter, refund semantics, and the smallest customer checkout UI before accepting payment. Seed launch evidence does not complete M9. |
 
 Only mark a milestone `Completed` when its exit evidence exists. Use `Blocked`

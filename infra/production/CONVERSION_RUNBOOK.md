@@ -192,10 +192,12 @@ maintenance marker，静态维护门禁会失效并触发入口关闭。
    `/opt/goodgood-production/compose.production.dependencies.yaml` 创建依赖。
    不挂载 staging volume，不 attach staging network，不运行导入。
 3. 核验 PostgreSQL/Valkey healthy、无主机端口、资源限制、production volume
-   名称及 internal network。数据库只能有初始化结构；Valkey `DBSIZE=0`。
+   名称及 internal network。此时 PostgreSQL 只能有初始化 catalog，尚无 public
+   application table；migration 保留到 C5。Valkey `DBSIZE=0`。
 4. 安装 production backup 配置、脚本和 units。初始化隔离 Restic 前缀一次，
    立即执行一次 `run` 和 `restore-latest-drill`；记录 snapshot freshness、
-   archive hash、表/行/迁移相等和 RTO。
+   archive hash、表/行/迁移相等和 RTO。C3 的预迁移基线必须明确报告
+   `public_tables=0`、`public_rows=0`、`migrations=0`，不能靠创建占位表绕过。
 5. 仅在恢复演练通过后启用：
 
    ```bash
@@ -226,7 +228,9 @@ OIDC discovery preflight。任何旧 callback、inline secret、错误权限或�
 1. 选择 blue 作为首次槽位。release 文件绑定同一 CI digest/revision/migration/
    runtimeConfigVersion，Compose 只读取 production runtime 和 secret 路径。
 2. 以 `--profile release run --rm migrate` 执行一次前向 migration；重复运行必须
-   checksum/idempotency 通过。不得降级 schema。
+   checksum/idempotency 通过。不得降级 schema。迁移 0012 后，在第一次真实登录
+   前必须证明 users、auth identities/sessions、credit accounts/ledger、content、
+   role 和 administrative action 均为零；本地 fixture seeder 在 production 禁用。
 3. 先只启动 blue Web，在 loopback `3100` 完成 `/live`、`/ready`、数据库、队列、
    R2、O1Key 和 release-label 校验。资源余量必须仍满足 500 MiB/80% 安全线。
 4. 通过私有 operator 路径完成正式 Authing 登录：返回身份在新数据库中创建

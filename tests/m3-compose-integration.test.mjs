@@ -10,6 +10,7 @@ import { createClient } from "redis";
 import { grantCredits } from "../server/billing/repository.mjs";
 import { signFakePaymentWebhook } from "../server/billing/payment-sandbox.mjs";
 import { applyMigrations } from "../server/persistence/migrate.mjs";
+import { seedLocalFixtures } from "../server/persistence/seed-local-fixtures.mjs";
 import { cleanupReferenceAssets } from "../server/references/cleanup-service.mjs";
 import { GENERATION_READY_QUEUE } from "../server/generation/config.mjs";
 import { createAuthenticationOperations } from "../server/auth/operations.mjs";
@@ -106,10 +107,12 @@ test(
 
     await applyMigrations({ databaseUrl, logger: { log() {} } });
     await applyMigrations({ databaseUrl, logger: { log() {} } });
+    await seedLocalFixtures({ databaseUrl, logger: { log() {} } });
+    await seedLocalFixtures({ databaseUrl, logger: { log() {} } });
     const migrationCount = await pool.query(
-      "SELECT count(*)::int AS count FROM goodgood_schema_migrations WHERE version IN ('0001_m3_generation.sql', '0002_m4_authenticated_owners.sql', '0003_m4_reference_assets.sql', '0004_m4_projects.sql', '0005_m4_oidc_sessions.sql', '0006_m4_oidc_login_binding.sql', '0007_m4_reference_cleanup.sql', '0008_m4_creation_drafts.sql', '0009_m6_credit_ledger.sql', '0010_m6_payment_sandbox.sql', '0011_m8_account_admission.sql')",
+      "SELECT count(*)::int AS count FROM goodgood_schema_migrations WHERE version IN ('0001_m3_generation.sql', '0002_m4_authenticated_owners.sql', '0003_m4_reference_assets.sql', '0004_m4_projects.sql', '0005_m4_oidc_sessions.sql', '0006_m4_oidc_login_binding.sql', '0007_m4_reference_cleanup.sql', '0008_m4_creation_drafts.sql', '0009_m6_credit_ledger.sql', '0010_m6_payment_sandbox.sql', '0011_m8_account_admission.sql', '0012_m8_remove_legacy_local_fixtures.sql')",
     );
-    assert.equal(migrationCount.rows[0].count, 11);
+    assert.equal(migrationCount.rows[0].count, 12);
     const suffix = `${Date.now()}-${process.pid}`;
     await Promise.all([
       grantCredits(pool, {

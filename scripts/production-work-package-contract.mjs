@@ -210,7 +210,14 @@ export function inspectProductionWorkPackage({
     const maintenanceTimer = source("infra/production/systemd/goodgood-production-postgres-maintenance.timer");
     requireText(maintenanceTimer, "Persistent=true", "production maintenance timer");
     const restore = source("infra/production/postgres-backup-restore.sh");
-    for (const expected of ["--network none", "--read-only", "storage=tmpfs", "goodgood_schema_migrations"]) {
+    for (const expected of [
+      "--network none",
+      "--read-only",
+      "storage=tmpfs",
+      "goodgood_schema_migrations",
+      "to_regclass('public.auth_sessions')",
+      'migration_count="0"',
+    ]) {
       requireText(restore, expected, "production restore drill");
     }
   });

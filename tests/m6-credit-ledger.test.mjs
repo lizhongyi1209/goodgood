@@ -28,6 +28,7 @@ import {
 import { generationApiError } from "../server/generation/api.mjs";
 import { readBillingSummary } from "../server/billing/api.mjs";
 import { applyMigrations } from "../server/persistence/migrate.mjs";
+import { seedLocalFixtures } from "../server/persistence/seed-local-fixtures.mjs";
 
 const { Pool } = pg;
 const integrationEnabled = process.env.GOODGOOD_M6_INTEGRATION === "1";
@@ -220,6 +221,7 @@ test(
     context.after(() => pool.end());
     await applyMigrations({ databaseUrl, logger: { log() {} } });
     await applyMigrations({ databaseUrl, logger: { log() {} } });
+    await seedLocalFixtures({ databaseUrl, logger: { log() {} } });
 
     const migrationCount = await pool.query(
       `SELECT count(*)::int AS count

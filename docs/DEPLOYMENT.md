@@ -29,9 +29,10 @@ the Hong Kong host.
 5. Before pushing, run `npm run check:local`.
 
 The UI build itself needs no credentials. Durable local generation uses the
-Compose defaults or the runtime variable names in `.env.example`. Its web role
-requires the explicitly local authentication mode and maps configured tokens to
-the seeded local identity records. It must also set
+Compose defaults or the runtime variable names in `.env.example`. Its migration
+role recreates the two fixed local fixture owners only when the local-auth opt-in
+is true, and its web role maps configured tokens to those records. Both roles
+must set
 `GOODGOOD_ALLOW_LOCAL_AUTH=true`; this explicit opt-in is test infrastructure,
 not a production identity configuration. Windows users may run the
 cross-platform local scripts directly; the original Sites lifecycle scripts
@@ -427,12 +428,16 @@ mounts.
 
 Compose also runs a one-shot `migrate` role after PostgreSQL becomes healthy.
 It records every SQL filename and checksum in `goodgood_schema_migrations`, then
-web and worker start only after migration success. The mock generation role now
+removes the historical fixed-UUID fixtures in migration 0012. Only the base
+local Compose role then runs the separate idempotent fixture seeder; staging and
+production leave the migrated database with no owner, identity, session, credit
+account, or ledger row until a real login provisions one. Web and worker start
+only after migration success. The mock generation role now
 implements authenticated, idempotent create/status behavior plus deterministic
 success, rejection, slow, and timeout paths. It serves only the checked-in test
 image; it is not a production provider.
 
-The current additive chain contains ten migrations: M3 generation, M4 owner
+The current forward chain contains twelve migrations: M3 generation, M4 owner
 identity, M4 reference assets, M4 projects/batch association, M4 OIDC login
 attempts/sessions plus same-browser callback binding, and reference-cleanup
 evidence, followed by owner-scoped creation drafts and the M6 immutable price/
@@ -442,7 +447,9 @@ append-only credit-ledger foundation. Migration 0009 seeds the accepted
 does the same for new owners. Migration 0010 seeds the immutable CNY 10 /
 500-credit product and adds payment orders plus webhook evidence. Its
 `fake-sandbox` provider value is local test data, not a selected production
-provider or credential. The manual payment role uses these existing tables and
+provider or credential. Migration 0011 adds account admission and site-owner
+administration; migration 0012 removes the legacy local fixtures without
+modifying the earlier applied checksums. The manual payment role uses these existing tables and
 adds no migration: `manual` is an operator-recorded receipt source, not a
 provider sandbox or customer checkout.
 Local rollback
@@ -1059,7 +1066,8 @@ Execute the eventual conversion only through a reviewed runbook:
    it for seven days after conversion passes, then delete it only through a
    separate exact-target approval.
 3. Create fresh production PostgreSQL and Valkey state and run all migrations;
-   import no staging business or session rows.
+   import no staging business or session rows, verify migration 0012 leaves no
+   local fixture owner/identity/credit row, and never enable the local seeder.
 4. Inventory every object in the existing private `goodgood` R2 bucket, preview
    the exact deletion set, obtain separate destructive approval, delete the test
    objects, and verify the bucket is empty. Rotate its scoped credentials before

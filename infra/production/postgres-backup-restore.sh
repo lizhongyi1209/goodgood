@@ -110,12 +110,25 @@ if docker inspect "${restore_container}" >/dev/null 2>&1; then
   fail "The fixed restore-drill container name is already in use."
 fi
 
-quiescence="$(docker exec "${source_container}" psql \
+application_schema="$(docker exec "${source_container}" psql \
   --username "${source_user}" \
   --dbname "${source_database}" \
   --tuples-only \
   --no-align \
-  --command "SELECT (SELECT count(*) FROM auth_sessions WHERE revoked_at IS NULL AND expires_at > now()) || '|' || (SELECT count(*) FROM generation_jobs WHERE state IN ('queued', 'running', 'refining'))")"
+  --command "SELECT CASE
+    WHEN to_regclass('public.auth_sessions') IS NOT NULL
+     AND to_regclass('public.generation_jobs') IS NOT NULL
+    THEN 'present' ELSE 'absent' END")"
+if [[ "${application_schema}" == "present" ]]; then
+  quiescence="$(docker exec "${source_container}" psql \
+    --username "${source_user}" \
+    --dbname "${source_database}" \
+    --tuples-only \
+    --no-align \
+    --command "SELECT (SELECT count(*) FROM auth_sessions WHERE revoked_at IS NULL AND expires_at > now()) || '|' || (SELECT count(*) FROM generation_jobs WHERE state IN ('queued', 'running', 'refining'))")"
+else
+  quiescence="0|0"
+fi
 [[ "${quiescence}" == "0|0" ]] || \
   fail "The restore drill requires zero active sessions and generation jobs."
 
@@ -187,10 +200,14 @@ while IFS= read -r table_name; do
   row_count=$((row_count + restored_count))
 done <<<"${source_tables}"
 
-migration_count="$(docker exec "${restore_container}" psql \
-  --username postgres --dbname "${restore_database}" \
-  --tuples-only --no-align \
-  --command "SELECT count(*) FROM goodgood_schema_migrations")"
+if [[ "${application_schema}" == "present" ]]; then
+  migration_count="$(docker exec "${restore_container}" psql \
+    --username postgres --dbname "${restore_database}" \
+    --tuples-only --no-align \
+    --command "SELECT count(*) FROM goodgood_schema_migrations")"
+else
+  migration_count="0"
+fi
 
 printf 'restore_drill=passed\n'
 printf 'archive_sha256=%s\n' "$(sha256sum "${archive_path}" | awk '{print $1}')"
