@@ -1,5 +1,13 @@
 # Production implementation plan
 
+> PARKED WORKTREE CHECKPOINT — GG-001, 2026-09-07.
+> This branch is an archive of deferred C6 work, not the current delivery plan.
+> The original source/log snapshot is `d65838a`; all chronology below is retained
+> for recovery only. Current rollout and next tasks live on main in
+> `docs/CURRENT_STATE.md`, `docs/IMPLEMENTATION_PLAN.md` and task GG-900.
+> This guard was checked with `git diff --check`; runtime and migrations were
+> not changed or revalidated. Next action: none until explicit restoration scope.
+
 - Last synchronized: 2026-09-07
 - Current phase: ADR 0025 is deployed to the publicly open ADR 0024 controlled
   alpha on Hong Kong production revision

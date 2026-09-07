@@ -1,5 +1,17 @@
 # GoodGood Agent Contract
 
+## PARKED SNAPSHOT — read this before all historical instructions below
+
+This worktree is `archive/c6-deletion-content-safety-20260907`, preserved by
+GG-001 on 2026-09-07. It is NOT main and NOT a deployable production candidate.
+Its deletion/content-safety runtime and migrations 0013–0020 remain deferred.
+Do not continue its historical next-actions or develop unrelated features here.
+First read the current main branch's `AGENTS.md`, `docs/CURRENT_STATE.md`,
+`docs/WORKFLOW.md` and `docs/tasks/GG-900-deferred-c6.md` (use the main worktree
+or `git show main:<path>`). Restoration needs an explicitly scoped new task.
+The unmodified initial source snapshot is commit `d65838a`; this guard only
+changes documentation and grants no live or destructive authority.
+
 This file is the stable entry point for every coding agent. Keep it short. Put
 changing detail in `docs/` and update the relevant document in the same change.
 
