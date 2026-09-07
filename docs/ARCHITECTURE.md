@@ -30,6 +30,10 @@ The active Worker ignores a second delivery of an in-flight job, and any
 unexpired lease blocks another claim even when the Worker identity matches.
 After object upload, the Worker reports success only when the asset and job
 terminal state commit together; a terminal loser removes its unaccepted object.
+The creation client owns a stable run key per click so the temporary pending job
+and later durable job remain one visible run. It keeps an unbounded registry of
+overlapping active and failed runs; this is presentation state, never provider
+identity or queue authority.
 
 M4 replaces the fixed server-owned identity at the generation API boundary. A
 provider-neutral `(issuer, subject)` identity maps to an internal GoodGood

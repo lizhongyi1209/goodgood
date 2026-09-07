@@ -232,6 +232,63 @@ test("enforces auditable job transitions and terminal states", async () => {
   );
 });
 
+test("tracks unlimited parallel client runs without cross-run replacement", async () => {
+  const {
+    getActiveGenerationRuns,
+    getFailedGenerationRuns,
+    getPersistentGenerationJobIds,
+    removeGenerationRun,
+    upsertGenerationRun,
+  } = await vite.ssrLoadModule("/features/creation/generation-runs.ts");
+  const snapshot = await createSnapshot();
+  const timestamp = "2026-09-08T00:00:00.000Z";
+  const createJob = (id, state = "queued", error = null) => Object.freeze({
+    createdAt: timestamp,
+    error,
+    id,
+    input: snapshot,
+    outputs: Object.freeze([]),
+    state,
+    updatedAt: timestamp,
+  });
+
+  assert.deepEqual(getActiveGenerationRuns([]), []);
+  assert.deepEqual(getFailedGenerationRuns([]), []);
+  let runs = [];
+  for (let index = 0; index < 25; index += 1) {
+    runs = upsertGenerationRun(
+      runs,
+      `run-${index}`,
+      createJob(`pending_${index}`),
+    );
+  }
+  assert.equal(runs.length, 25);
+  assert.equal(getActiveGenerationRuns(runs).length, 25);
+  assert.equal(runs[0].key, "run-24");
+
+  const firstPosition = runs.findIndex((run) => run.key === "run-0");
+  runs = upsertGenerationRun(runs, "run-0", createJob("job-0", "running"));
+  assert.equal(runs.findIndex((run) => run.key === "run-0"), firstPosition);
+  assert.equal(runs[firstPosition].job.id, "job-0");
+  assert.equal(runs.length, 25);
+
+  const failure = Object.freeze({
+    code: "MODEL_REJECTED",
+    message: "请调整提示词后重试。",
+    retryable: true,
+    title: "本次生成未完成",
+  });
+  runs = upsertGenerationRun(runs, "run-1", createJob("job-1", "failed", failure));
+  assert.equal(getActiveGenerationRuns(runs).length, 24);
+  assert.deepEqual(getFailedGenerationRuns(runs).map((run) => run.key), ["run-1"]);
+  assert.deepEqual(getPersistentGenerationJobIds(runs).sort(), ["job-0", "job-1"]);
+
+  runs = upsertGenerationRun(runs, "run-0", createJob("job-0", "succeeded"));
+  runs = removeGenerationRun(runs, "run-0");
+  assert.equal(runs.length, 24);
+  assert.equal(runs.some((run) => run.key === "run-1"), true);
+});
+
 test("runs successful mock jobs through repository and provider boundaries", async () => {
   const { createMockGenerationBoundary } = await vite.ssrLoadModule(
     "/features/creation/mock-generation-boundary.ts",

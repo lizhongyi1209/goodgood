@@ -24,6 +24,10 @@ after(async () => {
 test("declares the GoodGood visual and interaction invariants", async () => {
   const css = await readFile(path.join(root, "app/globals.css"), "utf8");
   const creationPage = await readFile(path.join(root, "app/page.tsx"), "utf8");
+  const creationComposer = await readFile(
+    path.join(root, "features/creation/creation-composer.tsx"),
+    "utf8",
+  );
 
   assert.match(css, /--accent:\s*#b52b30/);
   assert.match(css, /--control-md:\s*40px/);
@@ -35,8 +39,12 @@ test("declares the GoodGood visual and interaction invariants", async () => {
   assert.match(creationPage, /className="generation-task-frame"/);
   assert.match(creationPage, /renderCreationColumns\(generationItems, 4, "task"\)/);
   assert.match(creationPage, /renderCreationColumns\(creationItems, 4, "history"\)/);
-  assert.match(creationPage, /onClick=\{retryFailedGeneration\}/);
-  assert.match(creationPage, /onClick=\{restoreFailedGenerationSettings\}/);
+  assert.match(creationPage, /activeGenerationRuns\.flatMap/);
+  assert.match(creationPage, /failedGenerationRuns\.map/);
+  assert.match(creationPage, /retryFailedGeneration\(run\)/);
+  assert.match(creationPage, /restoreFailedGenerationSettings\(runInput\)/);
+  assert.match(creationComposer, /aria-label=\{isGenerating \? "继续生成图片" : "生成图片"\}/);
+  assert.doesNotMatch(creationComposer, /disabled=\{isGenerating\}/);
   assert.doesNotMatch(creationPage, /className="generation-error-panel/);
 });
 

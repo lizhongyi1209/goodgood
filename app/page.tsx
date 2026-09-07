@@ -15,6 +15,14 @@ import {
   toGenerationUiStage,
 } from "@/features/creation/generation-job";
 import {
+  getActiveGenerationRuns,
+  getFailedGenerationRuns,
+  getPersistentGenerationJobIds,
+  removeGenerationRun,
+  upsertGenerationRun,
+  type TrackedGenerationRun,
+} from "@/features/creation/generation-runs";
+import {
   MOCK_GENERATION_OUTPUTS,
 } from "@/features/creation/mock-generation-boundary";
 import { createHttpGenerationBoundary } from "@/features/creation/http-generation-boundary";
@@ -124,6 +132,7 @@ import {
 type ReferenceImage = GenerationReference;
 type AssetBatch = {
   id: string;
+  createdAt: string;
   dateLabel: string;
   time: string;
   prompt: string;
@@ -186,6 +195,7 @@ const emptyComposerCheckpoint = createComposerCheckpoint({
 const initialAssetBatches: AssetBatch[] = [
   {
     id: "GG-240827",
+    createdAt: "2026-09-08T10:16:00.000Z",
     dateLabel: "今天",
     time: "10:16",
     prompt: defaultPrompt,
@@ -201,6 +211,7 @@ const initialAssetBatches: AssetBatch[] = [
   },
   {
     id: "GG-236814",
+    createdAt: "2026-09-07T20:42:00.000Z",
     dateLabel: "昨天",
     time: "20:42",
     prompt: "参考图 1 的服装轮廓与参考图 2 的光影质感，创作一组冷调高级成衣广告，保留自然皮肤纹理与真实面料细节。",
@@ -237,6 +248,7 @@ function generationJobToAssetBatch(job: GenerationJob): AssetBatch {
   return {
     aspectRatio: job.input.aspectRatio,
     count: job.input.count,
+    createdAt: job.createdAt,
     dateLabel,
     id: job.id,
     images: job.outputs,
@@ -250,6 +262,11 @@ function generationJobToAssetBatch(job: GenerationJob): AssetBatch {
       minute: "2-digit",
     }).format(createdAt),
   };
+}
+
+function newestAssetBatches(batches: readonly AssetBatch[]) {
+  return [...batches].sort((left, right) =>
+    right.createdAt.localeCompare(left.createdAt));
 }
 
 function projectAssetBatches(project: ProjectRecord) {
@@ -289,6 +306,8 @@ export default function Home() {
   const draftMutationQueueRef = useRef<Promise<void>>(Promise.resolve());
   const draftSyncedCheckpointRef = useRef(emptyComposerCheckpoint);
   const draftVersionRef = useRef<number | null>(null);
+  const latestGenerationRunKeyRef = useRef<string | null>(null);
+  const retryingGenerationRunKeysRef = useRef(new Set<string>());
   const [generationBoundary] = useState(createHttpGenerationBoundary);
   const [authenticationSession, setAuthenticationSession] = useState<AuthenticationSession | null | undefined>(undefined);
   const [authenticationError, setAuthenticationError] = useState<string | null>(null);
@@ -305,7 +324,7 @@ export default function Home() {
   const [prompt, setPrompt] = useState("");
   const [referenceImages, setReferenceImages] = useState<ReferenceImage[]>([]);
   const [activeView, setActiveView] = useState<ActiveView>("create");
-  const [generationJob, setGenerationJob] = useState<GenerationJob | null>(null);
+  const [generationRuns, setGenerationRuns] = useState<readonly TrackedGenerationRun[]>([]);
   const [creationBatches, setCreationBatches] = useState<AssetBatch[]>([]);
   const [savedImages, setSavedImages] = useState<string[]>([]);
   const [newAssetCount, setNewAssetCount] = useState(0);
@@ -344,14 +363,10 @@ export default function Home() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailItems, setDetailItems] = useState<DetailImage[]>([]);
   const [detailIndex, setDetailIndex] = useState(0);
-  const activeRatio = getGenerationRatio(selectedRatio);
-  const activeModel = getGenerationModel(selectedModel);
-  const generationStage = toGenerationUiStage(generationJob?.state ?? null);
-  const isGenerating = generationJob ? isGenerationJobActive(generationJob.state) : false;
-  const generationError = generationJob?.error ?? null;
-  const submissionUnknown = generationError?.code === "SUBMISSION_UNKNOWN";
-  const failedGenerationSnapshot = generationJob?.state === "failed" ? generationJob.input : null;
-  const hasGenerationError = generationStage === "failed" && generationError !== null;
+  const activeGenerationRuns = getActiveGenerationRuns(generationRuns);
+  const failedGenerationRuns = getFailedGenerationRuns(generationRuns);
+  const isGenerating = activeGenerationRuns.length > 0;
+  const hasGenerationError = failedGenerationRuns.length > 0;
   const totalCreationImages = creationBatches.reduce((total, batch) => total + batch.images.length, 0);
   const creationDetailItems = getDetailImages(creationBatches);
   const assetDetailItems = getDetailImages(assetBatches);
@@ -362,19 +377,20 @@ export default function Home() {
   const activeDetailRatio = activeDetail
     ? getGenerationRatio(activeDetail.batch.aspectRatio)
     : null;
-  const jobInput = generationJob?.input ?? null;
-  const jobModel = jobInput ? getGenerationModel(jobInput.modelId) : activeModel;
-  const jobRatio = jobInput ? getGenerationRatio(jobInput.aspectRatio) : activeRatio;
-  const stageText = generationStage === "queued"
+  const latestActiveJob = activeGenerationRuns[0]?.job ?? null;
+  const latestActiveInput = latestActiveJob?.input ?? null;
+  const latestActiveStage = toGenerationUiStage(latestActiveJob?.state ?? null);
+  const latestActiveModel = latestActiveInput
+    ? getGenerationModel(latestActiveInput.modelId)
+    : null;
+  const stageText = activeGenerationRuns.length > 1
+    ? `${activeGenerationRuns.length} 个任务正在并行生成`
+    : latestActiveStage === "queued"
     ? "任务已提交，正在准备画面"
-    : generationStage === "rendering"
-      ? `${jobModel.name} 正在生成 ${jobInput?.count ?? generationCount} 张图片`
-      : generationStage === "refining"
+    : latestActiveStage === "rendering"
+      ? `${latestActiveModel?.name ?? "模型"} 正在生成 ${latestActiveInput?.count ?? 1} 张图片`
+      : latestActiveStage === "refining"
         ? "正在完成细节与清晰度处理"
-        : generationStage === "complete"
-          ? "生成完成"
-          : generationStage === "failed"
-            ? "生成失败"
           : "根据当前提示词创建的图像";
   const accountEmail = authenticationSession?.user.email ?? null;
   const accountInitials = accountEmail
@@ -399,14 +415,15 @@ export default function Home() {
   const composerBillingDescription = activeBillingQuote && billingSummary
     ? `每张 ${activeBillingQuote.creditAmount} 积分，当前可用 ${billingSummary.account.availableCredits} 积分`
     : composerBillingLabel;
-  const generationItems: CreationStreamItem[] = isGenerating
-    ? Array.from({ length: jobInput?.count ?? generationCount }, (_, index) => ({
+  const generationItems: CreationStreamItem[] = activeGenerationRuns.flatMap((run) => {
+    const runRatio = getGenerationRatio(run.job.input.aspectRatio);
+    return Array.from({ length: run.job.input.count }, (_, index) => ({
       kind: "skeleton" as const,
-      key: `skeleton-${generationJob?.id ?? "pending"}-${index}`,
-      ratio: jobRatio.value,
+      key: `skeleton-${run.key}-${index}`,
+      ratio: runRatio.value,
       index,
-    }))
-    : [];
+    }));
+  });
   const creationItems: CreationStreamItem[] = creationBatches.flatMap((batch) => {
       const batchRatio = getGenerationRatio(batch.aspectRatio);
       return batch.images.map((image, index) => ({
@@ -430,7 +447,7 @@ export default function Home() {
     checkpoint: composerCheckpoint,
     current: currentComposerCheckpoint,
     hasUnprojectedWork: !currentProject && (
-      creationBatches.length > 0 || generationJob !== null
+      creationBatches.length > 0 || generationRuns.length > 0
     ),
   });
   const currentDraftState: CreationDraftState = {
@@ -912,7 +929,6 @@ export default function Home() {
       .then((restoredProject) => {
         if (!active || requestId !== projectRouteRequestRef.current) return;
         const restoredBatches = projectAssetBatches(restoredProject);
-        const latestBatch = restoredProject.batches[0] ?? null;
         const restoredState = {
           ...restoredProject.state,
           aspectRatio: resolveGenerationAspectRatioForModel(
@@ -932,7 +948,9 @@ export default function Home() {
         setSelectedRatio(restoredState.aspectRatio);
         setResolution(restoredState.resolution);
         setGenerationCount(restoredState.count);
-        setGenerationJob(latestBatch?.state === "failed" ? latestBatch : null);
+        setGenerationRuns(restoredProject.batches
+          .filter((batch) => batch.state === "failed" && batch.error !== null)
+          .map((batch) => Object.freeze({ key: batch.id, job: batch })));
         setComposerCheckpoint(createComposerCheckpoint(restoredState));
         setProjectRouteError(null);
         if (projectRestoreAnnouncementRef.current) {
@@ -1241,7 +1259,9 @@ export default function Home() {
     setPrompt("");
     setCreationBatches([]);
     setCurrentProject(null);
-    setGenerationJob(null);
+    setGenerationRuns([]);
+    latestGenerationRunKeyRef.current = null;
+    retryingGenerationRunKeysRef.current.clear();
     setDrawerOpen(false);
     setProjectSaveError(null);
     setProjectCreateKey(null);
@@ -1322,7 +1342,7 @@ export default function Home() {
   const saveCurrentProject = async () => {
     const batchIds = [...new Set([
       ...creationBatches.map((batch) => batch.id),
-      ...(generationJob && !generationJob.id.startsWith("pending_") ? [generationJob.id] : []),
+      ...getPersistentGenerationJobIds(generationRuns),
     ])];
     if (!batchIds.length || projectSaving) return;
     const name = projectName.trim() || "未命名创作项目";
@@ -1369,12 +1389,17 @@ export default function Home() {
     setSelectedAssetIds((current) => current.includes(assetId) ? current.filter((id) => id !== assetId) : [...current, assetId]);
   };
 
-  const recordCompletedGeneration = (completedJob: GenerationJob) => {
+  const recordCompletedGeneration = (
+    completedJob: GenerationJob,
+    runKey: string,
+  ) => {
     const completedInput = completedJob.input;
+    const createdAt = new Date(completedJob.createdAt);
     const nextBatch: AssetBatch = {
       id: completedJob.id,
+      createdAt: completedJob.createdAt,
       dateLabel: "今天",
-      time: new Intl.DateTimeFormat("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date()),
+      time: new Intl.DateTimeFormat("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false }).format(createdAt),
       prompt: completedInput.prompt,
       modelId: completedInput.modelId,
       aspectRatio: completedInput.aspectRatio,
@@ -1385,59 +1410,75 @@ export default function Home() {
     };
     setSavedImages((current) => [...current, ...completedJob.outputs.map((result) => `${completedJob.id}-${result.id}`)]);
     setCreationBatches((current) => {
-      const nextBatches = [nextBatch, ...current];
+      const nextBatches = newestAssetBatches([
+        nextBatch,
+        ...current.filter((batch) => batch.id !== nextBatch.id),
+      ]);
       if (currentProject) {
+        const isLatestSubmission = latestGenerationRunKeyRef.current === runKey;
         setProjects((currentProjects) => currentProjects.map((project) => project.id === currentProject.id
           ? {
               ...project,
-              batches: [completedJob, ...project.batches.filter((batch) => batch.id !== completedJob.id)],
-              state: {
-                aspectRatio: completedInput.aspectRatio,
-                count: completedInput.count,
-                modelId: completedInput.modelId,
-                prompt: completedInput.prompt,
-                references: completedInput.references,
-                resolution: completedInput.resolution,
-              },
+              batches: [
+                completedJob,
+                ...project.batches.filter((batch) => batch.id !== completedJob.id),
+              ].sort((left, right) => right.createdAt.localeCompare(left.createdAt)),
+              state: isLatestSubmission
+                ? {
+                    aspectRatio: completedInput.aspectRatio,
+                    count: completedInput.count,
+                    modelId: completedInput.modelId,
+                    prompt: completedInput.prompt,
+                    references: completedInput.references,
+                    resolution: completedInput.resolution,
+                  }
+                : project.state,
               updatedAt: completedJob.updatedAt,
             }
           : project));
       }
       return nextBatches;
     });
-    setAssetBatches((current) => [
+    setAssetBatches((current) => newestAssetBatches([
       nextBatch,
       ...current.filter((batch) => batch.id !== nextBatch.id),
-    ]);
+    ]));
     setNewAssetCount(completedJob.outputs.length);
     setAssetPulse(true);
     if (assetPulseTimerRef.current) window.clearTimeout(assetPulseTimerRef.current);
     assetPulseTimerRef.current = window.setTimeout(() => setAssetPulse(false), 4200);
   };
 
-  const observeGenerationJob = (job: GenerationJob) => {
-    setGenerationJob(job);
+  const observeGenerationJob = (runKey: string, job: GenerationJob) => {
+    setGenerationRuns((current) => upsertGenerationRun(current, runKey, job));
     if (
       !job.id.startsWith("pending_") &&
       (job.state === "queued" || !isGenerationJobActive(job.state))
     ) {
       setBillingRevision((current) => current + 1);
     }
-    if (currentProject && !job.id.startsWith("pending_")) {
+    if (
+      currentProject &&
+      latestGenerationRunKeyRef.current === runKey &&
+      !job.id.startsWith("pending_")
+    ) {
       setComposerCheckpoint(createComposerCheckpoint(job.input));
     }
   };
 
-  const runGeneration = async (snapshot: GenerationInputSnapshot) => {
-    if (isGenerating) return;
-
+  const runGeneration = async (
+    snapshot: GenerationInputSnapshot,
+    runKey = globalThis.crypto.randomUUID(),
+  ) => {
+    latestGenerationRunKeyRef.current = runKey;
     setDrawerOpen(false);
     const terminalJob = await generationBoundary.service.submit(
       snapshot,
-      observeGenerationJob,
+      (job) => observeGenerationJob(runKey, job),
     );
     if (terminalJob.state === "succeeded") {
-      recordCompletedGeneration(terminalJob);
+      recordCompletedGeneration(terminalJob, runKey);
+      setGenerationRuns((current) => removeGenerationRun(current, runKey));
     }
   };
 
@@ -1474,23 +1515,34 @@ export default function Home() {
     void runGeneration(snapshot);
   };
 
-  const retryFailedGeneration = () => {
-    if (!generationJob || generationJob.state !== "failed") return;
-    if (generationJob.id.startsWith("pending_")) {
-      void runGeneration(generationJob.input);
-      return;
-    }
-    setDrawerOpen(false);
-    void generationBoundary.retry(generationJob, observeGenerationJob).then((terminalJob) => {
-      if (terminalJob.state === "succeeded") {
-        recordCompletedGeneration(terminalJob);
+  const retryFailedGeneration = async (run: TrackedGenerationRun) => {
+    if (
+      run.job.state !== "failed" ||
+      retryingGenerationRunKeysRef.current.has(run.key)
+    ) return;
+    retryingGenerationRunKeysRef.current.add(run.key);
+    latestGenerationRunKeyRef.current = run.key;
+    try {
+      if (run.job.id.startsWith("pending_")) {
+        await runGeneration(run.job.input, run.key);
+        return;
       }
-    });
+      setDrawerOpen(false);
+      const terminalJob = await generationBoundary.retry(
+        run.job,
+        (job) => observeGenerationJob(run.key, job),
+      );
+      if (terminalJob.state === "succeeded") {
+        recordCompletedGeneration(terminalJob, run.key);
+        setGenerationRuns((current) => removeGenerationRun(current, run.key));
+      }
+    } finally {
+      retryingGenerationRunKeysRef.current.delete(run.key);
+    }
   };
 
-  const restoreFailedGenerationSettings = () => {
-    if (!failedGenerationSnapshot) return;
-    const restored = restoreGenerationInputSnapshot(failedGenerationSnapshot);
+  const restoreFailedGenerationSettings = (snapshot: GenerationInputSnapshot) => {
+    const restored = restoreGenerationInputSnapshot(snapshot);
     const restoredAspectRatio = resolveGenerationAspectRatioForModel(
       restored.modelId,
       restored.aspectRatio,
@@ -1864,36 +1916,43 @@ export default function Home() {
               </header>
 
               {isGenerating && (
-                <div className="generation-task-frame" aria-live="polite" aria-label="当前生成任务">
+                <div className="generation-task-frame" aria-live="polite" aria-label="当前并行生成任务">
                   <div className="creation-masonry desktop-creation-masonry">{renderCreationColumns(generationItems, 4, "task")}</div>
                   <div className="creation-masonry mobile-creation-masonry">{renderCreationColumns(generationItems, 2, "task")}</div>
                 </div>
               )}
 
-              {hasGenerationError && (
-                <div className="generation-error-strip" role="alert">
+              {failedGenerationRuns.map((run) => {
+                const generationError = run.job.error;
+                if (!generationError) return null;
+                const runInput = run.job.input;
+                const runRatio = getGenerationRatio(runInput.aspectRatio);
+                const submissionUnknown = generationError.code === "SUBMISSION_UNKNOWN";
+                return (
+                <div className="generation-error-strip" key={run.key} role="alert">
                   <span className="generation-error-icon"><CircleAlert size={18} /></span>
                   <div className="generation-error-copy">
                     <div className="generation-error-heading">
                       <h3>{generationError.title}</h3>
-                      <span>{jobInput?.count ?? 0} 张未生成</span>
+                      <span>{runInput.count} 张未生成</span>
                     </div>
                     <p>{generationError.message}</p>
-                    <small>{generationError.code} · {generationJob?.id} · {jobRatio.label} · {jobInput ? getGenerationResolutionLabel(jobInput.resolution) : ""} · {(jobInput?.references.length ?? 0) > 0 ? `${jobInput?.references.length} 张参考图` : "无参考图"}</small>
+                    <small>{generationError.code} · {run.job.id} · {runRatio.label} · {getGenerationResolutionLabel(runInput.resolution)} · {runInput.references.length > 0 ? `${runInput.references.length} 张参考图` : "无参考图"}</small>
                   </div>
                   <div className="generation-error-actions">
                     <button
                       className="error-retry"
                       title={submissionUnknown ? "将创建新的上游任务，并可能再次计费" : "使用失败任务的原始参数和参考图"}
-                      onClick={retryFailedGeneration}
+                      onClick={() => void retryFailedGeneration(run)}
                     >
                       <RefreshCw size={14} />
                       {submissionUnknown ? "再次提交（将再次计费）" : "重新生成"}
                     </button>
-                    <button className="error-settings" title="恢复失败任务的输入后调整" onClick={restoreFailedGenerationSettings}><Settings2 size={14} />修改设置</button>
+                    <button className="error-settings" title="恢复失败任务的输入后调整" onClick={() => restoreFailedGenerationSettings(runInput)}><Settings2 size={14} />修改设置</button>
                   </div>
                 </div>
-              )}
+                );
+              })}
 
               {creationItems.length > 0 && (
                 <div className="creation-masonry-frame" aria-live="polite">
