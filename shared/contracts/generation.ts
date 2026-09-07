@@ -89,8 +89,10 @@ export type GenerationInputSnapshot = Readonly<{
 
 export type GenerationOutput = Readonly<{
   id: string;
+  height?: number;
   previewUrl: string;
   previewPosition: string;
+  width?: number;
 }>;
 
 export type GenerationJob = Readonly<{

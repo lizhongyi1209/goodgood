@@ -4,7 +4,10 @@ import { Readable } from "node:stream";
 import test from "node:test";
 import { sessionExpiredError } from "../server/auth/errors.mjs";
 import { createAssetNodeApiHandler } from "../server/assets/node-api.mjs";
-import { findOwnerAssetGenerationJobs } from "../server/generation/repository.mjs";
+import {
+  findOwnerAssetGenerationJobs,
+  publicGenerationJob,
+} from "../server/generation/repository.mjs";
 
 function requestFor({ headers = {}, method = "GET", url }) {
   const request = Readable.from([]);
@@ -50,6 +53,39 @@ test("asset repository lists only accepted successful records for one owner newe
   assert.match(query.sql, /j\.state = 'succeeded'/);
   assert.match(query.sql, /a\.moderation_state = 'accepted'/);
   assert.match(query.sql, /ORDER BY j\.submitted_at DESC, j\.id DESC/);
+});
+
+test("asset presentation exposes decoded pixel dimensions", () => {
+  const job = publicGenerationJob(
+    {
+      aspect_ratio: "3:4",
+      asset_id: "asset-4k",
+      error_code: null,
+      id: "job-4k",
+      model_id: "nano-banana-2",
+      pixel_height: 4800,
+      pixel_width: 3584,
+      project_id: null,
+      prompt: "实际尺寸",
+      reference_snapshot: [],
+      requested_count: 1,
+      resolution: "4K",
+      state: "succeeded",
+      submitted_at: "2026-09-07T00:00:00.000Z",
+      updated_at: "2026-09-07T00:01:00.000Z",
+    },
+    "https://storage.invalid/asset-4k",
+  );
+
+  assert.deepEqual(job.outputs, [
+    {
+      height: 4800,
+      id: "asset-4k",
+      previewPosition: "50% 50%",
+      previewUrl: "https://storage.invalid/asset-4k",
+      width: 3584,
+    },
+  ]);
 });
 
 test("asset HTTP route authenticates and preserves the owner context", async () => {
@@ -139,4 +175,16 @@ test("asset list is wired into both runtimes and exposes loading, empty, and fai
   assert.match(page, /void reloadAssets\(\)/);
   assert.match(page, /正在读取资产/);
   assert.match(page, /资产库还是空的/);
+  assert.match(
+    page,
+    /formatGenerationResolution\(batch\.resolution, getSharedPixelDimensions\(batch\.images\)\)/,
+  );
+  assert.match(
+    page,
+    /formatGenerationResolution\(item\.batch\.resolution, item\.image\)/,
+  );
+  assert.match(
+    page,
+    /formatGenerationResolution\(activeDetail\.batch\.resolution, activeDetail\.image\)/,
+  );
 });

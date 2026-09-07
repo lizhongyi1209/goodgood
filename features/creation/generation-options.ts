@@ -48,9 +48,9 @@ export const DEFAULT_GENERATION_RATIO_BY_MODE = {
 } as const satisfies Readonly<Record<GenerationRatioMode, GenerationAspectRatio>>;
 
 export const GENERATION_RESOLUTION_OPTIONS = [
-  { value: "1K", label: "标准" },
-  { value: "2K", label: "高清" },
-  { value: "4K", label: "超清" },
+  { value: "1K", label: "1K" },
+  { value: "2K", label: "2K" },
+  { value: "4K", label: "4K" },
 ] as const satisfies readonly Readonly<{
   value: GenerationResolution;
   label: string;
@@ -88,6 +88,52 @@ export function getGenerationResolutionLabel(
 
 export function formatPixelDimensions(dimensions: PixelDimensions): string {
   return `${dimensions.width} × ${dimensions.height}`;
+}
+
+type OptionalPixelDimensions = Readonly<{
+  width?: number;
+  height?: number;
+}>;
+
+function readPixelDimensions(
+  dimensions?: OptionalPixelDimensions,
+): PixelDimensions | undefined {
+  const width = dimensions?.width;
+  const height = dimensions?.height;
+  if (
+    typeof width !== "number" ||
+    typeof height !== "number" ||
+    !Number.isInteger(width) ||
+    !Number.isInteger(height) ||
+    width <= 0 ||
+    height <= 0
+  ) {
+    return undefined;
+  }
+  return { width, height };
+}
+
+export function getSharedPixelDimensions(
+  outputs: readonly OptionalPixelDimensions[],
+): PixelDimensions | undefined {
+  const first = readPixelDimensions(outputs[0]);
+  if (!first) return undefined;
+  return outputs.every(
+    (output) => output.width === first.width && output.height === first.height,
+  )
+    ? first
+    : undefined;
+}
+
+export function formatGenerationResolution(
+  resolution: GenerationResolution,
+  dimensions?: OptionalPixelDimensions,
+): string {
+  const label = getGenerationResolutionLabel(resolution);
+  const actualDimensions = readPixelDimensions(dimensions);
+  return actualDimensions
+    ? `${label} · ${formatPixelDimensions(actualDimensions)}`
+    : label;
 }
 
 export function getRatioFrame(ratio: number) {

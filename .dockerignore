@@ -8,6 +8,7 @@ coverage
 dist
 runtime-bundle
 node_modules
+/work
 *.log
 *.key
 *.pem

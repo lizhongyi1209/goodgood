@@ -72,7 +72,9 @@ test("maps ratios and resolution labels without persisting UI indices", async ()
     DEFAULT_GENERATION_RATIO_BY_MODE,
     GENERATION_RATIO_OPTIONS,
     findGenerationRatioByLabel,
+    formatGenerationResolution,
     formatPixelDimensions,
+    getSharedPixelDimensions,
     getGenerationRatio,
     getGenerationRatioIndex,
     getGenerationResolutionLabel,
@@ -110,9 +112,28 @@ test("maps ratios and resolution labels without persisting UI indices", async ()
   assert.equal(formatPixelDimensions(portrait.dimensions["2K"]), "1856 × 2304");
   assert.equal(getGenerationRatioIndex("4:5"), 5);
   assert.equal(findGenerationRatioByLabel("16 : 9")?.id, "16:9");
-  assert.equal(getGenerationResolutionLabel("1K"), "标准");
-  assert.equal(getGenerationResolutionLabel("2K"), "高清");
-  assert.equal(getGenerationResolutionLabel("4K"), "超清");
+  assert.equal(getGenerationResolutionLabel("1K"), "1K");
+  assert.equal(getGenerationResolutionLabel("2K"), "2K");
+  assert.equal(getGenerationResolutionLabel("4K"), "4K");
+  assert.equal(
+    formatGenerationResolution("4K", { width: 3584, height: 4800 }),
+    "4K · 3584 × 4800",
+  );
+  assert.equal(formatGenerationResolution("2K"), "2K");
+  assert.deepEqual(
+    getSharedPixelDimensions([
+      { width: 3584, height: 4800 },
+      { width: 3584, height: 4800 },
+    ]),
+    { width: 3584, height: 4800 },
+  );
+  assert.equal(
+    getSharedPixelDimensions([
+      { width: 3584, height: 4800 },
+      { width: 3072, height: 4096 },
+    ]),
+    undefined,
+  );
 });
 
 test("enforces auditable job transitions and terminal states", async () => {

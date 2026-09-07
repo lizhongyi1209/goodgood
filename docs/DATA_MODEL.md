@@ -123,7 +123,9 @@ standard welcome-credit rows. It fails closed when either reserved owner has
 unexpected identity or credit history; a disposable local database must then be
 reset instead of broadening the deletion. Production never recreates these
 records. The local Compose migration role opts in to the separate, idempotent
-`seedLocalFixtures` routine with `GOODGOOD_ALLOW_LOCAL_AUTH=true`.
+`seedLocalFixtures` routine with `GOODGOOD_ALLOW_LOCAL_AUTH=true`. It verifies
+fixture identity/account/grant existence while preserving balances and Assets
+changed by local testing, so a normal restart does not rewrite test history.
 
 ## Entities
 

@@ -11,6 +11,7 @@
 - 要做：创作设置及所有生成参数摘要直接显示 `1K / 2K / 4K`。
 - 要做：资产 API 返回已持久化的实际宽高；资产批次、画廊和图片详情显示类似
   `4K · 3584 × 4800` 的档位与实际尺寸组合。
+- 要做：本地联调栈重启时保留生成后的积分和资产状态，便于重建镜像后继续验收。
 - 不做：不把静态比例尺寸当成真实资产尺寸，不修改 provider 请求、数据库结构、定价、
   已生成文件或生产数据，不在本任务发布生产。
 - 验收点：成功 Asset 使用数据库 `pixel_width / pixel_height`；缺少尺寸的兼容数据只显示
@@ -23,7 +24,8 @@
 
 - 相关文件/专题文档：`shared/contracts/generation.ts`、
   `server/generation/repository.mjs`、`features/creation/generation-options.ts`、
-  `app/page.tsx`、`docs/DATA_MODEL.md`、`docs/UX_FLOWS.md`。
+  `app/page.tsx`、`server/persistence/seed-local-fixtures.mjs`、
+  `docs/DATA_MODEL.md`、`docs/UX_FLOWS.md`。
 - 已完成：确认 accepted Asset 已持久化非空正数宽高，但现有 API 输出未暴露这些字段。
 - 验证：尚未运行实现验证。
 - 发布：未发布。

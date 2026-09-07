@@ -128,6 +128,7 @@ test(
         reason: "compose_test_grant",
       }),
     ]);
+    await seedLocalFixtures({ databaseUrl, logger: { log() {} } });
     const initialBillingResponse = await fetch(`${webOrigin}/api/billing`, {
       headers: authorization(),
     });

@@ -91,11 +91,22 @@ export async function seedLocalFixtures({ databaseUrl, logger = console }) {
           WHERE owner_id IN (
             '00000000-0000-4000-8000-000000000001',
             '00000000-0000-4000-8000-000000000002'
-          ) AND unit = 'credit' AND available_balance = 100
-            AND reserved_balance = 0) AS accounts
+          ) AND unit = 'credit') AS accounts,
+        (SELECT count(*)::int FROM credit_ledger_entries
+          WHERE owner_id IN (
+            '00000000-0000-4000-8000-000000000001',
+            '00000000-0000-4000-8000-000000000002'
+          ) AND entry_type = 'grant'
+            AND amount = 100
+            AND reason = 'welcome_grant_v1') AS welcome_grants
     `);
     const result = verification.rows[0];
-    if (result.owners !== 2 || result.identities !== 2 || result.accounts !== 2) {
+    if (
+      result.owners !== 2 ||
+      result.identities !== 2 ||
+      result.accounts !== 2 ||
+      result.welcome_grants !== 2
+    ) {
       throw new Error("Local fixtures do not match the reviewed two-owner contract.");
     }
 

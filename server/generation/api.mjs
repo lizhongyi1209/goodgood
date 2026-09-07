@@ -66,7 +66,7 @@ export function validateM3GenerationInput(payload) {
   ) {
     throw new GenerationRequestError(
       "M3_SLICE_UNSUPPORTED",
-      "当前生成链路支持 Nano Banana 2、已列出的全部画面比例、标准/高清/超清、1 张图片。",
+      "当前生成链路支持 Nano Banana 2、已列出的全部画面比例、1K/2K/4K、1 张图片。",
     );
   }
 

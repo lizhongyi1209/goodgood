@@ -93,6 +93,9 @@ export function publicGenerationJob(
               id: row.asset_id,
               previewPosition: "50% 50%",
               previewUrl,
+              ...(row.pixel_width != null && row.pixel_height != null
+                ? { height: row.pixel_height, width: row.pixel_width }
+                : {}),
             },
           ]
         : [],

@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties, type Whee
 import Image from "next/image";
 import { CreationComposer } from "@/features/creation/creation-composer";
 import {
+  formatGenerationResolution,
+  getSharedPixelDimensions,
   getGenerationRatio,
   getGenerationResolutionLabel,
 } from "@/features/creation/generation-options";
@@ -1638,7 +1640,7 @@ export default function Home() {
           aria-pressed={isSelected}
           onClick={(event) => { event.stopPropagation(); toggleAssetSelection(item.key); }}
         ><Check size={12} /></button>
-        <span className="asset-gallery-caption"><strong>{itemRatio.label}</strong><small>{item.batch.time} · {itemModel.name}</small></span>
+        <span className="asset-gallery-caption"><strong>{formatGenerationResolution(item.batch.resolution, item.image)}</strong><small>{itemRatio.label} · {item.batch.time} · {itemModel.name}</small></span>
       </article>
     );
   };
@@ -1987,7 +1989,7 @@ export default function Home() {
                           <div className="asset-batch-details">
                             <p>{batch.prompt}</p>
                             <div className="asset-batch-meta">
-                              <span>{batchModel.name}</span><span>{batchRatio.label}</span><span>{getGenerationResolutionLabel(batch.resolution)}</span><span>{batch.count} 张</span>{batch.referenceCount > 0 && <span>{batch.referenceCount} 张参考</span>}
+                              <span>{batchModel.name}</span><span>{batchRatio.label}</span><span>{formatGenerationResolution(batch.resolution, getSharedPixelDimensions(batch.images))}</span><span>{batch.count} 张</span>{batch.referenceCount > 0 && <span>{batch.referenceCount} 张参考</span>}
                             </div>
                           </div>
                           <button className="asset-batch-more" aria-label="批次更多操作"><MoreHorizontal size={18} /></button>
@@ -2072,7 +2074,7 @@ export default function Home() {
                   <dl className="image-detail-parameters">
                     <div><dt>模型</dt><dd>{activeDetailModel?.name}</dd></div>
                     <div><dt>画面比例</dt><dd>{activeDetailRatio?.label}</dd></div>
-                    <div><dt>分辨率</dt><dd>{getGenerationResolutionLabel(activeDetail.batch.resolution)}</dd></div>
+                    <div><dt>分辨率</dt><dd>{formatGenerationResolution(activeDetail.batch.resolution, activeDetail.image)}</dd></div>
                     <div><dt>批次</dt><dd>{activeDetail.batch.count} 张</dd></div>
                     <div><dt>参考图</dt><dd>{activeDetail.batch.referenceCount ? `${activeDetail.batch.referenceCount} 张` : "无"}</dd></div>
                     <div><dt>任务编号</dt><dd>{activeDetail.batch.id}</dd></div>

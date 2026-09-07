@@ -453,7 +453,11 @@ removes the historical fixed-UUID fixtures in migration 0012. Only the base
 local Compose role then runs the separate idempotent fixture seeder; staging and
 production leave the migrated database with no owner, identity, session, credit
 account, or ledger row until a real login provisions one. Web and worker start
-only after migration success. The mock generation role now
+only after migration success. The seeder verifies the two reserved owners,
+identities, credit accounts, and one-time welcome grants without requiring
+unused 100-credit balances. Local generations and grants therefore survive an
+ordinary stack restart; use `down --volumes` only for an intentional clean
+reset. The mock generation role now
 implements authenticated, idempotent create/status behavior plus deterministic
 success, rejection, slow, and timeout paths. It serves only the checked-in test
 image; it is not a production provider.

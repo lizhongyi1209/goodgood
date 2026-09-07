@@ -158,4 +158,5 @@ test("container image keeps one non-root runtime for both process commands", asy
   assert.match(dockerignore, /^\.npmrc$/m);
   assert.match(dockerignore, /^\.sites-runtime$/m);
   assert.match(dockerignore, /^node_modules$/m);
+  assert.match(dockerignore, /^\/work$/m);
 });
