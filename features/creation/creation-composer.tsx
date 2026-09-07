@@ -10,6 +10,7 @@ import {
   GENERATION_RESOLUTION_OPTIONS,
   formatPixelDimensions,
   getDefaultGenerationRatioForModelMode,
+  isGenerationCountSupported,
   getGenerationModelRatioIndex,
   getGenerationPixelDimensions,
   getGenerationRatio,
@@ -381,6 +382,12 @@ export function CreationComposer({
                       key={generationCount}
                       className={count === generationCount ? "selected" : ""}
                       aria-pressed={count === generationCount}
+                      disabled={!isGenerationCountSupported(modelId, generationCount)}
+                      title={
+                        isGenerationCountSupported(modelId, generationCount)
+                          ? `生成 ${generationCount} 张`
+                          : "当前模型仅支持生成 1 张"
+                      }
                       onClick={() => onCountChange(generationCount)}
                     >
                       {generationCount}

@@ -65,6 +65,10 @@ function createFakeGateway() {
       const body = JSON.parse((await readBody(request)).toString("utf8"));
       const taskId = `task_${nextTask}`;
       nextTask += 1;
+      const resultImages = Array.from({ length: body.n ?? 1 }, (_, index) => ({
+        mime_type: "image/png",
+        url: `https://assetcache.o1key.invalid/result-${index + 1}.png`,
+      }));
       let responses;
       if (/transient failure/i.test(body.prompt)) {
         responses = [
@@ -78,12 +82,7 @@ function createFakeGateway() {
           },
           {
             data: {
-              images: [
-                {
-                  mime_type: "image/png",
-                  url: "https://assetcache.o1key.invalid/result.png",
-                },
-              ],
+              images: resultImages,
               model: US_GATEWAY_MVP_ROUTE.providerModel,
             },
             progress: "100%",
@@ -109,12 +108,7 @@ function createFakeGateway() {
           { progress: "70%", status: "IN_PROGRESS", task_id: taskId },
           {
             data: {
-              images: [
-                {
-                  mime_type: "image/png",
-                  url: "https://assetcache.o1key.invalid/result.png",
-                },
-              ],
+              images: resultImages,
               model: US_GATEWAY_MVP_ROUTE.providerModel,
             },
             progress: "100%",
@@ -303,7 +297,7 @@ test("polling normalizes O1Key success without inventing image dimensions", asyn
   assert.deepEqual(completed.outputs[0], {
     id: "output-1",
     mimeType: "image/png",
-    url: "https://assetcache.o1key.invalid/result.png",
+    url: "https://assetcache.o1key.invalid/result-1.png",
   });
 });
 
@@ -415,7 +409,7 @@ test("gateway transport and unsupported durable parameters fail closed", async (
   }
 });
 
-test("GPT Image 2 SD submission maps every enabled combination to an exact pixel size", async (context) => {
+test("GPT Image 2 SD maps every enabled size and count to one native task", async (context) => {
   const { adapter, gateway } = await withGateway(
     context,
     US_GATEWAY_GPT_IMAGE_2_ROUTE,
@@ -423,28 +417,62 @@ test("GPT Image 2 SD submission maps every enabled combination to an exact pixel
   let submissionIndex = 0;
   for (const aspectRatio of GENERATION_MODEL_CAPABILITIES["gpt-image-2"].aspectRatios) {
     for (const resolution of SUPPORTED_GENERATION_RESOLUTIONS) {
-      const submitted = await adapter.submit(
-        generationRequest("a realistic glass badge", {
-          aspect_ratio: aspectRatio,
-          model_id: "gpt-image-2",
-          resolution,
-        }),
-      );
-      submissionIndex += 1;
-      assert.deepEqual(submitted, { taskId: `task_${submissionIndex}` });
-      assert.deepEqual(gateway.submissions.at(-1).body, {
-        images: [],
-        model: "gpt-image-2-c-sd",
-        n: 1,
-        prompt: "a realistic glass badge",
-        size: getGptImage2PixelSize(aspectRatio, resolution),
-      });
+      for (const count of [1, 2, 4]) {
+        const submitted = await adapter.submit(
+          generationRequest("a realistic glass badge", {
+            aspect_ratio: aspectRatio,
+            model_id: "gpt-image-2",
+            requested_count: count,
+            resolution,
+          }),
+        );
+        submissionIndex += 1;
+        assert.deepEqual(submitted, { taskId: `task_${submissionIndex}` });
+        assert.deepEqual(gateway.submissions.at(-1).body, {
+          images: [],
+          model: "gpt-image-2-c-sd",
+          n: count,
+          prompt: "a realistic glass badge",
+          size: getGptImage2PixelSize(aspectRatio, resolution),
+        });
+      }
     }
   }
-  assert.equal(gateway.submissions.length, 21);
+  assert.equal(gateway.submissions.length, 63);
   assert.equal(gateway.submissions[0].body.aspect_ratio, undefined);
   assert.equal(gateway.submissions[0].body.response_modalities, undefined);
   assert.match(gateway.submissions[0].body.size, /^\d+x\d+$/);
+});
+
+test("GPT Image 2 polling returns exactly the requested ordered outputs", async (context) => {
+  const { adapter } = await withGateway(context, US_GATEWAY_GPT_IMAGE_2_ROUTE);
+  const submitted = await adapter.submit(
+    generationRequest("four ordered images", {
+      model_id: "gpt-image-2",
+      requested_count: 4,
+    }),
+  );
+  const completed = await adapter.waitForTerminal({
+    expectedOutputCount: 4,
+    pollIntervalMs: 1,
+    taskId: submitted.taskId,
+    timeoutMs: 100,
+  });
+  assert.deepEqual(
+    completed.outputs.map((output) => output.id),
+    ["output-1", "output-2", "output-3", "output-4"],
+  );
+  assert.throws(
+    () => normalizeUsGatewayTask({
+      data: { images: completed.outputs.slice(0, 2).map((output) => ({
+        mime_type: output.mimeType,
+        url: output.url,
+      })) },
+      status: "SUCCESS",
+      task_id: "short-task",
+    }, { expectedOutputCount: 4 }),
+    (error) => error instanceof NormalizedProviderError && error.code === "INTERNAL_ERROR",
+  );
 });
 
 test("GPT Image 2 SD keeps validated reference uploads in the edit request", async (context) => {

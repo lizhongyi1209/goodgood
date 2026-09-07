@@ -2,7 +2,8 @@
 
 - Last synchronized: 2026-09-08
 - Current phase: 已开放 controlled alpha；转入按需求的高频小步迭代。
-- Current objective: GG-004—GG-008 真实 O1Key 本地组合候选已在 3010 就绪，等待站长实测验收。
+- Current objective: GG-009 已完成独立实现与门禁，正在合入 GG-004—GG-008
+  本地组合候选并重建 3010。
 
 ## Current checkpoint
 

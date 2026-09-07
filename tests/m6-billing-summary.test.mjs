@@ -31,16 +31,16 @@ function accountRow(overrides = {}) {
   };
 }
 
-function priceRow(modelId, resolution) {
+function priceRow(modelId, resolution, count = 1) {
   return {
     created_at: timestamp,
-    credit_amount: "10",
+    credit_amount: String(10 * count),
     credit_unit: "credit",
     effective_from: timestamp,
     effective_until: null,
     id: `price-${modelId}-${resolution}`,
     model_id: modelId,
-    output_count: 1,
+    output_count: count,
     plan_context: "standard",
     resolution,
     version: 1,
@@ -57,7 +57,7 @@ function billingPool({ account = accountRow() } = {}) {
         return { rowCount: account ? 1 : 0, rows: account ? [account] : [] };
       }
       if (sql.includes("FROM price_versions")) {
-        return { rowCount: 1, rows: [priceRow(values[0], values[1])] };
+        return { rowCount: 1, rows: [priceRow(values[0], values[1], values[2])] };
       }
       throw new Error(`Unexpected query: ${sql}`);
     },
@@ -130,14 +130,25 @@ test("billing summary serializes exact credits without owner or account identifi
     version: "1",
   });
   assert.deepEqual(
-    summary.quotes.map((quote) => [quote.modelId, quote.resolution, quote.creditAmount]),
+    summary.quotes.map((quote) => [
+      quote.modelId,
+      quote.resolution,
+      quote.count,
+      quote.creditAmount,
+    ]),
     [
-      ["nano-banana-2", "1K", "10"],
-      ["nano-banana-2", "2K", "10"],
-      ["nano-banana-2", "4K", "10"],
-      ["gpt-image-2", "1K", "10"],
-      ["gpt-image-2", "2K", "10"],
-      ["gpt-image-2", "4K", "10"],
+      ["nano-banana-2", "1K", 1, "10"],
+      ["nano-banana-2", "2K", 1, "10"],
+      ["nano-banana-2", "4K", 1, "10"],
+      ["gpt-image-2", "1K", 1, "10"],
+      ["gpt-image-2", "2K", 1, "10"],
+      ["gpt-image-2", "4K", 1, "10"],
+      ["gpt-image-2", "1K", 2, "20"],
+      ["gpt-image-2", "2K", 2, "20"],
+      ["gpt-image-2", "4K", 2, "20"],
+      ["gpt-image-2", "1K", 4, "40"],
+      ["gpt-image-2", "2K", 4, "40"],
+      ["gpt-image-2", "4K", 4, "40"],
     ],
   );
   assert.equal("ownerId" in summary.account, false);

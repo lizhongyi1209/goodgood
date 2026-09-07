@@ -42,6 +42,7 @@ Current records:
 - `0029-enlarge-square-reference-previews-and-lead-with-aspect-ratio.md`
 - `0030-open-gpt-image-2-sd-with-model-specific-sizes.md`
 - `0031-allow-repeated-parallel-generation-submissions.md`
+- `0032-open-gpt-image-2-multi-output.md`
 
 Accepted describes a decision, not proof of deployment. ADR 0022/0023's full
 runtime rollout is deferred under ADR 0024. The current release and rollout

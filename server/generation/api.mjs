@@ -10,7 +10,6 @@ import { findProject } from "../projects/repository.mjs";
 import { newRequestId } from "../observability/http.mjs";
 import { dispatchPendingJobs } from "./queue.mjs";
 import {
-  DURABLE_GENERATION_OUTPUT_COUNT,
   isSupportedGenerationInput,
 } from "./capabilities.mjs";
 import {
@@ -66,13 +65,13 @@ export function validateM3GenerationInput(payload) {
   ) {
     throw new GenerationRequestError(
       "M3_SLICE_UNSUPPORTED",
-      "当前生成链路支持 Nano Banana 2、GPT IMAGE 2、对应画面比例、1K/2K/4K 和 1 张图片。",
+      "当前生成链路支持 Nano Banana 2 单张输出，以及 GPT IMAGE 2 的 1、2、4 张输出。",
     );
   }
 
   return {
     aspectRatio: payload.aspectRatio,
-    count: DURABLE_GENERATION_OUTPUT_COUNT,
+    count: payload.count,
     modelId: payload.modelId,
     ...(projectId ? { projectId } : {}),
     prompt,

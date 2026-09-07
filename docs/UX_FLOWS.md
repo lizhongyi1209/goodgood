@@ -80,13 +80,15 @@ fill space.
 - Model list: opens within the parameter drawer and collapses after selection.
 - Nano Banana 2 accepts its 14 displayed ratios; GPT IMAGE 2 accepts `9:16`,
   `2:3`, `3:4`, `1:1`, `4:3`, `3:2`, and `16:9`. Both use the existing
-  `1K / 2K / 4K` resolution domain and one output. The pixel readout follows the
-  selected model's exact size table. A model change keeps a compatible ratio or
-  visibly moves to the nearest supported ratio in the same orientation.
+  `1K / 2K / 4K` resolution domain. GPT IMAGE 2 supports `1 / 2 / 4` outputs;
+  Nano Banana 2 currently supports one and disables the other count choices.
+  The pixel readout follows the selected model's exact size table. A model
+  change keeps a compatible ratio or visibly moves to the nearest supported
+  ratio in the same orientation, and normalizes an unsupported count to one.
 - Unsupported model/count/domain combinations fail before submission without
   replacing values inside an immutable generation snapshot.
 - Keep the active server quote next to the composer actions as plain metadata,
-  for example `10 积分/张`; do not turn it into a purchase call-to-action.
+  for example `10 积分/张 · 共 40`; do not turn it into a purchase call-to-action.
 - Send: Feihong mark. It remains available while earlier jobs generate; each
   click freezes the current composer values and submits one independent job.
   Active styling and the creation stream communicate progress without blocking
@@ -148,9 +150,10 @@ failed -> queued (retry)
 - On full-batch failure, replace that run's active task area with one compact
   inline status strip that summarizes the requested count. Concurrent failures
   retain separate strips; do not repeat one run's error per requested image.
-- If a provider returns partial results, add successful images normally, keep
-  failed outputs out of the asset library, and summarize the completed and
-  failed counts in the task strip.
+- The current GPT multi-output batch succeeds only after every requested image
+  is decoded, stored, and committed. A missing or invalid output fails the whole
+  batch and exposes no partial Assets; partial-result settlement requires a
+  later explicit provider and billing policy.
 - Do not reorder an older completed batch above a newer submission merely
   because the provider completed out of order; sort by submission time.
 - On failure, keep the failed batch location and all input state.

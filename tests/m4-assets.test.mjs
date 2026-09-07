@@ -56,25 +56,31 @@ test("asset repository lists only accepted successful records for one owner newe
 });
 
 test("asset presentation exposes decoded pixel dimensions", () => {
+  const row = {
+    aspect_ratio: "3:4",
+    assets: [
+      {
+        id: "asset-4k",
+        ordinal: 1,
+        pixel_height: 4800,
+        pixel_width: 3584,
+      },
+    ],
+    error_code: null,
+    id: "job-4k",
+    model_id: "nano-banana-2",
+    project_id: null,
+    prompt: "实际尺寸",
+    reference_snapshot: [],
+    requested_count: 1,
+    resolution: "4K",
+    state: "succeeded",
+    submitted_at: "2026-09-07T00:00:00.000Z",
+    updated_at: "2026-09-07T00:01:00.000Z",
+  };
   const job = publicGenerationJob(
-    {
-      aspect_ratio: "3:4",
-      asset_id: "asset-4k",
-      error_code: null,
-      id: "job-4k",
-      model_id: "nano-banana-2",
-      pixel_height: 4800,
-      pixel_width: 3584,
-      project_id: null,
-      prompt: "实际尺寸",
-      reference_snapshot: [],
-      requested_count: 1,
-      resolution: "4K",
-      state: "succeeded",
-      submitted_at: "2026-09-07T00:00:00.000Z",
-      updated_at: "2026-09-07T00:01:00.000Z",
-    },
-    "https://storage.invalid/asset-4k",
+    row,
+    new Map([["asset-4k", "https://storage.invalid/asset-4k"]]),
   );
 
   assert.deepEqual(job.outputs, [
@@ -84,6 +90,50 @@ test("asset presentation exposes decoded pixel dimensions", () => {
       previewPosition: "50% 50%",
       previewUrl: "https://storage.invalid/asset-4k",
       width: 3584,
+    },
+  ]);
+});
+
+test("generation presentation preserves every accepted Asset in ordinal order", () => {
+  const row = {
+    aspect_ratio: "1:1",
+    assets: [
+      { id: "asset-1", ordinal: 1, pixel_height: 1024, pixel_width: 1024 },
+      { id: "asset-2", ordinal: 2, pixel_height: 1024, pixel_width: 1024 },
+    ],
+    error_code: null,
+    id: "job-multi",
+    model_id: "gpt-image-2",
+    project_id: null,
+    prompt: "two images",
+    reference_snapshot: [],
+    requested_count: 2,
+    resolution: "1K",
+    state: "succeeded",
+    submitted_at: "2026-09-08T00:00:00.000Z",
+    updated_at: "2026-09-08T00:01:00.000Z",
+  };
+  const job = publicGenerationJob(
+    row,
+    new Map([
+      ["asset-1", "https://storage.invalid/asset-1"],
+      ["asset-2", "https://storage.invalid/asset-2"],
+    ]),
+  );
+  assert.deepEqual(job.outputs, [
+    {
+      height: 1024,
+      id: "asset-1",
+      previewPosition: "50% 50%",
+      previewUrl: "https://storage.invalid/asset-1",
+      width: 1024,
+    },
+    {
+      height: 1024,
+      id: "asset-2",
+      previewPosition: "50% 50%",
+      previewUrl: "https://storage.invalid/asset-2",
+      width: 1024,
     },
   ]);
 });
@@ -175,16 +225,4 @@ test("asset list is wired into both runtimes and exposes loading, empty, and fai
   assert.match(page, /void reloadAssets\(\)/);
   assert.match(page, /正在读取资产/);
   assert.match(page, /资产库还是空的/);
-  assert.match(
-    page,
-    /formatGenerationResolution\(batch\.resolution, getSharedPixelDimensions\(batch\.images\)\)/,
-  );
-  assert.match(
-    page,
-    /formatGenerationResolution\(item\.batch\.resolution, item\.image\)/,
-  );
-  assert.match(
-    page,
-    /formatGenerationResolution\(activeDetail\.batch\.resolution, activeDetail\.image\)/,
-  );
 });

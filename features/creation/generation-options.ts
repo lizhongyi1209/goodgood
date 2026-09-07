@@ -1,4 +1,6 @@
-import type {
+import {
+  GENERATION_COUNTS,
+  type GenerationCount,
   GenerationAspectRatio,
   GenerationModelId,
   GenerationResolution,
@@ -109,6 +111,26 @@ export function getGenerationRatioOptions(
   return GENERATION_RATIO_OPTIONS.filter((option) =>
     GPT_IMAGE_2_RATIO_IDS.includes(option.id as GptImage2AspectRatio),
   );
+}
+
+export function getGenerationCountOptions(
+  modelId: GenerationModelId,
+): readonly GenerationCount[] {
+  return modelId === "gpt-image-2" ? GENERATION_COUNTS : [1];
+}
+
+export function isGenerationCountSupported(
+  modelId: GenerationModelId,
+  count: GenerationCount,
+): boolean {
+  return getGenerationCountOptions(modelId).includes(count);
+}
+
+export function resolveGenerationCountForModel(
+  modelId: GenerationModelId,
+  count: GenerationCount,
+): GenerationCount {
+  return isGenerationCountSupported(modelId, count) ? count : 1;
 }
 
 export function getGenerationModelRatioIndex(

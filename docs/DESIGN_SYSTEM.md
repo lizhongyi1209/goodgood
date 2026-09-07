@@ -82,8 +82,9 @@ individual icon. Upload, settings, and send align to the same 40px box.
 - Parameter group order: aspect ratio; model; output group with resolution above
   generation count. Aspect ratio leads from the left on desktop and remains first
   when the drawer reflows or stacks.
-- The per-image credit quote is quiet 11px metadata beside the settings/send
-  actions. It has no filled chip, border, icon, or payment emphasis.
+- The credit quote is quiet 11px metadata beside the settings/send actions. It
+  shows the per-image rate and, for 2/4 outputs, the selected batch total. It has
+  no filled chip, border, icon, or payment emphasis.
 
 ## Account credit
 

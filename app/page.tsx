@@ -8,7 +8,9 @@ import {
   getSharedPixelDimensions,
   getGenerationRatio,
   getGenerationResolutionLabel,
+  isGenerationCountSupported,
   resolveGenerationAspectRatioForModel,
+  resolveGenerationCountForModel,
 } from "@/features/creation/generation-options";
 import {
   isGenerationJobActive,
@@ -291,6 +293,14 @@ function formatProjectUpdated(updatedAt: string) {
   }).format(updated);
 }
 
+function perImageCreditAmount(total: string, count: GenerationCount): string {
+  try {
+    return (BigInt(total) / BigInt(count)).toString();
+  } catch {
+    return total;
+  }
+}
+
 export default function Home() {
   const referenceObjectUrlsRef = useRef(new Set<string>());
   const assetPulseTimerRef = useRef<number | null>(null);
@@ -397,7 +407,7 @@ export default function Home() {
     ? accountEmail.split("@")[0].slice(0, 2).toUpperCase()
     : "GG";
   const activeBillingQuote = findBillingQuote(billingSummary, {
-    count: 1,
+    count: generationCount,
     modelId: selectedModel,
     resolution,
   });
@@ -407,13 +417,18 @@ export default function Home() {
     resolution: "1K",
   });
   const availableImages = availableImageCount(billingSummary, launchBillingQuote);
+  const activePerImageCredits = activeBillingQuote
+    ? perImageCreditAmount(activeBillingQuote.creditAmount, generationCount)
+    : null;
   const composerBillingLabel = billingLoading
     ? "积分读取中"
     : activeBillingQuote
-      ? `${activeBillingQuote.creditAmount} 积分/张`
+      ? generationCount === 1
+        ? `${activePerImageCredits} 积分/张`
+        : `${activePerImageCredits} 积分/张 · 共 ${activeBillingQuote.creditAmount}`
       : "当前模型暂未定价";
   const composerBillingDescription = activeBillingQuote && billingSummary
-    ? `每张 ${activeBillingQuote.creditAmount} 积分，当前可用 ${billingSummary.account.availableCredits} 积分`
+    ? `每张 ${activePerImageCredits} 积分，本批 ${activeBillingQuote.creditAmount} 积分，当前可用 ${billingSummary.account.availableCredits} 积分`
     : composerBillingLabel;
   const generationItems: CreationStreamItem[] = activeGenerationRuns.flatMap((run) => {
     const runRatio = getGenerationRatio(run.job.input.aspectRatio);
@@ -480,6 +495,7 @@ export default function Home() {
         state.modelId,
         state.aspectRatio,
       ),
+      count: resolveGenerationCountForModel(state.modelId, state.count),
     };
     setPrompt(normalizedState.prompt);
     setReferenceImages(normalizedState.references.map((reference) => ({ ...reference })));
@@ -488,7 +504,7 @@ export default function Home() {
     setResolution(normalizedState.resolution);
     setGenerationCount(normalizedState.count);
     draftVersionRef.current = draft?.version ?? null;
-    draftSyncedCheckpointRef.current = createComposerCheckpoint(state);
+    draftSyncedCheckpointRef.current = createComposerCheckpoint(normalizedState);
     setDraftSyncRevision((current) => current + 1);
   }, []);
   const blockDraftSync = useCallback((error: unknown) => {
@@ -935,6 +951,10 @@ export default function Home() {
             restoredProject.state.modelId,
             restoredProject.state.aspectRatio,
           ),
+          count: resolveGenerationCountForModel(
+            restoredProject.state.modelId,
+            restoredProject.state.count,
+          ),
         };
         referenceObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
         referenceObjectUrlsRef.current.clear();
@@ -1074,6 +1094,9 @@ export default function Home() {
     setSelectedRatio((current) =>
       resolveGenerationAspectRatioForModel(value, current),
     );
+    setGenerationCount((current) =>
+      resolveGenerationCountForModel(value, current),
+    );
   };
 
   const handleAspectRatioChange = (value: GenerationAspectRatio) => {
@@ -1087,6 +1110,7 @@ export default function Home() {
   };
 
   const handleGenerationCountChange = (value: GenerationCount) => {
+    if (!isGenerationCountSupported(selectedModel, value)) return;
     composerEditRevisionRef.current += 1;
     setGenerationCount(value);
   };
@@ -1497,9 +1521,9 @@ export default function Home() {
     }
     if (
       !["nano-banana-2", "gpt-image-2"].includes(selectedModel) ||
-      generationCount !== 1
+      !isGenerationCountSupported(selectedModel, generationCount)
     ) {
-      toast.error("当前生成链路支持 Nano Banana 2、GPT IMAGE 2 和 1 张图片");
+      toast.error("Nano Banana 2 当前支持 1 张；GPT IMAGE 2 支持 1、2、4 张");
       return;
     }
 
@@ -1547,12 +1571,16 @@ export default function Home() {
       restored.modelId,
       restored.aspectRatio,
     );
+    const restoredCount = resolveGenerationCountForModel(
+      restored.modelId,
+      restored.count,
+    );
     setPrompt(restored.prompt);
     setReferenceImages(restored.references);
     setSelectedModel(restored.modelId);
     setSelectedRatio(restoredAspectRatio);
     setResolution(restored.resolution);
-    setGenerationCount(restored.count);
+    setGenerationCount(restoredCount);
     setDrawerOpen(true);
     window.requestAnimationFrame(() => {
       window.scrollTo({ top: 0, behavior: "smooth" });

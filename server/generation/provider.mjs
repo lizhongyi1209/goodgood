@@ -44,6 +44,7 @@ export async function createProviderTask({ attempt, config, job, references = []
     {
       body: JSON.stringify({
         aspectRatio: job.aspect_ratio,
+        count: job.requested_count,
         idempotencyKey: `${job.id}:${attempt.ordinal}`,
         jobId: job.id,
         modelId: job.model_id,
@@ -79,8 +80,13 @@ export async function pollProviderTask({ config, onRefining, taskId }) {
       { headers: { authorization: `Bearer ${config.apiKey}` } },
     );
     const payload = await response.json();
-    if (payload.state === "succeeded" && payload.output?.url) {
-      return payload.output;
+    if (payload.state === "succeeded") {
+      const outputs = Array.isArray(payload.outputs)
+        ? payload.outputs
+        : payload.output?.url
+          ? [payload.output]
+          : [];
+      if (outputs.length) return outputs;
     }
     if (payload.state === "failed") {
       throw new NormalizedProviderError({

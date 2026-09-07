@@ -57,6 +57,20 @@ function throwTerminalFailure(task) {
   });
 }
 
+function validateOutputCount(outputs, expectedOutputCount) {
+  if (
+    !Array.isArray(outputs) ||
+    !Number.isInteger(expectedOutputCount) ||
+    outputs.length !== expectedOutputCount
+  ) {
+    throw new NormalizedProviderError({
+      code: "INTERNAL_ERROR",
+      message: "生成服务返回的图片数量与请求不一致。输入内容已保留，请重试。",
+    });
+  }
+  return outputs;
+}
+
 export function createGenerationProvider({
   config,
   publicStorage,
@@ -108,7 +122,7 @@ export function createGenerationProvider({
         });
       },
 
-      async pollTask({ onRefining, taskId }) {
+      async pollTask({ expectedOutputCount, onRefining, taskId }) {
         let refiningNotified = false;
         const task = await adapter.waitForTerminal({
           onUpdate: async (update) => {
@@ -117,12 +131,13 @@ export function createGenerationProvider({
               await onRefining();
             }
           },
+          expectedOutputCount,
           pollIntervalMs: config.provider.pollIntervalMs,
           taskId,
           timeoutMs: config.provider.timeoutMs,
         });
         if (task.state === "failed") throwTerminalFailure(task);
-        return task.outputs[0];
+        return validateOutputCount(task.outputs, expectedOutputCount);
       },
     });
   }
@@ -161,12 +176,13 @@ export function createGenerationProvider({
 
     downloadOutput: downloadProviderOutput,
 
-    pollTask({ onRefining, taskId }) {
-      return pollProviderTask({
+    async pollTask({ expectedOutputCount, onRefining, taskId }) {
+      const outputs = await pollProviderTask({
         config: config.provider,
         onRefining,
         taskId,
       });
+      return validateOutputCount(outputs, expectedOutputCount);
     },
   });
 }
