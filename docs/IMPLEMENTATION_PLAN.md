@@ -1,8 +1,8 @@
 # Production implementation plan
 
-- Last synchronized: 2026-09-07
+- Last synchronized: 2026-09-08
 - Current phase: 已开放 controlled alpha；转入按需求的高频小步迭代。
-- Current objective: GG-001 交接整理完成；从干净当前基线接收下一个产品需求。
+- Current objective: GG-007 正在从 main 独立实现 GPT IMAGE 2 SD 的模型级精确尺寸、真实 O1Key 路由和三档 10 积分；完成后并入本地组合候选供站长实测。
 
 ## Current checkpoint
 
@@ -15,7 +15,7 @@
   本轮完整本地门禁通过，交接结果见 [任务卡](tasks/GG-001-project-continuity.md)。
 - 生产与本地分开：文档整理不部署、不迁移、不修改真实账户/素材/积分。
   历史记录中的开站、轮换、清空等许可不继承，旧转换流程不是新的执行计划。
-- Next action: 接收站长的新功能需求，按 WORKFLOW 创建 GG-004 起的新任务与独立分支。
+- Next action: 完成 GG-007 实现与本地门禁，再并入本地组合候选验证真实交互。
 - Blockers: 新功能本地开发无外部阻塞；下次 alpha 发布前须处理 GG-003 的独立
   门禁工具提取。完整删除、举报、外部删除条款与付费要求留在搁置项，不自动恢复。
 

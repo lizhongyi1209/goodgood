@@ -9,8 +9,9 @@
 | GG-001 | 项目记忆精简、交接协议、历史 C6 隔离 | 已完成（不需上线） | [任务](tasks/GG-001-project-continuity.md) |
 | GG-002 | Nano Banana 2 全宽高比/分辨率 | 已上线 | [发布记录](releases/2026-09-07-banana-2-parameters.md) |
 | GG-003 | 将 alpha 发布门禁从历史快照独立提取 | 待办；下次发布前 | [任务](tasks/GG-003-alpha-release-tooling.md) |
+| GG-007 | GPT IMAGE 2 SD 精确尺寸、真实生成与三档 10 积分 | 进行中；本地实现 | [任务](tasks/GG-007-gpt-image-2-sd.md) |
 
-下一个产品需求由站长提出；普通新任务从 **GG-004** 分配并检查是否已被占用。
+下一个普通产品需求从 **GG-008** 分配并检查是否已被占用。
 GG-003 不阻塞本地新功能开发，但必须在下一次实际 alpha 发布前闭环。
 
 ## 已明确搁置（不得自动恢复）
