@@ -177,7 +177,10 @@ preserves the expiring signature, and keeps private-IP SSRF protection enabled
 for all server-side fetches.
 
 The durable generation capability remains intentionally limited to
-`nano-banana-2`, 1:1, 1K, one output, and up to 10 validated references.
+`nano-banana-2`, one output, up to 10 validated references, the 14
+product-defined aspect ratios, and `1K` / `2K` / `4K`. The browser and O1Key
+adapter use synchronized server-validated capability allowlists; unknown values
+fail before provider submission.
 Primary real Authing/Google/email loopback exchange passes; provider edge-case
 and secure public-callback verification remain external evidence work;
 billing is active for every newly created generation job. M6 persists immutable
@@ -368,8 +371,10 @@ change model families. Persist route version and each provider attempt so
 retries, reconciliation, cost, and support remain auditable.
 
 M5 maps the stable `nano-banana-2` product route to O1Key's special-price
-`gemini-3.1-flash-image-c-sp` route at 1:1, 1K, and one output. The backend-only
-adapter uses Bearer authentication, uploads each validated private reference to
+`gemini-3.1-flash-image-c-sp` route for one output across all 14 product-defined
+aspect ratios and `1K` / `2K` / `4K`. The selected ratio and resolution remain
+in the durable job snapshot and are sent unchanged as O1Key `aspect_ratio` and
+`size`. The backend-only adapter uses Bearer authentication, uploads each validated private reference to
 `POST /v1/o1key/uploads` in stable order, submits `fileData` references to
 `POST /async/v1/generateImage`, and polls
 `GET /async/v1/tasks/{task_id}`. The temporary upload URL is publicly readable

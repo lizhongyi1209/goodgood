@@ -13,6 +13,7 @@
 | Category | Example code | UI placement | Default recovery |
 | --- | --- | --- | --- |
 | Input | `INVALID_PROMPT` | Composer field/toast | Focus and correct |
+| Generation capability | `M3_SLICE_UNSUPPORTED` | Composer/toast | Keep inputs and choose a listed ratio/resolution with Nano Banana 2 and one output |
 | Reference upload | `UPLOAD_TYPE_INVALID`, `UPLOAD_DECODE_INVALID`, `UPLOAD_TOO_LARGE` | Reference tray item | Remove/replace |
 | Reference readiness | `REFERENCE_NOT_READY` | Composer/toast | Wait for upload or remove failed item |
 | Reference cleanup | `OBJECT_DELETE_FAILED` | Operator evidence/logs | Keep row, release lease, retry a later bounded run |
@@ -62,6 +63,11 @@ poll deadline to `MODEL_TIMEOUT`, provider reachability/capacity to
 queue, and object-storage diagnostics remain server-side. Queue dispatch failure
 leaves the committed outbox row pending; an object-storage failure leaves the
 non-terminal job and attempt evidence recoverable for worker reconciliation.
+The generation API admits only the 14 listed aspect ratios and `1K` / `2K` /
+`4K`; it keeps Nano Banana 2 and one output fixed. Unknown capability values
+return `M3_SLICE_UNSUPPORTED` before a job, credit reservation, or provider POST
+is created. The adapter repeats this validation and sends admitted ratio and
+resolution values unchanged.
 
 The M5 O1Key contract normalizes `SUBMITTED`, `IN_PROGRESS`, `SUCCESS`, and
 `FAILURE` polling responses. Unknown error names and malformed or conflicting

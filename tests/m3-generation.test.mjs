@@ -6,6 +6,10 @@ import {
   validateIdempotencyKey,
   validateM3GenerationInput,
 } from "../server/generation/api.mjs";
+import {
+  SUPPORTED_GENERATION_ASPECT_RATIOS,
+  SUPPORTED_GENERATION_RESOLUTIONS,
+} from "../server/generation/capabilities.mjs";
 import { createMockProviderServer } from "../server/generation/mock-provider-server.mjs";
 
 const validInput = Object.freeze({
@@ -17,8 +21,14 @@ const validInput = Object.freeze({
   resolution: "1K",
 });
 
-test("generation input keeps the M3 model slice while accepting validated reference IDs", () => {
+test("generation input accepts every enabled ratio and resolution while keeping model and count fixed", () => {
   assert.deepEqual(validateM3GenerationInput(validInput), validInput);
+  for (const aspectRatio of SUPPORTED_GENERATION_ASPECT_RATIOS) {
+    for (const resolution of SUPPORTED_GENERATION_RESOLUTIONS) {
+      const input = { ...validInput, aspectRatio, resolution };
+      assert.deepEqual(validateM3GenerationInput(input), input);
+    }
+  }
   assert.equal(validateIdempotencyKey("web_12345678"), "web_12345678");
   assert.throws(
     () => validateM3GenerationInput({ ...validInput, prompt: "" }),
@@ -31,6 +41,18 @@ test("generation input keeps the M3 model slice while accepting validated refere
       error instanceof GenerationRequestError &&
       error.code === "M3_SLICE_UNSUPPORTED",
   );
+  for (const unsupportedInput of [
+    { ...validInput, aspectRatio: "10:1" },
+    { ...validInput, modelId: "nano-banana-pro" },
+    { ...validInput, resolution: "8K" },
+  ]) {
+    assert.throws(
+      () => validateM3GenerationInput(unsupportedInput),
+      (error) =>
+        error instanceof GenerationRequestError &&
+        error.code === "M3_SLICE_UNSUPPORTED",
+    );
+  }
   assert.deepEqual(
     validateM3GenerationInput({
       ...validInput,
@@ -44,6 +66,19 @@ test("generation input keeps the M3 model slice while accepting validated refere
     }).references,
     [{ id: "20000000-0000-4000-8000-000000000001" }],
   );
+});
+
+test("composer submits the selected ratio and resolution without a default-only guard", async () => {
+  const workspace = await readFile(
+    new URL("../app/page.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.doesNotMatch(workspace, /selectedRatio !== "1:1"/);
+  assert.doesNotMatch(workspace, /resolution !== "1K"/);
+  assert.match(workspace, /aspectRatio: selectedRatio/);
+  assert.match(workspace, /resolution,/);
+  assert.match(workspace, /selectedModel !== "nano-banana-2"/);
+  assert.match(workspace, /generationCount !== 1/);
 });
 
 test("mock provider is idempotent and exposes success, rejection, and timeout outcomes", async (context) => {

@@ -3,6 +3,10 @@ import { createServer } from "node:http";
 import test from "node:test";
 import { NormalizedProviderError } from "../server/generation/provider.mjs";
 import {
+  SUPPORTED_GENERATION_ASPECT_RATIOS,
+  SUPPORTED_GENERATION_RESOLUTIONS,
+} from "../server/generation/capabilities.mjs";
+import {
   US_GATEWAY_MVP_ROUTE,
   createUsGatewayAdapter,
   normalizeUsGatewayTask,
@@ -162,7 +166,7 @@ function gatewayAdapter(origin, overrides = {}) {
   });
 }
 
-function generationRequest(prompt = "a silver future garment") {
+function generationRequest(prompt = "a silver future garment", jobOverrides = {}) {
   return {
     job: {
       aspect_ratio: "1:1",
@@ -171,6 +175,7 @@ function generationRequest(prompt = "a silver future garment") {
       prompt,
       requested_count: 1,
       resolution: "1K",
+      ...jobOverrides,
     },
     references: [],
   };
@@ -186,20 +191,30 @@ async function withGateway(context) {
   return { adapter: gatewayAdapter(origin), gateway, origin };
 }
 
-test("O1Key MVP submission fixes Nano Banana 2 to special-price 1:1 1K", async (context) => {
+test("O1Key submission forwards every enabled aspect ratio and resolution", async (context) => {
   const { adapter, gateway } = await withGateway(context);
-  const submitted = await adapter.submit(generationRequest());
-
-  assert.deepEqual(submitted, { taskId: "task_1" });
-  assert.equal(gateway.submissions.length, 1);
-  assert.deepEqual(gateway.submissions[0].body, {
-    aspect_ratio: "1:1",
-    images: [],
-    model: "gemini-3.1-flash-image-c-sp",
-    prompt: "a silver future garment",
-    response_modalities: ["IMAGE"],
-    size: "1K",
-  });
+  let submissionIndex = 0;
+  for (const aspectRatio of SUPPORTED_GENERATION_ASPECT_RATIOS) {
+    for (const resolution of SUPPORTED_GENERATION_RESOLUTIONS) {
+      const submitted = await adapter.submit(
+        generationRequest("a silver future garment", {
+          aspect_ratio: aspectRatio,
+          resolution,
+        }),
+      );
+      submissionIndex += 1;
+      assert.deepEqual(submitted, { taskId: `task_${submissionIndex}` });
+      assert.deepEqual(gateway.submissions.at(-1).body, {
+        aspect_ratio: aspectRatio,
+        images: [],
+        model: "gemini-3.1-flash-image-c-sp",
+        prompt: "a silver future garment",
+        response_modalities: ["IMAGE"],
+        size: resolution,
+      });
+    }
+  }
+  assert.equal(gateway.submissions.length, 42);
   assert.equal(gateway.submissions[0].headers["idempotency-key"], undefined);
   assert.equal(gateway.submissions[0].body.callback_url, undefined);
 });
@@ -383,11 +398,16 @@ test("gateway transport and unsupported durable parameters fail closed", async (
     /must use HTTPS/,
   );
   const { adapter } = await withGateway(context);
-  await assert.rejects(
-    adapter.submit({
-      ...generationRequest(),
-      job: { ...generationRequest().job, resolution: "2K" },
-    }),
-    (error) => error instanceof NormalizedProviderError && error.code === "INTERNAL_ERROR",
-  );
+  for (const jobOverrides of [
+    { aspect_ratio: "10:1" },
+    { model_id: "nano-banana-pro" },
+    { requested_count: 2 },
+    { resolution: "8K" },
+  ]) {
+    await assert.rejects(
+      adapter.submit(generationRequest("unsupported", jobOverrides)),
+      (error) =>
+        error instanceof NormalizedProviderError && error.code === "INTERNAL_ERROR",
+    );
+  }
 });

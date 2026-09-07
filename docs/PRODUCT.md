@@ -52,9 +52,9 @@ Implemented in the interactive frontend:
 
 - Prompt and reference composer.
 - Expandable parameter settings.
-- Three visible model choices; the M3 durable local path currently accepts the
-  Nano Banana 2 / 1:1 / 1K / one-image default through the HTTP mock provider.
-- Polled loading, completion, inline failure, and retry for that M3 path.
+- Three visible model choices; the durable path accepts Nano Banana 2 with one
+  output across all 14 product-defined aspect ratios and `1K` / `2K` / `4K`.
+- Polled loading, completion, inline failure, and retry for that durable path.
 - The M4 backend boundary now authenticates a provider-neutral external
   identity and scopes generation and generated-asset reads to its internal
   GoodGood owner. The production-shaped adapter uses standard OIDC for an

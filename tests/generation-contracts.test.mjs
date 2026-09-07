@@ -3,6 +3,10 @@ import test, { after } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { createServer } from "vite";
+import {
+  SUPPORTED_GENERATION_ASPECT_RATIOS,
+  SUPPORTED_GENERATION_RESOLUTIONS,
+} from "../server/generation/capabilities.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const vite = await createServer({
@@ -61,6 +65,10 @@ test("maps stable model IDs to fixed presentation copy", async () => {
 
 test("maps ratios and resolution labels without persisting UI indices", async () => {
   const {
+    GENERATION_ASPECT_RATIOS,
+    GENERATION_RESOLUTIONS,
+  } = await vite.ssrLoadModule("/shared/contracts/generation.ts");
+  const {
     DEFAULT_GENERATION_RATIO_BY_MODE,
     GENERATION_RATIO_OPTIONS,
     findGenerationRatioByLabel,
@@ -73,6 +81,14 @@ test("maps ratios and resolution labels without persisting UI indices", async ()
   );
 
   assert.equal(GENERATION_RATIO_OPTIONS.length, 14);
+  assert.deepEqual(
+    [...GENERATION_ASPECT_RATIOS],
+    [...SUPPORTED_GENERATION_ASPECT_RATIOS],
+  );
+  assert.deepEqual(
+    [...GENERATION_RESOLUTIONS],
+    [...SUPPORTED_GENERATION_RESOLUTIONS],
+  );
   assert.deepEqual(
     GENERATION_RATIO_OPTIONS.map((option) => option.id),
     ["1:8", "1:4", "9:16", "2:3", "3:4", "4:5", "1:1", "5:4", "4:3", "3:2", "16:9", "21:9", "4:1", "8:1"],

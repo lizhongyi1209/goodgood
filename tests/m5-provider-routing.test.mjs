@@ -151,13 +151,16 @@ test("O1Key worker route reads private reference bytes, uploads, and resumes pol
   });
 
   assert.deepEqual(provider.route, {
-    aspectRatio: "1:1",
+    aspectRatios: [
+      "1:8", "1:4", "9:16", "2:3", "3:4", "4:5", "1:1",
+      "5:4", "4:3", "3:2", "16:9", "21:9", "4:1", "8:1",
+    ],
     outputCount: 1,
     productModelId: "nano-banana-2",
     provider: "o1key",
     providerModel: "gemini-3.1-flash-image-c-sp",
-    resolution: "1K",
-    routeVersion: "o1key-gemini-3.1-flash-image-c-sp-v1",
+    resolutions: ["1K", "2K", "4K"],
+    routeVersion: "o1key-gemini-3.1-flash-image-c-sp-v2",
   });
   const attempt = {
     provider: "o1key",
@@ -174,7 +177,7 @@ test("O1Key worker route reads private reference bytes, uploads, and resumes pol
   const taskId = await provider.createTask({
     attempt,
     job: {
-      aspect_ratio: "1:1",
+      aspect_ratio: "4:5",
       model_id: "nano-banana-2",
       prompt: "keep the subject and simplify the background",
       reference_snapshot: [
@@ -185,7 +188,7 @@ test("O1Key worker route reads private reference bytes, uploads, and resumes pol
         },
       ],
       requested_count: 1,
-      resolution: "1K",
+      resolution: "2K",
     },
     onSubmissionStart: async () => {
       submissionStartCount += 1;
@@ -212,6 +215,8 @@ test("O1Key worker route reads private reference bytes, uploads, and resumes pol
       },
     },
   ]);
+  assert.equal(fake.requests[1].body.aspect_ratio, "4:5");
+  assert.equal(fake.requests[1].body.size, "2K");
 
   let refiningCount = 0;
   const output = await provider.pollTask({

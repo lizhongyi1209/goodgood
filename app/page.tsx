@@ -1436,11 +1436,9 @@ export default function Home() {
     }
     if (
       selectedModel !== "nano-banana-2" ||
-      selectedRatio !== "1:1" ||
-      resolution !== "1K" ||
       generationCount !== 1
     ) {
-      toast.error("当前持久生成链路支持 Nano Banana 2、1:1、标准、1 张图片");
+      toast.error("当前生成链路支持 Nano Banana 2、1 张图片");
       return;
     }
 

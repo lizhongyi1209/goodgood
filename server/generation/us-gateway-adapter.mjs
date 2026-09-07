@@ -1,15 +1,23 @@
 import { NormalizedProviderError } from "./provider.mjs";
+import {
+  DURABLE_GENERATION_MODEL_ID,
+  DURABLE_GENERATION_OUTPUT_COUNT,
+  SUPPORTED_GENERATION_ASPECT_RATIOS,
+  SUPPORTED_GENERATION_RESOLUTIONS,
+  isSupportedGenerationAspectRatio,
+  isSupportedGenerationResolution,
+} from "./capabilities.mjs";
 
 export const US_GATEWAY_CONTRACT_VERSION = "o1key-image-api-2026-09-02";
 
 export const US_GATEWAY_MVP_ROUTE = Object.freeze({
-  aspectRatio: "1:1",
-  outputCount: 1,
-  productModelId: "nano-banana-2",
+  aspectRatios: SUPPORTED_GENERATION_ASPECT_RATIOS,
+  outputCount: DURABLE_GENERATION_OUTPUT_COUNT,
+  productModelId: DURABLE_GENERATION_MODEL_ID,
   provider: "o1key",
   providerModel: "gemini-3.1-flash-image-c-sp",
-  resolution: "1K",
-  routeVersion: "o1key-gemini-3.1-flash-image-c-sp-v1",
+  resolutions: SUPPORTED_GENERATION_RESOLUTIONS,
+  routeVersion: "o1key-gemini-3.1-flash-image-c-sp-v2",
 });
 
 const TERMINAL_STATES = new Set(["failed", "succeeded"]);
@@ -246,8 +254,8 @@ function normalizeTemporaryUpload(payload, expectedMimeType, nowSeconds) {
 function validateMvpJob(job) {
   if (
     job?.model_id !== US_GATEWAY_MVP_ROUTE.productModelId ||
-    job?.aspect_ratio !== US_GATEWAY_MVP_ROUTE.aspectRatio ||
-    job?.resolution !== US_GATEWAY_MVP_ROUTE.resolution ||
+    !isSupportedGenerationAspectRatio(job?.aspect_ratio) ||
+    !isSupportedGenerationResolution(job?.resolution) ||
     job?.requested_count !== US_GATEWAY_MVP_ROUTE.outputCount
   ) {
     throw protocolError();
@@ -335,7 +343,7 @@ export function createUsGatewayAdapter({
       await onSubmissionStart();
       const payload = await request("/async/v1/generateImage", {
         body: JSON.stringify({
-          aspect_ratio: US_GATEWAY_MVP_ROUTE.aspectRatio,
+          aspect_ratio: job.aspect_ratio,
           images: uploadedReferences.map((reference) => ({
             fileData: {
               fileUri: reference.url,
@@ -345,7 +353,7 @@ export function createUsGatewayAdapter({
           model: US_GATEWAY_MVP_ROUTE.providerModel,
           prompt: job.prompt,
           response_modalities: ["IMAGE"],
-          size: US_GATEWAY_MVP_ROUTE.resolution,
+          size: job.resolution,
         }),
         headers: { "content-type": "application/json" },
         method: "POST",

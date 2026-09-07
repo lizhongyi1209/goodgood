@@ -74,6 +74,9 @@ fill space.
   references preserve their tray order in the submitted batch snapshot.
 - Settings: attached downward drawer; closing it must not reset values.
 - Model list: opens within the parameter drawer and collapses after selection.
+- Nano Banana 2 accepts every displayed aspect ratio and `标准 / 高清 / 超清`
+  resolution (`1K / 2K / 4K`) with one output. Unsupported model/count/domain
+  values fail without silently replacing the creator's selection.
 - Keep the active server quote next to the composer actions as plain metadata,
   for example `10 积分/张`; do not turn it into a purchase call-to-action.
 - Send: Feihong mark; controls disable or communicate progress while generating.

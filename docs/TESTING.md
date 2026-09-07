@@ -393,9 +393,12 @@ The timestamped result of the latest verified gate belongs in
   newest-first grouping, and returns fresh signed private reads.
 - Provider timeout/rejection normalization.
 - Callback verification and duplicate callback handling.
-- The M5 fake O1Key gateway proves `nano-banana-2` maps only to
-  `gemini-3.1-flash-image-c-sp` with 1:1, 1K, one output, and `IMAGE` response
-  modality; ordered multipart temporary uploads become explicit `fileData`
+- The M5 fake O1Key gateway exhaustively proves all 42 combinations of the 14
+  product-defined aspect ratios and `1K` / `2K` / `4K` pass unchanged to
+  `gemini-3.1-flash-image-c-sp`, while the model remains `nano-banana-2`, the
+  output count remains one, and the response modality remains `IMAGE`;
+  unsupported ratio/resolution/model/count values fail before a POST. Ordered
+  multipart temporary uploads become explicit `fileData`
   references; polling success/failure, bounded timeout, duplicate/conflicting
   confirmed terminal reads, provisional-failure recovery to success, HTTPS
   enforcement, malformed response rejection, and stateless restart work

@@ -114,7 +114,10 @@ undeclared software or production credentials.
 M5's O1Key image path is selectable only through an explicit worker override;
 the base Compose stack remains fixed to the mock provider. The accepted MVP uses
 `https://cf-api.o1key.com`, the special-price
-`gemini-3.1-flash-image-c-sp` model, 1:1, 1K, and one output. The worker accepts
+`gemini-3.1-flash-image-c-sp` model, one output, all 14 product-defined aspect
+ratios, and `1K` / `2K` / `4K`. Promotion must verify there is no active attempt
+from the prior route version before the Worker switches to the expanded route.
+The worker accepts
 exactly one of `GENERATION_API_KEY` or `GENERATION_API_KEY_FILE`; deployment must
 prefer a dedicated least-privilege Bearer credential from its secret store. It
 must not enter checked-in Compose values, an image layer, browser JavaScript,

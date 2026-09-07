@@ -1,7 +1,32 @@
 # Production implementation plan
 
-- Last synchronized: 2026-09-06
-- Current phase: M7 is completed; the Alibaba Cloud Hong Kong host,
+- Last synchronized: 2026-09-07
+- Current phase: ADR 0024's controlled alpha is publicly open on
+  Hong Kong production revision `30c7a73ddb63f94f67a67b38a059d04c091040ba`
+  and immutable image digest
+  `sha256:1b0308cca64ecd0698fd9557e81c82989a3cd1f035218e869db554a09e9d5662`.
+  New registrations remain pending with 100 welcome credits until site-owner
+  approval. C7's public root, readiness, login boundary, access guard, and
+  initial observations passed; payment remains disabled and the full seed gate
+  is not claimed. ADR 0025's post-C7 product slice opens Nano Banana 2 across
+  all 14 product-defined aspect ratios and `1K` / `2K` / `4K`, still one output
+  and 10 credits. It is isolated in the current clean source candidate and has
+  not yet changed production traffic, data, objects, credentials, tasks, or
+  balances. The preserved local account-deletion/content-safety work is outside
+  this candidate.
+- Current objective: release ADR 0025 as the first isolated post-C7 product
+  update without changing admission, payment, data, or deferred M8 controls.
+  On 2026-09-07 the clean candidate passed `npm run check:local`: lint,
+  typecheck, the Vinext production build, and 187 tests with 183 passing and
+  four opt-in integrations skipped. The fake O1Key boundary covers all 42
+  ratio/resolution combinations and rejects unknown ratio, resolution, model,
+  or count values before submission.
+- Next action: pass the clean local gate, commit and publish one immutable
+  ADR-0025 candidate, prove there are no active attempts bound to the prior
+  O1Key route version, and perform the existing controlled-alpha release and
+  readiness checks. A live provider smoke is billable and requires an explicit
+  operator confirmation before its generation POST.
+- Historical M8 checkpoint at revision `30c7a73`: M7 is completed; the Alibaba Cloud Hong Kong host,
   test-data dependency layer, private R2 configuration, Cloudflare Origin CA,
   host-specific Full (strict) rule, reviewed Nginx origin, Authing callbacks,
   all four application secrets, and ADR 0013's reader-group correction are
@@ -64,7 +89,7 @@
   immutable artifact-security record has passed the repository importer for
   digest `195db77d74e1`. External monitoring activation and delivery remain
   required handoff evidence rather than a repository implementation claim.
-- Current objective: continue M8 reviewed seed-production readiness in
+- Historical objective at revision `30c7a73`: continue M8 reviewed seed-production readiness in
   Alibaba Cloud Hong Kong. Phase 1 is complete: registration/login has no
   numeric cap, every new owner starts pending with the existing 100 welcome
   credits, only site-owner approval enables product use, routine review and

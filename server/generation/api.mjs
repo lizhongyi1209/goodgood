@@ -10,6 +10,12 @@ import { findProject } from "../projects/repository.mjs";
 import { newRequestId } from "../observability/http.mjs";
 import { dispatchPendingJobs } from "./queue.mjs";
 import {
+  DURABLE_GENERATION_MODEL_ID,
+  DURABLE_GENERATION_OUTPUT_COUNT,
+  isSupportedGenerationAspectRatio,
+  isSupportedGenerationResolution,
+} from "./capabilities.mjs";
+import {
   GenerationPersistenceError,
   createGenerationJob,
   findGenerationJob,
@@ -20,13 +26,6 @@ import {
   connectGenerationQueue,
   getGenerationResources,
 } from "./resources.mjs";
-
-const M3_INPUT_CONTRACT = Object.freeze({
-  aspectRatio: "1:1",
-  count: 1,
-  modelId: "nano-banana-2",
-  resolution: "1K",
-});
 
 export class GenerationRequestError extends Error {
   constructor(code, message, status = 400, retryable = false) {
@@ -59,20 +58,26 @@ export function validateM3GenerationInput(payload) {
   ) {
     throw new GenerationRequestError("PROJECT_NOT_FOUND", "未找到该项目。", 404);
   }
-  for (const [field, expected] of Object.entries(M3_INPUT_CONTRACT)) {
-    if (payload[field] !== expected) {
-      throw new GenerationRequestError(
-        "M3_SLICE_UNSUPPORTED",
-        "当前持久生成链路仅支持 Nano Banana 2、1:1、标准、1 张图片。",
-      );
-    }
+  if (
+    payload.modelId !== DURABLE_GENERATION_MODEL_ID ||
+    payload.count !== DURABLE_GENERATION_OUTPUT_COUNT ||
+    !isSupportedGenerationAspectRatio(payload.aspectRatio) ||
+    !isSupportedGenerationResolution(payload.resolution)
+  ) {
+    throw new GenerationRequestError(
+      "M3_SLICE_UNSUPPORTED",
+      "当前生成链路支持 Nano Banana 2、已列出的全部画面比例、标准/高清/超清、1 张图片。",
+    );
   }
 
   return {
-    ...M3_INPUT_CONTRACT,
+    aspectRatio: payload.aspectRatio,
+    count: DURABLE_GENERATION_OUTPUT_COUNT,
+    modelId: DURABLE_GENERATION_MODEL_ID,
     ...(projectId ? { projectId } : {}),
     prompt,
     references: references.map((reference) => ({ id: reference.id })),
+    resolution: payload.resolution,
   };
 }
 

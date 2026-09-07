@@ -147,7 +147,7 @@ export async function main(argumentsList = process.argv.slice(2)) {
     );
     process.stdout.write(
       `\n已启动：http://127.0.0.1:${options.webPort}/\n` +
-        "完成 1:1 / 1K 测试后回到这里，直接按 Enter 停止容器并清除临时密钥。\n",
+        "完成所选宽高比 / 分辨率测试后回到这里，直接按 Enter 停止容器并清除临时密钥。\n",
     );
     await readHiddenLine("");
   } finally {
