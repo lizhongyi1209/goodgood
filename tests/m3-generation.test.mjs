@@ -7,7 +7,7 @@ import {
   validateM3GenerationInput,
 } from "../server/generation/api.mjs";
 import {
-  SUPPORTED_GENERATION_ASPECT_RATIOS,
+  GENERATION_MODEL_CAPABILITIES,
   SUPPORTED_GENERATION_RESOLUTIONS,
 } from "../server/generation/capabilities.mjs";
 import { createMockProviderServer } from "../server/generation/mock-provider-server.mjs";
@@ -21,12 +21,14 @@ const validInput = Object.freeze({
   resolution: "1K",
 });
 
-test("generation input accepts every enabled ratio and resolution while keeping model and count fixed", () => {
+test("generation input accepts every enabled model ratio and resolution while keeping count fixed", () => {
   assert.deepEqual(validateM3GenerationInput(validInput), validInput);
-  for (const aspectRatio of SUPPORTED_GENERATION_ASPECT_RATIOS) {
-    for (const resolution of SUPPORTED_GENERATION_RESOLUTIONS) {
-      const input = { ...validInput, aspectRatio, resolution };
-      assert.deepEqual(validateM3GenerationInput(input), input);
+  for (const [modelId, capability] of Object.entries(GENERATION_MODEL_CAPABILITIES)) {
+    for (const aspectRatio of capability.aspectRatios) {
+      for (const resolution of SUPPORTED_GENERATION_RESOLUTIONS) {
+        const input = { ...validInput, aspectRatio, modelId, resolution };
+        assert.deepEqual(validateM3GenerationInput(input), input);
+      }
     }
   }
   assert.equal(validateIdempotencyKey("web_12345678"), "web_12345678");
@@ -45,6 +47,7 @@ test("generation input accepts every enabled ratio and resolution while keeping 
     { ...validInput, aspectRatio: "10:1" },
     { ...validInput, modelId: "nano-banana-pro" },
     { ...validInput, resolution: "8K" },
+    { ...validInput, aspectRatio: "4:5", modelId: "gpt-image-2" },
   ]) {
     assert.throws(
       () => validateM3GenerationInput(unsupportedInput),
@@ -77,7 +80,7 @@ test("composer submits the selected ratio and resolution without a default-only 
   assert.doesNotMatch(workspace, /resolution !== "1K"/);
   assert.match(workspace, /aspectRatio: selectedRatio/);
   assert.match(workspace, /resolution,/);
-  assert.match(workspace, /selectedModel !== "nano-banana-2"/);
+  assert.match(workspace, /"nano-banana-2", "gpt-image-2"/);
   assert.match(workspace, /generationCount !== 1/);
 });
 

@@ -13,7 +13,7 @@
 | Category | Example code | UI placement | Default recovery |
 | --- | --- | --- | --- |
 | Input | `INVALID_PROMPT` | Composer field/toast | Focus and correct |
-| Generation capability | `M3_SLICE_UNSUPPORTED` | Composer/toast | Keep inputs and choose a listed ratio/resolution with Nano Banana 2 and one output |
+| Generation capability | `M3_SLICE_UNSUPPORTED` | Composer/toast | Keep inputs and choose a ratio supported by Nano Banana 2 or GPT IMAGE 2 with one output |
 | Reference upload | `UPLOAD_TYPE_INVALID`, `UPLOAD_DECODE_INVALID`, `UPLOAD_TOO_LARGE` | Reference tray item | Remove/replace |
 | Reference readiness | `REFERENCE_NOT_READY` | Composer/toast | Wait for upload or remove failed item |
 | Reference cleanup | `OBJECT_DELETE_FAILED` | Operator evidence/logs | Keep row, release lease, retry a later bounded run |
@@ -67,11 +67,11 @@ Dispatchers claim outbox rows atomically before publishing them, and recovery
 does not reopen a fresh dispatch until the Worker lease window has elapsed.
 Duplicate deliveries of the same active job are ignored, and an unexpired lease
 cannot be reclaimed by the same Worker identity.
-The generation API admits only the 14 listed aspect ratios and `1K` / `2K` /
-`4K`; it keeps Nano Banana 2 and one output fixed. Unknown capability values
+The generation API admits Nano Banana 2's 14 ratios and GPT IMAGE 2's seven
+ratios at `1K` / `2K` / `4K`, with one output. Unknown model combinations
 return `M3_SLICE_UNSUPPORTED` before a job, credit reservation, or provider POST
-is created. The adapter repeats this validation and sends admitted ratio and
-resolution values unchanged.
+is created. The adapter repeats this validation. Nano sends the admitted ratio
+and resolution values; GPT sends the corresponding exact pixel size.
 
 The M5 O1Key contract normalizes `SUBMITTED`, `IN_PROGRESS`, `SUCCESS`, and
 `FAILURE` polling responses. Unknown error names and malformed or conflicting

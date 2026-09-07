@@ -1,8 +1,8 @@
 # Production implementation plan
 
-- Last synchronized: 2026-09-07
+- Last synchronized: 2026-09-08
 - Current phase: 已开放 controlled alpha；转入按需求的高频小步迭代。
-- Current objective: GG-004—GG-006 真实 O1Key 本地组合候选已就绪，等待站长实测验收。
+- Current objective: 将已通过独立门禁的 GG-007 合入 GG-004—GG-006 真实 O1Key 本地组合候选，完成浏览器核验后交给站长实测。
 
 ## Current checkpoint
 
@@ -26,8 +26,10 @@
   作为资产尺寸来源；不修改数据库和 provider 契约。
 - GG-006：ADR 0029 取代被初审否定的矩形方案，最终使用桌面 64 px、移动端 56 px 的
   1:1 居中预览及“比例—模型—输出”顺序；完整门禁、真实本地栈和浏览器响应式核验通过。
-- Next action: 站长在 3010 本地真实链路实测 GG-004—GG-006；验收并批准发布后先完成
-  GG-003 门禁，再分别审查三项独立候选并形成正式发布候选。
+- GG-007：独立分支已完成 GPT IMAGE 2 的七种比例、精确 1K/2K/4K 像素、
+  `gpt-image-2-c-sd` O1Key 路由、参考图和三档 10 积分；完整门禁通过，尚未调用付费上游。
+- Next action: 合并并重建 3010 本地真实链路，核验 GG-004—GG-007；站长实测后，
+  若批准发布则先完成 GG-003 门禁，再分别审查独立候选并形成正式发布候选。
 - Blockers: 本地组合候选无代码阻塞；下次 alpha 发布前须处理 GG-003 的独立
   门禁工具提取。完整删除、举报、外部删除条款与付费要求留在搁置项，不自动恢复。
 

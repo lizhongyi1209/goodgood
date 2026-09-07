@@ -10,10 +10,8 @@ import { findProject } from "../projects/repository.mjs";
 import { newRequestId } from "../observability/http.mjs";
 import { dispatchPendingJobs } from "./queue.mjs";
 import {
-  DURABLE_GENERATION_MODEL_ID,
   DURABLE_GENERATION_OUTPUT_COUNT,
-  isSupportedGenerationAspectRatio,
-  isSupportedGenerationResolution,
+  isSupportedGenerationInput,
 } from "./capabilities.mjs";
 import {
   GenerationPersistenceError,
@@ -59,21 +57,23 @@ export function validateM3GenerationInput(payload) {
     throw new GenerationRequestError("PROJECT_NOT_FOUND", "未找到该项目。", 404);
   }
   if (
-    payload.modelId !== DURABLE_GENERATION_MODEL_ID ||
-    payload.count !== DURABLE_GENERATION_OUTPUT_COUNT ||
-    !isSupportedGenerationAspectRatio(payload.aspectRatio) ||
-    !isSupportedGenerationResolution(payload.resolution)
+    !isSupportedGenerationInput({
+      aspectRatio: payload.aspectRatio,
+      count: payload.count,
+      modelId: payload.modelId,
+      resolution: payload.resolution,
+    })
   ) {
     throw new GenerationRequestError(
       "M3_SLICE_UNSUPPORTED",
-      "当前生成链路支持 Nano Banana 2、已列出的全部画面比例、1K/2K/4K、1 张图片。",
+      "当前生成链路支持 Nano Banana 2、GPT IMAGE 2、对应画面比例、1K/2K/4K 和 1 张图片。",
     );
   }
 
   return {
     aspectRatio: payload.aspectRatio,
     count: DURABLE_GENERATION_OUTPUT_COUNT,
-    modelId: DURABLE_GENERATION_MODEL_ID,
+    modelId: payload.modelId,
     ...(projectId ? { projectId } : {}),
     prompt,
     references: references.map((reference) => ({ id: reference.id })),

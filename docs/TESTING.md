@@ -410,6 +410,11 @@ The timestamped result of the latest verified gate belongs in
   confirmed terminal reads, provisional-failure recovery to success, HTTPS
   enforcement, malformed response rejection, and stateless restart work
   without a real credential.
+- GG-007 coverage proves GPT IMAGE 2's seven ratios across all three product
+  resolutions map to the 21 documented lowercase-`x` pixel sizes, submit as
+  `gpt-image-2-c-sd` with `n: 1`, and omit Nano-only request fields. UI contract
+  tests cover ratio filtering, exact readouts, and nearest same-orientation
+  recovery after a model change. Billing tests cover all three 10-credit rows.
 - The M5 provider-router tests prove the worker reads ordered private RustFS
   bytes into O1Key temporary uploads, persists the selected provider route,
   rejects an active-attempt route mismatch, resumes polling, fully decodes a

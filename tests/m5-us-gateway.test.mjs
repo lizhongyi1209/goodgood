@@ -3,10 +3,13 @@ import { createServer } from "node:http";
 import test from "node:test";
 import { NormalizedProviderError } from "../server/generation/provider.mjs";
 import {
+  GENERATION_MODEL_CAPABILITIES,
   SUPPORTED_GENERATION_ASPECT_RATIOS,
   SUPPORTED_GENERATION_RESOLUTIONS,
+  getGptImage2PixelSize,
 } from "../server/generation/capabilities.mjs";
 import {
+  US_GATEWAY_GPT_IMAGE_2_ROUTE,
   US_GATEWAY_MVP_ROUTE,
   createUsGatewayAdapter,
   normalizeUsGatewayTask,
@@ -181,14 +184,14 @@ function generationRequest(prompt = "a silver future garment", jobOverrides = {}
   };
 }
 
-async function withGateway(context) {
+async function withGateway(context, route = US_GATEWAY_MVP_ROUTE) {
   const gateway = createFakeGateway();
   await gateway.listen();
   context.after(() => gateway.close());
   const address = gateway.address();
   assert.ok(address && typeof address === "object");
   const origin = `http://127.0.0.1:${address.port}`;
-  return { adapter: gatewayAdapter(origin), gateway, origin };
+  return { adapter: gatewayAdapter(origin, { route }), gateway, origin };
 }
 
 test("O1Key submission forwards every enabled aspect ratio and resolution", async (context) => {
@@ -410,4 +413,72 @@ test("gateway transport and unsupported durable parameters fail closed", async (
         error instanceof NormalizedProviderError && error.code === "INTERNAL_ERROR",
     );
   }
+});
+
+test("GPT Image 2 SD submission maps every enabled combination to an exact pixel size", async (context) => {
+  const { adapter, gateway } = await withGateway(
+    context,
+    US_GATEWAY_GPT_IMAGE_2_ROUTE,
+  );
+  let submissionIndex = 0;
+  for (const aspectRatio of GENERATION_MODEL_CAPABILITIES["gpt-image-2"].aspectRatios) {
+    for (const resolution of SUPPORTED_GENERATION_RESOLUTIONS) {
+      const submitted = await adapter.submit(
+        generationRequest("a realistic glass badge", {
+          aspect_ratio: aspectRatio,
+          model_id: "gpt-image-2",
+          resolution,
+        }),
+      );
+      submissionIndex += 1;
+      assert.deepEqual(submitted, { taskId: `task_${submissionIndex}` });
+      assert.deepEqual(gateway.submissions.at(-1).body, {
+        images: [],
+        model: "gpt-image-2-c-sd",
+        n: 1,
+        prompt: "a realistic glass badge",
+        size: getGptImage2PixelSize(aspectRatio, resolution),
+      });
+    }
+  }
+  assert.equal(gateway.submissions.length, 21);
+  assert.equal(gateway.submissions[0].body.aspect_ratio, undefined);
+  assert.equal(gateway.submissions[0].body.response_modalities, undefined);
+  assert.match(gateway.submissions[0].body.size, /^\d+x\d+$/);
+});
+
+test("GPT Image 2 SD keeps validated reference uploads in the edit request", async (context) => {
+  const { adapter, gateway } = await withGateway(
+    context,
+    US_GATEWAY_GPT_IMAGE_2_ROUTE,
+  );
+  await adapter.submit({
+    ...generationRequest("keep the subject and change the material", {
+      aspect_ratio: "3:2",
+      model_id: "gpt-image-2",
+      resolution: "4K",
+    }),
+    references: [
+      {
+        bytes: Buffer.from("gpt-reference"),
+        mimeType: "image/png",
+        name: "subject.png",
+      },
+    ],
+  });
+
+  assert.deepEqual(gateway.submissions[0].body, {
+    images: [
+      {
+        fileData: {
+          fileUri: "https://temporary.o1key.invalid/reference-1.png",
+          mimeType: "image/png",
+        },
+      },
+    ],
+    model: "gpt-image-2-c-sd",
+    n: 1,
+    prompt: "keep the subject and change the material",
+    size: "3504x2336",
+  });
 });

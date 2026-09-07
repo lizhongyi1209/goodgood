@@ -338,14 +338,10 @@ async function insertEvent(
 
 export async function claimGenerationJob(
   pool,
-  { attemptRoute, jobId, leaseMs, workerId },
+  { attemptRoute = null, attemptRouteForModel = null, jobId, leaseMs, workerId },
 ) {
-  if (
-    !attemptRoute?.routeVersion ||
-    !attemptRoute.provider ||
-    !attemptRoute.providerModel
-  ) {
-    throw new Error("A complete provider attempt route is required.");
+  if (!attemptRoute && typeof attemptRouteForModel !== "function") {
+    throw new Error("A provider attempt route or model route resolver is required.");
   }
   const client = await pool.connect();
   try {
@@ -359,9 +355,19 @@ export async function claimGenerationJob(
       return { claimed: false, reason: "missing" };
     }
     const job = locked.rows[0];
+    const resolvedAttemptRoute = attemptRouteForModel
+      ? attemptRouteForModel(job.model_id)
+      : attemptRoute;
+    if (
+      !resolvedAttemptRoute?.routeVersion ||
+      !resolvedAttemptRoute.provider ||
+      !resolvedAttemptRoute.providerModel
+    ) {
+      throw new Error("A complete provider attempt route is required.");
+    }
     if (["succeeded", "failed", "cancelled"].includes(job.state)) {
       await client.query("COMMIT");
-      return { claimed: false, reason: "terminal" };
+      return { claimed: false, reason: "terminal", route: resolvedAttemptRoute };
     }
     if (
       job.lease_owner &&
@@ -369,7 +375,7 @@ export async function claimGenerationJob(
       new Date(job.lease_expires_at).getTime() > Date.now()
     ) {
       await client.query("COMMIT");
-      return { claimed: false, reason: "leased" };
+      return { claimed: false, reason: "leased", route: resolvedAttemptRoute };
     }
 
     if (job.state === "queued") {
@@ -417,9 +423,9 @@ export async function claimGenerationJob(
           attemptId,
           jobId,
           ordinal,
-          attemptRoute.routeVersion,
-          attemptRoute.provider,
-          attemptRoute.providerModel,
+          resolvedAttemptRoute.routeVersion,
+          resolvedAttemptRoute.provider,
+          resolvedAttemptRoute.providerModel,
           job.input_hash,
         ],
       );
@@ -435,6 +441,7 @@ export async function claimGenerationJob(
       attempt: attemptResult.rows[0],
       claimed: true,
       job: refreshed.rows[0],
+      route: resolvedAttemptRoute,
     };
   } catch (error) {
     await client.query("ROLLBACK");

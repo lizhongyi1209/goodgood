@@ -31,15 +31,15 @@ function accountRow(overrides = {}) {
   };
 }
 
-function priceRow(resolution) {
+function priceRow(modelId, resolution) {
   return {
     created_at: timestamp,
     credit_amount: "10",
     credit_unit: "credit",
     effective_from: timestamp,
     effective_until: null,
-    id: `price-${resolution}`,
-    model_id: "nano-banana-2",
+    id: `price-${modelId}-${resolution}`,
+    model_id: modelId,
     output_count: 1,
     plan_context: "standard",
     resolution,
@@ -57,7 +57,7 @@ function billingPool({ account = accountRow() } = {}) {
         return { rowCount: account ? 1 : 0, rows: account ? [account] : [] };
       }
       if (sql.includes("FROM price_versions")) {
-        return { rowCount: 1, rows: [priceRow(values[1])] };
+        return { rowCount: 1, rows: [priceRow(values[0], values[1])] };
       }
       throw new Error(`Unexpected query: ${sql}`);
     },
@@ -130,11 +130,14 @@ test("billing summary serializes exact credits without owner or account identifi
     version: "1",
   });
   assert.deepEqual(
-    summary.quotes.map((quote) => [quote.resolution, quote.creditAmount]),
+    summary.quotes.map((quote) => [quote.modelId, quote.resolution, quote.creditAmount]),
     [
-      ["1K", "10"],
-      ["2K", "10"],
-      ["4K", "10"],
+      ["nano-banana-2", "1K", "10"],
+      ["nano-banana-2", "2K", "10"],
+      ["nano-banana-2", "4K", "10"],
+      ["gpt-image-2", "1K", "10"],
+      ["gpt-image-2", "2K", "10"],
+      ["gpt-image-2", "4K", "10"],
     ],
   );
   assert.equal("ownerId" in summary.account, false);

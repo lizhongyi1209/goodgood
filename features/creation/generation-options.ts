@@ -1,5 +1,6 @@
 import type {
   GenerationAspectRatio,
+  GenerationModelId,
   GenerationResolution,
 } from "@/shared/contracts/generation";
 
@@ -34,6 +35,31 @@ export const GENERATION_RATIO_OPTIONS = [
   { id: "4:1", label: "4 : 1", value: 4, dimensions: { "1K": { width: 2048, height: 512 }, "2K": { width: 4096, height: 1024 }, "4K": { width: 8192, height: 2048 } }, mode: "landscape" },
   { id: "8:1", label: "8 : 1", value: 8, dimensions: { "1K": { width: 3072, height: 384 }, "2K": { width: 6144, height: 768 }, "4K": { width: 12288, height: 1536 } }, mode: "landscape" },
 ] as const satisfies readonly GenerationRatioOption[];
+
+export const GPT_IMAGE_2_RATIO_IDS = [
+  "9:16",
+  "2:3",
+  "3:4",
+  "1:1",
+  "4:3",
+  "3:2",
+  "16:9",
+] as const satisfies readonly GenerationAspectRatio[];
+
+type GptImage2AspectRatio = (typeof GPT_IMAGE_2_RATIO_IDS)[number];
+
+export const GPT_IMAGE_2_DIMENSIONS = {
+  "9:16": { "1K": { width: 1024, height: 1824 }, "2K": { width: 2048, height: 3648 }, "4K": { width: 2160, height: 3840 } },
+  "2:3": { "1K": { width: 1024, height: 1536 }, "2K": { width: 2048, height: 3072 }, "4K": { width: 2336, height: 3504 } },
+  "3:4": { "1K": { width: 1024, height: 1360 }, "2K": { width: 2048, height: 2736 }, "4K": { width: 2448, height: 3264 } },
+  "1:1": { "1K": { width: 1024, height: 1024 }, "2K": { width: 2048, height: 2048 }, "4K": { width: 2880, height: 2880 } },
+  "4:3": { "1K": { width: 1360, height: 1024 }, "2K": { width: 2736, height: 2048 }, "4K": { width: 3264, height: 2448 } },
+  "3:2": { "1K": { width: 1536, height: 1024 }, "2K": { width: 3072, height: 2048 }, "4K": { width: 3504, height: 2336 } },
+  "16:9": { "1K": { width: 1824, height: 1024 }, "2K": { width: 3648, height: 2048 }, "4K": { width: 3840, height: 2160 } },
+} as const satisfies Readonly<Record<
+  GptImage2AspectRatio,
+  Readonly<Record<GenerationResolution, PixelDimensions>>
+>>;
 
 export const GENERATION_RATIO_MODES = [
   ["portrait", "竖版"],
@@ -74,6 +100,69 @@ export function getGenerationRatioIndex(ratio: GenerationAspectRatio): number {
   const index = GENERATION_RATIO_OPTIONS.findIndex((item) => item.id === ratio);
   if (index < 0) throw new Error(`Unknown generation ratio: ${ratio}`);
   return index;
+}
+
+export function getGenerationRatioOptions(
+  modelId: GenerationModelId,
+): readonly GenerationRatioOption[] {
+  if (modelId !== "gpt-image-2") return GENERATION_RATIO_OPTIONS;
+  return GENERATION_RATIO_OPTIONS.filter((option) =>
+    GPT_IMAGE_2_RATIO_IDS.includes(option.id as GptImage2AspectRatio),
+  );
+}
+
+export function getGenerationModelRatioIndex(
+  modelId: GenerationModelId,
+  ratio: GenerationAspectRatio,
+): number {
+  const index = getGenerationRatioOptions(modelId).findIndex(
+    (option) => option.id === ratio,
+  );
+  if (index < 0) {
+    throw new Error(`Unsupported generation ratio for ${modelId}: ${ratio}`);
+  }
+  return index;
+}
+
+export function getGenerationPixelDimensions(
+  modelId: GenerationModelId,
+  ratio: GenerationAspectRatio,
+  resolution: GenerationResolution,
+): PixelDimensions {
+  if (modelId === "gpt-image-2") {
+    if (!GPT_IMAGE_2_RATIO_IDS.includes(ratio as GptImage2AspectRatio)) {
+      throw new Error(`Unsupported generation ratio for ${modelId}: ${ratio}`);
+    }
+    return GPT_IMAGE_2_DIMENSIONS[ratio as GptImage2AspectRatio][resolution];
+  }
+  return getGenerationRatio(ratio).dimensions[resolution];
+}
+
+export function resolveGenerationAspectRatioForModel(
+  modelId: GenerationModelId,
+  ratio: GenerationAspectRatio,
+): GenerationAspectRatio {
+  const options = getGenerationRatioOptions(modelId);
+  if (options.some((option) => option.id === ratio)) return ratio;
+  const current = getGenerationRatio(ratio);
+  const sameMode = options.filter((option) => option.mode === current.mode);
+  const candidates = sameMode.length ? sameMode : options;
+  return candidates.reduce((nearest, option) =>
+    Math.abs(Math.log(option.value / current.value)) <
+    Math.abs(Math.log(nearest.value / current.value))
+      ? option
+      : nearest,
+  ).id;
+}
+
+export function getDefaultGenerationRatioForModelMode(
+  modelId: GenerationModelId,
+  mode: GenerationRatioMode,
+): GenerationAspectRatio {
+  return resolveGenerationAspectRatioForModel(
+    modelId,
+    DEFAULT_GENERATION_RATIO_BY_MODE[mode],
+  );
 }
 
 export function getGenerationResolutionLabel(

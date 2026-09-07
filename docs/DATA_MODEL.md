@@ -338,8 +338,8 @@ Contains ordering and membership metadata; never duplicate image bytes.
 - Generation submission reserves credit in the same logical transaction as the
   batch/job creation. Success settles, failure releases, and partial success
   follows an explicit per-output policy.
-- The M6 live path reserves 10 credits in the same transaction as a new Banana
-  2 job, settles after the accepted Asset is inserted, and releases when the
+- The M6/GG-007 live path reserves 10 credits in the same transaction as a new
+  Banana 2 or GPT IMAGE 2 job, settles after the accepted Asset is inserted, and releases when the
   job reaches a no-Asset failure. `SUBMISSION_UNKNOWN` releases the customer's
   reservation but does not infer or record an upstream refund.
 - The authenticated billing read projects cached available/reserved balances
@@ -359,6 +359,10 @@ Contains ordering and membership metadata; never duplicate image bytes.
   from one project to another by a browser request.
 - Batch order is submission order, newest first in UI.
 - Asset aspect ratio and pixel dimensions are source data, not inferred from CSS.
+- Provider pixel sizes are derived from the selected model/ratio/resolution
+  capability at submission time. Persisted creative state does not store an
+  O1Key model name or provider size string. Migration
+  `0013_gg007_gpt_image_2_prices.sql` adds immutable 10-credit GPT IMAGE 2 prices.
 - Deleting a project does not automatically delete globally retained assets.
 - Object deletion is asynchronous and only occurs after authorization and
   reference checks.

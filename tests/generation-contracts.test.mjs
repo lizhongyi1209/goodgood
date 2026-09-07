@@ -4,6 +4,8 @@ import { fileURLToPath } from "node:url";
 
 import { createServer } from "vite";
 import {
+  GENERATION_MODEL_CAPABILITIES,
+  GPT_IMAGE_2_PIXEL_SIZES,
   SUPPORTED_GENERATION_ASPECT_RATIOS,
   SUPPORTED_GENERATION_RESOLUTIONS,
 } from "../server/generation/capabilities.mjs";
@@ -70,14 +72,20 @@ test("maps ratios and resolution labels without persisting UI indices", async ()
   } = await vite.ssrLoadModule("/shared/contracts/generation.ts");
   const {
     DEFAULT_GENERATION_RATIO_BY_MODE,
+    GPT_IMAGE_2_DIMENSIONS,
+    GPT_IMAGE_2_RATIO_IDS,
     GENERATION_RATIO_OPTIONS,
     findGenerationRatioByLabel,
     formatGenerationResolution,
     formatPixelDimensions,
     getSharedPixelDimensions,
+    getDefaultGenerationRatioForModelMode,
+    getGenerationPixelDimensions,
     getGenerationRatio,
     getGenerationRatioIndex,
+    getGenerationRatioOptions,
     getGenerationResolutionLabel,
+    resolveGenerationAspectRatioForModel,
   } = await vite.ssrLoadModule(
     "/features/creation/generation-options.ts",
   );
@@ -133,6 +141,47 @@ test("maps ratios and resolution labels without persisting UI indices", async ()
       { width: 3072, height: 4096 },
     ]),
     undefined,
+  );
+  assert.deepEqual(
+    getGenerationRatioOptions("gpt-image-2").map((option) => option.id),
+    [...GPT_IMAGE_2_RATIO_IDS],
+  );
+  assert.deepEqual(
+    [...GPT_IMAGE_2_RATIO_IDS],
+    [...GENERATION_MODEL_CAPABILITIES["gpt-image-2"].aspectRatios],
+  );
+  for (const ratio of GPT_IMAGE_2_RATIO_IDS) {
+    for (const resolution of GENERATION_RESOLUTIONS) {
+      const dimensions = GPT_IMAGE_2_DIMENSIONS[ratio][resolution];
+      assert.equal(
+        `${dimensions.width}x${dimensions.height}`,
+        GPT_IMAGE_2_PIXEL_SIZES[ratio][resolution],
+      );
+    }
+  }
+  assert.deepEqual(GPT_IMAGE_2_DIMENSIONS["3:4"]["4K"], {
+    width: 2448,
+    height: 3264,
+  });
+  assert.deepEqual(
+    getGenerationPixelDimensions("gpt-image-2", "16:9", "2K"),
+    { width: 3648, height: 2048 },
+  );
+  assert.equal(
+    resolveGenerationAspectRatioForModel("gpt-image-2", "4:5"),
+    "3:4",
+  );
+  assert.equal(
+    resolveGenerationAspectRatioForModel("gpt-image-2", "21:9"),
+    "16:9",
+  );
+  assert.equal(
+    getDefaultGenerationRatioForModelMode("gpt-image-2", "portrait"),
+    "3:4",
+  );
+  assert.throws(
+    () => getGenerationPixelDimensions("gpt-image-2", "4:5", "1K"),
+    /Unsupported generation ratio/,
   );
 });
 

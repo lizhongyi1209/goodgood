@@ -74,7 +74,8 @@ test("new creation and project restore require an explicit discard action while 
   assert.match(page, /继续编辑/);
   assert.match(page, /放弃修改并新建/);
   assert.match(page, /放弃修改并打开/);
-  assert.match(page, /setComposerCheckpoint\(createComposerCheckpoint\(restoredProject\.state\)\)/);
+  assert.match(page, /setComposerCheckpoint\(createComposerCheckpoint\(restoredState\)\)/);
+  assert.match(page, /resolveGenerationAspectRatioForModel/);
   assert.match(page, /onClick=\{requestNewCreation\}/);
   assert.match(styles, /\.unsaved-changes-dialog/);
 });

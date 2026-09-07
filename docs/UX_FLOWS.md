@@ -78,9 +78,13 @@ fill space.
 - Settings read from aspect ratio to model to output; aspect ratio is the leftmost
   wide-screen group and stays first through responsive reflow.
 - Model list: opens within the parameter drawer and collapses after selection.
-- Nano Banana 2 accepts every displayed aspect ratio and `1K / 2K / 4K`
-  resolution with one output. Unsupported model/count/domain
-  values fail without silently replacing the creator's selection.
+- Nano Banana 2 accepts its 14 displayed ratios; GPT IMAGE 2 accepts `9:16`,
+  `2:3`, `3:4`, `1:1`, `4:3`, `3:2`, and `16:9`. Both use the existing
+  `1K / 2K / 4K` resolution domain and one output. The pixel readout follows the
+  selected model's exact size table. A model change keeps a compatible ratio or
+  visibly moves to the nearest supported ratio in the same orientation.
+- Unsupported model/count/domain combinations fail before submission without
+  replacing values inside an immutable generation snapshot.
 - Keep the active server quote next to the composer actions as plain metadata,
   for example `10 积分/张`; do not turn it into a purchase call-to-action.
 - Send: Feihong mark; controls disable or communicate progress while generating.
