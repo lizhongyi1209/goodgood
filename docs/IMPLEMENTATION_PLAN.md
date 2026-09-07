@@ -1,8 +1,8 @@
 # Production implementation plan
 
-- Last synchronized: 2026-09-07
+- Last synchronized: 2026-09-08
 - Current phase: 已开放 controlled alpha；转入按需求的高频小步迭代。
-- Current objective: GG-001 交接整理完成；从干净当前基线接收下一个产品需求。
+- Current objective: 实现 GG-008 快速并行生成并合入本地 3010 联调环境。
 
 ## Current checkpoint
 
@@ -15,7 +15,9 @@
   本轮完整本地门禁通过，交接结果见 [任务卡](tasks/GG-001-project-continuity.md)。
 - 生产与本地分开：文档整理不部署、不迁移、不修改真实账户/素材/积分。
   历史记录中的开站、轮换、清空等许可不继承，旧转换流程不是新的执行计划。
-- Next action: 接收站长的新功能需求，按 WORKFLOW 创建 GG-004 起的新任务与独立分支。
+- GG-008 已在独立分支接受 ADR 0031：每次点击创建独立运行，活动任务期间发送仍可用，
+  产品侧不设并发任务数上限；一个点击仍是一张图并单独预留现有积分。
+- Next action: 实现多运行前端状态与测试，通过门禁后合入 3010 本地联调分支供站长实测。
 - Blockers: 新功能本地开发无外部阻塞；下次 alpha 发布前须处理 GG-003 的独立
   门禁工具提取。完整删除、举报、外部删除条款与付费要求留在搁置项，不自动恢复。
 
@@ -31,6 +33,7 @@
 | M9 | 搁置 | 支付/国内支付宝，见 GG-902 |
 | ADR 0025 / GG-002 | 已上线 | Nano Banana 2 全 14 宽高比 × 三档分辨率 |
 | GG-001 | 已完成（不需部署） | 项目记忆、历史精简、分支隔离与交接协议 |
+| GG-008 | 进行中 | 快速重复提交、独立任务状态与逐任务失败恢复 |
 
 ## New-session recovery
 

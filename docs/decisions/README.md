@@ -37,6 +37,7 @@ Current records:
 - `0024-controlled-alpha-before-full-seed-readiness.md`
 - `0025-open-banana-2-aspect-ratios-and-resolutions.md`
 - `0026-repository-owned-session-continuity.md`
+- `0031-allow-repeated-parallel-generation-submissions.md`
 
 Accepted describes a decision, not proof of deployment. ADR 0022/0023's full
 runtime rollout is deferred under ADR 0024. The current release and rollout
