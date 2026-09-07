@@ -24,6 +24,12 @@ polls the HTTP mock provider, RustFS stores the image, PostgreSQL records the
 asset, and the browser polls the job into the creation stream and asset library.
 Worker leases and PostgreSQL reconciliation recover interrupted jobs, while
 terminal writes and deterministic object keys tolerate duplicate delivery.
+Outbox dispatchers atomically claim rows before publishing to Valkey, and
+reconciliation only reopens a dispatched row after the Worker lease window.
+The active Worker ignores a second delivery of an in-flight job, and any
+unexpired lease blocks another claim even when the Worker identity matches.
+After object upload, the Worker reports success only when the asset and job
+terminal state commit together; a terminal loser removes its unaccepted object.
 
 M4 replaces the fixed server-owned identity at the generation API boundary. A
 provider-neutral `(issuer, subject)` identity maps to an internal GoodGood

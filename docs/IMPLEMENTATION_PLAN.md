@@ -2,7 +2,7 @@
 
 - Last synchronized: 2026-09-07
 - Current phase: 已开放 controlled alpha；转入按需求的高频小步迭代。
-- Current objective: 实现 GG-005 的 `1K / 2K / 4K` 展示与资产实际像素尺寸。
+- Current objective: 本地联调验收 GG-004 可靠性修复与 GG-005 分辨率/资产尺寸展示组合候选。
 
 ## Current checkpoint
 
@@ -15,10 +15,16 @@
   本轮完整本地门禁通过，交接结果见 [任务卡](tasks/GG-001-project-continuity.md)。
 - 生产与本地分开：文档整理不部署、不迁移、不修改真实账户/素材/积分。
   历史记录中的开站、轮换、清空等许可不继承，旧转换流程不是新的执行计划。
+- GG-004：一条线上任务被重复派发并由同一 Worker 并发执行；失败分支先写入
+  `SUBMISSION_UNKNOWN`，成功分支已取得结果并写入私有 R2，却未能提交 Asset。
+  本地候选已加入 outbox 原子领取与延迟重派、单 job 互斥、严格 lease、终态结果检查和
+  孤儿对象补偿；完整门禁及 PostgreSQL/Compose 专项回归通过。积分已释放，生产数据
+  未做修复；完整非敏感证据见[任务卡](tasks/GG-004-generation-dispatch-race.md)。
 - GG-005：ADR 0027 已确认直接展示分辨率域值，并以 accepted Asset 持久化的实际宽高
   作为资产尺寸来源；不修改数据库和 provider 契约。
-- Next action: 完成 GG-005 API 映射、资产三处展示和回归测试，重建真实 O1Key 本地栈验收。
-- Blockers: 新功能本地开发无外部阻塞；下次 alpha 发布前须处理 GG-003 的独立
+- Next action: 重建真实 O1Key 本地栈，使用已有两张资产验收 GG-005 展示；发布前完成
+  GG-003 门禁并分别审查 GG-004/GG-005 候选。
+- Blockers: 本地组合候选无外部阻塞；下次 alpha 发布前须处理 GG-003 的独立
   门禁工具提取。完整删除、举报、外部删除条款与付费要求留在搁置项，不自动恢复。
 
 ## Milestones
@@ -33,6 +39,7 @@
 | M9 | 搁置 | 支付/国内支付宝，见 GG-902 |
 | ADR 0025 / GG-002 | 已上线 | Nano Banana 2 全 14 宽高比 × 三档分辨率 |
 | GG-001 | 已完成（不需部署） | 项目记忆、历史精简、分支隔离与交接协议 |
+| GG-004 | 待验收（本地已验证） | 重复派发、同 Worker 重入与失败/完成终态竞态修复 |
 | GG-005 | 进行中 | `1K / 2K / 4K` 展示与每张 Asset 实际像素尺寸 |
 
 ## New-session recovery
