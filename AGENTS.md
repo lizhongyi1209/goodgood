@@ -67,7 +67,10 @@ changing detail in `docs/` and update the relevant document in the same change.
 - Prompt textarea auto-grows to eight lines, then scrolls. Tool positions remain
   stable while it grows.
 - Reference images live in a tray below the prompt, never inside its text area.
-  Maximum: 10. At the limit, the add control is disabled.
+  Use enlarged responsive rectangular previews and horizontal overflow. Maximum:
+  10. At the limit, the add control is disabled.
+- Parameter groups read as aspect ratio, model, then output; aspect ratio starts
+  at the left on wide screens and remains first through responsive reflow.
 - Models and copy are fixed until a product decision changes them:
   `Nano Banana 2 — 快速，批量`; `Nano Banana Pro — 高质量资产，视觉优先`;
   `GPT IMAGE 2 — 高真实感，提示词遵循`.
