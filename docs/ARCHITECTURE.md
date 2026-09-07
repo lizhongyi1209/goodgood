@@ -2,6 +2,21 @@
 
 ## Current state
 
+The live application is an owner-reviewed controlled alpha: browser → GoodGood
+Web/API → PostgreSQL + Valkey → one concurrent Worker → O1Key → private R2.
+Authing supplies validated external identities; GoodGood owns account review,
+sessions, authorization, creative data, and the credit ledger. The Hong Kong
+single host and local-only preproduction topology follow ADR 0021; ADR 0024
+narrows launch scope without claiming the full seed gate. Deployed identity
+and verification are maintained in `docs/CURRENT_STATE.md`.
+
+The following sections describe how these boundaries evolved. M3's mock and
+RustFS path remains local test infrastructure, not the current live provider.
+Deferred C6 deletion/content-safety code is isolated on the archive branch;
+accepted ADRs for it do not mean its later migrations are deployed.
+
+## Implementation evolution and contracts
+
 M3 implements one production-shaped local generation path: the browser submits
 an idempotent request, PostgreSQL transactionally creates a batch, job, audit
 event, and queue outbox record, Valkey delivers it at least once, the worker

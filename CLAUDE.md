@@ -3,9 +3,10 @@
 Read `AGENTS.md` completely before taking action. It is the stable, canonical
 agent contract for this repository.
 
-Then read only the task-specific documents routed from `AGENTS.md`. Do not
-duplicate those rules here and do not treat older chat context or screenshots
-as more authoritative than the repository.
+Then read `docs/CURRENT_STATE.md`, `docs/WORKFLOW.md`,
+`docs/IMPLEMENTATION_PLAN.md`, `docs/BACKLOG.md`, and the active task card.
+Inspect Git before editing. Load topic documents only as needed. Keep detailed
+progress in the task card so a new window can resume without this chat.
 
 For substantial work:
 
@@ -15,6 +16,6 @@ For substantial work:
 4. Implement the smallest coherent change.
 5. Run `npm run check:local` and report exact failures.
 
-The current app is a frontend prototype. Do not invent a production API,
-database schema migration, billing path, or authentication behavior without an
-explicit approved task and the matching architecture documentation update.
+Actual production identity and deferred work are recorded in CURRENT_STATE.
+Never infer that a local change is deployed or restore historical C6 work
+without an explicit task. Follow the root contract's local/live authority split.

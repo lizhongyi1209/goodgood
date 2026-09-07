@@ -1,5 +1,23 @@
 # Development and deployment
 
+## Read first: ongoing production versus historical conversion
+
+Production is already open as an owner-reviewed controlled alpha. Read
+`docs/CURRENT_STATE.md` for the last verified release and `docs/WORKFLOW.md`
+for the next feature's normal local-first lifecycle. The initial M7/M8/C6/C7
+conversion sections below retain valuable procedures and rationale; they are
+not pending work and do not authorize another reset, bucket purge, identity
+rotation, maintenance change, or fresh production conversion.
+
+Blue/green slots share production state; an inactive slot is not an isolated
+test database. Host evidence must be refreshed for the exact candidate under
+the approved live scope. A main commit, CI pass, or GHCR publication never
+deploys by itself. For ADR 0024's alpha gate use its specific requirements, not
+the paid or full-seed readiness claim. The clean baseline currently lacks the
+alpha CLI preserved in the C6 snapshot: task `docs/tasks/GG-003-alpha-release-tooling.md`
+must be completed before the next release. Do not execute a missing command or
+merge the deferred runtime just to recover its operator tooling.
+
 ## Environments
 
 | Environment | Purpose | Data |

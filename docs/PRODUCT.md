@@ -46,82 +46,46 @@ and a project is not simply a folder of images.
 8. Later they open the project, restore its state, and continue; they can always
    start a clean creation from the project surface.
 
-## Current prototype scope
+## Implemented scope and active launch boundary
 
-Implemented in the interactive frontend:
+The product has real authenticated, durable production behavior, not just a
+frontend simulation. Exact deployed identity and verification live in
+`docs/CURRENT_STATE.md`; this section defines capability scope rather than
+duplicating a release log.
 
-- Prompt and reference composer.
-- Expandable parameter settings.
-- Three visible model choices; the durable path accepts Nano Banana 2 with one
-  output across all 14 product-defined aspect ratios and `1K` / `2K` / `4K`.
-- Polled loading, completion, inline failure, and retry for that durable path.
-- The M4 backend boundary now authenticates a provider-neutral external
-  identity and scopes generation and generated-asset reads to its internal
-  GoodGood owner. The production-shaped adapter uses standard OIDC for an
-  Authing-hosted Google / email verification-code login and then issues a
-  revocable GoodGood session; local Compose retains explicit test identities.
-- Reference thumbnails now use an owner-scoped signed direct-upload lifecycle;
-  the local backend validates the decoded JPEG/PNG/WebP before allowing up to
-  10 ready references into the durable generation snapshot. A manual, bounded
-  cleanup role protects every project/generation snapshot and records
-  object-deletion or retry evidence without deleting database history.
-- Projects now persist in the local PostgreSQL slice with owner-scoped,
-  idempotent save; restore returns the latest prompt, ordered ready references,
-  parameters, and batches, and project continuation automatically associates
-  new batches.
-- The authenticated root creation surface now restores and debounces one
-  owner-scoped prompt/reference/settings draft. It expires after 30 days,
-  detects stale-tab writes, and never overwrites a saved project.
-- Creation, project, and asset navigation now use stable, refreshable URLs;
-  `/create` and the compatible `/` entry share one creation state, while image
-  detail preserves its creation or asset-library source scope through browser
-  back/forward navigation.
-- Continuous creation stream, assets, gallery, projects, and image detail.
-- Responsive layout and keyboard/wheel detail navigation.
-- M6 prices Nano Banana 2 at 10 credits per image for 1K, 2K, and 4K and grants
-  each owner 100 non-expiring welcome credits once. New generation jobs reserve
-  credit transactionally, accepted Assets settle it, and no-Asset failures
-  release it. The authenticated workspace now presents exact available credit,
-  reserved work, the launch quote, and approximate remaining images without
-  exposing provider channels. The accepted CNY 10 / 500-credit product,
-  idempotent owner orders, and exactly-once fake-sandbox fulfillment now work
-  locally. Before the ICP-filed domestic Alipay checkout exists, a trusted
-  server operator can record an already received payment against that same
-  immutable product/order/ledger path; there is no customer checkout or public
-  balance-mutation endpoint yet.
+- Prompt/reference composer, attached settings, responsive creation stream,
+  polled pending/success/inline failure, retry, gallery and focused image detail.
+- Nano Banana 2 through the real server-side O1Key route, across 14 product
+  ratios and `1K / 2K / 4K`, one output. Other visible model names are not a
+  promise of availability; routing and UI labels remain separate.
+- Authing Google/email-code login and revocable GoodGood sessions, with
+  owner-scoped jobs, private assets, uploads, projects and drafts. Local Compose
+  uses explicitly isolated test identities/mock/RustFS, not production data.
+- Up to 10 decoded JPEG/PNG/WebP references; durable project save/restore and
+  continuing batches; a 30-day root draft with stale-tab conflict handling.
+- Stable `/create`, project and asset URLs, with root compatibility and
+  source-preserving detail navigation. Route contracts live in `ROUTES.md`.
+- One 100-credit welcome grant; one-image generation costs 10 credits, with
+  transactional reserve/settle/release semantics and private credit summaries.
+- Registration is open but creative use requires site-owner approval.
+  `pending / active / suspended`, system role and product tier are distinct.
+  `/admin/users` provides audited review and free test-credit grants. The site
+  owner is bootstrapped deliberately, never selected by registration order.
 
-Implemented locally for M8 seed-production preparation:
+ADR 0024 permits the owner-reviewed controlled alpha with non-sensitive test
+content, direct operator contact and manual response. It does not claim the
+full seed or paid gate. Its accepted deferrals remain in `docs/BACKLOG.md`:
 
-- Authing registration/login remains open. Every new GoodGood owner receives
-  the normal 100 welcome credits but starts pending; only a site-owner review
-  enables creation and credit consumption.
-- A small site-owner-only account-management page reviews access and appends
-  auditable free test-credit grants without creating payment records.
-- System role, creation-access state, and product account tier remain separate
-  concepts. Seed-user accounts and creative content are production data.
-- Access state is exactly pending, active, or suspended; the initial tier is
-  seed/内测用户. The site owner is established once with the audited bootstrap
-  command after normal login, never by registration order.
+- Customer checkout/domestic Alipay, additional models and multi-output.
+- Full automatic account/external-identity deletion, content reporting and
+  broader moderation, provider-erasure terms, and complex monitoring.
+- Search, Explore, Moodboards, collaboration, sharing, and richer cross-device
+  session policy beyond existing drafts/projects are not shipped features.
 
-Not production-ready yet:
-
-- Secure public-HTTPS callback/logout verification, explicitly deferred by the
-  operator to the M7 staging gate, and the separately deferred reverse
-  association order. All requested real-Authing loopback edge cases now pass.
-  Password and phone recovery are intentionally absent because those sign-in
-  methods are not offered.
-- Real model API calls and provider failover.
-- A fuller creation-session policy covering project edits, active jobs, and
-  cross-device session history beyond the minimal root draft.
-- Customer checkout UI, the selected domestic Alipay sandbox and fulfillment
-  adapter after the applicable domain/ICP review, quotas, moderation, abuse
-  controls, and server-enforced reviewed-account admission. ADRs 0019 and 0020
-  permit a Hong Kong seed-production launch only after those non-payment safety
-  controls and the separate seed release gate pass.
-- Production object-storage lifecycle alignment, moderation, approved retention
-  periods, cleanup scheduling/alerting, and staging capacity evidence beyond the
-  locally verified manual cleanup path.
-- Search, Explore, Moodboards, collaboration, and sharing.
+The accepted CNY 10 / 500-credit payment product and fake sandbox/operator
+recording infrastructure are not permission to collect payments during alpha.
+Password/phone recovery is not offered because those sign-in methods are absent.
+Historical implementation/verification stages are retained in `docs/history/`.
 
 ## Product principles
 

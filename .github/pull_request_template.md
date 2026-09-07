@@ -2,6 +2,11 @@
 
 <!-- Describe the user-visible or engineering outcome. -->
 
+- Task card: `docs/tasks/GG-xxx-slug.md`
+- Acceptance criteria / scope:
+- Release state: local only / verified candidate / deployed (link release record)
+- Deferred work excluded:
+
 ## Decision impact
 
 - [ ] No confirmed product/design/architecture decision changed.
@@ -14,6 +19,8 @@
 - [ ] Empty/loading/success/failure states considered where applicable
 - [ ] Keyboard, focus, responsive, and reduced-motion behavior considered
 - [ ] No secrets, production data, or real user assets included
+- [ ] Task, BACKLOG, and implementation checkpoint synchronized
+- [ ] CURRENT_STATE inspected; deployment identity updated only if actually changed
 
 ## Screenshots
 

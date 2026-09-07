@@ -8,9 +8,9 @@ changing detail in `docs/` and update the relevant document in the same change.
 - Product: **GoodGood**, a premium, image-first AI visual creation workspace.
 - Primary task: let creators generate repeatedly, inspect results, collect
   assets, and preserve a coherent creative session as a resumable project.
-- Current state: an interactive frontend plus one durable local, mock-backed
-  generation slice. Authentication, billing, references/projects, uploads, and
-  the real model gateway are not production implementations.
+- Live stage: publicly open, owner-reviewed controlled alpha. Read
+  `docs/CURRENT_STATE.md` for actual deployed capabilities and release identity;
+  never infer production from a branch name or old chat.
 - Primary language today: Simplified Chinese. Keep the information architecture
   ready for later internationalization; do not hard-code backend enums from UI
   labels.
@@ -18,8 +18,10 @@ changing detail in `docs/` and update the relevant document in the same change.
 ## Read before changing code
 
 1. Read this file.
-2. Read `docs/IMPLEMENTATION_PLAN.md` for the current milestone, verified
-   checkpoint, next slice, and blockers.
+2. Read `docs/CURRENT_STATE.md`, `docs/WORKFLOW.md`,
+   `docs/IMPLEMENTATION_PLAN.md`, and `docs/BACKLOG.md`. Inspect Git status,
+   branch/worktree and recent commits; match or create the task card in
+   `docs/tasks/`. Do not load the full historical log unless needed.
 3. Read the task-specific source of truth:
    - Product scope and terms: `docs/PRODUCT.md`
    - Historical rationale and rejected directions: `docs/PRODUCT_JOURNEY.md`
@@ -35,6 +37,25 @@ changing detail in `docs/` and update the relevant document in the same change.
    screenshot when the code is available.
 5. State whether the request changes a confirmed decision. If it does, create
    or update an ADR under `docs/decisions/` before implementation.
+
+## Session and delivery contract
+
+- A concise natural-language request is enough. The agent restores context,
+  records scope/acceptance, allocates a task ID, and maintains its task card.
+  Do not require the user to repeat earlier decisions or write a handoff essay.
+- New requests start isolated feature/fix branches from a verified main
+  baseline. Parallel windows use separate worktrees; preserve unrelated edits.
+  Never start from or bulk-merge the parked C6 branch without explicit scope.
+- Save material decisions and resumable next steps during work, before waits,
+  compaction, or handoff. Chat memory is not the project's source of truth.
+- Local implementation, tests, CI, image publication, and production deployment
+  are separate states. Existing real production data must not be reset by old
+  conversion scripts. Production authority is specific to the approved task.
+- Proceed through approved in-scope steps without repeated confirmations;
+  ask when a missing choice changes product direction, data safety, cost, or
+  external authority. Do not silently grow alpha work into full-seed readiness.
+- Follow repository workflows, not personal/external business skills. Tool
+  availability or legacy hosting metadata does not change the deployment target.
 
 ## Product invariants
 
@@ -93,10 +114,10 @@ changing detail in `docs/` and update the relevant document in the same change.
   labels, reduced motion, and responsive behavior intact.
 - Do not add speculative routes or functionality while refactoring.
 - Update documentation, tests, and error behavior in the same change as code.
-- At the end of every code or infrastructure task, synchronize the current
-  checkpoint in `docs/IMPLEMENTATION_PLAN.md`: milestone status, completed
-  slice, verification, and next action or blocker. If the plan did not change,
-  explicitly confirm that after inspecting it rather than inventing progress.
+- At each handoff, update the task card and BACKLOG, then synchronize the one
+  current checkpoint in `docs/IMPLEMENTATION_PLAN.md`. Update CURRENT_STATE
+  only when facts change. Record exact verification and the next action or
+  blocker; do not invent progress if the plan did not change.
 
 ## Local development
 
@@ -105,8 +126,9 @@ changing detail in `docs/` and update the relevant document in the same change.
 - Start the local development server from the repository root with
   `npm run dev:local`; use the local URL printed by Vite and press `Ctrl+C` to
   stop it.
-- The current prototype requires no environment variables. See
-  `docs/DEPLOYMENT.md` for environment and release details.
+- UI-only preview needs no secrets; durable behavior needs the local Compose
+  stack. Production uses real Authing/O1Key/private R2 and protected secrets.
+  See `docs/DEPLOYMENT.md`; never use production data for local testing.
 
 ## Definition of done
 
@@ -116,5 +138,7 @@ changing detail in `docs/` and update the relevant document in the same change.
   applicable.
 - No secret or real user asset enters the diff.
 - Relevant docs and ADR status are current.
+- Task card distinguishes implemented, verified, and deployed; no unreported
+  deferred changes are included in the release candidate.
 - `docs/IMPLEMENTATION_PLAN.md` accurately describes the handoff state and next
   smallest useful slice.

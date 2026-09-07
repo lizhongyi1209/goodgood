@@ -297,7 +297,8 @@ test("single-host seed decision keeps local data isolated and authorizes no live
   assert.match(deployment, /No live reset or deletion is authorized/);
   assert.match(deployment, /seven days after conversion passes/);
   assert.match(deployment, /verify the bucket is empty/);
-  assert.match(plan, /connected to no server and deleted or changed no data/);
+  assert.match(plan, /CURRENT_STATE\.md/);
+  assert.match(plan, /history\/2026-09-07-implementation-log\.md/);
 });
 
 test("production release CLI is plan-only and has no process execution path", async () => {

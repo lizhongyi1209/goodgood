@@ -1,5 +1,10 @@
 # Testing strategy
 
+Exact latest results belong in the task card and, for deployed behavior,
+`docs/CURRENT_STATE.md` / `docs/releases/`. Historical M-stage descriptions here
+are coverage contracts, not fresh production evidence. Follow `docs/WORKFLOW.md`
+to distinguish UI preview, durable local integration, live API, and browser proof.
+
 ## Current baseline
 
 The default suite validates the production build, rendered metadata, shared UI
@@ -477,10 +482,14 @@ outside the one-output MVP.
 
 ### Documentation continuity
 
-- `AGENTS.md` and `docs/README.md` keep the current implementation plan
-  discoverable.
-- The plan retains a dated checkpoint, active phase, next action, blockers,
-  milestones, and new-session recovery instructions.
+- Agent adapters and root/docs entry points expose CURRENT_STATE, WORKFLOW,
+  IMPLEMENTATION_PLAN and BACKLOG. These files remain short; history is lazy-read.
+- The plan retains one dated checkpoint, active phase, next action, blockers,
+  milestones, and new-session recovery instructions; task cards retain resumable
+  progress and distinguish local verification from deployment.
+- Relative links in the current continuity/task/release documents resolve.
+- CURRENT_STATE and release receipt agree on the recorded immutable identity;
+  later deployed migrations must not be inferred from a parked worktree.
 - Every numbered ADR file is listed in `docs/decisions/README.md`.
 - Automated structure checks do not replace the required human/agent review of
   whether the checkpoint and topic contracts are factually current.

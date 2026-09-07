@@ -1,7 +1,9 @@
 # Product journey and decision history
 
-This document preserves the reasoning that produced the current prototype. It
-prevents a future redesign from restarting the same debates without context.
+This document preserves the reasoning that shaped GoodGood, starting with its
+original prototype. It prevents a future redesign from restarting the same
+debates. Historical scope below is not live status; use `docs/CURRENT_STATE.md`
+and accepted later ADRs for the present rollout and decisions.
 
 ## 1. Start with the real task
 

@@ -32,4 +32,12 @@ Current records:
 - `0019-hong-kong-invite-only-seed-production.md`
 - `0020-owner-reviewed-accounts-and-site-owner-console.md`
 - `0021-single-host-seed-production-and-local-preproduction.md`
+- `0022-production-data-retention-and-account-deletion.md`
+- `0023-seed-content-safety-and-manual-response.md`
+- `0024-controlled-alpha-before-full-seed-readiness.md`
 - `0025-open-banana-2-aspect-ratios-and-resolutions.md`
+- `0026-repository-owned-session-continuity.md`
+
+Accepted describes a decision, not proof of deployment. ADR 0022/0023's full
+runtime rollout is deferred under ADR 0024. The current release and rollout
+status live in `docs/CURRENT_STATE.md`; older ADR context is historical.

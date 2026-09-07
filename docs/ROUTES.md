@@ -17,7 +17,7 @@ native history.
 | 灵感板 | Placeholder | No view or route yet |
 | 帮助 | Placeholder | No view or route yet |
 | 图片详情 | Implemented | `/assets/:assetId` over its preserved source scope |
-| 账户管理 | Implemented locally for M8 | `/admin/users`, visible and callable only by the site owner |
+| 账户管理 | Implemented | `/admin/users`, visible and callable only by the site owner |
 
 Do not describe placeholders as shipped features.
 

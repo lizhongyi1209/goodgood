@@ -1,44 +1,43 @@
-# GoodGood documentation map
+# GoodGood 文档导航
 
-These documents are the product memory for humans and AI agents. Source code
-describes what exists; these documents explain what must remain true and why.
+仓库是跨窗口共享的项目记忆。先读短入口，再按需读细节，不要求加载全部历史。
 
-| Document | Use it for |
+## 新会话必读
+
+1. 根 [AGENTS.md](../AGENTS.md)：稳定约束、入口、权限边界。
+2. [CURRENT_STATE.md](CURRENT_STATE.md)：真实阶段、线上版本、未发布/搁置内容。
+3. [WORKFLOW.md](WORKFLOW.md)：需求 → 本地实现 → 验收 → 精确候选发布 → 交接。
+4. `IMPLEMENTATION_PLAN.md`：[唯一当前检查点](IMPLEMENTATION_PLAN.md)。
+5. [BACKLOG.md](BACKLOG.md) 与 [任务卡](tasks/README.md)：优先级、验收、进度和下一步。
+
+同时检查实际 Git 状态；不会自动读取另一个窗口的聊天，也不应依赖它。
+
+## 按任务加载
+
+| 文档 | 解决什么问题 |
 | --- | --- |
-| `IMPLEMENTATION_PLAN.md` | Current milestone, verified status, next slice, blockers |
-| `PRODUCT.md` | Product definition, audience, terminology, scope |
-| `PRODUCT_JOURNEY.md` | From-zero rationale, confirmed and rejected directions |
-| `DESIGN_SYSTEM.md` | Brand, tokens, component sizing, layout rules |
-| `UX_FLOWS.md` | User flows and interface state contracts |
-| `ROUTES.md` | Implemented views and planned URL structure |
-| `PROJECT_MAP.md` | Current files, ownership, target feature boundaries |
-| `ARCHITECTURE.md` | Prototype and target production architecture |
-| `DATA_MODEL.md` | Canonical entities and lifecycle constraints |
-| `ERROR_HANDLING.md` | Error taxonomy, placement, recovery, observability |
-| `TESTING.md` | Test pyramid, required scenarios, release gates |
-| `DEPLOYMENT.md` | Local, staging, production and rollback workflow |
-| `decisions/` | Architecture/product decision records (ADRs) |
+| [PRODUCT.md](PRODUCT.md) | 产品范围、术语与人群 |
+| [PRODUCT_JOURNEY.md](PRODUCT_JOURNEY.md) | 用户决定、被放弃的方向与原因 |
+| [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) | 品牌、颜色、组件与布局 |
+| [UX_FLOWS.md](UX_FLOWS.md) | 交互与状态合同 |
+| [ROUTES.md](ROUTES.md) | 导航与 URL |
+| [PROJECT_MAP.md](PROJECT_MAP.md) | 文件责任与模块边界 |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | 实际集成边界及演进 |
+| [DATA_MODEL.md](DATA_MODEL.md) | 实体与生命周期 |
+| [ERROR_HANDLING.md](ERROR_HANDLING.md) | 错误、恢复与观测 |
+| [TESTING.md](TESTING.md) | 验证方式、测试覆盖与证据边界 |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | 环境、运行与发布/回退；历史转换不是待办 |
+| [decisions/README.md](decisions/README.md) | ADR 及已确认取舍；Accepted 不代表已上线 |
+| [releases/](releases/) | 已发布版本的非敏感证据摘要 |
+| [history/README.md](history/README.md) | 提炼经验及完整历史，默认不加载 |
 
-## Authority order
+## 有冲突时
 
-When material conflicts, use this order:
+- 遵守适用指令优先级；用户的新明确决定及时记 ADR/任务卡，不能因尚未落盘忽视它。
+- 预期产品行为由已确认决定、AGENTS 和专题合同定义；改变旧决定先记录。
+- 代码/Git/测试描述实际实现，精确发布证据描述实际生产；文档不能代替实测。
+- 发现合同与实现不一致，标出差异、风险和修复方向，不能悄悄改合同粉饰。
+- 截图、旧聊天和历史计划用于追溯，不能覆盖新的明确决定或当作操作授权。
 
-1. A newly approved user decision recorded in an accepted ADR.
-2. `AGENTS.md` invariants.
-3. The relevant topic document above.
-4. Existing tests and code behavior.
-5. Old screenshots, mock data, and chat summaries.
-
-If code differs from a confirmed contract, record it as implementation debt;
-do not silently rewrite the contract to match the accident.
-
-`IMPLEMENTATION_PLAN.md` controls delivery status only. It never overrides an
-accepted ADR, product invariant, or topic contract.
-
-## Session continuity
-
-Start every development session by reading `AGENTS.md`, then
-`IMPLEMENTATION_PLAN.md`, inspecting `git status`, and loading the topic docs
-for the active task. End every code or infrastructure task by synchronizing the
-current checkpoint, verification result, next slice, and any affected topic
-docs in the same change.
+每次任务交接同步任务卡与当前计划；部署事实变化才更新 CURRENT_STATE。
+同一事实指定一个主位置，其他文件链接过去，避免多个互相竞争的“当前状态”。

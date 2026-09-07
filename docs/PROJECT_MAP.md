@@ -2,6 +2,9 @@
 
 ## Current implementation
 
+Use `docs/CURRENT_STATE.md` for the deployed subset and parked work. This map
+describes ownership in the clean integration baseline, not live-release proof.
+
 | Path | Responsibility |
 | --- | --- |
 | `app/page.tsx` | Shared workspace orchestration plus authenticated root-draft, durable project, and asset-library UI states |
@@ -29,8 +32,8 @@
 | `tests/` | Build/render, documentation, domain/mock, M3/M4 runtime, and opt-in Compose integration coverage |
 | `db/` | PostgreSQL Drizzle schema and process-local database helper |
 | `migrations/` | Versioned, checksum-tracked, rerunnable PostgreSQL migrations |
-| `worker/` | Vinext/Cloudflare worker entry for the current prototype |
-| `worker-configuration.d.ts` | Typed optional bindings for the current Cloudflare prototype |
+| `worker/` | Retained legacy Vinext/Cloudflare hosting entry; not the Hong Kong production process |
+| `worker-configuration.d.ts` | Optional bindings for the retained Cloudflare hosting path |
 | `server/generation/` | Node API, persistence transactions, outbox/Valkey queue, unbounded concurrent job runner, worker orchestration, explicit mock/O1Key routing, provider adapters, and object storage |
 | `server/auth/` | Authing-compatible OIDC/PKCE flow, hashed GoodGood sessions, provider-neutral identity mapping, local test adapter, and owner context |
 | `server/admin/` | Site-owner authorization, account search/review, linked promotional-credit audit, and one-time owner bootstrap |
@@ -64,7 +67,10 @@
 | `compose.staging.yaml` / `compose.staging.dependencies.yaml` / `infra/staging/` | Digest-only app roles, a separately operated resource-bounded test-data dependency stack, host bootstrap/install helpers, and non-secret staging templates; real secrets remain outside the checkout |
 | `compose.o1key-local.yaml` | Explicit local worker override for the O1Key route and mounted key file |
 | `compose.production*.yaml` / `infra/production/` | Resource-bounded production state and blue/green app topology, exact four-hour conversion runbook, maintenance/Nginx boundary, backup automation, slot/systemd templates, and non-secret manifests; credentials, approvals, and operational evidence stay outside Git |
-| `.openai/hosting.json` | Current prototype hosting identity; not an app secret |
+| `.openai/hosting.json` | Retained historical Sites identity; not the current production target or an app secret |
+| `AGENTS.md` / `docs/CURRENT_STATE.md` / `docs/WORKFLOW.md` | Stable agent contract, actual snapshot, and repeatable development/release workflow |
+| `docs/BACKLOG.md` / `docs/tasks/` | Task priorities, acceptance, exact progress and resumable next steps |
+| `docs/releases/` / `docs/history/` | Release receipts and lazy-read historical development evidence |
 
 The remaining project, asset, detail, and view orchestration in `app/page.tsx`
 and the broad `app/globals.css` stylesheet are documented prototype debt. Do
@@ -110,8 +116,9 @@ Extraction order for the first backend milestone:
 4. Replace simulations behind that boundary with real APIs.
 5. Add addressable routes only after persistence IDs exist.
 
-Current milestone status and the next slice live only in
-`docs/IMPLEMENTATION_PLAN.md`; do not duplicate changing delivery status here.
+Current milestone status and the single next action live in
+`docs/IMPLEMENTATION_PLAN.md`; actual deployment in `docs/CURRENT_STATE.md`;
+task detail in `docs/tasks/`. Do not duplicate changing delivery status here.
 
 ## Ownership rules
 
