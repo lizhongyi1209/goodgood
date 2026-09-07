@@ -73,9 +73,9 @@ individual icon. Upload, settings, and send align to the same 40px box.
   drawer; drawers must not appear detached.
 - Prompt is the flexible column. Left and right controls remain top-aligned and
   fixed while the textarea grows.
-- Reference thumbnails use a horizontal tray, `84 × 64 px` rectangular crops on
-  desktop and `72 × 56 px` on mobile, with individual removal. Keep the sizes in
-  shared responsive tokens and do not show redundant `参考图` labels or totals.
+- Reference thumbnails use a horizontal tray, centered 1:1 crops at `64 × 64 px`
+  on desktop and `56 × 56 px` on mobile, with individual removal. Keep the sizes
+  in shared responsive tokens and do not show redundant `参考图` labels or totals.
 - Uploading and failed references reuse the thumbnail silhouette with a quiet
   opacity treatment and centered status icon; do not introduce a detached
   upload panel or success banner.

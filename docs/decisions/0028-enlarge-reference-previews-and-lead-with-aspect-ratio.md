@@ -1,8 +1,9 @@
 # ADR 0028: Enlarge reference previews and lead with aspect ratio
 
-- Status: Accepted
+- Status: Superseded
 - Date: 2026-09-07
 - Task: GG-006
+- Superseded by: [ADR 0029](0029-enlarge-square-reference-previews-and-lead-with-aspect-ratio.md)
 
 ## Context
 

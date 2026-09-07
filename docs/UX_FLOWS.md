@@ -70,8 +70,8 @@ fill space.
 - A selected reference appears immediately with a restrained uploading overlay.
   It becomes ready only after direct upload and server-side decoded validation;
   failure remains on that tray item with removal/replacement recovery.
-- The tray uses enlarged responsive rectangular crops and scrolls horizontally
-  without wrapping, so adding references does not destabilize the composer.
+- The tray uses moderately enlarged responsive 1:1 centered crops and scrolls
+  horizontally without wrapping, so adding references does not destabilize the composer.
 - Send is blocked while any retained reference is uploading or failed. Ready
   references preserve their tray order in the submitted batch snapshot.
 - Settings: attached downward drawer; closing it must not reset values.

@@ -39,6 +39,7 @@ Current records:
 - `0026-repository-owned-session-continuity.md`
 - `0027-expose-resolution-values-and-actual-asset-dimensions.md`
 - `0028-enlarge-reference-previews-and-lead-with-aspect-ratio.md`
+- `0029-enlarge-square-reference-previews-and-lead-with-aspect-ratio.md`
 
 Accepted describes a decision, not proof of deployment. ADR 0022/0023's full
 runtime rollout is deferred under ADR 0024. The current release and rollout
