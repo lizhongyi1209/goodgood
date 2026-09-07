@@ -2,7 +2,7 @@
 
 - Last synchronized: 2026-09-07
 - Current phase: 已开放 controlled alpha；转入按需求的高频小步迭代。
-- Current objective: GG-004 已完成生产竞态诊断；等待实现重复投递与终态一致性修复。
+- Current objective: GG-004 重复投递与终态一致性修复已实现并完成本地验证，等待验收。
 
 ## Current checkpoint
 
@@ -17,10 +17,12 @@
   历史记录中的开站、轮换、清空等许可不继承，旧转换流程不是新的执行计划。
 - GG-004：一条线上任务被重复派发并由同一 Worker 并发执行；失败分支先写入
   `SUBMISSION_UNKNOWN`，成功分支已取得结果并写入私有 R2，却未能提交 Asset。
-  积分已释放，生产数据未做修复；完整非敏感证据见[任务卡](tasks/GG-004-generation-dispatch-race.md)。
-- Next action: 为 GG-004 添加稳定复现测试，再修复 outbox 派发、单 job 执行互斥、
-  终态提交结果检查与孤儿对象补偿。
-- Blockers: GG-004 本地修复无外部阻塞；下次 alpha 发布前须处理 GG-003 的独立
+  本地候选已加入 outbox 原子领取与延迟重派、单 job 互斥、严格 lease、终态结果检查和
+  孤儿对象补偿；完整门禁及 PostgreSQL/Compose 专项回归通过。积分已释放，生产数据
+  未做修复；完整非敏感证据见[任务卡](tasks/GG-004-generation-dispatch-race.md)。
+- Next action: 审查 GG-004 候选；如批准发布，先完成 GG-003 发布门禁提取，再按发布流程
+  形成镜像、CI 与生产验证证据。真实孤儿 JPEG 和供应商费用核对另行授权处理。
+- Blockers: GG-004 本地候选无外部阻塞；下次 alpha 发布前须处理 GG-003 的独立
   门禁工具提取。完整删除、举报、外部删除条款与付费要求留在搁置项，不自动恢复。
 
 ## Milestones
@@ -35,7 +37,7 @@
 | M9 | 搁置 | 支付/国内支付宝，见 GG-902 |
 | ADR 0025 / GG-002 | 已上线 | Nano Banana 2 全 14 宽高比 × 三档分辨率 |
 | GG-001 | 已完成（不需部署） | 项目记忆、历史精简、分支隔离与交接协议 |
-| GG-004 | 待办（已诊断） | 重复派发、同 Worker 重入与失败/完成终态竞态修复 |
+| GG-004 | 待验收（本地已验证） | 重复派发、同 Worker 重入与失败/完成终态竞态修复 |
 
 ## New-session recovery
 

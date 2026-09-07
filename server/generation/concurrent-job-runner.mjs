@@ -8,6 +8,7 @@ export function createConcurrentJobRunner({
   }
 
   let accepting = true;
+  const activeJobIds = new Set();
   const activeTasks = new Set();
 
   function emit(event) {
@@ -42,8 +43,18 @@ export function createConcurrentJobRunner({
 
   function start(jobId) {
     if (!accepting) return false;
+    if (activeJobIds.has(jobId)) {
+      emit({
+        activeJobCount: activeTasks.size,
+        event: "worker.job_duplicate_ignored",
+        jobId,
+      });
+      return false;
+    }
+    activeJobIds.add(jobId);
     let task;
     task = execute(jobId).finally(() => {
+      activeJobIds.delete(jobId);
       activeTasks.delete(task);
       emit({
         activeJobCount: activeTasks.size,

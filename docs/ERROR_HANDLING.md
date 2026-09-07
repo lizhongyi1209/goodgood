@@ -63,6 +63,10 @@ poll deadline to `MODEL_TIMEOUT`, provider reachability/capacity to
 queue, and object-storage diagnostics remain server-side. Queue dispatch failure
 leaves the committed outbox row pending; an object-storage failure leaves the
 non-terminal job and attempt evidence recoverable for worker reconciliation.
+Dispatchers claim outbox rows atomically before publishing them, and recovery
+does not reopen a fresh dispatch until the Worker lease window has elapsed.
+Duplicate deliveries of the same active job are ignored, and an unexpired lease
+cannot be reclaimed by the same Worker identity.
 The generation API admits only the 14 listed aspect ratios and `1K` / `2K` /
 `4K`; it keeps Nano Banana 2 and one output fixed. Unknown capability values
 return `M3_SLICE_UNSUPPORTED` before a job, credit reservation, or provider POST
@@ -94,6 +98,13 @@ PNG, or WebP; empty, oversized, truncated, type-mismatched, or excessive-pixel
 outputs normalize to `INTERNAL_ERROR` and never become an Asset. An active
 attempt whose persisted route differs from the configured worker route is
 deferred for reconciliation rather than polled through a different provider.
+After a valid output is stored, the Worker records success only if the database
+accepts the asset and terminal transition. If a failed, cancelled, or missing
+job rejects completion, the unaccepted object is deleted and the execution is
+reported as superseded. Cleanup failure is emitted as `OBJECT_DELETE_FAILED`
+with orphan evidence for operator reconciliation. A lost lease or an already
+succeeded job preserves the deterministic object because another accepted
+execution may own it.
 
 ## API error envelope
 

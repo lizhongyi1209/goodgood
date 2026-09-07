@@ -334,6 +334,19 @@ test(
       workerId: `m6-worker-${suffix}`,
     });
     assert.equal(releasedClaim.claimed, true);
+    assert.deepEqual(
+      await claimGenerationJob(pool, {
+        attemptRoute: {
+          provider: "goodgood-mock",
+          providerModel: "nano-banana-2",
+          routeVersion: "m6-test-v1",
+        },
+        jobId: releasedGeneration.row.id,
+        leaseMs: 30_000,
+        workerId: `m6-worker-${suffix}`,
+      }),
+      { claimed: false, reason: "leased" },
+    );
     assert.equal(
       await failGenerationJob(pool, {
         attemptId: releasedClaim.attempt.id,
@@ -400,7 +413,7 @@ test(
       pixelHeight: 1,
       pixelWidth: 1,
     };
-    assert.equal(
+    assert.deepEqual(
       await completeGenerationJob(pool, {
         asset: settledAsset,
         attemptId: settledClaim.attempt.id,
@@ -408,7 +421,7 @@ test(
         resultHash: `m6-result-${suffix}`,
         workerId: `m6-stale-worker-${suffix}`,
       }),
-      false,
+      { completed: false, reason: "lease_lost" },
     );
     const staleCompletionEvidence = await pool.query(
       `SELECT
@@ -421,7 +434,7 @@ test(
       assets: 0,
       reserved_balance: "10",
     });
-    assert.equal(
+    assert.deepEqual(
       await completeGenerationJob(pool, {
         asset: settledAsset,
         attemptId: settledClaim.attempt.id,
@@ -429,7 +442,7 @@ test(
         resultHash: `m6-result-${suffix}`,
         workerId: `m6-worker-${suffix}`,
       }),
-      true,
+      { completed: true, reason: "completed" },
     );
     const liveBillingEvidence = await pool.query(
       `SELECT entry_type, amount, reason

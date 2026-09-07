@@ -11,7 +11,10 @@ import {
   renewGenerationLease,
   saveProviderTask,
 } from "./repository.mjs";
-import { storeGeneratedAsset } from "./storage.mjs";
+import {
+  discardGeneratedAsset,
+  storeGeneratedAsset,
+} from "./storage.mjs";
 
 const INTERNAL_ERROR = Object.freeze({
   code: "INTERNAL_ERROR",
@@ -27,6 +30,13 @@ const SUBMISSION_UNKNOWN = Object.freeze({
   title: "提交结果暂时无法确认",
 });
 
+class SupersededGenerationExecution extends Error {
+  constructor() {
+    super("Another execution already owns this generation attempt.");
+    this.name = "SupersededGenerationExecution";
+  }
+}
+
 function normalizedError(error) {
   if (error instanceof NormalizedProviderError) return error;
   return INTERNAL_ERROR;
@@ -40,6 +50,38 @@ function generatedObjectExtension(contentType) {
   })[contentType];
   if (!extension) throw new Error("Unsupported decoded generated image type.");
   return extension;
+}
+
+export async function resolveStoredGenerationCompletion({
+  completion,
+  discard,
+}) {
+  if (completion.completed) return { outcome: "succeeded" };
+  const discardStoredObject = ["cancelled", "failed", "missing"].includes(
+    completion.reason,
+  );
+  if (!discardStoredObject) {
+    return {
+      completionReason: completion.reason,
+      objectDiscarded: false,
+      outcome: "superseded",
+    };
+  }
+  try {
+    await discard();
+    return {
+      completionReason: completion.reason,
+      objectDiscarded: true,
+      outcome: "superseded",
+    };
+  } catch {
+    return {
+      code: "OBJECT_DELETE_FAILED",
+      completionReason: completion.reason,
+      objectDiscarded: false,
+      outcome: "orphaned",
+    };
+  }
 }
 
 export async function processGenerationJob(resources, { jobId, workerId }) {
@@ -100,7 +142,7 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
                   attemptId: attempt.id,
                 });
                 if (!started) {
-                  throw new NormalizedProviderError(SUBMISSION_UNKNOWN);
+                  throw new SupersededGenerationExecution();
                 }
               }
             : undefined,
@@ -135,7 +177,7 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
       storage,
     });
     stage = "generation-completion";
-    await completeGenerationJob(pool, {
+    const completion = await completeGenerationJob(pool, {
       asset: {
         aspectRatio: job.aspect_ratio,
         batchId: job.batch_id,
@@ -153,8 +195,20 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
       resultHash: checksum,
       workerId,
     });
-    return { ...resultContext(), outcome: "succeeded", stage };
+    const resolution = await resolveStoredGenerationCompletion({
+      completion,
+      discard: () =>
+        discardGeneratedAsset({
+          bucket: config.objectStorage.bucket,
+          key: objectKey,
+          storage,
+        }),
+    });
+    return { ...resultContext(), ...resolution, stage };
   } catch (error) {
+    if (error instanceof SupersededGenerationExecution) {
+      return { ...resultContext(), outcome: "superseded", stage };
+    }
     if (error instanceof NormalizedProviderError) {
       await failGenerationJob(pool, {
         attemptId: attempt.id,

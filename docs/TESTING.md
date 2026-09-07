@@ -223,9 +223,11 @@ configuration identity.
 Concurrent-Worker coverage proves one active Worker runner starts multiple
 accepted job promises without a fixed count ceiling, acknowledges each claimed
 queue item once, reports active-job count, stops taking work, and waits for all
-in-flight promises during graceful shutdown. The existing transactional claim,
-provider-submission guard, and credit settlement remain inside each isolated
-`processGenerationJob` call. Deterministic host-resource tests accept exactly
+in-flight promises during graceful shutdown. It also proves a duplicate
+delivery cannot start the same job twice while its first execution is active.
+The existing transactional claim, provider-submission guard, and credit
+settlement remain inside each isolated `processGenerationJob` call.
+Deterministic host-resource tests accept exactly
 500 MiB / below 80%, reject below 500 MiB or at 80%, latch protection until
 operator review plus process restart, block only new submit/retry requests, and
 leave safe generation reads available. Monitoring-shape requirements still
@@ -451,7 +453,10 @@ The timestamped result of the latest verified gate belongs in
   O1Key worker resumes only with a durable `task_id`; otherwise its persisted
   submission guard fails closed without an automatic second billable POST.
 - Duplicate queue delivery and duplicate completion callbacks have no adverse
-  effect.
+  effect. The GG-004 regression covers concurrent atomic outbox claims, the
+  redispatch stale window, same-Worker active-job deduplication, rejection of a
+  repeated unexpired lease, one attempt/Asset/settlement under live duplicate
+  Valkey delivery, and stored-object cleanup when a terminal transition wins.
 - Provider 500, rejection, malformed result, timeout, and unreachable states
   normalize to the documented recovery behavior.
 - Object storage or database failure preserves enough durable evidence for

@@ -38,7 +38,7 @@ await health.listen();
 const resources = await getGenerationResources();
 await connectGenerationQueue(resources);
 await prepareObjectStorage(resources);
-await reconcileRecoverableJobs(resources.pool);
+await reconcileRecoverableJobs(resources.pool, resources.config.workerLeaseMs);
 await dispatchPendingJobs(resources.pool, resources.redis);
 const checks = await probeGenerationResources(resources);
 health.markReady(checks);
@@ -73,11 +73,13 @@ const jobs = createConcurrentJobRunner({
         jobId,
         outcome: result.outcome,
         code: result.code,
+        completionReason: result.completionReason,
         customerCreditAmount: result.customerCreditAmount,
         customerCreditUnit: result.customerCreditUnit,
         durationMs: result.durationMs,
         stage: result.stage,
         ownerId: result.ownerId,
+        objectDiscarded: result.objectDiscarded,
         provider: result.provider,
         providerLatencyMs: result.providerLatencyMs,
         providerTaskId: result.providerTaskId,
@@ -93,7 +95,10 @@ const loop = (async () => {
   while (!stopping) {
     try {
       if (Date.now() - lastReconciliation > 1_000) {
-        await reconcileRecoverableJobs(resources.pool);
+        await reconcileRecoverableJobs(
+          resources.pool,
+          resources.config.workerLeaseMs,
+        );
         await dispatchPendingJobs(resources.pool, resources.redis);
         lastReconciliation = Date.now();
       }

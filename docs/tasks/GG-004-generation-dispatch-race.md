@@ -1,7 +1,7 @@
 # GG-004 — 修复重复投递导致生成结果丢失
 
-- 状态：待办（生产缺陷已诊断，尚未实施）
-- 用户需求：查明一条 `SUBMISSION_UNKNOWN` 生成任务失败的原因。
+- 状态：待验收（本地已实现并验证，未发布）
+- 用户需求：查明一条 `SUBMISSION_UNKNOWN` 生成任务失败的原因并修复。
 - 最后更新：2026-09-07
 - 分支 / worktree：`fix/GG-004-generation-dispatch-race` / `F:/goodgood`
 - 基线：`bab17fd`；诊断时线上源版本为 `94cecb0`
@@ -40,14 +40,23 @@
   `workerId` 复用未过期 lease，runner 也不去重活跃 job。竞态失败分支先提交终态，
   成功分支稍后调用 `completeGenerationJob` 得到 `false`，但 Worker 忽略返回值并记录
   `outcome=succeeded`，于是形成失败数据库记录和孤儿 R2 对象。
-- 验证：只读检查生产 Web/Worker 结构化日志、目标 job/attempt/event/asset/ledger/outbox
-  行及目标前缀 R2 元数据；并与当前线上源代码逐路径核对。尚未运行修复测试。
+- 实现：outbox 在发布到 Valkey 前以单条 PostgreSQL 语句原子领取；恢复扫描仅在派发
+  超过 lease 窗口后重开。runner 去重同一进程内的活跃 job，任意未过期 lease 都拒绝
+  再次 claim，provider submission guard 的失败竞争改为 superseded 执行。
+- 实现：Worker 仅在 `completeGenerationJob` 接受资产和终态后报告成功。失败、取消或
+  缺失终态拒绝已上传结果时删除未引用对象；删除失败记录 `OBJECT_DELETE_FAILED`，
+  lease 丢失或任务已成功时保留确定性对象供当前有效执行使用。
+- 验证：`npm run check:local` 共 201 项，195 通过、6 个 opt-in 跳过、0 失败；
+  `GOODGOOD_M6_INTEGRATION=1` 的积分/lease 集成 5/5 通过，队列专项 PostgreSQL 集成
+  3/3 通过。本地 Compose 在 3010 端口的重复活跃投递场景通过，最终仅有 1 次 claim、
+  1 个 attempt、1 个 Asset、1 次 settle，outbox 派发计数为 1；`stack:verify` 全部 ready。
+- 附加证据：旧的广泛 Compose 用例在进入生成路径前命中与本次差异无关的过期登录
+  session 结构断言；GG-004 聚焦 Compose 回归随后单独通过，本地完整门禁没有失败。
 - 发布：未发布；未修改生产数据、配置或运行进程。
 
-## 恢复工作
+## 交接
 
-- 尚未完成：先写可稳定复现上述时序的并发回归测试，再实现队列领取、单 job 执行互斥、
-  终态提交结果检查及孤儿对象补偿，最后运行 `npm run check:local` 和本地 Compose 验证。
-- 阻塞/风险：本地修复无外部阻塞；受影响真实 JPEG 的恢复、删除及供应商费用核对属于
+- 尚未完成：代码审查、CI、镜像发布和生产部署；下次 alpha 发布前还需先闭环 GG-003。
+- 风险：受影响真实 JPEG 的恢复、删除及供应商费用核对属于
   单独的生产数据操作，需要基于修复方案和账务证据明确处理范围。
-- 下一步：在当前分支添加重复派发与完成/失败交错测试，先让测试稳定复现生产竞态。
+- 下一步：审查当前候选；发布与真实数据处置分别取得授权后执行，不能互相替代。

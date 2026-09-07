@@ -362,7 +362,6 @@ export async function claimGenerationJob(
     }
     if (
       job.lease_owner &&
-      job.lease_owner !== workerId &&
       job.lease_expires_at &&
       new Date(job.lease_expires_at).getTime() > Date.now()
     ) {
@@ -529,15 +528,19 @@ export async function completeGenerationJob(
     const state = locked.rows[0]?.state;
     if (state === "succeeded") {
       await client.query("COMMIT");
-      return false;
+      return { completed: false, reason: "already_succeeded" };
     }
-    if (!state || state === "failed" || state === "cancelled") {
+    if (!state) {
       await client.query("COMMIT");
-      return false;
+      return { completed: false, reason: "missing" };
+    }
+    if (state === "failed" || state === "cancelled") {
+      await client.query("COMMIT");
+      return { completed: false, reason: state };
     }
     if (locked.rows[0].lease_owner !== workerId) {
       await client.query("COMMIT");
-      return false;
+      return { completed: false, reason: "lease_lost" };
     }
 
     await client.query(
@@ -591,7 +594,7 @@ export async function completeGenerationJob(
       detail: { assetId: asset.id },
     });
     await client.query("COMMIT");
-    return true;
+    return { completed: true, reason: "completed" };
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;

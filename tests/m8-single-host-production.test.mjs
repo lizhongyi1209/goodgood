@@ -197,6 +197,35 @@ test("one Worker runner overlaps accepted jobs and drains them gracefully", asyn
   );
 });
 
+test("one Worker runner ignores duplicate delivery while the job is active", async () => {
+  const gate = deferred();
+  const runs = [];
+  const acknowledgements = [];
+  const observations = [];
+  const runner = createConcurrentJobRunner({
+    acknowledge: async (jobId) => acknowledgements.push(jobId),
+    observe: (entry) => observations.push(entry),
+    run: async (jobId) => {
+      runs.push(jobId);
+      await gate.promise;
+    },
+  });
+
+  assert.equal(runner.start("duplicate-job"), true);
+  assert.equal(runner.start("duplicate-job"), false);
+  assert.deepEqual(runs, ["duplicate-job"]);
+  assert.equal(runner.activeJobCount(), 1);
+  assert.equal(
+    observations.filter(({ event }) => event === "worker.job_duplicate_ignored")
+      .length,
+    1,
+  );
+
+  gate.resolve();
+  await runner.drain();
+  assert.deepEqual(acknowledgements, ["duplicate-job"]);
+});
+
 test("conversion manifest is exact, fail-closed, and cannot execute", async () => {
   const manifest = readProductionConversionManifest(manifestFile);
   const pending = planProductionConversion(manifest, { now: () => NOW });
