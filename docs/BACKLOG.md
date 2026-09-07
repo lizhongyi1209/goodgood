@@ -9,7 +9,7 @@
 | GG-001 | 项目记忆精简、交接协议、历史 C6 隔离 | 已完成（不需上线） | [任务](tasks/GG-001-project-continuity.md) |
 | GG-002 | Nano Banana 2 全宽高比/分辨率 | 已上线 | [发布记录](releases/2026-09-07-banana-2-parameters.md) |
 | GG-003 | 将 alpha 发布门禁从历史快照独立提取 | 待办；下次发布前 | [任务](tasks/GG-003-alpha-release-tooling.md) |
-| GG-008 | 生成按钮支持无限次快速并行提交 | 进行中；本地实现 | [任务](tasks/GG-008-parallel-generation.md) |
+| GG-008 | 生成按钮支持无限次快速并行提交 | 独立分支门禁通过；待 3010 验收 | [任务](tasks/GG-008-parallel-generation.md) |
 
 GG-003 不阻塞本地新功能开发，但必须在下一次实际 alpha 发布前闭环。
 

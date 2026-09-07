@@ -204,8 +204,7 @@ export function CreationComposer({
           </button>
           <button
             className={`send-button ${isGenerating ? "generating" : ""}`}
-            aria-label={isGenerating ? "正在生成图片" : "生成图片"}
-            disabled={isGenerating}
+            aria-label={isGenerating ? "继续生成图片" : "生成图片"}
             onClick={onGenerate}
           >
             <span className="feihong-icon" aria-hidden="true" />

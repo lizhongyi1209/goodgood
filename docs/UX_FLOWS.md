@@ -79,7 +79,10 @@ fill space.
   values fail without silently replacing the creator's selection.
 - Keep the active server quote next to the composer actions as plain metadata,
   for example `10 积分/张`; do not turn it into a purchase call-to-action.
-- Send: Feihong mark; controls disable or communicate progress while generating.
+- Send: Feihong mark. It remains available while earlier jobs generate; each
+  click freezes the current composer values and submits one independent job.
+  Active styling and the creation stream communicate progress without blocking
+  another click. There is no product-side concurrent-job count ceiling.
 
 Reference ordinal is stored in data for prompt interpretation even though the
 tray does not add visually heavy number badges. The accessible name and future
@@ -119,18 +122,21 @@ failed -> queued (retry)
 
 - Create an immutable input snapshot at submission containing the prompt,
   ordered reference identities, stable model ID, ratio, resolution, and count.
-- Insert the pending batch at the top of the current creation stream.
+- Give every click a stable client run identity and insert it at the top of the
+  current creation stream. Replacing its temporary `pending_*` ID with the
+  durable server job ID must not create or erase another run.
 - Use ratio-correct skeletons for the requested image count.
-- Render the active task skeletons separately from the completed-image masonry;
-  loading or failure must not redistribute previously generated images.
+- Render all active task skeletons separately from the completed-image masonry;
+  loading, completion, or failure in one run must not replace another run or
+  redistribute previously generated images.
 - On success, replace skeletons with assets and prepend the completed batch to
   the asset library.
 - Refresh the account summary after a job is accepted into the queue and after
   every terminal outcome so reserved and available credit converge without a
   full page reload.
-- On full-batch failure, replace the active task area with one compact inline
-  status strip that summarizes the requested count. Do not repeat the same
-  error once per requested image.
+- On full-batch failure, replace that run's active task area with one compact
+  inline status strip that summarizes the requested count. Concurrent failures
+  retain separate strips; do not repeat one run's error per requested image.
 - If a provider returns partial results, add successful images normally, keep
   failed outputs out of the asset library, and summarize the completed and
   failed counts in the task strip.
@@ -140,6 +146,8 @@ failed -> queued (retry)
 - `重新生成` always submits the failed immutable snapshot, even if the composer
   has since changed. `修改设置` restores a mutable copy of that snapshot into
   the composer before opening the parameter drawer.
+- A retry updates only the selected run. Guard the retry action against a rapid
+  duplicate activation because it may create another billable upstream task.
 
 ## Continuous creation and projects
 

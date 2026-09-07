@@ -39,9 +39,10 @@
 
 ## Generation failure contract
 
-The failed batch remains visible in the active result region as a compact inline
-status strip. It does not enter or redistribute the completed-image masonry.
-The strip contains:
+Each failed batch remains visible in the active result region as its own compact
+inline status strip. One run's failure, retry, or settings recovery never clears
+another active or failed run, and failure strips do not enter or redistribute
+the completed-image masonry. Each strip contains:
 
 - Short title, useful explanation, requested/failed count, normalized error
   code, and job ID.
@@ -50,9 +51,10 @@ The strip contains:
 - `修改设置` restoring a mutable copy of that snapshot before returning to the
   parameter drawer.
 
-For a full-batch failure, show one strip rather than one repeated error per
-requested output. If results are partial, successful assets remain available
-and the strip summarizes completed versus failed outputs.
+For a full-batch failure, show one strip for that run rather than one repeated
+error per requested output. Multiple failed runs therefore show multiple
+strips. If results are partial, successful assets remain available and the
+matching strip summarizes completed versus failed outputs.
 
 A toast may announce a transient validation problem, but must not replace this
 panel for asynchronous generation failure.

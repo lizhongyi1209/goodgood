@@ -9,7 +9,8 @@ to distinguish UI preview, durable local integration, live API, and browser proo
 
 The default suite validates the production build, rendered metadata, shared UI
 primitive behavior, documentation continuity, stable model/ratio mappings,
-job-state transitions, both M1 and HTTP mock contracts, M3 input validation and
+job-state transitions, unbounded independent client-run tracking, both M1 and
+HTTP mock contracts, M3 input validation and
 migration structure, dependency-aware health endpoints, the single-image
 process contract, pinned Compose topology, and host probe success/failure.
 M4 adds fast coverage for the explicit local-auth opt-in, local credential
@@ -361,6 +362,8 @@ The timestamped result of the latest verified gate belongs in
 - Eight-line textarea height calculation.
 - Reference maximum, ordering, and validation.
 - Job-state transition rules and normalized errors.
+- Parallel client-run insertion, temporary-to-durable ID replacement, terminal
+  isolation, persistent ID filtering, and absence of client truncation.
 - Newest-first batch ordering.
 
 ### Component
@@ -370,6 +373,7 @@ The timestamped result of the latest verified gate belongs in
 - Composer open/closed drawer without value loss.
 - Reference tray from 0, 1, 9, 10, and over-limit inputs.
 - Generation skeleton count and ratio.
+- Feihong send availability during active generation and concurrent skeletons.
 - Inline failed batch preserves prompt/settings and retries.
 - Project restore and `新建创作` behavior.
 - Project index/detail direct access, refresh, back/forward, and unsaved composer
@@ -506,6 +510,8 @@ outside the one-output MVP.
    approves -> the same account can create without a duplicate grant.
 8. Site owner opens account management -> grants test credit with a reason ->
    one ledger/audit result appears -> replay does not grant twice.
+9. Click generate repeatedly while jobs are active -> every click keeps its own
+   skeleton and terminal result/error; a selected retry affects only that run.
 
 ### Staging-only verification
 

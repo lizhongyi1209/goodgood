@@ -24,6 +24,10 @@ polls the HTTP mock provider, RustFS stores the image, PostgreSQL records the
 asset, and the browser polls the job into the creation stream and asset library.
 Worker leases and PostgreSQL reconciliation recover interrupted jobs, while
 terminal writes and deterministic object keys tolerate duplicate delivery.
+The creation client owns a stable run key per click so the temporary pending job
+and later durable job remain one visible run. It keeps an unbounded registry of
+overlapping active and failed runs; this is presentation state, never provider
+identity or queue authority.
 
 M4 replaces the fixed server-owned identity at the generation API boundary. A
 provider-neutral `(issuer, subject)` identity maps to an internal GoodGood
