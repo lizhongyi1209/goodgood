@@ -11,7 +11,7 @@
 | GG-003 | 将 alpha 发布门禁从历史快照独立提取 | 待办；下次发布前 | [任务](tasks/GG-003-alpha-release-tooling.md) |
 | GG-004 | 修复重复投递导致生成结果丢失 | 待验收；本地已验证，未发布 | [任务](tasks/GG-004-generation-dispatch-race.md) |
 | GG-005 | 分辨率改为 1K/2K/4K，并展示资产实际像素 | 本地已验证；未发布 | [任务](tasks/GG-005-resolution-metadata.md) |
-| GG-006 | 放大参考图预览并将画面比例移到左侧 | 实现及门禁通过；待本地浏览器验收 | [任务](tasks/GG-006-reference-tray-layout.md) |
+| GG-006 | 放大 1:1 参考图预览并将画面比例移到左侧 | 本地浏览器已验证；待站长验收 | [任务](tasks/GG-006-reference-tray-layout.md) |
 
 下一个普通产品需求从 **GG-007** 分配并检查是否已被占用。
 GG-003 不阻塞本地新功能开发，但必须在下一次实际 alpha 发布前闭环。
