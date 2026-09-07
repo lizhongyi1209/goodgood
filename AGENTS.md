@@ -67,8 +67,8 @@ changing detail in `docs/` and update the relevant document in the same change.
 - Prompt textarea auto-grows to eight lines, then scrolls. Tool positions remain
   stable while it grows.
 - Reference images live in a tray below the prompt, never inside its text area.
-  Use enlarged responsive rectangular previews and horizontal overflow. Maximum:
-  10. At the limit, the add control is disabled.
+  Use moderately enlarged responsive 1:1 centered previews and horizontal
+  overflow. Maximum: 10. At the limit, the add control is disabled.
 - Parameter groups read as aspect ratio, model, then output; aspect ratio starts
   at the left on wide screens and remains first through responsive reflow.
 - Models and copy are fixed until a product decision changes them:
