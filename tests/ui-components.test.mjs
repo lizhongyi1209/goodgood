@@ -40,6 +40,36 @@ test("declares the GoodGood visual and interaction invariants", async () => {
   assert.doesNotMatch(creationPage, /className="generation-error-panel/);
 });
 
+test("keeps reference previews legible and aspect ratio first through responsive layouts", async () => {
+  const css = await readFile(path.join(root, "app/globals.css"), "utf8");
+  const composer = await readFile(
+    path.join(root, "features/creation/creation-composer.tsx"),
+    "utf8",
+  );
+
+  assert.match(css, /--reference-preview-width:\s*84px/);
+  assert.match(css, /--reference-preview-height:\s*64px/);
+  assert.match(css, /\.reference-thumbnails[^}]*overflow-x:\s*auto/s);
+  assert.match(
+    css,
+    /\.reference-thumbnail,\s*\.reference-add-more\s*\{[^}]*width:\s*var\(--reference-preview-width\)[^}]*height:\s*var\(--reference-preview-height\)/s,
+  );
+  assert.match(
+    css,
+    /@media \(max-width:\s*720px\)[\s\S]*--reference-preview-width:\s*72px;[\s\S]*--reference-preview-height:\s*56px;/,
+  );
+
+  const ratioGroup = composer.indexOf('className="parameter-group ratio-group"');
+  const modelGroup = composer.indexOf('className="parameter-group model-group"');
+  const outputGroup = composer.indexOf('className="parameter-group output-group"');
+  assert.ok(ratioGroup >= 0 && ratioGroup < modelGroup);
+  assert.ok(modelGroup < outputGroup);
+  assert.match(
+    css,
+    /@media \(max-width:\s*1180px\)[\s\S]*\.ratio-group\s*\{[^}]*grid-column:\s*1\s*\/\s*-1;[^}]*grid-row:\s*1;/,
+  );
+});
+
 test("keeps authentication global, passwordless, and recoverable", async () => {
   const css = await readFile(path.join(root, "app/globals.css"), "utf8");
   const creationPage = await readFile(path.join(root, "app/page.tsx"), "utf8");
