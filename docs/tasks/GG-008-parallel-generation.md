@@ -1,6 +1,6 @@
 # GG-008 — 快速并行生成
 
-- 状态：已合入本地组合候选并通过门禁；待 3010 真实 O1Key 实测
+- 状态：3010 真实 O1Key 联调环境已就绪；待站长实测
 - 最后更新：2026-09-08
 - 分支 / worktree：`feat/GG-008-parallel-generation` / `F:\goodgood`
 - 基线：`main` @ `bab17fd4d4c4d88eec6194bb5d024769ca8e26fa`
@@ -34,4 +34,7 @@
 - `npm run check:local` 通过：193 项，189 通过、4 个 opt-in 跳过；未执行真实付费生成。
 - 已合入 `test/GG-004-GG-005-local` 并保留 GG-004–007 行为；组合
   `npm run check:local` 通过：207 项，201 通过、6 个 opt-in 跳过。
-- 下一步：重建 3010 联调栈，站长执行多次真实点击，核对并行骨架、结果、失败和积分。
+- 3010 联调栈已从组合分支重建：迁移退出码 0，Web/Worker/PostgreSQL/Valkey/
+  RustFS/提供方探针均健康，Web readiness 全部检查为 `ok`；`/create` 返回 200。
+- 浏览器已刷新并确认普通生成按钮可操作；agent 未点击真实生成，未产生新的上游费用。
+- 下一步：站长连续点击两次或更多次真实生成，核对并行骨架、结果、失败和逐任务积分。

@@ -13,7 +13,7 @@
 | GG-005 | 分辨率改为 1K/2K/4K，并展示资产实际像素 | 本地已验证；未发布 | [任务](tasks/GG-005-resolution-metadata.md) |
 | GG-006 | 放大 1:1 参考图预览并将画面比例移到左侧 | 本地浏览器已验证；待站长验收 | [任务](tasks/GG-006-reference-tray-layout.md) |
 | GG-007 | GPT IMAGE 2 SD 精确尺寸、真实生成与三档 10 积分 | 本地浏览器已验证；待站长实测 | [任务](tasks/GG-007-gpt-image-2-sd.md) |
-| GG-008 | 生成按钮支持无限次快速并行提交 | 组合门禁通过；待 3010 验收 | [任务](tasks/GG-008-parallel-generation.md) |
+| GG-008 | 生成按钮支持无限次快速并行提交 | 3010 已就绪；待站长真实生成验收 | [任务](tasks/GG-008-parallel-generation.md) |
 
 下一个普通产品需求从 **GG-009** 分配并检查是否已被占用。
 GG-003 不阻塞本地新功能开发，但必须在下一次实际 alpha 发布前闭环。
