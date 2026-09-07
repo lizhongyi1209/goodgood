@@ -265,6 +265,44 @@ export function CreationComposer({
       <div className="parameter-drawer" aria-hidden={!drawerOpen}>
         <div className="drawer-overflow">
           <div className="drawer-content">
+            <div className="parameter-group ratio-group">
+              <label>画面比例</label>
+              <div className="ratio-control">
+                <svg className="ratio-preview" viewBox="0 0 120 112" role="img" aria-label={`当前画面比例 ${activeRatio.label}`}>
+                  <rect x={ratioFrame.guideX} y={ratioFrame.guideY} width={ratioFrame.guideWidth} height={ratioFrame.guideHeight} rx="6" fill="none" stroke="#d6d6dc" strokeWidth="1" strokeDasharray="4 4" />
+                  <rect x={ratioFrame.x} y={ratioFrame.y} width={ratioFrame.width} height={ratioFrame.height} rx="6" fill="none" stroke="#50505a" strokeWidth="1.25" />
+                  <text x="60" y="59" textAnchor="middle" fill="#3c3c45" fontSize="10">{activeRatio.label}</text>
+                </svg>
+                <div className="ratio-editor">
+                  <div className="ratio-modes" aria-label="画面方向">
+                    {GENERATION_RATIO_MODES.map(([mode, label]) => (
+                      <button
+                        key={mode}
+                        className={activeRatio.mode === mode ? "selected" : ""}
+                        onClick={() => onAspectRatioChange(DEFAULT_GENERATION_RATIO_BY_MODE[mode])}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <Slider
+                    className="ratio-slider"
+                    min={0}
+                    max={GENERATION_RATIO_OPTIONS.length - 1}
+                    step={1}
+                    value={[ratioIndex]}
+                    onValueChange={(value) => {
+                      const option = GENERATION_RATIO_OPTIONS[value[0]];
+                      if (option) onAspectRatioChange(option.id);
+                    }}
+                    aria-label="调整画面比例"
+                  />
+                  <div className="ratio-readout">
+                    <small>{formatPixelDimensions(activeRatio.dimensions[resolution])}</small>
+                  </div>
+                </div>
+              </div>
+            </div>
             <div className="parameter-group model-group">
               <label>生成模型</label>
               <div className="model-selector">
@@ -308,44 +346,6 @@ export function CreationComposer({
                         </button>
                       ))}
                     </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="parameter-group ratio-group">
-              <label>画面比例</label>
-              <div className="ratio-control">
-                <svg className="ratio-preview" viewBox="0 0 120 112" role="img" aria-label={`当前画面比例 ${activeRatio.label}`}>
-                  <rect x={ratioFrame.guideX} y={ratioFrame.guideY} width={ratioFrame.guideWidth} height={ratioFrame.guideHeight} rx="6" fill="none" stroke="#d6d6dc" strokeWidth="1" strokeDasharray="4 4" />
-                  <rect x={ratioFrame.x} y={ratioFrame.y} width={ratioFrame.width} height={ratioFrame.height} rx="6" fill="none" stroke="#50505a" strokeWidth="1.25" />
-                  <text x="60" y="59" textAnchor="middle" fill="#3c3c45" fontSize="10">{activeRatio.label}</text>
-                </svg>
-                <div className="ratio-editor">
-                  <div className="ratio-modes" aria-label="画面方向">
-                    {GENERATION_RATIO_MODES.map(([mode, label]) => (
-                      <button
-                        key={mode}
-                        className={activeRatio.mode === mode ? "selected" : ""}
-                        onClick={() => onAspectRatioChange(DEFAULT_GENERATION_RATIO_BY_MODE[mode])}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                  <Slider
-                    className="ratio-slider"
-                    min={0}
-                    max={GENERATION_RATIO_OPTIONS.length - 1}
-                    step={1}
-                    value={[ratioIndex]}
-                    onValueChange={(value) => {
-                      const option = GENERATION_RATIO_OPTIONS[value[0]];
-                      if (option) onAspectRatioChange(option.id);
-                    }}
-                    aria-label="调整画面比例"
-                  />
-                  <div className="ratio-readout">
-                    <small>{formatPixelDimensions(activeRatio.dimensions[resolution])}</small>
                   </div>
                 </div>
               </div>

@@ -73,13 +73,15 @@ individual icon. Upload, settings, and send align to the same 40px box.
   drawer; drawers must not appear detached.
 - Prompt is the flexible column. Left and right controls remain top-aligned and
   fixed while the textarea grows.
-- Reference thumbnails use a horizontal tray, 46px square crops, and individual
-  removal. Do not show redundant `参考图` labels or totals.
+- Reference thumbnails use a horizontal tray, `84 × 64 px` rectangular crops on
+  desktop and `72 × 56 px` on mobile, with individual removal. Keep the sizes in
+  shared responsive tokens and do not show redundant `参考图` labels or totals.
 - Uploading and failed references reuse the thumbnail silhouette with a quiet
   opacity treatment and centered status icon; do not introduce a detached
   upload panel or success banner.
-- Parameter group order: model; aspect ratio; output group with resolution above
-  generation count.
+- Parameter group order: aspect ratio; model; output group with resolution above
+  generation count. Aspect ratio leads from the left on desktop and remains first
+  when the drawer reflows or stacks.
 - The per-image credit quote is quiet 11px metadata beside the settings/send
   actions. It has no filled chip, border, icon, or payment emphasis.
 

@@ -70,9 +70,13 @@ fill space.
 - A selected reference appears immediately with a restrained uploading overlay.
   It becomes ready only after direct upload and server-side decoded validation;
   failure remains on that tray item with removal/replacement recovery.
+- The tray uses enlarged responsive rectangular crops and scrolls horizontally
+  without wrapping, so adding references does not destabilize the composer.
 - Send is blocked while any retained reference is uploading or failed. Ready
   references preserve their tray order in the submitted batch snapshot.
 - Settings: attached downward drawer; closing it must not reset values.
+- Settings read from aspect ratio to model to output; aspect ratio is the leftmost
+  wide-screen group and stays first through responsive reflow.
 - Model list: opens within the parameter drawer and collapses after selection.
 - Nano Banana 2 accepts every displayed aspect ratio and `1K / 2K / 4K`
   resolution with one output. Unsupported model/count/domain
