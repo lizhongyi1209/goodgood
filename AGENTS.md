@@ -71,8 +71,8 @@ changing detail in `docs/` and update the relevant document in the same change.
 - Models and copy are fixed until a product decision changes them:
   `Nano Banana 2 — 快速，批量`; `Nano Banana Pro — 高质量资产，视觉优先`;
   `GPT IMAGE 2 — 高真实感，提示词遵循`.
-- Resolution UI uses `标准 / 高清 / 超清`; domain values use `1K / 2K / 4K`.
-  Generation count defaults to 1.
+- Resolution UI and domain values use `1K / 2K / 4K`. Asset metadata pairs the
+  requested value with decoded pixel dimensions when available. Generation count defaults to 1.
 - New generation batches appear first. Generated assets enter the asset library
   automatically and trigger a restrained navigation cue; do not add a bottom
   success banner.

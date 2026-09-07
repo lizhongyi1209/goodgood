@@ -74,8 +74,8 @@ fill space.
   references preserve their tray order in the submitted batch snapshot.
 - Settings: attached downward drawer; closing it must not reset values.
 - Model list: opens within the parameter drawer and collapses after selection.
-- Nano Banana 2 accepts every displayed aspect ratio and `标准 / 高清 / 超清`
-  resolution (`1K / 2K / 4K`) with one output. Unsupported model/count/domain
+- Nano Banana 2 accepts every displayed aspect ratio and `1K / 2K / 4K`
+  resolution with one output. Unsupported model/count/domain
   values fail without silently replacing the creator's selection.
 - Keep the active server quote next to the composer actions as plain metadata,
   for example `10 积分/张`; do not turn it into a purchase call-to-action.
@@ -125,6 +125,9 @@ failed -> queued (retry)
   loading or failure must not redistribute previously generated images.
 - On success, replace skeletons with assets and prepend the completed batch to
   the asset library.
+- Asset metadata shows the requested resolution together with that Asset's
+  decoded pixel dimensions, for example `4K · 3584 × 4800`. It never derives
+  actual dimensions from the nominal tier or another Asset in the batch.
 - Refresh the account summary after a job is accepted into the queue and after
   every terminal outcome so reserved and available credit converge without a
   full page reload.

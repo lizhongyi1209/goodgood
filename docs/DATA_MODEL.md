@@ -368,8 +368,10 @@ Contains ordering and membership metadata; never duplicate image bytes.
   A failed deletion retains the evidence row and `OBJECT_DELETE_FAILED` for a
   later bounded retry; repeated successful execution is a no-op.
 
-## UI label mapping
+## Resolution presentation
 
-Persist domain values (`1K`, `2K`, `4K`, raw ratio, model ID). Translate to UI
-copy at the presentation boundary (`标准`, `高清`, `超清`). This keeps records
-stable across localization and copy changes.
+Persist and display the domain values `1K`, `2K`, and `4K`; keep raw ratio and
+model ID as stable domain data. Each accepted Asset's `pixel_width` and
+`pixel_height` are decoded source data and accompany the requested resolution
+in asset presentation. The UI may omit missing compatibility dimensions but
+must never infer them from the nominal tier, model, ratio, or CSS.
