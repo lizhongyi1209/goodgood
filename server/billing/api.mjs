@@ -19,6 +19,16 @@ const LAUNCH_PRICES = Object.freeze([
     modelId: "gpt-image-2",
     planContext: "standard",
   }),
+  Object.freeze({
+    count: 2,
+    modelId: "gpt-image-2",
+    planContext: "standard",
+  }),
+  Object.freeze({
+    count: 4,
+    modelId: "gpt-image-2",
+    planContext: "standard",
+  }),
 ]);
 
 function ownerIdFromContext(ownerContext) {
@@ -59,7 +69,7 @@ export const previewBillingSummary = Object.freeze({
       ["1K", "2K", "4K"].map((resolution) =>
         Object.freeze({
           ...launchPrice,
-          creditAmount: "10",
+          creditAmount: String(10 * launchPrice.count),
           creditUnit: "credit",
           priceVersion: 1,
           resolution,

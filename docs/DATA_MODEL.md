@@ -23,8 +23,9 @@ tier projection, immutable site-owner assignment, and append-only account
 administration evidence. A twelfth forward migration removes the two historical
 fixed-UUID local fixtures after verifying that they have no non-fixture identity
 or credit history. Local development recreates them only through an explicit
-local-auth seeder. The Drizzle schema mirrors the durable schema across all
-twelve migrations. A
+local-auth seeder. Migration 0013 adds GPT IMAGE 2's single-output prices.
+Migration 0014 adds ordered multi-Asset jobs and GPT count-2/count-4 prices.
+The Drizzle schema mirrors the durable schema across all fourteen migrations. A
 fuller project-backed creation session record and entitlements
 remain canonical contracts for later slices.
 
@@ -124,6 +125,18 @@ unexpected identity or credit history; a disposable local database must then be
 reset instead of broadening the deletion. Production never recreates these
 records. The local Compose migration role opts in to the separate, idempotent
 `seedLocalFixtures` routine with `GOODGOOD_ALLOW_LOCAL_AUTH=true`.
+
+Migration `0013_gg007_gpt_image_2_prices.sql` adds immutable 10-credit
+single-output prices for GPT IMAGE 2 at 1K, 2K, and 4K.
+
+Migration `0014_gg009_multi_output_assets.sql` backfills existing Assets with
+ordinal 1, replaces the one-Asset-per-job unique index with unique
+`(job_id, ordinal)`, and adds immutable GPT IMAGE 2 count-2/count-4 prices of
+20/40 credits for every resolution. It preserves every existing Asset and
+ledger row. Because the old worker's `ON CONFLICT (job_id)` statement depends
+on the removed unique index, a production rollout must drain/stop old workers
+before applying this migration and start only the matching candidate afterward;
+an application rollback requires a reviewed forward fix or database snapshot.
 
 ## Entities
 
@@ -304,8 +317,10 @@ when its job fails.
 
 ### Asset
 
-One output image: owner, batch, storage key, checksum, MIME, pixel dimensions,
-aspect ratio, byte size, moderation state, visibility, and timestamps.
+One output image: owner, batch, job-local positive ordinal, storage key,
+checksum, MIME, pixel dimensions, aspect ratio, byte size, moderation state,
+visibility, and timestamps. `(job, ordinal)` is unique and presentation returns
+the accepted Asset array in ordinal order.
 
 ### Project
 
@@ -334,12 +349,13 @@ Contains ordering and membership metadata; never duplicate image bytes.
   GoodGood model; it never silently changes the product model family.
 - Price snapshots and settled ledger entries are immutable.
 - Generation submission reserves credit in the same logical transaction as the
-  batch/job creation. Success settles, failure releases, and partial success
-  follows an explicit per-output policy.
-- The M6/GG-007 live path reserves 10 credits in the same transaction as a new
-  Banana 2 or GPT IMAGE 2 job, settles after the accepted Asset is inserted, and releases when the
-  job reaches a no-Asset failure. `SUBMISSION_UNKNOWN` releases the customer's
-  reservation but does not infer or record an upstream refund.
+  batch/job creation. Current success settles only after the complete requested
+  Asset set is committed; failure releases the full batch reservation.
+- The M6/GG-007/GG-009 path reserves 10 credits for Banana 2 or 10/20/40 credits
+  for GPT IMAGE 2 count 1/2/4. It settles after every requested accepted Asset
+  is inserted atomically and releases when the job reaches a no-Asset failure.
+  `SUBMISSION_UNKNOWN` releases the customer's reservation but does not infer
+  or record an upstream refund.
 - The authenticated billing read projects cached available/reserved balances
   and active price rows into decimal strings. Internal account, owner, ledger,
   and provider-route identifiers never enter the browser contract; the read

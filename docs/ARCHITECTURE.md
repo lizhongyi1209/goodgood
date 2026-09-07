@@ -192,16 +192,17 @@ preserves the expiring signature, and keeps private-IP SSRF protection enabled
 for all server-side fetches.
 
 The durable generation capability admits `nano-banana-2` across 14 ratios and
-`gpt-image-2` across seven exact-size ratios. Both use one output, up to 10
-validated references, and `1K` / `2K` / `4K`. The browser and O1Key adapter use
-model-owned capability allowlists; unknown combinations fail before provider
-submission.
+`gpt-image-2` across seven exact-size ratios. Nano uses one output; GPT accepts
+`1 / 2 / 4` outputs in one native task. Both accept up to 10 validated
+references and `1K` / `2K` / `4K`. The browser and O1Key adapter use model-owned
+capability allowlists; unknown combinations fail before provider submission.
 Primary real Authing/Google/email loopback exchange passes; provider edge-case
 and secure public-callback verification remain external evidence work;
 billing is active for every newly created generation job. M6 persists immutable
 server-owned prices, exact account caches, append-only credit entries, and
-composable reserve/settle/release/refund transactions. Banana 2 and GPT IMAGE 2
-are each 10 credits for one output at 1K, 2K, or 4K; new and migrated owners receive one 100-credit
+composable reserve/settle/release/refund transactions. Banana 2 costs 10 credits
+for its single output. GPT IMAGE 2 costs 10 credits per image, with immutable
+10/20/40-credit rows for counts 1/2/4 at every resolution; new and migrated owners receive one 100-credit
 welcome grant. The authenticated `GET /api/billing` boundary exposes only exact
 available/reserved balances and active product quotes as decimal strings; it
 does not expose internal account, owner, ledger, or provider-channel IDs. No
@@ -398,20 +399,22 @@ private object remains authoritative (RustFS locally and R2 in M7 staging).
 Completed outputs must be downloaded promptly and stored in GoodGood-owned
 object storage.
 
-GG-007 maps stable `gpt-image-2` to O1Key `gpt-image-2-c-sd`. Its seven ratios
-map to 21 explicit lowercase-`x` pixel sizes across the same product resolution
-values. The adapter sends that exact pixel string as `size` with `n: 1`; it does
-not send Nano-specific `aspect_ratio` or `response_modalities`. Product records
-retain the stable model, ratio, and resolution while each attempt retains the
-distinct `o1key-gpt-image-2-c-sd-v1` route identity.
+GG-007/GG-009 map stable `gpt-image-2` to O1Key `gpt-image-2-c-sd`. Its seven
+ratios map to 21 explicit lowercase-`x` pixel sizes across the same product
+resolution values. The adapter sends that exact pixel string as `size` with
+`n: 1`, `2`, or `4`; it does not send Nano-specific `aspect_ratio` or
+`response_modalities`. Product records retain the stable model, ratio,
+resolution, and count while each attempt retains the distinct
+`o1key-gpt-image-2-c-sd-v1` route identity.
 
 Worker routing is explicit and persisted per attempt. The default Compose path
 selects a model-specific M3 mock route; the O1Key override selects the matching
 Nano or GPT route, reads the
 ordered private reference bytes, and resumes the persisted `task_id` after a
 worker restart. Downloaded JPEG, PNG, or WebP results are bounded, type-checked,
-fully decoded, and stored with a content-derived object extension before the
-existing terminal job transaction accepts them. A worker whose selected route
+fully decoded, and stored with content-derived object extensions and stable
+positive ordinals before one terminal job transaction accepts the complete
+Asset set. A worker whose selected route
 does not match an active attempt defers that job instead of polling the wrong
 provider.
 

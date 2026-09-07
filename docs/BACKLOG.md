@@ -10,8 +10,9 @@
 | GG-002 | Nano Banana 2 全宽高比/分辨率 | 已上线 | [发布记录](releases/2026-09-07-banana-2-parameters.md) |
 | GG-003 | 将 alpha 发布门禁从历史快照独立提取 | 待办；下次发布前 | [任务](tasks/GG-003-alpha-release-tooling.md) |
 | GG-007 | GPT IMAGE 2 SD 精确尺寸、真实生成与三档 10 积分 | 进行中；本地实现 | [任务](tasks/GG-007-gpt-image-2-sd.md) |
+| GG-009 | GPT IMAGE 2 开放 2 / 4 张输出，每张 10 积分 | 独立门禁通过；待组合联调 | [任务](tasks/GG-009-gpt-image-output-counts.md) |
 
-下一个普通产品需求从 **GG-008** 分配并检查是否已被占用。
+下一个普通产品需求从 **GG-010** 分配并检查是否已被占用。
 GG-003 不阻塞本地新功能开发，但必须在下一次实际 alpha 发布前闭环。
 
 ## 已明确搁置（不得自动恢复）

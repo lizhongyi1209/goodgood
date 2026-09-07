@@ -80,8 +80,9 @@ individual icon. Upload, settings, and send align to the same 40px box.
   upload panel or success banner.
 - Parameter group order: model; aspect ratio; output group with resolution above
   generation count.
-- The per-image credit quote is quiet 11px metadata beside the settings/send
-  actions. It has no filled chip, border, icon, or payment emphasis.
+- The credit quote is quiet 11px metadata beside the settings/send actions. It
+  shows the per-image rate and, for 2/4 outputs, the selected batch total. It has
+  no filled chip, border, icon, or payment emphasis.
 
 ## Account credit
 

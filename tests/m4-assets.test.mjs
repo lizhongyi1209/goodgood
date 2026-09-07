@@ -4,7 +4,10 @@ import { Readable } from "node:stream";
 import test from "node:test";
 import { sessionExpiredError } from "../server/auth/errors.mjs";
 import { createAssetNodeApiHandler } from "../server/assets/node-api.mjs";
-import { findOwnerAssetGenerationJobs } from "../server/generation/repository.mjs";
+import {
+  findOwnerAssetGenerationJobs,
+  publicGenerationJob,
+} from "../server/generation/repository.mjs";
 
 function requestFor({ headers = {}, method = "GET", url }) {
   const request = Readable.from([]);
@@ -50,6 +53,50 @@ test("asset repository lists only accepted successful records for one owner newe
   assert.match(query.sql, /j\.state = 'succeeded'/);
   assert.match(query.sql, /a\.moderation_state = 'accepted'/);
   assert.match(query.sql, /ORDER BY j\.submitted_at DESC, j\.id DESC/);
+});
+
+test("generation presentation preserves every accepted Asset in ordinal order", () => {
+  const row = {
+    aspect_ratio: "1:1",
+    assets: [
+      { id: "asset-1", ordinal: 1, pixel_height: 1024, pixel_width: 1024 },
+      { id: "asset-2", ordinal: 2, pixel_height: 1024, pixel_width: 1024 },
+    ],
+    error_code: null,
+    id: "job-multi",
+    model_id: "gpt-image-2",
+    project_id: null,
+    prompt: "two images",
+    reference_snapshot: [],
+    requested_count: 2,
+    resolution: "1K",
+    state: "succeeded",
+    submitted_at: "2026-09-08T00:00:00.000Z",
+    updated_at: "2026-09-08T00:01:00.000Z",
+  };
+  const job = publicGenerationJob(
+    row,
+    new Map([
+      ["asset-1", "https://storage.invalid/asset-1"],
+      ["asset-2", "https://storage.invalid/asset-2"],
+    ]),
+  );
+  assert.deepEqual(job.outputs, [
+    {
+      height: 1024,
+      id: "asset-1",
+      previewPosition: "50% 50%",
+      previewUrl: "https://storage.invalid/asset-1",
+      width: 1024,
+    },
+    {
+      height: 1024,
+      id: "asset-2",
+      previewPosition: "50% 50%",
+      previewUrl: "https://storage.invalid/asset-2",
+      width: 1024,
+    },
+  ]);
 });
 
 test("asset HTTP route authenticates and preserves the owner context", async () => {

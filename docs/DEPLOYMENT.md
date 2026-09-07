@@ -133,11 +133,15 @@ M5's O1Key image path is selectable only through an explicit worker override;
 the base Compose stack remains fixed to the mock provider. The accepted MVP uses
 `https://cf-api.o1key.com`, the special-price
 `gemini-3.1-flash-image-c-sp` model, one output, all 14 product-defined aspect
-ratios, and `1K` / `2K` / `4K`. GG-007 adds the SD route
-`gpt-image-2-c-sd`, one output, seven supported ratios, and 21 exact pixel-size
-mappings. Migration `0013_gg007_gpt_image_2_prices.sql` publishes a 10-credit
-price for each GPT resolution. Promotion must verify there is no active attempt
-from either prior route version before the Worker switches to model-aware routing.
+ratios, and `1K` / `2K` / `4K`. GG-007/GG-009 add the SD route
+`gpt-image-2-c-sd`, `1 / 2 / 4` outputs in one native task, seven supported
+ratios, and 21 exact pixel-size mappings. Migrations 0013/0014 publish GPT's
+10-credit per-image prices and ordered multi-Asset storage. Before migration
+0014, stop and drain the old Worker because its one-Asset conflict target is not
+compatible with the new `(job_id, ordinal)` index. Start only the matching
+candidate after the migration. Promotion must also verify there is no active
+attempt from either prior route version before the Worker switches to
+model-aware routing.
 The worker accepts
 exactly one of `GENERATION_API_KEY` or `GENERATION_API_KEY_FILE`; deployment must
 prefer a dedicated least-privilege Bearer credential from its secret store. It

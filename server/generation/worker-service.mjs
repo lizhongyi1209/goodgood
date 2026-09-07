@@ -14,7 +14,10 @@ import {
   renewGenerationLease,
   saveProviderTask,
 } from "./repository.mjs";
-import { storeGeneratedAsset } from "./storage.mjs";
+import {
+  discardGeneratedAsset,
+  storeGeneratedAsset,
+} from "./storage.mjs";
 
 const INTERNAL_ERROR = Object.freeze({
   code: "INTERNAL_ERROR",
@@ -43,6 +46,62 @@ function generatedObjectExtension(contentType) {
   })[contentType];
   if (!extension) throw new Error("Unsupported decoded generated image type.");
   return extension;
+}
+
+export async function storeProviderOutputs({
+  bucket,
+  createAssetId = randomUUID,
+  discard = discardGeneratedAsset,
+  downloadOutput,
+  job,
+  outputs,
+  storage,
+  store = storeGeneratedAsset,
+}) {
+  if (!Array.isArray(outputs) || outputs.length !== job.requested_count) {
+    throw new NormalizedProviderError({
+      code: "INTERNAL_ERROR",
+      message: "生成服务返回的图片数量与请求不一致。输入内容已保留，请重试。",
+    });
+  }
+  const assets = [];
+  const objectKeys = [];
+  try {
+    for (const [index, output] of outputs.entries()) {
+      const ordinal = index + 1;
+      const downloaded = await downloadOutput(output);
+      const checksum = createHash("sha256").update(downloaded.bytes).digest("hex");
+      const objectKey = `generated/${job.owner_id}/${job.id}-${ordinal}.${generatedObjectExtension(downloaded.contentType)}`;
+      objectKeys.push(objectKey);
+      await store({
+        bucket,
+        bytes: downloaded.bytes,
+        checksum,
+        contentType: downloaded.contentType,
+        key: objectKey,
+        storage,
+      });
+      assets.push({
+        aspectRatio: job.aspect_ratio,
+        batchId: job.batch_id,
+        byteSize: downloaded.bytes.length,
+        checksum,
+        id: createAssetId(),
+        mimeType: downloaded.contentType,
+        objectKey,
+        ordinal,
+        ownerId: job.owner_id,
+        pixelHeight: downloaded.height,
+        pixelWidth: downloaded.width,
+      });
+    }
+    return { assets, objectKeys };
+  } catch (error) {
+    await Promise.allSettled(objectKeys.map((key) =>
+      discard({ bucket, key, storage })
+    ));
+    throw error;
+  }
 }
 
 export async function processGenerationJob(resources, { jobId, workerId }) {
@@ -118,7 +177,8 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
     }
 
     stage = "provider-poll";
-    const output = await provider.pollTask({
+    const outputs = await provider.pollTask({
+      expectedOutputCount: job.requested_count,
       onRefining: async () => {
         await markGenerationRefining(pool, { jobId, workerId });
         await renewGenerationLease(pool, {
@@ -129,39 +189,34 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
       },
       taskId,
     });
-    stage = "output-download";
-    const downloaded = await provider.downloadOutput(output);
-    const checksum = createHash("sha256").update(downloaded.bytes).digest("hex");
-    const assetId = randomUUID();
-    const objectKey = `generated/${job.owner_id}/${job.id}.${generatedObjectExtension(downloaded.contentType)}`;
-    stage = "asset-store";
-    await storeGeneratedAsset({
+    stage = "output-storage";
+    const { assets, objectKeys } = await storeProviderOutputs({
       bucket: config.objectStorage.bucket,
-      bytes: downloaded.bytes,
-      checksum,
-      contentType: downloaded.contentType,
-      key: objectKey,
+      downloadOutput: (output) => provider.downloadOutput(output),
+      job,
+      outputs,
       storage,
     });
     stage = "generation-completion";
-    await completeGenerationJob(pool, {
-      asset: {
-        aspectRatio: job.aspect_ratio,
-        batchId: job.batch_id,
-        byteSize: downloaded.bytes.length,
-        checksum,
-        id: assetId,
-        mimeType: downloaded.contentType,
-        objectKey,
-        ownerId: job.owner_id,
-        pixelHeight: downloaded.height,
-        pixelWidth: downloaded.width,
-      },
+    const completed = await completeGenerationJob(pool, {
+      assets,
       attemptId: attempt.id,
       jobId,
-      resultHash: checksum,
+      resultHash: createHash("sha256")
+        .update(JSON.stringify(assets.map((asset) => asset.checksum)))
+        .digest("hex"),
       workerId,
     });
+    if (!completed) {
+      await Promise.allSettled(objectKeys.map((key) =>
+        discardGeneratedAsset({
+          bucket: config.objectStorage.bucket,
+          key,
+          storage,
+        })
+      ));
+      return { ...resultContext(), outcome: "superseded", stage };
+    }
     return { ...resultContext(), outcome: "succeeded", stage };
   } catch (error) {
     if (error instanceof NormalizedProviderError) {

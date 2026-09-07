@@ -2,7 +2,7 @@
 
 - Last synchronized: 2026-09-08
 - Current phase: 已开放 controlled alpha；转入按需求的高频小步迭代。
-- Current objective: GG-007 正在从 main 独立实现 GPT IMAGE 2 SD 的模型级精确尺寸、真实 O1Key 路由和三档 10 积分；完成后并入本地组合候选供站长实测。
+- Current objective: GG-009 已完成 GPT IMAGE 2 的 1/2/4 张原生输出独立实现与门禁；下一步合入 GG-004—GG-008 本地组合候选并重建 3010。
 
 ## Current checkpoint
 

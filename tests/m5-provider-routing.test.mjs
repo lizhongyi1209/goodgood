@@ -160,7 +160,7 @@ test("O1Key worker route reads private reference bytes, uploads, and resumes pol
       "1:8", "1:4", "9:16", "2:3", "3:4", "4:5", "1:1",
       "5:4", "4:3", "3:2", "16:9", "21:9", "4:1", "8:1",
     ],
-    outputCount: 1,
+    outputCounts: [1],
     productModelId: "nano-banana-2",
     provider: "o1key",
     providerModel: "gemini-3.1-flash-image-c-sp",
@@ -224,14 +224,15 @@ test("O1Key worker route reads private reference bytes, uploads, and resumes pol
   assert.equal(fake.requests[1].body.size, "2K");
 
   let refiningCount = 0;
-  const output = await provider.pollTask({
+  const outputs = await provider.pollTask({
+    expectedOutputCount: 1,
     onRefining: async () => {
       refiningCount += 1;
     },
     taskId,
   });
   assert.equal(refiningCount, 1);
-  assert.equal(output.url, "https://assetcache.o1key.invalid/result.png");
+  assert.equal(outputs[0].url, "https://assetcache.o1key.invalid/result.png");
 });
 
 test("provider routing selects GPT Image 2 SD without changing its product model ID", () => {
@@ -241,7 +242,7 @@ test("provider routing selects GPT Image 2 SD without changing its product model
   );
   assert.deepEqual(US_GATEWAY_GPT_IMAGE_2_ROUTE, {
     aspectRatios: ["9:16", "2:3", "3:4", "1:1", "4:3", "3:2", "16:9"],
-    outputCount: 1,
+    outputCounts: [1, 2, 4],
     productModelId: "gpt-image-2",
     provider: "o1key",
     providerModel: "gpt-image-2-c-sd",

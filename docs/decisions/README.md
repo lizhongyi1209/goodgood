@@ -38,6 +38,7 @@ Current records:
 - `0025-open-banana-2-aspect-ratios-and-resolutions.md`
 - `0026-repository-owned-session-continuity.md`
 - `0030-open-gpt-image-2-sd-with-model-specific-sizes.md`
+- `0032-open-gpt-image-2-multi-output.md`
 
 Accepted describes a decision, not proof of deployment. ADR 0022/0023's full
 runtime rollout is deferred under ADR 0024. The current release and rollout

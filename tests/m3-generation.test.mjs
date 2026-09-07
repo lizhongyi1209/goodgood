@@ -21,13 +21,15 @@ const validInput = Object.freeze({
   resolution: "1K",
 });
 
-test("generation input accepts every enabled model ratio and resolution while keeping count fixed", () => {
+test("generation input accepts model-owned ratios, resolutions, and output counts", () => {
   assert.deepEqual(validateM3GenerationInput(validInput), validInput);
   for (const [modelId, capability] of Object.entries(GENERATION_MODEL_CAPABILITIES)) {
     for (const aspectRatio of capability.aspectRatios) {
       for (const resolution of SUPPORTED_GENERATION_RESOLUTIONS) {
-        const input = { ...validInput, aspectRatio, modelId, resolution };
-        assert.deepEqual(validateM3GenerationInput(input), input);
+        for (const count of capability.outputCounts) {
+          const input = { ...validInput, aspectRatio, count, modelId, resolution };
+          assert.deepEqual(validateM3GenerationInput(input), input);
+        }
       }
     }
   }
@@ -42,6 +44,14 @@ test("generation input accepts every enabled model ratio and resolution while ke
     (error) =>
       error instanceof GenerationRequestError &&
       error.code === "M3_SLICE_UNSUPPORTED",
+  );
+  assert.deepEqual(
+    validateM3GenerationInput({
+      ...validInput,
+      count: 4,
+      modelId: "gpt-image-2",
+    }).count,
+    4,
   );
   for (const unsupportedInput of [
     { ...validInput, aspectRatio: "10:1" },
@@ -81,7 +91,7 @@ test("composer submits the selected ratio and resolution without a default-only 
   assert.match(workspace, /aspectRatio: selectedRatio/);
   assert.match(workspace, /resolution,/);
   assert.match(workspace, /"nano-banana-2", "gpt-image-2"/);
-  assert.match(workspace, /generationCount !== 1/);
+  assert.match(workspace, /isGenerationCountSupported/);
 });
 
 test("mock provider is idempotent and exposes success, rejection, and timeout outcomes", async (context) => {

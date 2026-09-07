@@ -142,6 +142,7 @@ test("M6 migration and schema define immutable prices and append-only ledger lin
   const [
     migration,
     gptPricingMigration,
+    multiOutputMigration,
     schema,
     repository,
     contract,
@@ -156,6 +157,10 @@ test("M6 migration and schema define immutable prices and append-only ledger lin
     ),
     readFile(
       new URL("../migrations/0013_gg007_gpt_image_2_prices.sql", import.meta.url),
+      "utf8",
+    ),
+    readFile(
+      new URL("../migrations/0014_gg009_multi_output_assets.sql", import.meta.url),
       "utf8",
     ),
     readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
@@ -197,6 +202,11 @@ test("M6 migration and schema define immutable prices and append-only ledger lin
   assert.match(gptPricingMigration, /'gpt-image-2', '1K', 1, 'standard', 1, 'credit', 10/);
   assert.match(gptPricingMigration, /'gpt-image-2', '2K', 1, 'standard', 1, 'credit', 10/);
   assert.match(gptPricingMigration, /'gpt-image-2', '4K', 1, 'standard', 1, 'credit', 10/);
+  assert.match(multiOutputMigration, /DROP INDEX IF EXISTS assets_job_unique/);
+  assert.match(multiOutputMigration, /assets_job_ordinal_unique/);
+  assert.match(multiOutputMigration, /'gpt-image-2', '1K', 2, 'standard', 1, 'credit', 20/);
+  assert.match(multiOutputMigration, /'gpt-image-2', '4K', 4, 'standard', 1, 'credit', 40/);
+  assert.match(schema, /ordinal: integer\("ordinal"\)\.notNull\(\)/);
   assert.match(migration, /'welcome_grant_v1'/);
   assert.match(migration, /'\{"campaign":"welcome-v1","images":10\}'/);
   assert.match(repository, /FOR UPDATE/);
@@ -281,6 +291,30 @@ test(
         ["1K", "10"],
         ["2K", "10"],
         ["4K", "10"],
+      ],
+    );
+    const gptMultiPrices = await pool.query(
+      `SELECT resolution, output_count, credit_amount
+         FROM price_versions
+        WHERE model_id = 'gpt-image-2'
+          AND output_count IN (2, 4)
+          AND plan_context = 'standard'
+          AND version = 1
+        ORDER BY output_count, resolution`,
+    );
+    assert.deepEqual(
+      gptMultiPrices.rows.map((row) => [
+        row.resolution,
+        row.output_count,
+        row.credit_amount,
+      ]),
+      [
+        ["1K", 2, "20"],
+        ["2K", 2, "20"],
+        ["4K", 2, "20"],
+        ["1K", 4, "40"],
+        ["2K", 4, "40"],
+        ["4K", 4, "40"],
       ],
     );
     const seededWelcomeAccounts = await pool.query(
@@ -431,13 +465,14 @@ test(
       id: randomUUID(),
       mimeType: "image/png",
       objectKey: `m6/${suffix}/output.png`,
+      ordinal: 1,
       ownerId: welcomeOwner.ownerId,
       pixelHeight: 1,
       pixelWidth: 1,
     };
     assert.equal(
       await completeGenerationJob(pool, {
-        asset: settledAsset,
+        assets: [settledAsset],
         attemptId: settledClaim.attempt.id,
         jobId: settledGeneration.row.id,
         resultHash: `m6-result-${suffix}`,
@@ -458,7 +493,7 @@ test(
     });
     assert.equal(
       await completeGenerationJob(pool, {
-        asset: settledAsset,
+        assets: [settledAsset],
         attemptId: settledClaim.attempt.id,
         jobId: settledGeneration.row.id,
         resultHash: `m6-result-${suffix}`,
@@ -497,29 +532,96 @@ test(
       reserved_balance: "0",
       version: "5",
     });
+
+    const multiGeneration = await createGenerationJob(pool, {
+      idempotencyKey: `m6-live-multi-${suffix}`,
+      input: {
+        ...generationInput,
+        count: 4,
+        modelId: "gpt-image-2",
+        prompt: "M6 four-output settlement integration",
+      },
+      ownerId: welcomeOwner.ownerId,
+    });
+    const multiClaim = await claimGenerationJob(pool, {
+      attemptRoute: {
+        provider: "goodgood-mock",
+        providerModel: "gpt-image-2",
+        routeVersion: "m6-test-gpt-v1",
+      },
+      jobId: multiGeneration.row.id,
+      leaseMs: 30_000,
+      workerId: `m6-multi-worker-${suffix}`,
+    });
+    const multiAssets = Array.from({ length: 4 }, (_, index) => ({
+      aspectRatio: "1:1",
+      batchId: multiGeneration.row.batch_id,
+      byteSize: index + 1,
+      checksum: `m6-multi-checksum-${index + 1}`,
+      id: randomUUID(),
+      mimeType: "image/png",
+      objectKey: `m6/${suffix}/multi-${index + 1}.png`,
+      ordinal: index + 1,
+      ownerId: welcomeOwner.ownerId,
+      pixelHeight: 1024,
+      pixelWidth: 1024,
+    }));
+    await assert.rejects(
+      completeGenerationJob(pool, {
+        assets: multiAssets.slice(0, 2),
+        attemptId: multiClaim.attempt.id,
+        jobId: multiGeneration.row.id,
+        resultHash: `m6-short-result-${suffix}`,
+        workerId: `m6-multi-worker-${suffix}`,
+      }),
+      (error) => error.code === "GENERATION_OUTPUT_COUNT_MISMATCH",
+    );
+    assert.equal(
+      await completeGenerationJob(pool, {
+        assets: multiAssets,
+        attemptId: multiClaim.attempt.id,
+        jobId: multiGeneration.row.id,
+        resultHash: `m6-multi-result-${suffix}`,
+        workerId: `m6-multi-worker-${suffix}`,
+      }),
+      true,
+    );
+    const multiEvidence = await pool.query(
+      `SELECT ordinal FROM assets WHERE job_id = $1 ORDER BY ordinal`,
+      [multiGeneration.row.id],
+    );
+    assert.deepEqual(multiEvidence.rows.map((row) => row.ordinal), [1, 2, 3, 4]);
+
     const publicBillingSummary = await readBillingSummary({
       ownerContext: welcomeOwner,
       resources: { pool },
     });
     assert.deepEqual(publicBillingSummary.account, {
-      availableCredits: "90",
+      availableCredits: "50",
       reservedCredits: "0",
       unit: "credit",
-      version: "5",
+      version: "7",
     });
     assert.deepEqual(
       publicBillingSummary.quotes.map((quote) => [
         quote.modelId,
         quote.resolution,
+        quote.count,
         quote.creditAmount,
       ]),
       [
-        ["nano-banana-2", "1K", "10"],
-        ["nano-banana-2", "2K", "10"],
-        ["nano-banana-2", "4K", "10"],
-        ["gpt-image-2", "1K", "10"],
-        ["gpt-image-2", "2K", "10"],
-        ["gpt-image-2", "4K", "10"],
+        ["nano-banana-2", "1K", 1, "10"],
+        ["nano-banana-2", "2K", 1, "10"],
+        ["nano-banana-2", "4K", 1, "10"],
+        ["gpt-image-2", "1K", 1, "10"],
+        ["gpt-image-2", "2K", 1, "10"],
+        ["gpt-image-2", "4K", 1, "10"],
+        ["gpt-image-2", "1K", 2, "20"],
+        ["gpt-image-2", "2K", 2, "20"],
+        ["gpt-image-2", "4K", 2, "20"],
+        ["gpt-image-2", "1K", 4, "40"],
+        ["gpt-image-2", "2K", 4, "40"],
+        ["gpt-image-2", "4K", 4, "40"],
       ],
     );
 

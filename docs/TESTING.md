@@ -408,11 +408,13 @@ The timestamped result of the latest verified gate belongs in
   confirmed terminal reads, provisional-failure recovery to success, HTTPS
   enforcement, malformed response rejection, and stateless restart work
   without a real credential.
-- GG-007 coverage proves GPT IMAGE 2's seven ratios across all three product
-  resolutions map to the 21 documented lowercase-`x` pixel sizes, submit as
-  `gpt-image-2-c-sd` with `n: 1`, and omit Nano-only request fields. UI contract
-  tests cover ratio filtering, exact readouts, and nearest same-orientation
-  recovery after a model change. Billing tests cover all three 10-credit rows.
+- GG-007/GG-009 coverage proves GPT IMAGE 2's seven ratios across all three
+  product resolutions map to the 21 documented lowercase-`x` pixel sizes and
+  each accepts `n: 1`, `2`, or `4` in one `gpt-image-2-c-sd` task. It rejects a
+  short success result and omits Nano-only request fields. UI contract tests
+  cover ratio/count filtering, exact readouts, model-change normalization, and
+  per-image plus batch-total pricing. Billing tests cover immutable 10/20/40
+  rows and atomic four-Asset settlement.
 - The M5 provider-router tests prove the worker reads ordered private RustFS
   bytes into O1Key temporary uploads, persists the selected provider route,
   rejects an active-attempt route mismatch, resumes polling, fully decodes a
@@ -429,7 +431,8 @@ The timestamped result of the latest verified gate belongs in
   `/_vinext/image`, `srcset`, or `data-nimg` rewriting. The workspace uses that
   primitive for the reference tray plus creation, project, asset-library, and
   detail surfaces.
-- Database transaction creates batch/job/assets consistently.
+- Database transaction creates a batch/job and the complete ordinal Asset set
+  consistently; no short result can settle the batch.
 - Credit grant, live generation reservation, successful-Asset settlement,
   no-Asset release (including `SUBMISSION_UNKNOWN`), refund, and insufficient-
   credit paths are transactional and idempotent.
@@ -482,8 +485,9 @@ repository. Charge/refund outcomes are audited in the operator's New API usage
 history rather than inferred from generation state. O1Key confirmed that the
 image API has no idempotency, client-task lookup, or signed-callback field; ADR
 0008 accepts that limitation with the persisted at-most-once guard rather than
-claiming exactly-once execution. Multi-output and partial-result behavior remain
-outside the one-output MVP.
+claiming exactly-once execution. GPT multi-output now uses one native task and
+an all-or-nothing Asset/credit policy; partial-result settlement remains outside
+the current scope.
 
 ### Documentation continuity
 

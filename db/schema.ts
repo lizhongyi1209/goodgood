@@ -1021,6 +1021,7 @@ export const assets = pgTable(
     jobId: uuid("job_id")
       .notNull()
       .references(() => generationJobs.id, { onDelete: "restrict" }),
+    ordinal: integer("ordinal").notNull(),
     objectKey: text("object_key").notNull(),
     checksum: text("checksum").notNull(),
     mimeType: text("mime_type").notNull(),
@@ -1033,12 +1034,13 @@ export const assets = pgTable(
     ...timestamps,
   },
   (table) => [
-    uniqueIndex("assets_job_unique").on(table.jobId),
+    uniqueIndex("assets_job_ordinal_unique").on(table.jobId, table.ordinal),
     uniqueIndex("assets_object_key_unique").on(table.objectKey),
     index("assets_owner_created_idx").on(table.ownerId, table.createdAt),
     check("assets_pixel_width_check", sql`${table.pixelWidth} > 0`),
     check("assets_pixel_height_check", sql`${table.pixelHeight} > 0`),
     check("assets_byte_size_check", sql`${table.byteSize} > 0`),
+    check("assets_ordinal_check", sql`${table.ordinal} > 0`),
     check(
       "assets_moderation_state_check",
       sql`${table.moderationState} in ('pending', 'accepted', 'rejected')`,

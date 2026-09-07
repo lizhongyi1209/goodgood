@@ -13,7 +13,7 @@
 | Category | Example code | UI placement | Default recovery |
 | --- | --- | --- | --- |
 | Input | `INVALID_PROMPT` | Composer field/toast | Focus and correct |
-| Generation capability | `M3_SLICE_UNSUPPORTED` | Composer/toast | Keep inputs and choose a ratio supported by Nano Banana 2 or GPT IMAGE 2 with one output |
+| Generation capability | `M3_SLICE_UNSUPPORTED` | Composer/toast | Keep inputs and choose a model-supported ratio/count combination |
 | Reference upload | `UPLOAD_TYPE_INVALID`, `UPLOAD_DECODE_INVALID`, `UPLOAD_TOO_LARGE` | Reference tray item | Remove/replace |
 | Reference readiness | `REFERENCE_NOT_READY` | Composer/toast | Wait for upload or remove failed item |
 | Reference cleanup | `OBJECT_DELETE_FAILED` | Operator evidence/logs | Keep row, release lease, retry a later bounded run |
@@ -51,8 +51,9 @@ The strip contains:
   parameter drawer.
 
 For a full-batch failure, show one strip rather than one repeated error per
-requested output. If results are partial, successful assets remain available
-and the strip summarizes completed versus failed outputs.
+requested output. Current GPT multi-output is atomic: a short, malformed, or
+partly unstorable provider result fails the whole batch and exposes no partial
+Assets. A later partial-result policy must define output-level charging first.
 
 A toast may announce a transient validation problem, but must not replace this
 panel for asynchronous generation failure.
@@ -63,18 +64,20 @@ poll deadline to `MODEL_TIMEOUT`, provider reachability/capacity to
 queue, and object-storage diagnostics remain server-side. Queue dispatch failure
 leaves the committed outbox row pending; an object-storage failure leaves the
 non-terminal job and attempt evidence recoverable for worker reconciliation.
-The generation API admits Nano Banana 2's 14 ratios and GPT IMAGE 2's seven
-ratios at `1K` / `2K` / `4K`, with one output. Unknown model combinations
-return `M3_SLICE_UNSUPPORTED` before a job, credit reservation, or provider POST
-is created. The adapter repeats this validation. Nano sends the admitted ratio
-and resolution values; GPT sends the corresponding exact pixel size.
+The generation API admits Nano Banana 2's 14 ratios with one output and GPT
+IMAGE 2's seven ratios with `1 / 2 / 4` outputs at `1K` / `2K` / `4K`. Unknown
+model combinations return `M3_SLICE_UNSUPPORTED` before a job, credit
+reservation, or provider POST is created. The adapter repeats this validation.
+Nano sends the admitted ratio and resolution values; GPT sends the corresponding
+exact pixel size and count.
 
 The M5 O1Key contract normalizes `SUBMITTED`, `IN_PROGRESS`, `SUCCESS`, and
 `FAILURE` polling responses. Unknown error names and malformed or conflicting
 terminal payloads become `INTERNAL_ERROR`; raw O1Key errors never reach the
 browser. A bounded poll deadline becomes `MODEL_TIMEOUT` even when the last
-observation was still submitted or processing. Partial-result behavior is not
-claimed for the one-output MVP, and the image API documents no callback path.
+observation was still submitted or processing. GPT success must contain exactly
+the requested ordered output count; otherwise it becomes `INTERNAL_ERROR`. The
+image API documents no callback path.
 After a durable task ID, a single `FAILURE` observation remains provisional
 until the same normalized failure repeats on consecutive polls. A later
 non-failure observation clears it. A `SUCCESS` result URL also receives a small

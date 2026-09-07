@@ -71,7 +71,7 @@ export function persistedGenerationInputFromRow(row) {
 
 export function publicGenerationJob(
   row,
-  previewUrl = null,
+  previewUrls = new Map(),
   referenceUrls = new Map(),
 ) {
   return {
@@ -86,16 +86,19 @@ export function publicGenerationJob(
       : null,
     id: row.id,
     input: generationInputFromRow(row, referenceUrls),
-    outputs:
-      row.asset_id && previewUrl
-        ? [
-            {
-              id: row.asset_id,
-              previewPosition: "50% 50%",
-              previewUrl,
-            },
-          ]
-        : [],
+    outputs: (row.assets ?? []).flatMap((asset) => {
+      const previewUrl = previewUrls.get(asset.id);
+      return previewUrl
+        ? [{
+            id: asset.id,
+            previewPosition: "50% 50%",
+            previewUrl,
+            ...(asset.pixel_width != null && asset.pixel_height != null
+              ? { height: asset.pixel_height, width: asset.pixel_width }
+              : {}),
+          }]
+        : [];
+    }),
     state: row.state,
     updatedAt: new Date(row.updated_at).toISOString(),
   };
@@ -111,16 +114,14 @@ const JOB_SELECT = `
          b.resolution,
          b.requested_count,
          b.input_hash,
-         a.id AS asset_id,
-         a.object_key,
-         a.mime_type,
-         a.pixel_width,
-         a.pixel_height,
-         a.byte_size,
-         a.checksum
+         COALESCE((
+           SELECT jsonb_agg(to_jsonb(a) ORDER BY a.ordinal)
+             FROM assets a
+            WHERE a.job_id = j.id
+              AND a.moderation_state = 'accepted'
+         ), '[]'::jsonb) AS assets
     FROM generation_jobs j
     JOIN generation_batches b ON b.id = j.batch_id
-    LEFT JOIN assets a ON a.job_id = j.id
 `;
 
 export async function findGenerationJob(pool, { jobId, ownerId }) {
@@ -149,9 +150,13 @@ export async function findOwnerAssetGenerationJobs(pool, { ownerId }) {
     `${JOB_SELECT}
       WHERE j.owner_id = $1
         AND b.owner_id = $1
-        AND a.owner_id = $1
         AND j.state = 'succeeded'
-        AND a.moderation_state = 'accepted'
+        AND EXISTS (
+          SELECT 1 FROM assets a
+           WHERE a.job_id = j.id
+             AND a.owner_id = $1
+             AND a.moderation_state = 'accepted'
+        )
       ORDER BY j.submitted_at DESC, j.id DESC`,
     [ownerId],
   );
@@ -523,14 +528,17 @@ export async function markGenerationRefining(pool, { jobId, workerId }) {
 
 export async function completeGenerationJob(
   pool,
-  { asset, attemptId, jobId, resultHash, workerId },
+  { assets, attemptId, jobId, resultHash, workerId },
 ) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
     const locked = await client.query(
-      `SELECT state, owner_id, lease_owner, credit_reservation_entry_id
-         FROM generation_jobs WHERE id = $1 FOR UPDATE`,
+      `SELECT j.state, j.owner_id, j.batch_id, j.lease_owner,
+              j.credit_reservation_entry_id, b.requested_count
+         FROM generation_jobs j
+         JOIN generation_batches b ON b.id = j.batch_id
+        WHERE j.id = $1 FOR UPDATE OF j`,
       [jobId],
     );
     const state = locked.rows[0]?.state;
@@ -547,26 +555,43 @@ export async function completeGenerationJob(
       return false;
     }
 
-    await client.query(
-      `INSERT INTO assets (
-         id, owner_id, batch_id, job_id, object_key, checksum, mime_type,
-         pixel_width, pixel_height, aspect_ratio, byte_size
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-       ON CONFLICT (job_id) DO NOTHING`,
-      [
-        asset.id,
-        asset.ownerId,
-        asset.batchId,
-        jobId,
-        asset.objectKey,
-        asset.checksum,
-        asset.mimeType,
-        asset.pixelWidth,
-        asset.pixelHeight,
-        asset.aspectRatio,
-        asset.byteSize,
-      ],
-    );
+    if (
+      !Array.isArray(assets) ||
+      assets.length !== locked.rows[0].requested_count ||
+      assets.some((asset, index) =>
+        asset.ordinal !== index + 1 ||
+        asset.ownerId !== locked.rows[0].owner_id ||
+        asset.batchId !== locked.rows[0].batch_id
+      )
+    ) {
+      throw new GenerationPersistenceError(
+        "GENERATION_OUTPUT_COUNT_MISMATCH",
+        "The generated Asset set does not match the requested count.",
+      );
+    }
+
+    for (const asset of assets) {
+      await client.query(
+        `INSERT INTO assets (
+           id, owner_id, batch_id, job_id, ordinal, object_key, checksum,
+           mime_type, pixel_width, pixel_height, aspect_ratio, byte_size
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+        [
+          asset.id,
+          asset.ownerId,
+          asset.batchId,
+          jobId,
+          asset.ordinal,
+          asset.objectKey,
+          asset.checksum,
+          asset.mimeType,
+          asset.pixelWidth,
+          asset.pixelHeight,
+          asset.aspectRatio,
+          asset.byteSize,
+        ],
+      );
+    }
     if (locked.rows[0].credit_reservation_entry_id) {
       await settleGenerationCreditsInTransaction(client, {
         idempotencyKey: `generation-settle:${jobId}`,
@@ -595,7 +620,7 @@ export async function completeGenerationJob(
       fromState: state,
       jobId,
       toState: "succeeded",
-      detail: { assetId: asset.id },
+      detail: { assetIds: assets.map((asset) => asset.id) },
     });
     await client.query("COMMIT");
     return true;

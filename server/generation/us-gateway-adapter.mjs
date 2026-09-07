@@ -1,6 +1,5 @@
 import { NormalizedProviderError } from "./provider.mjs";
 import {
-  DURABLE_GENERATION_OUTPUT_COUNT,
   SUPPORTED_GENERATION_RESOLUTIONS,
   getGenerationModelCapability,
   getGptImage2PixelSize,
@@ -11,7 +10,7 @@ export const US_GATEWAY_CONTRACT_VERSION = "o1key-image-api-2026-09-02";
 
 export const US_GATEWAY_NANO_BANANA_2_ROUTE = Object.freeze({
   aspectRatios: getGenerationModelCapability("nano-banana-2").aspectRatios,
-  outputCount: DURABLE_GENERATION_OUTPUT_COUNT,
+  outputCounts: getGenerationModelCapability("nano-banana-2").outputCounts,
   productModelId: "nano-banana-2",
   provider: "o1key",
   providerModel: "gemini-3.1-flash-image-c-sp",
@@ -21,7 +20,7 @@ export const US_GATEWAY_NANO_BANANA_2_ROUTE = Object.freeze({
 
 export const US_GATEWAY_GPT_IMAGE_2_ROUTE = Object.freeze({
   aspectRatios: getGenerationModelCapability("gpt-image-2").aspectRatios,
-  outputCount: DURABLE_GENERATION_OUTPUT_COUNT,
+  outputCounts: getGenerationModelCapability("gpt-image-2").outputCounts,
   productModelId: "gpt-image-2",
   provider: "o1key",
   providerModel: "gpt-image-2-c-sd",
@@ -126,7 +125,11 @@ function normalizeProgress(value, state) {
   return null;
 }
 
-export function normalizeUsGatewayTask(payload) {
+export function normalizeUsGatewayTask(
+  payload,
+  { expectedOutputCount = 1 } = {},
+) {
+  if (![1, 2, 4].includes(expectedOutputCount)) throw protocolError();
   const taskId = payload?.task_id;
   if (typeof taskId !== "string" || !taskId) throw protocolError();
   const state = Object.freeze({
@@ -143,7 +146,7 @@ export function normalizeUsGatewayTask(payload) {
   const failures = Object.freeze(
     state === "failed" ? [normalizeFailure(payload.error)] : [],
   );
-  if (state === "succeeded" && outputs.length !== US_GATEWAY_MVP_ROUTE.outputCount) {
+  if (state === "succeeded" && outputs.length !== expectedOutputCount) {
     throw protocolError();
   }
   if (state !== "succeeded" && outputs.length !== 0) throw protocolError();
@@ -297,7 +300,7 @@ function generationPayload({ job, route, uploadedReferences }) {
   if (route.productModelId === "gpt-image-2") {
     return {
       ...common,
-      n: route.outputCount,
+      n: job.requested_count,
       size: getGptImage2PixelSize(job.aspect_ratio, job.resolution),
     };
   }
@@ -351,12 +354,12 @@ export function createUsGatewayAdapter({
     return parseResponse(response, { submission });
   }
 
-  async function getTask(taskId) {
+  async function getTask(taskId, expectedOutputCount) {
     const payload = await request(
       `/async/v1/tasks/${encodeURIComponent(taskId)}`,
       { method: "GET" },
     );
-    return normalizeUsGatewayTask(payload);
+    return normalizeUsGatewayTask(payload, { expectedOutputCount });
   }
 
   async function uploadReference(reference) {
@@ -408,6 +411,7 @@ export function createUsGatewayAdapter({
 
     async waitForTerminal({
       onUpdate = async () => {},
+      expectedOutputCount = 1,
       pollIntervalMs = 250,
       taskId,
       timeoutMs,
@@ -420,7 +424,7 @@ export function createUsGatewayAdapter({
       let failureCandidate = null;
       let failureObservations = 0;
       while (now() < deadline) {
-        const incoming = await getTask(taskId);
+        const incoming = await getTask(taskId, expectedOutputCount);
         if (incoming.state === "failed") {
           const sameFailure =
             failureCandidate &&

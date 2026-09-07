@@ -5,6 +5,8 @@ export const SUPPORTED_GENERATION_RESOLUTIONS = Object.freeze([
 ]);
 
 export const DURABLE_GENERATION_OUTPUT_COUNT = 1;
+export const SUPPORTED_GPT_IMAGE_2_OUTPUT_COUNTS = Object.freeze([1, 2, 4]);
+export const SUPPORTED_NANO_BANANA_2_OUTPUT_COUNTS = Object.freeze([1]);
 
 const NANO_BANANA_2_ASPECT_RATIOS = Object.freeze([
   "1:8",
@@ -46,12 +48,12 @@ export const GPT_IMAGE_2_PIXEL_SIZES = Object.freeze({
 export const GENERATION_MODEL_CAPABILITIES = Object.freeze({
   "nano-banana-2": Object.freeze({
     aspectRatios: NANO_BANANA_2_ASPECT_RATIOS,
-    outputCount: DURABLE_GENERATION_OUTPUT_COUNT,
+    outputCounts: SUPPORTED_NANO_BANANA_2_OUTPUT_COUNTS,
     resolutions: SUPPORTED_GENERATION_RESOLUTIONS,
   }),
   "gpt-image-2": Object.freeze({
     aspectRatios: GPT_IMAGE_2_ASPECT_RATIOS,
-    outputCount: DURABLE_GENERATION_OUTPUT_COUNT,
+    outputCounts: SUPPORTED_GPT_IMAGE_2_OUTPUT_COUNTS,
     resolutions: SUPPORTED_GENERATION_RESOLUTIONS,
   }),
 });
@@ -79,7 +81,7 @@ export function isSupportedGenerationInput({ aspectRatio, count, modelId, resolu
   const capability = getGenerationModelCapability(modelId);
   return Boolean(
     capability &&
-    count === capability.outputCount &&
+    capability.outputCounts.includes(count) &&
     capability.aspectRatios.includes(aspectRatio) &&
     capability.resolutions.includes(resolution),
   );
