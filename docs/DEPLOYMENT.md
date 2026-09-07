@@ -1045,6 +1045,399 @@ private Tair standard master-replica. Capacity observations may justify
 vertical growth first, but neither a threshold nor this document authorizes a
 purchase.
 
+### Controlled-alpha release gate
+
+ADR 0024 adds `controlled-alpha-v1` before the complete seed-production gate.
+It is deliberately evaluated by a different command:
+
+```bash
+npm run production:alpha-gate -- --evidence-file \
+  /var/lib/goodgood-production/controlled-alpha/readiness.json
+```
+
+Use `infra/production/controlled-alpha-readiness-evidence.example.json` only as
+a schema template; it is intentionally blocked. Passing evidence must bind the
+same immutable image, full revision, migration, and runtime-config checksum as
+the deployed candidate. It requires current artifact/preflight evidence plus
+the maintenance-closed admission/disclosure baseline, one controlled non-owner
+journey, fresh encrypted recovery and maintenance re-entry, and the minimum
+operator signal/manual-response handoff. Evidence stores no email, prompt,
+image, object key, signed URL, cookie, or credential.
+
+The controlled-alpha artifact lifetime is seven days and its preflight lifetime
+is 72 hours, conditional on a fresh read-only baseline proving the protected
+release/runtime identity is unchanged. Any identity change invalidates both.
+The full seed and paid gates retain their existing evidence lifetimes.
+
+This command is a verifier, not a release action. It has no execute flag and
+does not remove maintenance. `production:seed-gate` and
+`production:seed-release-plan` remain the full seed-production controls and
+continue to fail while their deferred privacy, deletion, content-report,
+monitoring, incident, and rollback evidence is absent. The step-by-step live
+procedure is `infra/production/CONTROLLED_ALPHA_RUNBOOK.md`; C7 retains a
+separate `publicTrafficOpen` approval.
+
+### Production retention and account deletion
+
+ADR 0022 accepts the production policy. Migrations 0013-0019, the administration
+POST boundary, and the two-confirmation `/admin/users` control implement and
+verify request creation, the non-content wait step, private-object deletion, and
+transactional creative-record deletion plus a fake-adapter external-identity
+step and final GoodGood-local anonymization/completion locally, but no production
+deployment or operator execution is authorized.
+Consumed login attempts are deleted 24 hours after consumption, unconsumed
+attempts 24 hours after expiry, expired/revoked sessions after 30 days, expired
+root drafts through a daily pass after their 30-day sliding expiry, and
+unreferenced private references through the existing bounded 30-day cleanup.
+Normal projects, generations, assets, and private bytes remain while the account
+lifecycle is open, regardless of access state, and has no verified deletion
+request.
+
+A verified account-deletion request must immediately suspend access, revoke
+sessions, and block Authing-backed re-entry. A retry-safe workflow then has 30
+days to delete or anonymize the GoodGood owner, delete its creative records and
+all owned private R2 bytes, and complete Authing disablement plus deletion or
+anonymization. Credit-ledger and administrative audit evidence is anonymized and
+retained for 12 months after deletion completion before controlled removal or
+irreversible aggregation. Deletion progress is not a fourth account status.
+
+The first entry point is the existing site-owner-only `/admin/users` page with
+two distinct confirmation steps. Request creation remains a POST-only,
+CSRF-protected, idempotent administration mutation and must reject the acting
+site owner on the server. It opens the lifecycle and stops access; it does not
+execute or attest the downstream destructive steps synchronously. There is no
+member self-service route in this phase. Deleting a site-owner account requires
+a separate exact-target runbook and approval.
+
+For the seed phase, verify the account holder manually: receive the request from
+the account's current registered email, reply to that same address, and require
+the user's explicit confirmation reply within 24 hours. If the address changes,
+does not match, or the reply is late, restart verification and do not create the
+request. Record only request/confirmation timestamps and the mail provider
+message/reference ID. Do not copy email subject/body into GoodGood, application
+logs, or release evidence. This policy does not itself install or authorize an
+email connector.
+
+At request creation, deny new login, generation submission, and user retry. Do
+not cancel or resubmit an O1Key task whose persisted submission guard has
+already crossed the billable boundary, and do not start a fallback. Keep the
+Worker available only to finish the existing bounded poll/result-ingest path
+and settle or release credit exactly once. Any late result stays private and
+unreadable to the suspended owner, then joins the deletion set. Do not run the
+destructive content phase until all provider-submitted attempts are terminal;
+a stuck task keeps the request incomplete and alerts the operator without
+moving the 30-day deadline.
+
+Cancel every accepted job that has not crossed the persisted provider-
+submission guard in the deletion-request PostgreSQL transaction. Release its
+reserved credit exactly once, set terminal `cancelled`, and make its outbox work
+ineligible; issue no O1Key request. Do not claim atomic mutation across
+PostgreSQL and Valkey. A stale at-least-once Valkey delivery must re-read the
+terminal database state, call no provider, and acknowledge the item. Exercise
+both race outcomes around the submission guard before production scheduling.
+
+Treat the final `/admin/users` request submit as the irreversible boundary.
+Before it, cancelling either confirmation persists no verification metadata or
+product mutation. After it, provide no withdrawal, reopen, or restore command,
+endpoint, or lifecycle transition. A mistaken committed request is handled by
+the incident runbook for alerting, evidence, and process correction while the
+deletion lifecycle continues; the runbook must not reconstruct sessions, jobs,
+credit, content, or remove deletion-register evidence.
+
+Before installing any cleanup timer, add and review the additive schema,
+operator runbook, exact dry-run/execute boundaries, lock/lease behavior,
+resource bounds, non-personal evidence format, named alert owner, and rollback
+behavior. The first production execution requires independent verification.
+The existing reference cleanup is not silently scheduled by this decision.
+
+Migration 0014 does not install a timer or runtime command. Its in-process local
+service can only inspect aggregate lifecycle counts and advance
+`wait_for_submitted_jobs`; it has no object-storage, Authing, or content-deletion
+dependency. Production migration and invocation remain unauthorized.
+
+C6-2D adds only an in-process local inventory preview. It may run after the wait
+step is complete and returns six aggregate counts plus a versioned SHA-256 from
+a read-only PostgreSQL snapshot. It neither persists the preview nor lists
+object keys to an operator, and it has no R2/Authing client, destructive SQL,
+runtime entry point, timer, deployment setting, or production authorization.
+Any later execution must recompute and bind current evidence in its own reviewed
+boundary.
+
+C6-2E remains an imported in-process service with no CLI or timer. Its real
+integration test uses only the workstation's disposable `goodgood-local` RustFS
+bucket, creates random-prefix fixtures, proves a redacted failed attempt, and
+deletes one object per bounded pass. An unexpired pending upload key remains
+present until its signed PUT window and clock-skew grace are made expired; the next pass deletes it
+and every exact target then returns 404. Test cleanup leaves that random prefix
+empty.
+
+C6-2F is also import-only. Its leased PostgreSQL pass starts only after private-
+object completion, deletes one disposable owner's complete creative graph in a
+single foreign-key-ordered transaction, and retains the GoodGood/Authing identity,
+request/register, sessions, credit account, ledger, payment, and administrative
+evidence. A failed pass rolls back all row and ledger-link changes before a
+bounded retry. Neither slice connects to the production `goodgood` bucket, reads
+production credentials, changes a host unit, deploys an image, installs a timer,
+or authorizes production invocation.
+
+C6-2G remains import-only and requires an explicitly injected identity adapter;
+there is no default Authing implementation. Its disposable in-memory test
+directory proves disable-before-delete ordering, partial-failure retry, local
+mapping retention, lease loss, and redacted logs after creative completion. It
+adds no Authing management endpoint, credential, network call, runtime command,
+timer, host unit, or production authorization. Before any real adapter is
+written, review Authing's exact management API, least-privilege application
+credential, rate/error contract, deletion semantics, and isolated test-tenant
+evidence as a separate approved slice.
+
+C6-2H is also import-only. After fake external deletion evidence, its disposable
+local integration transaction expires available credit, closes the account,
+deletes revoked sessions and local identity mappings, pseudonymizes the owner,
+scrubs the request mail reference, and fixes register retention at 12 months.
+Failure rollback and retry are proven against local PostgreSQL. Existing ledger
+and administrative evidence is not rewritten. There is no CLI, route, timer,
+host unit, credential loader, network call, migration execution against the
+Hong Kong database, or production authorization in this slice.
+
+C6-2I adds the opt-in `authing-node-sdk` adapter but no process selects it yet.
+Its public-cloud management host defaults to `https://api.authing.cn`; any
+configured non-loopback host must be an HTTPS origin. The explicit insecure
+exception accepts HTTP only on loopback and exists solely for the disposable
+fake-endpoint suite. The adapter requires an exact expected OIDC issuer and uses
+the verified OIDC subject only as `user_id`. It performs only user lookup,
+status update to `Suspended`, and one-user batch deletion, and validates every
+business response before returning success.
+
+C6-2J remains import-only. It composes the existing five deletion passes into a
+single bounded invocation with aggregate before/after observation, fixed-code
+alerts, and redacted completion output. It always requires an injected identity
+adapter and has no default Authing selection. No package command, executable
+runtime entry point, timer, systemd unit, Compose role, credential path,
+production endpoint, or Hong Kong invocation is added. Production scheduling,
+exclusive-worker operation, alert delivery, and runbook evidence require later
+reviewed slices.
+
+C6-2K is also import-only. It can create a version-1 deletion-register artifact
+from a PostgreSQL pool and replay an artifact against an already migrated,
+isolated database, but it does not write a host file or alter the production
+backup/restore shell scripts. The artifact contains internal UUIDs and therefore
+must later be placed only in encrypted, root-restricted off-host recovery
+storage. A restore invocation must receive the exact expected SHA-256 from
+independent trusted evidence; the embedded digest alone is insufficient. Any
+processing record returns `ready: false`. No restored candidate may gain a
+network or health-check path until replay returns ready and absence verification
+passes. Packaging, artifact freshness/retention, Restic snapshot binding, host
+permissions, and production restore-drill wiring were completed in local source
+by C6-2L.
+
+C6-2L changes a production automated backup from one plaintext staging file to
+one transient root-only three-file recovery point:
+
+```text
+production-auto-<UTC>.dump
+production-auto-<UTC>.account-deletion-register.json
+production-auto-<UTC>.recovery-manifest.json
+```
+
+The dump is created and validated first. The register is exported afterward by
+the exact immutable image in the protected production `release.env`, using only
+the internal `goodgood-production-state` network. If GoodGood application
+containers are running, every one must match the configured reference and local
+image ID; if Web/Worker are intentionally stopped for maintenance, the already-
+local configured image remains usable. A network-none command
+then creates and verifies the strict manifest. All files must be root-owned,
+non-symlink regular files with mode `0600`; Restic encrypts the three paths in
+one snapshot tagged `production`, `automated`, `postgresql`,
+`deletion-register`, and `recovery-point`, after which the host plaintexts are
+removed. A failed or partial invocation removes only files it created and never
+overwrites or deletes a pre-existing target.
+
+`restore-latest-drill` selects only snapshots with all five tags and exactly
+three exact paths sharing one stem. It rejects snapshots older than one hour,
+restores every file as root-only `0600`, and requires the manifest's immutable
+GoodGood image to exist locally (`--pull never`). PostgreSQL still restores in
+a `network=none`, read-only, tmpfs-backed container. The bound application image
+shares only that container's network namespace, verifies the files and manifest,
+and replays the deletion register over loopback before row-count evidence is
+accepted. Any processing record or mismatch prevents `recovery_ready=true`.
+The former one-file production snapshots have no recovery-point tags and are
+not eligible for this drill, though normal retention still ages them out.
+
+This is reviewed local source only. Do not replace the installed production
+scripts or application image, create a new snapshot, run a restore drill, or
+change the existing timers without a separate Hong Kong execution approval.
+The first approved rollout must publish an image containing
+`server/runtime/account-deletion-recovery.mjs`, install both reviewed scripts,
+create a fresh three-file snapshot, and complete the isolated drill before
+claiming production recovery evidence.
+
+C6-2M adds the next production source boundary but does not activate it.
+`server/runtime/account-deletion-cycle.mjs` is production-only and executes
+exactly one fixed-bounds C6-2J cycle. It rejects inline secrets, reads only the
+four exact container secret paths, accepts only the internal
+`postgres:5432/goodgood` database, exact HTTPS OIDC issuer, and the private
+Cloudflare R2 `goodgood` bucket in verify mode. Its dedicated resources use a
+two-connection PostgreSQL pool and one private S3 client; no Redis, O1Key
+provider, public storage client, or OIDC application secret is loaded.
+PostgreSQL `SELECT 1` and R2 `HeadBucket` must pass before the Authing adapter
+is constructed.
+
+`compose.production.account-deletion.yaml` is deliberately separate from the
+normal blue/green application file so absent management credentials cannot
+block Web/Worker release parsing. The one-shot role has no port, uses
+`pull_policy: never`, mounts only the application R2 credential and these
+future dedicated management files, and is read-only with 0.5 CPU, 384 MiB, and
+128 PID limits:
+
+```text
+/etc/goodgood/production/secrets/account-deletion/authing-access-key-id
+/etc/goodgood/production/secrets/account-deletion/authing-access-key-secret
+```
+
+Both must eventually be root-owned, non-symlink files in the production
+secret-reader group with mode `0640`; neither belongs in `release.env`,
+`runtime.env`, shell arguments, or logs. The root wrapper also verifies the
+existing production R2 secret files, protected release/runtime files, exact
+GoodGood GHCR digest, and already-local image. It takes a nonblocking
+`/run/lock/goodgood-production-account-deletion.lock` before invoking the
+standalone Compose role. The runtime returns `0` only for `ok`, `2` for
+`attention`, `3` for `aborted`, and `1` for a fixed-code runtime failure; lock
+overlap returns `75`.
+
+The checked-in systemd service is a four-minute oneshot and the persistent
+timer requests one run every five minutes with up to 30 seconds of jitter.
+The failed unit plus `account_deletion.*` aggregate JSON journal events are the
+vendor-neutral monitoring handoff; this repository does not select a
+notification destination or acknowledge incidents. Before installing or
+enabling anything, publish and retain the exact new image, prove an acceptable
+least-privilege Authing credential against one separately approved disposable
+identity, restrict the role's outbound path to Authing management and the
+production R2 endpoint, assign the alert owner, and test firing plus resolved
+delivery. Source deployment uses the reviewed names
+`/opt/goodgood-production/compose.production.account-deletion.yaml`,
+`/usr/local/sbin/goodgood-production-account-deletion-cycle`, and the two
+`goodgood-production-account-deletion.*` units. C6-2M does not perform any of
+those host actions.
+
+Do not reuse the OIDC application App Secret for this adapter. The current
+official Authing SDK contract instead requires an AK/SK accepted by the user
+pool management API. Authing documents the user-pool AK/SK as globally powerful
+and describes fine-grained collaborator-admin AK/SK availability separately;
+therefore production enabling remains blocked until the actual tenant proves a
+credential limited to the three required user methods, or the operator
+explicitly accepts and mitigates the global-key risk. Any accepted credential
+must be separately rotated, mounted only into the deletion worker from root-
+owned `0640` files, excluded from environment variables/logs/commands/Web, and
+paired with egress restricted to Authing management plus the production R2
+endpoint. C6-2M defines the future exact paths, loader, one-shot Compose role,
+wrapper, and inactive units, but adds no secret value, real-tenant call,
+installation, timer activation, or Hong Kong change.
+
+C6-2N tested that boundary against the actual Authing user pool on 2026-09-07
+after the operator separately approved one controlled, non-owner internal
+administrator. Its custom administrator role was associated only with
+`/api/v3/get-user`, `/api/v3/update-user`, and
+`/api/v3/delete-users-batch`. The live API nevertheless exposed no deployable
+least-privilege credential:
+
+- `create-access-key` with `type: userpool` returned an enabled, activated
+  credential whose Access Key ID exactly equalled the global user-pool ID. It
+  was not separately identifiable or safely revocable and must be treated as a
+  global user-pool secret, not collaborator evidence.
+- The console implementation uses `type: tenant-co-admin`, but that request
+  returned HTTP `422` / API code `4004` for the internal administrator because
+  it is not a multi-tenant collaborator.
+- Authing's published OpenAPI still describes fine-grained collaborator AK/SK
+  as under development. The exposed creation endpoint does not override that
+  warning or prove a service credential boundary.
+
+The proof therefore stopped before creating the disposable deletion target or
+calling lookup, suspension, or deletion with a scoped credential. No credential
+was installed on the Hong Kong host, no production runtime was invoked, and the
+timer remains disabled. Do not place the global user-pool secret into the
+dedicated deletion secret files. Enabling remains blocked until Authing supplies
+a separately revocable collaborator credential, or the operator makes a new
+explicit risk decision with reviewed compensating controls or changes the
+identity-provider boundary. The policy and non-owner role assignment may remain
+as inert configuration, but they are not release evidence by themselves.
+
+Encrypted backups continue to age out as 14 daily / 8 weekly / 12 monthly
+recovery points. Every restore remains network-isolated until an independently
+retained deletion register has been replayed and deleted identities/content are
+proven absent. Keep that non-content register until no retained recovery point
+predates the deletion. Verify O1Key's provider-side retention/deletion contract
+before seed admission; the current 24-hour result-ingestion window is not itself
+proof of provider erasure.
+
+C6-2O performed that public-contract review read-only on 2026-09-07. The current
+O1Key API documentation says that an uploaded attachment receives a public URL
+valid for 24 hours, readable with unauthenticated GET/HEAD until expiry, and that
+generated image URLs are retained for 24 hours. Its asynchronous image section
+documents `POST /async/v1/generateImage` and
+`GET /async/v1/tasks/{task_id}` but no DELETE operation. The same-date public
+`/api/status` responses from both documented API entry points report
+`privacy_policy_enabled: false` and `user_agreement_enabled: false`; the public
+documentation contains no separate deletion or privacy terms.
+
+Treat those facts as delivery/retrieval lifetimes only. They do not establish
+physical erasure of attachment bytes, prompts, task records, generated outputs,
+logs, caches, backups, or copies held by the selected upstream model processor.
+Before seed admission, obtain written O1Key evidence naming each data class,
+processor/subprocessor, storage region where applicable, retention period,
+deletion trigger, backup/log treatment, and account-deletion response path. A
+reviewed provider-boundary change is the alternative. Until one of those paths
+passes, `retention-deletion-policy` remains blocked. The review used no API key,
+created no task, generated no asset, and changed no provider or production
+configuration.
+
+### Seed moderation and abuse boundary
+
+ADR 0023 and migration 0020 implement the deliberately lightweight seed
+boundary. The existing defense layers remain:
+
+- Authing registration may be open, but every new GoodGood account remains
+  pending and every creative API resolves only an active account. The site owner
+  can approve, suspend, or restore with an explicit durable audit reason.
+- Welcome and operator-granted credits are finite, reserve transactionally, and
+  cannot overdraw. This bounds ordinary provider spend without adding a hidden
+  job-count or concurrency quota.
+- References and generated Assets remain owner-private. Reference intent limits
+  count and bytes, completion verifies declared size, fully decodes JPEG/PNG/WebP,
+  checks actual MIME and dimensions, and generated output is bounded and fully
+  decoded before private storage.
+- O1Key failures containing moderation/policy/safety rejection indicators become
+  the non-retryable `MODEL_REJECTED` product error without exposing raw provider
+  text.
+- Host memory/disk protection may reject only new submissions under ADR 0021;
+  it is a capacity guard, not an abuse or content policy.
+
+Do not misclassify technical validation as content review. Reference completion
+and generated-Asset ingestion now record `moderation_state = not_reviewed`.
+That state remains owner-private and usable; the selected
+`gemini-3.1-flash-image-c-sp` request sends no invented moderation field and
+keeps the provider's default safety behavior. GoodGood intentionally adds no
+keyword blocklist, local semantic classifier, or third-party moderation
+processor. It also adds no fixed per-user pending-job, global queue-depth, or
+generation-concurrency ceiling.
+
+Every active account must accept the exact server-owned `seed-v1` version/hash
+before reference upload, generation, or retry. A member can report only their
+own generated Asset with one fixed category. Creation atomically quarantines
+that Asset and stores no prompt, bytes, object key, or free-form allegation.
+Ordinary user joins expose only `not_reviewed | accepted`. The site owner sees a
+bounded metadata queue in `/admin/users`; opening one exact private preview is
+an audited POST. The only resolution actions are reasoned restore to `accepted`
+or byte-first removal to `rejected`. Storage failure leaves the Asset
+quarantined and the report open. Existing reasoned account suspension handles
+repeat or severe violations without a new account state.
+
+Do not mark `moderation-abuse-controls` pass from source tests. A production
+rehearsal for the exact candidate must prove policy acceptance enforcement,
+owner-only reporting, immediate hiding, audited exact review, both resolution
+paths, private-byte absence after removal, account suspension availability,
+retained provider default safety, and normalized provider rejection. Evidence
+contains only fixed booleans plus policy version/hash and no customer content.
+
 ### Clean staging-to-production conversion
 
 There is no ongoing remote staging hostname in the selected phase.
@@ -1303,7 +1696,13 @@ with reviewed admission. Authing registration may be open, but every new owner
 remains pending and cannot use production capabilities until the site owner
 approves it. Accounts and their creative content are production data from first
 login and therefore remain in the access, privacy, deletion, backup/restore,
-redaction, and incident-response scope even while pending.
+redaction, and incident-response scope even while pending. ADR 0022 now supplies
+the retention/deletion policy. Its local request UI/API, complete leased
+lifecycle, optional Authing adapter, aggregate cycle, and isolated register
+replay pass, but production credential/runtime selection, cleanup timers,
+provider coordination, encrypted register-artifact backup/restore wiring,
+alert delivery, and first production evidence must pass before the corresponding
+readiness item can change from blocked to pass.
 
 For the exact immutable candidate digest, require the repository/security/image
 gates, matching migration and runtime-contract labels, production preflight,
@@ -1398,7 +1797,7 @@ Run the unchanged full gate separately before any paid-production approval:
 npm run production:gate -- --evidence-file C:\ProgramData\GoodGood\production-readiness.json
 ```
 
-`infra/production/readiness-evidence.example.json` documents schema version 2
+`infra/production/readiness-evidence.example.json` documents schema version 3
 and intentionally exits nonzero. A live manifest must pin the exact GHCR digest,
 full Git revision, migration filename, and runtime-contract checksum. Every
 evidence item present must be a known ID, appear exactly once, and use only a

@@ -97,11 +97,53 @@ Implemented locally for M8 seed-production preparation:
   enables creation and credit consumption.
 - A small site-owner-only account-management page reviews access and appends
   auditable free test-credit grants without creating payment records.
+- The same `/admin/users` page is the accepted first entry point for a verified
+  account-deletion request, with two distinct confirmations. The local page and
+  backend now collect only the registered-email evidence metadata, reject a
+  site-owner target, and show a created request as irreversible and read-only.
+- A verified request immediately removes product access. Provider-submitted
+  generations only finish their existing status/credit reconciliation; they
+  are not cancelled or resubmitted, their results are hidden, and those private
+  results join the account deletion set.
+- Accepted jobs that have not begun provider submission are cancelled without
+  an O1Key request and release their reserved credit exactly once.
+- After submitted work is terminal, the local deletion workflow can preview the
+  owner's deletion set as six aggregate counts and a stable versioned digest.
+  The preview never exposes object keys or identifiers and does not delete data.
+- The private-object step removes owned private bytes in bounded, leased,
+  retry-safe passes. It records object deletion only after storage succeeds and
+  exposes only aggregate evidence. The following local step now removes the
+  owner-scoped creative database graph atomically while retaining financial and
+  administrative evidence. The provider-neutral identity step then proves
+  external disable/delete through a fake directory, and the final local
+  transaction removes GoodGood sessions/mappings, anonymizes the owner, expires
+  remaining credit, and completes the deletion register.
+- Email verification and both site-owner confirmations precede request
+  creation. Closing either confirmation makes no GoodGood change; after the
+  final submit creates the request, it cannot be withdrawn or used to restore
+  access, jobs, credits, or content. A mistake enters the separate incident
+  process while deletion continues.
 - System role, creation-access state, and product account tier remain separate
   concepts. Seed-user accounts and creative content are production data.
 - Access state is exactly pending, active, or suspended; the initial tier is
   seed/内测用户. The site owner is established once with the audited bootstrap
   command after normal login, never by registration order.
+
+Controlled-alpha launch policy:
+
+- ADR 0024 permits a smaller, personally reviewed tester cohort to use the
+  existing maintenance-closed production candidate after the separate
+  `controlled-alpha-v1` gate passes.
+- Registration remains open but pending. Only a known tester who has been
+  briefed to use non-sensitive, non-confidential material and informed of the
+  O1Key processing/erasure limitation may be activated by the site owner.
+- The 100 welcome-credit grant and audited manual test-credit grant remain the
+  only launch funding paths. Checkout stays disabled.
+- Reporting and removal use a documented out-of-band contact plus manual
+  suspension/exact-target handling during controlled alpha. This is not a claim
+  that the local automated deletion or content-report implementation is live.
+- A controlled-alpha pass does not pass the broader seed-production or paid-
+  production gate.
 
 Not production-ready yet:
 
@@ -118,9 +160,50 @@ Not production-ready yet:
   controls, and server-enforced reviewed-account admission. ADRs 0019 and 0020
   permit a Hong Kong seed-production launch only after those non-payment safety
   controls and the separate seed release gate pass.
-- Production object-storage lifecycle alignment, moderation, approved retention
-  periods, cleanup scheduling/alerting, and staging capacity evidence beyond the
-  locally verified manual cleanup path.
+- Production retention periods and account-deletion outcomes are accepted in
+  ADR 0022. Migrations 0013-0019 and the local administration API now persist the
+  verified request and atomically stop access, revoke sessions, cancel eligible
+  unsubmitted jobs, and release their credit. The local two-step management UI
+  completes the request-entry slice; a non-content register and leased wait step
+  now prevent destructive work from passing a live submitted job, and a local
+  read-only inventory binds the creative rows/private objects without exposing
+  their identifiers. Local private-object and creative-row steps now pass
+  against disposable PostgreSQL/RustFS data. The provider-neutral external-
+  identity step also passes disable/delete partial retry against a disposable
+  fake directory while retaining local mappings until the final local
+  transaction. Local GoodGood anonymization/completion now passes with an
+  anonymous retained audit anchor. The reviewed Authing management adapter now
+  passes against a local signed-request fake endpoint, but is not runtime-wired
+  and has no production credential or real-tenant deletion evidence. The five
+  local passes now also compose into one bounded, aggregate-only cycle with
+  fixed redacted alert codes, but it remains import-only. A digest-bound
+  non-content register export and isolated local restore replay now prevent
+  completed deletions from reappearing and keep processing deletions blocked.
+  The production recovery source now packages the database, deletion register,
+  and a trusted manifest into one encrypted off-host recovery point and refuses
+  stale, permission-unsafe, digest-mismatched, or non-ready restores; it has not
+  been installed or run on the Hong Kong host. A production-only one-shot
+  deletion cycle, isolated Compose role, host lock, fixed exit/alert handoff,
+  and five-minute systemd schedule now exist as inactive local source. No real
+  Authing management credential is selected and neither the runtime nor timer
+  is installed or enabled. The read-only provider-retention review now records
+  a named O1Key contract blocker: 24-hour public/result URL lifetimes do not
+  prove erasure of provider or upstream copies, and no public privacy/deletion
+  terms are enabled. Live alert delivery and production evidence remain
+  incomplete. ADR 0023 now defines the deliberately lightweight seed content-
+  safety boundary. An active user must explicitly accept the exact version and
+  hash of `seed-v1` before reference upload, generation, or retry. Technical
+  image validation records `not_reviewed`, not a false semantic approval;
+  upstream default safety remains enabled, while GoodGood adds neither a local
+  keyword filter nor a third-party semantic processor. A user may report only
+  one of their own generated Assets with a fixed category; that transaction
+  immediately quarantines the Asset without copying its prompt, bytes, or
+  object key into the report. The site owner receives the bounded report queue
+  in `/admin/users`, opens only an exact audited private preview, and either
+  restores the Asset or deletes its private bytes before recording removal.
+  Existing reasoned account suspension remains the repeat/severe-violation
+  response. Production rehearsal and evidence are still required before the
+  moderation gate can pass.
 - Search, Explore, Moodboards, collaboration, and sharing.
 
 ## Product principles

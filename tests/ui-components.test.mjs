@@ -115,6 +115,117 @@ test("authentication session boundary covers signed-in, signed-out, and failure 
   }
 });
 
+test("account deletion evidence and HTTP boundary fail closed before irreversible submit", async () => {
+  const { validateAccountDeletionEvidence } = await vite.ssrLoadModule(
+    "/features/admin/account-deletion-evidence.ts",
+  );
+  const now = new Date("2026-09-06T08:00:00.000Z");
+  const validDraft = {
+    accountEmail: "member@goodgood.invalid",
+    mailReferenceId: "mail-reference-0001",
+    reason: "用户已通过登记邮箱确认删除",
+    verificationConfirmedAt: "2026-09-06T07:00:00.000Z",
+    verificationRequestedAt: "2026-09-06T06:00:00.000Z",
+    verifiedEmail: "MEMBER@GOODGOOD.INVALID",
+  };
+
+  assert.deepEqual(
+    validateAccountDeletionEvidence(
+      { ...validDraft, verifiedEmail: "" },
+      now,
+    ),
+    { message: "请输入已完成往返确认的登记邮箱。", ok: false },
+  );
+  assert.match(
+    validateAccountDeletionEvidence(
+      { ...validDraft, verifiedEmail: "changed@goodgood.invalid" },
+      now,
+    ).message,
+    /登记邮箱完全一致/,
+  );
+  assert.match(
+    validateAccountDeletionEvidence(
+      {
+        ...validDraft,
+        verificationConfirmedAt: "2026-09-07T06:00:00.001Z",
+      },
+      new Date("2026-09-07T07:00:00.000Z"),
+    ).message,
+    /24 小时内/,
+  );
+  const validated = validateAccountDeletionEvidence(validDraft, now);
+  assert.equal(validated.ok, true);
+  assert.equal(validated.value.verifiedEmail, "member@goodgood.invalid");
+  assert.equal(
+    validated.value.verificationConfirmedAt,
+    "2026-09-06T07:00:00.000Z",
+  );
+
+  const { createManagedAccountDeletionRequest } = await vite.ssrLoadModule(
+    "/features/admin/http-admin-boundary.ts",
+  );
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  const requestResult = {
+    cancelledJobCount: 0,
+    created: true,
+    createdAt: "2026-09-06T08:00:00.000Z",
+    deadlineAt: "2026-10-06T08:00:00.000Z",
+    id: "request-1",
+    releasedCredits: "0",
+    revokedSessionCount: 1,
+    state: "processing",
+    verificationConfirmedAt: validated.value.verificationConfirmedAt,
+    verificationRequestedAt: validated.value.verificationRequestedAt,
+  };
+  try {
+    globalThis.fetch = async (input, options = {}) => {
+      calls.push({ input: String(input), options });
+      return Response.json(requestResult, { status: 201 });
+    };
+    assert.deepEqual(
+      await createManagedAccountDeletionRequest({
+        ...validated.value,
+        idempotencyKey: "admin-delete-fixed-retry-key",
+        ownerId: "20000000-0000-4000-8000-000000000002",
+      }),
+      requestResult,
+    );
+    assert.equal(
+      calls[0].input,
+      "/api/admin/users/20000000-0000-4000-8000-000000000002/deletion-requests",
+    );
+    assert.equal(calls[0].options.method, "POST");
+    assert.equal(
+      calls[0].options.headers["idempotency-key"],
+      "admin-delete-fixed-retry-key",
+    );
+    assert.equal(calls[0].options.headers["x-goodgood-admin-action"], "1");
+    assert.deepEqual(JSON.parse(calls[0].options.body), validated.value);
+
+    globalThis.fetch = async () =>
+      Response.json(
+        {
+          error: {
+            message: "验证邮箱与该账户当前登记邮箱不一致，请重新验证。",
+            requestId: "request-failure-1",
+          },
+        },
+        { status: 409 },
+      );
+    await assert.rejects(
+      createManagedAccountDeletionRequest({
+        ...validated.value,
+        idempotencyKey: "admin-delete-fixed-retry-key",
+        ownerId: "20000000-0000-4000-8000-000000000002",
+      }),
+      /请求编号：request-failure-1/,
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("keeps generation retries isolated from later composer edits", async () => {
   const {
     createGenerationInputSnapshot,

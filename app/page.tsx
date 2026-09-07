@@ -26,6 +26,14 @@ import {
 } from "@/features/auth/http-auth-boundary";
 import { AccountAccessGate } from "@/features/auth/account-access-gate";
 import { listAssets } from "@/features/assets/http-asset-boundary";
+import { ContentPolicyDialog } from "@/features/safety/content-policy-dialog";
+import {
+  acceptCurrentContentPolicy,
+  createAssetContentReport,
+  readCurrentContentPolicy,
+  type ContentPolicyState,
+  type ContentReportCategory,
+} from "@/features/safety/http-content-safety-boundary";
 import {
   availableImageCount,
   findBillingQuote,
@@ -104,6 +112,7 @@ import {
   Download,
   FolderOpen,
   FolderPlus,
+  Flag,
   HelpCircle,
   Images,
   LayoutGrid,
@@ -290,6 +299,12 @@ export default function Home() {
   const [authenticationSession, setAuthenticationSession] = useState<AuthenticationSession | null | undefined>(undefined);
   const [authenticationError, setAuthenticationError] = useState<string | null>(null);
   const [accessStatusRefreshing, setAccessStatusRefreshing] = useState(false);
+  const [contentPolicyState, setContentPolicyState] = useState<ContentPolicyState | null>(null);
+  const [contentPolicyLoading, setContentPolicyLoading] = useState(false);
+  const [contentPolicyError, setContentPolicyError] = useState<string | null>(null);
+  const [contentPolicyOpen, setContentPolicyOpen] = useState(false);
+  const [contentPolicyAcknowledged, setContentPolicyAcknowledged] = useState(false);
+  const [contentPolicyMutating, setContentPolicyMutating] = useState(false);
   const [billingSummary, setBillingSummary] = useState<BillingSummary | null>(null);
   const [billingLoading, setBillingLoading] = useState(true);
   const [billingError, setBillingError] = useState<string | null>(null);
@@ -341,6 +356,10 @@ export default function Home() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailItems, setDetailItems] = useState<DetailImage[]>([]);
   const [detailIndex, setDetailIndex] = useState(0);
+  const [reportAsset, setReportAsset] = useState<DetailImage | null>(null);
+  const [reportCategory, setReportCategory] = useState<ContentReportCategory["code"]>("other");
+  const [reportMutating, setReportMutating] = useState(false);
+  const [reportError, setReportError] = useState<string | null>(null);
   const activeRatio = getGenerationRatio(selectedRatio);
   const activeModel = getGenerationModel(selectedModel);
   const generationStage = toGenerationUiStage(generationJob?.state ?? null);
@@ -547,6 +566,36 @@ export default function Home() {
       window.removeEventListener(WORKSPACE_NAVIGATION_EVENT, applyWorkspaceRoute);
     };
   }, []);
+
+  const loadContentPolicy = useCallback(async () => {
+    setContentPolicyLoading(true);
+    setContentPolicyError(null);
+    try {
+      const next = await readCurrentContentPolicy();
+      setContentPolicyState(next);
+      if (!next.accepted) setContentPolicyOpen(true);
+    } catch (error) {
+      setContentPolicyState(null);
+      setContentPolicyError(
+        error instanceof Error ? error.message : "使用规则暂时无法读取，请重试。",
+      );
+      setContentPolicyOpen(true);
+    } finally {
+      setContentPolicyLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (
+      authenticationSession === undefined ||
+      authenticationSession === null ||
+      authenticationSession.access.status !== "active"
+    ) {
+      return;
+    }
+    const timer = window.setTimeout(() => void loadContentPolicy(), 0);
+    return () => window.clearTimeout(timer);
+  }, [authenticationSession, loadContentPolicy]);
 
   useEffect(() => {
     let active = true;
@@ -1141,6 +1190,32 @@ export default function Home() {
     }
   };
 
+  const acceptPolicy = async () => {
+    if (!contentPolicyState || contentPolicyMutating) return;
+    setContentPolicyMutating(true);
+    setContentPolicyError(null);
+    try {
+      const accepted = await acceptCurrentContentPolicy({
+        documentHash: contentPolicyState.policy.documentHash,
+        version: contentPolicyState.policy.version,
+      });
+      setContentPolicyState({
+        ...contentPolicyState,
+        accepted: true,
+        acceptedAt: accepted.acceptedAt,
+      });
+      setContentPolicyAcknowledged(false);
+      setContentPolicyOpen(false);
+      toast.success("已记录当前使用规则");
+    } catch (error) {
+      setContentPolicyError(
+        error instanceof Error ? error.message : "使用规则未能记录，请重试。",
+      );
+    } finally {
+      setContentPolicyMutating(false);
+    }
+  };
+
   const reloadAssets = async () => {
     if (!authenticationSession || authenticationSession.access.status !== "active") return;
     if (authenticationSession.preview) {
@@ -1540,6 +1615,42 @@ export default function Home() {
     navigateWorkspace({ kind: "assets" }, { replace: true });
   };
 
+  const openAssetReport = (item: DetailImage) => {
+    setReportAsset(item);
+    setReportCategory("other");
+    setReportError(null);
+    closeImageDetail();
+  };
+
+  const submitAssetReport = async () => {
+    if (!reportAsset || reportMutating) return;
+    setReportMutating(true);
+    setReportError(null);
+    try {
+      await createAssetContentReport({
+        assetId: reportAsset.image.id,
+        category: reportCategory,
+      });
+      const removeReportedAsset = (batches: AssetBatch[]) =>
+        batches
+          .map((batch) => ({
+            ...batch,
+            images: batch.images.filter((image) => image.id !== reportAsset.image.id),
+          }))
+          .filter((batch) => batch.images.length > 0);
+      setCreationBatches(removeReportedAsset);
+      setAssetBatches(removeReportedAsset);
+      setSavedImages((current) => current.filter((id) => !id.endsWith(`-${reportAsset.image.id}`)));
+      setSelectedAssetIds((current) => current.filter((id) => !id.endsWith(`-${reportAsset.image.id}`)));
+      setReportAsset(null);
+      toast.success("图片已隐藏，举报已提交给站长");
+    } catch (error) {
+      setReportError(error instanceof Error ? error.message : "举报没有提交，请重试。");
+    } finally {
+      setReportMutating(false);
+    }
+  };
+
   const retryAssetRoute = () => {
     setAssetRouteError(null);
     setAssetRouteRevision((current) => current + 1);
@@ -1680,7 +1791,7 @@ export default function Home() {
         </nav>
 
         <div className="sidebar-footer">
-          <button className="side-nav-item"><HelpCircle size={17} /><span>帮助</span></button>
+          <button className="side-nav-item" onClick={() => setContentPolicyOpen(true)}><HelpCircle size={17} /><span>使用规则</span></button>
           {authenticationSession && (
             <div
               className={`sidebar-billing ${billingError ? "has-error" : ""}`}
@@ -2059,6 +2170,9 @@ export default function Home() {
                       onClick={() => toggleSave(activeDetail.key)}
                     ><Bookmark size={17} fill={savedImages.includes(activeDetail.key) ? "currentColor" : "none"} /></button>
                     <button aria-label="下载图片" onClick={() => downloadImage(activeDetail.batch.id, activeDetail.image.id, activeDetail.image.previewUrl)}><Download size={17} /></button>
+                    {/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(activeDetail.image.id) && (
+                      <button aria-label="举报这张图片" onClick={() => openAssetReport(activeDetail)}><Flag size={17} /></button>
+                    )}
                   </div>
                 </header>
 
@@ -2106,6 +2220,37 @@ export default function Home() {
               </nav>
               </div>
             )}
+          </DialogPrimitive.Content>
+        </DialogPortal>
+      </Dialog>
+      <Dialog open={Boolean(reportAsset)} onOpenChange={(open) => !open && !reportMutating && setReportAsset(null)}>
+        <DialogPortal>
+          <DialogOverlay />
+          <DialogPrimitive.Content className="content-report-dialog">
+            <DialogTitle>举报并隐藏这张图片</DialogTitle>
+            <DialogDescription>
+              举报只会提交图片标识和所选类型，不会复制提示词或图片。提交后图片会立即从普通视图中隐藏，等待站长处理。
+            </DialogDescription>
+            <label className="content-report-field" htmlFor="content-report-category">
+              <span>举报类型</span>
+              <select
+                id="content-report-category"
+                value={reportCategory}
+                disabled={reportMutating}
+                onChange={(event) => setReportCategory(event.target.value as ContentReportCategory["code"])}
+              >
+                {(contentPolicyState?.reportCategories ?? []).map((category) => (
+                  <option key={category.code} value={category.code}>{category.label}</option>
+                ))}
+              </select>
+            </label>
+            {reportError && <p className="content-report-error" role="alert">{reportError}</p>}
+            <div className="content-report-actions">
+              <button disabled={reportMutating} onClick={() => setReportAsset(null)}>取消</button>
+              <button disabled={reportMutating || !contentPolicyState} onClick={() => void submitAssetReport()}>
+                {reportMutating && <LoaderCircle size={15} className="animate-spin" />}提交举报并隐藏
+              </button>
+            </div>
           </DialogPrimitive.Content>
         </DialogPortal>
       </Dialog>
@@ -2194,6 +2339,21 @@ export default function Home() {
           session={authenticationSession}
         />
       ) : null}
+      {authenticationSession?.access.status === "active" && (
+        <ContentPolicyDialog
+          acknowledged={contentPolicyAcknowledged}
+          busy={contentPolicyMutating}
+          error={contentPolicyError}
+          loading={contentPolicyLoading}
+          onAccept={() => void acceptPolicy()}
+          onAcknowledgedChange={setContentPolicyAcknowledged}
+          onOpenChange={setContentPolicyOpen}
+          onRetry={() => void loadContentPolicy()}
+          open={contentPolicyOpen || (!authenticationSession.preview && contentPolicyState?.accepted !== true)}
+          required={!authenticationSession.preview && contentPolicyState?.accepted !== true}
+          state={contentPolicyState}
+        />
+      )}
       <Toaster position="bottom-center" toastOptions={{ duration: 2200 }} />
     </main>
   );

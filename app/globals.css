@@ -440,6 +440,16 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .image-detail-actions button { width: 34px; height: 34px; padding: 0; border: 0; border-radius: 9px; background: transparent; display: grid; place-items: center; color: #757580; }
 .image-detail-actions button:hover { background: #f1f1f3; color: #32323a; }
 .image-detail-actions button.saved { background: var(--accent-soft); color: var(--accent-deep); }
+.content-report-dialog { position: fixed; left: 50%; top: 50%; z-index: 70; width: min(92vw, 480px); transform: translate(-50%, -50%); border: 1px solid var(--line); border-radius: 20px; background: white; padding: 24px; outline: 0; }
+.content-report-dialog h2 { margin: 0; color: var(--ink); font-size: 19px; }
+.content-report-dialog > p { margin: 9px 0 0; color: var(--quiet); font-size: 13px; line-height: 1.7; }
+.content-report-field { margin-top: 22px; display: grid; gap: 8px; color: var(--ink); font-size: 12px; font-weight: 620; }
+.content-report-field select { width: 100%; height: 42px; border: 1px solid var(--line); border-radius: 11px; background: white; padding: 0 12px; color: var(--ink); font: inherit; font-weight: 500; }
+.content-report-error { color: #b42318 !important; }
+.content-report-actions { margin-top: 24px; display: flex; justify-content: flex-end; gap: 8px; }
+.content-report-actions button { min-height: 38px; padding: 0 15px; border: 1px solid var(--line); border-radius: 10px; background: white; color: var(--ink); font-size: 12px; }
+.content-report-actions button:last-child { border-color: var(--accent); background: var(--accent); color: white; display: inline-flex; align-items: center; gap: 7px; }
+.content-report-actions button:disabled { cursor: not-allowed; opacity: .55; }
 .image-detail-section { padding-top: 24px; }
 .image-detail-section > span { display: block; margin-bottom: 10px; color: #9a9aa3; font-size: 9px; font-weight: 650; letter-spacing: .06em; }
 .image-detail-prompt p { margin: 0; color: #404049; font-size: 13px; line-height: 1.8; }

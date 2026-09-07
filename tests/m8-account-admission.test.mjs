@@ -135,6 +135,9 @@ test("site-owner dashboard keeps search in a POST body and returns empty state s
       calls.push(input);
       return { hasMore: false, items: [], next: null };
     },
+    async listOpenContentReports() {
+      return [];
+    },
     async listRecentAdministrativeActions() {
       return [];
     },
@@ -152,6 +155,7 @@ test("site-owner dashboard keeps search in a POST body and returns empty state s
     accounts: [],
     counts: { active: 2, pending: 1, suspended: 0 },
     nextCursor: null,
+    openContentReports: [],
     recentActions: [],
   });
   assert.equal(calls[0].query, "person@example.com");
@@ -244,10 +248,10 @@ test("account review persistence is idempotent and rejects conflicting key reuse
       if (normalized.startsWith("SELECT * FROM administrative_actions")) {
         return { rowCount: action ? 1 : 0, rows: action ? [action] : [] };
       }
-      if (normalized.startsWith("SELECT id, status FROM users")) {
+      if (normalized.startsWith("SELECT target.id, target.status")) {
         return {
           rowCount: 1,
-          rows: [{ id: values[0], status }],
+          rows: [{ has_deletion_request: false, id: values[0], status }],
         };
       }
       if (normalized.startsWith("UPDATE users SET status")) {

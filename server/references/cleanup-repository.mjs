@@ -36,6 +36,14 @@ const HAS_PERSISTED_REFERENCE = `
   )
 `;
 
+const HAS_ACCOUNT_DELETION = `
+  EXISTS (
+    SELECT 1
+      FROM account_deletion_requests deletion_request
+     WHERE deletion_request.target_owner_id = ra.owner_id
+  )
+`;
+
 export async function inspectReferenceCleanup(
   pool,
   { now, orphanedBefore, ownerId = null },
@@ -68,7 +76,8 @@ export async function inspectReferenceCleanup(
            AND NOT ${HAS_PERSISTED_REFERENCE}
        )::int AS due_for_deletion
      FROM reference_assets ra
-    WHERE ($3::uuid IS NULL OR ra.owner_id = $3::uuid)`,
+    WHERE ($3::uuid IS NULL OR ra.owner_id = $3::uuid)
+      AND NOT ${HAS_ACCOUNT_DELETION}`,
     [now, orphanedBefore, ownerId],
   );
   return {
@@ -101,6 +110,7 @@ export async function stageAndClaimReferenceCleanup(
               cleanup_lease_owner = NULL, cleanup_lease_expires_at = NULL,
               updated_at = $1
         WHERE ra.object_deleted_at IS NULL
+          AND NOT ${HAS_ACCOUNT_DELETION}
           AND ra.upload_state = 'expired'
           AND ra.error_code = 'REFERENCE_ORPHANED'
           AND ($2::uuid IS NULL OR ra.owner_id = $2::uuid)
@@ -112,6 +122,7 @@ export async function stageAndClaimReferenceCleanup(
           SET upload_state = 'expired', error_code = 'UPLOAD_EXPIRED',
               updated_at = $1
         WHERE ra.object_deleted_at IS NULL
+          AND NOT ${HAS_ACCOUNT_DELETION}
           AND ra.upload_state = 'pending'
           AND ra.expires_at <= $1
           AND ($2::uuid IS NULL OR ra.owner_id = $2::uuid)`,
@@ -131,6 +142,7 @@ export async function stageAndClaimReferenceCleanup(
               cleanup_error_code = NULL,
               updated_at = $1
         WHERE ra.object_deleted_at IS NULL
+          AND NOT ${HAS_ACCOUNT_DELETION}
           AND ra.cleanup_eligible_at IS NULL
           AND ($4::uuid IS NULL OR ra.owner_id = $4::uuid)
           AND (
@@ -145,6 +157,7 @@ export async function stageAndClaimReferenceCleanup(
          SELECT ra.id
            FROM reference_assets ra
           WHERE ra.object_deleted_at IS NULL
+            AND NOT ${HAS_ACCOUNT_DELETION}
             AND ra.cleanup_eligible_at <= $1
             AND (ra.cleanup_lease_expires_at IS NULL OR ra.cleanup_lease_expires_at <= $1)
             AND ($3::uuid IS NULL OR ra.owner_id = $3::uuid)

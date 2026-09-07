@@ -8,6 +8,7 @@ import {
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -32,6 +33,7 @@ export const users = pgTable(
     email: text("email").notNull(),
     locale: text("locale").default("zh-CN").notNull(),
     status: text("status").default("pending").notNull(),
+    anonymizedAt: timestamp("anonymized_at", { withTimezone: true }),
     ...timestamps,
   },
   (table) => [
@@ -43,6 +45,40 @@ export const users = pgTable(
     check(
       "users_status_check",
       sql`${table.status} in ('pending', 'active', 'suspended')`,
+    ),
+    check(
+      "users_anonymized_check",
+      sql`${table.anonymizedAt} is null or (${table.status} = 'suspended' and ${table.email} ~ '^deleted-[a-f0-9]{32}@deleted[.]goodgood[.]invalid$')`,
+    ),
+  ],
+);
+
+export const contentPolicyAcceptances = pgTable(
+  "content_policy_acceptances",
+  {
+    ownerId: uuid("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    policyVersion: text("policy_version").notNull(),
+    documentHash: text("document_hash").notNull(),
+    source: text("source").default("web").notNull(),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.ownerId, table.policyVersion] }),
+    check(
+      "content_policy_acceptances_version_check",
+      sql`${table.policyVersion} ~ '^[a-z0-9][a-z0-9._-]{1,49}$'`,
+    ),
+    check(
+      "content_policy_acceptances_hash_check",
+      sql`${table.documentHash} ~ '^[a-f0-9]{64}$'`,
+    ),
+    check(
+      "content_policy_acceptances_source_check",
+      sql`${table.source} in ('web', 'local_fixture')`,
     ),
   ],
 );
@@ -168,6 +204,12 @@ export const authIdentities = pgTable(
     lastAuthenticatedAt: timestamp("last_authenticated_at", {
       withTimezone: true,
     }),
+    externalDisabledAt: timestamp("external_disabled_at", {
+      withTimezone: true,
+    }),
+    externalDeletedAt: timestamp("external_deleted_at", {
+      withTimezone: true,
+    }),
   },
   (table) => [
     uniqueIndex("auth_identities_issuer_subject_unique").on(
@@ -175,6 +217,9 @@ export const authIdentities = pgTable(
       table.subject,
     ),
     index("auth_identities_owner_idx").on(table.ownerId),
+    index("auth_identities_owner_external_pending_idx")
+      .on(table.ownerId, table.id)
+      .where(sql`${table.externalDeletedAt} is null`),
     check(
       "auth_identities_issuer_check",
       sql`length(${table.issuer}) between 1 and 500`,
@@ -182,6 +227,10 @@ export const authIdentities = pgTable(
     check(
       "auth_identities_subject_check",
       sql`length(${table.subject}) between 1 and 500`,
+    ),
+    check(
+      "auth_identities_external_deletion_check",
+      sql`${table.externalDeletedAt} is null or (${table.externalDisabledAt} is not null and ${table.externalDeletedAt} >= ${table.externalDisabledAt})`,
     ),
   ],
 );
@@ -383,7 +432,7 @@ export const referenceAssets = pgTable(
     ),
     check(
       "reference_assets_moderation_state_check",
-      sql`${table.moderationState} in ('pending', 'accepted', 'rejected')`,
+      sql`${table.moderationState} in ('pending', 'not_reviewed', 'accepted', 'quarantined', 'rejected')`,
     ),
     check(
       "reference_assets_cleanup_attempt_count_check",
@@ -736,6 +785,13 @@ export const creditLedgerEntries = pgTable(
       onDelete: "restrict",
     }),
     relatedPaymentRef: text("related_payment_ref"),
+    accountDeletionRequestId: uuid("account_deletion_request_id").references(
+      (): AnyPgColumn => accountDeletionRegister.requestId,
+      { onDelete: "restrict" },
+    ),
+    creativeLinkDeletedAt: timestamp("creative_link_deleted_at", {
+      withTimezone: true,
+    }),
     priorEntryId: uuid("prior_entry_id").references(
       (): AnyPgColumn => creditLedgerEntries.id,
       { onDelete: "restrict" },
@@ -804,9 +860,11 @@ export const creditLedgerEntries = pgTable(
     ),
     check(
       "credit_ledger_entries_relation_check",
-      sql`(${table.entryType} in ('settle', 'release', 'refund') and ${table.priorEntryId} is not null and ${table.relatedJobId} is not null)
-        or (${table.entryType} = 'reserve' and ${table.priorEntryId} is null and ${table.relatedJobId} is not null)
-        or (${table.entryType} in ('grant', 'expire', 'adjust'))`,
+      sql`(${table.creativeLinkDeletedAt} is null and ${table.accountDeletionRequestId} is null and ((${table.entryType} in ('settle', 'release', 'refund') and ${table.priorEntryId} is not null and ${table.relatedJobId} is not null) or (${table.entryType} = 'reserve' and ${table.priorEntryId} is null and ${table.relatedJobId} is not null) or (${table.entryType} in ('grant', 'expire', 'adjust')))) or (${table.creativeLinkDeletedAt} is not null and ${table.accountDeletionRequestId} is not null and ${table.relatedJobId} is null and ${table.entryType} in ('reserve', 'settle', 'release', 'refund'))`,
+    ),
+    check(
+      "credit_ledger_entries_creative_link_deletion_check",
+      sql`(${table.creativeLinkDeletedAt} is null and ${table.accountDeletionRequestId} is null) or (${table.creativeLinkDeletedAt} is not null and ${table.accountDeletionRequestId} is not null)`,
     ),
   ],
 );
@@ -855,13 +913,14 @@ export const administrativeActions = pgTable(
     ),
     check(
       "administrative_actions_type_check",
-      sql`${table.actionType} in ('bootstrap_site_owner', 'approve_account', 'suspend_account', 'restore_account', 'grant_test_credits')`,
+      sql`${table.actionType} in ('bootstrap_site_owner', 'approve_account', 'suspend_account', 'restore_account', 'grant_test_credits', 'create_account_deletion_request')`,
     ),
     check(
       "administrative_actions_status_check",
       sql`(${table.actionType} = 'bootstrap_site_owner' and ${table.previousStatus} in ('pending', 'active') and ${table.resultingStatus} = 'active' and ${table.creditAmount} is null and ${table.creditLedgerEntryId} is null)
         or (${table.actionType} in ('approve_account', 'suspend_account', 'restore_account') and ${table.previousStatus} in ('pending', 'active', 'suspended') and ${table.resultingStatus} in ('active', 'suspended') and ${table.creditAmount} is null and ${table.creditLedgerEntryId} is null)
-        or (${table.actionType} = 'grant_test_credits' and ${table.previousStatus} is null and ${table.resultingStatus} is null and ${table.creditAmount} between 1 and 5000 and ${table.creditLedgerEntryId} is not null)`,
+        or (${table.actionType} = 'grant_test_credits' and ${table.previousStatus} is null and ${table.resultingStatus} is null and ${table.creditAmount} between 1 and 5000 and ${table.creditLedgerEntryId} is not null)
+        or (${table.actionType} = 'create_account_deletion_request' and ${table.previousStatus} in ('pending', 'active', 'suspended') and ${table.resultingStatus} = 'suspended' and ${table.creditAmount} is null and ${table.creditLedgerEntryId} is null)`,
     ),
     check(
       "administrative_actions_reason_check",
@@ -874,6 +933,302 @@ export const administrativeActions = pgTable(
     check(
       "administrative_actions_operation_hash_check",
       sql`length(${table.operationHash}) = 64`,
+    ),
+  ],
+);
+
+export const accountDeletionRequests = pgTable(
+  "account_deletion_requests",
+  {
+    id: uuid("id").primaryKey(),
+    actorOwnerId: uuid("actor_owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    targetOwnerId: uuid("target_owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    administrativeActionId: uuid("administrative_action_id")
+      .notNull()
+      .references(() => administrativeActions.id, { onDelete: "restrict" }),
+    verificationRequestedAt: timestamp("verification_requested_at", {
+      withTimezone: true,
+    }).notNull(),
+    verificationConfirmedAt: timestamp("verification_confirmed_at", {
+      withTimezone: true,
+    }).notNull(),
+    mailReferenceId: text("mail_reference_id").notNull(),
+    state: text("state").default("processing").notNull(),
+    deadlineAt: timestamp("deadline_at", { withTimezone: true }).notNull(),
+    revokedSessionCount: integer("revoked_session_count").default(0).notNull(),
+    cancelledJobCount: integer("cancelled_job_count").default(0).notNull(),
+    releasedCreditAmount: bigint("released_credit_amount", { mode: "bigint" })
+      .default(sql`0`)
+      .notNull(),
+    idempotencyKey: text("idempotency_key").notNull(),
+    operationHash: text("operation_hash").notNull(),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("account_deletion_requests_target_unique").on(
+      table.targetOwnerId,
+    ),
+    uniqueIndex("account_deletion_requests_action_unique").on(
+      table.administrativeActionId,
+    ),
+    uniqueIndex("account_deletion_requests_actor_idempotency_unique").on(
+      table.actorOwnerId,
+      table.idempotencyKey,
+    ),
+    index("account_deletion_requests_state_deadline_idx").on(
+      table.state,
+      table.deadlineAt,
+      table.id,
+    ),
+    check(
+      "account_deletion_requests_actor_target_check",
+      sql`${table.actorOwnerId} <> ${table.targetOwnerId}`,
+    ),
+    check(
+      "account_deletion_requests_verification_check",
+      sql`${table.verificationConfirmedAt} >= ${table.verificationRequestedAt} and ${table.verificationConfirmedAt} <= ${table.verificationRequestedAt} + interval '24 hours'`,
+    ),
+    check(
+      "account_deletion_requests_mail_reference_check",
+      sql`length(${table.mailReferenceId}) between 2 and 200`,
+    ),
+    check(
+      "account_deletion_requests_state_check",
+      sql`${table.state} in ('processing', 'completed')`,
+    ),
+    check(
+      "account_deletion_requests_completion_check",
+      sql`(${table.state} = 'processing' and ${table.completedAt} is null) or (${table.state} = 'completed' and ${table.completedAt} is not null)`,
+    ),
+    check(
+      "account_deletion_requests_deadline_check",
+      sql`${table.deadlineAt} > ${table.createdAt}`,
+    ),
+    check(
+      "account_deletion_requests_revoked_sessions_check",
+      sql`${table.revokedSessionCount} >= 0`,
+    ),
+    check(
+      "account_deletion_requests_cancelled_jobs_check",
+      sql`${table.cancelledJobCount} >= 0`,
+    ),
+    check(
+      "account_deletion_requests_released_credit_check",
+      sql`${table.releasedCreditAmount} >= 0`,
+    ),
+    check(
+      "account_deletion_requests_idempotency_key_check",
+      sql`length(${table.idempotencyKey}) between 8 and 200`,
+    ),
+    check(
+      "account_deletion_requests_operation_hash_check",
+      sql`length(${table.operationHash}) = 64`,
+    ),
+  ],
+);
+
+export const accountDeletionRegister = pgTable(
+  "account_deletion_register",
+  {
+    requestId: uuid("request_id").primaryKey(),
+    targetOwnerId: uuid("target_owner_id").notNull(),
+    state: text("state").default("processing").notNull(),
+    deadlineAt: timestamp("deadline_at", { withTimezone: true }).notNull(),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    auditRetentionUntil: timestamp("audit_retention_until", {
+      withTimezone: true,
+    }),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("account_deletion_register_target_unique").on(
+      table.targetOwnerId,
+    ),
+    index("account_deletion_register_state_deadline_idx").on(
+      table.state,
+      table.deadlineAt,
+      table.requestId,
+    ),
+    check(
+      "account_deletion_register_state_check",
+      sql`${table.state} in ('processing', 'completed')`,
+    ),
+    check(
+      "account_deletion_register_completion_check",
+      sql`(${table.state} = 'processing' and ${table.completedAt} is null and ${table.auditRetentionUntil} is null) or (${table.state} = 'completed' and ${table.completedAt} is not null and ${table.auditRetentionUntil} is not null)`,
+    ),
+    check(
+      "account_deletion_register_audit_retention_check",
+      sql`${table.auditRetentionUntil} is null or ${table.auditRetentionUntil} = ${table.completedAt} + interval '12 months'`,
+    ),
+    check(
+      "account_deletion_register_deadline_check",
+      sql`${table.deadlineAt} > ${table.createdAt}`,
+    ),
+  ],
+);
+
+export const accountDeletionSteps = pgTable(
+  "account_deletion_steps",
+  {
+    requestId: uuid("request_id")
+      .notNull()
+      .references(() => accountDeletionRegister.requestId, {
+        onDelete: "restrict",
+      }),
+    stepName: text("step_name").notNull(),
+    state: text("state").default("pending").notNull(),
+    attemptCount: integer("attempt_count").default(0).notNull(),
+    lastAttemptAt: timestamp("last_attempt_at", { withTimezone: true }),
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }),
+    lastActiveJobCount: integer("last_active_job_count").default(0).notNull(),
+    lastBlockCode: text("last_block_code"),
+    inventoryVersion: integer("inventory_version"),
+    inventorySha256: text("inventory_sha256"),
+    lastTargetObjectCount: integer("last_target_object_count")
+      .default(0)
+      .notNull(),
+    deletedObjectCount: integer("deleted_object_count").default(0).notNull(),
+    lastFailedObjectCount: integer("last_failed_object_count")
+      .default(0)
+      .notNull(),
+    lastTargetCreativeRecordCount: integer(
+      "last_target_creative_record_count",
+    )
+      .default(0)
+      .notNull(),
+    deletedCreativeRecordCount: integer("deleted_creative_record_count")
+      .default(0)
+      .notNull(),
+    lastFailedCreativeRecordCount: integer(
+      "last_failed_creative_record_count",
+    )
+      .default(0)
+      .notNull(),
+    lastTargetIdentityCount: integer("last_target_identity_count")
+      .default(0)
+      .notNull(),
+    disabledIdentityCount: integer("disabled_identity_count")
+      .default(0)
+      .notNull(),
+    deletedIdentityCount: integer("deleted_identity_count")
+      .default(0)
+      .notNull(),
+    lastFailedIdentityCount: integer("last_failed_identity_count")
+      .default(0)
+      .notNull(),
+    deletedLocalSessionCount: integer("deleted_local_session_count")
+      .default(0)
+      .notNull(),
+    deletedLocalIdentityCount: integer("deleted_local_identity_count")
+      .default(0)
+      .notNull(),
+    expiredCreditAmount: bigint("expired_credit_amount", { mode: "bigint" })
+      .default(sql`0`)
+      .notNull(),
+    leaseOwner: text("lease_owner"),
+    leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true }),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (table) => [
+    primaryKey({ columns: [table.requestId, table.stepName] }),
+    index("account_deletion_steps_claim_idx")
+      .on(
+        table.state,
+        table.nextAttemptAt,
+        table.leaseExpiresAt,
+        table.requestId,
+      )
+      .where(sql`${table.state} in ('pending', 'running')`),
+    check(
+      "account_deletion_steps_name_check",
+      sql`${table.stepName} in ('wait_for_submitted_jobs', 'delete_private_objects', 'delete_creative_records', 'delete_external_identities', 'anonymize_goodgood_account')`,
+    ),
+    check(
+      "account_deletion_steps_state_check",
+      sql`${table.state} in ('pending', 'running', 'completed')`,
+    ),
+    check(
+      "account_deletion_steps_attempt_count_check",
+      sql`${table.attemptCount} >= 0`,
+    ),
+    check(
+      "account_deletion_steps_active_job_count_check",
+      sql`${table.lastActiveJobCount} >= 0`,
+    ),
+    check(
+      "account_deletion_steps_block_code_check",
+      sql`${table.lastBlockCode} is null or (${table.stepName} = 'wait_for_submitted_jobs' and ${table.lastBlockCode} = 'SUBMITTED_JOBS_ACTIVE') or (${table.stepName} = 'delete_private_objects' and ${table.lastBlockCode} = 'OBJECT_DELETE_FAILED') or (${table.stepName} = 'delete_creative_records' and ${table.lastBlockCode} = 'CREATIVE_DELETE_FAILED') or (${table.stepName} = 'delete_external_identities' and ${table.lastBlockCode} = 'IDENTITY_DELETE_FAILED') or (${table.stepName} = 'anonymize_goodgood_account' and ${table.lastBlockCode} = 'LOCAL_ANONYMIZATION_FAILED')`,
+    ),
+    check(
+      "account_deletion_steps_inventory_check",
+      sql`(${table.stepName} = 'wait_for_submitted_jobs' and ${table.inventoryVersion} is null and ${table.inventorySha256} is null and ${table.lastTargetObjectCount} = 0 and ${table.deletedObjectCount} = 0 and ${table.lastFailedObjectCount} = 0 and ${table.lastTargetCreativeRecordCount} = 0 and ${table.deletedCreativeRecordCount} = 0 and ${table.lastFailedCreativeRecordCount} = 0 and ${table.lastTargetIdentityCount} = 0 and ${table.disabledIdentityCount} = 0 and ${table.deletedIdentityCount} = 0 and ${table.lastFailedIdentityCount} = 0 and ${table.deletedLocalSessionCount} = 0 and ${table.deletedLocalIdentityCount} = 0 and ${table.expiredCreditAmount} = 0) or (${table.stepName} = 'delete_private_objects' and ${table.lastTargetCreativeRecordCount} = 0 and ${table.deletedCreativeRecordCount} = 0 and ${table.lastFailedCreativeRecordCount} = 0 and ${table.lastTargetIdentityCount} = 0 and ${table.disabledIdentityCount} = 0 and ${table.deletedIdentityCount} = 0 and ${table.lastFailedIdentityCount} = 0 and ${table.deletedLocalSessionCount} = 0 and ${table.deletedLocalIdentityCount} = 0 and ${table.expiredCreditAmount} = 0 and ((${table.inventoryVersion} is null and ${table.inventorySha256} is null) or (${table.inventoryVersion} = 1 and ${table.inventorySha256} ~ '^[0-9a-f]{64}$'))) or (${table.stepName} = 'delete_creative_records' and ${table.lastTargetObjectCount} = 0 and ${table.deletedObjectCount} = 0 and ${table.lastFailedObjectCount} = 0 and ${table.lastTargetIdentityCount} = 0 and ${table.disabledIdentityCount} = 0 and ${table.deletedIdentityCount} = 0 and ${table.lastFailedIdentityCount} = 0 and ${table.deletedLocalSessionCount} = 0 and ${table.deletedLocalIdentityCount} = 0 and ${table.expiredCreditAmount} = 0 and ((${table.inventoryVersion} is null and ${table.inventorySha256} is null) or (${table.inventoryVersion} = 1 and ${table.inventorySha256} ~ '^[0-9a-f]{64}$'))) or (${table.stepName} = 'delete_external_identities' and ${table.inventoryVersion} is null and ${table.inventorySha256} is null and ${table.lastTargetObjectCount} = 0 and ${table.deletedObjectCount} = 0 and ${table.lastFailedObjectCount} = 0 and ${table.lastTargetCreativeRecordCount} = 0 and ${table.deletedCreativeRecordCount} = 0 and ${table.lastFailedCreativeRecordCount} = 0 and ${table.deletedLocalSessionCount} = 0 and ${table.deletedLocalIdentityCount} = 0 and ${table.expiredCreditAmount} = 0) or (${table.stepName} = 'anonymize_goodgood_account' and ${table.inventoryVersion} is null and ${table.inventorySha256} is null and ${table.lastTargetObjectCount} = 0 and ${table.deletedObjectCount} = 0 and ${table.lastFailedObjectCount} = 0 and ${table.lastTargetCreativeRecordCount} = 0 and ${table.deletedCreativeRecordCount} = 0 and ${table.lastFailedCreativeRecordCount} = 0 and ${table.lastTargetIdentityCount} = 0 and ${table.disabledIdentityCount} = 0 and ${table.deletedIdentityCount} = 0 and ${table.lastFailedIdentityCount} = 0)`,
+    ),
+    check(
+      "account_deletion_steps_target_object_count_check",
+      sql`${table.lastTargetObjectCount} >= 0`,
+    ),
+    check(
+      "account_deletion_steps_deleted_object_count_check",
+      sql`${table.deletedObjectCount} >= 0`,
+    ),
+    check(
+      "account_deletion_steps_failed_object_count_check",
+      sql`${table.lastFailedObjectCount} >= 0`,
+    ),
+    check(
+      "account_deletion_steps_target_creative_record_count_check",
+      sql`${table.lastTargetCreativeRecordCount} >= 0`,
+    ),
+    check(
+      "account_deletion_steps_deleted_creative_record_count_check",
+      sql`${table.deletedCreativeRecordCount} >= 0`,
+    ),
+    check(
+      "account_deletion_steps_failed_creative_record_count_check",
+      sql`${table.lastFailedCreativeRecordCount} >= 0`,
+    ),
+    check(
+      "account_deletion_steps_target_identity_count_check",
+      sql`${table.lastTargetIdentityCount} >= 0`,
+    ),
+    check(
+      "account_deletion_steps_disabled_identity_count_check",
+      sql`${table.disabledIdentityCount} >= 0 and ${table.disabledIdentityCount} <= ${table.lastTargetIdentityCount}`,
+    ),
+    check(
+      "account_deletion_steps_deleted_identity_count_check",
+      sql`${table.deletedIdentityCount} >= 0 and ${table.deletedIdentityCount} <= ${table.disabledIdentityCount}`,
+    ),
+    check(
+      "account_deletion_steps_failed_identity_count_check",
+      sql`${table.lastFailedIdentityCount} >= 0 and ${table.lastFailedIdentityCount} <= ${table.lastTargetIdentityCount}`,
+    ),
+    check(
+      "account_deletion_steps_deleted_local_session_count_check",
+      sql`${table.deletedLocalSessionCount} >= 0`,
+    ),
+    check(
+      "account_deletion_steps_deleted_local_identity_count_check",
+      sql`${table.deletedLocalIdentityCount} >= 0`,
+    ),
+    check(
+      "account_deletion_steps_expired_credit_amount_check",
+      sql`${table.expiredCreditAmount} >= 0`,
+    ),
+    check(
+      "account_deletion_steps_lease_check",
+      sql`(${table.state} = 'running' and ${table.leaseOwner} is not null and ${table.leaseExpiresAt} is not null) or (${table.state} in ('pending', 'completed') and ${table.leaseOwner} is null and ${table.leaseExpiresAt} is null)`,
+    ),
+    check(
+      "account_deletion_steps_completion_check",
+      sql`(${table.state} = 'completed' and ${table.completedAt} is not null and ${table.nextAttemptAt} is null) or (${table.state} in ('pending', 'running') and ${table.completedAt} is null)`,
     ),
   ],
 );
@@ -1028,24 +1383,157 @@ export const assets = pgTable(
     pixelHeight: integer("pixel_height").notNull(),
     aspectRatio: text("aspect_ratio").notNull(),
     byteSize: bigint("byte_size", { mode: "number" }).notNull(),
-    moderationState: text("moderation_state").default("accepted").notNull(),
+    moderationState: text("moderation_state").default("not_reviewed").notNull(),
     visibility: text("visibility").default("private").notNull(),
+    objectDeletedAt: timestamp("object_deleted_at", { withTimezone: true }),
     ...timestamps,
   },
   (table) => [
     uniqueIndex("assets_job_unique").on(table.jobId),
     uniqueIndex("assets_object_key_unique").on(table.objectKey),
     index("assets_owner_created_idx").on(table.ownerId, table.createdAt),
+    index("assets_owner_live_object_idx")
+      .on(table.ownerId, table.id)
+      .where(sql`${table.objectDeletedAt} is null`),
     check("assets_pixel_width_check", sql`${table.pixelWidth} > 0`),
     check("assets_pixel_height_check", sql`${table.pixelHeight} > 0`),
     check("assets_byte_size_check", sql`${table.byteSize} > 0`),
     check(
       "assets_moderation_state_check",
-      sql`${table.moderationState} in ('pending', 'accepted', 'rejected')`,
+      sql`${table.moderationState} in ('not_reviewed', 'accepted', 'quarantined', 'rejected')`,
     ),
     check(
       "assets_visibility_check",
       sql`${table.visibility} in ('private', 'project', 'public')`,
+    ),
+  ],
+);
+
+export const contentReports = pgTable(
+  "content_reports",
+  {
+    id: uuid("id").primaryKey(),
+    reporterOwnerId: uuid("reporter_owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    targetOwnerId: uuid("target_owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    assetId: uuid("asset_id").references(() => assets.id, {
+      onDelete: "set null",
+    }),
+    category: text("category").notNull(),
+    state: text("state").default("open").notNull(),
+    resolution: text("resolution"),
+    idempotencyKey: text("idempotency_key").notNull(),
+    operationHash: text("operation_hash").notNull(),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    retentionUntil: timestamp("retention_until", { withTimezone: true }),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("content_reports_reporter_idempotency_unique").on(
+      table.reporterOwnerId,
+      table.idempotencyKey,
+    ),
+    uniqueIndex("content_reports_open_asset_unique")
+      .on(table.reporterOwnerId, table.assetId)
+      .where(sql`${table.state} = 'open' and ${table.assetId} is not null`),
+    index("content_reports_open_created_idx")
+      .on(table.createdAt, table.id)
+      .where(sql`${table.state} = 'open'`),
+    index("content_reports_target_created_idx").on(
+      table.targetOwnerId,
+      table.createdAt,
+      table.id,
+    ),
+    check(
+      "content_reports_owner_check",
+      sql`${table.reporterOwnerId} = ${table.targetOwnerId}`,
+    ),
+    check(
+      "content_reports_category_check",
+      sql`${table.category} in ('child_safety', 'non_consensual_intimate', 'fraud_impersonation', 'extremism_violence', 'illegal_activity', 'privacy_ip', 'other')`,
+    ),
+    check(
+      "content_reports_state_check",
+      sql`${table.state} in ('open', 'resolved')`,
+    ),
+    check(
+      "content_reports_resolution_check",
+      sql`(${table.state} = 'open' and ${table.resolution} is null and ${table.resolvedAt} is null and ${table.retentionUntil} is null) or (${table.state} = 'resolved' and ${table.resolution} in ('dismissed', 'removed') and ${table.resolvedAt} is not null and ${table.retentionUntil} = ${table.resolvedAt} + interval '12 months')`,
+    ),
+    check(
+      "content_reports_idempotency_key_check",
+      sql`length(${table.idempotencyKey}) between 8 and 200`,
+    ),
+    check(
+      "content_reports_operation_hash_check",
+      sql`${table.operationHash} ~ '^[a-f0-9]{64}$'`,
+    ),
+  ],
+);
+
+export const contentModerationActions = pgTable(
+  "content_moderation_actions",
+  {
+    id: uuid("id").primaryKey(),
+    reportId: uuid("report_id")
+      .notNull()
+      .references(() => contentReports.id, { onDelete: "restrict" }),
+    actorOwnerId: uuid("actor_owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    targetOwnerId: uuid("target_owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    assetId: uuid("asset_id").references(() => assets.id, {
+      onDelete: "set null",
+    }),
+    actionType: text("action_type").notNull(),
+    previousModerationState: text("previous_moderation_state").notNull(),
+    resultingModerationState: text("resulting_moderation_state").notNull(),
+    reason: text("reason").notNull(),
+    idempotencyKey: text("idempotency_key").notNull(),
+    operationHash: text("operation_hash").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("content_moderation_actions_actor_idempotency_unique").on(
+      table.actorOwnerId,
+      table.idempotencyKey,
+    ),
+    index("content_moderation_actions_report_created_idx").on(
+      table.reportId,
+      table.createdAt,
+      table.id,
+    ),
+    index("content_moderation_actions_target_created_idx").on(
+      table.targetOwnerId,
+      table.createdAt,
+      table.id,
+    ),
+    check(
+      "content_moderation_actions_type_check",
+      sql`${table.actionType} in ('review_opened', 'restore_asset', 'remove_asset')`,
+    ),
+    check(
+      "content_moderation_actions_state_check",
+      sql`(${table.actionType} = 'review_opened' and ${table.previousModerationState} = 'quarantined' and ${table.resultingModerationState} = 'quarantined') or (${table.actionType} = 'restore_asset' and ${table.previousModerationState} = 'quarantined' and ${table.resultingModerationState} = 'accepted') or (${table.actionType} = 'remove_asset' and ${table.previousModerationState} = 'quarantined' and ${table.resultingModerationState} = 'rejected')`,
+    ),
+    check(
+      "content_moderation_actions_reason_check",
+      sql`length(${table.reason}) between 2 and 200`,
+    ),
+    check(
+      "content_moderation_actions_idempotency_key_check",
+      sql`length(${table.idempotencyKey}) between 8 and 200`,
+    ),
+    check(
+      "content_moderation_actions_operation_hash_check",
+      sql`${table.operationHash} ~ '^[a-f0-9]{64}$'`,
     ),
   ],
 );
@@ -1084,6 +1572,7 @@ export const generationQueueOutbox = pgTable(
       .references(() => generationJobs.id, { onDelete: "restrict" }),
     attempts: integer("attempts").default(0).notNull(),
     lastError: text("last_error"),
+    cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -1093,6 +1582,6 @@ export const generationQueueOutbox = pgTable(
     uniqueIndex("generation_queue_outbox_job_unique").on(table.jobId),
     index("generation_queue_outbox_pending_idx")
       .on(table.createdAt)
-      .where(sql`${table.dispatchedAt} is null`),
+      .where(sql`${table.dispatchedAt} is null and ${table.cancelledAt} is null`),
   ],
 );

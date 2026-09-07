@@ -53,6 +53,36 @@
 - Routine review and grants happen in this surface. The one-time site-owner
   bootstrap remains an out-of-band security operation, not a public signup
   shortcut.
+- The local deletion control starts only from the selected non-site-owner
+  account row. The first confirmation reviews the account, current registered
+  email, mail reference, request/confirmation times, and reason; the second
+  explicitly confirms immediate suspension/session revocation and the later
+  irreversible deletion outcomes. Closing either step changes nothing.
+- Successful request creation reports that access has stopped and deletion is
+  pending; it must not claim that PostgreSQL, R2, Authing, provider, or backup
+  copies are already erased. The acting site owner has no deletion control, and
+  there is no first-slice member self-service entry.
+- Until the final submit, either confirmation can be closed and no verification
+  metadata, account state, session, queue, or credit change is committed. The
+  final confirmation must state that request creation is irreversible.
+- After creation, the management view offers no withdraw, cancel, reopen, or
+  restore action. It reloads the suspended-account view and presents the durable
+  request state and deadline as read-only, while stating that downstream data
+  is not yet erased. If an operator reports a mistake, direct them to the
+  separate incident process; do not imply that the account or its work will be
+  restored.
+- If a generation was already submitted to the provider, the management view
+  may show only that deletion is waiting for existing work to finish. The owner
+  cannot reopen the workspace or see a late result; do not expose prompts,
+  provider task IDs, object keys, or retry controls in the deletion status.
+- Queued work that had not begun provider submission is cancelled immediately
+  and does not keep the deletion view waiting. The view may report only that
+  unspent reserved credit was released; it exposes no queue internals.
+- Before opening those confirmations, the site owner verifies a request sent
+  from the current registered email by replying to the same address and
+  receiving the user's explicit confirmation within 24 hours. Address mismatch
+  or expiry restarts verification. The form records timestamps and the mail
+  provider reference, not the email subject or body.
 
 ## Creation surface
 
@@ -162,6 +192,27 @@ failed -> queued (retry)
 - Saving an unprojected root context as a project transfers continuity to the
   project and clears the separate root draft. Project edits remain governed by
   project save/restore rather than root-draft autosave.
+
+## Seed usage rules and reporting
+
+- After an account becomes active, read the server-owned content policy. If the
+  exact current version/hash has not been accepted, keep one required dialog
+  open before any creative action. Loading failure offers retry without
+  guessing policy text; a version conflict reloads the current policy.
+- The checkbox confirms the displayed version. Acceptance is idempotent and
+  unlocks reference upload, generation, and retry. Account approval and credit
+  do not substitute for this acceptance.
+- `使用规则` in the sidebar reopens the same accepted policy for reference.
+- Only a durable generated Asset exposes `举报这张图片` in image detail. The
+  user selects one fixed category; the request contains no prompt, image bytes,
+  object key, or free-form text. Success immediately closes detail, removes the
+  image from current creation/library state, and confirms that it is hidden.
+- `/admin/users` lists open reports without rendering customer content. The
+  site owner deliberately opens one audited preview, then records a reason and
+  either restores the Asset or confirms irreversible private-byte removal. A
+  preview/removal failure preserves the quarantined report for retry. Suspending
+  the related account is an independent existing action, not an automatic side
+  effect of every report.
 
 ## Asset library
 

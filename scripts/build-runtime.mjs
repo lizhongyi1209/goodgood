@@ -11,6 +11,8 @@ await build({
   },
   bundle: true,
   entryPoints: {
+    "account-deletion-cycle": "server/runtime/account-deletion-cycle.mjs",
+    "account-deletion-recovery": "server/runtime/account-deletion-recovery.mjs",
     "bootstrap-site-owner": "server/runtime/bootstrap-site-owner.mjs",
     "manual-payment": "server/runtime/manual-payment.mjs",
     "mock-generation": "server/runtime/mock-generation.mjs",

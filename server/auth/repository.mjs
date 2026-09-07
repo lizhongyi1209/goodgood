@@ -199,21 +199,42 @@ export async function provisionOwnerIdentity(pool, claims) {
 }
 
 export async function createAuthenticationSession(pool, session) {
-  const result = await pool.query(
-    `INSERT INTO auth_sessions
-      (id, owner_id, auth_identity_id, token_hash, expires_at, last_seen_at)
-     SELECT $1, $2, i.id, $4, $5, now()
-       FROM auth_identities i
-      WHERE i.id = $3 AND i.owner_id = $2`,
-    [
-      randomUUID(),
-      session.ownerId,
-      session.identityId,
-      session.tokenHash,
-      session.expiresAt,
-    ],
-  );
-  if (result.rowCount !== 1) throw sessionExpiredError();
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const eligible = await client.query(
+      `SELECT owner.id
+         FROM users owner
+         JOIN auth_identities identity
+           ON identity.owner_id = owner.id AND identity.id = $2
+        WHERE owner.id = $1
+          AND NOT EXISTS (
+            SELECT 1 FROM account_deletion_requests request
+             WHERE request.target_owner_id = owner.id
+          )
+        FOR UPDATE OF owner, identity`,
+      [session.ownerId, session.identityId],
+    );
+    if (!eligible.rowCount) throw sessionExpiredError();
+    await client.query(
+      `INSERT INTO auth_sessions
+        (id, owner_id, auth_identity_id, token_hash, expires_at, last_seen_at)
+       VALUES ($1, $2, $3, $4, $5, now())`,
+      [
+        randomUUID(),
+        session.ownerId,
+        session.identityId,
+        session.tokenHash,
+        session.expiresAt,
+      ],
+    );
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 async function findSessionOwner(pool, tokenHash) {

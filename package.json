@@ -40,6 +40,7 @@
     "production:artifact-evidence": "node scripts/import-artifact-security-evidence.mjs",
     "production:gate": "node scripts/verify-production-readiness.mjs",
     "production:seed-gate": "node scripts/verify-seed-production-readiness.mjs",
+    "production:alpha-gate": "node scripts/verify-controlled-alpha-readiness.mjs",
     "production:conversion-plan": "node scripts/run-production-conversion.mjs",
     "production:r2-deletion-plan": "node scripts/run-production-r2-deletion-plan.mjs",
     "production:work-package": "node scripts/run-production-work-package.mjs",
@@ -54,6 +55,7 @@
     "@hookform/resolvers": "^5.7.1",
     "@lobehub/icons-static-svg": "1.94.0",
     "@shadcn/react": "^0.3.0",
+    "authing-node-sdk": "4.0.2",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "cmdk": "^1.1.1",
@@ -103,10 +105,12 @@
     "wrangler": "4.92.0"
   },
   "overrides": {
+    "crypto-js": "4.2.0",
     "fast-uri": "3.1.6",
     "nanoid": "3.3.18",
     "postcss": "8.5.28",
-    "sharp": "$sharp"
+    "sharp": "$sharp",
+    "ws": "8.21.3"
   },
   "type": "module",
   "displayName": "GoodGood"

@@ -52,12 +52,12 @@ function fallbackError(message?: string): GenerationError {
 function failedLocalJob(
   id: string,
   input: GenerationInputSnapshot,
-  message?: string,
+  error?: GenerationError,
 ): GenerationJob {
   const timestamp = new Date().toISOString();
   return Object.freeze({
     createdAt: timestamp,
-    error: fallbackError(message),
+    error: error ?? fallbackError(),
     id,
     input,
     outputs: Object.freeze([]),
@@ -66,11 +66,31 @@ function failedLocalJob(
   });
 }
 
+class GenerationHttpError extends Error {
+  readonly generationError: GenerationError;
+
+  constructor(error: GenerationError) {
+    super(error.message);
+    this.name = "GenerationHttpError";
+    this.generationError = error;
+  }
+}
+
 async function parseJob(response: Response) {
   const payload = (await response.json()) as GenerationJob | GenerationApiErrorEnvelope;
   if (!response.ok) {
     const errorPayload = payload as GenerationApiErrorEnvelope;
-    throw new Error(errorPayload.error?.message ?? "生成服务暂时不可用。");
+    const code = errorPayload.error?.code;
+    throw new GenerationHttpError({
+      code: code === "CONTENT_POLICY_ACCEPTANCE_REQUIRED"
+        ? code
+        : "INTERNAL_ERROR",
+      message: errorPayload.error?.message ?? "生成服务暂时不可用。",
+      retryable: errorPayload.error?.retryable ?? false,
+      title: code === "CONTENT_POLICY_ACCEPTANCE_REQUIRED"
+        ? "请先同意使用规则"
+        : "本次生成未完成",
+    });
   }
   return payload as GenerationJob;
 }
@@ -140,7 +160,9 @@ async function postAndPoll({
     const failed = failedLocalJob(
       localId,
       input,
-      error instanceof Error ? error.message : undefined,
+      error instanceof GenerationHttpError
+        ? error.generationError
+        : fallbackError(error instanceof Error ? error.message : undefined),
     );
     observer?.(failed);
     return failed;

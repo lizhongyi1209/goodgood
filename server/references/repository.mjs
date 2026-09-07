@@ -1,5 +1,9 @@
 import { randomUUID } from "node:crypto";
+import {
+  lockOwnerCreativeWriteAccess,
+} from "../account-deletion/creative-write-guard.mjs";
 import { ReferencePersistenceError } from "./errors.mjs";
+import { assertCurrentContentPolicyAccepted } from "../content-safety/repository.mjs";
 
 export async function createPendingReferenceAssets(
   pool,
@@ -8,6 +12,14 @@ export async function createPendingReferenceAssets(
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+    if (!(await lockOwnerCreativeWriteAccess(client, ownerId))) {
+      throw new ReferencePersistenceError(
+        "ACCOUNT_SUSPENDED",
+        "账户已暂停使用，不能创建参考图上传。",
+        403,
+      );
+    }
+    await assertCurrentContentPolicyAccepted(client, ownerId);
     const assets = [];
     for (const file of files) {
       const id = randomUUID();
@@ -55,7 +67,7 @@ export async function markReferenceReady(
 ) {
   const result = await pool.query(
     `UPDATE reference_assets
-        SET upload_state = 'ready', moderation_state = 'accepted',
+        SET upload_state = 'ready', moderation_state = 'not_reviewed',
             detected_mime_type = $3, byte_size = $4, pixel_width = $5,
             pixel_height = $6, checksum = $7, uploaded_at = now(),
             validated_at = now(), error_code = NULL, updated_at = now()
@@ -87,7 +99,7 @@ export async function markReferenceRejected(
 ) {
   await pool.query(
     `UPDATE reference_assets
-        SET upload_state = 'rejected', moderation_state = 'rejected',
+        SET upload_state = 'rejected', moderation_state = 'not_reviewed',
             error_code = $3, validated_at = now(), updated_at = now()
       WHERE id = $1 AND owner_id = $2 AND upload_state = 'pending'`,
     [referenceId, ownerId, errorCode],
@@ -113,7 +125,8 @@ export async function findReadyReferences(
     `SELECT id, object_key, original_file_name
        FROM reference_assets
       WHERE owner_id = $1 AND id = ANY($2::uuid[])
-        AND upload_state = 'ready' AND moderation_state = 'accepted'
+        AND upload_state = 'ready'
+        AND moderation_state IN ('not_reviewed', 'accepted')
         AND object_deleted_at IS NULL
       ${lock ? "FOR SHARE" : ""}`,
     [ownerId, referenceIds],

@@ -29,7 +29,7 @@ function responseRecorder() {
   };
 }
 
-test("asset repository lists only accepted successful records for one owner newest-first", async () => {
+test("asset repository lists only available successful records for one owner newest-first", async () => {
   const expectedRows = [{ id: "job-new" }, { id: "job-old" }];
   let query;
   const pool = {
@@ -48,7 +48,7 @@ test("asset repository lists only accepted successful records for one owner newe
   assert.match(query.sql, /b\.owner_id = \$1/);
   assert.match(query.sql, /a\.owner_id = \$1/);
   assert.match(query.sql, /j\.state = 'succeeded'/);
-  assert.match(query.sql, /a\.moderation_state = 'accepted'/);
+  assert.match(query.sql, /a\.moderation_state IN \('not_reviewed', 'accepted'\)/);
   assert.match(query.sql, /ORDER BY j\.submitted_at DESC, j\.id DESC/);
 });
 

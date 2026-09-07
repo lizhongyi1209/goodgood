@@ -110,9 +110,9 @@ test(
     await seedLocalFixtures({ databaseUrl, logger: { log() {} } });
     await seedLocalFixtures({ databaseUrl, logger: { log() {} } });
     const migrationCount = await pool.query(
-      "SELECT count(*)::int AS count FROM goodgood_schema_migrations WHERE version IN ('0001_m3_generation.sql', '0002_m4_authenticated_owners.sql', '0003_m4_reference_assets.sql', '0004_m4_projects.sql', '0005_m4_oidc_sessions.sql', '0006_m4_oidc_login_binding.sql', '0007_m4_reference_cleanup.sql', '0008_m4_creation_drafts.sql', '0009_m6_credit_ledger.sql', '0010_m6_payment_sandbox.sql', '0011_m8_account_admission.sql', '0012_m8_remove_legacy_local_fixtures.sql')",
+      "SELECT count(*)::int AS count FROM goodgood_schema_migrations WHERE version IN ('0001_m3_generation.sql', '0002_m4_authenticated_owners.sql', '0003_m4_reference_assets.sql', '0004_m4_projects.sql', '0005_m4_oidc_sessions.sql', '0006_m4_oidc_login_binding.sql', '0007_m4_reference_cleanup.sql', '0008_m4_creation_drafts.sql', '0009_m6_credit_ledger.sql', '0010_m6_payment_sandbox.sql', '0011_m8_account_admission.sql', '0012_m8_remove_legacy_local_fixtures.sql', '0013_m8_account_deletion_requests.sql', '0014_m8_account_deletion_lifecycle_foundation.sql', '0015_m8_account_deletion_private_objects.sql', '0016_m8_account_deletion_private_object_constraints.sql', '0017_m8_account_deletion_creative_records.sql', '0018_m8_account_deletion_external_identities.sql', '0019_m8_account_deletion_local_anonymization.sql', '0020_m8_seed_content_safety.sql')",
     );
-    assert.equal(migrationCount.rows[0].count, 12);
+    assert.equal(migrationCount.rows[0].count, 20);
     const suffix = `${Date.now()}-${process.pid}`;
     await Promise.all([
       grantCredits(pool, {
@@ -435,7 +435,7 @@ test(
     );
     assert.equal(referenceEvidence.rows[0].owner_id, "00000000-0000-4000-8000-000000000001");
     assert.equal(referenceEvidence.rows[0].upload_state, "ready");
-    assert.equal(referenceEvidence.rows[0].moderation_state, "accepted");
+    assert.equal(referenceEvidence.rows[0].moderation_state, "not_reviewed");
     assert.equal(referenceEvidence.rows[0].detected_mime_type, "image/png");
     assert.equal(referenceEvidence.rows[0].pixel_width, 1122);
     assert.equal(referenceEvidence.rows[0].pixel_height, 1402);

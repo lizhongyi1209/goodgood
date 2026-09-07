@@ -393,6 +393,247 @@ The timestamped result of the latest verified gate belongs in
   newest-first grouping, and returns fresh signed private reads.
 - Provider timeout/rejection normalization.
 - Callback verification and duplicate callback handling.
+- Retention jobs prove the 24-hour consumed/expired login-attempt thresholds,
+  30-day terminal-session threshold, 30-day sliding draft expiry, daily bounded
+  execution, empty runs, retry behavior, and concurrent-session safety.
+- Account deletion proves immediate access stop, session revocation, a separate
+  request lifecycle, idempotent partial-step retries, owner isolation, private-
+  byte deletion, Authing failure recovery, 30-day deadline tracking, audit
+  anonymization, and deletion-register replay against an isolated old backup.
+- The `/admin/users` request-entry tests require a persisted site owner, POST
+  plus CSRF and idempotency, two client confirmations, cancellation without
+  mutation, server-side self-target rejection, atomic suspension/revocation,
+  and pending-not-completed success copy. No member self-service route exists.
+- Verification tests accept only a request from the current registered email
+  plus an explicit same-address reply within 24 hours; they reject mismatched,
+  changed, missing, and late replies without mutation and prove that stored/
+  logged evidence contains message metadata but no email subject or body.
+- Submitted-generation deletion tests prove immediate login/submit/retry denial,
+  no provider cancellation/resubmission/fallback, bounded polling and ingest,
+  exactly-once settle/release, hidden late Assets, terminal-job waiting, and
+  inclusion of every late private object in the deletion set.
+- Unsubmitted-queue tests prove atomic PostgreSQL request/cancellation/credit
+  release/outbox invalidation, zero provider calls, idempotent replay, stale
+  Valkey delivery as a terminal no-op, and deterministic races on both sides of
+  the persisted provider-submission guard.
+- Irreversibility tests prove both browser cancellations and failed validation
+  leave no GoodGood mutation; final request creation persists verification
+  metadata once; duplicate submits are idempotent; and no route, lifecycle
+  transition, retry, or incident path can withdraw the request, reactivate
+  access, recreate work/credit, restore content, or remove register evidence.
+
+The C6-2A through C6-2H local verification includes an opt-in real PostgreSQL
+and disposable RustFS test. It applies all nineteen migrations twice, creates
+one unsubmitted, one guard-crossed, and one successfully completed job for a
+disposable account, creates the deletion request, and proves exactly
+one job cancellation/credit release, submitted-job preservation, session
+revocation, idempotent replay, and fail-closed login/generation/restore/grant
+paths. It also reads the persistent request state and deadline back through the
+site-owner account-list projection without returning email evidence. Component
+tests cover empty/mismatched/late evidence, normalized success payloads, the
+preserved retry key, and server failure display. Static UI checks enforce two
+separate confirmations, a mutation spinner, no site-owner control, and no
+withdrawal copy. These tests do not call O1Key, Authing, R2, or a production
+host.
+
+The same PostgreSQL test proves migration-0014 backfill/idempotency and atomic
+register/step creation. Its first leased pass sees the guard-crossed running job
+and defers with one active-job count and no retained lease. After that job is
+made terminal, a second pass completes only `wait_for_submitted_jobs`; the
+request/register remain processing and the owner plus all three jobs remain present.
+Fast tests cover empty, completed, deferred, lost-lease, and database-failure
+paths, aggregate preview redaction, `SKIP LOCKED`, and the absence of R2/Authing
+dependencies.
+
+After the wait step completes, the same real PostgreSQL test runs the C6-2D
+inventory twice and proves an identical SHA-256 with exactly three generation
+jobs, one asset, two references, three live private objects, one project, and
+one draft. Fast
+tests cover populated and empty inventories, canonical ordering, digest drift,
+not-ready and database-failure rollback, read-only SQL, generation-batch digest
+coverage, output whitelisting, and the absence of destructive/R2/Authing code.
+
+The C6-2E portion first injects one redacted storage failure and proves all
+exact disposable objects still exist while the step is pending with bounded
+retry evidence. It then limits work to one object per claim, proves the first
+two successful passes remain pending without a false failure code, proves the
+unexpired signed-upload key and row remain live, expires that intent plus its grace, completes
+the third pass, verifies every object returns 404, and proves the Asset/Reference
+markers plus aggregate step counts/digest. A repeat is a no-op and the test's
+random object prefix is empty afterward. Fast tests prove byte-delete-before-
+row-evidence ordering, empty work, duplicate-safe retry, claim bounds, lost
+lease, output/log redaction, migration constraints, reference-cleanup exclusion,
+and hidden deleted assets. No test calls Authing or production R2.
+
+The C6-2F portion creates project and root-draft rows and first proves new
+generation, project, draft, and reference-intent writes fail after request
+creation. A deliberately failed creative pass leaves the complete graph and
+ledger links unchanged while recording only aggregate retry evidence. The next
+pass deletes assets, events, attempts, outbox, jobs, batches, projects, draft,
+and references transactionally; exact row counts and a zero inventory prove
+completion. Credit accounts, every ledger entry, administrative actions,
+GoodGood/Authing identity/session rows, the request, and the independent
+register remain. Job-linked ledger entries lose only their creative job link and
+gain request/timestamp evidence; fast tests verify the trigger boundary,
+foreign-key order, digest binding, redacted failure, empty work, and lost lease.
+
+The C6-2G portion then uses only a disposable in-memory identity directory. It
+forces delete to fail after disable succeeds, proves the local mapping and
+disable evidence remain with `IDENTITY_DELETE_FAILED`, retries delete without a
+second disable, and completes with the fake directory empty while the local
+issuer/subject mapping, request, register, session, and financial/audit evidence
+remain. A repeated pass is a no-op. Fast tests cover two identities, empty work,
+disable-before-delete order, bounded claims, partial retry, lost evidence lease,
+adapter validation, fixed-code log redaction, creative-step dependency, and the
+absence of an Authing endpoint/credential/client.
+
+The C6-2H portion first releases the test's terminal submitted-job reservation,
+then injects a final-step failure and proves the owner email, local identity,
+revoked session, credit balance, and immutable evidence are unchanged while the
+step records only a redacted retry code. The successful retry expires all 90
+remaining credits through one new ledger entry, closes the account at zero,
+deletes the local session and identity mapping, installs the deterministic
+anonymous email, scrubs the mail reference, and atomically completes the step,
+request, and register with an exact 12-month deadline. It proves every prior
+ledger row and administrative action is unchanged, the original email can
+provision a fresh pending owner with normal welcome credit, and a repeat is a
+no-op. Fast tests cover success, empty work, failure, lost lease, transactional
+write checks, fixed-code log redaction, prerequisite/lease SQL, and the absence
+of a real Authing or production boundary.
+
+The C6-2I fast suite runs the published `authing-node-sdk` against a disposable
+loopback HTTP server with fake AK/SK values. It proves the concrete
+`get-user -> update-user -> get-user -> delete-users-batch` sequence, exact
+`user_id` request bodies, SDK authorization-header creation without placing the
+secret in the URL/body, suspended-response validation, user-not-found `apiCode`
+2004 idempotency, exact issuer rejection before I/O, subject-response mismatch,
+failed update/delete handling, fixed-code error redaction, HTTPS enforcement,
+and injectable-client validation. It never contacts Authing or a production
+endpoint and creates no real identity.
+
+The C6-2J fast suite invokes the real five pass services with fake repositories,
+object storage, and identity adapter. It proves the exact phase order, shared
+bounded worker namespace, before/after lifecycle observation, aggregate totals,
+successful empty work, and stripping of accidental extra result fields. Further
+tests prove handled failure/lost-lease/overdue alerts, continuation after
+handled failures, fail-closed initial observation, unexpected-phase abort, final
+observation after abort, fixed-code redaction, input bounds, and the absence of
+environment, timer, runtime, or Authing-adapter selection. No external endpoint
+or production resource is contacted.
+
+The C6-2K fast suite proves deterministic register ordering/digest, exact field
+allowlisting, JSON round-trip, tamper/duplicate/future-date rejection, retained-
+record SQL, trusted-digest binding, aggregate-only logs/results, processing
+restore blocking, normalized failures, and the absence of network/runtime/timer
+selection. Its opt-in integration creates two random disposable PostgreSQL
+databases: one holds the current non-content register and the other simulates an
+older restored snapshot. Completed replay removes the old email identity,
+session, project, draft, reference row, and 100-credit balance, restores all
+five completed steps, preserves ledger history, and repeats without another
+ledger entry. A processing record separately proves owner suspension, session
+revocation, retained creative data, five pending steps, and `ready: false`.
+Both databases are dropped after the test; R2, Authing, production backups, and
+the Hong Kong host are never contacted.
+
+The C6-2L fast suite proves the strict version-1 recovery manifest, one-stem
+three-file naming, immutable GoodGood image binding, dump and register digests,
+database-before-register-before-manifest ordering, the 15-minute component
+bound, root-only `0600`/non-symlink enforcement, and the one-hour freshness
+gate. It covers digest tampering, stale input, unexpected fields, mutable image
+references, invalid command arguments, stdout/stderr separation, trusted-digest
+handoff, and processing-record `ready: false` rejection with injected files and
+repositories. Static production-script coverage proves the new Restic tags,
+exact three-path selection, pre-existing-file preservation, `--pull never`,
+internal-only export, and restore replay through the network-none PostgreSQL
+namespace. `bash -n`, the packaged runtime build, and the complete local gate
+run without contacting R2, Authing, the Hong Kong host, or any provider. The
+synchronized gate contains 240 tests: 234 pass and six opt-in integrations are
+skipped by default.
+
+The C6-2M fast suite proves exact production-only secret paths, rejection of
+inline credentials and altered PostgreSQL/Authing/R2 targets, a two-connection
+database pool, R2 bucket preflight, dependency verification before adapter
+construction, fixed cycle limits, unconditional resource closure, aggregate
+result allowlisting, stable `0/1/2/3` process outcomes, and redaction of an
+unexpected secret-bearing error. Static coverage proves the standalone
+Compose role mounts only R2 plus dedicated Authing-management secrets, has no
+port or O1Key/OIDC application secret, uses an already-local read-only bounded
+image, and joins only state plus its own egress network. It also proves the
+nonblocking host lock, exact root/group file modes, inactive five-minute
+oneshot timer, four-minute timeout, systemd hardening, runtime-bundle inclusion,
+and release-configuration hashing. Tests and syntax checks do not create a
+credential, install a unit, contact Authing/R2/PostgreSQL, or access the Hong
+Kong host. The synchronized gate contains 247 tests: 241 pass and six opt-in
+integrations are skipped by default.
+
+The separately approved C6-2N live Authing review used one controlled,
+non-owner internal administrator and recorded only a SHA-256 subject
+fingerprint. Console inspection proved its custom role contains only the three
+required user-management methods. The first API branch returned an activated
+`userpool` credential whose Access Key ID equalled the global user-pool ID; the
+test treated that collision as a failure and did not use it as a scoped proof.
+The independent console-compatible `tenant-co-admin` branch failed with HTTP
+`422` / API code `4004`. The run therefore never created the disposable target
+user and never attempted target lookup, suspension, or deletion. Bootstrap
+secrets were read only from the operator clipboard, immediately cleared, never
+printed or persisted, and no production secret file or timer was created. This
+is negative boundary evidence: the least-privilege integration remains blocked
+by Authing capability and must not be reported as an identity-deletion pass.
+After removing the temporary proof runner and SDK checkout, `git diff --check`
+and the synchronized `npm run check:local` pass: lint, typecheck, the Vinext
+production build, and 247 tests with 241 passing and six opt-in integrations
+skipped.
+
+The C6-2O provider-retention review was deliberately credential-free and
+non-mutating. Read-only checks of the current O1Key documentation proved the
+24-hour public attachment-URL lifetime, unauthenticated GET/HEAD availability
+before expiry, 24-hour generated-image URL lifetime, the asynchronous submit and
+GET task-query routes, and zero documented DELETE routes. The public status
+responses from both documented API hosts reported privacy policy and user
+agreement disabled. Searches of the official domains and the published
+documentation found no erasure contract for prompt, reference, task/result,
+log, cache, backup, or upstream-processor copies. This is negative contract
+evidence, not a provider-deletion pass; no credential, generation, task, asset,
+or configuration was created or changed.
+
+C6-2P now covers ADR 0023's local lightweight content-safety slice. Automated
+tests bind the canonical `seed-v1` body to its SHA-256, reject displayed or
+persisted hash drift, enforce acceptance inside reference/generation
+transactions, and keep technical validation at `not_reviewed`. Report tests
+prove category validation, caller ownership, idempotency, atomic quarantine,
+and absence of prompt/image/object-key fields. Presentation-source assertions
+prove all ordinary signed-Asset joins allow only `not_reviewed | accepted`.
+Site-owner tests cover POST/CSRF/role boundaries, append-only audited preview,
+restore, byte-before-record removal, safe failure/retry, plus loading, empty,
+failure, and confirmation UI states. Readiness-contract tests reject passing
+moderation evidence unless every accepted control is explicit and reject any
+claim of a local classifier, keyword filter, added generation limit, or
+customer content in evidence. This is local implementation evidence only;
+`moderation-abuse-controls` remains blocked until the exact candidate is
+deployed and the owner-only report, quarantine, audited review, private-byte
+removal, account-suspension, and provider-default-safety paths are rehearsed in
+production without including customer content.
+
+ADR 0024 adds separate controlled-alpha gate coverage. The fast suite proves a
+complete `controlled-alpha-v1` document passes only when artifact/preflight and
+all four exact-candidate evidence groups are current. It also proves the full
+seed gate stays closed for that same narrow document, candidate-bound evidence
+cannot be reused, weakened pending/admission or cross-owner controls fail,
+recovery outside the one-hour RPO fails, unsafe/unknown evidence remains
+rejected, and the checked-in example is deliberately pending. The CLI is:
+
+```bash
+npm run production:alpha-gate -- --evidence-file \
+  infra/production/controlled-alpha-readiness-evidence.example.json
+```
+
+Repository tests do not make live attestations pass. C6-3A requires current
+read-only host evidence; C6-3B requires one controlled non-owner production
+journey; C6-3C requires a fresh encrypted recovery point, isolated restore, and
+maintenance re-entry; C6-3D requires real minimum-signal notification and the
+manual-response handoff. No evidence file may include customer content or a
+credential, and passing the command does not authorize C7 traffic opening.
+
 - The M5 fake O1Key gateway exhaustively proves all 42 combinations of the 14
   product-defined aspect ratios and `1K` / `2K` / `4K` pass unchanged to
   `gemini-3.1-flash-image-c-sp`, while the model remains `nano-banana-2`, the
@@ -497,6 +738,9 @@ outside the one-output MVP.
    approves -> the same account can create without a duplicate grant.
 8. Site owner opens account management -> grants test credit with a reason ->
    one ledger/audit result appears -> replay does not grant twice.
+9. Verified deletion request -> access stops immediately -> creative records
+   and private bytes disappear -> anonymized audit survives for its policy
+   period -> an old isolated restore cannot resurrect the account.
 
 ### Staging-only verification
 
@@ -526,6 +770,9 @@ outside the one-output MVP.
   does not support PUT cannot satisfy the upload/download portion. Report
   offline probe availability separately from application HTTP failures.
 - PostgreSQL backup restoration and application rollback using the prior image.
+- The first scheduled production retention run and account-deletion rehearsal
+  prove named ownership, alert delivery, redacted evidence, provider-retention
+  review, and deletion-register replay before a restore serves traffic.
 
 ## Release gate
 

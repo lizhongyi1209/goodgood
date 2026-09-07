@@ -1,4 +1,8 @@
 import pg from "pg";
+import {
+  CONTENT_POLICY_DOCUMENT_HASH,
+  CONTENT_POLICY_VERSION,
+} from "../content-safety/policy.mjs";
 
 const { Pool } = pg;
 
@@ -76,6 +80,19 @@ export async function seedLocalFixtures({ databaseUrl, logger = console }) {
         FROM inserted_welcome_grants seeded_grant
        WHERE account.id = seeded_grant.account_id;
     `);
+    await client.query(
+      `INSERT INTO content_policy_acceptances (
+         owner_id, policy_version, document_hash, source
+       )
+       SELECT id, $1, $2, 'local_fixture'
+         FROM users
+        WHERE id IN (
+          '00000000-0000-4000-8000-000000000001',
+          '00000000-0000-4000-8000-000000000002'
+        )
+       ON CONFLICT (owner_id, policy_version) DO NOTHING`,
+      [CONTENT_POLICY_VERSION, CONTENT_POLICY_DOCUMENT_HASH],
+    );
 
     const verification = await client.query(`
       SELECT
@@ -92,16 +109,26 @@ export async function seedLocalFixtures({ databaseUrl, logger = console }) {
             '00000000-0000-4000-8000-000000000001',
             '00000000-0000-4000-8000-000000000002'
           ) AND unit = 'credit' AND available_balance = 100
-            AND reserved_balance = 0) AS accounts
-    `);
+            AND reserved_balance = 0) AS accounts,
+        (SELECT count(*)::int FROM content_policy_acceptances
+          WHERE owner_id IN (
+            '00000000-0000-4000-8000-000000000001',
+            '00000000-0000-4000-8000-000000000002'
+          ) AND policy_version = $1 AND document_hash = $2) AS policy_acceptances
+    `, [CONTENT_POLICY_VERSION, CONTENT_POLICY_DOCUMENT_HASH]);
     const result = verification.rows[0];
-    if (result.owners !== 2 || result.identities !== 2 || result.accounts !== 2) {
+    if (
+      result.owners !== 2 ||
+      result.identities !== 2 ||
+      result.accounts !== 2 ||
+      result.policy_acceptances !== 2
+    ) {
       throw new Error("Local fixtures do not match the reviewed two-owner contract.");
     }
 
     await client.query("COMMIT");
     logger.log(JSON.stringify({ event: "local-fixtures.ready", owners: 2 }));
-    return { identities: 2, owners: 2 };
+    return { identities: 2, owners: 2, policyAcceptances: 2 };
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;

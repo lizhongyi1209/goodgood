@@ -23,6 +23,10 @@ import {
   PRODUCTION_INFRASTRUCTURE_PROFILE_ID,
   PRODUCTION_SCALE_OUT_PROFILE,
 } from "../scripts/production-infrastructure-profile.mjs";
+import {
+  CONTENT_POLICY_DOCUMENT_HASH,
+  CONTENT_POLICY_VERSION,
+} from "../server/content-safety/policy.mjs";
 
 const NOW = Date.parse("2026-09-05T05:00:00.000Z");
 const REVISION = "b".repeat(40);
@@ -49,6 +53,26 @@ function completeEvidenceDocument() {
         Object.assign(item, {
           observedRpoMinutes: 55,
           recoveryPoints: { daily: 14, monthly: 12, weekly: 8 },
+        });
+      }
+      if (id === "moderation-abuse-controls") {
+        Object.assign(item, {
+          accountSuspensionAvailable: true,
+          assetsPrivateByDefault: true,
+          customerContentInEvidence: false,
+          generationLimitAdded: false,
+          keywordFilterEnabled: false,
+          localSemanticClassifierEnabled: false,
+          ownerOnlyReportingPassed: true,
+          policyAcceptanceEnforced: true,
+          policyDocumentHash: CONTENT_POLICY_DOCUMENT_HASH,
+          policyVersion: CONTENT_POLICY_VERSION,
+          privateObjectRemovalPassed: true,
+          productionRehearsalPassed: true,
+          providerDefaultSafetyRetained: true,
+          providerRejectionNormalized: true,
+          quarantineFlowPassed: true,
+          siteOwnerReviewPassed: true,
         });
       }
       if (id === "production-restore-drill") item.observedRtoMinutes = 210;
@@ -105,7 +129,7 @@ function completeEvidenceDocument() {
       revision: REVISION,
       runtimeConfigVersion: "c".repeat(64),
     },
-    schemaVersion: 2,
+    schemaVersion: 3,
   };
 }
 

@@ -23,10 +23,22 @@ tier projection, immutable site-owner assignment, and append-only account
 administration evidence. A twelfth forward migration removes the two historical
 fixed-UUID local fixtures after verifying that they have no non-fixture identity
 or credit history. Local development recreates them only through an explicit
-local-auth seeder. The Drizzle schema mirrors the durable schema across all
-twelve migrations. A
-fuller project-backed creation session record and entitlements
-remain canonical contracts for later slices.
+local-auth seeder. A thirteenth migration adds the irreversible verified
+deletion request and queue-cancellation marker. A fourteenth adds the
+non-content deletion register and the leased submitted-job wait step. A
+fifteenth adds the private-object step, generated-asset deletion marker, and
+bounded object evidence; a sixteenth tightens step-specific evidence
+constraints without rewriting the applied migration. A seventeenth adds the
+leased creative-record step, aggregate record evidence, and a narrowly guarded
+ledger-to-job link removal bound to the deletion register. An eighteenth adds
+external disable/delete evidence to local identity mappings and the leased
+provider-neutral external-identity step. A nineteenth adds the final local
+anonymization/completion step, the owner anonymization timestamp, aggregate
+local-removal and credit-expiry evidence, and the deletion register's exact
+12-month audit-retention deadline. The Drizzle schema mirrors the durable
+schema across all nineteen migrations.
+A fuller project-backed creation session record and entitlements remain
+canonical contracts for later slices.
 
 `migrations/0001_m3_generation.sql` is additive and safe to rerun through the
 checksum-tracked migration runner. Rollback during local development is to stop
@@ -54,7 +66,9 @@ additive columns and use a forward fix.
 `migrations/0005_m4_oidc_sessions.sql` adds one-time OIDC state/PKCE evidence
 and server-owned sessions without rewriting users or external identities. Only
 the session-token hash is stored; provider tokens are not persisted. Expired or
-revoked rows are retained until an asynchronous retention job is introduced.
+revoked rows are currently retained until the ADR 0022 asynchronous retention
+job is implemented; the accepted deletion threshold is 30 days after expiry or
+revocation.
 Rollback follows the snapshot/forward-fix rule used by the other additive M4
 migrations.
 
@@ -136,6 +150,11 @@ to pending but still receive the one-time welcome grant; creation authorization
 requires an approved access state. Current plan, entitlements, account tier,
 system role, and credit are resolved through their own records rather than a
 browser-writable user balance.
+After completed account deletion, the row remains only as a pseudonymous
+referential-integrity anchor: status stays suspended, locale resets to the
+default, `anonymized_at` is set, and email becomes the deterministic
+`deleted-<request UUID without hyphens>@deleted.goodgood.invalid` placeholder.
+The original address and every local authentication mapping/session are gone.
 
 ### SystemRoleAssignment
 
@@ -172,7 +191,26 @@ External issuer and subject mapped to one internal GoodGood owner, with creation
 and last-authenticated timestamps. Provider claims do not replace the internal
 user ID in domain tables. The current seeded identities are local-only fixtures;
 production identities are provisioned from the accepted Authing OIDC issuer
-only after signed-token and verified-email validation.
+only after signed-token and verified-email validation. The persisted `subject`
+is that verified ID token's `sub`; C6-2I may use it as Authing `user_id` only
+when the row issuer exactly equals the adapter's configured OIDC issuer.
+Migration 0018 adds
+`external_disabled_at` and `external_deleted_at`. Delete evidence is valid only
+after disable evidence. These timestamps are retry evidence, not a replacement
+for the local mapping: issuer/subject stay present until the later GoodGood
+anonymization step runs after external success.
+
+C6-2J adds no table, column, enum, or durable state. Its import-only cycle reads
+and advances the existing deletion request/register/step records exclusively
+through the five repositories already defined by migrations 0014-0019. The
+cycle result and logs are operational aggregate evidence, not a new source of
+truth and not persisted user data.
+
+C6-2M also adds no durable state. Its production-only one-shot runtime and
+inactive schedule source reuse those same leases and rows. Host locks, exit
+codes, systemd status, and aggregate journal events are operational signals,
+not account-deletion completion evidence and not a replacement for the
+PostgreSQL register.
 
 ### AuthLoginAttempt
 
@@ -180,14 +218,141 @@ Hashed OIDC state, hash of the initiating browser's short-lived HttpOnly
 binding cookie, PKCE verifier, nonce, validated relative return path,
 expiration, consumption timestamp, and creation timestamp. State and browser
 binding must match in the same atomic one-time update before code exchange, so
-login CSRF, replay, and expired callbacks do not continue authentication.
+login CSRF, replay, and expired callbacks do not continue authentication. A
+consumed attempt is retained for 24 hours after consumption; an unconsumed
+attempt is retained for 24 hours after expiry, then a bounded cleanup removes
+it.
 
 ### AuthSession
 
 Owner and authentication-identity references, SHA-256 hash of an opaque
 GoodGood session token, expiration, revocation, last-seen, and creation
 timestamps. Raw session tokens and Authing/Google tokens are never stored in
-the database.
+the database. Expired or revoked session rows are retained for 30 days after
+the terminal event, then a bounded cleanup removes them.
+
+### AccountDeletionRequest
+
+Implemented locally by migration `0013_m8_account_deletion_requests.sql`. The
+additive record owns the verified request/confirmation times, opaque mail
+reference, creating site owner, target owner, linked administrative action,
+30-day deadline, `processing | completed` lifecycle state, creation-time
+session/job/credit counts, idempotency evidence, and completion time. It is
+separate from
+`User.status`; account access remains exactly `pending | active | suspended`.
+The first request creator is the persisted site owner acting from
+`/admin/users`. Verification evidence is limited to the registered-email
+request time, same-address reply-confirmation time within 24 hours, and mail
+provider message/reference ID; email subject/body are not copied into this
+record. The verification metadata, request creation, immediate suspension/
+session revocation, eligible queued-job cancellation, credit release, and
+outbox invalidation commit in the defined transaction boundary; abandoning a
+browser confirmation persists none of them. Once created, the request has no
+`cancelled`, `withdrawn`, or `reopened` transition. A database constraint or
+locked server check rejects
+`actor_owner_id = target_owner_id`; site-owner deletion is not represented by
+this browser workflow.
+
+The local site-owner account-list projection exposes only request ID, lifecycle
+state, creation time, and deadline. It deliberately omits the verified email,
+mail reference, operation hash, and downstream retry evidence from the browser
+dashboard.
+
+The current request repository implements irreversible request creation, its
+immediate PostgreSQL effects, and atomic creation of all current local deletion-
+register step rows. Private-object, creative-record, fake-adapter external-
+identity progression, and final local anonymization/completion now exist
+locally. Completion replaces the mail reference with fixed non-personal
+evidence. An opt-in Authing provider adapter and production-only one-shot
+runtime wiring now exist locally, while a real-tenant credential, disposable-
+target evidence, installation, and activation remain additive follow-up work.
+The register export and isolated local replay boundary
+now exist. C6-2L binds each export to one production database archive and an
+immutable application image through a strict encrypted recovery-point manifest;
+no new database table is required.
+
+### DeletionRegister
+
+Implemented locally by migration
+`0014_m8_account_deletion_lifecycle_foundation.sql`. The non-content register
+stores only request ID, internal target-owner UUID, `processing | completed`
+state, 30-day deadline, completion timestamp, exact 12-month
+`audit_retention_until`, and timestamps. Its request and owner identifiers have
+no foreign key to content/identity rows, allowing the register to survive their
+future removal. It contains no prompt, image, object key, email, mail reference,
+raw provider subject, credential, or session token. Independent export,
+and local restore replay are implemented by C6-2K without a new table. The
+version-1 export allowlists exactly the register fields above, sorts by request
+UUID, records its export time/count, and binds the canonical payload with
+SHA-256. Replay requires that digest again as independent expected evidence.
+Completed records restore the five terminal step rows and source completion/
+retention times after local identity/content removal. Processing records
+restore suspension, session revocation, and pending steps but deliberately keep
+the recovery candidate blocked. C6-2L places the artifact beside its database
+dump and strict manifest in one Restic snapshot, with root-only permissions,
+one-hour freshness, component-order, and digest checks before replay. Natural
+`14 daily / 8 weekly / 12 monthly` snapshot expiry remains the outer removal
+boundary. Installing the revised tools and collecting production recovery
+evidence remain release work.
+
+### AccountDeletionStep
+
+Implemented locally by migrations 0014-0019. The current steps are
+`wait_for_submitted_jobs`, `delete_private_objects`, and
+`delete_creative_records`, followed by `delete_external_identities` and
+`anonymize_goodgood_account`, each with
+`pending | running | completed` state,
+attempt/next-attempt times, last active-job count, bounded block code, lease
+owner/expiry, and completion time. The object step additionally stores the
+latest inventory version/SHA-256, current-pass target/failure counts, and a
+cumulative successfully recorded object count. Claiming uses row locking with
+`SKIP LOCKED`.
+Resolution locks every non-terminal job whose attempt crossed the provider
+submission guard; any such job returns the step to pending, while an empty set
+completes only this wait step. The object step cannot be claimed until the wait
+step completes. It deletes a bounded set of distinct live object keys first,
+then marks every associated Asset/ReferenceAsset row and increments aggregate
+step evidence in PostgreSQL. A pending reference upload whose signed PUT window
+and its short clock-skew grace have not expired stays live and keeps the object step pending; after expiry, the
+same key is deleted and marked normally. Storage failure returns the step to
+pending; lease/evidence ambiguity leaves it reclaimable for an idempotent retry.
+The creative step cannot be claimed until the object step completes. It binds a
+fresh inventory, requires zero live private objects, and transactionally deletes
+the full owner creative graph in explicit foreign-key order. Its target,
+failure, and deleted record counts include projects, batches, jobs, assets,
+drafts, references, attempts, job events, and outbox rows. No step completes the
+request/register. The external-identity step becomes claimable only after
+creative completion and stores target, disabled, deleted, and last-failed
+aggregate counts. Per-mapping timestamps preserve partial progress: disable is
+recorded before delete, delete requires prior disable evidence, and the local
+issuer/subject row remains after external success. The service requires an
+injected provider-neutral adapter and never selects a provider by itself. The
+repository now contains an opt-in server-only Authing adapter with a public-cloud
+management-host default, exact issuer binding, and injectable client boundary;
+the production-only one-shot runtime selects it only after exact file-backed
+configuration and PostgreSQL/R2 preflight. No management credential is
+persisted in GoodGood or checked into the repository.
+The final step requires every predecessor complete, no creative graph, only
+externally deleted identity mappings, revoked sessions, and zero reserved
+credit. Its transaction deletes local sessions and identity mappings, expires
+remaining available credit through a new append-only ledger event, closes the
+credit account, anonymizes the owner/request direct fields, and completes the
+request/register. The step stores only aggregate deleted-session,
+deleted-identity, and expired-credit amounts.
+
+### AccountDeletionInventoryPreview
+
+C6-2D is deliberately not a new durable table. After
+`wait_for_submitted_jobs = completed`, a repeatable-read, read-only snapshot
+counts the target owner's projects, generation jobs, assets, root draft,
+reference rows, and distinct private object keys whose object-deletion marker
+is still empty. The
+version-1 SHA-256 canonical set additionally includes generation-batch IDs so a
+job's parent record cannot change without changing the evidence. Only the six
+counts, inventory version, and digest cross the repository/service boundary;
+owner/request/row IDs and object keys remain internal. A future destructive
+step must recompute and bind a fresh inventory rather than treating this local
+preview as durable authorization.
 
 ### PlanEntitlement
 
@@ -208,7 +373,9 @@ accepted from the browser.
 
 Owner, currency/unit, cached available and reserved balances, version, status,
 and timestamps. The append-only ledger is authoritative; cached balances are
-updated transactionally and may be rebuilt.
+updated transactionally and may be rebuilt. Final account deletion requires no
+reservation, expires the remaining available balance, and closes the account
+at zero.
 
 ### CreditLedgerEntry
 
@@ -216,6 +383,18 @@ Append-only `grant | reserve | settle | release | refund | expire | adjust`
 entry with owner/account, signed amount, idempotency key, reason, related job,
 payment or prior entry, actor, and timestamp. Adjustments compensate with new
 entries; existing entries are never edited or deleted.
+
+Migration 0017 preserves that rule for every normal product path. The sole
+exception is the reviewed account-deletion transaction: while its creative step
+owns an unexpired lease and the private-object step is complete, a job-linked
+entry may remove only `related_job_id` and atomically set
+`account_deletion_request_id` plus `creative_link_deleted_at`. A trigger rejects
+changes to amounts, reasons, entry/prior-entry relationships, payment references,
+owner/account links, actors, hashes, metadata, or timestamps. This lets the job
+row disappear while preserving reconciliation evidence. C6-2H does not widen
+that exception: it appends one ordinary immutable `expire` entry and leaves all
+existing ledger rows unchanged. Their opaque owner link now resolves only to
+the pseudonymous retained User row.
 
 Signed amounts have one exact interpretation: `reserve` moves a negative amount
 from available to reserved; `settle` removes a negative amount from reserved;
@@ -305,7 +484,37 @@ when its job fails.
 ### Asset
 
 One output image: owner, batch, storage key, checksum, MIME, pixel dimensions,
-aspect ratio, byte size, moderation state, visibility, and timestamps.
+aspect ratio, byte size, moderation state, visibility, object-deletion time,
+and timestamps. New generated Assets start `not_reviewed`. Ordinary owner
+presentation joins include only `not_reviewed | accepted` rows whose private
+bytes have not been recorded deleted; `quarantined | rejected` rows never
+produce user-facing signed URLs.
+
+### ContentPolicyAcceptance
+
+Immutable evidence that one owner accepted one exact server-owned policy
+version and SHA-256 document hash through the web boundary. The compound
+`owner_id + policy_version` key prevents ambiguous replacement. This record is
+an access precondition for new reference upload, generation, and retry; it is
+not a semantic review result. The only alternate source is the explicit local-
+fixture seeder; production never enables that seeder.
+
+### ContentReport
+
+One owner report about one of that same owner's generated Assets. Stores only a
+fixed category, lifecycle state, resolution, idempotency/operation hashes, and
+timestamps; it deliberately stores no prompt, image bytes, object key, or
+free-form description. At most one open report exists for an Asset. Creating it
+atomically changes that Asset to `quarantined`. Resolved reports record either
+`dismissed` or `removed` and an exact 12-month retention deadline.
+
+### ContentModerationAction
+
+Append-only site-owner evidence for `review_opened`, `restore_asset`, or
+`remove_asset`, including actor/target/Asset relations, previous/resulting
+moderation states, a bounded reason, idempotency/operation hashes, and time. A
+removed Asset relation may later become null when account deletion removes the
+creative graph; the audit record and report remain.
 
 ### Project
 
@@ -323,6 +532,10 @@ Contains ordering and membership metadata; never duplicate image bytes.
 ## State invariants
 
 - Job state: `queued | running | refining | succeeded | failed | cancelled`.
+- Asset moderation state: `not_reviewed | accepted | quarantined | rejected`.
+  Technical validation creates `not_reviewed`; only an audited manual restore
+  creates `accepted`. Reporting atomically creates `quarantined`, and confirmed
+  byte-first removal creates `rejected`.
 - Job transitions are append-auditable and terminal states do not regress.
 - M3 user retry creates a new batch/job linked through `retry_of_job_id` and
   copies the failed immutable input server-side; each job keeps its own
@@ -352,6 +565,31 @@ Contains ordering and membership metadata; never duplicate image bytes.
   paid tier nor credit balance confers administrative authority.
 - Account review and promotional grants are server-authorized, idempotent, and
   append-auditable. Test grants never create payment evidence.
+- Account-deletion progress is not an access state. A verified request first
+  suspends access and revokes sessions, then deletes owner-scoped creative
+  records and private bytes and deletes or anonymizes the owner within 30 days
+  through idempotent, retryable steps.
+- Before durable request creation, cancellation leaves no product mutation.
+  After creation, deletion progress is monotonic and has no withdrawal,
+  account-reopen, or restoration transition; incident evidence cannot mutate
+  that invariant.
+- Credit-ledger and administrative audit history is append-only during normal
+  operations. Account deletion severs its personal linkage, retains the
+  anonymized evidence for 12 months after completion, and then removes or
+  irreversibly aggregates it through a controlled maintenance path.
+- A restored backup cannot serve traffic until the independent deletion
+  register has been replayed and deleted identities/content are proven absent.
+- Once an O1Key attempt has crossed its persisted submission guard, account
+  deletion cannot cancel, resubmit, or replace it. Existing polling/result
+  ingestion reaches a terminal state and closes its reservation exactly once;
+  any resulting private Asset joins the deletion set and is never exposed to
+  the suspended owner. Destructive content deletion waits for every such
+  attempt to become terminal within the existing 30-day account deadline.
+- A queued job that has not crossed the provider-submission guard becomes
+  terminal `cancelled`, releases its reservation, and makes its outbox work
+  ineligible in the same PostgreSQL transaction that creates the deletion
+  request. A stale Valkey delivery is acknowledged only after observing that
+  terminal state and never calls the provider.
 - Ledger, payment, queue, and callback writes are idempotent.
 - Project creation is owner-scoped and idempotent; batches cannot be reassigned
   from one project to another by a browser request.

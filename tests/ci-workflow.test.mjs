@@ -85,7 +85,7 @@ test("CI verifies changes and publishes one immutable main image", async () => {
   assert.match(workflow, /steps\.image\.outputs\.digest/);
 });
 
-test("runtime build dependencies exclude the vulnerable image-size release", async () => {
+test("runtime build dependencies pin reviewed security overrides", async () => {
   const manifest = JSON.parse(
     await readFile(new URL("../package.json", import.meta.url), "utf8"),
   );
@@ -104,11 +104,14 @@ test("runtime build dependencies exclude the vulnerable image-size release", asy
   assert.equal(manifest.devDependencies["@vitejs/plugin-rsc"], "0.5.34");
   assert.equal(manifest.devDependencies["eslint-config-next"], "16.2.11");
   assert.equal(manifest.dependencies.sharp, "0.35.0");
+  assert.equal(manifest.dependencies["authing-node-sdk"], "4.0.2");
   assert.deepEqual(manifest.overrides, {
+    "crypto-js": "4.2.0",
     "fast-uri": "3.1.6",
     nanoid: "3.3.18",
     postcss: "8.5.28",
     sharp: "$sharp",
+    ws: "8.21.3",
   });
   assert.equal(lock.packages["node_modules/vinext"].version, "1.0.0-beta.9");
   assert.equal(lock.packages["node_modules/react"].version, "19.2.8");
@@ -118,6 +121,8 @@ test("runtime build dependencies exclude the vulnerable image-size release", asy
     "19.2.8",
   );
   assert.equal(lock.packages["node_modules/sharp"].version, "0.35.0");
+  assert.equal(lock.packages["node_modules/crypto-js"].version, "4.2.0");
+  assert.equal(lock.packages["node_modules/ws"].version, "8.21.3");
   assert.equal(lock.packages["node_modules/image-size"], undefined);
 
   for (const dependency of Object.values(lock.packages)) {
@@ -135,13 +140,16 @@ test("release metadata is deterministic and records the current migration", asyn
 
   assert.deepEqual(first, second);
   assert.equal(first.imageName, "ghcr.io/lizhongyi1209/goodgood");
-  assert.equal(first.migrationVersion, "0012_m8_remove_legacy_local_fixtures.sql");
+  assert.equal(
+    first.migrationVersion,
+    "0020_m8_seed_content_safety.sql",
+  );
   assert.match(first.runtimeConfigVersion, /^[a-f0-9]{64}$/);
   assert.equal(
     githubOutput(first),
     [
       "image-name=ghcr.io/lizhongyi1209/goodgood",
-      "migration-version=0012_m8_remove_legacy_local_fixtures.sql",
+      "migration-version=0020_m8_seed_content_safety.sql",
       `runtime-config-version=${first.runtimeConfigVersion}`,
       "",
     ].join("\n"),

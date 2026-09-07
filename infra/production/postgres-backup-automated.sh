@@ -11,7 +11,14 @@ readonly expected_secret_key_file="/etc/goodgood/production/secrets/backups/r2-s
 readonly snapshot_host="goodgood-production"
 
 archive_path=""
+register_path=""
+manifest_path=""
 temporary_archive=""
+temporary_register=""
+temporary_manifest=""
+archive_owned="false"
+register_owned="false"
+manifest_owned="false"
 
 usage() {
   cat >&2 <<'EOF'
@@ -31,11 +38,22 @@ fail() {
 }
 
 cleanup() {
-  if [[ -n "${temporary_archive}" && -e "${temporary_archive}" ]]; then
-    rm -f -- "${temporary_archive}"
-  fi
-  if [[ -n "${archive_path}" && -e "${archive_path}" ]]; then
+  for cleanup_path in \
+    "${temporary_archive}" \
+    "${temporary_register}" \
+    "${temporary_manifest}"; do
+    if [[ -n "${cleanup_path}" && -e "${cleanup_path}" ]]; then
+      rm -f -- "${cleanup_path}"
+    fi
+  done
+  if [[ "${archive_owned}" == "true" && -e "${archive_path}" ]]; then
     rm -f -- "${archive_path}"
+  fi
+  if [[ "${register_owned}" == "true" && -e "${register_path}" ]]; then
+    rm -f -- "${register_path}"
+  fi
+  if [[ "${manifest_owned}" == "true" && -e "${manifest_path}" ]]; then
+    rm -f -- "${manifest_path}"
   fi
 }
 trap cleanup EXIT
@@ -143,15 +161,29 @@ case "${action}" in
     ;;
   run)
     timestamp="$(date --utc +%Y%m%dT%H%M%SZ)"
-    archive_path="${backup_root}/production-auto-${timestamp}.dump"
-    "${backup_tool}" backup "${archive_path}"
+    bundle_stem="${backup_root}/production-auto-${timestamp}"
+    archive_path="${bundle_stem}.dump"
+    register_path="${bundle_stem}.account-deletion-register.json"
+    manifest_path="${bundle_stem}.recovery-manifest.json"
+    "${backup_tool}" backup \
+      "${archive_path}" \
+      "${register_path}" \
+      "${manifest_path}"
+    archive_owned="true"
+    register_owned="true"
+    manifest_owned="true"
     restic_command backup \
       --host "${snapshot_host}" \
       --tag production \
       --tag automated \
       --tag postgresql \
-      "${archive_path}"
+      --tag deletion-register \
+      --tag recovery-point \
+      "${archive_path}" \
+      "${register_path}" \
+      "${manifest_path}"
     printf 'automated_backup=passed\n'
+    printf 'recovery_point_files=3\n'
     ;;
   maintain)
     restic_command forget \
@@ -170,34 +202,78 @@ case "${action}" in
   restore-latest-drill)
     snapshot_json="$(restic_command snapshots \
       --host "${snapshot_host}" \
-      --tag production,automated,postgresql \
+      --tag production,automated,postgresql,deletion-register,recovery-point \
       --json)"
     latest_snapshot='sort_by(.time) | last'
     snapshot_id="$(jq --exit-status --raw-output "${latest_snapshot} | .id // empty" <<<"${snapshot_json}")" || \
-      fail "A latest production PostgreSQL snapshot is required." 66
-    snapshot_path="$(jq --exit-status --raw-output "${latest_snapshot} | if (.paths | length) == 1 then .paths[0] else empty end" <<<"${snapshot_json}")" || \
-      fail "The latest production snapshot must contain one archive path." 66
-    if [[ ! "${snapshot_id}" =~ ^[a-f0-9]{64}$ || \
-      ! "${snapshot_path}" =~ ^/var/backups/goodgood-production/production-auto-[0-9]{8}T[0-9]{6}Z\.dump$ ]]; then
-      fail "The latest snapshot identity or archive path is malformed." 66
+      fail "A latest production recovery-point snapshot is required." 66
+    snapshot_time="$(jq --exit-status --raw-output "${latest_snapshot} | .time // empty" <<<"${snapshot_json}")" || \
+      fail "The latest recovery-point snapshot time is required." 66
+    snapshot_paths="$(jq --exit-status --compact-output "${latest_snapshot} | .paths" <<<"${snapshot_json}")" || \
+      fail "The latest recovery-point paths are required." 66
+    if [[ "$(jq --raw-output 'length' <<<"${snapshot_paths}")" -ne 3 ]]; then
+      fail "The latest production recovery point must contain exactly three files." 66
+    fi
+    archive_snapshot_path="$(jq --exit-status --raw-output \
+      '[.[] | select(test("^/var/backups/goodgood-production/production-auto-[0-9]{8}T[0-9]{6}Z\\.dump$"))] | if length == 1 then .[0] else empty end' \
+      <<<"${snapshot_paths}")" || fail "The recovery point must contain one database archive." 66
+    register_snapshot_path="$(jq --exit-status --raw-output \
+      '[.[] | select(test("^/var/backups/goodgood-production/production-auto-[0-9]{8}T[0-9]{6}Z\\.account-deletion-register\\.json$"))] | if length == 1 then .[0] else empty end' \
+      <<<"${snapshot_paths}")" || fail "The recovery point must contain one deletion register." 66
+    manifest_snapshot_path="$(jq --exit-status --raw-output \
+      '[.[] | select(test("^/var/backups/goodgood-production/production-auto-[0-9]{8}T[0-9]{6}Z\\.recovery-manifest\\.json$"))] | if length == 1 then .[0] else empty end' \
+      <<<"${snapshot_paths}")" || fail "The recovery point must contain one recovery manifest." 66
+    if [[ ! "${snapshot_id}" =~ ^[a-f0-9]{64}$ ]]; then
+      fail "The latest recovery-point snapshot identity is malformed." 66
+    fi
+    bundle_stem="${archive_snapshot_path%.dump}"
+    [[ "${register_snapshot_path}" == "${bundle_stem}.account-deletion-register.json" && \
+      "${manifest_snapshot_path}" == "${bundle_stem}.recovery-manifest.json" ]] || \
+      fail "The recovery-point files do not share one exact stem." 66
+    snapshot_epoch="$(date --date "${snapshot_time}" +%s)" || \
+      fail "The latest recovery-point snapshot time is malformed." 66
+    now_epoch="$(date --utc +%s)"
+    snapshot_age_seconds=$((now_epoch - snapshot_epoch))
+    if [[ "${snapshot_age_seconds}" -lt 0 || "${snapshot_age_seconds}" -gt 3600 ]]; then
+      fail "The latest production recovery point is older than the one-hour RPO." 70
     fi
 
-    timestamp="$(date --utc +%Y%m%dT%H%M%SZ)"
-    archive_path="${backup_root}/production-offhost-drill-${timestamp}.dump"
-    if [[ -e "${archive_path}" || -L "${archive_path}" ]]; then
-      fail "The restore-drill archive already exists; refusing to overwrite it."
-    fi
-    temporary_archive="$(mktemp "${backup_root}/.production-offhost-drill.partial.XXXXXX")"
-    chown root:root "${temporary_archive}"
-    chmod 0600 "${temporary_archive}"
-    restic_command dump "${snapshot_id}" "${snapshot_path}" >"${temporary_archive}"
-    [[ -s "${temporary_archive}" ]] || fail "Restic produced an empty archive." 70
-    mv "${temporary_archive}" "${archive_path}"
-    temporary_archive=""
-    chown root:root "${archive_path}"
-    chmod 0600 "${archive_path}"
-    "${backup_tool}" restore-drill "${archive_path}"
+    archive_path="${archive_snapshot_path}"
+    register_path="${register_snapshot_path}"
+    manifest_path="${manifest_snapshot_path}"
+    for output_path in "${archive_path}" "${register_path}" "${manifest_path}"; do
+      if [[ -e "${output_path}" || -L "${output_path}" ]]; then
+        fail "A recovery-point extraction target already exists; refusing to overwrite it."
+      fi
+    done
+
+    extract_recovery_file() {
+      local snapshot_path="$1"
+      local destination_path="$2"
+      local temporary_variable="$3"
+      local owned_variable="$4"
+      local temporary_path
+      temporary_path="$(mktemp "${backup_root}/.production-offhost-drill.partial.XXXXXX")"
+      printf -v "${temporary_variable}" '%s' "${temporary_path}"
+      chown root:root "${temporary_path}"
+      chmod 0600 "${temporary_path}"
+      restic_command dump "${snapshot_id}" "${snapshot_path}" >"${temporary_path}"
+      [[ -s "${temporary_path}" ]] || fail "Restic produced an empty recovery-point file." 70
+      mv "${temporary_path}" "${destination_path}"
+      printf -v "${temporary_variable}" '%s' ""
+      printf -v "${owned_variable}" '%s' "true"
+      chown root:root "${destination_path}"
+      chmod 0600 "${destination_path}"
+    }
+    extract_recovery_file "${archive_snapshot_path}" "${archive_path}" temporary_archive archive_owned
+    extract_recovery_file "${register_snapshot_path}" "${register_path}" temporary_register register_owned
+    extract_recovery_file "${manifest_snapshot_path}" "${manifest_path}" temporary_manifest manifest_owned
+    "${backup_tool}" restore-drill \
+      "${archive_path}" \
+      "${register_path}" \
+      "${manifest_path}"
     printf 'off_host_restore_drill=passed\n'
     printf 'snapshot=%s\n' "${snapshot_id}"
+    printf 'snapshot_age_seconds=%s\n' "${snapshot_age_seconds}"
     ;;
 esac

@@ -1,4 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
+import {
+  lockOwnerCreativeWriteAccess,
+} from "../account-deletion/creative-write-guard.mjs";
 import { lockReferenceLifecycle } from "../references/lifecycle-lock.mjs";
 import { findReadyReferences } from "../references/repository.mjs";
 import { ProjectPersistenceError } from "./errors.mjs";
@@ -78,6 +81,13 @@ export async function createProject(
   const inputHash = hashProjectInput({ batchIds, name, state });
   try {
     await client.query("BEGIN");
+    if (!(await lockOwnerCreativeWriteAccess(client, ownerId))) {
+      throw new ProjectPersistenceError(
+        "ACCOUNT_SUSPENDED",
+        "账户已暂停使用，不能保存创作项目。",
+        403,
+      );
+    }
     await client.query(
       "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
       [`${ownerId}:${idempotencyKey}`],
@@ -142,6 +152,13 @@ export async function updateProject(
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+    if (!(await lockOwnerCreativeWriteAccess(client, ownerId))) {
+      throw new ProjectPersistenceError(
+        "ACCOUNT_SUSPENDED",
+        "账户已暂停使用，不能更新创作项目。",
+        403,
+      );
+    }
     if (state.references.length) await lockReferenceLifecycle(client);
     const existing = await client.query(
       `SELECT id FROM projects

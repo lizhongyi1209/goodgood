@@ -3,7 +3,9 @@ import { AuthenticationError, sessionExpiredError } from "../auth/errors.mjs";
 import { BillingPersistenceError } from "../billing/repository.mjs";
 import { getGenerationResources } from "../generation/resources.mjs";
 import { newRequestId } from "../observability/http.mjs";
+import { listOpenContentReports } from "../content-safety/repository.mjs";
 import { AdministrationError, adminAccessDeniedError } from "./errors.mjs";
+import { createAccountDeletionRequest } from "./account-deletion-repository.mjs";
 import {
   changeAccountAccess,
   grantTestCredits,
@@ -17,8 +19,10 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3
 
 const DEFAULT_REPOSITORY = Object.freeze({
   changeAccountAccess,
+  createAccountDeletionRequest,
   grantTestCredits,
   listManagedAccounts,
+  listOpenContentReports,
   listRecentAdministrativeActions,
   readAccountStatusCounts,
 });
@@ -59,6 +63,37 @@ function requireOwnerId(value) {
 
 function requireIdempotencyKey(value) {
   return requireText(value, "Idempotency-Key", 8, 200);
+}
+
+function requireEmail(value) {
+  const email = requireText(value, "verifiedEmail", 3, 320).toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new AdministrationError(
+      "ADMIN_REQUEST_INVALID",
+      "验证邮箱格式无效。",
+      400,
+    );
+  }
+  return email;
+}
+
+function requireTimestamp(value, fieldName) {
+  if (typeof value !== "string" || !value.trim()) {
+    throw new AdministrationError(
+      "ADMIN_REQUEST_INVALID",
+      `${fieldName} 必须是有效时间。`,
+      400,
+    );
+  }
+  const timestamp = new Date(value);
+  if (Number.isNaN(timestamp.getTime())) {
+    throw new AdministrationError(
+      "ADMIN_REQUEST_INVALID",
+      `${fieldName} 必须是有效时间。`,
+      400,
+    );
+  }
+  return timestamp;
 }
 
 function operationHash(value) {
@@ -129,7 +164,7 @@ export async function readAdminDashboard({
     );
   }
   const resolved = await resourcesFor(resources);
-  const [accounts, counts, recentActions] = await Promise.all([
+  const [accounts, counts, openContentReports, recentActions] = await Promise.all([
     repository.listManagedAccounts(resolved.pool, {
       cursor: decodeCursor(input?.cursor),
       limit,
@@ -137,12 +172,14 @@ export async function readAdminDashboard({
       status,
     }),
     repository.readAccountStatusCounts(resolved.pool),
+    repository.listOpenContentReports(resolved.pool, { limit: 30 }),
     repository.listRecentAdministrativeActions(resolved.pool, { limit: 30 }),
   ]);
   return {
     accounts: accounts.items,
     counts,
     nextCursor: encodeCursor(accounts.next),
+    openContentReports,
     recentActions,
   };
 }
@@ -224,6 +261,67 @@ export async function createAdminTestCreditGrant({
     operationHash: fingerprint,
     reason,
     targetOwnerId: target,
+  });
+}
+
+export async function createAdminAccountDeletionRequest({
+  idempotencyKey,
+  input,
+  ownerContext,
+  repository = DEFAULT_REPOSITORY,
+  resources = null,
+  targetOwnerId,
+}) {
+  const actorOwnerId = requireOwner(ownerContext);
+  const target = requireOwnerId(targetOwnerId);
+  const key = requireIdempotencyKey(idempotencyKey);
+  const reason = requireText(input?.reason, "操作原因", 2, 200);
+  const mailReferenceId = requireText(
+    input?.mailReferenceId,
+    "邮件服务引用",
+    2,
+    200,
+  );
+  const verifiedEmail = requireEmail(input?.verifiedEmail);
+  const verificationRequestedAt = requireTimestamp(
+    input?.verificationRequestedAt,
+    "请求时间",
+  );
+  const verificationConfirmedAt = requireTimestamp(
+    input?.verificationConfirmedAt,
+    "确认时间",
+  );
+  const verificationDuration =
+    verificationConfirmedAt.getTime() - verificationRequestedAt.getTime();
+  if (verificationDuration < 0 || verificationDuration > 24 * 60 * 60 * 1_000) {
+    throw new AdministrationError(
+      "ADMIN_DELETION_VERIFICATION_EXPIRED",
+      "账户删除确认必须在请求发出后的 24 小时内完成。",
+      409,
+    );
+  }
+  const requestedAt = verificationRequestedAt.toISOString();
+  const confirmedAt = verificationConfirmedAt.toISOString();
+  const fingerprint = operationHash({
+    action: "create_account_deletion_request",
+    actorOwnerId,
+    confirmedAt,
+    mailReferenceId,
+    reason,
+    requestedAt,
+    targetOwnerId: target,
+  });
+  const resolved = await resourcesFor(resources);
+  return repository.createAccountDeletionRequest(resolved.pool, {
+    actorOwnerId,
+    idempotencyKey: key,
+    mailReferenceId,
+    operationHash: fingerprint,
+    reason,
+    targetOwnerId: target,
+    verificationConfirmedAt: confirmedAt,
+    verificationRequestedAt: requestedAt,
+    verifiedEmail,
   });
 }
 

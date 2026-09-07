@@ -6,6 +6,7 @@ import {
 } from "../billing/repository.mjs";
 import { lockReferenceLifecycle } from "../references/lifecycle-lock.mjs";
 import { findReadyReferences } from "../references/repository.mjs";
+import { assertCurrentContentPolicyAccepted } from "../content-safety/repository.mjs";
 
 export class GenerationPersistenceError extends Error {
   constructor(code, message, status = 500) {
@@ -120,7 +121,10 @@ const JOB_SELECT = `
          a.checksum
     FROM generation_jobs j
     JOIN generation_batches b ON b.id = j.batch_id
-    LEFT JOIN assets a ON a.job_id = j.id
+    LEFT JOIN assets a
+      ON a.job_id = j.id
+     AND a.object_deleted_at IS NULL
+     AND a.moderation_state IN ('not_reviewed', 'accepted')
 `;
 
 export async function findGenerationJob(pool, { jobId, ownerId }) {
@@ -151,7 +155,7 @@ export async function findOwnerAssetGenerationJobs(pool, { ownerId }) {
         AND b.owner_id = $1
         AND a.owner_id = $1
         AND j.state = 'succeeded'
-        AND a.moderation_state = 'accepted'
+        AND a.moderation_state IN ('not_reviewed', 'accepted')
       ORDER BY j.submitted_at DESC, j.id DESC`,
     [ownerId],
   );
@@ -170,6 +174,29 @@ export async function createGenerationJob(
       "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
       [`${ownerId}:${idempotencyKey}`],
     );
+
+    const ownerAccess = await client.query(
+      `SELECT owner.status,
+              EXISTS (
+                SELECT 1 FROM account_deletion_requests request
+                 WHERE request.target_owner_id = owner.id
+              ) AS has_deletion_request
+         FROM users owner
+        WHERE owner.id = $1
+        FOR UPDATE OF owner`,
+      [ownerId],
+    );
+    if (
+      ownerAccess.rows[0]?.status !== "active" ||
+      ownerAccess.rows[0]?.has_deletion_request
+    ) {
+      throw new GenerationPersistenceError(
+        "ACCOUNT_SUSPENDED",
+        "账户已暂停使用，不能提交或重试生成任务。",
+        403,
+      );
+    }
+    await assertCurrentContentPolicyAccepted(client, ownerId);
 
     const existing = await client.query(
       `${JOB_SELECT} WHERE j.owner_id = $1 AND j.idempotency_key = $2`,
@@ -453,14 +480,48 @@ export async function saveProviderTask(pool, { attemptId, taskId }) {
 }
 
 export async function markProviderSubmissionStarted(pool, { attemptId }) {
-  const result = await pool.query(
-    `UPDATE generation_attempts
-        SET state = 'submitted', updated_at = now()
-      WHERE id = $1 AND state = 'created' AND provider_task_id IS NULL
-      RETURNING id`,
-    [attemptId],
-  );
-  return result.rowCount === 1;
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const locked = await client.query(
+      `SELECT attempt.id, attempt.state, attempt.provider_task_id,
+              job.state AS job_state, job.owner_id,
+              EXISTS (
+                SELECT 1 FROM account_deletion_requests request
+                 WHERE request.target_owner_id = job.owner_id
+              ) AS has_deletion_request
+         FROM generation_attempts attempt
+         JOIN generation_jobs job ON job.id = attempt.job_id
+        WHERE attempt.id = $1
+        FOR UPDATE OF job, attempt`,
+      [attemptId],
+    );
+    const attempt = locked.rows[0];
+    if (
+      !attempt ||
+      attempt.state !== "created" ||
+      attempt.provider_task_id !== null ||
+      ["succeeded", "failed", "cancelled"].includes(attempt.job_state) ||
+      attempt.has_deletion_request
+    ) {
+      await client.query("COMMIT");
+      return false;
+    }
+    const result = await client.query(
+      `UPDATE generation_attempts
+          SET state = 'submitted', updated_at = now()
+        WHERE id = $1 AND state = 'created' AND provider_task_id IS NULL
+        RETURNING id`,
+      [attemptId],
+    );
+    await client.query("COMMIT");
+    return result.rowCount === 1;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export async function renewGenerationLease(
@@ -687,7 +748,8 @@ export async function deferGenerationJob(
         `INSERT INTO generation_queue_outbox (job_id, last_error)
          VALUES ($1, $2)
          ON CONFLICT (job_id) DO UPDATE
-           SET dispatched_at = NULL, last_error = EXCLUDED.last_error`,
+           SET dispatched_at = NULL, last_error = EXCLUDED.last_error
+         WHERE generation_queue_outbox.cancelled_at IS NULL`,
         [jobId, message.slice(0, 500)],
       );
       await insertEvent(client, {

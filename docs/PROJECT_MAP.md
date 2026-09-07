@@ -24,7 +24,8 @@
 | `public/feihong-send.png` | Send-action silhouette |
 | `public/nano-fashion.png` | Prototype-only representative generated image |
 | `components/ui/` | Vendored Shadcn/Radix primitives plus the browser-direct private-object image primitive |
-| `features/admin/` | Site-owner account-management working surface and browser HTTP boundary |
+| `features/admin/` | Site-owner account-management surface, content-report review/removal, verified deletion evidence/two-step confirmation UI, and browser HTTP boundary |
+| `features/safety/` | Versioned content-policy acceptance, owner report, and site-owner moderation browser boundaries |
 | `features/auth/` | Browser session boundary plus pending/suspended account gate |
 | `tests/` | Build/render, documentation, domain/mock, M3/M4 runtime, and opt-in Compose integration coverage |
 | `db/` | PostgreSQL Drizzle schema and process-local database helper |
@@ -33,7 +34,9 @@
 | `worker-configuration.d.ts` | Typed optional bindings for the current Cloudflare prototype |
 | `server/generation/` | Node API, persistence transactions, outbox/Valkey queue, unbounded concurrent job runner, worker orchestration, explicit mock/O1Key routing, provider adapters, and object storage |
 | `server/auth/` | Authing-compatible OIDC/PKCE flow, hashed GoodGood sessions, provider-neutral identity mapping, local test adapter, and owner context |
-| `server/admin/` | Site-owner authorization, account search/review, linked promotional-credit audit, and one-time owner bootstrap |
+| `server/admin/` | Site-owner authorization, account search/review, linked promotional-credit audit, irreversible account-deletion request creation, and one-time owner bootstrap |
+| `server/content-safety/` | Canonical seed policy, acceptance gate, owner-only report/quarantine transaction, exact audited site-owner preview, restore/removal, and normalized errors |
+| `server/account-deletion/` | Local non-content register, submitted-job wait, redacted inventory, bounded leased S3-compatible private-object deletion, creative-write guard, transactional creative-graph deletion, provider-neutral external-identity handling, opt-in Authing Management API adapter, final local anonymization/completion, aggregate-only five-phase orchestration, exact production-only file configuration/resources, digest-bound register export/isolated restore replay, and strict production recovery-point manifest; no real-tenant credential/evidence or production activation |
 | `server/references/` | Owner-scoped upload intent, signed storage transfer, decoded validation, lifecycle persistence, cleanup policy/leases, and Node API |
 | `server/projects/` | Owner-scoped project validation, idempotent persistence, signed presentation, and Node API |
 | `server/drafts/` | One-per-owner expiring root drafts, optimistic versioning, ready-reference validation, and Node API |
@@ -41,7 +44,7 @@
 | `features/billing/` | Browser HTTP boundary and exact public billing-summary helpers |
 | `server/billing/` | Server-owned immutable generation/payment products, authenticated account and order boundaries, signed fake-payment callbacks, dry-run-first operator manual-payment recording, and transaction-composable credit grant/reserve/settle/release/refund persistence |
 | `server/persistence/` | Versioned migration runner |
-| `server/runtime/` | Production web, concurrent worker, migration, reference-cleanup, manual-payment, site-owner-bootstrap, and mock-provider process entry points plus runtime health and host memory/disk admission protection |
+| `server/runtime/` | Production web, concurrent worker, migration, reference-cleanup, manual-payment, site-owner-bootstrap, one-shot account-deletion/recovery, and mock-provider process entry points plus runtime health and host memory/disk admission protection |
 | `server/observability/` | Server-owned request/support IDs, approved correlation fields, normalized HTTP routes, and structured completion events |
 | `infra/container/` | Image health check plus host-side Compose dependency probes |
 | `scripts/build-runtime.mjs` | Locked Node runtime bundling for the production image |
@@ -49,7 +52,7 @@
 | `scripts/verify-authentication.mjs` | Secret-redacting Authing/OIDC staging preflight entry point |
 | `scripts/staging-contract.mjs` / `scripts/verify-staging.mjs` | Fail-closed staging release/runtime/secret validation and secret-redacting CLI report |
 | `scripts/run-staging-release.mjs` | Dry-run-first digest deploy/rollback runner with live Authing and OCI-label verification |
-| `scripts/production-readiness-contract.mjs` / `scripts/verify-production-readiness.mjs` | Vendor-neutral, exact-candidate, fail-closed paid-production evidence gate and JSON report |
+| `scripts/production-readiness-contract.mjs` / `scripts/verify-*-readiness.mjs` | Vendor-neutral, exact-candidate, fail-closed controlled-alpha, full seed, and paid-production evidence gates; the narrow alpha result cannot satisfy the broader gates |
 | `scripts/production-preflight-contract.mjs` / `scripts/verify-production-preflight.mjs` | Read-only Linux-host configuration, source/image identity, secret-file, and live OIDC preflight that emits revision-bound evidence only on success |
 | `scripts/artifact-security-*.mjs` / `scripts/import-artifact-security-evidence.mjs` | Main-CI evidence creation plus GitHub run/job/artifact-digest verification that emits exact-candidate artifact evidence only on success |
 | `scripts/production-infrastructure-profile.mjs` | ADR 0021's selected existing 2-vCPU / 4-GiB / 50-GiB Hong Kong seed-host contract plus ADR 0018's separately named, unauthorized managed scale-out option |
@@ -63,7 +66,7 @@
 | `compose.yaml` | Pinned web/worker/mock plus PostgreSQL, Valkey, RustFS, one-shot migration, and opt-in maintenance topology |
 | `compose.staging.yaml` / `compose.staging.dependencies.yaml` / `infra/staging/` | Digest-only app roles, a separately operated resource-bounded test-data dependency stack, host bootstrap/install helpers, and non-secret staging templates; real secrets remain outside the checkout |
 | `compose.o1key-local.yaml` | Explicit local worker override for the O1Key route and mounted key file |
-| `compose.production*.yaml` / `infra/production/` | Resource-bounded production state and blue/green app topology, exact four-hour conversion runbook, maintenance/Nginx boundary, backup automation, slot/systemd templates, and non-secret manifests; credentials, approvals, and operational evidence stay outside Git |
+| `compose.production*.yaml` / `infra/production/` | Resource-bounded production state and blue/green app topology, exact conversion and controlled-alpha runbooks, maintenance/Nginx boundary, encrypted three-file database/deletion-register recovery automation, slot/systemd templates, and non-secret manifests; credentials, approvals, installation, and operational evidence stay outside Git |
 | `.openai/hosting.json` | Current prototype hosting identity; not an app secret |
 
 The remaining project, asset, detail, and view orchestration in `app/page.tsx`

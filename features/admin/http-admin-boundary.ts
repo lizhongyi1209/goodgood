@@ -1,11 +1,20 @@
 import { goodGoodApiFetch } from "@/features/auth/http-auth-boundary";
+import type { OpenContentReport } from "@/features/safety/http-content-safety-boundary";
 
 export type ManagedAccountStatus = "pending" | "active" | "suspended";
+
+export type AccountDeletionRequestSummary = Readonly<{
+  createdAt: string;
+  deadlineAt: string;
+  id: string;
+  state: "processing" | "completed";
+}>;
 
 export type ManagedAccount = Readonly<{
   accountTier: "seed";
   availableCredits: string;
   createdAt: string;
+  deletionRequest: AccountDeletionRequestSummary | null;
   email: string;
   id: string;
   lastAuthenticatedAt: string | null;
@@ -20,7 +29,8 @@ export type AdministrativeAction = Readonly<{
     | "approve_account"
     | "suspend_account"
     | "restore_account"
-    | "grant_test_credits";
+    | "grant_test_credits"
+    | "create_account_deletion_request";
   actorEmail: string;
   createdAt: string;
   creditAmount: string | null;
@@ -35,6 +45,7 @@ export type AdminDashboard = Readonly<{
   accounts: readonly ManagedAccount[];
   counts: Readonly<Record<ManagedAccountStatus, number>>;
   nextCursor: string | null;
+  openContentReports: readonly OpenContentReport[];
   recentActions: readonly AdministrativeAction[];
 }>;
 
@@ -115,6 +126,49 @@ export async function grantManagedAccountTestCredits(input: {
         headers: {
           ...ADMIN_HEADERS,
           "idempotency-key": crypto.randomUUID(),
+        },
+        method: "POST",
+      },
+    ),
+  );
+}
+
+export type AccountDeletionRequest = Readonly<{
+  cancelledJobCount: number;
+  created: boolean;
+  createdAt: string;
+  deadlineAt: string;
+  id: string;
+  releasedCredits: string;
+  revokedSessionCount: number;
+  state: "processing" | "completed";
+  verificationConfirmedAt: string;
+  verificationRequestedAt: string;
+}>;
+
+export async function createManagedAccountDeletionRequest(input: {
+  idempotencyKey: string;
+  mailReferenceId: string;
+  ownerId: string;
+  reason: string;
+  verificationConfirmedAt: string;
+  verificationRequestedAt: string;
+  verifiedEmail: string;
+}) {
+  return adminJson<AccountDeletionRequest>(
+    await goodGoodApiFetch(
+      `/api/admin/users/${encodeURIComponent(input.ownerId)}/deletion-requests`,
+      {
+        body: JSON.stringify({
+          mailReferenceId: input.mailReferenceId,
+          reason: input.reason,
+          verificationConfirmedAt: input.verificationConfirmedAt,
+          verificationRequestedAt: input.verificationRequestedAt,
+          verifiedEmail: input.verifiedEmail,
+        }),
+        headers: {
+          ...ADMIN_HEADERS,
+          "idempotency-key": input.idempotencyKey,
         },
         method: "POST",
       },

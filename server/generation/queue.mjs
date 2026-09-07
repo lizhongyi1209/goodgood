@@ -7,7 +7,7 @@ export async function dispatchPendingJobs(pool, redis, limit = 50) {
   const pending = await pool.query(
     `SELECT id, job_id
        FROM generation_queue_outbox
-      WHERE dispatched_at IS NULL
+      WHERE dispatched_at IS NULL AND cancelled_at IS NULL
       ORDER BY created_at ASC
       LIMIT $1`,
     [limit],
@@ -21,7 +21,7 @@ export async function dispatchPendingJobs(pool, redis, limit = 50) {
             SET attempts = attempts + 1,
                 dispatched_at = now(),
                 last_error = NULL
-          WHERE id = $1`,
+          WHERE id = $1 AND cancelled_at IS NULL`,
         [row.id],
       );
     } catch (error) {
@@ -29,7 +29,7 @@ export async function dispatchPendingJobs(pool, redis, limit = 50) {
         `UPDATE generation_queue_outbox
             SET attempts = attempts + 1,
                 last_error = $2
-          WHERE id = $1`,
+          WHERE id = $1 AND cancelled_at IS NULL`,
         [row.id, error instanceof Error ? error.message.slice(0, 500) : String(error)],
       );
       throw error;
@@ -49,6 +49,7 @@ export async function reconcileRecoverableJobs(pool) {
     ON CONFLICT (job_id) DO UPDATE
       SET dispatched_at = NULL,
           last_error = NULL
+      WHERE generation_queue_outbox.cancelled_at IS NULL
   `);
   return result.rowCount ?? 0;
 }

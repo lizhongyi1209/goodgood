@@ -42,6 +42,9 @@ GoodGood 正式环境。执行窗口最多 4 小时。维护页必须先于冻�
 | `infra/production/postgres-backup-restore.sh` | `/usr/local/sbin/goodgood-production-postgres` | `root:root 0755` |
 | `infra/production/postgres-backup-automated.sh` | `/usr/local/sbin/goodgood-production-postgres-backup-automated` | `root:root 0755` |
 | production backup units | `/etc/systemd/system/goodgood-production-postgres-{backup,maintenance}.{service,timer}` | `root:root 0644` |
+| `compose.production.account-deletion.yaml` | `/opt/goodgood-production/compose.production.account-deletion.yaml` | `root:root 0644` |
+| `infra/production/account-deletion-cycle.sh` | `/usr/local/sbin/goodgood-production-account-deletion-cycle` | `root:root 0755` |
+| account-deletion units | `/etc/systemd/system/goodgood-production-account-deletion.{service,timer}` | `root:root 0644` |
 
 正式 release/runtime/backup 环境文件、凭据、证据和批准只存在主机或批准的
 异地保管位置，绝不复制到仓库或操作员电脑。
@@ -91,8 +94,10 @@ maintenance marker，静态维护门禁会失效并触发入口关闭。
 - 轮换 Authing application client secret，撤销旧值；新值只写入
   `/etc/goodgood/production/secrets/auth-client-secret` 并以
   `root:goodgood-runtime-secrets 0640` 挂载给 Web。
-- Authing user-pool management secret 不被 GoodGood 运行时使用；如在操作中
-  接触或披露则轮换并撤销旧值，但不得写入主机 runtime 文件。
+- 当前正式 GoodGood 运行时不使用 Authing user-pool management secret。C6-2M
+  只定义未来专用文件路径和一次性进程；在权限审阅、精确一次性测试身份及另行
+  批准前，不创建凭据文件、不安装/启用 timer。如在操作中接触或披露则轮换并
+  撤销旧值，且始终不得写入主机 runtime 文件。
 - 用新的正式 secret 执行 network preflight；随后分别证明 Google 和邮件
   验证码登录落到同一 Authing `sub`，并经新鲜 GoodGood 数据库创建一个
   `pending` owner，而不是恢复旧 GoodGood 身份绑定。
@@ -253,6 +258,15 @@ OIDC discovery preflight。任何旧 callback、inline secret、错误权限或�
 - 上传 reference、提交一次真实生成、credit reserve/settle、R2 私有签名读取、
   asset/project 恢复和跨 owner 拒绝通过。不得为了失败自动重提付费任务。
 - 生产 backup `run` 和异地 `restore-latest-drill` 通过，RPO/RTO 证据满足门禁。
+  对包含 C6-2L 的候选版本，必须先确认受保护的 `release.env` 指向本机已有的
+  不可变镜像，再创建带 `deletion-register` / `recovery-point` 标签的三文件
+  快照；恢复演练必须报告 `recovery_ready=true`。旧的一文件快照继续按保留
+  策略自然过期，但不能作为账户删除后的恢复就绪证据。
+- C6-2M 的 account-deletion Compose、wrapper 和 systemd 文件只作为未启用来源。
+  在 Authing 管理凭据权限、精确一次性非站长身份、Authing/R2 出站限制、告警
+  负责人和 firing/resolved 投递均有独立证据前，不得安装凭据或启动/启用该
+  timer。测试身份删除与正式周期执行分别取得批准，且不得把空周期当作真实
+  Authing 删除证据。
 - 在 green loopback 只启动 Web candidate，验证后模拟一次 blue↔green upstream
   变更和回退；Worker 必须先 drain 旧进程再启动新进程，任意时刻只有一个。
   回滚后数据库、队列和 credit fingerprints 不变，`schemaDowngradeAttempted=false`。

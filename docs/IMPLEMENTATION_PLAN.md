@@ -1,32 +1,49 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-07
-- Current phase: ADR 0024's controlled alpha is publicly open on
-  Hong Kong production revision `30c7a73ddb63f94f67a67b38a059d04c091040ba`
-  and immutable image digest
-  `sha256:1b0308cca64ecd0698fd9557e81c82989a3cd1f035218e869db554a09e9d5662`.
-  New registrations remain pending with 100 welcome credits until site-owner
-  approval. C7's public root, readiness, login boundary, access guard, and
-  initial observations passed; payment remains disabled and the full seed gate
-  is not claimed. ADR 0025's post-C7 product slice opens Nano Banana 2 across
-  all 14 product-defined aspect ratios and `1K` / `2K` / `4K`, still one output
-  and 10 credits. It is isolated in the current clean source candidate and has
-  not yet changed production traffic, data, objects, credentials, tasks, or
-  balances. The preserved local account-deletion/content-safety work is outside
-  this candidate.
-- Current objective: release ADR 0025 as the first isolated post-C7 product
-  update without changing admission, payment, data, or deferred M8 controls.
-  On 2026-09-07 the clean candidate passed `npm run check:local`: lint,
-  typecheck, the Vinext production build, and 187 tests with 183 passing and
-  four opt-in integrations skipped. The fake O1Key boundary covers all 42
-  ratio/resolution combinations and rejects unknown ratio, resolution, model,
-  or count values before submission.
-- Next action: pass the clean local gate, commit and publish one immutable
-  ADR-0025 candidate, prove there are no active attempts bound to the prior
-  O1Key route version, and perform the existing controlled-alpha release and
-  readiness checks. A live provider smoke is billable and requires an explicit
-  operator confirmation before its generation POST.
-- Historical M8 checkpoint at revision `30c7a73`: M7 is completed; the Alibaba Cloud Hong Kong host,
+- Current phase: ADR 0025 is deployed to the publicly open ADR 0024 controlled
+  alpha on Hong Kong production revision
+  `94cecb0aa53f7adf1dd6c3b6be23325a535ed5c0` and immutable image digest
+  `sha256:fe52e00933367a7f8575dc862f41550da514a4f1324526224bf347d1934127b3`.
+  Nano Banana 2 now exposes all 14 product-defined aspect ratios and
+  `1K` / `2K` / `4K`, still one output at 10 credits. The active slot is green;
+  the prior blue Web and Worker, release file, repository, and image remain
+  stopped and retained for rollback. New registrations still start pending
+  with 100 welcome credits, checkout remains disabled, and the full seed gate
+  is not claimed.
+- Current objective: ADR 0025 release acceptance is complete. Continue the
+  controlled alpha with normal approved accounts and observe real generation
+  failures, latency, memory, disk, and provider behavior across the expanded
+  parameter surface. The restored account-deletion/content-safety work remains
+  local and undeployed.
+- Verification: the isolated source passed `npm run check:local` with lint,
+  typecheck, the Vinext production build, and 187 tests (183 pass, four opt-in
+  integrations skipped). CI run 37 passed source, dependency, runtime, image,
+  and published-image scans; the raw artifact-security record passed all five
+  repository importer checks. Production preflight, a fresh encrypted backup,
+  migration-0012 idempotency, old-route job/attempt/outbox and Valkey drain,
+  green Web/Worker health, one-Worker handoff, Nginx switch/rollback rehearsal,
+  and independent public checks passed. The public results are root `200`,
+  readiness `200`, login `302`, unauthenticated generation `401`, and HTTP to
+  HTTPS `301`; both green processes have zero restarts, available memory was
+  about 2.39 GiB, and root disk use was 35%. After explicit operator approval,
+  exactly one live `4:5` / `2K` request returned `202` and succeeded through
+  route version `o1key-gemini-3.1-flash-image-c-sp-v2`. The asset is private and
+  accepted at `1856 x 2304`; its 2,021,800-byte signed R2 read matched the stored
+  byte count and SHA-256, and two independent asset-list reads found the same
+  durable job. Available credit moved from 100 to 90, reserved credit returned
+  to zero, and the ledger contains one `reserve:-10` plus one `settle:-10`.
+  Jobs, attempts, pending outbox rows, and both Valkey queues returned to zero.
+  The short-lived production smoke session was revoked. Root-only aggregate
+  evidence is `live-ratio-smoke-94cecb0.json` with SHA-256
+  `9fd82dcb18afa86efe6dae4e2819ab38061c98d11b4e2260e1100bfcd6b9c27e`.
+- Next action: let approved alpha users exercise the expanded selector in the
+  normal browser flow and use collected production observations to choose the
+  next product or capacity change. Keep checkout disabled, retain the current
+  rollback release, and do not deploy the preserved migration-0020 work as part
+  of this completed slice.
+- Historical M8 checkpoint at revision `30c7a73`: M7 was completed; the Alibaba
+  Cloud Hong Kong host,
   test-data dependency layer, private R2 configuration, Cloudflare Origin CA,
   host-specific Full (strict) rule, reviewed Nginx origin, Authing callbacks,
   all four application secrets, and ADR 0013's reader-group correction are
@@ -89,8 +106,23 @@
   immutable artifact-security record has passed the repository importer for
   digest `195db77d74e1`. External monitoring activation and delivery remain
   required handoff evidence rather than a repository implementation claim.
-- Historical objective at revision `30c7a73`: continue M8 reviewed seed-production readiness in
-  Alibaba Cloud Hong Kong. Phase 1 is complete: registration/login has no
+- Historical controlled-alpha objective at revision `30c7a73`: ADR 0024's
+  `controlled-alpha-v1` rollout was publicly open
+  on the exact Hong Kong production candidate after the operator's separate
+  `publicTrafficOpen` approval. The first post-open product slice is ADR 0025:
+  open Nano Banana 2's existing 14 aspect ratios and `1K` / `2K` / `4K` while
+  keeping one output. It is implemented and verified locally but is not yet in
+  the immutable production image. C6-3A through C6-3D and C7 pass. Public root and
+  readiness return HTTP 200, the login entry returns 302, unauthenticated
+  generation returns 401 without a provider request, and three initial
+  observation samples show healthy zero-restart Web/Worker processes, exactly
+  one Worker, no active or failed generation, no 5xx or Nginx error, active
+  backup protection, and safe memory/disk headroom. The next release task is to
+  isolate ADR 0025 from the preserved undeployed migration-0020 work, publish an
+  immutable candidate, prove zero active old-route attempts, and promote it
+  without weakening the controlled-alpha gate. The full
+  seed-production gate remains blocked and is not renamed or counted as passed.
+  Phase 1 is complete: registration/login has no
   numeric cap, every new owner starts pending with the existing 100 welcome
   credits, only site-owner approval enables product use, routine review and
   additional test-credit grants belong in a site-owner-only web page, and all
@@ -290,14 +322,414 @@
   uses compatible date/time style options and adds a regression test; the full
   local gate passes 186 tests with 182 passing and four opt-in integrations
   skipped. This is a defect correction, not a changed product decision, so no
-  ADR changes. The next action is to publish and independently import a new
-  immutable candidate before opening a new reviewed C5 window; no old C5 health
-  or artifact evidence may be reused. Public traffic remains unapproved.
-  Collect the security/privacy/abuse,
-  recovery/rollback, candidate-health, incident-ownership, and delegated
-  monitoring evidence before admitting any seed user. Customer checkout,
-  domestic Alipay, and the applicable ICP/domain gate remain planned in M9.
-  Full-byte real-carrier throughput remains an accepted operator deferral.
+  ADR changes. Revision `30c7a73ddb63f94f67a67b38a059d04c091040ba`
+  subsequently passed CI Run 36 and published immutable image digest
+  `1b0308cca64ecd0698fd9557e81c82989a3cd1f035218e869db554a09e9d5662`.
+  The 1,104-byte raw artifact-security file has byte SHA-256
+  `4ff15b1959e6a472634f5ae11624b1a4621c0e4a953db70b9d4d8f0db64accc3`;
+  all five importer checks pass for artifact ID `9985740276`. The stopped host
+  replacement prestage is now complete. The production source and release
+  pointer bind exact revision `30c7a73` and digest `1b0308cca64e`; locked
+  production dependencies load, the corrected timestamp formatter is present,
+  and fresh release-bound production preflight and secret-access review pass.
+  The failed `613e16b` source is retained separately. Independent verification
+  before restart preserved one active seed `site_owner`, 100/0 credits, 12
+  migrations, zero generation jobs/outbox and zero Valkey keys; both backup
+  timers remained active and public maintenance stayed 503. The operator then
+  approved C5 restart stage 1. Without executing a migration command, the exact
+  candidate's blue Web was recreated and is healthy on loopback, and its private
+  `/admin/users` route returns HTTP 200. The operator then completed a private,
+  standard-port Chrome login and confirmed that the corrected populated account
+  page renders the initialized site-owner record normally. Root-only evidence
+  `c5-private-browser-confirmation-30c7a73.json` records that result in the
+  approved window. An append-only correction artifact,
+  `c5-private-browser-confirmation-attempt-counts-correction-30c7a73.json`,
+  corrects only the summary's consumed-login-attempt count from the total three
+  attempts to two consumed and one unconsumed attempt; independent verification
+  passes and the operational result is unchanged. Two active sessions remain;
+  the sole active seed `site_owner`, 100/0 credits, empty generation/queue state,
+  stopped Worker/green, and public maintenance 503 were unchanged. The operator
+  then separately approved one exact blue Worker. The first precheck stopped
+  before startup because it used obsolete backup-timer unit names; after binding
+  the check to the two actual active production PostgreSQL timers, exact Worker
+  startup passed. Root-only `c5-blue-worker-start-30c7a73.json` and
+  `c5-blue-worker-independent-30c7a73.json` prove two delayed healthy samples,
+  zero restarts, loopback-only health, one Worker, all database/queue/R2/provider
+  dependency checks, unchanged production state, zero queue keys, active backup
+  timers, 33% disk use, and about 2.41 GiB available memory. No migration or
+  synthetic generation ran; green remains stopped and public maintenance remains
+  503. C5 is complete for the corrected candidate. The separately approved C6-1
+  audit now passes runtime security and the privacy data map, including hardened
+  containers, private state/R2, OIDC/CSRF/site-owner boundaries, live log
+  redaction against actual identifiers and secrets, and the complete production-
+  data/external-processor inventory. Root-only
+  `c6-security-privacy-abuse-audit-30c7a73.json` and
+  `c6-security-privacy-abuse-independent-30c7a73.json` contain no personal
+  identifier or credential and prove that business data was not mutated. The
+  readiness manifest now marks `privacy-data-map` pass. The operator has since
+  accepted ADR 0022's production retention/deletion policy: transient login
+  attempts, terminal sessions, drafts, references, active-account content,
+  verified account deletion, 12-month anonymized audit retention, Authing, R2,
+  provider, and backup-replay boundaries are now explicit. The operator then
+  selected the existing site-owner-only `/admin/users` surface as the first
+  verified-request entry, with two distinct confirmations and server-side
+  rejection of the acting site owner; no member self-service route is added.
+  Holder verification is now accepted as a request from the current registered
+  email plus a site-owner reply and explicit same-address confirmation within
+  24 hours, retaining only timestamps and a mail reference rather than content.
+  A provider-submitted generation is not cancelled, resubmitted, or replaced by
+  fallback: the Worker only completes its existing poll/ingest and exactly-once
+  credit closure, hides any late Asset, and adds it to the deletion set before
+  content erasure. A queued job that has not crossed that guard is atomically
+  cancelled and releases credit in PostgreSQL; its outbox becomes ineligible,
+  while any stale Valkey delivery observes terminal state and calls no provider.
+  The final browser submit is now the accepted irreversible boundary: before it,
+  either confirmation can be cancelled with no GoodGood mutation; after request
+  creation, no route, lifecycle transition, operator action, retry, or incident
+  process withdraws the request or reconstructs access, sessions, work, credit,
+  content, or deletion-register state.
+  Local C6-2A is now implemented by additive migration
+  `0013_m8_account_deletion_requests.sql`, a POST-only site-owner API, and one
+  PostgreSQL transaction that records verification/audit evidence, suspends the
+  target, revokes sessions, cancels guard-unsubmitted jobs, releases their
+  reservations exactly once, and invalidates their outbox rows. Owner/job locks
+  close races with login, generation/retry, and the provider-submission guard;
+  restore and test-credit actions fail closed after request creation. A real
+  local PostgreSQL run applies all thirteen migrations twice and proves one
+  unsubmitted cancellation/release while preserving one guard-crossed job. No
+  O1Key, Authing, R2, or production endpoint was called.
+  Local C6-2B now implements the `/admin/users` registered-email evidence form,
+  two independent confirmation screens, safe retry with one preserved
+  idempotency key, and a durable read-only request state/deadline on account
+  rows. The dashboard projection does not return the verified email or mail
+  reference. The real PostgreSQL path also proves that projection after request
+  creation. Local C6-2C adds migration 0014's non-content register and leased
+  `wait_for_submitted_jobs` step. A bounded local pass defers while any
+  guard-crossed job is non-terminal and completes only that wait step after the
+  job becomes terminal; it leaves the request/register processing and deletes
+  nothing. The real PostgreSQL path now applies all nineteen migrations twice and
+  proves both outcomes. Local C6-2D now adds a deletion-inventory preview that
+  runs only after that step completes, reads one repeatable-read/read-only
+  snapshot, returns six owner-scoped creative/private-object counts plus a
+  versioned SHA-256, and hides every request/account/row identifier and object
+  key. The digest also binds generation-batch IDs. Real PostgreSQL proves two
+  identical previews with exactly two jobs and no mutation; no R2/Authing client,
+  route, runtime, timer, migration, or production change was added. The readiness
+  item remains blocked until the remaining destructive downstream lifecycle,
+  cleanup scheduling/alerting, provider review,
+  deletion-register export/backup replay, and production evidence exist.
+  `moderation-abuse-controls` also remains blocked. ADR 0023 and local C6-2P now
+  define and implement the policy/report/quarantine/review/removal boundary,
+  but the exact-candidate production rehearsal and evidence are absent. The seed
+  gate remains closed. Local C6-2E now adds migrations 0015-0016, a generated-asset deletion
+  marker, a leased `delete_private_objects` step, and bounded retry evidence.
+  Each pass recomputes/binds the inventory, deletes at most 100 distinct bytes
+  before marking their rows, excludes deletion owners from ordinary reference
+  cleanup, and hides deleted assets from presentation. Local C6-2F now adds
+  migration 0017 and a leased creative-record step after object completion. It
+  binds a fresh zero-object inventory, rejects cross-owner graph edges, removes
+  the full owner creative graph in one foreign-key-ordered transaction, and
+  retains financial/audit evidence through a narrowly guarded ledger-job link
+  removal. New creative writes serialize with the request, and unexpired signed
+  upload intents keep their object evidence until expiry plus a clock-skew grace. Real local PostgreSQL
+  and disposable RustFS pass failure/rollback/retry, exact 404, zero creative
+  inventory, retained evidence, and repeat-no-op paths. Local C6-2G now adds
+  migration 0018 and a leased `delete_external_identities` step after creative
+  completion. Its provider-neutral service requires an injected adapter, records
+  disable before delete, keeps each local mapping through external success, and
+  exposes only aggregate retry evidence. The disposable fake identity directory
+  proves disable-success/delete-failure recovery, delete-only retry, local mapping
+  retention, completion, and repeat no-op. Local C6-2H adds migration 0019 and
+  the leased `anonymize_goodgood_account` step after external completion. One
+  PostgreSQL transaction requires zero creative rows/reserved credit, expires
+  the remaining available balance through an immutable ledger entry, closes the
+  account, removes revoked sessions and externally deleted local mappings,
+  replaces the email with a request-scoped pseudonym, scrubs the mail reference,
+  and completes the step/request/register with exact 12-month retention. Existing
+  ledger and administrative evidence remains unchanged. Real disposable
+  PostgreSQL/RustFS verification applies all 19 migrations twice and proves a
+  redacted rollback/retry, 90-credit expiry, final absence, fresh same-email
+  pending reprovisioning, and repeat no-op. Local C6-2I reviews the current
+  official Authing Management API and adds an opt-in server-only adapter behind
+  the unchanged injected interface. It binds the exact OIDC issuer and verified
+  `sub`, uses only `user_id`, queries before mutation, requests `Suspended`
+  before one-user batch deletion, accepts only explicit matching success, and
+  normalizes only documented user-not-found `apiCode` 2004 as idempotent
+  absence. The published `authing-node-sdk@4.0.2` passes against a disposable
+  loopback HTTP endpoint with fake AK/SK; exact paths/bodies, signature-header
+  creation, issuer/subject mismatch, provider failures, redaction, and secure
+  configuration are covered. Required overrides pin its vulnerable transitive
+  `crypto-js` and `ws` ranges to audited versions.
+  Local C6-2J now composes the five existing leased steps into one import-only,
+  bounded server-side cycle. It observes aggregate lifecycle state before and
+  after the fixed-order pass, creates a stable worker namespace, preserves all
+  existing batch/lease/retry bounds, requires an explicitly injected identity
+  adapter, and allowlists returned evidence to non-negative aggregate counters.
+  Initial observation failure or an unexpected phase exception aborts later
+  mutation; handled failures remain retryable and produce fixed redacted alert
+  codes for failure, lease loss, and deadline overdue. The synchronized change
+  passes `npm run check:local`: lint, typecheck, Vinext production build, and 229
+  tests with 224 passing and five opt-in integrations skipped. The C6-2I
+  official-registry production-dependency audit remains zero known
+  vulnerabilities. No real Authing tenant/credential, production R2/host,
+  route, runtime, timer, deployment, commit, or push occurred. This implements
+  ADR 0022 rather than changing a confirmed product decision. Local C6-2K now
+  adds a strict version-1 non-content register export and serializable isolated-
+  restore replay. The canonical artifact contains only register UUID/state/time
+  fields, rejects unknown/duplicate/future/tampered data, and replay requires an
+  independently supplied matching SHA-256. Completed records transactionally
+  remove restored local identity, session, creative, and credit state while
+  recreating terminal step/register evidence; processing records restore
+  suspension, revoke sessions, retain content for the ordinary lifecycle, and
+  force recovery `ready: false`. A real two-database local PostgreSQL drill
+  proves completed and processing outcomes plus repeat idempotency, without R2,
+  Authing, production backup, or Hong Kong access. The synchronized C6-2K
+  change passes `npm run check:local`: lint, typecheck, Vinext production build,
+  and 235 tests with 229 passing and six opt-in integrations skipped. The
+  separately enabled C6-2K PostgreSQL integration also passes all six tests.
+  Local C6-2L now packages each production database dump, deletion-register
+  export, and strict manifest into one root-only encrypted Restic recovery
+  point. The dump precedes the register export; the manifest binds their exact
+  names, sizes, hashes, timestamps, aggregate register evidence, and immutable
+  application image. Restore selection requires all five recovery tags,
+  exactly three same-stem paths, a snapshot and manifest no older than one hour,
+  root-owned non-symlink `0600` files, an already-local `--pull never` image,
+  and trusted digest equality. PostgreSQL remains network-none/tmpfs; replay
+  shares only its isolated network namespace and any processing tombstone keeps
+  `recovery_ready` false. The backup cleanup now preserves pre-existing
+  collision targets and removes only files created by its own invocation. The
+  packaged runtime build and shell syntax checks pass. The synchronized
+  `npm run check:local` passes lint, typecheck, the Vinext production build, and
+  240 tests with 234 passing and six opt-in integrations skipped; no Hong Kong
+  host, R2 repository, installed timer/script, credential, provider, or
+  production data was accessed or
+  changed. This implements ADR 0022 without changing a confirmed decision.
+  Local C6-2M now adds that production-only one-shot cycle source. Its dedicated
+  loader rejects inline or alternate-path credentials and accepts only the
+  production PostgreSQL target, exact OIDC issuer, private `goodgood` R2
+  endpoint, and four reviewed file mounts. A two-connection PostgreSQL pool and
+  one R2 client are verified before the Authing adapter is constructed; Redis,
+  O1Key, the OIDC App Secret, and browser routes are absent. One invocation uses
+  fixed C6-2J batch/lease/retry bounds, allowlists the aggregate result, closes
+  resources, and maps `ok/attention/aborted` to `0/2/3`, with fixed-code
+  bootstrap failure at `1`. The separate no-port Compose role is read-only,
+  `pull_policy: never`, and CPU/memory/PID bounded. A root wrapper validates the
+  immutable local image plus exact `0600` configuration and future `0640`
+  secret files, then takes a nonblocking host lock. Inactive systemd source
+  requests a four-minute oneshot every five minutes; failed status and fixed
+  journal JSON are the vendor-neutral monitoring handoff. Targeted C6-2M tests
+  pass 7/7, the runtime bundle builds, and shell syntax passes. The synchronized
+  `npm run check:local` passes lint, typecheck, the Vinext production build, and
+  247 tests with 241 passing and six opt-in integrations skipped. No credential
+  value was created or selected, no unit/script/image was installed, and no
+  Authing, R2, PostgreSQL, Hong Kong host, or production data was accessed.
+  This implements ADR 0022 without changing a confirmed decision. C6-2N has
+  now completed the actual Authing privilege review against one separately
+  approved, non-owner internal administrator. The custom role and its policy
+  contain only `get-user`, `update-user`, and `delete-users-batch`, but Authing
+  cannot issue that user a separately identifiable service credential. Live
+  calls proved that `type: userpool` returns an activated credential whose
+  Access Key ID is the global user-pool ID, while the console's
+  `type: tenant-co-admin` returns `422` / API code `4004` for this internal
+  administrator. The official OpenAPI simultaneously labels fine-grained
+  collaborator AK/SK as under development. The disposable identity mutation
+  proof therefore stopped before creating its target; no production credential
+  was installed and the deletion timer remains disabled. This is a named
+  external Authing capability blocker, not a passed least-privilege proof. Do
+  not substitute the globally powerful user-pool secret. Resolution requires
+  Authing to supply a separately revocable collaborator credential, an explicit
+  operator decision accepting and mitigating the global-key risk, or a reviewed
+  identity-provider boundary change. C6-2O has now completed the read-only
+  O1Key provider-retention contract review. The current public API documentation
+  proves only that temporary upload URLs become unreadable after 24 hours and
+  that generated image URLs are retained for 24 hours; it documents no DELETE
+  route for asynchronous tasks, and the current public status endpoint reports
+  both privacy policy and user agreement disabled. It does not state when
+  prompt, reference, task/result, log, backup, cache, or upstream-processor
+  copies are erased. URL expiry therefore cannot serve as provider-erasure
+  evidence. This is a named external O1Key contract blocker pending written
+  retention/deletion terms for each data class or a reviewed provider-boundary
+  change. No credential, task, generation, or configuration was used. The
+  operator then accepted ADR 0023's lightweight seed content-safety boundary.
+  Local C6-2P is now implemented by migration
+  `0020_m8_seed_content_safety.sql`, a canonical hash-bound `seed-v1` policy,
+  immutable owner acceptance, and owner-locked enforcement before reference
+  upload, generation, or retry. Technical validation now produces
+  `not_reviewed`, while ordinary generation/project/asset presentation exposes
+  only `not_reviewed | accepted`. An owner-only fixed-category report stores no
+  prompt, bytes, object key, or free-form text and atomically quarantines the
+  generated Asset. `/admin/users` receives a bounded metadata queue, an exact
+  POST-only audited private preview, reasoned restore, byte-first permanent
+  removal, and the existing independent account-suspension action. Resolution
+  reports and append-only moderation actions retain 12-month evidence. Upstream
+  default safety and normalized `MODEL_REJECTED` remain; no local keyword or
+  semantic classifier, third-party processor, account state, queue limit, or
+  generation-concurrency limit was added. Readiness schema version 3 now
+  requires objective booleans for every accepted control and rejects customer
+  content in evidence. The synchronized checkpoint passes `git diff --check`
+  and `npm run check:local`: lint, typecheck, the Vinext production build, and
+  257 tests with 251 passing and six opt-in integrations skipped. No credential,
+  production host, database, object, account, provider task, deployment,
+  commit, or public traffic was accessed or changed.
+
+  ADR 0024 supersedes C6-2Q only as the immediate next action. The local
+  migration-0020 candidate, content-report rehearsal, automated deletion,
+  Authing management credential, provider erasure terms, complete monitoring,
+  dual-owner incident model, and full blue/green rollback rehearsal are
+  deferred to the full seed-production track; they remain unfinished. The new
+  local `production:alpha-gate` is intentionally distinct from
+  `production:seed-gate`. It requires exact-release artifact/preflight evidence
+  plus the four controlled-alpha boundaries and cannot make the full seed gate
+  pass. The next smallest live slice is the read-only portion of C6-3A: bind a
+  fresh baseline to the currently deployed revision/digest/migration, verify
+  public maintenance and private Web/Worker health/state without mutation, and
+  leave every remaining evidence item pending. Customer checkout, domestic
+  Alipay, and the applicable ICP/domain gate remain planned in M9.
+
+  C6-3A is complete. At `2026-09-07T09:59:53Z`, a fresh read-only host check
+  matched full revision `30c7a73ddb63f94f67a67b38a059d04c091040ba`, immutable
+  image digest
+  `1b0308cca64ecd0698fd9557e81c82989a3cd1f035218e869db554a09e9d5662`,
+  migration `0012_m8_remove_legacy_local_fixtures.sql`, and runtime-config hash
+  `05fc1ed4bf1848f6a2611fd63a29e1c0de168aaf914743507f70e7434aac158a`.
+  Public root remained 503. Blue Web/Worker and PostgreSQL/Valkey were healthy;
+  Web/Worker were read-only, had zero restarts, and green was absent. Private
+  health returned 200, the database contained exactly 12 migrations ending at
+  0012, Valkey had zero keys, and there was one active site owner with no
+  generation rows. Runtime configuration still selected OIDC with local auth
+  disabled, private R2 verification, O1Key, and disabled fake payment. Host
+  available memory was about 2473 MiB and root disk use 33%. Exact candidate
+  artifact evidence from CI run 36 remains inside ADR 0024's seven-day lifetime
+  and its preflight evidence remains inside the 72-hour lifetime; protected
+  release/runtime identity was unchanged. No host file, database row, queue,
+  object, identity, provider task, deployment, migration, or traffic state was
+  changed. At that C6-3A checkpoint the controlled-alpha gate intentionally
+  remained closed because later evidence was pending. The synchronized local gate
+  passes lint, typecheck, the Vinext production build, and 260 tests with 254
+  passing and six opt-in integrations skipped. The runtime bundle build and
+  `git diff --check` also pass.
+
+  C6-3B is complete. One non-owner member entered production through the
+  private maintenance-bypass path, received the one-time 100-credit welcome
+  grant, remained unable to generate while pending, and was then activated by
+  the site owner with one audited 25-credit test grant and no payment order.
+  The member uploaded one disposable reference and completed exactly one real
+  `nano-banana-2` 1K generation. The database records one successful job, one
+  private generated asset, a 10-credit reserve and settlement, and final
+  balances of 115 available / 0 reserved. The site-owner asset API returned no
+  member asset, the generated object was not anonymously readable, and the
+  member confirmed the image rendered both before and after logout/login.
+  Public root remained maintenance-closed with HTTP 503 and the exact release,
+  runtime configuration, and healthy zero-restart Web/Worker identity remained
+  unchanged. Immutable root-only evidence is
+  `c6-3b-member-journey-30c7a73.json`, checked at
+  `2026-09-07T11:26:05Z`, mode `0600`, SHA-256
+  `f2f97ea3098fc5a18f6fa9be8ee1d5e813af955293378fcc67d3f4cd11f76a89`.
+  The evidence contains only assertions and aggregate state: no email, prompt,
+  media bytes, object key, signed URL, cookie, identifier, or credential. The
+  selected member is retained as the first admitted tester rather than
+  suspended. No duplicate provider submission was made.
+
+  C6-3C is complete. The exercise first revoked the three active private test
+  sessions (two site-owner sessions and one member session) after confirming
+  zero active generation jobs; this only signs those browsers out and does not
+  remove account, credit, generation, or asset state. The exact deployed
+  migration-0012 backup tool created encrypted off-host snapshot
+  `12a27cd4195333f9ba4005ce55014148a043ebabfeefa3c343b6d470b7d9647e`
+  at `2026-09-07T11:30:06Z`, with archive SHA-256
+  `a1abc88567769c9b8e04ccc2b1cf4d586c627ceb9a09fac17033c5e1fb9d63cb`.
+  The accepted 14 daily / 8 weekly / 12 monthly retention action and full
+  repository read verification passed. At evidence capture the recovery point
+  was three minutes old. Restoring the exact off-host snapshot into a
+  no-network, tmpfs-only PostgreSQL container took 11 seconds and matched all
+  22 public tables, 52 aggregate rows, and 12 migrations; the isolated
+  container was then removed. Idempotent maintenance re-entry passed at the
+  origin and public root remained HTTP 503. The private generated R2 object
+  remained anonymously unreadable (HTTP 400), with no object key or content
+  retained. No production data was copied to the workstation. Immutable
+  root-only evidence is `c6-3c-minimum-recovery-30c7a73.json`, checked at
+  `2026-09-07T11:33:16Z`, mode `0600`, SHA-256
+  `da776ea37353f44a63aa48ec3ebc364ddce86df37bcce7f7d1745dbc0d130fa8`.
+  The deployed candidate intentionally retains its reviewed single-archive
+  recovery format; the local migration-0020 three-file deletion-register
+  format was not deployed and remains part of the full seed track.
+
+  C6-3D and the complete C6 controlled-alpha gate are now complete. Public
+  maintenance returned HTTP 503 while the exact blue Web and one Worker were
+  healthy with zero restarts. `MemAvailable` was 2417 MiB, root-disk use was
+  33%, the production backup timer and host CloudMonitor agent were active, and
+  the newest encrypted snapshot was 798 seconds old. A structured, non-billable,
+  no-content generation/provider failure test signal was written and observed
+  in the host journal, then delivered to the site owner through the current
+  direct operator conversation; no provider request was made. The audited
+  `/admin/users` suspension and restoration actions both passed against the
+  selected member, whose final status is active; the resulting operator session
+  was revoked and no active session or generation job remains. The root-only
+  owner handoff documents the direct tester contact alias, suspension path, and
+  migration-0012 exact-target manual removal procedure, including that external
+  identity, O1Key, immediate backup, and complete erasure are not claimed.
+  Complex dashboards and dual operators remain intentionally unnecessary for
+  controlled alpha and remain unfinished for the full seed gate.
+
+  Root-only mode-`0600` evidence includes
+  `c6-3a-boundary-30c7a73.json` (SHA-256
+  `daf70189d567f5131aad6a54fb85b5acefdf6131507cc2905044add64ab4087a`),
+  `c6-3d-owner-handoff-30c7a73.json` (SHA-256
+  `6d8318d706fa6695ac0b6486768b6b52ee1551d5fe89fe4c9995934a70218d52`),
+  and `c6-3d-operations-30c7a73.json` (SHA-256
+  `48ea7220cd3df2eb5744498e34f0e18b9a16b128a01e3504f0e929b77e0af8ed`).
+  The exact schema-v3 manifest
+  `controlled-alpha-evidence-30c7a73.json` has SHA-256
+  `156dfb9153f3808aca155fb4064c73661cd1e10c30b4f5bbec7841ed78ac2815`.
+  Running `npm run production:alpha-gate -- --evidence-file` against those exact
+  bytes returned `ok: true`: schema, release identity, artifact security,
+  preflight, boundary, member journey, recovery, and operations all pass. The
+  immutable gate report `controlled-alpha-gate-30c7a73.json`, checked at
+  `2026-09-07T11:48:39Z`, has SHA-256
+  `56f9ff5a2e9739500d04df02740f85b2c6c4ef866ed01fa06f386bbb7b8edb26`
+  and explicitly records `publicTrafficOpened: false` and
+  `fullSeedGateClaimed: false`. No customer content, email, prompt, object key,
+  signed URL, cookie, or credential is retained in this evidence.
+
+  C7 is complete. The operator separately approved `publicTrafficOpen`; at
+  `2026-09-07T12:58:36Z` the exact root-owned maintenance marker was removed
+  under an exclusive lock after a fresh read-only gate, release, database,
+  health, resource, and timer precheck. Nginx configuration validation passed
+  before and after removal, reload succeeded, and the rollback handler was not
+  needed. The public Cloudflare path returns HTTP 200 for the root and readiness,
+  HTTP 302 for the Authing login entry, and HTTP 301 for plain HTTP. TLS
+  verification passes from the operator workstation. An unauthenticated empty
+  generation request returned HTTP 401, left active jobs at zero, and made no
+  billable provider request. The pending user default remains enforced in the
+  production schema.
+
+  Three aggregate-only observations from `2026-09-07T12:59:53Z` through
+  `2026-09-07T13:00:55Z` all returned public root/readiness HTTP 200. Web and the
+  sole Worker stayed healthy with zero restarts; no Web 5xx, Worker failure,
+  Nginx error, active job, or failed job appeared. Available memory remained
+  between 2398 and 2434 MiB, root disk remained 33%, and the backup timer stayed
+  active. Root-only mode-`0600` evidence is
+  `c7-public-open-30c7a73.json` (SHA-256
+  `c0de84becac438abd76f822039fe334dddaf88afd8dcda6283203e0d7cbecb05`)
+  and `c7-observation-30c7a73.json` (SHA-256
+  `8d322723fbdc4d330623b61049440afbf756f26572719e8d25f901945451147d`).
+  Neither file contains customer content or credentials, and neither claims the
+  deferred full seed gate. The synchronized handoff passes
+  `npm run check:local`: lint, typecheck, the Vinext production build, and 260
+  tests with 254 passing and six opt-in integrations skipped.
+
+  After C7, ADR 0025 opens the full product-defined Nano Banana 2 parameter
+  matrix: 14 aspect ratios by `1K` / `2K` / `4K`, still one output and 10 credits.
+  The browser no longer rejects non-default selections; the generation API and
+  O1Key adapter validate the same allowlists, retain the durable selection, and
+  submit it unchanged. The provider route advances to
+  `o1key-gemini-3.1-flash-image-c-sp-v2`. Unknown ratio, resolution, model, or
+  count values still fail before a provider POST. The fake provider boundary
+  exhaustively covers all 42 combinations. On 2026-09-07,
+  `npm run check:local` passed lint, typecheck, the Vinext production build, and
+  261 tests with 255 passing and six opt-in integrations skipped. This local
+  checkpoint changes no production process, traffic, database row, object,
+  credential, provider task, or credit balance.
 
 ## Purpose and update contract
 
@@ -435,19 +867,94 @@ requirements are confirmed.
    the production database and healthy private dependencies, kept green absent,
    and left public maintenance at 503. The local forward fix now uses
    `dateStyle` plus `timeStyle`; its regression and complete 186-test local gate
-   pass. A new immutable CI candidate and new stage approval are required before
-   C5 can restart. Public traffic remains separately unapproved.
-5. **Exact-candidate rehearsal — pending replacement candidate.** Publish and
-   independently import the corrected exact candidate, then repeat C5 without
-   reusing the failed candidate's health evidence. Pass security/privacy/retention and
-   abuse review, preflight, migration, candidate health/state invariants,
-   public synthetic checks, restore drill, alert delivery, and rollback without
-   schema downgrade.
+   pass. Corrected revision `30c7a73` and digest `1b0308cca64e` pass CI Run 36
+   and independent raw-artifact import. Its stopped host replacement prestage,
+   fresh release-bound preflight, and fresh secret-access review now also pass.
+   The retained production account/credit state and active backup timers were
+   unchanged after prestage, no application had started, no migration reran,
+   and maintenance remained 503. The operator then approved C5 restart stage 1.
+   The 12 recorded versions and checksums match the candidate without executing
+   a migration command. Exact blue Web is now healthy and loopback-only; its
+   private `/admin/users` route returns HTTP 200, while Worker and green remain
+   stopped and public maintenance remains 503. The operator's standard-port
+   private Chrome login and populated account-page check now pass, including
+   visibility of the initialized site-owner record. Root-only browser evidence,
+   its append-only attempt-count correction, and an independent server-side
+   verification all pass. The separately approved exact blue Worker then starts
+   healthy with no restarts; two delayed samples prove all dependency checks and
+   production state invariants while green remains absent and maintenance stays
+   503. Public traffic remains separately unapproved.
+5. **Exact-candidate rehearsal — corrected Web, populated browser surface, and
+   one Worker passed; C6-1 audited with remaining implementation/policy gates.**
+   Runtime security and the privacy data map pass. ADR 0022 now accepts the
+   retention/deletion lifetimes and outcomes. The request begins on
+   `/admin/users`, uses two confirmations, rejects site-owner self-targets, and
+   adds no member route. Verification uses a registered-email request and
+   same-address confirmation reply within 24 hours without retaining message
+   content. Provider-submitted jobs only finish existing polling/ingest and
+   credit closure; they are not cancelled, resubmitted, or sent through fallback,
+   and any late private Asset joins the deletion set. Queued unsubmitted jobs are
+   cancelled with exactly-once credit release and outbox invalidation in
+   PostgreSQL; stale Valkey delivery is a no-provider terminal no-op. Readiness
+   requires the final browser submit to be irreversible: pre-submit cancellation
+   is mutation-free, while no post-creation withdrawal or restoration path exists.
+   Mistakes create incident evidence without reversing deletion. This phase
+   now has a local C6-2A migration, POST API, atomic access/session/eligible-job/
+   credit/outbox transaction, and owner/job submission-race guards. Local C6-2B
+   adds the verified-email evidence form, two-step irreversible UI, preserved
+   retry idempotency, and read-only request state/deadline projection. Local
+   C6-2C adds the non-content register plus the leased submitted-job wait step,
+   without a destructive adapter or timer. Local C6-2D adds the redacted,
+   read-only creative/private-object inventory and stable digest without a new
+   route, migration, runtime, timer, or external dependency. Local C6-2E adds
+   bounded leased private-object deletion with fresh digest binding and
+   aggregate retry evidence, verified only against disposable local RustFS.
+   Local C6-2F now adds transactional creative-row deletion after private-object
+   completion while retaining financial/audit evidence. It remains blocked on
+   owner/Authing deletion, provider review,
+   register export/backup replay,
+   cleanup scheduling/alerting, and production evidence.
+   ADR 0023 and local C6-2P now implement the moderation/abuse policy,
+   acceptance, report, quarantine, audited review, restore/removal, and evidence
+   contract without a classifier or new capacity limit. That item remains
+   blocked only until the exact candidate's maintenance-closed production
+   rehearsal passes. Do
+   not reuse the failed candidate's health evidence. Then pass candidate health/
+   state invariants, public
+   synthetic checks, restore drill, alert delivery, and rollback without schema
+   downgrade.
 6. **Reviewed seed rollout — pending.** Admit accounts only through site-owner
-   review, enforce credit and rate limits, observe the agreed signals and stop
+   review, enforce credit accounting and host resource protection, observe the agreed signals and stop
    conditions, and keep checkout disabled. Registration has no numeric cap.
 
-M9 begins only after a separate operator decision to resume payment work.
+The preceding phase-5/phase-6 text is retained as the full seed-production
+track. ADR 0024 changes the immediate execution order to this shorter active
+track:
+
+1. **C6-3A - controlled-alpha decision, contract, and baseline (completed).**
+   Bind artifact/preflight and maintenance-closed runtime evidence to the exact
+   deployed candidate. Do not deploy the local migration-0020 source.
+2. **C6-3B - one controlled member journey (completed).** Pending isolation,
+   100 welcome credits, reviewed activation, audited test credit, reference
+   upload, one real generation, private read, relogin, and cross-owner denial
+   all pass with aggregate-only immutable evidence.
+3. **C6-3C - minimum recovery (completed).** A fresh encrypted off-host
+   recovery point, accepted retention, repository read verification, isolated
+   restore inside RPO/RTO, private R2 check, and immediate maintenance re-entry
+   all pass without moving production data to the workstation.
+4. **C6-3D - minimum operations handoff (completed).** Availability,
+   Web/Worker/restart, memory, disk, backup, and generation-failure signals were
+   observed; one non-billable notification reached the site owner; and the
+   manual contact, audited suspension, and exact-target removal procedures are
+   recorded. The exact controlled-alpha gate passes.
+5. **C7 - controlled-alpha rollout (completed).** Separate public-open approval
+   was recorded, maintenance was removed through the reviewed atomic ingress
+   procedure, public smoke checks passed without a billable provider request,
+   and three initial observation samples passed. Restore maintenance immediately
+   on any stop condition.
+
+Passing this active track does not pass the full seed-production gate. M9 begins
+only after a separate operator decision to resume payment work.
 
 ## Current checkpoint
 
@@ -654,11 +1161,349 @@ M9 begins only after a separate operator decision to resume payment work.
   account suite passes 11 tests and `npm run check:local` passes lint,
   typecheck, the Vinext production build, and 186 tests with 182 passing and
   four opt-in integrations skipped. No ADR changes because the product and
-  architecture decisions are unchanged. C5 is not complete. The next smallest
-  slice is to commit and publish a new immutable candidate, import its fresh
-  artifact-security evidence, and present a new exact C5 window for approval;
-  revision `613e16b` evidence cannot be reused. Public opening remains
-  unapproved.
+  architecture decisions are unchanged. C5 is not complete. Corrected revision
+  `30c7a73ddb63f94f67a67b38a059d04c091040ba` passed CI Run 36 and published
+  `ghcr.io/lizhongyi1209/goodgood@sha256:1b0308cca64ecd0698fd9557e81c82989a3cd1f035218e869db554a09e9d5662`.
+  The downloaded raw artifact is 1,104 bytes with SHA-256
+  `4ff15b1959e6a472634f5ae11624b1a4621c0e4a953db70b9d4d8f0db64accc3`;
+  all five strict importer checks pass and emit
+  `github:run:34021659198/artifact:9985740276`. The stopped replacement
+  prestage has now installed the exact clean source and release pointer without
+  starting Web/Worker or rerunning migrations. Fresh root-only evidence is
+  `prestage-30c7a73.json`, `artifact-security-import-30c7a73.json`,
+  `production-preflight-report-30c7a73.json`,
+  `secret-access-review-30c7a73.json`,
+  `production-readiness-30c7a73.json`, and
+  `replacement-prestage-completion-30c7a73.json`. Independent verification
+  confirms all three early readiness items pass, all nine later shared items
+  remain pending, the old failed source is retained, the sole active site owner
+  still has 100/0 credits, migrations remain at 12, jobs/outbox/Valkey remain
+  zero, backup timers are active, and public maintenance remains 503. The
+  operator then approved C5 restart stage 1. Root-only evidence
+  `c5-restart-precheck-30c7a73.json`,
+  `c5-restart-blue-web-30c7a73.json`,
+  `c5-private-operator-path-30c7a73.json`, and
+  `c5-restart-stage1-completion-30c7a73.json` proves exact migration versions
+  and checksums without a migration execution, one healthy loopback-only blue
+  Web, private `/admin/users` HTTP 200, unchanged account/credit/generation/
+  queue state, stopped Worker/green, and public maintenance 503. The local SSH
+  tunnel self-check passes. The operator then logged in through the standard-
+  port private Chrome path and confirmed the corrected populated account page
+  renders normally with the initialized site-owner record visible. Root-only
+  `c5-private-browser-confirmation-30c7a73.json` records the in-window result.
+  Its summary accidentally used total login attempts for the consumed count;
+  the original was preserved and append-only
+  `c5-private-browser-confirmation-attempt-counts-correction-30c7a73.json`
+  records the exact three total, two consumed, and one unconsumed counts. An
+  independent check validates both files and current state: two active sessions,
+  one active seed `site_owner`, 100/0 credits, zero jobs/outbox/Valkey keys, the
+  exact healthy Web, stopped Worker/green, and public maintenance 503. The
+  operator then separately approved one exact blue Worker. Its first precheck
+  stopped before startup because the script referred to obsolete backup-timer
+  unit names; current state remained unchanged. The corrected check binds the
+  active `goodgood-production-postgres-backup.timer` and
+  `goodgood-production-postgres-maintenance.timer`. It recreated only the blue
+  Worker from exact revision `30c7a73` and digest `1b0308cca64e`, without a
+  migration or synthetic generation. Root-only
+  `c5-blue-worker-start-30c7a73.json` and
+  `c5-blue-worker-independent-30c7a73.json` pass exact labels, read-only rootfs,
+  loopback `127.0.0.1:3101`, database/queue/R2/provider readiness, two samples
+  ten seconds apart, zero restarts, exactly one Worker, no green or staging
+  application, unchanged owner/credit/generation/payment/migration state, zero
+  Valkey keys, active backup timers, about 2.41 GiB available memory, 33% root
+  disk, and public maintenance 503. C5 is complete for the corrected candidate.
+  The operator then approved C6-1 security/privacy/abuse evidence. Two audit
+  attempts stopped before evidence or manifest writes because of verifier-only
+  UID/name and wrapped-document-text comparisons; both were corrected without a
+  service or data change. The completed audit proves non-root read-only Web/
+  Worker containers, no-new-privileges, fixed memory/PID bounds, loopback-only
+  application health, unpublished PostgreSQL/Valkey ports, separate mounted
+  secrets absent from environment/logs, OIDC Secure `__Host-` cookies, disabled
+  local auth/payment sandbox, POST/CSRF/site-owner admin enforcement, private
+  unsigned R2 access, and log redaction against the actual production account,
+  identity, database, and application-secret values without recording them. A
+  dry-run reference cleanup found zero due/staged/protected objects; fresh R2
+  inventory found zero objects/bytes. The production data map covers identity/
+  session, creative content, credit/administration, operational logs, Authing,
+  O1Key, private R2, and encrypted Restic backup boundaries. Root-only
+  `c6-security-privacy-abuse-audit-30c7a73.json` records security and
+  `privacy-data-map` as pass. At audit time it kept
+  `retention-deletion-policy` blocked on unapproved data lifetimes, deletion
+  handling, backup propagation, and absent cleanup scheduling, and kept
+  `moderation-abuse-controls` blocked on the
+  missing moderation policy and operator response/removal runbook. The existing
+  technical admission, credit, upload, provider-rejection, suspension, and
+  500-MiB/80%-disk controls pass but are not mislabeled as the missing policy.
+  `production-readiness-pre-c6-1-30c7a73.json` preserves the prior manifest;
+  only the three reviewed entries changed. Independent root-only
+  `c6-security-privacy-abuse-independent-30c7a73.json` passes and
+  `seed-gate-post-c6-1-30c7a73.json` proves the seed gate remains closed. No
+  business data, migration, generation, or public traffic changed. The
+  synchronized handoff passes `npm run check:local`: lint, typecheck, the Vinext
+  production build, and 186 tests with 182 passing and four opt-in integrations
+  skipped. The operator then accepted ADR 0022: login attempts, terminal
+  sessions, drafts, orphan references, normal creative content, verified
+  account deletion, 12-month anonymized audit retention, Authing, provider,
+  private R2, and backup-replay outcomes now have an explicit policy. This was a
+  documentation decision only: no schema, timer, service, production data,
+  Authing identity, readiness evidence, or traffic changed. The readiness item
+  remains blocked until the request surface and lifecycle are implemented and
+  production scheduling, alerting, provider review, backup replay, and first
+  execution evidence pass. The synchronized ADR/topic/plan change passes
+  `npm run check:local`: lint, typecheck, the Vinext production build, and 186
+  tests with 182 passing and four opt-in integrations skipped. The operator
+  then selected `/admin/users` as the first verified deletion-request entry.
+  The future control requires two distinct confirmations, performs no mutation
+  when cancelled, and is unavailable to the acting site owner; the backend must
+  independently reject that self-target. No member self-service route is added,
+  and site-owner deletion remains an out-of-band exact-target operation. This
+  amendment changes documentation only: the control, API, schema, and lifecycle
+  remain unimplemented and no production state or readiness evidence changed.
+  The synchronized amendment passes `npm run check:local`: lint, typecheck, the
+  Vinext production build, and 186 tests with 182 passing and four opt-in
+  integrations skipped. The operator then accepted manual account-holder
+  verification: the user requests from the current registered email, the site
+  owner replies to that address, and an explicit same-address reply must arrive
+  within 24 hours. Only request/confirmation timestamps and the mail provider
+  message/reference ID are retained; message subject/body are excluded. A
+  mismatch or expiry creates no deletion request and restarts verification.
+  This amendment changes documentation only and does not install an email
+  connector, implement a request, or change production/readiness state. The
+  synchronized decision passes `npm run check:local`: lint, typecheck, the
+  Vinext production build, and 186 tests with 182 passing and four opt-in
+  integrations skipped. The operator then accepted submitted-generation
+  finalization: request creation immediately denies login/new generation/retry;
+  an O1Key-submitted attempt is neither cancelled, resubmitted, nor sent through
+  fallback. The Worker only finishes existing bounded polling/result ingest and
+  exactly-once credit closure, keeps any late result hidden/private, and adds it
+  to the deletion set. Destructive content deletion waits for those attempts to
+  become terminal without moving the 30-day deadline. This is documentation
+  only; no job, credit, asset, code, or production state changed. The
+  synchronized decision passes `npm run check:local`: lint, typecheck, the
+  Vinext production build, and 186 tests with 182 passing and four opt-in
+  integrations skipped. The operator then accepted immediate cancellation for
+  an accepted queued job that has not crossed the persisted provider-submission
+  guard. Deletion-request creation, terminal `cancelled`, exactly-once credit
+  release, and outbox ineligibility share one PostgreSQL transaction. No
+  cross-store atomicity with Valkey is claimed: a stale at-least-once delivery
+  must re-read terminal state, make no provider request, and acknowledge the
+  item. Owner/job locking and the persisted submission guard decide the race;
+  whichever transition commits first determines whether cancellation or the
+  already-submitted finalization rule applies. This is documentation only; no
+  job, credit, queue, code, or production state changed. The synchronized
+  queued-job decision passes `npm run check:local`: lint, typecheck, the Vinext
+  production build, and 186 tests with 182 passing and four opt-in integrations
+  skipped. The operator then accepted request irreversibility: email verification
+  and both browser confirmations precede the only mutation and can be abandoned
+  without changing GoodGood state. Once the durable request commits, no browser,
+  API, lifecycle, retry, operator, or incident path withdraws it or restores the
+  account, sessions, queued work, credit, content, or deletion register. A
+  mistaken request is recorded and investigated through the separate incident
+  process while deletion continues. This is documentation only; no request,
+  account, session, job, credit, content, code, or production state changed. The
+  synchronized irreversibility decision passes `npm run check:local`: lint,
+  typecheck, the Vinext production build, and 186 tests with 182 passing and four
+  opt-in integrations skipped. The operator then approved and completed local
+  C6-2A. Additive migration `0013_m8_account_deletion_requests.sql` creates the
+  irreversible request record and explicit outbox cancellation marker without
+  changing the three-state account enum. The site-owner-only POST API validates
+  registered-email evidence within 24 hours, rejects self/site-owner targets,
+  and idempotently commits audit/request evidence, suspension, session
+  revocation, guard-unsubmitted job cancellation, exactly-once credit release,
+  and outbox invalidation in one PostgreSQL transaction. Authentication session
+  creation and generation submission now lock/recheck the owner, while the
+  provider-submission guard locks the job/attempt pair; whichever side commits
+  first deterministically selects cancellation or submitted-job preservation.
+  Existing submitted jobs are not cancelled. Restore and test-credit actions
+  fail closed after request creation. At that C6-2A checkpoint, the backend route
+  existed in both Node runtimes and no management-page delete control had been
+  added. A real local PostgreSQL
+  test applied all thirteen migrations twice and passed one queued cancellation/
+  10-credit release, one submitted-job preservation, one session revocation,
+  idempotent replay, and post-request denial of session/generation/restore/grant.
+  The synchronized implementation passes `npm run check:local`: lint, typecheck,
+  the Vinext production build, and 195 tests with 190 passing and five opt-in
+  integrations skipped.
+  It contacted no O1Key, Authing, R2, or production service. No Hong Kong
+  container, database, queue, object, secret, readiness evidence, or traffic
+  changed. The operator then approved and completed local C6-2B. `/admin/users`
+  now collects the exact registered email, opaque mail reference, request and
+  confirmation times, and reason before two independent confirmations. Closing
+  either screen performs no request. Only the final destructive button calls
+  the existing POST boundary; a failed response keeps the evidence and original
+  idempotency key for safe retry. Successful creation switches to the suspended
+  view and shows an irreversible, read-only processing state and 30-day deadline
+  without claiming that downstream data is already erased. Site-owner rows have
+  no deletion control. The account-list projection returns only request ID,
+  state, creation time, and deadline, not verification email or mail reference.
+  The updated real PostgreSQL verification passes 11/11, including a refreshed
+  request projection, without external service access. The synchronized C6-2B
+  change passes `npm run check:local`: lint, typecheck, the Vinext production
+  build, and 198 tests with 193 passing and five opt-in integrations skipped.
+  The operator then approved and completed local C6-2C. Additive migration
+  `0014_m8_account_deletion_lifecycle_foundation.sql` creates a non-content
+  deletion register with no foreign key to owner/content rows and one leased
+  `wait_for_submitted_jobs` step. New requests seed both rows inside the existing
+  irreversible transaction; migration backfill is idempotent. The bounded local
+  service claims with `FOR UPDATE SKIP LOCKED`, records only aggregate block
+  evidence, safely handles expired/lost leases, and locks every guard-crossed
+  non-terminal job before deferring or completing the step. A completed wait
+  step does not complete the deletion request/register and performs no content,
+  object, Authing, queue, credit, or account deletion. The updated real
+  PostgreSQL verification passes 15/15: a live submitted job defers, its terminal
+  transition allows the next pass to complete the wait step, and the owner plus
+  both jobs remain present. The synchronized C6-2C change passes
+  `npm run check:local`: lint, typecheck, the Vinext production build, and 202
+  tests with 197 passing and five opt-in integrations skipped. No runtime command
+  or timer was added. The operator then approved and completed local C6-2D. Its
+  internal repository accepts only a processing request/register whose submitted-
+  job wait step is completed, then reads a repeatable-read, read-only snapshot of
+  projects, generation batches/jobs, assets, the root draft, references, and
+  distinct live private-object keys. The service returns only six counts,
+  inventory version 1, and a SHA-256; it strips all extra fields and never emits
+  an owner/request/row ID or object key. Populated, empty, reordered, digest-
+  drift, not-ready, rollback, and redaction paths pass. The opt-in real
+  PostgreSQL test passes 18/18 and proves two stable previews with exactly two
+  jobs and no mutation. The synchronized C6-2D change passes
+  `npm run check:local`: lint, typecheck, the Vinext production build, and 205
+  tests with 200 passing and five opt-in integrations skipped. No migration,
+  browser route, external adapter, runtime command, timer, deployment, or
+  production change was added. The next smallest useful slice is C6-2E: add a
+  leased, retry-safe local private-object deletion step against disposable
+  RustFS data, recomputing/binding the inventory and deleting bytes before
+  recording database success, with no Authing or production access. The operator
+  approved and completed C6-2E. Migration 0015 adds `delete_private_objects`,
+  generated-asset `object_deleted_at`, and persisted inventory/count/retry
+  evidence; because it had already entered the local checksum history before a
+  constraint hardening, migration 0016 applies that hardening strictly forward
+  instead of rewriting 0015. New requests create all lifecycle steps atomically.
+  The old wait claim was corrected to update only `wait_for_submitted_jobs` after
+  the second step exposed its formerly harmless request-wide update. Object
+  claims require the wait step completed, use `SKIP LOCKED`, lock owner asset and
+  reference rows, bind a fresh C6-2D digest, and return at most 100 distinct
+  internal targets. The service deletes bytes first, records all matching rows
+  and one aggregate success afterward, leaves ambiguous evidence reclaimable,
+  and returns/logs no keys or identifiers. Normal reference cleanup skips any
+  deletion owner, while generated-asset presentation excludes deleted bytes.
+  The real local integration applies all nineteen migrations twice. C6-2F adds
+  migration 0017 and a leased `delete_creative_records` step after private-object
+  completion. A fresh inventory and zero-live-object precondition bind one
+  foreign-key-ordered PostgreSQL transaction that deletes assets, job events,
+  attempts, outbox rows, jobs, batches, projects, the root draft, and references.
+  Cross-owner graph edges, count drift, or any database error roll the entire
+  transaction back. Retained job-linked ledger entries may lose only their job
+  foreign key through a trigger-guarded, request-bound transition; amounts,
+  reasons, entry relationships, credit accounts, payments, administrative audit,
+  GoodGood/Authing identity, sessions, request, and register remain. New project,
+  draft, reference-intent, and generation writes serialize with deletion through
+  the owner row. The object step now also keeps an unexpired pending-upload key
+  live until its signed PUT window and clock-skew grace close, preventing late byte resurrection.
+  Real local PostgreSQL and disposable RustFS prove redacted object and creative
+  failures, atomic retry, three one-object deletions including the expired upload
+  intent, exact 404s, complete creative-graph removal, retained evidence, repeat
+  no-ops, and zero temporary objects. C6-2G adds migration 0018's leased
+  `delete_external_identities` step after creative completion. Its provider-
+  neutral service has no default Authing implementation and requires an injected
+  adapter. It persists per-mapping disable-before-delete evidence while retaining
+  issuer/subject locally until downstream anonymization. A disposable in-memory
+  directory proves redacted partial failure, delete-only retry, completion, and
+  repeat no-op; the request/register remain processing. C6-2H adds migration
+  0019's final leased local completion step. The single transaction expires
+  remaining available credit with a new immutable ledger event, closes the
+  zero-reservation account, deletes revoked sessions and externally completed
+  local identity mappings, pseudonymizes the owner, scrubs the mail reference,
+  and completes the step/request/register with exact 12-month retention. Prior
+  financial and administrative evidence stays unchanged. A forced failure proves
+  rollback/redacted retry; the successful real local pass proves final absence,
+  same-email fresh pending reprovisioning, and repeat no-op across all 19
+  migrations. C6-2I adds the opt-in official-SDK Authing adapter with exact
+  issuer/subject binding, lookup-first suspend/delete semantics, explicit
+  response validation, and user-not-found `apiCode` 2004 idempotency. A
+  disposable loopback HTTP endpoint proves the real SDK request paths, bodies,
+  signing header, redaction, and failure closure with fake AK/SK. The dependency
+  overrides remove the SDK's audited vulnerable transitive versions. No real
+  Authing tenant/credential, production R2/host, route, runtime, timer,
+  deployment, commit, or push occurred. C6-2J then adds an import-only cycle
+  orchestrator around the five implemented leased passes. It observes only
+  aggregate lifecycle state, runs the phases in their fixed prerequisite order,
+  preserves bounded batches and leases, strips non-allowlisted result fields,
+  and emits only fixed redacted alert codes plus one aggregate summary. Initial
+  observation failure and unexpected phase exceptions abort later mutation;
+  handled retry failures, lease loss, and overdue work remain observable without
+  bypassing repository prerequisites. The synchronized C6-2J change passes
+  `npm run check:local`: lint, typecheck, the Vinext production build, and 229
+  tests with 224 passing and five opt-in integrations skipped. The C6-2I
+  official-registry production-dependency audit remains zero known
+  vulnerabilities. This implements ADR 0022 without changing a confirmed
+  decision. C6-2K now adds a strict, deterministic version-1 register artifact
+  and serializable isolated-restore replay. The artifact allowlists only the
+  non-content register UUID/state/time fields and is bound by its canonical
+  SHA-256 plus a separately required expected digest. Completed tombstones
+  remove restored local identity/session/creative/credit state and recreate the
+  terminal lifecycle; processing tombstones restore suspension/revocation and
+  return `ready: false` without discarding content needed by the ordinary
+  lifecycle. A disposable two-database PostgreSQL drill proves both paths and
+  repeat idempotency without external I/O. The synchronized C6-2K change passes
+  `npm run check:local`: lint, typecheck, the Vinext production build, and 235
+  tests with 229 passing and six opt-in integrations skipped; its separately
+  enabled PostgreSQL suite passes all six tests. C6-2L now binds dump-before-
+  export ordering, exact filenames/bytes/digests/timestamps, the immutable
+  application image, root-only permissions, and one-hour freshness in a strict
+  three-file manifest stored by one encrypted production Restic snapshot. The
+  restore source accepts only the new exact tags/paths, uses no image pull,
+  keeps PostgreSQL in network-none/tmpfs, and runs trusted-digest replay through
+  that container's isolated namespace; processing records fail readiness. It
+  also preserves any pre-existing collision target during cleanup. Shell syntax
+  and the runtime bundle pass; the synchronized `npm run check:local` passes
+  lint, typecheck, the Vinext production build, and 240 tests with 234 passing
+  and six opt-in integrations skipped, without invoking the Hong Kong host or
+  off-host repository. C6-2M then adds a production-only one-shot executable,
+  exact file-backed configuration, dedicated PostgreSQL/R2 resources, an
+  isolated no-port Compose role, nonblocking host lock, fixed aggregate
+  result/exit contract, and inactive five-minute systemd schedule. Its targeted
+  suite passes 7/7; the synchronized local gate passes 247 tests with 241
+  passing and six opt-in integrations skipped, and the runtime/shell checks
+  pass without selecting a management credential, installing a unit, or
+  contacting any production/external resource. C6-2N then completed the live
+  management-credential boundary review under separate approval. The exact
+  three-method custom policy and non-owner internal-administrator assignment
+  are present, but `type: userpool` aliases the global user-pool Access Key ID
+  and cannot be independently revoked, while `type: tenant-co-admin` is rejected
+  with `422` / API code `4004` because the subject is not a multi-tenant
+  collaborator. The target user was never created, no identity mutation ran,
+  no secret was persisted, and the production timer remains disabled. The
+  required least-privilege proof is blocked on Authing collaborator-AK support
+  or a separate operator risk/architecture decision. C6-2O then completed the
+  independent public O1Key contract review. The current documentation exposes
+  24-hour public-upload and generated-result URL lifetimes, a GET-only
+  asynchronous task-query path, and no documented task deletion route. Both
+  public API status endpoints report privacy policy and user agreement disabled.
+  No published term establishes erasure timing for prompts, references, task
+  records, generated bytes, logs, caches, backups, or upstream processors.
+  Consequently provider erasure remains blocked on written O1Key evidence or a
+  reviewed provider-boundary change; no credential, task, generation, or remote
+  mutation was used. C6-2P then completed a read-only source inventory. Active-
+  account enforcement, reviewed admission, finite credit, reasoned suspension,
+  private assets, bounded image validation, and provider-rejection normalization
+  already exist. They do not constitute semantic moderation: reference and Asset
+  moderation states are accepted by technical validation/default, the selected
+  Gemini provider request has no moderation parameter, and GoodGood has no
+  content-policy acceptance, semantic classifier, report path, per-asset
+  quarantine/removal operation, or objective readiness-evidence fields for this
+  gate. ADR 0021's unbounded observation-period concurrency remains unchanged.
+  The operator then accepted ADR 0023. Migration 0020, exact policy acceptance,
+  owner-only fixed-category reporting with atomic quarantine, site-owner audited
+  exact preview, restore/byte-first removal, presentation hiding, and objective
+  schema-version-3 evidence validation are now implemented locally without a
+  classifier or new capacity limit. The synchronized local gate passes lint,
+  typecheck, the Vinext production build, and 257 tests with 251 passing and six
+  skipped; no secret was persisted. No old candidate-
+  health evidence may be reused and public traffic
+  remains unapproved. Then collect the remaining
+  recovery/rollback, candidate-health, incident-ownership, and delegated
+  monitoring evidence before admitting any seed user. Customer checkout,
+  domestic Alipay, and the applicable ICP/domain gate remain planned in M9.
+  Full-byte real-carrier throughput remains an accepted operator deferral.
 - On 2026-09-05 the host created independent production-only local secret
   material under a new `goodgood-production-secrets` group (numeric GID 986),
   without adding the `goodgood` SSH administrator. PostgreSQL and Restic each
@@ -1869,14 +2714,18 @@ M9 begins only after a separate operator decision to resume payment work.
   rotation cannot be proven from the host and remain explicit conversion gates.
   No service, configuration, credential, traffic, database row, queue key,
   object, archive, or repository lock changed during this inspection.
-- Next action: present the read-only inventory and gaps to the operator and
-  wait. With separate confirmation, prepare and locally rehearse the exact
-  conversion work package: bounded production PostgreSQL/Valkey topology,
-  maintenance activation/recovery, five-minute Worker drain grace, 12-monthly
-  backup retention, R2 exact-key deletion preview, Authing console checklist,
-  secret-rotation checklist, and rollback checkpoints. This next step still
-  does not change the server, delete data, rotate credentials, or switch
-  traffic. Live conversion and each destructive target retain separate approval.
+- Post-C7 ADR 0025 action: the isolated generation-capability candidate was
+  published and promoted without the preserved local migration-0020 work. Old
+  route attempts were drained before Worker handoff, controlled-alpha release
+  and readiness checks passed, and the explicitly approved single live `4:5` /
+  `2K` request proved exact output dimensions, 10-credit settlement, private R2
+  integrity, repeated asset-list persistence, and empty database/Valkey work
+  queues afterward. New registrations remain pending with 100 welcome credits
+  and require site-owner review in `/admin/users`. Continue watching public
+  availability, Web/Worker health and restarts, memory, disk, backup freshness,
+  and generation failures; restore maintenance on a documented stop condition.
+  Do not enable checkout, claim the full seed gate, or deploy the local
+  migration-0020 work.
 - Blockers: domestic Alipay checkout requires the ICP-filed production domain,
   matching merchant approval, and sandbox credentials. These external items do
   not block M7 staging or trusted manual credit operation. The local fake
@@ -1978,7 +2827,7 @@ Completed real-Authing loopback checklist:
 | M5 | US generation gateway integration and recovery | Completed | O1Key special-price adapter, explicit worker route, RustFS transfer, decoded output ingestion, durable-task restart, fake-server matrix, secret-file launcher, one real URL-output reference-image smoke, operator-confirmed New API charge/refund evidence, and ADR 0008's accepted at-most-once submission guard pass |
 | M6 | Versioned pricing, credit ledger, and payment sandbox | Completed | ADR 0009 launch prices, welcome grants, append-only accounting, live reserve/settle/release, account presentation, immutable CNY 10 / 500-credit product, idempotent orders, signed fake-sandbox fulfillment, dry-run-first manual paid-credit recording, isolated PostgreSQL tests, and full Compose pass |
 | M7 | Hong Kong staging | Completed | The hardened Hong Kong host, isolated dependencies, private R2, Cloudflare-only TLS origin, Authing callbacks and rotated secrets, real O1Key generation/reference ingestion, public logout recovery, rollback, mainland HTTP sampling, and all ten migrations pass. ADR 0014's separate encrypted off-host PostgreSQL repository, retention, two latest-snapshot restore drills, real systemd backup, and active persistent timer pass; outbound notification is deferred to M8 and QQ Mail is not under consideration. CI run 23 passes 133 tests, dependency and finished-image scans, and runtime import smoke after the React 19.2.8 fix. Its exact immutable digest is the promoted healthy release: Web/Worker and every dependency readiness check pass, public root/live/ready return HTTP 200, and credit state is unchanged. Full-byte real-carrier throughput remains an accepted non-blocking deferral; payment checkout stays intentionally absent until M9 |
-| M8 | Hong Kong seed production readiness | In progress | ADR 0019 selects Hong Kong and `goodgood.o1key.com`; ADR 0020 completes open login, pending review, 100 welcome credits, the site-owner console, and bounded test-credit grants. ADR 0021 selects the current 2-vCPU / 4-GiB host with a clean production database/queue, private R2, encrypted recovery, no fixed generation/concurrency ceiling, and 500-MiB/80%-disk admission protection. C0 maintenance, C1 staging freeze/final restore-verified archive, C2 exact R2 cleanup plus production credential rotation, C3 fresh private PostgreSQL/Valkey plus encrypted off-host recovery baseline, and C4 exact production configuration, credential rotation, preflight, and secret-access review are complete. A fresh C3-C6-only window found the old candidate would recreate prototype owners. The verified forward migration 0012 removes them, keeps the production path empty, and gates their recreation behind local auth. Replacement revision `613e16b`, digest `6f2d0ca09907`, runtime contract `05fc1ed4`, and artifact-security ID `9981719267` pass CI, independent import, stopped prestage, and pre-C3 review. C3 proves zero pre-migration tables/keys, full backup read-data verification, a zero-table isolated off-host restore, and active half-hour/daily timers behind maintenance 503. C4 proves exact Authing allowlists and a rotated file-backed App Secret, revocation of the retained staging and exposed production O1Key keys, a fresh root-only production replacement through authenticated non-billable 404, current full preflight, and a passed secret-access readiness item. C5 applied/replayed all migrations, created the sole pending Authing seed account and 100-credit welcome grant, executed the approved audited site-owner bootstrap, and started healthy blue Web/Worker, but the populated account page exposed an incompatible `Intl.DateTimeFormat` client-render error. R5 containment stopped both application processes, retained the production database and private dependencies, and kept public maintenance at 503. The local forward fix and regression pass the full 186-test gate; a new immutable candidate and fresh C5 approval are required. C6 security/privacy/abuse, monitoring, post-migration recovery, candidate-health, and rollback evidence remain before seed admission. Public opening remains separately unapproved. |
+| M8 | Hong Kong controlled alpha, then full seed readiness | In progress | C0-C5 and the exact production candidate remain as recorded. ADR 0024 adds a narrower `controlled-alpha-v1` gate without passing or weakening the full seed gate. C6-3A exact-candidate baseline, C6-3B one reviewed non-owner journey, C6-3C fresh encrypted off-host recovery/isolated restore/maintenance fallback, and C6-3D minimum signal delivery/manual owner handoff are complete with immutable aggregate-only evidence. The exact `production:alpha-gate` returns `ok: true`; after separate `publicTrafficOpen` approval, C7 removed maintenance and passed public root/readiness/login/access-guard smoke checks plus three initial healthy observations. Controlled alpha is publicly operational. ADR 0025's 42-combination Nano Banana 2 ratio/resolution slice is deployed as immutable revision `94cecb0`; one explicitly approved billable `4:5` / `2K` production request succeeded at `1856 x 2304`, settled exactly 10 credits, passed private-R2 integrity and repeated asset-list reads, and left no active database or Valkey work. The local migration-0020 content-safety and account-deletion work remains preserved but undeployed; automated deletion, Authing management access, O1Key erasure terms, full monitoring/incident ownership, content-report rehearsal, and complete rollback rehearsal remain unfinished for the full seed track. |
 | M9 | Paid commercialization and domestic Alipay | Planned, deferred | Preserve ADR 0010's domestic Alipay direction and ADR 0015's fail-closed paid gate. Complete the applicable production-domain/ICP review, merchant qualification, real sandbox and callback evidence, provider adapter, refund semantics, and the smallest customer checkout UI before accepting payment. Seed launch evidence does not complete M9. |
 
 Only mark a milestone `Completed` when its exit evidence exists. Use `Blocked`

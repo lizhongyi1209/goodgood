@@ -1,0 +1,62 @@
+name: goodgood-production-account-deletion
+
+services:
+  account-deletion-cycle:
+    image: ${GOODGOOD_RELEASE_IMAGE:?Set the immutable GoodGood GHCR digest}
+    pull_policy: never
+    init: true
+    read_only: true
+    restart: "no"
+    user: node
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+    cpus: 0.5
+    mem_limit: 384m
+    memswap_limit: 384m
+    pids_limit: 128
+    group_add:
+      - "${GOODGOOD_PRODUCTION_SECRET_GID:?Set the numeric production secret-reader group GID}"
+    env_file:
+      - ${GOODGOOD_RUNTIME_ENV_FILE:?Set the absolute production runtime env-file path}
+    environment:
+      GOODGOOD_PROCESS: account-deletion-cycle
+      GOODGOOD_ACCOUNT_DELETION_AUTHING_ACCESS_KEY_ID_FILE: /run/secrets/goodgood_account_deletion_authing_access_key_id
+      GOODGOOD_ACCOUNT_DELETION_AUTHING_ACCESS_KEY_SECRET_FILE: /run/secrets/goodgood_account_deletion_authing_access_key_secret
+    entrypoint: ["node", "server/runtime/account-deletion-cycle.mjs"]
+    command: []
+    labels:
+      com.goodgood.source.revision: ${GOODGOOD_RELEASE_REVISION:?Set the CI source revision}
+      com.goodgood.migration.version: ${GOODGOOD_RELEASE_MIGRATION:?Set the CI migration version}
+      com.goodgood.runtime-config.version: ${GOODGOOD_RUNTIME_CONFIG_VERSION:?Set the CI runtime configuration version}
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+    networks:
+      - goodgood-production-state
+      - goodgood-production-account-deletion-egress
+    secrets:
+      - goodgood_account_deletion_authing_access_key_id
+      - goodgood_account_deletion_authing_access_key_secret
+      - goodgood_object_storage_access_key_id
+      - goodgood_object_storage_secret_access_key
+
+secrets:
+  goodgood_account_deletion_authing_access_key_id:
+    file: /etc/goodgood/production/secrets/account-deletion/authing-access-key-id
+  goodgood_account_deletion_authing_access_key_secret:
+    file: /etc/goodgood/production/secrets/account-deletion/authing-access-key-secret
+  goodgood_object_storage_access_key_id:
+    file: /etc/goodgood/production/secrets/r2-access-key-id
+  goodgood_object_storage_secret_access_key:
+    file: /etc/goodgood/production/secrets/r2-secret-access-key
+
+networks:
+  goodgood-production-state:
+    external: true
+    name: goodgood-production-state
+  goodgood-production-account-deletion-egress:
+    driver: bridge

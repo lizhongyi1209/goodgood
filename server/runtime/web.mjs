@@ -2,6 +2,7 @@ import path from "node:path";
 import { startProdServer } from "vinext/server/prod-server";
 import { createAssetNodeApiHandler } from "../assets/node-api.mjs";
 import { createAdminNodeApiHandler } from "../admin/node-api.mjs";
+import { createContentSafetyNodeApiHandler } from "../content-safety/node-api.mjs";
 import { createBillingNodeApiHandler } from "../billing/node-api.mjs";
 import { loadAuthenticationConfig } from "../auth/config.mjs";
 import { createAuthenticationNodeApiHandler } from "../auth/node-api.mjs";
@@ -53,6 +54,7 @@ const handleGenerationNodeApi = createGenerationNodeApiHandler({
   authenticate,
 });
 const handleAdminNodeApi = createAdminNodeApiHandler({ authenticate });
+const handleContentSafetyNodeApi = createContentSafetyNodeApiHandler({ authenticate });
 const handleCreationDraftNodeApi = createCreationDraftNodeApiHandler({ authenticate });
 const handleAssetNodeApi = createAssetNodeApiHandler({ authenticate });
 const handleBillingNodeApi = createBillingNodeApiHandler({ authenticate });
@@ -80,6 +82,9 @@ server.on("request", (request, response) => {
     response.setHeader("set-cookie", defaultSessionCookie);
   }
   void handleAuthenticationNodeApi(request, response)
+    .then((handled) =>
+      handled ? true : handleContentSafetyNodeApi(request, response),
+    )
     .then((handled) => (handled ? true : handleAdminNodeApi(request, response)))
     .then((handled) =>
       handled ? true : handleCreationDraftNodeApi(request, response),

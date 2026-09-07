@@ -107,8 +107,28 @@ individual icon. Upload, settings, and send align to the same 40px box.
 - Use existing table, dialog, select, input, and alert-dialog primitives where
   their semantics match. Granting credit requires an explicit confirmation and
   never uses checkout, wallet, or payment visual language.
+- Account deletion uses one evidence dialog followed by one consequence alert
+  dialog. Keep warning color restrained until the final destructive action;
+  after submission, use a compact read-only state/deadline treatment rather
+  than a reversible-looking control.
 - Loading, empty, failure, retry, and mutation-in-progress states retain the
   page silhouette so rows and controls do not jump.
+
+## Seed content safety
+
+- The first-use rules dialog is a compact working agreement, not a legal hero.
+  It shows the exact versioned obligations, prohibited categories, and response
+  posture in one scrollable surface with one explicit checkbox and one Palace
+  Red acceptance action. Required acceptance cannot be dismissed; loading and
+  retry states retain the dialog silhouette.
+- The image-detail report action is a quiet flag icon beside existing actions.
+  Its dialog offers only server-defined categories and makes immediate hiding
+  explicit. Do not add a prompt field, free-form allegation, or image upload.
+- `/admin/users` keeps reports as a bounded section below account operations.
+  Metadata is visible before review; exact image/prompt content appears only in
+  the audited preview dialog. Restore stays neutral, byte-removal uses the
+  existing destructive confirmation pattern, and account suspension remains a
+  separate reasoned action.
 
 ## Image presentation
 

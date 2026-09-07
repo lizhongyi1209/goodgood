@@ -8,6 +8,7 @@ import { findReadyReferences } from "../references/repository.mjs";
 import { validateReferenceIds } from "../references/validation.mjs";
 import { findProject } from "../projects/repository.mjs";
 import { newRequestId } from "../observability/http.mjs";
+import { ContentSafetyError } from "../content-safety/errors.mjs";
 import { dispatchPendingJobs } from "./queue.mjs";
 import {
   DURABLE_GENERATION_MODEL_ID,
@@ -198,6 +199,7 @@ export async function retryGeneration({ idempotencyKey, jobId, ownerContext }) {
 export function generationApiError(error, jobId = "", requestId = newRequestId()) {
   if (
     error instanceof AuthenticationError ||
+    error instanceof ContentSafetyError ||
     error instanceof BillingPersistenceError ||
     error instanceof GenerationRequestError ||
     error instanceof GenerationPersistenceError ||

@@ -10,6 +10,14 @@ function accountFromRow(row) {
     accountTier: row.account_tier,
     availableCredits: String(row.available_balance ?? 0),
     createdAt: new Date(row.created_at).toISOString(),
+    deletionRequest: row.deletion_request_id
+      ? {
+          createdAt: new Date(row.deletion_request_created_at).toISOString(),
+          deadlineAt: new Date(row.deletion_request_deadline_at).toISOString(),
+          id: row.deletion_request_id,
+          state: row.deletion_request_state,
+        }
+      : null,
     email: row.email,
     id: row.id,
     lastAuthenticatedAt: row.last_authenticated_at
@@ -56,6 +64,10 @@ export async function listManagedAccounts(
             identity.last_authenticated_at,
             COALESCE(account.available_balance, 0) AS available_balance,
             COALESCE(account.reserved_balance, 0) AS reserved_balance,
+            deletion_request.id AS deletion_request_id,
+            deletion_request.state AS deletion_request_state,
+            deletion_request.created_at AS deletion_request_created_at,
+            deletion_request.deadline_at AS deletion_request_deadline_at,
             EXISTS (
               SELECT 1 FROM system_role_assignments role
                WHERE role.owner_id = u.id AND role.role = 'site_owner'
@@ -68,6 +80,8 @@ export async function listManagedAccounts(
        ) identity ON true
        LEFT JOIN credit_accounts account
          ON account.owner_id = u.id AND account.unit = 'credit'
+       LEFT JOIN account_deletion_requests deletion_request
+         ON deletion_request.target_owner_id = u.id
       WHERE ($1::text IS NULL OR u.status = $1)
         AND ($2::text IS NULL OR lower(u.email) LIKE '%' || lower($2) || '%')
         AND (
@@ -135,6 +149,16 @@ function assertMatchingReplay(existing, operationHash) {
   }
 }
 
+function assertDeletionNotRequested(target) {
+  if (target.has_deletion_request) {
+    throw new AdministrationError(
+      "ADMIN_DELETION_REQUEST_IRREVERSIBLE",
+      "该账户已进入不可撤销的删除流程，不能恢复状态或增加积分。",
+      409,
+    );
+  }
+}
+
 export function changeAccountAccess(
   pool,
   { actorOwnerId, idempotencyKey, operationHash, reason, targetOwnerId, toStatus },
@@ -155,10 +179,14 @@ export function changeAccountAccess(
       };
     }
     const targetResult = await client.query(
-      `SELECT id, status
-         FROM users
-        WHERE id = $1
-        FOR UPDATE`,
+      `SELECT target.id, target.status,
+              EXISTS (
+                SELECT 1 FROM account_deletion_requests request
+                 WHERE request.target_owner_id = target.id
+              ) AS has_deletion_request
+         FROM users target
+        WHERE target.id = $1
+        FOR UPDATE OF target`,
       [targetOwnerId],
     );
     const target = targetResult.rows[0];
@@ -169,6 +197,7 @@ export function changeAccountAccess(
         404,
       );
     }
+    assertDeletionNotRequested(target);
     if (target.id === actorOwnerId && toStatus === "suspended") {
       throw new AdministrationError(
         "ADMIN_SELF_SUSPEND_FORBIDDEN",
@@ -252,7 +281,14 @@ export function grantTestCredits(
       };
     }
     const target = await client.query(
-      "SELECT id FROM users WHERE id = $1 FOR UPDATE",
+      `SELECT owner.id,
+              EXISTS (
+                SELECT 1 FROM account_deletion_requests request
+                 WHERE request.target_owner_id = owner.id
+              ) AS has_deletion_request
+         FROM users owner
+        WHERE owner.id = $1
+        FOR UPDATE OF owner`,
       [targetOwnerId],
     );
     if (!target.rowCount) {
@@ -262,6 +298,7 @@ export function grantTestCredits(
         404,
       );
     }
+    assertDeletionNotRequested(target.rows[0]);
     const actionId = randomUUID();
     const grant = await grantCreditsInTransaction(client, {
       actor: "operator",

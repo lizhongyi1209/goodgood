@@ -1,5 +1,6 @@
 import {
   administrationApiError,
+  createAdminAccountDeletionRequest,
   createAdminTestCreditGrant,
   readAdminDashboard,
   updateAdminAccountStatus,
@@ -13,6 +14,7 @@ const JSON_HEADERS = {
 };
 
 const DEFAULT_OPERATIONS = Object.freeze({
+  createAdminAccountDeletionRequest,
   createAdminTestCreditGrant,
   readAdminDashboard,
   updateAdminAccountStatus,
@@ -126,6 +128,21 @@ export function createAdminNodeApiHandler({
           input: await readJson(request),
           ownerContext,
           targetOwnerId: decodeURIComponent(grantMatch[1]),
+        });
+        sendJson(response, result.created ? 201 : 200, result);
+        return true;
+      }
+
+      const deletionRequestMatch =
+        /^\/api\/admin\/users\/([^/]+)\/deletion-requests$/.exec(
+          url.pathname,
+        );
+      if (deletionRequestMatch) {
+        const result = await operations.createAdminAccountDeletionRequest({
+          idempotencyKey: headerValue(request.headers, "idempotency-key"),
+          input: await readJson(request),
+          ownerContext,
+          targetOwnerId: decodeURIComponent(deletionRequestMatch[1]),
         });
         sendJson(response, result.created ? 201 : 200, result);
         return true;

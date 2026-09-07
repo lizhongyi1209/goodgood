@@ -55,6 +55,293 @@ only through the dry-run-first server bootstrap. The `/admin/users` browser
 boundary can approve, suspend, restore, and grant at most 5000 test credits per
 audited operation.
 
+ADR 0022 adds a separate deletion lifecycle without changing that three-state
+access projection. A verified account-deletion request immediately suspends
+GoodGood access, revokes sessions, and blocks Authing-backed re-entry. A durable
+request plus a non-content deletion register must then coordinate owner-account
+deletion/anonymization, creative-record and private R2 deletion, Authing
+completion, and the 30-day deadline. Credit-ledger and administrative audit
+records sever personal linkage and remain anonymized for 12 months after
+completion. Backup archives age out through the existing 14 daily / 8 weekly /
+12 monthly policy;
+an isolated restore must replay the independent deletion register before it is
+eligible to serve traffic. Migration 0013 now implements the local durable
+request record, request-creation transaction, and queue invalidation field. The
+local management UI now supplies the evidence form, two confirmation screens,
+and a read-only request summary. Migration 0014 adds the local non-content
+register and leased submitted-job wait step. Migrations 0015-0016 add a separate
+private-object step, generated-asset deletion marker, digest/count evidence, and
+step-specific constraints. Migration 0017 adds the leased creative-record step
+and the narrow ledger transformation needed to remove job rows without removing
+financial evidence. Migration 0018 adds a provider-neutral leased external-
+identity step plus local disable/delete evidence on each identity mapping.
+Migration 0019 adds the final leased local completion step, a pseudonymous
+owner marker, aggregate local-removal/credit-expiry evidence, and the exact
+12-month register-retention boundary. C6-2I adds an opt-in server-only Authing
+Management API adapter behind the existing provider-neutral interface. It binds
+the configured OIDC issuer exactly, treats the verified OIDC `sub` only as an
+Authing `user_id`, looks the user up before mutation, requests `Suspended`
+before batch deletion, and accepts only explicit success responses. Authing's
+documented user-not-found `apiCode` 2004 is the sole idempotent absence result.
+The adapter is not a default and has no credential loader, CLI, timer, runtime
+wiring, or production authorization. Register export/replay, cleanup
+scheduling, real-tenant evidence, and production operation remain absent.
+
+The implemented local first request entry point stays inside `/admin/users`; it does not
+create a new public or member route. The existing site-owner session, POST-only
+administration boundary, and CSRF header protect request creation. The browser
+presents two distinct confirmation steps, while the backend independently
+rejects a request whose target is the acting site owner. A created request
+suspends access and revokes sessions atomically, then leaves external/content
+steps pending for the asynchronous lifecycle. The account-holder verification
+is a manual round trip: request from the current registered email, site-owner
+reply to the same address, and explicit user reply within 24 hours. Persist only
+the two timestamps and mail provider message/reference ID, never email content,
+when the final browser submit creates the request. Before that commit,
+dismissing either confirmation changes no GoodGood state.
+
+Deletion request creation also closes the product boundary before asynchronous
+erasure begins. Login, generation submit, and user retry are denied. An attempt
+whose O1Key submission guard has already crossed the billable boundary keeps
+only its existing poll/result-ingest path: no cancellation, new provider POST,
+or fallback. The Worker reaches normal success/failure and credit settlement or
+release, while any accepted Asset stays private and unreadable to the suspended
+owner. Account/content erasure waits for those submitted attempts to become
+terminal and then includes their newly ingested private objects.
+
+A queued job that has not crossed the persisted provider-submission guard is
+cancelled in the deletion-request PostgreSQL transaction with an exactly-once
+credit release and outbox invalidation. PostgreSQL, not Valkey, decides whether
+work is eligible. A stale at-least-once Valkey delivery observes terminal
+`cancelled`, performs no provider call, and is acknowledged. Owner/job locks and
+the submission guard serialize the boundary: a guard committed first follows
+submitted-task reconciliation; cancellation committed first forbids submission.
+
+Request creation is a one-way orchestration boundary. The deletion lifecycle
+has no withdrawal/reopen transition or restoration API. An incident opened for
+an erroneous request is operational evidence only: it cannot reverse the
+committed suspension/session revocation, queue/credit closure, destructive
+steps, or deletion-register obligation.
+
+The local C6-2A implementation exposes the POST administration boundary.
+It locks the target owner and active jobs, writes the request and audit action,
+suspends the owner, revokes sessions, releases each eligible reservation once,
+marks those jobs terminal, and invalidates their PostgreSQL outbox rows in one
+transaction. Authentication-session creation and generation submission lock
+the same owner row; the O1Key submission guard locks the job/attempt pair. These
+locks choose one race outcome without a cross-store Valkey transaction.
+Local C6-2B adds the site-owner evidence form and two browser confirmation
+screens. It preserves one idempotency key across a failed-response retry and
+reads only request ID, state, creation time, and deadline into each account row;
+the mail reference and verified address are not returned in the dashboard.
+Local C6-2C creates the register and wait step in the same request transaction.
+A bounded in-process service claims due steps with expiring leases and
+`SKIP LOCKED`; it locks and counts non-terminal jobs only when an attempt has
+crossed the provider-submission guard. Active work defers the step with a bounded
+code and next-attempt time. No active work completes only that step, leaving the
+request and register `processing`. There is no runtime command, timer, R2 call,
+Authing call, content deletion, or production configuration in this slice.
+Local C6-2D adds an internal owner-scoped deletion-inventory preview after that
+wait step completes. It reads one repeatable-read, read-only PostgreSQL snapshot,
+counts projects, jobs, assets, the root draft, references, and distinct live
+private-object targets, and binds those rows plus their generation batches into
+a versioned SHA-256. Its public result is a strict whitelist of counts, version,
+and digest: account/request/row identifiers and object keys never leave the
+repository. It has no browser route, persistent inventory row, external adapter,
+destructive statement, runtime command, timer, or production configuration.
+Local C6-2E consumes that contract only after the submitted-job wait step. One
+leased request locks its Asset/ReferenceAsset rows, recomputes and persists the
+fresh inventory digest, and returns at most 100 distinct object targets to the
+internal service. Each S3-compatible delete completes before PostgreSQL marks
+all rows for that key; a missing object is therefore an idempotent success.
+Storage failure records only `OBJECT_DELETE_FAILED` and aggregate counts before
+a later retry. Lost/ambiguous evidence leaves the lease reclaimable and never
+claims success. Ordinary reference retention skips owners with a deletion
+request, and asset presentation excludes deleted-byte rows. A still-valid
+pending reference-upload intent protects its key until the signed PUT window
+and a short clock-skew grace expire, preventing a late upload from recreating bytes after row evidence has
+been removed. The service returns and logs aggregates only. There is no browser
+route, runtime command, timer, Authing access, production R2 access, creative-row
+deletion, or deployment in this slice.
+
+Local C6-2F adds the next leased step only after `delete_private_objects` is
+complete. It locks the owner and shared reference lifecycle, recomputes and binds
+the current inventory, requires zero live private-object keys, validates that no
+cross-owner foreign-key edge enters or leaves the graph, and deletes the
+Asset/event/attempt/outbox/job/batch/project/draft/reference graph in explicit
+foreign-key order inside one PostgreSQL transaction. Job-linked ledger entries
+remain immutable in every normal path; migration 0017 permits only the reviewed
+one-time removal of their creative job link while binding that change to the
+deletion register and a live creative-step lease. Credit amounts, reasons,
+entry relationships, accounts, payment evidence, administrative actions, the
+GoodGood owner, Authing mapping, sessions, request, and independent register all
+remain. Project, draft, reference-intent, and generation creation now serialize
+against the deletion request through the owner row, so committed deletion cannot
+be followed by a late creative write. Failure rolls the graph transaction back,
+records only `CREATIVE_DELETE_FAILED` plus aggregate counts, and retries safely.
+There is still no route, runtime command, timer, Authing or production access.
+
+Local C6-2G runs only after `delete_creative_records` completes. A leased claim
+reads a bounded internal set of issuer/subject targets without returning them
+to a browser or operator report. The injected provider adapter must make both
+disable and delete idempotent; GoodGood records disable evidence first, then
+calls delete, then records delete evidence. A provider or evidence failure
+leaves the local mapping intact and the step retryable with only bounded counts
+and `IDENTITY_DELETE_FAILED`. Completion proves every local mapping has external
+delete evidence but deliberately retains those mappings for the next local
+anonymization transaction. The default service has no Authing client, endpoint,
+credential loader, CLI, timer, or production executor; verification uses only a
+disposable in-memory identity directory.
+
+Local C6-2H runs only after every prior step is complete and every retained
+identity mapping has external-delete evidence. One PostgreSQL transaction
+requires zero creative rows and zero reserved credit, appends an immutable
+`expire` entry for remaining available credit, closes the zero-balance credit
+account, deletes revoked local sessions before identity mappings, and replaces
+the owner's email with a deterministic request-scoped placeholder under
+`deleted.goodgood.invalid`. It resets locale, keeps the access state suspended,
+sets `anonymized_at`, scrubs the opaque mail reference, and completes the final
+step, request, and register with an exact 12-month retention deadline. The
+owner UUID remains only as an internal pseudonymous join key, so existing
+ledger and administrative rows retain their amounts, reasons, relationships,
+metadata, and integrity hashes without being rewritten. Failure rolls the
+entire transaction back and records only `LOCAL_ANONYMIZATION_FAILED`; there is
+still no route, runtime command, timer, real Authing client, or production
+executor.
+
+Local C6-2I does not change the orchestration service or its injected interface.
+The new Authing implementation uses the official Node SDK's `getUser`,
+`updateUser`, and `deleteUsersBatch` methods with only `user_id`; an exact issuer
+mismatch or a mismatched/malformed provider response fails before GoodGood
+records success. Provider messages and identifiers never enter its thrown error
+messages. A local HTTP fake exercises the SDK request signing and concrete V3
+paths. The insecure-host exception is explicit and loopback-only; production
+hosts must be HTTPS. Nothing selects this adapter automatically.
+
+Local C6-2J adds one import-only server orchestration boundary around the five
+existing leased passes. One invocation observes aggregate lifecycle state,
+runs submitted-job wait, private-object deletion, creative-record deletion,
+external-identity deletion, and local anonymization in that fixed order, then
+observes aggregate state again. Each phase keeps the existing batch, object,
+identity, lease, and retry bounds; the cycle creates one stable worker namespace
+and still requires an explicitly injected identity adapter. Returned phase
+evidence is allowlisted to non-negative aggregate counters, so an accidental
+identifier field cannot cross the cycle boundary. An unavailable initial
+preview or unexpected phase exception aborts later mutation, while handled
+per-item failures remain retryable and let independent later phases inspect
+their own prerequisites. The cycle emits only fixed alert codes and a redacted
+aggregate summary. It adds no timer, CLI, runtime import, credential loader,
+network destination, host unit, or production executor.
+
+Local C6-2K adds a separate recovery boundary rather than routing restores
+through the live deletion Worker. The current register is exported as a strict,
+versioned, deterministically sorted JSON artifact containing only request UUID,
+internal target-owner UUID, lifecycle state, deadline/completion/retention
+times, and timestamps. Its SHA-256 binds the exact bytes, and replay additionally
+requires the independently supplied expected digest. Against a migrated,
+network-isolated restore, completed tombstones transactionally release stale
+reservations, remove the owner creative graph, local identities and sessions,
+expire remaining credit, close the account, restore five completed step rows,
+and apply the source completion/retention times. Processing tombstones suspend
+the restored owner, revoke sessions, restore pending steps, retain content for
+the normal lifecycle, and force `ready: false`. Repeated completed replay is a
+no-op and inconsistent identity/state rolls back the complete artifact. No
+artifact writer, backup repository integration, runtime command, or production
+restore-script selection existed in C6-2K.
+
+Local C6-2L packages that boundary into the production recovery-point source
+without executing it. The reviewed runtime image now contains one recovery
+command used only by root-run backup/restore tooling. After a validated custom
+PostgreSQL dump completes, a short-lived container on the internal production
+state network exports the register. Its immutable image comes from the protected
+production release file; any running GoodGood container must resolve to that
+same reference and local image ID, while a maintenance stop does not prevent a
+backup. Network-none containers then bind the dump, register, immutable image
+digest, byte count, timestamps, and both SHA-256 values into a strict version-1
+manifest and verify the three files.
+Restic stores exactly that root-only three-file set in one encrypted snapshot.
+Restore selection accepts only the new recovery-point tags, exact filenames,
+one shared stem, and a snapshot no older than the one-hour RPO. The PostgreSQL
+restore remains `network=none`/tmpfs; a `--pull never` container from the bound
+image shares only that restore network namespace, verifies root ownership,
+`0600` modes, component ordering, freshness, and digests, then replays the
+register over loopback. Processing tombstones or any mismatch keep recovery
+ineligible for traffic. No external provider is reachable from that replay.
+
+Local C6-2M adds a separate production-only, one-shot executor around the
+C6-2J cycle without changing the continuously running Web or generation
+Worker. Its dedicated configuration boundary accepts only the production
+PostgreSQL database, the private `goodgood` R2 bucket, the exact OIDC issuer,
+and four file-backed credentials; it neither loads Redis nor mounts the O1Key
+or OIDC application secret. The executable verifies PostgreSQL and R2 first,
+constructs the Authing adapter only after those checks, runs one fixed-bounds
+cycle, emits an aggregate allowlisted result, and exits. A standalone Compose
+role supplies state plus egress networks, an already-local immutable image,
+read-only filesystem, and explicit CPU/memory/process bounds. A root wrapper
+adds one nonblocking host lock and exact file ownership/mode checks. The
+systemd source is a five-minute persistent timer over a four-minute oneshot;
+nonzero exit status and fixed journal events form the vendor-neutral alert
+handoff. These files are checked-in inactive templates only: no management
+credential was selected, no timer was installed, and no production endpoint or
+Hong Kong host was invoked.
+
+Live C6-2N boundary review found that the current Authing user-pool collaborator
+role cannot be represented by a separately identifiable service AK/SK. Authing
+returns the global user-pool Access Key ID for `type: userpool`, and rejects the
+console's multi-tenant `type: tenant-co-admin` for the internal administrator.
+Consequently the checked-in adapter/runtime remain inactive source, and their
+future credential mount must not receive the global user-pool secret. The
+account-deletion architecture is unchanged; its Authing production edge is a
+named external capability blocker until a separately revocable credential or a
+new reviewed risk/provider decision exists.
+
+The C6-2O public O1Key contract review establishes only transport lifetimes:
+temporary attachment URLs are public for 24 hours and generated image URLs are
+retained for 24 hours. The documented asynchronous boundary exposes submit and
+GET task-query operations but no delete operation, while the public service
+status currently reports privacy policy and user agreement disabled. This does
+not prove that provider or upstream copies of prompts, reference bytes, task
+records, generated outputs, logs, caches, or backups are erased. The adapter
+architecture remains unchanged, but provider-side erasure is now a named
+external contract blocker until written terms cover those data classes or a
+reviewed provider-boundary change is accepted.
+
+C6-2P now implements ADR 0023 as a separate GoodGood content-safety boundary.
+The canonical `seed-v1` policy body is server-owned and SHA-256 bound; immutable
+per-owner acceptance is required inside the same owner-locked transactions that
+create reference intents or generation/retry jobs. A changed version or hash
+fails closed. Reference validation and generated-Asset ingestion produce
+`not_reviewed`; only `not_reviewed` and a manually restored `accepted` Asset may
+enter ordinary owner presentation joins. This state is explicitly availability,
+not semantic inspection. The selected Gemini route keeps upstream default
+safety, and GoodGood intentionally adds no keyword list or external semantic
+processor.
+
+The report boundary accepts only the caller's live generated Asset and one
+server-defined category. One transaction creates an owner-scoped idempotent
+report and changes the Asset to `quarantined`; no prompt, bytes, object key, or
+free-form allegation is copied into the report. The site-owner dashboard lists
+bounded metadata only. Opening one exact preview is a POST action that creates
+append-only review evidence before returning a short-lived private URL plus the
+live batch prompt. Restore returns the Asset to `accepted`; removal deletes the
+private object before recording `rejected` and terminal object deletion. A
+failed object deletion leaves the report open and Asset quarantined for safe
+retry. Resolution reports and moderation actions retain pseudonymous audit
+evidence for 12 months. Existing reasoned account suspension is reused rather
+than adding a new account state. ADR 0021's no-fixed-concurrency decision stays
+unchanged.
+
+ADR 0024 adds an operator-side `controlled-alpha-v1` release boundary without
+changing the application runtime or deploying C6-2P. Its evidence contract
+reuses immutable release identity, artifact-security, and production-preflight
+evidence, then adds exact-candidate attestations for the maintenance-closed
+admission/disclosure baseline, one non-owner end-to-end journey, private
+recovery plus maintenance re-entry, and minimum signal/manual-response handoff.
+The controlled-alpha verifier and full seed verifier are separate entry points;
+the former cannot satisfy or mutate the latter. This preserves the current
+deployed migration-0012 runtime while migration-0020 stays a local future-
+candidate boundary.
+
 The reference boundary is now implemented locally. The authenticated
 web API creates owner-scoped pending records and short-lived signed PUT URLs;
 the browser transfers bytes directly to RustFS. Completion re-reads and fully
@@ -179,8 +466,8 @@ for all server-side fetches.
 The durable generation capability remains intentionally limited to
 `nano-banana-2`, one output, up to 10 validated references, the 14
 product-defined aspect ratios, and `1K` / `2K` / `4K`. The browser and O1Key
-adapter use synchronized server-validated capability allowlists; unknown values
-fail before provider submission.
+adapter use the same server-owned, server-validated capability allowlists;
+unknown values fail before provider submission.
 Primary real Authing/Google/email loopback exchange passes; provider edge-case
 and secure public-callback verification remain external evidence work;
 billing is active for every newly created generation job. M6 persists immutable
@@ -319,6 +606,9 @@ container filesystem.
   raw GoodGood session token in client-readable storage or persisted logs.
 - Login attempts are one-time and short-lived; OIDC issuer, audience,
   signature, nonce, and verified email are checked before provisioning.
+- Consumed login attempts become deletion-eligible after 24 hours; unconsumed
+  attempts do so 24 hours after expiry. Expired or revoked GoodGood sessions
+  become deletion-eligible after 30 days.
 - No public object-storage write credential.
 - Every asset read/write is authorized against the owning user/project.
 - Every project read/write and batch association is owner-scoped.

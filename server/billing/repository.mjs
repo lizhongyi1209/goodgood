@@ -514,6 +514,64 @@ export function grantWelcomeCreditsInTransaction(client, { ownerId }) {
   });
 }
 
+export async function expireAvailableCreditsInTransaction(
+  client,
+  {
+    actor = "system",
+    idempotencyKey,
+    metadata = {},
+    ownerId,
+    reason = "account_deletion_expiry",
+    unit = "credit",
+  },
+) {
+  const key = requireIdempotencyKey(idempotencyKey);
+  const creditUnit = requireText(unit, "unit", 32);
+  const serverActor = requireActor(actor);
+  const entryReason = requireText(reason, "reason", 200);
+  await advisoryLock(client, `credit:${ownerId}:${key}`);
+  const account = await client.query(
+    `SELECT * FROM credit_accounts
+      WHERE owner_id = $1 AND unit = $2
+      FOR UPDATE`,
+    [ownerId, creditUnit],
+  );
+  if (!account.rowCount) {
+    throw new BillingPersistenceError(
+      "CREDIT_ACCOUNT_NOT_FOUND",
+      "The credit account was not found.",
+      409,
+    );
+  }
+  const accountRow = account.rows[0];
+  if (exactCreditAmount(accountRow.reserved_balance) !== 0n) {
+    throw new BillingPersistenceError(
+      "CREDIT_RESERVATION_INCONSISTENT",
+      "Reserved credit must be closed before account deletion.",
+      409,
+    );
+  }
+  const available = exactCreditAmount(accountRow.available_balance);
+  if (available === 0n) {
+    return {
+      account: accountFromRow(accountRow),
+      created: false,
+      entry: null,
+      expiredAmount: 0n,
+    };
+  }
+  const expired = await appendCreditEntryInTransaction(client, {
+    accountRow,
+    actor: serverActor,
+    amount: -available,
+    entryType: "expire",
+    idempotencyKey: key,
+    metadata,
+    reason: entryReason,
+  });
+  return { ...expired, expiredAmount: available };
+}
+
 async function loadGenerationForReservation(client, { jobId, ownerId }) {
   const result = await client.query(
     `SELECT j.id AS job_id, j.credit_reservation_entry_id,

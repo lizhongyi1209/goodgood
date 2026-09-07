@@ -1,9 +1,9 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "release": {
     "image": "ghcr.io/lizhongyi1209/goodgood@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     "revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-    "migration": "0010_m6_payment_sandbox.sql",
+    "migration": "0020_m8_seed_content_safety.sql",
     "runtimeConfigVersion": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
   },
   "evidence": [
@@ -12,7 +12,7 @@
     { "id": "secret-access-review", "status": "pending", "checkedAt": null, "reference": "pending:access-review" },
     { "id": "privacy-data-map", "status": "pending", "checkedAt": null, "reference": "pending:privacy" },
     { "id": "retention-deletion-policy", "status": "pending", "checkedAt": null, "reference": "pending:retention" },
-    { "id": "moderation-abuse-controls", "status": "pending", "checkedAt": null, "reference": "pending:abuse-controls" },
+    { "id": "moderation-abuse-controls", "status": "pending", "checkedAt": null, "reference": "pending:abuse-controls", "policyVersion": "seed-v1", "policyDocumentHash": null, "policyAcceptanceEnforced": false, "ownerOnlyReportingPassed": false, "quarantineFlowPassed": false, "siteOwnerReviewPassed": false, "privateObjectRemovalPassed": false, "accountSuspensionAvailable": true, "assetsPrivateByDefault": true, "providerDefaultSafetyRetained": true, "providerRejectionNormalized": true, "productionRehearsalPassed": false, "localSemanticClassifierEnabled": false, "keywordFilterEnabled": false, "generationLimitAdded": false, "customerContentInEvidence": false },
     { "id": "production-backup-freshness", "status": "pending", "checkedAt": null, "reference": "pending:backup" },
     { "id": "production-restore-drill", "status": "pending", "checkedAt": null, "reference": "pending:restore" },
     { "id": "monitoring-handoff", "status": "pending", "checkedAt": null, "reference": "pending:monitoring-agent" },

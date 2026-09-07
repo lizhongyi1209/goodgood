@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 3,
+  "release": {
+    "image": "ghcr.io/lizhongyi1209/goodgood@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "migration": "0012_m8_remove_legacy_local_fixtures.sql",
+    "runtimeConfigVersion": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  },
+  "evidence": [
+    { "id": "artifact-security", "status": "pending", "checkedAt": null, "reference": "pending:ci", "releaseRevision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" },
+    { "id": "production-preflight", "status": "pending", "checkedAt": null, "reference": "pending:preflight", "releaseRevision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" },
+    { "id": "controlled-alpha-boundary", "status": "pending", "checkedAt": null, "reference": "pending:alpha-boundary", "releaseRevision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "mode": "controlled-alpha-v1", "publicMaintenanceEnabled": true, "webHealthy": false, "workerHealthy": false, "activeWorkerCount": 0, "checkoutEnabled": false, "registrationDefaultState": "pending", "siteOwnerApprovalRequired": true, "assetsPrivateByDefault": true, "knownTesterBriefingRequired": true, "nonSensitiveContentOnly": true, "o1keyDisclosureRequired": true, "providerErasureTermsAvailable": false, "manualFallbackAccepted": true, "automatedAccountDeletionDeferred": true, "inProductReportingDeferred": true, "customerContentInEvidence": false },
+    { "id": "controlled-alpha-member-journey", "status": "pending", "checkedAt": null, "reference": "pending:member-journey", "releaseRevision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "nonOwnerAccountUsed": false, "pendingBeforeApproval": false, "generationBlockedWhilePending": false, "welcomeCredits": 100, "siteOwnerApprovalPassed": false, "manualTestCreditGrantPassed": false, "referenceUploadPassed": false, "realGenerationPassed": false, "privateAssetReadPassed": false, "reloginPassed": false, "crossOwnerReadDenied": false, "customerContentInEvidence": false },
+    { "id": "controlled-alpha-recovery", "status": "pending", "checkedAt": null, "reference": "pending:recovery", "releaseRevision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "assetsPrivateByDefault": true, "encryptedOffHostBackup": true, "observedRpoMinutes": null, "observedRtoMinutes": null, "recoveryPoints": { "daily": 14, "weekly": 8, "monthly": 12 }, "isolatedRestorePassed": false, "maintenanceReentryPassed": false, "productionDataCopiedLocal": false, "customerContentInEvidence": false },
+    { "id": "controlled-alpha-operations", "status": "pending", "checkedAt": null, "reference": "pending:operations", "releaseRevision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "owner": "operator:site-owner", "publicAvailabilityObserved": false, "webWorkerHealthObserved": false, "containerRestartSignalObserved": false, "hostMemoryObserved": false, "rootDiskObserved": false, "backupFreshnessObserved": false, "generationProviderFailureObserved": false, "notificationDelivered": false, "manualContactDocumented": false, "accountSuspensionPathPassed": false, "exactTargetRemovalRunbookDocumented": false, "complexDashboardRequired": false, "dualOperatorRequired": false, "customerContentInEvidence": false }
+  ]
+}

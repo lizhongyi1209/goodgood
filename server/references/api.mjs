@@ -6,6 +6,7 @@ import {
 } from "../generation/resources.mjs";
 import { REFERENCE_LIMITS } from "./constants.mjs";
 import { newRequestId } from "../observability/http.mjs";
+import { ContentSafetyError } from "../content-safety/errors.mjs";
 import {
   ReferencePersistenceError,
   ReferenceRequestError,
@@ -149,6 +150,7 @@ export function referenceApiError(
 ) {
   if (
     error instanceof AuthenticationError ||
+    error instanceof ContentSafetyError ||
     error instanceof ReferenceRequestError ||
     error instanceof ReferencePersistenceError
   ) {

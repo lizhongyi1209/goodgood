@@ -1,5 +1,8 @@
 import { CREATION_DRAFT_TTL_MS } from "./constants.mjs";
 import { DraftPersistenceError } from "./errors.mjs";
+import {
+  lockOwnerCreativeWriteAccess,
+} from "../account-deletion/creative-write-guard.mjs";
 import { lockReferenceLifecycle } from "../references/lifecycle-lock.mjs";
 import { findReadyReferences } from "../references/repository.mjs";
 
@@ -23,6 +26,13 @@ export async function saveCreationDraft(
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+    if (!(await lockOwnerCreativeWriteAccess(client, ownerId))) {
+      throw new DraftPersistenceError(
+        "ACCOUNT_SUSPENDED",
+        "账户已暂停使用，不能保存创作草稿。",
+        403,
+      );
+    }
     await lockReferenceLifecycle(client);
     const existingResult = await client.query(
       "SELECT * FROM creation_drafts WHERE owner_id = $1 FOR UPDATE",

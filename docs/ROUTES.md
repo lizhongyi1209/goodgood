@@ -21,6 +21,12 @@ native history.
 
 Do not describe placeholders as shipped features.
 
+ADR 0022 keeps the first verified account-deletion request entry on the
+existing `/admin/users` page. The POST-only server boundary is implemented
+locally at `/api/admin/users/:ownerId/deletion-requests`; the local page now
+provides the evidence form and two confirmation steps. It adds no public or
+member self-service route and exposes no withdrawal endpoint.
+
 The current authenticated Node API also owns `POST /api/references` for upload
 intents and `POST /api/references/:referenceId/complete` for post-upload
 validation. These are data boundaries, not visible navigation routes. They use
@@ -83,6 +89,11 @@ navigation:
 | `GET /api/auth/callback` | Consume state, expire the one-time browser binding on every outcome, exchange a valid code, and create a GoodGood session |
 | `GET /api/auth/session` | Return the safe current-account summary; never provider tokens |
 | `POST /api/auth/logout` | Revoke the GoodGood session, expire its cookie, and return the fixed Authing hosted-logout target in OIDC mode |
+| `GET /api/content-policy` | Return the canonical seed policy, exact version/hash, report categories, and current owner's acceptance state |
+| `POST /api/content-policy` | Idempotently accept that exact policy version/hash before creative writes |
+| `POST /api/content-reports` | Report and atomically quarantine one generated Asset owned by the caller |
+| `POST /api/admin/content-reports/:reportId/preview` | Site-owner-only audited exact private preview; no broad content browser |
+| `POST /api/admin/content-reports/:reportId/resolution` | Site-owner-only reasoned restore or byte-first permanent removal |
 
 The browser follows an OIDC logout target as a top-level navigation. It never
 uses `fetch` across origins, and the provider return is fixed to the GoodGood
@@ -106,11 +117,25 @@ persistence and navigation behavior exist:
 | `/explore` | Future discovery experience |
 | `/moodboards` | Future moodboards |
 | `/help` | Product help and status guidance |
-| `/admin/users` | M8 site-owner-only account review, suspension/restoration, audit history, and test-credit management |
+| `/admin/users` | M8 site-owner-only account review, suspension/restoration, audit history, test-credit management, and two-step verified deletion requests |
 
 The root route remains compatible for old links. Product navigation and clean
 creation transitions use `/create`; both entries mount the same component and
 do not create separate draft or history state.
+
+The local `/admin/users` deletion control uses two distinct confirmations and
+is never offered for the acting site owner. Both confirmations precede the
+single irreversible request-creation mutation. No request-withdrawal, account-
+reopen, or deletion-cancellation route is added. Site-owner account deletion
+remains an out-of-band operation with a separately reviewed runbook and
+approval.
+
+The same `/admin/users` working surface contains the bounded open content-report
+queue. Listing exposes metadata only. Exact preview, restore, and removal are
+POST-only, CSRF-protected, idempotent site-owner actions; there is no report ID,
+prompt, object key, or moderation content in a browser URL. Members report only
+their own generated Assets from the existing `/assets/:assetId` detail surface,
+so no new visible moderation route is introduced.
 
 ## Navigation rules
 
@@ -129,3 +154,7 @@ do not create separate draft or history state.
   and API authorization remain server-side. Search terms containing email or
   other personal data stay in request bodies or ephemeral client state rather
   than browser URLs or history.
+- Account-deletion request entry remains on `/admin/users`; do not add a member
+  self-service or separate deletion route in the first slice. The acting site
+  owner is never an eligible target in that surface. A created request has no
+  browser or API route for withdrawal or restoration.

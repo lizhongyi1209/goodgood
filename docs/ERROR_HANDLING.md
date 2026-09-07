@@ -264,9 +264,204 @@ longer owns. Project, generation, and unexpired creation-draft snapshots remain
 authoritative protection; cleanup does not expose object keys in a user
 response.
 
-An automated PostgreSQL backup failure leaves the source database untouched,
-removes only the transient plaintext archive created by that invocation, exits
-nonzero, and leaves the service failed in systemd with root-journal evidence.
+ADR 0022 account deletion is a separate operator lifecycle. Migration 0013 and
+the local POST administration boundary implement request creation and its
+immediate PostgreSQL transaction. Migration 0014 adds the non-content register
+and leased submitted-job wait step; migrations 0015-0016 add the local private-
+object deletion step and strict evidence constraints. Migration 0017 adds local
+creative-row deletion. Migration 0018 adds the provider-neutral external-
+identity disable/delete state machine. C6-2I adds an opt-in Authing adapter but
+does not wire it to a runtime. Migration 0019 adds final local anonymization/
+completion after external success. Once
+a request is verified, failure to complete a downstream step
+must not restore access: the account remains suspended, current sessions stay
+revoked, and new Authing-backed entry remains blocked. PostgreSQL, private R2,
+and Authing steps are individually idempotent and retain only bounded,
+non-content retry evidence. Private bytes are deleted before their successful
+completion is recorded. A timeout or partial failure keeps the request open,
+alerts the named operator, and never marks the 30-day outcome complete.
+
+The Authing adapter fails closed with fixed local codes rather than propagating
+provider messages: `AUTHING_IDENTITY_LOOKUP_FAILED`,
+`AUTHING_IDENTITY_LOOKUP_INVALID`, `AUTHING_IDENTITY_ISSUER_MISMATCH`,
+`AUTHING_IDENTITY_DISABLE_FAILED`, or `AUTHING_IDENTITY_DELETE_FAILED`.
+Only Authing's documented user-not-found `apiCode` 2004 is normalized to an
+idempotent no-op. A delete race or ambiguous delete error remains retryable; the
+next lookup may then prove absence. A response whose user ID or suspended status
+does not match the exact request never becomes GoodGood completion evidence.
+
+The C6-2J cycle reports only these orchestration-level alert codes:
+`ACCOUNT_DELETION_OBSERVATION_FAILED`, `ACCOUNT_DELETION_CYCLE_ABORTED`,
+`ACCOUNT_DELETION_PASS_FAILED`, `ACCOUNT_DELETION_LEASE_LOST`, and
+`ACCOUNT_DELETION_DEADLINE_OVERDUE`. Initial observation failure aborts every
+mutation. An unexpected phase exception aborts later phases but still attempts
+the final aggregate observation. Handled item/step failures and lease loss stay
+inside their existing retry state machine; the cycle continues so later phases
+can independently enforce their database prerequisites. Provider/database
+messages, request IDs, owner IDs, identity values, and object keys are never
+copied into cycle alerts or completion summaries. Alert delivery is not yet
+wired to a production notification route.
+
+C6-2M maps a completed cycle to process exit `0`, an aggregate `attention`
+result to `2`, and an aborted result to `3`. Configuration, dependency,
+construction, or cleanup failure returns `1` and emits only
+`ACCOUNT_DELETION_RUNTIME_FAILED`; an asynchronous database-pool failure emits
+only `ACCOUNT_DELETION_DATABASE_POOL_FAILED`. The public runtime completion
+event contains only status, fixed alert codes, before/after lifecycle counts,
+and aggregate claimed/completed/deferred/failed/lost-lease totals. It discards
+phase objects and any accidental identifier field.
+
+The host wrapper emits only fixed `ACCOUNT_DELETION_*` codes. Lock contention
+is `ACCOUNT_DELETION_CYCLE_OVERLAP` with exit `75`; invalid ownership, mode,
+configuration, credential mount, or immutable image fails before the container
+starts. The systemd four-minute outer timeout is also a failure signal; expired
+database leases make a later invocation reclaimable, and retry semantics still
+require provider lookup/object absence before recording success. The persistent
+timer may invoke the oneshot again but never performs an immediate shell retry,
+identity restore, content restore, or billable generation. The external
+monitoring agent must consume the failed unit plus fixed journal events and
+prove firing/resolved delivery before activation can count as production
+evidence.
+
+The `/admin/users` request entry is POST-only and requires the same persisted
+site-owner and CSRF boundary as other administration mutations. Either of its
+two implemented browser confirmation steps may be cancelled without mutation.
+Failed final submits keep the evidence, both confirmations, and the original
+idempotency key available for a safe retry. The server
+rejects acting-site-owner targets even if the client control is forged or
+stale. Successful request creation says only that access stopped and deletion
+is pending; the read-only account row retains that state and deadline after a
+refresh and never reports downstream erasure before step evidence exists.
+An email from any address other than the account's current registered address,
+a missing reply, or a reply after 24 hours fails verification without changing
+access or creating the request. The site owner restarts the round trip instead
+of extending or overriding the expired evidence. Email subject/body must not
+enter application logs or database error detail.
+
+The final request-creation submit is irreversible. A duplicate submit is an
+idempotent read of the same request, not a withdrawal or second deletion. No
+failure handler may reactivate the account, recreate sessions, reverse queued-
+job cancellation or credit release, restore content, or remove the deletion
+register. An erroneous committed request opens a separate incident record and
+alert for investigation while the deletion workflow remains active.
+
+The local wait-step runner uses expiring database leases. A live submitted job
+returns the step to `pending` with `SUBMITTED_JOBS_ACTIVE` and a later retry
+time. A lost lease records no completion. An unexpected database failure leaves
+the step `running` only until its lease expires, after which another bounded pass
+may reclaim it. Completing the wait step never marks the overall request or
+register completed and never triggers a destructive side effect.
+
+The local deletion-inventory preview fails closed with
+`ACCOUNT_DELETION_INVENTORY_NOT_READY` unless the request and register are still
+processing and `wait_for_submitted_jobs` is completed. Its database reads use a
+single read-only, repeatable-read transaction; a query failure rolls that
+transaction back and returns no partial count or digest. The service rejects an
+invalid count/hash contract and emits only the whitelisted aggregate result, so
+an internal object key or identifier cannot escape through an accidental extra
+repository field. No preview failure changes deletion lifecycle state.
+
+The private-object step is claimable only after the submitted-job wait step.
+It persists a freshly recomputed inventory hash and bounded target count before
+calling storage. For each distinct key, the storage delete happens before all
+matching asset/reference rows receive `object_deleted_at`; only then does the
+step's deleted count advance. `OBJECT_DELETE_FAILED` contains no key/provider
+message and returns the step to pending. An evidence-write error or expired
+lease never marks success: the idempotent storage delete is retried after lease
+recovery. Normal bounded continuation with remaining objects is pending without
+a false failure code. A pending reference upload remains protected until its
+signed PUT expiry plus a short clock-skew grace, so the worker cannot mark its key terminal and then lose the
+only evidence needed to remove a late upload. Request/register state stays
+processing throughout.
+
+The creative-record step is claimable only after private-object completion. It
+locks the owner, reference lifecycle, step, and graph rows; requires a matching
+fresh inventory digest and zero live object keys; then validates ownership and
+deletes the graph inside one transaction. Any drift, cross-owner edge, foreign-
+key error, count mismatch, database failure, or expired lease produces no
+partial deletion. The transaction rolls back, the step returns to pending with
+only `CREATIVE_DELETE_FAILED` and aggregate counts, and no prompt, object key,
+owner/request ID, SQL detail, or exception message enters its service log.
+Successful deletion retains ledger and audit rows. The only ledger mutation is
+the trigger-guarded removal of a deleted job link bound to the current request;
+normal update/delete attempts remain rejected.
+
+The external-identity step is claimable only after creative deletion completes.
+It calls an injected adapter to disable before delete and writes each local
+timestamp only after the corresponding external call succeeds. Missing external
+records are an adapter-level idempotent success; a provider exception records
+only `IDENTITY_DELETE_FAILED` plus aggregate counts and returns the step to
+pending. An evidence-write failure or lost lease cannot claim success; the next
+worker repeats the idempotent external call. Logs contain only fixed event/error
+codes and never issuer, subject, endpoint, credential, request/owner ID, or raw
+provider text. Local identity rows remain available for retry through external
+completion and are not anonymized by this step.
+
+The final local step is claimable only after all four predecessors complete.
+It fails closed if creative rows remain, a session is not revoked, any local
+identity lacks external-delete evidence, a site-owner role is present, a credit
+unit has no reviewed policy, or reserved credit is nonzero. Any expiry,
+session/identity removal, owner/request anonymization, or completion-marker
+failure rolls the one PostgreSQL transaction back. The leased step returns to
+pending with only `LOCAL_ANONYMIZATION_FAILED`; logs omit request/owner IDs,
+email, identity claims, SQL detail, and exception text. Success appends a credit
+expiry event rather than rewriting ledger history, preserves administrative
+evidence unchanged, and completes the request/register exactly once. A lost
+lease records no completion, and a repeated pass is a no-op.
+
+A provider-submitted generation is not interrupted by account deletion. The
+Worker may retry only the existing bounded poll/result download, never the
+provider submission or a fallback. Success still inserts the private Asset and
+settles reserved credit once; failure, including `SUBMISSION_UNKNOWN`, releases
+the reservation under the existing rule. The suspended owner cannot read a
+late result, and the deletion workflow must remove it before completion. A
+stuck submitted task keeps deletion incomplete and alerts the operator rather
+than deleting its reconciliation evidence or exceeding the 30-day deadline.
+
+A queued job that has not crossed the provider-submission guard is cancelled
+with its credit release and outbox invalidation in the deletion-request
+PostgreSQL transaction. If Valkey still delivers an older queue item, the Worker
+must observe terminal `cancelled`, make no provider request, acknowledge the
+delivery, and leave the prior credit release unchanged. A race never guesses:
+the committed submission guard selects submitted-task reconciliation; a
+committed cancellation prevents later submission.
+
+A backup restore containing an already deleted identity or content fails
+closed in network isolation. Replay the independent deletion register and
+verify absence before candidate health or recovery evidence can pass. Immutable
+encrypted archives are not rewritten in place; they expire through the accepted
+14 daily / 8 weekly / 12 monthly policy. Provider-side erasure is reported only
+when the provider contract or a provider response supplies evidence.
+
+C6-2K rejects malformed, unknown-field, duplicate-owner/request, future-dated,
+or digest-mismatched register exports before database mutation. Replay also
+requires a separately supplied expected SHA-256 and rejects count drift,
+identity conflicts, site-owner targets, state regression, unsupported credit
+units, residual reservations, or residual local identity/content. Every record
+is applied in one serializable transaction; any unexpected error rolls back the
+whole artifact. Public failures expose only
+`ACCOUNT_DELETION_REGISTER_EXPORT_FAILED` or
+`ACCOUNT_DELETION_REGISTER_REPLAY_FAILED`, never UUIDs, emails, subjects,
+prompts, object keys, or database messages. A processing tombstone is not an
+error, but it always returns `ready: false`; recovery must stay isolated until
+the ordinary lifecycle completes and a newer bound export replays cleanly.
+
+C6-2L also rejects a production recovery point before replay when it does not
+contain exactly one dump, one deletion-register artifact, and one manifest with
+the same timestamp stem; when the snapshot or manifest is older than the
+one-hour RPO; when dump/export/manifest timestamps are out of order or more than
+15 minutes apart; when any file is not a root-owned, non-symlink `0600` regular
+file; when either digest or aggregate register metadata differs; or when the
+manifest image is mutable, unavailable locally, or differs from the approved
+GoodGood GHCR namespace. The restore helper never pulls an image during the
+isolated drill. All such failures leave production untouched, remove only files
+created by that invocation, keep the restore container non-serving, and report
+fixed recovery codes rather than paths, UUIDs, database errors, or content.
+
+An automated PostgreSQL recovery-point failure leaves the source database
+untouched, removes only the transient dump/register/manifest files created by
+that invocation, preserves any pre-existing collision target, exits nonzero,
+and leaves the service failed in systemd with root-journal evidence.
 It does not retry a database dump, weaken retention, initialize a replacement
 repository, initiate a restore, or send a staging-only outbound alert. The unit
 does not print its secret URL, R2 credential, Restic password, database content,
@@ -363,6 +558,30 @@ duplicate keys, summary/hash drift, a truncated page without a continuation
 token, or unknown historical-version scope stops conversion. Its deletion plan
 binds the exact current-object hash but has no execution path; a changed object
 set requires a new inventory and approval.
+
+The content-policy boundary fails closed with
+`CONTENT_POLICY_ACCEPTANCE_REQUIRED` before a reference intent, generation, or
+retry transaction writes creative state. A stale displayed version/hash returns
+`CONTENT_POLICY_VERSION_CONFLICT`; an existing same-version record with another
+hash returns `CONTENT_POLICY_ACCEPTANCE_CONFLICT`. The browser preserves the
+composer and reloads the canonical policy. It never substitutes embedded or
+cached policy copy for unavailable server state.
+
+An owner report is idempotent and either creates both the report and
+`quarantined` Asset state in one transaction or creates neither. Foreign,
+missing, deleted, already terminal, or invalid-category targets return stable
+`CONTENT_REPORT_*` errors without revealing another owner or object key. Once
+quarantined, ordinary generation/project/asset presentation cannot issue a
+signed URL for that Asset.
+
+Site-owner preview and resolution are POST-only and require the dedicated CSRF
+header plus persisted site-owner authorization. An unavailable exact Asset
+remains quarantined. Restore records `accepted` only with append-only action
+evidence. Removal calls private object deletion before database success; an
+object-store or commit failure never reports completion, never restores the
+Asset, and remains safely retryable. Unexpected content-safety failures log
+only a fixed event and support/request ID, never provider text, prompt, image,
+account identifier, or object key.
 
 ## Idempotency and retries
 

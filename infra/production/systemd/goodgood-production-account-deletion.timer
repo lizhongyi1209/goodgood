@@ -1,0 +1,12 @@
+[Unit]
+Description=Schedule GoodGood production account deletion cycles
+
+[Timer]
+OnCalendar=*-*-* *:00/5:00 UTC
+RandomizedDelaySec=30s
+Persistent=true
+AccuracySec=30s
+Unit=goodgood-production-account-deletion.service
+
+[Install]
+WantedBy=timers.target

@@ -50,6 +50,7 @@ export type GenerationErrorCode =
   | "MODEL_REJECTED"
   | "CAPACITY_BUSY"
   | "SUBMISSION_UNKNOWN"
+  | "CONTENT_POLICY_ACCEPTANCE_REQUIRED"
   | "INTERNAL_ERROR";
 
 export type GenerationError = Readonly<{

@@ -400,11 +400,37 @@ test("worker persists the selected provider route and exposes charged-retry reco
 
 test("provider submission guard is a one-way persisted transition", async () => {
   const queries = [];
-  const pool = {
+  let attemptState = "created";
+  const client = {
     async query(sql, parameters) {
       queries.push({ parameters, sql });
-      return { rowCount: queries.length === 1 ? 1 : 0 };
+      const normalized = sql.replace(/\s+/g, " ").trim();
+      if (["BEGIN", "COMMIT", "ROLLBACK"].includes(normalized)) {
+        return { rowCount: null, rows: [] };
+      }
+      if (normalized.startsWith("SELECT attempt.id")) {
+        return {
+          rowCount: 1,
+          rows: [{
+            has_deletion_request: false,
+            id: "attempt-1",
+            job_state: "running",
+            owner_id: "owner-1",
+            provider_task_id: null,
+            state: attemptState,
+          }],
+        };
+      }
+      if (normalized.startsWith("UPDATE generation_attempts")) {
+        attemptState = "submitted";
+        return { rowCount: 1, rows: [{ id: "attempt-1" }] };
+      }
+      throw new Error(`Unexpected SQL: ${normalized}`);
     },
+    release() {},
+  };
+  const pool = {
+    async connect() { return client; },
   };
 
   assert.equal(
@@ -415,10 +441,14 @@ test("provider submission guard is a one-way persisted transition", async () => 
     await markProviderSubmissionStarted(pool, { attemptId: "attempt-1" }),
     false,
   );
-  assert.match(queries[0].sql, /state = 'submitted'/);
-  assert.match(queries[0].sql, /state = 'created'/);
-  assert.match(queries[0].sql, /provider_task_id IS NULL/);
-  assert.deepEqual(queries[0].parameters, ["attempt-1"]);
+  const lockQuery = queries.find(({ sql }) => /SELECT attempt\.id/.test(sql));
+  const updateQuery = queries.find(({ sql }) => /UPDATE generation_attempts/.test(sql));
+  assert.match(lockQuery.sql, /FOR UPDATE OF job, attempt/);
+  assert.match(lockQuery.sql, /account_deletion_requests/);
+  assert.deepEqual(lockQuery.parameters, ["attempt-1"]);
+  assert.match(updateQuery.sql, /state = 'submitted'/);
+  assert.match(updateQuery.sql, /state = 'created'/);
+  assert.match(updateQuery.sql, /provider_task_id IS NULL/);
 });
 
 test("O1Key local runner mounts an invisible temporary key into only the worker", async () => {
