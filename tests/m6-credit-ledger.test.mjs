@@ -141,15 +141,21 @@ test("billing failures preserve a normalized generation API response", () => {
 test("M6 migration and schema define immutable prices and append-only ledger links", async () => {
   const [
     migration,
+    gptPricingMigration,
     schema,
     repository,
     contract,
     authenticationRepository,
     generationRepository,
     pricingDecision,
+    gptPricingDecision,
   ] = await Promise.all([
     readFile(
       new URL("../migrations/0009_m6_credit_ledger.sql", import.meta.url),
+      "utf8",
+    ),
+    readFile(
+      new URL("../migrations/0013_gg007_gpt_image_2_prices.sql", import.meta.url),
       "utf8",
     ),
     readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
@@ -160,6 +166,13 @@ test("M6 migration and schema define immutable prices and append-only ledger lin
     readFile(
       new URL(
         "../docs/decisions/0009-banana-2-flat-credit-price.md",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+    readFile(
+      new URL(
+        "../docs/decisions/0030-open-gpt-image-2-sd-with-model-specific-sizes.md",
         import.meta.url,
       ),
       "utf8",
@@ -181,6 +194,9 @@ test("M6 migration and schema define immutable prices and append-only ledger lin
   assert.match(migration, /'nano-banana-2', '1K', 1, 'standard', 1, 'credit', 10/);
   assert.match(migration, /'nano-banana-2', '2K', 1, 'standard', 1, 'credit', 10/);
   assert.match(migration, /'nano-banana-2', '4K', 1, 'standard', 1, 'credit', 10/);
+  assert.match(gptPricingMigration, /'gpt-image-2', '1K', 1, 'standard', 1, 'credit', 10/);
+  assert.match(gptPricingMigration, /'gpt-image-2', '2K', 1, 'standard', 1, 'credit', 10/);
+  assert.match(gptPricingMigration, /'gpt-image-2', '4K', 1, 'standard', 1, 'credit', 10/);
   assert.match(migration, /'welcome_grant_v1'/);
   assert.match(migration, /'\{"campaign":"welcome-v1","images":10\}'/);
   assert.match(repository, /FOR UPDATE/);
@@ -193,6 +209,8 @@ test("M6 migration and schema define immutable prices and append-only ledger lin
   assert.match(pricingDecision, /10 credits/);
   assert.match(pricingDecision, /100-credit/);
   assert.match(pricingDecision, /CNY 0\.20/);
+  assert.match(gptPricingDecision, /`gpt-image-2-c-sd`/);
+  assert.match(gptPricingDecision, /10 GoodGood credits/);
   assert.doesNotMatch(repository, /request\.body|window\.|localStorage/);
 });
 
@@ -242,6 +260,23 @@ test(
     );
     assert.deepEqual(
       standardPrices.rows.map((row) => [row.resolution, row.credit_amount]),
+      [
+        ["1K", "10"],
+        ["2K", "10"],
+        ["4K", "10"],
+      ],
+    );
+    const gptPrices = await pool.query(
+      `SELECT resolution, credit_amount
+         FROM price_versions
+        WHERE model_id = 'gpt-image-2'
+          AND output_count = 1
+          AND plan_context = 'standard'
+          AND version = 1
+        ORDER BY resolution`,
+    );
+    assert.deepEqual(
+      gptPrices.rows.map((row) => [row.resolution, row.credit_amount]),
       [
         ["1K", "10"],
         ["2K", "10"],
@@ -474,13 +509,17 @@ test(
     });
     assert.deepEqual(
       publicBillingSummary.quotes.map((quote) => [
+        quote.modelId,
         quote.resolution,
         quote.creditAmount,
       ]),
       [
-        ["1K", "10"],
-        ["2K", "10"],
-        ["4K", "10"],
+        ["nano-banana-2", "1K", "10"],
+        ["nano-banana-2", "2K", "10"],
+        ["nano-banana-2", "4K", "10"],
+        ["gpt-image-2", "1K", "10"],
+        ["gpt-image-2", "2K", "10"],
+        ["gpt-image-2", "4K", "10"],
       ],
     );
 

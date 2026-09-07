@@ -55,9 +55,10 @@ duplicating a release log.
 
 - Prompt/reference composer, attached settings, responsive creation stream,
   polled pending/success/inline failure, retry, gallery and focused image detail.
-- Nano Banana 2 through the real server-side O1Key route, across 14 product
-  ratios and `1K / 2K / 4K`, one output. Other visible model names are not a
-  promise of availability; routing and UI labels remain separate.
+- Nano Banana 2 through the real server-side O1Key route across 14 product
+  ratios, plus GPT IMAGE 2 through `gpt-image-2-c-sd` across its seven exact-size
+  ratios. Both use `1K / 2K / 4K`, one output, and model-owned capability maps.
+  Other visible model names are not a promise of availability.
 - Authing Google/email-code login and revocable GoodGood sessions, with
   owner-scoped jobs, private assets, uploads, projects and drafts. Local Compose
   uses explicitly isolated test identities/mock/RustFS, not production data.
@@ -76,7 +77,8 @@ ADR 0024 permits the owner-reviewed controlled alpha with non-sensitive test
 content, direct operator contact and manual response. It does not claim the
 full seed or paid gate. Its accepted deferrals remain in `docs/BACKLOG.md`:
 
-- Customer checkout/domestic Alipay, additional models and multi-output.
+- Customer checkout/domestic Alipay, Nano Banana Pro and further models, and
+  multi-output.
 - Full automatic account/external-identity deletion, content reporting and
   broader moderation, provider-erasure terms, and complex monitoring.
 - Search, Explore, Moodboards, collaboration, sharing, and richer cross-device

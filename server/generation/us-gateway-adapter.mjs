@@ -1,24 +1,42 @@
 import { NormalizedProviderError } from "./provider.mjs";
 import {
-  DURABLE_GENERATION_MODEL_ID,
   DURABLE_GENERATION_OUTPUT_COUNT,
-  SUPPORTED_GENERATION_ASPECT_RATIOS,
   SUPPORTED_GENERATION_RESOLUTIONS,
-  isSupportedGenerationAspectRatio,
-  isSupportedGenerationResolution,
+  getGenerationModelCapability,
+  getGptImage2PixelSize,
+  isSupportedGenerationInput,
 } from "./capabilities.mjs";
 
 export const US_GATEWAY_CONTRACT_VERSION = "o1key-image-api-2026-09-02";
 
-export const US_GATEWAY_MVP_ROUTE = Object.freeze({
-  aspectRatios: SUPPORTED_GENERATION_ASPECT_RATIOS,
+export const US_GATEWAY_NANO_BANANA_2_ROUTE = Object.freeze({
+  aspectRatios: getGenerationModelCapability("nano-banana-2").aspectRatios,
   outputCount: DURABLE_GENERATION_OUTPUT_COUNT,
-  productModelId: DURABLE_GENERATION_MODEL_ID,
+  productModelId: "nano-banana-2",
   provider: "o1key",
   providerModel: "gemini-3.1-flash-image-c-sp",
   resolutions: SUPPORTED_GENERATION_RESOLUTIONS,
   routeVersion: "o1key-gemini-3.1-flash-image-c-sp-v2",
 });
+
+export const US_GATEWAY_GPT_IMAGE_2_ROUTE = Object.freeze({
+  aspectRatios: getGenerationModelCapability("gpt-image-2").aspectRatios,
+  outputCount: DURABLE_GENERATION_OUTPUT_COUNT,
+  productModelId: "gpt-image-2",
+  provider: "o1key",
+  providerModel: "gpt-image-2-c-sd",
+  resolutions: SUPPORTED_GENERATION_RESOLUTIONS,
+  routeVersion: "o1key-gpt-image-2-c-sd-v1",
+});
+
+export const US_GATEWAY_MVP_ROUTE = US_GATEWAY_NANO_BANANA_2_ROUTE;
+
+export function getUsGatewayRoute(modelId) {
+  return Object.freeze({
+    "nano-banana-2": US_GATEWAY_NANO_BANANA_2_ROUTE,
+    "gpt-image-2": US_GATEWAY_GPT_IMAGE_2_ROUTE,
+  })[modelId] ?? null;
+}
 
 const TERMINAL_STATES = new Set(["failed", "succeeded"]);
 const STATE_ORDER = Object.freeze({ queued: 0, running: 1, failed: 2, succeeded: 2 });
@@ -251,15 +269,44 @@ function normalizeTemporaryUpload(payload, expectedMimeType, nowSeconds) {
   });
 }
 
-function validateMvpJob(job) {
+function validateJob(job, route) {
   if (
-    job?.model_id !== US_GATEWAY_MVP_ROUTE.productModelId ||
-    !isSupportedGenerationAspectRatio(job?.aspect_ratio) ||
-    !isSupportedGenerationResolution(job?.resolution) ||
-    job?.requested_count !== US_GATEWAY_MVP_ROUTE.outputCount
+    job?.model_id !== route.productModelId ||
+    !isSupportedGenerationInput({
+      aspectRatio: job?.aspect_ratio,
+      count: job?.requested_count,
+      modelId: job?.model_id,
+      resolution: job?.resolution,
+    })
   ) {
     throw protocolError();
   }
+}
+
+function generationPayload({ job, route, uploadedReferences }) {
+  const common = {
+    images: uploadedReferences.map((reference) => ({
+      fileData: {
+        fileUri: reference.url,
+        mimeType: reference.contentType,
+      },
+    })),
+    model: route.providerModel,
+    prompt: job.prompt,
+  };
+  if (route.productModelId === "gpt-image-2") {
+    return {
+      ...common,
+      n: route.outputCount,
+      size: getGptImage2PixelSize(job.aspect_ratio, job.resolution),
+    };
+  }
+  return {
+    ...common,
+    aspect_ratio: job.aspect_ratio,
+    response_modalities: ["IMAGE"],
+    size: job.resolution,
+  };
 }
 
 export function createUsGatewayAdapter({
@@ -269,6 +316,7 @@ export function createUsGatewayAdapter({
   now = () => Date.now(),
   requestTimeoutMs = 15_000,
   failureConfirmationPolls = US_GATEWAY_FAILURE_CONFIRMATION_POLLS,
+  route = US_GATEWAY_MVP_ROUTE,
   sleep = (milliseconds) =>
     new Promise((resolve) => setTimeout(resolve, milliseconds)),
   allowInsecureLoopback = false,
@@ -281,6 +329,9 @@ export function createUsGatewayAdapter({
     throw new Error("Gateway failure confirmation polls must be a positive integer.");
   }
   const origin = assertLoopbackOrHttps(baseUrl, allowInsecureLoopback);
+  if (getUsGatewayRoute(route.productModelId) !== route) {
+    throw new Error("A supported O1Key generation route is required.");
+  }
 
   async function request(path, options = {}) {
     const { submission = false, ...requestOptions } = options;
@@ -329,10 +380,10 @@ export function createUsGatewayAdapter({
 
   return Object.freeze({
     getTask,
-    route: US_GATEWAY_MVP_ROUTE,
+    route,
 
     async submit({ job, onSubmissionStart = async () => {}, references = [] }) {
-      validateMvpJob(job);
+      validateJob(job, route);
       if (!Array.isArray(references) || references.length > MAX_REFERENCES) {
         throw protocolError();
       }
@@ -342,19 +393,7 @@ export function createUsGatewayAdapter({
       }
       await onSubmissionStart();
       const payload = await request("/async/v1/generateImage", {
-        body: JSON.stringify({
-          aspect_ratio: job.aspect_ratio,
-          images: uploadedReferences.map((reference) => ({
-            fileData: {
-              fileUri: reference.url,
-              mimeType: reference.contentType,
-            },
-          })),
-          model: US_GATEWAY_MVP_ROUTE.providerModel,
-          prompt: job.prompt,
-          response_modalities: ["IMAGE"],
-          size: job.resolution,
-        }),
+        body: JSON.stringify(generationPayload({ job, route, uploadedReferences })),
         headers: { "content-type": "application/json" },
         method: "POST",
         submission: true,

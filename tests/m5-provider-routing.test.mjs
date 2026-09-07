@@ -6,7 +6,12 @@ import path from "node:path";
 import test from "node:test";
 import { loadGenerationConfig } from "../server/generation/config.mjs";
 import { downloadProviderOutput } from "../server/generation/provider.mjs";
-import { createGenerationProvider } from "../server/generation/provider-router.mjs";
+import {
+  MOCK_GPT_IMAGE_2_ROUTE,
+  createGenerationProvider,
+  generationProviderRouteForModel,
+} from "../server/generation/provider-router.mjs";
+import { US_GATEWAY_GPT_IMAGE_2_ROUTE } from "../server/generation/us-gateway-adapter.mjs";
 import { markProviderSubmissionStarted } from "../server/generation/repository.mjs";
 import { prepareObjectStorage } from "../server/generation/resources.mjs";
 import {
@@ -229,6 +234,30 @@ test("O1Key worker route reads private reference bytes, uploads, and resumes pol
   assert.equal(output.url, "https://assetcache.o1key.invalid/result.png");
 });
 
+test("provider routing selects GPT Image 2 SD without changing its product model ID", () => {
+  assert.equal(
+    generationProviderRouteForModel("o1key", "gpt-image-2"),
+    US_GATEWAY_GPT_IMAGE_2_ROUTE,
+  );
+  assert.deepEqual(US_GATEWAY_GPT_IMAGE_2_ROUTE, {
+    aspectRatios: ["9:16", "2:3", "3:4", "1:1", "4:3", "3:2", "16:9"],
+    outputCount: 1,
+    productModelId: "gpt-image-2",
+    provider: "o1key",
+    providerModel: "gpt-image-2-c-sd",
+    resolutions: ["1K", "2K", "4K"],
+    routeVersion: "o1key-gpt-image-2-c-sd-v1",
+  });
+  assert.equal(
+    generationProviderRouteForModel("mock", "gpt-image-2"),
+    MOCK_GPT_IMAGE_2_ROUTE,
+  );
+  assert.throws(
+    () => generationProviderRouteForModel("o1key", "nano-banana-pro"),
+    /No o1key generation route/,
+  );
+});
+
 test("downloaded provider output is fully decoded instead of trusting metadata", async () => {
   const bytes = await readFile(
     new URL("../public/nano-fashion.png", import.meta.url),
@@ -386,10 +415,11 @@ test("worker persists the selected provider route and exposes charged-retry reco
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../shared/contracts/generation.ts", import.meta.url), "utf8"),
   ]);
-  assert.match(repository, /attemptRoute\.routeVersion/);
-  assert.match(repository, /attemptRoute\.providerModel/);
+  assert.match(repository, /resolvedAttemptRoute\.routeVersion/);
+  assert.match(repository, /resolvedAttemptRoute\.providerModel/);
   assert.doesNotMatch(repository, /VALUES \(\$1, \$2, \$3, 'm3-mock-v1'/);
-  assert.match(worker, /attemptRoute: provider\.route/);
+  assert.match(worker, /attemptRouteForModel/);
+  assert.match(worker, /route: claim\.route/);
   assert.match(worker, /provider\.assertAttempt\(attempt\)/);
   assert.match(worker, /attempt\.state !== "created"/);
   assert.match(worker, /markProviderSubmissionStarted/);

@@ -6,13 +6,14 @@ import { PrivateObjectImage } from "@/components/ui/private-object-image";
 
 import { Slider } from "@/components/ui/slider";
 import {
-  DEFAULT_GENERATION_RATIO_BY_MODE,
   GENERATION_RATIO_MODES,
-  GENERATION_RATIO_OPTIONS,
   GENERATION_RESOLUTION_OPTIONS,
   formatPixelDimensions,
+  getDefaultGenerationRatioForModelMode,
+  getGenerationModelRatioIndex,
+  getGenerationPixelDimensions,
   getGenerationRatio,
-  getGenerationRatioIndex,
+  getGenerationRatioOptions,
   getRatioFrame,
 } from "@/features/creation/generation-options";
 import {
@@ -120,7 +121,13 @@ export function CreationComposer({
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const activeModel = getGenerationModel(modelId);
   const activeRatio = getGenerationRatio(aspectRatio);
-  const ratioIndex = getGenerationRatioIndex(aspectRatio);
+  const ratioOptions = getGenerationRatioOptions(modelId);
+  const ratioIndex = getGenerationModelRatioIndex(modelId, aspectRatio);
+  const pixelDimensions = getGenerationPixelDimensions(
+    modelId,
+    aspectRatio,
+    resolution,
+  );
   const ratioFrame = getRatioFrame(activeRatio.value);
 
   useEffect(() => {
@@ -326,7 +333,9 @@ export function CreationComposer({
                       <button
                         key={mode}
                         className={activeRatio.mode === mode ? "selected" : ""}
-                        onClick={() => onAspectRatioChange(DEFAULT_GENERATION_RATIO_BY_MODE[mode])}
+                        onClick={() => onAspectRatioChange(
+                          getDefaultGenerationRatioForModelMode(modelId, mode),
+                        )}
                       >
                         {label}
                       </button>
@@ -335,17 +344,17 @@ export function CreationComposer({
                   <Slider
                     className="ratio-slider"
                     min={0}
-                    max={GENERATION_RATIO_OPTIONS.length - 1}
+                    max={ratioOptions.length - 1}
                     step={1}
                     value={[ratioIndex]}
                     onValueChange={(value) => {
-                      const option = GENERATION_RATIO_OPTIONS[value[0]];
+                      const option = ratioOptions[value[0]];
                       if (option) onAspectRatioChange(option.id);
                     }}
                     aria-label="调整画面比例"
                   />
                   <div className="ratio-readout">
-                    <small>{formatPixelDimensions(activeRatio.dimensions[resolution])}</small>
+                    <small>{formatPixelDimensions(pixelDimensions)}</small>
                   </div>
                 </div>
               </div>

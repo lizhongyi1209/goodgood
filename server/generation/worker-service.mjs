@@ -1,6 +1,9 @@
 import { createHash, randomUUID } from "node:crypto";
 import { NormalizedProviderError } from "./provider.mjs";
-import { createGenerationProvider } from "./provider-router.mjs";
+import {
+  createGenerationProvider,
+  generationProviderRouteForModel,
+} from "./provider-router.mjs";
 import {
   claimGenerationJob,
   completeGenerationJob,
@@ -45,9 +48,9 @@ function generatedObjectExtension(contentType) {
 export async function processGenerationJob(resources, { jobId, workerId }) {
   const startedAt = Date.now();
   const { config, pool, publicStorage, storage } = resources;
-  const provider = createGenerationProvider({ config, publicStorage, storage });
   const claim = await claimGenerationJob(pool, {
-    attemptRoute: provider.route,
+    attemptRouteForModel: (modelId) =>
+      generationProviderRouteForModel(config.provider.kind, modelId),
     jobId,
     leaseMs: config.workerLeaseMs,
     workerId,
@@ -56,12 +59,18 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
     return {
       durationMs: Date.now() - startedAt,
       outcome: claim.reason,
-      provider: provider.route.provider,
-      routeVersion: provider.route.routeVersion,
+      provider: claim.route?.provider ?? config.provider.kind,
+      routeVersion: claim.route?.routeVersion,
     };
   }
 
   const { attempt, job } = claim;
+  const provider = createGenerationProvider({
+    config,
+    publicStorage,
+    route: claim.route,
+    storage,
+  });
   let stage = "attempt-validation";
   let taskId = attempt.provider_task_id;
   let providerStartedAt = null;

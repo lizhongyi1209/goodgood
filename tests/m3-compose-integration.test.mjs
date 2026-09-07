@@ -110,9 +110,9 @@ test(
     await seedLocalFixtures({ databaseUrl, logger: { log() {} } });
     await seedLocalFixtures({ databaseUrl, logger: { log() {} } });
     const migrationCount = await pool.query(
-      "SELECT count(*)::int AS count FROM goodgood_schema_migrations WHERE version IN ('0001_m3_generation.sql', '0002_m4_authenticated_owners.sql', '0003_m4_reference_assets.sql', '0004_m4_projects.sql', '0005_m4_oidc_sessions.sql', '0006_m4_oidc_login_binding.sql', '0007_m4_reference_cleanup.sql', '0008_m4_creation_drafts.sql', '0009_m6_credit_ledger.sql', '0010_m6_payment_sandbox.sql', '0011_m8_account_admission.sql', '0012_m8_remove_legacy_local_fixtures.sql')",
+      "SELECT count(*)::int AS count FROM goodgood_schema_migrations WHERE version IN ('0001_m3_generation.sql', '0002_m4_authenticated_owners.sql', '0003_m4_reference_assets.sql', '0004_m4_projects.sql', '0005_m4_oidc_sessions.sql', '0006_m4_oidc_login_binding.sql', '0007_m4_reference_cleanup.sql', '0008_m4_creation_drafts.sql', '0009_m6_credit_ledger.sql', '0010_m6_payment_sandbox.sql', '0011_m8_account_admission.sql', '0012_m8_remove_legacy_local_fixtures.sql', '0013_gg007_gpt_image_2_prices.sql')",
     );
-    assert.equal(migrationCount.rows[0].count, 12);
+    assert.equal(migrationCount.rows[0].count, 13);
     const suffix = `${Date.now()}-${process.pid}`;
     await Promise.all([
       grantCredits(pool, {

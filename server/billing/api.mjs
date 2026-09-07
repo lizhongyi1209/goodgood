@@ -8,11 +8,18 @@ import {
 } from "./repository.mjs";
 import { PaymentError } from "./payment-errors.mjs";
 
-const LAUNCH_PRICE = Object.freeze({
-  count: 1,
-  modelId: "nano-banana-2",
-  planContext: "standard",
-});
+const LAUNCH_PRICES = Object.freeze([
+  Object.freeze({
+    count: 1,
+    modelId: "nano-banana-2",
+    planContext: "standard",
+  }),
+  Object.freeze({
+    count: 1,
+    modelId: "gpt-image-2",
+    planContext: "standard",
+  }),
+]);
 
 function ownerIdFromContext(ownerContext) {
   if (!ownerContext?.ownerId) throw sessionExpiredError();
@@ -48,16 +55,16 @@ export const previewBillingSummary = Object.freeze({
     version: "1",
   }),
   quotes: Object.freeze(
-    ["1K", "2K", "4K"].map((resolution) =>
-      Object.freeze({
-        count: 1,
-        creditAmount: "10",
-        creditUnit: "credit",
-        modelId: "nano-banana-2",
-        planContext: "standard",
-        priceVersion: 1,
-        resolution,
-      }),
+    LAUNCH_PRICES.flatMap((launchPrice) =>
+      ["1K", "2K", "4K"].map((resolution) =>
+        Object.freeze({
+          ...launchPrice,
+          creditAmount: "10",
+          creditUnit: "credit",
+          priceVersion: 1,
+          resolution,
+        }),
+      ),
     ),
   ),
 });
@@ -68,9 +75,13 @@ export async function readBillingSummary({
 }) {
   const ownerId = ownerIdFromContext(ownerContext);
   const resolvedResources = resources ?? (await getGenerationResources());
-  const [account, prices] = await Promise.all([
+  const [account, priceGroups] = await Promise.all([
     findCreditAccount(resolvedResources.pool, { ownerId }),
-    listActiveGenerationPrices(resolvedResources.pool, LAUNCH_PRICE),
+    Promise.all(
+      LAUNCH_PRICES.map((launchPrice) =>
+        listActiveGenerationPrices(resolvedResources.pool, launchPrice),
+      ),
+    ),
   ]);
   if (!account || account.status !== "active") {
     throw new BillingPersistenceError(
@@ -81,7 +92,7 @@ export async function readBillingSummary({
   }
   return {
     account: publicAccount(account),
-    quotes: prices.map(publicQuote),
+    quotes: priceGroups.flat().map(publicQuote),
   };
 }
 

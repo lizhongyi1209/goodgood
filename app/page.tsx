@@ -6,6 +6,7 @@ import { CreationComposer } from "@/features/creation/creation-composer";
 import {
   getGenerationRatio,
   getGenerationResolutionLabel,
+  resolveGenerationAspectRatioForModel,
 } from "@/features/creation/generation-options";
 import {
   isGenerationJobActive,
@@ -454,12 +455,19 @@ export default function Home() {
       references: [],
       resolution: "1K" as const,
     };
-    setPrompt(state.prompt);
-    setReferenceImages(state.references.map((reference) => ({ ...reference })));
-    setSelectedModel(state.modelId);
-    setSelectedRatio(state.aspectRatio);
-    setResolution(state.resolution);
-    setGenerationCount(state.count);
+    const normalizedState = {
+      ...state,
+      aspectRatio: resolveGenerationAspectRatioForModel(
+        state.modelId,
+        state.aspectRatio,
+      ),
+    };
+    setPrompt(normalizedState.prompt);
+    setReferenceImages(normalizedState.references.map((reference) => ({ ...reference })));
+    setSelectedModel(normalizedState.modelId);
+    setSelectedRatio(normalizedState.aspectRatio);
+    setResolution(normalizedState.resolution);
+    setGenerationCount(normalizedState.count);
     draftVersionRef.current = draft?.version ?? null;
     draftSyncedCheckpointRef.current = createComposerCheckpoint(state);
     setDraftSyncRevision((current) => current + 1);
@@ -903,20 +911,27 @@ export default function Home() {
         if (!active || requestId !== projectRouteRequestRef.current) return;
         const restoredBatches = projectAssetBatches(restoredProject);
         const latestBatch = restoredProject.batches[0] ?? null;
+        const restoredState = {
+          ...restoredProject.state,
+          aspectRatio: resolveGenerationAspectRatioForModel(
+            restoredProject.state.modelId,
+            restoredProject.state.aspectRatio,
+          ),
+        };
         referenceObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
         referenceObjectUrlsRef.current.clear();
         loadedProjectIdRef.current = restoredProject.id;
         setCurrentProject({ id: restoredProject.id, name: restoredProject.name });
         setCreationBatches(restoredBatches);
         setSavedImages(restoredBatches.flatMap((batch) => batch.images.map((image) => `${batch.id}-${image.id}`)));
-        setPrompt(restoredProject.state.prompt);
-        setReferenceImages(restoredProject.state.references.map((reference) => ({ ...reference })));
-        setSelectedModel(restoredProject.state.modelId);
-        setSelectedRatio(restoredProject.state.aspectRatio);
-        setResolution(restoredProject.state.resolution);
-        setGenerationCount(restoredProject.state.count);
+        setPrompt(restoredState.prompt);
+        setReferenceImages(restoredState.references.map((reference) => ({ ...reference })));
+        setSelectedModel(restoredState.modelId);
+        setSelectedRatio(restoredState.aspectRatio);
+        setResolution(restoredState.resolution);
+        setGenerationCount(restoredState.count);
         setGenerationJob(latestBatch?.state === "failed" ? latestBatch : null);
-        setComposerCheckpoint(createComposerCheckpoint(restoredProject.state));
+        setComposerCheckpoint(createComposerCheckpoint(restoredState));
         setProjectRouteError(null);
         if (projectRestoreAnnouncementRef.current) {
           projectRestoreAnnouncementRef.current = false;
@@ -1036,6 +1051,9 @@ export default function Home() {
   const handleModelChange = (value: GenerationModelId) => {
     composerEditRevisionRef.current += 1;
     setSelectedModel(value);
+    setSelectedRatio((current) =>
+      resolveGenerationAspectRatioForModel(value, current),
+    );
   };
 
   const handleAspectRatioChange = (value: GenerationAspectRatio) => {
@@ -1435,10 +1453,10 @@ export default function Home() {
       return;
     }
     if (
-      selectedModel !== "nano-banana-2" ||
+      !["nano-banana-2", "gpt-image-2"].includes(selectedModel) ||
       generationCount !== 1
     ) {
-      toast.error("当前生成链路支持 Nano Banana 2、1 张图片");
+      toast.error("当前生成链路支持 Nano Banana 2、GPT IMAGE 2 和 1 张图片");
       return;
     }
 
@@ -1471,10 +1489,14 @@ export default function Home() {
   const restoreFailedGenerationSettings = () => {
     if (!failedGenerationSnapshot) return;
     const restored = restoreGenerationInputSnapshot(failedGenerationSnapshot);
+    const restoredAspectRatio = resolveGenerationAspectRatioForModel(
+      restored.modelId,
+      restored.aspectRatio,
+    );
     setPrompt(restored.prompt);
     setReferenceImages(restored.references);
     setSelectedModel(restored.modelId);
-    setSelectedRatio(restored.aspectRatio);
+    setSelectedRatio(restoredAspectRatio);
     setResolution(restored.resolution);
     setGenerationCount(restored.count);
     setDrawerOpen(true);

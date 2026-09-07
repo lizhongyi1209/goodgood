@@ -6,8 +6,10 @@ import {
 } from "./provider.mjs";
 import { readPrivateObject, signAssetRead } from "./storage.mjs";
 import {
+  US_GATEWAY_GPT_IMAGE_2_ROUTE,
   US_GATEWAY_MVP_ROUTE,
   createUsGatewayAdapter,
+  getUsGatewayRoute,
 } from "./us-gateway-adapter.mjs";
 
 export const MOCK_PROVIDER_ROUTE = Object.freeze({
@@ -15,6 +17,26 @@ export const MOCK_PROVIDER_ROUTE = Object.freeze({
   providerModel: "nano-banana-2-mock-v1",
   routeVersion: "m3-mock-v1",
 });
+
+export const MOCK_GPT_IMAGE_2_ROUTE = Object.freeze({
+  provider: "goodgood-mock",
+  providerModel: "gpt-image-2-mock-v1",
+  routeVersion: "m3-mock-gpt-image-2-v1",
+});
+
+export function generationProviderRouteForModel(providerKind, modelId) {
+  if (providerKind === "o1key") {
+    const route = getUsGatewayRoute(modelId);
+    if (route) return route;
+  } else if (providerKind === "mock") {
+    const route = Object.freeze({
+      "nano-banana-2": MOCK_PROVIDER_ROUTE,
+      "gpt-image-2": MOCK_GPT_IMAGE_2_ROUTE,
+    })[modelId];
+    if (route) return route;
+  }
+  throw new Error(`No ${providerKind} generation route for ${modelId}.`);
+}
 
 function assertAttemptRoute(attempt, route) {
   if (
@@ -35,20 +57,29 @@ function throwTerminalFailure(task) {
   });
 }
 
-export function createGenerationProvider({ config, publicStorage, storage }) {
+export function createGenerationProvider({
+  config,
+  publicStorage,
+  route = generationProviderRouteForModel(config.provider.kind, "nano-banana-2"),
+  storage,
+}) {
   if (config.provider.kind === "o1key") {
+    if (route !== US_GATEWAY_MVP_ROUTE && route !== US_GATEWAY_GPT_IMAGE_2_ROUTE) {
+      throw new Error("The selected route does not match the O1Key provider.");
+    }
     const adapter = createUsGatewayAdapter({
       allowInsecureLoopback: config.provider.allowInsecureLoopback,
       apiKey: config.provider.apiKey,
       baseUrl: config.provider.baseUrl,
       requestTimeoutMs: config.provider.requestTimeoutMs,
+      route,
     });
     return Object.freeze({
-      route: US_GATEWAY_MVP_ROUTE,
+      route,
       submissionPolicy: "task-id-required",
 
       assertAttempt(attempt) {
-        assertAttemptRoute(attempt, US_GATEWAY_MVP_ROUTE);
+        assertAttemptRoute(attempt, route);
       },
 
       async createTask({ job, onSubmissionStart }) {
@@ -96,12 +127,16 @@ export function createGenerationProvider({ config, publicStorage, storage }) {
     });
   }
 
+  if (route !== MOCK_PROVIDER_ROUTE && route !== MOCK_GPT_IMAGE_2_ROUTE) {
+    throw new Error("The selected route does not match the mock provider.");
+  }
+
   return Object.freeze({
-    route: MOCK_PROVIDER_ROUTE,
+    route,
     submissionPolicy: "idempotent",
 
     assertAttempt(attempt) {
-      assertAttemptRoute(attempt, MOCK_PROVIDER_ROUTE);
+      assertAttemptRoute(attempt, route);
     },
 
     async createTask({ attempt, job }) {
