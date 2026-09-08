@@ -74,13 +74,17 @@ individual icon. Upload, settings, and send align to the same 40px box.
 - Prompt is the flexible column. Left and right controls remain top-aligned and
   fixed while the textarea grows.
 - Reference thumbnails use a horizontal tray, centered 1:1 crops at `64 × 64 px`
-  on desktop and `56 × 56 px` on mobile, with individual removal. Each thumbnail
+  on desktop and `56 × 56 px` on mobile, with a compact upper-right removal
+  control that minimizes image obstruction. Each thumbnail
   keeps a compact lower-left `图 1…图 10` badge so prompt references match the
   submitted order. Keep the sizes in shared responsive tokens and do not show a
   redundant tray heading or total.
 - Reference drag feedback uses a restrained opacity change on the moving item
   and a Palace Red inset edge on the current destination; it must not resize or
   reflow the tray before the drop.
+- Clicking a ready reference opens a focused, viewport-contained preview that
+  shows the complete source with `object-fit: contain`; it keeps `图 N` and the
+  filename visible without turning the preview into an editing surface.
 - Uploading and failed references reuse the thumbnail silhouette with a quiet
   opacity treatment and centered status icon; do not introduce a detached
   upload panel or success banner.

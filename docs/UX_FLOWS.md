@@ -77,6 +77,11 @@ fill space.
 - Every tray item shows `图 1…图 10` at the lower left. Dragging one item onto
   another moves it to that position and immediately renumbers the tray. Focused
   items support `Alt + ← / →` for the same operation.
+- Clicking a ready tray item opens an uncropped, viewport-contained large
+  preview for inspecting source detail. Enter/Space opens the focused item;
+  Escape closes the dialog. Uploading/failed items and completed drag gestures
+  do not open it. The smaller upper-right remove control deletes without opening
+  the preview.
 - Send is blocked while any retained reference is uploading or failed. Ready
   references preserve their tray order in the submitted batch snapshot.
 - Settings: attached downward drawer; closing it must not reset values.

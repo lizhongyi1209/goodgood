@@ -24,8 +24,9 @@
 | GG-016 | Nano Banana 2 隐藏并固定高思考 | 3010 已就绪；本地浏览器已验证 | [任务](tasks/GG-016-banana-hidden-high-thinking.md) |
 | GG-017 | 上传参考图沉淀为可复用素材，并可从资产库加入创作 | 3010 浏览器已验证；未发布 | [任务](tasks/GG-017-reusable-reference-library.md) |
 | GG-018 | 参考图拖拽排序并显示图 1…图 10 序号 | 3010 浏览器已验证；未发布 | [任务](tasks/GG-018-reference-ordering.md) |
+| GG-019 | 参考图点击查看完整大图并精简右上角删除按钮 | 3010 浏览器已验证；未发布 | [任务](tasks/GG-019-reference-large-preview.md) |
 
-下一个普通产品需求从 **GG-019** 分配并检查是否已被占用。
+下一个普通产品需求从 **GG-020** 分配并检查是否已被占用。
 GG-003 不阻塞本地新功能开发，但必须在下一次实际 alpha 发布前闭环。
 
 ## 已明确搁置（不得自动恢复）

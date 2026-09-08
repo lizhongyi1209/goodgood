@@ -19,6 +19,8 @@ idempotency, cross-owner read/retry denial, reference intent limits, real image
 decoding, format/size/dimension rejection, upload UI success/failure, reference
 route owner propagation, owner-scoped accepted-material listing, reusable
 selection deduplication/limits, material loading/empty/failure UI wiring,
+ready-reference click/Enter/Space large-preview behavior, uncropped contained
+rendering, drag-click suppression, and remove-button event isolation,
 project save validation and idempotency, project list
 loading/empty/failure UI states, project route owner propagation, cross-owner
 read/update denial, stable project route parsing/history notification, direct

@@ -4,11 +4,20 @@ import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import Image from "next/image";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import {
+  Dialog,
+  DialogClose,
+  DialogDescription,
+  DialogOverlay,
+  DialogPortal,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Dialog as DialogPrimitive } from "radix-ui";
 
 import { Slider } from "@/components/ui/slider";
 import {
@@ -159,7 +168,15 @@ export function CreationComposer({
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const [draggedReferenceId, setDraggedReferenceId] = useState<string | null>(null);
   const [dragTargetReferenceId, setDragTargetReferenceId] = useState<string | null>(null);
+  const [previewReferenceId, setPreviewReferenceId] = useState<string | null>(null);
+  const suppressReferencePreviewRef = useRef(false);
   const canReorderReferences = references.length > 1 && onReorderReference !== undefined;
+  const previewReferenceIndex = references.findIndex(
+    (reference) => reference.id === previewReferenceId,
+  );
+  const previewReference = previewReferenceIndex >= 0
+    ? references[previewReferenceIndex]
+    : null;
   const activeModel = getGenerationModel(modelId);
   const activeRatio = getGenerationRatio(aspectRatio);
   const ratioOptions = getGenerationRatioOptions(modelId);
@@ -281,12 +298,33 @@ export function CreationComposer({
                 className={`reference-thumbnail ${image.status} ${canReorderReferences ? "is-reorderable" : ""} ${draggedReferenceId === image.id ? "is-dragging" : ""} ${dragTargetReferenceId === image.id ? "is-drag-target" : ""}`}
                 key={image.id}
                 role="group"
-                tabIndex={canReorderReferences ? 0 : -1}
+                tabIndex={image.status === "ready" || canReorderReferences ? 0 : -1}
                 draggable={canReorderReferences}
-                aria-label={`图 ${index + 1}，${image.name}${canReorderReferences ? "，可拖拽排序" : ""}`}
-                aria-keyshortcuts={canReorderReferences ? "Alt+ArrowLeft Alt+ArrowRight" : undefined}
-                title={`${image.errorMessage ?? image.name}${canReorderReferences ? " · 拖拽排序" : ""}`}
+                aria-haspopup={image.status === "ready" ? "dialog" : undefined}
+                aria-label={`图 ${index + 1}，${image.name}${image.status === "ready" ? "，点击查看大图" : ""}${canReorderReferences ? "，可拖拽排序" : ""}`}
+                aria-keyshortcuts={
+                  image.status === "ready"
+                    ? canReorderReferences
+                      ? "Enter Space Alt+ArrowLeft Alt+ArrowRight"
+                      : "Enter Space"
+                    : canReorderReferences
+                      ? "Alt+ArrowLeft Alt+ArrowRight"
+                      : undefined
+                }
+                title={`${image.errorMessage ?? image.name}${image.status === "ready" ? " · 点击查看大图" : ""}${canReorderReferences ? " · 拖拽排序" : ""}`}
+                onClick={() => {
+                  if (image.status !== "ready" || suppressReferencePreviewRef.current) return;
+                  setPreviewReferenceId(image.id);
+                }}
                 onDragStart={(event) => {
+                  if (
+                    event.target instanceof Element &&
+                    event.target.closest(".reference-thumbnail-remove")
+                  ) {
+                    event.preventDefault();
+                    return;
+                  }
+                  suppressReferencePreviewRef.current = true;
                   event.dataTransfer.effectAllowed = "move";
                   event.dataTransfer.setData("text/plain", image.id);
                   setDraggedReferenceId(image.id);
@@ -311,18 +349,30 @@ export function CreationComposer({
                 onDragEnd={() => {
                   setDraggedReferenceId(null);
                   setDragTargetReferenceId(null);
+                  window.setTimeout(() => {
+                    suppressReferencePreviewRef.current = false;
+                  }, 0);
                 }}
                 onKeyDown={(event) => {
+                  if (event.currentTarget !== event.target) return;
                   if (
-                    event.currentTarget !== event.target ||
-                    !event.altKey ||
-                    (event.key !== "ArrowLeft" && event.key !== "ArrowRight")
-                  ) return;
-                  const targetIndex = event.key === "ArrowLeft" ? index - 1 : index + 1;
-                  const target = references[targetIndex];
-                  if (!target) return;
-                  event.preventDefault();
-                  onReorderReference?.(image.id, target.id);
+                    event.altKey &&
+                    (event.key === "ArrowLeft" || event.key === "ArrowRight")
+                  ) {
+                    const targetIndex = event.key === "ArrowLeft" ? index - 1 : index + 1;
+                    const target = references[targetIndex];
+                    if (!target) return;
+                    event.preventDefault();
+                    onReorderReference?.(image.id, target.id);
+                    return;
+                  }
+                  if (
+                    image.status === "ready" &&
+                    (event.key === "Enter" || event.key === " ")
+                  ) {
+                    event.preventDefault();
+                    setPreviewReferenceId(image.id);
+                  }
                 }}
               >
                 <PrivateObjectImage src={image.url} alt={`参考图 ${index + 1}`} />
@@ -346,9 +396,12 @@ export function CreationComposer({
                 <button
                   className="reference-thumbnail-remove"
                   aria-label={`移除参考图 ${index + 1}`}
-                  onClick={() => onRemoveReference(image)}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onRemoveReference(image);
+                  }}
                 >
-                  <X size={10} />
+                  <X size={8} strokeWidth={2.2} />
                 </button>
               </div>
             ))}
@@ -576,6 +629,47 @@ export function CreationComposer({
           </div>
         </div>
       </div>
+
+      <Dialog
+        open={previewReference?.status === "ready"}
+        onOpenChange={(open) => {
+          if (!open) setPreviewReferenceId(null);
+        }}
+      >
+        <DialogPortal>
+          <DialogOverlay className="reference-preview-overlay" />
+          <DialogPrimitive.Content className="reference-preview-dialog">
+            {previewReference?.status === "ready" && (
+              <>
+                <header className="reference-preview-dialog-header">
+                  <div>
+                    <span>图 {previewReferenceIndex + 1}</span>
+                    <DialogTitle title={previewReference.name}>
+                      {previewReference.name}
+                    </DialogTitle>
+                    <DialogDescription>完整参考图预览</DialogDescription>
+                  </div>
+                  <DialogClose asChild>
+                    <button
+                      className="reference-preview-close"
+                      aria-label="关闭参考图大图"
+                    >
+                      <X size={17} />
+                    </button>
+                  </DialogClose>
+                </header>
+                <div className="reference-preview-stage">
+                  <PrivateObjectImage
+                    src={previewReference.url}
+                    alt={`图 ${previewReferenceIndex + 1} 大图预览`}
+                    loading="eager"
+                  />
+                </div>
+              </>
+            )}
+          </DialogPrimitive.Content>
+        </DialogPortal>
+      </Dialog>
     </section>
   );
 }
