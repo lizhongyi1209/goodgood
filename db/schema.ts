@@ -416,6 +416,9 @@ export const creationDrafts = pgTable(
     generationCount: integer("generation_count").notNull(),
     thinkingLevel: text("thinking_level").default("low").notNull(),
     googleSearch: boolean("google_search").default(false).notNull(),
+    quality: text("quality").default("auto").notNull(),
+    background: text("background").default("auto").notNull(),
+    outputFormat: text("output_format").default("png").notNull(),
     version: integer("version").default(1).notNull(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     ...timestamps,
@@ -442,6 +445,26 @@ export const creationDrafts = pgTable(
     check(
       "creation_drafts_banana_options_check",
       sql`${table.modelId} = 'nano-banana-2' or (${table.thinkingLevel} = 'low' and ${table.googleSearch} = false)`,
+    ),
+    check(
+      "creation_drafts_gpt_quality_check",
+      sql`${table.quality} in ('auto', 'low', 'medium', 'high')`,
+    ),
+    check(
+      "creation_drafts_gpt_background_check",
+      sql`${table.background} in ('auto', 'transparent')`,
+    ),
+    check(
+      "creation_drafts_gpt_output_format_check",
+      sql`${table.outputFormat} in ('png', 'jpeg', 'webp')`,
+    ),
+    check(
+      "creation_drafts_gpt_options_check",
+      sql`${table.modelId} = 'gpt-image-2' or (${table.quality} = 'auto' and ${table.background} = 'auto' and ${table.outputFormat} = 'png')`,
+    ),
+    check(
+      "creation_drafts_transparent_format_check",
+      sql`${table.background} <> 'transparent' or ${table.outputFormat} in ('png', 'webp')`,
     ),
     check("creation_drafts_version_check", sql`${table.version} > 0`),
   ],
@@ -475,6 +498,9 @@ export const projects = pgTable(
     generationCount: integer("generation_count").notNull(),
     thinkingLevel: text("thinking_level").default("low").notNull(),
     googleSearch: boolean("google_search").default(false).notNull(),
+    quality: text("quality").default("auto").notNull(),
+    background: text("background").default("auto").notNull(),
+    outputFormat: text("output_format").default("png").notNull(),
     status: text("status").default("active").notNull(),
     version: integer("version").default(1).notNull(),
     ...timestamps,
@@ -506,6 +532,26 @@ export const projects = pgTable(
     check(
       "projects_banana_options_check",
       sql`${table.modelId} = 'nano-banana-2' or (${table.thinkingLevel} = 'low' and ${table.googleSearch} = false)`,
+    ),
+    check(
+      "projects_gpt_quality_check",
+      sql`${table.quality} in ('auto', 'low', 'medium', 'high')`,
+    ),
+    check(
+      "projects_gpt_background_check",
+      sql`${table.background} in ('auto', 'transparent')`,
+    ),
+    check(
+      "projects_gpt_output_format_check",
+      sql`${table.outputFormat} in ('png', 'jpeg', 'webp')`,
+    ),
+    check(
+      "projects_gpt_options_check",
+      sql`${table.modelId} = 'gpt-image-2' or (${table.quality} = 'auto' and ${table.background} = 'auto' and ${table.outputFormat} = 'png')`,
+    ),
+    check(
+      "projects_transparent_format_check",
+      sql`${table.background} <> 'transparent' or ${table.outputFormat} in ('png', 'webp')`,
     ),
     check(
       "projects_status_check",
@@ -608,6 +654,9 @@ export const generationBatches = pgTable(
     requestedCount: integer("requested_count").notNull(),
     thinkingLevel: text("thinking_level").default("low").notNull(),
     googleSearch: boolean("google_search").default(false).notNull(),
+    quality: text("quality").default("auto").notNull(),
+    background: text("background").default("auto").notNull(),
+    outputFormat: text("output_format").default("png").notNull(),
     priceVersionId: uuid("price_version_id").references(() => priceVersions.id, {
       onDelete: "restrict",
     }),
@@ -646,6 +695,26 @@ export const generationBatches = pgTable(
     check(
       "generation_batches_banana_options_check",
       sql`${table.modelId} = 'nano-banana-2' or (${table.thinkingLevel} = 'low' and ${table.googleSearch} = false)`,
+    ),
+    check(
+      "generation_batches_gpt_quality_check",
+      sql`${table.quality} in ('auto', 'low', 'medium', 'high')`,
+    ),
+    check(
+      "generation_batches_gpt_background_check",
+      sql`${table.background} in ('auto', 'transparent')`,
+    ),
+    check(
+      "generation_batches_gpt_output_format_check",
+      sql`${table.outputFormat} in ('png', 'jpeg', 'webp')`,
+    ),
+    check(
+      "generation_batches_gpt_options_check",
+      sql`${table.modelId} = 'gpt-image-2' or (${table.quality} = 'auto' and ${table.background} = 'auto' and ${table.outputFormat} = 'png')`,
+    ),
+    check(
+      "generation_batches_transparent_format_check",
+      sql`${table.background} <> 'transparent' or ${table.outputFormat} in ('png', 'webp')`,
     ),
   ],
 );

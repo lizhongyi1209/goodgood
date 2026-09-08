@@ -76,6 +76,7 @@ async function presentProject(resources, row) {
     state: {
       aspectRatio: row.aspect_ratio,
       count: row.generation_count,
+      background: row.background ?? "auto",
       googleSearch: row.google_search ?? false,
       modelId: row.model_id,
       prompt: row.prompt,
@@ -86,6 +87,8 @@ async function presentProject(resources, row) {
         url: referenceUrls.get(reference.id) ?? "",
       })),
       resolution: row.resolution,
+      outputFormat: row.output_format ?? "png",
+      quality: row.quality ?? "auto",
       thinkingLevel: row.thinking_level ?? "low",
     },
     updatedAt: new Date(row.updated_at).toISOString(),

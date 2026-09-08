@@ -88,6 +88,12 @@ fill space.
   `谷歌搜索` (`关闭 / 开启`, default `关闭`) segmented control in the attached drawer. Changing to another
   model hides and resets both model-specific controls. Restored drafts,
   projects, retries, and image detail preserve and expose the frozen choice.
+- Selecting GPT IMAGE 2 reveals `质量` (`自动 / 低 / 中 / 高`, default `自动`),
+  `背景` (`自动 / 透明`, default `自动`), and `输出格式`
+  (`PNG / JPEG / WebP`, default `PNG`). Choosing transparent while JPEG is
+  selected immediately moves output format to PNG; JPEG remains disabled until
+  background returns to automatic. Leaving GPT hides and resets all three.
+  Draft/project restore, retry, and image detail use the frozen values.
 - Unsupported model/count/domain combinations fail before submission without
   replacing values inside an immutable generation snapshot.
 - Keep the active server quote next to the composer actions as plain metadata,
@@ -110,8 +116,9 @@ detail metadata should still expose `参考图 1…10` semantics.
   the owner's unexpired draft before autosave starts. A direct project route
   restores only that project and never applies the root draft over it.
 - Meaningful root changes to prompt, ordered ready references, model, ratio,
-  resolution, or count save after a short debounce. Uploading/failed references
-  pause saving until the retained set is ready.
+  resolution, count, or model-owned generation options save after a short
+  debounce. Uploading/failed references pause saving until the retained set is
+  ready.
 - The draft expires 30 days after its last successful write. Empty root state
   removes it; saving the root context as a project or confirming
   `新建创作` also clears it.

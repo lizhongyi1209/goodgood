@@ -36,6 +36,15 @@ export const GENERATION_THINKING_LEVELS = ["low", "high"] as const;
 export type GenerationThinkingLevel =
   (typeof GENERATION_THINKING_LEVELS)[number];
 
+export const GPT_IMAGE_QUALITIES = ["auto", "low", "medium", "high"] as const;
+export type GptImageQuality = (typeof GPT_IMAGE_QUALITIES)[number];
+
+export const GPT_IMAGE_BACKGROUNDS = ["auto", "transparent"] as const;
+export type GptImageBackground = (typeof GPT_IMAGE_BACKGROUNDS)[number];
+
+export const GPT_IMAGE_OUTPUT_FORMATS = ["png", "jpeg", "webp"] as const;
+export type GptImageOutputFormat = (typeof GPT_IMAGE_OUTPUT_FORMATS)[number];
+
 export const MAX_GENERATION_REFERENCES = 10;
 
 export const GENERATION_JOB_STATES = [
@@ -80,6 +89,9 @@ export type GenerationInputDraft = {
   count: GenerationCount;
   thinkingLevel?: GenerationThinkingLevel;
   googleSearch?: boolean;
+  quality?: GptImageQuality;
+  background?: GptImageBackground;
+  outputFormat?: GptImageOutputFormat;
   projectId?: string | null;
 };
 
@@ -92,6 +104,9 @@ export type GenerationInputSnapshot = Readonly<{
   count: GenerationCount;
   thinkingLevel?: GenerationThinkingLevel;
   googleSearch?: boolean;
+  quality?: GptImageQuality;
+  background?: GptImageBackground;
+  outputFormat?: GptImageOutputFormat;
   projectId?: string | null;
 }>;
 

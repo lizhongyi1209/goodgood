@@ -8,6 +8,9 @@ export const DURABLE_GENERATION_OUTPUT_COUNT = 1;
 export const SUPPORTED_GPT_IMAGE_2_OUTPUT_COUNTS = Object.freeze([1, 2, 4]);
 export const SUPPORTED_NANO_BANANA_2_OUTPUT_COUNTS = Object.freeze([1, 2, 4]);
 export const SUPPORTED_GENERATION_THINKING_LEVELS = Object.freeze(["low", "high"]);
+export const SUPPORTED_GPT_IMAGE_QUALITIES = Object.freeze(["auto", "low", "medium", "high"]);
+export const SUPPORTED_GPT_IMAGE_BACKGROUNDS = Object.freeze(["auto", "transparent"]);
+export const SUPPORTED_GPT_IMAGE_OUTPUT_FORMATS = Object.freeze(["png", "jpeg", "webp"]);
 
 const NANO_BANANA_2_ASPECT_RATIOS = Object.freeze([
   "1:8",
@@ -89,15 +92,25 @@ export function isSupportedGenerationInput({ aspectRatio, count, modelId, resolu
 }
 
 export function normalizeGenerationModelOptions({
+  background,
   googleSearch,
   modelId,
+  outputFormat,
+  quality,
   thinkingLevel,
 }) {
   const normalizedThinkingLevel = thinkingLevel ?? "low";
   const normalizedGoogleSearch = googleSearch ?? false;
+  const normalizedQuality = quality ?? "auto";
+  const normalizedBackground = background ?? "auto";
+  const normalizedOutputFormat = outputFormat ?? "png";
   if (
     !SUPPORTED_GENERATION_THINKING_LEVELS.includes(normalizedThinkingLevel) ||
-    typeof normalizedGoogleSearch !== "boolean"
+    typeof normalizedGoogleSearch !== "boolean" ||
+    !SUPPORTED_GPT_IMAGE_QUALITIES.includes(normalizedQuality) ||
+    !SUPPORTED_GPT_IMAGE_BACKGROUNDS.includes(normalizedBackground) ||
+    !SUPPORTED_GPT_IMAGE_OUTPUT_FORMATS.includes(normalizedOutputFormat) ||
+    (normalizedBackground === "transparent" && normalizedOutputFormat === "jpeg")
   ) {
     return null;
   }
@@ -107,8 +120,19 @@ export function normalizeGenerationModelOptions({
   ) {
     return null;
   }
+  if (
+    modelId !== "gpt-image-2" &&
+    (normalizedQuality !== "auto" ||
+      normalizedBackground !== "auto" ||
+      normalizedOutputFormat !== "png")
+  ) {
+    return null;
+  }
   return Object.freeze({
+    background: normalizedBackground,
     googleSearch: normalizedGoogleSearch,
+    outputFormat: normalizedOutputFormat,
+    quality: normalizedQuality,
     thinkingLevel: normalizedThinkingLevel,
   });
 }

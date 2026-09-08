@@ -421,8 +421,11 @@ ratios map to 21 explicit lowercase-`x` pixel sizes across the same product
 resolution values. The adapter sends that exact pixel string as `size` with
 `n: 1`, `2`, or `4`; it does not send Nano-specific `aspect_ratio` or
 `response_modalities`. Product records retain the stable model, ratio,
-resolution, and count while each attempt retains the distinct
-`o1key-gpt-image-2-c-sd-v1` route identity.
+resolution, count, quality, background, and output format while each attempt
+retains the distinct `o1key-gpt-image-2-c-sd-v2` route identity. The v2 adapter
+always sends top-level `quality`, `background`, and `output_format`, including
+the explicit defaults `auto`, `auto`, and `png`. Transparent output is admitted
+only with PNG or WebP; this is checked before the billable provider POST.
 
 Worker routing is explicit and persisted per attempt. Nano's current
 `o1key-gemini-3.1-flash-image-c-sp-v4` route sends `response_modalities` as

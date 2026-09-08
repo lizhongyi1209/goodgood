@@ -457,10 +457,13 @@ test("GPT Image 2 SD maps every enabled size and count to one native task", asyn
         submissionIndex += 1;
         assert.deepEqual(submitted, { taskId: `task_${submissionIndex}` });
         assert.deepEqual(gateway.submissions.at(-1).body, {
+          background: "auto",
           images: [],
           model: "gpt-image-2-c-sd",
           n: count,
+          output_format: "png",
           prompt: "a realistic glass badge",
+          quality: "auto",
           size: getGptImage2PixelSize(aspectRatio, resolution),
         });
       }
@@ -470,6 +473,41 @@ test("GPT Image 2 SD maps every enabled size and count to one native task", asyn
   assert.equal(gateway.submissions[0].body.aspect_ratio, undefined);
   assert.equal(gateway.submissions[0].body.response_modalities, undefined);
   assert.match(gateway.submissions[0].body.size, /^\d+x\d+$/);
+});
+
+test("GPT Image 2 forwards quality, transparent background, and WebP at the top level", async (context) => {
+  const { adapter, gateway } = await withGateway(
+    context,
+    US_GATEWAY_GPT_IMAGE_2_ROUTE,
+  );
+  await adapter.submit(generationRequest("transparent glass badge", {
+    background: "transparent",
+    model_id: "gpt-image-2",
+    output_format: "webp",
+    quality: "high",
+  }));
+  assert.equal(gateway.submissions.length, 1);
+  assert.equal(gateway.submissions[0].body.quality, "high");
+  assert.equal(gateway.submissions[0].body.background, "transparent");
+  assert.equal(gateway.submissions[0].body.output_format, "webp");
+  assert.equal(gateway.submissions[0].body.thinking_level, undefined);
+  assert.equal(gateway.submissions[0].body.google_search, undefined);
+});
+
+test("GPT Image 2 rejects transparent JPEG before provider submission", async (context) => {
+  const { adapter, gateway } = await withGateway(
+    context,
+    US_GATEWAY_GPT_IMAGE_2_ROUTE,
+  );
+  await assert.rejects(
+    adapter.submit(generationRequest("invalid transparent JPEG", {
+      background: "transparent",
+      model_id: "gpt-image-2",
+      output_format: "jpeg",
+    })),
+    (error) => error instanceof NormalizedProviderError && error.code === "INTERNAL_ERROR",
+  );
+  assert.equal(gateway.submissions.length, 0);
 });
 
 test("GPT Image 2 polling returns exactly the requested ordered outputs", async (context) => {
@@ -524,6 +562,7 @@ test("GPT Image 2 SD keeps validated reference uploads in the edit request", asy
   });
 
   assert.deepEqual(gateway.submissions[0].body, {
+    background: "auto",
     images: [
       {
         fileData: {
@@ -534,7 +573,9 @@ test("GPT Image 2 SD keeps validated reference uploads in the edit request", asy
     ],
     model: "gpt-image-2-c-sd",
     n: 1,
+    output_format: "png",
     prompt: "keep the subject and change the material",
+    quality: "auto",
     size: "3504x2336",
   });
 });

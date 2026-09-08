@@ -259,6 +259,46 @@ test("keeps generation retries isolated from later composer edits", async () => 
   assert.equal(restored.googleSearch, true);
 });
 
+test("normalizes and restores GPT Image 2 quality, background, and output format", async () => {
+  const {
+    createGenerationInputSnapshot,
+    restoreGenerationInputSnapshot,
+  } = await vite.ssrLoadModule(
+    "/features/creation/generation-snapshot.ts",
+  );
+  const { resolveGptImageOptionsForModel } = await vite.ssrLoadModule(
+    "/features/creation/generation-options.ts",
+  );
+
+  assert.deepEqual(
+    resolveGptImageOptionsForModel("gpt-image-2", {
+      background: "transparent",
+      outputFormat: "jpeg",
+      quality: "high",
+    }),
+    { background: "transparent", outputFormat: "png", quality: "high" },
+  );
+
+  const snapshot = createGenerationInputSnapshot({
+    aspectRatio: "1:1",
+    background: "transparent",
+    count: 1,
+    modelId: "gpt-image-2",
+    outputFormat: "webp",
+    prompt: "透明玻璃徽章",
+    quality: "high",
+    references: [],
+    resolution: "1K",
+  });
+  assert.equal(snapshot.quality, "high");
+  assert.equal(snapshot.background, "transparent");
+  assert.equal(snapshot.outputFormat, "webp");
+  assert.deepEqual(restoreGenerationInputSnapshot(snapshot), {
+    ...snapshot,
+    references: [],
+  });
+});
+
 test("uploads references directly and reports both ready and failed states", async () => {
   const { uploadReferenceFiles } = await vite.ssrLoadModule(
     "/features/references/http-reference-upload.ts",

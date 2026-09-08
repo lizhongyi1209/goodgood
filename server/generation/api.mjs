@@ -70,14 +70,17 @@ export function validateM3GenerationInput(payload) {
     );
   }
   const modelOptions = normalizeGenerationModelOptions({
+    background: payload.background,
     googleSearch: payload.googleSearch,
     modelId: payload.modelId,
+    outputFormat: payload.outputFormat,
+    quality: payload.quality,
     thinkingLevel: payload.thinkingLevel,
   });
   if (!modelOptions) {
     throw new GenerationRequestError(
       "M3_SLICE_UNSUPPORTED",
-      "当前模型不支持所选思考程度或谷歌搜索参数。",
+      "当前模型不支持所选生成参数组合。",
     );
   }
 

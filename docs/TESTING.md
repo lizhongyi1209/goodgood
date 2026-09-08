@@ -45,6 +45,12 @@ snapshot/hash identity, draft/project/batch persistence and migration defaults,
 model-leakage rejection, `TEXT` + `IMAGE` response modalities, and omission or
 top-level forwarding of `thinking_level` / `google_search`. Provider tests use
 stub transport and must not issue a real, potentially billable request.
+GG-015 coverage proves GPT-only quality/background/output-format controls,
+explicit automatic defaults, transparent JPEG correction and fail-closed
+rejection, immutable snapshot/hash identity, draft/project/batch persistence,
+migration 0018 constraints, image-detail labels, and top-level O1Key forwarding.
+All provider assertions use stub transport; browser verification must not click
+Generate.
 The production-shaped authentication tests additionally cover OIDC
 configuration safety, discovery, Authorization Code + PKCE parameters, signed
 ID-token issuer/audience/nonce verification, verified email, one-time login
@@ -464,6 +470,11 @@ The timestamped result of the latest verified gate belongs in
   cover ratio/count filtering, exact readouts, model-change normalization, and
   per-image plus batch-total pricing. Billing tests cover immutable 10/20/40
   rows and atomic four-Asset settlement.
+- GG-015 provider coverage proves `quality`, `background`, and `output_format`
+  are always top-level GPT fields, defaults are explicit, transparent WebP is
+  admitted, transparent JPEG is rejected before submission, and GPT options do
+  not leak into Nano jobs. UI coverage proves default rendering, automatic PNG
+  correction, disabled JPEG help text, cross-model reset, and snapshot restore.
 - The M5 provider-router tests prove the worker reads ordered private RustFS
   bytes into O1Key temporary uploads, persists the selected provider route,
   rejects an active-attempt route mismatch, resumes polling, fully decodes a

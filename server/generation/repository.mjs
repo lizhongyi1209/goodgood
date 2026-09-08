@@ -19,14 +19,17 @@ export class GenerationPersistenceError extends Error {
 
 function requiredGenerationModelOptions(input) {
   const options = normalizeGenerationModelOptions({
+    background: input.background,
     googleSearch: input.googleSearch,
     modelId: input.modelId,
+    outputFormat: input.outputFormat,
+    quality: input.quality,
     thinkingLevel: input.thinkingLevel,
   });
   if (!options) {
     throw new GenerationPersistenceError(
       "UNSUPPORTED_GENERATION_OPTIONS",
-      "当前模型不支持所选思考程度或谷歌搜索参数。",
+      "当前模型不支持所选生成参数组合。",
       400,
     );
   }
@@ -39,9 +42,11 @@ export function hashGenerationInput(input) {
     .update(
       JSON.stringify({
         aspectRatio: input.aspectRatio,
+        background: modelOptions.background,
         count: input.count,
         googleSearch: modelOptions.googleSearch,
         modelId: input.modelId,
+        outputFormat: modelOptions.outputFormat,
         projectId: input.projectId ?? null,
         prompt: input.prompt,
         references: input.references.map(({ id, name }, index) => ({
@@ -50,6 +55,7 @@ export function hashGenerationInput(input) {
           ordinal: index + 1,
         })),
         resolution: input.resolution,
+        quality: modelOptions.quality,
         thinkingLevel: modelOptions.thinkingLevel,
       }),
     )
@@ -59,9 +65,11 @@ export function hashGenerationInput(input) {
 export function generationInputFromRow(row, referenceUrls = new Map()) {
   return {
     aspectRatio: row.aspect_ratio,
+    background: row.background ?? "auto",
     count: row.requested_count,
     googleSearch: row.google_search ?? false,
     modelId: row.model_id,
+    outputFormat: row.output_format ?? "png",
     projectId: row.project_id ?? null,
     prompt: row.prompt,
     references: (row.reference_snapshot ?? []).map((reference) => ({
@@ -71,6 +79,7 @@ export function generationInputFromRow(row, referenceUrls = new Map()) {
       url: referenceUrls.get(reference.id) ?? "",
     })),
     resolution: row.resolution,
+    quality: row.quality ?? "auto",
     thinkingLevel: row.thinking_level ?? "low",
   };
 }
@@ -78,9 +87,11 @@ export function generationInputFromRow(row, referenceUrls = new Map()) {
 export function persistedGenerationInputFromRow(row) {
   return {
     aspectRatio: row.aspect_ratio,
+    background: row.background ?? "auto",
     count: row.requested_count,
     googleSearch: row.google_search ?? false,
     modelId: row.model_id,
+    outputFormat: row.output_format ?? "png",
     projectId: row.project_id ?? null,
     prompt: row.prompt,
     references: (row.reference_snapshot ?? []).map((reference) => ({
@@ -89,6 +100,7 @@ export function persistedGenerationInputFromRow(row) {
       objectKey: reference.objectKey,
     })),
     resolution: row.resolution,
+    quality: row.quality ?? "auto",
     thinkingLevel: row.thinking_level ?? "low",
   };
 }
@@ -139,6 +151,9 @@ const JOB_SELECT = `
          b.requested_count,
          b.thinking_level,
          b.google_search,
+         b.quality,
+         b.background,
+         b.output_format,
          b.input_hash,
          COALESCE((
            SELECT jsonb_agg(to_jsonb(a) ORDER BY a.ordinal)
@@ -301,8 +316,8 @@ export async function createGenerationJob(
       `INSERT INTO generation_batches (
          id, owner_id, project_id, prompt, reference_snapshot, model_id,
          aspect_ratio, resolution, requested_count, thinking_level,
-         google_search, input_hash
-       ) VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8, $9, $10, $11, $12)`,
+         google_search, quality, background, output_format, input_hash
+       ) VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
       [
         batchId,
         ownerId,
@@ -315,6 +330,9 @@ export async function createGenerationJob(
         input.count,
         modelOptions.thinkingLevel,
         modelOptions.googleSearch,
+        modelOptions.quality,
+        modelOptions.background,
+        modelOptions.outputFormat,
         inputHash,
       ],
     );
@@ -324,7 +342,8 @@ export async function createGenerationJob(
             SET prompt = $3, reference_snapshot = $4::jsonb,
                 model_id = $5, aspect_ratio = $6, resolution = $7,
                 generation_count = $8, thinking_level = $9,
-                google_search = $10, version = version + 1,
+                google_search = $10, quality = $11, background = $12,
+                output_format = $13, version = version + 1,
                 updated_at = now()
           WHERE id = $1 AND owner_id = $2`,
         [
@@ -338,6 +357,9 @@ export async function createGenerationJob(
           input.count,
           modelOptions.thinkingLevel,
           modelOptions.googleSearch,
+          modelOptions.quality,
+          modelOptions.background,
+          modelOptions.outputFormat,
         ],
       );
     }

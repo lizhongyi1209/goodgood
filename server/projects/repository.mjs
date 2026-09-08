@@ -7,7 +7,7 @@ const PROJECT_SELECT = `
   SELECT id, owner_id, create_idempotency_key, create_input_hash,
          name, prompt, reference_snapshot, model_id,
          aspect_ratio, resolution, generation_count, thinking_level,
-         google_search, status, version,
+         google_search, quality, background, output_format, status, version,
          created_at, updated_at
     FROM projects
 `;
@@ -108,8 +108,9 @@ export async function createProject(
       `INSERT INTO projects (
          id, owner_id, create_idempotency_key, create_input_hash,
          name, prompt, reference_snapshot, model_id,
-         aspect_ratio, resolution, generation_count, thinking_level, google_search
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, $11, $12, $13)
+         aspect_ratio, resolution, generation_count, thinking_level, google_search,
+         quality, background, output_format
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, $11, $12, $13, $14, $15, $16)
        RETURNING *`,
       [
         projectId,
@@ -125,6 +126,9 @@ export async function createProject(
         state.count,
         state.thinkingLevel,
         state.googleSearch,
+        state.quality,
+        state.background,
+        state.outputFormat,
       ],
     );
     await associateProjectBatches(client, { batchIds, ownerId, projectId });
@@ -166,7 +170,8 @@ export async function updateProject(
           SET name = $3, prompt = $4, reference_snapshot = $5::jsonb,
               model_id = $6, aspect_ratio = $7, resolution = $8,
               generation_count = $9, thinking_level = $10,
-              google_search = $11, version = version + 1,
+              google_search = $11, quality = $12, background = $13,
+              output_format = $14, version = version + 1,
               updated_at = now()
         WHERE id = $1 AND owner_id = $2
         RETURNING *`,
@@ -182,6 +187,9 @@ export async function updateProject(
         state.count,
         state.thinkingLevel,
         state.googleSearch,
+        state.quality,
+        state.background,
+        state.outputFormat,
       ],
     );
     await client.query("COMMIT");

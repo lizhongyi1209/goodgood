@@ -36,6 +36,9 @@ test("creation drafts validate stable values, ready reference IDs, versions, and
       resolution: "2K",
       thinkingLevel: "low",
       googleSearch: false,
+      quality: "auto",
+      background: "auto",
+      outputFormat: "png",
     },
   });
   assert.equal(validateDraftDelete({ expectedVersion: 3 }), 3);
@@ -53,6 +56,35 @@ test("creation drafts validate stable values, ready reference IDs, versions, and
       referenceIds: [REFERENCE_ID],
       resolution: "2K",
       thinkingLevel: "high",
+      quality: "auto",
+      background: "auto",
+      outputFormat: "png",
+    },
+  );
+  assert.deepEqual(
+    validateDraftMutation({
+      ...validDraft,
+      state: {
+        ...validDraft.state,
+        aspectRatio: "1:1",
+        background: "transparent",
+        modelId: "gpt-image-2",
+        outputFormat: "webp",
+        quality: "high",
+      },
+    }).state,
+    {
+      aspectRatio: "1:1",
+      background: "transparent",
+      count: 1,
+      googleSearch: false,
+      modelId: "gpt-image-2",
+      outputFormat: "webp",
+      prompt: "保留服装结构",
+      quality: "high",
+      referenceIds: [REFERENCE_ID],
+      resolution: "2K",
+      thinkingLevel: "low",
     },
   );
   assert.throws(

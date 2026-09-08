@@ -102,6 +102,11 @@ persistence. Invalid thinking values, non-boolean search values, or enabled
 Nano-only options on another model return `M3_SLICE_UNSUPPORTED` before credit
 reservation or provider submission. The provider adapter repeats this
 fail-closed model isolation check.
+GPT's omitted quality/background/output-format values normalize to
+`auto` / `auto` / `png`. Invalid enum values, GPT-only options on another model,
+or `transparent` plus `jpeg` return `M3_SLICE_UNSUPPORTED` before a batch,
+credit reservation, or provider POST exists. The UI also auto-corrects that
+incompatible pair to PNG and disables JPEG while transparency is selected.
 
 The M5 O1Key contract normalizes `SUBMITTED`, `IN_PROGRESS`, `SUCCESS`, and
 `FAILURE` polling responses. Unknown error names and malformed or conflicting

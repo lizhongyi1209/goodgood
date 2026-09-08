@@ -21,6 +21,9 @@ const validInput = Object.freeze({
   resolution: "1K",
   thinkingLevel: "low",
   googleSearch: false,
+  quality: "auto",
+  background: "auto",
+  outputFormat: "png",
 });
 
 test("generation input accepts model-owned ratios, resolutions, and output counts", () => {
@@ -59,11 +62,29 @@ test("generation input accepts model-owned ratios, resolutions, and output count
     }),
     { ...validInput, thinkingLevel: "high", googleSearch: true },
   );
+  assert.deepEqual(
+    validateM3GenerationInput({
+      ...validInput,
+      background: "transparent",
+      modelId: "gpt-image-2",
+      outputFormat: "webp",
+      quality: "high",
+    }),
+    {
+      ...validInput,
+      background: "transparent",
+      modelId: "gpt-image-2",
+      outputFormat: "webp",
+      quality: "high",
+    },
+  );
   for (const unsupportedInput of [
     { ...validInput, thinkingLevel: "medium" },
     { ...validInput, googleSearch: "true" },
     { ...validInput, modelId: "gpt-image-2", thinkingLevel: "high" },
     { ...validInput, modelId: "gpt-image-2", googleSearch: true },
+    { ...validInput, modelId: "gpt-image-2", background: "transparent", outputFormat: "jpeg" },
+    { ...validInput, quality: "high" },
   ]) {
     assert.throws(
       () => validateM3GenerationInput(unsupportedInput),

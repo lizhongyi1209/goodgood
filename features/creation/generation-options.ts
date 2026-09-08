@@ -5,6 +5,9 @@ import {
   GenerationModelId,
   GenerationResolution,
   GenerationThinkingLevel,
+  GptImageBackground,
+  GptImageOutputFormat,
+  GptImageQuality,
 } from "@/shared/contracts/generation";
 
 export type GenerationRatioMode = "portrait" | "square" | "landscape";
@@ -85,6 +88,24 @@ export const GENERATION_RESOLUTION_OPTIONS = [
   label: string;
 }>[];
 
+export const GPT_IMAGE_QUALITY_OPTIONS = [
+  { value: "auto", label: "自动" },
+  { value: "low", label: "低" },
+  { value: "medium", label: "中" },
+  { value: "high", label: "高" },
+] as const satisfies readonly Readonly<{ value: GptImageQuality; label: string }>[];
+
+export const GPT_IMAGE_BACKGROUND_OPTIONS = [
+  { value: "auto", label: "自动" },
+  { value: "transparent", label: "透明" },
+] as const satisfies readonly Readonly<{ value: GptImageBackground; label: string }>[];
+
+export const GPT_IMAGE_OUTPUT_FORMAT_OPTIONS = [
+  { value: "png", label: "PNG" },
+  { value: "jpeg", label: "JPEG" },
+  { value: "webp", label: "WebP" },
+] as const satisfies readonly Readonly<{ value: GptImageOutputFormat; label: string }>[];
+
 export function getGenerationRatio(
   ratio: GenerationAspectRatio,
 ): GenerationRatioOption {
@@ -150,6 +171,46 @@ export function resolveGoogleSearchForModel(
   googleSearch: boolean | undefined,
 ): boolean {
   return modelId === "nano-banana-2" && googleSearch === true;
+}
+
+export type GptImageOptions = Readonly<{
+  background: GptImageBackground;
+  outputFormat: GptImageOutputFormat;
+  quality: GptImageQuality;
+}>;
+
+export function resolveGptImageOptionsForModel(
+  modelId: GenerationModelId,
+  options: Partial<GptImageOptions> = {},
+): GptImageOptions {
+  if (modelId !== "gpt-image-2") {
+    return { background: "auto", outputFormat: "png", quality: "auto" };
+  }
+  const background = GPT_IMAGE_BACKGROUND_OPTIONS.some(
+    (option) => option.value === options.background,
+  ) ? options.background as GptImageBackground : "auto";
+  const quality = GPT_IMAGE_QUALITY_OPTIONS.some(
+    (option) => option.value === options.quality,
+  ) ? options.quality as GptImageQuality : "auto";
+  let outputFormat = GPT_IMAGE_OUTPUT_FORMAT_OPTIONS.some(
+    (option) => option.value === options.outputFormat,
+  ) ? options.outputFormat as GptImageOutputFormat : "png";
+  if (background === "transparent" && outputFormat === "jpeg") {
+    outputFormat = "png";
+  }
+  return { background, outputFormat, quality };
+}
+
+export function gptImageQualityLabel(value: GptImageQuality): string {
+  return GPT_IMAGE_QUALITY_OPTIONS.find((option) => option.value === value)?.label ?? "自动";
+}
+
+export function gptImageBackgroundLabel(value: GptImageBackground): string {
+  return GPT_IMAGE_BACKGROUND_OPTIONS.find((option) => option.value === value)?.label ?? "自动";
+}
+
+export function gptImageOutputFormatLabel(value: GptImageOutputFormat): string {
+  return GPT_IMAGE_OUTPUT_FORMAT_OPTIONS.find((option) => option.value === value)?.label ?? "PNG";
 }
 
 export function getGenerationModelRatioIndex(

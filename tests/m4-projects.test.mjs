@@ -39,11 +39,40 @@ test("project saves validate stable domain values, ordered ready IDs, and idempo
       resolution: "2K",
       thinkingLevel: "low",
       googleSearch: false,
+      quality: "auto",
+      background: "auto",
+      outputFormat: "png",
     },
   });
   assert.equal(
     validateProjectIdempotencyKey("project_save_12345678"),
     "project_save_12345678",
+  );
+  assert.deepEqual(
+    validateProjectSaveRequest({
+      ...validSave,
+      state: {
+        ...validSave.state,
+        aspectRatio: "1:1",
+        background: "transparent",
+        modelId: "gpt-image-2",
+        outputFormat: "webp",
+        quality: "high",
+      },
+    }).state,
+    {
+      aspectRatio: "1:1",
+      background: "transparent",
+      count: 1,
+      googleSearch: false,
+      modelId: "gpt-image-2",
+      outputFormat: "webp",
+      prompt: "保留服装结构",
+      quality: "high",
+      referenceIds: [REFERENCE_ID],
+      resolution: "2K",
+      thinkingLevel: "low",
+    },
   );
   assert.throws(
     () => validateProjectSaveRequest({

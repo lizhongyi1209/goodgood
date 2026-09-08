@@ -31,7 +31,11 @@ Migration 0016 adds Nano Banana 2 count-2/count-4 prices at 20/40 credits for
 each resolution. Migration 0017 adds `thinking_level` and `google_search` to
 generation batches, projects, and root drafts, defaults old rows to `low` and
 false, and constrains enabled values to Nano Banana 2. The Drizzle schema
-mirrors the durable schema across all seventeen migrations. A
+mirrors that durable schema. Migration 0018 adds `quality`, `background`, and
+`output_format` to the same three snapshots, defaults old rows to
+`auto` / `auto` / `png`, constrains non-default values to GPT IMAGE 2, and
+rejects transparent JPEG. The Drizzle schema mirrors the durable schema across
+all eighteen migrations. A
 fuller project-backed creation session record and entitlements
 remain canonical contracts for later slices.
 
@@ -282,8 +286,9 @@ replay protections pass.
 ### CreationDraft
 
 One unprojected root composer draft per authenticated owner: prompt, ordered
-ready-reference snapshot, stable model/ratio/resolution/count, monotonic
-version, 30-day sliding expiry, and timestamps. The version is an optimistic
+ready-reference snapshot, stable model/ratio/resolution/count plus model-owned
+generation options, monotonic version, 30-day sliding expiry, and timestamps.
+The version is an optimistic
 write precondition so a stale tab cannot silently replace a newer draft.
 Unexpired reference snapshots protect their private objects from reference
 cleanup. Saving as a project or explicitly starting a clean creation removes
@@ -335,9 +340,9 @@ outcome cannot be reconstructed.
 
 ### GenerationBatch
 
-One user submission. Owns prompt snapshot, ordered reference links, parameters,
-requested count, submission order, and produced asset IDs. A batch exists even
-when its job fails.
+One user submission. Owns prompt snapshot, ordered reference links, parameters
+including model-owned options, requested count, submission order, and produced
+asset IDs. A batch exists even when its job fails.
 
 ### Asset
 
@@ -349,8 +354,9 @@ the accepted Asset array in ordinal order.
 ### Project
 
 Named resumable context with owner, create idempotency key/hash, latest prompt,
-ordered ready-reference snapshot, model/ratio/resolution/count, status,
-version, and timestamps. Current covers are derived from the newest successful
+ordered ready-reference snapshot, model/ratio/resolution/count plus model-owned
+generation options, status, version, and timestamps. Current covers are derived
+from the newest successful
 project batch rather than stored separately. Batches reference the project and
 are restored newest-first by submission time.
 

@@ -39,6 +39,7 @@ async function presentCreationDraft(resources, row) {
     expiresAt: new Date(row.expires_at).toISOString(),
     state: {
       aspectRatio: row.aspect_ratio,
+      background: row.background ?? "auto",
       count: row.generation_count,
       googleSearch: row.google_search ?? false,
       modelId: row.model_id,
@@ -50,6 +51,8 @@ async function presentCreationDraft(resources, row) {
         url: referenceUrls.get(reference.id) ?? "",
       })),
       resolution: row.resolution,
+      outputFormat: row.output_format ?? "png",
+      quality: row.quality ?? "auto",
       thinkingLevel: row.thinking_level ?? "low",
     },
     updatedAt: new Date(row.updated_at).toISOString(),

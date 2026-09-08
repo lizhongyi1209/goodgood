@@ -181,6 +181,15 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .google-search-options { padding: 2px; display: grid; grid-template-columns: repeat(2,1fr); border-radius: 9px; background: white; }
 .google-search-options button { height: 34px; border: 0; border-radius: 7px; background: transparent; color: #6c6c77; font-size: var(--text-xs); }
 .google-search-options button.selected { background: #f6dfdc; color: var(--accent-deep); font-weight: 650; }
+.gpt-image-model-options { margin-top: 10px; padding-top: 10px; border-top: 1px solid #e9e9ec; display: grid; gap: 12px; }
+.gpt-image-option-section > label { display: block; margin-bottom: var(--space-2); color: #797984; font-size: var(--text-xs); font-weight: 520; }
+.gpt-image-option-options { padding: 2px; display: grid; border-radius: 9px; background: white; }
+.gpt-image-option-options.quality { grid-template-columns: repeat(4,1fr); }
+.gpt-image-option-options.background { grid-template-columns: repeat(2,1fr); }
+.gpt-image-option-options.format { grid-template-columns: repeat(3,1fr); }
+.gpt-image-option-options button { height: 34px; min-width: 0; border: 0; border-radius: 7px; background: transparent; color: #6c6c77; font-size: var(--text-xs); }
+.gpt-image-option-options button.selected { background: #f6dfdc; color: var(--accent-deep); font-weight: 650; }
+.gpt-image-option-options button:disabled { cursor: not-allowed; color: #b9b9c0; background: transparent; }
 .choice-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 5px; }
 .choice-row.compact { grid-template-columns: repeat(3,1fr); }
 .choice-row button { height: 42px; padding: 0 8px; border: 1px solid transparent; background: white; border-radius: 10px; color: #666672; font-size: var(--text-xs); }

@@ -6,6 +6,9 @@ import type {
   GenerationReference,
   GenerationResolution,
   GenerationThinkingLevel,
+  GptImageBackground,
+  GptImageOutputFormat,
+  GptImageQuality,
 } from "@/shared/contracts/generation";
 
 export type ProjectStateSnapshot = Readonly<{
@@ -17,6 +20,9 @@ export type ProjectStateSnapshot = Readonly<{
   count: GenerationCount;
   thinkingLevel?: GenerationThinkingLevel;
   googleSearch?: boolean;
+  quality?: GptImageQuality;
+  background?: GptImageBackground;
+  outputFormat?: GptImageOutputFormat;
 }>;
 
 export type ProjectRecord = Readonly<{

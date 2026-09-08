@@ -1,12 +1,15 @@
 import { NormalizedProviderError } from "./provider.mjs";
 import {
+  SUPPORTED_GPT_IMAGE_BACKGROUNDS,
+  SUPPORTED_GPT_IMAGE_OUTPUT_FORMATS,
+  SUPPORTED_GPT_IMAGE_QUALITIES,
   SUPPORTED_GENERATION_RESOLUTIONS,
   getGenerationModelCapability,
   getGptImage2PixelSize,
   isSupportedGenerationInput,
 } from "./capabilities.mjs";
 
-export const US_GATEWAY_CONTRACT_VERSION = "o1key-image-api-2026-09-02";
+export const US_GATEWAY_CONTRACT_VERSION = "o1key-image-api-2026-09-08";
 
 export const US_GATEWAY_NANO_BANANA_2_ROUTE = Object.freeze({
   aspectRatios: getGenerationModelCapability("nano-banana-2").aspectRatios,
@@ -25,7 +28,7 @@ export const US_GATEWAY_GPT_IMAGE_2_ROUTE = Object.freeze({
   provider: "o1key",
   providerModel: "gpt-image-2-c-sd",
   resolutions: SUPPORTED_GENERATION_RESOLUTIONS,
-  routeVersion: "o1key-gpt-image-2-c-sd-v1",
+  routeVersion: "o1key-gpt-image-2-c-sd-v2",
 });
 
 export const US_GATEWAY_MVP_ROUTE = US_GATEWAY_NANO_BANANA_2_ROUTE;
@@ -275,6 +278,9 @@ function normalizeTemporaryUpload(payload, expectedMimeType, nowSeconds) {
 function validateJob(job, route) {
   const thinkingLevel = job?.thinking_level ?? "low";
   const googleSearch = job?.google_search ?? false;
+  const quality = job?.quality ?? "auto";
+  const background = job?.background ?? "auto";
+  const outputFormat = job?.output_format ?? "png";
   if (
     job?.model_id !== route.productModelId ||
     !isSupportedGenerationInput({
@@ -285,8 +291,14 @@ function validateJob(job, route) {
     }) ||
     !["low", "high"].includes(thinkingLevel) ||
     typeof googleSearch !== "boolean" ||
+    !SUPPORTED_GPT_IMAGE_QUALITIES.includes(quality) ||
+    !SUPPORTED_GPT_IMAGE_BACKGROUNDS.includes(background) ||
+    !SUPPORTED_GPT_IMAGE_OUTPUT_FORMATS.includes(outputFormat) ||
+    (background === "transparent" && outputFormat === "jpeg") ||
     (route.productModelId !== "nano-banana-2" &&
-      (thinkingLevel !== "low" || googleSearch))
+      (thinkingLevel !== "low" || googleSearch)) ||
+    (route.productModelId !== "gpt-image-2" &&
+      (quality !== "auto" || background !== "auto" || outputFormat !== "png"))
   ) {
     throw protocolError();
   }
@@ -306,7 +318,10 @@ function generationPayload({ job, route, uploadedReferences }) {
   if (route.productModelId === "gpt-image-2") {
     return {
       ...common,
+      background: job.background ?? "auto",
       n: job.requested_count,
+      output_format: job.output_format ?? "png",
+      quality: job.quality ?? "auto",
       size: getGptImage2PixelSize(job.aspect_ratio, job.resolution),
     };
   }

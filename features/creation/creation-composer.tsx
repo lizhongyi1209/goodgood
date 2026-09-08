@@ -8,6 +8,9 @@ import { Slider } from "@/components/ui/slider";
 import {
   GENERATION_RATIO_MODES,
   GENERATION_RESOLUTION_OPTIONS,
+  GPT_IMAGE_BACKGROUND_OPTIONS,
+  GPT_IMAGE_OUTPUT_FORMAT_OPTIONS,
+  GPT_IMAGE_QUALITY_OPTIONS,
   formatPixelDimensions,
   getDefaultGenerationRatioForModelMode,
   isGenerationCountSupported,
@@ -31,6 +34,9 @@ import {
   type GenerationReference,
   type GenerationResolution,
   type GenerationThinkingLevel,
+  type GptImageBackground,
+  type GptImageOutputFormat,
+  type GptImageQuality,
 } from "@/shared/contracts/generation";
 import nanoBananaIcon from "@lobehub/icons-static-svg/icons/nanobanana-color.svg";
 import openAiIcon from "@lobehub/icons-static-svg/icons/openai.svg";
@@ -54,6 +60,9 @@ export type CreationComposerProps = Readonly<{
   count: GenerationCount;
   thinkingLevel?: GenerationThinkingLevel;
   googleSearch?: boolean;
+  quality?: GptImageQuality;
+  background?: GptImageBackground;
+  outputFormat?: GptImageOutputFormat;
   drawerOpen: boolean;
   isGenerating: boolean;
   billingLabel: string;
@@ -67,6 +76,9 @@ export type CreationComposerProps = Readonly<{
   onCountChange: (count: GenerationCount) => void;
   onThinkingLevelChange?: (thinkingLevel: GenerationThinkingLevel) => void;
   onGoogleSearchChange?: (enabled: boolean) => void;
+  onQualityChange?: (quality: GptImageQuality) => void;
+  onBackgroundChange?: (background: GptImageBackground) => void;
+  onOutputFormatChange?: (outputFormat: GptImageOutputFormat) => void;
   onDrawerOpenChange: (open: boolean) => void;
   onGenerate: () => void;
 }>;
@@ -110,6 +122,9 @@ export function CreationComposer({
   count,
   thinkingLevel = "low",
   googleSearch = false,
+  quality = "auto",
+  background = "auto",
+  outputFormat = "png",
   drawerOpen,
   isGenerating,
   billingLabel,
@@ -123,6 +138,9 @@ export function CreationComposer({
   onCountChange,
   onThinkingLevelChange = () => {},
   onGoogleSearchChange = () => {},
+  onQualityChange = () => {},
+  onBackgroundChange = () => {},
+  onOutputFormatChange = () => {},
   onDrawerOpenChange,
   onGenerate,
 }: CreationComposerProps) {
@@ -402,6 +420,63 @@ export function CreationComposer({
                           {enabled ? "开启" : "关闭"}
                         </button>
                       ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              {modelId === "gpt-image-2" && (
+                <div className="gpt-image-model-options">
+                  <div className="gpt-image-option-section">
+                    <label>质量</label>
+                    <div className="gpt-image-option-options quality" aria-label="质量">
+                      {GPT_IMAGE_QUALITY_OPTIONS.map((option) => (
+                        <button
+                          type="button"
+                          key={option.value}
+                          className={quality === option.value ? "selected" : ""}
+                          aria-pressed={quality === option.value}
+                          onClick={() => onQualityChange(option.value)}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="gpt-image-option-section">
+                    <label>背景</label>
+                    <div className="gpt-image-option-options background" aria-label="背景">
+                      {GPT_IMAGE_BACKGROUND_OPTIONS.map((option) => (
+                        <button
+                          type="button"
+                          key={option.value}
+                          className={background === option.value ? "selected" : ""}
+                          aria-pressed={background === option.value}
+                          onClick={() => onBackgroundChange(option.value)}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="gpt-image-option-section">
+                    <label>输出格式</label>
+                    <div className="gpt-image-option-options format" aria-label="输出格式">
+                      {GPT_IMAGE_OUTPUT_FORMAT_OPTIONS.map((option) => {
+                        const disabled = background === "transparent" && option.value === "jpeg";
+                        return (
+                          <button
+                            type="button"
+                            key={option.value}
+                            className={outputFormat === option.value ? "selected" : ""}
+                            aria-pressed={outputFormat === option.value}
+                            disabled={disabled}
+                            title={disabled ? "透明背景仅支持 PNG 或 WebP" : undefined}
+                            onClick={() => onOutputFormatChange(option.value)}
+                          >
+                            {option.label}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>

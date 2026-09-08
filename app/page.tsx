@@ -10,11 +10,15 @@ import {
   getSharedPixelDimensions,
   getGenerationRatio,
   getGenerationResolutionLabel,
+  gptImageBackgroundLabel,
+  gptImageOutputFormatLabel,
+  gptImageQualityLabel,
   isGenerationCountSupported,
   resolveGenerationAspectRatioForModel,
   resolveGenerationCountForModel,
   resolveGenerationThinkingLevelForModel,
   resolveGoogleSearchForModel,
+  resolveGptImageOptionsForModel,
 } from "@/features/creation/generation-options";
 import {
   isGenerationJobActive,
@@ -92,6 +96,9 @@ import {
   type GenerationReference,
   type GenerationResolution,
   type GenerationThinkingLevel,
+  type GptImageBackground,
+  type GptImageOutputFormat,
+  type GptImageQuality,
 } from "@/shared/contracts/generation";
 import type { ProjectRecord } from "@/shared/contracts/project";
 import type { BillingSummary } from "@/shared/contracts/billing";
@@ -152,6 +159,9 @@ type AssetBatch = {
   count: GenerationCount;
   thinkingLevel: GenerationThinkingLevel;
   googleSearch: boolean;
+  quality: GptImageQuality;
+  background: GptImageBackground;
+  outputFormat: GptImageOutputFormat;
   referenceCount: number;
   images: readonly GenerationOutput[];
 };
@@ -205,6 +215,9 @@ const emptyComposerCheckpoint = createComposerCheckpoint({
   resolution: "1K",
   thinkingLevel: "low",
   googleSearch: false,
+  quality: "auto",
+  background: "auto",
+  outputFormat: "png",
 });
 const initialAssetBatches: AssetBatch[] = [
   {
@@ -219,6 +232,9 @@ const initialAssetBatches: AssetBatch[] = [
     count: 4,
     thinkingLevel: "low",
     googleSearch: false,
+    quality: "auto",
+    background: "auto",
+    outputFormat: "png",
     referenceCount: 0,
     images: MOCK_GENERATION_OUTPUTS.map((image) => ({
       ...image,
@@ -237,6 +253,9 @@ const initialAssetBatches: AssetBatch[] = [
     count: 2,
     thinkingLevel: "low",
     googleSearch: false,
+    quality: "auto",
+    background: "auto",
+    outputFormat: "png",
     referenceCount: 2,
     images: MOCK_GENERATION_OUTPUTS.slice(0, 2).map((image) => ({
       ...image,
@@ -270,11 +289,14 @@ function generationJobToAssetBatch(job: GenerationJob): AssetBatch {
     dateLabel,
     id: job.id,
     images: job.outputs,
+    background: job.input.background ?? "auto",
     googleSearch: job.input.googleSearch ?? false,
     modelId: job.input.modelId,
     prompt: job.input.prompt,
     referenceCount: job.input.references.length,
     resolution: job.input.resolution,
+    outputFormat: job.input.outputFormat ?? "png",
+    quality: job.input.quality ?? "auto",
     thinkingLevel: job.input.thinkingLevel ?? "low",
     time: new Intl.DateTimeFormat("zh-CN", {
       hour: "2-digit",
@@ -352,6 +374,9 @@ export default function Home() {
   const [generationCount, setGenerationCount] = useState<GenerationCount>(1);
   const [thinkingLevel, setThinkingLevel] = useState<GenerationThinkingLevel>("low");
   const [googleSearch, setGoogleSearch] = useState(false);
+  const [quality, setQuality] = useState<GptImageQuality>("auto");
+  const [background, setBackground] = useState<GptImageBackground>("auto");
+  const [outputFormat, setOutputFormat] = useState<GptImageOutputFormat>("png");
   const [prompt, setPrompt] = useState("");
   const [referenceImages, setReferenceImages] = useState<ReferenceImage[]>([]);
   const [activeView, setActiveView] = useState<ActiveView>("create");
@@ -484,11 +509,14 @@ export default function Home() {
   const currentComposerCheckpoint = createComposerCheckpoint({
     aspectRatio: selectedRatio,
     count: generationCount,
+    background,
     googleSearch,
     modelId: selectedModel,
     prompt,
     references: referenceImages,
     resolution,
+    outputFormat,
+    quality,
     thinkingLevel,
   });
   const hasUnsavedCreationChanges = hasMeaningfulUnsavedChanges({
@@ -500,12 +528,15 @@ export default function Home() {
   });
   const currentDraftState: CreationDraftState = {
     aspectRatio: selectedRatio,
+    background,
     count: generationCount,
     googleSearch,
     modelId: selectedModel,
     prompt,
     references: referenceImages,
     resolution,
+    outputFormat,
+    quality,
     thinkingLevel,
   };
   const queueDraftMutation = useCallback((mutation: () => Promise<void>) => {
@@ -519,11 +550,14 @@ export default function Home() {
     const state = draft?.state ?? {
       aspectRatio: "1:1" as const,
       count: 1 as const,
+      background: "auto" as const,
       modelId: DEFAULT_GENERATION_MODEL_ID,
       googleSearch: false,
       prompt: "",
       references: [],
       resolution: "1K" as const,
+      outputFormat: "png" as const,
+      quality: "auto" as const,
       thinkingLevel: "low" as const,
     };
     const normalizedState = {
@@ -541,6 +575,7 @@ export default function Home() {
         state.modelId,
         state.googleSearch,
       ),
+      ...resolveGptImageOptionsForModel(state.modelId, state),
     };
     setPrompt(normalizedState.prompt);
     setReferenceImages(normalizedState.references.map((reference) => ({ ...reference })));
@@ -550,6 +585,9 @@ export default function Home() {
     setGenerationCount(normalizedState.count);
     setThinkingLevel(normalizedState.thinkingLevel);
     setGoogleSearch(normalizedState.googleSearch);
+    setQuality(normalizedState.quality);
+    setBackground(normalizedState.background);
+    setOutputFormat(normalizedState.outputFormat);
     draftVersionRef.current = draft?.version ?? null;
     draftSyncedCheckpointRef.current = createComposerCheckpoint(normalizedState);
     setDraftSyncRevision((current) => current + 1);
@@ -781,12 +819,15 @@ export default function Home() {
     const checkpoint = currentComposerCheckpoint;
     const snapshot: CreationDraftState = {
       aspectRatio: selectedRatio,
+      background,
       count: generationCount,
       googleSearch,
       modelId: selectedModel,
       prompt,
       references: referenceImages.map((reference) => ({ ...reference })),
       resolution,
+      outputFormat,
+      quality,
       thinkingLevel,
     };
     draftAutosaveTimerRef.current = window.setTimeout(() => {
@@ -827,6 +868,7 @@ export default function Home() {
     };
   }, [
     authenticationSession,
+    background,
     blockDraftSync,
     currentComposerCheckpoint,
     currentProject,
@@ -835,7 +877,9 @@ export default function Home() {
     draftSyncRevision,
     generationCount,
     googleSearch,
+    outputFormat,
     prompt,
+    quality,
     queueDraftMutation,
     referenceImages,
     resolution,
@@ -1009,6 +1053,10 @@ export default function Home() {
             restoredProject.state.modelId,
             restoredProject.state.googleSearch,
           ),
+          ...resolveGptImageOptionsForModel(
+            restoredProject.state.modelId,
+            restoredProject.state,
+          ),
         };
         referenceObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
         referenceObjectUrlsRef.current.clear();
@@ -1023,6 +1071,9 @@ export default function Home() {
         setGenerationCount(restoredState.count);
         setThinkingLevel(restoredState.thinkingLevel);
         setGoogleSearch(restoredState.googleSearch);
+        setQuality(restoredState.quality);
+        setBackground(restoredState.background);
+        setOutputFormat(restoredState.outputFormat);
         setGenerationRuns(restoredProject.batches
           .filter((batch) => batch.state === "failed" && batch.error !== null)
           .map((batch) => Object.freeze({ key: batch.id, job: batch })));
@@ -1158,6 +1209,14 @@ export default function Home() {
     setGoogleSearch((current) =>
       resolveGoogleSearchForModel(value, current),
     );
+    const nextGptOptions = resolveGptImageOptionsForModel(value, {
+      background,
+      outputFormat,
+      quality,
+    });
+    setQuality(nextGptOptions.quality);
+    setBackground(nextGptOptions.background);
+    setOutputFormat(nextGptOptions.outputFormat);
   };
 
   const handleAspectRatioChange = (value: GenerationAspectRatio) => {
@@ -1186,6 +1245,30 @@ export default function Home() {
     if (selectedModel !== "nano-banana-2") return;
     composerEditRevisionRef.current += 1;
     setGoogleSearch(enabled);
+  };
+
+  const handleQualityChange = (value: GptImageQuality) => {
+    if (selectedModel !== "gpt-image-2") return;
+    composerEditRevisionRef.current += 1;
+    setQuality(value);
+  };
+
+  const handleBackgroundChange = (value: GptImageBackground) => {
+    if (selectedModel !== "gpt-image-2") return;
+    composerEditRevisionRef.current += 1;
+    setBackground(value);
+    if (value === "transparent" && outputFormat === "jpeg") {
+      setOutputFormat("png");
+    }
+  };
+
+  const handleOutputFormatChange = (value: GptImageOutputFormat) => {
+    if (
+      selectedModel !== "gpt-image-2" ||
+      (background === "transparent" && value === "jpeg")
+    ) return;
+    composerEditRevisionRef.current += 1;
+    setOutputFormat(value);
   };
 
   const handleReferenceFiles = (files: readonly File[]) => {
@@ -1451,12 +1534,15 @@ export default function Home() {
         projectId: currentProject?.id ?? null,
         state: {
           aspectRatio: selectedRatio,
+          background,
           count: generationCount,
           googleSearch,
           modelId: selectedModel,
           prompt,
           references: referenceImages.filter((reference) => reference.status === "ready"),
           resolution,
+          outputFormat,
+          quality,
           thinkingLevel,
         },
       });
@@ -1499,8 +1585,11 @@ export default function Home() {
       aspectRatio: completedInput.aspectRatio,
       resolution: completedInput.resolution,
       count: completedInput.count,
+      background: completedInput.background ?? "auto",
       googleSearch: completedInput.googleSearch ?? false,
       referenceCount: completedInput.references.length,
+      outputFormat: completedInput.outputFormat ?? "png",
+      quality: completedInput.quality ?? "auto",
       thinkingLevel: completedInput.thinkingLevel ?? "low",
       images: completedJob.outputs,
     };
@@ -1521,12 +1610,15 @@ export default function Home() {
               state: isLatestSubmission
                 ? {
                     aspectRatio: completedInput.aspectRatio,
+                    background: completedInput.background ?? "auto",
                     count: completedInput.count,
                     googleSearch: completedInput.googleSearch ?? false,
                     modelId: completedInput.modelId,
                     prompt: completedInput.prompt,
                     references: completedInput.references,
                     resolution: completedInput.resolution,
+                    outputFormat: completedInput.outputFormat ?? "png",
+                    quality: completedInput.quality ?? "auto",
                     thinkingLevel: completedInput.thinkingLevel ?? "low",
                   }
                 : project.state,
@@ -1607,8 +1699,11 @@ export default function Home() {
       aspectRatio: selectedRatio,
       resolution,
       count: generationCount,
+      background,
       thinkingLevel,
       googleSearch,
+      outputFormat,
+      quality,
       projectId: currentProject?.id ?? null,
     });
     void runGeneration(snapshot);
@@ -1664,6 +1759,13 @@ export default function Home() {
       restored.modelId,
       restored.googleSearch,
     ));
+    const restoredGptOptions = resolveGptImageOptionsForModel(
+      restored.modelId,
+      restored,
+    );
+    setQuality(restoredGptOptions.quality);
+    setBackground(restoredGptOptions.background);
+    setOutputFormat(restoredGptOptions.outputFormat);
     setDrawerOpen(true);
     window.requestAnimationFrame(() => {
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1979,6 +2081,9 @@ export default function Home() {
             count={generationCount}
             thinkingLevel={thinkingLevel}
             googleSearch={googleSearch}
+            quality={quality}
+            background={background}
+            outputFormat={outputFormat}
             drawerOpen={drawerOpen}
             isGenerating={isGenerating}
             billingLabel={composerBillingLabel}
@@ -1992,6 +2097,9 @@ export default function Home() {
             onCountChange={handleGenerationCountChange}
             onThinkingLevelChange={handleThinkingLevelChange}
             onGoogleSearchChange={handleGoogleSearchChange}
+            onQualityChange={handleQualityChange}
+            onBackgroundChange={handleBackgroundChange}
+            onOutputFormatChange={handleOutputFormatChange}
             onDrawerOpenChange={setDrawerOpen}
             onGenerate={handleGenerate}
           />
@@ -2276,6 +2384,13 @@ export default function Home() {
                       <>
                         <div><dt>思考程度</dt><dd>{activeDetail.batch.thinkingLevel === "high" ? "高" : "低"}</dd></div>
                         <div><dt>谷歌搜索</dt><dd>{activeDetail.batch.googleSearch ? "开启" : "关闭"}</dd></div>
+                      </>
+                    )}
+                    {activeDetail.batch.modelId === "gpt-image-2" && (
+                      <>
+                        <div><dt>质量</dt><dd>{gptImageQualityLabel(activeDetail.batch.quality)}</dd></div>
+                        <div><dt>背景</dt><dd>{gptImageBackgroundLabel(activeDetail.batch.background)}</dd></div>
+                        <div><dt>输出格式</dt><dd>{gptImageOutputFormatLabel(activeDetail.batch.outputFormat)}</dd></div>
                       </>
                     )}
                     <div><dt>任务编号</dt><dd>{activeDetail.batch.id}</dd></div>

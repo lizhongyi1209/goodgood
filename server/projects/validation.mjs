@@ -70,8 +70,11 @@ export function validateProjectSaveRequest(payload) {
   if (!RESOLUTIONS.has(state.resolution)) throw invalidProject();
   if (!COUNTS.has(state.count)) throw invalidProject();
   const modelOptions = normalizeGenerationModelOptions({
+    background: state.background,
     googleSearch: state.googleSearch,
     modelId: state.modelId,
+    outputFormat: state.outputFormat,
+    quality: state.quality,
     thinkingLevel: state.thinkingLevel,
   });
   if (!modelOptions) throw invalidProject();

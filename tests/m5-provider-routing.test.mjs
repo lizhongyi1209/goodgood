@@ -448,7 +448,7 @@ test("provider routing selects GPT Image 2 SD without changing its product model
     provider: "o1key",
     providerModel: "gpt-image-2-c-sd",
     resolutions: ["1K", "2K", "4K"],
-    routeVersion: "o1key-gpt-image-2-c-sd-v1",
+    routeVersion: "o1key-gpt-image-2-c-sd-v2",
   });
   assert.equal(
     generationProviderRouteForModel("mock", "gpt-image-2"),
