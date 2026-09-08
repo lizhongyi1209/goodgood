@@ -438,7 +438,6 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .image-detail-actions { display: flex; gap: 5px; }
 .image-detail-actions button { width: 34px; height: 34px; padding: 0; border: 0; border-radius: 9px; background: transparent; display: grid; place-items: center; color: #757580; }
 .image-detail-actions button:hover { background: #f1f1f3; color: #32323a; }
-.image-detail-actions button.saved { background: var(--accent-soft); color: var(--accent-deep); }
 .image-detail-section { padding-top: 24px; }
 .image-detail-section > span { display: block; margin-bottom: 10px; color: #9a9aa3; font-size: 9px; font-weight: 650; letter-spacing: .06em; }
 .image-detail-prompt p { margin: 0; color: #404049; font-size: 13px; line-height: 1.8; }

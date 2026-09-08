@@ -115,7 +115,6 @@ import { Toaster } from "@/components/ui/sonner";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { toast } from "sonner";
 import {
-  Bookmark,
   Brush,
   Check,
   CircleAlert,
@@ -356,7 +355,6 @@ export default function Home() {
   const [activeView, setActiveView] = useState<ActiveView>("create");
   const [generationRuns, setGenerationRuns] = useState<readonly TrackedGenerationRun[]>([]);
   const [creationBatches, setCreationBatches] = useState<AssetBatch[]>([]);
-  const [savedImages, setSavedImages] = useState<string[]>([]);
   const [downloadingImageKeys, setDownloadingImageKeys] = useState<readonly string[]>([]);
   const [newAssetCount, setNewAssetCount] = useState(0);
   const [assetPulse, setAssetPulse] = useState(false);
@@ -918,11 +916,6 @@ export default function Home() {
         if (!active) return;
         const batches = records.map(generationJobToAssetBatch);
         setAssetBatches(batches);
-        setSavedImages(
-          batches.flatMap((batch) =>
-            batch.images.map((image) => `${batch.id}-${image.id}`),
-          ),
-        );
         setSelectedAssetIds([]);
         setAssetsError(null);
       })
@@ -1026,7 +1019,6 @@ export default function Home() {
         loadedProjectIdRef.current = restoredProject.id;
         setCurrentProject({ id: restoredProject.id, name: restoredProject.name });
         setCreationBatches(restoredBatches);
-        setSavedImages(restoredBatches.flatMap((batch) => batch.images.map((image) => `${batch.id}-${image.id}`)));
         setPrompt(restoredState.prompt);
         setReferenceImages(restoredState.references.map((reference) => ({ ...reference })));
         setSelectedModel(restoredState.modelId);
@@ -1301,11 +1293,6 @@ export default function Home() {
     try {
       const batches = (await listAssets()).map(generationJobToAssetBatch);
       setAssetBatches(batches);
-      setSavedImages(
-        batches.flatMap((batch) =>
-          batch.images.map((image) => `${batch.id}-${image.id}`),
-        ),
-      );
       setSelectedAssetIds([]);
     } catch (error) {
       setAssetsError(
@@ -1521,7 +1508,6 @@ export default function Home() {
       thinkingLevel: completedInput.thinkingLevel ?? "low",
       images: completedJob.outputs,
     };
-    setSavedImages((current) => [...current, ...completedJob.outputs.map((result) => `${completedJob.id}-${result.id}`)]);
     setCreationBatches((current) => {
       const nextBatches = newestAssetBatches([
         nextBatch,
@@ -1687,12 +1673,6 @@ export default function Home() {
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
     toast.success("已恢复失败任务的原始提示词、参考图与参数");
-  };
-
-  const toggleSave = (assetId: string) => {
-    const isSaved = savedImages.includes(assetId);
-    setSavedImages((current) => isSaved ? current.filter((id) => id !== assetId) : [...current, assetId]);
-    toast.success(isSaved ? "已从资产库移除" : "已重新加入资产库");
   };
 
   const downloadImage = async (batch: AssetBatch, image: GenerationOutput, index: number) => {
@@ -2278,11 +2258,6 @@ export default function Home() {
                     <strong>{activeDetailModel?.name}</strong>
                   </div>
                   <div className="image-detail-actions">
-                    <button
-                      className={savedImages.includes(activeDetail.key) ? "saved" : ""}
-                      aria-label={savedImages.includes(activeDetail.key) ? "从资产库移除" : "保存到资产库"}
-                      onClick={() => toggleSave(activeDetail.key)}
-                    ><Bookmark size={17} fill={savedImages.includes(activeDetail.key) ? "currentColor" : "none"} /></button>
                     <button className="download-button" disabled={downloadingImageKeys.includes(`${activeDetail.batch.id}-${activeDetail.image.id}`)} aria-label={downloadingImageKeys.includes(`${activeDetail.batch.id}-${activeDetail.image.id}`) ? "正在下载图片" : "下载图片"} onClick={() => void downloadImage(activeDetail.batch, activeDetail.image, activeDetail.index)}>{downloadingImageKeys.includes(`${activeDetail.batch.id}-${activeDetail.image.id}`) ? <LoaderCircle className="download-spinner" size={17} /> : <Download size={17} />}</button>
                   </div>
                 </header>
