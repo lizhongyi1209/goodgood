@@ -51,6 +51,7 @@ Current records:
 - `0038-user-ordered-reference-tray.md`
 - `0039-reference-thumbnail-large-preview.md`
 - `0040-reference-quick-editor.md`
+- `0041-price-nano-banana-pro-at-fifteen-credits.md`
 
 Accepted describes a decision, not proof of deployment. ADR 0022/0023's full
 runtime rollout is deferred under ADR 0024. The current release and rollout

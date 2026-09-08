@@ -74,8 +74,10 @@ duplicating a release log.
   are durable; the root draft has 30-day expiry and stale-tab conflict handling.
 - Stable `/create`, project and asset URLs, with root compatibility and
   source-preserving detail navigation. Route contracts live in `ROUTES.md`.
-- One 100-credit welcome grant; each generated image costs 10 credits. GPT
-  batches of `1 / 2 / 4` therefore cost `10 / 20 / 40`, with transactional
+- One 100-credit welcome grant. Enabled Nano Banana 2 and GPT IMAGE 2 outputs
+  cost 10 credits each; GPT batches of `1 / 2 / 4` therefore cost `10 / 20 / 40`.
+  Nano Banana Pro has a published single-image quote of 15 credits, while its
+  provider route remains unavailable. Billing uses transactional
   reserve/settle/release semantics and private credit summaries.
 - Registration is open but creative use requires site-owner approval.
   `pending / active / suspended`, system role and product tier are distinct.
@@ -86,7 +88,7 @@ ADR 0024 permits the owner-reviewed controlled alpha with non-sensitive test
 content, direct operator contact and manual response. It does not claim the
 full seed or paid gate. Its accepted deferrals remain in `docs/BACKLOG.md`:
 
-- Customer checkout/domestic Alipay, Nano Banana Pro and further models, and
+- Customer checkout/domestic Alipay, Nano Banana Pro provider activation and further models, and
   partial-result settlement.
 - Full automatic account/external-identity deletion, content reporting and
   broader moderation, provider-erasure terms, and complex monitoring.

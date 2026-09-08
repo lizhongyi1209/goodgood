@@ -5,6 +5,7 @@ import test from "node:test";
 import { sessionExpiredError } from "../server/auth/errors.mjs";
 import {
   billingApiError,
+  previewBillingSummary,
   readBillingSummary,
 } from "../server/billing/api.mjs";
 import { createBillingNodeApiHandler } from "../server/billing/node-api.mjs";
@@ -34,7 +35,7 @@ function accountRow(overrides = {}) {
 function priceRow(modelId, resolution, count = 1) {
   return {
     created_at: timestamp,
-    credit_amount: String(10 * count),
+    credit_amount: String((modelId === "nano-banana-pro" ? 15 : 10) * count),
     credit_unit: "credit",
     effective_from: timestamp,
     effective_until: null,
@@ -118,6 +119,19 @@ test("billing repository reads exact account state and all launch resolution pri
   );
 });
 
+test("preview billing publishes the same Nano Banana Pro single-image price", () => {
+  assert.deepEqual(
+    previewBillingSummary.quotes
+      .filter((quote) => quote.modelId === "nano-banana-pro")
+      .map((quote) => [quote.resolution, quote.count, quote.creditAmount]),
+    [
+      ["1K", 1, "15"],
+      ["2K", 1, "15"],
+      ["4K", 1, "15"],
+    ],
+  );
+});
+
 test("billing summary serializes exact credits without owner or account identifiers", async () => {
   const summary = await readBillingSummary({
     ownerContext: { ownerId: "owner-a" },
@@ -146,6 +160,9 @@ test("billing summary serializes exact credits without owner or account identifi
       ["nano-banana-2", "1K", 4, "40"],
       ["nano-banana-2", "2K", 4, "40"],
       ["nano-banana-2", "4K", 4, "40"],
+      ["nano-banana-pro", "1K", 1, "15"],
+      ["nano-banana-pro", "2K", 1, "15"],
+      ["nano-banana-pro", "4K", 1, "15"],
       ["gpt-image-2", "1K", 1, "10"],
       ["gpt-image-2", "2K", 1, "10"],
       ["gpt-image-2", "4K", 1, "10"],
@@ -159,6 +176,16 @@ test("billing summary serializes exact credits without owner or account identifi
   );
   assert.equal("ownerId" in summary.account, false);
   assert.equal("id" in summary.account, false);
+  assert.deepEqual(
+    summary.quotes
+      .filter((quote) => quote.modelId === "nano-banana-pro")
+      .map((quote) => [quote.resolution, quote.count, quote.creditAmount]),
+    [
+      ["1K", 1, "15"],
+      ["2K", 1, "15"],
+      ["4K", 1, "15"],
+    ],
+  );
 
   await assert.rejects(
     readBillingSummary({

@@ -152,6 +152,9 @@ Migration 0016 appends Nano count-2/count-4 prices at 20/40 credits. Before
 switching the Nano route from v3 to v4, apply migration 0017, drain the prior
 Worker, and verify there are no active v3 attempts; a v3 Worker does not carry
 the new immutable request fields and must never overlap the v4 Worker.
+Migration 0019 appends Nano Banana Pro single-output prices at 15 credits for
+`1K / 2K / 4K`. It publishes billing data only and does not enable a Pro
+provider route.
 The worker accepts
 exactly one of `GENERATION_API_KEY` or `GENERATION_API_KEY_FILE`; deployment must
 prefer a dedicated least-privilege Bearer credential from its secret store. It
@@ -479,7 +482,7 @@ implements authenticated, idempotent create/status behavior plus deterministic
 success, rejection, slow, and timeout paths. It serves only the checked-in test
 image; it is not a production provider.
 
-The current forward chain contains seventeen migrations: M3 generation, M4 owner
+The current forward chain contains nineteen migrations: M3 generation, M4 owner
 identity, M4 reference assets, M4 projects/batch association, M4 OIDC login
 attempts/sessions plus same-browser callback binding, and reference-cleanup
 evidence, followed by owner-scoped creation drafts and the M6 immutable price/
@@ -498,6 +501,9 @@ Migration 0016 adds Nano Banana 2 count-2/count-4 prices at 20/40 credits for
 all three product resolutions. Migration 0017 persists Nano-only thinking and
 Google Search choices on batches, projects, and root drafts with compatible
 low/off defaults for existing rows.
+Migration 0018 adds GPT IMAGE 2 quality, background, and output-format snapshot
+fields. Migration 0019 adds Nano Banana Pro's three single-output 15-credit
+price rows without enabling generation.
 The manual payment role uses these existing tables and
 adds no migration: `manual` is an operator-recorded receipt source, not a
 provider sandbox or customer checkout.

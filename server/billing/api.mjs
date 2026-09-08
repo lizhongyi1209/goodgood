@@ -26,6 +26,11 @@ const LAUNCH_PRICES = Object.freeze([
   }),
   Object.freeze({
     count: 1,
+    modelId: "nano-banana-pro",
+    planContext: "standard",
+  }),
+  Object.freeze({
+    count: 1,
     modelId: "gpt-image-2",
     planContext: "standard",
   }),
@@ -40,6 +45,10 @@ const LAUNCH_PRICES = Object.freeze([
     planContext: "standard",
   }),
 ]);
+
+function previewCreditAmount({ count, modelId }) {
+  return String((modelId === "nano-banana-pro" ? 15 : 10) * count);
+}
 
 function ownerIdFromContext(ownerContext) {
   if (!ownerContext?.ownerId) throw sessionExpiredError();
@@ -79,7 +88,7 @@ export const previewBillingSummary = Object.freeze({
       ["1K", "2K", "4K"].map((resolution) =>
         Object.freeze({
           ...launchPrice,
-          creditAmount: String(10 * launchPrice.count),
+          creditAmount: previewCreditAmount(launchPrice),
           creditUnit: "credit",
           priceVersion: 1,
           resolution,

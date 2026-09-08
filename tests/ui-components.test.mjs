@@ -737,6 +737,15 @@ test("billing HTTP boundary covers balance, quote, zero capacity, and retryable 
         priceVersion: 1,
         resolution: "1K",
       },
+      {
+        count: 1,
+        creditAmount: "15",
+        creditUnit: "credit",
+        modelId: "nano-banana-pro",
+        planContext: "standard",
+        priceVersion: 1,
+        resolution: "1K",
+      },
     ],
   };
   try {
@@ -754,6 +763,13 @@ test("billing HTTP boundary covers balance, quote, zero capacity, and retryable 
     });
     assert.equal(quote.creditAmount, "10");
     assert.equal(availableImageCount(summary, quote), 10n);
+    const proQuote = findBillingQuote(summary, {
+      count: 1,
+      modelId: "nano-banana-pro",
+      resolution: "1K",
+    });
+    assert.equal(proQuote.creditAmount, "15");
+    assert.equal(availableImageCount(summary, proQuote), 6n);
     assert.equal(
       availableImageCount(
         {

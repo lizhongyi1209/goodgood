@@ -150,6 +150,7 @@ test("M6 migration and schema define immutable prices and append-only ledger lin
     multiOutputMigration,
     multiOutputPriceActivationMigration,
     nanoMultiOutputPriceMigration,
+    nanoBananaProPriceMigration,
     schema,
     repository,
     contract,
@@ -157,6 +158,7 @@ test("M6 migration and schema define immutable prices and append-only ledger lin
     generationRepository,
     pricingDecision,
     gptPricingDecision,
+    nanoBananaProPricingDecision,
   ] = await Promise.all([
     readFile(
       new URL("../migrations/0009_m6_credit_ledger.sql", import.meta.url),
@@ -184,6 +186,13 @@ test("M6 migration and schema define immutable prices and append-only ledger lin
       ),
       "utf8",
     ),
+    readFile(
+      new URL(
+        "../migrations/0019_gg021_nano_banana_pro_prices.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
     readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
     readFile(new URL("../server/billing/repository.mjs", import.meta.url), "utf8"),
     readFile(new URL("../shared/contracts/billing.ts", import.meta.url), "utf8"),
@@ -199,6 +208,13 @@ test("M6 migration and schema define immutable prices and append-only ledger lin
     readFile(
       new URL(
         "../docs/decisions/0030-open-gpt-image-2-sd-with-model-specific-sizes.md",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+    readFile(
+      new URL(
+        "../docs/decisions/0041-price-nano-banana-pro-at-fifteen-credits.md",
         import.meta.url,
       ),
       "utf8",
@@ -243,6 +259,18 @@ test("M6 migration and schema define immutable prices and append-only ledger lin
     nanoMultiOutputPriceMigration,
     /'nano-banana-2', '4K', 4, 'standard', 1, 'credit', 40/,
   );
+  assert.match(
+    nanoBananaProPriceMigration,
+    /'nano-banana-pro', '1K', 1, 'standard', 1, 'credit', 15/,
+  );
+  assert.match(
+    nanoBananaProPriceMigration,
+    /'nano-banana-pro', '2K', 1, 'standard', 1, 'credit', 15/,
+  );
+  assert.match(
+    nanoBananaProPriceMigration,
+    /'nano-banana-pro', '4K', 1, 'standard', 1, 'credit', 15/,
+  );
   assert.match(schema, /ordinal: integer\("ordinal"\)\.notNull\(\)/);
   assert.match(migration, /'welcome_grant_v1'/);
   assert.match(migration, /'\{"campaign":"welcome-v1","images":10\}'/);
@@ -258,6 +286,8 @@ test("M6 migration and schema define immutable prices and append-only ledger lin
   assert.match(pricingDecision, /CNY 0\.20/);
   assert.match(gptPricingDecision, /`gpt-image-2-c-sd`/);
   assert.match(gptPricingDecision, /10 GoodGood credits/);
+  assert.match(nanoBananaProPricingDecision, /15 GoodGood credits/);
+  assert.match(nanoBananaProPricingDecision, /does not enable/);
   assert.doesNotMatch(repository, /request\.body|window\.|localStorage/);
 });
 
@@ -329,6 +359,23 @@ test(
         ["1K", "10"],
         ["2K", "10"],
         ["4K", "10"],
+      ],
+    );
+    const nanoBananaProPrices = await pool.query(
+      `SELECT resolution, credit_amount
+         FROM price_versions
+        WHERE model_id = 'nano-banana-pro'
+          AND output_count = 1
+          AND plan_context = 'standard'
+          AND version = 1
+        ORDER BY resolution`,
+    );
+    assert.deepEqual(
+      nanoBananaProPrices.rows.map((row) => [row.resolution, row.credit_amount]),
+      [
+        ["1K", "15"],
+        ["2K", "15"],
+        ["4K", "15"],
       ],
     );
     const gptMultiPrices = await pool.query(
@@ -675,6 +722,9 @@ test(
         ["nano-banana-2", "1K", 4, "40"],
         ["nano-banana-2", "2K", 4, "40"],
         ["nano-banana-2", "4K", 4, "40"],
+        ["nano-banana-pro", "1K", 1, "15"],
+        ["nano-banana-pro", "2K", 1, "15"],
+        ["nano-banana-pro", "4K", 1, "15"],
         ["gpt-image-2", "1K", 1, "10"],
         ["gpt-image-2", "2K", 1, "10"],
         ["gpt-image-2", "4K", 1, "10"],

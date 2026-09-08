@@ -393,8 +393,10 @@ Contains ordering and membership metadata; never duplicate image bytes.
 - Generation submission reserves credit in the same logical transaction as the
   batch/job creation. Current success settles only after the complete requested
   Asset set is committed; failure releases the full batch reservation.
-- The M6/GG-007/GG-009 path reserves 10 credits for Banana 2 or 10/20/40 credits
-  for GPT IMAGE 2 count 1/2/4. It settles after every requested accepted Asset
+- The M6/GG-007/GG-009 path reserves 10/20/40 credits for Banana 2 or GPT IMAGE 2
+  count 1/2/4. GG-021 publishes 15-credit single-output Nano Banana Pro prices
+  for all three resolution tiers without enabling that model's provider route.
+  An enabled path settles after every requested accepted Asset
   is inserted atomically and releases when the job reaches a no-Asset failure.
   `SUBMISSION_UNKNOWN` releases the customer's reservation but does not infer
   or record an upstream refund.

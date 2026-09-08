@@ -59,6 +59,10 @@ rejection, immutable snapshot/hash identity, draft/project/batch persistence,
 migration 0018 constraints, image-detail labels, and top-level O1Key forwarding.
 All provider assertions use stub transport; browser verification must not click
 Generate.
+GG-021 coverage proves that Nano Banana Pro has immutable 15-credit single-image
+prices for `1K / 2K / 4K`, that durable and preview billing summaries agree,
+and that the pricing-only slice does not add a provider route or issue a real
+provider request.
 The production-shaped authentication tests additionally cover OIDC
 configuration safety, discovery, Authorization Code + PKCE parameters, signed
 ID-token issuer/audience/nonce verification, verified email, one-time login
