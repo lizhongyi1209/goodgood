@@ -82,6 +82,24 @@ test("keeps reference previews legible and aspect ratio first through responsive
   );
 });
 
+test("shows thinking and Google Search controls only for Nano Banana 2", async () => {
+  const composer = await readFile(
+    path.join(root, "features/creation/creation-composer.tsx"),
+    "utf8",
+  );
+  const page = await readFile(path.join(root, "app/page.tsx"), "utf8");
+
+  assert.match(composer, /modelId === "nano-banana-2"/);
+  assert.match(composer, />思考程度</);
+  assert.match(composer, /level === "low" \? "低" : "高"/);
+  assert.match(composer, />谷歌搜索</);
+  assert.match(composer, /checked=\{googleSearch\}/);
+  assert.match(page, /useState<GenerationThinkingLevel>\("low"\)/);
+  assert.match(page, /useState\(false\)/);
+  assert.match(page, /onThinkingLevelChange=\{handleThinkingLevelChange\}/);
+  assert.match(page, /onGoogleSearchChange=\{handleGoogleSearchChange\}/);
+});
+
 test("keeps authentication global, passwordless, and recoverable", async () => {
   const css = await readFile(path.join(root, "app/globals.css"), "utf8");
   const creationPage = await readFile(path.join(root, "app/page.tsx"), "utf8");
@@ -177,6 +195,8 @@ test("keeps generation retries isolated from later composer edits", async () => 
     aspectRatio: "4:5",
     resolution: "2K",
     count: 4,
+    thinkingLevel: "high",
+    googleSearch: true,
   };
 
   const snapshot = createGenerationInputSnapshot(draft);
@@ -190,6 +210,8 @@ test("keeps generation retries isolated from later composer edits", async () => 
   assert.equal(snapshot.aspectRatio, "4:5");
   assert.equal("ratioIndex" in snapshot, false);
   assert.equal(snapshot.count, 4);
+  assert.equal(snapshot.thinkingLevel, "high");
+  assert.equal(snapshot.googleSearch, true);
   assert.ok(Object.isFrozen(snapshot));
   assert.ok(Object.isFrozen(snapshot.references));
   assert.ok(Object.isFrozen(snapshot.references[0]));
@@ -205,6 +227,8 @@ test("keeps generation retries isolated from later composer edits", async () => 
   ]);
   assert.notEqual(restored.references, snapshot.references);
   assert.notEqual(restored.references[0], snapshot.references[0]);
+  assert.equal(restored.thinkingLevel, "high");
+  assert.equal(restored.googleSearch, true);
 });
 
 test("uploads references directly and reports both ready and failed states", async () => {

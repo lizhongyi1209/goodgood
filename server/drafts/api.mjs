@@ -40,6 +40,7 @@ async function presentCreationDraft(resources, row) {
     state: {
       aspectRatio: row.aspect_ratio,
       count: row.generation_count,
+      googleSearch: row.google_search ?? false,
       modelId: row.model_id,
       prompt: row.prompt,
       references: (row.reference_snapshot ?? []).map((reference) => ({
@@ -49,6 +50,7 @@ async function presentCreationDraft(resources, row) {
         url: referenceUrls.get(reference.id) ?? "",
       })),
       resolution: row.resolution,
+      thinkingLevel: row.thinking_level ?? "low",
     },
     updatedAt: new Date(row.updated_at).toISOString(),
     version: row.version,

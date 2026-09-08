@@ -61,6 +61,9 @@ duplicating a release log.
   model-owned capability maps. GPT IMAGE 2 uses one native task; Nano Banana 2
   composes a multi-image batch from one upstream task per requested image.
   Other visible model names are not a promise of availability.
+- Nano Banana 2 owns two optional generation controls: `低 / 高` thinking
+  (default `低`) and default-off Google Search grounding. These are frozen with
+  the generation snapshot and remain absent from other model contracts.
 - Authing Google/email-code login and revocable GoodGood sessions, with
   owner-scoped jobs, private assets, uploads, projects and drafts. Local Compose
   uses explicitly isolated test identities/mock/RustFS, not production data.

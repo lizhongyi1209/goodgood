@@ -32,6 +32,10 @@ export type GenerationResolution = (typeof GENERATION_RESOLUTIONS)[number];
 export const GENERATION_COUNTS = [1, 2, 4] as const;
 export type GenerationCount = (typeof GENERATION_COUNTS)[number];
 
+export const GENERATION_THINKING_LEVELS = ["low", "high"] as const;
+export type GenerationThinkingLevel =
+  (typeof GENERATION_THINKING_LEVELS)[number];
+
 export const MAX_GENERATION_REFERENCES = 10;
 
 export const GENERATION_JOB_STATES = [
@@ -74,6 +78,8 @@ export type GenerationInputDraft = {
   aspectRatio: GenerationAspectRatio;
   resolution: GenerationResolution;
   count: GenerationCount;
+  thinkingLevel?: GenerationThinkingLevel;
+  googleSearch?: boolean;
   projectId?: string | null;
 };
 
@@ -84,6 +90,8 @@ export type GenerationInputSnapshot = Readonly<{
   aspectRatio: GenerationAspectRatio;
   resolution: GenerationResolution;
   count: GenerationCount;
+  thinkingLevel?: GenerationThinkingLevel;
+  googleSearch?: boolean;
   projectId?: string | null;
 }>;
 

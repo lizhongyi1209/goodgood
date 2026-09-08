@@ -19,6 +19,8 @@ const validInput = Object.freeze({
   prompt: "银灰色未来服装",
   references: [],
   resolution: "1K",
+  thinkingLevel: "low",
+  googleSearch: false,
 });
 
 test("generation input accepts model-owned ratios, resolutions, and output counts", () => {
@@ -49,6 +51,27 @@ test("generation input accepts model-owned ratios, resolutions, and output count
     validateM3GenerationInput({ ...validInput, count: 4 }).count,
     4,
   );
+  assert.deepEqual(
+    validateM3GenerationInput({
+      ...validInput,
+      thinkingLevel: "high",
+      googleSearch: true,
+    }),
+    { ...validInput, thinkingLevel: "high", googleSearch: true },
+  );
+  for (const unsupportedInput of [
+    { ...validInput, thinkingLevel: "medium" },
+    { ...validInput, googleSearch: "true" },
+    { ...validInput, modelId: "gpt-image-2", thinkingLevel: "high" },
+    { ...validInput, modelId: "gpt-image-2", googleSearch: true },
+  ]) {
+    assert.throws(
+      () => validateM3GenerationInput(unsupportedInput),
+      (error) =>
+        error instanceof GenerationRequestError &&
+        error.code === "M3_SLICE_UNSUPPORTED",
+    );
+  }
   assert.deepEqual(
     validateM3GenerationInput({
       ...validInput,

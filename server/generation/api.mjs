@@ -11,6 +11,7 @@ import { newRequestId } from "../observability/http.mjs";
 import { dispatchPendingJobs } from "./queue.mjs";
 import {
   isSupportedGenerationInput,
+  normalizeGenerationModelOptions,
 } from "./capabilities.mjs";
 import {
   GenerationPersistenceError,
@@ -68,6 +69,17 @@ export function validateM3GenerationInput(payload) {
       "当前生成链路支持 Nano Banana 2 和 GPT IMAGE 2 的 1、2、4 张输出。",
     );
   }
+  const modelOptions = normalizeGenerationModelOptions({
+    googleSearch: payload.googleSearch,
+    modelId: payload.modelId,
+    thinkingLevel: payload.thinkingLevel,
+  });
+  if (!modelOptions) {
+    throw new GenerationRequestError(
+      "M3_SLICE_UNSUPPORTED",
+      "当前模型不支持所选思考程度或谷歌搜索参数。",
+    );
+  }
 
   return {
     aspectRatio: payload.aspectRatio,
@@ -77,6 +89,7 @@ export function validateM3GenerationInput(payload) {
     prompt,
     references: references.map((reference) => ({ id: reference.id })),
     resolution: payload.resolution,
+    ...modelOptions,
   };
 }
 

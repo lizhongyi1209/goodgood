@@ -206,7 +206,7 @@ test("O1Key submission forwards every enabled aspect ratio and resolution", asyn
         images: [],
         model: "gemini-3.1-flash-image-c-sp",
         prompt: "a silver future garment",
-        response_modalities: ["IMAGE"],
+        response_modalities: ["TEXT", "IMAGE"],
         size: resolution,
       });
     }
@@ -407,6 +407,21 @@ test("gateway transport and unsupported durable parameters fail closed", async (
         error instanceof NormalizedProviderError && error.code === "INTERNAL_ERROR",
     );
   }
+});
+
+test("Nano Banana 2 forwards only explicitly enabled thinking and Google Search fields", async (context) => {
+  const { adapter, gateway } = await withGateway(context);
+  await adapter.submit(generationRequest("grounded high-thinking image", {
+    thinking_level: "high",
+    google_search: true,
+  }));
+  assert.equal(gateway.submissions.length, 1);
+  assert.equal(gateway.submissions[0].body.thinking_level, "high");
+  assert.equal(gateway.submissions[0].body.google_search, true);
+  assert.deepEqual(
+    gateway.submissions[0].body.response_modalities,
+    ["TEXT", "IMAGE"],
+  );
 });
 
 test("Nano Banana 2 accepts multi-output counts without forwarding an unsupported n field", async (context) => {

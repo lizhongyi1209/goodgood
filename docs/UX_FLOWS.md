@@ -84,6 +84,10 @@ fill space.
   The pixel readout follows the selected model's exact size table. A model
   change keeps a compatible ratio or visibly moves to the nearest supported
   ratio in the same orientation, and normalizes an unsupported count to one.
+- Selecting Nano Banana 2 reveals `思考程度` (`低 / 高`, default `低`) and a
+  default-off `谷歌搜索` switch in the attached drawer. Changing to another
+  model hides and resets both model-specific controls. Restored drafts,
+  projects, retries, and image detail preserve and expose the frozen choice.
 - Unsupported model/count/domain combinations fail before submission without
   replacing values inside an immutable generation snapshot.
 - Keep the active server quote next to the composer actions as plain metadata,

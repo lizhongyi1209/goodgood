@@ -5,6 +5,7 @@ import Image from "next/image";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import {
   GENERATION_RATIO_MODES,
   GENERATION_RESOLUTION_OPTIONS,
@@ -30,6 +31,7 @@ import {
   type GenerationModelId,
   type GenerationReference,
   type GenerationResolution,
+  type GenerationThinkingLevel,
 } from "@/shared/contracts/generation";
 import nanoBananaIcon from "@lobehub/icons-static-svg/icons/nanobanana-color.svg";
 import openAiIcon from "@lobehub/icons-static-svg/icons/openai.svg";
@@ -51,6 +53,8 @@ export type CreationComposerProps = Readonly<{
   aspectRatio: GenerationAspectRatio;
   resolution: GenerationResolution;
   count: GenerationCount;
+  thinkingLevel?: GenerationThinkingLevel;
+  googleSearch?: boolean;
   drawerOpen: boolean;
   isGenerating: boolean;
   billingLabel: string;
@@ -62,6 +66,8 @@ export type CreationComposerProps = Readonly<{
   onAspectRatioChange: (ratio: GenerationAspectRatio) => void;
   onResolutionChange: (resolution: GenerationResolution) => void;
   onCountChange: (count: GenerationCount) => void;
+  onThinkingLevelChange?: (thinkingLevel: GenerationThinkingLevel) => void;
+  onGoogleSearchChange?: (enabled: boolean) => void;
   onDrawerOpenChange: (open: boolean) => void;
   onGenerate: () => void;
 }>;
@@ -103,6 +109,8 @@ export function CreationComposer({
   aspectRatio,
   resolution,
   count,
+  thinkingLevel = "low",
+  googleSearch = false,
   drawerOpen,
   isGenerating,
   billingLabel,
@@ -114,6 +122,8 @@ export function CreationComposer({
   onAspectRatioChange,
   onResolutionChange,
   onCountChange,
+  onThinkingLevelChange = () => {},
+  onGoogleSearchChange = () => {},
   onDrawerOpenChange,
   onGenerate,
 }: CreationComposerProps) {
@@ -358,6 +368,38 @@ export function CreationComposer({
                   </div>
                 </div>
               </div>
+              {modelId === "nano-banana-2" && (
+                <div className="banana-model-options">
+                  <div className="banana-thinking-section">
+                    <label>思考程度</label>
+                    <div className="banana-thinking-options" aria-label="思考程度">
+                      {(["low", "high"] as const).map((level) => (
+                        <button
+                          type="button"
+                          key={level}
+                          className={thinkingLevel === level ? "selected" : ""}
+                          aria-pressed={thinkingLevel === level}
+                          onClick={() => onThinkingLevelChange(level)}
+                        >
+                          {level === "low" ? "低" : "高"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="google-search-option">
+                    <span>
+                      <strong>谷歌搜索</strong>
+                      <small>使用 Google Search 辅助生成</small>
+                    </span>
+                    <Switch
+                      className="google-search-switch"
+                      checked={googleSearch}
+                      onCheckedChange={onGoogleSearchChange}
+                      aria-label="谷歌搜索"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
             <div className="parameter-group output-group">
               <div className="output-section">

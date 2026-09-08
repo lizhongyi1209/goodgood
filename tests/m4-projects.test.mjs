@@ -37,11 +37,24 @@ test("project saves validate stable domain values, ordered ready IDs, and idempo
       prompt: "保留服装结构",
       referenceIds: [REFERENCE_ID],
       resolution: "2K",
+      thinkingLevel: "low",
+      googleSearch: false,
     },
   });
   assert.equal(
     validateProjectIdempotencyKey("project_save_12345678"),
     "project_save_12345678",
+  );
+  assert.throws(
+    () => validateProjectSaveRequest({
+      ...validSave,
+      state: {
+        ...validSave.state,
+        modelId: "gpt-image-2",
+        thinkingLevel: "high",
+      },
+    }),
+    (error) => error.code === "INVALID_PROJECT",
   );
   assert.throws(
     () => validateProjectSaveRequest({ ...validSave, batchIds: [] }),

@@ -186,7 +186,7 @@ test("O1Key worker route reads private reference bytes, uploads, and resumes pol
     provider: "o1key",
     providerModel: "gemini-3.1-flash-image-c-sp",
     resolutions: ["1K", "2K", "4K"],
-    routeVersion: "o1key-gemini-3.1-flash-image-c-sp-v3",
+    routeVersion: "o1key-gemini-3.1-flash-image-c-sp-v4",
   });
   const attempt = {
     provider: "o1key",

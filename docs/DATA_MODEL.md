@@ -28,8 +28,10 @@ Migration 0014 adds ordered multi-Asset jobs and GPT count-2/count-4 prices.
 Migration 0015 appends an earlier-effective immutable copy of the same
 count-2/count-4 prices so they are active for the full Shanghai launch day.
 Migration 0016 adds Nano Banana 2 count-2/count-4 prices at 20/40 credits for
-each resolution. The Drizzle schema mirrors the durable schema across all
-sixteen migrations. A
+each resolution. Migration 0017 adds `thinking_level` and `google_search` to
+generation batches, projects, and root drafts, defaults old rows to `low` and
+false, and constrains enabled values to Nano Banana 2. The Drizzle schema
+mirrors the durable schema across all seventeen migrations. A
 fuller project-backed creation session record and entitlements
 remain canonical contracts for later slices.
 

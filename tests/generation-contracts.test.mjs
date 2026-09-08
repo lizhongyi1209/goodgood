@@ -88,6 +88,8 @@ test("maps ratios and resolution labels without persisting UI indices", async ()
     getGenerationResolutionLabel,
     resolveGenerationAspectRatioForModel,
     resolveGenerationCountForModel,
+    resolveGenerationThinkingLevelForModel,
+    resolveGoogleSearchForModel,
   } = await vite.ssrLoadModule(
     "/features/creation/generation-options.ts",
   );
@@ -152,6 +154,10 @@ test("maps ratios and resolution labels without persisting UI indices", async ()
   assert.deepEqual(getGenerationCountOptions("gpt-image-2"), [1, 2, 4]);
   assert.equal(resolveGenerationCountForModel("nano-banana-2", 4), 4);
   assert.equal(resolveGenerationCountForModel("gpt-image-2", 4), 4);
+  assert.equal(resolveGenerationThinkingLevelForModel("nano-banana-2", "high"), "high");
+  assert.equal(resolveGenerationThinkingLevelForModel("gpt-image-2", "high"), "low");
+  assert.equal(resolveGoogleSearchForModel("nano-banana-2", true), true);
+  assert.equal(resolveGoogleSearchForModel("gpt-image-2", true), false);
   assert.deepEqual(
     [...GPT_IMAGE_2_RATIO_IDS],
     [...GENERATION_MODEL_CAPABILITIES["gpt-image-2"].aspectRatios],

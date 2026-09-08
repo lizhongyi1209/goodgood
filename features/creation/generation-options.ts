@@ -4,6 +4,7 @@ import {
   GenerationAspectRatio,
   GenerationModelId,
   GenerationResolution,
+  GenerationThinkingLevel,
 } from "@/shared/contracts/generation";
 
 export type GenerationRatioMode = "portrait" | "square" | "landscape";
@@ -133,6 +134,22 @@ export function resolveGenerationCountForModel(
   count: GenerationCount,
 ): GenerationCount {
   return isGenerationCountSupported(modelId, count) ? count : 1;
+}
+
+export function resolveGenerationThinkingLevelForModel(
+  modelId: GenerationModelId,
+  thinkingLevel: GenerationThinkingLevel | undefined,
+): GenerationThinkingLevel {
+  return modelId === "nano-banana-2" && thinkingLevel === "high"
+    ? "high"
+    : "low";
+}
+
+export function resolveGoogleSearchForModel(
+  modelId: GenerationModelId,
+  googleSearch: boolean | undefined,
+): boolean {
+  return modelId === "nano-banana-2" && googleSearch === true;
 }
 
 export function getGenerationModelRatioIndex(

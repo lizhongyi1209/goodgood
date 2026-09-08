@@ -135,13 +135,13 @@ test("release metadata is deterministic and records the current migration", asyn
 
   assert.deepEqual(first, second);
   assert.equal(first.imageName, "ghcr.io/lizhongyi1209/goodgood");
-  assert.equal(first.migrationVersion, "0016_gg010_nano_multi_output_prices.sql");
+  assert.equal(first.migrationVersion, "0017_gg012_banana_thinking_search.sql");
   assert.match(first.runtimeConfigVersion, /^[a-f0-9]{64}$/);
   assert.equal(
     githubOutput(first),
     [
       "image-name=ghcr.io/lizhongyi1209/goodgood",
-      "migration-version=0016_gg010_nano_multi_output_prices.sql",
+      "migration-version=0017_gg012_banana_thinking_search.sql",
       `runtime-config-version=${first.runtimeConfigVersion}`,
       "",
     ].join("\n"),

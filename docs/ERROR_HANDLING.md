@@ -77,6 +77,11 @@ reservation, or provider POST is created. The adapter repeats this validation.
 Nano sends the admitted ratio and resolution values in one single-image task
 per output and never sends `n`; GPT sends the corresponding exact pixel size
 and native count in one task.
+Nano's omitted thinking/search values normalize to `low` and false before
+persistence. Invalid thinking values, non-boolean search values, or enabled
+Nano-only options on another model return `M3_SLICE_UNSUPPORTED` before credit
+reservation or provider submission. The provider adapter repeats this
+fail-closed model isolation check.
 
 The M5 O1Key contract normalizes `SUBMITTED`, `IN_PROGRESS`, `SUCCESS`, and
 `FAILURE` polling responses. Unknown error names and malformed or conflicting

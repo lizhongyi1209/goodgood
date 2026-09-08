@@ -15,7 +15,7 @@ export const US_GATEWAY_NANO_BANANA_2_ROUTE = Object.freeze({
   provider: "o1key",
   providerModel: "gemini-3.1-flash-image-c-sp",
   resolutions: SUPPORTED_GENERATION_RESOLUTIONS,
-  routeVersion: "o1key-gemini-3.1-flash-image-c-sp-v3",
+  routeVersion: "o1key-gemini-3.1-flash-image-c-sp-v4",
 });
 
 export const US_GATEWAY_GPT_IMAGE_2_ROUTE = Object.freeze({
@@ -273,6 +273,8 @@ function normalizeTemporaryUpload(payload, expectedMimeType, nowSeconds) {
 }
 
 function validateJob(job, route) {
+  const thinkingLevel = job?.thinking_level ?? "low";
+  const googleSearch = job?.google_search ?? false;
   if (
     job?.model_id !== route.productModelId ||
     !isSupportedGenerationInput({
@@ -280,7 +282,11 @@ function validateJob(job, route) {
       count: job?.requested_count,
       modelId: job?.model_id,
       resolution: job?.resolution,
-    })
+    }) ||
+    !["low", "high"].includes(thinkingLevel) ||
+    typeof googleSearch !== "boolean" ||
+    (route.productModelId !== "nano-banana-2" &&
+      (thinkingLevel !== "low" || googleSearch))
   ) {
     throw protocolError();
   }
@@ -307,8 +313,10 @@ function generationPayload({ job, route, uploadedReferences }) {
   return {
     ...common,
     aspect_ratio: job.aspect_ratio,
-    response_modalities: ["IMAGE"],
+    response_modalities: ["TEXT", "IMAGE"],
     size: job.resolution,
+    ...(job.thinking_level === "high" ? { thinking_level: "high" } : {}),
+    ...(job.google_search ? { google_search: true } : {}),
   };
 }
 

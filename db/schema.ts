@@ -414,6 +414,8 @@ export const creationDrafts = pgTable(
     aspectRatio: text("aspect_ratio").notNull(),
     resolution: text("resolution").notNull(),
     generationCount: integer("generation_count").notNull(),
+    thinkingLevel: text("thinking_level").default("low").notNull(),
+    googleSearch: boolean("google_search").default(false).notNull(),
     version: integer("version").default(1).notNull(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     ...timestamps,
@@ -432,6 +434,14 @@ export const creationDrafts = pgTable(
     check(
       "creation_drafts_count_check",
       sql`${table.generationCount} in (1, 2, 4)`,
+    ),
+    check(
+      "creation_drafts_thinking_level_check",
+      sql`${table.thinkingLevel} in ('low', 'high')`,
+    ),
+    check(
+      "creation_drafts_banana_options_check",
+      sql`${table.modelId} = 'nano-banana-2' or (${table.thinkingLevel} = 'low' and ${table.googleSearch} = false)`,
     ),
     check("creation_drafts_version_check", sql`${table.version} > 0`),
   ],
@@ -463,6 +473,8 @@ export const projects = pgTable(
     aspectRatio: text("aspect_ratio").notNull(),
     resolution: text("resolution").notNull(),
     generationCount: integer("generation_count").notNull(),
+    thinkingLevel: text("thinking_level").default("low").notNull(),
+    googleSearch: boolean("google_search").default(false).notNull(),
     status: text("status").default("active").notNull(),
     version: integer("version").default(1).notNull(),
     ...timestamps,
@@ -486,6 +498,14 @@ export const projects = pgTable(
     check(
       "projects_count_check",
       sql`${table.generationCount} in (1, 2, 4)`,
+    ),
+    check(
+      "projects_thinking_level_check",
+      sql`${table.thinkingLevel} in ('low', 'high')`,
+    ),
+    check(
+      "projects_banana_options_check",
+      sql`${table.modelId} = 'nano-banana-2' or (${table.thinkingLevel} = 'low' and ${table.googleSearch} = false)`,
     ),
     check(
       "projects_status_check",
@@ -586,6 +606,8 @@ export const generationBatches = pgTable(
     aspectRatio: text("aspect_ratio").notNull(),
     resolution: text("resolution").notNull(),
     requestedCount: integer("requested_count").notNull(),
+    thinkingLevel: text("thinking_level").default("low").notNull(),
+    googleSearch: boolean("google_search").default(false).notNull(),
     priceVersionId: uuid("price_version_id").references(() => priceVersions.id, {
       onDelete: "restrict",
     }),
@@ -616,6 +638,14 @@ export const generationBatches = pgTable(
     check(
       "generation_batches_count_check",
       sql`${table.requestedCount} in (1, 2, 4)`,
+    ),
+    check(
+      "generation_batches_thinking_level_check",
+      sql`${table.thinkingLevel} in ('low', 'high')`,
+    ),
+    check(
+      "generation_batches_banana_options_check",
+      sql`${table.modelId} = 'nano-banana-2' or (${table.thinkingLevel} = 'low' and ${table.googleSearch} = false)`,
     ),
   ],
 );

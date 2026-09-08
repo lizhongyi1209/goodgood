@@ -40,6 +40,11 @@ stable-value/reference validation, authenticated empty/read/save/delete routes,
 optimistic conflict responses, browser load/save/delete/error boundaries,
 root-only hydration/autosave wiring, explicit conflict recovery, and draft
 reference protection during cleanup.
+GG-012 coverage proves Nano-only dynamic controls, safe low/off defaults,
+snapshot/hash identity, draft/project/batch persistence and migration defaults,
+model-leakage rejection, `TEXT` + `IMAGE` response modalities, and omission or
+top-level forwarding of `thinking_level` / `google_search`. Provider tests use
+stub transport and must not issue a real, potentially billable request.
 The production-shaped authentication tests additionally cover OIDC
 configuration safety, discovery, Authorization Code + PKCE parameters, signed
 ID-token issuer/audience/nonce verification, verified email, one-time login

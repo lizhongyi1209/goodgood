@@ -6,6 +6,7 @@ import {
 } from "../billing/repository.mjs";
 import { lockReferenceLifecycle } from "../references/lifecycle-lock.mjs";
 import { findReadyReferences } from "../references/repository.mjs";
+import { normalizeGenerationModelOptions } from "./capabilities.mjs";
 
 export class GenerationPersistenceError extends Error {
   constructor(code, message, status = 500) {
@@ -16,12 +17,30 @@ export class GenerationPersistenceError extends Error {
   }
 }
 
+function requiredGenerationModelOptions(input) {
+  const options = normalizeGenerationModelOptions({
+    googleSearch: input.googleSearch,
+    modelId: input.modelId,
+    thinkingLevel: input.thinkingLevel,
+  });
+  if (!options) {
+    throw new GenerationPersistenceError(
+      "UNSUPPORTED_GENERATION_OPTIONS",
+      "当前模型不支持所选思考程度或谷歌搜索参数。",
+      400,
+    );
+  }
+  return options;
+}
+
 export function hashGenerationInput(input) {
+  const modelOptions = requiredGenerationModelOptions(input);
   return createHash("sha256")
     .update(
       JSON.stringify({
         aspectRatio: input.aspectRatio,
         count: input.count,
+        googleSearch: modelOptions.googleSearch,
         modelId: input.modelId,
         projectId: input.projectId ?? null,
         prompt: input.prompt,
@@ -31,6 +50,7 @@ export function hashGenerationInput(input) {
           ordinal: index + 1,
         })),
         resolution: input.resolution,
+        thinkingLevel: modelOptions.thinkingLevel,
       }),
     )
     .digest("hex");
@@ -40,6 +60,7 @@ export function generationInputFromRow(row, referenceUrls = new Map()) {
   return {
     aspectRatio: row.aspect_ratio,
     count: row.requested_count,
+    googleSearch: row.google_search ?? false,
     modelId: row.model_id,
     projectId: row.project_id ?? null,
     prompt: row.prompt,
@@ -50,6 +71,7 @@ export function generationInputFromRow(row, referenceUrls = new Map()) {
       url: referenceUrls.get(reference.id) ?? "",
     })),
     resolution: row.resolution,
+    thinkingLevel: row.thinking_level ?? "low",
   };
 }
 
@@ -57,6 +79,7 @@ export function persistedGenerationInputFromRow(row) {
   return {
     aspectRatio: row.aspect_ratio,
     count: row.requested_count,
+    googleSearch: row.google_search ?? false,
     modelId: row.model_id,
     projectId: row.project_id ?? null,
     prompt: row.prompt,
@@ -66,6 +89,7 @@ export function persistedGenerationInputFromRow(row) {
       objectKey: reference.objectKey,
     })),
     resolution: row.resolution,
+    thinkingLevel: row.thinking_level ?? "low",
   };
 }
 
@@ -113,6 +137,8 @@ const JOB_SELECT = `
          b.aspect_ratio,
          b.resolution,
          b.requested_count,
+         b.thinking_level,
+         b.google_search,
          b.input_hash,
          COALESCE((
            SELECT jsonb_agg(to_jsonb(a) ORDER BY a.ordinal)
@@ -167,6 +193,7 @@ export async function createGenerationJob(
   pool,
   { idempotencyKey, input, ownerId, retryOfJobId = null },
 ) {
+  const modelOptions = requiredGenerationModelOptions(input);
   const inputHash = hashGenerationInput(input);
   const client = await pool.connect();
   try {
@@ -256,8 +283,9 @@ export async function createGenerationJob(
     await client.query(
       `INSERT INTO generation_batches (
          id, owner_id, project_id, prompt, reference_snapshot, model_id,
-         aspect_ratio, resolution, requested_count, input_hash
-       ) VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8, $9, $10)`,
+         aspect_ratio, resolution, requested_count, thinking_level,
+         google_search, input_hash
+       ) VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8, $9, $10, $11, $12)`,
       [
         batchId,
         ownerId,
@@ -268,6 +296,8 @@ export async function createGenerationJob(
         input.aspectRatio,
         input.resolution,
         input.count,
+        modelOptions.thinkingLevel,
+        modelOptions.googleSearch,
         inputHash,
       ],
     );
@@ -276,7 +306,8 @@ export async function createGenerationJob(
         `UPDATE projects
             SET prompt = $3, reference_snapshot = $4::jsonb,
                 model_id = $5, aspect_ratio = $6, resolution = $7,
-                generation_count = $8, version = version + 1,
+                generation_count = $8, thinking_level = $9,
+                google_search = $10, version = version + 1,
                 updated_at = now()
           WHERE id = $1 AND owner_id = $2`,
         [
@@ -288,6 +319,8 @@ export async function createGenerationJob(
           input.aspectRatio,
           input.resolution,
           input.count,
+          modelOptions.thinkingLevel,
+          modelOptions.googleSearch,
         ],
       );
     }

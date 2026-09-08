@@ -4,6 +4,7 @@ import type {
   GenerationModelId,
   GenerationReference,
   GenerationResolution,
+  GenerationThinkingLevel,
 } from "@/shared/contracts/generation";
 
 export type CreationDraftState = Readonly<{
@@ -13,6 +14,8 @@ export type CreationDraftState = Readonly<{
   aspectRatio: GenerationAspectRatio;
   resolution: GenerationResolution;
   count: GenerationCount;
+  thinkingLevel?: GenerationThinkingLevel;
+  googleSearch?: boolean;
 }>;
 
 export type CreationDraftRecord = Readonly<{

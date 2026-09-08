@@ -11,6 +11,8 @@ import {
   isGenerationCountSupported,
   resolveGenerationAspectRatioForModel,
   resolveGenerationCountForModel,
+  resolveGenerationThinkingLevelForModel,
+  resolveGoogleSearchForModel,
 } from "@/features/creation/generation-options";
 import {
   isGenerationJobActive,
@@ -83,6 +85,7 @@ import {
   type GenerationOutput,
   type GenerationReference,
   type GenerationResolution,
+  type GenerationThinkingLevel,
 } from "@/shared/contracts/generation";
 import type { ProjectRecord } from "@/shared/contracts/project";
 import type { BillingSummary } from "@/shared/contracts/billing";
@@ -142,6 +145,8 @@ type AssetBatch = {
   aspectRatio: GenerationAspectRatio;
   resolution: GenerationResolution;
   count: GenerationCount;
+  thinkingLevel: GenerationThinkingLevel;
+  googleSearch: boolean;
   referenceCount: number;
   images: readonly GenerationOutput[];
 };
@@ -193,6 +198,8 @@ const emptyComposerCheckpoint = createComposerCheckpoint({
   prompt: "",
   references: [],
   resolution: "1K",
+  thinkingLevel: "low",
+  googleSearch: false,
 });
 const initialAssetBatches: AssetBatch[] = [
   {
@@ -205,6 +212,8 @@ const initialAssetBatches: AssetBatch[] = [
     aspectRatio: "4:5",
     resolution: "2K",
     count: 4,
+    thinkingLevel: "low",
+    googleSearch: false,
     referenceCount: 0,
     images: MOCK_GENERATION_OUTPUTS.map((image) => ({
       ...image,
@@ -221,6 +230,8 @@ const initialAssetBatches: AssetBatch[] = [
     aspectRatio: "1:1",
     resolution: "4K",
     count: 2,
+    thinkingLevel: "low",
+    googleSearch: false,
     referenceCount: 2,
     images: MOCK_GENERATION_OUTPUTS.slice(0, 2).map((image) => ({
       ...image,
@@ -254,10 +265,12 @@ function generationJobToAssetBatch(job: GenerationJob): AssetBatch {
     dateLabel,
     id: job.id,
     images: job.outputs,
+    googleSearch: job.input.googleSearch ?? false,
     modelId: job.input.modelId,
     prompt: job.input.prompt,
     referenceCount: job.input.references.length,
     resolution: job.input.resolution,
+    thinkingLevel: job.input.thinkingLevel ?? "low",
     time: new Intl.DateTimeFormat("zh-CN", {
       hour: "2-digit",
       hour12: false,
@@ -331,6 +344,8 @@ export default function Home() {
   const [selectedRatio, setSelectedRatio] = useState<GenerationAspectRatio>("1:1");
   const [resolution, setResolution] = useState<GenerationResolution>("1K");
   const [generationCount, setGenerationCount] = useState<GenerationCount>(1);
+  const [thinkingLevel, setThinkingLevel] = useState<GenerationThinkingLevel>("low");
+  const [googleSearch, setGoogleSearch] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [referenceImages, setReferenceImages] = useState<ReferenceImage[]>([]);
   const [activeView, setActiveView] = useState<ActiveView>("create");
@@ -453,10 +468,12 @@ export default function Home() {
   const currentComposerCheckpoint = createComposerCheckpoint({
     aspectRatio: selectedRatio,
     count: generationCount,
+    googleSearch,
     modelId: selectedModel,
     prompt,
     references: referenceImages,
     resolution,
+    thinkingLevel,
   });
   const hasUnsavedCreationChanges = hasMeaningfulUnsavedChanges({
     checkpoint: composerCheckpoint,
@@ -468,10 +485,12 @@ export default function Home() {
   const currentDraftState: CreationDraftState = {
     aspectRatio: selectedRatio,
     count: generationCount,
+    googleSearch,
     modelId: selectedModel,
     prompt,
     references: referenceImages,
     resolution,
+    thinkingLevel,
   };
   const queueDraftMutation = useCallback((mutation: () => Promise<void>) => {
     const result = draftMutationQueueRef.current.then(mutation, mutation);
@@ -485,9 +504,11 @@ export default function Home() {
       aspectRatio: "1:1" as const,
       count: 1 as const,
       modelId: DEFAULT_GENERATION_MODEL_ID,
+      googleSearch: false,
       prompt: "",
       references: [],
       resolution: "1K" as const,
+      thinkingLevel: "low" as const,
     };
     const normalizedState = {
       ...state,
@@ -496,6 +517,14 @@ export default function Home() {
         state.aspectRatio,
       ),
       count: resolveGenerationCountForModel(state.modelId, state.count),
+      thinkingLevel: resolveGenerationThinkingLevelForModel(
+        state.modelId,
+        state.thinkingLevel,
+      ),
+      googleSearch: resolveGoogleSearchForModel(
+        state.modelId,
+        state.googleSearch,
+      ),
     };
     setPrompt(normalizedState.prompt);
     setReferenceImages(normalizedState.references.map((reference) => ({ ...reference })));
@@ -503,6 +532,8 @@ export default function Home() {
     setSelectedRatio(normalizedState.aspectRatio);
     setResolution(normalizedState.resolution);
     setGenerationCount(normalizedState.count);
+    setThinkingLevel(normalizedState.thinkingLevel);
+    setGoogleSearch(normalizedState.googleSearch);
     draftVersionRef.current = draft?.version ?? null;
     draftSyncedCheckpointRef.current = createComposerCheckpoint(normalizedState);
     setDraftSyncRevision((current) => current + 1);
@@ -735,10 +766,12 @@ export default function Home() {
     const snapshot: CreationDraftState = {
       aspectRatio: selectedRatio,
       count: generationCount,
+      googleSearch,
       modelId: selectedModel,
       prompt,
       references: referenceImages.map((reference) => ({ ...reference })),
       resolution,
+      thinkingLevel,
     };
     draftAutosaveTimerRef.current = window.setTimeout(() => {
       draftAutosaveTimerRef.current = null;
@@ -785,6 +818,7 @@ export default function Home() {
     draftLoading,
     draftSyncRevision,
     generationCount,
+    googleSearch,
     prompt,
     queueDraftMutation,
     referenceImages,
@@ -792,6 +826,7 @@ export default function Home() {
     routeProjectId,
     selectedModel,
     selectedRatio,
+    thinkingLevel,
   ]);
 
   useEffect(() => {
@@ -955,6 +990,14 @@ export default function Home() {
             restoredProject.state.modelId,
             restoredProject.state.count,
           ),
+          thinkingLevel: resolveGenerationThinkingLevelForModel(
+            restoredProject.state.modelId,
+            restoredProject.state.thinkingLevel,
+          ),
+          googleSearch: resolveGoogleSearchForModel(
+            restoredProject.state.modelId,
+            restoredProject.state.googleSearch,
+          ),
         };
         referenceObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
         referenceObjectUrlsRef.current.clear();
@@ -968,6 +1011,8 @@ export default function Home() {
         setSelectedRatio(restoredState.aspectRatio);
         setResolution(restoredState.resolution);
         setGenerationCount(restoredState.count);
+        setThinkingLevel(restoredState.thinkingLevel);
+        setGoogleSearch(restoredState.googleSearch);
         setGenerationRuns(restoredProject.batches
           .filter((batch) => batch.state === "failed" && batch.error !== null)
           .map((batch) => Object.freeze({ key: batch.id, job: batch })));
@@ -1097,6 +1142,12 @@ export default function Home() {
     setGenerationCount((current) =>
       resolveGenerationCountForModel(value, current),
     );
+    setThinkingLevel((current) =>
+      resolveGenerationThinkingLevelForModel(value, current),
+    );
+    setGoogleSearch((current) =>
+      resolveGoogleSearchForModel(value, current),
+    );
   };
 
   const handleAspectRatioChange = (value: GenerationAspectRatio) => {
@@ -1113,6 +1164,18 @@ export default function Home() {
     if (!isGenerationCountSupported(selectedModel, value)) return;
     composerEditRevisionRef.current += 1;
     setGenerationCount(value);
+  };
+
+  const handleThinkingLevelChange = (value: GenerationThinkingLevel) => {
+    if (selectedModel !== "nano-banana-2") return;
+    composerEditRevisionRef.current += 1;
+    setThinkingLevel(value);
+  };
+
+  const handleGoogleSearchChange = (enabled: boolean) => {
+    if (selectedModel !== "nano-banana-2") return;
+    composerEditRevisionRef.current += 1;
+    setGoogleSearch(enabled);
   };
 
   const handleReferenceFiles = (files: readonly File[]) => {
@@ -1384,10 +1447,12 @@ export default function Home() {
         state: {
           aspectRatio: selectedRatio,
           count: generationCount,
+          googleSearch,
           modelId: selectedModel,
           prompt,
           references: referenceImages.filter((reference) => reference.status === "ready"),
           resolution,
+          thinkingLevel,
         },
       });
       setProjects((current) => [savedProject, ...current.filter((project) => project.id !== savedProject.id)]);
@@ -1429,7 +1494,9 @@ export default function Home() {
       aspectRatio: completedInput.aspectRatio,
       resolution: completedInput.resolution,
       count: completedInput.count,
+      googleSearch: completedInput.googleSearch ?? false,
       referenceCount: completedInput.references.length,
+      thinkingLevel: completedInput.thinkingLevel ?? "low",
       images: completedJob.outputs,
     };
     setSavedImages((current) => [...current, ...completedJob.outputs.map((result) => `${completedJob.id}-${result.id}`)]);
@@ -1451,10 +1518,12 @@ export default function Home() {
                 ? {
                     aspectRatio: completedInput.aspectRatio,
                     count: completedInput.count,
+                    googleSearch: completedInput.googleSearch ?? false,
                     modelId: completedInput.modelId,
                     prompt: completedInput.prompt,
                     references: completedInput.references,
                     resolution: completedInput.resolution,
+                    thinkingLevel: completedInput.thinkingLevel ?? "low",
                   }
                 : project.state,
               updatedAt: completedJob.updatedAt,
@@ -1534,6 +1603,8 @@ export default function Home() {
       aspectRatio: selectedRatio,
       resolution,
       count: generationCount,
+      thinkingLevel,
+      googleSearch,
       projectId: currentProject?.id ?? null,
     });
     void runGeneration(snapshot);
@@ -1581,6 +1652,14 @@ export default function Home() {
     setSelectedRatio(restoredAspectRatio);
     setResolution(restored.resolution);
     setGenerationCount(restoredCount);
+    setThinkingLevel(resolveGenerationThinkingLevelForModel(
+      restored.modelId,
+      restored.thinkingLevel,
+    ));
+    setGoogleSearch(resolveGoogleSearchForModel(
+      restored.modelId,
+      restored.googleSearch,
+    ));
     setDrawerOpen(true);
     window.requestAnimationFrame(() => {
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1883,6 +1962,8 @@ export default function Home() {
             aspectRatio={selectedRatio}
             resolution={resolution}
             count={generationCount}
+            thinkingLevel={thinkingLevel}
+            googleSearch={googleSearch}
             drawerOpen={drawerOpen}
             isGenerating={isGenerating}
             billingLabel={composerBillingLabel}
@@ -1894,6 +1975,8 @@ export default function Home() {
             onAspectRatioChange={handleAspectRatioChange}
             onResolutionChange={handleResolutionChange}
             onCountChange={handleGenerationCountChange}
+            onThinkingLevelChange={handleThinkingLevelChange}
+            onGoogleSearchChange={handleGoogleSearchChange}
             onDrawerOpenChange={setDrawerOpen}
             onGenerate={handleGenerate}
           />
@@ -2186,6 +2269,12 @@ export default function Home() {
                     <div><dt>分辨率</dt><dd>{formatGenerationResolution(activeDetail.batch.resolution, activeDetail.image)}</dd></div>
                     <div><dt>批次</dt><dd>{activeDetail.batch.count} 张</dd></div>
                     <div><dt>参考图</dt><dd>{activeDetail.batch.referenceCount ? `${activeDetail.batch.referenceCount} 张` : "无"}</dd></div>
+                    {activeDetail.batch.modelId === "nano-banana-2" && (
+                      <>
+                        <div><dt>思考程度</dt><dd>{activeDetail.batch.thinkingLevel === "high" ? "高" : "低"}</dd></div>
+                        <div><dt>谷歌搜索</dt><dd>{activeDetail.batch.googleSearch ? "开启" : "关闭"}</dd></div>
+                      </>
+                    )}
                     <div><dt>任务编号</dt><dd>{activeDetail.batch.id}</dd></div>
                   </dl>
                 </div>

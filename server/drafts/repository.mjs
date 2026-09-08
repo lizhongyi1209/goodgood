@@ -58,8 +58,9 @@ export async function saveCreationDraft(
     const result = await client.query(
       `INSERT INTO creation_drafts (
          owner_id, prompt, reference_snapshot, model_id, aspect_ratio,
-         resolution, generation_count, version, expires_at, created_at, updated_at
-       ) VALUES ($1, $2, $3::jsonb, $4, $5, $6, $7, $8, $9, $10, $10)
+         resolution, generation_count, thinking_level, google_search,
+         version, expires_at, created_at, updated_at
+       ) VALUES ($1, $2, $3::jsonb, $4, $5, $6, $7, $8, $9, $10, $11, $12, $12)
        ON CONFLICT (owner_id) DO UPDATE
          SET prompt = EXCLUDED.prompt,
              reference_snapshot = EXCLUDED.reference_snapshot,
@@ -67,6 +68,8 @@ export async function saveCreationDraft(
              aspect_ratio = EXCLUDED.aspect_ratio,
              resolution = EXCLUDED.resolution,
              generation_count = EXCLUDED.generation_count,
+             thinking_level = EXCLUDED.thinking_level,
+             google_search = EXCLUDED.google_search,
              version = EXCLUDED.version,
              expires_at = EXCLUDED.expires_at,
              updated_at = EXCLUDED.updated_at
@@ -79,6 +82,8 @@ export async function saveCreationDraft(
         state.aspectRatio,
         state.resolution,
         state.count,
+        state.thinkingLevel,
+        state.googleSearch,
         nextVersion,
         expiresAt,
         now,

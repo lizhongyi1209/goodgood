@@ -11,6 +11,7 @@ export type {
   GenerationModelId,
   GenerationReference,
   GenerationResolution,
+  GenerationThinkingLevel,
 } from "@/shared/contracts/generation";
 
 export function createGenerationInputSnapshot(
@@ -27,6 +28,12 @@ export function createGenerationInputSnapshot(
     aspectRatio: draft.aspectRatio,
     resolution: draft.resolution,
     count: draft.count,
+    thinkingLevel:
+      draft.modelId === "nano-banana-2" && draft.thinkingLevel === "high"
+        ? "high"
+        : "low",
+    googleSearch:
+      draft.modelId === "nano-banana-2" && draft.googleSearch === true,
     projectId: draft.projectId ?? null,
   });
 }
@@ -41,6 +48,8 @@ export function restoreGenerationInputSnapshot(
     aspectRatio: snapshot.aspectRatio,
     resolution: snapshot.resolution,
     count: snapshot.count,
+    thinkingLevel: snapshot.thinkingLevel ?? "low",
+    googleSearch: snapshot.googleSearch === true,
     projectId: snapshot.projectId ?? null,
   };
 }
