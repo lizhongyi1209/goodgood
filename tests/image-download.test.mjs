@@ -25,8 +25,8 @@ test("uses the native save picker before fetching and writes the downloaded byte
   const blob = new Blob(["image-bytes"], { type: "image/jpeg" });
   const result = await saveImageToLocal(
     {
-      batchId: "batch/unsafe",
-      imageId: "asset 1",
+      createdAt: "2026-09-08T14:30:25",
+      ordinal: 1,
       previewUrl: "https://assets.invalid/generated/image.jpeg?signature=private",
     },
     {
@@ -53,11 +53,11 @@ test("uses the native save picker before fetching and writes the downloaded byte
     "write",
     "close",
   ]);
-  assert.equal(calls[0][1], "goodgood-batch-unsafe-asset-1.jpg");
+  assert.equal(calls[0][1], "GoodGood_20260908_143025_01.jpg");
   assert.equal(calls[2][1], blob);
   assert.equal(
-    imageDownloadFilename("batch", "asset", "/generated/output.webp"),
-    "goodgood-batch-asset.webp",
+    imageDownloadFilename("2026-09-08T14:30:25", 4, "/generated/output.webp"),
+    "GoodGood_20260908_143025_04.webp",
   );
 });
 
@@ -75,8 +75,8 @@ test("falls back to a Blob download without navigating to the signed URL", async
   };
   const result = await saveImageToLocal(
     {
-      batchId: "batch",
-      imageId: "asset",
+      createdAt: "2026-09-08T14:30:25",
+      ordinal: 2,
       previewUrl: "https://assets.invalid/private/output.png?signature=private",
     },
     {
@@ -102,7 +102,7 @@ test("falls back to a Blob download without navigating to the signed URL", async
 
   assert.equal(result, "saved");
   assert.equal(link.href, "blob:goodgood-download");
-  assert.equal(link.download, "goodgood-batch-asset.png");
+  assert.equal(link.download, "GoodGood_20260908_143025_02.png");
   assert.notEqual(link.href, "https://assets.invalid/private/output.png?signature=private");
   assert.deepEqual(calls.map((call) => Array.isArray(call) ? call[0] : call), [
     "append",
@@ -118,7 +118,11 @@ test("treats cancelling the native picker as a quiet cancellation", async () => 
   );
   let fetched = false;
   const result = await saveImageToLocal(
-    { batchId: "batch", imageId: "asset", previewUrl: "/asset.png" },
+    {
+      createdAt: "2026-09-08T14:30:25",
+      ordinal: 1,
+      previewUrl: "/asset.png",
+    },
     {
       fetchImplementation: async () => {
         fetched = true;

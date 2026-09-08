@@ -41,8 +41,8 @@ function isAbortError(error: unknown): boolean {
 }
 
 export function imageDownloadFilename(
-  batchId: string,
-  imageId: string,
+  createdAt: string,
+  ordinal: number,
   previewUrl: string,
 ): string {
   let extension = ".png";
@@ -53,14 +53,26 @@ export function imageDownloadFilename(
   } catch {
     // A malformed URL will fail during fetch; keep a safe filename for the picker.
   }
-  const safePart = (value: string) => value.replace(/[^a-zA-Z0-9_-]+/g, "-");
-  return `goodgood-${safePart(batchId)}-${safePart(imageId)}${extension}`;
+  const createdDate = new Date(createdAt);
+  const safeDate = Number.isNaN(createdDate.valueOf()) ? new Date() : createdDate;
+  const pad = (value: number) => String(value).padStart(2, "0");
+  const timestamp = [
+    safeDate.getFullYear(),
+    pad(safeDate.getMonth() + 1),
+    pad(safeDate.getDate()),
+    "_",
+    pad(safeDate.getHours()),
+    pad(safeDate.getMinutes()),
+    pad(safeDate.getSeconds()),
+  ].join("");
+  const imageOrdinal = Number.isSafeInteger(ordinal) && ordinal > 0 ? ordinal : 1;
+  return `GoodGood_${timestamp}_${pad(imageOrdinal)}${extension}`;
 }
 
 export async function saveImageToLocal(
   input: Readonly<{
-    batchId: string;
-    imageId: string;
+    createdAt: string;
+    ordinal: number;
     previewUrl: string;
   }>,
   dependencies: ImageDownloadDependencies = {},
@@ -72,8 +84,8 @@ export async function saveImageToLocal(
     ? globalWithPicker.showSaveFilePicker?.bind(globalThis)
     : dependencies.saveFilePicker ?? undefined;
   const suggestedName = imageDownloadFilename(
-    input.batchId,
-    input.imageId,
+    input.createdAt,
+    input.ordinal,
     input.previewUrl,
   );
 

@@ -1695,10 +1695,14 @@ export default function Home() {
     toast.success(isSaved ? "已从资产库移除" : "已重新加入资产库");
   };
 
-  const downloadImage = async (batchId: string, imageId: string, previewUrl: string) => {
-    const imageKey = `${batchId}-${imageId}`;
+  const downloadImage = async (batch: AssetBatch, image: GenerationOutput, index: number) => {
+    const imageKey = `${batch.id}-${image.id}`;
     if (downloadingImageKeysRef.current.has(imageKey)) return;
-    const saveRequest = saveImageToLocal({ batchId, imageId, previewUrl });
+    const saveRequest = saveImageToLocal({
+      createdAt: batch.createdAt,
+      ordinal: index + 1,
+      previewUrl: image.previewUrl,
+    });
     downloadingImageKeysRef.current.add(imageKey);
     setDownloadingImageKeys((current) => [...current, imageKey]);
     try {
@@ -1809,7 +1813,7 @@ export default function Home() {
         />
         <span className="creation-card-meta">{formatPixelDimensions(itemDimensions)}</span>
         <div className="image-actions">
-          <button className="download-button" disabled={isDownloading} aria-label={isDownloading ? "正在下载图片" : "下载到本地"} onClick={(event) => { event.stopPropagation(); void downloadImage(item.batch.id, item.image.id, item.image.previewUrl); }}>{isDownloading ? <LoaderCircle className="download-spinner" size={15} /> : <Download size={15} />}</button>
+          <button className="download-button" disabled={isDownloading} aria-label={isDownloading ? "正在下载图片" : "下载到本地"} onClick={(event) => { event.stopPropagation(); void downloadImage(item.batch, item.image, item.index); }}>{isDownloading ? <LoaderCircle className="download-spinner" size={15} /> : <Download size={15} />}</button>
         </div>
       </article>
     );
@@ -2279,7 +2283,7 @@ export default function Home() {
                       aria-label={savedImages.includes(activeDetail.key) ? "从资产库移除" : "保存到资产库"}
                       onClick={() => toggleSave(activeDetail.key)}
                     ><Bookmark size={17} fill={savedImages.includes(activeDetail.key) ? "currentColor" : "none"} /></button>
-                    <button className="download-button" disabled={downloadingImageKeys.includes(`${activeDetail.batch.id}-${activeDetail.image.id}`)} aria-label={downloadingImageKeys.includes(`${activeDetail.batch.id}-${activeDetail.image.id}`) ? "正在下载图片" : "下载图片"} onClick={() => void downloadImage(activeDetail.batch.id, activeDetail.image.id, activeDetail.image.previewUrl)}>{downloadingImageKeys.includes(`${activeDetail.batch.id}-${activeDetail.image.id}`) ? <LoaderCircle className="download-spinner" size={17} /> : <Download size={17} />}</button>
+                    <button className="download-button" disabled={downloadingImageKeys.includes(`${activeDetail.batch.id}-${activeDetail.image.id}`)} aria-label={downloadingImageKeys.includes(`${activeDetail.batch.id}-${activeDetail.image.id}`) ? "正在下载图片" : "下载图片"} onClick={() => void downloadImage(activeDetail.batch, activeDetail.image, activeDetail.index)}>{downloadingImageKeys.includes(`${activeDetail.batch.id}-${activeDetail.image.id}`) ? <LoaderCircle className="download-spinner" size={17} /> : <Download size={17} />}</button>
                   </div>
                 </header>
 

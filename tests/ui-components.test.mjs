@@ -56,7 +56,7 @@ test("declares the GoodGood visual and interaction invariants", async () => {
   assert.match(creationCardRenderer, /className="download-button"/);
   assert.doesNotMatch(creationCardRenderer, /<Bookmark/);
   assert.doesNotMatch(creationCardRenderer, /toggleSave/);
-  assert.match(creationPage, /saveImageToLocal\(\{ batchId, imageId, previewUrl \}\)/);
+  assert.match(creationPage, /saveImageToLocal\(\{[\s\S]*createdAt: batch\.createdAt,[\s\S]*ordinal: index \+ 1,[\s\S]*previewUrl: image\.previewUrl,/);
   assert.doesNotMatch(creationPage, /link\.href = previewUrl/);
 });
 
