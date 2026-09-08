@@ -36,16 +36,28 @@ test("declares the GoodGood visual and interaction invariants", async () => {
   assert.match(css, /\.creation-masonry[^}]*gap:\s*3px/s);
   assert.match(css, /\.generation-error-strip[^}]*min-height:\s*72px/s);
   assert.match(css, /mask:\s*url\("\/feihong-send\.png"\)/);
-  assert.match(creationPage, /className="generation-task-frame"/);
-  assert.match(creationPage, /renderCreationColumns\(generationItems, 4, "task"\)/);
-  assert.match(creationPage, /renderCreationColumns\(creationItems, 4, "history"\)/);
-  assert.match(creationPage, /activeGenerationRuns\.flatMap/);
+  assert.doesNotMatch(creationPage, /className="generation-task-frame"/);
+  assert.match(creationPage, /const creationStreamItems = \[\.\.\.generationItems, \.\.\.creationItems\]/);
+  assert.match(creationPage, /renderCreationColumns\(creationStreamItems, 4\)/);
+  assert.match(creationPage, /getGenerationRunSlots\(generationRuns\)/);
+  assert.match(creationPage, /trackedGenerationBatchIds\.has\(batch\.id\)/);
   assert.match(creationPage, /failedGenerationRuns\.map/);
   assert.match(creationPage, /retryFailedGeneration\(run\)/);
   assert.match(creationPage, /restoreFailedGenerationSettings\(runInput\)/);
   assert.match(creationComposer, /aria-label=\{isGenerating \? "继续生成图片" : "生成图片"\}/);
   assert.doesNotMatch(creationComposer, /disabled=\{isGenerating\}/);
   assert.doesNotMatch(creationPage, /className="generation-error-panel/);
+
+  const creationCardRenderer = creationPage.slice(
+    creationPage.indexOf("const renderCreationItem"),
+    creationPage.indexOf("const renderCreationColumns"),
+  );
+  assert.match(creationCardRenderer, /formatPixelDimensions\(itemDimensions\)/);
+  assert.match(creationCardRenderer, /className="download-button"/);
+  assert.doesNotMatch(creationCardRenderer, /<Bookmark/);
+  assert.doesNotMatch(creationCardRenderer, /toggleSave/);
+  assert.match(creationPage, /saveImageToLocal\(\{ batchId, imageId, previewUrl \}\)/);
+  assert.doesNotMatch(creationPage, /link\.href = previewUrl/);
 });
 
 test("keeps reference previews legible and aspect ratio first through responsive layouts", async () => {

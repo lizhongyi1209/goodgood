@@ -122,6 +122,11 @@ individual icon. Upload, settings, and send align to the same 40px box.
 - Preserve the actual output ratio in all data and detail views.
 - Creation and asset gallery use tight 3px gaps and a single rounded outer frame;
   internal image corners remain square.
+- Creation skeletons occupy the same final masonry slots as their outputs; a
+  completed image replaces its skeleton without a second layout pass.
+- Creation-card hover metadata shows the concrete pixel dimensions. Successful
+  outputs are already in the asset library, so the creation card exposes only
+  download rather than a duplicate bookmark action.
 - Batch rows align image group, prompt, and metadata to the same top edge.
 - The image group has a stable visual height within a batch; width follows ratio.
 - Object cropping is acceptable only for a deliberately fixed thumbnail surface;

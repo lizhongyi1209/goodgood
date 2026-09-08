@@ -250,8 +250,6 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .creation-card:hover .image-actions { opacity: 1; transform: translateY(0); }
 .creation-skeleton { min-height: 160px; background: linear-gradient(115deg,#ededf0 15%,#f8f8f9 36%,#e9e9ed 57%); background-size: 240% 100%; display: grid; place-items: center; animation: skeleton-wave 1.5s ease-in-out infinite; }
 .creation-skeleton small { position: absolute; left: 11px; bottom: 10px; color: #aaaab2; font-size: 9px; }
-.generation-task-frame { margin-bottom: 10px; overflow: hidden; border-radius: 15px; background: var(--canvas); }
-
 .project-library-view { width: 100%; max-width: 1420px; margin: 0 auto; animation: asset-view-in .24s ease both; }
 .project-library-header { margin-bottom: 24px; }
 .project-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
@@ -346,6 +344,8 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .result-card:hover .image-actions { opacity: 1; transform: translateY(0); }
 .image-actions button { width: 32px; height: 32px; display: grid; place-items: center; border: 1px solid rgba(0,0,0,.06); background: rgba(255,255,255,.86); backdrop-filter: blur(10px); border-radius: 10px; color: #373734; }
 .image-actions button.saved { background: #f6dfdc; color: var(--accent-deep); }
+.download-button:disabled { cursor: wait; opacity: .72; }
+.download-spinner { animation: status-spin 1s linear infinite; }
 .generation-error-strip { min-height: 72px; margin-bottom: 10px; padding: 12px 14px; border: 1px solid #eddcda; border-radius: 14px; background: #fcf8f8; display: flex; align-items: center; gap: 12px; }
 .generation-error-icon { width: 36px; height: 36px; flex: 0 0 auto; border-radius: 11px; background: #f1dedd; display: grid; place-items: center; color: var(--accent-deep); }
 .generation-error-copy { min-width: 0; flex: 1; }

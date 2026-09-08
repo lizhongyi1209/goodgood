@@ -60,6 +60,16 @@ A later partial-result policy must define output-level charging first.
 A toast may announce a transient validation problem, but must not replace this
 panel for asynchronous generation failure.
 
+## Local image download
+
+Image download is a user-initiated browser operation. When the native file save
+picker is available, cancelling it is an expected no-op and produces no error
+toast. A signed-object read failure, Blob creation failure, or local file write
+failure keeps the current image/detail state and shows `下载失败，请重试`; it must
+not navigate the current page or open the signed image URL in another tab.
+Browsers without the native picker use a Blob download, so whether a separate
+save dialog appears follows that browser's download preference.
+
 The M3 mock contract maps a provider rejection to `MODEL_REJECTED`, a bounded
 poll deadline to `MODEL_TIMEOUT`, provider reachability/capacity to
 `CAPACITY_BUSY`, and malformed provider results to `INTERNAL_ERROR`. Database,

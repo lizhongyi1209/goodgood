@@ -248,18 +248,20 @@ test("tracks unlimited parallel client runs without cross-run replacement", asyn
   const {
     getActiveGenerationRuns,
     getFailedGenerationRuns,
+    getGenerationRunSlots,
     getPersistentGenerationJobIds,
+    getSucceededGenerationJobIds,
     removeGenerationRun,
     upsertGenerationRun,
   } = await vite.ssrLoadModule("/features/creation/generation-runs.ts");
   const snapshot = await createSnapshot();
   const timestamp = "2026-09-08T00:00:00.000Z";
-  const createJob = (id, state = "queued", error = null) => Object.freeze({
+  const createJob = (id, state = "queued", error = null, outputs = []) => Object.freeze({
     createdAt: timestamp,
     error,
     id,
     input: snapshot,
-    outputs: Object.freeze([]),
+    outputs: Object.freeze(outputs),
     state,
     updatedAt: timestamp,
   });
@@ -279,10 +281,16 @@ test("tracks unlimited parallel client runs without cross-run replacement", asyn
   assert.equal(runs[0].key, "run-24");
 
   const firstPosition = runs.findIndex((run) => run.key === "run-0");
+  const firstSlotKey = getGenerationRunSlots(runs)
+    .find((slot) => slot.runKey === "run-0").key;
   runs = upsertGenerationRun(runs, "run-0", createJob("job-0", "running"));
   assert.equal(runs.findIndex((run) => run.key === "run-0"), firstPosition);
   assert.equal(runs[firstPosition].job.id, "job-0");
   assert.equal(runs.length, 25);
+  assert.equal(
+    getGenerationRunSlots(runs).find((slot) => slot.runKey === "run-0").key,
+    firstSlotKey,
+  );
 
   const failure = Object.freeze({
     code: "MODEL_REJECTED",
@@ -293,9 +301,30 @@ test("tracks unlimited parallel client runs without cross-run replacement", asyn
   runs = upsertGenerationRun(runs, "run-1", createJob("job-1", "failed", failure));
   assert.equal(getActiveGenerationRuns(runs).length, 24);
   assert.deepEqual(getFailedGenerationRuns(runs).map((run) => run.key), ["run-1"]);
+  assert.equal(getGenerationRunSlots(runs).some((slot) => slot.runKey === "run-1"), false);
   assert.deepEqual(getPersistentGenerationJobIds(runs).sort(), ["job-0", "job-1"]);
 
-  runs = upsertGenerationRun(runs, "run-0", createJob("job-0", "succeeded"));
+  const output = Object.freeze({
+    height: 1200,
+    id: "asset-0",
+    previewPosition: "50% 50%",
+    previewUrl: "/asset-0.png",
+    width: 896,
+  });
+  const secondOutput = Object.freeze({ ...output, id: "asset-1", previewUrl: "/asset-1.png" });
+  runs = upsertGenerationRun(
+    runs,
+    "run-0",
+    createJob("job-0", "succeeded", null, [output, secondOutput]),
+  );
+  const completedSlots = getGenerationRunSlots(runs)
+    .filter((slot) => slot.runKey === "run-0");
+  assert.deepEqual(completedSlots.map((slot) => slot.key), [
+    firstSlotKey,
+    "generation-slot-run-0-1",
+  ]);
+  assert.deepEqual(completedSlots.map((slot) => slot.output), [output, secondOutput]);
+  assert.deepEqual(getSucceededGenerationJobIds(runs), ["job-0"]);
   runs = removeGenerationRun(runs, "run-0");
   assert.equal(runs.length, 24);
   assert.equal(runs.some((run) => run.key === "run-1"), true);

@@ -18,8 +18,9 @@
 | GG-010 | Nano Banana 2 开放 2 / 4 张编排输出，每张 10 积分 | 3010 已就绪；待站长真实生成验收 | [任务](tasks/GG-010-banana-multi-output.md) |
 | GG-011 | 固化快速交付与真实 provider 测试隔离规则 | 已完成；无需部署 | [任务](tasks/GG-011-fast-safe-local-delivery.md) |
 | GG-012 | Nano Banana 2 思考程度、谷歌搜索与文本/图片响应模态 | 3010 已就绪；待站长真实生成验收 | [任务](tasks/GG-012-banana-thinking-search.md) |
+| GG-013 | 稳定生成网格、实际尺寸悬浮信息与本地下载 | 3010 Web 已就绪；待站长生成/下载验收 | [任务](tasks/GG-013-stable-generation-grid-download.md) |
 
-下一个普通产品需求从 **GG-013** 分配并检查是否已被占用。
+下一个普通产品需求从 **GG-014** 分配并检查是否已被占用。
 GG-003 不阻塞本地新功能开发，但必须在下一次实际 alpha 发布前闭环。
 
 ## 已明确搁置（不得自动恢复）

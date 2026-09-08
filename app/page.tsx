@@ -4,7 +4,9 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties, type Whee
 import Image from "next/image";
 import { CreationComposer } from "@/features/creation/creation-composer";
 import {
+  formatPixelDimensions,
   formatGenerationResolution,
+  getGenerationPixelDimensions,
   getSharedPixelDimensions,
   getGenerationRatio,
   getGenerationResolutionLabel,
@@ -21,8 +23,9 @@ import {
 import {
   getActiveGenerationRuns,
   getFailedGenerationRuns,
+  getGenerationRunSlots,
   getPersistentGenerationJobIds,
-  removeGenerationRun,
+  getSucceededGenerationJobIds,
   upsertGenerationRun,
   type TrackedGenerationRun,
 } from "@/features/creation/generation-runs";
@@ -41,6 +44,7 @@ import {
 } from "@/features/auth/http-auth-boundary";
 import { AccountAccessGate } from "@/features/auth/account-access-gate";
 import { listAssets } from "@/features/assets/http-asset-boundary";
+import { saveImageToLocal } from "@/features/assets/image-download";
 import {
   availableImageCount,
   findBillingQuote,
@@ -159,7 +163,7 @@ type DraftConflictState = Readonly<{
 }>;
 type CreationStreamItem =
   | { kind: "skeleton"; key: string; ratio: number; index: number }
-  | { kind: "image"; key: string; ratio: number; batch: AssetBatch; image: GenerationOutput; index: number };
+  | { kind: "image"; key: string; detailKey: string; ratio: number; batch: AssetBatch; image: GenerationOutput; index: number };
 type AssetGalleryItem = { key: string; ratio: number; batch: AssetBatch; image: GenerationOutput; index: number };
 type DetailImage = AssetGalleryItem;
 type DetailSource = "creation" | "assets";
@@ -331,6 +335,7 @@ export default function Home() {
   const draftVersionRef = useRef<number | null>(null);
   const latestGenerationRunKeyRef = useRef<string | null>(null);
   const retryingGenerationRunKeysRef = useRef(new Set<string>());
+  const downloadingImageKeysRef = useRef(new Set<string>());
   const [generationBoundary] = useState(createHttpGenerationBoundary);
   const [authenticationSession, setAuthenticationSession] = useState<AuthenticationSession | null | undefined>(undefined);
   const [authenticationError, setAuthenticationError] = useState<string | null>(null);
@@ -352,6 +357,7 @@ export default function Home() {
   const [generationRuns, setGenerationRuns] = useState<readonly TrackedGenerationRun[]>([]);
   const [creationBatches, setCreationBatches] = useState<AssetBatch[]>([]);
   const [savedImages, setSavedImages] = useState<string[]>([]);
+  const [downloadingImageKeys, setDownloadingImageKeys] = useState<readonly string[]>([]);
   const [newAssetCount, setNewAssetCount] = useState(0);
   const [assetPulse, setAssetPulse] = useState(false);
   const [assetBatches, setAssetBatches] = useState<AssetBatch[]>(initialAssetBatches);
@@ -445,26 +451,42 @@ export default function Home() {
   const composerBillingDescription = activeBillingQuote && billingSummary
     ? `每张 ${activePerImageCredits} 积分，本批 ${activeBillingQuote.creditAmount} 积分，当前可用 ${billingSummary.account.availableCredits} 积分`
     : composerBillingLabel;
-  const generationItems: CreationStreamItem[] = activeGenerationRuns.flatMap((run) => {
-    const runRatio = getGenerationRatio(run.job.input.aspectRatio);
-    return Array.from({ length: run.job.input.count }, (_, index) => ({
-      kind: "skeleton" as const,
-      key: `skeleton-${run.key}-${index}`,
+  const trackedGenerationBatchIds = new Set(getSucceededGenerationJobIds(generationRuns));
+  const generationItems: CreationStreamItem[] = getGenerationRunSlots(generationRuns).map((slot) => {
+    const runRatio = getGenerationRatio(slot.job.input.aspectRatio);
+    if (!slot.output) {
+      return {
+        kind: "skeleton" as const,
+        key: slot.key,
+        ratio: runRatio.value,
+        index: slot.index,
+      };
+    }
+    const batch = generationJobToAssetBatch(slot.job);
+    return {
+      batch,
+      detailKey: `${batch.id}-${slot.output.id}`,
+      image: slot.output,
+      index: slot.index,
+      key: slot.key,
+      kind: "image" as const,
       ratio: runRatio.value,
-      index,
-    }));
+    };
   });
   const creationItems: CreationStreamItem[] = creationBatches.flatMap((batch) => {
+      if (trackedGenerationBatchIds.has(batch.id)) return [];
       const batchRatio = getGenerationRatio(batch.aspectRatio);
       return batch.images.map((image, index) => ({
         kind: "image" as const,
         key: `${batch.id}-${image.id}`,
+        detailKey: `${batch.id}-${image.id}`,
         ratio: batchRatio.value,
         batch,
         image,
         index,
       }));
     });
+  const creationStreamItems = [...generationItems, ...creationItems];
   const currentComposerCheckpoint = createComposerCheckpoint({
     aspectRatio: selectedRatio,
     count: generationCount,
@@ -1570,8 +1592,8 @@ export default function Home() {
       (job) => observeGenerationJob(runKey, job),
     );
     if (terminalJob.state === "succeeded") {
+      setGenerationRuns((current) => upsertGenerationRun(current, runKey, terminalJob));
       recordCompletedGeneration(terminalJob, runKey);
-      setGenerationRuns((current) => removeGenerationRun(current, runKey));
     }
   };
 
@@ -1628,8 +1650,8 @@ export default function Home() {
         (job) => observeGenerationJob(run.key, job),
       );
       if (terminalJob.state === "succeeded") {
+        setGenerationRuns((current) => upsertGenerationRun(current, run.key, terminalJob));
         recordCompletedGeneration(terminalJob, run.key);
-        setGenerationRuns((current) => removeGenerationRun(current, run.key));
       }
     } finally {
       retryingGenerationRunKeysRef.current.delete(run.key);
@@ -1673,14 +1695,21 @@ export default function Home() {
     toast.success(isSaved ? "已从资产库移除" : "已重新加入资产库");
   };
 
-  const downloadImage = (batchId: string, imageId: string, previewUrl: string) => {
-    const link = document.createElement("a");
-    link.href = previewUrl;
-    link.download = `goodgood-${batchId}-${imageId}.png`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    toast.success("图片已开始下载");
+  const downloadImage = async (batchId: string, imageId: string, previewUrl: string) => {
+    const imageKey = `${batchId}-${imageId}`;
+    if (downloadingImageKeysRef.current.has(imageKey)) return;
+    const saveRequest = saveImageToLocal({ batchId, imageId, previewUrl });
+    downloadingImageKeysRef.current.add(imageKey);
+    setDownloadingImageKeys((current) => [...current, imageKey]);
+    try {
+      const result = await saveRequest;
+      if (result === "saved") toast.success("图片已保存到本地");
+    } catch {
+      toast.error("下载失败，请重试");
+    } finally {
+      downloadingImageKeysRef.current.delete(imageKey);
+      setDownloadingImageKeys((current) => current.filter((key) => key !== imageKey));
+    }
   };
 
   const openImageDetail = (
@@ -1748,9 +1777,15 @@ export default function Home() {
       );
     }
 
-    const isSaved = savedImages.includes(item.key);
     const itemModel = getGenerationModel(item.batch.modelId);
-    const itemRatio = getGenerationRatio(item.batch.aspectRatio);
+    const itemDimensions = item.image.width && item.image.height
+      ? { width: item.image.width, height: item.image.height }
+      : getGenerationPixelDimensions(
+          item.batch.modelId,
+          item.batch.aspectRatio,
+          item.batch.resolution,
+        );
+    const isDownloading = downloadingImageKeys.includes(`${item.batch.id}-${item.image.id}`);
     return (
       <article
         className={`creation-card creation-variant-${(item.index % 4) + 1}`}
@@ -1759,11 +1794,11 @@ export default function Home() {
         role="button"
         tabIndex={0}
         aria-label={`查看 ${itemModel.name} 生成的视觉作品 ${item.index + 1}`}
-        onClick={() => openImageDetail(creationDetailItems, item.key, "creation")}
+        onClick={() => openImageDetail(creationDetailItems, item.detailKey, "creation")}
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
-            openImageDetail(creationDetailItems, item.key, "creation");
+            openImageDetail(creationDetailItems, item.detailKey, "creation");
           }
         }}
       >
@@ -1772,17 +1807,16 @@ export default function Home() {
           alt={`${itemModel.name} 生成的视觉作品 ${item.index + 1}`}
           style={{ objectPosition: item.image.previewPosition }}
         />
-        <span className="creation-card-meta">{item.batch.time} · {itemRatio.label}</span>
+        <span className="creation-card-meta">{formatPixelDimensions(itemDimensions)}</span>
         <div className="image-actions">
-          <button className={isSaved ? "saved" : ""} aria-label={isSaved ? "从资产库移除" : "保存到资产库"} onClick={(event) => { event.stopPropagation(); toggleSave(item.key); }}><Bookmark size={15} fill={isSaved ? "currentColor" : "none"} /></button>
-          <button aria-label="下载到本地" onClick={(event) => { event.stopPropagation(); downloadImage(item.batch.id, item.image.id, item.image.previewUrl); }}><Download size={15} /></button>
+          <button className="download-button" disabled={isDownloading} aria-label={isDownloading ? "正在下载图片" : "下载到本地"} onClick={(event) => { event.stopPropagation(); void downloadImage(item.batch.id, item.image.id, item.image.previewUrl); }}>{isDownloading ? <LoaderCircle className="download-spinner" size={15} /> : <Download size={15} />}</button>
         </div>
       </article>
     );
   };
 
-  const renderCreationColumns = (items: CreationStreamItem[], columnCount: number, group: "task" | "history") => Array.from({ length: columnCount }, (_, columnIndex) => (
-    <div className="creation-column" key={`${group}-column-${columnCount}-${columnIndex}`}>
+  const renderCreationColumns = (items: CreationStreamItem[], columnCount: number) => Array.from({ length: columnCount }, (_, columnIndex) => (
+    <div className="creation-column" key={`creation-column-${columnCount}-${columnIndex}`}>
       {items.filter((_, itemIndex) => itemIndex % columnCount === columnIndex).map(renderCreationItem)}
     </div>
   ));
@@ -2026,13 +2060,6 @@ export default function Home() {
                 </div>
               </header>
 
-              {isGenerating && (
-                <div className="generation-task-frame" aria-live="polite" aria-label="当前并行生成任务">
-                  <div className="creation-masonry desktop-creation-masonry">{renderCreationColumns(generationItems, 4, "task")}</div>
-                  <div className="creation-masonry mobile-creation-masonry">{renderCreationColumns(generationItems, 2, "task")}</div>
-                </div>
-              )}
-
               {failedGenerationRuns.map((run) => {
                 const generationError = run.job.error;
                 if (!generationError) return null;
@@ -2065,10 +2092,10 @@ export default function Home() {
                 );
               })}
 
-              {creationItems.length > 0 && (
-                <div className="creation-masonry-frame" aria-live="polite">
-                  <div className="creation-masonry desktop-creation-masonry">{renderCreationColumns(creationItems, 4, "history")}</div>
-                  <div className="creation-masonry mobile-creation-masonry">{renderCreationColumns(creationItems, 2, "history")}</div>
+              {creationStreamItems.length > 0 && (
+                <div className="creation-masonry-frame" aria-live="polite" aria-label="生成任务与创作结果">
+                  <div className="creation-masonry desktop-creation-masonry">{renderCreationColumns(creationStreamItems, 4)}</div>
+                  <div className="creation-masonry mobile-creation-masonry">{renderCreationColumns(creationStreamItems, 2)}</div>
                 </div>
               )}
             </section>
@@ -2252,7 +2279,7 @@ export default function Home() {
                       aria-label={savedImages.includes(activeDetail.key) ? "从资产库移除" : "保存到资产库"}
                       onClick={() => toggleSave(activeDetail.key)}
                     ><Bookmark size={17} fill={savedImages.includes(activeDetail.key) ? "currentColor" : "none"} /></button>
-                    <button aria-label="下载图片" onClick={() => downloadImage(activeDetail.batch.id, activeDetail.image.id, activeDetail.image.previewUrl)}><Download size={17} /></button>
+                    <button className="download-button" disabled={downloadingImageKeys.includes(`${activeDetail.batch.id}-${activeDetail.image.id}`)} aria-label={downloadingImageKeys.includes(`${activeDetail.batch.id}-${activeDetail.image.id}`) ? "正在下载图片" : "下载图片"} onClick={() => void downloadImage(activeDetail.batch.id, activeDetail.image.id, activeDetail.image.previewUrl)}>{downloadingImageKeys.includes(`${activeDetail.batch.id}-${activeDetail.image.id}`) ? <LoaderCircle className="download-spinner" size={17} /> : <Download size={17} />}</button>
                   </div>
                 </header>
 

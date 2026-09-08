@@ -402,6 +402,9 @@ The timestamped result of the latest verified gate belongs in
 - Composer open/closed drawer without value loss.
 - Reference tray from 0, 1, 9, 10, and over-limit inputs.
 - Generation skeleton count and ratio.
+- Unified creation slots keep their keys, columns, and submission order when a
+  multi-output run changes from active skeletons to successful images; the
+  corresponding durable batch is not rendered twice.
 - Feihong send availability during active generation and concurrent skeletons.
 - Inline failed batch preserves prompt/settings and retries.
 - Project restore and `新建创作` behavior.
@@ -418,6 +421,10 @@ The timestamped result of the latest verified gate belongs in
   scroll preservation, plus missing-ID recovery.
 - Detail wheel, arrow keys, stable-URL replacement, focus, source scope, and
   close restoration.
+- Creation-card hover shows concrete pixel dimensions, omits the duplicate
+  bookmark, and download uses a native save picker or Blob fallback without
+  navigating to the signed object URL. Cancellation and transfer failure retain
+  the page state.
 
 ### API/integration
 

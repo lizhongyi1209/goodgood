@@ -139,11 +139,12 @@ failed -> queued (retry)
   current creation stream. Replacing its temporary `pending_*` ID with the
   durable server job ID must not create or erase another run.
 - Use ratio-correct skeletons for the requested image count.
-- Render all active task skeletons separately from the completed-image masonry;
-  loading, completion, or failure in one run must not replace another run or
-  redistribute previously generated images.
-- On success, replace skeletons with assets and prepend the completed batch to
-  the asset library.
+- Render active task skeletons and completed images in one creation masonry.
+  Submission creates the final ratio-correct slots immediately; success replaces
+  those slots in place without moving another run or redistributing previously
+  generated images.
+- On success, replace skeletons with assets in place and prepend the completed
+  batch to the asset library without rendering the batch twice.
 - Asset metadata shows the requested resolution together with that Asset's
   decoded pixel dimensions, for example `4K · 3584 × 4800`. It never derives
   actual dimensions from the nominal tier or another Asset in the batch.

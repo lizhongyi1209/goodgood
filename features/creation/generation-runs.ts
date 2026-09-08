@@ -1,9 +1,17 @@
 import { isGenerationJobActive } from "@/features/creation/generation-job";
-import type { GenerationJob } from "@/shared/contracts/generation";
+import type { GenerationJob, GenerationOutput } from "@/shared/contracts/generation";
 
 export type TrackedGenerationRun = Readonly<{
   key: string;
   job: GenerationJob;
+}>;
+
+export type GenerationRunSlot = Readonly<{
+  index: number;
+  job: GenerationJob;
+  key: string;
+  output: GenerationOutput | null;
+  runKey: string;
 }>;
 
 export function upsertGenerationRun(
@@ -38,6 +46,31 @@ export function getFailedGenerationRuns(
 ): readonly TrackedGenerationRun[] {
   return runs.filter((run) =>
     !isGenerationJobActive(run.job.state) && run.job.error !== null);
+}
+
+export function getGenerationRunSlots(
+  runs: readonly TrackedGenerationRun[],
+): readonly GenerationRunSlot[] {
+  return runs.flatMap((run) => {
+    if (!isGenerationJobActive(run.job.state) && run.job.state !== "succeeded") {
+      return [];
+    }
+    return Array.from({ length: run.job.input.count }, (_, index) => Object.freeze({
+      index,
+      job: run.job,
+      key: `generation-slot-${run.key}-${index}`,
+      output: run.job.state === "succeeded" ? run.job.outputs[index] ?? null : null,
+      runKey: run.key,
+    }));
+  });
+}
+
+export function getSucceededGenerationJobIds(
+  runs: readonly TrackedGenerationRun[],
+): readonly string[] {
+  return runs
+    .filter((run) => run.job.state === "succeeded")
+    .map((run) => run.job.id);
 }
 
 export function getPersistentGenerationJobIds(
