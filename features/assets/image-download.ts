@@ -1,11 +1,14 @@
 type SaveFileWritable = Readonly<{
   abort?: () => Promise<void>;
   close: () => Promise<void>;
-  write: (data: Blob) => Promise<void>;
+  write: (data: Uint8Array<ArrayBuffer>) => Promise<void>;
 }>;
 
 type SaveFileHandle = Readonly<{
-  createWritable: () => Promise<SaveFileWritable>;
+  createWritable: (
+    options?: Readonly<{ keepExistingData?: boolean }>,
+  ) => Promise<SaveFileWritable>;
+  getFile: () => Promise<Readonly<{ size: number }>>;
 }>;
 
 type SaveFilePicker = (options: Readonly<{
@@ -104,25 +107,34 @@ export async function saveImageToLocal(
   if (!response.ok) {
     throw new Error(`Image download failed with status ${response.status}`);
   }
-  const blob = await response.blob();
-  if (blob.size === 0) {
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  if (bytes.byteLength === 0) {
     throw new Error("Image download returned an empty file.");
   }
 
   if (fileHandle) {
-    const writable = await fileHandle.createWritable();
+    const writable = await fileHandle.createWritable({
+      keepExistingData: false,
+    });
     try {
-      await writable.write(blob);
+      await writable.write(bytes);
       await writable.close();
     } catch (error) {
       await writable.abort?.().catch(() => undefined);
       throw error;
+    }
+    const savedFile = await fileHandle.getFile();
+    if (savedFile.size !== bytes.byteLength) {
+      throw new Error("Image download verification failed.");
     }
     return "saved";
   }
 
   const documentObject = dependencies.documentObject ?? document;
   const urlObject = dependencies.urlObject ?? URL;
+  const blob = new Blob([bytes], {
+    type: response.headers.get("content-type") ?? "application/octet-stream",
+  });
   const objectUrl = urlObject.createObjectURL(blob);
   const link = documentObject.createElement("a");
   link.href = objectUrl;

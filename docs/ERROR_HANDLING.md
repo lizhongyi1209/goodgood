@@ -72,6 +72,10 @@ save dialog appears follows that browser's download preference.
 Local managed object storage permits the reviewed app origins to read signed
 objects with `GET`/`HEAD` as well as upload with `PUT`. The browser rejects an
 empty response before opening a writable file and never reports it as saved.
+The native-picker path writes an explicit byte array with existing data
+disabled, closes the stream, then re-reads the file handle and requires the
+committed size to equal the downloaded size. A mismatch is a retryable download
+failure rather than a successful zero-byte save.
 
 The M3 mock contract maps a provider rejection to `MODEL_REJECTED`, a bounded
 poll deadline to `MODEL_TIMEOUT`, provider reachability/capacity to
