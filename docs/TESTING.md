@@ -297,7 +297,7 @@ M6 adds fast signed-delta, transaction commit/rollback, migration-structure,
 browser-separation, billing-summary serialization, authenticated route, and UI
 boundary tests. The opt-in test requires both
 `GOODGOOD_M6_INTEGRATION=1` and an explicit `GOODGOOD_M6_DATABASE_URL` naming
-a database with no running application Worker. It fails before connecting when
+a disposable database with no running application Worker. It fails before connecting when
 that URL is omitted, so test outbox rows cannot be consumed by a real O1Key
 Worker. It uses dedicated test identities and preserves existing local fixture
 balances.
@@ -342,6 +342,23 @@ Use:
 npm ci
 npm run check:local
 ```
+
+### Fast and safe test order
+
+Run the narrowest affected test first while editing. Run `npm run check:local`
+once after executable code stabilizes; repeat it only when a later edit changes
+runtime code, build inputs, or test behavior. A documentation-only process
+change runs `node --test tests/documentation-continuity.test.mjs` and
+`git diff --check`; it does not require a Compose rebuild.
+
+Before any opt-in test writes database or queue fixtures, verify its effective
+target without printing credentials. The database/Compose project must be
+explicitly named and disposable, and no Worker with real O1Key credentials may
+consume its queue. Environment names such as `test` do not prove isolation.
+Never run a fixture-writing test against the active 3010 real-provider stack.
+Use the fake provider or stop/detach the real-provider Worker. A real-provider
+smoke can incur cost and runs only when the site owner explicitly requests that
+specific generation call.
 
 `check:local` is the cross-platform gate intended for local computers and
 GitHub Actions. It runs lint, the full TypeScript check, the production build,

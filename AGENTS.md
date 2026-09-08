@@ -54,6 +54,9 @@ changing detail in `docs/` and update the relevant document in the same change.
 - Proceed through approved in-scope steps without repeated confirmations;
   ask when a missing choice changes product direction, data safety, cost, or
   external authority. Do not silently grow alpha work into full-seed readiness.
+- Match effort to the requested outcome. Start with the smallest behaviorally
+  complete change and targeted inspection; add refactors or hardening only when
+  acceptance requires them or the current change exposes a concrete defect.
 - Follow repository workflows, not personal/external business skills. Tool
   availability or legacy hosting metadata does not change the deployment target.
 
@@ -117,6 +120,13 @@ changing detail in `docs/` and update the relevant document in the same change.
   labels, reduced motion, and responsive behavior intact.
 - Do not add speculative routes or functionality while refactoring.
 - Update documentation, tests, and error behavior in the same change as code.
+- Iterate with the smallest relevant tests. Run `npm run check:local` once after
+  code stabilizes, and repeat it only when later edits can invalidate that gate.
+  Documentation-only changes use the documentation tests and diff checks.
+- Treat every real-provider request as potentially billable. Never let fixtures
+  or synthetic jobs share a database or queue with a real-provider Worker.
+  Opt-in write tests require an explicitly named disposable database/stack with
+  no attached real-provider Worker; verify the effective target before enabling.
 - At each handoff, update the task card and BACKLOG, then synchronize the one
   current checkpoint in `docs/IMPLEMENTATION_PLAN.md`. Update CURRENT_STATE
   only when facts change. Record exact verification and the next action or
