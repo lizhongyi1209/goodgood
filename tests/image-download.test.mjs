@@ -137,3 +137,35 @@ test("treats cancelling the native picker as a quiet cancellation", async () => 
   assert.equal(result, "cancelled");
   assert.equal(fetched, false);
 });
+
+test("rejects an empty image response before opening a writable file", async () => {
+  const { saveImageToLocal } = await vite.ssrLoadModule(
+    "/features/assets/image-download.ts",
+  );
+  let writableOpened = false;
+
+  await assert.rejects(
+    saveImageToLocal(
+      {
+        createdAt: "2026-09-08T14:30:25",
+        ordinal: 1,
+        previewUrl: "https://assets.invalid/private/empty.jpg",
+      },
+      {
+        fetchImplementation: async () => ({
+          blob: async () => new Blob([], { type: "image/jpeg" }),
+          ok: true,
+          status: 200,
+        }),
+        saveFilePicker: async () => ({
+          createWritable: async () => {
+            writableOpened = true;
+            throw new Error("must not open a writable for empty bytes");
+          },
+        }),
+      },
+    ),
+    /empty file/,
+  );
+  assert.equal(writableOpened, false);
+});

@@ -54,7 +54,7 @@ export function prepareObjectStorage(resources) {
             CORSRules: [
               {
                 AllowedHeaders: ["content-type", "x-amz-*"],
-                AllowedMethods: ["PUT"],
+                AllowedMethods: ["GET", "HEAD", "PUT"],
                 AllowedOrigins: uploadAllowedOrigins,
                 ExposeHeaders: ["etag"],
                 MaxAgeSeconds: 300,

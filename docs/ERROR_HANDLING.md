@@ -69,6 +69,9 @@ failure keeps the current image/detail state and shows `下载失败，请重试
 not navigate the current page or open the signed image URL in another tab.
 Browsers without the native picker use a Blob download, so whether a separate
 save dialog appears follows that browser's download preference.
+Local managed object storage permits the reviewed app origins to read signed
+objects with `GET`/`HEAD` as well as upload with `PUT`. The browser rejects an
+empty response before opening a writable file and never reports it as saved.
 
 The M3 mock contract maps a provider rejection to `MODEL_REJECTED`, a bounded
 poll deadline to `MODEL_TIMEOUT`, provider reachability/capacity to

@@ -105,6 +105,9 @@ export async function saveImageToLocal(
     throw new Error(`Image download failed with status ${response.status}`);
   }
   const blob = await response.blob();
+  if (blob.size === 0) {
+    throw new Error("Image download returned an empty file.");
+  }
 
   if (fileHandle) {
     const writable = await fileHandle.createWritable();

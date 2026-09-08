@@ -581,12 +581,19 @@ test("object-storage provisioning is mutable locally and verification-only in st
     },
     storage: {
       async send(command) {
-        commands.push(command.constructor.name);
+        commands.push(command);
       },
     },
   };
   await prepareObjectStorage(managed);
-  assert.deepEqual(commands, ["HeadBucketCommand", "PutBucketCorsCommand"]);
+  assert.deepEqual(
+    commands.map((command) => command.constructor.name),
+    ["HeadBucketCommand", "PutBucketCorsCommand"],
+  );
+  assert.deepEqual(
+    commands[1].input.CORSConfiguration.CORSRules[0].AllowedMethods,
+    ["GET", "HEAD", "PUT"],
+  );
 
   let attempts = 0;
   const verified = {
