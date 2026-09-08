@@ -166,7 +166,9 @@ individual icon. Upload, settings, and send align to the same 40px box.
 ## Destructive confirmation
 
 - Use one compact modal only when an in-app action would clear meaningful
-  unsaved creation state. Keep `继续编辑` visually quiet and the explicit discard
+  unsaved creation state. The confirmation itself is an opaque white card over
+  a restrained secondary veil; canvas or page content must never show through
+  its text and actions. Keep `继续编辑` visually quiet and the explicit discard
   action Palace Red; do not use a generic browser confirmation.
 
 ## Motion

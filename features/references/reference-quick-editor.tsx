@@ -1118,7 +1118,11 @@ export function ReferenceQuickEditor({
       </Dialog>
 
       <AlertDialog open={discardOpen} onOpenChange={setDiscardOpen}>
-        <AlertDialogContent size="sm" className="reference-editor-discard-dialog">
+        <AlertDialogContent
+          size="sm"
+          className="reference-editor-discard-dialog"
+          overlayClassName="reference-editor-discard-overlay"
+        >
           <AlertDialogHeader>
             <AlertDialogTitle>放弃本次编辑？</AlertDialogTitle>
             <AlertDialogDescription>裁剪和标注尚未保存，关闭后将无法恢复。</AlertDialogDescription>

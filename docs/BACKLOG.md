@@ -25,7 +25,7 @@
 | GG-017 | 上传参考图沉淀为可复用素材，并可从资产库加入创作 | 3010 浏览器已验证；未发布 | [任务](tasks/GG-017-reusable-reference-library.md) |
 | GG-018 | 参考图拖拽排序并显示图 1…图 10 序号 | 3010 浏览器已验证；未发布 | [任务](tasks/GG-018-reference-ordering.md) |
 | GG-019 | 参考图点击查看完整大图并精简右上角删除按钮 | 3010 浏览器已验证；未发布 | [任务](tasks/GG-019-reference-large-preview.md) |
-| GG-020 | 参考图快捷编辑：裁剪、画笔、贴图、箭头与 bbox | 3010 浏览器已验证；未发布 | [任务](tasks/GG-020-reference-quick-editor.md) |
+| GG-020 | 参考图快捷编辑：裁剪、画笔、贴图、箭头与 bbox | 3010 浏览器已验证，取消确认样式已复核；未发布 | [任务](tasks/GG-020-reference-quick-editor.md) |
 
 下一个普通产品需求从 **GG-021** 分配并检查是否已被占用。
 GG-003 不阻塞本地新功能开发，但必须在下一次实际 alpha 发布前闭环。

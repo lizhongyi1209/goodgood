@@ -46,6 +46,9 @@ test("declares the GoodGood visual and interaction invariants", async () => {
   assert.match(css, /\.reference-thumbnail-remove[^}]*width:\s*16px;[^}]*height:\s*16px;[^}]*top:\s*3px;[^}]*right:\s*3px/s);
   assert.match(css, /\.reference-editor-body[^}]*grid-template-columns:\s*72px minmax\(0,1fr\)/s);
   assert.match(css, /\.reference-editor-stage canvas[^}]*width:\s*100%;[^}]*height:\s*100%;[^}]*touch-action:\s*none/s);
+  assert.match(css, /\.reference-editor-discard-overlay[^}]*background:\s*rgba\(24,24,30,\.34\)/s);
+  assert.match(css, /\.reference-editor-discard-dialog[^}]*background:\s*var\(--white\)[^}]*box-shadow:/s);
+  assert.match(css, /\.reference-editor-discard-dialog \[data-slot="alert-dialog-action"\][^}]*background:\s*var\(--accent\)/s);
   assert.doesNotMatch(creationPage, /reference-library-picker-image" style=/);
   assert.match(creationComposer, /draggable=\{canReorderReferences\}/);
   assert.match(creationComposer, /onReorderReference\?\.\(sourceId, image\.id\)/);
@@ -56,6 +59,7 @@ test("declares the GoodGood visual and interaction invariants", async () => {
   assert.match(creationComposer, /suppressReferencePreviewRef\.current = true/);
   assert.match(creationComposer, /event\.stopPropagation\(\);[\s\S]*onRemoveReference\(image\)/);
   assert.match(referenceEditor, /aria-label="参考图编辑工具"/);
+  assert.match(referenceEditor, /overlayClassName="reference-editor-discard-overlay"/);
   assert.match(referenceEditor, /label: "查看"[\s\S]*label: "裁剪"[\s\S]*label: "画笔"[\s\S]*label: "贴图"[\s\S]*label: "箭头"[\s\S]*label: "框选"/);
   assert.match(referenceEditor, /formatReferenceEditorBboxPrompt\(ordinal, bbox\)/);
   assert.match(referenceEditor, /output\.x \* sourceImage\.naturalWidth/);
