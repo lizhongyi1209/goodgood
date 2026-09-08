@@ -59,6 +59,7 @@ export function createMockProviderServer({ apiKey, host, port }) {
       );
       return {
         completionPoll: payload.completionPoll,
+        count: payload.count ?? 1,
         polls: 0,
         shouldReject: payload.outcome === "reject",
         shouldTimeout: payload.outcome === "timeout",
@@ -103,7 +104,11 @@ export function createMockProviderServer({ apiKey, host, port }) {
       }
       if (request.method === "POST" && url.pathname === "/v1/generations") {
         const body = await readJson(request);
-        if (body.modelId !== "nano-banana-2") {
+        const requestedCount = body.count ?? 1;
+        const validCount = body.modelId === "gpt-image-2"
+          ? [1, 2, 4].includes(requestedCount)
+          : body.modelId === "nano-banana-2" && requestedCount === 1;
+        if (!validCount) {
           sendJson(response, 400, { error: "unsupported_model" });
           return;
         }
@@ -119,6 +124,7 @@ export function createMockProviderServer({ apiKey, host, port }) {
         const shouldReject = failurePrompt && !body.retryOfJobId;
         const task = {
           polls: 0,
+          count: requestedCount,
           completionPoll,
           shouldReject,
           shouldTimeout,
@@ -151,13 +157,15 @@ export function createMockProviderServer({ apiKey, host, port }) {
           sendJson(response, 200, { state: "processing" });
           return;
         }
-        sendJson(response, 200, {
-          output: {
+        const output = {
             height: 1402,
             mimeType: "image/png",
             url: `${url.origin}/v1/assets/nano-fashion.png`,
             width: 1122,
-          },
+          };
+        sendJson(response, 200, {
+          output,
+          outputs: Array.from({ length: task.count }, () => output),
           state: "succeeded",
         });
         return;

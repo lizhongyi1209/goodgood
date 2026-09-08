@@ -37,6 +37,21 @@ Current records:
 - `0024-controlled-alpha-before-full-seed-readiness.md`
 - `0025-open-banana-2-aspect-ratios-and-resolutions.md`
 - `0026-repository-owned-session-continuity.md`
+- `0027-expose-resolution-values-and-actual-asset-dimensions.md`
+- `0028-enlarge-reference-previews-and-lead-with-aspect-ratio.md`
+- `0029-enlarge-square-reference-previews-and-lead-with-aspect-ratio.md`
+- `0030-open-gpt-image-2-sd-with-model-specific-sizes.md`
+- `0031-allow-repeated-parallel-generation-submissions.md`
+- `0032-open-gpt-image-2-multi-output.md`
+- `0033-banana-thinking-and-google-search.md`
+- `0034-stable-generation-grid-and-download.md`
+- `0035-simplify-sidebar-credit-summary.md`
+- `0036-gpt-image-quality-background-format.md`
+- `0037-reusable-uploaded-reference-materials.md`
+- `0038-user-ordered-reference-tray.md`
+- `0039-reference-thumbnail-large-preview.md`
+- `0040-reference-quick-editor.md`
+- `0041-price-nano-banana-pro-at-fifteen-credits.md`
 
 Accepted describes a decision, not proof of deployment. ADR 0022/0023's full
 runtime rollout is deferred under ADR 0024. The current release and rollout

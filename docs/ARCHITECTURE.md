@@ -24,6 +24,16 @@ polls the HTTP mock provider, RustFS stores the image, PostgreSQL records the
 asset, and the browser polls the job into the creation stream and asset library.
 Worker leases and PostgreSQL reconciliation recover interrupted jobs, while
 terminal writes and deterministic object keys tolerate duplicate delivery.
+Outbox dispatchers atomically claim rows before publishing to Valkey, and
+reconciliation only reopens a dispatched row after the Worker lease window.
+The active Worker ignores a second delivery of an in-flight job, and any
+unexpired lease blocks another claim even when the Worker identity matches.
+After object upload, the Worker reports success only when the asset and job
+terminal state commit together; a terminal loser removes its unaccepted object.
+The creation client owns a stable run key per click so the temporary pending job
+and later durable job remain one visible run. It keeps an unbounded registry of
+overlapping active and failed runs; this is presentation state, never provider
+identity or queue authority.
 
 M4 replaces the fixed server-owned identity at the generation API boundary. A
 provider-neutral `(issuer, subject)` identity maps to an internal GoodGood
@@ -80,6 +90,17 @@ private objects through the selected provider route. The mock route creates
 fresh signed GET URLs; the O1Key route reads the bytes server-side and creates
 temporary provider attachments. Browser blob URLs and storage credentials never
 enter the persisted generation contract.
+An authenticated reference-list read exposes the same accepted rows as reusable
+materials, newest first, and signs their private objects without returning raw
+object keys. Composer reuse submits the existing stable reference ID, so the
+upload path and provider attachment path remain unchanged.
+The browser quick editor reads one ready material through the authenticated
+`GET /api/references/:referenceId/content` boundary. The server rechecks owner,
+ready/accepted state, and deletion state before returning private bytes with
+`no-store`; this avoids depending on cross-origin object URLs for Canvas while
+keeping storage keys and credentials out of the browser contract. Edited pixels
+are uploaded as a new reference record, and a project edit synchronizes the new
+ordered reference snapshot before the tray replacement is reported as saved.
 
 M7 keeps this S3-compatible boundary but selects the private Cloudflare R2
 `goodgood` bucket as staging's authoritative object store. Server requests and
@@ -144,9 +165,11 @@ runtime topology receive an accepted executable adapter.
 
 Reference-byte cleanup is a separate one-shot maintenance boundary, not part
 of a browser request or the continuously running worker. Its default dry-run
-reports candidates without mutation. Explicit execution first stages expired
-pending, rejected, expired, or sufficiently old unreferenced ready rows behind
-a grace window, then claims a bounded batch with expiring leases. Generation
+reports candidates without mutation. Explicit execution stages only incomplete,
+rejected, or expired upload attempts behind a grace window, then claims a bounded
+batch with expiring leases. Accepted ready uploads are durable user materials
+even when no snapshot currently references them. Legacy `REFERENCE_ORPHANED`
+rows whose objects still exist are restored to ready state. Generation
 and project snapshot writes share a PostgreSQL lifecycle lock and revalidate
 ready rows inside their write transaction; cleanup also checks immutable
 generation snapshots, current project snapshots, and unexpired creation-draft
@@ -182,6 +205,10 @@ The authenticated asset library now reloads successful accepted outputs from
 PostgreSQL through `GET /api/assets`. The repository constrains jobs, batches,
 and assets to the same resolved owner, sorts by submission time newest-first,
 and the presentation boundary signs every private object URL on each read.
+Image download resolves a new signed read through the owner-scoped stable Asset
+ID at click time; it never reuses the expiring preview URL retained in browser
+state. The API returns only the short-lived URL, and the browser still transfers
+the large image bytes directly from private object storage.
 Loading, empty, and retryable failure states replace stale in-memory assumptions
 after reload; representative mock batches remain available only in no-auth
 preview mode. Signed private-object images render directly from browser to
@@ -191,17 +218,18 @@ pass through the application image optimizer, which avoids proxying user bytes,
 preserves the expiring signature, and keeps private-IP SSRF protection enabled
 for all server-side fetches.
 
-The durable generation capability remains intentionally limited to
-`nano-banana-2`, one output, up to 10 validated references, the 14
-product-defined aspect ratios, and `1K` / `2K` / `4K`. The browser and O1Key
-adapter use synchronized server-validated capability allowlists; unknown values
-fail before provider submission.
+The durable generation capability admits `nano-banana-2` across 14 ratios and
+`gpt-image-2` across seven exact-size ratios. Nano uses one output; GPT accepts
+`1 / 2 / 4` outputs in one native task. Both accept up to 10 validated
+references and `1K` / `2K` / `4K`. The browser and O1Key adapter use model-owned
+capability allowlists; unknown combinations fail before provider submission.
 Primary real Authing/Google/email loopback exchange passes; provider edge-case
 and secure public-callback verification remain external evidence work;
 billing is active for every newly created generation job. M6 persists immutable
 server-owned prices, exact account caches, append-only credit entries, and
-composable reserve/settle/release/refund transactions. Banana 2 is 10 credits
-for one output at 1K, 2K, or 4K; new and migrated owners receive one 100-credit
+composable reserve/settle/release/refund transactions. Banana 2 costs 10 credits
+for its single output. GPT IMAGE 2 costs 10 credits per image, with immutable
+10/20/40-credit rows for counts 1/2/4 at every resolution; new and migrated owners receive one 100-credit
 welcome grant. The authenticated `GET /api/billing` boundary exposes only exact
 available/reserved balances and active product quotes as decimal strings; it
 does not expose internal account, owner, ledger, or provider-channel IDs. No
@@ -385,11 +413,14 @@ provider routes for the selected GoodGood model, but it must not silently
 change model families. Persist route version and each provider attempt so
 retries, reconciliation, cost, and support remain auditable.
 
-M5 maps the stable `nano-banana-2` product route to O1Key's special-price
-`gemini-3.1-flash-image-c-sp` route for one output across all 14 product-defined
+M5/GG-010 map the stable `nano-banana-2` product route to O1Key's special-price
+`gemini-3.1-flash-image-c-sp` route for `1 / 2 / 4` outputs across all 14 product-defined
 aspect ratios and `1K` / `2K` / `4K`. The selected ratio and resolution remain
 in the durable job snapshot and are sent unchanged as O1Key `aspect_ratio` and
-`size`. The backend-only adapter uses Bearer authentication, uploads each validated private reference to
+`size`. Because Banana exposes no native count field, a count-N GoodGood batch
+submits N single-image tasks without an `n` field. The backend-only adapter uses
+Bearer authentication, uploads each validated private reference once per
+submission/resume invocation to
 `POST /v1/o1key/uploads` in stable order, submits `fileData` references to
 `POST /async/v1/generateImage`, and polls
 `GET /async/v1/tasks/{task_id}`. The temporary upload URL is publicly readable
@@ -398,12 +429,34 @@ private object remains authoritative (RustFS locally and R2 in M7 staging).
 Completed outputs must be downloaded promptly and stored in GoodGood-owned
 object storage.
 
-Worker routing is explicit and persisted per attempt. The default Compose path
-selects the M3 mock route; the O1Key override selects the route above, reads the
-ordered private reference bytes, and resumes the persisted `task_id` after a
+GG-007/GG-009 map stable `gpt-image-2` to O1Key `gpt-image-2-c-sd`. Its seven
+ratios map to 21 explicit lowercase-`x` pixel sizes across the same product
+resolution values. The adapter sends that exact pixel string as `size` with
+`n: 1`, `2`, or `4`; it does not send Nano-specific `aspect_ratio` or
+`response_modalities`. Product records retain the stable model, ratio,
+resolution, count, quality, background, and output format while each attempt
+retains the distinct `o1key-gpt-image-2-c-sd-v2` route identity. The v2 adapter
+always sends top-level `quality`, `background`, and `output_format`, including
+the explicit defaults `auto`, `auto`, and `png`. Transparent output is admitted
+only with PNG or WebP; this is checked before the billable provider POST.
+
+Worker routing is explicit and persisted per attempt. Nano's current
+`o1key-gemini-3.1-flash-image-c-sp-v4` route sends `response_modalities` as
+`["TEXT", "IMAGE"]`. New Nano requests always send top-level
+`thinking_level: "high"`; disabled search is omitted and enabled search sends
+`google_search: true`. Historical records explicitly frozen as low thinking
+still omit the provider field on retry. The route stores a versioned ordered task-set
+token in `provider_task_id`; each returned task ID is persisted, followed by a
+submission-started marker immediately before the next POST. A restart completes
+only a provably unstarted suffix and then polls
+all known tasks concurrently in ordinal order. The default Compose path
+selects a model-specific M3 mock route; the O1Key override selects the matching
+Nano or GPT route, reads the
+ordered private reference bytes, and resumes persisted provider task evidence after a
 worker restart. Downloaded JPEG, PNG, or WebP results are bounded, type-checked,
-fully decoded, and stored with a content-derived object extension before the
-existing terminal job transaction accepts them. A worker whose selected route
+fully decoded, and stored with content-derived object extensions and stable
+positive ordinals before one terminal job transaction accepts the complete
+Asset set. A worker whose selected route
 does not match an active attempt defers that job instead of polling the wrong
 provider.
 
@@ -415,7 +468,12 @@ therefore does not invent either field. GoodGood's browser/API submission
 remains idempotent. For O1Key, the active attempt is durably moved from
 `created` to `submitted` immediately before the billable POST; if the worker is
 later reclaimed without a durable `task_id`, it fails as `SUBMISSION_UNKNOWN`
-instead of submitting again. An explicit user retry is a new billable request.
+instead of submitting again. For a Banana multi-task batch, the worker also
+compare-and-swaps the ordered task-set token after every accepted response and
+before every following POST. A safe partial token resumes; a persisted
+submission-started marker or ambiguous next POST remains
+`SUBMISSION_UNKNOWN` and is never repeated automatically. An explicit user
+retry is a new billable request.
 Polling is the only accepted MVP status transport. Identical terminal polls are
 duplicates, conflicting confirmed terminal polls fail closed, and a new worker
 can resume after the provider task ID is durable. One observed `FAILURE` is held

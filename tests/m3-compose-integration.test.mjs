@@ -110,9 +110,9 @@ test(
     await seedLocalFixtures({ databaseUrl, logger: { log() {} } });
     await seedLocalFixtures({ databaseUrl, logger: { log() {} } });
     const migrationCount = await pool.query(
-      "SELECT count(*)::int AS count FROM goodgood_schema_migrations WHERE version IN ('0001_m3_generation.sql', '0002_m4_authenticated_owners.sql', '0003_m4_reference_assets.sql', '0004_m4_projects.sql', '0005_m4_oidc_sessions.sql', '0006_m4_oidc_login_binding.sql', '0007_m4_reference_cleanup.sql', '0008_m4_creation_drafts.sql', '0009_m6_credit_ledger.sql', '0010_m6_payment_sandbox.sql', '0011_m8_account_admission.sql', '0012_m8_remove_legacy_local_fixtures.sql')",
+      "SELECT count(*)::int AS count FROM goodgood_schema_migrations WHERE version IN ('0001_m3_generation.sql', '0002_m4_authenticated_owners.sql', '0003_m4_reference_assets.sql', '0004_m4_projects.sql', '0005_m4_oidc_sessions.sql', '0006_m4_oidc_login_binding.sql', '0007_m4_reference_cleanup.sql', '0008_m4_creation_drafts.sql', '0009_m6_credit_ledger.sql', '0010_m6_payment_sandbox.sql', '0011_m8_account_admission.sql', '0012_m8_remove_legacy_local_fixtures.sql', '0013_gg007_gpt_image_2_prices.sql', '0014_gg009_multi_output_assets.sql')",
     );
-    assert.equal(migrationCount.rows[0].count, 12);
+    assert.equal(migrationCount.rows[0].count, 14);
     const suffix = `${Date.now()}-${process.pid}`;
     await Promise.all([
       grantCredits(pool, {
@@ -128,6 +128,7 @@ test(
         reason: "compose_test_grant",
       }),
     ]);
+    await seedLocalFixtures({ databaseUrl, logger: { log() {} } });
     const initialBillingResponse = await fetch(`${webOrigin}/api/billing`, {
       headers: authorization(),
     });
@@ -882,20 +883,17 @@ test(
       ownerId: "00000000-0000-4000-8000-000000000001",
       policy: cleanupPolicy,
     });
-    assert.ok(stageClearedDraftReference.staged >= 1);
+    assert.equal(stageClearedDraftReference.staged, 0);
     const deleteClearedDraftReference = await cleanupReferenceAssets(cleanupResources, {
       now: new Date(cleanupNow.getTime() + 8),
       ownerId: "00000000-0000-4000-8000-000000000001",
       policy: cleanupPolicy,
     });
-    assert.ok(deleteClearedDraftReference.deleted >= 1);
-    await assert.rejects(
-      storage.send(new HeadObjectCommand({
-        Bucket: objectStorageBucket,
-        Key: draftReadyEvidence.object_key,
-      })),
-      (error) => error?.$metadata?.httpStatusCode === 404,
-    );
+    assert.equal(deleteClearedDraftReference.deleted, 0);
+    await storage.send(new HeadObjectCommand({
+      Bucket: objectStorageBucket,
+      Key: draftReadyEvidence.object_key,
+    }));
 
     const ownerBSubmitted = await submit(
       "M4 owner B isolated success",

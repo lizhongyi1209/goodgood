@@ -1,19 +1,23 @@
 # GoodGood controlled-alpha runbook
 
-Historical opening procedure: C6-3 and C7 were completed on 2026-09-07.
-For current release identity and subsequent feature releases, read
-`docs/CURRENT_STATE.md` and `docs/WORKFLOW.md` first. Do not reopen conversion or
-repeat the initial C7 procedure merely because a new feature is requested.
-The `production:alpha-gate` CLI used for opening is preserved in the deferred
-worktree, not yet present on the clean release branch; see task GG-003 before
-planning another controlled-alpha release. This document describes that earlier
-procedure, not a runnable command checklist for the current checkout.
+The initial C6-3 and C7 opening completed on 2026-09-07. For the current release
+identity and each later feature release, read `docs/CURRENT_STATE.md` and
+`docs/WORKFLOW.md` first. Do not repeat the initial data conversion, bucket
+cleanup, credential rotation, or identity bootstrap.
 
-Status: reviewed source only. This file does not authorize deployment,
-migration, production data mutation, provider generation, or public traffic.
+GG-003 restored the standalone `production:alpha-gate` CLI to the clean release
+line without the deferred C6 deletion/reporting runtime. The checked-in example
+uses evidence schema v2 and is intentionally blocked. Copy its shape only into
+the root-only production evidence directory and replace every item with fresh,
+non-sensitive evidence bound to the exact candidate SHA. A prior schema or SHA
+must not be edited into a new pass.
 
-This runbook implements ADR 0024 for the existing Hong Kong production
-candidate while public maintenance remains enabled. Store live evidence only
+Status: runnable release-safety procedure. This file does not by itself
+authorize deployment, migration, provider generation, or public traffic; each
+release still needs explicit scope and production authority.
+
+This runbook implements ADR 0024 for the Hong Kong production candidate while
+public maintenance is enabled for the bounded rollout. Store live evidence only
 under a root-only production directory. Never copy production data, credentials,
 customer content, signed URLs, or raw command output into Git or the operator
 workstation.
@@ -35,16 +39,16 @@ workstation.
 
 ## C6-3A - decision, contract, and read-only baseline
 
-1. Confirm the deployed immutable image digest, full Git revision, migration
-   0012, and runtime-config checksum from protected release state.
+1. Confirm the candidate immutable image digest, full Git revision, latest
+   migration, and runtime-config checksum from protected release state.
 2. Reuse artifact-security evidence for at most seven days and production
    preflight evidence for at most 72 hours only when both are bound to that
    exact release and the protected release/runtime identities are unchanged.
    Otherwise rerun the corresponding verification without printing secrets.
-3. Confirm public root/login/generation requests still return the reviewed
-   maintenance 503 response. On the private path confirm blue Web and exactly
-   one blue Worker are healthy, green is absent, dependencies are healthy,
-   checkout is disabled, and no resource stop is active.
+3. Confirm public root/login/generation requests return the reviewed maintenance
+   503 response during the rollout. On the private path confirm the candidate
+   Web and exactly one candidate Worker are healthy, the prior Worker is stopped,
+   dependencies are healthy, checkout is disabled, and no resource stop is active.
 4. Confirm new registration still maps to `pending`, site-owner-only approval
    remains available, and R2 stays private. Do not create a user, generation, or
    object in this step.
@@ -99,8 +103,14 @@ or retains maintenance and opens an incident.
    test alerting.
 4. Record the tester contact route, account-suspension path, and exact-target
    content/account removal procedure, including provider and backup limitations.
-5. Populate the exact release evidence file and run `production:alpha-gate`.
-   A nonzero result keeps C6 open and maintenance enabled.
+5. Populate the exact release evidence file and run:
+
+   ```bash
+   npm run production:alpha-gate -- --evidence-file \
+     /var/lib/goodgood-production/controlled-alpha/readiness.json
+   ```
+
+   A nonzero result keeps maintenance enabled and blocks slot promotion.
 
 ### Controlled-alpha owner handoff
 
@@ -145,11 +155,12 @@ corresponding evidence.
 
 ## C7 - separately approved public opening
 
-C7 begins only after C6-3A through C6-3D pass for one exact release and the
-operator separately approves `publicTrafficOpen`. Removing maintenance is not a
-capability of the readiness verifier and must use the already reviewed ingress
-procedure. Immediately check public root, login, pending admission, and creation
-behavior while watching the minimum signals.
+The initial `publicTrafficOpen` approval was recorded on 2026-09-07. For a later
+approved feature release, restore public traffic only after C6-3A through C6-3D
+pass for that exact release. Removing maintenance is not a capability of the
+readiness verifier and must use the reviewed ingress procedure. Immediately
+check public root, login, pending admission, and creation behavior while watching
+the minimum signals.
 
 Restore maintenance immediately on private-data exposure, cross-owner access,
 credit inconsistency, unhealthy dependencies, unavailable or stale recovery,

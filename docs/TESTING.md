@@ -9,14 +9,22 @@ to distinguish UI preview, durable local integration, live API, and browser proo
 
 The default suite validates the production build, rendered metadata, shared UI
 primitive behavior, documentation continuity, stable model/ratio mappings,
-job-state transitions, both M1 and HTTP mock contracts, M3 input validation and
+job-state transitions, unbounded independent client-run tracking, both M1 and
+HTTP mock contracts, M3 input validation and
 migration structure, dependency-aware health endpoints, the single-image
 process contract, pinned Compose topology, and host probe success/failure.
 M4 adds fast coverage for the explicit local-auth opt-in, local credential
 parsing, external-identity mapping, disabled accounts, authentication on every generation route, owner-scoped
 idempotency, cross-owner read/retry denial, reference intent limits, real image
 decoding, format/size/dimension rejection, upload UI success/failure, reference
-route owner propagation, project save validation and idempotency, project list
+route owner propagation, owner-scoped accepted-material listing, reusable
+selection deduplication/limits, material loading/empty/failure UI wiring,
+ready-reference click/Enter/Space large-preview behavior, uncropped contained
+rendering, drag-click suppression, and remove-button event isolation,
+reference-editor crop/history/bbox/sticker math, owner-scoped same-origin
+material-byte reads, edit loading/error/save states, non-destructive upload,
+same-ordinal replacement, and project snapshot synchronization,
+project save validation and idempotency, project list
 loading/empty/failure UI states, project route owner propagation, cross-owner
 read/update denial, stable project route parsing/history notification, direct
 detail loading and recovery wiring, meaningful unsaved-change detection,
@@ -30,15 +38,31 @@ state, product navigation canonicalizes to `/create` only once, direct load and
 refresh mount the shared page, and native Back/Forward retain a working
 composer without console errors.
 Reference-retention coverage proves bounded server-owned defaults, dry-run
-non-mutation, two-phase eligibility and leases, object-first deletion evidence,
-failure retry evidence, idempotent reruns, and generation/project snapshot
-protection. Snapshot writers share the cleanup lifecycle lock and revalidate
-ready references inside their persistence transaction.
+non-mutation, two-phase eligibility and leases for incomplete/rejected uploads,
+object-first deletion evidence, failure retry evidence, idempotent reruns,
+legacy orphan rescue, and exclusion of accepted ready materials from claims.
 Creation-draft coverage proves one record per owner, 30-day sliding expiry,
 stable-value/reference validation, authenticated empty/read/save/delete routes,
 optimistic conflict responses, browser load/save/delete/error boundaries,
 root-only hydration/autosave wiring, explicit conflict recovery, and draft
 reference protection during cleanup.
+GG-012/GG-016 coverage proves the Nano-only Google Search control, the absence
+of a creator-facing thinking control/detail row, hidden high-thinking defaults,
+snapshot/hash identity, draft/project/batch persistence and migration compatibility,
+model-leakage rejection, `TEXT` + `IMAGE` response modalities, default top-level
+forwarding of `thinking_level: "high"`, enabled `google_search`, and exact legacy
+low-thinking retry behavior. Provider tests use
+stub transport and must not issue a real, potentially billable request.
+GG-015 coverage proves GPT-only quality/background/output-format controls,
+explicit automatic defaults, transparent JPEG correction and fail-closed
+rejection, immutable snapshot/hash identity, draft/project/batch persistence,
+migration 0018 constraints, image-detail labels, and top-level O1Key forwarding.
+All provider assertions use stub transport; browser verification must not click
+Generate.
+GG-021 coverage proves that Nano Banana Pro has immutable 15-credit single-image
+prices for `1K / 2K / 4K`, that durable and preview billing summaries agree,
+and that the pricing-only slice does not add a provider route or issue a real
+provider request.
 The production-shaped authentication tests additionally cover OIDC
 configuration safety, discovery, Authorization Code + PKCE parameters, signed
 ID-token issuer/audience/nonce verification, verified email, one-time login
@@ -127,6 +151,14 @@ unsafe-reference evidence. Artifact security, production preflight, candidate
 health, and rollback evidence must name the same candidate revision. The
 checked-in example is intentionally blocked, including monitoring handoff,
 ICP/domain, and domestic Alipay prerequisites.
+
+The controlled-alpha gate is a separate read-only entry point over evidence
+schema v2. Its synthetic suite proves an exact current alpha document passes
+while the seed gate remains closed, and proves missing, expired, cross-candidate,
+wrong-mode, unreadable, malformed-argument, and deliberately blocked example
+paths exit closed. Artifact evidence is bounded to seven days, preflight to
+72 hours, and all alpha-specific evidence to 24 hours. These tests do not create
+users, call a provider, migrate a database, or authorize a release.
 
 M8 production-preflight coverage proves only a Linux release host can emit the
 preflight evidence item. It requires a clean matching checkout, exact candidate
@@ -223,9 +255,11 @@ configuration identity.
 Concurrent-Worker coverage proves one active Worker runner starts multiple
 accepted job promises without a fixed count ceiling, acknowledges each claimed
 queue item once, reports active-job count, stops taking work, and waits for all
-in-flight promises during graceful shutdown. The existing transactional claim,
-provider-submission guard, and credit settlement remain inside each isolated
-`processGenerationJob` call. Deterministic host-resource tests accept exactly
+in-flight promises during graceful shutdown. It also proves a duplicate
+delivery cannot start the same job twice while its first execution is active.
+The existing transactional claim, provider-submission guard, and credit
+settlement remain inside each isolated `processGenerationJob` call.
+Deterministic host-resource tests accept exactly
 500 MiB / below 80%, reject below 500 MiB or at 80%, latch protection until
 operator review plus process restart, block only new submit/retry requests, and
 leave safe generation reads available. Monitoring-shape requirements still
@@ -268,7 +302,7 @@ This local flow does not replace the public HTTPS staging matrix.
 
 `GOODGOOD_M3_INTEGRATION=1 node --test tests/m3-compose-integration.test.mjs`
 is the opt-in destructive-process integration test against the disposable local
-test stack. It proves all twelve migration reruns, explicit idempotent local-
+test stack. It proves all fifteen migration reruns, explicit idempotent local-
 fixture seeding, authentication enforcement,
 two-owner idempotency isolation, cross-owner reference/job denial, signed direct
 reference PUT and CORS, server-side decoded validation and rejected-record
@@ -279,7 +313,7 @@ normalized provider rejection and timeout, retry, duplicate delivery, forced
 worker restart, owner-isolated root-draft save/read/delete, stale-version save
 and delete conflicts, signed draft-reference restore, deletion of an
 unreferenced rejected object, protection of project/generation/draft
-references, draft-reference eligibility after clearing, and idempotent
+references, ready-material retention after clearing the draft, and idempotent
 repeated cleanup. It preserves
 named volumes and does not run as part
 of the fast default gate. Production-provider identity, external object-storage
@@ -292,17 +326,22 @@ credit, and the exact final balance.
 
 M6 adds fast signed-delta, transaction commit/rollback, migration-structure,
 browser-separation, billing-summary serialization, authenticated route, and UI
-boundary tests. The opt-in
-`GOODGOOD_M6_INTEGRATION=1 node --test tests/m6-credit-ledger.test.mjs` test
-targets an isolated PostgreSQL database. It proves migration checksum rerun,
+boundary tests. The opt-in test requires both
+`GOODGOOD_M6_INTEGRATION=1` and an explicit `GOODGOOD_M6_DATABASE_URL` naming
+a disposable database with no running application Worker. It fails before connecting when
+that URL is omitted, so test outbox rows cannot be consumed by a real O1Key
+Worker. It uses dedicated test identities and preserves existing local fixture
+balances.
+It proves migration checksum rerun,
 the three immutable 10-credit Banana 2 prices, migration grants for existing
 owners, exactly-once first-login welcome grant, live job reservation, successful
-Asset settlement, `SUBMISSION_UNKNOWN` customer release, deterministic custom
-price selection, manual grant, refund, insufficient-credit rollback, same-key
+Asset settlement, four-Asset/40-credit atomic settlement, short-result rollback,
+`SUBMISSION_UNKNOWN` customer release, deterministic custom price selection,
+manual grant, refund, insufficient-credit rollback, same-key
 replay, conflicting replay, mutually exclusive reservation closure, one full
 refund, exact account caches, generation quote snapshots, and database rejection
 of price/ledger mutation. The same PostgreSQL run verifies that the public read
-returns exact decimal-string balances and all three active launch quotes without
+returns exact decimal-string balances and all active launch quotes without
 internal IDs. The ledger test itself does not call a payment sandbox.
 
 The M6 payment tests cover migration/schema structure, the immutable product,
@@ -335,6 +374,23 @@ npm ci
 npm run check:local
 ```
 
+### Fast and safe test order
+
+Run the narrowest affected test first while editing. Run `npm run check:local`
+once after executable code stabilizes; repeat it only when a later edit changes
+runtime code, build inputs, or test behavior. A documentation-only process
+change runs `node --test tests/documentation-continuity.test.mjs` and
+`git diff --check`; it does not require a Compose rebuild.
+
+Before any opt-in test writes database or queue fixtures, verify its effective
+target without printing credentials. The database/Compose project must be
+explicitly named and disposable, and no Worker with real O1Key credentials may
+consume its queue. Environment names such as `test` do not prove isolation.
+Never run a fixture-writing test against the active 3010 real-provider stack.
+Use the fake provider or stop/detach the real-provider Worker. A real-provider
+smoke can incur cost and runs only when the site owner explicitly requests that
+specific generation call.
+
 `check:local` is the cross-platform gate intended for local computers and
 GitHub Actions. It runs lint, the full TypeScript check, the production build,
 and automated tests. CI uses the same pinned Node.js 24.20.0 runtime. Pinned
@@ -361,6 +417,8 @@ The timestamped result of the latest verified gate belongs in
 - Eight-line textarea height calculation.
 - Reference maximum, ordering, and validation.
 - Job-state transition rules and normalized errors.
+- Parallel client-run insertion, temporary-to-durable ID replacement, terminal
+  isolation, persistent ID filtering, and absence of client truncation.
 - Newest-first batch ordering.
 
 ### Component
@@ -368,8 +426,13 @@ The timestamped result of the latest verified gate belongs in
 - Empty creation state.
 - Root and `/create` direct access, refresh, and Back/Forward equivalence.
 - Composer open/closed drawer without value loss.
-- Reference tray from 0, 1, 9, 10, and over-limit inputs.
+- Reference tray from 0, 1, 9, 10, and over-limit inputs; visible contiguous
+  ordinals; drag and `Alt + ← / →` reorder semantics; removal renumbering.
 - Generation skeleton count and ratio.
+- Unified creation slots keep their keys, columns, and submission order when a
+  multi-output run changes from active skeletons to successful images; the
+  corresponding durable batch is not rendered twice.
+- Feihong send availability during active generation and concurrent skeletons.
 - Inline failed batch preserves prompt/settings and retries.
 - Project restore and `新建创作` behavior.
 - Project index/detail direct access, refresh, back/forward, and unsaved composer
@@ -385,29 +448,56 @@ The timestamped result of the latest verified gate belongs in
   scroll preservation, plus missing-ID recovery.
 - Detail wheel, arrow keys, stable-URL replacement, focus, source scope, and
   close restoration.
+- Creation-card hover shows concrete pixel dimensions, omits the duplicate
+  bookmark, and download resolves a fresh owner-scoped URL by Asset ID before
+  creating a Blob download without navigation. URL resolution and transfer
+  failures retain the page state and expose a diagnostic stage.
 
 ### API/integration
 
 - Auth and ownership on every write/read.
 - Signed upload lifecycle and invalid-file rejection.
+- Owner-scoped reusable-reference listing returns only accepted ready rows with
+  fresh signed reads; selecting one reuses its stable ID without a PUT.
 - Reference-cleanup dry-run, bounded claim, object deletion, retry evidence,
-  idempotency, and concurrent snapshot protection.
+  idempotency, legacy-orphan rescue, and ready-material exclusion.
 - Idempotent generation creation.
 - Idempotent owner-scoped project creation, restore, update, and continuation.
 - Owner-scoped asset listing filters to accepted successful outputs, preserves
   newest-first grouping, and returns fresh signed private reads.
+- Owner-scoped Asset download URL resolution returns a fresh short-lived read
+  only for an accepted successful Asset and never proxies the image bytes.
 - Provider timeout/rejection normalization.
 - Callback verification and duplicate callback handling.
 - The M5 fake O1Key gateway exhaustively proves all 42 combinations of the 14
   product-defined aspect ratios and `1K` / `2K` / `4K` pass unchanged to
   `gemini-3.1-flash-image-c-sp`, while the model remains `nano-banana-2`, the
-  output count remains one, and the response modality remains `IMAGE`;
+  upstream task output count remains one, and the response modality remains `IMAGE`;
   unsupported ratio/resolution/model/count values fail before a POST. Ordered
   multipart temporary uploads become explicit `fileData`
   references; polling success/failure, bounded timeout, duplicate/conflicting
   confirmed terminal reads, provisional-failure recovery to success, HTTPS
   enforcement, malformed response rejection, and stateless restart work
   without a real credential.
+- GG-010 provider-router coverage proves a four-image Nano batch creates four
+  single-image O1Key tasks without `n`, uploads each reference once per worker
+  invocation, persists task-set prefixes of lengths 1–4 plus pre-POST markers,
+  preserves ordinal output order, resumes a safe partial task set by submitting
+  only its missing suffix, and fails an interrupted marker without another POST.
+  Repository coverage proves stale task evidence cannot overwrite a
+  newer token; shared output/storage and billing tests retain atomic completion.
+- GG-007/GG-009 coverage proves GPT IMAGE 2's seven ratios across all three
+  product resolutions map to the 21 documented lowercase-`x` pixel sizes and
+  each accepts `n: 1`, `2`, or `4` in one `gpt-image-2-c-sd` task. It rejects a
+  short success result and omits Nano-only request fields. UI contract tests
+  cover ratio/count filtering, exact readouts, model-change normalization, and
+  per-image plus batch-total pricing. Billing tests cover immutable 10/20/40
+  rows and atomic four-Asset settlement.
+- GG-015 provider coverage proves `quality`, `background`, and `output_format`
+  are always top-level GPT fields, defaults are explicit, transparent WebP is
+  admitted, transparent JPEG is rejected before submission, and GPT options do
+  not leak into Nano jobs. UI coverage proves default rendering, automatic PNG
+  correction, disabled JPEG help text, cross-model reset, and snapshot restore.
 - The M5 provider-router tests prove the worker reads ordered private RustFS
   bytes into O1Key temporary uploads, persists the selected provider route,
   rejects an active-attempt route mismatch, resumes polling, fully decodes a
@@ -424,7 +514,8 @@ The timestamped result of the latest verified gate belongs in
   `/_vinext/image`, `srcset`, or `data-nimg` rewriting. The workspace uses that
   primitive for the reference tray plus creation, project, asset-library, and
   detail surfaces.
-- Database transaction creates batch/job/assets consistently.
+- Database transaction creates a batch/job and the complete ordinal Asset set
+  consistently; no short result can settle the batch.
 - Credit grant, live generation reservation, successful-Asset settlement,
   no-Asset release (including `SUBMISSION_UNKNOWN`), refund, and insufficient-
   credit paths are transactional and idempotent.
@@ -451,7 +542,10 @@ The timestamped result of the latest verified gate belongs in
   O1Key worker resumes only with a durable `task_id`; otherwise its persisted
   submission guard fails closed without an automatic second billable POST.
 - Duplicate queue delivery and duplicate completion callbacks have no adverse
-  effect.
+  effect. The GG-004 regression covers concurrent atomic outbox claims, the
+  redispatch stale window, same-Worker active-job deduplication, rejection of a
+  repeated unexpired lease, one attempt/Asset/settlement under live duplicate
+  Valkey delivery, and stored-object cleanup when a terminal transition wins.
 - Provider 500, rejection, malformed result, timeout, and unreachable states
   normalize to the documented recovery behavior.
 - Object storage or database failure preserves enough durable evidence for
@@ -477,8 +571,10 @@ repository. Charge/refund outcomes are audited in the operator's New API usage
 history rather than inferred from generation state. O1Key confirmed that the
 image API has no idempotency, client-task lookup, or signed-callback field; ADR
 0008 accepts that limitation with the persisted at-most-once guard rather than
-claiming exactly-once execution. Multi-output and partial-result behavior remain
-outside the one-output MVP.
+claiming exactly-once execution. GPT multi-output uses one native task; Nano
+multi-output uses one task per image with incrementally durable ordered task
+evidence. Both use an all-or-nothing Asset/credit policy; partial-result
+settlement remains outside the current scope.
 
 ### Documentation continuity
 
@@ -506,6 +602,10 @@ outside the one-output MVP.
    approves -> the same account can create without a duplicate grant.
 8. Site owner opens account management -> grants test credit with a reason ->
    one ledger/audit result appears -> replay does not grant twice.
+9. Click generate repeatedly while jobs are active -> every click keeps its own
+   skeleton and terminal result/error; a selected retry affects only that run.
+10. Upload one reference -> open a new creation -> select it from uploaded
+    materials -> submit by the same reference ID without another object upload.
 
 ### Staging-only verification
 

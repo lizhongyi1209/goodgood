@@ -1,6 +1,9 @@
 import { createHash, randomUUID } from "node:crypto";
 import { NormalizedProviderError } from "./provider.mjs";
-import { createGenerationProvider } from "./provider-router.mjs";
+import {
+  createGenerationProvider,
+  generationProviderRouteForModel,
+} from "./provider-router.mjs";
 import {
   claimGenerationJob,
   completeGenerationJob,
@@ -11,7 +14,10 @@ import {
   renewGenerationLease,
   saveProviderTask,
 } from "./repository.mjs";
-import { storeGeneratedAsset } from "./storage.mjs";
+import {
+  discardGeneratedAsset,
+  storeGeneratedAsset,
+} from "./storage.mjs";
 
 const INTERNAL_ERROR = Object.freeze({
   code: "INTERNAL_ERROR",
@@ -26,6 +32,13 @@ const SUBMISSION_UNKNOWN = Object.freeze({
   retryable: true,
   title: "提交结果暂时无法确认",
 });
+
+class SupersededGenerationExecution extends Error {
+  constructor() {
+    super("Another execution already owns this generation attempt.");
+    this.name = "SupersededGenerationExecution";
+  }
+}
 
 function normalizedError(error) {
   if (error instanceof NormalizedProviderError) return error;
@@ -42,12 +55,100 @@ function generatedObjectExtension(contentType) {
   return extension;
 }
 
+export async function resolveStoredGenerationCompletion({
+  completion,
+  discard,
+}) {
+  if (completion.completed) return { outcome: "succeeded" };
+  const discardStoredObject = ["cancelled", "failed", "missing"].includes(
+    completion.reason,
+  );
+  if (!discardStoredObject) {
+    return {
+      completionReason: completion.reason,
+      objectDiscarded: false,
+      outcome: "superseded",
+    };
+  }
+  try {
+    await discard();
+    return {
+      completionReason: completion.reason,
+      objectDiscarded: true,
+      outcome: "superseded",
+    };
+  } catch {
+    return {
+      code: "OBJECT_DELETE_FAILED",
+      completionReason: completion.reason,
+      objectDiscarded: false,
+      outcome: "orphaned",
+    };
+  }
+}
+
+export async function storeProviderOutputs({
+  bucket,
+  createAssetId = randomUUID,
+  discard = discardGeneratedAsset,
+  downloadOutput,
+  job,
+  outputs,
+  storage,
+  store = storeGeneratedAsset,
+}) {
+  if (!Array.isArray(outputs) || outputs.length !== job.requested_count) {
+    throw new NormalizedProviderError({
+      code: "INTERNAL_ERROR",
+      message: "生成服务返回的图片数量与请求不一致。输入内容已保留，请重试。",
+    });
+  }
+  const assets = [];
+  const objectKeys = [];
+  try {
+    for (const [index, output] of outputs.entries()) {
+      const ordinal = index + 1;
+      const downloaded = await downloadOutput(output);
+      const checksum = createHash("sha256").update(downloaded.bytes).digest("hex");
+      const objectKey = `generated/${job.owner_id}/${job.id}-${ordinal}.${generatedObjectExtension(downloaded.contentType)}`;
+      objectKeys.push(objectKey);
+      await store({
+        bucket,
+        bytes: downloaded.bytes,
+        checksum,
+        contentType: downloaded.contentType,
+        key: objectKey,
+        storage,
+      });
+      assets.push({
+        aspectRatio: job.aspect_ratio,
+        batchId: job.batch_id,
+        byteSize: downloaded.bytes.length,
+        checksum,
+        id: createAssetId(),
+        mimeType: downloaded.contentType,
+        objectKey,
+        ordinal,
+        ownerId: job.owner_id,
+        pixelHeight: downloaded.height,
+        pixelWidth: downloaded.width,
+      });
+    }
+    return { assets, objectKeys };
+  } catch (error) {
+    await Promise.allSettled(objectKeys.map((key) =>
+      discard({ bucket, key, storage })
+    ));
+    throw error;
+  }
+}
+
 export async function processGenerationJob(resources, { jobId, workerId }) {
   const startedAt = Date.now();
   const { config, pool, publicStorage, storage } = resources;
-  const provider = createGenerationProvider({ config, publicStorage, storage });
   const claim = await claimGenerationJob(pool, {
-    attemptRoute: provider.route,
+    attemptRouteForModel: (modelId) =>
+      generationProviderRouteForModel(config.provider.kind, modelId),
     jobId,
     leaseMs: config.workerLeaseMs,
     workerId,
@@ -56,12 +157,18 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
     return {
       durationMs: Date.now() - startedAt,
       outcome: claim.reason,
-      provider: provider.route.provider,
-      routeVersion: provider.route.routeVersion,
+      provider: claim.route?.provider ?? config.provider.kind,
+      routeVersion: claim.route?.routeVersion,
     };
   }
 
   const { attempt, job } = claim;
+  const provider = createGenerationProvider({
+    config,
+    publicStorage,
+    route: claim.route,
+    storage,
+  });
   let stage = "attempt-validation";
   let taskId = attempt.provider_task_id;
   let providerStartedAt = null;
@@ -82,34 +189,72 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
   try {
     provider.assertAttempt(attempt);
     providerStartedAt = Date.now();
-    if (!taskId) {
+    if (!provider.isTaskSubmissionComplete({ job, taskId })) {
       if (
+        !taskId &&
         provider.submissionPolicy === "task-id-required" &&
         attempt.state !== "created"
       ) {
         throw new NormalizedProviderError(SUBMISSION_UNKNOWN);
       }
       stage = "provider-submission";
-      taskId = await provider.createTask({
+      let persistedTaskId = taskId ?? null;
+      const persistTaskId = async (
+        nextTaskId,
+        { submissionAccepted = true } = {},
+      ) => {
+        let saved;
+        try {
+          saved = await saveProviderTask(pool, {
+            attemptId: attempt.id,
+            previousTaskId: persistedTaskId,
+            taskId: nextTaskId,
+          });
+        } catch (error) {
+          if (
+            provider.submissionPolicy === "task-id-required" &&
+            submissionAccepted
+          ) {
+            throw new NormalizedProviderError(SUBMISSION_UNKNOWN);
+          }
+          throw error;
+        }
+        if (!saved) throw new SupersededGenerationExecution();
+        persistedTaskId = nextTaskId;
+        taskId = nextTaskId;
+      };
+      const createdTaskId = await provider.createTask({
         attempt,
         job,
+        onTaskCreated: persistTaskId,
         onSubmissionStart:
           provider.submissionPolicy === "task-id-required"
-            ? async () => {
+            ? async (submissionToken = null) => {
+                if (submissionToken) {
+                  await persistTaskId(submissionToken, {
+                    submissionAccepted: false,
+                  });
+                  return;
+                }
                 const started = await markProviderSubmissionStarted(pool, {
                   attemptId: attempt.id,
                 });
                 if (!started) {
-                  throw new NormalizedProviderError(SUBMISSION_UNKNOWN);
+                  throw new SupersededGenerationExecution();
                 }
               }
             : undefined,
+        taskId,
       });
-      await saveProviderTask(pool, { attemptId: attempt.id, taskId });
+      if (createdTaskId !== persistedTaskId) {
+        await persistTaskId(createdTaskId);
+      }
+      taskId = createdTaskId;
     }
 
     stage = "provider-poll";
-    const output = await provider.pollTask({
+    const outputs = await provider.pollTask({
+      expectedOutputCount: job.requested_count,
       onRefining: async () => {
         await markGenerationRefining(pool, { jobId, workerId });
         await renewGenerationLease(pool, {
@@ -120,41 +265,40 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
       },
       taskId,
     });
-    stage = "output-download";
-    const downloaded = await provider.downloadOutput(output);
-    const checksum = createHash("sha256").update(downloaded.bytes).digest("hex");
-    const assetId = randomUUID();
-    const objectKey = `generated/${job.owner_id}/${job.id}.${generatedObjectExtension(downloaded.contentType)}`;
-    stage = "asset-store";
-    await storeGeneratedAsset({
+    stage = "output-storage";
+    const { assets, objectKeys } = await storeProviderOutputs({
       bucket: config.objectStorage.bucket,
-      bytes: downloaded.bytes,
-      checksum,
-      contentType: downloaded.contentType,
-      key: objectKey,
+      downloadOutput: (output) => provider.downloadOutput(output),
+      job,
+      outputs,
       storage,
     });
     stage = "generation-completion";
-    await completeGenerationJob(pool, {
-      asset: {
-        aspectRatio: job.aspect_ratio,
-        batchId: job.batch_id,
-        byteSize: downloaded.bytes.length,
-        checksum,
-        id: assetId,
-        mimeType: downloaded.contentType,
-        objectKey,
-        ownerId: job.owner_id,
-        pixelHeight: downloaded.height,
-        pixelWidth: downloaded.width,
-      },
+    const completion = await completeGenerationJob(pool, {
+      assets,
       attemptId: attempt.id,
       jobId,
-      resultHash: checksum,
+      resultHash: createHash("sha256")
+        .update(JSON.stringify(assets.map((asset) => asset.checksum)))
+        .digest("hex"),
       workerId,
     });
-    return { ...resultContext(), outcome: "succeeded", stage };
+    const resolution = await resolveStoredGenerationCompletion({
+      completion,
+      discard: () =>
+        Promise.all(objectKeys.map((key) =>
+          discardGeneratedAsset({
+            bucket: config.objectStorage.bucket,
+            key,
+            storage,
+          })
+        )),
+    });
+    return { ...resultContext(), ...resolution, stage };
   } catch (error) {
+    if (error instanceof SupersededGenerationExecution) {
+      return { ...resultContext(), outcome: "superseded", stage };
+    }
     if (error instanceof NormalizedProviderError) {
       await failGenerationJob(pool, {
         attemptId: attempt.id,

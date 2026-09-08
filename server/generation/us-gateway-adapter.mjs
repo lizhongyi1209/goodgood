@@ -1,24 +1,45 @@
 import { NormalizedProviderError } from "./provider.mjs";
 import {
-  DURABLE_GENERATION_MODEL_ID,
-  DURABLE_GENERATION_OUTPUT_COUNT,
-  SUPPORTED_GENERATION_ASPECT_RATIOS,
+  DEFAULT_GPT_IMAGE_OUTPUT_FORMAT,
+  SUPPORTED_GPT_IMAGE_BACKGROUNDS,
+  SUPPORTED_GPT_IMAGE_OUTPUT_FORMATS,
+  SUPPORTED_GPT_IMAGE_QUALITIES,
   SUPPORTED_GENERATION_RESOLUTIONS,
-  isSupportedGenerationAspectRatio,
-  isSupportedGenerationResolution,
+  getGenerationModelCapability,
+  getGptImage2PixelSize,
+  isSupportedGenerationInput,
 } from "./capabilities.mjs";
 
-export const US_GATEWAY_CONTRACT_VERSION = "o1key-image-api-2026-09-02";
+export const US_GATEWAY_CONTRACT_VERSION = "o1key-image-api-2026-09-08";
 
-export const US_GATEWAY_MVP_ROUTE = Object.freeze({
-  aspectRatios: SUPPORTED_GENERATION_ASPECT_RATIOS,
-  outputCount: DURABLE_GENERATION_OUTPUT_COUNT,
-  productModelId: DURABLE_GENERATION_MODEL_ID,
+export const US_GATEWAY_NANO_BANANA_2_ROUTE = Object.freeze({
+  aspectRatios: getGenerationModelCapability("nano-banana-2").aspectRatios,
+  outputCounts: getGenerationModelCapability("nano-banana-2").outputCounts,
+  productModelId: "nano-banana-2",
   provider: "o1key",
   providerModel: "gemini-3.1-flash-image-c-sp",
   resolutions: SUPPORTED_GENERATION_RESOLUTIONS,
-  routeVersion: "o1key-gemini-3.1-flash-image-c-sp-v2",
+  routeVersion: "o1key-gemini-3.1-flash-image-c-sp-v4",
 });
+
+export const US_GATEWAY_GPT_IMAGE_2_ROUTE = Object.freeze({
+  aspectRatios: getGenerationModelCapability("gpt-image-2").aspectRatios,
+  outputCounts: getGenerationModelCapability("gpt-image-2").outputCounts,
+  productModelId: "gpt-image-2",
+  provider: "o1key",
+  providerModel: "gpt-image-2-c-sd",
+  resolutions: SUPPORTED_GENERATION_RESOLUTIONS,
+  routeVersion: "o1key-gpt-image-2-c-sd-v2",
+});
+
+export const US_GATEWAY_MVP_ROUTE = US_GATEWAY_NANO_BANANA_2_ROUTE;
+
+export function getUsGatewayRoute(modelId) {
+  return Object.freeze({
+    "nano-banana-2": US_GATEWAY_NANO_BANANA_2_ROUTE,
+    "gpt-image-2": US_GATEWAY_GPT_IMAGE_2_ROUTE,
+  })[modelId] ?? null;
+}
 
 const TERMINAL_STATES = new Set(["failed", "succeeded"]);
 const STATE_ORDER = Object.freeze({ queued: 0, running: 1, failed: 2, succeeded: 2 });
@@ -108,7 +129,11 @@ function normalizeProgress(value, state) {
   return null;
 }
 
-export function normalizeUsGatewayTask(payload) {
+export function normalizeUsGatewayTask(
+  payload,
+  { expectedOutputCount = 1 } = {},
+) {
+  if (![1, 2, 4].includes(expectedOutputCount)) throw protocolError();
   const taskId = payload?.task_id;
   if (typeof taskId !== "string" || !taskId) throw protocolError();
   const state = Object.freeze({
@@ -125,7 +150,7 @@ export function normalizeUsGatewayTask(payload) {
   const failures = Object.freeze(
     state === "failed" ? [normalizeFailure(payload.error)] : [],
   );
-  if (state === "succeeded" && outputs.length !== US_GATEWAY_MVP_ROUTE.outputCount) {
+  if (state === "succeeded" && outputs.length !== expectedOutputCount) {
     throw protocolError();
   }
   if (state !== "succeeded" && outputs.length !== 0) throw protocolError();
@@ -251,15 +276,72 @@ function normalizeTemporaryUpload(payload, expectedMimeType, nowSeconds) {
   });
 }
 
-function validateMvpJob(job) {
+function validateJob(job, route) {
+  const thinkingLevel =
+    job?.thinking_level ??
+    (route.productModelId === "nano-banana-2" ? "high" : "low");
+  const googleSearch = job?.google_search ?? false;
+  const quality = job?.quality ?? "auto";
+  const background = job?.background ?? "auto";
+  const outputFormat =
+    job?.output_format ??
+    (route.productModelId === "gpt-image-2"
+      ? DEFAULT_GPT_IMAGE_OUTPUT_FORMAT
+      : "png");
   if (
-    job?.model_id !== US_GATEWAY_MVP_ROUTE.productModelId ||
-    !isSupportedGenerationAspectRatio(job?.aspect_ratio) ||
-    !isSupportedGenerationResolution(job?.resolution) ||
-    job?.requested_count !== US_GATEWAY_MVP_ROUTE.outputCount
+    job?.model_id !== route.productModelId ||
+    !isSupportedGenerationInput({
+      aspectRatio: job?.aspect_ratio,
+      count: job?.requested_count,
+      modelId: job?.model_id,
+      resolution: job?.resolution,
+    }) ||
+    !["low", "high"].includes(thinkingLevel) ||
+    typeof googleSearch !== "boolean" ||
+    !SUPPORTED_GPT_IMAGE_QUALITIES.includes(quality) ||
+    !SUPPORTED_GPT_IMAGE_BACKGROUNDS.includes(background) ||
+    !SUPPORTED_GPT_IMAGE_OUTPUT_FORMATS.includes(outputFormat) ||
+    (background === "transparent" && outputFormat === "jpeg") ||
+    (route.productModelId !== "nano-banana-2" &&
+      (thinkingLevel !== "low" || googleSearch)) ||
+    (route.productModelId !== "gpt-image-2" &&
+      (quality !== "auto" || background !== "auto" || outputFormat !== "png"))
   ) {
     throw protocolError();
   }
+}
+
+function generationPayload({ job, route, uploadedReferences }) {
+  const common = {
+    images: uploadedReferences.map((reference) => ({
+      fileData: {
+        fileUri: reference.url,
+        mimeType: reference.contentType,
+      },
+    })),
+    model: route.providerModel,
+    prompt: job.prompt,
+  };
+  if (route.productModelId === "gpt-image-2") {
+    return {
+      ...common,
+      background: job.background ?? "auto",
+      n: job.requested_count,
+      output_format: job.output_format ?? DEFAULT_GPT_IMAGE_OUTPUT_FORMAT,
+      quality: job.quality ?? "auto",
+      size: getGptImage2PixelSize(job.aspect_ratio, job.resolution),
+    };
+  }
+  return {
+    ...common,
+    aspect_ratio: job.aspect_ratio,
+    response_modalities: ["TEXT", "IMAGE"],
+    size: job.resolution,
+    ...((job.thinking_level ?? "high") === "high"
+      ? { thinking_level: "high" }
+      : {}),
+    ...(job.google_search ? { google_search: true } : {}),
+  };
 }
 
 export function createUsGatewayAdapter({
@@ -269,6 +351,7 @@ export function createUsGatewayAdapter({
   now = () => Date.now(),
   requestTimeoutMs = 15_000,
   failureConfirmationPolls = US_GATEWAY_FAILURE_CONFIRMATION_POLLS,
+  route = US_GATEWAY_MVP_ROUTE,
   sleep = (milliseconds) =>
     new Promise((resolve) => setTimeout(resolve, milliseconds)),
   allowInsecureLoopback = false,
@@ -281,6 +364,9 @@ export function createUsGatewayAdapter({
     throw new Error("Gateway failure confirmation polls must be a positive integer.");
   }
   const origin = assertLoopbackOrHttps(baseUrl, allowInsecureLoopback);
+  if (getUsGatewayRoute(route.productModelId) !== route) {
+    throw new Error("A supported O1Key generation route is required.");
+  }
 
   async function request(path, options = {}) {
     const { submission = false, ...requestOptions } = options;
@@ -300,12 +386,12 @@ export function createUsGatewayAdapter({
     return parseResponse(response, { submission });
   }
 
-  async function getTask(taskId) {
+  async function getTask(taskId, expectedOutputCount) {
     const payload = await request(
       `/async/v1/tasks/${encodeURIComponent(taskId)}`,
       { method: "GET" },
     );
-    return normalizeUsGatewayTask(payload);
+    return normalizeUsGatewayTask(payload, { expectedOutputCount });
   }
 
   async function uploadReference(reference) {
@@ -327,48 +413,67 @@ export function createUsGatewayAdapter({
     );
   }
 
+  async function prepareReferences(references = []) {
+    if (!Array.isArray(references) || references.length > MAX_REFERENCES) {
+      throw protocolError();
+    }
+    const uploadedReferences = [];
+    for (const reference of references) {
+      uploadedReferences.push(await uploadReference(reference));
+    }
+    return Object.freeze(uploadedReferences);
+  }
+
+  async function submitPrepared({
+    job,
+    onSubmissionStart = async () => {},
+    uploadedReferences = [],
+  }) {
+    validateJob(job, route);
+    if (
+      !Array.isArray(uploadedReferences) ||
+      uploadedReferences.length > MAX_REFERENCES ||
+      uploadedReferences.some((reference) =>
+        typeof reference?.url !== "string" ||
+        typeof reference?.contentType !== "string"
+      )
+    ) {
+      throw protocolError();
+    }
+    await onSubmissionStart();
+    const payload = await request("/async/v1/generateImage", {
+      body: JSON.stringify(generationPayload({ job, route, uploadedReferences })),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+      submission: true,
+    });
+    if (typeof payload?.task_id !== "string" || !payload.task_id) {
+      throw normalizedError("SUBMISSION_UNKNOWN");
+    }
+    return Object.freeze({ taskId: payload.task_id });
+  }
+
   return Object.freeze({
     getTask,
-    route: US_GATEWAY_MVP_ROUTE,
+    prepareReferences,
+    route,
 
     async submit({ job, onSubmissionStart = async () => {}, references = [] }) {
-      validateMvpJob(job);
-      if (!Array.isArray(references) || references.length > MAX_REFERENCES) {
-        throw protocolError();
-      }
-      const uploadedReferences = [];
-      for (const reference of references) {
-        uploadedReferences.push(await uploadReference(reference));
-      }
-      await onSubmissionStart();
-      const payload = await request("/async/v1/generateImage", {
-        body: JSON.stringify({
-          aspect_ratio: job.aspect_ratio,
-          images: uploadedReferences.map((reference) => ({
-            fileData: {
-              fileUri: reference.url,
-              mimeType: reference.contentType,
-            },
-          })),
-          model: US_GATEWAY_MVP_ROUTE.providerModel,
-          prompt: job.prompt,
-          response_modalities: ["IMAGE"],
-          size: job.resolution,
-        }),
-        headers: { "content-type": "application/json" },
-        method: "POST",
-        submission: true,
+      const uploadedReferences = await prepareReferences(references);
+      return submitPrepared({
+        job,
+        onSubmissionStart,
+        uploadedReferences,
       });
-      if (typeof payload?.task_id !== "string" || !payload.task_id) {
-        throw normalizedError("SUBMISSION_UNKNOWN");
-      }
-      return Object.freeze({ taskId: payload.task_id });
     },
+
+    submitPrepared,
 
     uploadReference,
 
     async waitForTerminal({
       onUpdate = async () => {},
+      expectedOutputCount = 1,
       pollIntervalMs = 250,
       taskId,
       timeoutMs,
@@ -381,7 +486,7 @@ export function createUsGatewayAdapter({
       let failureCandidate = null;
       let failureObservations = 0;
       while (now() < deadline) {
-        const incoming = await getTask(taskId);
+        const incoming = await getTask(taskId, expectedOutputCount);
         if (incoming.state === "failed") {
           const sameFailure =
             failureCandidate &&

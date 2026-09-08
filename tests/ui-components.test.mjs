@@ -24,6 +24,14 @@ after(async () => {
 test("declares the GoodGood visual and interaction invariants", async () => {
   const css = await readFile(path.join(root, "app/globals.css"), "utf8");
   const creationPage = await readFile(path.join(root, "app/page.tsx"), "utf8");
+  const creationComposer = await readFile(
+    path.join(root, "features/creation/creation-composer.tsx"),
+    "utf8",
+  );
+  const referenceEditor = await readFile(
+    path.join(root, "features/references/reference-quick-editor.tsx"),
+    "utf8",
+  );
 
   assert.match(css, /--accent:\s*#b52b30/);
   assert.match(css, /--control-md:\s*40px/);
@@ -31,13 +39,124 @@ test("declares the GoodGood visual and interaction invariants", async () => {
   assert.match(css, /\.creation-masonry-frame[^}]*border-radius:\s*15px/s);
   assert.match(css, /\.creation-masonry[^}]*gap:\s*3px/s);
   assert.match(css, /\.generation-error-strip[^}]*min-height:\s*72px/s);
+  assert.match(css, /\.reference-library-picker-image[^}]*aspect-ratio:\s*1/s);
+  assert.match(css, /\.reference-material-masonry[^}]*grid-template-columns:\s*repeat\(4/s);
+  assert.match(css, /\.reference-thumbnail-ordinal[^}]*left:\s*4px;[^}]*bottom:\s*4px/s);
+  assert.match(css, /\.reference-thumbnail\.is-drag-target[^}]*border-color:\s*var\(--accent\)/s);
+  assert.match(css, /\.reference-thumbnail-remove[^}]*width:\s*16px;[^}]*height:\s*16px;[^}]*top:\s*3px;[^}]*right:\s*3px/s);
+  assert.match(css, /\.reference-editor-body[^}]*grid-template-columns:\s*72px minmax\(0,1fr\)/s);
+  assert.match(css, /\.reference-editor-stage canvas[^}]*width:\s*100%;[^}]*height:\s*100%;[^}]*touch-action:\s*none/s);
+  assert.match(css, /\.reference-editor-discard-overlay[^}]*background:\s*rgba\(24,24,30,\.34\)/s);
+  assert.match(css, /\.reference-editor-discard-dialog[^}]*background:\s*var\(--white\)[^}]*box-shadow:/s);
+  assert.match(css, /\.reference-editor-discard-dialog \[data-slot="alert-dialog-action"\][^}]*background:\s*var\(--accent\)/s);
+  assert.doesNotMatch(creationPage, /reference-library-picker-image" style=/);
+  assert.match(creationComposer, /draggable=\{canReorderReferences\}/);
+  assert.match(creationComposer, /onReorderReference\?\.\(sourceId, image\.id\)/);
+  assert.match(creationComposer, /"Enter Space Alt\+ArrowLeft Alt\+ArrowRight"/);
+  assert.match(creationComposer, /reference-thumbnail-ordinal">图 \{index \+ 1\}/);
+  assert.match(creationComposer, /<ReferenceQuickEditor/);
+  assert.match(creationComposer, /event\.key === "Enter" \|\| event\.key === " "/);
+  assert.match(creationComposer, /suppressReferencePreviewRef\.current = true/);
+  assert.match(creationComposer, /event\.stopPropagation\(\);[\s\S]*onRemoveReference\(image\)/);
+  assert.match(referenceEditor, /aria-label="参考图编辑工具"/);
+  assert.match(referenceEditor, /overlayClassName="reference-editor-discard-overlay"/);
+  assert.match(referenceEditor, /label: "查看"[\s\S]*label: "裁剪"[\s\S]*label: "画笔"[\s\S]*label: "贴图"[\s\S]*label: "箭头"[\s\S]*label: "框选"/);
+  assert.match(referenceEditor, /formatReferenceEditorBboxPrompt\(ordinal, bbox\)/);
+  assert.match(referenceEditor, /output\.x \* sourceImage\.naturalWidth/);
+  assert.doesNotMatch(referenceEditor, /filter:\s*(?:saturate|contrast|hue-rotate|brightness)/);
+  assert.match(creationPage, /onSaveReferenceEdit=\{handleSaveReferenceEdit\}/);
+  assert.match(creationPage, /item\.id === source\.id[\s\S]*\.\.\.result\.reference, url: previewUrl/s);
+  assert.match(creationPage, /if \(currentProject\) \{[\s\S]*await saveProject\(\{[\s\S]*references: nextReferences\.filter/s);
   assert.match(css, /mask:\s*url\("\/feihong-send\.png"\)/);
-  assert.match(creationPage, /className="generation-task-frame"/);
-  assert.match(creationPage, /renderCreationColumns\(generationItems, 4, "task"\)/);
-  assert.match(creationPage, /renderCreationColumns\(creationItems, 4, "history"\)/);
-  assert.match(creationPage, /onClick=\{retryFailedGeneration\}/);
-  assert.match(creationPage, /onClick=\{restoreFailedGenerationSettings\}/);
+  assert.doesNotMatch(creationPage, /className="generation-task-frame"/);
+  assert.match(creationPage, /const creationStreamItems = \[\.\.\.generationItems, \.\.\.creationItems\]/);
+  assert.match(creationPage, /renderCreationColumns\(creationStreamItems, 4\)/);
+  assert.match(creationPage, /getGenerationRunSlots\(generationRuns\)/);
+  assert.match(creationPage, /trackedGenerationBatchIds\.has\(batch\.id\)/);
+  assert.match(creationPage, /failedGenerationRuns\.map/);
+  assert.match(creationPage, /retryFailedGeneration\(run\)/);
+  assert.match(creationPage, /restoreFailedGenerationSettings\(runInput\)/);
+  assert.match(creationComposer, /aria-label=\{isGenerating \? "继续生成图片" : "生成图片"\}/);
+  assert.doesNotMatch(creationComposer, /disabled=\{isGenerating\}/);
   assert.doesNotMatch(creationPage, /className="generation-error-panel/);
+
+  const creationCardRenderer = creationPage.slice(
+    creationPage.indexOf("const renderCreationItem"),
+    creationPage.indexOf("const renderCreationColumns"),
+  );
+  assert.match(creationCardRenderer, /formatPixelDimensions\(itemDimensions\)/);
+  assert.match(creationCardRenderer, /className="download-button"/);
+  assert.doesNotMatch(creationCardRenderer, /<Bookmark/);
+  assert.doesNotMatch(creationCardRenderer, /toggleSave/);
+  const detailActionsStart = creationPage.indexOf('<div className="image-detail-actions">');
+  const detailActions = creationPage.slice(
+    detailActionsStart,
+    creationPage.indexOf("</div>", detailActionsStart),
+  );
+  assert.match(detailActions, /className="download-button"/);
+  assert.doesNotMatch(detailActions, /Bookmark|toggleSave|savedImages/);
+  assert.doesNotMatch(creationPage, /const \[savedImages, setSavedImages\]|const toggleSave/);
+  assert.match(css, /\.creation-card \.download-button:not\(:disabled\):hover\s*\{[^}]*color:\s*var\(--accent-deep\)[^}]*box-shadow:/s);
+  assert.match(css, /\.creation-card \.download-button:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--accent\)/s);
+  assert.match(css, /\.creation-card \.download-button:not\(:disabled\):active\s*\{[^}]*transform:\s*scale\(\.96\)/s);
+  assert.match(creationPage, /saveImageToLocal\(\{[\s\S]*createdAt: batch\.createdAt,[\s\S]*ordinal: index \+ 1,[\s\S]*previewUrl: image\.previewUrl,/);
+  assert.doesNotMatch(creationPage, /link\.href = previewUrl/);
+  assert.doesNotMatch(creationPage, /(?:creation|gallery|detail)-variant-/);
+  assert.doesNotMatch(css, /filter:\s*(?:saturate|contrast|hue-rotate|brightness)/);
+  assert.doesNotMatch(css, /asset-image-frame:nth-child\([234]\) img/);
+});
+
+test("keeps reference previews legible and aspect ratio first through responsive layouts", async () => {
+  const css = await readFile(path.join(root, "app/globals.css"), "utf8");
+  const composer = await readFile(
+    path.join(root, "features/creation/creation-composer.tsx"),
+    "utf8",
+  );
+
+  assert.match(css, /--reference-preview-width:\s*64px/);
+  assert.match(css, /--reference-preview-height:\s*64px/);
+  assert.match(css, /\.reference-thumbnails[^}]*overflow-x:\s*auto/s);
+  assert.match(
+    css,
+    /\.reference-thumbnail,\s*\.reference-add-more\s*\{[^}]*width:\s*var\(--reference-preview-width\)[^}]*height:\s*var\(--reference-preview-height\)/s,
+  );
+  assert.match(
+    css,
+    /\.reference-thumbnail img[^}]*object-fit:\s*cover;[^}]*object-position:\s*center;/s,
+  );
+  assert.match(
+    css,
+    /@media \(max-width:\s*720px\)[\s\S]*--reference-preview-width:\s*56px;[\s\S]*--reference-preview-height:\s*56px;/,
+  );
+
+  const ratioGroup = composer.indexOf('className="parameter-group ratio-group"');
+  const modelGroup = composer.indexOf('className="parameter-group model-group"');
+  const outputGroup = composer.indexOf('className="parameter-group output-group"');
+  assert.ok(ratioGroup >= 0 && ratioGroup < modelGroup);
+  assert.ok(modelGroup < outputGroup);
+  assert.match(
+    css,
+    /@media \(max-width:\s*1180px\)[\s\S]*\.ratio-group\s*\{[^}]*grid-column:\s*1\s*\/\s*-1;[^}]*grid-row:\s*1;/,
+  );
+});
+
+test("hides fixed Nano thinking and shows only the Google Search control", async () => {
+  const composer = await readFile(
+    path.join(root, "features/creation/creation-composer.tsx"),
+    "utf8",
+  );
+  const page = await readFile(path.join(root, "app/page.tsx"), "utf8");
+
+  assert.match(composer, /modelId === "nano-banana-2"/);
+  assert.doesNotMatch(composer, /思考程度|banana-thinking|thinkingLevel/);
+  assert.match(composer, />谷歌搜索</);
+  assert.match(composer, /aria-label="谷歌搜索"/);
+  assert.match(composer, /enabled \? "开启" : "关闭"/);
+  assert.match(composer, /googleSearch === enabled/);
+  assert.match(page, /useState<GenerationThinkingLevel>\("high"\)/);
+  assert.match(page, /useState\(false\)/);
+  assert.doesNotMatch(page, /onThinkingLevelChange|handleThinkingLevelChange|<dt>思考程度<\/dt>/);
+  assert.match(page, /onGoogleSearchChange=\{handleGoogleSearchChange\}/);
 });
 
 test("keeps authentication global, passwordless, and recoverable", async () => {
@@ -135,6 +254,8 @@ test("keeps generation retries isolated from later composer edits", async () => 
     aspectRatio: "4:5",
     resolution: "2K",
     count: 4,
+    thinkingLevel: "low",
+    googleSearch: true,
   };
 
   const snapshot = createGenerationInputSnapshot(draft);
@@ -148,6 +269,8 @@ test("keeps generation retries isolated from later composer edits", async () => 
   assert.equal(snapshot.aspectRatio, "4:5");
   assert.equal("ratioIndex" in snapshot, false);
   assert.equal(snapshot.count, 4);
+  assert.equal(snapshot.thinkingLevel, "high");
+  assert.equal(snapshot.googleSearch, true);
   assert.ok(Object.isFrozen(snapshot));
   assert.ok(Object.isFrozen(snapshot.references));
   assert.ok(Object.isFrozen(snapshot.references[0]));
@@ -163,6 +286,65 @@ test("keeps generation retries isolated from later composer edits", async () => 
   ]);
   assert.notEqual(restored.references, snapshot.references);
   assert.notEqual(restored.references[0], snapshot.references[0]);
+  assert.equal(restored.thinkingLevel, "high");
+  assert.equal(restored.googleSearch, true);
+
+  const historicalLow = restoreGenerationInputSnapshot({
+    ...snapshot,
+    thinkingLevel: "low",
+  });
+  assert.equal(historicalLow.thinkingLevel, "low");
+});
+
+test("normalizes and restores GPT Image 2 quality, background, and output format", async () => {
+  const {
+    createGenerationInputSnapshot,
+    restoreGenerationInputSnapshot,
+  } = await vite.ssrLoadModule(
+    "/features/creation/generation-snapshot.ts",
+  );
+  const { resolveGptImageOptionsForModel } = await vite.ssrLoadModule(
+    "/features/creation/generation-options.ts",
+  );
+
+  assert.deepEqual(resolveGptImageOptionsForModel("gpt-image-2"), {
+    background: "auto",
+    outputFormat: "jpeg",
+    quality: "auto",
+  });
+  assert.deepEqual(resolveGptImageOptionsForModel("nano-banana-2"), {
+    background: "auto",
+    outputFormat: "png",
+    quality: "auto",
+  });
+
+  assert.deepEqual(
+    resolveGptImageOptionsForModel("gpt-image-2", {
+      background: "transparent",
+      outputFormat: "jpeg",
+      quality: "high",
+    }),
+    { background: "transparent", outputFormat: "png", quality: "high" },
+  );
+
+  const snapshot = createGenerationInputSnapshot({
+    aspectRatio: "1:1",
+    background: "transparent",
+    count: 1,
+    modelId: "gpt-image-2",
+    outputFormat: "webp",
+    prompt: "透明玻璃徽章",
+    quality: "high",
+    references: [],
+    resolution: "1K",
+  });
+  assert.equal(snapshot.quality, "high");
+  assert.equal(snapshot.background, "transparent");
+  assert.equal(snapshot.outputFormat, "webp");
+  assert.deepEqual(restoreGenerationInputSnapshot(snapshot), {
+    ...snapshot,
+    references: [],
+  });
 });
 
 test("uploads references directly and reports both ready and failed states", async () => {
@@ -363,8 +545,8 @@ test("draft HTTP boundary covers empty, save, delete, and explicit conflict reco
   }
 });
 
-test("asset HTTP boundary covers durable success, empty, and retryable failure", async () => {
-  const { listAssets } = await vite.ssrLoadModule(
+test("asset HTTP boundary covers durable success, fresh download URLs, empty, and retryable failure", async () => {
+  const { listAssets, readAssetDownloadUrl } = await vite.ssrLoadModule(
     "/features/assets/http-asset-boundary.ts",
   );
   const originalFetch = globalThis.fetch;
@@ -403,6 +585,20 @@ test("asset HTTP boundary covers durable success, empty, and retryable failure",
     globalThis.fetch = async () => Response.json({ batches: [] });
     assert.deepEqual(await listAssets(), []);
 
+    globalThis.fetch = async (input, options = {}) => {
+      calls.push({ input: String(input), options });
+      return Response.json({ url: "https://storage.invalid/fresh-download" });
+    };
+    assert.equal(
+      await readAssetDownloadUrl("50000000-0000-4000-8000-000000000001"),
+      "https://storage.invalid/fresh-download",
+    );
+    assert.equal(
+      calls.at(-1).input,
+      "/api/assets/50000000-0000-4000-8000-000000000001/download-url",
+    );
+    assert.equal(calls.at(-1).options.cache, "no-store");
+
     globalThis.fetch = async () =>
       Response.json(
         {
@@ -420,6 +616,91 @@ test("asset HTTP boundary covers durable success, empty, and retryable failure",
         error.code === "ASSET_LIBRARY_UNAVAILABLE" &&
         error.retryable === true &&
         /资产库暂时无法读取/.test(error.message),
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("reference material boundary and selection cover success, empty, deduplication, limits, and failure", async () => {
+  const { listReferenceMaterials, ReferenceLibraryError } = await vite.ssrLoadModule(
+    "/features/references/http-reference-library.ts",
+  );
+  const { appendReferenceMaterials, reorderReferences } = await vite.ssrLoadModule(
+    "/features/references/reference-selection.ts",
+  );
+  const originalFetch = globalThis.fetch;
+  const material = Object.freeze({
+    byteSize: 1024,
+    height: 1200,
+    id: "20000000-0000-4000-8000-000000000001",
+    mimeType: "image/jpeg",
+    name: "人物参考.jpg",
+    status: "ready",
+    uploadedAt: "2026-09-08T12:00:00.000Z",
+    url: "https://storage.invalid/reference-a",
+    width: 900,
+  });
+  const second = Object.freeze({
+    ...material,
+    id: "20000000-0000-4000-8000-000000000002",
+    name: "服装参考.jpg",
+    url: "https://storage.invalid/reference-b",
+  });
+  try {
+    const calls = [];
+    globalThis.fetch = async (input, options = {}) => {
+      calls.push({ input: String(input), options });
+      return Response.json({ references: [material, second] });
+    };
+    assert.deepEqual(await listReferenceMaterials(), [material, second]);
+    assert.equal(calls[0].input, "/api/references");
+    assert.equal(calls[0].options.cache, "no-store");
+
+    globalThis.fetch = async () => Response.json({ references: [] });
+    assert.deepEqual(await listReferenceMaterials(), []);
+
+    const selected = appendReferenceMaterials([], [material, second], 1);
+    assert.equal(selected.addedCount, 1);
+    assert.equal(selected.overflowCount, 1);
+    assert.deepEqual(selected.references, [
+      {
+        id: material.id,
+        name: material.name,
+        status: "ready",
+        url: material.url,
+      },
+    ]);
+    const deduplicated = appendReferenceMaterials(selected.references, [material], 10);
+    assert.equal(deduplicated.addedCount, 0);
+    assert.equal(deduplicated.duplicateCount, 1);
+    assert.deepEqual(deduplicated.references, selected.references);
+
+    const ordered = appendReferenceMaterials([], [material, second], 10).references;
+    assert.deepEqual(
+      reorderReferences(ordered, material.id, second.id).map((reference) => reference.id),
+      [second.id, material.id],
+    );
+    assert.equal(reorderReferences(ordered, material.id, material.id), ordered);
+    assert.equal(reorderReferences(ordered, "missing", second.id), ordered);
+
+    globalThis.fetch = async () =>
+      Response.json(
+        {
+          error: {
+            code: "REFERENCE_LIBRARY_UNAVAILABLE",
+            message: "上传素材暂时无法读取，请重试。",
+            retryable: true,
+          },
+        },
+        { status: 503 },
+      );
+    await assert.rejects(
+      listReferenceMaterials(),
+      (error) =>
+        error instanceof ReferenceLibraryError &&
+        error.code === "REFERENCE_LIBRARY_UNAVAILABLE" &&
+        error.retryable === true,
     );
   } finally {
     globalThis.fetch = originalFetch;
@@ -456,6 +737,15 @@ test("billing HTTP boundary covers balance, quote, zero capacity, and retryable 
         priceVersion: 1,
         resolution: "1K",
       },
+      {
+        count: 1,
+        creditAmount: "15",
+        creditUnit: "credit",
+        modelId: "nano-banana-pro",
+        planContext: "standard",
+        priceVersion: 1,
+        resolution: "1K",
+      },
     ],
   };
   try {
@@ -473,6 +763,13 @@ test("billing HTTP boundary covers balance, quote, zero capacity, and retryable 
     });
     assert.equal(quote.creditAmount, "10");
     assert.equal(availableImageCount(summary, quote), 10n);
+    const proQuote = findBillingQuote(summary, {
+      count: 1,
+      modelId: "nano-banana-pro",
+      resolution: "1K",
+    });
+    assert.equal(proQuote.creditAmount, "15");
+    assert.equal(availableImageCount(summary, proQuote), 6n);
     assert.equal(
       availableImageCount(
         {

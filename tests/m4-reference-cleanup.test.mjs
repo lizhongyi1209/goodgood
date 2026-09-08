@@ -5,6 +5,7 @@ import {
   cleanupReferenceAssets,
   previewReferenceCleanup,
 } from "../server/references/cleanup-service.mjs";
+import { stageAndClaimReferenceCleanup } from "../server/references/cleanup-repository.mjs";
 import {
   REFERENCE_RETENTION_DEFAULTS,
   loadReferenceRetentionPolicy,
@@ -164,6 +165,43 @@ test("reference cleanup dry-run never stages or deletes data", async () => {
   );
 });
 
+test("reference cleanup rescues legacy orphaned materials and never claims ready uploads", async () => {
+  const queries = [];
+  const client = {
+    async query(sql, values) {
+      queries.push({ sql, values });
+      if (/RETURNING ra\.id/.test(sql)) return { rowCount: 0, rows: [] };
+      return { rowCount: 1, rows: [] };
+    },
+    release() {},
+  };
+  const pool = { async connect() { return client; } };
+
+  const result = await stageAndClaimReferenceCleanup(pool, {
+    cleanupEligibleAt: new Date("2026-09-01T03:30:00.000Z"),
+    cleanupRunId: "reference-cleanup-test",
+    leaseExpiresAt: new Date("2026-09-01T02:02:00.000Z"),
+    limit: 10,
+    now: NOW,
+    ownerId: null,
+  });
+  assert.equal(result.rescued, 1);
+
+  const rescue = queries.find(({ sql }) => /SET upload_state = 'ready'/.test(sql));
+  assert.match(rescue.sql, /error_code = 'REFERENCE_ORPHANED'/);
+  assert.match(rescue.sql, /moderation_state = 'accepted'/);
+  assert.doesNotMatch(rescue.sql, /jsonb_array_elements/);
+
+  const stage = queries.find(({ sql }) => /SET cleanup_eligible_at/.test(sql));
+  assert.match(stage.sql, /upload_state IN \('rejected', 'expired'\)/);
+  assert.match(stage.sql, /IS DISTINCT FROM 'REFERENCE_ORPHANED'/);
+  assert.doesNotMatch(stage.sql, /upload_state = 'ready'/);
+
+  const claim = queries.find(({ sql }) => /FOR UPDATE SKIP LOCKED/.test(sql));
+  assert.match(claim.sql, /upload_state IN \('rejected', 'expired'\)/);
+  assert.match(claim.sql, /IS DISTINCT FROM 'REFERENCE_ORPHANED'/);
+});
+
 test("reference cleanup migration and repository preserve project and generation references", async () => {
   const [
     migration,
@@ -196,6 +234,7 @@ test("reference cleanup migration and repository preserve project and generation
   assert.match(repository, /jsonb_array_elements\(draft\.reference_snapshot\)/);
   assert.match(repository, /FOR UPDATE SKIP LOCKED/);
   assert.match(repository, /REFERENCE_ORPHANED/);
+  assert.doesNotMatch(repository, /upload_state = 'ready' AND ra\.updated_at/);
   assert.match(repository, /lockReferenceLifecycle/);
   assert.match(lifecycleLock, /pg_advisory_xact_lock/);
   assert.match(generationRepository, /lockAndVerify|lockReferenceLifecycle/);

@@ -13,10 +13,20 @@ Blue/green slots share production state; an inactive slot is not an isolated
 test database. Host evidence must be refreshed for the exact candidate under
 the approved live scope. A main commit, CI pass, or GHCR publication never
 deploys by itself. For ADR 0024's alpha gate use its specific requirements, not
-the paid or full-seed readiness claim. The clean baseline currently lacks the
-alpha CLI preserved in the C6 snapshot: task `docs/tasks/GG-003-alpha-release-tooling.md`
-must be completed before the next release. Do not execute a missing command or
-merge the deferred runtime just to recover its operator tooling.
+the paid or full-seed readiness claim. GG-003 extracted the read-only alpha CLI
+without the deferred C6 runtime. Run it from the exact clean candidate checkout:
+
+```bash
+npm run production:alpha-gate -- --evidence-file \
+  /var/lib/goodgood-production/controlled-alpha/readiness.json
+```
+
+The alpha document uses production evidence schema v2. Artifact evidence is
+valid for at most seven days, preflight for at most 72 hours, and the remaining
+alpha checks for at most 24 hours. Every item is bound to the candidate Git SHA;
+an old schema, old SHA, stale timestamp, wrong mode, or blocked item fails closed.
+The CLI only verifies evidence: it does not create credentials, generate an
+image, apply a migration, switch a slot, or change public maintenance.
 
 ## Environments
 
@@ -132,9 +142,29 @@ undeclared software or production credentials.
 M5's O1Key image path is selectable only through an explicit worker override;
 the base Compose stack remains fixed to the mock provider. The accepted MVP uses
 `https://cf-api.o1key.com`, the special-price
-`gemini-3.1-flash-image-c-sp` model, one output, all 14 product-defined aspect
-ratios, and `1K` / `2K` / `4K`. Promotion must verify there is no active attempt
-from the prior route version before the Worker switches to the expanded route.
+`gemini-3.1-flash-image-c-sp` model, all 14 product-defined aspect ratios, and
+`1K` / `2K` / `4K`. GG-010 adds `1 / 2 / 4` Banana outputs by submitting one
+single-image O1Key task per requested output, with incrementally persisted task
+evidence under route `o1key-gemini-3.1-flash-image-c-sp-v4`. Route v4 requests
+both text and image modalities and conditionally forwards Nano-only thinking
+and Google Search fields. GG-007/GG-009 add the SD route
+`gpt-image-2-c-sd`, `1 / 2 / 4` outputs in one native task, seven supported
+ratios, and 21 exact pixel-size mappings. Migrations 0013/0014 publish GPT's
+10-credit per-image prices and ordered multi-Asset storage; migration 0015 makes
+the multi-output prices active for the full Shanghai validation day without
+mutating immutable price history. Before migration 0014, stop and drain the old
+Worker because its one-Asset conflict target is not
+compatible with the new `(job_id, ordinal)` index. Start only the matching
+candidate after the migration. Promotion must also verify there is no active
+attempt from either prior route version before the Worker switches to
+model-aware routing.
+Migration 0016 appends Nano count-2/count-4 prices at 20/40 credits. Before
+switching the Nano route from v3 to v4, apply migration 0017, drain the prior
+Worker, and verify there are no active v3 attempts; a v3 Worker does not carry
+the new immutable request fields and must never overlap the v4 Worker.
+Migration 0019 appends Nano Banana Pro single-output prices at 15 credits for
+`1K / 2K / 4K`. It publishes billing data only and does not enable a Pro
+provider route.
 The worker accepts
 exactly one of `GENERATION_API_KEY` or `GENERATION_API_KEY_FILE`; deployment must
 prefer a dedicated least-privilege Bearer credential from its secret store. It
@@ -453,12 +483,16 @@ removes the historical fixed-UUID fixtures in migration 0012. Only the base
 local Compose role then runs the separate idempotent fixture seeder; staging and
 production leave the migrated database with no owner, identity, session, credit
 account, or ledger row until a real login provisions one. Web and worker start
-only after migration success. The mock generation role now
+only after migration success. The seeder verifies the two reserved owners,
+identities, credit accounts, and one-time welcome grants without requiring
+unused 100-credit balances. Local generations and grants therefore survive an
+ordinary stack restart; use `down --volumes` only for an intentional clean
+reset. The mock generation role now
 implements authenticated, idempotent create/status behavior plus deterministic
 success, rejection, slow, and timeout paths. It serves only the checked-in test
 image; it is not a production provider.
 
-The current forward chain contains twelve migrations: M3 generation, M4 owner
+The current forward chain contains nineteen migrations: M3 generation, M4 owner
 identity, M4 reference assets, M4 projects/batch association, M4 OIDC login
 attempts/sessions plus same-browser callback binding, and reference-cleanup
 evidence, followed by owner-scoped creation drafts and the M6 immutable price/
@@ -470,7 +504,17 @@ does the same for new owners. Migration 0010 seeds the immutable CNY 10 /
 `fake-sandbox` provider value is local test data, not a selected production
 provider or credential. Migration 0011 adds account admission and site-owner
 administration; migration 0012 removes the legacy local fixtures without
-modifying the earlier applied checksums. The manual payment role uses these existing tables and
+modifying the earlier applied checksums. Migration 0013 adds GPT IMAGE 2's
+single-output prices, migration 0014 adds ordered multi-Asset jobs and count-2/
+count-4 prices, and migration 0015 appends their Shanghai-day activation fix.
+Migration 0016 adds Nano Banana 2 count-2/count-4 prices at 20/40 credits for
+all three product resolutions. Migration 0017 persists Nano-only thinking and
+Google Search choices on batches, projects, and root drafts with compatible
+low/off defaults for existing rows.
+Migration 0018 adds GPT IMAGE 2 quality, background, and output-format snapshot
+fields. Migration 0019 adds Nano Banana Pro's three single-output 15-credit
+price rows without enabling generation.
+The manual payment role uses these existing tables and
 adds no migration: `manual` is an operator-recorded receipt source, not a
 provider sandbox or customer checkout.
 Local rollback
@@ -504,13 +548,15 @@ step that deletes eligible private reference bytes. With the same runtime
 environment loaded outside Compose, `npm run references:cleanup` is the
 equivalent dry-run and `npm run references:cleanup -- --execute` executes it.
 
-Server-owned policy defaults are a 100-row batch, 30-day age threshold for
-unreferenced ready uploads, 60-minute staging grace, and five-minute claim
-lease. They can be bounded through `REFERENCE_CLEANUP_BATCH_SIZE`,
-`REFERENCE_ORPHAN_RETENTION_DAYS`, `REFERENCE_CLEANUP_GRACE_MINUTES`, and
-`REFERENCE_CLEANUP_LEASE_SECONDS`. Expired pending, rejected, and expired rows
-are also eligible, but any reference ID present in a generation, project, or
-unexpired creation-draft snapshot is protected at both staging and claim time.
+Server-owned policy defaults are a 100-row batch, 60-minute staging grace, and
+five-minute claim lease. They can be bounded through
+`REFERENCE_CLEANUP_BATCH_SIZE`, `REFERENCE_CLEANUP_GRACE_MINUTES`, and
+`REFERENCE_CLEANUP_LEASE_SECONDS`. `REFERENCE_ORPHAN_RETENTION_DAYS` remains a
+parsed compatibility setting but no longer makes accepted ready uploads
+eligible: those rows are durable reusable materials. Expired pending, rejected,
+and expired upload attempts are eligible, but any referenced row is protected
+at both staging and claim time. Legacy `REFERENCE_ORPHANED` rows whose objects
+remain present are restored to ready state before claiming.
 Snapshot writers share a
 database lifecycle lock with cleanup and revalidate ready references inside the
 write transaction. Object deletion happens before `object_deleted_at` is

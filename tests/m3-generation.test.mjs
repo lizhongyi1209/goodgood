@@ -7,7 +7,7 @@ import {
   validateM3GenerationInput,
 } from "../server/generation/api.mjs";
 import {
-  SUPPORTED_GENERATION_ASPECT_RATIOS,
+  GENERATION_MODEL_CAPABILITIES,
   SUPPORTED_GENERATION_RESOLUTIONS,
 } from "../server/generation/capabilities.mjs";
 import { createMockProviderServer } from "../server/generation/mock-provider-server.mjs";
@@ -19,14 +19,23 @@ const validInput = Object.freeze({
   prompt: "银灰色未来服装",
   references: [],
   resolution: "1K",
+  thinkingLevel: "low",
+  googleSearch: false,
+  quality: "auto",
+  background: "auto",
+  outputFormat: "png",
 });
 
-test("generation input accepts every enabled ratio and resolution while keeping model and count fixed", () => {
+test("generation input accepts model-owned ratios, resolutions, and output counts", () => {
   assert.deepEqual(validateM3GenerationInput(validInput), validInput);
-  for (const aspectRatio of SUPPORTED_GENERATION_ASPECT_RATIOS) {
-    for (const resolution of SUPPORTED_GENERATION_RESOLUTIONS) {
-      const input = { ...validInput, aspectRatio, resolution };
-      assert.deepEqual(validateM3GenerationInput(input), input);
+  for (const [modelId, capability] of Object.entries(GENERATION_MODEL_CAPABILITIES)) {
+    for (const aspectRatio of capability.aspectRatios) {
+      for (const resolution of SUPPORTED_GENERATION_RESOLUTIONS) {
+        for (const count of capability.outputCounts) {
+          const input = { ...validInput, aspectRatio, count, modelId, resolution };
+          assert.deepEqual(validateM3GenerationInput(input), input);
+        }
+      }
     }
   }
   assert.equal(validateIdempotencyKey("web_12345678"), "web_12345678");
@@ -36,15 +45,82 @@ test("generation input accepts every enabled ratio and resolution while keeping 
       error instanceof GenerationRequestError && error.code === "INVALID_PROMPT",
   );
   assert.throws(
-    () => validateM3GenerationInput({ ...validInput, count: 2 }),
+    () => validateM3GenerationInput({ ...validInput, count: 3 }),
     (error) =>
       error instanceof GenerationRequestError &&
       error.code === "M3_SLICE_UNSUPPORTED",
+  );
+  assert.equal(
+    validateM3GenerationInput({ ...validInput, count: 4 }).count,
+    4,
+  );
+  assert.deepEqual(
+    validateM3GenerationInput({
+      ...validInput,
+      thinkingLevel: "high",
+      googleSearch: true,
+    }),
+    { ...validInput, thinkingLevel: "high", googleSearch: true },
+  );
+  const nanoInputWithoutThinking = { ...validInput };
+  delete nanoInputWithoutThinking.thinkingLevel;
+  assert.equal(
+    validateM3GenerationInput(nanoInputWithoutThinking).thinkingLevel,
+    "high",
+  );
+  assert.deepEqual(
+    validateM3GenerationInput({
+      ...validInput,
+      background: "transparent",
+      modelId: "gpt-image-2",
+      outputFormat: "webp",
+      quality: "high",
+    }),
+    {
+      ...validInput,
+      background: "transparent",
+      modelId: "gpt-image-2",
+      outputFormat: "webp",
+      quality: "high",
+    },
+  );
+  const gptInputWithoutFormat = {
+    ...validInput,
+    modelId: "gpt-image-2",
+  };
+  delete gptInputWithoutFormat.outputFormat;
+  assert.equal(
+    validateM3GenerationInput(gptInputWithoutFormat).outputFormat,
+    "jpeg",
+  );
+  for (const unsupportedInput of [
+    { ...validInput, thinkingLevel: "medium" },
+    { ...validInput, googleSearch: "true" },
+    { ...validInput, modelId: "gpt-image-2", thinkingLevel: "high" },
+    { ...validInput, modelId: "gpt-image-2", googleSearch: true },
+    { ...validInput, modelId: "gpt-image-2", background: "transparent", outputFormat: "jpeg" },
+    { ...validInput, quality: "high" },
+  ]) {
+    assert.throws(
+      () => validateM3GenerationInput(unsupportedInput),
+      (error) =>
+        error instanceof GenerationRequestError &&
+        error.code === "M3_SLICE_UNSUPPORTED",
+    );
+  }
+  assert.deepEqual(
+    validateM3GenerationInput({
+      ...validInput,
+      count: 4,
+      modelId: "gpt-image-2",
+    }).count,
+    4,
   );
   for (const unsupportedInput of [
     { ...validInput, aspectRatio: "10:1" },
     { ...validInput, modelId: "nano-banana-pro" },
     { ...validInput, resolution: "8K" },
+    { ...validInput, aspectRatio: "4:5", modelId: "gpt-image-2" },
   ]) {
     assert.throws(
       () => validateM3GenerationInput(unsupportedInput),
@@ -77,8 +153,8 @@ test("composer submits the selected ratio and resolution without a default-only 
   assert.doesNotMatch(workspace, /resolution !== "1K"/);
   assert.match(workspace, /aspectRatio: selectedRatio/);
   assert.match(workspace, /resolution,/);
-  assert.match(workspace, /selectedModel !== "nano-banana-2"/);
-  assert.match(workspace, /generationCount !== 1/);
+  assert.match(workspace, /"nano-banana-2", "gpt-image-2"/);
+  assert.match(workspace, /isGenerationCountSupported/);
 });
 
 test("mock provider is idempotent and exposes success, rejection, and timeout outcomes", async (context) => {

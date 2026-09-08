@@ -4,18 +4,48 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties, type Whee
 import Image from "next/image";
 import { CreationComposer } from "@/features/creation/creation-composer";
 import {
+  formatPixelDimensions,
+  formatGenerationResolution,
+  getGenerationPixelDimensions,
+  getSharedPixelDimensions,
   getGenerationRatio,
   getGenerationResolutionLabel,
+  gptImageBackgroundLabel,
+  gptImageOutputFormatLabel,
+  gptImageQualityLabel,
+  isGenerationCountSupported,
+  resolveGenerationAspectRatioForModel,
+  resolveGenerationCountForModel,
+  resolveGenerationThinkingLevelForModel,
+  resolveGoogleSearchForModel,
+  resolveGptImageOptionsForModel,
 } from "@/features/creation/generation-options";
 import {
   isGenerationJobActive,
   toGenerationUiStage,
 } from "@/features/creation/generation-job";
 import {
+  getActiveGenerationRuns,
+  getFailedGenerationRuns,
+  getGenerationRunSlots,
+  getPersistentGenerationJobIds,
+  getSucceededGenerationJobIds,
+  upsertGenerationRun,
+  type TrackedGenerationRun,
+} from "@/features/creation/generation-runs";
+import {
   MOCK_GENERATION_OUTPUTS,
 } from "@/features/creation/mock-generation-boundary";
 import { createHttpGenerationBoundary } from "@/features/creation/http-generation-boundary";
 import { uploadReferenceFiles } from "@/features/references/http-reference-upload";
+import {
+  listReferenceMaterials,
+  type ReferenceMaterial,
+} from "@/features/references/http-reference-library";
+import {
+  appendReferenceMaterials,
+  reorderReferences,
+} from "@/features/references/reference-selection";
 import {
   SESSION_EXPIRED_EVENT,
   authenticationErrorMessage,
@@ -27,7 +57,10 @@ import {
 import { AccountAccessGate } from "@/features/auth/account-access-gate";
 import { listAssets } from "@/features/assets/http-asset-boundary";
 import {
-  availableImageCount,
+  ImageDownloadError,
+  saveImageToLocal,
+} from "@/features/assets/image-download";
+import {
   findBillingQuote,
   readBillingSummary,
 } from "@/features/billing/http-billing-boundary";
@@ -70,6 +103,10 @@ import {
   type GenerationOutput,
   type GenerationReference,
   type GenerationResolution,
+  type GenerationThinkingLevel,
+  type GptImageBackground,
+  type GptImageOutputFormat,
+  type GptImageQuality,
 } from "@/shared/contracts/generation";
 import type { ProjectRecord } from "@/shared/contracts/project";
 import type { BillingSummary } from "@/shared/contracts/billing";
@@ -95,7 +132,6 @@ import { Toaster } from "@/components/ui/sonner";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { toast } from "sonner";
 import {
-  Bookmark,
   Brush,
   Check,
   CircleAlert,
@@ -105,6 +141,7 @@ import {
   FolderOpen,
   FolderPlus,
   HelpCircle,
+  ImagePlus,
   Images,
   LayoutGrid,
   LoaderCircle,
@@ -121,6 +158,7 @@ import {
 type ReferenceImage = GenerationReference;
 type AssetBatch = {
   id: string;
+  createdAt: string;
   dateLabel: string;
   time: string;
   prompt: string;
@@ -128,6 +166,11 @@ type AssetBatch = {
   aspectRatio: GenerationAspectRatio;
   resolution: GenerationResolution;
   count: GenerationCount;
+  thinkingLevel: GenerationThinkingLevel;
+  googleSearch: boolean;
+  quality: GptImageQuality;
+  background: GptImageBackground;
+  outputFormat: GptImageOutputFormat;
   referenceCount: number;
   images: readonly GenerationOutput[];
 };
@@ -140,7 +183,7 @@ type DraftConflictState = Readonly<{
 }>;
 type CreationStreamItem =
   | { kind: "skeleton"; key: string; ratio: number; index: number }
-  | { kind: "image"; key: string; ratio: number; batch: AssetBatch; image: GenerationOutput; index: number };
+  | { kind: "image"; key: string; detailKey: string; ratio: number; batch: AssetBatch; image: GenerationOutput; index: number };
 type AssetGalleryItem = { key: string; ratio: number; batch: AssetBatch; image: GenerationOutput; index: number };
 type DetailImage = AssetGalleryItem;
 type DetailSource = "creation" | "assets";
@@ -179,10 +222,16 @@ const emptyComposerCheckpoint = createComposerCheckpoint({
   prompt: "",
   references: [],
   resolution: "1K",
+  thinkingLevel: "high",
+  googleSearch: false,
+  quality: "auto",
+  background: "auto",
+  outputFormat: "png",
 });
 const initialAssetBatches: AssetBatch[] = [
   {
     id: "GG-240827",
+    createdAt: "2026-09-08T10:16:00.000Z",
     dateLabel: "今天",
     time: "10:16",
     prompt: defaultPrompt,
@@ -190,6 +239,11 @@ const initialAssetBatches: AssetBatch[] = [
     aspectRatio: "4:5",
     resolution: "2K",
     count: 4,
+    thinkingLevel: "low",
+    googleSearch: false,
+    quality: "auto",
+    background: "auto",
+    outputFormat: "png",
     referenceCount: 0,
     images: MOCK_GENERATION_OUTPUTS.map((image) => ({
       ...image,
@@ -198,6 +252,7 @@ const initialAssetBatches: AssetBatch[] = [
   },
   {
     id: "GG-236814",
+    createdAt: "2026-09-07T20:42:00.000Z",
     dateLabel: "昨天",
     time: "20:42",
     prompt: "参考图 1 的服装轮廓与参考图 2 的光影质感，创作一组冷调高级成衣广告，保留自然皮肤纹理与真实面料细节。",
@@ -205,6 +260,11 @@ const initialAssetBatches: AssetBatch[] = [
     aspectRatio: "1:1",
     resolution: "4K",
     count: 2,
+    thinkingLevel: "low",
+    googleSearch: false,
+    quality: "auto",
+    background: "auto",
+    outputFormat: "png",
     referenceCount: 2,
     images: MOCK_GENERATION_OUTPUTS.slice(0, 2).map((image) => ({
       ...image,
@@ -234,19 +294,32 @@ function generationJobToAssetBatch(job: GenerationJob): AssetBatch {
   return {
     aspectRatio: job.input.aspectRatio,
     count: job.input.count,
+    createdAt: job.createdAt,
     dateLabel,
     id: job.id,
     images: job.outputs,
+    background: job.input.background ?? "auto",
+    googleSearch: job.input.googleSearch ?? false,
     modelId: job.input.modelId,
     prompt: job.input.prompt,
     referenceCount: job.input.references.length,
     resolution: job.input.resolution,
+    outputFormat: resolveGptImageOptionsForModel(job.input.modelId, job.input).outputFormat,
+    quality: job.input.quality ?? "auto",
+    thinkingLevel:
+      job.input.thinkingLevel ??
+      resolveGenerationThinkingLevelForModel(job.input.modelId),
     time: new Intl.DateTimeFormat("zh-CN", {
       hour: "2-digit",
       hour12: false,
       minute: "2-digit",
     }).format(createdAt),
   };
+}
+
+function newestAssetBatches(batches: readonly AssetBatch[]) {
+  return [...batches].sort((left, right) =>
+    right.createdAt.localeCompare(left.createdAt));
 }
 
 function projectAssetBatches(project: ProjectRecord) {
@@ -271,6 +344,19 @@ function formatProjectUpdated(updatedAt: string) {
   }).format(updated);
 }
 
+function formatMaterialSize(byteSize: number) {
+  if (byteSize >= 1024 * 1024) return `${(byteSize / 1024 / 1024).toFixed(1)} MB`;
+  return `${Math.max(1, Math.round(byteSize / 1024))} KB`;
+}
+
+function perImageCreditAmount(total: string, count: GenerationCount): string {
+  try {
+    return (BigInt(total) / BigInt(count)).toString();
+  } catch {
+    return total;
+  }
+}
+
 export default function Home() {
   const referenceObjectUrlsRef = useRef(new Set<string>());
   const assetPulseTimerRef = useRef<number | null>(null);
@@ -286,6 +372,9 @@ export default function Home() {
   const draftMutationQueueRef = useRef<Promise<void>>(Promise.resolve());
   const draftSyncedCheckpointRef = useRef(emptyComposerCheckpoint);
   const draftVersionRef = useRef<number | null>(null);
+  const latestGenerationRunKeyRef = useRef<string | null>(null);
+  const retryingGenerationRunKeysRef = useRef(new Set<string>());
+  const downloadingImageKeysRef = useRef(new Set<string>());
   const [generationBoundary] = useState(createHttpGenerationBoundary);
   const [authenticationSession, setAuthenticationSession] = useState<AuthenticationSession | null | undefined>(undefined);
   const [authenticationError, setAuthenticationError] = useState<string | null>(null);
@@ -299,19 +388,30 @@ export default function Home() {
   const [selectedRatio, setSelectedRatio] = useState<GenerationAspectRatio>("1:1");
   const [resolution, setResolution] = useState<GenerationResolution>("1K");
   const [generationCount, setGenerationCount] = useState<GenerationCount>(1);
+  const [thinkingLevel, setThinkingLevel] = useState<GenerationThinkingLevel>("high");
+  const [googleSearch, setGoogleSearch] = useState(false);
+  const [quality, setQuality] = useState<GptImageQuality>("auto");
+  const [background, setBackground] = useState<GptImageBackground>("auto");
+  const [outputFormat, setOutputFormat] = useState<GptImageOutputFormat>("png");
   const [prompt, setPrompt] = useState("");
   const [referenceImages, setReferenceImages] = useState<ReferenceImage[]>([]);
   const [activeView, setActiveView] = useState<ActiveView>("create");
-  const [generationJob, setGenerationJob] = useState<GenerationJob | null>(null);
+  const [generationRuns, setGenerationRuns] = useState<readonly TrackedGenerationRun[]>([]);
   const [creationBatches, setCreationBatches] = useState<AssetBatch[]>([]);
-  const [savedImages, setSavedImages] = useState<string[]>([]);
+  const [downloadingImageKeys, setDownloadingImageKeys] = useState<readonly string[]>([]);
   const [newAssetCount, setNewAssetCount] = useState(0);
   const [assetPulse, setAssetPulse] = useState(false);
   const [assetBatches, setAssetBatches] = useState<AssetBatch[]>(initialAssetBatches);
   const [assetsLoading, setAssetsLoading] = useState(true);
   const [assetsError, setAssetsError] = useState<string | null>(null);
   const [assetMode, setAssetMode] = useState<"batches" | "gallery">("batches");
+  const [assetSection, setAssetSection] = useState<"generated" | "materials">("generated");
   const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>([]);
+  const [referenceMaterials, setReferenceMaterials] = useState<readonly ReferenceMaterial[]>([]);
+  const [referenceMaterialsLoading, setReferenceMaterialsLoading] = useState(true);
+  const [referenceMaterialsError, setReferenceMaterialsError] = useState<string | null>(null);
+  const [referenceLibraryOpen, setReferenceLibraryOpen] = useState(false);
+  const [selectedReferenceMaterialIds, setSelectedReferenceMaterialIds] = useState<readonly string[]>([]);
   const [projects, setProjects] = useState<ProjectRecord[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(true);
   const [projectsError, setProjectsError] = useState<string | null>(null);
@@ -341,14 +441,10 @@ export default function Home() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailItems, setDetailItems] = useState<DetailImage[]>([]);
   const [detailIndex, setDetailIndex] = useState(0);
-  const activeRatio = getGenerationRatio(selectedRatio);
-  const activeModel = getGenerationModel(selectedModel);
-  const generationStage = toGenerationUiStage(generationJob?.state ?? null);
-  const isGenerating = generationJob ? isGenerationJobActive(generationJob.state) : false;
-  const generationError = generationJob?.error ?? null;
-  const submissionUnknown = generationError?.code === "SUBMISSION_UNKNOWN";
-  const failedGenerationSnapshot = generationJob?.state === "failed" ? generationJob.input : null;
-  const hasGenerationError = generationStage === "failed" && generationError !== null;
+  const activeGenerationRuns = getActiveGenerationRuns(generationRuns);
+  const failedGenerationRuns = getFailedGenerationRuns(generationRuns);
+  const isGenerating = activeGenerationRuns.length > 0;
+  const hasGenerationError = failedGenerationRuns.length > 0;
   const totalCreationImages = creationBatches.reduce((total, batch) => total + batch.images.length, 0);
   const creationDetailItems = getDetailImages(creationBatches);
   const assetDetailItems = getDetailImages(assetBatches);
@@ -359,84 +455,111 @@ export default function Home() {
   const activeDetailRatio = activeDetail
     ? getGenerationRatio(activeDetail.batch.aspectRatio)
     : null;
-  const jobInput = generationJob?.input ?? null;
-  const jobModel = jobInput ? getGenerationModel(jobInput.modelId) : activeModel;
-  const jobRatio = jobInput ? getGenerationRatio(jobInput.aspectRatio) : activeRatio;
-  const stageText = generationStage === "queued"
+  const latestActiveJob = activeGenerationRuns[0]?.job ?? null;
+  const latestActiveInput = latestActiveJob?.input ?? null;
+  const latestActiveStage = toGenerationUiStage(latestActiveJob?.state ?? null);
+  const latestActiveModel = latestActiveInput
+    ? getGenerationModel(latestActiveInput.modelId)
+    : null;
+  const stageText = activeGenerationRuns.length > 1
+    ? `${activeGenerationRuns.length} 个任务正在并行生成`
+    : latestActiveStage === "queued"
     ? "任务已提交，正在准备画面"
-    : generationStage === "rendering"
-      ? `${jobModel.name} 正在生成 ${jobInput?.count ?? generationCount} 张图片`
-      : generationStage === "refining"
+    : latestActiveStage === "rendering"
+      ? `${latestActiveModel?.name ?? "模型"} 正在生成 ${latestActiveInput?.count ?? 1} 张图片`
+      : latestActiveStage === "refining"
         ? "正在完成细节与清晰度处理"
-        : generationStage === "complete"
-          ? "生成完成"
-          : generationStage === "failed"
-            ? "生成失败"
           : "根据当前提示词创建的图像";
   const accountEmail = authenticationSession?.user.email ?? null;
   const accountInitials = accountEmail
     ? accountEmail.split("@")[0].slice(0, 2).toUpperCase()
     : "GG";
   const activeBillingQuote = findBillingQuote(billingSummary, {
-    count: 1,
+    count: generationCount,
     modelId: selectedModel,
     resolution,
   });
-  const launchBillingQuote = findBillingQuote(billingSummary, {
-    count: 1,
-    modelId: "nano-banana-2",
-    resolution: "1K",
-  });
-  const availableImages = availableImageCount(billingSummary, launchBillingQuote);
+  const activePerImageCredits = activeBillingQuote
+    ? perImageCreditAmount(activeBillingQuote.creditAmount, generationCount)
+    : null;
   const composerBillingLabel = billingLoading
     ? "积分读取中"
     : activeBillingQuote
-      ? `${activeBillingQuote.creditAmount} 积分/张`
+      ? generationCount === 1
+        ? `${activePerImageCredits} 积分/张`
+        : `${activePerImageCredits} 积分/张 · 共 ${activeBillingQuote.creditAmount}`
       : "当前模型暂未定价";
   const composerBillingDescription = activeBillingQuote && billingSummary
-    ? `每张 ${activeBillingQuote.creditAmount} 积分，当前可用 ${billingSummary.account.availableCredits} 积分`
+    ? `每张 ${activePerImageCredits} 积分，本批 ${activeBillingQuote.creditAmount} 积分，当前可用 ${billingSummary.account.availableCredits} 积分`
     : composerBillingLabel;
-  const generationItems: CreationStreamItem[] = isGenerating
-    ? Array.from({ length: jobInput?.count ?? generationCount }, (_, index) => ({
-      kind: "skeleton" as const,
-      key: `skeleton-${generationJob?.id ?? "pending"}-${index}`,
-      ratio: jobRatio.value,
-      index,
-    }))
-    : [];
+  const trackedGenerationBatchIds = new Set(getSucceededGenerationJobIds(generationRuns));
+  const generationItems: CreationStreamItem[] = getGenerationRunSlots(generationRuns).map((slot) => {
+    const runRatio = getGenerationRatio(slot.job.input.aspectRatio);
+    if (!slot.output) {
+      return {
+        kind: "skeleton" as const,
+        key: slot.key,
+        ratio: runRatio.value,
+        index: slot.index,
+      };
+    }
+    const batch = generationJobToAssetBatch(slot.job);
+    return {
+      batch,
+      detailKey: `${batch.id}-${slot.output.id}`,
+      image: slot.output,
+      index: slot.index,
+      key: slot.key,
+      kind: "image" as const,
+      ratio: runRatio.value,
+    };
+  });
   const creationItems: CreationStreamItem[] = creationBatches.flatMap((batch) => {
+      if (trackedGenerationBatchIds.has(batch.id)) return [];
       const batchRatio = getGenerationRatio(batch.aspectRatio);
       return batch.images.map((image, index) => ({
         kind: "image" as const,
         key: `${batch.id}-${image.id}`,
+        detailKey: `${batch.id}-${image.id}`,
         ratio: batchRatio.value,
         batch,
         image,
         index,
       }));
     });
+  const creationStreamItems = [...generationItems, ...creationItems];
   const currentComposerCheckpoint = createComposerCheckpoint({
     aspectRatio: selectedRatio,
     count: generationCount,
+    background,
+    googleSearch,
     modelId: selectedModel,
     prompt,
     references: referenceImages,
     resolution,
+    outputFormat,
+    quality,
+    thinkingLevel,
   });
   const hasUnsavedCreationChanges = hasMeaningfulUnsavedChanges({
     checkpoint: composerCheckpoint,
     current: currentComposerCheckpoint,
     hasUnprojectedWork: !currentProject && (
-      creationBatches.length > 0 || generationJob !== null
+      creationBatches.length > 0 || generationRuns.length > 0
     ),
   });
   const currentDraftState: CreationDraftState = {
     aspectRatio: selectedRatio,
+    background,
     count: generationCount,
+    googleSearch,
     modelId: selectedModel,
     prompt,
     references: referenceImages,
     resolution,
+    outputFormat,
+    quality,
+    thinkingLevel,
   };
   const queueDraftMutation = useCallback((mutation: () => Promise<void>) => {
     const result = draftMutationQueueRef.current.then(mutation, mutation);
@@ -449,19 +572,43 @@ export default function Home() {
     const state = draft?.state ?? {
       aspectRatio: "1:1" as const,
       count: 1 as const,
+      background: "auto" as const,
       modelId: DEFAULT_GENERATION_MODEL_ID,
+      googleSearch: false,
       prompt: "",
       references: [],
       resolution: "1K" as const,
+      outputFormat: "png" as const,
+      quality: "auto" as const,
+      thinkingLevel: "high" as const,
     };
-    setPrompt(state.prompt);
-    setReferenceImages(state.references.map((reference) => ({ ...reference })));
-    setSelectedModel(state.modelId);
-    setSelectedRatio(state.aspectRatio);
-    setResolution(state.resolution);
-    setGenerationCount(state.count);
+    const normalizedState = {
+      ...state,
+      aspectRatio: resolveGenerationAspectRatioForModel(
+        state.modelId,
+        state.aspectRatio,
+      ),
+      count: resolveGenerationCountForModel(state.modelId, state.count),
+      thinkingLevel: resolveGenerationThinkingLevelForModel(state.modelId),
+      googleSearch: resolveGoogleSearchForModel(
+        state.modelId,
+        state.googleSearch,
+      ),
+      ...resolveGptImageOptionsForModel(state.modelId, state),
+    };
+    setPrompt(normalizedState.prompt);
+    setReferenceImages(normalizedState.references.map((reference) => ({ ...reference })));
+    setSelectedModel(normalizedState.modelId);
+    setSelectedRatio(normalizedState.aspectRatio);
+    setResolution(normalizedState.resolution);
+    setGenerationCount(normalizedState.count);
+    setThinkingLevel(normalizedState.thinkingLevel);
+    setGoogleSearch(normalizedState.googleSearch);
+    setQuality(normalizedState.quality);
+    setBackground(normalizedState.background);
+    setOutputFormat(normalizedState.outputFormat);
     draftVersionRef.current = draft?.version ?? null;
-    draftSyncedCheckpointRef.current = createComposerCheckpoint(state);
+    draftSyncedCheckpointRef.current = createComposerCheckpoint(normalizedState);
     setDraftSyncRevision((current) => current + 1);
   }, []);
   const blockDraftSync = useCallback((error: unknown) => {
@@ -691,11 +838,16 @@ export default function Home() {
     const checkpoint = currentComposerCheckpoint;
     const snapshot: CreationDraftState = {
       aspectRatio: selectedRatio,
+      background,
       count: generationCount,
+      googleSearch,
       modelId: selectedModel,
       prompt,
       references: referenceImages.map((reference) => ({ ...reference })),
       resolution,
+      outputFormat,
+      quality,
+      thinkingLevel,
     };
     draftAutosaveTimerRef.current = window.setTimeout(() => {
       draftAutosaveTimerRef.current = null;
@@ -735,6 +887,7 @@ export default function Home() {
     };
   }, [
     authenticationSession,
+    background,
     blockDraftSync,
     currentComposerCheckpoint,
     currentProject,
@@ -742,13 +895,17 @@ export default function Home() {
     draftLoading,
     draftSyncRevision,
     generationCount,
+    googleSearch,
+    outputFormat,
     prompt,
+    quality,
     queueDraftMutation,
     referenceImages,
     resolution,
     routeProjectId,
     selectedModel,
     selectedRatio,
+    thinkingLevel,
   ]);
 
   useEffect(() => {
@@ -811,6 +968,41 @@ export default function Home() {
       authenticationSession === null ||
       authenticationSession.access.status !== "active"
     ) return;
+    if (authenticationSession.preview) {
+      const resetPreviewMaterials = window.setTimeout(() => {
+        setReferenceMaterials([]);
+        setReferenceMaterialsError(null);
+        setReferenceMaterialsLoading(false);
+      }, 0);
+      return () => window.clearTimeout(resetPreviewMaterials);
+    }
+    let active = true;
+    void listReferenceMaterials()
+      .then((materials) => {
+        if (!active) return;
+        setReferenceMaterials(materials);
+        setReferenceMaterialsError(null);
+      })
+      .catch((error) => {
+        if (!active) return;
+        setReferenceMaterialsError(
+          error instanceof Error ? error.message : "上传素材暂时无法读取，请重试。",
+        );
+      })
+      .finally(() => {
+        if (active) setReferenceMaterialsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [authenticationSession]);
+
+  useEffect(() => {
+    if (
+      authenticationSession === undefined ||
+      authenticationSession === null ||
+      authenticationSession.access.status !== "active"
+    ) return;
     if (authenticationSession.preview) return;
     let active = true;
     void listAssets()
@@ -818,11 +1010,6 @@ export default function Home() {
         if (!active) return;
         const batches = records.map(generationJobToAssetBatch);
         setAssetBatches(batches);
-        setSavedImages(
-          batches.flatMap((batch) =>
-            batch.images.map((image) => `${batch.id}-${image.id}`),
-          ),
-        );
         setSelectedAssetIds([]);
         setAssetsError(null);
       })
@@ -902,21 +1089,48 @@ export default function Home() {
       .then((restoredProject) => {
         if (!active || requestId !== projectRouteRequestRef.current) return;
         const restoredBatches = projectAssetBatches(restoredProject);
-        const latestBatch = restoredProject.batches[0] ?? null;
+        const restoredState = {
+          ...restoredProject.state,
+          aspectRatio: resolveGenerationAspectRatioForModel(
+            restoredProject.state.modelId,
+            restoredProject.state.aspectRatio,
+          ),
+          count: resolveGenerationCountForModel(
+            restoredProject.state.modelId,
+            restoredProject.state.count,
+          ),
+          thinkingLevel: resolveGenerationThinkingLevelForModel(
+            restoredProject.state.modelId,
+          ),
+          googleSearch: resolveGoogleSearchForModel(
+            restoredProject.state.modelId,
+            restoredProject.state.googleSearch,
+          ),
+          ...resolveGptImageOptionsForModel(
+            restoredProject.state.modelId,
+            restoredProject.state,
+          ),
+        };
         referenceObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
         referenceObjectUrlsRef.current.clear();
         loadedProjectIdRef.current = restoredProject.id;
         setCurrentProject({ id: restoredProject.id, name: restoredProject.name });
         setCreationBatches(restoredBatches);
-        setSavedImages(restoredBatches.flatMap((batch) => batch.images.map((image) => `${batch.id}-${image.id}`)));
-        setPrompt(restoredProject.state.prompt);
-        setReferenceImages(restoredProject.state.references.map((reference) => ({ ...reference })));
-        setSelectedModel(restoredProject.state.modelId);
-        setSelectedRatio(restoredProject.state.aspectRatio);
-        setResolution(restoredProject.state.resolution);
-        setGenerationCount(restoredProject.state.count);
-        setGenerationJob(latestBatch?.state === "failed" ? latestBatch : null);
-        setComposerCheckpoint(createComposerCheckpoint(restoredProject.state));
+        setPrompt(restoredState.prompt);
+        setReferenceImages(restoredState.references.map((reference) => ({ ...reference })));
+        setSelectedModel(restoredState.modelId);
+        setSelectedRatio(restoredState.aspectRatio);
+        setResolution(restoredState.resolution);
+        setGenerationCount(restoredState.count);
+        setThinkingLevel(restoredState.thinkingLevel);
+        setGoogleSearch(restoredState.googleSearch);
+        setQuality(restoredState.quality);
+        setBackground(restoredState.background);
+        setOutputFormat(restoredState.outputFormat);
+        setGenerationRuns(restoredProject.batches
+          .filter((batch) => batch.state === "failed" && batch.error !== null)
+          .map((batch) => Object.freeze({ key: batch.id, job: batch })));
+        setComposerCheckpoint(createComposerCheckpoint(restoredState));
         setProjectRouteError(null);
         if (projectRestoreAnnouncementRef.current) {
           projectRestoreAnnouncementRef.current = false;
@@ -1036,6 +1250,20 @@ export default function Home() {
   const handleModelChange = (value: GenerationModelId) => {
     composerEditRevisionRef.current += 1;
     setSelectedModel(value);
+    setSelectedRatio((current) =>
+      resolveGenerationAspectRatioForModel(value, current),
+    );
+    setGenerationCount((current) =>
+      resolveGenerationCountForModel(value, current),
+    );
+    setThinkingLevel(resolveGenerationThinkingLevelForModel(value));
+    setGoogleSearch((current) =>
+      resolveGoogleSearchForModel(value, current),
+    );
+    const nextGptOptions = resolveGptImageOptionsForModel(value);
+    setQuality(nextGptOptions.quality);
+    setBackground(nextGptOptions.background);
+    setOutputFormat(nextGptOptions.outputFormat);
   };
 
   const handleAspectRatioChange = (value: GenerationAspectRatio) => {
@@ -1049,8 +1277,39 @@ export default function Home() {
   };
 
   const handleGenerationCountChange = (value: GenerationCount) => {
+    if (!isGenerationCountSupported(selectedModel, value)) return;
     composerEditRevisionRef.current += 1;
     setGenerationCount(value);
+  };
+
+  const handleGoogleSearchChange = (enabled: boolean) => {
+    if (selectedModel !== "nano-banana-2") return;
+    composerEditRevisionRef.current += 1;
+    setGoogleSearch(enabled);
+  };
+
+  const handleQualityChange = (value: GptImageQuality) => {
+    if (selectedModel !== "gpt-image-2") return;
+    composerEditRevisionRef.current += 1;
+    setQuality(value);
+  };
+
+  const handleBackgroundChange = (value: GptImageBackground) => {
+    if (selectedModel !== "gpt-image-2") return;
+    composerEditRevisionRef.current += 1;
+    setBackground(value);
+    if (value === "transparent" && outputFormat === "jpeg") {
+      setOutputFormat("png");
+    }
+  };
+
+  const handleOutputFormatChange = (value: GptImageOutputFormat) => {
+    if (
+      selectedModel !== "gpt-image-2" ||
+      (background === "transparent" && value === "jpeg")
+    ) return;
+    composerEditRevisionRef.current += 1;
+    setOutputFormat(value);
   };
 
   const handleReferenceFiles = (files: readonly File[]) => {
@@ -1094,6 +1353,7 @@ export default function Home() {
       const readyCount = results.filter(
         (result) => result.reference.status === "ready",
       ).length;
+      if (readyCount > 0) void reloadReferenceMaterials();
       if (readyCount === results.length) {
         toast.success(`已上传 ${readyCount} 张参考图`);
       } else if (readyCount > 0) {
@@ -1104,12 +1364,167 @@ export default function Home() {
     });
   };
 
+  const reloadReferenceMaterials = async () => {
+    if (!authenticationSession || authenticationSession.access.status !== "active") return;
+    if (authenticationSession.preview) {
+      setReferenceMaterials([]);
+      setReferenceMaterialsError(null);
+      setReferenceMaterialsLoading(false);
+      return;
+    }
+    setReferenceMaterialsLoading(true);
+    try {
+      setReferenceMaterials(await listReferenceMaterials());
+      setReferenceMaterialsError(null);
+    } catch (error) {
+      setReferenceMaterialsError(
+        error instanceof Error ? error.message : "上传素材暂时无法读取，请重试。",
+      );
+    } finally {
+      setReferenceMaterialsLoading(false);
+    }
+  };
+
+  const handleSaveReferenceEdit = async (
+    source: GenerationReference,
+    file: File,
+  ) => {
+    const sourceIndex = referenceImages.findIndex((item) => item.id === source.id);
+    if (sourceIndex < 0) throw new Error("这张参考图已不在当前创作中。");
+
+    const clientId = globalThis.crypto.randomUUID();
+    const [result] = await uploadReferenceFiles(
+      [{ clientId, file }],
+      () => {},
+    );
+    if (!result || result.reference.status !== "ready") {
+      throw new Error(
+        result?.reference.errorMessage ?? "编辑后的素材上传失败，请重试。",
+      );
+    }
+
+    const nextReferences = referenceImages.map((item) =>
+      item.id === source.id ? result.reference : item
+    );
+    if (currentProject) {
+      const savedProject = await saveProject({
+        batchIds: [...new Set([
+          ...creationBatches.map((batch) => batch.id),
+          ...getPersistentGenerationJobIds(generationRuns),
+        ])],
+        name: currentProject.name,
+        projectId: currentProject.id,
+        state: {
+          aspectRatio: selectedRatio,
+          background,
+          count: generationCount,
+          googleSearch,
+          modelId: selectedModel,
+          prompt,
+          references: nextReferences.filter((reference) => reference.status === "ready"),
+          resolution,
+          outputFormat,
+          quality,
+          thinkingLevel,
+        },
+      });
+      setProjects((current) => [
+        savedProject,
+        ...current.filter((project) => project.id !== savedProject.id),
+      ]);
+      setComposerCheckpoint(createComposerCheckpoint(savedProject.state));
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    composerEditRevisionRef.current += 1;
+    referenceObjectUrlsRef.current.add(previewUrl);
+    if (referenceObjectUrlsRef.current.delete(source.url)) {
+      URL.revokeObjectURL(source.url);
+    }
+    setReferenceImages((current) => current.map((item) =>
+      item.id === source.id
+        ? { ...result.reference, url: previewUrl }
+        : item
+    ));
+    await reloadReferenceMaterials();
+    toast.success(`编辑结果已保存为新素材，并替换图 ${sourceIndex + 1}`);
+  };
+
+  const addMaterialsToReferences = (materials: readonly ReferenceMaterial[]) => {
+    const result = appendReferenceMaterials(
+      referenceImages,
+      materials,
+      MAX_GENERATION_REFERENCES,
+    );
+    if (result.addedCount > 0) {
+      composerEditRevisionRef.current += 1;
+      setReferenceImages([...result.references]);
+    }
+    if (result.overflowCount > 0) {
+      toast.info(`参考图最多 ${MAX_GENERATION_REFERENCES} 张`);
+    } else if (result.duplicateCount > 0 && result.addedCount === 0) {
+      toast.info("所选素材已在参考图中");
+    }
+    return result.addedCount;
+  };
+
+  const openReferenceLibrary = () => {
+    if (referenceImages.length >= MAX_GENERATION_REFERENCES) {
+      toast.info(`最多可添加 ${MAX_GENERATION_REFERENCES} 张参考图`);
+      return;
+    }
+    setSelectedReferenceMaterialIds([]);
+    setReferenceLibraryOpen(true);
+    void reloadReferenceMaterials();
+  };
+
+  const toggleReferenceMaterial = (materialId: string) => {
+    if (referenceImages.some((reference) => reference.id === materialId)) return;
+    setSelectedReferenceMaterialIds((current) => {
+      if (current.includes(materialId)) {
+        return current.filter((id) => id !== materialId);
+      }
+      const available = MAX_GENERATION_REFERENCES - referenceImages.length;
+      if (current.length >= available) {
+        toast.info(`本次最多还能添加 ${available} 张参考图`);
+        return current;
+      }
+      return [...current, materialId];
+    });
+  };
+
+  const confirmReferenceMaterials = () => {
+    const materials = selectedReferenceMaterialIds
+      .map((id) => referenceMaterials.find((material) => material.id === id))
+      .filter((material): material is ReferenceMaterial => Boolean(material));
+    const addedCount = addMaterialsToReferences(materials);
+    if (addedCount > 0) toast.success(`已添加 ${addedCount} 张素材`);
+    setReferenceLibraryOpen(false);
+    setSelectedReferenceMaterialIds([]);
+  };
+
+  const handleUseReferenceMaterial = (material: ReferenceMaterial) => {
+    const addedCount = addMaterialsToReferences([material]);
+    if (addedCount === 0) return;
+    toast.success("素材已加入参考图");
+    navigateWorkspace(currentProject
+      ? { kind: "project", projectId: currentProject.id }
+      : { kind: "create" });
+    setActiveView("create");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const removeReference = (image: ReferenceImage) => {
     composerEditRevisionRef.current += 1;
     if (referenceObjectUrlsRef.current.delete(image.url)) {
       URL.revokeObjectURL(image.url);
     }
     setReferenceImages((current) => current.filter((item) => item.id !== image.id));
+  };
+
+  const reorderReference = (sourceId: string, targetId: string) => {
+    composerEditRevisionRef.current += 1;
+    setReferenceImages((current) => [...reorderReferences(current, sourceId, targetId)]);
   };
 
   const handleLogin = () => {
@@ -1154,11 +1569,6 @@ export default function Home() {
     try {
       const batches = (await listAssets()).map(generationJobToAssetBatch);
       setAssetBatches(batches);
-      setSavedImages(
-        batches.flatMap((batch) =>
-          batch.images.map((image) => `${batch.id}-${image.id}`),
-        ),
-      );
       setSelectedAssetIds([]);
     } catch (error) {
       setAssetsError(
@@ -1221,7 +1631,9 @@ export default function Home() {
     setPrompt("");
     setCreationBatches([]);
     setCurrentProject(null);
-    setGenerationJob(null);
+    setGenerationRuns([]);
+    latestGenerationRunKeyRef.current = null;
+    retryingGenerationRunKeysRef.current.clear();
     setDrawerOpen(false);
     setProjectSaveError(null);
     setProjectCreateKey(null);
@@ -1302,7 +1714,7 @@ export default function Home() {
   const saveCurrentProject = async () => {
     const batchIds = [...new Set([
       ...creationBatches.map((batch) => batch.id),
-      ...(generationJob && !generationJob.id.startsWith("pending_") ? [generationJob.id] : []),
+      ...getPersistentGenerationJobIds(generationRuns),
     ])];
     if (!batchIds.length || projectSaving) return;
     const name = projectName.trim() || "未命名创作项目";
@@ -1319,11 +1731,16 @@ export default function Home() {
         projectId: currentProject?.id ?? null,
         state: {
           aspectRatio: selectedRatio,
+          background,
           count: generationCount,
+          googleSearch,
           modelId: selectedModel,
           prompt,
           references: referenceImages.filter((reference) => reference.status === "ready"),
           resolution,
+          outputFormat,
+          quality,
+          thinkingLevel,
         },
       });
       setProjects((current) => [savedProject, ...current.filter((project) => project.id !== savedProject.id)]);
@@ -1349,75 +1766,117 @@ export default function Home() {
     setSelectedAssetIds((current) => current.includes(assetId) ? current.filter((id) => id !== assetId) : [...current, assetId]);
   };
 
-  const recordCompletedGeneration = (completedJob: GenerationJob) => {
+  const recordCompletedGeneration = (
+    completedJob: GenerationJob,
+    runKey: string,
+  ) => {
     const completedInput = completedJob.input;
+    const createdAt = new Date(completedJob.createdAt);
     const nextBatch: AssetBatch = {
       id: completedJob.id,
+      createdAt: completedJob.createdAt,
       dateLabel: "今天",
-      time: new Intl.DateTimeFormat("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date()),
+      time: new Intl.DateTimeFormat("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false }).format(createdAt),
       prompt: completedInput.prompt,
       modelId: completedInput.modelId,
       aspectRatio: completedInput.aspectRatio,
       resolution: completedInput.resolution,
       count: completedInput.count,
+      background: completedInput.background ?? "auto",
+      googleSearch: completedInput.googleSearch ?? false,
       referenceCount: completedInput.references.length,
+      outputFormat: resolveGptImageOptionsForModel(
+        completedInput.modelId,
+        completedInput,
+      ).outputFormat,
+      quality: completedInput.quality ?? "auto",
+      thinkingLevel:
+        completedInput.thinkingLevel ??
+        resolveGenerationThinkingLevelForModel(completedInput.modelId),
       images: completedJob.outputs,
     };
-    setSavedImages((current) => [...current, ...completedJob.outputs.map((result) => `${completedJob.id}-${result.id}`)]);
     setCreationBatches((current) => {
-      const nextBatches = [nextBatch, ...current];
+      const nextBatches = newestAssetBatches([
+        nextBatch,
+        ...current.filter((batch) => batch.id !== nextBatch.id),
+      ]);
       if (currentProject) {
+        const isLatestSubmission = latestGenerationRunKeyRef.current === runKey;
         setProjects((currentProjects) => currentProjects.map((project) => project.id === currentProject.id
           ? {
               ...project,
-              batches: [completedJob, ...project.batches.filter((batch) => batch.id !== completedJob.id)],
-              state: {
-                aspectRatio: completedInput.aspectRatio,
-                count: completedInput.count,
-                modelId: completedInput.modelId,
-                prompt: completedInput.prompt,
-                references: completedInput.references,
-                resolution: completedInput.resolution,
-              },
+              batches: [
+                completedJob,
+                ...project.batches.filter((batch) => batch.id !== completedJob.id),
+              ].sort((left, right) => right.createdAt.localeCompare(left.createdAt)),
+              state: isLatestSubmission
+                ? {
+                    aspectRatio: completedInput.aspectRatio,
+                    background: completedInput.background ?? "auto",
+                    count: completedInput.count,
+                    googleSearch: completedInput.googleSearch ?? false,
+                    modelId: completedInput.modelId,
+                    prompt: completedInput.prompt,
+                    references: completedInput.references,
+                    resolution: completedInput.resolution,
+                    outputFormat: resolveGptImageOptionsForModel(
+                      completedInput.modelId,
+                      completedInput,
+                    ).outputFormat,
+                    quality: completedInput.quality ?? "auto",
+                    thinkingLevel:
+                      completedInput.thinkingLevel ??
+                      resolveGenerationThinkingLevelForModel(
+                        completedInput.modelId,
+                      ),
+                  }
+                : project.state,
               updatedAt: completedJob.updatedAt,
             }
           : project));
       }
       return nextBatches;
     });
-    setAssetBatches((current) => [
+    setAssetBatches((current) => newestAssetBatches([
       nextBatch,
       ...current.filter((batch) => batch.id !== nextBatch.id),
-    ]);
+    ]));
     setNewAssetCount(completedJob.outputs.length);
     setAssetPulse(true);
     if (assetPulseTimerRef.current) window.clearTimeout(assetPulseTimerRef.current);
     assetPulseTimerRef.current = window.setTimeout(() => setAssetPulse(false), 4200);
   };
 
-  const observeGenerationJob = (job: GenerationJob) => {
-    setGenerationJob(job);
+  const observeGenerationJob = (runKey: string, job: GenerationJob) => {
+    setGenerationRuns((current) => upsertGenerationRun(current, runKey, job));
     if (
       !job.id.startsWith("pending_") &&
       (job.state === "queued" || !isGenerationJobActive(job.state))
     ) {
       setBillingRevision((current) => current + 1);
     }
-    if (currentProject && !job.id.startsWith("pending_")) {
+    if (
+      currentProject &&
+      latestGenerationRunKeyRef.current === runKey &&
+      !job.id.startsWith("pending_")
+    ) {
       setComposerCheckpoint(createComposerCheckpoint(job.input));
     }
   };
 
-  const runGeneration = async (snapshot: GenerationInputSnapshot) => {
-    if (isGenerating) return;
-
+  const runGeneration = async (
+    snapshot: GenerationInputSnapshot,
+    runKey = globalThis.crypto.randomUUID(),
+  ) => {
+    latestGenerationRunKeyRef.current = runKey;
     setDrawerOpen(false);
     const terminalJob = await generationBoundary.service.submit(
       snapshot,
-      observeGenerationJob,
+      (job) => observeGenerationJob(runKey, job),
     );
     if (terminalJob.state === "succeeded") {
-      recordCompletedGeneration(terminalJob);
+      setGenerationRuns((current) => upsertGenerationRun(current, runKey, terminalJob));
+      recordCompletedGeneration(terminalJob, runKey);
     }
   };
 
@@ -1435,10 +1894,10 @@ export default function Home() {
       return;
     }
     if (
-      selectedModel !== "nano-banana-2" ||
-      generationCount !== 1
+      !["nano-banana-2", "gpt-image-2"].includes(selectedModel) ||
+      !isGenerationCountSupported(selectedModel, generationCount)
     ) {
-      toast.error("当前生成链路支持 Nano Banana 2、1 张图片");
+      toast.error("Nano Banana 2 和 GPT IMAGE 2 当前支持 1、2、4 张");
       return;
     }
 
@@ -1449,34 +1908,70 @@ export default function Home() {
       aspectRatio: selectedRatio,
       resolution,
       count: generationCount,
+      background,
+      thinkingLevel,
+      googleSearch,
+      outputFormat,
+      quality,
       projectId: currentProject?.id ?? null,
     });
     void runGeneration(snapshot);
   };
 
-  const retryFailedGeneration = () => {
-    if (!generationJob || generationJob.state !== "failed") return;
-    if (generationJob.id.startsWith("pending_")) {
-      void runGeneration(generationJob.input);
-      return;
-    }
-    setDrawerOpen(false);
-    void generationBoundary.retry(generationJob, observeGenerationJob).then((terminalJob) => {
-      if (terminalJob.state === "succeeded") {
-        recordCompletedGeneration(terminalJob);
+  const retryFailedGeneration = async (run: TrackedGenerationRun) => {
+    if (
+      run.job.state !== "failed" ||
+      retryingGenerationRunKeysRef.current.has(run.key)
+    ) return;
+    retryingGenerationRunKeysRef.current.add(run.key);
+    latestGenerationRunKeyRef.current = run.key;
+    try {
+      if (run.job.id.startsWith("pending_")) {
+        await runGeneration(run.job.input, run.key);
+        return;
       }
-    });
+      setDrawerOpen(false);
+      const terminalJob = await generationBoundary.retry(
+        run.job,
+        (job) => observeGenerationJob(run.key, job),
+      );
+      if (terminalJob.state === "succeeded") {
+        setGenerationRuns((current) => upsertGenerationRun(current, run.key, terminalJob));
+        recordCompletedGeneration(terminalJob, run.key);
+      }
+    } finally {
+      retryingGenerationRunKeysRef.current.delete(run.key);
+    }
   };
 
-  const restoreFailedGenerationSettings = () => {
-    if (!failedGenerationSnapshot) return;
-    const restored = restoreGenerationInputSnapshot(failedGenerationSnapshot);
+  const restoreFailedGenerationSettings = (snapshot: GenerationInputSnapshot) => {
+    const restored = restoreGenerationInputSnapshot(snapshot);
+    const restoredAspectRatio = resolveGenerationAspectRatioForModel(
+      restored.modelId,
+      restored.aspectRatio,
+    );
+    const restoredCount = resolveGenerationCountForModel(
+      restored.modelId,
+      restored.count,
+    );
     setPrompt(restored.prompt);
     setReferenceImages(restored.references);
     setSelectedModel(restored.modelId);
-    setSelectedRatio(restored.aspectRatio);
+    setSelectedRatio(restoredAspectRatio);
     setResolution(restored.resolution);
-    setGenerationCount(restored.count);
+    setGenerationCount(restoredCount);
+    setThinkingLevel(resolveGenerationThinkingLevelForModel(restored.modelId));
+    setGoogleSearch(resolveGoogleSearchForModel(
+      restored.modelId,
+      restored.googleSearch,
+    ));
+    const restoredGptOptions = resolveGptImageOptionsForModel(
+      restored.modelId,
+      restored,
+    );
+    setQuality(restoredGptOptions.quality);
+    setBackground(restoredGptOptions.background);
+    setOutputFormat(restoredGptOptions.outputFormat);
     setDrawerOpen(true);
     window.requestAnimationFrame(() => {
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1484,20 +1979,31 @@ export default function Home() {
     toast.success("已恢复失败任务的原始提示词、参考图与参数");
   };
 
-  const toggleSave = (assetId: string) => {
-    const isSaved = savedImages.includes(assetId);
-    setSavedImages((current) => isSaved ? current.filter((id) => id !== assetId) : [...current, assetId]);
-    toast.success(isSaved ? "已从资产库移除" : "已重新加入资产库");
-  };
-
-  const downloadImage = (batchId: string, imageId: string, previewUrl: string) => {
-    const link = document.createElement("a");
-    link.href = previewUrl;
-    link.download = `goodgood-${batchId}-${imageId}.png`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    toast.success("图片已开始下载");
+  const downloadImage = async (batch: AssetBatch, image: GenerationOutput, index: number) => {
+    const imageKey = `${batch.id}-${image.id}`;
+    if (downloadingImageKeysRef.current.has(imageKey)) return;
+    const saveRequest = saveImageToLocal({
+      assetId: image.id,
+      createdAt: batch.createdAt,
+      ordinal: index + 1,
+      previewUrl: image.previewUrl,
+    });
+    downloadingImageKeysRef.current.add(imageKey);
+    setDownloadingImageKeys((current) => [...current, imageKey]);
+    try {
+      await saveRequest;
+      toast.success("图片下载已开始");
+    } catch (error) {
+      console.error("[GoodGood] image download failed", {
+        assetId: image.id,
+        message: error instanceof Error ? error.message : String(error),
+        stage: error instanceof ImageDownloadError ? error.stage : "unknown",
+      });
+      toast.error("下载失败，请重试");
+    } finally {
+      downloadingImageKeysRef.current.delete(imageKey);
+      setDownloadingImageKeys((current) => current.filter((key) => key !== imageKey));
+    }
   };
 
   const openImageDetail = (
@@ -1565,22 +2071,28 @@ export default function Home() {
       );
     }
 
-    const isSaved = savedImages.includes(item.key);
     const itemModel = getGenerationModel(item.batch.modelId);
-    const itemRatio = getGenerationRatio(item.batch.aspectRatio);
+    const itemDimensions = item.image.width && item.image.height
+      ? { width: item.image.width, height: item.image.height }
+      : getGenerationPixelDimensions(
+          item.batch.modelId,
+          item.batch.aspectRatio,
+          item.batch.resolution,
+        );
+    const isDownloading = downloadingImageKeys.includes(`${item.batch.id}-${item.image.id}`);
     return (
       <article
-        className={`creation-card creation-variant-${(item.index % 4) + 1}`}
+        className="creation-card"
         key={item.key}
         style={{ aspectRatio: `${item.ratio}`, "--reveal-delay": `${item.index * 70}ms` } as CSSProperties}
         role="button"
         tabIndex={0}
         aria-label={`查看 ${itemModel.name} 生成的视觉作品 ${item.index + 1}`}
-        onClick={() => openImageDetail(creationDetailItems, item.key, "creation")}
+        onClick={() => openImageDetail(creationDetailItems, item.detailKey, "creation")}
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
-            openImageDetail(creationDetailItems, item.key, "creation");
+            openImageDetail(creationDetailItems, item.detailKey, "creation");
           }
         }}
       >
@@ -1589,17 +2101,16 @@ export default function Home() {
           alt={`${itemModel.name} 生成的视觉作品 ${item.index + 1}`}
           style={{ objectPosition: item.image.previewPosition }}
         />
-        <span className="creation-card-meta">{item.batch.time} · {itemRatio.label}</span>
+        <span className="creation-card-meta">{formatPixelDimensions(itemDimensions)}</span>
         <div className="image-actions">
-          <button className={isSaved ? "saved" : ""} aria-label={isSaved ? "从资产库移除" : "保存到资产库"} onClick={(event) => { event.stopPropagation(); toggleSave(item.key); }}><Bookmark size={15} fill={isSaved ? "currentColor" : "none"} /></button>
-          <button aria-label="下载到本地" onClick={(event) => { event.stopPropagation(); downloadImage(item.batch.id, item.image.id, item.image.previewUrl); }}><Download size={15} /></button>
+          <button className="download-button" disabled={isDownloading} aria-label={isDownloading ? "正在下载图片" : "下载到本地"} onClick={(event) => { event.stopPropagation(); void downloadImage(item.batch, item.image, item.index); }}>{isDownloading ? <LoaderCircle className="download-spinner" size={15} /> : <Download size={15} />}</button>
         </div>
       </article>
     );
   };
 
-  const renderCreationColumns = (items: CreationStreamItem[], columnCount: number, group: "task" | "history") => Array.from({ length: columnCount }, (_, columnIndex) => (
-    <div className="creation-column" key={`${group}-column-${columnCount}-${columnIndex}`}>
+  const renderCreationColumns = (items: CreationStreamItem[], columnCount: number) => Array.from({ length: columnCount }, (_, columnIndex) => (
+    <div className="creation-column" key={`creation-column-${columnCount}-${columnIndex}`}>
       {items.filter((_, itemIndex) => itemIndex % columnCount === columnIndex).map(renderCreationItem)}
     </div>
   ));
@@ -1613,7 +2124,7 @@ export default function Home() {
     const itemRatio = getGenerationRatio(item.batch.aspectRatio);
     return (
       <article
-        className={`asset-gallery-card gallery-variant-${(item.index % 4) + 1} ${isSelected ? "selected" : ""}`}
+        className={isSelected ? "asset-gallery-card selected" : "asset-gallery-card"}
         key={item.key}
         style={{ aspectRatio: `${item.ratio}` }}
         role="button"
@@ -1638,7 +2149,7 @@ export default function Home() {
           aria-pressed={isSelected}
           onClick={(event) => { event.stopPropagation(); toggleAssetSelection(item.key); }}
         ><Check size={12} /></button>
-        <span className="asset-gallery-caption"><strong>{itemRatio.label}</strong><small>{item.batch.time} · {itemModel.name}</small></span>
+        <span className="asset-gallery-caption"><strong>{formatGenerationResolution(item.batch.resolution, item.image)}</strong><small>{itemRatio.label} · {item.batch.time} · {itemModel.name}</small></span>
       </article>
     );
   };
@@ -1651,6 +2162,38 @@ export default function Home() {
       </div>
     ));
   };
+
+  const renderReferenceMaterialCard = (material: ReferenceMaterial) => {
+    const alreadyUsed = referenceImages.some((reference) => reference.id === material.id);
+    return (
+      <article className="reference-material-card" key={material.id}>
+        <div className="reference-material-image" style={{ aspectRatio: `${material.width} / ${material.height}` }}>
+          <PrivateObjectImage src={material.url} alt={material.name} />
+        </div>
+        <div className="reference-material-copy">
+          <strong title={material.name}>{material.name}</strong>
+          <span>{material.width} × {material.height} · {formatMaterialSize(material.byteSize)}</span>
+          <small>{formatProjectUpdated(material.uploadedAt)}</small>
+        </div>
+        <button
+          className="reference-material-use"
+          disabled={alreadyUsed || referenceImages.length >= MAX_GENERATION_REFERENCES}
+          onClick={() => handleUseReferenceMaterial(material)}
+        >
+          {alreadyUsed ? <><Check size={14} />已在创作中</> : <><Plus size={14} />用于创作</>}
+        </button>
+      </article>
+    );
+  };
+
+  const renderReferenceMaterialColumns = (columnCount: number) =>
+    Array.from({ length: columnCount }, (_, columnIndex) => (
+      <div className="reference-material-column" key={`reference-material-column-${columnCount}-${columnIndex}`}>
+        {referenceMaterials
+          .filter((_, materialIndex) => materialIndex % columnCount === columnIndex)
+          .map(renderReferenceMaterialCard)}
+      </div>
+    ));
 
   return (
     <main className="app-shell">
@@ -1698,12 +2241,7 @@ export default function Home() {
                   <CircleAlert size={12} />积分暂不可用<RefreshCw size={11} />
                 </button>
               ) : billingSummary ? (
-                <>
-                  <div><span>积分余额</span><strong>{billingSummary.account.availableCredits}</strong></div>
-                  <small>
-                    {launchBillingQuote?.creditAmount ?? "--"} 积分/张 · 可生成 {availableImages?.toString() ?? "--"} 张
-                  </small>
-                </>
+                <div><span>积分余额</span><strong>{billingSummary.account.availableCredits}</strong></div>
               ) : null}
             </div>
           )}
@@ -1779,17 +2317,29 @@ export default function Home() {
             aspectRatio={selectedRatio}
             resolution={resolution}
             count={generationCount}
+            googleSearch={googleSearch}
+            quality={quality}
+            background={background}
+            outputFormat={outputFormat}
             drawerOpen={drawerOpen}
             isGenerating={isGenerating}
             billingLabel={composerBillingLabel}
             billingDescription={composerBillingDescription}
             onPromptChange={handlePromptChange}
             onReferenceFiles={handleReferenceFiles}
+            onOpenReferenceLibrary={openReferenceLibrary}
             onRemoveReference={removeReference}
+            onReorderReference={reorderReference}
+            referenceEditorMaterials={referenceMaterials}
+            onSaveReferenceEdit={handleSaveReferenceEdit}
             onModelChange={handleModelChange}
             onAspectRatioChange={handleAspectRatioChange}
             onResolutionChange={handleResolutionChange}
             onCountChange={handleGenerationCountChange}
+            onGoogleSearchChange={handleGoogleSearchChange}
+            onQualityChange={handleQualityChange}
+            onBackgroundChange={handleBackgroundChange}
+            onOutputFormatChange={handleOutputFormatChange}
             onDrawerOpenChange={setDrawerOpen}
             onGenerate={handleGenerate}
           />
@@ -1839,42 +2389,42 @@ export default function Home() {
                 </div>
               </header>
 
-              {isGenerating && (
-                <div className="generation-task-frame" aria-live="polite" aria-label="当前生成任务">
-                  <div className="creation-masonry desktop-creation-masonry">{renderCreationColumns(generationItems, 4, "task")}</div>
-                  <div className="creation-masonry mobile-creation-masonry">{renderCreationColumns(generationItems, 2, "task")}</div>
-                </div>
-              )}
-
-              {hasGenerationError && (
-                <div className="generation-error-strip" role="alert">
+              {failedGenerationRuns.map((run) => {
+                const generationError = run.job.error;
+                if (!generationError) return null;
+                const runInput = run.job.input;
+                const runRatio = getGenerationRatio(runInput.aspectRatio);
+                const submissionUnknown = generationError.code === "SUBMISSION_UNKNOWN";
+                return (
+                <div className="generation-error-strip" key={run.key} role="alert">
                   <span className="generation-error-icon"><CircleAlert size={18} /></span>
                   <div className="generation-error-copy">
                     <div className="generation-error-heading">
                       <h3>{generationError.title}</h3>
-                      <span>{jobInput?.count ?? 0} 张未生成</span>
+                      <span>{runInput.count} 张未生成</span>
                     </div>
                     <p>{generationError.message}</p>
-                    <small>{generationError.code} · {generationJob?.id} · {jobRatio.label} · {jobInput ? getGenerationResolutionLabel(jobInput.resolution) : ""} · {(jobInput?.references.length ?? 0) > 0 ? `${jobInput?.references.length} 张参考图` : "无参考图"}</small>
+                    <small>{generationError.code} · {run.job.id} · {runRatio.label} · {getGenerationResolutionLabel(runInput.resolution)} · {runInput.references.length > 0 ? `${runInput.references.length} 张参考图` : "无参考图"}</small>
                   </div>
                   <div className="generation-error-actions">
                     <button
                       className="error-retry"
                       title={submissionUnknown ? "将创建新的上游任务，并可能再次计费" : "使用失败任务的原始参数和参考图"}
-                      onClick={retryFailedGeneration}
+                      onClick={() => void retryFailedGeneration(run)}
                     >
                       <RefreshCw size={14} />
                       {submissionUnknown ? "再次提交（将再次计费）" : "重新生成"}
                     </button>
-                    <button className="error-settings" title="恢复失败任务的输入后调整" onClick={restoreFailedGenerationSettings}><Settings2 size={14} />修改设置</button>
+                    <button className="error-settings" title="恢复失败任务的输入后调整" onClick={() => restoreFailedGenerationSettings(runInput)}><Settings2 size={14} />修改设置</button>
                   </div>
                 </div>
-              )}
+                );
+              })}
 
-              {creationItems.length > 0 && (
-                <div className="creation-masonry-frame" aria-live="polite">
-                  <div className="creation-masonry desktop-creation-masonry">{renderCreationColumns(creationItems, 4, "history")}</div>
-                  <div className="creation-masonry mobile-creation-masonry">{renderCreationColumns(creationItems, 2, "history")}</div>
+              {creationStreamItems.length > 0 && (
+                <div className="creation-masonry-frame" aria-live="polite" aria-label="生成任务与创作结果">
+                  <div className="creation-masonry desktop-creation-masonry">{renderCreationColumns(creationStreamItems, 4)}</div>
+                  <div className="creation-masonry mobile-creation-masonry">{renderCreationColumns(creationStreamItems, 2)}</div>
                 </div>
               )}
             </section>
@@ -1925,18 +2475,45 @@ export default function Home() {
           ) : (
             <section className="asset-library-view" aria-label="资产库">
               <header className="asset-library-header">
-                <div><small>GOODGOOD ASSETS</small><h1>资产库</h1><p>每一次生成，都按任务批次完整保留。</p></div>
+                <div><small>GOODGOOD ASSETS</small><h1>资产库</h1><p>{assetSection === "generated" ? "每一次生成，都按任务批次完整保留。" : "上传一次，随时作为参考素材再次使用。"}</p></div>
                 <div className="asset-library-controls">
-                  <div className="asset-view-toggle" aria-label="资产库展示模式">
-                    <button className={assetMode === "batches" ? "active" : ""} aria-pressed={assetMode === "batches"} onClick={() => setAssetMode("batches")}><Clock3 size={14} />批次</button>
-                    <button className={assetMode === "gallery" ? "active" : ""} aria-pressed={assetMode === "gallery"} onClick={() => setAssetMode("gallery")}><LayoutGrid size={14} />画廊</button>
+                  <div className="asset-view-toggle asset-section-toggle" aria-label="资产类型">
+                    <button className={assetSection === "generated" ? "active" : ""} aria-pressed={assetSection === "generated"} onClick={() => setAssetSection("generated")}><Images size={14} />生成图片</button>
+                    <button className={assetSection === "materials" ? "active" : ""} aria-pressed={assetSection === "materials"} onClick={() => setAssetSection("materials")}><ImagePlus size={14} />上传素材</button>
                   </div>
-                  {assetMode === "gallery" && selectedAssetIds.length > 0 && <span className="asset-selection-summary">已选 {selectedAssetIds.length}</span>}
+                  {assetSection === "generated" && (
+                    <div className="asset-view-toggle" aria-label="生成图片展示模式">
+                      <button className={assetMode === "batches" ? "active" : ""} aria-pressed={assetMode === "batches"} onClick={() => setAssetMode("batches")}><Clock3 size={14} />批次</button>
+                      <button className={assetMode === "gallery" ? "active" : ""} aria-pressed={assetMode === "gallery"} onClick={() => setAssetMode("gallery")}><LayoutGrid size={14} />画廊</button>
+                    </div>
+                  )}
+                  {assetSection === "generated" && assetMode === "gallery" && selectedAssetIds.length > 0 && <span className="asset-selection-summary">已选 {selectedAssetIds.length}</span>}
                   <button className="asset-return-button" onClick={handleCreateNav}><Brush size={15} />返回创作</button>
                 </div>
               </header>
 
-              {assetRouteError ? (
+              {assetSection === "materials" ? (
+                referenceMaterialsLoading ? (
+                  <div className="asset-library-state" role="status"><LoaderCircle size={18} />正在读取上传素材</div>
+                ) : referenceMaterialsError ? (
+                  <div className="asset-library-state asset-library-error" role="alert">
+                    <CircleAlert size={18} />
+                    <span>{referenceMaterialsError}</span>
+                    <button onClick={() => void reloadReferenceMaterials()}><RefreshCw size={14} />重试</button>
+                  </div>
+                ) : referenceMaterials.length === 0 ? (
+                  <div className="asset-library-state asset-library-empty">
+                    <ImagePlus size={20} />
+                    <strong>还没有上传素材</strong>
+                    <span>在创作器上传参考图后，会自动保存在这里。</span>
+                  </div>
+                ) : (
+                  <div className="reference-material-grid">
+                    <div className="reference-material-masonry desktop-reference-material-masonry">{renderReferenceMaterialColumns(4)}</div>
+                    <div className="reference-material-masonry mobile-reference-material-masonry">{renderReferenceMaterialColumns(2)}</div>
+                  </div>
+                )
+              ) : assetRouteError ? (
                 <div className="asset-library-state asset-library-error" role="alert">
                   <CircleAlert size={18} />
                   <span>{assetRouteError}</span>
@@ -1987,7 +2564,7 @@ export default function Home() {
                           <div className="asset-batch-details">
                             <p>{batch.prompt}</p>
                             <div className="asset-batch-meta">
-                              <span>{batchModel.name}</span><span>{batchRatio.label}</span><span>{getGenerationResolutionLabel(batch.resolution)}</span><span>{batch.count} 张</span>{batch.referenceCount > 0 && <span>{batch.referenceCount} 张参考</span>}
+                              <span>{batchModel.name}</span><span>{batchRatio.label}</span><span>{formatGenerationResolution(batch.resolution, getSharedPixelDimensions(batch.images))}</span><span>{batch.count} 张</span>{batch.referenceCount > 0 && <span>{batch.referenceCount} 张参考</span>}
                             </div>
                           </div>
                           <button className="asset-batch-more" aria-label="批次更多操作"><MoreHorizontal size={18} /></button>
@@ -2014,6 +2591,80 @@ export default function Home() {
         </div>
       </section>
       <Dialog
+        open={referenceLibraryOpen}
+        onOpenChange={(open) => {
+          setReferenceLibraryOpen(open);
+          if (!open) setSelectedReferenceMaterialIds([]);
+        }}
+      >
+        <DialogPortal>
+          <DialogOverlay />
+          <DialogPrimitive.Content className="reference-library-dialog">
+            <header className="reference-library-dialog-header">
+              <div>
+                <DialogTitle>从资产库选择</DialogTitle>
+                <DialogDescription>
+                  已上传的素材无需再次上传，最多还可添加 {Math.max(0, MAX_GENERATION_REFERENCES - referenceImages.length)} 张。
+                </DialogDescription>
+              </div>
+              <button aria-label="关闭素材选择" onClick={() => setReferenceLibraryOpen(false)}><X size={18} /></button>
+            </header>
+
+            <div className="reference-library-dialog-body">
+              {referenceMaterialsLoading ? (
+                <div className="reference-library-dialog-state" role="status"><LoaderCircle size={18} />正在读取上传素材</div>
+              ) : referenceMaterialsError ? (
+                <div className="reference-library-dialog-state reference-library-dialog-error" role="alert">
+                  <CircleAlert size={18} />
+                  <span>{referenceMaterialsError}</span>
+                  <button onClick={() => void reloadReferenceMaterials()}><RefreshCw size={14} />重试</button>
+                </div>
+              ) : referenceMaterials.length === 0 ? (
+                <div className="reference-library-dialog-state reference-library-dialog-empty">
+                  <ImagePlus size={20} />
+                  <strong>还没有上传素材</strong>
+                  <span>关闭窗口后，从参考图按钮选择“上传本地图片”。</span>
+                </div>
+              ) : (
+                <div className="reference-library-picker-grid">
+                  {referenceMaterials.map((material) => {
+                    const alreadyUsed = referenceImages.some((reference) => reference.id === material.id);
+                    const selected = selectedReferenceMaterialIds.includes(material.id);
+                    return (
+                      <button
+                        className={`reference-library-picker-card ${selected ? "selected" : ""} ${alreadyUsed ? "already-used" : ""}`}
+                        key={material.id}
+                        aria-label={alreadyUsed ? `${material.name} 已在参考图中` : `${selected ? "取消选择" : "选择"} ${material.name}`}
+                        aria-pressed={selected}
+                        disabled={alreadyUsed}
+                        onClick={() => toggleReferenceMaterial(material.id)}
+                      >
+                        <span className="reference-library-picker-image">
+                          <PrivateObjectImage src={material.url} alt="" />
+                          <i>{alreadyUsed ? <Check size={14} /> : selected ? <Check size={14} /> : null}</i>
+                        </span>
+                        <span className="reference-library-picker-copy">
+                          <strong title={material.name}>{material.name}</strong>
+                          <small>{material.width} × {material.height}</small>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <footer className="reference-library-dialog-footer">
+              <span>{selectedReferenceMaterialIds.length > 0 ? `已选 ${selectedReferenceMaterialIds.length} 张` : "选择后按原顺序加入参考图"}</span>
+              <div>
+                <button className="reference-library-cancel" onClick={() => setReferenceLibraryOpen(false)}>取消</button>
+                <button className="reference-library-confirm" disabled={selectedReferenceMaterialIds.length === 0} onClick={confirmReferenceMaterials}>添加{selectedReferenceMaterialIds.length > 0 ? ` ${selectedReferenceMaterialIds.length} 张` : ""}</button>
+              </div>
+            </footer>
+          </DialogPrimitive.Content>
+        </DialogPortal>
+      </Dialog>
+      <Dialog
         open={detailOpen}
         onOpenChange={(open) => {
           if (!open) closeImageDetail();
@@ -2034,7 +2685,7 @@ export default function Home() {
                 <button className="image-detail-close" aria-label="关闭图片详情" onClick={closeImageDetail}><X size={20} /></button>
                 <div className="image-detail-count">{String(detailIndex + 1).padStart(2, "0")} / {String(detailItems.length).padStart(2, "0")}</div>
                 <div
-                  className={`image-detail-art detail-variant-${(activeDetail.index % 4) + 1}`}
+                  className="image-detail-art"
                   style={{ aspectRatio: `${activeDetail.ratio}`, width: `min(calc(100% - 72px), ${activeDetail.ratio * 82}dvh)` }}
                 >
                   <PrivateObjectImage
@@ -2053,12 +2704,7 @@ export default function Home() {
                     <strong>{activeDetailModel?.name}</strong>
                   </div>
                   <div className="image-detail-actions">
-                    <button
-                      className={savedImages.includes(activeDetail.key) ? "saved" : ""}
-                      aria-label={savedImages.includes(activeDetail.key) ? "从资产库移除" : "保存到资产库"}
-                      onClick={() => toggleSave(activeDetail.key)}
-                    ><Bookmark size={17} fill={savedImages.includes(activeDetail.key) ? "currentColor" : "none"} /></button>
-                    <button aria-label="下载图片" onClick={() => downloadImage(activeDetail.batch.id, activeDetail.image.id, activeDetail.image.previewUrl)}><Download size={17} /></button>
+                    <button className="download-button" disabled={downloadingImageKeys.includes(`${activeDetail.batch.id}-${activeDetail.image.id}`)} aria-label={downloadingImageKeys.includes(`${activeDetail.batch.id}-${activeDetail.image.id}`) ? "正在下载图片" : "下载图片"} onClick={() => void downloadImage(activeDetail.batch, activeDetail.image, activeDetail.index)}>{downloadingImageKeys.includes(`${activeDetail.batch.id}-${activeDetail.image.id}`) ? <LoaderCircle className="download-spinner" size={17} /> : <Download size={17} />}</button>
                   </div>
                 </header>
 
@@ -2072,9 +2718,19 @@ export default function Home() {
                   <dl className="image-detail-parameters">
                     <div><dt>模型</dt><dd>{activeDetailModel?.name}</dd></div>
                     <div><dt>画面比例</dt><dd>{activeDetailRatio?.label}</dd></div>
-                    <div><dt>分辨率</dt><dd>{getGenerationResolutionLabel(activeDetail.batch.resolution)}</dd></div>
+                    <div><dt>分辨率</dt><dd>{formatGenerationResolution(activeDetail.batch.resolution, activeDetail.image)}</dd></div>
                     <div><dt>批次</dt><dd>{activeDetail.batch.count} 张</dd></div>
                     <div><dt>参考图</dt><dd>{activeDetail.batch.referenceCount ? `${activeDetail.batch.referenceCount} 张` : "无"}</dd></div>
+                    {activeDetail.batch.modelId === "nano-banana-2" && (
+                      <div><dt>谷歌搜索</dt><dd>{activeDetail.batch.googleSearch ? "开启" : "关闭"}</dd></div>
+                    )}
+                    {activeDetail.batch.modelId === "gpt-image-2" && (
+                      <>
+                        <div><dt>质量</dt><dd>{gptImageQualityLabel(activeDetail.batch.quality)}</dd></div>
+                        <div><dt>背景</dt><dd>{gptImageBackgroundLabel(activeDetail.batch.background)}</dd></div>
+                        <div><dt>输出格式</dt><dd>{gptImageOutputFormatLabel(activeDetail.batch.outputFormat)}</dd></div>
+                      </>
+                    )}
                     <div><dt>任务编号</dt><dd>{activeDetail.batch.id}</dd></div>
                   </dl>
                 </div>
@@ -2092,7 +2748,7 @@ export default function Home() {
                     <button
                       key={item.key}
                       ref={(element) => { detailThumbnailRefs.current[index] = element; }}
-                      className={`image-detail-thumbnail detail-variant-${(item.index % 4) + 1} ${index === detailIndex ? "active" : ""}`}
+                      className={index === detailIndex ? "image-detail-thumbnail active" : "image-detail-thumbnail"}
                       style={{ aspectRatio: `${item.ratio}` }}
                       aria-label={`查看第 ${index + 1} 张图片`}
                       aria-current={index === detailIndex ? "true" : undefined}

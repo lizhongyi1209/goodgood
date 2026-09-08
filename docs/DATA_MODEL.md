@@ -23,8 +23,21 @@ tier projection, immutable site-owner assignment, and append-only account
 administration evidence. A twelfth forward migration removes the two historical
 fixed-UUID local fixtures after verifying that they have no non-fixture identity
 or credit history. Local development recreates them only through an explicit
-local-auth seeder. The Drizzle schema mirrors the durable schema across all
-twelve migrations. A
+local-auth seeder. Migration 0013 adds GPT IMAGE 2's single-output prices.
+Migration 0014 adds ordered multi-Asset jobs and GPT count-2/count-4 prices.
+Migration 0015 appends an earlier-effective immutable copy of the same
+count-2/count-4 prices so they are active for the full Shanghai launch day.
+Migration 0016 adds Nano Banana 2 count-2/count-4 prices at 20/40 credits for
+each resolution. Migration 0017 adds `thinking_level` and `google_search` to
+generation batches, projects, and root drafts, defaults old rows to `low` and
+false, and constrains enabled values to Nano Banana 2. New application-created
+Nano snapshots use `high`; the database default remains `low` only for backward
+compatibility with historical rows and non-Nano model constraints. The Drizzle schema
+mirrors that durable schema. Migration 0018 adds `quality`, `background`, and
+`output_format` to the same three snapshots, defaults old rows to
+`auto` / `auto` / `png`, constrains non-default values to GPT IMAGE 2, and
+rejects transparent JPEG. The Drizzle schema mirrors the durable schema across
+all eighteen migrations. A
 fuller project-backed creation session record and entitlements
 remain canonical contracts for later slices.
 
@@ -123,7 +136,31 @@ standard welcome-credit rows. It fails closed when either reserved owner has
 unexpected identity or credit history; a disposable local database must then be
 reset instead of broadening the deletion. Production never recreates these
 records. The local Compose migration role opts in to the separate, idempotent
-`seedLocalFixtures` routine with `GOODGOOD_ALLOW_LOCAL_AUTH=true`.
+`seedLocalFixtures` routine with `GOODGOOD_ALLOW_LOCAL_AUTH=true`. It verifies
+fixture identity/account/grant existence while preserving balances and Assets
+changed by local testing, so a normal restart does not rewrite test history.
+
+Migration `0013_gg007_gpt_image_2_prices.sql` adds immutable 10-credit
+single-output prices for GPT IMAGE 2 at 1K, 2K, and 4K.
+
+Migration `0014_gg009_multi_output_assets.sql` backfills existing Assets with
+ordinal 1, replaces the one-Asset-per-job unique index with unique
+`(job_id, ordinal)`, and adds immutable GPT IMAGE 2 count-2/count-4 prices of
+20/40 credits for every resolution. It preserves every existing Asset and
+ledger row. Because the old worker's `ON CONFLICT (job_id)` statement depends
+on the removed unique index, a production rollout must drain/stop old workers
+before applying this migration and start only the matching candidate afterward;
+an application rollback requires a reviewed forward fix or database snapshot.
+
+Migration `0015_gg009_activate_multi_output_prices.sql` is an append-only price
+correction. Migration 0014's immutable rows begin at `2026-09-08 00:00 UTC`,
+which leaves the first eight hours of the Shanghai validation day without an
+active multi-output quote. Migration 0015 adds equal version-2 prices effective
+from `2026-09-07 00:00 UTC`; it neither updates nor deletes financial history.
+
+Migration `0016_gg010_nano_multi_output_prices.sql` adds immutable Nano Banana 2
+count-2/count-4 prices of 20/40 credits for 1K, 2K, and 4K. It changes no
+existing price, ledger, batch, attempt, or Asset row.
 
 ## Entities
 
@@ -251,8 +288,9 @@ replay protections pass.
 ### CreationDraft
 
 One unprojected root composer draft per authenticated owner: prompt, ordered
-ready-reference snapshot, stable model/ratio/resolution/count, monotonic
-version, 30-day sliding expiry, and timestamps. The version is an optimistic
+ready-reference snapshot, stable model/ratio/resolution/count plus model-owned
+generation options, monotonic version, 30-day sliding expiry, and timestamps.
+The version is an optimistic
 write precondition so a stale tab cannot silently replace a newer draft.
 Unexpired reference snapshots protect their private objects from reference
 cleanup. Saving as a project or explicitly starting a clean creation removes
@@ -277,6 +315,16 @@ object deletion time, and timestamps. Ordinal is not global asset metadata:
 stable `参考图 1…10`
 order is stored in each submitted `GenerationBatch.reference_snapshot` with the
 reference ID and object key.
+Every `ready + accepted` row whose object remains present is also a reusable
+material visible to its owner. It is not an orphan merely because no current
+draft, project, or generation snapshot references it; later deletion requires
+an explicit owner deletion workflow.
+An edited reference is stored as another ordinary `ReferenceAsset` after the
+same upload and decoded-validation lifecycle. The source row and object remain
+unchanged, while the current draft or project reference snapshot may point to
+the new row at the same ordinal. Crop bounds and transient brush, sticker,
+arrow, and bbox layers are not persisted in this slice; only flattened output
+pixels become durable.
 
 ### GenerationJob
 
@@ -288,30 +336,39 @@ submitted/started/completed timestamps.
 ### GenerationAttempt
 
 One dispatch attempt for a generation job: ordinal, route version, provider,
-provider model/version, provider task ID, state, request/result hashes,
+provider model/version, provider task evidence, state, request/result hashes,
 normalized error, estimated and actual provider cost, and timestamps. A retry
 or fallback adds an attempt; it does not overwrite prior execution evidence.
 For the non-idempotent O1Key route, `submitted` is persisted immediately before
 the generation POST. A `submitted` attempt without `provider_task_id` is
 intentionally unrecoverable and becomes `SUBMISSION_UNKNOWN`; reclaiming it
 must not create another upstream task.
+For Nano Banana 2 multi-output, `provider_task_id` stores a versioned ordered
+task-set token. The worker advances it with a compare-and-swap after every
+returned upstream ID and writes a submission-started variant immediately before
+the next POST. A safe partial token therefore resumes only the missing suffix;
+a submission-started token or unknown response is terminal because its upstream
+outcome cannot be reconstructed.
 
 ### GenerationBatch
 
-One user submission. Owns prompt snapshot, ordered reference links, parameters,
-requested count, submission order, and produced asset IDs. A batch exists even
-when its job fails.
+One user submission. Owns prompt snapshot, ordered reference links, parameters
+including model-owned options, requested count, submission order, and produced
+asset IDs. A batch exists even when its job fails.
 
 ### Asset
 
-One output image: owner, batch, storage key, checksum, MIME, pixel dimensions,
-aspect ratio, byte size, moderation state, visibility, and timestamps.
+One output image: owner, batch, job-local positive ordinal, storage key,
+checksum, MIME, pixel dimensions, aspect ratio, byte size, moderation state,
+visibility, and timestamps. `(job, ordinal)` is unique and presentation returns
+the accepted Asset array in ordinal order.
 
 ### Project
 
 Named resumable context with owner, create idempotency key/hash, latest prompt,
-ordered ready-reference snapshot, model/ratio/resolution/count, status,
-version, and timestamps. Current covers are derived from the newest successful
+ordered ready-reference snapshot, model/ratio/resolution/count plus model-owned
+generation options, status, version, and timestamps. Current covers are derived
+from the newest successful
 project batch rather than stored separately. Batches reference the project and
 are restored newest-first by submission time.
 
@@ -334,12 +391,15 @@ Contains ordering and membership metadata; never duplicate image bytes.
   GoodGood model; it never silently changes the product model family.
 - Price snapshots and settled ledger entries are immutable.
 - Generation submission reserves credit in the same logical transaction as the
-  batch/job creation. Success settles, failure releases, and partial success
-  follows an explicit per-output policy.
-- The M6 live path reserves 10 credits in the same transaction as a new Banana
-  2 job, settles after the accepted Asset is inserted, and releases when the
-  job reaches a no-Asset failure. `SUBMISSION_UNKNOWN` releases the customer's
-  reservation but does not infer or record an upstream refund.
+  batch/job creation. Current success settles only after the complete requested
+  Asset set is committed; failure releases the full batch reservation.
+- The M6/GG-007/GG-009 path reserves 10/20/40 credits for Banana 2 or GPT IMAGE 2
+  count 1/2/4. GG-021 publishes 15-credit single-output Nano Banana Pro prices
+  for all three resolution tiers without enabling that model's provider route.
+  An enabled path settles after every requested accepted Asset
+  is inserted atomically and releases when the job reaches a no-Asset failure.
+  `SUBMISSION_UNKNOWN` releases the customer's reservation but does not infer
+  or record an upstream refund.
 - The authenticated billing read projects cached available/reserved balances
   and active price rows into decimal strings. Internal account, owner, ledger,
   and provider-route identifiers never enter the browser contract; the read
@@ -357,19 +417,25 @@ Contains ordering and membership metadata; never duplicate image bytes.
   from one project to another by a browser request.
 - Batch order is submission order, newest first in UI.
 - Asset aspect ratio and pixel dimensions are source data, not inferred from CSS.
+- Provider pixel sizes are derived from the selected model/ratio/resolution
+  capability at submission time. Persisted creative state does not store an
+  O1Key model name or provider size string. Migration
+  `0013_gg007_gpt_image_2_prices.sql` adds immutable 10-credit GPT IMAGE 2 prices.
 - Deleting a project does not automatically delete globally retained assets.
 - Object deletion is asynchronous and only occurs after authorization and
   reference checks.
-- A reference present in any generation or project snapshot is protected from
-  cleanup. Snapshot writers serialize with cleanup and revalidate readiness in
-  the same transaction so a newly referenced object cannot be claimed by a
-  concurrent cleanup run.
+- Ready, accepted references are durable reusable materials and never enter
+  incomplete-upload cleanup. Pending/rejected/expired rows referenced by durable
+  state remain protected defensively. Snapshot writers serialize with cleanup
+  and revalidate readiness in the same transaction.
 - Reference cleanup deletes private bytes before setting `object_deleted_at`.
   A failed deletion retains the evidence row and `OBJECT_DELETE_FAILED` for a
   later bounded retry; repeated successful execution is a no-op.
 
-## UI label mapping
+## Resolution presentation
 
-Persist domain values (`1K`, `2K`, `4K`, raw ratio, model ID). Translate to UI
-copy at the presentation boundary (`标准`, `高清`, `超清`). This keeps records
-stable across localization and copy changes.
+Persist and display the domain values `1K`, `2K`, and `4K`; keep raw ratio and
+model ID as stable domain data. Each accepted Asset's `pixel_width` and
+`pixel_height` are decoded source data and accompany the requested resolution
+in asset presentation. The UI may omit missing compatibility dimensions but
+must never infer them from the nominal tier, model, ratio, or CSS.

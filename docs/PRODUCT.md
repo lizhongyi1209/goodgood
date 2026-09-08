@@ -25,8 +25,9 @@ The product has four distinct concepts:
 1. **创作 / Creation** — the active, fast, continuously accumulating session.
 2. **批次 / Batch** — one submission plus its prompt, references, parameters,
    results, status, and time.
-3. **资产 / Asset** — an individual generated image that can be inspected,
-   selected, downloaded, and reused.
+3. **资产 / Asset** — an owner-scoped stored image. Generated outputs can be
+   inspected and downloaded; uploaded materials can be selected repeatedly as
+   creation references without uploading their bytes again.
 4. **项目 / Project** — a saved creative context containing multiple related
    batches and enough state to resume work.
 
@@ -36,11 +37,12 @@ and a project is not simply a folder of images.
 ## Primary journey
 
 1. A new user sees a restrained empty creation state.
-2. They enter a prompt, optionally add up to 10 references, and optionally open
-   the attached settings drawer.
+2. They enter a prompt, optionally add up to 10 references from local files or
+   previously uploaded materials, and optionally open the attached settings drawer.
 3. They select model, aspect ratio, resolution, and generation count.
 4. The latest batch begins at the top of the creation stream.
-5. Completed images enter the asset library automatically.
+5. Completed images and accepted uploads enter their respective asset-library
+   sections automatically.
 6. The user continues generating around the same goal without leaving creation.
 7. When the body of work becomes meaningful, they save the session as a project.
 8. Later they open the project, restore its state, and continue; they can always
@@ -55,18 +57,28 @@ duplicating a release log.
 
 - Prompt/reference composer, attached settings, responsive creation stream,
   polled pending/success/inline failure, retry, gallery and focused image detail.
-- Nano Banana 2 through the real server-side O1Key route, across 14 product
-  ratios and `1K / 2K / 4K`, one output. Other visible model names are not a
-  promise of availability; routing and UI labels remain separate.
+- Nano Banana 2 through the real server-side O1Key route across 14 product
+  ratios, plus GPT IMAGE 2 through `gpt-image-2-c-sd` across its seven exact-size
+  ratios. Both use `1K / 2K / 4K`, accept `1 / 2 / 4` outputs, and use
+  model-owned capability maps. GPT IMAGE 2 uses one native task; Nano Banana 2
+  composes a multi-image batch from one upstream task per requested image.
+  Other visible model names are not a promise of availability.
+- Nano Banana 2 exposes default-off Google Search grounding and internally uses
+  high thinking without a creator-facing thinking control. These values are
+  frozen with the generation snapshot and remain absent from other model contracts.
 - Authing Google/email-code login and revocable GoodGood sessions, with
   owner-scoped jobs, private assets, uploads, projects and drafts. Local Compose
   uses explicitly isolated test identities/mock/RustFS, not production data.
-- Up to 10 decoded JPEG/PNG/WebP references; durable project save/restore and
-  continuing batches; a 30-day root draft with stale-tab conflict handling.
+- Up to 10 decoded JPEG/PNG/WebP references; accepted uploads are reusable from
+  the owner-scoped material library. Project save/restore and continuing batches
+  are durable; the root draft has 30-day expiry and stale-tab conflict handling.
 - Stable `/create`, project and asset URLs, with root compatibility and
   source-preserving detail navigation. Route contracts live in `ROUTES.md`.
-- One 100-credit welcome grant; one-image generation costs 10 credits, with
-  transactional reserve/settle/release semantics and private credit summaries.
+- One 100-credit welcome grant. Enabled Nano Banana 2 and GPT IMAGE 2 outputs
+  cost 10 credits each; GPT batches of `1 / 2 / 4` therefore cost `10 / 20 / 40`.
+  Nano Banana Pro has a published single-image quote of 15 credits, while its
+  provider route remains unavailable. Billing uses transactional
+  reserve/settle/release semantics and private credit summaries.
 - Registration is open but creative use requires site-owner approval.
   `pending / active / suspended`, system role and product tier are distinct.
   `/admin/users` provides audited review and free test-credit grants. The site
@@ -76,7 +88,8 @@ ADR 0024 permits the owner-reviewed controlled alpha with non-sensitive test
 content, direct operator contact and manual response. It does not claim the
 full seed or paid gate. Its accepted deferrals remain in `docs/BACKLOG.md`:
 
-- Customer checkout/domestic Alipay, additional models and multi-output.
+- Customer checkout/domestic Alipay, Nano Banana Pro provider activation and further models, and
+  partial-result settlement.
 - Full automatic account/external-identity deletion, content reporting and
   broader moderation, provider-erasure terms, and complex monitoring.
 - Search, Explore, Moodboards, collaboration, sharing, and richer cross-device

@@ -22,10 +22,15 @@ import {
 import { applyMigrations } from "../server/persistence/migrate.mjs";
 
 const { Pool } = pg;
-const integrationEnabled = process.env.GOODGOOD_M6_INTEGRATION === "1";
-const databaseUrl =
-  process.env.GOODGOOD_M6_DATABASE_URL ??
-  "postgresql://goodgood:goodgood-local-only@127.0.0.1:5432/goodgood";
+const integrationRequested = process.env.GOODGOOD_M6_INTEGRATION === "1";
+const explicitDatabaseUrl = process.env.GOODGOOD_M6_DATABASE_URL;
+if (integrationRequested && !explicitDatabaseUrl) {
+  throw new Error(
+    "GOODGOOD_M6_DATABASE_URL must name an isolated test database when GOODGOOD_M6_INTEGRATION=1.",
+  );
+}
+const integrationEnabled = integrationRequested && Boolean(explicitDatabaseUrl);
+const databaseUrl = explicitDatabaseUrl ?? "";
 const fakeSecret = "goodgood-fake-payment-test-secret";
 const paymentSandbox = loadFakePaymentSandboxConfig({
   GOODGOOD_FAKE_PAYMENT_ENABLED: "true",

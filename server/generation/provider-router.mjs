@@ -6,8 +6,10 @@ import {
 } from "./provider.mjs";
 import { readPrivateObject, signAssetRead } from "./storage.mjs";
 import {
+  US_GATEWAY_GPT_IMAGE_2_ROUTE,
   US_GATEWAY_MVP_ROUTE,
   createUsGatewayAdapter,
+  getUsGatewayRoute,
 } from "./us-gateway-adapter.mjs";
 
 export const MOCK_PROVIDER_ROUTE = Object.freeze({
@@ -15,6 +17,26 @@ export const MOCK_PROVIDER_ROUTE = Object.freeze({
   providerModel: "nano-banana-2-mock-v1",
   routeVersion: "m3-mock-v1",
 });
+
+export const MOCK_GPT_IMAGE_2_ROUTE = Object.freeze({
+  provider: "goodgood-mock",
+  providerModel: "gpt-image-2-mock-v1",
+  routeVersion: "m3-mock-gpt-image-2-v1",
+});
+
+export function generationProviderRouteForModel(providerKind, modelId) {
+  if (providerKind === "o1key") {
+    const route = getUsGatewayRoute(modelId);
+    if (route) return route;
+  } else if (providerKind === "mock") {
+    const route = Object.freeze({
+      "nano-banana-2": MOCK_PROVIDER_ROUTE,
+      "gpt-image-2": MOCK_GPT_IMAGE_2_ROUTE,
+    })[modelId];
+    if (route) return route;
+  }
+  throw new Error(`No ${providerKind} generation route for ${modelId}.`);
+}
 
 function assertAttemptRoute(attempt, route) {
   if (
@@ -35,23 +57,176 @@ function throwTerminalFailure(task) {
   });
 }
 
-export function createGenerationProvider({ config, publicStorage, storage }) {
+function validateOutputCount(outputs, expectedOutputCount) {
+  if (
+    !Array.isArray(outputs) ||
+    !Number.isInteger(expectedOutputCount) ||
+    outputs.length !== expectedOutputCount
+  ) {
+    throw new NormalizedProviderError({
+      code: "INTERNAL_ERROR",
+      message: "生成服务返回的图片数量与请求不一致。输入内容已保留，请重试。",
+    });
+  }
+  return outputs;
+}
+
+const O1KEY_TASK_SET_PREFIX = "gg-o1key-set-v1:";
+
+function taskSetError() {
+  return new NormalizedProviderError({
+    code: "INTERNAL_ERROR",
+    message: "生成服务任务记录无法识别。输入内容已保留，请重试。",
+  });
+}
+
+function submissionUnknownError() {
+  return new NormalizedProviderError({
+    code: "SUBMISSION_UNKNOWN",
+    message:
+      "生成请求可能已被上游受理。系统不会自动重复提交；再次生成会创建新的计费任务。",
+    retryable: true,
+  });
+}
+
+export function encodeO1KeyTaskSet(
+  taskIds,
+  { submissionStarted = false } = {},
+) {
+  if (
+    !Array.isArray(taskIds) ||
+    !taskIds.length ||
+    taskIds.some((taskId) => typeof taskId !== "string" || !taskId) ||
+    new Set(taskIds).size !== taskIds.length ||
+    typeof submissionStarted !== "boolean"
+  ) {
+    throw taskSetError();
+  }
+  return `${O1KEY_TASK_SET_PREFIX}${Buffer.from(
+    JSON.stringify({ submissionStarted, taskIds }),
+    "utf8",
+  ).toString("base64url")}`;
+}
+
+function decodeO1KeyTaskState(
+  taskId,
+  { expectedTaskCount, legacySingle = false },
+) {
+  if (![1, 2, 4].includes(expectedTaskCount)) throw taskSetError();
+  if (taskId === null || taskId === undefined || taskId === "") {
+    return { submissionStarted: false, taskIds: [] };
+  }
+  if (typeof taskId !== "string") throw taskSetError();
+  if (!taskId.startsWith(O1KEY_TASK_SET_PREFIX)) {
+    if (legacySingle && expectedTaskCount === 1) {
+      return { submissionStarted: false, taskIds: [taskId] };
+    }
+    throw taskSetError();
+  }
+  let payload;
+  try {
+    payload = JSON.parse(
+      Buffer.from(taskId.slice(O1KEY_TASK_SET_PREFIX.length), "base64url").toString(
+        "utf8",
+      ),
+    );
+  } catch {
+    throw taskSetError();
+  }
+  const taskIds = Array.isArray(payload) ? payload : payload?.taskIds;
+  const submissionStarted = Array.isArray(payload)
+    ? false
+    : payload?.submissionStarted;
+  if (
+    !Array.isArray(taskIds) ||
+    !taskIds.length ||
+    taskIds.length > expectedTaskCount ||
+    taskIds.some((value) => typeof value !== "string" || !value) ||
+    new Set(taskIds).size !== taskIds.length ||
+    typeof submissionStarted !== "boolean"
+  ) {
+    throw taskSetError();
+  }
+  return { submissionStarted, taskIds };
+}
+
+export function decodeO1KeyTaskSet(
+  taskId,
+  options,
+) {
+  return decodeO1KeyTaskState(taskId, options).taskIds;
+}
+
+function expectedO1KeyTaskCount(route, job) {
+  return route === US_GATEWAY_MVP_ROUTE ? job.requested_count : 1;
+}
+
+function o1keyTaskState(route, job, taskId) {
+  const expectedTaskCount = expectedO1KeyTaskCount(route, job);
+  if (taskId === null || taskId === undefined || taskId === "") {
+    return { submissionStarted: false, taskIds: [] };
+  }
+  return decodeO1KeyTaskState(taskId, {
+    expectedTaskCount,
+    legacySingle: expectedTaskCount === 1,
+  });
+}
+
+function o1keyTaskToken(
+  route,
+  job,
+  taskIds,
+  { submissionStarted = false } = {},
+) {
+  return expectedO1KeyTaskCount(route, job) === 1
+    ? taskIds[0]
+    : encodeO1KeyTaskSet(taskIds, { submissionStarted });
+}
+
+export function createGenerationProvider({
+  config,
+  publicStorage,
+  route = generationProviderRouteForModel(config.provider.kind, "nano-banana-2"),
+  storage,
+}) {
   if (config.provider.kind === "o1key") {
+    if (route !== US_GATEWAY_MVP_ROUTE && route !== US_GATEWAY_GPT_IMAGE_2_ROUTE) {
+      throw new Error("The selected route does not match the O1Key provider.");
+    }
     const adapter = createUsGatewayAdapter({
       allowInsecureLoopback: config.provider.allowInsecureLoopback,
       apiKey: config.provider.apiKey,
       baseUrl: config.provider.baseUrl,
       requestTimeoutMs: config.provider.requestTimeoutMs,
+      route,
     });
     return Object.freeze({
-      route: US_GATEWAY_MVP_ROUTE,
+      route,
       submissionPolicy: "task-id-required",
 
       assertAttempt(attempt) {
-        assertAttemptRoute(attempt, US_GATEWAY_MVP_ROUTE);
+        assertAttemptRoute(attempt, route);
       },
 
-      async createTask({ job, onSubmissionStart }) {
+      isTaskSubmissionComplete({ job, taskId }) {
+        const taskState = o1keyTaskState(route, job, taskId);
+        return (
+          !taskState.submissionStarted &&
+          taskState.taskIds.length ===
+          expectedO1KeyTaskCount(route, job)
+        );
+      },
+
+      async createTask({
+        job,
+        onSubmissionStart = async () => {},
+        onTaskCreated = async () => {},
+        taskId = null,
+      }) {
+        const taskState = o1keyTaskState(route, job, taskId);
+        if (taskState.submissionStarted) throw submissionUnknownError();
+        const taskIds = [...taskState.taskIds];
+        const expectedTaskCount = expectedO1KeyTaskCount(route, job);
         const references = [];
         for (const reference of job.reference_snapshot ?? []) {
           const object = await readPrivateObject({
@@ -66,8 +241,22 @@ export function createGenerationProvider({ config, publicStorage, storage }) {
             name: reference.name,
           });
         }
-        const task = await adapter.submit({ job, onSubmissionStart, references });
-        return task.taskId;
+        const uploadedReferences = await adapter.prepareReferences(references);
+        while (taskIds.length < expectedTaskCount) {
+          const submissionToken = taskIds.length === 0
+            ? null
+            : o1keyTaskToken(route, job, taskIds, {
+                submissionStarted: true,
+              });
+          const task = await adapter.submitPrepared({
+            job,
+            onSubmissionStart: () => onSubmissionStart(submissionToken),
+            uploadedReferences,
+          });
+          taskIds.push(task.taskId);
+          await onTaskCreated(o1keyTaskToken(route, job, taskIds));
+        }
+        return o1keyTaskToken(route, job, taskIds);
       },
 
       downloadOutput(output) {
@@ -77,31 +266,57 @@ export function createGenerationProvider({ config, publicStorage, storage }) {
         });
       },
 
-      async pollTask({ onRefining, taskId }) {
+      async pollTask({ expectedOutputCount, onRefining, taskId }) {
         let refiningNotified = false;
-        const task = await adapter.waitForTerminal({
-          onUpdate: async (update) => {
-            if (!refiningNotified && update.state === "running") {
-              refiningNotified = true;
-              await onRefining();
-            }
-          },
-          pollIntervalMs: config.provider.pollIntervalMs,
-          taskId,
-          timeoutMs: config.provider.timeoutMs,
-        });
-        if (task.state === "failed") throwTerminalFailure(task);
-        return task.outputs[0];
+        const taskState = o1keyTaskState(route, {
+          requested_count: expectedOutputCount,
+        }, taskId);
+        if (taskState.submissionStarted) throw submissionUnknownError();
+        const { taskIds } = taskState;
+        const expectedTaskCount = route === US_GATEWAY_MVP_ROUTE
+          ? expectedOutputCount
+          : 1;
+        if (taskIds.length !== expectedTaskCount) throw taskSetError();
+        const tasks = await Promise.all(taskIds.map((providerTaskId) =>
+          adapter.waitForTerminal({
+            onUpdate: async (update) => {
+              if (!refiningNotified && update.state === "running") {
+                refiningNotified = true;
+                await onRefining();
+              }
+            },
+            expectedOutputCount:
+              route === US_GATEWAY_MVP_ROUTE ? 1 : expectedOutputCount,
+            pollIntervalMs: config.provider.pollIntervalMs,
+            taskId: providerTaskId,
+            timeoutMs: config.provider.timeoutMs,
+          })
+        ));
+        for (const task of tasks) {
+          if (task.state === "failed") throwTerminalFailure(task);
+        }
+        return validateOutputCount(
+          tasks.flatMap((task) => task.outputs),
+          expectedOutputCount,
+        );
       },
     });
   }
 
+  if (route !== MOCK_PROVIDER_ROUTE && route !== MOCK_GPT_IMAGE_2_ROUTE) {
+    throw new Error("The selected route does not match the mock provider.");
+  }
+
   return Object.freeze({
-    route: MOCK_PROVIDER_ROUTE,
+    route,
     submissionPolicy: "idempotent",
 
     assertAttempt(attempt) {
-      assertAttemptRoute(attempt, MOCK_PROVIDER_ROUTE);
+      assertAttemptRoute(attempt, route);
+    },
+
+    isTaskSubmissionComplete({ taskId }) {
+      return typeof taskId === "string" && taskId.length > 0;
     },
 
     async createTask({ attempt, job }) {
@@ -126,12 +341,13 @@ export function createGenerationProvider({ config, publicStorage, storage }) {
 
     downloadOutput: downloadProviderOutput,
 
-    pollTask({ onRefining, taskId }) {
-      return pollProviderTask({
+    async pollTask({ expectedOutputCount, onRefining, taskId }) {
+      const outputs = await pollProviderTask({
         config: config.provider,
         onRefining,
         taskId,
       });
+      return validateOutputCount(outputs, expectedOutputCount);
     },
   });
 }

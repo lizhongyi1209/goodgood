@@ -13,7 +13,7 @@
 | Category | Example code | UI placement | Default recovery |
 | --- | --- | --- | --- |
 | Input | `INVALID_PROMPT` | Composer field/toast | Focus and correct |
-| Generation capability | `M3_SLICE_UNSUPPORTED` | Composer/toast | Keep inputs and choose a listed ratio/resolution with Nano Banana 2 and one output |
+| Generation capability | `M3_SLICE_UNSUPPORTED` | Composer/toast | Keep inputs and choose a model-supported ratio/count combination |
 | Reference upload | `UPLOAD_TYPE_INVALID`, `UPLOAD_DECODE_INVALID`, `UPLOAD_TOO_LARGE` | Reference tray item | Remove/replace |
 | Reference readiness | `REFERENCE_NOT_READY` | Composer/toast | Wait for upload or remove failed item |
 | Reference cleanup | `OBJECT_DELETE_FAILED` | Operator evidence/logs | Keep row, release lease, retry a later bounded run |
@@ -27,6 +27,8 @@
 | Draft persistence | `DRAFT_UNAVAILABLE` | Composer-attached status | Keep current page state and retry |
 | Draft conflict | `DRAFT_CONFLICT` | Composer-attached alert | Keep current tab or restore newer server draft |
 | Asset library | `ASSET_LIBRARY_UNAVAILABLE` | Asset library state | Retry the owner-scoped read |
+| Reference materials | `REFERENCE_LIBRARY_UNAVAILABLE` | Material section or picker | Keep composer state and retry the owner-scoped read |
+| Reference editor | `REFERENCE_NOT_FOUND`, image decode/export/upload failure | Focused editor footer/stage | Keep edits, retry or reduce the crop when output exceeds 20 MiB |
 | Authentication | `SESSION_EXPIRED` | Global blocking state | Sign in, restore draft |
 | Login callback | `AUTH_CALLBACK_INVALID` | Global sign-in state | Restart Google/email-code sign-in |
 | Login provider | `AUTH_PROVIDER_UNAVAILABLE` | Global sign-in state | Retry later |
@@ -39,9 +41,10 @@
 
 ## Generation failure contract
 
-The failed batch remains visible in the active result region as a compact inline
-status strip. It does not enter or redistribute the completed-image masonry.
-The strip contains:
+Each failed batch remains visible in the active result region as its own compact
+inline status strip. One run's failure, retry, or settings recovery never clears
+another active or failed run, and failure strips do not enter or redistribute
+the completed-image masonry. Each strip contains:
 
 - Short title, useful explanation, requested/failed count, normalized error
   code, and job ID.
@@ -50,12 +53,34 @@ The strip contains:
 - `修改设置` restoring a mutable copy of that snapshot before returning to the
   parameter drawer.
 
-For a full-batch failure, show one strip rather than one repeated error per
-requested output. If results are partial, successful assets remain available
-and the strip summarizes completed versus failed outputs.
+For a full-batch failure, show one strip for that run rather than one repeated
+error per requested output. Multiple failed runs therefore show multiple
+strips. Current GPT and Nano Banana multi-output is atomic: a short, malformed, or partly
+unstorable provider result fails the whole batch and exposes no partial Assets.
+A later partial-result policy must define output-level charging first.
 
 A toast may announce a transient validation problem, but must not replace this
 panel for asynchronous generation failure.
+
+## Local image download
+
+Image download is a user-initiated browser operation. The browser first reads
+an owner-authorized fresh signed URL by stable Asset ID, then reads and validates
+the complete object before its download manager receives an in-memory Blob URL.
+The expiring preview URL retained in page state is never reused for download.
+A URL-resolution, signed-object read, empty-body, or Blob creation failure keeps
+the current image/detail state and shows `下载失败，请重试`; it must not navigate
+the current page, open the signed image URL in another tab, or create a
+destination file. The console records only the Asset ID, safe error message, and
+one of `resolve-url / fetch / read / validate / prepare / start`; signed URLs are
+excluded. Whether a separate save dialog appears follows the browser's download
+preference. Once the browser has accepted the download the app reports
+`图片下载已开始`; browser-side cancellation is not observable by the page.
+Local managed object storage permits the reviewed app origins to read signed
+objects with `GET`/`HEAD` as well as upload with `PUT`. The browser rejects an
+empty response before creating the Blob download. The object URL is released
+only after a delay so the browser cannot race the download against immediate
+resource revocation.
 
 The M3 mock contract maps a provider rejection to `MODEL_REJECTED`, a bounded
 poll deadline to `MODEL_TIMEOUT`, provider reachability/capacity to
@@ -63,18 +88,38 @@ poll deadline to `MODEL_TIMEOUT`, provider reachability/capacity to
 queue, and object-storage diagnostics remain server-side. Queue dispatch failure
 leaves the committed outbox row pending; an object-storage failure leaves the
 non-terminal job and attempt evidence recoverable for worker reconciliation.
-The generation API admits only the 14 listed aspect ratios and `1K` / `2K` /
-`4K`; it keeps Nano Banana 2 and one output fixed. Unknown capability values
-return `M3_SLICE_UNSUPPORTED` before a job, credit reservation, or provider POST
-is created. The adapter repeats this validation and sends admitted ratio and
-resolution values unchanged.
+Dispatchers claim outbox rows atomically before publishing them, and recovery
+does not reopen a fresh dispatch until the Worker lease window has elapsed.
+Duplicate deliveries of the same active job are ignored, and an unexpired lease
+cannot be reclaimed by the same Worker identity.
+The generation API admits Nano Banana 2's 14 ratios and GPT IMAGE 2's seven
+ratios with `1 / 2 / 4` outputs at `1K` / `2K` / `4K`. Unknown
+model combinations return `M3_SLICE_UNSUPPORTED` before a job, credit
+reservation, or provider POST is created. The adapter repeats this validation.
+Nano sends the admitted ratio and resolution values in one single-image task
+per output and never sends `n`; GPT sends the corresponding exact pixel size
+and native count in one task.
+Nano's omitted thinking/search values normalize to `high` and false before
+persistence. Explicit historical `low` remains valid so a frozen retry can omit
+the upstream field. Invalid thinking values, non-boolean search values, or enabled
+Nano-only options on another model return `M3_SLICE_UNSUPPORTED` before credit
+reservation or provider submission. The provider adapter repeats this
+fail-closed model isolation check.
+GPT's omitted quality/background/output-format values normalize to
+`auto` / `auto` / `png`. Invalid enum values, GPT-only options on another model,
+or `transparent` plus `jpeg` return `M3_SLICE_UNSUPPORTED` before a batch,
+credit reservation, or provider POST exists. The UI also auto-corrects that
+incompatible pair to PNG and disables JPEG while transparency is selected.
 
 The M5 O1Key contract normalizes `SUBMITTED`, `IN_PROGRESS`, `SUCCESS`, and
 `FAILURE` polling responses. Unknown error names and malformed or conflicting
 terminal payloads become `INTERNAL_ERROR`; raw O1Key errors never reach the
 browser. A bounded poll deadline becomes `MODEL_TIMEOUT` even when the last
-observation was still submitted or processing. Partial-result behavior is not
-claimed for the one-output MVP, and the image API documents no callback path.
+observation was still submitted or processing. GPT success must contain exactly
+the requested ordered output count. Every Nano task must return one image and
+the ordered task set must total the requested count; either mismatch becomes
+`INTERNAL_ERROR`. The
+image API documents no callback path.
 After a durable task ID, a single `FAILURE` observation remains provisional
 until the same normalized failure repeats on consecutive polls. A later
 non-failure observation clears it. A `SUCCESS` result URL also receives a small
@@ -84,8 +129,14 @@ An interrupted generation POST, a 5xx response, or a successful response
 without a usable `task_id` becomes `SUBMISSION_UNKNOWN`. The attempt guard is
 already durable at that point, so worker recovery fails it instead of issuing a
 second POST. The inline retry states that it creates a new potentially charged
-task. GoodGood releases the customer's 10-credit reservation when this no-Asset
-job becomes terminal; that customer policy does not assert or record an upstream
+task. For Nano multi-output, each known task ID is persisted and a
+submission-started marker is written immediately before the next POST; a restart
+may submit only the provably unstarted suffix. If that marker remains or any
+later POST has an unknown outcome, the entire batch fails as
+`SUBMISSION_UNKNOWN` without exposing
+partial Assets or repeating that POST. GoodGood releases the customer's full
+reservation when this no-Asset job becomes terminal; that customer policy does
+not assert or record an upstream
 refund, so New API usage reconciliation is still required. Reference-upload
 failures happen before this billable guard and retain their ordinary retry
 behavior.
@@ -94,6 +145,13 @@ PNG, or WebP; empty, oversized, truncated, type-mismatched, or excessive-pixel
 outputs normalize to `INTERNAL_ERROR` and never become an Asset. An active
 attempt whose persisted route differs from the configured worker route is
 deferred for reconciliation rather than polled through a different provider.
+After a valid output is stored, the Worker records success only if the database
+accepts the asset and terminal transition. If a failed, cancelled, or missing
+job rejects completion, the unaccepted object is deleted and the execution is
+reported as superseded. Cleanup failure is emitted as `OBJECT_DELETE_FAILED`
+with orphan evidence for operator reconciliation. A lost lease or an already
+succeeded job preserves the deterministic object because another accepted
+execution may own it.
 
 ## API error envelope
 
@@ -157,6 +215,10 @@ request and does not require creating another external identity.
 Cross-owner job and retry requests normalize to `GENERATION_NOT_FOUND`, so one
 owner cannot use response differences to enumerate another owner's records.
 Reference completion likewise returns `REFERENCE_NOT_FOUND` across owners.
+Reference-material lists authenticate before lookup, return only accepted ready
+rows for that owner, and normalize database or signing failures to
+`REFERENCE_LIBRARY_UNAVAILABLE`. The browser keeps its existing tray and offers
+retry; no object key or cross-owner existence signal is exposed.
 Generation resolves only ready references owned by the caller and returns the
 same `REFERENCE_NOT_READY` response for missing, foreign, pending, rejected, or
 expired IDs, avoiding cross-owner enumeration. Failed decoded/type/size/

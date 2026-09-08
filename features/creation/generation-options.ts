@@ -1,6 +1,13 @@
-import type {
+import {
+  GENERATION_COUNTS,
+  type GenerationCount,
   GenerationAspectRatio,
+  GenerationModelId,
   GenerationResolution,
+  GenerationThinkingLevel,
+  GptImageBackground,
+  GptImageOutputFormat,
+  GptImageQuality,
 } from "@/shared/contracts/generation";
 
 export type GenerationRatioMode = "portrait" | "square" | "landscape";
@@ -35,6 +42,31 @@ export const GENERATION_RATIO_OPTIONS = [
   { id: "8:1", label: "8 : 1", value: 8, dimensions: { "1K": { width: 3072, height: 384 }, "2K": { width: 6144, height: 768 }, "4K": { width: 12288, height: 1536 } }, mode: "landscape" },
 ] as const satisfies readonly GenerationRatioOption[];
 
+export const GPT_IMAGE_2_RATIO_IDS = [
+  "9:16",
+  "2:3",
+  "3:4",
+  "1:1",
+  "4:3",
+  "3:2",
+  "16:9",
+] as const satisfies readonly GenerationAspectRatio[];
+
+type GptImage2AspectRatio = (typeof GPT_IMAGE_2_RATIO_IDS)[number];
+
+export const GPT_IMAGE_2_DIMENSIONS = {
+  "9:16": { "1K": { width: 1024, height: 1824 }, "2K": { width: 2048, height: 3648 }, "4K": { width: 2160, height: 3840 } },
+  "2:3": { "1K": { width: 1024, height: 1536 }, "2K": { width: 2048, height: 3072 }, "4K": { width: 2336, height: 3504 } },
+  "3:4": { "1K": { width: 1024, height: 1360 }, "2K": { width: 2048, height: 2736 }, "4K": { width: 2448, height: 3264 } },
+  "1:1": { "1K": { width: 1024, height: 1024 }, "2K": { width: 2048, height: 2048 }, "4K": { width: 2880, height: 2880 } },
+  "4:3": { "1K": { width: 1360, height: 1024 }, "2K": { width: 2736, height: 2048 }, "4K": { width: 3264, height: 2448 } },
+  "3:2": { "1K": { width: 1536, height: 1024 }, "2K": { width: 3072, height: 2048 }, "4K": { width: 3504, height: 2336 } },
+  "16:9": { "1K": { width: 1824, height: 1024 }, "2K": { width: 3648, height: 2048 }, "4K": { width: 3840, height: 2160 } },
+} as const satisfies Readonly<Record<
+  GptImage2AspectRatio,
+  Readonly<Record<GenerationResolution, PixelDimensions>>
+>>;
+
 export const GENERATION_RATIO_MODES = [
   ["portrait", "竖版"],
   ["square", "方形"],
@@ -48,13 +80,33 @@ export const DEFAULT_GENERATION_RATIO_BY_MODE = {
 } as const satisfies Readonly<Record<GenerationRatioMode, GenerationAspectRatio>>;
 
 export const GENERATION_RESOLUTION_OPTIONS = [
-  { value: "1K", label: "标准" },
-  { value: "2K", label: "高清" },
-  { value: "4K", label: "超清" },
+  { value: "1K", label: "1K" },
+  { value: "2K", label: "2K" },
+  { value: "4K", label: "4K" },
 ] as const satisfies readonly Readonly<{
   value: GenerationResolution;
   label: string;
 }>[];
+
+export const GPT_IMAGE_QUALITY_OPTIONS = [
+  { value: "auto", label: "自动" },
+  { value: "low", label: "低" },
+  { value: "medium", label: "中" },
+  { value: "high", label: "高" },
+] as const satisfies readonly Readonly<{ value: GptImageQuality; label: string }>[];
+
+export const GPT_IMAGE_BACKGROUND_OPTIONS = [
+  { value: "auto", label: "自动" },
+  { value: "transparent", label: "透明" },
+] as const satisfies readonly Readonly<{ value: GptImageBackground; label: string }>[];
+
+export const GPT_IMAGE_OUTPUT_FORMAT_OPTIONS = [
+  { value: "png", label: "PNG" },
+  { value: "jpeg", label: "JPEG" },
+  { value: "webp", label: "WebP" },
+] as const satisfies readonly Readonly<{ value: GptImageOutputFormat; label: string }>[];
+
+export const DEFAULT_GPT_IMAGE_OUTPUT_FORMAT = "jpeg" as const;
 
 export function getGenerationRatio(
   ratio: GenerationAspectRatio,
@@ -76,6 +128,144 @@ export function getGenerationRatioIndex(ratio: GenerationAspectRatio): number {
   return index;
 }
 
+export function getGenerationRatioOptions(
+  modelId: GenerationModelId,
+): readonly GenerationRatioOption[] {
+  if (modelId !== "gpt-image-2") return GENERATION_RATIO_OPTIONS;
+  return GENERATION_RATIO_OPTIONS.filter((option) =>
+    GPT_IMAGE_2_RATIO_IDS.includes(option.id as GptImage2AspectRatio),
+  );
+}
+
+export function getGenerationCountOptions(
+  modelId: GenerationModelId,
+): readonly GenerationCount[] {
+  return modelId === "nano-banana-2" || modelId === "gpt-image-2"
+    ? GENERATION_COUNTS
+    : [1];
+}
+
+export function isGenerationCountSupported(
+  modelId: GenerationModelId,
+  count: GenerationCount,
+): boolean {
+  return getGenerationCountOptions(modelId).includes(count);
+}
+
+export function resolveGenerationCountForModel(
+  modelId: GenerationModelId,
+  count: GenerationCount,
+): GenerationCount {
+  return isGenerationCountSupported(modelId, count) ? count : 1;
+}
+
+export function resolveGenerationThinkingLevelForModel(
+  modelId: GenerationModelId,
+): GenerationThinkingLevel {
+  return modelId === "nano-banana-2" ? "high" : "low";
+}
+
+export function resolveGoogleSearchForModel(
+  modelId: GenerationModelId,
+  googleSearch: boolean | undefined,
+): boolean {
+  return modelId === "nano-banana-2" && googleSearch === true;
+}
+
+export type GptImageOptions = Readonly<{
+  background: GptImageBackground;
+  outputFormat: GptImageOutputFormat;
+  quality: GptImageQuality;
+}>;
+
+export function resolveGptImageOptionsForModel(
+  modelId: GenerationModelId,
+  options: Partial<GptImageOptions> = {},
+): GptImageOptions {
+  if (modelId !== "gpt-image-2") {
+    return { background: "auto", outputFormat: "png", quality: "auto" };
+  }
+  const background = GPT_IMAGE_BACKGROUND_OPTIONS.some(
+    (option) => option.value === options.background,
+  ) ? options.background as GptImageBackground : "auto";
+  const quality = GPT_IMAGE_QUALITY_OPTIONS.some(
+    (option) => option.value === options.quality,
+  ) ? options.quality as GptImageQuality : "auto";
+  let outputFormat = GPT_IMAGE_OUTPUT_FORMAT_OPTIONS.some(
+    (option) => option.value === options.outputFormat,
+  ) ? options.outputFormat as GptImageOutputFormat : DEFAULT_GPT_IMAGE_OUTPUT_FORMAT;
+  if (background === "transparent" && outputFormat === "jpeg") {
+    outputFormat = "png";
+  }
+  return { background, outputFormat, quality };
+}
+
+export function gptImageQualityLabel(value: GptImageQuality): string {
+  return GPT_IMAGE_QUALITY_OPTIONS.find((option) => option.value === value)?.label ?? "自动";
+}
+
+export function gptImageBackgroundLabel(value: GptImageBackground): string {
+  return GPT_IMAGE_BACKGROUND_OPTIONS.find((option) => option.value === value)?.label ?? "自动";
+}
+
+export function gptImageOutputFormatLabel(value: GptImageOutputFormat): string {
+  return GPT_IMAGE_OUTPUT_FORMAT_OPTIONS.find((option) => option.value === value)?.label ?? "JPEG";
+}
+
+export function getGenerationModelRatioIndex(
+  modelId: GenerationModelId,
+  ratio: GenerationAspectRatio,
+): number {
+  const index = getGenerationRatioOptions(modelId).findIndex(
+    (option) => option.id === ratio,
+  );
+  if (index < 0) {
+    throw new Error(`Unsupported generation ratio for ${modelId}: ${ratio}`);
+  }
+  return index;
+}
+
+export function getGenerationPixelDimensions(
+  modelId: GenerationModelId,
+  ratio: GenerationAspectRatio,
+  resolution: GenerationResolution,
+): PixelDimensions {
+  if (modelId === "gpt-image-2") {
+    if (!GPT_IMAGE_2_RATIO_IDS.includes(ratio as GptImage2AspectRatio)) {
+      throw new Error(`Unsupported generation ratio for ${modelId}: ${ratio}`);
+    }
+    return GPT_IMAGE_2_DIMENSIONS[ratio as GptImage2AspectRatio][resolution];
+  }
+  return getGenerationRatio(ratio).dimensions[resolution];
+}
+
+export function resolveGenerationAspectRatioForModel(
+  modelId: GenerationModelId,
+  ratio: GenerationAspectRatio,
+): GenerationAspectRatio {
+  const options = getGenerationRatioOptions(modelId);
+  if (options.some((option) => option.id === ratio)) return ratio;
+  const current = getGenerationRatio(ratio);
+  const sameMode = options.filter((option) => option.mode === current.mode);
+  const candidates = sameMode.length ? sameMode : options;
+  return candidates.reduce((nearest, option) =>
+    Math.abs(Math.log(option.value / current.value)) <
+    Math.abs(Math.log(nearest.value / current.value))
+      ? option
+      : nearest,
+  ).id;
+}
+
+export function getDefaultGenerationRatioForModelMode(
+  modelId: GenerationModelId,
+  mode: GenerationRatioMode,
+): GenerationAspectRatio {
+  return resolveGenerationAspectRatioForModel(
+    modelId,
+    DEFAULT_GENERATION_RATIO_BY_MODE[mode],
+  );
+}
+
 export function getGenerationResolutionLabel(
   resolution: GenerationResolution,
 ): string {
@@ -88,6 +278,52 @@ export function getGenerationResolutionLabel(
 
 export function formatPixelDimensions(dimensions: PixelDimensions): string {
   return `${dimensions.width} × ${dimensions.height}`;
+}
+
+type OptionalPixelDimensions = Readonly<{
+  width?: number;
+  height?: number;
+}>;
+
+function readPixelDimensions(
+  dimensions?: OptionalPixelDimensions,
+): PixelDimensions | undefined {
+  const width = dimensions?.width;
+  const height = dimensions?.height;
+  if (
+    typeof width !== "number" ||
+    typeof height !== "number" ||
+    !Number.isInteger(width) ||
+    !Number.isInteger(height) ||
+    width <= 0 ||
+    height <= 0
+  ) {
+    return undefined;
+  }
+  return { width, height };
+}
+
+export function getSharedPixelDimensions(
+  outputs: readonly OptionalPixelDimensions[],
+): PixelDimensions | undefined {
+  const first = readPixelDimensions(outputs[0]);
+  if (!first) return undefined;
+  return outputs.every(
+    (output) => output.width === first.width && output.height === first.height,
+  )
+    ? first
+    : undefined;
+}
+
+export function formatGenerationResolution(
+  resolution: GenerationResolution,
+  dimensions?: OptionalPixelDimensions,
+): string {
+  const label = getGenerationResolutionLabel(resolution);
+  const actualDimensions = readPixelDimensions(dimensions);
+  return actualDimensions
+    ? `${label} · ${formatPixelDimensions(actualDimensions)}`
+    : label;
 }
 
 export function getRatioFrame(ratio: number) {

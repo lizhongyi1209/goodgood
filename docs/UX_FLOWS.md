@@ -66,24 +66,69 @@ fill space.
 
 - Empty prompt submission: short toast, keep focus available.
 - Prompt: autosize from one to eight lines; scroll after eight.
-- References: accept multiple images, append in upload order, maximum 10.
+- References: the add control offers local upload or selection from the owner's
+  uploaded materials. Append in upload/selection order, deduplicate by stable
+  reference ID, and enforce the shared maximum of 10.
 - A selected reference appears immediately with a restrained uploading overlay.
   It becomes ready only after direct upload and server-side decoded validation;
   failure remains on that tray item with removal/replacement recovery.
+- The tray uses moderately enlarged responsive 1:1 centered crops and scrolls
+  horizontally without wrapping, so adding references does not destabilize the composer.
+- Every tray item shows `图 1…图 10` at the lower left. Dragging one item onto
+  another moves it to that position and immediately renumbers the tray. Focused
+  items support `Alt + ← / →` for the same operation.
+- Clicking a ready tray item opens a viewport-contained quick editor in its
+  neutral view tool, with the complete uncropped source available for detail
+  inspection. Enter/Space opens the focused item; Escape closes the editor.
+  Uploading/failed items and completed drag gestures do not open it. The smaller
+  upper-right remove control deletes without opening the editor.
+- Crop, brush, sticker, and arrow edits affect the exported pixels. Stickers may
+  come from a local file or the owner's reusable materials and can be moved,
+  scaled, rotated, or removed. Box selection reports pixel and normalized
+  coordinates relative to the current cropped output; copy and prompt insertion
+  do not burn the box into the exported pixels.
+- Undo, redo, and reset operate inside the current editor session. Closing with
+  pixel-affecting unsaved edits asks for confirmation. Completing an edit uploads
+  a new reusable material and only then replaces the current `图 N` in the tray;
+  a project-backed session persists that replacement before reporting success.
+  The original material remains reusable, and export/upload failure preserves
+  the editor state for retry.
 - Send is blocked while any retained reference is uploading or failed. Ready
   references preserve their tray order in the submitted batch snapshot.
 - Settings: attached downward drawer; closing it must not reset values.
+- Settings read from aspect ratio to model to output; aspect ratio is the leftmost
+  wide-screen group and stays first through responsive reflow.
 - Model list: opens within the parameter drawer and collapses after selection.
-- Nano Banana 2 accepts every displayed aspect ratio and `标准 / 高清 / 超清`
-  resolution (`1K / 2K / 4K`) with one output. Unsupported model/count/domain
-  values fail without silently replacing the creator's selection.
+- Nano Banana 2 accepts its 14 displayed ratios; GPT IMAGE 2 accepts `9:16`,
+  `2:3`, `3:4`, `1:1`, `4:3`, `3:2`, and `16:9`. Both use the existing
+  `1K / 2K / 4K` resolution domain and support `1 / 2 / 4` outputs.
+  The pixel readout follows the selected model's exact size table. A model
+  change keeps a compatible ratio or visibly moves to the nearest supported
+  ratio in the same orientation, and normalizes an unsupported count to one.
+- Selecting Nano Banana 2 reveals only the `谷歌搜索` (`关闭 / 开启`, default
+  `关闭`) segmented control in the attached drawer. New Nano requests use the
+  internal high-thinking mode without exposing a creator control or detail row.
+  Changing to another model hides and resets Google Search. Historical
+  low/high values remain in frozen records for exact retries but are not shown.
+- Selecting GPT IMAGE 2 reveals `质量` (`自动 / 低 / 中 / 高`, default `自动`),
+  `背景` (`自动 / 透明`, default `自动`), and `输出格式`
+  (`PNG / JPEG / WebP`, default `JPEG`). Choosing transparent while JPEG is
+  selected immediately moves output format to PNG; JPEG remains disabled until
+  background returns to automatic. Leaving GPT hides and resets all three.
+  Draft/project restore, retry, and image detail use the frozen values.
+- Unsupported model/count/domain combinations fail before submission without
+  replacing values inside an immutable generation snapshot.
 - Keep the active server quote next to the composer actions as plain metadata,
-  for example `10 积分/张`; do not turn it into a purchase call-to-action.
-- Send: Feihong mark; controls disable or communicate progress while generating.
+  for example `10 积分/张 · 共 40`; do not turn it into a purchase call-to-action.
+- Send: Feihong mark. It remains available while earlier jobs generate; each
+  click freezes the current composer values and submits one independent job.
+  Active styling and the creation stream communicate progress without blocking
+  another click. There is no product-side concurrent-job count ceiling.
 
-Reference ordinal is stored in data for prompt interpretation even though the
-tray does not add visually heavy number badges. The accessible name and future
-detail metadata should still expose `参考图 1…10` semantics.
+Reference ordinal is the current tray index and is stored in data for prompt
+interpretation. The visible `图 1…10`, accessible name, draft/project order,
+generation snapshot, and provider reference order must all describe that same
+array; there is no separate display-only ordinal.
 
 ### Authenticated root draft
 
@@ -94,8 +139,9 @@ detail metadata should still expose `参考图 1…10` semantics.
   the owner's unexpired draft before autosave starts. A direct project route
   restores only that project and never applies the root draft over it.
 - Meaningful root changes to prompt, ordered ready references, model, ratio,
-  resolution, or count save after a short debounce. Uploading/failed references
-  pause saving until the retained set is ready.
+  resolution, count, or model-owned generation options save after a short
+  debounce. Uploading/failed references pause saving until the retained set is
+  ready.
 - The draft expires 30 days after its last successful write. Empty root state
   removes it; saving the root context as a project or confirming
   `新建创作` also clears it.
@@ -119,27 +165,37 @@ failed -> queued (retry)
 
 - Create an immutable input snapshot at submission containing the prompt,
   ordered reference identities, stable model ID, ratio, resolution, and count.
-- Insert the pending batch at the top of the current creation stream.
+- Give every click a stable client run identity and insert it at the top of the
+  current creation stream. Replacing its temporary `pending_*` ID with the
+  durable server job ID must not create or erase another run.
 - Use ratio-correct skeletons for the requested image count.
-- Render the active task skeletons separately from the completed-image masonry;
-  loading or failure must not redistribute previously generated images.
-- On success, replace skeletons with assets and prepend the completed batch to
-  the asset library.
+- Render active task skeletons and completed images in one creation masonry.
+  Submission creates the final ratio-correct slots immediately; success replaces
+  those slots in place without moving another run or redistributing previously
+  generated images.
+- On success, replace skeletons with assets in place and prepend the completed
+  batch to the asset library without rendering the batch twice.
+- Asset metadata shows the requested resolution together with that Asset's
+  decoded pixel dimensions, for example `4K · 3584 × 4800`. It never derives
+  actual dimensions from the nominal tier or another Asset in the batch.
 - Refresh the account summary after a job is accepted into the queue and after
   every terminal outcome so reserved and available credit converge without a
   full page reload.
-- On full-batch failure, replace the active task area with one compact inline
-  status strip that summarizes the requested count. Do not repeat the same
-  error once per requested image.
-- If a provider returns partial results, add successful images normally, keep
-  failed outputs out of the asset library, and summarize the completed and
-  failed counts in the task strip.
+- On full-batch failure, replace that run's active task area with one compact
+  inline status strip that summarizes the requested count. Concurrent failures
+  retain separate strips; do not repeat one run's error per requested image.
+- A GPT or Nano Banana multi-output batch succeeds only after every requested image
+  is decoded, stored, and committed. A missing or invalid output fails the whole
+  batch and exposes no partial Assets; partial-result settlement requires a
+  later explicit provider and billing policy.
 - Do not reorder an older completed batch above a newer submission merely
   because the provider completed out of order; sort by submission time.
 - On failure, keep the failed batch location and all input state.
 - `重新生成` always submits the failed immutable snapshot, even if the composer
   has since changed. `修改设置` restores a mutable copy of that snapshot into
   the composer before opening the parameter drawer.
+- A retry updates only the selected run. Guard the retry action against a rapid
+  duplicate activation because it may create another billable upstream task.
 
 ## Continuous creation and projects
 
@@ -165,10 +221,20 @@ failed -> queued (retry)
 
 ## Asset library
 
-All successfully generated images enter the asset library automatically.
+All successfully generated images and accepted reference uploads enter the
+asset library automatically. `生成图片` and `上传素材` are separate sections:
+generated images keep their batch/gallery modes, while materials list the
+owner's reusable uploads newest first with filename, dimensions, size, and a
+direct `用于创作` action. A material already in the current tray is visibly
+disabled rather than duplicated.
 The library uses `/assets`; direct access, refresh, and browser back/forward
 reload the current owner's durable assets without resetting the in-memory
 batch/gallery mode during an in-app detail round trip.
+
+From the composer, `从资产库选择` opens a focused multi-select dialog using 1:1
+centered thumbnails. Loading, empty, and failed reads keep the dialog silhouette
+and expose retry. Confirming adds the chosen stable IDs in selection order and
+does not transfer object bytes again.
 
 ### Batch mode
 

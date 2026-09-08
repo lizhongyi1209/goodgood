@@ -2,6 +2,10 @@ import type {
   GenerationInputDraft,
   GenerationInputSnapshot,
 } from "@/shared/contracts/generation";
+import {
+  resolveGenerationThinkingLevelForModel,
+  resolveGptImageOptionsForModel,
+} from "@/features/creation/generation-options";
 
 export type {
   GenerationAspectRatio,
@@ -11,6 +15,10 @@ export type {
   GenerationModelId,
   GenerationReference,
   GenerationResolution,
+  GenerationThinkingLevel,
+  GptImageBackground,
+  GptImageOutputFormat,
+  GptImageQuality,
 } from "@/shared/contracts/generation";
 
 export function createGenerationInputSnapshot(
@@ -20,6 +28,7 @@ export function createGenerationInputSnapshot(
     Object.freeze({ ...reference }),
   );
 
+  const gptImageOptions = resolveGptImageOptionsForModel(draft.modelId, draft);
   return Object.freeze({
     prompt: draft.prompt.trim(),
     references: Object.freeze(references),
@@ -27,6 +36,10 @@ export function createGenerationInputSnapshot(
     aspectRatio: draft.aspectRatio,
     resolution: draft.resolution,
     count: draft.count,
+    thinkingLevel: resolveGenerationThinkingLevelForModel(draft.modelId),
+    googleSearch:
+      draft.modelId === "nano-banana-2" && draft.googleSearch === true,
+    ...gptImageOptions,
     projectId: draft.projectId ?? null,
   });
 }
@@ -41,6 +54,11 @@ export function restoreGenerationInputSnapshot(
     aspectRatio: snapshot.aspectRatio,
     resolution: snapshot.resolution,
     count: snapshot.count,
+    thinkingLevel:
+      snapshot.thinkingLevel ??
+      resolveGenerationThinkingLevelForModel(snapshot.modelId),
+    googleSearch: snapshot.googleSearch === true,
+    ...resolveGptImageOptionsForModel(snapshot.modelId, snapshot),
     projectId: snapshot.projectId ?? null,
   };
 }

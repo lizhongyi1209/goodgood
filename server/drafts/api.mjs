@@ -39,7 +39,9 @@ async function presentCreationDraft(resources, row) {
     expiresAt: new Date(row.expires_at).toISOString(),
     state: {
       aspectRatio: row.aspect_ratio,
+      background: row.background ?? "auto",
       count: row.generation_count,
+      googleSearch: row.google_search ?? false,
       modelId: row.model_id,
       prompt: row.prompt,
       references: (row.reference_snapshot ?? []).map((reference) => ({
@@ -49,6 +51,12 @@ async function presentCreationDraft(resources, row) {
         url: referenceUrls.get(reference.id) ?? "",
       })),
       resolution: row.resolution,
+      outputFormat:
+        row.output_format ?? (row.model_id === "gpt-image-2" ? "jpeg" : "png"),
+      quality: row.quality ?? "auto",
+      thinkingLevel:
+        row.thinking_level ??
+        (row.model_id === "nano-banana-2" ? "high" : "low"),
     },
     updatedAt: new Date(row.updated_at).toISOString(),
     version: row.version,

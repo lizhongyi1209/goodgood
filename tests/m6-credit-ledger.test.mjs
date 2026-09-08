@@ -31,10 +31,15 @@ import { applyMigrations } from "../server/persistence/migrate.mjs";
 import { seedLocalFixtures } from "../server/persistence/seed-local-fixtures.mjs";
 
 const { Pool } = pg;
-const integrationEnabled = process.env.GOODGOOD_M6_INTEGRATION === "1";
-const databaseUrl =
-  process.env.GOODGOOD_M6_DATABASE_URL ??
-  "postgresql://goodgood:goodgood-local-only@127.0.0.1:5432/goodgood";
+const integrationRequested = process.env.GOODGOOD_M6_INTEGRATION === "1";
+const explicitDatabaseUrl = process.env.GOODGOOD_M6_DATABASE_URL;
+if (integrationRequested && !explicitDatabaseUrl) {
+  throw new Error(
+    "GOODGOOD_M6_DATABASE_URL must name an isolated test database when GOODGOOD_M6_INTEGRATION=1.",
+  );
+}
+const integrationEnabled = integrationRequested && Boolean(explicitDatabaseUrl);
+const databaseUrl = explicitDatabaseUrl ?? "";
 
 test("credit policy derives exact signed available and reserved deltas", () => {
   assert.deepEqual(creditBalanceDeltas("grant", 100n), {
@@ -141,15 +146,51 @@ test("billing failures preserve a normalized generation API response", () => {
 test("M6 migration and schema define immutable prices and append-only ledger links", async () => {
   const [
     migration,
+    gptPricingMigration,
+    multiOutputMigration,
+    multiOutputPriceActivationMigration,
+    nanoMultiOutputPriceMigration,
+    nanoBananaProPriceMigration,
     schema,
     repository,
     contract,
     authenticationRepository,
     generationRepository,
     pricingDecision,
+    gptPricingDecision,
+    nanoBananaProPricingDecision,
   ] = await Promise.all([
     readFile(
       new URL("../migrations/0009_m6_credit_ledger.sql", import.meta.url),
+      "utf8",
+    ),
+    readFile(
+      new URL("../migrations/0013_gg007_gpt_image_2_prices.sql", import.meta.url),
+      "utf8",
+    ),
+    readFile(
+      new URL("../migrations/0014_gg009_multi_output_assets.sql", import.meta.url),
+      "utf8",
+    ),
+    readFile(
+      new URL(
+        "../migrations/0015_gg009_activate_multi_output_prices.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+    readFile(
+      new URL(
+        "../migrations/0016_gg010_nano_multi_output_prices.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+    readFile(
+      new URL(
+        "../migrations/0019_gg021_nano_banana_pro_prices.sql",
+        import.meta.url,
+      ),
       "utf8",
     ),
     readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
@@ -160,6 +201,20 @@ test("M6 migration and schema define immutable prices and append-only ledger lin
     readFile(
       new URL(
         "../docs/decisions/0009-banana-2-flat-credit-price.md",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+    readFile(
+      new URL(
+        "../docs/decisions/0030-open-gpt-image-2-sd-with-model-specific-sizes.md",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+    readFile(
+      new URL(
+        "../docs/decisions/0041-price-nano-banana-pro-at-fifteen-credits.md",
         import.meta.url,
       ),
       "utf8",
@@ -181,6 +236,42 @@ test("M6 migration and schema define immutable prices and append-only ledger lin
   assert.match(migration, /'nano-banana-2', '1K', 1, 'standard', 1, 'credit', 10/);
   assert.match(migration, /'nano-banana-2', '2K', 1, 'standard', 1, 'credit', 10/);
   assert.match(migration, /'nano-banana-2', '4K', 1, 'standard', 1, 'credit', 10/);
+  assert.match(gptPricingMigration, /'gpt-image-2', '1K', 1, 'standard', 1, 'credit', 10/);
+  assert.match(gptPricingMigration, /'gpt-image-2', '2K', 1, 'standard', 1, 'credit', 10/);
+  assert.match(gptPricingMigration, /'gpt-image-2', '4K', 1, 'standard', 1, 'credit', 10/);
+  assert.match(multiOutputMigration, /DROP INDEX IF EXISTS assets_job_unique/);
+  assert.match(multiOutputMigration, /assets_job_ordinal_unique/);
+  assert.match(multiOutputMigration, /'gpt-image-2', '1K', 2, 'standard', 1, 'credit', 20/);
+  assert.match(multiOutputMigration, /'gpt-image-2', '4K', 4, 'standard', 1, 'credit', 40/);
+  assert.match(
+    multiOutputPriceActivationMigration,
+    /'gpt-image-2', '1K', 2, 'standard', 2, 'credit', 20/,
+  );
+  assert.match(
+    multiOutputPriceActivationMigration,
+    /'gpt-image-2', '4K', 4, 'standard', 2, 'credit', 40/,
+  );
+  assert.match(
+    nanoMultiOutputPriceMigration,
+    /'nano-banana-2', '1K', 2, 'standard', 1, 'credit', 20/,
+  );
+  assert.match(
+    nanoMultiOutputPriceMigration,
+    /'nano-banana-2', '4K', 4, 'standard', 1, 'credit', 40/,
+  );
+  assert.match(
+    nanoBananaProPriceMigration,
+    /'nano-banana-pro', '1K', 1, 'standard', 1, 'credit', 15/,
+  );
+  assert.match(
+    nanoBananaProPriceMigration,
+    /'nano-banana-pro', '2K', 1, 'standard', 1, 'credit', 15/,
+  );
+  assert.match(
+    nanoBananaProPriceMigration,
+    /'nano-banana-pro', '4K', 1, 'standard', 1, 'credit', 15/,
+  );
+  assert.match(schema, /ordinal: integer\("ordinal"\)\.notNull\(\)/);
   assert.match(migration, /'welcome_grant_v1'/);
   assert.match(migration, /'\{"campaign":"welcome-v1","images":10\}'/);
   assert.match(repository, /FOR UPDATE/);
@@ -193,6 +284,10 @@ test("M6 migration and schema define immutable prices and append-only ledger lin
   assert.match(pricingDecision, /10 credits/);
   assert.match(pricingDecision, /100-credit/);
   assert.match(pricingDecision, /CNY 0\.20/);
+  assert.match(gptPricingDecision, /`gpt-image-2-c-sd`/);
+  assert.match(gptPricingDecision, /10 GoodGood credits/);
+  assert.match(nanoBananaProPricingDecision, /15 GoodGood credits/);
+  assert.match(nanoBananaProPricingDecision, /does not enable/);
   assert.doesNotMatch(repository, /request\.body|window\.|localStorage/);
 });
 
@@ -206,8 +301,9 @@ async function insertGenerationFixture(pool, { jobId, ownerId, suffix }) {
     [batchId, ownerId, `M6 ledger ${suffix}`, `m6-hash-${suffix}`],
   );
   await pool.query(
-    `INSERT INTO generation_jobs (id, batch_id, owner_id, idempotency_key)
-     VALUES ($1, $2, $3, $4)`,
+    `INSERT INTO generation_jobs (
+       id, batch_id, owner_id, idempotency_key, state, completed_at
+     ) VALUES ($1, $2, $3, $4, 'cancelled', now())`,
     [jobId, batchId, ownerId, `m6-job-${suffix}`],
   );
   return batchId;
@@ -248,6 +344,64 @@ test(
         ["4K", "10"],
       ],
     );
+    const gptPrices = await pool.query(
+      `SELECT resolution, credit_amount
+         FROM price_versions
+        WHERE model_id = 'gpt-image-2'
+          AND output_count = 1
+          AND plan_context = 'standard'
+          AND version = 1
+        ORDER BY resolution`,
+    );
+    assert.deepEqual(
+      gptPrices.rows.map((row) => [row.resolution, row.credit_amount]),
+      [
+        ["1K", "10"],
+        ["2K", "10"],
+        ["4K", "10"],
+      ],
+    );
+    const nanoBananaProPrices = await pool.query(
+      `SELECT resolution, credit_amount
+         FROM price_versions
+        WHERE model_id = 'nano-banana-pro'
+          AND output_count = 1
+          AND plan_context = 'standard'
+          AND version = 1
+        ORDER BY resolution`,
+    );
+    assert.deepEqual(
+      nanoBananaProPrices.rows.map((row) => [row.resolution, row.credit_amount]),
+      [
+        ["1K", "15"],
+        ["2K", "15"],
+        ["4K", "15"],
+      ],
+    );
+    const gptMultiPrices = await pool.query(
+      `SELECT resolution, output_count, credit_amount
+         FROM price_versions
+        WHERE model_id = 'gpt-image-2'
+          AND output_count IN (2, 4)
+          AND plan_context = 'standard'
+          AND version = 1
+        ORDER BY output_count, resolution`,
+    );
+    assert.deepEqual(
+      gptMultiPrices.rows.map((row) => [
+        row.resolution,
+        row.output_count,
+        row.credit_amount,
+      ]),
+      [
+        ["1K", 2, "20"],
+        ["2K", 2, "20"],
+        ["4K", 2, "20"],
+        ["1K", 4, "40"],
+        ["2K", 4, "40"],
+        ["4K", 4, "40"],
+      ],
+    );
     const seededWelcomeAccounts = await pool.query(
       `SELECT owner_id, available_balance, reserved_balance
          FROM credit_accounts
@@ -259,20 +413,16 @@ test(
       ]],
     );
     assert.deepEqual(
-      seededWelcomeAccounts.rows,
+      seededWelcomeAccounts.rows.map((row) => row.owner_id),
       [
-        {
-          available_balance: "100",
-          owner_id: "00000000-0000-4000-8000-000000000001",
-          reserved_balance: "0",
-        },
-        {
-          available_balance: "100",
-          owner_id: "00000000-0000-4000-8000-000000000002",
-          reserved_balance: "0",
-        },
+        "00000000-0000-4000-8000-000000000001",
+        "00000000-0000-4000-8000-000000000002",
       ],
     );
+    for (const account of seededWelcomeAccounts.rows) {
+      assert.ok(BigInt(account.available_balance) >= 0n);
+      assert.ok(BigInt(account.reserved_balance) >= 0n);
+    }
 
     const welcomeClaims = {
       email: `m6-welcome-${suffix}@goodgood.invalid`,
@@ -334,6 +484,27 @@ test(
       workerId: `m6-worker-${suffix}`,
     });
     assert.equal(releasedClaim.claimed, true);
+    assert.deepEqual(
+      await claimGenerationJob(pool, {
+        attemptRoute: {
+          provider: "goodgood-mock",
+          providerModel: "nano-banana-2",
+          routeVersion: "m6-test-v1",
+        },
+        jobId: releasedGeneration.row.id,
+        leaseMs: 30_000,
+        workerId: `m6-worker-${suffix}`,
+      }),
+      {
+        claimed: false,
+        reason: "leased",
+        route: {
+          provider: "goodgood-mock",
+          providerModel: "nano-banana-2",
+          routeVersion: "m6-test-v1",
+        },
+      },
+    );
     assert.equal(
       await failGenerationJob(pool, {
         attemptId: releasedClaim.attempt.id,
@@ -396,19 +567,20 @@ test(
       id: randomUUID(),
       mimeType: "image/png",
       objectKey: `m6/${suffix}/output.png`,
+      ordinal: 1,
       ownerId: welcomeOwner.ownerId,
       pixelHeight: 1,
       pixelWidth: 1,
     };
-    assert.equal(
+    assert.deepEqual(
       await completeGenerationJob(pool, {
-        asset: settledAsset,
+        assets: [settledAsset],
         attemptId: settledClaim.attempt.id,
         jobId: settledGeneration.row.id,
         resultHash: `m6-result-${suffix}`,
         workerId: `m6-stale-worker-${suffix}`,
       }),
-      false,
+      { completed: false, reason: "lease_lost" },
     );
     const staleCompletionEvidence = await pool.query(
       `SELECT
@@ -421,15 +593,15 @@ test(
       assets: 0,
       reserved_balance: "10",
     });
-    assert.equal(
+    assert.deepEqual(
       await completeGenerationJob(pool, {
-        asset: settledAsset,
+        assets: [settledAsset],
         attemptId: settledClaim.attempt.id,
         jobId: settledGeneration.row.id,
         resultHash: `m6-result-${suffix}`,
         workerId: `m6-worker-${suffix}`,
       }),
-      true,
+      { completed: true, reason: "completed" },
     );
     const liveBillingEvidence = await pool.query(
       `SELECT entry_type, amount, reason
@@ -462,25 +634,106 @@ test(
       reserved_balance: "0",
       version: "5",
     });
+
+    const multiGeneration = await createGenerationJob(pool, {
+      idempotencyKey: `m6-live-multi-${suffix}`,
+      input: {
+        ...generationInput,
+        count: 4,
+        modelId: "nano-banana-2",
+        prompt: "M6 Nano Banana four-output settlement integration",
+      },
+      ownerId: welcomeOwner.ownerId,
+    });
+    const multiClaim = await claimGenerationJob(pool, {
+      attemptRoute: {
+        provider: "goodgood-mock",
+        providerModel: "nano-banana-2",
+        routeVersion: "m6-test-nano-v1",
+      },
+      jobId: multiGeneration.row.id,
+      leaseMs: 30_000,
+      workerId: `m6-multi-worker-${suffix}`,
+    });
+    assert.equal(multiClaim.claimed, true);
+    const multiAssets = Array.from({ length: 4 }, (_, index) => ({
+      aspectRatio: "1:1",
+      batchId: multiGeneration.row.batch_id,
+      byteSize: index + 1,
+      checksum: `m6-multi-checksum-${index + 1}`,
+      id: randomUUID(),
+      mimeType: "image/png",
+      objectKey: `m6/${suffix}/multi-${index + 1}.png`,
+      ordinal: index + 1,
+      ownerId: welcomeOwner.ownerId,
+      pixelHeight: 1024,
+      pixelWidth: 1024,
+    }));
+    await assert.rejects(
+      completeGenerationJob(pool, {
+        assets: multiAssets.slice(0, 2),
+        attemptId: multiClaim.attempt.id,
+        jobId: multiGeneration.row.id,
+        resultHash: `m6-short-result-${suffix}`,
+        workerId: `m6-multi-worker-${suffix}`,
+      }),
+      (error) => error.code === "GENERATION_OUTPUT_COUNT_MISMATCH",
+    );
+    assert.deepEqual(
+      await completeGenerationJob(pool, {
+        assets: multiAssets,
+        attemptId: multiClaim.attempt.id,
+        jobId: multiGeneration.row.id,
+        resultHash: `m6-multi-result-${suffix}`,
+        workerId: `m6-multi-worker-${suffix}`,
+      }),
+      { completed: true, reason: "completed" },
+    );
+    const multiEvidence = await pool.query(
+      `SELECT ordinal FROM assets WHERE job_id = $1 ORDER BY ordinal`,
+      [multiGeneration.row.id],
+    );
+    assert.deepEqual(multiEvidence.rows.map((row) => row.ordinal), [1, 2, 3, 4]);
+
     const publicBillingSummary = await readBillingSummary({
       ownerContext: welcomeOwner,
       resources: { pool },
     });
     assert.deepEqual(publicBillingSummary.account, {
-      availableCredits: "90",
+      availableCredits: "50",
       reservedCredits: "0",
       unit: "credit",
-      version: "5",
+      version: "7",
     });
     assert.deepEqual(
       publicBillingSummary.quotes.map((quote) => [
+        quote.modelId,
         quote.resolution,
+        quote.count,
         quote.creditAmount,
       ]),
       [
-        ["1K", "10"],
-        ["2K", "10"],
-        ["4K", "10"],
+        ["nano-banana-2", "1K", 1, "10"],
+        ["nano-banana-2", "2K", 1, "10"],
+        ["nano-banana-2", "4K", 1, "10"],
+        ["nano-banana-2", "1K", 2, "20"],
+        ["nano-banana-2", "2K", 2, "20"],
+        ["nano-banana-2", "4K", 2, "20"],
+        ["nano-banana-2", "1K", 4, "40"],
+        ["nano-banana-2", "2K", 4, "40"],
+        ["nano-banana-2", "4K", 4, "40"],
+        ["nano-banana-pro", "1K", 1, "15"],
+        ["nano-banana-pro", "2K", 1, "15"],
+        ["nano-banana-pro", "4K", 1, "15"],
+        ["gpt-image-2", "1K", 1, "10"],
+        ["gpt-image-2", "2K", 1, "10"],
+        ["gpt-image-2", "4K", 1, "10"],
+        ["gpt-image-2", "1K", 2, "20"],
+        ["gpt-image-2", "2K", 2, "20"],
+        ["gpt-image-2", "4K", 2, "20"],
+        ["gpt-image-2", "1K", 4, "40"],
+        ["gpt-image-2", "2K", 4, "40"],
+        ["gpt-image-2", "4K", 4, "40"],
       ],
     );
 

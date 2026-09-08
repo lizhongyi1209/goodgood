@@ -6,6 +6,7 @@ import {
 } from "../billing/repository.mjs";
 import { lockReferenceLifecycle } from "../references/lifecycle-lock.mjs";
 import { findReadyReferences } from "../references/repository.mjs";
+import { normalizeGenerationModelOptions } from "./capabilities.mjs";
 
 export class GenerationPersistenceError extends Error {
   constructor(code, message, status = 500) {
@@ -16,13 +17,36 @@ export class GenerationPersistenceError extends Error {
   }
 }
 
+function requiredGenerationModelOptions(input) {
+  const options = normalizeGenerationModelOptions({
+    background: input.background,
+    googleSearch: input.googleSearch,
+    modelId: input.modelId,
+    outputFormat: input.outputFormat,
+    quality: input.quality,
+    thinkingLevel: input.thinkingLevel,
+  });
+  if (!options) {
+    throw new GenerationPersistenceError(
+      "UNSUPPORTED_GENERATION_OPTIONS",
+      "当前模型不支持所选生成参数组合。",
+      400,
+    );
+  }
+  return options;
+}
+
 export function hashGenerationInput(input) {
+  const modelOptions = requiredGenerationModelOptions(input);
   return createHash("sha256")
     .update(
       JSON.stringify({
         aspectRatio: input.aspectRatio,
+        background: modelOptions.background,
         count: input.count,
+        googleSearch: modelOptions.googleSearch,
         modelId: input.modelId,
+        outputFormat: modelOptions.outputFormat,
         projectId: input.projectId ?? null,
         prompt: input.prompt,
         references: input.references.map(({ id, name }, index) => ({
@@ -31,6 +55,8 @@ export function hashGenerationInput(input) {
           ordinal: index + 1,
         })),
         resolution: input.resolution,
+        quality: modelOptions.quality,
+        thinkingLevel: modelOptions.thinkingLevel,
       }),
     )
     .digest("hex");
@@ -39,8 +65,12 @@ export function hashGenerationInput(input) {
 export function generationInputFromRow(row, referenceUrls = new Map()) {
   return {
     aspectRatio: row.aspect_ratio,
+    background: row.background ?? "auto",
     count: row.requested_count,
+    googleSearch: row.google_search ?? false,
     modelId: row.model_id,
+    outputFormat:
+      row.output_format ?? (row.model_id === "gpt-image-2" ? "jpeg" : "png"),
     projectId: row.project_id ?? null,
     prompt: row.prompt,
     references: (row.reference_snapshot ?? []).map((reference) => ({
@@ -50,14 +80,22 @@ export function generationInputFromRow(row, referenceUrls = new Map()) {
       url: referenceUrls.get(reference.id) ?? "",
     })),
     resolution: row.resolution,
+    quality: row.quality ?? "auto",
+    thinkingLevel:
+      row.thinking_level ??
+      (row.model_id === "nano-banana-2" ? "high" : "low"),
   };
 }
 
 export function persistedGenerationInputFromRow(row) {
   return {
     aspectRatio: row.aspect_ratio,
+    background: row.background ?? "auto",
     count: row.requested_count,
+    googleSearch: row.google_search ?? false,
     modelId: row.model_id,
+    outputFormat:
+      row.output_format ?? (row.model_id === "gpt-image-2" ? "jpeg" : "png"),
     projectId: row.project_id ?? null,
     prompt: row.prompt,
     references: (row.reference_snapshot ?? []).map((reference) => ({
@@ -66,12 +104,16 @@ export function persistedGenerationInputFromRow(row) {
       objectKey: reference.objectKey,
     })),
     resolution: row.resolution,
+    quality: row.quality ?? "auto",
+    thinkingLevel:
+      row.thinking_level ??
+      (row.model_id === "nano-banana-2" ? "high" : "low"),
   };
 }
 
 export function publicGenerationJob(
   row,
-  previewUrl = null,
+  previewUrls = new Map(),
   referenceUrls = new Map(),
 ) {
   return {
@@ -86,16 +128,19 @@ export function publicGenerationJob(
       : null,
     id: row.id,
     input: generationInputFromRow(row, referenceUrls),
-    outputs:
-      row.asset_id && previewUrl
-        ? [
-            {
-              id: row.asset_id,
-              previewPosition: "50% 50%",
-              previewUrl,
-            },
-          ]
-        : [],
+    outputs: (row.assets ?? []).flatMap((asset) => {
+      const previewUrl = previewUrls.get(asset.id);
+      return previewUrl
+        ? [{
+            id: asset.id,
+            previewPosition: "50% 50%",
+            previewUrl,
+            ...(asset.pixel_width != null && asset.pixel_height != null
+              ? { height: asset.pixel_height, width: asset.pixel_width }
+              : {}),
+          }]
+        : [];
+    }),
     state: row.state,
     updatedAt: new Date(row.updated_at).toISOString(),
   };
@@ -110,17 +155,20 @@ const JOB_SELECT = `
          b.aspect_ratio,
          b.resolution,
          b.requested_count,
+         b.thinking_level,
+         b.google_search,
+         b.quality,
+         b.background,
+         b.output_format,
          b.input_hash,
-         a.id AS asset_id,
-         a.object_key,
-         a.mime_type,
-         a.pixel_width,
-         a.pixel_height,
-         a.byte_size,
-         a.checksum
+         COALESCE((
+           SELECT jsonb_agg(to_jsonb(a) ORDER BY a.ordinal)
+             FROM assets a
+            WHERE a.job_id = j.id
+              AND a.moderation_state = 'accepted'
+         ), '[]'::jsonb) AS assets
     FROM generation_jobs j
     JOIN generation_batches b ON b.id = j.batch_id
-    LEFT JOIN assets a ON a.job_id = j.id
 `;
 
 export async function findGenerationJob(pool, { jobId, ownerId }) {
@@ -149,19 +197,41 @@ export async function findOwnerAssetGenerationJobs(pool, { ownerId }) {
     `${JOB_SELECT}
       WHERE j.owner_id = $1
         AND b.owner_id = $1
-        AND a.owner_id = $1
         AND j.state = 'succeeded'
-        AND a.moderation_state = 'accepted'
+        AND EXISTS (
+          SELECT 1 FROM assets a
+           WHERE a.job_id = j.id
+             AND a.owner_id = $1
+             AND a.moderation_state = 'accepted'
+        )
       ORDER BY j.submitted_at DESC, j.id DESC`,
     [ownerId],
   );
   return result.rows;
 }
 
+export async function findOwnerAsset(pool, { assetId, ownerId }) {
+  const result = await pool.query(
+    `SELECT a.id, a.object_key
+       FROM assets a
+       JOIN generation_jobs j ON j.id = a.job_id
+       JOIN generation_batches b ON b.id = a.batch_id
+      WHERE a.id = $1
+        AND a.owner_id = $2
+        AND j.owner_id = $2
+        AND b.owner_id = $2
+        AND j.state = 'succeeded'
+        AND a.moderation_state = 'accepted'`,
+    [assetId, ownerId],
+  );
+  return result.rows[0] ?? null;
+}
+
 export async function createGenerationJob(
   pool,
   { idempotencyKey, input, ownerId, retryOfJobId = null },
 ) {
+  const modelOptions = requiredGenerationModelOptions(input);
   const inputHash = hashGenerationInput(input);
   const client = await pool.connect();
   try {
@@ -251,8 +321,9 @@ export async function createGenerationJob(
     await client.query(
       `INSERT INTO generation_batches (
          id, owner_id, project_id, prompt, reference_snapshot, model_id,
-         aspect_ratio, resolution, requested_count, input_hash
-       ) VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8, $9, $10)`,
+         aspect_ratio, resolution, requested_count, thinking_level,
+         google_search, quality, background, output_format, input_hash
+       ) VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
       [
         batchId,
         ownerId,
@@ -263,6 +334,11 @@ export async function createGenerationJob(
         input.aspectRatio,
         input.resolution,
         input.count,
+        modelOptions.thinkingLevel,
+        modelOptions.googleSearch,
+        modelOptions.quality,
+        modelOptions.background,
+        modelOptions.outputFormat,
         inputHash,
       ],
     );
@@ -271,7 +347,9 @@ export async function createGenerationJob(
         `UPDATE projects
             SET prompt = $3, reference_snapshot = $4::jsonb,
                 model_id = $5, aspect_ratio = $6, resolution = $7,
-                generation_count = $8, version = version + 1,
+                generation_count = $8, thinking_level = $9,
+                google_search = $10, quality = $11, background = $12,
+                output_format = $13, version = version + 1,
                 updated_at = now()
           WHERE id = $1 AND owner_id = $2`,
         [
@@ -283,6 +361,11 @@ export async function createGenerationJob(
           input.aspectRatio,
           input.resolution,
           input.count,
+          modelOptions.thinkingLevel,
+          modelOptions.googleSearch,
+          modelOptions.quality,
+          modelOptions.background,
+          modelOptions.outputFormat,
         ],
       );
     }
@@ -335,14 +418,10 @@ async function insertEvent(
 
 export async function claimGenerationJob(
   pool,
-  { attemptRoute, jobId, leaseMs, workerId },
+  { attemptRoute = null, attemptRouteForModel = null, jobId, leaseMs, workerId },
 ) {
-  if (
-    !attemptRoute?.routeVersion ||
-    !attemptRoute.provider ||
-    !attemptRoute.providerModel
-  ) {
-    throw new Error("A complete provider attempt route is required.");
+  if (!attemptRoute && typeof attemptRouteForModel !== "function") {
+    throw new Error("A provider attempt route or model route resolver is required.");
   }
   const client = await pool.connect();
   try {
@@ -356,18 +435,27 @@ export async function claimGenerationJob(
       return { claimed: false, reason: "missing" };
     }
     const job = locked.rows[0];
+    const resolvedAttemptRoute = attemptRouteForModel
+      ? attemptRouteForModel(job.model_id)
+      : attemptRoute;
+    if (
+      !resolvedAttemptRoute?.routeVersion ||
+      !resolvedAttemptRoute.provider ||
+      !resolvedAttemptRoute.providerModel
+    ) {
+      throw new Error("A complete provider attempt route is required.");
+    }
     if (["succeeded", "failed", "cancelled"].includes(job.state)) {
       await client.query("COMMIT");
-      return { claimed: false, reason: "terminal" };
+      return { claimed: false, reason: "terminal", route: resolvedAttemptRoute };
     }
     if (
       job.lease_owner &&
-      job.lease_owner !== workerId &&
       job.lease_expires_at &&
       new Date(job.lease_expires_at).getTime() > Date.now()
     ) {
       await client.query("COMMIT");
-      return { claimed: false, reason: "leased" };
+      return { claimed: false, reason: "leased", route: resolvedAttemptRoute };
     }
 
     if (job.state === "queued") {
@@ -415,9 +503,9 @@ export async function claimGenerationJob(
           attemptId,
           jobId,
           ordinal,
-          attemptRoute.routeVersion,
-          attemptRoute.provider,
-          attemptRoute.providerModel,
+          resolvedAttemptRoute.routeVersion,
+          resolvedAttemptRoute.provider,
+          resolvedAttemptRoute.providerModel,
           job.input_hash,
         ],
       );
@@ -433,6 +521,7 @@ export async function claimGenerationJob(
       attempt: attemptResult.rows[0],
       claimed: true,
       job: refreshed.rows[0],
+      route: resolvedAttemptRoute,
     };
   } catch (error) {
     await client.query("ROLLBACK");
@@ -442,14 +531,20 @@ export async function claimGenerationJob(
   }
 }
 
-export async function saveProviderTask(pool, { attemptId, taskId }) {
-  await pool.query(
+export async function saveProviderTask(
+  pool,
+  { attemptId, previousTaskId = null, taskId },
+) {
+  const result = await pool.query(
     `UPDATE generation_attempts
-        SET provider_task_id = COALESCE(provider_task_id, $2),
+        SET provider_task_id = $2,
             state = 'submitted', updated_at = now()
-      WHERE id = $1`,
-    [attemptId, taskId],
+      WHERE id = $1
+        AND provider_task_id IS NOT DISTINCT FROM $3
+      RETURNING id`,
+    [attemptId, taskId, previousTaskId],
   );
+  return result.rowCount === 1;
 }
 
 export async function markProviderSubmissionStarted(pool, { attemptId }) {
@@ -516,50 +611,74 @@ export async function markGenerationRefining(pool, { jobId, workerId }) {
 
 export async function completeGenerationJob(
   pool,
-  { asset, attemptId, jobId, resultHash, workerId },
+  { assets, attemptId, jobId, resultHash, workerId },
 ) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
     const locked = await client.query(
-      `SELECT state, owner_id, lease_owner, credit_reservation_entry_id
-         FROM generation_jobs WHERE id = $1 FOR UPDATE`,
+      `SELECT j.state, j.owner_id, j.batch_id, j.lease_owner,
+              j.credit_reservation_entry_id, b.requested_count
+         FROM generation_jobs j
+         JOIN generation_batches b ON b.id = j.batch_id
+        WHERE j.id = $1 FOR UPDATE OF j`,
       [jobId],
     );
     const state = locked.rows[0]?.state;
     if (state === "succeeded") {
       await client.query("COMMIT");
-      return false;
+      return { completed: false, reason: "already_succeeded" };
     }
-    if (!state || state === "failed" || state === "cancelled") {
+    if (!state) {
       await client.query("COMMIT");
-      return false;
+      return { completed: false, reason: "missing" };
+    }
+    if (state === "failed" || state === "cancelled") {
+      await client.query("COMMIT");
+      return { completed: false, reason: state };
     }
     if (locked.rows[0].lease_owner !== workerId) {
       await client.query("COMMIT");
-      return false;
+      return { completed: false, reason: "lease_lost" };
     }
 
-    await client.query(
-      `INSERT INTO assets (
-         id, owner_id, batch_id, job_id, object_key, checksum, mime_type,
-         pixel_width, pixel_height, aspect_ratio, byte_size
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-       ON CONFLICT (job_id) DO NOTHING`,
-      [
-        asset.id,
-        asset.ownerId,
-        asset.batchId,
-        jobId,
-        asset.objectKey,
-        asset.checksum,
-        asset.mimeType,
-        asset.pixelWidth,
-        asset.pixelHeight,
-        asset.aspectRatio,
-        asset.byteSize,
-      ],
-    );
+    if (
+      !Array.isArray(assets) ||
+      assets.length !== locked.rows[0].requested_count ||
+      assets.some((asset, index) =>
+        asset.ordinal !== index + 1 ||
+        asset.ownerId !== locked.rows[0].owner_id ||
+        asset.batchId !== locked.rows[0].batch_id
+      )
+    ) {
+      throw new GenerationPersistenceError(
+        "GENERATION_OUTPUT_COUNT_MISMATCH",
+        "The generated Asset set does not match the requested count.",
+      );
+    }
+
+    for (const asset of assets) {
+      await client.query(
+        `INSERT INTO assets (
+           id, owner_id, batch_id, job_id, ordinal, object_key, checksum,
+           mime_type, pixel_width, pixel_height, aspect_ratio, byte_size
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+        [
+          asset.id,
+          asset.ownerId,
+          asset.batchId,
+          jobId,
+          asset.ordinal,
+          asset.objectKey,
+          asset.checksum,
+          asset.mimeType,
+          asset.pixelWidth,
+          asset.pixelHeight,
+          asset.aspectRatio,
+          asset.byteSize,
+        ],
+      );
+    }
     if (locked.rows[0].credit_reservation_entry_id) {
       await settleGenerationCreditsInTransaction(client, {
         idempotencyKey: `generation-settle:${jobId}`,
@@ -588,10 +707,10 @@ export async function completeGenerationJob(
       fromState: state,
       jobId,
       toState: "succeeded",
-      detail: { assetId: asset.id },
+      detail: { assetIds: assets.map((asset) => asset.id) },
     });
     await client.query("COMMIT");
-    return true;
+    return { completed: true, reason: "completed" };
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;

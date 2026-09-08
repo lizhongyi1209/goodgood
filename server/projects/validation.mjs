@@ -1,4 +1,5 @@
 import { validateReferenceIds } from "../references/validation.mjs";
+import { normalizeGenerationModelOptions } from "../generation/capabilities.mjs";
 import { ProjectRequestError } from "./errors.mjs";
 
 const MODEL_IDS = new Set([
@@ -68,6 +69,15 @@ export function validateProjectSaveRequest(payload) {
   if (!ASPECT_RATIOS.has(state.aspectRatio)) throw invalidProject();
   if (!RESOLUTIONS.has(state.resolution)) throw invalidProject();
   if (!COUNTS.has(state.count)) throw invalidProject();
+  const modelOptions = normalizeGenerationModelOptions({
+    background: state.background,
+    googleSearch: state.googleSearch,
+    modelId: state.modelId,
+    outputFormat: state.outputFormat,
+    quality: state.quality,
+    thinkingLevel: state.thinkingLevel,
+  });
+  if (!modelOptions) throw invalidProject();
 
   const references = Array.isArray(state.references) ? state.references : [];
   const referenceIds = validateReferenceIds(references);
@@ -92,6 +102,7 @@ export function validateProjectSaveRequest(payload) {
       prompt,
       referenceIds,
       resolution: state.resolution,
+      ...modelOptions,
     },
   };
 }

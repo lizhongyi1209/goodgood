@@ -72,6 +72,19 @@ test("keeps default recovery documents bounded instead of reintroducing a histor
   }
 });
 
+test("keeps fast delivery and real-provider test isolation in every new-session path", async () => {
+  const agents = await readDocument("AGENTS.md");
+  const workflow = await readDocument("docs/WORKFLOW.md");
+  const testing = await readDocument("docs/TESTING.md");
+
+  assert.match(agents, /smallest behaviorally\s+complete change/);
+  assert.match(agents, /Never let fixtures\s+or synthetic jobs share a database or queue with a real-provider Worker/);
+  assert.match(workflow, /实现稳定后只跑一次 `npm run check:local`/);
+  assert.match(workflow, /禁止让测试 outbox 进入真实\s+O1Key Worker/);
+  assert.match(testing, /Never run a fixture-writing test against the active 3010 real-provider stack/);
+  assert.match(testing, /site owner explicitly requests that\s+specific generation call/);
+});
+
 test("current context, task, and release links resolve inside the repository", async () => {
   const files = [
     "AGENTS.md", "README.md", "docs/README.md", "docs/CURRENT_STATE.md",

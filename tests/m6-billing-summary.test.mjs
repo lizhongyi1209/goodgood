@@ -5,6 +5,7 @@ import test from "node:test";
 import { sessionExpiredError } from "../server/auth/errors.mjs";
 import {
   billingApiError,
+  previewBillingSummary,
   readBillingSummary,
 } from "../server/billing/api.mjs";
 import { createBillingNodeApiHandler } from "../server/billing/node-api.mjs";
@@ -31,16 +32,16 @@ function accountRow(overrides = {}) {
   };
 }
 
-function priceRow(resolution) {
+function priceRow(modelId, resolution, count = 1) {
   return {
     created_at: timestamp,
-    credit_amount: "10",
+    credit_amount: String((modelId === "nano-banana-pro" ? 15 : 10) * count),
     credit_unit: "credit",
     effective_from: timestamp,
     effective_until: null,
-    id: `price-${resolution}`,
-    model_id: "nano-banana-2",
-    output_count: 1,
+    id: `price-${modelId}-${resolution}`,
+    model_id: modelId,
+    output_count: count,
     plan_context: "standard",
     resolution,
     version: 1,
@@ -57,7 +58,7 @@ function billingPool({ account = accountRow() } = {}) {
         return { rowCount: account ? 1 : 0, rows: account ? [account] : [] };
       }
       if (sql.includes("FROM price_versions")) {
-        return { rowCount: 1, rows: [priceRow(values[1])] };
+        return { rowCount: 1, rows: [priceRow(values[0], values[1], values[2])] };
       }
       throw new Error(`Unexpected query: ${sql}`);
     },
@@ -118,6 +119,19 @@ test("billing repository reads exact account state and all launch resolution pri
   );
 });
 
+test("preview billing publishes the same Nano Banana Pro single-image price", () => {
+  assert.deepEqual(
+    previewBillingSummary.quotes
+      .filter((quote) => quote.modelId === "nano-banana-pro")
+      .map((quote) => [quote.resolution, quote.count, quote.creditAmount]),
+    [
+      ["1K", 1, "15"],
+      ["2K", 1, "15"],
+      ["4K", 1, "15"],
+    ],
+  );
+});
+
 test("billing summary serializes exact credits without owner or account identifiers", async () => {
   const summary = await readBillingSummary({
     ownerContext: { ownerId: "owner-a" },
@@ -130,15 +144,48 @@ test("billing summary serializes exact credits without owner or account identifi
     version: "1",
   });
   assert.deepEqual(
-    summary.quotes.map((quote) => [quote.resolution, quote.creditAmount]),
+    summary.quotes.map((quote) => [
+      quote.modelId,
+      quote.resolution,
+      quote.count,
+      quote.creditAmount,
+    ]),
     [
-      ["1K", "10"],
-      ["2K", "10"],
-      ["4K", "10"],
+      ["nano-banana-2", "1K", 1, "10"],
+      ["nano-banana-2", "2K", 1, "10"],
+      ["nano-banana-2", "4K", 1, "10"],
+      ["nano-banana-2", "1K", 2, "20"],
+      ["nano-banana-2", "2K", 2, "20"],
+      ["nano-banana-2", "4K", 2, "20"],
+      ["nano-banana-2", "1K", 4, "40"],
+      ["nano-banana-2", "2K", 4, "40"],
+      ["nano-banana-2", "4K", 4, "40"],
+      ["nano-banana-pro", "1K", 1, "15"],
+      ["nano-banana-pro", "2K", 1, "15"],
+      ["nano-banana-pro", "4K", 1, "15"],
+      ["gpt-image-2", "1K", 1, "10"],
+      ["gpt-image-2", "2K", 1, "10"],
+      ["gpt-image-2", "4K", 1, "10"],
+      ["gpt-image-2", "1K", 2, "20"],
+      ["gpt-image-2", "2K", 2, "20"],
+      ["gpt-image-2", "4K", 2, "20"],
+      ["gpt-image-2", "1K", 4, "40"],
+      ["gpt-image-2", "2K", 4, "40"],
+      ["gpt-image-2", "4K", 4, "40"],
     ],
   );
   assert.equal("ownerId" in summary.account, false);
   assert.equal("id" in summary.account, false);
+  assert.deepEqual(
+    summary.quotes
+      .filter((quote) => quote.modelId === "nano-banana-pro")
+      .map((quote) => [quote.resolution, quote.count, quote.creditAmount]),
+    [
+      ["1K", 1, "15"],
+      ["2K", 1, "15"],
+      ["4K", 1, "15"],
+    ],
+  );
 
   await assert.rejects(
     readBillingSummary({
@@ -247,7 +294,9 @@ test("billing summary is wired into both runtimes and the shared workspace", asy
   assert.match(page, /billingLoading/);
   assert.match(page, /billingError/);
   assert.match(page, /积分余额/);
-  assert.match(page, /可生成 \{availableImages/);
+  assert.match(page, /billingSummary\.account\.availableCredits/);
+  assert.doesNotMatch(page, /可生成 \{availableImages/);
+  assert.doesNotMatch(page, /launchBillingQuote/);
   assert.match(composer, /className="composer-price"/);
   assert.match(composer, /billingDescription/);
 });

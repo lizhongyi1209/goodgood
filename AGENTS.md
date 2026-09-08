@@ -54,6 +54,9 @@ changing detail in `docs/` and update the relevant document in the same change.
 - Proceed through approved in-scope steps without repeated confirmations;
   ask when a missing choice changes product direction, data safety, cost, or
   external authority. Do not silently grow alpha work into full-seed readiness.
+- Match effort to the requested outcome. Start with the smallest behaviorally
+  complete change and targeted inspection; add refactors or hardening only when
+  acceptance requires them or the current change exposes a concrete defect.
 - Follow repository workflows, not personal/external business skills. Tool
   availability or legacy hosting metadata does not change the deployment target.
 
@@ -67,12 +70,15 @@ changing detail in `docs/` and update the relevant document in the same change.
 - Prompt textarea auto-grows to eight lines, then scrolls. Tool positions remain
   stable while it grows.
 - Reference images live in a tray below the prompt, never inside its text area.
-  Maximum: 10. At the limit, the add control is disabled.
+  Use moderately enlarged responsive 1:1 centered previews and horizontal
+  overflow. Maximum: 10. At the limit, the add control is disabled.
+- Parameter groups read as aspect ratio, model, then output; aspect ratio starts
+  at the left on wide screens and remains first through responsive reflow.
 - Models and copy are fixed until a product decision changes them:
   `Nano Banana 2 — 快速，批量`; `Nano Banana Pro — 高质量资产，视觉优先`;
   `GPT IMAGE 2 — 高真实感，提示词遵循`.
-- Resolution UI uses `标准 / 高清 / 超清`; domain values use `1K / 2K / 4K`.
-  Generation count defaults to 1.
+- Resolution UI and domain values use `1K / 2K / 4K`. Asset metadata pairs the
+  requested value with decoded pixel dimensions when available. Generation count defaults to 1.
 - New generation batches appear first. Generated assets enter the asset library
   automatically and trigger a restrained navigation cue; do not add a bottom
   success banner.
@@ -114,6 +120,13 @@ changing detail in `docs/` and update the relevant document in the same change.
   labels, reduced motion, and responsive behavior intact.
 - Do not add speculative routes or functionality while refactoring.
 - Update documentation, tests, and error behavior in the same change as code.
+- Iterate with the smallest relevant tests. Run `npm run check:local` once after
+  code stabilizes, and repeat it only when later edits can invalidate that gate.
+  Documentation-only changes use the documentation tests and diff checks.
+- Treat every real-provider request as potentially billable. Never let fixtures
+  or synthetic jobs share a database or queue with a real-provider Worker.
+  Opt-in write tests require an explicitly named disposable database/stack with
+  no attached real-provider Worker; verify the effective target before enabling.
 - At each handoff, update the task card and BACKLOG, then synchronize the one
   current checkpoint in `docs/IMPLEMENTATION_PLAN.md`. Update CURRENT_STATE
   only when facts change. Record exact verification and the next action or

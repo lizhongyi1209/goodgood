@@ -49,6 +49,21 @@ export async function findReferenceAsset(pool, { ownerId, referenceId }) {
   return result.rows[0] ?? null;
 }
 
+export async function findReusableReferenceAssets(pool, { ownerId }) {
+  const result = await pool.query(
+    `SELECT id, object_key, original_file_name, detected_mime_type,
+            byte_size, pixel_width, pixel_height, uploaded_at
+       FROM reference_assets
+      WHERE owner_id = $1
+        AND upload_state = 'ready'
+        AND moderation_state = 'accepted'
+        AND object_deleted_at IS NULL
+      ORDER BY uploaded_at DESC NULLS LAST, created_at DESC, id DESC`,
+    [ownerId],
+  );
+  return result.rows;
+}
+
 export async function markReferenceReady(
   pool,
   { byteSize, checksum, detectedMimeType, height, ownerId, referenceId, width },

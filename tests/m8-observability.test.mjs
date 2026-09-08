@@ -5,9 +5,19 @@ import test from "node:test";
 import { GenerationRequestError, generationApiError } from "../server/generation/api.mjs";
 import {
   correlateRequest,
+  httpRouteForPath,
   observeHttpRequest,
   requestIdFor,
 } from "../server/observability/http.mjs";
+
+test("reference content observations redact the owner-scoped material ID", () => {
+  assert.equal(
+    httpRouteForPath(
+      "/api/references/20000000-0000-4000-8000-000000000001/content",
+    ),
+    "/api/references/:referenceId/content",
+  );
+});
 
 function listen(server) {
   return new Promise((resolve, reject) => {

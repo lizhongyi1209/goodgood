@@ -3,10 +3,13 @@ import { createServer } from "node:http";
 import test from "node:test";
 import { NormalizedProviderError } from "../server/generation/provider.mjs";
 import {
+  GENERATION_MODEL_CAPABILITIES,
   SUPPORTED_GENERATION_ASPECT_RATIOS,
   SUPPORTED_GENERATION_RESOLUTIONS,
+  getGptImage2PixelSize,
 } from "../server/generation/capabilities.mjs";
 import {
+  US_GATEWAY_GPT_IMAGE_2_ROUTE,
   US_GATEWAY_MVP_ROUTE,
   createUsGatewayAdapter,
   normalizeUsGatewayTask,
@@ -62,6 +65,10 @@ function createFakeGateway() {
       const body = JSON.parse((await readBody(request)).toString("utf8"));
       const taskId = `task_${nextTask}`;
       nextTask += 1;
+      const resultImages = Array.from({ length: body.n ?? 1 }, (_, index) => ({
+        mime_type: "image/png",
+        url: `https://assetcache.o1key.invalid/result-${index + 1}.png`,
+      }));
       let responses;
       if (/transient failure/i.test(body.prompt)) {
         responses = [
@@ -75,12 +82,7 @@ function createFakeGateway() {
           },
           {
             data: {
-              images: [
-                {
-                  mime_type: "image/png",
-                  url: "https://assetcache.o1key.invalid/result.png",
-                },
-              ],
+              images: resultImages,
               model: US_GATEWAY_MVP_ROUTE.providerModel,
             },
             progress: "100%",
@@ -106,12 +108,7 @@ function createFakeGateway() {
           { progress: "70%", status: "IN_PROGRESS", task_id: taskId },
           {
             data: {
-              images: [
-                {
-                  mime_type: "image/png",
-                  url: "https://assetcache.o1key.invalid/result.png",
-                },
-              ],
+              images: resultImages,
               model: US_GATEWAY_MVP_ROUTE.providerModel,
             },
             progress: "100%",
@@ -181,14 +178,14 @@ function generationRequest(prompt = "a silver future garment", jobOverrides = {}
   };
 }
 
-async function withGateway(context) {
+async function withGateway(context, route = US_GATEWAY_MVP_ROUTE) {
   const gateway = createFakeGateway();
   await gateway.listen();
   context.after(() => gateway.close());
   const address = gateway.address();
   assert.ok(address && typeof address === "object");
   const origin = `http://127.0.0.1:${address.port}`;
-  return { adapter: gatewayAdapter(origin), gateway, origin };
+  return { adapter: gatewayAdapter(origin, { route }), gateway, origin };
 }
 
 test("O1Key submission forwards every enabled aspect ratio and resolution", async (context) => {
@@ -209,8 +206,9 @@ test("O1Key submission forwards every enabled aspect ratio and resolution", asyn
         images: [],
         model: "gemini-3.1-flash-image-c-sp",
         prompt: "a silver future garment",
-        response_modalities: ["IMAGE"],
+        response_modalities: ["TEXT", "IMAGE"],
         size: resolution,
+        thinking_level: "high",
       });
     }
   }
@@ -300,7 +298,7 @@ test("polling normalizes O1Key success without inventing image dimensions", asyn
   assert.deepEqual(completed.outputs[0], {
     id: "output-1",
     mimeType: "image/png",
-    url: "https://assetcache.o1key.invalid/result.png",
+    url: "https://assetcache.o1key.invalid/result-1.png",
   });
 });
 
@@ -401,7 +399,7 @@ test("gateway transport and unsupported durable parameters fail closed", async (
   for (const jobOverrides of [
     { aspect_ratio: "10:1" },
     { model_id: "nano-banana-pro" },
-    { requested_count: 2 },
+    { requested_count: 3 },
     { resolution: "8K" },
   ]) {
     await assert.rejects(
@@ -410,4 +408,184 @@ test("gateway transport and unsupported durable parameters fail closed", async (
         error instanceof NormalizedProviderError && error.code === "INTERNAL_ERROR",
     );
   }
+});
+
+test("Nano Banana 2 defaults to high thinking and forwards enabled Google Search", async (context) => {
+  const { adapter, gateway } = await withGateway(context);
+  await adapter.submit(generationRequest("grounded high-thinking image", {
+    google_search: true,
+  }));
+  assert.equal(gateway.submissions.length, 1);
+  assert.equal(gateway.submissions[0].body.thinking_level, "high");
+  assert.equal(gateway.submissions[0].body.google_search, true);
+  assert.deepEqual(
+    gateway.submissions[0].body.response_modalities,
+    ["TEXT", "IMAGE"],
+  );
+});
+
+test("Nano Banana 2 preserves historical low-thinking retries", async (context) => {
+  const { adapter, gateway } = await withGateway(context);
+  await adapter.submit(generationRequest("historical low-thinking image", {
+    thinking_level: "low",
+  }));
+  assert.equal(gateway.submissions.length, 1);
+  assert.equal(gateway.submissions[0].body.thinking_level, undefined);
+});
+
+test("Nano Banana 2 accepts multi-output counts without forwarding an unsupported n field", async (context) => {
+  const { adapter, gateway } = await withGateway(context);
+  await adapter.submit(
+    generationRequest("one task in a four-output GoodGood batch", {
+      requested_count: 4,
+    }),
+  );
+  assert.equal(gateway.submissions.length, 1);
+  assert.equal(gateway.submissions[0].body.n, undefined);
+  assert.equal(gateway.submissions[0].body.aspect_ratio, "1:1");
+  assert.equal(gateway.submissions[0].body.size, "1K");
+  assert.equal(gateway.submissions[0].body.thinking_level, "high");
+});
+
+test("GPT Image 2 SD maps every enabled size and count to one native task", async (context) => {
+  const { adapter, gateway } = await withGateway(
+    context,
+    US_GATEWAY_GPT_IMAGE_2_ROUTE,
+  );
+  let submissionIndex = 0;
+  for (const aspectRatio of GENERATION_MODEL_CAPABILITIES["gpt-image-2"].aspectRatios) {
+    for (const resolution of SUPPORTED_GENERATION_RESOLUTIONS) {
+      for (const count of [1, 2, 4]) {
+        const submitted = await adapter.submit(
+          generationRequest("a realistic glass badge", {
+            aspect_ratio: aspectRatio,
+            model_id: "gpt-image-2",
+            requested_count: count,
+            resolution,
+          }),
+        );
+        submissionIndex += 1;
+        assert.deepEqual(submitted, { taskId: `task_${submissionIndex}` });
+        assert.deepEqual(gateway.submissions.at(-1).body, {
+          background: "auto",
+          images: [],
+          model: "gpt-image-2-c-sd",
+          n: count,
+          output_format: "jpeg",
+          prompt: "a realistic glass badge",
+          quality: "auto",
+          size: getGptImage2PixelSize(aspectRatio, resolution),
+        });
+      }
+    }
+  }
+  assert.equal(gateway.submissions.length, 63);
+  assert.equal(gateway.submissions[0].body.aspect_ratio, undefined);
+  assert.equal(gateway.submissions[0].body.response_modalities, undefined);
+  assert.match(gateway.submissions[0].body.size, /^\d+x\d+$/);
+});
+
+test("GPT Image 2 forwards quality, transparent background, and WebP at the top level", async (context) => {
+  const { adapter, gateway } = await withGateway(
+    context,
+    US_GATEWAY_GPT_IMAGE_2_ROUTE,
+  );
+  await adapter.submit(generationRequest("transparent glass badge", {
+    background: "transparent",
+    model_id: "gpt-image-2",
+    output_format: "webp",
+    quality: "high",
+  }));
+  assert.equal(gateway.submissions.length, 1);
+  assert.equal(gateway.submissions[0].body.quality, "high");
+  assert.equal(gateway.submissions[0].body.background, "transparent");
+  assert.equal(gateway.submissions[0].body.output_format, "webp");
+  assert.equal(gateway.submissions[0].body.thinking_level, undefined);
+  assert.equal(gateway.submissions[0].body.google_search, undefined);
+});
+
+test("GPT Image 2 rejects transparent JPEG before provider submission", async (context) => {
+  const { adapter, gateway } = await withGateway(
+    context,
+    US_GATEWAY_GPT_IMAGE_2_ROUTE,
+  );
+  await assert.rejects(
+    adapter.submit(generationRequest("invalid transparent JPEG", {
+      background: "transparent",
+      model_id: "gpt-image-2",
+      output_format: "jpeg",
+    })),
+    (error) => error instanceof NormalizedProviderError && error.code === "INTERNAL_ERROR",
+  );
+  assert.equal(gateway.submissions.length, 0);
+});
+
+test("GPT Image 2 polling returns exactly the requested ordered outputs", async (context) => {
+  const { adapter } = await withGateway(context, US_GATEWAY_GPT_IMAGE_2_ROUTE);
+  const submitted = await adapter.submit(
+    generationRequest("four ordered images", {
+      model_id: "gpt-image-2",
+      requested_count: 4,
+    }),
+  );
+  const completed = await adapter.waitForTerminal({
+    expectedOutputCount: 4,
+    pollIntervalMs: 1,
+    taskId: submitted.taskId,
+    timeoutMs: 100,
+  });
+  assert.deepEqual(
+    completed.outputs.map((output) => output.id),
+    ["output-1", "output-2", "output-3", "output-4"],
+  );
+  assert.throws(
+    () => normalizeUsGatewayTask({
+      data: { images: completed.outputs.slice(0, 2).map((output) => ({
+        mime_type: output.mimeType,
+        url: output.url,
+      })) },
+      status: "SUCCESS",
+      task_id: "short-task",
+    }, { expectedOutputCount: 4 }),
+    (error) => error instanceof NormalizedProviderError && error.code === "INTERNAL_ERROR",
+  );
+});
+
+test("GPT Image 2 SD keeps validated reference uploads in the edit request", async (context) => {
+  const { adapter, gateway } = await withGateway(
+    context,
+    US_GATEWAY_GPT_IMAGE_2_ROUTE,
+  );
+  await adapter.submit({
+    ...generationRequest("keep the subject and change the material", {
+      aspect_ratio: "3:2",
+      model_id: "gpt-image-2",
+      resolution: "4K",
+    }),
+    references: [
+      {
+        bytes: Buffer.from("gpt-reference"),
+        mimeType: "image/png",
+        name: "subject.png",
+      },
+    ],
+  });
+
+  assert.deepEqual(gateway.submissions[0].body, {
+    background: "auto",
+    images: [
+      {
+        fileData: {
+          fileUri: "https://temporary.o1key.invalid/reference-1.png",
+          mimeType: "image/png",
+        },
+      },
+    ],
+    model: "gpt-image-2-c-sd",
+    n: 1,
+    output_format: "jpeg",
+    prompt: "keep the subject and change the material",
+    quality: "auto",
+    size: "3504x2336",
+  });
 });

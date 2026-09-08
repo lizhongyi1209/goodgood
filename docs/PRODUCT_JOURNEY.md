@@ -69,10 +69,12 @@ guide explains how portrait and landscape relate; the active black outline was
 made thin and the active frame remains visually dominant. The ratio text appears
 inside the preview and is not repeated below the control.
 
-Resolution uses human-facing `标准 / 高清 / 超清` while preserving domain values
-`1K / 2K / 4K`. Resolution and quantity share a component group; count defaults
-to 1. Selected controls use a soft Palace Red fill, unselected segmented options
-use white, and the surrounding group uses neutral gray.
+Resolution originally used `标准 / 高清 / 超清` while preserving domain values.
+ADR 0027 replaces that copy with the direct `1K / 2K / 4K` values and adds
+decoded pixel dimensions to Asset presentation. Resolution and quantity share a
+component group; count defaults to 1. Selected controls use a soft Palace Red
+fill, unselected segmented options use white, and the surrounding group uses
+neutral gray.
 
 ## 8. Support different creation intents
 

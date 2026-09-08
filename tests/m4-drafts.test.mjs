@@ -34,9 +34,59 @@ test("creation drafts validate stable values, ready reference IDs, versions, and
       prompt: "保留服装结构",
       referenceIds: [REFERENCE_ID],
       resolution: "2K",
+      thinkingLevel: "high",
+      googleSearch: false,
+      quality: "auto",
+      background: "auto",
+      outputFormat: "png",
     },
   });
   assert.equal(validateDraftDelete({ expectedVersion: 3 }), 3);
+  assert.deepEqual(
+    validateDraftMutation({
+      ...validDraft,
+      state: { ...validDraft.state, thinkingLevel: "high", googleSearch: true },
+    }).state,
+    {
+      aspectRatio: "4:5",
+      count: 1,
+      googleSearch: true,
+      modelId: "nano-banana-2",
+      prompt: "保留服装结构",
+      referenceIds: [REFERENCE_ID],
+      resolution: "2K",
+      thinkingLevel: "high",
+      quality: "auto",
+      background: "auto",
+      outputFormat: "png",
+    },
+  );
+  assert.deepEqual(
+    validateDraftMutation({
+      ...validDraft,
+      state: {
+        ...validDraft.state,
+        aspectRatio: "1:1",
+        background: "transparent",
+        modelId: "gpt-image-2",
+        outputFormat: "webp",
+        quality: "high",
+      },
+    }).state,
+    {
+      aspectRatio: "1:1",
+      background: "transparent",
+      count: 1,
+      googleSearch: false,
+      modelId: "gpt-image-2",
+      outputFormat: "webp",
+      prompt: "保留服装结构",
+      quality: "high",
+      referenceIds: [REFERENCE_ID],
+      resolution: "2K",
+      thinkingLevel: "low",
+    },
+  );
   assert.throws(
     () => validateDraftMutation({ ...validDraft, expectedVersion: 0 }),
     (error) => error.code === "INVALID_DRAFT",
