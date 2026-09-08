@@ -20,7 +20,7 @@
 | GG-012 | Nano Banana 2 思考程度、谷歌搜索与文本/图片响应模态 | 3010 已就绪；待站长真实生成验收 | [任务](tasks/GG-012-banana-thinking-search.md) |
 | GG-013 | 稳定生成网格、实际尺寸悬浮信息与本地下载 | 3010 Web 已就绪；待站长生成/下载验收 | [任务](tasks/GG-013-stable-generation-grid-download.md) |
 | GG-014 | 精简左下角积分余额，只保留余额标题与数值 | 3010 Web 已就绪；待站长验收 | [任务](tasks/GG-014-sidebar-balance-copy.md) |
-| GG-015 | GPT IMAGE 2 质量、背景与输出格式 | 3010 已就绪；待站长真实生成验收 | [任务](tasks/GG-015-gpt-image-options.md) |
+| GG-015 | GPT IMAGE 2 质量、背景与输出格式 | JPEG 默认及真实双图已验证；待透明/下载验收 | [任务](tasks/GG-015-gpt-image-options.md) |
 
 下一个普通产品需求从 **GG-016** 分配并检查是否已被占用。
 GG-003 不阻塞本地新功能开发，但必须在下一次实际 alpha 发布前闭环。

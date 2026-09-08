@@ -78,6 +78,15 @@ test("generation input accepts model-owned ratios, resolutions, and output count
       quality: "high",
     },
   );
+  const gptInputWithoutFormat = {
+    ...validInput,
+    modelId: "gpt-image-2",
+  };
+  delete gptInputWithoutFormat.outputFormat;
+  assert.equal(
+    validateM3GenerationInput(gptInputWithoutFormat).outputFormat,
+    "jpeg",
+  );
   for (const unsupportedInput of [
     { ...validInput, thinkingLevel: "medium" },
     { ...validInput, googleSearch: "true" },

@@ -106,6 +106,8 @@ export const GPT_IMAGE_OUTPUT_FORMAT_OPTIONS = [
   { value: "webp", label: "WebP" },
 ] as const satisfies readonly Readonly<{ value: GptImageOutputFormat; label: string }>[];
 
+export const DEFAULT_GPT_IMAGE_OUTPUT_FORMAT = "jpeg" as const;
+
 export function getGenerationRatio(
   ratio: GenerationAspectRatio,
 ): GenerationRatioOption {
@@ -194,7 +196,7 @@ export function resolveGptImageOptionsForModel(
   ) ? options.quality as GptImageQuality : "auto";
   let outputFormat = GPT_IMAGE_OUTPUT_FORMAT_OPTIONS.some(
     (option) => option.value === options.outputFormat,
-  ) ? options.outputFormat as GptImageOutputFormat : "png";
+  ) ? options.outputFormat as GptImageOutputFormat : DEFAULT_GPT_IMAGE_OUTPUT_FORMAT;
   if (background === "transparent" && outputFormat === "jpeg") {
     outputFormat = "png";
   }
@@ -210,7 +212,7 @@ export function gptImageBackgroundLabel(value: GptImageBackground): string {
 }
 
 export function gptImageOutputFormatLabel(value: GptImageOutputFormat): string {
-  return GPT_IMAGE_OUTPUT_FORMAT_OPTIONS.find((option) => option.value === value)?.label ?? "PNG";
+  return GPT_IMAGE_OUTPUT_FORMAT_OPTIONS.find((option) => option.value === value)?.label ?? "JPEG";
 }
 
 export function getGenerationModelRatioIndex(

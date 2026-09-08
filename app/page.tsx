@@ -295,7 +295,7 @@ function generationJobToAssetBatch(job: GenerationJob): AssetBatch {
     prompt: job.input.prompt,
     referenceCount: job.input.references.length,
     resolution: job.input.resolution,
-    outputFormat: job.input.outputFormat ?? "png",
+    outputFormat: resolveGptImageOptionsForModel(job.input.modelId, job.input).outputFormat,
     quality: job.input.quality ?? "auto",
     thinkingLevel: job.input.thinkingLevel ?? "low",
     time: new Intl.DateTimeFormat("zh-CN", {
@@ -1209,11 +1209,7 @@ export default function Home() {
     setGoogleSearch((current) =>
       resolveGoogleSearchForModel(value, current),
     );
-    const nextGptOptions = resolveGptImageOptionsForModel(value, {
-      background,
-      outputFormat,
-      quality,
-    });
+    const nextGptOptions = resolveGptImageOptionsForModel(value);
     setQuality(nextGptOptions.quality);
     setBackground(nextGptOptions.background);
     setOutputFormat(nextGptOptions.outputFormat);
@@ -1588,7 +1584,10 @@ export default function Home() {
       background: completedInput.background ?? "auto",
       googleSearch: completedInput.googleSearch ?? false,
       referenceCount: completedInput.references.length,
-      outputFormat: completedInput.outputFormat ?? "png",
+      outputFormat: resolveGptImageOptionsForModel(
+        completedInput.modelId,
+        completedInput,
+      ).outputFormat,
       quality: completedInput.quality ?? "auto",
       thinkingLevel: completedInput.thinkingLevel ?? "low",
       images: completedJob.outputs,
@@ -1617,7 +1616,10 @@ export default function Home() {
                     prompt: completedInput.prompt,
                     references: completedInput.references,
                     resolution: completedInput.resolution,
-                    outputFormat: completedInput.outputFormat ?? "png",
+                    outputFormat: resolveGptImageOptionsForModel(
+                      completedInput.modelId,
+                      completedInput,
+                    ).outputFormat,
                     quality: completedInput.quality ?? "auto",
                     thinkingLevel: completedInput.thinkingLevel ?? "low",
                   }

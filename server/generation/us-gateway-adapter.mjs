@@ -1,5 +1,6 @@
 import { NormalizedProviderError } from "./provider.mjs";
 import {
+  DEFAULT_GPT_IMAGE_OUTPUT_FORMAT,
   SUPPORTED_GPT_IMAGE_BACKGROUNDS,
   SUPPORTED_GPT_IMAGE_OUTPUT_FORMATS,
   SUPPORTED_GPT_IMAGE_QUALITIES,
@@ -280,7 +281,11 @@ function validateJob(job, route) {
   const googleSearch = job?.google_search ?? false;
   const quality = job?.quality ?? "auto";
   const background = job?.background ?? "auto";
-  const outputFormat = job?.output_format ?? "png";
+  const outputFormat =
+    job?.output_format ??
+    (route.productModelId === "gpt-image-2"
+      ? DEFAULT_GPT_IMAGE_OUTPUT_FORMAT
+      : "png");
   if (
     job?.model_id !== route.productModelId ||
     !isSupportedGenerationInput({
@@ -320,7 +325,7 @@ function generationPayload({ job, route, uploadedReferences }) {
       ...common,
       background: job.background ?? "auto",
       n: job.requested_count,
-      output_format: job.output_format ?? "png",
+      output_format: job.output_format ?? DEFAULT_GPT_IMAGE_OUTPUT_FORMAT,
       quality: job.quality ?? "auto",
       size: getGptImage2PixelSize(job.aspect_ratio, job.resolution),
     };

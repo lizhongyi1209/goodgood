@@ -69,7 +69,8 @@ export function generationInputFromRow(row, referenceUrls = new Map()) {
     count: row.requested_count,
     googleSearch: row.google_search ?? false,
     modelId: row.model_id,
-    outputFormat: row.output_format ?? "png",
+    outputFormat:
+      row.output_format ?? (row.model_id === "gpt-image-2" ? "jpeg" : "png"),
     projectId: row.project_id ?? null,
     prompt: row.prompt,
     references: (row.reference_snapshot ?? []).map((reference) => ({
@@ -91,7 +92,8 @@ export function persistedGenerationInputFromRow(row) {
     count: row.requested_count,
     googleSearch: row.google_search ?? false,
     modelId: row.model_id,
-    outputFormat: row.output_format ?? "png",
+    outputFormat:
+      row.output_format ?? (row.model_id === "gpt-image-2" ? "jpeg" : "png"),
     projectId: row.project_id ?? null,
     prompt: row.prompt,
     references: (row.reference_snapshot ?? []).map((reference) => ({

@@ -6,6 +6,7 @@ import { PrivateObjectImage } from "@/components/ui/private-object-image";
 
 import { Slider } from "@/components/ui/slider";
 import {
+  DEFAULT_GPT_IMAGE_OUTPUT_FORMAT,
   GENERATION_RATIO_MODES,
   GENERATION_RESOLUTION_OPTIONS,
   GPT_IMAGE_BACKGROUND_OPTIONS,
@@ -124,7 +125,9 @@ export function CreationComposer({
   googleSearch = false,
   quality = "auto",
   background = "auto",
-  outputFormat = "png",
+  outputFormat = modelId === "gpt-image-2"
+    ? DEFAULT_GPT_IMAGE_OUTPUT_FORMAT
+    : "png",
   drawerOpen,
   isGenerating,
   billingLabel,

@@ -90,7 +90,7 @@ fill space.
   projects, retries, and image detail preserve and expose the frozen choice.
 - Selecting GPT IMAGE 2 reveals `质量` (`自动 / 低 / 中 / 高`, default `自动`),
   `背景` (`自动 / 透明`, default `自动`), and `输出格式`
-  (`PNG / JPEG / WebP`, default `PNG`). Choosing transparent while JPEG is
+  (`PNG / JPEG / WebP`, default `JPEG`). Choosing transparent while JPEG is
   selected immediately moves output format to PNG; JPEG remains disabled until
   background returns to automatic. Leaving GPT hides and resets all three.
   Draft/project restore, retry, and image detail use the frozen values.

@@ -3,7 +3,8 @@
 - Last synchronized: 2026-09-08
 - Current phase: 已开放 controlled alpha；转入按需求的高频小步迭代。
 - Current objective: GG-015 已在 3010 为 GPT IMAGE 2 增加质量、背景和输出格式，完成
-  默认值、透明/JPEG 联动、持久化与 O1Key v2 映射；等待站长使用测试积分真实生成验收。
+  JPEG 默认值、透明/JPEG 联动、持久化与 O1Key v2 映射；站长已完成自动背景 JPEG
+  双图真实生成，等待透明格式与下载验收。
   GG-013 下载候选仍等待站长完成系统保存窗口复核。
 
 ## Current checkpoint
@@ -54,10 +55,12 @@
   Web readiness 与真实 Chrome 文案核对通过；完整门禁 228 项（222 通过、6 项
   opt-in 跳过），未调用真实 provider。
 - GG-015：ADR 0036 取代 GPT 输出参数延期决定；质量/背景/输出格式已贯穿快照、草稿、
-  项目、批次、重试和详情，O1Key GPT 路由升级为 v2。迁移 0018、最终 234 项门禁、
-  readiness 和真实 Chrome 默认/联动/重置通过；没有生成或付费请求。
-- Next action: 站长在当前 3010 用可用测试积分复核 GPT IMAGE 2 的代表性参数组合和下载
-  MIME/透明通道；随后完成系统保存窗口并确认
+  项目、批次、重试和详情，O1Key GPT 路由升级为 v2，输出格式默认值后续修订为 JPEG。
+  迁移 0018、最终 234 项门禁、readiness 和真实 Chrome 跨模型 JPEG 默认选择通过；
+  站长真实 `3:4 / 1K / 2 张 / 自动背景 / JPEG` 生成成功并落库 2 个 Asset，余额 480、
+  冻结 0，代理未点击生成。
+- Next action: 站长在当前 3010 用可用测试积分复核 GPT IMAGE 2 的透明 PNG/WebP 组合和
+  下载 MIME/透明通道；随后完成系统保存窗口并确认
   非零可打开图片，停留超过 15 分钟后再下载一次应同样成功。再使用可用测试积分复核
   2/4 张生成的最终排列和原位替换，结合 GG-012 决定是否进入发布候选。
 - Blockers: 本地组合候选无外部阻塞；下次 alpha 发布前须处理 GG-003 的独立

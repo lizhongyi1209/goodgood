@@ -51,7 +51,8 @@ async function presentCreationDraft(resources, row) {
         url: referenceUrls.get(reference.id) ?? "",
       })),
       resolution: row.resolution,
-      outputFormat: row.output_format ?? "png",
+      outputFormat:
+        row.output_format ?? (row.model_id === "gpt-image-2" ? "jpeg" : "png"),
       quality: row.quality ?? "auto",
       thinkingLevel: row.thinking_level ?? "low",
     },

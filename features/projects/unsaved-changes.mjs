@@ -20,7 +20,8 @@ export function createComposerCheckpoint(draft) {
     count: draft.count,
     googleSearch: draft.googleSearch === true,
     modelId: draft.modelId,
-    outputFormat: draft.outputFormat ?? "png",
+    outputFormat:
+      draft.outputFormat ?? (draft.modelId === "gpt-image-2" ? "jpeg" : "png"),
     prompt: draft.prompt.trim(),
     references: draft.references.map((reference) => ({
       id: reference.id,

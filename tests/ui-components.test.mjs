@@ -270,6 +270,17 @@ test("normalizes and restores GPT Image 2 quality, background, and output format
     "/features/creation/generation-options.ts",
   );
 
+  assert.deepEqual(resolveGptImageOptionsForModel("gpt-image-2"), {
+    background: "auto",
+    outputFormat: "jpeg",
+    quality: "auto",
+  });
+  assert.deepEqual(resolveGptImageOptionsForModel("nano-banana-2"), {
+    background: "auto",
+    outputFormat: "png",
+    quality: "auto",
+  });
+
   assert.deepEqual(
     resolveGptImageOptionsForModel("gpt-image-2", {
       background: "transparent",

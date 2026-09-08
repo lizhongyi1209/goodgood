@@ -27,6 +27,13 @@ test("GPT Image 2 options default, validate compatibility, and reject model leak
   assert.deepEqual(normalizeGenerationModelOptions({ modelId: "gpt-image-2" }), {
     background: "auto",
     googleSearch: false,
+    outputFormat: "jpeg",
+    quality: "auto",
+    thinkingLevel: "low",
+  });
+  assert.deepEqual(normalizeGenerationModelOptions({ modelId: "nano-banana-2" }), {
+    background: "auto",
+    googleSearch: false,
     outputFormat: "png",
     quality: "auto",
     thinkingLevel: "low",
@@ -109,6 +116,10 @@ test("GG-015 migration and UI persist model-owned GPT Image 2 controls", async (
   assert.match(composer, /modelId === "gpt-image-2"/);
   assert.match(composer, /GPT_IMAGE_QUALITY_OPTIONS/);
   assert.match(composer, /background === "transparent" && option\.value === "jpeg"/);
+  assert.match(
+    page,
+    /const nextGptOptions = resolveGptImageOptionsForModel\(value\)/,
+  );
   assert.match(page, /setOutputFormat\("png"\)/);
   assert.match(page, /gptImageQualityLabel\(activeDetail\.batch\.quality\)/);
   assert.match(projectRepository, /quality, background, output_format/);

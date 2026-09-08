@@ -11,6 +11,7 @@ export const SUPPORTED_GENERATION_THINKING_LEVELS = Object.freeze(["low", "high"
 export const SUPPORTED_GPT_IMAGE_QUALITIES = Object.freeze(["auto", "low", "medium", "high"]);
 export const SUPPORTED_GPT_IMAGE_BACKGROUNDS = Object.freeze(["auto", "transparent"]);
 export const SUPPORTED_GPT_IMAGE_OUTPUT_FORMATS = Object.freeze(["png", "jpeg", "webp"]);
+export const DEFAULT_GPT_IMAGE_OUTPUT_FORMAT = "jpeg";
 
 const NANO_BANANA_2_ASPECT_RATIOS = Object.freeze([
   "1:8",
@@ -103,7 +104,8 @@ export function normalizeGenerationModelOptions({
   const normalizedGoogleSearch = googleSearch ?? false;
   const normalizedQuality = quality ?? "auto";
   const normalizedBackground = background ?? "auto";
-  const normalizedOutputFormat = outputFormat ?? "png";
+  const normalizedOutputFormat =
+    outputFormat ?? (modelId === "gpt-image-2" ? DEFAULT_GPT_IMAGE_OUTPUT_FORMAT : "png");
   if (
     !SUPPORTED_GENERATION_THINKING_LEVELS.includes(normalizedThinkingLevel) ||
     typeof normalizedGoogleSearch !== "boolean" ||

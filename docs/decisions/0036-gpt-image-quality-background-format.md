@@ -25,7 +25,7 @@ an invalid combination to reach a potentially billable provider request.
   - background `auto | transparent`, shown as `自动 / 透明`;
   - output format `png | jpeg | webp`, shown as `PNG / JPEG / WebP`.
 - Defaults are `quality: "auto"`, `background: "auto"`, and
-  `outputFormat: "png"`. GPT submissions explicitly send all three as top-level
+  `outputFormat: "jpeg"`. GPT submissions explicitly send all three as top-level
   O1Key fields, using `output_format` for the provider name.
 - Choosing transparent background while JPEG is selected changes the format to
   PNG. JPEG is disabled while transparent background remains selected. The API,
@@ -45,8 +45,12 @@ an invalid combination to reach a potentially billable provider request.
 
 ## Consequences
 
-- Default GPT requests become explicit and deterministic without changing the
+- Default GPT requests use JPEG explicitly and deterministically without changing the
   product's model, size, output count, or 10-credit-per-image price.
+- The shared database columns retain their neutral `png` fallback because Nano
+  rows use the same schema and must keep hidden GPT-only options isolated. The
+  model-aware application boundary supplies `jpeg` for omitted GPT values;
+  existing persisted PNG selections remain frozen and are not rewritten.
 - Restored projects, drafts, failed-job settings, and retries reproduce the same
   quality/background/format combination.
 - Malformed values, model leakage, and transparent JPEG fail before credit
