@@ -1,6 +1,6 @@
 # ADR 0034: Stable generation slots and explicit local download
 
-- Status: Accepted
+- Status: Accepted (download path amended 2026-09-08)
 - Date: 2026-09-08
 - Supersedes: the separate active-task/completed-masonry presentation rule in ADR 0031 and `UX_FLOWS.md`
 - Refines: ADR 0001, ADR 0003, ADR 0027, and ADR 0031
@@ -36,9 +36,11 @@ generation outputs already enter the asset library automatically.
   table as a fallback.
 - The creation-card bookmark is removed. Asset-library selection and detail
   actions are unchanged.
-- A user-initiated download uses the native file save picker when supported.
-  Otherwise the browser fetches the signed image into a Blob and downloads an
-  object URL. Direct navigation to the private image URL is not a download path.
+- A user-initiated download first fetches and validates the complete signed
+  image in memory, then hands a Blob object URL to the browser download manager.
+  The object URL remains valid until after the browser has accepted the download.
+  Direct navigation to the private image URL and direct File System Access API
+  writes are not download paths.
 
 ## Consequences
 
@@ -47,7 +49,13 @@ generation outputs already enter the asset library automatically.
 - The client retains terminal successful runs for the current in-memory
   creation session so stable slot identity survives completion; durable jobs
   remain the source of truth after refresh or project restore.
-- The fallback cannot force a save dialog when a browser is configured for
-  automatic downloads, but it still downloads without opening an image tab.
+- Whether a save dialog appears follows the browser's download preference, but
+  the flow still downloads without opening an image tab. Because no destination
+  file is opened before the signed image has been read and validated, a network
+  or validation failure cannot leave a pre-created zero-byte target file.
+- This amends the original native-picker preference after repeated real Chrome
+  on Windows checks created a destination file before a later failure and left
+  a zero-byte artifact, even after cross-origin reads and committed-size checks
+  had been added.
 - This ADR authorizes local implementation and verification only. Production
   deployment and any real billable provider test require separate approval.

@@ -62,20 +62,20 @@ panel for asynchronous generation failure.
 
 ## Local image download
 
-Image download is a user-initiated browser operation. When the native file save
-picker is available, cancelling it is an expected no-op and produces no error
-toast. A signed-object read failure, Blob creation failure, or local file write
+Image download is a user-initiated browser operation. The browser first reads
+and validates the complete signed object, then receives an in-memory Blob URL
+through its download manager. A signed-object read, empty-body, or Blob creation
 failure keeps the current image/detail state and shows `下载失败，请重试`; it must
-not navigate the current page or open the signed image URL in another tab.
-Browsers without the native picker use a Blob download, so whether a separate
-save dialog appears follows that browser's download preference.
+not navigate the current page, open the signed image URL in another tab, or
+create a destination file. Whether a separate save dialog appears follows the
+browser's download preference. Once the browser has accepted the download the
+app reports `图片下载已开始`; browser-side cancellation is not observable by the
+page.
 Local managed object storage permits the reviewed app origins to read signed
 objects with `GET`/`HEAD` as well as upload with `PUT`. The browser rejects an
-empty response before opening a writable file and never reports it as saved.
-The native-picker path writes an explicit byte array with existing data
-disabled, closes the stream, then re-reads the file handle and requires the
-committed size to equal the downloaded size. A mismatch is a retryable download
-failure rather than a successful zero-byte save.
+empty response before creating the Blob download. The object URL is released
+only after a delay so the browser cannot race the download against immediate
+resource revocation.
 
 The M3 mock contract maps a provider rejection to `MODEL_REJECTED`, a bounded
 poll deadline to `MODEL_TIMEOUT`, provider reachability/capacity to

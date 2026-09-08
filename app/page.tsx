@@ -1686,8 +1686,8 @@ export default function Home() {
     downloadingImageKeysRef.current.add(imageKey);
     setDownloadingImageKeys((current) => [...current, imageKey]);
     try {
-      const result = await saveRequest;
-      if (result === "saved") toast.success("图片已保存到本地");
+      await saveRequest;
+      toast.success("图片下载已开始");
     } catch {
       toast.error("下载失败，请重试");
     } finally {
