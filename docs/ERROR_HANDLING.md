@@ -63,14 +63,17 @@ panel for asynchronous generation failure.
 ## Local image download
 
 Image download is a user-initiated browser operation. The browser first reads
-and validates the complete signed object, then receives an in-memory Blob URL
-through its download manager. A signed-object read, empty-body, or Blob creation
-failure keeps the current image/detail state and shows `下载失败，请重试`; it must
-not navigate the current page, open the signed image URL in another tab, or
-create a destination file. Whether a separate save dialog appears follows the
-browser's download preference. Once the browser has accepted the download the
-app reports `图片下载已开始`; browser-side cancellation is not observable by the
-page.
+an owner-authorized fresh signed URL by stable Asset ID, then reads and validates
+the complete object before its download manager receives an in-memory Blob URL.
+The expiring preview URL retained in page state is never reused for download.
+A URL-resolution, signed-object read, empty-body, or Blob creation failure keeps
+the current image/detail state and shows `下载失败，请重试`; it must not navigate
+the current page, open the signed image URL in another tab, or create a
+destination file. The console records only the Asset ID, safe error message, and
+one of `resolve-url / fetch / read / validate / prepare / start`; signed URLs are
+excluded. Whether a separate save dialog appears follows the browser's download
+preference. Once the browser has accepted the download the app reports
+`图片下载已开始`; browser-side cancellation is not observable by the page.
 Local managed object storage permits the reviewed app origins to read signed
 objects with `GET`/`HEAD` as well as upload with `PUT`. The browser rejects an
 empty response before creating the Blob download. The object URL is released

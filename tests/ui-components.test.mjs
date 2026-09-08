@@ -457,8 +457,8 @@ test("draft HTTP boundary covers empty, save, delete, and explicit conflict reco
   }
 });
 
-test("asset HTTP boundary covers durable success, empty, and retryable failure", async () => {
-  const { listAssets } = await vite.ssrLoadModule(
+test("asset HTTP boundary covers durable success, fresh download URLs, empty, and retryable failure", async () => {
+  const { listAssets, readAssetDownloadUrl } = await vite.ssrLoadModule(
     "/features/assets/http-asset-boundary.ts",
   );
   const originalFetch = globalThis.fetch;
@@ -496,6 +496,20 @@ test("asset HTTP boundary covers durable success, empty, and retryable failure",
 
     globalThis.fetch = async () => Response.json({ batches: [] });
     assert.deepEqual(await listAssets(), []);
+
+    globalThis.fetch = async (input, options = {}) => {
+      calls.push({ input: String(input), options });
+      return Response.json({ url: "https://storage.invalid/fresh-download" });
+    };
+    assert.equal(
+      await readAssetDownloadUrl("50000000-0000-4000-8000-000000000001"),
+      "https://storage.invalid/fresh-download",
+    );
+    assert.equal(
+      calls.at(-1).input,
+      "/api/assets/50000000-0000-4000-8000-000000000001/download-url",
+    );
+    assert.equal(calls.at(-1).options.cache, "no-store");
 
     globalThis.fetch = async () =>
       Response.json(

@@ -422,9 +422,9 @@ The timestamped result of the latest verified gate belongs in
 - Detail wheel, arrow keys, stable-URL replacement, focus, source scope, and
   close restoration.
 - Creation-card hover shows concrete pixel dimensions, omits the duplicate
-  bookmark, and download uses a native save picker or Blob fallback without
-  navigating to the signed object URL. Cancellation and transfer failure retain
-  the page state.
+  bookmark, and download resolves a fresh owner-scoped URL by Asset ID before
+  creating a Blob download without navigation. URL resolution and transfer
+  failures retain the page state and expose a diagnostic stage.
 
 ### API/integration
 
@@ -436,6 +436,8 @@ The timestamped result of the latest verified gate belongs in
 - Idempotent owner-scoped project creation, restore, update, and continuation.
 - Owner-scoped asset listing filters to accepted successful outputs, preserves
   newest-first grouping, and returns fresh signed private reads.
+- Owner-scoped Asset download URL resolution returns a fresh short-lived read
+  only for an accepted successful Asset and never proxies the image bytes.
 - Provider timeout/rejection normalization.
 - Callback verification and duplicate callback handling.
 - The M5 fake O1Key gateway exhaustively proves all 42 combinations of the 14

@@ -44,7 +44,10 @@ import {
 } from "@/features/auth/http-auth-boundary";
 import { AccountAccessGate } from "@/features/auth/account-access-gate";
 import { listAssets } from "@/features/assets/http-asset-boundary";
-import { saveImageToLocal } from "@/features/assets/image-download";
+import {
+  ImageDownloadError,
+  saveImageToLocal,
+} from "@/features/assets/image-download";
 import {
   availableImageCount,
   findBillingQuote,
@@ -1679,6 +1682,7 @@ export default function Home() {
     const imageKey = `${batch.id}-${image.id}`;
     if (downloadingImageKeysRef.current.has(imageKey)) return;
     const saveRequest = saveImageToLocal({
+      assetId: image.id,
       createdAt: batch.createdAt,
       ordinal: index + 1,
       previewUrl: image.previewUrl,
@@ -1688,7 +1692,12 @@ export default function Home() {
     try {
       await saveRequest;
       toast.success("图片下载已开始");
-    } catch {
+    } catch (error) {
+      console.error("[GoodGood] image download failed", {
+        assetId: image.id,
+        message: error instanceof Error ? error.message : String(error),
+        stage: error instanceof ImageDownloadError ? error.stage : "unknown",
+      });
       toast.error("下载失败，请重试");
     } finally {
       downloadingImageKeysRef.current.delete(imageKey);

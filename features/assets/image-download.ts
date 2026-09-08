@@ -1,11 +1,31 @@
+import { readAssetDownloadUrl } from "@/features/assets/http-asset-boundary";
+
 type ImageDownloadDependencies = Readonly<{
   documentObject?: Pick<Document, "body" | "createElement">;
   fetchImplementation?: typeof fetch;
+  resolveDownloadUrl?: (assetId: string) => Promise<string>;
   schedule?: (callback: () => void, delayMs: number) => unknown;
   urlObject?: Pick<typeof URL, "createObjectURL" | "revokeObjectURL">;
 }>;
 
 export type ImageDownloadResult = "started";
+export type ImageDownloadStage =
+  | "resolve-url"
+  | "fetch"
+  | "read"
+  | "validate"
+  | "prepare"
+  | "start";
+
+export class ImageDownloadError extends Error {
+  readonly stage: ImageDownloadStage;
+
+  constructor(stage: ImageDownloadStage, message: string, cause?: unknown) {
+    super(message, { cause });
+    this.name = "ImageDownloadError";
+    this.stage = stage;
+  }
+}
 
 const OBJECT_URL_RELEASE_DELAY_MS = 60_000;
 
@@ -40,30 +60,76 @@ export function imageDownloadFilename(
 
 export async function saveImageToLocal(
   input: Readonly<{
+    assetId: string;
     createdAt: string;
     ordinal: number;
     previewUrl: string;
   }>,
   dependencies: ImageDownloadDependencies = {},
 ): Promise<ImageDownloadResult> {
-  const fetchImplementation = dependencies.fetchImplementation ?? fetch;
-  const response = await fetchImplementation(input.previewUrl);
-  if (!response.ok) {
-    throw new Error(`Image download failed with status ${response.status}`);
+  const resolveDownloadUrl = dependencies.resolveDownloadUrl ?? readAssetDownloadUrl;
+  let downloadUrl: string;
+  try {
+    downloadUrl = await resolveDownloadUrl(input.assetId);
+  } catch (error) {
+    throw new ImageDownloadError(
+      "resolve-url",
+      "Image download URL could not be refreshed.",
+      error,
+    );
   }
-  const bytes = new Uint8Array(await response.arrayBuffer());
+  const fetchImplementation = dependencies.fetchImplementation ?? fetch;
+  let response: Response;
+  try {
+    response = await fetchImplementation(downloadUrl);
+  } catch (error) {
+    throw new ImageDownloadError(
+      "fetch",
+      "Image download request failed.",
+      error,
+    );
+  }
+  if (!response.ok) {
+    throw new ImageDownloadError(
+      "fetch",
+      `Image download failed with status ${response.status}`,
+    );
+  }
+  let bytes: Uint8Array<ArrayBuffer>;
+  try {
+    bytes = new Uint8Array(await response.arrayBuffer());
+  } catch (error) {
+    throw new ImageDownloadError(
+      "read",
+      "Image download response could not be read.",
+      error,
+    );
+  }
   if (bytes.byteLength === 0) {
-    throw new Error("Image download returned an empty file.");
+    throw new ImageDownloadError(
+      "validate",
+      "Image download returned an empty file.",
+    );
   }
 
   const documentObject = dependencies.documentObject ?? document;
   const urlObject = dependencies.urlObject ?? URL;
   const schedule = dependencies.schedule ?? setTimeout;
-  const blob = new Blob([bytes], {
-    type: response.headers.get("content-type") ?? "application/octet-stream",
-  });
-  const objectUrl = urlObject.createObjectURL(blob);
-  const link = documentObject.createElement("a");
+  let objectUrl: string;
+  let link: HTMLAnchorElement;
+  try {
+    const blob = new Blob([bytes], {
+      type: response.headers.get("content-type") ?? "application/octet-stream",
+    });
+    objectUrl = urlObject.createObjectURL(blob);
+    link = documentObject.createElement("a");
+  } catch (error) {
+    throw new ImageDownloadError(
+      "prepare",
+      "Image download could not be prepared.",
+      error,
+    );
+  }
   link.href = objectUrl;
   link.download = imageDownloadFilename(
     input.createdAt,
@@ -74,6 +140,12 @@ export async function saveImageToLocal(
   try {
     documentObject.body.appendChild(link);
     link.click();
+  } catch (error) {
+    throw new ImageDownloadError(
+      "start",
+      "Browser download could not be started.",
+      error,
+    );
   } finally {
     link.remove();
     schedule(() => urlObject.revokeObjectURL(objectUrl), OBJECT_URL_RELEASE_DELAY_MS);

@@ -189,6 +189,23 @@ export async function findOwnerAssetGenerationJobs(pool, { ownerId }) {
   return result.rows;
 }
 
+export async function findOwnerAsset(pool, { assetId, ownerId }) {
+  const result = await pool.query(
+    `SELECT a.id, a.object_key
+       FROM assets a
+       JOIN generation_jobs j ON j.id = a.job_id
+       JOIN generation_batches b ON b.id = a.batch_id
+      WHERE a.id = $1
+        AND a.owner_id = $2
+        AND j.owner_id = $2
+        AND b.owner_id = $2
+        AND j.state = 'succeeded'
+        AND a.moderation_state = 'accepted'`,
+    [assetId, ownerId],
+  );
+  return result.rows[0] ?? null;
+}
+
 export async function createGenerationJob(
   pool,
   { idempotencyKey, input, ownerId, retryOfJobId = null },

@@ -13,6 +13,10 @@ type AssetListResponse = Readonly<{
   batches: readonly GenerationJob[];
 }>;
 
+type AssetDownloadUrlResponse = Readonly<{
+  url?: string;
+}>;
+
 export class AssetBoundaryError extends Error {
   readonly code: string;
   readonly retryable: boolean;
@@ -41,4 +45,31 @@ export async function listAssets(): Promise<readonly GenerationJob[]> {
     );
   }
   return (payload as AssetListResponse).batches;
+}
+
+export async function readAssetDownloadUrl(assetId: string): Promise<string> {
+  const response = await goodGoodApiFetch(
+    `/api/assets/${encodeURIComponent(assetId)}/download-url`,
+    { cache: "no-store" },
+  );
+  const payload = (await response.json()) as
+    | AssetDownloadUrlResponse
+    | AssetApiErrorEnvelope;
+  if (!response.ok) {
+    const failure = payload as AssetApiErrorEnvelope;
+    throw new AssetBoundaryError(
+      failure.error?.code ?? "ASSET_LIBRARY_UNAVAILABLE",
+      failure.error?.message ?? "图片暂时无法下载，请重试。",
+      failure.error?.retryable ?? false,
+    );
+  }
+  const url = (payload as AssetDownloadUrlResponse).url;
+  if (typeof url !== "string" || !url) {
+    throw new AssetBoundaryError(
+      "ASSET_LIBRARY_UNAVAILABLE",
+      "图片暂时无法下载，请重试。",
+      true,
+    );
+  }
+  return url;
 }

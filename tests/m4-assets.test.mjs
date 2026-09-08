@@ -3,8 +3,10 @@ import { readFile } from "node:fs/promises";
 import { Readable } from "node:stream";
 import test from "node:test";
 import { sessionExpiredError } from "../server/auth/errors.mjs";
+import { AssetRequestError } from "../server/assets/api.mjs";
 import { createAssetNodeApiHandler } from "../server/assets/node-api.mjs";
 import {
+  findOwnerAsset,
   findOwnerAssetGenerationJobs,
   publicGenerationJob,
 } from "../server/generation/repository.mjs";
@@ -94,6 +96,28 @@ test("asset presentation exposes decoded pixel dimensions", () => {
   ]);
 });
 
+test("asset repository resolves one accepted successful Asset for its owner", async () => {
+  const expected = { id: "asset-a", object_key: "generated/owner-a/asset.jpg" };
+  let query;
+  const pool = {
+    async query(sql, values) {
+      query = { sql, values };
+      return { rows: [expected] };
+    },
+  };
+
+  assert.equal(
+    await findOwnerAsset(pool, { assetId: "asset-a", ownerId: "owner-a" }),
+    expected,
+  );
+  assert.deepEqual(query.values, ["asset-a", "owner-a"]);
+  assert.match(query.sql, /a\.owner_id = \$2/);
+  assert.match(query.sql, /j\.owner_id = \$2/);
+  assert.match(query.sql, /b\.owner_id = \$2/);
+  assert.match(query.sql, /j\.state = 'succeeded'/);
+  assert.match(query.sql, /a\.moderation_state = 'accepted'/);
+});
+
 test("generation presentation preserves every accepted Asset in ordinal order", () => {
   const row = {
     aspect_ratio: "1:1",
@@ -147,6 +171,17 @@ test("asset HTTP route authenticates and preserves the owner context", async () 
       return { ownerId };
     },
     operations: {
+      async getAssetDownloadUrl(input) {
+        calls.push(input);
+        if (input.ownerContext.ownerId !== "owner-a") {
+          throw new AssetRequestError(
+            "ASSET_NOT_FOUND",
+            "未找到这张图片。",
+            404,
+          );
+        }
+        return { url: "https://storage.invalid/fresh-download" };
+      },
       async listAssets(input) {
         calls.push(input);
         return {
@@ -172,12 +207,43 @@ test("asset HTTP route authenticates and preserves the owner context", async () 
   assert.equal(calls[0].ownerContext.ownerId, "owner-a");
   assert.equal(ownerResponse.headers["cache-control"], "no-store");
 
+  const downloadResponse = responseRecorder();
+  await handler(
+    requestFor({
+      headers: { "x-owner": "owner-a" },
+      url: "/api/assets/50000000-0000-4000-8000-000000000001/download-url",
+    }),
+    downloadResponse,
+  );
+  assert.equal(downloadResponse.statusCode, 200);
+  assert.deepEqual(JSON.parse(downloadResponse.body), {
+    url: "https://storage.invalid/fresh-download",
+  });
+  assert.deepEqual(calls[1], {
+    assetId: "50000000-0000-4000-8000-000000000001",
+    ownerContext: { ownerId: "owner-a" },
+  });
+
   const otherOwnerResponse = responseRecorder();
   await handler(
     requestFor({ headers: { "x-owner": "owner-b" }, url: "/api/assets" }),
     otherOwnerResponse,
   );
   assert.deepEqual(JSON.parse(otherOwnerResponse.body), { batches: [] });
+
+  const crossOwnerDownload = responseRecorder();
+  await handler(
+    requestFor({
+      headers: { "x-owner": "owner-b" },
+      url: "/api/assets/50000000-0000-4000-8000-000000000001/download-url",
+    }),
+    crossOwnerDownload,
+  );
+  assert.equal(crossOwnerDownload.statusCode, 404);
+  assert.equal(
+    JSON.parse(crossOwnerDownload.body).error.code,
+    "ASSET_NOT_FOUND",
+  );
 
   const unauthorizedResponse = responseRecorder();
   await handler(requestFor({ url: "/api/assets" }), unauthorizedResponse);
@@ -205,9 +271,16 @@ test("asset HTTP route authenticates and preserves the owner context", async () 
   );
 });
 
-test("asset list is wired into both runtimes and exposes loading, empty, and failure recovery", async () => {
-  const [route, runtime, page, boundary] = await Promise.all([
+test("asset list and fresh download URL are wired into both runtimes", async () => {
+  const [route, downloadRoute, runtime, page, boundary] = await Promise.all([
     readFile(new URL("../app/api/assets/route.ts", import.meta.url), "utf8"),
+    readFile(
+      new URL(
+        "../app/api/assets/[assetId]/download-url/route.ts",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
     readFile(new URL("../server/runtime/web.mjs", import.meta.url), "utf8"),
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(
@@ -216,9 +289,11 @@ test("asset list is wired into both runtimes and exposes loading, empty, and fai
     ),
   ]);
   assert.match(route, /await listAssets/);
+  assert.match(downloadRoute, /await getAssetDownloadUrl/);
   assert.match(runtime, /createAssetNodeApiHandler/);
   assert.match(runtime, /handleAssetNodeApi/);
   assert.match(boundary, /goodGoodApiFetch\("\/api\/assets"/);
+  assert.match(boundary, /\/api\/assets\/\$\{encodeURIComponent\(assetId\)\}\/download-url/);
   assert.match(page, /assetsLoading/);
   assert.match(page, /assetsError/);
   assert.match(page, /assetBatches\.length === 0/);

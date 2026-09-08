@@ -1,6 +1,6 @@
 # ADR 0034: Stable generation slots and explicit local download
 
-- Status: Accepted (download path amended 2026-09-08)
+- Status: Accepted (download path amended twice on 2026-09-08)
 - Date: 2026-09-08
 - Supersedes: the separate active-task/completed-masonry presentation rule in ADR 0031 and `UX_FLOWS.md`
 - Refines: ADR 0001, ADR 0003, ADR 0027, and ADR 0031
@@ -36,10 +36,12 @@ generation outputs already enter the asset library automatically.
   table as a fallback.
 - The creation-card bookmark is removed. Asset-library selection and detail
   actions are unchanged.
-- A user-initiated download first fetches and validates the complete signed
-  image in memory, then hands a Blob object URL to the browser download manager.
-  The object URL remains valid until after the browser has accepted the download.
-  Direct navigation to the private image URL and direct File System Access API
+- A user-initiated download first requests a fresh, owner-authorized signed read
+  URL for the stable Asset ID. The browser then fetches and validates the
+  complete image directly from private object storage before handing a Blob
+  object URL to its download manager. The object URL remains valid until after
+  the browser has accepted the download. A preview URL retained in page state,
+  direct navigation to a private image URL, and direct File System Access API
   writes are not download paths.
 
 ## Consequences
@@ -57,5 +59,10 @@ generation outputs already enter the asset library automatically.
   on Windows checks created a destination file before a later failure and left
   a zero-byte artifact, even after cross-origin reads and committed-size checks
   had been added.
+- A second real-browser diagnosis found that the visible preview could remain in
+  Chrome's cache after its 15-minute signed URL expired. Download must therefore
+  resolve a new URL by Asset ID at click time instead of reusing the preview URL.
+  The GoodGood API returns only that short-lived URL; large image bytes still
+  travel directly from object storage to the browser.
 - This ADR authorizes local implementation and verification only. Production
   deployment and any real billable provider test require separate approval.

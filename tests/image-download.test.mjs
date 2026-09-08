@@ -17,7 +17,11 @@ after(async () => {
   await vite.close();
 });
 
-function downloadHarness({ body = "image-bytes", contentType = "image/jpeg" } = {}) {
+function downloadHarness({
+  body = "image-bytes",
+  contentType = "image/jpeg",
+  freshUrl = "https://assets.invalid/fresh/image.jpg?signature=new",
+} = {}) {
   const calls = [];
   const scheduled = [];
   const link = {
@@ -39,14 +43,18 @@ function downloadHarness({ body = "image-bytes", contentType = "image/jpeg" } = 
           return link;
         },
       },
-      fetchImplementation: async () => {
-        calls.push("fetch");
+      fetchImplementation: async (url) => {
+        calls.push(["fetch", url]);
         return {
           arrayBuffer: async () => new TextEncoder().encode(body).buffer,
           headers: new Headers({ "content-type": contentType }),
           ok: true,
           status: 200,
         };
+      },
+      resolveDownloadUrl: async (assetId) => {
+        calls.push(["resolve", assetId]);
+        return freshUrl;
       },
       schedule: (callback, delayMs) => scheduled.push({ callback, delayMs }),
       urlObject: {
@@ -73,9 +81,10 @@ test("fetches and validates the image before handing it to the browser download 
   const harness = downloadHarness();
   const result = await saveImageToLocal(
     {
+      assetId: "10000000-0000-4000-8000-000000000001",
       createdAt: "2026-09-08T14:30:25",
       ordinal: 1,
-      previewUrl: "https://assets.invalid/generated/image.jpeg?signature=private",
+      previewUrl: "https://assets.invalid/generated/image.jpeg?signature=expired",
     },
     harness.dependencies,
   );
@@ -83,15 +92,23 @@ test("fetches and validates the image before handing it to the browser download 
   assert.equal(result, "started");
   assert.deepEqual(
     harness.calls.map((call) => Array.isArray(call) ? call[0] : call),
-    ["fetch", "createObjectURL", "append", "click", "remove"],
+    ["resolve", "fetch", "createObjectURL", "append", "click", "remove"],
   );
+  assert.deepEqual(harness.calls[0], [
+    "resolve",
+    "10000000-0000-4000-8000-000000000001",
+  ]);
+  assert.deepEqual(harness.calls[1], [
+    "fetch",
+    "https://assets.invalid/fresh/image.jpg?signature=new",
+  ]);
   assert.equal(harness.createdBlob.size, new TextEncoder().encode("image-bytes").byteLength);
   assert.equal(harness.createdBlob.type, "image/jpeg");
   assert.equal(harness.link.href, "blob:goodgood-download");
   assert.equal(harness.link.download, "GoodGood_20260908_143025_01.jpg");
   assert.notEqual(
     harness.link.href,
-    "https://assets.invalid/generated/image.jpeg?signature=private",
+    "https://assets.invalid/generated/image.jpeg?signature=expired",
   );
   assert.equal(
     imageDownloadFilename("2026-09-08T14:30:25", 4, "/generated/output.webp"),
@@ -107,6 +124,7 @@ test("keeps the object URL alive until after the browser accepts the download", 
 
   await saveImageToLocal(
     {
+      assetId: "10000000-0000-4000-8000-000000000002",
       createdAt: "2026-09-08T14:30:25",
       ordinal: 2,
       previewUrl: "https://assets.invalid/private/output.png?signature=private",
@@ -121,6 +139,32 @@ test("keeps the object URL alive until after the browser accepts the download", 
   assert.deepEqual(harness.calls.at(-1), ["revoke", "blob:goodgood-download"]);
 });
 
+test("reports the exact stage when a fresh download URL cannot be resolved", async () => {
+  const { ImageDownloadError, saveImageToLocal } = await vite.ssrLoadModule(
+    "/features/assets/image-download.ts",
+  );
+
+  await assert.rejects(
+    saveImageToLocal(
+      {
+        assetId: "10000000-0000-4000-8000-000000000005",
+        createdAt: "2026-09-08T14:30:25",
+        ordinal: 1,
+        previewUrl: "https://assets.invalid/private/stale.jpg",
+      },
+      {
+        resolveDownloadUrl: async () => {
+          throw new Error("session expired");
+        },
+      },
+    ),
+    (error) =>
+      error instanceof ImageDownloadError &&
+      error.stage === "resolve-url" &&
+      /could not be refreshed/.test(error.message),
+  );
+});
+
 test("rejects an empty image before creating a browser download", async () => {
   const { saveImageToLocal } = await vite.ssrLoadModule(
     "/features/assets/image-download.ts",
@@ -130,6 +174,7 @@ test("rejects an empty image before creating a browser download", async () => {
   await assert.rejects(
     saveImageToLocal(
       {
+        assetId: "10000000-0000-4000-8000-000000000003",
         createdAt: "2026-09-08T14:30:25",
         ordinal: 1,
         previewUrl: "https://assets.invalid/private/empty.jpg",
@@ -141,6 +186,7 @@ test("rejects an empty image before creating a browser download", async () => {
           ok: true,
           status: 200,
         }),
+        resolveDownloadUrl: async () => "https://assets.invalid/fresh/empty.jpg",
         urlObject: {
           createObjectURL: () => {
             objectUrlCreated = true;
@@ -150,7 +196,7 @@ test("rejects an empty image before creating a browser download", async () => {
         },
       },
     ),
-    /empty file/,
+    (error) => error.stage === "validate" && /empty file/.test(error.message),
   );
   assert.equal(objectUrlCreated, false);
 });
@@ -164,6 +210,7 @@ test("rejects a failed signed-image response before creating a browser download"
   await assert.rejects(
     saveImageToLocal(
       {
+        assetId: "10000000-0000-4000-8000-000000000004",
         createdAt: "2026-09-08T14:30:25",
         ordinal: 1,
         previewUrl: "https://assets.invalid/private/missing.jpg",
@@ -178,9 +225,10 @@ test("rejects a failed signed-image response before creating a browser download"
           ok: false,
           status: 403,
         }),
+        resolveDownloadUrl: async () => "https://assets.invalid/fresh/missing.jpg",
       },
     ),
-    /status 403/,
+    (error) => error.stage === "fetch" && /status 403/.test(error.message),
   );
   assert.equal(responseRead, false);
 });

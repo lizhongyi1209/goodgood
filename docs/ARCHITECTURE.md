@@ -192,6 +192,10 @@ The authenticated asset library now reloads successful accepted outputs from
 PostgreSQL through `GET /api/assets`. The repository constrains jobs, batches,
 and assets to the same resolved owner, sorts by submission time newest-first,
 and the presentation boundary signs every private object URL on each read.
+Image download resolves a new signed read through the owner-scoped stable Asset
+ID at click time; it never reuses the expiring preview URL retained in browser
+state. The API returns only the short-lived URL, and the browser still transfers
+the large image bytes directly from private object storage.
 Loading, empty, and retryable failure states replace stale in-memory assumptions
 after reload; representative mock batches remain available only in no-auth
 preview mode. Signed private-object images render directly from browser to
