@@ -127,6 +127,8 @@ individual icon. Upload, settings, and send align to the same 40px box.
 - Creation-card hover metadata shows the concrete pixel dimensions. Successful
   outputs are already in the asset library, so creation cards and image detail
   expose only download rather than a duplicate bookmark action.
+- Creation-card download controls provide visible hover, focus, and pressed
+  feedback through the Palace Red accent and a shallow elevation change.
 - Generated assets retain their original color in creation, project, asset, and
   detail views. Do not apply ordinal-based saturation, contrast, hue, brightness,
   or other presentation filters to make outputs appear artificially varied.
