@@ -277,7 +277,9 @@ function normalizeTemporaryUpload(payload, expectedMimeType, nowSeconds) {
 }
 
 function validateJob(job, route) {
-  const thinkingLevel = job?.thinking_level ?? "low";
+  const thinkingLevel =
+    job?.thinking_level ??
+    (route.productModelId === "nano-banana-2" ? "high" : "low");
   const googleSearch = job?.google_search ?? false;
   const quality = job?.quality ?? "auto";
   const background = job?.background ?? "auto";
@@ -335,7 +337,9 @@ function generationPayload({ job, route, uploadedReferences }) {
     aspect_ratio: job.aspect_ratio,
     response_modalities: ["TEXT", "IMAGE"],
     size: job.resolution,
-    ...(job.thinking_level === "high" ? { thinking_level: "high" } : {}),
+    ...((job.thinking_level ?? "high") === "high"
+      ? { thinking_level: "high" }
+      : {}),
     ...(job.google_search ? { google_search: true } : {}),
   };
 }

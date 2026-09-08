@@ -30,7 +30,9 @@ count-2/count-4 prices so they are active for the full Shanghai launch day.
 Migration 0016 adds Nano Banana 2 count-2/count-4 prices at 20/40 credits for
 each resolution. Migration 0017 adds `thinking_level` and `google_search` to
 generation batches, projects, and root drafts, defaults old rows to `low` and
-false, and constrains enabled values to Nano Banana 2. The Drizzle schema
+false, and constrains enabled values to Nano Banana 2. New application-created
+Nano snapshots use `high`; the database default remains `low` only for backward
+compatibility with historical rows and non-Nano model constraints. The Drizzle schema
 mirrors that durable schema. Migration 0018 adds `quality`, `background`, and
 `output_format` to the same three snapshots, defaults old rows to
 `auto` / `auto` / `png`, constrains non-default values to GPT IMAGE 2, and

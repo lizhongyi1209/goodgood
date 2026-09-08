@@ -54,7 +54,9 @@ async function presentCreationDraft(resources, row) {
       outputFormat:
         row.output_format ?? (row.model_id === "gpt-image-2" ? "jpeg" : "png"),
       quality: row.quality ?? "auto",
-      thinkingLevel: row.thinking_level ?? "low",
+      thinkingLevel:
+        row.thinking_level ??
+        (row.model_id === "nano-banana-2" ? "high" : "low"),
     },
     updatedAt: new Date(row.updated_at).toISOString(),
     version: row.version,

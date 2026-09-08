@@ -161,11 +161,8 @@ export function resolveGenerationCountForModel(
 
 export function resolveGenerationThinkingLevelForModel(
   modelId: GenerationModelId,
-  thinkingLevel: GenerationThinkingLevel | undefined,
 ): GenerationThinkingLevel {
-  return modelId === "nano-banana-2" && thinkingLevel === "high"
-    ? "high"
-    : "low";
+  return modelId === "nano-banana-2" ? "high" : "low";
 }
 
 export function resolveGoogleSearchForModel(

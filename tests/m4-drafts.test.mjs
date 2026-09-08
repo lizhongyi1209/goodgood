@@ -34,7 +34,7 @@ test("creation drafts validate stable values, ready reference IDs, versions, and
       prompt: "保留服装结构",
       referenceIds: [REFERENCE_ID],
       resolution: "2K",
-      thinkingLevel: "low",
+      thinkingLevel: "high",
       googleSearch: false,
       quality: "auto",
       background: "auto",

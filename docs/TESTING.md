@@ -40,10 +40,12 @@ stable-value/reference validation, authenticated empty/read/save/delete routes,
 optimistic conflict responses, browser load/save/delete/error boundaries,
 root-only hydration/autosave wiring, explicit conflict recovery, and draft
 reference protection during cleanup.
-GG-012 coverage proves Nano-only dynamic controls, safe low/off defaults,
-snapshot/hash identity, draft/project/batch persistence and migration defaults,
-model-leakage rejection, `TEXT` + `IMAGE` response modalities, and omission or
-top-level forwarding of `thinking_level` / `google_search`. Provider tests use
+GG-012/GG-016 coverage proves the Nano-only Google Search control, the absence
+of a creator-facing thinking control/detail row, hidden high-thinking defaults,
+snapshot/hash identity, draft/project/batch persistence and migration compatibility,
+model-leakage rejection, `TEXT` + `IMAGE` response modalities, default top-level
+forwarding of `thinking_level: "high"`, enabled `google_search`, and exact legacy
+low-thinking retry behavior. Provider tests use
 stub transport and must not issue a real, potentially billable request.
 GG-015 coverage proves GPT-only quality/background/output-format controls,
 explicit automatic defaults, transparent JPEG correction and fail-closed

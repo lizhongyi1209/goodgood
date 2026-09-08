@@ -29,7 +29,9 @@ export function createComposerCheckpoint(draft) {
     })),
     resolution: draft.resolution,
     quality: draft.quality ?? "auto",
-    thinkingLevel: draft.thinkingLevel ?? "low",
+    thinkingLevel:
+      draft.thinkingLevel ??
+      (draft.modelId === "nano-banana-2" ? "high" : "low"),
   });
 }
 

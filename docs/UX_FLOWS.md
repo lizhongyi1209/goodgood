@@ -84,10 +84,11 @@ fill space.
   The pixel readout follows the selected model's exact size table. A model
   change keeps a compatible ratio or visibly moves to the nearest supported
   ratio in the same orientation, and normalizes an unsupported count to one.
-- Selecting Nano Banana 2 reveals `思考程度` (`低 / 高`, default `低`) and a
-  `谷歌搜索` (`关闭 / 开启`, default `关闭`) segmented control in the attached drawer. Changing to another
-  model hides and resets both model-specific controls. Restored drafts,
-  projects, retries, and image detail preserve and expose the frozen choice.
+- Selecting Nano Banana 2 reveals only the `谷歌搜索` (`关闭 / 开启`, default
+  `关闭`) segmented control in the attached drawer. New Nano requests use the
+  internal high-thinking mode without exposing a creator control or detail row.
+  Changing to another model hides and resets Google Search. Historical
+  low/high values remain in frozen records for exact retries but are not shown.
 - Selecting GPT IMAGE 2 reveals `质量` (`自动 / 低 / 中 / 高`, default `自动`),
   `背景` (`自动 / 透明`, default `自动`), and `输出格式`
   (`PNG / JPEG / WebP`, default `JPEG`). Choosing transparent while JPEG is

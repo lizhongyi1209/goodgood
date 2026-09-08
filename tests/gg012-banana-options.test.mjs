@@ -20,9 +20,23 @@ const baseInput = Object.freeze({
   thinkingLevel: "low",
 });
 
-test("Banana options default safely and reject model leakage", () => {
+test("Banana options default to hidden high thinking and reject model leakage", () => {
   assert.deepEqual(
     normalizeGenerationModelOptions({ modelId: "nano-banana-2" }),
+    {
+      background: "auto",
+      googleSearch: false,
+      outputFormat: "png",
+      quality: "auto",
+      thinkingLevel: "high",
+    },
+  );
+  assert.deepEqual(
+    normalizeGenerationModelOptions({
+      googleSearch: false,
+      modelId: "nano-banana-2",
+      thinkingLevel: "low",
+    }),
     {
       background: "auto",
       googleSearch: false,

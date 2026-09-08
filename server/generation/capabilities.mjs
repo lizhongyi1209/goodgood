@@ -100,7 +100,8 @@ export function normalizeGenerationModelOptions({
   quality,
   thinkingLevel,
 }) {
-  const normalizedThinkingLevel = thinkingLevel ?? "low";
+  const normalizedThinkingLevel =
+    thinkingLevel ?? (modelId === "nano-banana-2" ? "high" : "low");
   const normalizedGoogleSearch = googleSearch ?? false;
   const normalizedQuality = quality ?? "auto";
   const normalizedBackground = background ?? "auto";

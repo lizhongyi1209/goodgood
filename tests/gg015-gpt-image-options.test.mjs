@@ -36,7 +36,7 @@ test("GPT Image 2 options default, validate compatibility, and reject model leak
     googleSearch: false,
     outputFormat: "png",
     quality: "auto",
-    thinkingLevel: "low",
+    thinkingLevel: "high",
   });
   assert.deepEqual(normalizeGenerationModelOptions({
     background: "transparent",

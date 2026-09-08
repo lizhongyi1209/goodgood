@@ -108,7 +108,7 @@ test("keeps reference previews legible and aspect ratio first through responsive
   );
 });
 
-test("shows thinking and Google Search controls only for Nano Banana 2", async () => {
+test("hides fixed Nano thinking and shows only the Google Search control", async () => {
   const composer = await readFile(
     path.join(root, "features/creation/creation-composer.tsx"),
     "utf8",
@@ -116,15 +116,14 @@ test("shows thinking and Google Search controls only for Nano Banana 2", async (
   const page = await readFile(path.join(root, "app/page.tsx"), "utf8");
 
   assert.match(composer, /modelId === "nano-banana-2"/);
-  assert.match(composer, />思考程度</);
-  assert.match(composer, /level === "low" \? "低" : "高"/);
+  assert.doesNotMatch(composer, /思考程度|banana-thinking|thinkingLevel/);
   assert.match(composer, />谷歌搜索</);
   assert.match(composer, /aria-label="谷歌搜索"/);
   assert.match(composer, /enabled \? "开启" : "关闭"/);
   assert.match(composer, /googleSearch === enabled/);
-  assert.match(page, /useState<GenerationThinkingLevel>\("low"\)/);
+  assert.match(page, /useState<GenerationThinkingLevel>\("high"\)/);
   assert.match(page, /useState\(false\)/);
-  assert.match(page, /onThinkingLevelChange=\{handleThinkingLevelChange\}/);
+  assert.doesNotMatch(page, /onThinkingLevelChange|handleThinkingLevelChange|<dt>思考程度<\/dt>/);
   assert.match(page, /onGoogleSearchChange=\{handleGoogleSearchChange\}/);
 });
 
@@ -223,7 +222,7 @@ test("keeps generation retries isolated from later composer edits", async () => 
     aspectRatio: "4:5",
     resolution: "2K",
     count: 4,
-    thinkingLevel: "high",
+    thinkingLevel: "low",
     googleSearch: true,
   };
 
@@ -257,6 +256,12 @@ test("keeps generation retries isolated from later composer edits", async () => 
   assert.notEqual(restored.references[0], snapshot.references[0]);
   assert.equal(restored.thinkingLevel, "high");
   assert.equal(restored.googleSearch, true);
+
+  const historicalLow = restoreGenerationInputSnapshot({
+    ...snapshot,
+    thinkingLevel: "low",
+  });
+  assert.equal(historicalLow.thinkingLevel, "low");
 });
 
 test("normalizes and restores GPT Image 2 quality, background, and output format", async () => {

@@ -81,7 +81,9 @@ export function generationInputFromRow(row, referenceUrls = new Map()) {
     })),
     resolution: row.resolution,
     quality: row.quality ?? "auto",
-    thinkingLevel: row.thinking_level ?? "low",
+    thinkingLevel:
+      row.thinking_level ??
+      (row.model_id === "nano-banana-2" ? "high" : "low"),
   };
 }
 
@@ -103,7 +105,9 @@ export function persistedGenerationInputFromRow(row) {
     })),
     resolution: row.resolution,
     quality: row.quality ?? "auto",
-    thinkingLevel: row.thinking_level ?? "low",
+    thinkingLevel:
+      row.thinking_level ??
+      (row.model_id === "nano-banana-2" ? "high" : "low"),
   };
 }
 

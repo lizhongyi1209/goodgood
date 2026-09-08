@@ -208,6 +208,7 @@ test("O1Key submission forwards every enabled aspect ratio and resolution", asyn
         prompt: "a silver future garment",
         response_modalities: ["TEXT", "IMAGE"],
         size: resolution,
+        thinking_level: "high",
       });
     }
   }
@@ -409,10 +410,9 @@ test("gateway transport and unsupported durable parameters fail closed", async (
   }
 });
 
-test("Nano Banana 2 forwards only explicitly enabled thinking and Google Search fields", async (context) => {
+test("Nano Banana 2 defaults to high thinking and forwards enabled Google Search", async (context) => {
   const { adapter, gateway } = await withGateway(context);
   await adapter.submit(generationRequest("grounded high-thinking image", {
-    thinking_level: "high",
     google_search: true,
   }));
   assert.equal(gateway.submissions.length, 1);
@@ -422,6 +422,15 @@ test("Nano Banana 2 forwards only explicitly enabled thinking and Google Search 
     gateway.submissions[0].body.response_modalities,
     ["TEXT", "IMAGE"],
   );
+});
+
+test("Nano Banana 2 preserves historical low-thinking retries", async (context) => {
+  const { adapter, gateway } = await withGateway(context);
+  await adapter.submit(generationRequest("historical low-thinking image", {
+    thinking_level: "low",
+  }));
+  assert.equal(gateway.submissions.length, 1);
+  assert.equal(gateway.submissions[0].body.thinking_level, undefined);
 });
 
 test("Nano Banana 2 accepts multi-output counts without forwarding an unsupported n field", async (context) => {
@@ -435,6 +444,7 @@ test("Nano Banana 2 accepts multi-output counts without forwarding an unsupporte
   assert.equal(gateway.submissions[0].body.n, undefined);
   assert.equal(gateway.submissions[0].body.aspect_ratio, "1:1");
   assert.equal(gateway.submissions[0].body.size, "1K");
+  assert.equal(gateway.submissions[0].body.thinking_level, "high");
 });
 
 test("GPT Image 2 SD maps every enabled size and count to one native task", async (context) => {

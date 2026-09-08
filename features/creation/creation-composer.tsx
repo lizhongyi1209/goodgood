@@ -34,7 +34,6 @@ import {
   type GenerationModelId,
   type GenerationReference,
   type GenerationResolution,
-  type GenerationThinkingLevel,
   type GptImageBackground,
   type GptImageOutputFormat,
   type GptImageQuality,
@@ -59,7 +58,6 @@ export type CreationComposerProps = Readonly<{
   aspectRatio: GenerationAspectRatio;
   resolution: GenerationResolution;
   count: GenerationCount;
-  thinkingLevel?: GenerationThinkingLevel;
   googleSearch?: boolean;
   quality?: GptImageQuality;
   background?: GptImageBackground;
@@ -75,7 +73,6 @@ export type CreationComposerProps = Readonly<{
   onAspectRatioChange: (ratio: GenerationAspectRatio) => void;
   onResolutionChange: (resolution: GenerationResolution) => void;
   onCountChange: (count: GenerationCount) => void;
-  onThinkingLevelChange?: (thinkingLevel: GenerationThinkingLevel) => void;
   onGoogleSearchChange?: (enabled: boolean) => void;
   onQualityChange?: (quality: GptImageQuality) => void;
   onBackgroundChange?: (background: GptImageBackground) => void;
@@ -121,7 +118,6 @@ export function CreationComposer({
   aspectRatio,
   resolution,
   count,
-  thinkingLevel = "low",
   googleSearch = false,
   quality = "auto",
   background = "auto",
@@ -139,7 +135,6 @@ export function CreationComposer({
   onAspectRatioChange,
   onResolutionChange,
   onCountChange,
-  onThinkingLevelChange = () => {},
   onGoogleSearchChange = () => {},
   onQualityChange = () => {},
   onBackgroundChange = () => {},
@@ -390,22 +385,6 @@ export function CreationComposer({
               </div>
               {modelId === "nano-banana-2" && (
                 <div className="banana-model-options">
-                  <div className="banana-thinking-section">
-                    <label>思考程度</label>
-                    <div className="banana-thinking-options" aria-label="思考程度">
-                      {(["low", "high"] as const).map((level) => (
-                        <button
-                          type="button"
-                          key={level}
-                          className={thinkingLevel === level ? "selected" : ""}
-                          aria-pressed={thinkingLevel === level}
-                          onClick={() => onThinkingLevelChange(level)}
-                        >
-                          {level === "low" ? "低" : "高"}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
                   <div className="google-search-option">
                     <span>
                       <strong>谷歌搜索</strong>

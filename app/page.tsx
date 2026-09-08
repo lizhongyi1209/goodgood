@@ -213,7 +213,7 @@ const emptyComposerCheckpoint = createComposerCheckpoint({
   prompt: "",
   references: [],
   resolution: "1K",
-  thinkingLevel: "low",
+  thinkingLevel: "high",
   googleSearch: false,
   quality: "auto",
   background: "auto",
@@ -297,7 +297,9 @@ function generationJobToAssetBatch(job: GenerationJob): AssetBatch {
     resolution: job.input.resolution,
     outputFormat: resolveGptImageOptionsForModel(job.input.modelId, job.input).outputFormat,
     quality: job.input.quality ?? "auto",
-    thinkingLevel: job.input.thinkingLevel ?? "low",
+    thinkingLevel:
+      job.input.thinkingLevel ??
+      resolveGenerationThinkingLevelForModel(job.input.modelId),
     time: new Intl.DateTimeFormat("zh-CN", {
       hour: "2-digit",
       hour12: false,
@@ -372,7 +374,7 @@ export default function Home() {
   const [selectedRatio, setSelectedRatio] = useState<GenerationAspectRatio>("1:1");
   const [resolution, setResolution] = useState<GenerationResolution>("1K");
   const [generationCount, setGenerationCount] = useState<GenerationCount>(1);
-  const [thinkingLevel, setThinkingLevel] = useState<GenerationThinkingLevel>("low");
+  const [thinkingLevel, setThinkingLevel] = useState<GenerationThinkingLevel>("high");
   const [googleSearch, setGoogleSearch] = useState(false);
   const [quality, setQuality] = useState<GptImageQuality>("auto");
   const [background, setBackground] = useState<GptImageBackground>("auto");
@@ -558,7 +560,7 @@ export default function Home() {
       resolution: "1K" as const,
       outputFormat: "png" as const,
       quality: "auto" as const,
-      thinkingLevel: "low" as const,
+      thinkingLevel: "high" as const,
     };
     const normalizedState = {
       ...state,
@@ -567,10 +569,7 @@ export default function Home() {
         state.aspectRatio,
       ),
       count: resolveGenerationCountForModel(state.modelId, state.count),
-      thinkingLevel: resolveGenerationThinkingLevelForModel(
-        state.modelId,
-        state.thinkingLevel,
-      ),
+      thinkingLevel: resolveGenerationThinkingLevelForModel(state.modelId),
       googleSearch: resolveGoogleSearchForModel(
         state.modelId,
         state.googleSearch,
@@ -1047,7 +1046,6 @@ export default function Home() {
           ),
           thinkingLevel: resolveGenerationThinkingLevelForModel(
             restoredProject.state.modelId,
-            restoredProject.state.thinkingLevel,
           ),
           googleSearch: resolveGoogleSearchForModel(
             restoredProject.state.modelId,
@@ -1203,9 +1201,7 @@ export default function Home() {
     setGenerationCount((current) =>
       resolveGenerationCountForModel(value, current),
     );
-    setThinkingLevel((current) =>
-      resolveGenerationThinkingLevelForModel(value, current),
-    );
+    setThinkingLevel(resolveGenerationThinkingLevelForModel(value));
     setGoogleSearch((current) =>
       resolveGoogleSearchForModel(value, current),
     );
@@ -1229,12 +1225,6 @@ export default function Home() {
     if (!isGenerationCountSupported(selectedModel, value)) return;
     composerEditRevisionRef.current += 1;
     setGenerationCount(value);
-  };
-
-  const handleThinkingLevelChange = (value: GenerationThinkingLevel) => {
-    if (selectedModel !== "nano-banana-2") return;
-    composerEditRevisionRef.current += 1;
-    setThinkingLevel(value);
   };
 
   const handleGoogleSearchChange = (enabled: boolean) => {
@@ -1589,7 +1579,9 @@ export default function Home() {
         completedInput,
       ).outputFormat,
       quality: completedInput.quality ?? "auto",
-      thinkingLevel: completedInput.thinkingLevel ?? "low",
+      thinkingLevel:
+        completedInput.thinkingLevel ??
+        resolveGenerationThinkingLevelForModel(completedInput.modelId),
       images: completedJob.outputs,
     };
     setCreationBatches((current) => {
@@ -1621,7 +1613,11 @@ export default function Home() {
                       completedInput,
                     ).outputFormat,
                     quality: completedInput.quality ?? "auto",
-                    thinkingLevel: completedInput.thinkingLevel ?? "low",
+                    thinkingLevel:
+                      completedInput.thinkingLevel ??
+                      resolveGenerationThinkingLevelForModel(
+                        completedInput.modelId,
+                      ),
                   }
                 : project.state,
               updatedAt: completedJob.updatedAt,
@@ -1753,10 +1749,7 @@ export default function Home() {
     setSelectedRatio(restoredAspectRatio);
     setResolution(restored.resolution);
     setGenerationCount(restoredCount);
-    setThinkingLevel(resolveGenerationThinkingLevelForModel(
-      restored.modelId,
-      restored.thinkingLevel,
-    ));
+    setThinkingLevel(resolveGenerationThinkingLevelForModel(restored.modelId));
     setGoogleSearch(resolveGoogleSearchForModel(
       restored.modelId,
       restored.googleSearch,
@@ -2081,7 +2074,6 @@ export default function Home() {
             aspectRatio={selectedRatio}
             resolution={resolution}
             count={generationCount}
-            thinkingLevel={thinkingLevel}
             googleSearch={googleSearch}
             quality={quality}
             background={background}
@@ -2097,7 +2089,6 @@ export default function Home() {
             onAspectRatioChange={handleAspectRatioChange}
             onResolutionChange={handleResolutionChange}
             onCountChange={handleGenerationCountChange}
-            onThinkingLevelChange={handleThinkingLevelChange}
             onGoogleSearchChange={handleGoogleSearchChange}
             onQualityChange={handleQualityChange}
             onBackgroundChange={handleBackgroundChange}
@@ -2383,10 +2374,7 @@ export default function Home() {
                     <div><dt>批次</dt><dd>{activeDetail.batch.count} 张</dd></div>
                     <div><dt>参考图</dt><dd>{activeDetail.batch.referenceCount ? `${activeDetail.batch.referenceCount} 张` : "无"}</dd></div>
                     {activeDetail.batch.modelId === "nano-banana-2" && (
-                      <>
-                        <div><dt>思考程度</dt><dd>{activeDetail.batch.thinkingLevel === "high" ? "高" : "低"}</dd></div>
-                        <div><dt>谷歌搜索</dt><dd>{activeDetail.batch.googleSearch ? "开启" : "关闭"}</dd></div>
-                      </>
+                      <div><dt>谷歌搜索</dt><dd>{activeDetail.batch.googleSearch ? "开启" : "关闭"}</dd></div>
                     )}
                     {activeDetail.batch.modelId === "gpt-image-2" && (
                       <>

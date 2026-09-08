@@ -429,9 +429,10 @@ only with PNG or WebP; this is checked before the billable provider POST.
 
 Worker routing is explicit and persisted per attempt. Nano's current
 `o1key-gemini-3.1-flash-image-c-sp-v4` route sends `response_modalities` as
-`["TEXT", "IMAGE"]`; it omits low thinking and disabled search, while explicitly
-enabled choices become top-level `thinking_level: "high"` and
-`google_search: true`. The route stores a versioned ordered task-set
+`["TEXT", "IMAGE"]`. New Nano requests always send top-level
+`thinking_level: "high"`; disabled search is omitted and enabled search sends
+`google_search: true`. Historical records explicitly frozen as low thinking
+still omit the provider field on retry. The route stores a versioned ordered task-set
 token in `provider_task_id`; each returned task ID is persisted, followed by a
 submission-started marker immediately before the next POST. A restart completes
 only a provably unstarted suffix and then polls

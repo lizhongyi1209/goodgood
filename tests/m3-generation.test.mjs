@@ -62,6 +62,12 @@ test("generation input accepts model-owned ratios, resolutions, and output count
     }),
     { ...validInput, thinkingLevel: "high", googleSearch: true },
   );
+  const nanoInputWithoutThinking = { ...validInput };
+  delete nanoInputWithoutThinking.thinkingLevel;
+  assert.equal(
+    validateM3GenerationInput(nanoInputWithoutThinking).thinkingLevel,
+    "high",
+  );
   assert.deepEqual(
     validateM3GenerationInput({
       ...validInput,

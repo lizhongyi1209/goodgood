@@ -37,7 +37,7 @@ test("project saves validate stable domain values, ordered ready IDs, and idempo
       prompt: "保留服装结构",
       referenceIds: [REFERENCE_ID],
       resolution: "2K",
-      thinkingLevel: "low",
+      thinkingLevel: "high",
       googleSearch: false,
       quality: "auto",
       background: "auto",

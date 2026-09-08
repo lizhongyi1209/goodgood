@@ -2,7 +2,10 @@ import type {
   GenerationInputDraft,
   GenerationInputSnapshot,
 } from "@/shared/contracts/generation";
-import { resolveGptImageOptionsForModel } from "@/features/creation/generation-options";
+import {
+  resolveGenerationThinkingLevelForModel,
+  resolveGptImageOptionsForModel,
+} from "@/features/creation/generation-options";
 
 export type {
   GenerationAspectRatio,
@@ -33,10 +36,7 @@ export function createGenerationInputSnapshot(
     aspectRatio: draft.aspectRatio,
     resolution: draft.resolution,
     count: draft.count,
-    thinkingLevel:
-      draft.modelId === "nano-banana-2" && draft.thinkingLevel === "high"
-        ? "high"
-        : "low",
+    thinkingLevel: resolveGenerationThinkingLevelForModel(draft.modelId),
     googleSearch:
       draft.modelId === "nano-banana-2" && draft.googleSearch === true,
     ...gptImageOptions,
@@ -54,7 +54,9 @@ export function restoreGenerationInputSnapshot(
     aspectRatio: snapshot.aspectRatio,
     resolution: snapshot.resolution,
     count: snapshot.count,
-    thinkingLevel: snapshot.thinkingLevel ?? "low",
+    thinkingLevel:
+      snapshot.thinkingLevel ??
+      resolveGenerationThinkingLevelForModel(snapshot.modelId),
     googleSearch: snapshot.googleSearch === true,
     ...resolveGptImageOptionsForModel(snapshot.modelId, snapshot),
     projectId: snapshot.projectId ?? null,
