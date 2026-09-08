@@ -453,14 +453,20 @@ export async function claimGenerationJob(
   }
 }
 
-export async function saveProviderTask(pool, { attemptId, taskId }) {
-  await pool.query(
+export async function saveProviderTask(
+  pool,
+  { attemptId, previousTaskId = null, taskId },
+) {
+  const result = await pool.query(
     `UPDATE generation_attempts
-        SET provider_task_id = COALESCE(provider_task_id, $2),
+        SET provider_task_id = $2,
             state = 'submitted', updated_at = now()
-      WHERE id = $1`,
-    [attemptId, taskId],
+      WHERE id = $1
+        AND provider_task_id IS NOT DISTINCT FROM $3
+      RETURNING id`,
+    [attemptId, taskId, previousTaskId],
   );
+  return result.rowCount === 1;
 }
 
 export async function markProviderSubmissionStarted(pool, { attemptId }) {

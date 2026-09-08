@@ -31,10 +31,15 @@ import { applyMigrations } from "../server/persistence/migrate.mjs";
 import { seedLocalFixtures } from "../server/persistence/seed-local-fixtures.mjs";
 
 const { Pool } = pg;
-const integrationEnabled = process.env.GOODGOOD_M6_INTEGRATION === "1";
-const databaseUrl =
-  process.env.GOODGOOD_M6_DATABASE_URL ??
-  "postgresql://goodgood:goodgood-local-only@127.0.0.1:5432/goodgood";
+const integrationRequested = process.env.GOODGOOD_M6_INTEGRATION === "1";
+const explicitDatabaseUrl = process.env.GOODGOOD_M6_DATABASE_URL;
+if (integrationRequested && !explicitDatabaseUrl) {
+  throw new Error(
+    "GOODGOOD_M6_DATABASE_URL must name an isolated test database when GOODGOOD_M6_INTEGRATION=1.",
+  );
+}
+const integrationEnabled = integrationRequested && Boolean(explicitDatabaseUrl);
+const databaseUrl = explicitDatabaseUrl ?? "";
 
 test("credit policy derives exact signed available and reserved deltas", () => {
   assert.deepEqual(creditBalanceDeltas("grant", 100n), {
@@ -144,6 +149,7 @@ test("M6 migration and schema define immutable prices and append-only ledger lin
     gptPricingMigration,
     multiOutputMigration,
     multiOutputPriceActivationMigration,
+    nanoMultiOutputPriceMigration,
     schema,
     repository,
     contract,
@@ -167,6 +173,13 @@ test("M6 migration and schema define immutable prices and append-only ledger lin
     readFile(
       new URL(
         "../migrations/0015_gg009_activate_multi_output_prices.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+    readFile(
+      new URL(
+        "../migrations/0016_gg010_nano_multi_output_prices.sql",
         import.meta.url,
       ),
       "utf8",
@@ -222,6 +235,14 @@ test("M6 migration and schema define immutable prices and append-only ledger lin
     multiOutputPriceActivationMigration,
     /'gpt-image-2', '4K', 4, 'standard', 2, 'credit', 40/,
   );
+  assert.match(
+    nanoMultiOutputPriceMigration,
+    /'nano-banana-2', '1K', 2, 'standard', 1, 'credit', 20/,
+  );
+  assert.match(
+    nanoMultiOutputPriceMigration,
+    /'nano-banana-2', '4K', 4, 'standard', 1, 'credit', 40/,
+  );
   assert.match(schema, /ordinal: integer\("ordinal"\)\.notNull\(\)/);
   assert.match(migration, /'welcome_grant_v1'/);
   assert.match(migration, /'\{"campaign":"welcome-v1","images":10\}'/);
@@ -250,8 +271,9 @@ async function insertGenerationFixture(pool, { jobId, ownerId, suffix }) {
     [batchId, ownerId, `M6 ledger ${suffix}`, `m6-hash-${suffix}`],
   );
   await pool.query(
-    `INSERT INTO generation_jobs (id, batch_id, owner_id, idempotency_key)
-     VALUES ($1, $2, $3, $4)`,
+    `INSERT INTO generation_jobs (
+       id, batch_id, owner_id, idempotency_key, state, completed_at
+     ) VALUES ($1, $2, $3, $4, 'cancelled', now())`,
     [jobId, batchId, ownerId, `m6-job-${suffix}`],
   );
   return batchId;
@@ -571,16 +593,16 @@ test(
       input: {
         ...generationInput,
         count: 4,
-        modelId: "gpt-image-2",
-        prompt: "M6 four-output settlement integration",
+        modelId: "nano-banana-2",
+        prompt: "M6 Nano Banana four-output settlement integration",
       },
       ownerId: welcomeOwner.ownerId,
     });
     const multiClaim = await claimGenerationJob(pool, {
       attemptRoute: {
         provider: "goodgood-mock",
-        providerModel: "gpt-image-2",
-        routeVersion: "m6-test-gpt-v1",
+        providerModel: "nano-banana-2",
+        routeVersion: "m6-test-nano-v1",
       },
       jobId: multiGeneration.row.id,
       leaseMs: 30_000,
@@ -647,6 +669,12 @@ test(
         ["nano-banana-2", "1K", 1, "10"],
         ["nano-banana-2", "2K", 1, "10"],
         ["nano-banana-2", "4K", 1, "10"],
+        ["nano-banana-2", "1K", 2, "20"],
+        ["nano-banana-2", "2K", 2, "20"],
+        ["nano-banana-2", "4K", 2, "20"],
+        ["nano-banana-2", "1K", 4, "40"],
+        ["nano-banana-2", "2K", 4, "40"],
+        ["nano-banana-2", "4K", 4, "40"],
         ["gpt-image-2", "1K", 1, "10"],
         ["gpt-image-2", "2K", 1, "10"],
         ["gpt-image-2", "4K", 1, "10"],

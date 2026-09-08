@@ -15,6 +15,16 @@ const LAUNCH_PRICES = Object.freeze([
     planContext: "standard",
   }),
   Object.freeze({
+    count: 2,
+    modelId: "nano-banana-2",
+    planContext: "standard",
+  }),
+  Object.freeze({
+    count: 4,
+    modelId: "nano-banana-2",
+    planContext: "standard",
+  }),
+  Object.freeze({
     count: 1,
     modelId: "gpt-image-2",
     planContext: "standard",

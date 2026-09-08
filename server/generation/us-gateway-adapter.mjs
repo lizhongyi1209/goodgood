@@ -15,7 +15,7 @@ export const US_GATEWAY_NANO_BANANA_2_ROUTE = Object.freeze({
   provider: "o1key",
   providerModel: "gemini-3.1-flash-image-c-sp",
   resolutions: SUPPORTED_GENERATION_RESOLUTIONS,
-  routeVersion: "o1key-gemini-3.1-flash-image-c-sp-v2",
+  routeVersion: "o1key-gemini-3.1-flash-image-c-sp-v3",
 });
 
 export const US_GATEWAY_GPT_IMAGE_2_ROUTE = Object.freeze({
@@ -381,31 +381,61 @@ export function createUsGatewayAdapter({
     );
   }
 
+  async function prepareReferences(references = []) {
+    if (!Array.isArray(references) || references.length > MAX_REFERENCES) {
+      throw protocolError();
+    }
+    const uploadedReferences = [];
+    for (const reference of references) {
+      uploadedReferences.push(await uploadReference(reference));
+    }
+    return Object.freeze(uploadedReferences);
+  }
+
+  async function submitPrepared({
+    job,
+    onSubmissionStart = async () => {},
+    uploadedReferences = [],
+  }) {
+    validateJob(job, route);
+    if (
+      !Array.isArray(uploadedReferences) ||
+      uploadedReferences.length > MAX_REFERENCES ||
+      uploadedReferences.some((reference) =>
+        typeof reference?.url !== "string" ||
+        typeof reference?.contentType !== "string"
+      )
+    ) {
+      throw protocolError();
+    }
+    await onSubmissionStart();
+    const payload = await request("/async/v1/generateImage", {
+      body: JSON.stringify(generationPayload({ job, route, uploadedReferences })),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+      submission: true,
+    });
+    if (typeof payload?.task_id !== "string" || !payload.task_id) {
+      throw normalizedError("SUBMISSION_UNKNOWN");
+    }
+    return Object.freeze({ taskId: payload.task_id });
+  }
+
   return Object.freeze({
     getTask,
+    prepareReferences,
     route,
 
     async submit({ job, onSubmissionStart = async () => {}, references = [] }) {
-      validateJob(job, route);
-      if (!Array.isArray(references) || references.length > MAX_REFERENCES) {
-        throw protocolError();
-      }
-      const uploadedReferences = [];
-      for (const reference of references) {
-        uploadedReferences.push(await uploadReference(reference));
-      }
-      await onSubmissionStart();
-      const payload = await request("/async/v1/generateImage", {
-        body: JSON.stringify(generationPayload({ job, route, uploadedReferences })),
-        headers: { "content-type": "application/json" },
-        method: "POST",
-        submission: true,
+      const uploadedReferences = await prepareReferences(references);
+      return submitPrepared({
+        job,
+        onSubmissionStart,
+        uploadedReferences,
       });
-      if (typeof payload?.task_id !== "string" || !payload.task_id) {
-        throw normalizedError("SUBMISSION_UNKNOWN");
-      }
-      return Object.freeze({ taskId: payload.task_id });
     },
+
+    submitPrepared,
 
     uploadReference,
 

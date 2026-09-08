@@ -6,7 +6,7 @@ export const SUPPORTED_GENERATION_RESOLUTIONS = Object.freeze([
 
 export const DURABLE_GENERATION_OUTPUT_COUNT = 1;
 export const SUPPORTED_GPT_IMAGE_2_OUTPUT_COUNTS = Object.freeze([1, 2, 4]);
-export const SUPPORTED_NANO_BANANA_2_OUTPUT_COUNTS = Object.freeze([1]);
+export const SUPPORTED_NANO_BANANA_2_OUTPUT_COUNTS = Object.freeze([1, 2, 4]);
 
 const NANO_BANANA_2_ASPECT_RATIOS = Object.freeze([
   "1:8",

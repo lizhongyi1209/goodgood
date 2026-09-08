@@ -148,9 +148,9 @@ test("maps ratios and resolution labels without persisting UI indices", async ()
     getGenerationRatioOptions("gpt-image-2").map((option) => option.id),
     [...GPT_IMAGE_2_RATIO_IDS],
   );
-  assert.deepEqual(getGenerationCountOptions("nano-banana-2"), [1]);
+  assert.deepEqual(getGenerationCountOptions("nano-banana-2"), [1, 2, 4]);
   assert.deepEqual(getGenerationCountOptions("gpt-image-2"), [1, 2, 4]);
-  assert.equal(resolveGenerationCountForModel("nano-banana-2", 4), 1);
+  assert.equal(resolveGenerationCountForModel("nano-banana-2", 4), 4);
   assert.equal(resolveGenerationCountForModel("gpt-image-2", 4), 4);
   assert.deepEqual(
     [...GPT_IMAGE_2_RATIO_IDS],

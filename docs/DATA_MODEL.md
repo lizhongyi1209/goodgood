@@ -27,7 +27,9 @@ local-auth seeder. Migration 0013 adds GPT IMAGE 2's single-output prices.
 Migration 0014 adds ordered multi-Asset jobs and GPT count-2/count-4 prices.
 Migration 0015 appends an earlier-effective immutable copy of the same
 count-2/count-4 prices so they are active for the full Shanghai launch day.
-The Drizzle schema mirrors the durable schema across all fifteen migrations. A
+Migration 0016 adds Nano Banana 2 count-2/count-4 prices at 20/40 credits for
+each resolution. The Drizzle schema mirrors the durable schema across all
+sixteen migrations. A
 fuller project-backed creation session record and entitlements
 remain canonical contracts for later slices.
 
@@ -147,6 +149,10 @@ correction. Migration 0014's immutable rows begin at `2026-09-08 00:00 UTC`,
 which leaves the first eight hours of the Shanghai validation day without an
 active multi-output quote. Migration 0015 adds equal version-2 prices effective
 from `2026-09-07 00:00 UTC`; it neither updates nor deletes financial history.
+
+Migration `0016_gg010_nano_multi_output_prices.sql` adds immutable Nano Banana 2
+count-2/count-4 prices of 20/40 credits for 1K, 2K, and 4K. It changes no
+existing price, ledger, batch, attempt, or Asset row.
 
 ## Entities
 
@@ -311,13 +317,19 @@ submitted/started/completed timestamps.
 ### GenerationAttempt
 
 One dispatch attempt for a generation job: ordinal, route version, provider,
-provider model/version, provider task ID, state, request/result hashes,
+provider model/version, provider task evidence, state, request/result hashes,
 normalized error, estimated and actual provider cost, and timestamps. A retry
 or fallback adds an attempt; it does not overwrite prior execution evidence.
 For the non-idempotent O1Key route, `submitted` is persisted immediately before
 the generation POST. A `submitted` attempt without `provider_task_id` is
 intentionally unrecoverable and becomes `SUBMISSION_UNKNOWN`; reclaiming it
 must not create another upstream task.
+For Nano Banana 2 multi-output, `provider_task_id` stores a versioned ordered
+task-set token. The worker advances it with a compare-and-swap after every
+returned upstream ID and writes a submission-started variant immediately before
+the next POST. A safe partial token therefore resumes only the missing suffix;
+a submission-started token or unknown response is terminal because its upstream
+outcome cannot be reconstructed.
 
 ### GenerationBatch
 

@@ -189,20 +189,53 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
   try {
     provider.assertAttempt(attempt);
     providerStartedAt = Date.now();
-    if (!taskId) {
+    if (!provider.isTaskSubmissionComplete({ job, taskId })) {
       if (
+        !taskId &&
         provider.submissionPolicy === "task-id-required" &&
         attempt.state !== "created"
       ) {
         throw new NormalizedProviderError(SUBMISSION_UNKNOWN);
       }
       stage = "provider-submission";
-      taskId = await provider.createTask({
+      let persistedTaskId = taskId ?? null;
+      const persistTaskId = async (
+        nextTaskId,
+        { submissionAccepted = true } = {},
+      ) => {
+        let saved;
+        try {
+          saved = await saveProviderTask(pool, {
+            attemptId: attempt.id,
+            previousTaskId: persistedTaskId,
+            taskId: nextTaskId,
+          });
+        } catch (error) {
+          if (
+            provider.submissionPolicy === "task-id-required" &&
+            submissionAccepted
+          ) {
+            throw new NormalizedProviderError(SUBMISSION_UNKNOWN);
+          }
+          throw error;
+        }
+        if (!saved) throw new SupersededGenerationExecution();
+        persistedTaskId = nextTaskId;
+        taskId = nextTaskId;
+      };
+      const createdTaskId = await provider.createTask({
         attempt,
         job,
+        onTaskCreated: persistTaskId,
         onSubmissionStart:
           provider.submissionPolicy === "task-id-required"
-            ? async () => {
+            ? async (submissionToken = null) => {
+                if (submissionToken) {
+                  await persistTaskId(submissionToken, {
+                    submissionAccepted: false,
+                  });
+                  return;
+                }
                 const started = await markProviderSubmissionStarted(pool, {
                   attemptId: attempt.id,
                 });
@@ -211,8 +244,12 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
                 }
               }
             : undefined,
+        taskId,
       });
-      await saveProviderTask(pool, { attemptId: attempt.id, taskId });
+      if (createdTaskId !== persistedTaskId) {
+        await persistTaskId(createdTaskId);
+      }
+      taskId = createdTaskId;
     }
 
     stage = "provider-poll";

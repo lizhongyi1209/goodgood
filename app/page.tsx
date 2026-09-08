@@ -1523,7 +1523,7 @@ export default function Home() {
       !["nano-banana-2", "gpt-image-2"].includes(selectedModel) ||
       !isGenerationCountSupported(selectedModel, generationCount)
     ) {
-      toast.error("Nano Banana 2 当前支持 1 张；GPT IMAGE 2 支持 1、2、4 张");
+      toast.error("Nano Banana 2 和 GPT IMAGE 2 当前支持 1、2、4 张");
       return;
     }
 

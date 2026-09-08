@@ -80,8 +80,7 @@ fill space.
 - Model list: opens within the parameter drawer and collapses after selection.
 - Nano Banana 2 accepts its 14 displayed ratios; GPT IMAGE 2 accepts `9:16`,
   `2:3`, `3:4`, `1:1`, `4:3`, `3:2`, and `16:9`. Both use the existing
-  `1K / 2K / 4K` resolution domain. GPT IMAGE 2 supports `1 / 2 / 4` outputs;
-  Nano Banana 2 currently supports one and disables the other count choices.
+  `1K / 2K / 4K` resolution domain and support `1 / 2 / 4` outputs.
   The pixel readout follows the selected model's exact size table. A model
   change keeps a compatible ratio or visibly moves to the nearest supported
   ratio in the same orientation, and normalizes an unsupported count to one.
@@ -150,7 +149,7 @@ failed -> queued (retry)
 - On full-batch failure, replace that run's active task area with one compact
   inline status strip that summarizes the requested count. Concurrent failures
   retain separate strips; do not repeat one run's error per requested image.
-- The current GPT multi-output batch succeeds only after every requested image
+- A GPT or Nano Banana multi-output batch succeeds only after every requested image
   is decoded, stored, and committed. A missing or invalid output fails the whole
   batch and exposes no partial Assets; partial-result settlement requires a
   later explicit provider and billing policy.

@@ -11,10 +11,17 @@ import { GENERATION_READY_QUEUE } from "../server/generation/config.mjs";
 import { applyMigrations } from "../server/persistence/migrate.mjs";
 
 const { Pool } = pg;
-const integrationEnabled = process.env.GOODGOOD_M6_INTEGRATION === "1";
+const integrationRequested = process.env.GOODGOOD_M6_INTEGRATION === "1";
+const explicitDatabaseUrl = process.env.GOODGOOD_M6_DATABASE_URL;
+if (integrationRequested && !explicitDatabaseUrl) {
+  throw new Error(
+    "GOODGOOD_M6_DATABASE_URL must name an isolated test database when GOODGOOD_M6_INTEGRATION=1.",
+  );
+}
+const integrationEnabled = integrationRequested && Boolean(explicitDatabaseUrl);
 const composeEnabled = process.env.GOODGOOD_M3_INTEGRATION === "1";
 const databaseUrl =
-  process.env.GOODGOOD_M6_DATABASE_URL ??
+  explicitDatabaseUrl ??
   "postgresql://goodgood:goodgood-local-only@127.0.0.1:5432/goodgood";
 const webOrigin = process.env.GOODGOOD_M3_WEB_ORIGIN ?? "http://127.0.0.1:3000";
 const redisUrl = process.env.GOODGOOD_M3_REDIS_URL ?? "redis://127.0.0.1:6379";

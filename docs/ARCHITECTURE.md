@@ -396,11 +396,14 @@ provider routes for the selected GoodGood model, but it must not silently
 change model families. Persist route version and each provider attempt so
 retries, reconciliation, cost, and support remain auditable.
 
-M5 maps the stable `nano-banana-2` product route to O1Key's special-price
-`gemini-3.1-flash-image-c-sp` route for one output across all 14 product-defined
+M5/GG-010 map the stable `nano-banana-2` product route to O1Key's special-price
+`gemini-3.1-flash-image-c-sp` route for `1 / 2 / 4` outputs across all 14 product-defined
 aspect ratios and `1K` / `2K` / `4K`. The selected ratio and resolution remain
 in the durable job snapshot and are sent unchanged as O1Key `aspect_ratio` and
-`size`. The backend-only adapter uses Bearer authentication, uploads each validated private reference to
+`size`. Because Banana exposes no native count field, a count-N GoodGood batch
+submits N single-image tasks without an `n` field. The backend-only adapter uses
+Bearer authentication, uploads each validated private reference once per
+submission/resume invocation to
 `POST /v1/o1key/uploads` in stable order, submits `fileData` references to
 `POST /async/v1/generateImage`, and polls
 `GET /async/v1/tasks/{task_id}`. The temporary upload URL is publicly readable
@@ -417,10 +420,15 @@ resolution values. The adapter sends that exact pixel string as `size` with
 resolution, and count while each attempt retains the distinct
 `o1key-gpt-image-2-c-sd-v1` route identity.
 
-Worker routing is explicit and persisted per attempt. The default Compose path
+Worker routing is explicit and persisted per attempt. Nano's current
+`o1key-gemini-3.1-flash-image-c-sp-v3` route stores a versioned ordered task-set
+token in `provider_task_id`; each returned task ID is persisted, followed by a
+submission-started marker immediately before the next POST. A restart completes
+only a provably unstarted suffix and then polls
+all known tasks concurrently in ordinal order. The default Compose path
 selects a model-specific M3 mock route; the O1Key override selects the matching
 Nano or GPT route, reads the
-ordered private reference bytes, and resumes the persisted `task_id` after a
+ordered private reference bytes, and resumes persisted provider task evidence after a
 worker restart. Downloaded JPEG, PNG, or WebP results are bounded, type-checked,
 fully decoded, and stored with content-derived object extensions and stable
 positive ordinals before one terminal job transaction accepts the complete
@@ -436,7 +444,12 @@ therefore does not invent either field. GoodGood's browser/API submission
 remains idempotent. For O1Key, the active attempt is durably moved from
 `created` to `submitted` immediately before the billable POST; if the worker is
 later reclaimed without a durable `task_id`, it fails as `SUBMISSION_UNKNOWN`
-instead of submitting again. An explicit user retry is a new billable request.
+instead of submitting again. For a Banana multi-task batch, the worker also
+compare-and-swaps the ordered task-set token after every accepted response and
+before every following POST. A safe partial token resumes; a persisted
+submission-started marker or ambiguous next POST remains
+`SUBMISSION_UNKNOWN` and is never repeated automatically. An explicit user
+retry is a new billable request.
 Polling is the only accepted MVP status transport. Identical terminal polls are
 duplicates, conflicting confirmed terminal polls fail closed, and a new worker
 can resume after the provider task ID is durable. One observed `FAILURE` is held

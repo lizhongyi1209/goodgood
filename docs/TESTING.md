@@ -295,9 +295,12 @@ credit, and the exact final balance.
 
 M6 adds fast signed-delta, transaction commit/rollback, migration-structure,
 browser-separation, billing-summary serialization, authenticated route, and UI
-boundary tests. The opt-in
-`GOODGOOD_M6_INTEGRATION=1 node --test tests/m6-credit-ledger.test.mjs` test
-uses dedicated test identities and preserves existing local fixture balances.
+boundary tests. The opt-in test requires both
+`GOODGOOD_M6_INTEGRATION=1` and an explicit `GOODGOOD_M6_DATABASE_URL` naming
+a database with no running application Worker. It fails before connecting when
+that URL is omitted, so test outbox rows cannot be consumed by a real O1Key
+Worker. It uses dedicated test identities and preserves existing local fixture
+balances.
 It proves migration checksum rerun,
 the three immutable 10-credit Banana 2 prices, migration grants for existing
 owners, exactly-once first-login welcome grant, live job reservation, successful
@@ -409,13 +412,20 @@ The timestamped result of the latest verified gate belongs in
 - The M5 fake O1Key gateway exhaustively proves all 42 combinations of the 14
   product-defined aspect ratios and `1K` / `2K` / `4K` pass unchanged to
   `gemini-3.1-flash-image-c-sp`, while the model remains `nano-banana-2`, the
-  output count remains one, and the response modality remains `IMAGE`;
+  upstream task output count remains one, and the response modality remains `IMAGE`;
   unsupported ratio/resolution/model/count values fail before a POST. Ordered
   multipart temporary uploads become explicit `fileData`
   references; polling success/failure, bounded timeout, duplicate/conflicting
   confirmed terminal reads, provisional-failure recovery to success, HTTPS
   enforcement, malformed response rejection, and stateless restart work
   without a real credential.
+- GG-010 provider-router coverage proves a four-image Nano batch creates four
+  single-image O1Key tasks without `n`, uploads each reference once per worker
+  invocation, persists task-set prefixes of lengths 1–4 plus pre-POST markers,
+  preserves ordinal output order, resumes a safe partial task set by submitting
+  only its missing suffix, and fails an interrupted marker without another POST.
+  Repository coverage proves stale task evidence cannot overwrite a
+  newer token; shared output/storage and billing tests retain atomic completion.
 - GG-007/GG-009 coverage proves GPT IMAGE 2's seven ratios across all three
   product resolutions map to the 21 documented lowercase-`x` pixel sizes and
   each accepts `n: 1`, `2`, or `4` in one `gpt-image-2-c-sd` task. It rejects a
@@ -496,9 +506,10 @@ repository. Charge/refund outcomes are audited in the operator's New API usage
 history rather than inferred from generation state. O1Key confirmed that the
 image API has no idempotency, client-task lookup, or signed-callback field; ADR
 0008 accepts that limitation with the persisted at-most-once guard rather than
-claiming exactly-once execution. GPT multi-output now uses one native task and
-an all-or-nothing Asset/credit policy; partial-result settlement remains outside
-the current scope.
+claiming exactly-once execution. GPT multi-output uses one native task; Nano
+multi-output uses one task per image with incrementally durable ordered task
+evidence. Both use an all-or-nothing Asset/credit policy; partial-result
+settlement remains outside the current scope.
 
 ### Documentation continuity
 

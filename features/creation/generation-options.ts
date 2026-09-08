@@ -116,7 +116,9 @@ export function getGenerationRatioOptions(
 export function getGenerationCountOptions(
   modelId: GenerationModelId,
 ): readonly GenerationCount[] {
-  return modelId === "gpt-image-2" ? GENERATION_COUNTS : [1];
+  return modelId === "nano-banana-2" || modelId === "gpt-image-2"
+    ? GENERATION_COUNTS
+    : [1];
 }
 
 export function isGenerationCountSupported(

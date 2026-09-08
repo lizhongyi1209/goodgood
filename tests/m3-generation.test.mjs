@@ -40,10 +40,14 @@ test("generation input accepts model-owned ratios, resolutions, and output count
       error instanceof GenerationRequestError && error.code === "INVALID_PROMPT",
   );
   assert.throws(
-    () => validateM3GenerationInput({ ...validInput, count: 2 }),
+    () => validateM3GenerationInput({ ...validInput, count: 3 }),
     (error) =>
       error instanceof GenerationRequestError &&
       error.code === "M3_SLICE_UNSUPPORTED",
+  );
+  assert.equal(
+    validateM3GenerationInput({ ...validInput, count: 4 }).count,
+    4,
   );
   assert.deepEqual(
     validateM3GenerationInput({

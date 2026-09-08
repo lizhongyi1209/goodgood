@@ -53,7 +53,7 @@ the completed-image masonry. Each strip contains:
 
 For a full-batch failure, show one strip for that run rather than one repeated
 error per requested output. Multiple failed runs therefore show multiple
-strips. Current GPT multi-output is atomic: a short, malformed, or partly
+strips. Current GPT and Nano Banana multi-output is atomic: a short, malformed, or partly
 unstorable provider result fails the whole batch and exposes no partial Assets.
 A later partial-result policy must define output-level charging first.
 
@@ -70,19 +70,22 @@ Dispatchers claim outbox rows atomically before publishing them, and recovery
 does not reopen a fresh dispatch until the Worker lease window has elapsed.
 Duplicate deliveries of the same active job are ignored, and an unexpired lease
 cannot be reclaimed by the same Worker identity.
-The generation API admits Nano Banana 2's 14 ratios with one output and GPT
-IMAGE 2's seven ratios with `1 / 2 / 4` outputs at `1K` / `2K` / `4K`. Unknown
+The generation API admits Nano Banana 2's 14 ratios and GPT IMAGE 2's seven
+ratios with `1 / 2 / 4` outputs at `1K` / `2K` / `4K`. Unknown
 model combinations return `M3_SLICE_UNSUPPORTED` before a job, credit
 reservation, or provider POST is created. The adapter repeats this validation.
-Nano sends the admitted ratio and resolution values; GPT sends the corresponding
-exact pixel size and count.
+Nano sends the admitted ratio and resolution values in one single-image task
+per output and never sends `n`; GPT sends the corresponding exact pixel size
+and native count in one task.
 
 The M5 O1Key contract normalizes `SUBMITTED`, `IN_PROGRESS`, `SUCCESS`, and
 `FAILURE` polling responses. Unknown error names and malformed or conflicting
 terminal payloads become `INTERNAL_ERROR`; raw O1Key errors never reach the
 browser. A bounded poll deadline becomes `MODEL_TIMEOUT` even when the last
 observation was still submitted or processing. GPT success must contain exactly
-the requested ordered output count; otherwise it becomes `INTERNAL_ERROR`. The
+the requested ordered output count. Every Nano task must return one image and
+the ordered task set must total the requested count; either mismatch becomes
+`INTERNAL_ERROR`. The
 image API documents no callback path.
 After a durable task ID, a single `FAILURE` observation remains provisional
 until the same normalized failure repeats on consecutive polls. A later
@@ -93,8 +96,14 @@ An interrupted generation POST, a 5xx response, or a successful response
 without a usable `task_id` becomes `SUBMISSION_UNKNOWN`. The attempt guard is
 already durable at that point, so worker recovery fails it instead of issuing a
 second POST. The inline retry states that it creates a new potentially charged
-task. GoodGood releases the customer's 10-credit reservation when this no-Asset
-job becomes terminal; that customer policy does not assert or record an upstream
+task. For Nano multi-output, each known task ID is persisted and a
+submission-started marker is written immediately before the next POST; a restart
+may submit only the provably unstarted suffix. If that marker remains or any
+later POST has an unknown outcome, the entire batch fails as
+`SUBMISSION_UNKNOWN` without exposing
+partial Assets or repeating that POST. GoodGood releases the customer's full
+reservation when this no-Asset job becomes terminal; that customer policy does
+not assert or record an upstream
 refund, so New API usage reconciliation is still required. Reference-upload
 failures happen before this billable guard and retain their ordinary retry
 behavior.

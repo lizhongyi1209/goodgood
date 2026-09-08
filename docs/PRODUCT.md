@@ -57,8 +57,9 @@ duplicating a release log.
   polled pending/success/inline failure, retry, gallery and focused image detail.
 - Nano Banana 2 through the real server-side O1Key route across 14 product
   ratios, plus GPT IMAGE 2 through `gpt-image-2-c-sd` across its seven exact-size
-  ratios. Both use `1K / 2K / 4K` and model-owned capability maps. Nano accepts
-  one output; GPT IMAGE 2 accepts `1 / 2 / 4` outputs in one native task.
+  ratios. Both use `1K / 2K / 4K`, accept `1 / 2 / 4` outputs, and use
+  model-owned capability maps. GPT IMAGE 2 uses one native task; Nano Banana 2
+  composes a multi-image batch from one upstream task per requested image.
   Other visible model names are not a promise of availability.
 - Authing Google/email-code login and revocable GoodGood sessions, with
   owner-scoped jobs, private assets, uploads, projects and drafts. Local Compose
@@ -80,7 +81,7 @@ content, direct operator contact and manual response. It does not claim the
 full seed or paid gate. Its accepted deferrals remain in `docs/BACKLOG.md`:
 
 - Customer checkout/domestic Alipay, Nano Banana Pro and further models, and
-  Nano Banana multi-output and partial-result settlement.
+  partial-result settlement.
 - Full automatic account/external-identity deletion, content reporting and
   broader moderation, provider-erasure terms, and complex monitoring.
 - Search, Explore, Moodboards, collaboration, sharing, and richer cross-device

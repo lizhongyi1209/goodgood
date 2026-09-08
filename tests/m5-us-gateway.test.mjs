@@ -398,7 +398,7 @@ test("gateway transport and unsupported durable parameters fail closed", async (
   for (const jobOverrides of [
     { aspect_ratio: "10:1" },
     { model_id: "nano-banana-pro" },
-    { requested_count: 2 },
+    { requested_count: 3 },
     { resolution: "8K" },
   ]) {
     await assert.rejects(
@@ -407,6 +407,19 @@ test("gateway transport and unsupported durable parameters fail closed", async (
         error instanceof NormalizedProviderError && error.code === "INTERNAL_ERROR",
     );
   }
+});
+
+test("Nano Banana 2 accepts multi-output counts without forwarding an unsupported n field", async (context) => {
+  const { adapter, gateway } = await withGateway(context);
+  await adapter.submit(
+    generationRequest("one task in a four-output GoodGood batch", {
+      requested_count: 4,
+    }),
+  );
+  assert.equal(gateway.submissions.length, 1);
+  assert.equal(gateway.submissions[0].body.n, undefined);
+  assert.equal(gateway.submissions[0].body.aspect_ratio, "1:1");
+  assert.equal(gateway.submissions[0].body.size, "1K");
 });
 
 test("GPT Image 2 SD maps every enabled size and count to one native task", async (context) => {

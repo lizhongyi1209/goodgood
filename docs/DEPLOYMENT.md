@@ -132,8 +132,10 @@ undeclared software or production credentials.
 M5's O1Key image path is selectable only through an explicit worker override;
 the base Compose stack remains fixed to the mock provider. The accepted MVP uses
 `https://cf-api.o1key.com`, the special-price
-`gemini-3.1-flash-image-c-sp` model, one output, all 14 product-defined aspect
-ratios, and `1K` / `2K` / `4K`. GG-007/GG-009 add the SD route
+`gemini-3.1-flash-image-c-sp` model, all 14 product-defined aspect ratios, and
+`1K` / `2K` / `4K`. GG-010 adds `1 / 2 / 4` Banana outputs by submitting one
+single-image O1Key task per requested output, with incrementally persisted task
+evidence under route `o1key-gemini-3.1-flash-image-c-sp-v3`. GG-007/GG-009 add the SD route
 `gpt-image-2-c-sd`, `1 / 2 / 4` outputs in one native task, seven supported
 ratios, and 21 exact pixel-size mappings. Migrations 0013/0014 publish GPT's
 10-credit per-image prices and ordered multi-Asset storage; migration 0015 makes
@@ -144,6 +146,10 @@ compatible with the new `(job_id, ordinal)` index. Start only the matching
 candidate after the migration. Promotion must also verify there is no active
 attempt from either prior route version before the Worker switches to
 model-aware routing.
+Migration 0016 appends Nano count-2/count-4 prices at 20/40 credits. Before
+switching the Nano route from v2 to v3, drain the prior Worker and verify there
+are no active v2 attempts; a v2 Worker cannot interpret the ordered task-set
+token and must never overlap the v3 Worker.
 The worker accepts
 exactly one of `GENERATION_API_KEY` or `GENERATION_API_KEY_FILE`; deployment must
 prefer a dedicated least-privilege Bearer credential from its secret store. It
@@ -471,7 +477,7 @@ implements authenticated, idempotent create/status behavior plus deterministic
 success, rejection, slow, and timeout paths. It serves only the checked-in test
 image; it is not a production provider.
 
-The current forward chain contains fifteen migrations: M3 generation, M4 owner
+The current forward chain contains sixteen migrations: M3 generation, M4 owner
 identity, M4 reference assets, M4 projects/batch association, M4 OIDC login
 attempts/sessions plus same-browser callback binding, and reference-cleanup
 evidence, followed by owner-scoped creation drafts and the M6 immutable price/
@@ -486,6 +492,8 @@ administration; migration 0012 removes the legacy local fixtures without
 modifying the earlier applied checksums. Migration 0013 adds GPT IMAGE 2's
 single-output prices, migration 0014 adds ordered multi-Asset jobs and count-2/
 count-4 prices, and migration 0015 appends their Shanghai-day activation fix.
+Migration 0016 adds Nano Banana 2 count-2/count-4 prices at 20/40 credits for
+all three product resolutions.
 The manual payment role uses these existing tables and
 adds no migration: `manual` is an operator-recorded receipt source, not a
 provider sandbox or customer checkout.

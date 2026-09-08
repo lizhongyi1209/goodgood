@@ -5,14 +5,22 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { loadGenerationConfig } from "../server/generation/config.mjs";
-import { downloadProviderOutput } from "../server/generation/provider.mjs";
+import {
+  NormalizedProviderError,
+  downloadProviderOutput,
+} from "../server/generation/provider.mjs";
 import {
   MOCK_GPT_IMAGE_2_ROUTE,
   createGenerationProvider,
+  decodeO1KeyTaskSet,
+  encodeO1KeyTaskSet,
   generationProviderRouteForModel,
 } from "../server/generation/provider-router.mjs";
 import { US_GATEWAY_GPT_IMAGE_2_ROUTE } from "../server/generation/us-gateway-adapter.mjs";
-import { markProviderSubmissionStarted } from "../server/generation/repository.mjs";
+import {
+  markProviderSubmissionStarted,
+  saveProviderTask,
+} from "../server/generation/repository.mjs";
 import { prepareObjectStorage } from "../server/generation/resources.mjs";
 import {
   parseArguments as parseO1KeyArguments,
@@ -34,7 +42,8 @@ async function readBody(request) {
 
 function createFakeO1Key() {
   const requests = [];
-  let polls = 0;
+  const polls = new Map();
+  const taskIds = [];
   const server = createServer(async (request, response) => {
     const url = new URL(request.url ?? "/", `http://${request.headers.host}`);
     assert.equal(request.headers.authorization, `Bearer ${API_KEY}`);
@@ -54,16 +63,25 @@ function createFakeO1Key() {
         body: JSON.parse((await readBody(request)).toString("utf8")),
         operation: "submit",
       });
-      sendJson(response, 200, { status: "SUBMITTED", task_id: "task-worker" });
+      const taskId = taskIds.length === 0
+        ? "task-worker"
+        : `task-worker-${taskIds.length + 1}`;
+      taskIds.push(taskId);
+      sendJson(response, 200, { status: "SUBMITTED", task_id: taskId });
       return;
     }
-    if (request.method === "GET" && url.pathname === "/async/v1/tasks/task-worker") {
-      polls += 1;
-      if (polls === 1) {
+    const taskMatch = /^\/async\/v1\/tasks\/(task-worker(?:-\d+)?)$/.exec(
+      url.pathname,
+    );
+    if (request.method === "GET" && taskMatch && taskIds.includes(taskMatch[1])) {
+      const taskId = taskMatch[1];
+      const pollCount = (polls.get(taskId) ?? 0) + 1;
+      polls.set(taskId, pollCount);
+      if (pollCount === 1) {
         sendJson(response, 200, {
           progress: "60%",
           status: "IN_PROGRESS",
-          task_id: "task-worker",
+          task_id: taskId,
         });
         return;
       }
@@ -72,13 +90,15 @@ function createFakeO1Key() {
           images: [
             {
               mime_type: "image/png",
-              url: "https://assetcache.o1key.invalid/result.png",
+              url: taskId === "task-worker"
+                ? "https://assetcache.o1key.invalid/result.png"
+                : `https://assetcache.o1key.invalid/result-${taskId}.png`,
             },
           ],
         },
         progress: "100%",
         status: "SUCCESS",
-        task_id: "task-worker",
+        task_id: taskId,
       });
       return;
     }
@@ -97,6 +117,7 @@ function createFakeO1Key() {
         });
       }),
     requests,
+    taskIds,
   };
 }
 
@@ -160,12 +181,12 @@ test("O1Key worker route reads private reference bytes, uploads, and resumes pol
       "1:8", "1:4", "9:16", "2:3", "3:4", "4:5", "1:1",
       "5:4", "4:3", "3:2", "16:9", "21:9", "4:1", "8:1",
     ],
-    outputCounts: [1],
+    outputCounts: [1, 2, 4],
     productModelId: "nano-banana-2",
     provider: "o1key",
     providerModel: "gemini-3.1-flash-image-c-sp",
     resolutions: ["1K", "2K", "4K"],
-    routeVersion: "o1key-gemini-3.1-flash-image-c-sp-v2",
+    routeVersion: "o1key-gemini-3.1-flash-image-c-sp-v3",
   });
   const attempt = {
     provider: "o1key",
@@ -233,6 +254,186 @@ test("O1Key worker route reads private reference bytes, uploads, and resumes pol
   });
   assert.equal(refiningCount, 1);
   assert.equal(outputs[0].url, "https://assetcache.o1key.invalid/result.png");
+});
+
+test("Nano Banana 2 fans four outputs into durable single-image O1Key tasks", async (context) => {
+  const fake = createFakeO1Key();
+  await fake.listen();
+  context.after(() => fake.close());
+  const address = fake.address();
+  assert.ok(address && typeof address === "object");
+  const storageReads = [];
+  const storage = {
+    async send(command) {
+      storageReads.push(command.input);
+      return {
+        Body: {
+          async transformToByteArray() {
+            return Buffer.from("one-reference-upload");
+          },
+        },
+        ContentLength: 20,
+        ContentType: "image/png",
+      };
+    },
+  };
+  const provider = createGenerationProvider({
+    config: {
+      objectStorage: { bucket: "goodgood-private" },
+      provider: {
+        allowInsecureLoopback: true,
+        apiKey: API_KEY,
+        baseUrl: `http://127.0.0.1:${address.port}`,
+        kind: "o1key",
+        pollIntervalMs: 1,
+        requestTimeoutMs: 1_000,
+        timeoutMs: 100,
+      },
+    },
+    publicStorage: null,
+    storage,
+  });
+  const job = {
+    aspect_ratio: "1:1",
+    model_id: "nano-banana-2",
+    prompt: "four ordered variations",
+    reference_snapshot: [{
+      name: "reference.png",
+      objectKey: "references/owner/reference/original",
+      ordinal: 1,
+    }],
+    requested_count: 4,
+    resolution: "1K",
+  };
+  const durableTokens = [];
+  const submissionTokens = [];
+  const taskId = await provider.createTask({
+    job,
+    onSubmissionStart: async (token) => submissionTokens.push(token),
+    onTaskCreated: async (token) => durableTokens.push(token),
+  });
+
+  assert.equal(submissionTokens[0], null);
+  assert.deepEqual(
+    submissionTokens.slice(1).map((token) =>
+      decodeO1KeyTaskSet(token, { expectedTaskCount: 4 }).length
+    ),
+    [1, 2, 3],
+  );
+  assert.equal(storageReads.length, 1);
+  assert.equal(fake.requests.filter((request) => request.operation === "upload").length, 1);
+  const submissions = fake.requests.filter((request) => request.operation === "submit");
+  assert.equal(submissions.length, 4);
+  for (const submission of submissions) {
+    assert.equal(submission.body.n, undefined);
+    assert.equal(submission.body.images.length, 1);
+  }
+  assert.deepEqual(
+    durableTokens.map((token, index) =>
+      decodeO1KeyTaskSet(token, { expectedTaskCount: 4 }).length === index + 1
+    ),
+    [true, true, true, true],
+  );
+  assert.deepEqual(
+    decodeO1KeyTaskSet(taskId, { expectedTaskCount: 4 }),
+    fake.taskIds,
+  );
+  assert.equal(provider.isTaskSubmissionComplete({ job, taskId }), true);
+
+  let refiningCount = 0;
+  const outputs = await provider.pollTask({
+    expectedOutputCount: 4,
+    onRefining: async () => {
+      refiningCount += 1;
+    },
+    taskId,
+  });
+  assert.equal(refiningCount, 1);
+  assert.equal(outputs.length, 4);
+  assert.deepEqual(
+    outputs.map((output) => output.url),
+    [
+      "https://assetcache.o1key.invalid/result.png",
+      "https://assetcache.o1key.invalid/result-task-worker-2.png",
+      "https://assetcache.o1key.invalid/result-task-worker-3.png",
+      "https://assetcache.o1key.invalid/result-task-worker-4.png",
+    ],
+  );
+});
+
+test("Nano Banana 2 resumes a partially persisted task set without resubmitting known tasks", async (context) => {
+  const fake = createFakeO1Key();
+  await fake.listen();
+  context.after(() => fake.close());
+  const address = fake.address();
+  assert.ok(address && typeof address === "object");
+  const provider = createGenerationProvider({
+    config: {
+      objectStorage: { bucket: "goodgood-private" },
+      provider: {
+        allowInsecureLoopback: true,
+        apiKey: API_KEY,
+        baseUrl: `http://127.0.0.1:${address.port}`,
+        kind: "o1key",
+        pollIntervalMs: 1,
+        requestTimeoutMs: 1_000,
+        timeoutMs: 100,
+      },
+    },
+    publicStorage: null,
+    storage: {},
+  });
+  const job = {
+    aspect_ratio: "16:9",
+    model_id: "nano-banana-2",
+    prompt: "resume two remaining variations",
+    reference_snapshot: [],
+    requested_count: 4,
+    resolution: "2K",
+  };
+  const partialTaskId = encodeO1KeyTaskSet(["known-1", "known-2"]);
+  const durableTokens = [];
+  const submissionTokens = [];
+  const resumedTaskId = await provider.createTask({
+    job,
+    onSubmissionStart: async (token) => submissionTokens.push(token),
+    onTaskCreated: async (token) => durableTokens.push(token),
+    taskId: partialTaskId,
+  });
+
+  assert.equal(fake.requests.filter((request) => request.operation === "submit").length, 2);
+  assert.deepEqual(
+    submissionTokens.map((token) =>
+      decodeO1KeyTaskSet(token, { expectedTaskCount: 4 }).length
+    ),
+    [2, 3],
+  );
+  assert.deepEqual(
+    decodeO1KeyTaskSet(resumedTaskId, { expectedTaskCount: 4 }),
+    ["known-1", "known-2", "task-worker", "task-worker-2"],
+  );
+  assert.deepEqual(
+    durableTokens.map((token) =>
+      decodeO1KeyTaskSet(token, { expectedTaskCount: 4 }).length
+    ),
+    [3, 4],
+  );
+
+  const interruptedTaskId = encodeO1KeyTaskSet(
+    ["known-1", "known-2"],
+    { submissionStarted: true },
+  );
+  assert.equal(
+    provider.isTaskSubmissionComplete({ job, taskId: interruptedTaskId }),
+    false,
+  );
+  await assert.rejects(
+    provider.createTask({ job, taskId: interruptedTaskId }),
+    (error) =>
+      error instanceof NormalizedProviderError &&
+      error.code === "SUBMISSION_UNKNOWN",
+  );
+  assert.equal(fake.requests.filter((request) => request.operation === "submit").length, 2);
 });
 
 test("provider routing selects GPT Image 2 SD without changing its product model ID", () => {
@@ -450,6 +651,38 @@ test("provider submission guard is a one-way persisted transition", async () => 
   assert.match(queries[0].sql, /state = 'created'/);
   assert.match(queries[0].sql, /provider_task_id IS NULL/);
   assert.deepEqual(queries[0].parameters, ["attempt-1"]);
+});
+
+test("provider task evidence advances only from the expected durable token", async () => {
+  const queries = [];
+  const pool = {
+    async query(sql, parameters) {
+      queries.push({ parameters, sql });
+      return { rowCount: queries.length === 1 ? 1 : 0 };
+    },
+  };
+  assert.equal(
+    await saveProviderTask(pool, {
+      attemptId: "attempt-1",
+      previousTaskId: "partial-token",
+      taskId: "complete-token",
+    }),
+    true,
+  );
+  assert.equal(
+    await saveProviderTask(pool, {
+      attemptId: "attempt-1",
+      previousTaskId: "partial-token",
+      taskId: "stale-token",
+    }),
+    false,
+  );
+  assert.match(queries[0].sql, /provider_task_id IS NOT DISTINCT FROM \$3/);
+  assert.deepEqual(queries[0].parameters, [
+    "attempt-1",
+    "complete-token",
+    "partial-token",
+  ]);
 });
 
 test("O1Key local runner mounts an invisible temporary key into only the worker", async () => {
