@@ -109,8 +109,14 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .reference-thumbnails { min-width: 0; display: flex; align-items: center; gap: 8px; overflow-x: auto; scrollbar-width: none; }
 .reference-thumbnails::-webkit-scrollbar { display: none; }
 .reference-thumbnail, .reference-add-more { width: var(--reference-preview-width); height: var(--reference-preview-height); flex: 0 0 auto; border-radius: 10px; }
-.reference-thumbnail { position: relative; background: #ececef; }
+.reference-thumbnail { position: relative; border: 1px solid transparent; background: #ececef; transition: opacity .16s ease, border-color .16s ease, box-shadow .16s ease, transform .16s ease; }
+.reference-thumbnail.is-reorderable { cursor: grab; touch-action: pan-x; }
+.reference-thumbnail.is-reorderable:active { cursor: grabbing; }
+.reference-thumbnail.is-reorderable:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.reference-thumbnail.is-dragging { opacity: .46; transform: scale(.97); }
+.reference-thumbnail.is-drag-target { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
 .reference-thumbnail img { width: 100%; height: 100%; display: block; border-radius: inherit; object-fit: cover; object-position: center; }
+.reference-thumbnail-ordinal { min-width: 25px; height: 17px; padding: 0 5px; position: absolute; left: 4px; bottom: 4px; z-index: 2; border-radius: 5px; background: rgba(35,35,42,.72); display: inline-flex; align-items: center; justify-content: center; color: white; font-size: 8px; font-weight: 650; line-height: 1; pointer-events: none; backdrop-filter: blur(4px); }
 .reference-thumbnail.uploading img, .reference-thumbnail.failed img { opacity: .48; }
 .reference-thumbnail-status { position: absolute; inset: 0; border-radius: inherit; display: grid; place-items: center; color: #696973; }
 .reference-thumbnail-status svg { filter: drop-shadow(0 1px 3px rgba(255,255,255,.8)); }

@@ -43,3 +43,18 @@ export function appendReferenceMaterials(
     references: [...current, ...additions],
   };
 }
+
+export function reorderReferences(
+  current: readonly GenerationReference[],
+  sourceId: string,
+  targetId: string,
+): readonly GenerationReference[] {
+  const sourceIndex = current.findIndex((reference) => reference.id === sourceId);
+  const targetIndex = current.findIndex((reference) => reference.id === targetId);
+  if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) return current;
+
+  const reordered = [...current];
+  const [moved] = reordered.splice(sourceIndex, 1);
+  reordered.splice(targetIndex, 0, moved);
+  return reordered;
+}

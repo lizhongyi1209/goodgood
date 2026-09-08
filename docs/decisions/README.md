@@ -48,6 +48,7 @@ Current records:
 - `0035-simplify-sidebar-credit-summary.md`
 - `0036-gpt-image-quality-background-format.md`
 - `0037-reusable-uploaded-reference-materials.md`
+- `0038-user-ordered-reference-tray.md`
 
 Accepted describes a decision, not proof of deployment. ADR 0022/0023's full
 runtime rollout is deferred under ADR 0024. The current release and rollout

@@ -74,6 +74,9 @@ fill space.
   failure remains on that tray item with removal/replacement recovery.
 - The tray uses moderately enlarged responsive 1:1 centered crops and scrolls
   horizontally without wrapping, so adding references does not destabilize the composer.
+- Every tray item shows `图 1…图 10` at the lower left. Dragging one item onto
+  another moves it to that position and immediately renumbers the tray. Focused
+  items support `Alt + ← / →` for the same operation.
 - Send is blocked while any retained reference is uploading or failed. Ready
   references preserve their tray order in the submitted batch snapshot.
 - Settings: attached downward drawer; closing it must not reset values.
@@ -106,9 +109,10 @@ fill space.
   Active styling and the creation stream communicate progress without blocking
   another click. There is no product-side concurrent-job count ceiling.
 
-Reference ordinal is stored in data for prompt interpretation even though the
-tray does not add visually heavy number badges. The accessible name and future
-detail metadata should still expose `参考图 1…10` semantics.
+Reference ordinal is the current tray index and is stored in data for prompt
+interpretation. The visible `图 1…10`, accessible name, draft/project order,
+generation snapshot, and provider reference order must all describe that same
+array; there is no separate display-only ordinal.
 
 ### Authenticated root draft
 

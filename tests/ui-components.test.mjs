@@ -37,7 +37,13 @@ test("declares the GoodGood visual and interaction invariants", async () => {
   assert.match(css, /\.generation-error-strip[^}]*min-height:\s*72px/s);
   assert.match(css, /\.reference-library-picker-image[^}]*aspect-ratio:\s*1/s);
   assert.match(css, /\.reference-material-masonry[^}]*grid-template-columns:\s*repeat\(4/s);
+  assert.match(css, /\.reference-thumbnail-ordinal[^}]*left:\s*4px;[^}]*bottom:\s*4px/s);
+  assert.match(css, /\.reference-thumbnail\.is-drag-target[^}]*border-color:\s*var\(--accent\)/s);
   assert.doesNotMatch(creationPage, /reference-library-picker-image" style=/);
+  assert.match(creationComposer, /draggable=\{canReorderReferences\}/);
+  assert.match(creationComposer, /onReorderReference\?\.\(sourceId, image\.id\)/);
+  assert.match(creationComposer, /aria-keyshortcuts=\{canReorderReferences \? "Alt\+ArrowLeft Alt\+ArrowRight"/);
+  assert.match(creationComposer, /reference-thumbnail-ordinal">图 \{index \+ 1\}/);
   assert.match(css, /mask:\s*url\("\/feihong-send\.png"\)/);
   assert.doesNotMatch(creationPage, /className="generation-task-frame"/);
   assert.match(creationPage, /const creationStreamItems = \[\.\.\.generationItems, \.\.\.creationItems\]/);
@@ -597,7 +603,7 @@ test("reference material boundary and selection cover success, empty, deduplicat
   const { listReferenceMaterials, ReferenceLibraryError } = await vite.ssrLoadModule(
     "/features/references/http-reference-library.ts",
   );
-  const { appendReferenceMaterials } = await vite.ssrLoadModule(
+  const { appendReferenceMaterials, reorderReferences } = await vite.ssrLoadModule(
     "/features/references/reference-selection.ts",
   );
   const originalFetch = globalThis.fetch;
@@ -646,6 +652,14 @@ test("reference material boundary and selection cover success, empty, deduplicat
     assert.equal(deduplicated.addedCount, 0);
     assert.equal(deduplicated.duplicateCount, 1);
     assert.deepEqual(deduplicated.references, selected.references);
+
+    const ordered = appendReferenceMaterials([], [material, second], 10).references;
+    assert.deepEqual(
+      reorderReferences(ordered, material.id, second.id).map((reference) => reference.id),
+      [second.id, material.id],
+    );
+    assert.equal(reorderReferences(ordered, material.id, material.id), ordered);
+    assert.equal(reorderReferences(ordered, "missing", second.id), ordered);
 
     globalThis.fetch = async () =>
       Response.json(

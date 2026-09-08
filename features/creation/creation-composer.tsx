@@ -78,6 +78,7 @@ export type CreationComposerProps = Readonly<{
   onReferenceFiles: (files: readonly File[]) => void;
   onOpenReferenceLibrary?: () => void;
   onRemoveReference: (reference: GenerationReference) => void;
+  onReorderReference?: (sourceId: string, targetId: string) => void;
   onModelChange: (modelId: GenerationModelId) => void;
   onAspectRatioChange: (ratio: GenerationAspectRatio) => void;
   onResolutionChange: (resolution: GenerationResolution) => void;
@@ -141,6 +142,7 @@ export function CreationComposer({
   onReferenceFiles,
   onOpenReferenceLibrary = () => {},
   onRemoveReference,
+  onReorderReference,
   onModelChange,
   onAspectRatioChange,
   onResolutionChange,
@@ -155,6 +157,9 @@ export function CreationComposer({
   const referenceInputRef = useRef<HTMLInputElement>(null);
   const promptInputRef = useRef<HTMLTextAreaElement>(null);
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
+  const [draggedReferenceId, setDraggedReferenceId] = useState<string | null>(null);
+  const [dragTargetReferenceId, setDragTargetReferenceId] = useState<string | null>(null);
+  const canReorderReferences = references.length > 1 && onReorderReference !== undefined;
   const activeModel = getGenerationModel(modelId);
   const activeRatio = getGenerationRatio(aspectRatio);
   const ratioOptions = getGenerationRatioOptions(modelId);
@@ -273,11 +278,55 @@ export function CreationComposer({
           <div className="reference-thumbnails">
             {references.map((image, index) => (
               <div
-                className={`reference-thumbnail ${image.status}`}
+                className={`reference-thumbnail ${image.status} ${canReorderReferences ? "is-reorderable" : ""} ${draggedReferenceId === image.id ? "is-dragging" : ""} ${dragTargetReferenceId === image.id ? "is-drag-target" : ""}`}
                 key={image.id}
-                title={image.errorMessage ?? image.name}
+                role="group"
+                tabIndex={canReorderReferences ? 0 : -1}
+                draggable={canReorderReferences}
+                aria-label={`图 ${index + 1}，${image.name}${canReorderReferences ? "，可拖拽排序" : ""}`}
+                aria-keyshortcuts={canReorderReferences ? "Alt+ArrowLeft Alt+ArrowRight" : undefined}
+                title={`${image.errorMessage ?? image.name}${canReorderReferences ? " · 拖拽排序" : ""}`}
+                onDragStart={(event) => {
+                  event.dataTransfer.effectAllowed = "move";
+                  event.dataTransfer.setData("text/plain", image.id);
+                  setDraggedReferenceId(image.id);
+                }}
+                onDragEnter={() => {
+                  if (draggedReferenceId && draggedReferenceId !== image.id) {
+                    setDragTargetReferenceId(image.id);
+                  }
+                }}
+                onDragOver={(event) => {
+                  if (!draggedReferenceId || draggedReferenceId === image.id) return;
+                  event.preventDefault();
+                  event.dataTransfer.dropEffect = "move";
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  const sourceId = event.dataTransfer.getData("text/plain") || draggedReferenceId;
+                  if (sourceId && sourceId !== image.id) onReorderReference?.(sourceId, image.id);
+                  setDraggedReferenceId(null);
+                  setDragTargetReferenceId(null);
+                }}
+                onDragEnd={() => {
+                  setDraggedReferenceId(null);
+                  setDragTargetReferenceId(null);
+                }}
+                onKeyDown={(event) => {
+                  if (
+                    event.currentTarget !== event.target ||
+                    !event.altKey ||
+                    (event.key !== "ArrowLeft" && event.key !== "ArrowRight")
+                  ) return;
+                  const targetIndex = event.key === "ArrowLeft" ? index - 1 : index + 1;
+                  const target = references[targetIndex];
+                  if (!target) return;
+                  event.preventDefault();
+                  onReorderReference?.(image.id, target.id);
+                }}
               >
                 <PrivateObjectImage src={image.url} alt={`参考图 ${index + 1}`} />
+                <span className="reference-thumbnail-ordinal">图 {index + 1}</span>
                 {image.status !== "ready" && (
                   <span
                     className="reference-thumbnail-status"

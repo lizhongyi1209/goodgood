@@ -42,7 +42,10 @@ import {
   listReferenceMaterials,
   type ReferenceMaterial,
 } from "@/features/references/http-reference-library";
-import { appendReferenceMaterials } from "@/features/references/reference-selection";
+import {
+  appendReferenceMaterials,
+  reorderReferences,
+} from "@/features/references/reference-selection";
 import {
   SESSION_EXPIRED_EVENT,
   authenticationErrorMessage,
@@ -1454,6 +1457,11 @@ export default function Home() {
     setReferenceImages((current) => current.filter((item) => item.id !== image.id));
   };
 
+  const reorderReference = (sourceId: string, targetId: string) => {
+    composerEditRevisionRef.current += 1;
+    setReferenceImages((current) => [...reorderReferences(current, sourceId, targetId)]);
+  };
+
   const handleLogin = () => {
     setAuthenticationError(null);
     beginAuthentication(`${window.location.pathname}${window.location.search}`);
@@ -2256,6 +2264,7 @@ export default function Home() {
             onReferenceFiles={handleReferenceFiles}
             onOpenReferenceLibrary={openReferenceLibrary}
             onRemoveReference={removeReference}
+            onReorderReference={reorderReference}
             onModelChange={handleModelChange}
             onAspectRatioChange={handleAspectRatioChange}
             onResolutionChange={handleResolutionChange}

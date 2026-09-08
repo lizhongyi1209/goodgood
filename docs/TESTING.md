@@ -409,7 +409,8 @@ The timestamped result of the latest verified gate belongs in
 - Empty creation state.
 - Root and `/create` direct access, refresh, and Back/Forward equivalence.
 - Composer open/closed drawer without value loss.
-- Reference tray from 0, 1, 9, 10, and over-limit inputs.
+- Reference tray from 0, 1, 9, 10, and over-limit inputs; visible contiguous
+  ordinals; drag and `Alt + ← / →` reorder semantics; removal renumbering.
 - Generation skeleton count and ratio.
 - Unified creation slots keep their keys, columns, and submission order when a
   multi-output run changes from active skeletons to successful images; the
