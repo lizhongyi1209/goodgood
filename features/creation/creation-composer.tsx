@@ -3,6 +3,12 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import Image from "next/image";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import { Slider } from "@/components/ui/slider";
 import {
@@ -44,9 +50,11 @@ import {
   CircleAlert,
   ChevronDown,
   ImagePlus,
+  Images,
   LoaderCircle,
   Plus,
   SlidersHorizontal,
+  Upload,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -68,6 +76,7 @@ export type CreationComposerProps = Readonly<{
   billingDescription: string;
   onPromptChange: (prompt: string) => void;
   onReferenceFiles: (files: readonly File[]) => void;
+  onOpenReferenceLibrary?: () => void;
   onRemoveReference: (reference: GenerationReference) => void;
   onModelChange: (modelId: GenerationModelId) => void;
   onAspectRatioChange: (ratio: GenerationAspectRatio) => void;
@@ -130,6 +139,7 @@ export function CreationComposer({
   billingDescription,
   onPromptChange,
   onReferenceFiles,
+  onOpenReferenceLibrary = () => {},
   onRemoveReference,
   onModelChange,
   onAspectRatioChange,
@@ -175,7 +185,7 @@ export function CreationComposer({
     event.target.value = "";
   };
 
-  const openReferencePicker = () => {
+  const openFilePicker = () => {
     if (references.length >= MAX_GENERATION_REFERENCES) {
       toast.info(`最多可添加 ${MAX_GENERATION_REFERENCES} 张参考图`);
       return;
@@ -199,14 +209,27 @@ export function CreationComposer({
             disabled={references.length >= MAX_GENERATION_REFERENCES}
             onChange={handleReferenceChange}
           />
-          <button
-            className="reference-button"
-            aria-label={references.length >= MAX_GENERATION_REFERENCES ? "参考图片已达到上限" : "上传参考图片，最多 10 张"}
-            disabled={references.length >= MAX_GENERATION_REFERENCES}
-            onClick={openReferencePicker}
-          >
-            <ImagePlus size={18} />
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="reference-button"
+                aria-label={references.length >= MAX_GENERATION_REFERENCES ? "参考图片已达到上限" : "添加参考图片，最多 10 张"}
+                disabled={references.length >= MAX_GENERATION_REFERENCES}
+              >
+                <ImagePlus size={18} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="reference-source-menu" align="start" sideOffset={7}>
+              <DropdownMenuItem onSelect={openFilePicker}>
+                <Upload size={15} />
+                上传本地图片
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={onOpenReferenceLibrary}>
+                <Images size={15} />
+                从资产库选择
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         <textarea
           ref={promptInputRef}
@@ -283,11 +306,11 @@ export function CreationComposer({
             {references.length < MAX_GENERATION_REFERENCES && (
               <button
                 className="reference-add-more"
-                aria-label="继续添加参考图片"
-                onClick={openReferencePicker}
+                aria-label="从资产库继续添加参考图片"
+                onClick={onOpenReferenceLibrary}
               >
                 <Plus size={15} />
-                <span>添加</span>
+                <span>素材库</span>
               </button>
             )}
           </div>

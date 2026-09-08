@@ -25,8 +25,9 @@ The product has four distinct concepts:
 1. **创作 / Creation** — the active, fast, continuously accumulating session.
 2. **批次 / Batch** — one submission plus its prompt, references, parameters,
    results, status, and time.
-3. **资产 / Asset** — an individual generated image that can be inspected,
-   selected, downloaded, and reused.
+3. **资产 / Asset** — an owner-scoped stored image. Generated outputs can be
+   inspected and downloaded; uploaded materials can be selected repeatedly as
+   creation references without uploading their bytes again.
 4. **项目 / Project** — a saved creative context containing multiple related
    batches and enough state to resume work.
 
@@ -36,11 +37,12 @@ and a project is not simply a folder of images.
 ## Primary journey
 
 1. A new user sees a restrained empty creation state.
-2. They enter a prompt, optionally add up to 10 references, and optionally open
-   the attached settings drawer.
+2. They enter a prompt, optionally add up to 10 references from local files or
+   previously uploaded materials, and optionally open the attached settings drawer.
 3. They select model, aspect ratio, resolution, and generation count.
 4. The latest batch begins at the top of the creation stream.
-5. Completed images enter the asset library automatically.
+5. Completed images and accepted uploads enter their respective asset-library
+   sections automatically.
 6. The user continues generating around the same goal without leaving creation.
 7. When the body of work becomes meaningful, they save the session as a project.
 8. Later they open the project, restore its state, and continue; they can always
@@ -61,14 +63,15 @@ duplicating a release log.
   model-owned capability maps. GPT IMAGE 2 uses one native task; Nano Banana 2
   composes a multi-image batch from one upstream task per requested image.
   Other visible model names are not a promise of availability.
-- Nano Banana 2 owns two optional generation controls: `低 / 高` thinking
-  (default `低`) and default-off Google Search grounding. These are frozen with
-  the generation snapshot and remain absent from other model contracts.
+- Nano Banana 2 exposes default-off Google Search grounding and internally uses
+  high thinking without a creator-facing thinking control. These values are
+  frozen with the generation snapshot and remain absent from other model contracts.
 - Authing Google/email-code login and revocable GoodGood sessions, with
   owner-scoped jobs, private assets, uploads, projects and drafts. Local Compose
   uses explicitly isolated test identities/mock/RustFS, not production data.
-- Up to 10 decoded JPEG/PNG/WebP references; durable project save/restore and
-  continuing batches; a 30-day root draft with stale-tab conflict handling.
+- Up to 10 decoded JPEG/PNG/WebP references; accepted uploads are reusable from
+  the owner-scoped material library. Project save/restore and continuing batches
+  are durable; the root draft has 30-day expiry and stale-tab conflict handling.
 - Stable `/create`, project and asset URLs, with root compatibility and
   source-preserving detail navigation. Route contracts live in `ROUTES.md`.
 - One 100-credit welcome grant; each generated image costs 10 credits. GPT

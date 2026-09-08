@@ -90,6 +90,10 @@ private objects through the selected provider route. The mock route creates
 fresh signed GET URLs; the O1Key route reads the bytes server-side and creates
 temporary provider attachments. Browser blob URLs and storage credentials never
 enter the persisted generation contract.
+An authenticated reference-list read exposes the same accepted rows as reusable
+materials, newest first, and signs their private objects without returning raw
+object keys. Composer reuse submits the existing stable reference ID, so the
+upload path and provider attachment path remain unchanged.
 
 M7 keeps this S3-compatible boundary but selects the private Cloudflare R2
 `goodgood` bucket as staging's authoritative object store. Server requests and
@@ -154,9 +158,11 @@ runtime topology receive an accepted executable adapter.
 
 Reference-byte cleanup is a separate one-shot maintenance boundary, not part
 of a browser request or the continuously running worker. Its default dry-run
-reports candidates without mutation. Explicit execution first stages expired
-pending, rejected, expired, or sufficiently old unreferenced ready rows behind
-a grace window, then claims a bounded batch with expiring leases. Generation
+reports candidates without mutation. Explicit execution stages only incomplete,
+rejected, or expired upload attempts behind a grace window, then claims a bounded
+batch with expiring leases. Accepted ready uploads are durable user materials
+even when no snapshot currently references them. Legacy `REFERENCE_ORPHANED`
+rows whose objects still exist are restored to ready state. Generation
 and project snapshot writes share a PostgreSQL lifecycle lock and revalidate
 ready rows inside their write transaction; cleanup also checks immutable
 generation snapshots, current project snapshots, and unexpired creation-draft

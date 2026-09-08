@@ -17,7 +17,9 @@ M4 adds fast coverage for the explicit local-auth opt-in, local credential
 parsing, external-identity mapping, disabled accounts, authentication on every generation route, owner-scoped
 idempotency, cross-owner read/retry denial, reference intent limits, real image
 decoding, format/size/dimension rejection, upload UI success/failure, reference
-route owner propagation, project save validation and idempotency, project list
+route owner propagation, owner-scoped accepted-material listing, reusable
+selection deduplication/limits, material loading/empty/failure UI wiring,
+project save validation and idempotency, project list
 loading/empty/failure UI states, project route owner propagation, cross-owner
 read/update denial, stable project route parsing/history notification, direct
 detail loading and recovery wiring, meaningful unsaved-change detection,
@@ -31,10 +33,9 @@ state, product navigation canonicalizes to `/create` only once, direct load and
 refresh mount the shared page, and native Back/Forward retain a working
 composer without console errors.
 Reference-retention coverage proves bounded server-owned defaults, dry-run
-non-mutation, two-phase eligibility and leases, object-first deletion evidence,
-failure retry evidence, idempotent reruns, and generation/project snapshot
-protection. Snapshot writers share the cleanup lifecycle lock and revalidate
-ready references inside their persistence transaction.
+non-mutation, two-phase eligibility and leases for incomplete/rejected uploads,
+object-first deletion evidence, failure retry evidence, idempotent reruns,
+legacy orphan rescue, and exclusion of accepted ready materials from claims.
 Creation-draft coverage proves one record per owner, 30-day sliding expiry,
 stable-value/reference validation, authenticated empty/read/save/delete routes,
 optimistic conflict responses, browser load/save/delete/error boundaries,
@@ -295,7 +296,7 @@ normalized provider rejection and timeout, retry, duplicate delivery, forced
 worker restart, owner-isolated root-draft save/read/delete, stale-version save
 and delete conflicts, signed draft-reference restore, deletion of an
 unreferenced rejected object, protection of project/generation/draft
-references, draft-reference eligibility after clearing, and idempotent
+references, ready-material retention after clearing the draft, and idempotent
 repeated cleanup. It preserves
 named volumes and does not run as part
 of the fast default gate. Production-provider identity, external object-storage
@@ -438,8 +439,10 @@ The timestamped result of the latest verified gate belongs in
 
 - Auth and ownership on every write/read.
 - Signed upload lifecycle and invalid-file rejection.
+- Owner-scoped reusable-reference listing returns only accepted ready rows with
+  fresh signed reads; selecting one reuses its stable ID without a PUT.
 - Reference-cleanup dry-run, bounded claim, object deletion, retry evidence,
-  idempotency, and concurrent snapshot protection.
+  idempotency, legacy-orphan rescue, and ready-material exclusion.
 - Idempotent generation creation.
 - Idempotent owner-scoped project creation, restore, update, and continuation.
 - Owner-scoped asset listing filters to accepted successful outputs, preserves
@@ -583,6 +586,8 @@ settlement remains outside the current scope.
    one ledger/audit result appears -> replay does not grant twice.
 9. Click generate repeatedly while jobs are active -> every click keeps its own
    skeleton and terminal result/error; a selected retry affects only that run.
+10. Upload one reference -> open a new creation -> select it from uploaded
+    materials -> submit by the same reference ID without another object upload.
 
 ### Staging-only verification
 

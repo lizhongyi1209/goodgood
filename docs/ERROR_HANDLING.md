@@ -27,6 +27,7 @@
 | Draft persistence | `DRAFT_UNAVAILABLE` | Composer-attached status | Keep current page state and retry |
 | Draft conflict | `DRAFT_CONFLICT` | Composer-attached alert | Keep current tab or restore newer server draft |
 | Asset library | `ASSET_LIBRARY_UNAVAILABLE` | Asset library state | Retry the owner-scoped read |
+| Reference materials | `REFERENCE_LIBRARY_UNAVAILABLE` | Material section or picker | Keep composer state and retry the owner-scoped read |
 | Authentication | `SESSION_EXPIRED` | Global blocking state | Sign in, restore draft |
 | Login callback | `AUTH_CALLBACK_INVALID` | Global sign-in state | Restart Google/email-code sign-in |
 | Login provider | `AUTH_PROVIDER_UNAVAILABLE` | Global sign-in state | Retry later |
@@ -213,6 +214,10 @@ request and does not require creating another external identity.
 Cross-owner job and retry requests normalize to `GENERATION_NOT_FOUND`, so one
 owner cannot use response differences to enumerate another owner's records.
 Reference completion likewise returns `REFERENCE_NOT_FOUND` across owners.
+Reference-material lists authenticate before lookup, return only accepted ready
+rows for that owner, and normalize database or signing failures to
+`REFERENCE_LIBRARY_UNAVAILABLE`. The browser keeps its existing tray and offers
+retry; no object key or cross-owner existence signal is exposed.
 Generation resolves only ready references owned by the caller and returns the
 same `REFERENCE_NOT_READY` response for missing, foreign, pending, rejected, or
 expired IDs, avoiding cross-owner enumeration. Failed decoded/type/size/

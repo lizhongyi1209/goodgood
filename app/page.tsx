@@ -39,6 +39,11 @@ import {
 import { createHttpGenerationBoundary } from "@/features/creation/http-generation-boundary";
 import { uploadReferenceFiles } from "@/features/references/http-reference-upload";
 import {
+  listReferenceMaterials,
+  type ReferenceMaterial,
+} from "@/features/references/http-reference-library";
+import { appendReferenceMaterials } from "@/features/references/reference-selection";
+import {
   SESSION_EXPIRED_EVENT,
   authenticationErrorMessage,
   beginAuthentication,
@@ -133,6 +138,7 @@ import {
   FolderOpen,
   FolderPlus,
   HelpCircle,
+  ImagePlus,
   Images,
   LayoutGrid,
   LoaderCircle,
@@ -335,6 +341,11 @@ function formatProjectUpdated(updatedAt: string) {
   }).format(updated);
 }
 
+function formatMaterialSize(byteSize: number) {
+  if (byteSize >= 1024 * 1024) return `${(byteSize / 1024 / 1024).toFixed(1)} MB`;
+  return `${Math.max(1, Math.round(byteSize / 1024))} KB`;
+}
+
 function perImageCreditAmount(total: string, count: GenerationCount): string {
   try {
     return (BigInt(total) / BigInt(count)).toString();
@@ -391,7 +402,13 @@ export default function Home() {
   const [assetsLoading, setAssetsLoading] = useState(true);
   const [assetsError, setAssetsError] = useState<string | null>(null);
   const [assetMode, setAssetMode] = useState<"batches" | "gallery">("batches");
+  const [assetSection, setAssetSection] = useState<"generated" | "materials">("generated");
   const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>([]);
+  const [referenceMaterials, setReferenceMaterials] = useState<readonly ReferenceMaterial[]>([]);
+  const [referenceMaterialsLoading, setReferenceMaterialsLoading] = useState(true);
+  const [referenceMaterialsError, setReferenceMaterialsError] = useState<string | null>(null);
+  const [referenceLibraryOpen, setReferenceLibraryOpen] = useState(false);
+  const [selectedReferenceMaterialIds, setSelectedReferenceMaterialIds] = useState<readonly string[]>([]);
   const [projects, setProjects] = useState<ProjectRecord[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(true);
   const [projectsError, setProjectsError] = useState<string | null>(null);
@@ -948,6 +965,41 @@ export default function Home() {
       authenticationSession === null ||
       authenticationSession.access.status !== "active"
     ) return;
+    if (authenticationSession.preview) {
+      const resetPreviewMaterials = window.setTimeout(() => {
+        setReferenceMaterials([]);
+        setReferenceMaterialsError(null);
+        setReferenceMaterialsLoading(false);
+      }, 0);
+      return () => window.clearTimeout(resetPreviewMaterials);
+    }
+    let active = true;
+    void listReferenceMaterials()
+      .then((materials) => {
+        if (!active) return;
+        setReferenceMaterials(materials);
+        setReferenceMaterialsError(null);
+      })
+      .catch((error) => {
+        if (!active) return;
+        setReferenceMaterialsError(
+          error instanceof Error ? error.message : "上传素材暂时无法读取，请重试。",
+        );
+      })
+      .finally(() => {
+        if (active) setReferenceMaterialsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [authenticationSession]);
+
+  useEffect(() => {
+    if (
+      authenticationSession === undefined ||
+      authenticationSession === null ||
+      authenticationSession.access.status !== "active"
+    ) return;
     if (authenticationSession.preview) return;
     let active = true;
     void listAssets()
@@ -1298,6 +1350,7 @@ export default function Home() {
       const readyCount = results.filter(
         (result) => result.reference.status === "ready",
       ).length;
+      if (readyCount > 0) void reloadReferenceMaterials();
       if (readyCount === results.length) {
         toast.success(`已上传 ${readyCount} 张参考图`);
       } else if (readyCount > 0) {
@@ -1306,6 +1359,91 @@ export default function Home() {
         toast.error("参考图上传失败，请移除失败项后重试");
       }
     });
+  };
+
+  const reloadReferenceMaterials = async () => {
+    if (!authenticationSession || authenticationSession.access.status !== "active") return;
+    if (authenticationSession.preview) {
+      setReferenceMaterials([]);
+      setReferenceMaterialsError(null);
+      setReferenceMaterialsLoading(false);
+      return;
+    }
+    setReferenceMaterialsLoading(true);
+    try {
+      setReferenceMaterials(await listReferenceMaterials());
+      setReferenceMaterialsError(null);
+    } catch (error) {
+      setReferenceMaterialsError(
+        error instanceof Error ? error.message : "上传素材暂时无法读取，请重试。",
+      );
+    } finally {
+      setReferenceMaterialsLoading(false);
+    }
+  };
+
+  const addMaterialsToReferences = (materials: readonly ReferenceMaterial[]) => {
+    const result = appendReferenceMaterials(
+      referenceImages,
+      materials,
+      MAX_GENERATION_REFERENCES,
+    );
+    if (result.addedCount > 0) {
+      composerEditRevisionRef.current += 1;
+      setReferenceImages([...result.references]);
+    }
+    if (result.overflowCount > 0) {
+      toast.info(`参考图最多 ${MAX_GENERATION_REFERENCES} 张`);
+    } else if (result.duplicateCount > 0 && result.addedCount === 0) {
+      toast.info("所选素材已在参考图中");
+    }
+    return result.addedCount;
+  };
+
+  const openReferenceLibrary = () => {
+    if (referenceImages.length >= MAX_GENERATION_REFERENCES) {
+      toast.info(`最多可添加 ${MAX_GENERATION_REFERENCES} 张参考图`);
+      return;
+    }
+    setSelectedReferenceMaterialIds([]);
+    setReferenceLibraryOpen(true);
+    void reloadReferenceMaterials();
+  };
+
+  const toggleReferenceMaterial = (materialId: string) => {
+    if (referenceImages.some((reference) => reference.id === materialId)) return;
+    setSelectedReferenceMaterialIds((current) => {
+      if (current.includes(materialId)) {
+        return current.filter((id) => id !== materialId);
+      }
+      const available = MAX_GENERATION_REFERENCES - referenceImages.length;
+      if (current.length >= available) {
+        toast.info(`本次最多还能添加 ${available} 张参考图`);
+        return current;
+      }
+      return [...current, materialId];
+    });
+  };
+
+  const confirmReferenceMaterials = () => {
+    const materials = selectedReferenceMaterialIds
+      .map((id) => referenceMaterials.find((material) => material.id === id))
+      .filter((material): material is ReferenceMaterial => Boolean(material));
+    const addedCount = addMaterialsToReferences(materials);
+    if (addedCount > 0) toast.success(`已添加 ${addedCount} 张素材`);
+    setReferenceLibraryOpen(false);
+    setSelectedReferenceMaterialIds([]);
+  };
+
+  const handleUseReferenceMaterial = (material: ReferenceMaterial) => {
+    const addedCount = addMaterialsToReferences([material]);
+    if (addedCount === 0) return;
+    toast.success("素材已加入参考图");
+    navigateWorkspace(currentProject
+      ? { kind: "project", projectId: currentProject.id }
+      : { kind: "create" });
+    setActiveView("create");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const removeReference = (image: ReferenceImage) => {
@@ -1952,6 +2090,38 @@ export default function Home() {
     ));
   };
 
+  const renderReferenceMaterialCard = (material: ReferenceMaterial) => {
+    const alreadyUsed = referenceImages.some((reference) => reference.id === material.id);
+    return (
+      <article className="reference-material-card" key={material.id}>
+        <div className="reference-material-image" style={{ aspectRatio: `${material.width} / ${material.height}` }}>
+          <PrivateObjectImage src={material.url} alt={material.name} />
+        </div>
+        <div className="reference-material-copy">
+          <strong title={material.name}>{material.name}</strong>
+          <span>{material.width} × {material.height} · {formatMaterialSize(material.byteSize)}</span>
+          <small>{formatProjectUpdated(material.uploadedAt)}</small>
+        </div>
+        <button
+          className="reference-material-use"
+          disabled={alreadyUsed || referenceImages.length >= MAX_GENERATION_REFERENCES}
+          onClick={() => handleUseReferenceMaterial(material)}
+        >
+          {alreadyUsed ? <><Check size={14} />已在创作中</> : <><Plus size={14} />用于创作</>}
+        </button>
+      </article>
+    );
+  };
+
+  const renderReferenceMaterialColumns = (columnCount: number) =>
+    Array.from({ length: columnCount }, (_, columnIndex) => (
+      <div className="reference-material-column" key={`reference-material-column-${columnCount}-${columnIndex}`}>
+        {referenceMaterials
+          .filter((_, materialIndex) => materialIndex % columnCount === columnIndex)
+          .map(renderReferenceMaterialCard)}
+      </div>
+    ));
+
   return (
     <main className="app-shell">
       <aside className="sidebar">
@@ -2084,6 +2254,7 @@ export default function Home() {
             billingDescription={composerBillingDescription}
             onPromptChange={handlePromptChange}
             onReferenceFiles={handleReferenceFiles}
+            onOpenReferenceLibrary={openReferenceLibrary}
             onRemoveReference={removeReference}
             onModelChange={handleModelChange}
             onAspectRatioChange={handleAspectRatioChange}
@@ -2228,18 +2399,45 @@ export default function Home() {
           ) : (
             <section className="asset-library-view" aria-label="资产库">
               <header className="asset-library-header">
-                <div><small>GOODGOOD ASSETS</small><h1>资产库</h1><p>每一次生成，都按任务批次完整保留。</p></div>
+                <div><small>GOODGOOD ASSETS</small><h1>资产库</h1><p>{assetSection === "generated" ? "每一次生成，都按任务批次完整保留。" : "上传一次，随时作为参考素材再次使用。"}</p></div>
                 <div className="asset-library-controls">
-                  <div className="asset-view-toggle" aria-label="资产库展示模式">
-                    <button className={assetMode === "batches" ? "active" : ""} aria-pressed={assetMode === "batches"} onClick={() => setAssetMode("batches")}><Clock3 size={14} />批次</button>
-                    <button className={assetMode === "gallery" ? "active" : ""} aria-pressed={assetMode === "gallery"} onClick={() => setAssetMode("gallery")}><LayoutGrid size={14} />画廊</button>
+                  <div className="asset-view-toggle asset-section-toggle" aria-label="资产类型">
+                    <button className={assetSection === "generated" ? "active" : ""} aria-pressed={assetSection === "generated"} onClick={() => setAssetSection("generated")}><Images size={14} />生成图片</button>
+                    <button className={assetSection === "materials" ? "active" : ""} aria-pressed={assetSection === "materials"} onClick={() => setAssetSection("materials")}><ImagePlus size={14} />上传素材</button>
                   </div>
-                  {assetMode === "gallery" && selectedAssetIds.length > 0 && <span className="asset-selection-summary">已选 {selectedAssetIds.length}</span>}
+                  {assetSection === "generated" && (
+                    <div className="asset-view-toggle" aria-label="生成图片展示模式">
+                      <button className={assetMode === "batches" ? "active" : ""} aria-pressed={assetMode === "batches"} onClick={() => setAssetMode("batches")}><Clock3 size={14} />批次</button>
+                      <button className={assetMode === "gallery" ? "active" : ""} aria-pressed={assetMode === "gallery"} onClick={() => setAssetMode("gallery")}><LayoutGrid size={14} />画廊</button>
+                    </div>
+                  )}
+                  {assetSection === "generated" && assetMode === "gallery" && selectedAssetIds.length > 0 && <span className="asset-selection-summary">已选 {selectedAssetIds.length}</span>}
                   <button className="asset-return-button" onClick={handleCreateNav}><Brush size={15} />返回创作</button>
                 </div>
               </header>
 
-              {assetRouteError ? (
+              {assetSection === "materials" ? (
+                referenceMaterialsLoading ? (
+                  <div className="asset-library-state" role="status"><LoaderCircle size={18} />正在读取上传素材</div>
+                ) : referenceMaterialsError ? (
+                  <div className="asset-library-state asset-library-error" role="alert">
+                    <CircleAlert size={18} />
+                    <span>{referenceMaterialsError}</span>
+                    <button onClick={() => void reloadReferenceMaterials()}><RefreshCw size={14} />重试</button>
+                  </div>
+                ) : referenceMaterials.length === 0 ? (
+                  <div className="asset-library-state asset-library-empty">
+                    <ImagePlus size={20} />
+                    <strong>还没有上传素材</strong>
+                    <span>在创作器上传参考图后，会自动保存在这里。</span>
+                  </div>
+                ) : (
+                  <div className="reference-material-grid">
+                    <div className="reference-material-masonry desktop-reference-material-masonry">{renderReferenceMaterialColumns(4)}</div>
+                    <div className="reference-material-masonry mobile-reference-material-masonry">{renderReferenceMaterialColumns(2)}</div>
+                  </div>
+                )
+              ) : assetRouteError ? (
                 <div className="asset-library-state asset-library-error" role="alert">
                   <CircleAlert size={18} />
                   <span>{assetRouteError}</span>
@@ -2316,6 +2514,80 @@ export default function Home() {
           )}
         </div>
       </section>
+      <Dialog
+        open={referenceLibraryOpen}
+        onOpenChange={(open) => {
+          setReferenceLibraryOpen(open);
+          if (!open) setSelectedReferenceMaterialIds([]);
+        }}
+      >
+        <DialogPortal>
+          <DialogOverlay />
+          <DialogPrimitive.Content className="reference-library-dialog">
+            <header className="reference-library-dialog-header">
+              <div>
+                <DialogTitle>从资产库选择</DialogTitle>
+                <DialogDescription>
+                  已上传的素材无需再次上传，最多还可添加 {Math.max(0, MAX_GENERATION_REFERENCES - referenceImages.length)} 张。
+                </DialogDescription>
+              </div>
+              <button aria-label="关闭素材选择" onClick={() => setReferenceLibraryOpen(false)}><X size={18} /></button>
+            </header>
+
+            <div className="reference-library-dialog-body">
+              {referenceMaterialsLoading ? (
+                <div className="reference-library-dialog-state" role="status"><LoaderCircle size={18} />正在读取上传素材</div>
+              ) : referenceMaterialsError ? (
+                <div className="reference-library-dialog-state reference-library-dialog-error" role="alert">
+                  <CircleAlert size={18} />
+                  <span>{referenceMaterialsError}</span>
+                  <button onClick={() => void reloadReferenceMaterials()}><RefreshCw size={14} />重试</button>
+                </div>
+              ) : referenceMaterials.length === 0 ? (
+                <div className="reference-library-dialog-state reference-library-dialog-empty">
+                  <ImagePlus size={20} />
+                  <strong>还没有上传素材</strong>
+                  <span>关闭窗口后，从参考图按钮选择“上传本地图片”。</span>
+                </div>
+              ) : (
+                <div className="reference-library-picker-grid">
+                  {referenceMaterials.map((material) => {
+                    const alreadyUsed = referenceImages.some((reference) => reference.id === material.id);
+                    const selected = selectedReferenceMaterialIds.includes(material.id);
+                    return (
+                      <button
+                        className={`reference-library-picker-card ${selected ? "selected" : ""} ${alreadyUsed ? "already-used" : ""}`}
+                        key={material.id}
+                        aria-label={alreadyUsed ? `${material.name} 已在参考图中` : `${selected ? "取消选择" : "选择"} ${material.name}`}
+                        aria-pressed={selected}
+                        disabled={alreadyUsed}
+                        onClick={() => toggleReferenceMaterial(material.id)}
+                      >
+                        <span className="reference-library-picker-image">
+                          <PrivateObjectImage src={material.url} alt="" />
+                          <i>{alreadyUsed ? <Check size={14} /> : selected ? <Check size={14} /> : null}</i>
+                        </span>
+                        <span className="reference-library-picker-copy">
+                          <strong title={material.name}>{material.name}</strong>
+                          <small>{material.width} × {material.height}</small>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <footer className="reference-library-dialog-footer">
+              <span>{selectedReferenceMaterialIds.length > 0 ? `已选 ${selectedReferenceMaterialIds.length} 张` : "选择后按原顺序加入参考图"}</span>
+              <div>
+                <button className="reference-library-cancel" onClick={() => setReferenceLibraryOpen(false)}>取消</button>
+                <button className="reference-library-confirm" disabled={selectedReferenceMaterialIds.length === 0} onClick={confirmReferenceMaterials}>添加{selectedReferenceMaterialIds.length > 0 ? ` ${selectedReferenceMaterialIds.length} 张` : ""}</button>
+              </div>
+            </footer>
+          </DialogPrimitive.Content>
+        </DialogPortal>
+      </Dialog>
       <Dialog
         open={detailOpen}
         onOpenChange={(open) => {

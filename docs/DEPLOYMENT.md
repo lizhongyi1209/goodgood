@@ -532,13 +532,15 @@ step that deletes eligible private reference bytes. With the same runtime
 environment loaded outside Compose, `npm run references:cleanup` is the
 equivalent dry-run and `npm run references:cleanup -- --execute` executes it.
 
-Server-owned policy defaults are a 100-row batch, 30-day age threshold for
-unreferenced ready uploads, 60-minute staging grace, and five-minute claim
-lease. They can be bounded through `REFERENCE_CLEANUP_BATCH_SIZE`,
-`REFERENCE_ORPHAN_RETENTION_DAYS`, `REFERENCE_CLEANUP_GRACE_MINUTES`, and
-`REFERENCE_CLEANUP_LEASE_SECONDS`. Expired pending, rejected, and expired rows
-are also eligible, but any reference ID present in a generation, project, or
-unexpired creation-draft snapshot is protected at both staging and claim time.
+Server-owned policy defaults are a 100-row batch, 60-minute staging grace, and
+five-minute claim lease. They can be bounded through
+`REFERENCE_CLEANUP_BATCH_SIZE`, `REFERENCE_CLEANUP_GRACE_MINUTES`, and
+`REFERENCE_CLEANUP_LEASE_SECONDS`. `REFERENCE_ORPHAN_RETENTION_DAYS` remains a
+parsed compatibility setting but no longer makes accepted ready uploads
+eligible: those rows are durable reusable materials. Expired pending, rejected,
+and expired upload attempts are eligible, but any referenced row is protected
+at both staging and claim time. Legacy `REFERENCE_ORPHANED` rows whose objects
+remain present are restored to ready state before claiming.
 Snapshot writers share a
 database lifecycle lock with cleanup and revalidate ready references inside the
 write transaction. Object deletion happens before `object_deleted_at` is

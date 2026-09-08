@@ -883,20 +883,17 @@ test(
       ownerId: "00000000-0000-4000-8000-000000000001",
       policy: cleanupPolicy,
     });
-    assert.ok(stageClearedDraftReference.staged >= 1);
+    assert.equal(stageClearedDraftReference.staged, 0);
     const deleteClearedDraftReference = await cleanupReferenceAssets(cleanupResources, {
       now: new Date(cleanupNow.getTime() + 8),
       ownerId: "00000000-0000-4000-8000-000000000001",
       policy: cleanupPolicy,
     });
-    assert.ok(deleteClearedDraftReference.deleted >= 1);
-    await assert.rejects(
-      storage.send(new HeadObjectCommand({
-        Bucket: objectStorageBucket,
-        Key: draftReadyEvidence.object_key,
-      })),
-      (error) => error?.$metadata?.httpStatusCode === 404,
-    );
+    assert.equal(deleteClearedDraftReference.deleted, 0);
+    await storage.send(new HeadObjectCommand({
+      Bucket: objectStorageBucket,
+      Key: draftReadyEvidence.object_key,
+    }));
 
     const ownerBSubmitted = await submit(
       "M4 owner B isolated success",

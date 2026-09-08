@@ -13,7 +13,7 @@ native history.
 | 创作 | Implemented | `/create`, with `/` as a compatible entry |
 | 探索 | Placeholder | No view or route yet |
 | 项目 | Implemented | `/projects` index and `/projects/:projectId` restore |
-| 资产库 | Implemented | `/assets` batch/gallery library |
+| 资产库 | Implemented | `/assets` generated batch/gallery and uploaded-material sections |
 | 灵感板 | Placeholder | No view or route yet |
 | 帮助 | Placeholder | No view or route yet |
 | 图片详情 | Implemented | `/assets/:assetId` over its preserved source scope |
@@ -21,10 +21,11 @@ native history.
 
 Do not describe placeholders as shipped features.
 
-The current authenticated Node API also owns `POST /api/references` for upload
-intents and `POST /api/references/:referenceId/complete` for post-upload
-validation. These are data boundaries, not visible navigation routes. They use
-stable reference IDs and the same owner context as `/api/generations`.
+The current authenticated Node API also owns `GET /api/references` for the
+owner's accepted reusable materials, `POST /api/references` for upload intents,
+and `POST /api/references/:referenceId/complete` for post-upload validation.
+These are data boundaries, not visible navigation routes. They use stable
+reference IDs and the same owner context as `/api/generations`.
 
 The authenticated Node API also owns `GET/POST /api/projects` and
 `GET/PATCH /api/projects/:projectId`. They use stable project IDs, owner-scoped

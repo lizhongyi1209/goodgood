@@ -35,6 +35,9 @@ test("declares the GoodGood visual and interaction invariants", async () => {
   assert.match(css, /\.creation-masonry-frame[^}]*border-radius:\s*15px/s);
   assert.match(css, /\.creation-masonry[^}]*gap:\s*3px/s);
   assert.match(css, /\.generation-error-strip[^}]*min-height:\s*72px/s);
+  assert.match(css, /\.reference-library-picker-image[^}]*aspect-ratio:\s*1/s);
+  assert.match(css, /\.reference-material-masonry[^}]*grid-template-columns:\s*repeat\(4/s);
+  assert.doesNotMatch(creationPage, /reference-library-picker-image" style=/);
   assert.match(css, /mask:\s*url\("\/feihong-send\.png"\)/);
   assert.doesNotMatch(creationPage, /className="generation-task-frame"/);
   assert.match(creationPage, /const creationStreamItems = \[\.\.\.generationItems, \.\.\.creationItems\]/);
@@ -584,6 +587,83 @@ test("asset HTTP boundary covers durable success, fresh download URLs, empty, an
         error.code === "ASSET_LIBRARY_UNAVAILABLE" &&
         error.retryable === true &&
         /资产库暂时无法读取/.test(error.message),
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("reference material boundary and selection cover success, empty, deduplication, limits, and failure", async () => {
+  const { listReferenceMaterials, ReferenceLibraryError } = await vite.ssrLoadModule(
+    "/features/references/http-reference-library.ts",
+  );
+  const { appendReferenceMaterials } = await vite.ssrLoadModule(
+    "/features/references/reference-selection.ts",
+  );
+  const originalFetch = globalThis.fetch;
+  const material = Object.freeze({
+    byteSize: 1024,
+    height: 1200,
+    id: "20000000-0000-4000-8000-000000000001",
+    mimeType: "image/jpeg",
+    name: "人物参考.jpg",
+    status: "ready",
+    uploadedAt: "2026-09-08T12:00:00.000Z",
+    url: "https://storage.invalid/reference-a",
+    width: 900,
+  });
+  const second = Object.freeze({
+    ...material,
+    id: "20000000-0000-4000-8000-000000000002",
+    name: "服装参考.jpg",
+    url: "https://storage.invalid/reference-b",
+  });
+  try {
+    const calls = [];
+    globalThis.fetch = async (input, options = {}) => {
+      calls.push({ input: String(input), options });
+      return Response.json({ references: [material, second] });
+    };
+    assert.deepEqual(await listReferenceMaterials(), [material, second]);
+    assert.equal(calls[0].input, "/api/references");
+    assert.equal(calls[0].options.cache, "no-store");
+
+    globalThis.fetch = async () => Response.json({ references: [] });
+    assert.deepEqual(await listReferenceMaterials(), []);
+
+    const selected = appendReferenceMaterials([], [material, second], 1);
+    assert.equal(selected.addedCount, 1);
+    assert.equal(selected.overflowCount, 1);
+    assert.deepEqual(selected.references, [
+      {
+        id: material.id,
+        name: material.name,
+        status: "ready",
+        url: material.url,
+      },
+    ]);
+    const deduplicated = appendReferenceMaterials(selected.references, [material], 10);
+    assert.equal(deduplicated.addedCount, 0);
+    assert.equal(deduplicated.duplicateCount, 1);
+    assert.deepEqual(deduplicated.references, selected.references);
+
+    globalThis.fetch = async () =>
+      Response.json(
+        {
+          error: {
+            code: "REFERENCE_LIBRARY_UNAVAILABLE",
+            message: "上传素材暂时无法读取，请重试。",
+            retryable: true,
+          },
+        },
+        { status: 503 },
+      );
+    await assert.rejects(
+      listReferenceMaterials(),
+      (error) =>
+        error instanceof ReferenceLibraryError &&
+        error.code === "REFERENCE_LIBRARY_UNAVAILABLE" &&
+        error.retryable === true,
     );
   } finally {
     globalThis.fetch = originalFetch;

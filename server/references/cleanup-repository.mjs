@@ -38,7 +38,7 @@ const HAS_PERSISTED_REFERENCE = `
 
 export async function inspectReferenceCleanup(
   pool,
-  { now, orphanedBefore, ownerId = null },
+  { now, ownerId = null },
 ) {
   const result = await pool.query(
     `SELECT
@@ -47,8 +47,10 @@ export async function inspectReferenceCleanup(
            AND ra.cleanup_eligible_at IS NULL
            AND (
              (ra.upload_state = 'pending' AND ra.expires_at <= $1)
-             OR ra.upload_state IN ('rejected', 'expired')
-             OR (ra.upload_state = 'ready' AND ra.updated_at <= $2)
+             OR (
+               ra.upload_state IN ('rejected', 'expired')
+               AND ra.error_code IS DISTINCT FROM 'REFERENCE_ORPHANED'
+             )
            )
            AND NOT ${HAS_PERSISTED_REFERENCE}
        )::int AS eligible_to_stage,
@@ -56,20 +58,24 @@ export async function inspectReferenceCleanup(
          WHERE ra.object_deleted_at IS NULL
            AND (
              (ra.upload_state = 'pending' AND ra.expires_at <= $1)
-             OR ra.upload_state IN ('rejected', 'expired')
-             OR (ra.upload_state = 'ready' AND ra.updated_at <= $2)
+             OR (
+               ra.upload_state IN ('rejected', 'expired')
+               AND ra.error_code IS DISTINCT FROM 'REFERENCE_ORPHANED'
+             )
            )
            AND ${HAS_PERSISTED_REFERENCE}
        )::int AS protected,
        count(*) FILTER (
          WHERE ra.object_deleted_at IS NULL
            AND ra.cleanup_eligible_at <= $1
+           AND ra.upload_state IN ('rejected', 'expired')
+           AND ra.error_code IS DISTINCT FROM 'REFERENCE_ORPHANED'
            AND (ra.cleanup_lease_expires_at IS NULL OR ra.cleanup_lease_expires_at <= $1)
            AND NOT ${HAS_PERSISTED_REFERENCE}
        )::int AS due_for_deletion
      FROM reference_assets ra
-    WHERE ($3::uuid IS NULL OR ra.owner_id = $3::uuid)`,
-    [now, orphanedBefore, ownerId],
+    WHERE ($2::uuid IS NULL OR ra.owner_id = $2::uuid)`,
+    [now, ownerId],
   );
   return {
     dueForDeletion: result.rows[0]?.due_for_deletion ?? 0,
@@ -86,7 +92,6 @@ export async function stageAndClaimReferenceCleanup(
     leaseExpiresAt,
     limit,
     now,
-    orphanedBefore,
     ownerId = null,
   },
 ) {
@@ -103,8 +108,9 @@ export async function stageAndClaimReferenceCleanup(
         WHERE ra.object_deleted_at IS NULL
           AND ra.upload_state = 'expired'
           AND ra.error_code = 'REFERENCE_ORPHANED'
+          AND ra.moderation_state = 'accepted'
           AND ($2::uuid IS NULL OR ra.owner_id = $2::uuid)
-          AND ${HAS_PERSISTED_REFERENCE}`,
+          `,
       [now, ownerId],
     );
     const expired = await client.query(
@@ -119,26 +125,18 @@ export async function stageAndClaimReferenceCleanup(
     );
     const staged = await client.query(
       `UPDATE reference_assets ra
-          SET cleanup_eligible_at = $3,
-              upload_state = CASE
-                WHEN ra.upload_state = 'ready' THEN 'expired'
-                ELSE ra.upload_state
-              END,
-              error_code = CASE
-                WHEN ra.upload_state = 'ready' THEN 'REFERENCE_ORPHANED'
-                ELSE ra.error_code
-              END,
+          SET cleanup_eligible_at = $2,
               cleanup_error_code = NULL,
               updated_at = $1
         WHERE ra.object_deleted_at IS NULL
           AND ra.cleanup_eligible_at IS NULL
-          AND ($4::uuid IS NULL OR ra.owner_id = $4::uuid)
+          AND ($3::uuid IS NULL OR ra.owner_id = $3::uuid)
           AND (
             ra.upload_state IN ('rejected', 'expired')
-            OR (ra.upload_state = 'ready' AND ra.updated_at <= $2)
+            AND ra.error_code IS DISTINCT FROM 'REFERENCE_ORPHANED'
           )
           AND NOT ${HAS_PERSISTED_REFERENCE}`,
-      [now, orphanedBefore, cleanupEligibleAt, ownerId],
+      [now, cleanupEligibleAt, ownerId],
     );
     const claimed = await client.query(
       `WITH candidates AS (
@@ -146,6 +144,8 @@ export async function stageAndClaimReferenceCleanup(
            FROM reference_assets ra
           WHERE ra.object_deleted_at IS NULL
             AND ra.cleanup_eligible_at <= $1
+            AND ra.upload_state IN ('rejected', 'expired')
+            AND ra.error_code IS DISTINCT FROM 'REFERENCE_ORPHANED'
             AND (ra.cleanup_lease_expires_at IS NULL OR ra.cleanup_lease_expires_at <= $1)
             AND ($3::uuid IS NULL OR ra.owner_id = $3::uuid)
             AND NOT ${HAS_PERSISTED_REFERENCE}

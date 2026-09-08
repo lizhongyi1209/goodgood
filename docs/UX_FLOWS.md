@@ -66,7 +66,9 @@ fill space.
 
 - Empty prompt submission: short toast, keep focus available.
 - Prompt: autosize from one to eight lines; scroll after eight.
-- References: accept multiple images, append in upload order, maximum 10.
+- References: the add control offers local upload or selection from the owner's
+  uploaded materials. Append in upload/selection order, deduplicate by stable
+  reference ID, and enforce the shared maximum of 10.
 - A selected reference appears immediately with a restrained uploading overlay.
   It becomes ready only after direct upload and server-side decoded validation;
   failure remains on that tray item with removal/replacement recovery.
@@ -199,10 +201,20 @@ failed -> queued (retry)
 
 ## Asset library
 
-All successfully generated images enter the asset library automatically.
+All successfully generated images and accepted reference uploads enter the
+asset library automatically. `生成图片` and `上传素材` are separate sections:
+generated images keep their batch/gallery modes, while materials list the
+owner's reusable uploads newest first with filename, dimensions, size, and a
+direct `用于创作` action. A material already in the current tray is visibly
+disabled rather than duplicated.
 The library uses `/assets`; direct access, refresh, and browser back/forward
 reload the current owner's durable assets without resetting the in-memory
 batch/gallery mode during an in-app detail round trip.
+
+From the composer, `从资产库选择` opens a focused multi-select dialog using 1:1
+centered thumbnails. Loading, empty, and failed reads keep the dialog silhouette
+and expose retry. Confirming adds the chosen stable IDs in selection order and
+does not transfer object bytes again.
 
 ### Batch mode
 

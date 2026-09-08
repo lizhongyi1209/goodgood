@@ -315,6 +315,10 @@ object deletion time, and timestamps. Ordinal is not global asset metadata:
 stable `参考图 1…10`
 order is stored in each submitted `GenerationBatch.reference_snapshot` with the
 reference ID and object key.
+Every `ready + accepted` row whose object remains present is also a reusable
+material visible to its owner. It is not an orphan merely because no current
+draft, project, or generation snapshot references it; later deletion requires
+an explicit owner deletion workflow.
 
 ### GenerationJob
 
@@ -412,10 +416,10 @@ Contains ordering and membership metadata; never duplicate image bytes.
 - Deleting a project does not automatically delete globally retained assets.
 - Object deletion is asynchronous and only occurs after authorization and
   reference checks.
-- A reference present in any generation or project snapshot is protected from
-  cleanup. Snapshot writers serialize with cleanup and revalidate readiness in
-  the same transaction so a newly referenced object cannot be claimed by a
-  concurrent cleanup run.
+- Ready, accepted references are durable reusable materials and never enter
+  incomplete-upload cleanup. Pending/rejected/expired rows referenced by durable
+  state remain protected defensively. Snapshot writers serialize with cleanup
+  and revalidate readiness in the same transaction.
 - Reference cleanup deletes private bytes before setting `object_deleted_at`.
   A failed deletion retains the evidence row and `OBJECT_DELETE_FAILED` for a
   later bounded retry; repeated successful execution is a no-op.

@@ -9,6 +9,7 @@ import {
   validateReferenceIds,
   validateReferenceUploadRequest,
 } from "../server/references/validation.mjs";
+import { findReusableReferenceAssets } from "../server/references/repository.mjs";
 
 const validUpload = Object.freeze({
   byteSize: 1024,
@@ -110,6 +111,28 @@ test("reference validation decodes the real image before accepting metadata", as
   );
 });
 
+test("reusable reference repository lists only accepted ready materials for one owner", async () => {
+  const expectedRows = [{ id: "reference-new" }, { id: "reference-old" }];
+  let query;
+  const pool = {
+    async query(sql, values) {
+      query = { sql, values };
+      return { rows: expectedRows };
+    },
+  };
+
+  assert.equal(
+    await findReusableReferenceAssets(pool, { ownerId: "owner-a" }),
+    expectedRows,
+  );
+  assert.deepEqual(query.values, ["owner-a"]);
+  assert.match(query.sql, /owner_id = \$1/);
+  assert.match(query.sql, /upload_state = 'ready'/);
+  assert.match(query.sql, /moderation_state = 'accepted'/);
+  assert.match(query.sql, /object_deleted_at IS NULL/);
+  assert.match(query.sql, /ORDER BY uploaded_at DESC NULLS LAST, created_at DESC, id DESC/);
+});
+
 function requestFor({ body, method = "POST", url }) {
   const request = Readable.from(body ? [Buffer.from(JSON.stringify(body))] : []);
   request.headers = {};
@@ -147,6 +170,10 @@ test("reference HTTP routes preserve the authenticated owner context", async () 
         calls.push(input);
         return { uploads: [] };
       },
+      async listReferenceAssets(input) {
+        calls.push(input);
+        return { references: [{ id: "reference-a" }] };
+      },
     },
   });
 
@@ -176,6 +203,18 @@ test("reference HTTP routes preserve the authenticated owner context", async () 
     ownerContext,
     referenceId: "20000000-0000-4000-8000-000000000001",
   });
+
+  const listResponse = responseRecorder();
+  await handler(
+    requestFor({ method: "GET", url: "/api/references" }),
+    listResponse,
+  );
+  assert.equal(listResponse.statusCode, 200);
+  assert.equal(listResponse.headers.allow, "GET, POST");
+  assert.deepEqual(JSON.parse(listResponse.body), {
+    references: [{ id: "reference-a" }],
+  });
+  assert.deepEqual(calls[2], { ownerContext });
 });
 
 test("M4 reference records are owner-scoped and retain validation evidence", async () => {
@@ -198,4 +237,23 @@ test("M4 reference records are owner-scoped and retain validation evidence", asy
   assert.match(migration, /upload_state IN \('pending', 'ready', 'rejected', 'expired'\)/);
   assert.match(schema, /export const referenceAssets = pgTable/);
   assert.match(generationRepository, /objectKey/);
+});
+
+test("reference material API is wired into both authenticated runtimes", async () => {
+  const [route, runtime, page, boundary] = await Promise.all([
+    readFile(new URL("../app/api/references/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../server/runtime/web.mjs", import.meta.url), "utf8"),
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(
+      new URL("../features/references/http-reference-library.ts", import.meta.url),
+      "utf8",
+    ),
+  ]);
+  assert.match(route, /export async function GET/);
+  assert.match(route, /await listReferenceAssets/);
+  assert.match(runtime, /createReferenceNodeApiHandler/);
+  assert.match(boundary, /goodGoodApiFetch\("\/api\/references"/);
+  assert.match(page, /上传素材/);
+  assert.match(page, /从资产库选择/);
+  assert.match(page, /referenceLibraryOpen/);
 });

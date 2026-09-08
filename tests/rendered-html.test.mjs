@@ -31,7 +31,7 @@ test("renders the GoodGood creation entry surface", async () => {
   assert.match(html, /<html lang="zh-CN">/);
   assert.match(html, /<title>GoodGood · AI 视觉创作<\/title>/);
   assert.match(html, /aria-label="图像生成区域"/);
-  assert.match(html, /上传参考图片，最多 10 张/);
+  assert.match(html, /添加参考图片，最多 10 张/);
   assert.match(html, />Nano Banana 2</);
   assert.match(html, />描述你想创作的画面</);
   assert.doesNotMatch(html, />生成记录</);

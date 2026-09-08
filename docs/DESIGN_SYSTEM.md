@@ -79,13 +79,16 @@ individual icon. Upload, settings, and send align to the same 40px box.
 - Uploading and failed references reuse the thumbnail silhouette with a quiet
   opacity treatment and centered status icon; do not introduce a detached
   upload panel or success banner.
+- The reference icon opens a compact source menu for local upload or existing
+  materials. Existing-material selection uses a focused responsive dialog with
+  1:1 centered previews, visible selection, existing-tray disabled state, and a
+  single confirmed add action.
 - Parameter group order: aspect ratio; model; output group with resolution above
   generation count. Aspect ratio leads from the left on desktop and remains first
   when the drawer reflows or stacks.
-- Nano Banana 2 places its conditional thinking and Google Search segmented
-  controls directly under the model selector. Use quiet labels and the
-  existing Palace Red selected/on treatment; hiding the controls must not leave
-  an empty panel for other models.
+- Nano Banana 2 places only its Google Search segmented control under the model
+  selector. Use quiet labels and the existing Palace Red selected/on treatment;
+  hiding the control must not leave an empty panel for other models.
 - GPT IMAGE 2 uses the same attached, quiet segmented-control treatment directly
   under the model selector for `质量`, `背景`, and `输出格式`. Keep the groups in
   that order. Disabled JPEG under a transparent background remains legible but
@@ -123,6 +126,10 @@ individual icon. Upload, settings, and send align to the same 40px box.
   page silhouette so rows and controls do not jump.
 
 ## Image presentation
+
+- The asset library separates generated images from uploaded materials without
+  making either look like a file-management table. Material cards preserve the
+  image's real ratio and keep filename/dimensions subordinate to the image.
 
 - Preserve the actual output ratio in all data and detail views.
 - Creation and asset gallery use tight 3px gaps and a single rounded outer frame;

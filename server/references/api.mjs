@@ -13,10 +13,12 @@ import {
 import {
   createPendingReferenceAssets,
   findReferenceAsset,
+  findReusableReferenceAssets,
   markReferenceExpired,
   markReferenceReady,
   markReferenceRejected,
 } from "./repository.mjs";
+import { signAssetRead } from "../generation/storage.mjs";
 import { readReferenceObject, signReferenceUpload } from "./storage.mjs";
 import {
   inspectReferenceImage,
@@ -37,6 +39,40 @@ function publicReference(row) {
     name: row.original_file_name,
     status: row.upload_state === "ready" ? "ready" : row.upload_state,
     width: row.pixel_width ?? undefined,
+  };
+}
+
+function publicReusableReference(row, url) {
+  return {
+    byteSize: Number(row.byte_size ?? 0),
+    height: Number(row.pixel_height ?? 0),
+    id: row.id,
+    mimeType: row.detected_mime_type,
+    name: row.original_file_name,
+    status: "ready",
+    uploadedAt: new Date(row.uploaded_at).toISOString(),
+    url,
+    width: Number(row.pixel_width ?? 0),
+  };
+}
+
+export async function listReferenceAssets({ ownerContext }) {
+  const ownerId = ownerIdFromContext(ownerContext);
+  const resources = await getGenerationResources();
+  const rows = await findReusableReferenceAssets(resources.pool, { ownerId });
+  return {
+    references: await Promise.all(
+      rows.map(async (row) =>
+        publicReusableReference(
+          row,
+          await signAssetRead({
+            bucket: resources.config.objectStorage.bucket,
+            key: row.object_key,
+            publicStorage: resources.publicStorage,
+          }),
+        ),
+      ),
+    ),
   };
 }
 
