@@ -152,6 +152,14 @@ health, and rollback evidence must name the same candidate revision. The
 checked-in example is intentionally blocked, including monitoring handoff,
 ICP/domain, and domestic Alipay prerequisites.
 
+The controlled-alpha gate is a separate read-only entry point over evidence
+schema v2. Its synthetic suite proves an exact current alpha document passes
+while the seed gate remains closed, and proves missing, expired, cross-candidate,
+wrong-mode, unreadable, malformed-argument, and deliberately blocked example
+paths exit closed. Artifact evidence is bounded to seven days, preflight to
+72 hours, and all alpha-specific evidence to 24 hours. These tests do not create
+users, call a provider, migrate a database, or authorize a release.
+
 M8 production-preflight coverage proves only a Linux release host can emit the
 preflight evidence item. It requires a clean matching checkout, exact candidate
 OCI labels, fixed root-owned non-symlink input paths, distinct bounded secret

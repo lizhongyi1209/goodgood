@@ -8,7 +8,7 @@
 | --- | --- | --- | --- |
 | GG-001 | 项目记忆精简、交接协议、历史 C6 隔离 | 已完成（不需上线） | [任务](tasks/GG-001-project-continuity.md) |
 | GG-002 | Nano Banana 2 全宽高比/分辨率 | 已上线 | [发布记录](releases/2026-09-07-banana-2-parameters.md) |
-| GG-003 | 将 alpha 发布门禁从历史快照独立提取 | 待办；下次发布前 | [任务](tasks/GG-003-alpha-release-tooling.md) |
+| GG-003 | 将 alpha 发布门禁从历史快照独立提取 | 本地完整门禁通过；待生产证据 | [任务](tasks/GG-003-alpha-release-tooling.md) |
 | GG-004 | 修复重复投递导致生成结果丢失 | 待验收；本地已验证，未发布 | [任务](tasks/GG-004-generation-dispatch-race.md) |
 | GG-005 | 分辨率改为 1K/2K/4K，并展示资产实际像素 | 本地已验证；未发布 | [任务](tasks/GG-005-resolution-metadata.md) |
 | GG-006 | 放大 1:1 参考图预览并将画面比例移到左侧 | 本地浏览器已验证；待站长验收 | [任务](tasks/GG-006-reference-tray-layout.md) |
@@ -29,7 +29,7 @@
 | GG-021 | Nano Banana Pro 单张定价 15 积分 | 3010 已验证；待站长验收；未发布 | [任务](tasks/GG-021-nano-banana-pro-pricing.md) |
 
 下一个普通产品需求从 **GG-022** 分配并检查是否已被占用。
-GG-003 不阻塞本地新功能开发，但必须在下一次实际 alpha 发布前闭环。
+GG-003 的独立工具已恢复；每次实际 alpha 发布仍必须取得新鲜精确候选证据并通过该门禁。
 
 ## 已明确搁置（不得自动恢复）
 

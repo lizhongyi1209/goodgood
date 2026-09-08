@@ -13,10 +13,20 @@ Blue/green slots share production state; an inactive slot is not an isolated
 test database. Host evidence must be refreshed for the exact candidate under
 the approved live scope. A main commit, CI pass, or GHCR publication never
 deploys by itself. For ADR 0024's alpha gate use its specific requirements, not
-the paid or full-seed readiness claim. The clean baseline currently lacks the
-alpha CLI preserved in the C6 snapshot: task `docs/tasks/GG-003-alpha-release-tooling.md`
-must be completed before the next release. Do not execute a missing command or
-merge the deferred runtime just to recover its operator tooling.
+the paid or full-seed readiness claim. GG-003 extracted the read-only alpha CLI
+without the deferred C6 runtime. Run it from the exact clean candidate checkout:
+
+```bash
+npm run production:alpha-gate -- --evidence-file \
+  /var/lib/goodgood-production/controlled-alpha/readiness.json
+```
+
+The alpha document uses production evidence schema v2. Artifact evidence is
+valid for at most seven days, preflight for at most 72 hours, and the remaining
+alpha checks for at most 24 hours. Every item is bound to the candidate Git SHA;
+an old schema, old SHA, stale timestamp, wrong mode, or blocked item fails closed.
+The CLI only verifies evidence: it does not create credentials, generate an
+image, apply a migration, switch a slot, or change public maintenance.
 
 ## Environments
 

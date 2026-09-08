@@ -1,8 +1,8 @@
 # GG-003 — 干净基线的 alpha 发布工具闭环
 
-- 状态：待办（下次实际发布前的依赖；不阻塞本地功能开发）
-- 最后更新：2026-09-07
-- 分支 / worktree：尚未开始；不得在 C6 快照目录继续叠加新产品需求。
+- 状态：已实现并通过完整本地门禁；等待精确候选生产证据
+- 最后更新：2026-09-09
+- 分支 / worktree：`feature/GG-003-alpha-release-tooling` / `F:\goodgood`
 - 来源：GG-001 隔离旧 WIP 时发现的工具可移植性缺口，不是新业务需求。
 
 ## 问题与范围
@@ -22,6 +22,16 @@
 
 ## 验收与下一步
 
-- 干净 checkout 能安装并运行受测试的 alpha 门禁，失败不能继续发布。
-- 本地通过不代表新的候选线上通过；具体发布仍需批准及新鲜精确候选证据。
-- 下一步：在准备下一次发布时建立独立任务分支，先检查最小工具依赖图。
+- 已从 `d65838a` 仅提取 alpha 检查集和只读 CLI；保留当前干净基线的 schema v2，
+  未引入 C6 的内容安全、删除、举报代码、迁移或新依赖。
+- `production:alpha-gate`、`production:seed-gate` 与 `production:gate` 保持独立；
+  alpha 的 artifact/preflight 时效分别为 168/72 小时，四项 alpha 证据为 24 小时，
+  六项证据全部绑定候选 Git SHA。
+- 定向验证：`node --test tests/m8-controlled-alpha-readiness.test.mjs
+  tests/m8-production-readiness.test.mjs tests/ci-workflow.test.mjs`，18/18 通过。
+  覆盖有效、缺失、过期、错误候选、错误模式、受阻模板、不可读文件与 CLI 参数失败。
+- 完整门禁：`npm run check:local` 通过；251 项中 245 通过、6 项明确的 opt-in
+  集成测试跳过、0 失败，lint、类型检查与本地生产构建均通过。
+- 本地测试不构成候选生产通过，也不会创建秘密、迁移、切流或生图。
+- 下一步：提交干净候选后取得 CI 发布的精确摘要，再在主机上生成新鲜、非敏感、
+  精确候选证据；门禁非零则保持维护并停止发布。

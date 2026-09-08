@@ -34,6 +34,22 @@ export const REQUIRED_SEED_PRODUCTION_CHECKS = Object.freeze(
   ),
 );
 
+export const CONTROLLED_ALPHA_MODE = "controlled-alpha-v1";
+
+export const REQUIRED_CONTROLLED_ALPHA_CHECKS = Object.freeze([
+  Object.freeze({ id: "artifact-security", maxAgeHours: 168 }),
+  Object.freeze({ id: "production-preflight", maxAgeHours: 72 }),
+  Object.freeze({ id: "controlled-alpha-boundary", maxAgeHours: 24 }),
+  Object.freeze({ id: "controlled-alpha-member-journey", maxAgeHours: 24 }),
+  Object.freeze({ id: "controlled-alpha-recovery", maxAgeHours: 24 }),
+  Object.freeze({ id: "controlled-alpha-operations", maxAgeHours: 24 }),
+]);
+
+const knownProductionEvidenceIds = new Set([
+  ...REQUIRED_PRODUCTION_CHECKS.map(({ id }) => id),
+  ...REQUIRED_CONTROLLED_ALPHA_CHECKS.map(({ id }) => id),
+]);
+
 const EVIDENCE_STATUSES = new Set(["blocked", "fail", "pass", "pending"]);
 const SAFE_REFERENCE = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,199}$/;
 const SAFE_OWNER = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,99}$/;
@@ -42,6 +58,10 @@ const RELEASE_BOUND_CHECKS = new Set([
   "production-preflight",
   "candidate-health-invariants",
   "rollback-rehearsal",
+  "controlled-alpha-boundary",
+  "controlled-alpha-member-journey",
+  "controlled-alpha-recovery",
+  "controlled-alpha-operations",
 ]);
 
 function validNumberAtMost(value, maximum) {
@@ -49,6 +69,90 @@ function validNumberAtMost(value, maximum) {
 }
 
 function validateObjectiveEvidence(id, item) {
+  if (id === "controlled-alpha-boundary") {
+    if (
+      item.mode !== CONTROLLED_ALPHA_MODE ||
+      item.publicMaintenanceEnabled !== true ||
+      item.webHealthy !== true ||
+      item.workerHealthy !== true ||
+      item.activeWorkerCount !== 1 ||
+      item.checkoutEnabled !== false ||
+      item.registrationDefaultState !== "pending" ||
+      item.siteOwnerApprovalRequired !== true ||
+      item.assetsPrivateByDefault !== true ||
+      item.knownTesterBriefingRequired !== true ||
+      item.nonSensitiveContentOnly !== true ||
+      item.o1keyDisclosureRequired !== true ||
+      item.providerErasureTermsAvailable !== false ||
+      item.manualFallbackAccepted !== true ||
+      item.automatedAccountDeletionDeferred !== true ||
+      item.inProductReportingDeferred !== true ||
+      item.customerContentInEvidence !== false
+    ) {
+      return "Controlled-alpha baseline must prove maintenance containment, healthy exact runtime, pending owner approval, disabled checkout, private assets, accepted briefing/disclosure/manual fallback, explicit deferrals, and no customer content in evidence.";
+    }
+  }
+  if (id === "controlled-alpha-member-journey") {
+    if (
+      item.nonOwnerAccountUsed !== true ||
+      item.pendingBeforeApproval !== true ||
+      item.generationBlockedWhilePending !== true ||
+      item.welcomeCredits !== 100 ||
+      item.siteOwnerApprovalPassed !== true ||
+      item.manualTestCreditGrantPassed !== true ||
+      item.referenceUploadPassed !== true ||
+      item.realGenerationPassed !== true ||
+      item.privateAssetReadPassed !== true ||
+      item.reloginPassed !== true ||
+      item.crossOwnerReadDenied !== true ||
+      item.customerContentInEvidence !== false
+    ) {
+      return "Controlled-alpha member evidence must prove pending isolation, 100 welcome credits, reviewed activation, audited test credit, reference upload, one real generation, private read, relogin, cross-owner denial, and no customer content in evidence.";
+    }
+  }
+  if (id === "controlled-alpha-recovery") {
+    const points = item.recoveryPoints;
+    if (
+      item.assetsPrivateByDefault !== true ||
+      item.encryptedOffHostBackup !== true ||
+      !validNumberAtMost(item.observedRpoMinutes, 60) ||
+      !validNumberAtMost(item.observedRtoMinutes, 240) ||
+      !points ||
+      !Number.isInteger(points.daily) ||
+      points.daily < 14 ||
+      !Number.isInteger(points.weekly) ||
+      points.weekly < 8 ||
+      !Number.isInteger(points.monthly) ||
+      points.monthly < 12 ||
+      item.isolatedRestorePassed !== true ||
+      item.maintenanceReentryPassed !== true ||
+      item.productionDataCopiedLocal !== false ||
+      item.customerContentInEvidence !== false
+    ) {
+      return "Controlled-alpha recovery evidence must prove private assets, encrypted off-host RPO/RTO and 14/8/12 retention, isolated restore, maintenance re-entry, no local production copy, and no customer content in evidence.";
+    }
+  }
+  if (id === "controlled-alpha-operations") {
+    if (
+      !SAFE_OWNER.test(item.owner ?? "") ||
+      item.publicAvailabilityObserved !== true ||
+      item.webWorkerHealthObserved !== true ||
+      item.containerRestartSignalObserved !== true ||
+      item.hostMemoryObserved !== true ||
+      item.rootDiskObserved !== true ||
+      item.backupFreshnessObserved !== true ||
+      item.generationProviderFailureObserved !== true ||
+      item.notificationDelivered !== true ||
+      item.manualContactDocumented !== true ||
+      item.accountSuspensionPathPassed !== true ||
+      item.exactTargetRemovalRunbookDocumented !== true ||
+      item.complexDashboardRequired !== false ||
+      item.dualOperatorRequired !== false ||
+      item.customerContentInEvidence !== false
+    ) {
+      return "Controlled-alpha operations evidence must name one operator, observe the minimum runtime/resource/backup/generation signals, prove notification and manual response paths, reject expanded dashboard/dual-operator claims, and contain no customer content.";
+    }
+  }
   if (id === "production-backup-freshness") {
     const points = item.recoveryPoints;
     if (
@@ -176,7 +280,7 @@ function evidenceById(document) {
     if (!item || typeof item !== "object" || Array.isArray(item)) {
       throw new Error("Every evidence item must be an object.");
     }
-    if (!REQUIRED_PRODUCTION_CHECKS.some(({ id }) => id === item.id)) {
+    if (!knownProductionEvidenceIds.has(item.id)) {
       throw new Error(`Unknown production evidence id: ${item.id ?? "missing"}.`);
     }
     if (result.has(item.id)) {
@@ -338,6 +442,16 @@ export function runSeedProductionReadinessGate(
   return runProductionReadinessGateForRequirements(document, {
     now,
     requirements: REQUIRED_SEED_PRODUCTION_CHECKS,
+  });
+}
+
+export function runControlledAlphaReadinessGate(
+  document,
+  { now = () => Date.now() } = {},
+) {
+  return runProductionReadinessGateForRequirements(document, {
+    now,
+    requirements: REQUIRED_CONTROLLED_ALPHA_CHECKS,
   });
 }
 
