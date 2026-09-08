@@ -45,6 +45,7 @@ Current records:
 - `0032-open-gpt-image-2-multi-output.md`
 - `0033-banana-thinking-and-google-search.md`
 - `0034-stable-generation-grid-and-download.md`
+- `0035-simplify-sidebar-credit-summary.md`
 
 Accepted describes a decision, not proof of deployment. ADR 0022/0023's full
 runtime rollout is deferred under ADR 0024. The current release and rollout

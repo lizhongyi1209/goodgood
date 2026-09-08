@@ -62,7 +62,6 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .sidebar-billing > div { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .sidebar-billing > div span { font-size: 10px; }
 .sidebar-billing > div strong { color: var(--ink); font-size: 15px; font-variant-numeric: tabular-nums; }
-.sidebar-billing small { display: block; margin-top: 2px; font-size: 9px; white-space: nowrap; }
 .sidebar-billing-loading { display: flex; align-items: center; gap: 5px; font-size: 10px; }
 .sidebar-billing-loading svg { animation: authentication-spin .9s linear infinite; }
 .sidebar-billing button { width: 100%; padding: 2px 0; border: 0; background: transparent; display: flex; align-items: center; justify-content: space-between; color: var(--accent-deep); font-size: 10px; }

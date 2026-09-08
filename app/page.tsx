@@ -49,7 +49,6 @@ import {
   saveImageToLocal,
 } from "@/features/assets/image-download";
 import {
-  availableImageCount,
   findBillingQuote,
   readBillingSummary,
 } from "@/features/billing/http-billing-boundary";
@@ -433,12 +432,6 @@ export default function Home() {
     modelId: selectedModel,
     resolution,
   });
-  const launchBillingQuote = findBillingQuote(billingSummary, {
-    count: 1,
-    modelId: "nano-banana-2",
-    resolution: "1K",
-  });
-  const availableImages = availableImageCount(billingSummary, launchBillingQuote);
   const activePerImageCredits = activeBillingQuote
     ? perImageCreditAmount(activeBillingQuote.creditAmount, generationCount)
     : null;
@@ -1908,12 +1901,7 @@ export default function Home() {
                   <CircleAlert size={12} />积分暂不可用<RefreshCw size={11} />
                 </button>
               ) : billingSummary ? (
-                <>
-                  <div><span>积分余额</span><strong>{billingSummary.account.availableCredits}</strong></div>
-                  <small>
-                    {launchBillingQuote?.creditAmount ?? "--"} 积分/张 · 可生成 {availableImages?.toString() ?? "--"} 张
-                  </small>
-                </>
+                <div><span>积分余额</span><strong>{billingSummary.account.availableCredits}</strong></div>
               ) : null}
             </div>
           )}

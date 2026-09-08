@@ -267,7 +267,9 @@ test("billing summary is wired into both runtimes and the shared workspace", asy
   assert.match(page, /billingLoading/);
   assert.match(page, /billingError/);
   assert.match(page, /积分余额/);
-  assert.match(page, /可生成 \{availableImages/);
+  assert.match(page, /billingSummary\.account\.availableCredits/);
+  assert.doesNotMatch(page, /可生成 \{availableImages/);
+  assert.doesNotMatch(page, /launchBillingQuote/);
   assert.match(composer, /className="composer-price"/);
   assert.match(composer, /billingDescription/);
 });

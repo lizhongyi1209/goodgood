@@ -92,9 +92,10 @@ individual icon. Upload, settings, and send align to the same 40px box.
 
 ## Account credit
 
-- Desktop uses a compact two-line summary above the existing account card:
-  available credit first, launch price and approximate remaining image count
-  second. A nonzero reservation appears only as restrained processing metadata.
+- Desktop uses a compact single-line summary above the existing account card:
+  the `积分余额` label and current available-credit number only. Per-image price,
+  batch total, and approximate remaining image count do not repeat in the
+  sidebar; generation pricing remains beside the composer actions.
 - Mobile uses one small neutral balance pill in the existing top bar. It is
   context, not a primary action.
 - Loading and retry states keep the same footprint so account chrome does not
