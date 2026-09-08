@@ -14,7 +14,7 @@
 | GG-006 | 放大 1:1 参考图预览并将画面比例移到左侧 | 本地浏览器已验证；待站长验收 | [任务](tasks/GG-006-reference-tray-layout.md) |
 | GG-007 | GPT IMAGE 2 SD 精确尺寸、真实生成与三档 10 积分 | 本地浏览器已验证；待站长实测 | [任务](tasks/GG-007-gpt-image-2-sd.md) |
 | GG-008 | 生成按钮支持无限次快速并行提交 | 3010 已就绪；待站长真实生成验收 | [任务](tasks/GG-008-parallel-generation.md) |
-| GG-009 | GPT IMAGE 2 开放 2 / 4 张输出，每张 10 积分 | 独立门禁通过；正在组合联调 | [任务](tasks/GG-009-gpt-image-output-counts.md) |
+| GG-009 | GPT IMAGE 2 开放 2 / 4 张输出，每张 10 积分 | 3010 已就绪；待站长真实生成验收 | [任务](tasks/GG-009-gpt-image-output-counts.md) |
 
 下一个普通产品需求从 **GG-010** 分配并检查是否已被占用。
 GG-003 不阻塞本地新功能开发，但必须在下一次实际 alpha 发布前闭环。

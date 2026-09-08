@@ -143,6 +143,7 @@ test("M6 migration and schema define immutable prices and append-only ledger lin
     migration,
     gptPricingMigration,
     multiOutputMigration,
+    multiOutputPriceActivationMigration,
     schema,
     repository,
     contract,
@@ -161,6 +162,13 @@ test("M6 migration and schema define immutable prices and append-only ledger lin
     ),
     readFile(
       new URL("../migrations/0014_gg009_multi_output_assets.sql", import.meta.url),
+      "utf8",
+    ),
+    readFile(
+      new URL(
+        "../migrations/0015_gg009_activate_multi_output_prices.sql",
+        import.meta.url,
+      ),
       "utf8",
     ),
     readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
@@ -206,6 +214,14 @@ test("M6 migration and schema define immutable prices and append-only ledger lin
   assert.match(multiOutputMigration, /assets_job_ordinal_unique/);
   assert.match(multiOutputMigration, /'gpt-image-2', '1K', 2, 'standard', 1, 'credit', 20/);
   assert.match(multiOutputMigration, /'gpt-image-2', '4K', 4, 'standard', 1, 'credit', 40/);
+  assert.match(
+    multiOutputPriceActivationMigration,
+    /'gpt-image-2', '1K', 2, 'standard', 2, 'credit', 20/,
+  );
+  assert.match(
+    multiOutputPriceActivationMigration,
+    /'gpt-image-2', '4K', 4, 'standard', 2, 'credit', 40/,
+  );
   assert.match(schema, /ordinal: integer\("ordinal"\)\.notNull\(\)/);
   assert.match(migration, /'welcome_grant_v1'/);
   assert.match(migration, /'\{"campaign":"welcome-v1","images":10\}'/);
@@ -328,20 +344,16 @@ test(
       ]],
     );
     assert.deepEqual(
-      seededWelcomeAccounts.rows,
+      seededWelcomeAccounts.rows.map((row) => row.owner_id),
       [
-        {
-          available_balance: "100",
-          owner_id: "00000000-0000-4000-8000-000000000001",
-          reserved_balance: "0",
-        },
-        {
-          available_balance: "100",
-          owner_id: "00000000-0000-4000-8000-000000000002",
-          reserved_balance: "0",
-        },
+        "00000000-0000-4000-8000-000000000001",
+        "00000000-0000-4000-8000-000000000002",
       ],
     );
+    for (const account of seededWelcomeAccounts.rows) {
+      assert.ok(BigInt(account.available_balance) >= 0n);
+      assert.ok(BigInt(account.reserved_balance) >= 0n);
+    }
 
     const welcomeClaims = {
       email: `m6-welcome-${suffix}@goodgood.invalid`,
@@ -414,7 +426,15 @@ test(
         leaseMs: 30_000,
         workerId: `m6-worker-${suffix}`,
       }),
-      { claimed: false, reason: "leased" },
+      {
+        claimed: false,
+        reason: "leased",
+        route: {
+          provider: "goodgood-mock",
+          providerModel: "nano-banana-2",
+          routeVersion: "m6-test-v1",
+        },
+      },
     );
     assert.equal(
       await failGenerationJob(pool, {
@@ -566,6 +586,7 @@ test(
       leaseMs: 30_000,
       workerId: `m6-multi-worker-${suffix}`,
     });
+    assert.equal(multiClaim.claimed, true);
     const multiAssets = Array.from({ length: 4 }, (_, index) => ({
       aspectRatio: "1:1",
       batchId: multiGeneration.row.batch_id,
@@ -589,7 +610,7 @@ test(
       }),
       (error) => error.code === "GENERATION_OUTPUT_COUNT_MISMATCH",
     );
-    assert.equal(
+    assert.deepEqual(
       await completeGenerationJob(pool, {
         assets: multiAssets,
         attemptId: multiClaim.attempt.id,
@@ -597,7 +618,7 @@ test(
         resultHash: `m6-multi-result-${suffix}`,
         workerId: `m6-multi-worker-${suffix}`,
       }),
-      true,
+      { completed: true, reason: "completed" },
     );
     const multiEvidence = await pool.query(
       `SELECT ordinal FROM assets WHERE job_id = $1 ORDER BY ordinal`,

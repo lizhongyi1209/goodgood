@@ -25,7 +25,9 @@ fixed-UUID local fixtures after verifying that they have no non-fixture identity
 or credit history. Local development recreates them only through an explicit
 local-auth seeder. Migration 0013 adds GPT IMAGE 2's single-output prices.
 Migration 0014 adds ordered multi-Asset jobs and GPT count-2/count-4 prices.
-The Drizzle schema mirrors the durable schema across all fourteen migrations. A
+Migration 0015 appends an earlier-effective immutable copy of the same
+count-2/count-4 prices so they are active for the full Shanghai launch day.
+The Drizzle schema mirrors the durable schema across all fifteen migrations. A
 fuller project-backed creation session record and entitlements
 remain canonical contracts for later slices.
 
@@ -139,6 +141,12 @@ ledger row. Because the old worker's `ON CONFLICT (job_id)` statement depends
 on the removed unique index, a production rollout must drain/stop old workers
 before applying this migration and start only the matching candidate afterward;
 an application rollback requires a reviewed forward fix or database snapshot.
+
+Migration `0015_gg009_activate_multi_output_prices.sql` is an append-only price
+correction. Migration 0014's immutable rows begin at `2026-09-08 00:00 UTC`,
+which leaves the first eight hours of the Shanghai validation day without an
+active multi-output quote. Migration 0015 adds equal version-2 prices effective
+from `2026-09-07 00:00 UTC`; it neither updates nor deletes financial history.
 
 ## Entities
 

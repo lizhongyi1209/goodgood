@@ -271,7 +271,7 @@ This local flow does not replace the public HTTPS staging matrix.
 
 `GOODGOOD_M3_INTEGRATION=1 node --test tests/m3-compose-integration.test.mjs`
 is the opt-in destructive-process integration test against the disposable local
-test stack. It proves all twelve migration reruns, explicit idempotent local-
+test stack. It proves all fifteen migration reruns, explicit idempotent local-
 fixture seeding, authentication enforcement,
 two-owner idempotency isolation, cross-owner reference/job denial, signed direct
 reference PUT and CORS, server-side decoded validation and rejected-record
@@ -297,15 +297,17 @@ M6 adds fast signed-delta, transaction commit/rollback, migration-structure,
 browser-separation, billing-summary serialization, authenticated route, and UI
 boundary tests. The opt-in
 `GOODGOOD_M6_INTEGRATION=1 node --test tests/m6-credit-ledger.test.mjs` test
-targets an isolated PostgreSQL database. It proves migration checksum rerun,
+uses dedicated test identities and preserves existing local fixture balances.
+It proves migration checksum rerun,
 the three immutable 10-credit Banana 2 prices, migration grants for existing
 owners, exactly-once first-login welcome grant, live job reservation, successful
-Asset settlement, `SUBMISSION_UNKNOWN` customer release, deterministic custom
-price selection, manual grant, refund, insufficient-credit rollback, same-key
+Asset settlement, four-Asset/40-credit atomic settlement, short-result rollback,
+`SUBMISSION_UNKNOWN` customer release, deterministic custom price selection,
+manual grant, refund, insufficient-credit rollback, same-key
 replay, conflicting replay, mutually exclusive reservation closure, one full
 refund, exact account caches, generation quote snapshots, and database rejection
 of price/ledger mutation. The same PostgreSQL run verifies that the public read
-returns exact decimal-string balances and all three active launch quotes without
+returns exact decimal-string balances and all active launch quotes without
 internal IDs. The ledger test itself does not call a payment sandbox.
 
 The M6 payment tests cover migration/schema structure, the immutable product,
