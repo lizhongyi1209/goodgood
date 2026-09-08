@@ -242,9 +242,6 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .creation-card:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
 .creation-card > img { width: 100%; height: 100%; display: block; object-fit: cover; transform: scale(1.01); transition: transform .5s cubic-bezier(.2,.7,.2,1); }
 .creation-card:hover > img { transform: scale(1.045); }
-.creation-card.creation-variant-2 > img { filter: saturate(.72) contrast(1.08) hue-rotate(9deg); }
-.creation-card.creation-variant-3 > img { filter: saturate(.48) contrast(1.1); }
-.creation-card.creation-variant-4 > img { filter: saturate(1.08) brightness(.88); }
 .creation-card-meta { position: absolute; left: 9px; bottom: 9px; padding: 6px 8px; border-radius: 8px; background: rgba(255,255,255,.86); backdrop-filter: blur(10px); color: #777780; font-size: 9px; opacity: 0; transform: translateY(3px); transition: opacity .18s ease, transform .18s ease; }
 .creation-card:hover .creation-card-meta { opacity: 1; transform: translateY(0); }
 .creation-card:hover .image-actions { opacity: 1; transform: translateY(0); }
@@ -330,9 +327,6 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .result-card:hover img { transform: scale(1.055); }
 .result-hero { grid-row: 1 / 3; }
 .result-wide { grid-column: 2 / 4; }
-.result-card:nth-child(2) img { filter: saturate(.72) contrast(1.08) hue-rotate(9deg); }
-.result-card:nth-child(3) img { filter: saturate(.48) contrast(1.1); }
-.result-card:nth-child(4) img { filter: saturate(1.08) brightness(.88); }
 .result-skeleton { background: linear-gradient(115deg,#ededf0 15%,#f8f8f9 36%,#e9e9ed 57%); background-size: 240% 100%; display: grid; place-items: center; animation: skeleton-wave 1.5s ease-in-out infinite; }
 .result-skeleton small { position: absolute; left: 12px; bottom: 11px; color: #aaaab2; font-size: 10px; }
 .skeleton-feihong { width: 34px; height: 30px; background: #c3c3ca; -webkit-mask: url("/feihong-send.png") center / contain no-repeat; mask: url("/feihong-send.png") center / contain no-repeat; animation: skeleton-breathe 1.5s ease-in-out infinite; }
@@ -404,9 +398,6 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .asset-batch-images .asset-image-frame:last-child { border-radius: 0 11px 11px 0; }
 .asset-batch-images .asset-image-frame:only-child { border-radius: 11px; }
 .asset-image-frame img { width: 100%; height: 100%; min-width: 0; display: block; object-fit: cover; }
-.asset-image-frame:nth-child(2) img { filter: saturate(.72) contrast(1.08) hue-rotate(9deg); }
-.asset-image-frame:nth-child(3) img { filter: saturate(.48) contrast(1.1); }
-.asset-image-frame:nth-child(4) img { filter: saturate(1.08) brightness(.88); }
 .asset-batch-more { width: 32px; height: 32px; padding: 0; border: 0; border-radius: 9px; background: transparent; display: grid; place-items: center; color: #92929c; }
 .asset-batch-more:hover { background: var(--soft); color: var(--ink); }
 .asset-gallery-date-group { margin-top: 36px; }
@@ -421,9 +412,6 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .asset-gallery-card:hover { transform: none; }
 .asset-gallery-card.selected::after { content: ""; position: absolute; inset: 0; z-index: 2; box-shadow: inset 0 0 0 2px var(--accent); pointer-events: none; }
 .asset-gallery-card img { width: 100%; height: 100%; display: block; object-fit: cover; }
-.asset-gallery-card.gallery-variant-2 img { filter: saturate(.72) contrast(1.08) hue-rotate(9deg); }
-.asset-gallery-card.gallery-variant-3 img { filter: saturate(.48) contrast(1.1); }
-.asset-gallery-card.gallery-variant-4 img { filter: saturate(1.08) brightness(.88); }
 .asset-gallery-check { width: 23px; height: 23px; padding: 0; position: absolute; top: 9px; right: 9px; z-index: 3; border: 0; border-radius: 50%; background: rgba(255,255,255,.88); backdrop-filter: blur(10px); display: grid; place-items: center; color: #a3a3ab; opacity: 0; cursor: pointer; transition: opacity .18s ease, color .18s ease, background .18s ease; }
 .asset-gallery-card:hover .asset-gallery-check, .asset-gallery-card.selected .asset-gallery-check { opacity: 1; }
 .asset-gallery-card.selected .asset-gallery-check { background: var(--accent); color: white; }
@@ -438,9 +426,6 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .image-detail-stage { min-width: 0; min-height: 0; position: relative; padding: 34px 36px; background: #f3f3f5; display: grid; place-items: center; overflow: hidden; }
 .image-detail-art { max-height: 82dvh; position: relative; overflow: hidden; border-radius: 15px; background: #dedee2; box-shadow: 0 18px 50px rgba(28,28,34,.08); animation: detail-image-in .28s cubic-bezier(.2,.72,.25,1) both; }
 .image-detail-art img { width: 100%; height: 100%; display: block; object-fit: cover; }
-.image-detail-art.detail-variant-2 img, .image-detail-thumbnail.detail-variant-2 img { filter: saturate(.72) contrast(1.08) hue-rotate(9deg); }
-.image-detail-art.detail-variant-3 img, .image-detail-thumbnail.detail-variant-3 img { filter: saturate(.48) contrast(1.1); }
-.image-detail-art.detail-variant-4 img, .image-detail-thumbnail.detail-variant-4 img { filter: saturate(1.08) brightness(.88); }
 @keyframes detail-image-in { from { opacity: .35; transform: scale(.992); } to { opacity: 1; transform: scale(1); } }
 .image-detail-close { width: 38px; height: 38px; padding: 0; position: absolute; top: 18px; right: 18px; z-index: 3; border: 0; border-radius: 50%; background: rgba(255,255,255,.86); backdrop-filter: blur(14px); display: grid; place-items: center; color: #45454e; }
 .image-detail-close:hover { background: white; color: var(--accent-deep); }

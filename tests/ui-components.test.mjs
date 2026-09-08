@@ -58,6 +58,9 @@ test("declares the GoodGood visual and interaction invariants", async () => {
   assert.doesNotMatch(creationCardRenderer, /toggleSave/);
   assert.match(creationPage, /saveImageToLocal\(\{[\s\S]*createdAt: batch\.createdAt,[\s\S]*ordinal: index \+ 1,[\s\S]*previewUrl: image\.previewUrl,/);
   assert.doesNotMatch(creationPage, /link\.href = previewUrl/);
+  assert.doesNotMatch(creationPage, /(?:creation|gallery|detail)-variant-/);
+  assert.doesNotMatch(css, /filter:\s*(?:saturate|contrast|hue-rotate|brightness)/);
+  assert.doesNotMatch(css, /asset-image-frame:nth-child\([234]\) img/);
 });
 
 test("keeps reference previews legible and aspect ratio first through responsive layouts", async () => {

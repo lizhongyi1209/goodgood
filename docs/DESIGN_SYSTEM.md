@@ -127,6 +127,9 @@ individual icon. Upload, settings, and send align to the same 40px box.
 - Creation-card hover metadata shows the concrete pixel dimensions. Successful
   outputs are already in the asset library, so the creation card exposes only
   download rather than a duplicate bookmark action.
+- Generated assets retain their original color in creation, project, asset, and
+  detail views. Do not apply ordinal-based saturation, contrast, hue, brightness,
+  or other presentation filters to make outputs appear artificially varied.
 - Batch rows align image group, prompt, and metadata to the same top edge.
 - The image group has a stable visual height within a batch; width follows ratio.
 - Object cropping is acceptable only for a deliberately fixed thumbnail surface;

@@ -1792,7 +1792,7 @@ export default function Home() {
     const isDownloading = downloadingImageKeys.includes(`${item.batch.id}-${item.image.id}`);
     return (
       <article
-        className={`creation-card creation-variant-${(item.index % 4) + 1}`}
+        className="creation-card"
         key={item.key}
         style={{ aspectRatio: `${item.ratio}`, "--reveal-delay": `${item.index * 70}ms` } as CSSProperties}
         role="button"
@@ -1834,7 +1834,7 @@ export default function Home() {
     const itemRatio = getGenerationRatio(item.batch.aspectRatio);
     return (
       <article
-        className={`asset-gallery-card gallery-variant-${(item.index % 4) + 1} ${isSelected ? "selected" : ""}`}
+        className={isSelected ? "asset-gallery-card selected" : "asset-gallery-card"}
         key={item.key}
         style={{ aspectRatio: `${item.ratio}` }}
         role="button"
@@ -2259,7 +2259,7 @@ export default function Home() {
                 <button className="image-detail-close" aria-label="关闭图片详情" onClick={closeImageDetail}><X size={20} /></button>
                 <div className="image-detail-count">{String(detailIndex + 1).padStart(2, "0")} / {String(detailItems.length).padStart(2, "0")}</div>
                 <div
-                  className={`image-detail-art detail-variant-${(activeDetail.index % 4) + 1}`}
+                  className="image-detail-art"
                   style={{ aspectRatio: `${activeDetail.ratio}`, width: `min(calc(100% - 72px), ${activeDetail.ratio * 82}dvh)` }}
                 >
                   <PrivateObjectImage
@@ -2323,7 +2323,7 @@ export default function Home() {
                     <button
                       key={item.key}
                       ref={(element) => { detailThumbnailRefs.current[index] = element; }}
-                      className={`image-detail-thumbnail detail-variant-${(item.index % 4) + 1} ${index === detailIndex ? "active" : ""}`}
+                      className={index === detailIndex ? "image-detail-thumbnail active" : "image-detail-thumbnail"}
                       style={{ aspectRatio: `${item.ratio}` }}
                       aria-label={`查看第 ${index + 1} 张图片`}
                       aria-current={index === detailIndex ? "true" : undefined}
