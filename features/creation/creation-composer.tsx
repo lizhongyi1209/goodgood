@@ -5,7 +5,6 @@ import Image from "next/image";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 
 import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
 import {
   GENERATION_RATIO_MODES,
   GENERATION_RESOLUTION_OPTIONS,
@@ -391,12 +390,19 @@ export function CreationComposer({
                       <strong>谷歌搜索</strong>
                       <small>使用 Google Search 辅助生成</small>
                     </span>
-                    <Switch
-                      className="google-search-switch"
-                      checked={googleSearch}
-                      onCheckedChange={onGoogleSearchChange}
-                      aria-label="谷歌搜索"
-                    />
+                    <div className="google-search-options" aria-label="谷歌搜索">
+                      {[false, true].map((enabled) => (
+                        <button
+                          type="button"
+                          key={String(enabled)}
+                          className={googleSearch === enabled ? "selected" : ""}
+                          aria-pressed={googleSearch === enabled}
+                          onClick={() => onGoogleSearchChange(enabled)}
+                        >
+                          {enabled ? "开启" : "关闭"}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}

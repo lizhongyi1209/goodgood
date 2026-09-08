@@ -93,7 +93,9 @@ test("shows thinking and Google Search controls only for Nano Banana 2", async (
   assert.match(composer, />思考程度</);
   assert.match(composer, /level === "low" \? "低" : "高"/);
   assert.match(composer, />谷歌搜索</);
-  assert.match(composer, /checked=\{googleSearch\}/);
+  assert.match(composer, /aria-label="谷歌搜索"/);
+  assert.match(composer, /enabled \? "开启" : "关闭"/);
+  assert.match(composer, /googleSearch === enabled/);
   assert.match(page, /useState<GenerationThinkingLevel>\("low"\)/);
   assert.match(page, /useState\(false\)/);
   assert.match(page, /onThinkingLevelChange=\{handleThinkingLevelChange\}/);

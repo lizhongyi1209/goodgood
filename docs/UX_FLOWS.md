@@ -85,7 +85,7 @@ fill space.
   change keeps a compatible ratio or visibly moves to the nearest supported
   ratio in the same orientation, and normalizes an unsupported count to one.
 - Selecting Nano Banana 2 reveals `思考程度` (`低 / 高`, default `低`) and a
-  default-off `谷歌搜索` switch in the attached drawer. Changing to another
+  `谷歌搜索` (`关闭 / 开启`, default `关闭`) segmented control in the attached drawer. Changing to another
   model hides and resets both model-specific controls. Restored drafts,
   projects, retries, and image detail preserve and expose the frozen choice.
 - Unsupported model/count/domain combinations fail before submission without

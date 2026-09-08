@@ -20,7 +20,8 @@ the immutable generation snapshot rather than exist only as transient UI state.
 - Its product thinking domain is `low | high`, presented as `低 / 高`. `low` is
   the default and omits the provider field. `high` sends the top-level provider
   field `thinking_level: "high"`.
-- Its Google Search domain is boolean, presented as a default-off switch. False
+- Its Google Search domain is boolean, presented as a `关闭 / 开启` segmented
+  control that defaults to off. False
   omits the provider field; true sends top-level `google_search: true`.
 - The controls render only for Nano Banana 2. GPT IMAGE 2 rejects enabled or
   non-default Banana-only settings and never forwards them upstream.
