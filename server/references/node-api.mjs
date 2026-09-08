@@ -2,6 +2,7 @@ import {
   completeReferenceUpload,
   createReferenceUploads,
   listReferenceAssets,
+  readReferenceAssetContent,
   referenceApiError,
 } from "./api.mjs";
 import { requestIdFor } from "../observability/http.mjs";
@@ -31,6 +32,7 @@ const DEFAULT_OPERATIONS = Object.freeze({
   completeReferenceUpload,
   createReferenceUploads,
   listReferenceAssets,
+  readReferenceAssetContent,
 });
 
 export function createReferenceNodeApiHandler({
@@ -66,6 +68,24 @@ export function createReferenceNodeApiHandler({
             ownerContext,
           }),
         );
+        return true;
+      }
+
+      const contentMatch = /^\/api\/references\/([^/]+)\/content$/.exec(
+        url.pathname,
+      );
+      if (contentMatch && request.method === "GET") {
+        referenceId = decodeURIComponent(contentMatch[1]);
+        const content = await operations.readReferenceAssetContent({
+          ownerContext,
+          referenceId,
+        });
+        response.writeHead(200, {
+          "cache-control": "private, no-store",
+          "content-length": String(content.bytes.length),
+          "content-type": content.mimeType,
+        });
+        response.end(content.bytes);
         return true;
       }
 

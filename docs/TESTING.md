@@ -21,6 +21,9 @@ route owner propagation, owner-scoped accepted-material listing, reusable
 selection deduplication/limits, material loading/empty/failure UI wiring,
 ready-reference click/Enter/Space large-preview behavior, uncropped contained
 rendering, drag-click suppression, and remove-button event isolation,
+reference-editor crop/history/bbox/sticker math, owner-scoped same-origin
+material-byte reads, edit loading/error/save states, non-destructive upload,
+same-ordinal replacement, and project snapshot synchronization,
 project save validation and idempotency, project list
 loading/empty/failure UI states, project route owner propagation, cross-owner
 read/update denial, stable project route parsing/history notification, direct

@@ -4,22 +4,14 @@ import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import Image from "next/image";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import {
-  Dialog,
-  DialogClose,
-  DialogDescription,
-  DialogOverlay,
-  DialogPortal,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Dialog as DialogPrimitive } from "radix-ui";
-
 import { Slider } from "@/components/ui/slider";
+import type { ReferenceMaterial } from "@/features/references/http-reference-library";
+import { ReferenceQuickEditor } from "@/features/references/reference-quick-editor";
 import {
   DEFAULT_GPT_IMAGE_OUTPUT_FORMAT,
   GENERATION_RATIO_MODES,
@@ -88,6 +80,8 @@ export type CreationComposerProps = Readonly<{
   onOpenReferenceLibrary?: () => void;
   onRemoveReference: (reference: GenerationReference) => void;
   onReorderReference?: (sourceId: string, targetId: string) => void;
+  referenceEditorMaterials?: readonly ReferenceMaterial[];
+  onSaveReferenceEdit?: (source: GenerationReference, file: File) => Promise<void>;
   onModelChange: (modelId: GenerationModelId) => void;
   onAspectRatioChange: (ratio: GenerationAspectRatio) => void;
   onResolutionChange: (resolution: GenerationResolution) => void;
@@ -152,6 +146,8 @@ export function CreationComposer({
   onOpenReferenceLibrary = () => {},
   onRemoveReference,
   onReorderReference,
+  referenceEditorMaterials = [],
+  onSaveReferenceEdit,
   onModelChange,
   onAspectRatioChange,
   onResolutionChange,
@@ -630,46 +626,22 @@ export function CreationComposer({
         </div>
       </div>
 
-      <Dialog
-        open={previewReference?.status === "ready"}
-        onOpenChange={(open) => {
-          if (!open) setPreviewReferenceId(null);
-        }}
-      >
-        <DialogPortal>
-          <DialogOverlay className="reference-preview-overlay" />
-          <DialogPrimitive.Content className="reference-preview-dialog">
-            {previewReference?.status === "ready" && (
-              <>
-                <header className="reference-preview-dialog-header">
-                  <div>
-                    <span>图 {previewReferenceIndex + 1}</span>
-                    <DialogTitle title={previewReference.name}>
-                      {previewReference.name}
-                    </DialogTitle>
-                    <DialogDescription>完整参考图预览</DialogDescription>
-                  </div>
-                  <DialogClose asChild>
-                    <button
-                      className="reference-preview-close"
-                      aria-label="关闭参考图大图"
-                    >
-                      <X size={17} />
-                    </button>
-                  </DialogClose>
-                </header>
-                <div className="reference-preview-stage">
-                  <PrivateObjectImage
-                    src={previewReference.url}
-                    alt={`图 ${previewReferenceIndex + 1} 大图预览`}
-                    loading="eager"
-                  />
-                </div>
-              </>
-            )}
-          </DialogPrimitive.Content>
-        </DialogPortal>
-      </Dialog>
+      {previewReference?.status === "ready" && (
+        <ReferenceQuickEditor
+          key={previewReference.id}
+          reference={previewReference}
+          ordinal={previewReferenceIndex + 1}
+          materials={referenceEditorMaterials}
+          onClose={() => setPreviewReferenceId(null)}
+          onInsertPrompt={(text) => {
+            const separator = prompt.trim().length > 0 ? "\n" : "";
+            onPromptChange(`${prompt.trimEnd()}${separator}${text}`);
+          }}
+          onSave={onSaveReferenceEdit ?? (async () => {
+            throw new Error("当前预览环境不支持保存编辑后的素材。");
+          })}
+        />
+      )}
     </section>
   );
 }

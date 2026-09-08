@@ -28,6 +28,10 @@ test("declares the GoodGood visual and interaction invariants", async () => {
     path.join(root, "features/creation/creation-composer.tsx"),
     "utf8",
   );
+  const referenceEditor = await readFile(
+    path.join(root, "features/references/reference-quick-editor.tsx"),
+    "utf8",
+  );
 
   assert.match(css, /--accent:\s*#b52b30/);
   assert.match(css, /--control-md:\s*40px/);
@@ -40,17 +44,25 @@ test("declares the GoodGood visual and interaction invariants", async () => {
   assert.match(css, /\.reference-thumbnail-ordinal[^}]*left:\s*4px;[^}]*bottom:\s*4px/s);
   assert.match(css, /\.reference-thumbnail\.is-drag-target[^}]*border-color:\s*var\(--accent\)/s);
   assert.match(css, /\.reference-thumbnail-remove[^}]*width:\s*16px;[^}]*height:\s*16px;[^}]*top:\s*3px;[^}]*right:\s*3px/s);
-  assert.match(css, /\.reference-preview-stage img[^}]*width:\s*calc\(100% - 32px\);[^}]*height:\s*calc\(100% - 32px\);[^}]*position:\s*absolute;[^}]*object-fit:\s*contain;/s);
+  assert.match(css, /\.reference-editor-body[^}]*grid-template-columns:\s*72px minmax\(0,1fr\)/s);
+  assert.match(css, /\.reference-editor-stage canvas[^}]*width:\s*100%;[^}]*height:\s*100%;[^}]*touch-action:\s*none/s);
   assert.doesNotMatch(creationPage, /reference-library-picker-image" style=/);
   assert.match(creationComposer, /draggable=\{canReorderReferences\}/);
   assert.match(creationComposer, /onReorderReference\?\.\(sourceId, image\.id\)/);
   assert.match(creationComposer, /"Enter Space Alt\+ArrowLeft Alt\+ArrowRight"/);
   assert.match(creationComposer, /reference-thumbnail-ordinal">图 \{index \+ 1\}/);
-  assert.match(creationComposer, /open=\{previewReference\?\.status === "ready"\}/);
+  assert.match(creationComposer, /<ReferenceQuickEditor/);
   assert.match(creationComposer, /event\.key === "Enter" \|\| event\.key === " "/);
   assert.match(creationComposer, /suppressReferencePreviewRef\.current = true/);
   assert.match(creationComposer, /event\.stopPropagation\(\);[\s\S]*onRemoveReference\(image\)/);
-  assert.match(creationComposer, /aria-label="关闭参考图大图"/);
+  assert.match(referenceEditor, /aria-label="参考图编辑工具"/);
+  assert.match(referenceEditor, /label: "查看"[\s\S]*label: "裁剪"[\s\S]*label: "画笔"[\s\S]*label: "贴图"[\s\S]*label: "箭头"[\s\S]*label: "框选"/);
+  assert.match(referenceEditor, /formatReferenceEditorBboxPrompt\(ordinal, bbox\)/);
+  assert.match(referenceEditor, /output\.x \* sourceImage\.naturalWidth/);
+  assert.doesNotMatch(referenceEditor, /filter:\s*(?:saturate|contrast|hue-rotate|brightness)/);
+  assert.match(creationPage, /onSaveReferenceEdit=\{handleSaveReferenceEdit\}/);
+  assert.match(creationPage, /item\.id === source\.id[\s\S]*\.\.\.result\.reference, url: previewUrl/s);
+  assert.match(creationPage, /if \(currentProject\) \{[\s\S]*await saveProject\(\{[\s\S]*references: nextReferences\.filter/s);
   assert.match(css, /mask:\s*url\("\/feihong-send\.png"\)/);
   assert.doesNotMatch(creationPage, /className="generation-task-frame"/);
   assert.match(creationPage, /const creationStreamItems = \[\.\.\.generationItems, \.\.\.creationItems\]/);

@@ -82,9 +82,14 @@ individual icon. Upload, settings, and send align to the same 40px box.
 - Reference drag feedback uses a restrained opacity change on the moving item
   and a Palace Red inset edge on the current destination; it must not resize or
   reflow the tray before the drop.
-- Clicking a ready reference opens a focused, viewport-contained preview that
-  shows the complete source with `object-fit: contain`; it keeps `图 N` and the
-  filename visible without turning the preview into an editing surface.
+- Clicking a ready reference opens a focused, viewport-contained quick editor.
+  The default view shows the complete source with `object-fit: contain` and keeps
+  `图 N` plus the filename visible. A compact left rail exposes view, crop,
+  brush, sticker, arrow, and box-selection tools; the active tool uses Palace
+  Red while inactive tools remain transparent or neutral.
+- Tool settings stay attached above the image stage and completion actions stay
+  in one quiet footer. Do not split the editor into heavy inspector panels or
+  let tool chrome cover the source detail being inspected.
 - Uploading and failed references reuse the thumbnail silhouette with a quiet
   opacity treatment and centered status icon; do not introduce a detached
   upload panel or success banner.

@@ -94,6 +94,13 @@ An authenticated reference-list read exposes the same accepted rows as reusable
 materials, newest first, and signs their private objects without returning raw
 object keys. Composer reuse submits the existing stable reference ID, so the
 upload path and provider attachment path remain unchanged.
+The browser quick editor reads one ready material through the authenticated
+`GET /api/references/:referenceId/content` boundary. The server rechecks owner,
+ready/accepted state, and deletion state before returning private bytes with
+`no-store`; this avoids depending on cross-origin object URLs for Canvas while
+keeping storage keys and credentials out of the browser contract. Edited pixels
+are uploaded as a new reference record, and a project edit synchronizes the new
+ordered reference snapshot before the tray replacement is reported as saved.
 
 M7 keeps this S3-compatible boundary but selects the private Cloudflare R2
 `goodgood` bucket as staging's authoritative object store. Server requests and

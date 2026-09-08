@@ -144,9 +144,11 @@ function requestFor({ body, method = "POST", url }) {
 function responseRecorder() {
   return {
     body: "",
+    rawBody: null,
     headers: {},
     statusCode: 0,
     end(chunk = "") {
+      this.rawBody = chunk;
       this.body += chunk;
     },
     writeHead(statusCode, headers) {
@@ -173,6 +175,10 @@ test("reference HTTP routes preserve the authenticated owner context", async () 
       async listReferenceAssets(input) {
         calls.push(input);
         return { references: [{ id: "reference-a" }] };
+      },
+      async readReferenceAssetContent(input) {
+        calls.push(input);
+        return { bytes: Buffer.from("image-bytes"), mimeType: "image/png" };
       },
     },
   });
@@ -215,6 +221,23 @@ test("reference HTTP routes preserve the authenticated owner context", async () 
     references: [{ id: "reference-a" }],
   });
   assert.deepEqual(calls[2], { ownerContext });
+
+  const contentResponse = responseRecorder();
+  await handler(
+    requestFor({
+      method: "GET",
+      url: "/api/references/20000000-0000-4000-8000-000000000001/content",
+    }),
+    contentResponse,
+  );
+  assert.equal(contentResponse.statusCode, 200);
+  assert.equal(contentResponse.headers["content-type"], "image/png");
+  assert.equal(contentResponse.headers["content-length"], "11");
+  assert.deepEqual(contentResponse.rawBody, Buffer.from("image-bytes"));
+  assert.deepEqual(calls[3], {
+    ownerContext,
+    referenceId: "20000000-0000-4000-8000-000000000001",
+  });
 });
 
 test("M4 reference records are owner-scoped and retain validation evidence", async () => {
@@ -240,8 +263,9 @@ test("M4 reference records are owner-scoped and retain validation evidence", asy
 });
 
 test("reference material API is wired into both authenticated runtimes", async () => {
-  const [route, runtime, page, boundary] = await Promise.all([
+  const [route, contentRoute, runtime, page, boundary] = await Promise.all([
     readFile(new URL("../app/api/references/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/references/[referenceId]/content/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../server/runtime/web.mjs", import.meta.url), "utf8"),
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(
@@ -251,6 +275,8 @@ test("reference material API is wired into both authenticated runtimes", async (
   ]);
   assert.match(route, /export async function GET/);
   assert.match(route, /await listReferenceAssets/);
+  assert.match(contentRoute, /await readReferenceAssetContent/);
+  assert.match(contentRoute, /private, no-store/);
   assert.match(runtime, /createReferenceNodeApiHandler/);
   assert.match(boundary, /goodGoodApiFetch\("\/api\/references"/);
   assert.match(page, /上传素材/);

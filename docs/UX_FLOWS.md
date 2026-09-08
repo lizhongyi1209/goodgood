@@ -77,11 +77,22 @@ fill space.
 - Every tray item shows `图 1…图 10` at the lower left. Dragging one item onto
   another moves it to that position and immediately renumbers the tray. Focused
   items support `Alt + ← / →` for the same operation.
-- Clicking a ready tray item opens an uncropped, viewport-contained large
-  preview for inspecting source detail. Enter/Space opens the focused item;
-  Escape closes the dialog. Uploading/failed items and completed drag gestures
-  do not open it. The smaller upper-right remove control deletes without opening
-  the preview.
+- Clicking a ready tray item opens a viewport-contained quick editor in its
+  neutral view tool, with the complete uncropped source available for detail
+  inspection. Enter/Space opens the focused item; Escape closes the editor.
+  Uploading/failed items and completed drag gestures do not open it. The smaller
+  upper-right remove control deletes without opening the editor.
+- Crop, brush, sticker, and arrow edits affect the exported pixels. Stickers may
+  come from a local file or the owner's reusable materials and can be moved,
+  scaled, rotated, or removed. Box selection reports pixel and normalized
+  coordinates relative to the current cropped output; copy and prompt insertion
+  do not burn the box into the exported pixels.
+- Undo, redo, and reset operate inside the current editor session. Closing with
+  pixel-affecting unsaved edits asks for confirmation. Completing an edit uploads
+  a new reusable material and only then replaces the current `图 N` in the tray;
+  a project-backed session persists that replacement before reporting success.
+  The original material remains reusable, and export/upload failure preserves
+  the editor state for retry.
 - Send is blocked while any retained reference is uploading or failed. Ready
   references preserve their tray order in the submitted batch snapshot.
 - Settings: attached downward drawer; closing it must not reset values.

@@ -76,6 +76,34 @@ export async function listReferenceAssets({ ownerContext }) {
   };
 }
 
+export async function readReferenceAssetContent({ referenceId, ownerContext }) {
+  validateReferenceIds([{ id: referenceId }]);
+  const ownerId = ownerIdFromContext(ownerContext);
+  const resources = await getGenerationResources();
+  const row = await findReferenceAsset(resources.pool, { ownerId, referenceId });
+  if (
+    !row ||
+    row.upload_state !== "ready" ||
+    row.moderation_state !== "accepted" ||
+    row.object_deleted_at
+  ) {
+    throw new ReferenceRequestError(
+      "REFERENCE_NOT_FOUND",
+      "未找到可读取的参考图素材。",
+      404,
+    );
+  }
+  const object = await readReferenceObject({
+    bucket: resources.config.objectStorage.bucket,
+    key: row.object_key,
+    storage: resources.storage,
+  });
+  return {
+    bytes: object.bytes,
+    mimeType: row.detected_mime_type || object.contentType || "application/octet-stream",
+  };
+}
+
 export async function createReferenceUploads({ files, ownerContext }) {
   const ownerId = ownerIdFromContext(ownerContext);
   const validatedFiles = validateReferenceUploadRequest({ files });

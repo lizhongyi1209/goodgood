@@ -1385,6 +1385,71 @@ export default function Home() {
     }
   };
 
+  const handleSaveReferenceEdit = async (
+    source: GenerationReference,
+    file: File,
+  ) => {
+    const sourceIndex = referenceImages.findIndex((item) => item.id === source.id);
+    if (sourceIndex < 0) throw new Error("这张参考图已不在当前创作中。");
+
+    const clientId = globalThis.crypto.randomUUID();
+    const [result] = await uploadReferenceFiles(
+      [{ clientId, file }],
+      () => {},
+    );
+    if (!result || result.reference.status !== "ready") {
+      throw new Error(
+        result?.reference.errorMessage ?? "编辑后的素材上传失败，请重试。",
+      );
+    }
+
+    const nextReferences = referenceImages.map((item) =>
+      item.id === source.id ? result.reference : item
+    );
+    if (currentProject) {
+      const savedProject = await saveProject({
+        batchIds: [...new Set([
+          ...creationBatches.map((batch) => batch.id),
+          ...getPersistentGenerationJobIds(generationRuns),
+        ])],
+        name: currentProject.name,
+        projectId: currentProject.id,
+        state: {
+          aspectRatio: selectedRatio,
+          background,
+          count: generationCount,
+          googleSearch,
+          modelId: selectedModel,
+          prompt,
+          references: nextReferences.filter((reference) => reference.status === "ready"),
+          resolution,
+          outputFormat,
+          quality,
+          thinkingLevel,
+        },
+      });
+      setProjects((current) => [
+        savedProject,
+        ...current.filter((project) => project.id !== savedProject.id),
+      ]);
+      setComposerCheckpoint(createComposerCheckpoint(savedProject.state));
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    composerEditRevisionRef.current += 1;
+    referenceObjectUrlsRef.current.add(previewUrl);
+    if (referenceObjectUrlsRef.current.delete(source.url)) {
+      URL.revokeObjectURL(source.url);
+    }
+    setReferenceImages((current) => current.map((item) =>
+      item.id === source.id
+        ? { ...result.reference, url: previewUrl }
+        : item
+    ));
+    await reloadReferenceMaterials();
+    toast.success(`编辑结果已保存为新素材，并替换图 ${sourceIndex + 1}`);
+  };
+
   const addMaterialsToReferences = (materials: readonly ReferenceMaterial[]) => {
     const result = appendReferenceMaterials(
       referenceImages,
@@ -2265,6 +2330,8 @@ export default function Home() {
             onOpenReferenceLibrary={openReferenceLibrary}
             onRemoveReference={removeReference}
             onReorderReference={reorderReference}
+            referenceEditorMaterials={referenceMaterials}
+            onSaveReferenceEdit={handleSaveReferenceEdit}
             onModelChange={handleModelChange}
             onAspectRatioChange={handleAspectRatioChange}
             onResolutionChange={handleResolutionChange}

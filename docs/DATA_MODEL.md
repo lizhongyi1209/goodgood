@@ -319,6 +319,12 @@ Every `ready + accepted` row whose object remains present is also a reusable
 material visible to its owner. It is not an orphan merely because no current
 draft, project, or generation snapshot references it; later deletion requires
 an explicit owner deletion workflow.
+An edited reference is stored as another ordinary `ReferenceAsset` after the
+same upload and decoded-validation lifecycle. The source row and object remain
+unchanged, while the current draft or project reference snapshot may point to
+the new row at the same ordinal. Crop bounds and transient brush, sticker,
+arrow, and bbox layers are not persisted in this slice; only flattened output
+pixels become durable.
 
 ### GenerationJob
 

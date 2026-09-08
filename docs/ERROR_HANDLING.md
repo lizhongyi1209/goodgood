@@ -28,6 +28,7 @@
 | Draft conflict | `DRAFT_CONFLICT` | Composer-attached alert | Keep current tab or restore newer server draft |
 | Asset library | `ASSET_LIBRARY_UNAVAILABLE` | Asset library state | Retry the owner-scoped read |
 | Reference materials | `REFERENCE_LIBRARY_UNAVAILABLE` | Material section or picker | Keep composer state and retry the owner-scoped read |
+| Reference editor | `REFERENCE_NOT_FOUND`, image decode/export/upload failure | Focused editor footer/stage | Keep edits, retry or reduce the crop when output exceeds 20 MiB |
 | Authentication | `SESSION_EXPIRED` | Global blocking state | Sign in, restore draft |
 | Login callback | `AUTH_CALLBACK_INVALID` | Global sign-in state | Restart Google/email-code sign-in |
 | Login provider | `AUTH_PROVIDER_UNAVAILABLE` | Global sign-in state | Retry later |
