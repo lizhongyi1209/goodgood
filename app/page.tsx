@@ -64,6 +64,7 @@ import {
   findBillingQuote,
   readBillingSummary,
 } from "@/features/billing/http-billing-boundary";
+import { CreditActivityView } from "@/features/billing/credit-activity-view";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import {
   DraftBoundaryError,
@@ -135,7 +136,9 @@ import {
   Brush,
   Check,
   CircleAlert,
+  CircleDot,
   Clock3,
+  Coins,
   Compass,
   Download,
   FolderOpen,
@@ -174,7 +177,7 @@ type AssetBatch = {
   referenceCount: number;
   images: readonly GenerationOutput[];
 };
-type ActiveView = "create" | "projects" | "assets";
+type ActiveView = "create" | "projects" | "assets" | "credits";
 type DestructiveCreationIntent =
   | { kind: "new" }
   | { kind: "project"; projectId: string; projectName: string };
@@ -200,7 +203,10 @@ function readAssetDetailNavigationState(state: unknown): AssetDetailNavigationSt
   const candidate = (state as Record<string, unknown>)[ASSET_DETAIL_HISTORY_KEY];
   if (!candidate || typeof candidate !== "object") return null;
   const detail = candidate as Record<string, unknown>;
-  if (detail.source !== "creation" && detail.source !== "assets") return null;
+  if (
+    detail.source !== "creation" &&
+    detail.source !== "assets"
+  ) return null;
   if (
     typeof detail.returnHref !== "string" ||
     !detail.returnHref.startsWith("/") ||
@@ -653,7 +659,11 @@ export default function Home() {
         setRouteAssetId(route.assetId);
         setAssetRouteError(null);
         setAssetRouteRevision((current) => current + 1);
-        setActiveView(detailNavigation?.source === "creation" ? "create" : "assets");
+        setActiveView(
+          detailNavigation?.source === "creation"
+            ? "create"
+            : "assets",
+        );
         return;
       }
       setRouteAssetId(null);
@@ -683,6 +693,8 @@ export default function Home() {
         ? "projects"
         : route.kind === "assets"
           ? "assets"
+          : route.kind === "credits"
+            ? "credits"
           : "create");
     };
     const applyInitialRoute = window.setTimeout(applyWorkspaceRoute, 0);
@@ -1621,6 +1633,15 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const handleCreditsNav = () => {
+    navigateWorkspace({ kind: "credits" });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleCreditAccountChange = useCallback((account: BillingSummary["account"]) => {
+    setBillingSummary((current) => current ? { ...current, account } : current);
+  }, []);
+
   const startNewCreation = () => {
     composerEditRevisionRef.current += 1;
     clearPersistedCreationDraft();
@@ -2224,32 +2245,34 @@ export default function Home() {
 
         <div className="sidebar-footer">
           <button className="side-nav-item"><HelpCircle size={17} /><span>帮助</span></button>
-          {authenticationSession && (
-            <div
-              className={`sidebar-billing ${billingError ? "has-error" : ""}`}
-              role={billingError ? "alert" : "status"}
-              aria-live="polite"
+          {authenticationSession?.access.status === "active" && (
+            <button
+              className={`side-nav-item ${activeView === "credits" ? "active" : ""}`}
+              onClick={handleCreditsNav}
             >
-              {billingLoading ? (
-                <span className="sidebar-billing-loading"><LoaderCircle size={12} />正在读取积分</span>
-              ) : billingError ? (
-                <button onClick={() => {
-                  setBillingLoading(true);
-                  setBillingError(null);
-                  setBillingRevision((current) => current + 1);
-                }}>
-                  <CircleAlert size={12} />积分暂不可用<RefreshCw size={11} />
-                </button>
-              ) : billingSummary ? (
-                <div><span>积分余额</span><strong>{billingSummary.account.availableCredits}</strong></div>
-              ) : null}
-            </div>
+              <Coins size={17} /><span>积分记录</span>
+            </button>
           )}
           <div className="account-card">
             <div className="avatar">{accountInitials}</div>
             <div>
               <strong>{accountEmail ?? "登录 GoodGood"}</strong>
-              <small>{authenticationSession?.preview ? "本地预览" : authenticationSession ? "已登录" : "Google 或邮箱验证码"}</small>
+              <small
+                aria-label={billingSummary && authenticationSession ? `积分余额 ${billingSummary.account.availableCredits}` : undefined}
+                aria-live={authenticationSession ? "polite" : undefined}
+                className={billingSummary && authenticationSession ? "account-credit-balance" : ""}
+                role={authenticationSession ? "status" : undefined}
+              >
+                {authenticationSession
+                  ? billingLoading
+                    ? "积分读取中"
+                    : billingError
+                      ? "积分暂不可用"
+                      : billingSummary
+                        ? <><CircleDot aria-hidden="true" size={12} /><span>{billingSummary.account.availableCredits}</span></>
+                        : "积分暂不可用"
+                  : "Google 或邮箱验证码"}
+              </small>
             </div>
             <button
               className="account-session-action"
@@ -2283,9 +2306,9 @@ export default function Home() {
                   setBillingRevision((current) => current + 1);
                 }}>积分重试</button>
               ) : (
-                <span className="mobile-credit-balance">
+                <button className="mobile-credit-balance" onClick={handleCreditsNav} aria-label="查看积分记录">
                   {billingLoading ? "--" : billingSummary?.account.availableCredits ?? "--"} 积分
-                </span>
+                </button>
               )
             )}
             <button
@@ -2472,6 +2495,12 @@ export default function Home() {
                 </div>
               )}
             </section>
+          ) : activeView === "credits" ? (
+            <CreditActivityView
+              enabled={Boolean(authenticationSession && authenticationSession.access.status === "active")}
+              onAccountChange={handleCreditAccountChange}
+              onBack={handleCreateNav}
+            />
           ) : (
             <section className="asset-library-view" aria-label="资产库">
               <header className="asset-library-header">

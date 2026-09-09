@@ -104,6 +104,23 @@ test("declares the GoodGood visual and interaction invariants", async () => {
   assert.doesNotMatch(creationPage, /(?:creation|gallery|detail)-variant-/);
   assert.doesNotMatch(css, /filter:\s*(?:saturate|contrast|hue-rotate|brightness)/);
   assert.doesNotMatch(css, /asset-image-frame:nth-child\([234]\) img/);
+
+  const sidebarFooter = creationPage.slice(
+    creationPage.indexOf('<div className="sidebar-footer">'),
+    creationPage.indexOf('<div className="account-card">'),
+  );
+  assert.ok(sidebarFooter.indexOf("帮助") < sidebarFooter.indexOf("积分记录"));
+  assert.match(sidebarFooter, /side-nav-item[^\n]*activeView === "credits"/);
+  assert.doesNotMatch(sidebarFooter, /点击查看|sidebar-billing|sidebar-credit-action/);
+  assert.doesNotMatch(css, /\.sidebar-billing|\.sidebar-credit-link|\.sidebar-credit-action/);
+  const accountCard = creationPage.slice(
+    creationPage.indexOf('<div className="account-card">'),
+    creationPage.indexOf("</aside>"),
+  );
+  assert.match(accountCard, /account-credit-balance/);
+  assert.match(accountCard, /<CircleDot aria-hidden="true" size=\{12\} \/><span>\{billingSummary\.account\.availableCredits\}<\/span>/);
+  assert.doesNotMatch(accountCard, />余额 \$\{billingSummary\.account\.availableCredits\} 积分</);
+  assert.match(css, /\.account-card small\.account-credit-balance \{[^}]*display:\s*inline-flex[^}]*color:\s*var\(--accent-deep\)/s);
 });
 
 test("keeps reference previews legible and aspect ratio first through responsive layouts", async () => {
@@ -712,6 +729,7 @@ test("billing HTTP boundary covers balance, quote, zero capacity, and retryable 
     availableImageCount,
     createPaymentOrder,
     findBillingQuote,
+    readCreditActivities,
     readBillingProducts,
     readBillingSummary,
     readPaymentOrder,
@@ -756,6 +774,37 @@ test("billing HTTP boundary covers balance, quote, zero capacity, and retryable 
     assert.deepEqual(await readBillingSummary(), summary);
     assert.equal(calls[0].input, "/api/billing");
     assert.equal(calls[0].options.cache, "no-store");
+    const activityPage = {
+      account: summary.account,
+      items: [
+        {
+          amount: "-10",
+          completedAt: "2026-09-09T00:00:02.000Z",
+          creditAmount: "10",
+          generation: null,
+          id: "act_11111111111111111111111111111111",
+          kind: "generation",
+          occurredAt: "2026-09-09T00:00:00.000Z",
+          status: "spent",
+          unit: "credit",
+        },
+      ],
+      nextCursor: "next-credit-page",
+    };
+    globalThis.fetch = async (input, options = {}) => {
+      calls.push({ input: String(input), options });
+      return Response.json(activityPage);
+    };
+    assert.deepEqual(
+      await readCreditActivities({ cursor: "cursor-token", filter: "spend", limit: 12 }),
+      activityPage,
+    );
+    const activityCall = calls.at(-1);
+    assert.equal(
+      activityCall.input,
+      "/api/billing/activities?filter=spend&limit=12&cursor=cursor-token",
+    );
+    assert.equal(activityCall.options.cache, "no-store");
     const quote = findBillingQuote(summary, {
       count: 1,
       modelId: "nano-banana-2",

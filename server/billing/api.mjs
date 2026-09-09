@@ -141,7 +141,11 @@ export function billingApiError(error, requestId = newRequestId()) {
   }
   if (
     error instanceof BillingPersistenceError &&
-    ["CREDIT_ACCOUNT_UNAVAILABLE", "PRICE_NOT_AVAILABLE"].includes(error.code)
+    [
+      "CREDIT_ACCOUNT_UNAVAILABLE",
+      "PRICE_NOT_AVAILABLE",
+      "CREDIT_ACTIVITY_UNAVAILABLE",
+    ].includes(error.code)
   ) {
     return {
       body: {
@@ -150,6 +154,22 @@ export function billingApiError(error, requestId = newRequestId()) {
           message: error.message,
           requestId,
           retryable: true,
+        },
+      },
+      status: error.status,
+    };
+  }
+  if (
+    error instanceof BillingPersistenceError &&
+    error.code === "CREDIT_ACTIVITY_REQUEST_INVALID"
+  ) {
+    return {
+      body: {
+        error: {
+          code: error.code,
+          message: error.message,
+          requestId,
+          retryable: false,
         },
       },
       status: error.status,

@@ -113,15 +113,25 @@ individual icon. Upload, settings, and send align to the same 40px box.
 
 ## Account credit
 
-- Desktop uses a compact single-line summary above the existing account card:
-  the `积分余额` label and current available-credit number only. Per-image price,
-  batch total, and approximate remaining image count do not repeat in the
-  sidebar; generation pricing remains beside the composer actions.
+- Desktop shows `积分记录` as a normal low-emphasis navigation row immediately
+  below `帮助` in the lower sidebar. It has no secondary call-to-action copy.
+  The current balance replaces the signed-in status below the username as a
+  small Palace Red credit icon plus the exact numeric value, without `余额`,
+  `积分`, a fill, or a pill. Per-image price, batch total, and
+  approximate remaining image count do not repeat there; generation pricing
+  remains beside the composer actions.
 - Mobile uses one small neutral balance pill in the existing top bar. It is
-  context, not a primary action.
-- Loading and retry states keep the same footprint so account chrome does not
-  jump. Do not add a wallet panel, pricing hero, or checkout treatment before
+  context, not a primary action. The desktop entry and mobile pill may open
+  the dedicated credit-record view while retaining their quiet visual weight.
+- Loading and unavailable states keep the username subtitle footprint so account
+  chrome does not jump. Do not add a wallet panel, pricing hero, or checkout treatment before
   a real payment provider and customer checkout flow are accepted.
+- The credit-record view uses one compact `今日消耗 / 本周消耗 / 本月消耗`
+  summary, a quiet segmented filter, and white list rows with shallow separators.
+  Rows show only business category, batch reference when present, time, status,
+  and credit change. Model, resolution, count, prompt, and image-result controls
+  stay in the asset library; the record view must not resemble a checkout or
+  marketing dashboard.
 
 ## Site-owner account management
 

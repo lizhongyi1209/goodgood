@@ -8,6 +8,7 @@ import {
 import { PaymentError } from "./payment-errors.mjs";
 import { loadFakePaymentSandboxConfig } from "./payment-sandbox.mjs";
 import { requestIdFor } from "../observability/http.mjs";
+import { readCreditActivities } from "./activity-api.mjs";
 
 const JSON_HEADERS = {
   "cache-control": "no-store",
@@ -54,6 +55,7 @@ const DEFAULT_OPERATIONS = Object.freeze({
   acceptFakePaymentWebhook,
   createPaymentOrder,
   listBillingProducts,
+  readCreditActivities,
   readBillingSummary,
   readPaymentOrder,
 });
@@ -100,6 +102,21 @@ export function createBillingNodeApiHandler({
 
       const ownerContext = await authenticate(request);
       if (request.method === "GET") {
+        if (url.pathname === "/api/billing/activities") {
+          sendJson(
+            response,
+            200,
+            await operations.readCreditActivities({
+              input: {
+                cursor: url.searchParams.get("cursor"),
+                filter: url.searchParams.get("filter") ?? "all",
+                limit: url.searchParams.get("limit") ?? undefined,
+              },
+              ownerContext,
+            }),
+          );
+          return true;
+        }
         if (url.pathname === "/api/billing") {
           sendJson(
             response,

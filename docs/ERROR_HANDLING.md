@@ -234,6 +234,14 @@ credit, creates an account, exposes internal identifiers, or blocks the rest of
 the workspace. The account surface keeps a stable footprint and offers retry;
 an exact zero balance is rendered as data rather than treated as a failure.
 
+`GET /api/billing/activities` uses the same active-owner boundary. Invalid
+filter, limit, mismatched-filter cursor, or an owner-missing cursor returns
+non-retryable `CREDIT_ACTIVITY_REQUEST_INVALID`; unavailable account or storage
+remains retryable and exposes a support ID, not ledger details. A first-page
+failure keeps the page shell and offers retry. A load-more failure retains all
+previous rows and retries only that cursor. No read error mutates balance or
+falls back to payment behavior.
+
 Payment product and order APIs authenticate before owner-scoped access.
 Malformed requests and missing idempotency keys use stable 400 responses;
 same-key/different-product reuse returns `PAYMENT_IDEMPOTENCY_CONFLICT`.

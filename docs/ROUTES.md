@@ -3,7 +3,7 @@
 ## Current implementation
 
 The shared workspace mounts at `/`, `/create`, `/projects`,
-`/projects/:projectId`, `/assets`, and `/assets/:assetId`. `/create` is the
+`/projects/:projectId`, `/assets`, `/assets/:assetId`, and `/credits`. `/create` is the
 canonical product URL for creation; `/` remains a compatible entry to the same
 workspace state. Project and asset navigation use stable browser URLs and
 native history.
@@ -18,6 +18,7 @@ native history.
 | 帮助 | Placeholder | No view or route yet |
 | 图片详情 | Implemented | `/assets/:assetId` over its preserved source scope |
 | 账户管理 | Implemented | `/admin/users`, visible and callable only by the site owner |
+| 积分记录 | Implemented | `/credits`, entered from the quiet row below `帮助` or the mobile balance |
 
 Do not describe placeholders as shipped features.
 
@@ -45,6 +46,17 @@ reserved credit balances plus the active Banana 2 launch quotes for 1K, 2K, and
 4K. It is a read-only, no-store data boundary rather than a visible route. The
 response uses decimal strings for exact credit values and exposes no internal
 account, owner, provider-channel, or ledger identifiers.
+
+`GET /api/billing/activities` returns the authenticated owner's business-level
+credit activity with `all / spend / receive / return` filtering and opaque
+cursor pagination. A reserve and its settle/release closure project to one
+generation activity; refunds remain separate positive activities. The response
+includes settled-spend totals for the Shanghai calendar day, Monday-based week,
+and month. Each item exposes a stable `image_generation / video_generation /
+other` category and optional asset-library batch reference, but never repeats
+model, resolution, count, prompt, or result Asset details and never
+returns account IDs, ledger IDs, payment references, internal reasons, actors,
+or provider details. It is read-only and `no-store`.
 
 M6 also owns `GET /api/billing/products`, `POST /api/billing/orders`, and
 `GET /api/billing/orders/:orderId`. Product reads expose the active immutable
@@ -93,8 +105,8 @@ response after expiring its local cookie.
 
 ## Accepted production routes
 
-`/create`, `/projects`, `/projects/:projectId`, `/assets`, and
-`/assets/:assetId` are implemented today. Adopt future routes only when their
+`/create`, `/projects`, `/projects/:projectId`, `/assets`,
+`/assets/:assetId`, and `/credits` are implemented today. Adopt future routes only when their
 persistence and navigation behavior exist:
 
 | Route | Purpose |
@@ -104,6 +116,7 @@ persistence and navigation behavior exist:
 | `/projects/:projectId` | Restore and continue a project |
 | `/assets` | Batch/gallery asset library |
 | `/assets/:assetId` | Addressable image detail |
+| `/credits` | Owner-scoped period spend summary and concise credit changes |
 | `/explore` | Future discovery experience |
 | `/moodboards` | Future moodboards |
 | `/help` | Product help and status guidance |
@@ -125,6 +138,8 @@ do not create separate draft or history state.
   images the user was browsing.
 - Filters, selected mode, and scroll position should survive detail close and
   browser back navigation.
+- Entering or leaving `/credits` preserves in-memory creation and active jobs;
+  its filter stays ephemeral and does not put financial state in the URL.
 - Future URLs use stable IDs, never model names, prompts, or localized labels.
 - Administrative navigation is emitted only for the site-owner role, but route
   and API authorization remain server-side. Search terms containing email or

@@ -74,6 +74,65 @@ export interface BillingSummary {
   quotes: readonly BillingGenerationQuote[];
 }
 
+export const creditActivityFilters = [
+  "all",
+  "spend",
+  "receive",
+  "return",
+] as const;
+
+export type CreditActivityFilter = (typeof creditActivityFilters)[number];
+
+export type CreditActivityKind =
+  | "generation"
+  | "welcome"
+  | "promotion"
+  | "purchase"
+  | "refund"
+  | "adjustment"
+  | "expiration"
+  | "credit";
+
+export type CreditActivityStatus =
+  | "processing"
+  | "spent"
+  | "released"
+  | "credited"
+  | "refunded"
+  | "adjusted"
+  | "expired";
+
+export type CreditActivityCategory =
+  | "image_generation"
+  | "video_generation"
+  | "other";
+
+export interface CreditActivitySpendSummary {
+  today: SerializedCreditAmount;
+  thisWeek: SerializedCreditAmount;
+  thisMonth: SerializedCreditAmount;
+}
+
+export interface CreditActivityItem {
+  id: string;
+  kind: CreditActivityKind;
+  status: CreditActivityStatus;
+  category: CreditActivityCategory;
+  batchReference: string | null;
+  amount: SerializedCreditAmount;
+  creditAmount: SerializedCreditAmount;
+  unit: string;
+  occurredAt: string;
+  completedAt: string | null;
+}
+
+export interface CreditActivityPage {
+  account: BillingAccountSummary;
+  spendSummary: CreditActivitySpendSummary;
+  items: readonly CreditActivityItem[];
+  nextCursor: string | null;
+}
+
 export interface BillingPaymentProduct {
   id: string;
   version: number;

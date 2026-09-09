@@ -78,7 +78,11 @@ duplicating a release log.
   cost 10 credits each; GPT batches of `1 / 2 / 4` therefore cost `10 / 20 / 40`.
   Nano Banana Pro has a published single-image quote of 15 credits, while its
   provider route remains unavailable. Billing uses transactional
-  reserve/settle/release semantics and private credit summaries.
+  reserve/settle/release semantics, private credit summaries, and an owner-only
+  activity view that summarizes today's, this week's, and this month's settled
+  spend. Each row identifies image generation, video generation, or another
+  change and uses the asset-library batch reference for traceability instead of
+  repeating generation configuration or exposing raw ledger operations.
 - Registration is open but creative use requires site-owner approval.
   `pending / active / suspended`, system role and product tier are distinct.
   `/admin/users` provides audited review and free test-credit grants. The site

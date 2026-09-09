@@ -19,6 +19,26 @@
   area and as a compact mobile balance. Initial loading stays quiet; a read
   failure keeps the workspace usable and offers a local retry. Zero is a valid
   balance, never an empty or error state.
+- On wide screens, a normal `积分记录` navigation row sits immediately below
+  `帮助` in the lower sidebar; the available balance sits below the username
+  as a Palace Red credit icon plus number. Its accessible name retains the full
+  `积分余额 N` meaning. On narrow screens, the compact balance
+  remains the entry. Selecting either opens `/credits` without discarding the
+  current composer, project, or active generation. The view shows settled spend
+  for today, the current Monday-based week, and the current month plus
+  `全部 / 消费 / 获得 / 退回` filters and stable load-more pagination; it always
+  offers a quick return to creation.
+- A generation reservation is one user-facing record. While open it reads as
+  processing, settlement changes it to consumed, and release changes it to
+  not charged with the reserved amount returned. A later refund is a separate
+  positive record. Raw reserve/settle rows and internal reasons never appear.
+- Each record identifies `图片生成 / 视频生成 / 其他变动`. Generation rows use
+  the same batch reference shown by the asset library; they do not repeat model,
+  resolution, count, prompt, or result-detail controls.
+- Credit-record loading, empty, first-page failure, retry, and load-more failure
+  preserve the page silhouette and any already loaded records. A successful
+  generation is traced in the asset library by its batch reference. Records
+  before credit metering are not invented or backfilled.
 - Open Authing login provisions a new GoodGood owner in `pending` access state.
   The authenticated pending surface replaces the creation workspace with one
   compact review message, shows that the 100 welcome credits are waiting, and

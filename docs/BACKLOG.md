@@ -30,6 +30,7 @@
 | GG-022 | 修复 alpha 后续发布的隔离恢复演练 | 已上线并通过真实恢复/发布验收 | [任务](tasks/GG-022-ongoing-production-restore.md) |
 | GG-023 | 升级 Sharp 以修复新识别的 HIGH 漏洞 | 安全镜像 CI 通过；待新生产/冒烟授权 | [任务](tasks/GG-023-sharp-security-update.md) |
 | GG-024 | 修复站长账户管理弹框与列表操作样式 | 本地已验证；待站长验收 | [任务](tasks/GG-024-admin-dialog-styles.md) |
+| GG-025 | 用户积分记录页与只读账本投影 | 第三轮图标反馈本地已验证，待用户验收 | [任务](tasks/GG-025-credit-activity.md) |
 | GG-026 | 合并账户管理与积分记录并整合本地预览环境 | 实施中 | [任务](tasks/GG-026-local-feature-integration.md) |
 
 下一个普通产品需求从 **GG-027** 分配并检查是否已被占用。每次 alpha 发布仍须取得
