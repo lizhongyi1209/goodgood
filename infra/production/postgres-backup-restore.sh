@@ -7,6 +7,7 @@ readonly source_user="goodgood"
 readonly backup_root="/var/backups/goodgood-production"
 readonly restore_container="goodgood-production-postgres-restore-drill"
 readonly restore_database="goodgood_restore_drill"
+readonly maintenance_marker="/etc/goodgood/production/maintenance.enabled"
 
 temporary_archive=""
 restore_started="false"
@@ -109,6 +110,10 @@ fi
 if docker inspect "${restore_container}" >/dev/null 2>&1; then
   fail "The fixed restore-drill container name is already in use."
 fi
+if [[ ! -f "${maintenance_marker}" || -L "${maintenance_marker}" || \
+  "$(stat --format '%u:%g:%a' "${maintenance_marker}")" != "0:0:644" ]]; then
+  fail "The restore drill requires the reviewed production maintenance marker."
+fi
 
 application_schema="$(docker exec "${source_container}" psql \
   --username "${source_user}" \
@@ -120,17 +125,21 @@ application_schema="$(docker exec "${source_container}" psql \
      AND to_regclass('public.generation_jobs') IS NOT NULL
     THEN 'present' ELSE 'absent' END")"
 if [[ "${application_schema}" == "present" ]]; then
-  quiescence="$(docker exec "${source_container}" psql \
+  source_activity="$(docker exec "${source_container}" psql \
     --username "${source_user}" \
     --dbname "${source_database}" \
     --tuples-only \
     --no-align \
     --command "SELECT (SELECT count(*) FROM auth_sessions WHERE revoked_at IS NULL AND expires_at > now()) || '|' || (SELECT count(*) FROM generation_jobs WHERE state IN ('queued', 'running', 'refining'))")"
 else
-  quiescence="0|0"
+  source_activity="0|0"
 fi
-[[ "${quiescence}" == "0|0" ]] || \
-  fail "The restore drill requires zero active sessions and generation jobs."
+[[ "${source_activity}" =~ ^[0-9]+\|[0-9]+$ ]] || \
+  fail "The source activity summary is malformed." 70
+source_active_sessions="${source_activity%%|*}"
+source_active_generation_jobs="${source_activity##*|}"
+[[ "${source_active_generation_jobs}" == "0" ]] || \
+  fail "The restore drill requires zero active generation jobs."
 
 source_tables="$(docker exec "${source_container}" psql \
   --username "${source_user}" \
@@ -214,5 +223,7 @@ printf 'archive_sha256=%s\n' "$(sha256sum "${archive_path}" | awk '{print $1}')"
 printf 'public_tables=%s\n' "${table_count}"
 printf 'public_rows=%s\n' "${row_count}"
 printf 'migrations=%s\n' "${migration_count}"
+printf 'active_sessions_observed=%s\n' "${source_active_sessions}"
+printf 'active_generation_jobs=%s\n' "${source_active_generation_jobs}"
 printf 'network=none\n'
 printf 'storage=tmpfs\n'

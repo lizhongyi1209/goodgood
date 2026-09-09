@@ -27,8 +27,9 @@
 | GG-019 | 参考图点击查看完整大图并精简右上角删除按钮 | 3010 浏览器已验证；未发布 | [任务](tasks/GG-019-reference-large-preview.md) |
 | GG-020 | 参考图快捷编辑：裁剪、画笔、贴图、箭头与 bbox | 3010 浏览器已验证，取消确认样式已复核；未发布 | [任务](tasks/GG-020-reference-quick-editor.md) |
 | GG-021 | Nano Banana Pro 单张定价 15 积分 | 3010 已验证；待站长验收；未发布 | [任务](tasks/GG-021-nano-banana-pro-pricing.md) |
+| GG-022 | 修复 alpha 后续发布的隔离恢复演练 | 实施中；生产维护保持 503 | [任务](tasks/GG-022-ongoing-production-restore.md) |
 
-下一个普通产品需求从 **GG-022** 分配并检查是否已被占用。
+下一个普通产品需求从 **GG-023** 分配并检查是否已被占用。
 GG-003 的独立工具已恢复；每次实际 alpha 发布仍必须取得新鲜精确候选证据并通过该门禁。
 
 ## 已明确搁置（不得自动恢复）

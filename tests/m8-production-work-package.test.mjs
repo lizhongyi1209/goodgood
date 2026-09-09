@@ -134,3 +134,32 @@ test("work package contains no local/live executor or R2 deletion implementation
   );
   assert.ok(PRODUCTION_WORK_PACKAGE_FILES.length >= 27);
 });
+
+test("ongoing production restore observes sessions but blocks active generation", async () => {
+  const restore = await readFile(
+    new URL("../infra/production/postgres-backup-restore.sh", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(
+    restore,
+    /maintenance_marker="\/etc\/goodgood\/production\/maintenance\.enabled"/,
+  );
+  assert.match(restore, /source_active_sessions="\$\{source_activity%%\|\*\}"/);
+  assert.match(
+    restore,
+    /source_active_generation_jobs="\$\{source_activity##\*\|\}"/,
+  );
+  assert.match(
+    restore,
+    /The restore drill requires zero active generation jobs\./,
+  );
+  assert.doesNotMatch(
+    restore,
+    /The restore drill requires zero active sessions and generation jobs\./,
+  );
+  assert.match(restore, /active_sessions_observed=%s/);
+  assert.match(restore, /active_generation_jobs=%s/);
+  assert.match(restore, /--network none/);
+  assert.match(restore, /--tmpfs \/var\/lib\/postgresql\/data/);
+});
