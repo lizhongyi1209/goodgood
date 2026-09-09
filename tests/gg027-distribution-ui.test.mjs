@@ -76,6 +76,14 @@ test("GG-027 station owner controls roles and direct parents with audited reason
   assert.match(parentRoute, /updateAdminDirectParent/);
 });
 
+test("GG-027 account-management selects always open below their triggers", async () => {
+  const admin = await source("features/admin/account-management-page.tsx");
+  assert.equal((admin.match(/position="popper"/g) ?? []).length, 3);
+  assert.equal((admin.match(/side="bottom"/g) ?? []).length, 3);
+  assert.equal((admin.match(/avoidCollisions=\{false\}/g) ?? []).length, 3);
+  assert.equal((admin.match(/sideOffset=\{6\}/g) ?? []).length, 3);
+});
+
 test("GG-027 browser routes keep read operations cacheless and transfer writes CSRF-protected", async () => {
   const [summaryRoute, childRoute, transferRoute] = await Promise.all([
     source("app/api/distribution/route.ts"),

@@ -385,7 +385,14 @@ export function AccountManagementPage() {
             <div className="flex items-center gap-2">
               <Select value={status} onValueChange={(value) => setStatus(value as ManagedAccountStatus | "all")}>
                 <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
-                <SelectContent>
+                <SelectContent
+                  align="start"
+                  avoidCollisions={false}
+                  className="max-h-60"
+                  position="popper"
+                  side="bottom"
+                  sideOffset={6}
+                >
                   <SelectItem value="all">全部状态</SelectItem>
                   <SelectItem value="pending">待审核</SelectItem>
                   <SelectItem value="active">已启用</SelectItem>
@@ -558,7 +565,14 @@ export function AccountManagementPage() {
                 <label htmlFor="business-role">业务身份</label>
                 <Select value={businessRole} onValueChange={(value) => setBusinessRole(value as BusinessRole | "none")}>
                   <SelectTrigger id="business-role"><SelectValue /></SelectTrigger>
-                  <SelectContent>
+                  <SelectContent
+                    align="start"
+                    avoidCollisions={false}
+                    className="max-h-60"
+                    position="popper"
+                    side="bottom"
+                    sideOffset={6}
+                  >
                     <SelectItem value="none">无业务身份</SelectItem>
                     <SelectItem value="enterprise">企业</SelectItem>
                     <SelectItem value="distributor">分销商</SelectItem>
@@ -572,7 +586,14 @@ export function AccountManagementPage() {
                 <label htmlFor="direct-parent">直属上级</label>
                 <Select value={parentOwnerId} onValueChange={setParentOwnerId}>
                   <SelectTrigger id="direct-parent"><SelectValue /></SelectTrigger>
-                  <SelectContent>
+                  <SelectContent
+                    align="start"
+                    avoidCollisions={false}
+                    className="max-h-60"
+                    position="popper"
+                    side="bottom"
+                    sideOffset={6}
+                  >
                     <SelectItem value="none">无直属上级</SelectItem>
                     {dashboard?.eligibleParents
                       .filter((parent) => parent.id !== selected.account.id)

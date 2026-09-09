@@ -146,6 +146,9 @@ individual icon. Upload, settings, and send align to the same 40px box.
 - Use existing table, dialog, select, input, and alert-dialog primitives where
   their semantics match. Granting credit requires an explicit confirmation and
   never uses checkout, wallet, or payment visual language.
+- Account-management select lists open below and left-aligned to their trigger
+  with a small gap; they do not flip upward over the field or preceding
+  content. Long candidate lists keep a bounded height and scroll internally.
 - Loading, empty, failure, retry, and mutation-in-progress states retain the
   page silhouette so rows and controls do not jump.
 
