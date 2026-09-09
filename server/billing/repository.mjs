@@ -14,7 +14,7 @@ const PRODUCT_MODELS = new Set([
 ]);
 const RESOLUTIONS = new Set(["1K", "2K", "4K"]);
 const OUTPUT_COUNTS = new Set([1, 2, 4]);
-const ACTORS = new Set(["system", "worker", "operator", "payment"]);
+const ACTORS = new Set(["system", "worker", "operator", "payment", "owner"]);
 
 export const WELCOME_CREDIT_AMOUNT = 100n;
 export const WELCOME_CREDIT_CAMPAIGN = "welcome-v1";
@@ -330,7 +330,7 @@ async function findExistingEntry(client, accountId, idempotencyKey) {
   return result.rows[0] ?? null;
 }
 
-async function appendCreditEntryInTransaction(
+export async function appendCreditEntryInTransaction(
   client,
   {
     accountRow,

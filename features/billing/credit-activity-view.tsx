@@ -45,10 +45,13 @@ function otherActivityLabel(item: CreditActivityItem) {
   if (item.kind === "refund") return "积分退回";
   if (item.kind === "expiration") return "积分到期";
   if (item.kind === "adjustment") return "积分调整";
+  if (item.kind === "transfer_out") return "分配给直属下级";
+  if (item.kind === "transfer_in") return "收到上级分配";
   return "GoodGood 积分";
 }
 
 function statusLabel(item: CreditActivityItem) {
+  if (item.kind === "transfer_out") return "已划拨";
   if (item.status === "processing") return "预留中";
   if (item.status === "spent") return "已消费";
   if (item.status === "released") return `${item.creditAmount} 积分已退回`;
@@ -65,7 +68,7 @@ function amountLabel(item: CreditActivityItem) {
 
 function activityDetail(item: CreditActivityItem) {
   return item.batchReference
-    ? <>批次 <span className="credit-activity-batch">{item.batchReference}</span></>
+    ? <>{item.kind === "transfer_out" || item.kind === "transfer_in" ? "编号" : "批次"} <span className="credit-activity-batch">{item.batchReference}</span></>
     : otherActivityLabel(item);
 }
 

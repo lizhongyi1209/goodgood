@@ -6,6 +6,8 @@ export const CREDIT_LEDGER_ENTRY_TYPES = Object.freeze([
   "refund",
   "expire",
   "adjust",
+  "transfer_out",
+  "transfer_in",
 ]);
 
 function toBigInt(value, fieldName) {
@@ -36,10 +38,10 @@ export function creditBalanceDeltas(entryType, value) {
   const amount = toBigInt(value, "signed amount");
   if (amount === 0n) throw new RangeError("Credit ledger amount cannot be zero.");
 
-  if (["grant", "release", "refund"].includes(entryType) && amount < 0n) {
+  if (["grant", "release", "refund", "transfer_in"].includes(entryType) && amount < 0n) {
     throw new RangeError(`${entryType} requires a positive signed amount.`);
   }
-  if (["reserve", "settle", "expire"].includes(entryType) && amount > 0n) {
+  if (["reserve", "settle", "expire", "transfer_out"].includes(entryType) && amount > 0n) {
     throw new RangeError(`${entryType} requires a negative signed amount.`);
   }
 

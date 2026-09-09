@@ -7,6 +7,8 @@ const ACTIVITY_ENTRY_TYPES = new Set([
   "refund",
   "expire",
   "adjust",
+  "transfer_out",
+  "transfer_in",
 ]);
 const ACTIVITY_REFERENCE_PREFIX = "goodgood-credit-activity-v1:";
 
@@ -122,6 +124,22 @@ function activityFromRow(row) {
       status: "expired",
     };
   }
+  if (row.entry_type === "transfer_out") {
+    return {
+      ...base,
+      amount: amount.toString(),
+      kind: "transfer_out",
+      status: "spent",
+    };
+  }
+  if (row.entry_type === "transfer_in") {
+    return {
+      ...base,
+      amount: amount.toString(),
+      kind: "transfer_in",
+      status: "credited",
+    };
+  }
   return {
     ...base,
     amount: amount.toString(),
@@ -137,7 +155,7 @@ async function resolveCursor(pool, { activityId, createdAt }, ownerId) {
        FROM credit_ledger_entries
       WHERE owner_id = $1
         AND created_at = $2::timestamptz
-        AND entry_type IN ('grant', 'reserve', 'refund', 'expire', 'adjust')
+        AND entry_type IN ('grant', 'reserve', 'refund', 'expire', 'adjust', 'transfer_out', 'transfer_in')
         AND md5('${ACTIVITY_REFERENCE_PREFIX}' || id::text) = $3
       LIMIT 1`,
     [ownerId, createdAt, digest],
@@ -177,16 +195,18 @@ export async function listCreditActivities(
        LEFT JOIN generation_jobs job
          ON job.id = entry.related_job_id AND job.owner_id = entry.owner_id
       WHERE entry.owner_id = $1
-        AND entry.entry_type IN ('grant', 'reserve', 'refund', 'expire', 'adjust')
+        AND entry.entry_type IN ('grant', 'reserve', 'refund', 'expire', 'adjust', 'transfer_out', 'transfer_in')
         AND (
           $2::text = 'all'
           OR ($2 = 'spend' AND (
             (entry.entry_type = 'reserve' AND COALESCE(closing.entry_type, 'open') IN ('open', 'settle'))
             OR entry.entry_type = 'expire'
+            OR entry.entry_type = 'transfer_out'
             OR (entry.entry_type = 'adjust' AND entry.amount < 0)
           ))
           OR ($2 = 'receive' AND (
             entry.entry_type = 'grant'
+            OR entry.entry_type = 'transfer_in'
             OR (entry.entry_type = 'adjust' AND entry.amount > 0)
           ))
           OR ($2 = 'return' AND (

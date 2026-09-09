@@ -454,6 +454,9 @@ set requires a new inventory and approval.
 - Same-key/same-transfer retry returns the original completed transfer.
   Same-key/different-input reuse returns
   `CREDIT_TRANSFER_IDEMPOTENCY_CONFLICT` without mutation.
+- Missing mutation CSRF evidence returns `DISTRIBUTION_CSRF_CHECK_FAILED` before
+  parsing or writing a transfer. Malformed child IDs, amounts, remarks, limits,
+  or opaque cursors return `CREDIT_TRANSFER_REQUEST_INVALID`.
 - Site-owner attempts to create a self-link, active cycle, unchanged relationship,
   parent without an active business role, second active parent, or duplicate
   business-role interval fail with stable 409 codes such as

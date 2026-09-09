@@ -14,6 +14,7 @@ import {
 } from "../auth/request-authenticator.mjs";
 import { createGenerationNodeApiHandler } from "../generation/node-api.mjs";
 import { createCreationDraftNodeApiHandler } from "../drafts/node-api.mjs";
+import { createDistributionNodeApiHandler } from "../distribution/node-api.mjs";
 import { createReferenceNodeApiHandler } from "../references/node-api.mjs";
 import { createProjectNodeApiHandler } from "../projects/node-api.mjs";
 import { observeHttpRequest } from "../observability/http.mjs";
@@ -54,6 +55,7 @@ const handleGenerationNodeApi = createGenerationNodeApiHandler({
 });
 const handleAdminNodeApi = createAdminNodeApiHandler({ authenticate });
 const handleCreationDraftNodeApi = createCreationDraftNodeApiHandler({ authenticate });
+const handleDistributionNodeApi = createDistributionNodeApiHandler({ authenticate });
 const handleAssetNodeApi = createAssetNodeApiHandler({ authenticate });
 const handleBillingNodeApi = createBillingNodeApiHandler({ authenticate });
 const handleReferenceNodeApi = createReferenceNodeApiHandler({ authenticate });
@@ -83,6 +85,9 @@ server.on("request", (request, response) => {
     .then((handled) => (handled ? true : handleAdminNodeApi(request, response)))
     .then((handled) =>
       handled ? true : handleCreationDraftNodeApi(request, response),
+    )
+    .then((handled) =>
+      handled ? true : handleDistributionNodeApi(request, response),
     )
     .then((handled) =>
       handled ? true : handleReferenceNodeApi(request, response),

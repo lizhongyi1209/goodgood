@@ -559,6 +559,14 @@ downstream price, fiat amount, payment, order, commission, revenue, or withdrawa
 contract; the existing operator-only manual-payment command remains the only
 pre-checkout paid-credit path.
 
+The local stage-3 implementation serializes transfer requests by parent-scoped
+idempotency identity, shares the hierarchy mutation lock with site-owner role
+and relationship changes, locks both credit accounts in owner-ID order, and
+rechecks active parent role, active direct relationship, account access, and
+payment-funded available credit before appending either ledger side. Transfer
+history is caller-scoped and keyset paginated; direct-child summaries expose
+only identity and allocation totals, not the child's private balance.
+
 The read side is deliberately narrower than the ledger. `GET /api/billing`
 authenticates before resolving the owner, performs no mutation, returns
 `Cache-Control: no-store`, and serializes exact aggregate and payment-funded
@@ -577,3 +585,7 @@ the same job/batch reference already visible in the asset library. Cursor and
 item references use derived public activity tokens; raw ledger/account/payment/
 provider identifiers, generation configuration, prompts, and reasons stay
 server-only.
+Transfer ledger rows appear in the same activity projection as `其他变动` with
+their public `trf_` reference. They may participate in received/outgoing list
+filters, but they are deliberately excluded from today/week/month generation
+consumption totals because allocation is not product usage.

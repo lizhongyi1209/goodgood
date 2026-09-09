@@ -44,16 +44,18 @@ existing history from paid-order evidence while treating every unproven source
 as non-transferable. Migration 0021 adds interval-based
 enterprise/distributor business-role assignments, one active direct-parent
 relationship per child, guarded immutable history, and hierarchy fields on the
-existing administrative audit. Active-cycle rejection remains a transactional
+existing administrative audit. Migration 0022 adds immutable `CreditTransfer`
+records and paired `transfer_out` / `transfer_in` ledger types. Active-cycle rejection remains a transactional
 service check serialized with hierarchy mutation; the database independently
 rejects self-links and a second active parent. The Drizzle schema mirrors the
-durable schema across all twenty-one migrations. A
+durable schema across all twenty-two migrations. A
 fuller project-backed creation session record and entitlements
 remain canonical contracts for later slices.
 
 ADR 0043 accepts an additive migration sequence for payment-funded credit
 provenance, business roles, direct relationships, and paired credit transfers.
-Migrations 0020 and 0021 locally implement the provenance and hierarchy phases.
+Migrations 0020 through 0022 locally implement the provenance, hierarchy, and
+atomic-transfer phases.
 Migration 0020 derives existing source classification from
 immutable evidence: a grant uniquely linked from a paid `PaymentOrder` is
 payment-funded; existing welcome/test/promotion/adjustment value is
@@ -318,6 +320,9 @@ relationship snapshot, idempotency identity/hash, optional non-secret remark,
 paired ledger entry references, actor owner, and timestamp. Normal state is
 completed in one transaction; exceptional site-owner correction is a new
 compensating transfer linked to the original, never an edit or deletion.
+The parent ledger amount and its payment-funded portion are both the exact
+negative transfer amount; the child values are the exact positive amount. No
+price, currency, payment receipt, commission, or downstream order is stored.
 
 ### PaymentProductVersion
 

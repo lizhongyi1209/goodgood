@@ -169,6 +169,10 @@ export function setBusinessRole(
       assertMatchingReplay(replay, operationHash);
       return hierarchyReplay(replay);
     }
+    await client.query(
+      "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
+      ["account-hierarchy:mutate"],
+    );
 
     const target = await client.query(
       "SELECT id FROM users WHERE id = $1 FOR UPDATE",

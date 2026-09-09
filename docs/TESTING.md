@@ -575,6 +575,10 @@ The timestamped result of the latest verified gate belongs in
   direct-child list isolation, atomic paired transfers, public references,
   opaque pagination, responsive loading/empty/failure/conflict states, and the
   absence of price/payment/commission controls.
+- Stage-3 database coverage must additionally race two valid transfers against
+  one insufficient transferable balance, prove exactly one commit, verify that
+  aggregate and payment-funded totals remain globally zero-sum, and confirm
+  transfer activity does not inflate generation-consumption summaries.
 - Equivalent provider fallback preserves the selected GoodGood model and
   records every attempt.
 

@@ -6,10 +6,12 @@ export const creditLedgerEntryTypes = [
   "refund",
   "expire",
   "adjust",
+  "transfer_out",
+  "transfer_in",
 ] as const;
 
 export type CreditLedgerEntryType = (typeof creditLedgerEntryTypes)[number];
-export type CreditActor = "system" | "worker" | "operator" | "payment";
+export type CreditActor = "system" | "worker" | "operator" | "payment" | "owner";
 
 export interface GenerationPriceVersion {
   id: string;
@@ -95,6 +97,8 @@ export type CreditActivityKind =
   | "refund"
   | "adjustment"
   | "expiration"
+  | "transfer_out"
+  | "transfer_in"
   | "credit";
 
 export type CreditActivityStatus =

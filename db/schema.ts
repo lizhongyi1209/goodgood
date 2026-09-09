@@ -1033,12 +1033,12 @@ export const creditLedgerEntries = pgTable(
       .where(sql`${table.entryType} = 'refund'`),
     check(
       "credit_ledger_entries_type_check",
-      sql`${table.entryType} in ('grant', 'reserve', 'settle', 'release', 'refund', 'expire', 'adjust')`,
+      sql`${table.entryType} in ('grant', 'reserve', 'settle', 'release', 'refund', 'expire', 'adjust', 'transfer_out', 'transfer_in')`,
     ),
     check(
       "credit_ledger_entries_amount_sign_check",
-      sql`(${table.entryType} in ('grant', 'release', 'refund') and ${table.amount} > 0)
-        or (${table.entryType} in ('reserve', 'settle', 'expire') and ${table.amount} < 0)
+      sql`(${table.entryType} in ('grant', 'release', 'refund', 'transfer_in') and ${table.amount} > 0)
+        or (${table.entryType} in ('reserve', 'settle', 'expire', 'transfer_out') and ${table.amount} < 0)
         or (${table.entryType} = 'adjust' and ${table.amount} <> 0)`,
     ),
     check(
@@ -1060,13 +1060,102 @@ export const creditLedgerEntries = pgTable(
     ),
     check(
       "credit_ledger_entries_actor_check",
-      sql`${table.actor} in ('system', 'worker', 'operator', 'payment')`,
+      sql`${table.actor} in ('system', 'worker', 'operator', 'payment', 'owner')`,
     ),
     check(
       "credit_ledger_entries_relation_check",
       sql`(${table.entryType} in ('settle', 'release', 'refund') and ${table.priorEntryId} is not null and ${table.relatedJobId} is not null)
         or (${table.entryType} = 'reserve' and ${table.priorEntryId} is null and ${table.relatedJobId} is not null)
+        or (${table.entryType} in ('transfer_out', 'transfer_in') and ${table.priorEntryId} is null and ${table.relatedJobId} is null and ${table.relatedPaymentRef} is null)
         or (${table.entryType} in ('grant', 'expire', 'adjust'))`,
+    ),
+  ],
+);
+
+export const creditTransfers = pgTable(
+  "credit_transfers",
+  {
+    id: uuid("id").primaryKey(),
+    publicId: text("public_id").notNull(),
+    parentOwnerId: uuid("parent_owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    childOwnerId: uuid("child_owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    relationshipId: uuid("relationship_id")
+      .notNull()
+      .references(() => accountRelationships.id, { onDelete: "restrict" }),
+    unit: text("unit").notNull(),
+    amount: bigint("amount", { mode: "bigint" }).notNull(),
+    parentLedgerEntryId: uuid("parent_ledger_entry_id")
+      .notNull()
+      .references(() => creditLedgerEntries.id, { onDelete: "restrict" }),
+    childLedgerEntryId: uuid("child_ledger_entry_id")
+      .notNull()
+      .references(() => creditLedgerEntries.id, { onDelete: "restrict" }),
+    actorOwnerId: uuid("actor_owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    remark: text("remark"),
+    idempotencyKey: text("idempotency_key").notNull(),
+    operationHash: text("operation_hash").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("credit_transfers_public_id_unique").on(table.publicId),
+    uniqueIndex("credit_transfers_parent_idempotency_unique").on(
+      table.parentOwnerId,
+      table.idempotencyKey,
+    ),
+    uniqueIndex("credit_transfers_parent_entry_unique").on(
+      table.parentLedgerEntryId,
+    ),
+    uniqueIndex("credit_transfers_child_entry_unique").on(
+      table.childLedgerEntryId,
+    ),
+    index("credit_transfers_parent_created_idx").on(
+      table.parentOwnerId,
+      table.createdAt,
+      table.id,
+    ),
+    index("credit_transfers_child_created_idx").on(
+      table.childOwnerId,
+      table.createdAt,
+      table.id,
+    ),
+    index("credit_transfers_relationship_created_idx").on(
+      table.relationshipId,
+      table.createdAt,
+      table.id,
+    ),
+    check(
+      "credit_transfers_public_id_check",
+      sql`${table.publicId} ~ '^trf_[0-9a-f]{32}$'`,
+    ),
+    check(
+      "credit_transfers_owner_shape_check",
+      sql`${table.parentOwnerId} <> ${table.childOwnerId} and ${table.actorOwnerId} = ${table.parentOwnerId}`,
+    ),
+    check("credit_transfers_unit_check", sql`${table.unit} = 'credit'`),
+    check("credit_transfers_amount_check", sql`${table.amount} > 0`),
+    check(
+      "credit_transfers_entry_shape_check",
+      sql`${table.parentLedgerEntryId} <> ${table.childLedgerEntryId}`,
+    ),
+    check(
+      "credit_transfers_remark_check",
+      sql`${table.remark} is null or length(${table.remark}) between 1 and 200`,
+    ),
+    check(
+      "credit_transfers_idempotency_key_check",
+      sql`length(${table.idempotencyKey}) between 8 and 200`,
+    ),
+    check(
+      "credit_transfers_operation_hash_check",
+      sql`length(${table.operationHash}) = 64`,
     ),
   ],
 );
