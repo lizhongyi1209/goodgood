@@ -2,6 +2,27 @@
 @import "tw-animate-css";
 @import "../vendor/shadcn-tailwind-4.13.0.css";
 
+@theme inline {
+  --color-background: var(--white);
+  --color-foreground: var(--ink);
+  --color-card: var(--white);
+  --color-card-foreground: var(--ink);
+  --color-popover: var(--white);
+  --color-popover-foreground: var(--ink);
+  --color-primary: var(--accent);
+  --color-primary-foreground: var(--white);
+  --color-secondary: var(--soft);
+  --color-secondary-foreground: var(--ink);
+  --color-muted: var(--soft);
+  --color-muted-foreground: var(--muted);
+  --color-accent: var(--soft);
+  --color-accent-foreground: var(--ink);
+  --color-destructive: var(--accent-deep);
+  --color-border: var(--line);
+  --color-input: var(--line);
+  --color-ring: var(--accent);
+}
+
 :root {
   color-scheme: light;
   --canvas: #f8f8fa;
@@ -94,6 +115,37 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .authentication-primary:hover { background: #17171d; }
 .authentication-loading { width: auto; padding: 16px 20px; flex-direction: row; gap: 10px; color: var(--muted); font-size: 12px; }
 .authentication-loading svg { animation: authentication-spin .9s linear infinite; }
+
+.admin-action-dialog-overlay { background: rgba(24,24,30,.38); backdrop-filter: blur(2px); }
+[data-slot="dialog-content"].admin-action-dialog { width: min(470px,calc(100vw - 32px)); max-width: none; max-height: calc(100dvh - 32px); gap: 0; overflow-y: auto; padding: 0; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--white); color: var(--ink); box-shadow: 0 18px 52px rgba(22,22,28,.18), 0 2px 8px rgba(22,22,28,.06); }
+.admin-action-dialog > [data-slot="dialog-close"] { width: 32px; height: 32px; top: 13px; right: 13px; border-radius: 9px; background: transparent; display: grid; place-items: center; color: var(--muted); opacity: 1; }
+.admin-action-dialog > [data-slot="dialog-close"]:hover { background: var(--soft); color: var(--ink); }
+.admin-action-dialog > [data-slot="dialog-close"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; box-shadow: none; }
+.admin-action-dialog-header { padding: 21px 56px 0 22px; gap: 5px; align-items: start; text-align: left; }
+.admin-action-dialog-header [data-slot="dialog-title"] { margin: 0; color: var(--ink); font-size: 17px; font-weight: 680; line-height: 1.35; letter-spacing: -.025em; }
+.admin-action-dialog-header [data-slot="dialog-description"] { margin: 0; overflow-wrap: anywhere; color: var(--muted); font-size: 12px; line-height: 1.65; }
+.admin-action-dialog-body { padding: 20px 22px 18px; display: grid; gap: 18px; }
+.admin-action-account-summary { min-height: 54px; padding: 10px 13px; border-radius: 11px; background: var(--canvas); display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.admin-action-account-summary span { color: var(--muted); font-size: 11px; }
+.admin-action-account-summary strong { color: var(--ink); font-size: 14px; font-weight: 670; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.admin-action-field { min-width: 0; }
+.admin-action-field > label { color: #55555f; font-size: 12px; font-weight: 640; }
+.admin-action-presets { margin-top: 9px; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 7px; }
+.admin-action-presets [data-slot="button"] { height: 34px; border-radius: 9px; box-shadow: none; font-size: 11px; }
+.admin-action-presets [data-variant="outline"] { border-color: var(--line); background: var(--white); color: #62626c; }
+.admin-action-presets [data-variant="outline"]:hover { background: var(--soft); color: var(--ink); }
+.admin-action-dialog [data-slot="input"], .admin-action-dialog [data-slot="textarea"] { border: 1px solid #dddde2; border-radius: 10px; background: #fafafb; color: var(--ink); box-shadow: none; }
+.admin-action-dialog [data-slot="input"] { height: 40px; margin-top: 8px; }
+.admin-action-dialog [data-slot="textarea"] { min-height: 104px; margin-top: 8px; resize: vertical; line-height: 1.55; }
+.admin-action-dialog [data-slot="input"]:focus-visible, .admin-action-dialog [data-slot="textarea"]:focus-visible { border-color: rgba(181,43,48,.5); box-shadow: 0 0 0 3px rgba(181,43,48,.09); }
+.admin-action-help { margin: 6px 0 0; color: var(--quiet); font-size: 10px; line-height: 1.5; }
+.admin-action-error { margin: -2px 0 0; padding: 9px 11px; border-radius: 9px; background: var(--accent-soft); color: var(--accent-deep); font-size: 11px; line-height: 1.5; }
+.admin-action-dialog-footer { padding: 0 22px 22px; display: flex; flex-direction: row; justify-content: flex-end; gap: 8px; }
+.admin-action-dialog-footer [data-slot="button"] { min-width: 84px; height: 36px; border-radius: 10px; box-shadow: none; font-size: 11px; font-weight: 640; }
+.admin-action-dialog-footer [data-variant="outline"] { border-color: var(--line); background: var(--white); color: #62626c; }
+.admin-action-dialog-footer [data-variant="outline"]:hover { background: var(--soft); color: var(--ink); }
+.admin-action-dialog-footer [data-variant="default"], .admin-action-dialog-footer [data-variant="destructive"] { border-color: var(--accent); background: var(--accent); color: var(--white); }
+.admin-action-dialog-footer [data-variant="default"]:hover, .admin-action-dialog-footer [data-variant="destructive"]:hover { border-color: var(--accent-deep); background: var(--accent-deep); }
 @keyframes authentication-spin { to { transform: rotate(360deg); } }
 
 .content-wrap { width: auto; margin: 0; padding: 17px 30px 50px 16px; }
@@ -648,6 +700,11 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 
 @media (max-width: 720px) {
   :root { --reference-preview-width: 56px; --reference-preview-height: 56px; }
+  [data-slot="dialog-content"].admin-action-dialog { width: calc(100vw - 20px); max-height: calc(100dvh - 20px); border-radius: 14px; }
+  .admin-action-dialog-header { padding: 18px 50px 0 17px; }
+  .admin-action-dialog-body { padding: 17px; gap: 16px; }
+  .admin-action-dialog-footer { padding: 0 17px 17px; }
+  .admin-action-dialog-footer [data-slot="button"] { flex: 1; }
   .app-shell { display: block; }
   .sidebar { display: none; }
   .mobile-bar { height: 62px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; }
