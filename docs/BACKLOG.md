@@ -1,6 +1,6 @@
 # 当前任务与优先级
 
-最后同步：2026-09-09。这里是索引，细节以任务卡为准；不是自动执行所有项目的授权。
+最后同步：2026-09-10。这里是索引，细节以任务卡为准；不是自动执行所有项目的授权。
 
 ## 当前与最近交付
 
@@ -29,8 +29,11 @@
 | GG-021 | Nano Banana Pro 单张定价 15 积分 | 已上线报价；生成路由仍关闭 | [任务](tasks/GG-021-nano-banana-pro-pricing.md) |
 | GG-022 | 修复 alpha 后续发布的隔离恢复演练 | 已上线并通过真实恢复/发布验收 | [任务](tasks/GG-022-ongoing-production-restore.md) |
 | GG-023 | 升级 Sharp 以修复新识别的 HIGH 漏洞 | 安全镜像 CI 通过；待新生产/冒烟授权 | [任务](tasks/GG-023-sharp-security-update.md) |
+| GG-028 | Authing 自定义域名和浏览器 Google | 被 GG-029 取代；原未发布分支保留，不继续配置 | 原提交 `81ed8ae`；[后续决策](decisions/0045-goodgood-owned-email-otp.md) |
+| GG-029 | 自建邮箱验证码登录，Google 延后 | 方案与文档验证完成；未实施/未部署 | [任务](tasks/GG-029-email-otp-plan.md) / [方案](EMAIL_AUTH_PLAN.md) |
 
-下一个普通产品需求从 **GG-024** 分配并检查是否已被占用。每次 alpha 发布仍须取得
+GG-024—GG-027 已被其他 worktree 占用，其进度以各自任务卡为准；不由本分支合并或覆盖。
+下一个普通产品需求从 **GG-030** 分配并检查是否已被占用。每次 alpha 发布仍须取得
 新鲜、精确绑定候选的证据并通过门禁；本次证据不能复用。
 完整发布证据见[累计发布记录](releases/2026-09-09-cumulative-alpha-release.md)。
 

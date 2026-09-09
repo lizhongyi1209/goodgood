@@ -1,11 +1,19 @@
 # Production implementation plan
 
-- Last synchronized: 2026-09-09
+- Last synchronized: 2026-09-10
 - Current phase: 已开放 controlled alpha；累计候选已发布，Sharp 安全候选等待新发布授权。
-- Current objective: GG-023 已将 Sharp 从 0.35.0 升级到 0.35.4 并恢复 main CI；当前线上
-  `65ceb168` 不自动切换到尚未完成新精确候选 alpha 门禁的镜像。
+- Current objective: GG-029 自建邮箱验证码登录方案与计划；Google 暂缓，取代 GG-028 域名方向。
+  当前仅完成规划，生产仍为 Authing；源码/镜像/部署的历史身份以 CURRENT_STATE 为准。
 
 ## Current checkpoint
+
+- 用户已选择邮箱验证码为唯一首版登录方法；[ADR 0045](decisions/0045-goodgood-owned-email-otp.md)
+  和 [EMAIL_AUTH_PLAN](EMAIL_AUTH_PLAN.md) 明确最低上线控制、发信服务、P0–P4、迁移及回退限制。
+- 新任务 [GG-029](tasks/GG-029-email-otp-plan.md) 在核验远端 main `42fc8d8` 的独立 worktree；
+  GG-024—027 属于其他并行工作，GG-028 未发布源码保留但不继续自定义域名/Google 配置。
+- 已核对复用边界与 Authing 专属 preflight；本轮纯文档，尚未实现邮箱模式、发信或修改生产。
+- 文档连续性测试 8/8、diff 检查通过；任务卡区分规划、后续实现与实际生产切换。
+- 下列生产健康/测试数是 2026-09-09 留存事实，本轮未再次检查生产，不作为实时状态声明。
 
 - 生产入口 `https://goodgood.o1key.com` 当前部署源码
   `65ceb16823138dd220813fbc3ae5672234fd1f43`、不可变镜像
@@ -30,10 +38,10 @@
   `sha256:b441e16685c77842e18cefcdbcae00c2e50d25350fe598ea2e462dd61758f152` 已发布但未部署。
 - 支付、自动账户删除、举报、完整外部删除条款与完整 seed readiness 仍在 GG-900—GG-902
   搁置范围，本次发布没有恢复它们。
-- Next action: 等待站长决定是否授权 GG-023 再执行 1 次约 10 积分真实 Nano 冒烟；若授权，
-  为 main `18fe779b` 生成新鲜 production preflight/alpha evidence 并部署安全镜像。
-- Blockers: 此前授权的唯一真实生图已经成功使用，不能为 GG-023 新候选再次计费；在取得
-  新授权前只完成源码/CI 修复，不变更当前生产镜像。
+- Next action: 用户启动 GG-029 实施后先核验 P0 发信服务，再执行 P1
+  验证码/限流/身份事务；可先在本地邮件接收器开发，不继续 GG-028 的 Authing 域名修复。
+- Blockers: 方案无阻塞；实际发信仍需供应商账号/地域/额度、发信 DNS、SMTP 凭据及支持邮箱。
+  本轮不含实施或上线。GG-023 的新候选生产/计费冒烟授权仍独立，不能复用此前单次授权。
 
 ## Milestones
 
@@ -45,6 +53,7 @@
 | M8 / controlled alpha | 已开放并完成本次累计发布 | 审核账户、核心生图、恢复与发布门禁 |
 | GG-004—GG-022 | 已部署或完成 | 累计功能、可靠性、恢复工具和生产发布 |
 | GG-023 | 实施中 | Sharp 0.35.4 安全修复与 main CI 恢复 |
+| GG-029 | 方案与文档验证完成 | 自建邮箱 OTP；P0–P4、最小上线控制、原账户迁移与有限回退 |
 | 完整 C6 / full seed | 搁置 | 删除、举报、外部条款与进一步配套，见 GG-900/901 |
 | M9 | 搁置 | 支付/支付宝，见 GG-902 |
 
@@ -53,7 +62,7 @@
 1. 读根 AGENTS、[CURRENT_STATE](CURRENT_STATE.md)、[WORKFLOW](WORKFLOW.md)、本页和
    [BACKLOG](BACKLOG.md)，检查 Git 分支/worktree/未提交改动。
 2. 不把最新 main 自动当作线上版本；以 CURRENT_STATE 的完整 revision、镜像摘要和迁移为准。
-3. 先恢复 GG-023；新的普通产品需求从 GG-024 或后续未占用编号建卡，不要恢复旧 C6。
+3. 本会话先恢复 GG-029；新需求从 GG-030 或后续未占用编号建卡，不恢复 GG-028 域名或旧 C6。
 4. 本次 alpha 证据只绑定 `65ceb168`，后续候选必须重新生成新鲜证据并通过门禁。
 5. 真实 provider 请求可能计费，必须与测试 fixture 隔离并取得对具体调用的明确授权。
 

@@ -256,6 +256,13 @@ server-owned GoodGood session.
 
 ### Production authentication configuration
 
+The deployed mode is still Authing OIDC. [ADR 0045](decisions/0045-goodgood-owned-email-otp.md)
+selects email-only authentication for a future release; follow
+[EMAIL_AUTH_PLAN.md](EMAIL_AUTH_PLAN.md) for its implementation and cutover
+requirements. Do not set `email_otp` in the current runtime: configuration,
+secret mounts, and release preflight do not support it yet. GG-028's custom
+Authing domain is no longer the target for this work.
+
 ADR 0007 selects Authing-hosted authentication through standard OIDC. The
 Authing application must expose only Google and passwordless email
 verification-code login/registration. Disable passwords, usernames, phone/SMS,

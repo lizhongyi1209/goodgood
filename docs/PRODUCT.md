@@ -50,6 +50,11 @@ and a project is not simply a folder of images.
 
 ## Implemented scope and active launch boundary
 
+The owner selected GoodGood-owned email-code-only authentication in
+[ADR 0045](decisions/0045-goodgood-owned-email-otp.md), with Google deferred.
+[EMAIL_AUTH_PLAN.md](EMAIL_AUTH_PLAN.md) defines the planned rollout; the
+Authing entry below still describes the implemented/deployed baseline.
+
 The product has real authenticated, durable production behavior, not just a
 frontend simulation. Exact deployed identity and verification live in
 `docs/CURRENT_STATE.md`; this section defines capability scope rather than
