@@ -409,6 +409,34 @@ test("all account actions share an opaque GoodGood dialog surface", async () => 
   assert.match(styles, /\.admin-action-dialog-footer[^}]*flex-direction:\s*row/);
 });
 
+test("account row actions keep a neutral hierarchy outside confirmation dialogs", async () => {
+  const [source, styles] = await Promise.all([
+    readFile(
+      new URL("../features/admin/account-management-page.tsx", import.meta.url),
+      "utf8",
+    ),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(source, /<Table className="admin-account-table">/);
+  assert.equal(source.match(/className="admin-account-actions/g)?.length, 2);
+  assert.equal(source.match(/className="admin-account-primary-action"/g)?.length, 6);
+  assert.equal(source.match(/className="admin-account-secondary-action"/g)?.length, 2);
+  assert.doesNotMatch(source, /status === "pending" && <Button size="sm"/);
+  assert.match(
+    styles,
+    /\.admin-account-table \[data-slot="table-row"\][^}]*border-color:\s*var\(--line\)[^}]*background:\s*var\(--white\)/,
+  );
+  assert.match(
+    styles,
+    /\.admin-account-primary-action[^}]*border-color:\s*var\(--line\)[^}]*background:\s*var\(--white\)/,
+  );
+  assert.match(
+    styles,
+    /\.admin-account-secondary-action[^}]*border-color:\s*transparent[^}]*background:\s*transparent/,
+  );
+});
+
 test("account management timestamps use compatible Intl style options", async () => {
   const source = await readFile(
     new URL("../features/admin/account-management-page.tsx", import.meta.url),
