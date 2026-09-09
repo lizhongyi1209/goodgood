@@ -248,6 +248,12 @@ planner that always reports `executed:false`/`executionAvailable:false`. Static
 coverage rejects child-process/live execution and any R2 delete implementation.
 Shell parsing and both production Compose slot interpolations are additionally
 checked locally without starting containers.
+ADR 0042 coverage keeps the ongoing-production restore drill fail-closed on a
+missing reviewed maintenance marker or any active generation job while allowing
+normal valid alpha sessions to remain in the encrypted archive. Static contract
+checks preserve the fixed archive path, immutable PostgreSQL image, no-network,
+read-only/tmpfs target, public-table/row comparison and aggregate-only output;
+the real host drill remains required release evidence.
 Release-metadata coverage also normalizes CRLF, lone CR, and LF checkout line
 endings before hashing so a Windows review and Linux CI bind the same runtime
 configuration identity.

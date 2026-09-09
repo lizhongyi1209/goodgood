@@ -1057,6 +1057,14 @@ services. The production backup timer runs at minute 00 and 30 with no more than
 five minutes of randomized delay, retaining all points within 24 hours plus 14
 daily, 8 weekly, and 12 monthly points in the isolated Restic `/production`
 prefix. A successful off-host restore drill remains mandatory before opening.
+For ongoing controlled-alpha releases, ADR 0042 permits the encrypted archive
+to contain valid login sessions. The drill first requires the exact root-owned
+maintenance marker and zero active generation jobs, then restores into the same
+no-network, read-only, tmpfs-only target and compares every public table count.
+It reports only aggregate valid-session and active-job counts; it never revokes,
+exports, or reuses a session. The original staging conversion procedure below
+retains its stricter empty-session requirement because it describes a different,
+pre-opening environment.
 
 ### Selected seed-production infrastructure baseline
 

@@ -87,7 +87,10 @@ or retains maintenance and opens an incident.
    monthly retention policy.
 2. Restore that exact point into the isolated no-traffic recovery environment.
    Verify migration and aggregate row-count/fingerprint integrity within four
-   hours. Do not restore over production.
+   hours. For an ongoing alpha release, valid login sessions may remain in the
+   encrypted archive only while the reviewed maintenance marker is active and
+   generation has zero active jobs; report their count only. Do not revoke,
+   expose, or reuse sessions, and never restore over production.
 3. Prove the public maintenance marker can be re-entered and returns the
    reviewed 503 response, then leave the site in its pre-step maintenance state.
 4. Reconfirm R2 private access and record no object key or user content.

@@ -2,12 +2,11 @@
 
 - Last synchronized: 2026-09-09
 - Current phase: 已开放 controlled alpha；转入按需求的高频小步迭代。
-- Current objective: 站长已要求把当前累计候选发布到生产。发布前置 GG-003 正在
-  `feature/GG-003-alpha-release-tooling` 从历史快照最小提取独立 alpha 门禁；当前
-  schema v2、候选绑定、时效和 CLI 失败路径已通过 18/18 定向测试；完整本地门禁
-  251 项中 245 通过、6 项 opt-in 跳过、0 失败。当前等待 CI 精确摘要和主机新鲜
-  证据。候选包含 GG-004～GG-021；Nano Banana Pro
-  只增加 `1K / 2K / 4K` 单张 15 积分价格，不开放 Pro provider 路由。
+- Current objective: 站长已授权把 GG-004～GG-021 累计候选发布到生产，并授权精确
+  修正 1 条历史 attempt 与执行 1 次预计 10 积分的非敏感真实生图。首个 main 候选
+  `e7dbc38` 的 CI/镜像已通过，生产已进入维护并完成新鲜异地备份；恢复演练发现旧工具
+  仍要求有效 session 为零。GG-022 已按 ADR 0042 完成最小修复并通过本地完整门禁；
+  未通过新 CI 与真实隔离恢复前不迁移、不切换 Worker 或流量。
 
 ## Current checkpoint
 
@@ -82,9 +81,10 @@
   轻遮罩和宫墙红危险操作，并在 3010 复核；最终门禁 245 项（239 通过、6 跳过）。
 - GG-021：ADR 0041 已接受；Nano Banana Pro 的三档单张标准报价固定为 15 积分，
   生成路由仍保持关闭。迁移 0019、最终门禁和 3010 API/Chrome 报价核验均已通过。
-- Next action: 完成 GG-003 的完整门禁与提交；从最新 `origin/main` 形成精确候选并等待
-  CI 发布不可变 GHCR 摘要；随后在生产维护窗口中备份、停旧 Worker、应用 0013～0019、
-  验证候选 Web/单 Worker/队列/积分不变量，写入新鲜 alpha 证据并通过门禁后切流。
+- Next action: 提交并合并 GG-022，从最新 `origin/main` 形成精确候选并等待 CI 发布
+  不可变 GHCR 摘要；随后在生产维护窗口中安装匹配的恢复工具、通过隔离恢复演练，
+  再精确修正 1 条历史 attempt、停旧 Worker、应用 0013～0019、验证候选 Web/单 Worker/
+  队列/积分不变量，写入新鲜 alpha 证据并通过门禁后切流。
 - Blockers: 当前无代码阻塞。生产切流前仍需 CI 摘要、主机只读基线和 alpha 的新鲜
   精确候选证据；任何一项失败即保持维护并停止。完整删除、举报、外部删除条款与付费
   要求留在搁置项，不自动恢复。

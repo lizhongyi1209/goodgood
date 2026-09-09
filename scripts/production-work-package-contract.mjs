@@ -217,9 +217,18 @@ export function inspectProductionWorkPackage({
       "goodgood_schema_migrations",
       "to_regclass('public.auth_sessions')",
       'migration_count="0"',
+      'maintenance_marker="/etc/goodgood/production/maintenance.enabled"',
+      "The restore drill requires zero active generation jobs.",
+      "active_sessions_observed=",
+      "active_generation_jobs=",
     ]) {
       requireText(restore, expected, "production restore drill");
     }
+    rejectText(
+      restore,
+      /requires zero active sessions and generation jobs/,
+      "production restore drill",
+    );
   });
 
   check("metadata-only-r2-inventory", () => {
