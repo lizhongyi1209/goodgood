@@ -559,13 +559,22 @@ downstream price, fiat amount, payment, order, commission, revenue, or withdrawa
 contract; the existing operator-only manual-payment command remains the only
 pre-checkout paid-credit path.
 
-The local stage-3 implementation serializes transfer requests by parent-scoped
+The local stage-3 service serializes transfer requests by parent-scoped
 idempotency identity, shares the hierarchy mutation lock with site-owner role
 and relationship changes, locks both credit accounts in owner-ID order, and
 rechecks active parent role, active direct relationship, account access, and
 payment-funded available credit before appending either ledger side. Transfer
 history is caller-scoped and keyset paginated; direct-child summaries expose
 only identity and allocation totals, not the child's private balance.
+
+The local stage-4 browser boundary mounts `/distribution` inside the existing
+workspace so creation state survives navigation. Session projection carries the
+current business role only to decide whether to show the entry; every summary,
+child-list, history, and transfer request authenticates and reauthorizes on the
+server. The site-owner dashboard reads active eligible parents independently of
+the current account filter, so relationship choices do not disappear when the
+operator filters the table. The page refreshes server-owned balance and child
+state after a transfer success or conflict and never submits a derived balance.
 
 The read side is deliberately narrower than the ledger. `GET /api/billing`
 authenticates before resolving the owner, performs no mutation, returns

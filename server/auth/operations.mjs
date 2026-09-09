@@ -196,6 +196,7 @@ export function createAuthenticationOperations({
       return {
         account: {
           availableCredits: owner.availableCredits,
+          businessRole: owner.businessRole ?? null,
           reservedCredits: owner.reservedCredits,
           role: owner.systemRole,
           tier: owner.accountTier,

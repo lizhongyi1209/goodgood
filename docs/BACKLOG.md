@@ -32,7 +32,7 @@
 | GG-024 | 修复站长账户管理弹框与列表操作样式 | 已合入 GG-026；待整体验收 | [任务](tasks/GG-024-admin-dialog-styles.md) |
 | GG-025 | 用户积分记录页与只读账本投影 | 已合入 GG-026；待整体验收 | [任务](tasks/GG-025-credit-activity.md) |
 | GG-026 | 合并账户管理与积分记录并整合本地预览环境 | 本地整合与单环境验收完成；待用户验收 | [任务](tasks/GG-026-local-feature-integration.md) |
-| GG-027 | 企业/分销身份、直属下级与充值来源积分划拨 | 阶段 0—3 完成；阶段 4 待实现 | [任务](tasks/GG-027-distributor-credit-transfers.md) |
+| GG-027 | 企业/分销身份、直属下级与充值来源积分划拨 | 阶段 0—4 与完整门禁完成；待 3030 联调 | [任务](tasks/GG-027-distributor-credit-transfers.md) |
 
 下一个普通产品需求从 **GG-028** 分配并检查是否已被占用。每次 alpha 发布仍须取得
 新鲜、精确绑定候选的证据并通过门禁；本次证据不能复用。

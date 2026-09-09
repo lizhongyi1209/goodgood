@@ -12,6 +12,7 @@ function accountContext(row, identity) {
     accessStatus: row.status,
     accountTier: row.account_tier,
     availableCredits: String(row.available_balance ?? 0),
+    businessRole: row.business_role ?? null,
     email: row.email ?? null,
     identity: Object.freeze({ ...identity }),
     identityId: row.identity_id ?? null,
@@ -47,6 +48,12 @@ async function findIdentityOwner(pool, identity) {
             u.id AS owner_id, u.locale, u.status,
             COALESCE(c.available_balance, 0) AS available_balance,
             COALESCE(c.reserved_balance, 0) AS reserved_balance,
+            (
+              SELECT role FROM business_role_assignments business_role
+               WHERE business_role.owner_id = u.id
+                 AND business_role.ended_at IS NULL
+              LIMIT 1
+            ) AS business_role,
             EXISTS (
               SELECT 1 FROM system_role_assignments role
                WHERE role.owner_id = u.id AND role.role = 'site_owner'
@@ -119,6 +126,12 @@ export async function provisionOwnerIdentity(pool, claims) {
               u.id AS owner_id, u.locale, u.status,
               COALESCE(c.available_balance, 0) AS available_balance,
               COALESCE(c.reserved_balance, 0) AS reserved_balance,
+              (
+                SELECT role FROM business_role_assignments business_role
+                 WHERE business_role.owner_id = u.id
+                   AND business_role.ended_at IS NULL
+                LIMIT 1
+              ) AS business_role,
               EXISTS (
                 SELECT 1 FROM system_role_assignments role
                  WHERE role.owner_id = u.id AND role.role = 'site_owner'
@@ -166,6 +179,7 @@ export async function provisionOwnerIdentity(pool, claims) {
         owner_id: ownerId,
         account_tier: "seed",
         available_balance: 100,
+        business_role: null,
         reserved_balance: 0,
         is_site_owner: false,
         status: "pending",
@@ -222,6 +236,12 @@ async function findSessionOwner(pool, tokenHash) {
             u.account_tier, u.email, u.id AS owner_id, u.locale, u.status,
             COALESCE(c.available_balance, 0) AS available_balance,
             COALESCE(c.reserved_balance, 0) AS reserved_balance,
+            (
+              SELECT role FROM business_role_assignments business_role
+               WHERE business_role.owner_id = u.id
+                 AND business_role.ended_at IS NULL
+              LIMIT 1
+            ) AS business_role,
             EXISTS (
               SELECT 1 FROM system_role_assignments role
                WHERE role.owner_id = u.id AND role.role = 'site_owner'

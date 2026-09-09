@@ -399,6 +399,12 @@ decision. Its phased coverage must prove:
 - browser and API contracts never accept or return an exchange price, fiat
   amount, downstream payment/order, commission, revenue, or withdrawal. The
   active 3010 real-provider stack and production remain outside this suite.
+- route/UI coverage proves `/distribution` parsing, role-gated desktop/mobile
+  navigation, direct-URL denial state, loading/empty/read-error/load-more/
+  mutation-error states, red selected presets, explicit irreversible
+  confirmation, public transfer references, and narrow-screen single-column
+  layout. Site-owner UI coverage proves role/direct-parent choices always carry
+  a required audited reason and use only independently loaded eligible parents.
 
 Use:
 

@@ -104,7 +104,7 @@ recording infrastructure are not permission to collect payments during alpha.
 Password/phone recovery is not offered because those sign-in methods are absent.
 Historical implementation/verification stages are retained in `docs/history/`.
 
-## Accepted next local milestone: direct-child credit allocation
+## Local candidate: direct-child credit allocation
 
 ADR 0043 accepts a locally developed account-hierarchy capability without
 claiming it is deployed. The site owner may classify an account as an
@@ -117,9 +117,10 @@ operational grants cannot be allocated.
 Allocation is a permanent atomic transfer, not a revocable limit. GoodGood does
 not store the distributor's exchange price, CNY amount, downstream payment,
 order, commission, revenue, or withdrawal. Those commercial arrangements stay
-outside the product, and online payment remains deferred. This milestone must
-be implemented and verified locally in ordered phases before the site owner
-separately decides whether any candidate should be released.
+outside the product, and online payment remains deferred. The ordered
+implementation phases are complete on the GG-027 local branch and the candidate
+now awaits full local/Compose verification. It is not deployed; the site owner
+separately decides whether a verified candidate should be released.
 
 ## Product principles
 

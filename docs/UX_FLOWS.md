@@ -74,13 +74,14 @@
   bootstrap remains an out-of-band security operation, not a public signup
   shortcut.
 
-### Enterprise and distributor allocation (accepted, not deployed)
+### Enterprise and distributor allocation (implemented locally, not deployed)
 
 - The site-owner account surface keeps system role, access state, account tier,
   and business role visibly separate. It may assign/end `企业` or `分销商` and
   create/end/replace one direct parent, with target, prior/resulting state,
   reason, and explicit confirmation. It never presents those actions as payment.
-- Only an active enterprise/distributor sees `下级管理`. The first view shows
+- Only an active enterprise/distributor sees `积分分配`. Direct navigation by
+  any other account stays denied even if it knows the URL. The first view shows
   total available credit, `可分配积分` (payment-funded available credit), and a
   direct-child list. It does not show exchange price, CNY, revenue, commission,
   order, prompts, generations, or assets.

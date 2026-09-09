@@ -78,6 +78,7 @@ test("pending sessions expose only account state and waiting credits", async () 
       accessStatus: "pending",
       accountTier: "seed",
       availableCredits: "100",
+      businessRole: null,
       email: "pending@goodgood.invalid",
       reservedCredits: "0",
       systemRole: "member",
@@ -88,6 +89,7 @@ test("pending sessions expose only account state and waiting credits", async () 
   assert.deepEqual(await operations.readSession({}), {
     account: {
       availableCredits: "100",
+      businessRole: null,
       reservedCredits: "0",
       role: "member",
       tier: "seed",
@@ -131,6 +133,9 @@ test("the shared product capability guard rejects pending and suspended owners",
 test("site-owner dashboard keeps search in a POST body and returns empty state safely", async () => {
   const calls = [];
   const repository = {
+    async listEligibleBusinessParents() {
+      return [];
+    },
     async listManagedAccounts(_pool, input) {
       calls.push(input);
       return { hasMore: false, items: [], next: null };
@@ -151,6 +156,7 @@ test("site-owner dashboard keeps search in a POST body and returns empty state s
   assert.deepEqual(dashboard, {
     accounts: [],
     counts: { active: 2, pending: 1, suspended: 0 },
+    eligibleParents: [],
     nextCursor: null,
     recentActions: [],
   });
@@ -426,7 +432,7 @@ test("account row actions keep a neutral hierarchy outside confirmation dialogs"
   assert.match(source, /<Table className="admin-account-table">/);
   assert.equal(source.match(/className="admin-account-actions/g)?.length, 2);
   assert.equal(source.match(/className="admin-account-primary-action"/g)?.length, 6);
-  assert.equal(source.match(/className="admin-account-secondary-action"/g)?.length, 2);
+  assert.equal(source.match(/className="admin-account-secondary-action"/g)?.length, 6);
   assert.doesNotMatch(source, /status === "pending" && <Button size="sm"/);
   assert.match(
     styles,

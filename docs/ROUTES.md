@@ -81,8 +81,8 @@ creates or mutates a payment order.
 
 ## Implemented GG-027 local API routes (not deployed)
 
-GG-027 stages 2—3 implement the authenticated API boundaries below. Stage 4 adds
-`/distribution` as the enterprise/distributor direct-child workspace. Ordinary
+GG-027 stages 2—4 implement the authenticated API boundaries and local page
+below. `/distribution` is the enterprise/distributor direct-child workspace. Ordinary
 users and business accounts without the allocation capability receive the same
 server-enforced denial on direct URL and API access; hiding navigation is not
 authorization. Entering or leaving the view preserves active creation state.
@@ -105,9 +105,9 @@ accepts or returns an exchange price, fiat amount, downstream payment/order,
 commission, revenue, or withdrawal. The operator-only manual-payment command
 remains outside the browser API.
 
-The four distribution API routes and two site-owner hierarchy mutations are
-implemented only on the GG-027 local branch. The `/distribution` page and its
-navigation entry remain absent until stage 4; none of these routes is deployed.
+The four distribution API routes, two site-owner hierarchy mutations,
+`/distribution` page, desktop business-role navigation row, and narrow-screen
+icon entry are implemented only on the GG-027 local branch. None is deployed.
 
 The visible asset library is addressable at `/assets`. Opening a generated
 image from creation or either asset mode pushes `/assets/:assetId` while
@@ -137,9 +137,8 @@ response after expiring its local cookie.
 ## Accepted production routes
 
 `/create`, `/projects`, `/projects/:projectId`, `/assets`,
-`/assets/:assetId`, and `/credits` are implemented today. `/distribution` is
-accepted for GG-027 but remains local/planned until its page and navigation
-behavior exist. Adopt other future routes only
+`/assets/:assetId`, and `/credits` are deployed today. `/distribution` is
+implemented on the GG-027 local candidate but is not deployed. Adopt other future routes only
 when their persistence and navigation behavior exist:
 
 | Route | Purpose |
@@ -150,11 +149,11 @@ when their persistence and navigation behavior exist:
 | `/assets` | Batch/gallery asset library |
 | `/assets/:assetId` | Addressable image detail |
 | `/credits` | Owner-scoped period spend summary and concise credit changes |
-| `/distribution` | Accepted future enterprise/distributor direct-child allocation workspace; not deployed |
+| `/distribution` | Local enterprise/distributor direct-child allocation workspace; not deployed |
 | `/explore` | Future discovery experience |
 | `/moodboards` | Future moodboards |
 | `/help` | Product help and status guidance |
-| `/admin/users` | M8 site-owner-only account review, suspension/restoration, audit history, and test-credit management |
+| `/admin/users` | Site-owner-only account review, business-role/direct-parent management, audit history, and test-credit management |
 
 The root route remains compatible for old links. Product navigation and clean
 creation transitions use `/create`; both entries mount the same component and

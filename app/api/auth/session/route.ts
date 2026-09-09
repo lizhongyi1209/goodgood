@@ -10,6 +10,7 @@ export async function GET(request: Request) {
       {
         account: {
           availableCredits: "100",
+          businessRole: null,
           reservedCredits: "0",
           role: "member",
           tier: "seed",

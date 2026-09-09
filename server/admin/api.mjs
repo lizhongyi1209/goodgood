@@ -8,6 +8,7 @@ import {
   changeAccountAccess,
   grantTestCredits,
   listManagedAccounts,
+  listEligibleBusinessParents,
   listRecentAdministrativeActions,
   readAccountStatusCounts,
   setBusinessRole,
@@ -22,6 +23,7 @@ const DEFAULT_REPOSITORY = Object.freeze({
   changeAccountAccess,
   grantTestCredits,
   listManagedAccounts,
+  listEligibleBusinessParents,
   listRecentAdministrativeActions,
   readAccountStatusCounts,
   setBusinessRole,
@@ -134,7 +136,7 @@ export async function readAdminDashboard({
     );
   }
   const resolved = await resourcesFor(resources);
-  const [accounts, counts, recentActions] = await Promise.all([
+  const [accounts, counts, eligibleParents, recentActions] = await Promise.all([
     repository.listManagedAccounts(resolved.pool, {
       cursor: decodeCursor(input?.cursor),
       limit,
@@ -142,11 +144,13 @@ export async function readAdminDashboard({
       status,
     }),
     repository.readAccountStatusCounts(resolved.pool),
+    repository.listEligibleBusinessParents(resolved.pool),
     repository.listRecentAdministrativeActions(resolved.pool, { limit: 30 }),
   ]);
   return {
     accounts: accounts.items,
     counts,
+    eligibleParents,
     nextCursor: encodeCursor(accounts.next),
     recentActions,
   };

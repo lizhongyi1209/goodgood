@@ -8,6 +8,7 @@ import {
   LoaderCircle,
   LogIn,
   LogOut,
+  Network,
   RefreshCw,
   Search,
   ShieldBan,
@@ -56,14 +57,22 @@ import {
 import {
   grantManagedAccountTestCredits,
   readAdminDashboard,
+  updateManagedAccountBusinessRole,
+  updateManagedAccountDirectParent,
   updateManagedAccountStatus,
   type AdministrativeAction,
   type AdminDashboard,
+  type BusinessRole,
   type ManagedAccount,
   type ManagedAccountStatus,
 } from "./http-admin-boundary";
 
-type AccountAction = "approve" | "suspend" | "restore" | "grant";
+type AccountAction = "approve" | "suspend" | "restore" | "grant" | "role" | "parent";
+
+const BUSINESS_ROLE_LABELS: Record<BusinessRole, string> = {
+  distributor: "分销商",
+  enterprise: "企业",
+};
 
 const STATUS_LABELS: Record<ManagedAccountStatus, string> = {
   active: "已启用",
@@ -109,6 +118,12 @@ function actionCopy(action: AccountAction, account: ManagedAccount) {
   if (action === "restore") {
     return { description: `恢复 ${account.email} 的产品访问。`, title: "恢复账户" };
   }
+  if (action === "role") {
+    return { description: `设置 ${account.email} 的业务身份。业务身份不授予站长权限。`, title: "调整业务身份" };
+  }
+  if (action === "parent") {
+    return { description: `设置 ${account.email} 的唯一直属上级。只有有效直属上级可以向其划拨积分。`, title: "调整直属关系" };
+  }
   return { description: `向 ${account.email} 追加一笔独立的测试积分流水。`, title: "赠送测试积分" };
 }
 
@@ -126,6 +141,8 @@ export function AccountManagementPage() {
   const [selected, setSelected] = useState<{ account: ManagedAccount; action: AccountAction } | null>(null);
   const [reason, setReason] = useState("");
   const [amount, setAmount] = useState("100");
+  const [businessRole, setBusinessRole] = useState<BusinessRole | "none">("none");
+  const [parentOwnerId, setParentOwnerId] = useState<string>("none");
   const [mutating, setMutating] = useState(false);
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [statusRefreshing, setStatusRefreshing] = useState(false);
@@ -189,6 +206,8 @@ export function AccountManagementPage() {
     setSelected({ account, action });
     setMutationError(null);
     setAmount("100");
+    setBusinessRole(account.businessRole ?? "none");
+    setParentOwnerId(account.directParentId ?? "none");
     setReason(
       action === "approve"
         ? "通过种子用户审核"
@@ -215,6 +234,20 @@ export function AccountManagementPage() {
           reason,
         });
         toast.success(`已向 ${selected.account.email} 赠送 ${Number(amount)} 积分`);
+      } else if (selected.action === "role") {
+        await updateManagedAccountBusinessRole({
+          ownerId: selected.account.id,
+          reason,
+          role: businessRole === "none" ? null : businessRole,
+        });
+        toast.success("业务身份已更新");
+      } else if (selected.action === "parent") {
+        await updateManagedAccountDirectParent({
+          ownerId: selected.account.id,
+          parentOwnerId: parentOwnerId === "none" ? null : parentOwnerId,
+          reason,
+        });
+        toast.success("直属关系已更新");
       } else {
         await updateManagedAccountStatus({
           ownerId: selected.account.id,
@@ -324,7 +357,7 @@ export function AccountManagementPage() {
           <div>
             <p className="text-sm font-medium text-primary">站长工作台</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight">账户管理</h1>
-            <p className="mt-2 max-w-2xl text-base leading-7 text-zinc-600">审核登录账户、暂停或恢复访问，并通过积分流水追加测试额度。</p>
+            <p className="mt-2 max-w-2xl text-base leading-7 text-zinc-600">审核登录账户、管理企业/分销身份与直属关系，并通过积分流水追加测试额度。</p>
           </div>
           <div className="grid grid-cols-3 gap-2 sm:min-w-[420px]">
             {(["pending", "active", "suspended"] as const).map((item) => (
@@ -388,13 +421,14 @@ export function AccountManagementPage() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <h3 className="truncate font-medium">{account.email}</h3>
-                        <p className="mt-1 text-sm text-zinc-500">{account.role === "site_owner" ? "站长" : "普通用户"}</p>
+                        <p className="mt-1 text-sm text-zinc-500">{account.role === "site_owner" ? "站长" : "普通用户"}{account.businessRole ? ` · ${BUSINESS_ROLE_LABELS[account.businessRole]}` : ""}</p>
+                        {account.directParentEmail && <p className="mt-1 truncate text-xs text-zinc-500">直属上级：{account.directParentEmail}</p>}
                       </div>
                       {statusBadge(account.status)}
                     </div>
                     <div className="mt-4 grid grid-cols-2 gap-3 rounded-2xl bg-zinc-50 p-4 text-sm">
                       <div><span className="block text-zinc-500">账户等级</span><strong className="mt-1 block">内测用户</strong></div>
-                      <div><span className="block text-zinc-500">积分</span><strong className="mt-1 block tabular-nums">{account.availableCredits} 可用</strong><span className="text-xs text-zinc-500">{account.reservedCredits} 预留</span></div>
+                      <div><span className="block text-zinc-500">积分</span><strong className="mt-1 block tabular-nums">{account.availableCredits} 可用</strong><span className="text-xs text-zinc-500">{account.transferableCredits} 可分配</span></div>
                       <div><span className="block text-zinc-500">注册时间</span><strong className="mt-1 block font-medium">{formatDate(account.createdAt)}</strong></div>
                       <div><span className="block text-zinc-500">最近登录</span><strong className="mt-1 block font-medium">{formatDate(account.lastAuthenticatedAt)}</strong></div>
                     </div>
@@ -403,6 +437,8 @@ export function AccountManagementPage() {
                       {account.status === "active" && account.role !== "site_owner" && <Button className="admin-account-primary-action" size="sm" variant="outline" onClick={() => openAction(account, "suspend")}><ShieldBan />暂停</Button>}
                       {account.status === "suspended" && <Button className="admin-account-primary-action" size="sm" variant="outline" onClick={() => openAction(account, "restore")}><CheckCircle2 />恢复</Button>}
                       <Button className="admin-account-secondary-action" size="sm" variant="ghost" onClick={() => openAction(account, "grant")}><Coins />积分</Button>
+                      <Button className="admin-account-secondary-action" size="sm" variant="ghost" onClick={() => openAction(account, "role")}><UserRoundCog />身份</Button>
+                      <Button className="admin-account-secondary-action" size="sm" variant="ghost" onClick={() => openAction(account, "parent")}><Network />上级</Button>
                     </div>
                   </article>
                 ))}
@@ -423,14 +459,15 @@ export function AccountManagementPage() {
                     <TableRow key={account.id}>
                       <TableCell className="max-w-[320px] pl-5">
                         <div className="truncate font-medium">{account.email}</div>
-                        <div className="mt-1 text-xs text-zinc-500">{account.role === "site_owner" ? "站长" : "普通用户"}</div>
+                        <div className="mt-1 text-xs text-zinc-500">{account.role === "site_owner" ? "站长" : "普通用户"}{account.businessRole ? ` · ${BUSINESS_ROLE_LABELS[account.businessRole]}` : ""}</div>
+                        {account.directParentEmail && <div className="mt-1 truncate text-xs text-zinc-500">上级：{account.directParentEmail}</div>}
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap items-center gap-2">{statusBadge(account.status)}<Badge variant="outline">内测用户</Badge></div>
                       </TableCell>
                       <TableCell>
                         <div className="font-medium tabular-nums">{account.availableCredits} 可用</div>
-                        <div className="mt-1 text-xs text-zinc-500 tabular-nums">{account.reservedCredits} 预留</div>
+                        <div className="mt-1 text-xs text-zinc-500 tabular-nums">{account.transferableCredits} 可分配</div>
                       </TableCell>
                       <TableCell>
                         <div>{formatDate(account.createdAt)}</div>
@@ -442,6 +479,8 @@ export function AccountManagementPage() {
                           {account.status === "active" && account.role !== "site_owner" && <Button className="admin-account-primary-action" size="sm" variant="outline" onClick={() => openAction(account, "suspend")}><ShieldBan />暂停</Button>}
                           {account.status === "suspended" && <Button className="admin-account-primary-action" size="sm" variant="outline" onClick={() => openAction(account, "restore")}><CheckCircle2 />恢复</Button>}
                           <Button className="admin-account-secondary-action" size="sm" variant="ghost" onClick={() => openAction(account, "grant")}><Coins />积分</Button>
+                          <Button className="admin-account-secondary-action" size="sm" variant="ghost" onClick={() => openAction(account, "role")}><UserRoundCog />身份</Button>
+                          <Button className="admin-account-secondary-action" size="sm" variant="ghost" onClick={() => openAction(account, "parent")}><Network />上级</Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -514,6 +553,39 @@ export function AccountManagementPage() {
                 </div>
               </>
             )}
+            {selected?.action === "role" && (
+              <div className="admin-action-field">
+                <label htmlFor="business-role">业务身份</label>
+                <Select value={businessRole} onValueChange={(value) => setBusinessRole(value as BusinessRole | "none")}>
+                  <SelectTrigger id="business-role"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">无业务身份</SelectItem>
+                    <SelectItem value="enterprise">企业</SelectItem>
+                    <SelectItem value="distributor">分销商</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="admin-action-help">企业与分销商当前共享直属下级积分分配能力；均不能设置兑换价格。</p>
+              </div>
+            )}
+            {selected?.action === "parent" && (
+              <div className="admin-action-field">
+                <label htmlFor="direct-parent">直属上级</label>
+                <Select value={parentOwnerId} onValueChange={setParentOwnerId}>
+                  <SelectTrigger id="direct-parent"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">无直属上级</SelectItem>
+                    {dashboard?.eligibleParents
+                      .filter((parent) => parent.id !== selected.account.id)
+                      .map((parent) => (
+                        <SelectItem key={parent.id} value={parent.id}>
+                          {parent.email} · {BUSINESS_ROLE_LABELS[parent.businessRole]}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                <p className="admin-action-help">只列出已启用且具有企业或分销商身份的账户。系统会拒绝循环关系。</p>
+              </div>
+            )}
             <div className="admin-action-field">
               <label htmlFor="admin-action-reason">操作原因</label>
               <Textarea id="admin-action-reason" maxLength={200} placeholder="请填写会进入审计记录的原因" value={reason} onChange={(event) => setReason(event.target.value)} />
@@ -524,7 +596,7 @@ export function AccountManagementPage() {
             <Button variant="outline" disabled={mutating} onClick={() => setSelected(null)}>取消</Button>
             <Button
               variant={selected?.action === "suspend" ? "destructive" : "default"}
-              disabled={mutating || reason.trim().length < 2 || (selected?.action === "grant" && (!Number.isInteger(Number(amount)) || Number(amount) < 1 || Number(amount) > 5000))}
+              disabled={mutating || reason.trim().length < 2 || (selected?.action === "grant" && (!Number.isInteger(Number(amount)) || Number(amount) < 1 || Number(amount) > 5000)) || (selected?.action === "role" && businessRole === (selected.account.businessRole ?? "none")) || (selected?.action === "parent" && parentOwnerId === (selected.account.directParentId ?? "none"))}
               onClick={() => void runAction()}
             >
               {mutating && <LoaderCircle className="animate-spin" />}确认

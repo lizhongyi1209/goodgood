@@ -65,6 +65,7 @@ import {
   readBillingSummary,
 } from "@/features/billing/http-billing-boundary";
 import { CreditActivityView } from "@/features/billing/credit-activity-view";
+import { DistributionView } from "@/features/distribution/distribution-view";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import {
   DraftBoundaryError,
@@ -151,6 +152,7 @@ import {
   LogIn,
   LogOut,
   MoreHorizontal,
+  Network,
   Plus,
   RefreshCw,
   Settings2,
@@ -177,7 +179,7 @@ type AssetBatch = {
   referenceCount: number;
   images: readonly GenerationOutput[];
 };
-type ActiveView = "create" | "projects" | "assets" | "credits";
+type ActiveView = "create" | "projects" | "assets" | "credits" | "distribution";
 type DestructiveCreationIntent =
   | { kind: "new" }
   | { kind: "project"; projectId: string; projectName: string };
@@ -695,6 +697,8 @@ export default function Home() {
           ? "assets"
           : route.kind === "credits"
             ? "credits"
+          : route.kind === "distribution"
+            ? "distribution"
           : "create");
     };
     const applyInitialRoute = window.setTimeout(applyWorkspaceRoute, 0);
@@ -1638,6 +1642,11 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const handleDistributionNav = () => {
+    navigateWorkspace({ kind: "distribution" });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handleCreditAccountChange = useCallback((account: BillingSummary["account"]) => {
     setBillingSummary((current) => current ? { ...current, account } : current);
   }, []);
@@ -2232,6 +2241,14 @@ export default function Home() {
             <Images size={17} /><span>资产库</span>
             {newAssetCount > 0 && <em className="asset-new-count">+{newAssetCount}</em>}
           </button>
+          {authenticationSession?.account.businessRole && (
+            <button
+              className={`side-nav-item ${activeView === "distribution" ? "active" : ""}`}
+              onClick={handleDistributionNav}
+            >
+              <Network size={17} /><span>积分分配</span>
+            </button>
+          )}
           <button className="side-nav-item"><LayoutGrid size={17} /><span>灵感板</span></button>
           {authenticationSession?.account.role === "site_owner" && (
             <button
@@ -2296,6 +2313,15 @@ export default function Home() {
                 onClick={() => window.location.assign("/admin/users")}
               >
                 <UserRoundCog size={16} />
+              </button>
+            )}
+            {authenticationSession?.account.businessRole && (
+              <button
+                className="top-avatar"
+                aria-label="积分分配"
+                onClick={handleDistributionNav}
+              >
+                <Network size={16} />
               </button>
             )}
             {authenticationSession && (
@@ -2498,6 +2524,16 @@ export default function Home() {
           ) : activeView === "credits" ? (
             <CreditActivityView
               enabled={Boolean(authenticationSession && authenticationSession.access.status === "active")}
+              onAccountChange={handleCreditAccountChange}
+              onBack={handleCreateNav}
+            />
+          ) : activeView === "distribution" ? (
+            <DistributionView
+              enabled={Boolean(
+                authenticationSession &&
+                  authenticationSession.access.status === "active" &&
+                  authenticationSession.account.businessRole,
+              )}
               onAccountChange={handleCreditAccountChange}
               onBack={handleCreateNav}
             />

@@ -140,6 +140,22 @@ export async function listRecentAdministrativeActions(pool, { limit = 30 } = {})
   return result.rows.map(actionFromRow);
 }
 
+export async function listEligibleBusinessParents(pool) {
+  const result = await pool.query(
+    `SELECT account.id, account.email, assignment.role AS business_role
+       FROM business_role_assignments assignment
+       JOIN users account
+         ON account.id = assignment.owner_id AND account.status = 'active'
+      WHERE assignment.ended_at IS NULL
+      ORDER BY account.email, account.id`,
+  );
+  return result.rows.map((row) => ({
+    businessRole: row.business_role,
+    email: row.email,
+    id: row.id,
+  }));
+}
+
 function hierarchyReplay(replay) {
   return replay.action_type === "set_business_role"
     ? {
@@ -306,8 +322,11 @@ export function setDirectParent(
     }
     if (parentOwnerId) {
       const parentRole = await client.query(
-        `SELECT role FROM business_role_assignments
-          WHERE owner_id = $1 AND ended_at IS NULL`,
+        `SELECT assignment.role
+           FROM business_role_assignments assignment
+           JOIN users parent
+             ON parent.id = assignment.owner_id AND parent.status = 'active'
+          WHERE assignment.owner_id = $1 AND assignment.ended_at IS NULL`,
         [parentOwnerId],
       );
       if (!parentRole.rowCount) {

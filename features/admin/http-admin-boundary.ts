@@ -42,9 +42,16 @@ export type AdministrativeAction = Readonly<{
   targetEmail: string;
 }>;
 
+export type EligibleBusinessParent = Readonly<{
+  businessRole: BusinessRole;
+  email: string;
+  id: string;
+}>;
+
 export type AdminDashboard = Readonly<{
   accounts: readonly ManagedAccount[];
   counts: Readonly<Record<ManagedAccountStatus, number>>;
+  eligibleParents: readonly EligibleBusinessParent[];
   nextCursor: string | null;
   recentActions: readonly AdministrativeAction[];
 }>;

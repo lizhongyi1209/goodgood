@@ -579,6 +579,46 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .credit-activity-more:hover { background: var(--soft); color: var(--ink); }
 .credit-activity-more:disabled { cursor: wait; opacity: .62; }
 .credit-activity-more-error { margin-top: 14px; padding: 10px 12px; border-radius: 10px; background: #faf2f1; display: flex; align-items: center; justify-content: center; gap: 9px; color: #8d5559; font-size: 10px; }
+
+.distribution-view { width: min(100%,1100px); margin: 0 auto; animation: asset-view-in .24s ease both; }
+.distribution-loading { height: 54px; display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 11px; }
+.distribution-loading svg { width: 17px; animation: status-spin 1s linear infinite; }
+.distribution-header { min-height: 104px; margin-bottom: 24px; display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
+.distribution-header small { display: block; margin-bottom: 7px; color: var(--accent); font-size: 9px; font-weight: 720; letter-spacing: .16em; }
+.distribution-title-row { display: flex; align-items: center; gap: 10px; }
+.distribution-title-row h1 { margin: 0; color: #272730; font-size: 28px; font-weight: 680; letter-spacing: -.045em; }
+.distribution-header p { max-width: 650px; margin: 8px 0 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+.distribution-summary-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }
+.distribution-summary-grid > article { min-height: 116px; padding: 18px; border: 1px solid #ececef; border-radius: 16px; background: var(--white); display: flex; flex-direction: column; }
+.distribution-summary-grid > article.is-accent { border-color: #ead7d6; background: linear-gradient(145deg,#fff 0%,#faf0ef 100%); }
+.distribution-summary-grid span { display: flex; align-items: center; gap: 5px; color: var(--muted); font-size: 10px; }
+.distribution-summary-grid span svg { width: 12px; height: 12px; color: var(--accent); }
+.distribution-summary-grid strong { margin-top: auto; color: var(--ink); font-size: 26px; font-weight: 690; font-variant-numeric: tabular-nums; letter-spacing: -.04em; }
+.distribution-summary-grid .is-accent strong { color: var(--accent-deep); }
+.distribution-summary-grid small { margin-top: 4px; color: var(--quiet); font-size: 9px; }
+.distribution-columns { margin-top: 18px; display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 14px; align-items: start; }
+.distribution-panel { overflow: hidden; border: 1px solid #ececef; border-radius: 17px; background: var(--white); }
+.distribution-panel-heading { min-height: 72px; padding: 16px 18px; border-bottom: 1px solid #eeeeF1; display: flex; align-items: center; justify-content: space-between; }
+.distribution-panel-heading h2 { margin: 0; color: var(--ink); font-size: 14px; font-weight: 670; }
+.distribution-panel-heading p { margin: 5px 0 0; color: var(--quiet); font-size: 9px; }
+.distribution-panel-heading > svg { width: 18px; color: #8e8e98; }
+.distribution-empty { min-height: 230px; padding: 28px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 7px; color: #9a9aa4; text-align: center; }
+.distribution-empty svg { width: 21px; color: #a96a6d; }
+.distribution-empty strong { color: #565660; font-size: 12px; font-weight: 650; }
+.distribution-empty span { font-size: 9px; line-height: 1.5; }
+.distribution-child-list article { min-height: 78px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.distribution-child-list article + article, .distribution-transfer-list article + article { border-top: 1px solid #eeeeF1; }
+.distribution-child-list article > div { min-width: 0; }
+.distribution-child-list strong, .distribution-transfer-list strong { display: block; overflow: hidden; color: #3b3b44; font-size: 11px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.distribution-child-list span, .distribution-transfer-list span { display: block; margin-top: 5px; overflow-wrap: anywhere; color: var(--quiet); font-size: 8px; line-height: 1.4; }
+.distribution-transfer-list article { min-height: 78px; padding: 13px 16px; display: grid; grid-template-columns: 34px minmax(0,1fr) auto; align-items: center; gap: 10px; }
+.distribution-transfer-icon { width: 34px; height: 34px; border-radius: 10px; background: var(--soft); display: grid; place-items: center; color: #70707a; }
+.distribution-transfer-icon svg { width: 15px; }
+.distribution-transfer-icon.incoming { background: var(--accent-soft); color: var(--accent-deep); }
+.distribution-transfer-list b { color: #4e4e58; font-size: 13px; font-variant-numeric: tabular-nums; }
+.distribution-transfer-list b.incoming { color: var(--accent-deep); }
+.distribution-transfer-list > button { width: calc(100% - 24px); margin: 8px 12px 12px; }
+.distribution-more-error { margin: 8px 12px; color: var(--accent-deep); font-size: 9px; }
 .reference-material-grid { overflow: hidden; }
 .reference-material-masonry { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; }
 .mobile-reference-material-masonry { display: none; }
@@ -836,6 +876,15 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
   .credit-activity-amount { min-width: 70px; }
   .credit-activity-amount strong { font-size: 13px; }
   .credit-activity-more-error { align-items: flex-start; flex-direction: column; }
+  .distribution-header { min-height: 88px; margin-bottom: 18px; align-items: center; }
+  .distribution-header p { max-width: 250px; }
+  .distribution-title-row h1 { font-size: 24px; }
+  .distribution-summary-grid { grid-template-columns: 1fr; gap: 8px; }
+  .distribution-summary-grid > article { min-height: 92px; padding: 14px; }
+  .distribution-summary-grid strong { font-size: 22px; }
+  .distribution-columns { grid-template-columns: minmax(0,1fr); }
+  .distribution-child-list article { align-items: flex-start; flex-direction: column; }
+  .distribution-child-list article > button { width: 100%; }
   .asset-section-toggle { flex-basis: 100%; }
   .desktop-reference-material-masonry { display: none; }
   .mobile-reference-material-masonry { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }

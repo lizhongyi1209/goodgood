@@ -6,6 +6,7 @@ export type AuthenticationSession = Readonly<{
   }>;
   account: Readonly<{
     availableCredits: string;
+    businessRole: "enterprise" | "distributor" | null;
     reservedCredits: string;
     role: "site_owner" | "member";
     tier: "seed";
