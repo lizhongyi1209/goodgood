@@ -293,7 +293,8 @@ test("billing summary is wired into both runtimes and the shared workspace", asy
   assert.match(contract, /BillingSummary/);
   assert.match(page, /billingLoading/);
   assert.match(page, /billingError/);
-  assert.match(page, /积分余额/);
+  assert.match(page, /积分记录/);
+  assert.match(page, /点击查看/);
   assert.match(page, /billingSummary\.account\.availableCredits/);
   assert.doesNotMatch(page, /可生成 \{availableImages/);
   assert.doesNotMatch(page, /launchBillingQuote/);

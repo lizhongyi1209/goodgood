@@ -104,6 +104,17 @@ test("declares the GoodGood visual and interaction invariants", async () => {
   assert.doesNotMatch(creationPage, /(?:creation|gallery|detail)-variant-/);
   assert.doesNotMatch(css, /filter:\s*(?:saturate|contrast|hue-rotate|brightness)/);
   assert.doesNotMatch(css, /asset-image-frame:nth-child\([234]\) img/);
+
+  const sidebarFooter = creationPage.slice(
+    creationPage.indexOf('<div className="sidebar-footer">'),
+    creationPage.indexOf('<div className="account-card">'),
+  );
+  assert.ok(sidebarFooter.indexOf("sidebar-billing") < sidebarFooter.indexOf("帮助"));
+  assert.match(sidebarFooter, /<strong>积分记录<\/strong>/);
+  assert.match(sidebarFooter, /sidebar-credit-action">点击查看/);
+  assert.match(css, /\.sidebar-billing \{[^}]*min-height:\s*48px/s);
+  assert.match(css, /\.sidebar-credit-link[^}]*grid-template-columns:\s*17px minmax\(0,1fr\) auto/s);
+  assert.match(css, /@media \(max-width:\s*1040px\)[\s\S]*\.sidebar-billing \.sidebar-credit-link \{[^}]*grid-template-columns:\s*17px/s);
 });
 
 test("keeps reference previews legible and aspect ratio first through responsive layouts", async () => {

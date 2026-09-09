@@ -135,8 +135,10 @@ import { toast } from "sonner";
 import {
   Brush,
   Check,
+  ChevronRight,
   CircleAlert,
   Clock3,
+  Coins,
   Compass,
   Download,
   FolderOpen,
@@ -2264,7 +2266,6 @@ export default function Home() {
         </nav>
 
         <div className="sidebar-footer">
-          <button className="side-nav-item"><HelpCircle size={17} /><span>帮助</span></button>
           {authenticationSession && (
             <div
               className={`sidebar-billing ${billingError ? "has-error" : ""}`}
@@ -2282,12 +2283,18 @@ export default function Home() {
                   <CircleAlert size={12} />积分暂不可用<RefreshCw size={11} />
                 </button>
               ) : billingSummary ? (
-                <button className="sidebar-credit-link" onClick={handleCreditsNav} aria-label={`查看积分记录，当前余额 ${billingSummary.account.availableCredits}`}>
-                  <span>积分余额</span><strong>{billingSummary.account.availableCredits}</strong>
+                <button className={`sidebar-credit-link ${activeView === "credits" ? "active" : ""}`} onClick={handleCreditsNav} aria-label={`查看积分记录，当前余额 ${billingSummary.account.availableCredits}`} title="积分记录，点击查看">
+                  <Coins size={17} />
+                  <span className="sidebar-credit-copy">
+                    <strong>积分记录</strong>
+                    <small>余额 {billingSummary.account.availableCredits}</small>
+                  </span>
+                  <span className="sidebar-credit-action">点击查看<ChevronRight size={12} /></span>
                 </button>
               ) : null}
             </div>
           )}
+          <button className="side-nav-item"><HelpCircle size={17} /><span>帮助</span></button>
           <div className="account-card">
             <div className="avatar">{accountInitials}</div>
             <div>

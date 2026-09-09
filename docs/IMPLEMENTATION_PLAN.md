@@ -29,7 +29,8 @@
   6 个 opt-in 跳过、0 失败）；跨平台锁记录经 npm 11.8 修复。PR/main CI 均通过，安全镜像
   `sha256:b441e16685c77842e18cefcdbcae00c2e50d25350fe598ea2e462dd61758f152` 已发布但未部署。
 - GG-025 从 `origin/main@42fc8d81` 建立隔离 worktree；已完成 `/credits`、owner-scoped 只读查询、
-  业务化 reserve/settle/release 投影、筛选分页及桌面/窄屏交互。独立 Compose 模拟生成后余额
+  业务化 reserve/settle/release 投影、筛选分页及桌面/窄屏交互；宽屏入口已按反馈固定为左下角
+  `帮助` 上方的 `积分记录 / 点击查看` 行。独立 Compose 模拟生成后余额
   100→90 且只显示一条 `-10 已消费`；完整门禁 257 项（251 通过、6 个 opt-in 跳过、0 失败），
   未请求真实 provider。
 - 支付、自动账户删除、举报、完整外部删除条款与完整 seed readiness 仍在 GG-900—GG-902

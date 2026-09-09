@@ -113,12 +113,13 @@ individual icon. Upload, settings, and send align to the same 40px box.
 
 ## Account credit
 
-- Desktop uses a compact single-line summary above the existing account card:
-  the `积分余额` label and current available-credit number only. Per-image price,
-  batch total, and approximate remaining image count do not repeat in the
-  sidebar; generation pricing remains beside the composer actions.
+- Desktop uses a dedicated compact entry immediately above `帮助` in the lower
+  sidebar. It reads `积分记录`, keeps the current available balance as secondary
+  context, and exposes the explicit action `点击查看`.
+  Per-image price, batch total, and approximate remaining image count do not
+  repeat in the sidebar; generation pricing remains beside the composer actions.
 - Mobile uses one small neutral balance pill in the existing top bar. It is
-  context, not a primary action. The desktop summary and mobile pill may open
+  context, not a primary action. The desktop entry and mobile pill may open
   the dedicated credit-record view while retaining their quiet visual weight.
 - Loading and retry states keep the same footprint so account chrome does not
   jump. Do not add a wallet panel, pricing hero, or checkout treatment before

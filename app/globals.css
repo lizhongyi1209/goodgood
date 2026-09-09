@@ -58,15 +58,17 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 @keyframes asset-arrival { 0%,100% { background: transparent; color: #6f6f7b; } 45% { background: #f4e5e4; color: var(--accent-deep); } }
 @keyframes asset-icon-arrival { 0%,100% { transform: scale(1) rotate(0); } 45% { transform: scale(1.16) rotate(-5deg); } }
 .sidebar-footer { margin-top: auto; display: flex; flex-direction: column; gap: 3px; }
-.sidebar-billing { margin: var(--space-1) 3px 0; padding: 8px 7px; border-top: 1px solid var(--line); color: var(--quiet); }
-.sidebar-billing-loading { display: flex; align-items: center; gap: 5px; font-size: 10px; }
+.sidebar-billing { min-height: 48px; margin-bottom: 3px; color: var(--quiet); }
+.sidebar-billing-loading { min-height: 48px; padding: 0 12px; border-radius: var(--radius-md); background: var(--soft); display: flex; align-items: center; gap: 7px; font-size: 10px; }
 .sidebar-billing-loading svg { animation: authentication-spin .9s linear infinite; }
-.sidebar-billing button { width: 100%; padding: 2px 0; border: 0; background: transparent; display: flex; align-items: center; justify-content: space-between; color: var(--accent-deep); font-size: 10px; }
-.sidebar-billing button:hover { color: var(--accent); }
-.sidebar-billing .sidebar-credit-link { align-items: baseline; color: var(--quiet); text-align: left; }
-.sidebar-billing .sidebar-credit-link:hover { color: var(--accent-deep); }
-.sidebar-credit-link span { font-size: 10px; }
-.sidebar-credit-link strong { color: var(--ink); font-size: 15px; font-variant-numeric: tabular-nums; }
+.sidebar-billing button { width: 100%; min-height: 48px; padding: 0 12px; border: 0; border-radius: var(--radius-md); background: var(--soft); display: flex; align-items: center; color: var(--accent-deep); font-size: 10px; }
+.sidebar-billing button:hover { background: #e9e9ed; color: var(--accent); }
+.sidebar-billing .sidebar-credit-link { display: grid; grid-template-columns: 17px minmax(0,1fr) auto; gap: 9px; color: #686873; text-align: left; }
+.sidebar-billing .sidebar-credit-link:hover, .sidebar-billing .sidebar-credit-link.active { background: var(--accent-soft); color: var(--accent-deep); }
+.sidebar-credit-copy { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.sidebar-credit-copy strong { color: var(--ink); font-size: 12px; font-weight: 650; }
+.sidebar-credit-copy small { overflow: hidden; color: var(--quiet); font-size: 9px; font-variant-numeric: tabular-nums; text-overflow: ellipsis; white-space: nowrap; }
+.sidebar-credit-action { display: inline-flex; align-items: center; gap: 1px; color: var(--accent-deep); font-size: 9px; white-space: nowrap; }
 .account-card { margin-top: var(--space-2); padding: 10px; background: #f0f0f3; border-radius: var(--radius-md); display: grid; grid-template-columns: 34px minmax(0,1fr) auto; align-items: center; gap: 10px; }
 .avatar, .top-avatar { border-radius: 50%; display: grid; place-items: center; background: #e7e7eb; border: 0; font-size: 10px; font-weight: 650; }
 .avatar { width: 34px; height: 34px; }
@@ -679,9 +681,12 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
   .app-shell { grid-template-columns: 76px minmax(0, 1fr); }
   .sidebar { padding: 22px 10px 14px; }
   .sidebar-brand { justify-content: center; padding: 0; }
-  .sidebar-wordmark, .side-nav-item span, .sidebar-billing, .account-card div:nth-child(2), .account-session-action { display: none; }
+  .sidebar-wordmark, .side-nav-item span, .sidebar-credit-copy, .sidebar-credit-action, .account-card div:nth-child(2), .account-session-action { display: none; }
   .brand-mark { width: 31px; height: 23px; }
   .side-nav-item { justify-content: center; padding: 0; }
+  .sidebar-billing { min-height: 44px; }
+  .sidebar-billing-loading, .sidebar-billing button { width: 44px; min-height: 44px; margin: 0 auto; padding: 0; justify-content: center; font-size: 0; }
+  .sidebar-billing .sidebar-credit-link { grid-template-columns: 17px; gap: 0; }
   .asset-new-count { min-width: 18px; height: 18px; position: absolute; top: 3px; right: 3px; margin: 0; padding: 0 4px; border: 2px solid var(--canvas); font-size: 7px; }
   .account-card { display: flex; justify-content: center; padding: 10px 0; }
   .content-wrap { width: auto; padding-left: 14px; padding-right: 20px; }

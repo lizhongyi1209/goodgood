@@ -19,10 +19,12 @@
   area and as a compact mobile balance. Initial loading stays quiet; a read
   failure keeps the workspace usable and offers a local retry. Zero is a valid
   balance, never an empty or error state.
-- Selecting either balance opens `/credits` without discarding the current
-  composer, project, or active generation. The view shows available and
-  processing credit plus `全部 / 消费 / 获得 / 退回` filters and stable load-more
-  pagination; it always offers a quick return to creation.
+- On wide screens, a dedicated `积分记录 / 点击查看` entry sits immediately
+  above `帮助` in the lower sidebar; on narrow screens, the compact balance
+  remains the entry. Selecting either opens `/credits` without discarding the
+  current composer, project, or active generation. The view shows available
+  and processing credit plus `全部 / 消费 / 获得 / 退回` filters and stable
+  load-more pagination; it always offers a quick return to creation.
 - A generation reservation is one user-facing record. While open it reads as
   processing, settlement changes it to consumed, and release changes it to
   not charged with the reserved amount returned. A later refund is a separate
