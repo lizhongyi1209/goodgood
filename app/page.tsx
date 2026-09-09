@@ -2256,14 +2256,19 @@ export default function Home() {
             <div className="avatar">{accountInitials}</div>
             <div>
               <strong>{accountEmail ?? "登录 GoodGood"}</strong>
-              <small className={billingSummary && authenticationSession ? "account-credit-balance" : ""} role={authenticationSession ? "status" : undefined} aria-live={authenticationSession ? "polite" : undefined}>
+              <small
+                aria-label={billingSummary && authenticationSession ? `积分余额 ${billingSummary.account.availableCredits}` : undefined}
+                aria-live={authenticationSession ? "polite" : undefined}
+                className={billingSummary && authenticationSession ? "account-credit-balance" : ""}
+                role={authenticationSession ? "status" : undefined}
+              >
                 {authenticationSession
                   ? billingLoading
                     ? "积分读取中"
                     : billingError
                       ? "积分暂不可用"
                       : billingSummary
-                        ? `余额 ${billingSummary.account.availableCredits} 积分`
+                        ? <><Coins aria-hidden="true" size={12} /><span>{billingSummary.account.availableCredits}</span></>
                         : "积分暂不可用"
                   : "Google 或邮箱验证码"}
               </small>

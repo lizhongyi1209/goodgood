@@ -64,7 +64,8 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .account-card div:nth-child(2) { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
 .account-card strong { font-size: var(--text-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .account-card small { color: var(--quiet); font-size: 10px; }
-.account-card small.account-credit-balance { color: var(--accent-deep); font-weight: 650; font-variant-numeric: tabular-nums; }
+.account-card small.account-credit-balance { display: inline-flex; align-items: center; gap: 4px; color: var(--accent-deep); font-weight: 650; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.account-card small.account-credit-balance svg { flex: 0 0 auto; }
 .account-session-action { width: 28px; height: 28px; padding: 0; border: 0; border-radius: 8px; background: transparent; display: grid; place-items: center; color: var(--quiet); }
 .account-session-action:hover { background: #e4e4e8; color: var(--ink); }
 

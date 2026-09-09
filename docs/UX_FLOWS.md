@@ -21,7 +21,8 @@
   balance, never an empty or error state.
 - On wide screens, a normal `积分记录` navigation row sits immediately below
   `帮助` in the lower sidebar; the available balance sits below the username
-  in Palace Red. On narrow screens, the compact balance
+  as a Palace Red credit icon plus number. Its accessible name retains the full
+  `积分余额 N` meaning. On narrow screens, the compact balance
   remains the entry. Selecting either opens `/credits` without discarding the
   current composer, project, or active generation. The view shows settled spend
   for today, the current Monday-based week, and the current month plus
