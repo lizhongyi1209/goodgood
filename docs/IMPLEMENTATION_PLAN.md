@@ -1,9 +1,10 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-09
-- Current phase: 已开放 controlled alpha；累计候选已发布，Sharp 安全候选等待新发布授权。
+- Current phase: 已开放 controlled alpha；累计候选已发布，Sharp 安全候选按站长决定留到
+  下一次发布执行。
 - Current objective: GG-023 已将 Sharp 从 0.35.0 升级到 0.35.4 并恢复 main CI；当前线上
-  `65ceb168` 不自动切换到尚未完成新精确候选 alpha 门禁的镜像。
+  `65ceb168` 本轮保持不变，下次发布必须按届时最新精确候选重新完成 alpha 门禁。
 
 ## Current checkpoint
 
@@ -30,10 +31,13 @@
   `sha256:b441e16685c77842e18cefcdbcae00c2e50d25350fe598ea2e462dd61758f152` 已发布但未部署。
 - 支付、自动账户删除、举报、完整外部删除条款与完整 seed readiness 仍在 GG-900—GG-902
   搁置范围，本次发布没有恢复它们。
-- Next action: 等待站长决定是否授权 GG-023 再执行 1 次约 10 积分真实 Nano 冒烟；若授权，
-  为 main `18fe779b` 生成新鲜 production preflight/alpha evidence 并部署安全镜像。
-- Blockers: 此前授权的唯一真实生图已经成功使用，不能为 GG-023 新候选再次计费；在取得
-  新授权前只完成源码/CI 修复，不变更当前生产镜像。
+- Next action: 下一次先恢复 PR #6，核定并处理 Trivy 新识别的 Next 16.2.11 CRITICAL 项；然后
+  在获得生产发布范围与额外计费冒烟授权后，选择届时最新的精确候选，重新生成 CI artifact、
+  production preflight 和 controlled-alpha evidence。门禁全部通过后才部署包含 Sharp 0.35.4
+  的镜像，不自动复用当前归档候选。
+- Blockers: PR #6 的 run `34322442639` 因 `CVE-2026-75604` 和 `GHSA-2xp9-vwfh-vxw4`
+  失败，修复版指向 Next 16.3.3；本轮按站长决定不扩展升级范围，PR 保持未合并。生产保持不变，
+  仍运行 Sharp 0.35.0；此前授权的唯一真实生图已经使用，后续计费冒烟仍需明确授权。
 
 ## Milestones
 
@@ -44,7 +48,7 @@
 | M7 | 已完成 | 香港链路、备份/恢复及兼容切换验证 |
 | M8 / controlled alpha | 已开放并完成本次累计发布 | 审核账户、核心生图、恢复与发布门禁 |
 | GG-004—GG-022 | 已部署或完成 | 累计功能、可靠性、恢复工具和生产发布 |
-| GG-023 | 实施中 | Sharp 0.35.4 安全修复与 main CI 恢复 |
+| GG-023 | 源码完成；部署延期 | Sharp 0.35.4 已通过 CI，生产切换留到下一次发布 |
 | 完整 C6 / full seed | 搁置 | 删除、举报、外部条款与进一步配套，见 GG-900/901 |
 | M9 | 搁置 | 支付/支付宝，见 GG-902 |
 
@@ -53,9 +57,13 @@
 1. 读根 AGENTS、[CURRENT_STATE](CURRENT_STATE.md)、[WORKFLOW](WORKFLOW.md)、本页和
    [BACKLOG](BACKLOG.md)，检查 Git 分支/worktree/未提交改动。
 2. 不把最新 main 自动当作线上版本；以 CURRENT_STATE 的完整 revision、镜像摘要和迁移为准。
-3. 先恢复 GG-023；新的普通产品需求从 GG-024 或后续未占用编号建卡，不要恢复旧 C6。
-4. 本次 alpha 证据只绑定 `65ceb168`，后续候选必须重新生成新鲜证据并通过门禁。
-5. 真实 provider 请求可能计费，必须与测试 fixture 隔离并取得对具体调用的明确授权。
+3. 不在会话恢复时自动部署 GG-023；站长已将它留到下一次明确授权的生产发布。
+4. 先检查 PR #6 与 run `34322442639`，为 Next 16.2.11 的两个 CRITICAL 项建立或匹配独立
+   安全任务；不要通过忽略策略绕过 fail-closed 门禁。
+5. 下一次发布先选择届时最新的精确候选；不要假定复用 `18fe779b`。本次 alpha 证据只绑定
+   `65ceb168`，后续候选必须重新生成新鲜证据并通过门禁。
+6. 新的普通产品需求从 GG-024 或后续未占用编号建卡，不要恢复旧 C6。
+7. 真实 provider 请求可能计费，必须与测试 fixture 隔离并取得对具体调用的明确授权。
 
 ## History and update policy
 
