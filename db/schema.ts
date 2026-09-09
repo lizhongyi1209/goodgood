@@ -200,6 +200,16 @@ export const creditAccounts = pgTable(
     reservedBalance: bigint("reserved_balance", { mode: "bigint" })
       .default(sql`0`)
       .notNull(),
+    paymentFundedAvailableBalance: bigint("payment_funded_available_balance", {
+      mode: "bigint",
+    })
+      .default(sql`0`)
+      .notNull(),
+    paymentFundedReservedBalance: bigint("payment_funded_reserved_balance", {
+      mode: "bigint",
+    })
+      .default(sql`0`)
+      .notNull(),
     version: bigint("version", { mode: "bigint" }).default(sql`0`).notNull(),
     status: text("status").default("active").notNull(),
     ...timestamps,
@@ -222,6 +232,14 @@ export const creditAccounts = pgTable(
     check(
       "credit_accounts_reserved_balance_check",
       sql`${table.reservedBalance} >= 0`,
+    ),
+    check(
+      "credit_accounts_payment_funded_available_check",
+      sql`${table.paymentFundedAvailableBalance} >= 0 and ${table.paymentFundedAvailableBalance} <= ${table.availableBalance}`,
+    ),
+    check(
+      "credit_accounts_payment_funded_reserved_check",
+      sql`${table.paymentFundedReservedBalance} >= 0 and ${table.paymentFundedReservedBalance} <= ${table.reservedBalance}`,
     ),
     check("credit_accounts_version_check", sql`${table.version} >= 0`),
     check(
@@ -828,6 +846,9 @@ export const creditLedgerEntries = pgTable(
       .references(() => users.id, { onDelete: "restrict" }),
     entryType: text("entry_type").notNull(),
     amount: bigint("amount", { mode: "bigint" }).notNull(),
+    paymentFundedAmount: bigint("payment_funded_amount", { mode: "bigint" })
+      .default(sql`0`)
+      .notNull(),
     idempotencyKey: text("idempotency_key").notNull(),
     operationHash: text("operation_hash").notNull(),
     reason: text("reason").notNull(),
@@ -884,6 +905,11 @@ export const creditLedgerEntries = pgTable(
       sql`(${table.entryType} in ('grant', 'release', 'refund') and ${table.amount} > 0)
         or (${table.entryType} in ('reserve', 'settle', 'expire') and ${table.amount} < 0)
         or (${table.entryType} = 'adjust' and ${table.amount} <> 0)`,
+    ),
+    check(
+      "credit_ledger_entries_payment_funded_amount_check",
+      sql`(${table.amount} > 0 and ${table.paymentFundedAmount} between 0 and ${table.amount})
+        or (${table.amount} < 0 and ${table.paymentFundedAmount} between ${table.amount} and 0)`,
     ),
     check(
       "credit_ledger_entries_idempotency_key_check",

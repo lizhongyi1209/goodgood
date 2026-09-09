@@ -482,6 +482,7 @@ test(
     });
     assert.equal(billing.account.availableCredits, "500");
     assert.equal(billing.account.reservedCredits, "0");
+    assert.equal(billing.account.transferableCredits, "500");
 
     const evidence = await pool.query(
       `SELECT

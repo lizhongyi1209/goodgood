@@ -1,7 +1,7 @@
 # ADR 0043: Direct-child transfer of payment-funded credits
 
 - Status: Accepted
-- Date: 2026-09-09
+- Date: 2026-09-10
 - Refines: ADR 0006, ADR 0010, and ADR 0020
 
 ## Context

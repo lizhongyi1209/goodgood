@@ -273,6 +273,7 @@ test("credit activity API validates filters, binds the owner, and keeps ledger I
   assert.deepEqual(page.account, {
     availableCredits: "80",
     reservedCredits: "20",
+    transferableCredits: "0",
     unit: "credit",
     version: "5",
   });

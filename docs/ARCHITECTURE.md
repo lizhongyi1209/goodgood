@@ -545,8 +545,8 @@ ADR 0043 adds a distribution boundary behind the same product-owned ledger. A
 payment-authored grant creates payment-funded credit; welcome, promotional, and
 ordinary adjustment entries create non-transferable credit. The account cache
 keeps source-aware available/reserved projections, while immutable source
-allocations link reservations and downstream transfers back to accepted
-origins. Generation reserves non-transferable credit first, records the source
+amounts on ledger entries preserve the payment-funded portion of reservations
+and downstream transfers. Generation reserves non-transferable credit first, records the source
 split, and settles, releases, or refunds that exact split.
 
 A transfer service owns business-role and direct-relationship authorization. It
@@ -561,10 +561,12 @@ pre-checkout paid-credit path.
 
 The read side is deliberately narrower than the ledger. `GET /api/billing`
 authenticates before resolving the owner, performs no mutation, returns
-`Cache-Control: no-store`, and serializes exact integer credit as decimal
-strings. The browser refreshes it after queue acceptance and terminal job
-states. Local frontend preview mode may return the same public response shape
-from fixed data; the production-shaped Node runtime always reads PostgreSQL.
+`Cache-Control: no-store`, and serializes exact aggregate and payment-funded
+transferable available credit as decimal strings. It never exposes the source
+split of an individual ledger entry. The browser refreshes it after queue
+acceptance and terminal job states. Local frontend preview mode may return the
+same public response shape from fixed data; the production-shaped Node runtime
+always reads PostgreSQL.
 `GET /api/billing/activities` uses the same authenticated owner and `no-store`
 boundary. It scans owner-keyed immutable entries newest-first, joins only the
 same owner's generation context, and maps reserve plus settle/release to one

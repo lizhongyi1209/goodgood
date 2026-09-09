@@ -29,6 +29,8 @@ export interface CreditAccountSnapshot {
   ownerId: string;
   unit: string;
   availableBalance: bigint;
+  paymentFundedAvailableBalance: bigint;
+  paymentFundedReservedBalance: bigint;
   reservedBalance: bigint;
   version: bigint;
   status: "active" | "frozen" | "closed";
@@ -40,6 +42,7 @@ export interface CreditLedgerEntry {
   ownerId: string;
   entryType: CreditLedgerEntryType;
   amount: bigint;
+  paymentFundedAmount: bigint;
   idempotencyKey: string;
   reason: string;
   relatedJobId: string | null;
@@ -56,6 +59,7 @@ export interface BillingAccountSummary {
   unit: string;
   availableCredits: SerializedCreditAmount;
   reservedCredits: SerializedCreditAmount;
+  transferableCredits: SerializedCreditAmount;
   version: SerializedCreditAmount;
 }
 

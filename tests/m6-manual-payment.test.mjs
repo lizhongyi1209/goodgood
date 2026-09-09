@@ -113,7 +113,7 @@ test(
     const email = `manual-${ownerId}@goodgood.invalid`;
     const otherEmail = `manual-${otherOwnerId}@goodgood.invalid`;
     await pool.query(
-      "INSERT INTO users (id, email) VALUES ($1, $2), ($3, $4)",
+      "INSERT INTO users (id, email, status) VALUES ($1, $2, 'active'), ($3, $4, 'active')",
       [ownerId, email, otherOwnerId, otherEmail],
     );
     const paymentReference = `receipt-${randomUUID()}`;

@@ -702,6 +702,7 @@ test(
     assert.deepEqual(publicBillingSummary.account, {
       availableCredits: "50",
       reservedCredits: "0",
+      transferableCredits: "0",
       unit: "credit",
       version: "7",
     });

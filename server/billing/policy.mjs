@@ -68,3 +68,86 @@ export function projectCreditBalance(account, entryType, amount) {
   }
   return projected;
 }
+
+function paymentFundedBalanceDeltas(entryType, value) {
+  const amount = toBigInt(value, "payment-funded amount");
+  if (amount === 0n) return { available: 0n, reserved: 0n };
+  return creditBalanceDeltas(entryType, amount);
+}
+
+export function paymentFundedPortionForReservation(account, value) {
+  const amount = toBigInt(value, "reservation amount");
+  const available = toBigInt(account.available, "available balance");
+  const paymentFundedAvailable = toBigInt(
+    account.paymentFundedAvailable,
+    "payment-funded available balance",
+  );
+  if (
+    amount <= 0n ||
+    available < 0n ||
+    paymentFundedAvailable < 0n ||
+    paymentFundedAvailable > available ||
+    amount > available
+  ) {
+    return null;
+  }
+  const nonTransferableAvailable = available - paymentFundedAvailable;
+  return amount > nonTransferableAvailable
+    ? amount - nonTransferableAvailable
+    : 0n;
+}
+
+export function projectSourceAwareCreditBalance(
+  account,
+  entryType,
+  amount,
+  paymentFundedAmount,
+) {
+  const signedAmount = toBigInt(amount, "signed amount");
+  const signedPaymentFundedAmount = toBigInt(
+    paymentFundedAmount,
+    "payment-funded amount",
+  );
+  if (
+    (signedAmount > 0n &&
+      (signedPaymentFundedAmount < 0n ||
+        signedPaymentFundedAmount > signedAmount)) ||
+    (signedAmount < 0n &&
+      (signedPaymentFundedAmount > 0n ||
+        signedPaymentFundedAmount < signedAmount))
+  ) {
+    throw new RangeError(
+      "payment-funded amount must share the entry sign and stay within its magnitude.",
+    );
+  }
+
+  const aggregate = projectCreditBalance(account, entryType, signedAmount);
+  if (!aggregate) return null;
+  const paymentFundedAvailable = toBigInt(
+    account.paymentFundedAvailable,
+    "payment-funded available balance",
+  );
+  const paymentFundedReserved = toBigInt(
+    account.paymentFundedReserved,
+    "payment-funded reserved balance",
+  );
+  const deltas = paymentFundedBalanceDeltas(
+    entryType,
+    signedPaymentFundedAmount,
+  );
+  const projected = {
+    available: aggregate.available,
+    paymentFundedAvailable: paymentFundedAvailable + deltas.available,
+    paymentFundedReserved: paymentFundedReserved + deltas.reserved,
+    reserved: aggregate.reserved,
+  };
+  if (
+    projected.paymentFundedAvailable < 0n ||
+    projected.paymentFundedReserved < 0n ||
+    projected.paymentFundedAvailable > projected.available ||
+    projected.paymentFundedReserved > projected.reserved
+  ) {
+    return null;
+  }
+  return projected;
+}

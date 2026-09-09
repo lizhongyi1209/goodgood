@@ -2,8 +2,9 @@ import { createHash, randomUUID } from "node:crypto";
 import {
   creditBalanceDeltas,
   exactCreditAmount,
+  paymentFundedPortionForReservation,
   positiveCreditAmount,
-  projectCreditBalance,
+  projectSourceAwareCreditBalance,
 } from "./policy.mjs";
 
 const PRODUCT_MODELS = new Set([
@@ -83,6 +84,12 @@ function accountFromRow(row) {
     createdAt: new Date(row.created_at),
     id: row.id,
     ownerId: row.owner_id,
+    paymentFundedAvailableBalance: exactCreditAmount(
+      row.payment_funded_available_balance ?? 0,
+    ),
+    paymentFundedReservedBalance: exactCreditAmount(
+      row.payment_funded_reserved_balance ?? 0,
+    ),
     reservedBalance: exactCreditAmount(row.reserved_balance),
     status: row.status,
     unit: row.unit,
@@ -102,6 +109,7 @@ function entryFromRow(row) {
     idempotencyKey: row.idempotency_key,
     metadata: row.metadata ?? {},
     ownerId: row.owner_id,
+    paymentFundedAmount: exactCreditAmount(row.payment_funded_amount ?? 0),
     priorEntryId: row.prior_entry_id ?? null,
     reason: row.reason,
     relatedJobId: row.related_job_id ?? null,
@@ -331,6 +339,7 @@ async function appendCreditEntryInTransaction(
     entryType,
     idempotencyKey,
     metadata = {},
+    paymentFundedAmount = 0n,
     priorEntryId = null,
     reason,
     relatedJobId = null,
@@ -339,6 +348,10 @@ async function appendCreditEntryInTransaction(
   },
 ) {
   const signedAmount = exactCreditAmount(amount);
+  const signedPaymentFundedAmount = exactCreditAmount(
+    paymentFundedAmount,
+    "paymentFundedAmount",
+  );
   const operation = {
     actor,
     amount: signedAmount.toString(),
@@ -372,20 +385,25 @@ async function appendCreditEntryInTransaction(
 
   await verifyBeforeApply();
   const deltas = creditBalanceDeltas(entryType, signedAmount);
-  const projected = projectCreditBalance(
+  const projected = projectSourceAwareCreditBalance(
     {
       available: accountRow.available_balance,
+      paymentFundedAvailable:
+        accountRow.payment_funded_available_balance ?? 0,
+      paymentFundedReserved:
+        accountRow.payment_funded_reserved_balance ?? 0,
       reserved: accountRow.reserved_balance,
     },
     entryType,
     signedAmount,
+    signedPaymentFundedAmount,
   );
   if (!projected) {
     const insufficient = deltas.available < 0n;
     throw new BillingPersistenceError(
       insufficient
         ? "INSUFFICIENT_POINTS"
-        : "CREDIT_RESERVATION_INCONSISTENT",
+        : "CREDIT_SOURCE_INCONSISTENT",
       insufficient
         ? "积分不足，请充值后重试。"
         : "The credit account cannot apply this operation.",
@@ -404,13 +422,23 @@ async function appendCreditEntryInTransaction(
     `UPDATE credit_accounts
         SET available_balance = available_balance + $2,
             reserved_balance = reserved_balance + $3,
+            payment_funded_available_balance = $4,
+            payment_funded_reserved_balance = $5,
             version = version + 1,
             updated_at = now()
       WHERE id = $1 AND status = 'active'
         AND available_balance + $2 >= 0
         AND reserved_balance + $3 >= 0
+        AND $4 >= 0 AND $4 <= available_balance + $2
+        AND $5 >= 0 AND $5 <= reserved_balance + $3
       RETURNING *`,
-    [accountRow.id, deltas.available.toString(), deltas.reserved.toString()],
+    [
+      accountRow.id,
+      deltas.available.toString(),
+      deltas.reserved.toString(),
+      projected.paymentFundedAvailable.toString(),
+      projected.paymentFundedReserved.toString(),
+    ],
   );
   if (!updated.rowCount) {
     throw new BillingPersistenceError(
@@ -422,10 +450,10 @@ async function appendCreditEntryInTransaction(
   const entryId = randomUUID();
   const inserted = await client.query(
     `INSERT INTO credit_ledger_entries (
-       id, account_id, owner_id, entry_type, amount, idempotency_key,
+       id, account_id, owner_id, entry_type, amount, payment_funded_amount, idempotency_key,
        operation_hash, reason, related_job_id, related_payment_ref,
        prior_entry_id, actor, metadata
-     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::jsonb)
+     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14::jsonb)
      RETURNING *`,
     [
       entryId,
@@ -433,6 +461,7 @@ async function appendCreditEntryInTransaction(
       accountRow.owner_id,
       entryType,
       signedAmount.toString(),
+      signedPaymentFundedAmount.toString(),
       idempotencyKey,
       fingerprint,
       reason,
@@ -460,6 +489,7 @@ export async function grantCreditsInTransaction(
     ownerId,
     reason,
     relatedPaymentRef = null,
+    sourceClass = "non_transferable",
     unit = "credit",
   },
 ) {
@@ -468,6 +498,12 @@ export async function grantCreditsInTransaction(
   const creditUnit = requireText(unit, "unit", 32);
   const serverActor = requireActor(actor);
   const entryReason = requireText(reason, "reason", 200);
+  if (!["non_transferable", "payment_funded"].includes(sourceClass)) {
+    throw new TypeError("Unsupported credit source class.");
+  }
+  if (sourceClass === "payment_funded" && !relatedPaymentRef) {
+    throw new TypeError("Payment-funded credit requires a payment reference.");
+  }
   await advisoryLock(client, `credit:${ownerId}:${key}`);
   await client.query(
     `INSERT INTO credit_accounts (id, owner_id, unit)
@@ -488,6 +524,8 @@ export async function grantCreditsInTransaction(
     entryType: "grant",
     idempotencyKey: key,
     metadata,
+    paymentFundedAmount:
+      sourceClass === "payment_funded" ? grantAmount : 0n,
     reason: entryReason,
     relatedPaymentRef,
   });
@@ -537,7 +575,9 @@ async function loadGenerationForReservation(client, { jobId, ownerId }) {
 
 async function loadLinkedReservation(client, reservationEntryId) {
   const result = await client.query(
-    `SELECT e.*, a.available_balance, a.reserved_balance, a.status,
+    `SELECT e.*, a.available_balance, a.reserved_balance,
+            a.payment_funded_available_balance,
+            a.payment_funded_reserved_balance, a.status,
             a.unit, a.version, a.created_at AS account_created_at,
             a.updated_at AS account_updated_at
        FROM credit_ledger_entries e
@@ -555,6 +595,8 @@ function accountRowFromLinkedEntry(row) {
     created_at: row.account_created_at,
     id: row.account_id,
     owner_id: row.owner_id,
+    payment_funded_available_balance: row.payment_funded_available_balance,
+    payment_funded_reserved_balance: row.payment_funded_reserved_balance,
     reserved_balance: row.reserved_balance,
     status: row.status,
     unit: row.unit,
@@ -642,6 +684,21 @@ export async function reserveGenerationCreditsInTransaction(
       409,
     );
   }
+  const paymentFundedPortion = paymentFundedPortionForReservation(
+    {
+      available: accountResult.rows[0].available_balance,
+      paymentFundedAvailable:
+        accountResult.rows[0].payment_funded_available_balance ?? 0,
+    },
+    price.creditAmount,
+  );
+  if (paymentFundedPortion === null) {
+    throw new BillingPersistenceError(
+      "INSUFFICIENT_POINTS",
+      "积分不足，请充值后重试。",
+      409,
+    );
+  }
   const reserved = await appendCreditEntryInTransaction(client, {
     accountRow: accountResult.rows[0],
     actor: serverActor,
@@ -649,6 +706,7 @@ export async function reserveGenerationCreditsInTransaction(
     entryType: "reserve",
     idempotencyKey: key,
     metadata: { ...metadata, priceVersionId: price.id },
+    paymentFundedAmount: -paymentFundedPortion,
     reason: entryReason,
     relatedJobId: jobId,
   });
@@ -722,6 +780,9 @@ async function closeReservationInTransaction(
   await advisoryLock(client, `credit:${ownerId}:${key}`);
   const context = await loadReservationContext(client, { jobId, ownerId });
   const reservationAmount = exactCreditAmount(context.reservation.amount);
+  const reservationPaymentFundedAmount = exactCreditAmount(
+    context.reservation.payment_funded_amount ?? 0,
+  );
   return appendCreditEntryInTransaction(client, {
     accountRow: context.accountRow,
     actor: serverActor,
@@ -729,6 +790,10 @@ async function closeReservationInTransaction(
     entryType,
     idempotencyKey: key,
     metadata,
+    paymentFundedAmount:
+      entryType === "settle"
+        ? reservationPaymentFundedAmount
+        : -reservationPaymentFundedAmount,
     priorEntryId: context.reservation.id,
     reason: entryReason,
     relatedJobId: jobId,
@@ -823,6 +888,9 @@ export async function refundGenerationCreditsInTransaction(
     entryType: "refund",
     idempotencyKey: key,
     metadata,
+    paymentFundedAmount: -exactCreditAmount(
+      settlement.payment_funded_amount ?? 0,
+    ),
     priorEntryId: settlement.id,
     reason: entryReason,
     relatedJobId: jobId,

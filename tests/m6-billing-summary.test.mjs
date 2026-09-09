@@ -140,6 +140,7 @@ test("billing summary serializes exact credits without owner or account identifi
   assert.deepEqual(summary.account, {
     availableCredits: "100",
     reservedCredits: "0",
+    transferableCredits: "0",
     unit: "credit",
     version: "1",
   });

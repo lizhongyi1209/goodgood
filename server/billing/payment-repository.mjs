@@ -238,6 +238,7 @@ export async function settlePaymentOrderInTransaction(
     ownerId: order.ownerId,
     reason,
     relatedPaymentRef: order.publicId,
+    sourceClass: "payment_funded",
     unit: order.creditUnit,
   });
   const paid = await client.query(

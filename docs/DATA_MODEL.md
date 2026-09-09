@@ -36,15 +36,19 @@ compatibility with historical rows and non-Nano model constraints. The Drizzle s
 mirrors that durable schema. Migration 0018 adds `quality`, `background`, and
 `output_format` to the same three snapshots, defaults old rows to
 `auto` / `auto` / `png`, constrains non-default values to GPT IMAGE 2, and
-rejects transparent JPEG. The Drizzle schema mirrors the durable schema across
-all eighteen migrations. A
+rejects transparent JPEG. Migration 0019 publishes Nano Banana Pro's 15-credit
+single-output prices without enabling its provider route. Migration 0020 adds
+payment-funded available/reserved projections to credit accounts, records the
+payment-funded portion of every ledger entry, and deterministically rebuilds
+existing history from paid-order evidence while treating every unproven source
+as non-transferable. The Drizzle schema mirrors the durable schema across all
+twenty migrations. A
 fuller project-backed creation session record and entitlements
 remain canonical contracts for later slices.
 
-ADR 0043 accepts a later additive migration sequence for payment-funded credit
+ADR 0043 accepts an additive migration sequence for payment-funded credit
 provenance, business roles, direct relationships, and paired credit transfers.
-These are planned local changes until the GG-027 task records implementation and
-verification. Migration must derive existing source classification from
+Migration 0020 locally implements the first phase. It derives existing source classification from
 immutable evidence: a grant uniquely linked from a paid `PaymentOrder` is
 payment-funded; existing welcome/test/promotion/adjustment value is
 non-transferable. Unknown history fails closed as non-transferable. No migration
@@ -256,17 +260,10 @@ Owner, currency/unit, cached available and reserved balances, version, status,
 and timestamps. The append-only ledger is authoritative; cached balances are
 updated transactionally and may be rebuilt.
 
-ADR 0043 extends the cache with payment-funded and non-transferable
-available/reserved projections whose sums equal the existing aggregate values.
-The projections are server-owned and never independently writable by a browser.
-
-### CreditSourceAllocation
-
-Immutable source split for a ledger operation: source class
-`payment_funded | non_transferable`, amount, root paid-order grant when present,
-and the reservation/transfer entry it funds. A downstream transfer keeps the
-same payment-funded class and root evidence. Reservation closure and refund
-refer back to the original allocation so release cannot upgrade provenance.
+Migration 0020 extends the cache with payment-funded available/reserved values.
+Non-transferable balances are derived by subtracting them from the existing
+aggregate values, avoiding a second redundant cache. These projections are
+server-owned and never independently writable by a browser.
 
 ### CreditLedgerEntry
 
@@ -275,9 +272,13 @@ entry with owner/account, signed amount, idempotency key, reason, related job,
 payment or prior entry, actor, and timestamp. Adjustments compensate with new
 entries; existing entries are never edited or deleted.
 
-ADR 0043 adds paired `transfer_out | transfer_in` entry types. Both refer to one
-`CreditTransfer`; their exact opposite amounts conserve the credit unit, and
-both carry payment-funded source allocations. They are not generic adjustments.
+Migration 0020 adds `payment_funded_amount`, the signed payment-funded portion
+of each entry. Generation reservation consumes the derived non-transferable
+available balance first; settlement repeats the reserve's signed source amount,
+while release/refund reverses it. ADR 0043 later adds paired
+`transfer_out | transfer_in` entry types. Both refer to one `CreditTransfer`;
+their exact opposite amounts conserve the credit unit, and both are fully
+payment-funded. They are not generic adjustments.
 
 Signed amounts have one exact interpretation: `reserve` moves a negative amount
 from available to reserved; `settle` removes a negative amount from reserved;
@@ -450,9 +451,10 @@ Contains ordering and membership metadata; never duplicate image bytes.
   `SUBMISSION_UNKNOWN` releases the customer's reservation but does not infer
   or record an upstream refund.
 - The authenticated billing read projects cached available/reserved balances
-  and active price rows into decimal strings. Internal account, owner, ledger,
-  and provider-route identifiers never enter the browser contract; the read
-  does not create an account or grant credit.
+  plus payment-funded transferable available credit and active price rows into
+  decimal strings. Internal account, owner, ledger, source, and provider-route
+  identifiers never enter the browser contract; the read does not create an
+  account or grant credit.
 - The credit-activity read is a projection over existing immutable rows, not a
   second ledger. It pages root `grant / reserve / refund / expire / adjust`
   entries by owner and time, joins a reserve's unique settle/release closure,
@@ -482,7 +484,7 @@ Contains ordering and membership metadata; never duplicate image bytes.
   test, promotion, ordinary adjustment, and unproven historical credit remain
   non-transferable. Received payment-funded credit retains its provenance.
 - Every completed transfer conserves the credit unit across two accounts. Both
-  cache mutations, paired ledger entries, source allocations, and audit/transfer
+  cache mutations, paired source-aware ledger entries, and audit/transfer
   record commit or roll back together.
 - Payment-funded plus non-transferable projections equal the aggregate
   available/reserved account caches. Reservation closure and refund preserve

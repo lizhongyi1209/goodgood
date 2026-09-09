@@ -63,6 +63,9 @@ function publicAccount(account) {
   return {
     availableCredits: account.availableBalance.toString(),
     reservedCredits: account.reservedBalance.toString(),
+    transferableCredits: (
+      account.paymentFundedAvailableBalance ?? 0n
+    ).toString(),
     unit: account.unit,
     version: account.version.toString(),
   };
@@ -175,6 +178,7 @@ export function readPreviewCreditActivities({ input = {} } = {}) {
     account: {
       availableCredits: "100",
       reservedCredits: "0",
+      transferableCredits: "0",
       unit: "credit",
       version: "4",
     },

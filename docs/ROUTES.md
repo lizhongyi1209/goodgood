@@ -41,11 +41,12 @@ generated assets, grouped by their immutable generation jobs newest-first. Each
 read returns fresh short-lived private-object signatures. It has no cross-owner
 lookup mode and returns an empty list when that owner has no assets.
 
-`GET /api/billing` returns the authenticated owner's exact available and
-reserved credit balances plus the active Banana 2 launch quotes for 1K, 2K, and
-4K. It is a read-only, no-store data boundary rather than a visible route. The
-response uses decimal strings for exact credit values and exposes no internal
-account, owner, provider-channel, or ledger identifiers.
+`GET /api/billing` returns the authenticated owner's exact available, reserved,
+and payment-funded transferable available credit plus the active Banana 2
+launch quotes for 1K, 2K, and 4K. It is a read-only, no-store data boundary
+rather than a visible route. The response uses decimal strings for exact credit
+values and exposes no internal account, owner, provider-channel, source, or
+ledger identifiers.
 
 `GET /api/billing/activities` returns the authenticated owner's business-level
 credit activity with `all / spend / receive / return` filtering and opaque
