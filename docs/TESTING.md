@@ -525,6 +525,12 @@ The timestamped result of the latest verified gate belongs in
 - Credit grant, live generation reservation, successful-Asset settlement,
   no-Asset release (including `SUBMISSION_UNKNOWN`), refund, and insufficient-
   credit paths are transactional and idempotent.
+- Owner-scoped credit activity projects open/settled/released reservations as
+  one processing/consumed/not-charged record, keeps refunds separate, classifies
+  grants and adjustments, paginates without raw ledger IDs, and rejects foreign
+  or filter-mismatched cursors. UI coverage includes direct `/credits`, balance
+  entry points, filters, loading, empty, retry, load-more failure, responsive
+  rows, and preservation of in-memory creation state.
 - Active payment-product selection, owner-scoped order idempotency, signed fake
   callback verification, exact amount matching, event replay/conflict handling,
   and paid-credit grant are transactional and idempotent.

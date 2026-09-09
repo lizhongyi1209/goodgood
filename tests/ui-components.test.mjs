@@ -712,6 +712,7 @@ test("billing HTTP boundary covers balance, quote, zero capacity, and retryable 
     availableImageCount,
     createPaymentOrder,
     findBillingQuote,
+    readCreditActivities,
     readBillingProducts,
     readBillingSummary,
     readPaymentOrder,
@@ -756,6 +757,37 @@ test("billing HTTP boundary covers balance, quote, zero capacity, and retryable 
     assert.deepEqual(await readBillingSummary(), summary);
     assert.equal(calls[0].input, "/api/billing");
     assert.equal(calls[0].options.cache, "no-store");
+    const activityPage = {
+      account: summary.account,
+      items: [
+        {
+          amount: "-10",
+          completedAt: "2026-09-09T00:00:02.000Z",
+          creditAmount: "10",
+          generation: null,
+          id: "act_11111111111111111111111111111111",
+          kind: "generation",
+          occurredAt: "2026-09-09T00:00:00.000Z",
+          status: "spent",
+          unit: "credit",
+        },
+      ],
+      nextCursor: "next-credit-page",
+    };
+    globalThis.fetch = async (input, options = {}) => {
+      calls.push({ input: String(input), options });
+      return Response.json(activityPage);
+    };
+    assert.deepEqual(
+      await readCreditActivities({ cursor: "cursor-token", filter: "spend", limit: 12 }),
+      activityPage,
+    );
+    const activityCall = calls.at(-1);
+    assert.equal(
+      activityCall.input,
+      "/api/billing/activities?filter=spend&limit=12&cursor=cursor-token",
+    );
+    assert.equal(activityCall.options.cache, "no-store");
     const quote = findBillingQuote(summary, {
       count: 1,
       modelId: "nano-banana-2",

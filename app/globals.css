@@ -59,13 +59,14 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 @keyframes asset-icon-arrival { 0%,100% { transform: scale(1) rotate(0); } 45% { transform: scale(1.16) rotate(-5deg); } }
 .sidebar-footer { margin-top: auto; display: flex; flex-direction: column; gap: 3px; }
 .sidebar-billing { margin: var(--space-1) 3px 0; padding: 8px 7px; border-top: 1px solid var(--line); color: var(--quiet); }
-.sidebar-billing > div { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.sidebar-billing > div span { font-size: 10px; }
-.sidebar-billing > div strong { color: var(--ink); font-size: 15px; font-variant-numeric: tabular-nums; }
 .sidebar-billing-loading { display: flex; align-items: center; gap: 5px; font-size: 10px; }
 .sidebar-billing-loading svg { animation: authentication-spin .9s linear infinite; }
 .sidebar-billing button { width: 100%; padding: 2px 0; border: 0; background: transparent; display: flex; align-items: center; justify-content: space-between; color: var(--accent-deep); font-size: 10px; }
 .sidebar-billing button:hover { color: var(--accent); }
+.sidebar-billing .sidebar-credit-link { align-items: baseline; color: var(--quiet); text-align: left; }
+.sidebar-billing .sidebar-credit-link:hover { color: var(--accent-deep); }
+.sidebar-credit-link span { font-size: 10px; }
+.sidebar-credit-link strong { color: var(--ink); font-size: 15px; font-variant-numeric: tabular-nums; }
 .account-card { margin-top: var(--space-2); padding: 10px; background: #f0f0f3; border-radius: var(--radius-md); display: grid; grid-template-columns: 34px minmax(0,1fr) auto; align-items: center; gap: 10px; }
 .avatar, .top-avatar { border-radius: 50%; display: grid; place-items: center; background: #e7e7eb; border: 0; font-size: 10px; font-weight: 650; }
 .avatar { width: 34px; height: 34px; }
@@ -474,6 +475,56 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .asset-view-toggle button:hover { color: var(--ink); }
 .asset-view-toggle button.active { background: white; color: var(--accent-deep); }
 .asset-section-toggle { background: #f1e8e8; }
+
+.credit-activity-view { width: min(100%,980px); margin: 0 auto; animation: asset-view-in .24s ease both; }
+.credit-activity-header { min-height: 92px; margin-bottom: 28px; display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.credit-activity-header small { display: block; margin-bottom: 7px; color: var(--accent); font-size: 9px; font-weight: 720; letter-spacing: .16em; }
+.credit-activity-header h1 { margin: 0; color: #272730; font-size: 24px; font-weight: 680; letter-spacing: -.04em; }
+.credit-activity-header p { margin: 7px 0 0; color: var(--quiet); font-size: var(--text-xs); }
+.credit-activity-back { height: 34px; padding: 0 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--white); display: inline-flex; align-items: center; gap: 6px; color: #74747e; font-size: 10px; }
+.credit-activity-back:hover { background: var(--soft); color: var(--ink); }
+.credit-account-summary { min-height: 76px; padding: 14px 18px; border-radius: 15px; background: var(--white); display: flex; align-items: center; gap: 42px; }
+.credit-account-summary > div { display: flex; flex-direction: column; gap: 5px; }
+.credit-account-summary span { color: var(--quiet); font-size: 10px; }
+.credit-account-summary strong { color: var(--ink); font-size: 21px; font-weight: 680; font-variant-numeric: tabular-nums; letter-spacing: -.03em; }
+.credit-account-summary > div + div { padding-left: 42px; border-left: 1px solid var(--line); }
+.credit-activity-toolbar { margin: 18px 0 8px; display: flex; align-items: center; justify-content: space-between; }
+.credit-activity-filters { padding: 2px; border-radius: 10px; background: #ececef; display: flex; align-items: center; gap: 1px; }
+.credit-activity-filters button { height: 32px; padding: 0 14px; border: 0; border-radius: 8px; background: transparent; color: #85858f; font-size: 10px; }
+.credit-activity-filters button:hover { color: var(--ink); }
+.credit-activity-filters button.active { background: var(--white); color: var(--accent-deep); }
+.credit-activity-list { overflow: hidden; border-radius: 15px; background: var(--white); }
+.credit-activity-row { min-height: 104px; padding: 17px 18px; display: grid; grid-template-columns: 38px minmax(0,1fr) auto; align-items: center; gap: 13px; }
+.credit-activity-row + .credit-activity-row { border-top: 1px solid #ededf0; }
+.credit-activity-icon { width: 38px; height: 38px; border-radius: 11px; background: var(--soft); display: grid; place-items: center; color: #777781; }
+.credit-activity-icon.processing { background: var(--accent-soft); color: var(--accent-deep); }
+.credit-activity-icon.released, .credit-activity-icon.refunded { background: #f3eded; color: #8f6063; }
+.credit-activity-icon.credited { background: #f0f0f3; color: #595963; }
+.credit-activity-copy { min-width: 0; }
+.credit-activity-copy h2 { margin: 0; color: #34343d; font-size: 13px; font-weight: 650; }
+.credit-activity-copy p { margin: 5px 0 0; color: #777781; font-size: 10px; }
+.credit-activity-copy > span { max-width: 620px; margin-top: 5px; overflow: hidden; color: #9999a3; display: block; font-size: 10px; line-height: 1.45; text-overflow: ellipsis; white-space: nowrap; }
+.credit-activity-copy time { margin-top: 6px; color: #b0b0b8; display: block; font-size: 9px; font-variant-numeric: tabular-nums; }
+.credit-activity-amount { min-width: 92px; display: flex; align-items: flex-end; flex-direction: column; gap: 4px; text-align: right; }
+.credit-activity-amount strong { color: #34343d; font-size: 15px; font-weight: 680; font-variant-numeric: tabular-nums; }
+.credit-activity-amount.credited strong, .credit-activity-amount.refunded strong { color: var(--accent-deep); }
+.credit-activity-amount.released strong { color: #73737d; font-size: 12px; }
+.credit-activity-amount span { color: var(--quiet); font-size: 9px; }
+.credit-activity-amount button { margin-top: 3px; padding: 3px 0; border: 0; background: transparent; color: var(--accent-deep); font-size: 9px; }
+.credit-activity-amount button:hover { color: var(--accent); }
+.credit-activity-state { min-height: 250px; border-radius: 15px; background: rgba(255,255,255,.75); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 7px; color: #9a9aa4; text-align: center; }
+.credit-activity-state > svg { color: #a96a6d; }
+.credit-activity-state strong { color: #565660; font-size: 13px; font-weight: 640; }
+.credit-activity-state span { max-width: 460px; font-size: 10px; line-height: 1.5; }
+.credit-activity-state button, .credit-activity-more-error button { height: 32px; padding: 0 10px; border: 0; border-radius: 9px; background: #f1e6e5; display: inline-flex; align-items: center; gap: 5px; color: var(--accent-deep); font-size: 10px; }
+.credit-activity-skeleton { min-height: 320px; position: relative; padding-top: 42px; }
+.credit-activity-skeleton > div { height: 68px; margin: 0 18px; border-top: 1px solid #f0f0f2; background: linear-gradient(100deg,transparent 0%,rgba(240,240,243,.72) 45%,transparent 90%); background-size: 220% 100%; animation: skeleton-wave 1.5s ease-in-out infinite; }
+.credit-activity-loading { position: absolute; top: 14px; left: 18px; display: inline-flex; align-items: center; gap: 6px; color: var(--quiet); font-size: 10px; }
+.credit-activity-loading svg, .credit-activity-more svg { animation: status-spin 1s linear infinite; }
+.credit-activity-more { min-width: 112px; height: 36px; margin: 18px auto 0; padding: 0 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--white); display: flex; align-items: center; justify-content: center; gap: 6px; color: #74747e; font-size: 10px; }
+.credit-activity-more:hover { background: var(--soft); color: var(--ink); }
+.credit-activity-more:disabled { cursor: wait; opacity: .62; }
+.credit-activity-more-error { margin-top: 14px; padding: 10px 12px; border-radius: 10px; background: #faf2f1; display: flex; align-items: center; justify-content: center; gap: 9px; color: #8d5559; font-size: 10px; }
 .reference-material-grid { overflow: hidden; }
 .reference-material-masonry { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; }
 .mobile-reference-material-masonry { display: none; }
@@ -712,6 +763,21 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
   .asset-view-toggle { flex: 1; }
   .asset-view-toggle button { flex: 1; justify-content: center; }
   .asset-return-button { background: var(--soft); }
+  .credit-activity-header { min-height: 76px; margin-bottom: 20px; align-items: center; }
+  .credit-activity-header p { display: none; }
+  .credit-activity-back { background: var(--soft); }
+  .credit-account-summary { min-height: 68px; padding: 12px 14px; gap: 24px; }
+  .credit-account-summary > div + div { padding-left: 24px; }
+  .credit-account-summary strong { font-size: 18px; }
+  .credit-activity-toolbar { margin-top: 14px; }
+  .credit-activity-filters { width: 100%; }
+  .credit-activity-filters button { flex: 1; padding: 0 8px; }
+  .credit-activity-row { min-height: 96px; padding: 14px 12px; grid-template-columns: 34px minmax(0,1fr) auto; gap: 9px; }
+  .credit-activity-icon { width: 34px; height: 34px; border-radius: 10px; }
+  .credit-activity-copy > span { max-width: 44vw; }
+  .credit-activity-amount { min-width: 70px; }
+  .credit-activity-amount strong { font-size: 13px; }
+  .credit-activity-more-error { align-items: flex-start; flex-direction: column; }
   .asset-section-toggle { flex-basis: 100%; }
   .desktop-reference-material-masonry { display: none; }
   .mobile-reference-material-masonry { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }

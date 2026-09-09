@@ -14,7 +14,7 @@ test("CI verifies changes and publishes one immutable main image", async () => {
   );
 
   assert.match(workflow, /pull_request:/);
-  assert.match(workflow, /push:\n\s+branches: \[main\]/);
+  assert.match(workflow, /push:\r?\n\s+branches: \[main\]/);
   assert.match(workflow, /workflow_dispatch:/);
   assert.match(workflow, /node-version: \$\{\{ env\.NODE_VERSION \}\}/);
   assert.match(workflow, /NODE_VERSION: 24\.20\.0/);

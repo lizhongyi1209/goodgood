@@ -19,6 +19,18 @@
   area and as a compact mobile balance. Initial loading stays quiet; a read
   failure keeps the workspace usable and offers a local retry. Zero is a valid
   balance, never an empty or error state.
+- Selecting either balance opens `/credits` without discarding the current
+  composer, project, or active generation. The view shows available and
+  processing credit plus `全部 / 消费 / 获得 / 退回` filters and stable load-more
+  pagination; it always offers a quick return to creation.
+- A generation reservation is one user-facing record. While open it reads as
+  processing, settlement changes it to consumed, and release changes it to
+  not charged with the reserved amount returned. A later refund is a separate
+  positive record. Raw reserve/settle rows and internal reasons never appear.
+- Credit-record loading, empty, first-page failure, retry, and load-more failure
+  preserve the page silhouette and any already loaded records. A successful
+  generation record may open its first accepted Asset through the stable asset
+  route. Records before credit metering are not invented or backfilled.
 - Open Authing login provisions a new GoodGood owner in `pending` access state.
   The authenticated pending surface replaces the creation workspace with one
   compact review message, shows that the 100 welcome credits are waiting, and

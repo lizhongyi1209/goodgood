@@ -1,7 +1,7 @@
 export const WORKSPACE_NAVIGATION_EVENT = "goodgood:workspace-navigation";
 
 /**
- * @typedef {{ kind: "create" } | { kind: "projects" } | { kind: "project", projectId: string } | { kind: "assets" } | { kind: "asset", assetId: string }} WorkspaceRoute
+ * @typedef {{ kind: "create" } | { kind: "projects" } | { kind: "project", projectId: string } | { kind: "assets" } | { kind: "asset", assetId: string } | { kind: "credits" }} WorkspaceRoute
  */
 
 /**
@@ -26,6 +26,7 @@ export function parseWorkspaceRoute(pathname) {
     }
   }
   if (normalized === "/assets") return { kind: "assets" };
+  if (normalized === "/credits") return { kind: "credits" };
   const assetMatch = normalized.match(/^\/assets\/([^/]+)$/);
   if (!assetMatch) return { kind: "create" };
   try {
@@ -45,6 +46,7 @@ export function workspaceRouteHref(route) {
     return `/projects/${encodeURIComponent(route.projectId)}`;
   }
   if (route.kind === "assets") return "/assets";
+  if (route.kind === "credits") return "/credits";
   if (route.kind === "asset") {
     return `/assets/${encodeURIComponent(route.assetId)}`;
   }

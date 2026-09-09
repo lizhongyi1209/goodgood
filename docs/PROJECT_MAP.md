@@ -41,7 +41,7 @@ describes ownership in the clean integration baseline, not live-release proof.
 | `server/projects/` | Owner-scoped project validation, idempotent persistence, signed presentation, and Node API |
 | `server/drafts/` | One-per-owner expiring root drafts, optimistic versioning, ready-reference validation, and Node API |
 | `server/assets/` | Authenticated asset-library listing, normalized errors, and Node API |
-| `features/billing/` | Browser HTTP boundary and exact public billing-summary helpers |
+| `features/billing/` | Browser HTTP boundary, exact billing-summary helpers, and the owner credit-activity view |
 | `server/billing/` | Server-owned immutable generation/payment products, authenticated account and order boundaries, signed fake-payment callbacks, dry-run-first operator manual-payment recording, and transaction-composable credit grant/reserve/settle/release/refund persistence |
 | `server/persistence/` | Versioned migration runner |
 | `server/runtime/` | Production web, concurrent worker, migration, reference-cleanup, manual-payment, site-owner-bootstrap, and mock-provider process entry points plus runtime health and host memory/disk admission protection |

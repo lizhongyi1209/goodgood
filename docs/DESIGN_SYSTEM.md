@@ -118,10 +118,15 @@ individual icon. Upload, settings, and send align to the same 40px box.
   batch total, and approximate remaining image count do not repeat in the
   sidebar; generation pricing remains beside the composer actions.
 - Mobile uses one small neutral balance pill in the existing top bar. It is
-  context, not a primary action.
+  context, not a primary action. The desktop summary and mobile pill may open
+  the dedicated credit-record view while retaining their quiet visual weight.
 - Loading and retry states keep the same footprint so account chrome does not
   jump. Do not add a wallet panel, pricing hero, or checkout treatment before
   a real payment provider and customer checkout flow are accepted.
+- The credit-record view uses one compact available/processing summary, a quiet
+  segmented filter, and white list rows with shallow separators. Generation
+  configuration, prompt excerpt, time, status, and amount stay readable on
+  narrow screens; it must not resemble a checkout or marketing dashboard.
 
 ## Site-owner account management
 

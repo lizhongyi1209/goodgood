@@ -74,6 +74,60 @@ export interface BillingSummary {
   quotes: readonly BillingGenerationQuote[];
 }
 
+export const creditActivityFilters = [
+  "all",
+  "spend",
+  "receive",
+  "return",
+] as const;
+
+export type CreditActivityFilter = (typeof creditActivityFilters)[number];
+
+export type CreditActivityKind =
+  | "generation"
+  | "welcome"
+  | "promotion"
+  | "purchase"
+  | "refund"
+  | "adjustment"
+  | "expiration"
+  | "credit";
+
+export type CreditActivityStatus =
+  | "processing"
+  | "spent"
+  | "released"
+  | "credited"
+  | "refunded"
+  | "adjusted"
+  | "expired";
+
+export interface CreditActivityGeneration {
+  modelId: "nano-banana-2" | "nano-banana-pro" | "gpt-image-2";
+  resolution: "1K" | "2K" | "4K";
+  count: 1 | 2 | 4;
+  promptPreview: string;
+  resultAssetId: string | null;
+}
+
+export interface CreditActivityItem {
+  id: string;
+  kind: CreditActivityKind;
+  status: CreditActivityStatus;
+  amount: SerializedCreditAmount;
+  creditAmount: SerializedCreditAmount;
+  unit: string;
+  occurredAt: string;
+  completedAt: string | null;
+  generation: CreditActivityGeneration | null;
+}
+
+export interface CreditActivityPage {
+  account: BillingAccountSummary;
+  items: readonly CreditActivityItem[];
+  nextCursor: string | null;
+}
+
 export interface BillingPaymentProduct {
   id: string;
   version: number;

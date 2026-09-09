@@ -1,5 +1,7 @@
 import { goodGoodApiFetch } from "@/features/auth/http-auth-boundary";
 import type {
+  CreditActivityFilter,
+  CreditActivityPage,
   BillingGenerationQuote,
   BillingProducts,
   BillingSummary,
@@ -47,6 +49,24 @@ export async function readBillingSummary(): Promise<BillingSummary> {
     );
   }
   return payload as BillingSummary;
+}
+
+export async function readCreditActivities({
+  cursor = null,
+  filter = "all",
+  limit = 20,
+}: Readonly<{
+  cursor?: string | null;
+  filter?: CreditActivityFilter;
+  limit?: number;
+}> = {}): Promise<CreditActivityPage> {
+  const search = new URLSearchParams({ filter, limit: String(limit) });
+  if (cursor) search.set("cursor", cursor);
+  return billingPayload<CreditActivityPage>(
+    await goodGoodApiFetch(`/api/billing/activities?${search.toString()}`, {
+      cache: "no-store",
+    }),
+  );
 }
 
 async function billingPayload<T>(response: Response): Promise<T> {

@@ -404,6 +404,14 @@ Contains ordering and membership metadata; never duplicate image bytes.
   and active price rows into decimal strings. Internal account, owner, ledger,
   and provider-route identifiers never enter the browser contract; the read
   does not create an account or grant credit.
+- The credit-activity read is a projection over existing immutable rows, not a
+  second ledger. It pages root `grant / reserve / refund / expire / adjust`
+  entries by owner and time, joins a reserve's unique settle/release closure,
+  and emits one generation lifecycle record. Existing owner/time and job indexes
+  serve this read; no balance, price, or historical row is rewritten.
+- Metered generation records may carry the model, resolution, requested count,
+  bounded prompt preview, and first accepted Asset ID. Pre-M6 unmetered jobs have
+  no ledger activity and are intentionally not assigned inferred charges.
 - Browser values and provider usage reports never directly mutate balances.
 - Pending accounts may hold welcome credit but cannot reserve or consume it.
   Approval is checked at the shared server capability boundary, not inferred

@@ -2,8 +2,8 @@
 
 - Last synchronized: 2026-09-09
 - Current phase: 已开放 controlled alpha；累计候选已发布，Sharp 安全候选等待新发布授权。
-- Current objective: GG-023 已将 Sharp 从 0.35.0 升级到 0.35.4 并恢复 main CI；当前线上
-  `65ceb168` 不自动切换到尚未完成新精确候选 alpha 门禁的镜像。
+- Current objective: GG-025 已在隔离分支完成积分记录页、只读账本投影、完整本地门禁与模拟链路验收；
+  当前等待用户验收，不自动合并、推送或改变线上 `65ceb168`。
 
 ## Current checkpoint
 
@@ -28,12 +28,15 @@
 - GG-023 已完成 Sharp 0.35.4 锁定和本地验证：定向 16/16、完整门禁 252 项（246 通过、
   6 个 opt-in 跳过、0 失败）；跨平台锁记录经 npm 11.8 修复。PR/main CI 均通过，安全镜像
   `sha256:b441e16685c77842e18cefcdbcae00c2e50d25350fe598ea2e462dd61758f152` 已发布但未部署。
+- GG-025 从 `origin/main@42fc8d81` 建立隔离 worktree；已完成 `/credits`、owner-scoped 只读查询、
+  业务化 reserve/settle/release 投影、筛选分页及桌面/窄屏交互。独立 Compose 模拟生成后余额
+  100→90 且只显示一条 `-10 已消费`；完整门禁 257 项（251 通过、6 个 opt-in 跳过、0 失败），
+  未请求真实 provider。
 - 支付、自动账户删除、举报、完整外部删除条款与完整 seed readiness 仍在 GG-900—GG-902
   搁置范围，本次发布没有恢复它们。
-- Next action: 等待站长决定是否授权 GG-023 再执行 1 次约 10 积分真实 Nano 冒烟；若授权，
-  为 main `18fe779b` 生成新鲜 production preflight/alpha evidence 并部署安全镜像。
-- Blockers: 此前授权的唯一真实生图已经成功使用，不能为 GG-023 新候选再次计费；在取得
-  新授权前只完成源码/CI 修复，不变更当前生产镜像。
+- Next action: 用户验收 GG-025 的本地预览；后续合并、推送或发布需要新授权。
+- Blockers: GG-025 本地无功能阻塞；GG-024 在另一隔离分支，后续集成 `app/globals.css` 时可能需要
+  常规冲突处理。真实 provider 与生产权限仍不在本任务授权内。
 
 ## Milestones
 
@@ -45,6 +48,7 @@
 | M8 / controlled alpha | 已开放并完成本次累计发布 | 审核账户、核心生图、恢复与发布门禁 |
 | GG-004—GG-022 | 已部署或完成 | 累计功能、可靠性、恢复工具和生产发布 |
 | GG-023 | 实施中 | Sharp 0.35.4 安全修复与 main CI 恢复 |
+| GG-025 | 本地已验证 | 用户积分记录、只读账本投影与本地模拟链路；待用户验收 |
 | 完整 C6 / full seed | 搁置 | 删除、举报、外部条款与进一步配套，见 GG-900/901 |
 | M9 | 搁置 | 支付/支付宝，见 GG-902 |
 
@@ -53,7 +57,7 @@
 1. 读根 AGENTS、[CURRENT_STATE](CURRENT_STATE.md)、[WORKFLOW](WORKFLOW.md)、本页和
    [BACKLOG](BACKLOG.md)，检查 Git 分支/worktree/未提交改动。
 2. 不把最新 main 自动当作线上版本；以 CURRENT_STATE 的完整 revision、镜像摘要和迁移为准。
-3. 先恢复 GG-023；新的普通产品需求从 GG-024 或后续未占用编号建卡，不要恢复旧 C6。
+3. 当前普通产品任务从 `feature/GG-025-credit-activity` 恢复；GG-024 仍在另一隔离分支，不要混合工作树或恢复旧 C6。
 4. 本次 alpha 证据只绑定 `65ceb168`，后续候选必须重新生成新鲜证据并通过门禁。
 5. 真实 provider 请求可能计费，必须与测试 fixture 隔离并取得对具体调用的明确授权。
 

@@ -343,7 +343,9 @@ container filesystem.
    later project reads re-sign private references and outputs.
 9. Browser reloads its owner-scoped accepted assets with fresh signed reads.
 10. Browser reads its owner-scoped credit summary and active product quote; it
-    never sends a price or balance mutation.
+    never sends a price or balance mutation. It may separately read a paginated
+    business-level activity projection that collapses reservation lifecycle
+    rows and exposes no internal ledger key.
 11. An authorized payment client may create an order using only a stable product
     ID and idempotency key. A verified provider callback, or the trusted
     dry-run-first operator command for an independently confirmed receipt, may
@@ -534,3 +536,8 @@ authenticates before resolving the owner, performs no mutation, returns
 strings. The browser refreshes it after queue acceptance and terminal job
 states. Local frontend preview mode may return the same public response shape
 from fixed data; the production-shaped Node runtime always reads PostgreSQL.
+`GET /api/billing/activities` uses the same authenticated owner and `no-store`
+boundary. It scans owner-keyed immutable entries newest-first, joins only the
+same owner's generation context, and maps reserve plus settle/release to one
+public activity. Cursor and item references use derived public activity tokens;
+raw ledger/account/payment/provider identifiers and reasons stay server-only.

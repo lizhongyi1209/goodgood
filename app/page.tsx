@@ -64,6 +64,7 @@ import {
   findBillingQuote,
   readBillingSummary,
 } from "@/features/billing/http-billing-boundary";
+import { CreditActivityView } from "@/features/billing/credit-activity-view";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import {
   DraftBoundaryError,
@@ -174,7 +175,7 @@ type AssetBatch = {
   referenceCount: number;
   images: readonly GenerationOutput[];
 };
-type ActiveView = "create" | "projects" | "assets";
+type ActiveView = "create" | "projects" | "assets" | "credits";
 type DestructiveCreationIntent =
   | { kind: "new" }
   | { kind: "project"; projectId: string; projectName: string };
@@ -186,7 +187,7 @@ type CreationStreamItem =
   | { kind: "image"; key: string; detailKey: string; ratio: number; batch: AssetBatch; image: GenerationOutput; index: number };
 type AssetGalleryItem = { key: string; ratio: number; batch: AssetBatch; image: GenerationOutput; index: number };
 type DetailImage = AssetGalleryItem;
-type DetailSource = "creation" | "assets";
+type DetailSource = "creation" | "assets" | "credits";
 type AssetDetailNavigationState = Readonly<{
   returnHref: string;
   scrollY: number;
@@ -200,7 +201,11 @@ function readAssetDetailNavigationState(state: unknown): AssetDetailNavigationSt
   const candidate = (state as Record<string, unknown>)[ASSET_DETAIL_HISTORY_KEY];
   if (!candidate || typeof candidate !== "object") return null;
   const detail = candidate as Record<string, unknown>;
-  if (detail.source !== "creation" && detail.source !== "assets") return null;
+  if (
+    detail.source !== "creation" &&
+    detail.source !== "assets" &&
+    detail.source !== "credits"
+  ) return null;
   if (
     typeof detail.returnHref !== "string" ||
     !detail.returnHref.startsWith("/") ||
@@ -653,7 +658,13 @@ export default function Home() {
         setRouteAssetId(route.assetId);
         setAssetRouteError(null);
         setAssetRouteRevision((current) => current + 1);
-        setActiveView(detailNavigation?.source === "creation" ? "create" : "assets");
+        setActiveView(
+          detailNavigation?.source === "creation"
+            ? "create"
+            : detailNavigation?.source === "credits"
+              ? "credits"
+              : "assets",
+        );
         return;
       }
       setRouteAssetId(null);
@@ -683,6 +694,8 @@ export default function Home() {
         ? "projects"
         : route.kind === "assets"
           ? "assets"
+          : route.kind === "credits"
+            ? "credits"
           : "create");
     };
     const applyInitialRoute = window.setTimeout(applyWorkspaceRoute, 0);
@@ -1621,6 +1634,34 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const handleCreditsNav = () => {
+    navigateWorkspace({ kind: "credits" });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleCreditAccountChange = useCallback((account: BillingSummary["account"]) => {
+    setBillingSummary((current) => current ? { ...current, account } : current);
+  }, []);
+
+  const handleCreditAssetOpen = (assetId: string) => {
+    const currentHistoryState = window.history.state && typeof window.history.state === "object"
+      ? window.history.state as Record<string, unknown>
+      : {};
+    navigateWorkspace(
+      { kind: "asset", assetId },
+      {
+        state: {
+          ...currentHistoryState,
+          [ASSET_DETAIL_HISTORY_KEY]: {
+            returnHref: `${window.location.pathname}${window.location.search}${window.location.hash}`,
+            scrollY: window.scrollY,
+            source: "credits",
+          },
+        },
+      },
+    );
+  };
+
   const startNewCreation = () => {
     composerEditRevisionRef.current += 1;
     clearPersistedCreationDraft();
@@ -2241,7 +2282,9 @@ export default function Home() {
                   <CircleAlert size={12} />积分暂不可用<RefreshCw size={11} />
                 </button>
               ) : billingSummary ? (
-                <div><span>积分余额</span><strong>{billingSummary.account.availableCredits}</strong></div>
+                <button className="sidebar-credit-link" onClick={handleCreditsNav} aria-label={`查看积分记录，当前余额 ${billingSummary.account.availableCredits}`}>
+                  <span>积分余额</span><strong>{billingSummary.account.availableCredits}</strong>
+                </button>
               ) : null}
             </div>
           )}
@@ -2283,9 +2326,9 @@ export default function Home() {
                   setBillingRevision((current) => current + 1);
                 }}>积分重试</button>
               ) : (
-                <span className="mobile-credit-balance">
+                <button className="mobile-credit-balance" onClick={handleCreditsNav} aria-label="查看积分记录">
                   {billingLoading ? "--" : billingSummary?.account.availableCredits ?? "--"} 积分
-                </span>
+                </button>
               )
             )}
             <button
@@ -2472,6 +2515,14 @@ export default function Home() {
                 </div>
               )}
             </section>
+          ) : activeView === "credits" ? (
+            <CreditActivityView
+              account={billingSummary?.account ?? null}
+              enabled={Boolean(authenticationSession && authenticationSession.access.status === "active")}
+              onAccountChange={handleCreditAccountChange}
+              onBack={handleCreateNav}
+              onOpenAsset={handleCreditAssetOpen}
+            />
           ) : (
             <section className="asset-library-view" aria-label="资产库">
               <header className="asset-library-header">
