@@ -118,7 +118,7 @@ test("declares the GoodGood visual and interaction invariants", async () => {
     creationPage.indexOf("</aside>"),
   );
   assert.match(accountCard, /account-credit-balance/);
-  assert.match(accountCard, /<Coins aria-hidden="true" size=\{12\} \/><span>\{billingSummary\.account\.availableCredits\}<\/span>/);
+  assert.match(accountCard, /<CircleDot aria-hidden="true" size=\{12\} \/><span>\{billingSummary\.account\.availableCredits\}<\/span>/);
   assert.doesNotMatch(accountCard, />余额 \$\{billingSummary\.account\.availableCredits\} 积分</);
   assert.match(css, /\.account-card small\.account-credit-balance \{[^}]*display:\s*inline-flex[^}]*color:\s*var\(--accent-deep\)/s);
 });

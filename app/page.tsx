@@ -136,6 +136,7 @@ import {
   Brush,
   Check,
   CircleAlert,
+  CircleDot,
   Clock3,
   Coins,
   Compass,
@@ -2268,7 +2269,7 @@ export default function Home() {
                     : billingError
                       ? "积分暂不可用"
                       : billingSummary
-                        ? <><Coins aria-hidden="true" size={12} /><span>{billingSummary.account.availableCredits}</span></>
+                        ? <><CircleDot aria-hidden="true" size={12} /><span>{billingSummary.account.availableCredits}</span></>
                         : "积分暂不可用"
                   : "Google 或邮箱验证码"}
               </small>
