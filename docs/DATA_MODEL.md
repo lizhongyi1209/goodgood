@@ -41,6 +41,15 @@ all eighteen migrations. A
 fuller project-backed creation session record and entitlements
 remain canonical contracts for later slices.
 
+ADR 0043 accepts a later additive migration sequence for payment-funded credit
+provenance, business roles, direct relationships, and paired credit transfers.
+These are planned local changes until the GG-027 task records implementation and
+verification. Migration must derive existing source classification from
+immutable evidence: a grant uniquely linked from a paid `PaymentOrder` is
+payment-funded; existing welcome/test/promotion/adjustment value is
+non-transferable. Unknown history fails closed as non-transferable. No migration
+may reset an account, recreate a grant, or infer payment from a balance alone.
+
 `migrations/0001_m3_generation.sql` is additive and safe to rerun through the
 checksum-tracked migration runner. Rollback during local development is to stop
 the new application image and restore the pre-migration database snapshot or
@@ -247,6 +256,18 @@ Owner, currency/unit, cached available and reserved balances, version, status,
 and timestamps. The append-only ledger is authoritative; cached balances are
 updated transactionally and may be rebuilt.
 
+ADR 0043 extends the cache with payment-funded and non-transferable
+available/reserved projections whose sums equal the existing aggregate values.
+The projections are server-owned and never independently writable by a browser.
+
+### CreditSourceAllocation
+
+Immutable source split for a ledger operation: source class
+`payment_funded | non_transferable`, amount, root paid-order grant when present,
+and the reservation/transfer entry it funds. A downstream transfer keeps the
+same payment-funded class and root evidence. Reservation closure and refund
+refer back to the original allocation so release cannot upgrade provenance.
+
 ### CreditLedgerEntry
 
 Append-only `grant | reserve | settle | release | refund | expire | adjust`
@@ -254,12 +275,40 @@ entry with owner/account, signed amount, idempotency key, reason, related job,
 payment or prior entry, actor, and timestamp. Adjustments compensate with new
 entries; existing entries are never edited or deleted.
 
+ADR 0043 adds paired `transfer_out | transfer_in` entry types. Both refer to one
+`CreditTransfer`; their exact opposite amounts conserve the credit unit, and
+both carry payment-funded source allocations. They are not generic adjustments.
+
 Signed amounts have one exact interpretation: `reserve` moves a negative amount
 from available to reserved; `settle` removes a negative amount from reserved;
 `release` moves a positive amount from reserved back to available; `grant` and
 `refund` add a positive amount to available. Cached balances and the append are
 one transaction. An operation hash makes same-key/same-input replay a no-op and
 same-key/different-input replay a conflict.
+
+### BusinessRoleAssignment
+
+Owner, stable `enterprise | distributor` role, status/effective interval,
+site-owner actor, reason, idempotency identity/hash, and timestamps. Business
+role is independent of `SystemRoleAssignment`, account access, tier, and balance.
+The first version maps both values to the same direct-child allocation
+capability; it does not grant site-owner authority.
+
+### AccountRelationship
+
+Parent owner, child owner, active/ended state, site-owner actor, reason,
+idempotency identity/hash, and timestamps. A partial unique constraint permits
+only one active parent per child. Service and database checks reject self-links
+and active cycles; ended history is immutable and balance/history never moves
+when a relationship changes.
+
+### CreditTransfer
+
+Stable public ID, parent and child, credit unit and positive amount, active
+relationship snapshot, idempotency identity/hash, optional non-secret remark,
+paired ledger entry references, actor owner, and timestamp. Normal state is
+completed in one transaction; exceptional site-owner correction is a new
+compensating transfer linked to the original, never an edit or deletion.
 
 ### PaymentProductVersion
 
@@ -426,6 +475,18 @@ Contains ordering and membership metadata; never duplicate image bytes.
   paid tier nor credit balance confers administrative authority.
 - Account review and promotional grants are server-authorized, idempotent, and
   append-auditable. Test grants never create payment evidence.
+- Business role is also independent. Only an active enterprise/distributor may
+  transfer, and only to its active direct child; neither relationship nor
+  payment-funded balance implies site-owner authority.
+- Transferable credit equals the payment-funded available projection. Welcome,
+  test, promotion, ordinary adjustment, and unproven historical credit remain
+  non-transferable. Received payment-funded credit retains its provenance.
+- Every completed transfer conserves the credit unit across two accounts. Both
+  cache mutations, paired ledger entries, source allocations, and audit/transfer
+  record commit or roll back together.
+- Payment-funded plus non-transferable projections equal the aggregate
+  available/reserved account caches. Reservation closure and refund preserve
+  the original source split.
 - Ledger, payment, queue, and callback writes are idempotent.
 - Project creation is owner-scoped and idempotent; batches cannot be reassigned
   from one project to another by a browser request.

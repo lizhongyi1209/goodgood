@@ -74,6 +74,34 @@
   bootstrap remains an out-of-band security operation, not a public signup
   shortcut.
 
+### Enterprise and distributor allocation (accepted, not deployed)
+
+- The site-owner account surface keeps system role, access state, account tier,
+  and business role visibly separate. It may assign/end `企业` or `分销商` and
+  create/end/replace one direct parent, with target, prior/resulting state,
+  reason, and explicit confirmation. It never presents those actions as payment.
+- Only an active enterprise/distributor sees `下级管理`. The first view shows
+  total available credit, `可分配积分` (payment-funded available credit), and a
+  direct-child list. It does not show exchange price, CNY, revenue, commission,
+  order, prompts, generations, or assets.
+- Selecting a direct child opens a compact allocation dialog with the child,
+  current transferable balance, positive integer amount, optional non-secret
+  remark, and final confirmation. The browser never decides provenance or
+  submits a balance. A successful response updates both the summary and that
+  child row and shows the public transfer reference.
+- Insufficient transferable credit is distinct from insufficient total credit:
+  the UI explains that welcome/test/promotion credit cannot be allocated. A
+  duplicate click returns the same completed transfer; a conflicting replay,
+  ended relationship, suspended account, or concurrent balance change keeps the
+  current view and offers a safe refresh using the support ID.
+- Transfer history shows `上级分配` or `分配给下级`, signed credit amount, time,
+  counterparty display identity, and public transfer reference. Completed rows
+  are immutable and expose no parent reclaim action.
+- A business child may reallocate received payment-funded credit only if the
+  site owner independently granted it an eligible business role and it has its
+  own direct children. Relationship depth never broadens a user's visible list
+  or permission.
+
 ## Creation surface
 
 ### Empty

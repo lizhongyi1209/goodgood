@@ -149,6 +149,28 @@ individual icon. Upload, settings, and send align to the same 40px box.
 - Loading, empty, failure, retry, and mutation-in-progress states retain the
   page silhouette so rows and controls do not jump.
 
+## Enterprise and distributor allocation
+
+- `下级管理` is a restrained utility surface visible only to an eligible
+  business account. Reuse the light account-table/list language and Palace Red
+  only for the selected state or final confirmed allocation; do not introduce a
+  sales dashboard, wallet hero, earnings chart, or commerce illustration.
+- Show total credit and `可分配积分` as concise account facts. Explain the latter
+  as payment-funded credit (`充值来源积分`) in supporting copy; do not use color alone to distinguish it
+  from non-transferable welcome/test/promotion credit.
+- Direct-child rows prioritize identity, status, current credit, cumulative
+  allocated credit, and the allocation action. They never expose creative
+  content. Narrow layouts stack these facts without hiding relationship or
+  account state.
+- The allocation dialog mirrors the compact site-owner credit dialog: explicit
+  target, transferable balance, integer amount, optional remark, and one final
+  Palace Red action. Completion shows the public transfer reference. There is
+  no price, currency, payment, order, commission, revenue, or reclaim control.
+- Loading, empty, first-read failure, stale-relationship conflict, insufficient
+  transferable balance, and mutation progress preserve layout and keyboard/
+  focus behavior. A disabled action must have a text explanation in addition to
+  its visual state.
+
 ## Image presentation
 
 - The asset library separates generated images from uploaded materials without

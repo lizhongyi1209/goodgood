@@ -373,6 +373,33 @@ ordinary users, invalid or conflicting replay, and direct balance/payment-order
 mutation while proving the linked ledger and administrative audit commit or
 roll back together.
 
+GG-027 runs only against disposable local data until a separate release
+decision. Its phased coverage must prove:
+
+- migration/rebuild classifies uniquely paid-order-funded value as
+  transferable, classifies welcome/test/promotion/ordinary adjustment and
+  unknown history as non-transferable, preserves aggregate balances, and is
+  checksum-rerunnable without recreating grants or resetting production-shaped
+  rows;
+- generation reserves non-transferable value first, records a mixed source
+  split when needed, and preserves that split through settle, release, and
+  refund;
+- business role remains independent from system role/access/tier; only the site
+  owner can assign/end it or create/end/replace a direct parent; one-active-
+  parent, self-link, cycle, duplicate, idempotency, and audit constraints fail
+  atomically;
+- only an active enterprise/distributor can transfer, only to its active direct
+  child, and only from payment-funded available value. Received value remains
+  transferable without granting the recipient a business capability;
+- paired transfer entries, source allocations, account caches, public transfer,
+  and audit record are atomic and zero-sum. Same-input replay returns the same
+  result; conflicting replay, cross-level access, insufficient transferable
+  balance, and concurrent transfer/generation attempts cannot create an
+  overdraft or one-sided write; and
+- browser and API contracts never accept or return an exchange price, fiat
+  amount, downstream payment/order, commission, revenue, or withdrawal. The
+  active 3010 real-provider stack and production remain outside this suite.
+
 Use:
 
 ```bash
@@ -540,6 +567,14 @@ The timestamped result of the latest verified gate belongs in
 - Dry-run manual payment preview, exact owner/product resolution, immutable
   receipt identity, paid-order settlement, and replay/conflict behavior are
   transactional and idempotent without accepting operator-supplied amounts.
+- GG-027 source-aware billing coverage proves aggregate/cache equality,
+  payment-funded-only transferability, non-transferable-first generation
+  consumption, exact release/refund restoration, and public balance
+  serialization without source-lot or ledger identifiers.
+- GG-027 distribution coverage proves site-owner role/relationship mutations,
+  direct-child list isolation, atomic paired transfers, public references,
+  opaque pagination, responsive loading/empty/failure/conflict states, and the
+  absence of price/payment/commission controls.
 - Equivalent provider fallback preserves the selected GoodGood model and
   records every attempt.
 
@@ -621,6 +656,15 @@ settlement remains outside the current scope.
    skeleton and terminal result/error; a selected retry affects only that run.
 10. Upload one reference -> open a new creation -> select it from uploaded
     materials -> submit by the same reference ID without another object upload.
+11. Operator records one local fake/manual paid order -> site owner assigns a
+    distributor and direct child -> distributor allocates paid credit -> both
+    balances and paired records update once -> replay is a no-op.
+12. The same distributor holds welcome/test credit -> allocation above the
+    payment-funded subset is rejected -> generation consumes non-transferable
+    credit first -> release/refund restores the original source classes.
+13. A distributor attempts an indirect, foreign, suspended, or re-parented
+    child -> the transfer fails without hierarchy disclosure or any balance,
+    ledger, transfer, or audit mutation.
 
 ### Staging-only verification
 

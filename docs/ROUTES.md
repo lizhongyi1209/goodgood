@@ -78,6 +78,32 @@ credit ledger. ADR 0020 separately accepts a site-owner-only test-credit action
 under `/admin/users`; that action appends a promotional ledger grant and never
 creates or mutates a payment order.
 
+## Accepted GG-027 local routes (not deployed)
+
+After its persistence and authorization phases exist, GG-027 adds
+`/distribution` as the enterprise/distributor direct-child workspace. Ordinary
+users and business accounts without the allocation capability receive the same
+server-enforced denial on direct URL and API access; hiding navigation is not
+authorization. Entering or leaving the view preserves active creation state.
+
+The planned authenticated boundaries are:
+
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /api/distribution` | Return the caller's business role, total and transferable balance, and capability summary |
+| `GET /api/distribution/children` | List active direct children only, with the minimum account and allocation summary needed to operate |
+| `GET /api/distribution/transfers` | Return caller-scoped incoming/outgoing transfer history with opaque pagination |
+| `POST /api/distribution/transfers` | Atomically move a positive integer amount of payment-funded credit to one active direct child |
+| `PUT /api/admin/users/:accountId/business-role` | Site-owner-only assign/end of `enterprise` or `distributor` business role |
+| `PUT /api/admin/users/:accountId/direct-parent` | Site-owner-only create/end/replace of one direct-parent relationship |
+
+Mutation routes require the normal GoodGood session, same-origin CSRF header,
+owner-scoped idempotency key, and server-derived actor. `accountId` is the
+existing stable public account identifier, not a database owner ID. No route
+accepts or returns an exchange price, fiat amount, downstream payment/order,
+commission, revenue, or withdrawal. The operator-only manual-payment command
+remains outside the browser API.
+
 The visible asset library is addressable at `/assets`. Opening a generated
 image from creation or either asset mode pushes `/assets/:assetId` while
 retaining its source scope, selected asset mode, and scroll position in browser
@@ -106,8 +132,10 @@ response after expiring its local cookie.
 ## Accepted production routes
 
 `/create`, `/projects`, `/projects/:projectId`, `/assets`,
-`/assets/:assetId`, and `/credits` are implemented today. Adopt future routes only when their
-persistence and navigation behavior exist:
+`/assets/:assetId`, and `/credits` are implemented today. `/distribution` is
+accepted for GG-027 but remains local/planned until its persistence,
+authorization, and navigation behavior exist. Adopt other future routes only
+when their persistence and navigation behavior exist:
 
 | Route | Purpose |
 | --- | --- |
@@ -117,6 +145,7 @@ persistence and navigation behavior exist:
 | `/assets` | Batch/gallery asset library |
 | `/assets/:assetId` | Addressable image detail |
 | `/credits` | Owner-scoped period spend summary and concise credit changes |
+| `/distribution` | Accepted future enterprise/distributor direct-child allocation workspace; not deployed |
 | `/explore` | Future discovery experience |
 | `/moodboards` | Future moodboards |
 | `/help` | Product help and status guidance |
@@ -140,6 +169,8 @@ do not create separate draft or history state.
   browser back navigation.
 - Entering or leaving `/credits` preserves in-memory creation and active jobs;
   its filter stays ephemeral and does not put financial state in the URL.
+- Entering or leaving `/distribution` follows the same preservation rule;
+  child search and transfer filters remain ephemeral and never enter the URL.
 - Future URLs use stable IDs, never model names, prompts, or localized labels.
 - Administrative navigation is emitted only for the site-owner role, but route
   and API authorization remain server-side. Search terms containing email or

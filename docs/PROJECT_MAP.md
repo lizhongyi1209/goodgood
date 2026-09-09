@@ -86,23 +86,26 @@ app/
   projects/
   assets/
   admin/users/    site-owner-only account management entry
+  distribution/   eligible business account's direct-child allocation entry
 features/
   creation/      composer, settings, stream, job states
   references/    upload queue, ordering, validation
   projects/      save, restore, autosave, clean start
   assets/        batch view, gallery, selection, detail
   models/        catalog, capability mapping, UI copy
-  admin/         account review and promotional-credit browser boundary
+  admin/         account review, business role, relationship, and promotional-credit browser boundary
+  distribution/  direct-child list, transferable balance, transfer history and mutation UI
 server/
   api/            authenticated route handlers
   admin/          site-owner authorization, account review, and audit writes
   auth/           identity binding, authorization, ownership context
   generation/     jobs, provider adapters, routing, reconciliation
   billing/        price versions, entitlements, credit ledger, payments
+  distribution/   business roles, direct relationships, and atomic paired credit transfers
   persistence/    repositories and transactions
   storage/        signed upload/download operations
 shared/
-  contracts/      schemas and domain enums
+  contracts/      schemas and domain enums, including source-aware credit and distribution values
   design/         tokens and shared product primitives
 infra/
   container/      image, Compose, health checks, deployment helpers

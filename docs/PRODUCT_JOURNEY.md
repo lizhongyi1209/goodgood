@@ -128,6 +128,22 @@ internal owner IDs so the provider can be changed without rewriting creative
 data. Until a filed custom domain exists, the hosted flow uses Authing's default
 application domain.
 
+## 14. Treat distribution as accountable credit movement, not commerce
+
+The accepted first distribution request deliberately stops before pricing and
+payment. A site owner can classify enterprise/distributor accounts and bind a
+single direct parent; those accounts can move eligible credit only to a direct
+child. GoodGood does not become the merchant or order system for the
+off-platform exchange.
+
+The key accounting choice is provenance rather than a second arbitrary wallet.
+Only credit created by a settled payment order is transferable. That property
+survives a valid downstream transfer, while welcome, test, promotion, and
+operational grants never acquire it. Generation uses non-transferable credit
+first and preserves the reservation source through release or refund. This
+prevents free promotional value from becoming reseller inventory and keeps
+every transfer auditable without storing an external negotiated price.
+
 ## Confirmed exclusions
 
 Do not reintroduce these without a new approved decision:

@@ -434,6 +434,33 @@ token, or unknown historical-version scope stops conversion. Its deletion plan
 binds the exact current-object hash but has no execution path; a changed object
 set requires a new inventory and approval.
 
+## Business-role and credit-transfer failures
+
+- A missing/ended business role returns `BUSINESS_ROLE_REQUIRED` before any
+  child or balance detail is read. Ordinary callers must not learn whether an
+  arbitrary account belongs to another hierarchy.
+- A target that is not the caller's active direct child returns
+  `DIRECT_CHILD_NOT_FOUND`. Self, indirect, ended, or foreign relationships use
+  the same public outcome; the server may retain a more precise audited reason.
+- Pending/suspended parent or child state returns `ACCOUNT_ACCESS_REQUIRED` and
+  produces no transfer row or ledger entry.
+- A positive amount larger than payment-funded available credit returns
+  `INSUFFICIENT_TRANSFERABLE_POINTS`, even when aggregate available credit is
+  higher. Copy explains that welcome/test/promotion credit cannot be allocated;
+  it does not suggest changing an off-platform price.
+- A relationship or source balance changed after the browser read returns
+  `CREDIT_TRANSFER_CONFLICT`. The browser keeps the form values, refreshes the
+  summary/child row, and requires an explicit resubmission.
+- Same-key/same-transfer retry returns the original completed transfer.
+  Same-key/different-input reuse returns
+  `CREDIT_TRANSFER_IDEMPOTENCY_CONFLICT` without mutation.
+- Site-owner attempts to create a self-link, active cycle, second active parent,
+  or duplicate business-role interval fail with a stable 409 conflict and write
+  no partial relationship/audit state.
+- Parent debit, child credit, source allocations, paired ledger entries, and the
+  public transfer/audit record are one transaction. Any failure rolls back all
+  of them; there is no pending or partially completed user-facing transfer.
+
 ## Idempotency and retries
 
 - Browser-to-GoodGood submission carries an owner-scoped idempotency key, so a
@@ -455,6 +482,10 @@ set requires a new inventory and approval.
   single-output charge accepts at most one full refund. Live generation maps
   unavailable price and insufficient balance errors to the submission action;
   internal ledger consistency errors still fail closed.
+- Direct-child transfers additionally use a parent-scoped idempotency key and
+  deterministic two-account locking. Retrying a committed request returns its
+  immutable public transfer; a concurrent generation reservation or transfer
+  rechecks the source projection under lock and cannot overdraw it.
 
 In the current M3 implementation, user retry is represented by a new durable
 job linked with `retry_of_job_id`; the backend copies the failed snapshot rather

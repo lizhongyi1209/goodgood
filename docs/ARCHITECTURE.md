@@ -354,7 +354,14 @@ container filesystem.
     through the administrator boundary. The backend derives the actor from the
     GoodGood session, checks the persisted role before target lookup, and writes
     idempotent review/ledger/audit evidence without a payment order.
-13. Browser receives status through polling initially; SSE/WebSocket is optional
+13. Under ADR 0043, a site owner may separately assign an enterprise/distributor
+    business role and one active direct parent. An eligible active parent may
+    request a server-authorized transfer to an active direct child. The backend
+    rechecks role, relationship, and payment-funded available credit, locks both
+    accounts in deterministic order, and commits paired ledger entries plus one
+    immutable transfer/audit record atomically. The browser never supplies a
+    balance, provenance, price, or money amount.
+14. Browser receives status through polling initially; SSE/WebSocket is optional
     only when measurement justifies it.
 
 ## Non-negotiable security boundaries
@@ -376,6 +383,10 @@ container filesystem.
 - Administrative navigation is not authorization. Every account-list, review,
   role, tier, and promotional-credit operation requires the persisted site-
   owner role and append-only audit evidence.
+- Business role is not system-administrator authority. Every credit transfer
+  requires the persisted allocation capability, active direct relationship,
+  active accounts, and sufficient payment-funded available credit. Transfer
+  ownership and provenance are derived server-side.
 
 ## Capacity posture
 
@@ -529,6 +540,24 @@ positive promotional `grant` and linked administrative audit record in one
 transaction, using a server-derived actor and idempotency key. Pending owners
 may receive the existing welcome grant and later promotional grants, but the
 shared admission guard prevents reservation or consumption until approval.
+
+ADR 0043 adds a distribution boundary behind the same product-owned ledger. A
+payment-authored grant creates payment-funded credit; welcome, promotional, and
+ordinary adjustment entries create non-transferable credit. The account cache
+keeps source-aware available/reserved projections, while immutable source
+allocations link reservations and downstream transfers back to accepted
+origins. Generation reserves non-transferable credit first, records the source
+split, and settles, releases, or refunds that exact split.
+
+A transfer service owns business-role and direct-relationship authorization. It
+locks both credit accounts in stable ID order, rejects self/cyclic/non-direct
+movement, debits only the parent's payment-funded available projection, credits
+the child's matching projection, and appends `transfer_out`/`transfer_in`
+entries joined by one public transfer record in the same transaction. Holding
+eligible credit never grants this capability by itself. GoodGood exposes no
+downstream price, fiat amount, payment, order, commission, revenue, or withdrawal
+contract; the existing operator-only manual-payment command remains the only
+pre-checkout paid-credit path.
 
 The read side is deliberately narrower than the ledger. `GET /api/billing`
 authenticates before resolving the owner, performs no mutation, returns
