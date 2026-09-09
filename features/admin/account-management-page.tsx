@@ -494,7 +494,18 @@ export function AccountManagementPage() {
                 <div className="admin-action-field">
                   <label htmlFor="grant-amount">积分数量</label>
                   <div className="admin-action-presets">
-                    {[100, 500, 1000].map((preset) => <Button key={preset} type="button" size="sm" variant={amount === String(preset) ? "default" : "outline"} onClick={() => setAmount(String(preset))}>{preset}</Button>)}
+                    {[100, 500, 1000].map((preset) => (
+                      <Button
+                        key={preset}
+                        type="button"
+                        size="sm"
+                        variant={amount === String(preset) ? "default" : "outline"}
+                        aria-pressed={amount === String(preset)}
+                        onClick={() => setAmount(String(preset))}
+                      >
+                        {preset}
+                      </Button>
+                    ))}
                   </div>
                   <Input id="grant-amount" inputMode="numeric" min={1} max={5000} type="number" value={amount} onChange={(event) => setAmount(event.target.value)} />
                   <p className="admin-action-help">单次最多 5000 积分，只允许正整数。</p>

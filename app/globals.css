@@ -136,6 +136,8 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .admin-action-presets [data-slot="button"] { height: 34px; border-radius: 9px; box-shadow: none; font-size: 11px; }
 .admin-action-presets [data-variant="outline"] { border-color: var(--line); background: var(--white); color: #62626c; }
 .admin-action-presets [data-variant="outline"]:hover { background: var(--soft); color: var(--ink); }
+.admin-action-presets [aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--white); font-weight: 650; }
+.admin-action-presets [aria-pressed="true"]:hover { border-color: var(--accent-deep); background: var(--accent-deep); color: var(--white); }
 .admin-action-dialog [data-slot="input"], .admin-action-dialog [data-slot="textarea"] { border: 1px solid #dddde2; border-radius: 10px; background: #fafafb; color: var(--ink); box-shadow: none; }
 .admin-action-dialog [data-slot="input"] { height: 40px; margin-top: 8px; }
 .admin-action-dialog [data-slot="textarea"] { min-height: 104px; margin-top: 8px; resize: vertical; line-height: 1.55; }

@@ -407,6 +407,11 @@ test("all account actions share an opaque GoodGood dialog surface", async () => 
   );
   assert.match(styles, /\.admin-action-dialog-overlay[^}]*backdrop-filter:\s*blur\(2px\)/);
   assert.match(styles, /\.admin-action-dialog-footer[^}]*flex-direction:\s*row/);
+  assert.match(source, /aria-pressed=\{amount === String\(preset\)\}/);
+  assert.match(
+    styles,
+    /\.admin-action-presets \[aria-pressed="true"\][^}]*background:\s*var\(--accent\)[^}]*color:\s*var\(--white\)/,
+  );
 });
 
 test("account row actions keep a neutral hierarchy outside confirmation dialogs", async () => {
