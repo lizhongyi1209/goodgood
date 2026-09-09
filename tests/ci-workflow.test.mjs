@@ -103,7 +103,7 @@ test("runtime build dependencies exclude the vulnerable image-size release", asy
   );
   assert.equal(manifest.devDependencies["@vitejs/plugin-rsc"], "0.5.34");
   assert.equal(manifest.devDependencies["eslint-config-next"], "16.2.11");
-  assert.equal(manifest.dependencies.sharp, "0.35.0");
+  assert.equal(manifest.dependencies.sharp, "0.35.4");
   assert.deepEqual(manifest.overrides, {
     "fast-uri": "3.1.6",
     nanoid: "3.3.18",
@@ -117,7 +117,7 @@ test("runtime build dependencies exclude the vulnerable image-size release", asy
     lock.packages["node_modules/react-server-dom-webpack"].version,
     "19.2.8",
   );
-  assert.equal(lock.packages["node_modules/sharp"].version, "0.35.0");
+  assert.equal(lock.packages["node_modules/sharp"].version, "0.35.4");
   assert.equal(lock.packages["node_modules/image-size"], undefined);
 
   for (const dependency of Object.values(lock.packages)) {

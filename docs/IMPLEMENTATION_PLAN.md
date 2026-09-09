@@ -1,9 +1,9 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-09
-- Current phase: 已开放 controlled alpha；累计候选完成生产发布，转入发布后观察与下一项小步迭代。
-- Current objective: GG-004—GG-010、GG-012—GG-022 已随精确候选 `65ceb168` 发布。
-  授权范围内的 1 条历史 attempt 修复和仅 1 次约 10 积分真实生图均已完成，生产已解除维护。
+- Current phase: 已开放 controlled alpha；累计候选完成生产发布，正在处理发布后安全扫描更新。
+- Current objective: GG-023 将 Trivy 新识别的 Sharp HIGH 漏洞从 0.35.0 升级到修复版 0.35.4，
+  恢复 main CI；当前线上 `65ceb168` 不自动切换到未经新候选门禁的镜像。
 
 ## Current checkpoint
 
@@ -23,12 +23,16 @@
 - GG-003 发布门禁和 GG-022 恢复修复已在这次真实发布中闭环；GG-011 是无需部署的流程契约。
 - GG-004—GG-021 的功能已经部署。Nano Banana Pro 当前只上线每张 15 积分报价，provider
   路由仍关闭；GPT 透明输出的额外人工验收并未由本次 Nano 冒烟代替。
+- 文档收尾 main run `34302821815` 的源码门禁通过，但 Trivy 在发布镜像中发现
+  `sharp 0.35.0` 的 HIGH 漏洞并要求 0.35.4；这是 GG-023 的最小依赖修复，不改变产品行为。
+- GG-023 已完成 Sharp 0.35.4 锁定和本地验证：定向 16/16、完整门禁 252 项（246 通过、
+  6 个 opt-in 跳过、0 失败）；等待 CI 的实际运行时镜像扫描。
 - 支付、自动账户删除、举报、完整外部删除条款与完整 seed readiness 仍在 GG-900—GG-902
   搁置范围，本次发布没有恢复它们。
-- Next action: 观察当前生产版本并接受站长验收反馈；新的普通产品需求从 GG-023 建卡，
-  从已核验 main 基线创建独立分支。
-- Blockers: 当前无发布阻塞；浏览器自动化页面树读取超时，因此只记录可见标签页标题，
-  不宣称完成了新的全 UI 流程。后续真实 provider 测试仍需逐次明确授权。
+- Next action: 完成 GG-023 锁文件、测试、完整本地门禁和 CI；新安全镜像若要部署，先生成
+  新鲜精确候选证据并获得额外真实 provider 冒烟授权。
+- Blockers: 此前授权的唯一真实生图已经成功使用，不能为 GG-023 新候选再次计费；在取得
+  新授权前只完成源码/CI 修复，不变更当前生产镜像。
 
 ## Milestones
 
@@ -39,6 +43,7 @@
 | M7 | 已完成 | 香港链路、备份/恢复及兼容切换验证 |
 | M8 / controlled alpha | 已开放并完成本次累计发布 | 审核账户、核心生图、恢复与发布门禁 |
 | GG-004—GG-022 | 已部署或完成 | 累计功能、可靠性、恢复工具和生产发布 |
+| GG-023 | 实施中 | Sharp 0.35.4 安全修复与 main CI 恢复 |
 | 完整 C6 / full seed | 搁置 | 删除、举报、外部条款与进一步配套，见 GG-900/901 |
 | M9 | 搁置 | 支付/支付宝，见 GG-902 |
 
@@ -47,7 +52,7 @@
 1. 读根 AGENTS、[CURRENT_STATE](CURRENT_STATE.md)、[WORKFLOW](WORKFLOW.md)、本页和
    [BACKLOG](BACKLOG.md)，检查 Git 分支/worktree/未提交改动。
 2. 不把最新 main 自动当作线上版本；以 CURRENT_STATE 的完整 revision、镜像摘要和迁移为准。
-3. 明确新需求后分配 GG-023 或后续未占用编号，建立独立分支和任务卡；不要恢复旧 C6。
+3. 先恢复 GG-023；新的普通产品需求从 GG-024 或后续未占用编号建卡，不要恢复旧 C6。
 4. 本次 alpha 证据只绑定 `65ceb168`，后续候选必须重新生成新鲜证据并通过门禁。
 5. 真实 provider 请求可能计费，必须与测试 fixture 隔离并取得对具体调用的明确授权。
 
