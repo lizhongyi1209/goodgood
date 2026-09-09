@@ -28,7 +28,7 @@
 | GG-020 | 参考图裁剪、画笔、贴图、箭头与 bbox 编辑 | 已上线；移动端触控仍可人工复核 | [任务](tasks/GG-020-reference-quick-editor.md) |
 | GG-021 | Nano Banana Pro 单张定价 15 积分 | 已上线报价；生成路由仍关闭 | [任务](tasks/GG-021-nano-banana-pro-pricing.md) |
 | GG-022 | 修复 alpha 后续发布的隔离恢复演练 | 已上线并通过真实恢复/发布验收 | [任务](tasks/GG-022-ongoing-production-restore.md) |
-| GG-023 | 升级 Sharp 以修复新识别的 HIGH 漏洞 | 安全镜像 CI 通过；待新生产/冒烟授权 | [任务](tasks/GG-023-sharp-security-update.md) |
+| GG-023 | 升级 Sharp 以修复新识别的 HIGH 漏洞 | 源码与安全镜像已就绪；部署留到下一次发布 | [任务](tasks/GG-023-sharp-security-update.md) |
 
 下一个普通产品需求从 **GG-024** 分配并检查是否已被占用。每次 alpha 发布仍须取得
 新鲜、精确绑定候选的证据并通过门禁；本次证据不能复用。
