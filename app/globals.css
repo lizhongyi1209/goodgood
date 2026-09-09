@@ -876,8 +876,9 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
   .credit-activity-amount { min-width: 70px; }
   .credit-activity-amount strong { font-size: 13px; }
   .credit-activity-more-error { align-items: flex-start; flex-direction: column; }
-  .distribution-header { min-height: 88px; margin-bottom: 18px; align-items: center; }
-  .distribution-header p { max-width: 250px; }
+  .distribution-header { min-height: 0; margin-bottom: 18px; align-items: flex-start; flex-direction: column; gap: 12px; }
+  .distribution-header p { max-width: none; }
+  .distribution-header > button { align-self: flex-start; }
   .distribution-title-row h1 { font-size: 24px; }
   .distribution-summary-grid { grid-template-columns: 1fr; gap: 8px; }
   .distribution-summary-grid > article { min-height: 92px; padding: 14px; }

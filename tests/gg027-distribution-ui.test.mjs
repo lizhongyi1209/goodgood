@@ -95,6 +95,8 @@ test("GG-027 browser routes keep read operations cacheless and transfer writes C
 
 test("GG-027 distribution layout has a single-column narrow-screen contract", async () => {
   const css = await source("app/globals.css");
+  assert.match(css, /\.distribution-header \{ min-height: 0;[^}]*flex-direction: column/);
+  assert.match(css, /\.distribution-header > button \{ align-self: flex-start/);
   assert.match(css, /\.distribution-summary-grid \{ grid-template-columns: 1fr/);
   assert.match(css, /\.distribution-columns \{ grid-template-columns: minmax\(0,1fr\)/);
   assert.match(css, /\.distribution-child-list article \{ align-items: flex-start; flex-direction: column/);
