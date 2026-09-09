@@ -1,9 +1,9 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-09
-- Current phase: 已开放 controlled alpha；累计候选完成生产发布，正在处理发布后安全扫描更新。
-- Current objective: GG-023 将 Trivy 新识别的 Sharp HIGH 漏洞从 0.35.0 升级到修复版 0.35.4，
-  恢复 main CI；当前线上 `65ceb168` 不自动切换到未经新候选门禁的镜像。
+- Current phase: 已开放 controlled alpha；累计候选已发布，Sharp 安全候选等待新发布授权。
+- Current objective: GG-023 已将 Sharp 从 0.35.0 升级到 0.35.4 并恢复 main CI；当前线上
+  `65ceb168` 不自动切换到尚未完成新精确候选 alpha 门禁的镜像。
 
 ## Current checkpoint
 
@@ -26,12 +26,12 @@
 - 文档收尾 main run `34302821815` 的源码门禁通过，但 Trivy 在发布镜像中发现
   `sharp 0.35.0` 的 HIGH 漏洞并要求 0.35.4；这是 GG-023 的最小依赖修复，不改变产品行为。
 - GG-023 已完成 Sharp 0.35.4 锁定和本地验证：定向 16/16、完整门禁 252 项（246 通过、
-  6 个 opt-in 跳过、0 失败）；首轮 PR CI 暴露跨平台锁记录缺口，已用 npm 11.8 修复并通过
-  干净安装 dry-run，等待重跑实际运行时镜像扫描。
+  6 个 opt-in 跳过、0 失败）；跨平台锁记录经 npm 11.8 修复。PR/main CI 均通过，安全镜像
+  `sha256:b441e16685c77842e18cefcdbcae00c2e50d25350fe598ea2e462dd61758f152` 已发布但未部署。
 - 支付、自动账户删除、举报、完整外部删除条款与完整 seed readiness 仍在 GG-900—GG-902
   搁置范围，本次发布没有恢复它们。
-- Next action: 完成 GG-023 锁文件、测试、完整本地门禁和 CI；新安全镜像若要部署，先生成
-  新鲜精确候选证据并获得额外真实 provider 冒烟授权。
+- Next action: 等待站长决定是否授权 GG-023 再执行 1 次约 10 积分真实 Nano 冒烟；若授权，
+  为 main `18fe779b` 生成新鲜 production preflight/alpha evidence 并部署安全镜像。
 - Blockers: 此前授权的唯一真实生图已经成功使用，不能为 GG-023 新候选再次计费；在取得
   新授权前只完成源码/CI 修复，不变更当前生产镜像。
 
