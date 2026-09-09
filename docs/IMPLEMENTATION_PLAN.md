@@ -31,11 +31,13 @@
   `sha256:b441e16685c77842e18cefcdbcae00c2e50d25350fe598ea2e462dd61758f152` 已发布但未部署。
 - 支付、自动账户删除、举报、完整外部删除条款与完整 seed readiness 仍在 GG-900—GG-902
   搁置范围，本次发布没有恢复它们。
-- Next action: 下一次获得生产发布范围与额外计费冒烟授权后，先选择届时最新的精确候选，
-  再重新生成 CI artifact、production preflight 和 controlled-alpha evidence；门禁全部通过后
-  才部署包含 Sharp 0.35.4 的镜像，不自动复用当前归档候选。
-- Blockers: 本轮没有待执行步骤；生产按站长决定保持不变。线上仍运行 Sharp 0.35.0 的风险
-  已记录并延后到下一次发布处理；此前授权的唯一真实生图已经使用，后续计费冒烟仍需明确授权。
+- Next action: 下一次先恢复 PR #6，核定并处理 Trivy 新识别的 Next 16.2.11 CRITICAL 项；然后
+  在获得生产发布范围与额外计费冒烟授权后，选择届时最新的精确候选，重新生成 CI artifact、
+  production preflight 和 controlled-alpha evidence。门禁全部通过后才部署包含 Sharp 0.35.4
+  的镜像，不自动复用当前归档候选。
+- Blockers: PR #6 的 run `34322442639` 因 `CVE-2026-75604` 和 `GHSA-2xp9-vwfh-vxw4`
+  失败，修复版指向 Next 16.3.3；本轮按站长决定不扩展升级范围，PR 保持未合并。生产保持不变，
+  仍运行 Sharp 0.35.0；此前授权的唯一真实生图已经使用，后续计费冒烟仍需明确授权。
 
 ## Milestones
 
@@ -56,10 +58,12 @@
    [BACKLOG](BACKLOG.md)，检查 Git 分支/worktree/未提交改动。
 2. 不把最新 main 自动当作线上版本；以 CURRENT_STATE 的完整 revision、镜像摘要和迁移为准。
 3. 不在会话恢复时自动部署 GG-023；站长已将它留到下一次明确授权的生产发布。
-4. 下一次发布先选择届时最新的精确候选；不要假定复用 `18fe779b`。本次 alpha 证据只绑定
+4. 先检查 PR #6 与 run `34322442639`，为 Next 16.2.11 的两个 CRITICAL 项建立或匹配独立
+   安全任务；不要通过忽略策略绕过 fail-closed 门禁。
+5. 下一次发布先选择届时最新的精确候选；不要假定复用 `18fe779b`。本次 alpha 证据只绑定
    `65ceb168`，后续候选必须重新生成新鲜证据并通过门禁。
-5. 新的普通产品需求从 GG-024 或后续未占用编号建卡，不要恢复旧 C6。
-6. 真实 provider 请求可能计费，必须与测试 fixture 隔离并取得对具体调用的明确授权。
+6. 新的普通产品需求从 GG-024 或后续未占用编号建卡，不要恢复旧 C6。
+7. 真实 provider 请求可能计费，必须与测试 fixture 隔离并取得对具体调用的明确授权。
 
 ## History and update policy
 
