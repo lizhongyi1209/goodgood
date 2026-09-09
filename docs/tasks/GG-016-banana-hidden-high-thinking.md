@@ -1,10 +1,10 @@
 # GG-016 — Nano Banana 2 隐藏并固定高思考
 
-- 状态：本地浏览器已验证；未发布
+- 状态：已上线；生产真实 Nano 冒烟通过
 - 用户需求：移除 Nano Banana 2 的“思考程度”参数，内部默认使用高思考且不向用户展示
-- 最后更新：2026-09-08
+- 最后更新：2026-09-09
 - 分支：`feature/GG-016-banana-hidden-high-thinking`
-- 依赖基线：本地组合候选 `60b56a9`，包含 GG-004—GG-015；生产仍为 `94cecb0`
+- 依赖基线：本地组合候选 `60b56a9`，包含 GG-004—GG-015；最终随 `65ceb168` 上线
 - 决策：[ADR 0033 修订](../decisions/0033-banana-thinking-and-google-search.md)
 
 ## 范围与验收
@@ -26,10 +26,9 @@
   跳过、0 失败）。重建前数据库无 queued/running job，也无 created/submitted/running
   attempt；3010 Web/Worker 重建后 readiness 全部为 `ok`。真实 Chrome 验证 Nano 参数
   抽屉只显示谷歌搜索，Nano 图片详情也无思考字段；代理未点击生成。
-- 发布：未发布，生产环境未变。
+- 发布：随 `65ceb168` 上线；生产快照确认隐藏的 `thinking_level: high`。
 
 ## 恢复工作
 
-- 下一步：站长可在 3010 按需执行真实 Nano 生成，确认上游高思考表现；若决定发布，
-  另行完成 GG-003 发布门禁提取和发布授权。
+- 下一步：生产观察；无需再为本任务调用 provider。
 - 阻塞/风险：本地实现无外部阻塞；真实高思考调用可能计费，本任务未由代理触发。
