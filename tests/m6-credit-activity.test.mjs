@@ -7,7 +7,10 @@ import {
   readCreditActivities,
   readPreviewCreditActivities,
 } from "../server/billing/activity-api.mjs";
-import { listCreditActivities } from "../server/billing/activity-repository.mjs";
+import {
+  listCreditActivities,
+  summarizeCreditActivitySpend,
+} from "../server/billing/activity-repository.mjs";
 import { BillingPersistenceError } from "../server/billing/repository.mjs";
 import { createBillingNodeApiHandler } from "../server/billing/node-api.mjs";
 import {
@@ -26,6 +29,7 @@ function activityRow(overrides = {}) {
     created_at: CREATED_AT,
     entry_type: "reserve",
     id: "71000000-0000-4000-8000-000000000001",
+    image_job_id: "73000000-0000-4000-8000-000000000001",
     metadata: {},
     model_id: "nano-banana-2",
     prompt: "  清晨薄雾中的现代建筑  ",
@@ -71,6 +75,7 @@ test("credit activity repository turns reservation lifecycles into one user reco
       closed_at: null,
       entry_type: "grant",
       id: "71000000-0000-4000-8000-000000000004",
+      image_job_id: null,
       metadata: { campaign: "welcome-v1" },
       model_id: null,
       prompt: null,
@@ -85,6 +90,7 @@ test("credit activity repository turns reservation lifecycles into one user reco
       closed_at: null,
       entry_type: "grant",
       id: "71000000-0000-4000-8000-000000000005",
+      image_job_id: null,
       metadata: { grantKind: "seed_test_credit" },
       model_id: null,
       prompt: null,
@@ -100,6 +106,19 @@ test("credit activity repository turns reservation lifecycles into one user reco
       entry_type: "refund",
       id: "71000000-0000-4000-8000-000000000006",
       reason: "generation_refund",
+    }),
+    activityRow({
+      amount: "-12",
+      close_entry_type: null,
+      closed_at: null,
+      entry_type: "adjust",
+      id: "71000000-0000-4000-8000-000000000007",
+      image_job_id: null,
+      metadata: {
+        activityCategory: "video_generation",
+        batchReference: "VID-20260909-0001",
+      },
+      reason: "video_generation_charge",
     }),
   ];
   const calls = [];
@@ -125,22 +144,42 @@ test("credit activity repository turns reservation lifecycles into one user reco
       ["welcome", "credited", "100"],
       ["promotion", "credited", "500"],
       ["refund", "refunded", "40"],
+      ["adjustment", "adjusted", "-12"],
     ],
   );
-  assert.deepEqual(result.items[0].generation, {
-    count: 4,
-    modelId: "nano-banana-2",
-    promptPreview: "清晨薄雾中的现代建筑",
-    resolution: "2K",
-    resultAssetId: "72000000-0000-4000-8000-000000000001",
-  });
+  assert.equal(result.items[0].category, "image_generation");
+  assert.equal(result.items[0].batchReference, rows[0].image_job_id);
   assert.equal(result.items[0].creditAmount, "40");
   assert.match(result.items[0].id, /^act_[0-9a-f]{32}$/);
   assert.equal(result.items[0].id.includes(rows[0].id), false);
   assert.equal("reason" in result.items[0], false);
   assert.equal("metadata" in result.items[0], false);
+  assert.equal("generation" in result.items[0], false);
+  assert.equal("modelId" in result.items[0], false);
+  assert.equal(result.items[3].category, "other");
+  assert.equal(result.items[3].batchReference, null);
+  assert.equal(result.items[6].category, "video_generation");
+  assert.equal(result.items[6].batchReference, "VID-20260909-0001");
   assert.equal(calls[0].values[0], OWNER_ID);
   assert.equal(calls[0].values[1], "all");
+});
+
+test("credit activity spend summary uses settled debits and Shanghai calendar boundaries", async () => {
+  const calls = [];
+  const pool = {
+    async query(sql, values) {
+      calls.push({ sql, values });
+      return { rowCount: 1, rows: [{ this_month: "70", this_week: "30", today: "10" }] };
+    },
+  };
+  assert.deepEqual(
+    await summarizeCreditActivitySpend(pool, { ownerId: OWNER_ID }),
+    { thisMonth: "70", thisWeek: "30", today: "10" },
+  );
+  assert.deepEqual(calls[0].values, [OWNER_ID, "Asia/Shanghai"]);
+  assert.match(calls[0].sql, /closing\.entry_type = 'settle'/);
+  assert.match(calls[0].sql, /date_trunc\('week'/);
+  assert.doesNotMatch(calls[0].sql, /closing\.entry_type = 'release'\)\s*THEN -entry\.amount/);
 });
 
 test("credit activity cursor resolves an owner-scoped public reference before paging", async () => {
@@ -203,9 +242,10 @@ test("credit activity API validates filters, binds the owner, and keeps ledger I
         items: [
           {
             amount: "-40",
+            batchReference: "73000000-0000-4000-8000-000000000001",
+            category: "image_generation",
             completedAt: CREATED_AT,
             creditAmount: "40",
-            generation: null,
             id: "act_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             kind: "generation",
             occurredAt: CREATED_AT,
@@ -218,6 +258,10 @@ test("credit activity API validates filters, binds the owner, and keeps ledger I
           createdAt: CREATED_AT,
         },
       };
+    },
+    async summarizeCreditActivitySpend(_pool, input) {
+      calls.push(["summary", input]);
+      return { thisMonth: "70", thisWeek: "30", today: "10" };
     },
   };
   const page = await readCreditActivities({
@@ -234,6 +278,7 @@ test("credit activity API validates filters, binds the owner, and keeps ledger I
   });
   assert.equal(calls[1][1].ownerId, OWNER_ID);
   assert.equal(calls[1][1].filter, "spend");
+  assert.deepEqual(page.spendSummary, { thisMonth: "70", thisWeek: "30", today: "10" });
   const decodedCursor = Buffer.from(page.nextCursor, "base64url").toString("utf8");
   assert.match(decodedCursor, /act_b{32}/);
   assert.doesNotMatch(decodedCursor, /[0-9a-f]{8}-[0-9a-f]{4}-/i);
@@ -253,6 +298,7 @@ test("credit activity API validates filters, binds the owner, and keeps ledger I
     repository: {
       async findCreditAccount() { return account(); },
       async listCreditActivities() { return { items: [], next: null }; },
+      async summarizeCreditActivitySpend() { return { thisMonth: "0", thisWeek: "0", today: "0" }; },
     },
     resources: { pool: {} },
   });
@@ -265,6 +311,7 @@ test("credit activity API validates filters, binds the owner, and keeps ledger I
       repository: {
         async findCreditAccount() { return { ...account(), status: "frozen" }; },
         async listCreditActivities() { return { items: [], next: null }; },
+        async summarizeCreditActivitySpend() { return { thisMonth: "0", thisWeek: "0", today: "0" }; },
       },
       resources: { pool: {} },
     }),
@@ -285,6 +332,11 @@ test("credit activity preview filters consumption, received credit, and releases
     readPreviewCreditActivities({ input: { filter: "return" } }).items.map((item) => item.status),
     ["released"],
   );
+  assert.deepEqual(readPreviewCreditActivities().spendSummary, {
+    thisMonth: "30",
+    thisWeek: "10",
+    today: "10",
+  });
 });
 
 function requestFor(url) {
@@ -315,7 +367,7 @@ test("both runtimes and workspace navigation expose the authenticated credit his
     operations: {
       async readCreditActivities(input) {
         inputs.push(input);
-        return { account: {}, items: [], nextCursor: null };
+        return { account: {}, items: [], nextCursor: null, spendSummary: {} };
       },
     },
     paymentSandbox: { enabled: false },
@@ -350,17 +402,23 @@ test("both runtimes and workspace navigation expose the authenticated credit his
   assert.match(pageEntry, /export \{ default \} from "\.\.\/page"/);
   assert.match(page, /handleCreditsNav/);
   assert.match(page, /activeView === "credits"/);
-  assert.match(page, /source: "credits"/);
+  assert.doesNotMatch(page, /source: "credits"/);
   assert.match(view, /credit-activity-skeleton/);
   assert.match(view, /credit-activity-error/);
   assert.match(view, /credit-activity-empty/);
   assert.match(view, /loadMoreError/);
   assert.match(view, /page\.nextCursor/);
   assert.match(view, /积分记录/);
-  assert.match(view, /全部/);
-  assert.match(view, /消费/);
-  assert.match(view, /获得/);
-  assert.match(view, /退回/);
+  assert.match(view, /今日消耗/);
+  assert.match(view, /本周消耗/);
+  assert.match(view, /本月消耗/);
+  assert.match(view, /图片生成/);
+  assert.match(view, /视频生成/);
+  assert.match(view, /其他变动/);
+  assert.match(view, /批次/);
+  assert.doesNotMatch(view, /getGenerationModel/);
+  assert.doesNotMatch(view, /promptPreview/);
+  assert.doesNotMatch(view, /查看结果/);
   assert.match(boundary, /\/api\/billing\/activities/);
   assert.match(contract, /CreditActivityPage/);
   assert.match(runtime, /createBillingNodeApiHandler/);

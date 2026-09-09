@@ -539,5 +539,10 @@ from fixed data; the production-shaped Node runtime always reads PostgreSQL.
 `GET /api/billing/activities` uses the same authenticated owner and `no-store`
 boundary. It scans owner-keyed immutable entries newest-first, joins only the
 same owner's generation context, and maps reserve plus settle/release to one
-public activity. Cursor and item references use derived public activity tokens;
-raw ledger/account/payment/provider identifiers and reasons stay server-only.
+public activity. A separate owner-scoped aggregate counts only settled debits
+for the Shanghai calendar day, Monday-based week, and month; open reservations
+and released amounts are excluded. Items expose a stable activity category and
+the same job/batch reference already visible in the asset library. Cursor and
+item references use derived public activity tokens; raw ledger/account/payment/
+provider identifiers, generation configuration, prompts, and reasons stay
+server-only.

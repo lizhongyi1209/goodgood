@@ -294,7 +294,9 @@ test("billing summary is wired into both runtimes and the shared workspace", asy
   assert.match(page, /billingLoading/);
   assert.match(page, /billingError/);
   assert.match(page, /积分记录/);
-  assert.match(page, /点击查看/);
+  assert.match(page, /account-credit-balance/);
+  assert.match(page, /余额 \$\{billingSummary\.account\.availableCredits\} 积分/);
+  assert.doesNotMatch(page, /点击查看/);
   assert.match(page, /billingSummary\.account\.availableCredits/);
   assert.doesNotMatch(page, /可生成 \{availableImages/);
   assert.doesNotMatch(page, /launchBillingQuote/);

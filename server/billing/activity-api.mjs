@@ -1,7 +1,10 @@
 import { sessionExpiredError } from "../auth/errors.mjs";
 import { getGenerationResources } from "../generation/resources.mjs";
 import { BillingPersistenceError, findCreditAccount } from "./repository.mjs";
-import { listCreditActivities } from "./activity-repository.mjs";
+import {
+  listCreditActivities,
+  summarizeCreditActivitySpend,
+} from "./activity-repository.mjs";
 
 const FILTERS = new Set(["all", "spend", "receive", "return"]);
 const ACTIVITY_ID_PATTERN = /^act_[0-9a-f]{32}$/;
@@ -9,6 +12,7 @@ const ACTIVITY_ID_PATTERN = /^act_[0-9a-f]{32}$/;
 const DEFAULT_REPOSITORY = Object.freeze({
   findCreditAccount,
   listCreditActivities,
+  summarizeCreditActivitySpend,
 });
 
 function requestError(message) {
@@ -87,9 +91,10 @@ export async function readCreditActivities({
   const ownerId = requireOwner(ownerContext);
   const query = readInput(input);
   const resolvedResources = resources ?? (await getGenerationResources());
-  const [account, activities] = await Promise.all([
+  const [account, activities, spendSummary] = await Promise.all([
     repository.findCreditAccount(resolvedResources.pool, { ownerId }),
     repository.listCreditActivities(resolvedResources.pool, { ...query, ownerId }),
+    repository.summarizeCreditActivitySpend(resolvedResources.pool, { ownerId }),
   ]);
   if (!account || account.status !== "active") {
     throw new BillingPersistenceError(
@@ -102,21 +107,17 @@ export async function readCreditActivities({
     account: publicAccount(account),
     items: activities.items,
     nextCursor: encodeCursor(activities.next, query.filter),
+    spendSummary,
   };
 }
 
 const PREVIEW_ITEMS = Object.freeze([
   Object.freeze({
     amount: "-10",
+    batchReference: "2b89ec79-84e6-4caa-aba8-db339ae999e0",
+    category: "image_generation",
     completedAt: "2026-09-09T06:32:18.000Z",
     creditAmount: "10",
-    generation: Object.freeze({
-      count: 1,
-      modelId: "nano-banana-2",
-      promptPreview: "清晨薄雾中的现代建筑，干净的玻璃反射与柔和自然光",
-      resolution: "2K",
-      resultAssetId: null,
-    }),
     id: "act_11111111111111111111111111111111",
     kind: "generation",
     occurredAt: "2026-09-09T06:31:42.000Z",
@@ -125,15 +126,10 @@ const PREVIEW_ITEMS = Object.freeze([
   }),
   Object.freeze({
     amount: "0",
+    batchReference: "ab712c66-3528-4f66-9c67-9ecb4e7d9991",
+    category: "image_generation",
     completedAt: "2026-09-08T11:08:31.000Z",
     creditAmount: "20",
-    generation: Object.freeze({
-      count: 2,
-      modelId: "gpt-image-2",
-      promptPreview: "白色背景上的红色陶瓷香水瓶产品摄影",
-      resolution: "1K",
-      resultAssetId: null,
-    }),
     id: "act_22222222222222222222222222222222",
     kind: "generation",
     occurredAt: "2026-09-08T11:07:48.000Z",
@@ -142,9 +138,10 @@ const PREVIEW_ITEMS = Object.freeze([
   }),
   Object.freeze({
     amount: "10",
+    batchReference: null,
+    category: "other",
     completedAt: null,
     creditAmount: "10",
-    generation: null,
     id: "act_33333333333333333333333333333333",
     kind: "promotion",
     occurredAt: "2026-09-07T03:15:00.000Z",
@@ -153,9 +150,10 @@ const PREVIEW_ITEMS = Object.freeze([
   }),
   Object.freeze({
     amount: "100",
+    batchReference: null,
+    category: "other",
     completedAt: null,
     creditAmount: "100",
-    generation: null,
     id: "act_44444444444444444444444444444444",
     kind: "welcome",
     occurredAt: "2026-09-02T02:00:00.000Z",
@@ -182,5 +180,10 @@ export function readPreviewCreditActivities({ input = {} } = {}) {
     },
     items: PREVIEW_ITEMS.filter((item) => previewMatches(item, query.filter)).slice(0, query.limit),
     nextCursor: null,
+    spendSummary: {
+      thisMonth: "30",
+      thisWeek: "10",
+      today: "10",
+    },
   };
 }

@@ -18,7 +18,7 @@ native history.
 | 帮助 | Placeholder | No view or route yet |
 | 图片详情 | Implemented | `/assets/:assetId` over its preserved source scope |
 | 账户管理 | Implemented | `/admin/users`, visible and callable only by the site owner |
-| 积分记录 | Implemented | `/credits`, entered from the authenticated balance summary |
+| 积分记录 | Implemented | `/credits`, entered from the quiet row below `帮助` or the mobile balance |
 
 Do not describe placeholders as shipped features.
 
@@ -51,7 +51,10 @@ account, owner, provider-channel, or ledger identifiers.
 credit activity with `all / spend / receive / return` filtering and opaque
 cursor pagination. A reserve and its settle/release closure project to one
 generation activity; refunds remain separate positive activities. The response
-may include safe generation context and a first accepted Asset ID, but never
+includes settled-spend totals for the Shanghai calendar day, Monday-based week,
+and month. Each item exposes a stable `image_generation / video_generation /
+other` category and optional asset-library batch reference, but never repeats
+model, resolution, count, prompt, or result Asset details and never
 returns account IDs, ledger IDs, payment references, internal reasons, actors,
 or provider details. It is read-only and `no-store`.
 
@@ -113,7 +116,7 @@ persistence and navigation behavior exist:
 | `/projects/:projectId` | Restore and continue a project |
 | `/assets` | Batch/gallery asset library |
 | `/assets/:assetId` | Addressable image detail |
-| `/credits` | Owner-scoped credit record and balance context |
+| `/credits` | Owner-scoped period spend summary and concise credit changes |
 | `/explore` | Future discovery experience |
 | `/moodboards` | Future moodboards |
 | `/help` | Product help and status guidance |

@@ -135,7 +135,6 @@ import { toast } from "sonner";
 import {
   Brush,
   Check,
-  ChevronRight,
   CircleAlert,
   Clock3,
   Coins,
@@ -189,7 +188,7 @@ type CreationStreamItem =
   | { kind: "image"; key: string; detailKey: string; ratio: number; batch: AssetBatch; image: GenerationOutput; index: number };
 type AssetGalleryItem = { key: string; ratio: number; batch: AssetBatch; image: GenerationOutput; index: number };
 type DetailImage = AssetGalleryItem;
-type DetailSource = "creation" | "assets" | "credits";
+type DetailSource = "creation" | "assets";
 type AssetDetailNavigationState = Readonly<{
   returnHref: string;
   scrollY: number;
@@ -205,8 +204,7 @@ function readAssetDetailNavigationState(state: unknown): AssetDetailNavigationSt
   const detail = candidate as Record<string, unknown>;
   if (
     detail.source !== "creation" &&
-    detail.source !== "assets" &&
-    detail.source !== "credits"
+    detail.source !== "assets"
   ) return null;
   if (
     typeof detail.returnHref !== "string" ||
@@ -663,9 +661,7 @@ export default function Home() {
         setActiveView(
           detailNavigation?.source === "creation"
             ? "create"
-            : detailNavigation?.source === "credits"
-              ? "credits"
-              : "assets",
+            : "assets",
         );
         return;
       }
@@ -1645,25 +1641,6 @@ export default function Home() {
     setBillingSummary((current) => current ? { ...current, account } : current);
   }, []);
 
-  const handleCreditAssetOpen = (assetId: string) => {
-    const currentHistoryState = window.history.state && typeof window.history.state === "object"
-      ? window.history.state as Record<string, unknown>
-      : {};
-    navigateWorkspace(
-      { kind: "asset", assetId },
-      {
-        state: {
-          ...currentHistoryState,
-          [ASSET_DETAIL_HISTORY_KEY]: {
-            returnHref: `${window.location.pathname}${window.location.search}${window.location.hash}`,
-            scrollY: window.scrollY,
-            source: "credits",
-          },
-        },
-      },
-    );
-  };
-
   const startNewCreation = () => {
     composerEditRevisionRef.current += 1;
     clearPersistedCreationDraft();
@@ -2266,40 +2243,30 @@ export default function Home() {
         </nav>
 
         <div className="sidebar-footer">
-          {authenticationSession && (
-            <div
-              className={`sidebar-billing ${billingError ? "has-error" : ""}`}
-              role={billingError ? "alert" : "status"}
-              aria-live="polite"
-            >
-              {billingLoading ? (
-                <span className="sidebar-billing-loading"><LoaderCircle size={12} />正在读取积分</span>
-              ) : billingError ? (
-                <button onClick={() => {
-                  setBillingLoading(true);
-                  setBillingError(null);
-                  setBillingRevision((current) => current + 1);
-                }}>
-                  <CircleAlert size={12} />积分暂不可用<RefreshCw size={11} />
-                </button>
-              ) : billingSummary ? (
-                <button className={`sidebar-credit-link ${activeView === "credits" ? "active" : ""}`} onClick={handleCreditsNav} aria-label={`查看积分记录，当前余额 ${billingSummary.account.availableCredits}`} title="积分记录，点击查看">
-                  <Coins size={17} />
-                  <span className="sidebar-credit-copy">
-                    <strong>积分记录</strong>
-                    <small>余额 {billingSummary.account.availableCredits}</small>
-                  </span>
-                  <span className="sidebar-credit-action">点击查看<ChevronRight size={12} /></span>
-                </button>
-              ) : null}
-            </div>
-          )}
           <button className="side-nav-item"><HelpCircle size={17} /><span>帮助</span></button>
+          {authenticationSession?.access.status === "active" && (
+            <button
+              className={`side-nav-item ${activeView === "credits" ? "active" : ""}`}
+              onClick={handleCreditsNav}
+            >
+              <Coins size={17} /><span>积分记录</span>
+            </button>
+          )}
           <div className="account-card">
             <div className="avatar">{accountInitials}</div>
             <div>
               <strong>{accountEmail ?? "登录 GoodGood"}</strong>
-              <small>{authenticationSession?.preview ? "本地预览" : authenticationSession ? "已登录" : "Google 或邮箱验证码"}</small>
+              <small className={billingSummary && authenticationSession ? "account-credit-balance" : ""} role={authenticationSession ? "status" : undefined} aria-live={authenticationSession ? "polite" : undefined}>
+                {authenticationSession
+                  ? billingLoading
+                    ? "积分读取中"
+                    : billingError
+                      ? "积分暂不可用"
+                      : billingSummary
+                        ? `余额 ${billingSummary.account.availableCredits} 积分`
+                        : "积分暂不可用"
+                  : "Google 或邮箱验证码"}
+              </small>
             </div>
             <button
               className="account-session-action"
@@ -2524,11 +2491,9 @@ export default function Home() {
             </section>
           ) : activeView === "credits" ? (
             <CreditActivityView
-              account={billingSummary?.account ?? null}
               enabled={Boolean(authenticationSession && authenticationSession.access.status === "active")}
               onAccountChange={handleCreditAccountChange}
               onBack={handleCreateNav}
-              onOpenAsset={handleCreditAssetOpen}
             />
           ) : (
             <section className="asset-library-view" aria-label="资产库">

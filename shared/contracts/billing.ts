@@ -102,28 +102,33 @@ export type CreditActivityStatus =
   | "adjusted"
   | "expired";
 
-export interface CreditActivityGeneration {
-  modelId: "nano-banana-2" | "nano-banana-pro" | "gpt-image-2";
-  resolution: "1K" | "2K" | "4K";
-  count: 1 | 2 | 4;
-  promptPreview: string;
-  resultAssetId: string | null;
+export type CreditActivityCategory =
+  | "image_generation"
+  | "video_generation"
+  | "other";
+
+export interface CreditActivitySpendSummary {
+  today: SerializedCreditAmount;
+  thisWeek: SerializedCreditAmount;
+  thisMonth: SerializedCreditAmount;
 }
 
 export interface CreditActivityItem {
   id: string;
   kind: CreditActivityKind;
   status: CreditActivityStatus;
+  category: CreditActivityCategory;
+  batchReference: string | null;
   amount: SerializedCreditAmount;
   creditAmount: SerializedCreditAmount;
   unit: string;
   occurredAt: string;
   completedAt: string | null;
-  generation: CreditActivityGeneration | null;
 }
 
 export interface CreditActivityPage {
   account: BillingAccountSummary;
+  spendSummary: CreditActivitySpendSummary;
   items: readonly CreditActivityItem[];
   nextCursor: string | null;
 }

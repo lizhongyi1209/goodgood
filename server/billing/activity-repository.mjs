@@ -27,14 +27,6 @@ function publicActivityId(id) {
     .digest("hex")}`;
 }
 
-function promptPreview(value) {
-  const normalized = typeof value === "string" ? value.trim().replace(/\s+/g, " ") : "";
-  const characters = Array.from(normalized);
-  return characters.length > 120
-    ? `${characters.slice(0, 120).join("")}…`
-    : normalized;
-}
-
 function grantKind(row) {
   if (row.related_payment_ref) return "purchase";
   if (row.metadata?.campaign === "welcome-v1" || row.reason === "welcome_grant_v1") {
@@ -44,20 +36,30 @@ function grantKind(row) {
   return "credit";
 }
 
-function generationFromRow(row) {
-  if (
-    !row.model_id ||
-    !row.resolution ||
-    ![1, 2, 4].includes(Number(row.requested_count))
-  ) {
-    return null;
+function metadataActivityCategory(metadata) {
+  const value = metadata?.activityCategory;
+  return value === "image_generation" || value === "video_generation"
+    ? value
+    : "other";
+}
+
+function metadataBatchReference(metadata) {
+  const value = metadata?.batchReference;
+  if (typeof value !== "string") return null;
+  const normalized = value.trim();
+  return normalized && normalized.length <= 120 ? normalized : null;
+}
+
+function activityTrace(row) {
+  if (row.image_job_id) {
+    return {
+      batchReference: row.image_job_id,
+      category: "image_generation",
+    };
   }
   return {
-    count: Number(row.requested_count),
-    modelId: row.model_id,
-    promptPreview: promptPreview(row.prompt),
-    resolution: row.resolution,
-    resultAssetId: row.result_asset_id ?? null,
+    batchReference: metadataBatchReference(row.metadata),
+    category: metadataActivityCategory(row.metadata),
   };
 }
 
@@ -71,10 +73,11 @@ function activityFromRow(row) {
   }
   const amount = exactAmount(row.amount);
   const absoluteAmount = amount < 0n ? -amount : amount;
+  const trace = activityTrace(row);
   const base = {
+    ...trace,
     completedAt: null,
     creditAmount: absoluteAmount.toString(),
-    generation: null,
     id: publicActivityId(row.id),
     occurredAt: new Date(row.created_at).toISOString(),
     unit: row.unit,
@@ -86,7 +89,6 @@ function activityFromRow(row) {
       ...base,
       amount: closeType === "release" ? "0" : amount.toString(),
       completedAt: row.closed_at ? new Date(row.closed_at).toISOString() : null,
-      generation: generationFromRow(row),
       kind: "generation",
       status:
         closeType === "settle"
@@ -108,7 +110,6 @@ function activityFromRow(row) {
     return {
       ...base,
       amount: amount.toString(),
-      generation: generationFromRow(row),
       kind: "refund",
       status: "refunded",
     };
@@ -162,8 +163,7 @@ export async function listCreditActivities(
             account.unit,
             closing.entry_type AS close_entry_type,
             closing.created_at AS closed_at,
-            batch.model_id, batch.resolution, batch.requested_count, batch.prompt,
-            result_asset.id AS result_asset_id
+            job.id AS image_job_id
        FROM credit_ledger_entries entry
        JOIN credit_accounts account
          ON account.id = entry.account_id AND account.owner_id = entry.owner_id
@@ -176,17 +176,6 @@ export async function listCreditActivities(
        ) closing ON entry.entry_type = 'reserve'
        LEFT JOIN generation_jobs job
          ON job.id = entry.related_job_id AND job.owner_id = entry.owner_id
-       LEFT JOIN generation_batches batch
-         ON batch.id = job.batch_id AND batch.owner_id = entry.owner_id
-       LEFT JOIN LATERAL (
-         SELECT asset.id
-           FROM assets asset
-          WHERE asset.job_id = entry.related_job_id
-            AND asset.owner_id = entry.owner_id
-            AND asset.moderation_state = 'accepted'
-          ORDER BY asset.ordinal ASC
-          LIMIT 1
-       ) result_asset ON true
       WHERE entry.owner_id = $1
         AND entry.entry_type IN ('grant', 'reserve', 'refund', 'expire', 'adjust')
         AND (
@@ -229,5 +218,56 @@ export async function listCreditActivities(
           createdAt: new Date(selected.at(-1).created_at).toISOString(),
         }
       : null,
+  };
+}
+
+export async function summarizeCreditActivitySpend(
+  pool,
+  { ownerId, timeZone = "Asia/Shanghai" },
+) {
+  const result = await pool.query(
+    `WITH spend AS (
+       SELECT CASE
+                WHEN entry.entry_type = 'reserve' AND closing.entry_type = 'settle'
+                  THEN -entry.amount
+                WHEN entry.entry_type IN ('expire', 'adjust') AND entry.amount < 0
+                  THEN -entry.amount
+                ELSE 0
+              END AS amount,
+              CASE
+                WHEN entry.entry_type = 'reserve' THEN closing.created_at
+                ELSE entry.created_at
+              END AS spent_at
+         FROM credit_ledger_entries entry
+         LEFT JOIN LATERAL (
+           SELECT closure.entry_type, closure.created_at
+             FROM credit_ledger_entries closure
+            WHERE closure.prior_entry_id = entry.id
+              AND closure.entry_type IN ('settle', 'release')
+            LIMIT 1
+         ) closing ON entry.entry_type = 'reserve'
+        WHERE entry.owner_id = $1
+          AND (
+            (entry.entry_type = 'reserve' AND closing.entry_type = 'settle')
+            OR (entry.entry_type IN ('expire', 'adjust') AND entry.amount < 0)
+          )
+     )
+     SELECT COALESCE(SUM(amount) FILTER (
+              WHERE spent_at >= date_trunc('day', CURRENT_TIMESTAMP AT TIME ZONE $2) AT TIME ZONE $2
+            ), 0) AS today,
+            COALESCE(SUM(amount) FILTER (
+              WHERE spent_at >= date_trunc('week', CURRENT_TIMESTAMP AT TIME ZONE $2) AT TIME ZONE $2
+            ), 0) AS this_week,
+            COALESCE(SUM(amount) FILTER (
+              WHERE spent_at >= date_trunc('month', CURRENT_TIMESTAMP AT TIME ZONE $2) AT TIME ZONE $2
+            ), 0) AS this_month
+       FROM spend`,
+    [ownerId, timeZone],
+  );
+  const row = result.rows[0] ?? {};
+  return {
+    thisMonth: exactAmount(row.this_month ?? 0).toString(),
+    thisWeek: exactAmount(row.this_week ?? 0).toString(),
+    today: exactAmount(row.today ?? 0).toString(),
   };
 }
