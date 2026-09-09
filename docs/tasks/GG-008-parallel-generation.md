@@ -1,7 +1,7 @@
 # GG-008 — 快速并行生成
 
-- 状态：3010 真实 O1Key 联调环境已就绪；待站长实测
-- 最后更新：2026-09-08
+- 状态：已上线
+- 最后更新：2026-09-09
 - 分支 / worktree：`feat/GG-008-parallel-generation` / `F:\goodgood`
 - 基线：`main` @ `bab17fd4d4c4d88eec6194bb5d024769ca8e26fa`
 - 决策：[ADR 0031](../decisions/0031-allow-repeated-parallel-generation-submissions.md)
@@ -37,4 +37,5 @@
 - 3010 联调栈已从组合分支重建：迁移退出码 0，Web/Worker/PostgreSQL/Valkey/
   RustFS/提供方探针均健康，Web readiness 全部检查为 `ok`；`/create` 返回 200。
 - 浏览器已刷新并确认普通生成按钮可操作；agent 未点击真实生成，未产生新的上游费用。
-- 下一步：站长连续点击两次或更多次真实生成，核对并行骨架、结果、失败和逐任务积分。
+- 发布：随 `65ceb168` 上线；本次只执行 1 次真实请求，未用它证明多请求并行体验。
+- 下一步：生产观察；多请求付费实测须另行明确授权。
