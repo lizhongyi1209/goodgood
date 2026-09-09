@@ -24,6 +24,9 @@
   `sharp@0.35.4`。
 - `npm run check:local` 通过：252 项中 246 通过、6 个 opt-in 跳过、0 失败；lint、
   typecheck 和本地构建通过。`git diff --check` 通过。
+- PR 首次 CI 在 `npm ci` 阶段发现 Windows npm 11.6 未写入两个跨平台 WASM 的嵌套
+  `@emnapi` 锁记录；未进入代码或镜像测试。使用 npm 11.8 重新生成锁文件后，
+  `npx -y npm@11.8.0 ci --dry-run --no-audit --no-fund` 通过。
 - official npm audit 另列出 Next 16.2.11 的 Windows-hosted RCE 和 Next AVIF optimizer
   advisories：生产运行于 Linux，且 GoodGood 使用 vinext 自有运行时而非 Next 图片优化 API；
   AVIF 的底层 libheif 风险由本次直接 Sharp 更新处理。是否升级 Next 不扩入本次最小修复，
