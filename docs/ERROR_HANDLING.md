@@ -454,9 +454,12 @@ set requires a new inventory and approval.
 - Same-key/same-transfer retry returns the original completed transfer.
   Same-key/different-input reuse returns
   `CREDIT_TRANSFER_IDEMPOTENCY_CONFLICT` without mutation.
-- Site-owner attempts to create a self-link, active cycle, second active parent,
-  or duplicate business-role interval fail with a stable 409 conflict and write
-  no partial relationship/audit state.
+- Site-owner attempts to create a self-link, active cycle, unchanged relationship,
+  parent without an active business role, second active parent, or duplicate
+  business-role interval fail with stable 409 codes such as
+  `ADMIN_RELATIONSHIP_SELF_FORBIDDEN`, `ADMIN_RELATIONSHIP_CYCLE`,
+  `ADMIN_RELATIONSHIP_UNCHANGED`, `ADMIN_PARENT_BUSINESS_ROLE_REQUIRED`, and
+  `ADMIN_BUSINESS_ROLE_UNCHANGED`. They write no partial relationship/audit state.
 - Parent debit, child credit, source allocations, paired ledger entries, and the
   public transfer/audit record are one transaction. Any failure rolls back all
   of them; there is no pending or partially completed user-facing transfer.

@@ -95,8 +95,8 @@ The planned authenticated boundaries are:
 | `GET /api/distribution/children` | List active direct children only, with the minimum account and allocation summary needed to operate |
 | `GET /api/distribution/transfers` | Return caller-scoped incoming/outgoing transfer history with opaque pagination |
 | `POST /api/distribution/transfers` | Atomically move a positive integer amount of payment-funded credit to one active direct child |
-| `PUT /api/admin/users/:accountId/business-role` | Site-owner-only assign/end of `enterprise` or `distributor` business role |
-| `PUT /api/admin/users/:accountId/direct-parent` | Site-owner-only create/end/replace of one direct-parent relationship |
+| `POST /api/admin/users/:accountId/business-role` | Site-owner-only assign/end of `enterprise` or `distributor` business role; requires the existing admin CSRF and idempotency headers |
+| `POST /api/admin/users/:accountId/direct-parent` | Site-owner-only create/end/replace of one direct-parent relationship; requires the existing admin CSRF and idempotency headers |
 
 Mutation routes require the normal GoodGood session, same-origin CSRF header,
 owner-scoped idempotency key, and server-derived actor. `accountId` is the

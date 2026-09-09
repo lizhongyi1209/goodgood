@@ -10,9 +10,12 @@ import {
   listManagedAccounts,
   listRecentAdministrativeActions,
   readAccountStatusCounts,
+  setBusinessRole,
+  setDirectParent,
 } from "./repository.mjs";
 
 const ACCOUNT_STATUSES = new Set(["pending", "active", "suspended"]);
+const BUSINESS_ROLES = new Set(["enterprise", "distributor"]);
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const DEFAULT_REPOSITORY = Object.freeze({
@@ -21,6 +24,8 @@ const DEFAULT_REPOSITORY = Object.freeze({
   listManagedAccounts,
   listRecentAdministrativeActions,
   readAccountStatusCounts,
+  setBusinessRole,
+  setDirectParent,
 });
 
 function requireOwner(ownerContext) {
@@ -222,6 +227,83 @@ export async function createAdminTestCreditGrant({
     idempotencyKey: key,
     ledgerIdempotencyKey: ledgerKey,
     operationHash: fingerprint,
+    reason,
+    targetOwnerId: target,
+  });
+}
+
+export async function updateAdminBusinessRole({
+  idempotencyKey,
+  input,
+  ownerContext,
+  repository = DEFAULT_REPOSITORY,
+  resources = null,
+  targetOwnerId,
+}) {
+  const actorOwnerId = requireOwner(ownerContext);
+  const target = requireOwnerId(targetOwnerId);
+  const key = requireIdempotencyKey(idempotencyKey);
+  const reason = requireText(input?.reason, "操作原因", 2, 200);
+  const businessRole = input?.role;
+  if (businessRole !== null && !BUSINESS_ROLES.has(businessRole)) {
+    throw new AdministrationError(
+      "ADMIN_REQUEST_INVALID",
+      "业务身份必须是企业、分销商或无。",
+      400,
+    );
+  }
+  const fingerprint = operationHash({
+    action: "set_business_role",
+    actorOwnerId,
+    businessRole,
+    reason,
+    targetOwnerId: target,
+  });
+  const resolved = await resourcesFor(resources);
+  return repository.setBusinessRole(resolved.pool, {
+    actorOwnerId,
+    businessRole,
+    idempotencyKey: key,
+    operationHash: fingerprint,
+    reason,
+    targetOwnerId: target,
+  });
+}
+
+export async function updateAdminDirectParent({
+  idempotencyKey,
+  input,
+  ownerContext,
+  repository = DEFAULT_REPOSITORY,
+  resources = null,
+  targetOwnerId,
+}) {
+  const actorOwnerId = requireOwner(ownerContext);
+  const target = requireOwnerId(targetOwnerId);
+  const key = requireIdempotencyKey(idempotencyKey);
+  const reason = requireText(input?.reason, "操作原因", 2, 200);
+  if (input?.parentOwnerId === undefined) {
+    throw new AdministrationError(
+      "ADMIN_REQUEST_INVALID",
+      "必须明确提供直属上级或使用 null 解除关系。",
+      400,
+    );
+  }
+  const parentOwnerId =
+    input.parentOwnerId === null ? null : requireOwnerId(input.parentOwnerId);
+  const fingerprint = operationHash({
+    action: "set_direct_parent",
+    actorOwnerId,
+    parentOwnerId,
+    reason,
+    targetOwnerId: target,
+  });
+  const resolved = await resourcesFor(resources);
+  return repository.setDirectParent(resolved.pool, {
+    actorOwnerId,
+    idempotencyKey: key,
+    operationHash: fingerprint,
+    parentOwnerId,
     reason,
     targetOwnerId: target,
   });

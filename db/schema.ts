@@ -99,6 +99,141 @@ export const systemRoleAssignments = pgTable(
   ],
 );
 
+export const businessRoleAssignments = pgTable(
+  "business_role_assignments",
+  {
+    id: uuid("id").primaryKey(),
+    ownerId: uuid("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    role: text("role").notNull(),
+    assignedByOwnerId: uuid("assigned_by_owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    assignmentReason: text("assignment_reason").notNull(),
+    assignedIdempotencyKey: text("assigned_idempotency_key").notNull(),
+    assignedOperationHash: text("assigned_operation_hash").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    endedAt: timestamp("ended_at", { withTimezone: true }),
+    endedByOwnerId: uuid("ended_by_owner_id").references(() => users.id, {
+      onDelete: "restrict",
+    }),
+    endReason: text("end_reason"),
+    endedIdempotencyKey: text("ended_idempotency_key"),
+    endedOperationHash: text("ended_operation_hash"),
+  },
+  (table) => [
+    uniqueIndex("business_role_assignments_active_owner_unique")
+      .on(table.ownerId)
+      .where(sql`${table.endedAt} is null`),
+    uniqueIndex("business_role_assignments_assigned_action_unique").on(
+      table.assignedByOwnerId,
+      table.assignedIdempotencyKey,
+    ),
+    uniqueIndex("business_role_assignments_ended_action_unique")
+      .on(table.endedByOwnerId, table.endedIdempotencyKey)
+      .where(sql`${table.endedAt} is not null`),
+    index("business_role_assignments_owner_history_idx").on(
+      table.ownerId,
+      table.createdAt,
+      table.id,
+    ),
+    check(
+      "business_role_assignments_role_check",
+      sql`${table.role} in ('enterprise', 'distributor')`,
+    ),
+    check(
+      "business_role_assignments_assignment_reason_check",
+      sql`length(${table.assignmentReason}) between 2 and 200`,
+    ),
+    check(
+      "business_role_assignments_assigned_idempotency_key_check",
+      sql`length(${table.assignedIdempotencyKey}) between 8 and 200`,
+    ),
+    check(
+      "business_role_assignments_assigned_operation_hash_check",
+      sql`length(${table.assignedOperationHash}) = 64`,
+    ),
+    check(
+      "business_role_assignments_end_shape_check",
+      sql`(${table.endedAt} is null and ${table.endedByOwnerId} is null and ${table.endReason} is null and ${table.endedIdempotencyKey} is null and ${table.endedOperationHash} is null)
+        or (${table.endedAt} is not null and ${table.endedAt} >= ${table.createdAt} and ${table.endedByOwnerId} is not null and length(${table.endReason}) between 2 and 200 and length(${table.endedIdempotencyKey}) between 8 and 200 and length(${table.endedOperationHash}) = 64)`,
+    ),
+  ],
+);
+
+export const accountRelationships = pgTable(
+  "account_relationships",
+  {
+    id: uuid("id").primaryKey(),
+    parentOwnerId: uuid("parent_owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    childOwnerId: uuid("child_owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    createdByOwnerId: uuid("created_by_owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    relationshipReason: text("relationship_reason").notNull(),
+    createdIdempotencyKey: text("created_idempotency_key").notNull(),
+    createdOperationHash: text("created_operation_hash").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    endedAt: timestamp("ended_at", { withTimezone: true }),
+    endedByOwnerId: uuid("ended_by_owner_id").references(() => users.id, {
+      onDelete: "restrict",
+    }),
+    endReason: text("end_reason"),
+    endedIdempotencyKey: text("ended_idempotency_key"),
+    endedOperationHash: text("ended_operation_hash"),
+  },
+  (table) => [
+    uniqueIndex("account_relationships_active_child_unique")
+      .on(table.childOwnerId)
+      .where(sql`${table.endedAt} is null`),
+    uniqueIndex("account_relationships_created_action_unique").on(
+      table.createdByOwnerId,
+      table.createdIdempotencyKey,
+    ),
+    uniqueIndex("account_relationships_ended_action_unique")
+      .on(table.endedByOwnerId, table.endedIdempotencyKey)
+      .where(sql`${table.endedAt} is not null`),
+    index("account_relationships_active_parent_idx")
+      .on(table.parentOwnerId, table.childOwnerId)
+      .where(sql`${table.endedAt} is null`),
+    index("account_relationships_child_history_idx").on(
+      table.childOwnerId,
+      table.createdAt,
+      table.id,
+    ),
+    check(
+      "account_relationships_distinct_owners_check",
+      sql`${table.parentOwnerId} <> ${table.childOwnerId}`,
+    ),
+    check(
+      "account_relationships_reason_check",
+      sql`length(${table.relationshipReason}) between 2 and 200`,
+    ),
+    check(
+      "account_relationships_created_idempotency_key_check",
+      sql`length(${table.createdIdempotencyKey}) between 8 and 200`,
+    ),
+    check(
+      "account_relationships_created_operation_hash_check",
+      sql`length(${table.createdOperationHash}) = 64`,
+    ),
+    check(
+      "account_relationships_end_shape_check",
+      sql`(${table.endedAt} is null and ${table.endedByOwnerId} is null and ${table.endReason} is null and ${table.endedIdempotencyKey} is null and ${table.endedOperationHash} is null)
+        or (${table.endedAt} is not null and ${table.endedAt} >= ${table.createdAt} and ${table.endedByOwnerId} is not null and length(${table.endReason}) between 2 and 200 and length(${table.endedIdempotencyKey}) between 8 and 200 and length(${table.endedOperationHash}) = 64)`,
+    ),
+  ],
+);
+
 export const paymentProductVersions = pgTable(
   "payment_product_versions",
   {
@@ -954,6 +1089,24 @@ export const administrativeActions = pgTable(
       () => creditLedgerEntries.id,
       { onDelete: "restrict" },
     ),
+    previousBusinessRole: text("previous_business_role"),
+    resultingBusinessRole: text("resulting_business_role"),
+    businessRoleAssignmentId: uuid("business_role_assignment_id").references(
+      () => businessRoleAssignments.id,
+      { onDelete: "restrict" },
+    ),
+    previousParentOwnerId: uuid("previous_parent_owner_id").references(
+      () => users.id,
+      { onDelete: "restrict" },
+    ),
+    resultingParentOwnerId: uuid("resulting_parent_owner_id").references(
+      () => users.id,
+      { onDelete: "restrict" },
+    ),
+    accountRelationshipId: uuid("account_relationship_id").references(
+      () => accountRelationships.id,
+      { onDelete: "restrict" },
+    ),
     reason: text("reason").notNull(),
     idempotencyKey: text("idempotency_key").notNull(),
     operationHash: text("operation_hash").notNull(),
@@ -969,6 +1122,12 @@ export const administrativeActions = pgTable(
     uniqueIndex("administrative_actions_credit_entry_unique")
       .on(table.creditLedgerEntryId)
       .where(sql`${table.creditLedgerEntryId} is not null`),
+    index("administrative_actions_business_role_assignment_idx")
+      .on(table.businessRoleAssignmentId)
+      .where(sql`${table.businessRoleAssignmentId} is not null`),
+    index("administrative_actions_account_relationship_idx")
+      .on(table.accountRelationshipId)
+      .where(sql`${table.accountRelationshipId} is not null`),
     index("administrative_actions_target_created_idx").on(
       table.targetOwnerId,
       table.createdAt,
@@ -980,13 +1139,15 @@ export const administrativeActions = pgTable(
     ),
     check(
       "administrative_actions_type_check",
-      sql`${table.actionType} in ('bootstrap_site_owner', 'approve_account', 'suspend_account', 'restore_account', 'grant_test_credits')`,
+      sql`${table.actionType} in ('bootstrap_site_owner', 'approve_account', 'suspend_account', 'restore_account', 'grant_test_credits', 'set_business_role', 'set_direct_parent')`,
     ),
     check(
       "administrative_actions_status_check",
       sql`(${table.actionType} = 'bootstrap_site_owner' and ${table.previousStatus} in ('pending', 'active') and ${table.resultingStatus} = 'active' and ${table.creditAmount} is null and ${table.creditLedgerEntryId} is null)
         or (${table.actionType} in ('approve_account', 'suspend_account', 'restore_account') and ${table.previousStatus} in ('pending', 'active', 'suspended') and ${table.resultingStatus} in ('active', 'suspended') and ${table.creditAmount} is null and ${table.creditLedgerEntryId} is null)
-        or (${table.actionType} = 'grant_test_credits' and ${table.previousStatus} is null and ${table.resultingStatus} is null and ${table.creditAmount} between 1 and 5000 and ${table.creditLedgerEntryId} is not null)`,
+        or (${table.actionType} = 'grant_test_credits' and ${table.previousStatus} is null and ${table.resultingStatus} is null and ${table.creditAmount} between 1 and 5000 and ${table.creditLedgerEntryId} is not null)
+        or (${table.actionType} = 'set_business_role' and ${table.previousStatus} is null and ${table.resultingStatus} is null and ${table.creditAmount} is null and ${table.creditLedgerEntryId} is null and ${table.previousBusinessRole} is distinct from ${table.resultingBusinessRole} and ${table.businessRoleAssignmentId} is not null)
+        or (${table.actionType} = 'set_direct_parent' and ${table.previousStatus} is null and ${table.resultingStatus} is null and ${table.creditAmount} is null and ${table.creditLedgerEntryId} is null and ${table.previousParentOwnerId} is distinct from ${table.resultingParentOwnerId} and ${table.accountRelationshipId} is not null)`,
     ),
     check(
       "administrative_actions_reason_check",

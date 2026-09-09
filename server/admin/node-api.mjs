@@ -3,6 +3,8 @@ import {
   createAdminTestCreditGrant,
   readAdminDashboard,
   updateAdminAccountStatus,
+  updateAdminBusinessRole,
+  updateAdminDirectParent,
 } from "./api.mjs";
 import { AdministrationError } from "./errors.mjs";
 import { requestIdFor } from "../observability/http.mjs";
@@ -16,6 +18,8 @@ const DEFAULT_OPERATIONS = Object.freeze({
   createAdminTestCreditGrant,
   readAdminDashboard,
   updateAdminAccountStatus,
+  updateAdminBusinessRole,
+  updateAdminDirectParent,
 });
 
 function sendJson(response, statusCode, payload, headers = {}) {
@@ -111,6 +115,42 @@ export function createAdminNodeApiHandler({
             input: await readJson(request),
             ownerContext,
             targetOwnerId: decodeURIComponent(statusMatch[1]),
+          }),
+        );
+        return true;
+      }
+
+      const businessRoleMatch =
+        /^\/api\/admin\/users\/([^/]+)\/business-role$/.exec(
+          url.pathname,
+        );
+      if (businessRoleMatch) {
+        sendJson(
+          response,
+          200,
+          await operations.updateAdminBusinessRole({
+            idempotencyKey: headerValue(request.headers, "idempotency-key"),
+            input: await readJson(request),
+            ownerContext,
+            targetOwnerId: decodeURIComponent(businessRoleMatch[1]),
+          }),
+        );
+        return true;
+      }
+
+      const directParentMatch =
+        /^\/api\/admin\/users\/([^/]+)\/direct-parent$/.exec(
+          url.pathname,
+        );
+      if (directParentMatch) {
+        sendJson(
+          response,
+          200,
+          await operations.updateAdminDirectParent({
+            idempotencyKey: headerValue(request.headers, "idempotency-key"),
+            input: await readJson(request),
+            ownerContext,
+            targetOwnerId: decodeURIComponent(directParentMatch[1]),
           }),
         );
         return true;

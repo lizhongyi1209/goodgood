@@ -76,6 +76,8 @@ const ACTION_LABELS: Record<AdministrativeAction["actionType"], string> = {
   bootstrap_site_owner: "初始化站长",
   grant_test_credits: "赠送测试积分",
   restore_account: "恢复账户",
+  set_business_role: "调整业务身份",
+  set_direct_parent: "调整直属关系",
   suspend_account: "暂停账户",
 };
 

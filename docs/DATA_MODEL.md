@@ -41,14 +41,20 @@ single-output prices without enabling its provider route. Migration 0020 adds
 payment-funded available/reserved projections to credit accounts, records the
 payment-funded portion of every ledger entry, and deterministically rebuilds
 existing history from paid-order evidence while treating every unproven source
-as non-transferable. The Drizzle schema mirrors the durable schema across all
-twenty migrations. A
+as non-transferable. Migration 0021 adds interval-based
+enterprise/distributor business-role assignments, one active direct-parent
+relationship per child, guarded immutable history, and hierarchy fields on the
+existing administrative audit. Active-cycle rejection remains a transactional
+service check serialized with hierarchy mutation; the database independently
+rejects self-links and a second active parent. The Drizzle schema mirrors the
+durable schema across all twenty-one migrations. A
 fuller project-backed creation session record and entitlements
 remain canonical contracts for later slices.
 
 ADR 0043 accepts an additive migration sequence for payment-funded credit
 provenance, business roles, direct relationships, and paired credit transfers.
-Migration 0020 locally implements the first phase. It derives existing source classification from
+Migrations 0020 and 0021 locally implement the provenance and hierarchy phases.
+Migration 0020 derives existing source classification from
 immutable evidence: a grant uniquely linked from a paid `PaymentOrder` is
 payment-funded; existing welcome/test/promotion/adjustment value is
 non-transferable. Unknown history fails closed as non-transferable. No migration
@@ -289,16 +295,18 @@ same-key/different-input replay a conflict.
 
 ### BusinessRoleAssignment
 
-Owner, stable `enterprise | distributor` role, status/effective interval,
-site-owner actor, reason, idempotency identity/hash, and timestamps. Business
+Owner, stable `enterprise | distributor` role, effective interval,
+site-owner assign/end actors, reasons, idempotency identities/hashes, and
+timestamps. Ending closes an interval once; replacement closes the old interval
+and inserts a new one. Business
 role is independent of `SystemRoleAssignment`, account access, tier, and balance.
 The first version maps both values to the same direct-child allocation
 capability; it does not grant site-owner authority.
 
 ### AccountRelationship
 
-Parent owner, child owner, active/ended state, site-owner actor, reason,
-idempotency identity/hash, and timestamps. A partial unique constraint permits
+Parent owner, child owner, effective interval, site-owner create/end actors,
+reasons, idempotency identities/hashes, and timestamps. A partial unique constraint permits
 only one active parent per child. Service and database checks reject self-links
 and active cycles; ended history is immutable and balance/history never moves
 when a relationship changes.

@@ -1,17 +1,22 @@
 import { goodGoodApiFetch } from "@/features/auth/http-auth-boundary";
 
 export type ManagedAccountStatus = "pending" | "active" | "suspended";
+export type BusinessRole = "enterprise" | "distributor";
 
 export type ManagedAccount = Readonly<{
   accountTier: "seed";
   availableCredits: string;
+  businessRole: BusinessRole | null;
   createdAt: string;
+  directParentEmail: string | null;
+  directParentId: string | null;
   email: string;
   id: string;
   lastAuthenticatedAt: string | null;
   reservedCredits: string;
   role: "site_owner" | "member";
   status: ManagedAccountStatus;
+  transferableCredits: string;
 }>;
 
 export type AdministrativeAction = Readonly<{
@@ -20,14 +25,20 @@ export type AdministrativeAction = Readonly<{
     | "approve_account"
     | "suspend_account"
     | "restore_account"
-    | "grant_test_credits";
+    | "grant_test_credits"
+    | "set_business_role"
+    | "set_direct_parent";
   actorEmail: string;
   createdAt: string;
   creditAmount: string | null;
   id: string;
+  previousBusinessRole: BusinessRole | null;
+  previousParentEmail: string | null;
   previousStatus: ManagedAccountStatus | null;
   reason: string;
   resultingStatus: ManagedAccountStatus | null;
+  resultingBusinessRole: BusinessRole | null;
+  resultingParentEmail: string | null;
   targetEmail: string;
 }>;
 
@@ -112,6 +123,57 @@ export async function grantManagedAccountTestCredits(input: {
       `/api/admin/users/${encodeURIComponent(input.ownerId)}/test-credit-grants`,
       {
         body: JSON.stringify({ amount: input.amount, reason: input.reason }),
+        headers: {
+          ...ADMIN_HEADERS,
+          "idempotency-key": crypto.randomUUID(),
+        },
+        method: "POST",
+      },
+    ),
+  );
+}
+
+export async function updateManagedAccountBusinessRole(input: {
+  ownerId: string;
+  reason: string;
+  role: BusinessRole | null;
+}) {
+  return adminJson<{
+    actionType: "set_business_role";
+    businessRole: BusinessRole | null;
+    created: boolean;
+  }>(
+    await goodGoodApiFetch(
+      `/api/admin/users/${encodeURIComponent(input.ownerId)}/business-role`,
+      {
+        body: JSON.stringify({ reason: input.reason, role: input.role }),
+        headers: {
+          ...ADMIN_HEADERS,
+          "idempotency-key": crypto.randomUUID(),
+        },
+        method: "POST",
+      },
+    ),
+  );
+}
+
+export async function updateManagedAccountDirectParent(input: {
+  ownerId: string;
+  parentOwnerId: string | null;
+  reason: string;
+}) {
+  return adminJson<{
+    actionType: "set_direct_parent";
+    created: boolean;
+    directParentId: string | null;
+  }>(
+    await goodGoodApiFetch(
+      `/api/admin/users/${encodeURIComponent(input.ownerId)}/direct-parent`,
+      {
+        body: JSON.stringify({
+          parentOwnerId: input.parentOwnerId,
+          reason: input.reason,
+        }),
         headers: {
           ...ADMIN_HEADERS,
           "idempotency-key": crypto.randomUUID(),
