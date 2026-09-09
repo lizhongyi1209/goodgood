@@ -396,17 +396,17 @@ export function AccountManagementPage() {
                       <div><span className="block text-zinc-500">注册时间</span><strong className="mt-1 block font-medium">{formatDate(account.createdAt)}</strong></div>
                       <div><span className="block text-zinc-500">最近登录</span><strong className="mt-1 block font-medium">{formatDate(account.lastAuthenticatedAt)}</strong></div>
                     </div>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {account.status === "pending" && <Button size="sm" onClick={() => openAction(account, "approve")}><CheckCircle2 />通过</Button>}
-                      {account.status === "active" && account.role !== "site_owner" && <Button size="sm" variant="outline" onClick={() => openAction(account, "suspend")}><ShieldBan />暂停</Button>}
-                      {account.status === "suspended" && <Button size="sm" variant="outline" onClick={() => openAction(account, "restore")}><CheckCircle2 />恢复</Button>}
-                      <Button size="sm" variant="ghost" onClick={() => openAction(account, "grant")}><Coins />积分</Button>
+                    <div className="admin-account-actions mt-4 flex flex-wrap gap-2">
+                      {account.status === "pending" && <Button className="admin-account-primary-action" size="sm" variant="outline" onClick={() => openAction(account, "approve")}><CheckCircle2 />通过</Button>}
+                      {account.status === "active" && account.role !== "site_owner" && <Button className="admin-account-primary-action" size="sm" variant="outline" onClick={() => openAction(account, "suspend")}><ShieldBan />暂停</Button>}
+                      {account.status === "suspended" && <Button className="admin-account-primary-action" size="sm" variant="outline" onClick={() => openAction(account, "restore")}><CheckCircle2 />恢复</Button>}
+                      <Button className="admin-account-secondary-action" size="sm" variant="ghost" onClick={() => openAction(account, "grant")}><Coins />积分</Button>
                     </div>
                   </article>
                 ))}
               </div>
               <div className="hidden lg:block">
-                <Table>
+                <Table className="admin-account-table">
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
                     <TableHead className="pl-5">账户</TableHead>
@@ -435,11 +435,11 @@ export function AccountManagementPage() {
                         <div className="mt-1 text-xs text-zinc-500">{formatDate(account.lastAuthenticatedAt)}</div>
                       </TableCell>
                       <TableCell className="pr-5">
-                        <div className="flex justify-end gap-1">
-                          {account.status === "pending" && <Button size="sm" onClick={() => openAction(account, "approve")}><CheckCircle2 />通过</Button>}
-                          {account.status === "active" && account.role !== "site_owner" && <Button size="sm" variant="outline" onClick={() => openAction(account, "suspend")}><ShieldBan />暂停</Button>}
-                          {account.status === "suspended" && <Button size="sm" variant="outline" onClick={() => openAction(account, "restore")}><CheckCircle2 />恢复</Button>}
-                          <Button size="sm" variant="ghost" onClick={() => openAction(account, "grant")}><Coins />积分</Button>
+                        <div className="admin-account-actions flex justify-end gap-1">
+                          {account.status === "pending" && <Button className="admin-account-primary-action" size="sm" variant="outline" onClick={() => openAction(account, "approve")}><CheckCircle2 />通过</Button>}
+                          {account.status === "active" && account.role !== "site_owner" && <Button className="admin-account-primary-action" size="sm" variant="outline" onClick={() => openAction(account, "suspend")}><ShieldBan />暂停</Button>}
+                          {account.status === "suspended" && <Button className="admin-account-primary-action" size="sm" variant="outline" onClick={() => openAction(account, "restore")}><CheckCircle2 />恢复</Button>}
+                          <Button className="admin-account-secondary-action" size="sm" variant="ghost" onClick={() => openAction(account, "grant")}><Coins />积分</Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -476,27 +476,38 @@ export function AccountManagementPage() {
       </div>
 
       <Dialog open={Boolean(selected)} onOpenChange={(open) => !open && !mutating && setSelected(null)}>
-        <DialogContent>
-          <DialogHeader>
+        <DialogContent
+          className="admin-action-dialog"
+          overlayClassName="admin-action-dialog-overlay"
+        >
+          <DialogHeader className="admin-action-dialog-header">
             <DialogTitle>{selectedCopy?.title}</DialogTitle>
             <DialogDescription>{selectedCopy?.description}</DialogDescription>
           </DialogHeader>
-          {selected?.action === "grant" && (
-            <div>
-              <label className="text-sm font-medium" htmlFor="grant-amount">积分数量</label>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {[100, 500, 1000].map((preset) => <Button key={preset} type="button" size="sm" variant={amount === String(preset) ? "default" : "outline"} onClick={() => setAmount(String(preset))}>{preset}</Button>)}
-              </div>
-              <Input id="grant-amount" className="mt-2" inputMode="numeric" min={1} max={5000} type="number" value={amount} onChange={(event) => setAmount(event.target.value)} />
-              <p className="mt-1 text-xs text-zinc-500">单次最多 5000 积分，只允许正整数。</p>
+          <div className="admin-action-dialog-body">
+            {selected?.action === "grant" && (
+              <>
+                <div className="admin-action-account-summary">
+                  <span>当前可用积分</span>
+                  <strong>{selected.account.availableCredits} 积分</strong>
+                </div>
+                <div className="admin-action-field">
+                  <label htmlFor="grant-amount">积分数量</label>
+                  <div className="admin-action-presets">
+                    {[100, 500, 1000].map((preset) => <Button key={preset} type="button" size="sm" variant={amount === String(preset) ? "default" : "outline"} onClick={() => setAmount(String(preset))}>{preset}</Button>)}
+                  </div>
+                  <Input id="grant-amount" inputMode="numeric" min={1} max={5000} type="number" value={amount} onChange={(event) => setAmount(event.target.value)} />
+                  <p className="admin-action-help">单次最多 5000 积分，只允许正整数。</p>
+                </div>
+              </>
+            )}
+            <div className="admin-action-field">
+              <label htmlFor="admin-action-reason">操作原因</label>
+              <Textarea id="admin-action-reason" maxLength={200} placeholder="请填写会进入审计记录的原因" value={reason} onChange={(event) => setReason(event.target.value)} />
             </div>
-          )}
-          <div>
-            <label className="text-sm font-medium" htmlFor="admin-action-reason">操作原因</label>
-            <Textarea id="admin-action-reason" className="mt-2 min-h-24" maxLength={200} placeholder="请填写会进入审计记录的原因" value={reason} onChange={(event) => setReason(event.target.value)} />
+            {mutationError && <p className="admin-action-error" role="alert">{mutationError}</p>}
           </div>
-          {mutationError && <p className="text-sm text-red-700" role="alert">{mutationError}</p>}
-          <DialogFooter>
+          <DialogFooter className="admin-action-dialog-footer">
             <Button variant="outline" disabled={mutating} onClick={() => setSelected(null)}>取消</Button>
             <Button
               variant={selected?.action === "suspend" ? "destructive" : "default"}

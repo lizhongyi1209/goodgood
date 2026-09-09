@@ -379,6 +379,64 @@ test("account management surface includes loading, empty, failure, audit, and gr
   assert.match(source, /x-goodgood-admin-action/);
 });
 
+test("all account actions share an opaque GoodGood dialog surface", async () => {
+  const [source, styles, dialogPrimitive] = await Promise.all([
+    readFile(
+      new URL("../features/admin/account-management-page.tsx", import.meta.url),
+      "utf8",
+    ),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+    readFile(new URL("../components/ui/dialog.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.equal(source.match(/<DialogContent/g)?.length, 1);
+  for (const action of ["approve", "suspend", "restore", "grant"]) {
+    assert.match(source, new RegExp(`openAction\\(account, "${action}"\\)`));
+  }
+  assert.match(source, /className="admin-action-dialog"/);
+  assert.match(source, /overlayClassName="admin-action-dialog-overlay"/);
+  assert.match(source, /当前可用积分/);
+  assert.match(dialogPrimitive, /overlayClassName\?: string/);
+  assert.match(dialogPrimitive, /<DialogOverlay className=\{overlayClassName\} \/>/);
+  assert.match(styles, /--color-background:\s*var\(--white\)/);
+  assert.match(styles, /--color-primary:\s*var\(--accent\)/);
+  assert.match(styles, /--color-input:\s*var\(--line\)/);
+  assert.match(
+    styles,
+    /\[data-slot="dialog-content"\]\.admin-action-dialog[^}]*background:\s*var\(--white\)/,
+  );
+  assert.match(styles, /\.admin-action-dialog-overlay[^}]*backdrop-filter:\s*blur\(2px\)/);
+  assert.match(styles, /\.admin-action-dialog-footer[^}]*flex-direction:\s*row/);
+});
+
+test("account row actions keep a neutral hierarchy outside confirmation dialogs", async () => {
+  const [source, styles] = await Promise.all([
+    readFile(
+      new URL("../features/admin/account-management-page.tsx", import.meta.url),
+      "utf8",
+    ),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(source, /<Table className="admin-account-table">/);
+  assert.equal(source.match(/className="admin-account-actions/g)?.length, 2);
+  assert.equal(source.match(/className="admin-account-primary-action"/g)?.length, 6);
+  assert.equal(source.match(/className="admin-account-secondary-action"/g)?.length, 2);
+  assert.doesNotMatch(source, /status === "pending" && <Button size="sm"/);
+  assert.match(
+    styles,
+    /\.admin-account-table \[data-slot="table-row"\][^}]*border-color:\s*var\(--line\)[^}]*background:\s*var\(--white\)/,
+  );
+  assert.match(
+    styles,
+    /\.admin-account-primary-action[^}]*border-color:\s*var\(--line\)[^}]*background:\s*var\(--white\)/,
+  );
+  assert.match(
+    styles,
+    /\.admin-account-secondary-action[^}]*border-color:\s*transparent[^}]*background:\s*transparent/,
+  );
+});
+
 test("account management timestamps use compatible Intl style options", async () => {
   const source = await readFile(
     new URL("../features/admin/account-management-page.tsx", import.meta.url),
