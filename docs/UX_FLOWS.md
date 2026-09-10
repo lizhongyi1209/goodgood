@@ -25,7 +25,8 @@
   informational rows show the resolved identity and available balance, followed
   by a separated logout action. `站长` wins over any business role; otherwise
   the effective business role is shown, falling back to `个人`. The numeric
-  balance retains Palace Red emphasis and the accessible `积分余额 N` meaning.
+  balance retains Palace Red emphasis and the accessible `积分余额 N` meaning;
+  its CircleDot icon stays neutral like the other workspace function icons.
   On narrow screens, the compact balance
   remains the entry. Selecting either opens `/credits` without discarding the
   current composer, project, or active generation. The view shows settled spend

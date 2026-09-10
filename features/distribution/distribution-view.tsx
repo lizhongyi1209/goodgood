@@ -215,7 +215,7 @@ export function DistributionView({ enabled, onAccountChange, onBack }: Props) {
           <AlertTitle>积分分配暂时不可用</AlertTitle>
           <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
             <span>{error ?? "未能读取分配账户。"}</span>
-            <Button size="sm" variant="outline" onClick={() => void load()}>
+            <Button size="sm" variant="ghost" onClick={() => void load()}>
               <RefreshCw />重试
             </Button>
           </AlertDescription>
@@ -235,7 +235,7 @@ export function DistributionView({ enabled, onAccountChange, onBack }: Props) {
           </div>
           <p>只可把充值来源积分分配给直属下级；兑换价格与收款由你在线下自行处理。</p>
         </div>
-        <Button variant="outline" onClick={onBack}><ArrowLeft />返回创作</Button>
+        <Button variant="ghost" onClick={onBack}><ArrowLeft />返回创作</Button>
       </header>
 
       <div className="distribution-summary-grid">
@@ -281,7 +281,7 @@ export function DistributionView({ enabled, onAccountChange, onBack }: Props) {
                         : " · 尚未分配"}
                     </span>
                   </div>
-                  <Button size="sm" onClick={() => openTransfer(child)}>分配积分</Button>
+                  <Button size="sm" variant="ghost" onClick={() => openTransfer(child)}>分配积分</Button>
                 </article>
               ))}
             </div>
@@ -342,7 +342,7 @@ export function DistributionView({ enabled, onAccountChange, onBack }: Props) {
                     key={preset}
                     type="button"
                     size="sm"
-                    variant={amount === String(preset) ? "default" : "outline"}
+                    variant="ghost"
                     aria-pressed={amount === String(preset)}
                     onClick={() => setAmount(String(preset))}
                   >
@@ -360,7 +360,7 @@ export function DistributionView({ enabled, onAccountChange, onBack }: Props) {
             {submitError && <p className="admin-action-error" role="alert">{submitError}</p>}
           </div>
           <DialogFooter className="admin-action-dialog-footer">
-            <Button variant="outline" disabled={submitting} onClick={() => setSelectedChild(null)}>取消</Button>
+            <Button variant="ghost" disabled={submitting} onClick={() => setSelectedChild(null)}>取消</Button>
             <Button disabled={submitting || !amountIsValid} onClick={() => void submitTransfer()}>
               {submitting && <LoaderCircle className="animate-spin" />}确认划拨
             </Button>

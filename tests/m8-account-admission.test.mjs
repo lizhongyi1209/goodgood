@@ -416,7 +416,7 @@ test("all account actions share an opaque GoodGood dialog surface", async () => 
   assert.match(source, /aria-pressed=\{amount === String\(preset\)\}/);
   assert.match(
     styles,
-    /\.admin-action-presets \[aria-pressed="true"\][^}]*background:\s*var\(--accent\)[^}]*color:\s*var\(--white\)/,
+    /\.admin-action-presets \[data-slot="button"\]\[aria-pressed="true"\][^}]*background:\s*var\(--accent\)[^}]*color:\s*var\(--white\)/,
   );
 });
 
@@ -434,17 +434,14 @@ test("account row actions keep a neutral hierarchy outside confirmation dialogs"
   assert.equal(source.match(/className="admin-account-primary-action"/g)?.length, 6);
   assert.equal(source.match(/className="admin-account-secondary-action"/g)?.length, 6);
   assert.doesNotMatch(source, /status === "pending" && <Button size="sm"/);
+  assert.doesNotMatch(source, /<Button[^>]*variant="outline"/);
   assert.match(
     styles,
     /\.admin-account-table \[data-slot="table-row"\][^}]*border-color:\s*var\(--line\)[^}]*background:\s*var\(--white\)/,
   );
   assert.match(
     styles,
-    /\.admin-account-primary-action[^}]*border-color:\s*var\(--line\)[^}]*background:\s*var\(--white\)/,
-  );
-  assert.match(
-    styles,
-    /\.admin-account-secondary-action[^}]*border-color:\s*transparent[^}]*background:\s*transparent/,
+    /\.admin-account-actions \.admin-account-primary-action, \.admin-account-actions \.admin-account-secondary-action \{[^}]*border-color:\s*transparent[^}]*background:\s*transparent/,
   );
 });
 

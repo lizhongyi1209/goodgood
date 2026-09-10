@@ -335,7 +335,7 @@ export function AccountManagementPage() {
           <UserRoundCog className="mx-auto text-zinc-500" />
           <h1 className="mt-5 text-2xl font-semibold">没有账户管理权限</h1>
           <p className="mt-3 text-base leading-7 text-zinc-600">只有站长可以查看和管理用户账户。</p>
-          <Button className="mt-6 w-full" asChild><a href="/create">返回创作</a></Button>
+          <Button className="mt-6 w-full" variant="ghost" asChild><a href="/create">返回创作</a></Button>
         </section>
       </main>
     );
@@ -371,7 +371,7 @@ export function AccountManagementPage() {
                 <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400" />
                 <Input className="pl-9" maxLength={100} placeholder="搜索邮箱" value={searchDraft} onChange={(event) => setSearchDraft(event.target.value)} />
               </div>
-              <Button type="submit" variant="outline">搜索</Button>
+              <Button type="submit" variant="ghost">搜索</Button>
             </form>
             <div className="flex items-center gap-2">
               <Select value={status} onValueChange={(value) => setStatus(value as ManagedAccountStatus | "all")}>
@@ -398,7 +398,7 @@ export function AccountManagementPage() {
             <Alert variant="destructive" className="m-4 w-auto">
               <AlertTitle>账户列表加载失败</AlertTitle>
               <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-                <span>{loadError}</span><Button size="sm" variant="outline" onClick={() => void loadDashboard()}>重试</Button>
+                <span>{loadError}</span><Button size="sm" variant="ghost" onClick={() => void loadDashboard()}>重试</Button>
               </AlertDescription>
             </Alert>
           ) : loading ? (
@@ -431,9 +431,9 @@ export function AccountManagementPage() {
                       <div><span className="block text-zinc-500">最近登录</span><strong className="mt-1 block font-medium">{formatDate(account.lastAuthenticatedAt)}</strong></div>
                     </div>
                     <div className="admin-account-actions mt-4 flex flex-wrap gap-2">
-                      {account.status === "pending" && <Button className="admin-account-primary-action" size="sm" variant="outline" onClick={() => openAction(account, "approve")}><CheckCircle2 />通过</Button>}
-                      {account.status === "active" && account.role !== "site_owner" && <Button className="admin-account-primary-action" size="sm" variant="outline" onClick={() => openAction(account, "suspend")}><ShieldBan />暂停</Button>}
-                      {account.status === "suspended" && <Button className="admin-account-primary-action" size="sm" variant="outline" onClick={() => openAction(account, "restore")}><CheckCircle2 />恢复</Button>}
+                      {account.status === "pending" && <Button className="admin-account-primary-action" size="sm" variant="ghost" onClick={() => openAction(account, "approve")}><CheckCircle2 />通过</Button>}
+                      {account.status === "active" && account.role !== "site_owner" && <Button className="admin-account-primary-action" size="sm" variant="ghost" onClick={() => openAction(account, "suspend")}><ShieldBan />暂停</Button>}
+                      {account.status === "suspended" && <Button className="admin-account-primary-action" size="sm" variant="ghost" onClick={() => openAction(account, "restore")}><CheckCircle2 />恢复</Button>}
                       <Button className="admin-account-secondary-action" size="sm" variant="ghost" onClick={() => openAction(account, "grant")}><Coins />积分</Button>
                       {account.role !== "site_owner" && (
                         <>
@@ -483,9 +483,9 @@ export function AccountManagementPage() {
                       </TableCell>
                       <TableCell className="pr-5">
                         <div className="admin-account-actions flex justify-end gap-1">
-                          {account.status === "pending" && <Button className="admin-account-primary-action" size="sm" variant="outline" onClick={() => openAction(account, "approve")}><CheckCircle2 />通过</Button>}
-                          {account.status === "active" && account.role !== "site_owner" && <Button className="admin-account-primary-action" size="sm" variant="outline" onClick={() => openAction(account, "suspend")}><ShieldBan />暂停</Button>}
-                          {account.status === "suspended" && <Button className="admin-account-primary-action" size="sm" variant="outline" onClick={() => openAction(account, "restore")}><CheckCircle2 />恢复</Button>}
+                          {account.status === "pending" && <Button className="admin-account-primary-action" size="sm" variant="ghost" onClick={() => openAction(account, "approve")}><CheckCircle2 />通过</Button>}
+                          {account.status === "active" && account.role !== "site_owner" && <Button className="admin-account-primary-action" size="sm" variant="ghost" onClick={() => openAction(account, "suspend")}><ShieldBan />暂停</Button>}
+                          {account.status === "suspended" && <Button className="admin-account-primary-action" size="sm" variant="ghost" onClick={() => openAction(account, "restore")}><CheckCircle2 />恢复</Button>}
                           <Button className="admin-account-secondary-action" size="sm" variant="ghost" onClick={() => openAction(account, "grant")}><Coins />积分</Button>
                           {account.role !== "site_owner" && (
                             <>
@@ -502,7 +502,7 @@ export function AccountManagementPage() {
               </div>
               {dashboard?.nextCursor && (
                 <div className="border-t border-zinc-200 p-4 text-center">
-                  <Button variant="outline" disabled={loadingMore} onClick={() => void loadDashboard({ append: true, cursor: dashboard.nextCursor })}>
+                  <Button variant="ghost" disabled={loadingMore} onClick={() => void loadDashboard({ append: true, cursor: dashboard.nextCursor })}>
                     {loadingMore && <LoaderCircle className="animate-spin" />}加载更多
                   </Button>
                 </div>
@@ -552,7 +552,7 @@ export function AccountManagementPage() {
                         key={preset}
                         type="button"
                         size="sm"
-                        variant={amount === String(preset) ? "default" : "outline"}
+                        variant="ghost"
                         aria-pressed={amount === String(preset)}
                         onClick={() => setAmount(String(preset))}
                       >
@@ -619,7 +619,7 @@ export function AccountManagementPage() {
             {mutationError && <p className="admin-action-error" role="alert">{mutationError}</p>}
           </div>
           <DialogFooter className="admin-action-dialog-footer">
-            <Button variant="outline" disabled={mutating} onClick={() => setSelected(null)}>取消</Button>
+            <Button variant="ghost" disabled={mutating} onClick={() => setSelected(null)}>取消</Button>
             <Button
               variant={selected?.action === "suspend" ? "destructive" : "default"}
               disabled={mutating || reason.trim().length < 2 || (selected?.action === "grant" && (!Number.isInteger(Number(amount)) || Number(amount) < 1 || Number(amount) > 5000)) || (selected?.action === "role" && businessRole === (selected.account.businessRole ?? "none")) || (selected?.action === "parent" && parentOwnerId === (selected.account.directParentId ?? "none"))}

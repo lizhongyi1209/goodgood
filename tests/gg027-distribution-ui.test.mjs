@@ -55,7 +55,8 @@ test("GG-027 distribution surface covers access, loading, empty, error, conflict
   assert.match(view, /setSubmitError/);
   assert.match(view, /数量必须为正整数，且不能超过当前可分配积分/);
   assert.match(view, /\[10, 50, 100\]/);
-  assert.match(view, /variant=\{amount === String\(preset\) \? "default" : "outline"\}/);
+  assert.match(view, /variant="ghost"\s+aria-pressed=\{amount === String\(preset\)\}/);
+  assert.doesNotMatch(view, /<Button[^>]*variant="outline"/);
   assert.match(view, /确认划拨/);
 });
 

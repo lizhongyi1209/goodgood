@@ -44,9 +44,18 @@ individual icon. Upload, settings, and send align to the same 40px box.
 
 - Prefer whitespace and grouping over lines.
 - Sidebar and content share the same canvas; no vertical divider.
-- Buttons are transparent at rest unless selection or hierarchy requires fill.
-- Default icon hover: `--soft`; active selection: `--accent-soft` or a subtle
-  light-to-deep Palace Red gradient.
+- Ordinary actions—including navigation, return, retry, search, row actions,
+  and cancel—have no outer border and remain transparent with neutral text and
+  icon color at rest. Their hover may use only the quiet `--soft` surface.
+- An ordinary button must not use Palace Red or another status-colored fill in
+  its default state. Accent fill is reserved for an explicit selected/pressed
+  state or a final commit/confirmation action; text and icons on that fill are
+  always white.
+- Form fields and select triggers may retain a neutral structural border. Focus
+  is communicated with a Palace Red outline or ring, not a persistent colored
+  background.
+- Default icon hover: `--soft`; active navigation may use `--accent-soft` or a
+  subtle light-to-deep Palace Red gradient.
 - Avoid persistent navigation shadows. Composer may use a very shallow neutral
   elevation to remain legible while sticky.
 - Authentication recovery is a compact white card over a softened canvas, not

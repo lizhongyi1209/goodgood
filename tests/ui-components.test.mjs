@@ -132,7 +132,9 @@ test("declares the GoodGood visual and interaction invariants", async () => {
   assert.match(accountMenu, /<span>退出登录<\/span>/);
   assert.doesNotMatch(accountCard, /account-identity-badge|account-credit-balance|account-session-action/);
   assert.match(css, /\.account-menu \{[^}]*width:\s*224px[^}]*box-shadow:/s);
+  assert.match(css, /\.account-menu-detail > svg \{[^}]*color:\s*#6f6f7b/s);
   assert.match(css, /\.account-menu-detail \.account-menu-credit \{[^}]*color:\s*var\(--accent-deep\)/s);
+  assert.doesNotMatch(css, /\.account-menu-detail:has\(\.account-menu-credit\)/);
 });
 
 test("keeps reference previews legible and aspect ratio first through responsive layouts", async () => {

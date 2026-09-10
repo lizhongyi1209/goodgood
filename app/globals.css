@@ -89,10 +89,9 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .account-menu { width: 224px; padding: 6px; border-color: var(--line); border-radius: var(--radius-md); box-shadow: 0 8px 22px rgba(24,24,30,.1); }
 .account-menu-details { padding: 4px; }
 .account-menu-detail { min-height: 38px; display: grid; grid-template-columns: 18px minmax(0,1fr) auto; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; }
-.account-menu-detail > svg { color: var(--quiet); }
+.account-menu-detail > svg { color: #6f6f7b; }
 .account-menu-detail strong { color: var(--ink); font-size: 13px; font-weight: 650; }
 .account-menu-detail .account-menu-credit { color: var(--accent-deep); font-variant-numeric: tabular-nums; }
-.account-menu-detail:has(.account-menu-credit) > svg { color: var(--accent); }
 .account-menu-logout { min-height: 38px; padding: 0 8px; border-radius: 8px; font-size: 13px; }
 
 .main-stage { min-width: 0; background: var(--canvas); }
@@ -118,11 +117,9 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .admin-account-table [data-slot="table-row"] { border-color: var(--line); background: var(--white); }
 .admin-account-table [data-slot="table-body"] [data-slot="table-row"]:hover { background: #fafafb; }
 .admin-account-actions [data-slot="button"] { height: 32px; border-radius: 10px; box-shadow: none; color: var(--ink); font-size: 12px; font-weight: 620; }
-.admin-account-actions .admin-account-primary-action { border-color: var(--line); background: var(--white); }
-.admin-account-actions .admin-account-primary-action:hover { border-color: #d6d6dc; background: var(--soft); color: var(--ink); }
-.admin-account-actions .admin-account-secondary-action { border-color: transparent; background: transparent; color: #55555f; }
-.admin-account-actions .admin-account-secondary-action:hover { background: var(--soft); color: var(--ink); }
-.admin-account-actions .admin-account-primary-action:focus-visible, .admin-account-actions .admin-account-secondary-action:focus-visible { border-color: rgba(181,43,48,.45); box-shadow: 0 0 0 3px rgba(181,43,48,.09); }
+.admin-account-actions .admin-account-primary-action, .admin-account-actions .admin-account-secondary-action { border-color: transparent; background: transparent; color: #55555f; }
+.admin-account-actions .admin-account-primary-action:hover, .admin-account-actions .admin-account-secondary-action:hover { border-color: transparent; background: var(--soft); color: var(--ink); }
+.admin-account-actions .admin-account-primary-action:focus-visible, .admin-account-actions .admin-account-secondary-action:focus-visible { border-color: transparent; outline: 2px solid var(--accent); outline-offset: 1px; box-shadow: none; }
 .admin-action-dialog-overlay { background: rgba(24,24,30,.38); backdrop-filter: blur(2px); }
 [data-slot="dialog-content"].admin-action-dialog { width: min(470px,calc(100vw - 32px)); max-width: none; max-height: calc(100dvh - 32px); gap: 0; overflow-y: auto; padding: 0; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--white); color: var(--ink); box-shadow: 0 18px 52px rgba(22,22,28,.18), 0 2px 8px rgba(22,22,28,.06); }
 .admin-action-dialog > [data-slot="dialog-close"] { width: 32px; height: 32px; top: 13px; right: 13px; border-radius: 9px; background: transparent; display: grid; place-items: center; color: var(--muted); opacity: 1; }
@@ -138,11 +135,10 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .admin-action-field { min-width: 0; }
 .admin-action-field > label { color: #55555f; font-size: 12px; font-weight: 640; }
 .admin-action-presets { margin-top: 9px; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 7px; }
-.admin-action-presets [data-slot="button"] { height: 34px; border-radius: 9px; box-shadow: none; font-size: 11px; }
-.admin-action-presets [data-variant="outline"] { border-color: var(--line); background: var(--white); color: #62626c; }
-.admin-action-presets [data-variant="outline"]:hover { background: var(--soft); color: var(--ink); }
-.admin-action-presets [aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--white); font-weight: 650; }
-.admin-action-presets [aria-pressed="true"]:hover { border-color: var(--accent-deep); background: var(--accent-deep); color: var(--white); }
+.admin-action-presets [data-slot="button"] { height: 34px; border: 0; border-radius: 9px; background: transparent; box-shadow: none; color: #62626c; font-size: 11px; }
+.admin-action-presets [data-slot="button"]:hover { background: var(--soft); color: var(--ink); }
+.admin-action-presets [data-slot="button"][aria-pressed="true"] { border: 0; background: var(--accent); color: var(--white); font-weight: 650; }
+.admin-action-presets [data-slot="button"][aria-pressed="true"]:hover { background: var(--accent-deep); color: var(--white); }
 .admin-action-dialog [data-slot="input"], .admin-action-dialog [data-slot="textarea"] { border: 1px solid #dddde2; border-radius: 10px; background: #fafafb; color: var(--ink); box-shadow: none; }
 .admin-action-dialog [data-slot="input"] { height: 40px; margin-top: 8px; }
 .admin-action-dialog [data-slot="textarea"] { min-height: 104px; margin-top: 8px; resize: vertical; line-height: 1.55; }
@@ -151,8 +147,8 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .admin-action-error { margin: -2px 0 0; padding: 9px 11px; border-radius: 9px; background: var(--accent-soft); color: var(--accent-deep); font-size: 11px; line-height: 1.5; }
 .admin-action-dialog-footer { padding: 0 22px 22px; display: flex; flex-direction: row; justify-content: flex-end; gap: 8px; }
 .admin-action-dialog-footer [data-slot="button"] { min-width: 84px; height: 36px; border-radius: 10px; box-shadow: none; font-size: 11px; font-weight: 640; }
-.admin-action-dialog-footer [data-variant="outline"] { border-color: var(--line); background: var(--white); color: #62626c; }
-.admin-action-dialog-footer [data-variant="outline"]:hover { background: var(--soft); color: var(--ink); }
+.admin-action-dialog-footer [data-variant="ghost"] { border-color: transparent; background: transparent; color: #62626c; }
+.admin-action-dialog-footer [data-variant="ghost"]:hover { background: var(--soft); color: var(--ink); }
 .admin-action-dialog-footer [data-variant="default"], .admin-action-dialog-footer [data-variant="destructive"] { border-color: var(--accent); background: var(--accent); color: var(--white); }
 .admin-action-dialog-footer [data-variant="default"]:hover, .admin-action-dialog-footer [data-variant="destructive"]:hover { border-color: var(--accent-deep); background: var(--accent-deep); }
 @keyframes authentication-spin { to { transform: rotate(360deg); } }
