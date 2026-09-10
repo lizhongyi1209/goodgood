@@ -47,6 +47,8 @@ services:
       - goodgood-production-egress
     secrets:
       - goodgood_auth_client_secret
+      - goodgood_email_otp_secret
+      - goodgood_email_smtp_password
       - goodgood_generation_api_key
       - goodgood_object_storage_access_key_id
       - goodgood_object_storage_secret_access_key
@@ -108,6 +110,39 @@ services:
       - goodgood_object_storage_access_key_id
       - goodgood_object_storage_secret_access_key
 
+  email-auth-status:
+    <<: *goodgood-production-app
+    profiles: ["maintenance"]
+    entrypoint: ["node", "server/runtime/email-auth-status.mjs"]
+    command: []
+    restart: "no"
+    healthcheck:
+      disable: true
+    environment:
+      GOODGOOD_PROCESS: email-auth-status
+
+  email-auth-cleanup:
+    <<: *goodgood-production-app
+    profiles: ["maintenance"]
+    entrypoint: ["node", "server/runtime/email-auth-cleanup.mjs"]
+    command: []
+    restart: "no"
+    healthcheck:
+      disable: true
+    environment:
+      GOODGOOD_PROCESS: email-auth-cleanup
+
+  bind-existing-owner-emails:
+    <<: *goodgood-production-app
+    profiles: ["maintenance"]
+    entrypoint: ["node", "server/runtime/bind-existing-owner-emails.mjs"]
+    command: []
+    restart: "no"
+    healthcheck:
+      disable: true
+    environment:
+      GOODGOOD_PROCESS: bind-existing-owner-emails
+
   r2-inventory:
     <<: *goodgood-production-app
     profiles: ["maintenance"]
@@ -140,6 +175,10 @@ services:
 secrets:
   goodgood_auth_client_secret:
     file: ${GOODGOOD_AUTH_CLIENT_SECRET_SOURCE_FILE:?Set the Authing secret-file path}
+  goodgood_email_otp_secret:
+    file: ${GOODGOOD_EMAIL_OTP_SECRET_SOURCE_FILE:?Set the email OTP secret-file path}
+  goodgood_email_smtp_password:
+    file: ${GOODGOOD_EMAIL_SMTP_PASSWORD_SOURCE_FILE:?Set the email SMTP password-file path}
   goodgood_generation_api_key:
     file: ${GOODGOOD_GENERATION_API_KEY_SOURCE_FILE:?Set the O1Key secret-file path}
   goodgood_object_storage_access_key_id:

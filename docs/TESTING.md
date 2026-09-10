@@ -109,6 +109,17 @@ real-provider or production evidence. A separate disposable PostgreSQL stack
 also applies every migration and exercises cleanup/status without starting a
 Web process, Worker, real mail adapter, or generation provider.
 
+GG-029 P3 coverage proves both OIDC and email production-preflight paths,
+file-only OTP/SMTP secrets, exact origin and Secure `__Host-` policy, implicit-
+TLS authenticated SMTP verification without `sendMail`, provider-error
+redaction, and production Compose secret/maintenance wiring. Binding tests cover
+manifest shape/count/digest, normalized-email and owner conflicts, required prior
+identity, site-owner-first verification, dry-run non-mutation, transactional
+creation, audit hashes, and exact no-write replay. A fresh disposable PostgreSQL
+17 database applied all 20 current migrations, created two synthetic old-owner
+bindings, replayed the same manifest, and retained zero credit-ledger rows; it
+contained no real user, mail, generation, or production data.
+
 M7 release-contract tests prove that staging accepts only the GoodGood GHCR
 image pinned by digest and full CI metadata, separates release identity from
 runtime configuration, reads Authing, O1Key, and R2 credentials only from

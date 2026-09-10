@@ -19,13 +19,19 @@ accepted ADRs for it do not mean its later migrations are deployed.
 
 The next selected authentication boundary is GoodGood-owned email OTP with a
 managed mail-delivery provider, documented in [ADR 0045](decisions/0045-goodgood-owned-email-otp.md)
-and [the rollout plan](EMAIL_AUTH_PLAN.md). GG-029 implements the P1 runtime and
-P2 browser/operations surface in an isolated local candidate. Its read-only
+and [the rollout plan](EMAIL_AUTH_PLAN.md). GG-029 implements the P1 runtime,
+P2 browser/operations surface, and P3 local release-preparation boundary in an
+isolated candidate. Its read-only
 operations report aggregates redacted authentication events and a cleanup
 heartbeat, while an existing owner-review transition performs targeted session
-revocation. Per ADR 0016 these signals do not install a monitoring collector or
-notification transport. The OIDC contracts below still apply to the deployed
-runtime until a separately approved cutover.
+revocation. The production preflight is mode-aware and verifies SMTP connection/
+authentication without sending mail. A dry-run-first manifest tool adds a random
+email identity only to an exact existing owner after matching its stored email,
+prior non-email identity, reviewed manifest digest, and site-owner verification.
+It does not mutate account, role, credit, asset, or project records. Per ADR 0016
+these signals do not install a monitoring collector or notification transport.
+The OIDC contracts below still apply to the deployed runtime until a separately
+approved cutover.
 
 M3 implements one production-shaped local generation path: the browser submits
 an idempotent request, PostgreSQL transactionally creates a batch, job, audit
@@ -80,7 +86,9 @@ and atomically consumes the challenge while resolving or creating a random
 `urn:goodgood:email` identity and opaque GoodGood session. New owners still
 start pending. Delivery, identity, account review, authorization, and business
 ownership remain separate; email mode does not accept provider tokens or fall
-back to local fixtures.
+back to local fixtures. Existing-owner migration never infers ownership from an
+email alone: the reviewed owner ID and current stored email must agree, and the
+new binding records its manifest, operator, and reference hashes for exact replay.
 
 ADR 0020 changes account admission without weakening OIDC identity validation.
 Any verified Authing user may establish a GoodGood session, but a newly

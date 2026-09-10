@@ -664,6 +664,8 @@ test("GG-029 migration stores keyed digests, shared limits, bindings, and audit 
     readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
   ]);
   assert.match(migration, /CREATE TABLE IF NOT EXISTS auth_email_bindings/);
+  assert.match(migration, /auth_email_bindings_migration_audit_check/);
+  assert.match(migration, /migration_manifest_sha256/);
   assert.match(migration, /CREATE TABLE IF NOT EXISTS auth_email_challenges/);
   assert.match(migration, /code_digest text NOT NULL/);
   assert.match(migration, /CREATE TABLE IF NOT EXISTS auth_rate_limits/);

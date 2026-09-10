@@ -10,6 +10,8 @@ import {
 } from "../scripts/verify-production-preflight.mjs";
 
 const AUTH_SECRET = "production-auth-secret-that-must-not-appear";
+const EMAIL_OTP_SECRET = "production-email-otp-secret-that-must-not-appear";
+const EMAIL_SMTP_SECRET = "production-email-smtp-secret-that-must-not-appear";
 const GENERATION_SECRET = "production-generation-secret-that-must-not-appear";
 const STORAGE_ACCESS_KEY = "production-storage-key-that-must-not-appear";
 const STORAGE_SECRET = "production-storage-secret-that-must-not-appear";
@@ -70,6 +72,31 @@ function imageLabels(overrides = {}) {
   };
 }
 
+function emailRuntime(runtime, overrides = {}) {
+  const selected = { ...runtime };
+  delete selected.GOODGOOD_AUTH_CLIENT_ID;
+  delete selected.GOODGOOD_AUTH_CLIENT_SECRET_FILE;
+  delete selected.GOODGOOD_AUTH_ISSUER;
+  delete selected.GOODGOOD_AUTH_REDIRECT_URI;
+  return {
+    ...selected,
+    GOODGOOD_AUTH_MODE: "email_otp",
+    GOODGOOD_AUTH_PUBLIC_ORIGIN: ORIGIN,
+    GOODGOOD_EMAIL_FROM: "GoodGood <no-reply@mail.goodgood.cn>",
+    GOODGOOD_EMAIL_OTP_SECRET_FILE:
+      "/run/secrets/goodgood_email_otp_secret",
+    GOODGOOD_EMAIL_REGISTRATION_ENABLED: "false",
+    GOODGOOD_EMAIL_SENDING_ENABLED: "true",
+    GOODGOOD_EMAIL_SMTP_HOST: "smtpdm-ap-southeast-1.aliyuncs.com",
+    GOODGOOD_EMAIL_SMTP_PASSWORD_FILE:
+      "/run/secrets/goodgood_email_smtp_password",
+    GOODGOOD_EMAIL_SMTP_PORT: "465",
+    GOODGOOD_EMAIL_SMTP_SECURE: "true",
+    GOODGOOD_EMAIL_SMTP_USERNAME: "smtp-user",
+    ...overrides,
+  };
+}
+
 async function productionFixture(context) {
   const directory = await mkdtemp(path.join(os.tmpdir(), "goodgood-production-"));
   context.after(() => rm(directory, { force: true, recursive: true }));
@@ -77,12 +104,16 @@ async function productionFixture(context) {
   const runtimeFile = path.join(directory, "runtime.env");
   const secretDirectory = path.join(directory, "secrets");
   const authSecretFile = path.join(secretDirectory, "auth-client-secret");
+  const emailOtpSecretFile = path.join(secretDirectory, "email-otp-secret");
+  const emailSmtpSecretFile = path.join(secretDirectory, "email-smtp-password");
   const generationSecretFile = path.join(secretDirectory, "o1key-api-key");
   const storageAccessKeyFile = path.join(secretDirectory, "r2-access-key-id");
   const storageSecretFile = path.join(secretDirectory, "r2-secret-access-key");
   const secretGroupId = 12000;
   const release = {
     GOODGOOD_AUTH_CLIENT_SECRET_SOURCE_FILE: authSecretFile,
+    GOODGOOD_EMAIL_OTP_SECRET_SOURCE_FILE: emailOtpSecretFile,
+    GOODGOOD_EMAIL_SMTP_PASSWORD_SOURCE_FILE: emailSmtpSecretFile,
     GOODGOOD_GENERATION_API_KEY_SOURCE_FILE: generationSecretFile,
     GOODGOOD_OBJECT_STORAGE_ACCESS_KEY_ID_SOURCE_FILE: storageAccessKeyFile,
     GOODGOOD_OBJECT_STORAGE_SECRET_ACCESS_KEY_SOURCE_FILE: storageSecretFile,
@@ -130,6 +161,8 @@ async function productionFixture(context) {
   await mkdir(secretDirectory, { recursive: true });
   await Promise.all([
     writeFile(authSecretFile, `${AUTH_SECRET}\n`),
+    writeFile(emailOtpSecretFile, `${EMAIL_OTP_SECRET}\n`),
+    writeFile(emailSmtpSecretFile, `${EMAIL_SMTP_SECRET}\n`),
     writeFile(generationSecretFile, `${GENERATION_SECRET}\n`),
     writeFile(storageAccessKeyFile, `${STORAGE_ACCESS_KEY}\n`),
     writeFile(storageSecretFile, `${STORAGE_SECRET}\n`),
@@ -200,6 +233,8 @@ test("production preflight emits one exact-candidate evidence item without secre
   const serialized = JSON.stringify(report);
   for (const secret of [
     AUTH_SECRET,
+    EMAIL_OTP_SECRET,
+    EMAIL_SMTP_SECRET,
     GENERATION_SECRET,
     STORAGE_ACCESS_KEY,
     STORAGE_SECRET,
@@ -208,6 +243,38 @@ test("production preflight emits one exact-candidate evidence item without secre
     assert.doesNotMatch(serialized, new RegExp(secret));
   }
   assert.doesNotMatch(serialized, /DATABASE_URL|REDIS_URL|CLIENT_ID/);
+});
+
+test("production preflight accepts file-backed email OTP and verifies SMTP without sending", async (context) => {
+  const fixture = await productionFixture(context);
+  let verified = false;
+  const report = await runFixture(fixture, {
+    runtimeEnvironment: emailRuntime(fixture.runtime),
+    smtpTransportFactory(options) {
+      assert.equal(options.host, "smtpdm-ap-southeast-1.aliyuncs.com");
+      assert.equal(options.secure, true);
+      assert.equal(options.auth.user, "smtp-user");
+      assert.equal(options.auth.pass, EMAIL_SMTP_SECRET);
+      return {
+        close() {},
+        async verify() {
+          verified = true;
+        },
+      };
+    },
+  });
+
+  assert.equal(report.ok, true);
+  assert.equal(verified, true);
+  assert.equal(
+    report.checks.find(({ id }) => id === "authentication:smtp-authentication")
+      .status,
+    "pass",
+  );
+  const serialized = JSON.stringify(report);
+  assert.doesNotMatch(serialized, new RegExp(EMAIL_OTP_SECRET));
+  assert.doesNotMatch(serialized, new RegExp(EMAIL_SMTP_SECRET));
+  assert.doesNotMatch(serialized, /smtp-user|SMTP_PASSWORD|OTP_SECRET/);
 });
 
 test("production preflight rejects dirty source and mismatched image labels", async (context) => {
@@ -269,6 +336,9 @@ test("production preflight blocks unsafe runtime modes and inline credentials", 
   for (const runtimeEnvironment of [
     { ...fixture.runtime, GOODGOOD_FAKE_PAYMENT_ENABLED: "true" },
     { ...fixture.runtime, GENERATION_API_KEY: GENERATION_SECRET },
+    emailRuntime(fixture.runtime, {
+      GOODGOOD_EMAIL_SMTP_PASSWORD: EMAIL_SMTP_SECRET,
+    }),
     {
       ...fixture.runtime,
       GOODGOOD_ALLOW_LOCAL_AUTH: "true",
@@ -364,11 +434,28 @@ test("production preflight CLI and release metadata include the new contract", a
     /Unknown production preflight argument/,
   );
 
-  const [packageJson, releaseMetadata, gitIgnore, dockerIgnore] = await Promise.all([
+  const [
+    packageJson,
+    releaseMetadata,
+    gitIgnore,
+    dockerIgnore,
+    productionCompose,
+    releaseExample,
+    runtimeExample,
+  ] = await Promise.all([
     readFile(new URL("../package.json", import.meta.url), "utf8"),
     readFile(new URL("../scripts/release-metadata.mjs", import.meta.url), "utf8"),
     readFile(new URL("../.gitignore", import.meta.url), "utf8"),
     readFile(new URL("../.dockerignore", import.meta.url), "utf8"),
+    readFile(new URL("../compose.production.yaml", import.meta.url), "utf8"),
+    readFile(
+      new URL("../infra/production/release.env.example", import.meta.url),
+      "utf8",
+    ),
+    readFile(
+      new URL("../infra/production/runtime.env.example", import.meta.url),
+      "utf8",
+    ),
   ]);
   assert.equal(
     JSON.parse(packageJson).scripts["production:preflight"],
@@ -387,4 +474,32 @@ test("production preflight CLI and release metadata include the new contract", a
   assert.match(dockerIgnore, /infra\/production\/\*\.env/);
   assert.match(dockerIgnore, /infra\/production\/secrets/);
   assert.match(releaseMetadata, /"\.dockerignore"/);
+
+  const webService = productionCompose.match(
+    /^  web:\r?\n[\s\S]*?(?=^  worker:)/m,
+  )?.[0];
+  const workerService = productionCompose.match(
+    /^  worker:\r?\n[\s\S]*?(?=^  migrate:)/m,
+  )?.[0];
+  assert.ok(webService);
+  assert.ok(workerService);
+  for (const secret of [
+    "goodgood_auth_client_secret",
+    "goodgood_email_otp_secret",
+    "goodgood_email_smtp_password",
+  ]) {
+    assert.match(webService, new RegExp(secret));
+    assert.doesNotMatch(workerService, new RegExp(secret));
+  }
+  assert.match(
+    productionCompose,
+    /^  bind-existing-owner-emails:\r?\n[\s\S]*?profiles: \["maintenance"\]/m,
+  );
+  assert.match(releaseExample, /GOODGOOD_EMAIL_OTP_SECRET_SOURCE_FILE=/);
+  assert.match(releaseExample, /GOODGOOD_EMAIL_SMTP_PASSWORD_SOURCE_FILE=/);
+  assert.match(runtimeExample, /^GOODGOOD_AUTH_MODE=email_otp$/m);
+  assert.match(
+    runtimeExample,
+    /^GOODGOOD_EMAIL_OTP_SECRET_FILE=\/run\/secrets\/goodgood_email_otp_secret$/m,
+  );
 });

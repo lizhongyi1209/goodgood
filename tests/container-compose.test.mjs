@@ -51,6 +51,7 @@ test("compose contract pins the complete local dependency stack", async () => {
     "reference-cleanup",
     "email-auth-status",
     "email-auth-cleanup",
+    "bind-existing-owner-emails",
     "postgres",
     "valkey",
     "object-storage",
@@ -102,6 +103,14 @@ test("compose contract pins the complete local dependency stack", async () => {
   assert.equal(
     packageData.scripts["auth:status"],
     "node server/runtime/email-auth-status.mjs",
+  );
+  assert.equal(
+    packageData.scripts["auth:bind-existing"],
+    "node server/runtime/bind-existing-owner-emails.mjs",
+  );
+  assert.equal(
+    packageData.optionalDependencies["@rolldown/binding-linux-x64-gnu"],
+    "1.0.1",
   );
   assert.match(dockerfile, /^EXPOSE 3000 3001 3002$/m);
   for (const dependency of [

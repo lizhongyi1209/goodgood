@@ -234,6 +234,12 @@ One verified normalized mailbox maps to one email authentication identity and
 one internal owner. The user-entered mailbox spelling is retained for display;
 the local identity subject is a random UUID rather than the mailbox. Runtime
 login never merges an existing non-email owner by matching `users.email`.
+Self-service rows carry no migration metadata. An `operator_migration` row must
+carry the reviewed manifest SHA-256, bounded operator ID, and hashed external
+reference; these fields make the dry-run-first owner-binding command replayable
+without storing its raw reference. The command preserves the existing owner,
+role, admission state, credit ledger, projects, and assets and never issues a
+welcome grant.
 
 ### AuthEmailChallenge
 

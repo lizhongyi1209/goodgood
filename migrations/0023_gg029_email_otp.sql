@@ -18,6 +18,9 @@ CREATE TABLE IF NOT EXISTS auth_email_bindings (
   display_email text NOT NULL,
   source text NOT NULL DEFAULT 'self_service',
   verified_at timestamptz NOT NULL,
+  migration_manifest_sha256 text,
+  migrated_by_operator_id text,
+  migration_reference_hash text,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT auth_email_bindings_identity_owner_fk
@@ -40,6 +43,19 @@ CREATE TABLE IF NOT EXISTS auth_email_bindings (
   ),
   CONSTRAINT auth_email_bindings_source_check CHECK (
     source IN ('self_service', 'operator_migration')
+  ),
+  CONSTRAINT auth_email_bindings_migration_audit_check CHECK (
+    (
+      source = 'self_service'
+      AND migration_manifest_sha256 IS NULL
+      AND migrated_by_operator_id IS NULL
+      AND migration_reference_hash IS NULL
+    ) OR (
+      source = 'operator_migration'
+      AND length(migration_manifest_sha256) = 64
+      AND length(migrated_by_operator_id) BETWEEN 2 AND 100
+      AND length(migration_reference_hash) = 64
+    )
   )
 );
 

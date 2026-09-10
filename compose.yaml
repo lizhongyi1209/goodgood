@@ -168,6 +168,23 @@ services:
       postgres:
         condition: service_healthy
 
+  bind-existing-owner-emails:
+    <<: *goodgood-app
+    profiles: ["maintenance"]
+    entrypoint: ["node", "server/runtime/bind-existing-owner-emails.mjs"]
+    command: []
+    restart: "no"
+    healthcheck:
+      disable: true
+    environment:
+      DATABASE_URL: postgresql://goodgood:${GOODGOOD_LOCAL_POSTGRES_PASSWORD:-goodgood-local-only}@postgres:5432/goodgood
+      GOODGOOD_PROCESS: bind-existing-owner-emails
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+
   manual-payment:
     <<: *goodgood-app
     profiles: ["maintenance"]

@@ -105,6 +105,7 @@ export async function verifyProductionPreflightFiles({
   releaseFile,
   repositoryEvidenceFor = defaultRepositoryEvidence,
   runtimeFile,
+  smtpTransportFactory,
 }) {
   const releaseEnvironment = readEnvironmentFile(releaseFile);
   const runtimeEnvironment = readEnvironmentFile(runtimeFile);
@@ -128,6 +129,7 @@ export async function verifyProductionPreflightFiles({
     repositoryEvidence,
     runtimeEnvironment,
     runtimeFilePath: runtimeFile,
+    smtpTransportFactory,
   });
 }
 

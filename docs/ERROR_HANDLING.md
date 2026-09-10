@@ -236,6 +236,16 @@ connection string, mailbox, code, SMTP response, or secret. Suspending a
 specific account revokes that owner's active sessions atomically; it never
 causes a global session purge.
 
+The existing-owner binding command fails closed before writes for malformed or
+count-mismatched manifests, digest mismatch, duplicate owner/email entries,
+missing owners, stored-email mismatch, absent prior identity, unverified or
+out-of-order site-owner mapping, existing binding conflicts, and partial replay.
+Expected failures use stable `EMAIL_BINDING_*` codes; unexpected database or file
+errors collapse to `EMAIL_BINDING_FAILED`. Command failure output never includes
+the database URL, raw manifest, full mailbox, external reference, or provider
+detail. All inserts are one transaction, so a failed execution creates neither a
+partial identity set nor any business/credit mutation.
+
 ADR 0020 separates authentication from creation admission. A valid new Authing
 identity receives a GoodGood session and `pending` account projection rather
 than an authentication failure. Pending users receive stable review-state copy,

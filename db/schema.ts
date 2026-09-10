@@ -323,6 +323,9 @@ export const authEmailBindings = pgTable(
     displayEmail: text("display_email").notNull(),
     source: text("source").default("self_service").notNull(),
     verifiedAt: timestamp("verified_at", { withTimezone: true }).notNull(),
+    migrationManifestSha256: text("migration_manifest_sha256"),
+    migratedByOperatorId: text("migrated_by_operator_id"),
+    migrationReferenceHash: text("migration_reference_hash"),
     ...timestamps,
   },
   (table) => [
@@ -344,6 +347,10 @@ export const authEmailBindings = pgTable(
     check(
       "auth_email_bindings_source_check",
       sql`${table.source} in ('self_service', 'operator_migration')`,
+    ),
+    check(
+      "auth_email_bindings_migration_audit_check",
+      sql`(${table.source} = 'self_service' and ${table.migrationManifestSha256} is null and ${table.migratedByOperatorId} is null and ${table.migrationReferenceHash} is null) or (${table.source} = 'operator_migration' and length(${table.migrationManifestSha256}) = 64 and length(${table.migratedByOperatorId}) between 2 and 100 and length(${table.migrationReferenceHash}) = 64)`,
     ),
   ],
 );

@@ -297,16 +297,68 @@ so P3 must connect and verify those pieces before production cutover. Account
 suspension and targeted session revocation remain in the existing site-owner
 account screen; restoration requires the user to establish a new session.
 
+P3 adds a third database-only, one-shot maintenance entry for reviewed existing-
+owner binding. It is not a bulk email matcher. Prepare a root-readable JSON file
+outside the checkout with exact internal owner IDs and already verified current
+mailboxes; the one site-owner row must be first until it has been bound:
+
+```json
+{
+  "schemaVersion": 1,
+  "expectedBindings": 2,
+  "bindings": [
+    {
+      "ownerId": "10000000-0000-4000-8000-000000000001",
+      "email": "owner@example.invalid",
+      "mailboxVerified": true,
+      "administratorVerified": true
+    },
+    {
+      "ownerId": "20000000-0000-4000-8000-000000000002",
+      "email": "member@example.invalid",
+      "mailboxVerified": true
+    }
+  ]
+}
+```
+
+Compute and separately review the exact file SHA-256. Run without `--execute`,
+confirm the expected count and masked accounts, then repeat the same command and
+arguments with `--execute`:
+
+```bash
+DATABASE_URL=... npm run auth:bind-existing -- \
+  --manifest /secure/operator/email-owner-bindings.json \
+  --sha256 <64-lowercase-hex> \
+  --operator <bounded-operator-id> \
+  --reference <non-secret-ticket-reference>
+
+DATABASE_URL=... npm run auth:bind-existing -- --execute \
+  --manifest /secure/operator/email-owner-bindings.json \
+  --sha256 <same-64-lowercase-hex> \
+  --operator <same-operator-id> \
+  --reference <same-ticket-reference>
+```
+
+For the production image, mount that reviewed file read-only into a one-shot
+`bind-existing-owner-emails` Compose run. The command rejects a changed digest,
+duplicate/missing/conflicting mapping, a mailbox that differs from `users.email`,
+an owner without a prior non-email identity, an unverified site owner, a symlink,
+or a manifest larger than 64 KiB. Exact replay makes no additional writes. Never
+commit the manifest or pass mailbox contents in a command-line flag.
+
 ### Production authentication configuration
 
 The deployed mode is still Authing OIDC. [ADR 0045](decisions/0045-goodgood-owned-email-otp.md)
-selects email-only authentication for a future release; follow
-[EMAIL_AUTH_PLAN.md](EMAIL_AUTH_PLAN.md) for its implementation and cutover
-requirements. The GG-029 runtime supports `email_otp` only as an isolated local
-candidate. Do not set it in production yet: real provider/DNS evidence,
-production secret mounts, mode-aware release preflight, migration/recovery, and
-cutover approval are incomplete. GG-028's custom Authing domain is no longer
-the target for this work.
+selects email-only authentication for the next approved authentication release;
+follow [EMAIL_AUTH_PLAN.md](EMAIL_AUTH_PLAN.md) for its implementation and
+cutover requirements. GG-029 now has local production-secret mounts, mode-aware
+release preflight, and a reviewed-owner binding command, but no live secret has
+been installed and no owner has been migrated. Do not set `email_otp` in
+production until the remaining delivery matrix, external alert delivery,
+exact-candidate CI/security evidence, migration/rollback rehearsal, and cutover
+authorization pass. GG-028's custom Authing domain is no longer the target for
+this work.
 
 The candidate Web process recognizes these email-mode values; none belongs in
 browser code, the image, or the generation Worker:
@@ -325,9 +377,10 @@ browser code, the image, or the generation Worker:
 | `GOODGOOD_AUTH_TRUSTED_PROXY_ADDRESSES` | At most 16 exact direct-proxy IPs; empty means ignore forwarded client headers |
 
 Optional OTP/session/SMTP timeouts retain the bounded defaults in
-`server/auth/config.mjs`. Production preflight must later require secret files,
-validate the actual CDN→Nginx address chain, and reject inline secrets even
-though inline values remain convenient in the isolated local test stack.
+`server/auth/config.mjs`. Production preflight now requires fixed-path secret
+files, the exact production origin, authenticated implicit-TLS non-loopback SMTP,
+and rejects inline credentials. The direct-proxy allowlist still requires an
+exact CDN-to-Nginx host review before cutover.
 
 ADR 0007 selects Authing-hosted authentication through standard OIDC. The
 Authing application must expose only Google and passwordless email
@@ -418,14 +471,16 @@ this command from the exact revision that will be deployed:
 npm run auth:preflight
 ```
 
-The command performs discovery and exits nonzero unless it can prove the exact
-issuer, HTTPS callback and endpoints, `/api/auth/callback` path, Secure
-`__Host-` cookie, Authorization Code flow, S256 PKCE, requested scopes, a
-supported server-side client authentication method, RS256 signing, and the
-authorization request contract. It also proves the derived logout callback and
-hosted Authing logout URL contract. Its JSON report contains only the public
-issuer, callback, cookie policy, capability results, and manual evidence IDs;
-it never prints the client ID or client secret. `--allow-loopback` exists only
+The command is mode-aware. In OIDC mode it performs discovery and exits nonzero
+unless it can prove the exact issuer, HTTPS callback and endpoints,
+`/api/auth/callback` path, Secure `__Host-` cookie, Authorization Code flow,
+S256 PKCE, requested scopes, supported server-side client authentication, RS256
+signing, authorization request, derived logout callback, and hosted Authing
+logout URL. In email mode it proves the exact HTTPS origin, Secure `__Host-`
+cookie, enabled authenticated implicit-TLS SMTP, and calls SMTP `verify()`; it
+never sends a message. Its JSON report contains only safe configuration booleans,
+checks, and manual evidence IDs; it never prints a client ID, SMTP username,
+server host, mailbox, password, or OTP secret. `--allow-loopback` exists only
 for explicit local verification and automated fixtures. It accepts HTTP and a
 non-`Secure` cookie only on `localhost` or `127.0.0.1`, and is forbidden when
 `NODE_ENV=production`.
@@ -1467,11 +1522,15 @@ credit grant, or provider resubmission.
 Use `infra/production/release.env.example` and
 `infra/production/runtime.env.example` only as templates. Install their live
 copies as `/etc/goodgood/production/release.env` and `runtime.env`, owned by
-`root:root` with mode `0600`. Install the four distinct credential files under
+`root:root` with mode `0600`. For the email cutover candidate, install six
+distinct credential files under
 `/etc/goodgood/production/secrets/` as `root:<production-secret-group>` mode
 `0640`, and record only that group's numeric GID in `release.env`. Symlinks,
 empty files, unexpected paths, oversized files, inline application credentials,
-and reused credential files fail closed.
+and reused credential files fail closed. The set is the retained Authing client
+secret for the seven-day rollback window, email OTP secret, SMTP password,
+O1Key key, and the two R2 credentials. Keeping Authing material here is rollback
+retention, not permission to expose both public login methods.
 
 From a clean checkout at the exact candidate revision on the Linux release
 host, make the immutable digest available to Docker without rebuilding it, then
@@ -1488,15 +1547,17 @@ The command is read-only: it checks the Git revision and derived runtime
 contract, inspects the existing candidate image labels, validates the
 production origin/callback, file ownership and modes, rejects local auth, fake
 payment, loopback dependencies, mutable or mismatched candidates, placeholder
-values, non-R2 object storage, and inline Authing/O1Key/R2 credentials, then
-runs live Authing OIDC discovery. It never pulls, builds, deploys, migrates, or
-starts the candidate.
+values, non-R2 object storage, and inline credentials. It then performs the
+selected mode's live authentication check: Authing discovery for OIDC, or SMTP
+connection/authentication verification for email without sending mail. It never
+pulls, builds, deploys, migrates, or starts the candidate.
 
 Only an all-pass report contains an evidence object. Copy that object unchanged
 into the matching release's readiness manifest. The object is bound to the full
 candidate Git revision and expires after 24 hours under the outer gate. Failed
 reports contain no evidence object and never echo credential values, database
-or queue URLs, Authing client IDs, or provider responses. The reference must be
+or queue URLs, Authing client IDs, SMTP usernames/hosts, mailboxes, or provider
+responses. The reference must be
 a short non-secret operator-record identifier; do not use a signed URL or put a
 token in it.
 

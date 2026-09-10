@@ -12,6 +12,7 @@ await build({
   bundle: true,
   entryPoints: {
     "bootstrap-site-owner": "server/runtime/bootstrap-site-owner.mjs",
+    "bind-existing-owner-emails": "server/runtime/bind-existing-owner-emails.mjs",
     "manual-payment": "server/runtime/manual-payment.mjs",
     "mock-generation": "server/runtime/mock-generation.mjs",
     migrate: "server/runtime/migrate.mjs",

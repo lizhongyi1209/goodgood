@@ -5,6 +5,10 @@ import { loadGenerationConfig } from "../server/generation/config.mjs";
 
 export const STAGING_AUTH_SECRET_PATH =
   "/run/secrets/goodgood_auth_client_secret";
+export const EMAIL_OTP_SECRET_PATH =
+  "/run/secrets/goodgood_email_otp_secret";
+export const EMAIL_SMTP_PASSWORD_PATH =
+  "/run/secrets/goodgood_email_smtp_password";
 export const STAGING_GENERATION_SECRET_PATH =
   "/run/secrets/goodgood_generation_api_key";
 export const STAGING_OBJECT_STORAGE_ACCESS_KEY_PATH =
@@ -478,6 +482,18 @@ export function runtimeEnvironmentForHost(release, runtime) {
     ...runtime,
     GOODGOOD_AUTH_CLIENT_SECRET_FILE:
       release.GOODGOOD_AUTH_CLIENT_SECRET_SOURCE_FILE,
+    ...(release.GOODGOOD_EMAIL_OTP_SECRET_SOURCE_FILE
+      ? {
+          GOODGOOD_EMAIL_OTP_SECRET_FILE:
+            release.GOODGOOD_EMAIL_OTP_SECRET_SOURCE_FILE,
+        }
+      : {}),
+    ...(release.GOODGOOD_EMAIL_SMTP_PASSWORD_SOURCE_FILE
+      ? {
+          GOODGOOD_EMAIL_SMTP_PASSWORD_FILE:
+            release.GOODGOOD_EMAIL_SMTP_PASSWORD_SOURCE_FILE,
+        }
+      : {}),
     GENERATION_API_KEY_FILE:
       release.GOODGOOD_GENERATION_API_KEY_SOURCE_FILE,
     OBJECT_STORAGE_ACCESS_KEY_ID_FILE:

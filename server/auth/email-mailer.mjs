@@ -9,6 +9,26 @@ export class EmailDeliveryError extends Error {
   }
 }
 
+export function createEmailSmtpTransport({
+  config,
+  transportFactory = nodemailer.createTransport,
+}) {
+  if (config.mode !== "email_otp" || !config.mail) {
+    throw new Error("Email OTP delivery requires enabled SMTP configuration.");
+  }
+  return transportFactory({
+    auth: config.mail.username
+      ? { pass: config.mail.password, user: config.mail.username }
+      : undefined,
+    connectionTimeout: config.mail.connectionTimeoutMs,
+    greetingTimeout: config.mail.connectionTimeoutMs,
+    host: config.mail.host,
+    port: config.mail.port,
+    secure: config.mail.secure,
+    socketTimeout: config.mail.connectionTimeoutMs,
+  });
+}
+
 function deliveryFailure(error) {
   const providerCode = typeof error?.code === "string" ? error.code : "SMTP_FAILED";
   const uncertainCodes = new Set([
@@ -25,19 +45,9 @@ function deliveryFailure(error) {
 }
 
 export function createEmailOtpMailer({ config, transportFactory = nodemailer.createTransport }) {
-  if (config.mode !== "email_otp" || !config.mail) {
-    throw new Error("Email OTP delivery requires enabled SMTP configuration.");
-  }
-  const transport = transportFactory({
-    auth: config.mail.username
-      ? { pass: config.mail.password, user: config.mail.username }
-      : undefined,
-    connectionTimeout: config.mail.connectionTimeoutMs,
-    greetingTimeout: config.mail.connectionTimeoutMs,
-    host: config.mail.host,
-    port: config.mail.port,
-    secure: config.mail.secure,
-    socketTimeout: config.mail.connectionTimeoutMs,
+  const transport = createEmailSmtpTransport({
+    config,
+    transportFactory,
   });
 
   return Object.freeze({
