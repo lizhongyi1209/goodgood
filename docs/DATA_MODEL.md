@@ -36,8 +36,12 @@ compatibility with historical rows and non-Nano model constraints. The Drizzle s
 mirrors that durable schema. Migration 0018 adds `quality`, `background`, and
 `output_format` to the same three snapshots, defaults old rows to
 `auto` / `auto` / `png`, constrains non-default values to GPT IMAGE 2, and
-rejects transparent JPEG. The Drizzle schema mirrors the durable schema across
-all eighteen migrations. A
+  rejects transparent JPEG. Migration 0019 adds Nano Banana Pro's immutable
+  single-output prices. GG-030 migration 0024 adds workspaces, organization
+  memberships, verified-email invitations, append-only enterprise audit, a
+  deterministic existing-user backfill, and an insert trigger for each new
+  user's personal Workspace. The Drizzle schema mirrors this branch's durable
+  schema. A
 fuller project-backed creation session record and entitlements
 remain canonical contracts for later slices.
 
@@ -162,7 +166,7 @@ Migration `0016_gg010_nano_multi_output_prices.sql` adds immutable Nano Banana 2
 count-2/count-4 prices of 20/40 credits for 1K, 2K, and 4K. It changes no
 existing price, ledger, batch, attempt, or Asset row.
 
-## Accepted GG-030 additions (not implemented)
+## GG-030 additions (foundation implemented; credit and creative scope pending)
 
 ### Workspace
 

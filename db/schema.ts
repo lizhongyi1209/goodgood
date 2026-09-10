@@ -47,6 +47,232 @@ export const users = pgTable(
   ],
 );
 
+export const workspaces = pgTable(
+  "workspaces",
+  {
+    id: uuid("id").primaryKey(),
+    kind: text("kind").notNull(),
+    name: text("name").notNull(),
+    status: text("status").default("active").notNull(),
+    personalOwnerId: uuid("personal_owner_id").references(() => users.id, {
+      onDelete: "restrict",
+    }),
+    createdByOwnerId: uuid("created_by_owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("workspaces_personal_owner_unique")
+      .on(table.personalOwnerId)
+      .where(sql`${table.kind} = 'personal'`),
+    index("workspaces_kind_status_idx").on(
+      table.kind,
+      table.status,
+      table.createdAt,
+      table.id,
+    ),
+    check("workspaces_kind_check", sql`${table.kind} in ('personal', 'organization')`),
+    check("workspaces_name_check", sql`length(${table.name}) between 1 and 100`),
+    check("workspaces_status_check", sql`${table.status} in ('active', 'suspended')`),
+    check(
+      "workspaces_personal_owner_check",
+      sql`(${table.kind} = 'personal' and ${table.personalOwnerId} is not null)
+        or (${table.kind} = 'organization' and ${table.personalOwnerId} is null)`,
+    ),
+  ],
+);
+
+export const workspaceMemberships = pgTable(
+  "workspace_memberships",
+  {
+    id: uuid("id").primaryKey(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "restrict" }),
+    ownerId: uuid("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    role: text("role").notNull(),
+    status: text("status").default("active").notNull(),
+    invitedByOwnerId: uuid("invited_by_owner_id").references(() => users.id, {
+      onDelete: "restrict",
+    }),
+    activatedAt: timestamp("activated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    endedAt: timestamp("ended_at", { withTimezone: true }),
+    version: integer("version").default(1).notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("workspace_memberships_workspace_owner_unique").on(
+      table.workspaceId,
+      table.ownerId,
+    ),
+    index("workspace_memberships_owner_status_idx").on(
+      table.ownerId,
+      table.status,
+      table.updatedAt,
+      table.id,
+    ),
+    index("workspace_memberships_workspace_status_idx").on(
+      table.workspaceId,
+      table.status,
+      table.role,
+      table.createdAt,
+      table.id,
+    ),
+    check(
+      "workspace_memberships_role_check",
+      sql`${table.role} in ('org_owner', 'org_admin', 'org_member')`,
+    ),
+    check(
+      "workspace_memberships_status_check",
+      sql`${table.status} in ('active', 'suspended', 'removed')`,
+    ),
+    check("workspace_memberships_version_check", sql`${table.version} > 0`),
+    check(
+      "workspace_memberships_interval_check",
+      sql`(${table.status} in ('active', 'suspended') and ${table.endedAt} is null)
+        or (${table.status} = 'removed' and ${table.endedAt} is not null)`,
+    ),
+  ],
+);
+
+export const workspaceInvitations = pgTable(
+  "workspace_invitations",
+  {
+    id: uuid("id").primaryKey(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "restrict" }),
+    normalizedEmail: text("normalized_email").notNull(),
+    intendedRole: text("intended_role").notNull(),
+    status: text("status").default("pending").notNull(),
+    invitedByOwnerId: uuid("invited_by_owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    acceptedByOwnerId: uuid("accepted_by_owner_id").references(() => users.id, {
+      onDelete: "restrict",
+    }),
+    membershipId: uuid("membership_id").references(() => workspaceMemberships.id, {
+      onDelete: "restrict",
+    }),
+    idempotencyKey: text("idempotency_key").notNull(),
+    operationHash: text("operation_hash").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("workspace_invitations_actor_idempotency_unique").on(
+      table.invitedByOwnerId,
+      table.idempotencyKey,
+    ),
+    uniqueIndex("workspace_invitations_pending_email_unique")
+      .on(table.workspaceId, table.normalizedEmail)
+      .where(sql`${table.status} = 'pending'`),
+    index("workspace_invitations_email_status_idx").on(
+      table.normalizedEmail,
+      table.status,
+      table.expiresAt,
+      table.id,
+    ),
+    check(
+      "workspace_invitations_intended_role_check",
+      sql`${table.intendedRole} in ('org_admin', 'org_member')`,
+    ),
+    check(
+      "workspace_invitations_status_check",
+      sql`${table.status} in ('pending', 'accepted', 'revoked', 'expired')`,
+    ),
+    check(
+      "workspace_invitations_email_check",
+      sql`length(${table.normalizedEmail}) between 3 and 320
+        and ${table.normalizedEmail} = lower(btrim(${table.normalizedEmail}))
+        and ${table.normalizedEmail} like '%@%'`,
+    ),
+    check(
+      "workspace_invitations_idempotency_check",
+      sql`length(${table.idempotencyKey}) between 8 and 200`,
+    ),
+    check(
+      "workspace_invitations_operation_hash_check",
+      sql`length(${table.operationHash}) = 64`,
+    ),
+    check(
+      "workspace_invitations_expiry_check",
+      sql`${table.expiresAt} > ${table.createdAt}`,
+    ),
+  ],
+);
+
+export const workspaceAuditEvents = pgTable(
+  "workspace_audit_events",
+  {
+    id: uuid("id").primaryKey(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "restrict" }),
+    actorOwnerId: uuid("actor_owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    targetOwnerId: uuid("target_owner_id").references(() => users.id, {
+      onDelete: "restrict",
+    }),
+    membershipId: uuid("membership_id").references(() => workspaceMemberships.id, {
+      onDelete: "restrict",
+    }),
+    invitationId: uuid("invitation_id").references(() => workspaceInvitations.id, {
+      onDelete: "restrict",
+    }),
+    actionType: text("action_type").notNull(),
+    reason: text("reason").notNull(),
+    idempotencyKey: text("idempotency_key").notNull(),
+    operationHash: text("operation_hash").notNull(),
+    metadata: jsonb("metadata").default({}).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("workspace_audit_events_actor_idempotency_unique").on(
+      table.actorOwnerId,
+      table.idempotencyKey,
+    ),
+    index("workspace_audit_events_workspace_created_idx").on(
+      table.workspaceId,
+      table.createdAt,
+      table.id,
+    ),
+    index("workspace_audit_events_target_created_idx")
+      .on(table.targetOwnerId, table.createdAt, table.id)
+      .where(sql`${table.targetOwnerId} is not null`),
+    check(
+      "workspace_audit_events_action_check",
+      sql`${table.actionType} in (
+        'create_organization', 'invite_member', 'accept_invitation',
+        'revoke_invitation', 'change_member_role', 'suspend_member',
+        'restore_member', 'remove_member'
+      )`,
+    ),
+    check(
+      "workspace_audit_events_reason_check",
+      sql`length(${table.reason}) between 2 and 200`,
+    ),
+    check(
+      "workspace_audit_events_idempotency_check",
+      sql`length(${table.idempotencyKey}) between 8 and 200`,
+    ),
+    check(
+      "workspace_audit_events_operation_hash_check",
+      sql`length(${table.operationHash}) = 64`,
+    ),
+  ],
+);
+
 export const systemRoleAssignments = pgTable(
   "system_role_assignments",
   {

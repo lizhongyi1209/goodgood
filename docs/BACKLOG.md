@@ -29,7 +29,7 @@
 | GG-021 | Nano Banana Pro 单张定价 15 积分 | 已上线报价；生成路由仍关闭 | [任务](tasks/GG-021-nano-banana-pro-pricing.md) |
 | GG-022 | 修复 alpha 后续发布的隔离恢复演练 | 已上线并通过真实恢复/发布验收 | [任务](tasks/GG-022-ongoing-production-restore.md) |
 | GG-023 | 升级 Sharp 以修复新识别的 HIGH 漏洞 | 安全镜像 CI 通过；待新生产/冒烟授权 | [任务](tasks/GG-023-sharp-security-update.md) |
-| GG-030 | 企业工作区、员工额度、消费记录和资产审阅 | 阶段 0 决策与契约完成；阶段 1 待实现 | [任务](tasks/GG-030-enterprise-workspace.md) |
+| GG-030 | 企业工作区、员工额度、消费记录和资产审阅 | 阶段 0—1 已验证；阶段 2 待实现 | [任务](tasks/GG-030-enterprise-workspace.md) |
 
 GG-024—GG-029 已由其他隔离 worktree 占用，状态以各自任务卡为准；本分支不合并或覆盖它们。
 下一个普通产品需求从 **GG-031** 分配并检查是否已被占用。每次 alpha 发布仍须取得

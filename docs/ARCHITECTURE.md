@@ -249,7 +249,7 @@ Project index/detail, asset index/detail, and root creation are URL-addressable.
 `/create` is the canonical creation URL while `/` remains a compatibility entry
 to the same state; future Explore, Moodboards, and Help routes remain deferred.
 
-## Accepted GG-030 enterprise boundary (not implemented)
+## GG-030 enterprise boundary (foundation implemented; later phases pending)
 
 GG-030 introduces `Workspace` as the authorization and durable ownership scope.
 Every existing user receives one personal Workspace; organization Workspaces
