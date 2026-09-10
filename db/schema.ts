@@ -8,6 +8,7 @@ import {
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -826,6 +827,12 @@ export const referenceAssets = pgTable(
     ownerId: uuid("owner_id")
       .notNull()
       .references(() => users.id, { onDelete: "restrict" }),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "restrict" }),
+    creatorOwnerId: uuid("creator_owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
     objectKey: text("object_key").notNull(),
     originalFileName: text("original_file_name").notNull(),
     declaredMimeType: text("declared_mime_type").notNull(),
@@ -857,6 +864,12 @@ export const referenceAssets = pgTable(
       table.ownerId,
       table.uploadState,
       table.createdAt,
+    ),
+    index("reference_assets_workspace_creator_created_idx").on(
+      table.workspaceId,
+      table.creatorOwnerId,
+      table.createdAt,
+      table.id,
     ),
     index("reference_assets_cleanup_due_idx")
       .on(table.cleanupEligibleAt, table.id)
@@ -901,6 +914,10 @@ export const referenceAssets = pgTable(
       "reference_assets_cleanup_attempt_count_check",
       sql`${table.cleanupAttemptCount} >= 0`,
     ),
+    check(
+      "reference_assets_creator_owner_check",
+      sql`${table.creatorOwnerId} = ${table.ownerId}`,
+    ),
   ],
 );
 
@@ -908,7 +925,13 @@ export const creationDrafts = pgTable(
   "creation_drafts",
   {
     ownerId: uuid("owner_id")
-      .primaryKey()
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "restrict" }),
+    creatorOwnerId: uuid("creator_owner_id")
+      .notNull()
       .references(() => users.id, { onDelete: "restrict" }),
     prompt: text("prompt").default("").notNull(),
     referenceSnapshot: jsonb("reference_snapshot")
@@ -936,6 +959,7 @@ export const creationDrafts = pgTable(
     ...timestamps,
   },
   (table) => [
+    primaryKey({ columns: [table.workspaceId, table.creatorOwnerId] }),
     index("creation_drafts_expiry_idx").on(table.expiresAt, table.ownerId),
     check("creation_drafts_prompt_check", sql`length(${table.prompt}) <= 4000`),
     check(
@@ -979,6 +1003,10 @@ export const creationDrafts = pgTable(
       sql`${table.background} <> 'transparent' or ${table.outputFormat} in ('png', 'webp')`,
     ),
     check("creation_drafts_version_check", sql`${table.version} > 0`),
+    check(
+      "creation_drafts_creator_owner_check",
+      sql`${table.creatorOwnerId} = ${table.ownerId}`,
+    ),
   ],
 );
 
@@ -987,6 +1015,12 @@ export const projects = pgTable(
   {
     id: uuid("id").primaryKey(),
     ownerId: uuid("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "restrict" }),
+    creatorOwnerId: uuid("creator_owner_id")
       .notNull()
       .references(() => users.id, { onDelete: "restrict" }),
     createIdempotencyKey: text("create_idempotency_key").notNull(),
@@ -1019,9 +1053,17 @@ export const projects = pgTable(
   },
   (table) => [
     index("projects_owner_updated_idx").on(table.ownerId, table.updatedAt),
-    uniqueIndex("projects_owner_create_idempotency_unique").on(
-      table.ownerId,
+    uniqueIndex("projects_workspace_creator_idempotency_unique").on(
+      table.workspaceId,
+      table.creatorOwnerId,
       table.createIdempotencyKey,
+    ),
+    uniqueIndex("projects_id_workspace_unique").on(table.id, table.workspaceId),
+    index("projects_workspace_creator_updated_idx").on(
+      table.workspaceId,
+      table.creatorOwnerId,
+      table.updatedAt,
+      table.id,
     ),
     check("projects_name_check", sql`length(${table.name}) between 1 and 32`),
     check("projects_prompt_check", sql`length(${table.prompt}) <= 4000`),
@@ -1070,6 +1112,10 @@ export const projects = pgTable(
       sql`${table.status} in ('active', 'archived')`,
     ),
     check("projects_version_check", sql`${table.version} > 0`),
+    check(
+      "projects_creator_owner_check",
+      sql`${table.creatorOwnerId} = ${table.ownerId}`,
+    ),
   ],
 );
 
@@ -1145,6 +1191,12 @@ export const generationBatches = pgTable(
     ownerId: uuid("owner_id")
       .notNull()
       .references(() => users.id, { onDelete: "restrict" }),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "restrict" }),
+    creatorOwnerId: uuid("creator_owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
     projectId: uuid("project_id").references(() => projects.id, {
       onDelete: "restrict",
     }),
@@ -1181,6 +1233,15 @@ export const generationBatches = pgTable(
     ...timestamps,
   },
   (table) => [
+    uniqueIndex("generation_batches_id_workspace_unique").on(
+      table.id,
+      table.workspaceId,
+    ),
+    foreignKey({
+      columns: [table.projectId, table.workspaceId],
+      foreignColumns: [projects.id, projects.workspaceId],
+      name: "generation_batches_project_workspace_fk",
+    }).onDelete("restrict"),
     index("generation_batches_owner_submitted_idx").on(
       table.ownerId,
       table.submittedAt,
@@ -1188,6 +1249,11 @@ export const generationBatches = pgTable(
     index("generation_batches_project_submitted_idx")
       .on(table.projectId, table.submittedAt)
       .where(sql`${table.projectId} is not null`),
+    index("generation_batches_workspace_submitted_idx").on(
+      table.workspaceId,
+      table.submittedAt,
+      table.id,
+    ),
     check(
       "generation_batches_model_check",
       sql`${table.modelId} in ('nano-banana-2', 'nano-banana-pro', 'gpt-image-2')`,
@@ -1228,6 +1294,10 @@ export const generationBatches = pgTable(
       "generation_batches_transparent_format_check",
       sql`${table.background} <> 'transparent' or ${table.outputFormat} in ('png', 'webp')`,
     ),
+    check(
+      "generation_batches_creator_owner_check",
+      sql`${table.creatorOwnerId} = ${table.ownerId}`,
+    ),
   ],
 );
 
@@ -1241,6 +1311,12 @@ export const generationJobs = pgTable(
     ownerId: uuid("owner_id")
       .notNull()
       .references(() => users.id, { onDelete: "restrict" }),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "restrict" }),
+    creatorOwnerId: uuid("creator_owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
     idempotencyKey: text("idempotency_key").notNull(),
     retryOfJobId: uuid("retry_of_job_id").references(
       (): AnyPgColumn => generationJobs.id,
@@ -1250,6 +1326,11 @@ export const generationJobs = pgTable(
       (): AnyPgColumn => creditLedgerEntries.id,
       { onDelete: "restrict" },
     ),
+    workspaceCreditReservationEntryId: uuid(
+      "workspace_credit_reservation_entry_id",
+    ).references(() => workspaceCreditLedgerEntries.id, {
+      onDelete: "restrict",
+    }),
     state: text("state").default("queued").notNull(),
     progress: integer("progress").default(0).notNull(),
     attemptCount: integer("attempt_count").default(0).notNull(),
@@ -1268,16 +1349,40 @@ export const generationJobs = pgTable(
   },
   (table) => [
     uniqueIndex("generation_jobs_batch_unique").on(table.batchId),
-    uniqueIndex("generation_jobs_owner_idempotency_unique").on(
-      table.ownerId,
+    uniqueIndex("generation_jobs_id_workspace_unique").on(
+      table.id,
+      table.workspaceId,
+    ),
+    uniqueIndex("generation_jobs_workspace_creator_idempotency_unique").on(
+      table.workspaceId,
+      table.creatorOwnerId,
       table.idempotencyKey,
     ),
+    foreignKey({
+      columns: [table.batchId, table.workspaceId],
+      foreignColumns: [generationBatches.id, generationBatches.workspaceId],
+      name: "generation_jobs_batch_workspace_fk",
+    }).onDelete("restrict"),
+    foreignKey({
+      columns: [table.retryOfJobId, table.workspaceId],
+      foreignColumns: [table.id, table.workspaceId],
+      name: "generation_jobs_retry_workspace_fk",
+    }).onDelete("restrict"),
     uniqueIndex("generation_jobs_credit_reservation_unique")
       .on(table.creditReservationEntryId)
       .where(sql`${table.creditReservationEntryId} is not null`),
+    uniqueIndex("generation_jobs_workspace_credit_reservation_unique")
+      .on(table.workspaceCreditReservationEntryId)
+      .where(sql`${table.workspaceCreditReservationEntryId} is not null`),
     index("generation_jobs_state_submitted_idx").on(
       table.state,
       table.submittedAt,
+    ),
+    index("generation_jobs_workspace_creator_submitted_idx").on(
+      table.workspaceId,
+      table.creatorOwnerId,
+      table.submittedAt,
+      table.id,
     ),
     check(
       "generation_jobs_state_check",
@@ -1286,6 +1391,10 @@ export const generationJobs = pgTable(
     check(
       "generation_jobs_progress_check",
       sql`${table.progress} between 0 and 100`,
+    ),
+    check(
+      "generation_jobs_creator_owner_check",
+      sql`${table.creatorOwnerId} = ${table.ownerId}`,
     ),
   ],
 );
@@ -1626,6 +1735,12 @@ export const assets = pgTable(
     ownerId: uuid("owner_id")
       .notNull()
       .references(() => users.id, { onDelete: "restrict" }),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "restrict" }),
+    creatorOwnerId: uuid("creator_owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
     batchId: uuid("batch_id")
       .notNull()
       .references(() => generationBatches.id, { onDelete: "restrict" }),
@@ -1645,9 +1760,25 @@ export const assets = pgTable(
     ...timestamps,
   },
   (table) => [
+    foreignKey({
+      columns: [table.batchId, table.workspaceId],
+      foreignColumns: [generationBatches.id, generationBatches.workspaceId],
+      name: "assets_batch_workspace_fk",
+    }).onDelete("restrict"),
+    foreignKey({
+      columns: [table.jobId, table.workspaceId],
+      foreignColumns: [generationJobs.id, generationJobs.workspaceId],
+      name: "assets_job_workspace_fk",
+    }).onDelete("restrict"),
     uniqueIndex("assets_job_ordinal_unique").on(table.jobId, table.ordinal),
     uniqueIndex("assets_object_key_unique").on(table.objectKey),
     index("assets_owner_created_idx").on(table.ownerId, table.createdAt),
+    index("assets_workspace_creator_created_idx").on(
+      table.workspaceId,
+      table.creatorOwnerId,
+      table.createdAt,
+      table.id,
+    ),
     check("assets_pixel_width_check", sql`${table.pixelWidth} > 0`),
     check("assets_pixel_height_check", sql`${table.pixelHeight} > 0`),
     check("assets_byte_size_check", sql`${table.byteSize} > 0`),
@@ -1659,6 +1790,10 @@ export const assets = pgTable(
     check(
       "assets_visibility_check",
       sql`${table.visibility} in ('private', 'project', 'public')`,
+    ),
+    check(
+      "assets_creator_owner_check",
+      sql`${table.creatorOwnerId} = ${table.ownerId}`,
     ),
   ],
 );

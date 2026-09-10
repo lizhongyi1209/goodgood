@@ -1,9 +1,16 @@
 import { createHash, randomUUID } from "node:crypto";
 import {
+  findActiveGenerationPrice,
   releaseGenerationCreditsInTransaction,
   reserveGenerationCreditsInTransaction,
   settleGenerationCreditsInTransaction,
 } from "../billing/repository.mjs";
+import {
+  releaseOrganizationGenerationCreditsInTransaction,
+  reserveOrganizationGenerationCreditsInTransaction,
+  settleOrganizationGenerationCreditsInTransaction,
+} from "../organizations/credit-repository.mjs";
+import { resolveWorkspaceAccess } from "../organizations/workspace-access.mjs";
 import { lockReferenceLifecycle } from "../references/lifecycle-lock.mjs";
 import { findReadyReferences } from "../references/repository.mjs";
 import { normalizeGenerationModelOptions } from "./capabilities.mjs";
@@ -57,6 +64,24 @@ export function hashGenerationInput(input) {
         resolution: input.resolution,
         quality: modelOptions.quality,
         thinkingLevel: modelOptions.thinkingLevel,
+      }),
+    )
+    .digest("hex");
+}
+
+export function hashOrganizationGenerationCreditOperation({
+  amount = null,
+  jobId,
+  operation,
+  workspaceId,
+}) {
+  return createHash("sha256")
+    .update(
+      JSON.stringify({
+        amount: amount == null ? null : String(amount),
+        jobId,
+        operation,
+        workspaceId,
       }),
     )
     .digest("hex");
@@ -165,52 +190,70 @@ const JOB_SELECT = `
            SELECT jsonb_agg(to_jsonb(a) ORDER BY a.ordinal)
              FROM assets a
             WHERE a.job_id = j.id
+              AND a.workspace_id = j.workspace_id
               AND a.moderation_state = 'accepted'
          ), '[]'::jsonb) AS assets
     FROM generation_jobs j
     JOIN generation_batches b ON b.id = j.batch_id
 `;
 
-export async function findGenerationJob(pool, { jobId, ownerId }) {
+export async function findGenerationJob(
+  pool,
+  { jobId, ownerId, workspaceId = null },
+) {
+  const workspace = await resolveWorkspaceAccess(pool, { ownerId, workspaceId });
   const result = await pool.query(
-    `${JOB_SELECT} WHERE j.id = $1 AND j.owner_id = $2`,
-    [jobId, ownerId],
+    `${JOB_SELECT} WHERE j.id = $1 AND j.owner_id = $2
+      AND j.workspace_id = $3`,
+    [jobId, ownerId, workspace.id],
   );
   return result.rows[0] ?? null;
 }
 
 export async function findProjectGenerationJobs(
   pool,
-  { ownerId, projectId },
+  { ownerId, projectId, workspaceId = null },
 ) {
+  const workspace = await resolveWorkspaceAccess(pool, { ownerId, workspaceId });
   const result = await pool.query(
     `${JOB_SELECT}
       WHERE b.project_id = $1 AND j.owner_id = $2
+        AND j.workspace_id = $3 AND b.workspace_id = $3
       ORDER BY j.submitted_at DESC, j.id DESC`,
-    [projectId, ownerId],
+    [projectId, ownerId, workspace.id],
   );
   return result.rows;
 }
 
-export async function findOwnerAssetGenerationJobs(pool, { ownerId }) {
+export async function findOwnerAssetGenerationJobs(
+  pool,
+  { ownerId, workspaceId = null },
+) {
+  const workspace = await resolveWorkspaceAccess(pool, { ownerId, workspaceId });
   const result = await pool.query(
     `${JOB_SELECT}
       WHERE j.owner_id = $1
         AND b.owner_id = $1
+        AND j.workspace_id = $2 AND b.workspace_id = $2
         AND j.state = 'succeeded'
         AND EXISTS (
           SELECT 1 FROM assets a
            WHERE a.job_id = j.id
              AND a.owner_id = $1
+             AND a.workspace_id = $2
              AND a.moderation_state = 'accepted'
         )
       ORDER BY j.submitted_at DESC, j.id DESC`,
-    [ownerId],
+    [ownerId, workspace.id],
   );
   return result.rows;
 }
 
-export async function findOwnerAsset(pool, { assetId, ownerId }) {
+export async function findOwnerAsset(
+  pool,
+  { assetId, ownerId, workspaceId = null },
+) {
+  const workspace = await resolveWorkspaceAccess(pool, { ownerId, workspaceId });
   const result = await pool.query(
     `SELECT a.id, a.object_key
        FROM assets a
@@ -220,30 +263,89 @@ export async function findOwnerAsset(pool, { assetId, ownerId }) {
         AND a.owner_id = $2
         AND j.owner_id = $2
         AND b.owner_id = $2
+        AND a.workspace_id = $3 AND j.workspace_id = $3 AND b.workspace_id = $3
         AND j.state = 'succeeded'
         AND a.moderation_state = 'accepted'`,
-    [assetId, ownerId],
+    [assetId, ownerId, workspace.id],
+  );
+  return result.rows[0] ?? null;
+}
+
+export async function findOrganizationAssetGenerationJobs(
+  pool,
+  { actorOwnerId, workspaceId },
+) {
+  const workspace = await resolveWorkspaceAccess(pool, {
+    manager: true,
+    ownerId: actorOwnerId,
+    workspaceId,
+  });
+  const result = await pool.query(
+    `${JOB_SELECT}
+      WHERE j.workspace_id = $1 AND b.workspace_id = $1
+        AND j.state = 'succeeded'
+        AND EXISTS (
+          SELECT 1 FROM assets a
+           WHERE a.job_id = j.id AND a.workspace_id = $1
+             AND a.moderation_state = 'accepted'
+        )
+      ORDER BY j.submitted_at DESC, j.id DESC`,
+    [workspace.id],
+  );
+  return result.rows;
+}
+
+export async function findOrganizationAsset(
+  pool,
+  { actorOwnerId, assetId, workspaceId },
+) {
+  const workspace = await resolveWorkspaceAccess(pool, {
+    manager: true,
+    ownerId: actorOwnerId,
+    workspaceId,
+  });
+  const result = await pool.query(
+    `SELECT a.id, a.object_key, a.creator_owner_id
+       FROM assets a
+       JOIN generation_jobs j
+         ON j.id = a.job_id AND j.workspace_id = a.workspace_id
+      WHERE a.id = $1 AND a.workspace_id = $2
+        AND j.state = 'succeeded' AND a.moderation_state = 'accepted'`,
+    [assetId, workspace.id],
   );
   return result.rows[0] ?? null;
 }
 
 export async function createGenerationJob(
   pool,
-  { idempotencyKey, input, ownerId, retryOfJobId = null },
+  {
+    idempotencyKey,
+    input,
+    ownerId,
+    retryOfJobId = null,
+    workspaceId = null,
+  },
 ) {
   const modelOptions = requiredGenerationModelOptions(input);
   const inputHash = hashGenerationInput(input);
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+    const workspace = await resolveWorkspaceAccess(client, {
+      ownerId,
+      workspaceId,
+      write: true,
+    });
     await client.query(
       "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
-      [`${ownerId}:${idempotencyKey}`],
+      [`${workspace.id}:${ownerId}:${idempotencyKey}`],
     );
 
     const existing = await client.query(
-      `${JOB_SELECT} WHERE j.owner_id = $1 AND j.idempotency_key = $2`,
-      [ownerId, idempotencyKey],
+      `${JOB_SELECT}
+        WHERE j.workspace_id = $1 AND j.creator_owner_id = $2
+          AND j.idempotency_key = $3`,
+      [workspace.id, ownerId, idempotencyKey],
     );
     if (existing.rowCount) {
       const row = existing.rows[0];
@@ -260,8 +362,9 @@ export async function createGenerationJob(
 
     if (retryOfJobId) {
       const source = await client.query(
-        "SELECT state FROM generation_jobs WHERE id = $1 AND owner_id = $2",
-        [retryOfJobId, ownerId],
+        `SELECT state FROM generation_jobs
+          WHERE id = $1 AND workspace_id = $2 AND creator_owner_id = $3`,
+        [retryOfJobId, workspace.id, ownerId],
       );
       if (!source.rowCount || source.rows[0].state !== "failed") {
         throw new GenerationPersistenceError(
@@ -280,6 +383,7 @@ export async function createGenerationJob(
         lock: true,
         ownerId,
         referenceIds: input.references.map((reference) => reference.id),
+        workspaceId: workspace.id,
       });
       const referencesMatch = input.references.every((reference, index) => {
         const current = currentReferences[index];
@@ -297,9 +401,10 @@ export async function createGenerationJob(
     if (input.projectId) {
       const project = await client.query(
         `SELECT id FROM projects
-          WHERE id = $1 AND owner_id = $2 AND status = 'active'
+          WHERE id = $1 AND workspace_id = $2 AND creator_owner_id = $3
+            AND status = 'active'
           FOR UPDATE`,
-        [input.projectId, ownerId],
+        [input.projectId, workspace.id, ownerId],
       );
       if (!project.rowCount) {
         throw new GenerationPersistenceError(
@@ -320,13 +425,16 @@ export async function createGenerationJob(
     }));
     await client.query(
       `INSERT INTO generation_batches (
-         id, owner_id, project_id, prompt, reference_snapshot, model_id,
+         id, owner_id, workspace_id, creator_owner_id, project_id,
+         prompt, reference_snapshot, model_id,
          aspect_ratio, resolution, requested_count, thinking_level,
          google_search, quality, background, output_format, input_hash
-       ) VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+       ) VALUES ($1, $2, $3, $2, $4, $5, $6::jsonb, $7, $8, $9, $10,
+                 $11, $12, $13, $14, $15, $16)`,
       [
         batchId,
         ownerId,
+        workspace.id,
         input.projectId ?? null,
         input.prompt,
         JSON.stringify(references),
@@ -351,7 +459,8 @@ export async function createGenerationJob(
                 google_search = $10, quality = $11, background = $12,
                 output_format = $13, version = version + 1,
                 updated_at = now()
-          WHERE id = $1 AND owner_id = $2`,
+          WHERE id = $1 AND owner_id = $2 AND creator_owner_id = $2
+            AND workspace_id = $14`,
         [
           input.projectId,
           ownerId,
@@ -366,20 +475,69 @@ export async function createGenerationJob(
           modelOptions.quality,
           modelOptions.background,
           modelOptions.outputFormat,
+          workspace.id,
         ],
       );
     }
     await client.query(
       `INSERT INTO generation_jobs (
-         id, batch_id, owner_id, idempotency_key, retry_of_job_id
-       ) VALUES ($1, $2, $3, $4, $5)`,
-      [jobId, batchId, ownerId, idempotencyKey, retryOfJobId],
+         id, batch_id, owner_id, workspace_id, creator_owner_id,
+         idempotency_key, retry_of_job_id
+       ) VALUES ($1, $2, $3, $4, $3, $5, $6)`,
+      [jobId, batchId, ownerId, workspace.id, idempotencyKey, retryOfJobId],
     );
-    await reserveGenerationCreditsInTransaction(client, {
-      idempotencyKey: `generation-reserve:${jobId}`,
-      jobId,
-      ownerId,
-    });
+    if (workspace.kind === "organization") {
+      const price = await findActiveGenerationPrice(client, {
+        count: input.count,
+        modelId: input.modelId,
+        resolution: input.resolution,
+      });
+      await client.query(
+        `UPDATE generation_batches
+            SET price_version_id = $2, quoted_credit_unit = $3,
+                quoted_credit_amount = $4, updated_at = now()
+          WHERE id = $1 AND workspace_id = $5`,
+        [
+          batchId,
+          price.id,
+          price.creditUnit,
+          price.creditAmount.toString(),
+          workspace.id,
+        ],
+      );
+      const reservation = await reserveOrganizationGenerationCreditsInTransaction(
+        client,
+        {
+          actorOwnerId: ownerId,
+          amount: price.creditAmount,
+          idempotencyKey: `organization-generation-reserve:${jobId}`,
+          jobId,
+          metadata: { priceVersionId: price.id },
+          operationHash: hashOrganizationGenerationCreditOperation({
+            amount: price.creditAmount,
+            jobId,
+            operation: "reserve",
+            workspaceId: workspace.id,
+          }),
+          reason: "organization generation reservation",
+          workspaceId: workspace.id,
+        },
+      );
+      await client.query(
+        `UPDATE generation_jobs
+            SET workspace_credit_reservation_entry_id = $2,
+                updated_at = now()
+          WHERE id = $1 AND workspace_id = $3
+            AND workspace_credit_reservation_entry_id IS NULL`,
+        [jobId, reservation.entry.id, workspace.id],
+      );
+    } else {
+      await reserveGenerationCreditsInTransaction(client, {
+        idempotencyKey: `generation-reserve:${jobId}`,
+        jobId,
+        ownerId,
+      });
+    }
     await client.query(
       `INSERT INTO generation_job_events (
          job_id, sequence, from_state, to_state, event_type, detail
@@ -617,8 +775,9 @@ export async function completeGenerationJob(
   try {
     await client.query("BEGIN");
     const locked = await client.query(
-      `SELECT j.state, j.owner_id, j.batch_id, j.lease_owner,
-              j.credit_reservation_entry_id, b.requested_count
+      `SELECT j.state, j.owner_id, j.creator_owner_id, j.workspace_id,
+              j.batch_id, j.lease_owner, j.credit_reservation_entry_id,
+              j.workspace_credit_reservation_entry_id, b.requested_count
          FROM generation_jobs j
          JOIN generation_batches b ON b.id = j.batch_id
         WHERE j.id = $1 FOR UPDATE OF j`,
@@ -660,13 +819,15 @@ export async function completeGenerationJob(
     for (const asset of assets) {
       await client.query(
         `INSERT INTO assets (
-           id, owner_id, batch_id, job_id, ordinal, object_key, checksum,
-           mime_type, pixel_width, pixel_height, aspect_ratio, byte_size
-         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+           id, owner_id, workspace_id, creator_owner_id, batch_id, job_id,
+           ordinal, object_key, checksum, mime_type, pixel_width, pixel_height,
+           aspect_ratio, byte_size
+         ) VALUES ($1, $2, $3, $2, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
         [
           asset.id,
-          asset.ownerId,
-          asset.batchId,
+          locked.rows[0].creator_owner_id,
+          locked.rows[0].workspace_id,
+          locked.rows[0].batch_id,
           jobId,
           asset.ordinal,
           asset.objectKey,
@@ -684,6 +845,17 @@ export async function completeGenerationJob(
         idempotencyKey: `generation-settle:${jobId}`,
         jobId,
         ownerId: locked.rows[0].owner_id,
+      });
+    } else if (locked.rows[0].workspace_credit_reservation_entry_id) {
+      await settleOrganizationGenerationCreditsInTransaction(client, {
+        idempotencyKey: `organization-generation-settle:${jobId}`,
+        jobId,
+        operationHash: hashOrganizationGenerationCreditOperation({
+          jobId,
+          operation: "settle",
+          workspaceId: locked.rows[0].workspace_id,
+        }),
+        workspaceId: locked.rows[0].workspace_id,
       });
     }
     await client.query(
@@ -727,7 +899,8 @@ export async function failGenerationJob(
   try {
     await client.query("BEGIN");
     const locked = await client.query(
-      `SELECT state, owner_id, lease_owner, credit_reservation_entry_id
+      `SELECT state, owner_id, workspace_id, lease_owner,
+              credit_reservation_entry_id, workspace_credit_reservation_entry_id
          FROM generation_jobs WHERE id = $1 FOR UPDATE`,
       [jobId],
     );
@@ -749,6 +922,21 @@ export async function failGenerationJob(
           error.code === "SUBMISSION_UNKNOWN"
             ? "customer_release_submission_unknown"
             : "generation_release",
+      });
+    } else if (locked.rows[0].workspace_credit_reservation_entry_id) {
+      await releaseOrganizationGenerationCreditsInTransaction(client, {
+        idempotencyKey: `organization-generation-release:${jobId}`,
+        jobId,
+        operationHash: hashOrganizationGenerationCreditOperation({
+          jobId,
+          operation: "release",
+          workspaceId: locked.rows[0].workspace_id,
+        }),
+        reason:
+          error.code === "SUBMISSION_UNKNOWN"
+            ? "organization release submission unknown"
+            : "organization generation release",
+        workspaceId: locked.rows[0].workspace_id,
       });
     }
     await client.query(

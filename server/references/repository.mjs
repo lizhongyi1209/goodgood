@@ -1,27 +1,35 @@
 import { randomUUID } from "node:crypto";
+import { resolveWorkspaceAccess } from "../organizations/workspace-access.mjs";
 import { ReferencePersistenceError } from "./errors.mjs";
 
 export async function createPendingReferenceAssets(
   pool,
-  { files, ownerId, uploadTtlSeconds },
+  { files, ownerId, uploadTtlSeconds, workspaceId = null },
 ) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+    const workspace = await resolveWorkspaceAccess(client, {
+      ownerId,
+      workspaceId,
+      write: true,
+    });
     const assets = [];
     for (const file of files) {
       const id = randomUUID();
-      const objectKey = `references/${ownerId}/${id}/original`;
+      const objectKey = `references/${workspace.id}/${ownerId}/${id}/original`;
       const result = await client.query(
         `INSERT INTO reference_assets (
-           id, owner_id, object_key, original_file_name, declared_mime_type,
+           id, owner_id, workspace_id, creator_owner_id, object_key,
+           original_file_name, declared_mime_type,
            declared_byte_size, expires_at
-         ) VALUES ($1, $2, $3, $4, $5, $6,
-                   now() + ($7 * interval '1 second'))
+         ) VALUES ($1, $2, $3, $2, $4, $5, $6, $7,
+                   now() + ($8 * interval '1 second'))
          RETURNING *`,
         [
           id,
           ownerId,
+          workspace.id,
           objectKey,
           file.name,
           file.mimeType,
@@ -41,43 +49,64 @@ export async function createPendingReferenceAssets(
   }
 }
 
-export async function findReferenceAsset(pool, { ownerId, referenceId }) {
+export async function findReferenceAsset(
+  pool,
+  { ownerId, referenceId, workspaceId = null },
+) {
+  const workspace = await resolveWorkspaceAccess(pool, { ownerId, workspaceId });
   const result = await pool.query(
-    "SELECT * FROM reference_assets WHERE id = $1 AND owner_id = $2",
-    [referenceId, ownerId],
+    `SELECT * FROM reference_assets
+      WHERE id = $1 AND workspace_id = $2 AND creator_owner_id = $3`,
+    [referenceId, workspace.id, ownerId],
   );
   return result.rows[0] ?? null;
 }
 
-export async function findReusableReferenceAssets(pool, { ownerId }) {
+export async function findReusableReferenceAssets(
+  pool,
+  { ownerId, workspaceId = null },
+) {
+  const workspace = await resolveWorkspaceAccess(pool, { ownerId, workspaceId });
   const result = await pool.query(
     `SELECT id, object_key, original_file_name, detected_mime_type,
             byte_size, pixel_width, pixel_height, uploaded_at
        FROM reference_assets
-      WHERE owner_id = $1
+      WHERE workspace_id = $1 AND creator_owner_id = $2
         AND upload_state = 'ready'
         AND moderation_state = 'accepted'
         AND object_deleted_at IS NULL
       ORDER BY uploaded_at DESC NULLS LAST, created_at DESC, id DESC`,
-    [ownerId],
+    [workspace.id, ownerId],
   );
   return result.rows;
 }
 
 export async function markReferenceReady(
   pool,
-  { byteSize, checksum, detectedMimeType, height, ownerId, referenceId, width },
+  {
+    byteSize,
+    checksum,
+    detectedMimeType,
+    height,
+    ownerId,
+    referenceId,
+    width,
+    workspaceId = null,
+  },
 ) {
+  const workspace = await resolveWorkspaceAccess(pool, { ownerId, workspaceId });
   const result = await pool.query(
     `UPDATE reference_assets
         SET upload_state = 'ready', moderation_state = 'accepted',
-            detected_mime_type = $3, byte_size = $4, pixel_width = $5,
-            pixel_height = $6, checksum = $7, uploaded_at = now(),
+            detected_mime_type = $4, byte_size = $5, pixel_width = $6,
+            pixel_height = $7, checksum = $8, uploaded_at = now(),
             validated_at = now(), error_code = NULL, updated_at = now()
-      WHERE id = $1 AND owner_id = $2 AND upload_state = 'pending'
+      WHERE id = $1 AND workspace_id = $2 AND creator_owner_id = $3
+        AND upload_state = 'pending'
       RETURNING *`,
     [
       referenceId,
+      workspace.id,
       ownerId,
       detectedMimeType,
       byteSize,
@@ -98,40 +127,53 @@ export async function markReferenceReady(
 
 export async function markReferenceRejected(
   pool,
-  { errorCode, ownerId, referenceId },
+  { errorCode, ownerId, referenceId, workspaceId = null },
 ) {
+  const workspace = await resolveWorkspaceAccess(pool, { ownerId, workspaceId });
   await pool.query(
     `UPDATE reference_assets
         SET upload_state = 'rejected', moderation_state = 'rejected',
-            error_code = $3, validated_at = now(), updated_at = now()
-      WHERE id = $1 AND owner_id = $2 AND upload_state = 'pending'`,
-    [referenceId, ownerId, errorCode],
+            error_code = $4, validated_at = now(), updated_at = now()
+      WHERE id = $1 AND workspace_id = $2 AND creator_owner_id = $3
+        AND upload_state = 'pending'`,
+    [referenceId, workspace.id, ownerId, errorCode],
   );
 }
 
-export async function markReferenceExpired(pool, { ownerId, referenceId }) {
+export async function markReferenceExpired(
+  pool,
+  { ownerId, referenceId, workspaceId = null },
+) {
+  const workspace = await resolveWorkspaceAccess(pool, { ownerId, workspaceId });
   await pool.query(
     `UPDATE reference_assets
         SET upload_state = 'expired', error_code = 'UPLOAD_EXPIRED',
             updated_at = now()
-      WHERE id = $1 AND owner_id = $2 AND upload_state = 'pending'`,
-    [referenceId, ownerId],
+      WHERE id = $1 AND workspace_id = $2 AND creator_owner_id = $3
+        AND upload_state = 'pending'`,
+    [referenceId, workspace.id, ownerId],
   );
 }
 
 export async function findReadyReferences(
   pool,
-  { lock = false, ownerId, referenceIds },
+  { lock = false, ownerId, referenceIds, workspaceId = null },
 ) {
   if (!referenceIds.length) return [];
+  const workspace = await resolveWorkspaceAccess(pool, {
+    ownerId,
+    workspaceId,
+    write: lock,
+  });
   const result = await pool.query(
     `SELECT id, object_key, original_file_name
        FROM reference_assets
-      WHERE owner_id = $1 AND id = ANY($2::uuid[])
+      WHERE workspace_id = $1 AND creator_owner_id = $2
+        AND id = ANY($3::uuid[])
         AND upload_state = 'ready' AND moderation_state = 'accepted'
         AND object_deleted_at IS NULL
       ${lock ? "FOR SHARE" : ""}`,
-    [ownerId, referenceIds],
+    [workspace.id, ownerId, referenceIds],
   );
   const byId = new Map(result.rows.map((row) => [row.id, row]));
   return referenceIds.map((id) => byId.get(id)).filter(Boolean);

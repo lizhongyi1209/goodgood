@@ -249,7 +249,7 @@ Project index/detail, asset index/detail, and root creation are URL-addressable.
 `/create` is the canonical creation URL while `/` remains a compatibility entry
 to the same state; future Explore, Moodboards, and Help routes remain deferred.
 
-## GG-030 enterprise boundary (foundation and credit implemented; creative/UI pending)
+## GG-030 enterprise boundary (backend scope implemented; API/UI pending)
 
 GG-030 introduces `Workspace` as the authorization and durable ownership scope.
 Every existing user receives one personal Workspace; organization Workspaces
@@ -281,12 +281,13 @@ Asset, credit entry, or budget entry fails closed. Existing personal ledger rows
 retain their user and receive the corresponding personal Workspace during an
 additive backfill.
 
-The implemented credit repository is deliberately separate from the personal
+The organization credit repository is deliberately separate from the personal
 billing repository. It atomically updates the organization account and member
 budget and appends immutable evidence for grant, allocation/reclaim, reserve,
-settlement, and release. Stage 3 will call its in-transaction operations from
-the generation boundary once batches/jobs carry Workspace and creator IDs; no
-provider request may occur before both enterprise limits reserve successfully.
+settlement, and release. The generation boundary now resolves Workspace access,
+stores Workspace and creator IDs, and calls these operations in the same
+transaction; no provider request can be queued before both enterprise limits
+reserve successfully.
 
 Managers read generated company Assets through a role-authorized query and
 fresh signed URLs. They do not impersonate the creator and cannot use the same

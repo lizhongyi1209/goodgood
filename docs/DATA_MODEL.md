@@ -36,13 +36,15 @@ compatibility with historical rows and non-Nano model constraints. The Drizzle s
 mirrors that durable schema. Migration 0018 adds `quality`, `background`, and
 `output_format` to the same three snapshots, defaults old rows to
 `auto` / `auto` / `png`, constrains non-default values to GPT IMAGE 2, and
-  rejects transparent JPEG. Migration 0019 adds Nano Banana Pro's immutable
-  single-output prices. GG-030 migration 0024 adds workspaces, organization
-  memberships, verified-email invitations, append-only enterprise audit, a
-  deterministic existing-user backfill, and an insert trigger for each new
-  user's personal Workspace. The Drizzle schema mirrors this branch's durable
-  schema. A
-fuller project-backed creation session record and entitlements
+rejects transparent JPEG. Migration 0019 adds Nano Banana Pro's immutable
+single-output prices. GG-030 migration 0024 adds workspaces, organization
+memberships, verified-email invitations, append-only enterprise audit, a
+deterministic existing-user backfill, and an insert trigger for each new
+user's personal Workspace. Migration 0025 adds organization credit accounts,
+member budgets, and their append-only ledgers. Migration 0026 adds Workspace
+and creator scope to existing creative records and backfills every old record
+to its creator's personal Workspace. The Drizzle schema mirrors this branch's
+durable schema. A fuller project-backed creation session record and entitlements
 remain canonical contracts for later slices.
 
 `migrations/0001_m3_generation.sql` is additive and safe to rerun through the
@@ -166,7 +168,7 @@ Migration `0016_gg010_nano_multi_output_prices.sql` adds immutable Nano Banana 2
 count-2/count-4 prices of 20/40 credits for 1K, 2K, and 4K. It changes no
 existing price, ledger, batch, attempt, or Asset row.
 
-## GG-030 additions (foundation and credit implemented; creative scope pending)
+## GG-030 additions (foundation, credit, and creative scope implemented)
 
 ### Workspace
 
@@ -224,9 +226,9 @@ the member.
 The repository locks the Workspace, account, membership, and budget in one
 transaction. It appends the organization ledger entry and matching member event
 with the same job evidence; concurrent reservations therefore cannot spend the
-same organization or member capacity twice. `related_job_id` remains an
-unconstrained UUID until the creative-scope migration gives generation jobs a
-Workspace identity, at which point the same-scope foreign key is added.
+same organization or member capacity twice. Migration 0026 links that job
+evidence to a generation job in the same Workspace, so financial history cannot
+silently reference another tenant's work.
 
 Removing a member closes the budget and reclaims its immediately spendable
 remainder in the membership transaction. Any in-flight reservation remains
@@ -243,11 +245,11 @@ action, reason where required, idempotency evidence, safe metadata, and time;
 it never stores authentication secrets, signed URLs, prompts, or image bytes.
 
 Existing `CreationDraft`, `ReferenceAsset`, `Project`, `GenerationBatch`,
-`GenerationJob`, `CreditAccount`, `CreditLedgerEntry`, and `Asset` gain a
-Workspace identity in the implementation phase. Creative records also retain
-the actual creating User. Backfill maps every current record to its owner's
-personal Workspace without changing public IDs, object keys, balance, order, or
-history.
+`GenerationJob`, and `Asset` now carry a Workspace identity and retain the
+actual creating User. Migration 0026 maps every current creative record to its
+creator's personal Workspace without changing public IDs, object keys, balance,
+order, or history. Personal credit records stay owner-scoped and unchanged;
+organization credit lives in its separate Workspace-scoped tables.
 
 ## Entities
 

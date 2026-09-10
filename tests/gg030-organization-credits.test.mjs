@@ -136,6 +136,25 @@ async function createMember(pool, { email, ownerId, principalId, workspaceId }) 
   return accepted.membership;
 }
 
+async function insertEnterpriseJob(pool, { jobId, ownerId, workspaceId }) {
+  const batchId = randomUUID();
+  await pool.query(
+    `INSERT INTO generation_batches (
+       id, owner_id, workspace_id, creator_owner_id, prompt,
+       reference_snapshot, model_id, aspect_ratio, resolution,
+       requested_count, input_hash
+     ) VALUES ($1, $2, $3, $2, 'credit fixture', '[]'::jsonb,
+               'nano-banana-2', '1:1', '1K', 1, $4)`,
+    [batchId, ownerId, workspaceId, "9".repeat(64)],
+  );
+  await pool.query(
+    `INSERT INTO generation_jobs (
+       id, batch_id, owner_id, workspace_id, creator_owner_id, idempotency_key
+     ) VALUES ($1, $2, $3, $4, $3, $5)`,
+    [jobId, batchId, ownerId, workspaceId, `credit-job-${jobId}`],
+  );
+}
+
 test(
   "organization grants, member budgets, reservations, settlement, and release stay zero-sum",
   { skip: !integrationEnabled, timeout: 40_000 },
@@ -277,6 +296,11 @@ test(
       );
 
       const firstJobId = randomUUID();
+      await insertEnterpriseJob(pool, {
+        jobId: firstJobId,
+        ownerId: employeeId,
+        workspaceId,
+      });
       const reserveInput = {
         actorOwnerId: employeeId,
         amount: 120,
@@ -299,6 +323,15 @@ test(
       );
 
       const competingJobs = [randomUUID(), randomUUID()];
+      await Promise.all(
+        competingJobs.map((jobId) =>
+          insertEnterpriseJob(pool, {
+            jobId,
+            ownerId: employeeId,
+            workspaceId,
+          }),
+        ),
+      );
       const competing = await Promise.allSettled(
         competingJobs.map((jobId, index) =>
           reserveOrganizationGenerationCredits(pool, {
@@ -413,6 +446,11 @@ test(
       assert.equal(BigInt(personal.rows[0].reserved_balance), 0n);
 
       const exitJobId = randomUUID();
+      await insertEnterpriseJob(pool, {
+        jobId: exitJobId,
+        ownerId: employeeId,
+        workspaceId,
+      });
       await reserveOrganizationGenerationCredits(pool, {
         actorOwnerId: employeeId,
         amount: 100,
