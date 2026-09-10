@@ -365,6 +365,13 @@ function perImageCreditAmount(total: string, count: GenerationCount): string {
   }
 }
 
+function accountIdentityLabel(session: AuthenticationSession) {
+  if (session.account.role === "site_owner") return "站长";
+  if (session.account.businessRole === "enterprise") return "企业";
+  if (session.account.businessRole === "distributor") return "分销商";
+  return "个人";
+}
+
 export default function Home() {
   const referenceObjectUrlsRef = useRef(new Set<string>());
   const assetPulseTimerRef = useRef<number | null>(null);
@@ -482,6 +489,9 @@ export default function Home() {
   const accountInitials = accountEmail
     ? accountEmail.split("@")[0].slice(0, 2).toUpperCase()
     : "GG";
+  const accountIdentity = authenticationSession
+    ? accountIdentityLabel(authenticationSession)
+    : null;
   const activeBillingQuote = findBillingQuote(billingSummary, {
     count: generationCount,
     modelId: selectedModel,
@@ -2272,24 +2282,29 @@ export default function Home() {
           )}
           <div className="account-card">
             <div className="avatar">{accountInitials}</div>
-            <div>
+            <div className="account-card-copy">
               <strong>{accountEmail ?? "登录 GoodGood"}</strong>
-              <small
-                aria-label={billingSummary && authenticationSession ? `积分余额 ${billingSummary.account.availableCredits}` : undefined}
-                aria-live={authenticationSession ? "polite" : undefined}
-                className={billingSummary && authenticationSession ? "account-credit-balance" : ""}
-                role={authenticationSession ? "status" : undefined}
-              >
-                {authenticationSession
-                  ? billingLoading
-                    ? "积分读取中"
-                    : billingError
-                      ? "积分暂不可用"
-                      : billingSummary
-                        ? <><CircleDot aria-hidden="true" size={12} /><span>{billingSummary.account.availableCredits}</span></>
-                        : "积分暂不可用"
-                  : "Google 或邮箱验证码"}
-              </small>
+              <div className="account-card-meta">
+                {accountIdentity && (
+                  <span className="account-identity-badge">{accountIdentity}</span>
+                )}
+                <small
+                  aria-label={billingSummary && authenticationSession ? `积分余额 ${billingSummary.account.availableCredits}` : undefined}
+                  aria-live={authenticationSession ? "polite" : undefined}
+                  className={billingSummary && authenticationSession ? "account-credit-balance" : ""}
+                  role={authenticationSession ? "status" : undefined}
+                >
+                  {authenticationSession
+                    ? billingLoading
+                      ? "积分读取中"
+                      : billingError
+                        ? "积分暂不可用"
+                        : billingSummary
+                          ? <><CircleDot aria-hidden="true" size={12} /><span>{billingSummary.account.availableCredits}</span></>
+                          : "积分暂不可用"
+                    : "Google 或邮箱验证码"}
+                </small>
+              </div>
             </div>
             <button
               className="account-session-action"

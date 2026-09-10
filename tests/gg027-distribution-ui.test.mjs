@@ -108,6 +108,15 @@ test("GG-027 account identity and direct parent have dedicated display fields", 
   assert.match(admin, /className="hidden xl:block"/);
 });
 
+test("GG-027 workspace account card shows the resolved identity beside the credit balance", async () => {
+  const page = await source("app/page.tsx");
+  assert.match(page, /if \(session\.account\.role === "site_owner"\) return "站长"/);
+  assert.match(page, /if \(session\.account\.businessRole === "enterprise"\) return "企业"/);
+  assert.match(page, /if \(session\.account\.businessRole === "distributor"\) return "分销商"/);
+  assert.match(page, /return "个人"/);
+  assert.match(page, /className="account-card-meta"[\s\S]*className="account-identity-badge">\{accountIdentity\}<\/span>[\s\S]*account-credit-balance/);
+});
+
 test("GG-027 browser routes keep read operations cacheless and transfer writes CSRF-protected", async () => {
   const [summaryRoute, childRoute, transferRoute] = await Promise.all([
     source("app/api/distribution/route.ts"),

@@ -20,8 +20,11 @@
   failure keeps the workspace usable and offers a local retry. Zero is a valid
   balance, never an empty or error state.
 - On wide screens, a normal `积分记录` navigation row sits immediately below
-  `帮助` in the lower sidebar; the available balance sits below the username
-  as a Palace Red credit icon plus number. Its accessible name retains the full
+  `帮助` in the lower sidebar. The account card shows the username first, then
+  a static `站长 / 个人 / 企业 / 分销商` identity badge and the available balance
+  on one compact second row. `站长` wins over any business role; otherwise the
+  effective business role is shown, falling back to `个人`. The balance remains
+  a Palace Red credit icon plus number, and its accessible name retains the full
   `积分余额 N` meaning. On narrow screens, the compact balance
   remains the entry. Selecting either opens `/credits` without discarding the
   current composer, project, or active generation. The view shows settled spend

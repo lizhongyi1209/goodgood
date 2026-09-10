@@ -115,9 +115,12 @@ individual icon. Upload, settings, and send align to the same 40px box.
 
 - Desktop shows `积分记录` as a normal low-emphasis navigation row immediately
   below `帮助` in the lower sidebar. It has no secondary call-to-action copy.
-  The current balance replaces the signed-in status below the username as a
-  small Palace Red credit icon plus the exact numeric value, without `余额`,
-  `积分`, a fill, or a pill. Per-image price, batch total, and
+  The account card keeps the username on its first line. Its second line starts
+  with one quiet, non-interactive neutral identity badge (`站长`, `个人`, `企业`,
+  or `分销商`), followed by the current balance as a small Palace Red credit icon
+  plus the exact numeric value, without `余额`, `积分`, a fill, or a credit pill.
+  Site-owner identity takes precedence over any business-role value. Per-image
+  price, batch total, and
   approximate remaining image count do not repeat there; generation pricing
   remains beside the composer actions.
 - Mobile uses one small neutral balance pill in the existing top bar. It is
