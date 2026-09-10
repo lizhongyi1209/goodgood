@@ -18,7 +18,9 @@
 - 完整 `npm run check:local` 通过：264 项中 257 通过、7 个显式 opt-in 跳过、0 失败。
 - P0 已获用户授权并开通 Direct Mail 按量服务，没有购买资源包；账号正常，日/月额度为
   2,000/62,000，免费额度剩余总计 2,000、当日 200。已在新加坡 `ap-southeast-1` 创建
-  `mail.goodgood.o1key.com`，当前待验证；Cloudflare DNS、发信地址、凭据和真实投递均未提交。
+  `mail.goodgood.o1key.com`。用户确认 2048 位 DKIM 后，Cloudflare 的 DKIM/SPF/DMARC/MX 已由
+  权威服务器查询确认，阿里云域名状态为“验证通过”；根域 Email Routing 记录未改。发信地址、
+  SMTP 凭据和真实投递尚未提交。
 - 下列生产健康/测试数是 2026-09-09 留存事实，本轮未再次检查生产，不作为实时状态声明。
 
 - 生产入口 `https://goodgood.o1key.com` 当前部署源码
@@ -44,10 +46,10 @@
   `sha256:b441e16685c77842e18cefcdbcae00c2e50d25350fe598ea2e462dd61758f152` 已发布但未部署。
 - 支付、自动账户删除、举报、完整外部删除条款与完整 seed readiness 仍在 GG-900—GG-902
   搁置范围，本次发布没有恢复它们。
-- Next action: 用户确认 2048 位 DKIM 切换警告后，配置并验证 Cloudflare 的 DKIM/SPF/DMARC/MX；
-  再在动作时确认后创建持久 SMTP 凭据。取得支持邮箱和授权测试收件箱后做香港主机 TLS/真实收件验证。
-- Blockers: P1 本地实现无阻塞；P0 当前停在阿里云“旧 1024 位 DKIM 将失效”的 2048 位切换确认框，
-  且支持邮箱/测试收件箱尚未提供。这些外部配置缺失阻止真实投递和生产发布。GG-023 的新候选
+- Next action: 创建 `GoodGood <no-reply@mail.goodgood.o1key.com>` 发信地址；若回复地址为必填，先取得
+  真实支持邮箱。再在动作时确认后创建持久 SMTP 凭据，验证香港主机 TLS；真实投递需授权测试收件箱。
+- Blockers: P1 本地实现无阻塞；P0 的 DNS 已闭环，当前尚缺发信地址、动作时确认的 SMTP 凭据、
+  支持邮箱和授权测试收件箱。这些外部配置缺失阻止真实投递和生产发布。GG-023 的新候选
   生产/计费冒烟授权仍独立，不能复用此前单次授权。
 
 ## Milestones
