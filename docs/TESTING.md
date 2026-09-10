@@ -547,6 +547,12 @@ The timestamped result of the latest verified gate belongs in
 - Credit grant, live generation reservation, successful-Asset settlement,
   no-Asset release (including `SUBMISSION_UNKNOWN`), refund, and insufficient-
   credit paths are transactional and idempotent.
+- Enterprise credit tests separately prove site-owner grant authorization,
+  revocable member allocation/reclaim, organization and member shortfalls,
+  same-operation replay, and atomic reserve/settle/release. Competing member
+  reservations must serialize so at most the affordable subset succeeds;
+  failure leaves both projections and both immutable event streams unchanged.
+  The fixture also proves the same user's personal credit account is untouched.
 - Active payment-product selection, owner-scoped order idempotency, signed fake
   callback verification, exact amount matching, event replay/conflict handling,
   and paid-credit grant are transactional and idempotent.

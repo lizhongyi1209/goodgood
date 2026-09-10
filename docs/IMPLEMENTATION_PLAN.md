@@ -2,8 +2,8 @@
 
 - Last synchronized: 2026-09-10
 - Current phase: 已开放 controlled alpha；累计候选已发布，Sharp 安全候选等待新发布授权。
-- Current objective: GG-030 企业工作区已完成阶段 0—1 决策、迁移、企业成员和邀请闭环，
-  准备实现企业积分池与成员额度；当前线上 `65ceb168` 保持不变。
+- Current objective: GG-030 企业工作区已完成阶段 0—2 决策、成员/邀请和企业积分/额度闭环，
+  准备实现创作归属与资产审阅；当前线上 `65ceb168` 保持不变。
 
 ## Current checkpoint
 
@@ -39,8 +39,12 @@
 - GG-030 阶段 1 迁移/Drizzle schema 与 organization repository 已完成；静态/纯逻辑 3/3、
   ESLint、TypeScript 通过，显式临时 PostgreSQL `goodgood_gg030_stage1` 的完整用例 4/4 通过，
   容器已移除。未改认证代码、未触发邮件/生图/生产。
-- Next action: 实现阶段 2 Workspace 积分账户、成员额度事件和原子分配/回收/预留/结算/释放，
-  先跑账务守恒、幂等和并发测试。
+- GG-030 阶段 2 迁移/Drizzle schema 与 enterprise credit repository 已完成；默认定向 5/5、
+  ESLint、TypeScript 通过，显式临时 PostgreSQL `goodgood_gg030_stage2` 的阶段 1—2 用例 7/7
+  通过。企业积分池、可回收成员额度和生成预留/结算/释放保持原子、幂等、零和；并发不透支，
+  个人积分账户未改动，临时容器已移除。
+- Next action: 实现阶段 3 创作数据 Workspace 回填与创作者证据，将企业积分事务接入生成链路，
+  并增加管理者消费/团队资产的隔离读模型。
 - Blockers: GG-030 当前无本地实现阻塞；最终集成必须等待 main 明确吸收哪些 GG-027/GG-029
   结果后复核迁移编号。真实邮件、生图和生产发布均不在当前授权内。
 
@@ -54,7 +58,7 @@
 | M8 / controlled alpha | 已开放并完成本次累计发布 | 审核账户、核心生图、恢复与发布门禁 |
 | GG-004—GG-022 | 已部署或完成 | 累计功能、可靠性、恢复工具和生产发布 |
 | GG-023 | 实施中 | Sharp 0.35.4 安全修复与 main CI 恢复 |
-| GG-030 | 阶段 0—1 完成 | 企业工作区/成员/邀请已验证；阶段 2 企业积分待实现 |
+| GG-030 | 阶段 0—2 完成 | 企业工作区、成员/邀请、积分池/成员额度已验证；阶段 3 待实现 |
 | 完整 C6 / full seed | 搁置 | 删除、举报、外部条款与进一步配套，见 GG-900/901 |
 | M9 | 搁置 | 支付/支付宝，见 GG-902 |
 

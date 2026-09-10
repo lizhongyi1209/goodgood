@@ -298,6 +298,15 @@ allocation or generation rolls back budget and credit evidence together and
 keeps the dialog/composer input. No error falls back to personal credit,
 GG-027 transfer, direct cache edit, payment order, or provider submission.
 
+`ORGANIZATION_CREDIT_UNAVAILABLE` and `MEMBER_BUDGET_UNAVAILABLE` distinguish a
+disabled projection from a shortfall without exposing another Workspace.
+`MEMBER_BUDGET_CONFLICT` rejects a stale version, unchanged limit, or reclaim
+below settled plus reserved use. A second, different close for one reservation
+returns `ORGANIZATION_CREDIT_RESERVATION_CLOSED`; a same-key/same-operation
+replay returns the recorded result. Settlement and release remain allowed for
+an in-flight reservation after Workspace suspension so the ledger cannot stay
+half closed.
+
 Manager usage and Asset reads retain the current list on transient failures and
 offer retry. An Asset not in the validated organization scope returns the same
 not-found response as an unknown ID. Raw reference objects remain creator-only;

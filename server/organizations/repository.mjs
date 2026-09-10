@@ -463,6 +463,12 @@ export function acceptOrganizationInvitation(
           WHERE id = $1`,
         [membershipId, invitation.intended_role],
       );
+      await client.query(
+        `UPDATE member_budgets
+            SET status = 'active', version = version + 1, updated_at = now()
+          WHERE membership_id = $1 AND status = 'closed'`,
+        [membershipId],
+      );
     } else {
       throw organizationConflictError("该员工已经属于这个企业。");
     }
@@ -592,6 +598,15 @@ export function changeOrganizationMembership(
         membership: await readMembership(client, replay.membership_id),
       };
     }
+    const reusedBudgetKey = await client.query(
+      `SELECT 1 FROM member_budget_events
+        WHERE workspace_id = $1 AND idempotency_key = $2
+        LIMIT 1`,
+      [workspaceId, idempotencyKey],
+    );
+    if (reusedBudgetKey.rowCount) {
+      throw organizationIdempotencyConflictError();
+    }
     const targetResult = await client.query(
       `SELECT m.*, u.email
          FROM workspace_memberships m
@@ -663,6 +678,64 @@ export function changeOrganizationMembership(
         "成员信息已更新，请刷新后重试。",
         409,
       );
+    }
+    if (nextStatus === "removed") {
+      const budgetResult = await client.query(
+        `SELECT b.*, a.id AS account_id, a.allocated_balance
+           FROM member_budgets b
+           JOIN workspace_credit_accounts a
+             ON a.workspace_id = b.workspace_id AND a.unit = 'credit'
+          WHERE b.workspace_id = $1 AND b.membership_id = $2
+            AND b.status = 'active'
+          FOR UPDATE OF b, a`,
+        [workspaceId, membershipId],
+      );
+      const budget = budgetResult.rows[0];
+      if (budget) {
+        const reclaimable =
+          BigInt(budget.credit_limit) -
+          BigInt(budget.settled_usage) -
+          BigInt(budget.reserved_usage);
+        const accountUpdate = await client.query(
+          `UPDATE workspace_credit_accounts
+              SET allocated_balance = allocated_balance - $2,
+                  version = version + 1, updated_at = now()
+            WHERE id = $1 AND allocated_balance >= $2
+          RETURNING id`,
+          [budget.account_id, reclaimable.toString()],
+        );
+        if (!accountUpdate.rowCount) {
+          throw organizationConflictError("企业额度投影不一致，无法移除成员。");
+        }
+        await client.query(
+          `UPDATE member_budgets
+              SET credit_limit = settled_usage + reserved_usage,
+                  status = 'closed', version = version + 1, updated_at = now()
+            WHERE id = $1`,
+          [budget.id],
+        );
+        if (reclaimable > 0n) {
+          await client.query(
+            `INSERT INTO member_budget_events (
+               id, workspace_id, member_budget_id, event_type, amount,
+               actor_owner_id, actor, reason, idempotency_key, operation_hash,
+               metadata
+             ) VALUES ($1, $2, $3, 'reclaim', $4, $5,
+                       'organization_manager', $6, $7, $8, $9::jsonb)`,
+            [
+              randomUUID(),
+              workspaceId,
+              budget.id,
+              reclaimable.toString(),
+              actorOwnerId,
+              reason,
+              idempotencyKey,
+              operationHash,
+              JSON.stringify({ cause: "membership_removed" }),
+            ],
+          );
+        }
+      }
     }
     await client.query(
       `INSERT INTO workspace_audit_events (

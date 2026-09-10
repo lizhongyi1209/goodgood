@@ -110,6 +110,10 @@ export const workspaceMemberships = pgTable(
       table.workspaceId,
       table.ownerId,
     ),
+    uniqueIndex("workspace_memberships_id_workspace_unique").on(
+      table.id,
+      table.workspaceId,
+    ),
     index("workspace_memberships_owner_status_idx").on(
       table.ownerId,
       table.status,
@@ -255,7 +259,8 @@ export const workspaceAuditEvents = pgTable(
       sql`${table.actionType} in (
         'create_organization', 'invite_member', 'accept_invitation',
         'revoke_invitation', 'change_member_role', 'suspend_member',
-        'restore_member', 'remove_member'
+        'restore_member', 'remove_member', 'grant_organization_credits',
+        'set_member_budget'
       )`,
     ),
     check(
@@ -269,6 +274,287 @@ export const workspaceAuditEvents = pgTable(
     check(
       "workspace_audit_events_operation_hash_check",
       sql`length(${table.operationHash}) = 64`,
+    ),
+  ],
+);
+
+export const workspaceCreditAccounts = pgTable(
+  "workspace_credit_accounts",
+  {
+    id: uuid("id").primaryKey(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "restrict" }),
+    unit: text("unit").default("credit").notNull(),
+    availableBalance: bigint("available_balance", { mode: "bigint" })
+      .default(sql`0`)
+      .notNull(),
+    reservedBalance: bigint("reserved_balance", { mode: "bigint" })
+      .default(sql`0`)
+      .notNull(),
+    allocatedBalance: bigint("allocated_balance", { mode: "bigint" })
+      .default(sql`0`)
+      .notNull(),
+    version: bigint("version", { mode: "bigint" }).default(sql`0`).notNull(),
+    status: text("status").default("active").notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("workspace_credit_accounts_workspace_unit_unique").on(
+      table.workspaceId,
+      table.unit,
+    ),
+    uniqueIndex("workspace_credit_accounts_id_workspace_unique").on(
+      table.id,
+      table.workspaceId,
+    ),
+    index("workspace_credit_accounts_workspace_idx").on(
+      table.workspaceId,
+      table.status,
+    ),
+    check(
+      "workspace_credit_accounts_unit_check",
+      sql`length(${table.unit}) between 1 and 32`,
+    ),
+    check(
+      "workspace_credit_accounts_balance_check",
+      sql`${table.availableBalance} >= 0 and ${table.reservedBalance} >= 0
+        and ${table.allocatedBalance} >= 0
+        and ${table.allocatedBalance} <= ${table.availableBalance} + ${table.reservedBalance}`,
+    ),
+    check("workspace_credit_accounts_version_check", sql`${table.version} >= 0`),
+    check(
+      "workspace_credit_accounts_status_check",
+      sql`${table.status} in ('active', 'frozen', 'closed')`,
+    ),
+  ],
+);
+
+export const memberBudgets = pgTable(
+  "member_budgets",
+  {
+    id: uuid("id").primaryKey(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "restrict" }),
+    membershipId: uuid("membership_id").notNull(),
+    creditLimit: bigint("credit_limit", { mode: "bigint" })
+      .default(sql`0`)
+      .notNull(),
+    settledUsage: bigint("settled_usage", { mode: "bigint" })
+      .default(sql`0`)
+      .notNull(),
+    reservedUsage: bigint("reserved_usage", { mode: "bigint" })
+      .default(sql`0`)
+      .notNull(),
+    version: bigint("version", { mode: "bigint" }).default(sql`0`).notNull(),
+    status: text("status").default("active").notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.membershipId, table.workspaceId],
+      foreignColumns: [workspaceMemberships.id, workspaceMemberships.workspaceId],
+      name: "member_budgets_membership_workspace_fk",
+    }).onDelete("restrict"),
+    uniqueIndex("member_budgets_membership_unique").on(table.membershipId),
+    uniqueIndex("member_budgets_id_workspace_unique").on(
+      table.id,
+      table.workspaceId,
+    ),
+    index("member_budgets_workspace_status_idx").on(
+      table.workspaceId,
+      table.status,
+      table.updatedAt,
+      table.id,
+    ),
+    check(
+      "member_budgets_amount_check",
+      sql`${table.creditLimit} >= 0 and ${table.settledUsage} >= 0
+        and ${table.reservedUsage} >= 0
+        and ${table.settledUsage} + ${table.reservedUsage} <= ${table.creditLimit}`,
+    ),
+    check("member_budgets_version_check", sql`${table.version} >= 0`),
+    check("member_budgets_status_check", sql`${table.status} in ('active', 'closed')`),
+  ],
+);
+
+export const workspaceCreditLedgerEntries = pgTable(
+  "workspace_credit_ledger_entries",
+  {
+    id: uuid("id").primaryKey(),
+    accountId: uuid("account_id").notNull(),
+    workspaceId: uuid("workspace_id").notNull(),
+    memberBudgetId: uuid("member_budget_id"),
+    entryType: text("entry_type").notNull(),
+    amount: bigint("amount", { mode: "bigint" }).notNull(),
+    idempotencyKey: text("idempotency_key").notNull(),
+    operationHash: text("operation_hash").notNull(),
+    reason: text("reason").notNull(),
+    relatedJobId: uuid("related_job_id"),
+    priorEntryId: uuid("prior_entry_id").references(
+      (): AnyPgColumn => workspaceCreditLedgerEntries.id,
+      { onDelete: "restrict" },
+    ),
+    actor: text("actor").notNull(),
+    metadata: jsonb("metadata").default({}).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.accountId, table.workspaceId],
+      foreignColumns: [workspaceCreditAccounts.id, workspaceCreditAccounts.workspaceId],
+      name: "workspace_credit_ledger_account_workspace_fk",
+    }).onDelete("restrict"),
+    foreignKey({
+      columns: [table.memberBudgetId, table.workspaceId],
+      foreignColumns: [memberBudgets.id, memberBudgets.workspaceId],
+      name: "workspace_credit_ledger_budget_workspace_fk",
+    }).onDelete("restrict"),
+    uniqueIndex("workspace_credit_ledger_account_idempotency_unique").on(
+      table.accountId,
+      table.idempotencyKey,
+    ),
+    index("workspace_credit_ledger_workspace_created_idx").on(
+      table.workspaceId,
+      table.createdAt,
+      table.id,
+    ),
+    index("workspace_credit_ledger_job_idx")
+      .on(table.relatedJobId, table.createdAt, table.id)
+      .where(sql`${table.relatedJobId} is not null`),
+    uniqueIndex("workspace_credit_ledger_reserve_job_unique")
+      .on(table.workspaceId, table.relatedJobId)
+      .where(sql`${table.entryType} = 'reserve'`),
+    uniqueIndex("workspace_credit_ledger_close_unique")
+      .on(table.priorEntryId)
+      .where(sql`${table.entryType} in ('settle', 'release')`),
+    check(
+      "workspace_credit_ledger_type_check",
+      sql`${table.entryType} in ('grant', 'reserve', 'settle', 'release')`,
+    ),
+    check(
+      "workspace_credit_ledger_amount_check",
+      sql`(${table.entryType} in ('grant', 'release') and ${table.amount} > 0)
+        or (${table.entryType} in ('reserve', 'settle') and ${table.amount} < 0)`,
+    ),
+    check(
+      "workspace_credit_ledger_reason_check",
+      sql`length(${table.reason}) between 2 and 200`,
+    ),
+    check(
+      "workspace_credit_ledger_idempotency_check",
+      sql`length(${table.idempotencyKey}) between 8 and 200`,
+    ),
+    check(
+      "workspace_credit_ledger_operation_hash_check",
+      sql`length(${table.operationHash}) = 64`,
+    ),
+    check(
+      "workspace_credit_ledger_actor_check",
+      sql`length(${table.actor}) between 2 and 100`,
+    ),
+    check(
+      "workspace_credit_ledger_relation_check",
+      sql`(${table.entryType} = 'grant' and ${table.memberBudgetId} is null
+          and ${table.relatedJobId} is null and ${table.priorEntryId} is null)
+        or (${table.entryType} = 'reserve' and ${table.memberBudgetId} is not null
+          and ${table.relatedJobId} is not null and ${table.priorEntryId} is null)
+        or (${table.entryType} in ('settle', 'release')
+          and ${table.memberBudgetId} is not null
+          and ${table.relatedJobId} is not null and ${table.priorEntryId} is not null)`,
+    ),
+  ],
+);
+
+export const memberBudgetEvents = pgTable(
+  "member_budget_events",
+  {
+    id: uuid("id").primaryKey(),
+    workspaceId: uuid("workspace_id").notNull(),
+    memberBudgetId: uuid("member_budget_id").notNull(),
+    creditLedgerEntryId: uuid("credit_ledger_entry_id").references(
+      () => workspaceCreditLedgerEntries.id,
+      { onDelete: "restrict" },
+    ),
+    eventType: text("event_type").notNull(),
+    amount: bigint("amount", { mode: "bigint" }).notNull(),
+    actorOwnerId: uuid("actor_owner_id").references(() => users.id, {
+      onDelete: "restrict",
+    }),
+    actor: text("actor").notNull(),
+    relatedJobId: uuid("related_job_id"),
+    priorEventId: uuid("prior_event_id").references(
+      (): AnyPgColumn => memberBudgetEvents.id,
+      { onDelete: "restrict" },
+    ),
+    reason: text("reason").notNull(),
+    idempotencyKey: text("idempotency_key").notNull(),
+    operationHash: text("operation_hash").notNull(),
+    metadata: jsonb("metadata").default({}).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.memberBudgetId, table.workspaceId],
+      foreignColumns: [memberBudgets.id, memberBudgets.workspaceId],
+      name: "member_budget_events_budget_workspace_fk",
+    }).onDelete("restrict"),
+    uniqueIndex("member_budget_events_workspace_idempotency_unique").on(
+      table.workspaceId,
+      table.idempotencyKey,
+    ),
+    uniqueIndex("member_budget_events_credit_entry_unique").on(
+      table.creditLedgerEntryId,
+    ),
+    index("member_budget_events_budget_created_idx").on(
+      table.memberBudgetId,
+      table.createdAt,
+      table.id,
+    ),
+    uniqueIndex("member_budget_events_reserve_job_unique")
+      .on(table.workspaceId, table.relatedJobId)
+      .where(sql`${table.eventType} = 'reserve'`),
+    uniqueIndex("member_budget_events_close_unique")
+      .on(table.priorEventId)
+      .where(sql`${table.eventType} in ('settle', 'release')`),
+    check(
+      "member_budget_events_type_check",
+      sql`${table.eventType} in ('allocate', 'reclaim', 'reserve', 'settle', 'release')`,
+    ),
+    check("member_budget_events_amount_check", sql`${table.amount} > 0`),
+    check(
+      "member_budget_events_actor_check",
+      sql`length(${table.actor}) between 2 and 100`,
+    ),
+    check(
+      "member_budget_events_reason_check",
+      sql`length(${table.reason}) between 2 and 200`,
+    ),
+    check(
+      "member_budget_events_idempotency_check",
+      sql`length(${table.idempotencyKey}) between 8 and 200`,
+    ),
+    check(
+      "member_budget_events_operation_hash_check",
+      sql`length(${table.operationHash}) = 64`,
+    ),
+    check(
+      "member_budget_events_relation_check",
+      sql`(${table.eventType} in ('allocate', 'reclaim')
+          and ${table.actorOwnerId} is not null and ${table.relatedJobId} is null
+          and ${table.priorEventId} is null and ${table.creditLedgerEntryId} is null)
+        or (${table.eventType} = 'reserve' and ${table.actorOwnerId} is not null
+          and ${table.relatedJobId} is not null and ${table.priorEventId} is null
+          and ${table.creditLedgerEntryId} is not null)
+        or (${table.eventType} in ('settle', 'release')
+          and ${table.actorOwnerId} is null and ${table.relatedJobId} is not null
+          and ${table.priorEventId} is not null
+          and ${table.creditLedgerEntryId} is not null)`,
     ),
   ],
 );

@@ -166,7 +166,7 @@ Migration `0016_gg010_nano_multi_output_prices.sql` adds immutable Nano Banana 2
 count-2/count-4 prices of 20/40 credits for 1K, 2K, and 4K. It changes no
 existing price, ledger, batch, attempt, or Asset row.
 
-## GG-030 additions (foundation implemented; credit and creative scope pending)
+## GG-030 additions (foundation and credit implemented; creative scope pending)
 
 ### Workspace
 
@@ -204,6 +204,14 @@ append-only and the cached available/reserved balances remain rebuildable.
 GG-027 `transfer_in | transfer_out` entries, when integrated, are permanent
 owner-account movements and are not member budgets.
 
+Migration `0025_gg030_workspace_credits.sql` implements the organization side
+without altering `credit_accounts` or `credit_ledger_entries`. The cached
+organization projection stores available, reserved, and allocated balances;
+allocated means the sum of member limits not yet settled. An allocation changes
+allocated balance, reserve moves available to reserved, settlement reduces both
+reserved and allocated, and release moves reserved back to available. Database
+checks forbid a negative projection or allocation beyond total pool value.
+
 ### MemberBudget and MemberBudgetEvent
 
 One effective spending projection per organization membership: cumulative
@@ -212,6 +220,19 @@ allocate, reclaim, reserve, settle, and release with actor, reason, related job,
 idempotency identity/hash, and timestamp. Allocated but unspent capacity is an
 earmark over the organization pool, not owned credit and not transferable by
 the member.
+
+The repository locks the Workspace, account, membership, and budget in one
+transaction. It appends the organization ledger entry and matching member event
+with the same job evidence; concurrent reservations therefore cannot spend the
+same organization or member capacity twice. `related_job_id` remains an
+unconstrained UUID until the creative-scope migration gives generation jobs a
+Workspace identity, at which point the same-scope foreign key is added.
+
+Removing a member closes the budget and reclaims its immediately spendable
+remainder in the membership transaction. Any in-flight reservation remains
+auditable; its later settlement or release removes the final closed-budget
+allocation. Reaccepting a new invitation reopens the same historical budget at
+its settled floor before a manager grants new capacity.
 
 ### WorkspaceAuditEvent
 

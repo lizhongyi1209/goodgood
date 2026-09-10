@@ -37,3 +37,49 @@ export function invitationUnavailableError() {
     404,
   );
 }
+
+export function organizationCreditUnavailableError() {
+  return new OrganizationError(
+    "ORGANIZATION_CREDIT_UNAVAILABLE",
+    "企业积分账户当前不可用。",
+    409,
+  );
+}
+
+export function organizationCreditInsufficientError() {
+  return new OrganizationError(
+    "ORGANIZATION_CREDIT_INSUFFICIENT",
+    "企业可用积分不足，请联系企业管理员补充积分。",
+    409,
+  );
+}
+
+export function memberBudgetUnavailableError() {
+  return new OrganizationError(
+    "MEMBER_BUDGET_UNAVAILABLE",
+    "你的企业积分额度当前不可用，请联系企业管理员。",
+    409,
+  );
+}
+
+export function memberBudgetInsufficientError() {
+  return new OrganizationError(
+    "MEMBER_BUDGET_INSUFFICIENT",
+    "你的企业积分额度不足，请联系企业管理员调整额度。",
+    409,
+  );
+}
+
+export function memberBudgetConflictError(
+  message = "员工额度已经发生变化，请刷新后重试。",
+) {
+  return new OrganizationError("MEMBER_BUDGET_CONFLICT", message, 409);
+}
+
+export function organizationCreditReservationClosedError() {
+  return new OrganizationError(
+    "ORGANIZATION_CREDIT_RESERVATION_CLOSED",
+    "这笔企业积分预留已经结算或释放。",
+    409,
+  );
+}
