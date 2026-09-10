@@ -139,6 +139,27 @@ individual icon. Upload, settings, and send align to the same 40px box.
 - Loading, empty, failure, retry, and mutation-in-progress states retain the
   page silhouette so rows and controls do not jump.
 
+## Enterprise workspace management
+
+- Keep Workspace identity visible but quiet in the existing account/navigation
+  area. Personal and organization scopes use names and role/status text, not
+  competing brand colors or large tenant banners.
+- Enterprise overview, members, usage, and Assets remain working surfaces on the
+  white image-first canvas. Reuse the compact admin table/card rhythm without
+  making organization managers look like GoodGood site owners.
+- Member rows lead with email/name, then role, membership state, allocated,
+  consumed, reserved, and remaining credit. Wide layouts use a readable table;
+  narrow layouts use stacked labeled fields and retain the primary action.
+- Invitation, role/status, and budget dialogs preserve their page context.
+  Confirmed allocation uses Palace Red only for the final action; current/new
+  amounts and company unallocated capacity are visually distinct without wallet
+  or checkout styling.
+- Team Assets keep the normal gallery-first presentation. Creator and usage
+  metadata stay subordinate to images; employee oversight must not turn the
+  gallery into a ledger table.
+- Loading, empty, access-denied, expired-invite, stale-version, mutation, and
+  retry states keep stable silhouettes and keyboard/focus behavior.
+
 ## Image presentation
 
 - The asset library separates generated images from uploaded materials without

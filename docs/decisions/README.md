@@ -53,7 +53,12 @@ Current records:
 - `0040-reference-quick-editor.md`
 - `0041-price-nano-banana-pro-at-fifteen-credits.md`
 - `0042-restore-drills-with-active-alpha-sessions.md`
+- `0046-enterprise-workspaces-members-and-budgets.md`
 
 Accepted describes a decision, not proof of deployment. ADR 0022/0023's full
 runtime rollout is deferred under ADR 0024. The current release and rollout
 status live in `docs/CURRENT_STATE.md`; older ADR context is historical.
+
+ADR numbering 0043—0045 is occupied by isolated parallel tasks that are not in
+this branch's verified main baseline. GG-030 deliberately uses 0046 so later
+integration does not renumber accepted decisions.

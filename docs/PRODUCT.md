@@ -109,3 +109,26 @@ Historical implementation/verification stages are retained in `docs/history/`.
 - Preserve creative context; never make a retry re-enter known information.
 - Simulated data must behave like real data: ordering, ratios, timestamps,
   states, and restored parameters must remain coherent.
+
+## Accepted enterprise direction (not implemented or deployed)
+
+GG-030 adds organization Workspaces without turning a company principal into a
+GoodGood site owner. A verified user may retain a personal Workspace and join
+one or more organization Workspaces as `org_owner`, `org_admin`, or
+`org_member`. Company managers invite verified email identities, allocate
+revocable member spending limits from one organization credit pool, inspect
+organization generation consumption, and review generated company Assets.
+
+Personal history and credit never become company data automatically. Work made
+in an organization Workspace belongs to that organization and retains its
+human creator; leaving the organization removes access without erasing company
+history. Managers can review generated outputs, prompts, and parameter
+snapshots, while reusable raw reference materials remain creator-restricted in
+the first release.
+
+This direction is distinct from GG-027's commercial `enterprise | distributor`
+classification and permanent direct-child credit transfers, and independent of
+whether Authing or GG-029 email OTP proves the user's email. Exact ownership,
+authorization, and budget rules are fixed in ADR 0046. None of these enterprise
+capabilities are part of the current production scope until implementation,
+verification, and a separate release approval complete.

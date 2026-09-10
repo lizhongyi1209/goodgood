@@ -426,6 +426,8 @@ The timestamped result of the latest verified gate belongs in
 - Parallel client-run insertion, temporary-to-durable ID replacement, terminal
   isolation, persistent ID filtering, and absence of client truncation.
 - Newest-first batch ordering.
+- Workspace capability mapping; invitation and membership transitions; member
+  budget allocation/reserve/settle/release arithmetic and operation hashes.
 
 ### Component
 
@@ -458,10 +460,30 @@ The timestamped result of the latest verified gate belongs in
   bookmark, and download resolves a fresh owner-scoped URL by Asset ID before
   creating a Blob download without navigation. URL resolution and transfer
   failures retain the page state and expose a diagnostic stage.
+- Workspace switcher with personal, one-organization, multi-organization,
+  suspended/removed membership, direct URL, refresh, and Back/Forward states.
+- Enterprise members, invitation, budget, usage, and team-Asset loading, empty,
+  failure, stale, mutation, responsive, keyboard, and retry states.
 
 ### API/integration
 
 - Auth and ownership on every write/read.
+- Idempotent personal-Workspace backfill preserves all owner IDs, counts,
+  balances, project/job/Asset order, and object keys; migration rerun is a no-op.
+- Site-owner organization creation and initial-owner assignment are atomic and
+  cannot be invoked by organization roles or inferred from email/domain/order.
+- Invitation create/accept/revoke/expire, verified-email match, replay,
+  conflicting replay, concurrent acceptance, membership state/role matrix, and
+  last-owner protection.
+- Organization credit plus member-budget allocation/reclaim/reserve/settle/
+  release is transactional, idempotent, concurrency-safe, and never falls back
+  to personal credit or GG-027 transfers.
+- Personal, organization-member, organization-manager, removed-member, and
+  cross-organization project/generation/Asset/reference boundaries return no
+  existence leak and mint only permitted signed reads.
+- Enterprise usage derives pending/released/settled state from durable job and
+  ledger evidence; manager Asset download appends safe audit without storing
+  signed URLs.
 - Signed upload lifecycle and invalid-file rejection.
 - Owner-scoped reusable-reference listing returns only accepted ready rows with
   fresh signed reads; selecting one reuses its stable ID without a PUT.
@@ -612,6 +634,14 @@ settlement remains outside the current scope.
    skeleton and terminal result/error; a selected retry affects only that run.
 10. Upload one reference -> open a new creation -> select it from uploaded
     materials -> submit by the same reference ID without another object upload.
+11. Site owner creates one enterprise for a verified principal -> principal
+    invites one employee -> employee accepts with matching verified email.
+12. Owner allocates employee budget -> employee generates in the enterprise ->
+    company and member reserve/settle once -> owner sees usage and generated
+    Asset while the employee's personal library remains hidden.
+13. Failed enterprise generation releases both company credit and member budget;
+    suspending/removing the employee blocks organization access but preserves
+    company history for managers.
 
 ### Staging-only verification
 

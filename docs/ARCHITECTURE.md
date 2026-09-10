@@ -249,6 +249,44 @@ Project index/detail, asset index/detail, and root creation are URL-addressable.
 `/create` is the canonical creation URL while `/` remains a compatibility entry
 to the same state; future Explore, Moodboards, and Help routes remain deferred.
 
+## Accepted GG-030 enterprise boundary (not implemented)
+
+GG-030 introduces `Workspace` as the authorization and durable ownership scope.
+Every existing user receives one personal Workspace; organization Workspaces
+have explicit memberships and roles. The authenticated session continues to
+resolve one stable internal user. A workspace selector supplied by the browser
+is accepted only after the server validates the current membership, user access
+state, organization state, and requested capability.
+
+The target feature boundary is:
+
+```text
+verified GoodGood user
+  -> workspace authorization (personal owner or active organization member)
+  -> creation/project/reference/asset repository scoped by workspace
+  -> personal credit, or organization credit + member budget reservation
+  -> durable creator and workspace audit evidence
+```
+
+Organization membership is not an Authing group, GG-029 challenge, email-domain
+rule, or GG-027 direct-child relationship. GG-030 consumes the existing
+provider-neutral session and normalized verified email. Invitation acceptance
+matches that email transactionally; a later notification adapter may send the
+invite but cannot reuse authentication codes or secrets.
+
+Enterprise billing uses one Workspace credit account plus an earmarked member
+budget. Generation locks and validates both scopes before reserve, then settles
+or releases them together. A Workspace mismatch among project, batch, job,
+Asset, credit entry, or budget entry fails closed. Existing personal ledger rows
+retain their user and receive the corresponding personal Workspace during an
+additive backfill.
+
+Managers read generated company Assets through a role-authorized query and
+fresh signed URLs. They do not impersonate the creator and cannot use the same
+query to sign personal or raw reusable-reference objects. Platform site-owner
+operations remain under `/admin/users`; enterprise administration has a
+separate repository, API, and route boundary.
+
 ## Target production topology
 
 ```mermaid

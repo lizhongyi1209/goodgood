@@ -162,6 +162,68 @@ Migration `0016_gg010_nano_multi_output_prices.sql` adds immutable Nano Banana 2
 count-2/count-4 prices of 20/40 credits for 1K, 2K, and 4K. It changes no
 existing price, ledger, batch, attempt, or Asset row.
 
+## Accepted GG-030 additions (not implemented)
+
+### Workspace
+
+Stable ownership/authorization scope with `personal | organization` kind,
+stable public identity, name, `active | suspended` state, and timestamps. Every
+existing User gains exactly one personal Workspace through an additive,
+idempotent backfill. Organization Workspaces never reuse a User ID as their
+identity.
+
+### WorkspaceMembership
+
+Workspace, User, organization role `org_owner | org_admin | org_member`, active
+membership state, inviter/activation evidence, and timestamps. Personal
+Workspace ownership is unique and is not managed through organization APIs.
+Organization role, platform system role, user access, business identity, tier,
+and credit remain independent. Removing a membership closes its effective
+interval rather than deleting history; the last active organization owner
+cannot be removed without an atomic ownership transfer.
+
+### WorkspaceInvitation
+
+Organization Workspace, normalized invited email, intended role, inviting User,
+`pending | accepted | revoked | expired` state, expiry, idempotency identity/hash,
+and timestamps. Acceptance requires an authenticated User whose verified
+normalized email is equal, then creates or activates exactly one membership in
+the same transaction. It stores no password, authentication code, or SMTP
+credential and reveals no cross-account existence to an unauthorized caller.
+
+### WorkspaceCreditAccount and WorkspaceCreditLedgerEntry
+
+The target credit subject is a Workspace. Personal rows preserve the current
+owner ledger semantics; an organization row is funded only by a separately
+authorized grant or later accepted purchase path. The ledger remains
+append-only and the cached available/reserved balances remain rebuildable.
+GG-027 `transfer_in | transfer_out` entries, when integrated, are permanent
+owner-account movements and are not member budgets.
+
+### MemberBudget and MemberBudgetEvent
+
+One effective spending projection per organization membership: cumulative
+limit, settled use, reserved use, version, and status. Append-only events record
+allocate, reclaim, reserve, settle, and release with actor, reason, related job,
+idempotency identity/hash, and timestamp. Allocated but unspent capacity is an
+earmark over the organization pool, not owned credit and not transferable by
+the member.
+
+### WorkspaceAuditEvent
+
+Append-only enterprise administration evidence for organization creation,
+invitation, acceptance, role/status change, budget change, enterprise grant,
+and manager Asset download. It records server-derived actor, workspace, target,
+action, reason where required, idempotency evidence, safe metadata, and time;
+it never stores authentication secrets, signed URLs, prompts, or image bytes.
+
+Existing `CreationDraft`, `ReferenceAsset`, `Project`, `GenerationBatch`,
+`GenerationJob`, `CreditAccount`, `CreditLedgerEntry`, and `Asset` gain a
+Workspace identity in the implementation phase. Creative records also retain
+the actual creating User. Backfill maps every current record to its owner's
+personal Workspace without changing public IDs, object keys, balance, order, or
+history.
+
 ## Entities
 
 ### User
@@ -413,6 +475,21 @@ Contains ordering and membership metadata; never duplicate image bytes.
 - Account review and promotional grants are server-authorized, idempotent, and
   append-auditable. Test grants never create payment evidence.
 - Ledger, payment, queue, and callback writes are idempotent.
+- A browser Workspace ID never grants access; the current active personal owner
+  or organization membership is resolved on every protected read/write.
+- A generation and its project, batch, Assets, credit account, member budget,
+  and creator must agree on one Workspace. A mismatch fails before provider work
+  and cannot be repaired by silently reassigning a browser-submitted record.
+- Organization available credit and member remaining/reserved budget cannot be
+  negative. Allocation, reserve, settle, release, and reclaim update all
+  affected projections and append evidence in one transaction.
+- Organization generation never consumes personal credit. Welcome or personal
+  test grants never become organization balance through backfill.
+- Manager Asset review includes organization-generated outputs and immutable
+  prompt/parameter snapshots, but excludes personal Workspaces and creator-only
+  raw reusable reference reads.
+- Closing a membership blocks new organization access and signed reads while
+  preserving organization Assets, usage, ledger, and audit history.
 - Project creation is owner-scoped and idempotent; batches cannot be reassigned
   from one project to another by a browser request.
 - Batch order is submission order, newest first in UI.
