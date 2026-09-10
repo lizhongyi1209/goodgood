@@ -99,17 +99,15 @@ real local SMTP/browser loop without real recipients or provider billing.
 Production provider, DNS, mailbox, proxy-chain, and mobile-device evidence
 remain P0/P3/P4 gates and must not be inferred from the local success.
 
-GG-029 email authentication coverage additionally proves server-only SMTP/code
-secrets, conservative mailbox normalization, untrusted proxy-header rejection,
-keyed code digests, shared send/verify limits, bounded JSON and Origin checks,
-SMTP accepted/unknown outcomes, email-mode logout, cleanup retention, and the
-binding/challenge/rate/audit schema. The opt-in PostgreSQL test must target the
-exact loopback database `gg029_email_auth_test`; it proves persistent failed
-attempts, cross-browser rejection, concurrent one-time verification, random
-identity subjects, pending admission, and one welcome grant. The isolated
-`goodgood-gg029` Compose project uses Mailpit and mock generation only. Its
-synthetic SMTP and 390×844 browser flow are local evidence, not real-provider or
-production evidence.
+GG-029 P2 operations coverage additionally proves redacted aggregate and exact
+request-ID support reports, stable budget/delivery/cleanup alert codes, cleanup
+heartbeat persistence, bounded read-only arguments, and account suspension
+that transactionally revokes only the target owner's active sessions. The
+isolated `goodgood-gg029` Compose project uses Mailpit and mock generation only.
+Its synthetic SMTP and 390×844 browser flow are local evidence, not
+real-provider or production evidence. A separate disposable PostgreSQL stack
+also applies every migration and exercises cleanup/status without starting a
+Web process, Worker, real mail adapter, or generation provider.
 
 M7 release-contract tests prove that staging accepts only the GoodGood GHCR
 image pinned by digest and full CI metadata, separates release identity from

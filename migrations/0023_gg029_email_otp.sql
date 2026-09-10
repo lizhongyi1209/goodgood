@@ -167,3 +167,16 @@ CREATE INDEX IF NOT EXISTS auth_events_owner_created_idx
 CREATE INDEX IF NOT EXISTS auth_events_challenge_idx
   ON auth_events (challenge_id, created_at DESC)
   WHERE challenge_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS auth_events_request_idx
+  ON auth_events (request_id, created_at ASC);
+
+CREATE TABLE IF NOT EXISTS auth_maintenance_state (
+  task_name text PRIMARY KEY,
+  last_succeeded_at timestamptz NOT NULL,
+  detail jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT auth_maintenance_state_task_check CHECK (
+    task_name IN ('cleanup')
+  )
+);

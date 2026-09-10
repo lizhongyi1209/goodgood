@@ -3,7 +3,7 @@
 - Last synchronized: 2026-09-10
 - Current phase: 已开放 controlled alpha；累计候选已发布，Sharp 安全候选等待新发布授权。
 - Current objective: GG-029 自建邮箱验证码登录本地候选；Google 暂缓，取代 GG-028 域名方向。
-  P1 与首个 P2 已本地验证，生产仍为 Authing；源码/镜像/部署的历史身份以 CURRENT_STATE 为准。
+  P1 与 P2 最小闭环已本地验证，生产仍为 Authing；源码/镜像/部署的历史身份以 CURRENT_STATE 为准。
 
 ## Current checkpoint
 
@@ -12,10 +12,14 @@
 - 新任务 [GG-029](tasks/GG-029-email-otp-plan.md) 在核验远端 main `42fc8d8` 的独立 worktree；
   GG-024—027 属于其他并行工作，GG-028 未发布源码保留但不继续自定义域名/Google 配置。
 - 已实现 email_otp 配置、schema、共享限流、SMTP、原子身份/Session、页面、清理与独立 Mailpit 栈；
+  P2 增加脱敏状态/支持汇总、稳定告警码、清理心跳和账户暂停时的定向 Session 撤销；
   暂定迁移 0023，合入前需在 GG-027 的 0020–0022 之后复核编号。
 - 定向邮箱/OIDC/UI 测试、隔离 PostgreSQL 竞态、容器真实 SMTP 闭环与 390×844 浏览器流程已通过；
   未调用真实邮件/生图供应商，生产配置、数据与 Authing 未改变。
-- 完整 `npm run check:local` 通过：264 项中 257 通过、7 个显式 opt-in 跳过、0 失败。
+- 完整 `npm run check:local` 通过：268 项中 261 通过、7 个显式 opt-in 跳过、0 失败。
+- P2 运维定向测试 26/26 通过；一次全新隔离 PostgreSQL 实测应用 20 个迁移并通过清理心跳、
+  24 小时脱敏汇总和合成 request ID 查询，随后已删除临时容器及数据卷。完整应用镜像复验被
+  既有 Linux `rolldown` 可选依赖缺失阻断，须在 P3 CI/镜像门禁前修复；这不改变线上状态。
 - P0 已获用户授权并开通 Direct Mail 按量服务，没有购买资源包；账号正常，日/月额度为
   2,000/62,000，免费额度剩余总计 2,000、当日 200。已在新加坡 `ap-southeast-1` 创建
   `mail.goodgood.o1key.com`。用户确认 2048 位 DKIM 后，Cloudflare 的 DKIM/SPF/DMARC/MX 已由
@@ -55,10 +59,11 @@
   `sha256:b441e16685c77842e18cefcdbcae00c2e50d25350fe598ea2e462dd61758f152` 已发布但未部署。
 - 支付、自动账户删除、举报、完整外部删除条款与完整 seed readiness 仍在 GG-900—GG-902
   搁置范围，本次发布没有恢复它们。
-- Next action: 进入 P2 最小运维补齐；发布前再按明确授权补 163/Outlook 与跨时段投递样本。
-  P3 再单独批准生产 SMTP 秘密挂载，回复能力仍需真实支持邮箱。
-- Blockers: P1 本地实现无阻塞；P0 的 DNS、发信地址、TLS 与无邮件认证冒烟已闭环，当前尚缺支持
-  邮箱和授权测试收件箱。这些外部输入缺失阻止真实投递和生产发布。GG-023 的新候选
+- Next action: 进入 P3，先修复/复验 Linux 镜像依赖，再补模式化 preflight、受审绑定、生产
+  SMTP 秘密挂载和外部告警送达；发布前按明确授权补 163/Outlook 与跨时段投递样本。
+  回复能力仍需真实支持邮箱。
+- Blockers: P1/P2 本地实现无阻塞；P0 的 DNS、发信地址、TLS 与小规模真信已闭环，当前尚缺支持
+  邮箱和发布前剩余矩阵的逐封授权。这些外部输入缺失阻止完整投递验收和生产发布。GG-023 的新候选
   生产/计费冒烟授权仍独立，不能复用此前单次授权。
 
 ## Milestones
@@ -71,7 +76,7 @@
 | M8 / controlled alpha | 已开放并完成本次累计发布 | 审核账户、核心生图、恢复与发布门禁 |
 | GG-004—GG-022 | 已部署或完成 | 累计功能、可靠性、恢复工具和生产发布 |
 | GG-023 | 实施中 | Sharp 0.35.4 安全修复与 main CI 恢复 |
-| GG-029 | P1 + 首个 P2 本地候选已验证；两封 QQ/一封 Gmail 真信成功 | 自建邮箱 OTP；P0 发布前扩展验证、P3/P4 与 P2 运维补齐仍待完成 |
+| GG-029 | P1 + P2 最小本地候选已验证；两封 QQ/一封 Gmail 真信成功 | 自建邮箱 OTP；P0 发布前扩展验证及 P3/P4 仍待完成 |
 | 完整 C6 / full seed | 搁置 | 删除、举报、外部条款与进一步配套，见 GG-900/901 |
 | M9 | 搁置 | 支付/支付宝，见 GG-902 |
 

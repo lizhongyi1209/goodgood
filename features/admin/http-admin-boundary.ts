@@ -82,7 +82,12 @@ export async function updateManagedAccountStatus(input: {
   reason: string;
   status: "active" | "suspended";
 }) {
-  return adminJson<{ actionType: string; created: boolean; status: ManagedAccountStatus }>(
+  return adminJson<{
+    actionType: string;
+    created: boolean;
+    revokedSessions: number;
+    status: ManagedAccountStatus;
+  }>(
     await goodGoodApiFetch(
       `/api/admin/users/${encodeURIComponent(input.ownerId)}/status`,
       {

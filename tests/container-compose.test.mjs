@@ -49,6 +49,8 @@ test("compose contract pins the complete local dependency stack", async () => {
     "mock-generation",
     "migrate",
     "reference-cleanup",
+    "email-auth-status",
+    "email-auth-cleanup",
     "postgres",
     "valkey",
     "object-storage",
@@ -96,6 +98,10 @@ test("compose contract pins the complete local dependency stack", async () => {
   assert.equal(
     packageData.scripts["references:cleanup"],
     "node server/runtime/reference-cleanup.mjs",
+  );
+  assert.equal(
+    packageData.scripts["auth:status"],
+    "node server/runtime/email-auth-status.mjs",
   );
   assert.match(dockerfile, /^EXPOSE 3000 3001 3002$/m);
   for (const dependency of [

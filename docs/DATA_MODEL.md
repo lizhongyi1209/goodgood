@@ -224,7 +224,9 @@ login CSRF, replay, and expired callbacks do not continue authentication.
 Owner and authentication-identity references, SHA-256 hash of an opaque
 GoodGood session token, expiration, revocation, last-seen, and creation
 timestamps. Raw session tokens and Authing/Google tokens are never stored in
-the database.
+the database. Suspending an account updates the user projection and revokes
+every still-active session for that owner in the same administrative
+transaction; restoring access does not revive those revoked sessions.
 
 ### AuthEmailBinding
 
@@ -249,6 +251,14 @@ events retain a bounded, redacted outcome trail and optional internal owner,
 challenge, request, and delivery references; they do not store a code or email
 body. GG-029 currently carries these additions in provisional migration 0023,
 whose number must be reconciled after parallel GG-027 migrations 0020–0022.
+
+### AuthMaintenanceState
+
+One bounded row per recognized authentication maintenance task records its
+last successful completion and redacted count detail. GG-029 currently permits
+only the hourly email-auth cleanup task. This heartbeat lets the read-only
+operations report distinguish an overdue cleanup from a quiet authentication
+period; it stores no mailbox, code, token, or provider response.
 
 ### PlanEntitlement
 

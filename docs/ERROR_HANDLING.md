@@ -225,6 +225,17 @@ and codes are not returned. Disabling sends does not invalidate existing
 sessions or already issued challenges; disabling registration is disclosed
 only after a valid unbound mailbox challenge is verified.
 
+The read-only email-auth operations command emits one redacted JSON report and
+uses stable alert codes: `EMAIL_AUTH_GLOBAL_BUDGET_HIGH`,
+`EMAIL_AUTH_DELIVERY_FAILURE_STREAK`, and `EMAIL_AUTH_CLEANUP_OVERDUE`.
+Operators and the separately owned monitoring layer may group repeated reports
+by code; this repository slice does not add an alert transport. Status-command
+failure emits only `EMAIL_AUTH_STATUS_FAILED`; cleanup-command failure emits
+only `EMAIL_AUTH_CLEANUP_FAILED`. Neither path prints a database error,
+connection string, mailbox, code, SMTP response, or secret. Suspending a
+specific account revokes that owner's active sessions atomically; it never
+causes a global session purge.
+
 ADR 0020 separates authentication from creation admission. A valid new Authing
 identity receives a GoodGood session and `pending` account projection rather
 than an authentication failure. Pending users receive stable review-state copy,

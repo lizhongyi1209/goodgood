@@ -37,6 +37,7 @@
     "references:cleanup": "node server/runtime/reference-cleanup.mjs",
     "auth:preflight": "node scripts/verify-authentication.mjs",
     "auth:cleanup": "node server/runtime/email-auth-cleanup.mjs",
+    "auth:status": "node server/runtime/email-auth-status.mjs",
     "staging:preflight": "node scripts/verify-staging.mjs",
     "staging:release": "node scripts/run-staging-release.mjs",
     "production:preflight": "node scripts/verify-production-preflight.mjs",

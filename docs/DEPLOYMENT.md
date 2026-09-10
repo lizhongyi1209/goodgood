@@ -271,6 +271,32 @@ credentials. The cleanup entry point is dry-run by default:
 `DATABASE_URL=... npm run auth:cleanup`; add `-- --execute` only after reviewing
 the exact isolated/approved database target.
 
+P2 adds two database-only maintenance entries to the normal Compose
+`maintenance` profile and matching host commands. They need `DATABASE_URL` but
+not the OTP or SMTP secrets:
+
+```bash
+# Redacted 24-hour aggregate; exits after writing one structured JSON event.
+DATABASE_URL=... npm run auth:status -- --hours 24
+
+# Optional exact support correlation; request ID is bounded and never treated as SQL.
+DATABASE_URL=... npm run auth:status -- --hours 24 --request-id <request-id>
+
+# Inspect first, then execute against the same reviewed target.
+DATABASE_URL=... npm run auth:cleanup
+DATABASE_URL=... npm run auth:cleanup -- --execute
+```
+
+Run cleanup hourly. Its successful transaction updates the cleanup heartbeat;
+the status report warns when that heartbeat is missing or more than two hours
+old, when 80% of the 500-send daily application budget is consumed, or when
+the latest five send outcomes within one hour are failed/unknown. Repeated
+reports have stable codes for the external monitoring owner to group. ADR 0016
+keeps scheduling, collection, and notification transport outside this slice,
+so P3 must connect and verify those pieces before production cutover. Account
+suspension and targeted session revocation remain in the existing site-owner
+account screen; restoration requires the user to establish a new session.
+
 ### Production authentication configuration
 
 The deployed mode is still Authing OIDC. [ADR 0045](decisions/0045-goodgood-owned-email-otp.md)

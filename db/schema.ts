@@ -458,6 +458,7 @@ export const authEvents = pgTable(
     index("auth_events_challenge_idx")
       .on(table.challengeId, table.createdAt)
       .where(sql`${table.challengeId} is not null`),
+    index("auth_events_request_idx").on(table.requestId, table.createdAt),
     check(
       "auth_events_event_type_check",
       sql`${table.eventType} in ('email_code_requested', 'email_code_verified', 'email_code_rejected')`,
@@ -465,6 +466,24 @@ export const authEvents = pgTable(
     check(
       "auth_events_outcome_check",
       sql`${table.outcome} in ('accepted', 'unknown', 'failed', 'succeeded', 'rejected')`,
+    ),
+  ],
+);
+
+export const authMaintenanceState = pgTable(
+  "auth_maintenance_state",
+  {
+    taskName: text("task_name").primaryKey(),
+    lastSucceededAt: timestamp("last_succeeded_at", {
+      withTimezone: true,
+    }).notNull(),
+    detail: jsonb("detail").default({}).notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    check(
+      "auth_maintenance_state_task_check",
+      sql`${table.taskName} in ('cleanup')`,
     ),
   ],
 );

@@ -20,8 +20,12 @@ accepted ADRs for it do not mean its later migrations are deployed.
 The next selected authentication boundary is GoodGood-owned email OTP with a
 managed mail-delivery provider, documented in [ADR 0045](decisions/0045-goodgood-owned-email-otp.md)
 and [the rollout plan](EMAIL_AUTH_PLAN.md). GG-029 implements the P1 runtime and
-first P2 browser surface in an isolated local candidate; the OIDC contracts
-below still apply to the deployed runtime until a separately approved cutover.
+P2 browser/operations surface in an isolated local candidate. Its read-only
+operations report aggregates redacted authentication events and a cleanup
+heartbeat, while an existing owner-review transition performs targeted session
+revocation. Per ADR 0016 these signals do not install a monitoring collector or
+notification transport. The OIDC contracts below still apply to the deployed
+runtime until a separately approved cutover.
 
 M3 implements one production-shaped local generation path: the browser submits
 an idempotent request, PostgreSQL transactionally creates a batch, job, audit

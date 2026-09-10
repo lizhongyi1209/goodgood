@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { Readable } from "node:stream";
 import test from "node:test";
@@ -10,6 +11,7 @@ import { EmailDeliveryError, createEmailOtpMailer } from "../server/auth/email-m
 import {
   cleanupEmailAuthentication,
   previewEmailAuthenticationCleanup,
+  readEmailAuthenticationOperations,
 } from "../server/auth/email-maintenance.mjs";
 import { createEmailOtpOperations } from "../server/auth/email-operations.mjs";
 import {
@@ -19,6 +21,7 @@ import {
 } from "../server/auth/email-policy.mjs";
 import { createAuthenticationNodeApiHandler } from "../server/auth/node-api.mjs";
 import { createAuthenticationOperations } from "../server/auth/operations.mjs";
+import { parseEmailAuthenticationStatusArguments } from "../server/runtime/email-auth-status.mjs";
 import { hashAuthenticationSecret } from "../server/auth/request-authenticator.mjs";
 
 const TEST_SECRET = "email-otp-test-secret-that-is-at-least-32-bytes";
@@ -416,6 +419,168 @@ test("email authentication cleanup previews by default and deletes only ephemera
   assert.equal(statements.at(-2), "COMMIT");
   assert.equal(statements.at(-1), "RELEASE");
   assert.equal(statements.some((sql) => /DELETE FROM users/.test(sql)), false);
+  assert.equal(
+    statements.some((sql) => /INSERT INTO auth_maintenance_state/.test(sql)),
+    true,
+  );
+});
+
+test("email authentication operations report stays aggregate and emits stable alert codes", async () => {
+  const currentTime = new Date("2026-09-10T08:00:00.000Z");
+  const queries = [];
+  const pool = {
+    async query(sql, parameters = []) {
+      queries.push({ parameters, sql });
+      if (/FILTER \(WHERE event_type/.test(sql)) {
+        return {
+          rows: [{
+            accepted: 7,
+            delivery_requests: 12,
+            failed: 3,
+            rejected: 4,
+            unknown: 2,
+            verified: 6,
+          }],
+        };
+      }
+      if (/scope = 'global_send_day'/.test(sql)) return { rows: [{ used: 405 }] };
+      if (/ORDER BY created_at DESC/.test(sql)) {
+        return {
+          rows: ["failed", "unknown", "failed", "failed", "unknown"].map(
+            (outcome) => ({ outcome }),
+          ),
+        };
+      }
+      if (/FROM auth_maintenance_state/.test(sql)) {
+        return { rows: [{ last_succeeded_at: "2026-09-10T05:00:00.000Z" }] };
+      }
+      if (/WHERE request_id = \$1/.test(sql)) {
+        return {
+          rows: [{
+            created_at: "2026-09-10T07:58:00.000Z",
+            delivery_error_code: "SMTP_TEST",
+            event_type: "email_code_requested",
+            outcome: "failed",
+            owner_id: null,
+            request_id: "support-123",
+          }],
+        };
+      }
+      throw new Error(`Unexpected SQL: ${sql}`);
+    },
+  };
+  const report = await readEmailAuthenticationOperations(pool, {
+    hours: 12,
+    now: currentTime,
+    requestId: "support-123",
+  });
+  assert.deepEqual(report.delivery, {
+    accepted: 7,
+    failed: 3,
+    requested: 12,
+    unknown: 2,
+  });
+  assert.deepEqual(report.verification, { rejected: 4, succeeded: 6 });
+  assert.deepEqual(report.budget, { limit: 500, percentUsed: 81, used: 405 });
+  assert.deepEqual(
+    report.alerts.map(({ code }) => code),
+    [
+      "EMAIL_AUTH_GLOBAL_BUDGET_HIGH",
+      "EMAIL_AUTH_DELIVERY_FAILURE_STREAK",
+      "EMAIL_AUTH_CLEANUP_OVERDUE",
+    ],
+  );
+  assert.deepEqual(report.support, {
+    events: [{
+      createdAt: "2026-09-10T07:58:00.000Z",
+      deliveryErrorCode: "SMTP_TEST",
+      eventType: "email_code_requested",
+      outcome: "failed",
+      ownerId: null,
+      requestId: "support-123",
+    }],
+    requestId: "support-123",
+  });
+  assert.doesNotMatch(
+    JSON.stringify(report),
+    /normalized|display_email|provider_message|code_digest/i,
+  );
+  assert.equal(
+    queries.some(({ sql }) => /normalized_email|display_email/.test(sql)),
+    false,
+  );
+});
+
+test("email authentication operations report represents a quiet healthy window", async () => {
+  const currentTime = new Date("2026-09-10T08:00:00.000Z");
+  const pool = {
+    async query(sql) {
+      if (/FILTER \(WHERE event_type/.test(sql)) {
+        return { rows: [{ accepted: 0, delivery_requests: 0, failed: 0, rejected: 0, unknown: 0, verified: 0 }] };
+      }
+      if (/scope = 'global_send_day'/.test(sql)) return { rows: [{ used: 0 }] };
+      if (/ORDER BY created_at DESC/.test(sql)) return { rows: [] };
+      if (/FROM auth_maintenance_state/.test(sql)) {
+        return { rows: [{ last_succeeded_at: "2026-09-10T07:30:00.000Z" }] };
+      }
+      throw new Error(`Unexpected SQL: ${sql}`);
+    },
+  };
+  const report = await readEmailAuthenticationOperations(pool, {
+    now: currentTime,
+  });
+  assert.deepEqual(report.alerts, []);
+  assert.deepEqual(report.delivery, {
+    accepted: 0,
+    failed: 0,
+    requested: 0,
+    unknown: 0,
+  });
+  assert.deepEqual(report.maintenance, {
+    cleanupHealthy: true,
+    lastCleanupAt: "2026-09-10T07:30:00.000Z",
+  });
+  assert.equal(report.support, null);
+});
+
+test("email authentication status arguments are bounded and read-only", () => {
+  assert.deepEqual(
+    parseEmailAuthenticationStatusArguments([
+      "--hours",
+      "48",
+      "--request-id",
+      "support-123",
+    ]),
+    { hours: 48, requestId: "support-123" },
+  );
+  assert.throws(
+    () => parseEmailAuthenticationStatusArguments(["--execute"]),
+    /Unknown email authentication status argument/,
+  );
+  assert.throws(
+    () => parseEmailAuthenticationStatusArguments(["--hours", "721"]),
+    /between 1 and 720/,
+  );
+});
+
+test("email authentication maintenance CLIs fail without leaking configuration errors", () => {
+  const environment = { ...process.env };
+  delete environment.DATABASE_URL;
+  for (const script of [
+    "server/runtime/email-auth-cleanup.mjs",
+    "server/runtime/email-auth-status.mjs",
+  ]) {
+    const result = spawnSync(process.execPath, [script], {
+      cwd: process.cwd(),
+      encoding: "utf8",
+      env: environment,
+    });
+    assert.equal(result.status, 1, script);
+    assert.equal(result.stdout, "");
+    const failure = JSON.parse(result.stderr);
+    assert.match(failure.code, /^EMAIL_AUTH_(?:CLEANUP|STATUS)_FAILED$/);
+    assert.doesNotMatch(result.stderr, /DATABASE_URL|required|postgres/i);
+  }
 });
 
 test("email authentication API exposes method, accepts bounded JSON, and returns cookies", async () => {
@@ -503,9 +668,12 @@ test("GG-029 migration stores keyed digests, shared limits, bindings, and audit 
   assert.match(migration, /code_digest text NOT NULL/);
   assert.match(migration, /CREATE TABLE IF NOT EXISTS auth_rate_limits/);
   assert.match(migration, /CREATE TABLE IF NOT EXISTS auth_events/);
+  assert.match(migration, /auth_events_request_idx/);
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS auth_maintenance_state/);
   assert.doesNotMatch(migration, /\bcode text\b|otp text|plaintext/);
   assert.match(schema, /export const authEmailBindings = pgTable/);
   assert.match(schema, /export const authEmailChallenges = pgTable/);
   assert.match(schema, /export const authRateLimits = pgTable/);
   assert.match(schema, /export const authEvents = pgTable/);
+  assert.match(schema, /export const authMaintenanceState = pgTable/);
 });
