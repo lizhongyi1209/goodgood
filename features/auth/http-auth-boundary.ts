@@ -22,7 +22,33 @@ type AuthenticationErrorEnvelope = Readonly<{
   error?: Readonly<{
     code?: string;
     message?: string;
+    retryAfterSeconds?: number;
+    retryable?: boolean;
   }>;
+}>;
+
+export class AuthenticationBoundaryError extends Error {
+  code: string;
+  retryAfterSeconds: number | null;
+  retryable: boolean;
+
+  constructor(payload: AuthenticationErrorEnvelope) {
+    super(payload.error?.message ?? "登录暂时无法完成，请稍后重试。");
+    this.name = "AuthenticationBoundaryError";
+    this.code = payload.error?.code ?? "AUTHENTICATION_FAILED";
+    this.retryAfterSeconds = payload.error?.retryAfterSeconds ?? null;
+    this.retryable = payload.error?.retryable ?? false;
+  }
+}
+
+export type AuthenticationMethod = "email_code" | "hosted";
+
+export type EmailAuthenticationChallenge = Readonly<{
+  delivery: "sending" | "accepted" | "unknown";
+  emailHint: string;
+  expiresAt: string;
+  id: string;
+  resendAfterSeconds: number;
 }>;
 
 type LogoutResponse = Readonly<{
@@ -51,6 +77,77 @@ export async function readAuthenticationSession(): Promise<AuthenticationSession
     throw new Error(failure.error?.message ?? "登录状态暂时无法确认，请重试。");
   }
   return payload as AuthenticationSession;
+}
+
+export async function readAuthenticationMethod(): Promise<AuthenticationMethod> {
+  const response = await fetch("/api/auth/method", { cache: "no-store" });
+  const payload = (await response.json()) as
+    | { method?: AuthenticationMethod }
+    | AuthenticationErrorEnvelope;
+  if (!response.ok) throw new AuthenticationBoundaryError(payload as AuthenticationErrorEnvelope);
+  const success = payload as { method?: AuthenticationMethod };
+  if (success.method !== "email_code" && success.method !== "hosted") {
+    throw new Error("登录方式暂时无法确认，请重试。");
+  }
+  return success.method;
+}
+
+export async function readEmailAuthenticationChallenge(): Promise<EmailAuthenticationChallenge | null> {
+  const response = await fetch("/api/auth/email/challenge", { cache: "no-store" });
+  const payload = (await response.json()) as
+    | { challenge?: EmailAuthenticationChallenge | null }
+    | AuthenticationErrorEnvelope;
+  if (!response.ok) throw new AuthenticationBoundaryError(payload as AuthenticationErrorEnvelope);
+  return "challenge" in payload ? payload.challenge ?? null : null;
+}
+
+export async function requestEmailAuthenticationCode(
+  email: string,
+  returnTo: string,
+): Promise<EmailAuthenticationChallenge> {
+  const response = await fetch("/api/auth/email/request", {
+    body: JSON.stringify({ email, returnTo }),
+    headers: { "content-type": "application/json" },
+    method: "POST",
+  });
+  const payload = (await response.json()) as
+    | {
+        challengeId: string;
+        delivery: EmailAuthenticationChallenge["delivery"];
+        emailHint: string;
+        expiresInSeconds: number;
+        resendAfterSeconds: number;
+      }
+    | AuthenticationErrorEnvelope;
+  if (!response.ok) throw new AuthenticationBoundaryError(payload as AuthenticationErrorEnvelope);
+  const accepted = payload as Exclude<typeof payload, AuthenticationErrorEnvelope>;
+  return Object.freeze({
+    delivery: accepted.delivery,
+    emailHint: accepted.emailHint,
+    expiresAt: new Date(Date.now() + accepted.expiresInSeconds * 1_000).toISOString(),
+    id: accepted.challengeId,
+    resendAfterSeconds: accepted.resendAfterSeconds,
+  });
+}
+
+export async function verifyEmailAuthenticationCode(
+  challengeId: string,
+  code: string,
+): Promise<string> {
+  const response = await fetch("/api/auth/email/verify", {
+    body: JSON.stringify({ challengeId, code }),
+    headers: { "content-type": "application/json" },
+    method: "POST",
+  });
+  const payload = (await response.json()) as
+    | { authenticated?: boolean; returnTo?: string }
+    | AuthenticationErrorEnvelope;
+  if (!response.ok) throw new AuthenticationBoundaryError(payload as AuthenticationErrorEnvelope);
+  const success = payload as { authenticated?: boolean; returnTo?: string };
+  if (success.authenticated !== true || typeof success.returnTo !== "string") {
+    throw new Error("登录结果无效，请重新获取验证码。");
+  }
+  return success.returnTo;
 }
 
 export function beginAuthentication(returnTo = "/") {
@@ -82,5 +179,5 @@ export function authenticationErrorMessage(code: string | null) {
   }
   if (code === "ACCOUNT_PENDING") return "账号正在等待审核，审核通过后即可开始创作。";
   if (code === "ACCOUNT_SUSPENDED") return "账号已暂停使用，请联系站长。";
-  return "登录没有完成，请重新使用 Google 或邮箱验证码登录。";
+  return "登录没有完成，请重新使用邮箱验证码登录。";
 }

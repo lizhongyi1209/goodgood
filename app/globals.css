@@ -94,6 +94,10 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .authentication-primary:hover { background: #17171d; }
 .authentication-loading { width: auto; padding: 16px 20px; flex-direction: row; gap: 10px; color: var(--muted); font-size: 12px; }
 .authentication-loading svg { animation: authentication-spin .9s linear infinite; }
+.email-authentication-card { align-items: stretch; gap: 16px; }
+.email-authentication-card h2 { margin-bottom: -9px; text-align: center; }
+.email-authentication-card > p { text-align: center; }
+.email-authentication-card .authentication-error { margin-top: 0; }
 @keyframes authentication-spin { to { transform: rotate(360deg); } }
 
 .content-wrap { width: auto; margin: 0; padding: 17px 30px 50px 16px; }

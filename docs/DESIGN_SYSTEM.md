@@ -50,9 +50,11 @@ individual icon. Upload, settings, and send align to the same 40px box.
 - Avoid persistent navigation shadows. Composer may use a very shallow neutral
   elevation to remain legible while sticky.
 - Authentication recovery is a compact white card over a softened canvas, not
-  a marketing hero. It uses one neutral dark primary action for the combined
-  Google / email-code hosted flow; authentication errors use restrained Palace
-  Red copy and fill.
+  a marketing hero. The email-only candidate uses one neutral dark primary
+  action, a normal email field, and one six-slot code control that fits a 390px
+  mobile viewport. Secondary modify/resend actions stay quiet; authentication
+  errors use restrained Palace Red copy and fill. OIDC rollback mode may retain
+  its combined hosted-login label until production cutover.
 
 ## Brand and icons
 

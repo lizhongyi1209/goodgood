@@ -87,6 +87,30 @@ handoff rejection. Hosted-page login methods, mail delivery,
 and cross-method subject association remain explicit manual staging evidence
 because OIDC discovery does not expose those controls.
 
+GG-029 adds deterministic email-mode coverage for configuration and secret
+separation, mailbox/IDN normalization, spoofed forwarding headers, HMAC-only
+storage, same-origin and request-size rejection, shared limits, SMTP accepted/
+unknown outcomes, logout revocation, cleanup scope, and browser-bound request/
+verify APIs. Its opt-in PostgreSQL test accepts only the loopback database named
+`gg029_email_auth_test`; it proves failed-attempt persistence, cross-browser
+rejection, concurrent one-time consumption, random identity creation, pending
+admission, and one welcome grant. `stack:email-local` supplies Mailpit for a
+real local SMTP/browser loop without real recipients or provider billing.
+Production provider, DNS, mailbox, proxy-chain, and mobile-device evidence
+remain P0/P3/P4 gates and must not be inferred from the local success.
+
+GG-029 email authentication coverage additionally proves server-only SMTP/code
+secrets, conservative mailbox normalization, untrusted proxy-header rejection,
+keyed code digests, shared send/verify limits, bounded JSON and Origin checks,
+SMTP accepted/unknown outcomes, email-mode logout, cleanup retention, and the
+binding/challenge/rate/audit schema. The opt-in PostgreSQL test must target the
+exact loopback database `gg029_email_auth_test`; it proves persistent failed
+attempts, cross-browser rejection, concurrent one-time verification, random
+identity subjects, pending admission, and one welcome grant. The isolated
+`goodgood-gg029` Compose project uses Mailpit and mock generation only. Its
+synthetic SMTP and 390×844 browser flow are local evidence, not real-provider or
+production evidence.
+
 M7 release-contract tests prove that staging accepts only the GoodGood GHCR
 image pinned by digest and full CI metadata, separates release identity from
 runtime configuration, reads Authing, O1Key, and R2 credentials only from

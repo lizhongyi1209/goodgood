@@ -8,8 +8,10 @@ import {
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   text,
   timestamp,
+  unique,
   uniqueIndex,
   uuid,
   type AnyPgColumn,
@@ -170,6 +172,7 @@ export const authIdentities = pgTable(
     }),
   },
   (table) => [
+    unique("auth_identities_id_owner_unique").on(table.id, table.ownerId),
     uniqueIndex("auth_identities_issuer_subject_unique").on(
       table.issuer,
       table.subject,
@@ -303,6 +306,165 @@ export const authSessions = pgTable(
     check(
       "auth_sessions_token_hash_check",
       sql`length(${table.tokenHash}) = 64`,
+    ),
+  ],
+);
+
+export const authEmailBindings = pgTable(
+  "auth_email_bindings",
+  {
+    identityId: uuid("identity_id")
+      .primaryKey()
+      .references(() => authIdentities.id, { onDelete: "restrict" }),
+    ownerId: uuid("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    normalizedEmail: text("normalized_email").notNull(),
+    displayEmail: text("display_email").notNull(),
+    source: text("source").default("self_service").notNull(),
+    verifiedAt: timestamp("verified_at", { withTimezone: true }).notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.identityId, table.ownerId],
+      foreignColumns: [authIdentities.id, authIdentities.ownerId],
+      name: "auth_email_bindings_identity_owner_fk",
+    }).onDelete("restrict"),
+    uniqueIndex("auth_email_bindings_email_unique").on(table.normalizedEmail),
+    uniqueIndex("auth_email_bindings_owner_unique").on(table.ownerId),
+    check(
+      "auth_email_bindings_normalized_email_check",
+      sql`length(${table.normalizedEmail}) between 3 and 320 and ${table.normalizedEmail} = lower(${table.normalizedEmail}) and ${table.normalizedEmail} = btrim(${table.normalizedEmail})`,
+    ),
+    check(
+      "auth_email_bindings_display_email_check",
+      sql`length(${table.displayEmail}) between 3 and 320 and ${table.displayEmail} = btrim(${table.displayEmail})`,
+    ),
+    check(
+      "auth_email_bindings_source_check",
+      sql`${table.source} in ('self_service', 'operator_migration')`,
+    ),
+  ],
+);
+
+export const authEmailChallenges = pgTable(
+  "auth_email_challenges",
+  {
+    id: uuid("id").primaryKey(),
+    normalizedEmail: text("normalized_email").notNull(),
+    displayEmail: text("display_email").notNull(),
+    browserBindingHash: text("browser_binding_hash").notNull(),
+    codeDigest: text("code_digest").notNull(),
+    returnTo: text("return_to").default("/").notNull(),
+    sendState: text("send_state").default("sending").notNull(),
+    providerMessageId: text("provider_message_id"),
+    deliveryErrorCode: text("delivery_error_code"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    consumedAt: timestamp("consumed_at", { withTimezone: true }),
+    invalidatedAt: timestamp("invalidated_at", { withTimezone: true }),
+    failedAttempts: integer("failed_attempts").default(0).notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("auth_email_challenges_current_email_unique")
+      .on(table.normalizedEmail)
+      .where(sql`${table.consumedAt} is null and ${table.invalidatedAt} is null`),
+    index("auth_email_challenges_expiry_idx")
+      .on(table.expiresAt)
+      .where(sql`${table.consumedAt} is null and ${table.invalidatedAt} is null`),
+    index("auth_email_challenges_browser_idx").on(
+      table.browserBindingHash,
+      table.createdAt,
+    ),
+    check(
+      "auth_email_challenges_email_check",
+      sql`length(${table.normalizedEmail}) between 3 and 320 and ${table.normalizedEmail} = lower(${table.normalizedEmail}) and ${table.normalizedEmail} = btrim(${table.normalizedEmail})`,
+    ),
+    check(
+      "auth_email_challenges_browser_binding_hash_check",
+      sql`length(${table.browserBindingHash}) = 64`,
+    ),
+    check(
+      "auth_email_challenges_code_digest_check",
+      sql`length(${table.codeDigest}) = 64`,
+    ),
+    check(
+      "auth_email_challenges_send_state_check",
+      sql`${table.sendState} in ('sending', 'accepted', 'unknown', 'failed')`,
+    ),
+    check(
+      "auth_email_challenges_failed_attempts_check",
+      sql`${table.failedAttempts} between 0 and 5`,
+    ),
+  ],
+);
+
+export const authRateLimits = pgTable(
+  "auth_rate_limits",
+  {
+    scope: text("scope").notNull(),
+    subjectHash: text("subject_hash").notNull(),
+    windowStartedAt: timestamp("window_started_at", {
+      withTimezone: true,
+    }).notNull(),
+    requestCount: integer("request_count").default(1).notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    primaryKey({ columns: [table.scope, table.subjectHash, table.windowStartedAt] }),
+    index("auth_rate_limits_expiry_idx").on(table.windowStartedAt),
+    check(
+      "auth_rate_limits_scope_check",
+      sql`${table.scope} in ('email_send_hour', 'email_send_day', 'ip_send_hour', 'ip_send_day', 'global_send_hour', 'global_send_day', 'email_verify_30m', 'ip_verify_15m', 'ip_entry_minute')`,
+    ),
+    check(
+      "auth_rate_limits_subject_hash_check",
+      sql`length(${table.subjectHash}) = 64`,
+    ),
+    check(
+      "auth_rate_limits_request_count_check",
+      sql`${table.requestCount} > 0`,
+    ),
+  ],
+);
+
+export const authEvents = pgTable(
+  "auth_events",
+  {
+    id: uuid("id").primaryKey(),
+    eventType: text("event_type").notNull(),
+    outcome: text("outcome").notNull(),
+    subjectHash: text("subject_hash"),
+    ownerId: uuid("owner_id").references(() => users.id, {
+      onDelete: "restrict",
+    }),
+    challengeId: uuid("challenge_id").references(
+      () => authEmailChallenges.id,
+      { onDelete: "set null" },
+    ),
+    requestId: text("request_id").notNull(),
+    providerMessageId: text("provider_message_id"),
+    detail: jsonb("detail").default({}).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("auth_events_created_idx").on(table.createdAt),
+    index("auth_events_owner_created_idx")
+      .on(table.ownerId, table.createdAt)
+      .where(sql`${table.ownerId} is not null`),
+    index("auth_events_challenge_idx")
+      .on(table.challengeId, table.createdAt)
+      .where(sql`${table.challengeId} is not null`),
+    check(
+      "auth_events_event_type_check",
+      sql`${table.eventType} in ('email_code_requested', 'email_code_verified', 'email_code_rejected')`,
+    ),
+    check(
+      "auth_events_outcome_check",
+      sql`${table.outcome} in ('accepted', 'unknown', 'failed', 'succeeded', 'rejected')`,
     ),
   ],
 );

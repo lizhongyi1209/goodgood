@@ -2,8 +2,8 @@
 
 - Last synchronized: 2026-09-10
 - Current phase: 已开放 controlled alpha；累计候选已发布，Sharp 安全候选等待新发布授权。
-- Current objective: GG-029 自建邮箱验证码登录方案与计划；Google 暂缓，取代 GG-028 域名方向。
-  当前仅完成规划，生产仍为 Authing；源码/镜像/部署的历史身份以 CURRENT_STATE 为准。
+- Current objective: GG-029 自建邮箱验证码登录本地候选；Google 暂缓，取代 GG-028 域名方向。
+  P1 与首个 P2 已本地验证，生产仍为 Authing；源码/镜像/部署的历史身份以 CURRENT_STATE 为准。
 
 ## Current checkpoint
 
@@ -11,8 +11,11 @@
   和 [EMAIL_AUTH_PLAN](EMAIL_AUTH_PLAN.md) 明确最低上线控制、发信服务、P0–P4、迁移及回退限制。
 - 新任务 [GG-029](tasks/GG-029-email-otp-plan.md) 在核验远端 main `42fc8d8` 的独立 worktree；
   GG-024—027 属于其他并行工作，GG-028 未发布源码保留但不继续自定义域名/Google 配置。
-- 已核对复用边界与 Authing 专属 preflight；本轮纯文档，尚未实现邮箱模式、发信或修改生产。
-- 文档连续性测试 8/8、diff 检查通过；任务卡区分规划、后续实现与实际生产切换。
+- 已实现 email_otp 配置、schema、共享限流、SMTP、原子身份/Session、页面、清理与独立 Mailpit 栈；
+  暂定迁移 0023，合入前需在 GG-027 的 0020–0022 之后复核编号。
+- 定向邮箱/OIDC/UI 测试、隔离 PostgreSQL 竞态、容器真实 SMTP 闭环与 390×844 浏览器流程已通过；
+  未调用真实邮件/生图供应商，生产配置、数据与 Authing 未改变。
+- 完整 `npm run check:local` 通过：264 项中 257 通过、7 个显式 opt-in 跳过、0 失败。
 - 下列生产健康/测试数是 2026-09-09 留存事实，本轮未再次检查生产，不作为实时状态声明。
 
 - 生产入口 `https://goodgood.o1key.com` 当前部署源码
@@ -38,10 +41,10 @@
   `sha256:b441e16685c77842e18cefcdbcae00c2e50d25350fe598ea2e462dd61758f152` 已发布但未部署。
 - 支付、自动账户删除、举报、完整外部删除条款与完整 seed readiness 仍在 GG-900—GG-902
   搁置范围，本次发布没有恢复它们。
-- Next action: 用户启动 GG-029 实施后先核验 P0 发信服务，再执行 P1
-  验证码/限流/身份事务；可先在本地邮件接收器开发，不继续 GG-028 的 Authing 域名修复。
-- Blockers: 方案无阻塞；实际发信仍需供应商账号/地域/额度、发信 DNS、SMTP 凭据及支持邮箱。
-  本轮不含实施或上线。GG-023 的新候选生产/计费冒烟授权仍独立，不能复用此前单次授权。
+- Next action: 取得 P0 邮件供应商账号/地域/额度、发信 DNS、受保护 SMTP 凭据及支持邮箱后，
+  做授权真实收件验证；再完成模式化生产 preflight、秘密挂载、告警与受审旧 owner 绑定工具。
+- Blockers: P1 本地实现无阻塞；P0 外部配置缺失阻止真实投递和生产发布。GG-023 的新候选
+  生产/计费冒烟授权仍独立，不能复用此前单次授权。
 
 ## Milestones
 
@@ -53,7 +56,7 @@
 | M8 / controlled alpha | 已开放并完成本次累计发布 | 审核账户、核心生图、恢复与发布门禁 |
 | GG-004—GG-022 | 已部署或完成 | 累计功能、可靠性、恢复工具和生产发布 |
 | GG-023 | 实施中 | Sharp 0.35.4 安全修复与 main CI 恢复 |
-| GG-029 | 方案与文档验证完成 | 自建邮箱 OTP；P0–P4、最小上线控制、原账户迁移与有限回退 |
+| GG-029 | P1 + 首个 P2 本地候选已验证 | 自建邮箱 OTP；P0/P3/P4 与 P2 运维补齐仍待完成 |
 | 完整 C6 / full seed | 搁置 | 删除、举报、外部条款与进一步配套，见 GG-900/901 |
 | M9 | 搁置 | 支付/支付宝，见 GG-902 |
 

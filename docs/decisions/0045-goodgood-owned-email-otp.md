@@ -5,8 +5,9 @@
 - Supersedes: ADR 0007's Authing/Google provider selection and GG-028's unshipped
   ADR 0044 custom-domain direction. The existing GoodGood session and ownership
   boundaries remain accepted.
-- Delivery: planning only; production still uses Authing. Implementation and
-  production cutover require their own evidence.
+- Delivery: the P1 runtime and first P2 browser surface are implemented and
+  verified only in the isolated GG-029 local stack. Production still uses
+  Authing; P0 mail-provider evidence and P3/P4 release work remain required.
 
 ## Context
 

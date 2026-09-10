@@ -226,6 +226,30 @@ GoodGood session token, expiration, revocation, last-seen, and creation
 timestamps. Raw session tokens and Authing/Google tokens are never stored in
 the database.
 
+### AuthEmailBinding
+
+One verified normalized mailbox maps to one email authentication identity and
+one internal owner. The user-entered mailbox spelling is retained for display;
+the local identity subject is a random UUID rather than the mailbox. Runtime
+login never merges an existing non-email owner by matching `users.email`.
+
+### AuthEmailChallenge
+
+A short-lived email login attempt stores the normalized/display mailbox,
+browser-binding hash, HMAC-SHA-256 code digest, safe relative return path,
+delivery state, expiry/consumption/invalidation times, and bounded failure
+count. The raw six-digit code is never persisted. Only one current challenge
+per normalized mailbox may exist, and verification consumes it under a row lock.
+
+### AuthRateLimit / AuthEvent
+
+Authentication rate limits use PostgreSQL rows keyed by scope, keyed subject
+digest, and time bucket so all Web instances share enforcement. Authentication
+events retain a bounded, redacted outcome trail and optional internal owner,
+challenge, request, and delivery references; they do not store a code or email
+body. GG-029 currently carries these additions in provisional migration 0023,
+whose number must be reconciled after parallel GG-027 migrations 0020–0022.
+
 ### PlanEntitlement
 
 Owner, product plan/version, effective interval, capability and quota snapshot,

@@ -19,8 +19,9 @@ accepted ADRs for it do not mean its later migrations are deployed.
 
 The next selected authentication boundary is GoodGood-owned email OTP with a
 managed mail-delivery provider, documented in [ADR 0045](decisions/0045-goodgood-owned-email-otp.md)
-and [the rollout plan](EMAIL_AUTH_PLAN.md). This is not implemented yet;
-the OIDC contracts below still apply to the deployed runtime.
+and [the rollout plan](EMAIL_AUTH_PLAN.md). GG-029 implements the P1 runtime and
+first P2 browser surface in an isolated local candidate; the OIDC contracts
+below still apply to the deployed runtime until a separately approved cutover.
 
 M3 implements one production-shaped local generation path: the browser submits
 an idempotent request, PostgreSQL transactionally creates a batch, job, audit
@@ -67,6 +68,15 @@ top-level browser navigation. Its callback is fixed to the GoodGood origin
 derived from the configured login callback. This clears the hosted Authing
 application session without retaining an ID Token or accepting a browser-owned
 redirect target.
+
+The email candidate replaces external identity proof with a browser-bound,
+short-lived challenge. GoodGood stores only a keyed code digest, enforces
+mailbox/IP/global limits in PostgreSQL, sends through one bounded SMTP adapter,
+and atomically consumes the challenge while resolving or creating a random
+`urn:goodgood:email` identity and opaque GoodGood session. New owners still
+start pending. Delivery, identity, account review, authorization, and business
+ownership remain separate; email mode does not accept provider tokens or fall
+back to local fixtures.
 
 ADR 0020 changes account admission without weakening OIDC identity validation.
 Any verified Authing user may establish a GoodGood session, but a newly

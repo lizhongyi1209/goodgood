@@ -16,6 +16,7 @@ await build({
     "mock-generation": "server/runtime/mock-generation.mjs",
     migrate: "server/runtime/migrate.mjs",
     "reference-cleanup": "server/runtime/reference-cleanup.mjs",
+    "email-auth-cleanup": "server/runtime/email-auth-cleanup.mjs",
     "r2-inventory": "server/runtime/r2-inventory.mjs",
     web: "server/runtime/web.mjs",
     worker: "server/runtime/worker.mjs",

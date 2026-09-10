@@ -55,6 +55,7 @@ import {
   type AuthenticationSession,
 } from "@/features/auth/http-auth-boundary";
 import { AccountAccessGate } from "@/features/auth/account-access-gate";
+import { AuthenticationGate } from "@/features/auth/authentication-gate";
 import { listAssets } from "@/features/assets/http-asset-boundary";
 import {
   ImageDownloadError,
@@ -1543,6 +1544,13 @@ export default function Home() {
     }
   };
 
+  const handleAuthenticationComplete = async () => {
+    const session = await readAuthenticationSession();
+    if (!session) throw new Error("登录状态尚未建立，请重新输入验证码。");
+    setAuthenticationSession(session);
+    setAuthenticationError(null);
+  };
+
   const handleRefreshAccessStatus = async () => {
     setAccessStatusRefreshing(true);
     try {
@@ -2830,18 +2838,11 @@ export default function Home() {
           </div>
         </div>
       ) : authenticationSession === null ? (
-        <div className="authentication-gate" role="dialog" aria-modal="true" aria-labelledby="authentication-title">
-          <div className="authentication-card">
-            <Image src="/goodgood-mark.svg" alt="" width={32} height={24} />
-            <h2 id="authentication-title">登录后继续创作</h2>
-            <p>使用 Google 账号或邮箱验证码。首次登录会自动注册，无需设置密码。</p>
-            {authenticationError && <div className="authentication-error" role="alert">{authenticationError}</div>}
-            <button className="authentication-primary" onClick={handleLogin}>
-              <LogIn size={16} />
-              Google / 邮箱验证码登录
-            </button>
-          </div>
-        </div>
+        <AuthenticationGate
+          initialError={authenticationError}
+          onAuthenticated={handleAuthenticationComplete}
+          onHostedLogin={handleLogin}
+        />
       ) : authenticationSession.access.status !== "active" ? (
         <AccountAccessGate
           busy={accessStatusRefreshing}

@@ -254,14 +254,54 @@ in staging or production. The OIDC adapter verifies the selected provider's
 signed identity and emits the same provider-neutral owner context through a
 server-owned GoodGood session.
 
+For the isolated GG-029 email candidate, start a separate project so it cannot
+replace the normal local stack:
+
+```bash
+npm run stack:email-local
+# Web: http://127.0.0.1:31029
+# Mailpit inbox: http://127.0.0.1:58029
+npm run stack:email-local:down
+```
+
+`compose.email-otp-local.yaml` uses a pinned Mailpit image, synthetic sender,
+loopback ports, a local-only OTP secret, and the existing mock generation
+provider. It is not a production mail server and must not receive real
+credentials. The cleanup entry point is dry-run by default:
+`DATABASE_URL=... npm run auth:cleanup`; add `-- --execute` only after reviewing
+the exact isolated/approved database target.
+
 ### Production authentication configuration
 
 The deployed mode is still Authing OIDC. [ADR 0045](decisions/0045-goodgood-owned-email-otp.md)
 selects email-only authentication for a future release; follow
 [EMAIL_AUTH_PLAN.md](EMAIL_AUTH_PLAN.md) for its implementation and cutover
-requirements. Do not set `email_otp` in the current runtime: configuration,
-secret mounts, and release preflight do not support it yet. GG-028's custom
-Authing domain is no longer the target for this work.
+requirements. The GG-029 runtime supports `email_otp` only as an isolated local
+candidate. Do not set it in production yet: real provider/DNS evidence,
+production secret mounts, mode-aware release preflight, migration/recovery, and
+cutover approval are incomplete. GG-028's custom Authing domain is no longer
+the target for this work.
+
+The candidate Web process recognizes these email-mode values; none belongs in
+browser code, the image, or the generation Worker:
+
+| Variable | Candidate meaning |
+| --- | --- |
+| `GOODGOOD_AUTH_MODE` | `email_otp` |
+| `GOODGOOD_AUTH_PUBLIC_ORIGIN` | Exact GoodGood origin only; HTTPS in production |
+| `GOODGOOD_AUTH_COOKIE_NAME` / `GOODGOOD_AUTH_COOKIE_SECURE` | HTTPS requires a Secure `__Host-` name |
+| `GOODGOOD_EMAIL_OTP_SECRET_FILE` | Preferred mounted file containing at least 32 random bytes; separate from SMTP credentials |
+| `GOODGOOD_EMAIL_SENDING_ENABLED` | Emergency send switch; `false` leaves existing sessions and already-issued codes usable |
+| `GOODGOOD_EMAIL_REGISTRATION_ENABLED` | New-owner switch; existing bound mailboxes may still log in |
+| `GOODGOOD_EMAIL_SMTP_HOST` / `PORT` / `SECURE` | One approved TLS SMTP endpoint; local Mailpit uses 1025/false only |
+| `GOODGOOD_EMAIL_SMTP_USERNAME` / `GOODGOOD_EMAIL_SMTP_PASSWORD_FILE` | Configure both or neither; prefer the mounted password file |
+| `GOODGOOD_EMAIL_FROM` / `GOODGOOD_EMAIL_REPLY_TO` | One validated mailbox value each; no multi-recipient input |
+| `GOODGOOD_AUTH_TRUSTED_PROXY_ADDRESSES` | At most 16 exact direct-proxy IPs; empty means ignore forwarded client headers |
+
+Optional OTP/session/SMTP timeouts retain the bounded defaults in
+`server/auth/config.mjs`. Production preflight must later require secret files,
+validate the actual CDN→Nginx address chain, and reject inline secrets even
+though inline values remain convenient in the isolated local test stack.
 
 ADR 0007 selects Authing-hosted authentication through standard OIDC. The
 Authing application must expose only Google and passwordless email

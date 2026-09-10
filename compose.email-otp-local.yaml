@@ -1,0 +1,35 @@
+services:
+  web:
+    environment:
+      GOODGOOD_ALLOW_LOCAL_AUTH: "false"
+      GOODGOOD_AUTH_MODE: email_otp
+      GOODGOOD_AUTH_PUBLIC_ORIGIN: http://127.0.0.1:${GOODGOOD_WEB_PORT:-3000}
+      GOODGOOD_AUTH_COOKIE_NAME: goodgood_email_session
+      GOODGOOD_AUTH_COOKIE_SECURE: "false"
+      GOODGOOD_AUTH_TRUSTED_PROXY_ADDRESSES: ""
+      GOODGOOD_LOCAL_AUTH_TOKENS: ""
+      GOODGOOD_LOCAL_AUTH_DEFAULT_TOKEN: ""
+      GOODGOOD_EMAIL_OTP_SECRET: goodgood-email-otp-local-only-secret-value
+      GOODGOOD_EMAIL_FROM: GoodGood <no-reply@mail.goodgood.local>
+      GOODGOOD_EMAIL_SMTP_HOST: mailpit
+      GOODGOOD_EMAIL_SMTP_PORT: "1025"
+      GOODGOOD_EMAIL_SMTP_SECURE: "false"
+    depends_on:
+      mailpit:
+        condition: service_started
+
+  mailpit:
+    image: ghcr.io/axllent/mailpit:v1.31.1@sha256:98b916bd3c8d61f7633a52d3ea2f58d00620cb01ca57ab59edde68c347a95365
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      MP_DATABASE: /tmp/mailpit.db
+      MP_MAX_MESSAGES: "100"
+    ports:
+      - "127.0.0.1:${GOODGOOD_MAILPIT_PORT:-8025}:8025"
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    networks:
+      - goodgood-local
