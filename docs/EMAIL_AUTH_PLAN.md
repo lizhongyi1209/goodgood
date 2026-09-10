@@ -70,8 +70,9 @@
 DKIM，并在 Cloudflare 写入 DKIM、SPF、监测策略 DMARC 和优先级 10 的 MX。Cloudflare 权威
 服务器查询可见四项记录，阿里云控制台复验状态为“验证通过”；根域已有 Cloudflare Email
 Routing 记录保留未改。
-新加坡 SMTP 端点为 `smtpdm-ap-southeast-1.aliyuncs.com:465`，仍须由香港主机 TLS 连通和真实
-投递验证。已创建“触发邮件”发信地址 `no-reply@mail.goodgood.o1key.com`，控制台状态为“正常”；
+新加坡 SMTP 端点为 `smtpdm-ap-southeast-1.aliyuncs.com:465`。香港生产主机只读连接已成功协商
+TLS 1.3 且证书校验为 OK，未使用凭据或发送邮件；SMTP 认证和真实投递仍待验证。已创建“触发邮件”
+发信地址 `no-reply@mail.goodgood.o1key.com`，控制台状态为“正常”；
 回信地址非必填，当前留空，未虚构无人维护的 support 邮箱。
 
 | 用途 | 建议值 | 说明 |
@@ -263,7 +264,7 @@ P0 已开通 Direct Mail 并完成发信子域 DNS；生产登录仍为 Authing�
 也未迁移生产数据、部署候选或自动切换生产。
 
 迁移暂用 `0023_gg029_email_otp.sql`，因为并行 GG-027 已预留 0020–0022；整合时必须先合并
-GG-027 或按最终 main 重新编号。下一步先完成 P0 凭据、香港主机 TLS 与收件验证，再补模式化
+GG-027 或按最终 main 重新编号。下一步先完成 P0 凭据、SMTP 认证与收件验证，再补模式化
 production preflight、秘密挂载、告警与受审旧 owner 邮箱绑定工具；不整合其他并行任务源码。
 
 ## 9. 上线验收清单

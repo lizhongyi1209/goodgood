@@ -28,6 +28,7 @@
 - P0 地域与发信域：已在新加坡 `ap-southeast-1` 创建 `mail.goodgood.o1key.com`；没有在默认华东地域创建域名。用户确认 2048 位 DKIM 切换警告后，阿里云最终状态为“验证通过”。匹配 SMTP 端点为 `smtpdm-ap-southeast-1.aliyuncs.com:465`。
 - P0 DNS：已在 Cloudflare 为发信子域配置 2048 位 DKIM、`v=spf1 include:spfdm-ap-southeast-1.aliyun.com -all`、监测策略 DMARC，以及优先级 10、目标 `mxdm-ap-southeast-1.aliyun.com` 的 MX。Cloudflare 权威服务器查询可见四项记录，阿里云控制台复验通过；根域已有 Cloudflare Email Routing 的 MX/SPF/DKIM/DMARC 均保留未改。
 - P0 发信地址：已创建触发邮件地址 `no-reply@mail.goodgood.o1key.com`，控制台状态为“正常”。回信地址非必填，当前留空；未虚构无人维护的 support 邮箱。
+- P0 主机连通：从香港生产主机只读连接 `smtpdm-ap-southeast-1.aliyuncs.com:465` 成功协商 TLS 1.3，证书校验为 OK；未使用 SMTP 密码或发送邮件。
 - 定向验证：邮箱/OIDC/UI 共 26 通过、隔离数据库测试默认 1 跳过；typecheck 与 runtime build 通过。一次显式回环数据库测试证明错误次数持久化、跨浏览器拒绝、并发单次成功及欢迎积分幂等。
 - 容器/浏览器：隔离项目 `goodgood-gg029` 构建、迁移、健康检查通过；Mailpit 合成收信端到端返回 pending/100 积分；390×844 Chrome 视口从邮箱输入走到审核页，无真实外发或生图请求。
 - 完整门禁：`npm run check:local` 通过，264 项中 257 通过、7 个显式外部/数据库测试跳过、0 失败；同时修正迁移版本断言、Windows CRLF 测试容差和一个既有 O1Key 失败轮询测试的并发超时容差。
@@ -36,8 +37,8 @@
 
 ## 恢复工作
 
-- 尚未完成：P0 受保护 SMTP 凭据、香港主机 TLS 连通及真实收件；P2 告警/支持汇总和定向账号撤销验收；P3 受审绑定工具、模式化 production preflight/秘密挂载/CI；P4 上线与观察。
+- 尚未完成：P0 受保护 SMTP 凭据、SMTP 认证及真实收件；P2 告警/支持汇总和定向账号撤销验收；P3 受审绑定工具、模式化 production preflight/秘密挂载/CI；P4 上线与观察。
 - 外部输入：站长可接收求助的真实支持邮箱、明确授权的测试收件箱，以及动作时确认创建受保护 SMTP 凭据。建议值不等于已经配置。
 - 限流/预算为 alpha 初始建议；按真实共享出口和发送表现调整，不宣称抵抗全部自动化滥用。
 - 回退限制：切换后新邮箱用户没有 Authing 身份；不能承诺只改回 Authing 就全员恢复。详细维护/回退路径见主方案第 7 节。
-- 下一步：用户动作时确认后，为 `no-reply@mail.goodgood.o1key.com` 创建持久 SMTP 密码并按生产秘密处理，随后验证香港主机 TLS；真实投递仍需明确授权的测试收件箱，回复能力仍需站长提供真实支持邮箱。不要切生产、清理 Authing 或继续 GG-028 域名修复。
+- 下一步：用户动作时确认后，为 `no-reply@mail.goodgood.o1key.com` 创建持久 SMTP 密码并按生产秘密处理，随后验证 SMTP 认证；真实投递仍需明确授权的测试收件箱，回复能力仍需站长提供真实支持邮箱。不要切生产、清理 Authing 或继续 GG-028 域名修复。
