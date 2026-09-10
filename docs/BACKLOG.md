@@ -30,7 +30,7 @@
 | GG-022 | 修复 alpha 后续发布的隔离恢复演练 | 已上线并通过真实恢复/发布验收 | [任务](tasks/GG-022-ongoing-production-restore.md) |
 | GG-023 | 升级 Sharp 以修复新识别的 HIGH 漏洞 | 安全镜像 CI 通过；待新生产/冒烟授权 | [任务](tasks/GG-023-sharp-security-update.md) |
 | GG-028 | Authing 自定义域名和浏览器 Google | 被 GG-029 取代；原未发布分支保留，不继续配置 | 原提交 `81ed8ae`；[后续决策](decisions/0045-goodgood-owned-email-otp.md) |
-| GG-029 | 自建邮箱验证码登录，Google 延后 | P0 服务、发信域与 DNS 验证完成，等待发信地址/凭据/真实收件；P1 与首个 P2 已验证，未部署 | [任务](tasks/GG-029-email-otp-plan.md) / [方案](EMAIL_AUTH_PLAN.md) |
+| GG-029 | 自建邮箱验证码登录，Google 延后 | P0 服务、发信域、DNS 与发信地址完成，等待凭据/真实收件；P1 与首个 P2 已验证，未部署 | [任务](tasks/GG-029-email-otp-plan.md) / [方案](EMAIL_AUTH_PLAN.md) |
 
 GG-024—GG-027 已被其他 worktree 占用，其进度以各自任务卡为准；不由本分支合并或覆盖。
 下一个普通产品需求从 **GG-030** 分配并检查是否已被占用。每次 alpha 发布仍须取得
