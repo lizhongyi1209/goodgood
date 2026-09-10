@@ -186,6 +186,8 @@ const JOB_SELECT = `
          b.background,
          b.output_format,
          b.input_hash,
+         (SELECT u.email FROM users u WHERE u.id = j.creator_owner_id)
+           AS creator_email,
          COALESCE((
            SELECT jsonb_agg(to_jsonb(a) ORDER BY a.ordinal)
              FROM assets a

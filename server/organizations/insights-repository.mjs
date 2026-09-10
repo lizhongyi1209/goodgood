@@ -1,5 +1,77 @@
+import { randomUUID } from "node:crypto";
 import { exactCreditAmount } from "../billing/policy.mjs";
+import { organizationIdempotencyConflictError } from "./errors.mjs";
+import { runOrganizationTransaction } from "./repository.mjs";
 import { resolveWorkspaceAccess } from "./workspace-access.mjs";
+
+export function readOrganizationAssetForDownload(
+  pool,
+  {
+    actorOwnerId,
+    assetId,
+    idempotencyKey,
+    operationHash,
+    workspaceId,
+  },
+) {
+  return runOrganizationTransaction(pool, async (client) => {
+    const workspace = await resolveWorkspaceAccess(client, {
+      manager: true,
+      ownerId: actorOwnerId,
+      workspaceId,
+      write: true,
+    });
+    const result = await client.query(
+      `SELECT a.id, a.object_key, a.creator_owner_id
+         FROM assets a
+         JOIN generation_jobs j
+           ON j.id = a.job_id AND j.workspace_id = a.workspace_id
+        WHERE a.id = $1 AND a.workspace_id = $2
+          AND j.state = 'succeeded' AND a.moderation_state = 'accepted'
+        FOR UPDATE OF a`,
+      [assetId, workspace.id],
+    );
+    const asset = result.rows[0];
+    if (!asset) return null;
+    const audit = await client.query(
+      `INSERT INTO workspace_audit_events (
+         id, workspace_id, actor_owner_id, target_owner_id, action_type,
+         reason, idempotency_key, operation_hash, metadata
+       ) VALUES ($1, $2, $3, $4, 'download_organization_asset',
+                 'download organization asset', $5, $6, $7::jsonb)
+       ON CONFLICT (actor_owner_id, idempotency_key) DO NOTHING
+       RETURNING id`,
+      [
+        randomUUID(),
+        workspace.id,
+        actorOwnerId,
+        asset.creator_owner_id,
+        idempotencyKey,
+        operationHash,
+        JSON.stringify({ assetId: asset.id }),
+      ],
+    );
+    if (!audit.rowCount) {
+      const replay = await client.query(
+        `SELECT workspace_id, action_type, operation_hash, metadata
+           FROM workspace_audit_events
+          WHERE actor_owner_id = $1 AND idempotency_key = $2`,
+        [actorOwnerId, idempotencyKey],
+      );
+      const event = replay.rows[0];
+      if (
+        !event ||
+        event.workspace_id !== workspace.id ||
+        event.action_type !== "download_organization_asset" ||
+        event.operation_hash !== operationHash ||
+        event.metadata?.assetId !== asset.id
+      ) {
+        throw organizationIdempotencyConflictError();
+      }
+    }
+    return asset;
+  });
+}
 
 export async function listOrganizationMemberBudgets(
   pool,

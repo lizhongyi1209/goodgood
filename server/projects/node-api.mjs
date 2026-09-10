@@ -6,6 +6,7 @@ import {
   updateProject,
 } from "./api.mjs";
 import { requestIdFor } from "../observability/http.mjs";
+import { workspaceIdFromRequest } from "../organizations/request.mjs";
 
 const JSON_HEADERS = {
   "cache-control": "no-store",
@@ -54,8 +55,13 @@ export function createProjectNodeApiHandler({
     let projectId;
     try {
       const ownerContext = await authenticate(request);
+      const workspaceId = workspaceIdFromRequest(request);
       if (url.pathname === "/api/projects" && request.method === "GET") {
-        sendJson(response, 200, await operations.listProjects({ ownerContext }));
+        sendJson(
+          response,
+          200,
+          await operations.listProjects({ ownerContext, workspaceId }),
+        );
         return true;
       }
       if (url.pathname === "/api/projects" && request.method === "POST") {
@@ -66,6 +72,7 @@ export function createProjectNodeApiHandler({
             idempotencyKey: idempotencyKey(request),
             input: await readJson(request),
             ownerContext,
+            workspaceId,
           }),
         );
         return true;
@@ -78,7 +85,7 @@ export function createProjectNodeApiHandler({
           sendJson(
             response,
             200,
-            await operations.readProject({ ownerContext, projectId }),
+            await operations.readProject({ ownerContext, projectId, workspaceId }),
           );
           return true;
         }
@@ -90,6 +97,7 @@ export function createProjectNodeApiHandler({
               input: await readJson(request),
               ownerContext,
               projectId,
+              workspaceId,
             }),
           );
           return true;

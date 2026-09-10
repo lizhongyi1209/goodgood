@@ -39,7 +39,7 @@ test("asset repository lists only accepted successful records for one owner newe
   let query;
   const pool = {
     async query(sql, values) {
-      if (/FROM users u/.test(sql)) {
+      if (/JOIN workspaces w/.test(sql)) {
         return {
           rows: [{
             kind: "personal",
@@ -112,7 +112,7 @@ test("asset repository resolves one accepted successful Asset for its owner", as
   let query;
   const pool = {
     async query(sql, values) {
-      if (/FROM users u/.test(sql)) {
+      if (/JOIN workspaces w/.test(sql)) {
         return {
           rows: [{
             kind: "personal",
@@ -244,6 +244,7 @@ test("asset HTTP route authenticates and preserves the owner context", async () 
   assert.deepEqual(calls[1], {
     assetId: "50000000-0000-4000-8000-000000000001",
     ownerContext: { ownerId: "owner-a" },
+    workspaceId: null,
   });
 
   const otherOwnerResponse = responseRecorder();

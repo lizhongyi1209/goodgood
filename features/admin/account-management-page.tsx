@@ -3,6 +3,7 @@
 import Image from "next/image";
 import {
   ArrowLeft,
+  Building2,
   CheckCircle2,
   Coins,
   LoaderCircle,
@@ -53,6 +54,7 @@ import {
   signOut,
   type AuthenticationSession,
 } from "@/features/auth/http-auth-boundary";
+import { createOrganizationWorkspace } from "@/features/organizations/http-organization-boundary";
 import {
   grantManagedAccountTestCredits,
   readAdminDashboard,
@@ -63,7 +65,7 @@ import {
   type ManagedAccountStatus,
 } from "./http-admin-boundary";
 
-type AccountAction = "approve" | "suspend" | "restore" | "grant";
+type AccountAction = "approve" | "suspend" | "restore" | "grant" | "organization";
 
 const STATUS_LABELS: Record<ManagedAccountStatus, string> = {
   active: "已启用",
@@ -107,6 +109,12 @@ function actionCopy(action: AccountAction, account: ManagedAccount) {
   if (action === "restore") {
     return { description: `恢复 ${account.email} 的产品访问。`, title: "恢复账户" };
   }
+  if (action === "organization") {
+    return {
+      description: `创建企业工作区，并把 ${account.email} 设为首位企业负责人。`,
+      title: "创建企业工作区",
+    };
+  }
   return { description: `向 ${account.email} 追加一笔独立的测试积分流水。`, title: "赠送测试积分" };
 }
 
@@ -124,6 +132,7 @@ export function AccountManagementPage() {
   const [selected, setSelected] = useState<{ account: ManagedAccount; action: AccountAction } | null>(null);
   const [reason, setReason] = useState("");
   const [amount, setAmount] = useState("100");
+  const [organizationName, setOrganizationName] = useState("");
   const [mutating, setMutating] = useState(false);
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [statusRefreshing, setStatusRefreshing] = useState(false);
@@ -187,12 +196,15 @@ export function AccountManagementPage() {
     setSelected({ account, action });
     setMutationError(null);
     setAmount("100");
+    setOrganizationName(`${account.email.split("@")[0]} 的企业`);
     setReason(
       action === "approve"
         ? "通过种子用户审核"
         : action === "restore"
           ? "恢复种子用户访问"
-          : "",
+          : action === "organization"
+            ? "为已验证负责人创建企业工作区"
+            : "",
     );
   };
 
@@ -206,7 +218,14 @@ export function AccountManagementPage() {
     setMutating(true);
     setMutationError(null);
     try {
-      if (selected.action === "grant") {
+      if (selected.action === "organization") {
+        const result = await createOrganizationWorkspace({
+          initialOwnerId: selected.account.id,
+          name: organizationName,
+          reason,
+        });
+        toast.success(`${result.workspace.name} 已创建`);
+      } else if (selected.action === "grant") {
         await grantManagedAccountTestCredits({
           amount: Number(amount),
           ownerId: selected.account.id,
@@ -401,6 +420,7 @@ export function AccountManagementPage() {
                       {account.status === "active" && account.role !== "site_owner" && <Button size="sm" variant="outline" onClick={() => openAction(account, "suspend")}><ShieldBan />暂停</Button>}
                       {account.status === "suspended" && <Button size="sm" variant="outline" onClick={() => openAction(account, "restore")}><CheckCircle2 />恢复</Button>}
                       <Button size="sm" variant="ghost" onClick={() => openAction(account, "grant")}><Coins />积分</Button>
+                      {account.status === "active" && <Button size="sm" variant="ghost" onClick={() => openAction(account, "organization")}><Building2 />企业</Button>}
                     </div>
                   </article>
                 ))}
@@ -440,6 +460,7 @@ export function AccountManagementPage() {
                           {account.status === "active" && account.role !== "site_owner" && <Button size="sm" variant="outline" onClick={() => openAction(account, "suspend")}><ShieldBan />暂停</Button>}
                           {account.status === "suspended" && <Button size="sm" variant="outline" onClick={() => openAction(account, "restore")}><CheckCircle2 />恢复</Button>}
                           <Button size="sm" variant="ghost" onClick={() => openAction(account, "grant")}><Coins />积分</Button>
+                          {account.status === "active" && <Button size="sm" variant="ghost" onClick={() => openAction(account, "organization")}><Building2 />企业</Button>}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -491,6 +512,13 @@ export function AccountManagementPage() {
               <p className="mt-1 text-xs text-zinc-500">单次最多 5000 积分，只允许正整数。</p>
             </div>
           )}
+          {selected?.action === "organization" && (
+            <div>
+              <label className="text-sm font-medium" htmlFor="organization-name">企业名称</label>
+              <Input id="organization-name" className="mt-2" maxLength={80} value={organizationName} onChange={(event) => setOrganizationName(event.target.value)} />
+              <p className="mt-1 text-xs text-zinc-500">负责人后续可邀请员工并分配可回收的创作额度。</p>
+            </div>
+          )}
           <div>
             <label className="text-sm font-medium" htmlFor="admin-action-reason">操作原因</label>
             <Textarea id="admin-action-reason" className="mt-2 min-h-24" maxLength={200} placeholder="请填写会进入审计记录的原因" value={reason} onChange={(event) => setReason(event.target.value)} />
@@ -500,7 +528,7 @@ export function AccountManagementPage() {
             <Button variant="outline" disabled={mutating} onClick={() => setSelected(null)}>取消</Button>
             <Button
               variant={selected?.action === "suspend" ? "destructive" : "default"}
-              disabled={mutating || reason.trim().length < 2 || (selected?.action === "grant" && (!Number.isInteger(Number(amount)) || Number(amount) < 1 || Number(amount) > 5000))}
+              disabled={mutating || reason.trim().length < 2 || (selected?.action === "grant" && (!Number.isInteger(Number(amount)) || Number(amount) < 1 || Number(amount) > 5000)) || (selected?.action === "organization" && organizationName.trim().length < 2)}
               onClick={() => void runAction()}
             >
               {mutating && <LoaderCircle className="animate-spin" />}确认

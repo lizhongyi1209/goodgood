@@ -5,6 +5,7 @@ import {
   completeReferenceUpload,
   referenceApiError,
 } from "@/server/references/api.mjs";
+import { workspaceIdFromRequest } from "@/server/organizations/request.mjs";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -25,6 +26,7 @@ export async function POST(request: Request, context: RouteContext) {
       await completeReferenceUpload({
         ownerContext: await authenticate(request),
         referenceId,
+        workspaceId: workspaceIdFromRequest(request),
       }),
       { headers: { "cache-control": "no-store" } },
     );

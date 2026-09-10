@@ -283,6 +283,25 @@ export async function listOwnerWorkspaces(pool, ownerId) {
   return result.rows.map(workspaceFromRow);
 }
 
+export async function listPendingOrganizationInvitations(pool, actorOwnerId) {
+  const result = await pool.query(
+    `SELECT i.*, w.name AS workspace_name
+       FROM users u
+       JOIN workspace_invitations i
+         ON i.normalized_email = lower(btrim(u.email))
+       JOIN workspaces w ON w.id = i.workspace_id
+      WHERE u.id = $1 AND u.status = 'active'
+        AND i.status = 'pending' AND i.expires_at > now()
+        AND w.kind = 'organization' AND w.status = 'active'
+      ORDER BY i.created_at DESC, i.id DESC`,
+    [actorOwnerId],
+  );
+  return result.rows.map((row) => ({
+    ...invitationFromRow(row),
+    workspaceName: row.workspace_name,
+  }));
+}
+
 export function inviteOrganizationMember(
   pool,
   {
@@ -772,8 +791,16 @@ export async function listOrganizationManagement(pool, { actorOwnerId, workspace
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    await assertOrganizationManager(client, workspaceId, actorOwnerId);
-    const workspace = await readWorkspace(client, workspaceId);
+    const manager = await assertOrganizationManager(
+      client,
+      workspaceId,
+      actorOwnerId,
+    );
+    const workspace = await readWorkspace(
+      client,
+      workspaceId,
+      manager.membership_id,
+    );
     const members = await client.query(
       `SELECT m.*, u.email
          FROM workspace_memberships m

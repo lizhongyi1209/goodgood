@@ -8,6 +8,7 @@ import { findReadyReferences } from "../references/repository.mjs";
 import { validateReferenceIds } from "../references/validation.mjs";
 import { findProject } from "../projects/repository.mjs";
 import { newRequestId } from "../observability/http.mjs";
+import { OrganizationError } from "../organizations/errors.mjs";
 import { dispatchPendingJobs } from "./queue.mjs";
 import {
   isSupportedGenerationInput,
@@ -24,6 +25,8 @@ import {
   connectGenerationQueue,
   getGenerationResources,
 } from "./resources.mjs";
+
+const DEFAULT_WORKSPACE_ID = /** @type {string | null} */ (null);
 
 export class GenerationRequestError extends Error {
   constructor(code, message, status = 400, retryable = false) {
@@ -111,7 +114,12 @@ function ownerIdFromContext(ownerContext) {
   return ownerContext.ownerId;
 }
 
-export async function submitGeneration({ idempotencyKey, input, ownerContext }) {
+export async function submitGeneration({
+  idempotencyKey,
+  input,
+  ownerContext,
+  workspaceId = DEFAULT_WORKSPACE_ID,
+}) {
   const resources = await getGenerationResources();
   const ownerId = ownerIdFromContext(ownerContext);
   const validatedInput = validateM3GenerationInput(input);
@@ -120,6 +128,7 @@ export async function submitGeneration({ idempotencyKey, input, ownerContext }) 
     !(await findProject(resources.pool, {
       ownerId,
       projectId: validatedInput.projectId,
+      workspaceId,
     }))
   ) {
     throw new GenerationRequestError("PROJECT_NOT_FOUND", "未找到该项目。", 404);
@@ -127,6 +136,7 @@ export async function submitGeneration({ idempotencyKey, input, ownerContext }) 
   const readyReferences = await findReadyReferences(resources.pool, {
     ownerId,
     referenceIds: validatedInput.references.map((reference) => reference.id),
+    workspaceId,
   });
   if (readyReferences.length !== validatedInput.references.length) {
     throw new GenerationRequestError(
@@ -146,6 +156,7 @@ export async function submitGeneration({ idempotencyKey, input, ownerContext }) 
       })),
     },
     ownerId,
+    workspaceId,
   });
   try {
     await connectGenerationQueue(resources);
@@ -165,11 +176,16 @@ export async function submitGeneration({ idempotencyKey, input, ownerContext }) 
   };
 }
 
-export async function readGeneration({ jobId, ownerContext }) {
+export async function readGeneration({
+  jobId,
+  ownerContext,
+  workspaceId = DEFAULT_WORKSPACE_ID,
+}) {
   const resources = await getGenerationResources();
   const row = await findGenerationJob(resources.pool, {
     jobId,
     ownerId: ownerIdFromContext(ownerContext),
+    workspaceId,
   });
   if (!row) {
     throw new GenerationRequestError("GENERATION_NOT_FOUND", "未找到该生成任务。", 404);
@@ -177,11 +193,17 @@ export async function readGeneration({ jobId, ownerContext }) {
   return presentGenerationJob(resources, row);
 }
 
-export async function retryGeneration({ idempotencyKey, jobId, ownerContext }) {
+export async function retryGeneration({
+  idempotencyKey,
+  jobId,
+  ownerContext,
+  workspaceId = DEFAULT_WORKSPACE_ID,
+}) {
   const resources = await getGenerationResources();
   const source = await findGenerationJob(resources.pool, {
     jobId,
     ownerId: ownerIdFromContext(ownerContext),
+    workspaceId,
   });
   if (!source) {
     throw new GenerationRequestError("GENERATION_NOT_FOUND", "未找到该生成任务。", 404);
@@ -191,6 +213,7 @@ export async function retryGeneration({ idempotencyKey, jobId, ownerContext }) {
     input: persistedGenerationInputFromRow(source),
     ownerId: ownerIdFromContext(ownerContext),
     retryOfJobId: jobId,
+    workspaceId,
   });
   try {
     await connectGenerationQueue(resources);
@@ -214,6 +237,7 @@ export function generationApiError(error, jobId = "", requestId = newRequestId()
   if (
     error instanceof AuthenticationError ||
     error instanceof BillingPersistenceError ||
+    error instanceof OrganizationError ||
     error instanceof GenerationRequestError ||
     error instanceof GenerationPersistenceError ||
     error instanceof ReferenceRequestError ||

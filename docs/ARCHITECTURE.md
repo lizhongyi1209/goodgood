@@ -249,7 +249,7 @@ Project index/detail, asset index/detail, and root creation are URL-addressable.
 `/create` is the canonical creation URL while `/` remains a compatibility entry
 to the same state; future Explore, Moodboards, and Help routes remain deferred.
 
-## GG-030 enterprise boundary (backend scope implemented; API/UI pending)
+## GG-030 enterprise boundary (implemented locally; not deployed)
 
 GG-030 introduces `Workspace` as the authorization and durable ownership scope.
 Every existing user receives one personal Workspace; organization Workspaces
@@ -294,6 +294,15 @@ fresh signed URLs. They do not impersonate the creator and cannot use the same
 query to sign personal or raw reusable-reference objects. Platform site-owner
 operations remain under `/admin/users`; enterprise administration has a
 separate repository, API, and route boundary.
+
+The browser sends an explicit Workspace header through draft, reference,
+project, generation, and Asset boundaries. Personal requests remain compatible
+without that header; organization requests fail closed until the current
+session's active membership is resolved. `/workspaces/:workspaceId/create`
+mounts the shared creation tool only after this validation. Enterprise overview,
+member, usage, and Asset routes use their own HTTP boundary, require CSRF on
+writes and audited downloads, and never treat a hidden navigation item as
+authorization.
 
 ## Target production topology
 

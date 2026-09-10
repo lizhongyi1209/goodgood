@@ -7,6 +7,7 @@ import {
   saveCreationDraft,
 } from "@/server/drafts/api.mjs";
 import { getGenerationResources } from "@/server/generation/resources.mjs";
+import { workspaceIdFromRequest } from "@/server/organizations/request.mjs";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -38,17 +39,28 @@ async function handle(
 
 export async function GET(request: Request) {
   return handle(request, (ownerContextValue) =>
-    readCreationDraft({ ownerContext: ownerContextValue }));
+    readCreationDraft({
+      ownerContext: ownerContextValue,
+      workspaceId: workspaceIdFromRequest(request),
+    }));
 }
 
 export async function PUT(request: Request) {
   return handle(request, (ownerContextValue) =>
     request.json().then((input) =>
-      saveCreationDraft({ input, ownerContext: ownerContextValue })));
+      saveCreationDraft({
+        input,
+        ownerContext: ownerContextValue,
+        workspaceId: workspaceIdFromRequest(request),
+      })));
 }
 
 export async function DELETE(request: Request) {
   return handle(request, (ownerContextValue) =>
     request.json().then((input) =>
-      deleteCreationDraft({ input, ownerContext: ownerContextValue })));
+      deleteCreationDraft({
+        input,
+        ownerContext: ownerContextValue,
+        workspaceId: workspaceIdFromRequest(request),
+      })));
 }

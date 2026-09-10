@@ -261,7 +261,7 @@ export const workspaceAuditEvents = pgTable(
         'create_organization', 'invite_member', 'accept_invitation',
         'revoke_invitation', 'change_member_role', 'suspend_member',
         'restore_member', 'remove_member', 'grant_organization_credits',
-        'set_member_budget'
+        'set_member_budget', 'download_organization_asset'
       )`,
     ),
     check(

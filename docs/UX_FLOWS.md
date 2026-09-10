@@ -54,7 +54,7 @@
   bootstrap remains an out-of-band security operation, not a public signup
   shortcut.
 
-### Enterprise workspace and member management (accepted, not implemented)
+### Enterprise workspace and member management (implemented locally; not deployed)
 
 The account area exposes a quiet Workspace switcher when a user has an active
 organization membership. Personal and organization names remain explicit; a

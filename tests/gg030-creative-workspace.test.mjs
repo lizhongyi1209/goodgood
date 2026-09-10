@@ -21,6 +21,7 @@ import {
 import {
   listOrganizationMemberBudgets,
   listOrganizationUsage,
+  readOrganizationAssetForDownload,
 } from "../server/organizations/insights-repository.mjs";
 import {
   acceptOrganizationInvitation,
@@ -456,6 +457,38 @@ test(
         })).creator_owner_id,
         employeeId,
       );
+      const auditedDownloadInput = {
+        actorOwnerId: principalId,
+        assetId,
+        idempotencyKey: `creative-download-${randomUUID()}`,
+        operationHash: "a".repeat(64),
+        workspaceId,
+      };
+      assert.equal(
+        (await readOrganizationAssetForDownload(pool, auditedDownloadInput)).id,
+        assetId,
+      );
+      assert.equal(
+        (await readOrganizationAssetForDownload(pool, auditedDownloadInput)).id,
+        assetId,
+      );
+      await assert.rejects(
+        readOrganizationAssetForDownload(pool, {
+          ...auditedDownloadInput,
+          operationHash: "b".repeat(64),
+        }),
+        (error) => error.code === "ORGANIZATION_IDEMPOTENCY_CONFLICT",
+      );
+      const downloadAudit = await pool.query(
+        `SELECT actor_owner_id, target_owner_id, metadata
+           FROM workspace_audit_events
+          WHERE workspace_id = $1 AND action_type = 'download_organization_asset'`,
+        [workspaceId],
+      );
+      assert.equal(downloadAudit.rowCount, 1);
+      assert.equal(downloadAudit.rows[0].actor_owner_id, principalId);
+      assert.equal(downloadAudit.rows[0].target_owner_id, employeeId);
+      assert.equal(downloadAudit.rows[0].metadata.assetId, assetId);
       await assert.rejects(
         findOrganizationAssetGenerationJobs(pool, {
           actorOwnerId: employeeId,

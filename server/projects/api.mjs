@@ -5,6 +5,7 @@ import { getGenerationResources } from "../generation/resources.mjs";
 import { signAssetRead } from "../generation/storage.mjs";
 import { ReferenceRequestError } from "../references/errors.mjs";
 import { newRequestId } from "../observability/http.mjs";
+import { OrganizationError } from "../organizations/errors.mjs";
 import { findReadyReferences } from "../references/repository.mjs";
 import {
   ProjectPersistenceError,
@@ -22,15 +23,18 @@ import {
   validateProjectSaveRequest,
 } from "./validation.mjs";
 
+const DEFAULT_WORKSPACE_ID = /** @type {string | null} */ (null);
+
 function ownerIdFromContext(ownerContext) {
   if (!ownerContext?.ownerId) throw sessionExpiredError();
   return ownerContext.ownerId;
 }
 
-async function resolveProjectState(resources, ownerId, state) {
+async function resolveProjectState(resources, ownerId, state, workspaceId) {
   const readyReferences = await findReadyReferences(resources.pool, {
     ownerId,
     referenceIds: state.referenceIds,
+    workspaceId,
   });
   if (readyReferences.length !== state.referenceIds.length) {
     throw new ProjectRequestError(
@@ -55,6 +59,7 @@ async function presentProject(resources, row) {
     findProjectGenerationJobs(resources.pool, {
       ownerId: row.owner_id,
       projectId: row.id,
+      workspaceId: row.workspace_id,
     }).then((jobs) => Promise.all(jobs.map((job) => presentGenerationJob(resources, job)))),
     Promise.all(
       (row.reference_snapshot ?? []).map(async (reference) => [
@@ -98,26 +103,42 @@ async function presentProject(resources, row) {
   };
 }
 
-export async function createProject({ idempotencyKey, input, ownerContext }) {
+export async function createProject({
+  idempotencyKey,
+  input,
+  ownerContext,
+  workspaceId = DEFAULT_WORKSPACE_ID,
+}) {
   const resources = await getGenerationResources();
   const ownerId = ownerIdFromContext(ownerContext);
   const validated = validateProjectSaveRequest(input);
-  const state = await resolveProjectState(resources, ownerId, validated.state);
+  const state = await resolveProjectState(
+    resources,
+    ownerId,
+    validated.state,
+    workspaceId,
+  );
   const row = await createProjectRecord(resources.pool, {
     ...validated,
     idempotencyKey: validateProjectIdempotencyKey(idempotencyKey),
     ownerId,
     state,
+    workspaceId,
   });
   return presentProject(resources, row);
 }
 
-export async function readProject({ ownerContext, projectId }) {
+export async function readProject({
+  ownerContext,
+  projectId,
+  workspaceId = DEFAULT_WORKSPACE_ID,
+}) {
   const resources = await getGenerationResources();
   const ownerId = ownerIdFromContext(ownerContext);
   const row = await findProject(resources.pool, {
     ownerId,
     projectId: validateProjectId(projectId),
+    workspaceId,
   });
   if (!row) {
     throw new ProjectRequestError("PROJECT_NOT_FOUND", "未找到该项目。", 404);
@@ -125,14 +146,22 @@ export async function readProject({ ownerContext, projectId }) {
   return presentProject(resources, row);
 }
 
-export async function listProjects({ ownerContext }) {
+export async function listProjects({
+  ownerContext,
+  workspaceId = DEFAULT_WORKSPACE_ID,
+}) {
   const resources = await getGenerationResources();
   const ownerId = ownerIdFromContext(ownerContext);
-  const rows = await listProjectRecords(resources.pool, { ownerId });
+  const rows = await listProjectRecords(resources.pool, { ownerId, workspaceId });
   return { projects: await Promise.all(rows.map((row) => presentProject(resources, row))) };
 }
 
-export async function updateProject({ input, ownerContext, projectId }) {
+export async function updateProject({
+  input,
+  ownerContext,
+  projectId,
+  workspaceId = DEFAULT_WORKSPACE_ID,
+}) {
   const resources = await getGenerationResources();
   const ownerId = ownerIdFromContext(ownerContext);
   const validatedProjectId = validateProjectId(projectId);
@@ -140,17 +169,24 @@ export async function updateProject({ input, ownerContext, projectId }) {
     !(await findProject(resources.pool, {
       ownerId,
       projectId: validatedProjectId,
+      workspaceId,
     }))
   ) {
     throw new ProjectRequestError("PROJECT_NOT_FOUND", "未找到该项目。", 404);
   }
   const validated = validateProjectSaveRequest(input);
-  const state = await resolveProjectState(resources, ownerId, validated.state);
+  const state = await resolveProjectState(
+    resources,
+    ownerId,
+    validated.state,
+    workspaceId,
+  );
   const row = await updateProjectRecord(resources.pool, {
     ...validated,
     ownerId,
     projectId: validatedProjectId,
     state,
+    workspaceId,
   });
   if (!row) {
     throw new ProjectRequestError("PROJECT_NOT_FOUND", "未找到该项目。", 404);
@@ -165,6 +201,7 @@ export function projectApiError(
 ) {
   if (
     error instanceof AuthenticationError ||
+    error instanceof OrganizationError ||
     error instanceof ProjectRequestError ||
     error instanceof ProjectPersistenceError ||
     error instanceof ReferenceRequestError

@@ -18,6 +18,8 @@ native history.
 | 帮助 | Placeholder | No view or route yet |
 | 图片详情 | Implemented | `/assets/:assetId` over its preserved source scope |
 | 账户管理 | Implemented | `/admin/users`, visible and callable only by the site owner |
+| 企业创作 | Implemented locally | `/workspaces/:workspaceId/create`, after active-membership validation |
+| 企业管理 | Implemented locally | `/organizations/:organizationId` plus members, usage, and assets subroutes |
 
 Do not describe placeholders as shipped features.
 
@@ -109,7 +111,7 @@ persistence and navigation behavior exist:
 | `/help` | Product help and status guidance |
 | `/admin/users` | M8 site-owner-only account review, suspension/restoration, audit history, and test-credit management |
 
-GG-030 accepts these stable routes for implementation but they are not deployed:
+GG-030 implements these stable routes locally, but they are not deployed:
 
 | Path | Purpose |
 | --- | --- |

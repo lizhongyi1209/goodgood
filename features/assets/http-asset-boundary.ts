@@ -1,5 +1,6 @@
 import { goodGoodApiFetch } from "@/features/auth/http-auth-boundary";
 import type { GenerationJob } from "@/shared/contracts/generation";
+import { workspaceRequestHeaders } from "@/features/organizations/workspace-request";
 
 type AssetApiErrorEnvelope = Readonly<{
   error?: Readonly<{
@@ -29,9 +30,12 @@ export class AssetBoundaryError extends Error {
   }
 }
 
-export async function listAssets(): Promise<readonly GenerationJob[]> {
+export async function listAssets(
+  workspaceId: string | null = null,
+): Promise<readonly GenerationJob[]> {
   const response = await goodGoodApiFetch("/api/assets", {
     cache: "no-store",
+    headers: workspaceRequestHeaders(workspaceId),
   });
   const payload = (await response.json()) as
     | AssetListResponse
@@ -47,10 +51,16 @@ export async function listAssets(): Promise<readonly GenerationJob[]> {
   return (payload as AssetListResponse).batches;
 }
 
-export async function readAssetDownloadUrl(assetId: string): Promise<string> {
+export async function readAssetDownloadUrl(
+  assetId: string,
+  workspaceId: string | null = null,
+): Promise<string> {
   const response = await goodGoodApiFetch(
     `/api/assets/${encodeURIComponent(assetId)}/download-url`,
-    { cache: "no-store" },
+    {
+      cache: "no-store",
+      headers: workspaceRequestHeaders(workspaceId),
+    },
   );
   const payload = (await response.json()) as
     | AssetDownloadUrlResponse

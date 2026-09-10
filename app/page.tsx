@@ -55,7 +55,10 @@ import {
   type AuthenticationSession,
 } from "@/features/auth/http-auth-boundary";
 import { AccountAccessGate } from "@/features/auth/account-access-gate";
-import { listAssets } from "@/features/assets/http-asset-boundary";
+import {
+  listAssets,
+  readAssetDownloadUrl,
+} from "@/features/assets/http-asset-boundary";
 import {
   ImageDownloadError,
   saveImageToLocal,
@@ -114,6 +117,8 @@ import type {
   CreationDraftRecord,
   CreationDraftState,
 } from "@/shared/contracts/draft";
+import { WorkspaceSwitcher } from "@/features/organizations/workspace-switcher";
+import type { WorkspaceRecord } from "@/features/organizations/http-organization-boundary";
 import {
   Dialog,
   DialogDescription,
@@ -357,7 +362,9 @@ function perImageCreditAmount(total: string, count: GenerationCount): string {
   }
 }
 
-export default function Home() {
+export default function Home({
+  workspaceId = null,
+}: Readonly<{ workspaceId?: string | null }> = {}) {
   const referenceObjectUrlsRef = useRef(new Set<string>());
   const assetPulseTimerRef = useRef<number | null>(null);
   const detailWheelTimerRef = useRef<number | null>(null);
@@ -375,7 +382,9 @@ export default function Home() {
   const latestGenerationRunKeyRef = useRef<string | null>(null);
   const retryingGenerationRunKeysRef = useRef(new Set<string>());
   const downloadingImageKeysRef = useRef(new Set<string>());
-  const [generationBoundary] = useState(createHttpGenerationBoundary);
+  const [generationBoundary] = useState(() =>
+    createHttpGenerationBoundary(workspaceId),
+  );
   const [authenticationSession, setAuthenticationSession] = useState<AuthenticationSession | null | undefined>(undefined);
   const [authenticationError, setAuthenticationError] = useState<string | null>(null);
   const [accessStatusRefreshing, setAccessStatusRefreshing] = useState(false);
@@ -383,6 +392,10 @@ export default function Home() {
   const [billingLoading, setBillingLoading] = useState(true);
   const [billingError, setBillingError] = useState<string | null>(null);
   const [billingRevision, setBillingRevision] = useState(0);
+  const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceRecord | null>(null);
+  const [workspaceResolutionStatus, setWorkspaceResolutionStatus] = useState<
+    "loading" | "ready" | "error"
+  >(workspaceId ? "loading" : "ready");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState<GenerationModelId>(DEFAULT_GENERATION_MODEL_ID);
   const [selectedRatio, setSelectedRatio] = useState<GenerationAspectRatio>("1:1");
@@ -441,6 +454,20 @@ export default function Home() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailItems, setDetailItems] = useState<DetailImage[]>([]);
   const [detailIndex, setDetailIndex] = useState(0);
+  const [detailSource, setDetailSource] = useState<DetailSource>("assets");
+  const workspaceAccessReady =
+    !workspaceId ||
+    (workspaceResolutionStatus === "ready" &&
+      activeWorkspace?.kind === "organization" &&
+      activeWorkspace.membershipStatus === "active" &&
+      activeWorkspace.status === "active");
+  const handleWorkspaceChange = useCallback((workspace: WorkspaceRecord | null) => {
+    setActiveWorkspace(workspace);
+    setWorkspaceResolutionStatus("ready");
+  }, []);
+  const handleWorkspaceError = useCallback(() => {
+    setWorkspaceResolutionStatus("error");
+  }, []);
   const activeGenerationRuns = getActiveGenerationRuns(generationRuns);
   const failedGenerationRuns = getFailedGenerationRuns(generationRuns);
   const isGenerating = activeGenerationRuns.length > 0;
@@ -482,6 +509,9 @@ export default function Home() {
   const activePerImageCredits = activeBillingQuote
     ? perImageCreditAmount(activeBillingQuote.creditAmount, generationCount)
     : null;
+  const displayedAvailableCredits = workspaceId
+    ? activeWorkspace?.credit?.budget?.remainingCredits ?? null
+    : billingSummary?.account.availableCredits ?? null;
   const composerBillingLabel = billingLoading
     ? "积分读取中"
     : activeBillingQuote
@@ -490,7 +520,9 @@ export default function Home() {
         : `${activePerImageCredits} 积分/张 · 共 ${activeBillingQuote.creditAmount}`
       : "当前模型暂未定价";
   const composerBillingDescription = activeBillingQuote && billingSummary
-    ? `每张 ${activePerImageCredits} 积分，本批 ${activeBillingQuote.creditAmount} 积分，当前可用 ${billingSummary.account.availableCredits} 积分`
+    ? workspaceId
+      ? `每张 ${activePerImageCredits} 积分，本批 ${activeBillingQuote.creditAmount} 积分，成员剩余额度 ${activeWorkspace?.credit?.budget?.remainingCredits ?? "--"}，企业可用 ${activeWorkspace?.credit?.account?.availableCredits ?? "--"}`
+      : `每张 ${activePerImageCredits} 积分，本批 ${activeBillingQuote.creditAmount} 积分，当前可用 ${billingSummary.account.availableCredits} 积分`
     : composerBillingLabel;
   const trackedGenerationBatchIds = new Set(getSucceededGenerationJobIds(generationRuns));
   const generationItems: CreationStreamItem[] = getGenerationRunSlots(generationRuns).map((slot) => {
@@ -632,11 +664,13 @@ export default function Home() {
     setDetailIndex(boundedIndex);
     if (!routeAssetId || !nextAssetId || nextAssetId === routeAssetId) return;
     setRouteAssetId(nextAssetId);
-    navigateWorkspace(
-      { kind: "asset", assetId: nextAssetId },
-      { notify: false, replace: true, state: window.history.state },
-    );
-  }, [detailItems, routeAssetId]);
+    if (!workspaceId) {
+      navigateWorkspace(
+        { kind: "asset", assetId: nextAssetId },
+        { notify: false, replace: true, state: window.history.state },
+      );
+    }
+  }, [detailItems, routeAssetId, workspaceId]);
 
   useEffect(() => {
     const applyWorkspaceRoute = (event?: Event) => {
@@ -775,10 +809,11 @@ export default function Home() {
       }, 0);
       return () => window.clearTimeout(finishPreview);
     }
+    if (!workspaceAccessReady) return;
     let active = true;
     const editRevision = composerEditRevisionRef.current;
     draftBlockedRef.current = false;
-    void readCreationDraft()
+    void readCreationDraft(workspaceId)
       .then((draft) => {
         if (!active) return;
         draftVersionRef.current = draft?.version ?? null;
@@ -814,7 +849,13 @@ export default function Home() {
     return () => {
       active = false;
     };
-  }, [applyCreationDraft, authenticationSession, draftLoadRevision]);
+  }, [
+    applyCreationDraft,
+    authenticationSession,
+    draftLoadRevision,
+    workspaceAccessReady,
+    workspaceId,
+  ]);
 
   useEffect(() => {
     if (draftAutosaveTimerRef.current) {
@@ -857,13 +898,14 @@ export default function Home() {
         try {
           if (checkpoint === emptyComposerCheckpoint) {
             if (draftVersionRef.current !== null) {
-              await deleteCreationDraft(draftVersionRef.current);
+              await deleteCreationDraft(draftVersionRef.current, workspaceId);
             }
             draftVersionRef.current = null;
           } else {
             const savedDraft = await saveCreationDraft(
               snapshot,
               draftVersionRef.current,
+              workspaceId,
             );
             draftVersionRef.current = savedDraft.version;
           }
@@ -906,6 +948,7 @@ export default function Home() {
     selectedModel,
     selectedRatio,
     thinkingLevel,
+    workspaceId,
   ]);
 
   useEffect(() => {
@@ -943,8 +986,9 @@ export default function Home() {
     if (authenticationSession === undefined) return;
     if (authenticationSession === null || authenticationSession.access.status !== "active") return;
     if (authenticationSession.preview) return;
+    if (!workspaceAccessReady) return;
     let active = true;
-    void listProjects()
+    void listProjects(workspaceId)
       .then((records) => {
         if (!active) return;
         setProjects([...records]);
@@ -960,7 +1004,7 @@ export default function Home() {
     return () => {
       active = false;
     };
-  }, [authenticationSession]);
+  }, [authenticationSession, workspaceAccessReady, workspaceId]);
 
   useEffect(() => {
     if (
@@ -976,8 +1020,9 @@ export default function Home() {
       }, 0);
       return () => window.clearTimeout(resetPreviewMaterials);
     }
+    if (!workspaceAccessReady) return;
     let active = true;
-    void listReferenceMaterials()
+    void listReferenceMaterials(workspaceId)
       .then((materials) => {
         if (!active) return;
         setReferenceMaterials(materials);
@@ -995,7 +1040,7 @@ export default function Home() {
     return () => {
       active = false;
     };
-  }, [authenticationSession]);
+  }, [authenticationSession, workspaceAccessReady, workspaceId]);
 
   useEffect(() => {
     if (
@@ -1004,8 +1049,9 @@ export default function Home() {
       authenticationSession.access.status !== "active"
     ) return;
     if (authenticationSession.preview) return;
+    if (!workspaceAccessReady) return;
     let active = true;
-    void listAssets()
+    void listAssets(workspaceId)
       .then((records) => {
         if (!active) return;
         const batches = records.map(generationJobToAssetBatch);
@@ -1025,14 +1071,15 @@ export default function Home() {
     return () => {
       active = false;
     };
-  }, [authenticationSession]);
+  }, [authenticationSession, workspaceAccessReady, workspaceId]);
 
   useEffect(() => {
     if (
       !routeAssetId ||
       authenticationSession === undefined ||
       authenticationSession === null ||
-      authenticationSession.access.status !== "active"
+      authenticationSession.access.status !== "active" ||
+      !workspaceAccessReady
     ) return;
     if (assetsLoading) return;
     const applyAssetRoute = window.setTimeout(() => {
@@ -1067,6 +1114,7 @@ export default function Home() {
     authenticationSession,
     creationBatches,
     routeAssetId,
+    workspaceAccessReady,
   ]);
 
   useEffect(() => {
@@ -1083,9 +1131,10 @@ export default function Home() {
       }, 0);
       return () => window.clearTimeout(previewFailure);
     }
+    if (!workspaceAccessReady) return;
     let active = true;
     const requestId = ++projectRouteRequestRef.current;
-    void readProject(routeProjectId)
+    void readProject(routeProjectId, workspaceId)
       .then((restoredProject) => {
         if (!active || requestId !== projectRouteRequestRef.current) return;
         const restoredBatches = projectAssetBatches(restoredProject);
@@ -1151,7 +1200,13 @@ export default function Home() {
     return () => {
       active = false;
     };
-  }, [authenticationSession, routeProjectId, projectRouteRevision]);
+  }, [
+    authenticationSession,
+    projectRouteRevision,
+    routeProjectId,
+    workspaceAccessReady,
+    workspaceId,
+  ]);
 
   const retryDraftSync = () => {
     setDraftSyncError(null);
@@ -1185,10 +1240,14 @@ export default function Home() {
       setDraftSyncing(true);
       try {
         if (checkpoint === emptyComposerCheckpoint) {
-          await deleteCreationDraft(expectedVersion);
+          await deleteCreationDraft(expectedVersion, workspaceId);
           draftVersionRef.current = null;
         } else {
-          const savedDraft = await saveCreationDraft(snapshot, expectedVersion);
+          const savedDraft = await saveCreationDraft(
+            snapshot,
+            expectedVersion,
+            workspaceId,
+          );
           draftVersionRef.current = savedDraft.version;
         }
         draftSyncedCheckpointRef.current = checkpoint;
@@ -1227,7 +1286,7 @@ export default function Home() {
     void queueDraftMutation(async () => {
       setDraftSyncing(true);
       try {
-        await deleteCreationDraft(expectedVersion);
+        await deleteCreationDraft(expectedVersion, workspaceId);
         draftVersionRef.current = null;
         setDraftConflict(null);
         setDraftSyncError(null);
@@ -1349,6 +1408,7 @@ export default function Home() {
           ),
         );
       },
+      workspaceId,
     ).then((results) => {
       const readyCount = results.filter(
         (result) => result.reference.status === "ready",
@@ -1374,7 +1434,7 @@ export default function Home() {
     }
     setReferenceMaterialsLoading(true);
     try {
-      setReferenceMaterials(await listReferenceMaterials());
+      setReferenceMaterials(await listReferenceMaterials(workspaceId));
       setReferenceMaterialsError(null);
     } catch (error) {
       setReferenceMaterialsError(
@@ -1396,6 +1456,7 @@ export default function Home() {
     const [result] = await uploadReferenceFiles(
       [{ clientId, file }],
       () => {},
+      workspaceId,
     );
     if (!result || result.reference.status !== "ready") {
       throw new Error(
@@ -1427,7 +1488,7 @@ export default function Home() {
           quality,
           thinkingLevel,
         },
-      });
+      }, workspaceId);
       setProjects((current) => [
         savedProject,
         ...current.filter((project) => project.id !== savedProject.id),
@@ -1507,9 +1568,11 @@ export default function Home() {
     const addedCount = addMaterialsToReferences([material]);
     if (addedCount === 0) return;
     toast.success("素材已加入参考图");
-    navigateWorkspace(currentProject
-      ? { kind: "project", projectId: currentProject.id }
-      : { kind: "create" });
+    if (!workspaceId) {
+      navigateWorkspace(currentProject
+        ? { kind: "project", projectId: currentProject.id }
+        : { kind: "create" });
+    }
     setActiveView("create");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -1567,7 +1630,7 @@ export default function Home() {
     setAssetsLoading(true);
     setAssetsError(null);
     try {
-      const batches = (await listAssets()).map(generationJobToAssetBatch);
+      const batches = (await listAssets(workspaceId)).map(generationJobToAssetBatch);
       setAssetBatches(batches);
       setSelectedAssetIds([]);
     } catch (error) {
@@ -1583,15 +1646,18 @@ export default function Home() {
     if (assetPulseTimerRef.current) window.clearTimeout(assetPulseTimerRef.current);
     setAssetPulse(false);
     setNewAssetCount(0);
-    navigateWorkspace({ kind: "assets" });
+    if (!workspaceId) navigateWorkspace({ kind: "assets" });
+    setActiveView("assets");
     void reloadAssets();
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleCreateNav = () => {
-    navigateWorkspace(currentProject
-      ? { kind: "project", projectId: currentProject.id }
-      : { kind: "create" });
+    if (!workspaceId) {
+      navigateWorkspace(currentProject
+        ? { kind: "project", projectId: currentProject.id }
+        : { kind: "create" });
+    }
     setActiveView("create");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -1607,7 +1673,7 @@ export default function Home() {
     setProjectsLoading(true);
     setProjectsError(null);
     try {
-      setProjects([...(await listProjects())]);
+      setProjects([...(await listProjects(workspaceId))]);
     } catch (error) {
       setProjectsError(error instanceof Error ? error.message : "项目列表暂时不可用，请重试。");
     } finally {
@@ -1616,7 +1682,8 @@ export default function Home() {
   };
 
   const handleProjectsNav = () => {
-    navigateWorkspace({ kind: "projects" });
+    if (!workspaceId) navigateWorkspace({ kind: "projects" });
+    setActiveView("projects");
     void reloadProjects();
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -1639,12 +1706,28 @@ export default function Home() {
     setProjectCreateKey(null);
     setComposerCheckpoint(emptyComposerCheckpoint);
     setDestructiveCreationIntent(null);
-    navigateWorkspace({ kind: "create" });
+    if (!workspaceId) navigateWorkspace({ kind: "create" });
+    setRouteProjectId(null);
+    setProjectRestoringId(null);
+    setRouteAssetId(null);
+    setDetailOpen(false);
+    setActiveView("create");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const continueProjectRestore = (projectId: string) => {
     projectRestoreAnnouncementRef.current = true;
+    if (workspaceId) {
+      projectRouteRequestRef.current += 1;
+      setProjectRouteError(null);
+      setRouteAssetId(null);
+      setDetailOpen(false);
+      setRouteProjectId(projectId);
+      setProjectRestoringId(projectId);
+      setProjectRouteRevision((current) => current + 1);
+      setActiveView("create");
+      return;
+    }
     navigateWorkspace({ kind: "project", projectId });
   };
 
@@ -1666,7 +1749,10 @@ export default function Home() {
       return;
     }
     if (loadedProjectIdRef.current === project.id) {
-      navigateWorkspace({ kind: "project", projectId: project.id });
+      if (!workspaceId) {
+        navigateWorkspace({ kind: "project", projectId: project.id });
+      }
+      setActiveView("create");
       return;
     }
     if (hasUnsavedCreationChanges) {
@@ -1742,15 +1828,17 @@ export default function Home() {
           quality,
           thinkingLevel,
         },
-      });
+      }, workspaceId);
       setProjects((current) => [savedProject, ...current.filter((project) => project.id !== savedProject.id)]);
       loadedProjectIdRef.current = savedProject.id;
       setCurrentProject({ id: savedProject.id, name: savedProject.name });
       setComposerCheckpoint(createComposerCheckpoint(savedProject.state));
-      navigateWorkspace(
-        { kind: "project", projectId: savedProject.id },
-        { notify: false, replace: true },
-      );
+      if (!workspaceId) {
+        navigateWorkspace(
+          { kind: "project", projectId: savedProject.id },
+          { notify: false, replace: true },
+        );
+      }
       setProjectCreateKey(null);
       setProjectDrawerOpen(false);
       if (savedFromCreationDraft) clearPersistedCreationDraft();
@@ -1982,12 +2070,18 @@ export default function Home() {
   const downloadImage = async (batch: AssetBatch, image: GenerationOutput, index: number) => {
     const imageKey = `${batch.id}-${image.id}`;
     if (downloadingImageKeysRef.current.has(imageKey)) return;
-    const saveRequest = saveImageToLocal({
-      assetId: image.id,
-      createdAt: batch.createdAt,
-      ordinal: index + 1,
-      previewUrl: image.previewUrl,
-    });
+    const saveRequest = saveImageToLocal(
+      {
+        assetId: image.id,
+        createdAt: batch.createdAt,
+        ordinal: index + 1,
+        previewUrl: image.previewUrl,
+      },
+      {
+        resolveDownloadUrl: (assetId) =>
+          readAssetDownloadUrl(assetId, workspaceId),
+      },
+    );
     downloadingImageKeysRef.current.add(imageKey);
     setDownloadingImageKeys((current) => [...current, imageKey]);
     try {
@@ -2020,23 +2114,32 @@ export default function Home() {
     setDetailItems(items);
     setDetailIndex(nextIndex);
     setDetailOpen(true);
-    navigateWorkspace(
-      { kind: "asset", assetId: nextDetail.image.id },
-      {
-        state: {
-          ...currentHistoryState,
-          [ASSET_DETAIL_HISTORY_KEY]: {
-            returnHref: `${window.location.pathname}${window.location.search}${window.location.hash}`,
-            scrollY: window.scrollY,
-            source,
+    setDetailSource(source);
+    setRouteAssetId(nextDetail.image.id);
+    if (!workspaceId) {
+      navigateWorkspace(
+        { kind: "asset", assetId: nextDetail.image.id },
+        {
+          state: {
+            ...currentHistoryState,
+            [ASSET_DETAIL_HISTORY_KEY]: {
+              returnHref: `${window.location.pathname}${window.location.search}${window.location.hash}`,
+              scrollY: window.scrollY,
+              source,
+            },
           },
         },
-      },
-    );
+      );
+    }
   };
 
   const closeImageDetail = () => {
     setDetailOpen(false);
+    if (workspaceId) {
+      setRouteAssetId(null);
+      setActiveView(detailSource === "creation" ? "create" : "assets");
+      return;
+    }
     const detailNavigation = readAssetDetailNavigationState(window.history.state);
     if (routeAssetId && detailNavigation) {
       pendingDetailScrollRef.current = detailNavigation.scrollY;
@@ -2203,6 +2306,17 @@ export default function Home() {
           <Image className="wordmark-image sidebar-wordmark" src="/goodgood-wordmark.svg" alt="" width={89} height={20} />
         </div>
 
+        <WorkspaceSwitcher
+          activeWorkspaceId={workspaceId}
+          enabled={Boolean(
+            authenticationSession &&
+              !authenticationSession.preview &&
+              authenticationSession.access.status === "active",
+          )}
+          onWorkspaceChange={handleWorkspaceChange}
+          onWorkspaceError={handleWorkspaceError}
+        />
+
         <nav className="side-nav" aria-label="主导航">
           <button className={`side-nav-item ${activeView === "create" ? "active" : ""}`} onClick={handleCreateNav}><Brush size={17} strokeWidth={1.8} /><span>创作</span></button>
           <button className="side-nav-item"><Compass size={17} /><span>探索</span></button>
@@ -2241,7 +2355,10 @@ export default function Home() {
                   <CircleAlert size={12} />积分暂不可用<RefreshCw size={11} />
                 </button>
               ) : billingSummary ? (
-                <div><span>积分余额</span><strong>{billingSummary.account.availableCredits}</strong></div>
+                <div>
+                  <span>{workspaceId ? "企业剩余额度" : "积分余额"}</span>
+                  <strong>{displayedAvailableCredits ?? "--"}</strong>
+                </div>
               ) : null}
             </div>
           )}
@@ -2265,6 +2382,18 @@ export default function Home() {
       <section className="main-stage">
         <header className="mobile-bar">
           <div className="mobile-brand" role="img" aria-label="GoodGood"><Image className="brand-mark" src="/goodgood-mark.svg" alt="" width={27} height={20} /><Image className="wordmark-image" src="/goodgood-wordmark.svg" alt="" width={84} height={19} /></div>
+          <div className="mobile-workspace-switcher">
+            <WorkspaceSwitcher
+              activeWorkspaceId={workspaceId}
+              enabled={Boolean(
+                authenticationSession &&
+                  !authenticationSession.preview &&
+                  authenticationSession.access.status === "active",
+              )}
+              onWorkspaceChange={handleWorkspaceChange}
+              onWorkspaceError={handleWorkspaceError}
+            />
+          </div>
           <div className="mobile-account">
             {authenticationSession?.account.role === "site_owner" && (
               <button
@@ -2284,7 +2413,7 @@ export default function Home() {
                 }}>积分重试</button>
               ) : (
                 <span className="mobile-credit-balance">
-                  {billingLoading ? "--" : billingSummary?.account.availableCredits ?? "--"} 积分
+                  {billingLoading ? "--" : displayedAvailableCredits ?? "--"} 积分
                 </span>
               )
             )}
@@ -2297,7 +2426,24 @@ export default function Home() {
         </header>
 
         <div className={`content-wrap ${activeView !== "create" ? "asset-content-wrap" : ""}`}>
-          {activeView === "create" ? routeProjectId && projectRestoringId === routeProjectId ? (
+          {workspaceId && workspaceResolutionStatus === "loading" ? (
+            <section className="project-library-state project-route-state" role="status">
+              <LoaderCircle size={18} />正在验证企业工作区权限
+            </section>
+          ) : workspaceId && workspaceResolutionStatus === "error" ? (
+            <section className="project-library-state project-library-error project-route-state" role="alert">
+              <CircleAlert size={18} />
+              <span>企业工作区暂时无法验证，请重试或返回个人工作区。</span>
+              <button onClick={() => window.location.reload()}><RefreshCw size={14} />重试</button>
+              <button onClick={() => window.location.assign("/create")}><Brush size={14} />个人工作区</button>
+            </section>
+          ) : workspaceId && !workspaceAccessReady ? (
+            <section className="project-library-state project-library-error project-route-state" role="alert">
+              <CircleAlert size={18} />
+              <span>你没有权限访问这个企业工作区，成员资格可能已暂停或移除。</span>
+              <button onClick={() => window.location.assign("/create")}><Brush size={14} />返回个人工作区</button>
+            </section>
+          ) : activeView === "create" ? routeProjectId && projectRestoringId === routeProjectId ? (
             <section className="project-library-state project-route-state" role="status">
               <LoaderCircle size={18} />正在恢复项目
             </section>
@@ -2518,7 +2664,7 @@ export default function Home() {
                   <CircleAlert size={18} />
                   <span>{assetRouteError}</span>
                   <button onClick={retryAssetRoute}><RefreshCw size={14} />重试</button>
-                  <button onClick={() => navigateWorkspace({ kind: "assets" }, { replace: true })}><Images size={14} />返回资产库</button>
+                  <button onClick={handleAssetNav}><Images size={14} />返回资产库</button>
                 </div>
               ) : assetsLoading ? (
                 <div className="asset-library-state" role="status"><LoaderCircle size={18} />正在读取资产</div>

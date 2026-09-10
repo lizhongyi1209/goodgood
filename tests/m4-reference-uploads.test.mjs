@@ -208,7 +208,11 @@ test("reference HTTP routes preserve the authenticated owner context", async () 
     true,
   );
   assert.equal(createResponse.statusCode, 201);
-  assert.deepEqual(calls[0], { files: [validUpload], ownerContext });
+  assert.deepEqual(calls[0], {
+    files: [validUpload],
+    ownerContext,
+    workspaceId: null,
+  });
 
   const completeResponse = responseRecorder();
   await handler(
@@ -221,6 +225,7 @@ test("reference HTTP routes preserve the authenticated owner context", async () 
   assert.deepEqual(calls[1], {
     ownerContext,
     referenceId: "20000000-0000-4000-8000-000000000001",
+    workspaceId: null,
   });
 
   const listResponse = responseRecorder();
@@ -233,7 +238,7 @@ test("reference HTTP routes preserve the authenticated owner context", async () 
   assert.deepEqual(JSON.parse(listResponse.body), {
     references: [{ id: "reference-a" }],
   });
-  assert.deepEqual(calls[2], { ownerContext });
+  assert.deepEqual(calls[2], { ownerContext, workspaceId: null });
 
   const contentResponse = responseRecorder();
   await handler(
@@ -250,6 +255,7 @@ test("reference HTTP routes preserve the authenticated owner context", async () 
   assert.deepEqual(calls[3], {
     ownerContext,
     referenceId: "20000000-0000-4000-8000-000000000001",
+    workspaceId: null,
   });
 });
 

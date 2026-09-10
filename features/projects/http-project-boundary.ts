@@ -3,6 +3,7 @@ import type {
   ProjectSaveDraft,
 } from "@/shared/contracts/project";
 import { goodGoodApiFetch } from "@/features/auth/http-auth-boundary";
+import { workspaceRequestHeaders } from "@/features/organizations/workspace-request";
 
 type ProjectApiErrorEnvelope = Readonly<{
   error?: Readonly<{
@@ -48,8 +49,13 @@ function projectRequestPayload(draft: ProjectSaveDraft) {
   };
 }
 
-export async function listProjects(): Promise<readonly ProjectRecord[]> {
-  const response = await goodGoodApiFetch("/api/projects", { cache: "no-store" });
+export async function listProjects(
+  workspaceId: string | null = null,
+): Promise<readonly ProjectRecord[]> {
+  const response = await goodGoodApiFetch("/api/projects", {
+    cache: "no-store",
+    headers: workspaceRequestHeaders(workspaceId),
+  });
   const payload = (await response.json()) as
     | Readonly<{ projects: readonly ProjectRecord[] }>
     | ProjectApiErrorEnvelope;
@@ -64,15 +70,22 @@ export async function listProjects(): Promise<readonly ProjectRecord[]> {
   return (payload as Readonly<{ projects: readonly ProjectRecord[] }>).projects;
 }
 
-export async function readProject(projectId: string): Promise<ProjectRecord> {
+export async function readProject(
+  projectId: string,
+  workspaceId: string | null = null,
+): Promise<ProjectRecord> {
   return parseProject(
     await goodGoodApiFetch(`/api/projects/${encodeURIComponent(projectId)}`, {
       cache: "no-store",
+      headers: workspaceRequestHeaders(workspaceId),
     }),
   );
 }
 
-export async function saveProject(draft: ProjectSaveDraft): Promise<ProjectRecord> {
+export async function saveProject(
+  draft: ProjectSaveDraft,
+  workspaceId: string | null = null,
+): Promise<ProjectRecord> {
   const projectId = draft.projectId ?? null;
   const idempotencyKey = draft.idempotencyKey ?? `project_${globalThis.crypto.randomUUID()}`;
   return parseProject(
@@ -85,6 +98,7 @@ export async function saveProject(draft: ProjectSaveDraft): Promise<ProjectRecor
         headers: {
           "content-type": "application/json",
           ...(projectId ? {} : { "idempotency-key": idempotencyKey }),
+          ...workspaceRequestHeaders(workspaceId),
         },
         method: projectId ? "PATCH" : "POST",
       },

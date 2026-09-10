@@ -43,7 +43,8 @@ deterministic existing-user backfill, and an insert trigger for each new
 user's personal Workspace. Migration 0025 adds organization credit accounts,
 member budgets, and their append-only ledgers. Migration 0026 adds Workspace
 and creator scope to existing creative records and backfills every old record
-to its creator's personal Workspace. The Drizzle schema mirrors this branch's
+to its creator's personal Workspace. Migration 0027 extends the enterprise
+audit action constraint with manager Asset downloads. The Drizzle schema mirrors this branch's
 durable schema. A fuller project-backed creation session record and entitlements
 remain canonical contracts for later slices.
 
@@ -168,7 +169,7 @@ Migration `0016_gg010_nano_multi_output_prices.sql` adds immutable Nano Banana 2
 count-2/count-4 prices of 20/40 credits for 1K, 2K, and 4K. It changes no
 existing price, ledger, batch, attempt, or Asset row.
 
-## GG-030 additions (foundation, credit, and creative scope implemented)
+## GG-030 additions (foundation through management implemented locally)
 
 ### Workspace
 

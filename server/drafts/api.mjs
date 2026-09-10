@@ -2,6 +2,7 @@ import { AuthenticationError, sessionExpiredError } from "../auth/errors.mjs";
 import { getGenerationResources } from "../generation/resources.mjs";
 import { signAssetRead } from "../generation/storage.mjs";
 import { newRequestId } from "../observability/http.mjs";
+import { OrganizationError } from "../organizations/errors.mjs";
 import {
   DraftConflictError,
   DraftPersistenceError,
@@ -16,6 +17,8 @@ import {
   validateDraftDelete,
   validateDraftMutation,
 } from "./validation.mjs";
+
+const DEFAULT_WORKSPACE_ID = /** @type {string | null} */ (null);
 
 function ownerIdFromContext(ownerContext) {
   if (!ownerContext?.ownerId) throw sessionExpiredError();
@@ -63,20 +66,29 @@ async function presentCreationDraft(resources, row) {
   };
 }
 
-export async function readCreationDraft({ ownerContext }) {
+export async function readCreationDraft({
+  ownerContext,
+  workspaceId = DEFAULT_WORKSPACE_ID,
+}) {
   const resources = await getGenerationResources();
   const row = await findCreationDraft(resources.pool, {
     ownerId: ownerIdFromContext(ownerContext),
+    workspaceId,
   });
   return { draft: await presentCreationDraft(resources, row) };
 }
 
-export async function saveCreationDraft({ input, ownerContext }) {
+export async function saveCreationDraft({
+  input,
+  ownerContext,
+  workspaceId = DEFAULT_WORKSPACE_ID,
+}) {
   const resources = await getGenerationResources();
   const validated = validateDraftMutation(input);
   const result = await saveCreationDraftRecord(resources.pool, {
     ...validated,
     ownerId: ownerIdFromContext(ownerContext),
+    workspaceId,
   });
   if (result.conflict) {
     throw new DraftConflictError(
@@ -86,11 +98,16 @@ export async function saveCreationDraft({ input, ownerContext }) {
   return presentCreationDraft(resources, result.current);
 }
 
-export async function deleteCreationDraft({ input, ownerContext }) {
+export async function deleteCreationDraft({
+  input,
+  ownerContext,
+  workspaceId = DEFAULT_WORKSPACE_ID,
+}) {
   const resources = await getGenerationResources();
   const result = await deleteCreationDraftRecord(resources.pool, {
     expectedVersion: validateDraftDelete(input),
     ownerId: ownerIdFromContext(ownerContext),
+    workspaceId,
   });
   if (result.conflict) {
     throw new DraftConflictError(
@@ -103,6 +120,7 @@ export async function deleteCreationDraft({ input, ownerContext }) {
 export function creationDraftApiError(error, requestId = newRequestId()) {
   if (
     error instanceof AuthenticationError ||
+    error instanceof OrganizationError ||
     error instanceof DraftRequestError ||
     error instanceof DraftPersistenceError
   ) {
