@@ -108,6 +108,11 @@ function statusBadge(status: ManagedAccountStatus) {
   return <Badge variant="outline" className={classes}>{STATUS_LABELS[status]}</Badge>;
 }
 
+function accountIdentityLabel(account: ManagedAccount) {
+  if (account.role === "site_owner") return "站长";
+  return account.businessRole ? BUSINESS_ROLE_LABELS[account.businessRole] : "个人";
+}
+
 function actionCopy(action: AccountAction, account: ManagedAccount) {
   if (action === "approve") {
     return { description: `允许 ${account.email} 使用创作、项目与资产能力。`, title: "通过账户审核" };
@@ -137,7 +142,7 @@ export function AccountManagementPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [searchDraft, setSearchDraft] = useState("");
   const [query, setQuery] = useState("");
-  const [status, setStatus] = useState<ManagedAccountStatus | "all">("pending");
+  const [status, setStatus] = useState<ManagedAccountStatus | "all">("all");
   const [selected, setSelected] = useState<{ account: ManagedAccount; action: AccountAction } | null>(null);
   const [reason, setReason] = useState("");
   const [amount, setAmount] = useState("100");
@@ -353,24 +358,10 @@ export function AccountManagementPage() {
       </header>
 
       <div className="mx-auto max-w-[1500px] px-5 py-8 lg:px-8 lg:py-10">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-sm font-medium text-primary">站长工作台</p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight">账户管理</h1>
-            <p className="mt-2 max-w-2xl text-base leading-7 text-zinc-600">审核登录账户、管理企业/分销身份与直属关系，并通过积分流水追加测试额度。</p>
-          </div>
-          <div className="grid grid-cols-3 gap-2 sm:min-w-[420px]">
-            {(["pending", "active", "suspended"] as const).map((item) => (
-              <button
-                key={item}
-                className={`rounded-2xl border px-4 py-3 text-left transition-colors ${status === item ? "border-primary bg-primary/5" : "border-zinc-200 hover:bg-zinc-50"}`}
-                onClick={() => setStatus(item)}
-              >
-                <span className="block text-sm text-zinc-500">{STATUS_LABELS[item]}</span>
-                <strong className="mt-1 block text-xl tabular-nums">{dashboard?.counts[item] ?? "--"}</strong>
-              </button>
-            ))}
-          </div>
+        <div>
+          <p className="text-sm font-medium text-primary">站长工作台</p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight">账户管理</h1>
+          <p className="mt-2 max-w-2xl text-base leading-7 text-zinc-600">审核登录账户、管理企业/分销身份与直属关系，并通过积分流水追加测试额度。</p>
         </div>
 
         <section className="mt-8 rounded-3xl border border-zinc-200">
@@ -428,7 +419,7 @@ export function AccountManagementPage() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <h3 className="truncate font-medium">{account.email}</h3>
-                        <p className="mt-1 text-sm text-zinc-500">{account.role === "site_owner" ? "站长" : "普通用户"}{account.businessRole ? ` · ${BUSINESS_ROLE_LABELS[account.businessRole]}` : ""}</p>
+                        <p className="mt-1 text-sm text-zinc-500">{accountIdentityLabel(account)}</p>
                         {account.directParentEmail && <p className="mt-1 truncate text-xs text-zinc-500">直属上级：{account.directParentEmail}</p>}
                       </div>
                       {statusBadge(account.status)}
@@ -444,8 +435,12 @@ export function AccountManagementPage() {
                       {account.status === "active" && account.role !== "site_owner" && <Button className="admin-account-primary-action" size="sm" variant="outline" onClick={() => openAction(account, "suspend")}><ShieldBan />暂停</Button>}
                       {account.status === "suspended" && <Button className="admin-account-primary-action" size="sm" variant="outline" onClick={() => openAction(account, "restore")}><CheckCircle2 />恢复</Button>}
                       <Button className="admin-account-secondary-action" size="sm" variant="ghost" onClick={() => openAction(account, "grant")}><Coins />积分</Button>
-                      <Button className="admin-account-secondary-action" size="sm" variant="ghost" onClick={() => openAction(account, "role")}><UserRoundCog />身份</Button>
-                      <Button className="admin-account-secondary-action" size="sm" variant="ghost" onClick={() => openAction(account, "parent")}><Network />上级</Button>
+                      {account.role !== "site_owner" && (
+                        <>
+                          <Button className="admin-account-secondary-action" size="sm" variant="ghost" onClick={() => openAction(account, "role")}><UserRoundCog />身份</Button>
+                          <Button className="admin-account-secondary-action" size="sm" variant="ghost" onClick={() => openAction(account, "parent")}><Network />上级</Button>
+                        </>
+                      )}
                     </div>
                   </article>
                 ))}
@@ -466,7 +461,7 @@ export function AccountManagementPage() {
                     <TableRow key={account.id}>
                       <TableCell className="max-w-[320px] pl-5">
                         <div className="truncate font-medium">{account.email}</div>
-                        <div className="mt-1 text-xs text-zinc-500">{account.role === "site_owner" ? "站长" : "普通用户"}{account.businessRole ? ` · ${BUSINESS_ROLE_LABELS[account.businessRole]}` : ""}</div>
+                        <div className="mt-1 text-xs text-zinc-500">{accountIdentityLabel(account)}</div>
                         {account.directParentEmail && <div className="mt-1 truncate text-xs text-zinc-500">上级：{account.directParentEmail}</div>}
                       </TableCell>
                       <TableCell>
@@ -486,8 +481,12 @@ export function AccountManagementPage() {
                           {account.status === "active" && account.role !== "site_owner" && <Button className="admin-account-primary-action" size="sm" variant="outline" onClick={() => openAction(account, "suspend")}><ShieldBan />暂停</Button>}
                           {account.status === "suspended" && <Button className="admin-account-primary-action" size="sm" variant="outline" onClick={() => openAction(account, "restore")}><CheckCircle2 />恢复</Button>}
                           <Button className="admin-account-secondary-action" size="sm" variant="ghost" onClick={() => openAction(account, "grant")}><Coins />积分</Button>
-                          <Button className="admin-account-secondary-action" size="sm" variant="ghost" onClick={() => openAction(account, "role")}><UserRoundCog />身份</Button>
-                          <Button className="admin-account-secondary-action" size="sm" variant="ghost" onClick={() => openAction(account, "parent")}><Network />上级</Button>
+                          {account.role !== "site_owner" && (
+                            <>
+                              <Button className="admin-account-secondary-action" size="sm" variant="ghost" onClick={() => openAction(account, "role")}><UserRoundCog />身份</Button>
+                              <Button className="admin-account-secondary-action" size="sm" variant="ghost" onClick={() => openAction(account, "parent")}><Network />上级</Button>
+                            </>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -573,7 +572,7 @@ export function AccountManagementPage() {
                     side="bottom"
                     sideOffset={6}
                   >
-                    <SelectItem value="none">无业务身份</SelectItem>
+                    <SelectItem value="none">个人</SelectItem>
                     <SelectItem value="enterprise">企业</SelectItem>
                     <SelectItem value="distributor">分销商</SelectItem>
                   </SelectContent>

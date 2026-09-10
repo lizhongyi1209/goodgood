@@ -56,15 +56,18 @@
 - Only a persisted site-owner role sees the account-management navigation and
   route. Direct URL or API access by every other account is rejected by the
   backend, regardless of hidden controls.
-- The first useful view prioritizes pending accounts, with restrained loading,
-  empty, read-failure, and retry states. Search and filters must not place email
-  addresses or other personal data in the URL.
+- The first useful view lists all accounts. One access-state select is the sole
+  status filter; do not duplicate it as summary cards above the table. Loading,
+  empty, read-failure, and retry states stay restrained. Search and filters must
+  not place email addresses or other personal data in the URL.
 - Review actions show the target account and resulting state explicitly.
   Repeated submission is idempotent. A failed action keeps the current row and
   filters intact and shows the support ID.
-- Each row shows email, registration and last-login times, role, `seed` /
-  `内测用户` tier, access state, and available/reserved credit. Valid actions
-  are approve, suspend, restore, and test-credit grant.
+- Each row shows email, registration and last-login times, one resolved display
+  identity, `seed` / `内测用户` tier, access state, and available/reserved
+  credit. The display identity is `站长` for the site owner; every other account
+  is exactly `个人`, `企业`, or `分销商`. Valid actions are approve, suspend,
+  restore, and test-credit grant.
 - Test-credit grant is a compact dialog showing the selected account, current
   balance, validated grant amount, required reason, and final confirmation. It
   appends ledger/audit evidence and never looks like a customer payment.
@@ -77,9 +80,12 @@
 ### Enterprise and distributor allocation (implemented locally, not deployed)
 
 - The site-owner account surface keeps system role, access state, account tier,
-  and business role visibly separate. It may assign/end `企业` or `分销商` and
-  create/end/replace one direct parent, with target, prior/resulting state,
-  reason, and explicit confirmation. It never presents those actions as payment.
+  and business role separate in authorization and persistence, while resolving
+  them to one row-level identity label. A site-owner row shows only `站长` and
+  does not offer business-identity or direct-parent controls. Other rows may be
+  set to `个人`, `企业`, or `分销商`, and may create/end/replace one direct
+  parent, with target, prior/resulting state, reason, and explicit confirmation.
+  It never presents those actions as payment.
 - Only an active enterprise/distributor sees `积分分配`. Direct navigation by
   any other account stays denied even if it knows the URL. The first view shows
   total available credit, `可分配积分` (payment-funded available credit), and a

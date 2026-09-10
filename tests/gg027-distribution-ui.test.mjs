@@ -84,6 +84,18 @@ test("GG-027 account-management selects always open below their triggers", async
   assert.equal((admin.match(/sideOffset=\{6\}/g) ?? []).length, 3);
 });
 
+test("GG-027 account management presents one user-facing identity and one status filter", async () => {
+  const admin = await source("features/admin/account-management-page.tsx");
+  assert.match(admin, /useState<ManagedAccountStatus \| "all">\("all"\)/);
+  assert.doesNotMatch(admin, /\(\["pending", "active", "suspended"\] as const\)\.map/);
+  assert.match(admin, /if \(account\.role === "site_owner"\) return "站长"/);
+  assert.match(admin, /BUSINESS_ROLE_LABELS\[account\.businessRole\] : "个人"/);
+  assert.doesNotMatch(admin, /"普通用户"/);
+  assert.match(admin, /<SelectItem value="none">个人<\/SelectItem>/);
+  assert.doesNotMatch(admin, />无业务身份<\/SelectItem>/);
+  assert.equal((admin.match(/account\.role !== "site_owner" && \(/g) ?? []).length, 2);
+});
+
 test("GG-027 browser routes keep read operations cacheless and transfer writes CSRF-protected", async () => {
   const [summaryRoute, childRoute, transferRoute] = await Promise.all([
     source("app/api/distribution/route.ts"),

@@ -141,8 +141,13 @@ individual icon. Upload, settings, and send align to the same 40px box.
 - Use no decorative imagery. Desktop favors a readable account table; narrow
   layouts use stacked account rows without hiding status, tier, or the primary
   review action.
-- Keep system role, access state, and account tier visually distinct. Status
+- Resolve account identity to one user-facing label: `站长` takes precedence;
+  every other account displays exactly one of `个人`, `企业`, or `分销商`.
+  Keep access state and account tier visually distinct from that label. Status
   treatments remain restrained and must not rely on color alone.
+- Use the access-state select as the only status filter. Do not repeat the same
+  pending, active, and suspended choices as summary cards above the table; the
+  initial view lists all accounts.
 - Use existing table, dialog, select, input, and alert-dialog primitives where
   their semantics match. Granting credit requires an explicit confirmation and
   never uses checkout, wallet, or payment visual language.
