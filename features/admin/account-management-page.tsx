@@ -413,18 +413,18 @@ export function AccountManagementPage() {
             </div>
           ) : (
             <>
-              <div className="divide-y divide-zinc-200 lg:hidden">
+              <div className="divide-y divide-zinc-200 xl:hidden">
                 {accounts.map((account) => (
                   <article key={account.id} className="p-5">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <h3 className="truncate font-medium">{account.email}</h3>
-                        <p className="mt-1 text-sm text-zinc-500">{accountIdentityLabel(account)}</p>
-                        {account.directParentEmail && <p className="mt-1 truncate text-xs text-zinc-500">直属上级：{account.directParentEmail}</p>}
                       </div>
                       {statusBadge(account.status)}
                     </div>
                     <div className="mt-4 grid grid-cols-2 gap-3 rounded-2xl bg-zinc-50 p-4 text-sm">
+                      <div><span className="block text-zinc-500">身份</span><strong className="mt-1 block font-medium">{accountIdentityLabel(account)}</strong></div>
+                      <div className="min-w-0"><span className="block text-zinc-500">直属上级</span><strong className="mt-1 block truncate font-medium" title={account.directParentEmail ?? undefined}>{account.directParentEmail ?? "—"}</strong></div>
                       <div><span className="block text-zinc-500">账户等级</span><strong className="mt-1 block">内测用户</strong></div>
                       <div><span className="block text-zinc-500">积分</span><strong className="mt-1 block tabular-nums">{account.availableCredits} 可用</strong><span className="text-xs text-zinc-500">{account.transferableCredits} 可分配</span></div>
                       <div><span className="block text-zinc-500">注册时间</span><strong className="mt-1 block font-medium">{formatDate(account.createdAt)}</strong></div>
@@ -445,11 +445,13 @@ export function AccountManagementPage() {
                   </article>
                 ))}
               </div>
-              <div className="hidden lg:block">
+              <div className="hidden xl:block">
                 <Table className="admin-account-table">
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className="pl-5">账户</TableHead>
+                    <TableHead className="w-[250px] pl-5">账户</TableHead>
+                    <TableHead className="w-[90px]">身份</TableHead>
+                    <TableHead className="w-[220px]">上级</TableHead>
                     <TableHead>状态 / 等级</TableHead>
                     <TableHead>积分</TableHead>
                     <TableHead>注册 / 最近登录</TableHead>
@@ -459,10 +461,14 @@ export function AccountManagementPage() {
                 <TableBody>
                   {accounts.map((account) => (
                     <TableRow key={account.id}>
-                      <TableCell className="max-w-[320px] pl-5">
+                      <TableCell className="max-w-[250px] pl-5">
                         <div className="truncate font-medium">{account.email}</div>
-                        <div className="mt-1 text-xs text-zinc-500">{accountIdentityLabel(account)}</div>
-                        {account.directParentEmail && <div className="mt-1 truncate text-xs text-zinc-500">上级：{account.directParentEmail}</div>}
+                      </TableCell>
+                      <TableCell className="text-zinc-600">
+                        {accountIdentityLabel(account)}
+                      </TableCell>
+                      <TableCell className="max-w-[220px] text-zinc-600">
+                        <div className="truncate" title={account.directParentEmail ?? undefined}>{account.directParentEmail ?? "—"}</div>
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap items-center gap-2">{statusBadge(account.status)}<Badge variant="outline">内测用户</Badge></div>

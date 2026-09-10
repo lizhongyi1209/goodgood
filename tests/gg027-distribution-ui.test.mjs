@@ -96,6 +96,18 @@ test("GG-027 account management presents one user-facing identity and one status
   assert.equal((admin.match(/account\.role !== "site_owner" && \(/g) ?? []).length, 2);
 });
 
+test("GG-027 account identity and direct parent have dedicated display fields", async () => {
+  const admin = await source("features/admin/account-management-page.tsx");
+  assert.match(admin, /<TableHead className="w-\[90px\]">身份<\/TableHead>/);
+  assert.match(admin, /<TableHead className="w-\[220px\]">上级<\/TableHead>/);
+  assert.match(admin, />身份<\/span><strong[^>]*>\{accountIdentityLabel\(account\)\}/);
+  assert.match(admin, />直属上级<\/span><strong[^>]*title=\{account\.directParentEmail \?\? undefined\}>\{account\.directParentEmail \?\? "—"\}/);
+  assert.equal((admin.match(/\{accountIdentityLabel\(account\)\}/g) ?? []).length, 2);
+  assert.equal((admin.match(/\{account\.directParentEmail \?\? "—"\}/g) ?? []).length, 2);
+  assert.match(admin, /className="divide-y divide-zinc-200 xl:hidden"/);
+  assert.match(admin, /className="hidden xl:block"/);
+});
+
 test("GG-027 browser routes keep read operations cacheless and transfer writes CSRF-protected", async () => {
   const [summaryRoute, childRoute, transferRoute] = await Promise.all([
     source("app/api/distribution/route.ts"),

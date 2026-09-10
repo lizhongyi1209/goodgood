@@ -68,6 +68,10 @@
   credit. The display identity is `站长` for the site owner; every other account
   is exactly `个人`, `企业`, or `分销商`. Valid actions are approve, suspend,
   restore, and test-credit grant.
+- Wide account tables give email, identity, and direct parent their own columns;
+  the email cell does not carry secondary identity or hierarchy text. Narrow
+  cards preserve those as two separately labelled fields and render a missing
+  direct parent as `—`.
 - Test-credit grant is a compact dialog showing the selected account, current
   balance, validated grant amount, required reason, and final confirmation. It
   appends ledger/audit evidence and never looks like a customer payment.

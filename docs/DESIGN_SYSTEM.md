@@ -145,6 +145,11 @@ individual icon. Upload, settings, and send align to the same 40px box.
   every other account displays exactly one of `个人`, `企业`, or `分销商`.
   Keep access state and account tier visually distinct from that label. Status
   treatments remain restrained and must not rely on color alone.
+- On wide screens, account email, identity, and direct parent occupy separate
+  table columns. The account column contains only the account identifier; a
+  missing direct parent displays an em dash. Card layouts use the same identity
+  and direct-parent labels as separate fields rather than nesting them below the
+  email.
 - Use the access-state select as the only status filter. Do not repeat the same
   pending, active, and suspended choices as summary cards above the table; the
   initial view lists all accounts.
