@@ -115,12 +115,14 @@ individual icon. Upload, settings, and send align to the same 40px box.
 
 - Desktop shows `积分记录` as a normal low-emphasis navigation row immediately
   below `帮助` in the lower sidebar. It has no secondary call-to-action copy.
-  The account card keeps the username on its first line. Its second line starts
-  with one quiet, non-interactive neutral identity badge (`站长`, `个人`, `企业`,
-  or `分销商`), followed by the current balance as a small Palace Red credit icon
-  plus the exact numeric value, without `余额`, `积分`, a fill, or a credit pill.
-  Site-owner identity takes precedence over any business-role value. Per-image
-  price, batch total, and
+  The account trigger itself stays to one quiet row: avatar, username, and a
+  trailing overflow mark. It does not repeat identity, balance, or logout.
+  Selecting it opens a compact menu to the right of the lower sidebar. The menu
+  gives identity and current balance separate, non-interactive 13px rows, then
+  separates the logout action below. Identity is one of `站长`, `个人`, `企业`,
+  or `分销商`; site-owner identity takes precedence over any business-role value.
+  The exact numeric balance retains Palace Red emphasis. Per-image price, batch
+  total, and
   approximate remaining image count do not repeat there; generation pricing
   remains beside the composer actions.
 - Mobile uses one small neutral balance pill in the existing top bar. It is

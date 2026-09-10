@@ -124,6 +124,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Drawer,
   DrawerContent,
   DrawerDescription,
@@ -2280,40 +2287,63 @@ export default function Home() {
               <Coins size={17} /><span>积分记录</span>
             </button>
           )}
-          <div className="account-card">
-            <div className="avatar">{accountInitials}</div>
-            <div className="account-card-copy">
-              <strong>{accountEmail ?? "登录 GoodGood"}</strong>
-              <div className="account-card-meta">
-                {accountIdentity && (
-                  <span className="account-identity-badge">{accountIdentity}</span>
-                )}
-                <small
-                  aria-label={billingSummary && authenticationSession ? `积分余额 ${billingSummary.account.availableCredits}` : undefined}
-                  aria-live={authenticationSession ? "polite" : undefined}
-                  className={billingSummary && authenticationSession ? "account-credit-balance" : ""}
-                  role={authenticationSession ? "status" : undefined}
+          {authenticationSession && accountIdentity ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="account-card"
+                  type="button"
+                  aria-label={`打开 ${accountEmail ?? "GoodGood 用户"} 的账户菜单`}
                 >
-                  {authenticationSession
-                    ? billingLoading
-                      ? "积分读取中"
-                      : billingError
-                        ? "积分暂不可用"
-                        : billingSummary
-                          ? <><CircleDot aria-hidden="true" size={12} /><span>{billingSummary.account.availableCredits}</span></>
-                          : "积分暂不可用"
-                    : "Google 或邮箱验证码"}
-                </small>
-              </div>
-            </div>
-            <button
-              className="account-session-action"
-              aria-label={authenticationSession ? "退出登录" : "登录"}
-              onClick={authenticationSession ? () => void handleLogout() : handleLogin}
-            >
-              {authenticationSession ? <LogOut size={15} /> : <LogIn size={15} />}
+                  <span className="avatar">{accountInitials}</span>
+                  <strong className="account-card-username">{accountEmail ?? "GoodGood 用户"}</strong>
+                  <MoreHorizontal className="account-card-more" aria-hidden="true" size={17} />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="account-menu"
+                collisionPadding={12}
+                side="right"
+                sideOffset={10}
+              >
+                <div className="account-menu-details" role="group" aria-label="账户信息">
+                  <div className="account-menu-detail">
+                    <UserRoundCog aria-hidden="true" size={17} />
+                    <span>身份</span>
+                    <strong>{accountIdentity}</strong>
+                  </div>
+                  <div className="account-menu-detail">
+                    <CircleDot aria-hidden="true" size={17} />
+                    <span>积分余额</span>
+                    <strong
+                      aria-label={billingSummary ? `积分余额 ${billingSummary.account.availableCredits}` : undefined}
+                      aria-live="polite"
+                      className={billingSummary ? "account-menu-credit" : ""}
+                      role="status"
+                    >
+                      {billingLoading
+                        ? "读取中"
+                        : billingError
+                          ? "暂不可用"
+                          : billingSummary?.account.availableCredits ?? "暂不可用"}
+                    </strong>
+                  </div>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="account-menu-logout" onSelect={() => void handleLogout()}>
+                  <LogOut aria-hidden="true" size={17} />
+                  <span>退出登录</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <button className="account-card" type="button" onClick={handleLogin}>
+              <span className="avatar">{accountInitials}</span>
+              <strong className="account-card-username">登录 GoodGood</strong>
+              <LogIn className="account-card-more" aria-hidden="true" size={17} />
             </button>
-          </div>
+          )}
         </div>
       </aside>
 

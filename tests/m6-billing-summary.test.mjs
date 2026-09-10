@@ -295,9 +295,10 @@ test("billing summary is wired into both runtimes and the shared workspace", asy
   assert.match(page, /billingLoading/);
   assert.match(page, /billingError/);
   assert.match(page, /积分记录/);
-  assert.match(page, /account-credit-balance/);
-  assert.match(page, /aria-label=\{billingSummary && authenticationSession \? `积分余额 \$\{billingSummary\.account\.availableCredits\}`/);
-  assert.match(page, /<CircleDot aria-hidden="true" size=\{12\} \/><span>\{billingSummary\.account\.availableCredits\}<\/span>/);
+  assert.match(page, /account-menu-credit/);
+  assert.match(page, /aria-label=\{billingSummary \? `积分余额 \$\{billingSummary\.account\.availableCredits\}`/);
+  assert.match(page, /<span>积分余额<\/span>/);
+  assert.match(page, /billingSummary\?\.account\.availableCredits \?\? "暂不可用"/);
   assert.doesNotMatch(page, /点击查看/);
   assert.match(page, /billingSummary\.account\.availableCredits/);
   assert.doesNotMatch(page, /可生成 \{availableImages/);

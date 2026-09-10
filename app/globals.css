@@ -79,18 +79,21 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 @keyframes asset-arrival { 0%,100% { background: transparent; color: #6f6f7b; } 45% { background: #f4e5e4; color: var(--accent-deep); } }
 @keyframes asset-icon-arrival { 0%,100% { transform: scale(1) rotate(0); } 45% { transform: scale(1.16) rotate(-5deg); } }
 .sidebar-footer { margin-top: auto; display: flex; flex-direction: column; gap: 3px; }
-.account-card { margin-top: var(--space-2); padding: 10px; background: #f0f0f3; border-radius: var(--radius-md); display: grid; grid-template-columns: 34px minmax(0,1fr) auto; align-items: center; gap: 10px; }
+.account-card { width: 100%; min-height: 52px; margin-top: var(--space-2); padding: 9px 10px; border: 0; background: #f0f0f3; border-radius: var(--radius-md); display: grid; grid-template-columns: 34px minmax(0,1fr) auto; align-items: center; gap: 10px; text-align: left; }
+.account-card:hover, .account-card[data-state="open"] { background: #e8e8ec; }
+.account-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .avatar, .top-avatar { border-radius: 50%; display: grid; place-items: center; background: #e7e7eb; border: 0; font-size: 10px; font-weight: 650; }
 .avatar { width: 34px; height: 34px; }
-.account-card-copy { display: flex; min-width: 0; flex-direction: column; gap: 4px; }
-.account-card strong { font-size: var(--text-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.account-card small { color: var(--quiet); font-size: 10px; }
-.account-card-meta { display: flex; min-width: 0; align-items: center; gap: 7px; }
-.account-identity-badge { display: inline-flex; height: 18px; flex: 0 0 auto; align-items: center; padding: 0 6px; border: 1px solid #d9d9de; border-radius: 999px; background: rgba(255,255,255,.58); color: #66666f; font-size: 10px; font-weight: 650; line-height: 1; }
-.account-card small.account-credit-balance { display: inline-flex; align-items: center; gap: 4px; color: var(--accent-deep); font-weight: 650; font-variant-numeric: tabular-nums; line-height: 1.1; }
-.account-card small.account-credit-balance svg { flex: 0 0 auto; }
-.account-session-action { width: 28px; height: 28px; padding: 0; border: 0; border-radius: 8px; background: transparent; display: grid; place-items: center; color: var(--quiet); }
-.account-session-action:hover { background: #e4e4e8; color: var(--ink); }
+.account-card-username { min-width: 0; overflow: hidden; color: var(--ink); font-size: 13px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.account-card-more { color: var(--quiet); }
+.account-menu { width: 224px; padding: 6px; border-color: var(--line); border-radius: var(--radius-md); box-shadow: 0 8px 22px rgba(24,24,30,.1); }
+.account-menu-details { padding: 4px; }
+.account-menu-detail { min-height: 38px; display: grid; grid-template-columns: 18px minmax(0,1fr) auto; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; }
+.account-menu-detail > svg { color: var(--quiet); }
+.account-menu-detail strong { color: var(--ink); font-size: 13px; font-weight: 650; }
+.account-menu-detail .account-menu-credit { color: var(--accent-deep); font-variant-numeric: tabular-nums; }
+.account-menu-detail:has(.account-menu-credit) > svg { color: var(--accent); }
+.account-menu-logout { min-height: 38px; padding: 0 8px; border-radius: 8px; font-size: 13px; }
 
 .main-stage { min-width: 0; background: var(--canvas); }
 .top-avatar { width: 34px; height: 34px; }
@@ -775,11 +778,11 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
   .app-shell { grid-template-columns: 76px minmax(0, 1fr); }
   .sidebar { padding: 22px 10px 14px; }
   .sidebar-brand { justify-content: center; padding: 0; }
-  .sidebar-wordmark, .side-nav-item span, .account-card-copy, .account-session-action { display: none; }
+  .sidebar-wordmark, .side-nav-item span, .account-card-username, .account-card-more { display: none; }
   .brand-mark { width: 31px; height: 23px; }
   .side-nav-item { justify-content: center; padding: 0; }
   .asset-new-count { min-width: 18px; height: 18px; position: absolute; top: 3px; right: 3px; margin: 0; padding: 0 4px; border: 2px solid var(--canvas); font-size: 7px; }
-  .account-card { display: flex; justify-content: center; padding: 10px 0; }
+  .account-card { display: flex; justify-content: center; padding: 9px 0; }
   .content-wrap { width: auto; padding-left: 14px; padding-right: 20px; }
   .gallery-grid { grid-template-columns: 1fr 1fr; grid-template-rows: 320px 220px; }
   .gallery-grid.count-1 { grid-template-columns: minmax(0,620px); grid-template-rows: 500px; }

@@ -105,27 +105,34 @@ test("declares the GoodGood visual and interaction invariants", async () => {
   assert.doesNotMatch(css, /filter:\s*(?:saturate|contrast|hue-rotate|brightness)/);
   assert.doesNotMatch(css, /asset-image-frame:nth-child\([234]\) img/);
 
-  const sidebarFooter = creationPage.slice(
-    creationPage.indexOf('<div className="sidebar-footer">'),
-    creationPage.indexOf('<div className="account-card">'),
-  );
+  const sidebarFooterStart = creationPage.indexOf('<div className="sidebar-footer">');
+  const accountCardStart = creationPage.indexOf("<DropdownMenu>", sidebarFooterStart);
+  const sidebarFooter = creationPage.slice(sidebarFooterStart, accountCardStart);
   assert.ok(sidebarFooter.indexOf("帮助") < sidebarFooter.indexOf("积分记录"));
   assert.match(sidebarFooter, /side-nav-item[^\n]*activeView === "credits"/);
   assert.doesNotMatch(sidebarFooter, /点击查看|sidebar-billing|sidebar-credit-action/);
   assert.doesNotMatch(css, /\.sidebar-billing|\.sidebar-credit-link|\.sidebar-credit-action/);
   const accountCard = creationPage.slice(
-    creationPage.indexOf('<div className="account-card">'),
+    accountCardStart,
     creationPage.indexOf("</aside>"),
   );
-  assert.match(accountCard, /className="account-card-copy"/);
-  assert.match(accountCard, /className="account-card-meta"/);
-  assert.match(accountCard, /className="account-identity-badge">\{accountIdentity\}<\/span>/);
-  assert.match(accountCard, /account-credit-balance/);
-  assert.match(accountCard, /<CircleDot aria-hidden="true" size=\{12\} \/><span>\{billingSummary\.account\.availableCredits\}<\/span>/);
-  assert.doesNotMatch(accountCard, />余额 \$\{billingSummary\.account\.availableCredits\} 积分</);
-  assert.match(css, /\.account-card-meta \{[^}]*display:\s*flex[^}]*align-items:\s*center/s);
-  assert.match(css, /\.account-identity-badge \{[^}]*border:\s*1px solid[^}]*border-radius:\s*999px[^}]*font-size:\s*10px/s);
-  assert.match(css, /\.account-card small\.account-credit-balance \{[^}]*display:\s*inline-flex[^}]*color:\s*var\(--accent-deep\)/s);
+  const accountTrigger = accountCard.slice(
+    accountCard.indexOf("<DropdownMenuTrigger"),
+    accountCard.indexOf("</DropdownMenuTrigger>"),
+  );
+  const accountMenu = accountCard.slice(
+    accountCard.indexOf("<DropdownMenuContent"),
+    accountCard.indexOf("</DropdownMenuContent>"),
+  );
+  assert.match(accountTrigger, /className="account-card-username">\{accountEmail \?\? "GoodGood 用户"\}<\/strong>/);
+  assert.match(accountTrigger, /className="account-card-more"/);
+  assert.doesNotMatch(accountTrigger, /accountIdentity|billingSummary|退出登录/);
+  assert.match(accountMenu, /<span>身份<\/span>[\s\S]*<strong>\{accountIdentity\}<\/strong>/);
+  assert.match(accountMenu, /<span>积分余额<\/span>[\s\S]*className=\{billingSummary \? "account-menu-credit" : ""\}/);
+  assert.match(accountMenu, /<span>退出登录<\/span>/);
+  assert.doesNotMatch(accountCard, /account-identity-badge|account-credit-balance|account-session-action/);
+  assert.match(css, /\.account-menu \{[^}]*width:\s*224px[^}]*box-shadow:/s);
+  assert.match(css, /\.account-menu-detail \.account-menu-credit \{[^}]*color:\s*var\(--accent-deep\)/s);
 });
 
 test("keeps reference previews legible and aspect ratio first through responsive layouts", async () => {

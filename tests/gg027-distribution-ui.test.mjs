@@ -108,13 +108,15 @@ test("GG-027 account identity and direct parent have dedicated display fields", 
   assert.match(admin, /className="hidden xl:block"/);
 });
 
-test("GG-027 workspace account card shows the resolved identity beside the credit balance", async () => {
+test("GG-027 workspace account menu resolves identity and moves balance and logout off the trigger", async () => {
   const page = await source("app/page.tsx");
   assert.match(page, /if \(session\.account\.role === "site_owner"\) return "站长"/);
   assert.match(page, /if \(session\.account\.businessRole === "enterprise"\) return "企业"/);
   assert.match(page, /if \(session\.account\.businessRole === "distributor"\) return "分销商"/);
   assert.match(page, /return "个人"/);
-  assert.match(page, /className="account-card-meta"[\s\S]*className="account-identity-badge">\{accountIdentity\}<\/span>[\s\S]*account-credit-balance/);
+  assert.match(page, /<DropdownMenuTrigger asChild>[\s\S]*className="account-card-username"[\s\S]*<\/DropdownMenuTrigger>/);
+  assert.match(page, /<DropdownMenuContent[\s\S]*side="right"[\s\S]*<span>身份<\/span>[\s\S]*<span>积分余额<\/span>[\s\S]*<span>退出登录<\/span>[\s\S]*<\/DropdownMenuContent>/);
+  assert.doesNotMatch(page, /account-identity-badge|account-credit-balance|account-session-action/);
 });
 
 test("GG-027 browser routes keep read operations cacheless and transfer writes CSRF-protected", async () => {
