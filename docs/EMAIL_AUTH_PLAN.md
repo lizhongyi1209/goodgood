@@ -63,6 +63,13 @@
 选择成熟维护的 Node 邮件库，实施时核对并锁定依赖；不自行实现 SMTP 协议。
 账号开通、地域、额度、付费方案和投递表现必须实测，不能因香港服务器在阿里云就假定已具备。
 
+2026-09-10 的 P0 只读核验结果：阿里云主账号已登录，但 Direct Mail 尚未开通；没有提交开通或购买。
+`o1key.com` 的权威 DNS 为 Cloudflare，`mail.goodgood.o1key.com` 尚无 TXT、MX 或独立 DMARC
+记录，未发现既有邮件配置冲突。按阿里云当前地域指引，香港主机若主要面向境内收件箱且不属于
+美国/新加坡部署的加速特例，首选新加坡区域，SMTP 端点为
+`smtpdm-ap-southeast-1.aliyuncs.com:465`。这仍须由香港主机 TLS 连通和真实投递验证，不能把文档
+建议写成已验证结果。
+
 | 用途 | 建议值 | 说明 |
 | --- | --- | --- |
 | 网站与登录界面 | `https://goodgood.o1key.com` | 沿用现有 HTTPS 入口 |
@@ -85,13 +92,16 @@ DNS 记录在实际权威 DNS 服务商配置，不取决于域名在哪里买�
 提供纯文本和简洁 HTML，不带附件、营销、追踪像素或短链接；发送请求不能让浏览器控制
 发件人、主题、收件人列表或任意正文。发信地址只能发信，不等于已经开通收信邮箱。
 
-上线前核对服务配额、余额和费用告警。费用估算为“实际发送尝试数 × 当期单价 + 所选固定费”，
-尚未查询该账户套餐，不承诺免费额度。首版不购买独立服务器、不引入新的常驻邮件 Worker。
+上线前核对服务配额、余额和费用告警。2026-09-10 官方计费页显示：每个阿里云主账号共 2,000 封
+免费额度、每天最多免费 200 封，之后按量 2 元/1,000 封；免费额度用完后会形成实际账单。
+账户实际剩余额度须在开通后核对。首版不购买资源包或独立服务器，不引入新的常驻邮件 Worker。
 
 官方依据（2026-09-10 查阅）：[发送方式及收件人限流责任](https://help.aliyun.com/zh/direct-mail/getting-started/three-mail-sending-methods)、
 [SMTP 端点与 TLS 端口](https://help.aliyun.com/zh/direct-mail/smtp-endpoints)、
 [发信域名与 DNS](https://help.aliyun.com/zh/direct-mail/user-guide/how-to-configure-sending-domain-names)、
-[地域隔离](https://help.aliyun.com/zh/direct-mail/user-guide/overview)。供应商不替 GoodGood 完成验证码认证。
+[地域选择](https://help.aliyun.com/zh/direct-mail/getting-started/simplified-procedure-of-sending-by-api-and-smtp)、
+[计费方式](https://help.aliyun.com/zh/direct-mail/billing-methods)、
+[开通流程](https://help.aliyun.com/zh/direct-mail/purchase-procedure)。供应商不替 GoodGood 完成验证码认证。
 
 ## 4. 最小安全与存储设计
 
