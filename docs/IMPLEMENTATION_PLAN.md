@@ -1,8 +1,8 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-11
-- Current phase: 已开放 controlled alpha；GG-031 已完成邮箱验证码与企业工作区的共同本地联调，线上测试未开始。
-- Current objective: 保持 GG-031 本地候选及证据可恢复，等待站长决定是否另行批准线上环境测试。
+- Current phase: 已开放 controlled alpha；GG-031 自动化本地联调已完成，用户手工本地全流程实测进行中。
+- Current objective: 在全新隔离数据上引导用户手工复验老板注册、站长审核、企业与员工闭环；线上测试未开始。
 
 ## Current checkpoint
 
@@ -37,8 +37,8 @@
   查看和接受企业邀请。老板邀请不绕过 controlled-alpha 平台审核。
 - 支付、自动账户删除、举报、完整外部删除条款与 full-seed readiness 仍在 GG-900—GG-902
   搁置范围，本任务不恢复它们。
-- Next action: 等待站长决定是否另建并授权线上环境测试；若批准，先确认候选、外部邮件、数据边界、
-  provider 范围和回退方案。
+- Next action: 用户通过本地 Mailpit 完成 `boss.manual@gg031.local` 的 OTP 登录并确认 pending 页面；
+  然后执行本地站长 bootstrap，继续企业和员工流程。
 - Blockers: 当前无本地阻塞。线上测试、真实邮件、真实生成 provider、生产数据/密钥、推送、合并
   和部署均未获本任务授权，不自动开始。
 
