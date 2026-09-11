@@ -87,6 +87,39 @@ handoff rejection. Hosted-page login methods, mail delivery,
 and cross-method subject association remain explicit manual staging evidence
 because OIDC discovery does not expose those controls.
 
+GG-029 adds deterministic email-mode coverage for configuration and secret
+separation, mailbox/IDN normalization, spoofed forwarding headers, HMAC-only
+storage, same-origin and request-size rejection, shared limits, SMTP accepted/
+unknown outcomes, logout revocation, cleanup scope, and browser-bound request/
+verify APIs. Its opt-in PostgreSQL test accepts only the loopback database named
+`gg029_email_auth_test`; it proves failed-attempt persistence, cross-browser
+rejection, concurrent one-time consumption, random identity creation, pending
+admission, and one welcome grant. `stack:email-local` supplies Mailpit for a
+real local SMTP/browser loop without real recipients or provider billing.
+Production provider, DNS, mailbox, proxy-chain, and mobile-device evidence
+remain P0/P3/P4 gates and must not be inferred from the local success.
+
+GG-029 P2 operations coverage additionally proves redacted aggregate and exact
+request-ID support reports, stable budget/delivery/cleanup alert codes, cleanup
+heartbeat persistence, bounded read-only arguments, and account suspension
+that transactionally revokes only the target owner's active sessions. The
+isolated `goodgood-gg029` Compose project uses Mailpit and mock generation only.
+Its synthetic SMTP and 390×844 browser flow are local evidence, not
+real-provider or production evidence. A separate disposable PostgreSQL stack
+also applies every migration and exercises cleanup/status without starting a
+Web process, Worker, real mail adapter, or generation provider.
+
+GG-029 P3 coverage proves both OIDC and email production-preflight paths,
+file-only OTP/SMTP secrets, exact origin and Secure `__Host-` policy, implicit-
+TLS authenticated SMTP verification without `sendMail`, provider-error
+redaction, and production Compose secret/maintenance wiring. Binding tests cover
+manifest shape/count/digest, normalized-email and owner conflicts, required prior
+identity, site-owner-first verification, dry-run non-mutation, transactional
+creation, audit hashes, and exact no-write replay. A fresh disposable PostgreSQL
+17 database applied all 20 current migrations, created two synthetic old-owner
+bindings, replayed the same manifest, and retained zero credit-ledger rows; it
+contained no real user, mail, generation, or production data.
+
 M7 release-contract tests prove that staging accepts only the GoodGood GHCR
 image pinned by digest and full CI metadata, separates release identity from
 runtime configuration, reads Authing, O1Key, and R2 credentials only from

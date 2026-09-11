@@ -4,22 +4,30 @@
 
 - On first load, confirm the GoodGood session before enabling owner-scoped
   work; keep the loading state quiet and blocking.
-- Signed-out and expired sessions use one global recovery surface. Its only
-  primary action is `Google / 邮箱验证码登录`; first use also registers.
-- The hosted login page must show only Google and email verification code. Do
-  not add password, phone, or unapproved social-login shortcuts in GoodGood.
-- A failed or cancelled callback returns to the same recovery surface with
-  stable copy. Never display provider payloads or tokens.
+- Signed-out and expired sessions use one global recovery surface. The selected
+  email mode keeps the mailbox, `发送验证码`, six-digit code, and `登录` action
+  visible in one form; first successful verification also registers. Password,
+  phone, and social login are absent. OIDC rollback mode keeps its hosted button.
+- Sending is user-initiated. Before a challenge exists the code control is
+  disabled. After a successful send, the mailbox is locked to that challenge,
+  the same send control shows a 60-second resend countdown, and `修改邮箱`
+  explicitly resets the form. Focused mailbox/code inputs change border only,
+  without a focus shadow. Refresh restores only a browser-bound active challenge;
+  mailbox/code never enters a URL or localStorage.
+- Invalid/replayed/expired/cross-browser codes use stable copy and keep the
+  current creative state. Uncertain delivery asks the user to wait/check mail;
+  it does not claim inbox delivery or automatically send a second message.
 - Session expiry preserves the in-browser prompt, references, parameters, and
   completed local view state, then allows the user to sign in again.
 - The account card shows the authenticated email and exposes explicit logout.
-  Logout revokes the GoodGood session and expires its cookie before navigating
-  the top-level browser through Authing's hosted logout and back to GoodGood.
+  Logout revokes the GoodGood session and expires its cookie. Only the deployed
+  OIDC mode additionally navigates through Authing's hosted logout.
 - The authenticated workspace shows available credit in the desktop account
   area and as a compact mobile balance. Initial loading stays quiet; a read
   failure keeps the workspace usable and offers a local retry. Zero is a valid
   balance, never an empty or error state.
-- Open Authing login provisions a new GoodGood owner in `pending` access state.
+- First valid email verification (or deployed Authing login before cutover)
+  provisions a new GoodGood owner in `pending` access state.
   The authenticated pending surface replaces the creation workspace with one
   compact review message, shows that the 100 welcome credits are waiting, and
   offers status refresh plus logout. It does not render usable upload, project,

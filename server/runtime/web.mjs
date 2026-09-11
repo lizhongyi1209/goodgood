@@ -6,6 +6,8 @@ import { createBillingNodeApiHandler } from "../billing/node-api.mjs";
 import { loadAuthenticationConfig } from "../auth/config.mjs";
 import { createAuthenticationNodeApiHandler } from "../auth/node-api.mjs";
 import { createAuthenticationOperations } from "../auth/operations.mjs";
+import { createEmailOtpMailer } from "../auth/email-mailer.mjs";
+import { createEmailOtpOperations } from "../auth/email-operations.mjs";
 import {
   createRequestAuthenticator,
   createSessionAuthenticator,
@@ -38,8 +40,21 @@ const authenticateSession = createSessionAuthenticator({
   config: authenticationConfig,
   getPool: async () => runtimeResources.pool,
 });
+const emailMailer =
+  authenticationConfig.mode === "email_otp" && authenticationConfig.sendingEnabled
+    ? createEmailOtpMailer({ config: authenticationConfig })
+    : null;
+const emailOperations =
+  authenticationConfig.mode === "email_otp"
+    ? createEmailOtpOperations({
+        config: authenticationConfig,
+        getPool: async () => runtimeResources.pool,
+        mailer: emailMailer,
+      })
+    : null;
 const handleAuthenticationNodeApi = createAuthenticationNodeApiHandler({
   config: authenticationConfig,
+  emailOperations,
   operations: createAuthenticationOperations({
     authenticate,
     authenticateSession,

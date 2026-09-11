@@ -53,6 +53,11 @@ Current records:
 - `0040-reference-quick-editor.md`
 - `0041-price-nano-banana-pro-at-fifteen-credits.md`
 - `0042-restore-drills-with-active-alpha-sessions.md`
+- `0045-goodgood-owned-email-otp.md`
+
+ADR 0043 is allocated in the parallel GG-027 worktree. ADR 0044 belongs to
+GG-028's unshipped Authing-domain branch and is superseded by ADR 0045; neither
+branch's runtime changes are implicitly included here.
 
 Accepted describes a decision, not proof of deployment. ADR 0022/0023's full
 runtime rollout is deferred under ADR 0024. The current release and rollout

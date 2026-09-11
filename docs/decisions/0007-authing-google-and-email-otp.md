@@ -1,7 +1,10 @@
 # ADR 0007: Authing hosted Google and email-code authentication
 
-- Status: Accepted
+- Status: Superseded
 - Date: 2026-08-31
+- Superseded by: [ADR 0045](0045-goodgood-owned-email-otp.md) for the future
+  provider/login-method selection. Its GoodGood session and ownership controls
+  remain accepted; Authing is still deployed until the new plan is implemented.
 
 ## Context
 

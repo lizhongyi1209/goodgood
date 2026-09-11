@@ -14,7 +14,7 @@ test("CI verifies changes and publishes one immutable main image", async () => {
   );
 
   assert.match(workflow, /pull_request:/);
-  assert.match(workflow, /push:\n\s+branches: \[main\]/);
+  assert.match(workflow, /push:\r?\n\s+branches: \[main\]/);
   assert.match(workflow, /workflow_dispatch:/);
   assert.match(workflow, /node-version: \$\{\{ env\.NODE_VERSION \}\}/);
   assert.match(workflow, /NODE_VERSION: 24\.20\.0/);
@@ -135,13 +135,13 @@ test("release metadata is deterministic and records the current migration", asyn
 
   assert.deepEqual(first, second);
   assert.equal(first.imageName, "ghcr.io/lizhongyi1209/goodgood");
-  assert.equal(first.migrationVersion, "0019_gg021_nano_banana_pro_prices.sql");
+  assert.equal(first.migrationVersion, "0023_gg029_email_otp.sql");
   assert.match(first.runtimeConfigVersion, /^[a-f0-9]{64}$/);
   assert.equal(
     githubOutput(first),
     [
       "image-name=ghcr.io/lizhongyi1209/goodgood",
-      "migration-version=0019_gg021_nano_banana_pro_prices.sql",
+      "migration-version=0023_gg029_email_otp.sql",
       `runtime-config-version=${first.runtimeConfigVersion}`,
       "",
     ].join("\n"),

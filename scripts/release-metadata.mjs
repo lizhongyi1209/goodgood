@@ -13,6 +13,7 @@ const CONFIG_CONTRACT_FILES = [
   "compose.staging.yaml",
   "compose.staging.dependencies.yaml",
   "compose.authing-local.yaml",
+  "compose.email-otp-local.yaml",
   "compose.o1key-local.yaml",
   "infra/staging/release.env.example",
   "infra/staging/runtime.env.example",

@@ -151,6 +151,7 @@ export function changeAccountAccess(
       return {
         actionType: replay.action_type,
         created: false,
+        revokedSessions: 0,
         status: replay.resulting_status,
       };
     }
@@ -195,6 +196,18 @@ export function changeAccountAccess(
       `UPDATE users SET status = $2, updated_at = now() WHERE id = $1`,
       [targetOwnerId, toStatus],
     );
+    let revokedSessions = 0;
+    if (toStatus === "suspended") {
+      const revoked = await client.query(
+        `UPDATE auth_sessions
+            SET revoked_at = COALESCE(revoked_at, now())
+          WHERE owner_id = $1
+            AND revoked_at IS NULL
+            AND expires_at > now()`,
+        [targetOwnerId],
+      );
+      revokedSessions = revoked.rowCount;
+    }
     await client.query(
       `INSERT INTO administrative_actions (
          id, actor_owner_id, target_owner_id, action_type,
@@ -213,7 +226,7 @@ export function changeAccountAccess(
         operationHash,
       ],
     );
-    return { actionType, created: true, status: toStatus };
+    return { actionType, created: true, revokedSessions, status: toStatus };
   });
 }
 

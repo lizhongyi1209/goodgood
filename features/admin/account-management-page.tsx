@@ -102,7 +102,7 @@ function actionCopy(action: AccountAction, account: ManagedAccount) {
     return { description: `允许 ${account.email} 使用创作、项目与资产能力。`, title: "通过账户审核" };
   }
   if (action === "suspend") {
-    return { description: `暂停 ${account.email} 的产品访问，历史数据仍会保留。`, title: "暂停账户" };
+    return { description: `暂停 ${account.email} 的产品访问并撤销其全部有效登录，历史数据仍会保留。`, title: "暂停账户并撤销登录" };
   }
   if (action === "restore") {
     return { description: `恢复 ${account.email} 的产品访问。`, title: "恢复账户" };
@@ -214,12 +214,16 @@ export function AccountManagementPage() {
         });
         toast.success(`已向 ${selected.account.email} 赠送 ${Number(amount)} 积分`);
       } else {
-        await updateManagedAccountStatus({
+        const result = await updateManagedAccountStatus({
           ownerId: selected.account.id,
           reason,
           status: selected.action === "suspend" ? "suspended" : "active",
         });
-        toast.success(selectedCopy?.title ?? "账户状态已更新");
+        toast.success(
+          selected.action === "suspend"
+            ? `账户已暂停，已撤销 ${result.revokedSessions} 个有效登录`
+            : selectedCopy?.title ?? "账户状态已更新",
+        );
       }
       setSelected(null);
       await loadDashboard();

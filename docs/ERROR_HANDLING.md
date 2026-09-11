@@ -203,6 +203,49 @@ cookie whose name starts with `__Host-`. The runtime and staging preflight fail
 closed instead of falling back to local identities or contacting discovery
 with an unsafe configuration.
 
+The GG-029 email candidate requires exact same-origin POST, bounded JSON, a
+valid single mailbox, and a short-lived HttpOnly browser-binding cookie.
+Malformed, expired, consumed, replaced, cross-browser, and incorrect codes all
+normalize to `EMAIL_CODE_INVALID`; failed guesses still commit their counter.
+Shared limits return `EMAIL_RATE_LIMITED` with `Retry-After`. A definite SMTP
+rejection returns `EMAIL_SEND_UNAVAILABLE` and invalidates that challenge;
+connection/timeout ambiguity is stored as `unknown`, remains verifiable if a
+message arrives, and is never auto-retried. No response contains the raw code,
+SMTP error body, secret, or complete mailbox after the request step.
+
+In `email_otp` mode, send and verify are same-origin JSON POSTs with a 2 KiB
+body limit. Invalid mailbox input fails before SMTP. Wrong, expired, replayed,
+replaced, cross-browser, and exhausted codes normalize to
+`EMAIL_CODE_INVALID`; no response reveals whether the mailbox already has an
+account. Shared limit failures return `EMAIL_RATE_LIMITED` and a bounded
+`retryAfterSeconds`. SMTP rejection returns stable unavailable copy, while an
+uncertain timeout leaves the exact challenge verifiable without automatic
+resend. Provider errors, credentials, full mailbox addresses in audit subjects,
+and codes are not returned. Disabling sends does not invalidate existing
+sessions or already issued challenges; disabling registration is disclosed
+only after a valid unbound mailbox challenge is verified.
+
+The read-only email-auth operations command emits one redacted JSON report and
+uses stable alert codes: `EMAIL_AUTH_GLOBAL_BUDGET_HIGH`,
+`EMAIL_AUTH_DELIVERY_FAILURE_STREAK`, and `EMAIL_AUTH_CLEANUP_OVERDUE`.
+Operators and the separately owned monitoring layer may group repeated reports
+by code; this repository slice does not add an alert transport. Status-command
+failure emits only `EMAIL_AUTH_STATUS_FAILED`; cleanup-command failure emits
+only `EMAIL_AUTH_CLEANUP_FAILED`. Neither path prints a database error,
+connection string, mailbox, code, SMTP response, or secret. Suspending a
+specific account revokes that owner's active sessions atomically; it never
+causes a global session purge.
+
+The existing-owner binding command fails closed before writes for malformed or
+count-mismatched manifests, digest mismatch, duplicate owner/email entries,
+missing owners, stored-email mismatch, absent prior identity, unverified or
+out-of-order site-owner mapping, existing binding conflicts, and partial replay.
+Expected failures use stable `EMAIL_BINDING_*` codes; unexpected database or file
+errors collapse to `EMAIL_BINDING_FAILED`. Command failure output never includes
+the database URL, raw manifest, full mailbox, external reference, or provider
+detail. All inserts are one transaction, so a failed execution creates neither a
+partial identity set nor any business/credit mutation.
+
 ADR 0020 separates authentication from creation admission. A valid new Authing
 identity receives a GoodGood session and `pending` account projection rather
 than an authentication failure. Pending users receive stable review-state copy,

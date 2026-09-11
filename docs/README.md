@@ -27,6 +27,7 @@
 | [ERROR_HANDLING.md](ERROR_HANDLING.md) | 错误、恢复与观测 |
 | [TESTING.md](TESTING.md) | 验证方式、测试覆盖与证据边界 |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | 环境、运行与发布/回退；历史转换不是待办 |
+| [EMAIL_AUTH_PLAN.md](EMAIL_AUTH_PLAN.md) | GG-029 已选自建邮箱验证码的上线范围、实施阶段与迁移回退；尚未实现 |
 | [decisions/README.md](decisions/README.md) | ADR 及已确认取舍；Accepted 不代表已上线 |
 | [releases/](releases/) | 已发布版本的非敏感证据摘要 |
 | [history/README.md](history/README.md) | 提炼经验及完整历史，默认不加载 |

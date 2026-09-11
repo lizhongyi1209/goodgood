@@ -226,9 +226,10 @@ test("review transitions and test-credit grants use server-owned actors and limi
   }
 });
 
-test("account review persistence is idempotent and rejects conflicting key reuse", async () => {
+test("account suspension revokes active sessions and remains idempotent", async () => {
   let action = null;
-  let status = "pending";
+  let status = "active";
+  let revokedSessions = 0;
   const client = {
     async query(sql, values = []) {
       const normalized = sql.replace(/\s+/g, " ").trim();
@@ -254,6 +255,10 @@ test("account review persistence is idempotent and rejects conflicting key reuse
         status = values[1];
         return { rowCount: 1, rows: [] };
       }
+      if (normalized.startsWith("UPDATE auth_sessions")) {
+        revokedSessions += 2;
+        return { rowCount: 2, rows: [] };
+      }
       if (normalized.startsWith("INSERT INTO administrative_actions")) {
         action = {
           action_type: values[3],
@@ -270,22 +275,25 @@ test("account review persistence is idempotent and rejects conflicting key reuse
   const pool = { async connect() { return client; } };
   const input = {
     actorOwnerId: SITE_OWNER.ownerId,
-    idempotencyKey: "review-key-0001",
+    idempotencyKey: "suspend-key-0001",
     operationHash: "a".repeat(64),
-    reason: "通过种子用户审核",
+    reason: "处理账户安全问题",
     targetOwnerId: "20000000-0000-4000-8000-000000000002",
-    toStatus: "active",
+    toStatus: "suspended",
   };
   assert.deepEqual(await changeAccountAccess(pool, input), {
-    actionType: "approve_account",
+    actionType: "suspend_account",
     created: true,
-    status: "active",
+    revokedSessions: 2,
+    status: "suspended",
   });
   assert.deepEqual(await changeAccountAccess(pool, input), {
-    actionType: "approve_account",
+    actionType: "suspend_account",
     created: false,
-    status: "active",
+    revokedSessions: 0,
+    status: "suspended",
   });
+  assert.equal(revokedSessions, 2);
   await assert.rejects(
     changeAccountAccess(pool, { ...input, operationHash: "b".repeat(64) }),
     (error) => error.code === "ADMIN_IDEMPOTENCY_CONFLICT" && error.status === 409,

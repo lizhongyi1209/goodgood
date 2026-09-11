@@ -224,7 +224,47 @@ login CSRF, replay, and expired callbacks do not continue authentication.
 Owner and authentication-identity references, SHA-256 hash of an opaque
 GoodGood session token, expiration, revocation, last-seen, and creation
 timestamps. Raw session tokens and Authing/Google tokens are never stored in
-the database.
+the database. Suspending an account updates the user projection and revokes
+every still-active session for that owner in the same administrative
+transaction; restoring access does not revive those revoked sessions.
+
+### AuthEmailBinding
+
+One verified normalized mailbox maps to one email authentication identity and
+one internal owner. The user-entered mailbox spelling is retained for display;
+the local identity subject is a random UUID rather than the mailbox. Runtime
+login never merges an existing non-email owner by matching `users.email`.
+Self-service rows carry no migration metadata. An `operator_migration` row must
+carry the reviewed manifest SHA-256, bounded operator ID, and hashed external
+reference; these fields make the dry-run-first owner-binding command replayable
+without storing its raw reference. The command preserves the existing owner,
+role, admission state, credit ledger, projects, and assets and never issues a
+welcome grant.
+
+### AuthEmailChallenge
+
+A short-lived email login attempt stores the normalized/display mailbox,
+browser-binding hash, HMAC-SHA-256 code digest, safe relative return path,
+delivery state, expiry/consumption/invalidation times, and bounded failure
+count. The raw six-digit code is never persisted. Only one current challenge
+per normalized mailbox may exist, and verification consumes it under a row lock.
+
+### AuthRateLimit / AuthEvent
+
+Authentication rate limits use PostgreSQL rows keyed by scope, keyed subject
+digest, and time bucket so all Web instances share enforcement. Authentication
+events retain a bounded, redacted outcome trail and optional internal owner,
+challenge, request, and delivery references; they do not store a code or email
+body. GG-029 currently carries these additions in provisional migration 0023,
+whose number must be reconciled after parallel GG-027 migrations 0020–0022.
+
+### AuthMaintenanceState
+
+One bounded row per recognized authentication maintenance task records its
+last successful completion and redacted count detail. GG-029 currently permits
+only the hourly email-auth cleanup task. This heartbeat lets the read-only
+operations report distinguish an overdue cleanup from a quiet authentication
+period; it stores no mailbox, code, token, or provider response.
 
 ### PlanEntitlement
 

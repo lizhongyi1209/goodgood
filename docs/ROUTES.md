@@ -80,16 +80,22 @@ navigation:
 
 | Endpoint | Purpose |
 | --- | --- |
-| `GET /api/auth/login` | Persist OIDC state/PKCE and redirect to the hosted login page |
+| `GET /api/auth/method` | Return `hosted` or `email_code` so one browser surface supports the deployed mode and rollback candidate |
+| `GET /api/auth/login` | Persist OIDC state/PKCE and redirect to hosted login; email mode only validates and returns to the same GoodGood path |
 | `GET /api/auth/callback` | Consume state, expire the one-time browser binding on every outcome, exchange a valid code, and create a GoodGood session |
+| `GET /api/auth/email/challenge` | Return only the current browser-bound challenge ID, masked mailbox, delivery state, expiry, and resend delay |
+| `POST /api/auth/email/request` | Validate Origin/bounded JSON/mailbox, reserve shared limits, persist a challenge, and submit one SMTP message |
+| `POST /api/auth/email/verify` | Validate Origin and browser binding, atomically consume the code, then create the owner/identity/session as required |
 | `GET /api/auth/session` | Return the safe current-account summary; never provider tokens |
-| `POST /api/auth/logout` | Revoke the GoodGood session, expire its cookie, and return the fixed Authing hosted-logout target in OIDC mode |
+| `POST /api/auth/logout` | Revoke the GoodGood session and expire its cookie; only OIDC mode returns the fixed Authing hosted-logout target |
 
 The browser follows an OIDC logout target as a top-level navigation. It never
 uses `fetch` across origins, and the provider return is fixed to the GoodGood
 origin root derived from the configured login callback rather than accepting a
 caller-supplied URL. Local test mode has no provider session and keeps the `204`
 response after expiring its local cookie.
+Email request/verify responses are no-store and same-origin only; mailbox,
+challenge, or code values never appear in a product URL.
 
 ## Accepted production routes
 
