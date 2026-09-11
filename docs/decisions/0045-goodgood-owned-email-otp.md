@@ -10,10 +10,10 @@
   local stack. Production still uses Authing; the remaining provider matrix,
   production rehearsal, secret installation, and P4 cutover remain required.
 - Interaction amendment: 2026-09-11. The accepted email candidate keeps the
-  mailbox, send-code action, six-digit code, and login action visible in one
-  form. A successful send starts the server-owned 60-second resend countdown;
-  the challenge-bound mailbox stays locked until explicit modification. Email
-  and code focus use border state only, without an input focus shadow.
+  mailbox, single six-digit code field, send-code action, and login action visible
+  in one compact form. A successful send starts the server-owned 60-second resend
+  countdown; the challenge-bound mailbox stays locked until explicit modification.
+  Email and code focus use border state only, without an input focus shadow.
 
 ## Context
 
@@ -38,11 +38,12 @@ suspension, ownership, and site-owner role rules continue to apply. Google,
 passwords, phone login, cross-provider linking, and a standalone identity
 server are outside the first release.
 
-Render email login as one persistent form rather than switching between mailbox
-and code screens. Keep both inputs visible; disable code entry until a challenge
-exists, lock the submitted mailbox while its challenge is active, and expose an
-explicit same-form modification action. The send control owns the visible
-60-second resend countdown and never sends automatically.
+Render email login as one persistent compact form rather than switching between
+mailbox and code screens. Keep a full-width mailbox above one code/send row;
+use a single six-digit code field instead of separate visual slots. Disable code
+entry until a challenge exists, lock the submitted mailbox while its challenge
+is active, and expose an explicit same-form modification action. The send control
+owns the visible 60-second resend countdown and never sends automatically.
 
 Keep the current Hong Kong application and site domain. A separate login domain
 is unnecessary. Use a managed transactional-email service for delivery;

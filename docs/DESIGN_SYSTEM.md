@@ -51,11 +51,13 @@ individual icon. Upload, settings, and send align to the same 40px box.
   elevation to remain legible while sticky.
 - Authentication recovery is a compact white card over a softened canvas, not
   a marketing hero. The email-only candidate keeps its normal email field,
-  send-code action, and one six-slot code control together in a single form that
-  fits a 390px mobile viewport. It uses one neutral dark login action; secondary
-  send/modify states stay quiet. Email and code focus is a Palace Red border with
-  no input shadow; authentication errors use restrained Palace Red copy and fill.
-  OIDC rollback mode may retain its combined hosted-login label until cutover.
+  one six-digit code field, and the send-code action together in a compact
+  single-column form: left-aligned stacked brand, a small underlined mode label,
+  full-width email, code/send row, then one neutral dark login action. It fits a
+  390px mobile viewport. Secondary send/modify states stay quiet. Email and code
+  focus is a Palace Red border with no input shadow; authentication errors use
+  restrained Palace Red copy and fill. OIDC rollback mode may retain its combined
+  hosted-login label until cutover.
 
 ## Brand and icons
 

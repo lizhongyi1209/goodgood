@@ -178,29 +178,33 @@ test("keeps authentication global, passwordless, and recoverable", async () => {
   assert.match(css, /\.authentication-gate[^}]*position:\s*fixed/s);
   assert.match(css, /\.authentication-card[^}]*calc\(100vw - 32px\)/s);
   assert.match(css, /\.authentication-email-input[^}]*height:\s*var\(--control-lg\)/s);
-  assert.match(css, /\.authentication-code-slot[^}]*height:\s*var\(--control-lg\)/s);
+  assert.match(css, /\.authentication-code-input[^}]*height:\s*var\(--control-lg\)/s);
   assert.match(
     css,
     /\.authentication-email-input:focus-visible[^}]*border-color:\s*var\(--accent\)[^}]*box-shadow:\s*none/s,
   );
   assert.match(
     css,
-    /\.authentication-code-slot\[data-active="true"\][^}]*border-color:\s*var\(--accent\)[^}]*box-shadow:\s*none/s,
+    /\.authentication-code-input:focus-visible[^}]*border-color:\s*var\(--accent\)[^}]*box-shadow:\s*none/s,
   );
   assert.match(creationPage, /<AuthenticationGate/);
-  assert.match(authenticationGate, /className="authentication-brand"/);
+  assert.match(authenticationGate, /authentication-brand-stacked/);
+  assert.match(authenticationGate, /authentication-mode-title/);
   assert.match(authenticationGate, /className="authentication-form"/);
   assert.match(authenticationGate, /className="authentication-input-shell"/);
   assert.match(
     authenticationGate,
-    /authentication-email-input[\s\S]*authentication-send-code[\s\S]*authentication-code-field[\s\S]*authentication-submit/,
+    /authentication-email-input[\s\S]*authentication-code-input[\s\S]*authentication-send-code[\s\S]*authentication-submit/,
   );
-  assert.match(authenticationGate, /输入邮箱获取六位验证码，填写后即可登录/);
+  assert.match(authenticationGate, /邮箱验证码登录/);
+  assert.match(authenticationGate, /placeholder="请输入 6 位验证码"/);
+  assert.match(authenticationGate, /发送验证码/);
   assert.match(authenticationGate, /首次验证成功会自动注册/);
   assert.match(authenticationGate, /autoComplete="one-time-code"/);
   assert.match(authenticationGate, /disabled=\{!challenge \|\| busy !== null\}/);
   assert.match(authenticationGate, /\$\{resendRemaining\} 秒后重发/);
   assert.match(authenticationGate, /重新发送/);
+  assert.doesNotMatch(authenticationGate, /InputOTPSlot/);
   assert.match(emailPolicy, /EMAIL_OTP_RESEND_SECONDS = 60/);
   assert.match(creationPage, /当前创作内容已保留/);
   assert.doesNotMatch(authenticationGate, /type="password"/);

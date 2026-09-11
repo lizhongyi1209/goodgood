@@ -5,7 +5,7 @@
 - On first load, confirm the GoodGood session before enabling owner-scoped
   work; keep the loading state quiet and blocking.
 - Signed-out and expired sessions use one global recovery surface. The selected
-  email mode keeps the mailbox, `获取验证码`, six-digit code, and `登录` action
+  email mode keeps the mailbox, `发送验证码`, six-digit code, and `登录` action
   visible in one form; first successful verification also registers. Password,
   phone, and social login are absent. OIDC rollback mode keeps its hosted button.
 - Sending is user-initiated. Before a challenge exists the code control is
