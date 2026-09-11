@@ -1,6 +1,6 @@
 # GG-031 — 邮箱验证码与企业工作区本地集成
 
-- 状态：阶段 0—2 已完成；阶段 3 正在做隔离 Compose/Mailpit 与浏览器验收
+- 状态：阶段 0—3 本地集成完成；线上环境测试未开始
 - 最后更新：2026-09-11
 - 分支：`feature/GG-031-email-enterprise-integration`
 - 工作树：`F:\goodgood-worktrees\GG-031`
@@ -44,7 +44,7 @@
 | 0 | 已完成 | 隔离工作树、合并预检、任务契约和本地边界 |
 | 1 | 已完成 | GG-029/GG-030 已合入；冲突按组合语义解决，lint、TypeScript 与定向 39/39 通过 |
 | 2 | 已完成 | 统一邮箱身份语义；GG-031 1/1、GG-029 1/1、GG-030 14/14 PostgreSQL 实跑通过 |
-| 3 | 实施中 | 隔离 Compose + Mailpit + 桌面/移动浏览器验收、完整本地门禁 |
+| 3 | 已完成 | 隔离 Compose + Mailpit + 桌面/移动浏览器验收、完整本地门禁 |
 
 ## 已有证据
 
@@ -67,7 +67,25 @@
   可变展示邮箱不可冒充身份、无验证身份拒绝、重复登录不重复用户/个人工作区/欢迎积分，1/1 通过。
 - 同一隔离容器中的 GG-029 原生 PostgreSQL 回归 1/1、GG-030 阶段 1—4 联合回归 14/14 通过；
   三个数据库及容器均已删除。
+- 专用 Compose 项目 `goodgood-gg031` 在独立端口启动 Web、Worker、PostgreSQL、Valkey、对象存储、
+  mock provider 与 Mailpit；readiness 全部健康，迁移登记到 `0027_gg030_management_surface.sql`。
+- 使用应用真实邮箱 OTP 接口和 Mailpit 完成浏览器联合验收 1/1：桌面老板注册、待审核、升为站长、
+  创建企业、充值企业测试积分、邀请员工、审核员工、分配 200 积分并查看空消费记录/空资产库；移动员工
+  注册后先被 pending 边界拦截，经审核后回到企业目标、接受邀请并看到 200 积分。桌面视口为
+  1440×1000，移动视口为 390×844；无页面异常和横向溢出。
+- 浏览器验收发现移动端曾隐藏邀请入口，首次展示修复又被 sticky composer 遮挡；现改为移动顶栏下方的
+  高层级邀请浮层，并加入静态 UI 契约测试。
+- Web 与 Worker 的 `GENERATION_PROVIDER_KIND` 均为 `mock`；浏览器验收后 `generation_jobs=0`、
+  `generation_attempts=0`，mock 日志只有 readiness，未产生真实 provider 请求。
+- 原生 Computer Use 管道连续三次不可用，按工具恢复边界改用本机 Chrome + Playwright 做等价浏览器验收；
+  临时脚本和结果已清理，未写入依赖清单。
+- `npm run check:local` 最终通过：295 项测试中 284 通过、11 项 opt-in 跳过、0 失败；Lint、TypeScript
+  与 `build:local` 同时通过。首次门禁发现 IMPLEMENTATION_PLAN 合并时漏掉既有 staging 名称契约，
+  恢复既定事实后定向 24/24 及完整门禁通过。
+- `goodgood-gg031` 容器、网络和数据卷均已删除；其他并行 Compose 项目保持运行。没有发送外部邮件，
+  没有访问生产数据/密钥，没有推送、合并或部署。
 
 ## 下一步
 
-启动不含真实 provider 的隔离邮箱栈，以 Mailpit 完成桌面和移动浏览器联合验收；随后跑完整本地门禁。
+等待站长决定是否另行批准线上环境测试。若进入下一阶段，先单独确认候选、外部邮箱投递、线上数据边界、
+真实 provider 是否参与以及回退方案；本任务不自动扩展这些权限。

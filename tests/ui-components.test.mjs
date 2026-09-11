@@ -229,6 +229,10 @@ test("keeps authentication global, passwordless, and recoverable", async () => {
   assert.match(authBoundary, /goodgood:session-expired/);
   assert.match(authBoundary, /\/api\/auth\/email\/request/);
   assert.match(authBoundary, /\/api\/auth\/email\/verify/);
+  assert.match(
+    css,
+    /@media \(max-width:\s*720px\)[\s\S]*\.mobile-workspace-switcher \.workspace-invitation\s*\{[^}]*position:\s*absolute;[^}]*z-index:\s*40;[^}]*right:\s*0;/,
+  );
 });
 
 test("authentication session boundary covers signed-in, signed-out, and failure responses", async () => {

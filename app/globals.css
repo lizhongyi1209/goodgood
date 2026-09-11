@@ -719,12 +719,13 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
   .app-shell { display: block; }
   .sidebar { display: none; }
   .mobile-bar { height: 62px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; }
-  .mobile-workspace-switcher { min-width: 0; max-width: 150px; display: block; }
+  .mobile-workspace-switcher { min-width: 0; max-width: 150px; position: relative; display: block; }
   .mobile-workspace-switcher .workspace-switcher { margin: 0; }
   .mobile-workspace-switcher .workspace-switcher-trigger { height: 34px; background: white; }
   .mobile-workspace-switcher .workspace-switcher-meta,
-  .mobile-workspace-switcher .workspace-invitation,
   .mobile-workspace-switcher .workspace-switcher-inline-error { display: none; }
+  .mobile-workspace-switcher .workspace-invitation { width: min(260px,calc(100vw - 24px)); position: absolute; z-index: 40; top: 42px; right: 0; padding: 10px 12px; border: 1px solid #ead2d0; background: white; font-size: 11px; }
+  .mobile-workspace-switcher .workspace-invitation button { font-size: 11px; }
   .content-wrap { width: auto; padding: 8px 10px 40px; }
   .composer { top: 8px; border-radius: 15px; }
   .prompt-row { min-height: 58px; padding: 7px; grid-template-columns: 40px minmax(0,1fr) auto; gap: 5px; }
