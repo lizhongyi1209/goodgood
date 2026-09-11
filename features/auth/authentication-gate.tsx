@@ -141,13 +141,16 @@ export function AuthenticationGate({
         aria-labelledby="authentication-title"
       >
         <div className="authentication-card email-authentication-card">
-          <Image className="self-center" src="/goodgood-mark.svg" alt="" width={32} height={24} />
+          <div className="authentication-brand" role="img" aria-label="GoodGood">
+            <Image src="/goodgood-mark.svg" alt="" width={29} height={22} />
+            <Image src="/goodgood-wordmark.svg" alt="" width={89} height={20} />
+          </div>
           <h2 id="authentication-title">登录暂时不可用</h2>
           <div className="authentication-error" role="alert">
             {error ?? "登录方式暂时无法确认，请重试。"}
           </div>
           <Button
-            className="h-11 w-full bg-zinc-900 text-white hover:bg-zinc-800"
+            className="authentication-submit"
             onClick={() => {
               setBusy("loading");
               setError(null);
@@ -169,13 +172,16 @@ export function AuthenticationGate({
       aria-labelledby="authentication-title"
     >
       <div className="authentication-card email-authentication-card">
-        <Image className="self-center" src="/goodgood-mark.svg" alt="" width={32} height={24} />
+        <div className="authentication-brand" role="img" aria-label="GoodGood">
+          <Image src="/goodgood-mark.svg" alt="" width={29} height={22} />
+          <Image src="/goodgood-wordmark.svg" alt="" width={89} height={20} />
+        </div>
         <h2 id="authentication-title">登录后继续创作</h2>
         {method === "hosted" ? (
           <>
             <p>使用 Google 账号或邮箱验证码。首次登录会自动注册，无需设置密码。</p>
             {error && <div className="authentication-error" role="alert">{error}</div>}
-            <button className="authentication-primary" onClick={onHostedLogin}>
+            <button className="authentication-submit" onClick={onHostedLogin}>
               <LogIn size={16} />
               Google / 邮箱验证码登录
             </button>
@@ -186,14 +192,15 @@ export function AuthenticationGate({
               验证码已提交发送至 <strong>{challenge.emailHint}</strong>。请检查收件箱和垃圾邮件。
             </p>
             {challenge.delivery === "unknown" && (
-              <div className="rounded-xl bg-zinc-100 px-3 py-2 text-sm text-zinc-600">
+              <div className="authentication-notice">
                 发信结果暂未确认，请稍等片刻；收到的当前验证码仍可尝试。
               </div>
             )}
-            <div className="flex justify-center py-1">
+            <div className="authentication-code-wrap">
               <InputOTP
                 aria-label="六位登录验证码"
                 autoComplete="one-time-code"
+                containerClassName="authentication-code-control"
                 disabled={busy !== null}
                 inputMode="numeric"
                 maxLength={6}
@@ -201,28 +208,40 @@ export function AuthenticationGate({
                 pattern={REGEXP_ONLY_DIGITS}
                 value={code}
               >
-                <InputOTPGroup>
+                <InputOTPGroup className="authentication-code-group">
                   {Array.from({ length: 6 }, (_, index) => (
-                    <InputOTPSlot className="h-11 w-10 text-base sm:w-11" index={index} key={index} />
+                    <InputOTPSlot
+                      aria-invalid={Boolean(error)}
+                      className="authentication-code-slot"
+                      index={index}
+                      key={index}
+                    />
                   ))}
                 </InputOTPGroup>
               </InputOTP>
             </div>
             {error && <div className="authentication-error" role="alert">{error}</div>}
             <Button
-              className="h-11 w-full bg-zinc-900 text-white hover:bg-zinc-800"
+              className="authentication-submit"
               disabled={busy !== null || code.length !== 6}
               onClick={() => void verifyCode()}
             >
               {busy === "verifying" ? <LoaderCircle className="animate-spin" /> : <LogIn />}
               {busy === "verifying" ? "正在登录" : "登录"}
             </Button>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <Button size="sm" variant="ghost" onClick={editEmail} disabled={busy !== null}>
+            <div className="authentication-secondary-actions">
+              <Button
+                className="authentication-secondary"
+                size="sm"
+                variant="ghost"
+                onClick={editEmail}
+                disabled={busy !== null}
+              >
                 <ArrowLeft />修改邮箱
               </Button>
               {requestedEmail ? (
                 <Button
+                  className="authentication-secondary"
                   size="sm"
                   variant="ghost"
                   disabled={busy !== null || resendRemaining > 0}
@@ -235,30 +254,35 @@ export function AuthenticationGate({
                       : "重新发送"}
                 </Button>
               ) : (
-                <span className="text-xs text-zinc-500">如需重发，请重新输入完整邮箱</span>
+                <span className="authentication-secondary-hint">如需重发，请重新输入完整邮箱</span>
               )}
             </div>
           </>
         ) : (
           <>
             <p>输入邮箱获取六位验证码。首次验证成功会自动注册，无需设置密码。</p>
-            <label className="grid w-full gap-2 text-left text-sm font-medium text-zinc-700">
-              邮箱
-              <Input
-                autoComplete="email"
-                autoFocus
-                disabled={busy !== null}
-                inputMode="email"
-                maxLength={320}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="name@example.com"
-                type="email"
-                value={email}
-              />
+            <label className="authentication-field-label">
+              <span>邮箱</span>
+              <div className="authentication-input-shell">
+                <Mail aria-hidden="true" size={17} />
+                <Input
+                  aria-invalid={Boolean(error)}
+                  autoComplete="email"
+                  autoFocus
+                  className="authentication-email-input"
+                  disabled={busy !== null}
+                  inputMode="email"
+                  maxLength={320}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="name@example.com"
+                  type="email"
+                  value={email}
+                />
+              </div>
             </label>
             {error && <div className="authentication-error" role="alert">{error}</div>}
             <Button
-              className="h-11 w-full bg-zinc-900 text-white hover:bg-zinc-800"
+              className="authentication-submit"
               disabled={busy !== null || !email.trim()}
               onClick={() => void sendCode()}
             >

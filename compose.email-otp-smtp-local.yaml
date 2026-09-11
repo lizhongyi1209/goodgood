@@ -1,0 +1,27 @@
+services:
+  web:
+    environment:
+      GOODGOOD_ALLOW_LOCAL_AUTH: "false"
+      GOODGOOD_AUTH_MODE: email_otp
+      GOODGOOD_AUTH_PUBLIC_ORIGIN: http://127.0.0.1:${GOODGOOD_WEB_PORT:-31029}
+      GOODGOOD_AUTH_COOKIE_NAME: goodgood_email_session
+      GOODGOOD_AUTH_COOKIE_SECURE: "false"
+      GOODGOOD_AUTH_TRUSTED_PROXY_ADDRESSES: ""
+      GOODGOOD_LOCAL_AUTH_TOKENS: ""
+      GOODGOOD_LOCAL_AUTH_DEFAULT_TOKEN: ""
+      GOODGOOD_EMAIL_OTP_SECRET: goodgood-email-otp-public-smtp-local-only-secret
+      GOODGOOD_EMAIL_SENDING_ENABLED: "true"
+      GOODGOOD_EMAIL_REGISTRATION_ENABLED: "true"
+      GOODGOOD_EMAIL_FROM: GoodGood <no-reply@mail.goodgood.o1key.com>
+      GOODGOOD_EMAIL_SMTP_HOST: smtpdm-ap-southeast-1.aliyuncs.com
+      GOODGOOD_EMAIL_SMTP_PORT: "465"
+      GOODGOOD_EMAIL_SMTP_SECURE: "true"
+      GOODGOOD_EMAIL_SMTP_USERNAME: no-reply@mail.goodgood.o1key.com
+      GOODGOOD_EMAIL_SMTP_PASSWORD: ""
+      GOODGOOD_EMAIL_SMTP_PASSWORD_FILE: /run/secrets/goodgood_email_smtp_password
+    secrets:
+      - goodgood_email_smtp_password
+
+secrets:
+  goodgood_email_smtp_password:
+    file: ${GOODGOOD_EMAIL_SMTP_PASSWORD_SOURCE_FILE:?Use the credentialed email SMTP local runner}

@@ -271,6 +271,24 @@ credentials. The cleanup entry point is dry-run by default:
 `DATABASE_URL=... npm run auth:cleanup`; add `-- --execute` only after reviewing
 the exact isolated/approved database target.
 
+For one explicitly authorized public-mailbox acceptance, use the separate
+credentialed launcher from an interactive terminal:
+
+```bash
+npm run stack:email-smtp-local
+```
+
+It requests the Alibaba Direct Mail SMTP password without echo, verifies TLS
+and authentication without sending, and then starts a disposable local stack
+using the Singapore endpoint and validated GoodGood sender. The password is
+written only to a permission-limited temporary file and mounted only into Web;
+Worker remains on the mock generation provider. Send only to the mailbox named
+in the current authorization. Press Enter in the launcher after the browser
+flow; it removes the temporary password, isolated database, queues, and object
+storage. A successful run proves the application-to-provider flow but does not
+replace production HTTPS/proxy, secret installation, migration, or post-cutover
+smoke evidence.
+
 P2 adds two database-only maintenance entries to the normal Compose
 `maintenance` profile and matching host commands. They need `DATABASE_URL` but
 not the OTP or SMTP secrets:

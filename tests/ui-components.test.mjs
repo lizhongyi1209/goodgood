@@ -172,7 +172,12 @@ test("keeps authentication global, passwordless, and recoverable", async () => {
   );
 
   assert.match(css, /\.authentication-gate[^}]*position:\s*fixed/s);
+  assert.match(css, /\.authentication-card[^}]*calc\(100vw - 32px\)/s);
+  assert.match(css, /\.authentication-email-input[^}]*height:\s*var\(--control-lg\)/s);
+  assert.match(css, /\.authentication-code-slot[^}]*height:\s*var\(--control-lg\)/s);
   assert.match(creationPage, /<AuthenticationGate/);
+  assert.match(authenticationGate, /className="authentication-brand"/);
+  assert.match(authenticationGate, /className="authentication-input-shell"/);
   assert.match(authenticationGate, /输入邮箱获取六位验证码/);
   assert.match(authenticationGate, /首次验证成功会自动注册，无需设置密码/);
   assert.match(authenticationGate, /autoComplete="one-time-code"/);

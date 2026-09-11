@@ -23,6 +23,7 @@
     "stack:authing-local": "node scripts/run-authing-local.mjs",
     "stack:email-local": "node scripts/run-email-otp-local.mjs",
     "stack:email-local:down": "node scripts/run-email-otp-local.mjs --down",
+    "stack:email-smtp-local": "node scripts/run-email-otp-smtp-local.mjs",
     "stack:o1key-local": "node scripts/run-o1key-local.mjs",
     "test": "npm run build && node --test tests/*.test.mjs",
     "test:local": "npm run build:local && node --test tests/*.test.mjs",

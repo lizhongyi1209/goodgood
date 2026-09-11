@@ -23,6 +23,10 @@ import { createAuthenticationNodeApiHandler } from "../server/auth/node-api.mjs"
 import { createAuthenticationOperations } from "../server/auth/operations.mjs";
 import { parseEmailAuthenticationStatusArguments } from "../server/runtime/email-auth-status.mjs";
 import { hashAuthenticationSecret } from "../server/auth/request-authenticator.mjs";
+import {
+  parseArguments as parseEmailSmtpLocalArguments,
+  runtimeEnvironment as emailSmtpLocalEnvironment,
+} from "../scripts/run-email-otp-smtp-local.mjs";
 
 const TEST_SECRET = "email-otp-test-secret-that-is-at-least-32-bytes";
 
@@ -112,6 +116,53 @@ test("email OTP configuration keeps SMTP and OTP secrets server-side", () => {
     }).configured,
     true,
   );
+});
+
+test("credentialed local SMTP runner keeps the password file-only and Web-only", async () => {
+  assert.deepEqual(parseEmailSmtpLocalArguments(["--web-port", "32029"]), {
+    help: false,
+    webPort: "32029",
+  });
+  assert.throws(
+    () => parseEmailSmtpLocalArguments(["--web-port", "0"]),
+    /1 to 65535/,
+  );
+  const environment = emailSmtpLocalEnvironment({
+    secretFile: "C:\\temporary\\smtp-password",
+    webPort: "32029",
+  });
+  assert.equal(environment.GOODGOOD_EMAIL_SMTP_PASSWORD, "");
+  assert.equal(
+    environment.GOODGOOD_EMAIL_SMTP_PASSWORD_FILE,
+    "C:\\temporary\\smtp-password",
+  );
+  assert.equal(
+    environment.GOODGOOD_EMAIL_SMTP_PASSWORD_SOURCE_FILE,
+    "C:\\temporary\\smtp-password",
+  );
+  assert.equal(environment.GOODGOOD_EMAIL_SMTP_SECURE, "true");
+  assert.equal(environment.GOODGOOD_AUTH_PUBLIC_ORIGIN, "http://127.0.0.1:32029");
+
+  const [composeOverride, launcher, packageJson] = await Promise.all([
+    readFile(
+      new URL("../compose.email-otp-smtp-local.yaml", import.meta.url),
+      "utf8",
+    ),
+    readFile(
+      new URL("../scripts/run-email-otp-smtp-local.mjs", import.meta.url),
+      "utf8",
+    ),
+    readFile(new URL("../package.json", import.meta.url), "utf8"),
+  ]);
+  assert.match(composeOverride, /GOODGOOD_EMAIL_SMTP_SECURE: "true"/);
+  assert.match(
+    composeOverride,
+    /GOODGOOD_EMAIL_SMTP_PASSWORD_FILE: \/run\/secrets\/goodgood_email_smtp_password/,
+  );
+  assert.doesNotMatch(composeOverride, /worker:[\s\S]*goodgood_email_smtp_password/);
+  assert.match(launcher, /mode: 0o600/);
+  assert.match(launcher, /down", "--volumes"/);
+  assert.match(packageJson, /"stack:email-smtp-local"/);
 });
 
 test("email normalization preserves provider aliases and ignores spoofed forwarding headers", () => {
