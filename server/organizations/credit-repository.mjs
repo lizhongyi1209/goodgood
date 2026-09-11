@@ -442,9 +442,10 @@ export async function setMemberBudgetInTransaction(
 
   const account = await lockAccount(client, workspaceId);
   const targetResult = await client.query(
-    `SELECT m.*, u.email
+    `SELECT m.*, COALESCE(eb.display_email, u.email) AS email
        FROM workspace_memberships m
        JOIN users u ON u.id = m.owner_id
+       LEFT JOIN auth_email_bindings eb ON eb.owner_id = u.id
       WHERE m.id = $1 AND m.workspace_id = $2
       FOR UPDATE OF m`,
     [membershipId, workspaceId],

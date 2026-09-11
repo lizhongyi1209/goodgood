@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { normalizeEmailAddress } from "../auth/email-policy.mjs";
 import {
   OrganizationError,
   invitationUnavailableError,
@@ -13,20 +14,15 @@ const INVITABLE_ROLES = new Set(["org_admin", "org_member"]);
 const MEMBER_STATUSES = new Set(["active", "suspended", "removed"]);
 
 export function normalizeOrganizationEmail(value) {
-  const email = typeof value === "string" ? value.trim().toLowerCase() : "";
-  if (
-    email.length < 3 ||
-    email.length > 320 ||
-    /[\u0000-\u0020\u007f]/.test(email) ||
-    !/^[^@]+@[^@]+$/.test(email)
-  ) {
+  try {
+    return normalizeEmailAddress(value).normalizedEmail;
+  } catch {
     throw new OrganizationError(
       "ORGANIZATION_REQUEST_INVALID",
       "请输入有效的员工邮箱。",
       400,
     );
   }
-  return email;
 }
 
 function workspaceFromRow(row) {
@@ -171,13 +167,54 @@ async function readInvitation(client, invitationId) {
 
 async function readMembership(client, membershipId) {
   const result = await client.query(
-    `SELECT m.*, u.email
+    `SELECT m.*, COALESCE(b.display_email, u.email) AS email
        FROM workspace_memberships m
        JOIN users u ON u.id = m.owner_id
+       LEFT JOIN auth_email_bindings b ON b.owner_id = u.id
       WHERE m.id = $1`,
     [membershipId],
   );
   return result.rows[0] ? membershipFromRow(result.rows[0]) : null;
+}
+
+async function readVerifiedOwnerEmail(client, ownerId, { lock = false } = {}) {
+  const owner = await client.query(
+    `SELECT u.id, u.email, u.status,
+            EXISTS (
+              SELECT 1 FROM auth_identities i
+               WHERE i.owner_id = u.id AND i.issuer <> 'urn:goodgood:email'
+            ) AS has_legacy_verified_identity
+       FROM users u
+      WHERE u.id = $1
+      ${lock ? "FOR UPDATE OF u" : ""}`,
+    [ownerId],
+  );
+  if (!owner.rowCount) return null;
+  const binding = await client.query(
+    `SELECT normalized_email, display_email
+       FROM auth_email_bindings
+      WHERE owner_id = $1
+      ${lock ? "FOR SHARE" : ""}`,
+    [ownerId],
+  );
+  if (binding.rowCount) {
+    return {
+      displayEmail: binding.rows[0].display_email,
+      normalizedEmail: binding.rows[0].normalized_email,
+      status: owner.rows[0].status,
+    };
+  }
+  if (!owner.rows[0].has_legacy_verified_identity) return null;
+  try {
+    const email = normalizeEmailAddress(owner.rows[0].email);
+    return {
+      displayEmail: email.displayEmail,
+      normalizedEmail: email.normalizedEmail,
+      status: owner.rows[0].status,
+    };
+  } catch {
+    return null;
+  }
 }
 
 export function createOrganization(
@@ -284,17 +321,17 @@ export async function listOwnerWorkspaces(pool, ownerId) {
 }
 
 export async function listPendingOrganizationInvitations(pool, actorOwnerId) {
+  const actor = await readVerifiedOwnerEmail(pool, actorOwnerId);
+  if (!actor || actor.status !== "active") return [];
   const result = await pool.query(
     `SELECT i.*, w.name AS workspace_name
-       FROM users u
-       JOIN workspace_invitations i
-         ON i.normalized_email = lower(btrim(u.email))
+       FROM workspace_invitations i
        JOIN workspaces w ON w.id = i.workspace_id
-      WHERE u.id = $1 AND u.status = 'active'
+      WHERE i.normalized_email = $1
         AND i.status = 'pending' AND i.expires_at > now()
         AND w.kind = 'organization' AND w.status = 'active'
       ORDER BY i.created_at DESC, i.id DESC`,
-    [actorOwnerId],
+    [actor.normalizedEmail],
   );
   return result.rows.map((row) => ({
     ...invitationFromRow(row),
@@ -346,7 +383,19 @@ export function inviteOrganizationMember(
       `SELECT m.status
          FROM users u
          JOIN workspace_memberships m ON m.owner_id = u.id
-        WHERE m.workspace_id = $1 AND lower(btrim(u.email)) = $2
+         LEFT JOIN auth_email_bindings b ON b.owner_id = u.id
+        WHERE m.workspace_id = $1
+          AND (
+            b.normalized_email = $2
+            OR (
+              b.owner_id IS NULL
+              AND lower(btrim(u.email)) = $2
+              AND EXISTS (
+                SELECT 1 FROM auth_identities i
+                 WHERE i.owner_id = u.id AND i.issuer <> 'urn:goodgood:email'
+              )
+            )
+          )
         FOR UPDATE OF m`,
       [workspaceId, normalizedEmail],
     );
@@ -436,18 +485,13 @@ export function acceptOrganizationInvitation(
       throw invitationUnavailableError();
     }
 
-    const actorResult = await client.query(
-      `SELECT id, lower(btrim(email)) AS normalized_email, status
-         FROM users
-        WHERE id = $1
-        FOR UPDATE`,
-      [actorOwnerId],
-    );
-    const actor = actorResult.rows[0];
+    const actor = await readVerifiedOwnerEmail(client, actorOwnerId, {
+      lock: true,
+    });
     if (
       !actor ||
       actor.status !== "active" ||
-      actor.normalized_email !== invitation.normalized_email
+      actor.normalizedEmail !== invitation.normalized_email
     ) {
       throw invitationUnavailableError();
     }
@@ -627,9 +671,10 @@ export function changeOrganizationMembership(
       throw organizationIdempotencyConflictError();
     }
     const targetResult = await client.query(
-      `SELECT m.*, u.email
+      `SELECT m.*, COALESCE(b.display_email, u.email) AS email
          FROM workspace_memberships m
          JOIN users u ON u.id = m.owner_id
+         LEFT JOIN auth_email_bindings b ON b.owner_id = u.id
         WHERE m.id = $1 AND m.workspace_id = $2
         FOR UPDATE OF m`,
       [membershipId, workspaceId],
@@ -802,16 +847,17 @@ export async function listOrganizationManagement(pool, { actorOwnerId, workspace
       manager.membership_id,
     );
     const members = await client.query(
-      `SELECT m.*, u.email
+      `SELECT m.*, COALESCE(b.display_email, u.email) AS email
          FROM workspace_memberships m
          JOIN users u ON u.id = m.owner_id
+         LEFT JOIN auth_email_bindings b ON b.owner_id = u.id
         WHERE m.workspace_id = $1 AND m.status <> 'removed'
         ORDER BY CASE m.role
                    WHEN 'org_owner' THEN 0
                    WHEN 'org_admin' THEN 1
                    ELSE 2
                  END,
-                 lower(u.email), m.id`,
+                 lower(COALESCE(b.display_email, u.email)), m.id`,
       [workspaceId],
     );
     const invitations = await client.query(

@@ -63,6 +63,10 @@ test("organization email normalization is provider-neutral and rejects ambiguous
     normalizeOrganizationEmail("  Employee+Design@Example.COM "),
     "employee+design@example.com",
   );
+  assert.equal(
+    normalizeOrganizationEmail("employee@bücher.example"),
+    "employee@xn--bcher-kva.example",
+  );
   for (const value of ["", "missing-at", "a@@example.com", "a @example.com"]) {
     assert.throws(
       () => normalizeOrganizationEmail(value),

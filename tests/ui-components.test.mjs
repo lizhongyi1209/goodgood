@@ -170,6 +170,14 @@ test("keeps authentication global, passwordless, and recoverable", async () => {
     path.join(root, "features/auth/authentication-gate.tsx"),
     "utf8",
   );
+  const adminPage = await readFile(
+    path.join(root, "features/admin/account-management-page.tsx"),
+    "utf8",
+  );
+  const organizationPage = await readFile(
+    path.join(root, "features/organizations/organization-management-page.tsx"),
+    "utf8",
+  );
   const authBoundary = await readFile(
     path.join(root, "features/auth/http-auth-boundary.ts"),
     "utf8",
@@ -192,6 +200,12 @@ test("keeps authentication global, passwordless, and recoverable", async () => {
     /\.authentication-code-input:focus-visible[^}]*border-color:\s*var\(--accent\)[^}]*box-shadow:\s*none/s,
   );
   assert.match(creationPage, /<AuthenticationGate/);
+  assert.match(adminPage, /<AuthenticationGate/);
+  assert.match(organizationPage, /<AuthenticationGate/);
+  assert.match(
+    organizationPage,
+    /beginAuthentication\(`\$\{window\.location\.pathname\}\$\{window\.location\.search\}`\)/,
+  );
   assert.match(authenticationGate, /authentication-brand-stacked/);
   assert.match(authenticationGate, /authentication-mode-title/);
   assert.match(authenticationGate, /className="authentication-form"/);

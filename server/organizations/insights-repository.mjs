@@ -84,10 +84,12 @@ export async function listOrganizationMemberBudgets(
   });
   const result = await pool.query(
     `SELECT m.id AS membership_id, m.owner_id, m.role, m.status,
-            u.email, b.id AS budget_id, b.credit_limit, b.settled_usage,
+            COALESCE(eb.display_email, u.email) AS email,
+            b.id AS budget_id, b.credit_limit, b.settled_usage,
             b.reserved_usage, b.version, b.status AS budget_status
        FROM workspace_memberships m
        JOIN users u ON u.id = m.owner_id
+       LEFT JOIN auth_email_bindings eb ON eb.owner_id = u.id
        LEFT JOIN member_budgets b
          ON b.workspace_id = m.workspace_id AND b.membership_id = m.id
       WHERE m.workspace_id = $1
@@ -96,7 +98,7 @@ export async function listOrganizationMemberBudgets(
                  WHEN 'org_admin' THEN 1
                  ELSE 2
                END,
-               lower(u.email), m.id`,
+               lower(COALESCE(eb.display_email, u.email)), m.id`,
     [workspace.id],
   );
   return result.rows.map((row) => {
@@ -135,7 +137,8 @@ export async function listOrganizationUsage(
   const result = await pool.query(
     `SELECT e.id, e.related_job_id, -e.amount AS credit_amount,
             e.created_at, m.id AS membership_id, m.owner_id,
-            u.email, j.state AS job_state, b.model_id, b.resolution,
+            COALESCE(eb.display_email, u.email) AS email,
+            j.state AS job_state, b.model_id, b.resolution,
             b.requested_count, b.prompt
        FROM workspace_credit_ledger_entries e
        JOIN member_budgets mb
@@ -143,6 +146,7 @@ export async function listOrganizationUsage(
        JOIN workspace_memberships m
          ON m.id = mb.membership_id AND m.workspace_id = mb.workspace_id
        JOIN users u ON u.id = m.owner_id
+       LEFT JOIN auth_email_bindings eb ON eb.owner_id = u.id
        JOIN generation_jobs j
          ON j.id = e.related_job_id AND j.workspace_id = e.workspace_id
        JOIN generation_batches b

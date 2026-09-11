@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   Coins,
   LoaderCircle,
-  LogIn,
   LogOut,
   RefreshCw,
   Search,
@@ -47,6 +46,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Toaster } from "@/components/ui/sonner";
 import { AccountAccessGate } from "@/features/auth/account-access-gate";
+import { AuthenticationGate } from "@/features/auth/authentication-gate";
 import {
   SESSION_EXPIRED_EVENT,
   beginAuthentication,
@@ -285,18 +285,14 @@ export function AccountManagementPage() {
 
   if (session === null) {
     return (
-      <main className="flex min-h-dvh items-center justify-center bg-white px-5">
-        <section className="w-full max-w-sm rounded-3xl border border-zinc-200 p-8 text-center">
-          <Image className="mx-auto" src="/goodgood-mark.svg" alt="" width={34} height={26} />
-          <h1 className="mt-6 text-2xl font-semibold">登录后管理账户</h1>
-          <p className="mt-3 text-base leading-7 text-zinc-600">此页面只对站长开放。</p>
-          {sessionError && <p className="mt-4 text-sm text-red-700" role="alert">{sessionError}</p>}
-          <Button className="mt-6 w-full" onClick={() => beginAuthentication("/admin/users")}>
-            <LogIn />Google / 邮箱验证码登录
-          </Button>
-          <Button className="mt-2 w-full" variant="ghost" asChild><a href="/create">返回 GoodGood</a></Button>
-        </section>
-      </main>
+      <AuthenticationGate
+        initialError={sessionError}
+        onAuthenticated={async () => {
+          setSessionError(null);
+          setSession(await readAuthenticationSession());
+        }}
+        onHostedLogin={() => beginAuthentication("/admin/users")}
+      />
     );
   }
 
