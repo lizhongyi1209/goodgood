@@ -31,6 +31,82 @@
 - 企业页面触发登录时保留原目标 URL，验证码成功后返回该页面。
 - 合并后定向测试、浏览器验收和 `npm run check:local` 全部通过。
 
+## 阶段 4 手工本地实测流程（换窗口后的恢复清单）
+
+### 环境与约束
+
+- 工作树：`F:\goodgood-worktrees\GG-031`，分支：`feature/GG-031-email-enterprise-integration`。
+- 若隔离栈尚未运行，从工作树执行以下 PowerShell 命令；若已运行，只检查 readiness，不要重复建卷：
+
+  ```powershell
+  $env:GOODGOOD_WEB_PORT="32131"; $env:GOODGOOD_WORKER_HEALTH_PORT="32132"; $env:GOODGOOD_MOCK_GENERATION_PORT="32133"; $env:GOODGOOD_POSTGRES_PORT="55231"; $env:GOODGOOD_VALKEY_PORT="57131"; $env:GOODGOOD_OBJECT_STORAGE_PORT="59031"; $env:GOODGOOD_OBJECT_STORAGE_CONSOLE_PORT="59032"; $env:GOODGOOD_MAILPIT_PORT="58031"; docker compose --project-name goodgood-gg031 -f compose.yaml -f compose.email-otp-local.yaml up --build --detach --wait
+  curl.exe -fsS http://127.0.0.1:32131/api/health/ready
+  ```
+
+- GoodGood：`http://127.0.0.1:32131`；Mailpit：`http://127.0.0.1:58031`；只使用
+  `boss.manual@gg031.local` 和 `employee.manual@gg031.local` 这两个 Mailpit 地址，不发送真实邮件。
+- Web/Worker 必须为 `GENERATION_PROVIDER_KIND=mock`。本轮手工结束前不要执行
+  `docker compose ... down --volumes`；若必须从头开始，只允许针对 `goodgood-gg031` 专用项目执行。
+
+### 主流程（逐段确认）
+
+1. **老板邮箱注册**：打开 `/admin/users`，用 `boss.manual@gg031.local` 请求验证码；在 Mailpit 打开
+   最新邮件并回填验证码。预期看到“账号正在审核中”、欢迎积分 `100`、 “刷新状态”和“退出登录”，且
+   不能进入站长控制台。到此暂停并记录结果。
+2. **本地站长 bootstrap**：确认第 1 步通过后，在工作树执行一次以下命令（不要在生产或其他项目执行）：
+
+   ```powershell
+   $env:DATABASE_URL="postgresql://goodgood:goodgood-local-only@127.0.0.1:55231/goodgood"; npm run accounts:bootstrap-site-owner -- --email boss.manual@gg031.local --operator gg031-local-operator --reference GG-031-manual-local-20260911 --execute
+   ```
+
+   预期输出 `administration.site_owner_bootstrapped`；若输出 `replayed: true`，说明此前已执行过，继续下一步。
+3. **老板审核后恢复**：回到 `/admin/users` 点击“刷新状态”。预期进入站长工作台，老板账户为“已启用”、
+   角色为“站长”，并能看到账户列表和审核操作。
+4. **创建企业**：在老板账户行点击“企业”，填写例如 `GG-031 手工企业` 和原因，确认创建。记录返回的
+   `workspaceId`（若页面不显示，由下一窗口读取本地数据库或 `/api/workspaces`，不要手改数据库）。
+5. **准备企业积分池**：当前页面没有企业充值按钮；必须在老板已登录的浏览器会话中调用企业 credit-grants
+   API（不要直接改账本）：
+
+   ```js
+   fetch(`/api/organizations/${workspaceId}/credit-grants`, {
+     method: "POST",
+     headers: {
+       "content-type": "application/json",
+       "x-goodgood-organization-action": "1",
+       "idempotency-key": "gg031-manual-credit-20260911"
+     },
+     body: JSON.stringify({ amount: 500, reason: "GG-031 手工本地测试" })
+   }).then(async (response) => ({ status: response.status, body: await response.json() })).then(console.log)
+   ```
+
+   预期 HTTP `201`（同一幂等键重复执行可为 `200`），企业概览显示企业可用积分 `500`。
+6. **创建邀请**：老板进入 `/organizations/<workspaceId>/members`，邀请
+   `employee.manual@gg031.local`，角色选“员工”，填写邀请原因。预期出现待接受邀请。
+7. **员工首次登录与 pending 边界**：用第二个浏览器/隐私窗口打开同一成员 URL，用员工邮箱请求并回填 Mailpit
+   验证码。预期仍为“账号正在审核中”，URL 保持企业成员目标页，不能接受邀请；老板邀请不能绕过平台审核。
+8. **站长审核员工**：老板回 `/admin/users` 搜索员工邮箱，点击“通过”并填写原因。员工点击“刷新状态”，
+   预期账号变为 active，但普通员工没有企业管理权限；回到 `/create` 后应在移动顶栏/工作区切换器看到邀请浮层。
+9. **接受邀请与工作区切换**：员工点击“接受”，预期跳转 `/workspaces/<workspaceId>/create`，工作区名称为
+   手工企业；员工看到企业额度入口但不能看到“企业管理”。
+10. **分配员工额度**：老板在企业“成员与额度”页对员工点击“额度”，设置累计额度 `200`，填写原因并确认。
+    预期成员行显示 `200 / 200`；员工刷新创作页后看到企业剩余额度 `200`。
+11. **实际 mock 创作与审阅**：员工在企业创作页使用默认 `Nano Banana 2`、`1K`、1 张，提示词填写
+    `GG-031 手工联调：一只红色纸飞机` 并发送。等待结果完成，预期只扣除该模型报价（当前 10 积分），
+    员工能看到生成结果；老板刷新“消费记录”应出现 1 条员工、提示词和积分记录，“团队资产”应出现 1 张结果图。
+12. **暂停/恢复回归**：老板暂停员工成员，员工刷新企业创作页，预期该企业不可用且不能继续创作；老板恢复
+    员工后，员工重新刷新可恢复访问。记录两次状态边界，不要把账号级暂停与企业成员暂停混为一谈。
+
+### 必要负向检查与停止条件
+
+- 员工在 pending、未接受邀请、成员 suspended 三种状态下都不得创建企业创作任务；发现可进入或可提交时立即
+  停在当前步骤并记录 URL、界面文案和时间。
+- 用第三个不同邮箱（如 `mismatch.manual@gg031.local`）登录时，不得看到发给员工邮箱的邀请；不得用改动
+  用户资料邮箱的方式验证身份匹配。
+- 任一步出现真实外部邮件、`GENERATION_PROVIDER_KIND` 不是 mock、非预期网络地址、账本重复授予或跨企业
+  数据可见，立即停止，不进入线上测试。
+- 每个步骤记录“通过/失败/未执行”和截图或界面文案；本地手工流程完成后，再由站长决定是否另开线上测试，
+  本任务不自动推进线上。
+
 ## 决策检查
 
 本任务不改变已确认决策：它只验证并修复 GG-029 与 GG-030 的组合行为。继续采用“平台审核后才能使用”
