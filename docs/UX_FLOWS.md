@@ -4,14 +4,16 @@
 
 - On first load, confirm the GoodGood session before enabling owner-scoped
   work; keep the loading state quiet and blocking.
-- Signed-out and expired sessions use one global recovery surface. In the
-  selected email mode it starts with one mailbox field and `获取验证码`; first
-  successful verification also registers. Password, phone, and social login
-  are absent. OIDC rollback mode keeps its existing hosted button.
-- Sending is user-initiated. The code step shows a masked mailbox, six-digit
-  paste/mobile-keyboard input, `修改邮箱`, and a 60-second resend countdown.
-  Refresh restores only a browser-bound active challenge; mailbox/code never
-  enters a URL or localStorage.
+- Signed-out and expired sessions use one global recovery surface. The selected
+  email mode keeps the mailbox, `获取验证码`, six-digit code, and `登录` action
+  visible in one form; first successful verification also registers. Password,
+  phone, and social login are absent. OIDC rollback mode keeps its hosted button.
+- Sending is user-initiated. Before a challenge exists the code control is
+  disabled. After a successful send, the mailbox is locked to that challenge,
+  the same send control shows a 60-second resend countdown, and `修改邮箱`
+  explicitly resets the form. Focused mailbox/code inputs change border only,
+  without a focus shadow. Refresh restores only a browser-bound active challenge;
+  mailbox/code never enters a URL or localStorage.
 - Invalid/replayed/expired/cross-browser codes use stable copy and keep the
   current creative state. Uncertain delivery asks the user to wait/check mail;
   it does not claim inbox delivery or automatically send a second message.

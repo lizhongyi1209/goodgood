@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { ArrowLeft, LoaderCircle, LogIn, Mail } from "lucide-react";
+import { LoaderCircle, LogIn, Mail } from "lucide-react";
 import { useEffect, useState } from "react";
 import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,9 @@ export function AuthenticationGate({
   const [challenge, setChallenge] = useState<EmailAuthenticationChallenge | null>(null);
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(initialError);
+  const [errorTarget, setErrorTarget] = useState<"email" | "code" | "general" | null>(
+    initialError ? "general" : null,
+  );
   const [busy, setBusy] = useState<"loading" | "sending" | "verifying" | null>(
     "loading",
   );
@@ -60,6 +63,7 @@ export function AuthenticationGate({
       .catch((reason) => {
         if (active) {
           setError(reason instanceof Error ? reason.message : "登录方式暂时无法确认，请重试。");
+          setErrorTarget("general");
         }
       })
       .finally(() => {
@@ -84,6 +88,7 @@ export function AuthenticationGate({
   const sendCode = async () => {
     setBusy("sending");
     setError(null);
+    setErrorTarget(null);
     try {
       const next = await requestEmailAuthenticationCode(
         email,
@@ -96,6 +101,7 @@ export function AuthenticationGate({
       setResendAvailableAt(Date.now() + next.resendAfterSeconds * 1_000);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "验证码邮件暂时无法发送，请稍后重试。");
+      setErrorTarget("email");
     } finally {
       setBusy(null);
     }
@@ -105,11 +111,13 @@ export function AuthenticationGate({
     if (!challenge) return;
     setBusy("verifying");
     setError(null);
+    setErrorTarget(null);
     try {
       await verifyEmailAuthenticationCode(challenge.id, code);
       await onAuthenticated();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "验证码无效或已过期，请重新获取。");
+      setErrorTarget("code");
     } finally {
       setBusy(null);
     }
@@ -117,9 +125,40 @@ export function AuthenticationGate({
 
   const editEmail = () => {
     setChallenge(null);
+    setRequestedEmail(null);
     setCode("");
     setError(null);
+    setErrorTarget(null);
+    setResendAvailableAt(0);
   };
+
+  const updateEmail = (value: string) => {
+    setEmail(value);
+    setError(null);
+    setErrorTarget(null);
+    if (challenge && requestedEmail === null) {
+      setChallenge(null);
+      setCode("");
+      setResendAvailableAt(0);
+    }
+  };
+
+  const updateCode = (value: string) => {
+    setCode(value);
+    if (errorTarget === "code") {
+      setError(null);
+      setErrorTarget(null);
+    }
+  };
+
+  const sendCodeLabel =
+    busy === "sending"
+      ? "正在发送"
+      : resendRemaining > 0
+        ? `${resendRemaining} 秒后重发`
+        : challenge
+          ? "重新发送"
+          : "获取验证码";
 
   if (busy === "loading" && method === null) {
     return (
@@ -154,6 +193,7 @@ export function AuthenticationGate({
             onClick={() => {
               setBusy("loading");
               setError(null);
+              setErrorTarget(null);
               setMethodAttempt((value) => value + 1);
             }}
           >
@@ -186,109 +226,111 @@ export function AuthenticationGate({
               Google / 邮箱验证码登录
             </button>
           </>
-        ) : challenge ? (
-          <>
-            <p>
-              验证码已提交发送至 <strong>{challenge.emailHint}</strong>。请检查收件箱和垃圾邮件。
-            </p>
-            {challenge.delivery === "unknown" && (
-              <div className="authentication-notice">
-                发信结果暂未确认，请稍等片刻；收到的当前验证码仍可尝试。
-              </div>
-            )}
-            <div className="authentication-code-wrap">
-              <InputOTP
-                aria-label="六位登录验证码"
-                autoComplete="one-time-code"
-                containerClassName="authentication-code-control"
-                disabled={busy !== null}
-                inputMode="numeric"
-                maxLength={6}
-                onChange={setCode}
-                pattern={REGEXP_ONLY_DIGITS}
-                value={code}
-              >
-                <InputOTPGroup className="authentication-code-group">
-                  {Array.from({ length: 6 }, (_, index) => (
-                    <InputOTPSlot
-                      aria-invalid={Boolean(error)}
-                      className="authentication-code-slot"
-                      index={index}
-                      key={index}
-                    />
-                  ))}
-                </InputOTPGroup>
-              </InputOTP>
-            </div>
-            {error && <div className="authentication-error" role="alert">{error}</div>}
-            <Button
-              className="authentication-submit"
-              disabled={busy !== null || code.length !== 6}
-              onClick={() => void verifyCode()}
-            >
-              {busy === "verifying" ? <LoaderCircle className="animate-spin" /> : <LogIn />}
-              {busy === "verifying" ? "正在登录" : "登录"}
-            </Button>
-            <div className="authentication-secondary-actions">
-              <Button
-                className="authentication-secondary"
-                size="sm"
-                variant="ghost"
-                onClick={editEmail}
-                disabled={busy !== null}
-              >
-                <ArrowLeft />修改邮箱
-              </Button>
-              {requestedEmail ? (
-                <Button
-                  className="authentication-secondary"
-                  size="sm"
-                  variant="ghost"
-                  disabled={busy !== null || resendRemaining > 0}
-                  onClick={() => void sendCode()}
-                >
-                  {busy === "sending"
-                    ? "正在发送"
-                    : resendRemaining > 0
-                      ? `${resendRemaining} 秒后重发`
-                      : "重新发送"}
-                </Button>
-              ) : (
-                <span className="authentication-secondary-hint">如需重发，请重新输入完整邮箱</span>
-              )}
-            </div>
-          </>
         ) : (
           <>
-            <p>输入邮箱获取六位验证码。首次验证成功会自动注册，无需设置密码。</p>
-            <label className="authentication-field-label">
-              <span>邮箱</span>
-              <div className="authentication-input-shell">
-                <Mail aria-hidden="true" size={17} />
-                <Input
-                  aria-invalid={Boolean(error)}
-                  autoComplete="email"
-                  autoFocus
-                  className="authentication-email-input"
-                  disabled={busy !== null}
-                  inputMode="email"
-                  maxLength={320}
-                  onChange={(event) => setEmail(event.target.value)}
-                  placeholder="name@example.com"
-                  type="email"
-                  value={email}
-                />
-              </div>
-            </label>
-            {error && <div className="authentication-error" role="alert">{error}</div>}
-            <Button
-              className="authentication-submit"
-              disabled={busy !== null || !email.trim()}
-              onClick={() => void sendCode()}
+            <p>输入邮箱获取六位验证码，填写后即可登录。首次验证成功会自动注册。</p>
+            <form
+              className="authentication-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void verifyCode();
+              }}
             >
-              {busy === "sending" ? <LoaderCircle className="animate-spin" /> : <Mail />}
-              {busy === "sending" ? "正在发送" : "获取验证码"}
-            </Button>
+              <div className="authentication-field-label">
+                <span className="authentication-field-heading">
+                  <label htmlFor="authentication-email">邮箱</label>
+                  {challenge && requestedEmail && (
+                    <button
+                      className="authentication-edit-email"
+                      disabled={busy !== null}
+                      onClick={editEmail}
+                      type="button"
+                    >
+                      修改邮箱
+                    </button>
+                  )}
+                </span>
+                <div className="authentication-email-row">
+                  <span className="authentication-input-shell">
+                    <Mail aria-hidden="true" size={17} />
+                    <Input
+                      aria-invalid={errorTarget === "email"}
+                      autoComplete="email"
+                      autoFocus
+                      className="authentication-email-input"
+                      disabled={busy !== null || Boolean(challenge && requestedEmail)}
+                      id="authentication-email"
+                      inputMode="email"
+                      maxLength={320}
+                      onChange={(event) => updateEmail(event.target.value)}
+                      placeholder={challenge ? challenge.emailHint : "name@example.com"}
+                      type="email"
+                      value={email}
+                    />
+                  </span>
+                  <Button
+                    aria-live="polite"
+                    className="authentication-send-code"
+                    disabled={busy !== null || !email.trim() || resendRemaining > 0}
+                    onClick={() => void sendCode()}
+                    type="button"
+                    variant="secondary"
+                  >
+                    {busy === "sending" && <LoaderCircle className="animate-spin" />}
+                    {sendCodeLabel}
+                  </Button>
+                </div>
+              </div>
+
+              {challenge && (
+                <p className="authentication-delivery" role="status">
+                  验证码已提交发送至 <strong>{challenge.emailHint}</strong>，请检查收件箱和垃圾邮件。
+                </p>
+              )}
+
+              <div className="authentication-code-field">
+                <span className="authentication-field-heading">验证码</span>
+                <div className="authentication-code-wrap">
+                  <InputOTP
+                    aria-label="六位登录验证码"
+                    autoComplete="one-time-code"
+                    containerClassName="authentication-code-control"
+                    disabled={!challenge || busy !== null}
+                    inputMode="numeric"
+                    maxLength={6}
+                    onChange={updateCode}
+                    pattern={REGEXP_ONLY_DIGITS}
+                    value={code}
+                  >
+                    <InputOTPGroup className="authentication-code-group">
+                      {Array.from({ length: 6 }, (_, index) => (
+                        <InputOTPSlot
+                          aria-invalid={errorTarget === "code"}
+                          className="authentication-code-slot"
+                          index={index}
+                          key={index}
+                        />
+                      ))}
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+              </div>
+
+              {challenge?.delivery === "unknown" && (
+                <div className="authentication-notice">
+                  发信结果暂未确认，请稍等片刻；收到的当前验证码仍可尝试。
+                </div>
+              )}
+              {error && <div className="authentication-error" role="alert">{error}</div>}
+              <Button
+                className="authentication-submit"
+                disabled={busy !== null || !challenge || code.length !== 6}
+                type="submit"
+              >
+                {busy === "verifying" ? <LoaderCircle className="animate-spin" /> : <LogIn />}
+                {busy === "verifying" ? "正在登录" : "登录"}
+              </Button>
+            </form>
           </>
         )}
       </div>

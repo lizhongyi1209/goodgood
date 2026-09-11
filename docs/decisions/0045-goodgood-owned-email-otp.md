@@ -5,9 +5,15 @@
 - Supersedes: ADR 0007's Authing/Google provider selection and GG-028's unshipped
   ADR 0044 custom-domain direction. The existing GoodGood session and ownership
   boundaries remain accepted.
-- Delivery: the P1 runtime and first P2 browser surface are implemented and
-  verified only in the isolated GG-029 local stack. Production still uses
-  Authing; P0 mail-provider evidence and P3/P4 release work remain required.
+- Delivery: P0 small-sample delivery and one real application login loop are
+  verified; P1/P2 and P3 preparation are implemented in the isolated GG-029
+  local stack. Production still uses Authing; the remaining provider matrix,
+  production rehearsal, secret installation, and P4 cutover remain required.
+- Interaction amendment: 2026-09-11. The accepted email candidate keeps the
+  mailbox, send-code action, six-digit code, and login action visible in one
+  form. A successful send starts the server-owned 60-second resend countdown;
+  the challenge-bound mailbox stays locked until explicit modification. Email
+  and code focus use border state only, without an input focus shadow.
 
 ## Context
 
@@ -31,6 +37,12 @@ pending account with the existing one-time welcome grant. Existing approval,
 suspension, ownership, and site-owner role rules continue to apply. Google,
 passwords, phone login, cross-provider linking, and a standalone identity
 server are outside the first release.
+
+Render email login as one persistent form rather than switching between mailbox
+and code screens. Keep both inputs visible; disable code entry until a challenge
+exists, lock the submitted mailbox while its challenge is active, and expose an
+explicit same-form modification action. The send control owns the visible
+60-second resend countdown and never sends automatically.
 
 Keep the current Hong Kong application and site domain. A separate login domain
 is unnecessary. Use a managed transactional-email service for delivery;
