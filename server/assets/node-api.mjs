@@ -1,5 +1,6 @@
 import { assetApiError, getAssetDownloadUrl, listAssets } from "./api.mjs";
 import { requestIdFor } from "../observability/http.mjs";
+import { workspaceIdFromRequest } from "../organizations/request.mjs";
 
 const JSON_HEADERS = {
   "cache-control": "no-store",
@@ -29,6 +30,7 @@ export function createAssetNodeApiHandler({
     if (url.pathname !== "/api/assets" && !downloadUrlMatch) return false;
     try {
       const ownerContext = await authenticate(request);
+      const workspaceId = workspaceIdFromRequest(request);
       if (downloadUrlMatch && request.method === "GET") {
         sendJson(
           response,
@@ -36,12 +38,17 @@ export function createAssetNodeApiHandler({
           await operations.getAssetDownloadUrl({
             assetId: downloadUrlMatch[1],
             ownerContext,
+            workspaceId,
           }),
         );
         return true;
       }
       if (url.pathname === "/api/assets" && request.method === "GET") {
-        sendJson(response, 200, await operations.listAssets({ ownerContext }));
+        sendJson(
+          response,
+          200,
+          await operations.listAssets({ ownerContext, workspaceId }),
+        );
         return true;
       }
       sendJson(

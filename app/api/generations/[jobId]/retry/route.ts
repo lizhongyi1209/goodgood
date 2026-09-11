@@ -5,6 +5,7 @@ import {
 import { loadAuthenticationConfig } from "@/server/auth/config.mjs";
 import { createRequestAuthenticator } from "@/server/auth/request-authenticator.mjs";
 import { getGenerationResources } from "@/server/generation/resources.mjs";
+import { workspaceIdFromRequest } from "@/server/organizations/request.mjs";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -24,6 +25,7 @@ export async function POST(
       idempotencyKey: request.headers.get("idempotency-key"),
       jobId,
       ownerContext: await authenticate(request),
+      workspaceId: workspaceIdFromRequest(request),
     });
     return Response.json(result.job, {
       headers: { "cache-control": "no-store" },

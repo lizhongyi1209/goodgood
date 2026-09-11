@@ -12,6 +12,7 @@ import {
   correlateRequest,
   requestIdFor,
 } from "../observability/http.mjs";
+import { workspaceIdFromRequest } from "../organizations/request.mjs";
 
 const JSON_HEADERS = {
   "cache-control": "no-store",
@@ -112,12 +113,14 @@ export function createGenerationNodeApiHandler({
     let jobId;
     try {
       const ownerContext = await authenticate(request);
+      const workspaceId = workspaceIdFromRequest(request);
       if (url.pathname === "/api/generations" && request.method === "POST") {
         await admitGeneration();
         const result = await operations.submitGeneration({
           idempotencyKey: idempotencyKey(request),
           input: await readJson(request),
           ownerContext,
+          workspaceId,
         });
         correlateRequest(request, { jobId: result.job.id });
         sendJson(response, result.created ? 202 : 200, result.job);
@@ -135,6 +138,7 @@ export function createGenerationNodeApiHandler({
           idempotencyKey: idempotencyKey(request),
           jobId,
           ownerContext,
+          workspaceId,
         });
         correlateRequest(request, { jobId: result.job.id });
         sendJson(response, result.created ? 202 : 200, result.job);
@@ -148,7 +152,7 @@ export function createGenerationNodeApiHandler({
         sendJson(
           response,
           200,
-          await operations.readGeneration({ jobId, ownerContext }),
+          await operations.readGeneration({ jobId, ownerContext, workspaceId }),
         );
         return true;
       }

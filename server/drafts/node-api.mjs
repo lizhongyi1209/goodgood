@@ -5,6 +5,7 @@ import {
   saveCreationDraft,
 } from "./api.mjs";
 import { requestIdFor } from "../observability/http.mjs";
+import { workspaceIdFromRequest } from "../organizations/request.mjs";
 
 const JSON_HEADERS = {
   "cache-control": "no-store",
@@ -45,14 +46,20 @@ export function createCreationDraftNodeApiHandler({
     if (url.pathname !== "/api/draft") return false;
     try {
       const ownerContext = await authenticate(request);
+      const workspaceId = workspaceIdFromRequest(request);
       if (request.method === "GET") {
-        sendJson(response, 200, await operations.readCreationDraft({ ownerContext }));
+        sendJson(
+          response,
+          200,
+          await operations.readCreationDraft({ ownerContext, workspaceId }),
+        );
         return true;
       }
       if (request.method === "PUT") {
         sendJson(response, 200, await operations.saveCreationDraft({
           input: await readJson(request),
           ownerContext,
+          workspaceId,
         }));
         return true;
       }
@@ -60,6 +67,7 @@ export function createCreationDraftNodeApiHandler({
         sendJson(response, 200, await operations.deleteCreationDraft({
           input: await readJson(request),
           ownerContext,
+          workspaceId,
         }));
         return true;
       }

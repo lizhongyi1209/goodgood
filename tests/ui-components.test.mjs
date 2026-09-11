@@ -99,7 +99,11 @@ test("declares the GoodGood visual and interaction invariants", async () => {
   assert.match(css, /\.creation-card \.download-button:not\(:disabled\):hover\s*\{[^}]*color:\s*var\(--accent-deep\)[^}]*box-shadow:/s);
   assert.match(css, /\.creation-card \.download-button:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--accent\)/s);
   assert.match(css, /\.creation-card \.download-button:not\(:disabled\):active\s*\{[^}]*transform:\s*scale\(\.96\)/s);
-  assert.match(creationPage, /saveImageToLocal\(\{[\s\S]*createdAt: batch\.createdAt,[\s\S]*ordinal: index \+ 1,[\s\S]*previewUrl: image\.previewUrl,/);
+  assert.match(creationPage, /saveImageToLocal\(\s*\{[\s\S]*createdAt: batch\.createdAt,[\s\S]*ordinal: index \+ 1,[\s\S]*previewUrl: image\.previewUrl,/);
+  assert.match(
+    creationPage,
+    /readAssetDownloadUrl\(assetId, workspaceId\)/,
+  );
   assert.doesNotMatch(creationPage, /link\.href = previewUrl/);
   assert.doesNotMatch(creationPage, /(?:creation|gallery|detail)-variant-/);
   assert.doesNotMatch(css, /filter:\s*(?:saturate|contrast|hue-rotate|brightness)/);

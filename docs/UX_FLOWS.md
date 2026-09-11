@@ -62,6 +62,43 @@
   bootstrap remains an out-of-band security operation, not a public signup
   shortcut.
 
+### Enterprise workspace and member management (implemented locally; not deployed)
+
+The account area exposes a quiet Workspace switcher when a user has an active
+organization membership. Personal and organization names remain explicit; a
+switch never moves drafts, projects, references, credit, or Assets between
+them. A direct organization URL verifies membership before rendering and offers
+a return to the personal creation surface when access is unavailable.
+
+The platform site owner creates an organization for a verified principal and
+assigns its first `org_owner`. Organization owners/admins then use a separate
+enterprise management surface to:
+
+1. enter an employee email and role;
+2. see the pending invitation without creating credentials;
+3. let the employee log in normally and accept the matching invitation;
+4. allocate or reclaim only unspent member budget with a reason;
+5. suspend/restore membership without suspending the person's GoodGood account;
+6. inspect settled/processing/released usage and generated company Assets by
+   member.
+
+Invitation loading, empty, failure, expired, already-accepted, and email-
+mismatch states preserve the current dialog/page input. Budget confirmation
+shows organization available/unallocated capacity, the member's current and new
+limit, and the exact change. Failure keeps the selected member and reason.
+
+Every creator, including an owner/admin, needs an allocation to generate in an
+organization Workspace. The creation composer shows organization name, member
+remaining allocation, and organization availability without exposing internal
+account IDs. Insufficient member budget and insufficient company credit are
+distinct recoverable states; neither falls back to personal credit.
+
+Organization managers see a team Asset view filtered by creator. Opening an
+Asset shows the output, prompt, parameters, creator, and generation time but
+does not sign creator-only reusable raw references. Ordinary members see only
+their own organization work. A removed member loses the organization switcher
+and new signed reads; company history remains visible to authorized managers.
+
 ## Creation surface
 
 ### Empty

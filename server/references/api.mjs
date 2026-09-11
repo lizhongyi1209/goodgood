@@ -6,6 +6,7 @@ import {
 } from "../generation/resources.mjs";
 import { REFERENCE_LIMITS } from "./constants.mjs";
 import { newRequestId } from "../observability/http.mjs";
+import { OrganizationError } from "../organizations/errors.mjs";
 import {
   ReferencePersistenceError,
   ReferenceRequestError,
@@ -25,6 +26,8 @@ import {
   validateReferenceIds,
   validateReferenceUploadRequest,
 } from "./validation.mjs";
+
+const DEFAULT_WORKSPACE_ID = /** @type {string | null} */ (null);
 
 function ownerIdFromContext(ownerContext) {
   if (!ownerContext?.ownerId) throw sessionExpiredError();
@@ -56,10 +59,16 @@ function publicReusableReference(row, url) {
   };
 }
 
-export async function listReferenceAssets({ ownerContext }) {
+export async function listReferenceAssets({
+  ownerContext,
+  workspaceId = DEFAULT_WORKSPACE_ID,
+}) {
   const ownerId = ownerIdFromContext(ownerContext);
   const resources = await getGenerationResources();
-  const rows = await findReusableReferenceAssets(resources.pool, { ownerId });
+  const rows = await findReusableReferenceAssets(resources.pool, {
+    ownerId,
+    workspaceId,
+  });
   return {
     references: await Promise.all(
       rows.map(async (row) =>
@@ -76,11 +85,19 @@ export async function listReferenceAssets({ ownerContext }) {
   };
 }
 
-export async function readReferenceAssetContent({ referenceId, ownerContext }) {
+export async function readReferenceAssetContent({
+  referenceId,
+  ownerContext,
+  workspaceId = DEFAULT_WORKSPACE_ID,
+}) {
   validateReferenceIds([{ id: referenceId }]);
   const ownerId = ownerIdFromContext(ownerContext);
   const resources = await getGenerationResources();
-  const row = await findReferenceAsset(resources.pool, { ownerId, referenceId });
+  const row = await findReferenceAsset(resources.pool, {
+    ownerId,
+    referenceId,
+    workspaceId,
+  });
   if (
     !row ||
     row.upload_state !== "ready" ||
@@ -104,7 +121,11 @@ export async function readReferenceAssetContent({ referenceId, ownerContext }) {
   };
 }
 
-export async function createReferenceUploads({ files, ownerContext }) {
+export async function createReferenceUploads({
+  files,
+  ownerContext,
+  workspaceId = DEFAULT_WORKSPACE_ID,
+}) {
   const ownerId = ownerIdFromContext(ownerContext);
   const validatedFiles = validateReferenceUploadRequest({ files });
   const resources = await getGenerationResources();
@@ -113,6 +134,7 @@ export async function createReferenceUploads({ files, ownerContext }) {
     files: validatedFiles,
     ownerId,
     uploadTtlSeconds: REFERENCE_LIMITS.uploadTtlSeconds,
+    workspaceId,
   });
 
   return {
@@ -137,11 +159,19 @@ export async function createReferenceUploads({ files, ownerContext }) {
   };
 }
 
-export async function completeReferenceUpload({ referenceId, ownerContext }) {
+export async function completeReferenceUpload({
+  referenceId,
+  ownerContext,
+  workspaceId = DEFAULT_WORKSPACE_ID,
+}) {
   validateReferenceIds([{ id: referenceId }]);
   const ownerId = ownerIdFromContext(ownerContext);
   const resources = await getGenerationResources();
-  const row = await findReferenceAsset(resources.pool, { ownerId, referenceId });
+  const row = await findReferenceAsset(resources.pool, {
+    ownerId,
+    referenceId,
+    workspaceId,
+  });
   if (!row) {
     throw new ReferenceRequestError(
       "REFERENCE_NOT_FOUND",
@@ -158,7 +188,11 @@ export async function completeReferenceUpload({ referenceId, ownerContext }) {
     );
   }
   if (new Date(row.expires_at).getTime() <= Date.now()) {
-    await markReferenceExpired(resources.pool, { ownerId, referenceId });
+    await markReferenceExpired(resources.pool, {
+      ownerId,
+      referenceId,
+      workspaceId,
+    });
     throw new ReferenceRequestError(
       "UPLOAD_EXPIRED",
       "参考图上传已过期，请重新选择文件。",
@@ -192,6 +226,7 @@ export async function completeReferenceUpload({ referenceId, ownerContext }) {
         ownerId,
         referenceId,
         width: image.width,
+        workspaceId,
       }),
     );
   } catch (error) {
@@ -200,6 +235,7 @@ export async function completeReferenceUpload({ referenceId, ownerContext }) {
         errorCode: error.code,
         ownerId,
         referenceId,
+        workspaceId,
       });
     }
     throw error;
@@ -213,6 +249,7 @@ export function referenceApiError(
 ) {
   if (
     error instanceof AuthenticationError ||
+    error instanceof OrganizationError ||
     error instanceof ReferenceRequestError ||
     error instanceof ReferencePersistenceError
   ) {

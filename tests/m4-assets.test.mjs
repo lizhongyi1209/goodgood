@@ -39,6 +39,16 @@ test("asset repository lists only accepted successful records for one owner newe
   let query;
   const pool = {
     async query(sql, values) {
+      if (/JOIN workspaces w/.test(sql)) {
+        return {
+          rows: [{
+            kind: "personal",
+            name: "个人工作区",
+            status: "active",
+            workspace_id: "workspace-a",
+          }],
+        };
+      }
       query = { sql, values };
       return { rows: expectedRows };
     },
@@ -48,10 +58,11 @@ test("asset repository lists only accepted successful records for one owner newe
     await findOwnerAssetGenerationJobs(pool, { ownerId: "owner-a" }),
     expectedRows,
   );
-  assert.deepEqual(query.values, ["owner-a"]);
+  assert.deepEqual(query.values, ["owner-a", "workspace-a"]);
   assert.match(query.sql, /j\.owner_id = \$1/);
   assert.match(query.sql, /b\.owner_id = \$1/);
   assert.match(query.sql, /a\.owner_id = \$1/);
+  assert.match(query.sql, /j\.workspace_id = \$2/);
   assert.match(query.sql, /j\.state = 'succeeded'/);
   assert.match(query.sql, /a\.moderation_state = 'accepted'/);
   assert.match(query.sql, /ORDER BY j\.submitted_at DESC, j\.id DESC/);
@@ -101,6 +112,16 @@ test("asset repository resolves one accepted successful Asset for its owner", as
   let query;
   const pool = {
     async query(sql, values) {
+      if (/JOIN workspaces w/.test(sql)) {
+        return {
+          rows: [{
+            kind: "personal",
+            name: "个人工作区",
+            status: "active",
+            workspace_id: "workspace-a",
+          }],
+        };
+      }
       query = { sql, values };
       return { rows: [expected] };
     },
@@ -110,10 +131,11 @@ test("asset repository resolves one accepted successful Asset for its owner", as
     await findOwnerAsset(pool, { assetId: "asset-a", ownerId: "owner-a" }),
     expected,
   );
-  assert.deepEqual(query.values, ["asset-a", "owner-a"]);
+  assert.deepEqual(query.values, ["asset-a", "owner-a", "workspace-a"]);
   assert.match(query.sql, /a\.owner_id = \$2/);
   assert.match(query.sql, /j\.owner_id = \$2/);
   assert.match(query.sql, /b\.owner_id = \$2/);
+  assert.match(query.sql, /a\.workspace_id = \$3/);
   assert.match(query.sql, /j\.state = 'succeeded'/);
   assert.match(query.sql, /a\.moderation_state = 'accepted'/);
 });
@@ -222,6 +244,7 @@ test("asset HTTP route authenticates and preserves the owner context", async () 
   assert.deepEqual(calls[1], {
     assetId: "50000000-0000-4000-8000-000000000001",
     ownerContext: { ownerId: "owner-a" },
+    workspaceId: null,
   });
 
   const otherOwnerResponse = responseRecorder();

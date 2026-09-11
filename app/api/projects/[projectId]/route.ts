@@ -6,6 +6,7 @@ import {
   readProject,
   updateProject,
 } from "@/server/projects/api.mjs";
+import { workspaceIdFromRequest } from "@/server/organizations/request.mjs";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -28,6 +29,7 @@ export async function GET(
       await readProject({
         ownerContext: await ownerContext(request),
         projectId,
+        workspaceId: workspaceIdFromRequest(request),
       }),
       { headers: { "cache-control": "no-store" } },
     );
@@ -51,6 +53,7 @@ export async function PATCH(
         input: await request.json(),
         ownerContext: await ownerContext(request),
         projectId,
+        workspaceId: workspaceIdFromRequest(request),
       }),
       { headers: { "cache-control": "no-store" } },
     );

@@ -6,6 +6,7 @@ import {
   referenceApiError,
 } from "./api.mjs";
 import { requestIdFor } from "../observability/http.mjs";
+import { workspaceIdFromRequest } from "../organizations/request.mjs";
 
 const JSON_HEADERS = {
   "cache-control": "no-store",
@@ -50,11 +51,12 @@ export function createReferenceNodeApiHandler({
     let referenceId;
     try {
       const ownerContext = await authenticate(request);
+      const workspaceId = workspaceIdFromRequest(request);
       if (url.pathname === "/api/references" && request.method === "GET") {
         sendJson(
           response,
           200,
-          await operations.listReferenceAssets({ ownerContext }),
+          await operations.listReferenceAssets({ ownerContext, workspaceId }),
           { allow: "GET, POST" },
         );
         return true;
@@ -66,6 +68,7 @@ export function createReferenceNodeApiHandler({
           await operations.createReferenceUploads({
             files: (await readJson(request))?.files,
             ownerContext,
+            workspaceId,
           }),
         );
         return true;
@@ -79,6 +82,7 @@ export function createReferenceNodeApiHandler({
         const content = await operations.readReferenceAssetContent({
           ownerContext,
           referenceId,
+          workspaceId,
         });
         response.writeHead(200, {
           "cache-control": "private, no-store",
@@ -100,6 +104,7 @@ export function createReferenceNodeApiHandler({
           await operations.completeReferenceUpload({
             ownerContext,
             referenceId,
+            workspaceId,
           }),
         );
         return true;

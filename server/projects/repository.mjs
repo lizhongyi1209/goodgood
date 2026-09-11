@@ -1,10 +1,12 @@
 import { createHash, randomUUID } from "node:crypto";
 import { lockReferenceLifecycle } from "../references/lifecycle-lock.mjs";
 import { findReadyReferences } from "../references/repository.mjs";
+import { resolveWorkspaceAccess } from "../organizations/workspace-access.mjs";
 import { ProjectPersistenceError } from "./errors.mjs";
 
 const PROJECT_SELECT = `
-  SELECT id, owner_id, create_idempotency_key, create_input_hash,
+  SELECT id, owner_id, workspace_id, creator_owner_id,
+         create_idempotency_key, create_input_hash,
          name, prompt, reference_snapshot, model_id,
          aspect_ratio, resolution, generation_count, thinking_level,
          google_search, quality, background, output_format, status, version,
@@ -18,12 +20,16 @@ export function hashProjectInput({ batchIds, name, state }) {
     .digest("hex");
 }
 
-async function verifyProjectReferences(client, { ownerId, references }) {
+async function verifyProjectReferences(
+  client,
+  { ownerId, references, workspaceId },
+) {
   if (!references.length) return;
   const currentReferences = await findReadyReferences(client, {
     lock: true,
     ownerId,
     referenceIds: references.map((reference) => reference.id),
+    workspaceId,
   });
   const referencesMatch = references.every((reference, index) => {
     const current = currentReferences[index];
@@ -40,15 +46,16 @@ async function verifyProjectReferences(client, { ownerId, references }) {
 
 async function associateProjectBatches(
   client,
-  { batchIds, ownerId, projectId },
+  { batchIds, ownerId, projectId, workspaceId },
 ) {
   const result = await client.query(
     `SELECT j.id AS job_id, b.id AS batch_id, b.project_id
        FROM generation_jobs j
        JOIN generation_batches b ON b.id = j.batch_id
-      WHERE j.owner_id = $1 AND j.id = ANY($2::uuid[])
+      WHERE j.creator_owner_id = $1 AND j.workspace_id = $2
+        AND b.workspace_id = $2 AND j.id = ANY($3::uuid[])
       FOR UPDATE OF b`,
-    [ownerId, batchIds],
+    [ownerId, workspaceId, batchIds],
   );
   if (
     result.rowCount !== batchIds.length ||
@@ -72,21 +79,27 @@ async function associateProjectBatches(
 
 export async function createProject(
   pool,
-  { batchIds, idempotencyKey, name, ownerId, state },
+  { batchIds, idempotencyKey, name, ownerId, state, workspaceId = null },
 ) {
   const client = await pool.connect();
   const projectId = randomUUID();
   const inputHash = hashProjectInput({ batchIds, name, state });
   try {
     await client.query("BEGIN");
+    const workspace = await resolveWorkspaceAccess(client, {
+      ownerId,
+      workspaceId,
+      write: true,
+    });
     await client.query(
       "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
-      [`${ownerId}:${idempotencyKey}`],
+      [`${workspace.id}:${ownerId}:${idempotencyKey}`],
     );
     const existing = await client.query(
       `${PROJECT_SELECT}
-        WHERE owner_id = $1 AND create_idempotency_key = $2`,
-      [ownerId, idempotencyKey],
+        WHERE workspace_id = $1 AND creator_owner_id = $2
+          AND create_idempotency_key = $3`,
+      [workspace.id, ownerId, idempotencyKey],
     );
     if (existing.rowCount) {
       if (existing.rows[0].create_input_hash !== inputHash) {
@@ -103,18 +116,22 @@ export async function createProject(
     await verifyProjectReferences(client, {
       ownerId,
       references: state.references,
+      workspaceId: workspace.id,
     });
     const result = await client.query(
       `INSERT INTO projects (
-         id, owner_id, create_idempotency_key, create_input_hash,
+         id, owner_id, workspace_id, creator_owner_id,
+         create_idempotency_key, create_input_hash,
          name, prompt, reference_snapshot, model_id,
          aspect_ratio, resolution, generation_count, thinking_level, google_search,
          quality, background, output_format
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+       ) VALUES ($1, $2, $3, $2, $4, $5, $6, $7, $8::jsonb, $9, $10,
+                 $11, $12, $13, $14, $15, $16, $17)
        RETURNING *`,
       [
         projectId,
         ownerId,
+        workspace.id,
         idempotencyKey,
         inputHash,
         name,
@@ -131,7 +148,12 @@ export async function createProject(
         state.outputFormat,
       ],
     );
-    await associateProjectBatches(client, { batchIds, ownerId, projectId });
+    await associateProjectBatches(client, {
+      batchIds,
+      ownerId,
+      projectId,
+      workspaceId: workspace.id,
+    });
     await client.query("COMMIT");
     return result.rows[0];
   } catch (error) {
@@ -144,17 +166,23 @@ export async function createProject(
 
 export async function updateProject(
   pool,
-  { batchIds, name, ownerId, projectId, state },
+  { batchIds, name, ownerId, projectId, state, workspaceId = null },
 ) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+    const workspace = await resolveWorkspaceAccess(client, {
+      ownerId,
+      workspaceId,
+      write: true,
+    });
     if (state.references.length) await lockReferenceLifecycle(client);
     const existing = await client.query(
       `SELECT id FROM projects
-        WHERE id = $1 AND owner_id = $2 AND status = 'active'
+        WHERE id = $1 AND workspace_id = $2 AND creator_owner_id = $3
+          AND status = 'active'
         FOR UPDATE`,
-      [projectId, ownerId],
+      [projectId, workspace.id, ownerId],
     );
     if (!existing.rowCount) {
       await client.query("COMMIT");
@@ -163,20 +191,27 @@ export async function updateProject(
     await verifyProjectReferences(client, {
       ownerId,
       references: state.references,
+      workspaceId: workspace.id,
     });
-    await associateProjectBatches(client, { batchIds, ownerId, projectId });
+    await associateProjectBatches(client, {
+      batchIds,
+      ownerId,
+      projectId,
+      workspaceId: workspace.id,
+    });
     const result = await client.query(
       `UPDATE projects
-          SET name = $3, prompt = $4, reference_snapshot = $5::jsonb,
-              model_id = $6, aspect_ratio = $7, resolution = $8,
-              generation_count = $9, thinking_level = $10,
-              google_search = $11, quality = $12, background = $13,
-              output_format = $14, version = version + 1,
+          SET name = $4, prompt = $5, reference_snapshot = $6::jsonb,
+              model_id = $7, aspect_ratio = $8, resolution = $9,
+              generation_count = $10, thinking_level = $11,
+              google_search = $12, quality = $13, background = $14,
+              output_format = $15, version = version + 1,
               updated_at = now()
-        WHERE id = $1 AND owner_id = $2
+        WHERE id = $1 AND workspace_id = $2 AND creator_owner_id = $3
         RETURNING *`,
       [
         projectId,
+        workspace.id,
         ownerId,
         name,
         state.prompt,
@@ -202,21 +237,27 @@ export async function updateProject(
   }
 }
 
-export async function findProject(pool, { ownerId, projectId }) {
+export async function findProject(
+  pool,
+  { ownerId, projectId, workspaceId = null },
+) {
+  const workspace = await resolveWorkspaceAccess(pool, { ownerId, workspaceId });
   const result = await pool.query(
     `${PROJECT_SELECT}
-      WHERE id = $1 AND owner_id = $2 AND status = 'active'`,
-    [projectId, ownerId],
+      WHERE id = $1 AND workspace_id = $2 AND creator_owner_id = $3
+        AND status = 'active'`,
+    [projectId, workspace.id, ownerId],
   );
   return result.rows[0] ?? null;
 }
 
-export async function listProjects(pool, { ownerId }) {
+export async function listProjects(pool, { ownerId, workspaceId = null }) {
+  const workspace = await resolveWorkspaceAccess(pool, { ownerId, workspaceId });
   const result = await pool.query(
     `${PROJECT_SELECT}
-      WHERE owner_id = $1 AND status = 'active'
+      WHERE workspace_id = $1 AND creator_owner_id = $2 AND status = 'active'
       ORDER BY updated_at DESC, id DESC`,
-    [ownerId],
+    [workspace.id, ownerId],
   );
   return result.rows;
 }

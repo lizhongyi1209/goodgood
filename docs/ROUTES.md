@@ -18,6 +18,8 @@ native history.
 | 帮助 | Placeholder | No view or route yet |
 | 图片详情 | Implemented | `/assets/:assetId` over its preserved source scope |
 | 账户管理 | Implemented | `/admin/users`, visible and callable only by the site owner |
+| 企业创作 | Implemented locally | `/workspaces/:workspaceId/create`, after active-membership validation |
+| 企业管理 | Implemented locally | `/organizations/:organizationId` plus members, usage, and assets subroutes |
 
 Do not describe placeholders as shipped features.
 
@@ -115,6 +117,24 @@ persistence and navigation behavior exist:
 | `/help` | Product help and status guidance |
 | `/admin/users` | M8 site-owner-only account review, suspension/restoration, audit history, and test-credit management |
 
+GG-030 implements these stable routes locally, but they are not deployed:
+
+| Path | Purpose |
+| --- | --- |
+| `/workspaces/:workspaceId/create` | Creation in one validated personal or organization Workspace |
+| `/organizations/:organizationId` | Enterprise overview and recovery entry |
+| `/organizations/:organizationId/members` | Organization owner/admin invitation, role, status, and budget management |
+| `/organizations/:organizationId/usage` | Role-authorized member consumption and reservation history |
+| `/organizations/:organizationId/assets` | Role-authorized generated company Asset review |
+
+The corresponding API boundary uses stable Workspace/organization IDs for
+selection and derives the human actor from the GoodGood session. It includes
+site-owner organization creation, member invitation/acceptance, membership
+changes, budget changes, organization billing summary, usage, and Assets.
+Invitation acceptance never accepts an owner ID or unverified email from the
+browser as authority. Search terms containing employee email remain in request
+bodies or ephemeral state, not URLs/history.
+
 The root route remains compatible for old links. Product navigation and clean
 creation transitions use `/create`; both entries mount the same component and
 do not create separate draft or history state.
@@ -136,3 +156,6 @@ do not create separate draft or history state.
   and API authorization remain server-side. Search terms containing email or
   other personal data stay in request bodies or ephemeral client state rather
   than browser URLs or history.
+- Organization navigation is emitted only for a current active membership.
+  `org_owner`/`org_admin` controls never reuse `/admin/users`, and hidden
+  navigation is never treated as authorization.

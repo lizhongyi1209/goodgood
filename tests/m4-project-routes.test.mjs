@@ -90,7 +90,7 @@ test("project pages mount the workspace and restore URL state through the owner 
   assert.match(projectDetail, /export \{ default \} from "\.\.\/\.\.\/page"/);
   assert.match(page, /window\.addEventListener\("popstate"/);
   assert.match(page, /WORKSPACE_NAVIGATION_EVENT/);
-  assert.match(page, /readProject\(routeProjectId\)/);
+  assert.match(page, /readProject\(routeProjectId, workspaceId\)/);
   assert.match(page, /正在恢复项目/);
   assert.match(page, /retryProjectRoute/);
   assert.match(page, /beginAuthentication\(`\$\{window\.location\.pathname\}/);

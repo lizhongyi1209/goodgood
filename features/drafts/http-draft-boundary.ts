@@ -3,6 +3,7 @@ import type {
   CreationDraftRecord,
   CreationDraftState,
 } from "@/shared/contracts/draft";
+import { workspaceRequestHeaders } from "@/features/organizations/workspace-request";
 
 type DraftApiFailure = Readonly<{
   error?: Readonly<{
@@ -53,8 +54,13 @@ function draftStatePayload(state: CreationDraftState) {
   };
 }
 
-export async function readCreationDraft(): Promise<CreationDraftRecord | null> {
-  const response = await goodGoodApiFetch("/api/draft", { cache: "no-store" });
+export async function readCreationDraft(
+  workspaceId: string | null = null,
+): Promise<CreationDraftRecord | null> {
+  const response = await goodGoodApiFetch("/api/draft", {
+    cache: "no-store",
+    headers: workspaceRequestHeaders(workspaceId),
+  });
   const payload = await parseDraftResponse<
     Readonly<{ draft: CreationDraftRecord | null }>
   >(response);
@@ -64,6 +70,7 @@ export async function readCreationDraft(): Promise<CreationDraftRecord | null> {
 export async function saveCreationDraft(
   state: CreationDraftState,
   expectedVersion: number | null,
+  workspaceId: string | null = null,
 ): Promise<CreationDraftRecord> {
   return parseDraftResponse<CreationDraftRecord>(
     await goodGoodApiFetch("/api/draft", {
@@ -71,17 +78,26 @@ export async function saveCreationDraft(
         expectedVersion,
         state: draftStatePayload(state),
       }),
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        ...workspaceRequestHeaders(workspaceId),
+      },
       method: "PUT",
     }),
   );
 }
 
-export async function deleteCreationDraft(expectedVersion: number | null) {
+export async function deleteCreationDraft(
+  expectedVersion: number | null,
+  workspaceId: string | null = null,
+) {
   await parseDraftResponse<Readonly<{ deleted: true }>>(
     await goodGoodApiFetch("/api/draft", {
       body: JSON.stringify({ expectedVersion }),
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        ...workspaceRequestHeaders(workspaceId),
+      },
       method: "DELETE",
     }),
   );

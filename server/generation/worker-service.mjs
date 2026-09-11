@@ -110,7 +110,10 @@ export async function storeProviderOutputs({
       const ordinal = index + 1;
       const downloaded = await downloadOutput(output);
       const checksum = createHash("sha256").update(downloaded.bytes).digest("hex");
-      const objectKey = `generated/${job.owner_id}/${job.id}-${ordinal}.${generatedObjectExtension(downloaded.contentType)}`;
+      const storageScope = job.workspace_id
+        ? `${job.workspace_id}/${job.owner_id}`
+        : job.owner_id;
+      const objectKey = `generated/${storageScope}/${job.id}-${ordinal}.${generatedObjectExtension(downloaded.contentType)}`;
       objectKeys.push(objectKey);
       await store({
         bucket,
@@ -130,6 +133,8 @@ export async function storeProviderOutputs({
         objectKey,
         ordinal,
         ownerId: job.owner_id,
+        creatorOwnerId: job.creator_owner_id ?? job.owner_id,
+        workspaceId: job.workspace_id ?? null,
         pixelHeight: downloaded.height,
         pixelWidth: downloaded.width,
       });

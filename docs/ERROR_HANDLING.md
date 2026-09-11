@@ -312,6 +312,49 @@ Invalid access transitions return `ADMIN_STATUS_TRANSITION_INVALID`; a site
 owner cannot suspend their own account. Test-credit amount outside the positive
 integer range 1-5000 returns `ADMIN_CREDIT_AMOUNT_INVALID` before ledger work.
 
+GG-030 enterprise endpoints authenticate the GoodGood session before resolving
+the requested Workspace. Missing, foreign, suspended, or removed memberships
+normalize to `WORKSPACE_ACCESS_DENIED` without disclosing the organization,
+member, invitation, budget, or Asset. Platform site-owner authority is not an
+implicit content bypass.
+
+Invitation creation validates normalized email, role, expiry, actor capability,
+and idempotency before mutation. A same-workspace pending invite for the same
+email is replayed or explicitly replaced; conflicting reuse returns
+`ORGANIZATION_IDEMPOTENCY_CONFLICT`. Acceptance derives the verified email from
+the session. Missing, expired, revoked, already-consumed by another user, or
+email-mismatched invitations return `INVITATION_UNAVAILABLE` without identifying
+another account. Failure preserves the current signed-in state and offers return
+to personal creation; it never creates credentials or calls an authentication
+code endpoint.
+
+Membership transitions reject the last-owner removal with
+`ORGANIZATION_OWNER_REQUIRED`, invalid transitions with
+`MEMBERSHIP_TRANSITION_INVALID`, and stale versions with
+`MEMBERSHIP_CONFLICT`. Suspending a member blocks new Workspace reads/writes and
+signed URLs but does not suspend their GoodGood user or erase company history.
+
+Budget updates require a current member, integer limit, reason, version, and
+idempotency key. `MEMBER_BUDGET_INSUFFICIENT` identifies a member limit shortfall;
+`ORGANIZATION_CREDIT_INSUFFICIENT` identifies company pool capacity. A failed
+allocation or generation rolls back budget and credit evidence together and
+keeps the dialog/composer input. No error falls back to personal credit,
+GG-027 transfer, direct cache edit, payment order, or provider submission.
+
+`ORGANIZATION_CREDIT_UNAVAILABLE` and `MEMBER_BUDGET_UNAVAILABLE` distinguish a
+disabled projection from a shortfall without exposing another Workspace.
+`MEMBER_BUDGET_CONFLICT` rejects a stale version, unchanged limit, or reclaim
+below settled plus reserved use. A second, different close for one reservation
+returns `ORGANIZATION_CREDIT_RESERVATION_CLOSED`; a same-key/same-operation
+replay returns the recorded result. Settlement and release remain allowed for
+an in-flight reservation after Workspace suspension so the ledger cannot stay
+half closed.
+
+Manager usage and Asset reads retain the current list on transient failures and
+offer retry. An Asset not in the validated organization scope returns the same
+not-found response as an unknown ID. Raw reference objects remain creator-only;
+a manager-facing result never contains their object keys or signed URLs.
+
 Draft read, save, and delete derive the owner only from the GoodGood session.
 `DRAFT_UNAVAILABLE` never clears the current composer; the inline recovery
 retries the blocked read or write. Each mutation carries the last observed

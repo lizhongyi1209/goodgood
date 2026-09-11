@@ -5,6 +5,7 @@ import {
 import { loadAuthenticationConfig } from "@/server/auth/config.mjs";
 import { createRequestAuthenticator } from "@/server/auth/request-authenticator.mjs";
 import { getGenerationResources } from "@/server/generation/resources.mjs";
+import { workspaceIdFromRequest } from "@/server/organizations/request.mjs";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -24,6 +25,7 @@ export async function GET(
       await getAssetDownloadUrl({
         assetId,
         ownerContext: await authenticate(request),
+        workspaceId: workspaceIdFromRequest(request),
       }),
       { headers: { "cache-control": "no-store" } },
     );

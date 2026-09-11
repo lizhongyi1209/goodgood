@@ -128,6 +128,20 @@ internal owner IDs so the provider can be changed without rewriting creative
 data. Until a filed custom domain exists, the hosted flow uses Authing's default
 application domain.
 
+## 14. Add companies as workspaces, not privileged users
+
+The enterprise request is a team ownership problem, not another platform-admin
+role. The company principal manages a scoped organization membership, employee
+budget, consumption view, and company Asset view while `site_owner` remains a
+GoodGood operational role. Employees keep their own verified identities and
+personal Workspaces; a manager invites rather than invents their credentials.
+
+Employee allocation is a revocable limit over one company pool, not a permanent
+user-to-user transfer. This preserves offboarding and budget control while
+GG-027's commercial hierarchy continues to represent a different business
+relationship. Generated work follows the selected Workspace, so company review
+never becomes permission to inspect an employee's earlier personal library.
+
 ## Confirmed exclusions
 
 Do not reintroduce these without a new approved decision:
