@@ -209,10 +209,14 @@ descriptions to fill space.
 - Send is blocked while any retained reference is uploading or failed. Ready
   references preserve their tray order in the submitted batch snapshot.
 - Video mode accepts local image, MP4/MOV, and WAV/MP3 references for frontend
-  composition. Images may be marked `首帧 / 尾帧 / 参考图`; video and audio read
-  as reference media. A model change is blocked when retained media exceeds its
-  capability limit. These object URLs remain session-only until backend upload
-  and durable material contracts exist.
+  composition. It also offers `从资产库选择` and reuses selected owner-uploaded
+  images by stable material ID and private read URL without transferring their
+  bytes again. Images from either source may be marked `首帧 / 尾帧 / 参考图`;
+  video and audio read as reference media. Selection respects both the model's
+  image limit and total-media limit, and material IDs already present in the
+  video tray are disabled. A model change is blocked when retained media exceeds
+  its capability limit. Local object URLs remain session-only until backend
+  upload and durable mixed-media contracts exist.
 - Settings: attached downward drawer; closing it must not reset values.
 - Settings read from aspect ratio to model to output; aspect ratio is the leftmost
   wide-screen group and stays first through responsive reflow.
@@ -362,7 +366,9 @@ batch/gallery mode during an in-app detail round trip.
 From the composer, `从资产库选择` opens a focused multi-select dialog using 1:1
 centered thumbnails. Loading, empty, and failed reads keep the dialog silhouette
 and expose retry. Confirming adds the chosen stable IDs in selection order and
-does not transfer object bytes again.
+does not transfer object bytes again. The same picker is available in video mode;
+there, selected images join the video reference tray and consume the active
+Seedance model's image and total reference capacity.
 
 ### Batch mode
 

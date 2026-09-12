@@ -48,6 +48,8 @@ test("GG-034 video composer exposes creator parameters and multimedia references
     assert.match(composer, new RegExp(label));
   }
   assert.match(composer, /上传图片/);
+  assert.match(composer, /从资产库选择/);
+  assert.match(composer, /onOpenReferenceLibrary/);
   assert.match(composer, /上传视频/);
   assert.match(composer, /上传音频/);
   assert.match(composer, /first_frame/);
@@ -55,6 +57,21 @@ test("GG-034 video composer exposes creator parameters and multimedia references
   assert.match(composer, /reference_image/);
   assert.match(composer, /接口待接入/);
   assert.doesNotMatch(composer, /生成数量/);
+});
+
+test("GG-034 reuses asset-library images in video drafts without uploading them again", async () => {
+  const page = await read("app/page.tsx");
+  const start = page.indexOf("const addMaterialsToVideoReferences =");
+  const end = page.indexOf("const openReferenceLibrary =", start);
+  const handler = page.slice(start, end);
+
+  assert.ok(start >= 0 && end > start);
+  assert.match(page, /onOpenReferenceLibrary=\{\(\) => openReferenceLibrary\("video"\)\}/);
+  assert.match(handler, /id: material\.id/);
+  assert.match(handler, /mediaType: "image"/);
+  assert.match(handler, /url: material\.url/);
+  assert.match(handler, /videoReferenceCapacityError/);
+  assert.doesNotMatch(handler, /uploadReferenceFiles|URL\.createObjectURL/);
 });
 
 test("GG-034 never routes the preview video action through image generation", async () => {

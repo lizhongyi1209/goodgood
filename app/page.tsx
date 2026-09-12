@@ -9,6 +9,7 @@ import {
   DEFAULT_VIDEO_MODEL_ID,
   DEFAULT_VIDEO_RATIO,
   DEFAULT_VIDEO_RESOLUTION,
+  countVideoReferences,
   getVideoGenerationModel,
   resolveVideoDuration,
   resolveVideoResolution,
@@ -476,6 +477,7 @@ export default function Home({
   const [referenceMaterialsLoading, setReferenceMaterialsLoading] = useState(true);
   const [referenceMaterialsError, setReferenceMaterialsError] = useState<string | null>(null);
   const [referenceLibraryOpen, setReferenceLibraryOpen] = useState(false);
+  const [referenceLibraryTarget, setReferenceLibraryTarget] = useState<CreationMode>("image");
   const [selectedReferenceMaterialIds, setSelectedReferenceMaterialIds] = useState<readonly string[]>([]);
   const [projects, setProjects] = useState<ProjectRecord[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(true);
@@ -1706,25 +1708,83 @@ export default function Home({
     return result.addedCount;
   };
 
-  const openReferenceLibrary = () => {
-    if (referenceImages.length >= MAX_GENERATION_REFERENCES) {
-      toast.info(`最多可添加 ${MAX_GENERATION_REFERENCES} 张参考图`);
+  const videoAssetReferenceRemaining = Math.max(
+    0,
+    Math.min(
+      getVideoGenerationModel(videoModelId).capabilities.imageLimit -
+        countVideoReferences(videoReferences, "image"),
+      getVideoGenerationModel(videoModelId).capabilities.totalLimit - videoReferences.length,
+    ),
+  );
+  const referenceLibraryRemaining = referenceLibraryTarget === "video"
+    ? videoAssetReferenceRemaining
+    : Math.max(0, MAX_GENERATION_REFERENCES - referenceImages.length);
+
+  const addMaterialsToVideoReferences = (materials: readonly ReferenceMaterial[]) => {
+    const nextReferences = [...videoReferences];
+    let addedCount = 0;
+    let duplicateCount = 0;
+    let capacityMessage: string | null = null;
+    for (const material of materials) {
+      if (nextReferences.some((reference) => reference.id === material.id)) {
+        duplicateCount += 1;
+        continue;
+      }
+      const candidate: VideoReference = {
+        id: material.id,
+        mediaType: "image",
+        name: material.name,
+        role: nextReferences.some((reference) => reference.role === "first_frame")
+          ? "reference_image"
+          : "first_frame",
+        size: material.byteSize,
+        url: material.url,
+      };
+      capacityMessage = videoReferenceCapacityError(
+        videoModelId,
+        [...nextReferences, candidate],
+      );
+      if (capacityMessage) break;
+      nextReferences.push(candidate);
+      addedCount += 1;
+    }
+    if (addedCount > 0) setVideoReferences(nextReferences);
+    if (capacityMessage) {
+      toast.info(capacityMessage);
+    } else if (duplicateCount > 0 && addedCount === 0) {
+      toast.info("所选素材已在视频参考素材中");
+    }
+    return addedCount;
+  };
+
+  const openReferenceLibrary = (target: CreationMode) => {
+    const available = target === "video"
+      ? videoAssetReferenceRemaining
+      : MAX_GENERATION_REFERENCES - referenceImages.length;
+    if (available <= 0) {
+      toast.info(target === "video"
+        ? `${getVideoGenerationModel(videoModelId).name} 的图片参考素材已达到上限`
+        : `最多可添加 ${MAX_GENERATION_REFERENCES} 张参考图`);
       return;
     }
+    setReferenceLibraryTarget(target);
     setSelectedReferenceMaterialIds([]);
     setReferenceLibraryOpen(true);
     void reloadReferenceMaterials();
   };
 
   const toggleReferenceMaterial = (materialId: string) => {
-    if (referenceImages.some((reference) => reference.id === materialId)) return;
+    const alreadyUsed = referenceLibraryTarget === "video"
+      ? videoReferences.some((reference) => reference.id === materialId)
+      : referenceImages.some((reference) => reference.id === materialId);
+    if (alreadyUsed) return;
     setSelectedReferenceMaterialIds((current) => {
       if (current.includes(materialId)) {
         return current.filter((id) => id !== materialId);
       }
-      const available = MAX_GENERATION_REFERENCES - referenceImages.length;
+      const available = referenceLibraryRemaining;
       if (current.length >= available) {
-        toast.info(`本次最多还能添加 ${available} 张参考图`);
+        toast.info(`本次最多还能添加 ${available} 张图片素材`);
         return current;
       }
       return [...current, materialId];
@@ -1735,7 +1795,9 @@ export default function Home({
     const materials = selectedReferenceMaterialIds
       .map((id) => referenceMaterials.find((material) => material.id === id))
       .filter((material): material is ReferenceMaterial => Boolean(material));
-    const addedCount = addMaterialsToReferences(materials);
+    const addedCount = referenceLibraryTarget === "video"
+      ? addMaterialsToVideoReferences(materials)
+      : addMaterialsToReferences(materials);
     if (addedCount > 0) toast.success(`已添加 ${addedCount} 张素材`);
     setReferenceLibraryOpen(false);
     setSelectedReferenceMaterialIds([]);
@@ -2728,7 +2790,7 @@ export default function Home({
               onModeChange={handleCreationModeChange}
               onPromptChange={handlePromptChange}
               onReferenceFiles={handleReferenceFiles}
-              onOpenReferenceLibrary={openReferenceLibrary}
+              onOpenReferenceLibrary={() => openReferenceLibrary("image")}
               onRemoveReference={removeReference}
               onReorderReference={reorderReference}
               referenceEditorMaterials={referenceMaterials}
@@ -2758,6 +2820,7 @@ export default function Home({
               onModeChange={handleCreationModeChange}
               onPromptChange={setVideoPrompt}
               onReferenceFiles={handleVideoReferenceFiles}
+              onOpenReferenceLibrary={() => openReferenceLibrary("video")}
               onRemoveReference={removeVideoReference}
               onReferenceRoleChange={handleVideoReferenceRoleChange}
               onModelChange={handleVideoModelChange}
@@ -3046,7 +3109,7 @@ export default function Home({
               <div>
                 <DialogTitle>从资产库选择</DialogTitle>
                 <DialogDescription>
-                  已上传的素材无需再次上传，最多还可添加 {Math.max(0, MAX_GENERATION_REFERENCES - referenceImages.length)} 张。
+                  已上传的素材无需再次上传，最多还可添加 {referenceLibraryRemaining} 张。
                 </DialogDescription>
               </div>
               <button aria-label="关闭素材选择" onClick={() => setReferenceLibraryOpen(false)}><X size={18} /></button>
@@ -3065,18 +3128,24 @@ export default function Home({
                 <div className="reference-library-dialog-state reference-library-dialog-empty">
                   <ImagePlus size={20} />
                   <strong>还没有上传素材</strong>
-                  <span>关闭窗口后，从参考图按钮选择“上传本地图片”。</span>
+                  <span>{referenceLibraryTarget === "video"
+                    ? "关闭窗口后，从添加素材按钮选择“上传图片”。"
+                    : "关闭窗口后，从参考图按钮选择“上传本地图片”。"}</span>
                 </div>
               ) : (
                 <div className="reference-library-picker-grid">
                   {referenceMaterials.map((material) => {
-                    const alreadyUsed = referenceImages.some((reference) => reference.id === material.id);
+                    const alreadyUsed = referenceLibraryTarget === "video"
+                      ? videoReferences.some((reference) => reference.id === material.id)
+                      : referenceImages.some((reference) => reference.id === material.id);
                     const selected = selectedReferenceMaterialIds.includes(material.id);
                     return (
                       <button
                         className={`reference-library-picker-card ${selected ? "selected" : ""} ${alreadyUsed ? "already-used" : ""}`}
                         key={material.id}
-                        aria-label={alreadyUsed ? `${material.name} 已在参考图中` : `${selected ? "取消选择" : "选择"} ${material.name}`}
+                        aria-label={alreadyUsed
+                          ? `${material.name} 已在${referenceLibraryTarget === "video" ? "视频参考素材" : "参考图"}中`
+                          : `${selected ? "取消选择" : "选择"} ${material.name}`}
                         aria-pressed={selected}
                         disabled={alreadyUsed}
                         onClick={() => toggleReferenceMaterial(material.id)}
@@ -3097,7 +3166,11 @@ export default function Home({
             </div>
 
             <footer className="reference-library-dialog-footer">
-              <span>{selectedReferenceMaterialIds.length > 0 ? `已选 ${selectedReferenceMaterialIds.length} 张` : "选择后按原顺序加入参考图"}</span>
+              <span>{selectedReferenceMaterialIds.length > 0
+                ? `已选 ${selectedReferenceMaterialIds.length} 张`
+                : referenceLibraryTarget === "video"
+                  ? "选择后按原顺序加入视频参考素材"
+                  : "选择后按原顺序加入参考图"}</span>
               <div>
                 <button className="reference-library-cancel" onClick={() => setReferenceLibraryOpen(false)}>取消</button>
                 <button className="reference-library-confirm" disabled={selectedReferenceMaterialIds.length === 0} onClick={confirmReferenceMaterials}>添加{selectedReferenceMaterialIds.length > 0 ? ` ${selectedReferenceMaterialIds.length} 张` : ""}</button>

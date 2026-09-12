@@ -30,6 +30,7 @@ import {
   ChevronDown,
   Film,
   ImagePlus,
+  Images,
   SlidersHorizontal,
   Upload,
   Video,
@@ -53,6 +54,7 @@ export type VideoCreationComposerProps = Readonly<{
     mediaType: VideoReferenceMediaType,
     files: readonly File[],
   ) => void;
+  onOpenReferenceLibrary: () => void;
   onRemoveReference: (reference: VideoReference) => void;
   onReferenceRoleChange: (
     referenceId: string,
@@ -104,6 +106,7 @@ export function VideoCreationComposer({
   onModeChange,
   onPromptChange,
   onReferenceFiles,
+  onOpenReferenceLibrary,
   onRemoveReference,
   onReferenceRoleChange,
   onModelChange,
@@ -181,6 +184,9 @@ export function VideoCreationComposer({
             <DropdownMenuContent className="reference-source-menu" align="start" sideOffset={7}>
               <DropdownMenuItem onSelect={() => imageInputRef.current?.click()}>
                 <ImagePlus size={15} />上传图片
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={onOpenReferenceLibrary}>
+                <Images size={15} />从资产库选择
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => videoInputRef.current?.click()}>
                 <Video size={15} />上传视频
@@ -430,4 +436,3 @@ export function VideoCreationComposer({
     </section>
   );
 }
-

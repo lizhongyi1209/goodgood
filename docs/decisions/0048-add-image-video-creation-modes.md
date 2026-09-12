@@ -28,8 +28,10 @@ video request through the existing billable image route.
   as callbacks, expiry, last-frame return, watermark policy, and frame counts
   remain outside the UI.
 - Accept local image, video, and audio references for frontend interaction and
-  role assignment. Do not persist or upload video-mode material until its
-  authenticated backend contract exists.
+  role assignment. Video mode also reuses owner-uploaded image materials through
+  the existing asset-library picker, preserving stable material IDs and private
+  read URLs without uploading object bytes again. New local video-mode material
+  remains session-only until its authenticated backend contract exists.
 - Do not submit video mode to `/api/generations`. The Feihong action reports
   that the video interface is awaiting connection while preserving all input.
 - Video editing, extension, timestamp editing, and durable mixed-media assets
@@ -46,4 +48,3 @@ video request through the existing billable image route.
   until the API and data migration are approved.
 - The frontend must clearly distinguish the unavailable video submission state
   from a failed generation and must never fake a successful provider result.
-

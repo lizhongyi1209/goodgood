@@ -64,9 +64,11 @@ duplicating a release log.
   polled pending/success/inline failure, retry, gallery and focused image detail.
 - The composer also has an accepted frontend-only `图片 / 视频` mode boundary.
   Video mode presents Seedance 2.5, 2.0, 2.0 Fast, and 2.0 Mini with
-  capability-derived ratio, resolution, duration, audio, and local multimedia
-  reference controls. It does not yet upload, submit, quote, persist, or present
-  video results; those remain pending the authenticated provider contract.
+  capability-derived ratio, resolution, duration, audio, and multimedia
+  reference controls. Video references may come from local files or reusable
+  image materials already in the owner's asset library. It does not yet upload
+  new video-mode files, submit, quote, persist, or present video results; those
+  remain pending the authenticated provider contract.
 - Nano Banana 2 through the real server-side O1Key route across 14 product
   ratios, plus the ordered GPT image family `GPT IMAGE 2.5 sunburst`,
   `GPT IMAGE 2`, and `GPT IMAGE 2.5 flare` across the same seven exact-size
