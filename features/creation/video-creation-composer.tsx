@@ -1,6 +1,5 @@
 "use client";
 
-
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import {
@@ -12,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider";
 import { CreationModeSwitch } from "@/features/creation/creation-mode-switch";
+import { useParameterDrawerViewport } from "@/features/creation/use-parameter-drawer-viewport";
 import { SeedanceModelIcon } from "@/features/models/seedance-model-icon";
 import { getRatioFrame } from "@/features/creation/generation-options";
 import { VideoMaterialCreationDialog } from "@/features/creation/video-material-creation-dialog";
@@ -185,8 +185,11 @@ export function VideoCreationComposer({
     event.target.value = "";
   };
 
+  const composerRef = useParameterDrawerViewport(drawerOpen);
+
   return (
     <section
+      ref={composerRef}
       className={`composer video-composer ${drawerOpen ? "drawer-open" : ""}`}
       aria-label="视频生成区域"
     >
@@ -323,7 +326,7 @@ export function VideoCreationComposer({
         </div>
       )}
 
-      <div className="parameter-drawer" aria-hidden={!drawerOpen}>
+      <div className="parameter-drawer" aria-hidden={!drawerOpen} inert={!drawerOpen}>
         <div className="drawer-overflow">
           <div className="drawer-content video-drawer-content">
             <div className="parameter-group ratio-group">

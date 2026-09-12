@@ -517,6 +517,10 @@ The timestamped result of the latest verified gate belongs in
 - Empty creation state.
 - Root and `/create` direct access, refresh, and Back/Forward equivalence.
 - Composer open/closed drawer without value loss.
+- GG-042 covers shared out-of-flow overlay/stacking, closed-control inertness,
+  remaining viewport height calculation, and scroll/resize listener cleanup.
+  Existing Chrome computer use verifies image/video results do not move when
+  settings toggles and long/narrow drawers remain internally scrollable; no send.
 - Image/video mode switch preserves independent prompt, material, model, provider
   line, ratio, resolution, duration, and sound state while leaving active image
   jobs intact. Video line defaults to standard; standard maps only to Doubao and

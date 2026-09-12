@@ -174,6 +174,10 @@ descriptions to fill space.
 ### Composer
 
 - Empty prompt submission: short toast, keep focus available.
+- Settings opens an attached overlay below the prompt/reference tray in either
+  mode; results stay in place. Toggle closes it without losing values. Closed
+  controls are inert; long drawers scroll internally within available viewport
+  space, including after prompt growth or page scrolling (ADR 0055).
 - `图片 / 视频` is always visible as a quiet segmented control attached above
   the prompt row. Image remains the default. Switching affects only the active
   composer and preserves separate in-memory inputs; it never alters an active
@@ -247,7 +251,7 @@ descriptions to fill space.
   the draft intact, block submission, and offer `重新创建`.
   Local object URLs remain session-only until
   backend upload and durable mixed-media contracts exist.
-- Settings: attached downward drawer; closing it must not reset values.
+- Settings: attached downward overlay drawer above results; closing it must not reset values or move results.
 - Settings read from aspect ratio to model to output; aspect ratio is the leftmost
   wide-screen group and stays first through responsive reflow.
 - Model list: opens within the parameter drawer and collapses after selection.

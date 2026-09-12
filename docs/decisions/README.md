@@ -82,3 +82,5 @@ ADR 0049 fixes the standard/backup Seedance provider mapping for GG-035.
 ADR 0050 enables a fail-closed local-only Seedance page smoke route for GG-036.
 
 ADR 0053 adds standalone-delimited concurrent prompt batches for GG-040.
+
+- `0055-parameter-drawer-overlay.md` — attached image/video settings overlay for GG-042.

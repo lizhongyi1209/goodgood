@@ -13,6 +13,7 @@ import { Slider } from "@/components/ui/slider";
 import type { ReferenceMaterial } from "@/features/references/http-reference-library";
 import { ReferenceQuickEditor } from "@/features/references/reference-quick-editor";
 import { CreationModeSwitch } from "@/features/creation/creation-mode-switch";
+import { useParameterDrawerViewport } from "@/features/creation/use-parameter-drawer-viewport";
 import type { CreationMode } from "@/features/creation/video-generation-options";
 import {
   DEFAULT_GPT_IMAGE_OUTPUT_FORMAT,
@@ -218,8 +219,11 @@ export function CreationComposer({
     referenceInputRef.current?.click();
   };
 
+  const composerRef = useParameterDrawerViewport(drawerOpen);
+
   return (
     <section
+      ref={composerRef}
       className={`composer ${drawerOpen ? "drawer-open" : ""} ${isGenerating ? "is-generating" : ""}`}
       aria-label="图像生成区域"
     >
@@ -423,7 +427,7 @@ export function CreationComposer({
         </div>
       )}
 
-      <div className="parameter-drawer" aria-hidden={!drawerOpen}>
+      <div className="parameter-drawer" aria-hidden={!drawerOpen} inert={!drawerOpen}>
         <div className="drawer-overflow">
           <div className="drawer-content">
             <div className="parameter-group ratio-group">

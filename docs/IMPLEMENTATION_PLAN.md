@@ -1,12 +1,12 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-13
-- Current phase: GG-041 本地完成，待用户检查。
-- Current objective: 两种 composer 已删除批量说明并验证；解析、乘积并发与报价不变。
+- Current phase: GG-042 本地完成，待用户检查。
+- Current objective: 双模式参数抽屉贴边覆盖成品区，不占位；参数与生成行为不变，门禁与 UI 验证通过。
 
 ## Current checkpoint
 
-- 当前工作树：`fix/GG-041-remove-batch-prompt-summary`（`F:/goodgood-worktrees/GG-037`），基于 GG-040 已验证提交 `5a0a8c3` 顺序切换新分支。其他 worktree 与用户真实视频页面保持不变。
+- 当前工作树：`fix/GG-042-parameter-drawer-overlay`（`F:/goodgood-worktrees/GG-037`），基于 GG-041 已验证提交 `5ae3521` 顺序切换新分支。其他 worktree 与用户真实视频页面保持不变。
 - 正式入口仍为 `https://goodgood.o1key.com`；`staging-goodgood.o1key.com` 只是历史名称，不是本任务的测试入口。
 - 组合来源：完整基础框架 `07e9ea5`，再合入 GG-029、GG-030、GG-031；不使用旧页面另起测试版本，也不恢复旧 C6。
 - 代码范围同时包含账户管理、积分记录/账本、企业/分销身份、直属上下级、充值来源积分划拨、邮箱 OTP、企业 Workspace、成员额度、消费记录、资产审阅和管理审计。
@@ -55,13 +55,14 @@
 - GG-039：ADR 0052 已记录；数量、并发独立 run、紧凑本地卡片与视频详情已实现。完整本地门禁 360 项中 346 通过、14 个 opt-in 跳过、0 失败；stub 验证 4 个并发 POST/独立 GET、追加批次、乱序、单项失败与查询恢复。现有 Chrome computer use 已检查默认 1、2/4 选择、图片数量独立及模式/模型/线路切换保持。
 - GG-040：ADR 0053 已记录，共享解析/编排、总数量/图片报价、稳定独立 run 与项目原输入/分段重试保持已实现；完整门禁 367 项中 353 通过、14 个 opt-in 跳过、0 失败。现有 Chrome computer use 已验证单独行触发、同行不触发、图片 2×4=8/80 积分、视频 2×4=8、空段提示、模式切换保持与摘要布局；未提交生成。
 - GG-041：ADR 0054 已记录，两种 composer 已去掉重复说明。定向与文档测试 15/15、完整门禁 367 项中 353 通过、14 个 opt-in 跳过、0 失败；现有 Chrome computer use 已核对双模式两段×数量 4 不出现说明、图片报价仍为 80 积分，未提交生成。
-- Next action: 用户检查 GG-041；真实批量/持久项目闭环未实测，正式视频素材/持久/计价不在本次范围。
+- GG-042：ADR 0055 已记录，双模式共享覆盖与闭合 inert、剩余视口内部滚动完成。定向 29/29，完整门禁 370 项中 356 通过、14 个 opt-in 跳过、0 失败。现有 Chrome computer use 核对桌面展开/收起结果不位移、390×844 双模式与视频八行提示词底部控件可达；视口恢复，未提交生成。
+- Next action: 用户检查 GG-042 的 32139 本地覆盖样式；真实批量/持久项目及视频素材/计价仍不在本次范围。
 - Blockers: 无；素材与正式持久/计价链路按用户要求后续处理。
 
 ## Verification sequence
 
-1. GG-041 定向回归与完整本地门禁已通过；不启用 opt-in 写测试或 provider 请求。
-2. 现有 Chrome 32139 已核对双模式无批量说明并保留 A/B 输入供检查，32138 真实结果页未动；真实批量尚未实测。
+1. GG-042 定向回归与完整本地门禁已通过；不启用 opt-in 写测试或 provider 请求。
+2. 现有 Chrome 32139 已核对双模式覆盖及窄屏滚动并恢复正常视口，测试页保留；32138 真实结果页未动，真实批量尚未实测。
 3. 推送、main 合入和生产部署必须获得新的明确授权；部署前按 ADR 0047 排空旧 GPT route 的活动 attempt。
 
 ## Milestones
@@ -86,12 +87,13 @@
 | GG-039 | 本地完成并验证 | 视频数量与并发；未真实并发实测，不接计价和持久化 |
 | GG-040 | 本地完成并验证 | 图片/视频批量提示词乘积并发；未真实批量或持久项目实测/发布 |
 | GG-041 | 本地完成并验证 | 双模式移除批量说明；积分与生成编排不变，未发布 |
+| GG-042 | 本地完成并验证 | 双模式参数抽屉覆盖成品区与内部滚动；仅 UI，未发布 |
 | 完整 C6 / M9 | 搁置 | 删除、举报、商业支付等，见 GG-900—GG-902 |
 
 ## New-session recovery
 
 1. 阅读根 `AGENTS.md`、[CURRENT_STATE](CURRENT_STATE.md)、[WORKFLOW](WORKFLOW.md)、本页和 [BACKLOG](BACKLOG.md)，检查分支/worktree/未提交改动。
-2. 从 `fix/GG-041-remove-batch-prompt-summary` 恢复；先读 GG-041 任务卡与 ADR 0054，不恢复旧 C6。
+2. 从 `fix/GG-042-parameter-drawer-overlay` 恢复；先读 GG-042 任务卡与 ADR 0055，不恢复旧 C6。
 3. 数量与本地并发已验证；不要未经费用授权启用 key 或提交真实生成。main 合入和生产部署仍需要新的明确授权。
 
 ## History and update policy
