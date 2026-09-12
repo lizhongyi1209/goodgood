@@ -99,8 +99,8 @@ individual icon. Upload, settings, and send align to the same 40px box.
 - Do not add a batch-prompt summary row in either composer (ADR 0054).
   Image quote beside send uses the total across segments, not just one segment;
   retain video interface status without inventing pricing or replacement copy.
-- Reference thumbnails use a horizontal tray, centered 1:1 crops at `64 × 64 px`
-  on desktop and `56 × 56 px` on mobile, with a compact upper-right removal
+- Reference thumbnails use a horizontal tray, centered 1:1 crops at `96 × 96 px`
+  on desktop and `80 × 80 px` on mobile (ADR 0056), with a compact upper-right removal
   control that minimizes image obstruction. Each thumbnail
   keeps a compact lower-left `图 1…图 10` badge so prompt references match the
   submitted order. Keep the sizes in shared responsive tokens and do not show a
@@ -128,7 +128,7 @@ individual icon. Upload, settings, and send align to the same 40px box.
   `创建素材` action. The creation action opens a focused checklist; no item is
   selected by default, and ordinary upload never implies material creation.
 - Material creation status and concurrent progress belong in that focused flow,
-  not as more badges over the 64px previews. Expired or unavailable historical
+  not as more badges over the tray previews. Expired or unavailable historical
   material uses one concise inline recovery message and `重新创建` action before
   submission.
 - Video provider line is a compact two-option control inside the model group,
@@ -147,7 +147,10 @@ individual icon. Upload, settings, and send align to the same 40px box.
   focused picker as image mode, adding quiet `全部 / 图片 / 视频 / 音频` filters,
   count badges, media labels, and type-specific empty states. Image cards retain
   centered crops, video cards use muted cover frames, and audio cards use a quiet
-  neutral placeholder. Video mode does not expose the image quick editor in its
+  neutral placeholder. Video-mode tray items open a focused read-only preview:
+  complete contained image, video with controls, or audio with controls; never
+  autoplay. Loading/error/retry remain inside it and do not alter references.
+  Video mode does not expose the image quick editor in its
   frontend-only phase.
 - Video generation mode is a quiet two-option segmented control inside the model
   parameter group. `多模态` is selected by default; `首尾帧` uses the same selected

@@ -84,3 +84,4 @@ ADR 0050 enables a fail-closed local-only Seedance page smoke route for GG-036.
 ADR 0053 adds standalone-delimited concurrent prompt batches for GG-040.
 
 - `0055-parameter-drawer-overlay.md` — attached image/video settings overlay for GG-042.
+- `0056-larger-reference-previews.md` — larger shared thumbnails and video-mode material inspection for GG-043.

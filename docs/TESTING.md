@@ -497,6 +497,12 @@ The timestamped result of the latest verified gate belongs in
 
 ### Component
 
+- GG-043 covers 96px/80px shared 1:1 thumbnails, horizontal overflow, video-mode
+  click/keyboard inspection and isolated removal, contained image/video/audio
+  preview, no autoplay, loading/error/retry, and Radix focus/close wiring. Image
+  quick editor remains unchanged. Browser review uses existing Chrome computer
+  use with local synthetic materials only; no generation or asset creation.
+
 - GG-040 covers standalone/inline/longer delimiters, CRLF, multiline segments,
   empty and duplicate segments, image/video count products, frozen shared values,
   immediate concurrent starts, stable order and isolated failures, eight stub

@@ -203,7 +203,7 @@ descriptions to fill space.
   It becomes ready only after direct upload and server-side decoded validation;
   failure remains on that tray item with removal/replacement recovery.
 - The tray uses moderately enlarged responsive 1:1 centered crops and scrolls
-  horizontally without wrapping, so adding references does not destabilize the composer.
+  horizontally without wrapping: 96px desktop / 80px mobile (ADR 0056).
 - Every tray item shows `图 1…图 10` at the lower left. Dragging one item onto
   another moves it to that position and immediately renumbers the tray. Focused
   items support `Alt + ← / →` for the same operation.
@@ -212,6 +212,10 @@ descriptions to fill space.
   inspection. Enter/Space opens the focused item; Escape closes the editor.
   Uploading/failed items and completed drag gestures do not open it. The smaller
   upper-right remove control deletes without opening the editor.
+- Video-mode tray items support click/Enter/Space to open a read-only focused
+  preview of the complete image or controlled video/audio. No autoplay, editing,
+  new upload or material creation. Escape/close restores trigger focus; nested
+  removal does not open preview. Loading/error/retry preserve composer materials.
 - Crop, brush, sticker, and arrow edits affect the exported pixels. Stickers may
   come from a local file or the owner's reusable materials and can be moved,
   scaled, rotated, or removed. Box selection reports pixel and normalized

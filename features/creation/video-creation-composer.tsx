@@ -15,6 +15,7 @@ import { useParameterDrawerViewport } from "@/features/creation/use-parameter-dr
 import { SeedanceModelIcon } from "@/features/models/seedance-model-icon";
 import { getRatioFrame } from "@/features/creation/generation-options";
 import { VideoMaterialCreationDialog } from "@/features/creation/video-material-creation-dialog";
+import { VideoReferencePreviewDialog } from "@/features/creation/video-reference-preview-dialog";
 import type { LocalVideoPreviewAvailability } from "@/features/creation/http-video-preview-boundary";
 import {
   VIDEO_GENERATION_MODEL_CATALOG,
@@ -139,6 +140,13 @@ export function VideoCreationComposer({
   const referenceInputRef = useRef<HTMLInputElement>(null);
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const [materialCreationOpen, setMaterialCreationOpen] = useState(false);
+  const [previewReferenceId, setPreviewReferenceId] = useState<string | null>(null);
+  const previewTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const previewReferenceIndex = references.findIndex((reference) => reference.id === previewReferenceId);
+  const previewReference = references[previewReferenceIndex];
+  const previewReferenceOrdinal = previewReference
+    ? references.slice(0, previewReferenceIndex + 1).filter((reference) => reference.mediaType === previewReference.mediaType).length
+    : 0;
   const activeModel = getVideoGenerationModel(modelId);
   const referenceLimits = getVideoReferenceLimits(modelId, generationMode);
   const referenceCounts = {
@@ -304,18 +312,26 @@ export function VideoCreationComposer({
                     ? `${reference.name} · ${formatFileSize(reference.size)}`
                     : reference.name}
                 >
+                  <button
+                    type="button"
+                    className="video-reference-preview-trigger"
+                    aria-label={`放大预览${mediaLabel}，${reference.name}`}
+                    aria-haspopup="dialog"
+                    onClick={(event) => { previewTriggerRef.current = event.currentTarget; setPreviewReferenceId(reference.id); }}
+                  >
                   {reference.mediaType === "image" ? (
                     <PrivateObjectImage src={reference.url} alt={mediaLabel} />
                   ) : reference.mediaType === "video" ? (
-                    <video src={reference.url} muted preload="metadata" aria-label={mediaLabel} />
+                    <video src={reference.url} muted playsInline preload="metadata" aria-label={mediaLabel} />
                   ) : (
                     <span className="video-reference-placeholder"><AudioLines size={22} /></span>
                   )}
                   <span className="reference-thumbnail-ordinal">{previewLabel}</span>
+                  </button>
                   <button
                     className="reference-thumbnail-remove"
                     aria-label={`移除${mediaLabel}`}
-                    onClick={() => onRemoveReference(reference)}
+                    onClick={(event) => { event.stopPropagation(); onRemoveReference(reference); }}
                   >
                     <X size={8} strokeWidth={2.2} />
                   </button>
@@ -511,6 +527,18 @@ export function VideoCreationComposer({
           </div>
         </div>
       </div>
+
+      {previewReference && (
+        <VideoReferencePreviewDialog
+          key={`${previewReference.id}:${previewReference.url}`}
+          reference={previewReference}
+          label={generationMode === "first_last_frame"
+            ? videoReferenceRoleLabel(previewReference.role)
+            : `${previewReference.mediaType === "image" ? "图片" : previewReference.mediaType === "video" ? "视频" : "音频"}${previewReferenceOrdinal}`}
+          onClose={() => setPreviewReferenceId(null)}
+          onReturnFocus={() => previewTriggerRef.current?.focus()}
+        />
+      )}
 
       {materialCreationOpen && (
         <VideoMaterialCreationDialog

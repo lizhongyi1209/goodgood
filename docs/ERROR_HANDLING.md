@@ -44,6 +44,10 @@
 
 ## Generation failure contract
 
+GG-043 material inspection failures stay in the read-only preview dialog with
+`重新加载`; closing or retrying does not remove the material, create an asset,
+or submit generation. Retry only reloads its existing browser-readable URL.
+
 GG-040 validates nonempty segments before fan-out. Empty segments are ignored;
 an all-delimiter prompt creates no request and keeps the input for correction.
 Each segment keeps the existing independent failure strip or video slot.

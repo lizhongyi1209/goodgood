@@ -150,8 +150,8 @@ test("keeps reference previews legible and aspect ratio first through responsive
     "utf8",
   );
 
-  assert.match(css, /--reference-preview-width:\s*64px/);
-  assert.match(css, /--reference-preview-height:\s*64px/);
+  assert.match(css, /--reference-preview-width:\s*96px/);
+  assert.match(css, /--reference-preview-height:\s*96px/);
   assert.match(css, /\.reference-thumbnails[^}]*overflow-x:\s*auto/s);
   assert.match(
     css,
@@ -163,7 +163,7 @@ test("keeps reference previews legible and aspect ratio first through responsive
   );
   assert.match(
     css,
-    /@media \(max-width:\s*720px\)[\s\S]*--reference-preview-width:\s*56px;[\s\S]*--reference-preview-height:\s*56px;/,
+    /@media \(max-width:\s*720px\)[\s\S]*--reference-preview-width:\s*80px;[\s\S]*--reference-preview-height:\s*80px;/,
   );
 
   const ratioGroup = composer.indexOf('className="parameter-group ratio-group"');
