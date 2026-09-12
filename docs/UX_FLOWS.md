@@ -239,8 +239,9 @@ descriptions to fill space.
   wide-screen group and stays first through responsive reflow.
 - Model list: opens within the parameter drawer and collapses after selection.
 - Video model order is Seedance 2.5, Seedance 2.0, Seedance 2.0 Fast, then
-  Seedance 2.0 Mini. Video settings use aspect ratio, model plus generation mode,
-  then output;
+  Seedance 2.0 Mini. Video settings use aspect ratio, model, provider line, and
+  generation mode, then output. Provider line defaults to `标准`; `标准` maps to
+  Doubao and `备用` maps to HC without changing any other selected value;
   output contains resolution, integer-second duration, and `有声 / 静音` rather
   than image count. Seedance 2.5 exposes 480p/720p and 4–30 seconds; standard
   Seedance 2.0 exposes 480p/720p/1080p/4K and 4–15 seconds; Fast and Mini expose
@@ -274,6 +275,10 @@ descriptions to fill space.
 - Until the video API is implemented, video Feihong validates a non-empty
   prompt and reports `视频生成接口尚未接入`; it must not call the image generation
   boundary or render a synthetic successful result.
+- The Seedance transport contract uses `POST /v1/seedance/assets` and its typed
+  status query for explicit materials, plus `POST /v1/video/generations` and its
+  task query for videos. Multimodal with no references is text-to-video; the
+  existing reference roles map directly into the ordered provider `content`.
 
 Reference ordinal is the current tray index and is stored in data for prompt
 interpretation. The visible `图 1…10`, accessible name, draft/project order,

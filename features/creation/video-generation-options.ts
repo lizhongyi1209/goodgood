@@ -28,6 +28,9 @@ export type VideoResolution = (typeof VIDEO_RESOLUTIONS)[number];
 export const VIDEO_GENERATION_MODES = ["multimodal", "first_last_frame"] as const;
 export type VideoGenerationMode = (typeof VIDEO_GENERATION_MODES)[number];
 
+export const VIDEO_PROVIDER_LINES = ["standard", "backup"] as const;
+export type VideoProviderLine = (typeof VIDEO_PROVIDER_LINES)[number];
+
 export type VideoReferenceMediaType = "image" | "video" | "audio";
 export type VideoReferenceRole =
   | "first_frame"
@@ -122,6 +125,15 @@ export const DEFAULT_VIDEO_RATIO: VideoAspectRatio = "adaptive";
 export const DEFAULT_VIDEO_RESOLUTION: VideoResolution = "720p";
 export const DEFAULT_VIDEO_DURATION_SECONDS = 5;
 export const DEFAULT_VIDEO_GENERATION_MODE: VideoGenerationMode = "multimodal";
+export const DEFAULT_VIDEO_PROVIDER_LINE: VideoProviderLine = "standard";
+
+export const VIDEO_PROVIDER_LINE_OPTIONS = [
+  { id: "standard", label: "标准" },
+  { id: "backup", label: "备用" },
+] as const satisfies readonly Readonly<{
+  id: VideoProviderLine;
+  label: string;
+}>[];
 
 export const VIDEO_GENERATION_MODE_OPTIONS = [
   {

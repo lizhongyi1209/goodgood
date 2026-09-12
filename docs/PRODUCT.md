@@ -64,15 +64,18 @@ duplicating a release log.
   polled pending/success/inline failure, retry, gallery and focused image detail.
 - The composer also has an accepted frontend-only `图片 / 视频` mode boundary.
   Video mode presents Seedance 2.5, 2.0, 2.0 Fast, and 2.0 Mini with
-  capability-derived ratio, generation mode, resolution, duration, audio, and
-  multimedia reference controls. `多模态` is the default and accepts model-bounded
+  capability-derived ratio, provider line, generation mode, resolution, duration,
+  audio, and multimedia reference controls. Line defaults to `标准` (Doubao) and
+  offers `备用` (HC) with the same product capabilities. `多模态` is the default and accepts model-bounded
   image, video, and audio references; `首尾帧` accepts at most two ordered images.
   Video references may come from local files or reusable
   image, video, and audio assets in the owner's library. The current frontend
   receives real generated/uploaded images; durable video and audio rows remain
   empty until the mixed-media asset API is connected. It does not yet upload new
   video-mode files, submit, quote, persist, or present video results; those remain
-  pending the authenticated provider contract.
+  pending the authenticated durable job and pricing contract. The server-side
+  O1Key transport adapter already owns the Seedance material/video endpoint and
+  payload mapping without exposing a browser submission route.
   Local reference upload is one explicit `上传素材` action capable of images,
   videos, and audio. It never creates an upstream reusable material automatically.
   `创建素材` is a separate opt-in flow for user-selected references. Historical

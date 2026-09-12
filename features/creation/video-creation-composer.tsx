@@ -16,6 +16,7 @@ import { VideoMaterialCreationDialog } from "@/features/creation/video-material-
 import {
   VIDEO_GENERATION_MODEL_CATALOG,
   VIDEO_GENERATION_MODE_OPTIONS,
+  VIDEO_PROVIDER_LINE_OPTIONS,
   VIDEO_RATIO_OPTIONS,
   countVideoReferences,
   getVideoGenerationModel,
@@ -25,6 +26,7 @@ import {
   type VideoAspectRatio,
   type VideoGenerationMode,
   type VideoGenerationModelId,
+  type VideoProviderLine,
   type VideoReference,
   type VideoReferenceMediaType,
   type VideoResolution,
@@ -47,6 +49,7 @@ export type VideoCreationComposerProps = Readonly<{
   references: readonly VideoReference[];
   generationMode: VideoGenerationMode;
   modelId: VideoGenerationModelId;
+  providerLine: VideoProviderLine;
   aspectRatio: VideoAspectRatio;
   resolution: VideoResolution;
   durationSeconds: number;
@@ -59,6 +62,7 @@ export type VideoCreationComposerProps = Readonly<{
   onRemoveReference: (reference: VideoReference) => void;
   onGenerationModeChange: (generationMode: VideoGenerationMode) => void;
   onModelChange: (modelId: VideoGenerationModelId) => void;
+  onProviderLineChange: (line: VideoProviderLine) => void;
   onAspectRatioChange: (ratio: VideoAspectRatio) => void;
   onResolutionChange: (resolution: VideoResolution) => void;
   onDurationChange: (duration: number) => void;
@@ -97,6 +101,7 @@ export function VideoCreationComposer({
   references,
   generationMode,
   modelId,
+  providerLine,
   aspectRatio,
   resolution,
   durationSeconds,
@@ -109,6 +114,7 @@ export function VideoCreationComposer({
   onRemoveReference,
   onGenerationModeChange,
   onModelChange,
+  onProviderLineChange,
   onAspectRatioChange,
   onResolutionChange,
   onDurationChange,
@@ -375,6 +381,22 @@ export function VideoCreationComposer({
                     ? "支持图片、视频、音频参考"
                     : "仅支持 1–2 张首尾帧图片"}
                 </span>
+              </div>
+              <div className="video-generation-mode-control">
+                <label>线路</label>
+                <div className="choice-row compact video-generation-mode-options" aria-label="视频生成线路">
+                  {VIDEO_PROVIDER_LINE_OPTIONS.map((option) => (
+                    <button
+                      type="button"
+                      key={option.id}
+                      className={providerLine === option.id ? "selected" : ""}
+                      aria-pressed={providerLine === option.id}
+                      onClick={() => onProviderLineChange(option.id)}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div className="video-generation-mode-control">
                 <label>生成模式</label>

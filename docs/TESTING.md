@@ -500,8 +500,10 @@ The timestamped result of the latest verified gate belongs in
 - Empty creation state.
 - Root and `/create` direct access, refresh, and Back/Forward equivalence.
 - Composer open/closed drawer without value loss.
-- Image/video mode switch preserves independent prompt, material, model, ratio,
-  resolution, duration, and sound state while leaving active image jobs intact.
+- Image/video mode switch preserves independent prompt, material, model, provider
+  line, ratio, resolution, duration, and sound state while leaving active image
+  jobs intact. Video line defaults to standard; standard maps only to Doubao and
+  backup maps only to HC without changing Seedance 2.5 capabilities.
 - Seedance model order and capability-driven resolution/duration controls;
   switching from 2.0 to 2.5 normalizes unsupported values without deleting
   compatible input.
@@ -584,6 +586,10 @@ The timestamped result of the latest verified gate belongs in
 - Owner-scoped Asset download URL resolution returns a fresh short-lived read
   only for an accepted successful Asset and never proxies the image bytes.
 - Provider timeout/rejection normalization.
+- Seedance provider contract covers all four product models on both lines,
+  exact material/video POST and typed/task GET paths, bearer authentication,
+  Doubao material `model`, HC HTTPS enforcement, text-only/multimodal/frame
+  `content`, `4K` to `4k`, malformed responses, and pre-transport validation.
 - Callback verification and duplicate callback handling.
 - The M5 fake O1Key gateway exhaustively proves all 42 combinations of the 14
   product-defined aspect ratios and `1K` / `2K` / `4K` pass unchanged to

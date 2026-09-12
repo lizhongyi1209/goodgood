@@ -23,6 +23,9 @@
 | Submission unknown | `SUBMISSION_UNKNOWN` | Failed batch in stream | Do not auto-submit; explicitly create a new billable task or edit settings |
 | Provider rejected | `MODEL_REJECTED` | Failed batch in stream | Edit prompt/settings |
 | Rate/capacity | `CAPACITY_BUSY` | Failed/pending batch | Backoff retry |
+| Seedance request invalid | `INVALID_VIDEO_REQUEST` | Video input boundary | Preserve input and identify the incompatible field |
+| Seedance unavailable | `PROVIDER_UNAVAILABLE` | Video provider boundary | Do not infer acceptance; retain the selected line and input |
+| Seedance malformed response | `PROVIDER_MALFORMED_RESPONSE` | Video provider boundary | Fail closed without inventing material/task identity |
 | Persistence | `SAVE_FAILED` | Affected asset/project | Retry without clearing |
 | Draft persistence | `DRAFT_UNAVAILABLE` | Composer-attached status | Keep current page state and retry |
 | Draft conflict | `DRAFT_CONFLICT` | Composer-attached alert | Keep current tab or restore newer server draft |

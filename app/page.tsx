@@ -13,6 +13,7 @@ import {
   DEFAULT_VIDEO_DURATION_SECONDS,
   DEFAULT_VIDEO_GENERATION_MODE,
   DEFAULT_VIDEO_MODEL_ID,
+  DEFAULT_VIDEO_PROVIDER_LINE,
   DEFAULT_VIDEO_RATIO,
   DEFAULT_VIDEO_RESOLUTION,
   countVideoReferences,
@@ -28,6 +29,7 @@ import {
   type VideoAspectRatio,
   type VideoGenerationMode,
   type VideoGenerationModelId,
+  type VideoProviderLine,
   type VideoReference,
   type VideoReferenceMediaType,
   type VideoReferenceRole,
@@ -479,6 +481,7 @@ export default function Home({
   const [videoReferences, setVideoReferences] = useState<VideoReference[]>([]);
   const [videoGenerationMode, setVideoGenerationMode] = useState<VideoGenerationMode>(DEFAULT_VIDEO_GENERATION_MODE);
   const [videoModelId, setVideoModelId] = useState<VideoGenerationModelId>(DEFAULT_VIDEO_MODEL_ID);
+  const [videoProviderLine, setVideoProviderLine] = useState<VideoProviderLine>(DEFAULT_VIDEO_PROVIDER_LINE);
   const [videoAspectRatio, setVideoAspectRatio] = useState<VideoAspectRatio>(DEFAULT_VIDEO_RATIO);
   const [videoResolution, setVideoResolution] = useState<VideoResolution>(DEFAULT_VIDEO_RESOLUTION);
   const [videoDurationSeconds, setVideoDurationSeconds] = useState(DEFAULT_VIDEO_DURATION_SECONDS);
@@ -665,6 +668,7 @@ export default function Home({
     videoReferences.length > 0 ||
     videoGenerationMode !== DEFAULT_VIDEO_GENERATION_MODE ||
     videoModelId !== DEFAULT_VIDEO_MODEL_ID ||
+    videoProviderLine !== DEFAULT_VIDEO_PROVIDER_LINE ||
     videoAspectRatio !== DEFAULT_VIDEO_RATIO ||
     videoResolution !== DEFAULT_VIDEO_RESOLUTION ||
     videoDurationSeconds !== DEFAULT_VIDEO_DURATION_SECONDS ||
@@ -2081,6 +2085,7 @@ export default function Home({
     setVideoPrompt("");
     setVideoGenerationMode(DEFAULT_VIDEO_GENERATION_MODE);
     setVideoModelId(DEFAULT_VIDEO_MODEL_ID);
+    setVideoProviderLine(DEFAULT_VIDEO_PROVIDER_LINE);
     setVideoAspectRatio(DEFAULT_VIDEO_RATIO);
     setVideoResolution(DEFAULT_VIDEO_RESOLUTION);
     setVideoDurationSeconds(DEFAULT_VIDEO_DURATION_SECONDS);
@@ -2933,6 +2938,7 @@ export default function Home({
               references={videoReferences}
               generationMode={videoGenerationMode}
               modelId={videoModelId}
+              providerLine={videoProviderLine}
               aspectRatio={videoAspectRatio}
               resolution={videoResolution}
               durationSeconds={videoDurationSeconds}
@@ -2945,6 +2951,7 @@ export default function Home({
               onRemoveReference={removeVideoReference}
               onGenerationModeChange={handleVideoGenerationModeChange}
               onModelChange={handleVideoModelChange}
+              onProviderLineChange={setVideoProviderLine}
               onAspectRatioChange={setVideoAspectRatio}
               onResolutionChange={setVideoResolution}
               onDurationChange={setVideoDurationSeconds}

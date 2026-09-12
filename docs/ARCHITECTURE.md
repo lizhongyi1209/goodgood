@@ -273,6 +273,14 @@ The O1Key worker path now has one real
 credentialed URL-output loopback smoke plus the accepted at-most-once
 submission guard from ADR 0008. New API usage records are the interim source
 for upstream charge/refund evidence. Project and asset navigation share one client workspace.
+GG-035 adds a separate Seedance transport adapter without widening the image
+generation route. Product line `standard` resolves server-side to O1Key
+`doubao`; `backup` resolves to `hc`. The adapter owns the exact material and
+video create/query paths, provider model mapping, ordered multimodal `content`,
+and conversion from product `4K` to provider `4k`. It exposes no browser route
+or credential and does not enable unpriced video submissions; durable video
+jobs, ownership, billing, result ingestion, and asset persistence remain the
+next backend boundary.
 Project index/detail, asset index/detail, and root creation are URL-addressable.
 `/create` is the canonical creation URL while `/` remains a compatibility entry
 to the same state; future Explore, Moodboards, and Help routes remain deferred.

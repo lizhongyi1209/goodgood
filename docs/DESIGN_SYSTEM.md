@@ -122,6 +122,9 @@ individual icon. Upload, settings, and send align to the same 40px box.
   not as more badges over the 64px previews. Expired or unavailable historical
   material uses one concise inline recovery message and `重新创建` action before
   submission.
+- Video provider line is a compact two-option control inside the model group,
+  after model capability copy and before generation mode. It reads `标准 / 备用`,
+  defaults to `标准`, and never resets another video value when changed.
 - Video mode keeps the same tray silhouette for local image, video, and audio
   references. It uses exactly one compact lower-left overlay: multimodal shows
   the media ordinal without a space (`图片1 / 视频1 / 音频1`), while first/last-

@@ -1,12 +1,12 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-12
-- Current phase: GG-034 图片 / 视频创作模式、统一上传、显式素材创建前端流程与统一媒体资产选择已完成本地实现和验证；等待用户检查。
-- Current objective: 保持 32136 专用预览可检查；真实视频接口待用户后续提供。
+- Current phase: GG-035 Seedance 标准/备用线路 UI 与 O1Key provider 契约已完成本地验证；专用临时凭据的真实成功调用待完成。
+- Current objective: 保持现有图片和 GG-034 视频能力不变，验证标准 Doubao、备用 HC 的请求端点与 payload；暂不接视频定价或产品提交。
 
 ## Current checkpoint
 
-- 当前工作树：`feature/GG-034-video-creation-frontend`（`F:/goodgood-worktrees/GG-034`），基于 GG-033 已验证提交 `dea84c0`。其他 worktree 保持不变。
+- 当前工作树：`feature/GG-035-seedance-provider`（`F:/goodgood-worktrees/GG-035`），基于 GG-034 已验证提交 `6a09a88`。其他 worktree 保持不变。
 - 正式入口仍为 `https://goodgood.o1key.com`；`staging-goodgood.o1key.com` 只是历史名称，不是本任务的测试入口。
 - 组合来源：完整基础框架 `07e9ea5`，再合入 GG-029、GG-030、GG-031；不使用旧页面另起测试版本，也不恢复旧 C6。
 - 代码范围同时包含账户管理、积分记录/账本、企业/分销身份、直属上下级、充值来源积分划拨、邮箱 OTP、企业 Workspace、成员额度、消费记录、资产审阅和管理审计。
@@ -31,8 +31,16 @@
   `创建素材` 是显式零预选流程，普通上传不会触发。界面记录后续并发创建与历史素材提交前
   有效性复检，接口到达前不伪造
   素材 ID 或成功状态。
-- Next action: 用户检查 `http://127.0.0.1:32136/create`；提供视频接口后另建后端接入任务。
-- Blockers: 前端无阻塞；视频上传、生成、计费、持久化和资产结果等待接口契约，不属于本阶段完成项。
+- GG-035 新增默认 `标准` 的线路参数；标准仅映射 Doubao，备用仅映射 HC，两线共享现有全部
+  参数和 Seedance 2.5 官方能力。服务端 adapter 已覆盖素材/视频的创建与查询端点、模型映射、
+  有序 `content`、role 和 `4K → 4k` 边界；GG-034 + GG-035 定向测试 13/13 通过。
+- `cf-api.o1key.com` 四个真实路径的无效 token 探测均返回 401，确认路径与认证边界在线且没有
+  创建计费任务。现有 Chrome `http://127.0.0.1:32137/create` 已验证默认标准、切换备用和参数保持。
+- 完整本地门禁通过：345 项测试中 331 通过、14 个 opt-in 跳过、0 失败；lint、TypeScript、
+  生产构建均通过。
+- Next action: 提供专用临时 API key 后执行一次隔离最小真实视频成功调用。
+- Blockers: 当前环境没有可用临时 API key，不能证明 provider 成功生成；视频定价、持久任务、
+  结果资产与产品提交入口按用户要求后续处理，不属于本阶段。
 
 ## Verification sequence
 
