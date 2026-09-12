@@ -57,6 +57,7 @@ Current records:
 - `0045-goodgood-owned-email-otp.md`
 - `0046-enterprise-workspaces-members-and-budgets.md`
 - `0047-add-gpt-image-25-routes.md`
+- `0048-add-image-video-creation-modes.md`
 
 ADR 0043 is allocated in the parallel GG-027 worktree. ADR 0044 belongs to
 GG-028's unshipped Authing-domain branch and is superseded by ADR 0045. ADR 0046
@@ -70,3 +71,4 @@ ADR numbering 0043—0046 is occupied. GG-030 deliberately used 0046 so integrat
 would not renumber accepted decisions.
 
 ADR 0047 adds the GG-033 GPT Image 2.5 product/provider routes.
+ADR 0048 adds the frontend image/video creation mode boundary for GG-034.

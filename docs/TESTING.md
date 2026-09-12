@@ -500,6 +500,14 @@ The timestamped result of the latest verified gate belongs in
 - Empty creation state.
 - Root and `/create` direct access, refresh, and Back/Forward equivalence.
 - Composer open/closed drawer without value loss.
+- Image/video mode switch preserves independent prompt, material, model, ratio,
+  resolution, duration, and sound state while leaving active image jobs intact.
+- Seedance model order and capability-driven resolution/duration controls;
+  switching from 2.0 to 2.5 normalizes unsupported values without deleting
+  compatible input.
+- Video local image/video/audio format, size, count, role, removal, and object-
+  URL cleanup behavior; video Feihong must not reach `/api/generations` before
+  the backend contract exists.
 - Reference tray from 0, 1, 9, 10, and over-limit inputs; visible contiguous
   ordinals; drag and `Alt + ← / →` reorder semantics; removal renumbering.
 - Generation skeleton count and ratio.

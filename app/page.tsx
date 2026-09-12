@@ -3,6 +3,25 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type WheelEvent as ReactWheelEvent } from "react";
 import Image from "next/image";
 import { CreationComposer } from "@/features/creation/creation-composer";
+import { VideoCreationComposer } from "@/features/creation/video-creation-composer";
+import {
+  DEFAULT_VIDEO_DURATION_SECONDS,
+  DEFAULT_VIDEO_MODEL_ID,
+  DEFAULT_VIDEO_RATIO,
+  DEFAULT_VIDEO_RESOLUTION,
+  getVideoGenerationModel,
+  resolveVideoDuration,
+  resolveVideoResolution,
+  videoReferenceCapacityError,
+  videoReferenceFileError,
+  type CreationMode,
+  type VideoAspectRatio,
+  type VideoGenerationModelId,
+  type VideoReference,
+  type VideoReferenceMediaType,
+  type VideoReferenceRole,
+  type VideoResolution,
+} from "@/features/creation/video-generation-options";
 import {
   formatPixelDimensions,
   formatGenerationResolution,
@@ -390,6 +409,7 @@ export default function Home({
   workspaceId = null,
 }: Readonly<{ workspaceId?: string | null }> = {}) {
   const referenceObjectUrlsRef = useRef(new Set<string>());
+  const videoReferenceObjectUrlsRef = useRef(new Set<string>());
   const assetPulseTimerRef = useRef<number | null>(null);
   const detailWheelTimerRef = useRef<number | null>(null);
   const detailThumbnailRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -421,6 +441,7 @@ export default function Home({
     "loading" | "ready" | "error"
   >(workspaceId ? "loading" : "ready");
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [creationMode, setCreationMode] = useState<CreationMode>("image");
   const [selectedModel, setSelectedModel] = useState<GenerationModelId>(DEFAULT_GENERATION_MODEL_ID);
   const [selectedRatio, setSelectedRatio] = useState<GenerationAspectRatio>("1:1");
   const [resolution, setResolution] = useState<GenerationResolution>("1K");
@@ -432,6 +453,13 @@ export default function Home({
   const [outputFormat, setOutputFormat] = useState<GptImageOutputFormat>("png");
   const [prompt, setPrompt] = useState("");
   const [referenceImages, setReferenceImages] = useState<ReferenceImage[]>([]);
+  const [videoPrompt, setVideoPrompt] = useState("");
+  const [videoReferences, setVideoReferences] = useState<VideoReference[]>([]);
+  const [videoModelId, setVideoModelId] = useState<VideoGenerationModelId>(DEFAULT_VIDEO_MODEL_ID);
+  const [videoAspectRatio, setVideoAspectRatio] = useState<VideoAspectRatio>(DEFAULT_VIDEO_RATIO);
+  const [videoResolution, setVideoResolution] = useState<VideoResolution>(DEFAULT_VIDEO_RESOLUTION);
+  const [videoDurationSeconds, setVideoDurationSeconds] = useState(DEFAULT_VIDEO_DURATION_SECONDS);
+  const [videoGenerateAudio, setVideoGenerateAudio] = useState(true);
   const [activeView, setActiveView] = useState<ActiveView>("create");
   const [generationRuns, setGenerationRuns] = useState<readonly TrackedGenerationRun[]>([]);
   const [creationBatches, setCreationBatches] = useState<AssetBatch[]>([]);
@@ -600,13 +628,22 @@ export default function Home({
     quality,
     thinkingLevel,
   });
-  const hasUnsavedCreationChanges = hasMeaningfulUnsavedChanges({
+  const hasUnsavedImageChanges = hasMeaningfulUnsavedChanges({
     checkpoint: composerCheckpoint,
     current: currentComposerCheckpoint,
     hasUnprojectedWork: !currentProject && (
       creationBatches.length > 0 || generationRuns.length > 0
     ),
   });
+  const hasVideoDraft =
+    videoPrompt.trim().length > 0 ||
+    videoReferences.length > 0 ||
+    videoModelId !== DEFAULT_VIDEO_MODEL_ID ||
+    videoAspectRatio !== DEFAULT_VIDEO_RATIO ||
+    videoResolution !== DEFAULT_VIDEO_RESOLUTION ||
+    videoDurationSeconds !== DEFAULT_VIDEO_DURATION_SECONDS ||
+    videoGenerateAudio !== true;
+  const hasUnsavedCreationChanges = hasUnsavedImageChanges || hasVideoDraft;
   const currentDraftState: CreationDraftState = {
     aspectRatio: selectedRatio,
     background,
@@ -1015,6 +1052,8 @@ export default function Home({
   useEffect(() => () => {
     referenceObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
     referenceObjectUrlsRef.current.clear();
+    videoReferenceObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    videoReferenceObjectUrlsRef.current.clear();
   }, []);
 
   useEffect(() => {
@@ -1406,6 +1445,109 @@ export default function Home({
     setOutputFormat(value);
   };
 
+  const handleCreationModeChange = (mode: CreationMode) => {
+    setCreationMode(mode);
+  };
+
+  const handleVideoModelChange = (modelId: VideoGenerationModelId) => {
+    const capacityError = videoReferenceCapacityError(modelId, videoReferences);
+    if (capacityError) {
+      toast.error(capacityError);
+      return;
+    }
+    const nextResolution = resolveVideoResolution(modelId, videoResolution);
+    const nextDuration = resolveVideoDuration(modelId, videoDurationSeconds);
+    if (nextResolution !== videoResolution) {
+      toast.info(`${getVideoGenerationModel(modelId).name} 已将清晰度调整为 ${nextResolution}`);
+    } else if (nextDuration !== videoDurationSeconds) {
+      toast.info(`${getVideoGenerationModel(modelId).name} 最长支持 ${nextDuration} 秒`);
+    }
+    setVideoModelId(modelId);
+    setVideoResolution(nextResolution);
+    setVideoDurationSeconds(nextDuration);
+  };
+
+  const handleVideoReferenceFiles = (
+    mediaType: VideoReferenceMediaType,
+    files: readonly File[],
+  ) => {
+    if (!files.length) return;
+    const nextReferences = [...videoReferences];
+    let rejectedCount = 0;
+    for (const file of files) {
+      const fileError = videoReferenceFileError(file, mediaType);
+      if (fileError) {
+        rejectedCount += 1;
+        toast.error(fileError);
+        continue;
+      }
+      const role: VideoReferenceRole = mediaType === "image"
+        ? nextReferences.some((reference) => reference.role === "first_frame")
+          ? "reference_image"
+          : "first_frame"
+        : mediaType === "video"
+          ? "reference_video"
+          : "reference_audio";
+      const candidate: VideoReference = {
+        id: `video_ref_${globalThis.crypto.randomUUID()}`,
+        mediaType,
+        name: file.name,
+        role,
+        size: file.size,
+        url: "",
+      };
+      const capacityError = videoReferenceCapacityError(
+        videoModelId,
+        [...nextReferences, candidate],
+      );
+      if (capacityError) {
+        rejectedCount += 1;
+        toast.info(capacityError);
+        continue;
+      }
+      const url = URL.createObjectURL(file);
+      videoReferenceObjectUrlsRef.current.add(url);
+      nextReferences.push({ ...candidate, url });
+    }
+    if (nextReferences.length !== videoReferences.length) {
+      setVideoReferences(nextReferences);
+    }
+    if (rejectedCount === 0) {
+      toast.success(`已添加 ${files.length} 个参考素材`);
+    }
+  };
+
+  const handleVideoReferenceRoleChange = (
+    referenceId: string,
+    role: Extract<VideoReferenceRole, "first_frame" | "last_frame" | "reference_image">,
+  ) => {
+    setVideoReferences((current) => current.map((reference) => {
+      if (
+        reference.id !== referenceId &&
+        (role === "first_frame" || role === "last_frame") &&
+        reference.role === role
+      ) {
+        return { ...reference, role: "reference_image" };
+      }
+      return reference.id === referenceId ? { ...reference, role } : reference;
+    }));
+  };
+
+  const removeVideoReference = (reference: VideoReference) => {
+    if (videoReferenceObjectUrlsRef.current.delete(reference.url)) {
+      URL.revokeObjectURL(reference.url);
+    }
+    setVideoReferences((current) => current.filter((item) => item.id !== reference.id));
+  };
+
+  const handleVideoGenerate = () => {
+    if (!videoPrompt.trim()) {
+      toast.error("请先输入视频描述");
+      return;
+    }
+    toast.info("视频生成接口尚未接入，当前提示词、素材与参数已保留");
+  };
+
   const handleReferenceFiles = (files: readonly File[]) => {
     if (!files.length) return;
 
@@ -1749,9 +1891,19 @@ export default function Home({
     clearPersistedCreationDraft();
     referenceObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
     referenceObjectUrlsRef.current.clear();
+    videoReferenceObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    videoReferenceObjectUrlsRef.current.clear();
     loadedProjectIdRef.current = null;
     setReferenceImages([]);
     setPrompt("");
+    setVideoReferences([]);
+    setVideoPrompt("");
+    setVideoModelId(DEFAULT_VIDEO_MODEL_ID);
+    setVideoAspectRatio(DEFAULT_VIDEO_RATIO);
+    setVideoResolution(DEFAULT_VIDEO_RESOLUTION);
+    setVideoDurationSeconds(DEFAULT_VIDEO_DURATION_SECONDS);
+    setVideoGenerateAudio(true);
+    setCreationMode("image");
     setCreationBatches([]);
     setCurrentProject(null);
     setGenerationRuns([]);
@@ -2556,39 +2708,67 @@ export default function Home({
               <button onClick={requestNewCreation}><Plus size={14} />新建创作</button>
             </section>
           ) : <>
-          <CreationComposer
-            prompt={prompt}
-            references={referenceImages}
-            modelId={selectedModel}
-            aspectRatio={selectedRatio}
-            resolution={resolution}
-            count={generationCount}
-            googleSearch={googleSearch}
-            quality={quality}
-            background={background}
-            outputFormat={outputFormat}
-            drawerOpen={drawerOpen}
-            isGenerating={isGenerating}
-            billingLabel={composerBillingLabel}
-            billingDescription={composerBillingDescription}
-            onPromptChange={handlePromptChange}
-            onReferenceFiles={handleReferenceFiles}
-            onOpenReferenceLibrary={openReferenceLibrary}
-            onRemoveReference={removeReference}
-            onReorderReference={reorderReference}
-            referenceEditorMaterials={referenceMaterials}
-            onSaveReferenceEdit={handleSaveReferenceEdit}
-            onModelChange={handleModelChange}
-            onAspectRatioChange={handleAspectRatioChange}
-            onResolutionChange={handleResolutionChange}
-            onCountChange={handleGenerationCountChange}
-            onGoogleSearchChange={handleGoogleSearchChange}
-            onQualityChange={handleQualityChange}
-            onBackgroundChange={handleBackgroundChange}
-            onOutputFormatChange={handleOutputFormatChange}
-            onDrawerOpenChange={setDrawerOpen}
-            onGenerate={handleGenerate}
-          />
+          {creationMode === "image" ? (
+            <CreationComposer
+              mode={creationMode}
+              prompt={prompt}
+              references={referenceImages}
+              modelId={selectedModel}
+              aspectRatio={selectedRatio}
+              resolution={resolution}
+              count={generationCount}
+              googleSearch={googleSearch}
+              quality={quality}
+              background={background}
+              outputFormat={outputFormat}
+              drawerOpen={drawerOpen}
+              isGenerating={isGenerating}
+              billingLabel={composerBillingLabel}
+              billingDescription={composerBillingDescription}
+              onModeChange={handleCreationModeChange}
+              onPromptChange={handlePromptChange}
+              onReferenceFiles={handleReferenceFiles}
+              onOpenReferenceLibrary={openReferenceLibrary}
+              onRemoveReference={removeReference}
+              onReorderReference={reorderReference}
+              referenceEditorMaterials={referenceMaterials}
+              onSaveReferenceEdit={handleSaveReferenceEdit}
+              onModelChange={handleModelChange}
+              onAspectRatioChange={handleAspectRatioChange}
+              onResolutionChange={handleResolutionChange}
+              onCountChange={handleGenerationCountChange}
+              onGoogleSearchChange={handleGoogleSearchChange}
+              onQualityChange={handleQualityChange}
+              onBackgroundChange={handleBackgroundChange}
+              onOutputFormatChange={handleOutputFormatChange}
+              onDrawerOpenChange={setDrawerOpen}
+              onGenerate={handleGenerate}
+            />
+          ) : (
+            <VideoCreationComposer
+              mode={creationMode}
+              prompt={videoPrompt}
+              references={videoReferences}
+              modelId={videoModelId}
+              aspectRatio={videoAspectRatio}
+              resolution={videoResolution}
+              durationSeconds={videoDurationSeconds}
+              generateAudio={videoGenerateAudio}
+              drawerOpen={drawerOpen}
+              onModeChange={handleCreationModeChange}
+              onPromptChange={setVideoPrompt}
+              onReferenceFiles={handleVideoReferenceFiles}
+              onRemoveReference={removeVideoReference}
+              onReferenceRoleChange={handleVideoReferenceRoleChange}
+              onModelChange={handleVideoModelChange}
+              onAspectRatioChange={setVideoAspectRatio}
+              onResolutionChange={setVideoResolution}
+              onDurationChange={setVideoDurationSeconds}
+              onGenerateAudioChange={setVideoGenerateAudio}
+              onDrawerOpenChange={setDrawerOpen}
+              onGenerate={handleVideoGenerate}
+            />
+          )}
 
           {!currentProject && draftLoading && (
             <div className="draft-sync-state" role="status">
@@ -2619,8 +2799,8 @@ export default function Home({
           {!isGenerating && !hasGenerationError && creationBatches.length === 0 ? (
             <section className="creation-empty-state" aria-label="尚未开始创作">
               <Image src="/goodgood-mark.svg" alt="" width={32} height={24} />
-              <h2>描述你想创作的画面</h2>
-              <p>输入提示词，或上传参考图片开始</p>
+              <h2>{creationMode === "video" ? "描述你想创作的视频" : "描述你想创作的画面"}</h2>
+              <p>{creationMode === "video" ? "输入提示词，或添加图片、视频和音频素材" : "输入提示词，或上传参考图片开始"}</p>
             </section>
           ) : (
             <section className="creation-stream" aria-label="当前创作内容">

@@ -85,6 +85,9 @@ individual icon. Upload, settings, and send align to the same 40px box.
 
 - One visual component: prompt row plus optional reference tray and parameter
   drawer; drawers must not appear detached.
+- A compact `图片 / 视频` segmented control is attached above the prompt row.
+  It uses the same white/soft surfaces and restrained Palace Red selected state;
+  it is a creation-mode choice, not another navigation bar.
 - Prompt is the flexible column. Left and right controls remain top-aligned and
   fixed while the textarea grows.
 - Reference thumbnails use a horizontal tray, centered 1:1 crops at `64 × 64 px`
@@ -111,6 +114,10 @@ individual icon. Upload, settings, and send align to the same 40px box.
   materials. Existing-material selection uses a focused responsive dialog with
   1:1 centered previews, visible selection, existing-tray disabled state, and a
   single confirmed add action.
+- Video mode keeps the same tray silhouette for local image, video, and audio
+  references. Media type and image role use compact overlays; audio uses a quiet
+  neutral placeholder rather than invented artwork. Video mode does not expose
+  the image quick editor or existing-material picker in its frontend-only phase.
 - Parameter group order: aspect ratio; model; output group with resolution above
   generation count. Aspect ratio leads from the left on desktop and remains first
   when the drawer reflows or stacks.
@@ -124,6 +131,9 @@ individual icon. Upload, settings, and send align to the same 40px box.
 - The credit quote is quiet 11px metadata beside the settings/send actions. It
   shows the per-image rate and, for 2/4 outputs, the selected batch total. It has
   no filled chip, border, icon, or payment emphasis.
+- Before video pricing exists, the same location reads `接口待接入` without a
+  fake price. Video output controls use resolution, duration, and sound; they
+  retain the existing quiet segmented and slider language.
 
 ## Account credit
 

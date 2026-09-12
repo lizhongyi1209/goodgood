@@ -1,12 +1,12 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-12
-- Current phase: GG-033 本地候选与三模型真实出图验证完成；等待用户检查，未推送、未合入、未部署。
-- Current objective: 保持测试页和精确验证证据可检查；生产事实与权限边界不变。
+- Current phase: GG-034 图片 / 视频创作模式与 Seedance 前端已完成本地实现和验证；等待用户检查。
+- Current objective: 保持 32136 专用预览可检查；真实视频接口待用户后续提供。
 
 ## Current checkpoint
 
-- 当前工作树：`feature/GG-033-gpt-image-25-models`（`F:/goodgood-worktrees/GG-033`）。主工作区保持不变。
+- 当前工作树：`feature/GG-034-video-creation-frontend`（`F:/goodgood-worktrees/GG-034`），基于 GG-033 已验证提交 `dea84c0`。其他 worktree 保持不变。
 - 正式入口仍为 `https://goodgood.o1key.com`；`staging-goodgood.o1key.com` 只是历史名称，不是本任务的测试入口。
 - 组合来源：完整基础框架 `07e9ea5`，再合入 GG-029、GG-030、GG-031；不使用旧页面另起测试版本，也不恢复旧 C6。
 - 代码范围同时包含账户管理、积分记录/账本、企业/分销身份、直属上下级、充值来源积分划拨、邮箱 OTP、企业 Workspace、成员额度、消费记录、资产审阅和管理审计。
@@ -21,8 +21,11 @@
 - 真实栈第一次预检发现默认 fixture owner 后，在 0 任务状态删除栈和数据卷；重建时关闭 fixture，确认初始用户/任务/尝试均为 0，迁移到 0028，Worker provider 为 `o1key`。
 - 现有 Chrome 中仅新建并控制 `http://127.0.0.1:32133/` 专用标签页，未使用 Playwright。sunburst、GPT IMAGE 2、flare 各完成一次 1K/1 张/JPEG 真实生成，页面显示三张 1024×1024 结果。
 - 最终 3 个 job、3 个 attempt、3 个 Asset 均成功；三条 provider model 与 route version 精确匹配；余额 70、预留 0、活动任务 0、pending outbox 0、Valkey DB size 0。隔离栈和测试页保留供用户检查。
-- Next action: 用户检查 GG-033 专用测试页；接受后再单独决定推送、main 合入或部署。
-- Blockers: 当前无本地实现阻塞；推送、main 合入和生产部署未授权。
+- GG-034 已完成常驻图片/视频切换、独立会话草稿、Seedance 2.0—2.5 能力参数、本地图片/视频/
+  音频素材和安全的接口待接入状态。定向测试 26/26、文档组合 14/14、完整本地门禁 337 项
+  （323 通过、14 个 opt-in 跳过、0 失败）均通过；Chrome 专用页完成桌面交互检查且未调用 provider。
+- Next action: 用户检查 `http://127.0.0.1:32136/create`；提供视频接口后另建后端接入任务。
+- Blockers: 前端无阻塞；视频上传、生成、计费、持久化和资产结果等待接口契约，不属于本阶段完成项。
 
 ## Verification sequence
 
@@ -44,13 +47,14 @@
 | GG-031 | 自动化完成 | 邮箱与企业集成已在 GG-032 完整基线上复验通过 |
 | GG-032 | 待用户确认 | 完整基础 + OTP + 企业的本地组合验收完成 |
 | GG-033 | 本地完成，待用户检查 | GPT IMAGE 2.5 模型扩展、GPT IMAGE 2 provider ID 更新与三模型真实本地验证均完成 |
+| GG-034 | 本地完成，待用户检查 | 图片 / 视频模式切换、Seedance 参数和本地多媒体素材前端；不接真实接口 |
 | 完整 C6 / M9 | 搁置 | 删除、举报、商业支付等，见 GG-900—GG-902 |
 
 ## New-session recovery
 
 1. 阅读根 `AGENTS.md`、[CURRENT_STATE](CURRENT_STATE.md)、[WORKFLOW](WORKFLOW.md)、本页和 [BACKLOG](BACKLOG.md)，检查分支/worktree/未提交改动。
-2. 从 `feature/GG-033-gpt-image-25-models` 恢复；先读 GG-033 任务卡和 ADR 0047，不恢复旧 C6。
-3. 真实 provider 请求只按任务卡执行三条最小规格调用；main 合入和生产部署仍需要新的明确授权。
+2. 从 `feature/GG-034-video-creation-frontend` 恢复；先读 GG-034 任务卡和 ADR 0048，不恢复旧 C6。
+3. 本任务不得提交视频 provider 请求；main 合入和生产部署仍需要新的明确授权。
 
 ## History and update policy
 

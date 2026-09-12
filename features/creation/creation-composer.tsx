@@ -12,6 +12,8 @@ import {
 import { Slider } from "@/components/ui/slider";
 import type { ReferenceMaterial } from "@/features/references/http-reference-library";
 import { ReferenceQuickEditor } from "@/features/references/reference-quick-editor";
+import { CreationModeSwitch } from "@/features/creation/creation-mode-switch";
+import type { CreationMode } from "@/features/creation/video-generation-options";
 import {
   DEFAULT_GPT_IMAGE_OUTPUT_FORMAT,
   GENERATION_RATIO_MODES,
@@ -62,6 +64,7 @@ import {
 import { toast } from "sonner";
 
 export type CreationComposerProps = Readonly<{
+  mode: CreationMode;
   prompt: string;
   references: readonly GenerationReference[];
   modelId: GenerationModelId;
@@ -77,6 +80,7 @@ export type CreationComposerProps = Readonly<{
   billingLabel: string;
   billingDescription: string;
   onPromptChange: (prompt: string) => void;
+  onModeChange: (mode: CreationMode) => void;
   onReferenceFiles: (files: readonly File[]) => void;
   onOpenReferenceLibrary?: () => void;
   onRemoveReference: (reference: GenerationReference) => void;
@@ -126,6 +130,7 @@ function resizePromptTextarea(element: HTMLTextAreaElement) {
 }
 
 export function CreationComposer({
+  mode,
   prompt,
   references,
   modelId,
@@ -143,6 +148,7 @@ export function CreationComposer({
   billingLabel,
   billingDescription,
   onPromptChange,
+  onModeChange,
   onReferenceFiles,
   onOpenReferenceLibrary = () => {},
   onRemoveReference,
@@ -217,6 +223,7 @@ export function CreationComposer({
       className={`composer ${drawerOpen ? "drawer-open" : ""} ${isGenerating ? "is-generating" : ""}`}
       aria-label="图像生成区域"
     >
+      <CreationModeSwitch value={mode} onChange={onModeChange} />
       <div className="prompt-row">
         <div className="reference-control">
           <input

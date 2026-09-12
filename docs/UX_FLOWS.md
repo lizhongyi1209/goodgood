@@ -166,13 +166,18 @@ and new signed reads; company history remains visible to authorized managers.
 
 ### Empty
 
-Show only a small GoodGood mark, `描述你想创作的画面`, and a quieter secondary
-sentence. Do not insert sample images, tutorials, or parameter descriptions to
-fill space.
+Show only a small GoodGood mark, one primary sentence, and a quieter secondary
+sentence. Image mode says `描述你想创作的画面`; video mode says
+`描述你想创作的视频`. Do not insert sample images, tutorials, or parameter
+descriptions to fill space.
 
 ### Composer
 
 - Empty prompt submission: short toast, keep focus available.
+- `图片 / 视频` is always visible as a quiet segmented control attached above
+  the prompt row. Image remains the default. Switching affects only the active
+  composer and preserves separate in-memory inputs; it never alters an active
+  image job or sends a request.
 - Prompt: autosize from one to eight lines; scroll after eight.
 - References: the add control offers local upload or selection from the owner's
   uploaded materials. Append in upload/selection order, deduplicate by stable
@@ -203,10 +208,21 @@ fill space.
   the editor state for retry.
 - Send is blocked while any retained reference is uploading or failed. Ready
   references preserve their tray order in the submitted batch snapshot.
+- Video mode accepts local image, MP4/MOV, and WAV/MP3 references for frontend
+  composition. Images may be marked `首帧 / 尾帧 / 参考图`; video and audio read
+  as reference media. A model change is blocked when retained media exceeds its
+  capability limit. These object URLs remain session-only until backend upload
+  and durable material contracts exist.
 - Settings: attached downward drawer; closing it must not reset values.
 - Settings read from aspect ratio to model to output; aspect ratio is the leftmost
   wide-screen group and stays first through responsive reflow.
 - Model list: opens within the parameter drawer and collapses after selection.
+- Video model order is Seedance 2.5, Seedance 2.0, Seedance 2.0 Fast, then
+  Seedance 2.0 Mini. Video settings use aspect ratio, model, then output;
+  output contains resolution, integer-second duration, and `有声 / 静音` rather
+  than image count. Seedance 2.5 exposes 480p/720p and 4–30 seconds; standard
+  Seedance 2.0 exposes 480p/720p/1080p/4K and 4–15 seconds; Fast and Mini expose
+  480p/720p and 4–15 seconds.
 - Nano Banana 2 accepts its 14 displayed ratios; each of GPT IMAGE 2.5
   sunburst, GPT IMAGE 2, and GPT IMAGE 2.5 flare accepts `9:16`,
   `2:3`, `3:4`, `1:1`, `4:3`, `3:2`, and `16:9`. Both use the existing
@@ -233,6 +249,9 @@ fill space.
   click freezes the current composer values and submits one independent job.
   Active styling and the creation stream communicate progress without blocking
   another click. There is no product-side concurrent-job count ceiling.
+- Until the video API is implemented, video Feihong validates a non-empty
+  prompt and reports `视频生成接口尚未接入`; it must not call the image generation
+  boundary or render a synthetic successful result.
 
 Reference ordinal is the current tray index and is stored in data for prompt
 interpretation. The visible `图 1…10`, accessible name, draft/project order,
