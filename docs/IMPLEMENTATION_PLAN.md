@@ -1,7 +1,7 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-12
-- Current phase: GG-035 Seedance 标准/备用线路 UI 与 O1Key provider 契约已完成本地验证；专用临时凭据的真实成功调用待完成。
+- Current phase: GG-035 Seedance 标准/备用线路 UI、O1Key provider 契约与一次标准线路真实视频均已完成本地验证。
 - Current objective: 保持现有图片和 GG-034 视频能力不变，验证标准 Doubao、备用 HC 的请求端点与 payload；暂不接视频定价或产品提交。
 
 ## Current checkpoint
@@ -33,14 +33,17 @@
   素材 ID 或成功状态。
 - GG-035 新增默认 `标准` 的线路参数；标准仅映射 Doubao，备用仅映射 HC，两线共享现有全部
   参数和 Seedance 2.5 官方能力。服务端 adapter 已覆盖素材/视频的创建与查询端点、模型映射、
-  有序 `content`、role 和 `4K → 4k` 边界；GG-034 + GG-035 定向测试 13/13 通过。
+  有序 `content`、role 和 `4K → 4k` 边界；GG-034 + GG-035 定向测试 14/14 通过。
 - `cf-api.o1key.com` 四个真实路径的无效 token 探测均返回 401，确认路径与认证边界在线且没有
   创建计费任务。现有 Chrome `http://127.0.0.1:32137/create` 已验证默认标准、切换备用和参数保持。
-- 完整本地门禁通过：345 项测试中 331 通过、14 个 opt-in 跳过、0 失败；lint、TypeScript、
+- 使用文件型临时凭据执行一次标准线路 Seedance 2.5 文生视频：4 秒、480p、16:9、静音；实际
+  provider 模型为 `doubao-seedance-2-5-260628-max`，同一任务约 191 秒后 `completed / 100%`
+  且返回视频输出。密钥和结果 URL 均未进入仓库。
+- 完整本地门禁通过：346 项测试中 332 通过、14 个 opt-in 跳过、0 失败；lint、TypeScript、
   生产构建均通过。
-- Next action: 提供专用临时 API key 后执行一次隔离最小真实视频成功调用。
-- Blockers: 当前环境没有可用临时 API key，不能证明 provider 成功生成；视频定价、持久任务、
-  结果资产与产品提交入口按用户要求后续处理，不属于本阶段。
+- Next action: 用户检查 `http://127.0.0.1:32137/create`；确认视频定价后另开持久任务、结果资产
+  与浏览器提交入口任务。
+- Blockers: provider 契约无阻塞；视频定价、持久任务、结果资产与产品提交入口按用户要求后续处理。
 
 ## Verification sequence
 

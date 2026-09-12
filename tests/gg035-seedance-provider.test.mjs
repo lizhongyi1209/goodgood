@@ -312,3 +312,18 @@ test("GG-035 rejects incompatible roles and insecure HC references before transp
   );
 });
 
+test("GG-035 real smoke requires explicit execution and a file-only credential", async () => {
+  const [script, packageJson] = await Promise.all([
+    read("scripts/run-seedance-provider-smoke.mjs"),
+    read("package.json"),
+  ]);
+  assert.match(script, /argumentsList\.includes\("--execute"\)/);
+  assert.match(script, /argumentValue\(argumentsList, "--key-file"\)/);
+  assert.doesNotMatch(script, /--api-key/);
+  assert.doesNotMatch(script, /console\.log\([^\n]*apiKey/);
+  assert.match(script, /line: "standard"/);
+  assert.match(script, /modelId: "seedance-2-5"/);
+  assert.match(script, /duration: 4/);
+  assert.match(script, /resolution: "480p"/);
+  assert.match(packageJson, /"video:provider-smoke": "node scripts\/run-seedance-provider-smoke\.mjs"/);
+});

@@ -590,6 +590,9 @@ The timestamped result of the latest verified gate belongs in
   exact material/video POST and typed/task GET paths, bearer authentication,
   Doubao material `model`, HC HTTPS enforcement, text-only/multimodal/frame
   `content`, `4K` to `4k`, malformed responses, and pre-transport validation.
+  Real smoke accepts credentials only by an explicitly named file plus
+  `--execute`, submits one minimal task, reuses its returned task ID for polling,
+  and never prints the credential or provider result URL.
 - Callback verification and duplicate callback handling.
 - The M5 fake O1Key gateway exhaustively proves all 42 combinations of the 14
   product-defined aspect ratios and `1K` / `2K` / `4K` pass unchanged to

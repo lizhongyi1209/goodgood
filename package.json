@@ -25,6 +25,7 @@
     "stack:email-local:down": "node scripts/run-email-otp-local.mjs --down",
     "stack:email-smtp-local": "node scripts/run-email-otp-smtp-local.mjs",
     "stack:o1key-local": "node scripts/run-o1key-local.mjs",
+    "video:provider-smoke": "node scripts/run-seedance-provider-smoke.mjs",
     "test": "npm run build && node --test tests/*.test.mjs",
     "test:local": "npm run build:local && node --test tests/*.test.mjs",
     "lint": "bash scripts/sites-env.sh -- eslint . --ignore-pattern dist --ignore-pattern .next",
