@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties, type Whee
 import Image from "next/image";
 import { CreationComposer } from "@/features/creation/creation-composer";
 import { VideoCreationComposer } from "@/features/creation/video-creation-composer";
+import { MixedMediaStylePreview } from "@/features/creation/mixed-media-style-preview";
 import {
   appendVideoAssetMaterials,
   type VideoAssetMaterial,
@@ -481,6 +482,7 @@ export default function Home({
   >(workspaceId ? "loading" : "ready");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [creationMode, setCreationMode] = useState<CreationMode>("image");
+  const [mixedMediaStylePreview, setMixedMediaStylePreview] = useState(false);
   const [selectedModel, setSelectedModel] = useState<GenerationModelId>(DEFAULT_GENERATION_MODEL_ID);
   const [selectedRatio, setSelectedRatio] = useState<GenerationAspectRatio>("1:1");
   const [resolution, setResolution] = useState<GenerationResolution>("1K");
@@ -862,6 +864,7 @@ export default function Home({
         if (!active) return;
         setAuthenticationSession(session);
         if (session?.preview) {
+          setMixedMediaStylePreview(url.searchParams.get("media-preview") === "1");
           setProjectsLoading(false);
           setAssetsLoading(false);
         }
@@ -3064,7 +3067,7 @@ export default function Home({
             </div>
           )}
 
-          {creationMode === "video" && videoPreviewJob ? (
+          {authenticationSession?.preview && mixedMediaStylePreview ? <MixedMediaStylePreview /> : creationMode === "video" && videoPreviewJob ? (
             <section className="video-preview-result" aria-label="本地视频实测结果" aria-live="polite">
               <header>
                 <div className="video-preview-result-title">

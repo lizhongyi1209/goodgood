@@ -415,6 +415,12 @@ per-type and total reference capacity.
 
 ## Image detail
 
+GG-037 provides an isolated preview-session `?media-preview=1` mock of unified
+image/video creation and detail. Completed video covers open the same three-zone
+layout; wheel over the stage, arrow keys, and the mixed rail navigate completed
+works. Closing restores the grid and focus. Playback is explicitly a simulated
+cover motion, not real generated media. No mock item enters drafts or projects.
+
 - Available from generated images and both asset views.
 - Uses `/assets/:assetId`; direct access and refresh resolve the stable asset ID
   from the authenticated owner's asset list.

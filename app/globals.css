@@ -512,6 +512,28 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .creation-card:hover .image-actions { opacity: 1; transform: translateY(0); }
 .creation-skeleton { min-height: 160px; background: linear-gradient(115deg,#ededf0 15%,#f8f8f9 36%,#e9e9ed 57%); background-size: 240% 100%; display: grid; place-items: center; animation: skeleton-wave 1.5s ease-in-out infinite; }
 .creation-skeleton small { position: absolute; left: 11px; bottom: 10px; color: #aaaab2; font-size: 9px; }
+.mixed-preview-note { color: var(--quiet); font-size: 10px; }
+.mixed-preview-card { padding: 0; border: 0; text-align: left; }
+.mixed-preview-video-marker { position: absolute; left: 9px; top: 9px; display: flex; align-items: center; gap: 5px; padding: 5px 7px; border-radius: 7px; background: rgba(25,25,30,.62); color: white; font-size: 10px; font-variant-numeric: tabular-nums; }
+.mixed-preview-card:focus-visible .creation-card-meta { opacity: 1; }
+.mixed-preview-pending { display: grid; place-items: center; background: #eeeef1; cursor: default; animation: none; }
+.mixed-preview-pending > div { display: flex; flex-direction: column; align-items: center; gap: 10px; color: #9999a3; }
+.mixed-preview-pending strong { font-size: 11px; font-weight: 500; }
+.mixed-preview-pending small { font-size: 10px; }
+.mixed-preview-pending.failed > div { color: #a66b6e; }
+.mixed-preview-slot-meta { position: absolute; left: 10px; bottom: 10px; display: flex; align-items: center; gap: 5px; color: #9999a3; font-size: 9px; }
+.mixed-preview-art > img { object-fit: contain; transform: none; }
+.mixed-preview-art.is-playing > img { animation: mixed-preview-pan 5s ease-in-out infinite alternate; }
+.mixed-preview-simulation-label { position: absolute; top: 12px; left: 12px; padding: 5px 7px; border-radius: 6px; background: rgba(25,25,30,.55); color: white; font-size: 9px; }
+.mixed-preview-play { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 54px; height: 54px; border: 0; border-radius: 50%; background: rgba(25,25,30,.48); color: white; display: grid; place-items: center; }
+.mixed-preview-controls { position: absolute; left: 0; bottom: 0; right: 0; display: flex; align-items: center; gap: 10px; padding: 22px 14px 12px; background: linear-gradient(transparent,rgba(0,0,0,.65)); color: white; font-size: 10px; }
+.mixed-preview-controls button { padding: 0; width: 24px; height: 24px; border: 0; background: transparent; color: white; display: grid; place-items: center; }
+.mixed-preview-timeline { flex: 1; height: 3px; border-radius: 3px; background: rgba(255,255,255,.35); overflow: hidden; }
+.mixed-preview-timeline i { height: 100%; display: block; background: white; }
+.mixed-preview-rail-video { position: absolute; left: 4px; top: 4px; color: white; filter: drop-shadow(0 1px 2px #333); }
+@keyframes mixed-preview-pan { to { transform: scale(1.06); } }
+@media (max-width: 760px) { .mixed-media-style-preview .creation-stream-header { align-items: flex-start; flex-direction: column; gap: 6px; } .mixed-preview-detail .mixed-preview-art { max-width: 100%; } }
+@media (prefers-reduced-motion: reduce) { .mixed-preview-art.is-playing > img { animation: none; } }
 .project-library-view { width: 100%; max-width: 1420px; margin: 0 auto; animation: asset-view-in .24s ease both; }
 .project-library-header { margin-bottom: 24px; }
 .project-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }

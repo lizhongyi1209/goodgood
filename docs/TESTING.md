@@ -497,6 +497,11 @@ The timestamped result of the latest verified gate belongs in
 
 ### Component
 
+- GG-037 mock fixtures cover mixed media, ratios, queued/running/failed/completed
+  card states, shared detail navigation, clearly labelled playback simulation,
+  preview-only opt-in, and no generation/persistence writes. Browser review uses
+  existing Chrome computer use; this is visual evidence, not provider evidence.
+
 - Empty creation state.
 - Root and `/create` direct access, refresh, and Back/Forward equivalence.
 - Composer open/closed drawer without value loss.

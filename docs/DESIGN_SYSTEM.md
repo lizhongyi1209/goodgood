@@ -258,6 +258,12 @@ individual icon. Upload, settings, and send align to the same 40px box.
 
 ## Image presentation
 
+- GG-037 opt-in style prototype mixes image and video output cards in the same
+  four-column / narrow two-column masonry. Video cards use a compact play/time
+  overlay, not an embedded full-width player; progress occupies the same slot.
+  Shared detail keeps a complete preview, parameters, and mixed thumbnail rail.
+  This prototype is labelled simulation and awaits owner visual acceptance.
+
 - The asset library separates generated images from uploaded materials without
   making either look like a file-management table. Material cards preserve the
   image's real ratio and keep filename/dimensions subordinate to the image.

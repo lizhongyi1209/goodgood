@@ -43,7 +43,9 @@
 | GG-035 | Seedance 线路与 O1Key 接口契约 | 线路 UI、标准 Doubao/备用 HC adapter、端点契约与一次标准线路真实视频均已验证；暂不接定价和产品提交 | [任务](tasks/GG-035-seedance-provider-lines.md) |
 | GG-036 | Seedance 页面真实接口实测 | 本地门禁通过，现有 Chrome 已打开“接口可用”专页；待用户提交一次实测，不接定价/持久化/生产 | [任务](tasks/GG-036-seedance-page-smoke.md) |
 
-GG-024—GG-036 已由隔离任务占用；下一个普通产品需求从 **GG-037** 分配并检查是否已被占用。每次 alpha 发布仍须取得
+| GG-037 | 图片与视频混排、紧凑状态及统一详情样式模拟 | 本地模拟与门禁通过，现有 Chrome 专页已检查；待视觉确认，不接真实生成/持久化 | [任务](tasks/GG-037-mixed-media-style-preview.md) |
+
+GG-024—GG-037 已由隔离任务占用；下一个普通产品需求从 **GG-038** 分配并检查是否已被占用。每次 alpha 发布仍须取得
 新鲜、精确绑定候选的证据并通过门禁；本次证据不能复用。
 完整发布证据见[累计发布记录](releases/2026-09-09-cumulative-alpha-release.md)。
 
