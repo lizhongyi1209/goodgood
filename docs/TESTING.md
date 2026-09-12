@@ -593,6 +593,12 @@ The timestamped result of the latest verified gate belongs in
   Real smoke accepts credentials only by an explicitly named file plus
   `--execute`, submits one minimal task, reuses its returned task ID for polling,
   and never prints the credential or provider result URL.
+- GG-036 page-smoke coverage proves the route is disabled by default and in
+  production, accepts only loopback/same-origin writes, reads only an explicit
+  credential file, submits current video parameters once, polls only the
+  returned task ID, renders pending/failure/playable states, blocks references,
+  and never reaches `/api/generations`. Browser acceptance uses the existing
+  Chrome tab and does not use Playwright.
 - Callback verification and duplicate callback handling.
 - The M5 fake O1Key gateway exhaustively proves all 42 combinations of the 14
   product-defined aspect ratios and `1K` / `2K` / `4K` pass unchanged to

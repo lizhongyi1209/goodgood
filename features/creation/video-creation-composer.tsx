@@ -13,6 +13,7 @@ import { Slider } from "@/components/ui/slider";
 import { CreationModeSwitch } from "@/features/creation/creation-mode-switch";
 import { getRatioFrame } from "@/features/creation/generation-options";
 import { VideoMaterialCreationDialog } from "@/features/creation/video-material-creation-dialog";
+import type { LocalVideoPreviewAvailability } from "@/features/creation/http-video-preview-boundary";
 import {
   VIDEO_GENERATION_MODEL_CATALOG,
   VIDEO_GENERATION_MODE_OPTIONS,
@@ -37,6 +38,7 @@ import {
   Film,
   ImagePlus,
   Images,
+  LoaderCircle,
   SlidersHorizontal,
   Upload,
   Volume2,
@@ -55,6 +57,8 @@ export type VideoCreationComposerProps = Readonly<{
   durationSeconds: number;
   generateAudio: boolean;
   drawerOpen: boolean;
+  interfaceAvailability: LocalVideoPreviewAvailability;
+  isGenerating: boolean;
   onModeChange: (mode: CreationMode) => void;
   onPromptChange: (prompt: string) => void;
   onReferenceFiles: (files: readonly File[]) => void;
@@ -107,6 +111,8 @@ export function VideoCreationComposer({
   durationSeconds,
   generateAudio,
   drawerOpen,
+  interfaceAvailability,
+  isGenerating,
   onModeChange,
   onPromptChange,
   onReferenceFiles,
@@ -146,6 +152,12 @@ export function VideoCreationComposer({
   const canUploadReference = referenceInputAccept.length > 0;
   const activeRatio = VIDEO_RATIO_OPTIONS.find((item) => item.id === aspectRatio) ?? VIDEO_RATIO_OPTIONS[0];
   const ratioFrame = getRatioFrame(activeRatio.value ?? 16 / 9);
+  const interfaceAvailable = interfaceAvailability === "available";
+  const interfaceLabel = interfaceAvailability === "checking"
+    ? "接口检查中"
+    : interfaceAvailable
+      ? "接口可用"
+      : "接口待接入";
 
   useEffect(() => {
     const element = promptInputRef.current;
@@ -233,10 +245,10 @@ export function VideoCreationComposer({
         <div className="prompt-actions">
           <span
             className="composer-price video-interface-state"
-            aria-label="视频接口接入后显示预计积分"
-            title="视频接口与计价将在下一阶段接入"
+            aria-label={interfaceAvailable ? "本地视频实测接口可用" : interfaceLabel}
+            title={interfaceAvailable ? "本地实测模式，不计入资产库" : "视频接口与计价将在下一阶段接入"}
           >
-            接口待接入
+            {interfaceLabel}
           </span>
           <button
             className={`prompt-action settings-toggle ${drawerOpen ? "active" : ""}`}
@@ -246,8 +258,15 @@ export function VideoCreationComposer({
           >
             <SlidersHorizontal size={18} />
           </button>
-          <button className="send-button" aria-label="生成视频" onClick={onGenerate}>
-            <span className="feihong-icon" aria-hidden="true" />
+          <button
+            className="send-button"
+            aria-label={isGenerating ? "视频生成中" : "生成视频"}
+            disabled={!interfaceAvailable || isGenerating}
+            onClick={onGenerate}
+          >
+            {isGenerating
+              ? <LoaderCircle className="spin" size={17} aria-hidden="true" />
+              : <span className="feihong-icon" aria-hidden="true" />}
           </button>
         </div>
       </div>
@@ -467,7 +486,10 @@ export function VideoCreationComposer({
                 </div>
               </div>
               <div className="video-interface-note">
-                <Upload size={12} />当前仅保存于本次页面会话，接口接入后再上传
+                <Upload size={12} />
+                {interfaceAvailable
+                  ? "本地实测接口已启用，结果不会写入资产库"
+                  : "当前仅保存于本次页面会话，接口接入后再上传"}
               </div>
             </div>
           </div>

@@ -102,14 +102,14 @@ test("GG-034 reuses image, video, and audio assets without uploading them again"
   assert.doesNotMatch(selection, /uploadReferenceFiles|URL\.createObjectURL/);
 });
 
-test("GG-034 never routes the preview video action through image generation", async () => {
+test("GG-034 video action remains isolated from image generation after GG-036", async () => {
   const page = await read("app/page.tsx");
-  const start = page.indexOf("const handleVideoGenerate = () =>");
+  const start = page.indexOf("const handleVideoGenerate = async () =>");
   const end = page.indexOf("const handleReferenceFiles", start);
   const handler = page.slice(start, end);
 
   assert.ok(start >= 0 && end > start);
-  assert.match(handler, /视频生成接口尚未接入/);
+  assert.match(handler, /submitLocalVideoPreview/);
   assert.doesNotMatch(handler, /generationBoundary|\/api\/generations|runGeneration/);
 });
 

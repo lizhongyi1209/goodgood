@@ -277,8 +277,12 @@ GG-035 adds a separate Seedance transport adapter without widening the image
 generation route. Product line `standard` resolves server-side to O1Key
 `doubao`; `backup` resolves to `hc`. The adapter owns the exact material and
 video create/query paths, provider model mapping, ordered multimodal `content`,
-and conversion from product `4K` to provider `4k`. It exposes no browser route
-or credential and does not enable unpriced video submissions; durable video
+and conversion from product `4K` to provider `4k`. GG-036 adds a distinct
+`/api/video/preview` loopback-only development route around that adapter. It is
+disabled by default and always disabled in production, reads a credential from
+an explicitly named server file, accepts text-only page smoke requests, and
+returns only task status plus the temporary result URL. It never uses the image
+generation route or writes PostgreSQL, queues, credits, or Assets. Durable video
 jobs, ownership, billing, result ingestion, and asset persistence remain the
 next backend boundary.
 Project index/detail, asset index/detail, and root creation are URL-addressable.

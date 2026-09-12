@@ -69,6 +69,12 @@ import {
   MOCK_GENERATION_OUTPUTS,
 } from "@/features/creation/mock-generation-boundary";
 import { createHttpGenerationBoundary } from "@/features/creation/http-generation-boundary";
+import {
+  readLocalVideoPreviewAvailability,
+  submitLocalVideoPreview,
+  type LocalVideoPreviewAvailability,
+  type LocalVideoPreviewJob,
+} from "@/features/creation/http-video-preview-boundary";
 import { uploadReferenceFiles } from "@/features/references/http-reference-upload";
 import {
   listReferenceMaterials,
@@ -239,6 +245,15 @@ type CreationStreamItem =
   | { kind: "image"; key: string; detailKey: string; ratio: number; batch: AssetBatch; image: GenerationOutput; index: number };
 type AssetGalleryItem = { key: string; ratio: number; batch: AssetBatch; image: GenerationOutput; index: number };
 type DetailImage = AssetGalleryItem;
+
+function localVideoStatusLabel(status: string, progress: number | null) {
+  if (status === "submitting") return "正在提交";
+  if (status === "queued") return "已排队";
+  if (status === "in_progress") return progress === null ? "正在生成" : `正在生成 ${progress}%`;
+  if (status === "completed") return "生成完成";
+  if (status === "failed") return "生成失败";
+  return "正在处理";
+}
 type DetailSource = "creation" | "assets";
 type AssetDetailNavigationState = Readonly<{
   returnHref: string;
@@ -486,6 +501,8 @@ export default function Home({
   const [videoResolution, setVideoResolution] = useState<VideoResolution>(DEFAULT_VIDEO_RESOLUTION);
   const [videoDurationSeconds, setVideoDurationSeconds] = useState(DEFAULT_VIDEO_DURATION_SECONDS);
   const [videoGenerateAudio, setVideoGenerateAudio] = useState(true);
+  const [videoInterfaceAvailability, setVideoInterfaceAvailability] = useState<LocalVideoPreviewAvailability>("checking");
+  const [videoPreviewJob, setVideoPreviewJob] = useState<LocalVideoPreviewJob | null>(null);
   const [activeView, setActiveView] = useState<ActiveView>("create");
   const [generationRuns, setGenerationRuns] = useState<readonly TrackedGenerationRun[]>([]);
   const [creationBatches, setCreationBatches] = useState<AssetBatch[]>([]);
@@ -551,6 +568,7 @@ export default function Home({
   const activeGenerationRuns = getActiveGenerationRuns(generationRuns);
   const failedGenerationRuns = getFailedGenerationRuns(generationRuns);
   const isGenerating = activeGenerationRuns.length > 0;
+  const isVideoGenerating = Boolean(videoPreviewJob && !videoPreviewJob.terminal);
   const hasGenerationError = failedGenerationRuns.length > 0;
   const totalCreationImages = creationBatches.reduce((total, batch) => total + batch.images.length, 0);
   const creationDetailItems = getDetailImages(creationBatches);
@@ -1079,6 +1097,16 @@ export default function Home({
     if (draftAutosaveTimerRef.current) window.clearTimeout(draftAutosaveTimerRef.current);
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    void readLocalVideoPreviewAvailability().then((available) => {
+      if (active) setVideoInterfaceAvailability(available ? "available" : "unavailable");
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   useEffect(() => () => {
     referenceObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
     referenceObjectUrlsRef.current.clear();
@@ -1588,12 +1616,59 @@ export default function Home({
     ]);
   };
 
-  const handleVideoGenerate = () => {
+  const handleVideoGenerate = async () => {
     if (!videoPrompt.trim()) {
       toast.error("请先输入视频描述");
       return;
     }
-    toast.info("视频生成接口尚未接入，当前提示词、素材与参数已保留");
+    if (videoInterfaceAvailability !== "available") {
+      toast.info("本地视频实测接口未启用，当前提示词、素材与参数已保留");
+      return;
+    }
+    if (videoReferences.length > 0) {
+      toast.info("本次页面实测先支持文生视频；请移除素材后提交，素材仍保留在当前会话中");
+      return;
+    }
+    if (isVideoGenerating) return;
+
+    const localTaskId = `local_${globalThis.crypto.randomUUID()}`;
+    setVideoPreviewJob({
+      taskId: localTaskId,
+      status: "submitting",
+      progress: 0,
+      resultUrl: null,
+      error: null,
+      terminal: false,
+    });
+    try {
+      const result = await submitLocalVideoPreview({
+        prompt: videoPrompt.trim(),
+        generationMode: videoGenerationMode,
+        modelId: videoModelId,
+        line: videoProviderLine,
+        ratio: videoAspectRatio,
+        resolution: videoResolution,
+        duration: videoDurationSeconds,
+        generateAudio: videoGenerateAudio,
+        references: [],
+      }, setVideoPreviewJob);
+      if (result.status === "completed" && result.resultUrl) {
+        toast.success("视频已生成，可在当前页面播放或下载");
+      } else if (result.status === "failed") {
+        toast.error(result.error ?? "视频生成失败，输入与参数已保留");
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "本地视频实测接口暂时不可用。";
+      setVideoPreviewJob({
+        taskId: localTaskId,
+        status: "failed",
+        progress: null,
+        resultUrl: null,
+        error: message,
+        terminal: true,
+      });
+      toast.error(message);
+    }
   };
 
   const handleReferenceFiles = (files: readonly File[]) => {
@@ -2944,6 +3019,8 @@ export default function Home({
               durationSeconds={videoDurationSeconds}
               generateAudio={videoGenerateAudio}
               drawerOpen={drawerOpen}
+              interfaceAvailability={videoInterfaceAvailability}
+              isGenerating={isVideoGenerating}
               onModeChange={handleCreationModeChange}
               onPromptChange={setVideoPrompt}
               onReferenceFiles={handleVideoReferenceFiles}
@@ -2957,7 +3034,7 @@ export default function Home({
               onDurationChange={setVideoDurationSeconds}
               onGenerateAudioChange={setVideoGenerateAudio}
               onDrawerOpenChange={setDrawerOpen}
-              onGenerate={handleVideoGenerate}
+              onGenerate={() => void handleVideoGenerate()}
             />
           )}
 
@@ -2987,7 +3064,40 @@ export default function Home({
             </div>
           )}
 
-          {!isGenerating && !hasGenerationError && creationBatches.length === 0 ? (
+          {creationMode === "video" && videoPreviewJob ? (
+            <section className="video-preview-result" aria-label="本地视频实测结果" aria-live="polite">
+              <header>
+                <div className="video-preview-result-title">
+                  <span className="model-icon seedance"><Film size={18} /></span>
+                  <div>
+                    <strong>{getVideoGenerationModel(videoModelId).name}</strong>
+                    <small>{videoProviderLine === "standard" ? "标准线路" : "备用线路"} · {videoResolution} · {videoDurationSeconds} 秒</small>
+                  </div>
+                </div>
+                <span className={`video-preview-status ${videoPreviewJob.status}`}>
+                  {!videoPreviewJob.terminal && <LoaderCircle className="spin" size={13} />}
+                  {localVideoStatusLabel(videoPreviewJob.status, videoPreviewJob.progress)}
+                </span>
+              </header>
+              {videoPreviewJob.resultUrl ? (
+                <video controls playsInline src={videoPreviewJob.resultUrl} aria-label="Seedance 生成视频" />
+              ) : videoPreviewJob.error ? (
+                <div className="video-preview-error" role="alert">
+                  <CircleAlert size={17} />
+                  <span>{videoPreviewJob.error}</span>
+                </div>
+              ) : (
+                <div className="video-preview-pending">
+                  <LoaderCircle className="spin" size={20} />
+                  <span>任务已提交，页面会持续查询同一个任务，不会重复创建。</span>
+                </div>
+              )}
+              <footer>
+                <span>{videoPreviewJob.taskId.startsWith("local_") ? "正在获取任务编号" : videoPreviewJob.taskId}</span>
+                <span>本地实测 · 不写入资产库</span>
+              </footer>
+            </section>
+          ) : !isGenerating && !hasGenerationError && creationBatches.length === 0 ? (
             <section className="creation-empty-state" aria-label="尚未开始创作">
               <Image src="/goodgood-mark.svg" alt="" width={32} height={24} />
               <h2>{creationMode === "video" ? "描述你想创作的视频" : "描述你想创作的画面"}</h2>

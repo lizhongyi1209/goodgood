@@ -272,9 +272,13 @@ descriptions to fill space.
   click freezes the current composer values and submits one independent job.
   Active styling and the creation stream communicate progress without blocking
   another click. There is no product-side concurrent-job count ceiling.
-- Until the video API is implemented, video Feihong validates a non-empty
-  prompt and reports `视频生成接口尚未接入`; it must not call the image generation
-  boundary or render a synthetic successful result.
+- By default, video Feihong remains unavailable and must not call the image
+  generation boundary or render a synthetic result. GG-036 may enable a
+  loopback-only page-smoke route with an explicit file credential; that route
+  supports text-to-video only, disables repeat submission while its one task is
+  active, polls the returned task ID, and labels the playable result as local and
+  not persisted. Reference media stays in the draft and blocks this temporary
+  submission until the durable upload/material boundary exists.
 - The Seedance transport contract uses `POST /v1/seedance/assets` and its typed
   status query for explicit materials, plus `POST /v1/video/generations` and its
   task query for videos. Multimodal with no references is text-to-video; the

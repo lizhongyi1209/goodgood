@@ -1,5 +1,7 @@
 import vinext from "vinext";
 import { defineConfig } from "vite";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import hostingConfig from "./.openai/hosting.json";
 import { sites } from "./build/sites-vite-plugin";
 
@@ -8,12 +10,36 @@ const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
 
 const { d1, r2 } = hostingConfig;
 
+function loadLocalSeedancePreviewVars() {
+  const keyFile = process.env.GOODGOOD_LOCAL_SEEDANCE_API_KEY_FILE?.trim();
+  const absoluteKeyFile = Boolean(
+    keyFile && (path.isAbsolute(keyFile) || path.win32.isAbsolute(keyFile)),
+  );
+  if (process.env.GOODGOOD_LOCAL_SEEDANCE_PREVIEW !== "true" || !absoluteKeyFile || !keyFile) {
+    return {};
+  }
+  let apiKey = "";
+  try {
+    apiKey = readFileSync(keyFile, "utf8").trim();
+  } catch {
+    // The route reports an unavailable state without exposing the operator path.
+  }
+  return {
+    GOODGOOD_LOCAL_SEEDANCE_PREVIEW: "true",
+    GOODGOOD_LOCAL_SEEDANCE_KEY_PATH: keyFile,
+    ...(apiKey ? { GOODGOOD_LOCAL_SEEDANCE_INJECTED_API_KEY: apiKey } : {}),
+  };
+}
+
+const localSeedancePreviewVars = loadLocalSeedancePreviewVars();
+
 // macOS Seatbelt blocks FSEvents, so Codex previews need polling for HMR.
 const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
 
 const localBindingConfig = {
   main: "./worker/index.ts",
   compatibility_flags: ["nodejs_compat"],
+  vars: localSeedancePreviewVars,
   d1_databases: d1
     ? [
         {

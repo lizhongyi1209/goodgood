@@ -176,6 +176,17 @@ prefer a dedicated least-privilege Bearer credential from its secret store. It
 must not enter checked-in Compose values, an image layer, browser JavaScript,
 logs, or retained test output.
 
+GG-036's Seedance page smoke is a separate development-only process boundary,
+not a Compose or production setting. Start it only on a loopback host with
+`GOODGOOD_LOCAL_SEEDANCE_PREVIEW=true` and
+`GOODGOOD_LOCAL_SEEDANCE_API_KEY_FILE` pointing to an absolute operator-owned
+temporary file, then run `npm run dev:local -- --host 127.0.0.1 --port <port>`.
+The Vite host reads that file once and injects its value only into the local RSC
+Worker binding because Workerd cannot read an arbitrary Windows host path.
+The route remains unavailable when either setting is absent and unconditionally
+fails in production. Stop the dev process after manual acceptance; never copy
+the temporary key into `.env`, source, output, image layers, or browser state.
+
 M5's local acceptance required no Cloudflare R2 bucket. The worker reads
 already validated reference bytes from private RustFS and uploads them
 server-to-server through O1Key's temporary attachment endpoint. Its returned

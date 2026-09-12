@@ -1,12 +1,12 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-12
-- Current phase: GG-035 Seedance 标准/备用线路 UI、O1Key provider 契约与一次标准线路真实视频均已完成本地验证。
-- Current objective: 保持现有图片和 GG-034 视频能力不变，验证标准 Doubao、备用 HC 的请求端点与 payload；暂不接视频定价或产品提交。
+- Current phase: GG-036 正在把已验证的 Seedance adapter 作为显式、本地、失败关闭的页面实测入口开放。
+- Current objective: 保持图片链路和现有视频参数不变，让站长从现有 Chrome 页面提交一次真实文生视频并查看状态/结果；暂不接视频定价或持久化。
 
 ## Current checkpoint
 
-- 当前工作树：`feature/GG-035-seedance-provider`（`F:/goodgood-worktrees/GG-035`），基于 GG-034 已验证提交 `6a09a88`。其他 worktree 保持不变。
+- 当前工作树：`feature/GG-036-seedance-page-smoke`（`F:/goodgood-worktrees/GG-036`），基于 GG-035 已验证提交 `ff37d16`。其他 worktree 保持不变。
 - 正式入口仍为 `https://goodgood.o1key.com`；`staging-goodgood.o1key.com` 只是历史名称，不是本任务的测试入口。
 - 组合来源：完整基础框架 `07e9ea5`，再合入 GG-029、GG-030、GG-031；不使用旧页面另起测试版本，也不恢复旧 C6。
 - 代码范围同时包含账户管理、积分记录/账本、企业/分销身份、直属上下级、充值来源积分划拨、邮箱 OTP、企业 Workspace、成员额度、消费记录、资产审阅和管理审计。
@@ -41,14 +41,19 @@
   且返回视频输出。密钥和结果 URL 均未进入仓库。
 - 完整本地门禁通过：346 项测试中 332 通过、14 个 opt-in 跳过、0 失败；lint、TypeScript、
   生产构建均通过。
-- Next action: 用户检查 `http://127.0.0.1:32137/create`；确认视频定价后另开持久任务、结果资产
-  与浏览器提交入口任务。
-- Blockers: provider 契约无阻塞；视频定价、持久任务、结果资产与产品提交入口按用户要求后续处理。
+- GG-036 新增默认/production 关闭的 `/api/video/preview` 本地路由；密钥只由服务端读取显式文件，
+  页面可提交现有文生参数、轮询同一任务并播放临时结果，不写积分、数据库、队列或资产库。
+- GG-036 完整本地门禁通过：352 项测试中 338 通过、14 个 opt-in 跳过、0 失败；lint、TypeScript、
+  本地构建均通过。接口状态端点返回 `200 / available: true`，未创建 provider 任务。
+- 现有 Chrome 已保留 `http://127.0.0.1:32138/create` 专用页并切到视频，页面显示“接口可用”；
+  未使用 Playwright、未替用户填写或提交。
+- Next action: 用户从已打开页面提交一次真实文生视频；随后根据验收再决定正式持久化与定价。
+- Blockers: 无；素材与正式持久/计价链路按用户要求后续处理。
 
 ## Verification sequence
 
-1. 用户在保留的 Chrome 专用页检查视频模式、Seedance 参数和资产库选图入口。
-2. 用户提供视频接口后另建后端接入任务；本阶段不提交视频请求或上传新的视频模式素材。
+1. 在 loopback 专用端口启动 GG-036，并在现有 Chrome 专用页检查“接口可用”。
+2. 用户从页面发起一次授权的真实文生视频，页面只轮询返回的同一任务 ID。
 3. 推送、main 合入和生产部署必须获得新的明确授权；部署前按 ADR 0047 排空旧 GPT route 的活动 attempt。
 
 ## Milestones
@@ -66,13 +71,15 @@
 | GG-032 | 待用户确认 | 完整基础 + OTP + 企业的本地组合验收完成 |
 | GG-033 | 本地完成，待用户检查 | GPT IMAGE 2.5 模型扩展、GPT IMAGE 2 provider ID 更新与三模型真实本地验证均完成 |
 | GG-034 | 本地完成，待用户检查 | 图片 / 视频切换、Seedance 参数、默认多模态/首尾帧、模式化素材上限与统一媒体资产选择；不接真实接口 |
+| GG-035 | 本地完成 | Seedance 标准/备用线路、O1Key adapter 与一次标准线路真实文生视频 |
+| GG-036 | 待用户实测 | 本地页面显示接口可用；无定价、持久化或生产开放 |
 | 完整 C6 / M9 | 搁置 | 删除、举报、商业支付等，见 GG-900—GG-902 |
 
 ## New-session recovery
 
 1. 阅读根 `AGENTS.md`、[CURRENT_STATE](CURRENT_STATE.md)、[WORKFLOW](WORKFLOW.md)、本页和 [BACKLOG](BACKLOG.md)，检查分支/worktree/未提交改动。
-2. 从 `feature/GG-034-video-creation-frontend` 恢复；先读 GG-034 任务卡和 ADR 0048，不恢复旧 C6。
-3. 本任务不得提交视频 provider 请求；main 合入和生产部署仍需要新的明确授权。
+2. 从 `feature/GG-036-seedance-page-smoke` 恢复；先读 GG-036 任务卡和 ADR 0050，不恢复旧 C6。
+3. 只有站长从显式开启的本地页面发起本次真实视频；main 合入和生产部署仍需要新的明确授权。
 
 ## History and update policy
 

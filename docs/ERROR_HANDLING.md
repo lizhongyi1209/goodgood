@@ -108,6 +108,14 @@ the upstream field. Invalid thinking values, non-boolean search values, or enabl
 Nano-only options on another model return `M3_SLICE_UNSUPPORTED` before credit
 reservation or provider submission. The provider adapter repeats this
 fail-closed model isolation check.
+
+The GG-036 Seedance page-smoke route fails closed unless the process is
+non-production, the request targets loopback, the explicit preview flag is true,
+and an absolute file credential is readable. Cross-origin writes are rejected.
+Provider rejection or polling failure appears in the local video result while
+the prompt and parameters stay intact; the browser never retries the POST or
+falls back to the image route. Reference media blocks the temporary text-only
+submission instead of sending browser-only or private URLs upstream.
 GPT's omitted quality/background/output-format values normalize to
 `auto` / `auto` / `png`. Invalid enum values, GPT-only options on another model,
 or `transparent` plus `jpeg` return `M3_SLICE_UNSUPPORTED` before a batch,
