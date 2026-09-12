@@ -114,11 +114,11 @@ individual icon. Upload, settings, and send align to the same 40px box.
   materials. Existing-material selection uses a focused responsive dialog with
   1:1 centered previews, visible selection, existing-tray disabled state, and a
   single confirmed add action.
-- In video mode the source menu uses one `上传素材` row with quiet secondary copy
-  for the currently accepted media types, followed by `从资产库选择` and a separated
+- In video mode the source menu uses one unadorned `上传素材` row, followed by
+  `从资产库选择` and a separated
   `创建素材` action. The creation action opens a focused checklist; no item is
   selected by default, and ordinary upload never implies material creation.
-- Material creation status and sequential progress belong in that focused flow,
+- Material creation status and concurrent progress belong in that focused flow,
   not as more badges over the 64px previews. Expired or unavailable historical
   material uses one concise inline recovery message and `重新创建` action before
   submission.

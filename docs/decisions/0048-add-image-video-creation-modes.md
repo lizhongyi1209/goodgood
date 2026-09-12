@@ -49,7 +49,7 @@ video request through the existing billable image route.
   user intents. One `上传素材` action accepts the media types still allowed by
   the active mode and never creates a provider material automatically. A
   separate `创建素材` flow starts with nothing selected, lets the creator choose
-  only the references that require it, and submits them through a bounded queue
+  only the references that require it, and submits the selected set concurrently
   once the backend contract exists; non-human references may stay ordinary.
 - Provider-created materials are expiring references, not permanently valid
   assets. Every historical material must pass a fresh availability check before

@@ -58,7 +58,7 @@ export function VideoMaterialCreationDialog({
           </header>
 
           <div className="video-material-creation-intro">
-            <strong>提交后将逐个创建</strong>
+            <strong>提交后将并发创建</strong>
             <span>历史素材会在视频提交前重新检查；失效时需要重新创建。</span>
           </div>
 
@@ -110,7 +110,7 @@ export function VideoMaterialCreationDialog({
           <footer className="reference-library-dialog-footer video-material-creation-footer">
             <span>
               {selectedReferences.length > 0
-                ? `已选 ${selectedReferences.length} 个，将按顺序创建`
+                ? `已选 ${selectedReferences.length} 个，将并发创建`
                 : "默认不创建任何素材"}
             </span>
             <div>

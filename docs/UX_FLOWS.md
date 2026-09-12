@@ -227,7 +227,7 @@ descriptions to fill space.
   its native picker accepts only image, video, and audio MIME types still allowed
   by the active mode. Uploading creates an ordinary session reference only.
   `创建素材` is a separate, opt-in selection dialog with nothing preselected and
-  a serial-processing promise. Until the material API arrives, its commit action
+  a concurrent-processing promise. Until the material API arrives, its commit action
   is visibly unavailable rather than simulating a returned material ID.
   Before final video submission, every historical created material is checked
   again. Valid items may proceed; expired, evicted, or indeterminate items keep

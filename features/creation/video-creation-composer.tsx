@@ -195,9 +195,6 @@ export function VideoCreationComposer({
                 onSelect={() => referenceInputRef.current?.click()}
               >
                 <Upload size={15} />上传素材
-                <span className="reference-source-limit">
-                  {generationMode === "first_last_frame" ? "仅图片" : "图片 / 视频 / 音频"}
-                </span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 disabled={referenceTotalRemaining <= 0}

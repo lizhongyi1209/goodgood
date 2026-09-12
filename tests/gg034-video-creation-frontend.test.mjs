@@ -56,7 +56,10 @@ test("GG-034 video composer exposes creator parameters and multimedia references
     assert.match(composer, new RegExp(label));
   }
   assert.match(composer, />上传素材/);
-  assert.match(composer, /图片 \/ 视频 \/ 音频/);
+  assert.doesNotMatch(
+    composer,
+    /generationMode === "first_last_frame" \? "仅图片" : "图片 \/ 视频 \/ 音频"/,
+  );
   assert.match(composer, /从资产库选择/);
   assert.match(composer, /onOpenReferenceLibrary/);
   assert.doesNotMatch(composer, />上传图片/);
@@ -64,7 +67,8 @@ test("GG-034 video composer exposes creator parameters and multimedia references
   assert.doesNotMatch(composer, />上传音频/);
   assert.match(composer, />创建素材/);
   assert.match(materialCreation, /默认不创建任何素材/);
-  assert.match(materialCreation, /提交后将逐个创建/);
+  assert.match(materialCreation, /提交后将并发创建/);
+  assert.match(materialCreation, /个，将并发创建/);
   assert.match(materialCreation, /历史素材会在视频提交前重新检查；失效时需要重新创建/);
   assert.match(materialCreation, /creationAvailable \? `创建/);
   assert.match(materialCreation, /接口待接入/);

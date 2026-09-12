@@ -520,7 +520,7 @@ The timestamped result of the latest verified gate belongs in
   classifies mixed selections before applying mode/model capacity. Material
   creation remains explicit, starts with no selected references, never runs on
   ordinary upload, and is unavailable while its API is absent. Provider-backed
-  tests must cover valid, expired, evicted, indeterminate, recreate, sequential
+  tests must cover valid, expired, evicted, indeterminate, recreate, concurrent
   creation, and partial-failure paths before enabling video submission.
 - Reference tray from 0, 1, 9, 10, and over-limit inputs; visible contiguous
   ordinals; drag and `Alt + ← / →` reorder semantics; removal renumbering.
