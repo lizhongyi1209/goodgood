@@ -62,8 +62,9 @@ test("GG-034 video composer exposes creator parameters and multimedia references
   assert.match(composer, /aria-label="视频生成模式"/);
   assert.match(composer, /referenceCounts\.image.*referenceLimits\.imageLimit/);
   assert.match(composer, /`图片 \$\{ordinal\}`/);
+  assert.match(composer, /generationMode === "first_last_frame"[\s\S]*videoReferenceRoleLabel\(reference\.role\)[\s\S]*mediaLabel\.replace\(" ", ""\)/);
   assert.doesNotMatch(composer, /设置\$\{mediaLabel\}用途/);
-  assert.match(composer, /videoReferenceRoleLabel\(reference\.role\)/);
+  assert.doesNotMatch(composer, /className="video-reference-role/);
   assert.match(composer, /接口待接入/);
   assert.doesNotMatch(composer, /生成数量/);
 });

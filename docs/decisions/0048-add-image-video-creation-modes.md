@@ -41,6 +41,10 @@ video request through the existing billable image route.
   show no available assets; no fixture may imply durable media that does not yet
   exist. New local video-mode material remains session-only until its
   authenticated backend contract exists.
+- Keep video-reference labels inside the preview but mode-specific and singular:
+  multimodal uses one lower-left media ordinal (`图片1 / 视频1 / 音频1`), while
+  first/last-frame uses only `首帧 / 尾帧`. Do not add a second upper-left role
+  label; the accessible description retains the full media name and role.
 - Do not submit video mode to `/api/generations`. The Feihong action reports
   that the video interface is awaiting connection while preserving all input.
 - Video editing, extension, timestamp editing, and durable mixed-media assets

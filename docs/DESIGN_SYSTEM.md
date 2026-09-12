@@ -115,9 +115,11 @@ individual icon. Upload, settings, and send align to the same 40px box.
   1:1 centered previews, visible selection, existing-tray disabled state, and a
   single confirmed add action.
 - Video mode keeps the same tray silhouette for local image, video, and audio
-  references. Separate compact overlays show media order (`图片 1 / 视频 1 / 音频 1`)
-  and mode-derived purpose (`参考图片 / 参考视频 / 参考音频 / 首帧 / 尾帧`);
-  do not expose a manual role selector. Audio uses a quiet
+  references. It uses exactly one compact lower-left overlay: multimodal shows
+  the media ordinal without a space (`图片1 / 视频1 / 音频1`), while first/last-
+  frame shows only `首帧 / 尾帧`. Do not add an upper-left role label or expose a
+  manual role selector. The accessible description retains the full media type,
+  ordinal, filename, and role. Audio uses a quiet
   neutral placeholder rather than invented artwork. Video mode uses the same
   focused picker as image mode, adding quiet `全部 / 图片 / 视频 / 音频` filters,
   count badges, media labels, and type-specific empty states. Image cards retain

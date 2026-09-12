@@ -235,9 +235,6 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .video-reference-thumbnail video { width: 100%; height: 100%; display: block; object-fit: cover; }
 .video-reference-thumbnail.audio { background: linear-gradient(145deg,#f3e6e5,#f6f6f8); color: var(--accent-deep); }
 .video-reference-placeholder { width: 100%; height: 100%; display: grid; place-items: center; }
-.video-reference-role { position: absolute; z-index: 2; top: 4px; left: 4px; max-width: calc(100% - 23px); min-height: 17px; padding: 1px 4px; border: 0; border-radius: 5px; display: inline-flex; align-items: center; gap: 2px; overflow: hidden; background: rgba(255,255,255,.9); color: #494953; font-size: 8px; line-height: 1.2; white-space: nowrap; text-overflow: ellipsis; backdrop-filter: blur(4px); }
-.video-reference-role:hover { background: white; color: var(--accent-deep); }
-.video-reference-role.is-static { pointer-events: none; }
 .reference-source-limit { margin-left: auto; color: #9999a2; font-size: 9px; }
 .reference-source-menu [data-disabled] .reference-source-limit { color: #b7b7bf; }
 .reference-thumbnail, .reference-add-more { width: var(--reference-preview-width); height: var(--reference-preview-height); flex: 0 0 auto; border-radius: 10px; }

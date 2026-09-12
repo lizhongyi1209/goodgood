@@ -272,6 +272,9 @@ export function VideoCreationComposer({
                 : reference.mediaType === "video"
                   ? `视频 ${ordinal}`
                   : `音频 ${ordinal}`;
+              const previewLabel = generationMode === "first_last_frame"
+                ? videoReferenceRoleLabel(reference.role)
+                : mediaLabel.replace(" ", "");
               return (
                 <div
                   className={`reference-thumbnail video-reference-thumbnail ${reference.mediaType}`}
@@ -289,10 +292,7 @@ export function VideoCreationComposer({
                   ) : (
                     <span className="video-reference-placeholder"><AudioLines size={22} /></span>
                   )}
-                  <span className="reference-thumbnail-ordinal">{mediaLabel}</span>
-                  <span className="video-reference-role is-static">
-                    {videoReferenceRoleLabel(reference.role)}
-                  </span>
+                  <span className="reference-thumbnail-ordinal">{previewLabel}</span>
                   <button
                     className="reference-thumbnail-remove"
                     aria-label={`移除${mediaLabel}`}

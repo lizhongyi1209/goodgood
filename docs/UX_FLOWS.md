@@ -221,6 +221,8 @@ descriptions to fill space.
   accepts only two images and derives `首帧 / 尾帧` from tray order; video/audio
   upload and asset filters are disabled. A model or mode change is blocked when
   retained media exceeds the target capability, without silently removing it.
+  Each preview has one lower-left label only: multimodal displays `图片1 / 视频1 /
+  音频1` ordinals, while first/last-frame displays only `首帧 / 尾帧`.
   Local object URLs remain session-only until
   backend upload and durable mixed-media contracts exist.
 - Settings: attached downward drawer; closing it must not reset values.
