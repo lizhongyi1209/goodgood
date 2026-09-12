@@ -31,6 +31,7 @@ export function createGenerationInputSnapshot(
   const gptImageOptions = resolveGptImageOptionsForModel(draft.modelId, draft);
   return Object.freeze({
     prompt: draft.prompt.trim(),
+    ...(draft.composerPrompt ? { composerPrompt: draft.composerPrompt.trim() } : {}),
     references: Object.freeze(references),
     modelId: draft.modelId,
     aspectRatio: draft.aspectRatio,

@@ -1,4 +1,5 @@
 import { AuthenticationError, sessionExpiredError } from "../auth/errors.mjs";
+import { parsePromptBatch } from "../../shared/contracts/prompt-batch.mjs";
 import { BillingPersistenceError } from "../billing/repository.mjs";
 import {
   ReferencePersistenceError,
@@ -59,6 +60,13 @@ export function validateM3GenerationInput(payload) {
   ) {
     throw new GenerationRequestError("PROJECT_NOT_FOUND", "未找到该项目。", 404);
   }
+  let composerPrompt;
+  if (payload.composerPrompt !== undefined) {
+    composerPrompt = typeof payload.composerPrompt === "string" ? payload.composerPrompt.trim() : "";
+    if (!projectId || !composerPrompt || composerPrompt.length > 4_000 || !parsePromptBatch(composerPrompt).prompts.includes(prompt)) {
+      throw new GenerationRequestError("INVALID_PROMPT", "批量提示词与当前项目输入不一致。");
+    }
+  }
   if (
     !isSupportedGenerationInput({
       aspectRatio: payload.aspectRatio,
@@ -93,6 +101,7 @@ export function validateM3GenerationInput(payload) {
     modelId: payload.modelId,
     ...(projectId ? { projectId } : {}),
     prompt,
+    ...(composerPrompt ? { composerPrompt } : {}),
     references: references.map((reference) => ({ id: reference.id })),
     resolution: payload.resolution,
     ...modelOptions,

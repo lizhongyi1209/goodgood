@@ -62,6 +62,7 @@ Current records:
 - `0050-enable-local-seedance-page-smoke.md`
 - `0051-mixed-media-style-preview.md`
 - `0052-video-count-and-concurrent-runs.md`
+- `0053-delimited-concurrent-prompt-batches.md`
 
 ADR 0043 is allocated in the parallel GG-027 worktree. ADR 0044 belongs to
 GG-028's unshipped Authing-domain branch and is superseded by ADR 0045. ADR 0046
@@ -78,3 +79,5 @@ ADR 0047 adds the GG-033 GPT Image 2.5 product/provider routes.
 ADR 0048 adds the frontend image/video creation mode boundary for GG-034.
 ADR 0049 fixes the standard/backup Seedance provider mapping for GG-035.
 ADR 0050 enables a fail-closed local-only Seedance page smoke route for GG-036.
+
+ADR 0053 adds standalone-delimited concurrent prompt batches for GG-040.

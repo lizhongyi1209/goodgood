@@ -44,6 +44,12 @@
 
 ## Generation failure contract
 
+GG-040 validates nonempty segments before fan-out. Empty segments are ignored;
+an all-delimiter prompt creates no request and keeps the input for correction.
+Each segment keeps the existing independent failure strip or video slot.
+There is no batch-wide rollback: a rejected/insufficient-credit segment does not
+cancel accepted siblings. Retry only the selected segment, never the whole source.
+
 Each failed batch remains visible in the active result region as its own compact
 inline status strip. One run's failure, retry, or settings recovery never clears
 another active or failed run, and failure strips do not enter or redistribute

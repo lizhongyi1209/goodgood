@@ -7,7 +7,9 @@ import { VideoCreationComposer } from "@/features/creation/video-creation-compos
 import { MixedMediaStylePreview } from "@/features/creation/mixed-media-style-preview";
 import { VideoPreviewCard, getVideoPreviewRatio } from "@/features/creation/video-preview-card";
 import { VideoPreviewDetail } from "@/features/creation/video-preview-detail";
-import { createVideoPreviewRuns, isVideoPreviewRunActive, resumeVideoPreviewRun, submitVideoPreviewRuns, updateVideoPreviewRun, type VideoPreviewRun } from "@/features/creation/video-preview-runs";
+import { isVideoPreviewRunActive, resumeVideoPreviewRun, submitVideoPreviewRuns, updateVideoPreviewRun, type VideoPreviewRun } from "@/features/creation/video-preview-runs";
+import { createImagePromptBatch, createImagePromptRuns, createVideoPromptBatch, submitPromptBatch } from "@/features/creation/prompt-batch";
+import { parsePromptBatch, promptContextForRetry } from "@/shared/contracts/prompt-batch.mjs";
 import {
   appendVideoAssetMaterials,
   type VideoAssetMaterial,
@@ -460,6 +462,7 @@ export default function Home({
   const draftSyncedCheckpointRef = useRef(emptyComposerCheckpoint);
   const draftVersionRef = useRef<number | null>(null);
   const latestGenerationRunKeyRef = useRef<string | null>(null);
+  const generationComposerSnapshotsRef = useRef(new Map<string, GenerationInputSnapshot>());
   const retryingGenerationRunKeysRef = useRef(new Set<string>());
   const downloadingImageKeysRef = useRef(new Set<string>());
   const [generationBoundary] = useState(() =>
@@ -613,17 +616,23 @@ export default function Home({
   const displayedAvailableCredits = workspaceId
     ? activeWorkspace?.credit?.budget?.remainingCredits ?? null
     : billingSummary?.account.availableCredits ?? null;
+  const imagePromptBatch = parsePromptBatch(prompt);
+  const imageQuotedPromptCount = Math.max(1, imagePromptBatch.prompts.length);
+  const imageBatchOutputCount = imageQuotedPromptCount * generationCount;
+  const imageBatchCredits = activeBillingQuote
+    ? (BigInt(activeBillingQuote.creditAmount) * BigInt(imageQuotedPromptCount)).toString()
+    : null;
   const composerBillingLabel = billingLoading
     ? "积分读取中"
     : activeBillingQuote
-      ? generationCount === 1
+      ? imageBatchOutputCount <= 1
         ? `${activePerImageCredits} 积分/张`
-        : `${activePerImageCredits} 积分/张 · 共 ${activeBillingQuote.creditAmount}`
+        : `${activePerImageCredits} 积分/张 · 共 ${imageBatchCredits}`
       : "当前模型暂未定价";
   const composerBillingDescription = activeBillingQuote && billingSummary
     ? workspaceId
-      ? `每张 ${activePerImageCredits} 积分，本批 ${activeBillingQuote.creditAmount} 积分，成员剩余额度 ${activeWorkspace?.credit?.budget?.remainingCredits ?? "--"}，企业可用 ${activeWorkspace?.credit?.account?.availableCredits ?? "--"}`
-      : `每张 ${activePerImageCredits} 积分，本批 ${activeBillingQuote.creditAmount} 积分，当前可用 ${billingSummary.account.availableCredits} 积分`
+      ? `每张 ${activePerImageCredits} 积分，本批 ${imageBatchCredits} 积分，成员剩余额度 ${activeWorkspace?.credit?.budget?.remainingCredits ?? "--"}，企业可用 ${activeWorkspace?.credit?.account?.availableCredits ?? "--"}`
+      : `每张 ${activePerImageCredits} 积分，本批 ${imageBatchCredits} 积分，当前可用 ${billingSummary.account.availableCredits} 积分`
     : composerBillingLabel;
   const trackedGenerationBatchIds = new Set(getSucceededGenerationJobIds(generationRuns));
   const generationItems: CreationStreamItem[] = getGenerationRunSlots(generationRuns).map((slot) => {
@@ -631,7 +640,7 @@ export default function Home({
     if (!slot.output) {
       return {
         kind: "skeleton" as const,
-        submittedAt: Date.parse(slot.job.createdAt),
+        submittedAt: slot.submittedAt,
         key: slot.key,
         ratio: runRatio.value,
         index: slot.index,
@@ -640,7 +649,7 @@ export default function Home({
     const batch = generationJobToAssetBatch(slot.job);
     return {
       batch,
-      submittedAt: Date.parse(slot.job.createdAt),
+      submittedAt: slot.submittedAt,
       detailKey: `${batch.id}-${slot.output.id}`,
       image: slot.output,
       index: slot.index,
@@ -1625,7 +1634,7 @@ export default function Home({
   };
 
   const handleVideoGenerate = async () => {
-    if (!videoPrompt.trim()) {
+    if (!parsePromptBatch(videoPrompt).prompts.length) {
       toast.error("请先输入视频描述");
       return;
     }
@@ -1637,7 +1646,7 @@ export default function Home({
       toast.info("本次页面实测先支持文生视频；请移除素材后提交，素材仍保留在当前会话中");
       return;
     }
-    const runs = createVideoPreviewRuns({
+    const runs = createVideoPromptBatch({
         prompt: videoPrompt.trim(),
         generationMode: videoGenerationMode,
         modelId: videoModelId,
@@ -2154,6 +2163,7 @@ export default function Home({
     setCurrentProject(null);
     setGenerationRuns([]);
     latestGenerationRunKeyRef.current = null;
+    generationComposerSnapshotsRef.current.clear();
     retryingGenerationRunKeysRef.current.clear();
     setDrawerOpen(false);
     setProjectSaveError(null);
@@ -2313,6 +2323,7 @@ export default function Home({
     runKey: string,
   ) => {
     const completedInput = completedJob.input;
+    const composerInput = generationComposerSnapshotsRef.current.get(runKey) ?? completedInput;
     const createdAt = new Date(completedJob.createdAt);
     const nextBatch: AssetBatch = {
       id: completedJob.id,
@@ -2358,7 +2369,7 @@ export default function Home({
                     count: completedInput.count,
                     googleSearch: completedInput.googleSearch ?? false,
                     modelId: completedInput.modelId,
-                    prompt: completedInput.prompt,
+                    prompt: composerInput.prompt,
                     references: completedInput.references,
                     resolution: completedInput.resolution,
                     outputFormat: resolveGptImageOptionsForModel(
@@ -2402,14 +2413,16 @@ export default function Home({
       latestGenerationRunKeyRef.current === runKey &&
       !job.id.startsWith("pending_")
     ) {
-      setComposerCheckpoint(createComposerCheckpoint(job.input));
+      setComposerCheckpoint(createComposerCheckpoint(generationComposerSnapshotsRef.current.get(runKey) ?? job.input));
     }
   };
 
   const runGeneration = async (
     snapshot: GenerationInputSnapshot,
     runKey = globalThis.crypto.randomUUID(),
+    composerSnapshot: GenerationInputSnapshot = snapshot,
   ) => {
+    generationComposerSnapshotsRef.current.set(runKey, composerSnapshot);
     latestGenerationRunKeyRef.current = runKey;
     setDrawerOpen(false);
     const terminalJob = await generationBoundary.service.submit(
@@ -2423,7 +2436,7 @@ export default function Home({
   };
 
   const handleGenerate = () => {
-    if (!prompt.trim()) {
+    if (!imagePromptBatch.prompts.length) {
       toast.error("请先输入画面描述");
       return;
     }
@@ -2443,7 +2456,7 @@ export default function Home({
       return;
     }
 
-    const snapshot = createGenerationInputSnapshot({
+    const draft = {
       prompt,
       references: referenceImages,
       modelId: selectedModel,
@@ -2456,8 +2469,16 @@ export default function Home({
       outputFormat,
       quality,
       projectId: currentProject?.id ?? null,
-    });
-    void runGeneration(snapshot);
+    };
+    try {
+      const snapshots = createImagePromptBatch(draft);
+      const composerSnapshot = createGenerationInputSnapshot(draft);
+      const runs = createImagePromptRuns(snapshots);
+      setGenerationRuns((current) => [...runs, ...current]);
+      void submitPromptBatch(runs, (run) => runGeneration(run.job.input, run.key, composerSnapshot));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "批量提示词无法提交，输入已保留");
+    }
   };
 
   const retryFailedGeneration = async (run: TrackedGenerationRun) => {
@@ -2466,10 +2487,14 @@ export default function Home({
       retryingGenerationRunKeysRef.current.has(run.key)
     ) return;
     retryingGenerationRunKeysRef.current.add(run.key);
+    generationComposerSnapshotsRef.current.set(run.key, {
+      ...run.job.input,
+      prompt: promptContextForRetry(run.job.input.prompt, projects.find((project) => project.id === currentProject?.id)?.state.prompt ?? run.job.input.prompt),
+    });
     latestGenerationRunKeyRef.current = run.key;
     try {
       if (run.job.id.startsWith("pending_")) {
-        await runGeneration(run.job.input, run.key);
+        await runGeneration(run.job.input, run.key, generationComposerSnapshotsRef.current.get(run.key));
         return;
       }
       setDrawerOpen(false);

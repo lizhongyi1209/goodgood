@@ -1,5 +1,7 @@
 "use client";
 
+import { PromptBatchSummary } from "@/features/creation/prompt-batch-summary";
+
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import {
@@ -275,6 +277,7 @@ export function VideoCreationComposer({
         </div>
       </div>
 
+      <PromptBatchSummary prompt={prompt} count={generationCount} media="video" />
       {references.length > 0 && (
         <div className="reference-tray video-reference-tray" aria-label="已添加的视频创作素材">
           <div className="reference-thumbnails">

@@ -179,6 +179,18 @@ descriptions to fill space.
   composer and preserves separate in-memory inputs; it never alters an active
   image job or sends a request.
 - Prompt: autosize from one to eight lines; scroll after eight.
+- A standalone `---` line (optional surrounding spaces/tabs) separates concurrent
+  prompts in image and video modes. Inline hyphens/longer rules remain literal.
+  Trim and ignore empty segments, keep duplicates and source order; all-empty
+  input submits nothing. The quiet summary shows segment count × selected count
+  and total outputs. Parameters and ordered references are frozen and shared.
+  Image mode submits one durable multi-output job per segment; local video mode
+  submits one single-output request per segment/output. Failure/retry is isolated.
+  Image quotes multiply the server's per-segment quote; reservations remain per
+  job, so partial acceptance is possible on insufficient credit. Composer/draft/
+  project retain full source; assets/models use their individual segment only.
+  A retry of a segment still present in a batch project keeps that full prompt
+  context, without re-submitting siblings. Image input total stays at 4000 chars.
 - References: the add control offers local upload or selection from the owner's
   uploaded materials. Append in upload/selection order, deduplicate by stable
   reference ID, and enforce the shared maximum of 10.
@@ -274,7 +286,8 @@ descriptions to fill space.
 - Keep the active server quote next to the composer actions as plain metadata,
   for example `10 积分/张 · 共 40`; do not turn it into a purchase call-to-action.
 - Send: Feihong mark. It remains available while earlier jobs generate; each
-  click freezes the current composer values and submits one independent job.
+  click freezes the current composer values and submits one independent job per
+  nonempty prompt segment (one job when no separator is used).
   Active styling and the creation stream communicate progress without blocking
   another click. There is no product-side concurrent-job count ceiling.
 - By default, video Feihong remains unavailable and must not call the image

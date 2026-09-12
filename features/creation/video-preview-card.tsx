@@ -25,7 +25,7 @@ export function VideoPreviewCard({ run, onOpen, onResume, onDimensions }: { run:
         {run.monitoringError && !job.taskId.startsWith("local_") && <button className="video-run-resume" onClick={onResume}>继续查询</button>}
         {run.monitoringError && job.taskId.startsWith("local_") && <small>请先核对上游记录，勿重复提交</small>}
       </div>
-      <span className="mixed-preview-slot-meta">视频{run.ordinal + 1} · {input.resolution} · {input.duration} 秒</span>
+      <span className="mixed-preview-slot-meta">{(run.promptCount ?? 1) > 1 ? `提示词${(run.promptOrdinal ?? 0) + 1} · ` : ""}视频{run.ordinal + 1} · {input.resolution} · {input.duration} 秒</span>
     </div>
   );
 }

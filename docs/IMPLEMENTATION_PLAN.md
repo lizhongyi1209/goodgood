@@ -1,12 +1,12 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-13
-- Current phase: GG-039 视频数量与并发。
-- Current objective: 新增视频 1/2/4 与独立并发提交、状态及恢复；不接定价/持久化。
+- Current phase: GG-040 批量提示词。
+- Current objective: 图片/视频单行 `---` 分段并发，输出为段数×数量，保留原输入与独立状态。
 
 ## Current checkpoint
 
-- 当前工作树：`feature/GG-039-video-count-concurrency`（`F:/goodgood-worktrees/GG-037`），基于 GG-038 已验证提交 `ed637e7` 顺序切换新分支。其他 worktree 与用户真实视频页面保持不变。
+- 当前工作树：`feature/GG-040-batch-prompts`（`F:/goodgood-worktrees/GG-037`），基于 GG-039 已验证提交 `e21ed01` 顺序切换新分支。其他 worktree 与用户真实视频页面保持不变。
 - 正式入口仍为 `https://goodgood.o1key.com`；`staging-goodgood.o1key.com` 只是历史名称，不是本任务的测试入口。
 - 组合来源：完整基础框架 `07e9ea5`，再合入 GG-029、GG-030、GG-031；不使用旧页面另起测试版本，也不恢复旧 C6。
 - 代码范围同时包含账户管理、积分记录/账本、企业/分销身份、直属上下级、充值来源积分划拨、邮箱 OTP、企业 Workspace、成员额度、消费记录、资产审阅和管理审计。
@@ -53,13 +53,14 @@
 - GG-037 布局已获用户确认；GG-038 品牌图标完成。完整门禁 355 项中 341 通过、14 个 opt-in
   跳过、0 失败；现有 Chrome computer use 已确认四个 Seedance 模型的 ByteDance 标识。
 - GG-039：ADR 0052 已记录；数量、并发独立 run、紧凑本地卡片与视频详情已实现。完整本地门禁 360 项中 346 通过、14 个 opt-in 跳过、0 失败；stub 验证 4 个并发 POST/独立 GET、追加批次、乱序、单项失败与查询恢复。现有 Chrome computer use 已检查默认 1、2/4 选择、图片数量独立及模式/模型/线路切换保持。
-- Next action: 用户检查 GG-039 的 32139 样式页；真实并发另需启用本地接口及费用授权，正式素材/持久/计价链路未验收。
+- GG-040：ADR 0053 已记录，共享解析/编排、总数量/图片报价、稳定独立 run 与项目原输入/分段重试保持已实现；完整门禁 367 项中 353 通过、14 个 opt-in 跳过、0 失败。现有 Chrome computer use 已验证单独行触发、同行不触发、图片 2×4=8/80 积分、视频 2×4=8、空段提示、模式切换保持与摘要布局；未提交生成。
+- Next action: 用户检查 32139 批量提示词布局；真实批量/持久项目闭环未实测，正式视频素材/持久/计价不在本次范围。
 - Blockers: 无；素材与正式持久/计价链路按用户要求后续处理。
 
 ## Verification sequence
 
-1. GG-039 stub 与完整本地门禁已通过；不启用 opt-in 写测试或 provider 请求。
-2. 现有 Chrome 32139 已保留供数量布局检查，32138 真实结果页未动；真实并发尚未实测。
+1. GG-040 stub 与完整本地门禁已通过；不启用 opt-in 写测试或 provider 请求。
+2. 现有 Chrome 32139 已保留双模式批量 A/B 输入供布局检查，32138 真实结果页未动；真实批量尚未实测。
 3. 推送、main 合入和生产部署必须获得新的明确授权；部署前按 ADR 0047 排空旧 GPT route 的活动 attempt。
 
 ## Milestones
@@ -82,12 +83,13 @@
 | GG-037 | 用户已确认布局 | 假数据混排与统一详情本地完成；不接接口或持久化 |
 | GG-038 | 本地完成并验证 | Seedance 统一 ByteDance 品牌标识；未发布 |
 | GG-039 | 本地完成并验证 | 视频数量与并发；未真实并发实测，不接计价和持久化 |
+| GG-040 | 本地完成并验证 | 图片/视频批量提示词乘积并发；未真实批量或持久项目实测/发布 |
 | 完整 C6 / M9 | 搁置 | 删除、举报、商业支付等，见 GG-900—GG-902 |
 
 ## New-session recovery
 
 1. 阅读根 `AGENTS.md`、[CURRENT_STATE](CURRENT_STATE.md)、[WORKFLOW](WORKFLOW.md)、本页和 [BACKLOG](BACKLOG.md)，检查分支/worktree/未提交改动。
-2. 从 `feature/GG-039-video-count-concurrency` 恢复；先读 GG-039 任务卡与 ADR 0052，不恢复旧 C6。
+2. 从 `feature/GG-040-batch-prompts` 恢复；先读 GG-040 任务卡与 ADR 0053，不恢复旧 C6。
 3. 数量与本地并发已验证；不要未经费用授权启用 key 或提交真实生成。main 合入和生产部署仍需要新的明确授权。
 
 ## History and update policy

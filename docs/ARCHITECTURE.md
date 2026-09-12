@@ -426,6 +426,13 @@ container filesystem.
 
 ## Request boundaries
 
+GG-040 parses a standalone `---` line in the shared composer boundary. Image
+fan-out calls existing `/api/generations` independently per segment, retaining
+count 1/2/4 and unique idempotency/run identities; server billing remains per
+job. Optional validated `composerPrompt` updates the owner's project context
+only, while workers read the persisted single-segment prompt. Local video fan-
+out uses the existing default-off GG-036 route, with no new provider fields.
+
 1. Browser authenticates with GoodGood.
 2. Browser requests signed reference uploads from the GoodGood backend.
 3. Browser uploads reference bytes directly to object storage.

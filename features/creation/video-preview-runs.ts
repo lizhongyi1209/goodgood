@@ -11,6 +11,8 @@ export type VideoPreviewRun = Readonly<{
   job: LocalVideoPreviewJob;
   monitoringError: string | null;
   outputRatio?: number;
+  promptOrdinal?: number;
+  promptCount?: number;
 }>;
 
 export function createVideoPreviewRuns(input: LocalVideoPreviewInput, count: VideoGenerationCount, batchId: string, submittedAt = Date.now()): readonly VideoPreviewRun[] {

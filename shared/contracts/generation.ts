@@ -98,6 +98,7 @@ export type GenerationReference = Readonly<{
 
 export type GenerationInputDraft = {
   prompt: string;
+  composerPrompt?: string;
   references: GenerationReference[];
   modelId: GenerationModelId;
   aspectRatio: GenerationAspectRatio;
@@ -113,6 +114,8 @@ export type GenerationInputDraft = {
 
 export type GenerationInputSnapshot = Readonly<{
   prompt: string;
+  /** Project context only; never sent as the model prompt. */
+  composerPrompt?: string;
   references: readonly GenerationReference[];
   modelId: GenerationModelId;
   aspectRatio: GenerationAspectRatio;

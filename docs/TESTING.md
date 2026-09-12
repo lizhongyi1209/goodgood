@@ -497,6 +497,12 @@ The timestamped result of the latest verified gate belongs in
 
 ### Component
 
+- GG-040 covers standalone/inline/longer delimiters, CRLF, multiline segments,
+  empty and duplicate segments, image/video count products, frozen shared values,
+  immediate concurrent starts, stable order and isolated failures, eight stub
+  video POST/GET pairs, project context validation/hash and segment retry, quiet
+  summary and multiplied image quote. No database fixtures or real provider.
+
 - GG-039 covers video-only count defaults and 1/2/4 limits, immediate concurrent
   fan-out with stub transport, frozen inputs, stable order under out-of-order
   completion, independent failure, additional batch preservation, uncertain-POST

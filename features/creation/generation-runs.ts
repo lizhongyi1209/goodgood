@@ -4,6 +4,7 @@ import type { GenerationJob, GenerationOutput } from "@/shared/contracts/generat
 export type TrackedGenerationRun = Readonly<{
   key: string;
   job: GenerationJob;
+  submittedAt?: number;
 }>;
 
 export type GenerationRunSlot = Readonly<{
@@ -12,6 +13,7 @@ export type GenerationRunSlot = Readonly<{
   key: string;
   output: GenerationOutput | null;
   runKey: string;
+  submittedAt: number;
 }>;
 
 export function upsertGenerationRun(
@@ -20,7 +22,7 @@ export function upsertGenerationRun(
   job: GenerationJob,
 ): readonly TrackedGenerationRun[] {
   const existingIndex = current.findIndex((run) => run.key === key);
-  const nextRun = Object.freeze({ key, job });
+  const nextRun = Object.freeze({ ...current[existingIndex], key, job });
   if (existingIndex < 0) {
     return Object.freeze([nextRun, ...current]);
   }
@@ -61,6 +63,7 @@ export function getGenerationRunSlots(
       key: `generation-slot-${run.key}-${index}`,
       output: run.job.state === "succeeded" ? run.job.outputs[index] ?? null : null,
       runKey: run.key,
+      submittedAt: run.submittedAt ?? Date.parse(run.job.createdAt),
     }));
   });
 }

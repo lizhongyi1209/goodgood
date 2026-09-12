@@ -549,9 +549,16 @@ outcome cannot be reconstructed.
 
 ### GenerationBatch
 
-One user submission. Owns prompt snapshot, ordered reference links, parameters
+One generation job submission (one nonempty prompt segment under GG-040). Owns prompt snapshot, ordered reference links, parameters
 including model-owned options, requested count, submission order, and produced
 asset IDs. A batch exists even when its job fails.
+
+GG-040 uses existing rows without a migration: each image segment has its own
+batch/job/price reservation; no atomic all-segment batch entity is introduced.
+The full delimited source remains in CreationDraft/Project prompt. Optional
+validated `composerPrompt` is a project-context-only submission field, included
+in the idempotency hash but not persisted as the asset/model prompt. Retries use
+the frozen segment and retain a batch project context containing that segment.
 
 ### Asset
 

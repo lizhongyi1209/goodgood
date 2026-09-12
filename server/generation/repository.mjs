@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
+import { promptContextForRetry } from "../../shared/contracts/prompt-batch.mjs";
 import {
   findActiveGenerationPrice,
   releaseGenerationCreditsInTransaction,
@@ -59,6 +60,7 @@ export function hashGenerationInput(input) {
         outputFormat: modelOptions.outputFormat,
         projectId: input.projectId ?? null,
         prompt: input.prompt,
+        ...(input.composerPrompt ? { composerPrompt: input.composerPrompt } : {}),
         references: input.references.map(({ id, name }, index) => ({
           id,
           name,
@@ -403,9 +405,10 @@ export async function createGenerationJob(
       }
     }
 
+    let projectComposerPrompt = input.composerPrompt ?? input.prompt;
     if (input.projectId) {
       const project = await client.query(
-        `SELECT id FROM projects
+        `SELECT id, prompt FROM projects
           WHERE id = $1 AND workspace_id = $2 AND creator_owner_id = $3
             AND status = 'active'
           FOR UPDATE`,
@@ -417,6 +420,9 @@ export async function createGenerationJob(
           "未找到该项目。",
           404,
         );
+      }
+      if (retryOfJobId && !input.composerPrompt) {
+        projectComposerPrompt = promptContextForRetry(input.prompt, project.rows[0].prompt ?? "");
       }
     }
 
@@ -469,7 +475,7 @@ export async function createGenerationJob(
         [
           input.projectId,
           ownerId,
-          input.prompt,
+          projectComposerPrompt,
           JSON.stringify(references),
           input.modelId,
           input.aspectRatio,
