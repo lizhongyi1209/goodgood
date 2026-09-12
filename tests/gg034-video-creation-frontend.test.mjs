@@ -47,20 +47,31 @@ test("GG-034 exposes the accepted Seedance catalog and model constraints", async
 });
 
 test("GG-034 video composer exposes creator parameters and multimedia references", async () => {
-  const composer = await read("features/creation/video-creation-composer.tsx");
+  const [composer, materialCreation] = await Promise.all([
+    read("features/creation/video-creation-composer.tsx"),
+    read("features/creation/video-material-creation-dialog.tsx"),
+  ]);
 
   for (const label of ["画面比例", "生成模型", "清晰度", "时长", "声音"]) {
     assert.match(composer, new RegExp(label));
   }
-  assert.match(composer, /上传图片/);
+  assert.match(composer, />上传素材/);
+  assert.match(composer, /图片 \/ 视频 \/ 音频/);
   assert.match(composer, /从资产库选择/);
   assert.match(composer, /onOpenReferenceLibrary/);
-  assert.match(composer, /上传视频/);
-  assert.match(composer, /上传音频/);
+  assert.doesNotMatch(composer, />上传图片/);
+  assert.doesNotMatch(composer, />上传视频/);
+  assert.doesNotMatch(composer, />上传音频/);
+  assert.match(composer, />创建素材/);
+  assert.match(materialCreation, /默认不创建任何素材/);
+  assert.match(materialCreation, /提交后将逐个创建/);
+  assert.match(materialCreation, /历史素材会在视频提交前重新检查；失效时需要重新创建/);
+  assert.match(materialCreation, /creationAvailable \? `创建/);
+  assert.match(materialCreation, /接口待接入/);
   assert.match(composer, /生成模式/);
   assert.match(composer, /VIDEO_GENERATION_MODE_OPTIONS\.map/);
   assert.match(composer, /aria-label="视频生成模式"/);
-  assert.match(composer, /referenceCounts\.image.*referenceLimits\.imageLimit/);
+  assert.match(composer, /referenceLimits\.imageLimit - referenceCounts\.image/);
   assert.match(composer, /`图片 \$\{ordinal\}`/);
   assert.match(composer, /generationMode === "first_last_frame"[\s\S]*videoReferenceRoleLabel\(reference\.role\)[\s\S]*mediaLabel\.replace\(" ", ""\)/);
   assert.doesNotMatch(composer, /设置\$\{mediaLabel\}用途/);
@@ -115,6 +126,8 @@ test("GG-034 records the accepted frontend-only boundary", async () => {
   ]);
 
   assert.match(adr, /Status: Accepted/);
+  assert.match(adr, /never creates a provider material automatically/);
+  assert.match(adr, /must pass a fresh availability check/);
   assert.match(adr, /Do not submit video mode to `\/api\/generations`/);
   assert.match(task, /不修改后端 API、数据库、计费、provider/);
   assert.match(backlog, /GG-034/);

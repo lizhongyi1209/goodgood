@@ -263,13 +263,21 @@ export function videoReferenceFileError(
   file: File,
   mediaType: VideoReferenceMediaType,
 ): string | null {
-  const validType = mediaType === "image"
-    ? ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"].includes(file.type)
-    : mediaType === "video"
-      ? ["video/mp4", "video/quicktime"].includes(file.type)
-      : ["audio/wav", "audio/x-wav", "audio/mpeg"].includes(file.type);
-  if (!validType) return `${file.name} 的文件格式不受支持`;
+  if (videoReferenceMediaTypeForFile(file) !== mediaType) {
+    return `${file.name} 的文件格式不受支持`;
+  }
   const maximum = mediaType === "image" ? 30 : mediaType === "video" ? 200 : 15;
   if (file.size >= maximum * 1024 * 1024) return `${file.name} 必须小于 ${maximum} MB`;
+  return null;
+}
+
+export function videoReferenceMediaTypeForFile(
+  file: Pick<File, "type">,
+): VideoReferenceMediaType | null {
+  if (["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"].includes(file.type)) {
+    return "image";
+  }
+  if (["video/mp4", "video/quicktime"].includes(file.type)) return "video";
+  if (["audio/wav", "audio/x-wav", "audio/mpeg"].includes(file.type)) return "audio";
   return null;
 }

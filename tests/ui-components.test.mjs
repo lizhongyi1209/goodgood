@@ -877,6 +877,9 @@ test("video asset selection preserves mixed-media identity, roles, deduplication
   const { appendVideoAssetMaterials } = await vite.ssrLoadModule(
     "/features/creation/video-asset-selection.ts",
   );
+  const { videoReferenceMediaTypeForFile } = await vite.ssrLoadModule(
+    "/features/creation/video-generation-options.ts",
+  );
   const asset = (id, mediaType) => ({
     id,
     mediaType,
@@ -890,6 +893,11 @@ test("video asset selection preserves mixed-media identity, roles, deduplication
     [asset("image-1", "image"), asset("video-1", "video"), asset("audio-1", "audio")],
     "seedance-2-0",
   );
+
+  assert.equal(videoReferenceMediaTypeForFile({ type: "image/png" }), "image");
+  assert.equal(videoReferenceMediaTypeForFile({ type: "video/mp4" }), "video");
+  assert.equal(videoReferenceMediaTypeForFile({ type: "audio/mpeg" }), "audio");
+  assert.equal(videoReferenceMediaTypeForFile({ type: "application/pdf" }), null);
 
   assert.equal(mixed.addedCount, 3);
   assert.deepEqual(

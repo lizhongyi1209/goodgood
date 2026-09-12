@@ -73,6 +73,11 @@ duplicating a release log.
   empty until the mixed-media asset API is connected. It does not yet upload new
   video-mode files, submit, quote, persist, or present video results; those remain
   pending the authenticated provider contract.
+  Local reference upload is one explicit `上传素材` action capable of images,
+  videos, and audio. It never creates an upstream reusable material automatically.
+  `创建素材` is a separate opt-in flow for user-selected references. Historical
+  created materials must be revalidated immediately before video submission;
+  invalid or uncertain materials block submission and require explicit recreation.
 - Nano Banana 2 through the real server-side O1Key route across 14 product
   ratios, plus the ordered GPT image family `GPT IMAGE 2.5 sunburst`,
   `GPT IMAGE 2`, and `GPT IMAGE 2.5 flare` across the same seven exact-size

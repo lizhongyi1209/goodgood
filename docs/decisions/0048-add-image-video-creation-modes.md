@@ -45,6 +45,17 @@ video request through the existing billable image route.
   multimodal uses one lower-left media ordinal (`图片1 / 视频1 / 音频1`), while
   first/last-frame uses only `首帧 / 尾帧`. Do not add a second upper-left role
   label; the accessible description retains the full media name and role.
+- Treat ordinary reference upload and provider material creation as separate
+  user intents. One `上传素材` action accepts the media types still allowed by
+  the active mode and never creates a provider material automatically. A
+  separate `创建素材` flow starts with nothing selected, lets the creator choose
+  only the references that require it, and submits them through a bounded queue
+  once the backend contract exists; non-human references may stay ordinary.
+- Provider-created materials are expiring references, not permanently valid
+  assets. Every historical material must pass a fresh availability check before
+  a video request is submitted. An unavailable or indeterminate material blocks
+  submission without discarding the draft and offers an explicit recreate path.
+  Provider material IDs and expiry mechanics remain internal implementation data.
 - Do not submit video mode to `/api/generations`. The Feihong action reports
   that the video interface is awaiting connection while preserving all input.
 - Video editing, extension, timestamp editing, and durable mixed-media assets

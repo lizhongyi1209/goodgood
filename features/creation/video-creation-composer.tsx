@@ -6,11 +6,13 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider";
 import { CreationModeSwitch } from "@/features/creation/creation-mode-switch";
 import { getRatioFrame } from "@/features/creation/generation-options";
+import { VideoMaterialCreationDialog } from "@/features/creation/video-material-creation-dialog";
 import {
   VIDEO_GENERATION_MODEL_CATALOG,
   VIDEO_GENERATION_MODE_OPTIONS,
@@ -35,7 +37,6 @@ import {
   Images,
   SlidersHorizontal,
   Upload,
-  Video,
   Volume2,
   X,
 } from "lucide-react";
@@ -53,10 +54,7 @@ export type VideoCreationComposerProps = Readonly<{
   drawerOpen: boolean;
   onModeChange: (mode: CreationMode) => void;
   onPromptChange: (prompt: string) => void;
-  onReferenceFiles: (
-    mediaType: VideoReferenceMediaType,
-    files: readonly File[],
-  ) => void;
+  onReferenceFiles: (files: readonly File[]) => void;
   onOpenReferenceLibrary: () => void;
   onRemoveReference: (reference: VideoReference) => void;
   onGenerationModeChange: (generationMode: VideoGenerationMode) => void;
@@ -82,11 +80,11 @@ function resizePromptTextarea(element: HTMLTextAreaElement) {
   element.classList.toggle("has-overflow", hasOverflow);
 }
 
-function fileInputAccept(mediaType: VideoReferenceMediaType) {
-  if (mediaType === "image") return "image/jpeg,image/png,image/webp,image/heic,image/heif";
-  if (mediaType === "video") return "video/mp4,video/quicktime";
-  return "audio/wav,audio/x-wav,audio/mpeg";
-}
+const referenceAcceptByMediaType = {
+  image: "image/jpeg,image/png,image/webp,image/heic,image/heif",
+  video: "video/mp4,video/quicktime",
+  audio: "audio/wav,audio/x-wav,audio/mpeg",
+} as const satisfies Readonly<Record<VideoReferenceMediaType, string>>;
 
 function formatFileSize(size: number) {
   if (size >= 1024 * 1024) return `${(size / 1024 / 1024).toFixed(1)} MB`;
@@ -119,10 +117,9 @@ export function VideoCreationComposer({
   onGenerate,
 }: VideoCreationComposerProps) {
   const promptInputRef = useRef<HTMLTextAreaElement>(null);
-  const imageInputRef = useRef<HTMLInputElement>(null);
-  const videoInputRef = useRef<HTMLInputElement>(null);
-  const audioInputRef = useRef<HTMLInputElement>(null);
+  const referenceInputRef = useRef<HTMLInputElement>(null);
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
+  const [materialCreationOpen, setMaterialCreationOpen] = useState(false);
   const activeModel = getVideoGenerationModel(modelId);
   const referenceLimits = getVideoReferenceLimits(modelId, generationMode);
   const referenceCounts = {
@@ -136,6 +133,11 @@ export function VideoCreationComposer({
     video: Math.max(0, Math.min(referenceLimits.videoLimit - referenceCounts.video, referenceTotalRemaining)),
     audio: Math.max(0, Math.min(referenceLimits.audioLimit - referenceCounts.audio, referenceTotalRemaining)),
   };
+  const referenceInputAccept = (Object.keys(referenceRemaining) as VideoReferenceMediaType[])
+    .filter((mediaType) => referenceRemaining[mediaType] > 0)
+    .map((mediaType) => referenceAcceptByMediaType[mediaType])
+    .join(",");
+  const canUploadReference = referenceInputAccept.length > 0;
   const activeRatio = VIDEO_RATIO_OPTIONS.find((item) => item.id === aspectRatio) ?? VIDEO_RATIO_OPTIONS[0];
   const ratioFrame = getRatioFrame(activeRatio.value ?? 16 / 9);
 
@@ -152,20 +154,11 @@ export function VideoCreationComposer({
     if (promptInputRef.current) resizePromptTextarea(promptInputRef.current);
   }, [prompt]);
 
-  const handleFileChange = (
-    mediaType: VideoReferenceMediaType,
-    event: ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
-    if (files.length > 0) onReferenceFiles(mediaType, files);
+    if (files.length > 0) onReferenceFiles(files);
     event.target.value = "";
   };
-
-  const inputs = [
-    ["image", imageInputRef],
-    ["video", videoInputRef],
-    ["audio", audioInputRef],
-  ] as const;
 
   return (
     <section
@@ -174,18 +167,15 @@ export function VideoCreationComposer({
     >
       <CreationModeSwitch value={mode} onChange={onModeChange} />
 
-      {inputs.map(([mediaType, inputRef]) => (
-        <input
-          key={mediaType}
-          ref={inputRef}
-          className="reference-input"
-          type="file"
-          accept={fileInputAccept(mediaType)}
-          multiple
-          disabled={referenceRemaining[mediaType] <= 0}
-          onChange={(event) => handleFileChange(mediaType, event)}
-        />
-      ))}
+      <input
+        ref={referenceInputRef}
+        className="reference-input"
+        type="file"
+        accept={referenceInputAccept}
+        multiple
+        disabled={!canUploadReference}
+        onChange={handleFileChange}
+      />
 
       <div className="prompt-row">
         <div className="reference-control">
@@ -193,36 +183,35 @@ export function VideoCreationComposer({
             <DropdownMenuTrigger asChild>
               <button
                 className="reference-button"
-                aria-label={`添加视频创作素材，当前模式还可添加 ${referenceTotalRemaining} 个`}
-                disabled={referenceTotalRemaining <= 0}
+                aria-label={`管理视频创作素材，当前模式还可添加 ${referenceTotalRemaining} 个`}
+                disabled={referenceTotalRemaining <= 0 && references.length === 0}
               >
                 <ImagePlus size={18} />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="reference-source-menu" align="start" sideOffset={7}>
               <DropdownMenuItem
-                disabled={referenceRemaining.image <= 0}
-                onSelect={() => imageInputRef.current?.click()}
+                disabled={!canUploadReference}
+                onSelect={() => referenceInputRef.current?.click()}
               >
-                <ImagePlus size={15} />上传图片
-                <span className="reference-source-limit">{referenceCounts.image}/{referenceLimits.imageLimit}</span>
+                <Upload size={15} />上传素材
+                <span className="reference-source-limit">
+                  {generationMode === "first_last_frame" ? "仅图片" : "图片 / 视频 / 音频"}
+                </span>
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={onOpenReferenceLibrary}>
+              <DropdownMenuItem
+                disabled={referenceTotalRemaining <= 0}
+                onSelect={onOpenReferenceLibrary}
+              >
                 <Images size={15} />从资产库选择
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem
-                disabled={referenceRemaining.video <= 0}
-                onSelect={() => videoInputRef.current?.click()}
+                disabled={references.length === 0}
+                onSelect={() => setMaterialCreationOpen(true)}
               >
-                <Video size={15} />上传视频
-                <span className="reference-source-limit">{referenceLimits.videoLimit > 0 ? `${referenceCounts.video}/${referenceLimits.videoLimit}` : "当前模式不支持"}</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={referenceRemaining.audio <= 0}
-                onSelect={() => audioInputRef.current?.click()}
-              >
-                <AudioLines size={15} />上传音频
-                <span className="reference-source-limit">{referenceLimits.audioLimit > 0 ? `${referenceCounts.audio}/${referenceLimits.audioLimit}` : "当前模式不支持"}</span>
+                <Film size={15} />创建素材
+                <span className="reference-source-limit">主动选择</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -465,6 +454,16 @@ export function VideoCreationComposer({
           </div>
         </div>
       </div>
+
+      {materialCreationOpen && (
+        <VideoMaterialCreationDialog
+          open
+          references={references}
+          creationAvailable={false}
+          onOpenChange={setMaterialCreationOpen}
+          onCreate={() => undefined}
+        />
+      )}
     </section>
   );
 }

@@ -516,6 +516,12 @@ The timestamped result of the latest verified gate belongs in
   appear as real current data while unavailable durable media types retain honest
   empty states. Video Feihong must not reach `/api/generations` before the backend
   contract exists.
+- Unified video upload accepts only supported image/video/audio MIME types and
+  classifies mixed selections before applying mode/model capacity. Material
+  creation remains explicit, starts with no selected references, never runs on
+  ordinary upload, and is unavailable while its API is absent. Provider-backed
+  tests must cover valid, expired, evicted, indeterminate, recreate, sequential
+  creation, and partial-failure paths before enabling video submission.
 - Reference tray from 0, 1, 9, 10, and over-limit inputs; visible contiguous
   ordinals; drag and `Alt + ← / →` reorder semantics; removal renumbering.
 - Generation skeleton count and ratio.

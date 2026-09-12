@@ -223,6 +223,15 @@ descriptions to fill space.
   retained media exceeds the target capability, without silently removing it.
   Each preview has one lower-left label only: multimodal displays `图片1 / 视频1 /
   音频1` ordinals, while first/last-frame displays only `首帧 / 尾帧`.
+  The source menu has one `上传素材` action rather than separate media-type rows;
+  its native picker accepts only image, video, and audio MIME types still allowed
+  by the active mode. Uploading creates an ordinary session reference only.
+  `创建素材` is a separate, opt-in selection dialog with nothing preselected and
+  a serial-processing promise. Until the material API arrives, its commit action
+  is visibly unavailable rather than simulating a returned material ID.
+  Before final video submission, every historical created material is checked
+  again. Valid items may proceed; expired, evicted, or indeterminate items keep
+  the draft intact, block submission, and offer `重新创建`.
   Local object URLs remain session-only until
   backend upload and durable mixed-media contracts exist.
 - Settings: attached downward drawer; closing it must not reset values.

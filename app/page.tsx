@@ -23,6 +23,7 @@ import {
   resolveVideoResolution,
   videoReferenceCapacityError,
   videoReferenceFileError,
+  videoReferenceMediaTypeForFile,
   type CreationMode,
   type VideoAspectRatio,
   type VideoGenerationMode,
@@ -1512,14 +1513,17 @@ export default function Home({
     setVideoGenerationMode(generationMode);
   };
 
-  const handleVideoReferenceFiles = (
-    mediaType: VideoReferenceMediaType,
-    files: readonly File[],
-  ) => {
+  const handleVideoReferenceFiles = (files: readonly File[]) => {
     if (!files.length) return;
     const nextReferences = [...videoReferences];
     let rejectedCount = 0;
     for (const file of files) {
+      const mediaType = videoReferenceMediaTypeForFile(file);
+      if (!mediaType) {
+        rejectedCount += 1;
+        toast.error(`${file.name} 的文件格式不受支持`);
+        continue;
+      }
       const fileError = videoReferenceFileError(file, mediaType);
       if (fileError) {
         rejectedCount += 1;
