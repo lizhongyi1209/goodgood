@@ -115,13 +115,19 @@ individual icon. Upload, settings, and send align to the same 40px box.
   1:1 centered previews, visible selection, existing-tray disabled state, and a
   single confirmed add action.
 - Video mode keeps the same tray silhouette for local image, video, and audio
-  references. Media type and image role use compact overlays; audio uses a quiet
+  references. Separate compact overlays show media order (`图片 1 / 视频 1 / 音频 1`)
+  and mode-derived purpose (`参考图片 / 参考视频 / 参考音频 / 首帧 / 尾帧`);
+  do not expose a manual role selector. Audio uses a quiet
   neutral placeholder rather than invented artwork. Video mode uses the same
   focused picker as image mode, adding quiet `全部 / 图片 / 视频 / 音频` filters,
   count badges, media labels, and type-specific empty states. Image cards retain
   centered crops, video cards use muted cover frames, and audio cards use a quiet
   neutral placeholder. Video mode does not expose the image quick editor in its
   frontend-only phase.
+- Video generation mode is a quiet two-option segmented control inside the model
+  parameter group. `多模态` is selected by default; `首尾帧` uses the same selected
+  treatment. Unsupported upload and asset-filter entries remain visible but
+  disabled with concise text, so the active limit is legible before selection.
 - Parameter group order: aspect ratio; model; output group with resolution above
   generation count. Aspect ratio leads from the left on desktop and remains first
   when the drawer reflows or stacks.

@@ -22,6 +22,7 @@ test("GG-034 keeps image and video as explicit composer modes", async () => {
   assert.match(page, /<VideoCreationComposer/);
   assert.match(page, /const \[videoPrompt, setVideoPrompt\] = useState\(""\)/);
   assert.match(page, /const \[videoReferences, setVideoReferences\] = useState<VideoReference\[]>\(\[\]\)/);
+  assert.match(page, /useState<VideoGenerationMode>\(DEFAULT_VIDEO_GENERATION_MODE\)/);
 });
 
 test("GG-034 exposes the accepted Seedance catalog and model constraints", async () => {
@@ -39,6 +40,10 @@ test("GG-034 exposes the accepted Seedance catalog and model constraints", async
   assert.match(options, /id: "seedance-2-0"[\s\S]*capabilities: STANDARD_CAPABILITIES/);
   assert.match(options, /STANDARD_CAPABILITIES[\s\S]*max: 15[\s\S]*\["480p", "720p", "1080p", "4K"\]/);
   assert.match(options, /VIDEO_ASPECT_RATIOS = \[[\s\S]*"adaptive"[\s\S]*"21:9"/);
+  assert.match(options, /DEFAULT_VIDEO_GENERATION_MODE: VideoGenerationMode = "multimodal"/);
+  assert.match(options, /id: "multimodal"[\s\S]*label: "多模态"/);
+  assert.match(options, /id: "first_last_frame"[\s\S]*label: "首尾帧"[\s\S]*最多两张图片/);
+  assert.match(options, /first_last_frame[\s\S]*imageLimit: 2, videoLimit: 0, audioLimit: 0, totalLimit: 2/);
 });
 
 test("GG-034 video composer exposes creator parameters and multimedia references", async () => {
@@ -52,9 +57,13 @@ test("GG-034 video composer exposes creator parameters and multimedia references
   assert.match(composer, /onOpenReferenceLibrary/);
   assert.match(composer, /上传视频/);
   assert.match(composer, /上传音频/);
-  assert.match(composer, /first_frame/);
-  assert.match(composer, /last_frame/);
-  assert.match(composer, /reference_image/);
+  assert.match(composer, /生成模式/);
+  assert.match(composer, /VIDEO_GENERATION_MODE_OPTIONS\.map/);
+  assert.match(composer, /aria-label="视频生成模式"/);
+  assert.match(composer, /referenceCounts\.image.*referenceLimits\.imageLimit/);
+  assert.match(composer, /`图片 \$\{ordinal\}`/);
+  assert.doesNotMatch(composer, /设置\$\{mediaLabel\}用途/);
+  assert.match(composer, /videoReferenceRoleLabel\(reference\.role\)/);
   assert.match(composer, /接口待接入/);
   assert.doesNotMatch(composer, /生成数量/);
 });
@@ -67,7 +76,7 @@ test("GG-034 reuses image, video, and audio assets without uploading them again"
 
   assert.match(page, /onOpenReferenceLibrary=\{\(\) => openReferenceLibrary\("video"\)\}/);
   assert.match(page, /筛选资产类型/);
-  assert.match(page, /图片、视频和音频均可复用/);
+  assert.match(page, /多模态模式可复用图片、视频和音频/);
   assert.match(selection, /"all" \| VideoReferenceMediaType/);
   assert.match(selection, /id: material\.id/);
   assert.match(selection, /mediaType: material\.mediaType/);

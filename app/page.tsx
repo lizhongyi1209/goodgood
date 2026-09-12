@@ -11,17 +11,21 @@ import {
 } from "@/features/creation/video-asset-selection";
 import {
   DEFAULT_VIDEO_DURATION_SECONDS,
+  DEFAULT_VIDEO_GENERATION_MODE,
   DEFAULT_VIDEO_MODEL_ID,
   DEFAULT_VIDEO_RATIO,
   DEFAULT_VIDEO_RESOLUTION,
   countVideoReferences,
   getVideoGenerationModel,
+  getVideoReferenceLimits,
+  normalizeVideoReferencesForMode,
   resolveVideoDuration,
   resolveVideoResolution,
   videoReferenceCapacityError,
   videoReferenceFileError,
   type CreationMode,
   type VideoAspectRatio,
+  type VideoGenerationMode,
   type VideoGenerationModelId,
   type VideoReference,
   type VideoReferenceMediaType,
@@ -472,6 +476,7 @@ export default function Home({
   const [referenceImages, setReferenceImages] = useState<ReferenceImage[]>([]);
   const [videoPrompt, setVideoPrompt] = useState("");
   const [videoReferences, setVideoReferences] = useState<VideoReference[]>([]);
+  const [videoGenerationMode, setVideoGenerationMode] = useState<VideoGenerationMode>(DEFAULT_VIDEO_GENERATION_MODE);
   const [videoModelId, setVideoModelId] = useState<VideoGenerationModelId>(DEFAULT_VIDEO_MODEL_ID);
   const [videoAspectRatio, setVideoAspectRatio] = useState<VideoAspectRatio>(DEFAULT_VIDEO_RATIO);
   const [videoResolution, setVideoResolution] = useState<VideoResolution>(DEFAULT_VIDEO_RESOLUTION);
@@ -657,6 +662,7 @@ export default function Home({
   const hasVideoDraft =
     videoPrompt.trim().length > 0 ||
     videoReferences.length > 0 ||
+    videoGenerationMode !== DEFAULT_VIDEO_GENERATION_MODE ||
     videoModelId !== DEFAULT_VIDEO_MODEL_ID ||
     videoAspectRatio !== DEFAULT_VIDEO_RATIO ||
     videoResolution !== DEFAULT_VIDEO_RESOLUTION ||
@@ -1469,7 +1475,11 @@ export default function Home({
   };
 
   const handleVideoModelChange = (modelId: VideoGenerationModelId) => {
-    const capacityError = videoReferenceCapacityError(modelId, videoReferences);
+    const capacityError = videoReferenceCapacityError(
+      modelId,
+      videoReferences,
+      videoGenerationMode,
+    );
     if (capacityError) {
       toast.error(capacityError);
       return;
@@ -1484,6 +1494,22 @@ export default function Home({
     setVideoModelId(modelId);
     setVideoResolution(nextResolution);
     setVideoDurationSeconds(nextDuration);
+  };
+
+  const handleVideoGenerationModeChange = (generationMode: VideoGenerationMode) => {
+    const capacityError = videoReferenceCapacityError(
+      videoModelId,
+      videoReferences,
+      generationMode,
+    );
+    if (capacityError) {
+      toast.error(`${capacityError}，请先移除不兼容的素材`);
+      return;
+    }
+    setVideoReferences((current) => [
+      ...normalizeVideoReferencesForMode(current, generationMode),
+    ]);
+    setVideoGenerationMode(generationMode);
   };
 
   const handleVideoReferenceFiles = (
@@ -1501,9 +1527,11 @@ export default function Home({
         continue;
       }
       const role: VideoReferenceRole = mediaType === "image"
-        ? nextReferences.some((reference) => reference.role === "first_frame")
+        ? videoGenerationMode === "multimodal"
           ? "reference_image"
-          : "first_frame"
+          : nextReferences.some((reference) => reference.mediaType === "image")
+            ? "last_frame"
+            : "first_frame"
         : mediaType === "video"
           ? "reference_video"
           : "reference_audio";
@@ -1518,6 +1546,7 @@ export default function Home({
       const capacityError = videoReferenceCapacityError(
         videoModelId,
         [...nextReferences, candidate],
+        videoGenerationMode,
       );
       if (capacityError) {
         rejectedCount += 1;
@@ -1529,34 +1558,26 @@ export default function Home({
       nextReferences.push({ ...candidate, url });
     }
     if (nextReferences.length !== videoReferences.length) {
-      setVideoReferences(nextReferences);
+      setVideoReferences([...normalizeVideoReferencesForMode(
+        nextReferences,
+        videoGenerationMode,
+      )]);
     }
     if (rejectedCount === 0) {
       toast.success(`已添加 ${files.length} 个参考素材`);
     }
   };
 
-  const handleVideoReferenceRoleChange = (
-    referenceId: string,
-    role: Extract<VideoReferenceRole, "first_frame" | "last_frame" | "reference_image">,
-  ) => {
-    setVideoReferences((current) => current.map((reference) => {
-      if (
-        reference.id !== referenceId &&
-        (role === "first_frame" || role === "last_frame") &&
-        reference.role === role
-      ) {
-        return { ...reference, role: "reference_image" };
-      }
-      return reference.id === referenceId ? { ...reference, role } : reference;
-    }));
-  };
-
   const removeVideoReference = (reference: VideoReference) => {
     if (videoReferenceObjectUrlsRef.current.delete(reference.url)) {
       URL.revokeObjectURL(reference.url);
     }
-    setVideoReferences((current) => current.filter((item) => item.id !== reference.id));
+    setVideoReferences((current) => [
+      ...normalizeVideoReferencesForMode(
+        current.filter((item) => item.id !== reference.id),
+        videoGenerationMode,
+      ),
+    ]);
   };
 
   const handleVideoGenerate = () => {
@@ -1749,9 +1770,20 @@ export default function Home({
   ].filter((material, index, materials) =>
     materials.findIndex((candidate) => candidate.id === material.id) === index
   );
+  const activeVideoReferenceLimits = getVideoReferenceLimits(
+    videoModelId,
+    videoGenerationMode,
+  );
+  const modeCompatibleVideoAssetMaterials = videoAssetMaterials.filter((material) =>
+    material.mediaType === "image"
+      ? activeVideoReferenceLimits.imageLimit > 0
+      : material.mediaType === "video"
+        ? activeVideoReferenceLimits.videoLimit > 0
+        : activeVideoReferenceLimits.audioLimit > 0
+  );
   const filteredVideoAssetMaterials = videoAssetMediaFilter === "all"
-    ? videoAssetMaterials
-    : videoAssetMaterials.filter((material) => material.mediaType === videoAssetMediaFilter);
+    ? modeCompatibleVideoAssetMaterials
+    : modeCompatibleVideoAssetMaterials.filter((material) => material.mediaType === videoAssetMediaFilter);
   const imageReferenceLibraryMaterials = referenceMaterials.map((material): VideoAssetMaterial => ({
     id: material.id,
     mediaType: "image",
@@ -1778,15 +1810,14 @@ export default function Home({
   };
   const videoAssetTotalRemaining = Math.max(
     0,
-    getVideoGenerationModel(videoModelId).capabilities.totalLimit - videoReferences.length,
+    activeVideoReferenceLimits.totalLimit - videoReferences.length,
   );
   const videoAssetMediaRemaining = (mediaType: VideoReferenceMediaType) => {
-    const capabilities = getVideoGenerationModel(videoModelId).capabilities;
     const typeLimit = mediaType === "image"
-      ? capabilities.imageLimit
+      ? activeVideoReferenceLimits.imageLimit
       : mediaType === "video"
-        ? capabilities.videoLimit
-        : capabilities.audioLimit;
+        ? activeVideoReferenceLimits.videoLimit
+        : activeVideoReferenceLimits.audioLimit;
     return Math.max(
       0,
       Math.min(
@@ -1802,7 +1833,12 @@ export default function Home({
     : Math.max(0, MAX_GENERATION_REFERENCES - referenceImages.length);
 
   const addMaterialsToVideoReferences = (materials: readonly VideoAssetMaterial[]) => {
-    const result = appendVideoAssetMaterials(videoReferences, materials, videoModelId);
+    const result = appendVideoAssetMaterials(
+      videoReferences,
+      materials,
+      videoModelId,
+      videoGenerationMode,
+    );
     if (result.addedCount > 0) setVideoReferences([...result.references]);
     if (result.firstCapacityError) {
       toast.info(result.firstCapacityError);
@@ -1849,6 +1885,7 @@ export default function Home({
           videoReferences,
           [...selected, material],
           videoModelId,
+          videoGenerationMode,
         );
         if (result.addedCount !== selected.length + 1) {
           if (result.firstCapacityError) toast.info(result.firstCapacityError);
@@ -2038,6 +2075,7 @@ export default function Home({
     setPrompt("");
     setVideoReferences([]);
     setVideoPrompt("");
+    setVideoGenerationMode(DEFAULT_VIDEO_GENERATION_MODE);
     setVideoModelId(DEFAULT_VIDEO_MODEL_ID);
     setVideoAspectRatio(DEFAULT_VIDEO_RATIO);
     setVideoResolution(DEFAULT_VIDEO_RESOLUTION);
@@ -2889,6 +2927,7 @@ export default function Home({
               mode={creationMode}
               prompt={videoPrompt}
               references={videoReferences}
+              generationMode={videoGenerationMode}
               modelId={videoModelId}
               aspectRatio={videoAspectRatio}
               resolution={videoResolution}
@@ -2900,7 +2939,7 @@ export default function Home({
               onReferenceFiles={handleVideoReferenceFiles}
               onOpenReferenceLibrary={() => openReferenceLibrary("video")}
               onRemoveReference={removeVideoReference}
-              onReferenceRoleChange={handleVideoReferenceRoleChange}
+              onGenerationModeChange={handleVideoGenerationModeChange}
               onModelChange={handleVideoModelChange}
               onAspectRatioChange={setVideoAspectRatio}
               onResolutionChange={setVideoResolution}
@@ -3188,9 +3227,11 @@ export default function Home({
                 <DialogTitle>从资产库选择</DialogTitle>
                 <DialogDescription>
                   {referenceLibraryTarget === "video"
-                    ? videoAssetMediaFilter === "all"
-                      ? `图片、视频和音频均可复用；总计还可添加 ${referenceLibraryRemaining} 个，单类型遵循模型上限。`
-                      : `${videoAssetMediaFilters.find((filter) => filter.id === videoAssetMediaFilter)?.label}资产最多还可添加 ${referenceLibraryRemaining} 个。`
+                    ? videoGenerationMode === "first_last_frame"
+                      ? `首尾帧模式只使用图片；按选择顺序作为首帧和尾帧，还可添加 ${referenceLibraryRemaining} 张。`
+                      : videoAssetMediaFilter === "all"
+                        ? `多模态模式可复用图片、视频和音频；总计还可添加 ${referenceLibraryRemaining} 个，单类型遵循模型上限。`
+                        : `${videoAssetMediaFilters.find((filter) => filter.id === videoAssetMediaFilter)?.label}资产最多还可添加 ${referenceLibraryRemaining} 个。`
                     : `已上传的素材无需再次上传，最多还可添加 ${referenceLibraryRemaining} 张。`}
                 </DialogDescription>
               </div>
@@ -3202,13 +3243,21 @@ export default function Home({
                 <div className="video-asset-media-filters" role="group" aria-label="筛选资产类型">
                   {videoAssetMediaFilters.map((filter) => {
                     const count = filter.id === "all"
-                      ? videoAssetMaterials.length
+                      ? modeCompatibleVideoAssetMaterials.length
                       : videoAssetMediaCounts[filter.id];
+                    const unsupported = filter.id === "video"
+                      ? activeVideoReferenceLimits.videoLimit === 0
+                      : filter.id === "audio"
+                        ? activeVideoReferenceLimits.audioLimit === 0
+                        : filter.id === "image"
+                          ? activeVideoReferenceLimits.imageLimit === 0
+                          : false;
                     return (
                       <button
                         key={filter.id}
                         className={videoAssetMediaFilter === filter.id ? "selected" : ""}
                         aria-pressed={videoAssetMediaFilter === filter.id}
+                        disabled={unsupported}
                         onClick={() => {
                           setVideoAssetMediaFilter(filter.id);
                           setSelectedReferenceMaterialIds([]);

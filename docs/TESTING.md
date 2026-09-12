@@ -505,6 +505,10 @@ The timestamped result of the latest verified gate belongs in
 - Seedance model order and capability-driven resolution/duration controls;
   switching from 2.0 to 2.5 normalizes unsupported values without deleting
   compatible input.
+- Video generation mode defaults to multimodal; multimodal and first/last-frame
+  per-type and total limits drive local upload plus asset-picker availability.
+  Compatible mode changes re-label retained media, while incompatible changes
+  preserve the tray and explain what must be removed.
 - Video local image/video/audio format, size, count, role, removal, and object-
   URL cleanup behavior; asset-library image/video/audio selection preserves
   stable IDs and media roles, does not re-upload bytes, disables duplicates, and

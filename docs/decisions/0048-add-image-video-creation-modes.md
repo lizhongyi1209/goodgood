@@ -24,9 +24,13 @@ video request through the existing billable image route.
   catalog is Seedance 2.5, Seedance 2.0, Seedance 2.0 Fast, and Seedance 2.0
   Mini. UI labels remain separate from provider IDs.
 - Expose only creator-facing video parameters now: aspect ratio, model,
-  resolution, duration, and audio generation. Provider-operational fields such
-  as callbacks, expiry, last-frame return, watermark policy, and frame counts
-  remain outside the UI.
+  generation mode, resolution, duration, and audio generation. Generation mode
+  lives in the attached parameter drawer and defaults to `多模态`. `多模态`
+  accepts model-bounded image/video/audio references; `首尾帧` accepts at most
+  two images and no video or audio. Switching to an incompatible mode is blocked
+  until excess media is removed rather than silently deleting creator input.
+  Provider-operational fields such as callbacks, expiry, last-frame return,
+  watermark policy, and frame counts remain outside the UI.
 - Accept local image, video, and audio references for frontend interaction and
   role assignment. Video mode uses one media-aware asset-library picker for
   reusable images, videos, and audio, preserving stable asset IDs and private

@@ -895,7 +895,7 @@ test("video asset selection preserves mixed-media identity, roles, deduplication
   assert.deepEqual(
     mixed.references.map(({ id, mediaType, role }) => ({ id, mediaType, role })),
     [
-      { id: "image-1", mediaType: "image", role: "first_frame" },
+      { id: "image-1", mediaType: "image", role: "reference_image" },
       { id: "video-1", mediaType: "video", role: "reference_video" },
       { id: "audio-1", mediaType: "audio", role: "reference_audio" },
     ],
@@ -917,6 +917,27 @@ test("video asset selection preserves mixed-media identity, roles, deduplication
   assert.equal(videoLimit.addedCount, 3);
   assert.equal(videoLimit.rejectedCount, 1);
   assert.match(videoLimit.firstCapacityError, /最多支持 3 段视频/);
+
+  const firstLast = appendVideoAssetMaterials(
+    [],
+    [
+      asset("image-start", "image"),
+      asset("image-end", "image"),
+      asset("image-extra", "image"),
+      asset("video-extra", "video"),
+    ],
+    "seedance-2-0",
+    "first_last_frame",
+  );
+  assert.equal(firstLast.addedCount, 2);
+  assert.equal(firstLast.rejectedCount, 2);
+  assert.deepEqual(
+    firstLast.references.map(({ id, role }) => ({ id, role })),
+    [
+      { id: "image-start", role: "first_frame" },
+      { id: "image-end", role: "last_frame" },
+    ],
+  );
 });
 
 test("billing HTTP boundary covers balance, quote, zero capacity, and retryable failure", async () => {

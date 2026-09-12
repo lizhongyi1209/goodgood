@@ -13,16 +13,18 @@ import { CreationModeSwitch } from "@/features/creation/creation-mode-switch";
 import { getRatioFrame } from "@/features/creation/generation-options";
 import {
   VIDEO_GENERATION_MODEL_CATALOG,
+  VIDEO_GENERATION_MODE_OPTIONS,
   VIDEO_RATIO_OPTIONS,
-  VIDEO_REFERENCE_ROLE_OPTIONS,
+  countVideoReferences,
   getVideoGenerationModel,
+  getVideoReferenceLimits,
   videoReferenceRoleLabel,
   type CreationMode,
   type VideoAspectRatio,
+  type VideoGenerationMode,
   type VideoGenerationModelId,
   type VideoReference,
   type VideoReferenceMediaType,
-  type VideoReferenceRole,
   type VideoResolution,
 } from "@/features/creation/video-generation-options";
 import {
@@ -42,6 +44,7 @@ export type VideoCreationComposerProps = Readonly<{
   mode: CreationMode;
   prompt: string;
   references: readonly VideoReference[];
+  generationMode: VideoGenerationMode;
   modelId: VideoGenerationModelId;
   aspectRatio: VideoAspectRatio;
   resolution: VideoResolution;
@@ -56,10 +59,7 @@ export type VideoCreationComposerProps = Readonly<{
   ) => void;
   onOpenReferenceLibrary: () => void;
   onRemoveReference: (reference: VideoReference) => void;
-  onReferenceRoleChange: (
-    referenceId: string,
-    role: Extract<VideoReferenceRole, "first_frame" | "last_frame" | "reference_image">,
-  ) => void;
+  onGenerationModeChange: (generationMode: VideoGenerationMode) => void;
   onModelChange: (modelId: VideoGenerationModelId) => void;
   onAspectRatioChange: (ratio: VideoAspectRatio) => void;
   onResolutionChange: (resolution: VideoResolution) => void;
@@ -97,6 +97,7 @@ export function VideoCreationComposer({
   mode,
   prompt,
   references,
+  generationMode,
   modelId,
   aspectRatio,
   resolution,
@@ -108,7 +109,7 @@ export function VideoCreationComposer({
   onReferenceFiles,
   onOpenReferenceLibrary,
   onRemoveReference,
-  onReferenceRoleChange,
+  onGenerationModeChange,
   onModelChange,
   onAspectRatioChange,
   onResolutionChange,
@@ -123,6 +124,18 @@ export function VideoCreationComposer({
   const audioInputRef = useRef<HTMLInputElement>(null);
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const activeModel = getVideoGenerationModel(modelId);
+  const referenceLimits = getVideoReferenceLimits(modelId, generationMode);
+  const referenceCounts = {
+    image: countVideoReferences(references, "image"),
+    video: countVideoReferences(references, "video"),
+    audio: countVideoReferences(references, "audio"),
+  };
+  const referenceTotalRemaining = Math.max(0, referenceLimits.totalLimit - references.length);
+  const referenceRemaining = {
+    image: Math.max(0, Math.min(referenceLimits.imageLimit - referenceCounts.image, referenceTotalRemaining)),
+    video: Math.max(0, Math.min(referenceLimits.videoLimit - referenceCounts.video, referenceTotalRemaining)),
+    audio: Math.max(0, Math.min(referenceLimits.audioLimit - referenceCounts.audio, referenceTotalRemaining)),
+  };
   const activeRatio = VIDEO_RATIO_OPTIONS.find((item) => item.id === aspectRatio) ?? VIDEO_RATIO_OPTIONS[0];
   const ratioFrame = getRatioFrame(activeRatio.value ?? 16 / 9);
 
@@ -169,6 +182,7 @@ export function VideoCreationComposer({
           type="file"
           accept={fileInputAccept(mediaType)}
           multiple
+          disabled={referenceRemaining[mediaType] <= 0}
           onChange={(event) => handleFileChange(mediaType, event)}
         />
       ))}
@@ -177,22 +191,38 @@ export function VideoCreationComposer({
         <div className="reference-control">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="reference-button" aria-label="添加视频创作素材">
+              <button
+                className="reference-button"
+                aria-label={`添加视频创作素材，当前模式还可添加 ${referenceTotalRemaining} 个`}
+                disabled={referenceTotalRemaining <= 0}
+              >
                 <ImagePlus size={18} />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="reference-source-menu" align="start" sideOffset={7}>
-              <DropdownMenuItem onSelect={() => imageInputRef.current?.click()}>
+              <DropdownMenuItem
+                disabled={referenceRemaining.image <= 0}
+                onSelect={() => imageInputRef.current?.click()}
+              >
                 <ImagePlus size={15} />上传图片
+                <span className="reference-source-limit">{referenceCounts.image}/{referenceLimits.imageLimit}</span>
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={onOpenReferenceLibrary}>
                 <Images size={15} />从资产库选择
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => videoInputRef.current?.click()}>
+              <DropdownMenuItem
+                disabled={referenceRemaining.video <= 0}
+                onSelect={() => videoInputRef.current?.click()}
+              >
                 <Video size={15} />上传视频
+                <span className="reference-source-limit">{referenceLimits.videoLimit > 0 ? `${referenceCounts.video}/${referenceLimits.videoLimit}` : "当前模式不支持"}</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => audioInputRef.current?.click()}>
+              <DropdownMenuItem
+                disabled={referenceRemaining.audio <= 0}
+                onSelect={() => audioInputRef.current?.click()}
+              >
                 <AudioLines size={15} />上传音频
+                <span className="reference-source-limit">{referenceLimits.audioLimit > 0 ? `${referenceCounts.audio}/${referenceLimits.audioLimit}` : "当前模式不支持"}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -238,7 +268,7 @@ export function VideoCreationComposer({
                 .slice(0, index + 1)
                 .filter((item) => item.mediaType === reference.mediaType).length;
               const mediaLabel = reference.mediaType === "image"
-                ? `图 ${ordinal}`
+                ? `图片 ${ordinal}`
                 : reference.mediaType === "video"
                   ? `视频 ${ordinal}`
                   : `音频 ${ordinal}`;
@@ -260,30 +290,9 @@ export function VideoCreationComposer({
                     <span className="video-reference-placeholder"><AudioLines size={22} /></span>
                   )}
                   <span className="reference-thumbnail-ordinal">{mediaLabel}</span>
-                  {reference.mediaType === "image" ? (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button className="video-reference-role" aria-label={`设置${mediaLabel}用途`}>
-                          {videoReferenceRoleLabel(reference.role)}
-                          <ChevronDown size={9} />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="reference-source-menu" align="start" sideOffset={5}>
-                        {VIDEO_REFERENCE_ROLE_OPTIONS.map((option) => (
-                          <DropdownMenuItem
-                            key={option.value}
-                            onSelect={() => onReferenceRoleChange(reference.id, option.value)}
-                          >
-                            {option.label}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  ) : (
-                    <span className="video-reference-role is-static">
-                      {videoReferenceRoleLabel(reference.role)}
-                    </span>
-                  )}
+                  <span className="video-reference-role is-static">
+                    {videoReferenceRoleLabel(reference.role)}
+                  </span>
                   <button
                     className="reference-thumbnail-remove"
                     aria-label={`移除${mediaLabel}`}
@@ -375,7 +384,28 @@ export function VideoCreationComposer({
               </div>
               <div className="video-model-note">
                 <span>最长 {activeModel.capabilities.duration.max} 秒</span>
-                <span>支持图片、视频、音频参考</span>
+                <span>
+                  {generationMode === "multimodal"
+                    ? "支持图片、视频、音频参考"
+                    : "仅支持 1–2 张首尾帧图片"}
+                </span>
+              </div>
+              <div className="video-generation-mode-control">
+                <label>生成模式</label>
+                <div className="choice-row compact video-generation-mode-options" aria-label="视频生成模式">
+                  {VIDEO_GENERATION_MODE_OPTIONS.map((option) => (
+                    <button
+                      type="button"
+                      key={option.id}
+                      className={generationMode === option.id ? "selected" : ""}
+                      aria-pressed={generationMode === option.id}
+                      onClick={() => onGenerationModeChange(option.id)}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+                <small>{VIDEO_GENERATION_MODE_OPTIONS.find((option) => option.id === generationMode)?.description}</small>
               </div>
             </div>
 

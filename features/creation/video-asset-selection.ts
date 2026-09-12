@@ -1,5 +1,8 @@
 import {
+  DEFAULT_VIDEO_GENERATION_MODE,
+  normalizeVideoReferencesForMode,
   videoReferenceCapacityError,
+  type VideoGenerationMode,
   type VideoGenerationModelId,
   type VideoReference,
   type VideoReferenceMediaType,
@@ -31,23 +34,26 @@ export type AppendVideoAssetMaterialsResult = Readonly<{
 function roleForAsset(
   material: VideoAssetMaterial,
   references: readonly VideoReference[],
+  generationMode: VideoGenerationMode,
 ): VideoReferenceRole {
   if (material.mediaType === "video") return "reference_video";
   if (material.mediaType === "audio") return "reference_audio";
+  if (generationMode === "multimodal") return "reference_image";
   return references.some((reference) => reference.role === "first_frame")
-    ? "reference_image"
+    ? "last_frame"
     : "first_frame";
 }
 
 export function videoAssetToReference(
   material: VideoAssetMaterial,
   references: readonly VideoReference[],
+  generationMode: VideoGenerationMode = DEFAULT_VIDEO_GENERATION_MODE,
 ): VideoReference {
   return {
     id: material.id,
     mediaType: material.mediaType,
     name: material.name,
-    role: roleForAsset(material, references),
+    role: roleForAsset(material, references, generationMode),
     size: material.size,
     url: material.url,
   };
@@ -57,6 +63,7 @@ export function appendVideoAssetMaterials(
   references: readonly VideoReference[],
   materials: readonly VideoAssetMaterial[],
   modelId: VideoGenerationModelId,
+  generationMode: VideoGenerationMode = DEFAULT_VIDEO_GENERATION_MODE,
 ): AppendVideoAssetMaterialsResult {
   const nextReferences = [...references];
   let addedCount = 0;
@@ -69,10 +76,11 @@ export function appendVideoAssetMaterials(
       duplicateCount += 1;
       continue;
     }
-    const candidate = videoAssetToReference(material, nextReferences);
+    const candidate = videoAssetToReference(material, nextReferences, generationMode);
     const capacityError = videoReferenceCapacityError(
       modelId,
       [...nextReferences, candidate],
+      generationMode,
     );
     if (capacityError) {
       rejectedCount += 1;
@@ -84,7 +92,7 @@ export function appendVideoAssetMaterials(
   }
 
   return {
-    references: nextReferences,
+    references: normalizeVideoReferencesForMode(nextReferences, generationMode),
     addedCount,
     duplicateCount,
     rejectedCount,

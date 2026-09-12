@@ -216,15 +216,20 @@ descriptions to fill space.
   their durable API is connected. Images from either source may be marked
   `首帧 / 尾帧 / 参考图`; selected videos and audio become reference media.
   Selection respects the model's per-type and total-media limits, and IDs already
-  present in the video tray are disabled. A model change is blocked when retained
-  media exceeds its capability limit. Local object URLs remain session-only until
+  present in the video tray are disabled. Video settings default to `多模态`, where
+  images, videos, and audio use `参考图片 / 参考视频 / 参考音频` roles. `首尾帧`
+  accepts only two images and derives `首帧 / 尾帧` from tray order; video/audio
+  upload and asset filters are disabled. A model or mode change is blocked when
+  retained media exceeds the target capability, without silently removing it.
+  Local object URLs remain session-only until
   backend upload and durable mixed-media contracts exist.
 - Settings: attached downward drawer; closing it must not reset values.
 - Settings read from aspect ratio to model to output; aspect ratio is the leftmost
   wide-screen group and stays first through responsive reflow.
 - Model list: opens within the parameter drawer and collapses after selection.
 - Video model order is Seedance 2.5, Seedance 2.0, Seedance 2.0 Fast, then
-  Seedance 2.0 Mini. Video settings use aspect ratio, model, then output;
+  Seedance 2.0 Mini. Video settings use aspect ratio, model plus generation mode,
+  then output;
   output contains resolution, integer-second duration, and `有声 / 静音` rather
   than image count. Seedance 2.5 exposes 480p/720p and 4–30 seconds; standard
   Seedance 2.0 exposes 480p/720p/1080p/4K and 4–15 seconds; Fast and Mini expose
