@@ -66,7 +66,12 @@ export interface BillingAccountSummary {
 }
 
 export interface BillingGenerationQuote {
-  modelId: "nano-banana-2" | "nano-banana-pro" | "gpt-image-2";
+  modelId:
+    | "nano-banana-2"
+    | "nano-banana-pro"
+    | "gpt-image-2.5-sunburst"
+    | "gpt-image-2"
+    | "gpt-image-2.5-flare";
   resolution: "1K" | "2K" | "4K";
   count: 1 | 2 | 4;
   planContext: string;

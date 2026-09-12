@@ -5,7 +5,9 @@ import { ProjectRequestError } from "./errors.mjs";
 const MODEL_IDS = new Set([
   "nano-banana-2",
   "nano-banana-pro",
+  "gpt-image-2.5-sunburst",
   "gpt-image-2",
+  "gpt-image-2.5-flare",
 ]);
 const ASPECT_RATIOS = new Set([
   "1:8",

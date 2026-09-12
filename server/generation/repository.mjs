@@ -13,7 +13,10 @@ import {
 import { resolveWorkspaceAccess } from "../organizations/workspace-access.mjs";
 import { lockReferenceLifecycle } from "../references/lifecycle-lock.mjs";
 import { findReadyReferences } from "../references/repository.mjs";
-import { normalizeGenerationModelOptions } from "./capabilities.mjs";
+import {
+  isGptImageModelId,
+  normalizeGenerationModelOptions,
+} from "./capabilities.mjs";
 
 export class GenerationPersistenceError extends Error {
   constructor(code, message, status = 500) {
@@ -95,7 +98,7 @@ export function generationInputFromRow(row, referenceUrls = new Map()) {
     googleSearch: row.google_search ?? false,
     modelId: row.model_id,
     outputFormat:
-      row.output_format ?? (row.model_id === "gpt-image-2" ? "jpeg" : "png"),
+      row.output_format ?? (isGptImageModelId(row.model_id) ? "jpeg" : "png"),
     projectId: row.project_id ?? null,
     prompt: row.prompt,
     references: (row.reference_snapshot ?? []).map((reference) => ({
@@ -120,7 +123,7 @@ export function persistedGenerationInputFromRow(row) {
     googleSearch: row.google_search ?? false,
     modelId: row.model_id,
     outputFormat:
-      row.output_format ?? (row.model_id === "gpt-image-2" ? "jpeg" : "png"),
+      row.output_format ?? (isGptImageModelId(row.model_id) ? "jpeg" : "png"),
     projectId: row.project_id ?? null,
     prompt: row.prompt,
     references: (row.reference_snapshot ?? []).map((reference) => ({

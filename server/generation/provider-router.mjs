@@ -6,7 +6,6 @@ import {
 } from "./provider.mjs";
 import { readPrivateObject, signAssetRead } from "./storage.mjs";
 import {
-  US_GATEWAY_GPT_IMAGE_2_ROUTE,
   US_GATEWAY_MVP_ROUTE,
   createUsGatewayAdapter,
   getUsGatewayRoute,
@@ -24,15 +23,31 @@ export const MOCK_GPT_IMAGE_2_ROUTE = Object.freeze({
   routeVersion: "m3-mock-gpt-image-2-v1",
 });
 
+export const MOCK_GPT_IMAGE_25_SUNBURST_ROUTE = Object.freeze({
+  provider: "goodgood-mock",
+  providerModel: "gpt-image-2.5-sunburst-mock-v1",
+  routeVersion: "m3-mock-gpt-image-2.5-sunburst-v1",
+});
+
+export const MOCK_GPT_IMAGE_25_FLARE_ROUTE = Object.freeze({
+  provider: "goodgood-mock",
+  providerModel: "gpt-image-2.5-flare-mock-v1",
+  routeVersion: "m3-mock-gpt-image-2.5-flare-v1",
+});
+
+const MOCK_PROVIDER_ROUTES = Object.freeze({
+  "nano-banana-2": MOCK_PROVIDER_ROUTE,
+  "gpt-image-2.5-sunburst": MOCK_GPT_IMAGE_25_SUNBURST_ROUTE,
+  "gpt-image-2": MOCK_GPT_IMAGE_2_ROUTE,
+  "gpt-image-2.5-flare": MOCK_GPT_IMAGE_25_FLARE_ROUTE,
+});
+
 export function generationProviderRouteForModel(providerKind, modelId) {
   if (providerKind === "o1key") {
     const route = getUsGatewayRoute(modelId);
     if (route) return route;
   } else if (providerKind === "mock") {
-    const route = Object.freeze({
-      "nano-banana-2": MOCK_PROVIDER_ROUTE,
-      "gpt-image-2": MOCK_GPT_IMAGE_2_ROUTE,
-    })[modelId];
+    const route = MOCK_PROVIDER_ROUTES[modelId];
     if (route) return route;
   }
   throw new Error(`No ${providerKind} generation route for ${modelId}.`);
@@ -190,7 +205,7 @@ export function createGenerationProvider({
   storage,
 }) {
   if (config.provider.kind === "o1key") {
-    if (route !== US_GATEWAY_MVP_ROUTE && route !== US_GATEWAY_GPT_IMAGE_2_ROUTE) {
+    if (getUsGatewayRoute(route.productModelId) !== route) {
       throw new Error("The selected route does not match the O1Key provider.");
     }
     const adapter = createUsGatewayAdapter({
@@ -303,7 +318,7 @@ export function createGenerationProvider({
     });
   }
 
-  if (route !== MOCK_PROVIDER_ROUTE && route !== MOCK_GPT_IMAGE_2_ROUTE) {
+  if (!Object.values(MOCK_PROVIDER_ROUTES).includes(route)) {
     throw new Error("The selected route does not match the mock provider.");
   }
 

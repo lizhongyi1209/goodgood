@@ -207,7 +207,8 @@ fill space.
 - Settings read from aspect ratio to model to output; aspect ratio is the leftmost
   wide-screen group and stays first through responsive reflow.
 - Model list: opens within the parameter drawer and collapses after selection.
-- Nano Banana 2 accepts its 14 displayed ratios; GPT IMAGE 2 accepts `9:16`,
+- Nano Banana 2 accepts its 14 displayed ratios; each of GPT IMAGE 2.5
+  sunburst, GPT IMAGE 2, and GPT IMAGE 2.5 flare accepts `9:16`,
   `2:3`, `3:4`, `1:1`, `4:3`, `3:2`, and `16:9`. Both use the existing
   `1K / 2K / 4K` resolution domain and support `1 / 2 / 4` outputs.
   The pixel readout follows the selected model's exact size table. A model
@@ -218,7 +219,7 @@ fill space.
   internal high-thinking mode without exposing a creator control or detail row.
   Changing to another model hides and resets Google Search. Historical
   low/high values remain in frozen records for exact retries but are not shown.
-- Selecting GPT IMAGE 2 reveals `质量` (`自动 / 低 / 中 / 高`, default `自动`),
+- Selecting any GPT image model reveals `质量` (`自动 / 低 / 中 / 高`, default `自动`),
   `背景` (`自动 / 透明`, default `自动`), and `输出格式`
   (`PNG / JPEG / WebP`, default `JPEG`). Choosing transparent while JPEG is
   selected immediately moves output format to PNG; JPEG remains disabled until

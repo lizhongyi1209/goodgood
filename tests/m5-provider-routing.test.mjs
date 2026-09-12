@@ -10,13 +10,19 @@ import {
   downloadProviderOutput,
 } from "../server/generation/provider.mjs";
 import {
+  MOCK_GPT_IMAGE_25_FLARE_ROUTE,
+  MOCK_GPT_IMAGE_25_SUNBURST_ROUTE,
   MOCK_GPT_IMAGE_2_ROUTE,
   createGenerationProvider,
   decodeO1KeyTaskSet,
   encodeO1KeyTaskSet,
   generationProviderRouteForModel,
 } from "../server/generation/provider-router.mjs";
-import { US_GATEWAY_GPT_IMAGE_2_ROUTE } from "../server/generation/us-gateway-adapter.mjs";
+import {
+  US_GATEWAY_GPT_IMAGE_25_FLARE_ROUTE,
+  US_GATEWAY_GPT_IMAGE_25_SUNBURST_ROUTE,
+  US_GATEWAY_GPT_IMAGE_2_ROUTE,
+} from "../server/generation/us-gateway-adapter.mjs";
 import {
   markProviderSubmissionStarted,
   saveProviderTask,
@@ -436,7 +442,11 @@ test("Nano Banana 2 resumes a partially persisted task set without resubmitting 
   assert.equal(fake.requests.filter((request) => request.operation === "submit").length, 2);
 });
 
-test("provider routing selects GPT Image 2 SD without changing its product model ID", () => {
+test("provider routing selects the three exact GPT image provider model IDs", () => {
+  assert.equal(
+    generationProviderRouteForModel("o1key", "gpt-image-2.5-sunburst"),
+    US_GATEWAY_GPT_IMAGE_25_SUNBURST_ROUTE,
+  );
   assert.equal(
     generationProviderRouteForModel("o1key", "gpt-image-2"),
     US_GATEWAY_GPT_IMAGE_2_ROUTE,
@@ -446,13 +456,27 @@ test("provider routing selects GPT Image 2 SD without changing its product model
     outputCounts: [1, 2, 4],
     productModelId: "gpt-image-2",
     provider: "o1key",
-    providerModel: "gpt-image-2-c-sd",
+    providerModel: "gpt-image-2",
     resolutions: ["1K", "2K", "4K"],
-    routeVersion: "o1key-gpt-image-2-c-sd-v2",
+    routeVersion: "o1key-gpt-image-2-v3",
   });
+  assert.equal(
+    generationProviderRouteForModel("o1key", "gpt-image-2.5-flare"),
+    US_GATEWAY_GPT_IMAGE_25_FLARE_ROUTE,
+  );
+  assert.equal(US_GATEWAY_GPT_IMAGE_25_SUNBURST_ROUTE.providerModel, "gpt-image-2.5-sunburst");
+  assert.equal(US_GATEWAY_GPT_IMAGE_25_FLARE_ROUTE.providerModel, "gpt-image-2.5-flare");
   assert.equal(
     generationProviderRouteForModel("mock", "gpt-image-2"),
     MOCK_GPT_IMAGE_2_ROUTE,
+  );
+  assert.equal(
+    generationProviderRouteForModel("mock", "gpt-image-2.5-sunburst"),
+    MOCK_GPT_IMAGE_25_SUNBURST_ROUTE,
+  );
+  assert.equal(
+    generationProviderRouteForModel("mock", "gpt-image-2.5-flare"),
+    MOCK_GPT_IMAGE_25_FLARE_ROUTE,
   );
   assert.throws(
     () => generationProviderRouteForModel("o1key", "nano-banana-pro"),

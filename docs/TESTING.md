@@ -580,9 +580,10 @@ The timestamped result of the latest verified gate belongs in
   only its missing suffix, and fails an interrupted marker without another POST.
   Repository coverage proves stale task evidence cannot overwrite a
   newer token; shared output/storage and billing tests retain atomic completion.
-- GG-007/GG-009 coverage proves GPT IMAGE 2's seven ratios across all three
-  product resolutions map to the 21 documented lowercase-`x` pixel sizes and
-  each accepts `n: 1`, `2`, or `4` in one `gpt-image-2-c-sd` task. It rejects a
+- GG-007/GG-009/GG-033 coverage proves the three GPT image models' seven ratios
+  across all three product resolutions map to the 21 documented lowercase-`x`
+  pixel sizes and each accepts `n: 1`, `2`, or `4` in one task with the exact
+  selected provider ID. It rejects a
   short success result and omits Nano-only request fields. UI contract tests
   cover ratio/count filtering, exact readouts, model-change normalization, and
   per-image plus batch-total pricing. Billing tests cover immutable 10/20/40

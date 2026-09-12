@@ -101,6 +101,7 @@ import {
 } from "@/features/models/catalog";
 import {
   MAX_GENERATION_REFERENCES,
+  isGptImageModelId,
   type GenerationAspectRatio,
   type GenerationCount,
   type GenerationInputSnapshot,
@@ -1382,13 +1383,13 @@ export default function Home({
   };
 
   const handleQualityChange = (value: GptImageQuality) => {
-    if (selectedModel !== "gpt-image-2") return;
+    if (!isGptImageModelId(selectedModel)) return;
     composerEditRevisionRef.current += 1;
     setQuality(value);
   };
 
   const handleBackgroundChange = (value: GptImageBackground) => {
-    if (selectedModel !== "gpt-image-2") return;
+    if (!isGptImageModelId(selectedModel)) return;
     composerEditRevisionRef.current += 1;
     setBackground(value);
     if (value === "transparent" && outputFormat === "jpeg") {
@@ -1398,7 +1399,7 @@ export default function Home({
 
   const handleOutputFormatChange = (value: GptImageOutputFormat) => {
     if (
-      selectedModel !== "gpt-image-2" ||
+      !isGptImageModelId(selectedModel) ||
       (background === "transparent" && value === "jpeg")
     ) return;
     composerEditRevisionRef.current += 1;
@@ -2037,10 +2038,10 @@ export default function Home({
       return;
     }
     if (
-      !["nano-banana-2", "gpt-image-2"].includes(selectedModel) ||
+      !(selectedModel === "nano-banana-2" || isGptImageModelId(selectedModel)) ||
       !isGenerationCountSupported(selectedModel, generationCount)
     ) {
-      toast.error("Nano Banana 2 和 GPT IMAGE 2 当前支持 1、2、4 张");
+      toast.error("Nano Banana 2 和 GPT IMAGE 系列当前支持 1、2、4 张");
       return;
     }
 
@@ -2985,7 +2986,7 @@ export default function Home({
                     {activeDetail.batch.modelId === "nano-banana-2" && (
                       <div><dt>谷歌搜索</dt><dd>{activeDetail.batch.googleSearch ? "开启" : "关闭"}</dd></div>
                     )}
-                    {activeDetail.batch.modelId === "gpt-image-2" && (
+                    {isGptImageModelId(activeDetail.batch.modelId) && (
                       <>
                         <div><dt>质量</dt><dd>{gptImageQualityLabel(activeDetail.batch.quality)}</dd></div>
                         <div><dt>背景</dt><dd>{gptImageBackgroundLabel(activeDetail.batch.background)}</dd></div>

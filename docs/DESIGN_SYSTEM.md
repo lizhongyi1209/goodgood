@@ -117,7 +117,7 @@ individual icon. Upload, settings, and send align to the same 40px box.
 - Nano Banana 2 places only its Google Search segmented control under the model
   selector. Use quiet labels and the existing Palace Red selected/on treatment;
   hiding the control must not leave an empty panel for other models.
-- GPT IMAGE 2 uses the same attached, quiet segmented-control treatment directly
+- All three GPT image models use the same attached, quiet segmented-control treatment directly
   under the model selector for `质量`, `背景`, and `输出格式`. Keep the groups in
   that order. Disabled JPEG under a transparent background remains legible but
   subdued, with a concise compatibility explanation.

@@ -8,6 +8,16 @@ import {
 } from "./repository.mjs";
 import { PaymentError } from "./payment-errors.mjs";
 
+const GPT_IMAGE_LAUNCH_PRICES = [
+  "gpt-image-2.5-sunburst",
+  "gpt-image-2",
+  "gpt-image-2.5-flare",
+].flatMap((modelId) => [1, 2, 4].map((count) => Object.freeze({
+  count,
+  modelId,
+  planContext: "standard",
+})));
+
 const LAUNCH_PRICES = Object.freeze([
   Object.freeze({
     count: 1,
@@ -29,21 +39,7 @@ const LAUNCH_PRICES = Object.freeze([
     modelId: "nano-banana-pro",
     planContext: "standard",
   }),
-  Object.freeze({
-    count: 1,
-    modelId: "gpt-image-2",
-    planContext: "standard",
-  }),
-  Object.freeze({
-    count: 2,
-    modelId: "gpt-image-2",
-    planContext: "standard",
-  }),
-  Object.freeze({
-    count: 4,
-    modelId: "gpt-image-2",
-    planContext: "standard",
-  }),
+  ...GPT_IMAGE_LAUNCH_PRICES,
 ]);
 
 function previewCreditAmount({ count, modelId }) {

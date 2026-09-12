@@ -1,5 +1,6 @@
 import { AuthenticationError, sessionExpiredError } from "../auth/errors.mjs";
 import { getGenerationResources } from "../generation/resources.mjs";
+import { isGptImageModelId } from "../generation/capabilities.mjs";
 import { signAssetRead } from "../generation/storage.mjs";
 import { newRequestId } from "../observability/http.mjs";
 import { OrganizationError } from "../organizations/errors.mjs";
@@ -55,7 +56,7 @@ async function presentCreationDraft(resources, row) {
       })),
       resolution: row.resolution,
       outputFormat:
-        row.output_format ?? (row.model_id === "gpt-image-2" ? "jpeg" : "png"),
+        row.output_format ?? (isGptImageModelId(row.model_id) ? "jpeg" : "png"),
       quality: row.quality ?? "auto",
       thinkingLevel:
         row.thinking_level ??

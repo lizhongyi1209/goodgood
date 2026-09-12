@@ -1,5 +1,6 @@
 import {
   GENERATION_COUNTS,
+  isGptImageModelId,
   type GenerationCount,
   GenerationAspectRatio,
   GenerationModelId,
@@ -131,7 +132,7 @@ export function getGenerationRatioIndex(ratio: GenerationAspectRatio): number {
 export function getGenerationRatioOptions(
   modelId: GenerationModelId,
 ): readonly GenerationRatioOption[] {
-  if (modelId !== "gpt-image-2") return GENERATION_RATIO_OPTIONS;
+  if (!isGptImageModelId(modelId)) return GENERATION_RATIO_OPTIONS;
   return GENERATION_RATIO_OPTIONS.filter((option) =>
     GPT_IMAGE_2_RATIO_IDS.includes(option.id as GptImage2AspectRatio),
   );
@@ -140,7 +141,7 @@ export function getGenerationRatioOptions(
 export function getGenerationCountOptions(
   modelId: GenerationModelId,
 ): readonly GenerationCount[] {
-  return modelId === "nano-banana-2" || modelId === "gpt-image-2"
+  return modelId === "nano-banana-2" || isGptImageModelId(modelId)
     ? GENERATION_COUNTS
     : [1];
 }
@@ -182,7 +183,7 @@ export function resolveGptImageOptionsForModel(
   modelId: GenerationModelId,
   options: Partial<GptImageOptions> = {},
 ): GptImageOptions {
-  if (modelId !== "gpt-image-2") {
+  if (!isGptImageModelId(modelId)) {
     return { background: "auto", outputFormat: "png", quality: "auto" };
   }
   const background = GPT_IMAGE_BACKGROUND_OPTIONS.some(
@@ -230,7 +231,7 @@ export function getGenerationPixelDimensions(
   ratio: GenerationAspectRatio,
   resolution: GenerationResolution,
 ): PixelDimensions {
-  if (modelId === "gpt-image-2") {
+  if (isGptImageModelId(modelId)) {
     if (!GPT_IMAGE_2_RATIO_IDS.includes(ratio as GptImage2AspectRatio)) {
       throw new Error(`Unsupported generation ratio for ${modelId}: ${ratio}`);
     }

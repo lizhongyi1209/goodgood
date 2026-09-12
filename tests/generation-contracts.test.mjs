@@ -55,7 +55,9 @@ test("maps stable model IDs to fixed presentation copy", async () => {
     [
       { id: "nano-banana-2", name: "Nano Banana 2", description: "快速，批量" },
       { id: "nano-banana-pro", name: "Nano Banana Pro", description: "高质量资产，视觉优先" },
+      { id: "gpt-image-2.5-sunburst", name: "GPT IMAGE 2.5 sunburst", description: "高真实感，提示词遵循" },
       { id: "gpt-image-2", name: "GPT IMAGE 2", description: "高真实感，提示词遵循" },
+      { id: "gpt-image-2.5-flare", name: "GPT IMAGE 2.5 flare", description: "高真实感，提示词遵循" },
     ],
   );
   assert.equal(findGenerationModelByName("Nano Banana Pro")?.id, "nano-banana-pro");
@@ -152,6 +154,8 @@ test("maps ratios and resolution labels without persisting UI indices", async ()
   );
   assert.deepEqual(getGenerationCountOptions("nano-banana-2"), [1, 2, 4]);
   assert.deepEqual(getGenerationCountOptions("gpt-image-2"), [1, 2, 4]);
+  assert.deepEqual(getGenerationCountOptions("gpt-image-2.5-sunburst"), [1, 2, 4]);
+  assert.deepEqual(getGenerationCountOptions("gpt-image-2.5-flare"), [1, 2, 4]);
   assert.equal(resolveGenerationCountForModel("nano-banana-2", 4), 4);
   assert.equal(resolveGenerationCountForModel("gpt-image-2", 4), 4);
   assert.equal(resolveGenerationThinkingLevelForModel("nano-banana-2"), "high");

@@ -63,9 +63,11 @@ duplicating a release log.
 - Prompt/reference composer, attached settings, responsive creation stream,
   polled pending/success/inline failure, retry, gallery and focused image detail.
 - Nano Banana 2 through the real server-side O1Key route across 14 product
-  ratios, plus GPT IMAGE 2 through `gpt-image-2-c-sd` across its seven exact-size
-  ratios. Both use `1K / 2K / 4K`, accept `1 / 2 / 4` outputs, and use
-  model-owned capability maps. GPT IMAGE 2 uses one native task; Nano Banana 2
+  ratios, plus the ordered GPT image family `GPT IMAGE 2.5 sunburst`,
+  `GPT IMAGE 2`, and `GPT IMAGE 2.5 flare` across the same seven exact-size
+  ratios. Their provider IDs are `gpt-image-2.5-sunburst`, `gpt-image-2`, and
+  `gpt-image-2.5-flare`. All use `1K / 2K / 4K`, accept `1 / 2 / 4` outputs,
+  and use model-owned capability maps. Each GPT image request uses one native task; Nano Banana 2
   composes a multi-image batch from one upstream task per requested image.
   Other visible model names are not a promise of availability.
 - Nano Banana 2 exposes default-off Google Search grounding and internally uses

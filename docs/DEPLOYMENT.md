@@ -147,9 +147,10 @@ the base Compose stack remains fixed to the mock provider. The accepted MVP uses
 single-image O1Key task per requested output, with incrementally persisted task
 evidence under route `o1key-gemini-3.1-flash-image-c-sp-v4`. Route v4 requests
 both text and image modalities and conditionally forwards Nano-only thinking
-and Google Search fields. GG-007/GG-009 add the SD route
-`gpt-image-2-c-sd`, `1 / 2 / 4` outputs in one native task, seven supported
-ratios, and 21 exact pixel-size mappings. Migrations 0013/0014 publish GPT's
+and Google Search fields. GG-033 enables `gpt-image-2.5-sunburst`,
+`gpt-image-2`, and `gpt-image-2.5-flare`, each with `1 / 2 / 4` outputs in one
+native task, seven supported ratios, and 21 exact pixel-size mappings.
+Migrations 0013/0014 publish the original GPT model's
 10-credit per-image prices and ordered multi-Asset storage; migration 0015 makes
 the multi-output prices active for the full Shanghai validation day without
 mutating immutable price history. Before migration 0014, stop and drain the old
@@ -165,6 +166,10 @@ the new immutable request fields and must never overlap the v4 Worker.
 Migration 0019 appends Nano Banana Pro single-output prices at 15 credits for
 `1K / 2K / 4K`. It publishes billing data only and does not enable a Pro
 provider route.
+Migration 0028 expands durable model constraints and appends 10/20/40-credit
+prices for both GPT IMAGE 2.5 models. Before switching from the historical
+`o1key-gpt-image-2-c-sd-v2` route, drain active attempts and start only a Worker
+whose route table includes all three new immutable identities.
 The worker accepts
 exactly one of `GENERATION_API_KEY` or `GENERATION_API_KEY_FILE`; deployment must
 prefer a dedicated least-privilege Bearer credential from its secret store. It

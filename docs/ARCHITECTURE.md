@@ -246,7 +246,8 @@ preserves the expiring signature, and keeps private-IP SSRF protection enabled
 for all server-side fetches.
 
 The durable generation capability admits `nano-banana-2` across 14 ratios and
-`gpt-image-2` across seven exact-size ratios. Nano uses one output; GPT accepts
+the three GPT image product IDs `gpt-image-2.5-sunburst`, `gpt-image-2`, and
+`gpt-image-2.5-flare` across seven exact-size ratios. Nano uses one output; GPT accepts
 `1 / 2 / 4` outputs in one native task. Both accept up to 10 validated
 references and `1K` / `2K` / `4K`. The browser and O1Key adapter use model-owned
 capability allowlists; unknown combinations fail before provider submission.
@@ -255,7 +256,7 @@ and secure public-callback verification remain external evidence work;
 billing is active for every newly created generation job. M6 persists immutable
 server-owned prices, exact account caches, append-only credit entries, and
 composable reserve/settle/release/refund transactions. Banana 2 costs 10 credits
-for its single output. GPT IMAGE 2 costs 10 credits per image, with immutable
+for its single output. Each enabled GPT image model costs 10 credits per image, with immutable
 10/20/40-credit rows for counts 1/2/4 at every resolution; new and migrated owners receive one 100-credit
 welcome grant. The authenticated `GET /api/billing` boundary exposes only exact
 available/reserved balances and active product quotes as decimal strings; it
@@ -524,13 +525,14 @@ private object remains authoritative (RustFS locally and R2 in M7 staging).
 Completed outputs must be downloaded promptly and stored in GoodGood-owned
 object storage.
 
-GG-007/GG-009 map stable `gpt-image-2` to O1Key `gpt-image-2-c-sd`. Its seven
+GG-033 maps the stable GPT product IDs `gpt-image-2.5-sunburst`, `gpt-image-2`,
+and `gpt-image-2.5-flare` to the same exact O1Key provider IDs. Their seven
 ratios map to 21 explicit lowercase-`x` pixel sizes across the same product
 resolution values. The adapter sends that exact pixel string as `size` with
 `n: 1`, `2`, or `4`; it does not send Nano-specific `aspect_ratio` or
 `response_modalities`. Product records retain the stable model, ratio,
 resolution, count, quality, background, and output format while each attempt
-retains the distinct `o1key-gpt-image-2-c-sd-v2` route identity. The v2 adapter
+retains a distinct immutable route identity for each provider model. The adapter
 always sends top-level `quality`, `background`, and `output_format`, including
 the explicit defaults `auto`, `auto`, and `png`. Transparent output is admitted
 only with PNG or WebP; this is checked before the billable provider POST.

@@ -38,7 +38,7 @@
 | GG-030 | 企业工作区、员工额度、消费记录和资产审阅 | 阶段 0—4 本地完成并验证；未合入/未部署 | [任务](tasks/GG-030-enterprise-workspace.md) |
 | GG-031 | 邮箱验证码与企业工作区本地集成 | 自动化完成，并已在 GG-032 完整基线上复验通过；线上未开始 | [任务](tasks/GG-031-email-enterprise-integration.md) |
 | GG-032 | 完整基础、邮箱验证码与企业工作区整合 | 完整本地组合验收完成，待用户确认；未合入/未部署 | [任务](tasks/GG-032-complete-base-email-enterprise.md) |
-| GG-033 | 新增 GPT IMAGE 2.5 sunburst/flare 并更新 GPT IMAGE 2 provider ID | 实施中；真实本地出图已获本任务授权，未部署 | [任务](tasks/GG-033-gpt-image-25-models.md) |
+| GG-033 | 新增 GPT IMAGE 2.5 sunburst/flare 并更新 GPT IMAGE 2 provider ID | 本地实现、完整门禁与三模型真实出图完成；待用户检查，未推送/未合入/未部署 | [任务](tasks/GG-033-gpt-image-25-models.md) |
 
 GG-024—GG-033 已由隔离任务占用；下一个普通产品需求从 **GG-034** 分配并检查是否已被占用。每次 alpha 发布仍须取得
 新鲜、精确绑定候选的证据并通过门禁；本次证据不能复用。

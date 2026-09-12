@@ -7,10 +7,11 @@ import {
   SUPPORTED_GENERATION_RESOLUTIONS,
   getGenerationModelCapability,
   getGptImage2PixelSize,
+  isGptImageModelId,
   isSupportedGenerationInput,
 } from "./capabilities.mjs";
 
-export const US_GATEWAY_CONTRACT_VERSION = "o1key-image-api-2026-09-08";
+export const US_GATEWAY_CONTRACT_VERSION = "o1key-image-api-2026-09-12";
 
 export const US_GATEWAY_NANO_BANANA_2_ROUTE = Object.freeze({
   aspectRatios: getGenerationModelCapability("nano-banana-2").aspectRatios,
@@ -27,9 +28,29 @@ export const US_GATEWAY_GPT_IMAGE_2_ROUTE = Object.freeze({
   outputCounts: getGenerationModelCapability("gpt-image-2").outputCounts,
   productModelId: "gpt-image-2",
   provider: "o1key",
-  providerModel: "gpt-image-2-c-sd",
+  providerModel: "gpt-image-2",
   resolutions: SUPPORTED_GENERATION_RESOLUTIONS,
-  routeVersion: "o1key-gpt-image-2-c-sd-v2",
+  routeVersion: "o1key-gpt-image-2-v3",
+});
+
+export const US_GATEWAY_GPT_IMAGE_25_SUNBURST_ROUTE = Object.freeze({
+  aspectRatios: getGenerationModelCapability("gpt-image-2.5-sunburst").aspectRatios,
+  outputCounts: getGenerationModelCapability("gpt-image-2.5-sunburst").outputCounts,
+  productModelId: "gpt-image-2.5-sunburst",
+  provider: "o1key",
+  providerModel: "gpt-image-2.5-sunburst",
+  resolutions: SUPPORTED_GENERATION_RESOLUTIONS,
+  routeVersion: "o1key-gpt-image-2.5-sunburst-v1",
+});
+
+export const US_GATEWAY_GPT_IMAGE_25_FLARE_ROUTE = Object.freeze({
+  aspectRatios: getGenerationModelCapability("gpt-image-2.5-flare").aspectRatios,
+  outputCounts: getGenerationModelCapability("gpt-image-2.5-flare").outputCounts,
+  productModelId: "gpt-image-2.5-flare",
+  provider: "o1key",
+  providerModel: "gpt-image-2.5-flare",
+  resolutions: SUPPORTED_GENERATION_RESOLUTIONS,
+  routeVersion: "o1key-gpt-image-2.5-flare-v1",
 });
 
 export const US_GATEWAY_MVP_ROUTE = US_GATEWAY_NANO_BANANA_2_ROUTE;
@@ -37,7 +58,9 @@ export const US_GATEWAY_MVP_ROUTE = US_GATEWAY_NANO_BANANA_2_ROUTE;
 export function getUsGatewayRoute(modelId) {
   return Object.freeze({
     "nano-banana-2": US_GATEWAY_NANO_BANANA_2_ROUTE,
+    "gpt-image-2.5-sunburst": US_GATEWAY_GPT_IMAGE_25_SUNBURST_ROUTE,
     "gpt-image-2": US_GATEWAY_GPT_IMAGE_2_ROUTE,
+    "gpt-image-2.5-flare": US_GATEWAY_GPT_IMAGE_25_FLARE_ROUTE,
   })[modelId] ?? null;
 }
 
@@ -285,7 +308,7 @@ function validateJob(job, route) {
   const background = job?.background ?? "auto";
   const outputFormat =
     job?.output_format ??
-    (route.productModelId === "gpt-image-2"
+    (isGptImageModelId(route.productModelId)
       ? DEFAULT_GPT_IMAGE_OUTPUT_FORMAT
       : "png");
   if (
@@ -304,7 +327,7 @@ function validateJob(job, route) {
     (background === "transparent" && outputFormat === "jpeg") ||
     (route.productModelId !== "nano-banana-2" &&
       (thinkingLevel !== "low" || googleSearch)) ||
-    (route.productModelId !== "gpt-image-2" &&
+    (!isGptImageModelId(route.productModelId) &&
       (quality !== "auto" || background !== "auto" || outputFormat !== "png"))
   ) {
     throw protocolError();
@@ -322,7 +345,7 @@ function generationPayload({ job, route, uploadedReferences }) {
     model: route.providerModel,
     prompt: job.prompt,
   };
-  if (route.productModelId === "gpt-image-2") {
+  if (isGptImageModelId(route.productModelId)) {
     return {
       ...common,
       background: job.background ?? "auto",

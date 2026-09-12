@@ -1,10 +1,26 @@
 export const GENERATION_MODEL_IDS = [
   "nano-banana-2",
   "nano-banana-pro",
+  "gpt-image-2.5-sunburst",
   "gpt-image-2",
+  "gpt-image-2.5-flare",
 ] as const;
 
 export type GenerationModelId = (typeof GENERATION_MODEL_IDS)[number];
+
+export const GPT_IMAGE_MODEL_IDS = [
+  "gpt-image-2.5-sunburst",
+  "gpt-image-2",
+  "gpt-image-2.5-flare",
+] as const satisfies readonly GenerationModelId[];
+
+export function isGptImageModelId(
+  modelId: GenerationModelId,
+): boolean {
+  return GPT_IMAGE_MODEL_IDS.includes(
+    modelId as (typeof GPT_IMAGE_MODEL_IDS)[number],
+  );
+}
 
 export const GENERATION_ASPECT_RATIOS = [
   "1:8",

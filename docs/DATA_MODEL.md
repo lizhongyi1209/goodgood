@@ -57,7 +57,10 @@ organization credit accounts, member budgets, and their append-only ledgers.
 Migration 0026 adds Workspace and creator scope to existing creative records and
 backfills every old record to its creator's personal Workspace. Migration 0027
 extends the enterprise audit action constraint with manager Asset downloads.
-The Drizzle schema mirrors the durable schema across all twenty-seven
+Migration 0028 expands the durable model constraints for
+`gpt-image-2.5-sunburst` and `gpt-image-2.5-flare` and appends their immutable
+10/20/40-credit price rows for counts 1/2/4 at each resolution. The Drizzle
+schema mirrors the durable schema across all twenty-eight
 migrations. These remain canonical contracts for later slices.
 
 ADR 0043 accepts an additive migration sequence for payment-funded credit
@@ -587,7 +590,7 @@ Contains ordering and membership metadata; never duplicate image bytes.
 - Generation submission reserves credit in the same logical transaction as the
   batch/job creation. Current success settles only after the complete requested
   Asset set is committed; failure releases the full batch reservation.
-- The M6/GG-007/GG-009 path reserves 10/20/40 credits for Banana 2 or GPT IMAGE 2
+- The M6/GG-007/GG-009/GG-033 path reserves 10/20/40 credits for Banana 2 or any enabled GPT image model
   count 1/2/4. GG-021 publishes 15-credit single-output Nano Banana Pro prices
   for all three resolution tiers without enabling that model's provider route.
   An enabled path settles after every requested accepted Asset
@@ -656,7 +659,9 @@ Contains ordering and membership metadata; never duplicate image bytes.
 - Provider pixel sizes are derived from the selected model/ratio/resolution
   capability at submission time. Persisted creative state does not store an
   O1Key model name or provider size string. Migration
-  `0013_gg007_gpt_image_2_prices.sql` adds immutable 10-credit GPT IMAGE 2 prices.
+  `0013_gg007_gpt_image_2_prices.sql` adds immutable 10-credit GPT IMAGE 2 prices;
+  `0028_gg033_gpt_image_25_models.sql` adds the two GPT IMAGE 2.5 model domains
+  and their immutable price rows.
 - Deleting a project does not automatically delete globally retained assets.
 - Object deletion is asynchronous and only occurs after authorization and
   reference checks.

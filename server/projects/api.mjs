@@ -1,5 +1,6 @@
 import { AuthenticationError, sessionExpiredError } from "../auth/errors.mjs";
 import { findProjectGenerationJobs } from "../generation/repository.mjs";
+import { isGptImageModelId } from "../generation/capabilities.mjs";
 import { presentGenerationJob } from "../generation/presenter.mjs";
 import { getGenerationResources } from "../generation/resources.mjs";
 import { signAssetRead } from "../generation/storage.mjs";
@@ -93,7 +94,7 @@ async function presentProject(resources, row) {
       })),
       resolution: row.resolution,
       outputFormat:
-        row.output_format ?? (row.model_id === "gpt-image-2" ? "jpeg" : "png"),
+        row.output_format ?? (isGptImageModelId(row.model_id) ? "jpeg" : "png"),
       quality: row.quality ?? "auto",
       thinkingLevel:
         row.thinking_level ??

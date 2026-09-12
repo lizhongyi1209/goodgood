@@ -7,6 +7,12 @@ const HEADERS = {
   "content-type": "application/json; charset=utf-8",
 };
 
+const GPT_IMAGE_MODEL_IDS = new Set([
+  "gpt-image-2.5-sunburst",
+  "gpt-image-2",
+  "gpt-image-2.5-flare",
+]);
+
 function sendJson(response, statusCode, payload, headers = {}) {
   response.writeHead(statusCode, { ...HEADERS, ...headers });
   response.end(JSON.stringify(payload));
@@ -105,7 +111,7 @@ export function createMockProviderServer({ apiKey, host, port }) {
       if (request.method === "POST" && url.pathname === "/v1/generations") {
         const body = await readJson(request);
         const requestedCount = body.count ?? 1;
-        const validCount = body.modelId === "gpt-image-2"
+        const validCount = GPT_IMAGE_MODEL_IDS.has(body.modelId)
           ? [1, 2, 4].includes(requestedCount)
           : body.modelId === "nano-banana-2" && requestedCount === 1;
         if (!validCount) {

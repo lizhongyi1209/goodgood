@@ -35,6 +35,7 @@ import {
 } from "@/features/models/catalog";
 import {
   GENERATION_COUNTS,
+  isGptImageModelId,
   MAX_GENERATION_REFERENCES,
   type GenerationAspectRatio,
   type GenerationCount,
@@ -134,7 +135,7 @@ export function CreationComposer({
   googleSearch = false,
   quality = "auto",
   background = "auto",
-  outputFormat = modelId === "gpt-image-2"
+  outputFormat = isGptImageModelId(modelId)
     ? DEFAULT_GPT_IMAGE_OUTPUT_FORMAT
     : "png",
   drawerOpen,
@@ -527,7 +528,7 @@ export function CreationComposer({
                   </div>
                 </div>
               )}
-              {modelId === "gpt-image-2" && (
+              {isGptImageModelId(modelId) && (
                 <div className="gpt-image-model-options">
                   <div className="gpt-image-option-section">
                     <label>质量</label>

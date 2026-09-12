@@ -113,7 +113,7 @@ test("GG-015 migration and UI persist model-owned GPT Image 2 controls", async (
   assert.match(schema, /quality: text\("quality"\)\.default\("auto"\)/);
   assert.match(schema, /background: text\("background"\)\.default\("auto"\)/);
   assert.match(schema, /outputFormat: text\("output_format"\)\.default\("png"\)/);
-  assert.match(composer, /modelId === "gpt-image-2"/);
+  assert.match(composer, /isGptImageModelId\(modelId\)/);
   assert.match(composer, /GPT_IMAGE_QUALITY_OPTIONS/);
   assert.match(composer, /background === "transparent" && option\.value === "jpeg"/);
   assert.match(

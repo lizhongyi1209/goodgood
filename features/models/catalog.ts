@@ -28,8 +28,22 @@ export const GENERATION_MODEL_CATALOG = [
     recommended: false,
   },
   {
+    id: "gpt-image-2.5-sunburst",
+    name: "GPT IMAGE 2.5 sunburst",
+    description: "高真实感，提示词遵循",
+    icon: "openai",
+    recommended: false,
+  },
+  {
     id: "gpt-image-2",
     name: "GPT IMAGE 2",
+    description: "高真实感，提示词遵循",
+    icon: "openai",
+    recommended: false,
+  },
+  {
+    id: "gpt-image-2.5-flare",
+    name: "GPT IMAGE 2.5 flare",
     description: "高真实感，提示词遵循",
     icon: "openai",
     recommended: false,

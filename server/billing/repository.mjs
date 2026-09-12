@@ -10,7 +10,9 @@ import {
 const PRODUCT_MODELS = new Set([
   "nano-banana-2",
   "nano-banana-pro",
+  "gpt-image-2.5-sunburst",
   "gpt-image-2",
+  "gpt-image-2.5-flare",
 ]);
 const RESOLUTIONS = new Set(["1K", "2K", "4K"]);
 const OUTPUT_COUNTS = new Set([1, 2, 4]);

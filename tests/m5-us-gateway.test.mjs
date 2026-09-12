@@ -9,6 +9,8 @@ import {
   getGptImage2PixelSize,
 } from "../server/generation/capabilities.mjs";
 import {
+  US_GATEWAY_GPT_IMAGE_25_FLARE_ROUTE,
+  US_GATEWAY_GPT_IMAGE_25_SUNBURST_ROUTE,
   US_GATEWAY_GPT_IMAGE_2_ROUTE,
   US_GATEWAY_MVP_ROUTE,
   createUsGatewayAdapter,
@@ -447,7 +449,7 @@ test("Nano Banana 2 accepts multi-output counts without forwarding an unsupporte
   assert.equal(gateway.submissions[0].body.thinking_level, "high");
 });
 
-test("GPT Image 2 SD maps every enabled size and count to one native task", async (context) => {
+test("GPT Image 2 maps every enabled size and count to one native task", async (context) => {
   const { adapter, gateway } = await withGateway(
     context,
     US_GATEWAY_GPT_IMAGE_2_ROUTE,
@@ -469,7 +471,7 @@ test("GPT Image 2 SD maps every enabled size and count to one native task", asyn
         assert.deepEqual(gateway.submissions.at(-1).body, {
           background: "auto",
           images: [],
-          model: "gpt-image-2-c-sd",
+          model: "gpt-image-2",
           n: count,
           output_format: "jpeg",
           prompt: "a realistic glass badge",
@@ -551,7 +553,7 @@ test("GPT Image 2 polling returns exactly the requested ordered outputs", async 
   );
 });
 
-test("GPT Image 2 SD keeps validated reference uploads in the edit request", async (context) => {
+test("GPT Image 2 keeps validated reference uploads in the edit request", async (context) => {
   const { adapter, gateway } = await withGateway(
     context,
     US_GATEWAY_GPT_IMAGE_2_ROUTE,
@@ -581,11 +583,33 @@ test("GPT Image 2 SD keeps validated reference uploads in the edit request", asy
         },
       },
     ],
-    model: "gpt-image-2-c-sd",
+    model: "gpt-image-2",
     n: 1,
     output_format: "jpeg",
     prompt: "keep the subject and change the material",
     quality: "auto",
     size: "3504x2336",
   });
+});
+
+test("GPT Image 2.5 routes share the GPT payload contract with exact provider IDs", async (context) => {
+  for (const route of [
+    US_GATEWAY_GPT_IMAGE_25_SUNBURST_ROUTE,
+    US_GATEWAY_GPT_IMAGE_25_FLARE_ROUTE,
+  ]) {
+    const { adapter, gateway } = await withGateway(context, route);
+    await adapter.submit(generationRequest("a precise product still life", {
+      model_id: route.productModelId,
+    }));
+    assert.deepEqual(gateway.submissions[0].body, {
+      background: "auto",
+      images: [],
+      model: route.providerModel,
+      n: 1,
+      output_format: "jpeg",
+      prompt: "a precise product still life",
+      quality: "auto",
+      size: "1024x1024",
+    });
+  }
 });

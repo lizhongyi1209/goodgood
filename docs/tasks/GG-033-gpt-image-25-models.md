@@ -1,6 +1,6 @@
 # GG-033 — GPT IMAGE 2.5 模型扩展与真实验证
 
-- 状态：实施中
+- 状态：本地实现与真实验证完成；未推送、未合入、未部署
 - 用户需求：在 GPT IMAGE 2 上方新增 `GPT IMAGE 2.5 sunburst`，下方新增 `GPT IMAGE 2.5 flare`；三者使用相同接口与参数，并把 GPT IMAGE 2 的实际 provider 模型改为 `gpt-image-2`。完成本地真实出图验证。
 - 最后更新：2026-09-12
 - 分支 / worktree：`feature/GG-033-gpt-image-25-models` / `F:/goodgood-worktrees/GG-033`
@@ -25,10 +25,16 @@
 ## 当前实现与证据
 
 - 已建立独立 GG-033 worktree，并确认 `origin/main` 是 GG-032 的祖先；新分支从远端 main 建立后快进到 GG-032 已验证候选。
-- 尚未修改运行时代码、迁移或测试；尚未发起真实 provider 请求。
+- 模型目录已按 sunburst、GPT IMAGE 2、flare 排序；前端与服务端统一使用 GPT 图片模型族判断，三个模型共享比例/尺寸、数量、质量、背景、格式、草稿、项目、重试和详情展示契约。
+- O1Key provider 路由分别冻结为 `o1key-gpt-image-2.5-sunburst-v1`、`o1key-gpt-image-2-v3`、`o1key-gpt-image-2.5-flare-v1`，对应 provider model 均与产品 ID 完全一致。
+- 迁移 `0028_gg033_gpt_image_25_models.sql` 已扩展四类持久化模型约束、三类 GPT 参数约束，并为两个新模型加入 18 条不可变 10/20/40 积分价格；新库实跑迁移到 0028。
+- 新增 GG-033 能力、路由、payload、顺序、迁移和价格测试，并更新既有契约测试。`npm run check:local` 通过：331 项，317 通过、14 个 opt-in 跳过、0 失败；`git diff --check` 通过。
+- 第一次真实栈预检发现基础 Compose 默认写入两个 fixture owner；在任务/尝试仍为 0 时立即删除该隔离栈及其卷。随后以 `localFixturesEnabled=false` 重建 `goodgood-gg033-real`，确认初始 `users=0`、任务/尝试为 0、Worker 为 `o1key` 且仅绑定 loopback 后才开始测试。
+- 通过现有 Chrome 的单一专用标签页 `http://127.0.0.1:32133/` 完成真实测试，未使用 Playwright。三个模型各提交一次 `1K / 1 张 / 自动 / 自动 / JPEG / 无参考图` 请求，均为 `succeeded`，页面显示三张 1024×1024 图像且模型标注正确。
+- 最终数据库为 1 个合成测试用户、3 个 job、3 个 attempt、3 个 Asset；三条 provider model/route 均精确匹配，账本为 1 次 grant、3 次 reserve、3 次 settle，可用积分 70、预留 0；活动任务 0、pending outbox 0、Valkey DB size 0，Worker readiness 全部为 `ok`。
+- 测试页与隔离栈保留供用户检查；生产事实未变化，`docs/CURRENT_STATE.md` 未改。
 
 ## 恢复工作
 
-- 下一步：实现共享 GPT 能力族、三条 provider 路由、持久化约束与价格迁移，补齐 UI/服务端/适配器测试。
-- 阻塞：当前无实现阻塞；真实请求前仍需验证专用栈目标、provider kind、账户余额、活动队列和密钥仅从受保护本地配置读取。
-
+- 下一步：用户检查专用测试页；如接受候选，再单独决定是否推送、合入 main 或进入部署流程。
+- 阻塞：本地无阻塞；推送、main 合入和生产部署均未授权。

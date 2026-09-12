@@ -40,6 +40,16 @@ const GPT_IMAGE_2_ASPECT_RATIOS = Object.freeze([
   "16:9",
 ]);
 
+export const GPT_IMAGE_MODEL_IDS = Object.freeze([
+  "gpt-image-2.5-sunburst",
+  "gpt-image-2",
+  "gpt-image-2.5-flare",
+]);
+
+export function isGptImageModelId(modelId) {
+  return GPT_IMAGE_MODEL_IDS.includes(modelId);
+}
+
 export const GPT_IMAGE_2_PIXEL_SIZES = Object.freeze({
   "9:16": Object.freeze({ "1K": "1024x1824", "2K": "2048x3648", "4K": "2160x3840" }),
   "2:3": Object.freeze({ "1K": "1024x1536", "2K": "2048x3072", "4K": "2336x3504" }),
@@ -50,17 +60,21 @@ export const GPT_IMAGE_2_PIXEL_SIZES = Object.freeze({
   "16:9": Object.freeze({ "1K": "1824x1024", "2K": "3648x2048", "4K": "3840x2160" }),
 });
 
+const GPT_IMAGE_CAPABILITY = Object.freeze({
+  aspectRatios: GPT_IMAGE_2_ASPECT_RATIOS,
+  outputCounts: SUPPORTED_GPT_IMAGE_2_OUTPUT_COUNTS,
+  resolutions: SUPPORTED_GENERATION_RESOLUTIONS,
+});
+
 export const GENERATION_MODEL_CAPABILITIES = Object.freeze({
   "nano-banana-2": Object.freeze({
     aspectRatios: NANO_BANANA_2_ASPECT_RATIOS,
     outputCounts: SUPPORTED_NANO_BANANA_2_OUTPUT_COUNTS,
     resolutions: SUPPORTED_GENERATION_RESOLUTIONS,
   }),
-  "gpt-image-2": Object.freeze({
-    aspectRatios: GPT_IMAGE_2_ASPECT_RATIOS,
-    outputCounts: SUPPORTED_GPT_IMAGE_2_OUTPUT_COUNTS,
-    resolutions: SUPPORTED_GENERATION_RESOLUTIONS,
-  }),
+  "gpt-image-2.5-sunburst": GPT_IMAGE_CAPABILITY,
+  "gpt-image-2": GPT_IMAGE_CAPABILITY,
+  "gpt-image-2.5-flare": GPT_IMAGE_CAPABILITY,
 });
 
 export const SUPPORTED_GENERATION_MODEL_IDS = Object.freeze(
@@ -106,7 +120,7 @@ export function normalizeGenerationModelOptions({
   const normalizedQuality = quality ?? "auto";
   const normalizedBackground = background ?? "auto";
   const normalizedOutputFormat =
-    outputFormat ?? (modelId === "gpt-image-2" ? DEFAULT_GPT_IMAGE_OUTPUT_FORMAT : "png");
+    outputFormat ?? (isGptImageModelId(modelId) ? DEFAULT_GPT_IMAGE_OUTPUT_FORMAT : "png");
   if (
     !SUPPORTED_GENERATION_THINKING_LEVELS.includes(normalizedThinkingLevel) ||
     typeof normalizedGoogleSearch !== "boolean" ||
@@ -124,7 +138,7 @@ export function normalizeGenerationModelOptions({
     return null;
   }
   if (
-    modelId !== "gpt-image-2" &&
+    !isGptImageModelId(modelId) &&
     (normalizedQuality !== "auto" ||
       normalizedBackground !== "auto" ||
       normalizedOutputFormat !== "png")

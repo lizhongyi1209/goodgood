@@ -164,15 +164,15 @@ test("billing summary serializes exact credits without owner or account identifi
       ["nano-banana-pro", "1K", 1, "15"],
       ["nano-banana-pro", "2K", 1, "15"],
       ["nano-banana-pro", "4K", 1, "15"],
-      ["gpt-image-2", "1K", 1, "10"],
-      ["gpt-image-2", "2K", 1, "10"],
-      ["gpt-image-2", "4K", 1, "10"],
-      ["gpt-image-2", "1K", 2, "20"],
-      ["gpt-image-2", "2K", 2, "20"],
-      ["gpt-image-2", "4K", 2, "20"],
-      ["gpt-image-2", "1K", 4, "40"],
-      ["gpt-image-2", "2K", 4, "40"],
-      ["gpt-image-2", "4K", 4, "40"],
+      ...["gpt-image-2.5-sunburst", "gpt-image-2", "gpt-image-2.5-flare"]
+        .flatMap((modelId) => [1, 2, 4].flatMap((count) =>
+          ["1K", "2K", "4K"].map((resolution) => [
+            modelId,
+            resolution,
+            count,
+            String(10 * count),
+          ]),
+        )),
     ],
   );
   assert.equal("ownerId" in summary.account, false);

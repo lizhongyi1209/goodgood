@@ -92,12 +92,12 @@ Dispatchers claim outbox rows atomically before publishing them, and recovery
 does not reopen a fresh dispatch until the Worker lease window has elapsed.
 Duplicate deliveries of the same active job are ignored, and an unexpired lease
 cannot be reclaimed by the same Worker identity.
-The generation API admits Nano Banana 2's 14 ratios and GPT IMAGE 2's seven
+The generation API admits Nano Banana 2's 14 ratios and all three GPT image models' seven
 ratios with `1 / 2 / 4` outputs at `1K` / `2K` / `4K`. Unknown
 model combinations return `M3_SLICE_UNSUPPORTED` before a job, credit
 reservation, or provider POST is created. The adapter repeats this validation.
 Nano sends the admitted ratio and resolution values in one single-image task
-per output and never sends `n`; GPT sends the corresponding exact pixel size
+per output and never sends `n`; each GPT route sends the corresponding exact pixel size
 and native count in one task.
 Nano's omitted thinking/search values normalize to `high` and false before
 persistence. Explicit historical `low` remains valid so a frozen retry can omit

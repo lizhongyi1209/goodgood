@@ -1304,7 +1304,7 @@ export const creationDrafts = pgTable(
     check("creation_drafts_prompt_check", sql`length(${table.prompt}) <= 4000`),
     check(
       "creation_drafts_model_check",
-      sql`${table.modelId} in ('nano-banana-2', 'nano-banana-pro', 'gpt-image-2')`,
+      sql`${table.modelId} in ('nano-banana-2', 'nano-banana-pro', 'gpt-image-2.5-sunburst', 'gpt-image-2', 'gpt-image-2.5-flare')`,
     ),
     check(
       "creation_drafts_resolution_check",
@@ -1336,7 +1336,7 @@ export const creationDrafts = pgTable(
     ),
     check(
       "creation_drafts_gpt_options_check",
-      sql`${table.modelId} = 'gpt-image-2' or (${table.quality} = 'auto' and ${table.background} = 'auto' and ${table.outputFormat} = 'png')`,
+      sql`${table.modelId} in ('gpt-image-2.5-sunburst', 'gpt-image-2', 'gpt-image-2.5-flare') or (${table.quality} = 'auto' and ${table.background} = 'auto' and ${table.outputFormat} = 'png')`,
     ),
     check(
       "creation_drafts_transparent_format_check",
@@ -1409,7 +1409,7 @@ export const projects = pgTable(
     check("projects_prompt_check", sql`length(${table.prompt}) <= 4000`),
     check(
       "projects_model_check",
-      sql`${table.modelId} in ('nano-banana-2', 'nano-banana-pro', 'gpt-image-2')`,
+      sql`${table.modelId} in ('nano-banana-2', 'nano-banana-pro', 'gpt-image-2.5-sunburst', 'gpt-image-2', 'gpt-image-2.5-flare')`,
     ),
     check(
       "projects_resolution_check",
@@ -1441,7 +1441,7 @@ export const projects = pgTable(
     ),
     check(
       "projects_gpt_options_check",
-      sql`${table.modelId} = 'gpt-image-2' or (${table.quality} = 'auto' and ${table.background} = 'auto' and ${table.outputFormat} = 'png')`,
+      sql`${table.modelId} in ('gpt-image-2.5-sunburst', 'gpt-image-2', 'gpt-image-2.5-flare') or (${table.quality} = 'auto' and ${table.background} = 'auto' and ${table.outputFormat} = 'png')`,
     ),
     check(
       "projects_transparent_format_check",
@@ -1494,7 +1494,7 @@ export const priceVersions = pgTable(
     ),
     check(
       "price_versions_model_check",
-      sql`${table.modelId} in ('nano-banana-2', 'nano-banana-pro', 'gpt-image-2')`,
+      sql`${table.modelId} in ('nano-banana-2', 'nano-banana-pro', 'gpt-image-2.5-sunburst', 'gpt-image-2', 'gpt-image-2.5-flare')`,
     ),
     check(
       "price_versions_resolution_check",
@@ -1596,7 +1596,7 @@ export const generationBatches = pgTable(
     ),
     check(
       "generation_batches_model_check",
-      sql`${table.modelId} in ('nano-banana-2', 'nano-banana-pro', 'gpt-image-2')`,
+      sql`${table.modelId} in ('nano-banana-2', 'nano-banana-pro', 'gpt-image-2.5-sunburst', 'gpt-image-2', 'gpt-image-2.5-flare')`,
     ),
     check(
       "generation_batches_resolution_check",
@@ -1628,7 +1628,7 @@ export const generationBatches = pgTable(
     ),
     check(
       "generation_batches_gpt_options_check",
-      sql`${table.modelId} = 'gpt-image-2' or (${table.quality} = 'auto' and ${table.background} = 'auto' and ${table.outputFormat} = 'png')`,
+      sql`${table.modelId} in ('gpt-image-2.5-sunburst', 'gpt-image-2', 'gpt-image-2.5-flare') or (${table.quality} = 'auto' and ${table.background} = 'auto' and ${table.outputFormat} = 'png')`,
     ),
     check(
       "generation_batches_transparent_format_check",
