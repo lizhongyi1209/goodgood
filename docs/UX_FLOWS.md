@@ -182,8 +182,9 @@ descriptions to fill space.
 - A standalone `---` line (optional surrounding spaces/tabs) separates concurrent
   prompts in image and video modes. Inline hyphens/longer rules remain literal.
   Trim and ignore empty segments, keep duplicates and source order; all-empty
-  input submits nothing. The quiet summary shows segment count × selected count
-  and total outputs. Parameters and ordered references are frozen and shared.
+  input submits nothing. Do not add a separate batch summary in either composer;
+  retain the multiplied image quote beside send. Parameters and ordered
+  references are frozen and shared.
   Image mode submits one durable multi-output job per segment; local video mode
   submits one single-output request per segment/output. Failure/retry is isolated.
   Image quotes multiply the server's per-segment quote; reservations remain per

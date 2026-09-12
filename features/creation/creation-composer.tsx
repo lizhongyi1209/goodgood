@@ -13,7 +13,6 @@ import { Slider } from "@/components/ui/slider";
 import type { ReferenceMaterial } from "@/features/references/http-reference-library";
 import { ReferenceQuickEditor } from "@/features/references/reference-quick-editor";
 import { CreationModeSwitch } from "@/features/creation/creation-mode-switch";
-import { PromptBatchSummary } from "@/features/creation/prompt-batch-summary";
 import type { CreationMode } from "@/features/creation/video-generation-options";
 import {
   DEFAULT_GPT_IMAGE_OUTPUT_FORMAT,
@@ -295,7 +294,6 @@ export function CreationComposer({
         </div>
       </div>
 
-      <PromptBatchSummary prompt={prompt} count={count} media="image" />
       {references.length > 0 && (
         <div className="reference-tray" aria-label="已添加的参考图片">
           <div className="reference-thumbnails">

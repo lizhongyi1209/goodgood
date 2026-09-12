@@ -514,7 +514,6 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .creation-skeleton small { position: absolute; left: 11px; bottom: 10px; color: #aaaab2; font-size: 9px; }
 .mixed-preview-note { color: var(--quiet); font-size: 10px; }
 .video-count-options { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); }
-.prompt-batch-summary { margin: 0 16px 10px; padding-left: 40px; color: var(--muted); font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
 .video-run-card > video { width: 100%; height: 100%; display: block; object-fit: cover; }
 .video-run-error { max-width: 85%; text-align: center; overflow-wrap: anywhere; }
 .video-run-resume { padding: 6px 10px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font-size: 11px; }

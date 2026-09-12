@@ -92,10 +92,9 @@ individual icon. Upload, settings, and send align to the same 40px box.
   it is a creation-mode choice, not another navigation bar.
 - Prompt is the flexible column. Left and right controls remain top-aligned and
   fixed while the textarea grows.
-- Only when a standalone `---` exists, add one quiet 11px batch summary below
-  the prompt row and above references: prompt segments × count = total images/
-  videos, concurrent generation. No new toggle, panel or empty-state tutorial.
-  Image quote beside send uses the total across segments, not just one segment.
+- Do not add a batch-prompt summary row in either composer (ADR 0054).
+  Image quote beside send uses the total across segments, not just one segment;
+  retain video interface status without inventing pricing or replacement copy.
 - Reference thumbnails use a horizontal tray, centered 1:1 crops at `64 × 64 px`
   on desktop and `56 × 56 px` on mobile, with a compact upper-right removal
   control that minimizes image obstruction. Each thumbnail

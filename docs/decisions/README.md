@@ -63,6 +63,7 @@ Current records:
 - `0051-mixed-media-style-preview.md`
 - `0052-video-count-and-concurrent-runs.md`
 - `0053-delimited-concurrent-prompt-batches.md`
+- `0054-remove-composer-batch-summary.md`
 
 ADR 0043 is allocated in the parallel GG-027 worktree. ADR 0044 belongs to
 GG-028's unshipped Authing-domain branch and is superseded by ADR 0045. ADR 0046

@@ -2,8 +2,6 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import test from "node:test";
-import React from "react";
-import { renderToStaticMarkup } from "react-dom/server";
 import { build } from "esbuild";
 import { parsePromptBatch, promptBatchOutputCount, promptContextForRetry } from "../shared/contracts/prompt-batch.mjs";
 import { validateM3GenerationInput } from "../server/generation/api.mjs";
@@ -18,7 +16,6 @@ async function compile(file) {
 const { createImagePromptBatch, createImagePromptRuns, createVideoPromptBatch, submitPromptBatch } = await compile("features/creation/prompt-batch.ts");
 const { submitVideoPreviewRuns, updateVideoPreviewRun } = await compile("features/creation/video-preview-runs.ts");
 const { upsertGenerationRun, getGenerationRunSlots } = await compile("features/creation/generation-runs.ts");
-const { PromptBatchSummary } = await compile("features/creation/prompt-batch-summary.tsx");
 const source = "提示词A\n---\n提示词B";
 const imageInput = { prompt: source, count: 4, modelId: "gpt-image-2", aspectRatio: "1:1", resolution: "1K", references: [], quality: "high", background: "transparent", outputFormat: "png" };
 const videoInput = { prompt: source, generationMode: "multimodal", modelId: "seedance-2-5", line: "standard", ratio: "16:9", resolution: "720p", duration: 5, generateAudio: true, references: [] };
@@ -134,13 +131,11 @@ test("GG-040 project context is validated separately from model prompt and hash-
   assert.match(repository, /promptContextForRetry\(input.prompt, project.rows\[0\].prompt/);
 });
 
-test("GG-040 composer summary and orchestration preserve normal mode and exact multiplication", async () => {
-  assert.equal(renderToStaticMarkup(React.createElement(PromptBatchSummary, { prompt: "normal", count: 4, media: "image" })), "");
-  for (const media of ["image", "video"]) {
-    const html = renderToStaticMarkup(React.createElement(PromptBatchSummary, { prompt: source, count: 4, media }));
-    assert.match(html, /2 段 × 4 = 8/); assert.match(html, media === "image" ? /张图片/ : /个视频/);
+test("GG-040/GG-041 retain batch orchestration and quote without duplicate composer copy", async () => {
+  for (const composer of ["creation-composer.tsx", "video-creation-composer.tsx"]) {
+    const code = await readFile(`features/creation/${composer}`, "utf8");
+    assert.doesNotMatch(code, /PromptBatchSummary|prompt-batch-summary|批量提示词/);
   }
-  assert.match(renderToStaticMarkup(React.createElement(PromptBatchSummary, { prompt: "---", count: 4, media: "video" })), /没有有效提示词/);
   const page = await readFile("app/page.tsx", "utf8");
   assert.match(page, /createImagePromptBatch\(draft\)/);
   assert.match(page, /submitPromptBatch\(runs/);
