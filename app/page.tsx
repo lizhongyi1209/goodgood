@@ -5,6 +5,7 @@ import Image from "next/image";
 import { CreationComposer } from "@/features/creation/creation-composer";
 import { VideoCreationComposer } from "@/features/creation/video-creation-composer";
 import { MixedMediaStylePreview } from "@/features/creation/mixed-media-style-preview";
+import { SeedanceModelIcon } from "@/features/models/seedance-model-icon";
 import {
   appendVideoAssetMaterials,
   type VideoAssetMaterial,
@@ -3071,7 +3072,7 @@ export default function Home({
             <section className="video-preview-result" aria-label="本地视频实测结果" aria-live="polite">
               <header>
                 <div className="video-preview-result-title">
-                  <span className="model-icon seedance"><Film size={18} /></span>
+                  <SeedanceModelIcon />
                   <div>
                     <strong>{getVideoGenerationModel(videoModelId).name}</strong>
                     <small>{videoProviderLine === "standard" ? "标准线路" : "备用线路"} · {videoResolution} · {videoDurationSeconds} 秒</small>

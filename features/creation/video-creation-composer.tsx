@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider";
 import { CreationModeSwitch } from "@/features/creation/creation-mode-switch";
+import { SeedanceModelIcon } from "@/features/models/seedance-model-icon";
 import { getRatioFrame } from "@/features/creation/generation-options";
 import { VideoMaterialCreationDialog } from "@/features/creation/video-material-creation-dialog";
 import type { LocalVideoPreviewAvailability } from "@/features/creation/http-video-preview-boundary";
@@ -356,7 +357,7 @@ export function VideoCreationComposer({
                   aria-controls="video-model-options-drawer"
                   onClick={() => setModelMenuOpen((value) => !value)}
                 >
-                  <span className="model-icon seedance"><Film size={19} /></span>
+                  <SeedanceModelIcon />
                   <span className="model-copy">
                     <strong>{activeModel.name}</strong>
                     <small>{activeModel.description}</small>
@@ -381,7 +382,7 @@ export function VideoCreationComposer({
                             setModelMenuOpen(false);
                           }}
                         >
-                          <span className="model-icon seedance"><Film size={19} /></span>
+                          <SeedanceModelIcon />
                           <span className="model-copy">
                             <strong>{model.name}</strong>
                             <small>{model.description}</small>

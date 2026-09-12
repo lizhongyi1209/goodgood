@@ -1,12 +1,12 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-13
-- Current phase: GG-037 图片与视频混排样式模拟。
-- Current objective: 用独立假数据预览确认紧凑视频卡片和统一详情，不接真实生成或持久化。
+- Current phase: GG-038 Seedance 品牌图标补充。
+- Current objective: 用户已确认混排布局；视频模型统一使用 ByteDance 图标，不改变参数或功能。
 
 ## Current checkpoint
 
-- 当前工作树：`feature/GG-037-mixed-media-style-preview`（`F:/goodgood-worktrees/GG-037`），基于 GG-036 已验证提交 `1aaf0c2`。其他 worktree 与用户视频页面保持不变。
+- 当前工作树：`feature/GG-038-seedance-brand-icon`（`F:/goodgood-worktrees/GG-037`），基于 GG-037 已验证提交 `256bafd` 顺序切换新分支。其他 worktree 与用户真实视频页面保持不变。
 - 正式入口仍为 `https://goodgood.o1key.com`；`staging-goodgood.o1key.com` 只是历史名称，不是本任务的测试入口。
 - 组合来源：完整基础框架 `07e9ea5`，再合入 GG-029、GG-030、GG-031；不使用旧页面另起测试版本，也不恢复旧 C6。
 - 代码范围同时包含账户管理、积分记录/账本、企业/分销身份、直属上下级、充值来源积分划拨、邮箱 OTP、企业 Workspace、成员额度、消费记录、资产审阅和管理审计。
@@ -50,13 +50,15 @@
 - GG-037：ADR 0051 已记录；preview-session opt-in 模拟网格与统一详情完成。完整门禁 354 项中
   340 通过、14 个 opt-in 跳过、0 失败；Chrome computer use 已检查混排、视频详情、轨道、
   方向键、滚轮与模拟播放。`http://127.0.0.1:32139/create?media-preview=1` 保留供确认。
-- Next action: 用户确认 GG-037 假数据卡片和详情样式；窄屏实机与正式混合媒体数据链路未验收。
+- GG-037 布局已获用户确认；GG-038 品牌图标完成。完整门禁 355 项中 341 通过、14 个 opt-in
+  跳过、0 失败；现有 Chrome computer use 已确认四个 Seedance 模型的 ByteDance 标识。
+- Next action: 用户检查现有 Chrome 模拟页的图标；正式混合媒体数据链路未验收。
 - Blockers: 无；素材与正式持久/计价链路按用户要求后续处理。
 
 ## Verification sequence
 
-1. 用户检查 GG-037 专用假数据页的卡片、任务状态、图片/视频详情和连续切换。
-2. 根据视觉确认再决定正式混合媒体数据链路；本次不创建 provider 任务。
+1. 检查 GG-038 模型图标；GG-037 混排布局已确认。
+2. 后续正式混合媒体数据链路按用户范围处理；本次不创建 provider 任务。
 3. 推送、main 合入和生产部署必须获得新的明确授权；部署前按 ADR 0047 排空旧 GPT route 的活动 attempt。
 
 ## Milestones
@@ -76,13 +78,14 @@
 | GG-034 | 本地完成，待用户检查 | 图片 / 视频切换、Seedance 参数、默认多模态/首尾帧、模式化素材上限与统一媒体资产选择；不接真实接口 |
 | GG-035 | 本地完成 | Seedance 标准/备用线路、O1Key adapter 与一次标准线路真实文生视频 |
 | GG-036 | 待用户实测 | 本地页面显示接口可用；无定价、持久化或生产开放 |
-| GG-037 | 待用户确认 | 假数据混排与统一详情本地完成；不接接口或持久化 |
+| GG-037 | 用户已确认布局 | 假数据混排与统一详情本地完成；不接接口或持久化 |
+| GG-038 | 本地完成并验证 | Seedance 统一 ByteDance 品牌标识；未发布 |
 | 完整 C6 / M9 | 搁置 | 删除、举报、商业支付等，见 GG-900—GG-902 |
 
 ## New-session recovery
 
 1. 阅读根 `AGENTS.md`、[CURRENT_STATE](CURRENT_STATE.md)、[WORKFLOW](WORKFLOW.md)、本页和 [BACKLOG](BACKLOG.md)，检查分支/worktree/未提交改动。
-2. 从 `feature/GG-037-mixed-media-style-preview` 恢复；先读 GG-037 任务卡和 ADR 0051，不恢复旧 C6。
+2. 从 `feature/GG-038-seedance-brand-icon` 恢复；先读 GG-038 任务卡与 GG-037 / ADR 0051，不恢复旧 C6。
 3. 本次只做样式模拟；不要启用 key 或提交真实生成。main 合入和生产部署仍需要新的明确授权。
 
 ## History and update policy

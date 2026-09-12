@@ -80,6 +80,8 @@ individual icon. Upload, settings, and send align to the same 40px box.
 - Moodboard: Layout grid.
 - Model providers: transparent marks from the peer-free
   `@lobehub/icons-static-svg` distribution only.
+- Seedance 2.0–2.5 uses `bytedance-color.svg` from the same distribution,
+  displayed at 26px within the existing transparent 32px model-icon slot.
 
 ## Composer
 
@@ -262,7 +264,7 @@ individual icon. Upload, settings, and send align to the same 40px box.
   four-column / narrow two-column masonry. Video cards use a compact play/time
   overlay, not an embedded full-width player; progress occupies the same slot.
   Shared detail keeps a complete preview, parameters, and mixed thumbnail rail.
-  This prototype is labelled simulation and awaits owner visual acceptance.
+  This prototype is labelled simulation; the owner accepted its layout on 2026-09-13.
 
 - The asset library separates generated images from uploaded materials without
   making either look like a file-management table. Material cards preserve the
