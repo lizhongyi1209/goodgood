@@ -1,7 +1,7 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-12
-- Current phase: GG-034 图片 / 视频创作模式与 Seedance 前端已完成本地实现和验证；等待用户检查。
+- Current phase: GG-034 图片 / 视频创作模式与统一媒体资产选择已完成本地实现和验证；等待用户检查。
 - Current objective: 保持 32136 专用预览可检查；真实视频接口待用户后续提供。
 
 ## Current checkpoint
@@ -12,7 +12,7 @@
 - 代码范围同时包含账户管理、积分记录/账本、企业/分销身份、直属上下级、充值来源积分划拨、邮箱 OTP、企业 Workspace、成员额度、消费记录、资产审阅和管理审计。
 - 迁移顺序连续覆盖 `0020`—`0028`，当前发布元数据断言使用最终迁移 `0028_gg033_gpt_image_25_models.sql`。
 - 线上入口与生产数据保持原状（生产 revision `65ceb168`，迁移 `0019`）；本任务不连接生产、不发送真实邮件，只在隔离本地栈按 GG-033 授权调用三次真实生图 provider，不推送或合入 main。
-- `git diff --check` 与 `npm run check:local` 通过，完整门禁 338 项中 324 通过、14 个 opt-in 跳过、0 失败。
+- `git diff --check` 与 `npm run check:local` 通过，完整门禁 339 项中 325 通过、14 个 opt-in 跳过、0 失败。
 - 隔离 Compose `goodgood-gg032` 已完成全栈验收：Web、Mailpit、PostgreSQL、Valkey、对象存储与 mock generation 全部只绑定 loopback，迁移执行到 `0027`；验收后容器和网络已删除，专用数据卷保留。
 - Computer Use 失败根因是 CUA 子进程丢失 Windows 代理环境；本机 CUA 启动器注入 `NODE_USE_ENV_PROXY` 与 `127.0.0.1:10808` 后，新会话初始化成功。当前只可用 Chrome extension provider，因此按用户要求只控制一个专用测试标签；未使用 Playwright。
 - 完整浏览器流程通过：老板 OTP/pending/欢迎积分、站长 bootstrap、建企业、`500` 测试积分、邀请员工、员工 OTP/pending、站长审核、接受邀请、分配 `200` 额度、一次 `10` 积分 mock 生成、消费与资产审阅、成员暂停/恢复均符合预期；`390×844` 窄屏检查无横向溢出。
@@ -22,9 +22,9 @@
 - 现有 Chrome 中仅新建并控制 `http://127.0.0.1:32133/` 专用标签页，未使用 Playwright。sunburst、GPT IMAGE 2、flare 各完成一次 1K/1 张/JPEG 真实生成，页面显示三张 1024×1024 结果。
 - 最终 3 个 job、3 个 attempt、3 个 Asset 均成功；三条 provider model 与 route version 精确匹配；余额 70、预留 0、活动任务 0、pending outbox 0、Valkey DB size 0。隔离栈和测试页保留供用户检查。
 - GG-034 已完成常驻图片/视频切换、独立会话草稿、Seedance 2.0—2.5 能力参数、本地图片/视频/
-  音频素材、资产库复用图片和安全的接口待接入状态。补充后的 GG-034 定向测试 7/7、完整本地
-  门禁 338 项（324 通过、14 个 opt-in 跳过、0 失败）均通过；Chrome 专用页已验证视频/图片
-  资产入口的独立额度与空态且未调用 provider。
+  音频素材，以及 `全部 / 图片 / 视频 / 音频` 统一资产选择器。当前图片数据来自真实生成资产与
+  上传素材，视频/音频保持接口待接入空态。完整门禁 339 项中 325 通过、14 个 opt-in 跳过、
+  0 失败；现有 Chrome 单页已完成分类空态、生成图片选择、首帧默认和重复禁用验证。
 - Next action: 用户检查 `http://127.0.0.1:32136/create`；提供视频接口后另建后端接入任务。
 - Blockers: 前端无阻塞；视频上传、生成、计费、持久化和资产结果等待接口契约，不属于本阶段完成项。
 
@@ -48,7 +48,7 @@
 | GG-031 | 自动化完成 | 邮箱与企业集成已在 GG-032 完整基线上复验通过 |
 | GG-032 | 待用户确认 | 完整基础 + OTP + 企业的本地组合验收完成 |
 | GG-033 | 本地完成，待用户检查 | GPT IMAGE 2.5 模型扩展、GPT IMAGE 2 provider ID 更新与三模型真实本地验证均完成 |
-| GG-034 | 本地完成，待用户检查 | 图片 / 视频模式切换、Seedance 参数、本地多媒体素材与资产库图片复用；不接真实接口 |
+| GG-034 | 本地完成，待用户检查 | 图片 / 视频模式切换、Seedance 参数、本地多媒体素材与统一媒体资产选择；不接真实接口 |
 | 完整 C6 / M9 | 搁置 | 删除、举报、商业支付等，见 GG-900—GG-902 |
 
 ## New-session recovery

@@ -506,10 +506,12 @@ The timestamped result of the latest verified gate belongs in
   switching from 2.0 to 2.5 normalizes unsupported values without deleting
   compatible input.
 - Video local image/video/audio format, size, count, role, removal, and object-
-  URL cleanup behavior; asset-library image selection preserves stable IDs,
-  does not re-upload bytes, disables duplicates, and respects image plus total
-  model capacity. Video Feihong must not reach `/api/generations` before the
-  backend contract exists.
+  URL cleanup behavior; asset-library image/video/audio selection preserves
+  stable IDs and media roles, does not re-upload bytes, disables duplicates, and
+  respects each per-type plus total model capacity. Generated and uploaded images
+  appear as real current data while unavailable durable media types retain honest
+  empty states. Video Feihong must not reach `/api/generations` before the backend
+  contract exists.
 - Reference tray from 0, 1, 9, 10, and over-limit inputs; visible contiguous
   ordinals; drag and `Alt + ← / →` reorder semantics; removal renumbering.
 - Generation skeleton count and ratio.

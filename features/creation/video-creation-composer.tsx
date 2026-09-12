@@ -248,7 +248,9 @@ export function VideoCreationComposer({
                   key={reference.id}
                   role="group"
                   aria-label={`${mediaLabel}，${reference.name}，${videoReferenceRoleLabel(reference.role)}`}
-                  title={`${reference.name} · ${formatFileSize(reference.size)}`}
+                  title={reference.size > 0
+                    ? `${reference.name} · ${formatFileSize(reference.size)}`
+                    : reference.name}
                 >
                   {reference.mediaType === "image" ? (
                     <PrivateObjectImage src={reference.url} alt={mediaLabel} />

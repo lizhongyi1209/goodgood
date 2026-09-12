@@ -5,6 +5,11 @@ import Image from "next/image";
 import { CreationComposer } from "@/features/creation/creation-composer";
 import { VideoCreationComposer } from "@/features/creation/video-creation-composer";
 import {
+  appendVideoAssetMaterials,
+  type VideoAssetMaterial,
+  type VideoAssetMediaFilter,
+} from "@/features/creation/video-asset-selection";
+import {
   DEFAULT_VIDEO_DURATION_SECONDS,
   DEFAULT_VIDEO_MODEL_ID,
   DEFAULT_VIDEO_RATIO,
@@ -168,6 +173,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { toast } from "sonner";
 import {
+  AudioLines,
   Brush,
   Check,
   CircleAlert,
@@ -178,6 +184,7 @@ import {
   Download,
   FolderOpen,
   FolderPlus,
+  Film,
   HelpCircle,
   ImagePlus,
   Images,
@@ -231,6 +238,15 @@ type AssetDetailNavigationState = Readonly<{
   scrollY: number;
   source: DetailSource;
 }>;
+const videoAssetMediaFilters = [
+  { id: "all", label: "全部" },
+  { id: "image", label: "图片" },
+  { id: "video", label: "视频" },
+  { id: "audio", label: "音频" },
+] as const satisfies readonly Readonly<{
+  id: VideoAssetMediaFilter;
+  label: string;
+}>[];
 
 const ASSET_DETAIL_HISTORY_KEY = "goodgoodAssetDetail";
 
@@ -478,6 +494,7 @@ export default function Home({
   const [referenceMaterialsError, setReferenceMaterialsError] = useState<string | null>(null);
   const [referenceLibraryOpen, setReferenceLibraryOpen] = useState(false);
   const [referenceLibraryTarget, setReferenceLibraryTarget] = useState<CreationMode>("image");
+  const [videoAssetMediaFilter, setVideoAssetMediaFilter] = useState<VideoAssetMediaFilter>("all");
   const [selectedReferenceMaterialIds, setSelectedReferenceMaterialIds] = useState<readonly string[]>([]);
   const [projects, setProjects] = useState<ProjectRecord[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(true);
@@ -1708,69 +1725,109 @@ export default function Home({
     return result.addedCount;
   };
 
-  const videoAssetReferenceRemaining = Math.max(
-    0,
-    Math.min(
-      getVideoGenerationModel(videoModelId).capabilities.imageLimit -
-        countVideoReferences(videoReferences, "image"),
-      getVideoGenerationModel(videoModelId).capabilities.totalLimit - videoReferences.length,
-    ),
+  const videoAssetMaterials = [
+    ...assetBatches.flatMap((batch) => batch.images.map((image, index): VideoAssetMaterial => ({
+      id: image.id,
+      mediaType: "image",
+      name: `生成图片 ${batch.id} · ${index + 1}`,
+      size: 0,
+      source: "generated",
+      url: image.previewUrl,
+      width: image.width,
+      height: image.height,
+    }))),
+    ...referenceMaterials.map((material): VideoAssetMaterial => ({
+      id: material.id,
+      mediaType: "image",
+      name: material.name,
+      size: material.byteSize,
+      source: "uploaded",
+      url: material.url,
+      width: material.width,
+      height: material.height,
+    })),
+  ].filter((material, index, materials) =>
+    materials.findIndex((candidate) => candidate.id === material.id) === index
   );
+  const filteredVideoAssetMaterials = videoAssetMediaFilter === "all"
+    ? videoAssetMaterials
+    : videoAssetMaterials.filter((material) => material.mediaType === videoAssetMediaFilter);
+  const imageReferenceLibraryMaterials = referenceMaterials.map((material): VideoAssetMaterial => ({
+    id: material.id,
+    mediaType: "image",
+    name: material.name,
+    size: material.byteSize,
+    source: "uploaded",
+    url: material.url,
+    width: material.width,
+    height: material.height,
+  }));
+  const activeReferenceLibraryMaterials = referenceLibraryTarget === "video"
+    ? filteredVideoAssetMaterials
+    : imageReferenceLibraryMaterials;
+  const activeReferenceLibraryLoading = referenceLibraryTarget === "video"
+    ? videoAssetMaterials.length === 0 && (assetsLoading || referenceMaterialsLoading)
+    : referenceMaterialsLoading;
+  const activeReferenceLibraryError = referenceLibraryTarget === "video"
+    ? videoAssetMaterials.length === 0 ? assetsError ?? referenceMaterialsError : null
+    : referenceMaterialsError;
+  const videoAssetMediaCounts = {
+    image: videoAssetMaterials.filter((material) => material.mediaType === "image").length,
+    video: videoAssetMaterials.filter((material) => material.mediaType === "video").length,
+    audio: videoAssetMaterials.filter((material) => material.mediaType === "audio").length,
+  };
+  const videoAssetTotalRemaining = Math.max(
+    0,
+    getVideoGenerationModel(videoModelId).capabilities.totalLimit - videoReferences.length,
+  );
+  const videoAssetMediaRemaining = (mediaType: VideoReferenceMediaType) => {
+    const capabilities = getVideoGenerationModel(videoModelId).capabilities;
+    const typeLimit = mediaType === "image"
+      ? capabilities.imageLimit
+      : mediaType === "video"
+        ? capabilities.videoLimit
+        : capabilities.audioLimit;
+    return Math.max(
+      0,
+      Math.min(
+        typeLimit - countVideoReferences(videoReferences, mediaType),
+        videoAssetTotalRemaining,
+      ),
+    );
+  };
   const referenceLibraryRemaining = referenceLibraryTarget === "video"
-    ? videoAssetReferenceRemaining
+    ? videoAssetMediaFilter === "all"
+      ? videoAssetTotalRemaining
+      : videoAssetMediaRemaining(videoAssetMediaFilter)
     : Math.max(0, MAX_GENERATION_REFERENCES - referenceImages.length);
 
-  const addMaterialsToVideoReferences = (materials: readonly ReferenceMaterial[]) => {
-    const nextReferences = [...videoReferences];
-    let addedCount = 0;
-    let duplicateCount = 0;
-    let capacityMessage: string | null = null;
-    for (const material of materials) {
-      if (nextReferences.some((reference) => reference.id === material.id)) {
-        duplicateCount += 1;
-        continue;
-      }
-      const candidate: VideoReference = {
-        id: material.id,
-        mediaType: "image",
-        name: material.name,
-        role: nextReferences.some((reference) => reference.role === "first_frame")
-          ? "reference_image"
-          : "first_frame",
-        size: material.byteSize,
-        url: material.url,
-      };
-      capacityMessage = videoReferenceCapacityError(
-        videoModelId,
-        [...nextReferences, candidate],
-      );
-      if (capacityMessage) break;
-      nextReferences.push(candidate);
-      addedCount += 1;
-    }
-    if (addedCount > 0) setVideoReferences(nextReferences);
-    if (capacityMessage) {
-      toast.info(capacityMessage);
-    } else if (duplicateCount > 0 && addedCount === 0) {
+  const addMaterialsToVideoReferences = (materials: readonly VideoAssetMaterial[]) => {
+    const result = appendVideoAssetMaterials(videoReferences, materials, videoModelId);
+    if (result.addedCount > 0) setVideoReferences([...result.references]);
+    if (result.firstCapacityError) {
+      toast.info(result.firstCapacityError);
+    } else if (result.duplicateCount > 0 && result.addedCount === 0) {
       toast.info("所选素材已在视频参考素材中");
     }
-    return addedCount;
+    return result.addedCount;
   };
 
   const openReferenceLibrary = (target: CreationMode) => {
     const available = target === "video"
-      ? videoAssetReferenceRemaining
+      ? videoAssetTotalRemaining
       : MAX_GENERATION_REFERENCES - referenceImages.length;
     if (available <= 0) {
       toast.info(target === "video"
-        ? `${getVideoGenerationModel(videoModelId).name} 的图片参考素材已达到上限`
+        ? `${getVideoGenerationModel(videoModelId).name} 的参考素材已达到上限`
         : `最多可添加 ${MAX_GENERATION_REFERENCES} 张参考图`);
       return;
     }
     setReferenceLibraryTarget(target);
+    setVideoAssetMediaFilter("all");
     setSelectedReferenceMaterialIds([]);
     setReferenceLibraryOpen(true);
     void reloadReferenceMaterials();
+    if (target === "video") void reloadAssets();
   };
 
   const toggleReferenceMaterial = (materialId: string) => {
@@ -1782,9 +1839,25 @@ export default function Home({
       if (current.includes(materialId)) {
         return current.filter((id) => id !== materialId);
       }
-      const available = referenceLibraryRemaining;
-      if (current.length >= available) {
-        toast.info(`本次最多还能添加 ${available} 张图片素材`);
+      if (referenceLibraryTarget === "video") {
+        const material = videoAssetMaterials.find((item) => item.id === materialId);
+        if (!material) return current;
+        const selected = current
+          .map((id) => videoAssetMaterials.find((item) => item.id === id))
+          .filter((item): item is VideoAssetMaterial => Boolean(item));
+        const result = appendVideoAssetMaterials(
+          videoReferences,
+          [...selected, material],
+          videoModelId,
+        );
+        if (result.addedCount !== selected.length + 1) {
+          if (result.firstCapacityError) toast.info(result.firstCapacityError);
+          return current;
+        }
+        return [...current, materialId];
+      }
+      if (current.length >= referenceLibraryRemaining) {
+        toast.info(`本次最多还能添加 ${referenceLibraryRemaining} 张图片素材`);
         return current;
       }
       return [...current, materialId];
@@ -1792,13 +1865,18 @@ export default function Home({
   };
 
   const confirmReferenceMaterials = () => {
-    const materials = selectedReferenceMaterialIds
-      .map((id) => referenceMaterials.find((material) => material.id === id))
-      .filter((material): material is ReferenceMaterial => Boolean(material));
     const addedCount = referenceLibraryTarget === "video"
-      ? addMaterialsToVideoReferences(materials)
-      : addMaterialsToReferences(materials);
-    if (addedCount > 0) toast.success(`已添加 ${addedCount} 张素材`);
+      ? addMaterialsToVideoReferences(
+          selectedReferenceMaterialIds
+            .map((id) => videoAssetMaterials.find((material) => material.id === id))
+            .filter((material): material is VideoAssetMaterial => Boolean(material)),
+        )
+      : addMaterialsToReferences(
+          selectedReferenceMaterialIds
+            .map((id) => referenceMaterials.find((material) => material.id === id))
+            .filter((material): material is ReferenceMaterial => Boolean(material)),
+        );
+    if (addedCount > 0) toast.success(`已添加 ${addedCount} 个素材`);
     setReferenceLibraryOpen(false);
     setSelectedReferenceMaterialIds([]);
   };
@@ -3109,36 +3187,83 @@ export default function Home({
               <div>
                 <DialogTitle>从资产库选择</DialogTitle>
                 <DialogDescription>
-                  已上传的素材无需再次上传，最多还可添加 {referenceLibraryRemaining} 张。
+                  {referenceLibraryTarget === "video"
+                    ? videoAssetMediaFilter === "all"
+                      ? `图片、视频和音频均可复用；总计还可添加 ${referenceLibraryRemaining} 个，单类型遵循模型上限。`
+                      : `${videoAssetMediaFilters.find((filter) => filter.id === videoAssetMediaFilter)?.label}资产最多还可添加 ${referenceLibraryRemaining} 个。`
+                    : `已上传的素材无需再次上传，最多还可添加 ${referenceLibraryRemaining} 张。`}
                 </DialogDescription>
               </div>
               <button aria-label="关闭素材选择" onClick={() => setReferenceLibraryOpen(false)}><X size={18} /></button>
             </header>
 
             <div className="reference-library-dialog-body">
-              {referenceMaterialsLoading ? (
-                <div className="reference-library-dialog-state" role="status"><LoaderCircle size={18} />正在读取上传素材</div>
-              ) : referenceMaterialsError ? (
+              {referenceLibraryTarget === "video" && (
+                <div className="video-asset-media-filters" role="group" aria-label="筛选资产类型">
+                  {videoAssetMediaFilters.map((filter) => {
+                    const count = filter.id === "all"
+                      ? videoAssetMaterials.length
+                      : videoAssetMediaCounts[filter.id];
+                    return (
+                      <button
+                        key={filter.id}
+                        className={videoAssetMediaFilter === filter.id ? "selected" : ""}
+                        aria-pressed={videoAssetMediaFilter === filter.id}
+                        onClick={() => {
+                          setVideoAssetMediaFilter(filter.id);
+                          setSelectedReferenceMaterialIds([]);
+                        }}
+                      >
+                        {filter.label}<small>{count}</small>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {activeReferenceLibraryLoading ? (
+                <div className="reference-library-dialog-state" role="status"><LoaderCircle size={18} />正在读取资产</div>
+              ) : activeReferenceLibraryError ? (
                 <div className="reference-library-dialog-state reference-library-dialog-error" role="alert">
                   <CircleAlert size={18} />
-                  <span>{referenceMaterialsError}</span>
-                  <button onClick={() => void reloadReferenceMaterials()}><RefreshCw size={14} />重试</button>
+                  <span>{activeReferenceLibraryError}</span>
+                  <button onClick={() => {
+                    void reloadReferenceMaterials();
+                    if (referenceLibraryTarget === "video") void reloadAssets();
+                  }}><RefreshCw size={14} />重试</button>
                 </div>
-              ) : referenceMaterials.length === 0 ? (
+              ) : activeReferenceLibraryMaterials.length === 0 ? (
                 <div className="reference-library-dialog-state reference-library-dialog-empty">
-                  <ImagePlus size={20} />
-                  <strong>还没有上传素材</strong>
+                  {referenceLibraryTarget === "video" && videoAssetMediaFilter === "video"
+                    ? <Film size={20} />
+                    : referenceLibraryTarget === "video" && videoAssetMediaFilter === "audio"
+                      ? <AudioLines size={20} />
+                      : <ImagePlus size={20} />}
+                  <strong>{referenceLibraryTarget === "video"
+                    ? videoAssetMediaFilter === "all"
+                      ? "还没有可用的媒体资产"
+                      : `暂无${videoAssetMediaFilters.find((filter) => filter.id === videoAssetMediaFilter)?.label}资产`
+                    : "还没有上传素材"}</strong>
                   <span>{referenceLibraryTarget === "video"
-                    ? "关闭窗口后，从添加素材按钮选择“上传图片”。"
+                    ? "资产库中的图片、视频和音频会按类型显示在这里。"
                     : "关闭窗口后，从参考图按钮选择“上传本地图片”。"}</span>
                 </div>
               ) : (
                 <div className="reference-library-picker-grid">
-                  {referenceMaterials.map((material) => {
+                  {activeReferenceLibraryMaterials.map((material) => {
                     const alreadyUsed = referenceLibraryTarget === "video"
                       ? videoReferences.some((reference) => reference.id === material.id)
                       : referenceImages.some((reference) => reference.id === material.id);
                     const selected = selectedReferenceMaterialIds.includes(material.id);
+                    const mediaTypeLabel = material.mediaType === "image"
+                      ? "图片"
+                      : material.mediaType === "video"
+                        ? "视频"
+                        : "音频";
+                    const metadata = material.mediaType === "image" && material.width && material.height
+                      ? `${material.width} × ${material.height}`
+                      : material.durationSeconds
+                        ? `${material.durationSeconds} 秒`
+                        : mediaTypeLabel;
                     return (
                       <button
                         className={`reference-library-picker-card ${selected ? "selected" : ""} ${alreadyUsed ? "already-used" : ""}`}
@@ -3150,13 +3275,22 @@ export default function Home({
                         disabled={alreadyUsed}
                         onClick={() => toggleReferenceMaterial(material.id)}
                       >
-                        <span className="reference-library-picker-image">
-                          <PrivateObjectImage src={material.url} alt="" />
+                        <span className={`reference-library-picker-image ${material.mediaType}`}>
+                          {material.mediaType === "image" ? (
+                            <PrivateObjectImage src={material.url} alt="" />
+                          ) : material.mediaType === "video" ? (
+                            <video src={material.url} muted preload="metadata" aria-label={material.name} />
+                          ) : (
+                            <span className="reference-library-media-placeholder"><AudioLines size={24} /></span>
+                          )}
+                          {referenceLibraryTarget === "video" && (
+                            <span className="reference-library-media-kind">{mediaTypeLabel}</span>
+                          )}
                           <i>{alreadyUsed ? <Check size={14} /> : selected ? <Check size={14} /> : null}</i>
                         </span>
                         <span className="reference-library-picker-copy">
                           <strong title={material.name}>{material.name}</strong>
-                          <small>{material.width} × {material.height}</small>
+                          <small>{metadata}{referenceLibraryTarget === "video" && material.source === "generated" ? " · 生成资产" : ""}</small>
                         </span>
                       </button>
                     );
@@ -3167,13 +3301,13 @@ export default function Home({
 
             <footer className="reference-library-dialog-footer">
               <span>{selectedReferenceMaterialIds.length > 0
-                ? `已选 ${selectedReferenceMaterialIds.length} 张`
+                ? `已选 ${selectedReferenceMaterialIds.length} ${referenceLibraryTarget === "video" ? "个" : "张"}`
                 : referenceLibraryTarget === "video"
                   ? "选择后按原顺序加入视频参考素材"
                   : "选择后按原顺序加入参考图"}</span>
               <div>
                 <button className="reference-library-cancel" onClick={() => setReferenceLibraryOpen(false)}>取消</button>
-                <button className="reference-library-confirm" disabled={selectedReferenceMaterialIds.length === 0} onClick={confirmReferenceMaterials}>添加{selectedReferenceMaterialIds.length > 0 ? ` ${selectedReferenceMaterialIds.length} 张` : ""}</button>
+                <button className="reference-library-confirm" disabled={selectedReferenceMaterialIds.length === 0} onClick={confirmReferenceMaterials}>添加{selectedReferenceMaterialIds.length > 0 ? ` ${selectedReferenceMaterialIds.length} ${referenceLibraryTarget === "video" ? "个" : "张"}` : ""}</button>
               </div>
             </footer>
           </DialogPrimitive.Content>

@@ -117,8 +117,11 @@ individual icon. Upload, settings, and send align to the same 40px box.
 - Video mode keeps the same tray silhouette for local image, video, and audio
   references. Media type and image role use compact overlays; audio uses a quiet
   neutral placeholder rather than invented artwork. Video mode uses the same
-  focused existing-material picker as image mode for reusable asset images, but
-  does not expose the image quick editor in its frontend-only phase.
+  focused picker as image mode, adding quiet `全部 / 图片 / 视频 / 音频` filters,
+  count badges, media labels, and type-specific empty states. Image cards retain
+  centered crops, video cards use muted cover frames, and audio cards use a quiet
+  neutral placeholder. Video mode does not expose the image quick editor in its
+  frontend-only phase.
 - Parameter group order: aspect ratio; model; output group with resolution above
   generation count. Aspect ratio leads from the left on desktop and remains first
   when the drawer reflows or stacks.

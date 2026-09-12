@@ -873,6 +873,52 @@ test("reference material boundary and selection cover success, empty, deduplicat
   }
 });
 
+test("video asset selection preserves mixed-media identity, roles, deduplication, and limits", async () => {
+  const { appendVideoAssetMaterials } = await vite.ssrLoadModule(
+    "/features/creation/video-asset-selection.ts",
+  );
+  const asset = (id, mediaType) => ({
+    id,
+    mediaType,
+    name: `${mediaType}-${id}`,
+    size: 1024,
+    source: "uploaded",
+    url: `https://storage.invalid/${id}`,
+  });
+  const mixed = appendVideoAssetMaterials(
+    [],
+    [asset("image-1", "image"), asset("video-1", "video"), asset("audio-1", "audio")],
+    "seedance-2-0",
+  );
+
+  assert.equal(mixed.addedCount, 3);
+  assert.deepEqual(
+    mixed.references.map(({ id, mediaType, role }) => ({ id, mediaType, role })),
+    [
+      { id: "image-1", mediaType: "image", role: "first_frame" },
+      { id: "video-1", mediaType: "video", role: "reference_video" },
+      { id: "audio-1", mediaType: "audio", role: "reference_audio" },
+    ],
+  );
+
+  const duplicate = appendVideoAssetMaterials(
+    mixed.references,
+    [asset("image-1", "image")],
+    "seedance-2-0",
+  );
+  assert.equal(duplicate.addedCount, 0);
+  assert.equal(duplicate.duplicateCount, 1);
+
+  const videoLimit = appendVideoAssetMaterials(
+    [],
+    [1, 2, 3, 4].map((index) => asset(`video-${index}`, "video")),
+    "seedance-2-0-mini",
+  );
+  assert.equal(videoLimit.addedCount, 3);
+  assert.equal(videoLimit.rejectedCount, 1);
+  assert.match(videoLimit.firstCapacityError, /最多支持 3 段视频/);
+});
+
 test("billing HTTP boundary covers balance, quote, zero capacity, and retryable failure", async () => {
   const {
     availableImageCount,

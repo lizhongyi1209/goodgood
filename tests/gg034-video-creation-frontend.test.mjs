@@ -59,19 +59,22 @@ test("GG-034 video composer exposes creator parameters and multimedia references
   assert.doesNotMatch(composer, /生成数量/);
 });
 
-test("GG-034 reuses asset-library images in video drafts without uploading them again", async () => {
-  const page = await read("app/page.tsx");
-  const start = page.indexOf("const addMaterialsToVideoReferences =");
-  const end = page.indexOf("const openReferenceLibrary =", start);
-  const handler = page.slice(start, end);
+test("GG-034 reuses image, video, and audio assets without uploading them again", async () => {
+  const [page, selection] = await Promise.all([
+    read("app/page.tsx"),
+    read("features/creation/video-asset-selection.ts"),
+  ]);
 
-  assert.ok(start >= 0 && end > start);
   assert.match(page, /onOpenReferenceLibrary=\{\(\) => openReferenceLibrary\("video"\)\}/);
-  assert.match(handler, /id: material\.id/);
-  assert.match(handler, /mediaType: "image"/);
-  assert.match(handler, /url: material\.url/);
-  assert.match(handler, /videoReferenceCapacityError/);
-  assert.doesNotMatch(handler, /uploadReferenceFiles|URL\.createObjectURL/);
+  assert.match(page, /筛选资产类型/);
+  assert.match(page, /图片、视频和音频均可复用/);
+  assert.match(selection, /"all" \| VideoReferenceMediaType/);
+  assert.match(selection, /id: material\.id/);
+  assert.match(selection, /mediaType: material\.mediaType/);
+  assert.match(selection, /material\.mediaType === "video"[\s\S]*"reference_video"/);
+  assert.match(selection, /material\.mediaType === "audio"[\s\S]*"reference_audio"/);
+  assert.match(selection, /videoReferenceCapacityError/);
+  assert.doesNotMatch(selection, /uploadReferenceFiles|URL\.createObjectURL/);
 });
 
 test("GG-034 never routes the preview video action through image generation", async () => {

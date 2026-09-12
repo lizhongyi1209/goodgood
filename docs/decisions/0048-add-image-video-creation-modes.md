@@ -28,10 +28,15 @@ video request through the existing billable image route.
   as callbacks, expiry, last-frame return, watermark policy, and frame counts
   remain outside the UI.
 - Accept local image, video, and audio references for frontend interaction and
-  role assignment. Video mode also reuses owner-uploaded image materials through
-  the existing asset-library picker, preserving stable material IDs and private
-  read URLs without uploading object bytes again. New local video-mode material
-  remains session-only until its authenticated backend contract exists.
+  role assignment. Video mode uses one media-aware asset-library picker for
+  reusable images, videos, and audio, preserving stable asset IDs and private
+  read URLs without uploading object bytes again. The frontend keeps media type
+  distinct from display labels and applies each model's per-type plus total
+  reference capacity. Until the mixed-media asset API arrives, real generated
+  and uploaded images populate the picker while video/audio filters truthfully
+  show no available assets; no fixture may imply durable media that does not yet
+  exist. New local video-mode material remains session-only until its
+  authenticated backend contract exists.
 - Do not submit video mode to `/api/generations`. The Feihong action reports
   that the video interface is awaiting connection while preserving all input.
 - Video editing, extension, timestamp editing, and durable mixed-media assets
