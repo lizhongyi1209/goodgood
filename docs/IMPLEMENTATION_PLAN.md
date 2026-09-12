@@ -1,7 +1,7 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-12
-- Current phase: 本地组合候选自动化验证完成；隔离浏览器验收待执行，尚未部署。
+- Current phase: 本地组合候选自动化验证完成；隔离 Compose 已就绪，Computer Use 代理修复需重启 Codex 会话后继续浏览器验收，尚未部署。
 - Current objective: 以完整基础框架 `07e9ea5`（GG-024—GG-027 的账户、积分、业务身份、直属关系与划拨能力）为基线，叠加 GG-029 邮箱验证码、GG-030 企业工作区和 GG-031 集成，完成一次可重复的本地门禁与浏览器流程验收。
 
 ## Current checkpoint
@@ -13,8 +13,10 @@
 - 迁移顺序连续覆盖 `0020`—`0027`，当前发布元数据断言使用最终迁移 `0027_gg030_management_surface.sql`。
 - 线上入口与生产数据保持原状（生产 revision `65ceb168`，迁移 `0019`）；本任务不连接生产、不发送真实邮件、不调用真实生图 provider，不推送或合入 main。
 - 合并冲突已清理；`git diff --check` 与 `npm run check:local` 通过，完整门禁 327 项中 313 通过、14 个 opt-in 跳过、0 失败。独立 PostgreSQL 中 GG-027、GG-029—GG-031 共 29/29 通过。
-- Next action: 启动新的隔离 Compose + Mailpit + `GENERATION_PROVIDER_KIND=mock`，按 GG-031 流程完成桌面与窄屏浏览器验收。
-- Blockers: 本地整合没有外部阻塞；真实邮件、真实 provider、推送、main 合入和生产部署均未授权，也不属于当前验证范围。
+- 隔离 Compose `goodgood-gg032` 已健康运行，Web 为 `http://127.0.0.1:32232`、Mailpit 为 `http://127.0.0.1:58332`，生成 provider 为 mock，所有依赖仅绑定 loopback，迁移已执行到 `0027`。
+- Computer Use 失败已定位为 CUA 子进程丢失代理环境：Windows 代理 `127.0.0.1:10808` 可访问初始化辅助域名，直连 20 秒超时；本机 CUA 启动器已注入代理并通过语法检查，但当前 MCP transport 关闭后不能热重建。
+- Next action: 重启/重开 Codex 会话，先以 `cua.getState()` 验证代理修复，再使用 in-app browser 按 GG-031 流程完成桌面与窄屏浏览器验收。
+- Blockers: 当前会话的 Computer Use MCP transport 已关闭，必须由新 Codex 会话启动 CUA 才能验证补丁；真实邮件、真实 provider、推送、main 合入和生产部署均未授权，也不属于当前验证范围。
 
 ## Verification sequence
 
