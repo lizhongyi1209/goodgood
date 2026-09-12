@@ -1,7 +1,7 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-12
-- Current phase: 本地组合候选自动化验证完成；隔离 Compose 已就绪，Computer Use 代理修复需重启 Codex 会话后继续浏览器验收，尚未部署。
+- Current phase: GG-032 完整本地组合验收完成，待用户确认；尚未合入 main、未部署。
 - Current objective: 以完整基础框架 `07e9ea5`（GG-024—GG-027 的账户、积分、业务身份、直属关系与划拨能力）为基线，叠加 GG-029 邮箱验证码、GG-030 企业工作区和 GG-031 集成，完成一次可重复的本地门禁与浏览器流程验收。
 
 ## Current checkpoint
@@ -13,10 +13,12 @@
 - 迁移顺序连续覆盖 `0020`—`0027`，当前发布元数据断言使用最终迁移 `0027_gg030_management_surface.sql`。
 - 线上入口与生产数据保持原状（生产 revision `65ceb168`，迁移 `0019`）；本任务不连接生产、不发送真实邮件、不调用真实生图 provider，不推送或合入 main。
 - 合并冲突已清理；`git diff --check` 与 `npm run check:local` 通过，完整门禁 327 项中 313 通过、14 个 opt-in 跳过、0 失败。独立 PostgreSQL 中 GG-027、GG-029—GG-031 共 29/29 通过。
-- 隔离 Compose `goodgood-gg032` 已健康运行，Web 为 `http://127.0.0.1:32232`、Mailpit 为 `http://127.0.0.1:58332`，生成 provider 为 mock，所有依赖仅绑定 loopback，迁移已执行到 `0027`。
-- Computer Use 失败已定位为 CUA 子进程丢失代理环境：Windows 代理 `127.0.0.1:10808` 可访问初始化辅助域名，直连 20 秒超时；本机 CUA 启动器已注入代理并通过语法检查，但当前 MCP transport 关闭后不能热重建。
-- Next action: 重启/重开 Codex 会话，先以 `cua.getState()` 验证代理修复，再使用 in-app browser 按 GG-031 流程完成桌面与窄屏浏览器验收。
-- Blockers: 当前会话的 Computer Use MCP transport 已关闭，必须由新 Codex 会话启动 CUA 才能验证补丁；真实邮件、真实 provider、推送、main 合入和生产部署均未授权，也不属于当前验证范围。
+- 隔离 Compose `goodgood-gg032` 已完成全栈验收：Web、Mailpit、PostgreSQL、Valkey、对象存储与 mock generation 全部只绑定 loopback，迁移执行到 `0027`；验收后容器和网络已删除，专用数据卷保留。
+- Computer Use 失败根因是 CUA 子进程丢失 Windows 代理环境；本机 CUA 启动器注入 `NODE_USE_ENV_PROXY` 与 `127.0.0.1:10808` 后，新会话初始化成功。当前只可用 Chrome extension provider，因此按用户要求只控制一个专用测试标签；未使用 Playwright。
+- 完整浏览器流程通过：老板 OTP/pending/欢迎积分、站长 bootstrap、建企业、`500` 测试积分、邀请员工、员工 OTP/pending、站长审核、接受邀请、分配 `200` 额度、一次 `10` 积分 mock 生成、消费与资产审阅、成员暂停/恢复均符合预期；`390×844` 窄屏检查无横向溢出。
+- 结算后员工剩余额度 `190`、企业可用 `490`；数据库任务与尝试各 1 条且均为 `succeeded`，Valkey 活跃生成队列为 `0`。Web/Worker 均为 mock provider，没有真实邮件、真实 provider 或生产访问。
+- Next action: 用户确认本地结果；若接受，再明确选择 main 合入/发布候选或另行授权线上测试。
+- Blockers: 本地范围无阻塞；真实邮件、真实 provider、推送、main 合入和生产部署仍未授权，也不属于本轮验证范围。
 
 ## Verification sequence
 
@@ -36,18 +38,18 @@
 | M3—M6 | 已完成核心链路 | 持久任务、身份、模型、积分、资产与项目 |
 | M7—M8 | 已完成并已开放 controlled alpha | 香港链路、恢复与发布门禁 |
 | GG-023 | 实施中 | Sharp 0.35.4 安全修复；未获新生产授权 |
-| GG-024—GG-027 | 已合入本地完整基础框架 | 账户/积分/业务身份/直属关系/来源划拨，待组合验收 |
+| GG-024—GG-027 | 已合入本地完整基础框架 | 账户/积分/业务身份/直属关系/来源划拨，GG-032 组合验收通过 |
 | GG-029 | 本地候选已验证 | 自建邮箱 OTP；生产外部证据与演练未完成 |
 | GG-030 | 阶段 0—4 本地完成 | 企业成员、额度、创作归属、管理 API/页面 |
-| GG-031 | 自动化完成 | 邮箱与企业集成，用户手工流程待在 GG-032 完整基线上复验 |
-| GG-032 | 当前 | 完整基础 + OTP + 企业的本地组合候选 |
+| GG-031 | 自动化完成 | 邮箱与企业集成已在 GG-032 完整基线上复验通过 |
+| GG-032 | 待用户确认 | 完整基础 + OTP + 企业的本地组合验收完成 |
 | 完整 C6 / M9 | 搁置 | 删除、举报、商业支付等，见 GG-900—GG-902 |
 
 ## New-session recovery
 
 1. 阅读根 `AGENTS.md`、[CURRENT_STATE](CURRENT_STATE.md)、[WORKFLOW](WORKFLOW.md)、本页和 [BACKLOG](BACKLOG.md)，检查分支/worktree/未提交改动。
-2. 从 `feature/GG-032-complete-base-email-enterprise` 恢复；确认基线为 `07e9ea5`，并保留 GG-029—GG-031 的来源任务卡，不恢复旧 C6。
-3. 先完成本地冲突清理与自动化门禁，再按本页流程启动隔离浏览器实测。线上测试、真实邮件、真实 provider、main 合入和生产部署都需要新的明确授权。
+2. 从 `feature/GG-032-complete-base-email-enterprise` 恢复；确认本地组合门禁与浏览器证据已经完成，不重复启动隔离栈或重跑真实外部路径。
+3. 等待用户确认；线上测试、真实邮件、真实 provider、main 合入和生产部署都需要新的明确授权。
 
 ## History and update policy
 

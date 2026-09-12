@@ -1,6 +1,6 @@
 # GG-032 — 完整基础、邮箱验证码与企业工作区整合
 
-- 状态：合并与自动化本地验证完成；隔离 Compose 已就绪，Computer Use 代理修复需重启 Codex 会话后继续浏览器验收
+- 状态：完整本地组合验收完成，待用户确认；未合入 main、未部署
 - 用户需求：继续 GG-032，把 GG-024—GG-027 的完整基础能力与 GG-029—GG-031 的邮箱验证码、企业工作区及两者集成放入同一个可重复验证的本地候选。
 - 最后更新：2026-09-12
 - 分支 / worktree：`feature/GG-032-complete-base-email-enterprise` / `F:/goodgood-worktrees/GG-032`
@@ -28,12 +28,16 @@
 - `npm run check:local` 通过：lint、TypeScript 与本地生产形态构建成功；327 项测试中 313 通过、14 个 opt-in 跳过、0 失败。
 - 明确命名且仅绑定 loopback 的临时 PostgreSQL 完成 GG-027 层级/来源/划拨 13/13、GG-029 OTP 1/1、GG-030 企业 14/14、GG-031 邮箱企业集成 1/1，共 29/29。数据库容器已经停止并自动删除，未连接任何 Worker。
 - GG-031 的固定测试时钟曾让邀请过期时间随真实日期失效；邀请期限改为基于实际执行时间的未来 24 小时后，空数据库复跑通过。
-- 隔离 Compose 项目 `goodgood-gg032` 已启动并保持健康：Web `127.0.0.1:32232`、Mailpit `127.0.0.1:58332`、mock generation、PostgreSQL、Valkey 与对象存储均只绑定 loopback；迁移 `0001`—`0027` 已记录完成。
-- Computer Use 在浏览器 provider 初始化阶段稳定于约 22 秒后报 `nodeRepl.fetch request failed`。本机证据表明 CUA 子进程未继承任何代理变量，而 Windows 代理为 `127.0.0.1:10808`；相关 ChatGPT 辅助域名经代理可立即返回，强制直连则 20 秒超时。已在本机版本化 CUA 启动器中注入 `NODE_USE_ENV_PROXY` 与 loopback 代理变量并通过 Node 语法检查；当前 MCP transport 关闭后无法热重建，需新 Codex 会话验证补丁并继续流程。
-- 浏览器流程仍待执行；当前自动化结果和 Computer Use 故障诊断不冒充页面验收。
+- 隔离 Compose 项目 `goodgood-gg032` 曾以 Web `127.0.0.1:32232`、Mailpit `127.0.0.1:58332`、mock generation、PostgreSQL、Valkey 与对象存储完整启动；所有端口只绑定 loopback，迁移 `0001`—`0027` 记录完成。浏览器验收结束后已删除该项目的容器和网络，专用数据卷保留。
+- Computer Use 初始化失败已确认是 CUA 子进程未继承代理变量：Windows 代理 `127.0.0.1:10808` 可立即访问初始化辅助域名，强制直连则 20 秒超时。本机版本化 CUA 启动器注入 `NODE_USE_ENV_PROXY` 与 loopback 代理变量后，新会话 `cua.getState()` 在约 2 秒内成功；该本机补丁可能被 Codex/插件更新覆盖。
+- 当前 CUA 会话只暴露 Chrome extension provider，in-app browser 不可用，原生 `sky` 也因未配置 trusted RPC 不可用。按用户明确要求，仅控制新建的 `🧪 GG-032` 专用 Chrome 标签；全程使用 Computer Use 可访问性接口，唯一无页面按钮的企业测试积分授予使用同一标签、同一 origin 的 CUA CDP 能力完成，未使用 Playwright，也未触碰用户其他标签。
+- Computer Use 桌面完整流程通过：老板邮箱 OTP 后进入 pending 并显示欢迎积分 `100`；本地可审计 bootstrap 后恢复为站长；创建 `GG-032 手工企业` 并由企业 API 授予 `500` 测试积分（HTTP `201`）；邀请员工后，员工首次 OTP 仍被平台 pending 拦截且目标 URL 保留；站长审核后员工才看到并接受邀请。
+- 成员额度、生成和审阅通过：员工接受邀请后没有企业管理入口；老板分配累计额度 `200`，成员行显示 `200 / 200`；员工使用默认 Nano Banana 2、`1K`、1 张完成一次 mock 生成，产出 `1122 × 1402` 结果，资产库出现 `+1` 提示，刷新后成员剩余 `190`、企业可用 `490`。老板消费记录显示该员工、原提示词、模型/输出与 `10` 积分，团队资产显示 1 张对应结果。
+- 成员级暂停/恢复通过：暂停后员工工作区标记“已暂停”，页面显示无权限且不能提交；恢复后员工重新进入企业创作页，`190` 额度与生成入口恢复。`390×844` 窄屏下工作区切换、积分、提示词、参数与飞鸿发送均可见，无横向溢出；随后恢复默认视口。
+- 验收前 Web/Worker 均确认 `GENERATION_PROVIDER_KIND=mock`。数据库保留 1 条 `succeeded` 任务、1 条 `succeeded` 尝试、1 个资产和 1 条结算记录作为证据；Valkey 活跃生成队列长度为 `0`。未发送真实邮件、未调用真实 provider、未访问生产。
 - 生产仍保持 `CURRENT_STATE.md` 记录的 revision `65ceb168` 与迁移 `0019`，本任务没有改变生产事实。
 
 ## 恢复工作
 
-- 下一步：重启/重开 Codex 会话，使 CUA 新进程继承已写入的代理环境；先用 `cua.getState()` 确认 Browser provider 恢复，再使用 in-app browser 在现有隔离 Compose、Mailpit 和 mock provider 上完成完整流程。任何真实邮件、真实 provider 或生产地址出现时立即停止。
-- 尚未完成：隔离浏览器验收和用户验收；推送、main 合入和发布均未授权。
+- 下一步：由用户确认 GG-032 本地组合结果；若接受，再明确选择 main 合入/发布候选或另行授权线上测试。无需为确认结果重新启动隔离栈。
+- 尚未完成：用户确认、推送、main 合入和发布；真实邮件、真实 provider 与生产操作仍未授权。
