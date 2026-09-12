@@ -243,7 +243,12 @@ descriptions to fill space.
   generation mode, then output. Provider line defaults to `标准`; `标准` maps to
   Doubao and `备用` maps to HC without changing any other selected value;
   output contains resolution, integer-second duration, and `有声 / 静音` rather
-  than image count. Seedance 2.5 exposes 480p/720p and 4–30 seconds; standard
+  than image-only options. Video count supports 1/2/4 (default 1), independently
+  of image count. Every click freezes current inputs and starts that many single-
+  video requests concurrently; another batch may be submitted while earlier ones
+  run. Each result/failure belongs to its own ordered slot. Poll interruption
+  keeps its task ID and offers query-only recovery, never an automatic new POST.
+  Seedance 2.5 exposes 480p/720p and 4–30 seconds; standard
   Seedance 2.0 exposes 480p/720p/1080p/4K and 4–15 seconds; Fast and Mini expose
   480p/720p and 4–15 seconds.
 - Nano Banana 2 accepts its 14 displayed ratios; each of GPT IMAGE 2.5
@@ -275,8 +280,8 @@ descriptions to fill space.
 - By default, video Feihong remains unavailable and must not call the image
   generation boundary or render a synthetic result. GG-036 may enable a
   loopback-only page-smoke route with an explicit file credential; that route
-  supports text-to-video only, disables repeat submission while its one task is
-  active, polls the returned task ID, and labels the playable result as local and
+  supports text-to-video only, uses GG-039 independent concurrent 1/2/4 slots,
+  polls each returned task ID, and labels the playable result as local and
   not persisted. Reference media stays in the draft and blocks this temporary
   submission until the durable upload/material boundary exists.
 - The Seedance transport contract uses `POST /v1/seedance/assets` and its typed

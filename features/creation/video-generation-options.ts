@@ -1,5 +1,9 @@
 export type CreationMode = "image" | "video";
 
+export const VIDEO_GENERATION_COUNTS = [1, 2, 4] as const;
+export type VideoGenerationCount = (typeof VIDEO_GENERATION_COUNTS)[number];
+export const DEFAULT_VIDEO_GENERATION_COUNT: VideoGenerationCount = 1;
+
 export const VIDEO_GENERATION_MODEL_IDS = [
   "seedance-2-5",
   "seedance-2-0",

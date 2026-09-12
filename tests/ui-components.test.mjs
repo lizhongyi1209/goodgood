@@ -69,7 +69,9 @@ test("declares the GoodGood visual and interaction invariants", async () => {
   assert.match(creationPage, /if \(currentProject\) \{[\s\S]*await saveProject\(\{[\s\S]*references: nextReferences\.filter/s);
   assert.match(css, /mask:\s*url\("\/feihong-send\.png"\)/);
   assert.doesNotMatch(creationPage, /className="generation-task-frame"/);
-  assert.match(creationPage, /const creationStreamItems = \[\.\.\.generationItems, \.\.\.creationItems\]/);
+  assert.match(creationPage, /const creationStreamItems = videoItems\.length/);
+  assert.match(creationPage, /\[\.\.\.videoItems, \.\.\.generationItems, \.\.\.creationItems\]/);
+  assert.match(creationPage, /: \[\.\.\.generationItems, \.\.\.creationItems\]/);
   assert.match(creationPage, /renderCreationColumns\(creationStreamItems, 4\)/);
   assert.match(creationPage, /getGenerationRunSlots\(generationRuns\)/);
   assert.match(creationPage, /trackedGenerationBatchIds\.has\(batch\.id\)/);

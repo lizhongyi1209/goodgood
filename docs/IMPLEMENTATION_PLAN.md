@@ -1,17 +1,17 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-13
-- Current phase: GG-038 Seedance 品牌图标补充。
-- Current objective: 用户已确认混排布局；视频模型统一使用 ByteDance 图标，不改变参数或功能。
+- Current phase: GG-039 视频数量与并发。
+- Current objective: 新增视频 1/2/4 与独立并发提交、状态及恢复；不接定价/持久化。
 
 ## Current checkpoint
 
-- 当前工作树：`feature/GG-038-seedance-brand-icon`（`F:/goodgood-worktrees/GG-037`），基于 GG-037 已验证提交 `256bafd` 顺序切换新分支。其他 worktree 与用户真实视频页面保持不变。
+- 当前工作树：`feature/GG-039-video-count-concurrency`（`F:/goodgood-worktrees/GG-037`），基于 GG-038 已验证提交 `ed637e7` 顺序切换新分支。其他 worktree 与用户真实视频页面保持不变。
 - 正式入口仍为 `https://goodgood.o1key.com`；`staging-goodgood.o1key.com` 只是历史名称，不是本任务的测试入口。
 - 组合来源：完整基础框架 `07e9ea5`，再合入 GG-029、GG-030、GG-031；不使用旧页面另起测试版本，也不恢复旧 C6。
 - 代码范围同时包含账户管理、积分记录/账本、企业/分销身份、直属上下级、充值来源积分划拨、邮箱 OTP、企业 Workspace、成员额度、消费记录、资产审阅和管理审计。
 - 迁移顺序连续覆盖 `0020`—`0028`，当前发布元数据断言使用最终迁移 `0028_gg033_gpt_image_25_models.sql`。
-- 线上入口与生产数据保持原状（生产 revision `65ceb168`，迁移 `0019`）；本任务不连接生产、不发送真实邮件，只在隔离本地栈按 GG-033 授权调用三次真实生图 provider，不推送或合入 main。
+- 线上入口与生产数据保持原状（生产 revision `65ceb168`，迁移 `0019`）；本任务不连接生产、不发送真实邮件或真实 provider 请求，不推送或合入 main。GG-033 三次真实生图是历史授权证据。
 - `git diff --check` 与 `npm run check:local` 通过，完整门禁 339 项中 325 通过、14 个 opt-in 跳过、0 失败。
 - 隔离 Compose `goodgood-gg032` 已完成全栈验收：Web、Mailpit、PostgreSQL、Valkey、对象存储与 mock generation 全部只绑定 loopback，迁移执行到 `0027`；验收后容器和网络已删除，专用数据卷保留。
 - Computer Use 失败根因是 CUA 子进程丢失 Windows 代理环境；本机 CUA 启动器注入 `NODE_USE_ENV_PROXY` 与 `127.0.0.1:10808` 后，新会话初始化成功。当前只可用 Chrome extension provider，因此按用户要求只控制一个专用测试标签；未使用 Playwright。
@@ -52,13 +52,14 @@
   方向键、滚轮与模拟播放。`http://127.0.0.1:32139/create?media-preview=1` 保留供确认。
 - GG-037 布局已获用户确认；GG-038 品牌图标完成。完整门禁 355 项中 341 通过、14 个 opt-in
   跳过、0 失败；现有 Chrome computer use 已确认四个 Seedance 模型的 ByteDance 标识。
-- Next action: 用户检查现有 Chrome 模拟页的图标；正式混合媒体数据链路未验收。
+- GG-039：ADR 0052 已记录；数量、并发独立 run、紧凑本地卡片与视频详情已实现。完整本地门禁 360 项中 346 通过、14 个 opt-in 跳过、0 失败；stub 验证 4 个并发 POST/独立 GET、追加批次、乱序、单项失败与查询恢复。现有 Chrome computer use 已检查默认 1、2/4 选择、图片数量独立及模式/模型/线路切换保持。
+- Next action: 用户检查 GG-039 的 32139 样式页；真实并发另需启用本地接口及费用授权，正式素材/持久/计价链路未验收。
 - Blockers: 无；素材与正式持久/计价链路按用户要求后续处理。
 
 ## Verification sequence
 
-1. 检查 GG-038 模型图标；GG-037 混排布局已确认。
-2. 后续正式混合媒体数据链路按用户范围处理；本次不创建 provider 任务。
+1. GG-039 stub 与完整本地门禁已通过；不启用 opt-in 写测试或 provider 请求。
+2. 现有 Chrome 32139 已保留供数量布局检查，32138 真实结果页未动；真实并发尚未实测。
 3. 推送、main 合入和生产部署必须获得新的明确授权；部署前按 ADR 0047 排空旧 GPT route 的活动 attempt。
 
 ## Milestones
@@ -80,13 +81,14 @@
 | GG-036 | 待用户实测 | 本地页面显示接口可用；无定价、持久化或生产开放 |
 | GG-037 | 用户已确认布局 | 假数据混排与统一详情本地完成；不接接口或持久化 |
 | GG-038 | 本地完成并验证 | Seedance 统一 ByteDance 品牌标识；未发布 |
+| GG-039 | 本地完成并验证 | 视频数量与并发；未真实并发实测，不接计价和持久化 |
 | 完整 C6 / M9 | 搁置 | 删除、举报、商业支付等，见 GG-900—GG-902 |
 
 ## New-session recovery
 
 1. 阅读根 `AGENTS.md`、[CURRENT_STATE](CURRENT_STATE.md)、[WORKFLOW](WORKFLOW.md)、本页和 [BACKLOG](BACKLOG.md)，检查分支/worktree/未提交改动。
-2. 从 `feature/GG-038-seedance-brand-icon` 恢复；先读 GG-038 任务卡与 GG-037 / ADR 0051，不恢复旧 C6。
-3. 本次只做样式模拟；不要启用 key 或提交真实生成。main 合入和生产部署仍需要新的明确授权。
+2. 从 `feature/GG-039-video-count-concurrency` 恢复；先读 GG-039 任务卡与 ADR 0052，不恢复旧 C6。
+3. 数量与本地并发已验证；不要未经费用授权启用 key 或提交真实生成。main 合入和生产部署仍需要新的明确授权。
 
 ## History and update policy
 

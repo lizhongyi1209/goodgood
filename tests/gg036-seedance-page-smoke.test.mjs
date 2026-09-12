@@ -119,6 +119,7 @@ test("GG-036 connects the current video parameters to one POST and same-task pol
   assert.match(page, /generateAudio: videoGenerateAudio/);
   assert.match(page, /videoReferences\.length > 0/);
   assert.match(composer, /接口可用/);
-  assert.match(composer, /disabled=\{!interfaceAvailable \|\| isGenerating\}/);
+  // ADR 0052 removes the single-active-run guard; default availability stays closed.
+  assert.match(composer, /disabled=\{!interfaceAvailable\}/);
   assert.doesNotMatch(boundary, /\/api\/generations/);
 });

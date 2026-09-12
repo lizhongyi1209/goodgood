@@ -513,6 +513,13 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .creation-skeleton { min-height: 160px; background: linear-gradient(115deg,#ededf0 15%,#f8f8f9 36%,#e9e9ed 57%); background-size: 240% 100%; display: grid; place-items: center; animation: skeleton-wave 1.5s ease-in-out infinite; }
 .creation-skeleton small { position: absolute; left: 11px; bottom: 10px; color: #aaaab2; font-size: 9px; }
 .mixed-preview-note { color: var(--quiet); font-size: 10px; }
+.video-count-options { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); }
+.video-run-card > video { width: 100%; height: 100%; display: block; object-fit: cover; }
+.video-run-error { max-width: 85%; text-align: center; overflow-wrap: anywhere; }
+.video-run-resume { padding: 6px 10px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font-size: 11px; }
+.video-run-resume:hover { background: var(--soft); }
+.video-run-detail-art > video { width: 100%; height: 100%; display: block; object-fit: contain; background: #17171a; }
+.image-detail-thumbnail > video { width: 100%; height: 100%; display: block; object-fit: cover; }
 .mixed-preview-card { padding: 0; border: 0; text-align: left; }
 .mixed-preview-video-marker { position: absolute; left: 9px; top: 9px; display: flex; align-items: center; gap: 5px; padding: 5px 7px; border-radius: 7px; background: rgba(25,25,30,.62); color: white; font-size: 10px; font-variant-numeric: tabular-nums; }
 .mixed-preview-card:focus-visible .creation-card-meta { opacity: 1; }

@@ -127,6 +127,9 @@ individual icon. Upload, settings, and send align to the same 40px box.
 - Video provider line is a compact two-option control inside the model group,
   after model capability copy and before generation mode. It reads `标准 / 备用`,
   defaults to `标准`, and never resets another video value when changed.
+- Video output adds `生成数量` with `1 / 2 / 4`, default 1, below sound. Reuse
+  the existing quiet segmented controls. Feihong remains available while earlier
+  videos run; compact stream status, not a disabled send action, shows progress.
 - Video mode keeps the same tray silhouette for local image, video, and audio
   references. It uses exactly one compact lower-left overlay: multimodal shows
   the media ordinal without a space (`图片1 / 视频1 / 音频1`), while first/last-

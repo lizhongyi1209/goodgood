@@ -7,7 +7,7 @@ test("GG-038 shares the packaged ByteDance mark across Seedance model surfaces",
   const [icon, composer, page, css, svg] = await Promise.all([
     read("features/models/seedance-model-icon.tsx"),
     read("features/creation/video-creation-composer.tsx"),
-    read("app/page.tsx"),
+    read("features/creation/video-preview-detail.tsx"),
     read("app/globals.css"),
     read("node_modules/@lobehub/icons-static-svg/icons/bytedance-color.svg"),
   ]);

@@ -61,6 +61,7 @@ Current records:
 - `0049-connect-seedance-provider-lines.md`
 - `0050-enable-local-seedance-page-smoke.md`
 - `0051-mixed-media-style-preview.md`
+- `0052-video-count-and-concurrent-runs.md`
 
 ADR 0043 is allocated in the parallel GG-027 worktree. ADR 0044 belongs to
 GG-028's unshipped Authing-domain branch and is superseded by ADR 0045. ADR 0046

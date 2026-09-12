@@ -5,7 +5,9 @@ import Image from "next/image";
 import { CreationComposer } from "@/features/creation/creation-composer";
 import { VideoCreationComposer } from "@/features/creation/video-creation-composer";
 import { MixedMediaStylePreview } from "@/features/creation/mixed-media-style-preview";
-import { SeedanceModelIcon } from "@/features/models/seedance-model-icon";
+import { VideoPreviewCard, getVideoPreviewRatio } from "@/features/creation/video-preview-card";
+import { VideoPreviewDetail } from "@/features/creation/video-preview-detail";
+import { createVideoPreviewRuns, isVideoPreviewRunActive, resumeVideoPreviewRun, submitVideoPreviewRuns, updateVideoPreviewRun, type VideoPreviewRun } from "@/features/creation/video-preview-runs";
 import {
   appendVideoAssetMaterials,
   type VideoAssetMaterial,
@@ -13,6 +15,7 @@ import {
 } from "@/features/creation/video-asset-selection";
 import {
   DEFAULT_VIDEO_DURATION_SECONDS,
+  DEFAULT_VIDEO_GENERATION_COUNT,
   DEFAULT_VIDEO_GENERATION_MODE,
   DEFAULT_VIDEO_MODEL_ID,
   DEFAULT_VIDEO_PROVIDER_LINE,
@@ -31,6 +34,7 @@ import {
   type VideoAspectRatio,
   type VideoGenerationMode,
   type VideoGenerationModelId,
+  type VideoGenerationCount,
   type VideoProviderLine,
   type VideoReference,
   type VideoReferenceMediaType,
@@ -73,9 +77,7 @@ import {
 import { createHttpGenerationBoundary } from "@/features/creation/http-generation-boundary";
 import {
   readLocalVideoPreviewAvailability,
-  submitLocalVideoPreview,
   type LocalVideoPreviewAvailability,
-  type LocalVideoPreviewJob,
 } from "@/features/creation/http-video-preview-boundary";
 import { uploadReferenceFiles } from "@/features/references/http-reference-upload";
 import {
@@ -242,20 +244,13 @@ type DestructiveCreationIntent =
 type DraftConflictState = Readonly<{
   currentDraft: CreationDraftRecord | null;
 }>;
-type CreationStreamItem =
+type CreationStreamItem = { submittedAt?: number } & (
+  | { kind: "video"; key: string; ratio: number; run: VideoPreviewRun }
   | { kind: "skeleton"; key: string; ratio: number; index: number }
-  | { kind: "image"; key: string; detailKey: string; ratio: number; batch: AssetBatch; image: GenerationOutput; index: number };
+  | { kind: "image"; key: string; detailKey: string; ratio: number; batch: AssetBatch; image: GenerationOutput; index: number });
 type AssetGalleryItem = { key: string; ratio: number; batch: AssetBatch; image: GenerationOutput; index: number };
 type DetailImage = AssetGalleryItem;
 
-function localVideoStatusLabel(status: string, progress: number | null) {
-  if (status === "submitting") return "正在提交";
-  if (status === "queued") return "已排队";
-  if (status === "in_progress") return progress === null ? "正在生成" : `正在生成 ${progress}%`;
-  if (status === "completed") return "生成完成";
-  if (status === "failed") return "生成失败";
-  return "正在处理";
-}
 type DetailSource = "creation" | "assets";
 type AssetDetailNavigationState = Readonly<{
   returnHref: string;
@@ -503,9 +498,11 @@ export default function Home({
   const [videoAspectRatio, setVideoAspectRatio] = useState<VideoAspectRatio>(DEFAULT_VIDEO_RATIO);
   const [videoResolution, setVideoResolution] = useState<VideoResolution>(DEFAULT_VIDEO_RESOLUTION);
   const [videoDurationSeconds, setVideoDurationSeconds] = useState(DEFAULT_VIDEO_DURATION_SECONDS);
+  const [videoGenerationCount, setVideoGenerationCount] = useState<VideoGenerationCount>(DEFAULT_VIDEO_GENERATION_COUNT);
   const [videoGenerateAudio, setVideoGenerateAudio] = useState(true);
   const [videoInterfaceAvailability, setVideoInterfaceAvailability] = useState<LocalVideoPreviewAvailability>("checking");
-  const [videoPreviewJob, setVideoPreviewJob] = useState<LocalVideoPreviewJob | null>(null);
+  const [videoPreviewRuns, setVideoPreviewRuns] = useState<readonly VideoPreviewRun[]>([]);
+  const [videoDetailKey, setVideoDetailKey] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<ActiveView>("create");
   const [generationRuns, setGenerationRuns] = useState<readonly TrackedGenerationRun[]>([]);
   const [creationBatches, setCreationBatches] = useState<AssetBatch[]>([]);
@@ -571,7 +568,7 @@ export default function Home({
   const activeGenerationRuns = getActiveGenerationRuns(generationRuns);
   const failedGenerationRuns = getFailedGenerationRuns(generationRuns);
   const isGenerating = activeGenerationRuns.length > 0;
-  const isVideoGenerating = Boolean(videoPreviewJob && !videoPreviewJob.terminal);
+  const isVideoGenerating = videoPreviewRuns.some(isVideoPreviewRunActive);
   const hasGenerationError = failedGenerationRuns.length > 0;
   const totalCreationImages = creationBatches.reduce((total, batch) => total + batch.images.length, 0);
   const creationDetailItems = getDetailImages(creationBatches);
@@ -634,6 +631,7 @@ export default function Home({
     if (!slot.output) {
       return {
         kind: "skeleton" as const,
+        submittedAt: Date.parse(slot.job.createdAt),
         key: slot.key,
         ratio: runRatio.value,
         index: slot.index,
@@ -642,6 +640,7 @@ export default function Home({
     const batch = generationJobToAssetBatch(slot.job);
     return {
       batch,
+      submittedAt: Date.parse(slot.job.createdAt),
       detailKey: `${batch.id}-${slot.output.id}`,
       image: slot.output,
       index: slot.index,
@@ -663,7 +662,10 @@ export default function Home({
         index,
       }));
     });
-  const creationStreamItems = [...generationItems, ...creationItems];
+  const videoItems: CreationStreamItem[] = videoPreviewRuns.map((run) => ({ kind: "video", key: run.key, ratio: getVideoPreviewRatio(run), submittedAt: run.submittedAt, run }));
+  const creationStreamItems = videoItems.length > 0
+    ? [...videoItems, ...generationItems, ...creationItems].sort((left, right) => (right.submittedAt ?? 0) - (left.submittedAt ?? 0))
+    : [...generationItems, ...creationItems];
   const currentComposerCheckpoint = createComposerCheckpoint({
     aspectRatio: selectedRatio,
     count: generationCount,
@@ -693,6 +695,8 @@ export default function Home({
     videoAspectRatio !== DEFAULT_VIDEO_RATIO ||
     videoResolution !== DEFAULT_VIDEO_RESOLUTION ||
     videoDurationSeconds !== DEFAULT_VIDEO_DURATION_SECONDS ||
+    videoGenerationCount !== DEFAULT_VIDEO_GENERATION_COUNT ||
+    videoPreviewRuns.length > 0 ||
     videoGenerateAudio !== true;
   const hasUnsavedCreationChanges = hasUnsavedImageChanges || hasVideoDraft;
   const currentDraftState: CreationDraftState = {
@@ -1633,19 +1637,7 @@ export default function Home({
       toast.info("本次页面实测先支持文生视频；请移除素材后提交，素材仍保留在当前会话中");
       return;
     }
-    if (isVideoGenerating) return;
-
-    const localTaskId = `local_${globalThis.crypto.randomUUID()}`;
-    setVideoPreviewJob({
-      taskId: localTaskId,
-      status: "submitting",
-      progress: 0,
-      resultUrl: null,
-      error: null,
-      terminal: false,
-    });
-    try {
-      const result = await submitLocalVideoPreview({
+    const runs = createVideoPreviewRuns({
         prompt: videoPrompt.trim(),
         generationMode: videoGenerationMode,
         modelId: videoModelId,
@@ -1655,24 +1647,9 @@ export default function Home({
         duration: videoDurationSeconds,
         generateAudio: videoGenerateAudio,
         references: [],
-      }, setVideoPreviewJob);
-      if (result.status === "completed" && result.resultUrl) {
-        toast.success("视频已生成，可在当前页面播放或下载");
-      } else if (result.status === "failed") {
-        toast.error(result.error ?? "视频生成失败，输入与参数已保留");
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "本地视频实测接口暂时不可用。";
-      setVideoPreviewJob({
-        taskId: localTaskId,
-        status: "failed",
-        progress: null,
-        resultUrl: null,
-        error: message,
-        terminal: true,
-      });
-      toast.error(message);
-    }
+      }, videoGenerationCount, globalThis.crypto.randomUUID());
+    setVideoPreviewRuns((current) => [...runs, ...current]);
+    await submitVideoPreviewRuns(runs, (run) => setVideoPreviewRuns((current) => updateVideoPreviewRun(current, run)));
   };
 
   const handleReferenceFiles = (files: readonly File[]) => {
@@ -2168,6 +2145,9 @@ export default function Home({
     setVideoAspectRatio(DEFAULT_VIDEO_RATIO);
     setVideoResolution(DEFAULT_VIDEO_RESOLUTION);
     setVideoDurationSeconds(DEFAULT_VIDEO_DURATION_SECONDS);
+    setVideoGenerationCount(DEFAULT_VIDEO_GENERATION_COUNT);
+    setVideoPreviewRuns([]);
+    setVideoDetailKey(null);
     setVideoGenerateAudio(true);
     setCreationMode("image");
     setCreationBatches([]);
@@ -2206,8 +2186,8 @@ export default function Home({
   };
 
   const requestNewCreation = () => {
-    if (isGenerating) {
-      toast.info("图片仍在生成，请等待当前任务完成后再新建创作");
+    if (isGenerating || isVideoGenerating) {
+      toast.info("仍有任务正在生成，请等待完成后再新建创作");
       return;
     }
     if (hasUnsavedCreationChanges) {
@@ -2218,8 +2198,8 @@ export default function Home({
   };
 
   const restoreProject = (project: ProjectRecord) => {
-    if (isGenerating) {
-      toast.info("图片仍在生成，请等待当前任务完成后再切换项目");
+    if (isGenerating || isVideoGenerating) {
+      toast.info("仍有任务正在生成，请等待完成后再切换项目");
       return;
     }
     if (loadedProjectIdRef.current === project.id) {
@@ -2639,6 +2619,7 @@ export default function Home({
   };
 
   const renderCreationItem = (item: CreationStreamItem) => {
+    if (item.kind === "video") return <VideoPreviewCard key={item.key} run={item.run} onOpen={() => setVideoDetailKey(item.key)} onDimensions={(width, height) => setVideoPreviewRuns((current) => current.map((run) => run.key === item.key ? { ...run, outputRatio: width / height } : run))} onResume={() => void resumeVideoPreviewRun(item.run, (run) => setVideoPreviewRuns((current) => updateVideoPreviewRun(current, run)))} />;
     if (item.kind === "skeleton") {
       return (
         <div className="creation-card creation-skeleton" key={item.key} style={{ aspectRatio: `${item.ratio}` }}>
@@ -3021,6 +3002,7 @@ export default function Home({
               aspectRatio={videoAspectRatio}
               resolution={videoResolution}
               durationSeconds={videoDurationSeconds}
+              generationCount={videoGenerationCount}
               generateAudio={videoGenerateAudio}
               drawerOpen={drawerOpen}
               interfaceAvailability={videoInterfaceAvailability}
@@ -3036,6 +3018,7 @@ export default function Home({
               onAspectRatioChange={setVideoAspectRatio}
               onResolutionChange={setVideoResolution}
               onDurationChange={setVideoDurationSeconds}
+              onGenerationCountChange={setVideoGenerationCount}
               onGenerateAudioChange={setVideoGenerateAudio}
               onDrawerOpenChange={setDrawerOpen}
               onGenerate={() => void handleVideoGenerate()}
@@ -3068,40 +3051,7 @@ export default function Home({
             </div>
           )}
 
-          {authenticationSession?.preview && mixedMediaStylePreview ? <MixedMediaStylePreview /> : creationMode === "video" && videoPreviewJob ? (
-            <section className="video-preview-result" aria-label="本地视频实测结果" aria-live="polite">
-              <header>
-                <div className="video-preview-result-title">
-                  <SeedanceModelIcon />
-                  <div>
-                    <strong>{getVideoGenerationModel(videoModelId).name}</strong>
-                    <small>{videoProviderLine === "standard" ? "标准线路" : "备用线路"} · {videoResolution} · {videoDurationSeconds} 秒</small>
-                  </div>
-                </div>
-                <span className={`video-preview-status ${videoPreviewJob.status}`}>
-                  {!videoPreviewJob.terminal && <LoaderCircle className="spin" size={13} />}
-                  {localVideoStatusLabel(videoPreviewJob.status, videoPreviewJob.progress)}
-                </span>
-              </header>
-              {videoPreviewJob.resultUrl ? (
-                <video controls playsInline src={videoPreviewJob.resultUrl} aria-label="Seedance 生成视频" />
-              ) : videoPreviewJob.error ? (
-                <div className="video-preview-error" role="alert">
-                  <CircleAlert size={17} />
-                  <span>{videoPreviewJob.error}</span>
-                </div>
-              ) : (
-                <div className="video-preview-pending">
-                  <LoaderCircle className="spin" size={20} />
-                  <span>任务已提交，页面会持续查询同一个任务，不会重复创建。</span>
-                </div>
-              )}
-              <footer>
-                <span>{videoPreviewJob.taskId.startsWith("local_") ? "正在获取任务编号" : videoPreviewJob.taskId}</span>
-                <span>本地实测 · 不写入资产库</span>
-              </footer>
-            </section>
-          ) : !isGenerating && !hasGenerationError && creationBatches.length === 0 ? (
+          {authenticationSession?.preview && mixedMediaStylePreview ? <MixedMediaStylePreview /> : !isGenerating && !hasGenerationError && creationBatches.length === 0 && videoPreviewRuns.length === 0 ? (
             <section className="creation-empty-state" aria-label="尚未开始创作">
               <Image src="/goodgood-mark.svg" alt="" width={32} height={24} />
               <h2>{creationMode === "video" ? "描述你想创作的视频" : "描述你想创作的画面"}</h2>
@@ -3111,10 +3061,11 @@ export default function Home({
             <section className="creation-stream" aria-label="当前创作内容">
               <header className="creation-stream-header">
                 <div className="creation-context">
-                  {currentProject ? <><FolderOpen size={16} /><strong>{currentProject.name}</strong><span>已自动保存</span></> : <><strong>本次创作</strong><span>{totalCreationImages} 张</span></>}
+                  {currentProject ? <><FolderOpen size={16} /><strong>{currentProject.name}</strong><span>已自动保存</span></> : <><strong>本次创作</strong><span>{totalCreationImages} 张{videoPreviewRuns.length > 0 ? ` · ${videoPreviewRuns.length} 个视频任务 · 本地未入库` : ""}</span></>}
                 </div>
                 <div className="creation-stream-actions">
                   {isGenerating && <span className="inline-generation-status" role="status"><LoaderCircle size={14} />{stageText}</span>}
+                  {isVideoGenerating && <span className="inline-generation-status" role="status"><LoaderCircle size={14} />{videoPreviewRuns.filter(isVideoPreviewRunActive).length} 个视频生成中</span>}
                   {creationBatches.length > 0 && <button className="save-project-button" onClick={openProjectDrawer}><FolderPlus size={15} />{currentProject ? "项目设置" : "保存为项目"}</button>}
                   {currentProject && <button className="new-session-button" aria-label="退出当前项目并开始新创作" disabled={isGenerating} onClick={requestNewCreation}><Plus size={15} />新建创作</button>}
                 </div>
@@ -3666,6 +3617,7 @@ export default function Home({
           session={authenticationSession}
         />
       ) : null}
+      <VideoPreviewDetail runs={videoPreviewRuns} activeKey={videoDetailKey} onSelect={setVideoDetailKey} />
       <Toaster position="bottom-center" toastOptions={{ duration: 2200 }} />
     </main>
   );

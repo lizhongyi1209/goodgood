@@ -81,7 +81,7 @@ test("GG-034 video composer exposes creator parameters and multimedia references
   assert.doesNotMatch(composer, /设置\$\{mediaLabel\}用途/);
   assert.doesNotMatch(composer, /className="video-reference-role/);
   assert.match(composer, /接口待接入/);
-  assert.doesNotMatch(composer, /生成数量/);
+  assert.match(composer, /aria-label="视频生成数量"/);
 });
 
 test("GG-034 reuses image, video, and audio assets without uploading them again", async () => {
@@ -109,7 +109,7 @@ test("GG-034 video action remains isolated from image generation after GG-036", 
   const handler = page.slice(start, end);
 
   assert.ok(start >= 0 && end > start);
-  assert.match(handler, /submitLocalVideoPreview/);
+  assert.match(handler, /submitVideoPreviewRuns/);
   assert.doesNotMatch(handler, /generationBoundary|\/api\/generations|runGeneration/);
 });
 

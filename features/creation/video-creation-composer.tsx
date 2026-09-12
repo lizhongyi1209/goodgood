@@ -17,6 +17,7 @@ import { VideoMaterialCreationDialog } from "@/features/creation/video-material-
 import type { LocalVideoPreviewAvailability } from "@/features/creation/http-video-preview-boundary";
 import {
   VIDEO_GENERATION_MODEL_CATALOG,
+  VIDEO_GENERATION_COUNTS,
   VIDEO_GENERATION_MODE_OPTIONS,
   VIDEO_PROVIDER_LINE_OPTIONS,
   VIDEO_RATIO_OPTIONS,
@@ -28,6 +29,7 @@ import {
   type VideoAspectRatio,
   type VideoGenerationMode,
   type VideoGenerationModelId,
+  type VideoGenerationCount,
   type VideoProviderLine,
   type VideoReference,
   type VideoReferenceMediaType,
@@ -39,7 +41,6 @@ import {
   Film,
   ImagePlus,
   Images,
-  LoaderCircle,
   SlidersHorizontal,
   Upload,
   Volume2,
@@ -56,6 +57,7 @@ export type VideoCreationComposerProps = Readonly<{
   aspectRatio: VideoAspectRatio;
   resolution: VideoResolution;
   durationSeconds: number;
+  generationCount: VideoGenerationCount;
   generateAudio: boolean;
   drawerOpen: boolean;
   interfaceAvailability: LocalVideoPreviewAvailability;
@@ -71,6 +73,7 @@ export type VideoCreationComposerProps = Readonly<{
   onAspectRatioChange: (ratio: VideoAspectRatio) => void;
   onResolutionChange: (resolution: VideoResolution) => void;
   onDurationChange: (duration: number) => void;
+  onGenerationCountChange: (count: VideoGenerationCount) => void;
   onGenerateAudioChange: (enabled: boolean) => void;
   onDrawerOpenChange: (open: boolean) => void;
   onGenerate: () => void;
@@ -110,6 +113,7 @@ export function VideoCreationComposer({
   aspectRatio,
   resolution,
   durationSeconds,
+  generationCount,
   generateAudio,
   drawerOpen,
   interfaceAvailability,
@@ -125,6 +129,7 @@ export function VideoCreationComposer({
   onAspectRatioChange,
   onResolutionChange,
   onDurationChange,
+  onGenerationCountChange,
   onGenerateAudioChange,
   onDrawerOpenChange,
   onGenerate,
@@ -261,13 +266,11 @@ export function VideoCreationComposer({
           </button>
           <button
             className="send-button"
-            aria-label={isGenerating ? "视频生成中" : "生成视频"}
-            disabled={!interfaceAvailable || isGenerating}
+            aria-label={isGenerating ? "继续生成视频" : "生成视频"}
+            disabled={!interfaceAvailable}
             onClick={onGenerate}
           >
-            {isGenerating
-              ? <LoaderCircle className="spin" size={17} aria-hidden="true" />
-              : <span className="feihong-icon" aria-hidden="true" />}
+            <span className="feihong-icon" aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -483,6 +486,14 @@ export function VideoCreationComposer({
                       {enabled ? <Volume2 size={13} /> : <X size={13} />}
                       {enabled ? "有声" : "静音"}
                     </button>
+                  ))}
+                </div>
+              </div>
+              <div className="output-section">
+                <label>生成数量</label>
+                <div className="choice-row compact video-count-options" aria-label="视频生成数量">
+                  {VIDEO_GENERATION_COUNTS.map((count) => (
+                    <button type="button" key={count} className={generationCount === count ? "selected" : ""} aria-pressed={generationCount === count} onClick={() => onGenerationCountChange(count)}>{count}</button>
                   ))}
                 </div>
               </div>

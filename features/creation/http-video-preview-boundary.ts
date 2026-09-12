@@ -59,12 +59,21 @@ export async function submitLocalVideoPreview(
   input: LocalVideoPreviewInput,
   observer: (job: LocalVideoPreviewJob) => void,
 ) {
-  let job = await parsePreviewResponse(await fetch("/api/video/preview", {
+  const job = await parsePreviewResponse(await fetch("/api/video/preview", {
     body: JSON.stringify(input),
     headers: { "content-type": "application/json" },
     method: "POST",
   }));
   observer(job);
+
+  return pollLocalVideoPreview(job, observer);
+}
+
+export async function pollLocalVideoPreview(
+  initialJob: LocalVideoPreviewJob,
+  observer: (job: LocalVideoPreviewJob) => void,
+) {
+  let job = initialJob;
 
   while (!job.terminal) {
     await wait(POLL_INTERVAL_MS);

@@ -45,8 +45,9 @@
 
 | GG-037 | 图片与视频混排、紧凑状态及统一详情样式模拟 | 用户已确认布局；不接真实生成/持久化 | [任务](tasks/GG-037-mixed-media-style-preview.md) |
 | GG-038 | Seedance ByteDance 品牌图标 | 本地门禁与现有 Chrome 验证通过；只改图标，未发布 | [任务](tasks/GG-038-seedance-brand-icon.md) |
+| GG-039 | 视频生成数量 1/2/4 与独立并发任务 | 本地完成并验证，待用户检查；未真实并发实测/发布 | [任务](tasks/GG-039-video-count-concurrency.md) |
 
-GG-024—GG-038 已由隔离任务占用；下一个普通产品需求从 **GG-039** 分配并检查是否已被占用。每次 alpha 发布仍须取得
+GG-024—GG-039 已由隔离任务占用；下一个普通产品需求从 **GG-040** 分配并检查是否已被占用。每次 alpha 发布仍须取得
 新鲜、精确绑定候选的证据并通过门禁；本次证据不能复用。
 完整发布证据见[累计发布记录](releases/2026-09-09-cumulative-alpha-release.md)。
 

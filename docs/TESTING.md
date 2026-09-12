@@ -497,6 +497,11 @@ The timestamped result of the latest verified gate belongs in
 
 ### Component
 
+- GG-039 covers video-only count defaults and 1/2/4 limits, immediate concurrent
+  fan-out with stub transport, frozen inputs, stable order under out-of-order
+  completion, independent failure, additional batch preservation, uncertain-POST
+  no-resubmit, known-ID polling recovery, compact cards and no provider count/n.
+
 - GG-037 mock fixtures cover mixed media, ratios, queued/running/failed/completed
   card states, shared detail navigation, clearly labelled playback simulation,
   preview-only opt-in, and no generation/persistence writes. Browser review uses

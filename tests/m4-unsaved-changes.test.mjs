@@ -67,7 +67,7 @@ test("new creation and project restore require an explicit discard action while 
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
   assert.match(page, /const requestNewCreation = \(\) =>/);
-  assert.match(page, /if \(isGenerating\)/);
+  assert.match(page, /if \(isGenerating \|\| isVideoGenerating\)/);
   assert.match(page, /if \(hasUnsavedCreationChanges\)/);
   assert.match(page, /setDestructiveCreationIntent\(\{ kind: "new" \}\)/);
   assert.match(page, /当前修改尚未保存/);
