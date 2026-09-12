@@ -1,12 +1,12 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-12
-- Current phase: GG-032 完整本地组合验收完成，待用户确认；尚未合入 main、未部署。
-- Current objective: 以完整基础框架 `07e9ea5`（GG-024—GG-027 的账户、积分、业务身份、直属关系与划拨能力）为基线，叠加 GG-029 邮箱验证码、GG-030 企业工作区和 GG-031 集成，完成一次可重复的本地门禁与浏览器流程验收。
+- Current phase: GG-033 实施中；新增两项 GPT IMAGE 2.5 并更新 GPT IMAGE 2 provider ID，随后完成三条真实本地出图验证。
+- Current objective: 在 GG-032 已验证完整候选上扩展 GPT 模型目录、持久化/计费与 O1Key 路由，同时保持现有 GPT 参数契约不变。
 
 ## Current checkpoint
 
-- 当前工作树：`feature/GG-032-complete-base-email-enterprise`（`F:/goodgood-worktrees/GG-032`）。主工作区保持不变。
+- 当前工作树：`feature/GG-033-gpt-image-25-models`（`F:/goodgood-worktrees/GG-033`）。主工作区保持不变。
 - 正式入口仍为 `https://goodgood.o1key.com`；`staging-goodgood.o1key.com` 只是历史名称，不是本任务的测试入口。
 - 组合来源：完整基础框架 `07e9ea5`，再合入 GG-029、GG-030、GG-031；不使用旧页面另起测试版本，也不恢复旧 C6。
 - 代码范围同时包含账户管理、积分记录/账本、企业/分销身份、直属上下级、充值来源积分划拨、邮箱 OTP、企业 Workspace、成员额度、消费记录、资产审阅和管理审计。
@@ -17,8 +17,9 @@
 - Computer Use 失败根因是 CUA 子进程丢失 Windows 代理环境；本机 CUA 启动器注入 `NODE_USE_ENV_PROXY` 与 `127.0.0.1:10808` 后，新会话初始化成功。当前只可用 Chrome extension provider，因此按用户要求只控制一个专用测试标签；未使用 Playwright。
 - 完整浏览器流程通过：老板 OTP/pending/欢迎积分、站长 bootstrap、建企业、`500` 测试积分、邀请员工、员工 OTP/pending、站长审核、接受邀请、分配 `200` 额度、一次 `10` 积分 mock 生成、消费与资产审阅、成员暂停/恢复均符合预期；`390×844` 窄屏检查无横向溢出。
 - 结算后员工剩余额度 `190`、企业可用 `490`；数据库任务与尝试各 1 条且均为 `succeeded`，Valkey 活跃生成队列为 `0`。Web/Worker 均为 mock provider，没有真实邮件、真实 provider 或生产访问。
-- Next action: 用户确认本地结果；若接受，再明确选择 main 合入/发布候选或另行授权线上测试。
-- Blockers: 本地范围无阻塞；真实邮件、真实 provider、推送、main 合入和生产部署仍未授权，也不属于本轮验证范围。
+- GG-033 使用 ADR 0047：模型顺序为 sunburst、GPT IMAGE 2、flare；三者共享 GPT 参数与每张 10 积分规则，provider ID 分别为 `gpt-image-2.5-sunburst`、`gpt-image-2`、`gpt-image-2.5-flare`。
+- Next action: 实现并完成自动门禁，再启动独立真实 provider 本地栈，对三条变更路由各执行一次最小规格出图。
+- Blockers: 当前无本地实现阻塞；推送、main 合入和生产部署未授权。
 
 ## Verification sequence
 
@@ -43,13 +44,14 @@
 | GG-030 | 阶段 0—4 本地完成 | 企业成员、额度、创作归属、管理 API/页面 |
 | GG-031 | 自动化完成 | 邮箱与企业集成已在 GG-032 完整基线上复验通过 |
 | GG-032 | 待用户确认 | 完整基础 + OTP + 企业的本地组合验收完成 |
+| GG-033 | 当前 | GPT IMAGE 2.5 模型扩展、GPT IMAGE 2 provider ID 更新与真实本地验证 |
 | 完整 C6 / M9 | 搁置 | 删除、举报、商业支付等，见 GG-900—GG-902 |
 
 ## New-session recovery
 
 1. 阅读根 `AGENTS.md`、[CURRENT_STATE](CURRENT_STATE.md)、[WORKFLOW](WORKFLOW.md)、本页和 [BACKLOG](BACKLOG.md)，检查分支/worktree/未提交改动。
-2. 从 `feature/GG-032-complete-base-email-enterprise` 恢复；确认本地组合门禁与浏览器证据已经完成，不重复启动隔离栈或重跑真实外部路径。
-3. 等待用户确认；线上测试、真实邮件、真实 provider、main 合入和生产部署都需要新的明确授权。
+2. 从 `feature/GG-033-gpt-image-25-models` 恢复；先读 GG-033 任务卡和 ADR 0047，不恢复旧 C6。
+3. 真实 provider 请求只按任务卡执行三条最小规格调用；main 合入和生产部署仍需要新的明确授权。
 
 ## History and update policy
 
