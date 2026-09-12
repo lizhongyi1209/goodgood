@@ -7,8 +7,10 @@ import {
 import { getGenerationResources } from "../generation/resources.mjs";
 import { signAssetRead } from "../generation/storage.mjs";
 import { newRequestId } from "../observability/http.mjs";
+import { OrganizationError } from "../organizations/errors.mjs";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const DEFAULT_WORKSPACE_ID = /** @type {string | null} */ (null);
 
 export class AssetRequestError extends Error {
   constructor(code, message, status = 400) {
@@ -25,10 +27,16 @@ function ownerIdFromContext(ownerContext) {
   return ownerContext.ownerId;
 }
 
-export async function listAssets({ ownerContext }) {
+export async function listAssets({
+  ownerContext,
+  workspaceId = DEFAULT_WORKSPACE_ID,
+}) {
   const resources = await getGenerationResources();
   const ownerId = ownerIdFromContext(ownerContext);
-  const rows = await findOwnerAssetGenerationJobs(resources.pool, { ownerId });
+  const rows = await findOwnerAssetGenerationJobs(resources.pool, {
+    ownerId,
+    workspaceId,
+  });
   return {
     batches: await Promise.all(
       rows.map((row) => presentGenerationJob(resources, row)),
@@ -36,13 +44,21 @@ export async function listAssets({ ownerContext }) {
   };
 }
 
-export async function getAssetDownloadUrl({ assetId, ownerContext }) {
+export async function getAssetDownloadUrl({
+  assetId,
+  ownerContext,
+  workspaceId = DEFAULT_WORKSPACE_ID,
+}) {
   const resources = await getGenerationResources();
   const ownerId = ownerIdFromContext(ownerContext);
   if (typeof assetId !== "string" || !UUID_PATTERN.test(assetId)) {
     throw new AssetRequestError("ASSET_NOT_FOUND", "未找到这张图片。", 404);
   }
-  const asset = await findOwnerAsset(resources.pool, { assetId, ownerId });
+  const asset = await findOwnerAsset(resources.pool, {
+    assetId,
+    ownerId,
+    workspaceId,
+  });
   if (!asset) {
     throw new AssetRequestError("ASSET_NOT_FOUND", "未找到这张图片。", 404);
   }
@@ -56,7 +72,11 @@ export async function getAssetDownloadUrl({ assetId, ownerContext }) {
 }
 
 export function assetApiError(error, requestId = newRequestId()) {
-  if (error instanceof AuthenticationError || error instanceof AssetRequestError) {
+  if (
+    error instanceof AuthenticationError ||
+    error instanceof AssetRequestError ||
+    error instanceof OrganizationError
+  ) {
     return {
       body: {
         error: {

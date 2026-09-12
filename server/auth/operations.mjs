@@ -35,7 +35,7 @@ function sha256Base64Url(value) {
   return createHash("sha256").update(value).digest("base64url");
 }
 
-function safeReturnTo(value) {
+export function safeReturnTo(value) {
   if (!value) return "/";
   if (
     typeof value !== "string" ||
@@ -66,6 +66,9 @@ export function authenticationApiError(error, requestId = newRequestId()) {
           code: error.code,
           message: error.message,
           requestId,
+          ...(error.retryAfterSeconds
+            ? { retryAfterSeconds: error.retryAfterSeconds }
+            : {}),
           retryable: error.retryable,
         },
       },
@@ -116,6 +119,9 @@ export function createAuthenticationOperations({
 
   return Object.freeze({
     async beginLogin(returnToValue) {
+      if (config.mode === "email_otp") {
+        return { cookie: null, location: safeReturnTo(returnToValue) };
+      }
       if (config.mode !== "oidc" || !oidcClient) {
         throw authenticationRequestError("AUTH_NOT_CONFIGURED", undefined, 404);
       }
@@ -217,7 +223,7 @@ export function createAuthenticationOperations({
         config.mode === "oidc" && oidcClient
           ? oidcClient.buildLogoutUrl()
           : null;
-      if (config.mode === "oidc") {
+      if (config.mode !== "local") {
         const credential = authenticationSessionCredential(request, config);
         if (credential) {
           await repository.revokeAuthenticationSession(

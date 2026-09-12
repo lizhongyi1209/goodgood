@@ -8,10 +8,12 @@ import {
 } from "../scripts/release-metadata.mjs";
 
 test("CI verifies changes and publishes one immutable main image", async () => {
-  const workflow = await readFile(
-    new URL("../.github/workflows/ci.yml", import.meta.url),
-    "utf8",
-  );
+  const workflow = (
+    await readFile(
+      new URL("../.github/workflows/ci.yml", import.meta.url),
+      "utf8",
+    )
+  ).replaceAll("\r\n", "\n");
 
   assert.match(workflow, /pull_request:/);
   assert.match(workflow, /push:\r?\n\s+branches: \[main\]/);
@@ -135,13 +137,13 @@ test("release metadata is deterministic and records the current migration", asyn
 
   assert.deepEqual(first, second);
   assert.equal(first.imageName, "ghcr.io/lizhongyi1209/goodgood");
-  assert.equal(first.migrationVersion, "0022_gg027_credit_transfers.sql");
+  assert.equal(first.migrationVersion, "0027_gg030_management_surface.sql");
   assert.match(first.runtimeConfigVersion, /^[a-f0-9]{64}$/);
   assert.equal(
     githubOutput(first),
     [
       "image-name=ghcr.io/lizhongyi1209/goodgood",
-      "migration-version=0022_gg027_credit_transfers.sql",
+      "migration-version=0027_gg030_management_surface.sql",
       `runtime-config-version=${first.runtimeConfigVersion}`,
       "",
     ].join("\n"),

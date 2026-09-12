@@ -113,10 +113,21 @@ test("reference validation decodes the real image before accepting metadata", as
 
 test("reusable reference repository lists only accepted ready materials for one owner", async () => {
   const expectedRows = [{ id: "reference-new" }, { id: "reference-old" }];
-  let query;
+  const workspaceId = "10000000-0000-4000-8000-000000000001";
+  const queries = [];
   const pool = {
     async query(sql, values) {
-      query = { sql, values };
+      queries.push({ sql, values });
+      if (sql.includes("FROM users u")) {
+        return {
+          rows: [{
+            kind: "personal",
+            name: "Personal",
+            status: "active",
+            workspace_id: workspaceId,
+          }],
+        };
+      }
       return { rows: expectedRows };
     },
   };
@@ -125,8 +136,10 @@ test("reusable reference repository lists only accepted ready materials for one 
     await findReusableReferenceAssets(pool, { ownerId: "owner-a" }),
     expectedRows,
   );
-  assert.deepEqual(query.values, ["owner-a"]);
-  assert.match(query.sql, /owner_id = \$1/);
+  const query = queries.at(-1);
+  assert.deepEqual(query.values, [workspaceId, "owner-a"]);
+  assert.match(query.sql, /workspace_id = \$1/);
+  assert.match(query.sql, /creator_owner_id = \$2/);
   assert.match(query.sql, /upload_state = 'ready'/);
   assert.match(query.sql, /moderation_state = 'accepted'/);
   assert.match(query.sql, /object_deleted_at IS NULL/);
@@ -195,7 +208,11 @@ test("reference HTTP routes preserve the authenticated owner context", async () 
     true,
   );
   assert.equal(createResponse.statusCode, 201);
-  assert.deepEqual(calls[0], { files: [validUpload], ownerContext });
+  assert.deepEqual(calls[0], {
+    files: [validUpload],
+    ownerContext,
+    workspaceId: null,
+  });
 
   const completeResponse = responseRecorder();
   await handler(
@@ -208,6 +225,7 @@ test("reference HTTP routes preserve the authenticated owner context", async () 
   assert.deepEqual(calls[1], {
     ownerContext,
     referenceId: "20000000-0000-4000-8000-000000000001",
+    workspaceId: null,
   });
 
   const listResponse = responseRecorder();
@@ -220,7 +238,7 @@ test("reference HTTP routes preserve the authenticated owner context", async () 
   assert.deepEqual(JSON.parse(listResponse.body), {
     references: [{ id: "reference-a" }],
   });
-  assert.deepEqual(calls[2], { ownerContext });
+  assert.deepEqual(calls[2], { ownerContext, workspaceId: null });
 
   const contentResponse = responseRecorder();
   await handler(
@@ -237,6 +255,7 @@ test("reference HTTP routes preserve the authenticated owner context", async () 
   assert.deepEqual(calls[3], {
     ownerContext,
     referenceId: "20000000-0000-4000-8000-000000000001",
+    workspaceId: null,
   });
 });
 

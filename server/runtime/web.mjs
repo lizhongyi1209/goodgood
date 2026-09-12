@@ -6,6 +6,8 @@ import { createBillingNodeApiHandler } from "../billing/node-api.mjs";
 import { loadAuthenticationConfig } from "../auth/config.mjs";
 import { createAuthenticationNodeApiHandler } from "../auth/node-api.mjs";
 import { createAuthenticationOperations } from "../auth/operations.mjs";
+import { createEmailOtpMailer } from "../auth/email-mailer.mjs";
+import { createEmailOtpOperations } from "../auth/email-operations.mjs";
 import {
   createRequestAuthenticator,
   createSessionAuthenticator,
@@ -17,6 +19,7 @@ import { createCreationDraftNodeApiHandler } from "../drafts/node-api.mjs";
 import { createDistributionNodeApiHandler } from "../distribution/node-api.mjs";
 import { createReferenceNodeApiHandler } from "../references/node-api.mjs";
 import { createProjectNodeApiHandler } from "../projects/node-api.mjs";
+import { createOrganizationNodeApiHandler } from "../organizations/node-api.mjs";
 import { observeHttpRequest } from "../observability/http.mjs";
 import {
   closeGenerationResources,
@@ -39,8 +42,21 @@ const authenticateSession = createSessionAuthenticator({
   config: authenticationConfig,
   getPool: async () => runtimeResources.pool,
 });
+const emailMailer =
+  authenticationConfig.mode === "email_otp" && authenticationConfig.sendingEnabled
+    ? createEmailOtpMailer({ config: authenticationConfig })
+    : null;
+const emailOperations =
+  authenticationConfig.mode === "email_otp"
+    ? createEmailOtpOperations({
+        config: authenticationConfig,
+        getPool: async () => runtimeResources.pool,
+        mailer: emailMailer,
+      })
+    : null;
 const handleAuthenticationNodeApi = createAuthenticationNodeApiHandler({
   config: authenticationConfig,
+  emailOperations,
   operations: createAuthenticationOperations({
     authenticate,
     authenticateSession,
@@ -60,6 +76,7 @@ const handleAssetNodeApi = createAssetNodeApiHandler({ authenticate });
 const handleBillingNodeApi = createBillingNodeApiHandler({ authenticate });
 const handleReferenceNodeApi = createReferenceNodeApiHandler({ authenticate });
 const handleProjectNodeApi = createProjectNodeApiHandler({ authenticate });
+const handleOrganizationNodeApi = createOrganizationNodeApiHandler({ authenticate });
 const defaultSessionCookie = localSessionCookie(authenticationConfig);
 const { server } = await startProdServer({
   host,
@@ -97,6 +114,9 @@ server.on("request", (request, response) => {
     )
     .then((handled) =>
       handled ? true : handleAssetNodeApi(request, response),
+    )
+    .then((handled) =>
+      handled ? true : handleOrganizationNodeApi(request, response),
     )
     .then((handled) =>
       handled ? true : handleBillingNodeApi(request, response),

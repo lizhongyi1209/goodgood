@@ -21,6 +21,9 @@
     "stack:verify": "node infra/container/verify-compose.mjs",
     "stack:down": "docker compose down",
     "stack:authing-local": "node scripts/run-authing-local.mjs",
+    "stack:email-local": "node scripts/run-email-otp-local.mjs",
+    "stack:email-local:down": "node scripts/run-email-otp-local.mjs --down",
+    "stack:email-smtp-local": "node scripts/run-email-otp-smtp-local.mjs",
     "stack:o1key-local": "node scripts/run-o1key-local.mjs",
     "test": "npm run build && node --test tests/*.test.mjs",
     "test:local": "npm run build:local && node --test tests/*.test.mjs",
@@ -34,6 +37,9 @@
     "accounts:bootstrap-site-owner": "node server/runtime/bootstrap-site-owner.mjs",
     "references:cleanup": "node server/runtime/reference-cleanup.mjs",
     "auth:preflight": "node scripts/verify-authentication.mjs",
+    "auth:cleanup": "node server/runtime/email-auth-cleanup.mjs",
+    "auth:bind-existing": "node server/runtime/bind-existing-owner-emails.mjs",
+    "auth:status": "node server/runtime/email-auth-status.mjs",
     "staging:preflight": "node scripts/verify-staging.mjs",
     "staging:release": "node scripts/run-staging-release.mjs",
     "production:preflight": "node scripts/verify-production-preflight.mjs",
@@ -66,6 +72,7 @@
     "lucide-react": "^1.31.0",
     "next": "16.2.11",
     "next-themes": "^0.4.6",
+    "nodemailer": "10.0.2",
     "pg": "^8.23.0",
     "radix-ui": "^1.6.7",
     "react": "19.2.8",
@@ -108,6 +115,9 @@
     "nanoid": "3.3.18",
     "postcss": "8.5.28",
     "sharp": "$sharp"
+  },
+  "optionalDependencies": {
+    "@rolldown/binding-linux-x64-gnu": "1.0.1"
   },
   "type": "module",
   "displayName": "GoodGood"

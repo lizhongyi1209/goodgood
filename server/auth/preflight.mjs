@@ -1,14 +1,11 @@
-import { loadAuthenticationConfig } from "./config.mjs";
+import {
+  inspectAuthenticationConfiguration,
+  loadAuthenticationConfig,
+} from "./config.mjs";
+import { createEmailSmtpTransport } from "./email-mailer.mjs";
 import { createOidcClient } from "./oidc-client.mjs";
 
-const OIDC_REQUIRED_ENVIRONMENT_NAMES = Object.freeze([
-  "GOODGOOD_AUTH_MODE",
-  "GOODGOOD_AUTH_ISSUER",
-  "GOODGOOD_AUTH_CLIENT_ID",
-  "GOODGOOD_AUTH_REDIRECT_URI",
-]);
-
-const MANUAL_CHECKS = Object.freeze([
+const OIDC_MANUAL_CHECKS = Object.freeze([
   Object.freeze({
     evidence: "Authing Login Control screenshot and exported setting notes",
     expected:
@@ -41,6 +38,39 @@ const MANUAL_CHECKS = Object.freeze([
   }),
 ]);
 
+const EMAIL_MANUAL_CHECKS = Object.freeze([
+  Object.freeze({
+    evidence: "Authoritative DNS lookup and mail-provider domain status",
+    expected:
+      "The selected sending subdomain has aligned SPF, DKIM, monitoring DMARC, and the provider-required MX without replacing unrelated root-domain mail records.",
+    id: "email-domain-authentication",
+  }),
+  Object.freeze({
+    evidence: "Provider quota and suppression settings with secrets removed",
+    expected:
+      "The account is active, the sending address is approved, quotas cover the application budget, and provider bounce/complaint suppression is available.",
+    id: "email-provider-readiness",
+  }),
+  Object.freeze({
+    evidence: "Authorized mailbox delivery samples with addresses and codes removed",
+    expected:
+      "QQ, 163, Gmail, and Outlook samples arrive within the accepted target across two time periods; provider acceptance is not reported as final delivery.",
+    id: "email-code-delivery",
+  }),
+  Object.freeze({
+    evidence: "Desktop and physical mobile-browser smoke checklist",
+    expected:
+      "Request, paste/type, mail-app switch, return, verification, repeat login, expiry, replay, logout, pending review, and suspended-account recovery match the documented behavior.",
+    id: "interactive-email-smoke-tests",
+  }),
+  Object.freeze({
+    evidence: "External monitoring handoff and received test alert",
+    expected:
+      "Cleanup-overdue, send-budget, and delivery-failure codes reach the accountable operator through a channel independent of the failing email path.",
+    id: "email-alert-delivery",
+  }),
+]);
+
 function check(id, status, detail) {
   return Object.freeze({ detail, id, status });
 }
@@ -61,21 +91,139 @@ function hasEvery(values, requiredValues) {
 }
 
 function safeConfigurationError(environment) {
-  const missing = OIDC_REQUIRED_ENVIRONMENT_NAMES.filter(
-    (name) => !environment[name],
-  );
-  if (
-    !environment.GOODGOOD_AUTH_CLIENT_SECRET &&
-    !environment.GOODGOOD_AUTH_CLIENT_SECRET_FILE
-  ) {
-    missing.push(
-      "GOODGOOD_AUTH_CLIENT_SECRET or GOODGOOD_AUTH_CLIENT_SECRET_FILE",
-    );
-  }
+  const inspected = inspectAuthenticationConfiguration(environment);
+  const missing = inspected.missing;
   if (missing.length > 0) {
     return `Missing required environment variables: ${missing.join(", ")}.`;
   }
   return "Authentication configuration is invalid or unsafe.";
+}
+
+function publicEmailConfiguration(config) {
+  return Object.freeze({
+    cookieName: config.cookieName,
+    mode: config.mode,
+    publicOrigin: config.publicOrigin,
+    registrationEnabled: config.registrationEnabled,
+    secureCookie: config.secureCookie,
+    sendingEnabled: config.sendingEnabled,
+    smtpAuthenticationConfigured: Boolean(
+      config.mail?.username && config.mail?.password,
+    ),
+    smtpSecure: config.mail?.secure === true,
+  });
+}
+
+function isLoopbackHost(value) {
+  const hostname = value.toLowerCase().replace(/^\[|\]$/g, "");
+  return (
+    hostname === "localhost" ||
+    hostname === "::1" ||
+    /^127(?:\.\d{1,3}){3}$/.test(hostname)
+  );
+}
+
+async function runEmailAuthenticationPreflight({
+  allowLoopback,
+  config,
+  smtpTransportFactory,
+}) {
+  const checks = [
+    check(
+      "runtime-configuration",
+      "pass",
+      "Email OTP server secrets and settings are configured.",
+    ),
+  ];
+  const publicOrigin = new URL(config.publicOrigin);
+  const localOrigin = allowLoopback && isLoopbackHost(publicOrigin.hostname);
+  checks.push(
+    check(
+      "public-origin-transport",
+      publicOrigin.protocol === "https:" || localOrigin ? "pass" : "fail",
+      publicOrigin.protocol === "https:"
+        ? "The email authentication origin uses HTTPS."
+        : localOrigin
+          ? "An explicit loopback-only run uses an HTTP origin."
+          : "Email authentication requires an HTTPS non-loopback public origin.",
+    ),
+    check(
+      "cookie-policy",
+      (config.secureCookie && config.cookieName.startsWith("__Host-")) ||
+        localOrigin
+        ? "pass"
+        : "fail",
+      config.secureCookie && config.cookieName.startsWith("__Host-")
+        ? "The GoodGood session uses a Secure __Host- cookie."
+        : localOrigin
+          ? "An explicit loopback-only run uses an HTTP-compatible local cookie."
+          : "Email authentication requires a Secure cookie whose name starts with __Host-.",
+    ),
+  );
+
+  const smtpLoopback = Boolean(config.mail && isLoopbackHost(config.mail.host));
+  const smtpCredentialsConfigured = Boolean(
+    config.mail?.username && config.mail?.password,
+  );
+  const smtpConfigurationValid = Boolean(
+    config.sendingEnabled &&
+      ((config.mail?.secure && !smtpLoopback && smtpCredentialsConfigured) ||
+        (allowLoopback && smtpLoopback)),
+  );
+  checks.push(
+    check(
+      "smtp-configuration",
+      smtpConfigurationValid ? "pass" : "fail",
+      smtpConfigurationValid
+        ? config.mail.secure
+          ? "Authenticated SMTP uses implicit TLS and a non-loopback host."
+          : "An explicit loopback-only run uses local SMTP."
+        : "Email sending must be enabled with authenticated implicit-TLS SMTP on a non-loopback host.",
+    ),
+  );
+
+  if (smtpConfigurationValid) {
+    const transport = createEmailSmtpTransport({
+      config,
+      transportFactory: smtpTransportFactory,
+    });
+    try {
+      await transport.verify();
+      checks.push(
+        check(
+          "smtp-authentication",
+          "pass",
+          "The SMTP endpoint accepted a connection and authentication without sending mail.",
+        ),
+      );
+    } catch {
+      checks.push(
+        check(
+          "smtp-authentication",
+          "fail",
+          "The SMTP endpoint could not verify connection and authentication.",
+        ),
+      );
+    } finally {
+      transport.close?.();
+    }
+  } else {
+    checks.push(
+      check(
+        "smtp-authentication",
+        "blocked",
+        "SMTP verification requires a safe email sending configuration.",
+      ),
+    );
+  }
+
+  return Object.freeze({
+    checks: Object.freeze(checks),
+    configuration: publicEmailConfiguration(config),
+    manualChecks: EMAIL_MANUAL_CHECKS,
+    ok: checks.every(({ status }) => status === "pass"),
+    schemaVersion: 1,
+  });
 }
 
 function publicConfiguration(config) {
@@ -95,6 +243,7 @@ export async function runAuthenticationPreflight({
   allowLoopback = false,
   environment = process.env,
   fetchImpl = fetch,
+  smtpTransportFactory,
 } = {}) {
   const checks = [];
   let config;
@@ -105,9 +254,20 @@ export async function runAuthenticationPreflight({
     return Object.freeze({
       checks: Object.freeze(checks),
       configuration: null,
-      manualChecks: MANUAL_CHECKS,
+      manualChecks:
+        environment.GOODGOOD_AUTH_MODE === "email_otp"
+          ? EMAIL_MANUAL_CHECKS
+          : OIDC_MANUAL_CHECKS,
       ok: false,
       schemaVersion: 1,
+    });
+  }
+
+  if (config.mode === "email_otp") {
+    return runEmailAuthenticationPreflight({
+      allowLoopback,
+      config,
+      smtpTransportFactory,
     });
   }
 
@@ -122,7 +282,7 @@ export async function runAuthenticationPreflight({
     return Object.freeze({
       checks: Object.freeze(checks),
       configuration: Object.freeze({ mode: config.mode }),
-      manualChecks: MANUAL_CHECKS,
+      manualChecks: OIDC_MANUAL_CHECKS,
       ok: false,
       schemaVersion: 1,
     });
@@ -351,7 +511,7 @@ export async function runAuthenticationPreflight({
   return Object.freeze({
     checks: Object.freeze(checks),
     configuration: publicConfiguration(config),
-    manualChecks: MANUAL_CHECKS,
+    manualChecks: OIDC_MANUAL_CHECKS,
     ok: !checks.some(({ status }) => status === "fail"),
     schemaVersion: 1,
   });

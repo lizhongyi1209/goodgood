@@ -3,10 +3,10 @@
 import Image from "next/image";
 import {
   ArrowLeft,
+  Building2,
   CheckCircle2,
   Coins,
   LoaderCircle,
-  LogIn,
   LogOut,
   Network,
   RefreshCw,
@@ -47,6 +47,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Toaster } from "@/components/ui/sonner";
 import { AccountAccessGate } from "@/features/auth/account-access-gate";
+import { AuthenticationGate } from "@/features/auth/authentication-gate";
 import {
   SESSION_EXPIRED_EVENT,
   beginAuthentication,
@@ -54,6 +55,7 @@ import {
   signOut,
   type AuthenticationSession,
 } from "@/features/auth/http-auth-boundary";
+import { createOrganizationWorkspace } from "@/features/organizations/http-organization-boundary";
 import {
   grantManagedAccountTestCredits,
   readAdminDashboard,
@@ -67,7 +69,7 @@ import {
   type ManagedAccountStatus,
 } from "./http-admin-boundary";
 
-type AccountAction = "approve" | "suspend" | "restore" | "grant" | "role" | "parent";
+type AccountAction = "approve" | "suspend" | "restore" | "grant" | "role" | "parent" | "organization";
 
 const BUSINESS_ROLE_LABELS: Record<BusinessRole, string> = {
   distributor: "分销商",
@@ -118,7 +120,7 @@ function actionCopy(action: AccountAction, account: ManagedAccount) {
     return { description: `允许 ${account.email} 使用创作、项目与资产能力。`, title: "通过账户审核" };
   }
   if (action === "suspend") {
-    return { description: `暂停 ${account.email} 的产品访问，历史数据仍会保留。`, title: "暂停账户" };
+    return { description: `暂停 ${account.email} 的产品访问并撤销其全部有效登录，历史数据仍会保留。`, title: "暂停账户并撤销登录" };
   }
   if (action === "restore") {
     return { description: `恢复 ${account.email} 的产品访问。`, title: "恢复账户" };
@@ -128,6 +130,12 @@ function actionCopy(action: AccountAction, account: ManagedAccount) {
   }
   if (action === "parent") {
     return { description: `设置 ${account.email} 的唯一直属上级。只有有效直属上级可以向其划拨积分。`, title: "调整直属关系" };
+  }
+  if (action === "organization") {
+    return {
+      description: `创建企业工作区，并把 ${account.email} 设为首位企业负责人。`,
+      title: "创建企业工作区",
+    };
   }
   return { description: `向 ${account.email} 追加一笔独立的测试积分流水。`, title: "赠送测试积分" };
 }
@@ -148,6 +156,7 @@ export function AccountManagementPage() {
   const [amount, setAmount] = useState("100");
   const [businessRole, setBusinessRole] = useState<BusinessRole | "none">("none");
   const [parentOwnerId, setParentOwnerId] = useState<string>("none");
+  const [organizationName, setOrganizationName] = useState("");
   const [mutating, setMutating] = useState(false);
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [statusRefreshing, setStatusRefreshing] = useState(false);
@@ -213,12 +222,15 @@ export function AccountManagementPage() {
     setAmount("100");
     setBusinessRole(account.businessRole ?? "none");
     setParentOwnerId(account.directParentId ?? "none");
+    setOrganizationName(`${account.email.split("@")[0]} 的企业`);
     setReason(
       action === "approve"
         ? "通过种子用户审核"
         : action === "restore"
           ? "恢复种子用户访问"
-          : "",
+          : action === "organization"
+            ? "为已验证负责人创建企业工作区"
+            : "",
     );
   };
 
@@ -232,7 +244,14 @@ export function AccountManagementPage() {
     setMutating(true);
     setMutationError(null);
     try {
-      if (selected.action === "grant") {
+      if (selected.action === "organization") {
+        const result = await createOrganizationWorkspace({
+          initialOwnerId: selected.account.id,
+          name: organizationName,
+          reason,
+        });
+        toast.success(`${result.workspace.name} 已创建`);
+      } else if (selected.action === "grant") {
         await grantManagedAccountTestCredits({
           amount: Number(amount),
           ownerId: selected.account.id,
@@ -254,12 +273,16 @@ export function AccountManagementPage() {
         });
         toast.success("直属关系已更新");
       } else {
-        await updateManagedAccountStatus({
+        const result = await updateManagedAccountStatus({
           ownerId: selected.account.id,
           reason,
           status: selected.action === "suspend" ? "suspended" : "active",
         });
-        toast.success(selectedCopy?.title ?? "账户状态已更新");
+        toast.success(
+          selected.action === "suspend"
+            ? `账户已暂停，已撤销 ${result.revokedSessions} 个有效登录`
+            : selectedCopy?.title ?? "账户状态已更新",
+        );
       }
       setSelected(null);
       await loadDashboard();
@@ -302,18 +325,14 @@ export function AccountManagementPage() {
 
   if (session === null) {
     return (
-      <main className="flex min-h-dvh items-center justify-center bg-white px-5">
-        <section className="w-full max-w-sm rounded-3xl border border-zinc-200 p-8 text-center">
-          <Image className="mx-auto" src="/goodgood-mark.svg" alt="" width={34} height={26} />
-          <h1 className="mt-6 text-2xl font-semibold">登录后管理账户</h1>
-          <p className="mt-3 text-base leading-7 text-zinc-600">此页面只对站长开放。</p>
-          {sessionError && <p className="mt-4 text-sm text-red-700" role="alert">{sessionError}</p>}
-          <Button className="mt-6 w-full" onClick={() => beginAuthentication("/admin/users")}>
-            <LogIn />Google / 邮箱验证码登录
-          </Button>
-          <Button className="mt-2 w-full" variant="ghost" asChild><a href="/create">返回 GoodGood</a></Button>
-        </section>
-      </main>
+      <AuthenticationGate
+        initialError={sessionError}
+        onAuthenticated={async () => {
+          setSessionError(null);
+          setSession(await readAuthenticationSession());
+        }}
+        onHostedLogin={() => beginAuthentication("/admin/users")}
+      />
     );
   }
 
@@ -441,6 +460,7 @@ export function AccountManagementPage() {
                           <Button className="admin-account-secondary-action" size="sm" variant="ghost" onClick={() => openAction(account, "parent")}><Network />上级</Button>
                         </>
                       )}
+                      {account.status === "active" && <Button className="admin-account-secondary-action" size="sm" variant="ghost" onClick={() => openAction(account, "organization")}><Building2 />企业</Button>}
                     </div>
                   </article>
                 ))}
@@ -493,6 +513,7 @@ export function AccountManagementPage() {
                               <Button className="admin-account-secondary-action" size="sm" variant="ghost" onClick={() => openAction(account, "parent")}><Network />上级</Button>
                             </>
                           )}
+                          {account.status === "active" && <Button className="admin-account-secondary-action" size="sm" variant="ghost" onClick={() => openAction(account, "organization")}><Building2 />企业</Button>}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -617,12 +638,19 @@ export function AccountManagementPage() {
               <Textarea id="admin-action-reason" maxLength={200} placeholder="请填写会进入审计记录的原因" value={reason} onChange={(event) => setReason(event.target.value)} />
             </div>
             {mutationError && <p className="admin-action-error" role="alert">{mutationError}</p>}
+            {selected?.action === "organization" && (
+              <div className="admin-action-field">
+                <label htmlFor="organization-name">企业名称</label>
+                <Input id="organization-name" maxLength={80} value={organizationName} onChange={(event) => setOrganizationName(event.target.value)} />
+                <p className="admin-action-help">负责人后续可邀请员工并分配可回收的创作额度。</p>
+              </div>
+            )}
           </div>
           <DialogFooter className="admin-action-dialog-footer">
             <Button variant="ghost" disabled={mutating} onClick={() => setSelected(null)}>取消</Button>
             <Button
               variant={selected?.action === "suspend" ? "destructive" : "default"}
-              disabled={mutating || reason.trim().length < 2 || (selected?.action === "grant" && (!Number.isInteger(Number(amount)) || Number(amount) < 1 || Number(amount) > 5000)) || (selected?.action === "role" && businessRole === (selected.account.businessRole ?? "none")) || (selected?.action === "parent" && parentOwnerId === (selected.account.directParentId ?? "none"))}
+              disabled={mutating || reason.trim().length < 2 || (selected?.action === "grant" && (!Number.isInteger(Number(amount)) || Number(amount) < 1 || Number(amount) > 5000)) || (selected?.action === "role" && businessRole === (selected.account.businessRole ?? "none")) || (selected?.action === "parent" && parentOwnerId === (selected.account.directParentId ?? "none")) || (selected?.action === "organization" && organizationName.trim().length < 2)}
               onClick={() => void runAction()}
             >
               {mutating && <LoaderCircle className="animate-spin" />}确认

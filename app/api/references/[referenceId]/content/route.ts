@@ -5,6 +5,7 @@ import {
   readReferenceAssetContent,
   referenceApiError,
 } from "@/server/references/api.mjs";
+import { workspaceIdFromRequest } from "@/server/organizations/request.mjs";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -24,6 +25,7 @@ export async function GET(request: Request, context: RouteContext) {
     const content = await readReferenceAssetContent({
       ownerContext: await authenticate(request),
       referenceId,
+      workspaceId: workspaceIdFromRequest(request),
     });
     return new Response(new Uint8Array(content.bytes), {
       headers: {

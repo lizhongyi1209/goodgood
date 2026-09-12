@@ -2,31 +2,42 @@ import { CREATION_DRAFT_TTL_MS } from "./constants.mjs";
 import { DraftPersistenceError } from "./errors.mjs";
 import { lockReferenceLifecycle } from "../references/lifecycle-lock.mjs";
 import { findReadyReferences } from "../references/repository.mjs";
+import { resolveWorkspaceAccess } from "../organizations/workspace-access.mjs";
 
 function activeDraft(row, now) {
   return row && new Date(row.expires_at).getTime() > now.getTime() ? row : null;
 }
 
-export async function findCreationDraft(pool, { now = new Date(), ownerId }) {
+export async function findCreationDraft(
+  pool,
+  { now = new Date(), ownerId, workspaceId = null },
+) {
+  const workspace = await resolveWorkspaceAccess(pool, { ownerId, workspaceId });
   const result = await pool.query(
     `SELECT * FROM creation_drafts
-      WHERE owner_id = $1 AND expires_at > $2`,
-    [ownerId, now],
+      WHERE workspace_id = $1 AND creator_owner_id = $2 AND expires_at > $3`,
+    [workspace.id, ownerId, now],
   );
   return result.rows[0] ?? null;
 }
 
 export async function saveCreationDraft(
   pool,
-  { expectedVersion, now = new Date(), ownerId, state },
+  { expectedVersion, now = new Date(), ownerId, state, workspaceId = null },
 ) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+    const workspace = await resolveWorkspaceAccess(client, {
+      ownerId,
+      workspaceId,
+      write: true,
+    });
     await lockReferenceLifecycle(client);
     const existingResult = await client.query(
-      "SELECT * FROM creation_drafts WHERE owner_id = $1 FOR UPDATE",
-      [ownerId],
+      `SELECT * FROM creation_drafts
+        WHERE workspace_id = $1 AND creator_owner_id = $2 FOR UPDATE`,
+      [workspace.id, ownerId],
     );
     const existing = existingResult.rows[0] ?? null;
     const current = activeDraft(existing, now);
@@ -39,6 +50,7 @@ export async function saveCreationDraft(
       lock: true,
       ownerId,
       referenceIds: state.referenceIds,
+      workspaceId: workspace.id,
     });
     if (readyReferences.length !== state.referenceIds.length) {
       throw new DraftPersistenceError(
@@ -57,12 +69,14 @@ export async function saveCreationDraft(
     const expiresAt = new Date(now.getTime() + CREATION_DRAFT_TTL_MS);
     const result = await client.query(
       `INSERT INTO creation_drafts (
-         owner_id, prompt, reference_snapshot, model_id, aspect_ratio,
+         owner_id, workspace_id, creator_owner_id, prompt,
+         reference_snapshot, model_id, aspect_ratio,
          resolution, generation_count, thinking_level, google_search,
          quality, background, output_format,
          version, expires_at, created_at, updated_at
-       ) VALUES ($1, $2, $3::jsonb, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $15)
-       ON CONFLICT (owner_id) DO UPDATE
+       ) VALUES ($1, $2, $1, $3, $4::jsonb, $5, $6, $7, $8, $9,
+                 $10, $11, $12, $13, $14, $15, $16, $16)
+       ON CONFLICT (workspace_id, creator_owner_id) DO UPDATE
          SET prompt = EXCLUDED.prompt,
              reference_snapshot = EXCLUDED.reference_snapshot,
              model_id = EXCLUDED.model_id,
@@ -80,6 +94,7 @@ export async function saveCreationDraft(
        RETURNING *`,
       [
         ownerId,
+        workspace.id,
         state.prompt,
         JSON.stringify(references),
         state.modelId,
@@ -108,14 +123,20 @@ export async function saveCreationDraft(
 
 export async function deleteCreationDraft(
   pool,
-  { expectedVersion, now = new Date(), ownerId },
+  { expectedVersion, now = new Date(), ownerId, workspaceId = null },
 ) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+    const workspace = await resolveWorkspaceAccess(client, {
+      ownerId,
+      workspaceId,
+      write: true,
+    });
     const result = await client.query(
-      "SELECT * FROM creation_drafts WHERE owner_id = $1 FOR UPDATE",
-      [ownerId],
+      `SELECT * FROM creation_drafts
+        WHERE workspace_id = $1 AND creator_owner_id = $2 FOR UPDATE`,
+      [workspace.id, ownerId],
     );
     const existing = result.rows[0] ?? null;
     const current = activeDraft(existing, now);
@@ -124,7 +145,11 @@ export async function deleteCreationDraft(
       return { conflict: true, current };
     }
     if (existing) {
-      await client.query("DELETE FROM creation_drafts WHERE owner_id = $1", [ownerId]);
+      await client.query(
+        `DELETE FROM creation_drafts
+          WHERE workspace_id = $1 AND creator_owner_id = $2`,
+        [workspace.id, ownerId],
+      );
     }
     await client.query("COMMIT");
     return { conflict: false, current: null };

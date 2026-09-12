@@ -1,6 +1,8 @@
 import { getGenerationResources } from "../generation/resources.mjs";
 import { loadAuthenticationConfig } from "./config.mjs";
 import { createAuthenticationOperations } from "./operations.mjs";
+import { createEmailOtpMailer } from "./email-mailer.mjs";
+import { createEmailOtpOperations } from "./email-operations.mjs";
 import {
   createRequestAuthenticator,
   createSessionAuthenticator,
@@ -15,10 +17,18 @@ export function getAuthenticationRuntime() {
     const getPool = async () => resources.pool;
     const authenticate = createRequestAuthenticator({ config, getPool });
     const authenticateSession = createSessionAuthenticator({ config, getPool });
+    const mailer =
+      config.mode === "email_otp" && config.sendingEnabled
+        ? createEmailOtpMailer({ config })
+        : null;
     return Object.freeze({
       authenticate,
       authenticateSession,
       config,
+      emailOperations:
+        config.mode === "email_otp"
+          ? createEmailOtpOperations({ config, getPool, mailer })
+          : null,
       operations: createAuthenticationOperations({
         authenticate,
         authenticateSession,

@@ -116,7 +116,7 @@ test("GG-027 workspace account menu resolves identity and moves balance and logo
   assert.match(page, /if \(session\.account\.businessRole === "distributor"\) return "分销商"/);
   assert.match(page, /return "个人"/);
   assert.match(page, /<DropdownMenuTrigger asChild>[\s\S]*className="account-card-username"[\s\S]*<\/DropdownMenuTrigger>/);
-  assert.match(page, /<DropdownMenuContent[\s\S]*side="right"[\s\S]*<span>身份<\/span>[\s\S]*<span>积分余额<\/span>[\s\S]*<span>退出登录<\/span>[\s\S]*<\/DropdownMenuContent>/);
+  assert.match(page, /<DropdownMenuContent[\s\S]*side="right"[\s\S]*<span>身份<\/span>[\s\S]*<span>\{workspaceId \? "企业剩余额度" : "积分余额"\}<\/span>[\s\S]*<span>退出登录<\/span>[\s\S]*<\/DropdownMenuContent>/);
   assert.doesNotMatch(page, /account-identity-badge|account-credit-balance|account-session-action/);
 });
 

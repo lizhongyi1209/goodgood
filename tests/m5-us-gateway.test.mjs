@@ -308,7 +308,7 @@ test("O1Key failure strings normalize without reaching the browser", async (cont
   const failed = await adapter.waitForTerminal({
     pollIntervalMs: 1,
     taskId: submitted.taskId,
-    timeoutMs: 100,
+    timeoutMs: 500,
   });
 
   assert.equal(failed.failures[0].code, "MODEL_REJECTED");

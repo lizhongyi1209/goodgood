@@ -1,5 +1,6 @@
 import type { GenerationReference } from "@/shared/contracts/generation";
 import { goodGoodApiFetch } from "@/features/auth/http-auth-boundary";
+import { workspaceRequestHeaders } from "@/features/organizations/workspace-request";
 
 type UploadIntent = Readonly<{
   clientId: string;
@@ -54,6 +55,7 @@ function failedReference(
 export async function uploadReferenceFiles(
   items: readonly PendingReferenceFile[],
   onUpdate: (clientId: string, reference: GenerationReference) => void,
+  workspaceId: string | null = null,
 ): Promise<readonly ReferenceUploadResult[]> {
   let intents: readonly UploadIntent[];
   try {
@@ -66,7 +68,10 @@ export async function uploadReferenceFiles(
           name: file.name,
         })),
       }),
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        ...workspaceRequestHeaders(workspaceId),
+      },
       method: "POST",
     });
     intents = (
@@ -104,7 +109,10 @@ export async function uploadReferenceFiles(
         >(
           await goodGoodApiFetch(
             `/api/references/${encodeURIComponent(intent.reference.id)}/complete`,
-            { method: "POST" },
+            {
+              headers: workspaceRequestHeaders(workspaceId),
+              method: "POST",
+            },
           ),
         );
         const reference: GenerationReference = Object.freeze({

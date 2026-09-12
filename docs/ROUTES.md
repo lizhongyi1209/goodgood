@@ -19,6 +19,8 @@ native history.
 | 图片详情 | Implemented | `/assets/:assetId` over its preserved source scope |
 | 账户管理 | Implemented | `/admin/users`, visible and callable only by the site owner |
 | 积分记录 | Implemented | `/credits`, entered from the quiet row below `帮助` or the mobile balance |
+| 企业创作 | Implemented locally | `/workspaces/:workspaceId/create`, after active-membership validation |
+| 企业管理 | Implemented locally | `/organizations/:organizationId` plus members, usage, and assets subroutes |
 
 Do not describe placeholders as shipped features.
 
@@ -123,16 +125,22 @@ navigation:
 
 | Endpoint | Purpose |
 | --- | --- |
-| `GET /api/auth/login` | Persist OIDC state/PKCE and redirect to the hosted login page |
+| `GET /api/auth/method` | Return `hosted` or `email_code` so one browser surface supports the deployed mode and rollback candidate |
+| `GET /api/auth/login` | Persist OIDC state/PKCE and redirect to hosted login; email mode only validates and returns to the same GoodGood path |
 | `GET /api/auth/callback` | Consume state, expire the one-time browser binding on every outcome, exchange a valid code, and create a GoodGood session |
+| `GET /api/auth/email/challenge` | Return only the current browser-bound challenge ID, masked mailbox, delivery state, expiry, and resend delay |
+| `POST /api/auth/email/request` | Validate Origin/bounded JSON/mailbox, reserve shared limits, persist a challenge, and submit one SMTP message |
+| `POST /api/auth/email/verify` | Validate Origin and browser binding, atomically consume the code, then create the owner/identity/session as required |
 | `GET /api/auth/session` | Return the safe current-account summary; never provider tokens |
-| `POST /api/auth/logout` | Revoke the GoodGood session, expire its cookie, and return the fixed Authing hosted-logout target in OIDC mode |
+| `POST /api/auth/logout` | Revoke the GoodGood session and expire its cookie; only OIDC mode returns the fixed Authing hosted-logout target |
 
 The browser follows an OIDC logout target as a top-level navigation. It never
 uses `fetch` across origins, and the provider return is fixed to the GoodGood
 origin root derived from the configured login callback rather than accepting a
 caller-supplied URL. Local test mode has no provider session and keeps the `204`
 response after expiring its local cookie.
+Email request/verify responses are no-store and same-origin only; mailbox,
+challenge, or code values never appear in a product URL.
 
 ## Accepted production routes
 
@@ -154,6 +162,24 @@ when their persistence and navigation behavior exist:
 | `/moodboards` | Future moodboards |
 | `/help` | Product help and status guidance |
 | `/admin/users` | Site-owner-only account review, business-role/direct-parent management, audit history, and test-credit management |
+
+GG-030 implements these stable routes locally, but they are not deployed:
+
+| Path | Purpose |
+| --- | --- |
+| `/workspaces/:workspaceId/create` | Creation in one validated personal or organization Workspace |
+| `/organizations/:organizationId` | Enterprise overview and recovery entry |
+| `/organizations/:organizationId/members` | Organization owner/admin invitation, role, status, and budget management |
+| `/organizations/:organizationId/usage` | Role-authorized member consumption and reservation history |
+| `/organizations/:organizationId/assets` | Role-authorized generated company Asset review |
+
+The corresponding API boundary uses stable Workspace/organization IDs for
+selection and derives the human actor from the GoodGood session. It includes
+site-owner organization creation, member invitation/acceptance, membership
+changes, budget changes, organization billing summary, usage, and Assets.
+Invitation acceptance never accepts an owner ID or unverified email from the
+browser as authority. Search terms containing employee email remain in request
+bodies or ephemeral state, not URLs/history.
 
 The root route remains compatible for old links. Product navigation and clean
 creation transitions use `/create`; both entries mount the same component and
@@ -180,3 +206,6 @@ do not create separate draft or history state.
   and API authorization remain server-side. Search terms containing email or
   other personal data stay in request bodies or ephemeral client state rather
   than browser URLs or history.
+- Organization navigation is emitted only for a current active membership.
+  `org_owner`/`org_admin` controls never reuse `/admin/users`, and hidden
+  navigation is never treated as authorization.

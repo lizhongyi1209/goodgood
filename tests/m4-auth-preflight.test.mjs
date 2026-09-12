@@ -23,6 +23,23 @@ function oidcEnvironment(overrides = {}) {
   };
 }
 
+function emailEnvironment(overrides = {}) {
+  return {
+    GOODGOOD_AUTH_COOKIE_NAME: "__Host-goodgood_session",
+    GOODGOOD_AUTH_COOKIE_SECURE: "true",
+    GOODGOOD_AUTH_MODE: "email_otp",
+    GOODGOOD_AUTH_PUBLIC_ORIGIN: "https://staging.goodgood.example",
+    GOODGOOD_EMAIL_FROM: "GoodGood <no-reply@mail.goodgood.example>",
+    GOODGOOD_EMAIL_OTP_SECRET: SECRET,
+    GOODGOOD_EMAIL_SMTP_HOST: "smtp.goodgood.example",
+    GOODGOOD_EMAIL_SMTP_PASSWORD: "smtp-secret-that-must-not-appear",
+    GOODGOOD_EMAIL_SMTP_PORT: "465",
+    GOODGOOD_EMAIL_SMTP_SECURE: "true",
+    GOODGOOD_EMAIL_SMTP_USERNAME: "smtp-user",
+    ...overrides,
+  };
+}
+
 function discovery(overrides = {}) {
   const issuer = "https://goodgood-staging.authing.cn/oidc";
   return {
@@ -79,6 +96,74 @@ test("authentication preflight validates a production-shaped Authing OIDC config
   assert.doesNotMatch(JSON.stringify(report), new RegExp(SECRET));
   assert.equal("clientId" in report.configuration, false);
   assert.equal("clientSecret" in report.configuration, false);
+});
+
+test("authentication preflight verifies email SMTP without sending or exposing secrets", async () => {
+  let closed = false;
+  let transportOptions = null;
+  let verified = false;
+  const report = await runAuthenticationPreflight({
+    environment: emailEnvironment(),
+    smtpTransportFactory(options) {
+      transportOptions = options;
+      return {
+        close() {
+          closed = true;
+        },
+        async verify() {
+          verified = true;
+        },
+      };
+    },
+  });
+
+  assert.equal(report.ok, true);
+  assert.equal(verified, true);
+  assert.equal(closed, true);
+  assert.equal(transportOptions.secure, true);
+  assert.equal(transportOptions.auth.user, "smtp-user");
+  assert.deepEqual(report.configuration, {
+    cookieName: "__Host-goodgood_session",
+    mode: "email_otp",
+    publicOrigin: "https://staging.goodgood.example",
+    registrationEnabled: true,
+    secureCookie: true,
+    sendingEnabled: true,
+    smtpAuthenticationConfigured: true,
+    smtpSecure: true,
+  });
+  assert.deepEqual(
+    report.manualChecks.map(({ id }) => id),
+    [
+      "email-domain-authentication",
+      "email-provider-readiness",
+      "email-code-delivery",
+      "interactive-email-smoke-tests",
+      "email-alert-delivery",
+    ],
+  );
+  assert.doesNotMatch(JSON.stringify(report), /smtp-secret|smtp-user|SECRET/);
+});
+
+test("authentication preflight fails closed on SMTP authentication errors", async () => {
+  const report = await runAuthenticationPreflight({
+    environment: emailEnvironment(),
+    smtpTransportFactory() {
+      return {
+        close() {},
+        async verify() {
+          throw new Error("provider detail must stay private");
+        },
+      };
+    },
+  });
+
+  assert.equal(report.ok, false);
+  assert.equal(
+    report.checks.find(({ id }) => id === "smtp-authentication").status,
+    "fail",
+  );
+  assert.doesNotMatch(JSON.stringify(report), /provider detail|smtp-secret/);
 });
 
 test("authentication preflight fails closed when discovery cannot prove the required OIDC capabilities", async () => {

@@ -7,6 +7,8 @@ import {
   isSafeProductionEvidenceReference,
 } from "./production-readiness-contract.mjs";
 import {
+  EMAIL_OTP_SECRET_PATH,
+  EMAIL_SMTP_PASSWORD_PATH,
   STAGING_AUTH_SECRET_PATH,
   STAGING_GENERATION_SECRET_PATH,
   STAGING_OBJECT_STORAGE_ACCESS_KEY_PATH,
@@ -24,6 +26,8 @@ const RELEASE_VARIABLES = Object.freeze([
   "GOODGOOD_RUNTIME_ENV_FILE",
   "GOODGOOD_PRODUCTION_ORIGIN",
   "GOODGOOD_AUTH_CLIENT_SECRET_SOURCE_FILE",
+  "GOODGOOD_EMAIL_OTP_SECRET_SOURCE_FILE",
+  "GOODGOOD_EMAIL_SMTP_PASSWORD_SOURCE_FILE",
   "GOODGOOD_GENERATION_API_KEY_SOURCE_FILE",
   "GOODGOOD_OBJECT_STORAGE_ACCESS_KEY_ID_SOURCE_FILE",
   "GOODGOOD_OBJECT_STORAGE_SECRET_ACCESS_KEY_SOURCE_FILE",
@@ -32,6 +36,8 @@ const RELEASE_VARIABLES = Object.freeze([
 
 const SOURCE_SECRET_NAMES = Object.freeze([
   "GOODGOOD_AUTH_CLIENT_SECRET_SOURCE_FILE",
+  "GOODGOOD_EMAIL_OTP_SECRET_SOURCE_FILE",
+  "GOODGOOD_EMAIL_SMTP_PASSWORD_SOURCE_FILE",
   "GOODGOOD_GENERATION_API_KEY_SOURCE_FILE",
   "GOODGOOD_OBJECT_STORAGE_ACCESS_KEY_ID_SOURCE_FILE",
   "GOODGOOD_OBJECT_STORAGE_SECRET_ACCESS_KEY_SOURCE_FILE",
@@ -39,6 +45,8 @@ const SOURCE_SECRET_NAMES = Object.freeze([
 
 const SECRET_SOURCE_FILENAMES = Object.freeze({
   GOODGOOD_AUTH_CLIENT_SECRET_SOURCE_FILE: "auth-client-secret",
+  GOODGOOD_EMAIL_OTP_SECRET_SOURCE_FILE: "email-otp-secret",
+  GOODGOOD_EMAIL_SMTP_PASSWORD_SOURCE_FILE: "email-smtp-password",
   GOODGOOD_GENERATION_API_KEY_SOURCE_FILE: "o1key-api-key",
   GOODGOOD_OBJECT_STORAGE_ACCESS_KEY_ID_SOURCE_FILE: "r2-access-key-id",
   GOODGOOD_OBJECT_STORAGE_SECRET_ACCESS_KEY_SOURCE_FILE: "r2-secret-access-key",
@@ -169,7 +177,10 @@ function validateRelease(releaseEnvironment, runtimeFilePath, productionRoot) {
       );
     }
   }
-  if (new Set(secretSourcePaths.map((filePath) => path.resolve(filePath))).size !== 4) {
+  if (
+    new Set(secretSourcePaths.map((filePath) => path.resolve(filePath))).size !==
+    SOURCE_SECRET_NAMES.length
+  ) {
     throw new Error("Every production credential must use a distinct source file.");
   }
 
@@ -296,8 +307,8 @@ function validateRuntime(release, releaseEnvironment, runtime) {
       throw new Error(`${name} belongs in the release file, not runtime.env.`);
     }
   }
-  if (runtime.GOODGOOD_AUTH_MODE !== "oidc") {
-    throw new Error("GOODGOOD_AUTH_MODE must be oidc in production.");
+  if (!["email_otp", "oidc"].includes(runtime.GOODGOOD_AUTH_MODE)) {
+    throw new Error("GOODGOOD_AUTH_MODE must be email_otp or oidc in production.");
   }
   if (
     (runtime.GOODGOOD_ALLOW_LOCAL_AUTH &&
@@ -309,14 +320,34 @@ function validateRuntime(release, releaseEnvironment, runtime) {
   }
   if (
     runtime.GOODGOOD_AUTH_CLIENT_SECRET ||
+    runtime.GOODGOOD_EMAIL_OTP_SECRET ||
+    runtime.GOODGOOD_EMAIL_SMTP_PASSWORD ||
     runtime.GENERATION_API_KEY ||
     runtime.OBJECT_STORAGE_ACCESS_KEY_ID ||
     runtime.OBJECT_STORAGE_SECRET_ACCESS_KEY
   ) {
     throw new Error("Application and object-storage credentials must be file-backed.");
   }
-  if (runtime.GOODGOOD_AUTH_CLIENT_SECRET_FILE !== STAGING_AUTH_SECRET_PATH) {
-    throw new Error("GOODGOOD_AUTH_CLIENT_SECRET_FILE must use the fixed container secret path.");
+  if (runtime.GOODGOOD_AUTH_MODE === "oidc") {
+    if (runtime.GOODGOOD_AUTH_CLIENT_SECRET_FILE !== STAGING_AUTH_SECRET_PATH) {
+      throw new Error("GOODGOOD_AUTH_CLIENT_SECRET_FILE must use the fixed container secret path.");
+    }
+    if (
+      runtime.GOODGOOD_EMAIL_OTP_SECRET_FILE ||
+      runtime.GOODGOOD_EMAIL_SMTP_PASSWORD_FILE
+    ) {
+      throw new Error("Email authentication secret paths must be absent in OIDC mode.");
+    }
+  } else {
+    if (runtime.GOODGOOD_AUTH_CLIENT_SECRET_FILE) {
+      throw new Error("The Authing client secret path must be absent in email mode.");
+    }
+    if (
+      runtime.GOODGOOD_EMAIL_OTP_SECRET_FILE !== EMAIL_OTP_SECRET_PATH ||
+      runtime.GOODGOOD_EMAIL_SMTP_PASSWORD_FILE !== EMAIL_SMTP_PASSWORD_PATH
+    ) {
+      throw new Error("Email authentication secrets must use the fixed container paths.");
+    }
   }
   if (runtime.GENERATION_API_KEY_FILE !== STAGING_GENERATION_SECRET_PATH) {
     throw new Error("GENERATION_API_KEY_FILE must use the fixed container secret path.");
@@ -411,14 +442,30 @@ function validateRuntime(release, releaseEnvironment, runtime) {
   const hostRuntime = runtimeEnvironmentForHost(releaseEnvironment, runtime);
   const auth = loadAuthenticationConfig(hostRuntime);
   loadGenerationConfig(hostRuntime);
-  const authIssuer = parseUrl(auth.issuer, "GOODGOOD_AUTH_ISSUER", ["https:"]);
-  if (
-    isLoopback(authIssuer.hostname) ||
-    !(authIssuer.hostname === "authing.cn" || authIssuer.hostname.endsWith(".authing.cn")) ||
-    auth.redirectUri !== `${release.origin}/api/auth/callback`
+  if (auth.mode === "oidc") {
+    const authIssuer = parseUrl(auth.issuer, "GOODGOOD_AUTH_ISSUER", ["https:"]);
+    if (
+      isLoopback(authIssuer.hostname) ||
+      !(
+        authIssuer.hostname === "authing.cn" ||
+        authIssuer.hostname.endsWith(".authing.cn")
+      ) ||
+      auth.redirectUri !== `${release.origin}/api/auth/callback`
+    ) {
+      throw new Error(
+        "OIDC mode must use the accepted Authing issuer and exact production callback.",
+      );
+    }
+  } else if (
+    auth.publicOrigin !== release.origin ||
+    !auth.sendingEnabled ||
+    !auth.mail?.secure ||
+    !auth.mail?.username ||
+    !auth.mail?.password ||
+    isLoopback(auth.mail.host)
   ) {
     throw new Error(
-      "Production authentication must use the accepted Authing issuer and exact production callback.",
+      "Email mode must use the exact production origin and authenticated implicit-TLS SMTP.",
     );
   }
 
@@ -456,6 +503,7 @@ export async function runProductionPreflight({
   repositoryEvidence,
   runtimeEnvironment = {},
   runtimeFilePath,
+  smtpTransportFactory,
 }) {
   const checks = [];
   const linuxHost = platform === "linux";
@@ -611,6 +659,7 @@ export async function runProductionPreflight({
     const authentication = await runAuthenticationPreflight({
       environment: runtime.hostRuntime,
       fetchImpl,
+      smtpTransportFactory,
     });
     for (const item of authentication.checks) {
       checks.push(
@@ -626,7 +675,7 @@ export async function runProductionPreflight({
       check(
         "authentication:network",
         "blocked",
-        "OIDC discovery requires a valid production runtime configuration.",
+        "Authentication network checks require a valid production runtime configuration.",
       ),
     );
   }

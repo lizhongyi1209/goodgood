@@ -203,6 +203,49 @@ cookie whose name starts with `__Host-`. The runtime and staging preflight fail
 closed instead of falling back to local identities or contacting discovery
 with an unsafe configuration.
 
+The GG-029 email candidate requires exact same-origin POST, bounded JSON, a
+valid single mailbox, and a short-lived HttpOnly browser-binding cookie.
+Malformed, expired, consumed, replaced, cross-browser, and incorrect codes all
+normalize to `EMAIL_CODE_INVALID`; failed guesses still commit their counter.
+Shared limits return `EMAIL_RATE_LIMITED` with `Retry-After`. A definite SMTP
+rejection returns `EMAIL_SEND_UNAVAILABLE` and invalidates that challenge;
+connection/timeout ambiguity is stored as `unknown`, remains verifiable if a
+message arrives, and is never auto-retried. No response contains the raw code,
+SMTP error body, secret, or complete mailbox after the request step.
+
+In `email_otp` mode, send and verify are same-origin JSON POSTs with a 2 KiB
+body limit. Invalid mailbox input fails before SMTP. Wrong, expired, replayed,
+replaced, cross-browser, and exhausted codes normalize to
+`EMAIL_CODE_INVALID`; no response reveals whether the mailbox already has an
+account. Shared limit failures return `EMAIL_RATE_LIMITED` and a bounded
+`retryAfterSeconds`. SMTP rejection returns stable unavailable copy, while an
+uncertain timeout leaves the exact challenge verifiable without automatic
+resend. Provider errors, credentials, full mailbox addresses in audit subjects,
+and codes are not returned. Disabling sends does not invalidate existing
+sessions or already issued challenges; disabling registration is disclosed
+only after a valid unbound mailbox challenge is verified.
+
+The read-only email-auth operations command emits one redacted JSON report and
+uses stable alert codes: `EMAIL_AUTH_GLOBAL_BUDGET_HIGH`,
+`EMAIL_AUTH_DELIVERY_FAILURE_STREAK`, and `EMAIL_AUTH_CLEANUP_OVERDUE`.
+Operators and the separately owned monitoring layer may group repeated reports
+by code; this repository slice does not add an alert transport. Status-command
+failure emits only `EMAIL_AUTH_STATUS_FAILED`; cleanup-command failure emits
+only `EMAIL_AUTH_CLEANUP_FAILED`. Neither path prints a database error,
+connection string, mailbox, code, SMTP response, or secret. Suspending a
+specific account revokes that owner's active sessions atomically; it never
+causes a global session purge.
+
+The existing-owner binding command fails closed before writes for malformed or
+count-mismatched manifests, digest mismatch, duplicate owner/email entries,
+missing owners, stored-email mismatch, absent prior identity, unverified or
+out-of-order site-owner mapping, existing binding conflicts, and partial replay.
+Expected failures use stable `EMAIL_BINDING_*` codes; unexpected database or file
+errors collapse to `EMAIL_BINDING_FAILED`. Command failure output never includes
+the database URL, raw manifest, full mailbox, external reference, or provider
+detail. All inserts are one transaction, so a failed execution creates neither a
+partial identity set nor any business/credit mutation.
+
 ADR 0020 separates authentication from creation admission. A valid new Authing
 identity receives a GoodGood session and `pending` account projection rather
 than an authentication failure. Pending users receive stable review-state copy,
@@ -276,6 +319,49 @@ or command-line receipt semantics.
 Invalid access transitions return `ADMIN_STATUS_TRANSITION_INVALID`; a site
 owner cannot suspend their own account. Test-credit amount outside the positive
 integer range 1-5000 returns `ADMIN_CREDIT_AMOUNT_INVALID` before ledger work.
+
+GG-030 enterprise endpoints authenticate the GoodGood session before resolving
+the requested Workspace. Missing, foreign, suspended, or removed memberships
+normalize to `WORKSPACE_ACCESS_DENIED` without disclosing the organization,
+member, invitation, budget, or Asset. Platform site-owner authority is not an
+implicit content bypass.
+
+Invitation creation validates normalized email, role, expiry, actor capability,
+and idempotency before mutation. A same-workspace pending invite for the same
+email is replayed or explicitly replaced; conflicting reuse returns
+`ORGANIZATION_IDEMPOTENCY_CONFLICT`. Acceptance derives the verified email from
+the session. Missing, expired, revoked, already-consumed by another user, or
+email-mismatched invitations return `INVITATION_UNAVAILABLE` without identifying
+another account. Failure preserves the current signed-in state and offers return
+to personal creation; it never creates credentials or calls an authentication
+code endpoint.
+
+Membership transitions reject the last-owner removal with
+`ORGANIZATION_OWNER_REQUIRED`, invalid transitions with
+`MEMBERSHIP_TRANSITION_INVALID`, and stale versions with
+`MEMBERSHIP_CONFLICT`. Suspending a member blocks new Workspace reads/writes and
+signed URLs but does not suspend their GoodGood user or erase company history.
+
+Budget updates require a current member, integer limit, reason, version, and
+idempotency key. `MEMBER_BUDGET_INSUFFICIENT` identifies a member limit shortfall;
+`ORGANIZATION_CREDIT_INSUFFICIENT` identifies company pool capacity. A failed
+allocation or generation rolls back budget and credit evidence together and
+keeps the dialog/composer input. No error falls back to personal credit,
+GG-027 transfer, direct cache edit, payment order, or provider submission.
+
+`ORGANIZATION_CREDIT_UNAVAILABLE` and `MEMBER_BUDGET_UNAVAILABLE` distinguish a
+disabled projection from a shortfall without exposing another Workspace.
+`MEMBER_BUDGET_CONFLICT` rejects a stale version, unchanged limit, or reclaim
+below settled plus reserved use. A second, different close for one reservation
+returns `ORGANIZATION_CREDIT_RESERVATION_CLOSED`; a same-key/same-operation
+replay returns the recorded result. Settlement and release remain allowed for
+an in-flight reservation after Workspace suspension so the ledger cannot stay
+half closed.
+
+Manager usage and Asset reads retain the current list on transient failures and
+offer retry. An Asset not in the validated organization scope returns the same
+not-found response as an unknown ID. Raw reference objects remain creator-only;
+a manager-facing result never contains their object keys or signed URLs.
 
 Draft read, save, and delete derive the owner only from the GoodGood session.
 `DRAFT_UNAVAILABLE` never clears the current composer; the inline recovery

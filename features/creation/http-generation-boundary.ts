@@ -8,6 +8,7 @@ import type {
   GenerationJob,
 } from "@/shared/contracts/generation";
 import { goodGoodApiFetch } from "@/features/auth/http-auth-boundary";
+import { workspaceRequestHeaders } from "@/features/organizations/workspace-request";
 
 const POLL_INTERVAL_MS = 450;
 
@@ -75,7 +76,11 @@ async function parseJob(response: Response) {
   return payload as GenerationJob;
 }
 
-async function pollJob(job: GenerationJob, observer?: GenerationJobObserver) {
+async function pollJob(
+  job: GenerationJob,
+  observer?: GenerationJobObserver,
+  workspaceId?: string | null,
+) {
   let current = job;
   while (
     current.state === "queued" ||
@@ -87,6 +92,7 @@ async function pollJob(job: GenerationJob, observer?: GenerationJobObserver) {
       current = await parseJob(
         await goodGoodApiFetch(`/api/generations/${encodeURIComponent(current.id)}`, {
           cache: "no-store",
+          headers: workspaceRequestHeaders(workspaceId),
         }),
       );
       observer?.(current);
@@ -102,10 +108,12 @@ async function postAndPoll({
   endpoint,
   input,
   observer,
+  workspaceId,
 }: Readonly<{
   endpoint: string;
   input: GenerationInputSnapshot;
   observer?: GenerationJobObserver;
+  workspaceId?: string | null;
 }>) {
   const localId = `pending_${globalThis.crypto.randomUUID()}`;
   const timestamp = new Date().toISOString();
@@ -130,12 +138,13 @@ async function postAndPoll({
       headers: {
         "content-type": "application/json",
         "idempotency-key": createIdempotencyKey(),
+        ...workspaceRequestHeaders(workspaceId),
       },
       method: "POST",
     });
     const submitted = await parseJob(response);
     observer?.(submitted);
-    return pollJob(submitted, observer);
+    return pollJob(submitted, observer, workspaceId);
   } catch (error) {
     const failed = failedLocalJob(
       localId,
@@ -147,18 +156,26 @@ async function postAndPoll({
   }
 }
 
-export function createHttpGenerationBoundary(): HttpGenerationBoundary {
+export function createHttpGenerationBoundary(
+  workspaceId: string | null = null,
+): HttpGenerationBoundary {
   return Object.freeze({
     retry(failedJob, observer) {
       return postAndPoll({
         endpoint: `/api/generations/${encodeURIComponent(failedJob.id)}/retry`,
         input: failedJob.input,
         observer,
+        workspaceId,
       });
     },
     service: {
       submit(input, observer) {
-        return postAndPoll({ endpoint: "/api/generations", input, observer });
+        return postAndPoll({
+          endpoint: "/api/generations",
+          input,
+          observer,
+          workspaceId,
+        });
       },
     },
   });

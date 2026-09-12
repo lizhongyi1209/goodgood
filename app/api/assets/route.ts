@@ -2,6 +2,7 @@ import { assetApiError, listAssets } from "@/server/assets/api.mjs";
 import { loadAuthenticationConfig } from "@/server/auth/config.mjs";
 import { createRequestAuthenticator } from "@/server/auth/request-authenticator.mjs";
 import { getGenerationResources } from "@/server/generation/resources.mjs";
+import { workspaceIdFromRequest } from "@/server/organizations/request.mjs";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -17,7 +18,10 @@ async function ownerContext(request: Request) {
 export async function GET(request: Request) {
   try {
     return Response.json(
-      await listAssets({ ownerContext: await ownerContext(request) }),
+      await listAssets({
+        ownerContext: await ownerContext(request),
+        workspaceId: workspaceIdFromRequest(request),
+      }),
       { headers: { "cache-control": "no-store" } },
     );
   } catch (error) {

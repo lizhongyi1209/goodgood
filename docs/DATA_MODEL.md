@@ -49,8 +49,16 @@ records and paired `transfer_out` / `transfer_in` ledger types. Active-cycle rej
 service check serialized with hierarchy mutation; the database independently
 rejects self-links and a second active parent. The Drizzle schema mirrors the
 durable schema across all twenty-two migrations. A
-fuller project-backed creation session record and entitlements
-remain canonical contracts for later slices.
+fuller project-backed creation session record and entitlements. GG-030 migration
+0024 adds workspaces, organization memberships, verified-email invitations,
+append-only enterprise audit, a deterministic existing-user backfill, and an
+insert trigger for each new user's personal Workspace. Migration 0025 adds
+organization credit accounts, member budgets, and their append-only ledgers.
+Migration 0026 adds Workspace and creator scope to existing creative records and
+backfills every old record to its creator's personal Workspace. Migration 0027
+extends the enterprise audit action constraint with manager Asset downloads.
+The Drizzle schema mirrors the durable schema across all twenty-seven
+migrations. These remain canonical contracts for later slices.
 
 ADR 0043 accepts an additive migration sequence for payment-funded credit
 provenance, business roles, direct relationships, and paired credit transfers.
@@ -183,6 +191,89 @@ Migration `0016_gg010_nano_multi_output_prices.sql` adds immutable Nano Banana 2
 count-2/count-4 prices of 20/40 credits for 1K, 2K, and 4K. It changes no
 existing price, ledger, batch, attempt, or Asset row.
 
+## GG-030 additions (foundation through management implemented locally)
+
+### Workspace
+
+Stable ownership/authorization scope with `personal | organization` kind,
+stable public identity, name, `active | suspended` state, and timestamps. Every
+existing User gains exactly one personal Workspace through an additive,
+idempotent backfill. Organization Workspaces never reuse a User ID as their
+identity.
+
+### WorkspaceMembership
+
+Workspace, User, organization role `org_owner | org_admin | org_member`, active
+membership state, inviter/activation evidence, and timestamps. Personal
+Workspace ownership is unique and is not managed through organization APIs.
+Organization role, platform system role, user access, business identity, tier,
+and credit remain independent. Removing a membership closes its effective
+interval rather than deleting history; the last active organization owner
+cannot be removed without an atomic ownership transfer.
+
+### WorkspaceInvitation
+
+Organization Workspace, normalized invited email, intended role, inviting User,
+`pending | accepted | revoked | expired` state, expiry, idempotency identity/hash,
+and timestamps. Acceptance requires an authenticated User whose verified
+normalized email is equal, then creates or activates exactly one membership in
+the same transaction. It stores no password, authentication code, or SMTP
+credential and reveals no cross-account existence to an unauthorized caller.
+
+### WorkspaceCreditAccount and WorkspaceCreditLedgerEntry
+
+The target credit subject is a Workspace. Personal rows preserve the current
+owner ledger semantics; an organization row is funded only by a separately
+authorized grant or later accepted purchase path. The ledger remains
+append-only and the cached available/reserved balances remain rebuildable.
+GG-027 `transfer_in | transfer_out` entries, when integrated, are permanent
+owner-account movements and are not member budgets.
+
+Migration `0025_gg030_workspace_credits.sql` implements the organization side
+without altering `credit_accounts` or `credit_ledger_entries`. The cached
+organization projection stores available, reserved, and allocated balances;
+allocated means the sum of member limits not yet settled. An allocation changes
+allocated balance, reserve moves available to reserved, settlement reduces both
+reserved and allocated, and release moves reserved back to available. Database
+checks forbid a negative projection or allocation beyond total pool value.
+
+### MemberBudget and MemberBudgetEvent
+
+One effective spending projection per organization membership: cumulative
+limit, settled use, reserved use, version, and status. Append-only events record
+allocate, reclaim, reserve, settle, and release with actor, reason, related job,
+idempotency identity/hash, and timestamp. Allocated but unspent capacity is an
+earmark over the organization pool, not owned credit and not transferable by
+the member.
+
+The repository locks the Workspace, account, membership, and budget in one
+transaction. It appends the organization ledger entry and matching member event
+with the same job evidence; concurrent reservations therefore cannot spend the
+same organization or member capacity twice. Migration 0026 links that job
+evidence to a generation job in the same Workspace, so financial history cannot
+silently reference another tenant's work.
+
+Removing a member closes the budget and reclaims its immediately spendable
+remainder in the membership transaction. Any in-flight reservation remains
+auditable; its later settlement or release removes the final closed-budget
+allocation. Reaccepting a new invitation reopens the same historical budget at
+its settled floor before a manager grants new capacity.
+
+### WorkspaceAuditEvent
+
+Append-only enterprise administration evidence for organization creation,
+invitation, acceptance, role/status change, budget change, enterprise grant,
+and manager Asset download. It records server-derived actor, workspace, target,
+action, reason where required, idempotency evidence, safe metadata, and time;
+it never stores authentication secrets, signed URLs, prompts, or image bytes.
+
+Existing `CreationDraft`, `ReferenceAsset`, `Project`, `GenerationBatch`,
+`GenerationJob`, and `Asset` now carry a Workspace identity and retain the
+actual creating User. Migration 0026 maps every current creative record to its
+creator's personal Workspace without changing public IDs, object keys, balance,
+order, or history. Personal credit records stay owner-scoped and unchanged;
+organization credit lives in its separate Workspace-scoped tables.
+
 ## Entities
 
 ### User
@@ -245,7 +336,47 @@ login CSRF, replay, and expired callbacks do not continue authentication.
 Owner and authentication-identity references, SHA-256 hash of an opaque
 GoodGood session token, expiration, revocation, last-seen, and creation
 timestamps. Raw session tokens and Authing/Google tokens are never stored in
-the database.
+the database. Suspending an account updates the user projection and revokes
+every still-active session for that owner in the same administrative
+transaction; restoring access does not revive those revoked sessions.
+
+### AuthEmailBinding
+
+One verified normalized mailbox maps to one email authentication identity and
+one internal owner. The user-entered mailbox spelling is retained for display;
+the local identity subject is a random UUID rather than the mailbox. Runtime
+login never merges an existing non-email owner by matching `users.email`.
+Self-service rows carry no migration metadata. An `operator_migration` row must
+carry the reviewed manifest SHA-256, bounded operator ID, and hashed external
+reference; these fields make the dry-run-first owner-binding command replayable
+without storing its raw reference. The command preserves the existing owner,
+role, admission state, credit ledger, projects, and assets and never issues a
+welcome grant.
+
+### AuthEmailChallenge
+
+A short-lived email login attempt stores the normalized/display mailbox,
+browser-binding hash, HMAC-SHA-256 code digest, safe relative return path,
+delivery state, expiry/consumption/invalidation times, and bounded failure
+count. The raw six-digit code is never persisted. Only one current challenge
+per normalized mailbox may exist, and verification consumes it under a row lock.
+
+### AuthRateLimit / AuthEvent
+
+Authentication rate limits use PostgreSQL rows keyed by scope, keyed subject
+digest, and time bucket so all Web instances share enforcement. Authentication
+events retain a bounded, redacted outcome trail and optional internal owner,
+challenge, request, and delivery references; they do not store a code or email
+body. GG-029 currently carries these additions in provisional migration 0023,
+whose number must be reconciled after parallel GG-027 migrations 0020–0022.
+
+### AuthMaintenanceState
+
+One bounded row per recognized authentication maintenance task records its
+last successful completion and redacted count detail. GG-029 currently permits
+only the hourly email-auth cleanup task. This heartbeat lets the read-only
+operations report distinguish an overdue cleanup from a quiet authentication
+period; it stores no mailbox, code, token, or provider response.
 
 ### PlanEntitlement
 
@@ -503,6 +634,21 @@ Contains ordering and membership metadata; never duplicate image bytes.
   available/reserved account caches. Reservation closure and refund preserve
   the original source split.
 - Ledger, payment, queue, and callback writes are idempotent.
+- A browser Workspace ID never grants access; the current active personal owner
+  or organization membership is resolved on every protected read/write.
+- A generation and its project, batch, Assets, credit account, member budget,
+  and creator must agree on one Workspace. A mismatch fails before provider work
+  and cannot be repaired by silently reassigning a browser-submitted record.
+- Organization available credit and member remaining/reserved budget cannot be
+  negative. Allocation, reserve, settle, release, and reclaim update all
+  affected projections and append evidence in one transaction.
+- Organization generation never consumes personal credit. Welcome or personal
+  test grants never become organization balance through backfill.
+- Manager Asset review includes organization-generated outputs and immutable
+  prompt/parameter snapshots, but excludes personal Workspaces and creator-only
+  raw reusable reference reads.
+- Closing a membership blocks new organization access and signed reads while
+  preserving organization Assets, usage, ledger, and audit history.
 - Project creation is owner-scoped and idempotent; batches cannot be reassigned
   from one project to another by a browser request.
 - Batch order is submission order, newest first in UI.

@@ -99,7 +99,11 @@ test("declares the GoodGood visual and interaction invariants", async () => {
   assert.match(css, /\.creation-card \.download-button:not\(:disabled\):hover\s*\{[^}]*color:\s*var\(--accent-deep\)[^}]*box-shadow:/s);
   assert.match(css, /\.creation-card \.download-button:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--accent\)/s);
   assert.match(css, /\.creation-card \.download-button:not\(:disabled\):active\s*\{[^}]*transform:\s*scale\(\.96\)/s);
-  assert.match(creationPage, /saveImageToLocal\(\{[\s\S]*createdAt: batch\.createdAt,[\s\S]*ordinal: index \+ 1,[\s\S]*previewUrl: image\.previewUrl,/);
+  assert.match(creationPage, /saveImageToLocal\(\s*\{[\s\S]*createdAt: batch\.createdAt,[\s\S]*ordinal: index \+ 1,[\s\S]*previewUrl: image\.previewUrl,/);
+  assert.match(
+    creationPage,
+    /readAssetDownloadUrl\(assetId, workspaceId\)/,
+  );
   assert.doesNotMatch(creationPage, /link\.href = previewUrl/);
   assert.doesNotMatch(creationPage, /(?:creation|gallery|detail)-variant-/);
   assert.doesNotMatch(css, /filter:\s*(?:saturate|contrast|hue-rotate|brightness)/);
@@ -128,7 +132,7 @@ test("declares the GoodGood visual and interaction invariants", async () => {
   assert.match(accountTrigger, /className="account-card-more"/);
   assert.doesNotMatch(accountTrigger, /accountIdentity|billingSummary|退出登录/);
   assert.match(accountMenu, /<span>身份<\/span>[\s\S]*<strong>\{accountIdentity\}<\/strong>/);
-  assert.match(accountMenu, /<span>积分余额<\/span>[\s\S]*className=\{billingSummary \? "account-menu-credit" : ""\}/);
+  assert.match(accountMenu, /<span>\{workspaceId \? "企业剩余额度" : "积分余额"\}<\/span>[\s\S]*className=\{billingSummary \? "account-menu-credit" : ""\}/);
   assert.match(accountMenu, /<span>退出登录<\/span>/);
   assert.doesNotMatch(accountCard, /account-identity-badge|account-credit-balance|account-session-action/);
   assert.match(css, /\.account-menu \{[^}]*width:\s*224px[^}]*box-shadow:/s);
@@ -193,17 +197,73 @@ test("hides fixed Nano thinking and shows only the Google Search control", async
 test("keeps authentication global, passwordless, and recoverable", async () => {
   const css = await readFile(path.join(root, "app/globals.css"), "utf8");
   const creationPage = await readFile(path.join(root, "app/page.tsx"), "utf8");
+  const authenticationGate = await readFile(
+    path.join(root, "features/auth/authentication-gate.tsx"),
+    "utf8",
+  );
+  const adminPage = await readFile(
+    path.join(root, "features/admin/account-management-page.tsx"),
+    "utf8",
+  );
+  const organizationPage = await readFile(
+    path.join(root, "features/organizations/organization-management-page.tsx"),
+    "utf8",
+  );
   const authBoundary = await readFile(
     path.join(root, "features/auth/http-auth-boundary.ts"),
     "utf8",
   );
+  const emailPolicy = await readFile(
+    path.join(root, "server/auth/email-policy.mjs"),
+    "utf8",
+  );
 
   assert.match(css, /\.authentication-gate[^}]*position:\s*fixed/s);
-  assert.match(creationPage, /Google \/ 邮箱验证码登录/);
-  assert.match(creationPage, /首次登录会自动注册，无需设置密码/);
+  assert.match(css, /\.authentication-card[^}]*calc\(100vw - 32px\)/s);
+  assert.match(css, /\.authentication-email-input[^}]*height:\s*var\(--control-lg\)/s);
+  assert.match(css, /\.authentication-code-input[^}]*height:\s*var\(--control-lg\)/s);
+  assert.match(
+    css,
+    /\.authentication-email-input:focus-visible[^}]*border-color:\s*var\(--accent\)[^}]*box-shadow:\s*none/s,
+  );
+  assert.match(
+    css,
+    /\.authentication-code-input:focus-visible[^}]*border-color:\s*var\(--accent\)[^}]*box-shadow:\s*none/s,
+  );
+  assert.match(creationPage, /<AuthenticationGate/);
+  assert.match(adminPage, /<AuthenticationGate/);
+  assert.match(organizationPage, /<AuthenticationGate/);
+  assert.match(
+    organizationPage,
+    /beginAuthentication\(`\$\{window\.location\.pathname\}\$\{window\.location\.search\}`\)/,
+  );
+  assert.match(authenticationGate, /authentication-brand-stacked/);
+  assert.match(authenticationGate, /authentication-mode-title/);
+  assert.match(authenticationGate, /className="authentication-form"/);
+  assert.match(authenticationGate, /className="authentication-input-shell"/);
+  assert.match(
+    authenticationGate,
+    /authentication-email-input[\s\S]*authentication-code-input[\s\S]*authentication-send-code[\s\S]*authentication-submit/,
+  );
+  assert.match(authenticationGate, /邮箱验证码登录/);
+  assert.match(authenticationGate, /placeholder="请输入 6 位验证码"/);
+  assert.match(authenticationGate, /发送验证码/);
+  assert.match(authenticationGate, /首次验证成功会自动注册/);
+  assert.match(authenticationGate, /autoComplete="one-time-code"/);
+  assert.match(authenticationGate, /disabled=\{!challenge \|\| busy !== null\}/);
+  assert.match(authenticationGate, /\$\{resendRemaining\} 秒后重发/);
+  assert.match(authenticationGate, /重新发送/);
+  assert.doesNotMatch(authenticationGate, /InputOTPSlot/);
+  assert.match(emailPolicy, /EMAIL_OTP_RESEND_SECONDS = 60/);
   assert.match(creationPage, /当前创作内容已保留/);
-  assert.doesNotMatch(creationPage, /type="password"/);
+  assert.doesNotMatch(authenticationGate, /type="password"/);
   assert.match(authBoundary, /goodgood:session-expired/);
+  assert.match(authBoundary, /\/api\/auth\/email\/request/);
+  assert.match(authBoundary, /\/api\/auth\/email\/verify/);
+  assert.match(
+    css,
+    /@media \(max-width:\s*720px\)[\s\S]*\.mobile-workspace-switcher \.workspace-invitation\s*\{[^}]*position:\s*absolute;[^}]*z-index:\s*40;[^}]*right:\s*0;/,
+  );
 });
 
 test("authentication session boundary covers signed-in, signed-out, and failure responses", async () => {
@@ -262,6 +322,81 @@ test("authentication session boundary covers signed-in, signed-out, and failure 
   } finally {
     globalThis.fetch = originalFetch;
     globalThis.window = originalWindow;
+  }
+});
+
+test("email authentication browser boundary covers challenge restore, request, verify, and failure", async () => {
+  const {
+    AuthenticationBoundaryError,
+    readAuthenticationMethod,
+    readEmailAuthenticationChallenge,
+    requestEmailAuthenticationCode,
+    verifyEmailAuthenticationCode,
+  } = await vite.ssrLoadModule("/features/auth/http-auth-boundary.ts");
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  try {
+    globalThis.fetch = async (input, options = {}) => {
+      calls.push({ input: String(input), options });
+      if (input === "/api/auth/method") {
+        return Response.json({ method: "email_code" });
+      }
+      if (input === "/api/auth/email/challenge") {
+        return Response.json({ challenge: null });
+      }
+      if (input === "/api/auth/email/request") {
+        return Response.json(
+          {
+            challengeId: "challenge-1",
+            delivery: "accepted",
+            emailHint: "cr***@example.com",
+            expiresInSeconds: 300,
+            resendAfterSeconds: 60,
+          },
+          { status: 202 },
+        );
+      }
+      return Response.json({ authenticated: true, returnTo: "/create" });
+    };
+    assert.equal(await readAuthenticationMethod(), "email_code");
+    assert.equal(await readEmailAuthenticationChallenge(), null);
+    const challenge = await requestEmailAuthenticationCode(
+      "creator@example.com",
+      "/create",
+    );
+    assert.equal(challenge.id, "challenge-1");
+    assert.equal(challenge.delivery, "accepted");
+    assert.equal(await verifyEmailAuthenticationCode("challenge-1", "123456"), "/create");
+    assert.deepEqual(JSON.parse(calls[2].options.body), {
+      email: "creator@example.com",
+      returnTo: "/create",
+    });
+    assert.deepEqual(JSON.parse(calls[3].options.body), {
+      challengeId: "challenge-1",
+      code: "123456",
+    });
+
+    globalThis.fetch = async () =>
+      Response.json(
+        {
+          error: {
+            code: "EMAIL_RATE_LIMITED",
+            message: "请求过于频繁",
+            retryAfterSeconds: 42,
+            retryable: false,
+          },
+        },
+        { status: 429 },
+      );
+    await assert.rejects(
+      requestEmailAuthenticationCode("creator@example.com", "/"),
+      (error) =>
+        error instanceof AuthenticationBoundaryError &&
+        error.code === "EMAIL_RATE_LIMITED" &&
+        error.retryAfterSeconds === 42,
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
   }
 });
 

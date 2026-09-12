@@ -1,4 +1,5 @@
 import { goodGoodApiFetch } from "@/features/auth/http-auth-boundary";
+import { workspaceRequestHeaders } from "@/features/organizations/workspace-request";
 
 export type ReferenceMaterial = Readonly<{
   byteSize: number;
@@ -36,9 +37,12 @@ export class ReferenceLibraryError extends Error {
   }
 }
 
-export async function listReferenceMaterials(): Promise<readonly ReferenceMaterial[]> {
+export async function listReferenceMaterials(
+  workspaceId: string | null = null,
+): Promise<readonly ReferenceMaterial[]> {
   const response = await goodGoodApiFetch("/api/references", {
     cache: "no-store",
+    headers: workspaceRequestHeaders(workspaceId),
   });
   const payload = (await response.json()) as ReferenceListResponse | ReferenceApiError;
   if (!response.ok) {

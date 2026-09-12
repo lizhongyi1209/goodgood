@@ -2,10 +2,12 @@ import {
   authenticationApiError,
   authenticationErrorRedirect,
 } from "./operations.mjs";
+import { authenticationRequestError } from "./errors.mjs";
 import { expiredAuthenticationLoginCookie } from "./request-authenticator.mjs";
 import { requestIdFor } from "../observability/http.mjs";
 
 const NO_STORE = { "cache-control": "no-store" };
+const EMAIL_BODY_LIMIT = 2 * 1024;
 
 function sendJson(response, statusCode, payload, headers = {}) {
   response.writeHead(statusCode, {
@@ -21,13 +23,115 @@ function redirect(response, statusCode, location, headers = {}) {
   response.end();
 }
 
-export function createAuthenticationNodeApiHandler({ config, operations }) {
+function failureHeaders(failure) {
+  const retryAfter = failure.body?.error?.retryAfterSeconds;
+  return retryAfter ? { "retry-after": String(retryAfter) } : {};
+}
+
+async function readJson(request) {
+  const rawContentType = typeof request.headers?.get === "function"
+    ? request.headers.get("content-type")
+    : request.headers?.["content-type"];
+  const contentType = String(rawContentType ?? "")
+    .split(";", 1)[0]
+    .trim()
+    .toLowerCase();
+  if (contentType !== "application/json") {
+    throw new TypeError("Authentication requests require application/json.");
+  }
+  const chunks = [];
+  let size = 0;
+  for await (const chunk of request) {
+    size += chunk.length;
+    if (size > EMAIL_BODY_LIMIT) {
+      throw new TypeError("Authentication request body is too large.");
+    }
+    chunks.push(chunk);
+  }
+  try {
+    return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+  } catch {
+    throw new TypeError("Authentication request body is invalid.");
+  }
+}
+
+export function createAuthenticationNodeApiHandler({
+  config,
+  emailOperations = null,
+  operations,
+}) {
   if (!config) throw new Error("Authentication configuration is required.");
   if (!operations) throw new Error("Authentication operations are required.");
 
   return async function handleAuthenticationNodeApi(request, response) {
     const url = new URL(request.url ?? "/", "http://localhost");
     if (!url.pathname.startsWith("/api/auth/")) return false;
+
+    if (url.pathname === "/api/auth/method") {
+      if (request.method !== "GET") {
+        sendJson(response, 405, { error: "method_not_allowed" }, { allow: "GET" });
+        return true;
+      }
+      sendJson(response, 200, {
+        method: config.mode === "email_otp" ? "email_code" : "hosted",
+      });
+      return true;
+    }
+
+    if (url.pathname === "/api/auth/email/challenge") {
+      if (request.method !== "GET") {
+        sendJson(response, 405, { error: "method_not_allowed" }, { allow: "GET" });
+        return true;
+      }
+      if (!emailOperations) {
+        sendJson(response, 404, { error: "not_found" });
+        return true;
+      }
+      try {
+        sendJson(response, 200, await emailOperations.readChallenge(request));
+      } catch (error) {
+        const failure = authenticationApiError(error, requestIdFor(request));
+        sendJson(response, failure.status, failure.body, failureHeaders(failure));
+      }
+      return true;
+    }
+
+    if (
+      url.pathname === "/api/auth/email/request" ||
+      url.pathname === "/api/auth/email/verify"
+    ) {
+      if (request.method !== "POST") {
+        sendJson(response, 405, { error: "method_not_allowed" }, { allow: "POST" });
+        return true;
+      }
+      if (!emailOperations) {
+        sendJson(response, 404, { error: "not_found" });
+        return true;
+      }
+      try {
+        const input = await readJson(request);
+        if (url.pathname.endsWith("/request")) {
+          const result = await emailOperations.requestCode(input, request);
+          sendJson(response, 202, result.body, { "set-cookie": result.cookie });
+        } else {
+          const result = await emailOperations.verifyCode(input, request);
+          sendJson(response, 200, result.body, { "set-cookie": result.cookies });
+        }
+      } catch (error) {
+        const normalizedError = error instanceof TypeError
+          ? authenticationRequestError(
+              "AUTH_REQUEST_INVALID",
+              "登录请求内容无效。",
+            )
+          : error;
+        const failure = authenticationApiError(
+          normalizedError,
+          requestIdFor(request),
+        );
+        sendJson(response, failure.status, failure.body, failureHeaders(failure));
+      }
+      return true;
+    }
 
     if (url.pathname === "/api/auth/login") {
       if (request.method !== "GET") {
@@ -36,10 +140,15 @@ export function createAuthenticationNodeApiHandler({ config, operations }) {
       }
       try {
         const result = await operations.beginLogin(url.searchParams.get("returnTo"));
-        redirect(response, 302, result.location, { "set-cookie": result.cookie });
+        redirect(
+          response,
+          302,
+          result.location,
+          result.cookie ? { "set-cookie": result.cookie } : {},
+        );
       } catch (error) {
         const failure = authenticationApiError(error, requestIdFor(request));
-        sendJson(response, failure.status, failure.body);
+        sendJson(response, failure.status, failure.body, failureHeaders(failure));
       }
       return true;
     }
@@ -83,7 +192,7 @@ export function createAuthenticationNodeApiHandler({ config, operations }) {
         sendJson(response, 200, await operations.readSession(request));
       } catch (error) {
         const failure = authenticationApiError(error, requestIdFor(request));
-        sendJson(response, failure.status, failure.body);
+        sendJson(response, failure.status, failure.body, failureHeaders(failure));
       }
       return true;
     }
@@ -108,7 +217,7 @@ export function createAuthenticationNodeApiHandler({ config, operations }) {
         }
       } catch (error) {
         const failure = authenticationApiError(error, requestIdFor(request));
-        sendJson(response, failure.status, failure.body);
+        sendJson(response, failure.status, failure.body, failureHeaders(failure));
       }
       return true;
     }

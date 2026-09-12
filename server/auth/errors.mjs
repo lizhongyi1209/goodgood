@@ -1,9 +1,10 @@
 export class AuthenticationError extends Error {
-  constructor(code, message, status = 401) {
+  constructor(code, message, status = 401, options = {}) {
     super(message);
     this.name = "AuthenticationError";
     this.code = code;
-    this.retryable = false;
+    this.retryAfterSeconds = options.retryAfterSeconds ?? null;
+    this.retryable = options.retryable ?? false;
     this.status = status;
   }
 }
@@ -28,5 +29,22 @@ export function authenticationProviderError() {
     "AUTH_PROVIDER_UNAVAILABLE",
     "登录服务暂时不可用，请稍后重试。",
     503,
+  );
+}
+
+export function authenticationRateLimitError(retryAfterSeconds) {
+  return new AuthenticationError(
+    "EMAIL_RATE_LIMITED",
+    `请求过于频繁，请在 ${retryAfterSeconds} 秒后重试。`,
+    429,
+    { retryAfterSeconds },
+  );
+}
+
+export function emailCodeInvalidError() {
+  return new AuthenticationError(
+    "EMAIL_CODE_INVALID",
+    "验证码无效或已过期，请重新获取。",
+    400,
   );
 }

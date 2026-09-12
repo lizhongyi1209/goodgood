@@ -143,6 +143,19 @@ operational grants never acquire it. Generation uses non-transferable credit
 first and preserves the reservation source through release or refund. This
 prevents free promotional value from becoming reseller inventory and keeps
 every transfer auditable without storing an external negotiated price.
+## 14. Add companies as workspaces, not privileged users
+
+The enterprise request is a team ownership problem, not another platform-admin
+role. The company principal manages a scoped organization membership, employee
+budget, consumption view, and company Asset view while `site_owner` remains a
+GoodGood operational role. Employees keep their own verified identities and
+personal Workspaces; a manager invites rather than invents their credentials.
+
+Employee allocation is a revocable limit over one company pool, not a permanent
+user-to-user transfer. This preserves offboarding and budget control while
+GG-027's commercial hierarchy continues to represent a different business
+relationship. Generated work follows the selected Workspace, so company review
+never becomes permission to inspect an employee's earlier personal library.
 
 ## Confirmed exclusions
 

@@ -87,6 +87,39 @@ handoff rejection. Hosted-page login methods, mail delivery,
 and cross-method subject association remain explicit manual staging evidence
 because OIDC discovery does not expose those controls.
 
+GG-029 adds deterministic email-mode coverage for configuration and secret
+separation, mailbox/IDN normalization, spoofed forwarding headers, HMAC-only
+storage, same-origin and request-size rejection, shared limits, SMTP accepted/
+unknown outcomes, logout revocation, cleanup scope, and browser-bound request/
+verify APIs. Its opt-in PostgreSQL test accepts only the loopback database named
+`gg029_email_auth_test`; it proves failed-attempt persistence, cross-browser
+rejection, concurrent one-time consumption, random identity creation, pending
+admission, and one welcome grant. `stack:email-local` supplies Mailpit for a
+real local SMTP/browser loop without real recipients or provider billing.
+Production provider, DNS, mailbox, proxy-chain, and mobile-device evidence
+remain P0/P3/P4 gates and must not be inferred from the local success.
+
+GG-029 P2 operations coverage additionally proves redacted aggregate and exact
+request-ID support reports, stable budget/delivery/cleanup alert codes, cleanup
+heartbeat persistence, bounded read-only arguments, and account suspension
+that transactionally revokes only the target owner's active sessions. The
+isolated `goodgood-gg029` Compose project uses Mailpit and mock generation only.
+Its synthetic SMTP and 390×844 browser flow are local evidence, not
+real-provider or production evidence. A separate disposable PostgreSQL stack
+also applies every migration and exercises cleanup/status without starting a
+Web process, Worker, real mail adapter, or generation provider.
+
+GG-029 P3 coverage proves both OIDC and email production-preflight paths,
+file-only OTP/SMTP secrets, exact origin and Secure `__Host-` policy, implicit-
+TLS authenticated SMTP verification without `sendMail`, provider-error
+redaction, and production Compose secret/maintenance wiring. Binding tests cover
+manifest shape/count/digest, normalized-email and owner conflicts, required prior
+identity, site-owner-first verification, dry-run non-mutation, transactional
+creation, audit hashes, and exact no-write replay. A fresh disposable PostgreSQL
+17 database applied all 20 current migrations, created two synthetic old-owner
+bindings, replayed the same manifest, and retained zero credit-ledger rows; it
+contained no real user, mail, generation, or production data.
+
 M7 release-contract tests prove that staging accepts only the GoodGood GHCR
 image pinned by digest and full CI metadata, separates release identity from
 runtime configuration, reads Authing, O1Key, and R2 credentials only from
@@ -459,6 +492,8 @@ The timestamped result of the latest verified gate belongs in
 - Parallel client-run insertion, temporary-to-durable ID replacement, terminal
   isolation, persistent ID filtering, and absence of client truncation.
 - Newest-first batch ordering.
+- Workspace capability mapping; invitation and membership transitions; member
+  budget allocation/reserve/settle/release arithmetic and operation hashes.
 
 ### Component
 
@@ -491,10 +526,30 @@ The timestamped result of the latest verified gate belongs in
   bookmark, and download resolves a fresh owner-scoped URL by Asset ID before
   creating a Blob download without navigation. URL resolution and transfer
   failures retain the page state and expose a diagnostic stage.
+- Workspace switcher with personal, one-organization, multi-organization,
+  suspended/removed membership, direct URL, refresh, and Back/Forward states.
+- Enterprise members, invitation, budget, usage, and team-Asset loading, empty,
+  failure, stale, mutation, responsive, keyboard, and retry states.
 
 ### API/integration
 
 - Auth and ownership on every write/read.
+- Idempotent personal-Workspace backfill preserves all owner IDs, counts,
+  balances, project/job/Asset order, and object keys; migration rerun is a no-op.
+- Site-owner organization creation and initial-owner assignment are atomic and
+  cannot be invoked by organization roles or inferred from email/domain/order.
+- Invitation create/accept/revoke/expire, verified-email match, replay,
+  conflicting replay, concurrent acceptance, membership state/role matrix, and
+  last-owner protection.
+- Organization credit plus member-budget allocation/reclaim/reserve/settle/
+  release is transactional, idempotent, concurrency-safe, and never falls back
+  to personal credit or GG-027 transfers.
+- Personal, organization-member, organization-manager, removed-member, and
+  cross-organization project/generation/Asset/reference boundaries return no
+  existence leak and mint only permitted signed reads.
+- Enterprise usage derives pending/released/settled state from durable job and
+  ledger evidence; manager Asset download appends safe audit without storing
+  signed URLs.
 - Signed upload lifecycle and invalid-file rejection.
 - Owner-scoped reusable-reference listing returns only accepted ready rows with
   fresh signed reads; selecting one reuses its stable ID without a PUT.
@@ -567,6 +622,12 @@ The timestamped result of the latest verified gate belongs in
   categories, batch traceability, filters, loading, empty, retry, load-more
   failure, responsive rows, and preservation of in-memory creation state; it
   also rejects duplicated generation parameters and prompt/result controls.
+- Enterprise credit tests separately prove site-owner grant authorization,
+  revocable member allocation/reclaim, organization and member shortfalls,
+  same-operation replay, and atomic reserve/settle/release. Competing member
+  reservations must serialize so at most the affordable subset succeeds;
+  failure leaves both projections and both immutable event streams unchanged.
+  The fixture also proves the same user's personal credit account is untouched.
 - Active payment-product selection, owner-scoped order idempotency, signed fake
   callback verification, exact amount matching, event replay/conflict handling,
   and paid-credit grant are transactional and idempotent.
@@ -666,15 +727,23 @@ settlement remains outside the current scope.
    skeleton and terminal result/error; a selected retry affects only that run.
 10. Upload one reference -> open a new creation -> select it from uploaded
     materials -> submit by the same reference ID without another object upload.
-11. Operator records one local fake/manual paid order -> site owner assigns a
-    distributor and direct child -> distributor allocates paid credit -> both
-    balances and paired records update once -> replay is a no-op.
+ 11. Operator records one local fake/manual paid order -> site owner assigns a
+     distributor and direct child -> distributor allocates paid credit -> both
+     balances and paired records update once -> replay is a no-op.
 12. The same distributor holds welcome/test credit -> allocation above the
     payment-funded subset is rejected -> generation consumes non-transferable
     credit first -> release/refund restores the original source classes.
-13. A distributor attempts an indirect, foreign, suspended, or re-parented
-    child -> the transfer fails without hierarchy disclosure or any balance,
-    ledger, transfer, or audit mutation.
+ 13. A distributor attempts an indirect, foreign, suspended, or re-parented
+     child -> the transfer fails without hierarchy disclosure or any balance,
+     ledger, transfer, or audit mutation.
+ 14. Site owner creates one enterprise for a verified principal -> principal
+     invites one employee -> employee accepts with matching verified email.
+ 15. Owner allocates employee budget -> employee generates in the enterprise ->
+     company and member reserve/settle once -> owner sees usage and generated
+     Asset while the employee's personal library remains hidden.
+ 16. Failed enterprise generation releases both company credit and member budget;
+     suspending/removing the employee blocks organization access but preserves
+     company history for managers.
 
 ### Staging-only verification
 

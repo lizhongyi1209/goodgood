@@ -6,6 +6,7 @@ import {
   listReferenceAssets,
   referenceApiError,
 } from "@/server/references/api.mjs";
+import { workspaceIdFromRequest } from "@/server/organizations/request.mjs";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -21,7 +22,10 @@ async function ownerContext(request: Request) {
 export async function GET(request: Request) {
   try {
     return Response.json(
-      await listReferenceAssets({ ownerContext: await ownerContext(request) }),
+      await listReferenceAssets({
+        ownerContext: await ownerContext(request),
+        workspaceId: workspaceIdFromRequest(request),
+      }),
       { headers: { "cache-control": "no-store" } },
     );
   } catch (error) {
@@ -40,6 +44,7 @@ export async function POST(request: Request) {
       await createReferenceUploads({
         files: payload.files,
         ownerContext: await ownerContext(request),
+        workspaceId: workspaceIdFromRequest(request),
       }),
       { headers: { "cache-control": "no-store" }, status: 201 },
     );

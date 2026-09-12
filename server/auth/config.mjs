@@ -3,7 +3,9 @@ import { readFileSync } from "node:fs";
 const DEFAULT_LOCAL_ISSUER = "goodgood-local";
 const DEFAULT_LOCAL_COOKIE_NAME = "goodgood_local_session";
 const DEFAULT_OIDC_COOKIE_NAME = "__Host-goodgood_session";
+const DEFAULT_EMAIL_ISSUER = "urn:goodgood:email";
 const DEFAULT_LOGIN_TTL_SECONDS = 10 * 60;
+const DEFAULT_EMAIL_CODE_TTL_SECONDS = 5 * 60;
 const DEFAULT_SESSION_TTL_SECONDS = 30 * 24 * 60 * 60;
 
 function required(environment, name) {
@@ -12,31 +14,37 @@ function required(environment, name) {
   return value;
 }
 
-function clientSecret(environment) {
-  const inlineSecret = environment.GOODGOOD_AUTH_CLIENT_SECRET?.trim();
-  const secretFile = environment.GOODGOOD_AUTH_CLIENT_SECRET_FILE?.trim();
+function secretValue(environment, inlineName, fileName) {
+  const inlineSecret = environment[inlineName]?.trim();
+  const secretFile = environment[fileName]?.trim();
   if (inlineSecret && secretFile) {
     throw new Error(
-      "Configure only one of GOODGOOD_AUTH_CLIENT_SECRET or GOODGOOD_AUTH_CLIENT_SECRET_FILE.",
+      `Configure only one of ${inlineName} or ${fileName}.`,
     );
   }
   if (inlineSecret) return inlineSecret;
   if (!secretFile) {
-    throw new Error(
-      "GOODGOOD_AUTH_CLIENT_SECRET or GOODGOOD_AUTH_CLIENT_SECRET_FILE is required.",
-    );
+    throw new Error(`${inlineName} or ${fileName} is required.`);
   }
 
   let value;
   try {
     value = readFileSync(secretFile, "utf8").trim();
   } catch {
-    throw new Error("GOODGOOD_AUTH_CLIENT_SECRET_FILE could not be read.");
+    throw new Error(`${fileName} could not be read.`);
   }
   if (!value) {
-    throw new Error("GOODGOOD_AUTH_CLIENT_SECRET_FILE must not be empty.");
+    throw new Error(`${fileName} must not be empty.`);
   }
   return value;
+}
+
+function clientSecret(environment) {
+  return secretValue(
+    environment,
+    "GOODGOOD_AUTH_CLIENT_SECRET",
+    "GOODGOOD_AUTH_CLIENT_SECRET_FILE",
+  );
 }
 
 function positiveInteger(environment, name, fallback, maximum) {
@@ -83,6 +91,46 @@ function parseCookieName(environment, fallback) {
     throw new Error("GOODGOOD_AUTH_COOKIE_NAME contains invalid characters.");
   }
   return cookieName;
+}
+
+function validateSessionCookie({ cookieName, label, publicUrl, secureCookie }) {
+  if (publicUrl.protocol === "https:" && !secureCookie) {
+    throw new Error(
+      `HTTPS ${label} require GOODGOOD_AUTH_COOKIE_SECURE=true.`,
+    );
+  }
+  if (publicUrl.protocol === "https:" && !cookieName.startsWith("__Host-")) {
+    throw new Error(
+      `HTTPS ${label} require GOODGOOD_AUTH_COOKIE_NAME to start with __Host-.`,
+    );
+  }
+  if (cookieName.startsWith("__Host-") && !secureCookie) {
+    throw new Error(
+      "A __Host- authentication cookie requires GOODGOOD_AUTH_COOKIE_SECURE=true.",
+    );
+  }
+}
+
+function parseMailbox(value, name) {
+  if (!value || value.length > 500 || /[\r\n,]/.test(value)) {
+    throw new Error(`${name} must contain one safe mailbox value.`);
+  }
+  return value;
+}
+
+function parseTrustedProxyAddresses(environment) {
+  const raw = environment.GOODGOOD_AUTH_TRUSTED_PROXY_ADDRESSES?.trim();
+  if (!raw) return Object.freeze([]);
+  const addresses = raw.split(",").map((value) => value.trim()).filter(Boolean);
+  if (
+    addresses.length > 16 ||
+    addresses.some((value) => value.length > 64 || /[\s,]/.test(value))
+  ) {
+    throw new Error(
+      "GOODGOOD_AUTH_TRUSTED_PROXY_ADDRESSES must contain at most 16 exact addresses.",
+    );
+  }
+  return Object.freeze([...new Set(addresses)]);
 }
 
 function parseTokenBindings(value) {
@@ -160,19 +208,12 @@ function loadOidcConfig(environment) {
     redirectUrl.protocol === "https:",
   );
   const cookieName = parseCookieName(environment, DEFAULT_OIDC_COOKIE_NAME);
-  if (redirectUrl.protocol === "https:" && !secureCookie) {
-    throw new Error(
-      "HTTPS OIDC callbacks require GOODGOOD_AUTH_COOKIE_SECURE=true.",
-    );
-  }
-  if (redirectUrl.protocol === "https:" && !cookieName.startsWith("__Host-")) {
-    throw new Error(
-      "HTTPS OIDC callbacks require GOODGOOD_AUTH_COOKIE_NAME to start with __Host-.",
-    );
-  }
-  if (cookieName.startsWith("__Host-") && !secureCookie) {
-    throw new Error("A __Host- authentication cookie requires GOODGOOD_AUTH_COOKIE_SECURE=true.");
-  }
+  validateSessionCookie({
+    cookieName,
+    label: "OIDC callbacks",
+    publicUrl: redirectUrl,
+    secureCookie,
+  });
 
   return Object.freeze({
     clientId: required(environment, "GOODGOOD_AUTH_CLIENT_ID"),
@@ -200,6 +241,135 @@ function loadOidcConfig(environment) {
   });
 }
 
+function loadEmailOtpConfig(environment) {
+  const publicUrl = parseUrl(
+    required(environment, "GOODGOOD_AUTH_PUBLIC_ORIGIN"),
+    "GOODGOOD_AUTH_PUBLIC_ORIGIN",
+    { allowLocalHttp: true },
+  );
+  if (
+    publicUrl.pathname !== "/" ||
+    publicUrl.search ||
+    publicUrl.hash
+  ) {
+    throw new Error("GOODGOOD_AUTH_PUBLIC_ORIGIN must contain only an origin.");
+  }
+  const secureCookie = parseBoolean(
+    environment,
+    "GOODGOOD_AUTH_COOKIE_SECURE",
+    publicUrl.protocol === "https:",
+  );
+  const cookieName = parseCookieName(environment, DEFAULT_OIDC_COOKIE_NAME);
+  validateSessionCookie({
+    cookieName,
+    label: "authentication origins",
+    publicUrl,
+    secureCookie,
+  });
+
+  const otpSecret = secretValue(
+    environment,
+    "GOODGOOD_EMAIL_OTP_SECRET",
+    "GOODGOOD_EMAIL_OTP_SECRET_FILE",
+  );
+  if (Buffer.byteLength(otpSecret, "utf8") < 32) {
+    throw new Error("GOODGOOD_EMAIL_OTP_SECRET must contain at least 32 bytes.");
+  }
+
+  const sendingEnabled = parseBoolean(
+    environment,
+    "GOODGOOD_EMAIL_SENDING_ENABLED",
+    true,
+  );
+  let mail = null;
+  if (sendingEnabled) {
+    const username = environment.GOODGOOD_EMAIL_SMTP_USERNAME?.trim() || null;
+    const passwordConfigured = Boolean(
+      environment.GOODGOOD_EMAIL_SMTP_PASSWORD?.trim() ||
+      environment.GOODGOOD_EMAIL_SMTP_PASSWORD_FILE?.trim(),
+    );
+    if (Boolean(username) !== passwordConfigured) {
+      throw new Error(
+        "GOODGOOD_EMAIL_SMTP_USERNAME and its SMTP password must be configured together.",
+      );
+    }
+    mail = Object.freeze({
+      connectionTimeoutMs: positiveInteger(
+        environment,
+        "GOODGOOD_EMAIL_SMTP_TIMEOUT_MS",
+        10_000,
+        30_000,
+      ),
+      from: parseMailbox(
+        required(environment, "GOODGOOD_EMAIL_FROM"),
+        "GOODGOOD_EMAIL_FROM",
+      ),
+      host: required(environment, "GOODGOOD_EMAIL_SMTP_HOST"),
+      password: username
+        ? secretValue(
+            environment,
+            "GOODGOOD_EMAIL_SMTP_PASSWORD",
+            "GOODGOOD_EMAIL_SMTP_PASSWORD_FILE",
+          )
+        : null,
+      port: positiveInteger(
+        environment,
+        "GOODGOOD_EMAIL_SMTP_PORT",
+        465,
+        65_535,
+      ),
+      replyTo: environment.GOODGOOD_EMAIL_REPLY_TO
+        ? parseMailbox(
+            environment.GOODGOOD_EMAIL_REPLY_TO.trim(),
+            "GOODGOOD_EMAIL_REPLY_TO",
+          )
+        : null,
+      secure: parseBoolean(
+        environment,
+        "GOODGOOD_EMAIL_SMTP_SECURE",
+        true,
+      ),
+      username,
+    });
+  }
+
+  return Object.freeze({
+    cookieName,
+    emailCodeTtlSeconds: positiveInteger(
+      environment,
+      "GOODGOOD_EMAIL_OTP_TTL_SECONDS",
+      DEFAULT_EMAIL_CODE_TTL_SECONDS,
+      15 * 60,
+    ),
+    issuer: DEFAULT_EMAIL_ISSUER,
+    loginCookieName: `${cookieName}_login`,
+    loginTtlSeconds: positiveInteger(
+      environment,
+      "GOODGOOD_AUTH_LOGIN_TTL_SECONDS",
+      DEFAULT_LOGIN_TTL_SECONDS,
+      30 * 60,
+    ),
+    mail,
+    mode: "email_otp",
+    otpSecret,
+    publicOrigin: publicUrl.origin,
+    registrationEnabled: parseBoolean(
+      environment,
+      "GOODGOOD_EMAIL_REGISTRATION_ENABLED",
+      true,
+    ),
+    secureCookie,
+    sendingEnabled,
+    sessionTtlSeconds: positiveInteger(
+      environment,
+      "GOODGOOD_AUTH_SESSION_TTL_SECONDS",
+      DEFAULT_SESSION_TTL_SECONDS,
+      90 * 24 * 60 * 60,
+    ),
+    trustedProxyAddresses: parseTrustedProxyAddresses(environment),
+  });
+}
+
 export function loadAuthenticationConfig(environment = process.env) {
   const mode = required(environment, "GOODGOOD_AUTH_MODE");
   const allowLocalAuth = parseBoolean(
@@ -223,6 +393,14 @@ export function loadAuthenticationConfig(environment = process.env) {
     }
     return loadOidcConfig(environment);
   }
+  if (mode === "email_otp") {
+    if (allowLocalAuth) {
+      throw new Error(
+        "GOODGOOD_ALLOW_LOCAL_AUTH must not be true when GOODGOOD_AUTH_MODE=email_otp.",
+      );
+    }
+    return loadEmailOtpConfig(environment);
+  }
   throw new Error(`GOODGOOD_AUTH_MODE=${mode} is not supported.`);
 }
 
@@ -240,11 +418,19 @@ export function inspectAuthenticationConfiguration(environment = process.env) {
             "GOODGOOD_AUTH_CLIENT_ID",
             "GOODGOOD_AUTH_REDIRECT_URI",
           ]
-        : [
+        : mode === "email_otp"
+          ? [
+              "GOODGOOD_AUTH_MODE",
+              "GOODGOOD_AUTH_PUBLIC_ORIGIN",
+              ...(environment.GOODGOOD_EMAIL_SENDING_ENABLED === "false"
+                ? []
+                : ["GOODGOOD_EMAIL_FROM", "GOODGOOD_EMAIL_SMTP_HOST"]),
+            ]
+          : [
             "GOODGOOD_AUTH_MODE",
             "GOODGOOD_ALLOW_LOCAL_AUTH",
             "GOODGOOD_LOCAL_AUTH_TOKENS",
-          ];
+            ];
     return {
       configured: false,
       missing: [
@@ -255,6 +441,11 @@ export function inspectAuthenticationConfiguration(environment = process.env) {
           ? [
               "GOODGOOD_AUTH_CLIENT_SECRET or GOODGOOD_AUTH_CLIENT_SECRET_FILE",
             ]
+          : []),
+        ...(mode === "email_otp" &&
+        !environment.GOODGOOD_EMAIL_OTP_SECRET &&
+        !environment.GOODGOOD_EMAIL_OTP_SECRET_FILE
+          ? ["GOODGOOD_EMAIL_OTP_SECRET or GOODGOOD_EMAIL_OTP_SECRET_FILE"]
           : []),
       ],
     };

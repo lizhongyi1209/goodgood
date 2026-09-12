@@ -17,6 +17,22 @@ accepted ADRs for it do not mean its later migrations are deployed.
 
 ## Implementation evolution and contracts
 
+The next selected authentication boundary is GoodGood-owned email OTP with a
+managed mail-delivery provider, documented in [ADR 0045](decisions/0045-goodgood-owned-email-otp.md)
+and [the rollout plan](EMAIL_AUTH_PLAN.md). GG-029 implements the P1 runtime,
+P2 browser/operations surface, and P3 local release-preparation boundary in an
+isolated candidate. Its read-only
+operations report aggregates redacted authentication events and a cleanup
+heartbeat, while an existing owner-review transition performs targeted session
+revocation. The production preflight is mode-aware and verifies SMTP connection/
+authentication without sending mail. A dry-run-first manifest tool adds a random
+email identity only to an exact existing owner after matching its stored email,
+prior non-email identity, reviewed manifest digest, and site-owner verification.
+It does not mutate account, role, credit, asset, or project records. Per ADR 0016
+these signals do not install a monitoring collector or notification transport.
+The OIDC contracts below still apply to the deployed runtime until a separately
+approved cutover.
+
 M3 implements one production-shaped local generation path: the browser submits
 an idempotent request, PostgreSQL transactionally creates a batch, job, audit
 event, and queue outbox record, Valkey delivers it at least once, the worker
@@ -62,6 +78,17 @@ top-level browser navigation. Its callback is fixed to the GoodGood origin
 derived from the configured login callback. This clears the hosted Authing
 application session without retaining an ID Token or accepting a browser-owned
 redirect target.
+
+The email candidate replaces external identity proof with a browser-bound,
+short-lived challenge. GoodGood stores only a keyed code digest, enforces
+mailbox/IP/global limits in PostgreSQL, sends through one bounded SMTP adapter,
+and atomically consumes the challenge while resolving or creating a random
+`urn:goodgood:email` identity and opaque GoodGood session. New owners still
+start pending. Delivery, identity, account review, authorization, and business
+ownership remain separate; email mode does not accept provider tokens or fall
+back to local fixtures. Existing-owner migration never infers ownership from an
+email alone: the reviewed owner ID and current stored email must agree, and the
+new binding records its manifest, operator, and reference hashes for exact replay.
 
 ADR 0020 changes account admission without weakening OIDC identity validation.
 Any verified Authing user may establish a GoodGood session, but a newly
@@ -248,6 +275,61 @@ for upstream charge/refund evidence. Project and asset navigation share one clie
 Project index/detail, asset index/detail, and root creation are URL-addressable.
 `/create` is the canonical creation URL while `/` remains a compatibility entry
 to the same state; future Explore, Moodboards, and Help routes remain deferred.
+
+## GG-030 enterprise boundary (implemented locally; not deployed)
+
+GG-030 introduces `Workspace` as the authorization and durable ownership scope.
+Every existing user receives one personal Workspace; organization Workspaces
+have explicit memberships and roles. The authenticated session continues to
+resolve one stable internal user. A workspace selector supplied by the browser
+is accepted only after the server validates the current membership, user access
+state, organization state, and requested capability.
+
+The target feature boundary is:
+
+```text
+verified GoodGood user
+  -> workspace authorization (personal owner or active organization member)
+  -> creation/project/reference/asset repository scoped by workspace
+  -> personal credit, or organization credit + member budget reservation
+  -> durable creator and workspace audit evidence
+```
+
+Organization membership is not an Authing group, GG-029 challenge, email-domain
+rule, or GG-027 direct-child relationship. GG-030 consumes the existing
+provider-neutral session and normalized verified email. Invitation acceptance
+matches that email transactionally; a later notification adapter may send the
+invite but cannot reuse authentication codes or secrets.
+
+Enterprise billing uses one Workspace credit account plus an earmarked member
+budget. Generation locks and validates both scopes before reserve, then settles
+or releases them together. A Workspace mismatch among project, batch, job,
+Asset, credit entry, or budget entry fails closed. Existing personal ledger rows
+retain their user and receive the corresponding personal Workspace during an
+additive backfill.
+
+The organization credit repository is deliberately separate from the personal
+billing repository. It atomically updates the organization account and member
+budget and appends immutable evidence for grant, allocation/reclaim, reserve,
+settlement, and release. The generation boundary now resolves Workspace access,
+stores Workspace and creator IDs, and calls these operations in the same
+transaction; no provider request can be queued before both enterprise limits
+reserve successfully.
+
+Managers read generated company Assets through a role-authorized query and
+fresh signed URLs. They do not impersonate the creator and cannot use the same
+query to sign personal or raw reusable-reference objects. Platform site-owner
+operations remain under `/admin/users`; enterprise administration has a
+separate repository, API, and route boundary.
+
+The browser sends an explicit Workspace header through draft, reference,
+project, generation, and Asset boundaries. Personal requests remain compatible
+without that header; organization requests fail closed until the current
+session's active membership is resolved. `/workspaces/:workspaceId/create`
+mounts the shared creation tool only after this validation. Enterprise overview,
+member, usage, and Asset routes use their own HTTP boundary, require CSRF on
+writes and audited downloads, and never treat a hidden navigation item as
+authorization.
 
 ## Target production topology
 

@@ -1,99 +1,54 @@
 # Production implementation plan
 
-- Last synchronized: 2026-09-10
-- Current phase: 已开放 controlled alpha；累计候选已发布，Sharp 安全候选等待新发布授权。
-- Current objective: GG-027 已在 GG-026 本地整合候选上完成企业/分销直属下级积分划拨；
-  阶段 0—4、唯一一次完整本地门禁、3030 保留数据迁移与浏览器联调均已完成，等待用户本地验收并决定是否另行授权发布准备。所有工作留在本地，
-  当前线上 `65ceb168` 保持不变。
+- Last synchronized: 2026-09-12
+- Current phase: 本地组合候选自动化验证完成；隔离浏览器验收待执行，尚未部署。
+- Current objective: 以完整基础框架 `07e9ea5`（GG-024—GG-027 的账户、积分、业务身份、直属关系与划拨能力）为基线，叠加 GG-029 邮箱验证码、GG-030 企业工作区和 GG-031 集成，完成一次可重复的本地门禁与浏览器流程验收。
 
 ## Current checkpoint
 
-- 生产入口 `https://goodgood.o1key.com` 当前部署源码
-  `65ceb16823138dd220813fbc3ae5672234fd1f43`、不可变镜像
-  `sha256:40ebfc40ced1963f02250bd8518823567e25692f82c31793817760cdb58db2cb`、迁移 0019；
-  完整身份、能力边界与发布后证据见 [CURRENT_STATE.md](CURRENT_STATE.md)。
-- `staging-goodgood.o1key.com` 仍只是历史名称，不是常驻测试入口；生产与本地数据继续隔离。
-- main CI、artifact evidence、23 项生产 preflight、8 项精确候选 controlled-alpha 门禁均通过。
-  维护解除后公网首页/readiness 为 200，登录跳转与未登录 401 边界正常。
-- blue Web 与唯一 blue Worker 健康，队列、活动 job/attempt 和冻结积分均为 0；旧 green Web
-  保留为应用层回退候选，旧 Worker 已停止。回退不包含 schema 降级。
-- 授权的数据修复严格匹配 1 条历史孤立 attempt，只改为失败终态；授权的唯一真实 Nano
-  Banana 2 请求成功生成 1 个 Asset，积分 115→105，冻结归零，没有重复 provider 提交。
-- 最新备份、异机 restic 快照和隔离恢复演练均通过。恢复工具允许正常有效 session 存在，
-  但继续要求受审维护标记、零活动 generation job、无网络、tmpfs 和逐表计数。
-- GG-003 发布门禁和 GG-022 恢复修复已在这次真实发布中闭环；GG-011 是无需部署的流程契约。
-- GG-004—GG-021 的功能已经部署。Nano Banana Pro 当前只上线每张 15 积分报价，provider
-  路由仍关闭；GPT 透明输出的额外人工验收并未由本次 Nano 冒烟代替。
-- 文档收尾 main run `34302821815` 的源码门禁通过，但 Trivy 在发布镜像中发现
-  `sharp 0.35.0` 的 HIGH 漏洞并要求 0.35.4；这是 GG-023 的最小依赖修复，不改变产品行为。
-- GG-023 已完成 Sharp 0.35.4 锁定和本地验证：定向 16/16、完整门禁 252 项（246 通过、
-  6 个 opt-in 跳过、0 失败）；跨平台锁记录经 npm 11.8 修复。PR/main CI 均通过，安全镜像
-  `sha256:b441e16685c77842e18cefcdbcae00c2e50d25350fe598ea2e462dd61758f152` 已发布但未部署。
-- GG-024 已在独立分支补齐 GoodGood 与 Shadcn 语义色映射，统一四类弹框，并将列表的通过、
-  暂停、恢复收敛为中性描边主操作、积分收敛为透明次级操作；表格统一白底与浅灰分隔。定向测试
-  13/13、完整本地门禁 254 项（248 通过、6 个 opt-in 跳过、0 失败）；隔离 mock 栈桌面与
-  390×844 浏览器验收通过，未为本轮颜色复核执行账户写操作。
-- GG-025 从 `origin/main@42fc8d81` 建立隔离 worktree；已完成 `/credits`、owner-scoped 只读查询、
-  业务化 reserve/settle/release 投影、筛选分页及桌面/窄屏交互。第三轮反馈已把宽屏入口降为
-  `帮助` 下方普通导航行，把余额改为用户名下方的单枚 `CircleDot` 图标加品牌红数值（后续 GG-027 将图标收敛为中性色），并用今日/周/月已结算消耗、
-  `图片生成 / 视频生成 / 其他变动` 和资产库同一批次编号替换生成参数、提示词与结果回看。
-  独立 Compose 保留模拟生成后的余额 90 和 `-10 已消费` 记录，API 三个周期均返回 10；桌面及
-  390×844 视口已确认，窄屏 document/row 无横向溢出。完整门禁 258 项（252 通过、6 个 opt-in
-  跳过、0 失败）；未请求真实 provider。
-- 支付、自动账户删除、举报、完整外部删除条款与完整 seed readiness 仍在 GG-900—GG-902
-  搁置范围，本次发布没有恢复它们。
-- GG-026 从同一 `origin/main@42fc8d81` 基线建立集成分支，并以 `48c400b`/`34e7642` 合入两组功能。
-  联合定向测试 40/40、完整门禁 260 项（254 通过、6 个 opt-in 跳过、0 失败）通过。3030 统一运行
-  `goodgood:gg026-local`，保留站长角色、90 积分及流水；接口和 `/create`、`/credits`、`/admin/users`
-  浏览器验收通过。最新反馈已把赠送积分预设的选中态改为宫墙红底白字并在 3030 复验；定向测试
-  13/13 通过，单次完整门禁仅有 1 个无关 O1Key 轮询时序用例失败且单独复跑通过。3020 容器与网络
-  已移除但卷保留，3010 与生产未改动，未请求真实 provider。
-- GG-027 已接受 ADR 0043：企业/分销身份只能向有效直属下级划拨；仅支付订单形成且沿转移链保留来源的
-  积分可转，欢迎/测试/活动/运营赠送不可转；价格、人民币金额、收款、订单与佣金全部留在场外，
-  不新增在线支付。任务分为来源守恒、身份关系、零和划拨、页面/Compose 四个本地阶段。
-- GG-027 阶段 1 已新增迁移 0020 与双来源账务投影：只把已支付订单 grant 及其后续守恒部分标为可转，
-  生成优先消耗不可转积分并在结算/释放/退款中保持拆分；隔离 PostgreSQL 迁移、支付和混合来源用例通过，
-  生产尚未迁移。
-- GG-027 阶段 2 已新增迁移 0021、站长身份/直属关系 API、唯一有效任期约束、循环检查和审计读模型；
-  快速测试与独立 PostgreSQL 全迁移用例通过，临时数据库已删除，生产仍未迁移。
-- GG-027 阶段 3 已新增迁移 0022、直属下级/划拨 API、原子双边账本、公开编号和积分活动投影；
-  独立 PostgreSQL 并发用例证明只有余额允许的请求提交，aggregate 与 payment-funded 总额均守恒，临时数据库已删除。
-- GG-027 阶段 4 代码已新增站长身份/直属关系操作、独立候选上级读模型、`/distribution` 工作区、角色门控导航、响应式/错误/确认状态和 Next/Vinext 路由；定向 lint、类型检查及 28 项回归通过（26 pass、2 opt-in skip）。唯一一次完整本地门禁随后通过：构建成功，280 项测试 271 pass、9 opt-in skip、0 fail。
-- 3030 已先备份再把原数据卷从 0019 向前迁移到 0022，并运行 `goodgood:gg027-local@36245d3`。本地线下付款订单 `ord_e817175300f34e02b06a698ea9c65524` 提供 500 个充值来源积分；50 积分划拨 `trf_5ad6a603bc70402b8adafd71ab6d4e16` 的余额、来源、双边账本、幂等重放、普通账户 403、积分记录和消费汇总均验证通过。桌面与 390×844 浏览器复验通过；窄屏页头溢出在 `455fb29` 修复并经 7/7 定向回归确认。三个账户管理下拉列表已固定向下展开；状态统计卡已移除、首屏默认全部账户，身份显示收敛为 `站长 / 个人 / 企业 / 分销商` 单一标签，站长行不再提供身份/上级操作。宽屏表格现将账户、身份和上级拆为独立列，中窄屏使用独立字段。首页左下账户入口只保留头像、用户名和省略号；身份、余额及退出登录移入向右、底部对齐的账户菜单，余额图标为功能栏中性色，仅数字使用宫墙红。积分分配和账户管理的普通按钮现为透明无外边框，积分预设仅在选中时显示宫墙红底白字；最终确认操作仍保留强调色。最新定向检查 53/53 与完整本地门禁通过：284 项中 275 通过、9 个 opt-in 跳过、0 失败；3030 readiness 五项全绿并完成三个页面、两个弹框的桌面浏览器复验，验收过程未提交划拨或账户变更。
-- Next action: 用户在 3030 本地验收后决定是否另行授权发布准备；不得推送、合入 main 或发布线上。
-- Blockers: 当前无本地实施阻塞。GG-027 叠加在尚未合入 main 的 GG-026 本地候选上；真实 provider、
-  推送、main 合入和生产发布权限均不在当前授权内。
+- 当前工作树：`feature/GG-032-complete-base-email-enterprise`（`F:/goodgood-worktrees/GG-032`）。主工作区保持不变。
+- 正式入口仍为 `https://goodgood.o1key.com`；`staging-goodgood.o1key.com` 只是历史名称，不是本任务的测试入口。
+- 组合来源：完整基础框架 `07e9ea5`，再合入 GG-029、GG-030、GG-031；不使用旧页面另起测试版本，也不恢复旧 C6。
+- 代码范围同时包含账户管理、积分记录/账本、企业/分销身份、直属上下级、充值来源积分划拨、邮箱 OTP、企业 Workspace、成员额度、消费记录、资产审阅和管理审计。
+- 迁移顺序连续覆盖 `0020`—`0027`，当前发布元数据断言使用最终迁移 `0027_gg030_management_surface.sql`。
+- 线上入口与生产数据保持原状（生产 revision `65ceb168`，迁移 `0019`）；本任务不连接生产、不发送真实邮件、不调用真实生图 provider，不推送或合入 main。
+- 合并冲突已清理；`git diff --check` 与 `npm run check:local` 通过，完整门禁 327 项中 313 通过、14 个 opt-in 跳过、0 失败。独立 PostgreSQL 中 GG-027、GG-029—GG-031 共 29/29 通过。
+- Next action: 启动新的隔离 Compose + Mailpit + `GENERATION_PROVIDER_KIND=mock`，按 GG-031 流程完成桌面与窄屏浏览器验收。
+- Blockers: 本地整合没有外部阻塞；真实邮件、真实 provider、推送、main 合入和生产部署均未授权，也不属于当前验证范围。
+
+## Verification sequence
+
+1. 静态检查：确认无冲突标记、文档/迁移索引一致，运行 `git diff --check`。
+2. 自动门禁：运行 `npm run check:local`；记录通过数、opt-in 跳过数和失败数。
+3. 定向回归：
+   `node --test tests/gg029-email-auth.test.mjs tests/gg029-email-auth-postgres.test.mjs tests/gg029-email-binding-maintenance.test.mjs`
+   以及 `node --test tests/gg030-*.test.mjs tests/gg031-email-enterprise-integration.test.mjs`。
+4. 浏览器流程：在隔离数据卷中按 [GG-031 任务卡](tasks/GG-031-email-enterprise-integration.md) 依次验收老板 OTP/pending、站长审核、建企业、邀请员工、员工 OTP/pending、接受邀请、额度显示、企业消费与资产审阅；员工邀请不绕过站长审核。
+5. 验收结束删除隔离容器/网络，保留必要日志与结果；确认任务与生成队列为 0。用户确认本地完整流程无误后，另行讨论线上测试授权。
 
 ## Milestones
 
 | 阶段 | 状态 | 当前含义 |
 | --- | --- | --- |
-| M0—M2 | 已完成基线 | 产品/设计契约、前端与容器/CI 基础 |
-| M3—M6 | 已完成核心链路 | 持久任务、身份边界、真实模型、积分、资产与项目 |
-| M7 | 已完成 | 香港链路、备份/恢复及兼容切换验证 |
-| M8 / controlled alpha | 已开放并完成本次累计发布 | 审核账户、核心生图、恢复与发布门禁 |
-| GG-004—GG-022 | 已部署或完成 | 累计功能、可靠性、恢复工具和生产发布 |
-| GG-023 | 实施中 | Sharp 0.35.4 安全修复与 main CI 恢复 |
-| GG-024 | 已合入 GG-026 | 弹框与列表操作颜色层级已在 3030 整合预览复验 |
-| GG-025 | 已合入 GG-026 | 周期消耗、简洁业务分类与资产批次追溯已在 3030 复验 |
-| GG-026 | 待用户验收 | 代码、门禁、3030 数据保留和单环境浏览器验收均完成 |
-| GG-027 | 本地完成，待用户验收 | 阶段 0—4、完整门禁、3030 数据保留迁移及桌面/窄屏端到端验收均通过 |
-| 完整 C6 / full seed | 搁置 | 删除、举报、外部条款与进一步配套，见 GG-900/901 |
-| M9 | 搁置 | 支付/支付宝，见 GG-902 |
+| M0—M2 | 已完成基线 | 产品、设计、前端与容器/CI 基础 |
+| M3—M6 | 已完成核心链路 | 持久任务、身份、模型、积分、资产与项目 |
+| M7—M8 | 已完成并已开放 controlled alpha | 香港链路、恢复与发布门禁 |
+| GG-023 | 实施中 | Sharp 0.35.4 安全修复；未获新生产授权 |
+| GG-024—GG-027 | 已合入本地完整基础框架 | 账户/积分/业务身份/直属关系/来源划拨，待组合验收 |
+| GG-029 | 本地候选已验证 | 自建邮箱 OTP；生产外部证据与演练未完成 |
+| GG-030 | 阶段 0—4 本地完成 | 企业成员、额度、创作归属、管理 API/页面 |
+| GG-031 | 自动化完成 | 邮箱与企业集成，用户手工流程待在 GG-032 完整基线上复验 |
+| GG-032 | 当前 | 完整基础 + OTP + 企业的本地组合候选 |
+| 完整 C6 / M9 | 搁置 | 删除、举报、商业支付等，见 GG-900—GG-902 |
 
 ## New-session recovery
 
-1. 读根 AGENTS、[CURRENT_STATE](CURRENT_STATE.md)、[WORKFLOW](WORKFLOW.md)、本页和
-   [BACKLOG](BACKLOG.md)，检查 Git 分支/worktree/未提交改动。
-2. 不把最新 main 自动当作线上版本；以 CURRENT_STATE 的完整 revision、镜像摘要和迁移为准。
-3. 当前任务从 `feature/GG-027-distributor-credit-transfers` 与 `F:/goodgood-worktrees/GG-026` 恢复；
-   它基于 GG-026 本地整合候选，GG-024/GG-025 源分支只作追溯，不要恢复旧 C6。
-4. 本次 alpha 证据只绑定 `65ceb168`，后续候选必须重新生成新鲜证据并通过门禁。
-5. 真实 provider 请求可能计费，必须与测试 fixture 隔离并取得对具体调用的明确授权。
+1. 阅读根 `AGENTS.md`、[CURRENT_STATE](CURRENT_STATE.md)、[WORKFLOW](WORKFLOW.md)、本页和 [BACKLOG](BACKLOG.md)，检查分支/worktree/未提交改动。
+2. 从 `feature/GG-032-complete-base-email-enterprise` 恢复；确认基线为 `07e9ea5`，并保留 GG-029—GG-031 的来源任务卡，不恢复旧 C6。
+3. 先完成本地冲突清理与自动化门禁，再按本页流程启动隔离浏览器实测。线上测试、真实邮件、真实 provider、main 合入和生产部署都需要新的明确授权。
 
 ## History and update policy
 
-- [提炼后的历史经验](history/2026-09-07-development-lessons.md)。
-- [完整原始开发日志](history/2026-09-07-implementation-log.md)仅供追溯。
-- [本次发布记录](releases/2026-09-09-cumulative-alpha-release.md)。
-- 本文只保留一个检查点和下一步；细节写任务卡，发布事实写 CURRENT_STATE。
+- 完整历史日志仅供追溯：[2026-09-07 implementation log](history/2026-09-07-implementation-log.md)。
+- 细节写入对应任务卡，发布事实写入 `docs/CURRENT_STATE.md`。
+- 本页只维护一个当前检查点、验证顺序和下一步；不得把未执行的线上动作写成已完成。

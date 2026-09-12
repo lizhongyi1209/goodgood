@@ -357,7 +357,10 @@ test("staging Compose has no build, local auth, mock provider, or fake payment d
   assert.doesNotMatch(compose, /GOODGOOD_ALLOW_LOCAL_AUTH|mock-generation/);
   assert.doesNotMatch(compose, /GOODGOOD_FAKE_PAYMENT_ENABLED/);
   assert.match(compose, /127\.0\.0\.1:\$\{GOODGOOD_STAGING_WEB_PORT/);
-  assert.match(compose, /group_add:\r?\n\s+- "\$\{GOODGOOD_STAGING_SECRET_GID:\?/);
+  assert.match(
+    compose,
+    /group_add:\r?\n\s+- "\$\{GOODGOOD_STAGING_SECRET_GID:\?/,
+  );
   assert.match(compose, /goodgood_auth_client_secret:/);
   assert.match(compose, /goodgood_generation_api_key:/);
   assert.match(compose, /goodgood_object_storage_access_key_id:/);
@@ -469,7 +472,10 @@ test("same-host staging dependencies are bounded, private, and secret-file backe
 
   assert.match(applicationCompose, /mem_limit: 640m/);
   assert.match(applicationCompose, /pids_limit: 256/);
-  assert.match(applicationCompose, /goodgood-staging-private:\r?\n\s+external: true/);
+  assert.match(
+    applicationCompose,
+    /goodgood-staging-private:\r?\n\s+external: true/,
+  );
   assert.match(applicationCompose, /goodgood-staging-egress:/);
 
   assert.match(installer, /openssl rand -hex 32/);
