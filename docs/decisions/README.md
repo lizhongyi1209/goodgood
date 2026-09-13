@@ -90,3 +90,4 @@ ADR 0053 adds standalone-delimited concurrent prompt batches for GG-040.
 - `0059-actionable-enterprise-overview.md` — administrator metrics, attention, member usage and recent outputs for GG-048; period aggregation deferred.
 - `0060-exclusive-enterprise-distributor-identities.md` — single business identity per account; distributor-only transfers and separate enterprise tabs for GG-049.
 - `0061-remove-persistent-page-return-actions.md` — remove the five audited page-header return entries without replacements for GG-050.
+- `0062-rmb-anchored-specification-pricing.md` — accepted RMB-anchored per-image/output-second/reference-video-second pricing direction for GG-051; CNY 1/100 credits is still a unit proposal, with no runtime changes.
