@@ -24,6 +24,18 @@ model settings from converted current prices, including operator customizations.
 Video specification prices represent output/reference seconds only; this slice
 adds no durable video job or settlement. Production has not executed this exchange.
 
+GG-054 migration 0031 adds `managed_models.lines` JSON with three enabled/price
+configurations and nullable `image_line` to batches, projects and creation drafts.
+Line values are constrained to Banana models. Existing model prices initialize
+special only; quality/dedicated start disabled and empty. Old nullable records
+read as special without changing hashes, quoted amounts, price IDs or ledger.
+Immutable `price_versions.plan_context` distinguishes `standard` (special),
+`banana-quality` and `banana-dedicated`; versions increment within each scope.
+Only edited line prices publish new versions. Admission stores the chosen line
+and reservation references its scope; settlement uses the accepted reservation,
+including enterprise/member-budget settlement. No denomination exchange occurs
+in 0031. Existing model edit versions/timestamps and historical records stay intact.
+
 The M3 PostgreSQL migration physically implements the initial local user,
 `GenerationBatch`, `GenerationJob`, `GenerationAttempt`, `Asset`, append-only
 job events, and the queue outbox. The additive M4 identity migration introduces

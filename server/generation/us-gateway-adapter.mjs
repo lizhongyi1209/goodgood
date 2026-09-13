@@ -1,4 +1,5 @@
 import { NormalizedProviderError } from "./provider.mjs";
+import { isBananaModel, isValidImageLine } from "../../shared/contracts/banana-lines.mjs";
 import {
   DEFAULT_GPT_IMAGE_OUTPUT_FORMAT,
   SUPPORTED_GPT_IMAGE_BACKGROUNDS,
@@ -55,7 +56,28 @@ export const US_GATEWAY_GPT_IMAGE_25_FLARE_ROUTE = Object.freeze({
 
 export const US_GATEWAY_MVP_ROUTE = US_GATEWAY_NANO_BANANA_2_ROUTE;
 
-export function getUsGatewayRoute(modelId) {
+function bananaRoute(productModelId, imageLine, providerModel) {
+  return Object.freeze({
+    productModelId, imageLine, providerModel,
+    provider: "o1key",
+    aspectRatios: getGenerationModelCapability(productModelId).aspectRatios,
+    outputCounts: getGenerationModelCapability(productModelId).outputCounts,
+    resolutions: SUPPORTED_GENERATION_RESOLUTIONS,
+    routeVersion: `o1key-${providerModel}-v1`,
+  });
+}
+const BANANA_PROVIDER_ROUTES = Object.freeze({
+  "nano-banana-2": Object.freeze({ special: US_GATEWAY_NANO_BANANA_2_ROUTE }),
+  "nano-banana-pro": Object.freeze({
+    special: bananaRoute("nano-banana-pro", "special", "gemini-3-pro-image-c-sp"),
+    quality: bananaRoute("nano-banana-pro", "quality", "gemini-3-pro-image-c-sd"),
+    dedicated: bananaRoute("nano-banana-pro", "dedicated", "gemini-3-pro-image"),
+  }),
+});
+
+export function getUsGatewayRoute(modelId, imageLine) {
+  if (!isValidImageLine(modelId, imageLine)) return null;
+  if (isBananaModel(modelId)) return BANANA_PROVIDER_ROUTES[modelId]?.[imageLine ?? "special"] ?? null;
   return Object.freeze({
     "nano-banana-2": US_GATEWAY_NANO_BANANA_2_ROUTE,
     "gpt-image-2.5-sunburst": US_GATEWAY_GPT_IMAGE_25_SUNBURST_ROUTE,
@@ -313,6 +335,7 @@ function validateJob(job, route) {
       : "png");
   if (
     job?.model_id !== route.productModelId ||
+    (isBananaModel(route.productModelId) && (job?.image_line ?? "special") !== (route.imageLine ?? "special")) ||
     !isSupportedGenerationInput({
       aspectRatio: job?.aspect_ratio,
       count: job?.requested_count,
@@ -387,7 +410,7 @@ export function createUsGatewayAdapter({
     throw new Error("Gateway failure confirmation polls must be a positive integer.");
   }
   const origin = assertLoopbackOrHttps(baseUrl, allowInsecureLoopback);
-  if (getUsGatewayRoute(route.productModelId) !== route) {
+  if (getUsGatewayRoute(route.productModelId, route.imageLine) !== route) {
     throw new Error("A supported O1Key generation route is required.");
   }
 

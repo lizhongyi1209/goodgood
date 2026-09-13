@@ -55,7 +55,7 @@ function billingPool({ account = accountRow() } = {}) {
     async query(sql, values) {
       calls.push({ sql, values });
       if (sql.includes("FROM managed_models")) {
-        return { rows: ["nano-banana-2","nano-banana-pro","gpt-image-2.5-sunburst","gpt-image-2","gpt-image-2.5-flare"].map((id) => ({ id, name: id, description: "", media_type: "image", adapter_id: id, enabled: true, prices: {}, version: 1, updated_at: timestamp })) };
+        return { rows: ["nano-banana-2","nano-banana-pro","gpt-image-2.5-sunburst","gpt-image-2","gpt-image-2.5-flare"].map((id) => ({ id, name: id, description: "", media_type: "image", adapter_id: id, enabled: true, prices: Object.fromEntries(["1K", "2K", "4K"].map((resolution) => [resolution, { output: id === "nano-banana-pro" ? 30 : 20 }])), version: 1, updated_at: timestamp })) };
       }
       if (sql.includes("FROM credit_accounts")) {
         return { rowCount: account ? 1 : 0, rows: account ? [account] : [] };

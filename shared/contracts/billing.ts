@@ -66,6 +66,7 @@ export interface BillingAccountSummary {
 }
 
 export interface BillingGenerationQuote {
+  imageLine?: import("./generation").BananaLine;
   catalogModelId?: string;
   modelId:
     | "nano-banana-2"

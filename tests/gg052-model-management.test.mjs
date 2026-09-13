@@ -123,10 +123,7 @@ test("enable requires supported adapter and complete positive specification pric
     validateManagedModel(draft({ enabled: false, prices: {} })).enabled,
     false,
   );
-  assert.throws(
-    () => validateManagedModel(draft({ adapterId: "nano-banana-pro" })),
-    /线路/,
-  );
+  assert.equal(validateManagedModel(draft({ adapterId: "nano-banana-pro" })).enabled, true);
   assert.throws(
     () =>
       validateManagedModel(

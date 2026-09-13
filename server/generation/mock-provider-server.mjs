@@ -113,7 +113,7 @@ export function createMockProviderServer({ apiKey, host, port }) {
         const requestedCount = body.count ?? 1;
         const validCount = GPT_IMAGE_MODEL_IDS.has(body.modelId)
           ? [1, 2, 4].includes(requestedCount)
-          : body.modelId === "nano-banana-2" && requestedCount === 1;
+          : body.modelId === "nano-banana-2" ? [1, 2, 4].includes(requestedCount) : body.modelId === "nano-banana-pro" && requestedCount === 1;
         if (!validCount) {
           sendJson(response, 400, { error: "unsupported_model" });
           return;

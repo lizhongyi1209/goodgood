@@ -2,6 +2,7 @@ import type {
   GenerationInputDraft,
   GenerationInputSnapshot,
 } from "@/shared/contracts/generation";
+import { isBananaModel } from "@/shared/contracts/banana-lines.mjs";
 import {
   resolveGenerationThinkingLevelForModel,
   resolveGptImageOptionsForModel,
@@ -34,6 +35,7 @@ export function createGenerationInputSnapshot(
     ...(draft.composerPrompt ? { composerPrompt: draft.composerPrompt.trim() } : {}),
     references: Object.freeze(references),
     modelId: draft.modelId,
+    ...(isBananaModel(draft.modelId) && draft.imageLine && draft.imageLine !== "special" ? { imageLine: draft.imageLine } : {}),
     ...(draft.expectedPriceVersion ? { expectedPriceVersion: draft.expectedPriceVersion } : {}),
     ...(draft.catalogModelId ? { catalogModelId: draft.catalogModelId } : {}),
     aspectRatio: draft.aspectRatio,
@@ -54,6 +56,7 @@ export function restoreGenerationInputSnapshot(
     prompt: snapshot.prompt,
     references: snapshot.references.map((reference) => ({ ...reference })),
     modelId: snapshot.modelId,
+    ...(snapshot.imageLine ? { imageLine: snapshot.imageLine } : {}),
     ...(snapshot.catalogModelId ? { catalogModelId: snapshot.catalogModelId } : {}),
     aspectRatio: snapshot.aspectRatio,
     resolution: snapshot.resolution,

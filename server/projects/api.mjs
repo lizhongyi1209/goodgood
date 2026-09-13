@@ -85,6 +85,7 @@ async function presentProject(resources, row) {
       background: row.background ?? "auto",
       googleSearch: row.google_search ?? false,
       modelId: row.model_id,
+      ...(row.image_line && row.image_line !== "special" ? { imageLine: row.image_line } : {}),
       ...(row.catalog_model_id ? { catalogModelId: row.catalog_model_id } : {}),
       prompt: row.prompt,
       references: (row.reference_snapshot ?? []).map((reference) => ({

@@ -37,6 +37,29 @@ async function createSnapshot(prompt = "银灰色未来服装") {
   });
 }
 
+test("Banana line survives snapshots and restore while default and GPT inputs keep their existing shape", async () => {
+  const { createGenerationInputSnapshot, restoreGenerationInputSnapshot } = await vite.ssrLoadModule("/features/creation/generation-snapshot.ts");
+  const { getGenerationCountOptions, getGenerationRatioOptions } = await vite.ssrLoadModule("/features/creation/generation-options.ts");
+  const draft = { prompt: "synthetic", references: [], modelId: "nano-banana-pro", imageLine: "quality", aspectRatio: "1:1", resolution: "4K", count: 1 };
+  const snapshot = createGenerationInputSnapshot(draft);
+  assert.equal(snapshot.imageLine, "quality");
+  assert.equal(restoreGenerationInputSnapshot(snapshot).imageLine, "quality");
+  assert.equal(createGenerationInputSnapshot({ ...draft, imageLine: "special" }).imageLine, undefined);
+  assert.equal(createGenerationInputSnapshot({ ...draft, modelId: "gpt-image-2" }).imageLine, undefined);
+  assert.deepEqual(getGenerationCountOptions("nano-banana-pro"), [1]);
+  assert.equal(getGenerationRatioOptions("nano-banana-pro").length, 10);
+  const { findBillingQuote } = await vite.ssrLoadModule("/features/billing/http-billing-boundary.ts");
+  const summary = { quotes: [
+    { modelId: "nano-banana-pro", resolution: "4K", count: 1, creditAmount: "30" },
+    { modelId: "nano-banana-pro", imageLine: "quality", resolution: "4K", count: 1, creditAmount: "72" },
+    { modelId: "nano-banana-pro", imageLine: "dedicated", resolution: "4K", count: 1, creditAmount: "165" },
+  ] };
+  for (const [imageLine, amount] of [["special", "30"], ["quality", "72"], ["dedicated", "165"]]) {
+    assert.equal(findBillingQuote(summary, { ...draft, imageLine }).creditAmount, amount);
+  }
+  assert.equal(findBillingQuote({ quotes: summary.quotes.slice(0, 1) }, draft), null);
+});
+
 test("maps stable model IDs to fixed presentation copy", async () => {
   const {
     DEFAULT_GENERATION_MODEL_ID,

@@ -7,6 +7,14 @@ quiet interface chrome, compact rounded controls, and vivid imagery. Palace Red
 adds authorship and cultural character without turning the interface into a red
 surface.
 
+GG-054 Banana line choice reuses the compact rounded segmented controls beneath
+the model selector. Selection uses Palace Red; unavailable choices retain native
+disabled and accessible pressed states. The pricing list keeps one model name
+with three compact aligned line rows and RMB/credit units. Desktop shares the
+resolution header; narrow screens repeat it once per model, not per line. The
+editor switches line inputs without duplicating the full model form or exposing
+provider IDs. Line enable/availability stays explicit.
+
 ## Foundations
 
 Canonical CSS tokens currently live in `app/globals.css`.
@@ -167,8 +175,9 @@ individual icon. Upload, settings, and send align to the same 40px box.
 - Parameter group order: aspect ratio; model; output group with resolution above
   generation count. Aspect ratio leads from the left on desktop and remains first
   when the drawer reflows or stacks.
-- Nano Banana 2 places only its Google Search segmented control under the model
-  selector. Use quiet labels and the existing Palace Red selected/on treatment;
+- Both Banana models show the GG-054 three-line control under the model selector;
+  Nano Banana 2 also places its Google Search control below the line choice.
+  Use quiet labels and the existing Palace Red selected/on treatment;
   hiding the control must not leave an empty panel for other models.
 - All three GPT image models use the same attached, quiet segmented-control treatment directly
   under the model selector for `质量`, `背景`, and `输出格式`. Keep the groups in

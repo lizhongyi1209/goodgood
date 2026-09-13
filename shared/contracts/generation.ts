@@ -7,6 +7,7 @@ export const GENERATION_MODEL_IDS = [
 ] as const;
 
 export type GenerationModelId = (typeof GENERATION_MODEL_IDS)[number];
+export type BananaLine = "special" | "quality" | "dedicated";
 
 export const GPT_IMAGE_MODEL_IDS = [
   "gpt-image-2.5-sunburst",
@@ -101,6 +102,7 @@ export type GenerationInputDraft = {
   composerPrompt?: string;
   references: GenerationReference[];
   modelId: GenerationModelId;
+  imageLine?: BananaLine;
   catalogModelId?: string;
   expectedPriceVersion?: number;
   catalogModelName?: string;
@@ -121,6 +123,7 @@ export type GenerationInputSnapshot = Readonly<{
   composerPrompt?: string;
   references: readonly GenerationReference[];
   modelId: GenerationModelId;
+  imageLine?: BananaLine;
   catalogModelId?: string;
   expectedPriceVersion?: number;
   catalogModelName?: string;

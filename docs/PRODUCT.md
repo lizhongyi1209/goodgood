@@ -143,6 +143,15 @@ Upstream token variation never changes an accepted customer quote. Image
 pricing connects to durable submissions; video prices can be configured/tested
 but the local preview has no settlement. This is not a production price change.
 
+ADR 0064 (GG-054) extends Banana to three user-selected lines: 特价 (default),
+优质 and 专线. One catalog model owns independent enabled states and 1K/2K/4K
+fixed per-image prices for each line. Pro uses the three owner-specified provider
+IDs; Banana 2 retains its known special route while its other IDs await confirmation.
+Pro retains single-image output. Drafts/projects/results retain the choice;
+accepted tasks retain their line and quote without automatic fallback or token
+surcharges. Existing prices belong to special only; other lines start disabled
+and unpriced. This is local implementation, not production Pro activation.
+
 ## Local candidate: direct-child credit allocation
 
 ADR 0043 accepts a locally developed account-hierarchy capability without

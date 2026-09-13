@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
+import { imagePriceContext, isBananaModel } from "../../shared/contracts/banana-lines.mjs";
 import { requireEnabledImageModel } from "../admin/models.mjs";
 import { promptContextForRetry } from "../../shared/contracts/prompt-batch.mjs";
 import {
@@ -31,6 +32,7 @@ export class GenerationPersistenceError extends Error {
 
 function requiredGenerationModelOptions(input) {
   const options = normalizeGenerationModelOptions({
+    imageLine: input.imageLine,
     background: input.background,
     googleSearch: input.googleSearch,
     modelId: input.modelId,
@@ -58,6 +60,7 @@ export function hashGenerationInput(input) {
         count: input.count,
         googleSearch: modelOptions.googleSearch,
         modelId: input.modelId,
+        ...(modelOptions.imageLine ? { imageLine: modelOptions.imageLine } : {}),
         ...(input.catalogModelId ? { catalogModelId: input.catalogModelId } : {}),
         outputFormat: modelOptions.outputFormat,
         projectId: input.projectId ?? null,
@@ -101,6 +104,7 @@ export function generationInputFromRow(row, referenceUrls = new Map()) {
     count: row.requested_count,
     googleSearch: row.google_search ?? false,
     modelId: row.model_id,
+    ...(row.image_line && row.image_line !== "special" ? { imageLine: row.image_line } : {}),
     ...(row.catalog_model_id ? { catalogModelId: row.catalog_model_id, catalogModelName: row.catalog_model_name } : {}),
     outputFormat:
       row.output_format ?? (isGptImageModelId(row.model_id) ? "jpeg" : "png"),
@@ -127,6 +131,7 @@ export function persistedGenerationInputFromRow(row) {
     count: row.requested_count,
     googleSearch: row.google_search ?? false,
     modelId: row.model_id,
+    ...(row.image_line && row.image_line !== "special" ? { imageLine: row.image_line } : {}),
     ...(row.catalog_model_id ? { catalogModelId: row.catalog_model_id } : {}),
     outputFormat:
       row.output_format ?? (isGptImageModelId(row.model_id) ? "jpeg" : "png"),
@@ -186,6 +191,7 @@ const JOB_SELECT = `
          b.project_id,
          b.reference_snapshot,
          b.model_id,
+         b.image_line,
          b.catalog_model_id,
          b.catalog_model_name,
          b.aspect_ratio,
@@ -390,7 +396,7 @@ export async function createGenerationJob(
 
     const managedModel = await requireEnabledImageModel(client, input);
     if (input.expectedPriceVersion !== undefined) {
-      const quote = await findActiveGenerationPrice(client, { modelId: managedModel.id, resolution: input.resolution, count: input.count });
+      const quote = await findActiveGenerationPrice(client, { modelId: managedModel.id, resolution: input.resolution, count: input.count, planContext: imagePriceContext(input.imageLine) });
       if (quote.version !== input.expectedPriceVersion) throw new GenerationPersistenceError("PRICE_CHANGED", "模型价格已更新，请刷新报价后重新提交。尚未扣除积分。", 409);
     }
 
@@ -451,9 +457,9 @@ export async function createGenerationJob(
          id, owner_id, workspace_id, creator_owner_id, project_id,
          prompt, reference_snapshot, model_id,
          aspect_ratio, resolution, requested_count, thinking_level,
-         google_search, quality, background, output_format, input_hash
+         google_search, quality, background, output_format, input_hash, image_line
        ) VALUES ($1, $2, $3, $2, $4, $5, $6::jsonb, $7, $8, $9, $10,
-                 $11, $12, $13, $14, $15, $16)`,
+                 $11, $12, $13, $14, $15, $16, $17)`,
       [
         batchId,
         ownerId,
@@ -471,6 +477,7 @@ export async function createGenerationJob(
         modelOptions.background,
         modelOptions.outputFormat,
         inputHash,
+        isBananaModel(input.modelId) ? input.imageLine ?? "special" : null,
       ],
     );
     if (input.projectId) {
@@ -480,7 +487,7 @@ export async function createGenerationJob(
                 model_id = $5, aspect_ratio = $6, resolution = $7,
                 generation_count = $8, thinking_level = $9,
                 google_search = $10, quality = $11, background = $12,
-                output_format = $13, catalog_model_id = $15, version = version + 1,
+                output_format = $13, catalog_model_id = $15, image_line = $16, version = version + 1,
                 updated_at = now()
           WHERE id = $1 AND owner_id = $2 AND creator_owner_id = $2
             AND workspace_id = $14`,
@@ -500,6 +507,7 @@ export async function createGenerationJob(
           modelOptions.outputFormat,
           workspace.id,
           input.catalogModelId ?? null,
+          isBananaModel(input.modelId) ? input.imageLine ?? "special" : null,
         ],
       );
     }
@@ -516,6 +524,7 @@ export async function createGenerationJob(
       const price = await findActiveGenerationPrice(client, {
         count: input.count,
         modelId: input.catalogModelId ?? input.modelId,
+        planContext: imagePriceContext(input.imageLine),
         resolution: input.resolution,
       });
       await client.query(
@@ -559,6 +568,7 @@ export async function createGenerationJob(
       );
     } else {
       await reserveGenerationCreditsInTransaction(client, {
+        planContext: imagePriceContext(input.imageLine),
         idempotencyKey: `generation-reserve:${jobId}`,
         jobId,
         ownerId,
@@ -620,7 +630,7 @@ export async function claimGenerationJob(
     }
     const job = locked.rows[0];
     const resolvedAttemptRoute = attemptRouteForModel
-      ? attemptRouteForModel(job.model_id)
+      ? attemptRouteForModel(job.model_id, job.image_line ?? undefined)
       : attemptRoute;
     if (
       !resolvedAttemptRoute?.routeVersion ||

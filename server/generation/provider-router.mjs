@@ -5,8 +5,8 @@ import {
   pollProviderTask,
 } from "./provider.mjs";
 import { readPrivateObject, signAssetRead } from "./storage.mjs";
+import { BANANA_LINES, isBananaModel, isBananaLineReady, isValidImageLine } from "../../shared/contracts/banana-lines.mjs";
 import {
-  US_GATEWAY_MVP_ROUTE,
   createUsGatewayAdapter,
   getUsGatewayRoute,
 } from "./us-gateway-adapter.mjs";
@@ -41,13 +41,23 @@ const MOCK_PROVIDER_ROUTES = Object.freeze({
   "gpt-image-2": MOCK_GPT_IMAGE_2_ROUTE,
   "gpt-image-2.5-flare": MOCK_GPT_IMAGE_25_FLARE_ROUTE,
 });
+const MOCK_BANANA_LINE_ROUTES = Object.freeze(Object.fromEntries(
+  ["nano-banana-2", "nano-banana-pro"].map((modelId) => [modelId, Object.freeze(Object.fromEntries(
+    BANANA_LINES.map(({ id }) => [id, modelId === "nano-banana-2" && id === "special" ? MOCK_PROVIDER_ROUTE : Object.freeze({
+      provider: "goodgood-mock", productModelId: modelId, imageLine: id,
+      providerModel: `${modelId}-${id}-mock-v1`, routeVersion: `m3-mock-${modelId}-${id}-v1`,
+    })]),
+  ))]),
+));
 
-export function generationProviderRouteForModel(providerKind, modelId) {
+export function generationProviderRouteForModel(providerKind, modelId, imageLine) {
+  if (!isValidImageLine(modelId, imageLine)) throw new Error("Invalid image line.");
+  if (isBananaModel(modelId) && !isBananaLineReady(modelId, imageLine)) throw new Error("Image line is not connected.");
   if (providerKind === "o1key") {
-    const route = getUsGatewayRoute(modelId);
+    const route = getUsGatewayRoute(modelId, imageLine);
     if (route) return route;
   } else if (providerKind === "mock") {
-    const route = MOCK_PROVIDER_ROUTES[modelId];
+    const route = isBananaModel(modelId) ? MOCK_BANANA_LINE_ROUTES[modelId]?.[imageLine ?? "special"] : MOCK_PROVIDER_ROUTES[modelId];
     if (route) return route;
   }
   throw new Error(`No ${providerKind} generation route for ${modelId}.`);
@@ -173,7 +183,7 @@ export function decodeO1KeyTaskSet(
 }
 
 function expectedO1KeyTaskCount(route, job) {
-  return route === US_GATEWAY_MVP_ROUTE ? job.requested_count : 1;
+  return isBananaModel(route.productModelId) ? job.requested_count : 1;
 }
 
 function o1keyTaskState(route, job, taskId) {
@@ -205,7 +215,7 @@ export function createGenerationProvider({
   storage,
 }) {
   if (config.provider.kind === "o1key") {
-    if (getUsGatewayRoute(route.productModelId) !== route) {
+    if (getUsGatewayRoute(route.productModelId, route.imageLine) !== route) {
       throw new Error("The selected route does not match the O1Key provider.");
     }
     const adapter = createUsGatewayAdapter({
@@ -288,7 +298,7 @@ export function createGenerationProvider({
         }, taskId);
         if (taskState.submissionStarted) throw submissionUnknownError();
         const { taskIds } = taskState;
-        const expectedTaskCount = route === US_GATEWAY_MVP_ROUTE
+        const expectedTaskCount = isBananaModel(route.productModelId)
           ? expectedOutputCount
           : 1;
         if (taskIds.length !== expectedTaskCount) throw taskSetError();
@@ -301,7 +311,7 @@ export function createGenerationProvider({
               }
             },
             expectedOutputCount:
-              route === US_GATEWAY_MVP_ROUTE ? 1 : expectedOutputCount,
+              isBananaModel(route.productModelId) ? 1 : expectedOutputCount,
             pollIntervalMs: config.provider.pollIntervalMs,
             taskId: providerTaskId,
             timeoutMs: config.provider.timeoutMs,
@@ -318,7 +328,7 @@ export function createGenerationProvider({
     });
   }
 
-  if (!Object.values(MOCK_PROVIDER_ROUTES).includes(route)) {
+  if (![...Object.values(MOCK_PROVIDER_ROUTES), ...Object.values(MOCK_BANANA_LINE_ROUTES).flatMap(Object.values)].includes(route)) {
     throw new Error("The selected route does not match the mock provider.");
   }
 

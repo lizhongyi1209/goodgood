@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
+import { imagePriceContext } from "../../shared/contracts/banana-lines.mjs";
 import {
   creditBalanceDeltas,
   exactCreditAmount,
@@ -557,7 +558,7 @@ export function grantWelcomeCreditsInTransaction(client, { ownerId }) {
 async function loadGenerationForReservation(client, { jobId, ownerId }) {
   const result = await client.query(
     `SELECT j.id AS job_id, j.credit_reservation_entry_id,
-            b.id AS batch_id, b.model_id, b.catalog_model_id, b.resolution, b.requested_count,
+            b.id AS batch_id, b.model_id, b.catalog_model_id, b.image_line, b.resolution, b.requested_count,
             b.price_version_id, b.quoted_credit_unit, b.quoted_credit_amount
        FROM generation_jobs j
        JOIN generation_batches b ON b.id = j.batch_id
@@ -670,7 +671,7 @@ export async function reserveGenerationCreditsInTransaction(
     at,
     count: job.requested_count,
     modelId: job.catalog_model_id ?? job.model_id,
-    planContext,
+    planContext: job.image_line ? imagePriceContext(job.image_line) : planContext,
     resolution: job.resolution,
   });
   const accountResult = await client.query(

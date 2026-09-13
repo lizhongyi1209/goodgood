@@ -20,6 +20,15 @@ import { GENERATION_MODEL_CATALOG } from "@/features/models/catalog";
 import { VIDEO_GENERATION_MODEL_CATALOG } from "@/features/creation/video-generation-options";
 import { ModelPricingList } from "./model-pricing-list";
 import {
+  BANANA_LINES,
+  isBananaModel,
+  isBananaLineReady,
+  imageLineName,
+  modelBananaLines,
+} from "@/shared/contracts/banana-lines.mjs";
+import type { BananaLine } from "@/shared/contracts/generation";
+import type { ManagedBananaLines } from "@/shared/contracts/model-management";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -54,6 +63,8 @@ import {
 } from "@/shared/contracts/model-pricing.mjs";
 import type { ManagedModel } from "@/shared/contracts/model-management";
 
+type DraftPrices = Record<string, { output: string; input: string }>;
+type DraftLines = Record<BananaLine, { enabled: boolean; prices: DraftPrices }>;
 type Draft = {
   id: string;
   name: string;
@@ -61,8 +72,27 @@ type Draft = {
   adapterId: string;
   enabled: boolean;
   version: number | null;
-  prices: Record<string, { output: string; input: string }>;
+  prices: DraftPrices;
+  lines?: DraftLines;
 };
+function emptyDraftLines(): DraftLines {
+  return {
+    special: { enabled: true, prices: {} },
+    quality: { enabled: false, prices: {} },
+    dedicated: { enabled: false, prices: {} },
+  };
+}
+function editablePrices(prices: ManagedModel["prices"]): DraftPrices {
+  return Object.fromEntries(
+    Object.entries(prices).map(([key, price]) => [
+      key,
+      {
+        output: creditsToYuan(price.output),
+        input: creditsToYuan(price.input ?? 0),
+      },
+    ]),
+  );
+}
 const newDraft = (): Draft => ({
   id: `model-${globalThis.crypto.randomUUID()}`,
   name: "",
@@ -71,24 +101,29 @@ const newDraft = (): Draft => ({
   enabled: false,
   version: null,
   prices: {},
+  lines: emptyDraftLines(),
 });
 function editDraft(model: ManagedModel): Draft {
+  const lines = modelBananaLines(model);
   return {
     ...model,
-    prices: Object.fromEntries(
-      Object.entries(model.prices).map(([key, price]) => [
-        key,
-        {
-          output: creditsToYuan(price.output),
-          input: creditsToYuan(price.input ?? 0),
-        },
-      ]),
-    ),
+    prices: editablePrices(model.prices),
+    lines: lines
+      ? (Object.fromEntries(
+          BANANA_LINES.map(({ id }) => [
+            id,
+            {
+              enabled: lines[id].enabled,
+              prices: editablePrices(lines[id].prices),
+            },
+          ]),
+        ) as DraftLines)
+      : undefined,
   };
 }
-function parsedPrices(draft: Draft) {
+function parsedPrices(draft: Draft, line: BananaLine = "special") {
   return Object.fromEntries(
-    Object.entries(draft.prices)
+    Object.entries(draft.lines ? draft.lines[line].prices : draft.prices)
       .filter(([, price]) => price.output.trim())
       .map(([key, price]) => [
         key,
@@ -123,6 +158,7 @@ export function ModelManagementPage() {
   const [saving, setSaving] = useState(false);
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [resolution, setResolution] = useState("1K");
+  const [pricingLine, setPricingLine] = useState<BananaLine>("special");
   const [count, setCount] = useState("1");
   const [seconds, setSeconds] = useState("5");
   const [referenceSeconds, setReferenceSeconds] = useState("0");
@@ -186,6 +222,8 @@ export function ModelManagementPage() {
   const open = (model?: ManagedModel) => {
     const next = model ? editDraft(model) : newDraft();
     setDraft(next);
+    setPricingLine("special");
+    setCount("1");
     setMutationError(null);
     setResolution(
       MODEL_TEMPLATES.find((item) => item.id === next.adapterId)!
@@ -204,6 +242,17 @@ export function ModelManagementPage() {
         ...nextDraft,
         mediaType: template.mediaType as "image" | "video",
         prices: parsedPrices(nextDraft),
+        lines: nextDraft.lines
+          ? (Object.fromEntries(
+              BANANA_LINES.map(({ id }) => [
+                id,
+                {
+                  enabled: nextDraft.lines![id as BananaLine].enabled,
+                  prices: parsedPrices(nextDraft, id as BananaLine),
+                },
+              ]),
+            ) as ManagedBananaLines)
+          : undefined,
       });
       setModels((previous) => [
         ...previous.filter((item) => item.id !== result.model.id),
@@ -223,11 +272,43 @@ export function ModelManagementPage() {
   };
   const template =
     draft && MODEL_TEMPLATES.find((item) => item.id === draft.adapterId)!;
+  const currentPrices = draft?.lines
+    ? draft.lines[pricingLine].prices
+    : (draft?.prices ?? {});
+  const updatePrice = (
+    key: string,
+    field: "output" | "input",
+    value: string,
+  ) => {
+    if (!draft) return;
+    const prices = {
+      ...currentPrices,
+      [key]: {
+        output: currentPrices[key]?.output ?? "",
+        input: currentPrices[key]?.input ?? "0",
+        [field]: value,
+      },
+    };
+    setDraft(
+      draft.lines
+        ? {
+            ...draft,
+            lines: {
+              ...draft.lines,
+              [pricingLine]: { ...draft.lines[pricingLine], prices },
+            },
+          }
+        : { ...draft, prices },
+    );
+  };
   let quote: number | null = null;
   if (draft && template) {
     try {
       quote = calculateModelQuote(
-        { mediaType: template.mediaType, prices: parsedPrices(draft) },
+        {
+          mediaType: template.mediaType,
+          prices: parsedPrices(draft, pricingLine),
+        },
         {
           resolution,
           count: Number(count),
@@ -472,9 +553,14 @@ export function ModelManagementPage() {
                           ...draft,
                           adapterId: value,
                           prices: {},
+                          lines: isBananaModel(value)
+                            ? emptyDraftLines()
+                            : undefined,
                           enabled: false,
                         });
                         setResolution(next.resolutions[0]);
+                        setPricingLine("special");
+                        setCount("1");
                       }}
                     >
                       <SelectTrigger aria-label="使用的模型">
@@ -493,6 +579,57 @@ export function ModelManagementPage() {
                   </label>
                 )}
 
+                {draft.lines && (
+                  <section aria-label="线路定价" className="space-y-3">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <h3 className="text-sm font-medium">线路</h3>
+                      <div className="flex gap-1">
+                        {BANANA_LINES.map(({ id, name }) => (
+                          <Button
+                            key={id}
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            aria-pressed={pricingLine === id}
+                            className={pricingLine === id ? "bg-zinc-100" : ""}
+                            onClick={() => setPricingLine(id as BananaLine)}
+                          >
+                            {name}
+                            {id === "special" ? " · 默认" : ""}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                    <label className="flex items-center gap-2 text-xs text-zinc-500">
+                      <input
+                        type="checkbox"
+                        checked={draft.lines[pricingLine].enabled}
+                        disabled={
+                          !isBananaLineReady(draft.adapterId, pricingLine)
+                        }
+                        onChange={(event) =>
+                          setDraft({
+                            ...draft,
+                            lines: {
+                              ...draft.lines!,
+                              [pricingLine]: {
+                                ...draft.lines![pricingLine],
+                                enabled: event.target.checked,
+                              },
+                            },
+                          })
+                        }
+                      />
+                      启用{imageLineName(pricingLine)}线路
+                      {!isBananaLineReady(draft.adapterId, pricingLine) && (
+                        <span>接入 ID 待确认</span>
+                      )}
+                    </label>
+                    <p className="text-xs leading-5 text-zinc-400">
+                      三条线路分别设置售价。切换查看与编辑，保存时一起生效。
+                    </p>
+                  </section>
+                )}
                 <div>
                   <h3 className="text-sm font-medium">规格售价</h3>
                   <p className="mt-1 text-xs text-zinc-500">
@@ -528,24 +665,15 @@ export function ModelManagementPage() {
                               className="bg-white px-2 tabular-nums"
                               inputMode="decimal"
                               placeholder="未定价"
-                              value={draft.prices[key]?.output ?? ""}
+                              value={currentPrices[key]?.output ?? ""}
                               onChange={(event) =>
-                                setDraft({
-                                  ...draft,
-                                  prices: {
-                                    ...draft.prices,
-                                    [key]: {
-                                      input: draft.prices[key]?.input ?? "0",
-                                      output: event.target.value,
-                                    },
-                                  },
-                                })
+                                updatePrice(key, "output", event.target.value)
                               }
                             />
                             <span className="mt-2 block text-[11px] text-zinc-400">
                               {(() => {
                                 try {
-                                  return `${yuanToCredits(draft.prices[key]?.output ?? "")} 积分/${template.mediaType === "image" ? "张" : "秒"}`;
+                                  return `${yuanToCredits(currentPrices[key]?.output ?? "")} 积分/${template.mediaType === "image" ? "张" : "秒"}`;
                                 } catch {
                                   return "—";
                                 }
@@ -561,24 +689,15 @@ export function ModelManagementPage() {
                                 aria-label={`${key} 参考视频秒价`}
                                 className="bg-white px-2 tabular-nums"
                                 inputMode="decimal"
-                                value={draft.prices[key]?.input ?? "0"}
+                                value={currentPrices[key]?.input ?? "0"}
                                 onChange={(event) =>
-                                  setDraft({
-                                    ...draft,
-                                    prices: {
-                                      ...draft.prices,
-                                      [key]: {
-                                        output: draft.prices[key]?.output ?? "",
-                                        input: event.target.value,
-                                      },
-                                    },
-                                  })
+                                  updatePrice(key, "input", event.target.value)
                                 }
                               />
                               <span className="mt-2 block text-[11px] text-zinc-400">
                                 {(() => {
                                   try {
-                                    return `${yuanToCredits(draft.prices[key]?.input || "0")} 积分/秒`;
+                                    return `${yuanToCredits(currentPrices[key]?.input || "0")} 积分/秒`;
                                   } catch {
                                     return "—";
                                   }
@@ -612,7 +731,14 @@ export function ModelManagementPage() {
                       </SelectTrigger>
                       <SelectContent>
                         {[1, 2, 4].map((value) => (
-                          <SelectItem key={value} value={String(value)}>
+                          <SelectItem
+                            key={value}
+                            value={String(value)}
+                            disabled={
+                              draft.adapterId === "nano-banana-pro" &&
+                              value !== 1
+                            }
+                          >
                             {value}{" "}
                             {template.mediaType === "image" ? "张" : "条"}
                           </SelectItem>
@@ -667,7 +793,9 @@ export function ModelManagementPage() {
                   />
                   启用模型
                   <span className="text-xs text-zinc-400">
-                    须填齐全部规格售价
+                    {draft.lines
+                      ? "须启用线路并填齐其规格售价"
+                      : "须填齐全部规格售价"}
                   </span>
                 </label>
                 <Collapsible className="pt-1">

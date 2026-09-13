@@ -152,8 +152,8 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
   const startedAt = Date.now();
   const { config, pool, publicStorage, storage } = resources;
   const claim = await claimGenerationJob(pool, {
-    attemptRouteForModel: (modelId) =>
-      generationProviderRouteForModel(config.provider.kind, modelId),
+    attemptRouteForModel: (modelId, imageLine) =>
+      generationProviderRouteForModel(config.provider.kind, modelId, imageLine),
     jobId,
     leaseMs: config.workerLeaseMs,
     workerId,

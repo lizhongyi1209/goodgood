@@ -14,6 +14,7 @@ export type CreationDraftState = Readonly<{
   prompt: string;
   references: readonly GenerationReference[];
   modelId: GenerationModelId;
+  imageLine?: import("./generation").BananaLine;
   catalogModelId?: string;
   aspectRatio: GenerationAspectRatio;
   resolution: GenerationResolution;

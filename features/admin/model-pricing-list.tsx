@@ -7,6 +7,11 @@ import {
   creditsToYuan,
 } from "@/shared/contracts/model-pricing.mjs";
 import type { ManagedModel } from "@/shared/contracts/model-management";
+import {
+  BANANA_LINES,
+  modelBananaLines,
+  modelSpecificationPrices,
+} from "@/shared/contracts/banana-lines.mjs";
 
 const IMAGE_RESOLUTIONS = ["1K", "2K", "4K"];
 const VIDEO_RESOLUTIONS = ["480p", "720p", "1080p", "4K"];
@@ -15,16 +20,26 @@ const ROW_LAYOUT = "lg:grid-cols-[minmax(180px,1fr)_minmax(0,2fr)_150px]";
 function ModelPrice({
   model,
   resolution,
+  imageLine,
+  showResolution = true,
 }: {
   model: ManagedModel;
   resolution: string;
+  imageLine?: string;
+  showResolution?: boolean;
 }) {
   const template = MODEL_TEMPLATES.find((item) => item.id === model.adapterId);
   const supported = template?.resolutions.includes(resolution);
-  const price = model.prices[resolution];
+  const price = modelSpecificationPrices(model, imageLine)[resolution];
   return (
     <div className="min-w-0 text-center tabular-nums">
-      <p className="mb-2 text-xs text-zinc-400 lg:sr-only">{resolution}</p>
+      <p
+        className={
+          showResolution ? "mb-2 text-xs text-zinc-400 lg:sr-only" : "sr-only"
+        }
+      >
+        {resolution}
+      </p>
       {!supported ? (
         <p className="text-xs text-zinc-400">不支持</p>
       ) : !price ? (
@@ -81,7 +96,9 @@ export function ModelPricingList({
         const resolutions =
           mediaType === "image" ? IMAGE_RESOLUTIONS : VIDEO_RESOLUTIONS;
         const priceLayout =
-          mediaType === "image" ? "grid-cols-3" : "grid-cols-2 lg:grid-cols-4";
+          mediaType === "image"
+            ? "grid-cols-[64px_repeat(3,minmax(0,1fr))]"
+            : "grid-cols-2 lg:grid-cols-4";
         return (
           <section
             key={mediaType}
@@ -106,6 +123,7 @@ export function ModelPricingList({
             >
               <span>模型</span>
               <div className={`grid gap-5 ${priceLayout}`}>
+                {mediaType === "image" && <span>线路</span>}
                 {resolutions.map((resolution) => (
                   <span key={resolution} className="text-center">
                     {resolution}
@@ -130,16 +148,66 @@ export function ModelPricingList({
                     {model.enabled ? "已启用" : "已禁用"}
                   </p>
                 </div>
-                <div
-                  className={`order-3 col-span-2 grid gap-x-5 gap-y-5 lg:order-2 lg:col-span-1 ${priceLayout}`}
-                >
-                  {resolutions.map((resolution) => (
-                    <ModelPrice
-                      key={resolution}
-                      model={model}
-                      resolution={resolution}
-                    />
-                  ))}
+                <div className="order-3 col-span-2 lg:order-2 lg:col-span-1">
+                  {mediaType === "image" ? (
+                    <div className="space-y-4">
+                      <div
+                        aria-hidden="true"
+                        className={`grid gap-x-3 text-center text-xs text-zinc-400 lg:hidden ${priceLayout}`}
+                      >
+                        <span />
+                        {resolutions.map((key) => (
+                          <span key={key}>{key}</span>
+                        ))}
+                      </div>
+                      {(modelBananaLines(model)
+                        ? BANANA_LINES
+                        : [{ id: undefined, name: "—" }]
+                      ).map((line) => {
+                        const enabled = line.id
+                          ? modelBananaLines(model)[line.id]?.enabled
+                          : model.enabled;
+                        return (
+                          <div
+                            key={line.id ?? "default"}
+                            className={`grid items-center gap-x-3 lg:gap-x-5 ${priceLayout}`}
+                          >
+                            <div className="text-xs text-zinc-600">
+                              {line.name}
+                              {line.id && (
+                                <p className="mt-1 text-[10px] text-zinc-400">
+                                  {enabled
+                                    ? line.id === "special"
+                                      ? "默认"
+                                      : "已启用"
+                                    : "未启用"}
+                                </p>
+                              )}
+                            </div>
+                            {resolutions.map((resolution) => (
+                              <ModelPrice
+                                key={resolution}
+                                model={model}
+                                resolution={resolution}
+                                imageLine={line.id}
+                                showResolution={false}
+                              />
+                            ))}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className={`grid gap-x-5 gap-y-5 ${priceLayout}`}>
+                      {resolutions.map((resolution) => (
+                        <ModelPrice
+                          key={resolution}
+                          model={model}
+                          resolution={resolution}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="order-2 flex justify-end gap-0.5 lg:order-3">
                   <Button

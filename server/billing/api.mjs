@@ -8,6 +8,7 @@ import {
 } from "./repository.mjs";
 import { PaymentError } from "./payment-errors.mjs";
 import { readManagedModels } from "../admin/models.mjs";
+import { BANANA_LINES, imagePriceContext, isBananaModel, isBananaLineReady, modelBananaLines, modelSpecificationPrices } from "../../shared/contracts/banana-lines.mjs";
 
 const GPT_IMAGE_LAUNCH_PRICES = [
   "gpt-image-2.5-sunburst",
@@ -110,7 +111,8 @@ export async function readBillingSummary({
     findCreditAccount(resolvedResources.pool, { ownerId }),
     Promise.all(
       directory.models.filter((model) => model.mediaType === "image").flatMap((model) =>
-        (model.adapterId === "nano-banana-pro" ? [1] : [1,2,4]).map((count) => ({ modelId: model.id, count, planContext: "standard" }))).map((launchPrice) =>
+        (isBananaModel(model.adapterId) ? BANANA_LINES.filter(({ id }) => modelBananaLines(model)[id].enabled && isBananaLineReady(model.adapterId, id)).map(({ id }) => id) : [undefined]).flatMap((line) =>
+          (model.adapterId === "nano-banana-pro" ? [1] : [1,2,4]).map((count) => ({ modelId: model.id, count, planContext: imagePriceContext(line) })))).map((launchPrice) =>
         listActiveGenerationPrices(resolvedResources.pool, launchPrice),
       ),
     ),
@@ -124,9 +126,13 @@ export async function readBillingSummary({
   }
   return {
     account: publicAccount(account),
-    quotes: priceGroups.flat().map((price) => {
+    quotes: priceGroups.flat().flatMap((price) => {
       const model = directory.models.find((item) => item.id === price.modelId);
-      return { ...publicQuote(price), modelId: model.adapterId, catalogModelId: model.id };
+      const imageLine = price.planContext === "standard" ? "special" : price.planContext.replace("banana-", "");
+      if (!modelSpecificationPrices(model, imageLine)[price.resolution]) return [];
+      return [{ ...publicQuote(price), modelId: model.adapterId, catalogModelId: model.id,
+        ...(isBananaModel(model.adapterId) && imageLine !== "special" ? { imageLine } : {}),
+      }];
     }),
     models: directory.models,
   };

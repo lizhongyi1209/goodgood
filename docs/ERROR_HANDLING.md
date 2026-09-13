@@ -21,6 +21,14 @@ Already accepted jobs retain their original quote despite later price or enable
 changes. The denomination migration rejects undrained jobs/reservations/pending
 orders atomically; never bypass the guard or rewrite historical records.
 
+GG-054 applies `MODEL_DISABLED` to disabled/unpriced/unknown Banana lines before
+credit reservation. Line input must be a stable known ID and cannot be supplied
+to GPT. Admin activation requires confirmed mapping and complete line prices;
+invalid changes retain the dialog input. Stale quotes are checked within the
+chosen line. Restored unavailable choices preserve state and offer another line;
+there is no automatic fallback. Accepted jobs continue their pinned line and
+quote after model/line disable, including restart and failure credit release.
+
 GG-044 directory loading/empty/error lives in the enterprise content area,
 not a global Workspace control. Retry reads the authenticated directory only.
 Direct company access is still authorized by manager APIs; denial offers the

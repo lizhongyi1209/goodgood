@@ -132,6 +132,7 @@ export function getGenerationRatioIndex(ratio: GenerationAspectRatio): number {
 export function getGenerationRatioOptions(
   modelId: GenerationModelId,
 ): readonly GenerationRatioOption[] {
+  if (modelId === "nano-banana-pro") return GENERATION_RATIO_OPTIONS.filter((option) => !["1:8", "1:4", "4:1", "8:1"].includes(option.id));
   if (!isGptImageModelId(modelId)) return GENERATION_RATIO_OPTIONS;
   return GENERATION_RATIO_OPTIONS.filter((option) =>
     GPT_IMAGE_2_RATIO_IDS.includes(option.id as GptImage2AspectRatio),

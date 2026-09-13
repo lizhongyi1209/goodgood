@@ -15,6 +15,15 @@ denomination exchange uses new accounts and append-only history, not mutation
 of historic ledger/price/order/job records. Video prices are configuration and
 second-based trial quotes until durable video billing is added.
 
+GG-054 separates stable product `imageLine` (`special / quality / dedicated`)
+from server-only provider IDs. Shared line contracts drive UI/pricing validation;
+the provider router resolves the exact model and line on worker claim/recovery.
+Banana aliases use their canonical adapter mapping. Admission locks model/line
+availability and line-specific immutable pricing in the reservation transaction.
+Accepted jobs do not reread enabled flags and cannot silently switch lines.
+Pro retains count 1 and the ten standard Gemini ratios. Unknown Banana 2 mappings
+cannot be enabled or requested. No provider IDs/credentials enter creator UI.
+
 ## Current state
 
 The live application is an owner-reviewed controlled alpha: browser → GoodGood

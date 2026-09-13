@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { BANANA_LINES, isBananaModel, isBananaLineReady, imagePriceContext, modelBananaLines, modelSpecificationPrices, isValidImageLine } from "../../shared/contracts/banana-lines.mjs";
 import { sessionExpiredError } from "../auth/errors.mjs";
 import { getGenerationResources } from "../generation/resources.mjs";
 import { AdministrationError, adminAccessDeniedError } from "./errors.mjs";
@@ -16,6 +17,7 @@ function publicModel(row) {
     adapterId: row.adapter_id,
     enabled: row.enabled,
     prices: row.prices,
+    ...(isBananaModel(row.adapter_id) ? { lines: modelBananaLines(row) } : {}),
     version: row.version,
     updatedAt: new Date(row.updated_at).toISOString(),
   };
@@ -51,36 +53,42 @@ export function validateManagedModel(input) {
     fail("请填写有效名称、说明和启用状态。");
   if (input.enabled && !template.ready)
     fail("该模板的生成线路尚未开放，暂时只能保存为禁用。");
-  const prices = {};
-  if (
-    !input.prices ||
-    typeof input.prices !== "object" ||
-    Array.isArray(input.prices)
-  )
-    fail("规格价格格式无效。");
-  for (const [resolution, price] of Object.entries(input.prices)) {
-    if (
-      !template.resolutions.includes(resolution) ||
-      !price ||
-      !Number.isSafeInteger(price.output) ||
-      price.output <= 0 ||
-      price.output > 100000000 ||
-      (template.mediaType === "video" &&
-        (!Number.isSafeInteger(price.input) ||
-          price.input < 0 ||
-          price.input > 100000000))
-    )
-      fail("输出价必须大于零；参考秒价可以为零。价格精度为 1 积分。");
-    prices[resolution] =
-      template.mediaType === "video"
-        ? { output: price.output, input: price.input }
-        : { output: price.output };
+  function parseSpecificationPrices(value, enabled) {
+    const prices = {};
+    if (!value || typeof value !== "object" || Array.isArray(value)) fail("规格价格格式无效。");
+    for (const [resolution, price] of Object.entries(value)) {
+      if (!template.resolutions.includes(resolution) || !price ||
+          !Number.isSafeInteger(price.output) || price.output <= 0 || price.output > 100000000 ||
+          (template.mediaType === "video" && (!Number.isSafeInteger(price.input) || price.input < 0 || price.input > 100000000)))
+        fail("输出价必须大于零；参考秒价可以为零。价格精度为 1 积分。");
+      prices[resolution] = template.mediaType === "video" ? { output: price.output, input: price.input } : { output: price.output };
+    }
+    if (enabled && template.resolutions.some((resolution) => !prices[resolution])) fail("启用前请填齐该线路全部分辨率价格。");
+    return prices;
   }
-  if (
-    input.enabled &&
-    template.resolutions.some((resolution) => !prices[resolution])
-  )
-    fail("启用前请填齐全部分辨率价格。");
+  let prices;
+  let lines;
+  if (isBananaModel(template.id)) {
+    const value = input.lines ?? {
+      special: { enabled: input.enabled, prices: input.prices },
+      quality: { enabled: false, prices: {} },
+      dedicated: { enabled: false, prices: {} },
+    };
+    if (!value || typeof value !== "object" || Array.isArray(value) ||
+        Object.keys(value).some((id) => !BANANA_LINES.some((line) => line.id === id))) fail("线路配置无效。");
+    lines = {};
+    for (const { id, name: lineName } of BANANA_LINES) {
+      const line = value[id];
+      if (!line || typeof line.enabled !== "boolean") fail("请填写三条线路的启用状态。");
+      if (line.enabled && !isBananaLineReady(template.id, id)) fail(`${lineName}线路尚未接入，暂时只能保存为禁用。`);
+      lines[id] = { enabled: line.enabled, prices: parseSpecificationPrices(line.prices, input.enabled && line.enabled) };
+    }
+    if (input.enabled && !Object.values(lines).some((line) => line.enabled)) fail("启用模型前至少启用一条已定价线路。");
+    prices = lines.special.prices;
+  } else {
+    if (input.lines && Object.keys(input.lines).length) fail("只有 Banana 模型支持图片线路。");
+    prices = parseSpecificationPrices(input.prices, input.enabled);
+  }
   if (
     input.version !== null &&
     (!Number.isSafeInteger(input.version) || input.version < 1)
@@ -93,6 +101,7 @@ export function validateManagedModel(input) {
     adapterId: template.id,
     mediaType: template.mediaType,
     enabled: input.enabled,
+    ...(lines ? { lines } : {}),
     prices,
     version: input.version,
   };
@@ -158,9 +167,9 @@ export async function saveManagedModel({
       );
     const next = (
       await client.query(
-        `INSERT INTO managed_models (id,name,description,media_type,adapter_id,enabled,prices)
-      VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb) ON CONFLICT (id) DO UPDATE SET name=$2,description=$3,
-      enabled=$6,prices=$7::jsonb,version=managed_models.version+1,updated_at=now() RETURNING *`,
+        `INSERT INTO managed_models (id,name,description,media_type,adapter_id,enabled,prices,lines)
+      VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8::jsonb) ON CONFLICT (id) DO UPDATE SET name=$2,description=$3,
+      enabled=$6,prices=$7::jsonb,lines=$8::jsonb,version=managed_models.version+1,updated_at=now() RETURNING *`,
         [
           model.id,
           model.name,
@@ -169,31 +178,24 @@ export async function saveManagedModel({
           model.adapterId,
           model.enabled,
           JSON.stringify(model.prices),
+          JSON.stringify(model.lines ?? {}),
         ],
       )
     ).rows[0];
-    if (
-      model.mediaType === "image" &&
-      (!previous ||
-        JSON.stringify(previous.prices) !== JSON.stringify(model.prices))
-    ) {
-      for (const [resolution, price] of Object.entries(model.prices)) {
-        for (const count of model.adapterId === "nano-banana-pro"
-          ? [1]
-          : [1, 2, 4]) {
-          await client.query(
-            `INSERT INTO price_versions (id,model_id,resolution,output_count,plan_context,version,credit_unit,credit_amount,effective_from)
-            SELECT $1,$2,$3,$4,'standard',COALESCE(MAX(version),0)+1,$5,$6,now() FROM price_versions
-             WHERE model_id=$2 AND resolution=$3 AND output_count=$4 AND plan_context='standard'`,
-            [
-              randomUUID(),
-              model.id,
-              resolution,
-              count,
-              CREDIT_UNIT,
-              String(price.output * count),
-            ],
-          );
+    if (model.mediaType === "image") {
+      const scopes = isBananaModel(model.adapterId) ? BANANA_LINES.map(({ id }) => ({ line: id, prices: model.lines[id].prices })) : [{ line: undefined, prices: model.prices }];
+      for (const scope of scopes) {
+        const priorPrices = previous ? modelSpecificationPrices(previous, scope.line) : null;
+        if (priorPrices && JSON.stringify(priorPrices) === JSON.stringify(scope.prices)) continue;
+        for (const [resolution, price] of Object.entries(scope.prices)) {
+          for (const count of model.adapterId === "nano-banana-pro" ? [1] : [1, 2, 4]) {
+            await client.query(
+              `INSERT INTO price_versions (id,model_id,resolution,output_count,plan_context,version,credit_unit,credit_amount,effective_from)
+              SELECT $1,$2,$3,$4,$7,COALESCE(MAX(version),0)+1,$5,$6,now() FROM price_versions
+              WHERE model_id=$2 AND resolution=$3 AND output_count=$4 AND plan_context=$7`,
+              [randomUUID(), model.id, resolution, count, CREDIT_UNIT, String(price.output * count), imagePriceContext(scope.line)],
+            );
+          }
         }
       }
     }
@@ -230,7 +232,9 @@ export async function requireEnabledImageModel(client, input) {
     !row.enabled ||
     row.media_type !== "image" ||
     row.adapter_id !== input.modelId ||
-    !row.prices[input.resolution]
+    !isValidImageLine(input.modelId, input.imageLine) ||
+    (isBananaModel(input.modelId) && (!isBananaLineReady(input.modelId, input.imageLine) || !modelBananaLines(row)[input.imageLine ?? "special"]?.enabled)) ||
+    !modelSpecificationPrices(row, input.imageLine)[input.resolution]
   ) {
     throw new AdministrationError(
       "MODEL_DISABLED",

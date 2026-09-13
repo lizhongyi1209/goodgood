@@ -52,6 +52,7 @@ export function validateDraftMutation(payload) {
   if (!RESOLUTIONS.has(state.resolution)) throw invalidDraft();
   if (!COUNTS.has(state.count)) throw invalidDraft();
   const modelOptions = normalizeGenerationModelOptions({
+    imageLine: state.imageLine,
     background: state.background,
     googleSearch: state.googleSearch,
     modelId: state.modelId,

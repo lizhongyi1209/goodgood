@@ -121,11 +121,13 @@ export function findBillingQuote(
   {
     count,
     catalogModelId,
+    imageLine = "special",
     modelId,
     resolution,
   }: Readonly<{
     count: GenerationCount;
     catalogModelId?: string;
+    imageLine?: import("@/shared/contracts/generation").BananaLine;
     modelId: GenerationModelId;
     resolution: GenerationResolution;
   }>,
@@ -136,6 +138,7 @@ export function findBillingQuote(
         quote.count === count &&
         (quote.catalogModelId ?? quote.modelId) === (catalogModelId ?? modelId) &&
         quote.modelId === modelId &&
+        (quote.imageLine ?? "special") === imageLine &&
         quote.resolution === resolution,
     ) ?? null
   );

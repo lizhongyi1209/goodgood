@@ -1,3 +1,5 @@
+import { isValidImageLine } from "../../shared/contracts/banana-lines.mjs";
+
 export const SUPPORTED_GENERATION_RESOLUTIONS = Object.freeze([
   "1K",
   "2K",
@@ -73,6 +75,11 @@ export const GENERATION_MODEL_CAPABILITIES = Object.freeze({
     resolutions: SUPPORTED_GENERATION_RESOLUTIONS,
   }),
   "gpt-image-2.5-sunburst": GPT_IMAGE_CAPABILITY,
+  "nano-banana-pro": Object.freeze({
+    aspectRatios: Object.freeze(NANO_BANANA_2_ASPECT_RATIOS.filter((ratio) => !["1:8", "1:4", "4:1", "8:1"].includes(ratio))),
+    outputCounts: Object.freeze([1]),
+    resolutions: SUPPORTED_GENERATION_RESOLUTIONS,
+  }),
   "gpt-image-2": GPT_IMAGE_CAPABILITY,
   "gpt-image-2.5-flare": GPT_IMAGE_CAPABILITY,
 });
@@ -107,6 +114,7 @@ export function isSupportedGenerationInput({ aspectRatio, count, modelId, resolu
 }
 
 export function normalizeGenerationModelOptions({
+  imageLine,
   background,
   googleSearch,
   modelId,
@@ -122,6 +130,7 @@ export function normalizeGenerationModelOptions({
   const normalizedOutputFormat =
     outputFormat ?? (isGptImageModelId(modelId) ? DEFAULT_GPT_IMAGE_OUTPUT_FORMAT : "png");
   if (
+    !isValidImageLine(modelId, imageLine) ||
     !SUPPORTED_GENERATION_THINKING_LEVELS.includes(normalizedThinkingLevel) ||
     typeof normalizedGoogleSearch !== "boolean" ||
     !SUPPORTED_GPT_IMAGE_QUALITIES.includes(normalizedQuality) ||
@@ -146,6 +155,7 @@ export function normalizeGenerationModelOptions({
     return null;
   }
   return Object.freeze({
+    ...(imageLine && imageLine !== "special" ? { imageLine } : {}),
     background: normalizedBackground,
     googleSearch: normalizedGoogleSearch,
     outputFormat: normalizedOutputFormat,

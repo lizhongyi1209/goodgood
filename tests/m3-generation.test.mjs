@@ -118,7 +118,7 @@ test("generation input accepts model-owned ratios, resolutions, and output count
   );
   for (const unsupportedInput of [
     { ...validInput, aspectRatio: "10:1" },
-    { ...validInput, modelId: "nano-banana-pro" },
+    { ...validInput, modelId: "nano-banana-pro", count: 2 },
     { ...validInput, resolution: "8K" },
     { ...validInput, aspectRatio: "4:5", modelId: "gpt-image-2" },
   ]) {
@@ -153,7 +153,7 @@ test("composer submits the selected ratio and resolution without a default-only 
   assert.doesNotMatch(workspace, /resolution !== "1K"/);
   assert.match(workspace, /aspectRatio: selectedRatio/);
   assert.match(workspace, /resolution,/);
-  assert.match(workspace, /selectedModel === "nano-banana-2" \|\| isGptImageModelId\(selectedModel\)/);
+  assert.match(workspace, /isBananaModel\(selectedModel\) \|\| isGptImageModelId\(selectedModel\)/);
   assert.match(workspace, /isGenerationCountSupported/);
 });
 

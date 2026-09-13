@@ -1,3 +1,5 @@
+import { modelSpecificationPrices } from "./banana-lines.mjs";
+
 export const CREDIT_UNIT = "credit-cny-cent";
 export const CREDITS_PER_CNY = 100;
 export function currentCreditAmount(value, unit) {
@@ -15,7 +17,7 @@ export const MODEL_TEMPLATES = Object.freeze([
     id,
     mediaType: "image",
     resolutions: ["1K", "2K", "4K"],
-    ready: id !== "nano-banana-pro",
+    ready: true,
   })),
   ...[
     "seedance-2-0",
@@ -52,9 +54,9 @@ export function creditsToYuan(value) {
 
 export function calculateModelQuote(
   model,
-  { resolution, count = 1, outputSeconds = 0, referenceSeconds = 0 },
+  { resolution, count = 1, outputSeconds = 0, referenceSeconds = 0, imageLine = "special" },
 ) {
-  const price = model.prices[resolution];
+  const price = modelSpecificationPrices(model, imageLine)[resolution];
   if (
     !price ||
     !Number.isSafeInteger(price.output) ||

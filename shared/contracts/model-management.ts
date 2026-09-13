@@ -1,4 +1,6 @@
-import type { GenerationModelId } from "./generation";
+import type { BananaLine, GenerationModelId } from "./generation";
+export type ModelSpecificationPrices = Readonly<Record<string, Readonly<{ output: number; input?: number }>>>;
+export type ManagedBananaLines = Readonly<Record<BananaLine, Readonly<{ enabled: boolean; prices: ModelSpecificationPrices }>>>;
 export type ManagedModel = Readonly<{
   id: string;
   name: string;
@@ -6,6 +8,7 @@ export type ManagedModel = Readonly<{
   mediaType: "image" | "video";
   adapterId: string;
   enabled: boolean;
+  lines?: ManagedBananaLines;
   prices: Readonly<
     Record<string, Readonly<{ output: number; input?: number }>>
   >;

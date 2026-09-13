@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type WheelEvent as ReactWheelEvent } from "react";
 import Image from "next/image";
 import { CreationComposer } from "@/features/creation/creation-composer";
+import { isBananaModel, imageLineName } from "@/shared/contracts/banana-lines.mjs";
+import type { BananaLine } from "@/shared/contracts/generation";
 import { VideoCreationComposer } from "@/features/creation/video-creation-composer";
 import { MixedMediaStylePreview } from "@/features/creation/mixed-media-style-preview";
 import { VideoPreviewCard, getVideoPreviewRatio } from "@/features/creation/video-preview-card";
@@ -236,6 +238,7 @@ type AssetBatch = {
   modelId: GenerationModelId;
   catalogModelId?: string;
   catalogModelName?: string;
+  imageLine?: BananaLine;
   aspectRatio: GenerationAspectRatio;
   resolution: GenerationResolution;
   count: GenerationCount;
@@ -388,6 +391,7 @@ function generationJobToAssetBatch(job: GenerationJob): AssetBatch {
     background: job.input.background ?? "auto",
     googleSearch: job.input.googleSearch ?? false,
     modelId: job.input.modelId,
+    ...(job.input.imageLine ? { imageLine: job.input.imageLine } : {}),
     catalogModelId: job.input.catalogModelId,
     catalogModelName: job.input.catalogModelName,
     prompt: job.input.prompt,
@@ -499,6 +503,7 @@ export default function Home({
   const [generationCount, setGenerationCount] = useState<GenerationCount>(1);
   const [thinkingLevel, setThinkingLevel] = useState<GenerationThinkingLevel>("high");
   const [googleSearch, setGoogleSearch] = useState(false);
+  const [imageLine, setImageLine] = useState<BananaLine>("special");
   const [quality, setQuality] = useState<GptImageQuality>("auto");
   const [background, setBackground] = useState<GptImageBackground>("auto");
   const [outputFormat, setOutputFormat] = useState<GptImageOutputFormat>("png");
@@ -630,6 +635,7 @@ export default function Home({
   const activeBillingQuote = findBillingQuote(billingSummary, {
     count: generationCount,
     modelId: selectedModel,
+    ...(isBananaModel(selectedModel) ? { imageLine } : {}),
     catalogModelId: selectedCatalogModelId,
     resolution,
   });
@@ -704,6 +710,7 @@ export default function Home({
     background,
     googleSearch,
     modelId: selectedModel,
+    ...(isBananaModel(selectedModel) ? { imageLine } : {}),
     catalogModelId: selectedCatalogModelId,
     prompt,
     references: referenceImages,
@@ -738,6 +745,7 @@ export default function Home({
     count: generationCount,
     googleSearch,
     modelId: selectedModel,
+    ...(isBananaModel(selectedModel) ? { imageLine } : {}),
     catalogModelId: selectedCatalogModelId,
     prompt,
     references: referenceImages,
@@ -784,6 +792,7 @@ export default function Home({
     setPrompt(normalizedState.prompt);
     setReferenceImages(normalizedState.references.map((reference) => ({ ...reference })));
     setSelectedModel(normalizedState.modelId);
+    setImageLine(normalizedState.imageLine ?? "special");
     setSelectedCatalogModelId(normalizedState.catalogModelId);
     setSelectedRatio(normalizedState.aspectRatio);
     setResolution(normalizedState.resolution);
@@ -1070,6 +1079,7 @@ export default function Home({
       count: generationCount,
       googleSearch,
       modelId: selectedModel,
+      ...(isBananaModel(selectedModel) ? { imageLine } : {}),
       catalogModelId: selectedCatalogModelId,
       prompt,
       references: referenceImages.map((reference) => ({ ...reference })),
@@ -1135,6 +1145,7 @@ export default function Home({
     routeProjectId,
     selectedModel,
     selectedCatalogModelId,
+    imageLine,
     selectedRatio,
     thinkingLevel,
     workspaceId,
@@ -1369,6 +1380,7 @@ export default function Home({
         setPrompt(restoredState.prompt);
         setReferenceImages(restoredState.references.map((reference) => ({ ...reference })));
         setSelectedModel(restoredState.modelId);
+        setImageLine(restoredState.imageLine ?? "special");
         setSelectedCatalogModelId(restoredState.catalogModelId);
         setSelectedRatio(restoredState.aspectRatio);
         setResolution(restoredState.resolution);
@@ -1512,6 +1524,7 @@ export default function Home({
     setSelectedCatalogModelId(undefined);
     composerEditRevisionRef.current += 1;
     setSelectedModel(value);
+    setImageLine("special");
     setSelectedRatio((current) =>
       resolveGenerationAspectRatioForModel(value, current),
     );
@@ -1829,6 +1842,7 @@ export default function Home({
           count: generationCount,
           googleSearch,
           modelId: selectedModel,
+          ...(isBananaModel(selectedModel) ? { imageLine } : {}),
           catalogModelId: selectedCatalogModelId,
           prompt,
           references: nextReferences.filter((reference) => reference.status === "ready"),
@@ -2356,6 +2370,7 @@ export default function Home({
           count: generationCount,
           googleSearch,
           modelId: selectedModel,
+          ...(isBananaModel(selectedModel) ? { imageLine } : {}),
           catalogModelId: selectedCatalogModelId,
           prompt,
           references: referenceImages.filter((reference) => reference.status === "ready"),
@@ -2404,6 +2419,7 @@ export default function Home({
       time: new Intl.DateTimeFormat("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false }).format(createdAt),
       prompt: completedInput.prompt,
       modelId: completedInput.modelId,
+      ...(completedInput.imageLine ? { imageLine: completedInput.imageLine } : {}),
       catalogModelId: completedInput.catalogModelId,
       catalogModelName: completedInput.catalogModelName,
       aspectRatio: completedInput.aspectRatio,
@@ -2443,6 +2459,7 @@ export default function Home({
                     count: completedInput.count,
                     googleSearch: completedInput.googleSearch ?? false,
                     modelId: completedInput.modelId,
+                    ...(completedInput.imageLine ? { imageLine: completedInput.imageLine } : {}),
                     catalogModelId: completedInput.catalogModelId,
                     prompt: composerInput.prompt,
                     references: completedInput.references,
@@ -2524,10 +2541,10 @@ export default function Home({
       return;
     }
     if (
-      !(selectedModel === "nano-banana-2" || isGptImageModelId(selectedModel)) ||
+      !(isBananaModel(selectedModel) || isGptImageModelId(selectedModel)) ||
       !isGenerationCountSupported(selectedModel, generationCount)
     ) {
-      toast.error("Nano Banana 2 和 GPT IMAGE 系列当前支持 1、2、4 张");
+      toast.error("当前模型不支持所选生成数量。Pro 支持单张输出。");
       return;
     }
 
@@ -2536,6 +2553,7 @@ export default function Home({
       prompt,
       references: referenceImages,
       modelId: selectedModel,
+      ...(isBananaModel(selectedModel) ? { imageLine } : {}),
       catalogModelId: selectedCatalogModelId,
       expectedPriceVersion: activeBillingQuote.priceVersion,
       aspectRatio: selectedRatio,
@@ -2602,6 +2620,7 @@ export default function Home({
     setPrompt(restored.prompt);
     setReferenceImages(restored.references);
     setSelectedModel(restored.modelId);
+    setImageLine(restored.imageLine ?? "special");
     setSelectedCatalogModelId(restored.catalogModelId);
     setSelectedRatio(restoredAspectRatio);
     setResolution(restored.resolution);
@@ -3052,6 +3071,9 @@ export default function Home({
           ) : <>
           {creationMode === "image" ? (
             <CreationComposer
+              imageLine={imageLine}
+              managedModel={billingSummary?.models?.find((model) => model.id === (selectedCatalogModelId ?? selectedModel))}
+              onImageLineChange={(line) => { composerEditRevisionRef.current += 1; setImageLine(line); }}
               mode={creationMode}
               prompt={prompt}
               references={referenceImages}
@@ -3601,6 +3623,7 @@ export default function Home({
                     <div><dt>分辨率</dt><dd>{formatGenerationResolution(activeDetail.batch.resolution, activeDetail.image)}</dd></div>
                     <div><dt>批次</dt><dd>{activeDetail.batch.count} 张</dd></div>
                     <div><dt>参考图</dt><dd>{activeDetail.batch.referenceCount ? `${activeDetail.batch.referenceCount} 张` : "无"}</dd></div>
+                    {isBananaModel(activeDetail.batch.modelId) && <div><dt>线路</dt><dd>{imageLineName(activeDetail.batch.imageLine)}</dd></div>}
                     {activeDetail.batch.modelId === "nano-banana-2" && (
                       <div><dt>谷歌搜索</dt><dd>{activeDetail.batch.googleSearch ? "开启" : "关闭"}</dd></div>
                     )}

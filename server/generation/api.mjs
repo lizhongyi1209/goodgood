@@ -80,10 +80,11 @@ export function validateM3GenerationInput(payload) {
   ) {
     throw new GenerationRequestError(
       "M3_SLICE_UNSUPPORTED",
-      "当前生成链路支持 Nano Banana 2 和 GPT IMAGE 2 的 1、2、4 张输出。",
+      "当前模型不支持所选比例、分辨率或生成数量。Pro 支持单张输出。",
     );
   }
   const modelOptions = normalizeGenerationModelOptions({
+    imageLine: payload.imageLine,
     background: payload.background,
     googleSearch: payload.googleSearch,
     modelId: payload.modelId,

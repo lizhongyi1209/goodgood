@@ -13,6 +13,17 @@ and `GOODGOOD_GG052_NO_WORKER=1`; verify no Worker uses that database. Never use
 32140 or a real-provider database/queue. Browser verification uses the isolated
 32141 mock stack, not real paid generation. Exact results live in the task card.
 
+GG-054 adds line validation/default compatibility, independent price scopes,
+quote omission for disabled/missing specifications, idempotency line separation,
+exact Pro model payloads across 10 ratios × 3 resolutions × 3 lines, and state
+snapshot/restore coverage. Injected fetches make no network requests. The SQL
+suite verifies migration history preservation, pinned personal/enterprise
+settlement, stale-price/disabled-line rejection, duplicate settlement/release
+and draft/project persistence. Opt in with `GOODGOOD_GG054_INTEGRATION=1`, explicit
+loopback `GOODGOOD_GG054_DATABASE_URL` starting `goodgood_gg054_lines_test`, and
+`GOODGOOD_GG054_NO_WORKER=1`; verify no Worker uses the effective database.
+No queue/provider is attached to that fixture database.
+
 Exact latest results belong in the task card and, for deployed behavior,
 `docs/CURRENT_STATE.md` / `docs/releases/`. Historical M-stage descriptions here
 are coverage contracts, not fresh production evidence. Follow `docs/WORKFLOW.md`

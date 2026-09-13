@@ -478,10 +478,7 @@ test("provider routing selects the three exact GPT image provider model IDs", ()
     generationProviderRouteForModel("mock", "gpt-image-2.5-flare"),
     MOCK_GPT_IMAGE_25_FLARE_ROUTE,
   );
-  assert.throws(
-    () => generationProviderRouteForModel("o1key", "nano-banana-pro"),
-    /No o1key generation route/,
-  );
+  assert.equal(generationProviderRouteForModel("o1key", "nano-banana-pro").providerModel, "gemini-3-pro-image-c-sp");
 });
 
 test("downloaded provider output is fully decoded instead of trusting metadata", async () => {

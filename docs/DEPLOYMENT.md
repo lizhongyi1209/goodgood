@@ -19,6 +19,15 @@ Existing 32140 real-provider stack/data remain intact. New model entries use
 existing server adapters; no browser provider credentials. Video second prices
 may be configured/tested but current preview has no durable billing or assets.
 
+GG-054 adds migration 0031 after 0029/0030. It is additive line configuration and
+state persistence, preserving historical hashes/prices/ledger and custom model
+prices. It does not enable Pro globally or populate quality/dedicated prices.
+Pro mappings use owner-provided IDs; Banana 2's unconfirmed lines remain closed.
+The local 32141 stack must update Web, mock Worker and mock provider together
+after migration, retaining user trial data. The disposable `goodgood_gg054_lines_test`
+databases have no attached Worker. Production migration/activation and paid
+provider tests require separate authorized release scope.
+
 ## Read first: ongoing production versus historical conversion
 
 Production is already open as an owner-reviewed controlled alpha. Read

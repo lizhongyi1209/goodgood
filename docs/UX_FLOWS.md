@@ -27,6 +27,18 @@ existing IDs remain stable. `接入详情` reveals the ID's purpose, adapter nam
 configuration version on demand. These technical fields do not repeat in the
 list or normal price editor; conflicts and server-side version checks remain.
 
+GG-054 keeps one Banana model name with three price rows (特价/优质/专线),
+each aligned to 1K/2K/4K. In the editor, line buttons switch independent price
+inputs and trial quotes; unsaved inputs survive switching and one save commits
+all lines. Line enable and model enable are distinct. Enabled lines require
+complete positive prices and a known provider mapping. Original prices remain
+on special; other lines start unpriced/disabled. Pro trial quantity is 1.
+The composer shows three line buttons below a Banana model, defaulting to
+special on new creation/model change. Unavailable lines are disabled; restoring
+an unavailable choice explains recovery instead of silently substituting it.
+Changing lines changes the displayed quote. Drafts/projects/retry/details retain
+the line; accepted tasks retain the choice and quote after disable/reprice.
+
 ## Authentication
 
 - On first load, confirm the GoodGood session before enabling owner-scoped

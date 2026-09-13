@@ -48,6 +48,7 @@ export async function createProviderTask({ attempt, config, job, references = []
         idempotencyKey: `${job.id}:${attempt.ordinal}`,
         jobId: job.id,
         modelId: job.model_id,
+        ...(job.image_line ? { imageLine: job.image_line } : {}),
         prompt: job.prompt,
         references,
         retryOfJobId: job.retry_of_job_id,

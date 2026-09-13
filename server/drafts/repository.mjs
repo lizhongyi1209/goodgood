@@ -73,14 +73,15 @@ export async function saveCreationDraft(
          reference_snapshot, model_id, aspect_ratio,
          resolution, generation_count, thinking_level, google_search,
          quality, background, output_format,
-         version, expires_at, created_at, updated_at, catalog_model_id
+         version, expires_at, created_at, updated_at, catalog_model_id, image_line
        ) VALUES ($1, $2, $1, $3, $4::jsonb, $5, $6, $7, $8, $9,
-                 $10, $11, $12, $13, $14, $15, $16, $16, $17)
+                 $10, $11, $12, $13, $14, $15, $16, $16, $17, $18)
        ON CONFLICT (workspace_id, creator_owner_id) DO UPDATE
          SET prompt = EXCLUDED.prompt,
              reference_snapshot = EXCLUDED.reference_snapshot,
              model_id = EXCLUDED.model_id,
              catalog_model_id = EXCLUDED.catalog_model_id,
+             image_line = EXCLUDED.image_line,
              aspect_ratio = EXCLUDED.aspect_ratio,
              resolution = EXCLUDED.resolution,
              generation_count = EXCLUDED.generation_count,
@@ -111,6 +112,7 @@ export async function saveCreationDraft(
         expiresAt,
         now,
         state.catalogModelId ?? null,
+        state.imageLine ?? null,
       ],
     );
     await client.query("COMMIT");
