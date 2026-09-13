@@ -1,12 +1,12 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-13
-- Current phase: GG-045 积分划拨融入企业与分销管理，本地实现、完整门禁和企业账户桌面检查完成，待用户验收。
-- Current objective: 移除独立积分分配主导航，按业务对象归位账户操作/记录；企业员工预算和原权限不变。
+- Current phase: GG-046 企业与分销积分管理模拟填充，完整本地门禁通过，独立 UI-only 预览已打开，待用户确认。
+- Current objective: 用模拟账户和划拨记录展示已确认的管理布局，不改变真实身份、积分或接口行为。
 
 ## Current checkpoint
 
-- 当前工作树：`feature/GG-045-contextual-credit-management`（`F:/goodgood-worktrees/GG-037`），main `bab17fd` 为祖先，基于干净已验证 GG-044 `bf3a9e9` 顺序新分支；决策 ADR 0058，任务卡 GG-045。其他 worktree 与用户真实视频页面保持不变。
+- 当前工作树：`feature/GG-046-business-style-preview`（`F:/goodgood-worktrees/GG-037`），main `bab17fd` 为祖先，基于干净已验证 GG-045 `9239e77` 顺序新分支；沿用 ADR 0058，任务卡 GG-046。其他 worktree 与用户真实视频页面保持不变。
 - 正式入口仍为 `https://goodgood.o1key.com`；`staging-goodgood.o1key.com` 只是历史名称，不是本任务的测试入口。
 - 组合来源：完整基础框架 `07e9ea5`，再合入 GG-029、GG-030、GG-031；不使用旧页面另起测试版本，也不恢复旧 C6。
 - 代码范围同时包含账户管理、积分记录/账本、企业/分销身份、直属上下级、充值来源积分划拨、邮箱 OTP、企业 Workspace、成员额度、消费记录、资产审阅和管理审计。
@@ -60,13 +60,14 @@
 - 2026-09-13 用户完成 GG-043 页面检查；最新构建在 `http://127.0.0.1:32140/admin/users` 启动，使用已有隔离真实接口栈与原有效站长会话。Windows 保留端口导致 PostgreSQL 宿主映射改为 55448，数据卷保留；本地 OTP 收件箱 58045，Worker readiness 与视频可用状态正常。详见 GG-036 运行记录。
 - GG-044：ADR 0057，移除所有身份全局选择器、主侧栏企业管理/积分分配、共享 shell 管理路由与紧凑响应式成员/消费/资产及统一弹框完成。最新完整门禁 380 项中 366 通过、14 opt-in 跳过；32140 已重启，现有 Chrome 企业会话已检查概览/成员/邀请和额度弹框，无 mutation 或计费请求。详见 GG-044 任务卡。
 - GG-045：ADR 0058，划拨归位企业直属账户/分销客户与下级，共享接口/弹框、紧凑账户事实、行内操作/记录、分页筛选及旧链接兼容完成；最终完整门禁 390 项中 376 通过、14 opt-in 跳过、0 失败。32140 已重启（会话 73051），原企业 Chrome 页面完成旧链接归位、账户/历史/成员只读检查；readiness/video available 正常，无划拨或计费请求。详见 GG-045 任务卡。
-- Next action: 用户在原 32140 企业页检查并反馈；分销账户实际登录/资金实测需明确对象与授权。不切换创作身份，不迁移数据/积分；视频定价/持久化/素材接口仍未接入。
+- GG-046：企业/分销各 4 个模拟账户及收支一致的划拨记录，复用管理页面/筛选/弹框；确认按钮禁用且提交处理再次阻断。仅 preview session 的显式参数生效，不读取真实划拨 API、不回写余额。定向 27/27，完整门禁 396 项中 382 通过、14 opt-in 跳过、0 失败；原 Chrome 标签已打开 `http://127.0.0.1:5173/organizations/accounts?business-preview=1` 并确认填充内容出现，未进行浏览器交互测试。32140 已重启最新构建（会话 8691），readiness 五项 ok、视频 available true，数据/会话/Worker 保留。详见 GG-046 任务卡。
+- Next action: 用户在独立 5173 预览切换企业/分销、查看记录和分配弹框并反馈；正式确认禁用，32140 原真实接口版可继续使用。分销真实登录/资金实测不在本次范围；视频定价/持久化/素材接口仍未接入。
 - Blockers: 无；素材与正式持久/计价链路按用户要求后续处理。
 
 ## Verification sequence
 
-1. GG-045 定向和最终完整门禁通过；不启用 opt-in 写测试或 provider 请求。
-2. 原 Chrome 32140 企业账户只读核验完成，停留直属账户页；非空记录/分销/站长/普通规则与窄屏由自动化契约覆盖，不冒充不同登录/窄屏/mutation 证据。32138 历史结果页未动。
+1. GG-046 定向 27/27、完整门禁 396 项中 382 通过/14 跳过；不启用 opt-in 写测试或提交 provider 任务。
+2. 原 Chrome 单标签用于独立 5173 模拟预览，不冒充真实企业/分销登录或交互测试；32140 真实会话和 32138 历史结果页保持。
 3. 推送、main 合入和生产部署必须获得新的明确授权；部署前按 ADR 0047 排空旧 GPT route 的活动 attempt。
 
 ## Milestones
@@ -95,12 +96,13 @@
 | GG-043 | 用户完成页面检查 | 双模式缩略图与只读素材预览；进入 32140 真实接口站长全排查，未发布 |
 | GG-044 | 本地完成，待用户验收 | 移除全局工作区切换，企业管理并入主界面与紧凑管理布局；未发布 |
 | GG-045 | 本地完成，待用户验收 | 划拨归位企业/分销上下文，行内操作/历史与共享原接口；门禁/企业只读检查完成，未发布 |
+| GG-046 | 本地完成，待用户确认 | 企业/分销模拟账户与记录，复用布局与只读分配弹框；门禁通过，不影响真实账户，未发布 |
 | 完整 C6 / M9 | 搁置 | 删除、举报、商业支付等，见 GG-900—GG-902 |
 
 ## New-session recovery
 
 1. 阅读根 `AGENTS.md`、[CURRENT_STATE](CURRENT_STATE.md)、[WORKFLOW](WORKFLOW.md)、本页和 [BACKLOG](BACKLOG.md)，检查分支/worktree/未提交改动。
-2. 从 `feature/GG-045-contextual-credit-management` 恢复；先读 GG-045 任务卡与 ADR 0058，不恢复旧 C6。
+2. 从 `feature/GG-046-business-style-preview` 恢复；先读 GG-046 任务卡与 ADR 0058，不恢复旧 C6。5173 是独立 UI-only 预览，32140 是原真实接口版，不向后者填充模拟数据。
 3. 数量与本地并发已验证；不要未经费用授权启用 key 或提交真实生成。main 合入和生产部署仍需要新的明确授权。
 
 ## History and update policy

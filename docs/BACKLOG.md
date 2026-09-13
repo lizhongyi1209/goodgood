@@ -6,6 +6,7 @@
 
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
+| GG-046 | 企业与分销积分管理模拟填充 | 本地门禁通过，原 Chrome 已打开独立模拟预览，待用户确认；不写真实账户/积分，未发布 | [任务](tasks/GG-046-business-style-preview.md) |
 | GG-045 | 积分划拨融入企业与分销管理 | 本地门禁与企业账户桌面检查完成，待用户验收；不改积分/权限，未发布 | [任务](tasks/GG-045-contextual-credit-management.md) |
 | GG-044 | 个人账户统一主导航与企业管理布局 | 本地门禁与企业账户桌面检查完成，待用户验收；未发布 | [任务](tasks/GG-044-unified-account-navigation.md) |
 | GG-001 | 项目记忆精简、交接协议、历史 C6 隔离 | 已完成（不需上线） | [任务](tasks/GG-001-project-continuity.md) |
@@ -57,7 +58,7 @@
 
 | GG-043 | 放大 1:1 素材缩略图与视频模式点击预览 | 本地门禁通过，用户完成页面检查；最新候选已启动 32140 供真实接口站长全排查，未发布 | [任务](tasks/GG-043-larger-reference-previews.md) / [运行记录](tasks/GG-036-seedance-page-smoke.md) |
 
-GG-024—GG-045 已由隔离任务占用；下一个普通产品需求从 **GG-046** 分配并检查是否已被占用。每次 alpha 发布仍须取得
+GG-024—GG-046 已由隔离任务占用；下一个普通产品需求从 **GG-047** 分配并检查是否已被占用。每次 alpha 发布仍须取得
 新鲜、精确绑定候选的证据并通过门禁；本次证据不能复用。
 完整发布证据见[累计发布记录](releases/2026-09-09-cumulative-alpha-release.md)。
 

@@ -738,6 +738,11 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .distribution-loading { min-height: 54px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
 .distribution-loading svg { width: 17px; animation: status-spin 1s linear infinite; }
 .business-account-facts { margin: 0; padding: 16px 0; display: flex; flex-wrap: wrap; gap: 24px 40px; }
+.business-style-preview-notice { margin-bottom: 24px; padding: 12px 16px; border-radius: var(--radius-md); background: var(--white); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.business-style-preview-notice strong { display: block; color: var(--ink); font-size: 13px; }
+.business-style-preview-notice span { display: block; margin-top: 4px; color: var(--muted); font-size: 12px; }
+.business-style-preview-controls { display: flex; flex-wrap: wrap; gap: 4px; }
+.business-style-preview-controls button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-deep); }
 .business-account-facts > div { display: flex; align-items: baseline; gap: 10px; }
 .business-account-facts dt { color: var(--muted); font-size: 12px; }
 .business-account-facts dd { margin: 0; color: var(--ink); font-size: 18px; font-weight: 650; font-variant-numeric: tabular-nums; }

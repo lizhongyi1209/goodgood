@@ -4,11 +4,12 @@ import { Building2, Coins, History, Images, Network, Users } from "lucide-react"
 import { navigateWorkspace } from "@/features/navigation/workspace-route.mjs";
 import type { OrganizationManagementTab } from "./organization-management-page";
 
-export function EnterpriseManagementNavigation({ activeTab, organizationId, allocationEnabled = false, onTransfers }: Readonly<{
+export function EnterpriseManagementNavigation({ activeTab, organizationId, allocationEnabled = false, onTransfers, onAccountTabChange }: Readonly<{
   activeTab: OrganizationManagementTab | "accounts" | "transfers";
   organizationId?: string;
   allocationEnabled?: boolean;
   onTransfers?: () => void;
+  onAccountTabChange?: (tab: "accounts" | "transfers") => void;
 }>) {
   const companyTabs = organizationId ? [
     { id: "overview" as const, label: "概览", icon: Building2 },
@@ -24,9 +25,9 @@ export function EnterpriseManagementNavigation({ activeTab, organizationId, allo
     </button>)}
     {allocationEnabled && <>
       <button className={activeTab === "accounts" ? "active" : ""} aria-current={activeTab === "accounts" ? "page" : undefined}
-        onClick={() => navigateWorkspace({ kind: "enterpriseAccounts", tab: "accounts" })}><Network size={16} />直属账户</button>
+        onClick={() => onAccountTabChange ? onAccountTabChange("accounts") : navigateWorkspace({ kind: "enterpriseAccounts", tab: "accounts" })}><Network size={16} />直属账户</button>
       <button className={activeTab === "transfers" ? "active" : ""} aria-current={activeTab === "transfers" ? "page" : undefined}
-        onClick={() => { onTransfers?.(); navigateWorkspace({ kind: "enterpriseAccounts", tab: "transfers" }); }}><History size={16} />划拨记录</button>
+        onClick={() => { onTransfers?.(); if (onAccountTabChange) onAccountTabChange("transfers"); else navigateWorkspace({ kind: "enterpriseAccounts", tab: "transfers" }); }}><History size={16} />划拨记录</button>
     </>}
   </nav>;
 }

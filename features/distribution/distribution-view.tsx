@@ -25,6 +25,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { transfersForCounterparty } from "./transfer-history.mjs";
 import { transferAndRefresh } from "./transfer-and-refresh";
+import type { DistributionPreviewData } from "./business-style-fixtures";
 import type { BillingAccountSummary } from "@/shared/contracts/billing";
 import type {
   CreditTransferPage,
@@ -108,13 +109,14 @@ type Props = Readonly<{
   historyAccount: Pick<DistributionChild, "id" | "email"> | null;
   onShowRecords: (child: DistributionChild) => void;
   onClearRecords: () => void;
+  previewData?: DistributionPreviewData;
 }>;
 
-export function DistributionView({ enabled, onAccountChange, tab, context, historyAccount, onShowRecords, onClearRecords }: Props) {
-  const [summary, setSummary] = useState<DistributionSummary | null>(null);
-  const [children, setChildren] = useState<readonly DistributionChild[]>([]);
-  const [transfers, setTransfers] = useState<CreditTransferPage | null>(null);
-  const [loading, setLoading] = useState(true);
+export function DistributionView({ enabled, onAccountChange, tab, context, historyAccount, onShowRecords, onClearRecords, previewData }: Props) {
+  const [summary, setSummary] = useState<DistributionSummary | null>(previewData?.summary ?? null);
+  const [children, setChildren] = useState<readonly DistributionChild[]>(previewData?.directAccounts ?? []);
+  const [transfers, setTransfers] = useState<CreditTransferPage | null>(previewData?.transfers ?? null);
+  const [loading, setLoading] = useState(!previewData);
   const [error, setError] = useState<string | null>(null);
   const [selectedChild, setSelectedChild] = useState<DistributionChild | null>(null);
   const [amount, setAmount] = useState("10");
@@ -127,7 +129,7 @@ export function DistributionView({ enabled, onAccountChange, tab, context, histo
   const loadRequestRef = useRef(0);
 
   const load = useCallback(async () => {
-    if (!enabled) return;
+    if (!enabled || previewData) return;
     const request = ++loadRequestRef.current;
     setLoading(true);
     setError(null);
@@ -153,7 +155,7 @@ export function DistributionView({ enabled, onAccountChange, tab, context, histo
     } finally {
       if (request === loadRequestRef.current) setLoading(false);
     }
-  }, [enabled, onAccountChange]);
+  }, [enabled, onAccountChange, previewData]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
@@ -177,7 +179,7 @@ export function DistributionView({ enabled, onAccountChange, tab, context, histo
   };
 
   const submitTransfer = async () => {
-    if (!selectedChild || !amountIsValid) return;
+    if (previewData || !selectedChild || !amountIsValid) return;
     setSubmitting(true);
     setSubmitError(null);
     try {
@@ -221,7 +223,7 @@ export function DistributionView({ enabled, onAccountChange, tab, context, histo
   };
 
   const loadMore = async () => {
-    if (!transfers?.nextCursor || loadingMore) return;
+    if (previewData || !transfers?.nextCursor || loadingMore) return;
     const request = loadRequestRef.current;
     setLoadingMore(true);
     setLoadMoreError(null);
@@ -275,6 +277,7 @@ export function DistributionView({ enabled, onAccountChange, tab, context, histo
             <DialogDescription>向 {selectedChild?.email} 划拨充值来源积分。提交后不可撤回或编辑。</DialogDescription>
           </DialogHeader>
           <div className="admin-action-dialog-body">
+            {previewData && <p className="organization-note">模拟预览 · 不会提交实际划拨请求。</p>}
             <div className="admin-action-account-summary">
               <span>当前可分配</span>
               <strong>{summary.account.transferableCredits} 积分</strong>
@@ -306,7 +309,7 @@ export function DistributionView({ enabled, onAccountChange, tab, context, histo
           </div>
           <DialogFooter className="admin-action-dialog-footer">
             <Button variant="ghost" disabled={submitting} onClick={() => setSelectedChild(null)}>取消</Button>
-            <Button disabled={submitting || !amountIsValid} onClick={() => void submitTransfer()}>
+            <Button disabled={Boolean(previewData) || submitting || !amountIsValid} onClick={() => void submitTransfer()}>
               {submitting && <LoaderCircle className="animate-spin" />}确认划拨
             </Button>
           </DialogFooter>

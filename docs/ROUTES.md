@@ -28,6 +28,12 @@ native history.
 
 Do not describe placeholders as shipped features.
 
+GG-046 uses `/organizations/accounts?business-preview=1` only with an existing
+UI-only preview session (non-production, no configured AUTH_MODE). It fills
+shared enterprise/distributor allocation content with labelled synthetic data,
+keeps context/tab/filter changes in memory, and disables writes. The query does
+not override an authenticated real account or expose a new production route.
+
 The current authenticated Node API also owns `GET /api/references` for the
 owner's accepted reusable materials, `POST /api/references` for upload intents,
 and `POST /api/references/:referenceId/complete` for post-upload validation.

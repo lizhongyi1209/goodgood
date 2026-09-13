@@ -114,6 +114,7 @@ import {
 } from "@/features/billing/http-billing-boundary";
 import { CreditActivityView } from "@/features/billing/credit-activity-view";
 import { BusinessManagementView } from "@/features/distribution/business-management-view";
+import { BusinessManagementStylePreview } from "@/features/distribution/business-management-style-preview";
 import { canonicalBusinessRoute } from "@/features/distribution/business-route.mjs";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import {
@@ -515,6 +516,7 @@ export default function Home({
   const [activeView, setActiveView] = useState<ActiveView>("create");
   const [organizationRoute, setOrganizationRoute] = useState<{ id: string; tab: OrganizationManagementTab } | null>(null);
   const [enterpriseAccountTab, setEnterpriseAccountTab] = useState<"accounts" | "transfers" | null>(null);
+  const [businessStylePreview, setBusinessStylePreview] = useState(false);
   const [distributionTab, setDistributionTab] = useState<"children" | "transfers">("children");
   const [generationRuns, setGenerationRuns] = useState<readonly TrackedGenerationRun[]>([]);
   const [creationBatches, setCreationBatches] = useState<AssetBatch[]>([]);
@@ -917,6 +919,7 @@ export default function Home({
         setAuthenticationSession(session);
         if (session?.preview) {
           setMixedMediaStylePreview(url.searchParams.get("media-preview") === "1");
+          setBusinessStylePreview(url.searchParams.get("business-preview") === "1");
           setProjectsLoading(false);
           setAssetsLoading(false);
         }
@@ -3225,7 +3228,7 @@ export default function Home({
               onBack={handleCreateNav}
             />
           ) : activeView === "organizations" ? (
-            enterpriseAccountTab ? (
+            authenticationSession?.preview && businessStylePreview ? <BusinessManagementStylePreview /> : enterpriseAccountTab ? (
               <BusinessManagementView key="enterprise" context="enterprise" tab={enterpriseAccountTab === "accounts" ? "children" : "transfers"}
                 organizationId={manageableOrganizations(workspaceDirectory.workspaces).length === 1 ? manageableOrganizations(workspaceDirectory.workspaces)[0].id : undefined}
                 enabled={Boolean(authenticationSession && !authenticationSession.preview && authenticationSession.access.status === "active" && authenticationSession.account.businessRole === "enterprise")}

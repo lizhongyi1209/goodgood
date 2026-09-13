@@ -25,6 +25,10 @@ and offers a read-only refresh. An empty counterparty filter with more pages
 explicitly says only loaded records are empty and retains load-more/all-records.
 Failed pagination preserves loaded rows and the counterparty filter.
 
+GG-046 simulated lists/history are explicitly preview-only. Allocation dialogs
+can be inspected, but final submission is disabled with a text explanation and
+a handler guard. Mock loads never fall back to real reads or writes.
+
 | Category | Example code | UI placement | Default recovery |
 | --- | --- | --- | --- |
 | Input | `INVALID_PROMPT` | Composer field/toast | Focus and correct |

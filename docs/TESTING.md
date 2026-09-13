@@ -860,6 +860,13 @@ settlement remains outside the current scope.
 
 ## Release gate
 
+GG-046 style-fixture tests prove coherent allocation totals/timestamps,
+nonempty shared lists and histories, simulation/context labels, no balance
+callback or persistence, disabled read/page/write paths, and preview-session
+gating. All fixture data stays in memory; never seed it into the real-provider
+database/queue. Live 32140 auth continues to use actual data, while UI-only
+5173 uses its existing preview session without credentials.
+
 - Dependency install is locked and reproducible.
 - Lint, full TypeScript check, build, and automated tests pass.
 - No secrets or real user assets in the diff.
