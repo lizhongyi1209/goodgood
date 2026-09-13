@@ -2,15 +2,11 @@
 
 import {
   ArrowLeft,
-  Building2,
   CheckCircle2,
-  Coins,
   Download,
-  Images,
   LoaderCircle,
   RefreshCw,
   UserPlus,
-  Users,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
@@ -47,6 +43,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { navigateWorkspace } from "@/features/navigation/workspace-route.mjs";
 import { saveImageToLocal } from "@/features/assets/image-download";
 import { EnterpriseManagementNavigation } from "./enterprise-management-navigation";
+import { OrganizationOverview } from "./organization-overview";
 import {
   inviteOrganizationMember,
   readOrganizationAssetDownloadUrl,
@@ -80,16 +77,6 @@ function formatDate(value: string) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
-}
-
-function navigationItems(workspaceId: string) {
-  const root = `/organizations/${encodeURIComponent(workspaceId)}`;
-  return [
-    { href: root, icon: Building2, id: "overview" as const, label: "概览" },
-    { href: `${root}/members`, icon: Users, id: "members" as const, label: "成员与额度" },
-    { href: `${root}/usage`, icon: Coins, id: "usage" as const, label: "消费记录" },
-    { href: `${root}/assets`, icon: Images, id: "assets" as const, label: "团队资产" },
-  ];
 }
 
 export function OrganizationManagementView({
@@ -281,7 +268,6 @@ export function OrganizationManagementView({
 
   if (!enabled) return <section className="organization-state">请使用已开通的账户查看企业管理。</section>;
 
-  const navItems = navigationItems(workspaceId);
   const currentMembershipId = dashboard?.currentMembershipId ?? null;
   const navigateTab = (tab: OrganizationManagementTab) => navigateWorkspace({ kind: "organizations", organizationId: workspaceId, tab });
   const roleControl = (member: OrganizationMember) => <Select
@@ -314,18 +300,10 @@ export function OrganizationManagementView({
 
     {loadError ? <Alert variant="destructive" className="organization-load-error">
       <AlertTitle>企业信息加载失败</AlertTitle><AlertDescription><span>{loadError}</span><Button size="sm" variant="ghost" onClick={() => void load()}><RefreshCw />重试</Button><Button size="sm" variant="ghost" onClick={() => navigateWorkspace({ kind: "organizations" })}>返回企业列表</Button></AlertDescription>
-    </Alert> : loading || !dashboard ? <div className="organization-loading" role="status" aria-label="正在加载企业信息"><Skeleton className="h-24 rounded-2xl" /><Skeleton className="h-48 rounded-2xl" /></div> : activeTab === "overview" ? <>
-      <div className="organization-summary-grid">
-        {[
-          ["企业可用积分", dashboard.account?.availableCredits ?? "0"],
-          ["未分配额度", dashboard.account?.unallocatedCredits ?? "0"],
-          ["有效成员", String(dashboard.members.filter((member) => member.status === "active").length)],
-          ["待接受邀请", String(dashboard.invitations.filter((invitation) => invitation.status === "pending").length)],
-        ].map(([label, value]) => <div className="organization-summary" key={label}><span>{label}</span><strong>{value}</strong></div>)}
-      </div>
-      <div className="organization-shortcuts">{navItems.slice(1).map((item) => <button key={item.id} onClick={() => navigateTab(item.id)}><item.icon size={18} /><strong>{item.label}</strong><span>{item.id === "members" ? "邀请员工，调整创作额度" : item.id === "usage" ? "核对企业创作积分消耗" : "查看团队生成的成品"}</span></button>)}</div>
-      <p className="organization-note">员工额度是企业创作预算；直属账户接收的是当前个人账户的充值来源积分，两者独立。邀请员工不会建立直属账户关系。</p>
-    </> : activeTab === "members" ? <>
+    </Alert> : loading || !dashboard ? <div className="organization-loading" role="status" aria-label="正在加载企业信息"><Skeleton className="h-24 rounded-2xl" /><Skeleton className="h-48 rounded-2xl" /></div> : activeTab === "overview" ?
+      <OrganizationOverview key={workspaceId} dashboard={dashboard} mutating={mutating} onAdjustBudget={openBudget}
+        onMembers={() => navigateTab("members")} onAssets={() => navigateTab("assets")} />
+    : activeTab === "members" ? <>
       <div className="organization-section-heading"><div><h2>成员与额度</h2><p>剩余额度不包含已消费和在途预留，减少额度不会追回已使用积分。</p></div><Button variant="ghost" onClick={() => { setActionError(null); setInviteOpen(true); }}><UserPlus />邀请成员</Button></div>
       {dashboard.invitations.length > 0 && <section className="organization-invitations" aria-label="待接受邀请"><h3>待接受邀请</h3>
         {dashboard.invitations.map((invitation) => <div className="organization-invitation-row" key={invitation.id}><div><strong>{invitation.email}</strong><span>{ROLE_LABELS[invitation.role]} · {formatDate(invitation.expiresAt)} 前有效</span></div>

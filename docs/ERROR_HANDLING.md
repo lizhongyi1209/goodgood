@@ -29,6 +29,14 @@ GG-046 simulated lists/history are explicitly preview-only. Allocation dialogs
 can be inspected, but final submission is disabled with a text explanation and
 a handler guard. Mock loads never fall back to real reads or writes.
 
+GG-048 overview keeps missing monthly aggregates and unconfigured credit accounts
+distinct from real zero. Dashboard `account: null` means no credit account exists,
+not a failed request; ask the site owner to fund it, never claim healthy credit.
+Recent-output loading/failure/retry is local to its panel and preserves
+balance/member facts; late or unmounted requests are ignored. Image detail has
+loading, failure, remount retry and read-only signed-address refresh. None of
+these recovery actions creates assets, generation tasks or allocations.
+
 | Category | Example code | UI placement | Default recovery |
 | --- | --- | --- | --- |
 | Input | `INVALID_PROMPT` | Composer field/toast | Focus and correct |

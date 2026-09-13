@@ -259,6 +259,12 @@ individual icon. Upload, settings, and send align to the same 40px box.
   its visual state.
 ## Enterprise workspace management
 
+- ADR 0059 makes overview a compact operational page, not repeated navigation
+  cards: four metrics, actionable credit/invitation attention, member usage and
+  recent team outputs. Monthly aggregates show `— / 待接入统计` until connected;
+  current member figures are explicitly cumulative. Use white rounded lists,
+  neutral row actions, two columns that stack on narrow screens, and bounded
+  image thumbnails opening a focused, complete-image read-only dialog.
 - ADR 0057 removes all global Workspace selectors, including site owners.
   Enterprise management and eligible credit distribution use the normal main
   sidebar. Enterprise detail has compact horizontal content tabs, not a second

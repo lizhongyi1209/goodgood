@@ -972,6 +972,61 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .organization-summary { padding: 20px; border-radius: var(--radius-lg); background: var(--white); }
 .organization-summary span { color: var(--muted); font-size: 12px; }
 .organization-summary strong { display: block; margin-top: 8px; font-size: 24px; font-weight: 650; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.organization-overview .organization-summary p { margin: 8px 0 0; color: var(--quiet); font-size: 11px; }
+.organization-overview-period-note { margin: 12px 0 0; color: var(--quiet); font-size: 11px; line-height: 1.65; }
+.organization-overview-columns { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 24px; }
+.organization-overview-columns > section { min-width: 0; }
+.organization-overview .organization-section-heading { gap: 8px; }
+.organization-overview .organization-section-heading [data-slot="button"] { flex-shrink: 0; height: 32px; padding: 0 8px; font-size: 12px; }
+.organization-overview-attention-list, .organization-overview-member-list { overflow: hidden; border-radius: var(--radius-lg); background: var(--white); }
+.organization-overview-attention-row { padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
+.organization-overview-attention-row + .organization-overview-attention-row { border-top: 1px solid var(--line); }
+.organization-overview-attention-row > svg { flex-shrink: 0; color: var(--accent-deep); }
+.organization-overview-attention-row > div { flex: 1; min-width: 0; }
+.organization-overview-attention-row strong { font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+.organization-overview-attention-row p { margin: 4px 0 0; color: var(--muted); font-size: 12px; line-height: 1.65; }
+.organization-overview-attention-row [data-slot="button"] { flex-shrink: 0; padding: 0 8px; font-size: 12px; }
+.organization-overview-clear { padding: 16px; display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12px; }
+.organization-overview-member-head, .organization-overview-member-row { padding: 12px 16px; display: grid; grid-template-columns: minmax(0,1fr) 76px 72px 72px; align-items: center; gap: 8px; font-size: 12px; }
+.organization-overview-member-head { color: var(--muted); font-size: 11px; }
+.organization-overview-member-row { border-top: 1px solid var(--line); }
+.organization-overview-member-row strong { min-width: 0; font-size: 12px; font-weight: 600; overflow-wrap: anywhere; }
+.organization-overview-member-row strong small { display: block; margin-top: 4px; color: var(--quiet); font-size: 11px; font-weight: 400; }
+.organization-overview-member-row > span { font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.organization-overview-member-row > span small { display: none; }
+.organization-overview-member-row [data-slot="button"] { height: 32px; padding: 0 4px; font-size: 12px; }
+.organization-overview-empty { min-height: 220px; margin: 0; padding: 24px 16px; border-radius: var(--radius-lg); background: var(--white); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; color: var(--muted); font-size: 12px; line-height: 1.65; overflow-wrap: anywhere; }
+.organization-overview-empty p { margin: 0; }
+.organization-overview-empty span { color: var(--quiet); font-size: 11px; }
+.organization-overview-output-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); align-items: start; gap: 12px 4px; }
+.organization-overview-output { min-width: 0; padding: 0 0 8px; border: 0; border-radius: 8px; overflow: hidden; background: var(--white); color: var(--ink); text-align: left; }
+.organization-overview-output:hover { background: var(--soft); }
+.organization-overview-output img { display: block; width: 100%; background: var(--soft); }
+.organization-overview-output span, .organization-overview-output time { display: block; margin: 8px 8px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+.organization-overview-output time { margin-top: 4px; color: var(--quiet); font-size: 10px; }
+.organization-overview-output-skeleton { width: 100%; aspect-ratio: 1/1; border-radius: 8px; }
+.organization-overview-output:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.organization-overview-detail[data-slot="dialog-content"] { width: min(840px,calc(100vw - 32px)); max-width: 840px; }
+.organization-overview-detail-body { padding: 0 20px 20px; overflow-y: auto; max-height: calc(100dvh - 150px); }
+.organization-overview-detail-stage { position: relative; height: min(54dvh,480px); border-radius: 12px; background: var(--soft); display: grid; place-items: center; }
+.organization-overview-detail-stage img { position: absolute; width: 100%; height: 100%; }
+.organization-overview-detail-stage > span, .organization-overview-detail-stage > div { position: relative; color: var(--muted); font-size: 12px; text-align: center; }
+.organization-overview-detail-body > p { margin: 16px 0 8px; font-size: 13px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
+.organization-overview-detail-body > span { color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
+@media (max-width: 1000px) {
+  .organization-overview-columns { grid-template-columns: minmax(0,1fr); gap: 0; }
+}
+@media (max-width: 600px) {
+  .organization-overview-member-head { display: none; }
+  .organization-overview-member-row { grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; }
+  .organization-overview-member-row > strong { grid-column: 1/-1; }
+  .organization-overview-member-row > span small { display: block; margin-bottom: 4px; color: var(--muted); font-size: 11px; }
+  .organization-overview-member-row [data-slot="button"] { justify-self: start; }
+  .organization-overview-attention-row { align-items: start; flex-wrap: wrap; }
+  .organization-overview-attention-row > div { flex-basis: calc(100% - 30px); }
+  .organization-overview-attention-row [data-slot="button"] { margin-left: 29px; }
+  .organization-overview-output-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
 .organization-shortcuts, .organization-directory-grid { margin-top: 24px; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
 .organization-shortcuts button, .organization-directory-card { padding: 20px; border: 0; border-radius: var(--radius-lg); background: var(--white); display: grid; justify-items: start; gap: 8px; color: var(--ink); text-align: left; }
 .organization-shortcuts button:hover, .organization-directory-card:hover { background: var(--soft); }

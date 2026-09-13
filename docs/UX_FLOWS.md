@@ -154,6 +154,15 @@ directory without automatically entering enterprise creation.
 Legacy scoped creation URLs retain membership checks and quiet company context;
 returning to personal creation never transfers drafts, credit or Assets.
 
+ADR 0059 replaces overview shortcut tiles with operational facts. Zero company
+credit, missing/paused/exhausted active-member budgets and pending invitations
+expiring within 48 hours lead to the existing budget dialog or member page;
+opening overview never allocates credit. Members are ranked by cumulative
+settled usage, not monthly activity. Monthly metrics remain explicitly pending
+until complete aggregation exists. Recent successful company outputs use the
+manager asset boundary, up to six previews; clicking opens a read-only dialog
+with prompt, parameters, creator and time. Closing restores thumbnail focus.
+
 The platform site owner creates an organization for a verified principal and
 assigns its first `org_owner`. Organization owners/admins then use a separate
 enterprise management view in the normal app shell to:

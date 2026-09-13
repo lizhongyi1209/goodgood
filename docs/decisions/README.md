@@ -87,3 +87,4 @@ ADR 0053 adds standalone-delimited concurrent prompt batches for GG-040.
 - `0056-larger-reference-previews.md` — larger shared thumbnails and video-mode material inspection for GG-043.
 - `0057-personal-account-main-navigation.md` — personal shell, no global Workspace selector, enterprise main navigation for GG-044.
 - `0058-contextual-business-credit-management.md` — row-level allocation and history within enterprise/distributor management for GG-045.
+- `0059-actionable-enterprise-overview.md` — administrator metrics, attention, member usage and recent outputs for GG-048; period aggregation deferred.

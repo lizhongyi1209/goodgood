@@ -7,6 +7,15 @@ to distinguish UI preview, durable local integration, live API, and browser proo
 
 ## Current baseline
 
+GG-048 uses in-memory fixtures and SSR only: actual-zero/unconfigured/pending metrics,
+active-member budget attention, clocked 48-hour invitation deadlines, exact
+integer cumulative ranking, successful actual-output ordering and six-preview
+limit, populated/empty/loading/local-failure states, existing budget dialog
+wiring, request-version cleanup, focus return and responsive containment. It
+never seeds a database/queue or calls providers. Browser evidence on the existing
+real local enterprise account is recorded separately; empty real assets do not
+constitute proof of populated thumbnail/dialog interaction.
+
 GG-044 tests enterprise entry visibility independently from active manager
 membership, stable directory/detail tab URLs, shared-shell/auth wiring,
 SSR directory loading/empty/error/invitation/multiple-company states, preserved
