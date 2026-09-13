@@ -359,8 +359,8 @@ export function AccountManagementPage() {
   }
 
   return (
-    <main className="min-h-dvh bg-white text-zinc-950">
-      <AdminManagementHeader activePage="users" onLogout={() => void logout()} />
+    <main className="admin-management-page min-h-dvh bg-white text-zinc-950">
+      <AdminManagementHeader activePage="users" />
 
       <div className="mx-auto max-w-[1500px] px-5 py-8 lg:px-8 lg:py-10">
         <div>

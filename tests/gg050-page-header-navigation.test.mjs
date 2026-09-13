@@ -41,19 +41,19 @@ test("GG-050 four workspace page headers retain the accepted absence of return r
 test("GG-057 shared site-owner navigation marks either page and links directly to management and creation", async () => {
   const { AdminManagementHeader } = await vite.ssrLoadModule("/features/admin/admin-management-header.tsx");
   for (const activePage of ["users", "models"]) {
-    const html = render(AdminManagementHeader, { activePage, onLogout: noop });
+    const html = render(AdminManagementHeader, { activePage });
     assert.match(html, /站长管理/);
     assert.match(html, /href="\/admin\/users"/);
     assert.match(html, /href="\/admin\/models"/);
     assert.match(html, new RegExp(`href="/admin/${activePage}" aria-current="page"`));
     assert.equal((html.match(/aria-current="page"/g) ?? []).length, 1);
     assert.match(html, /href="\/create"[^>]*>[\s\S]*?返回创作/);
-    assert.match(html, /aria-label="退出登录"/);
+    assert.doesNotMatch(html, /退出登录/);
     assert.doesNotMatch(html, /\/api\/auth\/login|history\.back/);
   }
   for (const [file, activePage] of [["account", "users"], ["model", "models"]]) {
     const text = await source(`features/admin/${file}-management-page.tsx`);
-    assert.match(text, new RegExp(`<AdminManagementHeader activePage="${activePage}" onLogout=`));
+    assert.match(text, new RegExp(`<AdminManagementHeader activePage="${activePage}" />`));
     assert.ok(text.indexOf('session.account.role !== "site_owner"') < text.indexOf("<AdminManagementHeader"));
   }
 });
@@ -119,6 +119,6 @@ test("GG-050 error-body recovery, close, new creation and logout remain explicit
   assert.match(enterprise, /企业信息加载失败[\s\S]*返回企业列表/);
   const admin = await source("features/admin/account-management-page.tsx");
   assert.match(admin, /没有账户管理权限[\s\S]*href="\/create">返回创作/);
-  assert.match(admin, /<AdminManagementHeader activePage="users" onLogout=\{\(\) => void logout\(\)\}/);
+  assert.match(admin, /onLogout=\{\(\) => void logout\(\)\}/);
   assert.match(await source("features/creation/video-preview-detail.tsx"), /aria-label="关闭视频详情" onClick=\{\(\) => onSelect\(null\)\}/);
 });

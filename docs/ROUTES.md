@@ -215,7 +215,8 @@ do not create separate draft or history state.
 - ADR 0061 removes the audited workspace page families' persistent header return
   entries, without replacements. ADR 0066 supersedes its account-page restriction:
   `/admin/users` and `/admin/models` share `站长管理` navigation, active-page links,
-  a direct `/create` return and logout. They remain outside the creator shell.
+  a direct `/create` return. GG-058 removes header logout; the creator account
+  menu and access gates retain it. They remain outside the creator shell.
   Routes and browser history remain compatible;
   content tabs, error-body recovery, detail/dialog close, logout and
   `新建创作` are unaffected. Management navigation uses page URLs, never login

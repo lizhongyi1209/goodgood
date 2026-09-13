@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { ArrowLeft, LogOut, SlidersHorizontal, UsersRound } from "lucide-react";
+import { ArrowLeft, SlidersHorizontal, UsersRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const pages = [
@@ -11,10 +11,8 @@ const pages = [
 
 export function AdminManagementHeader({
   activePage,
-  onLogout,
 }: {
   activePage: "users" | "models";
-  onLogout: () => void;
 }) {
   return (
     <header className="sticky top-0 z-20 border-b border-zinc-200 bg-white">
@@ -30,9 +28,6 @@ export function AdminManagementHeader({
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="sm" asChild>
               <a href="/create"><ArrowLeft aria-hidden="true" />返回创作</a>
-            </Button>
-            <Button variant="ghost" size="icon" aria-label="退出登录" onClick={onLogout}>
-              <LogOut aria-hidden="true" />
             </Button>
           </div>
         </div>

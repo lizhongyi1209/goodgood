@@ -10,6 +10,13 @@ with the actual Vinext Image shim. Browser evidence separately covers the
 existing 32141 site-owner session, both tabs, creation return and Back/Forward;
 read-only snapshots check model configuration and immutable history preservation.
 
+GG-058 refines that navigation check to require no direct header logout while
+retaining access-gate sign-out. Browser checks repeat account/model switching,
+inspect the single heading and computed Chinese font/synthesis settings, and
+check screenshots separately. Current platform font evidence cannot prove
+Windows-specific rasterization from the owner's screenshot; do not report an
+unreproduced duplicate-DOM cause or a cross-platform guarantee.
+
 GG-052 coverage verifies exact RMB/credit conversion, image/second quotes,
 complete-price enabling, template validation, site-owner permissions, empty
 and enabled-only directory reads, atomic price/audit saves, rollback/version

@@ -14,7 +14,9 @@ development sign-in.
 
 Share one site-owner header between `/admin/users` and `/admin/models`, labelled
 `站长管理`, with persistent `账户管理` and `模型管理` links and an accessible
-current-page state. Provide `返回创作` as a direct `/create` link, plus logout.
+current-page state. Provide `返回创作` as a direct `/create` link. GG-058's
+2026-09-13 owner refinement removes direct header logout; sign-out remains in
+the creator account menu and account-access gates.
 Use quiet, responsive white chrome and the existing Palace Red selection style.
 This supersedes ADR 0061's standalone account-page header restriction only;
 other page families keep their accepted navigation. Do not merge these pages

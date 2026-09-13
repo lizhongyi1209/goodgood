@@ -388,8 +388,8 @@ export function ModelManagementPage() {
     );
 
   return (
-    <main className="min-h-dvh bg-white text-zinc-950">
-      <AdminManagementHeader activePage="models" onLogout={() => void logout()} />
+    <main className="admin-management-page min-h-dvh bg-white text-zinc-950">
+      <AdminManagementHeader activePage="models" />
       <div className="mx-auto max-w-[1500px] px-5 py-8 lg:px-8 lg:py-10">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>

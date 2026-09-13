@@ -9,6 +9,8 @@
 - `返回创作` and the brand link go directly to `/create`; switching tabs uses
   `/admin/users` and `/admin/models`. Neither action begins login or replays
   browser history. Native Back/Forward remains available.
+- GG-058 removes direct logout from the management header. Use `返回创作` and
+  the creator account menu for sign-out; access gates retain their logout action.
 - Revisiting `/api/auth/login` in explicitly configured local mode retains a
   valid current identity or signs in the configured default, then redirects to
   a validated local return path. Missing local defaults fail closed. Production

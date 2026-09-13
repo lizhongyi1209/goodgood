@@ -229,7 +229,9 @@ and error-body recovery actions retain their current semantics and focus behavio
 
 - GG-057 shares the account/model header under `站长管理`: quiet white sticky
   chrome, one matching content width, two compact navigation links, Palace Red
-  current-page fill/text plus `aria-current`, and direct creation/logout actions.
+  current-page fill/text plus `aria-current`, and the direct creation action.
+  GG-058 removes header logout and sets an explicit Chinese sans-serif fallback
+  stack with no synthesized font weights on these two page bodies.
   Narrow screens wrap the brand/action row and retain both text navigation
   labels below it. Match the two page headings and spacing; add no shadow or
   decorative management hero.

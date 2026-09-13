@@ -1,24 +1,24 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-13
-- Current phase: GG-057 本地实现/完整门禁/运行同步/浏览器验收完成，线上候选仍在本地准备。
-- Current objective: 统一站长账户/模型管理导航，修复返回旧 local 登录请求，同时保留用户价格与历史数据。
+- Current phase: GG-058 本地调整/完整门禁/原页面同步/Chrome 检查完成，原 Windows 文字待用户复看；线上候选仍在本地准备。
+- Current objective: 站长两页明确中文字体/关闭合成字重，右上角仅保留返回创作；保持导航与用户价格/历史。
 
 ## Current checkpoint
 
-- 当前任务 [GG-057](tasks/GG-057-admin-navigation.md)，`fix/GG-057-admin-navigation`、`F:/goodgood-worktrees/GG-057`，接续已验收本地候选 GG-056 `3509e6e`；main `bab17fd` 已验证为祖先。ADR 0066 只替代 ADR 0061 的站长页头限制。
-- 两页共用站长导航/当前项/直接返回创作/退出；显式 local 登录保留有效身份或恢复已配置默认身份，生产模式和管理授权不变。无数据迁移、不重设价格/启禁/积分。
-- 32141 已运行 GG-057 的独立 `goodgood-gg052` Web/Worker/mock，readiness 全通过；迁移 0032 与试价归档保留。本任务没有新迁移、fixtures 或真实请求。全部模型配置及九类历史 count/hash 前后一致；用户当前 Pro 总开关与 Banana 2 全部线路已启用，三个 GPT 条目禁用，保留最新实际状态。
+- 当前任务 [GG-058](tasks/GG-058-admin-text-and-actions.md)，`fix/GG-058-admin-text-and-actions`、`F:/goodgood-worktrees/GG-058`，接续 GG-057 `ddb465b`；main 已验证为祖先。用户细化 ADR 0066 为页头无退出。
+- 两页字体限定站长主体、移除共享页头退出回调，返回创作/当前导航保留；账户菜单/访问门禁仍可退出。原 local 登录修复与后端授权不变。无迁移、不重设价格/启禁/积分。
+- 32141 Web 已更新为 GG-058；独立 `goodgood-gg052` Worker/mock 保留未变的 GG-057 角色，三角色 ready 全通过。全部模型配置及九类历史 count/hash 前后一致；不写入、不迁移、不触发生成。
 - 正式 `https://goodgood.o1key.com`、production revision `65ceb168`/迁移 0019 不变；`staging-goodgood.o1key.com` 仅历史名称。旧 32140 是真实 provider 栈，不能放 fixtures/outbox；本轮不推送/合 main/发布。
-- Verification: 本任务定向登录/导航/OIDC/OTP 34/34；一次完整门禁 432 通过/16 opt-in 跳过/0 失败，lint/TypeScript/构建通过；原 Chrome 站长登录恢复、两页切换、返回创作、Back/Forward 与 390×844 检查通过；价格与历史核对一致，详见任务卡。
-- Next action: 用户用原 32141 模型页继续本地定价测试，页头可切换账户/模型；真实线路、视频正式结算与生产发布依明确范围安排。
+- Verification: 本任务定向 25/25；一次完整门禁 432 通过/16 opt-in 跳过/0 失败，lint/TypeScript/构建通过；原 Chrome 账户/模型重复往返两轮、字体/单标题/无页头退出、返回创作与配置/历史检查通过，详见任务卡。不能由当前字体诊断证明 Windows 原截图的具体栅格化原因。
+- Next action: 用户查看原 32141 账户页文字与右上角操作，继续本地定价测试；若原 Windows 重影仍在，读取该浏览器实际字体/缩放后定位。
 - Blockers: 当前无阻塞；mock 不证明真实上游，生产单位兑换/迁移/费率与上线尚未执行。
 
 ## Verification sequence
 
-1. 定向验证登录恢复/身份保留/失败关闭/直接导航；没有 SQL fixture 写入。
-2. 稳定后一次完整门禁，保留当前用户价格/版本，检查无活动任务后同步本地 Web/Worker/mock，不执行迁移。
-3. 浏览器以站长身份核对切换、返回、导航与价格，交用户本地验收；真实 provider 与发布使用新鲜证据及独立范围。
+1. 导航/登录定向回归，无 SQL fixture 写入。
+2. 稳定后一次完整门禁，保留配置，仅更新 Web，不执行迁移。
+3. 浏览器重复双向切换/返回并检查字体与页头，交用户本地验收；真实 provider 与发布使用独立范围。
 
 ## Milestones
 
@@ -39,12 +39,13 @@
 | GG-055 | 官方调研与文档验证完成 | 六规格输出成本、整单公式与五参考图/长文本敏感性；文档测试 15/15、diff 检查通过；未改价/发布 |
 | GG-056 | 本地完成并验证 | Banana 2 三线路、用户价格/历史保留、试价目录归档；门禁 427/16、SQL/运行/Chrome 通过，未发布 |
 | GG-057 | 本地完成并验证 | 站长导航与 local 登录恢复；门禁 432/16、运行/Chrome 检查与配置/历史保留通过，未发布 |
+| GG-058 | 本地调整与验证完成 | 站长字体/无页头退出；门禁 432/16、运行/Chrome 与历史保留通过，原 Windows 文字待用户复看，未发布 |
 | 完整 C6 / M9 | 搁置 | 删除、举报、商业支付等，见 GG-900—GG-902 |
 
 ## New-session recovery
 
-1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-057` 与 GG-057 任务卡；按卡核对运行版本，不能仅看 URL。
-2. 当前定价验收页为 `http://127.0.0.1:32141/admin/models`，仅独立 mock 栈；旧 `32140` 是有真实 provider Worker 的栈，不运行 fixtures 或测试 outbox，不重置其数据。
+1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-058` 与 GG-058 任务卡；按卡核对运行版本，不能仅看 URL。
+2. 当前页面为 `http://127.0.0.1:32141/admin/users`，页头可切模型定价；仅独立 mock 栈。旧 `32140` 有真实 provider Worker，不运行 fixtures/outbox，不重置其数据。
 3. 本地 ignored `.gg052-local.mjs` 分别启动 web/worker/mock-generation；按本任务已记录的运行状态恢复，保留用户试价数据。正式生产与真实请求不在本次授权范围。
 4. 不恢复或 bulk merge 旧 C6；旧阶段具体验证见相应任务卡，GG-051 [研究记录](research/GG-051-credit-pricing-reassessment.md) 保留定价依据。
 
