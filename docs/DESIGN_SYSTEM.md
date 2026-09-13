@@ -15,6 +15,10 @@ resolution header; narrow screens repeat it once per model, not per line. The
 editor switches line inputs without duplicating the full model form or exposing
 provider IDs. Line enable/availability stays explicit.
 
+GG-064 quality-priced image lines keep their quality matrix visible below the line
+range. Align quality labels with three resolution columns; RMB is primary and
+credits per image are secondary. No disclosure control or additional page heading.
+
 ## Foundations
 
 Canonical CSS tokens currently live in `app/globals.css`.

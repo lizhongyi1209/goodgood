@@ -9,3 +9,5 @@ The owner requests independent GPT quality pricing. This extends fixed line/reso
 Use immutable price-version contexts for each quality and auto, preserving accepted quotes and settlement. Auto uses the highest configured tier with visible UI copy. GPT IMAGE 2 rejects xhigh/max; 2.5 supports them through validation, saved drafts/projects and upstream parameters.
 
 Only dedicated lines receive fal output estimates at USD 1 = CNY 7, rounded upward to integer credits. Preserve names, switches and other prices. Reference dimensions differ from some GoodGood requests; adjustable estimates exclude inputs and margin. No production authority is implied.
+
+GG-064 owner adjustment: quality prices in the model list remain fully visible, without disclosure controls. Show quality rows aligned to 1K/2K/4K with RMB and credits per image; flat-price lines retain their existing presentation.

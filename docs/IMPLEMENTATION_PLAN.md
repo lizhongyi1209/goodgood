@@ -1,27 +1,27 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-14
-- Current phase: GG-063 implemented, verified and filled on local preview; not deployed.
-- Current objective: GG-063 GPT quality pricing and dedicated-line fal estimates.
+- Current phase: GG-064 always-visible image quality prices implemented and verified on local preview; not deployed.
+- Current objective: Display every quality price directly in the model list.
 - Previous objective: 用户在模型管理为 GPT 图片系列逐线路定价与启禁，保留原测试配置与历史。
 
 ## Current checkpoint
 
-- Task [GG-063](tasks/GG-063-gpt-quality-pricing.md), branch feature/GG-063-gpt-quality-pricing, worktree F:/goodgood-worktrees/GG-063, based on verified main ancestor plus GG-062 dd27aff. ADR 0069 adds quality pricing while preserving fixed lines.
-- GPT IMAGE 2 supports low/medium/high; GPT IMAGE 2.5 Sunburst/Flare also support xhigh/max. Line/resolution/quality editing, range and detail tables, calculator, provider validation, drafts/projects, immutable personal and enterprise quotes are implemented. Auto uses the highest configured tier on quality-priced lines.
-- Final npm run check:local: lint/type/build passed, 448 tests passed, 17 opt-in skipped, zero failures. Disposable no-Worker goodgood_gg063_quality_test_v4 verified all tiers, failure release, stale quotes, disabled admission, pinned settlement and duplicate completion. Earlier gate issues were one temporary helper and two documentation omissions, all corrected.
-- Local 32141 mock preview backed up in ignored .gg063-before.dump; only migration 0034 applied. Web session 93625, Worker 79489, mock 67415 run from GG-063; all readiness checks pass.
-- Owner UI saved 39 dedicated-line prices using agreed fal USD x7, rounded upward to integer credits. Three model events and 144 immutable price versions added. Names, switches, all other prices including Banana and eight unchanged history checksums verified. Archived trial model remains archived.
-- Chrome saved/reloaded prices and quality matrix layout verified; Sunburst calculator low 1K = CNY 0.05 / 5 credits, auto = CNY 1.48 / 148 credits. The editor is preserved for user testing.
-- Production revision 65ceb168/migration 0019 and real-provider 32140 unchanged. No push, main merge, deployment or paid provider requests.
-- Next action: owner reviews local dedicated estimates and adjusts retail margins, then enables desired models/lines for local testing. Prices estimate output only; inputs, aspect ratios and actual bills can differ.
-- Blockers: none for local scope. Real upstream and production migration/release remain unverified.
+- Current task [GG-064](tasks/GG-064-visible-quality-prices.md), branch fix/GG-064-visible-quality-prices, worktree F:/goodgood-worktrees/GG-064; verified main ancestor plus existing local candidate GG-063 52ef01a.
+- Quality-priced image lines show their complete quality matrix directly, aligned to 1K/2K/4K, with RMB and credits per image. No disclosure controls. Flat lines, prices, model switches, quote behavior and provider requests are unchanged. ADR 0069 records the owner adjustment.
+- Targeted SSR/docs 11/11 passed. One full npm run check:local passed lint/types/build and 447 tests, skipped 17 opt-in tests; one inherited documentation failure was corrected by restoring production/historical-domain context. Relevant documentation and release tests then passed 15/15. No code edits followed the gate.
+- Local 32141 Web session 2875 runs from GG-064. Existing GG-063 Worker 79489 and mock 67415 remain unchanged; all three readiness endpoints returned 200 ready. No migration or database writes.
+- Chrome confirmed all three quality sections without details/summary controls, RMB/credits and desktop/narrow layout. Narrow 375px content had no horizontal overflow; viewport restored and original page preserved.
+- Read-only before/after comparison verified every managed-model record and all ten history count/hash snapshots unchanged, including owner prices, switches, Banana and archived trial-model state.
+- Production https://goodgood.o1key.com revision 65ceb168/migration 0019 unchanged. staging-goodgood.o1key.com is historical naming. Real-provider 32140 unchanged; no paid calls, push, main merge or deployment.
+- Next action: owner quickly compares the displayed quality prices and continues local pricing tests.
+- Blockers: none for local scope; upstream cost estimates and production release retain the GG-063 limitations.
 
 ## Verification sequence
 
-1. Nine GPT mappings, independent quotes/disable, draft/project and legacy route compatibility.
-2. Explicit no-Worker disposable SQL database; one full local gate after stabilization.
-3. Preview snapshots, local migration/runtime update and browser model-pricing verification.
+1. SSR quality content, no disclosure controls, legacy line rows.
+2. One complete local gate, then documentation-only checks as needed.
+3. Read-only preview snapshots, Web update, desktop/narrow browser verification.
 
 ## Milestones
 
@@ -51,7 +51,7 @@
 
 ## New-session recovery
 
-1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-063` 与 GG-063 任务卡；按卡核对运行版本，不能仅看 URL。
+1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-064` 与 GG-064 任务卡；按卡核对运行版本，不能仅看 URL。
 2. 当前页面为 `http://127.0.0.1:32141/admin/models`，已更新 GPT 图片三线路，右侧四管理功能保留；仅独立 mock 栈。旧 `32140` 有真实 provider Worker，不运行 fixtures/outbox，不重置其数据。
 3. 本地 ignored `.gg052-local.mjs` 分别启动 web/worker/mock-generation；按本任务已记录的运行状态恢复，保留用户试价数据。正式生产与真实请求不在本次授权范围。
 4. 不恢复或 bulk merge 旧 C6；旧阶段具体验证见相应任务卡，GG-051 [研究记录](research/GG-051-credit-pricing-reassessment.md) 保留定价依据。

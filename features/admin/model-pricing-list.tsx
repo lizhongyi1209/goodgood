@@ -208,16 +208,19 @@ export function ModelPricingList({
                                 modelSpecificationPrices(model, line.id),
                               ) as ManagedModel["prices"][string][]
                             ).some((price) => price.qualities) && (
-                              <details className="text-xs">
-                                <summary className="cursor-pointer py-1 text-zinc-500">
-                                  查看{line.name}质量价格
-                                </summary>
+                              <section
+                                aria-label={`${line.name}质量价格`}
+                                className="text-xs"
+                              >
+                                <p className="py-1 text-zinc-500">
+                                  {line.name} · 质量价格
+                                </p>
                                 <div className="mt-2 space-y-2">
                                   {gptPricingQualities(model.adapterId).map(
                                     (quality) => (
                                       <div
                                         key={quality.id}
-                                        className={`grid gap-x-3 ${priceLayout}`}
+                                        className={`grid items-center gap-x-3 lg:gap-x-5 ${priceLayout}`}
                                       >
                                         <span className="text-zinc-500">
                                           {quality.name}
@@ -241,6 +244,11 @@ export function ModelPricingList({
                                               {value
                                                 ? `¥${creditsToYuan(value)}`
                                                 : "未定价"}
+                                              {value !== undefined && (
+                                                <span className="mt-0.5 block text-[10px] text-zinc-400">
+                                                  {value} 积分/张
+                                                </span>
+                                              )}
                                             </span>
                                           );
                                         })}
@@ -248,7 +256,7 @@ export function ModelPricingList({
                                     ),
                                   )}
                                 </div>
-                              </details>
+                              </section>
                             )}
                           </div>
                         );
