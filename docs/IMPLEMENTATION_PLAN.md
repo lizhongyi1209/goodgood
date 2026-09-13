@@ -1,25 +1,25 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-13
-- Current phase: GG-054 Pro 三线路与通用分线路定价本地完成并验证；Banana 2 两条映射待补齐。
-- Current objective: 默认特价，创作者选线，线路独立人民币售价贯穿报价、任务与状态恢复。
+- Current phase: GG-055 官方成本调研与文档验证完成；GG-054 本地试价保持可用，Banana 2 两条映射待补齐。
+- Current objective: 核对 Pro/Banana 2 官方输出与整单成本，给出人民币/积分按张基准，支持现有试价决策。
 
 ## Current checkpoint
 
-- 当前任务 GG-054，`feature/GG-054-banana-lines`、`F:/goodgood-worktrees/GG-054`，从 GG-053 `adcfc67` 隔离建立；main `bab17fd` 为已验证祖先。GG-052 `7d75525` 为人民币积分与模型面板来源；旧工作树和未关联改动保留。
-- [ADR 0064](decisions/0064-banana-lines-and-specification-prices.md) 接受默认特价、用户选线、线路独立 1K/2K/4K 固定人民币售价与启禁。Pro 三个请求 ID 已按用户要求映射，保持单张输出；Banana 2 仅特价映射已确认，另两条 ID 待用户补齐，配置保留但不能启用。
-- 线路贯穿目录、创作报价、个人/企业预留结算、批次、草稿、项目与历史恢复。已受理任务保持原线路/价格，无自动回退和 token 追扣。迁移 0031 添加配置/状态，不改旧 hash、报价或账本，原价格只沿用至特价。
-- 定向 47/47、独立无 Worker `goodgood_gg054_lines_test_v2` SQL 1/1 通过；最终 `npm run check:local` lint/TypeScript/构建通过，439 项中 423 通过/16 opt-in 跳过/0 失败。Chrome 桌面/390×844 价格矩阵、Pro 独立输入往返保留/42 积分试算、窄屏保存可达及创作默认特价检查完成；未保存试算费率或发生成请求。确切证据见 [GG-054 任务卡](tasks/GG-054-banana-lines.md)。
-- 隔离 Compose `goodgood-gg052`：数据库 55449、Valkey 56449、对象存储 59049/59050，Web 32141、mock Worker 32142、mock provider 32143。已更新 GG-054 Web `3926`/mock Worker `43261`/mock provider `29023`，mock 库迁移至 0031，Web/Worker readiness 五项 ok。用户试价模型 v3、余额 179/预留 0、项目 v1 保留。
-- 正式 `https://goodgood.o1key.com`、production revision `65ceb168`/迁移 0019 不变；`staging-goodgood.o1key.com` 仅历史名称，不是当前验收入口。旧 32140 是真实 provider 栈，不能放 fixtures/outbox。本次不推送、不合 main、不部署，不发真实付费请求。
-- Next action: 用户在已保留的 32141 模型管理页为 Pro 各线路试定价/启用；补齐 Banana 2 两条请求 ID 后再接通映射并验证。生产发布与真实冒烟另行取得范围。
-- Blockers: Banana 2 优质/专线请求 ID 待补齐；不阻塞 Pro 和通用配置。生产单位转换、正式视频扣费仍为后续范围。
+- 当前任务 GG-055，`chore/GG-055-gemini-image-costs`、`F:/goodgood-worktrees/GG-055`，从 GG-054 `5cc0963` 隔离建立；main `bab17fd` 为已验证祖先。纯调研文档，延续 ADR 0063/0064，不修改代码/价格/余额，不新增 ADR。
+- [研究记录](research/GG-055-gemini-image-costs.md) 已按当日 Google 官方 Developer API Standard 定价核对两个模型、六个规格图片 tokens/输出成本。按测算汇率 1 USD=7 CNY：Pro 1K/2K≈0.94 元、4K=1.68 元；Banana 2 1K≈0.47 元、2K≈0.71 元、4K≈1.06 元。仅图片输出，整单另计输入/文字思考/付费工具。未读取真实账单。
+- 研究区分完整成本/售价和 Standard/异步 Batch。公式按计费分项乘费率，实际线路按供应商固定成本或真实折扣核算；高思考 hidden 显示不免计费。本次测算汇率、思考量和毛利算例都是假设，不是默认售价或实测。
+- GG-054 本地实现来源保留在 `F:/goodgood-worktrees/GG-054`。Pro 三线路/独立定价已完整本地验证，原 32141 模型管理页可试价；Banana 2 两条 ID 仍待补齐。该任务的门禁/SQL/浏览器和运行记录见 [任务卡](tasks/GG-054-banana-lines.md)，本轮不重启或重新宣称验证其运行。
+- 正式 `https://goodgood.o1key.com`、production revision `65ceb168`/迁移 0019 不变；`staging-goodgood.o1key.com` 仅历史名称。旧 32140 是真实 provider 栈，不能放 fixtures/outbox。本次无真实 API 生成、数据写入、推送/main 合并或发布。
+- Verification: 文档连续性/发布边界测试 15/15 通过，0 跳过、0 失败；diff 检查通过。文档专用任务不安装依赖或执行代码完整门禁。
+- Next action: 交付官方按张成本分析；依据 O1Key 固定价/各项折扣与 high 模式 usage 分项核算实际三线路完整成本，再试定积分售价。
+- Blockers: 官方成本基准无阻塞；三线路实际成本仍需供应商账单/折扣与失败退款规则。GG-054 Banana 2 优质/专线请求 ID 缺口保留。
 
 ## Verification sequence
 
-1. 定向 GG-054 线路/价格/权限/API 与状态恢复测试；隔离无 Worker PostgreSQL 写验证必须显式命名 disposable 数据库，不使用旧真实接口栈。
-2. 实现稳定后一次 `npm run check:local`，再做浏览器 mock 流程及文档/diff 检查。确切结果记录任务卡。
-3. 用户检查本地页面后另行决定发布。生产兑换前须停新任务/新订单、排空活动任务/预留/待支付订单；不直接复用旧转换脚本。
+1. 核对官方源页面，按图片 tokens × 对应费率程序精算美元，再按明确测算汇率换算人民币/积分。
+2. 纯文档执行连续性/发布边界定向测试与 diff 检查；不跑付费 API 或数据库/队列 fixtures。
+3. 售价按真实完整成本与最低实际积分收入确定，沿用按张固定报价/受理价锁定；正式发布独立授权。
 
 ## Milestones
 
@@ -37,11 +37,12 @@
 | GG-052 | 本地完成并验证 | 1 元/100 积分与站长模型面板；完整门禁、SQL/browser mock 验证通过，定价页已保留，未发布 |
 | GG-053 | 本地完成并验证 | 模型名称一次、规格价格对齐、自动内部编号与折叠接入详情；完整门禁与桌面/窄屏验收通过，原页面已更新保留，未发布 |
 | GG-054 | Pro 与通用功能本地完成并验证 | 三线路、独立启禁/规格价与状态恢复；完整门禁、SQL、桌面/窄屏检查通过，页面保留；Banana 2 两条 ID 待补齐，未发布 |
+| GG-055 | 官方调研与文档验证完成 | 六规格图片输出成本、整单公式与人民币/积分测算；文档测试 15/15、diff 检查通过；未改价/发布 |
 | 完整 C6 / M9 | 搁置 | 删除、举报、商业支付等，见 GG-900—GG-902 |
 
 ## New-session recovery
 
-1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-054` 与 GG-054 任务卡；GG-053/052 是已交付实现来源。
+1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-055` 与 GG-055 任务卡；代码/试价运行来源在 GG-054。
 2. 当前定价验收页为 `http://127.0.0.1:32141/admin/models`，仅独立 mock 栈；旧 `32140` 是有真实 provider Worker 的栈，不运行 fixtures 或测试 outbox，不重置其数据。
 3. 本地 ignored `.gg052-local.mjs` 分别启动 web/worker/mock-generation；按本任务已记录的运行状态恢复，保留用户试价数据。正式生产与真实请求不在本次授权范围。
 4. 不恢复或 bulk merge 旧 C6；旧阶段具体验证见相应任务卡，GG-051 [研究记录](research/GG-051-credit-pricing-reassessment.md) 保留定价依据。
