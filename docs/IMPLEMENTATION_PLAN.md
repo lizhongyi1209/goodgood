@@ -1,22 +1,21 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-14
-- Current phase: GG-065 compact model management implemented, verified and updated on local preview; not deployed.
-- Current objective: Hide quality details in the list and tighten the model/price columns.
+- Current phase: GG-066 adaptive model width implemented, verified and restored on local preview; not deployed.
+- Current objective: Restore adaptive model-management page width.
 - Previous objective: 用户在模型管理为 GPT 图片系列逐线路定价与启禁，保留原测试配置与历史。
 
 ## Current checkpoint
 
-- Current task [GG-065](tasks/GG-065-compact-model-management.md), branch fix/GG-065-compact-model-management, worktree F:/goodgood-worktrees/GG-065; verified main ancestor plus GG-064 f87dff5.
-- The list keeps dedicated resolution price ranges and hides tier details. Complete quality prices remain in the pricing editor. ADR 0069 supersedes the GG-064 presentation at owner request. No billing or persistence changes.
-- Content max width 960px, desktop model-name/price/action columns measured 200/616/112px with 16px gaps, replacing 442.7/885.3/150px with 24px gaps on the original 1526px list. Image/video rows share compact alignment and reduced vertical spacing.
-- Targeted SSR/documentation/release tests 18/18 passed. One full npm run check:local passed lint/types/build, 448 tests passed / 17 opt-in skipped / zero failures. No code edits followed the gate.
-- Local 32141 Web session 83314 runs from GG-065. Existing GG-063 Worker 79489 and mock 67415 unchanged. All three readiness endpoints returned 200 ready; no migration or database writes.
-- Chrome verified zero quality-list sections, compact desktop layout, pricing-button access to all fifteen Sunburst tier values, and narrow layout with no horizontal overflow. Temporary viewport reset and original list preserved.
-- Read-only before/after comparison: every managed-model record and all ten historical count/hash snapshots identical, including owner prices, names, switches, Banana and archived trial state.
+- Current task [GG-066](tasks/GG-066-responsive-model-width.md), branch fix/GG-066-responsive-model-width, worktree F:/goodgood-worktrees/GG-066; verified main ancestor plus current local candidate GG-065 96bb606.
+- Restored embedded model-page adaptive width and original standalone 1500px maximum. Only two width classes changed. Hidden dedicated tier details and compact row/column spacing retained; ADR 0069 records the owner adjustment.
+- Existing targeted SSR/documentation/release tests 18/18 passed. One full npm run check:local passed lint/types/build, 448 tests passed / 17 opt-in skipped / zero failures. No new tests for this reversible width-only adjustment.
+- Local 32141 Web session 41801 runs from GG-066. Existing GG-063 Worker 79489 and mock 67415 unchanged. All three readiness endpoints returned 200 ready; no migration or database writes.
+- Chrome confirmed embedded content/list width 1526px with max-width none, restored from 960px; column gap retained at 16px. Original model page preserved.
+- Read-only before/after comparison: every managed-model record and all ten historical count/hash snapshots identical, including newly owner-adjusted GPT prices and enabled states, Banana and archived trial state.
 - Production https://goodgood.o1key.com revision 65ceb168/migration 0019 unchanged. staging-goodgood.o1key.com is historical naming. Real-provider 32140 unchanged; no paid calls, push, main merge or deployment.
-- Next action: owner checks the compact list and continues local pricing through the pricing editor.
-- Blockers: none for local scope; upstream cost estimates and production release retain the GG-063 limitations.
+- Next action: owner continues local pricing tests on the adaptive model page.
+- Blockers: none for local scope; provider cost estimates and production release retain the GG-063 limitations.
 
 ## Verification sequence
 
@@ -52,7 +51,7 @@
 
 ## New-session recovery
 
-1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-065` 与 GG-065 任务卡；按卡核对运行版本，不能仅看 URL。
+1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-066` 与 GG-066 任务卡；按卡核对运行版本，不能仅看 URL。
 2. 当前页面为 `http://127.0.0.1:32141/admin/models`，已更新 GPT 图片三线路，右侧四管理功能保留；仅独立 mock 栈。旧 `32140` 有真实 provider Worker，不运行 fixtures/outbox，不重置其数据。
 3. 本地 ignored `.gg052-local.mjs` 分别启动 web/worker/mock-generation；按本任务已记录的运行状态恢复，保留用户试价数据。正式生产与真实请求不在本次授权范围。
 4. 不恢复或 bulk merge 旧 C6；旧阶段具体验证见相应任务卡，GG-051 [研究记录](research/GG-051-credit-pricing-reassessment.md) 保留定价依据。

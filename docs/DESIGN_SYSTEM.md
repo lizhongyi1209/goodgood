@@ -16,8 +16,8 @@ editor switches line inputs without duplicating the full model form or exposing
 provider IDs. Line enable/availability stays explicit.
 
 GG-065 supersedes GG-064: quality-priced lines show ranges in the list; tier
-details live only in the pricing editor. Model management uses a 960px maximum
-content width, a 200px desktop model-name column and compact aligned price/action
+details live only in the pricing editor. GG-066 restores adaptive embedded page
+width and the original standalone 1500px maximum, retaining the 200px desktop model-name column and compact aligned price/action
 columns. Narrow screens retain the stacked model/price layout and resolution labels.
 
 ## Foundations
