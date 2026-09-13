@@ -5,7 +5,7 @@
 The shared workspace mounts at `/`, `/create`, `/projects`,
 `/projects/:projectId`, `/assets`, `/assets/:assetId`, `/credits`, `/distribution`,
 `/distribution/transfers`, and `/organizations` with organization detail and
-account-wide `/organizations/accounts` and `/organizations/transfers` subroutes. `/create` is the
+legacy `/organizations/accounts` and `/organizations/transfers` compatibility subroutes. `/create` is the
 canonical product URL for creation; `/` remains a compatible entry to the same
 workspace state. Project and asset navigation use stable browser URLs and
 native history.
@@ -24,13 +24,13 @@ native history.
 | 企业历史创作 | Compatible local route | `/workspaces/:workspaceId/create`, after active-membership validation; no global selector |
 | 企业管理 | Implemented locally | Main sidebar `/organizations`; one managed company opens overview, multiple companies use a management-only directory; detail subroutes share the main shell |
 | 分销管理 | Implemented locally | Distributor-only main-sidebar `/distribution` customers/downstream and `/distribution/transfers` history |
-| 企业直属账户 / 划拨记录 | Implemented locally | Enterprise commercial-role content tabs `/organizations/accounts` and `/organizations/transfers`; account-wide, not company budget views |
+| 旧企业划拨链接 | Compatibility only | `/organizations/accounts` and `/organizations/transfers` canonicalize by identity under ADR 0060; not visible enterprise tabs |
 
 Do not describe placeholders as shipped features.
 
 GG-046 uses `/organizations/accounts?business-preview=1` only with an existing
 UI-only preview session (non-production, no configured AUTH_MODE). It fills
-shared enterprise/distributor allocation content with labelled synthetic data,
+distributor-only allocation content with labelled synthetic data after ADR 0060,
 keeps context/tab/filter changes in memory, and disables writes. The query does
 not override an authenticated real account or expose a new production route.
 
@@ -94,10 +94,11 @@ creates or mutates a payment order.
 ## Implemented GG-027 local API routes (not deployed)
 
 GG-027 stages 2—4 implement the authenticated API boundaries and local page
-below. ADR 0058 places the same boundary under enterprise account tabs and
-distributor management. For an active enterprise commercial account, legacy
-`/distribution` and `/distribution/transfers` replace browser history with the
-corresponding enterprise account route, without reloading creative state. Ordinary
+below. ADR 0060 limits this boundary to distributor management. For an active
+enterprise account, legacy `/distribution` and `/distribution/transfers` replace
+history with `/organizations`. Old enterprise allocation URLs also return there;
+for a distributor, they resolve to the corresponding distribution tab, without
+reloading creative state. Ordinary
 users and business accounts without the allocation capability receive the same
 server-enforced denial on direct URL and API access; hiding navigation is not
 authorization. Entering or leaving the view preserves active creation state.
@@ -170,7 +171,7 @@ when their persistence and navigation behavior exist:
 | `/assets` | Batch/gallery asset library |
 | `/assets/:assetId` | Addressable image detail |
 | `/credits` | Owner-scoped period spend summary and concise credit changes |
-| `/distribution` | Local enterprise/distributor direct-child allocation workspace; not deployed |
+| `/distribution` | Local distributor-only direct-child allocation workspace; not deployed |
 | `/explore` | Future discovery experience |
 | `/moodboards` | Future moodboards |
 | `/help` | Product help and status guidance |

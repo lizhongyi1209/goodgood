@@ -83,12 +83,10 @@ export function OrganizationManagementView({
   activeTab,
   workspaceId,
   enabled,
-  allocationEnabled = false,
 }: Readonly<{
   activeTab: OrganizationManagementTab;
   workspaceId: string;
   enabled: boolean;
-  allocationEnabled?: boolean;
 }>) {
   const [dashboard, setDashboard] = useState<OrganizationDashboard | null>(null);
   const [usage, setUsage] = useState<readonly OrganizationUsage[]>([]);
@@ -296,7 +294,7 @@ export function OrganizationManagementView({
       <div><h1>{dashboard?.workspace.name ?? "企业管理"}</h1><p>企业成员、创作额度、消费与资产统一管理。</p></div>
       <Button variant="ghost" size="sm" onClick={() => navigateWorkspace({ kind: "organizations" })}><ArrowLeft />企业列表</Button>
     </header>
-    <EnterpriseManagementNavigation activeTab={activeTab} organizationId={workspaceId} allocationEnabled={allocationEnabled} />
+    <EnterpriseManagementNavigation activeTab={activeTab} organizationId={workspaceId} />
 
     {loadError ? <Alert variant="destructive" className="organization-load-error">
       <AlertTitle>企业信息加载失败</AlertTitle><AlertDescription><span>{loadError}</span><Button size="sm" variant="ghost" onClick={() => void load()}><RefreshCw />重试</Button><Button size="sm" variant="ghost" onClick={() => navigateWorkspace({ kind: "organizations" })}>返回企业列表</Button></AlertDescription>

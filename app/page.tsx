@@ -170,7 +170,6 @@ import type {
 import { useWorkspaceDirectory } from "@/features/organizations/use-workspace-directory";
 import { showOrganizationNavigation } from "@/features/organizations/organization-navigation.mjs";
 import { OrganizationDirectoryView } from "@/features/organizations/organization-directory-view";
-import { manageableOrganizations } from "@/features/organizations/organization-navigation.mjs";
 import { OrganizationManagementView, type OrganizationManagementTab } from "@/features/organizations/organization-management-page";
 import type { WorkspaceRecord } from "@/features/organizations/http-organization-boundary";
 import {
@@ -515,7 +514,6 @@ export default function Home({
   const [videoDetailKey, setVideoDetailKey] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<ActiveView>("create");
   const [organizationRoute, setOrganizationRoute] = useState<{ id: string; tab: OrganizationManagementTab } | null>(null);
-  const [enterpriseAccountTab, setEnterpriseAccountTab] = useState<"accounts" | "transfers" | null>(null);
   const [businessStylePreview, setBusinessStylePreview] = useState(false);
   const [distributionTab, setDistributionTab] = useState<"children" | "transfers">("children");
   const [generationRuns, setGenerationRuns] = useState<readonly TrackedGenerationRun[]>([]);
@@ -819,7 +817,7 @@ export default function Home({
   }, [detailItems, routeAssetId, workspaceId]);
 
   useEffect(() => {
-    if (!authenticationSession || authenticationSession.preview || authenticationSession.access.status !== "active" || authenticationSession.account.businessRole !== "enterprise") return;
+    if (!authenticationSession || authenticationSession.preview || authenticationSession.access.status !== "active") return;
     const canonicalize = () => {
       const route = parseWorkspaceRoute(window.location.pathname);
       const canonical = canonicalBusinessRoute(route, authenticationSession.account.businessRole);
@@ -840,7 +838,6 @@ export default function Home({
         projectRestoreAnnouncementRef.current = false;
       }
       const route = parseWorkspaceRoute(window.location.pathname);
-      setEnterpriseAccountTab(route.kind === "enterpriseAccounts" ? route.tab : null);
       setDistributionTab(route.kind === "distribution" && route.tab === "transfers" ? "transfers" : "children");
       setOrganizationRoute(route.kind === "organizations" && route.organizationId
         ? { id: route.organizationId, tab: route.tab ?? "overview" } : null);
@@ -3228,20 +3225,14 @@ export default function Home({
               onBack={handleCreateNav}
             />
           ) : activeView === "organizations" ? (
-            authenticationSession?.preview && businessStylePreview ? <BusinessManagementStylePreview /> : enterpriseAccountTab ? (
-              <BusinessManagementView key="enterprise" context="enterprise" tab={enterpriseAccountTab === "accounts" ? "children" : "transfers"}
-                organizationId={manageableOrganizations(workspaceDirectory.workspaces).length === 1 ? manageableOrganizations(workspaceDirectory.workspaces)[0].id : undefined}
-                enabled={Boolean(authenticationSession && !authenticationSession.preview && authenticationSession.access.status === "active" && authenticationSession.account.businessRole === "enterprise")}
-                onAccountChange={handleCreditAccountChange} onBack={handleCreateNav} />
-            ) : organizationRoute ? (
+            authenticationSession?.preview && businessStylePreview ? <BusinessManagementStylePreview /> : organizationRoute ? (
               <OrganizationManagementView key={organizationRoute.id} activeTab={organizationRoute.tab} workspaceId={organizationRoute.id}
-                enabled={Boolean(authenticationSession && !authenticationSession.preview && authenticationSession.access.status === "active")}
-                allocationEnabled={Boolean(authenticationSession && !authenticationSession.preview && authenticationSession.access.status === "active" && authenticationSession.account.businessRole === "enterprise")} />
+                enabled={Boolean(authenticationSession && !authenticationSession.preview && authenticationSession.access.status === "active")} />
             ) : (
               <OrganizationDirectoryView directory={workspaceDirectory} session={authenticationSession ?? null} />
             )
           ) : activeView === "distribution" ? (
-            <BusinessManagementView key="distributor" context="distributor" tab={distributionTab}
+            <BusinessManagementView key="distributor" tab={distributionTab}
               enabled={Boolean(
                 authenticationSession &&
                   !authenticationSession.preview &&

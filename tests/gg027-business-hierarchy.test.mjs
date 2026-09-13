@@ -226,10 +226,19 @@ test(
       hierarchyInput({
         actorOwnerId: ownerId,
         key: `role-grandchild-${suffix}`,
-        role: "enterprise",
+        role: "distributor",
         targetOwnerId: grandchildId,
       }),
     );
+
+    await assert.rejects(setDirectParent(pool, hierarchyInput({
+      actorOwnerId: ownerId, key: `enterprise-parent-denied-${suffix}`, parentOwnerId: enterpriseId, targetOwnerId: childId,
+    })), (error) => error.code === "ADMIN_PARENT_BUSINESS_ROLE_REQUIRED");
+    await setBusinessRole(pool, hierarchyInput({
+      actorOwnerId: ownerId, key: `switch-to-distributor-${suffix}`, role: "distributor", targetOwnerId: enterpriseId,
+    }));
+    const activeRoles = await pool.query("SELECT role FROM business_role_assignments WHERE owner_id = $1 AND ended_at IS NULL", [enterpriseId]);
+    assert.deepEqual(activeRoles.rows.map((item) => item.role), ["distributor"]);
 
     await setDirectParent(
       pool,

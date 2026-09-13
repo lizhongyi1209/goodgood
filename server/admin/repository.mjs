@@ -146,7 +146,7 @@ export async function listEligibleBusinessParents(pool) {
        FROM business_role_assignments assignment
        JOIN users account
          ON account.id = assignment.owner_id AND account.status = 'active'
-      WHERE assignment.ended_at IS NULL
+      WHERE assignment.ended_at IS NULL AND assignment.role = 'distributor'
       ORDER BY account.email, account.id`,
   );
   return result.rows.map((row) => ({
@@ -329,10 +329,10 @@ export function setDirectParent(
           WHERE assignment.owner_id = $1 AND assignment.ended_at IS NULL`,
         [parentOwnerId],
       );
-      if (!parentRole.rowCount) {
+      if (parentRole.rows[0]?.role !== "distributor") {
         throw new AdministrationError(
           "ADMIN_PARENT_BUSINESS_ROLE_REQUIRED",
-          "直属上级必须先具有企业或分销商业务身份。",
+          "直属上级必须是已启用的分销商账户。",
           409,
         );
       }

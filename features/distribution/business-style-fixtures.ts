@@ -1,5 +1,5 @@
 import type { SerializedCreditAmount } from "@/shared/contracts/billing";
-import type { BusinessRole, CreditTransferPage, DistributionChild, DistributionSummary } from "@/shared/contracts/distribution";
+import type { CreditTransferPage, DistributionChild, DistributionSummary } from "@/shared/contracts/distribution";
 
 export type DistributionPreviewData = Readonly<{
   summary: DistributionSummary;
@@ -7,7 +7,7 @@ export type DistributionPreviewData = Readonly<{
   transfers: CreditTransferPage;
 }>;
 
-function fixture(context: BusinessRole, emails: readonly string[], amounts: readonly SerializedCreditAmount[], transferable: SerializedCreditAmount, promotional: SerializedCreditAmount): DistributionPreviewData {
+function fixture(context: "distributor", emails: readonly string[], amounts: readonly SerializedCreditAmount[], transferable: SerializedCreditAmount, promotional: SerializedCreditAmount): DistributionPreviewData {
   const dates = ["2026-09-13T02:24:00Z", "2026-09-12T08:10:00Z", "2026-09-11T01:06:00Z"];
   const directAccounts: DistributionChild[] = emails.map((email, index) => ({
     id: `demo-${context}-${index + 1}`, email, allocatedCredits: amounts[index], status: "active",
@@ -34,6 +34,5 @@ function fixture(context: BusinessRole, emails: readonly string[], amounts: read
 }
 
 export const businessStyleFixtures = {
-  enterprise: fixture("enterprise", ["brand-team@demo.example.invalid", "visual-studio@demo.example.invalid", "campaign-team@demo.example.invalid", "new-partner@demo.example.invalid"], ["1800", "1200", "500", "0"], "6500", "2500"),
   distributor: fixture("distributor", ["creative-agency@demo.example.invalid", "regional-partner@demo.example.invalid", "independent-creator@demo.example.invalid", "new-client@demo.example.invalid"], ["4200", "2800", "2000", "0"], "15000", "500"),
 } as const;

@@ -43,7 +43,7 @@ async function assertBusinessRole(client, ownerId, { lock = false } = {}) {
     [ownerId],
   );
   const owner = result.rows[0];
-  if (!owner?.role) throw businessRoleRequiredError();
+  if (owner?.role !== "distributor") throw businessRoleRequiredError();
   if (owner.status !== "active") {
     throw new DistributionError(
       "ACCOUNT_ACCESS_REQUIRED",
@@ -201,6 +201,11 @@ export function createCreditTransfer(
       "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
       [`credit-transfer:${ownerId}:${idempotencyKey}`],
     );
+    await client.query(
+      "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
+      ["account-hierarchy:mutate"],
+    );
+    await assertBusinessRole(client, ownerId, { lock: true });
     const replay = await findExistingTransfer(client, ownerId, idempotencyKey);
     if (replay) {
       if (replay.operation_hash !== operationHash) {
@@ -222,11 +227,6 @@ export function createCreditTransfer(
       };
     }
 
-    await client.query(
-      "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
-      ["account-hierarchy:mutate"],
-    );
-    await assertBusinessRole(client, ownerId, { lock: true });
     const relationshipResult = await client.query(
       `SELECT relationship.id, child.email AS child_email,
               child.status AS child_status

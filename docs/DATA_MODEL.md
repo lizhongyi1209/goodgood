@@ -436,8 +436,10 @@ site-owner assign/end actors, reasons, idempotency identities/hashes, and
 timestamps. Ending closes an interval once; replacement closes the old interval
 and inserts a new one. Business
 role is independent of `SystemRoleAssignment`, account access, tier, and balance.
-The first version maps both values to the same direct-child allocation
-capability; it does not grant site-owner authority.
+The partial unique index permits only one active assignment per owner, so
+enterprise and distributor cannot be combined. ADR 0060 restricts direct-child
+allocation to distributors; enterprise identity uses scoped company management.
+Neither grants site-owner authority. Existing intervals/records remain unchanged.
 
 ### AccountRelationship
 
@@ -446,6 +448,8 @@ reasons, idempotency identities/hashes, and timestamps. A partial unique constra
 only one active parent per child. Service and database checks reject self-links
 and active cycles; ended history is immutable and balance/history never moves
 when a relationship changes.
+Under ADR 0060 new parent bindings require an active distributor; historical
+enterprise-parent intervals are retained without automatically ending them.
 
 ### CreditTransfer
 
@@ -631,7 +635,7 @@ Contains ordering and membership metadata; never duplicate image bytes.
   paid tier nor credit balance confers administrative authority.
 - Account review and promotional grants are server-authorized, idempotent, and
   append-auditable. Test grants never create payment evidence.
-- Business role is also independent. Only an active enterprise/distributor may
+- Business role is also independent and single-valued. Only an active distributor may
   transfer, and only to its active direct child; neither relationship nor
   payment-funded balance implies site-owner authority.
 - Transferable credit equals the payment-funded available projection. Welcome,

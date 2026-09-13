@@ -3,6 +3,7 @@
 - Status: Accepted
 - Date: 2026-09-10
 - Refines: ADR 0006, ADR 0010, and ADR 0020
+- Shared enterprise/distributor transfer capability superseded by [ADR 0060](0060-exclusive-enterprise-distributor-identities.md); provenance/atomic accounting remains.
 
 ## Context
 

@@ -21,8 +21,8 @@ const noop = () => {};
 const child = { id: "child-a", email: "a@example.invalid", allocatedCredits: "50", lastTransferredAt: null, status: "active", privateBalance: "hidden-balance" };
 const transfer = { id: "trf_public1", counterpartyId: child.id, counterpartyEmail: child.email,
   direction: "outgoing", amount: "50", createdAt: "2026-09-13T02:00:00Z", remark: "核对说明", unit: "credit" };
-const base = { summary: { account: { availableCredits: "110", transferableCredits: "60" }, directChildCount: 1, businessRole: "enterprise" },
-  directAccounts: [child], transfers: { items: [transfer], nextCursor: null }, tab: "children", context: "enterprise", historyAccount: null,
+const base = { summary: { account: { availableCredits: "110", transferableCredits: "60" }, directChildCount: 1, businessRole: "distributor" },
+  directAccounts: [child], transfers: { items: [transfer], nextCursor: null }, tab: "children", historyAccount: null,
   onTransfer: noop, onShowRecords: noop, onClearRecords: noop, onLoadMore: noop, loadingMore: false, loadMoreError: null };
 const render = (props = {}) => renderToStaticMarkup(React.createElement(BusinessAccountContent, { ...base, ...props }));
 
@@ -39,19 +39,19 @@ test("GG-045 contextual routes round-trip and static account paths never become 
 });
 
 test("GG-045 legacy enterprise allocation links canonicalize without changing other scopes", () => {
-  assert.deepEqual(canonicalBusinessRoute({ kind: "distribution" }, "enterprise"), { kind: "enterpriseAccounts", tab: "accounts" });
-  assert.deepEqual(canonicalBusinessRoute({ kind: "distribution", tab: "transfers" }, "enterprise"), { kind: "enterpriseAccounts", tab: "transfers" });
+  assert.deepEqual(canonicalBusinessRoute({ kind: "distribution" }, "enterprise"), { kind: "organizations" });
+  assert.deepEqual(canonicalBusinessRoute({ kind: "distribution", tab: "transfers" }, "enterprise"), { kind: "organizations" });
   for (const role of ["distributor", null]) for (const route of [{ kind: "distribution" }, { kind: "create" }, { kind: "organizations", organizationId: "a", tab: "members" }]) {
     assert.equal(canonicalBusinessRoute(route, role), route);
   }
 });
 
-test("GG-045 enterprise navigation separates company permission from account allocation capability", () => {
+test("GG-045 enterprise navigation excludes distributor allocation after ADR 0060", () => {
   const nav = (props) => renderToStaticMarkup(React.createElement(EnterpriseManagementNavigation, { activeTab: "members", organizationId: "company-a", ...props }));
   assert.match(nav({}), /成员与额度[\s\S]*消费记录[\s\S]*团队资产/);
   assert.doesNotMatch(nav({}), /直属账户|划拨记录/);
-  assert.match(nav({ allocationEnabled: true }), /直属账户[\s\S]*划拨记录/);
-  assert.match(nav({ organizationId: undefined, allocationEnabled: true }), /企业概览[\s\S]*直属账户[\s\S]*划拨记录/);
+  assert.doesNotMatch(nav({ allocationEnabled: true }), /直属账户|划拨记录/);
+  assert.match(nav({ organizationId: undefined, allocationEnabled: true }), /企业概览/);
   assert.doesNotMatch(nav({ organizationId: undefined, allocationEnabled: true }), /成员与额度/);
 });
 
@@ -60,7 +60,7 @@ test("GG-045 row actions and compact own-account facts do not expose downstream 
   assert.match(html, /当前个人账户[\s\S]*可分配积分[\s\S]*60[\s\S]*个人可用积分[\s\S]*110/);
   assert.match(html, /a@example.invalid[\s\S]*累计分配 50[\s\S]*查看记录[\s\S]*分配积分/);
   assert.doesNotMatch(html, /hidden-balance|还没有划拨记录|trf_public1/);
-  assert.match(render({ context: "distributor" }), /客户与下级/);
+  assert.match(render(), /客户与下级/);
   assert.match(render({ directAccounts: [] }), /还没有直属下级[\s\S]*站长/);
 });
 
@@ -92,12 +92,11 @@ test("GG-045 filtered empty pages retain load-more, range disclosure, loading an
 
 test("GG-045 shared allocation content has access denial/loading and distinct contextual shells", () => {
   const props = { ...base, enabled: false, onAccountChange: noop };
-  assert.match(renderToStaticMarkup(React.createElement(DistributionView, props)), /没有积分分配权限[\s\S]*企业管理资格不代表划拨权限/);
+  assert.match(renderToStaticMarkup(React.createElement(DistributionView, props)), /没有积分分配权限[\s\S]*仅分销商身份[\s\S]*企业身份使用成员创作额度/);
   assert.match(renderToStaticMarkup(React.createElement(DistributionView, { ...props, enabled: true })), /role="status"[\s\S]*正在读取分配账户/);
-  const shell = (context) => renderToStaticMarkup(React.createElement(BusinessManagementView, { context, tab: "children", enabled: true, onAccountChange: noop, onBack: noop }));
-  assert.match(shell("enterprise"), /企业管理[\s\S]*不使用企业积分池[\s\S]*直属账户[\s\S]*划拨记录/);
-  assert.match(shell("distributor"), /分销管理[\s\S]*客户与下级[\s\S]*划拨记录/);
-  assert.doesNotMatch(shell("distributor"), /GOODGOOD DISTRIBUTION|<aside|<h1>积分分配/);
+  const shell = renderToStaticMarkup(React.createElement(BusinessManagementView, { tab: "children", enabled: true, onAccountChange: noop, onBack: noop }));
+  assert.match(shell, /分销管理[\s\S]*客户与下级[\s\S]*划拨记录/);
+  assert.doesNotMatch(shell, /企业管理|GOODGOOD DISTRIBUTION|<aside|<h1>积分分配/);
 });
 
 test("GG-045 accepted transfer updates once before refreshing, with no second mutation", async () => {
@@ -134,7 +133,7 @@ test("GG-045 shared shell retains exact role gates, history-only routes and crea
   const view = await readFile(new URL("../features/distribution/distribution-view.tsx", import.meta.url), "utf8");
   assert.equal((page.match(/businessRole === "distributor" && \(/g) ?? []).length, 2);
   assert.doesNotMatch(page, /<span>积分分配<\/span>|aria-label="积分分配"/);
-  assert.match(page, /context="enterprise"[\s\S]*!authenticationSession.preview[\s\S]*businessRole === "enterprise"/);
+  assert.doesNotMatch(page, /context="enterprise"|allocationEnabled|enterpriseAccountTab/);
   assert.match(page, /canonicalBusinessRoute[\s\S]*replace: true/);
   const effect = page.slice(page.indexOf("const canonicalize ="), page.indexOf("const applyWorkspaceRoute ="));
   assert.doesNotMatch(effect, /location.assign|setPrompt|setReferences|setGenerationRuns|setCreationBatches/);

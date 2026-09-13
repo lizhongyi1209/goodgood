@@ -11,7 +11,7 @@ export class DistributionError extends Error {
 export function businessRoleRequiredError() {
   return new DistributionError(
     "BUSINESS_ROLE_REQUIRED",
-    "当前账户没有可分配积分的企业或分销商身份。",
+    "仅分销商身份可使用个人积分划拨，企业身份请使用成员创作额度。",
     403,
   );
 }

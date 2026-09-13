@@ -4,7 +4,8 @@
  * @returns {import("../navigation/workspace-route.mjs").WorkspaceRoute}
  */
 export function canonicalBusinessRoute(route, businessRole) {
-  return businessRole === "enterprise" && route.kind === "distribution"
-    ? { kind: "enterpriseAccounts", tab: route.tab === "transfers" ? "transfers" : "accounts" }
-    : route;
+  if (route.kind === "enterpriseAccounts") return businessRole === "distributor"
+    ? route.tab === "transfers" ? { kind: "distribution", tab: "transfers" } : { kind: "distribution" }
+    : { kind: "organizations" };
+  return businessRole === "enterprise" && route.kind === "distribution" ? { kind: "organizations" } : route;
 }

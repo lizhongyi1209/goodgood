@@ -432,14 +432,19 @@ retains legacy-scope validation. Management tab navigation changes only the
 view/URL, not the mounted creation boundary, inputs or active polling. Backend
 organization IDs, membership checks and credit ownership remain unchanged.
 
-GG-045/ADR 0058 mounts one shared direct-account/transfer content boundary under
-enterprise account tabs and distributor management. Organization budgets still
+GG-049/ADR 0060 replaces GG-045's shared enterprise/distributor allocation scope:
+the direct-account/transfer content boundary mounts only under distributor management.
+Enterprise navigation has company overview/members/usage/Assets only. Organization budgets still
 use the organization API. Allocation still uses only `/api/distribution`,
 `/api/distribution/children` and `/api/distribution/transfers`; commercial role,
 direct relationships, provenance and atomicity stay server-authorized. Row
 history filters fetched pages in memory and keeps cursor pagination; no server
 query or persisted record changes. Accepted writes and failed follow-up reads
 are separate outcomes, so refresh never initiates another transfer.
+Current distributor role is checked before transfer replay as well as new writes.
+The existing single-active business-assignment constraint remains; no new schema,
+role/data migration or composite identity is introduced. Legacy account links
+canonicalize by current identity without resetting the composer.
 
 GG-040 parses a standalone `---` line in the shared composer boundary. Image
 fan-out calls existing `/api/generations` independently per segment, retaining
@@ -472,7 +477,7 @@ out uses the existing default-off GG-036 route, with no new provider fields.
     GoodGood session, checks the persisted role before target lookup, and writes
     idempotent review/ledger/audit evidence without a payment order.
 13. Under ADR 0043, a site owner may separately assign an enterprise/distributor
-    business role and one active direct parent. An eligible active parent may
+    business role and one active direct parent. Under ADR 0060 only an active distributor parent may
     request a server-authorized transfer to an active direct child. The backend
     rechecks role, relationship, and payment-funded available credit, locks both
     accounts in deterministic order, and commits paired ledger entries plus one
@@ -667,7 +672,7 @@ amounts on ledger entries preserve the payment-funded portion of reservations
 and downstream transfers. Generation reserves non-transferable credit first, records the source
 split, and settles, releases, or refunds that exact split.
 
-A transfer service owns business-role and direct-relationship authorization. It
+A transfer service owns distributor-role and direct-relationship authorization. It
 locks both credit accounts in stable ID order, rejects self/cyclic/non-direct
 movement, debits only the parent's payment-funded available projection, credits
 the child's matching projection, and appends `transfer_out`/`transfer_in`

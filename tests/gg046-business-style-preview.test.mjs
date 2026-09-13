@@ -36,13 +36,15 @@ test("GG-046 synthetic fixture totals, public IDs and recent timestamps are cohe
   }
 });
 
-test("GG-046 both contextual mock lists render nonempty through the real shared presentation", () => {
+test("GG-046 distributor mock list renders through the real presentation after ADR 0060", () => {
   for (const [context, previewData] of Object.entries(businessStyleFixtures)) {
     const before = JSON.stringify(previewData);
     const html = renderToStaticMarkup(React.createElement(BusinessManagementView, {
-      context, tab: "children", enabled: true, previewData, onNavigateTab: noop, onAccountChange: noop, onBack: noop,
+      tab: "children", enabled: true, previewData, onNavigateTab: noop, onAccountChange: noop, onBack: noop,
     }));
-    assert.match(html, context === "enterprise" ? /企业管理/ : /分销管理/);
+    assert.equal(context, "distributor");
+    assert.match(html, /分销管理/);
+    assert.doesNotMatch(html, /企业管理/);
     assert.match(html, /累计分配[\s\S]*查看记录[\s\S]*分配积分/);
     assert.match(html, /尚未分配/);
     assert.equal((html.match(/>分配积分<\/button>/g) ?? []).length, 4);
@@ -52,9 +54,9 @@ test("GG-046 both contextual mock lists render nonempty through the real shared 
 });
 
 test("GG-046 mock histories show incoming/outgoing, remarks and synthetic support references", () => {
-  for (const [context, previewData] of Object.entries(businessStyleFixtures)) {
+  for (const previewData of Object.values(businessStyleFixtures)) {
     const html = renderToStaticMarkup(React.createElement(BusinessManagementView, {
-      context, tab: "transfers", enabled: true, previewData, onNavigateTab: noop, onAccountChange: noop, onBack: noop,
+      tab: "transfers", enabled: true, previewData, onNavigateTab: noop, onAccountChange: noop, onBack: noop,
     }));
     assert.match(html, /分配给[\s\S]*trf_demo-[\s\S]*9 月创作额度补充/);
     assert.match(html, /收到来自[\s\S]*上级积分划入/);
@@ -65,9 +67,8 @@ test("GG-046 mock histories show incoming/outgoing, remarks and synthetic suppor
 test("GG-046 demo framing separates visual contexts from account identity and transfers", () => {
   const html = renderToStaticMarkup(React.createElement(BusinessManagementStylePreview));
   assert.match(html, /模拟数据预览[\s\S]*不改变账户身份[\s\S]*不会实际划拨积分/);
-  assert.match(html, /aria-pressed="true"[\s\S]*企业呈现/);
-  assert.match(html, /aria-pressed="false"[\s\S]*分销呈现/);
-  assert.match(html, /6500[\s\S]*9000/);
+  assert.doesNotMatch(html, /企业呈现|分销呈现|企业管理/);
+  assert.match(html, /15000[\s\S]*15500/);
 });
 
 test("GG-046 preview data disables all shared reads, paging and transfer writes", async () => {
@@ -88,5 +89,5 @@ test("GG-046 explicit visual preview is available only in an existing UI-only pr
   assert.match(page, /authenticationSession\?\.preview && businessStylePreview \? <BusinessManagementStylePreview/);
   const session = await readFile(new URL("../app/api/auth/session/route.ts", import.meta.url), "utf8");
   assert.match(session, /process.env.NODE_ENV !== "production" && !process.env.GOODGOOD_AUTH_MODE/);
-  assert.match(page, /context="enterprise"[\s\S]*businessRole === "enterprise"/);
+  assert.doesNotMatch(page, /context="enterprise"/);
 });

@@ -94,7 +94,7 @@
   bootstrap remains an out-of-band security operation, not a public signup
   shortcut.
 
-### Enterprise and distributor allocation (implemented locally, not deployed)
+### Distributor allocation (implemented locally, not deployed)
 
 - The site-owner account surface keeps system role, access state, account tier,
   and business role separate in authorization and persistence, while resolving
@@ -103,8 +103,12 @@
   set to `个人`, `企业`, or `分销商`, and may create/end/replace one direct
   parent, with target, prior/resulting state, reason, and explicit confirmation.
   It never presents those actions as payment.
-- Only an active enterprise/distributor can allocate: enterprise accounts enter
-  `企业管理 → 直属账户`, distributors enter `分销管理 → 客户与下级`.
+- ADR 0060 permits one current business identity per account: personal, enterprise
+  or distributor, never enterprise plus distributor. Users needing both use two
+  independent accounts. Existing role replacement ends the old assignment before
+  inserting the new one; it does not move money, relationships or company data.
+- Only an active distributor can allocate through `分销管理 → 客户与下级`.
+  Enterprise management has no direct-account/transfer-history tabs.
   There is no standalone allocation main-navigation item. Direct navigation by
   any other account stays denied even if it knows the URL. The first view shows
   total available credit, `可分配积分` (payment-funded available credit), and a
@@ -131,21 +135,22 @@
   filtered page, and offer `全部记录`. The main history tab clears the filter.
   Filters are not persisted into creative drafts or URLs.
 - A business child may reallocate received payment-funded credit only if the
-  site owner independently granted it an eligible business role and it has its
+  site owner independently granted it the distributor role and it has its
   own direct children. Relationship depth never broadens a user's visible list
   or permission.
 ### Enterprise workspace and member management (implemented locally; not deployed)
 
 ADR 0057 removes the desktop/mobile global Workspace switcher for every account,
 including site owners. Creation and the main account navigation stay personal.
-ADR 0058 retains enterprise management and adds distributor management as
-main-sidebar entries, with allocation and history inside their content tabs;
+ADR 0060 keeps enterprise and distributor management as main-sidebar entries,
+with personal-credit allocation and history only inside distributor tabs;
 commercial identity exposes features but never grants company data access.
 Managers enter their organization directly (a management-only directory is used
 for multiple organizations); overview/members/usage/Assets are horizontal
-content tabs inside the shared app shell. Enterprise allocation tabs are
-account-wide, visible by the commercial role even without a managed company;
-company membership/platform role alone does not grant allocation. Employee
+content tabs inside the shared app shell. Legacy enterprise account URLs return
+to enterprise management for an enterprise, or the corresponding distribution
+tab for a distributor, without resetting creation. Only distributor identity
+grants allocation; company membership/platform role does not. Employee
 invitations never establish commercial direct-child relationships.
 Personal composer state and polling
 remain mounted while visiting management. Invitation acceptance refreshes this

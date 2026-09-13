@@ -115,7 +115,7 @@ test("GG-027 distribution API validates exact amounts and uses owner-scoped repo
     },
     async readDistributionSummary(_pool, input) {
       assert.equal(input.ownerId, OWNER_CONTEXT.ownerId);
-      return { account: {}, businessRole: "enterprise", directChildCount: 0 };
+      return { account: {}, businessRole: "distributor", directChildCount: 0 };
     },
   };
   await createDistributionTransfer({
@@ -135,7 +135,7 @@ test("GG-027 distribution API validates exact amounts and uses owner-scoped repo
       repository,
       resources: { pool: {} },
     })).businessRole,
-    "enterprise",
+    "distributor",
   );
   assert.deepEqual(
     await readDistributionTransfers({
@@ -254,7 +254,7 @@ test(
     await insertBusinessRole(pool, {
       actorId,
       ownerId: parentId,
-      role: "enterprise",
+      role: "distributor",
       suffix: `parent-${suffix}`,
     });
     await insertBusinessRole(pool, {

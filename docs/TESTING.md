@@ -7,6 +7,13 @@ to distinguish UI preview, durable local integration, live API, and browser proo
 
 ## Current baseline
 
+GG-049 covers existing single-role uniqueness and atomic role replacement,
+distributor-only read/new-write/replay authorization, suspension, eligible-parent
+filter/binding denial, legacy-route recovery and enterprise navigation removal.
+Injected SQL/SSR fixtures perform no database or queue writes. Existing GG-027,
+GG-045 and GG-046 expectations follow ADR 0060; hierarchy/transfer write opt-ins
+stay disabled on the real-provider stack. Browser enterprise evidence is separate.
+
 GG-048 uses in-memory fixtures and SSR only: actual-zero/unconfigured/pending metrics,
 active-member budget attention, clocked 48-hour invitation deadlines, exact
 integer cumulative ranking, successful actual-output ordering and six-preview
@@ -437,7 +444,7 @@ decision. Its phased coverage must prove:
   owner can assign/end it or create/end/replace a direct parent; one-active-
   parent, self-link, cycle, duplicate, idempotency, and audit constraints fail
   atomically;
-- only an active enterprise/distributor can transfer, only to its active direct
+- only an active distributor can transfer (ADR 0060), only to its active direct
   child, and only from payment-funded available value. Received value remains
   transferable without granting the recipient a business capability;
 - paired transfer entries, source allocations, account caches, public transfer,
@@ -870,7 +877,7 @@ settlement remains outside the current scope.
 ## Release gate
 
 GG-046 style-fixture tests prove coherent allocation totals/timestamps,
-nonempty shared lists and histories, simulation/context labels, no balance
+nonempty distributor lists and histories, simulation labels, no balance
 callback or persistence, disabled read/page/write paths, and preview-session
 gating. All fixture data stays in memory; never seed it into the real-provider
 database/queue. Live 32140 auth continues to use actual data, while UI-only

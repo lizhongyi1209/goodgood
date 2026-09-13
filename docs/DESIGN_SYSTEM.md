@@ -229,17 +229,18 @@ individual icon. Upload, settings, and send align to the same 40px box.
 - Loading, empty, failure, retry, and mutation-in-progress states retain the
   page silhouette so rows and controls do not jump.
 
-## Enterprise and distributor allocation
+## Distributor allocation
 
-- ADR 0058 integrates allocation into `企业管理 → 直属账户` and
-  `分销管理 → 客户与下级`, not a standalone main-navigation item. Both use
-  horizontal content tabs with `划拨记录` and one shared allocation boundary.
+- ADR 0060 puts allocation only in `分销管理 → 客户与下级`, with horizontal
+  `划拨记录` tabs, not in enterprise management or standalone main navigation.
+  Each account displays one identity; no enterprise/distributor toggle or combined
+  badge. Enterprise management contains only its four company tabs.
   Reuse the light account-table/list language and Palace Red
   only for the selected state or final confirmed allocation; do not introduce a
   sales dashboard, wallet hero, earnings chart, or commerce illustration.
 - Show personal total credit and `可分配积分` as a compact inline facts row,
-  not prominent summary cards. Enterprise allocation never implies company
-  pool or employee budget ownership. Explain the latter
+  not prominent summary cards. Distributor allocation never implies company
+  pool or employee budget ownership. Explain the transferable subset
   as payment-funded credit (`充值来源积分`) in supporting copy; do not use color alone to distinguish it
   from non-transferable welcome/test/promotion credit.
 - Direct-child rows prioritize identity, cumulative allocated credit, latest

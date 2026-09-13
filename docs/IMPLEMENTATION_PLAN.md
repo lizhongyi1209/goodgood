@@ -1,12 +1,12 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-13
-- Current phase: GG-048 企业管理员概览页面本地完成，原 Chrome 已展示，待用户确认布局。
-- Current objective: 核心指标/需要关注/成员使用/最近成品展示现有企业数据；周期聚合明确待接入，先由用户确认页面。
+- Current phase: GG-049 企业与分销身份及功能分离本地完成并验证，待用户验收。
+- Current objective: 单业务身份，企业移除划拨入口、分销专属划拨权限；保留历史记录和公司预算，不自动改账户。
 
 ## Current checkpoint
 
-- 当前工作树：`feature/GG-048-enterprise-overview`（`F:/goodgood-worktrees/GG-037`），main `bab17fd` 为祖先，基于已验证 GG-046 `93ce764` 顺序新分支；决策 ADR 0059，任务卡 GG-048。GG-047 在另一工作树；未跟踪 `.codex/` 用户配置保留不提交。其他 worktree 与用户真实视频页面保持不变。
+- 当前工作树：`feature/GG-049-separate-business-roles`（`F:/goodgood-worktrees/GG-037`），main `bab17fd` 为祖先，基于已验证 GG-048 `2075451` 顺序新分支；决策 ADR 0060，任务卡 GG-049。GG-047 在另一工作树；未跟踪 `.codex/` 用户配置保留不提交。
 - 正式入口仍为 `https://goodgood.o1key.com`；`staging-goodgood.o1key.com` 只是历史名称，不是本任务的测试入口。
 - 组合来源：完整基础框架 `07e9ea5`，再合入 GG-029、GG-030、GG-031；不使用旧页面另起测试版本，也不恢复旧 C6。
 - 代码范围同时包含账户管理、积分记录/账本、企业/分销身份、直属上下级、充值来源积分划拨、邮箱 OTP、企业 Workspace、成员额度、消费记录、资产审阅和管理审计。
@@ -64,13 +64,14 @@
 - 最新展示：按用户要求，原 Chrome 已切回 `http://127.0.0.1:32140/organizations`，真实本地 `enterprise-demo@local.goodgood` 会话显示 GoodGood 测试企业及全部管理入口；实际企业积分 0、有效成员 1。未自动登录、修改代码或注入模拟记录，未新增邀请/关系/积分/任务。
 - GG-048 完成独立概览/纯计算/局部企业成品读取、四指标/具体提醒/累计成员使用/只读六成品详情；周期统计标注待接入。定向 24/24 通过，首次完整门禁 404 项中 390 通过、14 跳过。
 - GG-048 实测空账户为 null（未配置），已修正联系站长提示；最终 lint/TypeScript/构建/功能测试通过，唯一任务卡文档字段失败补回后 8/8 复验通过、diff 检查通过。原 Chrome 企业桌面/原额度弹框只读检查及最终截图完成；32140 会话 89176/readiness 五项 ok/video available，数据/Worker/会话不变。
-- Next action: 用户确认原 32140 企业概览布局，之后按新授权补完整周期聚合；不新增真实测试数据。视频定价/持久化/素材接口仍未接入，有成品详情/窄屏未实测。
+- GG-049 企业四标签/分销独立页面/旧链接/admin 帮助与分销读取/新写/重放权限收紧已完成，无迁移或数据变更。定向 63 通过/2 opt-in 跳过；稳定后一次完整门禁 412 项中 398 通过/14 opt-in 跳过/0 失败、diff 检查通过。原 32140 Web 已更新（会话 `30457`），readiness 五项 ok、视频 available true/persistence false；原 Chrome 企业四标签截图与两个旧链接归位完成，页面保留，无身份/额度/关系修改或 provider 任务。真实分销商会话/划拨和窄屏未实测。
+- Next action: 用户在原 32140 企业概览验收功能分离；真实分销页面需另行登录独立分销商账户，不自动创建或分配身份。本月聚合和视频定价/持久化/素材接口仍未接入。
 - Blockers: 无；素材与正式持久/计价链路按用户要求后续处理。
 
 ## Verification sequence
 
-1. GG-048 代码检查与文档修复复验完成，浏览器桌面只读通过；不启用 opt-in 写测试或提交 provider 任务。
-2. 只复用原 Chrome 单标签与 32140 有效企业会话，不注入模拟记录。32138 历史结果页保持。
+1. GG-049 定向 63 通过/2 opt-in 跳过，完整门禁 398 通过/14 opt-in 跳过；交付文档复验 8/8、diff 检查通过，不重复未失效的代码门禁。
+2. 原 Chrome 单标签与 32140 有效企业会话已确认四标签和旧链接恢复，供用户验收；不注入模拟记录或提交划拨/provider 任务。32138 历史结果页保持。
 3. 推送、main 合入和生产部署必须获得新的明确授权；部署前按 ADR 0047 排空旧 GPT route 的活动 attempt。
 
 ## Milestones
@@ -101,12 +102,13 @@
 | GG-045 | 本地完成，待用户验收 | 划拨归位企业/分销上下文，行内操作/历史与共享原接口；门禁/企业只读检查完成，未发布 |
 | GG-046 | 模拟未获认可，真实企业页已打开 | 模拟门禁通过；当前展示原真实本地企业账户与完整管理入口，不改数据，未发布 |
 | GG-048 | 本地页面完成，待用户确认 | 核心指标/具体提醒/累计成员使用/最近成品；检查及原 Chrome 展示完成，周期聚合待接入，未发布 |
+| GG-049 | 本地完成并验证，待用户验收 | 单业务身份、企业/分销划拨分离；完整门禁与原 Chrome 企业检查完成，未发布 |
 | 完整 C6 / M9 | 搁置 | 删除、举报、商业支付等，见 GG-900—GG-902 |
 
 ## New-session recovery
 
 1. 阅读根 `AGENTS.md`、[CURRENT_STATE](CURRENT_STATE.md)、[WORKFLOW](WORKFLOW.md)、本页和 [BACKLOG](BACKLOG.md)，检查分支/worktree/未提交改动。
-2. 从 `feature/GG-048-enterprise-overview` 恢复；先读 GG-048 任务卡与 ADR 0059，不恢复旧 C6。当前展示入口为 32140 真实企业概览，不向真实接口填充模拟数据。
+2. 从 `feature/GG-049-separate-business-roles` 恢复；先读 GG-049 任务卡与 ADR 0060，不恢复旧 C6。当前展示入口为 32140 真实企业概览，不向真实接口填充模拟数据。
 3. 数量与本地并发已验证；不要未经费用授权启用 key 或提交真实生成。main 合入和生产部署仍需要新的明确授权。
 
 ## History and update policy

@@ -604,7 +604,7 @@ export function AccountManagementPage() {
                     <SelectItem value="distributor">分销商</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="admin-action-help">企业与分销商当前共享直属下级积分分配能力；均不能设置兑换价格。</p>
+                <p className="admin-action-help">一个账户只能选择一个身份。企业管理成员与创作额度，分销商划拨个人充值来源积分；两种业务请使用不同账户。</p>
               </div>
             )}
             {selected?.action === "parent" && (
@@ -630,7 +630,7 @@ export function AccountManagementPage() {
                       ))}
                   </SelectContent>
                 </Select>
-                <p className="admin-action-help">只列出已启用且具有企业或分销商身份的账户。系统会拒绝循环关系。</p>
+                <p className="admin-action-help">只列出已启用的分销商账户。直属关系用于个人积分划拨，与企业成员无关；系统会拒绝循环关系。</p>
               </div>
             )}
             <div className="admin-action-field">

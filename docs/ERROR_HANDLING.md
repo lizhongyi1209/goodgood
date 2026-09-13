@@ -18,7 +18,7 @@ stay in their compact dialog with email/member, amount and reason preserved;
 stale tab/directory reads cannot overwrite newer results. No recovery switches
 creative identity, transfers records or submits generation.
 
-GG-045 keeps allocation errors inside the relevant enterprise/distributor
+GG-045 keeps allocation errors inside the relevant distribution
 content. A successful transfer followed by a failed list read retains the
 confirmed balance and public transfer ID; it warns against repeat allocation
 and offers a read-only refresh. An empty counterparty filter with more pages
@@ -28,6 +28,12 @@ Failed pagination preserves loaded rows and the counterparty filter.
 GG-046 simulated lists/history are explicitly preview-only. Allocation dialogs
 can be inspected, but final submission is disabled with a text explanation and
 a handler guard. Mock loads never fall back to real reads or writes.
+
+GG-049 returns `BUSINESS_ROLE_REQUIRED / 403` for enterprise/personal distribution
+reads, new transfers and historical transfer replays. Suspended distributors stay
+denied. New parent bindings reject a non-distributor with the existing admin
+conflict code and no relationship mutation. Old enterprise allocation links use
+read-only navigation recovery; it never assigns a role or deletes history.
 
 GG-048 overview keeps missing monthly aggregates and unconfigured credit accounts
 distinct from real zero. Dashboard `account: null` means no credit account exists,

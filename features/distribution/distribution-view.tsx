@@ -44,12 +44,11 @@ const dateFormatter = new Intl.DateTimeFormat("zh-CN", {
   timeStyle: "short",
 });
 
-export function BusinessAccountContent({ summary, directAccounts, transfers, tab, context, historyAccount, onTransfer, onShowRecords, onClearRecords, loadingMore, loadMoreError, onLoadMore }: Readonly<{
+export function BusinessAccountContent({ summary, directAccounts, transfers, tab, historyAccount, onTransfer, onShowRecords, onClearRecords, loadingMore, loadMoreError, onLoadMore }: Readonly<{
   summary: DistributionSummary;
   directAccounts: readonly DistributionChild[];
   transfers: CreditTransferPage;
   tab: "children" | "transfers";
-  context: "enterprise" | "distributor";
   historyAccount: Pick<DistributionChild, "id" | "email"> | null;
   onTransfer: (child: DistributionChild) => void;
   onShowRecords: (child: DistributionChild) => void;
@@ -67,7 +66,7 @@ export function BusinessAccountContent({ summary, directAccounts, transfers, tab
     </dl>
     <p className="organization-note">只可把充值来源积分分配给直属下级；兑换价格与收款由你在线下自行处理。划拨提交后不可撤回或编辑。</p>
     {tab === "children" ? <section className="distribution-panel" aria-labelledby="distribution-children-title">
-      <div className="distribution-panel-heading"><div><h2 id="distribution-children-title">{context === "enterprise" ? "直属账户" : "客户与下级"}</h2>
+      <div className="distribution-panel-heading"><div><h2 id="distribution-children-title">客户与下级</h2>
         <p>直属关系由站长设置，不与企业成员或邀请自动关联。</p></div><UsersRound /></div>
       {directAccounts.length === 0 ? <div className="distribution-empty"><UsersRound /><strong>还没有直属下级</strong>
         <span>直属关系需要由站长在账户管理中设置。</span></div>
@@ -105,14 +104,13 @@ type Props = Readonly<{
   enabled: boolean;
   onAccountChange: (account: BillingAccountSummary) => void;
   tab: "children" | "transfers";
-  context: "enterprise" | "distributor";
   historyAccount: Pick<DistributionChild, "id" | "email"> | null;
   onShowRecords: (child: DistributionChild) => void;
   onClearRecords: () => void;
   previewData?: DistributionPreviewData;
 }>;
 
-export function DistributionView({ enabled, onAccountChange, tab, context, historyAccount, onShowRecords, onClearRecords, previewData }: Props) {
+export function DistributionView({ enabled, onAccountChange, tab, historyAccount, onShowRecords, onClearRecords, previewData }: Props) {
   const [summary, setSummary] = useState<DistributionSummary | null>(previewData?.summary ?? null);
   const [children, setChildren] = useState<readonly DistributionChild[]>(previewData?.directAccounts ?? []);
   const [transfers, setTransfers] = useState<CreditTransferPage | null>(previewData?.transfers ?? null);
@@ -246,7 +244,7 @@ export function DistributionView({ enabled, onAccountChange, tab, context, histo
 
   if (!enabled) return <Alert className="distribution-access">
     <CircleAlert /><AlertTitle>当前账户没有积分分配权限</AlertTitle>
-    <AlertDescription>企业或分销商身份需要由站长在账户管理中设置；企业管理资格不代表划拨权限。</AlertDescription>
+    <AlertDescription>仅分销商身份可划拨个人充值来源积分；企业身份使用成员创作额度，不具备划拨权限。</AlertDescription>
   </Alert>;
 
   if (loading && (!summary || !transfers)) return <div className="distribution-loading" role="status">
@@ -266,7 +264,7 @@ export function DistributionView({ enabled, onAccountChange, tab, context, histo
       {(refreshError || error) && <div className="distribution-refresh-error" role="alert"><p>{refreshError ?? error}</p>
         <Button size="sm" variant="ghost" disabled={loading} onClick={() => void load()}><RefreshCw />{loading ? "正在刷新" : "刷新记录"}</Button></div>}
       <BusinessAccountContent summary={summary} directAccounts={children} transfers={transfers}
-        tab={tab} context={context} historyAccount={historyAccount}
+        tab={tab} historyAccount={historyAccount}
         onTransfer={openTransfer} onShowRecords={onShowRecords} onClearRecords={onClearRecords}
         loadingMore={loadingMore} loadMoreError={loadMoreError} onLoadMore={() => void loadMore()} />
 

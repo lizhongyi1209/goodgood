@@ -32,7 +32,7 @@ test("GG-027 allocation is contextual to the authenticated business role (GG-045
   );
   assert.match(page, /activeView === "distribution"/);
   assert.match(page, /<BusinessManagementView/);
-  assert.match(page, /context="enterprise"[\s\S]*businessRole === "enterprise"/);
+  assert.doesNotMatch(page, /context="enterprise"|allocationEnabled/);
 });
 
 test("GG-027 distribution surface keeps offline commerce outside the product", async () => {
@@ -70,8 +70,8 @@ test("GG-027 station owner controls roles and direct parents with audited reason
   ]);
   assert.match(admin, /调整业务身份/);
   assert.match(admin, /调整直属关系/);
-  assert.match(admin, /企业与分销商当前共享直属下级积分分配能力/);
-  assert.match(admin, /只列出已启用且具有企业或分销商身份的账户/);
+  assert.match(admin, /一个账户只能选择一个身份[\s\S]*两种业务请使用不同账户/);
+  assert.match(admin, /只列出已启用的分销商账户/);
   assert.match(admin, /placeholder="请填写会进入审计记录的原因"/);
   assert.match(boundary, /x-goodgood-admin-action/);
   assert.match(roleRoute, /updateAdminBusinessRole/);

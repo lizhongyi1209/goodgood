@@ -134,8 +134,9 @@ Historical implementation/verification stages are retained in `docs/history/`.
 
 ADR 0043 accepts a locally developed account-hierarchy capability without
 claiming it is deployed. The site owner may classify an account as an
-`enterprise` or `distributor` and bind one active direct parent. Either business
-role may allocate only payment-funded available credit to an active direct
+`enterprise` or `distributor`, exclusively, and bind one active direct parent.
+ADR 0060 limits allocation to an active distributor, using only payment-funded
+available credit to an active direct
 child; a downstream business account may allocate received credit again because
 the original payment provenance is retained. Welcome, test, promotion, and
 operational grants cannot be allocated.
@@ -168,19 +169,21 @@ revocable member spending limits from one organization credit pool, inspect
 organization generation consumption, and review generated company Assets.
 
 ADR 0057 makes every identity a personal account in the main interface: no
-global Workspace switcher, including site owners. ADR 0058 makes enterprise and
-distributor management the business navigation entries; allocation lives in
-enterprise direct accounts or distributor customers/downstream, with row actions
-and transfer-history tabs. There is no standalone allocation navigation. Company
+global Workspace switcher, including site owners. ADR 0060 separates enterprise
+and distributor identities: each account has one current business identity;
+users needing both use two independent accounts in the short term. Allocation
+lives only in distributor customers/downstream and transfer-history tabs.
+Enterprise management contains overview, members/budgets, usage and team Assets,
+without direct-account or transfer tabs. There is no standalone allocation navigation. Company
 tabs live inside the same shell; platform role and commercial identity do not
 replace organization authorization. Legacy company creative URLs and ownership
 remain compatible; this navigation change does not migrate data or credit.
 
-Enterprise commercial identity may manage its own direct accounts even without
-company-management membership. A manager or site owner without that commercial
-capability cannot allocate. Direct-account transfers use the current personal
-account, never the company pool or revocable employee budgets. A distributor
-who also manages a company can enter both areas with independent authorization.
+Enterprise identity cannot allocate personal credit. Only an active distributor
+may do so. Transfers use the current personal account, never a company pool or
+revocable employee budgets. Company membership roles are scoped collaboration
+permissions, not a second business identity. No combined enterprise/distributor
+identity or account-switching/automatic linking flow is offered.
 
 Personal history and credit never become company data automatically. Work made
 in an organization Workspace belongs to that organization and retains its

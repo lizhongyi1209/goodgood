@@ -3,6 +3,7 @@
 - Status: Accepted
 - Date: 2026-09-13
 - Refines: ADR 0057 navigation and ADR 0043 presentation only
+- Enterprise transfer tabs/capability superseded by [ADR 0060](0060-exclusive-enterprise-distributor-identities.md); distributor row actions, history recovery and personal shell remain.
 
 ## Decision
 

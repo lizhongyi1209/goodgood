@@ -4,7 +4,7 @@ export type BusinessRole = "enterprise" | "distributor";
 
 export interface DistributionSummary {
   account: BillingAccountSummary;
-  businessRole: BusinessRole;
+  businessRole: "distributor";
   directChildCount: number;
 }
 
