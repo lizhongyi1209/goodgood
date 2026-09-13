@@ -3,6 +3,8 @@
 - Status: Accepted
 - Date: 2026-09-13
 - Refines: ADR 0046 navigation, not its persistence or authorization boundaries
+- Allocation navigation refined by [ADR 0058](0058-contextual-business-credit-management.md);
+  the personal shell/no-switcher decision remains unchanged.
 
 ## Decision
 

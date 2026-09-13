@@ -432,6 +432,15 @@ retains legacy-scope validation. Management tab navigation changes only the
 view/URL, not the mounted creation boundary, inputs or active polling. Backend
 organization IDs, membership checks and credit ownership remain unchanged.
 
+GG-045/ADR 0058 mounts one shared direct-account/transfer content boundary under
+enterprise account tabs and distributor management. Organization budgets still
+use the organization API. Allocation still uses only `/api/distribution`,
+`/api/distribution/children` and `/api/distribution/transfers`; commercial role,
+direct relationships, provenance and atomicity stay server-authorized. Row
+history filters fetched pages in memory and keeps cursor pagination; no server
+query or persisted record changes. Accepted writes and failed follow-up reads
+are separate outcomes, so refresh never initiates another transfer.
+
 GG-040 parses a standalone `---` line in the shared composer boundary. Image
 fan-out calls existing `/api/generations` independently per segment, retaining
 count 1/2/4 and unique idempotency/run identities; server billing remains per

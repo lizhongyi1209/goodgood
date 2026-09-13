@@ -73,7 +73,7 @@ test("GG-044 shared shell preserves authorization, creation/polling state and in
   const directory = await readFile(new URL("../features/organizations/organization-directory-view.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(source, /WorkspaceSwitcher|mobile-workspace-switcher/);
   assert.match(source, /side-nav-item[\s\S]*handleOrganizationNav[\s\S]*企业管理/);
-  assert.match(source, /side-nav-item[\s\S]*handleDistributionNav[\s\S]*积分分配/);
+  assert.match(source, /side-nav-item[\s\S]*handleDistributionNav[\s\S]*分销管理/);
   const handler = source.slice(source.indexOf("const handleOrganizationNav"), source.indexOf("const handleCreditAccountChange"));
   assert.doesNotMatch(handler, /setPrompt|setReferences|setVideoReferences|setGenerationRuns|setCreationBatches|setWorkspace/);
   assert.match(hook, /readWorkspaceDirectory/);

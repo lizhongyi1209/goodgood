@@ -18,6 +18,13 @@ stay in their compact dialog with email/member, amount and reason preserved;
 stale tab/directory reads cannot overwrite newer results. No recovery switches
 creative identity, transfers records or submits generation.
 
+GG-045 keeps allocation errors inside the relevant enterprise/distributor
+content. A successful transfer followed by a failed list read retains the
+confirmed balance and public transfer ID; it warns against repeat allocation
+and offers a read-only refresh. An empty counterparty filter with more pages
+explicitly says only loaded records are empty and retains load-more/all-records.
+Failed pagination preserves loaded rows and the counterparty filter.
+
 | Category | Example code | UI placement | Default recovery |
 | --- | --- | --- | --- |
 | Input | `INVALID_PROMPT` | Composer field/toast | Focus and correct |

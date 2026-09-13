@@ -4,7 +4,8 @@
 
 The shared workspace mounts at `/`, `/create`, `/projects`,
 `/projects/:projectId`, `/assets`, `/assets/:assetId`, `/credits`, `/distribution`,
-and `/organizations` with organization detail subroutes. `/create` is the
+`/distribution/transfers`, and `/organizations` with organization detail and
+account-wide `/organizations/accounts` and `/organizations/transfers` subroutes. `/create` is the
 canonical product URL for creation; `/` remains a compatible entry to the same
 workspace state. Project and asset navigation use stable browser URLs and
 native history.
@@ -22,7 +23,8 @@ native history.
 | 积分记录 | Implemented | `/credits`, entered from the quiet row below `帮助` or the mobile balance |
 | 企业历史创作 | Compatible local route | `/workspaces/:workspaceId/create`, after active-membership validation; no global selector |
 | 企业管理 | Implemented locally | Main sidebar `/organizations`; one managed company opens overview, multiple companies use a management-only directory; detail subroutes share the main shell |
-| 积分分配 | Implemented locally | Eligible business identity main-sidebar `/distribution`, distinct from member budget management |
+| 分销管理 | Implemented locally | Distributor-only main-sidebar `/distribution` customers/downstream and `/distribution/transfers` history |
+| 企业直属账户 / 划拨记录 | Implemented locally | Enterprise commercial-role content tabs `/organizations/accounts` and `/organizations/transfers`; account-wide, not company budget views |
 
 Do not describe placeholders as shipped features.
 
@@ -86,7 +88,10 @@ creates or mutates a payment order.
 ## Implemented GG-027 local API routes (not deployed)
 
 GG-027 stages 2—4 implement the authenticated API boundaries and local page
-below. `/distribution` is the enterprise/distributor direct-child workspace. Ordinary
+below. ADR 0058 places the same boundary under enterprise account tabs and
+distributor management. For an active enterprise commercial account, legacy
+`/distribution` and `/distribution/transfers` replace browser history with the
+corresponding enterprise account route, without reloading creative state. Ordinary
 users and business accounts without the allocation capability receive the same
 server-enforced denial on direct URL and API access; hiding navigation is not
 authorization. Entering or leaving the view preserves active creation state.

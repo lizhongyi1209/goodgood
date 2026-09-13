@@ -46,6 +46,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { navigateWorkspace } from "@/features/navigation/workspace-route.mjs";
 import { saveImageToLocal } from "@/features/assets/image-download";
+import { EnterpriseManagementNavigation } from "./enterprise-management-navigation";
 import {
   inviteOrganizationMember,
   readOrganizationAssetDownloadUrl,
@@ -95,10 +96,12 @@ export function OrganizationManagementView({
   activeTab,
   workspaceId,
   enabled,
+  allocationEnabled = false,
 }: Readonly<{
   activeTab: OrganizationManagementTab;
   workspaceId: string;
   enabled: boolean;
+  allocationEnabled?: boolean;
 }>) {
   const [dashboard, setDashboard] = useState<OrganizationDashboard | null>(null);
   const [usage, setUsage] = useState<readonly OrganizationUsage[]>([]);
@@ -307,9 +310,7 @@ export function OrganizationManagementView({
       <div><h1>{dashboard?.workspace.name ?? "企业管理"}</h1><p>企业成员、创作额度、消费与资产统一管理。</p></div>
       <Button variant="ghost" size="sm" onClick={() => navigateWorkspace({ kind: "organizations" })}><ArrowLeft />企业列表</Button>
     </header>
-    <nav className="organization-tabs" aria-label="企业管理内容">
-      {navItems.map((item) => <button className={activeTab === item.id ? "active" : ""} aria-current={activeTab === item.id ? "page" : undefined} key={item.id} onClick={() => navigateTab(item.id)}><item.icon size={16} />{item.label}</button>)}
-    </nav>
+    <EnterpriseManagementNavigation activeTab={activeTab} organizationId={workspaceId} allocationEnabled={allocationEnabled} />
 
     {loadError ? <Alert variant="destructive" className="organization-load-error">
       <AlertTitle>企业信息加载失败</AlertTitle><AlertDescription><span>{loadError}</span><Button size="sm" variant="ghost" onClick={() => void load()}><RefreshCw />重试</Button><Button size="sm" variant="ghost" onClick={() => navigateWorkspace({ kind: "organizations" })}>返回企业列表</Button></AlertDescription>
@@ -323,7 +324,7 @@ export function OrganizationManagementView({
         ].map(([label, value]) => <div className="organization-summary" key={label}><span>{label}</span><strong>{value}</strong></div>)}
       </div>
       <div className="organization-shortcuts">{navItems.slice(1).map((item) => <button key={item.id} onClick={() => navigateTab(item.id)}><item.icon size={18} /><strong>{item.label}</strong><span>{item.id === "members" ? "邀请员工，调整创作额度" : item.id === "usage" ? "核对企业创作积分消耗" : "查看团队生成的成品"}</span></button>)}</div>
-      <p className="organization-note">员工额度是企业创作预算；主导航中的“积分分配”用于直属账户之间的充值来源积分划拨，两者独立。</p>
+      <p className="organization-note">员工额度是企业创作预算；直属账户接收的是当前个人账户的充值来源积分，两者独立。邀请员工不会建立直属账户关系。</p>
     </> : activeTab === "members" ? <>
       <div className="organization-section-heading"><div><h2>成员与额度</h2><p>剩余额度不包含已消费和在途预留，减少额度不会追回已使用积分。</p></div><Button variant="ghost" onClick={() => { setActionError(null); setInviteOpen(true); }}><UserPlus />邀请成员</Button></div>
       {dashboard.invitations.length > 0 && <section className="organization-invitations" aria-label="待接受邀请"><h3>待接受邀请</h3>

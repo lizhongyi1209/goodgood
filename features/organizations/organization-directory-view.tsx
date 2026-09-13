@@ -8,6 +8,7 @@ import { navigateWorkspace } from "@/features/navigation/workspace-route.mjs";
 import { acceptOrganizationInvitation, type OrganizationInvitation, type WorkspaceRecord } from "./http-organization-boundary";
 import { manageableOrganizations } from "./organization-navigation.mjs";
 import { OrganizationManagementView } from "./organization-management-page";
+import { EnterpriseManagementNavigation } from "./enterprise-management-navigation";
 
 export function OrganizationDirectoryView({ directory, session }: Readonly<{
   session: AuthenticationSession | null;
@@ -23,6 +24,7 @@ export function OrganizationDirectoryView({ directory, session }: Readonly<{
   const [acceptError, setAcceptError] = useState<string | null>(null);
   const organizations: readonly WorkspaceRecord[] = manageableOrganizations(directory.workspaces);
   const enabled = Boolean(session && !session.preview && session.access.status === "active");
+  const allocationEnabled = enabled && session?.account.businessRole === "enterprise";
   const accept = async (invitation: OrganizationInvitation) => {
     setAcceptingId(invitation.id);
     setAcceptError(null);
@@ -34,15 +36,16 @@ export function OrganizationDirectoryView({ directory, session }: Readonly<{
     } finally { setAcceptingId(null); }
   };
 
-  if (directory.loading) return <section className="organization-state" role="status"><LoaderCircle className="animate-spin" size={18} />正在读取企业信息</section>;
-  if (directory.error) return <section className="organization-state" role="alert"><p>{directory.error}</p><Button variant="ghost" onClick={() => void directory.reload()}><RefreshCw />重试</Button></section>;
+  if (directory.loading) return <>{allocationEnabled && <EnterpriseManagementNavigation activeTab="overview" allocationEnabled />}<section className="organization-state" role="status"><LoaderCircle className="animate-spin" size={18} />正在读取企业信息</section></>;
+  if (directory.error) return <>{allocationEnabled && <EnterpriseManagementNavigation activeTab="overview" allocationEnabled />}<section className="organization-state" role="alert"><p>{directory.error}</p><Button variant="ghost" onClick={() => void directory.reload()}><RefreshCw />重试</Button></section></>;
   if (!enabled) return <section className="organization-state">请使用已开通的账户查看企业管理。</section>;
   if (organizations.length === 1 && directory.invitations.length === 0 && !acceptError) {
-    return <OrganizationManagementView activeTab="overview" workspaceId={organizations[0].id} enabled={enabled} />;
+    return <OrganizationManagementView activeTab="overview" workspaceId={organizations[0].id} enabled={enabled} allocationEnabled={allocationEnabled} />;
   }
 
   return <section className="organization-view" aria-label="企业管理">
     <header className="organization-header"><div><h1>企业管理</h1><p>管理企业成员、创作额度和团队资产，不切换你的个人创作。</p></div></header>
+    <EnterpriseManagementNavigation activeTab="overview" allocationEnabled={allocationEnabled} />
     {acceptError && <p className="organization-inline-error" role="alert">{acceptError}</p>}
     {directory.invitations.length > 0 && <section className="organization-invitations" aria-label="待接受的企业邀请">
       <h2>企业邀请</h2>

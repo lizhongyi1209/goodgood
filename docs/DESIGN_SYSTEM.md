@@ -231,17 +231,24 @@ individual icon. Upload, settings, and send align to the same 40px box.
 
 ## Enterprise and distributor allocation
 
-- `积分分配` is a restrained utility surface visible only to an eligible
-  business account. Reuse the light account-table/list language and Palace Red
+- ADR 0058 integrates allocation into `企业管理 → 直属账户` and
+  `分销管理 → 客户与下级`, not a standalone main-navigation item. Both use
+  horizontal content tabs with `划拨记录` and one shared allocation boundary.
+  Reuse the light account-table/list language and Palace Red
   only for the selected state or final confirmed allocation; do not introduce a
   sales dashboard, wallet hero, earnings chart, or commerce illustration.
-- Show total credit and `可分配积分` as concise account facts. Explain the latter
+- Show personal total credit and `可分配积分` as a compact inline facts row,
+  not prominent summary cards. Enterprise allocation never implies company
+  pool or employee budget ownership. Explain the latter
   as payment-funded credit (`充值来源积分`) in supporting copy; do not use color alone to distinguish it
   from non-transferable welcome/test/promotion credit.
 - Direct-child rows prioritize identity, cumulative allocated credit, latest
-  transfer time, and the allocation action. They never expose that child's
-  balance or creative content. Narrow layouts stack the row and make the action
-  full-width without hiding relationship context.
+  transfer time, `查看记录`, and `分配积分`. They never expose that child's
+  balance or creative content. Narrow layouts stack the row and keep both
+  neutral actions together without hiding relationship context.
+- Account-specific history is an ephemeral filter of fetched pages. Keep
+  `全部记录`, range disclosure and load-more visible even when that filter
+  yields no rows; do not label a partial empty result as empty full history.
 - The allocation dialog mirrors the compact site-owner credit dialog: explicit
   target, transferable balance, integer amount, optional remark, and one final
   Palace Red action. Completion shows the public transfer reference. There is

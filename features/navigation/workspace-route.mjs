@@ -1,7 +1,7 @@
 export const WORKSPACE_NAVIGATION_EVENT = "goodgood:workspace-navigation";
 
 /**
- * @typedef {{ kind: "create" } | { kind: "projects" } | { kind: "project", projectId: string } | { kind: "assets" } | { kind: "asset", assetId: string } | { kind: "credits" } | { kind: "distribution" } | { kind: "organizations", organizationId?: string, tab?: "overview" | "members" | "usage" | "assets" }} WorkspaceRoute
+ * @typedef {{ kind: "create" } | { kind: "projects" } | { kind: "project", projectId: string } | { kind: "assets" } | { kind: "asset", assetId: string } | { kind: "credits" } | { kind: "distribution", tab?: "transfers" } | { kind: "enterpriseAccounts", tab: "accounts" | "transfers" } | { kind: "organizations", organizationId?: string, tab?: "overview" | "members" | "usage" | "assets" }} WorkspaceRoute
  */
 
 /**
@@ -28,6 +28,9 @@ export function parseWorkspaceRoute(pathname) {
   if (normalized === "/assets") return { kind: "assets" };
   if (normalized === "/credits") return { kind: "credits" };
   if (normalized === "/distribution") return { kind: "distribution" };
+  if (normalized === "/distribution/transfers") return { kind: "distribution", tab: "transfers" };
+  if (normalized === "/organizations/accounts") return { kind: "enterpriseAccounts", tab: "accounts" };
+  if (normalized === "/organizations/transfers") return { kind: "enterpriseAccounts", tab: "transfers" };
   if (normalized === "/organizations") return { kind: "organizations" };
   const organizationMatch = normalized.match(/^\/organizations\/([^/]+)(?:\/(members|usage|assets))?$/);
   if (organizationMatch) {
@@ -57,7 +60,8 @@ export function workspaceRouteHref(route) {
   }
   if (route.kind === "assets") return "/assets";
   if (route.kind === "credits") return "/credits";
-  if (route.kind === "distribution") return "/distribution";
+  if (route.kind === "distribution") return route.tab === "transfers" ? "/distribution/transfers" : "/distribution";
+  if (route.kind === "enterpriseAccounts") return `/organizations/${route.tab}`;
   if (route.kind === "organizations") {
     if (!route.organizationId) return "/organizations";
     const root = `/organizations/${encodeURIComponent(route.organizationId)}`;

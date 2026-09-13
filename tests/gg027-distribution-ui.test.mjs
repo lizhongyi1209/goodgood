@@ -20,25 +20,26 @@ test("GG-027 distribution is a first-class workspace route", () => {
   assert.equal(workspaceRouteHref({ kind: "distribution" }), "/distribution");
 });
 
-test("GG-027 navigation is visible only to an authenticated business role", async () => {
+test("GG-027 allocation is contextual to the authenticated business role (GG-045 navigation)", async () => {
   const page = await source("app/page.tsx");
   assert.match(
     page,
-    /authenticationSession\?\.account\.businessRole\s*&&\s*\(\s*<button[\s\S]*?<Network size=\{17\}/,
+    /authenticationSession\?\.account\.businessRole === "distributor"\s*&&\s*\(\s*<button[\s\S]*?<Network size=\{17\}/,
   );
   assert.match(
     page,
-    /access\.status === "active" &&\s*authenticationSession\.account\.businessRole/,
+    /access\.status === "active" &&\s*authenticationSession\.account\.businessRole === "distributor"/,
   );
   assert.match(page, /activeView === "distribution"/);
-  assert.match(page, /<DistributionView/);
+  assert.match(page, /<BusinessManagementView/);
+  assert.match(page, /context="enterprise"[\s\S]*businessRole === "enterprise"/);
 });
 
 test("GG-027 distribution surface keeps offline commerce outside the product", async () => {
   const view = await source("features/distribution/distribution-view.tsx");
   assert.match(view, /只可把充值来源积分分配给直属下级/);
   assert.match(view, /兑换价格与收款由你在线下自行处理/);
-  assert.match(view, /仅充值及上级划入来源/);
+  assert.match(view, /充值来源积分/);
   assert.match(view, /公开编号可用于对账追溯/);
   assert.match(view, /提交后不可撤回或编辑/);
   assert.doesNotMatch(view, /name=["'](?:price|currency|money|commission)/i);
@@ -51,7 +52,7 @@ test("GG-027 distribution surface covers access, loading, empty, error, conflict
   assert.match(view, /正在读取分配账户/);
   assert.match(view, /还没有直属下级/);
   assert.match(view, /还没有划拨记录/);
-  assert.match(view, /积分分配暂时不可用/);
+  assert.match(view, /账户信息暂时不可用/);
   assert.match(view, /setSubmitError/);
   assert.match(view, /数量必须为正整数，且不能超过当前可分配积分/);
   assert.match(view, /\[10, 50, 100\]/);
@@ -139,9 +140,8 @@ test("GG-027 browser routes keep read operations cacheless and transfer writes C
 
 test("GG-027 distribution layout has a single-column narrow-screen contract", async () => {
   const css = await source("app/globals.css");
-  assert.match(css, /\.distribution-header \{ min-height: 0;[^}]*flex-direction: column/);
-  assert.match(css, /\.distribution-header > button \{ align-self: flex-start/);
-  assert.match(css, /\.distribution-summary-grid \{ grid-template-columns: 1fr/);
-  assert.match(css, /\.distribution-columns \{ grid-template-columns: minmax\(0,1fr\)/);
+  assert.match(css, /\.business-account-facts \{[^}]*flex-wrap: wrap/);
+  assert.match(css, /\.business-account-facts > div \{ flex: 1 1 150px/);
+  assert.match(css, /\.distribution-row-actions \{ width: 100%; justify-content: flex-end/);
   assert.match(css, /\.distribution-child-list article \{ align-items: flex-start; flex-direction: column/);
 });

@@ -1,19 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDownLeft,
-  ArrowLeft,
   ArrowUpRight,
   CircleAlert,
-  CircleDot,
   LoaderCircle,
   RefreshCw,
   UsersRound,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -26,6 +23,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { transfersForCounterparty } from "./transfer-history.mjs";
+import { transferAndRefresh } from "./transfer-and-refresh";
 import type { BillingAccountSummary } from "@/shared/contracts/billing";
 import type {
   CreditTransferPage,
@@ -39,23 +38,79 @@ import {
   readDistributionTransfers,
 } from "./http-distribution-boundary";
 
-const roleLabels = {
-  distributor: "分销商",
-  enterprise: "企业",
-} as const;
-
 const dateFormatter = new Intl.DateTimeFormat("zh-CN", {
   dateStyle: "medium",
   timeStyle: "short",
 });
 
+export function BusinessAccountContent({ summary, directAccounts, transfers, tab, context, historyAccount, onTransfer, onShowRecords, onClearRecords, loadingMore, loadMoreError, onLoadMore }: Readonly<{
+  summary: DistributionSummary;
+  directAccounts: readonly DistributionChild[];
+  transfers: CreditTransferPage;
+  tab: "children" | "transfers";
+  context: "enterprise" | "distributor";
+  historyAccount: Pick<DistributionChild, "id" | "email"> | null;
+  onTransfer: (child: DistributionChild) => void;
+  onShowRecords: (child: DistributionChild) => void;
+  onClearRecords: () => void;
+  loadingMore: boolean;
+  loadMoreError: string | null;
+  onLoadMore: () => void;
+}>) {
+  const visibleTransfers = transfersForCounterparty(transfers.items, historyAccount?.id);
+  return <>
+    <dl className="business-account-facts" aria-label="当前个人账户">
+      <div><dt>可分配积分</dt><dd>{summary.account.transferableCredits}</dd></div>
+      <div><dt>个人可用积分</dt><dd>{summary.account.availableCredits}</dd></div>
+      <div><dt>直属账户</dt><dd>{summary.directChildCount}</dd></div>
+    </dl>
+    <p className="organization-note">只可把充值来源积分分配给直属下级；兑换价格与收款由你在线下自行处理。划拨提交后不可撤回或编辑。</p>
+    {tab === "children" ? <section className="distribution-panel" aria-labelledby="distribution-children-title">
+      <div className="distribution-panel-heading"><div><h2 id="distribution-children-title">{context === "enterprise" ? "直属账户" : "客户与下级"}</h2>
+        <p>直属关系由站长设置，不与企业成员或邀请自动关联。</p></div><UsersRound /></div>
+      {directAccounts.length === 0 ? <div className="distribution-empty"><UsersRound /><strong>还没有直属下级</strong>
+        <span>直属关系需要由站长在账户管理中设置。</span></div>
+        : <div className="distribution-child-list">{directAccounts.map((child) => <article key={child.id}>
+          <div><strong>{child.email}</strong><span>累计分配 {child.allocatedCredits}{child.lastTransferredAt
+            ? ` · 最近 ${dateFormatter.format(new Date(child.lastTransferredAt))}` : " · 尚未分配"}</span></div>
+          <div className="distribution-row-actions">
+            <Button size="sm" variant="ghost" onClick={() => onShowRecords(child)}>查看记录</Button>
+            <Button size="sm" variant="ghost" onClick={() => onTransfer(child)}>分配积分</Button>
+          </div></article>)}</div>}
+    </section> : <section className="distribution-panel" aria-labelledby="distribution-history-title">
+      <div className="distribution-panel-heading"><div><h2 id="distribution-history-title">划拨记录</h2><p>公开编号可用于对账追溯</p></div>
+        {historyAccount && <Button size="sm" variant="ghost" onClick={onClearRecords}>全部记录</Button>}</div>
+      {historyAccount && <p className="distribution-history-scope">{historyAccount.email}
+        {transfers.nextCursor ? " · 仅筛选已加载记录，可继续加载更多" : " · 已加载全部记录"}</p>}
+      {visibleTransfers.length === 0 ? <div className="distribution-empty"><ArrowUpRight />
+        <strong>{historyAccount ? transfers.nextCursor ? "已加载记录中暂无此账户划拨" : "此账户暂无划拨记录" : "还没有划拨记录"}</strong>
+        <span>{historyAccount && transfers.nextCursor ? "这不代表全部历史为空，请继续加载或查看全部记录。" : "完成第一笔分配后会显示在这里。"}</span></div>
+        : <div className="distribution-transfer-list">{visibleTransfers.map((transfer) => <article key={transfer.id}>
+          <div className={`distribution-transfer-icon ${transfer.direction}`}>
+            {transfer.direction === "outgoing" ? <ArrowUpRight /> : <ArrowDownLeft />}</div>
+          <div><strong>{transfer.direction === "outgoing" ? "分配给" : "收到来自"} {transfer.counterpartyEmail ?? "账户不可用"}</strong>
+            <span>{transfer.id} · {dateFormatter.format(new Date(transfer.createdAt))}</span>
+            {transfer.remark && <span>备注：{transfer.remark}</span>}</div>
+          <b className={transfer.direction}>{transfer.direction === "outgoing" ? "−" : "+"}{transfer.amount}</b>
+        </article>)}</div>}
+      {loadMoreError && <p className="distribution-more-error" role="alert">{loadMoreError}</p>}
+      {transfers.nextCursor && <div className="distribution-history-more"><Button variant="ghost" disabled={loadingMore} onClick={onLoadMore}>
+        {loadingMore && <LoaderCircle className="animate-spin" />}加载更多</Button></div>}
+    </section>}
+  </>;
+}
+
 type Props = Readonly<{
   enabled: boolean;
   onAccountChange: (account: BillingAccountSummary) => void;
-  onBack: () => void;
+  tab: "children" | "transfers";
+  context: "enterprise" | "distributor";
+  historyAccount: Pick<DistributionChild, "id" | "email"> | null;
+  onShowRecords: (child: DistributionChild) => void;
+  onClearRecords: () => void;
 }>;
 
-export function DistributionView({ enabled, onAccountChange, onBack }: Props) {
+export function DistributionView({ enabled, onAccountChange, tab, context, historyAccount, onShowRecords, onClearRecords }: Props) {
   const [summary, setSummary] = useState<DistributionSummary | null>(null);
   const [children, setChildren] = useState<readonly DistributionChild[]>([]);
   const [transfers, setTransfers] = useState<CreditTransferPage | null>(null);
@@ -68,9 +123,12 @@ export function DistributionView({ enabled, onAccountChange, onBack }: Props) {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
+  const [refreshError, setRefreshError] = useState<string | null>(null);
+  const loadRequestRef = useRef(0);
 
   const load = useCallback(async () => {
     if (!enabled) return;
+    const request = ++loadRequestRef.current;
     setLoading(true);
     setError(null);
     try {
@@ -79,24 +137,27 @@ export function DistributionView({ enabled, onAccountChange, onBack }: Props) {
         readDistributionChildren(),
         readDistributionTransfers(),
       ]);
+      if (request !== loadRequestRef.current) return;
       setSummary(nextSummary);
       setChildren(nextChildren.items);
       setTransfers(nextTransfers);
+      setRefreshError(null);
       onAccountChange(nextSummary.account);
     } catch (failure) {
+      if (request !== loadRequestRef.current) return;
       setError(
         failure instanceof Error
           ? failure.message
           : "积分分配暂时无法读取，请稍后重试。",
       );
     } finally {
-      setLoading(false);
+      if (request === loadRequestRef.current) setLoading(false);
     }
   }, [enabled, onAccountChange]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
-    return () => window.clearTimeout(timer);
+    return () => { window.clearTimeout(timer); loadRequestRef.current += 1; };
   }, [load]);
 
   const amountIsValid = useMemo(() => {
@@ -120,25 +181,25 @@ export function DistributionView({ enabled, onAccountChange, onBack }: Props) {
     setSubmitting(true);
     setSubmitError(null);
     try {
-      const result = await createDistributionTransfer({
+      const refreshed = await transferAndRefresh({
         amount,
         childOwnerId: selectedChild.id,
         remark: remark.trim() || null,
+      }, {
+        create: createDistributionTransfer, readChildren: readDistributionChildren, readTransfers: readDistributionTransfers,
+        onAccepted: (result) => {
+          loadRequestRef.current += 1;
+          setSummary((current) => current ? { ...current, account: result.account } : current);
+          onAccountChange(result.account);
+          setSelectedChild(null);
+          toast.success(`已向 ${selectedChild.email} 分配 ${amount} 积分`, { description: `划拨编号 ${result.transfer.id}` });
+        },
       });
-      setSummary((current) =>
-        current ? { ...current, account: result.account } : current,
-      );
-      onAccountChange(result.account);
-      setSelectedChild(null);
-      toast.success(`已向 ${selectedChild.email} 分配 ${amount} 积分`, {
-        description: `划拨编号 ${result.transfer.id}`,
-      });
-      const [nextChildren, nextTransfers] = await Promise.all([
-        readDistributionChildren(),
-        readDistributionTransfers(),
-      ]);
-      setChildren(nextChildren.items);
-      setTransfers(nextTransfers);
+      if (refreshed.children && refreshed.transfers) {
+        setChildren(refreshed.children.items);
+        setTransfers(refreshed.transfers);
+      }
+      setRefreshError(refreshed.refreshError);
     } catch (failure) {
       setSubmitError(
         failure instanceof Error ? failure.message : "积分划拨没有完成，请重试。",
@@ -160,16 +221,19 @@ export function DistributionView({ enabled, onAccountChange, onBack }: Props) {
   };
 
   const loadMore = async () => {
-    if (!transfers?.nextCursor) return;
+    if (!transfers?.nextCursor || loadingMore) return;
+    const request = loadRequestRef.current;
     setLoadingMore(true);
     setLoadMoreError(null);
     try {
       const next = await readDistributionTransfers({ cursor: transfers.nextCursor });
+      if (request !== loadRequestRef.current) return;
       setTransfers({
         items: [...transfers.items, ...next.items],
         nextCursor: next.nextCursor,
       });
     } catch (failure) {
+      if (request !== loadRequestRef.current) return;
       setLoadMoreError(
         failure instanceof Error ? failure.message : "更多记录暂时无法读取。",
       );
@@ -178,150 +242,31 @@ export function DistributionView({ enabled, onAccountChange, onBack }: Props) {
     }
   };
 
-  if (!enabled) {
-    return (
-      <section className="distribution-view" aria-label="积分分配">
-        <Button variant="ghost" onClick={onBack}><ArrowLeft />返回创作</Button>
-        <Alert className="mt-6">
-          <CircleAlert />
-          <AlertTitle>当前账户没有积分分配权限</AlertTitle>
-          <AlertDescription>企业或分销商身份需要由站长在账户管理中设置。</AlertDescription>
-        </Alert>
-      </section>
-    );
-  }
+  if (!enabled) return <Alert className="distribution-access">
+    <CircleAlert /><AlertTitle>当前账户没有积分分配权限</AlertTitle>
+    <AlertDescription>企业或分销商身份需要由站长在账户管理中设置；企业管理资格不代表划拨权限。</AlertDescription>
+  </Alert>;
 
-  if (loading) {
-    return (
-      <section className="distribution-view" aria-label="积分分配">
-        <div className="distribution-loading" role="status">
-          <LoaderCircle />正在读取分配账户
-        </div>
-        <div className="distribution-summary-grid">
-          {Array.from({ length: 3 }, (_, index) => (
-            <Skeleton className="h-28 rounded-2xl" key={index} />
-          ))}
-        </div>
-      </section>
-    );
-  }
+  if (loading && (!summary || !transfers)) return <div className="distribution-loading" role="status">
+    <LoaderCircle />正在读取分配账户<Skeleton className="h-6 w-28 rounded-lg" />
+  </div>;
 
-  if (error || !summary || !transfers) {
-    return (
-      <section className="distribution-view" aria-label="积分分配">
-        <Button variant="ghost" onClick={onBack}><ArrowLeft />返回创作</Button>
-        <Alert variant="destructive" className="mt-6">
-          <CircleAlert />
-          <AlertTitle>积分分配暂时不可用</AlertTitle>
-          <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-            <span>{error ?? "未能读取分配账户。"}</span>
-            <Button size="sm" variant="ghost" onClick={() => void load()}>
-              <RefreshCw />重试
-            </Button>
-          </AlertDescription>
-        </Alert>
-      </section>
-    );
-  }
+  if (!summary || !transfers) return <Alert variant="destructive">
+    <CircleAlert /><AlertTitle>账户信息暂时不可用</AlertTitle>
+    <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+      <span>{error ?? "未能读取分配账户。"}</span>
+      <Button size="sm" variant="ghost" onClick={() => void load()}><RefreshCw />重试</Button>
+    </AlertDescription>
+  </Alert>;
 
   return (
-    <section className="distribution-view" aria-label="积分分配">
-      <header className="distribution-header">
-        <div>
-          <small>GOODGOOD DISTRIBUTION</small>
-          <div className="distribution-title-row">
-            <h1>积分分配</h1>
-            <Badge variant="outline">{roleLabels[summary.businessRole]}</Badge>
-          </div>
-          <p>只可把充值来源积分分配给直属下级；兑换价格与收款由你在线下自行处理。</p>
-        </div>
-        <Button variant="ghost" onClick={onBack}><ArrowLeft />返回创作</Button>
-      </header>
-
-      <div className="distribution-summary-grid">
-        <article>
-          <span>当前积分</span>
-          <strong>{summary.account.availableCredits}</strong>
-          <small>可用总余额</small>
-        </article>
-        <article className="is-accent">
-          <span><CircleDot />可分配积分</span>
-          <strong>{summary.account.transferableCredits}</strong>
-          <small>仅充值及上级划入来源</small>
-        </article>
-        <article>
-          <span>直属下级</span>
-          <strong>{summary.directChildCount}</strong>
-          <small>仅显示当前有效关系</small>
-        </article>
-      </div>
-
-      <div className="distribution-columns">
-        <section className="distribution-panel" aria-labelledby="distribution-children-title">
-          <div className="distribution-panel-heading">
-            <div><h2 id="distribution-children-title">直属下级</h2><p>选择账户并分配积分</p></div>
-            <UsersRound />
-          </div>
-          {children.length === 0 ? (
-            <div className="distribution-empty">
-              <UsersRound />
-              <strong>还没有直属下级</strong>
-              <span>直属关系需要由站长在账户管理中设置。</span>
-            </div>
-          ) : (
-            <div className="distribution-child-list">
-              {children.map((child) => (
-                <article key={child.id}>
-                  <div>
-                    <strong>{child.email}</strong>
-                    <span>
-                      累计分配 {child.allocatedCredits}
-                      {child.lastTransferredAt
-                        ? ` · 最近 ${dateFormatter.format(new Date(child.lastTransferredAt))}`
-                        : " · 尚未分配"}
-                    </span>
-                  </div>
-                  <Button size="sm" variant="ghost" onClick={() => openTransfer(child)}>分配积分</Button>
-                </article>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="distribution-panel" aria-labelledby="distribution-history-title">
-          <div className="distribution-panel-heading">
-            <div><h2 id="distribution-history-title">最近划拨</h2><p>公开编号可用于对账追溯</p></div>
-          </div>
-          {transfers.items.length === 0 ? (
-            <div className="distribution-empty">
-              <ArrowUpRight />
-              <strong>还没有划拨记录</strong>
-              <span>完成第一笔分配后会显示在这里。</span>
-            </div>
-          ) : (
-            <div className="distribution-transfer-list">
-              {transfers.items.map((transfer) => (
-                <article key={transfer.id}>
-                  <div className={`distribution-transfer-icon ${transfer.direction}`}>
-                    {transfer.direction === "outgoing" ? <ArrowUpRight /> : <ArrowDownLeft />}
-                  </div>
-                  <div>
-                    <strong>{transfer.direction === "outgoing" ? "分配给" : "收到来自"} {transfer.counterpartyEmail}</strong>
-                    <span>{transfer.id} · {dateFormatter.format(new Date(transfer.createdAt))}</span>
-                  </div>
-                  <b className={transfer.direction}>{transfer.direction === "outgoing" ? "−" : "+"}{transfer.amount}</b>
-                </article>
-              ))}
-              {loadMoreError && <p className="distribution-more-error" role="alert">{loadMoreError}</p>}
-              {transfers.nextCursor && (
-                <Button variant="ghost" disabled={loadingMore} onClick={() => void loadMore()}>
-                  {loadingMore && <LoaderCircle className="animate-spin" />}加载更多
-                </Button>
-              )}
-            </div>
-          )}
-        </section>
-      </div>
+    <div className="distribution-view">
+      {(refreshError || error) && <div className="distribution-refresh-error" role="alert"><p>{refreshError ?? error}</p>
+        <Button size="sm" variant="ghost" disabled={loading} onClick={() => void load()}><RefreshCw />{loading ? "正在刷新" : "刷新记录"}</Button></div>}
+      <BusinessAccountContent summary={summary} directAccounts={children} transfers={transfers}
+        tab={tab} context={context} historyAccount={historyAccount}
+        onTransfer={openTransfer} onShowRecords={onShowRecords} onClearRecords={onClearRecords}
+        loadingMore={loadingMore} loadMoreError={loadMoreError} onLoadMore={() => void loadMore()} />
 
       <Dialog open={Boolean(selectedChild)} onOpenChange={(open) => !open && !submitting && setSelectedChild(null)}>
         <DialogContent className="admin-action-dialog" overlayClassName="admin-action-dialog-overlay">
@@ -367,6 +312,6 @@ export function DistributionView({ enabled, onAccountChange, onBack }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </section>
+    </div>
   );
 }

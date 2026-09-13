@@ -168,11 +168,19 @@ revocable member spending limits from one organization credit pool, inspect
 organization generation consumption, and review generated company Assets.
 
 ADR 0057 makes every identity a personal account in the main interface: no
-global Workspace switcher, including site owners. Enterprise management and
-eligible direct-child credit distribution are main navigation features. Company
+global Workspace switcher, including site owners. ADR 0058 makes enterprise and
+distributor management the business navigation entries; allocation lives in
+enterprise direct accounts or distributor customers/downstream, with row actions
+and transfer-history tabs. There is no standalone allocation navigation. Company
 tabs live inside the same shell; platform role and commercial identity do not
 replace organization authorization. Legacy company creative URLs and ownership
 remain compatible; this navigation change does not migrate data or credit.
+
+Enterprise commercial identity may manage its own direct accounts even without
+company-management membership. A manager or site owner without that commercial
+capability cannot allocate. Direct-account transfers use the current personal
+account, never the company pool or revocable employee budgets. A distributor
+who also manages a company can enter both areas with independent authorization.
 
 Personal history and credit never become company data automatically. Work made
 in an organization Workspace belongs to that organization and retains its

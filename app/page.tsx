@@ -113,7 +113,8 @@ import {
   readBillingSummary,
 } from "@/features/billing/http-billing-boundary";
 import { CreditActivityView } from "@/features/billing/credit-activity-view";
-import { DistributionView } from "@/features/distribution/distribution-view";
+import { BusinessManagementView } from "@/features/distribution/business-management-view";
+import { canonicalBusinessRoute } from "@/features/distribution/business-route.mjs";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import {
   DraftBoundaryError,
@@ -168,6 +169,7 @@ import type {
 import { useWorkspaceDirectory } from "@/features/organizations/use-workspace-directory";
 import { showOrganizationNavigation } from "@/features/organizations/organization-navigation.mjs";
 import { OrganizationDirectoryView } from "@/features/organizations/organization-directory-view";
+import { manageableOrganizations } from "@/features/organizations/organization-navigation.mjs";
 import { OrganizationManagementView, type OrganizationManagementTab } from "@/features/organizations/organization-management-page";
 import type { WorkspaceRecord } from "@/features/organizations/http-organization-boundary";
 import {
@@ -512,6 +514,8 @@ export default function Home({
   const [videoDetailKey, setVideoDetailKey] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<ActiveView>("create");
   const [organizationRoute, setOrganizationRoute] = useState<{ id: string; tab: OrganizationManagementTab } | null>(null);
+  const [enterpriseAccountTab, setEnterpriseAccountTab] = useState<"accounts" | "transfers" | null>(null);
+  const [distributionTab, setDistributionTab] = useState<"children" | "transfers">("children");
   const [generationRuns, setGenerationRuns] = useState<readonly TrackedGenerationRun[]>([]);
   const [creationBatches, setCreationBatches] = useState<AssetBatch[]>([]);
   const [downloadingImageKeys, setDownloadingImageKeys] = useState<readonly string[]>([]);
@@ -813,11 +817,29 @@ export default function Home({
   }, [detailItems, routeAssetId, workspaceId]);
 
   useEffect(() => {
+    if (!authenticationSession || authenticationSession.preview || authenticationSession.access.status !== "active" || authenticationSession.account.businessRole !== "enterprise") return;
+    const canonicalize = () => {
+      const route = parseWorkspaceRoute(window.location.pathname);
+      const canonical = canonicalBusinessRoute(route, authenticationSession.account.businessRole);
+      if (canonical !== route) navigateWorkspace(canonical, { replace: true });
+    };
+    canonicalize();
+    window.addEventListener("popstate", canonicalize);
+    window.addEventListener(WORKSPACE_NAVIGATION_EVENT, canonicalize);
+    return () => {
+      window.removeEventListener("popstate", canonicalize);
+      window.removeEventListener(WORKSPACE_NAVIGATION_EVENT, canonicalize);
+    };
+  }, [authenticationSession]);
+
+  useEffect(() => {
     const applyWorkspaceRoute = (event?: Event) => {
       if (event?.type === "popstate") {
         projectRestoreAnnouncementRef.current = false;
       }
       const route = parseWorkspaceRoute(window.location.pathname);
+      setEnterpriseAccountTab(route.kind === "enterpriseAccounts" ? route.tab : null);
+      setDistributionTab(route.kind === "distribution" && route.tab === "transfers" ? "transfers" : "children");
       setOrganizationRoute(route.kind === "organizations" && route.organizationId
         ? { id: route.organizationId, tab: route.tab ?? "overview" } : null);
       projectRouteRequestRef.current += 1;
@@ -867,7 +889,7 @@ export default function Home({
             ? "credits"
           : route.kind === "distribution"
             ? "distribution"
-          : route.kind === "organizations"
+          : route.kind === "organizations" || route.kind === "enterpriseAccounts"
             ? "organizations"
           : "create");
     };
@@ -2828,12 +2850,12 @@ export default function Home({
               <Building2 size={17} /><span>企业管理</span>
             </button>
           )}
-          {authenticationSession?.account.businessRole && (
+          {authenticationSession?.account.businessRole === "distributor" && (
             <button
               className={`side-nav-item ${activeView === "distribution" ? "active" : ""}`}
               onClick={handleDistributionNav}
             >
-              <Network size={17} /><span>积分分配</span>
+              <Network size={17} /><span>分销管理</span>
             </button>
           )}
           <button className="side-nav-item"><LayoutGrid size={17} /><span>灵感板</span></button>
@@ -2933,10 +2955,10 @@ export default function Home({
                 <UserRoundCog size={16} />
               </button>
             )}
-            {authenticationSession?.account.businessRole && (
+            {authenticationSession?.account.businessRole === "distributor" && (
               <button
                 className="top-avatar"
-                aria-label="积分分配"
+                aria-label="分销管理"
                 onClick={handleDistributionNav}
               >
                 <Network size={16} />
@@ -3203,18 +3225,25 @@ export default function Home({
               onBack={handleCreateNav}
             />
           ) : activeView === "organizations" ? (
-            organizationRoute ? (
+            enterpriseAccountTab ? (
+              <BusinessManagementView key="enterprise" context="enterprise" tab={enterpriseAccountTab === "accounts" ? "children" : "transfers"}
+                organizationId={manageableOrganizations(workspaceDirectory.workspaces).length === 1 ? manageableOrganizations(workspaceDirectory.workspaces)[0].id : undefined}
+                enabled={Boolean(authenticationSession && !authenticationSession.preview && authenticationSession.access.status === "active" && authenticationSession.account.businessRole === "enterprise")}
+                onAccountChange={handleCreditAccountChange} onBack={handleCreateNav} />
+            ) : organizationRoute ? (
               <OrganizationManagementView key={organizationRoute.id} activeTab={organizationRoute.tab} workspaceId={organizationRoute.id}
-                enabled={Boolean(authenticationSession && !authenticationSession.preview && authenticationSession.access.status === "active")} />
+                enabled={Boolean(authenticationSession && !authenticationSession.preview && authenticationSession.access.status === "active")}
+                allocationEnabled={Boolean(authenticationSession && !authenticationSession.preview && authenticationSession.access.status === "active" && authenticationSession.account.businessRole === "enterprise")} />
             ) : (
               <OrganizationDirectoryView directory={workspaceDirectory} session={authenticationSession ?? null} />
             )
           ) : activeView === "distribution" ? (
-            <DistributionView
+            <BusinessManagementView key="distributor" context="distributor" tab={distributionTab}
               enabled={Boolean(
                 authenticationSession &&
+                  !authenticationSession.preview &&
                   authenticationSession.access.status === "active" &&
-                  authenticationSession.account.businessRole,
+                  authenticationSession.account.businessRole === "distributor",
               )}
               onAccountChange={handleCreditAccountChange}
               onBack={handleCreateNav}

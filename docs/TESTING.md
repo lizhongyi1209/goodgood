@@ -439,12 +439,24 @@ decision. Its phased coverage must prove:
 - browser and API contracts never accept or return an exchange price, fiat
   amount, downstream payment/order, commission, revenue, or withdrawal. The
   active 3010 real-provider stack and production remain outside this suite.
-- route/UI coverage proves `/distribution` parsing, role-gated desktop/mobile
+- route/UI coverage proves contextual enterprise/distributor route parsing,
+  role-gated desktop/mobile
   navigation, direct-URL denial state, loading/empty/read-error/load-more/
   mutation-error states, red selected presets, explicit irreversible
   confirmation, public transfer references, and narrow-screen single-column
   layout. Site-owner UI coverage proves role/direct-parent choices always carry
   a required audited reason and use only independently loaded eligible parents.
+
+GG-045 adds `tests/gg045-contextual-credit-management.test.mjs`: stable static
+account routes/legacy canonicalization, commercial-vs-company permissions,
+shared shell access/loading, own-account facts/downstream privacy, row actions,
+public transfer history, filtered empty/loading/failure/pagination recovery,
+and accepted-write versus refresh-failure behavior. SSR/pure-function tests use
+in-memory fixtures and injected boundaries only; they never create a database
+job, transfer credits, or contact a provider. Existing GG-027 authorization and
+atomic-transfer tests remain intact; their write opt-ins stay disabled on the
+active real-provider stack. Responsive verification is contract coverage until
+a separate actual narrow-viewport check is recorded.
 
 Use:
 
