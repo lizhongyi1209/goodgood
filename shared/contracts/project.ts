@@ -15,6 +15,7 @@ export type ProjectStateSnapshot = Readonly<{
   prompt: string;
   references: readonly GenerationReference[];
   modelId: GenerationModelId;
+  catalogModelId?: string;
   aspectRatio: GenerationAspectRatio;
   resolution: GenerationResolution;
   count: GenerationCount;

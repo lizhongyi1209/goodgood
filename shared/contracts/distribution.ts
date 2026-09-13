@@ -28,7 +28,7 @@ export interface CreditTransferSummary {
   direction: "outgoing" | "incoming";
   id: `trf_${string}`;
   remark: string | null;
-  unit: "credit";
+  unit: "credit-cny-cent";
 }
 
 export interface CreditTransferPage {

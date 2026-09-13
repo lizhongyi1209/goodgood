@@ -1,0 +1,718 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import Image from "next/image";
+import { Plus, RefreshCw, Search, Pencil, LoaderCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { AuthenticationGate } from "@/features/auth/authentication-gate";
+import { AccountAccessGate } from "@/features/auth/account-access-gate";
+import {
+  beginAuthentication,
+  signOut,
+  readAuthenticationSession,
+  SESSION_EXPIRED_EVENT,
+  type AuthenticationSession,
+} from "@/features/auth/http-auth-boundary";
+import {
+  readModelManagement,
+  saveModelManagement,
+} from "./http-model-boundary";
+import {
+  MODEL_TEMPLATES,
+  calculateModelQuote,
+  creditsToYuan,
+  yuanToCredits,
+} from "@/shared/contracts/model-pricing.mjs";
+import type { ManagedModel } from "@/shared/contracts/model-management";
+
+type Draft = {
+  id: string;
+  name: string;
+  description: string;
+  adapterId: string;
+  enabled: boolean;
+  version: number | null;
+  prices: Record<string, { output: string; input: string }>;
+};
+const newDraft = (): Draft => ({
+  id: "",
+  name: "",
+  description: "",
+  adapterId: "nano-banana-2",
+  enabled: false,
+  version: null,
+  prices: {},
+});
+function editDraft(model: ManagedModel): Draft {
+  return {
+    ...model,
+    prices: Object.fromEntries(
+      Object.entries(model.prices).map(([key, price]) => [
+        key,
+        {
+          output: creditsToYuan(price.output),
+          input: creditsToYuan(price.input ?? 0),
+        },
+      ]),
+    ),
+  };
+}
+function parsedPrices(draft: Draft) {
+  return Object.fromEntries(
+    Object.entries(draft.prices)
+      .filter(([, price]) => price.output.trim())
+      .map(([key, price]) => [
+        key,
+        {
+          output: yuanToCredits(price.output),
+          input: yuanToCredits(price.input || "0"),
+        },
+      ]),
+  );
+}
+
+export function ModelManagementPage() {
+  const [session, setSession] = useState<
+    AuthenticationSession | null | undefined
+  >();
+  const [sessionError, setSessionError] = useState<string | null>(null);
+  const [models, setModels] = useState<readonly ManagedModel[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState("all");
+  const [draft, setDraft] = useState<Draft | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [mutationError, setMutationError] = useState<string | null>(null);
+  const [resolution, setResolution] = useState("1K");
+  const [count, setCount] = useState("1");
+  const [seconds, setSeconds] = useState("5");
+  const [referenceSeconds, setReferenceSeconds] = useState("0");
+  const refreshSession = useCallback(async () => {
+    try {
+      setSession(await readAuthenticationSession());
+      setSessionError(null);
+    } catch (failure) {
+      setSessionError(
+        failure instanceof Error ? failure.message : "登录状态暂时无法读取。",
+      );
+    }
+  }, []);
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      setModels((await readModelManagement()).models);
+    } catch (failure) {
+      setError(
+        failure instanceof Error ? failure.message : "模型列表暂时无法读取。",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  useEffect(() => {
+    let active = true;
+    void readAuthenticationSession()
+      .then((next) => {
+        if (active) setSession(next);
+      })
+      .catch((failure) => {
+        if (active)
+          setSessionError(
+            failure instanceof Error
+              ? failure.message
+              : "登录状态暂时无法读取。",
+          );
+      });
+    const expire = () => {
+      setSession(null);
+      setDraft(null);
+      setModels([]);
+    };
+    window.addEventListener(SESSION_EXPIRED_EVENT, expire);
+    return () => {
+      active = false;
+      window.removeEventListener(SESSION_EXPIRED_EVENT, expire);
+    };
+  }, []);
+  useEffect(() => {
+    if (
+      session?.access.status !== "active" ||
+      session.account.role !== "site_owner"
+    )
+      return;
+    const timer = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timer);
+  }, [session, load]);
+  const open = (model?: ManagedModel) => {
+    const next = model ? editDraft(model) : newDraft();
+    setDraft(next);
+    setMutationError(null);
+    setResolution(
+      MODEL_TEMPLATES.find((item) => item.id === next.adapterId)!
+        .resolutions[0],
+    );
+  };
+  const save = async (nextDraft: Draft) => {
+    setSaving(true);
+    setMutationError(null);
+    setNotice(null);
+    try {
+      const template = MODEL_TEMPLATES.find(
+        (item) => item.id === nextDraft.adapterId,
+      )!;
+      const result = await saveModelManagement({
+        ...nextDraft,
+        mediaType: template.mediaType as "image" | "video",
+        prices: parsedPrices(nextDraft),
+      });
+      setModels((previous) => [
+        ...previous.filter((item) => item.id !== result.model.id),
+        result.model,
+      ]);
+      setDraft(null);
+      setNotice(
+        `${result.model.name} 已保存，版本 ${result.model.version}。新价格用于新提交，已受理任务保留原报价。`,
+      );
+    } catch (failure) {
+      setMutationError(
+        failure instanceof Error ? failure.message : "保存失败，输入已保留。",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+  const template =
+    draft && MODEL_TEMPLATES.find((item) => item.id === draft.adapterId)!;
+  let quote: number | null = null;
+  if (draft && template) {
+    try {
+      quote = calculateModelQuote(
+        { mediaType: template.mediaType, prices: parsedPrices(draft) },
+        {
+          resolution,
+          count: Number(count),
+          outputSeconds: Number(seconds),
+          referenceSeconds: Number(referenceSeconds),
+        },
+      );
+    } catch {
+      /* Incomplete input keeps the calculator quiet until valid. */
+    }
+  }
+  const visible = models.filter(
+    (model) =>
+      `${model.name} ${model.id}`.toLowerCase().includes(query.toLowerCase()) &&
+      (filter === "all" ||
+        filter === model.mediaType ||
+        filter === (model.enabled ? "enabled" : "disabled")),
+  );
+
+  if (session === undefined)
+    return (
+      <main className="flex min-h-dvh items-center justify-center">
+        <div role="status" className="text-sm text-zinc-500">
+          {sessionError ?? "正在读取登录状态…"}
+          {sessionError && (
+            <Button variant="ghost" onClick={() => void refreshSession()}>
+              重试
+            </Button>
+          )}
+        </div>
+      </main>
+    );
+  if (session === null)
+    return (
+      <AuthenticationGate
+        initialError={sessionError}
+        onAuthenticated={refreshSession}
+        onHostedLogin={() => beginAuthentication("/admin/models")}
+      />
+    );
+  if (session.access.status !== "active")
+    return (
+      <AccountAccessGate
+        busy={false}
+        session={session}
+        onLogout={() =>
+          void signOut().then(() => window.location.assign("/create"))
+        }
+        onRefresh={() => void refreshSession()}
+      />
+    );
+  if (session.account.role !== "site_owner")
+    return (
+      <main className="flex min-h-dvh items-center justify-center">
+        <section className="text-center">
+          <h1 className="text-xl font-semibold">没有模型管理权限</h1>
+          <p className="mt-3 text-sm text-zinc-500">
+            只有站长可以设置平台模型和价格。
+          </p>
+          <Button className="mt-4" variant="ghost" asChild>
+            <a href="/create">返回创作</a>
+          </Button>
+        </section>
+      </main>
+    );
+
+  return (
+    <main className="min-h-dvh bg-white text-zinc-950">
+      <header className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-5">
+        <a
+          href="/create"
+          aria-label="GoodGood 创作"
+          className="flex items-center gap-3"
+        >
+          <Image src="/goodgood-mark.svg" width={29} height={22} alt="" />
+          <Image
+            src="/goodgood-wordmark.svg"
+            width={89}
+            height={20}
+            alt="GoodGood"
+          />
+        </a>
+        <nav aria-label="站长管理" className="flex gap-1">
+          <Button variant="ghost" asChild>
+            <a href="/admin/users">账户管理</a>
+          </Button>
+          <Button variant="ghost" className="bg-zinc-100" asChild>
+            <a href="/admin/models" aria-current="page">
+              模型管理
+            </a>
+          </Button>
+        </nav>
+      </header>
+      <div className="mx-auto max-w-6xl px-5 pb-12 pt-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-semibold">模型管理</h1>
+            <p className="mt-2 text-sm leading-6 text-zinc-500">
+              1 元 = 100 积分。图片按张，视频按输出秒与参考视频秒定价。
+            </p>
+          </div>
+          <Button variant="ghost" onClick={() => open()} disabled={saving}>
+            <Plus className="size-4" />
+            添加模型
+          </Button>
+        </div>
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          <div className="relative min-w-48 flex-1">
+            <Search className="absolute left-3 top-3 size-4 text-zinc-400" />
+            <Input
+              aria-label="搜索模型"
+              className="pl-9"
+              placeholder="搜索模型名称或标识"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </div>
+          <Select value={filter} onValueChange={setFilter}>
+            <SelectTrigger className="w-32" aria-label="筛选模型">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">全部模型</SelectItem>
+              <SelectItem value="image">图片模型</SelectItem>
+              <SelectItem value="video">视频模型</SelectItem>
+              <SelectItem value="enabled">已启用</SelectItem>
+              <SelectItem value="disabled">已禁用</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="刷新模型列表"
+            disabled={loading || saving}
+            onClick={() => void load()}
+          >
+            <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} />
+          </Button>
+        </div>
+        {notice && (
+          <p role="status" className="mt-4 text-sm text-zinc-600">
+            {notice}
+          </p>
+        )}
+        {(error || (!draft && mutationError)) && (
+          <div role="alert" className="mt-4 text-sm text-destructive">
+            {error ?? mutationError}
+            <Button variant="ghost" onClick={() => void load()}>
+              重新读取
+            </Button>
+          </div>
+        )}
+        {loading ? (
+          <p role="status" className="py-12 text-center text-sm text-zinc-500">
+            正在读取模型…
+          </p>
+        ) : (
+          <section className="mt-4" aria-label="模型列表">
+            {!visible.length && (
+              <p className="py-12 text-center text-sm text-zinc-500">
+                {models.length
+                  ? "没有匹配的模型。"
+                  : "还没有模型，点击添加模型开始配置。"}
+              </p>
+            )}
+            {visible.map((model) => (
+              <article
+                key={model.id}
+                className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-100 py-5"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-sm font-semibold">{model.name}</h2>
+                    <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500">
+                      {model.mediaType === "image" ? "图片" : "视频"}
+                    </span>
+                    <span
+                      className={`text-xs ${model.enabled ? "text-primary" : "text-zinc-400"}`}
+                    >
+                      {model.enabled ? "已启用" : "已禁用"}
+                    </span>
+                  </div>
+                  <p className="mt-1 break-all text-xs text-zinc-400">
+                    {model.id} · {model.adapterId} · v{model.version}
+                  </p>
+                  <p className="mt-2 text-xs leading-5 text-zinc-500">
+                    {Object.entries(model.prices).length
+                      ? Object.entries(model.prices)
+                          .map(
+                            ([key, price]) =>
+                              `${key} ¥${creditsToYuan(price.output)}/${model.mediaType === "image" ? "张" : "输出秒"}${model.mediaType === "video" ? ` + ¥${creditsToYuan(price.input ?? 0)}/参考秒` : ""}`,
+                          )
+                          .join("　")
+                      : "尚未定价"}
+                  </p>
+                </div>
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={saving}
+                    onClick={() => open(model)}
+                  >
+                    <Pencil className="size-3.5" />
+                    编辑 / 定价
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={saving}
+                    onClick={() =>
+                      void save({
+                        ...editDraft(model),
+                        enabled: !model.enabled,
+                      })
+                    }
+                  >
+                    {model.enabled ? "禁用" : "启用"}
+                  </Button>
+                </div>
+              </article>
+            ))}
+          </section>
+        )}
+        <p className="mt-6 text-xs leading-6 text-zinc-400">
+          新增条目复用已接入模板的模型和线路。视频价格可配置与试算；当前本地视频预览不扣积分，正式结算尚未接入。
+        </p>
+      </div>
+      <Dialog
+        open={draft !== null}
+        onOpenChange={(value) => {
+          if (!value && !saving) setDraft(null);
+        }}
+      >
+        <DialogContent
+          className="max-h-[90dvh] overflow-y-auto sm:max-w-3xl"
+          onInteractOutside={(event) => {
+            if (saving) event.preventDefault();
+          }}
+        >
+          {draft && template && (
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                void save(draft);
+              }}
+            >
+              <DialogHeader>
+                <DialogTitle>
+                  {draft.version === null ? "添加模型" : "编辑模型与价格"}
+                </DialogTitle>
+                <DialogDescription>
+                  人民币编辑，积分自动换算。保存后用于新提交的报价。
+                </DialogDescription>
+              </DialogHeader>
+              <fieldset disabled={saving} className="mt-6 space-y-5">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="space-y-2 text-xs text-zinc-500">
+                    <span>模型名称</span>
+                    <Input
+                      required
+                      maxLength={80}
+                      value={draft.name}
+                      onChange={(event) =>
+                        setDraft({ ...draft, name: event.target.value })
+                      }
+                    />
+                  </label>
+                  <label className="space-y-2 text-xs text-zinc-500">
+                    <span>模型标识</span>
+                    <Input
+                      required
+                      maxLength={80}
+                      disabled={draft.version !== null}
+                      placeholder="例如 banana-studio"
+                      value={draft.id}
+                      onChange={(event) =>
+                        setDraft({ ...draft, id: event.target.value })
+                      }
+                    />
+                  </label>
+                </div>
+                <label className="block space-y-2 text-xs text-zinc-500">
+                  <span>接入模板</span>
+                  <Select
+                    disabled={draft.version !== null}
+                    value={draft.adapterId}
+                    onValueChange={(value) => {
+                      const next = MODEL_TEMPLATES.find(
+                        (item) => item.id === value,
+                      )!;
+                      setDraft({
+                        ...draft,
+                        adapterId: value,
+                        prices: {},
+                        enabled: false,
+                      });
+                      setResolution(next.resolutions[0]);
+                    }}
+                  >
+                    <SelectTrigger aria-label="接入模板">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MODEL_TEMPLATES.map((item) => (
+                        <SelectItem key={item.id} value={item.id}>
+                          {item.id} ·{" "}
+                          {item.mediaType === "image" ? "图片" : "视频"}
+                          {item.ready ? "" : " · 线路待开放"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </label>
+                <label className="block space-y-2 text-xs text-zinc-500">
+                  <span>简短说明</span>
+                  <Input
+                    maxLength={200}
+                    value={draft.description}
+                    onChange={(event) =>
+                      setDraft({ ...draft, description: event.target.value })
+                    }
+                  />
+                </label>
+                <div>
+                  <h3 className="text-sm font-medium">规格售价</h3>
+                  <p className="mt-1 text-xs text-zinc-500">
+                    {template.mediaType === "image"
+                      ? "每张图片售价，可为不同分辨率分别设置。"
+                      : "每秒输出视频售价；参考视频按输入秒加价，没有参考视频时不收输入费用。"}
+                  </p>
+                  <div className="mt-3 space-y-3">
+                    {template.resolutions.map((key) => (
+                      <div
+                        key={key}
+                        className="grid grid-cols-[48px_1fr] items-center gap-3 sm:grid-cols-[48px_1fr_1fr_100px]"
+                      >
+                        <span className="text-xs text-zinc-500">{key}</span>
+                        <label className="text-xs text-zinc-500">
+                          ¥ / {template.mediaType === "image" ? "张" : "输出秒"}
+                          <Input
+                            aria-label={`${key} 输出售价`}
+                            inputMode="decimal"
+                            placeholder="未定价"
+                            value={draft.prices[key]?.output ?? ""}
+                            onChange={(event) =>
+                              setDraft({
+                                ...draft,
+                                prices: {
+                                  ...draft.prices,
+                                  [key]: {
+                                    input: draft.prices[key]?.input ?? "0",
+                                    output: event.target.value,
+                                  },
+                                },
+                              })
+                            }
+                          />
+                        </label>
+                        {template.mediaType === "video" ? (
+                          <label className="col-start-2 text-xs text-zinc-500 sm:col-start-auto">
+                            ¥ / 参考视频秒
+                            <Input
+                              aria-label={`${key} 参考视频秒价`}
+                              inputMode="decimal"
+                              value={draft.prices[key]?.input ?? "0"}
+                              onChange={(event) =>
+                                setDraft({
+                                  ...draft,
+                                  prices: {
+                                    ...draft.prices,
+                                    [key]: {
+                                      output: draft.prices[key]?.output ?? "",
+                                      input: event.target.value,
+                                    },
+                                  },
+                                })
+                              }
+                            />
+                          </label>
+                        ) : (
+                          <span className="hidden sm:block" />
+                        )}
+                        <span className="col-start-2 text-xs text-zinc-400 sm:col-start-auto">
+                          {(() => {
+                            try {
+                              return `${yuanToCredits(draft.prices[key]?.output ?? "")} 积分/${template.mediaType === "image" ? "张" : "秒"}`;
+                            } catch {
+                              return "—";
+                            }
+                          })()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <section className="rounded-2xl bg-zinc-50 p-4">
+                  <h3 className="text-sm font-medium">价格试算</h3>
+                  <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <Select value={resolution} onValueChange={setResolution}>
+                      <SelectTrigger aria-label="试算分辨率">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {template.resolutions.map((key) => (
+                          <SelectItem key={key} value={key}>
+                            {key}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={count} onValueChange={setCount}>
+                      <SelectTrigger aria-label="试算数量">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[1, 2, 4].map((value) => (
+                          <SelectItem key={value} value={String(value)}>
+                            {value}{" "}
+                            {template.mediaType === "image" ? "张" : "条"}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {template.mediaType === "video" && (
+                      <>
+                        <label className="text-xs text-zinc-500">
+                          每条输出秒数
+                          <Input
+                            aria-label="输出秒数"
+                            type="number"
+                            min="1"
+                            max="30"
+                            step="1"
+                            value={seconds}
+                            onChange={(event) => setSeconds(event.target.value)}
+                          />
+                        </label>
+                        <label className="text-xs text-zinc-500">
+                          每条参考视频秒数
+                          <Input
+                            aria-label="参考视频秒数"
+                            type="number"
+                            min="0"
+                            max="60"
+                            step="0.01"
+                            value={referenceSeconds}
+                            onChange={(event) =>
+                              setReferenceSeconds(event.target.value)
+                            }
+                          />
+                        </label>
+                      </>
+                    )}
+                  </div>
+                  <p aria-live="polite" className="mt-4 text-sm">
+                    {quote === null
+                      ? "填写有效价格和参数后显示总价。"
+                      : `合计 ¥${creditsToYuan(quote)} · ${quote} 积分`}
+                  </p>
+                </section>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    disabled={!template.ready}
+                    checked={draft.enabled}
+                    onChange={(event) =>
+                      setDraft({ ...draft, enabled: event.target.checked })
+                    }
+                  />
+                  启用模型
+                  <span className="text-xs text-zinc-400">
+                    须填齐全部规格售价
+                  </span>
+                </label>
+              </fieldset>
+              {mutationError && (
+                <p role="alert" className="mt-4 text-sm text-destructive">
+                  {mutationError}{" "}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => void load()}
+                  >
+                    刷新列表
+                  </Button>
+                </p>
+              )}
+              <div className="mt-6 flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  disabled={saving}
+                  onClick={() => setDraft(null)}
+                >
+                  取消
+                </Button>
+                <Button type="submit" disabled={saving}>
+                  {saving && <LoaderCircle className="size-4 animate-spin" />}
+                  {saving ? "正在保存…" : "保存并生效"}
+                </Button>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+    </main>
+  );
+}

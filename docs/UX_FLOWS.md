@@ -1,5 +1,23 @@
 # UX flows and state contracts
 
+## GG-052 site-owner model pricing (local candidate)
+
+- Enter `模型管理` from the site-owner navigation or account-management tab.
+  Pending/suspended accounts retain their access gate; ordinary members see a
+  no-permission state. Session expiry returns to authentication.
+- Search/filter and use `添加模型` or `编辑 / 定价`. Adding uses an integrated
+  adapter template; saved ID/template are stable. Names/descriptions may change.
+  Disable stops new submissions; accepted jobs retain their adapter and price.
+- Enter RMB output prices by resolution and reference-video-second prices
+  (zero permitted). Display credits at 1 CNY = 100 credits. All resolutions need
+  positive output prices before enabling; unpriced drafts may remain disabled.
+  Trial quotes combine quantity and output/reference seconds, rounding the
+  fractional total upward to one credit.
+- `保存并生效` persists a new edit version and applicable immutable image prices.
+  Failures keep input, conflicts require refresh/reopen, and loading/empty/retry
+  states stay inline. Images consume published prices; video preview has no
+  settlement. No actual-token surcharge follows an accepted creator quote.
+
 ## Authentication
 
 - On first load, confirm the GoodGood session before enabling owner-scoped

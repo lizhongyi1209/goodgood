@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { CREDIT_UNIT, currentCreditAmount } from "../../shared/contracts/model-pricing.mjs";
 import {
   appendCreditEntryInTransaction,
   runCreditTransaction,
@@ -13,7 +14,7 @@ function accountSummary(row) {
     availableCredits: String(row.available_balance ?? 0),
     reservedCredits: String(row.reserved_balance ?? 0),
     transferableCredits: String(row.payment_funded_available_balance ?? 0),
-    unit: row.unit ?? "credit",
+    unit: row.unit ?? CREDIT_UNIT,
     version: String(row.version ?? 0),
   };
 }
@@ -21,14 +22,14 @@ function accountSummary(row) {
 function transferFromRow(row, ownerId) {
   const outgoing = row.parent_owner_id === ownerId;
   return {
-    amount: String(row.amount),
+    amount: currentCreditAmount(row.amount, row.unit),
     counterpartyEmail: outgoing ? row.child_email : row.parent_email,
     counterpartyId: outgoing ? row.child_owner_id : row.parent_owner_id,
     createdAt: new Date(row.created_at).toISOString(),
     direction: outgoing ? "outgoing" : "incoming",
     id: row.public_id,
     remark: row.remark ?? null,
-    unit: row.unit,
+    unit: CREDIT_UNIT,
   };
 }
 
@@ -65,7 +66,7 @@ export async function readDistributionSummary(pool, { ownerId }) {
                 AND relationship.ended_at IS NULL
                 AND child.status = 'active') AS child_count
        FROM credit_accounts account
-      WHERE account.owner_id = $1 AND account.unit = 'credit'`,
+      WHERE account.owner_id = $1 AND account.unit = 'credit-cny-cent'`,
     [ownerId],
   );
   const account = result.rows[0];
@@ -94,7 +95,7 @@ export async function listDirectChildren(pool, { ownerId }) {
        JOIN users child
          ON child.id = relationship.child_owner_id AND child.status = 'active'
        LEFT JOIN LATERAL (
-         SELECT sum(transfer.amount) AS total,
+         SELECT sum(transfer.amount * CASE WHEN transfer.unit='credit' THEN 2 ELSE 1 END) AS total,
                 max(transfer.created_at) AS last_transferred_at
            FROM credit_transfers transfer
           WHERE transfer.parent_owner_id = relationship.parent_owner_id
@@ -217,7 +218,7 @@ export function createCreditTransfer(
       }
       const account = await client.query(
         `SELECT * FROM credit_accounts
-          WHERE owner_id = $1 AND unit = 'credit'`,
+          WHERE owner_id = $1 AND unit = 'credit-cny-cent'`,
         [ownerId],
       );
       return {
@@ -262,7 +263,7 @@ export function createCreditTransfer(
     );
     const accounts = await client.query(
       `SELECT * FROM credit_accounts
-        WHERE owner_id = ANY($1::uuid[]) AND unit = 'credit'
+        WHERE owner_id = ANY($1::uuid[]) AND unit = 'credit-cny-cent'
         ORDER BY owner_id
         FOR UPDATE`,
       [[ownerId, childOwnerId].sort()],
@@ -349,7 +350,7 @@ export function createCreditTransfer(
         direction: "outgoing",
         id: publicId,
         remark,
-        unit: "credit",
+        unit: "credit-cny-cent",
       },
     };
   });

@@ -26,6 +26,7 @@ export function createComposerCheckpoint(draft) {
     count: draft.count,
     googleSearch: draft.googleSearch === true,
     modelId: draft.modelId,
+    ...(draft.catalogModelId ? { catalogModelId: draft.catalogModelId } : {}),
     outputFormat:
       draft.outputFormat ?? (GPT_IMAGE_MODEL_IDS.has(draft.modelId) ? "jpeg" : "png"),
     prompt: draft.prompt.trim(),

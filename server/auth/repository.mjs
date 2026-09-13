@@ -61,7 +61,7 @@ async function findIdentityOwner(pool, identity) {
        FROM auth_identities i
        JOIN users u ON u.id = i.owner_id
        LEFT JOIN credit_accounts c
-         ON c.owner_id = u.id AND c.unit = 'credit'
+         ON c.owner_id = u.id AND c.unit = 'credit-cny-cent'
       WHERE i.issuer = $1 AND i.subject = $2`,
     [identity.issuer, identity.subject],
   );
@@ -139,7 +139,7 @@ export async function provisionOwnerIdentity(pool, claims) {
          FROM auth_identities i
          JOIN users u ON u.id = i.owner_id
          LEFT JOIN credit_accounts c
-           ON c.owner_id = u.id AND c.unit = 'credit'
+           ON c.owner_id = u.id AND c.unit = 'credit-cny-cent'
         WHERE i.issuer = $1 AND i.subject = $2
         FOR UPDATE OF i, u`,
       [claims.issuer, claims.subject],
@@ -178,7 +178,7 @@ export async function provisionOwnerIdentity(pool, claims) {
         locale: "zh-CN",
         owner_id: ownerId,
         account_tier: "seed",
-        available_balance: 100,
+        available_balance: 200,
         business_role: null,
         reserved_balance: 0,
         is_site_owner: false,
@@ -251,7 +251,7 @@ async function findSessionOwner(pool, tokenHash) {
        JOIN auth_identities i
          ON i.id = s.auth_identity_id AND i.owner_id = s.owner_id
        LEFT JOIN credit_accounts c
-         ON c.owner_id = u.id AND c.unit = 'credit'
+         ON c.owner_id = u.id AND c.unit = 'credit-cny-cent'
       WHERE s.token_hash = $1
         AND s.revoked_at IS NULL
         AND s.expires_at > now()

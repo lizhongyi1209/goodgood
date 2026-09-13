@@ -93,7 +93,7 @@ test("pending sessions expose only account state and waiting credits", async () 
       reservedCredits: "0",
       role: "member",
       tier: "seed",
-      unit: "credit",
+      unit: "credit-cny-cent",
     },
     access: { status: "pending" },
     authenticated: true,

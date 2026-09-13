@@ -10,7 +10,7 @@ export type AuthenticationSession = Readonly<{
     reservedCredits: string;
     role: "site_owner" | "member";
     tier: "seed";
-    unit: "credit";
+    unit: "credit-cny-cent";
   }>;
   authenticated: true;
   preview?: true;

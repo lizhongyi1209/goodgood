@@ -7,6 +7,7 @@ import {
   listActiveGenerationPrices,
 } from "./repository.mjs";
 import { PaymentError } from "./payment-errors.mjs";
+import { readManagedModels } from "../admin/models.mjs";
 
 const GPT_IMAGE_LAUNCH_PRICES = [
   "gpt-image-2.5-sunburst",
@@ -43,7 +44,7 @@ const LAUNCH_PRICES = Object.freeze([
 ]);
 
 function previewCreditAmount({ count, modelId }) {
-  return String((modelId === "nano-banana-pro" ? 15 : 10) * count);
+  return String((modelId === "nano-banana-pro" ? 30 : 20) * count);
 }
 
 function ownerIdFromContext(ownerContext) {
@@ -77,10 +78,10 @@ function publicQuote(price) {
 
 export const previewBillingSummary = Object.freeze({
   account: Object.freeze({
-    availableCredits: "100",
+    availableCredits: "200",
     reservedCredits: "0",
     transferableCredits: "0",
-    unit: "credit",
+    unit: "credit-cny-cent",
     version: "1",
   }),
   quotes: Object.freeze(
@@ -89,7 +90,7 @@ export const previewBillingSummary = Object.freeze({
         Object.freeze({
           ...launchPrice,
           creditAmount: previewCreditAmount(launchPrice),
-          creditUnit: "credit",
+          creditUnit: "credit-cny-cent",
           priceVersion: 1,
           resolution,
         }),
@@ -104,10 +105,12 @@ export async function readBillingSummary({
 }) {
   const ownerId = ownerIdFromContext(ownerContext);
   const resolvedResources = resources ?? (await getGenerationResources());
+  const directory = await readManagedModels({ ownerContext, resources: resolvedResources, publicDirectory: true });
   const [account, priceGroups] = await Promise.all([
     findCreditAccount(resolvedResources.pool, { ownerId }),
     Promise.all(
-      LAUNCH_PRICES.map((launchPrice) =>
+      directory.models.filter((model) => model.mediaType === "image").flatMap((model) =>
+        (model.adapterId === "nano-banana-pro" ? [1] : [1,2,4]).map((count) => ({ modelId: model.id, count, planContext: "standard" }))).map((launchPrice) =>
         listActiveGenerationPrices(resolvedResources.pool, launchPrice),
       ),
     ),
@@ -121,7 +124,11 @@ export async function readBillingSummary({
   }
   return {
     account: publicAccount(account),
-    quotes: priceGroups.flat().map(publicQuote),
+    quotes: priceGroups.flat().map((price) => {
+      const model = directory.models.find((item) => item.id === price.modelId);
+      return { ...publicQuote(price), modelId: model.adapterId, catalogModelId: model.id };
+    }),
+    models: directory.models,
   };
 }
 

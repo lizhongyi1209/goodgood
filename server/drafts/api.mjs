@@ -47,6 +47,7 @@ async function presentCreationDraft(resources, row) {
       count: row.generation_count,
       googleSearch: row.google_search ?? false,
       modelId: row.model_id,
+      ...(row.catalog_model_id ? { catalogModelId: row.catalog_model_id } : {}),
       prompt: row.prompt,
       references: (row.reference_snapshot ?? []).map((reference) => ({
         id: reference.id,

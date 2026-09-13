@@ -1,3 +1,4 @@
+import { AdministrationError } from "../admin/errors.mjs";
 import { AuthenticationError, sessionExpiredError } from "../auth/errors.mjs";
 import { parsePromptBatch } from "../../shared/contracts/prompt-batch.mjs";
 import { BillingPersistenceError } from "../billing/repository.mjs";
@@ -60,6 +61,8 @@ export function validateM3GenerationInput(payload) {
   ) {
     throw new GenerationRequestError("PROJECT_NOT_FOUND", "未找到该项目。", 404);
   }
+  if (payload.catalogModelId !== undefined && (typeof payload.catalogModelId !== "string" || !/^[a-z0-9][a-z0-9._-]{1,79}$/.test(payload.catalogModelId))) throw new GenerationRequestError("INVALID_MODEL", "模型标识无效。");
+  if (payload.expectedPriceVersion !== undefined && (!Number.isSafeInteger(payload.expectedPriceVersion) || payload.expectedPriceVersion < 1)) throw new GenerationRequestError("INVALID_QUOTE", "报价版本无效。");
   let composerPrompt;
   if (payload.composerPrompt !== undefined) {
     composerPrompt = typeof payload.composerPrompt === "string" ? payload.composerPrompt.trim() : "";
@@ -99,6 +102,8 @@ export function validateM3GenerationInput(payload) {
     aspectRatio: payload.aspectRatio,
     count: payload.count,
     modelId: payload.modelId,
+    ...(payload.expectedPriceVersion ? { expectedPriceVersion: payload.expectedPriceVersion } : {}),
+    ...(payload.catalogModelId ? { catalogModelId: payload.catalogModelId } : {}),
     ...(projectId ? { projectId } : {}),
     prompt,
     ...(composerPrompt ? { composerPrompt } : {}),
@@ -245,6 +250,7 @@ export async function retryGeneration({
 export function generationApiError(error, jobId = "", requestId = newRequestId()) {
   if (
     error instanceof AuthenticationError ||
+    error instanceof AdministrationError ||
     error instanceof BillingPersistenceError ||
     error instanceof OrganizationError ||
     error instanceof GenerationRequestError ||

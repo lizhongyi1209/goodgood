@@ -38,7 +38,7 @@ function activityRow(overrides = {}) {
     requested_count: 4,
     resolution: "2K",
     result_asset_id: "72000000-0000-4000-8000-000000000001",
-    unit: "credit",
+    unit: "credit-cny-cent",
     ...overrides,
   };
 }
@@ -48,7 +48,7 @@ function account() {
     availableBalance: 80n,
     reservedBalance: 20n,
     status: "active",
-    unit: "credit",
+    unit: "credit-cny-cent",
     version: 5n,
   };
 }
@@ -250,7 +250,7 @@ test("credit activity API validates filters, binds the owner, and keeps ledger I
             kind: "generation",
             occurredAt: CREATED_AT,
             status: "spent",
-            unit: "credit",
+            unit: "credit-cny-cent",
           },
         ],
         next: {
@@ -274,7 +274,7 @@ test("credit activity API validates filters, binds the owner, and keeps ledger I
     availableCredits: "80",
     reservedCredits: "20",
     transferableCredits: "0",
-    unit: "credit",
+    unit: "credit-cny-cent",
     version: "5",
   });
   assert.equal(calls[1][1].ownerId, OWNER_ID);
@@ -321,6 +321,10 @@ test("credit activity API validates filters, binds the owner, and keeps ledger I
 });
 
 test("credit activity preview filters consumption, received credit, and releases", () => {
+  const preview = readPreviewCreditActivities();
+  assert.equal(preview.account.unit, "credit-cny-cent");
+  assert.equal(preview.account.availableCredits, "200");
+  assert.equal(preview.items[0].amount, "-20");
   assert.deepEqual(
     readPreviewCreditActivities({ input: { filter: "spend" } }).items.map((item) => item.status),
     ["spent"],
@@ -334,9 +338,9 @@ test("credit activity preview filters consumption, received credit, and releases
     ["released"],
   );
   assert.deepEqual(readPreviewCreditActivities().spendSummary, {
-    thisMonth: "30",
-    thisWeek: "10",
-    today: "10",
+    thisMonth: "60",
+    thisWeek: "20",
+    today: "20",
   });
 });
 

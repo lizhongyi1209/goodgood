@@ -206,7 +206,7 @@ export function createAuthenticationOperations({
           reservedCredits: owner.reservedCredits,
           role: owner.systemRole,
           tier: owner.accountTier,
-          unit: "credit",
+          unit: "credit-cny-cent",
         },
         access: {
           status: owner.accessStatus,

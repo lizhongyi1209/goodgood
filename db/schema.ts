@@ -26,6 +26,41 @@ const timestamps = {
     .notNull(),
 };
 
+export const managedModels = pgTable("managed_models", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull().default(""),
+  mediaType: text("media_type").notNull(),
+  adapterId: text("adapter_id").notNull(),
+  enabled: boolean("enabled").notNull().default(false),
+  prices: jsonb("prices").notNull().default({}),
+  version: integer("version").notNull().default(1),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  check("managed_models_id_check", sql`${table.id} ~ '^[a-z0-9][a-z0-9._-]{1,79}$'`),
+  check("managed_models_name_check", sql`length(${table.name}) between 1 and 80`),
+  check("managed_models_media_type_check", sql`${table.mediaType} in ('image','video')`),
+]);
+
+export const managedModelEvents = pgTable("managed_model_events", {
+  id: uuid("id").primaryKey(),
+  modelId: text("model_id").notNull().references(() => managedModels.id, { onDelete: "restrict" }),
+  actorOwnerId: uuid("actor_owner_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  beforeRecord: jsonb("before_record"),
+  afterRecord: jsonb("after_record").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const creditUnitExchanges = pgTable("credit_unit_exchanges", {
+  sourceKind: text("source_kind").notNull(),
+  sourceId: uuid("source_id").notNull(),
+  targetId: uuid("target_id"),
+  originalRecord: jsonb("original_record").notNull(),
+  multiplier: integer("multiplier").notNull().default(2),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [primaryKey({ columns: [table.sourceKind, table.sourceId] }),
+  check("credit_unit_exchanges_multiplier_check", sql`${table.multiplier} = 2`)]);
+
 export const users = pgTable(
   "users",
   {
@@ -287,7 +322,7 @@ export const workspaceCreditAccounts = pgTable(
     workspaceId: uuid("workspace_id")
       .notNull()
       .references(() => workspaces.id, { onDelete: "restrict" }),
-    unit: text("unit").default("credit").notNull(),
+    unit: text("unit").default("credit-cny-cent").notNull(),
     availableBalance: bigint("available_balance", { mode: "bigint" })
       .default(sql`0`)
       .notNull(),
@@ -1285,6 +1320,7 @@ export const creationDrafts = pgTable(
       >()
       .default([])
       .notNull(),
+    catalogModelId: text("catalog_model_id"),
     modelId: text("model_id").notNull(),
     aspectRatio: text("aspect_ratio").notNull(),
     resolution: text("resolution").notNull(),
@@ -1304,7 +1340,7 @@ export const creationDrafts = pgTable(
     check("creation_drafts_prompt_check", sql`length(${table.prompt}) <= 4000`),
     check(
       "creation_drafts_model_check",
-      sql`${table.modelId} in ('nano-banana-2', 'nano-banana-pro', 'gpt-image-2.5-sunburst', 'gpt-image-2', 'gpt-image-2.5-flare')`,
+      sql`${table.modelId} ~ '^[a-z0-9][a-z0-9._-]{1,79}$'`,
     ),
     check(
       "creation_drafts_resolution_check",
@@ -1378,6 +1414,7 @@ export const projects = pgTable(
       >()
       .default([])
       .notNull(),
+    catalogModelId: text("catalog_model_id"),
     modelId: text("model_id").notNull(),
     aspectRatio: text("aspect_ratio").notNull(),
     resolution: text("resolution").notNull(),
@@ -1409,7 +1446,7 @@ export const projects = pgTable(
     check("projects_prompt_check", sql`length(${table.prompt}) <= 4000`),
     check(
       "projects_model_check",
-      sql`${table.modelId} in ('nano-banana-2', 'nano-banana-pro', 'gpt-image-2.5-sunburst', 'gpt-image-2', 'gpt-image-2.5-flare')`,
+      sql`${table.modelId} ~ '^[a-z0-9][a-z0-9._-]{1,79}$'`,
     ),
     check(
       "projects_resolution_check",
@@ -1494,7 +1531,7 @@ export const priceVersions = pgTable(
     ),
     check(
       "price_versions_model_check",
-      sql`${table.modelId} in ('nano-banana-2', 'nano-banana-pro', 'gpt-image-2.5-sunburst', 'gpt-image-2', 'gpt-image-2.5-flare')`,
+      sql`${table.modelId} ~ '^[a-z0-9][a-z0-9._-]{1,79}$'`,
     ),
     check(
       "price_versions_resolution_check",
@@ -1552,6 +1589,8 @@ export const generationBatches = pgTable(
       >()
       .default([])
       .notNull(),
+    catalogModelId: text("catalog_model_id"),
+    catalogModelName: text("catalog_model_name"),
     modelId: text("model_id").notNull(),
     aspectRatio: text("aspect_ratio").notNull(),
     resolution: text("resolution").notNull(),
@@ -1596,7 +1635,7 @@ export const generationBatches = pgTable(
     ),
     check(
       "generation_batches_model_check",
-      sql`${table.modelId} in ('nano-banana-2', 'nano-banana-pro', 'gpt-image-2.5-sunburst', 'gpt-image-2', 'gpt-image-2.5-flare')`,
+      sql`${table.modelId} ~ '^[a-z0-9][a-z0-9._-]{1,79}$'`,
     ),
     check(
       "generation_batches_resolution_check",
@@ -1947,7 +1986,7 @@ export const creditTransfers = pgTable(
       "credit_transfers_owner_shape_check",
       sql`${table.parentOwnerId} <> ${table.childOwnerId} and ${table.actorOwnerId} = ${table.parentOwnerId}`,
     ),
-    check("credit_transfers_unit_check", sql`${table.unit} = 'credit'`),
+    check("credit_transfers_unit_check", sql`${table.unit} in ('credit','credit-cny-cent')`),
     check("credit_transfers_amount_check", sql`${table.amount} > 0`),
     check(
       "credit_transfers_entry_shape_check",

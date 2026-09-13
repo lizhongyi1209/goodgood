@@ -1,5 +1,18 @@
 # Testing strategy
 
+GG-052 coverage verifies exact RMB/credit conversion, image/second quotes,
+complete-price enabling, template validation, site-owner permissions, empty
+and enabled-only directory reads, atomic price/audit saves, rollback/version
+conflicts, disabled model rejection and CSRF dispatch. The disposable PostgreSQL
+suite proves old ledger preservation, 2:1 personal/payment-funded/workspace/
+budget conversion, reservation drain rejection, prior custom-price preservation,
+legacy refunds, stale quote rejection, pinned settlement and accepted-job claim
+after disable. Opt in only with `GOODGOOD_GG052_INTEGRATION=1`, explicit loopback
+`GOODGOOD_GG052_DATABASE_URL` whose database starts `goodgood_gg052_pricing_test`,
+and `GOODGOOD_GG052_NO_WORKER=1`; verify no Worker uses that database. Never use
+32140 or a real-provider database/queue. Browser verification uses the isolated
+32141 mock stack, not real paid generation. Exact results live in the task card.
+
 Exact latest results belong in the task card and, for deployed behavior,
 `docs/CURRENT_STATE.md` / `docs/releases/`. Historical M-stage descriptions here
 are coverage contracts, not fresh production evidence. Follow `docs/WORKFLOW.md`

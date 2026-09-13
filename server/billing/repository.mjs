@@ -18,7 +18,7 @@ const RESOLUTIONS = new Set(["1K", "2K", "4K"]);
 const OUTPUT_COUNTS = new Set([1, 2, 4]);
 const ACTORS = new Set(["system", "worker", "operator", "payment", "owner"]);
 
-export const WELCOME_CREDIT_AMOUNT = 100n;
+export const WELCOME_CREDIT_AMOUNT = 200n;
 export const WELCOME_CREDIT_CAMPAIGN = "welcome-v1";
 
 export class BillingPersistenceError extends Error {
@@ -178,7 +178,7 @@ export async function publishGenerationPriceVersion(
   {
     count,
     creditAmount,
-    creditUnit = "credit",
+    creditUnit = "credit-cny-cent",
     effectiveFrom,
     effectiveUntil = null,
     id = randomUUID(),
@@ -288,7 +288,7 @@ export async function findActiveGenerationPrice(
 
 export async function findCreditAccount(
   client,
-  { ownerId, unit = "credit" },
+  { ownerId, unit = "credit-cny-cent" },
 ) {
   const creditUnit = requireText(unit, "unit", 32);
   const result = await client.query(
@@ -492,7 +492,7 @@ export async function grantCreditsInTransaction(
     reason,
     relatedPaymentRef = null,
     sourceClass = "non_transferable",
-    unit = "credit",
+    unit = "credit-cny-cent",
   },
 ) {
   const grantAmount = positiveCreditAmount(amount);
@@ -550,14 +550,14 @@ export function grantWelcomeCreditsInTransaction(client, { ownerId }) {
     },
     ownerId,
     reason: "welcome_grant_v1",
-    unit: "credit",
+    unit: "credit-cny-cent",
   });
 }
 
 async function loadGenerationForReservation(client, { jobId, ownerId }) {
   const result = await client.query(
     `SELECT j.id AS job_id, j.credit_reservation_entry_id,
-            b.id AS batch_id, b.model_id, b.resolution, b.requested_count,
+            b.id AS batch_id, b.model_id, b.catalog_model_id, b.resolution, b.requested_count,
             b.price_version_id, b.quoted_credit_unit, b.quoted_credit_amount
        FROM generation_jobs j
        JOIN generation_batches b ON b.id = j.batch_id
@@ -669,7 +669,7 @@ export async function reserveGenerationCreditsInTransaction(
   const price = await findActiveGenerationPrice(client, {
     at,
     count: job.requested_count,
-    modelId: job.model_id,
+    modelId: job.catalog_model_id ?? job.model_id,
     planContext,
     resolution: job.resolution,
   });
@@ -883,16 +883,23 @@ export async function refundGenerationCreditsInTransaction(
     );
   }
   const settlement = settlementResult.rows[0];
+  let refundAccount = context.accountRow;
+  let multiplier = 1n;
+  if (refundAccount.unit === "credit") {
+    const exchanged = await client.query(`SELECT a.* FROM credit_unit_exchanges e
+      JOIN credit_accounts a ON a.id=e.target_id WHERE e.source_kind='personal' AND e.source_id=$1 FOR UPDATE OF a`, [refundAccount.id]);
+    if (exchanged.rowCount) { refundAccount = exchanged.rows[0]; multiplier = 2n; }
+  }
   return appendCreditEntryInTransaction(client, {
-    accountRow: context.accountRow,
+    accountRow: refundAccount,
     actor: serverActor,
-    amount: -exactCreditAmount(settlement.amount),
+    amount: -exactCreditAmount(settlement.amount) * multiplier,
     entryType: "refund",
     idempotencyKey: key,
-    metadata,
+    metadata: multiplier === 2n ? { ...metadata, sourceUnit: "credit", multiplier: 2 } : metadata,
     paymentFundedAmount: -exactCreditAmount(
       settlement.payment_funded_amount ?? 0,
-    ),
+    ) * multiplier,
     priorEntryId: settlement.id,
     reason: entryReason,
     relatedJobId: jobId,

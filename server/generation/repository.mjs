@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
+import { requireEnabledImageModel } from "../admin/models.mjs";
 import { promptContextForRetry } from "../../shared/contracts/prompt-batch.mjs";
 import {
   findActiveGenerationPrice,
@@ -57,6 +58,7 @@ export function hashGenerationInput(input) {
         count: input.count,
         googleSearch: modelOptions.googleSearch,
         modelId: input.modelId,
+        ...(input.catalogModelId ? { catalogModelId: input.catalogModelId } : {}),
         outputFormat: modelOptions.outputFormat,
         projectId: input.projectId ?? null,
         prompt: input.prompt,
@@ -99,6 +101,7 @@ export function generationInputFromRow(row, referenceUrls = new Map()) {
     count: row.requested_count,
     googleSearch: row.google_search ?? false,
     modelId: row.model_id,
+    ...(row.catalog_model_id ? { catalogModelId: row.catalog_model_id, catalogModelName: row.catalog_model_name } : {}),
     outputFormat:
       row.output_format ?? (isGptImageModelId(row.model_id) ? "jpeg" : "png"),
     projectId: row.project_id ?? null,
@@ -124,6 +127,7 @@ export function persistedGenerationInputFromRow(row) {
     count: row.requested_count,
     googleSearch: row.google_search ?? false,
     modelId: row.model_id,
+    ...(row.catalog_model_id ? { catalogModelId: row.catalog_model_id } : {}),
     outputFormat:
       row.output_format ?? (isGptImageModelId(row.model_id) ? "jpeg" : "png"),
     projectId: row.project_id ?? null,
@@ -182,6 +186,8 @@ const JOB_SELECT = `
          b.project_id,
          b.reference_snapshot,
          b.model_id,
+         b.catalog_model_id,
+         b.catalog_model_name,
          b.aspect_ratio,
          b.resolution,
          b.requested_count,
@@ -382,6 +388,12 @@ export async function createGenerationJob(
       }
     }
 
+    const managedModel = await requireEnabledImageModel(client, input);
+    if (input.expectedPriceVersion !== undefined) {
+      const quote = await findActiveGenerationPrice(client, { modelId: managedModel.id, resolution: input.resolution, count: input.count });
+      if (quote.version !== input.expectedPriceVersion) throw new GenerationPersistenceError("PRICE_CHANGED", "模型价格已更新，请刷新报价后重新提交。尚未扣除积分。", 409);
+    }
+
     if (input.projectId || input.references.length) {
       await lockReferenceLifecycle(client);
     }
@@ -468,7 +480,7 @@ export async function createGenerationJob(
                 model_id = $5, aspect_ratio = $6, resolution = $7,
                 generation_count = $8, thinking_level = $9,
                 google_search = $10, quality = $11, background = $12,
-                output_format = $13, version = version + 1,
+                output_format = $13, catalog_model_id = $15, version = version + 1,
                 updated_at = now()
           WHERE id = $1 AND owner_id = $2 AND creator_owner_id = $2
             AND workspace_id = $14`,
@@ -487,6 +499,7 @@ export async function createGenerationJob(
           modelOptions.background,
           modelOptions.outputFormat,
           workspace.id,
+          input.catalogModelId ?? null,
         ],
       );
     }
@@ -497,10 +510,12 @@ export async function createGenerationJob(
        ) VALUES ($1, $2, $3, $4, $3, $5, $6)`,
       [jobId, batchId, ownerId, workspace.id, idempotencyKey, retryOfJobId],
     );
+    await client.query("UPDATE generation_batches SET catalog_model_id=$2,catalog_model_name=$3 WHERE id=$1",
+      [batchId, managedModel.id, managedModel.name]);
     if (workspace.kind === "organization") {
       const price = await findActiveGenerationPrice(client, {
         count: input.count,
-        modelId: input.modelId,
+        modelId: input.catalogModelId ?? input.modelId,
         resolution: input.resolution,
       });
       await client.query(

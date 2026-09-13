@@ -9,12 +9,12 @@ export async function GET(request: Request) {
     return Response.json(
       {
         account: {
-          availableCredits: "100",
+          availableCredits: "200",
           businessRole: null,
           reservedCredits: "0",
           role: "member",
           tier: "seed",
-          unit: "credit",
+          unit: "credit-cny-cent",
         },
         access: { status: "active" },
         authenticated: true,

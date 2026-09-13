@@ -1,5 +1,24 @@
 # Development and deployment
 
+## GG-052 local denomination exchange and model management
+
+Migrations 0029/0030 are local candidates, not production authorization. Before
+an approved production unit exchange, stop new generation and payment orders,
+drain queued/running/refining jobs and all personal/workspace/member reservations,
+and resolve pending payment orders. Migration 0029 rejects an undrained target
+and atomically creates current-unit accounts/exchange snapshots/price-product
+versions while preserving original ledger/order/job history. Do not run old
+conversion/reset scripts. Old credits exchange at 2 new credits; 1 CNY = 100
+new credits. Migration 0030 preserves configured prices in untouched model
+settings. Restore procedures must preserve both historical and exchanged units.
+
+Local GG-052 uses dedicated Compose `goodgood-gg052`, database at 55449, Valkey
+56449, object storage 59049/59050, Web 32141, mock Worker 32142 and mock provider
+32143. The integration-only named pricing database has no attached Worker.
+Existing 32140 real-provider stack/data remain intact. New model entries use
+existing server adapters; no browser provider credentials. Video second prices
+may be configured/tested but current preview has no durable billing or assets.
+
 ## Read first: ongoing production versus historical conversion
 
 Production is already open as an owner-reviewed controlled alpha. Read

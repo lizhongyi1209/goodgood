@@ -135,12 +135,13 @@ export async function listOrganizationUsage(
     throw new TypeError("limit must be an integer from 1 to 500.");
   }
   const result = await pool.query(
-    `SELECT e.id, e.related_job_id, -e.amount AS credit_amount,
+    `SELECT e.id, e.related_job_id, -e.amount * CASE WHEN a.unit='credit' THEN 2 ELSE 1 END AS credit_amount,
             e.created_at, m.id AS membership_id, m.owner_id,
             COALESCE(eb.display_email, u.email) AS email,
             j.state AS job_state, b.model_id, b.resolution,
             b.requested_count, b.prompt
        FROM workspace_credit_ledger_entries e
+       JOIN workspace_credit_accounts a ON a.id=e.account_id
        JOIN member_budgets mb
          ON mb.id = e.member_budget_id AND mb.workspace_id = e.workspace_id
        JOIN workspace_memberships m

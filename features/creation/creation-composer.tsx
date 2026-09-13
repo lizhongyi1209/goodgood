@@ -64,7 +64,12 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import type { ManagedImageOption } from "@/shared/contracts/model-management";
+
 export type CreationComposerProps = Readonly<{
+  modelOptions?: readonly ManagedImageOption[];
+  catalogModelId?: string;
+  onCatalogModelChange?: (id: string, adapterId: GenerationModelId) => void;
   mode: CreationMode;
   prompt: string;
   references: readonly GenerationReference[];
@@ -131,6 +136,9 @@ function resizePromptTextarea(element: HTMLTextAreaElement) {
 }
 
 export function CreationComposer({
+  modelOptions,
+  catalogModelId,
+  onCatalogModelChange,
   mode,
   prompt,
   references,
@@ -181,7 +189,7 @@ export function CreationComposer({
   const previewReference = previewReferenceIndex >= 0
     ? references[previewReferenceIndex]
     : null;
-  const activeModel = getGenerationModel(modelId);
+  const activeModel = modelOptions?.find((model) => model.catalogId === (catalogModelId ?? modelId)) ?? getGenerationModel(modelId);
   const activeRatio = getGenerationRatio(aspectRatio);
   const ratioOptions = getGenerationRatioOptions(modelId);
   const ratioIndex = getGenerationModelRatioIndex(modelId, aspectRatio);
@@ -494,13 +502,14 @@ export function CreationComposer({
                 >
                   <div className="model-select-overflow">
                     <div className="model-options">
-                      {GENERATION_MODEL_CATALOG.map((model) => (
+                      {(modelOptions ?? GENERATION_MODEL_CATALOG.map((model) => ({ ...model, catalogId: model.id }))).map((model) => (
                         <button
-                          key={model.id}
-                          className={`model-option ${modelId === model.id ? "selected" : ""}`}
-                          aria-pressed={modelId === model.id}
+                          key={model.catalogId}
+                          className={`model-option ${(catalogModelId ?? modelId) === model.catalogId ? "selected" : ""}`}
+                          aria-pressed={(catalogModelId ?? modelId) === model.catalogId}
                           onClick={() => {
-                            onModelChange(model.id);
+                            if (onCatalogModelChange) onCatalogModelChange(model.catalogId, model.id);
+                            else onModelChange(model.id);
                             setModelMenuOpen(false);
                           }}
                         >

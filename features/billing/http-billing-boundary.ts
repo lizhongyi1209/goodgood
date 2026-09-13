@@ -120,10 +120,12 @@ export function findBillingQuote(
   summary: BillingSummary | null,
   {
     count,
+    catalogModelId,
     modelId,
     resolution,
   }: Readonly<{
     count: GenerationCount;
+    catalogModelId?: string;
     modelId: GenerationModelId;
     resolution: GenerationResolution;
   }>,
@@ -132,6 +134,7 @@ export function findBillingQuote(
     summary?.quotes.find(
       (quote) =>
         quote.count === count &&
+        (quote.catalogModelId ?? quote.modelId) === (catalogModelId ?? modelId) &&
         quote.modelId === modelId &&
         quote.resolution === resolution,
     ) ?? null

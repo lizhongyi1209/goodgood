@@ -101,6 +101,9 @@ export type GenerationInputDraft = {
   composerPrompt?: string;
   references: GenerationReference[];
   modelId: GenerationModelId;
+  catalogModelId?: string;
+  expectedPriceVersion?: number;
+  catalogModelName?: string;
   aspectRatio: GenerationAspectRatio;
   resolution: GenerationResolution;
   count: GenerationCount;
@@ -118,6 +121,9 @@ export type GenerationInputSnapshot = Readonly<{
   composerPrompt?: string;
   references: readonly GenerationReference[];
   modelId: GenerationModelId;
+  catalogModelId?: string;
+  expectedPriceVersion?: number;
+  catalogModelName?: string;
   aspectRatio: GenerationAspectRatio;
   resolution: GenerationResolution;
   count: GenerationCount;

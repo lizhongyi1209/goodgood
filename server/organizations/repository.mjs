@@ -748,7 +748,7 @@ export function changeOrganizationMembership(
         `SELECT b.*, a.id AS account_id, a.allocated_balance
            FROM member_budgets b
            JOIN workspace_credit_accounts a
-             ON a.workspace_id = b.workspace_id AND a.unit = 'credit'
+             ON a.workspace_id = b.workspace_id AND a.unit = 'credit-cny-cent'
           WHERE b.workspace_id = $1 AND b.membership_id = $2
             AND b.status = 'active'
           FOR UPDATE OF b, a`,

@@ -30,7 +30,7 @@ function actionFromRow(row) {
     actionType: row.action_type,
     actorEmail: row.actor_email,
     createdAt: new Date(row.created_at).toISOString(),
-    creditAmount: row.credit_amount === null ? null : String(row.credit_amount),
+    creditAmount: row.credit_amount === null ? null : (BigInt(row.credit_amount) * (row.credit_unit === "credit" ? 2n : 1n)).toString(),
     id: row.id,
     previousBusinessRole: row.previous_business_role,
     previousParentEmail: row.previous_parent_email ?? null,
@@ -80,7 +80,7 @@ export async function listManagedAccounts(
           WHERE owner_id = u.id
        ) identity ON true
        LEFT JOIN credit_accounts account
-         ON account.owner_id = u.id AND account.unit = 'credit'
+         ON account.owner_id = u.id AND account.unit = 'credit-cny-cent'
        LEFT JOIN business_role_assignments business_role
          ON business_role.owner_id = u.id AND business_role.ended_at IS NULL
        LEFT JOIN account_relationships relationship
@@ -125,10 +125,13 @@ export async function listRecentAdministrativeActions(pool, { limit = 30 } = {})
   const result = await pool.query(
     `SELECT action.*, actor.email AS actor_email, target.email AS target_email,
             previous_parent.email AS previous_parent_email,
-            resulting_parent.email AS resulting_parent_email
+            resulting_parent.email AS resulting_parent_email,
+            credit_account.unit AS credit_unit
        FROM administrative_actions action
        JOIN users actor ON actor.id = action.actor_owner_id
        JOIN users target ON target.id = action.target_owner_id
+       LEFT JOIN credit_ledger_entries credit_entry ON credit_entry.id = action.credit_ledger_entry_id
+       LEFT JOIN credit_accounts credit_account ON credit_account.id = credit_entry.account_id
        LEFT JOIN users previous_parent
          ON previous_parent.id = action.previous_parent_owner_id
        LEFT JOIN users resulting_parent
@@ -564,7 +567,7 @@ export function grantTestCredits(
       const account = await client.query(
         `SELECT available_balance, reserved_balance
            FROM credit_accounts
-          WHERE owner_id = $1 AND unit = 'credit'`,
+          WHERE owner_id = $1 AND unit = 'credit-cny-cent'`,
         [targetOwnerId],
       );
       return {

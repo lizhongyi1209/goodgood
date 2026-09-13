@@ -19,13 +19,13 @@ const timestamp = "2026-09-02T00:00:00.000Z";
 
 function accountRow(overrides = {}) {
   return {
-    available_balance: "100",
+    available_balance: "200",
     created_at: timestamp,
     id: "70000000-0000-4000-8000-000000000001",
     owner_id: "owner-a",
     reserved_balance: "0",
     status: "active",
-    unit: "credit",
+    unit: "credit-cny-cent",
     updated_at: timestamp,
     version: "1",
     ...overrides,
@@ -35,8 +35,8 @@ function accountRow(overrides = {}) {
 function priceRow(modelId, resolution, count = 1) {
   return {
     created_at: timestamp,
-    credit_amount: String((modelId === "nano-banana-pro" ? 15 : 10) * count),
-    credit_unit: "credit",
+    credit_amount: String((modelId === "nano-banana-pro" ? 30 : 20) * count),
+    credit_unit: "credit-cny-cent",
     effective_from: timestamp,
     effective_until: null,
     id: `price-${modelId}-${resolution}`,
@@ -54,6 +54,9 @@ function billingPool({ account = accountRow() } = {}) {
     calls,
     async query(sql, values) {
       calls.push({ sql, values });
+      if (sql.includes("FROM managed_models")) {
+        return { rows: ["nano-banana-2","nano-banana-pro","gpt-image-2.5-sunburst","gpt-image-2","gpt-image-2.5-flare"].map((id) => ({ id, name: id, description: "", media_type: "image", adapter_id: id, enabled: true, prices: {}, version: 1, updated_at: timestamp })) };
+      }
       if (sql.includes("FROM credit_accounts")) {
         return { rowCount: account ? 1 : 0, rows: account ? [account] : [] };
       }
@@ -93,7 +96,7 @@ test("billing repository reads exact account state and all launch resolution pri
   const account = await findCreditAccount(pool, {
     ownerId: "owner-a",
   });
-  assert.equal(account.availableBalance, 100n);
+  assert.equal(account.availableBalance, 200n);
   assert.equal(account.reservedBalance, 0n);
   assert.equal(account.version, 1n);
 
@@ -104,9 +107,9 @@ test("billing repository reads exact account state and all launch resolution pri
   assert.deepEqual(
     prices.map((price) => [price.resolution, price.creditAmount]),
     [
-      ["1K", 10n],
-      ["2K", 10n],
-      ["4K", 10n],
+      ["1K", 20n],
+      ["2K", 20n],
+      ["4K", 20n],
     ],
   );
   assert.deepEqual(
@@ -125,9 +128,9 @@ test("preview billing publishes the same Nano Banana Pro single-image price", ()
       .filter((quote) => quote.modelId === "nano-banana-pro")
       .map((quote) => [quote.resolution, quote.count, quote.creditAmount]),
     [
-      ["1K", 1, "15"],
-      ["2K", 1, "15"],
-      ["4K", 1, "15"],
+      ["1K", 1, "30"],
+      ["2K", 1, "30"],
+      ["4K", 1, "30"],
     ],
   );
 });
@@ -138,10 +141,10 @@ test("billing summary serializes exact credits without owner or account identifi
     resources: { pool: billingPool() },
   });
   assert.deepEqual(summary.account, {
-    availableCredits: "100",
+    availableCredits: "200",
     reservedCredits: "0",
     transferableCredits: "0",
-    unit: "credit",
+    unit: "credit-cny-cent",
     version: "1",
   });
   assert.deepEqual(
@@ -152,25 +155,25 @@ test("billing summary serializes exact credits without owner or account identifi
       quote.creditAmount,
     ]),
     [
-      ["nano-banana-2", "1K", 1, "10"],
-      ["nano-banana-2", "2K", 1, "10"],
-      ["nano-banana-2", "4K", 1, "10"],
-      ["nano-banana-2", "1K", 2, "20"],
-      ["nano-banana-2", "2K", 2, "20"],
-      ["nano-banana-2", "4K", 2, "20"],
-      ["nano-banana-2", "1K", 4, "40"],
-      ["nano-banana-2", "2K", 4, "40"],
-      ["nano-banana-2", "4K", 4, "40"],
-      ["nano-banana-pro", "1K", 1, "15"],
-      ["nano-banana-pro", "2K", 1, "15"],
-      ["nano-banana-pro", "4K", 1, "15"],
+      ["nano-banana-2", "1K", 1, "20"],
+      ["nano-banana-2", "2K", 1, "20"],
+      ["nano-banana-2", "4K", 1, "20"],
+      ["nano-banana-2", "1K", 2, "40"],
+      ["nano-banana-2", "2K", 2, "40"],
+      ["nano-banana-2", "4K", 2, "40"],
+      ["nano-banana-2", "1K", 4, "80"],
+      ["nano-banana-2", "2K", 4, "80"],
+      ["nano-banana-2", "4K", 4, "80"],
+      ["nano-banana-pro", "1K", 1, "30"],
+      ["nano-banana-pro", "2K", 1, "30"],
+      ["nano-banana-pro", "4K", 1, "30"],
       ...["gpt-image-2.5-sunburst", "gpt-image-2", "gpt-image-2.5-flare"]
         .flatMap((modelId) => [1, 2, 4].flatMap((count) =>
           ["1K", "2K", "4K"].map((resolution) => [
             modelId,
             resolution,
             count,
-            String(10 * count),
+            String(20 * count),
           ]),
         )),
     ],
@@ -182,9 +185,9 @@ test("billing summary serializes exact credits without owner or account identifi
       .filter((quote) => quote.modelId === "nano-banana-pro")
       .map((quote) => [quote.resolution, quote.count, quote.creditAmount]),
     [
-      ["1K", 1, "15"],
-      ["2K", 1, "15"],
-      ["4K", 1, "15"],
+      ["1K", 1, "30"],
+      ["2K", 1, "30"],
+      ["4K", 1, "30"],
     ],
   );
 
@@ -222,9 +225,9 @@ test("billing HTTP route authenticates, remains read-only, and preserves owner c
         calls.push(input);
         return {
           account: {
-            availableCredits: input.ownerContext.ownerId === "owner-a" ? "100" : "0",
+            availableCredits: input.ownerContext.ownerId === "owner-a" ? "200" : "0",
             reservedCredits: "0",
-            unit: "credit",
+            unit: "credit-cny-cent",
             version: "1",
           },
           quotes: [],
@@ -242,7 +245,7 @@ test("billing HTTP route authenticates, remains read-only, and preserves owner c
     true,
   );
   assert.equal(ownerResponse.statusCode, 200);
-  assert.equal(JSON.parse(ownerResponse.body).account.availableCredits, "100");
+  assert.equal(JSON.parse(ownerResponse.body).account.availableCredits, "200");
   assert.equal(calls[0].ownerContext.ownerId, "owner-a");
   assert.equal(ownerResponse.headers["cache-control"], "no-store");
 

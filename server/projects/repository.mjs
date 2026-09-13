@@ -7,7 +7,7 @@ import { ProjectPersistenceError } from "./errors.mjs";
 const PROJECT_SELECT = `
   SELECT id, owner_id, workspace_id, creator_owner_id,
          create_idempotency_key, create_input_hash,
-         name, prompt, reference_snapshot, model_id,
+         name, prompt, reference_snapshot, model_id, catalog_model_id,
          aspect_ratio, resolution, generation_count, thinking_level,
          google_search, quality, background, output_format, status, version,
          created_at, updated_at
@@ -124,9 +124,9 @@ export async function createProject(
          create_idempotency_key, create_input_hash,
          name, prompt, reference_snapshot, model_id,
          aspect_ratio, resolution, generation_count, thinking_level, google_search,
-         quality, background, output_format
+         quality, background, output_format, catalog_model_id
        ) VALUES ($1, $2, $3, $2, $4, $5, $6, $7, $8::jsonb, $9, $10,
-                 $11, $12, $13, $14, $15, $16, $17)
+                 $11, $12, $13, $14, $15, $16, $17, $18)
        RETURNING *`,
       [
         projectId,
@@ -146,6 +146,7 @@ export async function createProject(
         state.quality,
         state.background,
         state.outputFormat,
+        state.catalogModelId ?? null,
       ],
     );
     await associateProjectBatches(client, {
@@ -205,7 +206,7 @@ export async function updateProject(
               model_id = $7, aspect_ratio = $8, resolution = $9,
               generation_count = $10, thinking_level = $11,
               google_search = $12, quality = $13, background = $14,
-              output_format = $15, version = version + 1,
+              output_format = $15, catalog_model_id = $16, version = version + 1,
               updated_at = now()
         WHERE id = $1 AND workspace_id = $2 AND creator_owner_id = $3
         RETURNING *`,
@@ -225,6 +226,7 @@ export async function updateProject(
         state.quality,
         state.background,
         state.outputFormat,
+        state.catalogModelId ?? null,
       ],
     );
     await client.query("COMMIT");

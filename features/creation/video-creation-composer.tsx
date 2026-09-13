@@ -50,6 +50,9 @@ import {
 } from "lucide-react";
 
 export type VideoCreationComposerProps = Readonly<{
+  modelOptions?: readonly (ReturnType<typeof getVideoGenerationModel> & { catalogId: string })[];
+  catalogModelId?: string;
+  onCatalogModelChange?: (id: string, modelId: VideoGenerationModelId) => void;
   mode: CreationMode;
   prompt: string;
   references: readonly VideoReference[];
@@ -106,6 +109,9 @@ function formatFileSize(size: number) {
 }
 
 export function VideoCreationComposer({
+  modelOptions,
+  catalogModelId,
+  onCatalogModelChange,
   mode,
   prompt,
   references,
@@ -147,7 +153,7 @@ export function VideoCreationComposer({
   const previewReferenceOrdinal = previewReference
     ? references.slice(0, previewReferenceIndex + 1).filter((reference) => reference.mediaType === previewReference.mediaType).length
     : 0;
-  const activeModel = getVideoGenerationModel(modelId);
+  const activeModel = modelOptions?.find((model) => model.catalogId === (catalogModelId ?? modelId)) ?? getVideoGenerationModel(modelId);
   const referenceLimits = getVideoReferenceLimits(modelId, generationMode);
   const referenceCounts = {
     image: countVideoReferences(references, "image"),
@@ -395,13 +401,14 @@ export function VideoCreationComposer({
                 >
                   <div className="model-select-overflow">
                     <div className="model-options">
-                      {VIDEO_GENERATION_MODEL_CATALOG.map((model) => (
+                      {(modelOptions ?? VIDEO_GENERATION_MODEL_CATALOG.map((model) => ({ ...model, catalogId: model.id }))).map((model) => (
                         <button
-                          key={model.id}
-                          className={`model-option ${modelId === model.id ? "selected" : ""}`}
-                          aria-pressed={modelId === model.id}
+                          key={model.catalogId}
+                          className={`model-option ${(catalogModelId ?? modelId) === model.catalogId ? "selected" : ""}`}
+                          aria-pressed={(catalogModelId ?? modelId) === model.catalogId}
                           onClick={() => {
-                            onModelChange(model.id);
+                            if (onCatalogModelChange) onCatalogModelChange(model.catalogId, model.id);
+                            else onModelChange(model.id);
                             setModelMenuOpen(false);
                           }}
                         >

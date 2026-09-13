@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { BillingPersistenceError } from "./repository.mjs";
+import { CREDIT_UNIT, currentCreditAmount } from "../../shared/contracts/model-pricing.mjs";
 
 const ACTIVITY_ENTRY_TYPES = new Set([
   "grant",
@@ -73,7 +74,7 @@ function activityFromRow(row) {
       503,
     );
   }
-  const amount = exactAmount(row.amount);
+  const amount = exactAmount(currentCreditAmount(row.amount, row.unit));
   const absoluteAmount = amount < 0n ? -amount : amount;
   const trace = activityTrace(row);
   const base = {
@@ -82,7 +83,7 @@ function activityFromRow(row) {
     creditAmount: absoluteAmount.toString(),
     id: publicActivityId(row.id),
     occurredAt: new Date(row.created_at).toISOString(),
-    unit: row.unit,
+    unit: CREDIT_UNIT,
   };
 
   if (row.entry_type === "reserve") {
@@ -195,6 +196,7 @@ export async function listCreditActivities(
        LEFT JOIN generation_jobs job
          ON job.id = entry.related_job_id AND job.owner_id = entry.owner_id
       WHERE entry.owner_id = $1
+        AND entry.reason <> 'credit_unit_exchange'
         AND entry.entry_type IN ('grant', 'reserve', 'refund', 'expire', 'adjust', 'transfer_out', 'transfer_in')
         AND (
           $2::text = 'all'
@@ -253,12 +255,13 @@ export async function summarizeCreditActivitySpend(
                 WHEN entry.entry_type IN ('expire', 'adjust') AND entry.amount < 0
                   THEN -entry.amount
                 ELSE 0
-              END AS amount,
+              END * CASE WHEN account.unit='credit' THEN 2 ELSE 1 END AS amount,
               CASE
                 WHEN entry.entry_type = 'reserve' THEN closing.created_at
                 ELSE entry.created_at
               END AS spent_at
          FROM credit_ledger_entries entry
+         JOIN credit_accounts account ON account.id=entry.account_id
          LEFT JOIN LATERAL (
            SELECT closure.entry_type, closure.created_at
              FROM credit_ledger_entries closure

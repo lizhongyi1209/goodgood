@@ -8,6 +8,7 @@ import {
 } from "./api.mjs";
 import { AdministrationError } from "./errors.mjs";
 import { requestIdFor } from "../observability/http.mjs";
+import { readManagedModels, saveManagedModel } from "./models.mjs";
 
 const JSON_HEADERS = {
   "cache-control": "no-store",
@@ -15,6 +16,8 @@ const JSON_HEADERS = {
 };
 
 const DEFAULT_OPERATIONS = Object.freeze({
+  readManagedModels,
+  saveManagedModel,
   createAdminTestCreditGrant,
   readAdminDashboard,
   updateAdminAccountStatus,
@@ -77,9 +80,13 @@ export function createAdminNodeApiHandler({
 
   return async function handleAdminNodeApi(request, response) {
     const url = new URL(request.url ?? "/", "http://localhost");
-    if (!url.pathname.startsWith("/api/admin/")) return false;
+    if (!url.pathname.startsWith("/api/admin/") && url.pathname !== "/api/models") return false;
 
     try {
+      if (url.pathname === "/api/models" && request.method === "GET") {
+        sendJson(response, 200, await operations.readManagedModels({ ownerContext: await authenticate(request), publicDirectory: true }));
+        return true;
+      }
       if (request.method !== "POST") {
         sendJson(
           response,
@@ -91,6 +98,12 @@ export function createAdminNodeApiHandler({
       }
       assertCsrfSafe(request);
       const ownerContext = await authenticate(request);
+      if (url.pathname === "/api/admin/models/query" || url.pathname === "/api/admin/models/save") {
+        const input = await readJson(request);
+        const operation = url.pathname.endsWith("/save") ? operations.saveManagedModel : operations.readManagedModels;
+        sendJson(response, 200, await operation({ input, ownerContext }));
+        return true;
+      }
       if (url.pathname === "/api/admin/users/query") {
         sendJson(
           response,

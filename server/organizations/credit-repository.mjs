@@ -179,14 +179,14 @@ async function lockAccount(client, workspaceId, { create = false } = {}) {
   if (create) {
     await client.query(
       `INSERT INTO workspace_credit_accounts (id, workspace_id, unit)
-       VALUES ($1, $2, 'credit')
+       VALUES ($1, $2, 'credit-cny-cent')
        ON CONFLICT (workspace_id, unit) DO NOTHING`,
       [randomUUID(), workspaceId],
     );
   }
   const result = await client.query(
     `SELECT * FROM workspace_credit_accounts
-      WHERE workspace_id = $1 AND unit = 'credit'
+      WHERE workspace_id = $1 AND unit = 'credit-cny-cent'
       FOR UPDATE`,
     [workspaceId],
   );
@@ -365,7 +365,7 @@ export async function grantOrganizationCreditsInTransaction(
     actionType: "grant_organization_credits",
     actorOwnerId,
     idempotencyKey: key,
-    metadata: { ...metadata, amount: grantAmount.toString(), unit: "credit" },
+    metadata: { ...metadata, amount: grantAmount.toString(), unit: "credit-cny-cent" },
     operationHash: fingerprint,
     reason: entryReason,
     workspaceId,
@@ -993,7 +993,7 @@ export async function readOrganizationCreditSummary(
        FROM workspaces w
        JOIN workspace_memberships m ON m.workspace_id = w.id
        LEFT JOIN workspace_credit_accounts a
-         ON a.workspace_id = w.id AND a.unit = 'credit'
+         ON a.workspace_id = w.id AND a.unit = 'credit-cny-cent'
        LEFT JOIN member_budgets b
          ON b.workspace_id = w.id AND b.membership_id = m.id
       WHERE w.id = $1 AND w.kind = 'organization' AND w.status = 'active'

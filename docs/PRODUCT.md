@@ -130,6 +130,19 @@ recording infrastructure are not permission to collect payments during alpha.
 Password/phone recovery is not offered because those sign-in methods are absent.
 Historical implementation/verification stages are retained in `docs/history/`.
 
+## Local candidate: managed model pricing
+
+ADR 0063 additionally implements managed model pricing locally (GG-052):
+1 CNY = 100 credits. Existing balances convert at 2 new credits per historical
+credit; immutable history retains its original unit. `/admin/models` lets the
+site owner add an entry using an existing adapter template, rename it,
+enable/disable it, edit resolution prices in RMB and test the credit quote.
+Arbitrary providers/protocols require adapter development. Images sell per
+image and resolution; videos have output/reference-video-second prices.
+Upstream token variation never changes an accepted customer quote. Image
+pricing connects to durable submissions; video prices can be configured/tested
+but the local preview has no settlement. This is not a production price change.
+
 ## Local candidate: direct-child credit allocation
 
 ADR 0043 accepts a locally developed account-hierarchy capability without

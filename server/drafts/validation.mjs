@@ -46,6 +46,7 @@ export function validateDraftMutation(payload) {
   if (prompt === null || prompt.length > 4_000) {
     throw invalidDraft("草稿提示词不能超过 4000 个字符。");
   }
+  if (state.catalogModelId !== undefined && (typeof state.catalogModelId !== "string" || !/^[a-z0-9][a-z0-9._-]{1,79}$/.test(state.catalogModelId))) throw invalidDraft();
   if (!MODEL_IDS.has(state.modelId)) throw invalidDraft();
   if (!ASPECT_RATIOS.has(state.aspectRatio)) throw invalidDraft();
   if (!RESOLUTIONS.has(state.resolution)) throw invalidDraft();
@@ -66,6 +67,7 @@ export function validateDraftMutation(payload) {
       aspectRatio: state.aspectRatio,
       count: state.count,
       modelId: state.modelId,
+      ...(state.catalogModelId ? { catalogModelId: state.catalogModelId } : {}),
       prompt,
       referenceIds: validateReferenceIds(
         Array.isArray(state.references) ? state.references : [],

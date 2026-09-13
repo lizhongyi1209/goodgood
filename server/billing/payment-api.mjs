@@ -13,8 +13,8 @@ import { verifyFakePaymentWebhook } from "./payment-sandbox.mjs";
 export const previewBillingProducts = Object.freeze({
   products: Object.freeze([
     Object.freeze({
-      creditAmount: "500",
-      creditUnit: "credit",
+      creditAmount: "1000",
+      creditUnit: "credit-cny-cent",
       currency: "CNY",
       id: "credits-500-cny",
       moneyAmountMinor: "1000",

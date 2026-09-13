@@ -17,18 +17,18 @@ function fixture(context: "distributor", emails: readonly string[], amounts: rea
   return {
     summary: { businessRole: context, directChildCount: directAccounts.length,
       account: { availableCredits: String(BigInt(transferable) + BigInt(promotional)) as SerializedCreditAmount,
-        reservedCredits: "0", transferableCredits: transferable, unit: "credit", version: "1" } },
+        reservedCredits: "0", transferableCredits: transferable, unit: "credit-cny-cent", version: "1" } },
     directAccounts,
     transfers: { nextCursor: null, items: [
       ...directAccounts.filter((child) => child.allocatedCredits !== "0").map((child, index) => ({
         id: `trf_demo-${context}-${index + 1}` as const, direction: "outgoing" as const,
         amount: child.allocatedCredits, counterpartyEmail: child.email, counterpartyId: child.id,
-        createdAt: child.lastTransferredAt!, unit: "credit" as const,
+        createdAt: child.lastTransferredAt!, unit: "credit-cny-cent" as const,
         remark: ["9 月创作额度补充", "项目阶段配额", "首次积分分配"][index],
       })),
       { id: `trf_demo-${context}-incoming`, direction: "incoming", amount: received,
         counterpartyEmail: "upstream@demo.example.invalid", counterpartyId: `demo-${context}-parent`,
-        createdAt: "2026-09-10T00:30:00Z", remark: "上级积分划入", unit: "credit" },
+        createdAt: "2026-09-10T00:30:00Z", remark: "上级积分划入", unit: "credit-cny-cent" },
     ] },
   };
 }

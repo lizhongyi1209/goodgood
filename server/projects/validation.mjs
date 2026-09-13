@@ -67,6 +67,7 @@ export function validateProjectSaveRequest(payload) {
   if (prompt === null || prompt.length > 4_000) {
     throw invalidProject("项目提示词不能超过 4000 个字符。");
   }
+  if (state.catalogModelId !== undefined && (typeof state.catalogModelId !== "string" || !/^[a-z0-9][a-z0-9._-]{1,79}$/.test(state.catalogModelId))) throw invalidProject();
   if (!MODEL_IDS.has(state.modelId)) throw invalidProject();
   if (!ASPECT_RATIOS.has(state.aspectRatio)) throw invalidProject();
   if (!RESOLUTIONS.has(state.resolution)) throw invalidProject();
@@ -101,6 +102,7 @@ export function validateProjectSaveRequest(payload) {
       aspectRatio: state.aspectRatio,
       count: state.count,
       modelId: state.modelId,
+      ...(state.catalogModelId ? { catalogModelId: state.catalogModelId } : {}),
       prompt,
       referenceIds,
       resolution: state.resolution,

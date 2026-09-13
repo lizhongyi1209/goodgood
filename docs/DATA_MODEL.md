@@ -1,5 +1,29 @@
 # Data model contract
 
+## GG-052 local candidate: denomination and managed models
+
+Migration 0029 introduces `credit-cny-cent` (1 CNY = 100 credits), using a
+2:1 exchange from historical `credit`. `credit_unit_exchanges` stores immutable
+original personal/workspace/budget snapshots and source-to-target account IDs.
+New accounts receive a traceable opening grant; old accounts close without
+changing their ledger amounts. Payment-funded transferable balance, workspace
+allocated balance and member limit/settled usage also double. Historic activity,
+administrative grants, organization spend and transfers project into current
+units on read; a refund of an old settled job credits its exchanged account at
+the same multiplier. Old orders/jobs/prices remain unchanged. New price and
+payment-product versions use the new unit (existing CNY 10 product = 1000 credits).
+
+`managed_models` separates catalog ID/name from canonical image/video adapter
+ID, enabled state, specification prices and edit version. `managed_model_events`
+is append-only actor/before/after audit. Image saves append immutable
+`price_versions` by catalog ID, resolution and count; accepted jobs retain their
+price snapshot. Model edit row locks and job share locks serialize acceptance
+with price/enable updates. `generation_batches` retain catalog ID/name; drafts
+and projects retain catalog ID for restore. Migration 0030 initializes untouched
+model settings from converted current prices, including operator customizations.
+Video specification prices represent output/reference seconds only; this slice
+adds no durable video job or settlement. Production has not executed this exchange.
+
 The M3 PostgreSQL migration physically implements the initial local user,
 `GenerationBatch`, `GenerationJob`, `GenerationAttempt`, `Asset`, append-only
 job events, and the queue outbox. The additive M4 identity migration introduces

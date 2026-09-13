@@ -35,7 +35,7 @@ export async function seedLocalFixtures({ databaseUrl, logger = console }) {
       ON CONFLICT (issuer, subject) DO NOTHING;
 
       INSERT INTO credit_accounts (id, owner_id, unit)
-      SELECT md5('goodgood-credit-account:credit:' || id::text)::uuid, id, 'credit'
+      SELECT md5('goodgood-credit-account:credit-cny-cent:' || id::text)::uuid, id, 'credit-cny-cent'
         FROM users
        WHERE id IN (
          '00000000-0000-4000-8000-000000000001',
@@ -49,11 +49,11 @@ export async function seedLocalFixtures({ databaseUrl, logger = console }) {
           operation_hash, reason, actor, metadata
         )
         SELECT
-          md5('goodgood-welcome-grant:v1:' || account.owner_id::text)::uuid,
+          md5('goodgood-welcome-grant:cent-v1:' || account.owner_id::text)::uuid,
           account.id,
           account.owner_id,
           'grant',
-          100,
+          200,
           'welcome-grant:v1:' || account.owner_id::text,
           md5('goodgood-welcome-grant-operation:v1:' || account.owner_id::text)
             || md5('goodgood-welcome-grant-operation-proof:v1:' || account.owner_id::text),
@@ -61,7 +61,7 @@ export async function seedLocalFixtures({ databaseUrl, logger = console }) {
           'system',
           '{"campaign":"welcome-v1","images":10}'::jsonb
         FROM credit_accounts account
-        WHERE account.unit = 'credit'
+        WHERE account.unit = 'credit-cny-cent'
           AND account.owner_id IN (
             '00000000-0000-4000-8000-000000000001',
             '00000000-0000-4000-8000-000000000002'
@@ -91,13 +91,13 @@ export async function seedLocalFixtures({ databaseUrl, logger = console }) {
           WHERE owner_id IN (
             '00000000-0000-4000-8000-000000000001',
             '00000000-0000-4000-8000-000000000002'
-          ) AND unit = 'credit') AS accounts,
+          ) AND unit = 'credit-cny-cent') AS accounts,
         (SELECT count(*)::int FROM credit_ledger_entries
           WHERE owner_id IN (
             '00000000-0000-4000-8000-000000000001',
             '00000000-0000-4000-8000-000000000002'
           ) AND entry_type = 'grant'
-            AND amount = 100
+            AND amount = 200
             AND reason = 'welcome_grant_v1') AS welcome_grants
     `);
     const result = verification.rows[0];

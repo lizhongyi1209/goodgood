@@ -1,5 +1,20 @@
 # Architecture
 
+## GG-052 local model-management boundary
+
+`server/admin/models.mjs` owns authenticated directory reads, site-owner saves,
+template/price validation and immutable audit/price publication in one
+transaction. `features/admin/model-management-page.tsx` edits RMB and converts
+at exactly 100 credits/CNY; it never configures credentials or arbitrary provider
+URLs. Catalog IDs select independent products over canonical adapter templates.
+The creation composer reads enabled models and quotes; the backend rechecks
+model availability and optional expected quote version before credit reservation.
+Disable or reprice after acceptance does not cancel or reprice that job. Existing
+draft/project boundaries persist catalog ID independently from adapter ID. The
+denomination exchange uses new accounts and append-only history, not mutation
+of historic ledger/price/order/job records. Video prices are configuration and
+second-based trial quotes until durable video billing is added.
+
 ## Current state
 
 The live application is an owner-reviewed controlled alpha: browser → GoodGood

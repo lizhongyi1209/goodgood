@@ -66,6 +66,7 @@ export interface BillingAccountSummary {
 }
 
 export interface BillingGenerationQuote {
+  catalogModelId?: string;
   modelId:
     | "nano-banana-2"
     | "nano-banana-pro"
@@ -81,6 +82,7 @@ export interface BillingGenerationQuote {
 }
 
 export interface BillingSummary {
+  models?: readonly import("./model-management").ManagedModel[];
   account: BillingAccountSummary;
   quotes: readonly BillingGenerationQuote[];
 }

@@ -10,6 +10,17 @@
 
 ## Error categories
 
+GG-052 model edits reject invalid IDs/templates/prices with
+`MODEL_REQUEST_INVALID`, and concurrent edits with `MODEL_VERSION_CONFLICT`;
+the dialog keeps input and offers list refresh/reopen. Directory read failures
+have inline retry; unauthorized accounts never reach model mutation. New image
+submissions reject unavailable entries/specifications as `MODEL_DISABLED` or
+a stale displayed quote as `PRICE_CHANGED` before reserving credit. Preserve
+prompt/references/settings and refresh the catalog/quote before retrying.
+Already accepted jobs retain their original quote despite later price or enable
+changes. The denomination migration rejects undrained jobs/reservations/pending
+orders atomically; never bypass the guard or rewrite historical records.
+
 GG-044 directory loading/empty/error lives in the enterprise content area,
 not a global Workspace control. Retry reads the authenticated directory only.
 Direct company access is still authorized by manager APIs; denial offers the

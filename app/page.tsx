@@ -234,6 +234,8 @@ type AssetBatch = {
   time: string;
   prompt: string;
   modelId: GenerationModelId;
+  catalogModelId?: string;
+  catalogModelName?: string;
   aspectRatio: GenerationAspectRatio;
   resolution: GenerationResolution;
   count: GenerationCount;
@@ -386,6 +388,8 @@ function generationJobToAssetBatch(job: GenerationJob): AssetBatch {
     background: job.input.background ?? "auto",
     googleSearch: job.input.googleSearch ?? false,
     modelId: job.input.modelId,
+    catalogModelId: job.input.catalogModelId,
+    catalogModelName: job.input.catalogModelName,
     prompt: job.input.prompt,
     referenceCount: job.input.references.length,
     resolution: job.input.resolution,
@@ -488,6 +492,7 @@ export default function Home({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [creationMode, setCreationMode] = useState<CreationMode>("image");
   const [mixedMediaStylePreview, setMixedMediaStylePreview] = useState(false);
+  const [selectedCatalogModelId, setSelectedCatalogModelId] = useState<string | undefined>();
   const [selectedModel, setSelectedModel] = useState<GenerationModelId>(DEFAULT_GENERATION_MODEL_ID);
   const [selectedRatio, setSelectedRatio] = useState<GenerationAspectRatio>("1:1");
   const [resolution, setResolution] = useState<GenerationResolution>("1K");
@@ -503,6 +508,7 @@ export default function Home({
   const [videoReferences, setVideoReferences] = useState<VideoReference[]>([]);
   const [videoGenerationMode, setVideoGenerationMode] = useState<VideoGenerationMode>(DEFAULT_VIDEO_GENERATION_MODE);
   const [videoModelId, setVideoModelId] = useState<VideoGenerationModelId>(DEFAULT_VIDEO_MODEL_ID);
+  const [videoCatalogModelId, setVideoCatalogModelId] = useState<string | undefined>();
   const [videoProviderLine, setVideoProviderLine] = useState<VideoProviderLine>(DEFAULT_VIDEO_PROVIDER_LINE);
   const [videoAspectRatio, setVideoAspectRatio] = useState<VideoAspectRatio>(DEFAULT_VIDEO_RATIO);
   const [videoResolution, setVideoResolution] = useState<VideoResolution>(DEFAULT_VIDEO_RESOLUTION);
@@ -594,7 +600,7 @@ export default function Home({
   const assetDetailItems = getDetailImages(assetBatches);
   const activeDetail = detailItems[detailIndex] ?? null;
   const activeDetailModel = activeDetail
-    ? getGenerationModel(activeDetail.batch.modelId)
+    ? { ...getGenerationModel(activeDetail.batch.modelId), name: activeDetail.batch.catalogModelName ?? getGenerationModel(activeDetail.batch.modelId).name }
     : null;
   const activeDetailRatio = activeDetail
     ? getGenerationRatio(activeDetail.batch.aspectRatio)
@@ -603,7 +609,7 @@ export default function Home({
   const latestActiveInput = latestActiveJob?.input ?? null;
   const latestActiveStage = toGenerationUiStage(latestActiveJob?.state ?? null);
   const latestActiveModel = latestActiveInput
-    ? getGenerationModel(latestActiveInput.modelId)
+    ? { ...getGenerationModel(latestActiveInput.modelId), name: latestActiveInput.catalogModelName ?? getGenerationModel(latestActiveInput.modelId).name }
     : null;
   const stageText = activeGenerationRuns.length > 1
     ? `${activeGenerationRuns.length} 个任务正在并行生成`
@@ -624,6 +630,7 @@ export default function Home({
   const activeBillingQuote = findBillingQuote(billingSummary, {
     count: generationCount,
     modelId: selectedModel,
+    catalogModelId: selectedCatalogModelId,
     resolution,
   });
   const activePerImageCredits = activeBillingQuote
@@ -697,6 +704,7 @@ export default function Home({
     background,
     googleSearch,
     modelId: selectedModel,
+    catalogModelId: selectedCatalogModelId,
     prompt,
     references: referenceImages,
     resolution,
@@ -730,6 +738,7 @@ export default function Home({
     count: generationCount,
     googleSearch,
     modelId: selectedModel,
+    catalogModelId: selectedCatalogModelId,
     prompt,
     references: referenceImages,
     resolution,
@@ -775,6 +784,7 @@ export default function Home({
     setPrompt(normalizedState.prompt);
     setReferenceImages(normalizedState.references.map((reference) => ({ ...reference })));
     setSelectedModel(normalizedState.modelId);
+    setSelectedCatalogModelId(normalizedState.catalogModelId);
     setSelectedRatio(normalizedState.aspectRatio);
     setResolution(normalizedState.resolution);
     setGenerationCount(normalizedState.count);
@@ -946,6 +956,8 @@ export default function Home({
     return () => window.removeEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
   }, []);
 
+  useEffect(() => { const refresh = () => setBillingRevision((value) => value + 1); window.addEventListener("focus", refresh); return () => window.removeEventListener("focus", refresh); }, []);
+
   useEffect(() => {
     if (authenticationSession === undefined) return;
     if (authenticationSession === null || authenticationSession.access.status !== "active") return;
@@ -1058,6 +1070,7 @@ export default function Home({
       count: generationCount,
       googleSearch,
       modelId: selectedModel,
+      catalogModelId: selectedCatalogModelId,
       prompt,
       references: referenceImages.map((reference) => ({ ...reference })),
       resolution,
@@ -1121,6 +1134,7 @@ export default function Home({
     resolution,
     routeProjectId,
     selectedModel,
+    selectedCatalogModelId,
     selectedRatio,
     thinkingLevel,
     workspaceId,
@@ -1355,6 +1369,7 @@ export default function Home({
         setPrompt(restoredState.prompt);
         setReferenceImages(restoredState.references.map((reference) => ({ ...reference })));
         setSelectedModel(restoredState.modelId);
+        setSelectedCatalogModelId(restoredState.catalogModelId);
         setSelectedRatio(restoredState.aspectRatio);
         setResolution(restoredState.resolution);
         setGenerationCount(restoredState.count);
@@ -1494,6 +1509,7 @@ export default function Home({
   };
 
   const handleModelChange = (value: GenerationModelId) => {
+    setSelectedCatalogModelId(undefined);
     composerEditRevisionRef.current += 1;
     setSelectedModel(value);
     setSelectedRatio((current) =>
@@ -1672,6 +1688,10 @@ export default function Home({
   };
 
   const handleVideoGenerate = async () => {
+    if (billingSummary?.models && !billingSummary.models.some((model) => model.mediaType === "video" && model.id === (videoCatalogModelId ?? videoModelId))) {
+      toast.info("该视频模型尚未启用，请先在模型管理中配置价格并启用");
+      return;
+    }
     if (!parsePromptBatch(videoPrompt).prompts.length) {
       toast.error("请先输入视频描述");
       return;
@@ -1809,6 +1829,7 @@ export default function Home({
           count: generationCount,
           googleSearch,
           modelId: selectedModel,
+          catalogModelId: selectedCatalogModelId,
           prompt,
           references: nextReferences.filter((reference) => reference.status === "ready"),
           resolution,
@@ -2335,6 +2356,7 @@ export default function Home({
           count: generationCount,
           googleSearch,
           modelId: selectedModel,
+          catalogModelId: selectedCatalogModelId,
           prompt,
           references: referenceImages.filter((reference) => reference.status === "ready"),
           resolution,
@@ -2382,6 +2404,8 @@ export default function Home({
       time: new Intl.DateTimeFormat("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false }).format(createdAt),
       prompt: completedInput.prompt,
       modelId: completedInput.modelId,
+      catalogModelId: completedInput.catalogModelId,
+      catalogModelName: completedInput.catalogModelName,
       aspectRatio: completedInput.aspectRatio,
       resolution: completedInput.resolution,
       count: completedInput.count,
@@ -2419,6 +2443,7 @@ export default function Home({
                     count: completedInput.count,
                     googleSearch: completedInput.googleSearch ?? false,
                     modelId: completedInput.modelId,
+                    catalogModelId: completedInput.catalogModelId,
                     prompt: composerInput.prompt,
                     references: completedInput.references,
                     resolution: completedInput.resolution,
@@ -2453,8 +2478,8 @@ export default function Home({
   const observeGenerationJob = (runKey: string, job: GenerationJob) => {
     setGenerationRuns((current) => upsertGenerationRun(current, runKey, job));
     if (
-      !job.id.startsWith("pending_") &&
-      (job.state === "queued" || !isGenerationJobActive(job.state))
+      (!job.id.startsWith("pending_") && job.state === "queued") ||
+      !isGenerationJobActive(job.state)
     ) {
       setBillingRevision((current) => current + 1);
     }
@@ -2506,10 +2531,13 @@ export default function Home({
       return;
     }
 
+    if (!activeBillingQuote) { toast.error("该模型当前不可用或报价尚未读取，请刷新后重试"); return; }
     const draft = {
       prompt,
       references: referenceImages,
       modelId: selectedModel,
+      catalogModelId: selectedCatalogModelId,
+      expectedPriceVersion: activeBillingQuote.priceVersion,
       aspectRatio: selectedRatio,
       resolution,
       count: generationCount,
@@ -2574,6 +2602,7 @@ export default function Home({
     setPrompt(restored.prompt);
     setReferenceImages(restored.references);
     setSelectedModel(restored.modelId);
+    setSelectedCatalogModelId(restored.catalogModelId);
     setSelectedRatio(restoredAspectRatio);
     setResolution(restored.resolution);
     setGenerationCount(restoredCount);
@@ -2704,7 +2733,7 @@ export default function Home({
       );
     }
 
-    const itemModel = getGenerationModel(item.batch.modelId);
+    const itemModel = { ...getGenerationModel(item.batch.modelId), name: item.batch.catalogModelName ?? getGenerationModel(item.batch.modelId).name };
     const itemDimensions = item.image.width && item.image.height
       ? { width: item.image.width, height: item.image.height }
       : getGenerationPixelDimensions(
@@ -2753,7 +2782,7 @@ export default function Home({
 
   const renderAssetGalleryCard = (item: AssetGalleryItem) => {
     const isSelected = selectedAssetIds.includes(item.key);
-    const itemModel = getGenerationModel(item.batch.modelId);
+    const itemModel = { ...getGenerationModel(item.batch.modelId), name: item.batch.catalogModelName ?? getGenerationModel(item.batch.modelId).name };
     const itemRatio = getGenerationRatio(item.batch.aspectRatio);
     return (
       <article
@@ -2859,6 +2888,7 @@ export default function Home({
             </button>
           )}
           <button className="side-nav-item"><LayoutGrid size={17} /><span>灵感板</span></button>
+          {authenticationSession?.account.role === "site_owner" && (<button className="side-nav-item" onClick={() => window.location.assign("/admin/models")}><Settings2 size={17} /><span>模型管理</span></button>)}
           {authenticationSession?.account.role === "site_owner" && (
             <button
               className="side-nav-item"
@@ -2943,6 +2973,7 @@ export default function Home({
         <header className="mobile-bar">
           <div className="mobile-brand" role="img" aria-label="GoodGood"><Image className="brand-mark" src="/goodgood-mark.svg" alt="" width={27} height={20} /><Image className="wordmark-image" src="/goodgood-wordmark.svg" alt="" width={84} height={19} /></div>
           <div className="mobile-account">
+            {authenticationSession?.account.role === "site_owner" && <button className="top-avatar" aria-label="模型管理" onClick={() => window.location.assign("/admin/models")}><Settings2 size={16} /></button>}
             {organizationNavigationVisible && (
               <button className="top-avatar" aria-label="企业管理" onClick={handleOrganizationNav}><Building2 size={16} /></button>
             )}
@@ -3044,6 +3075,9 @@ export default function Home({
               onReorderReference={reorderReference}
               referenceEditorMaterials={referenceMaterials}
               onSaveReferenceEdit={handleSaveReferenceEdit}
+              modelOptions={billingSummary?.models?.filter((model) => model.mediaType === "image").map((model) => ({ id: model.adapterId as GenerationModelId, catalogId: model.id, name: model.name, description: model.description, icon: model.adapterId.startsWith("nano") ? "nano" : "openai", recommended: model.id === DEFAULT_GENERATION_MODEL_ID }))}
+              catalogModelId={selectedCatalogModelId}
+              onCatalogModelChange={(id, adapterId) => { handleModelChange(adapterId); setSelectedCatalogModelId(id); }}
               onModelChange={handleModelChange}
               onAspectRatioChange={handleAspectRatioChange}
               onResolutionChange={handleResolutionChange}
@@ -3057,6 +3091,9 @@ export default function Home({
             />
           ) : (
             <VideoCreationComposer
+              modelOptions={billingSummary?.models?.filter((model) => model.mediaType === "video").map((model) => ({ ...getVideoGenerationModel(model.adapterId as VideoGenerationModelId), catalogId: model.id, name: model.name, description: model.description }))}
+              catalogModelId={videoCatalogModelId}
+              onCatalogModelChange={(id, adapterId) => { handleVideoModelChange(adapterId); setVideoCatalogModelId(id); }}
               mode={creationMode}
               prompt={videoPrompt}
               references={videoReferences}
@@ -3307,7 +3344,7 @@ export default function Home({
                   <div className="asset-batch-list">
                     {assetBatches.filter((batch) => batch.dateLabel === dateLabel).map((batch) => {
                       const batchRatio = getGenerationRatio(batch.aspectRatio);
-                      const batchModel = getGenerationModel(batch.modelId);
+                      const batchModel = { ...getGenerationModel(batch.modelId), name: batch.catalogModelName ?? getGenerationModel(batch.modelId).name };
                       return (
                         <article className="asset-batch-row" key={batch.id}>
                           <div className="asset-batch-time"><strong>{batch.time}</strong><small>{batch.id}</small></div>

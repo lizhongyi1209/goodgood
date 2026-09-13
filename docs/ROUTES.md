@@ -20,6 +20,7 @@ native history.
 | 帮助 | Placeholder | No view or route yet |
 | 图片详情 | Implemented | `/assets/:assetId` over its preserved source scope |
 | 账户管理 | Implemented | `/admin/users`, visible and callable only by the site owner |
+| 模型管理 | Implemented locally | Site-owner `/admin/models`: add existing templates, enable/disable, edit RMB specification prices and test credit quotes |
 | 积分记录 | Implemented | `/credits`, entered from the quiet row below `帮助` or the mobile balance |
 | 企业历史创作 | Compatible local route | `/workspaces/:workspaceId/create`, after active-membership validation; no global selector |
 | 企业管理 | Implemented locally | Main sidebar `/organizations`; one managed company opens overview, multiple companies use a management-only directory; detail subroutes share the main shell |
@@ -70,6 +71,15 @@ other` category and optional asset-library batch reference, but never repeats
 model, resolution, count, prompt, or result Asset details and never
 returns account IDs, ledger IDs, payment references, internal reasons, actors,
 or provider details. It is read-only and `no-store`.
+
+GG-052 extends `/api/billing` with enabled managed models and versioned image
+quotes by catalog ID; adapter IDs remain separate canonical families.
+Authenticated `GET /api/models` exposes enabled entries only. Site-owner
+`POST /api/admin/models/query` reads the complete directory and
+`POST /api/admin/models/save` publishes a version-checked update under the
+existing CSRF header. These return no upstream URLs or credentials. The page
+edits RMB prices at 1 CNY = 100 `credit-cny-cent` credits; video second prices
+are configuration/calculation only until formal settlement is connected.
 
 M6 also owns `GET /api/billing/products`, `POST /api/billing/orders`, and
 `GET /api/billing/orders/:orderId`. Product reads expose the active immutable
