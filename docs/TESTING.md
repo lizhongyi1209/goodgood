@@ -1,5 +1,15 @@
 # Testing strategy
 
+GG-057 local-login tests dispatch the real Node authentication handler with
+injected identity/session reads and no database/queue/provider writes. They
+verify configured-default redirects, existing-member identity preservation,
+missing-default failure, unsafe return destinations and lookup-error cookie
+suppression. The existing navigation suite now retains GG-050's four workspace
+header contracts and verifies ADR 0066's shared management links/current page
+with the actual Vinext Image shim. Browser evidence separately covers the
+existing 32141 site-owner session, both tabs, creation return and Back/Forward;
+read-only snapshots check model configuration and immutable history preservation.
+
 GG-052 coverage verifies exact RMB/credit conversion, image/second quotes,
 complete-price enabling, template validation, site-owner permissions, empty
 and enabled-only directory reads, atomic price/audit saves, rollback/version

@@ -17,6 +17,7 @@ import {
   expiredAuthenticationLoginCookie,
   expiredAuthenticationSessionCookie,
   hashAuthenticationSecret,
+  localSessionCookie,
 } from "./request-authenticator.mjs";
 
 const DEFAULT_REPOSITORY = Object.freeze({
@@ -118,7 +119,25 @@ export function createAuthenticationOperations({
   }
 
   return Object.freeze({
-    async beginLogin(returnToValue) {
+    async beginLogin(returnToValue, request) {
+      if (config.mode === "local") {
+        const location = safeReturnTo(returnToValue);
+        if (request) {
+          try {
+            await authenticateSession(request);
+            return { cookie: null, location };
+          } catch (error) {
+            if (!(error instanceof AuthenticationError) || error.code !== "SESSION_EXPIRED") {
+              throw error;
+            }
+          }
+        }
+        const cookie = localSessionCookie(config);
+        if (!cookie) {
+          throw authenticationRequestError("AUTH_NOT_CONFIGURED", undefined, 404);
+        }
+        return { cookie, location };
+      }
       if (config.mode === "email_otp") {
         return { cookie: null, location: safeReturnTo(returnToValue) };
       }

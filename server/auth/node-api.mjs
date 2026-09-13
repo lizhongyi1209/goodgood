@@ -139,7 +139,7 @@ export function createAuthenticationNodeApiHandler({
         return true;
       }
       try {
-        const result = await operations.beginLogin(url.searchParams.get("returnTo"));
+        const result = await operations.beginLogin(url.searchParams.get("returnTo"), request);
         redirect(
           response,
           302,

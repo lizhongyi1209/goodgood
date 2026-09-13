@@ -1,5 +1,19 @@
 # UX flows and state contracts
 
+## GG-057 site-owner navigation (local candidate)
+
+- Account and model management share a `站长管理` header with `账户管理` and
+  `模型管理` links. Exactly one link marks the current page. The same header
+  remains during directory loading, empty, and read-failure states after access
+  has been confirmed; signed-out and denied accounts keep their access gates.
+- `返回创作` and the brand link go directly to `/create`; switching tabs uses
+  `/admin/users` and `/admin/models`. Neither action begins login or replays
+  browser history. Native Back/Forward remains available.
+- Revisiting `/api/auth/login` in explicitly configured local mode retains a
+  valid current identity or signs in the configured default, then redirects to
+  a validated local return path. Missing local defaults fail closed. Production
+  OIDC/email OTP and site-owner permissions remain unchanged.
+
 ## GG-052 site-owner model pricing (local candidate)
 
 - Enter `模型管理` from the site-owner navigation or account-management tab.

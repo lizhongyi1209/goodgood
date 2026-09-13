@@ -282,6 +282,14 @@ cookie whose name starts with `__Host-`. The runtime and staging preflight fail
 closed instead of falling back to local identities or contacting discovery
 with an unsafe configuration.
 
+GG-057 fixes the explicit local `/api/auth/login` entry: validate the return
+path first, retain a valid existing session, otherwise issue only the configured
+local default HttpOnly cookie and redirect. No default returns
+`AUTH_NOT_CONFIGURED`; unsafe destinations return `AUTH_RETURN_TO_INVALID`.
+Unexpected session lookup failures are propagated without issuing a fallback
+identity. OIDC/email modes never enter this branch. Direct management links and
+`返回创作` use stable page destinations instead of replaying login history.
+
 The GG-029 email candidate requires exact same-origin POST, bounded JSON, a
 valid single mailbox, and a short-lived HttpOnly browser-binding cookie.
 Malformed, expired, consumed, replaced, cross-browser, and incorrect codes all

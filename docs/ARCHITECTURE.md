@@ -1,5 +1,15 @@
 # Architecture
 
+## GG-057 site-owner navigation boundary
+
+`features/admin/admin-management-header.tsx` is shared by the two standalone
+management pages after session/access/site-owner gates. Direct page links do
+not perform authentication. The authentication Node handler passes the current
+request to `beginLogin`; explicit local mode preserves its valid identity or
+restores the configured default with a validated return path. Production modes
+retain their existing authentication and authorization. No persisted data or
+pricing contract changes.
+
 ## GG-052 local model-management boundary
 
 `server/admin/models.mjs` owns authenticated directory reads, site-owner saves,

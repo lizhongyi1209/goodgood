@@ -4,6 +4,7 @@
 - Date: 2026-09-13
 - Task: GG-050
 - Refines: existing page-header navigation; no route or authorization changes
+- Partially superseded: [ADR 0066](0066-site-owner-management-navigation.md) accepts shared site-owner navigation and a direct creation link for account/model management; other page families retain this decision.
 
 ## Decision
 

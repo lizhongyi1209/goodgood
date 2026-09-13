@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Image from "next/image";
+import { toast } from "sonner";
+import { AdminManagementHeader } from "./admin-management-header";
 import {
   Plus,
   RefreshCw,
@@ -328,6 +329,19 @@ export function ModelManagementPage() {
         filter === (model.enabled ? "enabled" : "disabled")),
   );
 
+  const logout = async () => {
+    try {
+      const redirecting = await signOut();
+      if (!redirecting) {
+        setSession(null);
+        setDraft(null);
+        setModels([]);
+      }
+    } catch (failure) {
+      toast.error(failure instanceof Error ? failure.message : "退出登录失败，请重试。");
+    }
+  };
+
   if (session === undefined)
     return (
       <main className="flex min-h-dvh items-center justify-center">
@@ -354,9 +368,7 @@ export function ModelManagementPage() {
       <AccountAccessGate
         busy={false}
         session={session}
-        onLogout={() =>
-          void signOut().then(() => window.location.assign("/create"))
-        }
+        onLogout={() => void logout()}
         onRefresh={() => void refreshSession()}
       />
     );
@@ -377,32 +389,8 @@ export function ModelManagementPage() {
 
   return (
     <main className="min-h-dvh bg-white text-zinc-950">
-      <header className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-5">
-        <a
-          href="/create"
-          aria-label="GoodGood 创作"
-          className="flex items-center gap-3"
-        >
-          <Image src="/goodgood-mark.svg" width={29} height={22} alt="" />
-          <Image
-            src="/goodgood-wordmark.svg"
-            width={89}
-            height={20}
-            alt="GoodGood"
-          />
-        </a>
-        <nav aria-label="站长管理" className="flex gap-1">
-          <Button variant="ghost" asChild>
-            <a href="/admin/users">账户管理</a>
-          </Button>
-          <Button variant="ghost" className="bg-zinc-100" asChild>
-            <a href="/admin/models" aria-current="page">
-              模型管理
-            </a>
-          </Button>
-        </nav>
-      </header>
-      <div className="mx-auto max-w-6xl px-5 pb-12 pt-6">
+      <AdminManagementHeader activePage="models" onLogout={() => void logout()} />
+      <div className="mx-auto max-w-[1500px] px-5 py-8 lg:px-8 lg:py-10">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="text-xl font-semibold">模型管理</h1>

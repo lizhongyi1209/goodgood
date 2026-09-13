@@ -212,11 +212,14 @@ do not create separate draft or history state.
 
 ## Navigation rules
 
-- ADR 0061 removes the five audited page families' persistent header return
-  entries, without replacements. Routes and browser history remain compatible;
+- ADR 0061 removes the audited workspace page families' persistent header return
+  entries, without replacements. ADR 0066 supersedes its account-page restriction:
+  `/admin/users` and `/admin/models` share `站长管理` navigation, active-page links,
+  a direct `/create` return and logout. They remain outside the creator shell.
+  Routes and browser history remain compatible;
   content tabs, error-body recovery, detail/dialog close, logout and
-  `新建创作` are unaffected. `/admin/users` remains standalone, not a newly
-  shared-shell route.
+  `新建创作` are unaffected. Management navigation uses page URLs, never login
+  URLs or a history-based return action.
 
 - Navigating between Creation, Projects, and Assets must not silently lose an
   in-progress generation.

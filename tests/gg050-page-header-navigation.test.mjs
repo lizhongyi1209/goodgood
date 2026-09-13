@@ -8,7 +8,7 @@ import { createServer } from "vite";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const vite = await createServer({ appType: "custom", configFile: false, root,
-  resolve: { alias: { "@": root } }, server: { middlewareMode: true, hmr: false, ws: false } });
+  resolve: { alias: { "@": root, "next/image": `${root}node_modules/vinext/dist/shims/image.js` } }, server: { middlewareMode: true, hmr: false, ws: false } });
 after(() => vite.close());
 const source = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 const render = (component, props) => renderToStaticMarkup(React.createElement(component, props));
@@ -22,13 +22,12 @@ const header = (text, className) => {
 };
 const noReturn = (text) => assert.doesNotMatch(text, /返回创作|企业列表|onBack|ArrowLeft|asset-return-button|credit-activity-back/);
 
-test("GG-050 all five page headers omit persistent return actions without replacements", async () => {
+test("GG-050 four workspace page headers retain the accepted absence of return replacements", async () => {
   const cases = [
     ["app/page.tsx", "asset-library-header"],
     ["features/billing/credit-activity-view.tsx", "credit-activity-header"],
     ["features/distribution/business-management-view.tsx", "organization-header"],
     ["features/organizations/organization-management-page.tsx", "organization-header"],
-    ["features/admin/account-management-page.tsx", "border-b border-zinc-200"],
   ];
   for (const [path, className] of cases) {
     const text = header(await source(path), className);
@@ -37,8 +36,26 @@ test("GG-050 all five page headers omit persistent return actions without replac
   }
   const assets = header(await source("app/page.tsx"), "asset-library-header");
   assert.match(assets, /生成图片[\s\S]*上传素材[\s\S]*批次[\s\S]*画廊/);
-  const admin = header(await source("features/admin/account-management-page.tsx"), "border-b border-zinc-200");
-  assert.match(admin, /账户管理[\s\S]*aria-label="退出登录"/);
+});
+
+test("GG-057 shared site-owner navigation marks either page and links directly to management and creation", async () => {
+  const { AdminManagementHeader } = await vite.ssrLoadModule("/features/admin/admin-management-header.tsx");
+  for (const activePage of ["users", "models"]) {
+    const html = render(AdminManagementHeader, { activePage, onLogout: noop });
+    assert.match(html, /站长管理/);
+    assert.match(html, /href="\/admin\/users"/);
+    assert.match(html, /href="\/admin\/models"/);
+    assert.match(html, new RegExp(`href="/admin/${activePage}" aria-current="page"`));
+    assert.equal((html.match(/aria-current="page"/g) ?? []).length, 1);
+    assert.match(html, /href="\/create"[^>]*>[\s\S]*?返回创作/);
+    assert.match(html, /aria-label="退出登录"/);
+    assert.doesNotMatch(html, /\/api\/auth\/login|history\.back/);
+  }
+  for (const [file, activePage] of [["account", "users"], ["model", "models"]]) {
+    const text = await source(`features/admin/${file}-management-page.tsx`);
+    assert.match(text, new RegExp(`<AdminManagementHeader activePage="${activePage}" onLogout=`));
+    assert.ok(text.indexOf('session.account.role !== "site_owner"') < text.indexOf("<AdminManagementHeader"));
+  }
 });
 
 test("GG-050 removed return callbacks, icons and dedicated styles cannot leave empty controls", async () => {
@@ -102,6 +119,6 @@ test("GG-050 error-body recovery, close, new creation and logout remain explicit
   assert.match(enterprise, /企业信息加载失败[\s\S]*返回企业列表/);
   const admin = await source("features/admin/account-management-page.tsx");
   assert.match(admin, /没有账户管理权限[\s\S]*href="\/create">返回创作/);
-  assert.match(admin, /aria-label="退出登录" onClick=\{\(\) => void logout\(\)\}/);
+  assert.match(admin, /<AdminManagementHeader activePage="users" onLogout=\{\(\) => void logout\(\)\}/);
   assert.match(await source("features/creation/video-preview-detail.tsx"), /aria-label="关闭视频详情" onClick=\{\(\) => onSelect\(null\)\}/);
 });
