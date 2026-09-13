@@ -29,7 +29,6 @@ export function SiteOwnerManagementView({ session, activeTab, children, onLogin,
 
   return <section className="site-owner-management admin-management-page" aria-label="站长管理工作区">
     <header className="site-owner-management-header">
-      <strong>站长管理</strong>
       <nav aria-label="站长管理功能" className="site-owner-management-tabs">
         {tabs.map(({ id, label, icon: Icon, route }) => <Button key={id} variant="ghost" asChild className={activeTab === id ? "bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary" : "text-zinc-500"}>
           <a href={workspaceRouteHref(route)} aria-current={activeTab === id ? "page" : undefined} onClick={(event) => {

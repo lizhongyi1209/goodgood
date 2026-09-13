@@ -23,6 +23,9 @@ Preserve in-memory creation, references, projects and tracked generation jobs.
 Ordinary enterprise managers keep their existing enterprise entry. Presentation
 does not grant membership or site-owner permission; all API gates remain intact.
 Embedded admin views reuse the workspace session and omit standalone chrome.
+GG-060's owner refinement removes the duplicate visible `站长管理` content title:
+the sidebar provides that context, the upper row only switches functions, and the
+current content page has the sole primary title. Keep accessible navigation names.
 On narrow screens, replace the lobby's direct sign-out avatar with a creation
 return while in site-owner management, so the hidden sidebar does not trap users.
 

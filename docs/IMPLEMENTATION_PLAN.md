@@ -1,24 +1,24 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-13
-- Current phase: GG-059 本地实现/完整门禁/原页面与浏览器检查完成，待用户尝试；未发布。
-- Current objective: 大厅单一站长管理入口，企业/模型/账户在右侧切换，保留创作、授权与用户配置。
+- Current phase: GG-060 本地标题层级/完整门禁/桌面窄屏与原页面验证完成，待用户查看；未发布。
+- Current objective: 右侧上方只保留管理功能切换，当前页面作为唯一主标题，保留原导航与配置。
 
 ## Current checkpoint
 
-- 当前任务 [GG-059](tasks/GG-059-site-owner-workspace.md)，`feature/GG-059-site-owner-workspace`、`F:/goodgood-worktrees/GG-059`，接续 GG-058 `5eb1695`；main 已验证为祖先。ADR 0067 调整 ADR 0066 的独立页面决定。
-- 模型/账户 URL 共用大厅，站长入口默认企业，右侧三功能切换；共用登录且省去重复页头/Toaster。普通企业管理与服务器授权保留；成功修改刷新共享价格/目录。字体与 local 登录恢复不变。无迁移或价格/积分重设。
-- 32141 Web 已更新最终 GG-059（82667）；独立 `goodgood-gg052` Worker/mock 保留未变的 GG-057，三角色 ready/checks 全 ok。模型全记录与九类历史 count/hash 精确一致，无迁移/SQL fixtures/生成请求。窄屏管理改为返回创作，保留无直接退出决定。
+- 当前任务 [GG-060](tasks/GG-060-management-heading-hierarchy.md)，`fix/GG-060-management-heading-hierarchy`、`F:/goodgood-worktrees/GG-060`，接续 GG-059 `68cf479`；main 已验证为祖先。更新 ADR 0067 的视觉细节，导航决定不变。
+- 去掉右侧重复站长标题和废弃标题布局，保留三个功能切换与唯一当前页标题；其描述为次级文字。导航可访问名称/当前项/点击区/焦点/换行保留；不改路由、授权、字体、价格、启禁、余额或历史。
+- 32141 Web 已更新 GG-060（43528）；独立 `goodgood-gg052` Worker/mock 保留未变的 GG-057。三角色 ready/checks 全 ok，模型全记录与九类历史 count/hash 精确一致，无迁移/SQL fixtures/生成请求。
 - 正式 `https://goodgood.o1key.com`、production revision `65ceb168`/迁移 0019 不变；`staging-goodgood.o1key.com` 仅历史名称。旧 32140 是真实 provider 栈，不能放 fixtures/outbox；本轮不推送/合 main/发布。
-- Verification: 新定向 5/5、旧导航/组件 32/32；最终完整门禁 437 通过/16 opt-in 跳过/0 失败，lint/类型/构建通过；Chrome 三功能/创作连续性/Back/Forward/原地址刷新/窄屏返回与只读定价取消通过，详见任务卡。
-- Next action: 用户在已保留的 32141 模型管理工作区尝试价格；用右侧三功能切换，侧栏创作（窄屏返回创作）离开，继续本地线上候选准备。
+- Verification: 管理/导航定向 11/11；稳定后一次完整门禁 437 通过/16 opt-in 跳过/0 失败，lint/类型/构建通过；Chrome 三页唯一主标题、桌面/390px 窄屏层级、40px 点击区和数据对比通过；详见任务卡。
+- Next action: 用户查看已保留的 32141 模型管理页面，上方切换功能、下方唯一当前页标题，继续本地测试。
 - Blockers: 当前无阻塞；mock 不证明真实上游，生产单位兑换/迁移/费率与上线尚未执行。
 
 ## Verification sequence
 
-1. 共享路由、嵌入视图与授权定向回归，无 SQL fixture 写入。
+1. 既有管理/导航与授权定向回归，无 SQL fixture 写入。
 2. 稳定后完整门禁（仅遇到后续具体缺陷修改才重跑），保留配置，仅更新 Web，不执行迁移。
-3. 浏览器三功能切换/创作连续性/刷新/窄屏和配置历史对比，交用户本地验收；真实 provider 与发布使用独立范围。
+3. 浏览器三页标题主次/桌面窄屏与配置历史对比，交用户本地验收；真实 provider 与发布使用独立范围。
 
 ## Milestones
 
@@ -41,11 +41,12 @@
 | GG-057 | 本地完成并验证 | 站长导航与 local 登录恢复；门禁 432/16、运行/Chrome 检查与配置/历史保留通过，未发布 |
 | GG-058 | 本地调整与验证完成 | 站长字体/无页头退出；门禁 432/16、运行/Chrome 与历史保留通过，原 Windows 文字待用户复看，未发布 |
 | GG-059 | 本地完成并验证 | 大厅统一站长管理/右侧切换/窄屏返回；最终门禁 437/16、浏览器与历史保留通过，未发布 |
+| GG-060 | 本地完成并验证 | 顶部功能切换/唯一页面主标题；门禁 437/16、桌面窄屏与历史保留检查通过，未发布 |
 | 完整 C6 / M9 | 搁置 | 删除、举报、商业支付等，见 GG-900—GG-902 |
 
 ## New-session recovery
 
-1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-059` 与 GG-059 任务卡；按卡核对运行版本，不能仅看 URL。
+1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-060` 与 GG-060 任务卡；按卡核对运行版本，不能仅看 URL。
 2. 当前页面为 `http://127.0.0.1:32141/admin/models`，已更新共享大厅候选、右侧三功能切换；仅独立 mock 栈。旧 `32140` 有真实 provider Worker，不运行 fixtures/outbox，不重置其数据。
 3. 本地 ignored `.gg052-local.mjs` 分别启动 web/worker/mock-generation；按本任务已记录的运行状态恢复，保留用户试价数据。正式生产与真实请求不在本次授权范围。
 4. 不恢复或 bulk merge 旧 C6；旧阶段具体验证见相应任务卡，GG-051 [研究记录](research/GG-051-credit-pricing-reassessment.md) 保留定价依据。

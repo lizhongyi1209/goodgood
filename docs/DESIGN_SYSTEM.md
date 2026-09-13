@@ -51,8 +51,10 @@ individual icon. Upload, settings, and send align to the same 40px box.
 ## Surfaces and separation
 
 - GG-059 embeds site-owner enterprise/model/account content beside the retained
-  lobby sidebar. One quiet `站长管理` header exposes three wrapping 40px links,
-  using Palace Red selection. Embedded admin content omits duplicate brand/header,
+  lobby sidebar. GG-060 removes its duplicate visible context title: the upper
+  row only exposes three wrapping 40px function links using Palace Red selection;
+  the current content page supplies the sole 20px primary title with a secondary
+  description. Embedded admin content omits duplicate brand/header,
   outer viewport height and padding; Chinese font settings remain scoped there.
 
 - The model-management list groups images and videos, shows each model name
