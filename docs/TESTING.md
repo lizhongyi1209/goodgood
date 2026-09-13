@@ -7,6 +7,12 @@ to distinguish UI preview, durable local integration, live API, and browser proo
 
 ## Current baseline
 
+GG-050 verifies absent persistent header return controls in all five audited
+page families, removed callback/style wiring, retained enterprise/distributor
+tabs, loading/empty/access denial, and unchanged error-body recovery, detail
+close, project creation and logout. SSR fixtures do not write to databases or
+queues; real-account browser evidence is recorded separately.
+
 GG-049 covers existing single-role uniqueness and atomic role replacement,
 distributor-only read/new-write/replay authorization, suspension, eligible-parent
 filter/binding denial, legacy-route recovery and enterprise navigation removal.

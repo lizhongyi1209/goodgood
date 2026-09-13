@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  ArrowLeft,
   CheckCircle2,
   Download,
   LoaderCircle,
@@ -292,7 +291,6 @@ export function OrganizationManagementView({
   return <section className="organization-view" aria-label="企业管理">
     <header className="organization-header">
       <div><h1>{dashboard?.workspace.name ?? "企业管理"}</h1><p>企业成员、创作额度、消费与资产统一管理。</p></div>
-      <Button variant="ghost" size="sm" onClick={() => navigateWorkspace({ kind: "organizations" })}><ArrowLeft />企业列表</Button>
     </header>
     <EnterpriseManagementNavigation activeTab={activeTab} organizationId={workspaceId} />
 

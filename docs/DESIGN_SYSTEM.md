@@ -173,6 +173,14 @@ individual icon. Upload, settings, and send align to the same 40px box.
   fake price. Video output controls use resolution, duration, and sound; they
   retain the existing quiet segmented and slider language.
 
+## Page-header navigation
+
+ADR 0061 removes persistent top-right return entries from Assets, credit
+activity, distributor management, enterprise management and site-owner account
+management. Do not add replacement buttons, breadcrumbs or logo navigation.
+Existing content tabs, filters, logout, `新建创作`, detail/dialog close controls
+and error-body recovery actions retain their current semantics and focus behavior.
+
 ## Account credit
 
 - Desktop shows `积分记录` as a normal low-emphasis navigation row immediately

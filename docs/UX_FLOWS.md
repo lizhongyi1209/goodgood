@@ -418,6 +418,15 @@ failed -> queued (retry)
 - A retry updates only the selected run. Guard the retry action against a rapid
   duplicate activation because it may create another billable upstream task.
 
+## Page-header navigation
+
+ADR 0061 removes the persistent top-right return actions from Assets, credit
+activity, distributor management, all four enterprise content tabs and site-owner
+account management. Existing navigation and tabs stay unchanged. No replacement
+entry is added to the standalone site-owner page. Error-body recovery, browser
+history, dialog/detail close, logout and `新建创作` remain available as before;
+this does not authorize creative-state clearing or route changes.
+
 ## Continuous creation and projects
 
 - A creation session accumulates batches newest-first.

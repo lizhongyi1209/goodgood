@@ -40,7 +40,7 @@ test("GG-046 distributor mock list renders through the real presentation after A
   for (const [context, previewData] of Object.entries(businessStyleFixtures)) {
     const before = JSON.stringify(previewData);
     const html = renderToStaticMarkup(React.createElement(BusinessManagementView, {
-      tab: "children", enabled: true, previewData, onNavigateTab: noop, onAccountChange: noop, onBack: noop,
+      tab: "children", enabled: true, previewData, onNavigateTab: noop, onAccountChange: noop,
     }));
     assert.equal(context, "distributor");
     assert.match(html, /分销管理/);
@@ -56,7 +56,7 @@ test("GG-046 distributor mock list renders through the real presentation after A
 test("GG-046 mock histories show incoming/outgoing, remarks and synthetic support references", () => {
   for (const previewData of Object.values(businessStyleFixtures)) {
     const html = renderToStaticMarkup(React.createElement(BusinessManagementView, {
-      tab: "transfers", enabled: true, previewData, onNavigateTab: noop, onAccountChange: noop, onBack: noop,
+      tab: "transfers", enabled: true, previewData, onNavigateTab: noop, onAccountChange: noop,
     }));
     assert.match(html, /分配给[\s\S]*trf_demo-[\s\S]*9 月创作额度补充/);
     assert.match(html, /收到来自[\s\S]*上级积分划入/);

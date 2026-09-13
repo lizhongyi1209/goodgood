@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import {
-  ArrowLeft,
   Building2,
   CheckCircle2,
   Coins,
@@ -370,7 +369,6 @@ export function AccountManagementPage() {
             <span className="ml-2 hidden border-l border-zinc-200 pl-4 text-sm text-zinc-500 sm:inline">账户管理</span>
           </div>
           <div className="flex items-center gap-1">
-            <Button variant="ghost" asChild><a href="/create"><ArrowLeft />返回创作</a></Button>
             <Button variant="ghost" size="icon" aria-label="退出登录" onClick={() => void logout()}><LogOut /></Button>
           </div>
         </div>

@@ -202,6 +202,12 @@ do not create separate draft or history state.
 
 ## Navigation rules
 
+- ADR 0061 removes the five audited page families' persistent header return
+  entries, without replacements. Routes and browser history remain compatible;
+  content tabs, error-body recovery, detail/dialog close, logout and
+  `新建创作` are unaffected. `/admin/users` remains standalone, not a newly
+  shared-shell route.
+
 - Navigating between Creation, Projects, and Assets must not silently lose an
   in-progress generation.
 - Returning to the same loaded project preserves its current in-memory edits.

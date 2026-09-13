@@ -3222,7 +3222,6 @@ export default function Home({
             <CreditActivityView
               enabled={Boolean(authenticationSession && authenticationSession.access.status === "active")}
               onAccountChange={handleCreditAccountChange}
-              onBack={handleCreateNav}
             />
           ) : activeView === "organizations" ? (
             authenticationSession?.preview && businessStylePreview ? <BusinessManagementStylePreview /> : organizationRoute ? (
@@ -3240,7 +3239,6 @@ export default function Home({
                   authenticationSession.account.businessRole === "distributor",
               )}
               onAccountChange={handleCreditAccountChange}
-              onBack={handleCreateNav}
             />
           ) : (
             <section className="asset-library-view" aria-label="资产库">
@@ -3258,7 +3256,6 @@ export default function Home({
                     </div>
                   )}
                   {assetSection === "generated" && assetMode === "gallery" && selectedAssetIds.length > 0 && <span className="asset-selection-summary">已选 {selectedAssetIds.length}</span>}
-                  <button className="asset-return-button" onClick={handleCreateNav}><Brush size={15} />返回创作</button>
                 </div>
               </header>
 

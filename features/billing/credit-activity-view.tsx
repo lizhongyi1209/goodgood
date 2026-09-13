@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  ArrowLeft,
   CircleAlert,
   Clock3,
   Coins,
@@ -82,13 +81,11 @@ function activityIcon(item: CreditActivityItem) {
 type Props = Readonly<{
   enabled: boolean;
   onAccountChange: (account: BillingAccountSummary) => void;
-  onBack: () => void;
 }>;
 
 export function CreditActivityView({
   enabled,
   onAccountChange,
-  onBack,
 }: Props) {
   const [filter, setFilter] = useState<CreditActivityFilter>("all");
   const [page, setPage] = useState<CreditActivityPage | null>(null);
@@ -174,9 +171,6 @@ export function CreditActivityView({
           <h1>积分记录</h1>
           <p>按时间查看积分消耗和变动。</p>
         </div>
-        <button className="credit-activity-back" onClick={onBack}>
-          <ArrowLeft size={15} />返回创作
-        </button>
       </header>
 
       <div className="credit-account-summary" role="status" aria-live="polite">

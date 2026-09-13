@@ -94,7 +94,7 @@ test("GG-045 shared allocation content has access denial/loading and distinct co
   const props = { ...base, enabled: false, onAccountChange: noop };
   assert.match(renderToStaticMarkup(React.createElement(DistributionView, props)), /没有积分分配权限[\s\S]*仅分销商身份[\s\S]*企业身份使用成员创作额度/);
   assert.match(renderToStaticMarkup(React.createElement(DistributionView, { ...props, enabled: true })), /role="status"[\s\S]*正在读取分配账户/);
-  const shell = renderToStaticMarkup(React.createElement(BusinessManagementView, { tab: "children", enabled: true, onAccountChange: noop, onBack: noop }));
+  const shell = renderToStaticMarkup(React.createElement(BusinessManagementView, { tab: "children", enabled: true, onAccountChange: noop }));
   assert.match(shell, /分销管理[\s\S]*客户与下级[\s\S]*划拨记录/);
   assert.doesNotMatch(shell, /企业管理|GOODGOOD DISTRIBUTION|<aside|<h1>积分分配/);
 });
