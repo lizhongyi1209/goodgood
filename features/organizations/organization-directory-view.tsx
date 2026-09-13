@@ -58,7 +58,7 @@ export function OrganizationDirectoryView({ directory, session }: Readonly<{
       <Building2 size={18} /><strong>{organization.name}</strong><span>{organization.role === "org_owner" ? "负责人" : "管理员"} · 查看与管理</span>
     </button>)}</div> : <div className="organization-state">
       <Building2 size={22} /><p>暂无可管理的企业</p><span>企业身份不会自动授予管理权限，请联系站长开通企业或等待负责人邀请。</span>
-      {session?.account.role === "site_owner" && <Button variant="ghost" onClick={() => window.location.assign("/admin/users")}>前往账户管理</Button>}
+      {session?.account.role === "site_owner" && <Button variant="ghost" onClick={() => navigateWorkspace({ kind: "admin", tab: "users" })}>前往账户管理</Button>}
     </div>}
   </section>;
 }

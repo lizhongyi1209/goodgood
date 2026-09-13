@@ -2,6 +2,8 @@
 
 Status: Accepted, local candidate; 2026-09-13, GG-057.
 
+Navigation/chrome superseded by ADR 0067 (GG-059); local sign-in recovery remains.
+
 ## Context
 
 The owner identifies account and model management as one site-owner area and

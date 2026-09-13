@@ -186,6 +186,7 @@ when their persistence and navigation behavior exist:
 | `/moodboards` | Future moodboards |
 | `/help` | Product help and status guidance |
 | `/admin/users` | Site-owner-only account review, business-role/direct-parent management, audit history, and test-credit management |
+| `/admin/models` | Site-owner model availability, template-backed additions and specification pricing; local candidate |
 
 GG-030 implements these stable routes locally, but they are not deployed:
 
@@ -212,14 +213,16 @@ do not create separate draft or history state.
 
 ## Navigation rules
 
-- ADR 0061 removes the audited workspace page families' persistent header return
-  entries, without replacements. ADR 0066 supersedes its account-page restriction:
-  `/admin/users` and `/admin/models` share `站长管理` navigation, active-page links,
-  a direct `/create` return. GG-058 removes header logout; the creator account
-  menu and access gates retain it. They remain outside the creator shell.
-  Routes and browser history remain compatible;
+- ADR 0067 brings `/admin/users` and `/admin/models` into the creator shell.
+  Site owners have one `站长管理` entry, opening `/organizations`, with enterprise,
+  model and account links in the right-hand workspace. Existing organization
+  details remain in that area. Ordinary enterprise managers keep their entry.
+  Management uses workspace history navigation and preserves mounted creation
+  state; direct links and refresh mount the same shell. The creator account
+  menu and access gates retain logout; no management header logout is added.
+  This supersedes ADR 0066's standalone chrome. Routes and history remain compatible;
   content tabs, error-body recovery, detail/dialog close, logout and
-  `新建创作` are unaffected. Management navigation uses page URLs, never login
+  `新建创作` are unaffected. Management navigation uses workspace URLs, never login
   URLs or a history-based return action.
 
 - Navigating between Creation, Projects, and Assets must not silently lose an
@@ -241,6 +244,7 @@ do not create separate draft or history state.
   and API authorization remain server-side. Search terms containing email or
   other personal data stay in request bodies or ephemeral client state rather
   than browser URLs or history.
-- Organization navigation is emitted only for a current active membership.
+- Ordinary organization navigation requires an active eligible account, enterprise
+  identity, manageable membership or invitation; site owners use `站长管理`.
   `org_owner`/`org_admin` controls never reuse `/admin/users`, and hidden
   navigation is never treated as authorization.

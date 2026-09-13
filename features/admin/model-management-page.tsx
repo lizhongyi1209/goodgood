@@ -144,10 +144,15 @@ function templateLabel(id: string) {
   );
 }
 
-export function ModelManagementPage() {
-  const [session, setSession] = useState<
+export function ModelManagementPage({ workspaceSession, embedded = false, onManagementChange }: {
+  workspaceSession?: AuthenticationSession;
+  embedded?: boolean;
+  onManagementChange?: () => void;
+} = {}) {
+  const [standaloneSession, setSession] = useState<
     AuthenticationSession | null | undefined
   >();
+  const session = workspaceSession ?? standaloneSession;
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [models, setModels] = useState<readonly ManagedModel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -187,6 +192,7 @@ export function ModelManagementPage() {
     }
   }, []);
   useEffect(() => {
+    if (workspaceSession) return;
     let active = true;
     void readAuthenticationSession()
       .then((next) => {
@@ -210,7 +216,7 @@ export function ModelManagementPage() {
       active = false;
       window.removeEventListener(SESSION_EXPIRED_EVENT, expire);
     };
-  }, []);
+  }, [workspaceSession]);
   useEffect(() => {
     if (
       session?.access.status !== "active" ||
@@ -263,6 +269,7 @@ export function ModelManagementPage() {
       setNotice(
         `${result.model.name} 已保存。新价格用于新提交，已受理任务保留原报价。`,
       );
+      onManagementChange?.();
     } catch (failure) {
       setMutationError(
         failure instanceof Error ? failure.message : "保存失败，输入已保留。",
@@ -388,9 +395,9 @@ export function ModelManagementPage() {
     );
 
   return (
-    <main className="admin-management-page min-h-dvh bg-white text-zinc-950">
-      <AdminManagementHeader activePage="models" />
-      <div className="mx-auto max-w-[1500px] px-5 py-8 lg:px-8 lg:py-10">
+    <section className={`admin-management-page bg-white text-zinc-950 ${embedded ? "admin-management-embedded" : "min-h-dvh"}`} aria-label="模型管理">
+      {!embedded && <AdminManagementHeader activePage="models" />}
+      <div className={embedded ? "admin-management-content" : "mx-auto max-w-[1500px] px-5 py-8 lg:px-8 lg:py-10"}>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="text-xl font-semibold">模型管理</h1>
@@ -851,6 +858,6 @@ export function ModelManagementPage() {
           )}
         </DialogContent>
       </Dialog>
-    </main>
+    </section>
   );
 }

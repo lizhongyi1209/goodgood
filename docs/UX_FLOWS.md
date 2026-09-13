@@ -562,6 +562,16 @@ cover motion, not real generated media. No mock item enters drafts or projects.
 
 ## Notifications
 
+Site owners enter `站长管理` from the lobby sidebar (one compact mobile entry).
+Enterprise opens first; enterprise/model/account links switch the right-hand
+content without reloading the creation shell. Existing admin URLs, refresh and
+Back/Forward use this same shell. Creation inputs and tracked jobs stay in memory.
+With the sidebar hidden on mobile, management replaces the direct sign-out avatar
+with an accessible creation return; management itself exposes no direct logout.
+Successful model/account changes refresh shared billing/directory data so returning
+to creation uses current prices/availability/balances. Ordinary enterprise manager
+access and all server authorization remain unchanged (ADR 0067).
+
 - Toast: brief confirmation or local validation (`已添加`, `已下载`, missing
   prompt). Never the only record of a generation failure.
 - Inline status: ongoing generation within the creation stream.

@@ -138,8 +138,13 @@ function actionCopy(action: AccountAction, account: ManagedAccount) {
   return { description: `向 ${account.email} 追加一笔独立的测试积分流水。`, title: "赠送测试积分" };
 }
 
-export function AccountManagementPage() {
-  const [session, setSession] = useState<AuthenticationSession | null | undefined>(undefined);
+export function AccountManagementPage({ workspaceSession, embedded = false, onManagementChange }: {
+  workspaceSession?: AuthenticationSession;
+  embedded?: boolean;
+  onManagementChange?: () => void;
+} = {}) {
+  const [standaloneSession, setSession] = useState<AuthenticationSession | null | undefined>(undefined);
+  const session = workspaceSession ?? standaloneSession;
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [dashboard, setDashboard] = useState<AdminDashboard | null>(null);
   const [accounts, setAccounts] = useState<readonly ManagedAccount[]>([]);
@@ -185,6 +190,7 @@ export function AccountManagementPage() {
   );
 
   useEffect(() => {
+    if (workspaceSession) return;
     let active = true;
     void readAuthenticationSession()
       .then((next) => {
@@ -201,7 +207,7 @@ export function AccountManagementPage() {
       active = false;
       window.removeEventListener(SESSION_EXPIRED_EVENT, expire);
     };
-  }, []);
+  }, [workspaceSession]);
 
   useEffect(() => {
     if (!canManage) return;
@@ -283,6 +289,7 @@ export function AccountManagementPage() {
         );
       }
       setSelected(null);
+      onManagementChange?.();
       await loadDashboard();
     } catch (error) {
       setMutationError(error instanceof Error ? error.message : "操作没有完成，请重试。");
@@ -359,10 +366,10 @@ export function AccountManagementPage() {
   }
 
   return (
-    <main className="admin-management-page min-h-dvh bg-white text-zinc-950">
-      <AdminManagementHeader activePage="users" />
+    <section className={`admin-management-page bg-white text-zinc-950 ${embedded ? "admin-management-embedded" : "min-h-dvh"}`} aria-label="账户管理">
+      {!embedded && <AdminManagementHeader activePage="users" />}
 
-      <div className="mx-auto max-w-[1500px] px-5 py-8 lg:px-8 lg:py-10">
+      <div className={embedded ? "admin-management-content" : "mx-auto max-w-[1500px] px-5 py-8 lg:px-8 lg:py-10"}>
         <div>
           <h1 className="text-xl font-semibold tracking-tight">账户管理</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-500">审核登录账户、管理企业/分销身份与直属关系，并通过积分流水追加测试额度。</p>
@@ -643,7 +650,7 @@ export function AccountManagementPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <Toaster position="bottom-center" toastOptions={{ duration: 2400 }} />
-    </main>
+      {!embedded && <Toaster position="bottom-center" toastOptions={{ duration: 2400 }} />}
+    </section>
   );
 }

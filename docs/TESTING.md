@@ -1,5 +1,13 @@
 # Testing strategy
 
+GG-059 tests existing admin route round-trips, retained history state and business
+route compatibility; server rendering verifies owner-only mounting, loading,
+signed-out/inactive/member/preview denial and three accessible embedded links.
+The current shell routes reuse the workspace session. Browser evidence separately
+checks live switching, document continuity, direct refresh and narrow layout on
+32141; read-only snapshots retain user prices and immutable history. No SQL
+fixtures, paid generation or production changes are part of these checks.
+
 GG-057 local-login tests dispatch the real Node authentication handler with
 injected identity/session reads and no database/queue/provider writes. They
 verify configured-default redirects, existing-member identity preservation,

@@ -102,6 +102,7 @@ import {
 } from "@/features/auth/http-auth-boundary";
 import { AccountAccessGate } from "@/features/auth/account-access-gate";
 import { AuthenticationGate } from "@/features/auth/authentication-gate";
+import { SiteOwnerManagementView } from "@/features/admin/site-owner-management-view";
 import {
   listAssets,
   readAssetDownloadUrl,
@@ -250,7 +251,7 @@ type AssetBatch = {
   referenceCount: number;
   images: readonly GenerationOutput[];
 };
-type ActiveView = "create" | "projects" | "assets" | "credits" | "distribution" | "organizations";
+type ActiveView = "create" | "projects" | "assets" | "credits" | "distribution" | "organizations" | "admin";
 type DestructiveCreationIntent =
   | { kind: "new" }
   | { kind: "project"; projectId: string; projectName: string };
@@ -524,6 +525,7 @@ export default function Home({
   const [videoPreviewRuns, setVideoPreviewRuns] = useState<readonly VideoPreviewRun[]>([]);
   const [videoDetailKey, setVideoDetailKey] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<ActiveView>("create");
+  const [adminTab, setAdminTab] = useState<"models" | "users">("models");
   const [organizationRoute, setOrganizationRoute] = useState<{ id: string; tab: OrganizationManagementTab } | null>(null);
   const [businessStylePreview, setBusinessStylePreview] = useState(false);
   const [distributionTab, setDistributionTab] = useState<"children" | "transfers">("children");
@@ -595,6 +597,7 @@ export default function Home({
     onWorkspaceError: handleWorkspaceError,
   });
   const organizationNavigationVisible = showOrganizationNavigation(authenticationSession, workspaceDirectory.workspaces, workspaceDirectory.invitations);
+  const siteOwnerManagementActive = authenticationSession?.account.role === "site_owner" && (activeView === "organizations" || activeView === "admin");
   const activeGenerationRuns = getActiveGenerationRuns(generationRuns);
   const failedGenerationRuns = getFailedGenerationRuns(generationRuns);
   const isGenerating = activeGenerationRuns.length > 0;
@@ -858,6 +861,7 @@ export default function Home({
       }
       const route = parseWorkspaceRoute(window.location.pathname);
       setDistributionTab(route.kind === "distribution" && route.tab === "transfers" ? "transfers" : "children");
+      if (route.kind === "admin") setAdminTab(route.tab);
       setOrganizationRoute(route.kind === "organizations" && route.organizationId
         ? { id: route.organizationId, tab: route.tab ?? "overview" } : null);
       projectRouteRequestRef.current += 1;
@@ -909,6 +913,8 @@ export default function Home({
             ? "distribution"
           : route.kind === "organizations" || route.kind === "enterpriseAccounts"
             ? "organizations"
+          : route.kind === "admin"
+            ? "admin"
           : "create");
     };
     const applyInitialRoute = window.setTimeout(applyWorkspaceRoute, 0);
@@ -2893,7 +2899,7 @@ export default function Home({
             <Images size={17} /><span>资产库</span>
             {newAssetCount > 0 && <em className="asset-new-count">+{newAssetCount}</em>}
           </button>
-          {organizationNavigationVisible && (
+          {organizationNavigationVisible && authenticationSession?.account.role !== "site_owner" && (
             <button className={`side-nav-item ${activeView === "organizations" ? "active" : ""}`} onClick={handleOrganizationNav}>
               <Building2 size={17} /><span>企业管理</span>
             </button>
@@ -2907,13 +2913,12 @@ export default function Home({
             </button>
           )}
           <button className="side-nav-item"><LayoutGrid size={17} /><span>灵感板</span></button>
-          {authenticationSession?.account.role === "site_owner" && (<button className="side-nav-item" onClick={() => window.location.assign("/admin/models")}><Settings2 size={17} /><span>模型管理</span></button>)}
           {authenticationSession?.account.role === "site_owner" && (
             <button
-              className="side-nav-item"
-              onClick={() => window.location.assign("/admin/users")}
+              className={`side-nav-item ${siteOwnerManagementActive ? "active" : ""}`}
+              onClick={handleOrganizationNav}
             >
-              <UserRoundCog size={17} /><span>账户管理</span>
+              <UserRoundCog size={17} /><span>站长管理</span>
             </button>
           )}
         </nav>
@@ -2992,15 +2997,14 @@ export default function Home({
         <header className="mobile-bar">
           <div className="mobile-brand" role="img" aria-label="GoodGood"><Image className="brand-mark" src="/goodgood-mark.svg" alt="" width={27} height={20} /><Image className="wordmark-image" src="/goodgood-wordmark.svg" alt="" width={84} height={19} /></div>
           <div className="mobile-account">
-            {authenticationSession?.account.role === "site_owner" && <button className="top-avatar" aria-label="模型管理" onClick={() => window.location.assign("/admin/models")}><Settings2 size={16} /></button>}
-            {organizationNavigationVisible && (
+            {organizationNavigationVisible && authenticationSession?.account.role !== "site_owner" && (
               <button className="top-avatar" aria-label="企业管理" onClick={handleOrganizationNav}><Building2 size={16} /></button>
             )}
             {authenticationSession?.account.role === "site_owner" && (
               <button
                 className="top-avatar"
-                aria-label="账户管理"
-                onClick={() => window.location.assign("/admin/users")}
+                aria-label="站长管理"
+                onClick={handleOrganizationNav}
               >
                 <UserRoundCog size={16} />
               </button>
@@ -3027,11 +3031,11 @@ export default function Home({
                 </button>
               )
             )}
-            <button
+            {siteOwnerManagementActive ? <button className="top-avatar" aria-label="返回创作" onClick={handleCreateNav}><Brush size={16} /></button> : <button
               className="top-avatar"
               aria-label={authenticationSession ? "退出登录" : "登录"}
               onClick={authenticationSession ? () => void handleLogout() : handleLogin}
-            >{accountInitials}</button>
+            >{accountInitials}</button>}
           </div>
         </header>
 
@@ -3282,6 +3286,14 @@ export default function Home({
               enabled={Boolean(authenticationSession && authenticationSession.access.status === "active")}
               onAccountChange={handleCreditAccountChange}
             />
+          ) : activeView === "admin" || siteOwnerManagementActive ? (
+            <SiteOwnerManagementView session={authenticationSession} activeTab={activeView === "admin" ? adminTab : "organizations"} onLogin={handleLogin}
+              onManagementChange={() => { setBillingRevision((current) => current + 1); void workspaceDirectory.reload(); }}>
+              {organizationRoute ? (
+                <OrganizationManagementView key={organizationRoute.id} activeTab={organizationRoute.tab} workspaceId={organizationRoute.id}
+                  enabled={Boolean(authenticationSession && !authenticationSession.preview && authenticationSession.access.status === "active")} />
+              ) : <OrganizationDirectoryView directory={workspaceDirectory} session={authenticationSession ?? null} />}
+            </SiteOwnerManagementView>
           ) : activeView === "organizations" ? (
             authenticationSession?.preview && businessStylePreview ? <BusinessManagementStylePreview /> : organizationRoute ? (
               <OrganizationManagementView key={organizationRoute.id} activeTab={organizationRoute.tab} workspaceId={organizationRoute.id}
