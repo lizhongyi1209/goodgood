@@ -2,9 +2,23 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
-import { Plus, RefreshCw, Search, Pencil, LoaderCircle } from "lucide-react";
+import {
+  Plus,
+  RefreshCw,
+  Search,
+  ChevronDown,
+  LoaderCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { GENERATION_MODEL_CATALOG } from "@/features/models/catalog";
+import { VIDEO_GENERATION_MODEL_CATALOG } from "@/features/creation/video-generation-options";
+import { ModelPricingList } from "./model-pricing-list";
 import {
   Dialog,
   DialogContent,
@@ -50,7 +64,7 @@ type Draft = {
   prices: Record<string, { output: string; input: string }>;
 };
 const newDraft = (): Draft => ({
-  id: "",
+  id: `model-${globalThis.crypto.randomUUID()}`,
   name: "",
   description: "",
   adapterId: "nano-banana-2",
@@ -83,6 +97,14 @@ function parsedPrices(draft: Draft) {
           input: yuanToCredits(price.input || "0"),
         },
       ]),
+  );
+}
+
+function templateLabel(id: string) {
+  return (
+    GENERATION_MODEL_CATALOG.find((model) => model.id === id)?.name ??
+    VIDEO_GENERATION_MODEL_CATALOG.find((model) => model.id === id)?.name ??
+    id
   );
 }
 
@@ -189,7 +211,7 @@ export function ModelManagementPage() {
       ]);
       setDraft(null);
       setNotice(
-        `${result.model.name} 已保存，版本 ${result.model.version}。新价格用于新提交，已受理任务保留原报价。`,
+        `${result.model.name} 已保存。新价格用于新提交，已受理任务保留原报价。`,
       );
     } catch (failure) {
       setMutationError(
@@ -318,7 +340,7 @@ export function ModelManagementPage() {
             <Input
               aria-label="搜索模型"
               className="pl-9"
-              placeholder="搜索模型名称或标识"
+              placeholder="搜索模型"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
             />
@@ -363,7 +385,7 @@ export function ModelManagementPage() {
             正在读取模型…
           </p>
         ) : (
-          <section className="mt-4" aria-label="模型列表">
+          <>
             {!visible.length && (
               <p className="py-12 text-center text-sm text-zinc-500">
                 {models.length
@@ -371,64 +393,15 @@ export function ModelManagementPage() {
                   : "还没有模型，点击添加模型开始配置。"}
               </p>
             )}
-            {visible.map((model) => (
-              <article
-                key={model.id}
-                className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-100 py-5"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-sm font-semibold">{model.name}</h2>
-                    <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500">
-                      {model.mediaType === "image" ? "图片" : "视频"}
-                    </span>
-                    <span
-                      className={`text-xs ${model.enabled ? "text-primary" : "text-zinc-400"}`}
-                    >
-                      {model.enabled ? "已启用" : "已禁用"}
-                    </span>
-                  </div>
-                  <p className="mt-1 break-all text-xs text-zinc-400">
-                    {model.id} · {model.adapterId} · v{model.version}
-                  </p>
-                  <p className="mt-2 text-xs leading-5 text-zinc-500">
-                    {Object.entries(model.prices).length
-                      ? Object.entries(model.prices)
-                          .map(
-                            ([key, price]) =>
-                              `${key} ¥${creditsToYuan(price.output)}/${model.mediaType === "image" ? "张" : "输出秒"}${model.mediaType === "video" ? ` + ¥${creditsToYuan(price.input ?? 0)}/参考秒` : ""}`,
-                          )
-                          .join("　")
-                      : "尚未定价"}
-                  </p>
-                </div>
-                <div className="flex gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={saving}
-                    onClick={() => open(model)}
-                  >
-                    <Pencil className="size-3.5" />
-                    编辑 / 定价
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={saving}
-                    onClick={() =>
-                      void save({
-                        ...editDraft(model),
-                        enabled: !model.enabled,
-                      })
-                    }
-                  >
-                    {model.enabled ? "禁用" : "启用"}
-                  </Button>
-                </div>
-              </article>
-            ))}
-          </section>
+            <ModelPricingList
+              models={visible}
+              busy={saving}
+              onEdit={open}
+              onToggle={(model) =>
+                void save({ ...editDraft(model), enabled: !model.enabled })
+              }
+            />
+          </>
         )}
         <p className="mt-6 text-xs leading-6 text-zinc-400">
           新增条目复用已接入模板的模型和线路。视频价格可配置与试算；当前本地视频预览不扣积分，正式结算尚未接入。
@@ -474,62 +447,52 @@ export function ModelManagementPage() {
                       }
                     />
                   </label>
-                  <label className="space-y-2 text-xs text-zinc-500">
-                    <span>模型标识</span>
+                  <label className="block space-y-2 text-xs text-zinc-500">
+                    <span>简短说明</span>
                     <Input
-                      required
-                      maxLength={80}
-                      disabled={draft.version !== null}
-                      placeholder="例如 banana-studio"
-                      value={draft.id}
+                      maxLength={200}
+                      value={draft.description}
                       onChange={(event) =>
-                        setDraft({ ...draft, id: event.target.value })
+                        setDraft({ ...draft, description: event.target.value })
                       }
                     />
                   </label>
                 </div>
-                <label className="block space-y-2 text-xs text-zinc-500">
-                  <span>接入模板</span>
-                  <Select
-                    disabled={draft.version !== null}
-                    value={draft.adapterId}
-                    onValueChange={(value) => {
-                      const next = MODEL_TEMPLATES.find(
-                        (item) => item.id === value,
-                      )!;
-                      setDraft({
-                        ...draft,
-                        adapterId: value,
-                        prices: {},
-                        enabled: false,
-                      });
-                      setResolution(next.resolutions[0]);
-                    }}
-                  >
-                    <SelectTrigger aria-label="接入模板">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {MODEL_TEMPLATES.map((item) => (
-                        <SelectItem key={item.id} value={item.id}>
-                          {item.id} ·{" "}
-                          {item.mediaType === "image" ? "图片" : "视频"}
-                          {item.ready ? "" : " · 线路待开放"}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </label>
-                <label className="block space-y-2 text-xs text-zinc-500">
-                  <span>简短说明</span>
-                  <Input
-                    maxLength={200}
-                    value={draft.description}
-                    onChange={(event) =>
-                      setDraft({ ...draft, description: event.target.value })
-                    }
-                  />
-                </label>
+                {draft.version === null && (
+                  <label className="block space-y-2 text-xs text-zinc-500">
+                    <span>使用的模型</span>
+                    <Select
+                      disabled={draft.version !== null}
+                      value={draft.adapterId}
+                      onValueChange={(value) => {
+                        const next = MODEL_TEMPLATES.find(
+                          (item) => item.id === value,
+                        )!;
+                        setDraft({
+                          ...draft,
+                          adapterId: value,
+                          prices: {},
+                          enabled: false,
+                        });
+                        setResolution(next.resolutions[0]);
+                      }}
+                    >
+                      <SelectTrigger aria-label="使用的模型">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {MODEL_TEMPLATES.map((item) => (
+                          <SelectItem key={item.id} value={item.id}>
+                            {templateLabel(item.id)} ·{" "}
+                            {item.mediaType === "image" ? "图片" : "视频"}
+                            {item.ready ? "" : " · 线路待开放"}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </label>
+                )}
+
                 <div>
                   <h3 className="text-sm font-medium">规格售价</h3>
                   <p className="mt-1 text-xs text-zinc-500">
@@ -537,68 +500,94 @@ export function ModelManagementPage() {
                       ? "每张图片售价，可为不同分辨率分别设置。"
                       : "每秒输出视频售价；参考视频按输入秒加价，没有参考视频时不收输入费用。"}
                   </p>
-                  <div className="mt-3 space-y-3">
+                  <div
+                    className={`mt-4 grid gap-3 ${template.mediaType === "image" ? "grid-cols-3" : "sm:grid-cols-2"}`}
+                  >
                     {template.resolutions.map((key) => (
-                      <div
+                      <section
                         key={key}
-                        className="grid grid-cols-[48px_1fr] items-center gap-3 sm:grid-cols-[48px_1fr_1fr_100px]"
+                        aria-label={`${key} 售价设置`}
+                        className="min-w-0 rounded-xl bg-zinc-50 p-3"
                       >
-                        <span className="text-xs text-zinc-500">{key}</span>
-                        <label className="text-xs text-zinc-500">
-                          ¥ / {template.mediaType === "image" ? "张" : "输出秒"}
-                          <Input
-                            aria-label={`${key} 输出售价`}
-                            inputMode="decimal"
-                            placeholder="未定价"
-                            value={draft.prices[key]?.output ?? ""}
-                            onChange={(event) =>
-                              setDraft({
-                                ...draft,
-                                prices: {
-                                  ...draft.prices,
-                                  [key]: {
-                                    input: draft.prices[key]?.input ?? "0",
-                                    output: event.target.value,
-                                  },
-                                },
-                              })
-                            }
-                          />
-                        </label>
-                        {template.mediaType === "video" ? (
-                          <label className="col-start-2 text-xs text-zinc-500 sm:col-start-auto">
-                            ¥ / 参考视频秒
+                        <h4 className="mb-3 text-xs font-medium">{key}</h4>
+                        <div
+                          className={
+                            template.mediaType === "video"
+                              ? "grid grid-cols-2 gap-3"
+                              : ""
+                          }
+                        >
+                          <label className="block min-w-0">
+                            <span className="mb-1.5 block text-[11px] text-zinc-500">
+                              {template.mediaType === "image"
+                                ? "每张 / 元"
+                                : "输出秒 / 元"}
+                            </span>
                             <Input
-                              aria-label={`${key} 参考视频秒价`}
+                              aria-label={`${key} 输出售价`}
+                              className="bg-white px-2 tabular-nums"
                               inputMode="decimal"
-                              value={draft.prices[key]?.input ?? "0"}
+                              placeholder="未定价"
+                              value={draft.prices[key]?.output ?? ""}
                               onChange={(event) =>
                                 setDraft({
                                   ...draft,
                                   prices: {
                                     ...draft.prices,
                                     [key]: {
-                                      output: draft.prices[key]?.output ?? "",
-                                      input: event.target.value,
+                                      input: draft.prices[key]?.input ?? "0",
+                                      output: event.target.value,
                                     },
                                   },
                                 })
                               }
                             />
+                            <span className="mt-2 block text-[11px] text-zinc-400">
+                              {(() => {
+                                try {
+                                  return `${yuanToCredits(draft.prices[key]?.output ?? "")} 积分/${template.mediaType === "image" ? "张" : "秒"}`;
+                                } catch {
+                                  return "—";
+                                }
+                              })()}
+                            </span>
                           </label>
-                        ) : (
-                          <span className="hidden sm:block" />
-                        )}
-                        <span className="col-start-2 text-xs text-zinc-400 sm:col-start-auto">
-                          {(() => {
-                            try {
-                              return `${yuanToCredits(draft.prices[key]?.output ?? "")} 积分/${template.mediaType === "image" ? "张" : "秒"}`;
-                            } catch {
-                              return "—";
-                            }
-                          })()}
-                        </span>
-                      </div>
+                          {template.mediaType === "video" && (
+                            <label className="block min-w-0">
+                              <span className="mb-1.5 block text-[11px] text-zinc-500">
+                                参考秒 / 元
+                              </span>
+                              <Input
+                                aria-label={`${key} 参考视频秒价`}
+                                className="bg-white px-2 tabular-nums"
+                                inputMode="decimal"
+                                value={draft.prices[key]?.input ?? "0"}
+                                onChange={(event) =>
+                                  setDraft({
+                                    ...draft,
+                                    prices: {
+                                      ...draft.prices,
+                                      [key]: {
+                                        output: draft.prices[key]?.output ?? "",
+                                        input: event.target.value,
+                                      },
+                                    },
+                                  })
+                                }
+                              />
+                              <span className="mt-2 block text-[11px] text-zinc-400">
+                                {(() => {
+                                  try {
+                                    return `${yuanToCredits(draft.prices[key]?.input || "0")} 积分/秒`;
+                                  } catch {
+                                    return "—";
+                                  }
+                                })()}
+                              </span>
+                            </label>
+                          )}
+                        </div>
+                      </section>
                     ))}
                   </div>
                 </div>
@@ -681,6 +670,39 @@ export function ModelManagementPage() {
                     须填齐全部规格售价
                   </span>
                 </label>
+                <Collapsible className="pt-1">
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="px-0 text-xs text-zinc-400 [&[data-state=open]>svg]:rotate-180"
+                    >
+                      接入详情
+                      <ChevronDown className="size-3.5 transition-transform motion-reduce:transition-none" />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-3 space-y-3 text-xs text-zinc-500">
+                    <p className="leading-5">
+                      内部编号由系统自动生成，用于关联价格、创作和历史记录。它不是上游
+                      API 模型名，保存后保持不变。
+                    </p>
+                    <dl className="grid grid-cols-[72px_minmax(0,1fr)] gap-x-3 gap-y-2">
+                      <dt>使用的模型</dt>
+                      <dd>{templateLabel(draft.adapterId)}</dd>
+                      <dt>内部编号</dt>
+                      <dd className="break-all font-mono text-[11px]">
+                        {draft.id}
+                      </dd>
+                      {draft.version !== null && (
+                        <>
+                          <dt>配置版本</dt>
+                          <dd>{draft.version}</dd>
+                        </>
+                      )}
+                    </dl>
+                  </CollapsibleContent>
+                </Collapsible>
               </fieldset>
               {mutationError && (
                 <p role="alert" className="mt-4 text-sm text-destructive">

@@ -18,6 +18,15 @@
   states stay inline. Images consume published prices; video preview has no
   settlement. No actual-token surcharge follows an accepted creator quote.
 
+GG-053 refines this panel: the list shows each model name once and groups image
+and video models with aligned resolution prices. RMB is primary; credits show
+the equivalent image/second unit. Video output/reference rates are separate,
+and unpriced/supported specifications differ from unsupported ones. The editor
+groups inputs by resolution. New catalog IDs are generated automatically;
+existing IDs remain stable. `接入详情` reveals the ID's purpose, adapter name and
+configuration version on demand. These technical fields do not repeat in the
+list or normal price editor; conflicts and server-side version checks remain.
+
 ## Authentication
 
 - On first load, confirm the GoodGood session before enabling owner-scoped

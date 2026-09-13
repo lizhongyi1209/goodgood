@@ -42,6 +42,14 @@ individual icon. Upload, settings, and send align to the same 40px box.
 
 ## Surfaces and separation
 
+- The model-management list groups images and videos, shows each model name
+  once, and aligns resolution prices in quiet desktop columns. On mobile each
+  row retains its actions above a compact price grid. RMB values have modest
+  emphasis with tabular digits; equivalent credits and units are secondary.
+  Output/reference video prices remain distinct. The editor uses compact
+  specification groups and a collapsed technical detail area, not repeated IDs
+  or version badges in ordinary rows (GG-053).
+
 - Prefer whitespace and grouping over lines.
 - Sidebar and content share the same canvas; no vertical divider.
 - Ordinary actions—including navigation, return, retry, search, row actions,
