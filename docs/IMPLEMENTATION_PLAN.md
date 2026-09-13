@@ -1,24 +1,24 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-13
-- Current phase: GG-061 本地独立审计日志/完整门禁/原页面与浏览器检查完成，待用户查看；未发布。
-- Current objective: 账户操作记录独立为审计日志，与其他管理功能在大厅右侧切换，保留原历史。
+- Current phase: GG-062 GPT 图片三线路本地实现、门禁、隔离 SQL 与原页面检查完成，未发布。
+- Current objective: 用户在模型管理为 GPT 图片系列逐线路定价与启禁，保留原测试配置与历史。
 
 ## Current checkpoint
 
-- 当前任务 [GG-061](tasks/GG-061-audit-log-section.md)，`feature/GG-061-audit-log-section`、`F:/goodgood-worktrees/GG-061`，接续 GG-060 `353f93d`；main 已验证为祖先。更新 ADR 0067 为四功能与独立日志。
-- `/admin/audit` 共用大厅与站长登录，账户页不再重复日志；复用既有最新 30 条账户操作查询，显示时间/操作/人员/对象/原因，刷新/加载/空/失败重试完整。主标题层级/窄屏返回保留。无新后台持久化或审计写操作。
-- 32141 Web 已更新 GG-061（72111）；独立 `goodgood-gg052` Worker/mock 保留未变的 GG-057，三角色 ready/checks 全 ok。模型全记录与十类历史 count/hash 精确一致，无迁移/SQL fixtures/生成请求。
-- 正式 `https://goodgood.o1key.com`、production revision `65ceb168`/迁移 0019 不变；`staging-goodgood.o1key.com` 仅历史名称。旧 32140 是真实 provider 栈，不能放 fixtures/outbox；本轮不推送/合 main/发布。
-- Verification: 定向 26/26；一次完整门禁 439 通过/16 opt-in 跳过/0 失败，lint/类型/构建通过；Chrome 旧账户列表移除、四功能/独立日志/刷新/直接地址/桌面窄屏与数据对比通过，详见任务卡。
-- Next action: 用户在已保留的 32141 审计日志工作区查看原记录，用四功能栏切换管理内容，继续本地测试。
-- Blockers: 当前无阻塞；mock 不证明真实上游，生产单位兑换/迁移/费率与上线尚未执行。
+- 当前任务 [GG-062](tasks/GG-062-gpt-image-lines.md)，`feature/GG-062-gpt-image-lines`、`F:/goodgood-worktrees/GG-062`，接续 GG-061 `a25cfe0`；main 已验证为祖先。ADR 0068 扩展 GPT 图片三线路，保留 Banana 专属参数/编排。
+- GPT 2/2.5 sunburst/flare 九个请求 ID 接入；默认特价，独立线路选择/固定报价/站长定价与启禁。原价沿用特价，总模型仍禁用，优质/专线为空且禁用；旧空线路任务保留原路由。
+- 独立 goodgood-gg052 已备份后只添加 0033；所有原价/启禁/版本/更新时间、Banana 全配置与十类历史 count/hash 保留。Web 44103/Worker 29662/mock 71031 均来自 GG-062，ready/checks 全 ok。32140 真实 provider 栈不变，不放 fixtures/outbox。
+- Verification: 最终完整门禁 445 通过/16 opt-in 跳过/0 失败，lint/类型/构建通过；567 注入参数请求、隔离 SQL 与 Chrome 三模型价格编辑/窄屏检查通过，详见任务卡。
+- Production `https://goodgood.o1key.com` revision `65ceb168`/migration 0019 unchanged; `staging-goodgood.o1key.com` is historical naming. No push/main merge/deployment/paid calls.
+- Next action: 用户在已保留的 32141 模型管理页面逐线路定价、开启需要的模型与线路，继续本地测试。
+- Blockers: 当前无阻塞；mock 不证明真实上游，生产上线/迁移及真实付费请求尚未执行。
 
 ## Verification sequence
 
-1. 既有管理/导航与授权定向回归，无 SQL fixture 写入。
-2. 稳定后完整门禁（仅遇到后续具体缺陷修改才重跑），保留配置，仅更新 Web，不执行迁移。
-3. 浏览器审计/账户切换、原记录/刷新/桌面窄屏和配置历史对比，交用户本地验收；真实 provider 与发布使用独立范围。
+1. Nine GPT mappings, independent quotes/disable, draft/project and legacy route compatibility.
+2. Explicit no-Worker disposable SQL database; one full local gate after stabilization.
+3. Preview snapshots, local migration/runtime update and browser model-pricing verification.
 
 ## Milestones
 
@@ -43,12 +43,13 @@
 | GG-059 | 本地完成并验证 | 大厅统一站长管理/右侧切换/窄屏返回；最终门禁 437/16、浏览器与历史保留通过，未发布 |
 | GG-060 | 本地完成并验证 | 顶部功能切换/唯一页面主标题；门禁 437/16、桌面窄屏与历史保留检查通过，未发布 |
 | GG-061 | 本地完成并验证 | 独立审计/四功能；门禁 439/16、原浏览器/窄屏与历史保留通过，未发布 |
+| GG-062 | 本地完成并验证 | GPT 图片三线路；门禁 445/16、隔离 SQL、原页面/窄屏与历史保留通过，未发布 |
 | 完整 C6 / M9 | 搁置 | 删除、举报、商业支付等，见 GG-900—GG-902 |
 
 ## New-session recovery
 
-1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-061` 与 GG-061 任务卡；按卡核对运行版本，不能仅看 URL。
-2. 当前页面为 `http://127.0.0.1:32141/admin/audit`，已更新独立审计日志、右侧四功能切换；仅独立 mock 栈。旧 `32140` 有真实 provider Worker，不运行 fixtures/outbox，不重置其数据。
+1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-062` 与 GG-062 任务卡；按卡核对运行版本，不能仅看 URL。
+2. 当前页面为 `http://127.0.0.1:32141/admin/models`，已更新 GPT 图片三线路，右侧四管理功能保留；仅独立 mock 栈。旧 `32140` 有真实 provider Worker，不运行 fixtures/outbox，不重置其数据。
 3. 本地 ignored `.gg052-local.mjs` 分别启动 web/worker/mock-generation；按本任务已记录的运行状态恢复，保留用户试价数据。正式生产与真实请求不在本次授权范围。
 4. 不恢复或 bulk merge 旧 C6；旧阶段具体验证见相应任务卡，GG-051 [研究记录](research/GG-051-credit-pricing-reassessment.md) 保留定价依据。
 

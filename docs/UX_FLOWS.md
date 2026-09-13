@@ -1,5 +1,11 @@
 # UX flows and state contracts
 
+GG-062 extends the Banana three-line flow to GPT IMAGE 2/2.5: new creation defaults
+to special, selection updates the independent fixed quote, and unavailable lines
+remain disabled without automatic fallback. Site owners edit and enable each
+line in the existing model dialog; original prices and model flags remain intact.
+Restored drafts/projects keep the chosen line.
+
 ## GG-057 site-owner navigation (local candidate)
 
 - Account and model management share a `站长管理` header with `账户管理` and

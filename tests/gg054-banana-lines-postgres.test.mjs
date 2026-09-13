@@ -134,8 +134,10 @@ test(
       ).rows,
     });
     const before = await history();
+    const gptConfiguration = (await pool.query("SELECT id,enabled,prices,version,updated_at FROM managed_models WHERE adapter_id LIKE 'gpt-image-%' ORDER BY id")).rows;
     await applyMigrations({ databaseUrl, logger: quiet });
     assert.deepEqual(await history(), before);
+    assert.deepEqual((await pool.query("SELECT id,enabled,prices,version,updated_at FROM managed_models WHERE adapter_id LIKE 'gpt-image-%' ORDER BY id")).rows, gptConfiguration);
     assert.equal(
       (
         await pool.query(
@@ -419,6 +421,48 @@ test(
     await failGenerationJob(pool, { jobId: nanoJob.row.id, workerId, attemptId: nanoClaim.attempt.id,
       error: { code: "PROVIDER_FAILED", title: "Synthetic", message: "isolated fixture", retryable: true } });
     assert.equal((await findCreditAccount(pool, { ownerId })).reservedBalance, 0n);
+    // GG-062 uses the same explicitly isolated no-Worker database, never preview data.
+    for (const adapterId of ["gpt-image-2", "gpt-image-2.5-sunburst", "gpt-image-2.5-flare"]) {
+      const migratedGpt = (await pool.query("SELECT * FROM managed_models WHERE id=$1", [adapterId])).rows[0];
+      assert.deepEqual(migratedGpt.lines.special.prices, migratedGpt.prices);
+      assert.deepEqual(migratedGpt.lines.quality, { enabled: false, prices: {} });
+      assert.deepEqual(migratedGpt.lines.dedicated, { enabled: false, prices: {} });
+      let gpt = (await saveManagedModel({ ownerContext, resources: { pool }, input: {
+        id: `gg062-${adapterId}`, adapterId, name: "Isolated GPT lines", description: "", version: null,
+        enabled: true, prices: prices(20), lines: {
+          special: { enabled: true, prices: prices(20) }, quality: { enabled: true, prices: prices(40) }, dedicated: { enabled: true, prices: prices(90) },
+        },
+      } })).model;
+      for (const line of [undefined, "quality", "dedicated"]) {
+        const gptInput = { ...input, modelId: adapterId, catalogModelId: gpt.id, count: 4,
+          ...(line ? { imageLine: line } : {}), quality: "high", background: "transparent", outputFormat: "png" };
+        const accepted = await createGenerationJob(pool, { ownerId, idempotencyKey: `gg062-${adapterId}-${line}`, input: gptInput });
+        const expectedLine = line ?? "special";
+        assert.equal(accepted.row.image_line, expectedLine);
+        const beforePin = (await pool.query("SELECT quoted_credit_amount,price_version_id FROM generation_batches WHERE id=$1", [accepted.row.batch_id])).rows[0];
+        assert.equal(beforePin.quoted_credit_amount, String(gpt.lines[expectedLine].prices["1K"].output * 4));
+        const claimed = await claim(accepted.row.id);
+        assert.equal(claimed.route.imageLine, expectedLine);
+        assert.equal(claimed.route.providerModel, `${adapterId}-${expectedLine}-mock-v1`);
+        if (line === "dedicated") {
+          gpt = (await saveManagedModel({ ownerContext, resources: { pool }, input: {
+            ...gpt, lines: { ...gpt.lines, dedicated: { enabled: false, prices: prices(100) } },
+          } })).model;
+          assert.deepEqual((await pool.query("SELECT quoted_credit_amount,price_version_id FROM generation_batches WHERE id=$1", [accepted.row.batch_id])).rows[0], beforePin);
+          await assert.rejects(createGenerationJob(pool, { ownerId, idempotencyKey: `gg062-disabled-${adapterId}`, input: gptInput }), error => error.code === "MODEL_DISABLED");
+        }
+        await failGenerationJob(pool, { jobId: accepted.row.id, workerId, attemptId: claimed.attempt.id,
+          error: { code: "PROVIDER_FAILED", title: "Synthetic", message: "isolated fixture", retryable: true } });
+        assert.equal((await findCreditAccount(pool, { ownerId })).reservedBalance, 0n);
+      }
+      const gptState = { ...input, modelId: adapterId, catalogModelId: gpt.id,
+        ...normalizeGenerationModelOptions({ modelId: adapterId, imageLine: "quality" }) };
+      const gptProject = await createProject(pool, { ownerId, batchIds: [], state: gptState, name: "Isolated GPT restore", idempotencyKey: `gg062-project-${adapterId}` });
+      assert.equal((await findProject(pool, { ownerId, projectId: gptProject.id })).image_line, "quality");
+      const previousDraft = await findCreationDraft(pool, { ownerId });
+      await saveCreationDraft(pool, { ownerId, ...validateDraftMutation({ state: gptState, expectedVersion: previousDraft.version }) });
+      assert.equal((await findCreationDraft(pool, { ownerId })).image_line, "quality");
+    }
     const beforeArchive = await history();
     const beforeProject = await findProject(pool, { ownerId, projectId: project.id });
     const beforeAudit = (await pool.query("SELECT to_jsonb(e) AS record FROM managed_model_events e ORDER BY id")).rows;

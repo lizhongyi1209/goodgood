@@ -1,5 +1,13 @@
 # Testing strategy
 
+GG-062 covers nine exact GPT mappings, legacy routes/hashes, 567 injected
+non-billable ratio/resolution/count payloads with five references/long prompts,
+independent quotes, availability and state restore. Server rendering verifies
+three selector/list lines and unavailable states. The explicit GG-054 no-Worker
+disposable SQL suite also checks GPT migration preservation, default/selected
+line pinning, price/disable changes and drafts/projects. Never run these fixtures
+against the pricing preview or real-provider stack.
+
 GG-061 extends shared-route/history/owner-gate coverage to audit as the fourth
 function. Audit content tests cover loading, empty, retryable failure, actor/target/
 amount/time and escaped reasons; injected HTTP tests cover empty/success/401/403/

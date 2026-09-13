@@ -22,7 +22,7 @@ import { VIDEO_GENERATION_MODEL_CATALOG } from "@/features/creation/video-genera
 import { ModelPricingList } from "./model-pricing-list";
 import {
   BANANA_LINES,
-  isBananaModel,
+  supportsImageLines,
   isBananaLineReady,
   imageLineName,
   modelBananaLines,
@@ -548,7 +548,7 @@ export function ModelManagementPage({ workspaceSession, embedded = false, onMana
                           ...draft,
                           adapterId: value,
                           prices: {},
-                          lines: isBananaModel(value)
+                          lines: supportsImageLines(value)
                             ? emptyDraftLines()
                             : undefined,
                           enabled: false,

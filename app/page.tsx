@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type WheelEvent as ReactWheelEvent } from "react";
 import Image from "next/image";
 import { CreationComposer } from "@/features/creation/creation-composer";
-import { isBananaModel, imageLineName } from "@/shared/contracts/banana-lines.mjs";
+import { supportsImageLines, imageLineName } from "@/shared/contracts/banana-lines.mjs";
 import type { BananaLine } from "@/shared/contracts/generation";
 import { VideoCreationComposer } from "@/features/creation/video-creation-composer";
 import { MixedMediaStylePreview } from "@/features/creation/mixed-media-style-preview";
@@ -638,7 +638,7 @@ export default function Home({
   const activeBillingQuote = findBillingQuote(billingSummary, {
     count: generationCount,
     modelId: selectedModel,
-    ...(isBananaModel(selectedModel) ? { imageLine } : {}),
+    ...(supportsImageLines(selectedModel) ? { imageLine } : {}),
     catalogModelId: selectedCatalogModelId,
     resolution,
   });
@@ -713,7 +713,7 @@ export default function Home({
     background,
     googleSearch,
     modelId: selectedModel,
-    ...(isBananaModel(selectedModel) ? { imageLine } : {}),
+    ...(supportsImageLines(selectedModel) ? { imageLine } : {}),
     catalogModelId: selectedCatalogModelId,
     prompt,
     references: referenceImages,
@@ -748,7 +748,7 @@ export default function Home({
     count: generationCount,
     googleSearch,
     modelId: selectedModel,
-    ...(isBananaModel(selectedModel) ? { imageLine } : {}),
+    ...(supportsImageLines(selectedModel) ? { imageLine } : {}),
     catalogModelId: selectedCatalogModelId,
     prompt,
     references: referenceImages,
@@ -1085,7 +1085,7 @@ export default function Home({
       count: generationCount,
       googleSearch,
       modelId: selectedModel,
-      ...(isBananaModel(selectedModel) ? { imageLine } : {}),
+      ...(supportsImageLines(selectedModel) ? { imageLine } : {}),
       catalogModelId: selectedCatalogModelId,
       prompt,
       references: referenceImages.map((reference) => ({ ...reference })),
@@ -1848,7 +1848,7 @@ export default function Home({
           count: generationCount,
           googleSearch,
           modelId: selectedModel,
-          ...(isBananaModel(selectedModel) ? { imageLine } : {}),
+          ...(supportsImageLines(selectedModel) ? { imageLine } : {}),
           catalogModelId: selectedCatalogModelId,
           prompt,
           references: nextReferences.filter((reference) => reference.status === "ready"),
@@ -2376,7 +2376,7 @@ export default function Home({
           count: generationCount,
           googleSearch,
           modelId: selectedModel,
-          ...(isBananaModel(selectedModel) ? { imageLine } : {}),
+          ...(supportsImageLines(selectedModel) ? { imageLine } : {}),
           catalogModelId: selectedCatalogModelId,
           prompt,
           references: referenceImages.filter((reference) => reference.status === "ready"),
@@ -2547,7 +2547,7 @@ export default function Home({
       return;
     }
     if (
-      !(isBananaModel(selectedModel) || isGptImageModelId(selectedModel)) ||
+      !(supportsImageLines(selectedModel) || isGptImageModelId(selectedModel)) ||
       !isGenerationCountSupported(selectedModel, generationCount)
     ) {
       toast.error("当前模型不支持所选生成数量。Pro 支持单张输出。");
@@ -2559,7 +2559,7 @@ export default function Home({
       prompt,
       references: referenceImages,
       modelId: selectedModel,
-      ...(isBananaModel(selectedModel) ? { imageLine } : {}),
+      ...(supportsImageLines(selectedModel) ? { imageLine } : {}),
       catalogModelId: selectedCatalogModelId,
       expectedPriceVersion: activeBillingQuote.priceVersion,
       aspectRatio: selectedRatio,
@@ -3635,7 +3635,7 @@ export default function Home({
                     <div><dt>分辨率</dt><dd>{formatGenerationResolution(activeDetail.batch.resolution, activeDetail.image)}</dd></div>
                     <div><dt>批次</dt><dd>{activeDetail.batch.count} 张</dd></div>
                     <div><dt>参考图</dt><dd>{activeDetail.batch.referenceCount ? `${activeDetail.batch.referenceCount} 张` : "无"}</dd></div>
-                    {isBananaModel(activeDetail.batch.modelId) && <div><dt>线路</dt><dd>{imageLineName(activeDetail.batch.imageLine)}</dd></div>}
+                    {supportsImageLines(activeDetail.batch.modelId) && (activeDetail.batch.imageLine || activeDetail.batch.modelId.startsWith("nano-banana-")) && <div><dt>线路</dt><dd>{imageLineName(activeDetail.batch.imageLine)}</dd></div>}
                     {activeDetail.batch.modelId === "nano-banana-2" && (
                       <div><dt>谷歌搜索</dt><dd>{activeDetail.batch.googleSearch ? "开启" : "关闭"}</dd></div>
                     )}

@@ -67,7 +67,7 @@ import { toast } from "sonner";
 import type { ManagedImageOption } from "@/shared/contracts/model-management";
 import type { ManagedModel } from "@/shared/contracts/model-management";
 import type { BananaLine } from "@/shared/contracts/generation";
-import { isBananaModel } from "@/shared/contracts/banana-lines.mjs";
+import { supportsImageLines } from "@/shared/contracts/banana-lines.mjs";
 import { BananaLineSelector } from "./banana-line-selector";
 
 export type CreationComposerProps = Readonly<{
@@ -535,7 +535,7 @@ export function CreationComposer({
                   </div>
                 </div>
               </div>
-              {isBananaModel(modelId) && <BananaLineSelector modelId={modelId} model={managedModel} resolution={resolution} value={imageLine} onChange={onImageLineChange} />}
+              {supportsImageLines(modelId) && <BananaLineSelector modelId={modelId} model={managedModel} resolution={resolution} value={imageLine} onChange={onImageLineChange} />}
               {modelId === "nano-banana-2" && (
                 <div className="banana-model-options">
                   <div className="google-search-option">

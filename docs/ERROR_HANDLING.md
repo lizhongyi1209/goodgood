@@ -21,9 +21,9 @@ Already accepted jobs retain their original quote despite later price or enable
 changes. The denomination migration rejects undrained jobs/reservations/pending
 orders atomically; never bypass the guard or rewrite historical records.
 
-GG-054 applies `MODEL_DISABLED` to disabled/unpriced/unknown Banana lines before
-credit reservation. Line input must be a stable known ID and cannot be supplied
-to GPT. Admin activation requires confirmed mapping and complete line prices;
+GG-054 and GG-062 apply `MODEL_DISABLED` to disabled/unpriced/unknown image lines before
+credit reservation. Banana and GPT image templates accept the three stable line IDs.
+Admin activation requires confirmed mapping and complete line prices;
 invalid changes retain the dialog input. Stale quotes are checked within the
 chosen line. Restored unavailable choices preserve state and offer another line;
 there is no automatic fallback. Accepted jobs continue their pinned line and

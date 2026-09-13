@@ -7,7 +7,7 @@ quiet interface chrome, compact rounded controls, and vivid imagery. Palace Red
 adds authorship and cultural character without turning the interface into a red
 surface.
 
-GG-054 Banana line choice reuses the compact rounded segmented controls beneath
+GG-054/GG-062 Banana and GPT line choice reuses the compact rounded segmented controls beneath
 the model selector. Selection uses Palace Red; unavailable choices retain native
 disabled and accessible pressed states. The pricing list keeps one model name
 with three compact aligned line rows and RMB/credit units. Desktop shares the

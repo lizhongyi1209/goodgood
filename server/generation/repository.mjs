@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { imagePriceContext, isBananaModel } from "../../shared/contracts/banana-lines.mjs";
+import { imagePriceContext, supportsImageLines } from "../../shared/contracts/banana-lines.mjs";
 import { requireEnabledImageModel } from "../admin/models.mjs";
 import { promptContextForRetry } from "../../shared/contracts/prompt-batch.mjs";
 import {
@@ -477,7 +477,7 @@ export async function createGenerationJob(
         modelOptions.background,
         modelOptions.outputFormat,
         inputHash,
-        isBananaModel(input.modelId) ? input.imageLine ?? "special" : null,
+        supportsImageLines(input.modelId) ? input.imageLine ?? "special" : null,
       ],
     );
     if (input.projectId) {
@@ -507,7 +507,7 @@ export async function createGenerationJob(
           modelOptions.outputFormat,
           workspace.id,
           input.catalogModelId ?? null,
-          isBananaModel(input.modelId) ? input.imageLine ?? "special" : null,
+          supportsImageLines(input.modelId) ? input.imageLine ?? "special" : null,
         ],
       );
     }

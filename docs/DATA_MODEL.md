@@ -1,5 +1,12 @@
 # Data model contract
 
+GG-062 migration 0033 expands image-line checks for GPT IMAGE 2 and 2.5 sunburst/flare
+on batches, projects and drafts. Only empty GPT managed-model line configurations
+are backfilled from existing prices into special; quality/dedicated stay unpriced
+and disabled. Model enable flags, versions and timestamps stay intact, as do all
+historical prices, input hashes, jobs and credits. New jobs persist special by
+default; historical null GPT lines retain their original provider route.
+
 ## GG-052 local candidate: denomination and managed models
 
 Migration 0029 introduces `credit-cny-cent` (1 CNY = 100 credits), using a

@@ -5,6 +5,8 @@
 - Task: [GG-054](../tasks/GG-054-banana-lines.md)
 - Extends: ADR 0006、0033、0041、0063 的固定线路/Pro 未开放边界。
 
+GG-062 的 [ADR 0068](0068-gpt-image-provider-lines.md) 将三线路扩展到 GPT 图片系列；旧 GPT 空线路仍保留旧无后缀路由，并不套用 Banana 的旧默认语义或逐张编排。
+
 用户要求 Banana 系列提供特价、优质、专线，默认特价，允许创作者选择线路并分别定价。产品线路用 `special / quality / dedicated`，与中文标签、上游请求模型 ID 分离；同模型仍只有一个目录条目，不将三条线路冒充三个模型。
 
 Pro 三线路分别请求 `gemini-3-pro-image-c-sp`、`gemini-3-pro-image-c-sd`、`gemini-3-pro-image`。Nano Banana 2 现有特价映射保持不变，新增映射以用户提供或明确可核实的接入资料为准。未确认映射不开放生成，不通过同名后缀猜测线路。

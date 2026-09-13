@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { BANANA_LINES, isBananaModel, isBananaLineReady, imagePriceContext, modelBananaLines, modelSpecificationPrices, isValidImageLine } from "../../shared/contracts/banana-lines.mjs";
+import { BANANA_LINES, supportsImageLines, isBananaLineReady, imagePriceContext, modelBananaLines, modelSpecificationPrices, isValidImageLine } from "../../shared/contracts/banana-lines.mjs";
 import { sessionExpiredError } from "../auth/errors.mjs";
 import { getGenerationResources } from "../generation/resources.mjs";
 import { AdministrationError, adminAccessDeniedError } from "./errors.mjs";
@@ -17,7 +17,7 @@ function publicModel(row) {
     adapterId: row.adapter_id,
     enabled: row.enabled,
     prices: row.prices,
-    ...(isBananaModel(row.adapter_id) ? { lines: modelBananaLines(row) } : {}),
+    ...(supportsImageLines(row.adapter_id) ? { lines: modelBananaLines(row) } : {}),
     version: row.version,
     updatedAt: new Date(row.updated_at).toISOString(),
   };
@@ -68,7 +68,7 @@ export function validateManagedModel(input) {
   }
   let prices;
   let lines;
-  if (isBananaModel(template.id)) {
+  if (supportsImageLines(template.id)) {
     const value = input.lines ?? {
       special: { enabled: input.enabled, prices: input.prices },
       quality: { enabled: false, prices: {} },
@@ -86,7 +86,7 @@ export function validateManagedModel(input) {
     if (input.enabled && !Object.values(lines).some((line) => line.enabled)) fail("启用模型前至少启用一条已定价线路。");
     prices = lines.special.prices;
   } else {
-    if (input.lines && Object.keys(input.lines).length) fail("只有 Banana 模型支持图片线路。");
+    if (input.lines && Object.keys(input.lines).length) fail("该模型不支持图片线路。");
     prices = parseSpecificationPrices(input.prices, input.enabled);
   }
   if (
@@ -185,7 +185,7 @@ export async function saveManagedModel({
       )
     ).rows[0];
     if (model.mediaType === "image") {
-      const scopes = isBananaModel(model.adapterId) ? BANANA_LINES.map(({ id }) => ({ line: id, prices: model.lines[id].prices })) : [{ line: undefined, prices: model.prices }];
+      const scopes = supportsImageLines(model.adapterId) ? BANANA_LINES.map(({ id }) => ({ line: id, prices: model.lines[id].prices })) : [{ line: undefined, prices: model.prices }];
       for (const scope of scopes) {
         const priorPrices = previous ? modelSpecificationPrices(previous, scope.line) : null;
         if (priorPrices && JSON.stringify(priorPrices) === JSON.stringify(scope.prices)) continue;
@@ -268,7 +268,7 @@ export async function requireEnabledImageModel(client, input) {
     row.media_type !== "image" ||
     row.adapter_id !== input.modelId ||
     !isValidImageLine(input.modelId, input.imageLine) ||
-    (isBananaModel(input.modelId) && (!isBananaLineReady(input.modelId, input.imageLine) || !modelBananaLines(row)[input.imageLine ?? "special"]?.enabled)) ||
+    (supportsImageLines(input.modelId) && (!isBananaLineReady(input.modelId, input.imageLine) || !modelBananaLines(row)[input.imageLine ?? "special"]?.enabled)) ||
     !modelSpecificationPrices(row, input.imageLine)[input.resolution]
   ) {
     throw new AdministrationError(

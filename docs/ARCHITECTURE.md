@@ -1,5 +1,11 @@
 # Architecture
 
+GG-062 extends image-line eligibility to GPT templates while keeping Banana-only
+thinking/search and per-image provider orchestration separate. GPT routes carry
+the exact user-specified -sp/-sd/base model IDs and retain single-request n=1/2/4.
+Explicit lines select new immutable routes; null historical GPT jobs select legacy
+routes. Price contexts remain isolated by catalog model and line.
+
 ## GG-057 site-owner navigation boundary
 
 ADR 0067/GG-059 supersedes the standalone chrome below: management routes mount

@@ -5,7 +5,7 @@ import {
   pollProviderTask,
 } from "./provider.mjs";
 import { readPrivateObject, signAssetRead } from "./storage.mjs";
-import { BANANA_LINES, isBananaModel, isBananaLineReady, isValidImageLine } from "../../shared/contracts/banana-lines.mjs";
+import { BANANA_LINES, supportsImageLines, isBananaModel, isBananaLineReady, isValidImageLine } from "../../shared/contracts/banana-lines.mjs";
 import {
   createUsGatewayAdapter,
   getUsGatewayRoute,
@@ -42,7 +42,7 @@ const MOCK_PROVIDER_ROUTES = Object.freeze({
   "gpt-image-2.5-flare": MOCK_GPT_IMAGE_25_FLARE_ROUTE,
 });
 const MOCK_BANANA_LINE_ROUTES = Object.freeze(Object.fromEntries(
-  ["nano-banana-2", "nano-banana-pro"].map((modelId) => [modelId, Object.freeze(Object.fromEntries(
+  ["nano-banana-2", "nano-banana-pro", "gpt-image-2", "gpt-image-2.5-sunburst", "gpt-image-2.5-flare"].map((modelId) => [modelId, Object.freeze(Object.fromEntries(
     BANANA_LINES.map(({ id }) => [id, modelId === "nano-banana-2" && id === "special" ? MOCK_PROVIDER_ROUTE : Object.freeze({
       provider: "goodgood-mock", productModelId: modelId, imageLine: id,
       providerModel: `${modelId}-${id}-mock-v1`, routeVersion: `m3-mock-${modelId}-${id}-v1`,
@@ -52,12 +52,12 @@ const MOCK_BANANA_LINE_ROUTES = Object.freeze(Object.fromEntries(
 
 export function generationProviderRouteForModel(providerKind, modelId, imageLine) {
   if (!isValidImageLine(modelId, imageLine)) throw new Error("Invalid image line.");
-  if (isBananaModel(modelId) && !isBananaLineReady(modelId, imageLine)) throw new Error("Image line is not connected.");
+  if (supportsImageLines(modelId) && !isBananaLineReady(modelId, imageLine)) throw new Error("Image line is not connected.");
   if (providerKind === "o1key") {
     const route = getUsGatewayRoute(modelId, imageLine);
     if (route) return route;
   } else if (providerKind === "mock") {
-    const route = isBananaModel(modelId) ? MOCK_BANANA_LINE_ROUTES[modelId]?.[imageLine ?? "special"] : MOCK_PROVIDER_ROUTES[modelId];
+    const route = (isBananaModel(modelId) || (supportsImageLines(modelId) && imageLine !== undefined)) ? MOCK_BANANA_LINE_ROUTES[modelId]?.[imageLine ?? "special"] : MOCK_PROVIDER_ROUTES[modelId];
     if (route) return route;
   }
   throw new Error(`No ${providerKind} generation route for ${modelId}.`);

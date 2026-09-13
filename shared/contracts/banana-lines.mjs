@@ -7,15 +7,18 @@ export const DEFAULT_BANANA_LINE = "special";
 export function isBananaModel(modelId) {
   return modelId === "nano-banana-2" || modelId === "nano-banana-pro";
 }
+export function supportsImageLines(modelId) {
+  return isBananaModel(modelId) || ["gpt-image-2", "gpt-image-2.5-sunburst", "gpt-image-2.5-flare"].includes(modelId);
+}
 export function isValidImageLine(modelId, line) {
   return (
     line === undefined ||
-    (isBananaModel(modelId) && BANANA_LINES.some((item) => item.id === line))
+    (supportsImageLines(modelId) && BANANA_LINES.some((item) => item.id === line))
   );
 }
 export function isBananaLineReady(modelId, line = DEFAULT_BANANA_LINE) {
   return (
-    isBananaModel(modelId) && BANANA_LINES.some((item) => item.id === line)
+    supportsImageLines(modelId) && BANANA_LINES.some((item) => item.id === line)
   );
 }
 export function imageLineName(line = DEFAULT_BANANA_LINE) {
@@ -25,7 +28,7 @@ export function imagePriceContext(line) {
   return !line || line === DEFAULT_BANANA_LINE ? "standard" : `banana-${line}`;
 }
 export function modelBananaLines(model) {
-  if (!isBananaModel(model.adapterId ?? model.adapter_id)) return null;
+  if (!supportsImageLines(model.adapterId ?? model.adapter_id)) return null;
   if (model.lines?.special) return model.lines;
   return {
     special: { enabled: true, prices: model.prices ?? {} },

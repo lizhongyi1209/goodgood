@@ -153,7 +153,7 @@ test("composer submits the selected ratio and resolution without a default-only 
   assert.doesNotMatch(workspace, /resolution !== "1K"/);
   assert.match(workspace, /aspectRatio: selectedRatio/);
   assert.match(workspace, /resolution,/);
-  assert.match(workspace, /isBananaModel\(selectedModel\) \|\| isGptImageModelId\(selectedModel\)/);
+  assert.match(workspace, /supportsImageLines\(selectedModel\) \|\| isGptImageModelId\(selectedModel\)/);
   assert.match(workspace, /isGenerationCountSupported/);
 });
 

@@ -79,8 +79,17 @@ const BANANA_PROVIDER_ROUTES = Object.freeze({
   }),
 });
 
+const GPT_PROVIDER_LINE_ROUTES = Object.freeze(Object.fromEntries(
+  ["gpt-image-2", "gpt-image-2.5-sunburst", "gpt-image-2.5-flare"].map((modelId) => [modelId, Object.freeze({
+    special: bananaRoute(modelId, "special", `${modelId}-sp`),
+    quality: bananaRoute(modelId, "quality", `${modelId}-sd`),
+    dedicated: bananaRoute(modelId, "dedicated", modelId),
+  })]),
+));
+
 export function getUsGatewayRoute(modelId, imageLine) {
   if (!isValidImageLine(modelId, imageLine)) return null;
+  if (isGptImageModelId(modelId) && imageLine !== undefined) return GPT_PROVIDER_LINE_ROUTES[modelId]?.[imageLine] ?? null;
   if (isBananaModel(modelId)) return BANANA_PROVIDER_ROUTES[modelId]?.[imageLine ?? "special"] ?? null;
   return Object.freeze({
     "nano-banana-2": US_GATEWAY_NANO_BANANA_2_ROUTE,
@@ -340,6 +349,7 @@ function validateJob(job, route) {
   if (
     job?.model_id !== route.productModelId ||
     (isBananaModel(route.productModelId) && (job?.image_line ?? "special") !== (route.imageLine ?? "special")) ||
+    (isGptImageModelId(route.productModelId) && (job?.image_line ?? undefined) !== route.imageLine) ||
     !isSupportedGenerationInput({
       aspectRatio: job?.aspect_ratio,
       count: job?.requested_count,
