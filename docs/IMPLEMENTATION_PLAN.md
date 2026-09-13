@@ -1,12 +1,12 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-13
-- Current phase: GG-043 用户完成页面检查，最新候选进入本地真实接口站长全排查。
-- Current objective: 32140 最新候选已启动，本地企业测试账号已准备；现有 Chrome 停在企业工作区验证码登录，交用户登录检查。
+- Current phase: GG-044 个人账户统一主导航与企业管理布局，本地完成待用户验收。
+- Current objective: 32140 已更新，用户检查企业主侧栏、横向管理标签、成员列表及邀请/额度弹框；生产不变。
 
 ## Current checkpoint
 
-- 当前工作树：`feature/GG-043-larger-reference-previews`（`F:/goodgood-worktrees/GG-037`），基于 GG-042 已验证提交 `8c7a6d8` 顺序切换新分支。其他 worktree 与用户真实视频页面保持不变。
+- 当前工作树：`feature/GG-044-unified-account-navigation`（`F:/goodgood-worktrees/GG-037`），main `bab17fd` 为祖先，基于干净已验证依赖候选 `589913d` 顺序新分支；决策 ADR 0057，任务卡 GG-044。其他 worktree 与用户真实视频页面保持不变。
 - 正式入口仍为 `https://goodgood.o1key.com`；`staging-goodgood.o1key.com` 只是历史名称，不是本任务的测试入口。
 - 组合来源：完整基础框架 `07e9ea5`，再合入 GG-029、GG-030、GG-031；不使用旧页面另起测试版本，也不恢复旧 C6。
 - 代码范围同时包含账户管理、积分记录/账本、企业/分销身份、直属上下级、充值来源积分划拨、邮箱 OTP、企业 Workspace、成员额度、消费记录、资产审阅和管理审计。
@@ -58,13 +58,14 @@
 - GG-042：ADR 0055 已记录，双模式共享覆盖与闭合 inert、剩余视口内部滚动完成。定向 29/29，完整门禁 370 项中 356 通过、14 个 opt-in 跳过、0 失败。现有 Chrome computer use 核对桌面展开/收起结果不位移、390×844 双模式与视频八行提示词底部控件可达；视口恢复，未提交生成。
 - GG-043：ADR 0056 已记录，共享 96px/80px 缩略图、视频模式原生预览按钮、只读图片/视频/音频弹窗和加载/失败重试/焦点归还完成。定向 39/39、完整门禁 374 项中 360 通过、14 个 opt-in 跳过、0 失败。现有 Chrome 本地素材列表为空，测试页已更新；未获合成素材上传许可，因此实际素材/窄屏预览仍待验收。
 - 2026-09-13 用户完成 GG-043 页面检查；最新构建在 `http://127.0.0.1:32140/admin/users` 启动，使用已有隔离真实接口栈与原有效站长会话。Windows 保留端口导致 PostgreSQL 宿主映射改为 55448，数据卷保留；本地 OTP 收件箱 58045，Worker readiness 与视频可用状态正常。详见 GG-036 运行记录。
-- Next action: 用户使用 `enterprise-demo@local.goodgood` 在现有 32140 企业工作区登录检查（验证码在 58045 本地收件箱）；企业业务身份与 org_owner 已验证，没有站长权限。视频定价/持久化/素材接口仍未接入，代理不提交计费请求。
+- GG-044：ADR 0057，移除所有身份全局选择器、主侧栏企业管理/积分分配、共享 shell 管理路由与紧凑响应式成员/消费/资产及统一弹框完成。最新完整门禁 380 项中 366 通过、14 opt-in 跳过；32140 已重启，现有 Chrome 企业会话已检查概览/成员/邀请和额度弹框，无 mutation 或计费请求。详见 GG-044 任务卡。
+- Next action: 用户在现有 32140 企业账户检查新布局/导航；不切换创作身份，不迁移数据/积分。视频定价/持久化/素材接口仍未接入，代理不提交计费请求。
 - Blockers: 无；素材与正式持久/计价链路按用户要求后续处理。
 
 ## Verification sequence
 
-1. GG-043 定向与最新完整本地门禁已通过；不启用 opt-in 写测试或 provider 请求。
-2. 现有 Chrome 已切换至 32140 并显示真实测试库站长工作台；用户负责全排查，代理未提交生成。32138 历史结果页未动。
+1. GG-044 定向与完整门禁已通过；不启用 opt-in 写测试或 provider 请求。
+2. 现有 Chrome 32140 企业管理桌面检查完成；站长/普通规则与窄屏由自动化契约覆盖，本轮不冒充登录/窄屏/mutation 证据。32138 历史结果页未动。
 3. 推送、main 合入和生产部署必须获得新的明确授权；部署前按 ADR 0047 排空旧 GPT route 的活动 attempt。
 
 ## Milestones
@@ -91,12 +92,13 @@
 | GG-041 | 本地完成并验证 | 双模式移除批量说明；积分与生成编排不变，未发布 |
 | GG-042 | 本地完成并验证 | 双模式参数抽屉覆盖成品区与内部滚动；仅 UI，未发布 |
 | GG-043 | 用户完成页面检查 | 双模式缩略图与只读素材预览；进入 32140 真实接口站长全排查，未发布 |
+| GG-044 | 本地完成，待用户验收 | 移除全局工作区切换，企业管理并入主界面与紧凑管理布局；未发布 |
 | 完整 C6 / M9 | 搁置 | 删除、举报、商业支付等，见 GG-900—GG-902 |
 
 ## New-session recovery
 
 1. 阅读根 `AGENTS.md`、[CURRENT_STATE](CURRENT_STATE.md)、[WORKFLOW](WORKFLOW.md)、本页和 [BACKLOG](BACKLOG.md)，检查分支/worktree/未提交改动。
-2. 从 `feature/GG-043-larger-reference-previews` 恢复；先读 GG-043 任务卡与 ADR 0056，不恢复旧 C6。
+2. 从 `feature/GG-044-unified-account-navigation` 恢复；先读 GG-044 任务卡与 ADR 0057，不恢复旧 C6。
 3. 数量与本地并发已验证；不要未经费用授权启用 key 或提交真实生成。main 合入和生产部署仍需要新的明确授权。
 
 ## History and update policy

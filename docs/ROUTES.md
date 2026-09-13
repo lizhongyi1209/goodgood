@@ -3,7 +3,8 @@
 ## Current implementation
 
 The shared workspace mounts at `/`, `/create`, `/projects`,
-`/projects/:projectId`, `/assets`, `/assets/:assetId`, and `/credits`. `/create` is the
+`/projects/:projectId`, `/assets`, `/assets/:assetId`, `/credits`, `/distribution`,
+and `/organizations` with organization detail subroutes. `/create` is the
 canonical product URL for creation; `/` remains a compatible entry to the same
 workspace state. Project and asset navigation use stable browser URLs and
 native history.
@@ -19,8 +20,9 @@ native history.
 | 图片详情 | Implemented | `/assets/:assetId` over its preserved source scope |
 | 账户管理 | Implemented | `/admin/users`, visible and callable only by the site owner |
 | 积分记录 | Implemented | `/credits`, entered from the quiet row below `帮助` or the mobile balance |
-| 企业创作 | Implemented locally | `/workspaces/:workspaceId/create`, after active-membership validation |
-| 企业管理 | Implemented locally | `/organizations/:organizationId` plus members, usage, and assets subroutes |
+| 企业历史创作 | Compatible local route | `/workspaces/:workspaceId/create`, after active-membership validation; no global selector |
+| 企业管理 | Implemented locally | Main sidebar `/organizations`; one managed company opens overview, multiple companies use a management-only directory; detail subroutes share the main shell |
+| 积分分配 | Implemented locally | Eligible business identity main-sidebar `/distribution`, distinct from member budget management |
 
 Do not describe placeholders as shipped features.
 
@@ -168,6 +170,7 @@ GG-030 implements these stable routes locally, but they are not deployed:
 | Path | Purpose |
 | --- | --- |
 | `/workspaces/:workspaceId/create` | Creation in one validated personal or organization Workspace |
+| `/organizations` | Personal-account shell's organization directory/invitation entry; not a creative scope switch |
 | `/organizations/:organizationId` | Enterprise overview and recovery entry |
 | `/organizations/:organizationId/members` | Organization owner/admin invitation, role, status, and budget management |
 | `/organizations/:organizationId/usage` | Role-authorized member consumption and reservation history |

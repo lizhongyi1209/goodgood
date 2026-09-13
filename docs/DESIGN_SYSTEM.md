@@ -252,9 +252,13 @@ individual icon. Upload, settings, and send align to the same 40px box.
   its visual state.
 ## Enterprise workspace management
 
-- Keep Workspace identity visible but quiet in the existing account/navigation
-  area. Personal and organization scopes use names and role/status text, not
-  competing brand colors or large tenant banners.
+- ADR 0057 removes all global Workspace selectors, including site owners.
+  Enterprise management and eligible credit distribution use the normal main
+  sidebar. Enterprise detail has compact horizontal content tabs, not a second
+  sidebar. Only legacy scoped creation URLs display quiet company context.
+- Enterprise headings use the 20px section scale; summaries are restrained
+  white 16px-radius surfaces. Ordinary row/invite/navigation actions stay
+  neutral. The invitation and budget dialogs reuse `admin-action-dialog`.
 - Enterprise overview, members, usage, and Assets remain working surfaces on the
   white image-first canvas. Reuse the compact admin table/card rhythm without
   making organization managers look like GoodGood site owners.

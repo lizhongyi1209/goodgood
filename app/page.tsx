@@ -165,7 +165,10 @@ import type {
   CreationDraftRecord,
   CreationDraftState,
 } from "@/shared/contracts/draft";
-import { WorkspaceSwitcher } from "@/features/organizations/workspace-switcher";
+import { useWorkspaceDirectory } from "@/features/organizations/use-workspace-directory";
+import { showOrganizationNavigation } from "@/features/organizations/organization-navigation.mjs";
+import { OrganizationDirectoryView } from "@/features/organizations/organization-directory-view";
+import { OrganizationManagementView, type OrganizationManagementTab } from "@/features/organizations/organization-management-page";
 import type { WorkspaceRecord } from "@/features/organizations/http-organization-boundary";
 import {
   Dialog,
@@ -194,6 +197,7 @@ import { toast } from "sonner";
 import {
   AudioLines,
   Brush,
+  Building2,
   Check,
   CircleAlert,
   CircleDot,
@@ -239,7 +243,7 @@ type AssetBatch = {
   referenceCount: number;
   images: readonly GenerationOutput[];
 };
-type ActiveView = "create" | "projects" | "assets" | "credits" | "distribution";
+type ActiveView = "create" | "projects" | "assets" | "credits" | "distribution" | "organizations";
 type DestructiveCreationIntent =
   | { kind: "new" }
   | { kind: "project"; projectId: string; projectName: string };
@@ -507,6 +511,7 @@ export default function Home({
   const [videoPreviewRuns, setVideoPreviewRuns] = useState<readonly VideoPreviewRun[]>([]);
   const [videoDetailKey, setVideoDetailKey] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<ActiveView>("create");
+  const [organizationRoute, setOrganizationRoute] = useState<{ id: string; tab: OrganizationManagementTab } | null>(null);
   const [generationRuns, setGenerationRuns] = useState<readonly TrackedGenerationRun[]>([]);
   const [creationBatches, setCreationBatches] = useState<AssetBatch[]>([]);
   const [downloadingImageKeys, setDownloadingImageKeys] = useState<readonly string[]>([]);
@@ -568,6 +573,13 @@ export default function Home({
   const handleWorkspaceError = useCallback(() => {
     setWorkspaceResolutionStatus("error");
   }, []);
+  const workspaceDirectory = useWorkspaceDirectory({
+    activeWorkspaceId: workspaceId,
+    enabled: Boolean(authenticationSession && !authenticationSession.preview && authenticationSession.access.status === "active"),
+    onWorkspaceChange: handleWorkspaceChange,
+    onWorkspaceError: handleWorkspaceError,
+  });
+  const organizationNavigationVisible = showOrganizationNavigation(authenticationSession, workspaceDirectory.workspaces, workspaceDirectory.invitations);
   const activeGenerationRuns = getActiveGenerationRuns(generationRuns);
   const failedGenerationRuns = getFailedGenerationRuns(generationRuns);
   const isGenerating = activeGenerationRuns.length > 0;
@@ -806,6 +818,8 @@ export default function Home({
         projectRestoreAnnouncementRef.current = false;
       }
       const route = parseWorkspaceRoute(window.location.pathname);
+      setOrganizationRoute(route.kind === "organizations" && route.organizationId
+        ? { id: route.organizationId, tab: route.tab ?? "overview" } : null);
       projectRouteRequestRef.current += 1;
       setProjectRouteError(null);
       if (route.kind === "asset") {
@@ -853,6 +867,8 @@ export default function Home({
             ? "credits"
           : route.kind === "distribution"
             ? "distribution"
+          : route.kind === "organizations"
+            ? "organizations"
           : "create");
     };
     const applyInitialRoute = window.setTimeout(applyWorkspaceRoute, 0);
@@ -2077,6 +2093,7 @@ export default function Home({
   };
 
   const handleAssetNav = () => {
+    if (workspaceId) { window.location.assign("/assets"); return; }
     if (assetPulseTimerRef.current) window.clearTimeout(assetPulseTimerRef.current);
     setAssetPulse(false);
     setNewAssetCount(0);
@@ -2087,6 +2104,7 @@ export default function Home({
   };
 
   const handleCreateNav = () => {
+    if (workspaceId) { window.location.assign("/create"); return; }
     if (!workspaceId) {
       navigateWorkspace(currentProject
         ? { kind: "project", projectId: currentProject.id }
@@ -2116,6 +2134,7 @@ export default function Home({
   };
 
   const handleProjectsNav = () => {
+    if (workspaceId) { window.location.assign("/projects"); return; }
     if (!workspaceId) navigateWorkspace({ kind: "projects" });
     setActiveView("projects");
     void reloadProjects();
@@ -2123,12 +2142,21 @@ export default function Home({
   };
 
   const handleCreditsNav = () => {
+    if (workspaceId) { window.location.assign("/credits"); return; }
     navigateWorkspace({ kind: "credits" });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleDistributionNav = () => {
+    if (workspaceId) { window.location.assign("/distribution"); return; }
     navigateWorkspace({ kind: "distribution" });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleOrganizationNav = () => {
+    // Management is account navigation, never a creative Workspace switch.
+    if (workspaceId) { window.location.assign("/organizations"); return; }
+    navigateWorkspace({ kind: "organizations" });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -2786,16 +2814,6 @@ export default function Home({
           <Image className="wordmark-image sidebar-wordmark" src="/goodgood-wordmark.svg" alt="" width={89} height={20} />
         </div>
 
-        <WorkspaceSwitcher
-          activeWorkspaceId={workspaceId}
-          enabled={Boolean(
-            authenticationSession &&
-              !authenticationSession.preview &&
-              authenticationSession.access.status === "active",
-          )}
-          onWorkspaceChange={handleWorkspaceChange}
-          onWorkspaceError={handleWorkspaceError}
-        />
 
         <nav className="side-nav" aria-label="主导航">
           <button className={`side-nav-item ${activeView === "create" ? "active" : ""}`} onClick={handleCreateNav}><Brush size={17} strokeWidth={1.8} /><span>创作</span></button>
@@ -2805,6 +2823,11 @@ export default function Home({
             <Images size={17} /><span>资产库</span>
             {newAssetCount > 0 && <em className="asset-new-count">+{newAssetCount}</em>}
           </button>
+          {organizationNavigationVisible && (
+            <button className={`side-nav-item ${activeView === "organizations" ? "active" : ""}`} onClick={handleOrganizationNav}>
+              <Building2 size={17} /><span>企业管理</span>
+            </button>
+          )}
           {authenticationSession?.account.businessRole && (
             <button
               className={`side-nav-item ${activeView === "distribution" ? "active" : ""}`}
@@ -2897,19 +2920,10 @@ export default function Home({
       <section className="main-stage">
         <header className="mobile-bar">
           <div className="mobile-brand" role="img" aria-label="GoodGood"><Image className="brand-mark" src="/goodgood-mark.svg" alt="" width={27} height={20} /><Image className="wordmark-image" src="/goodgood-wordmark.svg" alt="" width={84} height={19} /></div>
-          <div className="mobile-workspace-switcher">
-            <WorkspaceSwitcher
-              activeWorkspaceId={workspaceId}
-              enabled={Boolean(
-                authenticationSession &&
-                  !authenticationSession.preview &&
-                  authenticationSession.access.status === "active",
-              )}
-              onWorkspaceChange={handleWorkspaceChange}
-              onWorkspaceError={handleWorkspaceError}
-            />
-          </div>
           <div className="mobile-account">
+            {organizationNavigationVisible && (
+              <button className="top-avatar" aria-label="企业管理" onClick={handleOrganizationNav}><Building2 size={16} /></button>
+            )}
             {authenticationSession?.account.role === "site_owner" && (
               <button
                 className="top-avatar"
@@ -2950,6 +2964,9 @@ export default function Home({
         </header>
 
         <div className={`content-wrap ${activeView !== "create" ? "asset-content-wrap" : ""}`}>
+          {workspaceId && workspaceAccessReady && <div className="legacy-organization-context">
+            <span>{activeWorkspace?.name} · 企业历史创作</span><button onClick={() => window.location.assign("/create")}>返回个人创作</button>
+          </div>}
           {workspaceId && workspaceResolutionStatus === "loading" ? (
             <section className="project-library-state project-route-state" role="status">
               <LoaderCircle size={18} />正在验证企业工作区权限
@@ -3185,6 +3202,13 @@ export default function Home({
               onAccountChange={handleCreditAccountChange}
               onBack={handleCreateNav}
             />
+          ) : activeView === "organizations" ? (
+            organizationRoute ? (
+              <OrganizationManagementView key={organizationRoute.id} activeTab={organizationRoute.tab} workspaceId={organizationRoute.id}
+                enabled={Boolean(authenticationSession && !authenticationSession.preview && authenticationSession.access.status === "active")} />
+            ) : (
+              <OrganizationDirectoryView directory={workspaceDirectory} session={authenticationSession ?? null} />
+            )
           ) : activeView === "distribution" ? (
             <DistributionView
               enabled={Boolean(

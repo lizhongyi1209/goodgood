@@ -10,6 +10,14 @@
 
 ## Error categories
 
+GG-044 directory loading/empty/error lives in the enterprise content area,
+not a global Workspace control. Retry reads the authenticated directory only.
+Direct company access is still authorized by manager APIs; denial offers the
+enterprise list without enumerating other companies. Invitation/budget failures
+stay in their compact dialog with email/member, amount and reason preserved;
+stale tab/directory reads cannot overwrite newer results. No recovery switches
+creative identity, transfers records or submits generation.
+
 | Category | Example code | UI placement | Default recovery |
 | --- | --- | --- | --- |
 | Input | `INVALID_PROMPT` | Composer field/toast | Focus and correct |

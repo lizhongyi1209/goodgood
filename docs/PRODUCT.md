@@ -158,7 +158,7 @@ separately decides whether a verified candidate should be released.
 - Simulated data must behave like real data: ordering, ratios, timestamps,
   states, and restored parameters must remain coherent.
 
-## Accepted enterprise direction (not implemented or deployed)
+## Accepted enterprise direction (implemented locally; not deployed)
 
 GG-030 adds organization Workspaces without turning a company principal into a
 GoodGood site owner. A verified user may retain a personal Workspace and join
@@ -166,6 +166,13 @@ one or more organization Workspaces as `org_owner`, `org_admin`, or
 `org_member`. Company managers invite verified email identities, allocate
 revocable member spending limits from one organization credit pool, inspect
 organization generation consumption, and review generated company Assets.
+
+ADR 0057 makes every identity a personal account in the main interface: no
+global Workspace switcher, including site owners. Enterprise management and
+eligible direct-child credit distribution are main navigation features. Company
+tabs live inside the same shell; platform role and commercial identity do not
+replace organization authorization. Legacy company creative URLs and ownership
+remain compatible; this navigation change does not migrate data or credit.
 
 Personal history and credit never become company data automatically. Work made
 in an organization Workspace belongs to that organization and retains its

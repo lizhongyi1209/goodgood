@@ -4,6 +4,7 @@
 - Date: 2026-09-10
 - Refines: ADR 0003, ADR 0006, ADR 0020, and ADR 0043
 - Parallel dependency: ADR 0045 changes identity proof but not this enterprise domain
+- Navigation refined by ADR 0057: no global selector; personal shell with enterprise main entry. Ownership and authorization below remain unchanged.
 
 ## Context
 

@@ -127,15 +127,22 @@
   or permission.
 ### Enterprise workspace and member management (implemented locally; not deployed)
 
-The account area exposes a quiet Workspace switcher when a user has an active
-organization membership. Personal and organization names remain explicit; a
-switch never moves drafts, projects, references, credit, or Assets between
-them. A direct organization URL verifies membership before rendering and offers
-a return to the personal creation surface when access is unavailable.
+ADR 0057 removes the desktop/mobile global Workspace switcher for every account,
+including site owners. Creation and the main account navigation stay personal.
+Enterprise management and eligible credit distribution are main-sidebar entries;
+commercial identity exposes features but never grants company data access.
+Managers enter their organization directly (a management-only directory is used
+for multiple organizations); overview/members/usage/Assets are horizontal
+content tabs inside the shared app shell. Personal composer state and polling
+remain mounted while visiting management. Invitation acceptance refreshes this
+directory without automatically entering enterprise creation.
+
+Legacy scoped creation URLs retain membership checks and quiet company context;
+returning to personal creation never transfers drafts, credit or Assets.
 
 The platform site owner creates an organization for a verified principal and
 assigns its first `org_owner`. Organization owners/admins then use a separate
-enterprise management surface to:
+enterprise management view in the normal app shell to:
 
 1. enter an employee email and role;
 2. see the pending invitation without creating credentials;
@@ -159,7 +166,7 @@ distinct recoverable states; neither falls back to personal credit.
 Organization managers see a team Asset view filtered by creator. Opening an
 Asset shows the output, prompt, parameters, creator, and generation time but
 does not sign creator-only reusable raw references. Ordinary members see only
-their own organization work. A removed member loses the organization switcher
+their own organization work. A removed member loses organization access
 and new signed reads; company history remains visible to authorized managers.
 
 ## Creation surface

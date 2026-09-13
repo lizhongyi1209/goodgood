@@ -6,6 +6,7 @@
 
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
+| GG-044 | 个人账户统一主导航与企业管理布局 | 本地门禁与企业账户桌面检查完成，待用户验收；未发布 | [任务](tasks/GG-044-unified-account-navigation.md) |
 | GG-001 | 项目记忆精简、交接协议、历史 C6 隔离 | 已完成（不需上线） | [任务](tasks/GG-001-project-continuity.md) |
 | GG-002 | Nano Banana 2 全宽高比/分辨率 | 已上线 | [发布记录](releases/2026-09-07-banana-2-parameters.md) |
 | GG-003 | 将 alpha 发布门禁从历史快照独立提取 | 已上线并以精确候选通过 | [任务](tasks/GG-003-alpha-release-tooling.md) |

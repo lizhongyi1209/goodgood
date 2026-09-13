@@ -426,6 +426,12 @@ container filesystem.
 
 ## Request boundaries
 
+GG-044 mounts enterprise management/directory routes into the shared personal
+app shell. Its directory hook replaces the visible Workspace selector but
+retains legacy-scope validation. Management tab navigation changes only the
+view/URL, not the mounted creation boundary, inputs or active polling. Backend
+organization IDs, membership checks and credit ownership remain unchanged.
+
 GG-040 parses a standalone `---` line in the shared composer boundary. Image
 fan-out calls existing `/api/generations` independently per segment, retaining
 count 1/2/4 and unique idempotency/run identities; server billing remains per

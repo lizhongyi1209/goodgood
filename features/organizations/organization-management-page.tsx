@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import {
   ArrowLeft,
   Building2,
@@ -13,7 +12,7 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -45,16 +44,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { Toaster } from "@/components/ui/sonner";
-import { AccountAccessGate } from "@/features/auth/account-access-gate";
-import { AuthenticationGate } from "@/features/auth/authentication-gate";
-import {
-  SESSION_EXPIRED_EVENT,
-  beginAuthentication,
-  readAuthenticationSession,
-  signOut,
-  type AuthenticationSession,
-} from "@/features/auth/http-auth-boundary";
+import { navigateWorkspace } from "@/features/navigation/workspace-route.mjs";
 import { saveImageToLocal } from "@/features/assets/image-download";
 import {
   inviteOrganizationMember,
@@ -101,15 +91,15 @@ function navigationItems(workspaceId: string) {
   ];
 }
 
-export function OrganizationManagementPage({
+export function OrganizationManagementView({
   activeTab,
   workspaceId,
+  enabled,
 }: Readonly<{
   activeTab: OrganizationManagementTab;
   workspaceId: string;
+  enabled: boolean;
 }>) {
-  const [session, setSession] = useState<AuthenticationSession | null | undefined>(undefined);
-  const [sessionError, setSessionError] = useState<string | null>(null);
   const [dashboard, setDashboard] = useState<OrganizationDashboard | null>(null);
   const [usage, setUsage] = useState<readonly OrganizationUsage[]>([]);
   const [assets, setAssets] = useState<readonly OrganizationAssetBatch[]>([]);
@@ -119,34 +109,17 @@ export function OrganizationManagementPage({
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<"org_admin" | "org_member">("org_member");
   const [inviteReason, setInviteReason] = useState("邀请加入企业工作区");
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [budgetMember, setBudgetMember] = useState<OrganizationMember | null>(null);
   const [budgetLimit, setBudgetLimit] = useState("0");
   const [budgetReason, setBudgetReason] = useState("调整员工创作额度");
   const [downloadingAssetId, setDownloadingAssetId] = useState<string | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    void readAuthenticationSession()
-      .then((next) => {
-        if (active) setSession(next);
-      })
-      .catch((error) => {
-        if (!active) return;
-        setSession(null);
-        setSessionError(
-          error instanceof Error ? error.message : "暂时无法确认登录状态。",
-        );
-      });
-    const expire = () => setSession(null);
-    window.addEventListener(SESSION_EXPIRED_EVENT, expire);
-    return () => {
-      active = false;
-      window.removeEventListener(SESSION_EXPIRED_EVENT, expire);
-    };
-  }, []);
+  const loadRequestRef = useRef(0);
 
   const load = useCallback(async () => {
-    if (!session || session.access.status !== "active" || session.preview) return;
+    if (!enabled) return;
+    const request = ++loadRequestRef.current;
     setLoading(true);
     setLoadError(null);
     try {
@@ -159,36 +132,30 @@ export function OrganizationManagementPage({
           ? readOrganizationAssets(workspaceId)
           : Promise.resolve({ batches: [] }),
       ]);
+      if (request !== loadRequestRef.current) return;
       setDashboard(nextDashboard);
       setUsage(nextUsage.usage);
       setAssets(nextAssets.batches);
     } catch (error) {
+      if (request !== loadRequestRef.current) return;
       setLoadError(
         error instanceof Error
           ? error.message
           : "企业信息暂时无法读取，请重试。",
       );
     } finally {
-      setLoading(false);
+      if (request === loadRequestRef.current) setLoading(false);
     }
-  }, [activeTab, session, workspaceId]);
+  }, [activeTab, enabled, workspaceId]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
-    return () => window.clearTimeout(timer);
+    return () => { window.clearTimeout(timer); loadRequestRef.current += 1; };
   }, [load]);
-
-  const logout = async () => {
-    try {
-      const redirecting = await signOut();
-      if (!redirecting) setSession(null);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "退出登录失败。" );
-    }
-  };
 
   const submitInvitation = async (event: FormEvent) => {
     event.preventDefault();
+    setActionError(null);
     setMutating(true);
     try {
       await inviteOrganizationMember({
@@ -198,10 +165,11 @@ export function OrganizationManagementPage({
         workspaceId,
       });
       setInviteEmail("");
+      setInviteOpen(false);
       toast.success("邀请已创建，员工登录后即可接受");
       await load();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "邀请创建失败。" );
+      setActionError(error instanceof Error ? error.message : "邀请创建失败。");
     } finally {
       setMutating(false);
     }
@@ -257,6 +225,7 @@ export function OrganizationManagementPage({
   };
 
   const openBudget = (member: OrganizationMember) => {
+    setActionError(null);
     setBudgetMember(member);
     setBudgetLimit(member.budget?.creditLimit ?? "0");
     setBudgetReason("调整员工创作额度");
@@ -264,6 +233,7 @@ export function OrganizationManagementPage({
 
   const saveBudget = async () => {
     if (!budgetMember) return;
+    setActionError(null);
     setMutating(true);
     try {
       await updateOrganizationMemberBudget({
@@ -277,7 +247,7 @@ export function OrganizationManagementPage({
       toast.success("员工额度已更新");
       await load();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "额度更新失败。" );
+      setActionError(error instanceof Error ? error.message : "额度更新失败。");
     } finally {
       setMutating(false);
     }
@@ -306,166 +276,106 @@ export function OrganizationManagementPage({
     }
   };
 
-  if (session === undefined) {
-    return (
-      <main className="flex min-h-dvh items-center justify-center bg-white text-sm text-zinc-600">
-        <LoaderCircle className="mr-2 animate-spin" />正在确认企业权限
-      </main>
-    );
-  }
-  if (session === null) {
-    return (
-      <AuthenticationGate
-        initialError={sessionError}
-        onAuthenticated={async () => {
-          setSessionError(null);
-          setSession(await readAuthenticationSession());
-        }}
-        onHostedLogin={() =>
-          beginAuthentication(`${window.location.pathname}${window.location.search}`)
-        }
-      />
-    );
-  }
-  if (session.access.status !== "active") {
-    return (
-      <AccountAccessGate
-        busy={false}
-        onLogout={() => void logout()}
-        onRefresh={() => window.location.reload()}
-        session={session}
-      />
-    );
-  }
+  if (!enabled) return <section className="organization-state">请使用已开通的账户查看企业管理。</section>;
 
   const navItems = navigationItems(workspaceId);
   const currentMembershipId = dashboard?.currentMembershipId ?? null;
+  const navigateTab = (tab: OrganizationManagementTab) => navigateWorkspace({ kind: "organizations", organizationId: workspaceId, tab });
+  const roleControl = (member: OrganizationMember) => <Select
+    disabled={mutating || member.status === "removed" || member.id === currentMembershipId}
+    value={member.role} onValueChange={(value) => void changeRole(member, value as OrganizationRole)}>
+    <SelectTrigger className="organization-role-control" aria-label={`调整 ${member.email} 的角色`}><SelectValue /></SelectTrigger>
+    <SelectContent><SelectItem value="org_member">员工</SelectItem><SelectItem value="org_admin">管理员</SelectItem><SelectItem value="org_owner">负责人</SelectItem></SelectContent>
+  </Select>;
+  const memberActions = (member: OrganizationMember) => <div className="organization-member-actions">
+    <Button size="sm" variant="ghost" disabled={mutating || member.status === "removed"} onClick={() => openBudget(member)}>调整额度</Button>
+    {member.id !== currentMembershipId && member.status !== "removed" && <>
+      <Button size="sm" variant="ghost" disabled={mutating} onClick={() => void changeStatus(member, member.status === "active" ? "suspended" : "active")}>{member.status === "active" ? "暂停" : "恢复"}</Button>
+      <Button size="sm" variant="ghost" disabled={mutating} onClick={() => void changeStatus(member, "removed")}>移除</Button>
+    </>}
+  </div>;
+  const memberMetrics = (member: OrganizationMember) => [
+    ["累计额度", member.budget?.creditLimit ?? "0"],
+    ["已消费", member.budget?.settledCredits ?? "0"],
+    ["预留", member.budget?.reservedCredits ?? "0"],
+    ["剩余", member.budget?.remainingCredits ?? "0"],
+  ];
+  const statusLabel = (member: OrganizationMember) => member.status === "active" ? "有效" : member.status === "removed" ? "已移除" : "已暂停";
 
-  return (
-    <main className="min-h-dvh bg-white text-zinc-950">
-      <header className="border-b border-zinc-200">
-        <div className="mx-auto flex max-w-[1500px] items-center justify-between px-5 py-4 lg:px-8">
-          <div className="flex items-center gap-3">
-            <Image src="/goodgood-mark.svg" alt="" width={29} height={22} />
-            <Image src="/goodgood-wordmark.svg" alt="GoodGood" width={89} height={20} />
-            <span className="hidden border-l border-zinc-200 pl-4 text-sm text-zinc-500 sm:inline">企业工作台</span>
-          </div>
-          <Button variant="ghost" asChild>
-            <a href={`/workspaces/${encodeURIComponent(workspaceId)}/create`}>
-              <ArrowLeft />返回企业创作
-            </a>
-          </Button>
-        </div>
-      </header>
+  return <section className="organization-view" aria-label="企业管理">
+    <header className="organization-header">
+      <div><h1>{dashboard?.workspace.name ?? "企业管理"}</h1><p>企业成员、创作额度、消费与资产统一管理。</p></div>
+      <Button variant="ghost" size="sm" onClick={() => navigateWorkspace({ kind: "organizations" })}><ArrowLeft />企业列表</Button>
+    </header>
+    <nav className="organization-tabs" aria-label="企业管理内容">
+      {navItems.map((item) => <button className={activeTab === item.id ? "active" : ""} aria-current={activeTab === item.id ? "page" : undefined} key={item.id} onClick={() => navigateTab(item.id)}><item.icon size={16} />{item.label}</button>)}
+    </nav>
 
-      <div className="mx-auto grid max-w-[1500px] gap-8 px-5 py-8 lg:grid-cols-[220px_minmax(0,1fr)] lg:px-8 lg:py-10">
-        <aside>
-          <p className="truncate text-sm font-medium text-zinc-500">{dashboard?.workspace.name ?? "企业工作区"}</p>
-          <nav className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-1" aria-label="企业管理导航">
-            {navItems.map((item) => (
-              <Button key={item.id} variant={activeTab === item.id ? "secondary" : "ghost"} className="justify-start" asChild>
-                <a href={item.href}><item.icon />{item.label}</a>
-              </Button>
-            ))}
-          </nav>
-        </aside>
-
-        <section className="min-w-0">
-          {loadError ? (
-            <Alert variant="destructive">
-              <AlertTitle>企业信息加载失败</AlertTitle>
-              <AlertDescription className="mt-2 flex flex-wrap items-center justify-between gap-3">
-                <span>{loadError}</span><Button size="sm" variant="outline" onClick={() => void load()}><RefreshCw />重试</Button>
-              </AlertDescription>
-            </Alert>
-          ) : loading || !dashboard ? (
-            <div className="space-y-3" role="status" aria-label="正在加载企业信息">
-              <Skeleton className="h-10 w-52" /><Skeleton className="h-28 w-full rounded-3xl" /><Skeleton className="h-72 w-full rounded-3xl" />
-            </div>
-          ) : activeTab === "overview" ? (
-            <>
-              <p className="text-sm font-medium text-primary">企业概览</p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight">{dashboard.workspace.name}</h1>
-              <p className="mt-2 text-zinc-600">统一查看成员、额度、消费和团队创作资产。</p>
-              <div className="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                {[
-                  ["企业可用积分", dashboard.account?.availableCredits ?? "0"],
-                  ["未分配额度", dashboard.account?.unallocatedCredits ?? "0"],
-                  ["有效成员", String(dashboard.members.filter((member) => member.status === "active").length)],
-                  ["待接受邀请", String(dashboard.invitations.length)],
-                ].map(([label, value]) => (
-                  <div className="rounded-3xl border border-zinc-200 p-5" key={label}>
-                    <span className="text-sm text-zinc-500">{label}</span>
-                    <strong className="mt-2 block text-3xl tabular-nums">{value}</strong>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-6 grid gap-3 md:grid-cols-3">
-                {navItems.slice(1).map((item) => (
-                  <a className="rounded-3xl border border-zinc-200 p-5 transition-colors hover:bg-zinc-50" href={item.href} key={item.id}>
-                    <item.icon className="text-primary" /><strong className="mt-5 block">{item.label}</strong>
-                    <span className="mt-1 block text-sm text-zinc-500">进入查看与管理</span>
-                  </a>
-                ))}
-              </div>
-            </>
-          ) : activeTab === "members" ? (
-            <>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                <div><p className="text-sm font-medium text-primary">成员与额度</p><h1 className="mt-2 text-3xl font-semibold">管理员工创作权限</h1></div>
-              </div>
-              <form className="mt-7 grid gap-3 rounded-3xl border border-zinc-200 p-5 lg:grid-cols-[minmax(220px,1fr)_150px_minmax(220px,1fr)_auto]" onSubmit={submitInvitation}>
-                <Input aria-label="员工邮箱" placeholder="员工邮箱" type="email" required value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} />
-                <Select value={inviteRole} onValueChange={(value) => setInviteRole(value as "org_admin" | "org_member")}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="org_member">员工</SelectItem><SelectItem value="org_admin">管理员</SelectItem></SelectContent></Select>
-                <Input aria-label="邀请原因" placeholder="邀请原因" required value={inviteReason} onChange={(event) => setInviteReason(event.target.value)} />
-                <Button disabled={mutating} type="submit"><UserPlus />创建邀请</Button>
-              </form>
-              {dashboard.invitations.length > 0 && (
-                <div className="mt-4 space-y-2">
-                  {dashboard.invitations.map((invitation) => (
-                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-zinc-50 px-4 py-3 text-sm" key={invitation.id}>
-                      <span>{invitation.email} · {ROLE_LABELS[invitation.role]} · {formatDate(invitation.expiresAt)} 前有效</span>
-                      <Button size="sm" variant="ghost" disabled={mutating} onClick={async () => { setMutating(true); try { await revokeOrganizationInvitation({ invitationId: invitation.id, reason: "撤销未接受的企业邀请", workspaceId }); await load(); toast.success("邀请已撤销"); } catch (error) { toast.error(error instanceof Error ? error.message : "撤销失败。"); } finally { setMutating(false); } }}>撤销</Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div className="mt-5 overflow-hidden rounded-3xl border border-zinc-200">
-                <Table><TableHeader><TableRow><TableHead className="pl-5">成员</TableHead><TableHead>角色</TableHead><TableHead>额度</TableHead><TableHead>消费 / 预留</TableHead><TableHead className="pr-5 text-right">操作</TableHead></TableRow></TableHeader><TableBody>
-                  {dashboard.members.map((member) => (
-                    <TableRow key={member.id}>
-                      <TableCell className="pl-5"><strong className="block">{member.email}</strong><Badge className="mt-1" variant="outline">{member.status === "active" ? "有效" : "已暂停"}</Badge></TableCell>
-                      <TableCell><Select disabled={mutating || member.id === currentMembershipId} value={member.role} onValueChange={(value) => void changeRole(member, value as OrganizationRole)}><SelectTrigger className="w-28"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="org_member">员工</SelectItem><SelectItem value="org_admin">管理员</SelectItem><SelectItem value="org_owner">负责人</SelectItem></SelectContent></Select></TableCell>
-                      <TableCell className="tabular-nums">{member.budget?.remainingCredits ?? "0"} / {member.budget?.creditLimit ?? "0"}</TableCell>
-                      <TableCell className="tabular-nums">{member.budget?.settledCredits ?? "0"} / {member.budget?.reservedCredits ?? "0"}</TableCell>
-                      <TableCell className="pr-5"><div className="flex justify-end gap-1"><Button size="sm" variant="ghost" disabled={mutating} onClick={() => openBudget(member)}>额度</Button>{member.id !== currentMembershipId && (member.status === "active" ? <Button size="sm" variant="ghost" disabled={mutating} onClick={() => void changeStatus(member, "suspended")}>暂停</Button> : <Button size="sm" variant="ghost" disabled={mutating} onClick={() => void changeStatus(member, "active")}>恢复</Button>)}{member.id !== currentMembershipId && <Button size="sm" variant="ghost" disabled={mutating} className="text-red-700" onClick={() => void changeStatus(member, "removed")}>移除</Button>}</div></TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody></Table>
-              </div>
-            </>
-          ) : activeTab === "usage" ? (
-            <>
-              <p className="text-sm font-medium text-primary">消费记录</p><h1 className="mt-2 text-3xl font-semibold">已结算的企业创作</h1>
-              {usage.length === 0 ? <div className="mt-8 rounded-3xl border border-dashed border-zinc-300 py-16 text-center text-zinc-500">还没有企业消费记录</div> : <div className="mt-7 overflow-hidden rounded-3xl border border-zinc-200"><Table><TableHeader><TableRow><TableHead className="pl-5">员工</TableHead><TableHead>提示词</TableHead><TableHead>模型 / 输出</TableHead><TableHead>积分</TableHead><TableHead className="pr-5">时间</TableHead></TableRow></TableHeader><TableBody>{usage.map((item) => <TableRow key={item.id}><TableCell className="pl-5">{item.email}</TableCell><TableCell className="max-w-[380px] truncate">{item.prompt}</TableCell><TableCell>{item.modelId} · {item.resolution} · {item.count} 张</TableCell><TableCell className="font-medium tabular-nums">{item.creditAmount}</TableCell><TableCell className="pr-5 text-zinc-500">{formatDate(item.createdAt)}</TableCell></TableRow>)}</TableBody></Table></div>}
-            </>
-          ) : (
-            <>
-              <p className="text-sm font-medium text-primary">团队资产</p><h1 className="mt-2 text-3xl font-semibold">检查企业创作效果</h1><p className="mt-2 text-zinc-600">仅展示生成结果；员工上传的原始参考素材不会向管理员签发。</p>
-              {assets.length === 0 ? <div className="mt-8 rounded-3xl border border-dashed border-zinc-300 py-16 text-center text-zinc-500">企业资产库还是空的</div> : <div className="mt-7 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{assets.flatMap((batch) => batch.outputs.map((output, index) => <article className="overflow-hidden rounded-3xl border border-zinc-200" key={output.id}><div className="relative bg-zinc-100" style={{ aspectRatio: output.width && output.height ? `${output.width}/${output.height}` : "1/1" }}><PrivateObjectImage src={output.previewUrl} alt="企业生成资产" style={{ objectFit: "cover" }} /><Button className="absolute bottom-3 right-3" size="icon" variant="secondary" disabled={downloadingAssetId === output.id} onClick={() => void downloadAsset(batch, output.id, index + 1, output.previewUrl)}>{downloadingAssetId === output.id ? <LoaderCircle className="animate-spin" /> : <Download />}<span className="sr-only">下载图片</span></Button></div><div className="p-4"><strong className="block truncate">{batch.creator.email}</strong><p className="mt-2 line-clamp-2 text-sm leading-6 text-zinc-600">{batch.input.prompt}</p><span className="mt-3 block text-xs text-zinc-500">{formatDate(batch.createdAt)} · {batch.input.modelId} · {batch.input.resolution}</span></div></article>))}</div>}
-            </>
-          )}
-        </section>
+    {loadError ? <Alert variant="destructive" className="organization-load-error">
+      <AlertTitle>企业信息加载失败</AlertTitle><AlertDescription><span>{loadError}</span><Button size="sm" variant="ghost" onClick={() => void load()}><RefreshCw />重试</Button><Button size="sm" variant="ghost" onClick={() => navigateWorkspace({ kind: "organizations" })}>返回企业列表</Button></AlertDescription>
+    </Alert> : loading || !dashboard ? <div className="organization-loading" role="status" aria-label="正在加载企业信息"><Skeleton className="h-24 rounded-2xl" /><Skeleton className="h-48 rounded-2xl" /></div> : activeTab === "overview" ? <>
+      <div className="organization-summary-grid">
+        {[
+          ["企业可用积分", dashboard.account?.availableCredits ?? "0"],
+          ["未分配额度", dashboard.account?.unallocatedCredits ?? "0"],
+          ["有效成员", String(dashboard.members.filter((member) => member.status === "active").length)],
+          ["待接受邀请", String(dashboard.invitations.filter((invitation) => invitation.status === "pending").length)],
+        ].map(([label, value]) => <div className="organization-summary" key={label}><span>{label}</span><strong>{value}</strong></div>)}
       </div>
+      <div className="organization-shortcuts">{navItems.slice(1).map((item) => <button key={item.id} onClick={() => navigateTab(item.id)}><item.icon size={18} /><strong>{item.label}</strong><span>{item.id === "members" ? "邀请员工，调整创作额度" : item.id === "usage" ? "核对企业创作积分消耗" : "查看团队生成的成品"}</span></button>)}</div>
+      <p className="organization-note">员工额度是企业创作预算；主导航中的“积分分配”用于直属账户之间的充值来源积分划拨，两者独立。</p>
+    </> : activeTab === "members" ? <>
+      <div className="organization-section-heading"><div><h2>成员与额度</h2><p>剩余额度不包含已消费和在途预留，减少额度不会追回已使用积分。</p></div><Button variant="ghost" onClick={() => { setActionError(null); setInviteOpen(true); }}><UserPlus />邀请成员</Button></div>
+      {dashboard.invitations.length > 0 && <section className="organization-invitations" aria-label="待接受邀请"><h3>待接受邀请</h3>
+        {dashboard.invitations.map((invitation) => <div className="organization-invitation-row" key={invitation.id}><div><strong>{invitation.email}</strong><span>{ROLE_LABELS[invitation.role]} · {formatDate(invitation.expiresAt)} 前有效</span></div>
+          <Button size="sm" variant="ghost" disabled={mutating} onClick={async () => { setMutating(true); try { await revokeOrganizationInvitation({ invitationId: invitation.id, reason: "撤销未接受的企业邀请", workspaceId }); await load(); toast.success("邀请已撤销"); } catch (error) { toast.error(error instanceof Error ? error.message : "撤销失败。"); } finally { setMutating(false); } }}>撤销</Button></div>)}
+      </section>}
+      {dashboard.members.length === 0 ? <div className="organization-state">暂无成员</div> : <>
+        <div className="organization-table organization-members-desktop"><Table><TableHeader><TableRow><TableHead>成员</TableHead><TableHead>角色</TableHead><TableHead>累计额度</TableHead><TableHead>已消费</TableHead><TableHead>预留</TableHead><TableHead>剩余</TableHead><TableHead className="text-right">操作</TableHead></TableRow></TableHeader><TableBody>
+          {dashboard.members.map((member) => <TableRow key={member.id}><TableCell><strong className="organization-member-email">{member.email}</strong><Badge variant="secondary">{statusLabel(member)}</Badge></TableCell><TableCell>{roleControl(member)}</TableCell>
+            {memberMetrics(member).map(([label, value]) => <TableCell className="organization-number" key={label}>{value}</TableCell>)}<TableCell>{memberActions(member)}</TableCell></TableRow>)}
+        </TableBody></Table></div>
+        <div className="organization-members-mobile">{dashboard.members.map((member) => <article className="organization-member-card" key={member.id}><header><strong>{member.email}</strong><Badge variant="secondary">{statusLabel(member)}</Badge></header><div className="organization-mobile-role"><span>角色</span>{roleControl(member)}</div><dl>{memberMetrics(member).map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>{memberActions(member)}</article>)}</div>
+      </>}
+    </> : activeTab === "usage" ? <>
+      <div className="organization-section-heading"><div><h2>消费记录</h2><p>查看企业创作的已结算积分，保留员工与任务信息。</p></div></div>
+      {usage.length === 0 ? <div className="organization-state">还没有企业消费记录</div> : <>
+        <div className="organization-table organization-usage-desktop"><Table><TableHeader><TableRow><TableHead>员工</TableHead><TableHead>提示词</TableHead><TableHead>模型 / 输出</TableHead><TableHead>积分</TableHead><TableHead>时间</TableHead></TableRow></TableHeader><TableBody>
+          {usage.map((item) => <TableRow key={item.id}><TableCell>{item.email}</TableCell><TableCell className="organization-prompt-cell" title={item.prompt}>{item.prompt}</TableCell><TableCell>{item.modelId} · {item.resolution} · {item.count} 张</TableCell><TableCell className="organization-number">{item.creditAmount}</TableCell><TableCell>{formatDate(item.createdAt)}</TableCell></TableRow>)}
+        </TableBody></Table></div>
+        <div className="organization-usage-mobile">{usage.map((item) => <article className="organization-member-card" key={item.id}><header><strong>{item.email}</strong><span>{item.creditAmount} 积分</span></header><p>{item.prompt}</p><dl><div><dt>模型 / 输出</dt><dd>{item.modelId} · {item.resolution} · {item.count} 张</dd></div><div><dt>时间</dt><dd>{formatDate(item.createdAt)}</dd></div></dl></article>)}</div>
+      </>}
+    </> : <>
+      <div className="organization-section-heading"><div><h2>团队资产</h2><p>仅展示企业生成结果，不开放员工的原始参考素材。</p></div></div>
+      {assets.length === 0 ? <div className="organization-state">企业资产库还是空的</div> : <div className="organization-assets-grid">{assets.flatMap((batch) => batch.outputs.map((output, index) => <article className="organization-asset-card" key={output.id}>
+        <div className="organization-asset-image" style={{ aspectRatio: output.width && output.height ? `${output.width}/${output.height}` : "1/1" }}><PrivateObjectImage src={output.previewUrl} alt="企业生成资产" style={{ objectFit: "contain" }} />
+          <Button className="organization-download" size="icon" variant="ghost" disabled={downloadingAssetId === output.id} onClick={() => void downloadAsset(batch, output.id, index + 1, output.previewUrl)}>{downloadingAssetId === output.id ? <LoaderCircle className="animate-spin" /> : <Download />}<span className="sr-only">下载图片</span></Button>
+        </div><div className="organization-asset-meta"><strong>{batch.creator.email}</strong><p>{batch.input.prompt}</p><span>{formatDate(batch.createdAt)} · {batch.input.modelId} · {batch.input.resolution}</span></div>
+      </article>))}</div>}
+    </>}
 
-      <Dialog open={budgetMember !== null} onOpenChange={(open) => { if (!open) setBudgetMember(null); }}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>调整员工额度</DialogTitle><DialogDescription>{budgetMember?.email} 当前剩余 {budgetMember?.budget?.remainingCredits ?? "0"} 积分。新额度不能低于已消费与在途预留。</DialogDescription></DialogHeader>
-          <div className="space-y-4"><label className="space-y-2 text-sm"><span>累计额度</span><Input inputMode="numeric" min={0} type="number" value={budgetLimit} onChange={(event) => setBudgetLimit(event.target.value)} /></label><label className="space-y-2 text-sm"><span>调整原因</span><Textarea value={budgetReason} onChange={(event) => setBudgetReason(event.target.value)} /></label></div>
-          <DialogFooter><Button variant="ghost" onClick={() => setBudgetMember(null)}>取消</Button><Button disabled={mutating || !budgetReason.trim()} onClick={() => void saveBudget()}>{mutating ? <LoaderCircle className="animate-spin" /> : <CheckCircle2 />}确认额度</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
-      <Toaster position="bottom-center" toastOptions={{ duration: 2400 }} />
-    </main>
-  );
+    <Dialog open={inviteOpen} onOpenChange={(open) => { if (!mutating) setInviteOpen(open); }}>
+      <DialogContent className="admin-action-dialog" overlayClassName="admin-action-dialog-overlay" onEscapeKeyDown={(event) => { if (mutating) event.preventDefault(); }} onInteractOutside={(event) => { if (mutating) event.preventDefault(); }}>
+        <DialogHeader className="admin-action-dialog-header"><DialogTitle>邀请企业成员</DialogTitle><DialogDescription>{dashboard?.workspace.name} · 对方需使用对应邮箱登录后接受邀请，不会创建新的登录凭据。</DialogDescription></DialogHeader>
+        <form onSubmit={submitInvitation}><div className="admin-action-dialog-body organization-dialog-body">
+          <label htmlFor="organization-invite-email">员工邮箱<Input id="organization-invite-email" type="email" required value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} placeholder="name@example.com" /></label>
+          <label>角色<Select value={inviteRole} onValueChange={(value) => setInviteRole(value as "org_admin" | "org_member")}><SelectTrigger aria-label="邀请成员角色"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="org_member">员工</SelectItem><SelectItem value="org_admin">管理员</SelectItem></SelectContent></Select></label>
+          <label htmlFor="organization-invite-reason">邀请原因<Input id="organization-invite-reason" required value={inviteReason} onChange={(event) => setInviteReason(event.target.value)} /></label>
+          {actionError && <p className="organization-inline-error" role="alert">{actionError}</p>}
+        </div><DialogFooter className="admin-action-dialog-footer"><Button type="button" variant="ghost" disabled={mutating} onClick={() => setInviteOpen(false)}>取消</Button><Button type="submit" disabled={mutating || !inviteEmail.trim() || !inviteReason.trim()}>{mutating ? <LoaderCircle className="animate-spin" /> : <UserPlus />}确认邀请</Button></DialogFooter></form>
+      </DialogContent>
+    </Dialog>
+    <Dialog open={budgetMember !== null} onOpenChange={(open) => { if (!open && !mutating) setBudgetMember(null); }}>
+      <DialogContent className="admin-action-dialog" overlayClassName="admin-action-dialog-overlay" onEscapeKeyDown={(event) => { if (mutating) event.preventDefault(); }} onInteractOutside={(event) => { if (mutating) event.preventDefault(); }}>
+        <DialogHeader className="admin-action-dialog-header"><DialogTitle>调整员工额度</DialogTitle><DialogDescription>{budgetMember?.email} · 新累计额度不能低于已消费与在途预留。</DialogDescription></DialogHeader>
+        <div className="admin-action-dialog-body organization-dialog-body">
+          <dl className="organization-budget-context">{[["企业可用积分", dashboard?.account?.availableCredits ?? "0"], ["未分配额度", dashboard?.account?.unallocatedCredits ?? "0"], ...(budgetMember ? memberMetrics(budgetMember) : [])].map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
+          <label htmlFor="organization-budget-limit">新累计额度<Input id="organization-budget-limit" inputMode="numeric" min={0} step={1} type="number" value={budgetLimit} onChange={(event) => setBudgetLimit(event.target.value)} /></label>
+          <p className="organization-note">额度变化：{Number.isSafeInteger(Number(budgetLimit)) && Number(budgetLimit) >= 0 ? Number(budgetLimit) - Number(budgetMember?.budget?.creditLimit ?? 0) : "请输入有效整数"} 积分</p>
+          <label htmlFor="organization-budget-reason">调整原因<Textarea id="organization-budget-reason" value={budgetReason} onChange={(event) => setBudgetReason(event.target.value)} /></label>
+          {actionError && <p className="organization-inline-error" role="alert">{actionError}</p>}
+        </div><DialogFooter className="admin-action-dialog-footer"><Button variant="ghost" disabled={mutating} onClick={() => setBudgetMember(null)}>取消</Button><Button disabled={mutating || !budgetReason.trim() || !budgetLimit.trim() || !Number.isSafeInteger(Number(budgetLimit)) || Number(budgetLimit) < 0} onClick={() => void saveBudget()}>{mutating ? <LoaderCircle className="animate-spin" /> : <CheckCircle2 />}确认额度</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
+  </section>;
 }

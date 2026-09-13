@@ -234,11 +234,10 @@ test("keeps authentication global, passwordless, and recoverable", async () => {
   );
   assert.match(creationPage, /<AuthenticationGate/);
   assert.match(adminPage, /<AuthenticationGate/);
-  assert.match(organizationPage, /<AuthenticationGate/);
-  assert.match(
-    organizationPage,
-    /beginAuthentication\(`\$\{window\.location\.pathname\}\$\{window\.location\.search\}`\)/,
-  );
+  // Enterprise routes now share the creation shell and its authentication gate.
+  assert.match(await readFile(path.join(root, "app/organizations/[organizationId]/page.tsx"), "utf8"), /export \{ default \} from "@\/app\/page"/);
+  assert.match(creationPage, /<OrganizationManagementView[\s\S]*enabled=\{Boolean\(authenticationSession/);
+  assert.match(organizationPage, /if \(!enabled\) return/);
   assert.match(authenticationGate, /authentication-brand-stacked/);
   assert.match(authenticationGate, /authentication-mode-title/);
   assert.match(authenticationGate, /className="authentication-form"/);
@@ -262,10 +261,7 @@ test("keeps authentication global, passwordless, and recoverable", async () => {
   assert.match(authBoundary, /goodgood:session-expired/);
   assert.match(authBoundary, /\/api\/auth\/email\/request/);
   assert.match(authBoundary, /\/api\/auth\/email\/verify/);
-  assert.match(
-    css,
-    /@media \(max-width:\s*720px\)[\s\S]*\.mobile-workspace-switcher \.workspace-invitation\s*\{[^}]*position:\s*absolute;[^}]*z-index:\s*40;[^}]*right:\s*0;/,
-  );
+  assert.doesNotMatch(css, /mobile-workspace-switcher|workspace-switcher-trigger/);
 });
 
 test("authentication session boundary covers signed-in, signed-out, and failure responses", async () => {

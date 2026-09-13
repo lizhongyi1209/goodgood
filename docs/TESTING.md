@@ -7,6 +7,13 @@ to distinguish UI preview, durable local integration, live API, and browser proo
 
 ## Current baseline
 
+GG-044 tests enterprise entry visibility independently from active manager
+membership, stable directory/detail tab URLs, shared-shell/auth wiring,
+SSR directory loading/empty/error/invitation/multiple-company states, preserved
+composer navigation, stale-read guards, compact responsive metrics and dialogs.
+They use no database/queue writes or real-provider requests. Browser mutation
+and company-budget evidence remains separately recorded in task cards.
+
 The default suite validates the production build, rendered metadata, shared UI
 primitive behavior, documentation continuity, stable model/ratio mappings,
 job-state transitions, unbounded independent client-run tracking, both M1 and

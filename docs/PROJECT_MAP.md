@@ -28,7 +28,7 @@ describes ownership in the clean integration baseline, not live-release proof.
 | `public/nano-fashion.png` | Prototype-only representative generated image |
 | `components/ui/` | Vendored Shadcn/Radix primitives plus the browser-direct private-object image primitive |
 | `features/admin/` | Site-owner account-management working surface and browser HTTP boundary |
-| `features/organizations/` | GG-030 Workspace switcher, enterprise members, invitations, budgets, usage, and team-asset browser boundaries |
+| `features/organizations/` | Workspace directory hook/legacy-scope validation, management-only organization directory, enterprise members, invitations, budgets, usage and team-asset view in the main shell |
 | `features/auth/` | Browser session boundary plus pending/suspended account gate |
 | `tests/` | Build/render, documentation, domain/mock, M3/M4 runtime, and opt-in Compose integration coverage |
 | `db/` | PostgreSQL Drizzle schema and process-local database helper |
@@ -98,7 +98,7 @@ features/
   models/        catalog, capability mapping, UI copy
   admin/         account review, business role, relationship, and promotional-credit browser boundary
   distribution/  direct-child list, transferable balance, transfer history and mutation UI
-  organizations/ workspace selection and enterprise management boundary
+  organizations/ account navigation, legacy-scope validation and enterprise management boundary
 server/
   api/            authenticated route handlers
   admin/          site-owner authorization, account review, and audit writes

@@ -363,7 +363,8 @@ test("management migration, routes, UI, and workspace-aware clients stay wired",
   assert.match(schema, /download_organization_asset/);
   assert.match(runtime, /createOrganizationNodeApiHandler/);
   assert.match(runtime, /handleOrganizationNodeApi/);
-  assert.match(page, /WorkspaceSwitcher/);
+  assert.match(page, /useWorkspaceDirectory/);
+  assert.doesNotMatch(page, /WorkspaceSwitcher|mobile-workspace-switcher/);
   assert.match(page, /workspaceId/);
   assert.match(page, /正在验证企业工作区权限/);
   assert.match(page, /你没有权限访问这个企业工作区/);

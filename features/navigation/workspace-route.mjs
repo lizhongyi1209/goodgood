@@ -1,7 +1,7 @@
 export const WORKSPACE_NAVIGATION_EVENT = "goodgood:workspace-navigation";
 
 /**
- * @typedef {{ kind: "create" } | { kind: "projects" } | { kind: "project", projectId: string } | { kind: "assets" } | { kind: "asset", assetId: string } | { kind: "credits" } | { kind: "distribution" }} WorkspaceRoute
+ * @typedef {{ kind: "create" } | { kind: "projects" } | { kind: "project", projectId: string } | { kind: "assets" } | { kind: "asset", assetId: string } | { kind: "credits" } | { kind: "distribution" } | { kind: "organizations", organizationId?: string, tab?: "overview" | "members" | "usage" | "assets" }} WorkspaceRoute
  */
 
 /**
@@ -28,6 +28,15 @@ export function parseWorkspaceRoute(pathname) {
   if (normalized === "/assets") return { kind: "assets" };
   if (normalized === "/credits") return { kind: "credits" };
   if (normalized === "/distribution") return { kind: "distribution" };
+  if (normalized === "/organizations") return { kind: "organizations" };
+  const organizationMatch = normalized.match(/^\/organizations\/([^/]+)(?:\/(members|usage|assets))?$/);
+  if (organizationMatch) {
+    try {
+      const organizationId = decodeURIComponent(organizationMatch[1]).trim();
+      return organizationId ? { kind: "organizations", organizationId,
+        tab: /** @type {"overview" | "members" | "usage" | "assets"} */ (organizationMatch[2] ?? "overview") } : { kind: "create" };
+    } catch { return { kind: "create" }; }
+  }
   const assetMatch = normalized.match(/^\/assets\/([^/]+)$/);
   if (!assetMatch) return { kind: "create" };
   try {
@@ -49,6 +58,11 @@ export function workspaceRouteHref(route) {
   if (route.kind === "assets") return "/assets";
   if (route.kind === "credits") return "/credits";
   if (route.kind === "distribution") return "/distribution";
+  if (route.kind === "organizations") {
+    if (!route.organizationId) return "/organizations";
+    const root = `/organizations/${encodeURIComponent(route.organizationId)}`;
+    return route.tab && route.tab !== "overview" ? `${root}/${route.tab}` : root;
+  }
   if (route.kind === "asset") {
     return `/assets/${encodeURIComponent(route.assetId)}`;
   }
