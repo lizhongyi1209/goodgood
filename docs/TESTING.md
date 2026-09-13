@@ -24,6 +24,13 @@ loopback `GOODGOOD_GG054_DATABASE_URL` starting `goodgood_gg054_lines_test`, and
 `GOODGOOD_GG054_NO_WORKER=1`; verify no Worker uses the effective database.
 No queue/provider is attached to that fixture database.
 
+GG-056 adds exact Banana 2 mappings and 126 injected requests across three
+lines, 14 ratios and three resolutions, including high thinking, search, long
+prompt and five reference payloads. Quotes retain 1/2/4 count multiplication.
+The existing named SQL suite additionally checks four-image dedicated admission,
+failure credit release, archive conflict/atomic audit, hidden catalogs, rejection
+of archived submissions/saves and preservation of prices/projects/ledger.
+
 Exact latest results belong in the task card and, for deployed behavior,
 `docs/CURRENT_STATE.md` / `docs/releases/`. Historical M-stage descriptions here
 are coverage contracts, not fresh production evidence. Follow `docs/WORKFLOW.md`

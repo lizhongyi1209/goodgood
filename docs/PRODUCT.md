@@ -146,11 +146,16 @@ but the local preview has no settlement. This is not a production price change.
 ADR 0064 (GG-054) extends Banana to three user-selected lines: 特价 (default),
 优质 and 专线. One catalog model owns independent enabled states and 1K/2K/4K
 fixed per-image prices for each line. Pro uses the three owner-specified provider
-IDs; Banana 2 retains its known special route while its other IDs await confirmation.
+IDs; GG-056 also connects Banana 2 to the owner's confirmed special/quality/dedicated IDs.
 Pro retains single-image output. Drafts/projects/results retain the choice;
 accepted tasks retain their line and quote without automatic fallback or token
 surcharges. Existing prices belong to special only; other lines start disabled
 and unpriced. This is local implementation, not production Pro activation.
+
+GG-056 removes catalog entries by archiving and disabling them, keeping accepted
+jobs, results, projects, immutable prices and management audit intact. Archived
+entries are absent from ordinary catalogs and reject new submissions. This
+does not change saved Banana prices or enable flags, or add historical cleanup.
 
 ## Local candidate: direct-child credit allocation
 

@@ -115,11 +115,11 @@ export async function readManagedModels({
   requireOwner(ownerContext, !publicDirectory);
   const { pool } = resources ?? (await getGenerationResources());
   const result = await pool.query(
-    "SELECT * FROM managed_models ORDER BY updated_at, id",
+    "SELECT * FROM managed_models WHERE archived_at IS NULL ORDER BY updated_at, id",
   );
   return {
     models: result.rows
-      .filter((row) => !publicDirectory || row.enabled)
+      .filter((row) => !row.archived_at && (!publicDirectory || row.enabled))
       .sort((left, right) => {
         const rank = (row) => {
           const index = MODEL_TEMPLATES.findIndex(
@@ -159,6 +159,8 @@ export async function saveManagedModel({
         "该模型已被更新或标识已存在，请刷新后重新编辑。",
         409,
       );
+    if (previous?.archived_at)
+      throw new AdministrationError("MODEL_DISABLED", "该模型已移除，请刷新列表或添加新条目。", 409);
     if (previous && previous.adapter_id !== model.adapterId)
       throw new AdministrationError(
         "MODEL_REQUEST_INVALID",
@@ -220,6 +222,39 @@ export async function saveManagedModel({
   }
 }
 
+export async function archiveManagedModel({ ownerContext, input, resources = null }) {
+  requireOwner(ownerContext);
+  if (!/^[a-z0-9][a-z0-9._-]{1,79}$/.test(input?.id ?? "") ||
+      !Number.isSafeInteger(input?.version) || input.version < 1)
+    throw new AdministrationError("MODEL_REQUEST_INVALID", "请刷新列表后重新移除模型。", 400);
+  const { pool } = resources ?? (await getGenerationResources());
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))", [`managed-model:${input.id}`]);
+    const previous = (await client.query("SELECT * FROM managed_models WHERE id=$1 FOR UPDATE", [input.id])).rows[0];
+    if (!previous || previous.archived_at)
+      throw new AdministrationError("MODEL_DISABLED", "该模型已移除或不存在，请刷新列表。", 409);
+    if (previous.version !== input.version)
+      throw new AdministrationError("MODEL_VERSION_CONFLICT", "该模型已被更新，请刷新后重新移除。", 409);
+    const next = (await client.query(
+      "UPDATE managed_models SET archived_at=now(),enabled=false,version=version+1,updated_at=now() WHERE id=$1 RETURNING *",
+      [input.id],
+    )).rows[0];
+    await client.query(
+      "INSERT INTO managed_model_events (id,model_id,actor_owner_id,before_record,after_record) VALUES ($1,$2,$3,$4::jsonb,$5::jsonb)",
+      [randomUUID(), input.id, ownerContext.ownerId, JSON.stringify(previous), JSON.stringify(next)],
+    );
+    await client.query("COMMIT");
+    return { archived: true, id: input.id };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 export async function requireEnabledImageModel(client, input) {
   const id = input.catalogModelId ?? input.modelId;
   const row = (
@@ -229,7 +264,7 @@ export async function requireEnabledImageModel(client, input) {
   ).rows[0];
   if (
     !row ||
-    !row.enabled ||
+    row.archived_at || !row.enabled ||
     row.media_type !== "image" ||
     row.adapter_id !== input.modelId ||
     !isValidImageLine(input.modelId, input.imageLine) ||

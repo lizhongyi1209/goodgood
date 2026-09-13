@@ -29,6 +29,12 @@ chosen line. Restored unavailable choices preserve state and offer another line;
 there is no automatic fallback. Accepted jobs continue their pinned line and
 quote after model/line disable, including restart and failure credit release.
 
+GG-056 archiving rejects non-owners before persistence, stale versions with
+`MODEL_VERSION_CONFLICT`, and missing/archived entries with `MODEL_DISABLED`.
+Normal saves and new generation also reject archived catalog IDs. Failures
+roll back both catalog update and audit; refresh the list to recover. No automatic
+price changes or line enabling accompanies confirmed Banana 2 mappings.
+
 GG-044 directory loading/empty/error lives in the enterprise content area,
 not a global Workspace control. Retry reads the authenticated directory only.
 Direct company access is still authorized by manager APIs; denial offers the

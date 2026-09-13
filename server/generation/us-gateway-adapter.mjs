@@ -67,7 +67,11 @@ function bananaRoute(productModelId, imageLine, providerModel) {
   });
 }
 const BANANA_PROVIDER_ROUTES = Object.freeze({
-  "nano-banana-2": Object.freeze({ special: US_GATEWAY_NANO_BANANA_2_ROUTE }),
+  "nano-banana-2": Object.freeze({
+    special: US_GATEWAY_NANO_BANANA_2_ROUTE,
+    quality: bananaRoute("nano-banana-2", "quality", "gemini-3.1-flash-image-c-sd"),
+    dedicated: bananaRoute("nano-banana-2", "dedicated", "gemini-3.1-flash-image"),
+  }),
   "nano-banana-pro": Object.freeze({
     special: bananaRoute("nano-banana-pro", "special", "gemini-3-pro-image-c-sp"),
     quality: bananaRoute("nano-banana-pro", "quality", "gemini-3-pro-image-c-sd"),

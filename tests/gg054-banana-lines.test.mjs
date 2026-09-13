@@ -100,7 +100,7 @@ test("Banana lines have stable product IDs, exact Pro mappings and a preserved l
   assert.equal(imagePriceContext("dedicated"), "banana-dedicated");
   assert.equal(getUsGatewayRoute("nano-banana-pro", "arbitrary"), null);
   assert.equal(getUsGatewayRoute("gpt-image-2", "quality"), null);
-  assert.equal(getUsGatewayRoute("nano-banana-2", "quality"), null);
+  assert.equal(getUsGatewayRoute("nano-banana-2", "quality").providerModel, "gemini-3.1-flash-image-c-sd");
 });
 
 test("line selection changes the input hash; omitted and explicit special preserve legacy idempotency", () => {
@@ -188,7 +188,6 @@ test("enabled lines require complete prices, valid IDs and a confirmed provider 
         ]),
       ),
     }),
-    model({ adapterId: "nano-banana-2" }),
   ])
     assert.throws(
       () => validateManagedModel(value),

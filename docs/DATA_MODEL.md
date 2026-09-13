@@ -36,6 +36,12 @@ and reservation references its scope; settlement uses the accepted reservation,
 including enterprise/member-budget settlement. No denomination exchange occurs
 in 0031. Existing model edit versions/timestamps and historical records stay intact.
 
+GG-056 migration 0032 adds nullable `managed_models.archived_at`, constrained
+to disabled entries. Archiving increments the catalog edit version and appends
+actor/before/after audit, retaining the row for its audit foreign key. It creates
+no price versions and leaves batches, assets, drafts, projects and credit history
+unchanged. The migration does not archive any row or change existing prices.
+
 The M3 PostgreSQL migration physically implements the initial local user,
 `GenerationBatch`, `GenerationJob`, `GenerationAttempt`, `Asset`, append-only
 job events, and the queue outbox. The additive M4 identity migration introduces

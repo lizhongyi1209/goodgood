@@ -93,3 +93,4 @@ ADR 0053 adds standalone-delimited concurrent prompt batches for GG-040.
 - `0062-rmb-anchored-specification-pricing.md` — accepted RMB-anchored per-image/output-second/reference-video-second pricing direction for GG-051; CNY 1/100 credits is still a unit proposal, with no runtime changes.
 - `0063-model-management-and-cent-credits.md` — accepted 100 credits/CNY, preserved legacy records, dynamic template-backed model management and specification price publishing for GG-052.
 - `0064-banana-lines-and-specification-prices.md` — Banana special/quality/dedicated selection, server-owned mappings and independent fixed specification prices for GG-054.
+- `0065-remove-managed-model-preserving-history.md` — archive removed catalog entries while preserving immutable audit, prices, results and projects for GG-056.

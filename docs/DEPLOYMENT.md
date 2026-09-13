@@ -22,11 +22,18 @@ may be configured/tested but current preview has no durable billing or assets.
 GG-054 adds migration 0031 after 0029/0030. It is additive line configuration and
 state persistence, preserving historical hashes/prices/ledger and custom model
 prices. It does not enable Pro globally or populate quality/dedicated prices.
-Pro mappings use owner-provided IDs; Banana 2's unconfirmed lines remain closed.
+Pro mappings use owner-provided IDs; GG-056 now supplies all three confirmed
+Banana 2 mappings without changing owner prices or line enable flags.
 The local 32141 stack must update Web, mock Worker and mock provider together
 after migration, retaining user trial data. The disposable `goodgood_gg054_lines_test`
 databases have no attached Worker. Production migration/activation and paid
 provider tests require separate authorized release scope.
+
+GG-056 adds additive migration 0032 for catalog archival. The schema migration
+does not remove entries or update pricing; the owner's explicit local removal
+targets only `banana-pricing-demo`. Preserve configured prices and immutable
+history when updating the 32141 mock stack. Local testing for the next online
+version is preparation, not authorization to deploy or to call real providers.
 
 ## Read first: ongoing production versus historical conversion
 

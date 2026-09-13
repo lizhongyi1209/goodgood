@@ -15,8 +15,7 @@ export function isValidImageLine(modelId, line) {
 }
 export function isBananaLineReady(modelId, line = DEFAULT_BANANA_LINE) {
   return (
-    modelId === "nano-banana-pro" ||
-    (modelId === "nano-banana-2" && line === "special")
+    isBananaModel(modelId) && BANANA_LINES.some((item) => item.id === line)
   );
 }
 export function imageLineName(line = DEFAULT_BANANA_LINE) {

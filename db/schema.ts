@@ -35,10 +35,12 @@ export const managedModels = pgTable("managed_models", {
   enabled: boolean("enabled").notNull().default(false),
   prices: jsonb("prices").notNull().default({}),
   lines: jsonb("lines").notNull().default({}),
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
   version: integer("version").notNull().default(1),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [
   check("managed_models_lines_check", sql`jsonb_typeof(${table.lines}) = 'object'`),
+  check("managed_models_archive_disabled", sql`${table.archivedAt} is null or ${table.enabled} = false`),
   check("managed_models_id_check", sql`${table.id} ~ '^[a-z0-9][a-z0-9._-]{1,79}$'`),
   check("managed_models_name_check", sql`length(${table.name}) between 1 and 80`),
   check("managed_models_media_type_check", sql`${table.mediaType} in ('image','video')`),

@@ -21,8 +21,15 @@ the provider router resolves the exact model and line on worker claim/recovery.
 Banana aliases use their canonical adapter mapping. Admission locks model/line
 availability and line-specific immutable pricing in the reservation transaction.
 Accepted jobs do not reread enabled flags and cannot silently switch lines.
-Pro retains count 1 and the ten standard Gemini ratios. Unknown Banana 2 mappings
-cannot be enabled or requested. No provider IDs/credentials enter creator UI.
+Pro retains count 1 and the ten standard Gemini ratios. GG-056 connects both
+Banana models' three owner-confirmed routes; Banana 2 retains per-image task
+orchestration and its legacy special route/version. No provider IDs/credentials enter creator UI.
+
+GG-056 `archiveManagedModel` locks the catalog version, disables/archives the
+entry and appends its audit atomically. Catalog reads and new admission exclude
+archived rows; normal saves cannot reuse an archived ID. Accepted task recovery
+continues from its original snapshot. The operation removes the specified local
+trial entry without adding a browser delete route or deleting historical data.
 
 ## Current state
 

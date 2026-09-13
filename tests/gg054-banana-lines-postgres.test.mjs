@@ -6,7 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import pg from "pg";
 import { applyMigrations } from "../server/persistence/migrate.mjs";
-import { saveManagedModel } from "../server/admin/models.mjs";
+import { saveManagedModel, archiveManagedModel, readManagedModels } from "../server/admin/models.mjs";
 import {
   findCreditAccount,
   grantCredits,
@@ -406,6 +406,43 @@ test(
       (await findCreationDraft(pool, { ownerId })).image_line,
       "quality",
     );
+    const nano2 = (await saveManagedModel({ ownerContext, resources: { pool }, input: {
+      ...model, id: "banana-two-line-lab", adapterId: "nano-banana-2", version: null,
+      enabled: true, lines: { special: { enabled: true, prices: prices(20) }, quality: { enabled: true, prices: prices(40) }, dedicated: { enabled: true, prices: prices(72) } },
+    } })).model;
+    const nanoInput = { ...input, modelId: "nano-banana-2", catalogModelId: nano2.id, count: 4, imageLine: "dedicated" };
+    const nanoJob = await createGenerationJob(pool, { ownerId, idempotencyKey: "gg056-four-dedicated", input: nanoInput });
+    assert.equal(nanoJob.row.image_line, "dedicated");
+    const nanoClaim = await claim(nanoJob.row.id);
+    assert.equal(nanoClaim.route.providerModel, "nano-banana-2-dedicated-mock-v1");
+    assert.equal((await pool.query("SELECT quoted_credit_amount FROM generation_batches WHERE id=$1", [nanoJob.row.batch_id])).rows[0].quoted_credit_amount, "288");
+    await failGenerationJob(pool, { jobId: nanoJob.row.id, workerId, attemptId: nanoClaim.attempt.id,
+      error: { code: "PROVIDER_FAILED", title: "Synthetic", message: "isolated fixture", retryable: true } });
+    assert.equal((await findCreditAccount(pool, { ownerId })).reservedBalance, 0n);
+    const beforeArchive = await history();
+    const beforeProject = await findProject(pool, { ownerId, projectId: project.id });
+    const beforeAudit = (await pool.query("SELECT to_jsonb(e) AS record FROM managed_model_events e ORDER BY id")).rows;
+    await assert.rejects(archiveManagedModel({ ownerContext, resources: { pool }, input: { id: model.id, version: model.version + 1 } }),
+      (error) => error.code === "MODEL_VERSION_CONFLICT");
+    assert.deepEqual((await pool.query("SELECT to_jsonb(e) AS record FROM managed_model_events e ORDER BY id")).rows, beforeAudit);
+    const unmodifiedNano2 = (await pool.query("SELECT to_jsonb(m) AS record FROM managed_models m WHERE id=$1", [nano2.id])).rows;
+    assert.deepEqual(await archiveManagedModel({ ownerContext, resources: { pool }, input: { id: model.id, version: model.version } }), { archived: true, id: model.id });
+    assert.deepEqual(await history(), beforeArchive);
+    assert.deepEqual(await findProject(pool, { ownerId, projectId: project.id }), beforeProject);
+    assert.deepEqual((await pool.query("SELECT to_jsonb(m) AS record FROM managed_models m WHERE id=$1", [nano2.id])).rows, unmodifiedNano2);
+    for (const publicDirectory of [false, true]) {
+      assert.ok(!(await readManagedModels({ ownerContext, resources: { pool }, publicDirectory })).models.some(({ id }) => id === model.id));
+    }
+    const archived = (await pool.query("SELECT * FROM managed_models WHERE id=$1", [model.id])).rows[0];
+    assert.ok(archived.archived_at);
+    assert.equal(archived.enabled, false);
+    assert.equal(archived.version, model.version + 1);
+    assert.deepEqual(archived.lines, model.lines);
+    assert.equal((await pool.query("SELECT count(*) FROM managed_model_events WHERE model_id=$1", [model.id])).rows[0].count,
+      String(beforeAudit.filter(({ record }) => record.model_id === model.id).length + 1));
+    await assert.rejects(create("gg056-archived", "dedicated"), (error) => error.code === "MODEL_DISABLED");
+    await assert.rejects(saveManagedModel({ ownerContext, resources: { pool }, input: { ...model, version: archived.version } }), (error) => error.code === "MODEL_DISABLED");
+    await assert.rejects(archiveManagedModel({ ownerContext, resources: { pool }, input: { id: model.id, version: archived.version } }), (error) => error.code === "MODEL_DISABLED");
     assert.equal(
       (
         await pool.query(

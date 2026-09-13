@@ -19,6 +19,6 @@
 - 验证：`node --test tests/documentation-continuity.test.mjs tests/m8-production-release.test.mjs` 15/15 通过，0 跳过、0 失败；`git -c core.safecrlf=false diff --check` 通过。文档专用任务不执行代码完整门禁，不安装依赖或重启预览。
 - 发布：未推送/合 main/部署；32141 继续 GG-054 本地试价，CURRENT_STATE 生产事实不变。
 
-## 恢复工作
+## 下一步与恢复工作
 
-向用户交付官方成本基准；下一步依据供应商固定价/折扣和 high 模式分项用量核算三线路实际整单成本，再确定按张积分售价。GG-054 Banana 2 优质/专线请求 ID 仍待补齐，本轮未获得这两个 ID。
+已交付官方成本基准；实际成本仍需供应商固定价/折扣和 high 模式分项用量。用户后续已保存 Banana 价格并提供 Banana 2 优质/专线 ID，接续实现与本地测试准备见 [GG-056](GG-056-banana2-lines.md)；本研究没有改价或确认实测账单。
