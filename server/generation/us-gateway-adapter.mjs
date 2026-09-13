@@ -1,3 +1,4 @@
+import { gptPricingQualities } from "../../shared/contracts/gpt-quality-pricing.mjs";
 import { NormalizedProviderError } from "./provider.mjs";
 import { isBananaModel, isValidImageLine } from "../../shared/contracts/banana-lines.mjs";
 import {
@@ -358,7 +359,7 @@ function validateJob(job, route) {
     }) ||
     !["low", "high"].includes(thinkingLevel) ||
     typeof googleSearch !== "boolean" ||
-    !SUPPORTED_GPT_IMAGE_QUALITIES.includes(quality) ||
+    (!SUPPORTED_GPT_IMAGE_QUALITIES.includes(quality) || (quality !== "auto" && !gptPricingQualities(route.productModelId).some(item => item.id === quality))) ||
     !SUPPORTED_GPT_IMAGE_BACKGROUNDS.includes(background) ||
     !SUPPORTED_GPT_IMAGE_OUTPUT_FORMATS.includes(outputFormat) ||
     (background === "transparent" && outputFormat === "jpeg") ||

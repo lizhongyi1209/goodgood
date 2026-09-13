@@ -21,7 +21,7 @@ import {
   GENERATION_RESOLUTION_OPTIONS,
   GPT_IMAGE_BACKGROUND_OPTIONS,
   GPT_IMAGE_OUTPUT_FORMAT_OPTIONS,
-  GPT_IMAGE_QUALITY_OPTIONS,
+  getGptImageQualityOptions,
   formatPixelDimensions,
   getDefaultGenerationRatioForModelMode,
   isGenerationCountSupported,
@@ -65,6 +65,7 @@ import {
 import { toast } from "sonner";
 
 import type { ManagedImageOption } from "@/shared/contracts/model-management";
+import { modelSpecificationPrices } from "@/shared/contracts/banana-lines.mjs";
 import type { ManagedModel } from "@/shared/contracts/model-management";
 import type { BananaLine } from "@/shared/contracts/generation";
 import { supportsImageLines } from "@/shared/contracts/banana-lines.mjs";
@@ -563,8 +564,9 @@ export function CreationComposer({
                 <div className="gpt-image-model-options">
                   <div className="gpt-image-option-section">
                     <label>质量</label>
-                    <div className="gpt-image-option-options quality" aria-label="质量">
-                      {GPT_IMAGE_QUALITY_OPTIONS.map((option) => (
+                    {managedModel && modelSpecificationPrices(managedModel, imageLine)[resolution]?.qualities && <p className="text-xs text-zinc-500">自动质量按最高档计价；手动选择档位可降低费用。</p>}
+                    <div className={`gpt-image-option-options quality ${getGptImageQualityOptions(modelId).length > 4 ? "extended" : ""}`} aria-label="质量">
+                      {getGptImageQualityOptions(modelId).map((option) => (
                         <button
                           type="button"
                           key={option.value}

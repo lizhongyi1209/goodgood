@@ -1,5 +1,6 @@
 "use client";
 
+import { gptPricingQualities } from "@/shared/contracts/gpt-quality-pricing.mjs";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AdminManagementHeader } from "./admin-management-header";
@@ -64,7 +65,10 @@ import {
 } from "@/shared/contracts/model-pricing.mjs";
 import type { ManagedModel } from "@/shared/contracts/model-management";
 
-type DraftPrices = Record<string, { output: string; input: string }>;
+type DraftPrices = Record<
+  string,
+  { output: string; input: string; qualities?: Record<string, string> }
+>;
 type DraftLines = Record<BananaLine, { enabled: boolean; prices: DraftPrices }>;
 type Draft = {
   id: string;
@@ -90,6 +94,16 @@ function editablePrices(prices: ManagedModel["prices"]): DraftPrices {
       {
         output: creditsToYuan(price.output),
         input: creditsToYuan(price.input ?? 0),
+        ...(price.qualities
+          ? {
+              qualities: Object.fromEntries(
+                Object.entries(price.qualities).map(([id, amount]) => [
+                  id,
+                  creditsToYuan(amount),
+                ]),
+              ),
+            }
+          : {}),
       },
     ]),
   );
@@ -125,11 +139,27 @@ function editDraft(model: ManagedModel): Draft {
 function parsedPrices(draft: Draft, line: BananaLine = "special") {
   return Object.fromEntries(
     Object.entries(draft.lines ? draft.lines[line].prices : draft.prices)
-      .filter(([, price]) => price.output.trim())
+      .filter(([, price]) => price.output.trim() || price.qualities)
       .map(([key, price]) => [
         key,
         {
-          output: yuanToCredits(price.output),
+          output: price.qualities
+            ? Math.max(
+                ...Object.values(price.qualities).map((value) =>
+                  yuanToCredits(value),
+                ),
+              )
+            : yuanToCredits(price.output),
+          ...(price.qualities
+            ? {
+                qualities: Object.fromEntries(
+                  Object.entries(price.qualities).map(([id, value]) => [
+                    id,
+                    yuanToCredits(value),
+                  ]),
+                ),
+              }
+            : {}),
           input: yuanToCredits(price.input || "0"),
         },
       ]),
@@ -144,7 +174,11 @@ function templateLabel(id: string) {
   );
 }
 
-export function ModelManagementPage({ workspaceSession, embedded = false, onManagementChange }: {
+export function ModelManagementPage({
+  workspaceSession,
+  embedded = false,
+  onManagementChange,
+}: {
   workspaceSession?: AuthenticationSession;
   embedded?: boolean;
   onManagementChange?: () => void;
@@ -165,6 +199,7 @@ export function ModelManagementPage({ workspaceSession, embedded = false, onMana
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [resolution, setResolution] = useState("1K");
   const [pricingLine, setPricingLine] = useState<BananaLine>("special");
+  const [pricingQuality, setPricingQuality] = useState("auto");
   const [count, setCount] = useState("1");
   const [seconds, setSeconds] = useState("5");
   const [referenceSeconds, setReferenceSeconds] = useState("0");
@@ -230,6 +265,7 @@ export function ModelManagementPage({ workspaceSession, embedded = false, onMana
     const next = model ? editDraft(model) : newDraft();
     setDraft(next);
     setPricingLine("special");
+    setPricingQuality("auto");
     setCount("1");
     setMutationError(null);
     setResolution(
@@ -283,6 +319,57 @@ export function ModelManagementPage({ workspaceSession, embedded = false, onMana
   const currentPrices = draft?.lines
     ? draft.lines[pricingLine].prices
     : (draft?.prices ?? {});
+  const qualities = draft ? gptPricingQualities(draft.adapterId) : [];
+  const qualityMode = Object.values(currentPrices).some(
+    (price) => price.qualities,
+  );
+  const replaceCurrentPrices = (prices: DraftPrices) => {
+    if (!draft) return;
+    setDraft(
+      draft.lines
+        ? {
+            ...draft,
+            lines: {
+              ...draft.lines,
+              [pricingLine]: { ...draft.lines[pricingLine], prices },
+            },
+          }
+        : { ...draft, prices },
+    );
+  };
+  const toggleQualityMode = (enabled: boolean) => {
+    if (!template) return;
+    replaceCurrentPrices(
+      Object.fromEntries(
+        template.resolutions.map((key) => {
+          const price = currentPrices[key] ?? { output: "", input: "0" };
+          return [
+            key,
+            {
+              output: price.output,
+              input: price.input,
+              ...(enabled
+                ? {
+                    qualities: Object.fromEntries(
+                      qualities.map((item) => [item.id, price.output]),
+                    ),
+                  }
+                : {}),
+            },
+          ];
+        }),
+      ),
+    );
+  };
+  const updateQualityPrice = (key: string, id: string, value: string) => {
+    replaceCurrentPrices({
+      ...currentPrices,
+      [key]: {
+        ...currentPrices[key],
+        qualities: { ...currentPrices[key]?.qualities, [id]: value },
+      },
+    });
+  };
   const updatePrice = (
     key: string,
     field: "output" | "input",
@@ -319,6 +406,7 @@ export function ModelManagementPage({ workspaceSession, embedded = false, onMana
         },
         {
           resolution,
+          quality: pricingQuality,
           count: Number(count),
           outputSeconds: Number(seconds),
           referenceSeconds: Number(referenceSeconds),
@@ -345,7 +433,9 @@ export function ModelManagementPage({ workspaceSession, embedded = false, onMana
         setModels([]);
       }
     } catch (failure) {
-      toast.error(failure instanceof Error ? failure.message : "退出登录失败，请重试。");
+      toast.error(
+        failure instanceof Error ? failure.message : "退出登录失败，请重试。",
+      );
     }
   };
 
@@ -395,9 +485,18 @@ export function ModelManagementPage({ workspaceSession, embedded = false, onMana
     );
 
   return (
-    <section className={`admin-management-page bg-white text-zinc-950 ${embedded ? "admin-management-embedded" : "min-h-dvh"}`} aria-label="模型管理">
+    <section
+      className={`admin-management-page bg-white text-zinc-950 ${embedded ? "admin-management-embedded" : "min-h-dvh"}`}
+      aria-label="模型管理"
+    >
       {!embedded && <AdminManagementHeader activePage="models" />}
-      <div className={embedded ? "admin-management-content" : "mx-auto max-w-[1500px] px-5 py-8 lg:px-8 lg:py-10"}>
+      <div
+        className={
+          embedded
+            ? "admin-management-content"
+            : "mx-auto max-w-[1500px] px-5 py-8 lg:px-8 lg:py-10"
+        }
+      >
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="text-xl font-semibold">模型管理</h1>
@@ -555,6 +654,7 @@ export function ModelManagementPage({ workspaceSession, embedded = false, onMana
                         });
                         setResolution(next.resolutions[0]);
                         setPricingLine("special");
+                        setPricingQuality("auto");
                         setCount("1");
                       }}
                     >
@@ -632,6 +732,23 @@ export function ModelManagementPage({ workspaceSession, embedded = false, onMana
                       ? "每张图片售价，可为不同分辨率分别设置。"
                       : "每秒输出视频售价；参考视频按输入秒加价，没有参考视频时不收输入费用。"}
                   </p>
+                  {qualities.length > 0 && (
+                    <label className="mt-3 flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={qualityMode}
+                        onChange={(event) =>
+                          toggleQualityMode(event.target.checked)
+                        }
+                      />
+                      按质量分别定价
+                    </label>
+                  )}
+                  {qualityMode && (
+                    <p className="mt-2 text-xs leading-5 text-zinc-500">
+                      自动质量按最高档计价。各分辨率需填齐全部质量价格，精度为 ¥0.01（1 积分）。
+                    </p>
+                  )}
                   <div
                     className={`mt-4 grid gap-3 ${template.mediaType === "image" ? "grid-cols-3" : "sm:grid-cols-2"}`}
                   >
@@ -649,32 +766,62 @@ export function ModelManagementPage({ workspaceSession, embedded = false, onMana
                               : ""
                           }
                         >
-                          <label className="block min-w-0">
-                            <span className="mb-1.5 block text-[11px] text-zinc-500">
-                              {template.mediaType === "image"
-                                ? "每张 / 元"
-                                : "输出秒 / 元"}
-                            </span>
-                            <Input
-                              aria-label={`${key} 输出售价`}
-                              className="bg-white px-2 tabular-nums"
-                              inputMode="decimal"
-                              placeholder="未定价"
-                              value={currentPrices[key]?.output ?? ""}
-                              onChange={(event) =>
-                                updatePrice(key, "output", event.target.value)
-                              }
-                            />
-                            <span className="mt-2 block text-[11px] text-zinc-400">
-                              {(() => {
-                                try {
-                                  return `${yuanToCredits(currentPrices[key]?.output ?? "")} 积分/${template.mediaType === "image" ? "张" : "秒"}`;
-                                } catch {
-                                  return "—";
+                          {qualityMode ? (
+                            <div className="space-y-3">
+                              {qualities.map((item) => (
+                                <label key={item.id} className="block min-w-0">
+                                  <span className="mb-1.5 block text-[11px] text-zinc-500">
+                                    {item.name} · {item.id} / 元
+                                  </span>
+                                  <Input
+                                    aria-label={`${key} ${item.id} 售价`}
+                                    className="bg-white px-2 tabular-nums"
+                                    inputMode="decimal"
+                                    placeholder="未定价"
+                                    value={
+                                      currentPrices[key]?.qualities?.[
+                                        item.id
+                                      ] ?? ""
+                                    }
+                                    onChange={(event) =>
+                                      updateQualityPrice(
+                                        key,
+                                        item.id,
+                                        event.target.value,
+                                      )
+                                    }
+                                  />
+                                </label>
+                              ))}
+                            </div>
+                          ) : (
+                            <label className="block min-w-0">
+                              <span className="mb-1.5 block text-[11px] text-zinc-500">
+                                {template.mediaType === "image"
+                                  ? "每张 / 元"
+                                  : "输出秒 / 元"}
+                              </span>
+                              <Input
+                                aria-label={`${key} 输出售价`}
+                                className="bg-white px-2 tabular-nums"
+                                inputMode="decimal"
+                                placeholder="未定价"
+                                value={currentPrices[key]?.output ?? ""}
+                                onChange={(event) =>
+                                  updatePrice(key, "output", event.target.value)
                                 }
-                              })()}
-                            </span>
-                          </label>
+                              />
+                              <span className="mt-2 block text-[11px] text-zinc-400">
+                                {(() => {
+                                  try {
+                                    return `${yuanToCredits(currentPrices[key]?.output ?? "")} 积分/${template.mediaType === "image" ? "张" : "秒"}`;
+                                  } catch {
+                                    return "—";
+                                  }
+                                })()}
+                              </span>
+                            </label>
+                          )}
                           {template.mediaType === "video" && (
                             <label className="block min-w-0">
                               <span className="mb-1.5 block text-[11px] text-zinc-500">
@@ -720,6 +867,24 @@ export function ModelManagementPage({ workspaceSession, embedded = false, onMana
                         ))}
                       </SelectContent>
                     </Select>
+                    {qualityMode && (
+                      <Select
+                        value={pricingQuality}
+                        onValueChange={setPricingQuality}
+                      >
+                        <SelectTrigger aria-label="试算质量">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="auto">自动（最高档）</SelectItem>
+                          {qualities.map((item) => (
+                            <SelectItem key={item.id} value={item.id}>
+                              {item.name} · {item.id}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                     <Select value={count} onValueChange={setCount}>
                       <SelectTrigger aria-label="试算数量">
                         <SelectValue />

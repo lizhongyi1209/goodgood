@@ -671,7 +671,7 @@ export async function reserveGenerationCreditsInTransaction(
     at,
     count: job.requested_count,
     modelId: job.catalog_model_id ?? job.model_id,
-    planContext: job.image_line ? imagePriceContext(job.image_line) : planContext,
+    planContext: planContext.includes(":gpt-") ? planContext : (job.image_line ? imagePriceContext(job.image_line) : planContext),
     resolution: job.resolution,
   });
   const accountResult = await client.query(

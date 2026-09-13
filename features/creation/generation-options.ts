@@ -1,3 +1,4 @@
+import { gptPricingQualities } from "@/shared/contracts/gpt-quality-pricing.mjs";
 import {
   GENERATION_COUNTS,
   isGptImageModelId,
@@ -27,20 +28,160 @@ export type GenerationRatioOption = Readonly<{
 }>;
 
 export const GENERATION_RATIO_OPTIONS = [
-  { id: "1:8", label: "1 : 8", value: 1 / 8, dimensions: { "1K": { width: 384, height: 3072 }, "2K": { width: 768, height: 6144 }, "4K": { width: 1536, height: 12288 } }, mode: "portrait" },
-  { id: "1:4", label: "1 : 4", value: 1 / 4, dimensions: { "1K": { width: 512, height: 2048 }, "2K": { width: 1024, height: 4096 }, "4K": { width: 2048, height: 8192 } }, mode: "portrait" },
-  { id: "9:16", label: "9 : 16", value: 9 / 16, dimensions: { "1K": { width: 768, height: 1376 }, "2K": { width: 1536, height: 2752 }, "4K": { width: 3072, height: 5504 } }, mode: "portrait" },
-  { id: "2:3", label: "2 : 3", value: 2 / 3, dimensions: { "1K": { width: 848, height: 1264 }, "2K": { width: 1696, height: 2528 }, "4K": { width: 3392, height: 5056 } }, mode: "portrait" },
-  { id: "3:4", label: "3 : 4", value: 3 / 4, dimensions: { "1K": { width: 896, height: 1200 }, "2K": { width: 1792, height: 2400 }, "4K": { width: 3584, height: 4800 } }, mode: "portrait" },
-  { id: "4:5", label: "4 : 5", value: 4 / 5, dimensions: { "1K": { width: 928, height: 1152 }, "2K": { width: 1856, height: 2304 }, "4K": { width: 3712, height: 4608 } }, mode: "portrait" },
-  { id: "1:1", label: "1 : 1", value: 1, dimensions: { "1K": { width: 1024, height: 1024 }, "2K": { width: 2048, height: 2048 }, "4K": { width: 4096, height: 4096 } }, mode: "square" },
-  { id: "5:4", label: "5 : 4", value: 5 / 4, dimensions: { "1K": { width: 1152, height: 928 }, "2K": { width: 2304, height: 1856 }, "4K": { width: 4608, height: 3712 } }, mode: "landscape" },
-  { id: "4:3", label: "4 : 3", value: 4 / 3, dimensions: { "1K": { width: 1200, height: 896 }, "2K": { width: 2400, height: 1792 }, "4K": { width: 4800, height: 3584 } }, mode: "landscape" },
-  { id: "3:2", label: "3 : 2", value: 3 / 2, dimensions: { "1K": { width: 1264, height: 848 }, "2K": { width: 2528, height: 1696 }, "4K": { width: 5056, height: 3392 } }, mode: "landscape" },
-  { id: "16:9", label: "16 : 9", value: 16 / 9, dimensions: { "1K": { width: 1376, height: 768 }, "2K": { width: 2752, height: 1536 }, "4K": { width: 5504, height: 3072 } }, mode: "landscape" },
-  { id: "21:9", label: "21 : 9", value: 21 / 9, dimensions: { "1K": { width: 1584, height: 672 }, "2K": { width: 3168, height: 1344 }, "4K": { width: 6336, height: 2688 } }, mode: "landscape" },
-  { id: "4:1", label: "4 : 1", value: 4, dimensions: { "1K": { width: 2048, height: 512 }, "2K": { width: 4096, height: 1024 }, "4K": { width: 8192, height: 2048 } }, mode: "landscape" },
-  { id: "8:1", label: "8 : 1", value: 8, dimensions: { "1K": { width: 3072, height: 384 }, "2K": { width: 6144, height: 768 }, "4K": { width: 12288, height: 1536 } }, mode: "landscape" },
+  {
+    id: "1:8",
+    label: "1 : 8",
+    value: 1 / 8,
+    dimensions: {
+      "1K": { width: 384, height: 3072 },
+      "2K": { width: 768, height: 6144 },
+      "4K": { width: 1536, height: 12288 },
+    },
+    mode: "portrait",
+  },
+  {
+    id: "1:4",
+    label: "1 : 4",
+    value: 1 / 4,
+    dimensions: {
+      "1K": { width: 512, height: 2048 },
+      "2K": { width: 1024, height: 4096 },
+      "4K": { width: 2048, height: 8192 },
+    },
+    mode: "portrait",
+  },
+  {
+    id: "9:16",
+    label: "9 : 16",
+    value: 9 / 16,
+    dimensions: {
+      "1K": { width: 768, height: 1376 },
+      "2K": { width: 1536, height: 2752 },
+      "4K": { width: 3072, height: 5504 },
+    },
+    mode: "portrait",
+  },
+  {
+    id: "2:3",
+    label: "2 : 3",
+    value: 2 / 3,
+    dimensions: {
+      "1K": { width: 848, height: 1264 },
+      "2K": { width: 1696, height: 2528 },
+      "4K": { width: 3392, height: 5056 },
+    },
+    mode: "portrait",
+  },
+  {
+    id: "3:4",
+    label: "3 : 4",
+    value: 3 / 4,
+    dimensions: {
+      "1K": { width: 896, height: 1200 },
+      "2K": { width: 1792, height: 2400 },
+      "4K": { width: 3584, height: 4800 },
+    },
+    mode: "portrait",
+  },
+  {
+    id: "4:5",
+    label: "4 : 5",
+    value: 4 / 5,
+    dimensions: {
+      "1K": { width: 928, height: 1152 },
+      "2K": { width: 1856, height: 2304 },
+      "4K": { width: 3712, height: 4608 },
+    },
+    mode: "portrait",
+  },
+  {
+    id: "1:1",
+    label: "1 : 1",
+    value: 1,
+    dimensions: {
+      "1K": { width: 1024, height: 1024 },
+      "2K": { width: 2048, height: 2048 },
+      "4K": { width: 4096, height: 4096 },
+    },
+    mode: "square",
+  },
+  {
+    id: "5:4",
+    label: "5 : 4",
+    value: 5 / 4,
+    dimensions: {
+      "1K": { width: 1152, height: 928 },
+      "2K": { width: 2304, height: 1856 },
+      "4K": { width: 4608, height: 3712 },
+    },
+    mode: "landscape",
+  },
+  {
+    id: "4:3",
+    label: "4 : 3",
+    value: 4 / 3,
+    dimensions: {
+      "1K": { width: 1200, height: 896 },
+      "2K": { width: 2400, height: 1792 },
+      "4K": { width: 4800, height: 3584 },
+    },
+    mode: "landscape",
+  },
+  {
+    id: "3:2",
+    label: "3 : 2",
+    value: 3 / 2,
+    dimensions: {
+      "1K": { width: 1264, height: 848 },
+      "2K": { width: 2528, height: 1696 },
+      "4K": { width: 5056, height: 3392 },
+    },
+    mode: "landscape",
+  },
+  {
+    id: "16:9",
+    label: "16 : 9",
+    value: 16 / 9,
+    dimensions: {
+      "1K": { width: 1376, height: 768 },
+      "2K": { width: 2752, height: 1536 },
+      "4K": { width: 5504, height: 3072 },
+    },
+    mode: "landscape",
+  },
+  {
+    id: "21:9",
+    label: "21 : 9",
+    value: 21 / 9,
+    dimensions: {
+      "1K": { width: 1584, height: 672 },
+      "2K": { width: 3168, height: 1344 },
+      "4K": { width: 6336, height: 2688 },
+    },
+    mode: "landscape",
+  },
+  {
+    id: "4:1",
+    label: "4 : 1",
+    value: 4,
+    dimensions: {
+      "1K": { width: 2048, height: 512 },
+      "2K": { width: 4096, height: 1024 },
+      "4K": { width: 8192, height: 2048 },
+    },
+    mode: "landscape",
+  },
+  {
+    id: "8:1",
+    label: "8 : 1",
+    value: 8,
+    dimensions: {
+      "1K": { width: 3072, height: 384 },
+      "2K": { width: 6144, height: 768 },
+      "4K": { width: 12288, height: 1536 },
+    },
+    mode: "landscape",
+  },
 ] as const satisfies readonly GenerationRatioOption[];
 
 export const GPT_IMAGE_2_RATIO_IDS = [
@@ -56,17 +197,47 @@ export const GPT_IMAGE_2_RATIO_IDS = [
 type GptImage2AspectRatio = (typeof GPT_IMAGE_2_RATIO_IDS)[number];
 
 export const GPT_IMAGE_2_DIMENSIONS = {
-  "9:16": { "1K": { width: 1024, height: 1824 }, "2K": { width: 2048, height: 3648 }, "4K": { width: 2160, height: 3840 } },
-  "2:3": { "1K": { width: 1024, height: 1536 }, "2K": { width: 2048, height: 3072 }, "4K": { width: 2336, height: 3504 } },
-  "3:4": { "1K": { width: 1024, height: 1360 }, "2K": { width: 2048, height: 2736 }, "4K": { width: 2448, height: 3264 } },
-  "1:1": { "1K": { width: 1024, height: 1024 }, "2K": { width: 2048, height: 2048 }, "4K": { width: 2880, height: 2880 } },
-  "4:3": { "1K": { width: 1360, height: 1024 }, "2K": { width: 2736, height: 2048 }, "4K": { width: 3264, height: 2448 } },
-  "3:2": { "1K": { width: 1536, height: 1024 }, "2K": { width: 3072, height: 2048 }, "4K": { width: 3504, height: 2336 } },
-  "16:9": { "1K": { width: 1824, height: 1024 }, "2K": { width: 3648, height: 2048 }, "4K": { width: 3840, height: 2160 } },
-} as const satisfies Readonly<Record<
-  GptImage2AspectRatio,
-  Readonly<Record<GenerationResolution, PixelDimensions>>
->>;
+  "9:16": {
+    "1K": { width: 1024, height: 1824 },
+    "2K": { width: 2048, height: 3648 },
+    "4K": { width: 2160, height: 3840 },
+  },
+  "2:3": {
+    "1K": { width: 1024, height: 1536 },
+    "2K": { width: 2048, height: 3072 },
+    "4K": { width: 2336, height: 3504 },
+  },
+  "3:4": {
+    "1K": { width: 1024, height: 1360 },
+    "2K": { width: 2048, height: 2736 },
+    "4K": { width: 2448, height: 3264 },
+  },
+  "1:1": {
+    "1K": { width: 1024, height: 1024 },
+    "2K": { width: 2048, height: 2048 },
+    "4K": { width: 2880, height: 2880 },
+  },
+  "4:3": {
+    "1K": { width: 1360, height: 1024 },
+    "2K": { width: 2736, height: 2048 },
+    "4K": { width: 3264, height: 2448 },
+  },
+  "3:2": {
+    "1K": { width: 1536, height: 1024 },
+    "2K": { width: 3072, height: 2048 },
+    "4K": { width: 3504, height: 2336 },
+  },
+  "16:9": {
+    "1K": { width: 1824, height: 1024 },
+    "2K": { width: 3648, height: 2048 },
+    "4K": { width: 3840, height: 2160 },
+  },
+} as const satisfies Readonly<
+  Record<
+    GptImage2AspectRatio,
+    Readonly<Record<GenerationResolution, PixelDimensions>>
+  >
+>;
 
 export const GENERATION_RATIO_MODES = [
   ["portrait", "竖版"],
@@ -78,7 +249,9 @@ export const DEFAULT_GENERATION_RATIO_BY_MODE = {
   portrait: "4:5",
   square: "1:1",
   landscape: "16:9",
-} as const satisfies Readonly<Record<GenerationRatioMode, GenerationAspectRatio>>;
+} as const satisfies Readonly<
+  Record<GenerationRatioMode, GenerationAspectRatio>
+>;
 
 export const GENERATION_RESOLUTION_OPTIONS = [
   { value: "1K", label: "1K" },
@@ -94,18 +267,37 @@ export const GPT_IMAGE_QUALITY_OPTIONS = [
   { value: "low", label: "低" },
   { value: "medium", label: "中" },
   { value: "high", label: "高" },
-] as const satisfies readonly Readonly<{ value: GptImageQuality; label: string }>[];
+  { value: "xhigh", label: "超高" },
+  { value: "max", label: "最高" },
+] as const satisfies readonly Readonly<{
+  value: GptImageQuality;
+  label: string;
+}>[];
+
+export function getGptImageQualityOptions(modelId: GenerationModelId) {
+  return GPT_IMAGE_QUALITY_OPTIONS.filter(
+    (option) =>
+      option.value === "auto" ||
+      gptPricingQualities(modelId).some((item) => item.id === option.value),
+  );
+}
 
 export const GPT_IMAGE_BACKGROUND_OPTIONS = [
   { value: "auto", label: "自动" },
   { value: "transparent", label: "透明" },
-] as const satisfies readonly Readonly<{ value: GptImageBackground; label: string }>[];
+] as const satisfies readonly Readonly<{
+  value: GptImageBackground;
+  label: string;
+}>[];
 
 export const GPT_IMAGE_OUTPUT_FORMAT_OPTIONS = [
   { value: "png", label: "PNG" },
   { value: "jpeg", label: "JPEG" },
   { value: "webp", label: "WebP" },
-] as const satisfies readonly Readonly<{ value: GptImageOutputFormat; label: string }>[];
+] as const satisfies readonly Readonly<{
+  value: GptImageOutputFormat;
+  label: string;
+}>[];
 
 export const DEFAULT_GPT_IMAGE_OUTPUT_FORMAT = "jpeg" as const;
 
@@ -132,7 +324,10 @@ export function getGenerationRatioIndex(ratio: GenerationAspectRatio): number {
 export function getGenerationRatioOptions(
   modelId: GenerationModelId,
 ): readonly GenerationRatioOption[] {
-  if (modelId === "nano-banana-pro") return GENERATION_RATIO_OPTIONS.filter((option) => !["1:8", "1:4", "4:1", "8:1"].includes(option.id));
+  if (modelId === "nano-banana-pro")
+    return GENERATION_RATIO_OPTIONS.filter(
+      (option) => !["1:8", "1:4", "4:1", "8:1"].includes(option.id),
+    );
   if (!isGptImageModelId(modelId)) return GENERATION_RATIO_OPTIONS;
   return GENERATION_RATIO_OPTIONS.filter((option) =>
     GPT_IMAGE_2_RATIO_IDS.includes(option.id as GptImage2AspectRatio),
@@ -189,13 +384,19 @@ export function resolveGptImageOptionsForModel(
   }
   const background = GPT_IMAGE_BACKGROUND_OPTIONS.some(
     (option) => option.value === options.background,
-  ) ? options.background as GptImageBackground : "auto";
-  const quality = GPT_IMAGE_QUALITY_OPTIONS.some(
+  )
+    ? (options.background as GptImageBackground)
+    : "auto";
+  const quality = getGptImageQualityOptions(modelId).some(
     (option) => option.value === options.quality,
-  ) ? options.quality as GptImageQuality : "auto";
+  )
+    ? (options.quality as GptImageQuality)
+    : "auto";
   let outputFormat = GPT_IMAGE_OUTPUT_FORMAT_OPTIONS.some(
     (option) => option.value === options.outputFormat,
-  ) ? options.outputFormat as GptImageOutputFormat : DEFAULT_GPT_IMAGE_OUTPUT_FORMAT;
+  )
+    ? (options.outputFormat as GptImageOutputFormat)
+    : DEFAULT_GPT_IMAGE_OUTPUT_FORMAT;
   if (background === "transparent" && outputFormat === "jpeg") {
     outputFormat = "png";
   }
@@ -203,15 +404,24 @@ export function resolveGptImageOptionsForModel(
 }
 
 export function gptImageQualityLabel(value: GptImageQuality): string {
-  return GPT_IMAGE_QUALITY_OPTIONS.find((option) => option.value === value)?.label ?? "自动";
+  return (
+    GPT_IMAGE_QUALITY_OPTIONS.find((option) => option.value === value)?.label ??
+    "自动"
+  );
 }
 
 export function gptImageBackgroundLabel(value: GptImageBackground): string {
-  return GPT_IMAGE_BACKGROUND_OPTIONS.find((option) => option.value === value)?.label ?? "自动";
+  return (
+    GPT_IMAGE_BACKGROUND_OPTIONS.find((option) => option.value === value)
+      ?.label ?? "自动"
+  );
 }
 
 export function gptImageOutputFormatLabel(value: GptImageOutputFormat): string {
-  return GPT_IMAGE_OUTPUT_FORMAT_OPTIONS.find((option) => option.value === value)?.label ?? "JPEG";
+  return (
+    GPT_IMAGE_OUTPUT_FORMAT_OPTIONS.find((option) => option.value === value)
+      ?.label ?? "JPEG"
+  );
 }
 
 export function getGenerationModelRatioIndex(

@@ -1,3 +1,14 @@
+# GG-063 verification
+
+Quality validation/quotes and 2.5-only tier controls have targeted tests.
+`GOODGOOD_GG063_INTEGRATION=1` requires an explicitly named disposable loopback
+`goodgood_gg063_quality_test*` database plus `GOODGOOD_GG063_NO_WORKER=1`; the
+operator verifies no Worker connection before creation. SQL checks quote scopes,
+reservation/release, immutable price snapshots, stale edits, disabled admission,
+successful pinned settlement and xhigh/max project/draft restore. Never run these
+fixtures against 32141 preview data, 32140 or production; preview receives only
+user-authorized model administration, with audit and history comparison.
+
 # Testing strategy
 
 GG-062 covers nine exact GPT mappings, legacy routes/hashes, 567 injected

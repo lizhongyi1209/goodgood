@@ -1,5 +1,7 @@
 import { modelSpecificationPrices } from "./banana-lines.mjs";
 
+import { specificationOutputPrice } from "./gpt-quality-pricing.mjs";
+
 export const CREDIT_UNIT = "credit-cny-cent";
 export const CREDITS_PER_CNY = 100;
 export function currentCreditAmount(value, unit) {
@@ -54,9 +56,10 @@ export function creditsToYuan(value) {
 
 export function calculateModelQuote(
   model,
-  { resolution, count = 1, outputSeconds = 0, referenceSeconds = 0, imageLine = "special" },
+  { resolution, count = 1, outputSeconds = 0, referenceSeconds = 0, imageLine = "special", quality = "auto" },
 ) {
-  const price = modelSpecificationPrices(model, imageLine)[resolution];
+  const specification = modelSpecificationPrices(model, imageLine)[resolution];
+  const price = specification ? { ...specification, output: specificationOutputPrice(specification, quality) } : null;
   if (
     !price ||
     !Number.isSafeInteger(price.output) ||

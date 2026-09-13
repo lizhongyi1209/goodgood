@@ -1366,7 +1366,7 @@ export const creationDrafts = pgTable(
     ),
     check(
       "creation_drafts_gpt_quality_check",
-      sql`${table.quality} in ('auto', 'low', 'medium', 'high')`,
+      sql`${table.quality} in ('auto', 'low', 'medium', 'high') or (${table.modelId} in ('gpt-image-2.5-sunburst', 'gpt-image-2.5-flare') and ${table.quality} in ('xhigh', 'max'))`,
     ),
     check(
       "creation_drafts_gpt_background_check",
@@ -1474,7 +1474,7 @@ export const projects = pgTable(
     ),
     check(
       "projects_gpt_quality_check",
-      sql`${table.quality} in ('auto', 'low', 'medium', 'high')`,
+      sql`${table.quality} in ('auto', 'low', 'medium', 'high') or (${table.modelId} in ('gpt-image-2.5-sunburst', 'gpt-image-2.5-flare') and ${table.quality} in ('xhigh', 'max'))`,
     ),
     check(
       "projects_gpt_background_check",
@@ -1665,7 +1665,7 @@ export const generationBatches = pgTable(
     ),
     check(
       "generation_batches_gpt_quality_check",
-      sql`${table.quality} in ('auto', 'low', 'medium', 'high')`,
+      sql`${table.quality} in ('auto', 'low', 'medium', 'high') or (${table.modelId} in ('gpt-image-2.5-sunburst', 'gpt-image-2.5-flare') and ${table.quality} in ('xhigh', 'max'))`,
     ),
     check(
       "generation_batches_gpt_background_check",

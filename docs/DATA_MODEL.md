@@ -1,3 +1,13 @@
+# GG-063 quality pricing
+
+Migration 0034 expands xhigh/max only for GPT 2.5 batches/projects/drafts;
+no rows, prices or historical snapshots are rewritten. Specification JSON can
+store optional `qualities` integer prices alongside legacy `output`. Flat lines
+retain their original contexts. Quality lines publish `base:gpt-quality` contexts,
+including auto at the highest configured price. Admission reads a shared-locked
+managed model and pins the selected context for personal and enterprise credits.
+Already accepted jobs keep their immutable quote, settle/release and input hash.
+
 # Data model contract
 
 GG-062 migration 0033 expands image-line checks for GPT IMAGE 2 and 2.5 sunburst/flare

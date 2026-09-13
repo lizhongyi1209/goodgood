@@ -33,3 +33,19 @@ test("GG-062 GPT pricing list retains three independent line rows per model", ()
   assert.ok(html.includes("0.40"));
   assert.ok(html.includes("未定价"));
 });
+
+test("GG-063 quality tables and billing selectors display model-owned prices", async () => {
+ const { findBillingQuote } = await vite.ssrLoadModule("/features/billing/http-billing-boundary.ts");
+ const { getGptImageQualityOptions, resolveGptImageOptionsForModel } = await vite.ssrLoadModule("/features/creation/generation-options.ts");
+ const qualityModel = {...models[2], lines: {...models[2].lines, dedicated:{ enabled:false, prices:{"1K":{output:148,qualities:{low:5,medium:10,high:37,xhigh:66,max:148}}}}}};
+ const html=renderToStaticMarkup(React.createElement(ModelPricingList,{models:[qualityModel],busy:false,onEdit(){},onToggle(){}}));
+ for (const value of ["low","medium","high","xhigh","max","0.05","0.66","1.48"]) assert.ok(html.includes(value));
+ assert.match(html,/查看专线质量价格/);
+ assert.equal(getGptImageQualityOptions("gpt-image-2").length,4);
+ assert.equal(getGptImageQualityOptions("gpt-image-2.5-flare").length,6);
+ assert.equal(resolveGptImageOptionsForModel("gpt-image-2",{quality:"max"}).quality,"auto");
+ assert.equal(resolveGptImageOptionsForModel("gpt-image-2.5-flare",{quality:"max"}).quality,"max");
+ const quotes=["low","high","max"].map(quality=>({modelId:qualityModel.id,count:1,resolution:"1K",imageLine:"dedicated",quality,creditAmount:String(qualityModel.lines.dedicated.prices["1K"].qualities[quality])}));
+ assert.equal(findBillingQuote({quotes},{modelId:qualityModel.id,count:1,resolution:"1K",imageLine:"dedicated",quality:"max"}).creditAmount,"148");
+ assert.equal(findBillingQuote({quotes},{modelId:qualityModel.id,count:1,resolution:"1K",imageLine:"dedicated",quality:"auto"}),null);
+});

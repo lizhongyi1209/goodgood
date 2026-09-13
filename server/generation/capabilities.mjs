@@ -1,3 +1,4 @@
+import { gptPricingQualities } from "../../shared/contracts/gpt-quality-pricing.mjs";
 import { isValidImageLine } from "../../shared/contracts/banana-lines.mjs";
 
 export const SUPPORTED_GENERATION_RESOLUTIONS = Object.freeze([
@@ -10,7 +11,7 @@ export const DURABLE_GENERATION_OUTPUT_COUNT = 1;
 export const SUPPORTED_GPT_IMAGE_2_OUTPUT_COUNTS = Object.freeze([1, 2, 4]);
 export const SUPPORTED_NANO_BANANA_2_OUTPUT_COUNTS = Object.freeze([1, 2, 4]);
 export const SUPPORTED_GENERATION_THINKING_LEVELS = Object.freeze(["low", "high"]);
-export const SUPPORTED_GPT_IMAGE_QUALITIES = Object.freeze(["auto", "low", "medium", "high"]);
+export const SUPPORTED_GPT_IMAGE_QUALITIES = Object.freeze(["auto", "low", "medium", "high", "xhigh", "max"]);
 export const SUPPORTED_GPT_IMAGE_BACKGROUNDS = Object.freeze(["auto", "transparent"]);
 export const SUPPORTED_GPT_IMAGE_OUTPUT_FORMATS = Object.freeze(["png", "jpeg", "webp"]);
 export const DEFAULT_GPT_IMAGE_OUTPUT_FORMAT = "jpeg";
@@ -133,7 +134,7 @@ export function normalizeGenerationModelOptions({
     !isValidImageLine(modelId, imageLine) ||
     !SUPPORTED_GENERATION_THINKING_LEVELS.includes(normalizedThinkingLevel) ||
     typeof normalizedGoogleSearch !== "boolean" ||
-    !SUPPORTED_GPT_IMAGE_QUALITIES.includes(normalizedQuality) ||
+    (!SUPPORTED_GPT_IMAGE_QUALITIES.includes(normalizedQuality) || (normalizedQuality !== "auto" && !gptPricingQualities(modelId).some(item => item.id === normalizedQuality))) ||
     !SUPPORTED_GPT_IMAGE_BACKGROUNDS.includes(normalizedBackground) ||
     !SUPPORTED_GPT_IMAGE_OUTPUT_FORMATS.includes(normalizedOutputFormat) ||
     (normalizedBackground === "transparent" && normalizedOutputFormat === "jpeg")

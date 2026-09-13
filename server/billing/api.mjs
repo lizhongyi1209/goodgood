@@ -8,17 +8,34 @@ import {
 } from "./repository.mjs";
 import { PaymentError } from "./payment-errors.mjs";
 import { readManagedModels } from "../admin/models.mjs";
-import { BANANA_LINES, imagePriceContext, supportsImageLines, isBananaLineReady, modelBananaLines, modelSpecificationPrices } from "../../shared/contracts/banana-lines.mjs";
+import {
+  BANANA_LINES,
+  supportsImageLines,
+  isBananaLineReady,
+  modelBananaLines,
+  modelSpecificationPrices,
+} from "../../shared/contracts/banana-lines.mjs";
+
+import {
+  gptPricingQualities,
+  modelQualityPriceContext,
+  parseQualityPriceContext,
+  specificationOutputPrice,
+} from "../../shared/contracts/gpt-quality-pricing.mjs";
 
 const GPT_IMAGE_LAUNCH_PRICES = [
   "gpt-image-2.5-sunburst",
   "gpt-image-2",
   "gpt-image-2.5-flare",
-].flatMap((modelId) => [1, 2, 4].map((count) => Object.freeze({
-  count,
-  modelId,
-  planContext: "standard",
-})));
+].flatMap((modelId) =>
+  [1, 2, 4].map((count) =>
+    Object.freeze({
+      count,
+      modelId,
+      planContext: "standard",
+    }),
+  ),
+);
 
 const LAUNCH_PRICES = Object.freeze([
   Object.freeze({
@@ -100,21 +117,52 @@ export const previewBillingSummary = Object.freeze({
   ),
 });
 
-export async function readBillingSummary({
-  ownerContext,
-  resources = null,
-}) {
+export async function readBillingSummary({ ownerContext, resources = null }) {
   const ownerId = ownerIdFromContext(ownerContext);
   const resolvedResources = resources ?? (await getGenerationResources());
-  const directory = await readManagedModels({ ownerContext, resources: resolvedResources, publicDirectory: true });
+  const directory = await readManagedModels({
+    ownerContext,
+    resources: resolvedResources,
+    publicDirectory: true,
+  });
   const [account, priceGroups] = await Promise.all([
     findCreditAccount(resolvedResources.pool, { ownerId }),
     Promise.all(
-      directory.models.filter((model) => model.mediaType === "image").flatMap((model) =>
-        (supportsImageLines(model.adapterId) ? BANANA_LINES.filter(({ id }) => modelBananaLines(model)[id].enabled && isBananaLineReady(model.adapterId, id)).map(({ id }) => id) : [undefined]).flatMap((line) =>
-          (model.adapterId === "nano-banana-pro" ? [1] : [1,2,4]).map((count) => ({ modelId: model.id, count, planContext: imagePriceContext(line) })))).map((launchPrice) =>
-        listActiveGenerationPrices(resolvedResources.pool, launchPrice),
-      ),
+      directory.models
+        .filter((model) => model.mediaType === "image")
+        .flatMap((model) =>
+          (supportsImageLines(model.adapterId)
+            ? BANANA_LINES.filter(
+                ({ id }) =>
+                  modelBananaLines(model)[id].enabled &&
+                  isBananaLineReady(model.adapterId, id),
+              ).map(({ id }) => id)
+            : [undefined]
+          ).flatMap((line) =>
+            (Object.values(modelSpecificationPrices(model, line)).some(
+              (price) => price.qualities,
+            )
+              ? [
+                  "auto",
+                  ...gptPricingQualities(model.adapterId).map(
+                    (item) => item.id,
+                  ),
+                ]
+              : [undefined]
+            ).flatMap((quality) =>
+              (model.adapterId === "nano-banana-pro" ? [1] : [1, 2, 4]).map(
+                (count) => ({
+                  modelId: model.id,
+                  count,
+                  planContext: modelQualityPriceContext(model, line, quality),
+                }),
+              ),
+            ),
+          ),
+        )
+        .map((launchPrice) =>
+          listActiveGenerationPrices(resolvedResources.pool, launchPrice),
+        ),
     ),
   ]);
   if (!account || account.status !== "active") {
@@ -128,11 +176,27 @@ export async function readBillingSummary({
     account: publicAccount(account),
     quotes: priceGroups.flat().flatMap((price) => {
       const model = directory.models.find((item) => item.id === price.modelId);
-      const imageLine = price.planContext === "standard" ? "special" : price.planContext.replace("banana-", "");
-      if (!modelSpecificationPrices(model, imageLine)[price.resolution]) return [];
-      return [{ ...publicQuote(price), modelId: model.adapterId, catalogModelId: model.id,
-        ...(supportsImageLines(model.adapterId) && imageLine !== "special" ? { imageLine } : {}),
-      }];
+      const { imageLine, quality } = parseQualityPriceContext(
+        price.planContext,
+      );
+      if (
+        !specificationOutputPrice(
+          modelSpecificationPrices(model, imageLine)[price.resolution],
+          quality,
+        )
+      )
+        return [];
+      return [
+        {
+          ...publicQuote(price),
+          ...(quality ? { quality } : {}),
+          modelId: model.adapterId,
+          catalogModelId: model.id,
+          ...(supportsImageLines(model.adapterId) && imageLine !== "special"
+            ? { imageLine }
+            : {}),
+        },
+      ];
     }),
     models: directory.models,
   };

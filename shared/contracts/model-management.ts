@@ -1,6 +1,20 @@
 import type { BananaLine, GenerationModelId } from "./generation";
-export type ModelSpecificationPrices = Readonly<Record<string, Readonly<{ output: number; input?: number }>>>;
-export type ManagedBananaLines = Readonly<Record<BananaLine, Readonly<{ enabled: boolean; prices: ModelSpecificationPrices }>>>;
+export type ModelSpecificationPrices = Readonly<
+  Record<
+    string,
+    Readonly<{
+      output: number;
+      input?: number;
+      qualities?: Readonly<Record<string, number>>;
+    }>
+  >
+>;
+export type ManagedBananaLines = Readonly<
+  Record<
+    BananaLine,
+    Readonly<{ enabled: boolean; prices: ModelSpecificationPrices }>
+  >
+>;
 export type ManagedModel = Readonly<{
   id: string;
   name: string;
@@ -10,7 +24,14 @@ export type ManagedModel = Readonly<{
   enabled: boolean;
   lines?: ManagedBananaLines;
   prices: Readonly<
-    Record<string, Readonly<{ output: number; input?: number }>>
+    Record<
+      string,
+      Readonly<{
+        output: number;
+        input?: number;
+        qualities?: Readonly<Record<string, number>>;
+      }>
+    >
   >;
   version: number;
   updatedAt: string;

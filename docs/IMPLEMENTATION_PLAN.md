@@ -1,18 +1,21 @@
 # Production implementation plan
 
-- Last synchronized: 2026-09-13
-- Current phase: GG-062 GPT 图片三线路本地实现、门禁、隔离 SQL 与原页面检查完成，未发布。
-- Current objective: 用户在模型管理为 GPT 图片系列逐线路定价与启禁，保留原测试配置与历史。
+- Last synchronized: 2026-09-14
+- Current phase: GG-063 implemented, verified and filled on local preview; not deployed.
+- Current objective: GG-063 GPT quality pricing and dedicated-line fal estimates.
+- Previous objective: 用户在模型管理为 GPT 图片系列逐线路定价与启禁，保留原测试配置与历史。
 
 ## Current checkpoint
 
-- 当前任务 [GG-062](tasks/GG-062-gpt-image-lines.md)，`feature/GG-062-gpt-image-lines`、`F:/goodgood-worktrees/GG-062`，接续 GG-061 `a25cfe0`；main 已验证为祖先。ADR 0068 扩展 GPT 图片三线路，保留 Banana 专属参数/编排。
-- GPT 2/2.5 sunburst/flare 九个请求 ID 接入；默认特价，独立线路选择/固定报价/站长定价与启禁。原价沿用特价，总模型仍禁用，优质/专线为空且禁用；旧空线路任务保留原路由。
-- 独立 goodgood-gg052 已备份后只添加 0033；所有原价/启禁/版本/更新时间、Banana 全配置与十类历史 count/hash 保留。Web 44103/Worker 29662/mock 71031 均来自 GG-062，ready/checks 全 ok。32140 真实 provider 栈不变，不放 fixtures/outbox。
-- Verification: 最终完整门禁 445 通过/16 opt-in 跳过/0 失败，lint/类型/构建通过；567 注入参数请求、隔离 SQL 与 Chrome 三模型价格编辑/窄屏检查通过，详见任务卡。
-- Production `https://goodgood.o1key.com` revision `65ceb168`/migration 0019 unchanged; `staging-goodgood.o1key.com` is historical naming. No push/main merge/deployment/paid calls.
-- Next action: 用户在已保留的 32141 模型管理页面逐线路定价、开启需要的模型与线路，继续本地测试。
-- Blockers: 当前无阻塞；mock 不证明真实上游，生产上线/迁移及真实付费请求尚未执行。
+- Task [GG-063](tasks/GG-063-gpt-quality-pricing.md), branch feature/GG-063-gpt-quality-pricing, worktree F:/goodgood-worktrees/GG-063, based on verified main ancestor plus GG-062 dd27aff. ADR 0069 adds quality pricing while preserving fixed lines.
+- GPT IMAGE 2 supports low/medium/high; GPT IMAGE 2.5 Sunburst/Flare also support xhigh/max. Line/resolution/quality editing, range and detail tables, calculator, provider validation, drafts/projects, immutable personal and enterprise quotes are implemented. Auto uses the highest configured tier on quality-priced lines.
+- Final npm run check:local: lint/type/build passed, 448 tests passed, 17 opt-in skipped, zero failures. Disposable no-Worker goodgood_gg063_quality_test_v4 verified all tiers, failure release, stale quotes, disabled admission, pinned settlement and duplicate completion. Earlier gate issues were one temporary helper and two documentation omissions, all corrected.
+- Local 32141 mock preview backed up in ignored .gg063-before.dump; only migration 0034 applied. Web session 93625, Worker 79489, mock 67415 run from GG-063; all readiness checks pass.
+- Owner UI saved 39 dedicated-line prices using agreed fal USD x7, rounded upward to integer credits. Three model events and 144 immutable price versions added. Names, switches, all other prices including Banana and eight unchanged history checksums verified. Archived trial model remains archived.
+- Chrome saved/reloaded prices and quality matrix layout verified; Sunburst calculator low 1K = CNY 0.05 / 5 credits, auto = CNY 1.48 / 148 credits. The editor is preserved for user testing.
+- Production revision 65ceb168/migration 0019 and real-provider 32140 unchanged. No push, main merge, deployment or paid provider requests.
+- Next action: owner reviews local dedicated estimates and adjusts retail margins, then enables desired models/lines for local testing. Prices estimate output only; inputs, aspect ratios and actual bills can differ.
+- Blockers: none for local scope. Real upstream and production migration/release remain unverified.
 
 ## Verification sequence
 
@@ -48,7 +51,7 @@
 
 ## New-session recovery
 
-1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-062` 与 GG-062 任务卡；按卡核对运行版本，不能仅看 URL。
+1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-063` 与 GG-063 任务卡；按卡核对运行版本，不能仅看 URL。
 2. 当前页面为 `http://127.0.0.1:32141/admin/models`，已更新 GPT 图片三线路，右侧四管理功能保留；仅独立 mock 栈。旧 `32140` 有真实 provider Worker，不运行 fixtures/outbox，不重置其数据。
 3. 本地 ignored `.gg052-local.mjs` 分别启动 web/worker/mock-generation；按本任务已记录的运行状态恢复，保留用户试价数据。正式生产与真实请求不在本次授权范围。
 4. 不恢复或 bulk merge 旧 C6；旧阶段具体验证见相应任务卡，GG-051 [研究记录](research/GG-051-credit-pricing-reassessment.md) 保留定价依据。

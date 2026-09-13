@@ -641,6 +641,7 @@ export default function Home({
     ...(supportsImageLines(selectedModel) ? { imageLine } : {}),
     catalogModelId: selectedCatalogModelId,
     resolution,
+    quality,
   });
   const activePerImageCredits = activeBillingQuote
     ? perImageCreditAmount(activeBillingQuote.creditAmount, generationCount)

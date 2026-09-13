@@ -53,7 +53,7 @@ export const GENERATION_THINKING_LEVELS = ["low", "high"] as const;
 export type GenerationThinkingLevel =
   (typeof GENERATION_THINKING_LEVELS)[number];
 
-export const GPT_IMAGE_QUALITIES = ["auto", "low", "medium", "high"] as const;
+export const GPT_IMAGE_QUALITIES = ["auto", "low", "medium", "high", "xhigh", "max"] as const;
 export type GptImageQuality = (typeof GPT_IMAGE_QUALITIES)[number];
 
 export const GPT_IMAGE_BACKGROUNDS = ["auto", "transparent"] as const;

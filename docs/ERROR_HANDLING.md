@@ -1,3 +1,10 @@
+# GG-063 quality pricing errors
+
+Reject incomplete/unsupported/nonpositive quality prices before persistence.
+Enabled quality lines require all model-owned tiers and resolutions. GPT 2 rejects
+xhigh/max before provider POST. Stale price versions reject new submission without
+credits reserved; already accepted jobs retain original quote and failure release.
+
 # Error handling and recovery
 
 ## Principles

@@ -1,5 +1,6 @@
 "use client";
 
+import { gptPricingQualities } from "@/shared/contracts/gpt-quality-pricing.mjs";
 import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,6 +32,9 @@ function ModelPrice({
   const template = MODEL_TEMPLATES.find((item) => item.id === model.adapterId);
   const supported = template?.resolutions.includes(resolution);
   const price = modelSpecificationPrices(model, imageLine)[resolution];
+  const qualityPrices = price?.qualities
+    ? (Object.values(price.qualities) as number[])
+    : [];
   return (
     <div className="min-w-0 text-center tabular-nums">
       <p
@@ -46,9 +50,14 @@ function ModelPrice({
         <p className="text-xs text-zinc-400">未定价</p>
       ) : model.mediaType === "image" ? (
         <>
-          <p className="text-sm font-medium">¥{creditsToYuan(price.output)}</p>
+          <p className="text-sm font-medium">
+            ¥
+            {qualityPrices.length
+              ? `${creditsToYuan(Math.min(...qualityPrices))}–${creditsToYuan(Math.max(...qualityPrices))}`
+              : creditsToYuan(price.output)}
+          </p>
           <p className="mt-1 text-[11px] text-zinc-400">
-            {price.output} 积分/张
+            {qualityPrices.length ? "按质量定价" : `${price.output} 积分/张`}
           </p>
         </>
       ) : (
@@ -168,31 +177,79 @@ export function ModelPricingList({
                           ? modelBananaLines(model)[line.id]?.enabled
                           : model.enabled;
                         return (
-                          <div
-                            key={line.id ?? "default"}
-                            className={`grid items-center gap-x-3 lg:gap-x-5 ${priceLayout}`}
-                          >
-                            <div className="text-xs text-zinc-600">
-                              {line.name}
-                              {line.id && (
-                                <p className="mt-1 text-[10px] text-zinc-400">
-                                  {enabled
-                                    ? line.id === "special"
-                                      ? "默认"
-                                      : "已启用"
-                                    : "未启用"}
-                                </p>
-                              )}
+                          <div key={line.id ?? "default"} className="space-y-3">
+                            <div
+                              className={`grid items-center gap-x-3 lg:gap-x-5 ${priceLayout}`}
+                            >
+                              <div className="text-xs text-zinc-600">
+                                {line.name}
+                                {line.id && (
+                                  <p className="mt-1 text-[10px] text-zinc-400">
+                                    {enabled
+                                      ? line.id === "special"
+                                        ? "默认"
+                                        : "已启用"
+                                      : "未启用"}
+                                  </p>
+                                )}
+                              </div>
+                              {resolutions.map((resolution) => (
+                                <ModelPrice
+                                  key={resolution}
+                                  model={model}
+                                  resolution={resolution}
+                                  imageLine={line.id}
+                                  showResolution={false}
+                                />
+                              ))}
                             </div>
-                            {resolutions.map((resolution) => (
-                              <ModelPrice
-                                key={resolution}
-                                model={model}
-                                resolution={resolution}
-                                imageLine={line.id}
-                                showResolution={false}
-                              />
-                            ))}
+                            {(
+                              Object.values(
+                                modelSpecificationPrices(model, line.id),
+                              ) as ManagedModel["prices"][string][]
+                            ).some((price) => price.qualities) && (
+                              <details className="text-xs">
+                                <summary className="cursor-pointer py-1 text-zinc-500">
+                                  查看{line.name}质量价格
+                                </summary>
+                                <div className="mt-2 space-y-2">
+                                  {gptPricingQualities(model.adapterId).map(
+                                    (quality) => (
+                                      <div
+                                        key={quality.id}
+                                        className={`grid gap-x-3 ${priceLayout}`}
+                                      >
+                                        <span className="text-zinc-500">
+                                          {quality.name}
+                                          <span className="block text-[10px]">
+                                            {quality.id}
+                                          </span>
+                                        </span>
+                                        {resolutions.map((resolution) => {
+                                          const value =
+                                            modelSpecificationPrices(
+                                              model,
+                                              line.id,
+                                            )[resolution]?.qualities?.[
+                                              quality.id
+                                            ];
+                                          return (
+                                            <span
+                                              key={resolution}
+                                              className="text-center tabular-nums"
+                                            >
+                                              {value
+                                                ? `¥${creditsToYuan(value)}`
+                                                : "未定价"}
+                                            </span>
+                                          );
+                                        })}
+                                      </div>
+                                    ),
+                                  )}
+                                </div>
+                              </details>
+                            )}
                           </div>
                         );
                       })}

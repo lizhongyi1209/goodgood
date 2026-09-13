@@ -1,3 +1,11 @@
+# GG-063 quality pricing
+
+Each GPT line retains fixed-resolution pricing or opts into quality pricing.
+The editor lists resolution columns and model-owned quality rows, plus a quality
+selector in the price calculator. List rows show the price range and an expandable
+quality table. GPT 2.5 creation shows xhigh/max; GPT 2 does not. Auto pricing on a
+quality line explicitly uses the highest price. Errors preserve the edited values.
+
 # UX flows and state contracts
 
 GG-062 extends the Banana three-line flow to GPT IMAGE 2/2.5: new creation defaults

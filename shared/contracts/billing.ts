@@ -66,6 +66,7 @@ export interface BillingAccountSummary {
 }
 
 export interface BillingGenerationQuote {
+  quality?: import("./generation").GptImageQuality;
   imageLine?: import("./generation").BananaLine;
   catalogModelId?: string;
   modelId:

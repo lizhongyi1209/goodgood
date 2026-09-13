@@ -124,18 +124,21 @@ export function findBillingQuote(
     imageLine = "special",
     modelId,
     resolution,
+    quality = "auto",
   }: Readonly<{
     count: GenerationCount;
     catalogModelId?: string;
     imageLine?: import("@/shared/contracts/generation").BananaLine;
     modelId: GenerationModelId;
     resolution: GenerationResolution;
+    quality?: import("@/shared/contracts/generation").GptImageQuality;
   }>,
 ): BillingGenerationQuote | null {
   return (
     summary?.quotes.find(
       (quote) =>
         quote.count === count &&
+        (quote.quality === undefined || quote.quality === quality) &&
         (quote.catalogModelId ?? quote.modelId) === (catalogModelId ?? modelId) &&
         quote.modelId === modelId &&
         (quote.imageLine ?? "special") === imageLine &&

@@ -1,5 +1,6 @@
+import { modelQualityPriceContext } from "../../shared/contracts/gpt-quality-pricing.mjs";
 import { createHash, randomUUID } from "node:crypto";
-import { imagePriceContext, supportsImageLines } from "../../shared/contracts/banana-lines.mjs";
+import { supportsImageLines } from "../../shared/contracts/banana-lines.mjs";
 import { requireEnabledImageModel } from "../admin/models.mjs";
 import { promptContextForRetry } from "../../shared/contracts/prompt-batch.mjs";
 import {
@@ -396,7 +397,7 @@ export async function createGenerationJob(
 
     const managedModel = await requireEnabledImageModel(client, input);
     if (input.expectedPriceVersion !== undefined) {
-      const quote = await findActiveGenerationPrice(client, { modelId: managedModel.id, resolution: input.resolution, count: input.count, planContext: imagePriceContext(input.imageLine) });
+      const quote = await findActiveGenerationPrice(client, { modelId: managedModel.id, resolution: input.resolution, count: input.count, planContext: modelQualityPriceContext(managedModel, input.imageLine, input.quality) });
       if (quote.version !== input.expectedPriceVersion) throw new GenerationPersistenceError("PRICE_CHANGED", "模型价格已更新，请刷新报价后重新提交。尚未扣除积分。", 409);
     }
 
@@ -524,7 +525,7 @@ export async function createGenerationJob(
       const price = await findActiveGenerationPrice(client, {
         count: input.count,
         modelId: input.catalogModelId ?? input.modelId,
-        planContext: imagePriceContext(input.imageLine),
+        planContext: modelQualityPriceContext(managedModel, input.imageLine, input.quality),
         resolution: input.resolution,
       });
       await client.query(
@@ -568,7 +569,7 @@ export async function createGenerationJob(
       );
     } else {
       await reserveGenerationCreditsInTransaction(client, {
-        planContext: imagePriceContext(input.imageLine),
+        planContext: modelQualityPriceContext(managedModel, input.imageLine, input.quality),
         idempotencyKey: `generation-reserve:${jobId}`,
         jobId,
         ownerId,

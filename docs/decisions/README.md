@@ -1,5 +1,7 @@
 # Decision records
 
+- `0069-gpt-quality-pricing.md` — GPT quality pricing and fal estimates for GG-063.
+
 Use an ADR when a change affects product vocabulary, a confirmed UX invariant,
 data ownership, provider boundaries, security, routes, or deployment topology.
 
