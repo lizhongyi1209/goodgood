@@ -6,7 +6,7 @@
 
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
-| GG-046 | 企业与分销积分管理模拟填充 | 本地门禁通过，原 Chrome 已打开独立模拟预览，待用户确认；不写真实账户/积分，未发布 | [任务](tasks/GG-046-business-style-preview.md) |
+| GG-046 | 企业与分销积分管理模拟填充 | 模拟门禁通过但用户认为不直观；已切回真实本地企业账户概览供查看，不改真实数据，未发布 | [任务](tasks/GG-046-business-style-preview.md) |
 | GG-045 | 积分划拨融入企业与分销管理 | 本地门禁与企业账户桌面检查完成，待用户验收；不改积分/权限，未发布 | [任务](tasks/GG-045-contextual-credit-management.md) |
 | GG-044 | 个人账户统一主导航与企业管理布局 | 本地门禁与企业账户桌面检查完成，待用户验收；未发布 | [任务](tasks/GG-044-unified-account-navigation.md) |
 | GG-001 | 项目记忆精简、交接协议、历史 C6 隔离 | 已完成（不需上线） | [任务](tasks/GG-001-project-continuity.md) |
