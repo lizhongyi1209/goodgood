@@ -10,4 +10,4 @@ Use immutable price-version contexts for each quality and auto, preserving accep
 
 Only dedicated lines receive fal output estimates at USD 1 = CNY 7, rounded upward to integer credits. Preserve names, switches and other prices. Reference dimensions differ from some GoodGood requests; adjustable estimates exclude inputs and margin. No production authority is implied.
 
-GG-064 owner adjustment: quality prices in the model list remain fully visible, without disclosure controls. Show quality rows aligned to 1K/2K/4K with RMB and credits per image; flat-price lines retain their existing presentation.
+GG-065 supersedes the GG-064 presentation: the owner requests dedicated quality details only through the pricing editor. The list keeps line/resolution ranges without quality tables or disclosure controls, saving vertical space. Use a compact content width and shorter name/price/action column gaps. Quality prices and billing semantics are unchanged.

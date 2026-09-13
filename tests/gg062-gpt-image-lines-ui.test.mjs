@@ -34,15 +34,14 @@ test("GG-062 GPT pricing list retains three independent line rows per model", ()
   assert.ok(html.includes("未定价"));
 });
 
-test("GG-063 quality tables and billing selectors display model-owned prices", async () => {
+test("GG-063/GG-065 quality ranges stay compact while billing retains model-owned prices", async () => {
  const { findBillingQuote } = await vite.ssrLoadModule("/features/billing/http-billing-boundary.ts");
  const { getGptImageQualityOptions, resolveGptImageOptionsForModel } = await vite.ssrLoadModule("/features/creation/generation-options.ts");
  const qualityModel = {...models[2], lines: {...models[2].lines, dedicated:{ enabled:false, prices:{"1K":{output:148,qualities:{low:5,medium:10,high:37,xhigh:66,max:148}}}}}};
  const html=renderToStaticMarkup(React.createElement(ModelPricingList,{models:[qualityModel],busy:false,onEdit(){},onToggle(){}}));
- for (const value of ["low","medium","high","xhigh","max","0.05","0.66","1.48"]) assert.ok(html.includes(value));
- assert.match(html,/aria-label="专线质量价格"/);
+ for (const value of ["0.05","1.48"]) assert.ok(html.includes(value));
+ assert.doesNotMatch(html,/aria-label="专线质量价格"|xhigh|66 积分\/张/);
  assert.doesNotMatch(html,/<details|<summary/);
- assert.match(html,/66 积分\/张/);
  assert.equal(getGptImageQualityOptions("gpt-image-2").length,4);
  assert.equal(getGptImageQualityOptions("gpt-image-2.5-flare").length,6);
  assert.equal(resolveGptImageOptionsForModel("gpt-image-2",{quality:"max"}).quality,"auto");

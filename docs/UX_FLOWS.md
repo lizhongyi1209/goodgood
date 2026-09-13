@@ -2,8 +2,8 @@
 
 Each GPT line retains fixed-resolution pricing or opts into quality pricing.
 The editor lists resolution columns and model-owned quality rows, plus a quality
-selector in the price calculator. GG-064 list rows show the price range and an always-visible
-quality table with RMB and credits. GPT 2.5 creation shows xhigh/max; GPT 2 does not. Auto pricing on a
+selector in the price calculator. GG-065 list rows show only price ranges; quality
+details are viewed through the pricing editor. GPT 2.5 creation shows xhigh/max; GPT 2 does not. Auto pricing on a
 quality line explicitly uses the highest price. Errors preserve the edited values.
 
 # UX flows and state contracts

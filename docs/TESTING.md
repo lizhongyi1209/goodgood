@@ -1,8 +1,8 @@
 # GG-063 verification
 
-GG-064 reuses SSR coverage to verify named always-visible quality sections,
-all tier prices and credits, and absence of details/summary disclosure elements.
-Browser verification checks desktop/narrow layouts without changing saved prices.
+GG-065 reuses SSR coverage to verify quality ranges without tier sections or
+disclosure controls. Browser verification checks compact desktop/narrow layouts
+and confirms pricing-editor tier values without changing saved prices.
 
 Quality validation/quotes and 2.5-only tier controls have targeted tests.
 `GOODGOOD_GG063_INTEGRATION=1` requires an explicitly named disposable loopback

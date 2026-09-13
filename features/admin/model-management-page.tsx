@@ -493,8 +493,8 @@ export function ModelManagementPage({
       <div
         className={
           embedded
-            ? "admin-management-content"
-            : "mx-auto max-w-[1500px] px-5 py-8 lg:px-8 lg:py-10"
+            ? "admin-management-content max-w-[960px]"
+            : "mx-auto max-w-[960px] px-5 py-8 lg:px-8 lg:py-10"
         }
       >
         <div className="flex flex-wrap items-start justify-between gap-4">

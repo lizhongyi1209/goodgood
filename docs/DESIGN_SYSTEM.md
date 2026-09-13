@@ -15,9 +15,10 @@ resolution header; narrow screens repeat it once per model, not per line. The
 editor switches line inputs without duplicating the full model form or exposing
 provider IDs. Line enable/availability stays explicit.
 
-GG-064 quality-priced image lines keep their quality matrix visible below the line
-range. Align quality labels with three resolution columns; RMB is primary and
-credits per image are secondary. No disclosure control or additional page heading.
+GG-065 supersedes GG-064: quality-priced lines show ranges in the list; tier
+details live only in the pricing editor. Model management uses a 960px maximum
+content width, a 200px desktop model-name column and compact aligned price/action
+columns. Narrow screens retain the stacked model/price layout and resolution labels.
 
 ## Foundations
 

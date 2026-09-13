@@ -1,6 +1,5 @@
 "use client";
 
-import { gptPricingQualities } from "@/shared/contracts/gpt-quality-pricing.mjs";
 import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +15,7 @@ import {
 
 const IMAGE_RESOLUTIONS = ["1K", "2K", "4K"];
 const VIDEO_RESOLUTIONS = ["480p", "720p", "1080p", "4K"];
-const ROW_LAYOUT = "lg:grid-cols-[minmax(180px,1fr)_minmax(0,2fr)_150px]";
+const ROW_LAYOUT = "lg:grid-cols-[200px_minmax(0,1fr)_112px]";
 
 function ModelPrice({
   model,
@@ -98,7 +97,7 @@ export function ModelPricingList({
   onToggle: (model: ManagedModel) => void;
 }) {
   return (
-    <section aria-label="模型列表" className="mt-7 space-y-9">
+    <section aria-label="模型列表" className="mt-6 space-y-7">
       {(["image", "video"] as const).map((mediaType) => {
         const group = models.filter((model) => model.mediaType === mediaType);
         if (!group.length) return null;
@@ -128,10 +127,10 @@ export function ModelPricingList({
             </div>
             <div
               aria-hidden="true"
-              className={`hidden items-center gap-x-6 border-b border-zinc-100 pb-3 text-xs text-zinc-400 lg:grid ${ROW_LAYOUT}`}
+              className={`hidden items-center gap-x-4 border-b border-zinc-100 pb-3 text-xs text-zinc-400 lg:grid ${ROW_LAYOUT}`}
             >
               <span>模型</span>
-              <div className={`grid gap-5 ${priceLayout}`}>
+              <div className={`grid gap-3 ${priceLayout}`}>
                 {mediaType === "image" && <span>线路</span>}
                 {resolutions.map((resolution) => (
                   <span key={resolution} className="text-center">
@@ -145,7 +144,7 @@ export function ModelPricingList({
               <article
                 key={model.id}
                 aria-label={`${model.name} 价格`}
-                className={`grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-5 border-b border-zinc-100 py-5 lg:items-center lg:gap-x-6 ${ROW_LAYOUT}`}
+                className={`grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-4 border-b border-zinc-100 py-4 lg:items-center lg:gap-x-4 ${ROW_LAYOUT}`}
               >
                 <div className="min-w-0">
                   <h3 className="text-sm font-semibold leading-5">
@@ -159,7 +158,7 @@ export function ModelPricingList({
                 </div>
                 <div className="order-3 col-span-2 lg:order-2 lg:col-span-1">
                   {mediaType === "image" ? (
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       <div
                         aria-hidden="true"
                         className={`grid gap-x-3 text-center text-xs text-zinc-400 lg:hidden ${priceLayout}`}
@@ -179,7 +178,7 @@ export function ModelPricingList({
                         return (
                           <div key={line.id ?? "default"} className="space-y-3">
                             <div
-                              className={`grid items-center gap-x-3 lg:gap-x-5 ${priceLayout}`}
+                              className={`grid items-center gap-x-3 lg:gap-x-3 ${priceLayout}`}
                             >
                               <div className="text-xs text-zinc-600">
                                 {line.name}
@@ -203,67 +202,12 @@ export function ModelPricingList({
                                 />
                               ))}
                             </div>
-                            {(
-                              Object.values(
-                                modelSpecificationPrices(model, line.id),
-                              ) as ManagedModel["prices"][string][]
-                            ).some((price) => price.qualities) && (
-                              <section
-                                aria-label={`${line.name}质量价格`}
-                                className="text-xs"
-                              >
-                                <p className="py-1 text-zinc-500">
-                                  {line.name} · 质量价格
-                                </p>
-                                <div className="mt-2 space-y-2">
-                                  {gptPricingQualities(model.adapterId).map(
-                                    (quality) => (
-                                      <div
-                                        key={quality.id}
-                                        className={`grid items-center gap-x-3 lg:gap-x-5 ${priceLayout}`}
-                                      >
-                                        <span className="text-zinc-500">
-                                          {quality.name}
-                                          <span className="block text-[10px]">
-                                            {quality.id}
-                                          </span>
-                                        </span>
-                                        {resolutions.map((resolution) => {
-                                          const value =
-                                            modelSpecificationPrices(
-                                              model,
-                                              line.id,
-                                            )[resolution]?.qualities?.[
-                                              quality.id
-                                            ];
-                                          return (
-                                            <span
-                                              key={resolution}
-                                              className="text-center tabular-nums"
-                                            >
-                                              {value
-                                                ? `¥${creditsToYuan(value)}`
-                                                : "未定价"}
-                                              {value !== undefined && (
-                                                <span className="mt-0.5 block text-[10px] text-zinc-400">
-                                                  {value} 积分/张
-                                                </span>
-                                              )}
-                                            </span>
-                                          );
-                                        })}
-                                      </div>
-                                    ),
-                                  )}
-                                </div>
-                              </section>
-                            )}
                           </div>
                         );
                       })}
                     </div>
                   ) : (
-                    <div className={`grid gap-x-5 gap-y-5 ${priceLayout}`}>
+                    <div className={`grid gap-x-3 gap-y-4 ${priceLayout}`}>
                       {resolutions.map((resolution) => (
                         <ModelPrice
                           key={resolution}
