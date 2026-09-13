@@ -120,3 +120,49 @@ BytePlus 公开估算涉及 `(输入视频时长 + 输出视频时长) × 输出
 当前存在 `publishGenerationPriceVersion` 和不可变图片价格行，但没有站长定价界面，也没有多类别用量销售规则及部分预留结算。面板必须连接新的计价/结算契约，否则只能改展示数字，无法解决按量扣费。
 
 本轮已形成可讨论的面板功能与混合计费方案，未将产品方向擅自视为已批准。后续确认范围后先写 ADR：定义可用量证据、预付上界/平台风险政策、报价失效与锁价、部分结算和站长发布。第一实现片段应覆盖一个固定线路与一个按量线路的面板发布→报价→预留→结算完整闭环，并验证个人/企业额度、来源余额、并发与失败，使用无真实 Worker 的隔离测试。
+
+## 第三轮：创作平台具体价目表核对
+
+用户希望直接参考平台具体扣费规则，暂不讨论实现。查询日期 2026-09-13，以下为官方公开页面中的选择性摘录及算术折算；各平台积分不是同一价值单位，促销与更新可改变价格。未使用平台比较其他公司的营销文章作为价格依据。
+
+### 图片：Nano Banana Pro
+
+| 创作平台 | 1K 每张 | 2K 每张 | 4K 每张 |
+| --- | --- | --- | --- |
+| Runway | 20 积分 | 20 积分 | 40 积分 |
+| Adobe Firefly | 40 积分/次，公开该行未按分辨率细分 | 同左 | 同左 |
+| Freepik / Magnific | 75 积分 | 75 积分 | 150 积分 |
+
+来源：[Runway 模型价目表](https://academy.runwayml.com/models-pricing)、[Adobe 合作模型消耗](https://helpx.adobe.com/creative-cloud/apps/generative-ai/non-adobe-models-in-adobe-products.html)、[Magnific 图片积分表](https://www.magnific.com/ai/docs/ai-image-generator-credits)。Adobe Nano Banana Pro 的 40 积分注明限时价；其 Nano Banana 2 明确列出 1K/2K/4K 为 20/20/30 积分，也注明限时价。
+
+### 视频：Seedance 2.0
+
+| 创作平台 | 480p 每秒 | 720p 每秒 | 1080p 每秒 | 4K 每秒 |
+| --- | --- | --- | --- | --- |
+| Runway | 36 积分 | 36 积分 | 40 积分 | 150 积分 |
+| Adobe Firefly | 40 积分 | 90 积分 | 180 积分 | 此价目表未列 |
+| Freepik / Magnific | 145 积分 | 280 积分 | 700 积分 | 1400 积分 |
+
+按以上公开费率，720p 输出 5 秒分别折算 180/450/1400 积分；4K 输出 5 秒在 Runway/Magnific 分别折算 750/7000 积分。这是基础费率算术，不保证表格未列的所有模式、附加输入、格式都同价。
+
+来源：[Runway](https://academy.runwayml.com/models-pricing)、[Adobe](https://helpx.adobe.com/creative-cloud/apps/generative-ai/non-adobe-models-in-adobe-products.html)、[Magnific 视频积分表](https://www.magnific.com/ai/docs/ai-video-generator-credits)。Adobe 页面最后更新 2026-09-10；Freepik 官方文档地址现重定向到 Magnific。
+
+### 与复杂输入最相关：Runway Seedance 2.5
+
+| 输出规格 | 每输出秒 | 每输入视频秒附加 |
+| --- | --- | --- |
+| 480p | 20 积分 | 10 积分 |
+| 720p | 30 积分 | 15 积分 |
+| 1080p | 68 积分 | 34 积分 |
+
+官方[模型使用文档](https://help.runwayml.com/hc/en-us/articles/53542207042323-Creating-with-Seedance-2-5)直接列出以上费率，与其模型价目表一致。例如指定 720p 输出 8 秒，无参考视频为 240 积分；加一段 10 秒参考视频折算 390 积分。其支持 Auto 时长，因此不能将全部模式称为提交前已经确定总价。
+
+Runway 官方[追加积分说明](https://help.runwayml.com/hc/en-us/articles/23987639973267-Will-unused-credits-carry-over-after-my-billing-day)列出 1 积分=0.01 美元；按这一购买口径，上述 240/390 积分对应 2.40/3.90 美元，Seedance 2.0 4K 5 秒的 750 积分对应 7.50 美元。套餐分摊口径可能不同，此处不将套餐总价直接当成纯积分购买价。
+
+### 本轮证据的结论与局限
+
+上述三家创作产品公开的是按张、按输出秒，以及某些模型按输入视频秒加收的价目表；未查到其 Seedance 公布以返回 token 为准对消费者浮动扣分的规则。第二轮按实际 token 结算是对 GoodGood 高波动采购线路提出的方案，不应描述为已经核实的主流创作平台共同做法。
+
+相对地，BytePlus ModelArk 的 Seedance API 官方资料按实际 token 消耗收费，不能将官方 API 成本与创作平台的消费价混为一谈。公开价目表未披露平台采购折扣、批量合同、成本分布或风险承担，无法证明其按秒价对 GoodGood 相同 O1Key 线路也有利润。
+
+因此，后续可同时比较“按输出秒 + 输入秒的明码规则”与“按实际 token 结算”。能否采用前者，仍取决于 GoodGood 各线路的全范围实耗与可承担偏差；本轮先提供具体参照，不擅自决定一种规则或实现面板。
