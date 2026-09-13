@@ -95,6 +95,10 @@ export async function readAdminDashboard(input: {
   );
 }
 
+export async function readAuditLog(): Promise<readonly AdministrativeAction[]> {
+  return (await readAdminDashboard({ limit: 1 })).recentActions;
+}
+
 export async function updateManagedAccountStatus(input: {
   ownerId: string;
   reason: string;

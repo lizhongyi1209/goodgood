@@ -52,10 +52,13 @@ individual icon. Upload, settings, and send align to the same 40px box.
 
 - GG-059 embeds site-owner enterprise/model/account content beside the retained
   lobby sidebar. GG-060 removes its duplicate visible context title: the upper
-  row only exposes three wrapping 40px function links using Palace Red selection;
+  row only exposes wrapping 40px function links using Palace Red selection;
   the current content page supplies the sole 20px primary title with a secondary
   description. Embedded admin content omits duplicate brand/header,
   outer viewport height and padding; Chinese font settings remain scoped there.
+  GG-061 adds an independent audit function with the same sole primary title,
+  quiet desktop columns and stacked mobile fields. Actor, target and reason stay
+  readable without truncating audit evidence; no duplicate account-page log panel.
 
 - The model-management list groups images and videos, shows each model name
   once, and aligns resolution prices in quiet desktop columns. On mobile each

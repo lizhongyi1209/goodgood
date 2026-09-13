@@ -2,6 +2,13 @@
 
 ## GG-057 site-owner navigation boundary
 
+ADR 0067/GG-059 supersedes the standalone chrome below: management routes mount
+the creation shell and inject its session into embedded views. GG-061 adds
+`/admin/audit` and `features/admin/audit-log-view.tsx`; `readAuditLog` extracts
+only recentActions from the existing site-owner-authorized dashboard query,
+requesting one account row while retaining the fixed latest-30 action query.
+No new server endpoint, persistence or write workflow is introduced.
+
 `features/admin/admin-management-header.tsx` is shared by the two standalone
 management pages after session/access/site-owner gates. Direct page links do
 not perform authentication. The authentication Node handler passes the current

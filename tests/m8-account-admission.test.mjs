@@ -371,7 +371,7 @@ test("site-owner bootstrap is dry-run by default and requires an explicit operat
   );
 });
 
-test("account management surface includes loading, empty, failure, audit, and grant controls", async () => {
+test("account management surface includes loading, empty, failure and grants; audit has its own view", async () => {
   const source = (
     await Promise.all([
       readFile(
@@ -387,7 +387,8 @@ test("account management surface includes loading, empty, failure, audit, and gr
   assert.match(source, /正在加载账户/);
   assert.match(source, /没有符合条件的账户/);
   assert.match(source, /账户列表加载失败/);
-  assert.match(source, /最近操作记录/);
+  assert.doesNotMatch(source, /最近操作记录/);
+  assert.match(await readFile(new URL("../features/admin/audit-log-view.tsx", import.meta.url), "utf8"), /审计日志/);
   assert.match(source, /\[100, 500, 1000\]/);
   assert.match(source, /Number\(amount\) > 5000/);
   assert.match(source, /x-goodgood-admin-action/);

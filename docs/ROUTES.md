@@ -10,6 +10,9 @@ canonical product URL for creation; `/` remains a compatible entry to the same
 workspace state. Project and asset navigation use stable browser URLs and
 native history.
 
+Local site-owner `/admin/models`, `/admin/users` and `/admin/audit` also mount
+this shell; audit moves the prior account-page recent-action list into its own view.
+
 | Visible navigation | Current status | Current behavior |
 | --- | --- | --- |
 | 创作 | Implemented | `/create`, with `/` as a compatible entry |
@@ -21,6 +24,7 @@ native history.
 | 图片详情 | Implemented | `/assets/:assetId` over its preserved source scope |
 | 账户管理 | Implemented | `/admin/users`, visible and callable only by the site owner |
 | 模型管理 | Implemented locally | Site-owner `/admin/models`: add existing templates, enable/disable, edit RMB specification prices and test credit quotes |
+| 审计日志 | Implemented locally | Site-owner `/admin/audit`, latest 30 account actions in the shared workspace |
 | 积分记录 | Implemented | `/credits`, entered from the quiet row below `帮助` or the mobile balance |
 | 企业历史创作 | Compatible local route | `/workspaces/:workspaceId/create`, after active-membership validation; no global selector |
 | 企业管理 | Implemented locally | Main sidebar `/organizations`; one managed company opens overview, multiple companies use a management-only directory; detail subroutes share the main shell |
@@ -215,7 +219,9 @@ do not create separate draft or history state.
 
 - ADR 0067 brings `/admin/users` and `/admin/models` into the creator shell.
   Site owners have one `站长管理` entry, opening `/organizations`, with enterprise,
-  model and account links in the right-hand workspace. Existing organization
+  model, account and (GG-061) audit links in the right-hand workspace. Account
+  management no longer embeds recent actions; `/admin/audit` reuses the existing
+  authorized latest-30 account-action query. Existing organization
   details remain in that area. Ordinary enterprise managers keep their entry.
   Management uses workspace history navigation and preserves mounted creation
   state; direct links and refresh mount the same shell. The creator account

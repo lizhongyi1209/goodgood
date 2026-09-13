@@ -60,7 +60,6 @@ import {
   updateManagedAccountBusinessRole,
   updateManagedAccountDirectParent,
   updateManagedAccountStatus,
-  type AdministrativeAction,
   type AdminDashboard,
   type BusinessRole,
   type ManagedAccount,
@@ -78,16 +77,6 @@ const STATUS_LABELS: Record<ManagedAccountStatus, string> = {
   active: "已启用",
   pending: "待审核",
   suspended: "已暂停",
-};
-
-const ACTION_LABELS: Record<AdministrativeAction["actionType"], string> = {
-  approve_account: "通过审核",
-  bootstrap_site_owner: "初始化站长",
-  grant_test_credits: "赠送测试积分",
-  restore_account: "恢复账户",
-  set_business_role: "调整业务身份",
-  set_direct_parent: "调整直属关系",
-  suspend_account: "暂停账户",
 };
 
 function formatDate(value: string | null) {
@@ -524,21 +513,6 @@ export function AccountManagementPage({ workspaceSession, embedded = false, onMa
           )}
         </section>
 
-        <section className="mt-8">
-          <h2 className="text-lg font-semibold">最近操作记录</h2>
-          <div className="mt-3 divide-y divide-zinc-200 rounded-3xl border border-zinc-200">
-            {dashboard?.recentActions.length ? dashboard.recentActions.map((action) => (
-              <div key={action.id} className="grid gap-1 px-5 py-4 text-sm md:grid-cols-[160px_minmax(0,1fr)_minmax(0,1fr)_180px] md:items-center md:gap-4">
-                <strong>{ACTION_LABELS[action.actionType]}</strong>
-                <span className="truncate text-zinc-600">{action.targetEmail}</span>
-                <span className="truncate text-zinc-500">{action.creditAmount ? `${action.creditAmount} 积分 · ` : ""}{action.reason}</span>
-                <time className="text-zinc-500 md:text-right" dateTime={action.createdAt}>{formatDate(action.createdAt)}</time>
-              </div>
-            )) : (
-              <p className="px-5 py-10 text-center text-sm text-zinc-500">还没有管理操作记录。</p>
-            )}
-          </div>
-        </section>
       </div>
 
       <Dialog open={Boolean(selected)} onOpenChange={(open) => !open && !mutating && setSelected(null)}>

@@ -26,6 +26,11 @@ Embedded admin views reuse the workspace session and omit standalone chrome.
 GG-060's owner refinement removes the duplicate visible `站长管理` content title:
 the sidebar provides that context, the upper row only switches functions, and the
 current content page has the sole primary title. Keep accessible navigation names.
+GG-061 adds `审计日志` as the fourth function at `/admin/audit`, moving the
+account page's recent-action list into a separate read-only workspace view.
+Reuse the existing owner-authorized latest-30 account-action query; show time,
+actor, target and reason with loading, empty, error/retry and refresh states.
+No general audit-center scope, new history persistence or mutation is implied.
 On narrow screens, replace the lobby's direct sign-out avatar with a creation
 return while in site-owner management, so the hidden sidebar does not trap users.
 

@@ -564,6 +564,10 @@ cover motion, not real generated media. No mock item enters drafts or projects.
 
 Site owners enter `站长管理` from the lobby sidebar (one compact mobile entry).
 Enterprise opens first; enterprise/model/account links switch the right-hand
+content, and GG-061 adds `审计日志` for the latest 30 account-management actions.
+The old account-page recent-action list is removed. Audit refresh and read errors
+have explicit loading/retry states; an empty list does not masquerade as a failure.
+All four functions switch right-hand
 content without reloading the creation shell. Existing admin URLs, refresh and
 Back/Forward use this same shell. Creation inputs and tracked jobs stay in memory.
 With the sidebar hidden on mobile, management replaces the direct sign-out avatar

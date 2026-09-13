@@ -1,8 +1,14 @@
 # Testing strategy
 
+GG-061 extends shared-route/history/owner-gate coverage to audit as the fourth
+function. Audit content tests cover loading, empty, retryable failure, actor/target/
+amount/time and escaped reasons; injected HTTP tests cover empty/success/401/403/
+500/network failure with no external requests. The view reuses the latest-30
+account-action query; no database fixtures or general audit-center scope.
+
 GG-059 tests existing admin route round-trips, retained history state and business
 route compatibility; server rendering verifies owner-only mounting, loading,
-signed-out/inactive/member/preview denial and three accessible embedded links.
+signed-out/inactive/member/preview denial and accessible embedded management links.
 The current shell routes reuse the workspace session. Browser evidence separately
 checks live switching, document continuity, direct refresh and narrow layout on
 32141; read-only snapshots retain user prices and immutable history. No SQL
