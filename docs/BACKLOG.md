@@ -6,7 +6,7 @@
 
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
-| GG-051 | 重新评估积分定价体系 | 首轮现状与官方平台研究完成；待实际 O1Key 成本与方案讨论，未实施/改价/发布 | [任务](tasks/GG-051-credit-pricing-reassessment.md) |
+| GG-051 | 重新评估积分定价体系与站长定价面板 | 第二轮固定/按量混合计费和面板方案完成；待成本与上限策略，未实施/改价/发布 | [任务](tasks/GG-051-credit-pricing-reassessment.md) |
 | GG-050 | 移除页面右上角常驻返回入口 | 本地完成且用户已验收；门禁 403 通过/14 opt-in 跳过、原 Chrome 企业/积分/资产检查通过，不新增替代导航，未发布 | [任务](tasks/GG-050-remove-page-return-actions.md) |
 | GG-049 | 企业与分销身份及功能分离 | 本地门禁 398 通过/14 opt-in 跳过、原 Chrome 企业四标签/旧链接检查完成，待用户验收；保留历史，未发布 | [任务](tasks/GG-049-separate-business-roles.md) |
 | GG-048 | 面向企业管理员的概览 | 本地页面/代码门禁/文档复验/原 Chrome 企业桌面检查完成，待布局确认；周期统计待接入，未发布 | [任务](tasks/GG-048-enterprise-overview.md) |
