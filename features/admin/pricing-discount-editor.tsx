@@ -93,12 +93,11 @@ export function PricingDiscountEditor({
         </Button>
       </div>
       <p className="text-xs leading-5 text-zinc-400">
-        98 = 9.8 折，80 = 8 折，100 =
-        原价。调整当前线路全部价格；以首次应用前的价格为基准，不叠加。
+        98 = 9.8 折，80 = 8 折，100 = 恢复基准。仅调整当前线路。
       </p>
       <p className="text-xs leading-5 text-zinc-400">
-        四舍五入至 0.01 元，正价最低 0.01
-        元。保存后再次打开，以已保存价格为新基准。
+        按首次应用前价格计算，不叠加；保存后重新设基准。四舍五入至 0.01
+        元，正价最低 0.01 元。
       </p>
       {state.error && (
         <p role="alert" className="text-xs text-red-700">

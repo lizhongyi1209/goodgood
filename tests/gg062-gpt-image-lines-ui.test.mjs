@@ -17,7 +17,7 @@ test("GG-068 line prices remain distinct, 2.5 stays first and creation resolves 
   const other={id:"seedance-2-0",adapterId:"seedance-2-0",name:"Seedance 2.0",mediaType:"video",enabled:false,prices:{}};
   const html=renderToStaticMarkup(React.createElement(ModelPricingList,{models:[other,video],busy:false,onEdit(){},onToggle(){}}));
   assert.ok(html.indexOf('aria-label="Seedance 2.5 价格"') < html.indexOf('aria-label="Seedance 2.0 价格"'));
-  assert.match(html,/77.00/); assert.match(html,/61.60/); assert.match(html,/标准线路价格/); assert.match(html,/备用线路价格/);
+  assert.match(html,/77.00/); assert.doesNotMatch(html,/61.60/); assert.match(html,/标准/); assert.match(html,/2 条线路/);
   assert.doesNotMatch(html,/每百万 tokens 售价|人民币 \/ 百万 tokens/);
   assert.equal(resolveVideoResolution("seedance-2-5","1080p"),"1080p");
   assert.equal(resolveVideoResolution("seedance-2-5","4K"),"720p");
@@ -50,13 +50,13 @@ test("GG-062 GPT selector exposes three accessible lines and preserves unavailab
     assert.match(unavailable, /请选择其他线路/);
   }
 });
-test("GG-062 GPT pricing list retains three independent line rows per model", () => {
+test("GG-070 GPT cards summarize the default line while other prices remain in the sheet", () => {
   const html = renderToStaticMarkup(React.createElement(ModelPricingList, { models, busy: false, onEdit() {}, onToggle() {} }));
   for (const model of models) assert.ok(html.includes(model.name));
-  for (const name of ["特价", "优质", "专线"]) assert.equal((html.match(new RegExp(`>${name}<`, "g")) ?? []).length, 3);
+  assert.equal((html.match(/3 条线路/g) ?? []).length,3);
   assert.ok(html.includes("0.20"));
-  assert.ok(html.includes("0.40"));
-  assert.ok(html.includes("未定价"));
+  assert.ok(!html.includes("0.40"));
+  assert.ok(!html.includes("优质"));
 });
 
 test("GG-063/GG-065 quality ranges stay compact while billing retains model-owned prices", async () => {
@@ -64,7 +64,8 @@ test("GG-063/GG-065 quality ranges stay compact while billing retains model-owne
  const { getGptImageQualityOptions, resolveGptImageOptionsForModel } = await vite.ssrLoadModule("/features/creation/generation-options.ts");
  const qualityModel = {...models[2], lines: {...models[2].lines, dedicated:{ enabled:false, prices:{"1K":{output:148,qualities:{low:5,medium:10,high:37,xhigh:66,max:148}}}}}};
  const html=renderToStaticMarkup(React.createElement(ModelPricingList,{models:[qualityModel],busy:false,onEdit(){},onToggle(){}}));
- for (const value of ["0.05","1.48"]) assert.ok(html.includes(value));
+ assert.ok(html.includes("0.20"));
+ for (const value of ["0.05","1.48"]) assert.ok(!html.includes(value));
  assert.doesNotMatch(html,/aria-label="专线质量价格"|xhigh|66 积分\/张/);
  assert.doesNotMatch(html,/<details|<summary/);
  assert.equal(getGptImageQualityOptions("gpt-image-2").length,4);

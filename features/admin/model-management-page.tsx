@@ -1,7 +1,7 @@
 "use client";
 
 import { gptPricingQualities } from "@/shared/contracts/gpt-quality-pricing.mjs";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AdminManagementHeader } from "./admin-management-header";
 import {
@@ -41,12 +41,12 @@ import {
 import type { BananaLine } from "@/shared/contracts/generation";
 import type { ManagedBananaLines } from "@/shared/contracts/model-management";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   Select,
   SelectContent,
@@ -245,6 +245,7 @@ export function ModelManagementPage({
   const [pricingLine, setPricingLine] = useState<BananaLine>("special");
   const [videoPricingLine, setVideoPricingLine] =
     useState<SeedanceLine>("standard");
+  const returnFocus = useRef<HTMLElement | null>(null);
   const [pricingQuality, setPricingQuality] = useState("auto");
   const [count, setCount] = useState("1");
   const refreshSession = useCallback(async () => {
@@ -306,6 +307,10 @@ export function ModelManagementPage({
     return () => window.clearTimeout(timer);
   }, [session, load]);
   const open = (model?: ManagedModel) => {
+    returnFocus.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
     const next = model ? editDraft(model) : newDraft();
     setDraft(next);
     setPricingLine("special");
@@ -571,9 +576,6 @@ export function ModelManagementPage({
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="text-xl font-semibold">模型管理</h1>
-            <p className="mt-2 text-sm leading-6 text-zinc-500">
-              1 元 = 100 积分。图片按张，视频按实际 tokens 用量定价。
-            </p>
           </div>
           <Button variant="ghost" onClick={() => open()} disabled={saving}>
             <Plus className="size-4" />
@@ -649,38 +651,46 @@ export function ModelManagementPage({
             />
           </>
         )}
-        <p className="mt-6 text-xs leading-6 text-zinc-400">
-          新增条目复用已接入模板的模型和线路。视频价格可配置与试算；当前本地视频预览不扣积分，正式结算尚未接入。
-        </p>
       </div>
-      <Dialog
+      <Sheet
         open={draft !== null}
         onOpenChange={(value) => {
           if (!value && !saving) setDraft(null);
         }}
       >
-        <DialogContent
-          className="max-h-[90dvh] overflow-y-auto sm:max-w-3xl"
+        <SheetContent
+          side="right"
+          className="w-full gap-0 overflow-hidden border-zinc-200 bg-white shadow-none sm:max-w-[760px]"
           onInteractOutside={(event) => {
             if (saving) event.preventDefault();
+          }}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            returnFocus.current?.focus();
           }}
         >
           {draft && template && (
             <form
+              className="flex h-full min-h-0 flex-col"
               onSubmit={(event) => {
                 event.preventDefault();
                 void save(draft);
               }}
             >
-              <DialogHeader>
-                <DialogTitle>
-                  {draft.version === null ? "添加模型" : "编辑模型与价格"}
-                </DialogTitle>
-                <DialogDescription>
-                  人民币编辑，积分自动换算。保存后用于新提交的报价。
-                </DialogDescription>
-              </DialogHeader>
-              <fieldset disabled={saving} className="mt-6 space-y-5">
+              <SheetHeader className="shrink-0 border-b border-zinc-100 px-6 py-5 pr-12">
+                <SheetTitle className="text-lg">
+                  {draft.version === null
+                    ? "添加模型"
+                    : draft.name || "价格详情"}
+                </SheetTitle>
+                <SheetDescription className="text-xs">
+                  1 元 = 100 积分 · 保存后生效
+                </SheetDescription>
+              </SheetHeader>
+              <fieldset
+                disabled={saving}
+                className="min-h-0 min-w-0 flex-1 space-y-5 overflow-y-auto px-6 py-5"
+              >
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="space-y-2 text-xs text-zinc-500">
                     <span>模型名称</span>
@@ -799,9 +809,6 @@ export function ModelManagementPage({
                         <span>接入 ID 待确认</span>
                       )}
                     </label>
-                    <p className="text-xs leading-5 text-zinc-400">
-                      三条线路分别设置售价。切换查看与编辑，保存时一起生效。
-                    </p>
                   </section>
                 )}
                 {template.mediaType === "video" ? (
@@ -849,11 +856,6 @@ export function ModelManagementPage({
                       />
                     </div>
                     <h3 className="text-sm font-medium">规格售价</h3>
-                    <p className="mt-1 text-xs text-zinc-500">
-                      {template.mediaType === "image"
-                        ? "每张图片售价，可为不同分辨率分别设置。"
-                        : "每秒输出视频售价；参考视频按输入秒加价，没有参考视频时不收输入费用。"}
-                    </p>
                     {qualities.length > 0 && (
                       <label className="mt-3 flex items-center gap-2 text-sm">
                         <input
@@ -868,8 +870,7 @@ export function ModelManagementPage({
                     )}
                     {qualityMode && (
                       <p className="mt-2 text-xs leading-5 text-zinc-500">
-                        自动质量按最高档计价。各分辨率需填齐全部质量价格，精度为
-                        ¥0.01（1 积分）。
+                        自动按最高档计价，需填齐全部质量价格。
                       </p>
                     )}
                     <div
@@ -1079,8 +1080,7 @@ export function ModelManagementPage({
                   </CollapsibleTrigger>
                   <CollapsibleContent className="mt-3 space-y-3 text-xs text-zinc-500">
                     <p className="leading-5">
-                      内部编号由系统自动生成，用于关联价格、创作和历史记录。它不是上游
-                      API 模型名，保存后保持不变。
+                      内部编号用于关联创作和价格，不是 API 模型名。
                     </p>
                     <dl className="grid grid-cols-[72px_minmax(0,1fr)] gap-x-3 gap-y-2">
                       <dt>使用的模型</dt>
@@ -1100,7 +1100,10 @@ export function ModelManagementPage({
                 </Collapsible>
               </fieldset>
               {mutationError && (
-                <p role="alert" className="mt-4 text-sm text-destructive">
+                <p
+                  role="alert"
+                  className="shrink-0 px-6 py-3 text-sm text-destructive"
+                >
                   {mutationError}{" "}
                   <Button
                     type="button"
@@ -1112,7 +1115,7 @@ export function ModelManagementPage({
                   </Button>
                 </p>
               )}
-              <div className="mt-6 flex justify-end gap-2">
+              <div className="flex shrink-0 justify-end gap-2 border-t border-zinc-100 bg-white px-6 py-4">
                 <Button
                   type="button"
                   variant="ghost"
@@ -1128,8 +1131,8 @@ export function ModelManagementPage({
               </div>
             </form>
           )}
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     </section>
   );
 }

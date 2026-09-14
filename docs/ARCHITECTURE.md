@@ -1,5 +1,9 @@
 # Architecture
 
+GG-070 changes only the owner presentation: model cards summarize the current
+default-line specification matrix; existing edits/additions use Radix Sheet on
+the same route. No new API, price semantics, persistence or provider behavior.
+
 GG-069 shares exact cent-based batch discount calculation and a reusable
 current-route draft editor for image/video pricing. Existing owner saves publish
 final prices; discount metadata is editing-session state only. No new API,

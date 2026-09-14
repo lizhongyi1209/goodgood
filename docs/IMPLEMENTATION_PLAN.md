@@ -1,26 +1,26 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-14
-- Current phase: GG-069 overall route discount editing implemented and locally verified; not deployed.
-- Current objective: Let the owner apply and inspect whole-route price discounts before saving.
+- Current phase: GG-070 model cards and right pricing Sheet implemented and locally verified; not deployed.
+- Current objective: Let the owner review a compact model directory and edit full prices in the right panel.
 - Previous objective: 用户在模型管理为 GPT 图片系列逐线路定价与启禁，保留原测试配置与历史。
 
 ## Current checkpoint
 
-- Current task [GG-069](tasks/GG-069-pricing-discount.md), branch feature/GG-069-pricing-discount, worktree F:/goodgood-worktrees/GG-069; verified main bab17fd ancestor plus GG-068 262c498 candidate.
-- ADR 0072 adds whole-route discount draft editing: 98=98%/9.8折, 80=8折, 100 restores first-application baseline. Repeated applications do not compound; all resolutions/quality/reference rates change together, other routes retain their values. Existing save persists final prices only; no migration or formal settlement changes.
-- Targeted tests 12/12 passed. One full npm run check:local passed lint/types/build and all 477 tests: 460 passed, 17 opt-in skipped, 0 failed.
-- GG-069 Web session 32488 replaces stopped GG-068 Web 74757; mock 42311 and Worker 72412 retained. Original goodgood-gg052 volumes retained; no migrations/reset/rebuild or requests to real-provider 32140.
-- Browser verified 2.5 1080p discounts 98→75.46/45.08 and 80→61.60/36.80, independent standard/backup states, invalid input preservation, 100 reset, manual edit and cancellation. GPT quality line discounts all 15 tiers; special price remains unchanged. All trial edits cancelled, no model save this task.
-- 390px list/editor has no horizontal overflow and discount controls are usable. Restored desktop, original tab 1648144383 kept in Seedance 2.5 standard pricing editor at 100%.
-- Read-only before/after: 39 non-model table hashes/counts, complete managed_models records and model event hashes/counts identical. Original prices, all flags and trial archival state retained; no generation/ledger writes.
+- Current task [GG-070](tasks/GG-070-model-cards.md), branch feature/GG-070-model-cards, worktree F:/goodgood-worktrees/GG-070; verified main bab17fd ancestor plus GG-069 bc7d466 candidate.
+- ADR 0073 replaces directory price matrices with default-line summary cards and a same-page right Sheet. Pricing/quality/discount logic and quick enable remain; duplicate copy removed. No migration, new API or formal video settlement changes.
+- Targeted tests 22/22 and browser-preview build passed. Initial gate exposed a TypeScript matrix inference issue; explicit contract typing fixed it. Final npm run check:local passes lint/types/build and all480 tests:463 passed,17 opt-in skipped,0 failed.
+- GG-070 Web session 6035 replaces stopped GG-069 Web 32488; mock 42311 and Worker 72412 retained. Original goodgood-gg052 volumes retained; no migrations/reset/rebuild or requests to real-provider 32140.
+- Browser verifies 9 model cards in the desktop first screen, 2.5 first, 760px right-aligned Sheet, independent backup discount and standard original price. Esc restores card focus, search and no-match states work; quality matrix remains accessible. All trial edits cancelled, no model save this task.
+- 390px Sheet is full width with internal scroll (1194px content/682px area), save pinned at y828 in 844px viewport; no horizontal overflow. Add Sheet checked without saving. Desktop restored, original tab1648144383 retained on card directory.
+- Read-only before/after:39 non-model table hashes/counts, entire managed_models records and model event hashes/counts identical. No model save, price/flag/history change or generation/ledger writes.
 - Production https://goodgood.o1key.com revision 65ceb168/migration 0019 unchanged. staging-goodgood.o1key.com is historical naming. No paid requests, push, main merge or deployment.
 - Next action: owner checks http://127.0.0.1:32141/admin/models; formal video reservation/price snapshots/actual ledger settlement require the next implementation slice.
 - Blockers: none for pricing-only local scope.
 
 ## Verification sequence
 
-1. Batch discount computation, exact cent rounding, empty/invalid atomic rejection and editor accessibility; retain existing route save coverage.
+1. Card summaries and non-mixed units, existing price/discount/persistence coverage and editor accessibility.
 2. One complete local gate, then documentation-only handoff checks.
 3. Verify isolated mock target, browser application/cancel and desktop/narrow UI, compare unchanged data snapshots.
 
@@ -52,7 +52,7 @@
 
 ## New-session recovery
 
-1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-069` 与 GG-069 任务卡；按卡核对运行版本，不能仅看 URL。
+1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-070` 与 GG-070 任务卡；按卡核对运行版本，不能仅看 URL。
 2. 当前页面为 `http://127.0.0.1:32141/admin/models`，已更新 GPT 图片三线路，右侧四管理功能保留；仅独立 mock 栈。旧 `32140` 有真实 provider Worker，不运行 fixtures/outbox，不重置其数据。
 3. 本地 ignored `.gg052-local.mjs` 分别启动 web/worker/mock-generation；按本任务已记录的运行状态恢复，保留用户试价数据。正式生产与真实请求不在本次授权范围。
 4. 不恢复或 bulk merge 旧 C6；旧阶段具体验证见相应任务卡，GG-051 [研究记录](research/GG-051-credit-pricing-reassessment.md) 保留定价依据。

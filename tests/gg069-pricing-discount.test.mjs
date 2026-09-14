@@ -122,7 +122,7 @@ test("GG-069 accessible discount controls appear inside video pricing above rate
   assert.match(html, /应用折扣/);
   assert.match(html, /98 = 9.8 折，80 = 8 折/);
   assert.match(html, /不叠加/);
-  assert.match(html, /保存后再次打开/);
+  assert.match(html, /保存后重新设基准/);
   assert.ok(
     html.indexOf('aria-label="整体折扣"') <
       html.indexOf("1080p 无参考视频 token 售价"),

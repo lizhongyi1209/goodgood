@@ -1,5 +1,11 @@
 # GG-063 verification
 
+GG-070 covers default-line supported price ranges, quality summaries, separate
+reference token rates, disabled/unpriced/legacy states and 60 in-memory cards
+with busy actions disabled. Existing persistence tests remain. Browser checks
+right/mobile panel bounds, scrolling/fixed save, focus restoration, search and
+matrix/discount controls; cancelled edits leave all preview records unchanged.
+
 GG-069 tests all-resolution/quality/token-rate discounts, precise rounding,
 positive cent floor, empty/invalid atomic rejection, immutable source values
 and accessible controls. Local browser checks non-compounding 98→80, independent

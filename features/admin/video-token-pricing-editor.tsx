@@ -139,17 +139,14 @@ export function VideoTokenPricingEditor({
             />
             启用{line === "standard" ? "标准" : "备用"}线路
           </label>
-          <p className="text-xs text-zinc-400">
-            两条线路分别设置人民币售价，可独立调整折扣后的价格。切换保留输入，保存时一起生效。
-          </p>
         </section>
       )}
       {pricingTools}
       <div>
-        <h3 className="text-sm font-medium">按实际 tokens 定价</h3>
+        <h3 className="text-sm font-medium">规格售价</h3>
         <p className="mt-1 text-xs leading-5 text-zinc-500">
-          单位：人民币 / 百万 tokens。根据是否上传参考视频选择一档费率，按
-          completion_tokens 计算整单价格；两档不相加。参考图片、音频不单独加价。
+          元/百万token。按实际 completion_tokens
+          计费，两档择一；图片、音频不单独加价。
         </p>
         {legacy && (
           <p className="mt-2 text-xs text-zinc-500">
@@ -160,8 +157,8 @@ export function VideoTokenPricingEditor({
       <div className="space-y-3">
         <div className="grid grid-cols-[48px_minmax(0,1fr)_minmax(0,1fr)] gap-3 text-[11px] text-zinc-500">
           <span>分辨率</span>
-          <span>无参考视频 · 元/百万 tokens</span>
-          <span>含参考视频 · 元/百万 tokens</span>
+          <span>无参考视频</span>
+          <span>含参考视频</span>
         </div>
         {resolutions.map((key) => (
           <div
@@ -227,8 +224,7 @@ export function VideoTokenPricingEditor({
           </label>
         </div>
         <p className="mt-3 text-[11px] leading-5 text-zinc-500">
-          人民币金额 = tokens × 所选单价 ÷ 1,000,000。积分 = 金额 ×
-          100，整单向上取整一次。
+          金额 = tokens × 单价 ÷ 1,000,000；积分整单向上取整。
         </p>
         <p aria-live="polite" className="mt-3 text-sm">
           {quote
@@ -260,7 +256,7 @@ export function VideoTokenPricingEditor({
           </p>
         )}
         <p className="mt-2 text-[11px] text-zinc-400">
-          这里只试算，不提交生成、不扣积分。参考视频状态请按实际请求选择。
+          试算不扣积分；视频积分结算尚未接入。
         </p>
       </section>
     </section>

@@ -1,5 +1,7 @@
 # Decision records
 
+- `0073-model-cards-and-pricing-sheet.md` — compact model cards, default-line summaries and same-page right pricing sheet for GG-070.
+
 - `0072-pricing-discount.md` — current-route batch discount editing, exact rounding and save-only price persistence for GG-069.
 
 - `0071-seedance-line-prices-and-1080p.md` — independent video route pricing, Seedance 2.5 first and 1080p support for GG-068.

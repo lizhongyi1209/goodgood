@@ -1,5 +1,12 @@
 # GG-063 quality pricing
 
+GG-070 replaces directory matrices with cards. Click opens a right pricing Sheet;
+existing routes, quality/discount edits, trial quotes and one atomic save remain.
+Quick enable/disable stays on the card. Adding uses the same Sheet, with scrollable
+fields and a pinned save footer. Cancel/Esc discard drafts and restore trigger
+focus; saving blocks close. Search/filter and access/loading/error/empty states
+remain. Full matrix values are no longer displayed in the directory.
+
 GG-069 adds an overall discount to image/video route pricing. Input 98 means
 98% (9.8折), 80 means 8折; apply updates every current-route specification and
 quality/reference rate. Each route retains its first-application baseline;

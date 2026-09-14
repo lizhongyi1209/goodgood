@@ -1,110 +1,62 @@
 "use client";
 
-import { Pencil } from "lucide-react";
-import {
-  modelVideoLines,
-  SEEDANCE_LINES,
-} from "@/shared/contracts/seedance-models.mjs";
+import { ChevronRight } from "lucide-react";
+import { modelVideoLines } from "@/shared/contracts/seedance-models.mjs";
 import { Button } from "@/components/ui/button";
 import {
   MODEL_TEMPLATES,
   creditsToYuan,
 } from "@/shared/contracts/model-pricing.mjs";
-import type { ManagedModel } from "@/shared/contracts/model-management";
-import {
-  BANANA_LINES,
-  modelBananaLines,
-  modelSpecificationPrices,
-} from "@/shared/contracts/banana-lines.mjs";
+import type {
+  ManagedModel,
+  ModelSpecificationPrices,
+} from "@/shared/contracts/model-management";
+import { modelBananaLines } from "@/shared/contracts/banana-lines.mjs";
 
-const IMAGE_RESOLUTIONS = ["1K", "2K", "4K"];
-const VIDEO_RESOLUTIONS = ["480p", "720p", "1080p", "4K"];
-const ROW_LAYOUT = "lg:grid-cols-[200px_minmax(0,1fr)_112px]";
-
-function ModelPrice({
-  model,
-  resolution,
-  imageLine,
-  videoLine,
-  showResolution = true,
-}: {
-  model: ManagedModel;
-  resolution: string;
-  imageLine?: string;
-  videoLine?: string;
-  showResolution?: boolean;
-}) {
-  const template = MODEL_TEMPLATES.find((item) => item.id === model.adapterId);
-  const supported = template?.resolutions.includes(resolution);
-  const price = (
-    videoLine
-      ? modelVideoLines(model)?.[videoLine]?.prices
-      : modelSpecificationPrices(model, imageLine)
-  )?.[resolution];
-  const qualityPrices = price?.qualities
-    ? (Object.values(price.qualities) as number[])
-    : [];
-  return (
-    <div className="min-w-0 text-center tabular-nums">
-      <p
-        className={
-          showResolution ? "mb-2 text-xs text-zinc-400 lg:sr-only" : "sr-only"
-        }
-      >
-        {resolution}
-      </p>
-      {!supported ? (
-        <p className="text-xs text-zinc-400">不支持</p>
-      ) : !price ? (
-        <p className="text-xs text-zinc-400">未定价</p>
-      ) : model.mediaType === "image" ? (
-        <>
-          <p className="text-sm font-medium">
-            ¥
-            {qualityPrices.length
-              ? `${creditsToYuan(Math.min(...qualityPrices))}–${creditsToYuan(Math.max(...qualityPrices))}`
-              : creditsToYuan(price.output)}
-          </p>
-          <p className="mt-1 text-[11px] text-zinc-400">
-            {qualityPrices.length ? "按质量定价" : `${price.output} 积分/张`}
-          </p>
-        </>
-      ) : price.billing === "tokens" ? (
-        <dl className="mx-auto grid max-w-44 grid-cols-[auto_1fr] items-baseline gap-x-2 gap-y-1.5">
-          <dt className="text-left text-[11px] text-zinc-400">无参考视频</dt>
-          <dd className="text-right text-sm font-medium">
-            ¥{creditsToYuan(price.output)}
-          </dd>
-          <dt className="text-left text-[11px] text-zinc-400">含参考视频</dt>
-          <dd className="text-right text-sm font-medium">
-            ¥{creditsToYuan(price.input ?? 0)}
-          </dd>
-          <dd className="col-span-2 text-[10px] text-zinc-400">元/百万token</dd>
-        </dl>
-      ) : (
-        <dl className="mx-auto grid max-w-36 grid-cols-[auto_1fr] items-baseline gap-x-2 gap-y-1.5">
-          <dt className="text-left text-[11px] text-zinc-400">输出</dt>
-          <dd className="text-right">
-            <span className="text-sm font-medium">
-              ¥{creditsToYuan(price.output)}
-            </span>
-            <span className="mt-0.5 block text-[10px] text-zinc-400">
-              {price.output} 积分/秒
-            </span>
-          </dd>
-          <dt className="text-left text-[11px] text-zinc-400">参考</dt>
-          <dd className="text-right">
-            <span className="text-xs text-zinc-600">
-              ¥{creditsToYuan(price.input ?? 0)}
-            </span>
-            <span className="mt-0.5 block text-[10px] text-zinc-400">
-              {price.input ?? 0} 积分/秒
-            </span>
-          </dd>
-        </dl>
-      )}
-    </div>
+function priceRange(values: number[]) {
+  const valid = values.filter(
+    (value) => Number.isSafeInteger(value) && value > 0,
   );
+  if (!valid.length) return "未定价";
+  const min = Math.min(...valid),
+    max = Math.max(...valid);
+  return min === max
+    ? `¥${creditsToYuan(min)}`
+    : `¥${creditsToYuan(min)}–${creditsToYuan(max)}`;
+}
+
+export function modelCardSummary(model: ManagedModel) {
+  const template = MODEL_TEMPLATES.find((item) => item.id === model.adapterId);
+  const imageLines = modelBananaLines(model);
+  const videoLines = modelVideoLines(model);
+  const line =
+    model.mediaType === "video" ? videoLines?.standard : imageLines?.special;
+  const prices: ModelSpecificationPrices = line?.prices ?? model.prices;
+  const entries = Object.entries(prices)
+    .filter(([key]) => template?.resolutions.includes(key))
+    .map(([, price]) => price);
+  const tokenRates = entries.filter((price) => price.billing === "tokens");
+  return {
+    resolutions: template?.resolutions ?? [],
+    lineCount: model.mediaType === "video" ? 2 : imageLines ? 3 : 1,
+    lineName:
+      model.mediaType === "video" ? "标准" : imageLines ? "特价" : "默认",
+    lineEnabled: line?.enabled ?? model.enabled,
+    output: priceRange(
+      model.mediaType === "image"
+        ? entries.flatMap((price) =>
+            price.qualities
+              ? (Object.values(price.qualities) as number[])
+              : [price.output],
+          )
+        : tokenRates.map((price) => price.output),
+    ),
+    reference: priceRange(tokenRates.map((price) => price.input ?? 0)),
+    unit: model.mediaType === "image" ? "元/张" : "元/百万token",
+    legacy:
+      model.mediaType === "video" &&
+      entries.some((price) => price.billing !== "tokens"),
+  };
 }
 
 export function ModelPricingList({
@@ -129,161 +81,99 @@ export function ModelPricingList({
               MODEL_TEMPLATES.findIndex((t) => t.id === b.adapterId),
           );
         if (!group.length) return null;
-        const resolutions =
-          mediaType === "image" ? IMAGE_RESOLUTIONS : VIDEO_RESOLUTIONS;
-        const priceLayout =
-          mediaType === "image"
-            ? "grid-cols-[64px_repeat(3,minmax(0,1fr))]"
-            : "grid-cols-2 lg:grid-cols-[64px_repeat(4,minmax(0,1fr))]";
         return (
           <section
             key={mediaType}
             aria-label={mediaType === "image" ? "图片模型价格" : "视频模型价格"}
           >
-            <div className="mb-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <h2 className="text-sm font-medium">
-                {mediaType === "image" ? "图片模型" : "视频模型"}
-                <span className="ml-2 text-xs font-normal text-zinc-400">
-                  {group.length}
-                </span>
-              </h2>
-              {mediaType === "image" && (
-                <p className="text-xs text-zinc-400">每张售价</p>
-              )}
-            </div>
-            <div
-              aria-hidden="true"
-              className={`hidden items-center gap-x-4 border-b border-zinc-100 pb-3 text-xs text-zinc-400 lg:grid ${ROW_LAYOUT}`}
-            >
-              <span>模型</span>
-              <div className={`grid gap-3 ${priceLayout}`}>
-                <span>线路</span>
-                {resolutions.map((resolution) => (
-                  <span key={resolution} className="text-center">
-                    {resolution}
-                  </span>
-                ))}
-              </div>
-              <span className="text-right">操作</span>
-            </div>
-            {group.map((model) => (
-              <article
-                key={model.id}
-                aria-label={`${model.name} 价格`}
-                className={`grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-4 border-b border-zinc-100 py-4 lg:items-center lg:gap-x-4 ${ROW_LAYOUT}`}
-              >
-                <div className="min-w-0">
-                  <h3 className="text-sm font-semibold leading-5">
-                    {model.name}
-                  </h3>
-                  <p
-                    className={`mt-1.5 text-xs ${model.enabled ? "text-primary" : "text-zinc-400"}`}
+            <h2 className="mb-3 text-sm font-medium">
+              {mediaType === "image" ? "图片模型" : "视频模型"}
+              <span className="ml-2 text-xs font-normal text-zinc-400">
+                {group.length}
+              </span>
+            </h2>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-3">
+              {group.map((model) => {
+                const summary = modelCardSummary(model);
+                return (
+                  <article
+                    key={model.id}
+                    aria-label={`${model.name} 价格`}
+                    className="flex min-w-0 flex-col rounded-2xl border border-zinc-200/70 bg-white"
                   >
-                    {model.enabled ? "已启用" : "已禁用"}
-                  </p>
-                </div>
-                <div className="order-3 col-span-2 lg:order-2 lg:col-span-1">
-                  {mediaType === "image" ? (
-                    <div className="space-y-3">
-                      <div
-                        aria-hidden="true"
-                        className={`grid gap-x-3 text-center text-xs text-zinc-400 lg:hidden ${priceLayout}`}
-                      >
-                        <span />
-                        {resolutions.map((key) => (
-                          <span key={key}>{key}</span>
-                        ))}
-                      </div>
-                      {(modelBananaLines(model)
-                        ? BANANA_LINES
-                        : [{ id: undefined, name: "—" }]
-                      ).map((line) => {
-                        const enabled = line.id
-                          ? modelBananaLines(model)[line.id]?.enabled
-                          : model.enabled;
-                        return (
-                          <div key={line.id ?? "default"} className="space-y-3">
-                            <div
-                              className={`grid items-center gap-x-3 lg:gap-x-3 ${priceLayout}`}
-                            >
-                              <div className="text-xs text-zinc-600">
-                                {line.name}
-                                {line.id && (
-                                  <p className="mt-1 text-[10px] text-zinc-400">
-                                    {enabled
-                                      ? line.id === "special"
-                                        ? "默认"
-                                        : "已启用"
-                                      : "未启用"}
-                                  </p>
-                                )}
-                              </div>
-                              {resolutions.map((resolution) => (
-                                <ModelPrice
-                                  key={resolution}
-                                  model={model}
-                                  resolution={resolution}
-                                  imageLine={line.id}
-                                  showResolution={false}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {SEEDANCE_LINES.map((line) => (
-                        <div
-                          key={line.id}
-                          aria-label={`${line.name}线路价格`}
-                          className={`grid items-center gap-x-3 gap-y-4 ${priceLayout}`}
+                    <button
+                      type="button"
+                      aria-label={`${model.name} 价格详情`}
+                      aria-haspopup="dialog"
+                      disabled={busy}
+                      onClick={() => onEdit(model)}
+                      className="group flex flex-1 flex-col gap-4 rounded-t-2xl p-4 text-left transition-colors hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-60"
+                    >
+                      <div className="flex w-full items-start justify-between gap-3">
+                        <h3 className="min-w-0 text-sm font-semibold leading-5">
+                          {model.name}
+                        </h3>
+                        <span
+                          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] ${model.enabled ? "bg-emerald-50 text-emerald-700" : "bg-zinc-100 text-zinc-400"}`}
                         >
-                          <div className="col-span-2 text-xs text-zinc-600 lg:col-span-1">
-                            {line.name}
-                            <p className="mt-1 text-[10px] text-zinc-400">
-                              {modelVideoLines(model)?.[line.id]?.enabled
-                                ? line.id === "standard"
-                                  ? "默认"
-                                  : "已启用"
-                                : "未启用"}
+                          {model.enabled ? "已启用" : "已禁用"}
+                        </span>
+                      </div>
+                      <div className="flex w-full items-center justify-between gap-3">
+                        <div className="min-w-0 flex-1 space-y-1.5 tabular-nums">
+                          <p className="text-[11px] text-zinc-400">
+                            {summary.lineName}
+                            {summary.lineEnabled ? "" : " · 未启用"}
+                            <span className="ml-2">{summary.unit}</span>
+                          </p>
+                          {mediaType === "image" ? (
+                            <p className="text-base font-medium">
+                              {summary.output}
                             </p>
-                          </div>
-                          {resolutions.map((resolution) => (
-                            <ModelPrice
-                              key={resolution}
-                              model={model}
-                              resolution={resolution}
-                              videoLine={line.id}
-                            />
-                          ))}
+                          ) : summary.legacy ? (
+                            <p className="text-xs text-zinc-500">
+                              待配置 token 价格
+                            </p>
+                          ) : (
+                            <dl className="grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-1 text-xs">
+                              <dt className="text-zinc-500">无参考视频</dt>
+                              <dd className="text-right font-medium">
+                                {summary.output}
+                              </dd>
+                              <dt className="text-zinc-500">含参考视频</dt>
+                              <dd className="text-right font-medium">
+                                {summary.reference}
+                              </dd>
+                            </dl>
+                          )}
                         </div>
-                      ))}
+                        <ChevronRight
+                          aria-hidden="true"
+                          className="size-4 shrink-0 text-zinc-400 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none"
+                        />
+                      </div>
+                    </button>
+                    <div className="flex items-center justify-between gap-2 px-4 pb-3">
+                      <p className="min-w-0 text-[10px] leading-5 text-zinc-400">
+                        {summary.resolutions.join(" · ")}
+                        <span className="ml-2">{summary.lineCount} 条线路</span>
+                      </p>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 shrink-0 px-2 text-xs"
+                        aria-label={`${model.enabled ? "禁用" : "启用"} ${model.name}`}
+                        disabled={busy}
+                        onClick={() => onToggle(model)}
+                      >
+                        {model.enabled ? "禁用" : "启用"}
+                      </Button>
                     </div>
-                  )}
-                </div>
-                <div className="order-2 flex justify-end gap-0.5 lg:order-3">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={busy}
-                    onClick={() => onEdit(model)}
-                  >
-                    <Pencil className="hidden size-3.5 sm:block" />
-                    定价
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={busy}
-                    onClick={() => onToggle(model)}
-                  >
-                    {model.enabled ? "禁用" : "启用"}
-                  </Button>
-                </div>
-              </article>
-            ))}
+                  </article>
+                );
+              })}
+            </div>
           </section>
         );
       })}

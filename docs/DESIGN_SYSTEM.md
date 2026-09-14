@@ -1,5 +1,12 @@
 # Design system
 
+GG-070 supersedes the pricing-row layouts below with compact responsive model
+cards. Each card shows name/status, default-line price range and specs/line count;
+video reference rates remain separate. A same-page right Sheet holds full pricing
+controls, with internal content scrolling and a fixed save footer. Desktop width
+is 760px, mobile full width; minimal borders and no panel shadow. Repeated pricing
+and route explanations are removed; necessary units and discount rules remain.
+
 GG-069 pricing dialogs add a compact overall-discount input, percent unit and
 apply button after route controls. Quiet helper copy defines 98/80/100 and
 non-compounding behavior; inline feedback stays beside the control. No new

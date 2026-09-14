@@ -1,5 +1,10 @@
 # GG-063 quality pricing errors
 
+GG-070 card summaries show unpriced/disabled and legacy-unit states explicitly.
+Existing save conflicts/errors preserve right-sheet fields; errors remain above
+the pinned save footer. Loading disables card mutation actions; cancel/Esc
+restores trigger focus. Pricing validation/persistence semantics are unchanged.
+
 GG-069 accepts integer discounts 1–100 only. Invalid/malformed prices or a
 route with no positive price fail before draft mutation. Blank specifications
 remain blank; exact rounding keeps positive prices at least 0.01 RMB. Inline
