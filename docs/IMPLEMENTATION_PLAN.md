@@ -1,20 +1,20 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-14
-- Current phase: GG-086 live issuance progress implemented; verification pending, no production deployment.
+- Current phase: GG-086 live issuance progress verified and running locally; no production deployment.
 - Current objective: 接续5298a47/a73835f，站长批次卡片增加发行进度条及15秒只读刷新。
 - Previous objective: GG082最小发行讨论；GG081积分类型/充值登记/运营与并发本地实现验证保留。
 
 ## Current checkpoint
 
 - Task [GG-086](tasks/GG-086-jcoin-live-progress.md)，feature/GG-086-jcoin-live-progress，F:/goodgood-worktrees/GG-086；5298a47完整保留a73835f。
-- 进度条及只读轮询已实现，待定向/完整门禁及原页面验证；不新增发行决策，ADR0084不变，用户仍仅自己币与流水。
+- 进度条及只读轮询已实现，定向10/10、原Chrome桌面/390px及15秒更新时间通过；不新增发行决策，ADR0084不变，用户仍仅自己币与流水。
 - 首期100万枚，每100有效充值消费积分2枚，9.18北京时间起算，issued高水位/退款回收不重发；无期限/兑换/价值锚定。下一期/创作20%/企业来源/正式视频仍另行实施。
-- 当前验收服务仍GG085 Web26608/32141，原GG084 mock Worker30432/32142、mock provider9048/32143；PG54449/Valkey56449/对象58049原数据保留，无fixture或真实provider。
-- Next action: 完成GG086门禁后只更新32141 Web，核对原Chrome进度及390px布局并供验收。
+- 当前验收服务GG086 UIa1955fb Web1696/32141，原GG084 mock Worker30432/32142、mock provider9048/32143；PG54449/Valkey56449/对象58049原数据保留，无fixture或真实provider。
+- Next action: 供站长验收32141卡片发行进度；后续配置或发布另行授权。
 - 未部署/发币，不操作生产、3010、其他worktree或旧重置脚本。
 - 正式入口 https://goodgood.o1key.com 不变；staging-goodgood.o1key.com 为历史名称，生产身份以CURRENT_STATE为准。
-- Blockers: 无；待本地门禁与页面核对，生产发布未授权。
+- Blockers: 无；check:local lint/typecheck/build通过，全量唯一文档断言失败已修复、受影响文档15/15通过，详情见任务；仅文档修复不重跑代码门禁。生产未授权。
 
 ## Verification sequence
 
@@ -27,6 +27,7 @@
 | 阶段 | 状态 | 当前含义 |
 | --- | --- | --- |
 | M0—M8 | 已完成基线 / controlled alpha 已开放 | 生产事实以 CURRENT_STATE 和发布收据为准 |
+| GG-086 | 本地实现/验证完成 | 发行进度与15秒只读刷新、桌面/390px通过，原32141已更新；门禁详情见任务，未部署 |
 | GG-085 | 本地实现/验证完成 | 按期卡片、门禁515/24及桌面/390px通过，原32141已更新，未部署 |
 | GG-084 | 本地实现/验证完成 | 个人仅自己统计/记录，站长计划/一期生命周期；门禁515/24、SQL1/1、UI通过，未部署 |
 | GG-083 | 结构/首批参数规划完成 | 第一批100万枚/系数2、正常50万元有效消费、无期限/仅累计；GG084接续一期运行时 |
