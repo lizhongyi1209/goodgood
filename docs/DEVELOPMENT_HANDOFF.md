@@ -1,7 +1,7 @@
 # 当前开发版本与跨窗口交接
 
-- 日期：2026-09-14；任务GG-092；代码基线bb782c0（完整保留a73835f → GG081—091）。
-- 当前项目入口：F:/goodgood；分支chore/GG-092-development-handoff。GG091 worktree也保留，当前运行的Web来自那里，不代表根目录仍是旧版本。
+- 日期：2026-09-15本地重启更新；任务GG-092；代码基线bb782c0（完整保留a73835f → GG081—091）。
+- 当前项目入口：F:/goodgood；分支chore/GG-092-development-handoff。GG091 worktree也保留，旧Web来自那里；2026-09-15已从根目录f68ba81构建重启，不代表根目录仍是旧版本。
 - 版本标记：goodgood-local-2026-09-14-gg092。此标记是本地检查点，不是线上发布，也未自动push/main合并。
 - 新窗口先读AGENTS/CURRENT_STATE/WORKFLOW/IMPLEMENTATION_PLAN/BACKLOG，然后本页；新任务从GG-093分配。
 
@@ -36,29 +36,32 @@ git merge-base --is-ancestor bb782c0 HEAD
 
 | 组件 | 当前入口 | 本次记录的进程/来源 |
 | --- | --- | --- |
-| Web | http://127.0.0.1:32141 | PID132，GG091/work/gg091-preview/start-review.mjs，代码de7d4a1 |
-| mock Worker | http://127.0.0.1:32142/health/ready | PID30432，GG084/work/gg084-preview/start.mjs worker |
-| mock provider | http://127.0.0.1:32143/health/ready | PID9048，GG084/work/gg084-preview/start.mjs mock-generation |
+| 工作区Web | http://127.0.0.1:32131 | PID32716，根目录work/restart-workspace.cmd，代码f68ba81 |
+| 邮箱登录检查Web | http://127.0.0.1:32191/create | PID8216，根目录work/restart-login.cmd，独立cookie，代码f68ba81 |
+| mock Worker | http://127.0.0.1:32142/health/ready | PID6744，根目录work/restart-worker.cmd，代码f68ba81 |
+| mock provider | http://127.0.0.1:32143/health/ready | PID26808，根目录work/restart-provider.cmd，代码f68ba81 |
 | PostgreSQL | loopback54449/goodgood | goodgood-gg052-postgres-1，最新0043 |
 | Valkey | loopback56449/db0 | goodgood-gg052-valkey-1 |
 | RustFS | loopback58049/58050 | goodgood-gg052-object-storage-1，桶goodgood-gg052-local |
 
 PID是交接时的记录，不是以后可直接kill的授权目标。先用Get-NetTCPConnection/Get-CimInstance核验端口、命令行、目录；不要停陌生进程或重载用户带未提交草稿的浏览器标签。原预览账户/作品/反馈保留，禁止fixture/reset/自动重新初始化。
 
-当前32141是local认证，供页面/已有账户检查；不是邮件注册测试入口。邮件双码通过独立Mailpit无Worker环境验收；GG091的32191专用UI/数据库/空桶/Redis12/Mailpit已清理，不把该地址当常驻服务。
+当前32131保留local认证与原用户数据。32191是本次新启的email_otp登录检查Web，共享原本地goodgood，但独立cookie/issuer；未写fixtures或注册模拟用户，用户可手验。邮件仅进入现有本地Mailpit（SMTP58046，查看http://127.0.0.1:58045），不向外发信。此前GG091命名独立UI测试资源已清理；本次32191不是恢复旧测试数据库。
 
 ## 启动与恢复
 
-Node >=22.13.0，npm；本机记录v24.12.0/npm11.6.2。切换版本后用npm ci恢复锁定依赖，忽略旧node_modules/dist。普通UI开发用npm run dev:local，按Vite实际打印的URL访问；它不能替代有数据的32141原预览。
+Node >=22.13.0，npm；本机记录v24.12.0/npm11.6.2。切换版本后用npm ci恢复锁定依赖，忽略旧node_modules/dist。普通UI开发用npm run dev:local，按Vite实际打印的URL访问；它不能替代有数据的32131原预览。
 
 根目录已有忽略的.env.local-review，仅本机localhost mock/local配置。未提交、不打印、不复制到报告；没有生产凭据。它为当前命名Compose读取现有本地配置，不能替代其他机器的独立环境安装。若文件或容器缺失，按DEPLOYMENT的独立本地栈步骤配置，不运行旧数据转换，也不从生产导入。
 
-原Web未运行或完成代码改动需要更新时，在F:/goodgood执行以下步骤；若32141占用，先核验并只停止已识别的原Web，保留Worker/provider/容器。构建是更新预览的准备，不代表验证通过：
+当前原工作区入口已从32141改为32131。原Web未运行或完成代码改动需要更新时，在F:/goodgood执行以下步骤；若32131占用，先核验并只停止已识别的原Web，保留Worker/provider/容器。构建是更新预览的准备，不代表验证通过：
 
 ~~~powershell
 npm run build:local
 New-Item -ItemType Directory -Force work | Out-Null
 $env:GOODGOOD_REVISION = (git rev-parse HEAD).Trim()
+$env:PORT = "32131"
+$env:OBJECT_STORAGE_UPLOAD_ALLOWED_ORIGINS = "http://127.0.0.1:32131,http://localhost:32131"
 Start-Process -FilePath node -ArgumentList '--env-file=.env.local-review','server/runtime/web.mjs' -WorkingDirectory 'F:/goodgood' -WindowStyle Hidden -RedirectStandardOutput 'F:/goodgood/work/local-review-out.log' -RedirectStandardError 'F:/goodgood/work/local-review-err.log' -PassThru
 ~~~
 
@@ -90,3 +93,5 @@ runner只在loopback54449创建固定命名的新空库，拒绝已存在库，�
 线上仍65ceb168/迁移0019/原blue镜像，当前本地累计功能没有部署。2026-09-14已按授权删全部10测试账户（含站长）及29对象，用户/文件0；事前/事后加密备份和服务器审计保留。不要再执行清理或自动恢复测试站长；新站长初始化/生产登录发布必须另列明确范围。
 
 下一步：新窗口从本检查点接新需求（GG-093起），先检查Git与端口，保持原数据；若要确认上次最后两处样式，询问用户手验结论或按新需求的验证范围处理。上线、真实发信、生图/视频付费调用均非本次交接授权。
+
+本次重启构建成功；工作区/登录Web、Worker、provider四个readiness及Mailpit均200。Chrome新标签确认邮箱/验证码/邀请码/确认表单并保留供用户检查，未发送邮件/提交注册/生成，未执行完整功能门禁。忽略.env.login-review保存本机Mailpit模式，work/restart-*.cmd可恢复此次四进程；不能将其配置用于生产。

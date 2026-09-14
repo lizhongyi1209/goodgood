@@ -1,7 +1,7 @@
 # 当前任务与优先级 · 当前与最近交付
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
-| GG-092 | 保存版本/AGENTS与无上下文交接 | 根目录已接当前累计版本；交接文档15/15、SQL恢复3/3通过，本地保存未发布 | [任务](tasks/GG-092-development-handoff.md) |
+| GG-092 | 保存版本/AGENTS与无上下文交接 | 当前累计版本已保存；09-15重启工作区32131/登录32191，ready200，本地未发布 | [任务](tasks/GG-092-development-handoff.md) |
 | GG-091 | 账户唯一邀请码、简洁登录与线上测试清理 | 原功能已验证；邀请码纯文本与账户入口无外框补充由用户手验，32141已更新；线上10测试用户/29文件清理完成，功能未部署 | [GG091](tasks/GG-091-account-invitation-login.md) / [前版GG090](tasks/GG-090-invitation-registration.md) |
 | GG-088—089 | 下拉向下/站长管理功能排序 | 本地完成；522/25、桌面/390px通过；32141已更新，未部署 | [GG088](tasks/GG-088-feedback-select-downward.md) / [GG089](tasks/GG-089-admin-navigation-order.md) |
 | GG-087 | 私有问题反馈与站长处理 | 实现验证完成；522/25、SQL/UI通过，原32141已更新；未部署 | [任务](tasks/GG-087-problem-feedback.md) |

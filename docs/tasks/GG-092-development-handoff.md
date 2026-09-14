@@ -10,3 +10,10 @@
 - 下一步：保存提交及goodgood-local-2026-09-14-gg092本地标记；保留根目录当前分支供新窗口从GG-093继续。新站长/上线/真实provider均另行明确授权。
 
 - AGENTS已移除无条件main起点与视频仅前端的旧断言，开发入口和依赖重装规则指向当前checkpoint。F:/goodgood已由旧GG024可逆切至本任务分支，旧分支/C6/.codex保留，原运行预览没有重启。
+
+## 2026-09-15 重启供用户检查登录
+
+- 现有四端口均无listener后，从根目录f68ba81构建并启动工作区32131/Web32716、登录32191/Web8216、mock Worker32142/PID6744、provider32143/PID26808。
+- 原local配置保留；登录检查使用忽略.env.login-review、独立cookie/issuer、现有Mailpit58046/58045。原goodgood数据不重置、不写fixtures；不联系外部SMTP/provider。
+- 四readiness及Mailpit均200，Chrome已打开统一邮箱/验证码/邀请码/确认表单并保留给用户；未提交注册、发信或生成，未全量验证登录功能。
+- 下一步：用户访问32191/create手动检查，验证码进入58045本地邮件箱；工作区32131使用local登录，后续上下文以最新交接为准。
