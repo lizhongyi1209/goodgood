@@ -2,7 +2,7 @@
 ## 当前与最近交付
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
-| GG-089 | 站长管理功能栏排序 | 实现待验证，未部署 | [任务](tasks/GG-089-admin-navigation-order.md) |
+| GG-089 | 站长管理功能栏排序 | 本地完成；522/25、桌面/390px通过；32141已更新，未部署 | [任务](tasks/GG-089-admin-navigation-order.md) |
 | GG-088 | 问题类型下拉向下展开 | 本地完成；522/25、桌面/390px通过；32141已更新，未部署 | [任务](tasks/GG-088-feedback-select-downward.md) |
 | GG-087 | 私有问题反馈与站长处理 | 实现验证完成；522/25、SQL/UI通过，原32141已更新；未部署 | [任务](tasks/GG-087-problem-feedback.md) |
 | GG-086 | JCOIN发行进度与自动刷新 | 本地完成；精确进度/只读15秒刷新、桌面/390px核对通过；32141已更新，验证详情见任务，未部署 | [任务](tasks/GG-086-jcoin-live-progress.md) |
