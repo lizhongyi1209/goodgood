@@ -1,4 +1,3 @@
-import {manageInvitations} from "../server/auth/invitations.mjs";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
@@ -161,7 +160,7 @@ test(
         issued.cookie,
       )?.[1];
       assert.ok(loginBinding);
-      const registrationCode=await manageInvitations({action:'create',ownerContext:{ownerId:siteOwnerId,systemRole:'site_owner',accessStatus:'active'},idempotencyKey:'gg031-registration',resources:{pool}});
+      const registrationCode=(await pool.query('SELECT code FROM account_invitations WHERE owner_id=$1',[siteOwnerId])).rows[0];
       const verified = await authentication.verifyCode(
         { challengeId: issued.body.challengeId, code: delivered[0].code,invitationCode:registrationCode.code },
         authenticationRequest(`goodgood_gg031_session_login=${loginBinding}`),

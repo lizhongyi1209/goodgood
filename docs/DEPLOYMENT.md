@@ -1,5 +1,7 @@
 # Development and deployment
 
+GG-091本地功能仅新增0043账户码/邀请关系及触发器补齐，替换原32141 Web；保持原local配置/用户数据/Worker，不发真实邮件。注册UI在命名隔离SMTP无Worker栈验收。线上全部测试用户清理已按独立授权完成，现有0019/镜像不变，见操作记录；不是累计功能上线。不要将已删除的站长测试身份恢复或运行旧转换脚本。
+
 GG-090为本地候选，仅新增0042邀请码空表供原32141站长验收并替换Web；无需Worker变更，不切换原local认证或发送真实邮件。真实邮件注册UI通过命名隔离Mailpit/无Worker栈验收。生产需单独授权迁移0042并采用email_otp配置；历史OIDC不能新注册，既有绑定可登录。不得旧脚本批量激活/重置旧账户。
 
 GG-074 is local only. Scoped migration0037 preserves old case content/defaults,

@@ -1,13 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {
-  invitationDigest,
-  manageInvitations,
-} from "../server/auth/invitations.mjs";
-import { invitationHttp } from "../server/auth/invitation-http.mjs";
-import { createEmailOtpOperations } from "../server/auth/email-operations.mjs";
+import { normalizeAccountInvitationCode } from "../server/auth/account-invitations.mjs";
 import { loadAuthenticationConfig } from "../server/auth/config.mjs";
+import { createEmailOtpOperations } from "../server/auth/email-operations.mjs";
 import { emailCodeDigest } from "../server/auth/email-policy.mjs";
+
 const config = loadAuthenticationConfig({
   GOODGOOD_AUTH_MODE: "email_otp",
   GOODGOOD_AUTH_COOKIE_NAME: "gg090_test_session",
@@ -16,53 +13,20 @@ const config = loadAuthenticationConfig({
   GOODGOOD_EMAIL_OTP_SECRET: "gg090-test-secret-at-least-thirty-two-characters",
   GOODGOOD_EMAIL_SENDING_ENABLED: "false",
 });
-test("single-use invitation digest accepts only generated high-entropy syntax", () => {
-  const code = "GG-" + "a".repeat(24);
-  assert.match(invitationDigest(code), /^[a-f0-9]{64}$/);
-  assert.equal(invitationDigest(" " + code + " "), invitationDigest(code));
-  for (const value of [null, {}, "123456", "GG-short", code + "a"])
-    assert.equal(invitationDigest(value), null);
+
+test("six-digit invitation preserves leading zeroes and rejects old/invalid codes", () => {
+  assert.equal(normalizeAccountInvitationCode(" 000123 "), "000123");
+  for (const code of [
+    123456,
+    "12345",
+    "1234567",
+    "GG-" + "a".repeat(24),
+    null,
+    "１２３４５６",
+  ])
+    assert.equal(normalizeAccountInvitationCode(code), null);
 });
-test("invitation HTTP enforces admin header, bounded JSON and sanitized errors", async () => {
-  const request = (body = "{}", headers = {}) =>
-    new Request("http://localhost/api/admin/invitations/create", {
-      method: "POST",
-      headers,
-      body,
-    });
-  const options = {
-    authenticate: async () => ({ ownerId: "one" }),
-    operation: async (input) => ({
-      action: input.action,
-      key: input.idempotencyKey,
-    }),
-  };
-  assert.equal((await invitationHttp(request(), options)).status, 403);
-  const headers = {
-    "x-goodgood-admin-action": "1",
-    "idempotency-key": "test-key",
-  };
-  assert.deepEqual(
-    await (await invitationHttp(request("{}", headers), options)).json(),
-    { action: "create", key: "test-key" },
-  );
-  assert.equal(
-    (await invitationHttp(request("x".repeat(2049), headers), options)).status,
-    413,
-  );
-  assert.equal(
-    (await invitationHttp(request("[]", headers), options)).status,
-    400,
-  );
-  const failure = await invitationHttp(request("{}", headers), {
-    ...options,
-    operation: async () => {
-      throw Error("database password secret");
-    },
-  });
-  assert.equal(failure.status, 503);
-  assert.doesNotMatch(await failure.text(), /password|secret/);
-});
+
 test("email invitation outcomes issue no session cookies and preserve old login", async () => {
   const binding = "b".repeat(32),
     challengeId = "90000000-0000-4000-8000-000000000001";
@@ -107,25 +71,16 @@ test("email invitation outcomes issue no session cookies and preserve old login"
   outcome = "invitation_invalid";
   await assert.rejects(
     operations.verifyCode(
-      { challengeId, code: "123456", invitationCode: "GG-" + "a".repeat(24) },
+      { challengeId, code: "123456", invitationCode: "123456" },
       request,
     ),
     (e) => e.code === "INVITATION_INVALID",
   );
-  assert.equal(completed.invitationCode, "GG-" + "a".repeat(24));
+  assert.equal(completed.invitationCode, "123456");
   outcome = "succeeded";
   assert.equal(
     (await operations.verifyCode({ challengeId, code: "123456" }, request))
       .cookies.length,
     2,
-  );
-  await assert.rejects(
-    manageInvitations({
-      action: "create",
-      idempotencyKey: "bad",
-      ownerContext: {},
-      resources: {},
-    }),
-    (e) => e.code === "ADMIN_REQUEST_INVALID",
   );
 });

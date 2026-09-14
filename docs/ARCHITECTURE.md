@@ -1,5 +1,7 @@
 # Architecture
 
+GG-091独立account-invitations验证器与0043用户插入触发器自动分配唯一六位码；邮箱事务验证正确邮件码/预期email后共享锁活动邀请者，再记录account_invitation_uses并提交账户/欢迎积分/Session/挑战。邀请码无限复用，注册者邀请关系唯一；不消耗原码。旧0042仅历史表，旧后台操作路径移除。
+
 GG-090独立server/auth/invitations.mjs与共用invitation-http连接Node/框架API；邮箱事务在邮件码正确后锁邮箱/owner/邀请码，一次提交新active用户或旧pending开通、欢迎积分（仅新用户）、邀请码使用、Session和challenge消费。OIDC仅允许已有绑定登录，无自动注册旁路；local仅已有身份。后台在DB再次验证活动站长。
 
 GG-087隔离features/feedback、server/feedback及shared/contracts/feedback；框架与Node共用有界multipart/http服务，session认证允许非活动用户联系站长，DB再次核对管理角色。专用私有对象通过同源认证图片API读取，不走references/资产库/provider；创建锁用户+内容指纹幂等，站长版本/动作锁保护回复。

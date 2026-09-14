@@ -1,5 +1,7 @@
 # GG-063 quality pricing
 
+GG-091迁移0043新增account_invitations(owner_id PK、code UNIQUE六位字符串、created_at)与account_invitation_uses(registered_owner_id PK、inviter_owner_id FK、challenge_id UNIQUE独立审计UUID、created_at)。新增用户同事务通过触发器分配随机六位码，既有用户补齐，不改用户/积分/长码历史；允许前导零，碰撞重试，百万码空间耗尽则注册整体失败。码固定无限复用、活动邀请者校验，使用关系不绑定短期挑战FK。旧0042保留历史，不再新增/消费。
+
 GG-090迁移0042新增registration_invitations，id、随机高熵码SHA256摘要唯一、末6位提示、created_by、幂等键、created_at、revoked_at/revoked_by、used_at/used_by/challenge_id；challenge_id为独立审计标识、不阻止短期邮件挑战清理；每码单人，owner/challenge唯一，使用字段整体非空且不可同时停用。旧用户/状态/账本/迁移校验不改，users历史默认pending保留用于旧兼容；仅邮箱双码注册显式active。
 
 GG-087迁移0041新增feedback_tickets、feedback_images、feedback_events；票据用户/操作键唯一，0—5张附件通过位置1—5主键约束，私有对象键唯一。回复/状态事件追加且UPDATE/DELETE触发器拒绝；version保护站长并发。原用户/积分/任务/资产/JCOIN数据不改，迁移不种反馈。

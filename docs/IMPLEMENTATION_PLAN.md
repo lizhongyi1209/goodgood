@@ -1,19 +1,19 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-14
-- Current phase: GG-090 invitation registration locally implemented and verified; not deployed.
-- Current objective: 接续e60d192/a73835f，以有效邮件码及单人邀请码原子注册active账户，替代审核入口。
+- Current phase: GG-091 account invitations and concise authentication; production test cleanup completed; local feature verified; original preview handoff.
+- Current objective: 接续9f205c9/a73835f；账户唯一6位数字码无限邀请、统一验证表单，按明确授权清理线上全部测试用户。
 - Previous objective: GG082最小发行讨论；GG081积分类型/充值登记/运营与并发本地实现验证保留。
 
 ## Current checkpoint
 
-- Task [GG-090](tasks/GG-090-invitation-registration.md)：feature/GG-090-invitation-registration；F:/goodgood-worktrees/GG-090；基线e60d192保留a73835f及GG089。
-- [ADR0086](decisions/0086-invitation-email-registration.md)：双码注册active、站长单人码/停用；旧pending新验证补码开通，暂停不恢复。
-- 本地实现/隔离邮件UI与GG090/GG029/GG031 SQL已通过；最终check:local 525/26通过，文档8/8。已仅新增0042，原表全部内容/行数及旧迁移校验和保持。
-- 候选8807a1e；原32141 Web26600已更新，三服务ready200；mock Worker30432/32142、provider9048/32143保持。原数据哈希/行数保留；所有命名QA数据库/bucket/Redis db12/专用Mailpit/页面已清理。
-- Next action: 用户验收32141/admin/users邀请码管理；注册UI已隔离邮件模式验证，原预览仍local。手动注册验收须恢复专用无Worker邮件栈；下一普通任务GG091。
-- Blockers: 本任务无；额外历史M6写测试旧10积分价格断言失败（现价20），详见任务，未扩大修复。生产/真实发信/付费生成未授权。
-- 正式入口https://goodgood.o1key.com不变；staging-goodgood.o1key.com为历史名称。
+- Task [GG-091](tasks/GG-091-account-invitation-login.md)：feature/GG-091-account-invitation-login；F:/goodgood-worktrees/GG-091；基线9f205c9保留a73835f及GG090。
+- [ADR0087](decisions/0087-account-owned-invitations.md)：账户唯一6位数字码无限邀请，单一表单，邮箱直接可编辑；替代0086部分规则。
+- 线上授权清理已完成：10测试账户（含站长）及15资产/13素材/37任务/29对象已删；用户/文件0，全局配置/迁移0019不变，现有服务healthy/公网200。详见任务清理记录；本地功能未部署。
+- 部署目标保持 `goodgood.o1key.com`；`staging-goodgood.o1key.com` 仅隔离预发布，不混用数据。
+- 原32141 Web26600、mock Worker30432/32142、provider9048/32143保持。原本地用户草稿/反馈/数据不重置。
+- Next action: 本地类型与双码/无限复用SQL通过；继续邮件UI/手机/账户码展示与check:local，更新原32141；清理临时演练文件。
+- Blockers: 无；生产功能部署或真实发信/付费生成不在此授权范围。
 
 ## Verification sequence
 
@@ -60,7 +60,7 @@
 
 ## New-session recovery
 
-1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，进入 `F:/goodgood-worktrees/GG-090`，读GG090/ADR0086与server/auth/email-repository.mjs及邀请码服务，原32141为GG090 start-review.mjs（PID26600），核验8807a1e/a73835f祖先；继续当前代码，不退旧版本。
+1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，进入 `F:/goodgood-worktrees/GG-091`，读GG091/ADR0087与server/auth/email-repository.mjs及邀请码服务，原32141为GG090 start-review.mjs（PID26600），核验9f205c9/a73835f祖先；继续当前代码，不退旧版本。
 2. 根 `F:/goodgood` 仍为旧 GG-024；GG-079 是原累计候选，main 也不能代替 a73835f。`.codex/` 与未跟踪用户文件保持原样；不用旧检查点退回历史版本。
 3. GG081的32181模拟检查已停止/临时页面移除，不依赖聊天句柄。后续恢复先核验版本/端口及独立mock目标；GG079/GG077 helpers与依赖54449/56449/58049见原交接。六个命名测试库已清理；禁止对原预览fixture/重置，旧32140曾有真实Worker，不操作。
 4. 不恢复或 bulk merge 旧 C6；旧阶段具体验证见相应任务卡，GG-051 [研究记录](research/GG-051-credit-pricing-reassessment.md) 保留定价依据。

@@ -1,5 +1,6 @@
 "use client";
 
+import { AccountInvitation } from "@/features/auth/account-invitation";
 import "@/features/profile/profile.css";
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type WheelEvent as ReactWheelEvent } from "react";
@@ -3072,6 +3073,7 @@ export default function Home({
                           : displayedAvailableCredits ?? "暂不可用"}
                     </strong>
                   </div>
+                  <AccountInvitation code={authenticationSession.account.invitationCode} />
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="account-menu-logout" onSelect={() => void handleLogout()}>
@@ -3133,6 +3135,9 @@ export default function Home({
               <DropdownMenu>
                 <DropdownMenuTrigger asChild><button className="top-avatar" aria-label="打开账户菜单"><ProfileAvatar className="account-profile-avatar" url={personalProfile.profile?.avatarUrl} name={personalProfile.profile?.displayName ?? accountInitials}/></button></DropdownMenuTrigger>
                 <DropdownMenuContent align="end" collisionPadding={12}>
+                  <div className="account-menu-detail"><CircleDot size={17}/><span>积分余额</span><strong>{displayedAvailableCredits ?? "—"}</strong></div>
+                  <AccountInvitation code={authenticationSession.account.invitationCode} />
+                  <DropdownMenuSeparator/>
                   <DropdownMenuItem onSelect={handleProfileNav}><UserRoundCog size={16}/><span>个人资料</span></DropdownMenuItem>
                   <DropdownMenuItem onSelect={handleFeedbackNav}><MessageSquare size={16}/><span>问题反馈</span></DropdownMenuItem>
                   {authenticationSession.access.status === 'active'&&<DropdownMenuItem onSelect={handleJcoinNav}><Coins size={16}/><span>我的平台币</span></DropdownMenuItem>}

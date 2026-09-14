@@ -1,5 +1,4 @@
-import {randomUUID,randomBytes} from "node:crypto";
-import {invitationDigest} from "../server/auth/invitations.mjs";
+import {randomUUID} from "node:crypto";
 import assert from "node:assert/strict";
 import test from "node:test";
 import pg from "pg";
@@ -66,9 +65,9 @@ test(
     });
 
     try {
-      const inviterId=randomUUID(),invitationCode='GG-'+randomBytes(18).toString('base64url');
+      const inviterId=randomUUID();
       await pool.query("INSERT INTO users(id,email,status) VALUES($1,'inviter@example.invalid','active')",[inviterId]);
-      await pool.query("INSERT INTO registration_invitations(id,code_digest,code_hint,created_by,idempotency_key) VALUES($1,$2,$3,$4,'gg029-registration')",[randomUUID(),invitationDigest(invitationCode),invitationCode.slice(-6),inviterId]);
+      const invitationCode=(await pool.query('SELECT code FROM account_invitations WHERE owner_id=$1',[inviterId])).rows[0].code;
       const issued = await operations.requestCode(
         { email: "alpha.creator@example.com", returnTo: "/create" },
         request(),

@@ -133,3 +133,5 @@ ADR 0053 adds standalone-delimited concurrent prompt batches for GG-040.
 - `0078-inspiration-visibility-and-statistics.md` — three visibility modes, fixed private parameters and durable deduplicated case statistics for GG-077.
 
 - `0086-invitation-email-registration.md` — 邮箱与邀请码共同注册，替代新账户待审核入口。
+
+- `0087-account-owned-invitations.md` — 账户固定六位数字码无限邀请、统一简洁验证表单与授权线上测试数据清理。

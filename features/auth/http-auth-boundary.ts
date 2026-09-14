@@ -6,6 +6,7 @@ export type AuthenticationSession = Readonly<{
   }>;
   account: Readonly<{
     availableCredits: string;
+    invitationCode?: string;
     businessRole: "enterprise" | "distributor" | null;
     reservedCredits: string;
     role: "site_owner" | "member";
@@ -71,8 +72,7 @@ export async function readAuthenticationSession(): Promise<AuthenticationSession
   const response = await fetch("/api/auth/session", { cache: "no-store" });
   if (response.status === 401) return null;
   const payload = (await response.json()) as
-    | AuthenticationSession
-    | AuthenticationErrorEnvelope;
+    AuthenticationSession | AuthenticationErrorEnvelope;
   if (!response.ok) {
     const failure = payload as AuthenticationErrorEnvelope;
     throw new Error(failure.error?.message ?? "登录状态暂时无法确认，请重试。");
@@ -83,9 +83,11 @@ export async function readAuthenticationSession(): Promise<AuthenticationSession
 export async function readAuthenticationMethod(): Promise<AuthenticationMethod> {
   const response = await fetch("/api/auth/method", { cache: "no-store" });
   const payload = (await response.json()) as
-    | { method?: AuthenticationMethod }
-    | AuthenticationErrorEnvelope;
-  if (!response.ok) throw new AuthenticationBoundaryError(payload as AuthenticationErrorEnvelope);
+    { method?: AuthenticationMethod } | AuthenticationErrorEnvelope;
+  if (!response.ok)
+    throw new AuthenticationBoundaryError(
+      payload as AuthenticationErrorEnvelope,
+    );
   const success = payload as { method?: AuthenticationMethod };
   if (success.method !== "email_code" && success.method !== "hosted") {
     throw new Error("登录方式暂时无法确认，请重试。");
@@ -94,12 +96,17 @@ export async function readAuthenticationMethod(): Promise<AuthenticationMethod> 
 }
 
 export async function readEmailAuthenticationChallenge(): Promise<EmailAuthenticationChallenge | null> {
-  const response = await fetch("/api/auth/email/challenge", { cache: "no-store" });
+  const response = await fetch("/api/auth/email/challenge", {
+    cache: "no-store",
+  });
   const payload = (await response.json()) as
     | { challenge?: EmailAuthenticationChallenge | null }
     | AuthenticationErrorEnvelope;
-  if (!response.ok) throw new AuthenticationBoundaryError(payload as AuthenticationErrorEnvelope);
-  return "challenge" in payload ? payload.challenge ?? null : null;
+  if (!response.ok)
+    throw new AuthenticationBoundaryError(
+      payload as AuthenticationErrorEnvelope,
+    );
+  return "challenge" in payload ? (payload.challenge ?? null) : null;
 }
 
 export async function requestEmailAuthenticationCode(
@@ -120,12 +127,20 @@ export async function requestEmailAuthenticationCode(
         resendAfterSeconds: number;
       }
     | AuthenticationErrorEnvelope;
-  if (!response.ok) throw new AuthenticationBoundaryError(payload as AuthenticationErrorEnvelope);
-  const accepted = payload as Exclude<typeof payload, AuthenticationErrorEnvelope>;
+  if (!response.ok)
+    throw new AuthenticationBoundaryError(
+      payload as AuthenticationErrorEnvelope,
+    );
+  const accepted = payload as Exclude<
+    typeof payload,
+    AuthenticationErrorEnvelope
+  >;
   return Object.freeze({
     delivery: accepted.delivery,
     emailHint: accepted.emailHint,
-    expiresAt: new Date(Date.now() + accepted.expiresInSeconds * 1_000).toISOString(),
+    expiresAt: new Date(
+      Date.now() + accepted.expiresInSeconds * 1_000,
+    ).toISOString(),
     id: accepted.challengeId,
     resendAfterSeconds: accepted.resendAfterSeconds,
   });
@@ -135,16 +150,25 @@ export async function verifyEmailAuthenticationCode(
   challengeId: string,
   code: string,
   invitationCode?: string,
+  email?: string,
 ): Promise<string> {
   const response = await fetch("/api/auth/email/verify", {
-    body: JSON.stringify({ challengeId, code, ...(invitationCode !== undefined ? {invitationCode} : {}) }),
+    body: JSON.stringify({
+      challengeId,
+      code,
+      ...(invitationCode !== undefined ? { invitationCode } : {}),
+      ...(email !== undefined ? { email } : {}),
+    }),
     headers: { "content-type": "application/json" },
     method: "POST",
   });
   const payload = (await response.json()) as
     | { authenticated?: boolean; returnTo?: string }
     | AuthenticationErrorEnvelope;
-  if (!response.ok) throw new AuthenticationBoundaryError(payload as AuthenticationErrorEnvelope);
+  if (!response.ok)
+    throw new AuthenticationBoundaryError(
+      payload as AuthenticationErrorEnvelope,
+    );
   const success = payload as { authenticated?: boolean; returnTo?: string };
   if (success.authenticated !== true || typeof success.returnTo !== "string") {
     throw new Error("登录结果无效，请重新获取验证码。");
@@ -179,7 +203,8 @@ export function authenticationErrorMessage(code: string | null) {
   if (code === "ACCOUNT_LINK_REQUIRED") {
     return "该邮箱已有登录身份，请先在登录页完成账号关联。";
   }
-  if (code === "ACCOUNT_PENDING") return "账户尚未开通，请验证邮箱并填写邀请码。";
+  if (code === "ACCOUNT_PENDING")
+    return "账户尚未开通，请验证邮箱并填写邀请码。";
   if (code === "ACCOUNT_SUSPENDED") return "账号已暂停使用，请联系站长。";
   return "登录没有完成，请重新使用邮箱验证码登录。";
 }

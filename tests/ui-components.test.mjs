@@ -248,15 +248,16 @@ test("keeps authentication global, passwordless, and recoverable", async () => {
     authenticationGate,
     /authentication-email-input[\s\S]*authentication-code-input[\s\S]*authentication-send-code[\s\S]*authentication-submit/,
   );
-  assert.match(authenticationGate, /邮箱验证码登录/);
-  assert.match(authenticationGate, /placeholder="请输入 6 位验证码"/);
+  assert.match(authenticationGate, /authentication-mode-title/);
+  assert.match(authenticationGate, /placeholder="验证码"/);
   assert.match(authenticationGate, /发送验证码/);
-  assert.match(authenticationGate, /新用户需邀请码注册/);
+  assert.match(authenticationGate, /邀请码（新用户填写）/);
+  assert.doesNotMatch(authenticationGate, /修改邮箱|使用邀请码注册|setRegister/);
   assert.match(authenticationGate, /aria-label="邀请码"/);
   assert.match(authenticationGate, /autoComplete="one-time-code"/);
   assert.match(authenticationGate, /disabled=\{!challenge \|\| busy !== null\}/);
-  assert.match(authenticationGate, /\$\{resendRemaining\} 秒后重发/);
-  assert.match(authenticationGate, /重新发送/);
+  assert.match(authenticationGate, /\$\{resendRemaining\}s/);
+  assert.match(authenticationGate, /重发/);
   assert.doesNotMatch(authenticationGate, /InputOTPSlot/);
   assert.match(emailPolicy, /EMAIL_OTP_RESEND_SECONDS = 60/);
   assert.match(creationPage, /当前创作内容已保留/);

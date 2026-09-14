@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { grantWelcomeCreditsInTransaction } from "../billing/repository.mjs";
 import { AuthenticationError } from "./errors.mjs";
-import { invitationDigest } from "./invitations.mjs";
+import { normalizeAccountInvitationCode } from "./account-invitations.mjs";
 import { EMAIL_OTP_MAX_FAILURES } from "./email-policy.mjs";
 
 async function inTransaction(pool, operation) {
@@ -285,6 +285,8 @@ export async function completeEmailChallenge(
     const validState =
       challenge &&
       challenge.browser_binding_hash === input.browserBindingHash &&
+      (!input.expectedEmail ||
+        challenge.normalized_email === input.expectedEmail) &&
       !challenge.consumed_at &&
       !challenge.invalidated_at &&
       new Date(challenge.expires_at).getTime() > input.now.getTime() &&
@@ -346,11 +348,11 @@ export async function completeEmailChallenge(
     if (!identity || pendingOwner) {
       if (!input.invitationCode)
         return Object.freeze({ outcome: "invitation_required" });
-      const digest = invitationDigest(input.invitationCode);
-      const match = digest
+      const inviteCode = normalizeAccountInvitationCode(input.invitationCode);
+      const match = inviteCode
         ? await client.query(
-            "SELECT id FROM registration_invitations WHERE code_digest=$1 AND revoked_at IS NULL AND used_at IS NULL FOR UPDATE",
-            [digest],
+            "SELECT i.owner_id FROM account_invitations i JOIN users u ON u.id=i.owner_id WHERE i.code=$1 AND u.status='active' FOR SHARE OF i,u",
+            [inviteCode],
           )
         : { rows: [] };
       invitation = match.rows[0];
@@ -401,8 +403,8 @@ export async function completeEmailChallenge(
           [identity.owner_id, input.now],
         );
       await client.query(
-        "UPDATE registration_invitations SET used_at=$2,used_by=$3,challenge_id=$4 WHERE id=$1",
-        [invitation.id, input.now, identity.owner_id, input.challengeId],
+        "INSERT INTO account_invitation_uses(registered_owner_id,inviter_owner_id,challenge_id,created_at) VALUES($1,$2,$3,$4)",
+        [identity.owner_id, invitation.owner_id, input.challengeId, input.now],
       );
     }
 

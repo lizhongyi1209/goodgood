@@ -1,5 +1,7 @@
 # GG-063 verification
 
+GG-091替代GG090旧单次码测试：六位字符串/前导零/拒长码，验证码与email匹配、缺码/错码、同邀请码并发两个成功、同邮件挑战一次性、每用户仅1唯一code、活动邀请人要求、旧pending/暂停、200欢迎一次、注册事务回滚及挑战清理。命名goodgood_gg091_invitation_test*、loopback54449、INTEGRATION/NO_WORKER及空库/无peer守卫；UI仅专用Mailpit无Worker栈，原预览不写fixtures。授权线上清理仅服务器新备份/命名无Worker克隆演练及精确用户/对象清单，生产身份/配置保持，详见操作记录。
+
 GG-090使用命名空库goodgood_gg090_invitation_test*、loopback54449、显式INTEGRATION/NO_WORKER及0其他连接；完整42迁移，虚拟邮件捕获、真实PG测试双码/状态、并发使用、停用竞态、回滚及角色复核。UI测试用专用DB/Redis db12/private bucket与本地Mailpit，不连接Worker/真实SMTP/provider。原32141仅只读验证和新增空表，无fixtures/真实信件。
 
 GG-088定位修复用实际浏览器验证默认其他首次打开、选择首项后再次打开及390px全新表单首次打开；菜单顶部在触发按钮底部之下且data-side=bottom，保留键盘选择与Escape返回焦点。不提交或写fixture；沿用GG087定向检查及一次check:local。

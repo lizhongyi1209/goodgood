@@ -15,6 +15,7 @@ function accountContext(row, identity) {
     email: row.email ?? null,
     identity: Object.freeze({ ...identity }),
     identityId: row.identity_id ?? null,
+    invitationCode: row.invitation_code ?? null,
     locale: row.locale,
     ownerId: row.owner_id,
     reservedCredits: String(row.reserved_balance ?? 0),
@@ -44,6 +45,7 @@ function activeOwnerContext(row, identity) {
 async function findIdentityOwner(pool, identity) {
   const result = await pool.query(
     `SELECT i.id AS identity_id, u.account_tier, u.email,
+            invite.code AS invitation_code,
             u.id AS owner_id, u.locale, u.status,
             COALESCE(c.available_balance, 0) AS available_balance,
             COALESCE(c.reserved_balance, 0) AS reserved_balance,
@@ -59,6 +61,7 @@ async function findIdentityOwner(pool, identity) {
             ) AS is_site_owner
        FROM auth_identities i
        JOIN users u ON u.id = i.owner_id
+       LEFT JOIN account_invitations invite ON invite.owner_id = u.id
        LEFT JOIN credit_accounts c
          ON c.owner_id = u.id AND c.unit = 'credit-cny-cent'
       WHERE i.issuer = $1 AND i.subject = $2`,
@@ -122,6 +125,7 @@ export async function provisionOwnerIdentity(pool, claims) {
     );
     const existing = await client.query(
       `SELECT i.id AS identity_id, u.account_tier, u.email,
+            invite.code AS invitation_code,
               u.id AS owner_id, u.locale, u.status,
               COALESCE(c.available_balance, 0) AS available_balance,
               COALESCE(c.reserved_balance, 0) AS reserved_balance,
@@ -137,7 +141,8 @@ export async function provisionOwnerIdentity(pool, claims) {
               ) AS is_site_owner
          FROM auth_identities i
          JOIN users u ON u.id = i.owner_id
-         LEFT JOIN credit_accounts c
+         LEFT JOIN account_invitations invite ON invite.owner_id = u.id
+       LEFT JOIN credit_accounts c
            ON c.owner_id = u.id AND c.unit = 'credit-cny-cent'
         WHERE i.issuer = $1 AND i.subject = $2
         FOR UPDATE OF i, u`,
@@ -207,6 +212,7 @@ export async function createAuthenticationSession(pool, session) {
 async function findSessionOwner(pool, tokenHash) {
   const result = await pool.query(
     `SELECT i.id AS identity_id, i.issuer, i.subject,
+            invite.code AS invitation_code,
             u.account_tier, u.email, u.id AS owner_id, u.locale, u.status,
             COALESCE(c.available_balance, 0) AS available_balance,
             COALESCE(c.reserved_balance, 0) AS reserved_balance,
@@ -224,6 +230,7 @@ async function findSessionOwner(pool, tokenHash) {
        JOIN users u ON u.id = s.owner_id
        JOIN auth_identities i
          ON i.id = s.auth_identity_id AND i.owner_id = s.owner_id
+       LEFT JOIN account_invitations invite ON invite.owner_id = u.id
        LEFT JOIN credit_accounts c
          ON c.owner_id = u.id AND c.unit = 'credit-cny-cent'
       WHERE s.token_hash = $1

@@ -7,6 +7,7 @@ export type BusinessRole = "enterprise" | "distributor";
 
 export type ManagedAccount = Readonly<{
   accountTier: "seed";
+  invitationCode?: string | null;
   availableCredits: string;
   businessRole: BusinessRole | null;
   createdAt: string;

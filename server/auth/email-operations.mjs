@@ -321,6 +321,10 @@ export function createEmailOtpOperations({
           challengeId,
           issuer: config.issuer,
           invitationCode: input?.invitationCode,
+          expectedEmail:
+            input?.email === undefined
+              ? null
+              : normalizeEmailAddress(input.email).normalizedEmail,
           now: currentTime,
           registrationEnabled: config.registrationEnabled,
           requestId: requestIdFor(request),
@@ -352,8 +356,8 @@ export function createEmailOtpOperations({
             ? "INVITATION_REQUIRED"
             : "INVITATION_INVALID",
           result.outcome === "invitation_required"
-            ? "请填写有效邀请码，验证邮箱后即可开通账户。"
-            : "邀请码无效、已停用或已使用，请检查后重试。",
+            ? "请输入邀请码。"
+            : "邀请码无效。",
           403,
         );
       }

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { LoaderCircle, LogIn, Mail, ShieldCheck } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,21 +17,18 @@ import {
 export function AuthenticationGate({
   initialError,
   initialEmail = "",
-  invitationOnly = false,
   onAuthenticated,
   onHostedLogin,
 }: {
   initialError: string | null;
   initialEmail?: string;
-  invitationOnly?: boolean;
   onAuthenticated: () => Promise<void>;
   onHostedLogin: () => void;
 }) {
   const [method, setMethod] = useState<"email_code" | "hosted" | null>(null);
   const [email, setEmail] = useState(initialEmail);
-  const [register, setRegister] = useState(invitationOnly);
+  const emailRef = useRef(initialEmail);
   const [invitationCode, setInvitationCode] = useState("");
-  const [requestedEmail, setRequestedEmail] = useState<string | null>(null);
   const [challenge, setChallenge] =
     useState<EmailAuthenticationChallenge | null>(null);
   const [code, setCode] = useState("");
@@ -65,9 +62,7 @@ export function AuthenticationGate({
       .catch((reason) => {
         if (active) {
           setError(
-            reason instanceof Error
-              ? reason.message
-              : "登录方式暂时无法确认，请重试。",
+            reason instanceof Error ? reason.message : "暂时不可用，请重试。",
           );
           setErrorTarget("general");
         }
@@ -95,13 +90,15 @@ export function AuthenticationGate({
     setBusy("sending");
     setError(null);
     setErrorTarget(null);
+    const snapshot = email.trim();
     try {
       const next = await requestEmailAuthenticationCode(
-        email,
+        snapshot,
         `${window.location.pathname}${window.location.search}`,
       );
+      if (emailRef.current.trim().toLowerCase() !== snapshot.toLowerCase())
+        return;
       setChallenge(next);
-      setRequestedEmail(email.trim());
       setCode("");
       setNow(Date.now());
       setResendAvailableAt(Date.now() + next.resendAfterSeconds * 1_000);
@@ -126,7 +123,8 @@ export function AuthenticationGate({
       await verifyEmailAuthenticationCode(
         challenge.id,
         code,
-        register ? invitationCode : undefined,
+        invitationCode,
+        email,
       );
       await onAuthenticated();
     } catch (reason) {
@@ -139,7 +137,6 @@ export function AuthenticationGate({
         reason instanceof AuthenticationBoundaryError &&
         ["INVITATION_REQUIRED", "INVITATION_INVALID"].includes(reason.code)
       ) {
-        setRegister(true);
         setErrorTarget("invitation");
       } else setErrorTarget("code");
     } finally {
@@ -147,20 +144,14 @@ export function AuthenticationGate({
     }
   };
 
-  const editEmail = () => {
-    setChallenge(null);
-    setRequestedEmail(null);
-    setCode("");
-    setError(null);
-    setErrorTarget(null);
-    setResendAvailableAt(0);
-  };
-
   const updateEmail = (value: string) => {
+    const changed =
+      emailRef.current.trim().toLowerCase() !== value.trim().toLowerCase();
+    emailRef.current = value;
     setEmail(value);
     setError(null);
     setErrorTarget(null);
-    if (challenge && requestedEmail === null) {
+    if (changed) {
       setChallenge(null);
       setCode("");
       setResendAvailableAt(0);
@@ -179,18 +170,14 @@ export function AuthenticationGate({
     busy === "sending"
       ? "正在发送"
       : resendRemaining > 0
-        ? `${resendRemaining} 秒后重发`
+        ? `${resendRemaining}s`
         : challenge
-          ? "重新发送"
+          ? "重发"
           : "发送验证码";
 
   if (busy === "loading" && method === null) {
     return (
-      <div
-        className="authentication-gate"
-        role="status"
-        aria-label="正在读取登录方式"
-      >
+      <div className="authentication-gate" role="status" aria-label="加载中">
         <div className="authentication-card authentication-loading">
           <LoaderCircle className="animate-spin" size={20} />
           <span>正在读取登录方式</span>
@@ -260,10 +247,8 @@ export function AuthenticationGate({
         </div>
         {method === "hosted" ? (
           <>
-            <h2 id="authentication-title">登录后继续创作</h2>
-            <p>
-              使用 Google 账号或邮箱验证码。新用户请使用邮箱验证码和邀请码注册。
-            </p>
+            <h2 id="authentication-title">登录</h2>
+
             {error && (
               <div className="authentication-error" role="alert">
                 {error}
@@ -271,17 +256,13 @@ export function AuthenticationGate({
             )}
             <button className="authentication-submit" onClick={onHostedLogin}>
               <LogIn size={16} />
-              Google / 邮箱验证码登录
+              确认
             </button>
           </>
         ) : (
           <>
             <h2 className="authentication-mode-title" id="authentication-title">
-              {invitationOnly
-                ? "邀请码开通"
-                : register
-                  ? "邀请码注册"
-                  : "邮箱验证码登录"}
+              登录
             </h2>
             <form
               className="authentication-form"
@@ -299,14 +280,12 @@ export function AuthenticationGate({
                     autoComplete="email"
                     autoFocus
                     className="authentication-email-input"
-                    disabled={
-                      busy !== null || Boolean(challenge && requestedEmail)
-                    }
+                    disabled={busy === "verifying"}
                     id="authentication-email"
                     inputMode="email"
                     maxLength={320}
                     onChange={(event) => updateEmail(event.target.value)}
-                    placeholder={challenge ? challenge.emailHint : "请输入邮箱"}
+                    placeholder="邮箱"
                     type="email"
                     value={email}
                   />
@@ -318,7 +297,7 @@ export function AuthenticationGate({
                   <ShieldCheck aria-hidden="true" size={16} />
                   <Input
                     aria-invalid={errorTarget === "code"}
-                    aria-label="六位登录验证码"
+                    aria-label="邮箱验证码"
                     autoComplete="one-time-code"
                     className="authentication-code-input"
                     disabled={!challenge || busy !== null}
@@ -327,7 +306,7 @@ export function AuthenticationGate({
                     maxLength={6}
                     onChange={(event) => updateCode(event.target.value)}
                     pattern="[0-9]{6}"
-                    placeholder="请输入 6 位验证码"
+                    placeholder="验证码"
                     type="text"
                     value={code}
                   />
@@ -349,19 +328,22 @@ export function AuthenticationGate({
                 </Button>
               </div>
 
-              {register && (
+              {
                 <span className="authentication-input-shell">
                   <ShieldCheck aria-hidden="true" size={16} />
                   <Input
                     aria-label="邀请码"
                     aria-invalid={errorTarget === "invitation"}
                     autoComplete="off"
-                    maxLength={64}
-                    placeholder="请输入邀请码"
+                    maxLength={6}
+                    inputMode="numeric"
+                    placeholder="邀请码（新用户填写）"
                     disabled={busy !== null}
                     value={invitationCode}
                     onChange={(event) => {
-                      setInvitationCode(event.target.value);
+                      setInvitationCode(
+                        event.target.value.replace(/\D/g, "").slice(0, 6),
+                      );
                       if (errorTarget === "invitation") {
                         setError(null);
                         setErrorTarget(null);
@@ -369,10 +351,10 @@ export function AuthenticationGate({
                     }}
                   />
                 </span>
-              )}
+              }
               {challenge?.delivery === "unknown" && (
                 <div className="authentication-notice">
-                  发信结果暂未确认，请稍等片刻；收到的当前验证码仍可尝试。
+                  发送状态待确认，请稍后重试。
                 </div>
               )}
               {error && (
@@ -386,56 +368,15 @@ export function AuthenticationGate({
                   busy !== null ||
                   !challenge ||
                   code.length !== 6 ||
-                  (register && !invitationCode.trim())
+                  !email.trim()
                 }
                 type="submit"
               >
                 {busy === "verifying" && (
                   <LoaderCircle className="animate-spin" />
                 )}
-                {busy === "verifying"
-                  ? "正在验证"
-                  : invitationOnly
-                    ? "验证并开通"
-                    : register
-                      ? "注册并登录"
-                      : "登录"}
+                {busy === "verifying" ? "验证中" : "确认"}
               </Button>
-              {challenge && (
-                <div className="authentication-delivery" role="status">
-                  <span>
-                    验证码已提交至 <strong>{challenge.emailHint}</strong>
-                    ，请检查收件箱和垃圾邮件。
-                  </span>
-                  <button
-                    className="authentication-edit-email"
-                    disabled={busy !== null}
-                    onClick={editEmail}
-                    type="button"
-                  >
-                    修改邮箱
-                  </button>
-                </div>
-              )}
-              <p className="authentication-registration-hint">
-                {register
-                  ? "邮箱验证码和邀请码均有效后，账户即可开通。"
-                  : "已有账户使用邮箱验证码登录，新用户需邀请码注册。"}
-              </p>
-              {!invitationOnly && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  disabled={busy !== null}
-                  onClick={() => {
-                    setRegister((v) => !v);
-                    setError(null);
-                    setErrorTarget(null);
-                  }}
-                >
-                  {register ? "已有账户，登录" : "使用邀请码注册"}
-                </Button>
-              )}
             </form>
           </>
         )}

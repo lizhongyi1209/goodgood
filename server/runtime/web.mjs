@@ -1,4 +1,3 @@
-import {createInvitationNodeHandler} from "../auth/invitation-http.mjs";
 import path from "node:path";
 import { startProdServer } from "vinext/server/prod-server";
 import { createAssetNodeApiHandler } from "../assets/node-api.mjs";
@@ -74,7 +73,6 @@ const handleGenerationNodeApi = createGenerationNodeApiHandler({
   admitGeneration: hostGenerationAdmission.admitGeneration,
   authenticate,
 });
-const handleInvitationNodeApi = createInvitationNodeHandler({authenticate});
 const handleAdminNodeApi = createAdminNodeApiHandler({ authenticate });
 const handleJcoinNodeApi = createJcoinNodeApiHandler({ authenticate });
 const handleFeedbackNodeApi = createFeedbackNodeApiHandler({ authenticateSession });
@@ -111,7 +109,6 @@ server.on("request", (request, response) => {
   void handleAuthenticationNodeApi(request, response)
     .then((handled) => (handled ? true : handleJcoinNodeApi(request, response)))
     .then((handled) => (handled ? true : handleFeedbackNodeApi(request, response)))
-    .then((handled) => (handled ? true : handleInvitationNodeApi(request, response)))
     .then((handled) => (handled ? true : handleAdminNodeApi(request, response)))
     .then((handled) =>
       handled ? true : handleCreationDraftNodeApi(request, response),

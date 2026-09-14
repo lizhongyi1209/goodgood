@@ -11,6 +11,7 @@ function accountFromRow(row) {
   return {
     accountTier: row.account_tier,
     availableCredits: String(row.available_balance ?? 0),
+    invitationCode: row.invitation_code ?? null,
     businessRole: row.business_role ?? null,
     createdAt: new Date(row.created_at).toISOString(),
     directParentEmail: row.direct_parent_email ?? null,
@@ -64,6 +65,7 @@ export async function listManagedAccounts(
   const values = [status, query, cursor?.createdAt ?? null, cursor?.id ?? null, limit + 1];
   const result = await pool.query(
     `SELECT u.id, u.email, u.status, u.account_tier, u.created_at,
+            invite.code AS invitation_code,
             identity.last_authenticated_at,
             COALESCE(account.available_balance, 0) AS available_balance,
             COALESCE(account.reserved_balance, 0) AS reserved_balance,
@@ -77,6 +79,7 @@ export async function listManagedAccounts(
                WHERE role.owner_id = u.id AND role.role = 'site_owner'
             ) AS is_site_owner
        FROM users u
+       LEFT JOIN account_invitations invite ON invite.owner_id=u.id
        LEFT JOIN LATERAL (
          SELECT max(last_authenticated_at) AS last_authenticated_at
            FROM auth_identities

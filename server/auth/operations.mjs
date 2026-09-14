@@ -221,6 +221,7 @@ export function createAuthenticationOperations({
       return {
         account: {
           availableCredits: owner.availableCredits,
+          ...(owner.invitationCode ? { invitationCode: owner.invitationCode } : {}),
           businessRole: owner.businessRole ?? null,
           reservedCredits: owner.reservedCredits,
           role: owner.systemRole,

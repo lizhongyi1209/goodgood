@@ -2483,3 +2483,21 @@ export const registrationInvitations = pgTable(
     check("registration_invitations_revocation", sql`(${table.revokedAt} is null) = (${table.revokedBy} is null)`),
   ],
 );
+
+export const accountInvitations = pgTable("account_invitations", {
+  ownerId: uuid("owner_id").primaryKey().references(() => users.id),
+  code: text("code").notNull().unique(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, table => [
+  check("account_invitations_code", sql`${table.code} ~ '^[0-9]{6}$'`),
+]);
+
+export const accountInvitationUses = pgTable("account_invitation_uses", {
+  registeredOwnerId: uuid("registered_owner_id").primaryKey().references(() => users.id),
+  inviterOwnerId: uuid("inviter_owner_id").notNull().references(() => accountInvitations.ownerId),
+  challengeId: uuid("challenge_id").notNull().unique(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+}, table => [
+  index("account_invitation_uses_inviter_idx").on(table.inviterOwnerId),
+  check("account_invitation_uses_not_self", sql`${table.registeredOwnerId} <> ${table.inviterOwnerId}`),
+]);
