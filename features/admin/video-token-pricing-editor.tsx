@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { SEEDANCE_LINES } from "@/shared/contracts/seedance-models.mjs";
 import type { SeedanceLine } from "@/shared/contracts/model-management";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,7 @@ export function VideoTokenPricingEditor({
   onLineChange,
   enabled = true,
   onEnabledChange,
+  pricingTools,
 }: {
   resolutions: readonly string[];
   prices: DraftPrices;
@@ -43,6 +44,7 @@ export function VideoTokenPricingEditor({
   onLineChange?: (line: SeedanceLine) => void;
   enabled?: boolean;
   onEnabledChange?: (enabled: boolean) => void;
+  pricingTools?: ReactNode;
 }) {
   const [resolution, setResolution] = useState(resolutions[0]);
   const [tokens, setTokens] = useState("50638");
@@ -142,6 +144,7 @@ export function VideoTokenPricingEditor({
           </p>
         </section>
       )}
+      {pricingTools}
       <div>
         <h3 className="text-sm font-medium">按实际 tokens 定价</h3>
         <p className="mt-1 text-xs leading-5 text-zinc-500">

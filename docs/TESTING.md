@@ -1,5 +1,11 @@
 # GG-063 verification
 
+GG-069 tests all-resolution/quality/token-rate discounts, precise rounding,
+positive cent floor, empty/invalid atomic rejection, immutable source values
+and accessible controls. Local browser checks non-compounding 98→80, independent
+routes, manual edits, cancel/data preservation and narrow layout, without paid
+requests or synthetic database writes.
+
 GG-068 coverage proves independent route clones, edited rate quotes, complete
 enabled matrices, one atomic save/audit and API roundtrip, 2.5 first and 1080p
 UI resolution/request payloads for both routes. SSR checks distinct prices,

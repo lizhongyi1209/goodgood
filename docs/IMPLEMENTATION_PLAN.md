@@ -1,28 +1,28 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-14
-- Current phase: GG-068 independent Seedance route pricing and 2.5 1080p implemented, verified and filled on local mock preview; not deployed.
-- Current objective: Let the owner inspect and adjust standard/backup Seedance prices independently.
+- Current phase: GG-069 overall route discount editing implemented and locally verified; not deployed.
+- Current objective: Let the owner apply and inspect whole-route price discounts before saving.
 - Previous objective: 用户在模型管理为 GPT 图片系列逐线路定价与启禁，保留原测试配置与历史。
 
 ## Current checkpoint
 
-- Current task [GG-068](tasks/GG-068-seedance-line-pricing.md), branch feature/GG-068-seedance-line-pricing, worktree F:/goodgood-worktrees/GG-068; verified main bab17fd ancestor plus GG-067 97df1ea candidate.
-- ADR 0071 extends actual-token pricing to independent standard/backup matrices and enables official 2.5 1080p. Public videoLines persists in existing lines JSON; legacy rates initially copy into both routes. Shared capabilities keep admin, creation and provider validation aligned. Image prices and adaptive width unchanged.
-- Targeted tests 35/35 passed. One full npm run check:local passed lint/types/build and all 473 tests: 456 passed, 17 opt-in skipped, 0 failed.
-- GG-068 Web session 74757 replaces stopped GG-067 Web 56576; mock 42311 and Worker 72412 retained. Original goodgood-gg052 volumes retained; no migrations/reset/rebuild or requests to real-provider 32140.
-- Owner browser saved four Seedance route configurations, each version 2 to 3. No discounts. Both 2.5 routes include 1080p normal rates 77/46 RMB per million tokens; other prices unchanged.
-- Browser verified independent edited values survive route switches and persisted values survive refresh. 2.5 appears first, creation 1080p selectable, request fixtures accept it on both routes and reject unsupported 4K. 390px list/editor has no horizontal overflow. Restored desktop, original tab 1648144383 kept in Seedance 2.5 standard pricing editor.
-- Read-only before/after: 39 non-model table hashes/counts identical, all image records and every model enable flag unchanged. Trial archival state retained. Only four video records and four append-only model events changed.
+- Current task [GG-069](tasks/GG-069-pricing-discount.md), branch feature/GG-069-pricing-discount, worktree F:/goodgood-worktrees/GG-069; verified main bab17fd ancestor plus GG-068 262c498 candidate.
+- ADR 0072 adds whole-route discount draft editing: 98=98%/9.8折, 80=8折, 100 restores first-application baseline. Repeated applications do not compound; all resolutions/quality/reference rates change together, other routes retain their values. Existing save persists final prices only; no migration or formal settlement changes.
+- Targeted tests 12/12 passed. One full npm run check:local passed lint/types/build and all 477 tests: 460 passed, 17 opt-in skipped, 0 failed.
+- GG-069 Web session 32488 replaces stopped GG-068 Web 74757; mock 42311 and Worker 72412 retained. Original goodgood-gg052 volumes retained; no migrations/reset/rebuild or requests to real-provider 32140.
+- Browser verified 2.5 1080p discounts 98→75.46/45.08 and 80→61.60/36.80, independent standard/backup states, invalid input preservation, 100 reset, manual edit and cancellation. GPT quality line discounts all 15 tiers; special price remains unchanged. All trial edits cancelled, no model save this task.
+- 390px list/editor has no horizontal overflow and discount controls are usable. Restored desktop, original tab 1648144383 kept in Seedance 2.5 standard pricing editor at 100%.
+- Read-only before/after: 39 non-model table hashes/counts, complete managed_models records and model event hashes/counts identical. Original prices, all flags and trial archival state retained; no generation/ledger writes.
 - Production https://goodgood.o1key.com revision 65ceb168/migration 0019 unchanged. staging-goodgood.o1key.com is historical naming. No paid requests, push, main merge or deployment.
 - Next action: owner checks http://127.0.0.1:32141/admin/models; formal video reservation/price snapshots/actual ledger settlement require the next implementation slice.
 - Blockers: none for pricing-only local scope.
 
 ## Verification sequence
 
-1. Independent route validation and atomic persistence, token examples, editor/list SSR and model resolution contracts.
+1. Batch discount computation, exact cent rounding, empty/invalid atomic rejection and editor accessibility; retain existing route save coverage.
 2. One complete local gate, then documentation-only handoff checks.
-3. Verify isolated mock target, compare data snapshots, owner-save prices, refresh and desktop/narrow UI verification.
+3. Verify isolated mock target, browser application/cancel and desktop/narrow UI, compare unchanged data snapshots.
 
 ## Milestones
 
@@ -52,7 +52,7 @@
 
 ## New-session recovery
 
-1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-068` 与 GG-068 任务卡；按卡核对运行版本，不能仅看 URL。
+1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-069` 与 GG-069 任务卡；按卡核对运行版本，不能仅看 URL。
 2. 当前页面为 `http://127.0.0.1:32141/admin/models`，已更新 GPT 图片三线路，右侧四管理功能保留；仅独立 mock 栈。旧 `32140` 有真实 provider Worker，不运行 fixtures/outbox，不重置其数据。
 3. 本地 ignored `.gg052-local.mjs` 分别启动 web/worker/mock-generation；按本任务已记录的运行状态恢复，保留用户试价数据。正式生产与真实请求不在本次授权范围。
 4. 不恢复或 bulk merge 旧 C6；旧阶段具体验证见相应任务卡，GG-051 [研究记录](research/GG-051-credit-pricing-reassessment.md) 保留定价依据。

@@ -1,5 +1,10 @@
 # GG-063 quality pricing errors
 
+GG-069 accepts integer discounts 1–100 only. Invalid/malformed prices or a
+route with no positive price fail before draft mutation. Blank specifications
+remain blank; exact rounding keeps positive prices at least 0.01 RMB. Inline
+errors retain all inputs; existing save/loading/conflict handling is unchanged.
+
 GG-068 rejects malformed/unknown video route configs and missing enabled-route
 specifications. Disabling both routes prevents model enable. Unsupported video
 resolution fails before provider transport; editing/switching preserves input.

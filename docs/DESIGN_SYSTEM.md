@@ -1,5 +1,10 @@
 # Design system
 
+GG-069 pricing dialogs add a compact overall-discount input, percent unit and
+apply button after route controls. Quiet helper copy defines 98/80/100 and
+non-compounding behavior; inline feedback stays beside the control. No new
+list columns or navigation; responsive controls wrap with visible labels.
+
 ## Visual thesis
 
 GG-068 adds two aligned standard/backup video price rows per model, each with a

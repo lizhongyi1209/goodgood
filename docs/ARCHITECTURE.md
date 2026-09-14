@@ -1,5 +1,10 @@
 # Architecture
 
+GG-069 shares exact cent-based batch discount calculation and a reusable
+current-route draft editor for image/video pricing. Existing owner saves publish
+final prices; discount metadata is editing-session state only. No new API,
+provider request, migration or settlement path is introduced.
+
 GG-068 shared Seedance specifications drive admin template order/resolutions and
 provider payload validation. 2.5 accepts 1080p; UI resolves it unchanged and
 rejects 4K. Independent standard/backup prices use existing owner APIs and JSON

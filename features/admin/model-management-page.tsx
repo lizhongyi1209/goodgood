@@ -22,6 +22,7 @@ import { GENERATION_MODEL_CATALOG } from "@/features/models/catalog";
 import { VIDEO_GENERATION_MODEL_CATALOG } from "@/features/creation/video-generation-options";
 import { ModelPricingList } from "./model-pricing-list";
 import { VideoTokenPricingEditor } from "./video-token-pricing-editor";
+import { PricingDiscountEditor } from "./pricing-discount-editor";
 import {
   modelVideoLines,
   SEEDANCE_LINES,
@@ -805,6 +806,14 @@ export function ModelManagementPage({
                 )}
                 {template.mediaType === "video" ? (
                   <VideoTokenPricingEditor
+                    pricingTools={
+                      <PricingDiscountEditor
+                        key={`${draft.id}:${draft.adapterId}`}
+                        scope={videoPricingLine}
+                        prices={currentPrices}
+                        onChange={replaceCurrentPrices}
+                      />
+                    }
                     resolutions={template.resolutions}
                     prices={currentPrices}
                     onChange={replaceCurrentPrices}
@@ -831,6 +840,14 @@ export function ModelManagementPage({
                   />
                 ) : (
                   <div>
+                    <div className="mb-5">
+                      <PricingDiscountEditor
+                        key={`${draft.id}:${draft.adapterId}`}
+                        scope={pricingLine}
+                        prices={currentPrices}
+                        onChange={replaceCurrentPrices}
+                      />
+                    </div>
                     <h3 className="text-sm font-medium">规格售价</h3>
                     <p className="mt-1 text-xs text-zinc-500">
                       {template.mediaType === "image"

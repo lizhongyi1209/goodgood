@@ -1,5 +1,10 @@
 # GG-063 quality pricing
 
+GG-069 discount editing persists only the resulting existing specification
+prices via the same atomic owner save/audit. Per-route percentage and first-use
+baseline remain transient dialog state; reopening uses saved prices at 100%.
+No schema change, automatic price conversion or historical rewrite occurs.
+
 GG-068 reuses managed_models.lines JSON for video standard/backup enabled/prices
 records; public/save DTOs expose videoLines separately from image lines. Existing
 single video prices initialize both independent read projections; saving pins

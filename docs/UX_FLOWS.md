@@ -1,5 +1,12 @@
 # GG-063 quality pricing
 
+GG-069 adds an overall discount to image/video route pricing. Input 98 means
+98% (9.8折), 80 means 8折; apply updates every current-route specification and
+quality/reference rate. Each route retains its first-application baseline;
+repeat applications do not compound and 100 restores that baseline. Save uses
+existing final-price persistence; cancel discards changes. Reopen starts from
+saved prices at 100. Invalid input preserves prices and shows an inline error.
+
 GG-068 video pricing switches 标准/备用, retaining separate prices and enable
 states; one save commits both. Initial rates retain owner values, which can be
 edited directly to independent discounted retail prices. Trial parameters stay

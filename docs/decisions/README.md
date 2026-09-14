@@ -1,5 +1,7 @@
 # Decision records
 
+- `0072-pricing-discount.md` — current-route batch discount editing, exact rounding and save-only price persistence for GG-069.
+
 - `0071-seedance-line-prices-and-1080p.md` — independent video route pricing, Seedance 2.5 first and 1080p support for GG-068.
 
 - `0070-seedance-token-pricing.md` — actual completion-token video pricing and pricing-only scope for GG-067.
