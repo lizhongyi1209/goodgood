@@ -1,6 +1,6 @@
 # Design system
 
-GG-084沿用轻量个人工作区与站长功能栏，Palace Red突出自己的币与奖励；三项统计、简洁时间流水，未加币价或发行进度营销。手机入口使用既有Radix账户菜单，保持顶部工具位置；站长窄屏总量独占一行，另两项并排，计划两列，数字不截断。开启确认复用Dialog与既有Button，加载/错误用status/alert，刷新有明确aria-label。功能样式限定features/jcoin/jcoin.css。
+GG-084沿用轻量个人工作区与站长功能栏，Palace Red突出自己的币与奖励；三项统计、简洁时间流水，未加币价或发行进度营销。手机入口使用既有Radix账户菜单，保持顶部工具位置；站长窄屏总量独占一行，另两项并排，发行批次采用独立白色圆角卡片、轻边框无阴影；期号/状态在顶部，额度突出，已发/剩余并排，规则及操作在卡片内。卡片网格自适应，手机单列，数字不截断（GG-085）。开启确认复用Dialog与既有Button，加载/错误用status/alert，刷新有明确aria-label。功能样式限定features/jcoin/jcoin.css。
 
 GG-081继续使用同一admin-action-dialog及Radix Select/Checkbox：积分类型有显式label，默认测试，充值动态展开凭证与收款确认；不增加独立支付页。看板延续operations-metrics/可横向滚动日表，趋势按钮支持键盘及aria-pressed。现金带¥，峰值缺失显示暂无统计及—，排队与当前并发分开。
 

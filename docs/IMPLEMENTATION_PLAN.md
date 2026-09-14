@@ -1,20 +1,21 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-14
-- Current phase: GG-084 local implementation and verification complete; no production issuance or deployment.
-- Current objective: 接续3f23285/a73835f，实现JCOIN个人统计与自己的记录，发行计划/额度只进站长管理；第一期100万枚/系数2。
+- Current phase: GG-085 phase cards implemented; local gates passed, browser verification pending, no production issuance or deployment.
+- Current objective: 接续c00bc4f/a73835f，将站长JCOIN实际批次做成独立卡片，保留原发行规则与用户私有页面。
 - Previous objective: GG082最小发行讨论；GG081积分类型/充值登记/运营与并发本地实现验证保留。
 
 ## Current checkpoint
 
-- Task [GG-084](tasks/GG-084-jcoin-ledger-pages.md), feature/GG-084-jcoin-ledger-pages, F:/goodgood-worktrees/GG-084；精确3f23285dabc5a7cad61440b60847882a8c88c0c4完整继承a73835fb7924ce1423196735a2b377a89dead256，旧根目录/其他worktree不改。
+- Task [GG-085](tasks/GG-085-jcoin-batch-cards.md), feature/GG-085-jcoin-batch-cards, F:/goodgood-worktrees/GG-085；基线c00bc4f4c9fa2f322e763dffd9727c5b408c68df完整保留a73835f；原GG084已验证实现作为继承基线。
+- GG085只改批次卡片：真实第一期、状态/额度/规则/原操作归在卡片，全平台未安排额度留在外层；定向7/7、文档8/8通过；完整门禁exit0（515通过/24跳过），待更新32141及浏览器核对。数据库与Worker不改。
 - [ADR0084](decisions/0084-jcoin-runtime-and-private-user-view.md) Accepted：用户/jcoin仅自己余额/获得/撤回和记录，GET不返回库存/批次/全平台规模；/admin/jcoin站长管理总库存及第一期固定计划、开启/暂停/恢复/处理。
 - 第一批100万枚、每100有效充值消费积分2枚、9.18北京时间00:00起算、无期限/无兑换/无价值锚定不变。迁移0040只建固定库存/草稿；需站长在本期页面开启才分发。20%创作/企业来源/正式视频/第二期计划另行实施。
 - 已写JCOIN schema/处理器、两套API与页面、导航和Worker独立15秒处理；正常消费/退款事务不依赖奖励处理。来源验证真实manual与历史划拨，混合或缺证据保守排除；有异常计数。
 - 定向7/7、命名空库全40迁移/并发/来源/回滚/退款/封顶1/1及Chrome实际工作区1280/390px全fetch模拟验证通过。临时库/58184页面均清理停止；未接provider。最终npm run check:local exit0：lint/typecheck/build、515通过/24 opt-in跳过/0失败；CI迁移断言随0040更新，缓存diff检查通过。
 - 站长已请求启动验收：d6b0ce0的Web28072/32141、mock Worker30432/32142、mock provider9048/32143运行；原PG54449/Valkey56449/对象58049保留。仅补0039/0040，原行/旧checksum验证不变；JONY页面/会话/个人与站长计划API200，本期仍draft/余额0，没有生成或启期。恢复脚本与停止边界见GG084任务卡。
 - 正式入口 https://goodgood.o1key.com 不变；staging-goodgood.o1key.com是历史名称。CURRENT_STATE不改；未起真实provider Worker，不操作3010或其他环境。
-- Next action: 供站长验收本地一期页面；若发布需另行明确本累计候选的范围与生产迁移/发行授权。后续批次配置/创作另定任务，不自动推进。
+- Next action: 完成GG085门禁和卡片浏览器验证，更新32141 Web供站长验收；若发布需另行明确本累计候选的范围与生产迁移/发行授权。后续批次配置/创作另定任务，不自动推进。
 - Blockers: 无；未授权生产迁移/发行、真实provider请求或部署。
 
 ## Verification sequence
@@ -56,7 +57,7 @@
 
 ## New-session recovery
 
-1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，进入 `F:/goodgood-worktrees/GG-084`，读GG084任务/ADR0084及server/jcoin与features/jcoin，核验3f23285/a73835f祖先；继续当前代码/验证，不退旧版本。
+1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，进入 `F:/goodgood-worktrees/GG-085`，读GG085/GG084任务/ADR0084及server/jcoin与features/jcoin，核验3f23285/a73835f祖先；继续当前代码/验证，不退旧版本。
 2. 根 `F:/goodgood` 仍为旧 GG-024；GG-079 是原累计候选，main 也不能代替 a73835f。`.codex/` 与未跟踪用户文件保持原样；不用旧检查点退回历史版本。
 3. GG081的32181模拟检查已停止/临时页面移除，不依赖聊天句柄。后续恢复先核验版本/端口及独立mock目标；GG079/GG077 helpers与依赖54449/56449/58049见原交接。六个命名测试库已清理；禁止对原预览fixture/重置，旧32140曾有真实Worker，不操作。
 4. 不恢复或 bulk merge 旧 C6；旧阶段具体验证见相应任务卡，GG-051 [研究记录](research/GG-051-credit-pricing-reassessment.md) 保留定价依据。
