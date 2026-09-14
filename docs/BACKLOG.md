@@ -1,7 +1,7 @@
 # 当前任务与优先级 · 当前与最近交付
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
-| GG-090 | 邮箱与邀请码共同注册 | 实现/隔离SQL/邮件UI通过，原Web更新中；未部署 | [任务](tasks/GG-090-invitation-registration.md) |
+| GG-090 | 邮箱与邀请码共同注册 | 本地完成，525/26与双码SQL/邮件UI通过，32141已更新；历史M6断言见任务；未部署 | [任务](tasks/GG-090-invitation-registration.md) |
 | GG-089 | 站长管理功能栏排序 | 本地完成；522/25、桌面/390px通过；32141已更新，未部署 | [任务](tasks/GG-089-admin-navigation-order.md) |
 | GG-088 | 问题类型下拉向下展开 | 本地完成；522/25、桌面/390px通过；32141已更新，未部署 | [任务](tasks/GG-088-feedback-select-downward.md) |
 | GG-087 | 私有问题反馈与站长处理 | 实现验证完成；522/25、SQL/UI通过，原32141已更新；未部署 | [任务](tasks/GG-087-problem-feedback.md) |
