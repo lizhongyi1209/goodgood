@@ -125,7 +125,8 @@ test("GG-040 project context is validated separately from model prompt and hash-
   assert.notEqual(hashGenerationInput(input), hashGenerationInput({ ...input, composerPrompt: "提示词A\n---\nother" }));
   const repository = await readFile("server/generation/repository.mjs", "utf8");
   assert.match(repository, /input\.composerPrompt \?\? input\.prompt/);
-  assert.match(repository, /input\.prompt,\s*JSON\.stringify\(references\)/);
+  assert.match(repository, /const visiblePrompt=[^;]+:input\.prompt;/);
+  assert.match(repository, /visiblePrompt,\s*JSON\.stringify\(references\)/);
   assert.equal(promptContextForRetry("提示词A", source), source);
   assert.equal(promptContextForRetry("unrelated", source), "unrelated");
   assert.match(repository, /promptContextForRetry\(input.prompt, project.rows\[0\].prompt/);

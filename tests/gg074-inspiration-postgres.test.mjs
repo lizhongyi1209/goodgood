@@ -1,0 +1,46 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import pg from 'pg';
+import {applyMigrations} from '../server/persistence/migrate.mjs';
+import {grantWelcomeCreditsInTransaction,publishGenerationPriceVersion} from '../server/billing/repository.mjs';
+import {inspirationOperation} from '../server/inspiration/api.mjs';
+import {frozenPresetForJob} from '../server/inspiration/preset.mjs';
+import {createGenerationJob,publicGenerationJob,persistedGenerationInputFromRow,claimGenerationJob,failGenerationJob,completeGenerationJob,findOwnerAssetGenerationJobs} from '../server/generation/repository.mjs';
+const enabled=process.env.GOODGOOD_GG074_INTEGRATION==='1';
+test('GG074 disposable SQL freezes private inputs atomically, prices once, replays and retries without disclosure',{skip:!enabled},async()=>{
+  const url=new URL(process.env.GOODGOOD_GG074_DATABASE_URL??'');assert.ok(['127.0.0.1','localhost'].includes(url.hostname));assert.equal(url.pathname,'/goodgood_gg074_presets_test_20260914');assert.equal(process.env.GOODGOOD_GG074_NO_WORKER,'1');
+  const pool=new pg.Pool({connectionString:url.href,max:2});
+  try {
+    assert.equal((await pool.query('SELECT pid FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid()')).rowCount,0);assert.equal((await pool.query("SELECT tablename FROM pg_tables WHERE schemaname='public'")).rowCount,0);
+    await applyMigrations({databaseUrl:url.href,logger:{log(){}}});
+    await publishGenerationPriceVersion(pool,{modelId:'nano-banana-2',resolution:'1K',count:1,version:3,creditAmount:20n,effectiveFrom:new Date()});
+    const id=n=>`74000000-0000-4000-8000-${String(n).padStart(12,'0')}`,author=id(1),viewer=id(2);
+    for(const who of [author,viewer]){await pool.query("INSERT INTO users(id,email,status) VALUES($1,$2,'active')",[who,`${who}@fixture.invalid`]);const client=await pool.connect();await client.query('BEGIN');try{await grantWelcomeCreditsInTransaction(client,{ownerId:who});await client.query('COMMIT');}finally{client.release();}}
+    const workspace=(await pool.query("SELECT id FROM workspaces WHERE personal_owner_id=$1",[author])).rows[0].id;
+    await pool.query(`INSERT INTO generation_batches(id,owner_id,creator_owner_id,workspace_id,prompt,reference_snapshot,model_id,catalog_model_id,catalog_model_name,aspect_ratio,resolution,requested_count,input_hash,image_line,thinking_level,google_search,quality,background,output_format) VALUES($1,$2,$2,$3,'source prompt','[]','nano-banana-2','nano-banana-2','Nano Banana 2','1:1','1K',1,$4,'special','high',false,'auto','auto','png')`,[id(10),author,workspace,'a'.repeat(64)]);
+    await pool.query(`INSERT INTO generation_jobs(id,batch_id,owner_id,creator_owner_id,workspace_id,idempotency_key,state,progress) VALUES($1,$2,$3,$3,$4,'fixture-source','succeeded',100)`,[id(11),id(10),author,workspace]);
+    await pool.query(`INSERT INTO assets(id,owner_id,creator_owner_id,workspace_id,batch_id,job_id,object_key,checksum,mime_type,pixel_width,pixel_height,aspect_ratio,byte_size,ordinal) VALUES($1,$2,$2,$3,$4,$5,'fixture/after',$6,'image/png',1024,1024,'1:1',10,1)`,[id(12),author,workspace,id(10),id(11),'b'.repeat(64)]);
+    const resources={pool,signRead:async key=>`https://fixture.invalid/${key}`},ownerContext={ownerId:author,systemRole:'member'},secret='PRIVATE ORIGINAL PRESET 740';
+    const hidden=await inspirationOperation({action:'publish',ownerContext,resources,input:{assetId:id(12),title:'hidden',prompt:secret,promptVisibility:'hidden',comparisonMode:'hover',consent:true}});assert.equal(hidden.prompt,null);
+    const used=await inspirationOperation({action:'use',id:hidden.id,ownerContext:{ownerId:viewer},resources});assert.equal(used.recipe.prompt,'');
+    const input={...used.recipe,prompt:'supplement',references:[]};
+    const created=await createGenerationJob(pool,{ownerId:viewer,idempotencyKey:'preset-first-740',input,presetCaseId:hidden.id,presetSupplement:'supplement'});
+    assert.equal((await frozenPresetForJob(pool,created.row.id)).effective_prompt,`${secret}\nsupplement`);assert.match(created.row.prompt,/supplement/);assert.ok(!JSON.stringify(publicGenerationJob(created.row)).includes(secret));
+    const duplicate=await createGenerationJob(pool,{ownerId:viewer,idempotencyKey:'preset-first-740',input,presetCaseId:hidden.id,presetSupplement:'supplement'});assert.equal(duplicate.created,false);assert.equal(duplicate.row.id,created.row.id);
+    const route={routeVersion:'gg074-fixture',provider:'mock',providerModel:'nano-banana-2'},workerId='74000000-0000-4000-8000-000000000074';
+    await claimGenerationJob(pool,{jobId:created.row.id,workerId,leaseMs:3000,attemptRoute:route});
+    const attempt=(await pool.query('SELECT id FROM generation_attempts WHERE job_id=$1',[created.row.id])).rows[0];await failGenerationJob(pool,{jobId:created.row.id,attemptId:attempt.id,workerId,error:{code:'MODEL_REJECTED',title:'fixture',message:'fixture',retryable:true}});
+    await inspirationOperation({action:'withdraw',id:hidden.id,ownerContext,resources});
+    const replay=await createGenerationJob(pool,{ownerId:viewer,idempotencyKey:'preset-first-740',input,presetCaseId:hidden.id,presetSupplement:'supplement'});assert.equal(replay.created,false);
+    await assert.rejects(createGenerationJob(pool,{ownerId:viewer,idempotencyKey:'preset-after-withdraw',input,presetCaseId:hidden.id,presetSupplement:''}),error=>error.code==='INSPIRATION_NOT_FOUND');
+    const source=(await pool.query(`SELECT j.*,b.* FROM generation_jobs j JOIN generation_batches b ON b.id=j.batch_id WHERE j.id=$1`,[created.row.id])).rows[0];source.id=created.row.id;
+    const frozenPreset=await frozenPresetForJob(pool,created.row.id);
+    const retried=await createGenerationJob(pool,{ownerId:viewer,idempotencyKey:'preset-retry-740',input:persistedGenerationInputFromRow(source),retryOfJobId:created.row.id,frozenPreset});assert.equal((await frozenPresetForJob(pool,retried.row.id)).effective_prompt,`${secret}\nsupplement`);
+    const claim=await claimGenerationJob(pool,{jobId:retried.row.id,workerId,leaseMs:3000,attemptRoute:route});const assetId=id(30);
+    await completeGenerationJob(pool,{jobId:retried.row.id,attemptId:claim.attempt.id,workerId,resultHash:'c'.repeat(64),assets:[{id:assetId,ownerId:viewer,batchId:claim.job.batch_id,ordinal:1,objectKey:'fixture/reproduced',checksum:'c'.repeat(64),mimeType:'image/png',pixelWidth:1024,pixelHeight:1024,aspectRatio:'1:1',byteSize:10}]});
+    const rows=await findOwnerAssetGenerationJobs(pool,{ownerId:viewer});assert.ok(!JSON.stringify(rows.map(row=>publicGenerationJob(row))).includes(secret));
+    await assert.rejects(inspirationOperation({action:'prepare',ownerContext:{ownerId:viewer},resources,input:{assetId}}),error=>error.status===404);
+    assert.equal((await pool.query("SELECT count(*)::int count FROM credit_ledger_entries WHERE owner_id=$1 AND entry_type='reserve'",[viewer])).rows[0].count,2);
+    assert.equal((await pool.query('SELECT count(*)::int count FROM inspiration_generation_prompts')).rows[0].count,2);
+  } finally {await pool.end();}
+});

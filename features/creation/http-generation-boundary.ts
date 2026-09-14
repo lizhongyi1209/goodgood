@@ -132,12 +132,13 @@ async function postAndPoll({
   try {
     const response = await goodGoodApiFetch(endpoint, {
       body:
-        endpoint === "/api/generations"
+        !endpoint.endsWith('/retry')
           ? JSON.stringify(generationRequestPayload(input))
           : undefined,
       headers: {
         "content-type": "application/json",
         "idempotency-key": createIdempotencyKey(),
+        ...(endpoint.startsWith('/api/inspiration/') ? {'x-goodgood-inspiration-action':'1'} : {}),
         ...workspaceRequestHeaders(workspaceId),
       },
       method: "POST",
@@ -158,6 +159,7 @@ async function postAndPoll({
 
 export function createHttpGenerationBoundary(
   workspaceId: string | null = null,
+  presetCaseId?: string,
 ): HttpGenerationBoundary {
   return Object.freeze({
     retry(failedJob, observer) {
@@ -171,7 +173,7 @@ export function createHttpGenerationBoundary(
     service: {
       submit(input, observer) {
         return postAndPoll({
-          endpoint: "/api/generations",
+          endpoint: presetCaseId ? `/api/inspiration/${encodeURIComponent(presetCaseId)}/generate` : "/api/generations",
           input,
           observer,
           workspaceId,

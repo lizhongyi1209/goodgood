@@ -22,12 +22,14 @@ function text(value,max,required=false) {
 }
 export function validateInspirationInput(action,input={}) {
   if(!input||typeof input!=='object'||Array.isArray(input)) throw new InspirationError('INSPIRATION_INVALID','案例请求内容无效。');
-  const allowed={list:['query','cursor'],prepare:['assetId'],publish:['assetId','beforeReferenceId','title','description','consent'],detail:[],use:[],like:['liked'],withdraw:[]}[action];
+  const allowed={list:['query','cursor'],prepare:['assetId'],publish:['assetId','beforeReferenceId','title','description','consent','prompt','promptVisibility','comparisonMode'],detail:[],use:[],like:['liked'],withdraw:[]}[action];
   if(!allowed||Object.keys(input).some(key=>!allowed.includes(key))) throw new InspirationError('INSPIRATION_INVALID','案例请求内容无效。');
   if(action==='prepare') return {assetId:identifier(input.assetId)};
   if(action==='publish') {
     if(input.consent!==true) throw new InspirationError('INSPIRATION_CONSENT_REQUIRED','请确认分享范围后发布。');
-    return {assetId:identifier(input.assetId),beforeReferenceId:input.beforeReferenceId==null?null:identifier(input.beforeReferenceId),title:text(input.title,60,true),description:text(input.description??'',1000)};
+    const promptVisibility=input.promptVisibility??'public',comparisonMode=input.comparisonMode??'side_by_side';
+    if(!['public','hidden'].includes(promptVisibility)||!['side_by_side','hover'].includes(comparisonMode)) throw new InspirationError('INSPIRATION_INVALID','请选择提示词和对比展示方式。');
+    return {assetId:identifier(input.assetId),beforeReferenceId:input.beforeReferenceId==null?null:identifier(input.beforeReferenceId),title:text(input.title,60,true),description:text(input.description??'',1000),prompt:input.prompt===undefined?undefined:text(input.prompt,4000,true),promptVisibility,comparisonMode};
   }
   if(action==='like') {if(typeof input.liked!=='boolean') throw new InspirationError('INSPIRATION_INVALID','点赞请求无效。');return {liked:input.liked};}
   if(action==='list') {
@@ -51,7 +53,8 @@ const SOURCE_SELECT=`SELECT a.id AS asset_id,a.object_key,a.pixel_width,a.pixel_
  WHERE a.id=$1 AND a.owner_id=$2 AND j.owner_id=$2 AND b.owner_id=$2
  AND w.kind='personal' AND w.personal_owner_id=$2 AND w.status='active'
  AND j.workspace_id=w.id AND b.workspace_id=w.id
- AND j.state='succeeded' AND a.moderation_state='accepted'`;
+ AND j.state='succeeded' AND a.moderation_state='accepted'
+ AND NOT EXISTS(SELECT 1 FROM inspiration_generation_prompts gp WHERE gp.job_id=j.id)`;
 const CASE_SELECT=`SELECT c.*,to_char(c.created_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS cursor_created_at,
  a.object_key AS after_key,a.pixel_width AS after_width,a.pixel_height AS after_height,
  ra.object_key AS before_key,ra.pixel_width AS before_width,ra.pixel_height AS before_height,
@@ -73,7 +76,8 @@ async function sign(resources,key) {
 async function presentCase(row,resources,actor) {
   const [after,before,avatar]=await Promise.all([sign(resources,row.after_key),sign(resources,row.before_key),sign(resources,row.avatar_key)]);
   return {
-    id:row.id,title:row.title,description:row.description,prompt:row.prompt,parameters:row.parameters,
+    id:row.id,title:row.title,description:row.description,prompt:row.prompt_visibility==='hidden'?null:row.prompt,parameters:row.parameters,
+    promptVisibility:row.prompt_visibility??'public',comparisonMode:row.comparison_mode??'side_by_side',
     author:{displayName:row.author_snapshot?.displayName??'GoodGood 用户',handle:row.author_snapshot?.handle??null,avatarUrl:avatar},
     after:{url:after,width:row.after_width,height:row.after_height},
     before:before?{url:before,width:row.before_width,height:row.before_height}:null,
@@ -126,7 +130,7 @@ export async function inspirationOperation({action='list',id,input={},ownerConte
     if(action==='use') {
       const recipe=inspirationRecipe(row);
       if(!recipe) throw new InspirationError('INSPIRATION_RECIPE_UNAVAILABLE','这个案例的模型参数已不可用。',409);
-      return {recipe,referenceCount:row.parameters.referenceCount,title:row.title};
+      return {recipe:{...recipe,prompt:row.prompt_visibility==='hidden'?'':recipe.prompt},caseId:row.id,promptVisibility:row.prompt_visibility??'public',referenceCount:row.parameters.referenceCount,title:row.title};
     }
     return presentCase(row,resources,ownerContext);
   }
@@ -154,7 +158,7 @@ export async function inspirationOperation({action='list',id,input={},ownerConte
       let caseId=existing?.id;
       if(!caseId) {
         caseId=randomUUID();const author=await authorSnapshot(client,ownerId);delete author.objectKey;
-        await client.query(`INSERT INTO inspiration_cases(id,owner_id,source_asset_id,before_reference_id,title,description,prompt,parameters,author_snapshot) VALUES($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9::jsonb)`,[caseId,ownerId,value.assetId,value.beforeReferenceId,value.title,value.description,row.prompt,JSON.stringify(inspirationParameters(row)),JSON.stringify(author)]);
+        await client.query(`INSERT INTO inspiration_cases(id,owner_id,source_asset_id,before_reference_id,title,description,prompt,parameters,author_snapshot,prompt_visibility,comparison_mode) VALUES($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9::jsonb,$10,$11)`,[caseId,ownerId,value.assetId,value.beforeReferenceId,value.title,value.description,value.prompt??row.prompt,JSON.stringify(inspirationParameters(row)),JSON.stringify(author),value.promptVisibility,value.comparisonMode]);
         await client.query(`INSERT INTO inspiration_events(id,case_id,actor_owner_id,action) VALUES($1,$2,$3,'publish')`,[randomUUID(),caseId,ownerId]);
       }
       const dto=await presentCase(await findCase(client,caseId,ownerId),resources,ownerContext);

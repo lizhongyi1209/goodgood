@@ -1,5 +1,10 @@
 # Product definition
 
+GG-074 supersedes the publication Sheet/always-public prompt via ADR0077.
+Authors edit a case on a dedicated page and choose public/hidden reusable prompt.
+Public reuse is editable; hidden reuse has a preset badge and optional supplement,
+combined only server-side. Comparison supports side-by-side or pointer wipe.
+
 GG-073 introduces inspiration cases: explicit selected personal image sharing
 with before/after, immutable prompt/parameters and author attribution, active-user
 likes and recipe reuse. Authors withdraw their own; site owners remove any case.

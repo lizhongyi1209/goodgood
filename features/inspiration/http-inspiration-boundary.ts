@@ -5,12 +5,13 @@ export type CaseImage={url:string;width?:number;height?:number};
 export type CaseAuthor={displayName:string;handle:string|null;avatarUrl:string|null};
 export type CaseParameters=Omit<GenerationInputSnapshot,'prompt'|'references'> & {referenceCount:number};
 export type InspirationCase={
-  id:string;title:string;description:string;prompt:string;parameters:CaseParameters;
+  id:string;title:string;description:string;prompt:string|null;parameters:CaseParameters;
+  promptVisibility:'public'|'hidden';comparisonMode:'side_by_side'|'hover';
   author:CaseAuthor;after:CaseImage;before:CaseImage|null;
   likes:number;liked:boolean;canWithdraw:boolean;owned:boolean;createdAt:string;
 };
 export type CasePreparation={assetId:string;prompt:string;parameters:CaseParameters;author:CaseAuthor;after:CaseImage;beforeOptions:(CaseImage&{id:string;name:string})[]};
-export type UseCaseResult={recipe:GenerationInputSnapshot;referenceCount:number;title:string};
+export type UseCaseResult={recipe:GenerationInputSnapshot;referenceCount:number;title:string;caseId:string;promptVisibility:'public'|'hidden'};
 
 export class InspirationBoundaryError extends Error {
   constructor(readonly code:string,message:string) {super(message);}

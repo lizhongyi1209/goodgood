@@ -1,5 +1,12 @@
 # GG-063 quality pricing
 
+GG-074 image-detail 发布灵感案例 opens a dedicated editing page, not a Sheet.
+Edit title/description/prompt, visibility, selected before image and comparison;
+review/consent precede publication. Public cases load editable creation. Hidden
+cases open reproduction with empty optional supplement, own uploads/library and
+current quote. Empty supplement is valid; failed submissions retain input/results
+and offer retry. Original creative draft stays independent. No automatic submit.
+
 GG-073: own image detail → share preview → title/optional notes/before choice →
 explicit consent → publish. Inspiration card opens before/after/detail and likes.
 Use starts personal creation with prompt/parameters, count1, no original reference

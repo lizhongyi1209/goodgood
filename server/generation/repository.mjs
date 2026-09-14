@@ -1,4 +1,5 @@
 import { modelQualityPriceContext } from "../../shared/contracts/gpt-quality-pricing.mjs";
+import {lockHiddenPreset} from '../inspiration/preset.mjs';
 import { createHash, randomUUID } from "node:crypto";
 import { supportsImageLines } from "../../shared/contracts/banana-lines.mjs";
 import { requireEnabledImageModel } from "../admin/models.mjs";
@@ -66,6 +67,7 @@ export function hashGenerationInput(input) {
         outputFormat: modelOptions.outputFormat,
         projectId: input.projectId ?? null,
         prompt: input.prompt,
+        ...(input.presetFingerprint ? {presetFingerprint:input.presetFingerprint} : {}),
         ...(input.composerPrompt ? { composerPrompt: input.composerPrompt } : {}),
         references: input.references.map(({ id, name }, index) => ({
           id,
@@ -344,10 +346,14 @@ export async function createGenerationJob(
     ownerId,
     retryOfJobId = null,
     workspaceId = null,
+    presetCaseId = null,
+    presetSupplement = null,
+    frozenPreset = null,
   },
 ) {
   const modelOptions = requiredGenerationModelOptions(input);
-  const inputHash = hashGenerationInput(input);
+  const presetFingerprint=presetCaseId?`${presetCaseId}:${presetSupplement}`:frozenPreset?createHash('sha256').update(frozenPreset.effective_prompt).digest('hex'):null;
+  const inputHash = hashGenerationInput({...input,presetFingerprint});
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -401,9 +407,12 @@ export async function createGenerationJob(
       if (quote.version !== input.expectedPriceVersion) throw new GenerationPersistenceError("PRICE_CHANGED", "模型价格已更新，请刷新报价后重新提交。尚未扣除积分。", 409);
     }
 
-    if (input.projectId || input.references.length) {
+    if (input.projectId || input.references.length || presetCaseId) {
       await lockReferenceLifecycle(client);
     }
+    if((presetCaseId||frozenPreset)&&workspace.kind!=='personal') throw new GenerationPersistenceError('INSPIRATION_FORBIDDEN','预设效果仅支持个人创作。',403);
+    const effectivePrompt=presetCaseId?await lockHiddenPreset(client,presetCaseId,presetSupplement):frozenPreset?.effective_prompt;
+    const visiblePrompt=presetCaseId?`预设效果（原提示词隐藏）${presetSupplement?`\n补充提示词：${presetSupplement}`:''}`:input.prompt;
     if (input.references.length) {
       const currentReferences = await findReadyReferences(client, {
         lock: true,
@@ -466,7 +475,7 @@ export async function createGenerationJob(
         ownerId,
         workspace.id,
         input.projectId ?? null,
-        input.prompt,
+        visiblePrompt,
         JSON.stringify(references),
         input.modelId,
         input.aspectRatio,
@@ -519,6 +528,7 @@ export async function createGenerationJob(
        ) VALUES ($1, $2, $3, $4, $3, $5, $6)`,
       [jobId, batchId, ownerId, workspace.id, idempotencyKey, retryOfJobId],
     );
+    if(effectivePrompt) await client.query('INSERT INTO inspiration_generation_prompts(job_id,case_id,effective_prompt) VALUES($1,$2,$3)',[jobId,presetCaseId??frozenPreset.case_id,effectivePrompt]);
     await client.query("UPDATE generation_batches SET catalog_model_id=$2,catalog_model_name=$3 WHERE id=$1",
       [batchId, managedModel.id, managedModel.name]);
     if (workspace.kind === "organization") {

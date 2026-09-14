@@ -24,6 +24,7 @@ test('GG-073 named disposable SQL publication, reuse, likes, shared permissions 
       CREATE TABLE projects(owner_id uuid,reference_snapshot jsonb);
       CREATE TABLE creation_drafts(owner_id uuid,reference_snapshot jsonb,expires_at timestamptz);`);
     await pool.query(await readFile(new URL('../migrations/0036_gg073_inspiration_cases.sql',import.meta.url),'utf8'));
+    await pool.query(await readFile(new URL('../migrations/0037_gg074_inspiration_presets.sql',import.meta.url),'utf8'));
     await pool.query(`INSERT INTO users VALUES($1,'active'),($2,'active'),($3,'active'),($4,'suspended')`,[id(1),id(2),id(3),id(4)]);
     await pool.query(`INSERT INTO workspaces VALUES($1,'personal','first','active',$4),($2,'personal','second','active',$5),($3,'personal','owner','active',$6),($7,'organization','company','active',NULL)`,[id(11),id(12),id(13),id(1),id(2),id(3),id(14)]);
     await pool.query(`INSERT INTO reference_assets(id,owner_id,creator_owner_id,workspace_id,object_key,original_file_name,pixel_width,pixel_height,upload_state,moderation_state) VALUES($1,$4,$4,$5,'before/one','one.png',1024,1024,'ready','accepted'),($2,$4,$4,$5,'unselected/private','two.png',1024,1024,'ready','accepted'),($3,$6,$6,$7,'other/private','other.png',1024,1024,'ready','accepted'),($8,$4,$4,$5,'avatar/one','avatar.png',128,128,'ready','accepted')`,[id(21),id(22),id(23),id(1),id(11),id(2),id(12),id(24)]);

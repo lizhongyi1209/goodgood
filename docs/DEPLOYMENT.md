@@ -1,5 +1,11 @@
 # Development and deployment
 
+GG-074 is local only. Scoped migration0037 preserves old case content/defaults,
+prices, profiles and financial history; apply before GG074 Web/Worker because the
+Worker reads the private prompt table. Never replay/reset old migration checksums.
+UI fixtures use their named temporary DB/isolated Redis15 and optional mock-only
+Worker health32145; original user preview32141/32142 stays a separate database.
+
 GG-073 migration0036/shared case APIs are local candidates only. Apply only this
 scoped migration to32141 mock data; preserve old checksum records, user-set
 models/prices, assets and ledgers. Publication/deployment to production requires

@@ -1,5 +1,7 @@
 # Decision records
 
+- `0077-inspiration-editor-private-presets.md` — dedicated case editor, prompt visibility, server-only preset reproduction and pointer-wipe comparison for GG-074.
+
 - `0076-shareable-inspiration-cases.md` — explicit personal effect publication, immutable before/after and parameters, reuse, likes and owner withdrawal for GG-073.
 
 - `0075-private-personal-profile.md` — private own profile, unique handle, validated avatar and personal image works for GG-072.

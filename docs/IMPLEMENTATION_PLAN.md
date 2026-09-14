@@ -1,21 +1,20 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-14
-- Current phase: GG-073 implemented and locally verified; not deployed.
-- Current objective: Shareable reusable image effects with before/after, likes and owner withdrawal.
+- Current phase: GG-074 locally implemented and verified; not deployed.
+- Current objective: Dedicated case editor, public/hidden preset reuse and configurable comparison.
 - Previous objective: 用户在模型管理为 GPT 图片系列逐线路定价与启禁，保留原测试配置与历史。
 
 ## Current checkpoint
 
-- Current task [GG-073](tasks/GG-073-inspiration-cases.md), branch feature/GG-073-inspiration-cases, worktree F:/goodgood-worktrees/GG-073; verified main bab17fd plus fast-forward GG-072 f4698d0.
-- ADR0076 accepted before implementation: selected personal image publication, before/after prompt/parameters snapshot, active-user likes, settings reuse and audited owner withdrawal. Only authenticated shared reads, no public profiles/friends or automatic generation.
-- Original32141 owner preview now GG073 Web19840/Worker31969, mock91616 retained; only migration0036 added. Original38 historical tables, all models/events, prior migrations and current private profiles unchanged. No production authority or real-provider32140 requests.
-- Implementation complete: own asset review, immutable case snapshots, search/keyset pages, before/after detail, desired-state likes, audited withdrawal and settings reuse with fresh own references.
-- Targeted18/18 and disposable GG073 SQL1/1 plus GG072 regression SQL1/1 passed. Final stable gate lint/types/build and505 tests485 pass20 opt-in skip0 fail; desktop/narrow390px publishing/likes/reuse/withdrawal verified. UI confirmation overlay fixed and mouse actions confirmed.
-- Temporary no-Worker UI database and exact four fixture object keys removed, viewport restored. Original owner JONY session remains at /inspiration; real original images not published, new case tables empty.
-- Next action: owner publishes an actual personal work through image detail and tries the reusable case at http://127.0.0.1:32141/inspiration. Local commit only; no push/merge/deployment.
-- Blockers: none; optional publishing permission question pending, default active-user own works as announced.
-- Production https://goodgood.o1key.com revision65ceb168/migration0019 unchanged; staging-goodgood.o1key.com is historical naming.
+- Task [GG-074](tasks/GG-074-inspiration-editor.md), feature/GG-074-inspiration-editor, F:/goodgood-worktrees/GG-074; verified main bab17fd plus FF GG073 0a80849.
+- ADR0077 accepted before code: dedicated author editor, public/hidden presets, side-by-side or pointer wipe. Hidden reproduction sends only optional supplement and own materials, stores final prompt server-only and supports frozen retry.
+- Complete gate: 512 tests, 491 pass, 21 opt-in skips, 0 failures. GG074, GG073 and GG072 named disposable no-Worker SQL each1/1. Mock UI proved empty/nonempty supplement generation, correct credits, public edited reuse, desktop/390px layout and pointer/keyboard comparison.
+- Original32141 now GG074; JONY owner login/avatar, all models/events, 38 historical tables, profiles and original cases/likes/events preserved. Only scoped migration0037 applied, no old pricing conversion replay. Original private preset rows0.
+- Temporary32144/32145 stopped, exact UI DB and six synthetic objects removed. Original Web37007/Worker56339 and mock-provider91616 active; loopback54449/goodgood, Redis56449 DB0, RustFS58049/58050 unchanged.
+- Next action: owner reviews dedicated editor and optional hidden supplements on local page. No blockers; no main merge/push/paid calls/deployment authorized.
+- Blockers: none.
+- Production https://goodgood.o1key.com revision65ceb168/migration0019 unchanged; staging-goodgood.o1key.com remains historical naming.
 
 ## Verification sequence
 
@@ -51,7 +50,7 @@
 
 ## New-session recovery
 
-1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-073` 与 GG-073 任务卡；按卡核对运行版本，不能仅看 URL。
+1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-074` 与 GG-074 任务卡；按卡核对运行版本，不能仅看 URL。
 2. 当前页面为 `http://127.0.0.1:32141/inspiration`，灵感板案例；个人资料和站长管理看板/总日志/模型/企业/账户/审计仍保留。仅独立 mock 栈。旧 `32140` 有真实 provider Worker，不运行 fixtures/outbox，不重置其数据。
 3. 本地 ignored `.gg052-local.mjs` 分别启动 web/worker/mock-generation；按本任务已记录的运行状态恢复，保留用户试价数据。正式生产与真实请求不在本次授权范围。
 4. 不恢复或 bulk merge 旧 C6；旧阶段具体验证见相应任务卡，GG-051 [研究记录](research/GG-051-credit-pricing-reassessment.md) 保留定价依据。

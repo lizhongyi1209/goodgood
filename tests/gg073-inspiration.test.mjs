@@ -20,8 +20,8 @@ test('GG-073 recipes whitelist reusable settings and remove source references, p
   assert.equal(inspirationRecipe({parameters,prompt:''}),null);
 });
 test('GG-073 validates consent, bounded text, filters, UUIDs and desired like state',()=>{
-  assert.deepEqual(validateInspirationInput('publish',{assetId:id,title:'案例',consent:true}),{assetId:id,beforeReferenceId:null,title:'案例',description:''});
-  for(const [action,input] of [['publish',{assetId:id,title:'case',consent:false}],['publish',{assetId:id,title:'a'.repeat(61),consent:true}],['publish',{assetId:id,title:'case',consent:true,prompt:'forged'}],['publish',{assetId:id,title:'case',consent:true,beforeReferenceId:'https://private'}],['publish',{assetId:id,title:'case',consent:true,description:'a'.repeat(1001)}],['prepare',{assetId:'not-id'}],['like',{liked:'true'}],['list',{query:'a'.repeat(101)}],['list',{cursor:'garbage'}],['list',null]]) assert.throws(()=>validateInspirationInput(action,input),InspirationError);
+  assert.deepEqual(validateInspirationInput('publish',{assetId:id,title:'案例',consent:true}),{assetId:id,beforeReferenceId:null,prompt:undefined,promptVisibility:'public',comparisonMode:'side_by_side',title:'案例',description:''});
+  for(const [action,input] of [['publish',{assetId:id,title:'case',consent:false}],['publish',{assetId:id,title:'a'.repeat(61),consent:true}],['publish',{assetId:id,title:'case',consent:true,parameters:{forged:true}}],['publish',{assetId:id,title:'case',consent:true,beforeReferenceId:'https://private'}],['publish',{assetId:id,title:'case',consent:true,description:'a'.repeat(1001)}],['prepare',{assetId:'not-id'}],['like',{liked:'true'}],['list',{query:'a'.repeat(101)}],['list',{cursor:'garbage'}],['list',null]]) assert.throws(()=>validateInspirationInput(action,input),InspirationError);
   assert.deepEqual(validateInspirationInput('like',{liked:false}),{liked:false});
 });
 test('GG-073 unauthenticated and unavailable cases fail safely before sharing/recipe access',async()=>{

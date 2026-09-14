@@ -1,5 +1,12 @@
 # GG-063 quality pricing
 
+GG-074 migration0037 adds prompt_visibility(public default/hidden) and
+comparison_mode(side_by_side default/hover). inspiration_generation_prompts has
+job_id PK/FK, case_id FK and effective_prompt(1–8001 chars). It is server-only;
+visible batch prompts keep only a preset label and supplement. New private input,
+job, reservation and outbox are one transaction. Hidden-derived assets cannot be
+published as reusable cases; normal own asset inspection remains available.
+
 GG-073 migration0036 adds inspiration_cases (source asset, optional original
 reference, title/notes, immutable prompt/parameters/author snapshot, soft removal),
 inspiration_likes (unique case/user) and inspiration_events (publish/withdraw/

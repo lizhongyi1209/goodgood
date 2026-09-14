@@ -1,5 +1,11 @@
 # Design system
 
+GG-074 case editor uses the creator shell with a quiet heading, left editing
+fields and right live image/settings preview; one column below900px. Public/hidden
+and comparison radios have plain explanations. Pointer wipe preserves decoded
+aspect ratio and contained images, with a visible seam and touch/keyboard range.
+Hidden reproduction clearly separates preset badge from optional supplement.
+
 GG-073: quiet inspiration heading/search, responsive image cards with original
 ratio, author and like action. 720px right Sheet shows contained before/after,
 prompt, original settings and one recipe-use action; mobile full width.

@@ -1,5 +1,11 @@
 # Navigation and route contract
 
+GG-074 adds same-shell /inspiration/edit/:assetId and /inspiration/use/:caseId.
+Neither URL includes prompts. POST /api/inspiration/:id/generate is personal-only,
+authenticated active, action-header/idempotency guarded and normal quote/billing
+protected. Publish/generate bodies allow32KiB for edited Chinese prompts; other
+case POSTs retain8KiB. Hidden detail/use DTOs contain no original prompt.
+
 GG-073 implements `/inspiration`, entered from sidebar or mobile bar. Private
 GET `/api/inspiration` lists first20; POST `/list` accepts search/keyset cursor,
 POST `/prepare` reviews own asset and POST base publishes selected content.

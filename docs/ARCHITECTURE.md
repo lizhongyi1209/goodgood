@@ -1,5 +1,13 @@
 # Architecture
 
+GG-074 keeps editor, comparison and reproduction under features/inspiration.
+Hidden submission calls normal durable generation with a trusted route case ID;
+browser private prompt fields are ignored. Transaction locks lifecycle then case,
+validates current hidden publication and freezes server-combined effective input.
+Private prompts never join public generation queries. Worker alone replaces its
+local provider prompt; failures sanitize provider text. Retry preserves frozen
+input after accepted generation, even if case was later withdrawn.
+
 GG-073 isolates case SQL/service/routing under server/inspiration and board,
 publication review/http boundary under features/inspiration. Shared recipe
 contract whitelists settings and drops references/project/prices. Private asset

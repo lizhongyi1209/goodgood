@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
+import {frozenPresetForJob} from '../inspiration/preset.mjs';
 import { NormalizedProviderError } from "./provider.mjs";
 import {
   createGenerationProvider,
@@ -177,6 +178,7 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
   let stage = "attempt-validation";
   let taskId = attempt.provider_task_id;
   let providerStartedAt = null;
+  let privatePreset = null;
   const resultContext = () => ({
     customerCreditAmount:
       job.quoted_credit_amount === null || job.quoted_credit_amount === undefined
@@ -192,6 +194,8 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
     routeVersion: provider.route.routeVersion,
   });
   try {
+    privatePreset=await frozenPresetForJob(pool,job.id);
+    if(privatePreset) job.prompt=privatePreset.effective_prompt;
     provider.assertAttempt(attempt);
     providerStartedAt = Date.now();
     if (!provider.isTaskSubmissionComplete({ job, taskId })) {
@@ -307,7 +311,7 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
     if (error instanceof NormalizedProviderError) {
       await failGenerationJob(pool, {
         attemptId: attempt.id,
-        error: normalizedError(error),
+        error: privatePreset?{...normalizedError(error),message:'预设效果生成未完成，请重试或联系站长。'}:normalizedError(error),
         jobId,
         workerId,
       });
@@ -321,7 +325,7 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
 
     await deferGenerationJob(pool, {
       jobId,
-      message: error instanceof Error ? error.message : String(error),
+      message: privatePreset?'Preset generation deferred':error instanceof Error ? error.message : String(error),
       workerId,
     });
     return { ...resultContext(), outcome: "deferred", stage };

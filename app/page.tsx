@@ -6,7 +6,8 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties, type Whee
 import Image from "next/image";
 import {PersonalProfileView,ProfileAvatar,usePersonalProfile} from "@/features/profile/personal-profile";
 import {InspirationBoard} from "@/features/inspiration/inspiration-board";
-import {PublishCaseSheet} from "@/features/inspiration/publish-case-sheet";
+import {CaseEditor} from "@/features/inspiration/case-editor";
+import {CaseReplica} from "@/features/inspiration/case-replica";
 import type {UseCaseResult} from "@/features/inspiration/http-inspiration-boundary";
 import { CreationComposer } from "@/features/creation/creation-composer";
 import { supportsImageLines, imageLineName } from "@/shared/contracts/banana-lines.mjs";
@@ -259,7 +260,7 @@ type AssetBatch = {
   referenceCount: number;
   images: readonly GenerationOutput[];
 };
-type ActiveView = "create" | "profile" | "inspiration" | "projects" | "assets" | "credits" | "distribution" | "organizations" | "admin";
+type ActiveView = "create" | "profile" | "inspiration" | "inspirationEditor" | "inspirationReplica" | "projects" | "assets" | "credits" | "distribution" | "organizations" | "admin";
 type DestructiveCreationIntent =
   | { kind: "new" }
   | { kind: "project"; projectId: string; projectName: string }
@@ -536,7 +537,7 @@ export default function Home({
   const [videoPreviewRuns, setVideoPreviewRuns] = useState<readonly VideoPreviewRun[]>([]);
   const [videoDetailKey, setVideoDetailKey] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<ActiveView>("create");
-  const [shareAssetId,setShareAssetId] = useState<string|null>(null);
+  const [inspirationRoute,setInspirationRoute] = useState<{kind:"edit"|"use";id:string}|null>(null);
   const [adminTab, setAdminTab] = useState<"models" | "users" | "audit" | "operations" | "logs">("models");
   const [organizationRoute, setOrganizationRoute] = useState<{ id: string; tab: OrganizationManagementTab } | null>(null);
   const [businessStylePreview, setBusinessStylePreview] = useState(false);
@@ -916,6 +917,10 @@ export default function Home({
       }
       setRouteProjectId(null);
       setProjectRestoringId(null);
+      if(route.kind==='inspirationEdit'||route.kind==='inspirationUse') {
+        setInspirationRoute({kind:route.kind==='inspirationEdit'?'edit':'use',id:route.kind==='inspirationEdit'?route.assetId:route.caseId});
+        setActiveView(route.kind==='inspirationEdit'?'inspirationEditor':'inspirationReplica');return;
+      }
       setActiveView(route.kind === "projects"
         ? "projects"
         : route.kind === "profile"
@@ -2384,6 +2389,7 @@ export default function Home({
     if(!billingSummary?.models?.some(model=>model.id===(recipe.catalogModelId??recipe.modelId))) toast.info("原作模型暂不可用，请在参数中选择可用模型。");
   };
   const requestInspirationCase = (value:UseCaseResult) => {
+    if(value.promptVisibility==='hidden') {navigateWorkspace({kind:"inspirationUse",caseId:value.caseId});return;}
     if(isGenerating||isVideoGenerating) {toast.info("仍有任务正在生成，请等待完成后再使用案例。");return;}
     if(hasUnsavedCreationChanges) {setDestructiveCreationIntent({kind:"inspiration",value});return;}
     applyInspirationCase(value);
@@ -2772,6 +2778,10 @@ export default function Home({
     }
   };
 
+  const publishInspirationAsset = (assetId:string) => {
+    setDetailOpen(false);
+    navigateWorkspace({kind:'inspirationEdit',assetId});
+  };
   const closeImageDetail = () => {
     setDetailOpen(false);
     if (workspaceId) {
@@ -2968,7 +2978,7 @@ export default function Home({
               <Network size={17} /><span>分销管理</span>
             </button>
           )}
-          <button className={`side-nav-item ${activeView === "inspiration" ? "active" : ""}`} onClick={handleInspirationNav}><LayoutGrid size={17} /><span>灵感板</span></button>
+          <button className={`side-nav-item ${["inspiration","inspirationEditor","inspirationReplica"].includes(activeView) ? "active" : ""}`} onClick={handleInspirationNav}><LayoutGrid size={17} /><span>灵感板</span></button>
           {authenticationSession?.account.role === "site_owner" && (
             <button
               className={`side-nav-item ${siteOwnerManagementActive ? "active" : ""}`}
@@ -3347,6 +3357,10 @@ export default function Home({
                 </div>
               )}
             </section>
+          ) : activeView === 'inspirationEditor' && inspirationRoute ? (
+            authenticationSession?.access.status==='active'&&!authenticationSession.preview&&<CaseEditor key={inspirationRoute.id} assetId={inspirationRoute.id} onCancel={handleInspirationNav} onPublished={()=>{toast.success('案例已发布到灵感板');handleInspirationNav();}}/>
+          ) : activeView === 'inspirationReplica' && inspirationRoute ? (
+            authenticationSession?.access.status==='active'&&!authenticationSession.preview&&<CaseReplica key={inspirationRoute.id} caseId={inspirationRoute.id} onReturn={handleInspirationNav} onCompleted={()=>{void reloadAssets();void readBillingSummary().then(setBillingSummary).catch(()=>undefined);}}/>
           ) : activeView === "inspiration" ? (
             <InspirationBoard enabled={Boolean(authenticationSession&&!authenticationSession.preview&&authenticationSession.access.status==="active")} onUse={requestInspirationCase}/>
           ) : activeView === "profile" ? (
@@ -3688,7 +3702,7 @@ export default function Home({
                     <strong>{activeDetailModel?.name}</strong>
                   </div>
                   <div className="image-detail-actions">
-                    {!workspaceId&&!authenticationSession?.preview&&<button className="download-button" aria-label="分享作品" onClick={()=>setShareAssetId(activeDetail.image.id)}><Share2 size={17}/></button>}
+                    {!workspaceId&&!authenticationSession?.preview&&<button className="download-button" aria-label="发布灵感案例" onClick={()=>publishInspirationAsset(activeDetail.image.id)}><Share2 size={17}/></button>}
                     <button className="download-button" disabled={downloadingImageKeys.includes(`${activeDetail.batch.id}-${activeDetail.image.id}`)} aria-label={downloadingImageKeys.includes(`${activeDetail.batch.id}-${activeDetail.image.id}`) ? "正在下载图片" : "下载图片"} onClick={() => void downloadImage(activeDetail.batch, activeDetail.image, activeDetail.index)}>{downloadingImageKeys.includes(`${activeDetail.batch.id}-${activeDetail.image.id}`) ? <LoaderCircle className="download-spinner" size={17} /> : <Download size={17} />}</button>
                   </div>
                 </header>
@@ -3829,7 +3843,6 @@ export default function Home({
           session={authenticationSession}
         />
       ) : null}
-      <PublishCaseSheet assetId={shareAssetId} onClose={()=>setShareAssetId(null)} onPublished={()=>toast.success("作品已分享到灵感板")}/>
       <VideoPreviewDetail runs={videoPreviewRuns} activeKey={videoDetailKey} onSelect={setVideoDetailKey} />
       <Toaster position="bottom-center" toastOptions={{ duration: 2200 }} />
     </main>

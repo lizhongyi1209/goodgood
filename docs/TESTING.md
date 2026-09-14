@@ -1,5 +1,14 @@
 # GG-063 verification
 
+GG-074 tests cover hidden/public DTOs, optional supplement joining, custom prompt
+validation, modes, routes and accessible pointer wipe. Opt-in SQL requires exact
+goodgood_gg074_presets_test_20260914 loopback DB, integration/no-Worker flags,
+empty schema and zero peer connections. It verifies atomic private input, one
+reservation per idempotent submission, removal blocking, frozen retry, completion
+and no secret in public records/derived publication. The fixture publishes its
+current20-credit quote through the normal immutable price-version writer.
+UI uses a separate named disposable mock stack; never real-provider32140.
+
 GG-073 feature tests cover recipe privacy, consent/bounds, active/ownership and
 shared DTOs, HTTP methods/action gates, rendered read/empty/like/comparison/settings.
 Opt-in gg073-inspiration-postgres requires explicit loopback named empty

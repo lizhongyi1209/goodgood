@@ -1,5 +1,12 @@
 # GG-063 quality pricing errors
 
+GG-074 missing/removed/non-hidden preset rejects new submissions before reserve.
+Insufficient balance, unavailable model/line, stale price or unready references
+use existing billing/generation errors. Idempotent replay returns the accepted
+job; failed-job retry retains private input. Preset provider failures never expose
+provider error text that might echo hidden content. Editor publish errors retain
+all fields; list/recipe/library read errors offer retry.
+
 GG-073 separates directory/detail loading, empty/error/retry and action errors.
 Consent/input/source/before failures retain publish fields; withdrawn or hidden
 cases return404, forbidden removal403 and removed-source republish403. Like

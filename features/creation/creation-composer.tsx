@@ -72,6 +72,9 @@ import { supportsImageLines } from "@/shared/contracts/banana-lines.mjs";
 import { BananaLineSelector } from "./banana-line-selector";
 
 export type CreationComposerProps = Readonly<{
+  showModeSwitch?: boolean;
+  promptLabel?: string;
+  promptPlaceholder?: string;
   managedModel?: ManagedModel;
   imageLine?: BananaLine;
   onImageLineChange?: (line: BananaLine) => void;
@@ -144,6 +147,9 @@ function resizePromptTextarea(element: HTMLTextAreaElement) {
 }
 
 export function CreationComposer({
+  showModeSwitch = true,
+  promptLabel = '画面描述',
+  promptPlaceholder = '描述你想创作的画面…',
   managedModel,
   imageLine = "special",
   onImageLineChange = () => {},
@@ -246,7 +252,7 @@ export function CreationComposer({
       className={`composer ${drawerOpen ? "drawer-open" : ""} ${isGenerating ? "is-generating" : ""}`}
       aria-label="图像生成区域"
     >
-      <CreationModeSwitch value={mode} onChange={onModeChange} />
+      {showModeSwitch && <CreationModeSwitch value={mode} onChange={onModeChange} />}
       <div className="prompt-row">
         <div className="reference-control">
           <input
@@ -282,10 +288,10 @@ export function CreationComposer({
         </div>
         <textarea
           ref={promptInputRef}
-          aria-label="画面描述"
+          aria-label={promptLabel}
           value={prompt}
           rows={1}
-          placeholder="描述你想创作的画面…"
+          placeholder={promptPlaceholder}
           onChange={(event) => {
             onPromptChange(event.target.value);
             resizePromptTextarea(event.currentTarget);

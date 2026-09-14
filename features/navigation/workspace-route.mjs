@@ -1,7 +1,7 @@
 export const WORKSPACE_NAVIGATION_EVENT = "goodgood:workspace-navigation";
 
 /**
- * @typedef {{ kind: "create" } | { kind: "profile" } | { kind: "inspiration" } | { kind: "projects" } | { kind: "project", projectId: string } | { kind: "assets" } | { kind: "asset", assetId: string } | { kind: "credits" } | { kind: "distribution", tab?: "transfers" } | { kind: "admin", tab: "models" | "users" | "audit" | "operations" | "logs" } | { kind: "enterpriseAccounts", tab: "accounts" | "transfers" } | { kind: "organizations", organizationId?: string, tab?: "overview" | "members" | "usage" | "assets" }} WorkspaceRoute
+ * @typedef {{ kind: "create" } | { kind: "profile" } | { kind: "inspiration" } | { kind: "inspirationEdit", assetId: string } | { kind: "inspirationUse", caseId: string } | { kind: "projects" } | { kind: "project", projectId: string } | { kind: "assets" } | { kind: "asset", assetId: string } | { kind: "credits" } | { kind: "distribution", tab?: "transfers" } | { kind: "admin", tab: "models" | "users" | "audit" | "operations" | "logs" } | { kind: "enterpriseAccounts", tab: "accounts" | "transfers" } | { kind: "organizations", organizationId?: string, tab?: "overview" | "members" | "usage" | "assets" }} WorkspaceRoute
  */
 
 /**
@@ -25,6 +25,8 @@ export function parseWorkspaceRoute(pathname) {
       return { kind: "create" };
     }
   }
+  const inspirationMatch=normalized.match(/^\/inspiration\/(edit|use)\/([0-9a-f-]{36})$/i);
+  if(inspirationMatch) return inspirationMatch[1]==='edit'?{kind:'inspirationEdit',assetId:inspirationMatch[2]}:{kind:'inspirationUse',caseId:inspirationMatch[2]};
   if (normalized === "/inspiration") return { kind: "inspiration" };
   if (normalized === "/profile") return { kind: "profile" };
   if (normalized === "/assets") return { kind: "assets" };
@@ -65,6 +67,8 @@ export function workspaceRouteHref(route) {
   if (route.kind === "project") {
     return `/projects/${encodeURIComponent(route.projectId)}`;
   }
+  if(route.kind==='inspirationEdit') return '/inspiration/edit/'+encodeURIComponent(route.assetId);
+  if(route.kind==='inspirationUse') return '/inspiration/use/'+encodeURIComponent(route.caseId);
   if (route.kind === "inspiration") return "/inspiration";
   if (route.kind === "profile") return "/profile";
   if (route.kind === "assets") return "/assets";
