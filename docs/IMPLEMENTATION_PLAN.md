@@ -2,7 +2,7 @@
 
 - Last synchronized: 2026-09-14
 - Current phase: GG-083 batch/accumulation decisions recorded; numerical rules pending, no issuance or deployment.
-- Current objective: 从9c30960完整继承a73835f，整理分批定额无期限、仅充值消费挖矿累计、不兑换/不锚定人民币，讨论线性获币比例。
+- Current objective: 延续GG083且完整继承a73835f，展开100万首期额度下每100有效消费积分奖励5/10/20枚的参数比较；数值未接受。
 - Previous objective: GG082最小发行讨论；GG081积分类型/充值登记/运营与并发本地实现验证保留。
 
 ## Current checkpoint
@@ -12,6 +12,7 @@
 - [ADR0080](decisions/0080-classified-admin-credit-grants-and-operations.md) Accepted；六类积分、充值凭证/正常支付账本及现金/并发看板已实现。历史备注不自动改来源，企业来源与正式视频结算不在本切片。
 - [ADR0081](decisions/0081-jcoin-batch-accumulation.md) Accepted：分批限额、无截止日期、发完再另开下一批；第一期仅累计，不支持积分/任何兑换，不锚定人民币。旧GG082兑换/面值试算移除，GG080自动跨批建议失效。当前仍无JCOIN账户/库存/流水/分发/退款/余额界面。
 - [GG083思路](research/GG-083-jcoin-batch-accumulation.md)建议同批固定比例线性累计，不自动增加消费档位倍率。首期限定枚数/比例、最后一笔/批间消费/退款回收规则未接受；此前100万/示例10枚仍非确定配置。20%创作分母/含义与企业归属待明确，创作保持未启动。
+- 用户“同意。开始讨论”后展开固定100万枚下5/10/20的三档比较，需2000万/1000万/500万有效消费积分发完，优先建议10；参数内存试算通过，没有真实消费统计或发完日期预测。
 - GG081验证见任务，门禁508通过/23跳过、隔离SQL2/2及桌面/窄屏mock保留。GG083仅文档，线性/尾差/封顶内存试算、文档/发布契约15/15、diff及a73835f/90a1d9a祖先检查通过。运行时代码不变，不跑完整构建或写数据库。
 - 正式入口 `https://goodgood.o1key.com` 不变；`staging-goodgood.o1key.com` 仅历史名称。原预览状态仅沿用 GG-079 交接记录（32141/32142/32143 已停止、依赖健康），本轮未重新核验运行；CURRENT_STATE 不改，不把历史 session ID 当可恢复句柄。
 - Next action: 讨论并接受首期限定枚数、固定比例及批次边界/退款建议，再实施仅充值消费挖矿、独立账本和累计界面，验证9.18/幂等/库存。下一批另行开启；不继续兑换/面值/自动跨批方案。当前不部署或改历史来源。
