@@ -88,7 +88,8 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .sidebar-footer { margin-top: auto; display: flex; flex-direction: column; gap: 3px; }
 .account-card { width: 100%; min-height: 52px; margin-top: var(--space-2); padding: 9px 10px; border: 0; background: #f0f0f3; border-radius: var(--radius-md); display: grid; grid-template-columns: 34px minmax(0,1fr) auto; align-items: center; gap: 10px; text-align: left; }
 .account-card:hover, .account-card[data-state="open"] { background: #e8e8ec; }
-.account-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.account-card:focus { outline: none; }
+.account-card:focus-visible { background: #e8e8ec; }
 .avatar, .top-avatar { border-radius: 50%; display: grid; place-items: center; background: #e7e7eb; border: 0; font-size: 10px; font-weight: 650; }
 .avatar { width: 34px; height: 34px; }
 .account-card-username { min-width: 0; overflow: hidden; color: var(--ink); font-size: 13px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
