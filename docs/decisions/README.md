@@ -1,5 +1,7 @@
 # Decision records
 
+- `0084-jcoin-runtime-and-private-user-view.md` — accepted first-batch runtime, private own-balance/history without supply data, owner-only plan/lifecycle and independent durable consumption processing for GG-084.
+
 - `0083-jcoin-first-batch-consumption-coefficient.md` — accepted 500,000 CNY qualified-consumption scale implies 2 JCOIN per 100 qualified consumption credits for the 1,000,000-coin first batch; no currency value peg.
 
 - `0082-jcoin-first-batch-budget.md` — accepted 1,000,000 JCOIN first-batch budget for GG-083; proposed mining coefficient remains unapproved, consumption-scale calculation is not a token value peg.

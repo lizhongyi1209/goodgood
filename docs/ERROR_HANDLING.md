@@ -1,5 +1,7 @@
 # GG-063 quality pricing errors
 
+GG-084个人/站长边界复用登录失效401；未启用或非站长403 JCOIN_ACCESS_DENIED，管理header不足403 JCOIN_CSRF_FAILED。非法动作、limit、cursor、幂等键或大于4KiB请求400 JCOIN_INVALID；同键异动作409 JCOIN_IDEMPOTENCY_CONFLICT，状态不匹配409 JCOIN_BATCH_CONFLICT。未知数据库异常统一503并隐藏SQL/连接信息。个人读取失败可重试、更多失败保留已加载记录；管理动作失败保留稳定键，成功后重新读取失败只重试查询。奖励事务失败整批回滚，定期重放；来源缺证据排除不是零币流水。库存初始草稿/起算前为正常状态，不触发奖励或兑换。
+
 GG-081未知类型/非法数量返回400；未确认充值返回ADMIN_PAYMENT_CONFIRMATION_REQUIRED，凭证内容不合规则ADMIN_REQUEST_INVALID；重复凭证返回ADMIN_PAYMENT_RECEIPT_CONFLICT（409），价目冲突ADMIN_PAYMENT_PRODUCT_CONFLICT（409），同键不同操作ADMIN_IDEMPOTENCY_CONFLICT（409）。身份/CSRF在入账前拒绝，事务失败回滚订单/账本/审计。表单保留编辑并重用相同内容键；历史峰值缺时间为null/暂无统计，不伪造为零。
 
 GG-075: unchecked publication confirmation produces an accessible inline alert beside the checkbox, retains edits and sends no publish request. Required title/preset whitespace is rejected explicitly. No available original reference is an explained state rather than hidden controls. Backend consent/ownership checks remain unchanged.

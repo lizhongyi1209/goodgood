@@ -8,6 +8,7 @@ describes ownership in the clean integration baseline, not live-release proof.
 | Path | Responsibility |
 | --- | --- |
 | `app/page.tsx` | Shared workspace orchestration plus authenticated root-draft, durable project, and asset-library UI states |
+| `features/jcoin/`, `server/jcoin/`, `shared/contracts/jcoin.*` | 私有个人币统计/流水、站长固定一期计划与独立消费奖励处理；迁移0040、Worker周期接线 |
 | `app/create/` | Canonical creation page entry reusing the shared workspace |
 | `app/projects/` | Addressable project index/detail page entries mounted into the shared workspace |
 | `app/assets/` | Addressable asset-library and stable asset-detail page entries mounted into the shared workspace |

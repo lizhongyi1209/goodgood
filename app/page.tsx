@@ -123,6 +123,7 @@ import {
   readBillingSummary,
 } from "@/features/billing/http-billing-boundary";
 import { CreditActivityView } from "@/features/billing/credit-activity-view";
+import { OwnJcoinView } from '@/features/jcoin/own-jcoin-view';
 import { BusinessManagementView } from "@/features/distribution/business-management-view";
 import { BusinessManagementStylePreview } from "@/features/distribution/business-management-style-preview";
 import { canonicalBusinessRoute } from "@/features/distribution/business-route.mjs";
@@ -259,7 +260,7 @@ type AssetBatch = {
   referenceCount: number;
   images: readonly GenerationOutput[];
 };
-type ActiveView = "create" | "profile" | "inspiration" | "inspirationEditor" | "inspirationReplica" | "projects" | "assets" | "credits" | "distribution" | "organizations" | "admin";
+type ActiveView = "create" | "profile" | "inspiration" | "inspirationEditor" | "inspirationReplica" | "projects" | "assets" | "credits" | "jcoin" | "distribution" | "organizations" | "admin";
 type DestructiveCreationIntent =
   | { kind: "new" }
   | { kind: "project"; projectId: string; projectName: string }
@@ -538,7 +539,7 @@ export default function Home({
   const [videoDetailKey, setVideoDetailKey] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<ActiveView>("create");
   const [inspirationRoute,setInspirationRoute] = useState<{kind:"edit"|"use";id:string}|null>(null);
-  const [adminTab, setAdminTab] = useState<"models" | "users" | "audit" | "operations" | "logs">("models");
+  const [adminTab, setAdminTab] = useState<"models" | "users" | "audit" | "operations" | "logs" | "jcoin">("models");
   const [organizationRoute, setOrganizationRoute] = useState<{ id: string; tab: OrganizationManagementTab } | null>(null);
   const [businessStylePreview, setBusinessStylePreview] = useState(false);
   const [distributionTab, setDistributionTab] = useState<"children" | "transfers">("children");
@@ -931,6 +932,8 @@ export default function Home({
           ? "assets"
           : route.kind === "credits"
             ? "credits"
+          : route.kind === "jcoin"
+            ? "jcoin"
           : route.kind === "distribution"
             ? "distribution"
           : route.kind === "organizations" || route.kind === "enterpriseAccounts"
@@ -2245,6 +2248,12 @@ export default function Home({
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const handleJcoinNav = () => {
+    if (workspaceId) { window.location.assign('/jcoin'); return; }
+    navigateWorkspace({ kind: 'jcoin' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleDistributionNav = () => {
     if (workspaceId) { window.location.assign("/distribution"); return; }
     navigateWorkspace({ kind: "distribution" });
@@ -3007,6 +3016,7 @@ export default function Home({
               <Coins size={17} /><span>积分记录</span>
             </button>
           )}
+          {authenticationSession?.access.status === 'active' && <button className={`side-nav-item ${activeView === 'jcoin' ? 'active' : ''}`} onClick={handleJcoinNav}><Coins size={17}/><span>平台币</span></button>}
           {authenticationSession && accountIdentity ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -3115,6 +3125,7 @@ export default function Home({
                 <DropdownMenuTrigger asChild><button className="top-avatar" aria-label="打开账户菜单"><ProfileAvatar className="account-profile-avatar" url={personalProfile.profile?.avatarUrl} name={personalProfile.profile?.displayName ?? accountInitials}/></button></DropdownMenuTrigger>
                 <DropdownMenuContent align="end" collisionPadding={12}>
                   <DropdownMenuItem onSelect={handleProfileNav}><UserRoundCog size={16}/><span>个人资料</span></DropdownMenuItem>
+                  {authenticationSession.access.status === 'active'&&<DropdownMenuItem onSelect={handleJcoinNav}><Coins size={16}/><span>我的平台币</span></DropdownMenuItem>}
                   <DropdownMenuSeparator/>
                   <DropdownMenuItem onSelect={()=>void handleLogout()}><LogOut size={16}/><span>退出登录</span></DropdownMenuItem>
                 </DropdownMenuContent>
@@ -3373,6 +3384,8 @@ export default function Home({
             <InspirationBoard enabled={Boolean(authenticationSession&&!authenticationSession.preview&&authenticationSession.access.status==="active")} onUse={requestInspirationCase}/>
           ) : activeView === "profile" ? (
             <PersonalProfileView state={personalProfile} works={assetDetailItems.map(item=>({key:item.key,url:item.image.previewUrl,ratio:item.image.width && item.image.height ? item.image.width/item.image.height : item.ratio,alt:item.batch.prompt}))} worksLoading={assetsLoading} worksError={assetsError ?? assetRouteError} onRetryWorks={()=>void reloadAssets()} onOpenWork={key=>openImageDetail(assetDetailItems,key,"profile")} onCreate={handleCreateNav}/>
+          ) : activeView === "jcoin" ? (
+            <OwnJcoinView session={authenticationSession} onLogin={handleLogin}/>
           ) : activeView === "credits" ? (
             <CreditActivityView
               enabled={Boolean(authenticationSession && authenticationSession.access.status === "active")}

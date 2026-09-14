@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, ChartNoAxesCombined, ListFilter, LoaderCircle, ScrollText, SlidersHorizontal, UsersRound } from "lucide-react";
+import { Building2, ChartNoAxesCombined, Coins, ListFilter, LoaderCircle, ScrollText, SlidersHorizontal, UsersRound } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import type { AuthenticationSession } from "@/features/auth/http-auth-boundary";
@@ -9,9 +9,11 @@ import { AccountManagementPage } from "./account-management-page";
 import { ModelManagementPage } from "./model-management-page";
 import { AuditLogView } from "./audit-log-view";
 import { SiteOperationsDashboard, SiteOperationsLog } from "./site-operations-view";
+import { JcoinManagementView } from '@/features/jcoin/jcoin-management-view';
 
 const tabs = [
   { id: "operations", label: "运营看板", icon: ChartNoAxesCombined, route: { kind: "admin", tab: "operations" } },
+  { id: "jcoin", label: "平台币", icon: Coins, route: { kind: "admin", tab: "jcoin" } },
   { id: "organizations", label: "企业管理", icon: Building2, route: { kind: "organizations" } },
   { id: "models", label: "模型管理", icon: SlidersHorizontal, route: { kind: "admin", tab: "models" } },
   { id: "users", label: "账户管理", icon: UsersRound, route: { kind: "admin", tab: "users" } },
@@ -21,7 +23,7 @@ const tabs = [
 
 export function SiteOwnerManagementView({ session, activeTab, children, onLogin, onManagementChange }: {
   session: AuthenticationSession | null | undefined;
-  activeTab: "organizations" | "models" | "users" | "audit" | "operations" | "logs";
+  activeTab: "organizations" | "models" | "users" | "audit" | "operations" | "logs" | "jcoin";
   children?: ReactNode;
   onLogin: () => void;
   onManagementChange?: () => void;
@@ -45,6 +47,7 @@ export function SiteOwnerManagementView({ session, activeTab, children, onLogin,
       </nav>
     </header>
     {activeTab === "operations" ? <SiteOperationsDashboard />
+      : activeTab === "jcoin" ? <JcoinManagementView />
       : activeTab === "logs" ? <SiteOperationsLog />
       : activeTab === "models" ? <ModelManagementPage workspaceSession={session} embedded onManagementChange={onManagementChange} />
       : activeTab === "users" ? <AccountManagementPage workspaceSession={session} embedded onManagementChange={onManagementChange} />

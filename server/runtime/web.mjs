@@ -5,6 +5,7 @@ import { createProfileNodeApiHandler } from "../profile/node-api.mjs";
 import { createInspirationNodeApiHandler } from "../inspiration/node-api.mjs";
 import { createAdminNodeApiHandler } from "../admin/node-api.mjs";
 import { createBillingNodeApiHandler } from "../billing/node-api.mjs";
+import { createJcoinNodeApiHandler } from '../jcoin/node-api.mjs';
 import { loadAuthenticationConfig } from "../auth/config.mjs";
 import { createAuthenticationNodeApiHandler } from "../auth/node-api.mjs";
 import { createAuthenticationOperations } from "../auth/operations.mjs";
@@ -72,6 +73,7 @@ const handleGenerationNodeApi = createGenerationNodeApiHandler({
   authenticate,
 });
 const handleAdminNodeApi = createAdminNodeApiHandler({ authenticate });
+const handleJcoinNodeApi = createJcoinNodeApiHandler({ authenticate });
 const handleCreationDraftNodeApi = createCreationDraftNodeApiHandler({ authenticate });
 const handleDistributionNodeApi = createDistributionNodeApiHandler({ authenticate });
 const handleAssetNodeApi = createAssetNodeApiHandler({ authenticate });
@@ -103,6 +105,7 @@ server.on("request", (request, response) => {
     response.setHeader("set-cookie", defaultSessionCookie);
   }
   void handleAuthenticationNodeApi(request, response)
+    .then((handled) => (handled ? true : handleJcoinNodeApi(request, response)))
     .then((handled) => (handled ? true : handleAdminNodeApi(request, response)))
     .then((handled) =>
       handled ? true : handleCreationDraftNodeApi(request, response),

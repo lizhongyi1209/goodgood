@@ -23,7 +23,7 @@ test('GG081 isolated full migrations, classified sources, receipt races and atom
     const peers=await pool.query(`SELECT pid FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid()`);
     assert.equal(peers.rowCount,0,'Disposable database must have no Worker/other clients');
     const migrations=await applyMigrations({databaseUrl:url.href,logger:{log(){}}});
-    assert.equal(migrations.at(-1),'0039_gg081_classified_credit_grants.sql');
+    assert.ok(migrations.includes('0039_gg081_classified_credit_grants.sql'));
     const actor=randomUUID(), user=randomUUID(), other=randomUUID();
     await pool.query(`INSERT INTO users(id,email,status) VALUES ($1,'owner-081@example.invalid','active'),($2,'user-081@example.invalid','active'),($3,'other-081@example.invalid','active')`,[actor,user,other]);
     await pool.query(`INSERT INTO system_role_assignments(id,owner_id,role,source,assigned_by_operator_id,reason,idempotency_key,operation_hash)

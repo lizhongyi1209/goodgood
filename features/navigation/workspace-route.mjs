@@ -1,7 +1,7 @@
 export const WORKSPACE_NAVIGATION_EVENT = "goodgood:workspace-navigation";
 
 /**
- * @typedef {{ kind: "create" } | { kind: "profile" } | { kind: "inspiration" } | { kind: "inspirationEdit", assetId: string } | { kind: "inspirationUse", caseId: string } | { kind: "projects" } | { kind: "project", projectId: string } | { kind: "assets" } | { kind: "asset", assetId: string } | { kind: "credits" } | { kind: "distribution", tab?: "transfers" } | { kind: "admin", tab: "models" | "users" | "audit" | "operations" | "logs" } | { kind: "enterpriseAccounts", tab: "accounts" | "transfers" } | { kind: "organizations", organizationId?: string, tab?: "overview" | "members" | "usage" | "assets" }} WorkspaceRoute
+ * @typedef {{ kind: "create" } | { kind: "profile" } | { kind: "inspiration" } | { kind: "inspirationEdit", assetId: string } | { kind: "inspirationUse", caseId: string } | { kind: "projects" } | { kind: "project", projectId: string } | { kind: "assets" } | { kind: "asset", assetId: string } | { kind: "credits" } | { kind: "jcoin" } | { kind: "distribution", tab?: "transfers" } | { kind: "admin", tab: "models" | "users" | "audit" | "operations" | "logs" | "jcoin" } | { kind: "enterpriseAccounts", tab: "accounts" | "transfers" } | { kind: "organizations", organizationId?: string, tab?: "overview" | "members" | "usage" | "assets" }} WorkspaceRoute
  */
 
 /**
@@ -31,6 +31,8 @@ export function parseWorkspaceRoute(pathname) {
   if (normalized === "/profile") return { kind: "profile" };
   if (normalized === "/assets") return { kind: "assets" };
   if (normalized === "/credits") return { kind: "credits" };
+  if (normalized === "/jcoin") return { kind: "jcoin" };
+  if (normalized === "/admin/jcoin") return { kind: "admin", tab: "jcoin" };
   if (normalized === "/admin/models") return { kind: "admin", tab: "models" };
   if (normalized === "/admin/users") return { kind: "admin", tab: "users" };
   if (normalized === "/admin/audit") return { kind: "admin", tab: "audit" };
@@ -73,6 +75,7 @@ export function workspaceRouteHref(route) {
   if (route.kind === "profile") return "/profile";
   if (route.kind === "assets") return "/assets";
   if (route.kind === "credits") return "/credits";
+  if (route.kind === "jcoin") return "/jcoin";
   if (route.kind === "admin") return `/admin/${route.tab}`;
   if (route.kind === "distribution") return route.tab === "transfers" ? "/distribution/transfers" : "/distribution";
   if (route.kind === "enterpriseAccounts") return `/organizations/${route.tab}`;
