@@ -1,4 +1,5 @@
 import path from "node:path";
+import { handleLocalBuildVersion } from "./local-build-identity.mjs";
 import { startProdServer } from "vinext/server/prod-server";
 import { createAssetNodeApiHandler } from "../assets/node-api.mjs";
 import { createProfileNodeApiHandler } from "../profile/node-api.mjs";
@@ -96,6 +97,7 @@ const vinextRequestListeners = server.listeners("request");
 server.removeAllListeners("request");
 server.on("request", (request, response) => {
   observeHttpRequest(request, response);
+  if (handleLocalBuildVersion(request, response)) return;
   const url = new URL(request.url ?? "/", "http://localhost");
   if (
     defaultSessionCookie &&

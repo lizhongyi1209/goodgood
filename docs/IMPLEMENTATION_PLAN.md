@@ -1,20 +1,20 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-15
-- Current phase: GG-092 current local checkpoint and context-free development handoff.
-- Current objective: 保存bb782c0累计状态，修正AGENTS陈旧指引，将F:/goodgood接到当前版本，提供可执行恢复与安全测试命令。
+- Current phase: GG-093 retired Docker cleanup and build provenance handoff.
+- Current objective: 完成按授权的旧GoodGood Docker清理，保留现用依赖/历史卷，并以可验证构建指纹交接本地版本。
 - Previous objective: GG082最小发行讨论；GG081积分类型/充值登记/运营与并发本地实现验证保留。
 
 ## Current checkpoint
 
-- Task [GG-092](tasks/GG-092-development-handoff.md)：chore/GG-092-development-handoff / F:/goodgood；基线bb782c0保留a73835f与GG081—091。旧根目录GG024分支保留，.codex不改。
-- 本地版本标记goodgood-local-2026-09-14-gg092；新窗口从此检查点的后续版本分支，不从不含累计功能的main开始。
+- Task [GG-093](tasks/GG-093-docker-cleanup-build-handoff.md)：chore/GG-093-docker-cleanup-build-handoff / F:/goodgood；基线bc0e053保留f68ba81/a73835f，.codex不改。
+- 本地版本标记将在本任务最终提交后创建为goodgood-local-2026-09-15-gg093；新窗口从此检查点的后续版本分支，不从不含累计功能的main开始。
 - [跨窗口交接](DEVELOPMENT_HANDOFF.md)记录实际功能、启动命令、依赖/端口、命名SQL runner、验证边界。AGENTS/WORKFLOW/README已同步。
-- 09-15从根目录f68ba81构建重启：工作区Web32716/32131，登录检查Web8216/32191，mock Worker6744/32142，provider26808/32143；四ready200，原DB0043与数据保留。邮件仅本地Mailpit58045/58046，配置忽略文件见交接。
+- 09-15已从当前累计版本重建并重启工作区32131、登录32191、mock Worker32142、provider32143；服务使用loopback依赖与本地Mailpit，原DB0043与数据保留。最终PID以端口实时核验，不写死在交接文档。
 - 此前完整门禁a88bdc3 524通过/26跳过、GG091/GG029/GG031 SQL各1/1；最后邀请码文本/入口焦点样式按用户要求仅构建，手验结果未记录。
 - 线上仍goodgood.o1key.com的65ceb168/0019原镜像；测试用户清理已完成（含站长），本地功能未部署。staging-goodgood.o1key.com不是测试入口。
-- 当前验证：文档15/15、SQL恢复命令GG091/GG029/GG031各1/1及runner lint通过，本次重启四个readiness200、Chrome确认统一登录表单；未写fixture/注册/发信/生成；不重用此前门禁为最新样式证据。
-- Next action: 新窗口从本地标记接续GG-093新需求，按DEVELOPMENT_HANDOFF启动和测试；原数据保留，用户在32191检查登录。
+- 当前验证：GG093构建来源定向测试5/5，文档连续性测试与diff检查通过；清理后Docker仅保留7个当前容器、34个卷，旧GoodGood端口无监听；完整门禁与四服务ready/version核验结果记录在交接页。
+- Next action: 新窗口从GG093标签开始，先运行verify:checkpoint及/api/health/version，再分配GG-094；生产不部署。
 - Blockers: 无；上线/新站长初始化/真实provider需独立范围，本次只保存本地版本。
 
 ## Verification sequence

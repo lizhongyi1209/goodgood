@@ -1,10 +1,15 @@
 # GoodGood 当前状态
 
-- 最后核对：2026-09-14测试用户清理后健康；部署身份仍为2026-09-09记录，不是实时监控。
+- 最后核对：2026-09-15完成GG093本地Docker清理与构建来源交接；生产部署身份仍为2026-09-09记录，不是实时监控。
 - 产品阶段：已开放的 `controlled-alpha-v1`，不是完整 seed/付费生产就绪。
 - 正式入口：https://goodgood.o1key.com
-- 当前工作：GG-092保存累计本地版本与跨窗口交接，根目录接续bb782c0，见[开发交接](DEVELOPMENT_HANDOFF.md)。GG091功能未部署，最后两处样式仅构建待用户手验。GG023安全镜像仍未切生产。
-- 下一个普通产品需求从 GG-093 分配，以BACKLOG核验占用；不要自动恢复搁置的 C6。
+- 当前工作：GG-093已在分支chore/GG-093-docker-cleanup-build-handoff完成本地交付，见[开发交接](DEVELOPMENT_HANDOFF.md)。构建指纹绑定Git提交和dist产物，旧GoodGood Docker应用栈已清理；累计功能仍未部署，最后两处样式由用户手验。GG023安全镜像仍未切生产。
+- 下一个普通产品需求从 GG-094 分配，以BACKLOG核验占用；不要自动恢复搁置的 C6。
+
+## GG-093 本地运行边界
+
+- 当前仅保留goodgood-gg052的PostgreSQL/Valkey/RustFS、gg044 Mailpit及无关项目容器；全部34个卷保留。旧GoodGood应用容器、镜像、空网络和构建缓存已按任务卡清理，生产主机与数据未触碰。
+- 新版本须运行`npm run build:checkpoint`和`npm run verify:checkpoint`；启动脚本拒绝源码、Git revision或产物指纹不匹配。Web的`/api/health/version`返回`build.verified`与revision，作为跨窗口页面来源核验。
 
 ## 已上线的能力与边界
 

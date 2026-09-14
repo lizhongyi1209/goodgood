@@ -1,5 +1,7 @@
 # Navigation and route contract
 
+GG-093本地交接新增只读`GET /api/health/version`，返回受`start:checkpoint`验证的Git revision/源码与产物指纹；无构建身份时`build`为null。该接口仅用于本地版本核验，不是产品业务API，POST返回405。
+
 GG-091 /api/auth/session新增本人account.invitationCode；POST /api/auth/email/verify可传email并校验与挑战收件地址一致，六位invitationCode对新用户/旧pending必需。移除GG090后台query/create/revoke邀请码路由；码随用户创建自动分配，用户无改码/发额外码接口。
 
 GG-090现有POST /api/auth/email/verify新增可选invitationCode；新邮箱/旧pending必填有效码，active/suspended现有账户无需码登录。新增POST /api/admin/invitations/query|create|revoke，活动站长、x-goodgood-admin-action=1、no-store、2KiB请求上限，create必需8—200字符Idempotency-Key；revoke输入id。入口位于账户管理，无新增站长一级标签。

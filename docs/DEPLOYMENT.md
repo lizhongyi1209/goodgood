@@ -1,6 +1,6 @@
 # Development and deployment
 
-GG-092当前本地环境/恢复/安全命名SQL命令见[DEVELOPMENT_HANDOFF.md](DEVELOPMENT_HANDOFF.md)；下方有任务标号的旧端口与测试数是对应阶段记录，以该交接的当前端口和验证边界为准，不运行旧fixture/转换脚本。
+GG-093当前本地环境、Docker清理、构建指纹与恢复命令见[DEVELOPMENT_HANDOFF.md](DEVELOPMENT_HANDOFF.md)；下方有任务标号的旧端口与测试数是对应阶段记录，以该交接的当前端口和验证边界为准，不运行旧fixture/转换脚本。生产未部署。
 
 GG-091本地功能仅新增0043账户码/邀请关系及触发器补齐，替换原32141 Web；保持原local配置/用户数据/Worker，不发真实邮件。注册UI在命名隔离SMTP无Worker栈验收。线上全部测试用户清理已按独立授权完成，现有0019/镜像不变，见操作记录；不是累计功能上线。不要将已删除的站长测试身份恢复或运行旧转换脚本。
 

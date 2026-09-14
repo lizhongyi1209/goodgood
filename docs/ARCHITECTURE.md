@@ -1,5 +1,7 @@
 # Architecture
 
+GG-093本地版本交接由`scripts/local-build-provenance.mjs`绑定Git revision、源码指纹和`dist/client`/`dist/server`产物指纹；`scripts/local-checkpoint.mjs start`只允许本地mock依赖并在导入Web前注入已验证身份。`/api/health/version`不参与业务鉴权，仅报告当前进程是否由该受保护流程启动。
+
 GG-091独立account-invitations验证器与0043用户插入触发器自动分配唯一六位码；邮箱事务验证正确邮件码/预期email后共享锁活动邀请者，再记录account_invitation_uses并提交账户/欢迎积分/Session/挑战。邀请码无限复用，注册者邀请关系唯一；不消耗原码。旧0042仅历史表，旧后台操作路径移除。
 
 GG-090独立server/auth/invitations.mjs与共用invitation-http连接Node/框架API；邮箱事务在邮件码正确后锁邮箱/owner/邀请码，一次提交新active用户或旧pending开通、欢迎积分（仅新用户）、邀请码使用、Session和challenge消费。OIDC仅允许已有绑定登录，无自动注册旁路；local仅已有身份。后台在DB再次验证活动站长。

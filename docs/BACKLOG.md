@@ -1,12 +1,12 @@
 # 当前任务与优先级 · 当前与最近交付
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
+| GG-093 | 废弃Docker清理与构建版本交接 | 已完成本地交付；删除37容器/9旧应用镜像/5空网络，回收21.92GB构建缓存，34卷保留；构建指纹与启动核验已加入，未部署 | [任务](tasks/GG-093-docker-cleanup-build-handoff.md) |
 | GG-092 | 保存版本/AGENTS与无上下文交接 | 当前累计版本已保存；09-15重启工作区32131/登录32191，ready200，本地未发布 | [任务](tasks/GG-092-development-handoff.md) |
 | GG-091 | 账户唯一邀请码、简洁登录与线上测试清理 | 原功能已验证；邀请码纯文本与账户入口无外框补充由用户手验，32141已更新；线上10测试用户/29文件清理完成，功能未部署 | [GG091](tasks/GG-091-account-invitation-login.md) / [前版GG090](tasks/GG-090-invitation-registration.md) |
 | GG-088—089 | 下拉向下/站长管理功能排序 | 本地完成；522/25、桌面/390px通过；32141已更新，未部署 | [GG088](tasks/GG-088-feedback-select-downward.md) / [GG089](tasks/GG-089-admin-navigation-order.md) |
 | GG-087 | 私有问题反馈与站长处理 | 实现验证完成；522/25、SQL/UI通过，原32141已更新；未部署 | [任务](tasks/GG-087-problem-feedback.md) |
-| GG-086 | JCOIN发行进度与自动刷新 | 本地完成；精确进度/只读15秒刷新、桌面/390px核对通过；32141已更新，验证详情见任务，未部署 | [任务](tasks/GG-086-jcoin-live-progress.md) |
-| GG-085 | JCOIN发行批次卡片 | 本地完成；门禁515/24、桌面/390px通过；原32141卡片已更新，发行规则/原数据保留，未部署 | [任务](tasks/GG-085-jcoin-batch-cards.md) |
+| GG-085 | JCOIN发行批次卡片 | 本地完成；门禁515/24、桌面/390px通过；原32141卡片已更新，发行规则/原数据保留，未部署 | [GG085](tasks/GG-085-jcoin-batch-cards.md) / [GG086](tasks/GG-086-jcoin-live-progress.md) |
 | GG-084 | JCOIN账本、个人统计与站长计划 | 本地完成；门禁515/24、SQL/UI通过；32141原数据mock服务启动供验收，本期未开启，未部署 | [任务](tasks/GG-084-jcoin-ledger-pages.md) |
 | GG-083 | JCOIN分批定额与仅累计 | 参数规划完成：第一期100万枚/预计50万元消费→每100有效积分2枚；GG084接入一期运行时，不兑换或锚定人民币 | [任务](tasks/GG-083-jcoin-batch-accumulation.md) |
 | GG-082 | JCOIN最小发行、用途与倍率讨论 | GG083接续；原兑换/面值建议被否决，首期数值未接受，未实施/发币 | [任务](tasks/GG-082-jcoin-minimum-issuance.md) |
@@ -90,7 +90,7 @@
 | GG-060 | 站长管理标题层级与功能栏简化 | 本地完整门禁、桌面/窄屏及历史保留检查通过，原页面已更新，未发布 | [任务](tasks/GG-060-management-heading-hierarchy.md) |
 | GG-061 | 账户操作记录移为独立审计日志 | 本地门禁、桌面/窄屏与历史保留检查通过，原页面已更新，未发布 | [任务](tasks/GG-061-audit-log-section.md) |
 | GG-062 | GPT 图片三线路与独立定价 | 本地门禁、隔离 SQL、原页面与历史保留检查通过，未发布 | [任务](tasks/GG-062-gpt-image-lines.md) |
-GG-024—GG-092 已由任务占用（GG-047 为另一工作树的 agent 范围配置）；下一个普通产品需求从 **GG-093** 分配并检查是否已被占用。每次 alpha 发布仍须取得新鲜、精确绑定候选的证据并通过门禁；本次证据不能复用。完整发布证据见[累计发布记录](releases/2026-09-09-cumulative-alpha-release.md)。
+GG-024—GG-093 已由任务占用（GG-047 为另一工作树的 agent 范围配置）；下一个普通产品需求从 **GG-094** 分配并检查是否已被占用。每次 alpha 发布仍须取得新鲜、精确绑定候选的证据并通过门禁；本次证据不能复用。完整发布证据见[累计发布记录](releases/2026-09-09-cumulative-alpha-release.md)。
 ## 已明确搁置（不得自动恢复）
 | ID | 事项 | 恢复条件 | 入口 |
 | --- | --- | --- | --- |
