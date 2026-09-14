@@ -99,7 +99,6 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .account-menu-detail > svg { color: #6f6f7b; }
 .account-menu-detail strong { color: var(--ink); font-size: 13px; font-weight: 650; }
 .account-menu-detail .account-menu-credit { color: var(--accent-deep); font-variant-numeric: tabular-nums; }
-.account-menu-invitation { grid-template-columns: 18px minmax(0,1fr) auto 14px; gap: 6px; }
 .account-menu-invitation strong { letter-spacing: .04em; }
 .account-menu-logout { min-height: 38px; padding: 0 8px; border-radius: 8px; font-size: 13px; }
 
