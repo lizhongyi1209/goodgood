@@ -231,8 +231,6 @@ import {
   Network,
   Plus,
   RefreshCw,
-  Share2,
-  Sparkles,
   Settings2,
   UserRoundCog,
   X,
@@ -3067,7 +3065,7 @@ export default function Home({
         <header className="mobile-bar">
           <div className="mobile-brand" role="img" aria-label="GoodGood"><Image className="brand-mark" src="/goodgood-mark.svg" alt="" width={27} height={20} /><Image className="wordmark-image" src="/goodgood-wordmark.svg" alt="" width={84} height={19} /></div>
           <div className="mobile-account">
-            {authenticationSession?.access.status === "active"&&<button className="top-avatar" aria-label="灵感板" onClick={handleInspirationNav}><Sparkles size={16}/></button>}
+            {authenticationSession?.access.status === "active"&&<button className="top-avatar" aria-label="灵感板" onClick={handleInspirationNav}><LayoutGrid size={16}/></button>}
             {organizationNavigationVisible && authenticationSession?.account.role !== "site_owner" && (
               <button className="top-avatar" aria-label="企业管理" onClick={handleOrganizationNav}><Building2 size={16} /></button>
             )}
@@ -3702,7 +3700,7 @@ export default function Home({
                     <strong>{activeDetailModel?.name}</strong>
                   </div>
                   <div className="image-detail-actions">
-                    {!workspaceId&&!authenticationSession?.preview&&<button className="download-button" aria-label="发布灵感案例" onClick={()=>publishInspirationAsset(activeDetail.image.id)}><Share2 size={17}/></button>}
+                    {!workspaceId&&!authenticationSession?.preview&&<button className="download-button" aria-label="发布灵感案例" title="发布灵感案例" onClick={()=>publishInspirationAsset(activeDetail.image.id)}><LayoutGrid size={17}/></button>}
                     <button className="download-button" disabled={downloadingImageKeys.includes(`${activeDetail.batch.id}-${activeDetail.image.id}`)} aria-label={downloadingImageKeys.includes(`${activeDetail.batch.id}-${activeDetail.image.id}`) ? "正在下载图片" : "下载图片"} onClick={() => void downloadImage(activeDetail.batch, activeDetail.image, activeDetail.index)}>{downloadingImageKeys.includes(`${activeDetail.batch.id}-${activeDetail.image.id}`) ? <LoaderCircle className="download-spinner" size={17} /> : <Download size={17} />}</button>
                   </div>
                 </header>

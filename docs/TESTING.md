@@ -1,5 +1,7 @@
 # GG-063 verification
 
+GG-075 render tests cover reference-thumbnail selection, effect-only and no-reference states, visible enabled/disabled comparison modes and publication consent/content validation. Browser QA uses a separate named mock/no-Worker database, changes no user prices or publications, and confirms missing consent feedback and live comparison selection.
+
 GG-074 tests cover hidden/public DTOs, optional supplement joining, custom prompt
 validation, modes, routes and accessible pointer wipe. Opt-in SQL requires exact
 goodgood_gg074_presets_test_20260914 loopback DB, integration/no-Worker flags,

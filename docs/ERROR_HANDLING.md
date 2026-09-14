@@ -1,5 +1,7 @@
 # GG-063 quality pricing errors
 
+GG-075: unchecked publication confirmation produces an accessible inline alert beside the checkbox, retains edits and sends no publish request. Required title/preset whitespace is rejected explicitly. No available original reference is an explained state rather than hidden controls. Backend consent/ownership checks remain unchanged.
+
 GG-074 missing/removed/non-hidden preset rejects new submissions before reserve.
 Insufficient balance, unavailable model/line, stale price or unready references
 use existing billing/generation errors. Idempotent replay returns the accepted

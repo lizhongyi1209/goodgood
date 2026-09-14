@@ -1,5 +1,7 @@
 # Design system
 
+GG-075 uses the same LayoutGrid icon for inspiration navigation and image-detail publication. Effect comparison is a visible labelled section, with selectable original-reference thumbnails, an effect-only option and explicit empty state. Modes remain visible when unavailable.
+
 GG-074 case editor uses the creator shell with a quiet heading, left editing
 fields and right live image/settings preview; one column below900px. Public/hidden
 and comparison radios have plain explanations. Pointer wipe preserves decoded

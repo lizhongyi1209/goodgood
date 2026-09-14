@@ -1,9 +1,9 @@
 # 当前任务与优先级
 最后同步：2026-09-14。这里是索引，细节以任务卡为准；不是自动执行所有项目的授权。
 ## 当前与最近交付
-
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
+| GG-075 | 灵感发布与效果对比反馈 | 本地完成；统一图标、参考图缩略选择与未确认提醒；门槛494/21、页面验证和数据保留通过，未发布 | [任务](tasks/GG-075-inspiration-publish-controls.md) |
 | GG-074 | 案例编辑页与隐藏预设 | 本地完成；独立编辑、公开/隐藏复刻与两种对比；门槛491/21、隔离SQL和模拟生成通过，原数据保留，未发布 | [任务](tasks/GG-074-inspiration-editor.md) |
 | GG-073 | 灵感板可复用案例 | 本地完成；发布对比/参数、使用、点赞与下架，门禁485/20、隔离SQL及桌面窄屏通过，数据保留，未发布 | [任务](tasks/GG-073-inspiration-cases.md) |
 | GG-072 | 个人资料与自己的图片作品 | 本地完成；私有资料/头像/名称/@用户名与作品，门禁479/19、隔离SQL、桌面窄屏与数据保留验证，未发布 | [任务](tasks/GG-072-personal-profile.md) |
@@ -66,31 +66,20 @@
 | GG-034 | 图片 / 视频创作模式与 Seedance 前端 | 前端实现、默认多模态/首尾帧、无备注统一上传、显式并发素材创建选择、历史素材复检决策、统一媒体资产选择；待用户检查，不接真实视频接口 | [任务](tasks/GG-034-video-creation-frontend.md) |
 | GG-035 | Seedance 线路与 O1Key 接口契约 | 线路 UI、标准 Doubao/备用 HC adapter、端点契约与一次标准线路真实视频均已验证；暂不接定价和产品提交 | [任务](tasks/GG-035-seedance-provider-lines.md) |
 | GG-036 | Seedance 页面真实接口实测 | 最新候选 32140 真实接口本地全栈已启动；企业测试账号准备完成，Chrome 登录交用户操作；不接视频定价/持久化/生产 | [任务](tasks/GG-036-seedance-page-smoke.md) |
-
 | GG-037 | 图片与视频混排、紧凑状态及统一详情样式模拟 | 用户已确认布局；不接真实生成/持久化 | [任务](tasks/GG-037-mixed-media-style-preview.md) |
 | GG-038 | Seedance ByteDance 品牌图标 | 本地门禁与现有 Chrome 验证通过；只改图标，未发布 | [任务](tasks/GG-038-seedance-brand-icon.md) |
 | GG-039 | 视频生成数量 1/2/4 与独立并发任务 | 本地完成并验证，待用户检查；未真实并发实测/发布 | [任务](tasks/GG-039-video-count-concurrency.md) |
-
 | GG-040 | 图片/视频 `---` 批量提示词与数量乘积并发 | 本地门禁与 Chrome 验证通过，待用户检查；未真实批量实测/发布 | [任务](tasks/GG-040-batch-prompts.md) |
-
 | GG-041 | 移除图片/视频批量提示词重复说明 | 本地门禁与现有 Chrome 验证通过，待用户检查；并发与报价不变，未发布 | [任务](tasks/GG-041-remove-batch-prompt-summary.md) |
-
 | GG-042 | 参数抽屉覆盖成品区 | 本地门禁与现有 Chrome 桌面/窄屏验证通过，待用户检查；未发布 | [任务](tasks/GG-042-parameter-drawer-overlay.md) |
-
 | GG-043 | 放大 1:1 素材缩略图与视频模式点击预览 | 本地门禁通过，用户完成页面检查；最新候选已启动 32140 供真实接口站长全排查，未发布 | [任务](tasks/GG-043-larger-reference-previews.md) / [运行记录](tasks/GG-036-seedance-page-smoke.md) |
-
 | GG-059 | 大厅统一站长管理与右侧企业/模型/账户切换 | 本地门禁、浏览器与配置/历史保留检查完成，原页面已更新，未发布 | [任务](tasks/GG-059-site-owner-workspace.md) |
-
 | GG-060 | 站长管理标题层级与功能栏简化 | 本地完整门禁、桌面/窄屏及历史保留检查通过，原页面已更新，未发布 | [任务](tasks/GG-060-management-heading-hierarchy.md) |
-
 | GG-061 | 账户操作记录移为独立审计日志 | 本地门禁、桌面/窄屏与历史保留检查通过，原页面已更新，未发布 | [任务](tasks/GG-061-audit-log-section.md) |
-
 | GG-062 | GPT 图片三线路与独立定价 | 本地门禁、隔离 SQL、原页面与历史保留检查通过，未发布 | [任务](tasks/GG-062-gpt-image-lines.md) |
-
 GG-024—GG-071 已由任务占用（GG-047 为另一工作树的 agent 范围配置）；下一个普通产品需求从 **GG-072** 分配并检查是否已被占用。每次 alpha 发布仍须取得
 新鲜、精确绑定候选的证据并通过门禁；本次证据不能复用。
 完整发布证据见[累计发布记录](releases/2026-09-09-cumulative-alpha-release.md)。
-
 ## 已明确搁置（不得自动恢复）
 | ID | 事项 | 恢复条件 | 入口 |
 | --- | --- | --- | --- |

@@ -1,10 +1,14 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, LoaderCircle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ProfileAvatar } from "@/features/profile/personal-profile";
 import { CaseParametersList, InspirationReadState } from "./inspiration-board";
 import { CaseComparison } from "./case-comparison";
+import {
+  CaseComparisonSettings,
+  casePublicationIssue,
+} from "./case-comparison-settings";
 import {
   inspirationRequest,
   type CasePreparation,
@@ -32,6 +36,8 @@ export function CaseEditor({
     [mode, setMode] = useState<"side_by_side" | "hover">("side_by_side");
   const [consent, setConsent] = useState(false),
     [busy, setBusy] = useState(false);
+  const [consentError, setConsentError] = useState<string | null>(null);
+  const consentRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     let active = true;
     void inspirationRequest<CasePreparation>("/prepare", { assetId })
@@ -64,7 +70,15 @@ export function CaseEditor({
     return () => window.removeEventListener("beforeunload", handler);
   }, [title, description, busy]);
   async function publish() {
-    if (!prepared || !consent || busy) return;
+    if (!prepared || busy) return;
+    const issue = casePublicationIssue({ consent, title, prompt });
+    if (issue) {
+      if (!consent) {
+        setConsentError(issue);
+        consentRef.current?.focus();
+      } else setError(issue);
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -109,6 +123,7 @@ export function CaseEditor({
       ) : (
         <form
           className="case-editor-layout"
+          noValidate
           onSubmit={(event) => {
             event.preventDefault();
             void publish();
@@ -180,63 +195,42 @@ export function CaseEditor({
                 </span>
               </label>
             </fieldset>
-            {prepared.beforeOptions.length > 0 && (
-              <>
-                <label htmlFor="case-before">处理前图片</label>
-                <select
-                  id="case-before"
-                  value={beforeId}
-                  disabled={busy}
-                  onChange={(event) => setBeforeId(event.target.value)}
-                >
-                  <option value="">不展示对比原图</option>
-                  {prepared.beforeOptions.map((item, index) => (
-                    <option key={item.id} value={item.id}>
-                      参考图 {index + 1} · {item.name}
-                    </option>
-                  ))}
-                </select>
-                <p className="case-field-hint">
-                  只公开选中的原图，其余参考素材保持私有。
-                </p>
-              </>
-            )}
-            {beforeId && (
-              <fieldset className="case-choice is-inline">
-                <legend>对比展示方式</legend>
-                <label>
-                  <input
-                    type="radio"
-                    name="comparison"
-                    checked={mode === "side_by_side"}
-                    disabled={busy}
-                    onChange={() => setMode("side_by_side")}
-                  />
-                  左右并排
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name="comparison"
-                    checked={mode === "hover"}
-                    disabled={busy}
-                    onChange={() => setMode("hover")}
-                  />
-                  鼠标划过
-                </label>
-              </fieldset>
-            )}
+            <CaseComparisonSettings
+              options={prepared.beforeOptions}
+              selectedId={beforeId}
+              mode={mode}
+              busy={busy}
+              onSelect={setBeforeId}
+              onMode={setMode}
+            />
             <label className="case-consent" htmlFor="case-consent">
               <Checkbox
                 id="case-consent"
+                ref={consentRef}
                 checked={consent}
                 disabled={busy}
-                onCheckedChange={(value) => setConsent(value === true)}
+                aria-invalid={!!consentError}
+                aria-describedby={
+                  consentError ? "case-consent-error" : undefined
+                }
+                onCheckedChange={(value) => {
+                  setConsent(value === true);
+                  if (value === true) setConsentError(null);
+                }}
               />
               <span>
                 我确认发布选中的图片、参数和署名，并按所选方式提供提示词复用。
               </span>
             </label>
+            {consentError && (
+              <p
+                id="case-consent-error"
+                className="inspiration-action-error"
+                role="alert"
+              >
+                {consentError}
+              </p>
+            )}
             {error && (
               <div className="inspiration-action-error" role="alert">
                 {error}
@@ -246,11 +240,7 @@ export function CaseEditor({
               <button type="button" disabled={busy} onClick={onCancel}>
                 取消
               </button>
-              <button
-                className="case-use"
-                type="submit"
-                disabled={busy || !consent || !title.trim() || !prompt.trim()}
-              >
+              <button className="case-use" type="submit" disabled={busy}>
                 {busy ? (
                   <>
                     <LoaderCircle size={16} />

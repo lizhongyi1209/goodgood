@@ -1,5 +1,7 @@
 # GG-063 quality pricing
 
+GG-075: editor always shows 效果对比. Select an available original reference as 变化前, with the generated output as 效果图; choose 左右并排 or 鼠标划过 and preview immediately. No reference explains effect-only output. Submit remains clickable before consent, announces the missing confirmation inline and focuses the checkbox; checking clears the message. No request is sent until consent and required fields are valid.
+
 GG-074 image-detail 发布灵感案例 opens a dedicated editing page, not a Sheet.
 Edit title/description/prompt, visibility, selected before image and comparison;
 review/consent precede publication. Public cases load editable creation. Hidden
