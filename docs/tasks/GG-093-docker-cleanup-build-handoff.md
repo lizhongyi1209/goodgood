@@ -9,4 +9,5 @@
 - 门禁修复：根目录类型检查此前递归读入被`.gitignore`排除的`work/`和`.sites-runtime/`旧预览产物；将两者加入`tsconfig.json`排除项，未修改业务代码或用户数据。
 - 决策：产品规则不变，无新产品ADR；补本地构建来源/启动保护与交接，旧样式用户手验状态保持。
 - 验证：构建来源定向测试5/5通过；清理后仅保留gg052依赖、gg044 Mailpit及三个无关项目容器；旧GoodGood端口3010/3030/32029/32133无监听。`npm run build:checkpoint`写入提交、源码和dist指纹，`npm run verify:checkpoint`拒绝缺失/过期/篡改产物；`/api/health/version`用于核对运行进程的verified revision。未fixture原goodgood，不发真实邮件/生成。
+- 完整门禁：`npm run check:local`为555项，529通过、26跳过、0失败；文档/发布连续性15/15通过；最终工作区Web32131、登录32191、Worker32142、provider32143及Mailpit58045均返回200，两个Web version均绑定当前提交。
 - 下一步：从本任务最终提交和`goodgood-local-2026-09-15-gg093`标签继续；新窗口先执行交接页的Git、构建指纹和端口核验，再从GG-094分配新需求。生产仍未部署。
