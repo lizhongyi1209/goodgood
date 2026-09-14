@@ -8,7 +8,7 @@
 1. 完整读根 `AGENTS.md`，再读 `CURRENT_STATE.md`、本文、
    `IMPLEMENTATION_PLAN.md` 和 `BACKLOG.md`；按任务加载专题文档。
 2. 检查 `git status --short --branch`、`git worktree list`、近期提交，
-   确认所在分支、未提交改动和集成基线；如需远端事实，先安全 fetch。
+   确认所在分支、未提交改动和当前检查点；[跨窗口交接](DEVELOPMENT_HANDOFF.md) 给出具体版本/启动/测试命令。如需远端事实，先安全 fetch。
    不将旧聊天中的“已完成/已批准”当作当前 Git 或生产证据。
 3. 用户说“继续”：先匹配当前分支/任务卡的下一步；有多个可选任务才询问。
    用户提出新需求：新建任务，不自动继续 C6、支付或历史下一阶段。
@@ -19,8 +19,8 @@
 
 ## 2. 分支与数据隔离
 
-- 从核验后的 `main` 基线开始 `feature/GG-xxx-slug`、`fix/GG-xxx-slug`
-  或 `chore/GG-xxx-slug`。现有用户改动先辨认归属，不擅自 stash/reset/覆盖。
+- 从 IMPLEMENTATION_PLAN 指定并核验祖先的当前检查点开始 `feature/GG-xxx-slug`、`fix/GG-xxx-slug`
+  或 `chore/GG-xxx-slug`；main只有包含该检查点时才适用。现有用户改动先辨认归属，不擅自 stash/reset/覆盖。
 - 同一根目录同时只允许一个窗口编辑。并行任务用仓库外的独立 worktree，
   例如 `F:/goodgood-worktrees/GG-xxx`；不同窗口不能同时切换同一目录分支。
 - 若目标分支已被其他 worktree 占用，进入那个目录或另建任务分支；不强行抢占。

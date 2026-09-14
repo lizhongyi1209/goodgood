@@ -1,27 +1,27 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-14
-- Current phase: GG-091 account invitations and concise authentication; production test cleanup completed; local feature verified; original preview handoff.
-- Current objective: 接续9f205c9/a73835f；账户唯一6位数字码无限邀请、统一验证表单，按明确授权清理线上全部测试用户。
+- Current phase: GG-092 current local checkpoint and context-free development handoff.
+- Current objective: 保存bb782c0累计状态，修正AGENTS陈旧指引，将F:/goodgood接到当前版本，提供可执行恢复与安全测试命令。
 - Previous objective: GG082最小发行讨论；GG081积分类型/充值登记/运营与并发本地实现验证保留。
 
 ## Current checkpoint
 
-- Task [GG-091](tasks/GG-091-account-invitation-login.md)：feature/GG-091-account-invitation-login；F:/goodgood-worktrees/GG-091；基线9f205c9保留a73835f及GG090。
-- [ADR0087](decisions/0087-account-owned-invitations.md)：账户唯一6位数字码无限邀请，单一表单，邮箱直接可编辑；替代0086部分规则。
-- 线上授权清理已完成：10测试账户（含站长）及15资产/13素材/37任务/29对象已删；用户/文件0，全局配置/迁移0019不变，现有服务healthy/公网200。详见任务清理记录；本地功能未部署。
-- 部署目标保持 `goodgood.o1key.com`；`staging-goodgood.o1key.com` 仅隔离预发布，不混用数据。
-- 原32141已更新：Web132从GG091启动，运行代码de7d4a1；mock Worker30432/32142、provider9048/32143保持。只增0043，全部旧表/迁移校验和一致，草稿/反馈/数据保留。
-- 用户样式补充：邀请码仅普通文本，无点击/复制；账户入口focus无外框，以浅色背景提示；按要求不做验证，仅更新预览，用户刷新验收。
-- 此补充前的验证：完整check:local 524通过/26跳过；GG091/GG029/GG031隔离SQL各1/1及Chrome桌面/390px通过；命名测试资源已清理。
-- Next action: 保留32141供用户检查；后续生产登录发布与新站长初始化按独立任务处理。
-- Blockers: 无；生产功能部署或真实发信/付费生成不在此授权范围。
+- Task [GG-092](tasks/GG-092-development-handoff.md)：chore/GG-092-development-handoff / F:/goodgood；基线bb782c0保留a73835f与GG081—091。旧根目录GG024分支保留，.codex不改。
+- 本地版本标记goodgood-local-2026-09-14-gg092；新窗口从此检查点的后续版本分支，不从不含累计功能的main开始。
+- [跨窗口交接](DEVELOPMENT_HANDOFF.md)记录实际功能、启动命令、依赖/端口、命名SQL runner、验证边界。AGENTS/WORKFLOW/README已同步。
+- 原32141 Web132（GG091，de7d4a1）、mock Worker30432/32142、provider9048/32143保持；原DB最新0043，用户作品/反馈/草稿不重置。进程先核验命令行再操作。
+- 此前完整门禁a88bdc3 524通过/26跳过、GG091/GG029/GG031 SQL各1/1；最后邀请码文本/入口焦点样式按用户要求仅构建，手验结果未记录。
+- 线上仍goodgood.o1key.com的65ceb168/0019原镜像；测试用户清理已完成（含站长），本地功能未部署。staging-goodgood.o1key.com不是测试入口。
+- 当前验证：文档15/15、SQL恢复命令GG091/GG029/GG031各1/1及runner lint通过，原运行服务未替换；不重用此前门禁为最新样式证据。
+- Next action: 新窗口从本地标记接续GG-093新需求，按DEVELOPMENT_HANDOFF启动和测试；原预览保留。
+- Blockers: 无；上线/新站长初始化/真实provider需独立范围，本次只保存本地版本。
 
 ## Verification sequence
 
-1. 本片已完成双码注册/权限/并发/回滚/恢复、命名无Worker隔离SQL及Chrome桌面/390px验收。
-2. 后续实现先定向验证资格、幂等、库存、退款与起算边界；SQL写测试仅显式命名、无Worker可丢弃数据库。
-3. 代码稳定后一次npm run check:local，更新任务/文档；生产事实以CURRENT_STATE为准。
+1. 先按DEVELOPMENT_HANDOFF核验当前检查点、Git祖先与实际端口；文档整理只跑文档/链接契约与diff检查。
+2. SQL恢复命令只创建命名空库且无Worker，原goodgood与生产不写fixtures；新功能按对应任务做最小定向验证。
+3. 代码稳定后一次npm run check:local，更新任务/文档；生产事实以CURRENT_STATE.md为准。
 
 ## Milestones
 
@@ -62,10 +62,10 @@
 
 ## New-session recovery
 
-1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，进入 `F:/goodgood-worktrees/GG-091`，读GG091/ADR0087与server/auth/email-repository.mjs及邀请码服务，原32141为GG091 start-review.mjs（PID132，运行代码de7d4a1），核验9f205c9/a73835f祖先；继续当前代码，不退旧版本。
-2. 根 `F:/goodgood` 仍为旧 GG-024；GG-079 是原累计候选，main 也不能代替 a73835f。`.codex/` 与未跟踪用户文件保持原样；不用旧检查点退回历史版本。
-3. GG081的32181模拟检查已停止/临时页面移除，不依赖聊天句柄。后续恢复先核验版本/端口及独立mock目标；GG079/GG077 helpers与依赖54449/56449/58049见原交接。六个命名测试库已清理；禁止对原预览fixture/重置，旧32140曾有真实Worker，不操作。
-4. 不恢复或 bulk merge 旧 C6；旧阶段具体验证见相应任务卡，GG-051 [研究记录](research/GG-051-credit-pricing-reassessment.md) 保留定价依据。
+1. 打开F:/goodgood；读AGENTS/CURRENT_STATE/WORKFLOW/本页/BACKLOG与DEVELOPMENT_HANDOFF。核验本地标记、bb782c0/a73835f祖先，当前chore/GG-092-development-handoff；main不能代替此检查点。
+2. GG091 worktree及旧GG024/C6分支均保留；新窗口不bulk merge/reset旧版本，不覆盖.codex/未提交用户内容。
+3. 原mock预览32141/32142/32143保持；依赖54449/56449/58049见交接。运行代码de7d4a1，PID只是记录，先核验再停；根目录.env.local-review忽略，不打印凭据。
+4. 使用交接中的启动/定向SQL命令；不fixture原用户数据、不进入真实provider32140栈、不重放线上清理。
 
 ## History and update policy
 

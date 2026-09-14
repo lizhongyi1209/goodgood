@@ -10,6 +10,8 @@
 4. `IMPLEMENTATION_PLAN.md`：[唯一当前检查点](IMPLEMENTATION_PLAN.md)。
 5. [BACKLOG.md](BACKLOG.md) 与 [任务卡](tasks/README.md)：优先级、验收、进度和下一步。
 
+本次跨窗口入口：[DEVELOPMENT_HANDOFF.md](DEVELOPMENT_HANDOFF.md)，包含当前检查点、保留数据的预览恢复与安全SQL命令。
+
 同时检查实际 Git 状态；不会自动读取另一个窗口的聊天，也不应依赖它。
 
 ## 按任务加载
@@ -27,7 +29,7 @@
 | [ERROR_HANDLING.md](ERROR_HANDLING.md) | 错误、恢复与观测 |
 | [TESTING.md](TESTING.md) | 验证方式、测试覆盖与证据边界 |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | 环境、运行与发布/回退；历史转换不是待办 |
-| [EMAIL_AUTH_PLAN.md](EMAIL_AUTH_PLAN.md) | GG-029 已选自建邮箱验证码的上线范围、实施阶段与迁移回退；尚未实现 |
+| [EMAIL_AUTH_PLAN.md](EMAIL_AUTH_PLAN.md) | 自建邮箱验证码已本地实现，GG091统一邀请码规则、上线范围与迁移回退；未部署生产 |
 | [decisions/README.md](decisions/README.md) | ADR 及已确认取舍；Accepted 不代表已上线 |
 | [releases/](releases/) | 已发布版本的非敏感证据摘要 |
 | [history/README.md](history/README.md) | 提炼经验及完整历史，默认不加载 |

@@ -2,13 +2,15 @@
 
 This file is the stable entry point for every coding agent. Keep it short. Put
 changing detail in `docs/` and update the relevant document in the same change.
+For a new window, resolve the current checkpoint in `docs/IMPLEMENTATION_PLAN.md`
+and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local code.
 
 ## Product identity
 
 - Product: **GoodGood**, a premium, image-first AI visual creation workspace.
 - Primary task: let creators generate repeatedly, inspect results, collect
   assets, and preserve a coherent creative session as a resumable project.
-- Live stage: publicly open, owner-reviewed controlled alpha. Read
+- Live stage: publicly open controlled alpha; deployed access rules are recorded below. Read
   `docs/CURRENT_STATE.md` for actual deployed capabilities and release identity;
   never infer production from a branch name or old chat.
 - Primary language today: Simplified Chinese. Keep the information architecture
@@ -43,8 +45,10 @@ changing detail in `docs/` and update the relevant document in the same change.
 - A concise natural-language request is enough. The agent restores context,
   records scope/acceptance, allocates a task ID, and maintains its task card.
   Do not require the user to repeat earlier decisions or write a handoff essay.
-- New requests start isolated feature/fix branches from a verified main
-  baseline. Parallel windows use separate worktrees; preserve unrelated edits.
+- New requests start isolated feature/fix branches from the verified current
+  checkpoint in IMPLEMENTATION_PLAN; use main only when it contains that baseline.
+  Verify Git ancestry before branching. Parallel windows use separate worktrees;
+  preserve unrelated edits.
   Never start from or bulk-merge the parked C6 branch without explicit scope.
 - Save material decisions and resumable next steps during work, before waits,
   compaction, or handoff. Chat memory is not the project's source of truth.
@@ -77,9 +81,9 @@ changing detail in `docs/` and update the relevant document in the same change.
 - Models and copy are fixed until a product decision changes them:
   `Nano Banana 2 — 快速，批量`; `Nano Banana Pro — 高质量资产，视觉优先`;
   `GPT IMAGE 2.5 sunburst`; `GPT IMAGE 2`; `GPT IMAGE 2.5 flare`.
-- Creation exposes attached `图片 / 视频` modes. Video currently has a
-  frontend-only Seedance 2.0–2.5 composer and must not call the image API until
-  its backend contract is explicitly implemented.
+- Creation exposes attached `图片 / 视频` modes. Seedance transport and an
+  opt-in local preview exist; durable video jobs/billing/assets remain unconnected.
+  Never send video through the image API or enable real preview calls implicitly.
 - Resolution UI and domain values use `1K / 2K / 4K`. Asset metadata pairs the
   requested value with decoded pixel dimensions when available. Generation count defaults to 1.
 - New generation batches appear first. Generated assets enter the asset library
@@ -138,13 +142,15 @@ changing detail in `docs/` and update the relevant document in the same change.
 ## Local development
 
 - Requires Node.js `>=22.13.0` and npm.
-- On first setup, install locked dependencies with `npm ci`.
+- On first setup or after changing checkpoints, install locked dependencies
+  with `npm ci`. Existing node_modules/build output may belong to an old branch.
 - Start the local development server from the repository root with
   `npm run dev:local`; use the local URL printed by Vite and press `Ctrl+C` to
   stop it.
 - UI-only preview needs no secrets; durable behavior needs the local Compose
   stack. Production uses real Authing/O1Key/private R2 and protected secrets.
-  See `docs/DEPLOYMENT.md`; never use production data for local testing.
+  See `docs/DEVELOPMENT_HANDOFF.md` for the preserved local preview and named SQL
+  tests, and `docs/DEPLOYMENT.md` for release work; never use production data locally.
 
 ## Definition of done
 
