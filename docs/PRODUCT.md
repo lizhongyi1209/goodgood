@@ -1,5 +1,7 @@
 # Product definition
 
+JCOIN当前决定见[ADR0081](decisions/0081-jcoin-batch-accumulation.md)：每批限定总额、无截止日期、发完后另行开启下一批；第一期仅充值消费挖矿并累计，不支持积分或其他兑换，不锚定人民币价值。首期额度/奖励比例仍待确定；此前兑换/服务面值及自动跨阶段建议已失效。总上限1亿、5000万用户回馈、消费驱动与2026-09-18北京时间00:00起算不变，20%创作安排保留未启动。当前没有JCOIN运行时，见[GG083思路](research/GG-083-jcoin-batch-accumulation.md)。下文GG080为历史规划背景。
+
 GG-081本地候选允许站长按充值/赠送/活动奖励/测试/服务补偿/其他增加个人积分，默认测试；类型独立于备注。充值登记已确认收款，凭证唯一，100积分/CNY，单次1—5000，赠品独立记赠送。站长入口默认运营看板，统计真实充值与生成任务并发；JCOIN仍属GG-080规划，未启用发行。参见[ADR0080](decisions/0080-classified-admin-credit-grants-and-operations.md)。
 
 GG-080 proposes a separate JCOIN reward system, continuing candidate a73835f.
