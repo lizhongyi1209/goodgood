@@ -62,6 +62,7 @@ function paymentRequest(input) {
     typeof input.productId !== "string" ||
     input.productId.length < 1 ||
     input.productId.length > 100 ||
+    input.productId.startsWith("site-owner-recharge-") ||
     Object.keys(input).some((key) => key !== "productId")
   ) {
     throw new PaymentError(

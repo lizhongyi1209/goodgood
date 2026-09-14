@@ -5,11 +5,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { AuthenticationSession } from "@/features/auth/http-auth-boundary";
 import { readAuditLog, type AdministrativeAction } from "./http-admin-boundary";
+import { ADMIN_CREDIT_TYPE_LABELS } from "@/shared/contracts/admin-credit-types.mjs";
 
 const ACTION_LABELS: Record<AdministrativeAction["actionType"], string> = {
   approve_account: "通过审核",
   bootstrap_site_owner: "初始化站长",
   grant_test_credits: "赠送测试积分",
+  grant_credits: "增加积分",
   restore_account: "恢复账户",
   set_business_role: "调整业务身份",
   set_direct_parent: "调整直属关系",
@@ -43,7 +45,7 @@ export function AuditLogContent({ actions, loading, error, onReload }: {
           {actions.map((action) => <li key={action.id} className="py-4 lg:px-4">
             <dl className="grid gap-3 text-sm lg:grid-cols-[180px_140px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)] lg:gap-4">
               <div><dt className="text-xs text-zinc-500 lg:sr-only">时间</dt><dd className="mt-1 text-zinc-500 lg:mt-0"><time dateTime={action.createdAt}>{formatDate(action.createdAt)}</time></dd></div>
-              <div><dt className="text-xs text-zinc-500 lg:sr-only">操作</dt><dd className="mt-1 font-medium lg:mt-0">{ACTION_LABELS[action.actionType] ?? "管理操作"}</dd></div>
+              <div><dt className="text-xs text-zinc-500 lg:sr-only">操作</dt><dd className="mt-1 font-medium lg:mt-0">{ACTION_LABELS[action.actionType] ?? "管理操作"}{action.creditGrantType && <span className="mt-1 block text-xs text-zinc-500">{ADMIN_CREDIT_TYPE_LABELS[action.creditGrantType]}</span>}</dd></div>
               <div className="min-w-0"><dt className="text-xs text-zinc-500 lg:sr-only">操作人</dt><dd className="mt-1 break-all text-zinc-600 lg:mt-0">{action.actorEmail}</dd></div>
               <div className="min-w-0"><dt className="text-xs text-zinc-500 lg:sr-only">对象</dt><dd className="mt-1 break-all text-zinc-600 lg:mt-0">{action.targetEmail}</dd></div>
               <div className="min-w-0"><dt className="text-xs text-zinc-500 lg:sr-only">原因 / 积分</dt><dd className="mt-1 whitespace-pre-wrap break-words text-zinc-600 lg:mt-0">{action.creditAmount ? `${action.creditAmount} 积分 · ` : ""}{action.reason}</dd></div>

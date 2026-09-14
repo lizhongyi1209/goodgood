@@ -4,6 +4,8 @@ import {
   runCreditTransaction,
 } from "../billing/repository.mjs";
 import { AdministrationError, adminAccessDeniedError } from "./errors.mjs";
+import { ADMIN_CREDIT_TYPES } from "../../shared/contracts/admin-credit-types.mjs";
+import { createPaymentOrderInTransaction, settlePaymentOrderInTransaction } from "../billing/payment-repository.mjs";
 
 function accountFromRow(row) {
   return {
@@ -31,6 +33,7 @@ function actionFromRow(row) {
     actorEmail: row.actor_email,
     createdAt: new Date(row.created_at).toISOString(),
     creditAmount: row.credit_amount === null ? null : (BigInt(row.credit_amount) * (row.credit_unit === "credit" ? 2n : 1n)).toString(),
+    creditGrantType: row.credit_grant_type ?? (row.action_type === "grant_test_credits" ? "test" : null),
     id: row.id,
     previousBusinessRole: row.previous_business_role,
     previousParentEmail: row.previous_parent_email ?? null,
@@ -541,6 +544,85 @@ export function changeAccountAccess(
     );
     return { actionType, created: true, revokedSessions, status: toStatus };
   });
+}
+
+export function grantClassifiedCredits(pool, {
+  actorOwnerId, amount, creditGrantType, idempotencyKey, ledgerIdempotencyKey,
+  operationHash, reason, receiptReference, targetOwnerId,
+}) {
+  if (!ADMIN_CREDIT_TYPES.includes(creditGrantType) || !Number.isSafeInteger(amount) || amount < 1 || amount > 5000) {
+    throw new AdministrationError("ADMIN_REQUEST_INVALID", "积分类型或数量无效。", 400);
+  }
+  return runCreditTransaction(pool, async (client) => {
+    const actor = await client.query(`SELECT u.id FROM users u
+      JOIN system_role_assignments r ON r.owner_id=u.id AND r.role='site_owner'
+      WHERE u.id=$1 AND u.status='active'`, [actorOwnerId]);
+    if (!actor.rowCount) throw adminAccessDeniedError();
+    await client.query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
+      [`administration:${actorOwnerId}:${idempotencyKey}`]);
+    const replay = await existingAction(client, actorOwnerId, idempotencyKey);
+    if (replay) {
+      assertMatchingReplay(replay, operationHash);
+      return classifiedGrantResult(client, targetOwnerId, replay.credit_amount, creditGrantType, false);
+    }
+    if (creditGrantType === "paid_recharge") {
+      if (typeof receiptReference !== "string" || receiptReference.length < 8 || receiptReference.length > 200) {
+        throw new AdministrationError("ADMIN_REQUEST_INVALID", "收款凭证无效。", 400);
+      }
+      // The operator CLI uses this same lock and provider receipt namespace.
+      await client.query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [`manual-payment:${receiptReference}`]);
+      const receipt = await client.query(`SELECT id FROM payment_orders
+        WHERE provider='manual' AND provider_order_id=$1`, [receiptReference]);
+      if (receipt.rowCount) {
+        throw new AdministrationError("ADMIN_PAYMENT_RECEIPT_CONFLICT", "该收款凭证已登记，请核对原充值记录。", 409);
+      }
+    }
+    // Receipt lock precedes user locks, matching the CLI; ordered user locks
+    // also permit simultaneous grants involving two owners or oneself.
+    const accounts = await client.query("SELECT id,status FROM users WHERE id=ANY($1::uuid[]) ORDER BY id FOR UPDATE",
+      [[...new Set([actorOwnerId, targetOwnerId])].sort()]);
+    if (accounts.rows.find(row => row.id === actorOwnerId)?.status !== "active") throw adminAccessDeniedError();
+    if (!accounts.rows.some(row => row.id === targetOwnerId)) throw new AdministrationError("ADMIN_ACCOUNT_NOT_FOUND", "没有找到该账户。", 404);
+    const actionId = randomUUID();
+    const metadata = { administrativeActionId: actionId, actorOwnerId, grantKind: creditGrantType };
+    let ledgerEntryId;
+    if (creditGrantType === "paid_recharge") {
+      // One immutable exact-price snapshot per amount; never a customer product.
+      const productId = `site-owner-recharge-${amount}-cny-cent`;
+      await client.query(`INSERT INTO payment_product_versions
+        (id,product_id,version,currency,money_amount_minor,credit_unit,credit_amount,effective_from)
+        VALUES ($1,$2,1,'CNY',$3,'credit-cny-cent',$3,'2026-09-14T00:00:00Z')
+        ON CONFLICT (product_id,version) DO NOTHING`, [randomUUID(), productId, String(amount)]);
+      const { order } = await createPaymentOrderInTransaction(client, {
+        ownerId: targetOwnerId, productId, provider: "manual", providerOrderId: receiptReference,
+        idempotencyKey: ledgerIdempotencyKey,
+      });
+      if (order.creditAmount !== BigInt(amount) || order.moneyAmountMinor !== BigInt(amount) || order.creditUnit !== 'credit-cny-cent' || order.currency !== 'CNY') {
+        throw new AdministrationError("ADMIN_PAYMENT_PRODUCT_CONFLICT", "充值价目快照不一致，请联系维护人员。", 409);
+      }
+      const settled = await settlePaymentOrderInTransaction(client, { actor: "operator", metadata, order, reason });
+      ledgerEntryId = settled.order.paidLedgerEntryId;
+    } else {
+      const grant = await grantCreditsInTransaction(client, {
+        actor: "operator", amount, idempotencyKey: ledgerIdempotencyKey,
+        metadata, ownerId: targetOwnerId, reason, sourceClass: "non_transferable",
+      });
+      ledgerEntryId = grant.entry.id;
+    }
+    await client.query(`INSERT INTO administrative_actions
+      (id,actor_owner_id,target_owner_id,action_type,credit_amount,credit_grant_type,
+       credit_ledger_entry_id,reason,idempotency_key,operation_hash)
+      VALUES ($1,$2,$3,'grant_credits',$4,$5,$6,$7,$8,$9)`,
+      [actionId,actorOwnerId,targetOwnerId,String(amount),creditGrantType,ledgerEntryId,reason,idempotencyKey,operationHash]);
+    return classifiedGrantResult(client, targetOwnerId, amount, creditGrantType, true);
+  });
+}
+
+async function classifiedGrantResult(client, ownerId, amount, creditGrantType, created) {
+  const { rows } = await client.query(`SELECT available_balance,reserved_balance
+    FROM credit_accounts WHERE owner_id=$1 AND unit='credit-cny-cent'`, [ownerId]);
+  return { availableCredits: String(rows[0]?.available_balance ?? 0), reservedCredits: String(rows[0]?.reserved_balance ?? 0),
+    grantedCredits: String(amount), creditGrantType, created };
 }
 
 export function grantTestCredits(

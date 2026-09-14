@@ -1,5 +1,7 @@
 # Architecture
 
+GG-081通用积分入账端点复用身份/CSRF、事务与管理幂等。充值与manual命令共用凭证互斥，通过正常PaymentOrder与payment_funded账本原子入账；内部按数量不可变价目不进入客户目录，也不能经客户支付接口创建。其他五类为non_transferable。看板只读已确认manual订单现金和任务运行区间，假支付排除。见[ADR0080](decisions/0080-classified-admin-credit-grants-and-operations.md)。
+
 GG-074 keeps editor, comparison and reproduction under features/inspiration.
 Hidden submission calls normal durable generation with a trusted route case ID;
 browser private prompt fields are ignored. Transaction locks lifecycle then case,

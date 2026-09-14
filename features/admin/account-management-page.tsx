@@ -12,7 +12,7 @@ import {
   ShieldBan,
   UserRoundCog,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +26,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ADMIN_CREDIT_TYPES, ADMIN_CREDIT_TYPE_LABELS } from "@/shared/contracts/admin-credit-types.mjs";
 import {
   Select,
   SelectContent,
@@ -55,7 +57,7 @@ import {
 } from "@/features/auth/http-auth-boundary";
 import { createOrganizationWorkspace } from "@/features/organizations/http-organization-boundary";
 import {
-  grantManagedAccountTestCredits,
+  grantManagedAccountCredits,
   readAdminDashboard,
   updateManagedAccountBusinessRole,
   updateManagedAccountDirectParent,
@@ -64,6 +66,7 @@ import {
   type BusinessRole,
   type ManagedAccount,
   type ManagedAccountStatus,
+  type AdminCreditType,
 } from "./http-admin-boundary";
 
 type AccountAction = "approve" | "suspend" | "restore" | "grant" | "role" | "parent" | "organization";
@@ -124,7 +127,7 @@ function actionCopy(action: AccountAction, account: ManagedAccount) {
       title: "创建企业工作区",
     };
   }
-  return { description: `向 ${account.email} 追加一笔独立的测试积分流水。`, title: "赠送测试积分" };
+  return { description: `向 ${account.email} 增加积分，请选择实际入账类型。`, title: "增加积分" };
 }
 
 export function AccountManagementPage({ workspaceSession, embedded = false, onManagementChange }: {
@@ -146,6 +149,10 @@ export function AccountManagementPage({ workspaceSession, embedded = false, onMa
   const [selected, setSelected] = useState<{ account: ManagedAccount; action: AccountAction } | null>(null);
   const [reason, setReason] = useState("");
   const [amount, setAmount] = useState("100");
+  const [creditGrantType, setCreditGrantType] = useState<AdminCreditType>("test");
+  const [receiptReference, setReceiptReference] = useState("");
+  const [paymentConfirmed, setPaymentConfirmed] = useState(false);
+  const grantRequest = useRef<{ fingerprint: string; key: string } | null>(null);
   const [businessRole, setBusinessRole] = useState<BusinessRole | "none">("none");
   const [parentOwnerId, setParentOwnerId] = useState<string>("none");
   const [organizationName, setOrganizationName] = useState("");
@@ -213,6 +220,10 @@ export function AccountManagementPage({ workspaceSession, embedded = false, onMa
     setSelected({ account, action });
     setMutationError(null);
     setAmount("100");
+    setCreditGrantType("test");
+    setReceiptReference("");
+    setPaymentConfirmed(false);
+    grantRequest.current = null;
     setBusinessRole(account.businessRole ?? "none");
     setParentOwnerId(account.directParentId ?? "none");
     setOrganizationName(`${account.email.split("@")[0]} 的企业`);
@@ -245,12 +256,16 @@ export function AccountManagementPage({ workspaceSession, embedded = false, onMa
         });
         toast.success(`${result.workspace.name} 已创建`);
       } else if (selected.action === "grant") {
-        await grantManagedAccountTestCredits({
+        const payload = {
           amount: Number(amount),
           ownerId: selected.account.id,
-          reason,
-        });
-        toast.success(`已向 ${selected.account.email} 赠送 ${Number(amount)} 积分`);
+          reason: reason.trim(), creditGrantType,
+          ...(creditGrantType === "paid_recharge" ? { receiptReference: receiptReference.trim(), paymentConfirmed } : {}),
+        };
+        const fingerprint = JSON.stringify(payload);
+        if (grantRequest.current?.fingerprint !== fingerprint) grantRequest.current = { fingerprint, key: crypto.randomUUID() };
+        await grantManagedAccountCredits({ ...payload, idempotencyKey: grantRequest.current.key });
+        toast.success(`已向 ${selected.account.email} 入账 ${Number(amount)} 积分（${ADMIN_CREDIT_TYPE_LABELS[creditGrantType]}）`);
       } else if (selected.action === "role") {
         await updateManagedAccountBusinessRole({
           ownerId: selected.account.id,
@@ -361,7 +376,7 @@ export function AccountManagementPage({ workspaceSession, embedded = false, onMa
       <div className={embedded ? "admin-management-content" : "mx-auto max-w-[1500px] px-5 py-8 lg:px-8 lg:py-10"}>
         <div>
           <h1 className="text-xl font-semibold tracking-tight">账户管理</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-500">审核登录账户、管理企业/分销身份与直属关系，并通过积分流水追加测试额度。</p>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-500">审核登录账户、管理企业/分销身份与直属关系，并按实际类型增加积分。</p>
         </div>
 
         <section className="mt-8 rounded-3xl border border-zinc-200">
@@ -532,6 +547,16 @@ export function AccountManagementPage({ workspaceSession, embedded = false, onMa
                   <strong>{selected.account.availableCredits} 积分</strong>
                 </div>
                 <div className="admin-action-field">
+                  <label htmlFor="grant-type">积分类型</label>
+                  <Select value={creditGrantType} onValueChange={value => { setCreditGrantType(value as AdminCreditType); setPaymentConfirmed(false); }}>
+                    <SelectTrigger id="grant-type"><SelectValue /></SelectTrigger>
+                    <SelectContent align="start" avoidCollisions={false} className="max-h-60" position="popper" side="bottom" sideOffset={6}>
+                      {ADMIN_CREDIT_TYPES.map(value => <SelectItem key={value} value={value}>{ADMIN_CREDIT_TYPE_LABELS[value as AdminCreditType]}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <p className="admin-action-help">{creditGrantType === "paid_recharge" ? "登记已收到的充值款。充值赠品请另记为赠送。" : "非充值来源，不参与充值消费奖励。备注不会改变积分类型。"}</p>
+                </div>
+                <div className="admin-action-field">
                   <label htmlFor="grant-amount">积分数量</label>
                   <div className="admin-action-presets">
                     {[100, 500, 1000].map((preset) => (
@@ -541,15 +566,26 @@ export function AccountManagementPage({ workspaceSession, embedded = false, onMa
                         size="sm"
                         variant="ghost"
                         aria-pressed={amount === String(preset)}
-                        onClick={() => setAmount(String(preset))}
+                        onClick={() => { setAmount(String(preset)); setPaymentConfirmed(false); }}
                       >
                         {preset}
                       </Button>
                     ))}
                   </div>
-                  <Input id="grant-amount" inputMode="numeric" min={1} max={5000} type="number" value={amount} onChange={(event) => setAmount(event.target.value)} />
+                  <Input id="grant-amount" inputMode="numeric" min={1} max={5000} type="number" value={amount} onChange={(event) => { setAmount(event.target.value); setPaymentConfirmed(false); }} />
                   <p className="admin-action-help">单次最多 5000 积分，只允许正整数。</p>
                 </div>
+                {creditGrantType === "paid_recharge" && <>
+                  <div className="admin-action-field">
+                    <label htmlFor="grant-receipt">收款凭证</label>
+                    <Input id="grant-receipt" maxLength={200} placeholder="支付流水号或唯一收款凭证编号" value={receiptReference} onChange={event => { setReceiptReference(event.target.value); setPaymentConfirmed(false); }} />
+                    <p className="admin-action-help">8—200 个字符，同一凭证只能登记一次。</p>
+                  </div>
+                  <label className="flex items-start gap-3 text-sm leading-6" htmlFor="grant-paid-confirmed">
+                    <Checkbox id="grant-paid-confirmed" className="mt-1" checked={paymentConfirmed} onCheckedChange={value => setPaymentConfirmed(value === true)} />
+                    <span>已核对收款 ¥{(Number(amount || 0) / 100).toFixed(2)}（100 积分 / 元）</span>
+                  </label>
+                </>}
               </>
             )}
             {selected?.action === "role" && (
@@ -616,7 +652,7 @@ export function AccountManagementPage({ workspaceSession, embedded = false, onMa
             <Button variant="ghost" disabled={mutating} onClick={() => setSelected(null)}>取消</Button>
             <Button
               variant={selected?.action === "suspend" ? "destructive" : "default"}
-              disabled={mutating || reason.trim().length < 2 || (selected?.action === "grant" && (!Number.isInteger(Number(amount)) || Number(amount) < 1 || Number(amount) > 5000)) || (selected?.action === "role" && businessRole === (selected.account.businessRole ?? "none")) || (selected?.action === "parent" && parentOwnerId === (selected.account.directParentId ?? "none")) || (selected?.action === "organization" && organizationName.trim().length < 2)}
+              disabled={mutating || reason.trim().length < 2 || (selected?.action === "grant" && creditGrantType === "paid_recharge" && (!paymentConfirmed || receiptReference.trim().length < 8)) || (selected?.action === "grant" && (!Number.isInteger(Number(amount)) || Number(amount) < 1 || Number(amount) > 5000)) || (selected?.action === "role" && businessRole === (selected.account.businessRole ?? "none")) || (selected?.action === "parent" && parentOwnerId === (selected.account.directParentId ?? "none")) || (selected?.action === "organization" && organizationName.trim().length < 2)}
               onClick={() => void runAction()}
             >
               {mutating && <LoaderCircle className="animate-spin" />}确认

@@ -1,12 +1,15 @@
 import { createHash } from "node:crypto";
 import { AuthenticationError, sessionExpiredError } from "../auth/errors.mjs";
 import { BillingPersistenceError } from "../billing/repository.mjs";
+import { PaymentError } from "../billing/payment-errors.mjs";
+import { ADMIN_CREDIT_TYPES } from "../../shared/contracts/admin-credit-types.mjs";
 import { getGenerationResources } from "../generation/resources.mjs";
 import { newRequestId } from "../observability/http.mjs";
 import { AdministrationError, adminAccessDeniedError } from "./errors.mjs";
 import {
   changeAccountAccess,
   grantTestCredits,
+  grantClassifiedCredits,
   listManagedAccounts,
   listEligibleBusinessParents,
   listRecentAdministrativeActions,
@@ -22,6 +25,7 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3
 const DEFAULT_REPOSITORY = Object.freeze({
   changeAccountAccess,
   grantTestCredits,
+  grantClassifiedCredits,
   listManagedAccounts,
   listEligibleBusinessParents,
   listRecentAdministrativeActions,
@@ -236,6 +240,43 @@ export async function createAdminTestCreditGrant({
   });
 }
 
+export async function createAdminCreditGrant({
+  idempotencyKey, input, ownerContext, repository = DEFAULT_REPOSITORY,
+  resources = null, targetOwnerId,
+}) {
+  const actorOwnerId = requireOwner(ownerContext);
+  if (ownerContext.accessStatus !== "active") throw adminAccessDeniedError();
+  const target = requireOwnerId(targetOwnerId);
+  const key = requireIdempotencyKey(idempotencyKey);
+  const reason = requireText(input?.reason, "操作原因", 2, 200);
+  const amount = input?.amount;
+  if (!Number.isSafeInteger(amount) || amount < 1 || amount > 5_000) {
+    throw new AdministrationError("ADMIN_CREDIT_AMOUNT_INVALID", "单次积分必须是 1 到 5000 之间的整数。", 400);
+  }
+  const creditGrantType = input?.creditGrantType;
+  if (!ADMIN_CREDIT_TYPES.includes(creditGrantType)) {
+    throw new AdministrationError("ADMIN_REQUEST_INVALID", "请选择有效的积分类型。", 400);
+  }
+  let receiptReference = null;
+  if (creditGrantType === "paid_recharge") {
+    if (input?.paymentConfirmed !== true) {
+      throw new AdministrationError("ADMIN_PAYMENT_CONFIRMATION_REQUIRED", "充值登记需要确认收款。", 400);
+    }
+    receiptReference = requireText(input?.receiptReference, "收款凭证", 8, 200);
+  } else if (input?.receiptReference != null || input?.paymentConfirmed === true) {
+    throw new AdministrationError("ADMIN_REQUEST_INVALID", "收款凭证只用于充值登记。", 400);
+  }
+  const fingerprint = operationHash({ action: "grant_credits", actorOwnerId,
+    amount, creditGrantType, reason, receiptReference, targetOwnerId: target });
+  const ledgerKey = `admin-credit:v1:${operationHash({ actorOwnerId, key })}`;
+  const resolved = await resourcesFor(resources);
+  return repository.grantClassifiedCredits(resolved.pool, {
+    actorOwnerId, amount, creditGrantType, idempotencyKey: key,
+    ledgerIdempotencyKey: ledgerKey, operationHash: fingerprint,
+    reason, receiptReference, targetOwnerId: target,
+  });
+}
+
 export async function updateAdminBusinessRole({
   idempotencyKey,
   input,
@@ -327,7 +368,7 @@ export function administrationApiError(error, requestId = newRequestId()) {
       status: error.status,
     };
   }
-  if (error instanceof BillingPersistenceError) {
+  if (error instanceof BillingPersistenceError || error instanceof PaymentError) {
     return {
       body: {
         error: {

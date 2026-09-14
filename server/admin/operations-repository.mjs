@@ -43,7 +43,7 @@ export async function readOperations(pool, { from, to }) {
   const { rows } = await pool.query(`WITH ledger AS (${LEDGER_SQL}),
   days AS (SELECT generate_series($1::date,$2::date,interval '1 day')::date AS day),
   submitted AS (SELECT (submitted_at AT TIME ZONE 'Asia/Shanghai')::date AS day,
-    count(*) jobs,count(DISTINCT creator_owner_id) creators FROM generation_jobs
+    count(DISTINCT creator_owner_id) creators FROM generation_jobs
     WHERE submitted_at >= $1::date::timestamp AT TIME ZONE 'Asia/Shanghai'
       AND submitted_at < ($2::date+1)::timestamp AT TIME ZONE 'Asia/Shanghai' GROUP BY 1),
   outcomes AS (SELECT (completed_at AT TIME ZONE 'Asia/Shanghai')::date AS day,
@@ -58,19 +58,54 @@ export async function readOperations(pool, { from, to }) {
     COALESCE(sum(credits) FILTER(WHERE entry_type='release'),0) released FROM ledger
     WHERE created_at >= $1::date::timestamp AT TIME ZONE 'Asia/Shanghai'
       AND created_at < ($2::date+1)::timestamp AT TIME ZONE 'Asia/Shanghai' GROUP BY 1),
+  recharges AS (SELECT (paid_at AT TIME ZONE 'Asia/Shanghai')::date AS day,
+    sum(money_amount_minor) amount,count(*) orders,count(DISTINCT owner_id) owners,
+    sum(credit_amount * CASE WHEN credit_unit='credit' THEN 2 ELSE 1 END) credits
+    FROM payment_orders WHERE state='paid' AND provider='manual' AND currency='CNY'
+      AND credit_unit IN ('credit','credit-cny-cent')
+      AND paid_at >= $1::date::timestamp AT TIME ZONE 'Asia/Shanghai'
+      AND paid_at < ($2::date+1)::timestamp AT TIME ZONE 'Asia/Shanghai' GROUP BY 1),
+  intervals AS (SELECT started_at,
+    CASE WHEN state IN ('running','refining') THEN now() ELSE completed_at END AS ended_at
+    FROM generation_jobs WHERE started_at IS NOT NULL
+      AND (state IN ('running','refining') OR completed_at IS NOT NULL)),
+  clipped AS (SELECT d.day,
+    GREATEST(i.started_at,d.day::timestamp AT TIME ZONE 'Asia/Shanghai') AS start_at,
+    LEAST(i.ended_at,(d.day+1)::timestamp AT TIME ZONE 'Asia/Shanghai') AS end_at
+    FROM days d JOIN intervals i
+      ON i.started_at < (d.day+1)::timestamp AT TIME ZONE 'Asia/Shanghai'
+      AND i.ended_at > d.day::timestamp AT TIME ZONE 'Asia/Shanghai'
+      AND i.ended_at > i.started_at),
+  events AS (SELECT day,start_at AS at,1 AS delta FROM clipped
+    UNION ALL SELECT day,end_at,-1 FROM clipped),
+  combined_events AS (SELECT day,at,sum(delta) delta FROM events GROUP BY day,at),
+  concurrency AS (SELECT day,sum(delta) OVER (PARTITION BY day ORDER BY at) active FROM combined_events),
+  peaks AS (SELECT day,max(active) peak FROM concurrency GROUP BY day),
+  uncertain AS (SELECT DISTINCT d.day FROM days d JOIN generation_jobs j
+    ON j.submitted_at < (d.day+1)::timestamp AT TIME ZONE 'Asia/Shanghai'
+      AND COALESCE(j.completed_at,now()) > d.day::timestamp AT TIME ZONE 'Asia/Shanghai'
+    WHERE (j.started_at IS NULL AND j.state IN ('running','refining','succeeded'))
+      OR (j.started_at IS NOT NULL AND j.completed_at IS NULL AND j.state IN ('succeeded','failed','cancelled'))
+      OR (j.started_at IS NOT NULL AND j.completed_at < j.started_at)),
   newcomers AS (SELECT (created_at AT TIME ZONE 'Asia/Shanghai')::date AS day,count(*) users FROM users
     WHERE created_at >= $1::date::timestamp AT TIME ZONE 'Asia/Shanghai'
       AND created_at < ($2::date+1)::timestamp AT TIME ZONE 'Asia/Shanghai' GROUP BY 1)
-  SELECT d.day::text,COALESCE(s.jobs,0)::text jobs,COALESCE(s.creators,0)::text creators,
+  SELECT d.day::text,CASE WHEN unknown.day IS NOT NULL THEN NULL ELSE COALESCE(p.peak,0)::text END peak,
+    COALESCE(s.creators,0)::text creators,
     COALESCE(o.succeeded,0)::text succeeded,COALESCE(o.failed,0)::text failed,
     COALESCE(o.cancelled,0)::text cancelled,COALESCE(n.users,0)::text users,
     COALESCE(m.settled,0)::text settled,COALESCE(m.refunded,0)::text refunded,
-    COALESCE(m.released,0)::text released FROM days d
+    COALESCE(m.released,0)::text released,
+    COALESCE(r.amount,0)::text "rechargeAmountMinor",COALESCE(r.orders,0)::text "rechargeOrders",
+    COALESCE(r.owners,0)::text "rechargeUsers",COALESCE(r.credits,0)::text "rechargeCredits" FROM days d
   LEFT JOIN submitted s USING(day) LEFT JOIN outcomes o USING(day)
-  LEFT JOIN newcomers n USING(day) LEFT JOIN money m USING(day) ORDER BY d.day`, [from,to]);
-  const pending = await pool.query(`SELECT count(*)::text count FROM generation_jobs
-    WHERE state IN ('queued','running','refining')`);
-  return { days: rows, pending: pending.rows[0].count };
+  LEFT JOIN newcomers n USING(day) LEFT JOIN money m USING(day)
+  LEFT JOIN recharges r USING(day) LEFT JOIN peaks p USING(day) LEFT JOIN uncertain unknown USING(day)
+  ORDER BY d.day`, [from,to]);
+  const current = await pool.query(`SELECT count(*) FILTER(WHERE state IN ('running','refining'))::text concurrent,
+    count(*) FILTER(WHERE state='queued')::text queued,now() measured_at FROM generation_jobs`);
+  return { days: rows, concurrent: current.rows[0].concurrent, queued: current.rows[0].queued,
+    measuredAt: iso(current.rows[0].measured_at) };
 }
 
 export async function queryOperationsLog(pool, { kind, from, to, query, filter, cursor, limit }) {

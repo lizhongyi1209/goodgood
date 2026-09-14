@@ -63,8 +63,8 @@ test('GG-071 rendering distinguishes read states and exact settlement without do
   assert.match(render(view.OperationsDetailContent,{data:{job,selected:null,timeline:[credit('reserve','-40'),credit('release','40')]}}),/最终实扣<\/dt><dd>0 积分 · ¥0.00/);
 });
 test('GG-071 daily empty counts avoid fake success rate and charts remain keyboard controls',()=>{
-  const day={day:'2026-09-14',jobs:'0',creators:'0',users:'0',succeeded:'0',failed:'0',cancelled:'0',settled:'0',refunded:'0',released:'0'};
-  const html=render(view.OperationsDashboardContent,{data:{days:[day],pending:'0'},selectedDay:day.day,onSelectDay(){}});
+  const day={day:'2026-09-14',peak:'0',rechargeAmountMinor:'0',rechargeOrders:'0',rechargeUsers:'0',rechargeCredits:'0',creators:'0',users:'0',succeeded:'0',failed:'0',cancelled:'0',settled:'0',refunded:'0',released:'0'};
+  const html=render(view.OperationsDashboardContent,{data:{days:[day],concurrent:'0',queued:'0',measuredAt:time},selectedDay:day.day,onSelectDay(){}});
   assert.match(html,/成功率 —/);assert.match(html,/aria-pressed="true"/);assert.match(html,/¥0.00/);
 });
 test('GG-071 both views stay in owner shell and URLs round-trip',async()=>{

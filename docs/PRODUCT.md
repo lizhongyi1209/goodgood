@@ -1,5 +1,7 @@
 # Product definition
 
+GG-081本地候选允许站长按充值/赠送/活动奖励/测试/服务补偿/其他增加个人积分，默认测试；类型独立于备注。充值登记已确认收款，凭证唯一，100积分/CNY，单次1—5000，赠品独立记赠送。站长入口默认运营看板，统计真实充值与生成任务并发；JCOIN仍属GG-080规划，未启用发行。参见[ADR0080](decisions/0080-classified-admin-credit-grants-and-operations.md)。
+
 GG-080 proposes a separate JCOIN reward system, continuing candidate a73835f.
 The owner confirmed a fixed 100,000,000 supply cap and a 50,000,000 user-benefit
 pool, consumption-driven release and a 2026-09-18 Shanghai settlement cutoff.

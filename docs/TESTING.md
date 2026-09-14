@@ -1,5 +1,7 @@
 # GG-063 verification
 
+GG-081快速测试覆盖活动站长/CSRF、严格分类与金额、收款确认、类型/凭证指纹、稳定重试键、内部商品拒绝、现金精度/未知峰值/审计渲染。gg081-credits-postgres.test.mjs需GOODGOOD_GG081_INTEGRATION=1、GOODGOOD_GG081_NO_WORKER=1及GOODGOOD_GG081_DATABASE_URL指向loopback的goodgood_gg081_credits_test*空数据库；拒绝其他连接。全迁移后验证正常来源/订单/审计、并发重放与凭证竞争、CLI互斥、价目/目标失败回滚、旧测试来源、自身并发及暂停权限。gg071-operations-postgres.test.mjs沿用其命名隔离契约，补现金币种/假支付/账期、跨日峰值/同刻交接/缺历史、当前running/refining及queued。两者无provider或Worker调用，默认跳过；本轮单独隔离运行2/2通过。
+
 GG-076 tests cover output-first frame, board selected-mode preview, ratio and non-nested interactive controls. Isolated mock/no-Worker UI verifies pointer entry/move/leave restoring output, detail opening, keyboard range and narrow layout.
 
 GG-075 render tests cover reference-thumbnail selection, effect-only and no-reference states, visible enabled/disabled comparison modes and publication consent/content validation. Browser QA uses a separate named mock/no-Worker database, changes no user prices or publications, and confirms missing consent feedback and live comparison selection.
@@ -494,7 +496,7 @@ references, drafts, projects, assets, and credit reservation. Site-owner tests
 must prove navigation and every administration API deny ordinary users before
 querying targets; account lists do not leak into URLs/logs; review actions and
 test-credit grants are idempotent and append-auditable; grant rollback is
-atomic; and no grant creates a payment order. Loading, empty, failure, retry,
+atomic; legacy test-credit grants never create payment orders. GG-081 paid_recharge alone creates a receipt-backed normal order. Loading, empty, failure, retry,
 and mutation-conflict states are required for the management page. The fast
 suite also fixes the 1-5000 grant bound, CSRF-only header, server-derived actor,
 dry-run-first bootstrap parser, three-state migration, and visible

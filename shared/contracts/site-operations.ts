@@ -10,9 +10,10 @@ export type OperationsCredit = {
   fund: string; fundName: string | null; jobId: string | null; priorId: string | null;
 };
 export type OperationsDay = {
-  day: string; jobs: string; creators: string; succeeded: string; failed: string;
+  day: string; peak: string | null; creators: string; succeeded: string; failed: string;
   cancelled: string; users: string; settled: string; refunded: string; released: string;
+  rechargeAmountMinor: string; rechargeOrders: string; rechargeUsers: string; rechargeCredits: string;
 };
-export type OperationsDashboard = { days: OperationsDay[]; pending: string };
+export type OperationsDashboard = { days: OperationsDay[]; concurrent: string; queued: string; measuredAt: string };
 export type OperationsLog = { items: (OperationsJob | OperationsCredit)[]; nextCursor: string | null };
 export type OperationsDetail = { job: OperationsJob | null; selected: OperationsCredit | null; timeline: OperationsCredit[] };

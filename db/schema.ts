@@ -2092,6 +2092,7 @@ export const administrativeActions = pgTable(
     previousStatus: text("previous_status"),
     resultingStatus: text("resulting_status"),
     creditAmount: bigint("credit_amount", { mode: "bigint" }),
+    creditGrantType: text("credit_grant_type"),
     creditLedgerEntryId: uuid("credit_ledger_entry_id").references(
       () => creditLedgerEntries.id,
       { onDelete: "restrict" },
@@ -2146,15 +2147,19 @@ export const administrativeActions = pgTable(
     ),
     check(
       "administrative_actions_type_check",
-      sql`${table.actionType} in ('bootstrap_site_owner', 'approve_account', 'suspend_account', 'restore_account', 'grant_test_credits', 'set_business_role', 'set_direct_parent')`,
+      sql`${table.actionType} in ('bootstrap_site_owner', 'approve_account', 'suspend_account', 'restore_account', 'grant_test_credits', 'grant_credits', 'set_business_role', 'set_direct_parent')`,
     ),
     check(
       "administrative_actions_status_check",
       sql`(${table.actionType} = 'bootstrap_site_owner' and ${table.previousStatus} in ('pending', 'active') and ${table.resultingStatus} = 'active' and ${table.creditAmount} is null and ${table.creditLedgerEntryId} is null)
         or (${table.actionType} in ('approve_account', 'suspend_account', 'restore_account') and ${table.previousStatus} in ('pending', 'active', 'suspended') and ${table.resultingStatus} in ('active', 'suspended') and ${table.creditAmount} is null and ${table.creditLedgerEntryId} is null)
-        or (${table.actionType} = 'grant_test_credits' and ${table.previousStatus} is null and ${table.resultingStatus} is null and ${table.creditAmount} between 1 and 5000 and ${table.creditLedgerEntryId} is not null)
+        or (${table.actionType} in ('grant_test_credits', 'grant_credits') and ${table.previousStatus} is null and ${table.resultingStatus} is null and ${table.creditAmount} between 1 and 5000 and ${table.creditLedgerEntryId} is not null)
         or (${table.actionType} = 'set_business_role' and ${table.previousStatus} is null and ${table.resultingStatus} is null and ${table.creditAmount} is null and ${table.creditLedgerEntryId} is null and ${table.previousBusinessRole} is distinct from ${table.resultingBusinessRole} and ${table.businessRoleAssignmentId} is not null)
         or (${table.actionType} = 'set_direct_parent' and ${table.previousStatus} is null and ${table.resultingStatus} is null and ${table.creditAmount} is null and ${table.creditLedgerEntryId} is null and ${table.previousParentOwnerId} is distinct from ${table.resultingParentOwnerId} and ${table.accountRelationshipId} is not null)`,
+    ),
+    check(
+      "administrative_actions_credit_grant_type_check",
+      sql`(${table.actionType}='grant_credits' and ${table.creditAmount} is not null and ${table.creditGrantType} is not null and ${table.creditGrantType} in ('paid_recharge','gift','promotion','test','service_compensation','other')) or (${table.actionType}<>'grant_credits' and ${table.creditGrantType} is null)`,
     ),
     check(
       "administrative_actions_reason_check",

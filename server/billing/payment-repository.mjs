@@ -89,6 +89,7 @@ export async function listActivePaymentProducts(client, { at = new Date() } = {}
     `SELECT DISTINCT ON (product_id) *
        FROM payment_product_versions
       WHERE effective_from <= $1
+        AND product_id NOT LIKE 'site-owner-recharge-%'
         AND (effective_until IS NULL OR effective_until > $1)
       ORDER BY product_id, effective_from DESC, version DESC`,
     [activeAt],

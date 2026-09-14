@@ -71,7 +71,10 @@ test("GG-061 active owner has four accessible functions and one current content 
 test("GG-059 admin entry points mount the same shell and management changes refresh shared data", async () => {
   for (const tab of ["models", "users", "audit"]) assert.match(await readFile(new URL(`../app/admin/${tab}/page.tsx`, import.meta.url), "utf8"), /export \{ default \} from "@\/app\/page"/);
   const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
-  assert.doesNotMatch(page, /location.assign\("\/admin\//);
+  const managementEntry = page.slice(page.indexOf('const handleOrganizationNav ='), page.indexOf('const handleCreditAccountChange'));
+  assert.match(managementEntry, /account.role === "site_owner"[\s\S]*location.assign\("\/admin\/operations"\)/);
+  assert.match(managementEntry, /navigateWorkspace\(\{ kind: "admin", tab: "operations" \}\)/);
+  assert.match(managementEntry, /location.assign\("\/organizations"\)[\s\S]*navigateWorkspace\(\{ kind: "organizations" \}\)/);
   assert.match(page, /aria-label="站长管理"[\s\S]*?onClick=\{handleOrganizationNav\}/);
   assert.match(page, /onManagementChange=\{[\s\S]*?setBillingRevision[\s\S]*?workspaceDirectory.reload/);
   assert.match(page, /siteOwnerManagementActive \? <button[^>]*aria-label="返回创作" onClick=\{handleCreateNav\}/);

@@ -33,20 +33,23 @@ export function OperationsDashboardContent({data,selectedDay,onSelectDay}: {data
   const metrics = [
     ["创作用户",day.creators,"当日提交任务的独立用户"],
     ["新增用户",day.users,"当日注册"],
-    ["提交任务",day.jobs,"按任务统计，含重试"],
+    ["当日峰值并发",day.peak ?? "暂无统计","按生成任务运行区间重叠统计"],
+    ["充值金额",`¥${creditRmb(day.rechargeAmountMinor)}`,`${day.rechargeOrders} 笔已确认收款`],
+    ["充值人数",day.rechargeUsers,`${day.rechargeCredits} 充值积分入账`],
     ["成功 / 失败",`${day.succeeded} / ${day.failed}`,`成功率 ${successRate} · 取消 ${day.cancelled}`],
     ["实扣积分",day.settled,`¥${creditRmb(day.settled)} · 结算时计入`],
     ["释放 / 退款",`${day.released} / ${day.refunded}`,"释放预扣 / 已结算退款积分"],
   ];
-  const max = Math.max(1,...data.days.map(item=>Number(item.jobs)));
+  const max = Math.max(1,...data.days.map(item=>Number(item.peak ?? 0)));
   return <>
     <div className="operations-metrics">{metrics.map(([label,value,hint])=><article key={label} className="operations-metric"><p className="text-sm text-zinc-500">{label}</p><p className="my-3 text-2xl font-semibold tabular-nums">{value}</p><p className="text-xs text-zinc-400">{hint}</p></article>)}</div>
     <section className="operations-panel" aria-label="每日运营趋势">
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-2"><h2 className="font-medium">每日运营</h2><span className="text-xs text-zinc-500">当前处理中 {data.pending} 个任务 · 点击日期查看当天</span></div>
-      <div className="operations-trend" role="group" aria-label="每日提交任务数">{data.days.map(item=><button key={item.day} type="button" aria-label={`${item.day}，${item.jobs} 个任务`} aria-pressed={selectedDay===item.day} onClick={()=>onSelectDay(item.day)} className="operations-bar-button">
-        <span className="text-[10px] text-zinc-500">{item.jobs}</span><span className="operations-bar-track"><span className="operations-bar" style={{height:`${Number(item.jobs)/max*100}%`,minHeight:Number(item.jobs)?4:0}} /></span><span className="text-[10px]">{item.day.slice(5)}</span>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-2"><h2 className="font-medium">每日运营</h2><span className="text-xs text-zinc-500">当前生成并发 {data.concurrent} · 排队 {data.queued} · 点击日期查看当天</span></div>
+      <p className="mb-4 text-xs text-zinc-400">采集于 {dateTime(data.measuredAt)}，刷新可更新。缺少可靠运行时间的历史显示“暂无统计”。</p>
+      <div className="operations-trend" role="group" aria-label="每日生成任务峰值并发">{data.days.map(item=><button key={item.day} type="button" aria-label={`${item.day}，峰值并发 ${item.peak ?? "暂无统计"}`} aria-pressed={selectedDay===item.day} onClick={()=>onSelectDay(item.day)} className="operations-bar-button">
+        <span className="text-[10px] text-zinc-500">{item.peak ?? "—"}</span><span className="operations-bar-track"><span className="operations-bar" style={{height:`${Number(item.peak ?? 0)/max*100}%`,minHeight:Number(item.peak)?4:0}} /></span><span className="text-[10px]">{item.day.slice(5)}</span>
       </button>)}</div>
-      <div className="operations-table-wrap mt-6"><table className="operations-table"><caption className="sr-only">每日运营明细</caption><thead><tr>{["日期","创作用户","新增用户","提交","成功","失败","实扣积分","释放","退款"].map(label=><th key={label}>{label}</th>)}</tr></thead><tbody>{[...data.days].reverse().map(item=><tr key={item.day} className={selectedDay===item.day?"bg-primary/5":""}><td><button type="button" className="hover:text-primary" onClick={()=>onSelectDay(item.day)}>{item.day}</button></td>{[item.creators,item.users,item.jobs,item.succeeded,item.failed,item.settled,item.released,item.refunded].map((value,index)=><td key={index} className="tabular-nums">{value}</td>)}</tr>)}</tbody></table></div>
+      <div className="operations-table-wrap mt-6"><table className="operations-table"><caption className="sr-only">每日运营明细</caption><thead><tr>{["日期","创作用户","新增用户","峰值并发","充值金额","充值笔数","充值人数","充值积分","成功","失败","实扣积分","释放","退款"].map(label=><th key={label}>{label}</th>)}</tr></thead><tbody>{[...data.days].reverse().map(item=><tr key={item.day} className={selectedDay===item.day?"bg-primary/5":""}><td><button type="button" className="hover:text-primary" onClick={()=>onSelectDay(item.day)}>{item.day}</button></td>{[item.creators,item.users,item.peak ?? "暂无统计",`¥${creditRmb(item.rechargeAmountMinor)}`,item.rechargeOrders,item.rechargeUsers,item.rechargeCredits,item.succeeded,item.failed,item.settled,item.released,item.refunded].map((value,index)=><td key={index} className="tabular-nums">{value}</td>)}</tr>)}</tbody></table></div>
     </section>
   </>;
 }

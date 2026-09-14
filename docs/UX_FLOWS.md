@@ -1,5 +1,7 @@
 # GG-063 quality pricing
 
+GG-081站长入口进入/admin/operations，既有管理深链接保留。增加积分弹窗默认测试，下拉六类；充值才显示凭证及已收款确认，数量或凭证修改后重新确认，充值赠品另记赠送。失败保留编辑与同内容幂等键，成功关闭并刷新余额/审计。看板展示现金充值金额/笔数/人数/积分、当前生成并发、排队、每日峰值；缺历史显示暂无统计，刷新更新时间戳，提交数量不再作为指标。
+
 GG-076 hover cases preview on board cards and details. Show full processed output at rest; enter/move reveals before with pointer-following seam, leave restores output. Detail/editor range supports keyboard/touch; board cover stays one case-opening button without nested inputs.
 
 GG-075: editor always shows 效果对比. Select an available original reference as 变化前, with the generated output as 效果图; choose 左右并排 or 鼠标划过 and preview immediately. No reference explains effect-only output. Submit remains clickable before consent, announces the missing confirmation inline and focuses the checkbox; checking clears the message. No request is sent until consent and required fields are valid.

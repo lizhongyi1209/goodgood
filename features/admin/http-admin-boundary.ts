@@ -1,4 +1,6 @@
 import { goodGoodApiFetch } from "@/features/auth/http-auth-boundary";
+import { ADMIN_CREDIT_TYPE_LABELS } from "@/shared/contracts/admin-credit-types.mjs";
+export type AdminCreditType = keyof typeof ADMIN_CREDIT_TYPE_LABELS;
 
 export type ManagedAccountStatus = "pending" | "active" | "suspended";
 export type BusinessRole = "enterprise" | "distributor";
@@ -26,11 +28,13 @@ export type AdministrativeAction = Readonly<{
     | "suspend_account"
     | "restore_account"
     | "grant_test_credits"
+    | "grant_credits"
     | "set_business_role"
     | "set_direct_parent";
   actorEmail: string;
   createdAt: string;
   creditAmount: string | null;
+  creditGrantType?: AdminCreditType | null;
   id: string;
   previousBusinessRole: BusinessRole | null;
   previousParentEmail: string | null;
@@ -146,6 +150,19 @@ export async function grantManagedAccountTestCredits(input: {
         method: "POST",
       },
     ),
+  );
+}
+
+export async function grantManagedAccountCredits(input: {
+  amount: number; ownerId: string; reason: string; creditGrantType: AdminCreditType;
+  receiptReference?: string; paymentConfirmed?: boolean; idempotencyKey: string;
+}) {
+  const { ownerId, idempotencyKey, ...body } = input;
+  return adminJson<{ availableCredits: string; created: boolean; grantedCredits: string;
+    reservedCredits: string; creditGrantType: AdminCreditType }>(
+    await goodGoodApiFetch(`/api/admin/users/${encodeURIComponent(ownerId)}/credit-grants`, {
+      body: JSON.stringify(body), headers: { ...ADMIN_HEADERS, "idempotency-key": idempotencyKey }, method: "POST",
+    }),
   );
 }
 

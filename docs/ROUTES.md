@@ -1,5 +1,7 @@
 # Navigation and route contract
 
+GG-081本地新增POST /api/admin/users/:ownerId/credit-grants，活动site_owner及x-goodgood-admin-action=1/Idempotency-Key必需。amount为1—5000整数，creditGrantType为共享英文枚举，reason为2—200字符；paid_recharge另需paymentConfirmed=true及8—200字符receiptReference。其他类型不收凭证，旧test-credit-grants兼容接口仍只测试赠送。站长默认/admin/operations；运营dashboard返回concurrent/queued/measuredAt及daily peak与recharge*，移除jobs/pending旧指标。
+
 GG-074 adds same-shell /inspiration/edit/:assetId and /inspiration/use/:caseId.
 Neither URL includes prompts. POST /api/inspiration/:id/generate is personal-only,
 authenticated active, action-header/idempotency guarded and normal quote/billing
@@ -121,7 +123,7 @@ not use a browser session. It requires the enabled fake sandbox, a current HMAC
 timestamp/signature over the exact raw body, and an exact order amount/currency.
 It must remain disabled outside explicitly local test environments.
 
-There is intentionally no browser route for recording payment. Before domestic
+GG-081 adds the classified site-owner-only recharge route described above. Before domestic
 Alipay checkout is enabled, a trusted server operator may still record an
 independently confirmed payment with the dry-run-first
 `billing:manual-payment` command. It uses the same immutable payment order and

@@ -1,5 +1,7 @@
 # GG-063 quality pricing
 
+GG-081迁移0039为administrative_actions添加credit_grant_type及grant_credits约束，原测试审计以历史action_type解释为test，不回填备注或改账。新类型与积分流水一一关联；充值额等于当前积分数（人民币分），正常不可变支付订单保留价格快照。内部商品每数量一条version1，不进入客户列表。每日现金以paid_at、币种/金额快照为准；并发来自started_at至completed_at/当前时刻，无可靠历史返回null。
+
 GG-074 migration0037 adds prompt_visibility(public default/hidden) and
 comparison_mode(side_by_side default/hover). inspiration_generation_prompts has
 job_id PK/FK, case_id FK and effective_prompt(1–8001 chars). It is server-only;

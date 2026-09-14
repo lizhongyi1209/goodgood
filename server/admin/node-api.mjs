@@ -1,6 +1,7 @@
 import {
   administrationApiError,
   createAdminTestCreditGrant,
+  createAdminCreditGrant,
   readAdminDashboard,
   updateAdminAccountStatus,
   updateAdminBusinessRole,
@@ -21,6 +22,7 @@ const DEFAULT_OPERATIONS = Object.freeze({
   readManagedModels,
   saveManagedModel,
   createAdminTestCreditGrant,
+  createAdminCreditGrant,
   readAdminDashboard,
   updateAdminAccountStatus,
   updateAdminBusinessRole,
@@ -175,6 +177,17 @@ export function createAdminNodeApiHandler({
             targetOwnerId: decodeURIComponent(directParentMatch[1]),
           }),
         );
+        return true;
+      }
+
+      const creditGrantMatch = /^\/api\/admin\/users\/([^/]+)\/credit-grants$/.exec(url.pathname);
+      if (creditGrantMatch) {
+        const result = await operations.createAdminCreditGrant({
+          idempotencyKey: headerValue(request.headers, "idempotency-key"),
+          input: await readJson(request), ownerContext,
+          targetOwnerId: decodeURIComponent(creditGrantMatch[1]),
+        });
+        sendJson(response, result.created ? 201 : 200, result);
         return true;
       }
 

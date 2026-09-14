@@ -1,26 +1,26 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-14
-- Current phase: GG-080 JCOIN plan saved for discussion; no issuance or runtime changes.
-- Current objective: 在a73835f累计候选及78e4c40规划上完善消费驱动/9.18起算、积分下拉真实来源与20%创作安排；本阶段仍只规划。
-- Previous objective: 用户在模型管理为 GPT 图片系列逐线路定价与启禁，保留原测试配置与历史。
+- Current phase: GG-081 verified local candidate; no deployment or JCOIN issuance.
+- Current objective: 从e7e6b6a完整继承a73835f，落实积分类型下拉、真实充值登记、默认运营看板及并发口径。
+- Previous objective: GG-080补充JCOIN消费驱动/9.18起算、结构化积分来源与条件子池规划。
 
 ## Current checkpoint
 
-- Task [GG-080](tasks/GG-080-jcoin-planning.md), feature/GG-080-jcoin-planning, F:/goodgood-worktrees/GG-080；从精确 `a73835fb7924ce1423196735a2b377a89dead256` 创建，核验 origin/main `42fc8d8` 为祖先，原 GG-079 和根目录不改。
+- Task [GG-081](tasks/GG-081-credit-types-operations.md), feature/GG-081-credit-types-operations, F:/goodgood-worktrees/GG-081；从e7e6b6a接续精确 `a73835fb7924ce1423196735a2b377a89dead256`，原GG-079/GG-080和根目录不改。
 - JCOIN名称、1亿固定上限、5000万用户回馈总池及早期仅充值消费、消费驱动速度、2026-09-18北京时间00:00结算起算已定；[ADR0079](decisions/0079-jcoin-reward-planning.md)仍Proposed，[方案](research/GG-080-jcoin-distribution-plan.md)更新条件子池/分类/创作安排。
-- 个人正式账本具备payment_funded_amount；站长赠送接口固定测试来源，备注写充值不改变来源。下拉分类方向已定，设计真实充值证据/幂等/审计与历史核对，未实施；企业来源未拆，视频未正式结算。另50%未分配。
-- 20%分母/“创作利益”已通过异步问题征询，不锁定1000万或2000万创作子池，也不擅自赋予收益权；倍率/用途/企业归属待定。创作部分先预留，早期只消费奖励。原默认看板/充值/并发要求保留未实现。
-- 本次无代码/数据库/队列/服务/价格/余额改动；P=4000万/3000万条件预算、消费驱动/跨阶段/零消费/封顶、9.18结算边界试算及文档/发布契约15/15、diff检查通过。前次78e4c40旧预算证据保留，GG079完整门禁502/22仅继承。
+- [ADR0080](decisions/0080-classified-admin-credit-grants-and-operations.md) Accepted；六类积分、充值凭证/正常支付账本及现金/并发看板已实现。历史备注不自动改来源，企业来源与正式视频结算不在本切片。
+- 20%分母/“创作利益”已征询，尚无明确口径，不锁定1000万或2000万创作子池或收益权；倍率/用途/企业归属待定。早期只消费奖励。默认看板/充值/并发要求已实现，JCOIN未发币。
+- npm ci、定向29/29、更新验收后24/24、文档/发布/CI契约19/19及最终隔离SQL2/2通过；桌面1280/窄屏390模拟表单及看板通过。旧导航/三个下拉断言按新范围更新，菜单保留既有定位约束；最终完整门禁531项（508通过/23按规则跳过），diff检查通过。32181/临时页面与六个独立SQL测试库已清理。
 - 正式入口 `https://goodgood.o1key.com` 不变；`staging-goodgood.o1key.com` 仅历史名称。原预览状态仅沿用 GG-079 交接记录（32141/32142/32143 已停止、依赖健康），本轮未重新核验运行；CURRENT_STATE 不改，不把历史 session ID 当可恢复句柄。
-- Next action: 等20%定义明确后锁定P/C和倍率，再先实施积分类型/真实来源与历史核对。本次完善规划保存为本地任务提交；管理看板可独立实施，起算保持9.18不随部署日变。
-- Blockers: 不影响继续规划；精确子池/用途/倍率待用户澄清，不实施实际发币或支付登记，生产未授权。
+- Next action: 验收GG081本地候选；JCOIN先锁定20%分母/含义和倍率，再实施消费奖励账本及9.18起算验证。当前不部署或改历史来源。
+- Blockers: 不影响GG081；JCOIN子池/用途/倍率待明确，未授权部署或真实支付登记。
 
 ## Verification sequence
 
-1. 本阶段文档契约与 diff 检查；不为纯规划重跑完整构建或启用数据库写测试。
-2. 核验精确 a73835f 接续及代码零变化；数学试算仅用内存合成数值，不写实际账户。
-3. 后续实施才验证资格/并发库存/退款/权限，稳定后一次完整本地门禁。
+1. 定向验证权限、分类、凭证/幂等、支付来源、现金账期与运行区间峰值。
+2. SQL写测试仅显式命名、无Worker的可丢弃数据库；不修改原预览或真实数据。
+3. 稳定后一次npm run check:local，更新任务/文档；生产事实以CURRENT_STATE为准。
 
 ## Milestones
 
@@ -28,6 +28,7 @@
 | --- | --- | --- |
 | M0—M8 | 已完成基线 / controlled alpha 已开放 | 生产事实以 CURRENT_STATE 和发布收据为准 |
 | GG-080 | 补充规划完成待澄清 | 消费驱动/9.18/分类方向已定，条件试算/文档通过，20%待澄清，未实施 |
+| GG-081 | 本地实现/验证完成 | 积分类型、真实充值登记与默认运营/现金/并发；门禁508/23、隔离SQL2/2及模拟页面通过，未部署 |
 | GG-023 | 本地安全候选已 CI 通过 | 尚未切生产，见任务卡 |
 | GG-024—GG-032 | 本地完整基础组合已验证 | 账户、积分、直属关系、来源划拨、OTP、企业及成员额度 |
 | GG-033 | 本地完成并真实验证 | 三个 GPT 图片模型，生产未发布 |
@@ -51,9 +52,9 @@
 
 ## New-session recovery
 
-1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，进入 `F:/goodgood-worktrees/GG-080`，读 GG-080/ADR0079/方案并核验 a73835f 是祖先；当前只是规划。
+1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，进入 `F:/goodgood-worktrees/GG-081`，读GG081/ADR0080与GG080方案，核验a73835f是祖先。
 2. 根 `F:/goodgood` 仍为旧 GG-024；GG-079 是原累计候选，main 也不能代替 a73835f。`.codex/` 与未跟踪用户文件保持原样；不用旧检查点退回历史版本。
-3. 本阶段无需预览。后续如需恢复，先核验运行版本/端口和独立 mock 目标；GG-079/GG-077 的 ignored helpers 与依赖端口54449/56449/58049见 GG-079 原交接。禁止重置/fixture，旧32140曾有真实provider Worker，不操作；正式生产和真实请求需对应授权。
+3. GG081的32181模拟检查已停止/临时页面移除，不依赖聊天句柄。后续恢复先核验版本/端口及独立mock目标；GG079/GG077 helpers与依赖54449/56449/58049见原交接。六个命名测试库已清理；禁止对原预览fixture/重置，旧32140曾有真实Worker，不操作。
 4. 不恢复或 bulk merge 旧 C6；旧阶段具体验证见相应任务卡，GG-051 [研究记录](research/GG-051-credit-pricing-reassessment.md) 保留定价依据。
 
 ## History and update policy

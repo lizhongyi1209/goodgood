@@ -80,10 +80,14 @@ test("GG-027 station owner controls roles and direct parents with audited reason
 
 test("GG-027 account-management selects always open below their triggers", async () => {
   const admin = await source("features/admin/account-management-page.tsx");
-  assert.equal((admin.match(/position="popper"/g) ?? []).length, 3);
-  assert.equal((admin.match(/side="bottom"/g) ?? []).length, 3);
-  assert.equal((admin.match(/avoidCollisions=\{false\}/g) ?? []).length, 3);
-  assert.equal((admin.match(/sideOffset=\{6\}/g) ?? []).length, 3);
+  const menus = [...admin.matchAll(/<SelectContent\b([\s\S]*?)>/g)].map(match => match[1]);
+  assert.equal(menus.length, 4, 'Status, credit type, business role and parent each have one menu');
+  for (const menu of menus) {
+    assert.match(menu, /position="popper"/);
+    assert.match(menu, /side="bottom"/);
+    assert.match(menu, /avoidCollisions=\{false\}/);
+    assert.match(menu, /sideOffset=\{6\}/);
+  }
 });
 
 test("GG-027 account management presents one user-facing identity and one status filter", async () => {

@@ -1,5 +1,7 @@
 # Design system
 
+GG-081继续使用同一admin-action-dialog及Radix Select/Checkbox：积分类型有显式label，默认测试，充值动态展开凭证与收款确认；不增加独立支付页。看板延续operations-metrics/可横向滚动日表，趋势按钮支持键盘及aria-pressed。现金带¥，峰值缺失显示暂无统计及—，排队与当前并发分开。
+
 GG-076 hover cases preview on board cards and details. Show full processed output at rest; enter/move reveals before with pointer-following seam, leave restores output. Detail/editor range supports keyboard/touch; board cover stays one case-opening button without nested inputs.
 
 GG-075 uses the same LayoutGrid icon for inspiration navigation and image-detail publication. Effect comparison is a visible labelled section, with selectable original-reference thumbnails, an effect-only option and explicit empty state. Modes remain visible when unavailable.

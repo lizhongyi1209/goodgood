@@ -2253,6 +2253,12 @@ export default function Home({
 
   const handleOrganizationNav = () => {
     // Management is account navigation, never a creative Workspace switch.
+    if (authenticationSession?.account.role === "site_owner") {
+      if (workspaceId) { window.location.assign("/admin/operations"); return; }
+      navigateWorkspace({ kind: "admin", tab: "operations" });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     if (workspaceId) { window.location.assign("/organizations"); return; }
     navigateWorkspace({ kind: "organizations" });
     window.scrollTo({ top: 0, behavior: "smooth" });
