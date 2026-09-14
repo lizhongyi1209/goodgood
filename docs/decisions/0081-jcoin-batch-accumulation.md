@@ -1,6 +1,7 @@
 # ADR 0081 — JCOIN 分批定额与仅累计的第一期
 
 - Status: Accepted
+- 后续额度决定：[ADR0082](0082-jcoin-first-batch-budget.md)已接受第一期100万枚；本ADR保留接受结构时的历史参数边界，倍率仍待接受。
 - Date: 2026-09-14
 - Task: [GG-083](../tasks/GG-083-jcoin-batch-accumulation.md)
 - 关联：[ADR0079](0079-jcoin-reward-planning.md)、[ADR0080](0080-classified-admin-credit-grants-and-operations.md)。本ADR接受发行结构/一期边界，不接受具体额度或倍率。
