@@ -11,10 +11,25 @@ after(() => vite.close());
 const { BananaLineSelector } = await vite.ssrLoadModule("/features/creation/banana-line-selector.tsx");
 const { ModelPricingList } = await vite.ssrLoadModule("/features/admin/model-pricing-list.tsx");
 const { VideoTokenPricingEditor } = await vite.ssrLoadModule("/features/admin/video-token-pricing-editor.tsx");
+test("GG-068 line prices remain distinct, 2.5 stays first and creation resolves 1080p", async () => {
+  const { resolveVideoResolution, VIDEO_GENERATION_MODEL_CATALOG } = await vite.ssrLoadModule("/features/creation/video-generation-options.ts");
+  const video={ id:"seedance-2-5", adapterId:"seedance-2-5", name:"Seedance 2.5",mediaType:"video", enabled:false,prices:{},videoLines:{standard:{enabled:true,prices:{"1080p":{billing:"tokens",output:7700,input:4600}}},backup:{enabled:true,prices:{"1080p":{billing:"tokens",output:6160,input:3680}}}}};
+  const other={id:"seedance-2-0",adapterId:"seedance-2-0",name:"Seedance 2.0",mediaType:"video",enabled:false,prices:{}};
+  const html=renderToStaticMarkup(React.createElement(ModelPricingList,{models:[other,video],busy:false,onEdit(){},onToggle(){}}));
+  assert.ok(html.indexOf('aria-label="Seedance 2.5 价格"') < html.indexOf('aria-label="Seedance 2.0 价格"'));
+  assert.match(html,/77.00/); assert.match(html,/61.60/); assert.match(html,/标准线路价格/); assert.match(html,/备用线路价格/);
+  assert.doesNotMatch(html,/每百万 tokens 售价|人民币 \/ 百万 tokens/);
+  assert.equal(resolveVideoResolution("seedance-2-5","1080p"),"1080p");
+  assert.equal(resolveVideoResolution("seedance-2-5","4K"),"720p");
+  assert.equal(resolveVideoResolution("seedance-2-0-fast","1080p"),"720p");
+  assert.equal(VIDEO_GENERATION_MODEL_CATALOG[0].id,"seedance-2-5");
+  const editor=renderToStaticMarkup(React.createElement(VideoTokenPricingEditor,{resolutions:["480p","720p","1080p"],prices:{},line:"backup",onLineChange(){},onChange(){}}));
+  assert.match(editor,/启用备用/); assert.match(editor,/1080p 含参考视频 token 售价/);
+});
 test("GG-067 video prices disclose token units and editor keeps both rate inputs visible", () => {
   const video = { id: "seedance-2-0-mini", adapterId: "seedance-2-0-mini", name: "Seedance Mini", mediaType: "video", enabled: false, prices: { "480p": { billing: "tokens", output: 2300, input: 1400 } } };
   const html = renderToStaticMarkup(React.createElement(ModelPricingList, { models: [video], busy: false, onEdit() {}, onToggle() {} }));
-  assert.match(html, /无参考视频/); assert.match(html, /含参考视频/); assert.match(html, /百万 tokens/); assert.doesNotMatch(html, /积分\/秒/);
+  assert.match(html, /无参考视频/); assert.match(html, /含参考视频/); assert.match(html, /元\/百万token/); assert.doesNotMatch(html, /积分\/秒/);
   const editor = renderToStaticMarkup(React.createElement(VideoTokenPricingEditor, { resolutions: ["480p", "720p"], prices: { "480p": { billing: "tokens", output: "23.00", input: "14.00" } }, onChange() {} }));
   assert.match(editor, /117 积分/); assert.match(editor, /1.164674/); assert.match(editor, /Seedance 响应 JSON/); assert.match(editor, /720p 含参考视频 token 售价/);
   const empty = renderToStaticMarkup(React.createElement(VideoTokenPricingEditor, { resolutions: ["480p"], prices: {}, onChange() {} }));

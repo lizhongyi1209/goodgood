@@ -1,5 +1,11 @@
 # GG-063 verification
 
+GG-068 coverage proves independent route clones, edited rate quotes, complete
+enabled matrices, one atomic save/audit and API roundtrip, 2.5 first and 1080p
+UI resolution/request payloads for both routes. SSR checks distinct prices,
+removed subtitle and simplified units. Local browser verifies switching,
+save/reload, preserved history and creation parameters without paid requests.
+
 GG-067 targeted coverage verifies token-rate validation and legacy separation,
 nested/top-level completion_tokens parsing, missing/illegal use, mutually
 exclusive reference rates, exact 826200/50638 examples and one-time rounding.

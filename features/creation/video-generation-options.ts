@@ -98,7 +98,7 @@ export const VIDEO_GENERATION_MODEL_CATALOG = [
       videoLimit: 10,
       audioLimit: 10,
       totalLimit: 50,
-      resolutions: ["480p", "720p"] as const,
+      resolutions: ["480p", "720p", "1080p"] as const,
     }),
   },
   {

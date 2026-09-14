@@ -1,3 +1,4 @@
+import { seedanceResolutions } from "../../shared/contracts/seedance-models.mjs";
 const VIDEO_MODEL_IDS = Object.freeze([
   "seedance-2-5",
   "seedance-2-0",
@@ -182,7 +183,7 @@ export function buildO1KeySeedanceVideoPayload({
   if (!Number.isInteger(duration)) invalid("Video duration must be an integer.");
   const maximumDuration = modelId === "seedance-2-5" ? 30 : 15;
   if (duration < 4 || duration > maximumDuration) invalid("Video duration is unsupported.");
-  if (!VIDEO_RESOLUTIONS.has(resolution)) invalid("Video resolution is unsupported.");
+  if (!VIDEO_RESOLUTIONS.has(resolution) || !seedanceResolutions(modelId).includes(resolution)) invalid("Video resolution is unsupported.");
   if (!VIDEO_RATIOS.has(ratio)) invalid("Video ratio is unsupported.");
   if (typeof generateAudio !== "boolean") invalid("Video audio setting is required.");
 

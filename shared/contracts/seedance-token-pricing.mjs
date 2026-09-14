@@ -6,7 +6,7 @@ export const SEEDANCE_LIST_PRICES = Object.freeze({
     "4K": [26, 16],
   },
   "seedance-2-0-fast": { "480p": [37, 22], "720p": [37, 22] },
-  "seedance-2-5": { "480p": [70, 42], "720p": [70, 42] },
+  "seedance-2-5": { "480p": [70, 42], "720p": [70, 42], "1080p": [77, 46] },
   "seedance-2-0-mini": { "480p": [23, 14], "720p": [23, 14] },
 });
 

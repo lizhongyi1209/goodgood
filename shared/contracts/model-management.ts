@@ -24,6 +24,7 @@ export type ManagedModel = Readonly<{
   adapterId: string;
   enabled: boolean;
   lines?: ManagedBananaLines;
+  videoLines?: ManagedVideoLines;
   prices: Readonly<
     Record<
       string,
@@ -38,6 +39,13 @@ export type ManagedModel = Readonly<{
   version: number;
   updatedAt: string;
 }>;
+export type SeedanceLine = "standard" | "backup";
+export type ManagedVideoLines = Readonly<
+  Record<
+    SeedanceLine,
+    Readonly<{ enabled: boolean; prices: ModelSpecificationPrices }>
+  >
+>;
 export type ManagedImageOption = Readonly<{
   id: GenerationModelId;
   catalogId: string;

@@ -1,5 +1,11 @@
 # GG-063 quality pricing
 
+GG-068 reuses managed_models.lines JSON for video standard/backup enabled/prices
+records; public/save DTOs expose videoLines separately from image lines. Existing
+single video prices initialize both independent read projections; saving pins
+both matrices and projects standard into root prices. No migration or image
+record conversion. Existing model events audit both routes together.
+
 GG-067 video specification JSON adds `billing: "tokens"`. `output` and `input`
 are integer credits per million completion tokens for no-reference-video and
 reference-video tasks respectively; select exactly one rate, never add them.

@@ -1,5 +1,11 @@
 # GG-063 quality pricing
 
+GG-068 video pricing switches 标准/备用, retaining separate prices and enable
+states; one save commits both. Initial rates retain owner values, which can be
+edited directly to independent discounted retail prices. Trial parameters stay
+when switching, with the selected route's price. Seedance 2.5 is first in admin
+and creation, with 480p/720p/1080p. Existing default 720p and references stay.
+
 GG-067 supersedes the video-second pricing flow below. The video editor shows
 two RMB/million-token fields per supported resolution, an actual-use calculator,
 and optional response JSON extraction. Choose reference-video state explicitly;

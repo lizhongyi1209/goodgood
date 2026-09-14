@@ -1,5 +1,7 @@
 # Decision records
 
+- `0071-seedance-line-prices-and-1080p.md` — independent video route pricing, Seedance 2.5 first and 1080p support for GG-068.
+
 - `0070-seedance-token-pricing.md` — actual completion-token video pricing and pricing-only scope for GG-067.
 
 - `0069-gpt-quality-pricing.md` — GPT quality pricing and fal estimates for GG-063.

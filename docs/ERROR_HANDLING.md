@@ -1,5 +1,9 @@
 # GG-063 quality pricing errors
 
+GG-068 rejects malformed/unknown video route configs and missing enabled-route
+specifications. Disabling both routes prevents model enable. Unsupported video
+resolution fails before provider transport; editing/switching preserves input.
+
 GG-067 rejects unknown/mixed billing units, incomplete enabled-model prices and
 nonpositive token rates as MODEL_REQUEST_INVALID. Missing/invalid
 completion_tokens is unresolved, never zero or inferred from total_tokens.

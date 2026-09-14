@@ -2,6 +2,11 @@
 
 ## Visual thesis
 
+GG-068 adds two aligned standard/backup video price rows per model, each with a
+quiet route label. Video groups omit the requested billing subtitle and use
+元/百万token below specifications. The editor uses the existing compact route
+buttons rather than duplicating its form; adaptive page width remains intact.
+
 GG-067 video rows show two compact mutually exclusive rate rows (无参考视频 /
 含参考视频), with an explicit 人民币/百万 tokens unit. The editor aligns supported
 resolutions and both rates; calculation and optional JSON parsing share one

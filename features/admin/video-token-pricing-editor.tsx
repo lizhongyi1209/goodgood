@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { SEEDANCE_LINES } from "@/shared/contracts/seedance-models.mjs";
+import type { SeedanceLine } from "@/shared/contracts/model-management";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -29,10 +31,18 @@ export function VideoTokenPricingEditor({
   resolutions,
   prices,
   onChange,
+  line = "standard",
+  onLineChange,
+  enabled = true,
+  onEnabledChange,
 }: {
   resolutions: readonly string[];
   prices: DraftPrices;
   onChange: (prices: DraftPrices) => void;
+  line?: SeedanceLine;
+  onLineChange?: (line: SeedanceLine) => void;
+  enabled?: boolean;
+  onEnabledChange?: (enabled: boolean) => void;
 }) {
   const [resolution, setResolution] = useState(resolutions[0]);
   const [tokens, setTokens] = useState("50638");
@@ -98,6 +108,40 @@ export function VideoTokenPricingEditor({
   }
   return (
     <section aria-label="视频 tokens 定价" className="space-y-5">
+      {onLineChange && (
+        <section aria-label="视频线路定价" className="space-y-3">
+          <div className="flex items-center gap-3">
+            <h3 className="text-sm font-medium">线路</h3>
+            <div className="flex gap-1">
+              {SEEDANCE_LINES.map((item) => (
+                <Button
+                  key={item.id}
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  aria-pressed={line === item.id}
+                  className={line === item.id ? "bg-zinc-100" : ""}
+                  onClick={() => onLineChange(item.id as SeedanceLine)}
+                >
+                  {item.name}
+                  {item.id === "standard" ? " · 默认" : ""}
+                </Button>
+              ))}
+            </div>
+          </div>
+          <label className="flex items-center gap-2 text-xs text-zinc-500">
+            <input
+              type="checkbox"
+              checked={enabled}
+              onChange={(event) => onEnabledChange?.(event.target.checked)}
+            />
+            启用{line === "standard" ? "标准" : "备用"}线路
+          </label>
+          <p className="text-xs text-zinc-400">
+            两条线路分别设置人民币售价，可独立调整折扣后的价格。切换保留输入，保存时一起生效。
+          </p>
+        </section>
+      )}
       <div>
         <h3 className="text-sm font-medium">按实际 tokens 定价</h3>
         <p className="mt-1 text-xs leading-5 text-zinc-500">

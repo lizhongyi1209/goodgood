@@ -6,6 +6,7 @@
 
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
+| GG-068 | Seedance 双线路定价与 2.5 1080p | 本地完成并验证；双线路持久化、2.5 首位/1080p、文案简化，门禁 456/17 与 Chrome/历史保留通过，待站长检查，未发布 | [任务](tasks/GG-068-seedance-line-pricing.md) |
 | GG-067 | Seedance 实际 tokens 定价配置 | 本地完成；两档 token 费率、响应试算、四模型原价已保存，功能/文档及 Chrome 与数据保留验证，未发布 | [任务](tasks/GG-067-seedance-token-pricing.md) |
 | GG-066 | 恢复模型管理自适应宽度 | 本地完成；自适应宽度、隐藏明细与紧凑间距，门禁 448/17、原页面及数据保留验证，未发布 | [任务](tasks/GG-066-responsive-model-width.md) |
 | GG-065 | 隐藏质量明细与紧凑模型管理 | 本地完成；隐藏明细、960px 紧凑列宽，门禁 448/17、Chrome 与数据保留验证，未发布 | [任务](tasks/GG-065-compact-model-management.md) |
@@ -82,7 +83,7 @@
 
 | GG-062 | GPT 图片三线路与独立定价 | 本地门禁、隔离 SQL、原页面与历史保留检查通过，未发布 | [任务](tasks/GG-062-gpt-image-lines.md) |
 
-GG-024—GG-067 已由任务占用（GG-047 为另一工作树的 agent 范围配置）；下一个普通产品需求从 **GG-068** 分配并检查是否已被占用。每次 alpha 发布仍须取得
+GG-024—GG-068 已由任务占用（GG-047 为另一工作树的 agent 范围配置）；下一个普通产品需求从 **GG-069** 分配并检查是否已被占用。每次 alpha 发布仍须取得
 新鲜、精确绑定候选的证据并通过门禁；本次证据不能复用。
 完整发布证据见[累计发布记录](releases/2026-09-09-cumulative-alpha-release.md)。
 

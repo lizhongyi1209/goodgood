@@ -1,5 +1,11 @@
 # Architecture
 
+GG-068 shared Seedance specifications drive admin template order/resolutions and
+provider payload validation. 2.5 accepts 1080p; UI resolves it unchanged and
+rejects 4K. Independent standard/backup prices use existing owner APIs and JSON
+persistence; existing server-only route IDs are unchanged. No paid verification
+or formal video settlement is added.
+
 GG-067 introduces shared completion-token parsing/calculation and a video-only
 pricing editor. Existing owner-only save/query APIs persist billing-tagged JSON
 prices with optimistic versions and audit snapshots. No provider call, new

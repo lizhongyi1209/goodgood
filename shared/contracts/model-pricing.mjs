@@ -1,6 +1,7 @@
 import { modelSpecificationPrices } from "./banana-lines.mjs";
 
 import { specificationOutputPrice } from "./gpt-quality-pricing.mjs";
+import { SEEDANCE_MODEL_IDS, seedanceResolutions } from "./seedance-models.mjs";
 
 export const CREDIT_UNIT = "credit-cny-cent";
 export const CREDITS_PER_CNY = 100;
@@ -21,18 +22,10 @@ export const MODEL_TEMPLATES = Object.freeze([
     resolutions: ["1K", "2K", "4K"],
     ready: true,
   })),
-  ...[
-    "seedance-2-0",
-    "seedance-2-0-fast",
-    "seedance-2-5",
-    "seedance-2-0-mini",
-  ].map((id) => ({
+  ...SEEDANCE_MODEL_IDS.map((id) => ({
     id,
     mediaType: "video",
-    resolutions:
-      id === "seedance-2-0"
-        ? ["480p", "720p", "1080p", "4K"]
-        : ["480p", "720p"],
+    resolutions: seedanceResolutions(id),
     ready: true,
   })),
 ]);

@@ -5,6 +5,10 @@ import {
 } from "../../shared/contracts/gpt-quality-pricing.mjs";
 import { randomUUID } from "node:crypto";
 import {
+  modelVideoLines,
+  SEEDANCE_LINES,
+} from "../../shared/contracts/seedance-models.mjs";
+import {
   BANANA_LINES,
   supportsImageLines,
   isBananaLineReady,
@@ -30,6 +34,7 @@ function publicModel(row) {
     adapterId: row.adapter_id,
     enabled: row.enabled,
     prices: row.prices,
+    ...(row.media_type === "video" ? { videoLines: modelVideoLines(row) } : {}),
     ...(supportsImageLines(row.adapter_id)
       ? { lines: modelBananaLines(row) }
       : {}),
@@ -141,6 +146,9 @@ export function validateManagedModel(input) {
   }
   let prices;
   let lines;
+  let videoLines;
+  if (template.mediaType === "image" && input.videoLines !== undefined)
+    fail("图片模型不支持视频线路。");
   if (supportsImageLines(template.id)) {
     const value = input.lines ?? {
       special: { enabled: input.enabled, prices: input.prices },
@@ -174,6 +182,40 @@ export function validateManagedModel(input) {
     if (input.enabled && !Object.values(lines).some((line) => line.enabled))
       fail("启用模型前至少启用一条已定价线路。");
     prices = lines.special.prices;
+  } else if (template.mediaType === "video") {
+    if (input.lines && Object.keys(input.lines).length)
+      fail("视频模型请使用视频线路配置。");
+    const value =
+      input.videoLines ??
+      modelVideoLines({ adapterId: template.id, prices: input.prices });
+    if (
+      !value ||
+      typeof value !== "object" ||
+      Array.isArray(value) ||
+      Object.keys(value).some(
+        (id) => !SEEDANCE_LINES.some((line) => line.id === id),
+      )
+    )
+      fail("视频线路配置无效。");
+    videoLines = {};
+    for (const { id } of SEEDANCE_LINES) {
+      const line = value[id];
+      if (!line || typeof line.enabled !== "boolean")
+        fail("请填写标准、备用线路的启用状态。");
+      videoLines[id] = {
+        enabled: line.enabled,
+        prices: parseSpecificationPrices(
+          line.prices,
+          input.enabled && line.enabled,
+        ),
+      };
+    }
+    if (
+      input.enabled &&
+      !Object.values(videoLines).some((line) => line.enabled)
+    )
+      fail("启用模型前至少启用一条已定价线路。");
+    prices = videoLines.standard.prices;
   } else {
     if (input.lines && Object.keys(input.lines).length)
       fail("该模型不支持图片线路。");
@@ -192,6 +234,7 @@ export function validateManagedModel(input) {
     mediaType: template.mediaType,
     enabled: input.enabled,
     ...(lines ? { lines } : {}),
+    ...(videoLines ? { videoLines } : {}),
     prices,
     version: input.version,
   };
@@ -274,7 +317,7 @@ export async function saveManagedModel({
           model.adapterId,
           model.enabled,
           JSON.stringify(model.prices),
-          JSON.stringify(model.lines ?? {}),
+          JSON.stringify(model.lines ?? model.videoLines ?? {}),
         ],
       )
     ).rows[0];

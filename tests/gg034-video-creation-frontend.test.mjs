@@ -36,7 +36,7 @@ test("GG-034 exposes the accepted Seedance catalog and model constraints", async
 
   assert.ok(modelOrder.every((index) => index >= 0));
   assert.deepEqual([...modelOrder].sort((left, right) => left - right), modelOrder);
-  assert.match(options, /id: "seedance-2-5"[\s\S]*max: 30[\s\S]*resolutions: \["480p", "720p"\]/);
+  assert.match(options, /id: "seedance-2-5"[\s\S]*max: 30[\s\S]*resolutions: \["480p", "720p", "1080p"\]/);
   assert.match(options, /id: "seedance-2-0"[\s\S]*capabilities: STANDARD_CAPABILITIES/);
   assert.match(options, /STANDARD_CAPABILITIES[\s\S]*max: 15[\s\S]*\["480p", "720p", "1080p", "4K"\]/);
   assert.match(options, /VIDEO_ASPECT_RATIOS = \[[\s\S]*"adaptive"[\s\S]*"21:9"/);

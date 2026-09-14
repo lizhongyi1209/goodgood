@@ -23,6 +23,14 @@ import { VIDEO_GENERATION_MODEL_CATALOG } from "@/features/creation/video-genera
 import { ModelPricingList } from "./model-pricing-list";
 import { VideoTokenPricingEditor } from "./video-token-pricing-editor";
 import {
+  modelVideoLines,
+  SEEDANCE_LINES,
+} from "@/shared/contracts/seedance-models.mjs";
+import type {
+  SeedanceLine,
+  ManagedVideoLines,
+} from "@/shared/contracts/model-management";
+import {
   BANANA_LINES,
   supportsImageLines,
   isBananaLineReady,
@@ -76,6 +84,10 @@ type DraftPrices = Record<
   }
 >;
 type DraftLines = Record<BananaLine, { enabled: boolean; prices: DraftPrices }>;
+type DraftVideoLines = Record<
+  SeedanceLine,
+  { enabled: boolean; prices: DraftPrices }
+>;
 type Draft = {
   id: string;
   name: string;
@@ -85,6 +97,7 @@ type Draft = {
   version: number | null;
   prices: DraftPrices;
   lines?: DraftLines;
+  videoLines?: DraftVideoLines;
 };
 function emptyDraftLines(): DraftLines {
   return {
@@ -127,9 +140,21 @@ const newDraft = (): Draft => ({
 });
 function editDraft(model: ManagedModel): Draft {
   const lines = modelBananaLines(model);
+  const videoLines = modelVideoLines(model);
   return {
     ...model,
     prices: editablePrices(model.prices),
+    videoLines: videoLines
+      ? (Object.fromEntries(
+          SEEDANCE_LINES.map(({ id }) => [
+            id,
+            {
+              enabled: videoLines[id].enabled,
+              prices: editablePrices(videoLines[id].prices),
+            },
+          ]),
+        ) as DraftVideoLines)
+      : undefined,
     lines: lines
       ? (Object.fromEntries(
           BANANA_LINES.map(({ id }) => [
@@ -143,9 +168,19 @@ function editDraft(model: ManagedModel): Draft {
       : undefined,
   };
 }
-function parsedPrices(draft: Draft, line: BananaLine = "special") {
+function parsedPrices(
+  draft: Draft,
+  line: BananaLine = "special",
+  videoLine: SeedanceLine = "standard",
+) {
   return Object.fromEntries(
-    Object.entries(draft.lines ? draft.lines[line].prices : draft.prices)
+    Object.entries(
+      draft.lines
+        ? draft.lines[line].prices
+        : draft.videoLines
+          ? draft.videoLines[videoLine].prices
+          : draft.prices,
+    )
       .filter(([, price]) => price.output.trim() || price.qualities)
       .map(([key, price]) => [
         key,
@@ -207,6 +242,8 @@ export function ModelManagementPage({
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [resolution, setResolution] = useState("1K");
   const [pricingLine, setPricingLine] = useState<BananaLine>("special");
+  const [videoPricingLine, setVideoPricingLine] =
+    useState<SeedanceLine>("standard");
   const [pricingQuality, setPricingQuality] = useState("auto");
   const [count, setCount] = useState("1");
   const refreshSession = useCallback(async () => {
@@ -271,6 +308,7 @@ export function ModelManagementPage({
     const next = model ? editDraft(model) : newDraft();
     setDraft(next);
     setPricingLine("special");
+    setVideoPricingLine("standard");
     setPricingQuality("auto");
     setCount("1");
     setMutationError(null);
@@ -291,6 +329,21 @@ export function ModelManagementPage({
         ...nextDraft,
         mediaType: template.mediaType as "image" | "video",
         prices: parsedPrices(nextDraft),
+        videoLines: nextDraft.videoLines
+          ? (Object.fromEntries(
+              SEEDANCE_LINES.map(({ id }) => [
+                id,
+                {
+                  enabled: nextDraft.videoLines![id as SeedanceLine].enabled,
+                  prices: parsedPrices(
+                    nextDraft,
+                    "special",
+                    id as SeedanceLine,
+                  ),
+                },
+              ]),
+            ) as ManagedVideoLines)
+          : undefined,
         lines: nextDraft.lines
           ? (Object.fromEntries(
               BANANA_LINES.map(({ id }) => [
@@ -324,7 +377,9 @@ export function ModelManagementPage({
     draft && MODEL_TEMPLATES.find((item) => item.id === draft.adapterId)!;
   const currentPrices = draft?.lines
     ? draft.lines[pricingLine].prices
-    : (draft?.prices ?? {});
+    : draft?.videoLines
+      ? draft.videoLines[videoPricingLine].prices
+      : (draft?.prices ?? {});
   const qualities = draft ? gptPricingQualities(draft.adapterId) : [];
   const qualityMode = Object.values(currentPrices).some(
     (price) => price.qualities,
@@ -340,7 +395,18 @@ export function ModelManagementPage({
               [pricingLine]: { ...draft.lines[pricingLine], prices },
             },
           }
-        : { ...draft, prices },
+        : draft.videoLines
+          ? {
+              ...draft,
+              videoLines: {
+                ...draft.videoLines,
+                [videoPricingLine]: {
+                  ...draft.videoLines[videoPricingLine],
+                  prices,
+                },
+              },
+            }
+          : { ...draft, prices },
     );
   };
   const toggleQualityMode = (enabled: boolean) => {
@@ -651,6 +717,13 @@ export function ModelManagementPage({
                           ...draft,
                           adapterId: value,
                           prices: {},
+                          videoLines:
+                            next.mediaType === "video"
+                              ? {
+                                  standard: { enabled: true, prices: {} },
+                                  backup: { enabled: true, prices: {} },
+                                }
+                              : undefined,
                           lines: supportsImageLines(value)
                             ? emptyDraftLines()
                             : undefined,
@@ -658,6 +731,7 @@ export function ModelManagementPage({
                         });
                         setResolution(next.resolutions[0]);
                         setPricingLine("special");
+                        setVideoPricingLine("standard");
                         setPricingQuality("auto");
                         setCount("1");
                       }}
@@ -734,6 +808,26 @@ export function ModelManagementPage({
                     resolutions={template.resolutions}
                     prices={currentPrices}
                     onChange={replaceCurrentPrices}
+                    line={videoPricingLine}
+                    onLineChange={setVideoPricingLine}
+                    enabled={
+                      draft.videoLines?.[videoPricingLine].enabled ?? true
+                    }
+                    onEnabledChange={(enabled) =>
+                      setDraft({
+                        ...draft,
+                        videoLines: {
+                          ...(draft.videoLines ?? {
+                            standard: { enabled: true, prices: draft.prices },
+                            backup: { enabled: true, prices: draft.prices },
+                          }),
+                          [videoPricingLine]: {
+                            enabled,
+                            prices: currentPrices,
+                          },
+                        },
+                      })
+                    }
                   />
                 ) : (
                   <div>

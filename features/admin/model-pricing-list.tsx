@@ -1,6 +1,10 @@
 "use client";
 
 import { Pencil } from "lucide-react";
+import {
+  modelVideoLines,
+  SEEDANCE_LINES,
+} from "@/shared/contracts/seedance-models.mjs";
 import { Button } from "@/components/ui/button";
 import {
   MODEL_TEMPLATES,
@@ -21,16 +25,22 @@ function ModelPrice({
   model,
   resolution,
   imageLine,
+  videoLine,
   showResolution = true,
 }: {
   model: ManagedModel;
   resolution: string;
   imageLine?: string;
+  videoLine?: string;
   showResolution?: boolean;
 }) {
   const template = MODEL_TEMPLATES.find((item) => item.id === model.adapterId);
   const supported = template?.resolutions.includes(resolution);
-  const price = modelSpecificationPrices(model, imageLine)[resolution];
+  const price = (
+    videoLine
+      ? modelVideoLines(model)?.[videoLine]?.prices
+      : modelSpecificationPrices(model, imageLine)
+  )?.[resolution];
   const qualityPrices = price?.qualities
     ? (Object.values(price.qualities) as number[])
     : [];
@@ -69,9 +79,7 @@ function ModelPrice({
           <dd className="text-right text-sm font-medium">
             ¥{creditsToYuan(price.input ?? 0)}
           </dd>
-          <dd className="col-span-2 text-[10px] text-zinc-400">
-            人民币 / 百万 tokens
-          </dd>
+          <dd className="col-span-2 text-[10px] text-zinc-400">元/百万token</dd>
         </dl>
       ) : (
         <dl className="mx-auto grid max-w-36 grid-cols-[auto_1fr] items-baseline gap-x-2 gap-y-1.5">
@@ -114,13 +122,19 @@ export function ModelPricingList({
     <section aria-label="模型列表" className="mt-6 space-y-7">
       {(["image", "video"] as const).map((mediaType) => {
         const group = models.filter((model) => model.mediaType === mediaType);
+        if (mediaType === "video")
+          group.sort(
+            (a, b) =>
+              MODEL_TEMPLATES.findIndex((t) => t.id === a.adapterId) -
+              MODEL_TEMPLATES.findIndex((t) => t.id === b.adapterId),
+          );
         if (!group.length) return null;
         const resolutions =
           mediaType === "image" ? IMAGE_RESOLUTIONS : VIDEO_RESOLUTIONS;
         const priceLayout =
           mediaType === "image"
             ? "grid-cols-[64px_repeat(3,minmax(0,1fr))]"
-            : "grid-cols-2 lg:grid-cols-4";
+            : "grid-cols-2 lg:grid-cols-[64px_repeat(4,minmax(0,1fr))]";
         return (
           <section
             key={mediaType}
@@ -133,11 +147,9 @@ export function ModelPricingList({
                   {group.length}
                 </span>
               </h2>
-              <p className="text-xs text-zinc-400">
-                {mediaType === "image"
-                  ? "每张售价"
-                  : "每百万 tokens 售价 · 按是否含参考视频选档"}
-              </p>
+              {mediaType === "image" && (
+                <p className="text-xs text-zinc-400">每张售价</p>
+              )}
             </div>
             <div
               aria-hidden="true"
@@ -145,7 +157,7 @@ export function ModelPricingList({
             >
               <span>模型</span>
               <div className={`grid gap-3 ${priceLayout}`}>
-                {mediaType === "image" && <span>线路</span>}
+                <span>线路</span>
                 {resolutions.map((resolution) => (
                   <span key={resolution} className="text-center">
                     {resolution}
@@ -221,13 +233,32 @@ export function ModelPricingList({
                       })}
                     </div>
                   ) : (
-                    <div className={`grid gap-x-3 gap-y-4 ${priceLayout}`}>
-                      {resolutions.map((resolution) => (
-                        <ModelPrice
-                          key={resolution}
-                          model={model}
-                          resolution={resolution}
-                        />
+                    <div className="space-y-4">
+                      {SEEDANCE_LINES.map((line) => (
+                        <div
+                          key={line.id}
+                          aria-label={`${line.name}线路价格`}
+                          className={`grid items-center gap-x-3 gap-y-4 ${priceLayout}`}
+                        >
+                          <div className="col-span-2 text-xs text-zinc-600 lg:col-span-1">
+                            {line.name}
+                            <p className="mt-1 text-[10px] text-zinc-400">
+                              {modelVideoLines(model)?.[line.id]?.enabled
+                                ? line.id === "standard"
+                                  ? "默认"
+                                  : "已启用"
+                                : "未启用"}
+                            </p>
+                          </div>
+                          {resolutions.map((resolution) => (
+                            <ModelPrice
+                              key={resolution}
+                              model={model}
+                              resolution={resolution}
+                              videoLine={line.id}
+                            />
+                          ))}
+                        </div>
                       ))}
                     </div>
                   )}
