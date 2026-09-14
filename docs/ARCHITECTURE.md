@@ -1,5 +1,11 @@
 # Architecture
 
+GG-072 places profile UI/state under features/profile, owner service and Node
+handler under server/profile, and framework API under app/api/profile. Existing
+personal assets supply the works and validated private reference uploads supply
+avatars. DTOs contain display identity, version, reference ID and signed URL,
+never raw provider identity/credentials. No cross-user API or provider call.
+
 GG-071 isolates read-only operations SQL/services in server/admin/operations*
 and feature UI/http boundary in features/admin/site-operations-view and
 http-operations-boundary. Both runtime Node dispatch and framework POST routes

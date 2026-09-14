@@ -1,5 +1,10 @@
 # Design system
 
+GG-072 uses a quiet profile identity row (circular centered avatar, name, muted
+@handle, one edit button) above responsive image works preserving their ratios.
+An accessible 480px right Sheet edits identity; mobile uses full width. Reuse
+canvas/soft/ink/muted/line/Palace Red tokens and existing private image rendering.
+
 GG-071 adds quiet responsive KPI cards, selectable Palace Red daily bars and
 compact table rows in the existing owner shell. Logs have task/ledger buttons,
 wrapping labelled search/date/filter controls and a right 640px detail Sheet

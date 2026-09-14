@@ -1,5 +1,12 @@
 # GG-063 quality pricing
 
+GG-072 migration0035 adds personal_profiles keyed by owner with display_name,
+unique lowercase handle, optional avatar_reference_id, positive optimistic
+version and timestamps. Reads return unconfigured defaults without writes.
+Existing accounts/jobs/ledgers/models are untouched. Avatar saves validate ready,
+accepted, undeleted personal references owned/created by the user under the
+reference lifecycle lock; cleanup protects references used by saved profiles.
+
 GG-071 introduces no persistence or billing mutation. Daily submissions use
 generation_jobs.submitted_at; outcomes use completed_at; settlement/refund/release
 use ledger.created_at, all in Asia/Shanghai calendar dates. Only settle contributes

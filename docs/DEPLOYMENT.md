@@ -1,5 +1,11 @@
 # Development and deployment
 
+GG-072 adds migration0035/profile API and cleanup protection; local candidate
+only. Original32141 mock stack retains users/prices/financial history. Current
+loopback dependency ports are PG54449, Valkey56449, storage58049/58050 after
+Windows reservations made the old ports unavailable. This is not permission to
+apply migrations or change production. Old migration checksums are never reset.
+
 GG-067 supersedes the video-second pricing notes below with completion-token
 rates. It adds no migration and only prefills the four video models through the
 owner editor on existing 32141 mock data. Formal video debit/settlement remains

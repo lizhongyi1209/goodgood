@@ -26,6 +26,20 @@ const timestamps = {
     .notNull(),
 };
 
+export const personalProfiles = pgTable("personal_profiles", {
+  ownerId: uuid("owner_id").primaryKey().references(() => users.id),
+  displayName: text("display_name").notNull(),
+  handle: text("handle").notNull().unique("personal_profiles_handle_key"),
+  avatarReferenceId: uuid("avatar_reference_id").references(() => referenceAssets.id),
+  version: integer("version").notNull().default(1),
+  ...timestamps,
+}, (table) => [
+  check("personal_profiles_display_name_check", sql`char_length(${table.displayName}) between 1 and 30`),
+  check("personal_profiles_handle_check", sql`${table.handle} ~ '^[a-z0-9_]{3,24}$'`),
+  check("personal_profiles_version_check", sql`${table.version} > 0`),
+  index("personal_profiles_avatar_reference_idx").on(table.avatarReferenceId).where(sql`${table.avatarReferenceId} is not null`),
+]);
+
 export const managedModels = pgTable("managed_models", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),

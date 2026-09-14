@@ -1,5 +1,11 @@
 # GG-063 quality pricing
 
+GG-072: account menu → personal profile in the same shell, leaving the composer
+intact. Mobile avatar opens an account menu with profile and logout. Edit name/handle/avatar, save or cancel;
+upload/save disables dismissal until it finishes. Failed saves preserve inputs,
+duplicate handles can be corrected, and version conflicts offer reload. Works
+open existing image detail; closing restores profile and scroll position.
+
 GG-071 owner operations: choose an end date and 7/30-day trend, click a daily
 bar/date to show that day's metrics. Logs: select tasks or credits, enter mailbox,
 task/batch ID, bounded calendar range and event/state, then query. Next page uses

@@ -1,7 +1,10 @@
 "use client";
 
+import "@/features/profile/profile.css";
+
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type WheelEvent as ReactWheelEvent } from "react";
 import Image from "next/image";
+import {PersonalProfileView,ProfileAvatar,usePersonalProfile} from "@/features/profile/personal-profile";
 import { CreationComposer } from "@/features/creation/creation-composer";
 import { supportsImageLines, imageLineName } from "@/shared/contracts/banana-lines.mjs";
 import type { BananaLine } from "@/shared/contracts/generation";
@@ -251,7 +254,7 @@ type AssetBatch = {
   referenceCount: number;
   images: readonly GenerationOutput[];
 };
-type ActiveView = "create" | "projects" | "assets" | "credits" | "distribution" | "organizations" | "admin";
+type ActiveView = "create" | "profile" | "projects" | "assets" | "credits" | "distribution" | "organizations" | "admin";
 type DestructiveCreationIntent =
   | { kind: "new" }
   | { kind: "project"; projectId: string; projectName: string };
@@ -265,7 +268,7 @@ type CreationStreamItem = { submittedAt?: number } & (
 type AssetGalleryItem = { key: string; ratio: number; batch: AssetBatch; image: GenerationOutput; index: number };
 type DetailImage = AssetGalleryItem;
 
-type DetailSource = "creation" | "assets";
+type DetailSource = "creation" | "assets" | "profile";
 type AssetDetailNavigationState = Readonly<{
   returnHref: string;
   scrollY: number;
@@ -290,7 +293,8 @@ function readAssetDetailNavigationState(state: unknown): AssetDetailNavigationSt
   const detail = candidate as Record<string, unknown>;
   if (
     detail.source !== "creation" &&
-    detail.source !== "assets"
+    detail.source !== "assets" &&
+    detail.source !== "profile"
   ) return null;
   if (
     typeof detail.returnHref !== "string" ||
@@ -484,6 +488,7 @@ export default function Home({
     createHttpGenerationBoundary(workspaceId),
   );
   const [authenticationSession, setAuthenticationSession] = useState<AuthenticationSession | null | undefined>(undefined);
+  const personalProfile = usePersonalProfile(authenticationSession && !authenticationSession.preview && authenticationSession.access.status === "active" ? authenticationSession.user.email ?? "authenticated" : null);
   const [authenticationError, setAuthenticationError] = useState<string | null>(null);
   const [accessStatusRefreshing, setAccessStatusRefreshing] = useState(false);
   const [billingSummary, setBillingSummary] = useState<BillingSummary | null>(null);
@@ -877,7 +882,7 @@ export default function Home({
         setActiveView(
           detailNavigation?.source === "creation"
             ? "create"
-            : "assets",
+            : detailNavigation?.source === "profile" ? "profile" : "assets",
         );
         return;
       }
@@ -906,6 +911,8 @@ export default function Home({
       setProjectRestoringId(null);
       setActiveView(route.kind === "projects"
         ? "projects"
+        : route.kind === "profile"
+          ? "profile"
         : route.kind === "assets"
           ? "assets"
           : route.kind === "credits"
@@ -2156,6 +2163,13 @@ export default function Home({
     }
   };
 
+  const handleProfileNav = () => {
+    if(workspaceId) {window.location.assign("/profile");return;}
+    navigateWorkspace({kind:"profile"});
+    void reloadAssets();
+    window.scrollTo({top:0,behavior:"smooth"});
+  };
+
   const handleAssetNav = () => {
     if (workspaceId) { window.location.assign("/assets"); return; }
     if (assetPulseTimerRef.current) window.clearTimeout(assetPulseTimerRef.current);
@@ -2942,8 +2956,8 @@ export default function Home({
                   type="button"
                   aria-label={`打开 ${accountEmail ?? "GoodGood 用户"} 的账户菜单`}
                 >
-                  <span className="avatar">{accountInitials}</span>
-                  <strong className="account-card-username">{accountEmail ?? "GoodGood 用户"}</strong>
+                  <ProfileAvatar className="account-profile-avatar" url={personalProfile.profile?.avatarUrl} name={personalProfile.profile?.displayName ?? accountInitials}/>
+                  <strong className="account-card-username">{personalProfile.profile?.version ? personalProfile.profile.displayName : accountEmail ?? "GoodGood 用户"}</strong>
                   <MoreHorizontal className="account-card-more" aria-hidden="true" size={17} />
                 </button>
               </DropdownMenuTrigger>
@@ -2954,6 +2968,10 @@ export default function Home({
                 side="right"
                 sideOffset={10}
               >
+                <DropdownMenuItem onSelect={handleProfileNav}>
+                  <UserRoundCog aria-hidden="true" size={17} /><span>个人资料</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <div className="account-menu-details" role="group" aria-label="账户信息">
                   <div className="account-menu-detail">
                     <UserRoundCog aria-hidden="true" size={17} />
@@ -3032,11 +3050,16 @@ export default function Home({
                 </button>
               )
             )}
-            {siteOwnerManagementActive ? <button className="top-avatar" aria-label="返回创作" onClick={handleCreateNav}><Brush size={16} /></button> : <button
-              className="top-avatar"
-              aria-label={authenticationSession ? "退出登录" : "登录"}
-              onClick={authenticationSession ? () => void handleLogout() : handleLogin}
-            >{accountInitials}</button>}
+            {siteOwnerManagementActive ? <button className="top-avatar" aria-label="返回创作" onClick={handleCreateNav}><Brush size={16}/></button> : authenticationSession ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild><button className="top-avatar" aria-label="打开账户菜单"><ProfileAvatar className="account-profile-avatar" url={personalProfile.profile?.avatarUrl} name={personalProfile.profile?.displayName ?? accountInitials}/></button></DropdownMenuTrigger>
+                <DropdownMenuContent align="end" collisionPadding={12}>
+                  <DropdownMenuItem onSelect={handleProfileNav}><UserRoundCog size={16}/><span>个人资料</span></DropdownMenuItem>
+                  <DropdownMenuSeparator/>
+                  <DropdownMenuItem onSelect={()=>void handleLogout()}><LogOut size={16}/><span>退出登录</span></DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : <button className="top-avatar" aria-label="登录" onClick={handleLogin}>{accountInitials}</button>}
           </div>
         </header>
 
@@ -3282,6 +3305,8 @@ export default function Home({
                 </div>
               )}
             </section>
+          ) : activeView === "profile" ? (
+            <PersonalProfileView state={personalProfile} works={assetDetailItems.map(item=>({key:item.key,url:item.image.previewUrl,ratio:item.image.width && item.image.height ? item.image.width/item.image.height : item.ratio,alt:item.batch.prompt}))} worksLoading={assetsLoading} worksError={assetsError ?? assetRouteError} onRetryWorks={()=>void reloadAssets()} onOpenWork={key=>openImageDetail(assetDetailItems,key,"profile")} onCreate={handleCreateNav}/>
           ) : activeView === "credits" ? (
             <CreditActivityView
               enabled={Boolean(authenticationSession && authenticationSession.access.status === "active")}

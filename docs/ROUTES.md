@@ -1,5 +1,10 @@
 # Navigation and route contract
 
+GG-072 adds private `/profile` inside the creator shell and owner-bound
+GET/PATCH `/api/profile`. No `/@handle` or public lookup. Image detail retains
+`profile` as history origin so close/back returns to personal works. Legacy
+enterprise context leaves for the personal route before showing this page.
+
 GG-071 adds `/admin/operations` (daily operating dashboard) and `/admin/logs`
 (task/credit tabs and right detail Sheet) to the owner management shell. Existing
 audit remains separate. Three owner-only no-store POST boundaries under

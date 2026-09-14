@@ -5,6 +5,7 @@
 
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
+| GG-072 | 个人资料与自己的图片作品 | 本地完成；私有资料/头像/名称/@用户名与作品，门禁479/19、隔离SQL、桌面窄屏与数据保留验证，未发布 | [任务](tasks/GG-072-personal-profile.md) |
 | GG-071 | 站点运营看板与总日志 | 本地完成；代码门禁/SQL/文档及桌面窄屏查账验证，数据保留，未发布 | [任务](tasks/GG-071-site-operations.md) |
 | GG-070 | 模型卡片与右侧定价面板 | 本地完成并验证；卡片/右侧编辑/精简文案，门禁463/17、Chrome桌面窄屏与数据保留通过，未发布 | [任务](tasks/GG-070-model-cards.md) |
 | GG-069 | 定价整体折扣 | 本地完成并验证；全部规格/质量/费率批量折扣，门禁460/17、Chrome与数据保留通过，待站长检查，未发布 | [任务](tasks/GG-069-pricing-discount.md) |
@@ -96,5 +97,4 @@ GG-024—GG-071 已由任务占用（GG-047 为另一工作树的 agent 范围�
 | GG-900 | C6 自动账户删除/身份删除/举报与内容处理 | 站长明确要求并重审生产差异 | [保全与恢复](tasks/GG-900-deferred-c6.md) |
 | GG-901 | 完整 seed、外部删除条款、复杂监控/响应 | 扩大服务范围或风险需要，另行确认 | [ADR 0024](decisions/0024-controlled-alpha-before-full-seed-readiness.md) |
 | GG-902 | 收款/国内支付宝等商业化 | 站长重新确认且合规条件就绪 | [ADR 0010](decisions/0010-domestic-alipay-after-icp-with-manual-credit-operations.md) |
-
 不为未经提出的功能预先排期；发现缺陷可登记，不能伪称已获产品批准。

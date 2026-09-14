@@ -1,5 +1,11 @@
 # GG-063 quality pricing errors
 
+GG-072 has independent profile/works loading, empty, error and retry states.
+PROFILE_INVALID/PROFILE_AVATAR_INVALID preserve edits; PROFILE_HANDLE_TAKEN409
+asks for a different handle; PROFILE_CONFLICT409 offers reload before editing.
+Unauthenticated access uses the existing session-expired flow. Unexpected server
+errors return safe PROFILE_UNAVAILABLE503 without SQL/storage/provider details.
+
 GG-070 card summaries show unpriced/disabled and legacy-unit states explicitly.
 Existing save conflicts/errors preserve right-sheet fields; errors remain above
 the pinned save footer. Loading disables card mutation actions; cancel/Esc

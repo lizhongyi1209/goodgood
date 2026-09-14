@@ -2,6 +2,8 @@ import { lockReferenceLifecycle } from "./lifecycle-lock.mjs";
 
 const HAS_PERSISTED_REFERENCE = `
   (
+    EXISTS (SELECT 1 FROM personal_profiles profile WHERE profile.avatar_reference_id = ra.id)
+    OR
     EXISTS (
       SELECT 1
         FROM generation_batches batch

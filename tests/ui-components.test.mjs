@@ -130,7 +130,9 @@ test("declares the GoodGood visual and interaction invariants", async () => {
     accountCard.indexOf("<DropdownMenuContent"),
     accountCard.indexOf("</DropdownMenuContent>"),
   );
-  assert.match(accountTrigger, /className="account-card-username">\{accountEmail \?\? "GoodGood 用户"\}<\/strong>/);
+  assert.match(accountTrigger, /className="account-card-username">\{personalProfile\.profile\?\.version \? personalProfile\.profile\.displayName : accountEmail \?\? "GoodGood 用户"\}<\/strong>/);
+  assert.match(accountTrigger, /<ProfileAvatar[\s\S]*personalProfile\.profile\?\.avatarUrl/);
+  assert.match(accountMenu, /onSelect=\{handleProfileNav\}[\s\S]*个人资料/);
   assert.match(accountTrigger, /className="account-card-more"/);
   assert.doesNotMatch(accountTrigger, /accountIdentity|billingSummary|退出登录/);
   assert.match(accountMenu, /<span>身份<\/span>[\s\S]*<strong>\{accountIdentity\}<\/strong>/);

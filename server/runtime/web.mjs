@@ -1,6 +1,7 @@
 import path from "node:path";
 import { startProdServer } from "vinext/server/prod-server";
 import { createAssetNodeApiHandler } from "../assets/node-api.mjs";
+import { createProfileNodeApiHandler } from "../profile/node-api.mjs";
 import { createAdminNodeApiHandler } from "../admin/node-api.mjs";
 import { createBillingNodeApiHandler } from "../billing/node-api.mjs";
 import { loadAuthenticationConfig } from "../auth/config.mjs";
@@ -73,6 +74,7 @@ const handleAdminNodeApi = createAdminNodeApiHandler({ authenticate });
 const handleCreationDraftNodeApi = createCreationDraftNodeApiHandler({ authenticate });
 const handleDistributionNodeApi = createDistributionNodeApiHandler({ authenticate });
 const handleAssetNodeApi = createAssetNodeApiHandler({ authenticate });
+const handleProfileNodeApi = createProfileNodeApiHandler({ authenticate });
 const handleBillingNodeApi = createBillingNodeApiHandler({ authenticate });
 const handleReferenceNodeApi = createReferenceNodeApiHandler({ authenticate });
 const handleProjectNodeApi = createProjectNodeApiHandler({ authenticate });
@@ -115,6 +117,7 @@ server.on("request", (request, response) => {
     .then((handled) =>
       handled ? true : handleAssetNodeApi(request, response),
     )
+    .then((handled) => handled ? true : handleProfileNodeApi(request, response))
     .then((handled) =>
       handled ? true : handleOrganizationNodeApi(request, response),
     )

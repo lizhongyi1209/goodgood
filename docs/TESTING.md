@@ -1,5 +1,14 @@
 # GG-063 verification
 
+GG-072 targeted tests: profile validation/owner gates/read-only defaults,
+transaction/rollback/version/duplicate/foreign avatar cases, private HTTP action
+header and bounded JSON, route and rendered loading/error/empty/image states.
+Opt-in tests/gg072-profile-postgres.test.mjs requires named empty loopback DB
+goodgood_gg072_profile_test*, GOODGOOD_GG072_INTEGRATION=1 and
+GOODGOOD_GG072_NO_WORKER=1; verifies no peer connections before fixtures.
+Never put profile fixtures in a real-provider stack. Browser review covers
+menu/direct refresh, cancel/validation, detail return and responsive layout.
+
 GG-071 targeted tests cover owner/CSRF/auth gates, date/search/cursor validation,
 read states, exact large credit amounts, reservation versus settlement/refund,
 safe DTOs and owner shell routes. Optional SQL tests require loopback

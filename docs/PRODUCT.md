@@ -1,5 +1,10 @@
 # Product definition
 
+GG-072 adds a private personal profile: avatar, name, unique @handle and the
+user's accepted personal generated images. All works are visible to their owner
+automatically. No public profile, publication controls or friends in this slice;
+enterprise images are excluded. ADR 0075 defines this new scope.
+
 ## One sentence
 
 GoodGood is an image-first AI visual creation workspace for people who need to

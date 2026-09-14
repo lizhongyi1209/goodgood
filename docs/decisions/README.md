@@ -1,5 +1,7 @@
 # Decision records
 
+- `0075-private-personal-profile.md` — private own profile, unique handle, validated avatar and personal image works for GG-072.
+
 - `0074-site-operations-and-global-log.md` — owner daily operations and cross-user task/credit lookup for GG-071; read-only personal/enterprise ledgers, same-shell pages and right details.
 - `0073-model-cards-and-pricing-sheet.md` — compact model cards, default-line summaries and same-page right pricing sheet for GG-070.
 
