@@ -243,3 +243,5 @@ capabilities are part of the current production scope until implementation,
 verification, and a separate release approval complete.
 
 GG-077：灵感参数可见性为公开全部、仅隐藏提示词、隐藏参数和提示词。完全隐藏使用后端固定预设；大厅显示查看和使用统计，分别按打开详情和载入复刻配置计数，并非独立访客/生成成功数。
+
+GG-078：取消灵感大厅与详情的点赞入口，历史点赞数据保留。大厅查看/使用并排，仅显示图标与数字，保留无障碍名称。

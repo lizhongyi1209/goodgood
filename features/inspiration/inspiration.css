@@ -58,10 +58,6 @@
 .inspiration-title { font-size:14px; font-weight:550; text-align:left; overflow-wrap:anywhere; }
 .inspiration-card-meta { display:flex; gap:8px; align-items:center; justify-content:space-between; margin-top:6px; color:var(--muted); font-size:12px; }
 .inspiration-card-meta > span { min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
-.case-like { display:inline-flex; align-items:center; gap:6px; flex-shrink:0; border-radius:8px; padding:7px; font-size:12px; }
-.case-like:hover { background:var(--soft); }
-.case-like.is-liked { color:var(--accent); }
-.case-like.is-liked svg { fill:var(--accent); }
 .inspiration-state, .inspiration-empty { min-height:220px; display:flex; justify-content:center; align-items:center; gap:12px; color:var(--muted); font-size:14px; }
 .inspiration-empty { flex-direction:column; }
 .inspiration-empty p { margin:0; font-size:13px; text-align:center; }
@@ -136,5 +132,5 @@
  .case-detail-footer p { text-align:left; }
 }
 
-.case-statistics { display:flex;gap:16px;margin-top:10px;color:var(--muted-foreground);font-size:12px; }
+.case-statistics { display:flex;flex-shrink:0;gap:12px;color:var(--muted-foreground);font-size:12px; }
 .case-statistics span { display:inline-flex;align-items:center;gap:5px; }

@@ -1,20 +1,19 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-14
-- Current phase: GG-077 locally implemented and verified; not deployed.
-- Current objective: Private parameter visibility and deduplicated view/use statistics.
+- Current phase: GG-078 locally implemented and verified; not deployed.
+- Current objective: Compact inspiration statistics without like controls.
 - Previous objective: 用户在模型管理为 GPT 图片系列逐线路定价与启禁，保留原测试配置与历史。
 
 ## Current checkpoint
 
-- Task [GG-077](tasks/GG-077-inspiration-visibility-statistics.md), feature/GG-077-inspiration-visibility-statistics, F:/goodgood-worktrees/GG-077; verified main bab17fd + FF accepted GG076371b001.
-- ADR0078 accepted before code: public/prompt-only hidden/all hidden visibility; fixed private recipe and per-action deduplicated view/use counts. Old cases maintain prior visibility, counters start zero.
-- Complete local gate524 tests:502 pass,22 opt-in skips,0 failures; lint/typecheck/build passed. Targeted17/17 +6/6; GG077 SQL1/1 and GG074 regression1/1; docs15/15. Initial documentation-header failure corrected and full gate rerun passed.
-- Mock UI: three-mode preview, fixed composer without parameter DOM, blank supplement + own reference succeeds200→180 with one20-credit reserve/settle; actual4K/4:3 server-side and public job redacted; board1view/1use,390px no overflow. Temporary DB/5exact synthetic objects removed, no billable calls.
-- Original32141 GG077 Web73804/Worker45153, mock91616 retained; migration0038 only. JONY owner, all model/events and38historical tables/profile/case/likes/events/old checksums unchanged; original draft preserved. Chrome kept on inspiration board with0/0 initialized counts.
-- Production goodgood.o1key.com unchanged; staging-goodgood.o1key.com remains a historical name. No push/main merge/deployment.
-- Next action: Owner reviews the original local board/editor visibility and counters. Existing published-case editing is outside this slice; any production release needs a separately specified cumulative scope.
-- Blockers: None for local delivery; real provider and production verification are outside authorization.
+- Task [GG-078](tasks/GG-078-inspiration-card-statistics.md), fix/GG-078-inspiration-card-statistics, F:/goodgood-worktrees/GG-078; verified main bab17fd + FF accepted GG07746aa397.
+- ADR0078 refined before code: remove board/detail like controls; view/use icon numbers inline with author, no visible Chinese counter labels; accessible names retained. No backend/schema changes or historical like deletion.
+- Complete local gate524 tests:502 pass,22 opt-in skips,0 failures; lint/typecheck/build passed. Affected existing tests12/12. Original Chrome desktop/narrow390px: two counters share the same top, numbers only, zero like buttons, no overflow; viewport reset.
+- Original32141 GG078 Web89799; unchanged GG077 Worker45153 and mock91616 retained, JONY owner preserved. Read-only board QA, no detail/use/generation or database fixtures; model prices and historical data not modified.
+- Production goodgood.o1key.com unchanged; staging-goodgood.o1key.com remains historical. No push/main merge/deployment.
+- Next action: Owner reviews compact statistics on the local inspiration board. Next new request starts GG079; production release needs separately specified cumulative scope.
+- Blockers: None for local delivery; no production deployment authorized.
 
 ## Verification sequence
 
@@ -50,7 +49,7 @@
 
 ## New-session recovery
 
-1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-077` 与 GG-077 任务卡；按卡核对运行版本，不能仅看 URL。
+1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-078` 与 GG-078 任务卡；按卡核对运行版本，不能仅看 URL。
 2. 当前页面为 `http://127.0.0.1:32141/inspiration`，灵感板案例；个人资料和站长管理看板/总日志/模型/企业/账户/审计仍保留。仅独立 mock 栈。旧 `32140` 有真实 provider Worker，不运行 fixtures/outbox，不重置其数据。
 3. 本地 ignored `.gg052-local.mjs` 分别启动 web/worker/mock-generation；按本任务已记录的运行状态恢复，保留用户试价数据。正式生产与真实请求不在本次授权范围。
 4. 不恢复或 bulk merge 旧 C6；旧阶段具体验证见相应任务卡，GG-051 [研究记录](research/GG-051-credit-pricing-reassessment.md) 保留定价依据。

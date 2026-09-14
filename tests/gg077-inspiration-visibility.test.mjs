@@ -44,7 +44,7 @@ const {InspirationCards}=await vite.ssrLoadModule('/features/inspiration/inspira
 const {CreationComposer}=await vite.ssrLoadModule('/features/creation/creation-composer.tsx');
 test('GG077 cards expose view/use statistics without depending on opening details',()=>{
  const html=renderToStaticMarkup(React.createElement(InspirationCards,{items:[{id,title:'案例',after:{url:'https://fixture.invalid/after'},author:{displayName:'作者'},views:42,uses:7,likes:1}],onOpen(){},onLike(){},busy:[]}));
- assert.match(html,/42 查看/);assert.match(html,/7 使用/);assert.match(html,/点赞：案例/);
+ assert.match(html,/aria-label="查看次数：42"/);assert.match(html,/aria-label="使用次数：7"/);assert.doesNotMatch(html,/42 查看|7 使用|点赞|case-like/);
 });
 test('GG077 fully hidden composer retains optional prompt/reference/send but removes parameter controls from DOM',()=>{
  const no=()=>{};
