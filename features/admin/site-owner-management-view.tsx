@@ -14,13 +14,13 @@ import { JcoinManagementView } from '@/features/jcoin/jcoin-management-view';
 
 const tabs = [
   { id: "operations", label: "运营看板", icon: ChartNoAxesCombined, route: { kind: "admin", tab: "operations" } },
-  { id: "feedback", label: "问题反馈", icon: MessageSquare, route: { kind: "admin", tab: "feedback" } },
-  { id: "jcoin", label: "平台币", icon: Coins, route: { kind: "admin", tab: "jcoin" } },
+  { id: "users", label: "账户管理", icon: UsersRound, route: { kind: "admin", tab: "users" } },
+  { id: "logs", label: "总日志", icon: ListFilter, route: { kind: "admin", tab: "logs" } },
   { id: "organizations", label: "企业管理", icon: Building2, route: { kind: "organizations" } },
   { id: "models", label: "模型管理", icon: SlidersHorizontal, route: { kind: "admin", tab: "models" } },
-  { id: "users", label: "账户管理", icon: UsersRound, route: { kind: "admin", tab: "users" } },
+  { id: "feedback", label: "用户反馈", icon: MessageSquare, route: { kind: "admin", tab: "feedback" } },
+  { id: "jcoin", label: "平台币", icon: Coins, route: { kind: "admin", tab: "jcoin" } },
   { id: "audit", label: "审计日志", icon: ScrollText, route: { kind: "admin", tab: "audit" } },
-  { id: "logs", label: "总日志", icon: ListFilter, route: { kind: "admin", tab: "logs" } },
 ] as const satisfies readonly { id: string; label: string; icon: typeof Building2; route: WorkspaceRoute }[];
 
 export function SiteOwnerManagementView({ session, activeTab, children, onLogin, onManagementChange }: {
