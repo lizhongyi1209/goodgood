@@ -251,7 +251,8 @@ test("keeps authentication global, passwordless, and recoverable", async () => {
   assert.match(authenticationGate, /邮箱验证码登录/);
   assert.match(authenticationGate, /placeholder="请输入 6 位验证码"/);
   assert.match(authenticationGate, /发送验证码/);
-  assert.match(authenticationGate, /首次验证成功会自动注册/);
+  assert.match(authenticationGate, /新用户需邀请码注册/);
+  assert.match(authenticationGate, /aria-label="邀请码"/);
   assert.match(authenticationGate, /autoComplete="one-time-code"/);
   assert.match(authenticationGate, /disabled=\{!challenge \|\| busy !== null\}/);
   assert.match(authenticationGate, /\$\{resendRemaining\} 秒后重发/);

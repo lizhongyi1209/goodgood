@@ -1,5 +1,4 @@
 import { randomUUID } from "node:crypto";
-import { grantWelcomeCreditsInTransaction } from "../billing/repository.mjs";
 import {
   AuthenticationError,
   authenticationRequestError,
@@ -28,7 +27,7 @@ function activeOwnerContext(row, identity) {
   if (owner.accessStatus === "pending") {
     throw new AuthenticationError(
       "ACCOUNT_PENDING",
-      "账号正在等待审核，审核通过后即可开始创作。",
+      "账户尚未开通，请验证邮箱并填写邀请码。",
       403,
     );
   }
@@ -158,32 +157,7 @@ export async function provisionOwnerIdentity(pool, claims) {
         );
       }
 
-      const ownerId = randomUUID();
-      const identityId = randomUUID();
-      await client.query(
-        `INSERT INTO users (id, email, locale, status, account_tier)
-         VALUES ($1, $2, 'zh-CN', 'pending', 'seed')`,
-        [ownerId, claims.email],
-      );
-      await client.query(
-        `INSERT INTO auth_identities
-          (id, owner_id, issuer, subject, last_authenticated_at)
-         VALUES ($1, $2, $3, $4, now())`,
-        [identityId, ownerId, claims.issuer, claims.subject],
-      );
-      await grantWelcomeCreditsInTransaction(client, { ownerId });
-      row = {
-        email: claims.email,
-        identity_id: identityId,
-        locale: "zh-CN",
-        owner_id: ownerId,
-        account_tier: "seed",
-        available_balance: 200,
-        business_role: null,
-        reserved_balance: 0,
-        is_site_owner: false,
-        status: "pending",
-      };
+      throw new AuthenticationError("INVITATION_REQUIRED", "新账户请使用邮箱验证码和邀请码注册。", 403);
     } else {
       await client.query(
         `UPDATE auth_identities

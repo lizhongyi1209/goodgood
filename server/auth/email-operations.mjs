@@ -59,7 +59,7 @@ function randomCode() {
 function headerValue(headers, name) {
   if (typeof headers?.get === "function") return headers.get(name);
   const value = headers?.[name] ?? headers?.[name.toLowerCase()];
-  return Array.isArray(value) ? value[0] : value ?? null;
+  return Array.isArray(value) ? value[0] : (value ?? null);
 }
 
 function assertSameOrigin(request, config) {
@@ -75,7 +75,9 @@ function assertSameOrigin(request, config) {
 function requireChallengeId(value) {
   if (
     typeof value !== "string" ||
-    !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(value)
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(
+      value,
+    )
   ) {
     throw emailCodeInvalidError();
   }
@@ -112,7 +114,8 @@ async function enforceRateLimits(repository, pool, config, now, limits) {
 
 function browserBinding(request, config) {
   const existing = authenticationLoginCredential(request, config);
-  if (existing && existing.length >= 32 && existing.length <= 512) return existing;
+  if (existing && existing.length >= 32 && existing.length <= 512)
+    return existing;
   return randomSecret();
 }
 
@@ -124,7 +127,9 @@ export function createEmailOtpOperations({
   repository = DEFAULT_REPOSITORY,
 }) {
   if (config.mode !== "email_otp" || typeof getPool !== "function") {
-    throw new Error("Email OTP operations require email_otp configuration and a pool.");
+    throw new Error(
+      "Email OTP operations require email_otp configuration and a pool.",
+    );
   }
 
   return Object.freeze({
@@ -138,10 +143,13 @@ export function createEmailOtpOperations({
         return Object.freeze({ challenge: null });
       }
       const currentTime = now();
-      const challenge = await repository.readCurrentEmailChallenge(await getPool(), {
-        browserBindingHash: hashAuthenticationSecret(binding),
-        now: currentTime,
-      });
+      const challenge = await repository.readCurrentEmailChallenge(
+        await getPool(),
+        {
+          browserBindingHash: hashAuthenticationSecret(binding),
+          now: currentTime,
+        },
+      );
       if (!challenge) return Object.freeze({ challenge: null });
       return Object.freeze({
         challenge: Object.freeze({
@@ -236,9 +244,8 @@ export function createEmailOtpOperations({
           subjectHash,
         });
       } catch (error) {
-        delivery = error instanceof EmailDeliveryError
-          ? error.deliveryState
-          : "unknown";
+        delivery =
+          error instanceof EmailDeliveryError ? error.deliveryState : "unknown";
         await repository.updateEmailChallengeDelivery(pool, {
           challengeId: id,
           errorCode:
@@ -288,11 +295,14 @@ export function createEmailOtpOperations({
         { scope: "ip_entry_minute", subject: clientAddress },
         { scope: "ip_verify_15m", subject: clientAddress },
       ]);
-      const challenge = await repository.readEmailChallengeForVerification(pool, {
-        browserBindingHash: hashAuthenticationSecret(binding),
-        challengeId,
-        now: currentTime,
-      });
+      const challenge = await repository.readEmailChallengeForVerification(
+        pool,
+        {
+          browserBindingHash: hashAuthenticationSecret(binding),
+          challengeId,
+          now: currentTime,
+        },
+      );
       if (!challenge) throw emailCodeInvalidError();
       await enforceRateLimits(repository, pool, config, currentTime, [
         { scope: "email_verify_30m", subject: challenge.normalized_email },
@@ -310,6 +320,7 @@ export function createEmailOtpOperations({
           browserBindingHash: hashAuthenticationSecret(binding),
           challengeId,
           issuer: config.issuer,
+          invitationCode: input?.invitationCode,
           now: currentTime,
           registrationEnabled: config.registrationEnabled,
           requestId: requestIdFor(request),
@@ -332,6 +343,20 @@ export function createEmailOtpOperations({
         },
       );
       if (result.outcome === "invalid") throw emailCodeInvalidError();
+      if (
+        result.outcome === "invitation_required" ||
+        result.outcome === "invitation_invalid"
+      ) {
+        throw new AuthenticationError(
+          result.outcome === "invitation_required"
+            ? "INVITATION_REQUIRED"
+            : "INVITATION_INVALID",
+          result.outcome === "invitation_required"
+            ? "请填写有效邀请码，验证邮箱后即可开通账户。"
+            : "邀请码无效、已停用或已使用，请检查后重试。",
+          403,
+        );
+      }
       if (result.outcome === "registration_closed") {
         throw new AuthenticationError(
           "EMAIL_REGISTRATION_CLOSED",

@@ -1,5 +1,7 @@
 # Development and deployment
 
+GG-090为本地候选，仅新增0042邀请码空表供原32141站长验收并替换Web；无需Worker变更，不切换原local认证或发送真实邮件。真实邮件注册UI通过命名隔离Mailpit/无Worker栈验收。生产需单独授权迁移0042并采用email_otp配置；历史OIDC不能新注册，既有绑定可登录。不得旧脚本批量激活/重置旧账户。
+
 GG-074 is local only. Scoped migration0037 preserves old case content/defaults,
 prices, profiles and financial history; apply before GG074 Web/Worker because the
 Worker reads the private prompt table. Never replay/reset old migration checksums.

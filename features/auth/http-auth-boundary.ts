@@ -134,9 +134,10 @@ export async function requestEmailAuthenticationCode(
 export async function verifyEmailAuthenticationCode(
   challengeId: string,
   code: string,
+  invitationCode?: string,
 ): Promise<string> {
   const response = await fetch("/api/auth/email/verify", {
-    body: JSON.stringify({ challengeId, code }),
+    body: JSON.stringify({ challengeId, code, ...(invitationCode !== undefined ? {invitationCode} : {}) }),
     headers: { "content-type": "application/json" },
     method: "POST",
   });
@@ -178,7 +179,7 @@ export function authenticationErrorMessage(code: string | null) {
   if (code === "ACCOUNT_LINK_REQUIRED") {
     return "该邮箱已有登录身份，请先在登录页完成账号关联。";
   }
-  if (code === "ACCOUNT_PENDING") return "账号正在等待审核，审核通过后即可开始创作。";
+  if (code === "ACCOUNT_PENDING") return "账户尚未开通，请验证邮箱并填写邀请码。";
   if (code === "ACCOUNT_SUSPENDED") return "账号已暂停使用，请联系站长。";
   return "登录没有完成，请重新使用邮箱验证码登录。";
 }

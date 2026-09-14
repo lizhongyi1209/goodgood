@@ -131,3 +131,5 @@ ADR 0053 adds standalone-delimited concurrent prompt batches for GG-040.
 - `0068-gpt-image-provider-lines.md` ? GPT image three-line routing, independent pricing and preserved legacy accepted routes for GG-062.
 
 - `0078-inspiration-visibility-and-statistics.md` — three visibility modes, fixed private parameters and durable deduplicated case statistics for GG-077.
+
+- `0086-invitation-email-registration.md` — 邮箱与邀请码共同注册，替代新账户待审核入口。

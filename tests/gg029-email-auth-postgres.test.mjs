@@ -1,3 +1,5 @@
+import {randomUUID,randomBytes} from "node:crypto";
+import {invitationDigest} from "../server/auth/invitations.mjs";
 import assert from "node:assert/strict";
 import test from "node:test";
 import pg from "pg";
@@ -64,6 +66,9 @@ test(
     });
 
     try {
+      const inviterId=randomUUID(),invitationCode='GG-'+randomBytes(18).toString('base64url');
+      await pool.query("INSERT INTO users(id,email,status) VALUES($1,'inviter@example.invalid','active')",[inviterId]);
+      await pool.query("INSERT INTO registration_invitations(id,code_digest,code_hint,created_by,idempotency_key) VALUES($1,$2,$3,$4,'gg029-registration')",[randomUUID(),invitationDigest(invitationCode),invitationCode.slice(-6),inviterId]);
       const issued = await operations.requestCode(
         { email: "alpha.creator@example.com", returnTo: "/create" },
         request(),
@@ -95,7 +100,7 @@ test(
 
       await assert.rejects(
         operations.verifyCode(
-          { challengeId: issued.body.challengeId, code: delivered[0].code },
+          { challengeId: issued.body.challengeId, code: delivered[0].code, invitationCode },
           request("goodgood_email_session_login=another-browser-binding-value-123456"),
         ),
         (error) => error.code === "EMAIL_CODE_INVALID",
@@ -103,11 +108,11 @@ test(
 
       const attempts = await Promise.allSettled([
         operations.verifyCode(
-          { challengeId: issued.body.challengeId, code: delivered[0].code },
+          { challengeId: issued.body.challengeId, code: delivered[0].code, invitationCode },
           request(`goodgood_email_session_login=${binding}`),
         ),
         operations.verifyCode(
-          { challengeId: issued.body.challengeId, code: delivered[0].code },
+          { challengeId: issued.body.challengeId, code: delivered[0].code, invitationCode },
           request(`goodgood_email_session_login=${binding}`),
         ),
       ]);
@@ -116,7 +121,7 @@ test(
 
       const [users, identities, bindings, sessions, accounts, events] =
         await Promise.all([
-          pool.query("SELECT id, email, status FROM users"),
+          pool.query("SELECT id, email, status FROM users WHERE email='alpha.creator@example.com'"),
           pool.query("SELECT issuer, subject FROM auth_identities"),
           pool.query("SELECT normalized_email, source FROM auth_email_bindings"),
           pool.query("SELECT revoked_at FROM auth_sessions"),
@@ -124,7 +129,7 @@ test(
           pool.query("SELECT event_type, outcome FROM auth_events ORDER BY created_at"),
         ]);
       assert.equal(users.rowCount, 1);
-      assert.equal(users.rows[0].status, "pending");
+      assert.equal(users.rows[0].status, "active");
       assert.equal(identities.rows[0].issuer, "urn:goodgood:email");
       assert.match(identities.rows[0].subject, /^[0-9a-f-]{36}$/);
       assert.deepEqual(bindings.rows[0], {
@@ -132,7 +137,7 @@ test(
         source: "self_service",
       });
       assert.equal(sessions.rowCount, 1);
-      assert.equal(accounts.rows[0].available_balance, "100");
+      assert.equal(accounts.rows[0].available_balance, "200");
       assert.equal(accounts.rows[0].reserved_balance, "0");
       assert.ok(events.rows.some(({ event_type, outcome }) =>
         event_type === "email_code_verified" && outcome === "succeeded"));
@@ -156,7 +161,7 @@ test(
       );
       assert.deepEqual(repeated.rows[0], {
         bindings: 1,
-        users: 1,
+        users: 2,
         welcome_grants: 1,
       });
     } finally {

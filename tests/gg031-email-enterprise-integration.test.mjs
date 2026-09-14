@@ -1,3 +1,4 @@
+import {manageInvitations} from "../server/auth/invitations.mjs";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
@@ -160,8 +161,9 @@ test(
         issued.cookie,
       )?.[1];
       assert.ok(loginBinding);
+      const registrationCode=await manageInvitations({action:'create',ownerContext:{ownerId:siteOwnerId,systemRole:'site_owner',accessStatus:'active'},idempotencyKey:'gg031-registration',resources:{pool}});
       const verified = await authentication.verifyCode(
-        { challengeId: issued.body.challengeId, code: delivered[0].code },
+        { challengeId: issued.body.challengeId, code: delivered[0].code,invitationCode:registrationCode.code },
         authenticationRequest(`goodgood_gg031_session_login=${loginBinding}`),
       );
       assert.equal(verified.body.returnTo, returnTo);
@@ -173,7 +175,9 @@ test(
           WHERE b.normalized_email = 'employee@xn--bcher-kva.example'`,
       );
       const employeeId = employee.rows[0].id;
-      assert.equal(employee.rows[0].status, "pending");
+      assert.equal(employee.rows[0].status, "active");
+      // Preserve the existing legacy-pending capability/recovery assertions below.
+      await pool.query("UPDATE users SET status='pending' WHERE id=$1",[employeeId]);
       assert.equal(employee.rows[0].display_email, "Employee@bücher.example");
       assert.deepEqual(
         await listPendingOrganizationInvitations(pool, employeeId),

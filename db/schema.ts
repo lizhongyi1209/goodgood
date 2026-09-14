@@ -2455,3 +2455,31 @@ export const feedbackImages=pgTable('feedback_images',{
 export const feedbackEvents=pgTable('feedback_events',{
  id:uuid('id').primaryKey(),ticketId:uuid('ticket_id').notNull().references(()=>feedbackTickets.id),actorOwnerId:uuid('actor_owner_id').notNull().references(()=>users.id),message:text('message'),status:text('status').notNull(),requestKey:text('request_key').notNull(),fingerprint:text('fingerprint').notNull(),createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),
 },t=>[unique('feedback_events_actor_owner_id_request_key_key').on(t.actorOwnerId,t.requestKey),index('feedback_event_ticket_idx').on(t.ticketId,t.createdAt,t.id),check('feedback_event_status',sql`${t.status} in ('open','processing','resolved','closed')`),check('feedback_event_message',sql`${t.message} is null or char_length(${t.message}) between 1 and 4000`)]);
+
+export const registrationInvitations = pgTable(
+  "registration_invitations",
+  {
+    id: uuid("id").primaryKey(),
+    codeDigest: text("code_digest").notNull().unique(),
+    codeHint: text("code_hint").notNull(),
+    createdBy: uuid("created_by").notNull().references(() => users.id),
+    idempotencyKey: text("idempotency_key").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    revokedBy: uuid("revoked_by").references(() => users.id),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    usedBy: uuid("used_by").unique().references(() => users.id),
+    // Independent audit identifier: verification challenges have a shorter lifetime.
+    challengeId: uuid("challenge_id").unique(),
+  },
+  (table) => [
+    unique("registration_invitations_actor_key").on(table.createdBy, table.idempotencyKey),
+    index("registration_invitations_created_idx").on(table.createdAt.desc(), table.id.desc()),
+    check("registration_invitations_digest", sql`${table.codeDigest} ~ '^[0-9a-f]{64}$'`),
+    check("registration_invitations_hint", sql`char_length(${table.codeHint}) = 6`),
+    check("registration_invitations_key", sql`char_length(${table.idempotencyKey}) between 8 and 200`),
+    check("registration_invitations_use", sql`(${table.usedAt} is null and ${table.usedBy} is null and ${table.challengeId} is null) or (${table.usedAt} is not null and ${table.usedBy} is not null and ${table.challengeId} is not null)`),
+    check("registration_invitations_state", sql`${table.revokedAt} is null or ${table.usedAt} is null`),
+    check("registration_invitations_revocation", sql`(${table.revokedAt} is null) = (${table.revokedBy} is null)`),
+  ],
+);

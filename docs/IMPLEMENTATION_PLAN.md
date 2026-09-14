@@ -1,23 +1,23 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-14
-- Current phase: GG-089 site-owner navigation reordered; verified; original local preview updated; not deployed.
-- Current objective: 接续7470c35/a73835f，按用户指定8项顺序整理站长功能栏。
+- Current phase: GG-090 invitation registration implementation; not deployed.
+- Current objective: 接续e60d192/a73835f，以有效邮件码及单人邀请码原子注册active账户，替代审核入口。
 - Previous objective: GG082最小发行讨论；GG081积分类型/充值登记/运营与并发本地实现验证保留。
 
 ## Current checkpoint
 
-- Task [GG-089](tasks/GG-089-admin-navigation-order.md)，fix/GG-089-admin-navigation-order，F:/goodgood-worktrees/GG-089；基线7470c35保留a73835f及反馈/下拉修复。
-- 仅共享站长tabs重排为运营看板/账户管理/总日志/企业管理/模型管理/用户反馈/平台币/审计日志；原路由、权限与默认入口不变，无新ADR。
-- 原32141 Web31816已更新为GG089候选60a6d86；Worker30432/32142、provider9048/32143及所有数据保留。
-- 验证：现有导航/登录/文档19/19，check:local为522通过/25显式写测试跳过，lint/typecheck/build通过；Chrome桌面顺序/href/用户反馈选中与390px自然换行顺序通过。
-- Next action: 用户刷新32141/admin/operations验收，下一普通任务GG090。
-- Blockers: 无；生产部署、数据库写入和真实provider请求均不在此范围。
+- Task [GG-090](tasks/GG-090-invitation-registration.md)：feature/GG-090-invitation-registration；F:/goodgood-worktrees/GG-090；基线e60d192保留a73835f及GG089。
+- [ADR0086](decisions/0086-invitation-email-registration.md)：双码注册active、站长单人码/停用；旧pending新验证补码开通，暂停不恢复。
+- 本地实现/隔离邮件UI与GG090/GG029/GG031 SQL已通过；最终check:local 525/26通过，文档8/8。已仅新增0042，原表全部内容/行数及旧迁移校验和保持。
+- 原32141 Web31816待替换；mock Worker30432/32142、provider9048/32143保持。QA32190无Worker，仅命名测试数据/本地Mailpit，验证后清理。
+- Next action: 门禁后提交、更新原Web并只读核对，再清理QA并留下32141验收入口；不发真实邮件或生成。
+- Blockers: 无；生产部署或真实provider请求不在此范围。
 - 正式入口https://goodgood.o1key.com不变；staging-goodgood.o1key.com为历史名称。
 
 ## Verification sequence
 
-1. 本片已完成反馈边界/权限/幂等/恢复、命名无Worker隔离SQL及Chrome桌面/390px验收。
+1. 本片已完成双码注册/权限/并发/回滚/恢复、命名无Worker隔离SQL及Chrome桌面/390px验收。
 2. 后续实现先定向验证资格、幂等、库存、退款与起算边界；SQL写测试仅显式命名、无Worker可丢弃数据库。
 3. 代码稳定后一次npm run check:local，更新任务/文档；生产事实以CURRENT_STATE为准。
 
@@ -59,7 +59,7 @@
 
 ## New-session recovery
 
-1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，进入 `F:/goodgood-worktrees/GG-089`，读GG089与features/admin/site-owner-management-view.tsx及GG088/GG087，原32141为GG089 start-review.mjs（PID31816），核验3f23285/a73835f祖先；继续当前代码/验证，不退旧版本。
+1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，进入 `F:/goodgood-worktrees/GG-090`，读GG090/ADR0086与server/auth/email-repository.mjs及邀请码服务，原32141为GG089 start-review.mjs（PID31816），核验3f23285/a73835f祖先；继续当前代码/验证，不退旧版本。
 2. 根 `F:/goodgood` 仍为旧 GG-024；GG-079 是原累计候选，main 也不能代替 a73835f。`.codex/` 与未跟踪用户文件保持原样；不用旧检查点退回历史版本。
 3. GG081的32181模拟检查已停止/临时页面移除，不依赖聊天句柄。后续恢复先核验版本/端口及独立mock目标；GG079/GG077 helpers与依赖54449/56449/58049见原交接。六个命名测试库已清理；禁止对原预览fixture/重置，旧32140曾有真实Worker，不操作。
 4. 不恢复或 bulk merge 旧 C6；旧阶段具体验证见相应任务卡，GG-051 [研究记录](research/GG-051-credit-pricing-reassessment.md) 保留定价依据。

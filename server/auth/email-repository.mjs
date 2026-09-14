@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { grantWelcomeCreditsInTransaction } from "../billing/repository.mjs";
 import { AuthenticationError } from "./errors.mjs";
+import { invitationDigest } from "./invitations.mjs";
 import { EMAIL_OTP_MAX_FAILURES } from "./email-policy.mjs";
 
 async function inTransaction(pool, operation) {
@@ -55,13 +56,17 @@ export async function consumeAuthenticationRateLimit(pool, input) {
       [input.scope, input.subjectHash, input.now, input.windowSeconds],
     );
     if (total.rows[0].request_count >= input.limit) {
-      const oldestRequestAt = new Date(total.rows[0].oldest_request_at).getTime();
+      const oldestRequestAt = new Date(
+        total.rows[0].oldest_request_at,
+      ).getTime();
       return Object.freeze({
         allowed: false,
         retryAfterSeconds: Math.max(
           1,
           Math.ceil(
-            (oldestRequestAt + input.windowSeconds * 1_000 - input.now.getTime()) /
+            (oldestRequestAt +
+              input.windowSeconds * 1_000 -
+              input.now.getTime()) /
               1_000,
           ),
         ),
@@ -162,7 +167,9 @@ export async function updateEmailChallengeDelivery(pool, delivery) {
     if (!updated.rowCount) return false;
     await recordEvent(client, {
       challengeId: delivery.challengeId,
-      detail: delivery.errorCode ? { deliveryErrorCode: delivery.errorCode } : {},
+      detail: delivery.errorCode
+        ? { deliveryErrorCode: delivery.errorCode }
+        : {},
       eventType: "email_code_requested",
       outcome: delivery.state,
       providerMessageId: delivery.providerMessageId,
@@ -200,7 +207,12 @@ export async function readEmailChallengeForVerification(pool, input) {
         AND failed_attempts < $4
         AND send_state <> 'failed'
       LIMIT 1`,
-    [input.challengeId, input.browserBindingHash, input.now, EMAIL_OTP_MAX_FAILURES],
+    [
+      input.challengeId,
+      input.browserBindingHash,
+      input.now,
+      EMAIL_OTP_MAX_FAILURES,
+    ],
   );
   return result.rows[0] ?? null;
 }
@@ -230,7 +242,7 @@ async function createEmailOwner(client, challenge, issuer) {
   const subject = randomUUID();
   await client.query(
     `INSERT INTO users (id, email, locale, status, account_tier)
-     VALUES ($1, $2, 'zh-CN', 'pending', 'seed')`,
+     VALUES ($1, $2, 'zh-CN', 'active', 'seed')`,
     [ownerId, challenge.display_email],
   );
   await client.query(
@@ -322,6 +334,42 @@ export async function completeEmailChallenge(
       );
       return Object.freeze({ outcome: "registration_closed" });
     }
+    let invitation = null;
+    let pendingOwner = false;
+    if (identity) {
+      const owner = await client.query(
+        "SELECT status FROM users WHERE id=$1 FOR UPDATE",
+        [identity.owner_id],
+      );
+      pendingOwner = owner.rows[0]?.status === "pending";
+    }
+    if (!identity || pendingOwner) {
+      if (!input.invitationCode)
+        return Object.freeze({ outcome: "invitation_required" });
+      const digest = invitationDigest(input.invitationCode);
+      const match = digest
+        ? await client.query(
+            "SELECT id FROM registration_invitations WHERE code_digest=$1 AND revoked_at IS NULL AND used_at IS NULL FOR UPDATE",
+            [digest],
+          )
+        : { rows: [] };
+      invitation = match.rows[0];
+      if (!invitation) {
+        await client.query(
+          "UPDATE auth_email_challenges SET failed_attempts=failed_attempts+1, invalidated_at=CASE WHEN failed_attempts+1 >= $3 THEN $2 ELSE invalidated_at END, updated_at=$2 WHERE id=$1",
+          [input.challengeId, input.now, EMAIL_OTP_MAX_FAILURES],
+        );
+        await recordEvent(client, {
+          eventType: "email_code_rejected",
+          outcome: "rejected",
+          challengeId: input.challengeId,
+          requestId: input.requestId,
+          subjectHash: input.subjectHash,
+          detail: { reason: "invitation_invalid" },
+        });
+        return Object.freeze({ outcome: "invitation_invalid" });
+      }
+    }
     if (!identity) {
       identity = await createEmailOwner(
         client,
@@ -346,6 +394,18 @@ export async function completeEmailChallenge(
       );
     }
 
+    if (invitation) {
+      if (pendingOwner)
+        await client.query(
+          "UPDATE users SET status='active',updated_at=$2 WHERE id=$1 AND status='pending'",
+          [identity.owner_id, input.now],
+        );
+      await client.query(
+        "UPDATE registration_invitations SET used_at=$2,used_by=$3,challenge_id=$4 WHERE id=$1",
+        [invitation.id, input.now, identity.owner_id, input.challengeId],
+      );
+    }
+
     const sessionId = randomUUID();
     const session = await client.query(
       `INSERT INTO auth_sessions
@@ -364,7 +424,9 @@ export async function completeEmailChallenge(
       ],
     );
     if (session.rowCount !== 1) {
-      throw new Error("The verified email identity no longer belongs to its owner.");
+      throw new Error(
+        "The verified email identity no longer belongs to its owner.",
+      );
     }
     await client.query(
       `UPDATE auth_email_challenges

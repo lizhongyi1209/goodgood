@@ -36,8 +36,8 @@ test("M8 account migration keeps exactly pending, active, and suspended access s
   assert.match(migration, /CREATE TABLE IF NOT EXISTS administrative_actions/);
   assert.match(migration, /administrative_actions_append_only/);
   assert.match(schema, /default\("pending"\)/);
-  assert.match(authRepository, /VALUES \(\$1, \$2, 'zh-CN', 'pending', 'seed'\)/);
-  assert.match(authRepository, /grantWelcomeCreditsInTransaction/);
+  assert.match(authRepository, /INVITATION_REQUIRED/);
+  assert.doesNotMatch(authRepository, /INSERT INTO users/);
 });
 
 test("production migration removes legacy local owners and local seeding is explicit", async () => {

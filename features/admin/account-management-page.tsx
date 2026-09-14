@@ -1,4 +1,5 @@
 "use client";
+import {InvitationManagement} from "./invitation-management";
 
 import { AdminManagementHeader } from "./admin-management-header";
 import {
@@ -376,7 +377,7 @@ export function AccountManagementPage({ workspaceSession, embedded = false, onMa
       <div className={embedded ? "admin-management-content" : "mx-auto max-w-[1500px] px-5 py-8 lg:px-8 lg:py-10"}>
         <div>
           <h1 className="text-xl font-semibold tracking-tight">账户管理</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-500">审核登录账户、管理企业/分销身份与直属关系，并按实际类型增加积分。</p>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-500">管理邀请码、账户状态、企业/分销身份与直属关系，并按实际类型增加积分。</p>
         </div>
 
         <section className="mt-8 rounded-3xl border border-zinc-200">
@@ -389,6 +390,7 @@ export function AccountManagementPage({ workspaceSession, embedded = false, onMa
               <Button type="submit" variant="ghost">搜索</Button>
             </form>
             <div className="flex items-center gap-2">
+              <InvitationManagement/>
               <Select value={status} onValueChange={(value) => setStatus(value as ManagedAccountStatus | "all")}>
                 <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
                 <SelectContent

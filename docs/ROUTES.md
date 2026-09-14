@@ -1,5 +1,7 @@
 # Navigation and route contract
 
+GG-090现有POST /api/auth/email/verify新增可选invitationCode；新邮箱/旧pending必填有效码，active/suspended现有账户无需码登录。新增POST /api/admin/invitations/query|create|revoke，活动站长、x-goodgood-admin-action=1、no-store、2KiB请求上限，create必需8—200字符Idempotency-Key；revoke输入id。入口位于账户管理，无新增站长一级标签。
+
 GG-089站长功能栏按运营看板 → 账户管理 → 总日志 → 企业管理 → 模型管理 → 用户反馈 → 平台币 → 审计日志排列；共享桌面/手机顺序。用户反馈仍指向/admin/feedback，个人侧栏仍为问题反馈，默认入口运营看板。
 
 GG-087 /feedback个人页、/admin/feedback站长页保持同工作区。GET /api/feedback只返回自己的每20条游标列表；POST multipart及x-goodgood-feedback-action=1/Idempotency-Key创建；GET /:id详情、/:id/images/:position受所有者或活动站长保护。站长POST /api/admin/feedback列表、GET /:id详情、POST /:id/reply版本化状态/回复都需x-goodgood-admin-action=1，回复另需幂等键。

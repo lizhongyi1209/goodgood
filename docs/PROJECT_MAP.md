@@ -1,5 +1,7 @@
 # Project map
 
+GG-090邀请码后端为server/auth/invitations.mjs/invitation-http.mjs/invitation-route.ts，邮箱完成事务继续server/auth/email-repository.mjs；管理UI为features/admin/invitation-management.tsx嵌入账户管理，注册/开通在features/auth，不扩展app/page.tsx。
+
 GG-087问题反馈领域放在features/feedback和server/feedback，shared/contracts/feedback区分领域值和中文标签；app/page仅接导航/页面，反馈图片保持独立私有存储。
 
 ## Current implementation

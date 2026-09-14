@@ -1,5 +1,7 @@
 # GG-063 quality pricing
 
+GG-090迁移0042新增registration_invitations，id、随机高熵码SHA256摘要唯一、末6位提示、created_by、幂等键、created_at、revoked_at/revoked_by、used_at/used_by/challenge_id；challenge_id为独立审计标识、不阻止短期邮件挑战清理；每码单人，owner/challenge唯一，使用字段整体非空且不可同时停用。旧用户/状态/账本/迁移校验不改，users历史默认pending保留用于旧兼容；仅邮箱双码注册显式active。
+
 GG-087迁移0041新增feedback_tickets、feedback_images、feedback_events；票据用户/操作键唯一，0—5张附件通过位置1—5主键约束，私有对象键唯一。回复/状态事件追加且UPDATE/DELETE触发器拒绝；version保护站长并发。原用户/积分/任务/资产/JCOIN数据不改，迁移不种反馈。
 
 GG-084迁移0040增加jcoin_treasury、jcoin_batches、jcoin_accounts、jcoin_source_events、jcoin_ledger_entries、jcoin_administrative_actions。bigint atoms为1e-8 JCOIN；前端金额用精确十进制字符串，不能用Number累计。初始总库存1亿/用户池5000万、分配一期100万且草稿、每有效当前积分2000000 atoms，起算2026-09-17T16:00:00Z；不种用户奖励。账户balance=earned-reversed，库存与批次issued保留累计发行量，recovered独立记录且不退额度。来源credit ledger ID唯一，奖励/撤回流水与管理动作不可变，退款指向原实际奖励且唯一。所有衍生写入同事务；不改原积分/订单数据或执行历史转换。资格要求正式manual订单与grant、用户、单位、金额、支付时间一致；历史credit_transfers沿上游核对，混合测试或缺证据不发。

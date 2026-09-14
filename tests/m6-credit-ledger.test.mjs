@@ -276,7 +276,8 @@ test("M6 migration and schema define immutable prices and append-only ledger lin
   assert.match(migration, /'\{"campaign":"welcome-v1","images":10\}'/);
   assert.match(repository, /FOR UPDATE/);
   assert.match(repository, /INSUFFICIENT_POINTS/);
-  assert.match(authenticationRepository, /grantWelcomeCreditsInTransaction/);
+  assert.match(authenticationRepository, /INVITATION_REQUIRED/);
+  assert.match(await readFile(new URL("../server/auth/email-repository.mjs", import.meta.url), "utf8"), /grantWelcomeCreditsInTransaction/);
   assert.match(generationRepository, /generation-reserve:/);
   assert.match(generationRepository, /generation-settle:/);
   assert.match(generationRepository, /customer_release_submission_unknown/);
@@ -429,26 +430,14 @@ test(
       issuer: "https://m6-auth.goodgood.invalid/oidc",
       subject: `m6-subject-${suffix}`,
     };
+    await assert.rejects(provisionOwnerIdentity(pool, welcomeClaims), error => error.code === "INVITATION_REQUIRED");
+    // The billing scenario uses an explicit legacy 100-unit fixture; new registration
+    // and its current welcome grant are covered by the isolated invitation test.
+    const fixtureOwnerId = randomUUID();
+    await pool.query("INSERT INTO users (id, email, status) VALUES ($1, $2, 'active')", [fixtureOwnerId, welcomeClaims.email]);
+    await pool.query("INSERT INTO auth_identities (id, owner_id, issuer, subject) VALUES ($1, $2, $3, $4)", [randomUUID(), fixtureOwnerId, welcomeClaims.issuer, welcomeClaims.subject]);
     const welcomeOwner = await provisionOwnerIdentity(pool, welcomeClaims);
-    const repeatedWelcomeOwner = await provisionOwnerIdentity(pool, welcomeClaims);
-    assert.equal(repeatedWelcomeOwner.ownerId, welcomeOwner.ownerId);
-    const welcomeEvidence = await pool.query(
-      `SELECT a.available_balance, a.reserved_balance,
-              count(l.id)::int AS grant_count,
-              min(l.amount) AS grant_amount
-         FROM credit_accounts a
-         JOIN credit_ledger_entries l ON l.account_id = a.id
-        WHERE a.owner_id = $1
-          AND l.idempotency_key = $2
-        GROUP BY a.id`,
-      [welcomeOwner.ownerId, `welcome-grant:v1:${welcomeOwner.ownerId}`],
-    );
-    assert.deepEqual(welcomeEvidence.rows[0], {
-      available_balance: "100",
-      grant_amount: "100",
-      grant_count: 1,
-      reserved_balance: "0",
-    });
+    await grantCredits(pool, { amount: 100n, idempotencyKey: `welcome-grant:v1:${fixtureOwnerId}`, ownerId: fixtureOwnerId, reason: "welcome_grant_v1" });
 
     const generationInput = {
       aspectRatio: "1:1",
