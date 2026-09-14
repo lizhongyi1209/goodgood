@@ -1,19 +1,19 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-14
-- Current phase: GG-078 locally implemented and verified; not deployed.
-- Current objective: Compact inspiration statistics without like controls.
+- Current phase: GG-079 implemented and locally verified; not deployed.
+- Current objective: Restore inspiration likes and center detail comparisons.
 - Previous objective: 用户在模型管理为 GPT 图片系列逐线路定价与启禁，保留原测试配置与历史。
 
 ## Current checkpoint
 
-- Task [GG-078](tasks/GG-078-inspiration-card-statistics.md), fix/GG-078-inspiration-card-statistics, F:/goodgood-worktrees/GG-078; verified main bab17fd + FF accepted GG07746aa397.
-- ADR0078 refined before code: remove board/detail like controls; view/use icon numbers inline with author, no visible Chinese counter labels; accessible names retained. No backend/schema changes or historical like deletion.
-- Complete local gate524 tests:502 pass,22 opt-in skips,0 failures; lint/typecheck/build passed. Affected existing tests12/12. Original Chrome desktop/narrow390px: two counters share the same top, numbers only, zero like buttons, no overflow; viewport reset.
-- Original32141 GG078 Web89799; unchanged GG077 Worker45153 and mock91616 retained, JONY owner preserved. Read-only board QA, no detail/use/generation or database fixtures; model prices and historical data not modified.
-- Production goodgood.o1key.com unchanged; staging-goodgood.o1key.com remains historical. No push/main merge/deployment.
-- Next action: Owner reviews compact statistics on the local inspiration board. Next new request starts GG079; production release needs separately specified cumulative scope.
-- Blockers: None for local delivery; no production deployment authorized.
+- Task [GG-079](tasks/GG-079-inspiration-likes-centered-detail.md), fix/GG-079-inspiration-likes-centered-detail, F:/goodgood-worktrees/GG-079; main bab17fd + FF accepted GG07824a1711.
+- ADR0078 clarified before code: restore board/detail likes, all three icon-number counters inline, center detail image frames. No backend/schema changes.
+- Final local gate: 502 passed/22 opt-in skipped, lint/typecheck/build passed; targeted12/12. Desktop inline counters/28px like hit area and centered frame, 390px narrow detail verified.
+- Original32141 now GG079 Web25928; GG077 Worker45153 and mock91616 retained. Original user tab/draft/prices/history preserved; one detail observation incremented views1→2, no like/use/generation mutation. Production goodgood.o1key.com unchanged; staging-goodgood.o1key.com historical only.
+- Documentation handoff tests15/15 and diff checks passed; local task commit saved at handoff.
+- Next action: User reviews original page; next scoped request starts GG-080.
+- Blockers: None for local work; no production deployment authorized.
 
 ## Verification sequence
 
@@ -49,8 +49,8 @@
 
 ## New-session recovery
 
-1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-078` 与 GG-078 任务卡；按卡核对运行版本，不能仅看 URL。
-2. 当前页面为 `http://127.0.0.1:32141/inspiration`，灵感板案例；个人资料和站长管理看板/总日志/模型/企业/账户/审计仍保留。仅独立 mock 栈。旧 `32140` 有真实 provider Worker，不运行 fixtures/outbox，不重置其数据。
+1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-079` 与 GG-079 任务卡；按卡核对运行版本，不能仅看 URL。
+2. 当前用户页面为 `http://127.0.0.1:32141/admin/operations`；灵感板、个人资料和站长管理看板/总日志/模型/企业/账户/审计仍保留。仅独立 mock 栈。旧 `32140` 有真实 provider Worker，不运行 fixtures/outbox，不重置其数据。
 3. 本地 ignored `.gg052-local.mjs` 分别启动 web/worker/mock-generation；按本任务已记录的运行状态恢复，保留用户试价数据。正式生产与真实请求不在本次授权范围。
 4. 不恢复或 bulk merge 旧 C6；旧阶段具体验证见相应任务卡，GG-051 [研究记录](research/GG-051-credit-pricing-reassessment.md) 保留定价依据。
 

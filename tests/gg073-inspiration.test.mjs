@@ -61,7 +61,7 @@ test('GG-073 route and accessible empty/loading/error cards and complete origina
   assert.match(render(view.InspirationReadState,{loading:true,onRetry(){}}),/role="status"/);assert.match(render(view.InspirationReadState,{loading:false,error:'失败',onRetry(){}}),/role="alert".*重试/s);
   assert.match(render(view.InspirationCards,{items:[],busy:[],onOpen(){},onLike(){}}),/还没有案例/);
   const item={id,title:'高清放大',after:{url:'https://fixture.invalid/after',width:4096,height:2160},before:{url:'https://fixture.invalid/before'},author:{displayName:'Jony',handle:'jony'},liked:true,likes:2};
-  const html=render(view.InspirationCards,{items:[item],busy:[id],onOpen(){},onLike(){}});assert.match(html,/前后对比/);assert.match(html,/@jony/);assert.doesNotMatch(html,/case-like|点赞/);assert.match(html,/aspect-ratio:1.896/);
+  const html=render(view.InspirationCards,{items:[item],busy:[id],onOpen(){},onLike(){}});assert.match(html,/前后对比/);assert.match(html,/@jony/);assert.match(html,/aria-pressed="true" disabled/);assert.match(html,/aspect-ratio:1.896/);
   assert.match(render(view.CaseComparison,{before:item.before,after:item.after,title:item.title}),/处理前.*处理后/s);assert.ok(!render(view.CaseComparison,{before:null,after:item.after,title:item.title}).includes('处理前'));
   const settings=render(view.CaseParametersList,{parameters});assert.match(settings,/最高/);assert.match(settings,/4K/);assert.match(settings,/专线/);
 });
