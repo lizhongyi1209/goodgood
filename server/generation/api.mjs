@@ -1,3 +1,4 @@
+import {readPresetParameters,presetGenerationInput} from '../inspiration/private-parameters.mjs';
 import { AdministrationError } from "../admin/errors.mjs";
 import { frozenPresetForJob } from '../inspiration/preset.mjs';
 import { AuthenticationError, sessionExpiredError } from "../auth/errors.mjs";
@@ -142,7 +143,9 @@ export async function submitGeneration({
   if(presetCaseId!==null&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(presetCaseId)) throw new GenerationRequestError('INSPIRATION_NOT_FOUND','案例标识无效。',404);
   const supplement=presetCaseId?(typeof input?.prompt==='string'?input.prompt.trim():null):null;
   if(presetCaseId&&(supplement===null||supplement.length>4000||input.projectId||input.composerPrompt)) throw new GenerationRequestError('INVALID_PROMPT','补充提示词最多 4000 个字符。');
-  const validatedInput = validateM3GenerationInput(presetCaseId?{...input,prompt:supplement||'预设'}:input);
+  const preset=presetCaseId?await readPresetParameters(resources.pool,presetCaseId,{ownerId,idempotencyKey:validateIdempotencyKey(idempotencyKey)}):null;
+  const submittedInput=presetCaseId?{...presetGenerationInput(preset,input),prompt:supplement||'预设'}:input;
+  const validatedInput = validateM3GenerationInput(submittedInput);
   if (
     validatedInput.projectId &&
     !(await findProject(resources.pool, {
@@ -166,7 +169,7 @@ export async function submitGeneration({
     );
   }
   const result = await createGenerationJob(resources.pool, {
-    presetCaseId,presetSupplement:supplement,
+    presetCaseId,presetSupplement:supplement,presetParametersHidden:preset?.hidden??false,
     idempotencyKey: validateIdempotencyKey(idempotencyKey),
     input: {
       ...validatedInput,

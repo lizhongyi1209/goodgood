@@ -6,7 +6,7 @@ export function inspirationRequestRoute(pathname,method) {
   if(pathname==='/api/inspiration') return {action:method==='GET'?'list':'publish'};
   if(pathname==='/api/inspiration/list') return {action:'list'};
   if(pathname==='/api/inspiration/prepare') return {action:'prepare'};
-  const match=pathname.match(/^\/api\/inspiration\/([^/]+)(?:\/(like|use|withdraw|generate))?$/);
+  const match=pathname.match(/^\/api\/inspiration\/([^/]+)(?:\/(like|use|view|quote|withdraw|generate))?$/);
   return match?{action:match[2]??'detail',id:match[1]}:null;
 }
 export function createInspirationNodeApiHandler({authenticate,operation=inspirationOperation}) {

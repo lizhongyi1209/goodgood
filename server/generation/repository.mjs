@@ -101,6 +101,7 @@ export function hashOrganizationGenerationCreditOperation({
 }
 
 export function generationInputFromRow(row, referenceUrls = new Map()) {
+  if(row.parameters_hidden) return {parametersHidden:true,modelId:'nano-banana-2',catalogModelName:'预设效果',aspectRatio:'1:1',resolution:'1K',count:1,prompt:row.prompt,references:(row.reference_snapshot??[]).map(r=>({id:r.id,name:r.name,status:'ready',url:referenceUrls.get(r.id)??''}))};
   return {
     aspectRatio: row.aspect_ratio,
     background: row.background ?? "auto",
@@ -190,6 +191,7 @@ export function publicGenerationJob(
 
 const JOB_SELECT = `
   SELECT j.*,
+         EXISTS(SELECT 1 FROM inspiration_generation_prompts gp WHERE gp.job_id=j.id AND gp.parameters_hidden) AS parameters_hidden,
          b.prompt,
          b.project_id,
          b.reference_snapshot,
@@ -348,6 +350,7 @@ export async function createGenerationJob(
     workspaceId = null,
     presetCaseId = null,
     presetSupplement = null,
+    presetParametersHidden = false,
     frozenPreset = null,
   },
 ) {
@@ -528,7 +531,7 @@ export async function createGenerationJob(
        ) VALUES ($1, $2, $3, $4, $3, $5, $6)`,
       [jobId, batchId, ownerId, workspace.id, idempotencyKey, retryOfJobId],
     );
-    if(effectivePrompt) await client.query('INSERT INTO inspiration_generation_prompts(job_id,case_id,effective_prompt) VALUES($1,$2,$3)',[jobId,presetCaseId??frozenPreset.case_id,effectivePrompt]);
+    if(effectivePrompt) await client.query('INSERT INTO inspiration_generation_prompts(job_id,case_id,effective_prompt,parameters_hidden) VALUES($1,$2,$3,$4)',[jobId,presetCaseId??frozenPreset.case_id,effectivePrompt,presetParametersHidden||frozenPreset?.parameters_hidden||false]);
     await client.query("UPDATE generation_batches SET catalog_model_id=$2,catalog_model_name=$3 WHERE id=$1",
       [batchId, managedModel.id, managedModel.name]);
     if (workspace.kind === "organization") {

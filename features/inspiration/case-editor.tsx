@@ -32,7 +32,7 @@ export function CaseEditor({
     [description, setDescription] = useState(""),
     [prompt, setPrompt] = useState(""),
     [beforeId, setBeforeId] = useState("");
-  const [visibility, setVisibility] = useState<"public" | "hidden">("public"),
+  const [visibility, setVisibility] = useState<"public" | "prompt_hidden" | "hidden">("public"),
     [mode, setMode] = useState<"side_by_side" | "hover">("side_by_side");
   const [consent, setConsent] = useState(false),
     [busy, setBusy] = useState(false);
@@ -88,7 +88,7 @@ export function CaseEditor({
         title: title.trim(),
         description: description.trim(),
         prompt: prompt.trim(),
-        promptVisibility: visibility,
+        parameterVisibility: visibility,
         comparisonMode: mode,
         consent: true,
       });
@@ -165,7 +165,7 @@ export function CaseEditor({
               可针对复刻调整提示词，不影响原作品记录。
             </p>
             <fieldset className="case-choice">
-              <legend>提示词可见性</legend>
+              <legend>参数可见性</legend>
               <label>
                 <input
                   type="radio"
@@ -176,24 +176,25 @@ export function CaseEditor({
                   onChange={() => setVisibility("public")}
                 />
                 <span>
-                  <strong>公开提示词</strong>
-                  <small>用户可以查看并修改提示词后生成。</small>
+                  <strong>公开全部</strong>
+                  <small>用户可查看并修改参数和提示词。</small>
                 </span>
               </label>
               <label>
                 <input
                   type="radio"
                   name="visibility"
-                  value="hidden"
-                  checked={visibility === "hidden"}
+                  value="prompt_hidden"
+                  checked={visibility === "prompt_hidden"}
                   disabled={busy}
-                  onChange={() => setVisibility("hidden")}
+                  onChange={() => setVisibility("prompt_hidden")}
                 />
                 <span>
-                  <strong>隐藏提示词</strong>
+                  <strong>仅隐藏提示词</strong>
                   <small>用户使用预设，可补充自己的要求；补充可为空。</small>
                 </span>
               </label>
+            <label><input type="radio" name="visibility" value="hidden" checked={visibility === "hidden"} disabled={busy} onChange={() => setVisibility("hidden")}/><span><strong>隐藏参数和提示词</strong><small>使用固定预设，仅可补充要求和替换自己的参考图。</small></span></label>
             </fieldset>
             <CaseComparisonSettings
               options={prepared.beforeOptions}
@@ -219,7 +220,7 @@ export function CaseEditor({
                 }}
               />
               <span>
-                我确认发布选中的图片、参数和署名，并按所选方式提供提示词复用。
+                我确认发布选中的图片和署名，并按所选可见性提供参数和提示词复用。
               </span>
             </label>
             {consentError && (
@@ -287,7 +288,7 @@ export function CaseEditor({
               </p>
             )}
             <h3>原作参数</h3>
-            <CaseParametersList parameters={prepared.parameters} />
+            {visibility === "hidden" ? <p className="case-field-hint">参数已隐藏，复刻时使用固定预设。</p> : <CaseParametersList parameters={prepared.parameters} />}
           </aside>
         </form>
       )}

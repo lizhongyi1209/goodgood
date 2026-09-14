@@ -431,3 +431,5 @@ and error-body recovery actions retain their current semantics and focus behavio
 - Typical duration: 160–300ms. Result reveal may use 480ms with small stagger.
 - No decorative constant movement. Respect `prefers-reduced-motion` for every
   new animation.
+
+GG-077：参数可见性使用同一单选组的三档选项。大厅卡片在署名下用轻量 Eye/Sparkles 图标显示查看/使用数，保持效果图为主体；隐藏参数详情用一句预设说明代替参数列表。

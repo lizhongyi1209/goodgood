@@ -725,3 +725,5 @@ In the current M3 implementation, user retry is represented by a new durable
 job linked with `retry_of_job_id`; the backend copies the failed snapshot rather
 than trusting a browser-resubmitted replacement. Provider fallback within one
 job is deferred to the real gateway milestone.
+
+GG-077：下架/不可用案例不增加查看或使用；载入固定预设前先验证参数和可用报价。查看/使用的交互UUID跨effect重入和重试保持，报价刷新不增加使用。实际生成仍通过原子预留和版本冲突/积分不足恢复，不在浏览器拼接隐藏参数。

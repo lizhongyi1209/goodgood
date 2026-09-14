@@ -1050,3 +1050,5 @@ database/queue. Live 32140 auth continues to use actual data, while UI-only
   smoke test; production does not rebuild it.
 - `IMPLEMENTATION_PLAN.md` records the completed slice, verification result,
   remaining debt, and next action.
+
+GG-077：定向测试验证三档可见性、固定参数覆盖防伪、公开投影脱敏与计数UI；opt-in GOODGOOD_GG077_INTEGRATION=1必须配GOODGOOD_GG077_NO_WORKER=1及精确loopback临时数据库goodgood_gg077_visibility_test_20260914。SQL覆盖去重、并发统计、下架不计数、报价不计数、私有参数生成/重试/结算与资产DTO。不得指向32140真实Worker数据库。

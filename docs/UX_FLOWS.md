@@ -656,3 +656,5 @@ access and all server authorization remain unchanged (ADR 0067).
 - Inline status: ongoing generation within the creation stream.
 - Inline error panel: durable job failure with recovery actions.
 - Asset navigation cue: completed assets arrived; clear when assets is opened.
+
+GG-077：编辑页三档参数可见性实时预览。完全隐藏复刻仅提供自己的参考图、可选补充与积分报价，移除参数入口。大厅打开成功记查看，载入成功记使用；同一动作的重发和预设页初始化去重。

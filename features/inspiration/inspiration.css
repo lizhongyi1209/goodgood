@@ -135,3 +135,6 @@
  .case-parameters { grid-template-columns:minmax(0,1fr); }
  .case-detail-footer p { text-align:left; }
 }
+
+.case-statistics { display:flex;gap:16px;margin-top:10px;color:var(--muted-foreground);font-size:12px; }
+.case-statistics span { display:inline-flex;align-items:center;gap:5px; }

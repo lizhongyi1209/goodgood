@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -37,13 +37,17 @@ import "./inspiration.css";
 
 export function CaseReplica({
   caseId,
+  initialValue,
   onReturn,
   onCompleted,
 }: {
   caseId: string;
+  initialValue?: UseCaseResult|null;
   onReturn: () => void;
   onCompleted: () => void;
 }) {
+  const interactionId=useRef<string|null>(null);
+  const [fixed, setFixed]=useState(false),[fixedQuote,setFixedQuote]=useState<{creditAmount:string;priceVersion:number}|null>(null);
   const [recipe, setRecipe] = useState<GenerationInputSnapshot | null>(null),
     [title, setTitle] = useState(""),
     [referenceCount, setReferenceCount] = useState(0);
@@ -68,14 +72,16 @@ export function CaseReplica({
   useEffect(() => {
     let active = true;
     void Promise.all([
-      inspirationRequest<UseCaseResult>(`/${caseId}/use`, {}),
+      initialValue?Promise.resolve(initialValue):inspirationRequest<UseCaseResult>(`/${caseId}/use`, {interactionId:interactionId.current??(interactionId.current=crypto.randomUUID())}),
       readBillingSummary(),
     ])
       .then(([value, billing]) => {
         if (active) {
           if (value.promptVisibility !== "hidden")
             throw Error("案例已改为公开提示词，请返回灵感板重新使用。");
-          setRecipe(value.recipe);
+          setFixed(value.parameterVisibility==='hidden');
+          setFixedQuote(value.quote);
+          setRecipe(value.recipe??{parametersHidden:true,modelId:'nano-banana-2',aspectRatio:'1:1',resolution:'1K',count:1,prompt:'',references:[]});
           setTitle(value.title);
           setReferenceCount(value.referenceCount);
           setSummary(billing);
@@ -91,7 +97,7 @@ export function CaseReplica({
     return () => {
       active = false;
     };
-  }, [caseId, revision]);
+  }, [caseId, revision, initialValue]);
   useEffect(() => {
     const handler = (event: BeforeUnloadEvent) => {
       if (busy || prompt.trim() || references.length) {
@@ -102,7 +108,7 @@ export function CaseReplica({
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
   }, [busy, prompt, references]);
-  const quote = recipe ? findBillingQuote(summary, recipe) : null,
+  const quote = fixed ? fixedQuote : recipe ? findBillingQuote(summary, recipe) : null,
     managedModel = summary?.models?.find(
       (item) => item.id === (recipe?.catalogModelId ?? recipe?.modelId),
     );
@@ -226,10 +232,11 @@ export function CaseReplica({
       ) : (
         <>
           <div className="case-preset-note">
-            <strong>预设 · 提示词隐藏</strong>仅可补充要求，也可留空。
+            <strong>{fixed?"预设 · 参数和提示词隐藏":"预设 · 提示词隐藏"}</strong>仅可补充要求，也可留空。
             {referenceCount > 0 && ` 原作使用了 ${referenceCount} 张参考图。`}
           </div>
           <CreationComposer
+            parametersHidden={fixed}
             modelOptions={summary?.models
               ?.filter((model) => model.mediaType === "image")
               .map((model) => ({
@@ -322,8 +329,8 @@ export function CaseReplica({
               {actionError}
               <button
                 onClick={() =>
-                  void readBillingSummary()
-                    .then(setSummary)
+                  void Promise.all([readBillingSummary(),fixed?inspirationRequest<{creditAmount:string;priceVersion:number}>(`/${caseId}/quote`,{}):Promise.resolve(null)])
+                    .then(([billing,price])=>{setSummary(billing);if(price)setFixedQuote(price);})
                     .catch(() => setActionError("报价读取失败，请重试。"))
                 }
               >

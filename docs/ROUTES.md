@@ -278,3 +278,5 @@ do not create separate draft or history state.
   identity, manageable membership or invitation; site owners use `站长管理`.
   `org_owner`/`org_admin` controls never reuse `/admin/users`, and hidden
   navigation is never treated as authorization.
+
+GG-077：现有灵感资源新增POST /api/inspiration/:id/view与quote；view使用交互UUID，quote只返回积分金额和报价版本，均要求有效会话和动作头。use可带交互UUID；预设页复用大厅已载入结果，直接访问则分配自己的UUID。GET详情与列表不计数。

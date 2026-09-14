@@ -44,7 +44,7 @@ export async function frozenPresetForJob(pool, jobId) {
   return (
     (
       await pool.query(
-        "SELECT case_id,effective_prompt FROM inspiration_generation_prompts WHERE job_id=$1",
+        "SELECT case_id,effective_prompt,parameters_hidden FROM inspiration_generation_prompts WHERE job_id=$1",
         [jobId],
       )
     ).rows[0] ?? null

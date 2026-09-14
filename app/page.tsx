@@ -246,6 +246,7 @@ type AssetBatch = {
   modelId: GenerationModelId;
   catalogModelId?: string;
   catalogModelName?: string;
+  parametersHidden?: boolean;
   imageLine?: BananaLine;
   aspectRatio: GenerationAspectRatio;
   resolution: GenerationResolution;
@@ -404,6 +405,7 @@ function generationJobToAssetBatch(job: GenerationJob): AssetBatch {
     ...(job.input.imageLine ? { imageLine: job.input.imageLine } : {}),
     catalogModelId: job.input.catalogModelId,
     catalogModelName: job.input.catalogModelName,
+    parametersHidden: job.input.parametersHidden,
     prompt: job.input.prompt,
     referenceCount: job.input.references.length,
     resolution: job.input.resolution,
@@ -2370,6 +2372,7 @@ export default function Home({
   const applyInspirationCase = (value:UseCaseResult) => {
     startNewCreation();
     const recipe=value.recipe;
+    if(!recipe) return;
     composerEditRevisionRef.current+=1;
     setPrompt(recipe.prompt);
     setSelectedModel(recipe.modelId);
@@ -2386,8 +2389,9 @@ export default function Home({
     toast.info(value.referenceCount?`效果已载入，请上传自己的 ${value.referenceCount} 张参考图，确认参数后生成。`:"效果已载入，请确认参数后生成。");
     if(!billingSummary?.models?.some(model=>model.id===(recipe.catalogModelId??recipe.modelId))) toast.info("原作模型暂不可用，请在参数中选择可用模型。");
   };
+  const [initialCaseUse,setInitialCaseUse]=useState<UseCaseResult|null>(null);
   const requestInspirationCase = (value:UseCaseResult) => {
-    if(value.promptVisibility==='hidden') {navigateWorkspace({kind:"inspirationUse",caseId:value.caseId});return;}
+    if(value.promptVisibility==='hidden') {setInitialCaseUse(value);navigateWorkspace({kind:"inspirationUse",caseId:value.caseId});return;}
     if(isGenerating||isVideoGenerating) {toast.info("仍有任务正在生成，请等待完成后再使用案例。");return;}
     if(hasUnsavedCreationChanges) {setDestructiveCreationIntent({kind:"inspiration",value});return;}
     applyInspirationCase(value);
@@ -2900,7 +2904,7 @@ export default function Home({
           aria-pressed={isSelected}
           onClick={(event) => { event.stopPropagation(); toggleAssetSelection(item.key); }}
         ><Check size={12} /></button>
-        <span className="asset-gallery-caption"><strong>{formatGenerationResolution(item.batch.resolution, item.image)}</strong><small>{itemRatio.label} · {item.batch.time} · {itemModel.name}</small></span>
+        <span className="asset-gallery-caption"><strong>{item.batch.parametersHidden?"预设效果":formatGenerationResolution(item.batch.resolution, item.image)}</strong><small>{item.batch.parametersHidden?item.batch.time:`${itemRatio.label} · ${item.batch.time} · ${itemModel.name}`}</small></span>
       </article>
     );
   };
@@ -3358,7 +3362,7 @@ export default function Home({
           ) : activeView === 'inspirationEditor' && inspirationRoute ? (
             authenticationSession?.access.status==='active'&&!authenticationSession.preview&&<CaseEditor key={inspirationRoute.id} assetId={inspirationRoute.id} onCancel={handleInspirationNav} onPublished={()=>{toast.success('案例已发布到灵感板');handleInspirationNav();}}/>
           ) : activeView === 'inspirationReplica' && inspirationRoute ? (
-            authenticationSession?.access.status==='active'&&!authenticationSession.preview&&<CaseReplica key={inspirationRoute.id} caseId={inspirationRoute.id} onReturn={handleInspirationNav} onCompleted={()=>{void reloadAssets();void readBillingSummary().then(setBillingSummary).catch(()=>undefined);}}/>
+            authenticationSession?.access.status==='active'&&!authenticationSession.preview&&<CaseReplica key={inspirationRoute.id} caseId={inspirationRoute.id} initialValue={initialCaseUse?.caseId===inspirationRoute.id?initialCaseUse:null} onReturn={handleInspirationNav} onCompleted={()=>{void reloadAssets();void readBillingSummary().then(setBillingSummary).catch(()=>undefined);}}/>
           ) : activeView === "inspiration" ? (
             <InspirationBoard enabled={Boolean(authenticationSession&&!authenticationSession.preview&&authenticationSession.access.status==="active")} onUse={requestInspirationCase}/>
           ) : activeView === "profile" ? (
@@ -3484,7 +3488,7 @@ export default function Home({
                           <div className="asset-batch-details">
                             <p>{batch.prompt}</p>
                             <div className="asset-batch-meta">
-                              <span>{batchModel.name}</span><span>{batchRatio.label}</span><span>{formatGenerationResolution(batch.resolution, getSharedPixelDimensions(batch.images))}</span><span>{batch.count} 张</span>{batch.referenceCount > 0 && <span>{batch.referenceCount} 张参考</span>}
+                              <span>{batchModel.name}</span>{!batch.parametersHidden&&<><span>{batchRatio.label}</span><span>{formatGenerationResolution(batch.resolution, getSharedPixelDimensions(batch.images))}</span></>}<span>{batch.count} 张</span>{batch.referenceCount > 0 && <span>{batch.referenceCount} 张参考</span>}
                             </div>
                           </div>
                           <button className="asset-batch-more" aria-label="批次更多操作"><MoreHorizontal size={18} /></button>
@@ -3712,7 +3716,7 @@ export default function Home({
 
                 <div className="image-detail-section">
                   <span>生成参数</span>
-                  <dl className="image-detail-parameters">
+                  {activeDetail.batch.parametersHidden?<p>预设参数已隐藏</p>:<dl className="image-detail-parameters">
                     <div><dt>模型</dt><dd>{activeDetailModel?.name}</dd></div>
                     <div><dt>画面比例</dt><dd>{activeDetailRatio?.label}</dd></div>
                     <div><dt>分辨率</dt><dd>{formatGenerationResolution(activeDetail.batch.resolution, activeDetail.image)}</dd></div>
@@ -3730,7 +3734,7 @@ export default function Home({
                       </>
                     )}
                     <div><dt>任务编号</dt><dd>{activeDetail.batch.id}</dd></div>
-                  </dl>
+                  </dl>}
                 </div>
 
                 <div className="image-detail-wheel-hint">

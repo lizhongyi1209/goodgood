@@ -118,6 +118,7 @@ export type GenerationInputDraft = {
 };
 
 export type GenerationInputSnapshot = Readonly<{
+  parametersHidden?: boolean;
   prompt: string;
   /** Project context only; never sent as the model prompt. */
   composerPrompt?: string;

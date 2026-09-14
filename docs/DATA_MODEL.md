@@ -800,3 +800,5 @@ model ID as stable domain data. Each accepted Asset's `pixel_width` and
 `pixel_height` are decoded source data and accompany the requested resolution
 in asset presentation. The UI may omit missing compatibility dimensions but
 must never infer them from the nominal tier, model, ratio, or CSS.
+
+GG-077 migration0038：parameter_visibility(public/prompt_hidden/hidden)与旧prompt_visibility一致约束；旧案例自动保持语义。view_count/use_count非负bigint从零开始。inspiration_interactions以案例/用户/动作/交互UUID为主键，原子增量去重。私有生成表parameters_hidden标记持续到重试，公开任务/资产投影屏蔽实际参数。

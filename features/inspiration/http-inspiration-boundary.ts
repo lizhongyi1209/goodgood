@@ -5,13 +5,14 @@ export type CaseImage={url:string;width?:number;height?:number};
 export type CaseAuthor={displayName:string;handle:string|null;avatarUrl:string|null};
 export type CaseParameters=Omit<GenerationInputSnapshot,'prompt'|'references'> & {referenceCount:number};
 export type InspirationCase={
-  id:string;title:string;description:string;prompt:string|null;parameters:CaseParameters;
+  id:string;title:string;description:string;prompt:string|null;parameters:CaseParameters|null;
+  parameterVisibility:'public'|'prompt_hidden'|'hidden';views:number;uses:number;
   promptVisibility:'public'|'hidden';comparisonMode:'side_by_side'|'hover';
   author:CaseAuthor;after:CaseImage;before:CaseImage|null;
   likes:number;liked:boolean;canWithdraw:boolean;owned:boolean;createdAt:string;
 };
 export type CasePreparation={assetId:string;prompt:string;parameters:CaseParameters;author:CaseAuthor;after:CaseImage;beforeOptions:(CaseImage&{id:string;name:string})[]};
-export type UseCaseResult={recipe:GenerationInputSnapshot;referenceCount:number;title:string;caseId:string;promptVisibility:'public'|'hidden'};
+export type UseCaseResult={recipe:GenerationInputSnapshot|null;parameterVisibility:'public'|'prompt_hidden'|'hidden';quote:{creditAmount:string;priceVersion:number}|null;interactionId?:string|null;views?:number;uses?:number;referenceCount:number;title:string;caseId:string;promptVisibility:'public'|'hidden'};
 
 export class InspirationBoundaryError extends Error {
   constructor(readonly code:string,message:string) {super(message);}

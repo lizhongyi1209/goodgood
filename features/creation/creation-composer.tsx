@@ -73,6 +73,7 @@ import { BananaLineSelector } from "./banana-line-selector";
 
 export type CreationComposerProps = Readonly<{
   showModeSwitch?: boolean;
+  parametersHidden?: boolean;
   promptLabel?: string;
   promptPlaceholder?: string;
   managedModel?: ManagedModel;
@@ -170,6 +171,7 @@ export function CreationComposer({
     ? DEFAULT_GPT_IMAGE_OUTPUT_FORMAT
     : "png",
   drawerOpen,
+  parametersHidden = false,
   isGenerating,
   billingLabel,
   billingDescription,
@@ -305,14 +307,14 @@ export function CreationComposer({
           >
             {billingLabel}
           </span>
-          <button
+          {!parametersHidden && <button
             className={`prompt-action settings-toggle ${drawerOpen ? "active" : ""}`}
             aria-label="展开生成参数"
             aria-expanded={drawerOpen}
             onClick={() => onDrawerOpenChange(!drawerOpen)}
           >
             <SlidersHorizontal size={18} />
-          </button>
+          </button>}
           <button
             className={`send-button ${isGenerating ? "generating" : ""}`}
             aria-label={isGenerating ? "继续生成图片" : "生成图片"}
@@ -452,7 +454,7 @@ export function CreationComposer({
         </div>
       )}
 
-      <div className="parameter-drawer" aria-hidden={!drawerOpen} inert={!drawerOpen}>
+      {!parametersHidden && <div className="parameter-drawer" aria-hidden={!drawerOpen} inert={!drawerOpen}>
         <div className="drawer-overflow">
           <div className="drawer-content">
             <div className="parameter-group ratio-group">
@@ -664,7 +666,7 @@ export function CreationComposer({
             </div>
           </div>
         </div>
-      </div>
+      </div>}
 
       {previewReference?.status === "ready" && (
         <ReferenceQuickEditor

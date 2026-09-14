@@ -824,3 +824,5 @@ Transfer ledger rows appear in the same activity projection as `其他变动` wi
 their public `trf_` reference. They may participate in received/outgoing list
 filters, but they are deliberately excluded from today/week/month generation
 consumption totals because allocation is not product usage.
+
+GG-077：完全隐藏参数仅在服务器解析，忽略浏览器覆盖的模型/分辨率/数量等；真实参数供账单和Worker使用，统一public generation投影返回标记与无原参数的中性占位。原参数不进入案例/复刻DTO。观察到的输出像素不视为私有预设字段；站长查账仍保留实际计费上下文。

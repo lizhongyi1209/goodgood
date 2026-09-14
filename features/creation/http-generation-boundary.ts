@@ -36,7 +36,7 @@ const createIdempotencyKey = () =>
 
 function generationRequestPayload(input: GenerationInputSnapshot) {
   return {
-    ...input,
+    ...(input.parametersHidden?{prompt:input.prompt,expectedPriceVersion:input.expectedPriceVersion}:input),
     references: input.references.map((reference) => ({ id: reference.id })),
   };
 }

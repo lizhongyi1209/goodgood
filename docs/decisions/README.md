@@ -115,3 +115,5 @@ ADR 0053 adds standalone-delimited concurrent prompt batches for GG-040.
 - `0067-site-owner-workspace-management.md` — one site-owner entry and embedded enterprise/model/account management in the existing workspace for GG-059; supersedes ADR 0066's standalone chrome.
 
 - `0068-gpt-image-provider-lines.md` ? GPT image three-line routing, independent pricing and preserved legacy accepted routes for GG-062.
+
+- `0078-inspiration-visibility-and-statistics.md` — three visibility modes, fixed private parameters and durable deduplicated case statistics for GG-077.
