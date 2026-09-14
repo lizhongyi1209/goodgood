@@ -4,6 +4,7 @@ export type ModelSpecificationPrices = Readonly<
     string,
     Readonly<{
       output: number;
+      billing?: "tokens";
       input?: number;
       qualities?: Readonly<Record<string, number>>;
     }>
@@ -28,6 +29,7 @@ export type ManagedModel = Readonly<{
       string,
       Readonly<{
         output: number;
+        billing?: "tokens";
         input?: number;
         qualities?: Readonly<Record<string, number>>;
       }>

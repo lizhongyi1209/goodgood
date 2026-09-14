@@ -10,6 +10,16 @@ const vite = await createServer({ appType: "custom", configFile: false, root,
 after(() => vite.close());
 const { BananaLineSelector } = await vite.ssrLoadModule("/features/creation/banana-line-selector.tsx");
 const { ModelPricingList } = await vite.ssrLoadModule("/features/admin/model-pricing-list.tsx");
+const { VideoTokenPricingEditor } = await vite.ssrLoadModule("/features/admin/video-token-pricing-editor.tsx");
+test("GG-067 video prices disclose token units and editor keeps both rate inputs visible", () => {
+  const video = { id: "seedance-2-0-mini", adapterId: "seedance-2-0-mini", name: "Seedance Mini", mediaType: "video", enabled: false, prices: { "480p": { billing: "tokens", output: 2300, input: 1400 } } };
+  const html = renderToStaticMarkup(React.createElement(ModelPricingList, { models: [video], busy: false, onEdit() {}, onToggle() {} }));
+  assert.match(html, /无参考视频/); assert.match(html, /含参考视频/); assert.match(html, /百万 tokens/); assert.doesNotMatch(html, /积分\/秒/);
+  const editor = renderToStaticMarkup(React.createElement(VideoTokenPricingEditor, { resolutions: ["480p", "720p"], prices: { "480p": { billing: "tokens", output: "23.00", input: "14.00" } }, onChange() {} }));
+  assert.match(editor, /117 积分/); assert.match(editor, /1.164674/); assert.match(editor, /Seedance 响应 JSON/); assert.match(editor, /720p 含参考视频 token 售价/);
+  const empty = renderToStaticMarkup(React.createElement(VideoTokenPricingEditor, { resolutions: ["480p"], prices: {}, onChange() {} }));
+  assert.match(empty, /填写有效价格/);
+});
 const models = ["gpt-image-2", "gpt-image-2.5-sunburst", "gpt-image-2.5-flare"].map(id => ({
   id, adapterId: id, name: id, mediaType: "image", enabled: true, version: 1,
   prices: { "1K": { output: 20 } }, lines: { special: { enabled: true, prices: { "1K": { output: 20 } } },

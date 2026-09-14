@@ -74,6 +74,16 @@ export function validateManagedModel(input) {
       fail("规格价格格式无效。");
     for (const [resolution, price] of Object.entries(value)) {
       if (
+        price?.billing !== undefined &&
+        (template.mediaType !== "video" || price.billing !== "tokens")
+      )
+        fail("计费方式无效。");
+      if (
+        price?.billing === "tokens" &&
+        (!Number.isSafeInteger(price.input) || price.input <= 0)
+      )
+        fail("请填写无参考视频、含参考视频两档正数 token 售价。");
+      if (
         !template.resolutions.includes(resolution) ||
         !price ||
         !Number.isSafeInteger(price.output) ||
@@ -105,9 +115,18 @@ export function validateManagedModel(input) {
       }
       prices[resolution] =
         template.mediaType === "video"
-          ? { output: price.output, input: price.input }
+          ? {
+              output: price.output,
+              input: price.input,
+              ...(price.billing ? { billing: price.billing } : {}),
+            }
           : { output: price.output, ...(qualities ? { qualities } : {}) };
     }
+    if (
+      new Set(Object.values(prices).map((price) => price.billing ?? "seconds"))
+        .size > 1
+    )
+      fail("同一模型不能混用秒价和 token 售价。");
     if (
       Object.values(prices).some((price) => price.qualities) &&
       Object.values(prices).some((price) => !price.qualities)

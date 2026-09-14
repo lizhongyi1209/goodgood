@@ -2,6 +2,11 @@
 
 ## Visual thesis
 
+GG-067 video rows show two compact mutually exclusive rate rows (无参考视频 /
+含参考视频), with an explicit 人民币/百万 tokens unit. The editor aligns supported
+resolutions and both rates; calculation and optional JSON parsing share one
+quiet surface. Adaptive width stays unchanged.
+
 GoodGood is a bright, premium visual workspace: continuous white/light space,
 quiet interface chrome, compact rounded controls, and vivid imagery. Palace Red
 adds authorship and cultural character without turning the interface into a red

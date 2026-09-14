@@ -1,5 +1,11 @@
 # Development and deployment
 
+GG-067 supersedes the video-second pricing notes below with completion-token
+rates. It adds no migration and only prefills the four video models through the
+owner editor on existing 32141 mock data. Formal video debit/settlement remains
+unconnected. Preserve user prices/history and never use the real-provider
+32140 stack for pricing fixtures or implicit paid requests.
+
 ## GG-052 local denomination exchange and model management
 
 Migrations 0029/0030 are local candidates, not production authorization. Before

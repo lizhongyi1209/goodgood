@@ -1,5 +1,11 @@
 # GG-063 quality pricing errors
 
+GG-067 rejects unknown/mixed billing units, incomplete enabled-model prices and
+nonpositive token rates as MODEL_REQUEST_INVALID. Missing/invalid
+completion_tokens is unresolved, never zero or inferred from total_tokens.
+Malformed response JSON and extraction errors stay inline with input preserved.
+No generation or ledger operation occurs in the pricing calculator.
+
 Reject incomplete/unsupported/nonpositive quality prices before persistence.
 Enabled quality lines require all model-owned tiers and resolutions. GPT 2 rejects
 xhigh/max before provider POST. Stale price versions reject new submission without

@@ -59,6 +59,20 @@ function ModelPrice({
             {qualityPrices.length ? "按质量定价" : `${price.output} 积分/张`}
           </p>
         </>
+      ) : price.billing === "tokens" ? (
+        <dl className="mx-auto grid max-w-44 grid-cols-[auto_1fr] items-baseline gap-x-2 gap-y-1.5">
+          <dt className="text-left text-[11px] text-zinc-400">无参考视频</dt>
+          <dd className="text-right text-sm font-medium">
+            ¥{creditsToYuan(price.output)}
+          </dd>
+          <dt className="text-left text-[11px] text-zinc-400">含参考视频</dt>
+          <dd className="text-right text-sm font-medium">
+            ¥{creditsToYuan(price.input ?? 0)}
+          </dd>
+          <dd className="col-span-2 text-[10px] text-zinc-400">
+            人民币 / 百万 tokens
+          </dd>
+        </dl>
       ) : (
         <dl className="mx-auto grid max-w-36 grid-cols-[auto_1fr] items-baseline gap-x-2 gap-y-1.5">
           <dt className="text-left text-[11px] text-zinc-400">输出</dt>
@@ -122,7 +136,7 @@ export function ModelPricingList({
               <p className="text-xs text-zinc-400">
                 {mediaType === "image"
                   ? "每张售价"
-                  : "每秒售价 · 输出与参考视频分别计价"}
+                  : "每百万 tokens 售价 · 按是否含参考视频选档"}
               </p>
             </div>
             <div

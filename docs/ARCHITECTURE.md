@@ -1,5 +1,10 @@
 # Architecture
 
+GG-067 introduces shared completion-token parsing/calculation and a video-only
+pricing editor. Existing owner-only save/query APIs persist billing-tagged JSON
+prices with optimistic versions and audit snapshots. No provider call, new
+route, schema migration or formal video settlement is added.
+
 GG-062 extends image-line eligibility to GPT templates while keeping Banana-only
 thinking/search and per-image provider orchestration separate. GPT routes carry
 the exact user-specified -sp/-sd/base model IDs and retain single-request n=1/2/4.

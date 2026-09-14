@@ -1,27 +1,28 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-14
-- Current phase: GG-066 adaptive model width implemented, verified and restored on local preview; not deployed.
-- Current objective: Restore adaptive model-management page width.
+- Current phase: GG-067 actual-token video pricing implemented, verified and filled on local mock preview; not deployed.
+- Current objective: Let the owner inspect Seedance token rates and actual-use calculator.
 - Previous objective: 用户在模型管理为 GPT 图片系列逐线路定价与启禁，保留原测试配置与历史。
 
 ## Current checkpoint
 
-- Current task [GG-066](tasks/GG-066-responsive-model-width.md), branch fix/GG-066-responsive-model-width, worktree F:/goodgood-worktrees/GG-066; verified main ancestor plus current local candidate GG-065 96bb606.
-- Restored embedded model-page adaptive width and original standalone 1500px maximum. Only two width classes changed. Hidden dedicated tier details and compact row/column spacing retained; ADR 0069 records the owner adjustment.
-- Existing targeted SSR/documentation/release tests 18/18 passed. One full npm run check:local passed lint/types/build, 448 tests passed / 17 opt-in skipped / zero failures. No new tests for this reversible width-only adjustment.
-- Local 32141 Web session 41801 runs from GG-066. Existing GG-063 Worker 79489 and mock 67415 unchanged. All three readiness endpoints returned 200 ready; no migration or database writes.
-- Chrome confirmed embedded content/list width 1526px with max-width none, restored from 960px; column gap retained at 16px. Original model page preserved.
-- Read-only before/after comparison: every managed-model record and all ten historical count/hash snapshots identical, including newly owner-adjusted GPT prices and enabled states, Banana and archived trial state.
-- Production https://goodgood.o1key.com revision 65ceb168/migration 0019 unchanged. staging-goodgood.o1key.com is historical naming. Real-provider 32140 unchanged; no paid calls, push, main merge or deployment.
-- Next action: owner continues local pricing tests on the adaptive model page.
-- Blockers: none for local scope; provider cost estimates and production release retain the GG-063 limitations.
+- Current task [GG-067](tasks/GG-067-seedance-token-pricing.md), branch feature/GG-067-seedance-token-pricing, worktree F:/goodgood-worktrees/GG-067; verified main bab17fd ancestor plus GG-066 28dc0ed candidate.
+- ADR 0070 supersedes video-second retail pricing. Existing JSON prices add billing=tokens; two mutually exclusive credits/million-token rates per resolution. Editor supports RMB rates, actual completion_tokens and optional nested response JSON extraction. Legacy seconds retain their meaning; image pricing and adaptive width unchanged.
+- Targeted tests 17/17 passed. One full npm run check:local passed lint/types/build and functional tests: 451 passed, 17 opt-in skipped, one documentation index failure. BACKLOG fixed and documentation tests 8/8 passed; no unresolved code failure.
+- Restored previously stopped local Docker dependencies and mock-only host services. GG-067 Web session 56576, mock 42311, Worker 72412. Original data volumes retained; no migrations/reset/rebuild. Docker auto-restarted existing containers; no manual changes or requests to real-provider 32140.
+- Owner browser saved four Seedance official normal-rate matrices, each version 1 to 2. No discounts. 2.5 1080p rate is documented but its current generation capability is not expanded.
+- Browser verified refresh persistence, malformed JSON recovery, nested completion_tokens, Mini 50638 at 117 or 71 credits, and 390px layout without horizontal overflow. Restored desktop, original tab 1648144383 kept in Seedance 2.0 pricing editor.
+- Read-only before/after: 39 non-model table hashes/counts identical, all image records and every model enable flag unchanged. Trial archival state retained. Only four video records and four append-only model events changed.
+- Production https://goodgood.o1key.com revision 65ceb168/migration 0019 unchanged. staging-goodgood.o1key.com is historical naming. No paid requests, push, main merge or deployment.
+- Next action: owner checks http://127.0.0.1:32141/admin/models; formal video reservation/price snapshots/actual ledger settlement require the next implementation slice.
+- Blockers: none for pricing-only local scope.
 
 ## Verification sequence
 
-1. SSR quality content, no disclosure controls, legacy line rows.
-2. One complete local gate, then documentation-only checks as needed.
-3. Read-only preview snapshots, Web update, desktop/narrow browser verification.
+1. Token-rate validation, exact pricing examples, response usage parsing and editor/list SSR.
+2. One complete local gate; correct documentation index and recheck documentation-only changes.
+3. Verify isolated mock target, compare data snapshots, owner-save prices, refresh and desktop/narrow UI verification.
 
 ## Milestones
 
@@ -51,7 +52,7 @@
 
 ## New-session recovery
 
-1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-066` 与 GG-066 任务卡；按卡核对运行版本，不能仅看 URL。
+1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-067` 与 GG-067 任务卡；按卡核对运行版本，不能仅看 URL。
 2. 当前页面为 `http://127.0.0.1:32141/admin/models`，已更新 GPT 图片三线路，右侧四管理功能保留；仅独立 mock 栈。旧 `32140` 有真实 provider Worker，不运行 fixtures/outbox，不重置其数据。
 3. 本地 ignored `.gg052-local.mjs` 分别启动 web/worker/mock-generation；按本任务已记录的运行状态恢复，保留用户试价数据。正式生产与真实请求不在本次授权范围。
 4. 不恢复或 bulk merge 旧 C6；旧阶段具体验证见相应任务卡，GG-051 [研究记录](research/GG-051-credit-pricing-reassessment.md) 保留定价依据。

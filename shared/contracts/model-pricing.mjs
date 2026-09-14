@@ -56,10 +56,23 @@ export function creditsToYuan(value) {
 
 export function calculateModelQuote(
   model,
-  { resolution, count = 1, outputSeconds = 0, referenceSeconds = 0, imageLine = "special", quality = "auto" },
+  {
+    resolution,
+    count = 1,
+    outputSeconds = 0,
+    referenceSeconds = 0,
+    imageLine = "special",
+    quality = "auto",
+  },
 ) {
   const specification = modelSpecificationPrices(model, imageLine)[resolution];
-  const price = specification ? { ...specification, output: specificationOutputPrice(specification, quality) } : null;
+  if (specification?.billing === "tokens") return null;
+  const price = specification
+    ? {
+        ...specification,
+        output: specificationOutputPrice(specification, quality),
+      }
+    : null;
   if (
     !price ||
     !Number.isSafeInteger(price.output) ||

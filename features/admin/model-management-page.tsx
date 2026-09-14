@@ -21,6 +21,7 @@ import {
 import { GENERATION_MODEL_CATALOG } from "@/features/models/catalog";
 import { VIDEO_GENERATION_MODEL_CATALOG } from "@/features/creation/video-generation-options";
 import { ModelPricingList } from "./model-pricing-list";
+import { VideoTokenPricingEditor } from "./video-token-pricing-editor";
 import {
   BANANA_LINES,
   supportsImageLines,
@@ -67,7 +68,12 @@ import type { ManagedModel } from "@/shared/contracts/model-management";
 
 type DraftPrices = Record<
   string,
-  { output: string; input: string; qualities?: Record<string, string> }
+  {
+    output: string;
+    input: string;
+    billing?: "tokens";
+    qualities?: Record<string, string>;
+  }
 >;
 type DraftLines = Record<BananaLine, { enabled: boolean; prices: DraftPrices }>;
 type Draft = {
@@ -94,6 +100,7 @@ function editablePrices(prices: ManagedModel["prices"]): DraftPrices {
       {
         output: creditsToYuan(price.output),
         input: creditsToYuan(price.input ?? 0),
+        ...(price.billing ? { billing: price.billing } : {}),
         ...(price.qualities
           ? {
               qualities: Object.fromEntries(
@@ -161,6 +168,7 @@ function parsedPrices(draft: Draft, line: BananaLine = "special") {
               }
             : {}),
           input: yuanToCredits(price.input || "0"),
+          ...(price.billing ? { billing: price.billing } : {}),
         },
       ]),
   );
@@ -201,8 +209,6 @@ export function ModelManagementPage({
   const [pricingLine, setPricingLine] = useState<BananaLine>("special");
   const [pricingQuality, setPricingQuality] = useState("auto");
   const [count, setCount] = useState("1");
-  const [seconds, setSeconds] = useState("5");
-  const [referenceSeconds, setReferenceSeconds] = useState("0");
   const refreshSession = useCallback(async () => {
     try {
       setSession(await readAuthenticationSession());
@@ -408,8 +414,6 @@ export function ModelManagementPage({
           resolution,
           quality: pricingQuality,
           count: Number(count),
-          outputSeconds: Number(seconds),
-          referenceSeconds: Number(referenceSeconds),
         },
       );
     } catch {
@@ -501,7 +505,7 @@ export function ModelManagementPage({
           <div>
             <h1 className="text-xl font-semibold">模型管理</h1>
             <p className="mt-2 text-sm leading-6 text-zinc-500">
-              1 元 = 100 积分。图片按张，视频按输出秒与参考视频秒定价。
+              1 元 = 100 积分。图片按张，视频按实际 tokens 用量定价。
             </p>
           </div>
           <Button variant="ghost" onClick={() => open()} disabled={saving}>
@@ -725,223 +729,215 @@ export function ModelManagementPage({
                     </p>
                   </section>
                 )}
-                <div>
-                  <h3 className="text-sm font-medium">规格售价</h3>
-                  <p className="mt-1 text-xs text-zinc-500">
-                    {template.mediaType === "image"
-                      ? "每张图片售价，可为不同分辨率分别设置。"
-                      : "每秒输出视频售价；参考视频按输入秒加价，没有参考视频时不收输入费用。"}
-                  </p>
-                  {qualities.length > 0 && (
-                    <label className="mt-3 flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={qualityMode}
-                        onChange={(event) =>
-                          toggleQualityMode(event.target.checked)
-                        }
-                      />
-                      按质量分别定价
-                    </label>
-                  )}
-                  {qualityMode && (
-                    <p className="mt-2 text-xs leading-5 text-zinc-500">
-                      自动质量按最高档计价。各分辨率需填齐全部质量价格，精度为 ¥0.01（1 积分）。
+                {template.mediaType === "video" ? (
+                  <VideoTokenPricingEditor
+                    resolutions={template.resolutions}
+                    prices={currentPrices}
+                    onChange={replaceCurrentPrices}
+                  />
+                ) : (
+                  <div>
+                    <h3 className="text-sm font-medium">规格售价</h3>
+                    <p className="mt-1 text-xs text-zinc-500">
+                      {template.mediaType === "image"
+                        ? "每张图片售价，可为不同分辨率分别设置。"
+                        : "每秒输出视频售价；参考视频按输入秒加价，没有参考视频时不收输入费用。"}
                     </p>
-                  )}
-                  <div
-                    className={`mt-4 grid gap-3 ${template.mediaType === "image" ? "grid-cols-3" : "sm:grid-cols-2"}`}
-                  >
-                    {template.resolutions.map((key) => (
-                      <section
-                        key={key}
-                        aria-label={`${key} 售价设置`}
-                        className="min-w-0 rounded-xl bg-zinc-50 p-3"
-                      >
-                        <h4 className="mb-3 text-xs font-medium">{key}</h4>
-                        <div
-                          className={
-                            template.mediaType === "video"
-                              ? "grid grid-cols-2 gap-3"
-                              : ""
+                    {qualities.length > 0 && (
+                      <label className="mt-3 flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={qualityMode}
+                          onChange={(event) =>
+                            toggleQualityMode(event.target.checked)
                           }
-                        >
-                          {qualityMode ? (
-                            <div className="space-y-3">
-                              {qualities.map((item) => (
-                                <label key={item.id} className="block min-w-0">
-                                  <span className="mb-1.5 block text-[11px] text-zinc-500">
-                                    {item.name} · {item.id} / 元
-                                  </span>
-                                  <Input
-                                    aria-label={`${key} ${item.id} 售价`}
-                                    className="bg-white px-2 tabular-nums"
-                                    inputMode="decimal"
-                                    placeholder="未定价"
-                                    value={
-                                      currentPrices[key]?.qualities?.[
-                                        item.id
-                                      ] ?? ""
-                                    }
-                                    onChange={(event) =>
-                                      updateQualityPrice(
-                                        key,
-                                        item.id,
-                                        event.target.value,
-                                      )
-                                    }
-                                  />
-                                </label>
-                              ))}
-                            </div>
-                          ) : (
-                            <label className="block min-w-0">
-                              <span className="mb-1.5 block text-[11px] text-zinc-500">
-                                {template.mediaType === "image"
-                                  ? "每张 / 元"
-                                  : "输出秒 / 元"}
-                              </span>
-                              <Input
-                                aria-label={`${key} 输出售价`}
-                                className="bg-white px-2 tabular-nums"
-                                inputMode="decimal"
-                                placeholder="未定价"
-                                value={currentPrices[key]?.output ?? ""}
-                                onChange={(event) =>
-                                  updatePrice(key, "output", event.target.value)
-                                }
-                              />
-                              <span className="mt-2 block text-[11px] text-zinc-400">
-                                {(() => {
-                                  try {
-                                    return `${yuanToCredits(currentPrices[key]?.output ?? "")} 积分/${template.mediaType === "image" ? "张" : "秒"}`;
-                                  } catch {
-                                    return "—";
-                                  }
-                                })()}
-                              </span>
-                            </label>
-                          )}
-                          {template.mediaType === "video" && (
-                            <label className="block min-w-0">
-                              <span className="mb-1.5 block text-[11px] text-zinc-500">
-                                参考秒 / 元
-                              </span>
-                              <Input
-                                aria-label={`${key} 参考视频秒价`}
-                                className="bg-white px-2 tabular-nums"
-                                inputMode="decimal"
-                                value={currentPrices[key]?.input ?? "0"}
-                                onChange={(event) =>
-                                  updatePrice(key, "input", event.target.value)
-                                }
-                              />
-                              <span className="mt-2 block text-[11px] text-zinc-400">
-                                {(() => {
-                                  try {
-                                    return `${yuanToCredits(currentPrices[key]?.input || "0")} 积分/秒`;
-                                  } catch {
-                                    return "—";
-                                  }
-                                })()}
-                              </span>
-                            </label>
-                          )}
-                        </div>
-                      </section>
-                    ))}
-                  </div>
-                </div>
-                <section className="rounded-2xl bg-zinc-50 p-4">
-                  <h3 className="text-sm font-medium">价格试算</h3>
-                  <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <Select value={resolution} onValueChange={setResolution}>
-                      <SelectTrigger aria-label="试算分辨率">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {template.resolutions.map((key) => (
-                          <SelectItem key={key} value={key}>
-                            {key}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                        />
+                        按质量分别定价
+                      </label>
+                    )}
                     {qualityMode && (
-                      <Select
-                        value={pricingQuality}
-                        onValueChange={setPricingQuality}
-                      >
-                        <SelectTrigger aria-label="试算质量">
+                      <p className="mt-2 text-xs leading-5 text-zinc-500">
+                        自动质量按最高档计价。各分辨率需填齐全部质量价格，精度为
+                        ¥0.01（1 积分）。
+                      </p>
+                    )}
+                    <div
+                      className={`mt-4 grid gap-3 ${template.mediaType === "image" ? "grid-cols-3" : "sm:grid-cols-2"}`}
+                    >
+                      {template.resolutions.map((key) => (
+                        <section
+                          key={key}
+                          aria-label={`${key} 售价设置`}
+                          className="min-w-0 rounded-xl bg-zinc-50 p-3"
+                        >
+                          <h4 className="mb-3 text-xs font-medium">{key}</h4>
+                          <div
+                            className={
+                              template.mediaType === "video"
+                                ? "grid grid-cols-2 gap-3"
+                                : ""
+                            }
+                          >
+                            {qualityMode ? (
+                              <div className="space-y-3">
+                                {qualities.map((item) => (
+                                  <label
+                                    key={item.id}
+                                    className="block min-w-0"
+                                  >
+                                    <span className="mb-1.5 block text-[11px] text-zinc-500">
+                                      {item.name} · {item.id} / 元
+                                    </span>
+                                    <Input
+                                      aria-label={`${key} ${item.id} 售价`}
+                                      className="bg-white px-2 tabular-nums"
+                                      inputMode="decimal"
+                                      placeholder="未定价"
+                                      value={
+                                        currentPrices[key]?.qualities?.[
+                                          item.id
+                                        ] ?? ""
+                                      }
+                                      onChange={(event) =>
+                                        updateQualityPrice(
+                                          key,
+                                          item.id,
+                                          event.target.value,
+                                        )
+                                      }
+                                    />
+                                  </label>
+                                ))}
+                              </div>
+                            ) : (
+                              <label className="block min-w-0">
+                                <span className="mb-1.5 block text-[11px] text-zinc-500">
+                                  {template.mediaType === "image"
+                                    ? "每张 / 元"
+                                    : "输出秒 / 元"}
+                                </span>
+                                <Input
+                                  aria-label={`${key} 输出售价`}
+                                  className="bg-white px-2 tabular-nums"
+                                  inputMode="decimal"
+                                  placeholder="未定价"
+                                  value={currentPrices[key]?.output ?? ""}
+                                  onChange={(event) =>
+                                    updatePrice(
+                                      key,
+                                      "output",
+                                      event.target.value,
+                                    )
+                                  }
+                                />
+                                <span className="mt-2 block text-[11px] text-zinc-400">
+                                  {(() => {
+                                    try {
+                                      return `${yuanToCredits(currentPrices[key]?.output ?? "")} 积分/${template.mediaType === "image" ? "张" : "秒"}`;
+                                    } catch {
+                                      return "—";
+                                    }
+                                  })()}
+                                </span>
+                              </label>
+                            )}
+                            {template.mediaType === "video" && (
+                              <label className="block min-w-0">
+                                <span className="mb-1.5 block text-[11px] text-zinc-500">
+                                  参考秒 / 元
+                                </span>
+                                <Input
+                                  aria-label={`${key} 参考视频秒价`}
+                                  className="bg-white px-2 tabular-nums"
+                                  inputMode="decimal"
+                                  value={currentPrices[key]?.input ?? "0"}
+                                  onChange={(event) =>
+                                    updatePrice(
+                                      key,
+                                      "input",
+                                      event.target.value,
+                                    )
+                                  }
+                                />
+                                <span className="mt-2 block text-[11px] text-zinc-400">
+                                  {(() => {
+                                    try {
+                                      return `${yuanToCredits(currentPrices[key]?.input || "0")} 积分/秒`;
+                                    } catch {
+                                      return "—";
+                                    }
+                                  })()}
+                                </span>
+                              </label>
+                            )}
+                          </div>
+                        </section>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {template.mediaType === "image" && (
+                  <section className="rounded-2xl bg-zinc-50 p-4">
+                    <h3 className="text-sm font-medium">价格试算</h3>
+                    <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                      <Select value={resolution} onValueChange={setResolution}>
+                        <SelectTrigger aria-label="试算分辨率">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="auto">自动（最高档）</SelectItem>
-                          {qualities.map((item) => (
-                            <SelectItem key={item.id} value={item.id}>
-                              {item.name} · {item.id}
+                          {template.resolutions.map((key) => (
+                            <SelectItem key={key} value={key}>
+                              {key}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                    )}
-                    <Select value={count} onValueChange={setCount}>
-                      <SelectTrigger aria-label="试算数量">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {[1, 2, 4].map((value) => (
-                          <SelectItem
-                            key={value}
-                            value={String(value)}
-                            disabled={
-                              draft.adapterId === "nano-banana-pro" &&
-                              value !== 1
-                            }
-                          >
-                            {value}{" "}
-                            {template.mediaType === "image" ? "张" : "条"}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {template.mediaType === "video" && (
-                      <>
-                        <label className="text-xs text-zinc-500">
-                          每条输出秒数
-                          <Input
-                            aria-label="输出秒数"
-                            type="number"
-                            min="1"
-                            max="30"
-                            step="1"
-                            value={seconds}
-                            onChange={(event) => setSeconds(event.target.value)}
-                          />
-                        </label>
-                        <label className="text-xs text-zinc-500">
-                          每条参考视频秒数
-                          <Input
-                            aria-label="参考视频秒数"
-                            type="number"
-                            min="0"
-                            max="60"
-                            step="0.01"
-                            value={referenceSeconds}
-                            onChange={(event) =>
-                              setReferenceSeconds(event.target.value)
-                            }
-                          />
-                        </label>
-                      </>
-                    )}
-                  </div>
-                  <p aria-live="polite" className="mt-4 text-sm">
-                    {quote === null
-                      ? "填写有效价格和参数后显示总价。"
-                      : `合计 ¥${creditsToYuan(quote)} · ${quote} 积分`}
-                  </p>
-                </section>
+                      {qualityMode && (
+                        <Select
+                          value={pricingQuality}
+                          onValueChange={setPricingQuality}
+                        >
+                          <SelectTrigger aria-label="试算质量">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="auto">自动（最高档）</SelectItem>
+                            {qualities.map((item) => (
+                              <SelectItem key={item.id} value={item.id}>
+                                {item.name} · {item.id}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                      <Select value={count} onValueChange={setCount}>
+                        <SelectTrigger aria-label="试算数量">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 4].map((value) => (
+                            <SelectItem
+                              key={value}
+                              value={String(value)}
+                              disabled={
+                                draft.adapterId === "nano-banana-pro" &&
+                                value !== 1
+                              }
+                            >
+                              {value}{" "}
+                              {template.mediaType === "image" ? "张" : "条"}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <p aria-live="polite" className="mt-4 text-sm">
+                      {quote === null
+                        ? "填写有效价格和参数后显示总价。"
+                        : `合计 ¥${creditsToYuan(quote)} · ${quote} 积分`}
+                    </p>
+                  </section>
+                )}
                 <label className="flex items-center gap-2 text-sm">
                   <input
                     type="checkbox"

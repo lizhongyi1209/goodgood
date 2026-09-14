@@ -1,5 +1,7 @@
 # Decision records
 
+- `0070-seedance-token-pricing.md` — actual completion-token video pricing and pricing-only scope for GG-067.
+
 - `0069-gpt-quality-pricing.md` — GPT quality pricing and fal estimates for GG-063.
 
 Use an ADR when a change affects product vocabulary, a confirmed UX invariant,

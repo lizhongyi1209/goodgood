@@ -1,5 +1,13 @@
 # GG-063 quality pricing
 
+GG-067 supersedes the video-second pricing flow below. The video editor shows
+two RMB/million-token fields per supported resolution, an actual-use calculator,
+and optional response JSON extraction. Choose reference-video state explicitly;
+images/audio do not select that rate. Read completion_tokens only, never add
+total_tokens. Single-task credits round upward once. Invalid usage shows an
+error and preserves inputs. Legacy seconds require new token prices; the
+current pure mock preview still does not debit video credit.
+
 Each GPT line retains fixed-resolution pricing or opts into quality pricing.
 The editor lists resolution columns and model-owned quality rows, plus a quality
 selector in the price calculator. GG-065 list rows show only price ranges; quality

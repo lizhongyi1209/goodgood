@@ -1,5 +1,12 @@
 # GG-063 verification
 
+GG-067 targeted coverage verifies token-rate validation and legacy separation,
+nested/top-level completion_tokens parsing, missing/illegal use, mutually
+exclusive reference rates, exact 826200/50638 examples and one-time rounding.
+SSR verifies visible rate inputs and units. Browser checks save/reload, response
+extraction failure/recovery, and narrow layout on the isolated 32141 mock stack.
+Full video admission and actual ledger settlement remain outside this slice.
+
 GG-065 reuses SSR coverage to verify quality ranges without tier sections or
 disclosure controls. Browser verification checks compact desktop/narrow layouts
 and confirms pricing-editor tier values without changing saved prices.

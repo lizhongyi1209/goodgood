@@ -1,5 +1,12 @@
 # GG-063 quality pricing
 
+GG-067 video specification JSON adds `billing: "tokens"`. `output` and `input`
+are integer credits per million completion tokens for no-reference-video and
+reference-video tasks respectively; select exactly one rate, never add them.
+Legacy entries without billing retain seconds semantics. No schema migration
+or legacy conversion occurs. Existing model events retain edit snapshots;
+formal video reservation/settlement snapshots are still not connected.
+
 Migration 0034 expands xhigh/max only for GPT 2.5 batches/projects/drafts;
 no rows, prices or historical snapshots are rewritten. Specification JSON can
 store optional `qualities` integer prices alongside legacy `output`. Flat lines
