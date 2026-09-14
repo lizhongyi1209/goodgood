@@ -26,4 +26,8 @@
 
 ## 恢复工作与下一步
 
+2026-09-14按站长“启动服务检查”恢复真实本地页面：实现revision d6b0ce0879426fa977918ccb41a935d803478283，Web PID28072/32141、mock Worker PID30432/32142、mock provider PID9048/32143；沿用goodgood-gg052专用PG54449/Valkey56449/对象58049原数据，桶goodgood-gg052-local，非线上环境。只增量执行0039/0040，并逐表比较原列行hash和旧迁移checksum，全部不变；不执行历史转换/重置/造数据。个人余额0，第一期仍draft；页面/正常local站长会话/个人GET/站长计划查询均200，浏览器JONY资料与计划正常显示。没有开启本期、登记收款或发起生成。
+
+服务恢复脚本在忽略目录`work/gg084-preview/start.mjs`，从GG084根运行`node work/gg084-preview/start.mjs web`、`worker`、`mock-generation`三个独立进程；各自日志/PID同目录。启动参数仅loopback、本地身份、mock provider；prepare.mjs已执行且拒绝重跑，不再跑迁移或旧helpers。后续停止只核对这三个PID/监听后逐个停止，不能操作3010或其他Worker。当前服务保留供用户检查。
+
 下一步：站长验收本地一期页面与分发规则；发布/生产迁移/真实发行另行明确授权。当前仅固定第一期管理，没有第二期配置/创作/企业/正式视频发行功能。正式启用前需同一累计候选的正常发布流程，并在站长页明确开启本期；不得运行旧数据重置或仅迁移就称已发行。

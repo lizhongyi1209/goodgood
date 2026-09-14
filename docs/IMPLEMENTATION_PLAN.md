@@ -12,7 +12,8 @@
 - 第一批100万枚、每100有效充值消费积分2枚、9.18北京时间00:00起算、无期限/无兑换/无价值锚定不变。迁移0040只建固定库存/草稿；需站长在本期页面开启才分发。20%创作/企业来源/正式视频/第二期计划另行实施。
 - 已写JCOIN schema/处理器、两套API与页面、导航和Worker独立15秒处理；正常消费/退款事务不依赖奖励处理。来源验证真实manual与历史划拨，混合或缺证据保守排除；有异常计数。
 - 定向7/7、命名空库全40迁移/并发/来源/回滚/退款/封顶1/1及Chrome实际工作区1280/390px全fetch模拟验证通过。临时库/58184页面均清理停止；未接provider。最终npm run check:local exit0：lint/typecheck/build、515通过/24 opt-in跳过/0失败；CI迁移断言随0040更新，缓存diff检查通过。
-- 正式入口 https://goodgood.o1key.com 不变；staging-goodgood.o1key.com是历史名称。CURRENT_STATE不改；原GG079/GG081预览已停止，当前本轮未起真实Worker，不操作3010或原预览数据库。
+- 站长已请求启动验收：d6b0ce0的Web28072/32141、mock Worker30432/32142、mock provider9048/32143运行；原PG54449/Valkey56449/对象58049保留。仅补0039/0040，原行/旧checksum验证不变；JONY页面/会话/个人与站长计划API200，本期仍draft/余额0，没有生成或启期。恢复脚本与停止边界见GG084任务卡。
+- 正式入口 https://goodgood.o1key.com 不变；staging-goodgood.o1key.com是历史名称。CURRENT_STATE不改；未起真实provider Worker，不操作3010或其他环境。
 - Next action: 供站长验收本地一期页面；若发布需另行明确本累计候选的范围与生产迁移/发行授权。后续批次配置/创作另定任务，不自动推进。
 - Blockers: 无；未授权生产迁移/发行、真实provider请求或部署。
 
