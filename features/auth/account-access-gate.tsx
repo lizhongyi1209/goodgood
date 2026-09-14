@@ -9,11 +9,13 @@ export function AccountAccessGate({
   busy = false,
   onLogout,
   onRefresh,
+  onFeedback,
   session,
 }: {
   busy?: boolean;
   onLogout: () => void;
   onRefresh: () => void;
+  onFeedback?: () => void;
   session: AuthenticationSession;
 }) {
   const pending = session.access.status === "pending";
@@ -57,6 +59,7 @@ export function AccountAccessGate({
             <LogOut />退出登录
           </Button>
         </div>
+        {onFeedback && <Button className="mt-3" variant="ghost" onClick={onFeedback}>问题反馈</Button>}
       </section>
     </div>
   );

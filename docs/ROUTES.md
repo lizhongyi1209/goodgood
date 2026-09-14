@@ -1,5 +1,7 @@
 # Navigation and route contract
 
+GG-087 /feedback个人页、/admin/feedback站长页保持同工作区。GET /api/feedback只返回自己的每20条游标列表；POST multipart及x-goodgood-feedback-action=1/Idempotency-Key创建；GET /:id详情、/:id/images/:position受所有者或活动站长保护。站长POST /api/admin/feedback列表、GET /:id详情、POST /:id/reply版本化状态/回复都需x-goodgood-admin-action=1，回复另需幂等键。
+
 GG-084新增个人`/jcoin`，桌面左下平台币入口、手机账户菜单“我的平台币”；离开企业历史工作区时回到个人域。GET `/api/jcoin?limit=20&cursor=…`只读，绑定已启用登录用户，limit为1—50，按原发生时间/ID分页；不接受目标用户切换，不返回发行库存、批次预算或来源支付详情。站长`/admin/jcoin`保留同工作区导航，活动site_owner独占no-store POST `/api/admin/jcoin/query`与`/action`；管理header必需，action仅start/pause/resume/process，8—200字符Idempotency-Key必需。预算、系数和日期来自固定一期计划，客户端不能传金额来铸币。站长默认入口仍为运营看板。
 
 GG-081本地新增POST /api/admin/users/:ownerId/credit-grants，活动site_owner及x-goodgood-admin-action=1/Idempotency-Key必需。amount为1—5000整数，creditGrantType为共享英文枚举，reason为2—200字符；paid_recharge另需paymentConfirmed=true及8—200字符receiptReference。其他类型不收凭证，旧test-credit-grants兼容接口仍只测试赠送。站长默认/admin/operations；运营dashboard返回concurrent/queued/measuredAt及daily peak与recharge*，移除jobs/pending旧指标。

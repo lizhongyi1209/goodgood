@@ -1,5 +1,7 @@
 # Architecture
 
+GG-087隔离features/feedback、server/feedback及shared/contracts/feedback；框架与Node共用有界multipart/http服务，session认证允许非活动用户联系站长，DB再次核对管理角色。专用私有对象通过同源认证图片API读取，不走references/资产库/provider；创建锁用户+内容指纹幂等，站长版本/动作锁保护回复。
+
 GG-084以features/jcoin、server/jcoin和shared/contracts/jcoin隔离运行时；app/page仅路由/导航接线。个人DTO显式投影自身统计/记录，平台计划只走站长API且数据库再次验证活动角色。独立处理器从已结算credit ledger核对真实manual支付与历史划拨，不在消费/退款事务中同步发币。Worker每15秒单飞处理一批至多200条，PG全局事务锁与唯一source使多Worker/手动重放幂等；失败仅记录事件/错误码，原生成队列继续。暂停/发完仍处理已奖励消费的退款，原消费时间决定资格与稳定分发顺序。仅一期生命周期，后续批次管理另行实施。
 
 GG-081通用积分入账端点复用身份/CSRF、事务与管理幂等。充值与manual命令共用凭证互斥，通过正常PaymentOrder与payment_funded账本原子入账；内部按数量不可变价目不进入客户目录，也不能经客户支付接口创建。其他五类为non_transferable。看板只读已确认manual订单现金和任务运行区间，假支付排除。见[ADR0080](decisions/0080-classified-admin-credit-grants-and-operations.md)。

@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, ChartNoAxesCombined, Coins, ListFilter, LoaderCircle, ScrollText, SlidersHorizontal, UsersRound } from "lucide-react";
+import { Building2, ChartNoAxesCombined, Coins, MessageSquare, ListFilter, LoaderCircle, ScrollText, SlidersHorizontal, UsersRound } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import type { AuthenticationSession } from "@/features/auth/http-auth-boundary";
@@ -9,10 +9,12 @@ import { AccountManagementPage } from "./account-management-page";
 import { ModelManagementPage } from "./model-management-page";
 import { AuditLogView } from "./audit-log-view";
 import { SiteOperationsDashboard, SiteOperationsLog } from "./site-operations-view";
+import { FeedbackManagementView } from '@/features/feedback/feedback-view';
 import { JcoinManagementView } from '@/features/jcoin/jcoin-management-view';
 
 const tabs = [
   { id: "operations", label: "运营看板", icon: ChartNoAxesCombined, route: { kind: "admin", tab: "operations" } },
+  { id: "feedback", label: "问题反馈", icon: MessageSquare, route: { kind: "admin", tab: "feedback" } },
   { id: "jcoin", label: "平台币", icon: Coins, route: { kind: "admin", tab: "jcoin" } },
   { id: "organizations", label: "企业管理", icon: Building2, route: { kind: "organizations" } },
   { id: "models", label: "模型管理", icon: SlidersHorizontal, route: { kind: "admin", tab: "models" } },
@@ -23,7 +25,7 @@ const tabs = [
 
 export function SiteOwnerManagementView({ session, activeTab, children, onLogin, onManagementChange }: {
   session: AuthenticationSession | null | undefined;
-  activeTab: "organizations" | "models" | "users" | "audit" | "operations" | "logs" | "jcoin";
+  activeTab: "organizations" | "models" | "users" | "audit" | "operations" | "logs" | "jcoin" | "feedback";
   children?: ReactNode;
   onLogin: () => void;
   onManagementChange?: () => void;
@@ -47,6 +49,7 @@ export function SiteOwnerManagementView({ session, activeTab, children, onLogin,
       </nav>
     </header>
     {activeTab === "operations" ? <SiteOperationsDashboard />
+      : activeTab === "feedback" ? <FeedbackManagementView />
       : activeTab === "jcoin" ? <JcoinManagementView />
       : activeTab === "logs" ? <SiteOperationsLog />
       : activeTab === "models" ? <ModelManagementPage workspaceSession={session} embedded onManagementChange={onManagementChange} />

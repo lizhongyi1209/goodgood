@@ -6,6 +6,7 @@ import { createInspirationNodeApiHandler } from "../inspiration/node-api.mjs";
 import { createAdminNodeApiHandler } from "../admin/node-api.mjs";
 import { createBillingNodeApiHandler } from "../billing/node-api.mjs";
 import { createJcoinNodeApiHandler } from '../jcoin/node-api.mjs';
+import { createFeedbackNodeApiHandler } from '../feedback/http.mjs';
 import { loadAuthenticationConfig } from "../auth/config.mjs";
 import { createAuthenticationNodeApiHandler } from "../auth/node-api.mjs";
 import { createAuthenticationOperations } from "../auth/operations.mjs";
@@ -74,6 +75,7 @@ const handleGenerationNodeApi = createGenerationNodeApiHandler({
 });
 const handleAdminNodeApi = createAdminNodeApiHandler({ authenticate });
 const handleJcoinNodeApi = createJcoinNodeApiHandler({ authenticate });
+const handleFeedbackNodeApi = createFeedbackNodeApiHandler({ authenticateSession });
 const handleCreationDraftNodeApi = createCreationDraftNodeApiHandler({ authenticate });
 const handleDistributionNodeApi = createDistributionNodeApiHandler({ authenticate });
 const handleAssetNodeApi = createAssetNodeApiHandler({ authenticate });
@@ -106,6 +108,7 @@ server.on("request", (request, response) => {
   }
   void handleAuthenticationNodeApi(request, response)
     .then((handled) => (handled ? true : handleJcoinNodeApi(request, response)))
+    .then((handled) => (handled ? true : handleFeedbackNodeApi(request, response)))
     .then((handled) => (handled ? true : handleAdminNodeApi(request, response)))
     .then((handled) =>
       handled ? true : handleCreationDraftNodeApi(request, response),

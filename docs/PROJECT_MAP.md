@@ -1,5 +1,7 @@
 # Project map
 
+GG-087问题反馈领域放在features/feedback和server/feedback，shared/contracts/feedback区分领域值和中文标签；app/page仅接导航/页面，反馈图片保持独立私有存储。
+
 ## Current implementation
 
 Use `docs/CURRENT_STATE.md` for the deployed subset and parked work. This map

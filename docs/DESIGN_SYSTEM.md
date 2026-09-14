@@ -1,5 +1,7 @@
 # Design system
 
+GG-087反馈沿用侧栏普通MessageSquare图标与站长功能栏；安静标题、白色圆角反馈列表、右侧640px Sheet（手机全宽），字段复用Select/Textarea/Button。上传88px方形缩略图并带可访问移除，5张时禁用添加；原图复用Dialog，状态/时间/回复使用中性层级，不加重阴影。
+
 GG-086站长批次卡片在已发/剩余下方增加Palace Red细进度条和百分比，复用Radix/Shadcn Progress、期号aria-label/value文本；减少动画时禁用过渡，手机保持全卡宽度。用户个人页不展示发行进度。
 
 GG-084沿用轻量个人工作区与站长功能栏，Palace Red突出自己的币与奖励；三项统计、简洁时间流水，未加币价或发行进度营销。手机入口使用既有Radix账户菜单，保持顶部工具位置；站长窄屏总量独占一行，另两项并排，发行批次采用独立白色圆角卡片、轻边框无阴影；期号/状态在顶部，额度突出，已发/剩余并排，规则及操作在卡片内。卡片网格自适应，手机单列，数字不截断（GG-085）。开启确认复用Dialog与既有Button，加载/错误用status/alert，刷新有明确aria-label。功能样式限定features/jcoin/jcoin.css。

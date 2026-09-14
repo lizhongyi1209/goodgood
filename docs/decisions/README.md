@@ -1,5 +1,7 @@
 # Decision records
 
+- `0085-private-problem-feedback.md` — accepted private support tickets, up to five verified images, own status/replies and active owner handling for GG-087.
+
 - `0084-jcoin-runtime-and-private-user-view.md` — accepted first-batch runtime, private own-balance/history without supply data, owner-only plan/lifecycle and independent durable consumption processing for GG-084.
 
 - `0083-jcoin-first-batch-consumption-coefficient.md` — accepted 500,000 CNY qualified-consumption scale implies 2 JCOIN per 100 qualified consumption credits for the 1,000,000-coin first batch; no currency value peg.

@@ -1,5 +1,7 @@
 # GG-063 verification
 
+GG-087定向验证类型/文字/0—5图片/大小/解码、分页、401/403/404、方法/header/安全错误、multipart、SSR字段/空/登录/详情。命名空库goodgood_gg087_feedback_test*、显式INTEGRATION/NO_WORKER及loopback54449，完整迁移和内存对象mock测试原子性/幂等/回滚、越权、回复/冲突、筛选/分页/事件历史；没有队列/Worker/provider。浏览器使用隔离无Worker栈合成图片验证全流程，不对原验收数据写fixtures。
+
 GG-086 tests/gg086-jcoin-progress.test.mjs覆盖整数精度、空/极小/接近封顶/封顶进度、15秒更新、失败保留/恢复、不重叠、隐藏/可见及取消迟到请求；GG084 SSR追加可访问进度条及部分/完成断言。全为内存只读测试，无数据库或provider调用。
 
 GG-084 `node --test tests/gg084-jcoin.test.mjs`验证精确金额、当前/历史单位、线性小额与50万元预算封顶、只返回自身DTO、身份/输入/分页/安全错误、Node方法/CSRF/请求限制、深链和SSR成功/空/加载状态。`gg084-jcoin-postgres.test.mjs`默认跳过；仅GOODGOOD_GG084_INTEGRATION=1、GOODGOOD_GG084_NO_WORKER=1及GOODGOOD_GG084_DATABASE_URL指向loopback54449的goodgood_gg084_jcoin_test*命名空库，拒绝非空库/其他客户端。全40迁移验证草稿、起算边界、历史单位、混合赠送、真假支付/缺来源/历史划拨、并发重放、个人分页、暂停退款、失败回滚重跑、最后一笔封顶、回收不重开、不可变账本及活动角色。无outbox、Redis或真实provider请求。临时Chrome页面用全fetch模拟验证实际工作区个人/站长桌面1280px/窄屏390px、空记录、分页、读取重试、开启失败重试/暂停/恢复与手机菜单；不接真实数据库。

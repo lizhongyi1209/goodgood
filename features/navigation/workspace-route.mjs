@@ -1,7 +1,7 @@
 export const WORKSPACE_NAVIGATION_EVENT = "goodgood:workspace-navigation";
 
 /**
- * @typedef {{ kind: "create" } | { kind: "profile" } | { kind: "inspiration" } | { kind: "inspirationEdit", assetId: string } | { kind: "inspirationUse", caseId: string } | { kind: "projects" } | { kind: "project", projectId: string } | { kind: "assets" } | { kind: "asset", assetId: string } | { kind: "credits" } | { kind: "jcoin" } | { kind: "distribution", tab?: "transfers" } | { kind: "admin", tab: "models" | "users" | "audit" | "operations" | "logs" | "jcoin" } | { kind: "enterpriseAccounts", tab: "accounts" | "transfers" } | { kind: "organizations", organizationId?: string, tab?: "overview" | "members" | "usage" | "assets" }} WorkspaceRoute
+ * @typedef {{ kind: "create" } | { kind: "profile" } | { kind: "inspiration" } | { kind: "inspirationEdit", assetId: string } | { kind: "inspirationUse", caseId: string } | { kind: "projects" } | { kind: "project", projectId: string } | { kind: "assets" } | { kind: "asset", assetId: string } | { kind: "credits" } | { kind: "jcoin" } | { kind: "feedback" } | { kind: "distribution", tab?: "transfers" } | { kind: "admin", tab: "models" | "users" | "audit" | "operations" | "logs" | "jcoin" | "feedback" } | { kind: "enterpriseAccounts", tab: "accounts" | "transfers" } | { kind: "organizations", organizationId?: string, tab?: "overview" | "members" | "usage" | "assets" }} WorkspaceRoute
  */
 
 /**
@@ -31,6 +31,8 @@ export function parseWorkspaceRoute(pathname) {
   if (normalized === "/profile") return { kind: "profile" };
   if (normalized === "/assets") return { kind: "assets" };
   if (normalized === "/credits") return { kind: "credits" };
+  if (normalized === "/feedback") return { kind: "feedback" };
+  if (normalized === "/admin/feedback") return { kind: "admin", tab: "feedback" };
   if (normalized === "/jcoin") return { kind: "jcoin" };
   if (normalized === "/admin/jcoin") return { kind: "admin", tab: "jcoin" };
   if (normalized === "/admin/models") return { kind: "admin", tab: "models" };
@@ -75,6 +77,7 @@ export function workspaceRouteHref(route) {
   if (route.kind === "profile") return "/profile";
   if (route.kind === "assets") return "/assets";
   if (route.kind === "credits") return "/credits";
+  if (route.kind === "feedback") return "/feedback";
   if (route.kind === "jcoin") return "/jcoin";
   if (route.kind === "admin") return `/admin/${route.tab}`;
   if (route.kind === "distribution") return route.tab === "transfers" ? "/distribution/transfers" : "/distribution";
