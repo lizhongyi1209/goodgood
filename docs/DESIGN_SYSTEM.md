@@ -1,5 +1,7 @@
 # Design system
 
+GG-088问题类型菜单固定从按钮下方展开（首次及切换选项后均如此），保留Radix键盘/焦点与可滚动菜单。
+
 GG-087反馈沿用侧栏普通MessageSquare图标与站长功能栏；安静标题、白色圆角反馈列表、右侧640px Sheet（手机全宽），字段复用Select/Textarea/Button。上传88px方形缩略图并带可访问移除，5张时禁用添加；原图复用Dialog，状态/时间/回复使用中性层级，不加重阴影。
 
 GG-086站长批次卡片在已发/剩余下方增加Palace Red细进度条和百分比，复用Radix/Shadcn Progress、期号aria-label/value文本；减少动画时禁用过渡，手机保持全卡宽度。用户个人页不展示发行进度。

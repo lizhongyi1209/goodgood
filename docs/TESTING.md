@@ -1,5 +1,7 @@
 # GG-063 verification
 
+GG-088定位修复用实际浏览器验证默认其他首次打开、选择首项后再次打开及390px全新表单首次打开；菜单顶部在触发按钮底部之下且data-side=bottom，保留键盘选择与Escape返回焦点。不提交或写fixture；沿用GG087定向检查及一次check:local。
+
 GG-087定向验证类型/文字/0—5图片/大小/解码、分页、401/403/404、方法/header/安全错误、multipart、SSR字段/空/登录/详情。命名空库goodgood_gg087_feedback_test*、显式INTEGRATION/NO_WORKER及loopback54449，完整迁移和内存对象mock测试原子性/幂等/回滚、越权、回复/冲突、筛选/分页/事件历史；没有队列/Worker/provider。浏览器使用隔离无Worker栈合成图片验证全流程，不对原验收数据写fixtures。
 
 GG-086 tests/gg086-jcoin-progress.test.mjs覆盖整数精度、空/极小/接近封顶/封顶进度、15秒更新、失败保留/恢复、不重叠、隐藏/可见及取消迟到请求；GG084 SSR追加可访问进度条及部分/完成断言。全为内存只读测试，无数据库或provider调用。

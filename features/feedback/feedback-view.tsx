@@ -15,7 +15,7 @@ import {queryFeedback,getFeedback,submitFeedback,respondToFeedback} from './http
 const date=new Intl.DateTimeFormat('zh-CN',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Shanghai'});
 const messageOf=(e:unknown)=>e instanceof Error?e.message:'问题反馈暂时不可用，请重试。';
 function CategorySelect({value,onChange,disabled}:{value:FeedbackCategory;onChange:(v:FeedbackCategory)=>void;disabled:boolean}){
-  return <Select value={value} onValueChange={v=>onChange(v as FeedbackCategory)} disabled={disabled}><SelectTrigger id="feedback-category"><SelectValue/></SelectTrigger><SelectContent>{Object.entries(FEEDBACK_CATEGORIES).map(([v,label])=><SelectItem key={v} value={v}>{label}</SelectItem>)}</SelectContent></Select>;
+  return <Select value={value} onValueChange={v=>onChange(v as FeedbackCategory)} disabled={disabled}><SelectTrigger id="feedback-category"><SelectValue/></SelectTrigger><SelectContent position="popper" side="bottom" align="start" avoidCollisions={false}>{Object.entries(FEEDBACK_CATEGORIES).map(([v,label])=><SelectItem key={v} value={v}>{label}</SelectItem>)}</SelectContent></Select>;
 }
 export function FeedbackForm({onSubmitted,onBusyChange}:{onSubmitted:(id:string)=>void;onBusyChange?:(busy:boolean)=>void}) {
   const [category,setCategory]=useState<FeedbackCategory>('other'),[message,setMessage]=useState(''),[images,setImages]=useState<{id:string;file:File;url:string}[]>([]),[busy,setBusy]=useState(false),[error,setError]=useState('');
