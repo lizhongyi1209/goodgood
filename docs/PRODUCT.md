@@ -1,9 +1,12 @@
 # Product definition
 
 GG-080 proposes a separate JCOIN reward system, continuing candidate a73835f.
-The owner confirmed a 100,000,000 supply cap and a 50,000,000 consumption-user
-pool; only proven payment-funded consumption qualifies. Allocation rates,
-utility, beneficiary rules, start date and issuance remain proposed in
+The owner confirmed a fixed 100,000,000 supply cap and a 50,000,000 user-benefit
+pool, consumption-driven release and a 2026-09-18 Shanghai settlement cutoff.
+Early rewards require proven payment-funded consumption; a proposed 20% creative
+arrangement needs denominator/utility clarification before the subpools are fixed.
+Admin credit types must be structured rather than inferred from notes. Rates,
+utility, beneficiary rules, classified grant implementation and issuance remain proposed in
 [ADR 0079](decisions/0079-jcoin-reward-planning.md) and the
 [distribution plan](research/GG-080-jcoin-distribution-plan.md).
 No wallet, token issuance, pricing conversion or management change is implemented
