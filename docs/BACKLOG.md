@@ -3,7 +3,7 @@
 ## 当前与最近交付
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
-| GG-079 | 恢复点赞与详情图片居中 | 本地完成；点赞恢复、三项同行、详情居中；门禁502/22及桌面窄屏通过，页面已更新，未部署 | [任务](tasks/GG-079-inspiration-likes-centered-detail.md) |
+| GG-079 | 恢复点赞与详情图片居中 | 本地完成并保存新窗口交接；实现6c1ab22，门禁502/22及桌面窄屏通过；预览进程已停止、依赖健康，未部署 | [任务](tasks/GG-079-inspiration-likes-centered-detail.md) |
 | GG-078 | 简化灵感卡片统计 | 本地完成；取消点赞、图标数字并排；门槛502/22与桌面窄屏通过，未部署 | [任务](tasks/GG-078-inspiration-card-statistics.md) |
 | GG-077 | 灵感参数可见性与查看/使用统计 | 本地完成；三档可见性、固定私有参数与查看/使用去重；门槛502/22、SQL/模拟页面及数据保留通过，未部署 | [任务](tasks/GG-077-inspiration-visibility-statistics.md) |
 | GG-076 | 灵感卡片滑动与详情默认效果图 | 本地完成；卡片滑动、默认处理后与离开恢复；门槛496/21、实页/窄屏与数据保留通过，未发布 | [任务](tasks/GG-076-inspiration-hover-preview.md) |

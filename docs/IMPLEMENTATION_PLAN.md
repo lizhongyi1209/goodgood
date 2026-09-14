@@ -2,7 +2,7 @@
 
 - Last synchronized: 2026-09-14
 - Current phase: GG-079 implemented and locally verified; not deployed.
-- Current objective: Restore inspiration likes and center detail comparisons.
+- Current objective: GG-079 saved for a new-window handoff; await the user's next development request.
 - Previous objective: 用户在模型管理为 GPT 图片系列逐线路定价与启禁，保留原测试配置与历史。
 
 ## Current checkpoint
@@ -10,9 +10,10 @@
 - Task [GG-079](tasks/GG-079-inspiration-likes-centered-detail.md), fix/GG-079-inspiration-likes-centered-detail, F:/goodgood-worktrees/GG-079; main bab17fd + FF accepted GG07824a1711.
 - ADR0078 clarified before code: restore board/detail likes, all three icon-number counters inline, center detail image frames. No backend/schema changes.
 - Final local gate: 502 passed/22 opt-in skipped, lint/typecheck/build passed; targeted12/12. Desktop inline counters/28px like hit area and centered frame, 390px narrow detail verified.
-- Original32141 now GG079 Web25928; GG077 Worker45153 and mock91616 retained. Original user tab/draft/prices/history preserved; one detail observation incremented views1→2, no like/use/generation mutation. Production goodgood.o1key.com unchanged; staging-goodgood.o1key.com historical only.
+- Saved implementation commit: `6c1ab22` on the task branch; working tree clean before this documentation handoff. This cumulative candidate includes GG-078/GG-077; main remains `bab17fd`, not the latest local product candidate.
+- Handoff runtime check: 32141/32142/32143 have no listeners; previous tool session IDs are historical, not portable recovery handles. The goodgood-gg052 PostgreSQL/Valkey/RustFS containers remain running and healthy; no data reset. Original draft/prices/history preserved in the preceding UI verification; no new data writes in this handoff. Production goodgood.o1key.com unchanged; staging-goodgood.o1key.com historical only.
 - Documentation handoff tests15/15 and diff checks passed; local task commit saved at handoff.
-- Next action: User reviews original page; next scoped request starts GG-080.
+- Next action: New window reads this checkpoint and GG-079 task card, then allocates the next scoped request as GG-080 after checking occupancy; verify main and explicitly carry forward the saved cumulative candidate into the new isolated branch.
 - Blockers: None for local work; no production deployment authorized.
 
 ## Verification sequence
@@ -50,8 +51,8 @@
 ## New-session recovery
 
 1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-079` 与 GG-079 任务卡；按卡核对运行版本，不能仅看 URL。
-2. 当前用户页面为 `http://127.0.0.1:32141/admin/operations`；灵感板、个人资料和站长管理看板/总日志/模型/企业/账户/审计仍保留。仅独立 mock 栈。旧 `32140` 有真实 provider Worker，不运行 fixtures/outbox，不重置其数据。
-3. 本地 ignored `.gg052-local.mjs` 分别启动 web/worker/mock-generation；按本任务已记录的运行状态恢复，保留用户试价数据。正式生产与真实请求不在本次授权范围。
+2. 新窗口应进入 `F:/goodgood-worktrees/GG-079`；根 `F:/goodgood` 仍是旧 GG-024 工作树，`.codex/` 未跟踪内容保持原样，不将其旧检查点当作最新实现。原预览 URL 为 `http://127.0.0.1:32141`，上次用户在站长看板；本次交接不再启动或导航。
+3. 恢复预览先确认端口与独立 mock 目标；分别运行 `node .gg052-local.mjs web`（GG-079目录）、`node .gg052-local.mjs worker` 与 `node .gg052-local.mjs mock-generation`（GG-077目录）。ignored helpers/build仍留在本机，数据库54449、Redis56449、RustFS58049；不要运行重置/fixture。旧32140曾有真实provider Worker，不重启或操作它。正式生产与真实请求不在本次授权范围。
 4. 不恢复或 bulk merge 旧 C6；旧阶段具体验证见相应任务卡，GG-051 [研究记录](research/GG-051-credit-pricing-reassessment.md) 保留定价依据。
 
 ## History and update policy
