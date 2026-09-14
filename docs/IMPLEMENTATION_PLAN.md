@@ -11,8 +11,9 @@
 - [ADR0087](decisions/0087-account-owned-invitations.md)：账户唯一6位数字码无限邀请，单一表单，邮箱直接可编辑；替代0086部分规则。
 - 线上授权清理已完成：10测试账户（含站长）及15资产/13素材/37任务/29对象已删；用户/文件0，全局配置/迁移0019不变，现有服务healthy/公网200。详见任务清理记录；本地功能未部署。
 - 部署目标保持 `goodgood.o1key.com`；`staging-goodgood.o1key.com` 仅隔离预发布，不混用数据。
-- 原32141 Web26600、mock Worker30432/32142、provider9048/32143保持。原本地用户草稿/反馈/数据不重置。
-- Next action: 本地类型与双码/无限复用SQL通过；继续邮件UI/手机/账户码展示与check:local，更新原32141；清理临时演练文件。
+- 原32141已更新：Web9796从GG091启动，运行代码a88bdc3；mock Worker30432/32142、provider9048/32143保持。只增0043，全部旧表/迁移校验和一致，草稿/反馈/数据保留。
+- 验证：完整check:local 524通过/26跳过；GG091/GG029/GG031隔离SQL各1/1及Chrome桌面/390px通过；命名测试资源已清理。
+- Next action: 保留32141供用户检查；后续生产登录发布与新站长初始化按独立任务处理。
 - Blockers: 无；生产功能部署或真实发信/付费生成不在此授权范围。
 
 ## Verification sequence
@@ -60,7 +61,7 @@
 
 ## New-session recovery
 
-1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，进入 `F:/goodgood-worktrees/GG-091`，读GG091/ADR0087与server/auth/email-repository.mjs及邀请码服务，原32141为GG090 start-review.mjs（PID26600），核验9f205c9/a73835f祖先；继续当前代码，不退旧版本。
+1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，进入 `F:/goodgood-worktrees/GG-091`，读GG091/ADR0087与server/auth/email-repository.mjs及邀请码服务，原32141为GG091 start-review.mjs（PID9796，运行代码a88bdc3），核验9f205c9/a73835f祖先；继续当前代码，不退旧版本。
 2. 根 `F:/goodgood` 仍为旧 GG-024；GG-079 是原累计候选，main 也不能代替 a73835f。`.codex/` 与未跟踪用户文件保持原样；不用旧检查点退回历史版本。
 3. GG081的32181模拟检查已停止/临时页面移除，不依赖聊天句柄。后续恢复先核验版本/端口及独立mock目标；GG079/GG077 helpers与依赖54449/56449/58049见原交接。六个命名测试库已清理；禁止对原预览fixture/重置，旧32140曾有真实Worker，不操作。
 4. 不恢复或 bulk merge 旧 C6；旧阶段具体验证见相应任务卡，GG-051 [研究记录](research/GG-051-credit-pricing-reassessment.md) 保留定价依据。
