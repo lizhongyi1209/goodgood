@@ -1,22 +1,22 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-14
-- Current phase: GG-070 model cards and right pricing Sheet implemented and locally verified; not deployed.
-- Current objective: Let the owner review a compact model directory and edit full prices in the right panel.
+- Current phase: GG-071 site operations and global log implemented and locally verified; not deployed.
+- Current objective: Owner daily operations and cross-user task/credit lookup in the existing shell.
 - Previous objective: 用户在模型管理为 GPT 图片系列逐线路定价与启禁，保留原测试配置与历史。
 
 ## Current checkpoint
 
-- Current task [GG-070](tasks/GG-070-model-cards.md), branch feature/GG-070-model-cards, worktree F:/goodgood-worktrees/GG-070; verified main bab17fd ancestor plus GG-069 bc7d466 candidate.
-- ADR 0073 replaces directory price matrices with default-line summary cards and a same-page right Sheet. Pricing/quality/discount logic and quick enable remain; duplicate copy removed. No migration, new API or formal video settlement changes.
-- Targeted tests 22/22 and browser-preview build passed. Initial gate exposed a TypeScript matrix inference issue; explicit contract typing fixed it. Final npm run check:local passes lint/types/build and all480 tests:463 passed,17 opt-in skipped,0 failed.
-- GG-070 Web session 6035 replaces stopped GG-069 Web 32488; mock 42311 and Worker 72412 retained. Original goodgood-gg052 volumes retained; no migrations/reset/rebuild or requests to real-provider 32140.
-- Browser verifies 9 model cards in the desktop first screen, 2.5 first, 760px right-aligned Sheet, independent backup discount and standard original price. Esc restores card focus, search and no-match states work; quality matrix remains accessible. All trial edits cancelled, no model save this task.
-- 390px Sheet is full width with internal scroll (1194px content/682px area), save pinned at y828 in 844px viewport; no horizontal overflow. Add Sheet checked without saving. Desktop restored, original tab1648144383 retained on card directory.
-- Read-only before/after:39 non-model table hashes/counts, entire managed_models records and model event hashes/counts identical. No model save, price/flag/history change or generation/ledger writes.
+- Current task [GG-071](tasks/GG-071-site-operations.md), branch feature/GG-071-site-operations, worktree F:/goodgood-worktrees/GG-071; verified main bab17fd ancestor plus fast-forward GG-070 04fb519.
+- ADR 0074 extends owner management with daily operations and task/ledger log plus details; existing audit and pricing remain. No migration, billing write or formal video settlement.
+- Targeted feature/navigation17/17 and isolated SQL1/1 passed. Shanghai timestamp boundaries and historical MD5 UUIDs verified; preview SQL ran read-only. npm run check:local lint/types/build passed,491 tests470 pass/18 skip/3 doc-only failures. Documentation contract fixes passed8/8 afterward; no runtime/test edits after gate.
+- Docker Desktop restarted after reboot. Existing goodgood-gg052 volumes retained; Windows excluded ports forced PG54449 and storage58049/58050 (Valkey56449), replacing unavailable55449/59049/59050. Only three named dependency containers recreated, no volume reset or migration. Other auto-started stacks untouched; no fixtures/outbox sent to real-provider32140.
+- Final Web39107 at32141 (old45055 stopped), Worker46152 at32142 and mock91616 at32143 running from GG-071 ignored local helper. Original owner tab1648145248 retained on operations dashboard; account/session unchanged.
+- Browser:7/30-day trends, daily selection, real1 successful task/21 credits, task and ledger details, mailbox/task/settle filters and empty results; historical grant details and Esc focus restoration pass. 390px tables/trend scroll internally and Sheet full width; desktop viewport restored.
+- Before/after39 non-model table hashes/counts and complete model/event records identical. No model save or preview ledger/queue writes. Named disposable SQL fixture DB had no peer/Worker connections and was removed after test.
 - Production https://goodgood.o1key.com revision 65ceb168/migration 0019 unchanged. staging-goodgood.o1key.com is historical naming. No paid requests, push, main merge or deployment.
-- Next action: owner checks http://127.0.0.1:32141/admin/models; formal video reservation/price snapshots/actual ledger settlement require the next implementation slice.
-- Blockers: none for pricing-only local scope.
+- Next action: owner reviews http://127.0.0.1:32141/admin/operations and /admin/logs; video persistence/settlement remains a separate future slice. Local task-related commit saved; no deployment requested.
+- Blockers: none; local dependencies restored.
 
 ## Verification sequence
 
@@ -52,7 +52,7 @@
 
 ## New-session recovery
 
-1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-070` 与 GG-070 任务卡；按卡核对运行版本，不能仅看 URL。
+1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-071` 与 GG-071 任务卡；按卡核对运行版本，不能仅看 URL。
 2. 当前页面为 `http://127.0.0.1:32141/admin/models`，已更新 GPT 图片三线路，右侧四管理功能保留；仅独立 mock 栈。旧 `32140` 有真实 provider Worker，不运行 fixtures/outbox，不重置其数据。
 3. 本地 ignored `.gg052-local.mjs` 分别启动 web/worker/mock-generation；按本任务已记录的运行状态恢复，保留用户试价数据。正式生产与真实请求不在本次授权范围。
 4. 不恢复或 bulk merge 旧 C6；旧阶段具体验证见相应任务卡，GG-051 [研究记录](research/GG-051-credit-pricing-reassessment.md) 保留定价依据。

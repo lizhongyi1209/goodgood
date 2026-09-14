@@ -1257,3 +1257,24 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
   .image-detail-thumbnails { padding: 0 4px; flex-direction: row; gap: 6px; overflow-x: auto; overflow-y: hidden; }
   .image-detail-thumbnail { width: 52px; height: 64px; }
 }
+/* GG-071: same-shell owner operations and bounded log tables. */
+.operations-view { min-width: 0; padding-top: 20px; }
+.operations-metrics { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,210px),1fr)); gap: 12px; margin-bottom: 24px; }
+.operations-metric, .operations-panel { border: 1px solid var(--line); border-radius: 16px; padding: 20px; background: var(--white); }
+.operations-table-wrap { max-width: 100%; overflow-x: auto; }
+.operations-table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
+.operations-table th { font-weight: 400; color: var(--muted); white-space: nowrap; }
+.operations-table th, .operations-table td { padding: 14px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.operations-table td { min-width: 70px; }
+.operations-trend { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; }
+.operations-bar-button { display: flex; flex: 1; min-width: 40px; flex-direction: column; align-items: center; gap: 8px; padding: 6px; border-radius: 8px; }
+.operations-bar-button:hover { background: var(--soft); }
+.operations-bar-button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+.operations-bar-track { height: 100px; width: min(100%,32px); display: flex; align-items: flex-end; background: var(--soft); border-radius: 6px; overflow: hidden; }
+.operations-bar { width: 100%; background: var(--accent); border-radius: 6px; }
+.operations-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.operations-filters > div:first-child { flex-basis: 220px; }
+.operations-detail-fields { display: grid; grid-template-columns: 100px minmax(0,1fr); gap: 14px 12px; }
+.operations-detail-fields dt { color: var(--muted); }
+.operations-detail-fields dd { overflow-wrap: anywhere; }
+@media(max-width:640px) { .operations-metric, .operations-panel { padding: 16px; } .operations-filters > div:first-child { flex-basis: 100%; } .operations-detail-fields { grid-template-columns: 80px minmax(0,1fr); } }

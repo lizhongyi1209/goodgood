@@ -1,5 +1,15 @@
 # GG-063 verification
 
+GG-071 targeted tests cover owner/CSRF/auth gates, date/search/cursor validation,
+read states, exact large credit amounts, reservation versus settlement/refund,
+safe DTOs and owner shell routes. Optional SQL tests require loopback
+GOODGOOD_GG071_DATABASE_URL naming goodgood_gg071_operations_test*,
+GOODGOOD_GG071_INTEGRATION=1 and GOODGOOD_GG071_NO_WORKER=1. They assert an empty
+database with no other connections before fixtures; production projections run
+inside BEGIN READ ONLY. Never enable against preview goodgood, 32140 or production.
+Browser preview only reads existing records; compare model/history hashes before
+and after. No provider calls are needed.
+
 GG-070 covers default-line supported price ranges, quality summaries, separate
 reference token rates, disabled/unpriced/legacy states and 60 in-memory cards
 with busy actions disabled. Existing persistence tests remain. Browser checks

@@ -27,6 +27,12 @@ credits reserved; already accepted jobs retain original quote and failure releas
 
 # Error handling and recovery
 
+GG-071 read failures retain search/date controls and offer inline retry; request
+IDs accompany normalized API failures. ADMIN_REQUEST_INVALID rejects invalid
+dates/ranges over 90 days, filters, cursor and limits before SQL. Missing detail
+returns ADMIN_RECORD_NOT_FOUND. Cross-user logs require an authenticated active
+site owner; no prompts, raw upstream messages or credentials enter response DTOs.
+
 ## Principles
 
 - Tell the user what failed, what was preserved, and the next useful action.

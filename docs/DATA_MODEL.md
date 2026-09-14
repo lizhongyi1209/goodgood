@@ -1,5 +1,14 @@
 # GG-063 quality pricing
 
+GG-071 introduces no persistence or billing mutation. Daily submissions use
+generation_jobs.submitted_at; outcomes use completed_at; settlement/refund/release
+use ledger.created_at, all in Asia/Shanghai calendar dates. Only settle contributes
+actual consumption; reserve is a separate financial event. Historical credit
+converts by two, current credit-cny-cent stays exact. Enterprise job attribution
+uses creator_owner_id; member budgets are not counted again. Exchange grants are
+excluded. Submitted catalog_model_name/quoted unit and amount remain immutable
+detail evidence; no current model repricing is applied to historical jobs.
+
 GG-069 discount editing persists only the resulting existing specification
 prices via the same atomic owner save/audit. Per-route percentage and first-use
 baseline remain transient dialog state; reopening uses saved prices at 100%.

@@ -1,5 +1,11 @@
 # Design system
 
+GG-071 adds quiet responsive KPI cards, selectable Palace Red daily bars and
+compact table rows in the existing owner shell. Logs have task/ledger buttons,
+wrapping labelled search/date/filter controls and a right 640px detail Sheet
+(mobile full width/internal scroll). Wide tables scroll within their area, never
+expand the page. Existing single page title and wrapping management links remain.
+
 GG-070 supersedes the pricing-row layouts below with compact responsive model
 cards. Each card shows name/status, default-line price range and specs/line count;
 video reference rates remain separate. A same-page right Sheet holds full pricing

@@ -525,7 +525,7 @@ export default function Home({
   const [videoPreviewRuns, setVideoPreviewRuns] = useState<readonly VideoPreviewRun[]>([]);
   const [videoDetailKey, setVideoDetailKey] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<ActiveView>("create");
-  const [adminTab, setAdminTab] = useState<"models" | "users" | "audit">("models");
+  const [adminTab, setAdminTab] = useState<"models" | "users" | "audit" | "operations" | "logs">("models");
   const [organizationRoute, setOrganizationRoute] = useState<{ id: string; tab: OrganizationManagementTab } | null>(null);
   const [businessStylePreview, setBusinessStylePreview] = useState(false);
   const [distributionTab, setDistributionTab] = useState<"children" | "transfers">("children");

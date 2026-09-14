@@ -1,5 +1,6 @@
 # Decision records
 
+- `0074-site-operations-and-global-log.md` — owner daily operations and cross-user task/credit lookup for GG-071; read-only personal/enterprise ledgers, same-shell pages and right details.
 - `0073-model-cards-and-pricing-sheet.md` — compact model cards, default-line summaries and same-page right pricing sheet for GG-070.
 
 - `0072-pricing-discount.md` — current-route batch discount editing, exact rounding and save-only price persistence for GG-069.

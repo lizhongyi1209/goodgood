@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, LoaderCircle, ScrollText, SlidersHorizontal, UsersRound } from "lucide-react";
+import { Building2, ChartNoAxesCombined, ListFilter, LoaderCircle, ScrollText, SlidersHorizontal, UsersRound } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import type { AuthenticationSession } from "@/features/auth/http-auth-boundary";
@@ -8,17 +8,20 @@ import { navigateWorkspace, workspaceRouteHref, type WorkspaceRoute } from "@/fe
 import { AccountManagementPage } from "./account-management-page";
 import { ModelManagementPage } from "./model-management-page";
 import { AuditLogView } from "./audit-log-view";
+import { SiteOperationsDashboard, SiteOperationsLog } from "./site-operations-view";
 
 const tabs = [
+  { id: "operations", label: "运营看板", icon: ChartNoAxesCombined, route: { kind: "admin", tab: "operations" } },
   { id: "organizations", label: "企业管理", icon: Building2, route: { kind: "organizations" } },
   { id: "models", label: "模型管理", icon: SlidersHorizontal, route: { kind: "admin", tab: "models" } },
   { id: "users", label: "账户管理", icon: UsersRound, route: { kind: "admin", tab: "users" } },
   { id: "audit", label: "审计日志", icon: ScrollText, route: { kind: "admin", tab: "audit" } },
+  { id: "logs", label: "总日志", icon: ListFilter, route: { kind: "admin", tab: "logs" } },
 ] as const satisfies readonly { id: string; label: string; icon: typeof Building2; route: WorkspaceRoute }[];
 
 export function SiteOwnerManagementView({ session, activeTab, children, onLogin, onManagementChange }: {
   session: AuthenticationSession | null | undefined;
-  activeTab: "organizations" | "models" | "users" | "audit";
+  activeTab: "organizations" | "models" | "users" | "audit" | "operations" | "logs";
   children?: ReactNode;
   onLogin: () => void;
   onManagementChange?: () => void;
@@ -41,7 +44,9 @@ export function SiteOwnerManagementView({ session, activeTab, children, onLogin,
         </Button>)}
       </nav>
     </header>
-    {activeTab === "models" ? <ModelManagementPage workspaceSession={session} embedded onManagementChange={onManagementChange} />
+    {activeTab === "operations" ? <SiteOperationsDashboard />
+      : activeTab === "logs" ? <SiteOperationsLog />
+      : activeTab === "models" ? <ModelManagementPage workspaceSession={session} embedded onManagementChange={onManagementChange} />
       : activeTab === "users" ? <AccountManagementPage workspaceSession={session} embedded onManagementChange={onManagementChange} />
       : activeTab === "audit" ? <AuditLogView session={session} /> : children}
   </section>;

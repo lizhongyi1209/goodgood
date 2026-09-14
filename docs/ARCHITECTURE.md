@@ -1,5 +1,13 @@
 # Architecture
 
+GG-071 isolates read-only operations SQL/services in server/admin/operations*
+and feature UI/http boundary in features/admin/site-operations-view and
+http-operations-boundary. Both runtime Node dispatch and framework POST routes
+enforce authenticated site-owner reads with CSRF/no-store/normalized errors.
+Personal and enterprise ledgers normalize known units and exclude denomination
+exchange grants. Detail DTOs whitelist submitted parameters and error codes;
+provider payloads, prompts, URLs and arbitrary metadata stay server-side.
+
 GG-070 changes only the owner presentation: model cards summarize the current
 default-line specification matrix; existing edits/additions use Radix Sheet on
 the same route. No new API, price semantics, persistence or provider behavior.

@@ -1,5 +1,12 @@
 # Navigation and route contract
 
+GG-071 adds `/admin/operations` (daily operating dashboard) and `/admin/logs`
+(task/credit tabs and right detail Sheet) to the owner management shell. Existing
+audit remains separate. Three owner-only no-store POST boundaries under
+`/api/admin/operations/{dashboard,logs,detail}` reuse active sessions and the
+admin CSRF header. Email/task filters stay in bodies; neither page changes
+creation state. Logs use date ranges, event/state filters and keyset pagination.
+
 ## Current implementation
 
 The shared workspace mounts at `/`, `/create`, `/projects`,

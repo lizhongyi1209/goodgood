@@ -1,7 +1,7 @@
 export const WORKSPACE_NAVIGATION_EVENT = "goodgood:workspace-navigation";
 
 /**
- * @typedef {{ kind: "create" } | { kind: "projects" } | { kind: "project", projectId: string } | { kind: "assets" } | { kind: "asset", assetId: string } | { kind: "credits" } | { kind: "distribution", tab?: "transfers" } | { kind: "admin", tab: "models" | "users" | "audit" } | { kind: "enterpriseAccounts", tab: "accounts" | "transfers" } | { kind: "organizations", organizationId?: string, tab?: "overview" | "members" | "usage" | "assets" }} WorkspaceRoute
+ * @typedef {{ kind: "create" } | { kind: "projects" } | { kind: "project", projectId: string } | { kind: "assets" } | { kind: "asset", assetId: string } | { kind: "credits" } | { kind: "distribution", tab?: "transfers" } | { kind: "admin", tab: "models" | "users" | "audit" | "operations" | "logs" } | { kind: "enterpriseAccounts", tab: "accounts" | "transfers" } | { kind: "organizations", organizationId?: string, tab?: "overview" | "members" | "usage" | "assets" }} WorkspaceRoute
  */
 
 /**
@@ -30,6 +30,8 @@ export function parseWorkspaceRoute(pathname) {
   if (normalized === "/admin/models") return { kind: "admin", tab: "models" };
   if (normalized === "/admin/users") return { kind: "admin", tab: "users" };
   if (normalized === "/admin/audit") return { kind: "admin", tab: "audit" };
+  if (normalized === "/admin/operations") return { kind: "admin", tab: "operations" };
+  if (normalized === "/admin/logs") return { kind: "admin", tab: "logs" };
   if (normalized === "/distribution") return { kind: "distribution" };
   if (normalized === "/distribution/transfers") return { kind: "distribution", tab: "transfers" };
   if (normalized === "/organizations/accounts") return { kind: "enterpriseAccounts", tab: "accounts" };

@@ -9,6 +9,7 @@ import {
 import { AdministrationError } from "./errors.mjs";
 import { requestIdFor } from "../observability/http.mjs";
 import { readManagedModels, saveManagedModel } from "./models.mjs";
+import { readSiteOperations } from "./operations.mjs";
 
 const JSON_HEADERS = {
   "cache-control": "no-store",
@@ -16,6 +17,7 @@ const JSON_HEADERS = {
 };
 
 const DEFAULT_OPERATIONS = Object.freeze({
+  readSiteOperations,
   readManagedModels,
   saveManagedModel,
   createAdminTestCreditGrant,
@@ -98,6 +100,13 @@ export function createAdminNodeApiHandler({
       }
       assertCsrfSafe(request);
       const ownerContext = await authenticate(request);
+      const operationsMatch = /^\/api\/admin\/operations\/(dashboard|logs|detail)$/.exec(url.pathname);
+      if (operationsMatch) {
+        sendJson(response, 200, await operations.readSiteOperations({
+          action: operationsMatch[1], input: await readJson(request), ownerContext,
+        }));
+        return true;
+      }
       if (url.pathname === "/api/admin/models/query" || url.pathname === "/api/admin/models/save") {
         const input = await readJson(request);
         const operation = url.pathname.endsWith("/save") ? operations.saveManagedModel : operations.readManagedModels;

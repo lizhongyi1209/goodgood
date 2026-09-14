@@ -1,5 +1,13 @@
 # GG-063 quality pricing
 
+GG-071 owner operations: choose an end date and 7/30-day trend, click a daily
+bar/date to show that day's metrics. Logs: select tasks or credits, enter mailbox,
+task/batch ID, bounded calendar range and event/state, then query. Next page uses
+stable keyset; filter query resets page. Details open on the same route, showing
+submitted parameters and linked credit timeline; Esc restores trigger focus.
+Aborted/stale requests cannot overwrite current filters/details. Read loading,
+empty, normalized failure/retry remain visible without placeholder metrics.
+
 GG-070 replaces directory matrices with cards. Click opens a right pricing Sheet;
 existing routes, quality/discount edits, trial quotes and one atomic save remain.
 Quick enable/disable stays on the card. Adding uses the same Sheet, with scrollable
