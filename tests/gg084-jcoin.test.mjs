@@ -65,4 +65,10 @@ test('personal rendering shows only own values, exact decimals and empty/loading
   assert.match(renderToStaticMarkup(React.createElement(own.OwnJcoinView,{session:null,onLogin(){}})),/登录 GoodGood/);
   const plan={supply:'100000000',userPool:'50000000',issued:'0',recovered:'0',unassigned:'49000000',excludedCount:'0',lastProcessedAt:null,actions:[],batch:{number:1,status:'draft',budget:'1000000',issued:'0',remaining:'1000000',recovered:'0',rewardPer100Credits:'2',startsAt:'2026-09-17T16:00:00Z',activatedAt:null}};
   const adminHtml=renderToStaticMarkup(React.createElement(management.JcoinManagementContent,{plan,busy:false,onAction(){}}));assert.match(adminHtml,/固定总量/);assert.match(adminHtml,/1,000,000/);assert.match(adminHtml,/开启第一期/);
+  assert.match(adminHtml,/role="progressbar"/);assert.match(adminHtml,/aria-label="第1期发行进度"/);assert.match(adminHtml,/aria-valuenow="0"/);
+  for(const [issued,remaining,progress] of [['250000','750000','25'],['1000000','0','100']]){
+    const progressHtml=renderToStaticMarkup(React.createElement(management.JcoinManagementContent,{plan:{...plan,batch:{...plan.batch,issued,remaining,recovered:'100'}},busy:false,onAction(){}}));
+    assert.match(progressHtml,new RegExp(`aria-valuenow="${progress}"`));assert.match(progressHtml,new RegExp(`aria-valuetext="${progress}%"`));
+  }
+  assert.doesNotMatch(html,/progressbar|发行进度/);
 });

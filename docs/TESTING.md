@@ -1,5 +1,7 @@
 # GG-063 verification
 
+GG-086 tests/gg086-jcoin-progress.test.mjs覆盖整数精度、空/极小/接近封顶/封顶进度、15秒更新、失败保留/恢复、不重叠、隐藏/可见及取消迟到请求；GG084 SSR追加可访问进度条及部分/完成断言。全为内存只读测试，无数据库或provider调用。
+
 GG-084 `node --test tests/gg084-jcoin.test.mjs`验证精确金额、当前/历史单位、线性小额与50万元预算封顶、只返回自身DTO、身份/输入/分页/安全错误、Node方法/CSRF/请求限制、深链和SSR成功/空/加载状态。`gg084-jcoin-postgres.test.mjs`默认跳过；仅GOODGOOD_GG084_INTEGRATION=1、GOODGOOD_GG084_NO_WORKER=1及GOODGOOD_GG084_DATABASE_URL指向loopback54449的goodgood_gg084_jcoin_test*命名空库，拒绝非空库/其他客户端。全40迁移验证草稿、起算边界、历史单位、混合赠送、真假支付/缺来源/历史划拨、并发重放、个人分页、暂停退款、失败回滚重跑、最后一笔封顶、回收不重开、不可变账本及活动角色。无outbox、Redis或真实provider请求。临时Chrome页面用全fetch模拟验证实际工作区个人/站长桌面1280px/窄屏390px、空记录、分页、读取重试、开启失败重试/暂停/恢复与手机菜单；不接真实数据库。
 
 GG-081快速测试覆盖活动站长/CSRF、严格分类与金额、收款确认、类型/凭证指纹、稳定重试键、内部商品拒绝、现金精度/未知峰值/审计渲染。gg081-credits-postgres.test.mjs需GOODGOOD_GG081_INTEGRATION=1、GOODGOOD_GG081_NO_WORKER=1及GOODGOOD_GG081_DATABASE_URL指向loopback的goodgood_gg081_credits_test*空数据库；拒绝其他连接。全迁移后验证正常来源/订单/审计、并发重放与凭证竞争、CLI互斥、价目/目标失败回滚、旧测试来源、自身并发及暂停权限。gg071-operations-postgres.test.mjs沿用其命名隔离契约，补现金币种/假支付/账期、跨日峰值/同刻交接/缺历史、当前running/refining及queued。两者无provider或Worker调用，默认跳过；本轮单独隔离运行2/2通过。
