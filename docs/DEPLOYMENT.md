@@ -1,5 +1,11 @@
 # Development and deployment
 
+GG-073 migration0036/shared case APIs are local candidates only. Apply only this
+scoped migration to32141 mock data; preserve old checksum records, user-set
+models/prices, assets and ledgers. Publication/deployment to production requires
+specific scope approval. UI fixtures use a named disposable DB without a Worker;
+source object paths are an explicit temporary fixture namespace, not user uploads.
+
 GG-072 adds migration0035/profile API and cleanup protection; local candidate
 only. Original32141 mock stack retains users/prices/financial history. Current
 loopback dependency ports are PG54449, Valkey56449, storage58049/58050 after

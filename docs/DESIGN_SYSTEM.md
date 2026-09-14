@@ -1,5 +1,10 @@
 # Design system
 
+GG-073: quiet inspiration heading/search, responsive image cards with original
+ratio, author and like action. 720px right Sheet shows contained before/after,
+prompt, original settings and one recipe-use action; mobile full width.
+Publish preview and removal confirmation reuse Sheet/Checkbox/AlertDialog.
+
 GG-072 uses a quiet profile identity row (circular centered avatar, name, muted
 @handle, one edit button) above responsive image works preserving their ratios.
 An accessible 480px right Sheet edits identity; mobile uses full width. Reuse

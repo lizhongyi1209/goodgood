@@ -2,6 +2,9 @@ import { lockReferenceLifecycle } from "./lifecycle-lock.mjs";
 
 const HAS_PERSISTED_REFERENCE = `
   (
+    EXISTS (SELECT 1 FROM inspiration_cases inspiration WHERE inspiration.deleted_at IS NULL
+      AND (inspiration.before_reference_id = ra.id OR inspiration.author_snapshot->>'avatarReferenceId' = ra.id::text))
+    OR
     EXISTS (SELECT 1 FROM personal_profiles profile WHERE profile.avatar_reference_id = ra.id)
     OR
     EXISTS (

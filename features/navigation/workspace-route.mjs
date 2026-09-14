@@ -1,7 +1,7 @@
 export const WORKSPACE_NAVIGATION_EVENT = "goodgood:workspace-navigation";
 
 /**
- * @typedef {{ kind: "create" } | { kind: "profile" } | { kind: "projects" } | { kind: "project", projectId: string } | { kind: "assets" } | { kind: "asset", assetId: string } | { kind: "credits" } | { kind: "distribution", tab?: "transfers" } | { kind: "admin", tab: "models" | "users" | "audit" | "operations" | "logs" } | { kind: "enterpriseAccounts", tab: "accounts" | "transfers" } | { kind: "organizations", organizationId?: string, tab?: "overview" | "members" | "usage" | "assets" }} WorkspaceRoute
+ * @typedef {{ kind: "create" } | { kind: "profile" } | { kind: "inspiration" } | { kind: "projects" } | { kind: "project", projectId: string } | { kind: "assets" } | { kind: "asset", assetId: string } | { kind: "credits" } | { kind: "distribution", tab?: "transfers" } | { kind: "admin", tab: "models" | "users" | "audit" | "operations" | "logs" } | { kind: "enterpriseAccounts", tab: "accounts" | "transfers" } | { kind: "organizations", organizationId?: string, tab?: "overview" | "members" | "usage" | "assets" }} WorkspaceRoute
  */
 
 /**
@@ -25,6 +25,7 @@ export function parseWorkspaceRoute(pathname) {
       return { kind: "create" };
     }
   }
+  if (normalized === "/inspiration") return { kind: "inspiration" };
   if (normalized === "/profile") return { kind: "profile" };
   if (normalized === "/assets") return { kind: "assets" };
   if (normalized === "/credits") return { kind: "credits" };
@@ -64,6 +65,7 @@ export function workspaceRouteHref(route) {
   if (route.kind === "project") {
     return `/projects/${encodeURIComponent(route.projectId)}`;
   }
+  if (route.kind === "inspiration") return "/inspiration";
   if (route.kind === "profile") return "/profile";
   if (route.kind === "assets") return "/assets";
   if (route.kind === "credits") return "/credits";

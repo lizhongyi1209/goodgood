@@ -17,6 +17,7 @@ test('GG-072 disposable SQL profile persistence, unique handles, versions and ow
    CREATE TABLE workspaces(id uuid PRIMARY KEY,kind text,name text,status text,personal_owner_id uuid);
    CREATE TABLE workspace_memberships(id uuid,workspace_id uuid,owner_id uuid,role text,status text);
    CREATE TABLE reference_assets(id uuid PRIMARY KEY,owner_id uuid,creator_owner_id uuid,workspace_id uuid,upload_state text,moderation_state text,object_key text,object_deleted_at timestamptz,cleanup_lease_owner uuid,cleanup_lease_expires_at timestamptz,cleanup_eligible_at timestamptz,expires_at timestamptz,error_code text);
+   CREATE TABLE inspiration_cases(before_reference_id uuid,author_snapshot jsonb,deleted_at timestamptz);
    CREATE TABLE generation_batches(owner_id uuid,reference_snapshot jsonb);
    CREATE TABLE projects(owner_id uuid,reference_snapshot jsonb);
    CREATE TABLE creation_drafts(owner_id uuid,reference_snapshot jsonb,expires_at timestamptz);`);

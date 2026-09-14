@@ -1,5 +1,7 @@
 # Decision records
 
+- `0076-shareable-inspiration-cases.md` — explicit personal effect publication, immutable before/after and parameters, reuse, likes and owner withdrawal for GG-073.
+
 - `0075-private-personal-profile.md` — private own profile, unique handle, validated avatar and personal image works for GG-072.
 
 - `0074-site-operations-and-global-log.md` — owner daily operations and cross-user task/credit lookup for GG-071; read-only personal/enterprise ledgers, same-shell pages and right details.

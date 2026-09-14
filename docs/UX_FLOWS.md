@@ -1,5 +1,13 @@
 # GG-063 quality pricing
 
+GG-073: own image detail → share preview → title/optional notes/before choice →
+explicit consent → publish. Inspiration card opens before/after/detail and likes.
+Use starts personal creation with prompt/parameters, count1, no original reference
+IDs/signatures/project/history price. Unsaved edits require confirmation and active
+jobs block switching. Replace personal references and confirm current settings/
+price manually before generation. Unavailable original models are explicit.
+Author withdraw and owner removal require confirmation; originals/billing remain.
+
 GG-072: account menu → personal profile in the same shell, leaving the composer
 intact. Mobile avatar opens an account menu with profile and logout. Edit name/handle/avatar, save or cancel;
 upload/save disables dismissal until it finishes. Failed saves preserve inputs,

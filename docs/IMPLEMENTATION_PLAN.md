@@ -1,26 +1,25 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-14
-- Current phase: GG-072 personal profile implemented and locally verified; not deployed.
-- Current objective: Private own profile with editable identity and personal image works.
+- Current phase: GG-073 implemented and locally verified; not deployed.
+- Current objective: Shareable reusable image effects with before/after, likes and owner withdrawal.
 - Previous objective: 用户在模型管理为 GPT 图片系列逐线路定价与启禁，保留原测试配置与历史。
 
 ## Current checkpoint
 
-- Current task [GG-072](tasks/GG-072-personal-profile.md), branch feature/GG-072-personal-profile, worktree F:/goodgood-worktrees/GG-072; verified main bab17fd plus fast-forward GG-071 839f89d.
-- ADR 0075 accepted before implementation: private own /profile, avatar/name/unique handle and personal generated image gallery, no social/public access or enterprise works.
-- Private owner API/table, versioned unique handle/name and validated personal avatar implemented; own works preserve ratios and reuse image detail with profile return. Desktop/mobile menu retains logout.
-- Targeted14/14 and isolated named empty/no-Worker SQL1/1 passed. Final npm run check:local lint/types/build plus498 tests479 pass19 skip0 fail; repeated only to resolve discovered stale contracts and mobile wrapping. Documentation-only handoff checks follow.
-- Migration0035 applied only to dedicated mock DB; prior0029 inherited byte checksum mismatch stopped bulk replay, no old migration/checksum reset. New profiles table empty; old migration records,38 other tables and full model/events unchanged.
-- Final Web1813/Worker56279 at32141/32142 from GG072; mock91616 at32143 retained. PG54449/Valkey56449/storage58049/58050, original GG052 volumes retained; no real-provider32140 fixtures or requests.
-- Browser tab1648145248 owner session retained at /profile; account entries, invalid input/cancel, direct refresh, own1 image/detail return and390px Sheet/identity wrapping/no overflow pass; desktop restored, page marked deliverable.
-- Next action: owner sets actual name/@handle/avatar at http://127.0.0.1:32141/profile. Local task commit saved; no push/main merge/deployment requested.
-- Blockers: none.
-- Production https://goodgood.o1key.com revision65ceb168/migration0019 unchanged; staging-goodgood.o1key.com is historical naming. No production authority granted.
+- Current task [GG-073](tasks/GG-073-inspiration-cases.md), branch feature/GG-073-inspiration-cases, worktree F:/goodgood-worktrees/GG-073; verified main bab17fd plus fast-forward GG-072 f4698d0.
+- ADR0076 accepted before implementation: selected personal image publication, before/after prompt/parameters snapshot, active-user likes, settings reuse and audited owner withdrawal. Only authenticated shared reads, no public profiles/friends or automatic generation.
+- Original32141 owner preview now GG073 Web19840/Worker31969, mock91616 retained; only migration0036 added. Original38 historical tables, all models/events, prior migrations and current private profiles unchanged. No production authority or real-provider32140 requests.
+- Implementation complete: own asset review, immutable case snapshots, search/keyset pages, before/after detail, desired-state likes, audited withdrawal and settings reuse with fresh own references.
+- Targeted18/18 and disposable GG073 SQL1/1 plus GG072 regression SQL1/1 passed. Final stable gate lint/types/build and505 tests485 pass20 opt-in skip0 fail; desktop/narrow390px publishing/likes/reuse/withdrawal verified. UI confirmation overlay fixed and mouse actions confirmed.
+- Temporary no-Worker UI database and exact four fixture object keys removed, viewport restored. Original owner JONY session remains at /inspiration; real original images not published, new case tables empty.
+- Next action: owner publishes an actual personal work through image detail and tries the reusable case at http://127.0.0.1:32141/inspiration. Local commit only; no push/merge/deployment.
+- Blockers: none; optional publishing permission question pending, default active-user own works as announced.
+- Production https://goodgood.o1key.com revision65ceb168/migration0019 unchanged; staging-goodgood.o1key.com is historical naming.
 
 ## Verification sequence
 
-1. Owner identity validation, persisted version/conflict/unique handle and avatar isolation, private own works and route/detail return.
+1. Consent/ownership and shared DTO privacy; immutable recipe, empty references, likes idempotency, moderation and microsecond pagination.
 2. One complete local gate, then documentation-only handoff checks.
 3. Verify isolated mock target, browser application/cancel and desktop/narrow UI, compare unchanged data snapshots.
 
@@ -52,8 +51,8 @@
 
 ## New-session recovery
 
-1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-072` 与 GG-072 任务卡；按卡核对运行版本，不能仅看 URL。
-2. 当前页面为 `http://127.0.0.1:32141/profile`，个人资料和个人图片作品；站长管理看板/总日志/模型/企业/账户/审计仍保留。仅独立 mock 栈。旧 `32140` 有真实 provider Worker，不运行 fixtures/outbox，不重置其数据。
+1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-073` 与 GG-073 任务卡；按卡核对运行版本，不能仅看 URL。
+2. 当前页面为 `http://127.0.0.1:32141/inspiration`，灵感板案例；个人资料和站长管理看板/总日志/模型/企业/账户/审计仍保留。仅独立 mock 栈。旧 `32140` 有真实 provider Worker，不运行 fixtures/outbox，不重置其数据。
 3. 本地 ignored `.gg052-local.mjs` 分别启动 web/worker/mock-generation；按本任务已记录的运行状态恢复，保留用户试价数据。正式生产与真实请求不在本次授权范围。
 4. 不恢复或 bulk merge 旧 C6；旧阶段具体验证见相应任务卡，GG-051 [研究记录](research/GG-051-credit-pricing-reassessment.md) 保留定价依据。
 

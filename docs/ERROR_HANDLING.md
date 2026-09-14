@@ -1,5 +1,12 @@
 # GG-063 quality pricing errors
 
+GG-073 separates directory/detail loading, empty/error/retry and action errors.
+Consent/input/source/before failures retain publish fields; withdrawn or hidden
+cases return404, forbidden removal403 and removed-source republish403. Like
+failures preserve prior state. Recipes with unavailable domain options return409.
+Unknown errors return safe503 without SQL/provider/storage secrets. Use does not
+submit generation; current pricing/provider failures remain in creator recovery.
+
 GG-072 has independent profile/works loading, empty, error and retry states.
 PROFILE_INVALID/PROFILE_AVATAR_INVALID preserve edits; PROFILE_HANDLE_TAKEN409
 asks for a different handle; PROFILE_CONFLICT409 offers reload before editing.

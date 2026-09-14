@@ -1,5 +1,11 @@
 # Product definition
 
+GG-073 introduces inspiration cases: explicit selected personal image sharing
+with before/after, immutable prompt/parameters and author attribution, active-user
+likes and recipe reuse. Authors withdraw their own; site owners remove any case.
+Shared reads stay authenticated; private profiles/unselected/enterprise media
+remain private. Publication extends the private-only GG-072 scope via ADR0076.
+
 GG-072 adds a private personal profile: avatar, name, unique @handle and the
 user's accepted personal generated images. All works are visible to their owner
 automatically. No public profile, publication controls or friends in this slice;

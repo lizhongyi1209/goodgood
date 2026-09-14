@@ -1,5 +1,12 @@
 # Architecture
 
+GG-073 isolates case SQL/service/routing under server/inspiration and board,
+publication review/http boundary under features/inspiration. Shared recipe
+contract whitelists settings and drops references/project/prices. Private asset
+ownership is checked before publication; active shared reads sign only selected
+case media and attribution. Publication and withdrawal use lifecycle locks;
+likes use locked case rows and unique user entries. No provider call on use.
+
 GG-072 places profile UI/state under features/profile, owner service and Node
 handler under server/profile, and framework API under app/api/profile. Existing
 personal assets supply the works and validated private reference uploads supply

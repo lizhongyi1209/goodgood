@@ -1,5 +1,11 @@
 # Navigation and route contract
 
+GG-073 implements `/inspiration`, entered from sidebar or mobile bar. Private
+GET `/api/inspiration` lists first20; POST `/list` accepts search/keyset cursor,
+POST `/prepare` reviews own asset and POST base publishes selected content.
+GET `/:id` detail; POST `/:id/{like,use,withdraw}` enforce authenticated active
+users, desired like state, action header and bounded inputs. No public route.
+
 GG-072 adds private `/profile` inside the creator shell and owner-bound
 GET/PATCH `/api/profile`. No `/@handle` or public lookup. Image detail retains
 `profile` as history origin so close/back returns to personal works. Legacy
@@ -31,7 +37,7 @@ this shell; audit moves the prior account-page recent-action list into its own v
 | 探索 | Placeholder | No view or route yet |
 | 项目 | Implemented | `/projects` index and `/projects/:projectId` restore |
 | 资产库 | Implemented | `/assets` generated batch/gallery and uploaded-material sections |
-| 灵感板 | Placeholder | No view or route yet |
+| 灵感板 | Implemented locally | `/inspiration` selected effect cases, before/after, recipe reuse, likes and audited owner withdrawal |
 | 帮助 | Placeholder | No view or route yet |
 | 图片详情 | Implemented | `/assets/:assetId` over its preserved source scope |
 | 账户管理 | Implemented | `/admin/users`, visible and callable only by the site owner |

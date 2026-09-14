@@ -1,5 +1,14 @@
 # GG-063 verification
 
+GG-073 feature tests cover recipe privacy, consent/bounds, active/ownership and
+shared DTOs, HTTP methods/action gates, rendered read/empty/like/comparison/settings.
+Opt-in gg073-inspiration-postgres requires explicit loopback named empty
+goodgood_gg073_inspiration_test*, INTEGRATION/NO_WORKER flags and no peer connections.
+It covers concurrent publish/likes, personal-only source and selected references,
+attribution snapshot/cleanup protection, recipe privacy, author/owner removal,
+republish rules, retries and exact microsecond pagination. Separate disposable
+UI fixture DB has no Worker; never fixture the user preview or real-provider32140.
+
 GG-072 targeted tests: profile validation/owner gates/read-only defaults,
 transaction/rollback/version/duplicate/foreign avatar cases, private HTTP action
 header and bounded JSON, route and rendered loading/error/empty/image states.

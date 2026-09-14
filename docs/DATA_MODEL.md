@@ -1,5 +1,14 @@
 # GG-063 quality pricing
 
+GG-073 migration0036 adds inspiration_cases (source asset, optional original
+reference, title/notes, immutable prompt/parameters/author snapshot, soft removal),
+inspiration_likes (unique case/user) and inspiration_events (publish/withdraw/
+owner_remove). Partial source uniqueness makes publish retries idempotent;
+author withdrawal permits fresh publication, owner removal blocks same-source
+republish. Cleanup pins selected before/author avatar until withdrawal. Source
+assets/jobs/billing remain intact. Shared signed links expire normally; removal
+blocks new API reads but cannot recall already viewed/downloaded media.
+
 GG-072 migration0035 adds personal_profiles keyed by owner with display_name,
 unique lowercase handle, optional avatar_reference_id, positive optimistic
 version and timestamps. Reads return unconfigured defaults without writes.
