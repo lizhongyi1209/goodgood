@@ -1,7 +1,7 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-14
-- Current phase: GG-088 feedback category dropdown downward positioning implemented; verification pending.
+- Current phase: GG-088 feedback category dropdown downward positioning implemented; verified; original local preview updated; not deployed.
 - Current objective: 接续b248836/a73835f，修复首次点击问题类型菜单向上展开。
 - Previous objective: GG082最小发行讨论；GG081积分类型/充值登记/运营与并发本地实现验证保留。
 
@@ -9,8 +9,9 @@
 
 - Task [GG-088](tasks/GG-088-feedback-select-downward.md)，fix/GG-088-feedback-select-downward，F:/goodgood-worktrees/GG-088；基线b248836保留a73835f及GG087反馈。
 - 普通展示修复，不改变ADR0085：仅问题类型使用popper/bottom/start且禁止方向翻转，不改共享Select默认行为。
-- 原32141 Web27176仍为GG087候选9d99d77；Worker30432/32142、provider9048/32143及所有数据保留。
-- Next action: 一次check:local、首次/切换后桌面与390px浏览器验证，只更新本地32141 Web。
+- 原32141 Web4564已更新为GG088候选a5c0c83；Worker30432/32142、provider9048/32143及所有数据保留。
+- 验证：check:local为522通过/25显式写测试跳过，lint/typecheck/build通过；默认其他首次、改选后及390px菜单向下，键盘/Escape焦点正常；无反馈提交。
+- Next action: 用户刷新32141/feedback验收，下一普通需求GG089。
 - Blockers: 无；生产部署、数据库写入和真实provider请求均不在此范围。
 - 正式入口https://goodgood.o1key.com不变；staging-goodgood.o1key.com为历史名称。
 
@@ -25,6 +26,7 @@
 | 阶段 | 状态 | 当前含义 |
 | --- | --- | --- |
 | M0—M8 | 已完成基线 / controlled alpha 已开放 | 生产事实以 CURRENT_STATE 和发布收据为准 |
+| GG-088 | 本地实现/验证完成 | 问题类型首次及改选后向下、桌面/390px和门禁522/25通过，32141已更新，未部署 |
 | GG-087 | 本地实现/验证完成 | 私有反馈5图/类型/状态/回复，522通过/25跳过、SQL/UI通过，原32141更新；未部署 |
 | GG-086 | 本地实现/验证完成 | 发行进度与15秒只读刷新、桌面/390px通过，原32141已更新；门禁详情见任务，未部署 |
 | GG-085 | 本地实现/验证完成 | 按期卡片、门禁515/24及桌面/390px通过，原32141已更新，未部署 |
@@ -56,7 +58,7 @@
 
 ## New-session recovery
 
-1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，进入 `F:/goodgood-worktrees/GG-088`，读GG088与GG087/ADR0085及features/feedback，原32141仍为GG087 start-review.mjs（PID27176），核验3f23285/a73835f祖先；继续当前代码/验证，不退旧版本。
+1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，进入 `F:/goodgood-worktrees/GG-088`，读GG088与GG087/ADR0085及features/feedback，原32141为GG088 start-review.mjs（PID4564），核验3f23285/a73835f祖先；继续当前代码/验证，不退旧版本。
 2. 根 `F:/goodgood` 仍为旧 GG-024；GG-079 是原累计候选，main 也不能代替 a73835f。`.codex/` 与未跟踪用户文件保持原样；不用旧检查点退回历史版本。
 3. GG081的32181模拟检查已停止/临时页面移除，不依赖聊天句柄。后续恢复先核验版本/端口及独立mock目标；GG079/GG077 helpers与依赖54449/56449/58049见原交接。六个命名测试库已清理；禁止对原预览fixture/重置，旧32140曾有真实Worker，不操作。
 4. 不恢复或 bulk merge 旧 C6；旧阶段具体验证见相应任务卡，GG-051 [研究记录](research/GG-051-credit-pricing-reassessment.md) 保留定价依据。
