@@ -1,5 +1,14 @@
 # Product definition
 
+GG-080 proposes a separate JCOIN reward system, continuing candidate a73835f.
+The owner confirmed a 100,000,000 supply cap and a 50,000,000 consumption-user
+pool; only proven payment-funded consumption qualifies. Allocation rates,
+utility, beneficiary rules, start date and issuance remain proposed in
+[ADR 0079](decisions/0079-jcoin-reward-planning.md) and the
+[distribution plan](research/GG-080-jcoin-distribution-plan.md).
+No wallet, token issuance, pricing conversion or management change is implemented
+by this planning task; existing consumption-credit rules remain authoritative.
+
 GG-074 supersedes the publication Sheet/always-public prompt via ADR0077.
 Authors edit a case on a dedicated page and choose public/hidden reusable prompt.
 Public reuse is editable; hidden reuse has a preset badge and optional supplement,

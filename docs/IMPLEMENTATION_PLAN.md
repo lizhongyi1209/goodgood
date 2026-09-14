@@ -1,32 +1,33 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-14
-- Current phase: GG-079 implemented and locally verified; not deployed.
-- Current objective: GG-079 saved for a new-window handoff; await the user's next development request.
+- Current phase: GG-080 JCOIN plan saved for discussion; no issuance or runtime changes.
+- Current objective: 从用户指定 a73835f 接续 JCOIN 分发规划，区分确定的总量/资格与待讨论的用途/参数；原管理调整保留未实施。
 - Previous objective: 用户在模型管理为 GPT 图片系列逐线路定价与启禁，保留原测试配置与历史。
 
 ## Current checkpoint
 
-- Task [GG-079](tasks/GG-079-inspiration-likes-centered-detail.md), fix/GG-079-inspiration-likes-centered-detail, F:/goodgood-worktrees/GG-079; main bab17fd + FF accepted GG07824a1711.
-- ADR0078 clarified before code: restore board/detail likes, all three icon-number counters inline, center detail image frames. No backend/schema changes.
-- Final local gate: 502 passed/22 opt-in skipped, lint/typecheck/build passed; targeted12/12. Desktop inline counters/28px like hit area and centered frame, 390px narrow detail verified.
-- Saved implementation commit: `6c1ab22` on the task branch; working tree clean before this documentation handoff. This cumulative candidate includes GG-078/GG-077; main remains `bab17fd`, not the latest local product candidate.
-- Handoff runtime check: 32141/32142/32143 have no listeners; previous tool session IDs are historical, not portable recovery handles. The goodgood-gg052 PostgreSQL/Valkey/RustFS containers remain running and healthy; no data reset. Original draft/prices/history preserved in the preceding UI verification; no new data writes in this handoff. Production goodgood.o1key.com unchanged; staging-goodgood.o1key.com historical only.
-- Documentation handoff tests15/15 and diff checks passed; local task commit saved at handoff.
-- Next action: New window reads this checkpoint and GG-079 task card, then allocates the next scoped request as GG-080 after checking occupancy; verify main and explicitly carry forward the saved cumulative candidate into the new isolated branch.
-- Blockers: None for local work; no production deployment authorized.
+- Task [GG-080](tasks/GG-080-jcoin-planning.md), feature/GG-080-jcoin-planning, F:/goodgood-worktrees/GG-080；从精确 `a73835fb7924ce1423196735a2b377a89dead256` 创建，核验 origin/main `42fc8d8` 为祖先，原 GG-079 和根目录不改。
+- JCOIN 名称、1 亿上限、5000 万消费回馈池及仅充值来源消费已确定；[ADR 0079](decisions/0079-jcoin-reward-planning.md) 仍 Proposed，[方案](research/GG-080-jcoin-distribution-plan.md) 给出贡献递减分发、退款、主体、权益预算和实施依赖。
+- 个人正式账本具备 payment_funded_amount；企业资金池未拆同样来源，视频预览未正式结算；不得按全部扣费发币。另 50% 保留未分配，阶段数值是示例，未确定用途/兑换/历史起算。
+- 已通过异步问题征询用途，默认提出平台内权益建议，不将未回复解释为批准。原管理端默认看板/充值指标/提交改并发要求保留，本阶段只做口径规划。
+- GG-080 无代码、数据库、队列、服务、价格或余额改动；文档/发布契约15/15、5阶段预算及8内存奖励场景、diff检查通过，保存本地规划提交。此前 GG-079 门禁502/22及页面验收仅继承，本阶段不重跑完整门禁。
+- 正式入口 `https://goodgood.o1key.com` 不变；`staging-goodgood.o1key.com` 仅历史名称。原预览状态仅沿用 GG-079 交接记录（32141/32142/32143 已停止、依赖健康），本轮未重新核验运行；CURRENT_STATE 不改，不把历史 session ID 当可恢复句柄。
+- Next action: 与用户讨论一期用途/比例/主体/起算；确认后先实施只读资格试算，再增加独立库存账本。管理默认看板/充值/并发可先做独立切片，当前仍未实现。
+- Blockers: 规划无阻塞；正式发币的用途/参数/主体/起算尚未确定，未获得生产授权。
 
 ## Verification sequence
 
-1. Consent/ownership and shared DTO privacy; immutable recipe, empty references, likes idempotency, moderation and microsecond pagination.
-2. One complete local gate, then documentation-only handoff checks.
-3. Verify isolated mock target, browser application/cancel and desktop/narrow UI, compare unchanged data snapshots.
+1. 本阶段文档契约与 diff 检查；不为纯规划重跑完整构建或启用数据库写测试。
+2. 核验精确 a73835f 接续及代码零变化；数学试算仅用内存合成数值，不写实际账户。
+3. 后续实施才验证资格/并发库存/退款/权限，稳定后一次完整本地门禁。
 
 ## Milestones
 
 | 阶段 | 状态 | 当前含义 |
 | --- | --- | --- |
 | M0—M8 | 已完成基线 / controlled alpha 已开放 | 生产事实以 CURRENT_STATE 和发布收据为准 |
+| GG-080 | 规划完成待讨论 | 总量/资格已确定，文档/数学验证通过；未发币，管理调整未实现 |
 | GG-023 | 本地安全候选已 CI 通过 | 尚未切生产，见任务卡 |
 | GG-024—GG-032 | 本地完整基础组合已验证 | 账户、积分、直属关系、来源划拨、OTP、企业及成员额度 |
 | GG-033 | 本地完成并真实验证 | 三个 GPT 图片模型，生产未发布 |
@@ -50,9 +51,9 @@
 
 ## New-session recovery
 
-1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-079` 与 GG-079 任务卡；按卡核对运行版本，不能仅看 URL。
-2. 新窗口应进入 `F:/goodgood-worktrees/GG-079`；根 `F:/goodgood` 仍是旧 GG-024 工作树，`.codex/` 未跟踪内容保持原样，不将其旧检查点当作最新实现。原预览 URL 为 `http://127.0.0.1:32141`，上次用户在站长看板；本次交接不再启动或导航。
-3. 恢复预览先确认端口与独立 mock 目标；分别运行 `node .gg052-local.mjs web`（GG-079目录）、`node .gg052-local.mjs worker` 与 `node .gg052-local.mjs mock-generation`（GG-077目录）。ignored helpers/build仍留在本机，数据库54449、Redis56449、RustFS58049；不要运行重置/fixture。旧32140曾有真实provider Worker，不重启或操作它。正式生产与真实请求不在本次授权范围。
+1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，进入 `F:/goodgood-worktrees/GG-080`，读 GG-080/ADR0079/方案并核验 a73835f 是祖先；当前只是规划。
+2. 根 `F:/goodgood` 仍为旧 GG-024；GG-079 是原累计候选，main 也不能代替 a73835f。`.codex/` 与未跟踪用户文件保持原样；不用旧检查点退回历史版本。
+3. 本阶段无需预览。后续如需恢复，先核验运行版本/端口和独立 mock 目标；GG-079/GG-077 的 ignored helpers 与依赖端口54449/56449/58049见 GG-079 原交接。禁止重置/fixture，旧32140曾有真实provider Worker，不操作；正式生产和真实请求需对应授权。
 4. 不恢复或 bulk merge 旧 C6；旧阶段具体验证见相应任务卡，GG-051 [研究记录](research/GG-051-credit-pricing-reassessment.md) 保留定价依据。
 
 ## History and update policy
