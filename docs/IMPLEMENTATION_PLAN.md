@@ -8,7 +8,7 @@
 ## Current checkpoint
 
 - Task [GG-093](tasks/GG-093-docker-cleanup-build-handoff.md)：chore/GG-093-docker-cleanup-build-handoff / F:/goodgood；基线bc0e053保留f68ba81/a73835f，.codex不改。
-- 本地版本标记将在本任务最终提交后创建为goodgood-local-2026-09-15-gg093；新窗口从此检查点的后续版本分支，不从不含累计功能的main开始。
+- 本地版本标记`goodgood-local-2026-09-15-gg093`已指向本任务最终提交；新窗口从此检查点的后续版本分支，不从不含累计功能的main开始。
 - [跨窗口交接](DEVELOPMENT_HANDOFF.md)记录实际功能、启动命令、依赖/端口、命名SQL runner、验证边界。AGENTS/WORKFLOW/README已同步。
 - 09-15已从当前累计版本重建并重启工作区32131、登录32191、mock Worker32142、provider32143；服务使用loopback依赖与本地Mailpit，原DB0043与数据保留。最终PID以端口实时核验，不写死在交接文档。
 - 此前完整门禁a88bdc3 524通过/26跳过、GG091/GG029/GG031 SQL各1/1；最后邀请码文本/入口焦点样式按用户要求仅构建，手验结果未记录。
