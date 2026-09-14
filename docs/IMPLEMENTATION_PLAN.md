@@ -1,20 +1,20 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-14
-- Current phase: GG-075 locally implemented and verified; not deployed.
-- Current objective: Clear inspiration comparison controls and publication consent feedback.
+- Current phase: GG-076 locally implemented and verified; not deployed.
+- Current objective: Board hover comparison and output-first detail previews.
 - Previous objective: 用户在模型管理为 GPT 图片系列逐线路定价与启禁，保留原测试配置与历史。
 
 ## Current checkpoint
 
-- Task [GG-075](tasks/GG-075-inspiration-publish-controls.md), fix/GG-075-inspiration-publish-controls, F:/goodgood-worktrees/GG-075; verified main bab17fd plus FF accepted GG074 fa5a080.
-- Refines ADR0077: LayoutGrid inspiration/publish icons, visible comparison section with original-reference thumbnails/effect-only explanation, explicit missing-consent alert/focus and content validation. Privacy/backend/schema unchanged.
-- Gate passed: 515 tests, 494 pass, 21 opt-in skips, 0 failures; lint/typecheck/build passed. Targeted9/9, docs/release15/15. Isolated no-Worker UI verified own thumbnail/effect-only/both modes, alert clears on checking, mouse/keyboard and390px layout.
-- Original32141 now GG075 Web73491; backend unchanged so GG074 Worker56339 and mock-provider91616 retained. JONY owner/profile and original model/event/38 historical table/profile/case/like/event snapshots unchanged. No schema or original publish/generate/price changes.
-- Temporary32144 stopped, named UI DB and four exact synthetic objects removed; no fixture Worker/outbox/editor publication. Root worktree and real-provider32140 untouched.
-- Next action: owner reviews existing no-reference editor explanation and uses a reference-based work to choose comparison; local commit only, no main merge/push/paid calls/deployment authorized.
+- Task [GG-076](tasks/GG-076-inspiration-hover-preview.md), fix/GG-076-inspiration-hover-preview, F:/goodgood-worktrees/GG-076; verified main bab17fd plus FF accepted GG07564c2a10.
+- ADR0077 refined before code: shared hover frame on board/detail/editor. Full processed output at rest/leave, pointer-position wipe on entry/move; board button omits nested input, detail range retained.
+- Complete gate517 tests:496 pass,21 opt-in skips,0 failures; lint/typecheck/build passed. Targeted14/14 and docs/release15/15. Mock/no-Worker UI: card≈81%→0%, detail0%→75%→0%, keyboard0→1, case opening and390px no overflow.
+- Original32141 GG076 Web76141, unchanged GG074 Worker56339 and mock-provider91616 retained; JONY owner and all model/events/38 historical tables/profile/case/like/event snapshots unchanged. No schema, original publication/generation or paid calls.
+- Temporary32144 stopped; exact fixture DB/four synthetic objects removed, no fixture Worker/outbox/private jobs. Original loopback DB54449/goodgood, Redis56449 DB0, RustFS58049/58050, root and real-provider32140 untouched.
+- Next action: owner reviews their hover-case board cover and detail output-first behavior on original32141. Local commit only; no main merge/push/deployment authorized.
 - Blockers: none.
-- Production https://goodgood.o1key.com revision65ceb168/migration0019 unchanged; staging-goodgood.o1key.com remains historical naming.
+- Production https://goodgood.o1key.com revision65ceb168/migration0019 unchanged; staging-goodgood.o1key.com historical naming.
 
 ## Verification sequence
 
@@ -50,7 +50,7 @@
 
 ## New-session recovery
 
-1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-075` 与 GG-075 任务卡；按卡核对运行版本，不能仅看 URL。
+1. 读根 AGENTS.md、docs/CURRENT_STATE.md、docs/WORKFLOW.md、本页和 docs/BACKLOG.md，检查 Git 分支/worktree/未提交改动；打开 `F:/goodgood-worktrees/GG-076` 与 GG-076 任务卡；按卡核对运行版本，不能仅看 URL。
 2. 当前页面为 `http://127.0.0.1:32141/inspiration`，灵感板案例；个人资料和站长管理看板/总日志/模型/企业/账户/审计仍保留。仅独立 mock 栈。旧 `32140` 有真实 provider Worker，不运行 fixtures/outbox，不重置其数据。
 3. 本地 ignored `.gg052-local.mjs` 分别启动 web/worker/mock-generation；按本任务已记录的运行状态恢复，保留用户试价数据。正式生产与真实请求不在本次授权范围。
 4. 不恢复或 bulk merge 旧 C6；旧阶段具体验证见相应任务卡，GG-051 [研究记录](research/GG-051-credit-pricing-reassessment.md) 保留定价依据。

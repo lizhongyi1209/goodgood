@@ -47,6 +47,6 @@ const vite=await createServer({appType:'custom',configFile:false,root,resolve:{a
 const comparison=await vite.ssrLoadModule('/features/inspiration/case-comparison.tsx');
 test('GG074 before/after pointer wipe has touch/keyboard range and preserves image framing',()=>{
   const props={before:{url:'https://fixture.invalid/before'},after:{url:'https://fixture.invalid/after',width:1024,height:768},title:'对比',mode:'hover'};
-  const html=renderToStaticMarkup(React.createElement(comparison.CaseComparison,props));assert.match(html,/type="range"/);assert.match(html,/调整前后对比位置/);assert.match(html,/clip-path:inset\(0 50% 0 0\)/);assert.match(html,/aspect-ratio:1.333/);
+  const html=renderToStaticMarkup(React.createElement(comparison.CaseComparison,props));assert.match(html,/type="range"/);assert.match(html,/调整前后对比位置/);assert.match(html,/clip-path:inset\(0 100% 0 0\)/);assert.match(html,/aspect-ratio:1.333/);
   assert.ok(!renderToStaticMarkup(React.createElement(comparison.CaseComparison,{...props,before:null})).includes('type="range"'));
 });

@@ -34,4 +34,9 @@ Pointer-wipe uses the selected before/after images with a dividing line followin
 the pointer; keyboard and touch can use the same accessible range control.
 Pure text-to-image cases have no before image and show only the output.
 
+GG-076 refines preview behavior: hover-mode cases show the full processed output
+at rest, start the wipe at the pointer position on entry, and restore output on
+exit. Board covers also support the chosen hover preview, without nested controls
+inside their case-opening button. Detail/editor ranges retain keyboard/touch use.
+
 No production publication/deployment, paid provider tests or social scope growth.

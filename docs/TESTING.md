@@ -1,5 +1,7 @@
 # GG-063 verification
 
+GG-076 tests cover output-first frame, board selected-mode preview, ratio and non-nested interactive controls. Isolated mock/no-Worker UI verifies pointer entry/move/leave restoring output, detail opening, keyboard range and narrow layout.
+
 GG-075 render tests cover reference-thumbnail selection, effect-only and no-reference states, visible enabled/disabled comparison modes and publication consent/content validation. Browser QA uses a separate named mock/no-Worker database, changes no user prices or publications, and confirms missing consent feedback and live comparison selection.
 
 GG-074 tests cover hidden/public DTOs, optional supplement joining, custom prompt

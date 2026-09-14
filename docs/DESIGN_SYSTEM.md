@@ -1,5 +1,7 @@
 # Design system
 
+GG-076 hover cases preview on board cards and details. Show full processed output at rest; enter/move reveals before with pointer-following seam, leave restores output. Detail/editor range supports keyboard/touch; board cover stays one case-opening button without nested inputs.
+
 GG-075 uses the same LayoutGrid icon for inspiration navigation and image-detail publication. Effect comparison is a visible labelled section, with selectable original-reference thumbnails, an effect-only option and explicit empty state. Modes remain visible when unavailable.
 
 GG-074 case editor uses the creator shell with a quiet heading, left editing

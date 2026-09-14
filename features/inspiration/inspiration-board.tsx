@@ -10,7 +10,7 @@ import {imageLineName} from '@/shared/contracts/banana-lines.mjs';
 import {gptImageQualityLabel,gptImageBackgroundLabel,gptImageOutputFormatLabel} from '@/features/creation/generation-options';
 import {inspirationRequest,type InspirationCase,type CaseParameters,type UseCaseResult} from './http-inspiration-boundary';
 import './inspiration.css';
-import {CaseComparison} from './case-comparison';
+import {CaseComparison,CaseWipe} from './case-comparison';
 export {CaseComparison} from './case-comparison';
 
 export function CaseParametersList({parameters:p}:{parameters:CaseParameters}) {
@@ -23,7 +23,7 @@ export function InspirationReadState({loading,error,onRetry}:{loading:boolean;er
 }
 export function InspirationCards({items,onOpen,onLike,busy}:{items:readonly InspirationCase[];onOpen:(id:string)=>void;onLike:(item:InspirationCase)=>void;busy:readonly string[]}) {
   if(!items.length) return <div className="inspiration-empty"><Sparkles size={25}/><strong>还没有案例</strong><p>从自己的图片详情分享作品，让效果成为可复用的灵感。</p></div>;
-  return <div className="inspiration-grid">{items.map(item=><article className="inspiration-card" key={item.id}><button className="inspiration-cover" style={{aspectRatio:item.after.width&&item.after.height?item.after.width/item.after.height:1}} onClick={()=>onOpen(item.id)} aria-label={`查看案例：${item.title}`}><PrivateObjectImage src={item.after.url} alt={item.title}/>{item.before&&<span>前后对比</span>}</button><div className="inspiration-card-body"><button className="inspiration-title" onClick={()=>onOpen(item.id)}>{item.title}</button><div className="inspiration-card-meta"><span>{item.author.handle?`@${item.author.handle}`:item.author.displayName}</span><button className={`case-like ${item.liked?'is-liked':''}`} aria-label={`${item.liked?'取消点赞':'点赞'}：${item.title}`} aria-pressed={item.liked} disabled={busy.includes(item.id)} onClick={()=>onLike(item)}><Heart size={15}/>{item.likes}</button></div></div></article>)}</div>;
+  return <div className="inspiration-grid">{items.map(item=><article className="inspiration-card" key={item.id}><button className="inspiration-cover" style={{aspectRatio:item.after.width&&item.after.height?item.after.width/item.after.height:1}} onClick={()=>onOpen(item.id)} aria-label={`查看案例：${item.title}`}>{item.before&&item.comparisonMode==='hover'?<CaseWipe before={item.before} after={item.after} title={item.title} compact/>:<PrivateObjectImage src={item.after.url} alt={item.title}/>} {item.before&&<span>{item.comparisonMode==='hover'?'划过对比':'前后对比'}</span>}</button><div className="inspiration-card-body"><button className="inspiration-title" onClick={()=>onOpen(item.id)}>{item.title}</button><div className="inspiration-card-meta"><span>{item.author.handle?`@${item.author.handle}`:item.author.displayName}</span><button className={`case-like ${item.liked?'is-liked':''}`} aria-label={`${item.liked?'取消点赞':'点赞'}：${item.title}`} aria-pressed={item.liked} disabled={busy.includes(item.id)} onClick={()=>onLike(item)}><Heart size={15}/>{item.likes}</button></div></div></article>)}</div>;
 }
 
 export function InspirationBoard({enabled,onUse}:{enabled:boolean;onUse:(value:UseCaseResult)=>void}) {

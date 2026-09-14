@@ -50,6 +50,9 @@
 .inspiration-card { min-width:0; }
 .inspiration-cover { display:block; position:relative; width:100%; aspect-ratio:4/3; overflow:hidden; border-radius:14px; background:var(--soft); }
 .inspiration-cover img { width:100%; height:100%; object-fit:cover; }
+.inspiration-cover .case-wipe { height:100%; max-height:none; border-radius:0; }
+.inspiration-cover .case-wipe img { object-fit:contain; }
+.inspiration-cover > span { pointer-events:none; }
 .inspiration-cover > span { position:absolute; left:10px; bottom:10px; font-size:11px; color:var(--ink); background:var(--white); padding:4px 7px; border-radius:7px; }
 .inspiration-card-body { padding:12px 3px 0; }
 .inspiration-title { font-size:14px; font-weight:550; text-align:left; overflow-wrap:anywhere; }
