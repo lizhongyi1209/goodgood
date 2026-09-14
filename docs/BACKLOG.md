@@ -3,7 +3,7 @@
 ## 当前与最近交付
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
-| GG-085 | JCOIN发行批次卡片 | 本地实现中；保留发行规则与原数据，未部署 | [任务](tasks/GG-085-jcoin-batch-cards.md) |
+| GG-085 | JCOIN发行批次卡片 | 本地完成；门禁515/24、桌面/390px通过；原32141卡片已更新，发行规则/原数据保留，未部署 | [任务](tasks/GG-085-jcoin-batch-cards.md) |
 | GG-084 | JCOIN账本、个人统计与站长计划 | 本地完成；门禁515/24、SQL/UI通过；32141原数据mock服务启动供验收，本期未开启，未部署 | [任务](tasks/GG-084-jcoin-ledger-pages.md) |
 | GG-083 | JCOIN分批定额与仅累计 | 参数规划完成：第一期100万枚/预计50万元消费→每100有效积分2枚；GG084接入一期运行时，不兑换或锚定人民币 | [任务](tasks/GG-083-jcoin-batch-accumulation.md) |
 | GG-082 | JCOIN最小发行、用途与倍率讨论 | GG083接续；原兑换/面值建议被否决，首期数值未接受，未实施/发币 | [任务](tasks/GG-082-jcoin-minimum-issuance.md) |

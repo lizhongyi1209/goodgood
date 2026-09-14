@@ -1,21 +1,21 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-14
-- Current phase: GG-085 phase cards implemented; local gates passed, browser verification pending, no production issuance or deployment.
+- Current phase: GG-085 phase cards verified and running locally; no production issuance or deployment.
 - Current objective: 接续c00bc4f/a73835f，将站长JCOIN实际批次做成独立卡片，保留原发行规则与用户私有页面。
 - Previous objective: GG082最小发行讨论；GG081积分类型/充值登记/运营与并发本地实现验证保留。
 
 ## Current checkpoint
 
 - Task [GG-085](tasks/GG-085-jcoin-batch-cards.md), feature/GG-085-jcoin-batch-cards, F:/goodgood-worktrees/GG-085；基线c00bc4f4c9fa2f322e763dffd9727c5b408c68df完整保留a73835f；原GG084已验证实现作为继承基线。
-- GG085只改批次卡片：真实第一期、状态/额度/规则/原操作归在卡片，全平台未安排额度留在外层；定向7/7、文档8/8通过；完整门禁exit0（515通过/24跳过），待更新32141及浏览器核对。数据库与Worker不改。
+- GG085只改批次卡片：真实第一期、状态/额度/规则/原操作归在卡片，全平台未安排额度留在外层；定向7/7、文档8/8通过；完整门禁exit0（515通过/24跳过），原Chrome桌面/390px卡片通过，32141 Web已更新。数据库与Worker不改。
 - [ADR0084](decisions/0084-jcoin-runtime-and-private-user-view.md) Accepted：用户/jcoin仅自己余额/获得/撤回和记录，GET不返回库存/批次/全平台规模；/admin/jcoin站长管理总库存及第一期固定计划、开启/暂停/恢复/处理。
 - 第一批100万枚、每100有效充值消费积分2枚、9.18北京时间00:00起算、无期限/无兑换/无价值锚定不变。迁移0040只建固定库存/草稿；需站长在本期页面开启才分发。20%创作/企业来源/正式视频/第二期计划另行实施。
 - 已写JCOIN schema/处理器、两套API与页面、导航和Worker独立15秒处理；正常消费/退款事务不依赖奖励处理。来源验证真实manual与历史划拨，混合或缺证据保守排除；有异常计数。
 - 定向7/7、命名空库全40迁移/并发/来源/回滚/退款/封顶1/1及Chrome实际工作区1280/390px全fetch模拟验证通过。临时库/58184页面均清理停止；未接provider。最终npm run check:local exit0：lint/typecheck/build、515通过/24 opt-in跳过/0失败；CI迁移断言随0040更新，缓存diff检查通过。
-- 站长已请求启动验收：d6b0ce0的Web28072/32141、mock Worker30432/32142、mock provider9048/32143运行；原PG54449/Valkey56449/对象58049保留。仅补0039/0040，原行/旧checksum验证不变；JONY页面/会话/个人与站长计划API200，本期仍draft/余额0，没有生成或启期。恢复脚本与停止边界见GG084任务卡。
+- 站长已请求启动验收：GG085 UI332d0f0的Web26608/32141、原GG084 mock Worker30432/32142、mock provider9048/32143运行；原PG54449/Valkey56449/对象58049保留。仅补0039/0040，原行/旧checksum验证不变；JONY页面/会话/个人与站长计划API200，本期仍draft/余额0，没有生成或启期。恢复脚本与停止边界见GG084任务卡。
 - 正式入口 https://goodgood.o1key.com 不变；staging-goodgood.o1key.com是历史名称。CURRENT_STATE不改；未起真实provider Worker，不操作3010或其他环境。
-- Next action: 完成GG085门禁和卡片浏览器验证，更新32141 Web供站长验收；若发布需另行明确本累计候选的范围与生产迁移/发行授权。后续批次配置/创作另定任务，不自动推进。
+- Next action: 供站长验收32141按期卡片；若发布需另行明确本累计候选的范围与生产迁移/发行授权。后续批次配置/创作另定任务，不自动推进。
 - Blockers: 无；未授权生产迁移/发行、真实provider请求或部署。
 
 ## Verification sequence
@@ -29,6 +29,7 @@
 | 阶段 | 状态 | 当前含义 |
 | --- | --- | --- |
 | M0—M8 | 已完成基线 / controlled alpha 已开放 | 生产事实以 CURRENT_STATE 和发布收据为准 |
+| GG-085 | 本地实现/验证完成 | 按期卡片、门禁515/24及桌面/390px通过，原32141已更新，未部署 |
 | GG-084 | 本地实现/验证完成 | 个人仅自己统计/记录，站长计划/一期生命周期；门禁515/24、SQL1/1、UI通过，未部署 |
 | GG-083 | 结构/首批参数规划完成 | 第一批100万枚/系数2、正常50万元有效消费、无期限/仅累计；GG084接续一期运行时 |
 | GG-082 | 历史最小发行讨论 | GG083接续；原兑换/服务面值建议否决，首期数值未确认，未实现/发币 |
