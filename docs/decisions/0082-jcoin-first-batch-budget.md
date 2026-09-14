@@ -1,6 +1,7 @@
 # ADR 0082 — JCOIN 第一期100万枚额度
 
 - Status: Accepted
+- 后续系数：[ADR0083](0083-jcoin-first-batch-consumption-coefficient.md)按50万元消费规模确定系数2；下文系数10保留为本ADR接受额度时的历史测算，不是当前规则。
 - Date: 2026-09-14
 - Task: [GG-083](../tasks/GG-083-jcoin-batch-accumulation.md)
 - Extends: [ADR0081](0081-jcoin-batch-accumulation.md)的分批/仅累计结构，只接受首批额度。

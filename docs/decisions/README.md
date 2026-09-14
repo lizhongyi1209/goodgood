@@ -1,5 +1,7 @@
 # Decision records
 
+- `0083-jcoin-first-batch-consumption-coefficient.md` — accepted 500,000 CNY qualified-consumption scale implies 2 JCOIN per 100 qualified consumption credits for the 1,000,000-coin first batch; no currency value peg.
+
 - `0082-jcoin-first-batch-budget.md` — accepted 1,000,000 JCOIN first-batch budget for GG-083; proposed mining coefficient remains unapproved, consumption-scale calculation is not a token value peg.
 
 - `0081-jcoin-batch-accumulation.md` — accepted finite batches without expiry, separately opened next batch, recharge-consumption-only accumulation and no redemption/value peg for GG-083; numerical parameters remain unapproved.
