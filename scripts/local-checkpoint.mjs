@@ -28,7 +28,8 @@ if (command === "build") {
   } else {
     const mode = process.argv[3];
     assert.ok(["workspace", "login", "worker", "provider"].includes(mode) && process.argv.length === 4, "Expected workspace, login, worker, or provider");
-    const envFile = mode === "login" ? ".env.login-review" : ".env.local-review";
+    const emailWeb = mode === "workspace" || mode === "login";
+    const envFile = emailWeb ? ".env.login-review" : ".env.local-review";
     const environment = parseEnv(await readFile(path.join(root, envFile), "utf8"));
     assert.equal(environment.GENERATION_PROVIDER_KIND, "mock", "Checkpoint start supports mock only");
     assert.equal(environment.GENERATION_API_BASE_URL, "http://127.0.0.1:32143");
@@ -40,7 +41,7 @@ if (command === "build") {
     assert.equal(environment.OBJECT_STORAGE_ENDPOINT, "http://127.0.0.1:58049");
     assert.equal(environment.OBJECT_STORAGE_PUBLIC_ENDPOINT, "http://127.0.0.1:58049");
     assert.equal(environment.OBJECT_STORAGE_BUCKET, "goodgood-gg052-local");
-    if (mode === "login") {
+    if (emailWeb) {
       assert.equal(environment.GOODGOOD_AUTH_MODE, "email_otp");
       assert.equal(environment.GOODGOOD_ALLOW_LOCAL_AUTH, "false");
       assert.equal(environment.GOODGOOD_EMAIL_SMTP_HOST, "127.0.0.1");
@@ -51,7 +52,18 @@ if (command === "build") {
     }
     const role = mode === "worker" ? "worker" : mode === "provider" ? "mock-generation" : "web";
     const port = mode === "login" ? "32191" : "32131";
-    Object.assign(process.env, environment, {
+    const authenticationOverrides = emailWeb
+      ? {
+          GOODGOOD_AUTH_COOKIE_NAME:
+            mode === "workspace"
+              ? "goodgood_workspace_email_session"
+              : environment.GOODGOOD_AUTH_COOKIE_NAME,
+          GOODGOOD_AUTH_PUBLIC_ORIGIN: "http://127.0.0.1:" + port,
+          GOODGOOD_LOCAL_AUTH_DEFAULT_TOKEN: "",
+          GOODGOOD_LOCAL_AUTH_TOKENS: "",
+        }
+      : {};
+    Object.assign(process.env, environment, authenticationOverrides, {
       GOODGOOD_REVISION: build.revision,
       GOODGOOD_PROCESS: role,
       HOST: "127.0.0.1",

@@ -1,6 +1,6 @@
 # GG-094 — 登录与注册邀请码按状态显示
 
-- 状态：本地逻辑调整与自动验证完成；最终可验证构建与服务更新进行中；用户手动页面验收待记录
+- 状态：本地逻辑调整、自动验证、可验证构建与服务更新完成；用户手动页面验收通过，后续运行入口由GG095统一到32131
 - 用户需求：登录状态不出现邀请码；仅注册时填写邀请码；移除“（新用户填写）”，并让邀请码输入框与其他输入框一致。
 - 最后更新：2026-09-15
 - 分支 / worktree：fix/GG-094-registration-invitation-visibility / F:/goodgood
@@ -18,11 +18,11 @@
 
 - 相关文件：`features/auth/authentication-gate.tsx`、`features/auth/account-access-gate.tsx`、`app/globals.css`、`tests/ui-components.test.mjs`。
 - 已完成：新增明确注册状态；登录请求不携带邀请码；后端要求或无效邀请码时显示注册字段；待开通入口显式进入注册；移除旧占位备注并统一样式；冷却定时器独立于当前challenge，换邮箱不清除冷却截止时间。
-- 验证：冷却补充后定向回归43/43；完整`npm run check:local`为555项（529通过/26跳过/0失败），lint/typecheck/build均通过；`git diff --check`通过。未发送验证码、注册用户或调用真实provider；最终checkpoint与服务revision在提交后刷新。
+- 验证：冷却补充后定向回归43/43；完整`npm run check:local`为555项（529通过/26跳过/0失败），lint/typecheck/build均通过；`git diff --check`通过。最终提交65dcee5的checkpoint构建/验证通过，32131/32191均报告该revision及`build.verified=true`，Worker/provider ready。未发送验证码、注册用户或调用真实provider。
 - 发布：未发布。
 
 ## 恢复工作
 
-- 尚未完成：用户手动检查登录初始态，并触发新用户注册态验收邀请码显示与样式。
+- 尚未完成：无；运行入口统一由GG095处理。
 - 阻塞/风险：不自动注册测试用户，因此注册态最终视觉由用户手动验收。
-- 下一步：用户在 `http://127.0.0.1:32191/create` 手动验收并反馈结果。
+- 下一步：由GG095将已验收流程切换到 `http://127.0.0.1:32131/create`。

@@ -1,7 +1,7 @@
 # 当前任务与优先级 · 当前与最近交付
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
-| GG-094 | 登录与注册邀请码按状态显示 | 本地实现与自动验证完成；登录隐藏邀请码，注册才显示同规格六码输入，换邮箱不绕过发送冷却；待用户手验，未部署 | [任务](tasks/GG-094-registration-invitation-visibility.md) |
+| GG-094—095 | 登录/注册邀请码状态与主测试入口 | GG094用户验收通过；GG095本地实现与门禁完成，待构建切换32131并停用32191；未部署 | [GG094](tasks/GG-094-registration-invitation-visibility.md) / [GG095](tasks/GG-095-primary-email-auth-test-flow.md) |
 | GG-093 | 废弃Docker清理与构建版本交接 | 已完成本地交付；删除37容器/9旧应用镜像/5空网络，回收21.92GB构建缓存，34卷保留；构建指纹与启动核验已加入，未部署 | [任务](tasks/GG-093-docker-cleanup-build-handoff.md) |
 | GG-092 | 保存版本/AGENTS与无上下文交接 | 当前累计版本已保存；09-15重启工作区32131/登录32191，ready200，本地未发布 | [任务](tasks/GG-092-development-handoff.md) |
 | GG-091 | 账户唯一邀请码、简洁登录与线上测试清理 | 原功能已验证；登录/注册邀请码显示由GG094修正并待32191手验；线上10测试用户/29文件清理完成，功能未部署 | [GG091](tasks/GG-091-account-invitation-login.md) / [GG094](tasks/GG-094-registration-invitation-visibility.md) / [前版GG090](tasks/GG-090-invitation-registration.md) |

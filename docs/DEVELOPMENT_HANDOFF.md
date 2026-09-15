@@ -35,8 +35,7 @@ git merge-base --is-ancestor bb782c0 HEAD
 
 | 组件 | 当前入口 | 本次记录的进程/来源 |
 | --- | --- | --- |
-| 工作区Web | http://127.0.0.1:32131 | `node scripts/local-checkpoint.mjs start workspace`；端口实时核验PID，代码由version接口证明 |
-| 邮箱登录检查Web | http://127.0.0.1:32191/create | `node scripts/local-checkpoint.mjs start login`；独立cookie，代码由version接口证明 |
+| 工作区Web | http://127.0.0.1:32131 | `node scripts/local-checkpoint.mjs start workspace`；邮箱验证码、无local账户预设；端口实时核验PID，代码由version接口证明 |
 | mock Worker | http://127.0.0.1:32142/health/ready | `node scripts/local-checkpoint.mjs start worker`；mock-only |
 | mock provider | http://127.0.0.1:32143/health/ready | `node scripts/local-checkpoint.mjs start provider`；mock-only |
 | PostgreSQL | loopback54449/goodgood | goodgood-gg052-postgres-1，最新0043 |
@@ -56,22 +55,21 @@ npm run verify:checkpoint
 node scripts/local-checkpoint.mjs start workspace
 ~~~
 
-`build:checkpoint`构建`dist/client`与`dist/server`，写入忽略的`dist/goodgood-build.json`，绑定当前Git revision、源码指纹、产物指纹和文件数。`verify:checkpoint`会拒绝缺失、过期、源码变化或产物篡改；`start`仅接受loopback PG54449/Valkey56449/RustFS58049、Mailpit和mock provider配置，并在启动前验证同一指纹。工作区/登录分别使用32131/32191；worker/provider使用32142/32143健康端口。
+`build:checkpoint`构建`dist/client`与`dist/server`，写入忽略的`dist/goodgood-build.json`，绑定当前Git revision、源码指纹、产物指纹和文件数。`verify:checkpoint`会拒绝缺失/过期/篡改产物；`start workspace`仅接受loopback依赖、Mailpit、mock provider及email_otp配置，并显式清空local auth账户预设。主测试入口使用32131；worker/provider使用32142/32143健康端口。`start login`保留为诊断兼容命令但正常流程不启动32191。
 
 启动后检查：
 
 ~~~powershell
 Invoke-RestMethod http://127.0.0.1:32131/api/health/version
-Invoke-RestMethod http://127.0.0.1:32191/api/health/version
 Invoke-RestMethod http://127.0.0.1:32142/health/ready
 Invoke-RestMethod http://127.0.0.1:32143/health/ready
 ~~~
 
-两个Web响应的`build.verified`必须为`true`且revision等于`git rev-parse HEAD`；仅有`/api/health/ready`返回200不能证明页面来自当前提交。构建产物`dist/`被忽略，不提交到Git；旧Docker `goodgood:gg027-local`已删除，不能再作为当前版本依据。
+Web响应的`build.verified`必须为`true`且revision等于`git rev-parse HEAD`；仅有`/api/health/ready`返回200不能证明页面来自当前提交。构建产物`dist/`被忽略，不提交到Git；旧Docker `goodgood:gg027-local`已删除，不能再作为当前版本依据。
 
 PID是交接时的记录，不是以后可直接kill的授权目标。先用Get-NetTCPConnection/Get-CimInstance核验端口、命令行、目录；不要停陌生进程或重载用户带未提交草稿的浏览器标签。原预览账户/作品/反馈保留，禁止fixture/reset/自动重新初始化。
 
-当前32131保留local认证与原用户数据。32191是本次新启的email_otp登录检查Web，共享原本地goodgood，但独立cookie/issuer；未写fixtures或注册模拟用户，用户可手验。邮件仅进入现有本地Mailpit（SMTP58046，查看http://127.0.0.1:58045），不向外发信。此前GG091命名独立UI测试资源已清理；本次32191不是恢复旧测试数据库。
+当前32131使用email_otp并保留原用户数据，不配置local auth token/default token，也不自动写入登录Cookie；使用新的`goodgood_workspace_email_session` Cookie名称，旧local/32191 Cookie不会形成预设登录。邮件仅进入现有本地Mailpit（SMTP58046，查看http://127.0.0.1:58045），不向外发信。独立32191正常流程已停用。
 
 ## 启动与恢复
 
@@ -108,9 +106,9 @@ runner只在loopback54449创建固定命名的新空库，拒绝已存在库，�
 
 线上仍65ceb168/迁移0019/原blue镜像，当前本地累计功能没有部署。2026-09-14已按授权删全部10测试账户（含站长）及29对象，用户/文件0；事前/事后加密备份和服务器审计保留。不要再执行清理或自动恢复测试站长；新站长初始化/生产登录发布必须另列明确范围。
 
-当前GG094从GG093标签基线修正登录/注册邀请码显示：普通登录不展示邀请码，服务端确认新用户或待开通账户时才进入注册态；发送验证码后修改邮箱只清除旧挑战，不清除或冻结发送冷却。新窗口从GG094提交继续，先执行`verify:checkpoint`和version/端口核验，保持原数据；上线、真实发信、生图/视频付费调用均非本次交接授权。
+GG094已获用户手动验收。GG095将该登录流程并入32131，取消工作区local auth账户预设并停用32191。新窗口从GG095提交继续，先执行`verify:checkpoint`和version/端口核验，保持原数据；上线、真实发信、生图/视频付费调用均非本次交接授权。
 
-GG094最终提交完成后须重新构建并更新两个Web；工作区/登录Web的version接口都必须为`build.verified=true`，Worker/provider readiness及Mailpit保持200。未发送验证码或创建测试用户；登录和新用户注册态由用户自行检查，尚未记录手动页面验收通过。登录入口为 `http://127.0.0.1:32191/create`，邮件查看入口为 `http://127.0.0.1:58045`。忽略.env.login-review保存本机Mailpit模式，不能将其配置用于生产。
+GG095最终提交后重新构建并更新32131；version接口须为该revision且`build.verified=true`，未登录session须401，32191须无监听，Worker/provider readiness保持200。登录入口为 `http://127.0.0.1:32131/create`，邮件查看入口为 `http://127.0.0.1:58045`。忽略.env.login-review保存本机Mailpit模式，不能将其配置用于生产。
 
 ## 提交正确但打开旧页面的排查
 
