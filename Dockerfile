@@ -35,6 +35,13 @@ WORKDIR /app
 RUN rm -rf /usr/local/lib/node_modules/npm \
     && rm -f /usr/local/bin/npm /usr/local/bin/npx
 
+# The pinned base image predates Debian's fixed libpcre2 build, and the release
+# gate fails closed on any fixable HIGH/CRITICAL library, including OS packages.
+# Take only that security update so the runtime keeps the reviewed base.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends --only-upgrade libpcre2-8-0 \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --from=build --chown=node:node /app/dist/standalone/ ./
 # Vinext 1.0 beta's standalone tracer does not currently retain its React peer
 # packages. Keep the exact locked peers and their small runtime dependency tree
