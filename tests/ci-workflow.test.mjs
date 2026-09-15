@@ -95,7 +95,7 @@ test("runtime build dependencies exclude the vulnerable image-size release", asy
     await readFile(new URL("../package-lock.json", import.meta.url), "utf8"),
   );
 
-  assert.equal(manifest.dependencies.next, "16.2.11");
+  assert.equal(manifest.dependencies.next, "16.3.3");
   assert.equal(manifest.dependencies.react, "19.2.8");
   assert.equal(manifest.dependencies["react-dom"], "19.2.8");
   assert.equal(manifest.devDependencies.vinext, "1.0.0-beta.9");
@@ -104,7 +104,7 @@ test("runtime build dependencies exclude the vulnerable image-size release", asy
     "19.2.8",
   );
   assert.equal(manifest.devDependencies["@vitejs/plugin-rsc"], "0.5.34");
-  assert.equal(manifest.devDependencies["eslint-config-next"], "16.2.11");
+  assert.equal(manifest.devDependencies["eslint-config-next"], "16.3.3");
   assert.equal(manifest.dependencies.sharp, "0.35.4");
   assert.deepEqual(manifest.overrides, {
     "fast-uri": "3.1.6",
