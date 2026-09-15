@@ -1,6 +1,6 @@
 # 当前开发版本与跨窗口交接
 
-- 日期：2026-09-15；当前任务GG-096；本地分支feature/GG-096-production-auth-entry，基线提交18c338f；GG093标签继续作为历史构建交接点。
+- 日期：2026-09-15；当前任务GG-097（累计功能生产重发布）；本地分支feature/GG-096-production-auth-entry，HEAD `69a22bb`（代码末位 `f2bbbc`），基线提交18c338f；GG093标签继续作为历史构建交接点。
 - 当前项目入口：F:/goodgood；累计代码包含a73835f、GG081—091与GG092交接。`.codex/`是用户本地设置，保留不提交；生产未部署。
 - 新窗口先读AGENTS/CURRENT_STATE/WORKFLOW/IMPLEMENTATION_PLAN/BACKLOG，然后本页；新任务从GG-097分配。不要从main或旧GG024工作树开始。
 
@@ -36,11 +36,30 @@ git merge-base --is-ancestor bb782c0 HEAD
 | 组件 | 当前入口 | 本次记录的进程/来源 |
 | --- | --- | --- |
 | 工作区Web | http://127.0.0.1:32131/login | `node scripts/local-checkpoint.mjs start workspace`；`/register`为注册入口；邮箱验证码、无local账户预设；端口实时核验PID，代码由version接口证明 |
-| mock Worker | http://127.0.0.1:32142/health/ready | `node scripts/local-checkpoint.mjs start worker`；mock-only |
-| mock provider | http://127.0.0.1:32143/health/ready | `node scripts/local-checkpoint.mjs start provider`；mock-only |
+| 真实 worker | http://127.0.0.1:32142/health/ready | `node scripts/local-checkpoint.mjs start worker`；**真实 O1Key，真实计费** |
+| mock provider | http://127.0.0.1:32143/health/ready | 仅在 `LOCAL_GENERATION_PROVIDER_KIND=mock` 时启动；真实模式下按设计不启动 |
 | PostgreSQL | loopback54449/goodgood | goodgood-gg052-postgres-1，最新0043 |
 | Valkey | loopback56449/db0 | goodgood-gg052-valkey-1 |
 | RustFS | loopback58049/58050 | goodgood-gg052-object-storage-1，桶goodgood-gg052-local |
+
+GG-097起本地 worker **默认调用真实 O1Key**（真实计费）。令牌只从仓库外路径读取：
+
+~~~text
+%USERPROFILE%\.claude\goodgood-local-secrets\o1key-api-key.txt
+（可用 GOODGOOD_LOCAL_O1KEY_KEY_FILE 覆盖；启动器拒绝仓库内路径）
+~~~
+
+令牌缺失或为空时启动器直接报错退出，**不会**静默回退 mock。要临时离线，在
+`.env.local-review` 设 `LOCAL_GENERATION_PROVIDER_KIND=mock` 并同时启动 32143。
+worker 启动横幅会打印当前 provider 身份。绝不要把生产令牌放进该文件，也不要
+把该令牌复制进仓库、文档或聊天记录。
+
+## GG-097 本地测试窗口结论（2026-09-15）
+
+- **真实链路已在本地验证通过**：用户实测真实 O1Key 出图成功、消费记录正常。此外接口侧验证：令牌鉴权（404 vs 401 对照）、`GET /v1/models` 与本项目 15 个 provider 模型 **15/15 全部存在**、参考图上传契约（https URL、整数 `expires_at`、24h）满足 adapter 校验。
+- 本窗口四项修复（均已提交）：本地上传 CORS 过期来源（`736a959`）；mock provider 改为实现真实 O1Key 契约（`15cc1f5`）；本地 worker 默认真实 provider（`cfb8331`）；生成被 Linux 专用资源门锁死（`f2bbbcd`）。
+- 重要认知：`host-resource-admission.mjs` 原读 `/proc/meminfo` 与 `statfs("/")`，非 Linux 主机必然落入「无法观测」并**永久锁死**生成。生产走 Linux 分支未改动。
+- 末次 `npm run check:local` 563 项（537 通过/26 隔离跳过/0 失败）。
 
 本次Docker清理删除37个确认废弃容器、9个旧GoodGood应用镜像、5个空网络和无引用的postgres:16-alpine/node:24.12.0-bookworm-slim，构建缓存回收21.92GB。保留goodgood-gg052三个依赖、gg044 Mailpit、new-api/redis/postgres及全部34个卷；清理后共7个容器，旧GoodGood端口3010/3030/32029/32133无监听。没有删除数据库或素材卷。
 

@@ -1,15 +1,19 @@
 # GoodGood 当前状态
 
-- 最后核对：2026-09-15完成GG093本地Docker清理与构建来源交接；生产部署身份仍为2026-09-09记录，不是实时监控。
+- 最后核对：2026-09-15完成GG-097本地全功能测试窗口（本地上传、mock契约、真实provider、资源门四项修复）；生产部署身份仍为2026-09-09记录，不是实时监控。
 - 产品阶段：已开放的 `controlled-alpha-v1`，不是完整 seed/付费生产就绪。
 - 正式入口：https://goodgood.o1key.com
-- 当前工作：GG-096最终提交完成独立`/login`、`/register`、固定子导航、安全回跳及pending注册边界，完整本地门禁/checkpoint/32131切换和只读页面检查通过；32131构建身份与Git HEAD一致，保持无预设账户的邮箱验证码环境，32191停用。累计功能仍未部署，GG023安全镜像仍未切生产。
+- 当前工作：GG-097累计功能生产重发布。本地测试窗口已完成并**首次在本地通过真实 O1Key 链路出图**（用户实测，消费记录正常）；本地栈现由真实provider驱动（worker `provider: o1key`，32143 mock 在真实模式下不启动）。路线甲（原地迁移 0019→0043）与「站长先注册再放行」已定。发布本身尚未开工，等待明确授权范围。
 - 下一个普通产品需求从 GG-097 分配，以BACKLOG核验占用；不要自动恢复搁置的 C6。
 
 ## GG-093 本地运行边界
 
 - 当前仅保留goodgood-gg052的PostgreSQL/Valkey/RustFS、gg044 Mailpit及无关项目容器；全部34个卷保留。旧GoodGood应用容器、镜像、空网络和构建缓存已按任务卡清理，生产主机与数据未触碰。
 - 新版本须运行`npm run build:checkpoint`和`npm run verify:checkpoint`；启动脚本拒绝源码、Git revision或产物指纹不匹配。Web的`/api/health/version`返回`build.verified`与revision，作为跨窗口页面来源核验。
+- GG-097起本地 worker 默认调用**真实** O1Key（真实计费），令牌从仓库外
+  `%USERPROFILE%\.claude\goodgood-local-secrets\o1key-api-key.txt` 读取；
+  在`.env.local-review`设`LOCAL_GENERATION_PROVIDER_KIND=mock`可退回 mock。
+  真实模式下 32143 mock provider 不启动，32131/32142 为活动进程。
 
 ## 已上线的能力与边界
 

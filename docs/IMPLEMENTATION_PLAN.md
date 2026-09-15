@@ -2,24 +2,24 @@
 
 - Last synchronized: 2026-09-15
 - Current phase: GG-097 cumulative production re-release (0019 → 0043).
-- Current objective: 以全新方式发布到生产并完成站长初始化与真实链路冒烟。计划见任务卡；**未开工**。
+- Current objective: 本地全功能测试已完成，转入发布执行（合并 main → CI 镜像 → 生产迁移 → 切流 → 站长初始化 → 门禁）。
 - Previous objective: GG-096 production-shaped authentication entry（本地完成，未部署）。
 
 ## Current checkpoint
 
-- Task [GG-097](tasks/GG-097-production-release-0019-to-0043.md)：全新方式重发布；邀请码改可选（ADR 0089）已完成本地实现与门禁，32131 已切到 `31302f0`。
+- Task [GG-097](tasks/GG-097-production-release-0019-to-0043.md)：全新方式重发布。本地全功能测试窗口已完成，产出 6 个提交，HEAD `69a22bb`（代码末位 `f2bbbc`）。
+- 本窗口已修（均已提交、门禁通过、32131 已重建切换）：本地上传 CORS 过期来源；mock provider 改为实现真实 O1Key 契约；本地 worker 默认改走真实 provider（令牌在仓库外）；生成被 Linux 专用资源门锁死。
+- **真实链路已本地验证通过**（用户实测）：真实 O1Key 出图成功、消费记录正常。接口侧另验：令牌鉴权、`/v1/models` 对比 15/15 模型名全部存在、参考图上传契约。
 - 已解除：首个账户死锁——邀请码可选后站长可用真实邮箱验证码创建首账户并自动获得邀请码。
-- 待决：路线甲（原地前向迁移，推荐）/ 乙（重建生产库）；B5「注册即创作」取舍（`createEmailOwner` 建 active 账户）。
-- 仍未决：B2 main 落后（`git rev-list --left-right --count main...HEAD` 原为 `0 224`；`18fe779`/`42fc8d8` 已是 HEAD 祖先，纯快进）；B3 迁移 0020—0043 对旧 Web 前向兼容未审计；B4 alpha 门禁四项证据仅 24h 有效。
+- 已定：路线甲（原地前向迁移 0019→0043）；B5 采用「站长先注册再放行」（见 ADR 0089）。
+- 仍未决：B2 main 落后（`git rev-list --left-right --count origin/main...HEAD` = `0 175`，纯快进）；B3 迁移 0020—0043 对旧 Web 前向兼容未审计；B4 alpha 门禁四项证据仅 24h 有效。
 - Task [GG-096](tasks/GG-096-production-auth-entry.md)：本地实现与门禁完成，未部署。
-- GG093标记`goodgood-local-2026-09-15-gg093`仍指向历史基线；新窗口从GG095最终提交接续，不从不含累计功能的main开始。
-- [跨窗口交接](DEVELOPMENT_HANDOFF.md)记录实际功能、启动命令、依赖/端口、命名SQL runner、验证边界。AGENTS/WORKFLOW/README已同步。
-- GG096沿用唯一工作区32131、mock Worker32142、provider32143；32131使用email_otp与本地Mailpit，不使用local auth默认账户。`/login`、`/register`为测试入口，受保护页跳登录并保留安全returnTo。原DB0043与数据保留，最终PID以端口实时核验，不写死在交接文档。
-- GG094将普通登录初始态的邀请码移除；正确邮件码收到`INVITATION_REQUIRED`后切换注册并保留邮件码，`INVITATION_INVALID`保持注册态；待开通账户直接进入注册态。邀请码占位仅为“邀请码”，输入规格与邮箱/验证码一致。发送成功后修改邮箱会清除旧挑战，但保留并继续刷新原发送冷却，不能立即向新地址重发。
+- [跨窗口交接](DEVELOPMENT_HANDOFF.md)记录实际功能、启动命令、依赖/端口、命名 SQL runner、验证边界。
+- 本地栈：32131 Web + 32142 worker（`provider: o1key`，真实计费）；32143 mock provider 在真实模式下按设计不启动。原DB0043与数据保留，PID 以端口实时核验。
 - 线上仍goodgood.o1key.com的65ceb168/0019原镜像；测试用户清理已完成（含站长），本地功能未部署。staging-goodgood.o1key.com不是测试入口。
-- 当前验证：GG096定向34/34；完整`check:local`为559项（533通过/26隔离跳过/0失败）；最终提交的checkpoint构建/核验通过，32131对应Git HEAD且version verified、email_code、无Cookie session 401；32191无监听。根路由/双tab/邀请码可见性及390px无溢出通过。未发送邮件、注册用户或调用真实provider。
-- Next action: 用户选定路线甲/乙并确认 B5，记录发布授权范围；agent 随后执行阶段 1.1—1.2 与阶段 2 迁移审计。
-- Blockers: B2 main 未合并；B3 迁移兼容未审计；B4 证据时效；B5 注册即创作待确认。
+- 当前验证：本窗口末次完整 `check:local` 563 项（537 通过/26 隔离跳过/0 失败）；checkpoint 重建/核验通过，32131 revision = HEAD 且 `build.verified=true`。
+- Next action: 用户批准发布授权范围后，新窗口执行阶段 1（合并 main、CI 产出不可变镜像）与阶段 2（迁移前向兼容审计）。
+- Blockers: B2 main 未合并；B3 迁移兼容未审计；B4 证据时效；发布授权范围未记录。
 
 ## Verification sequence
 
