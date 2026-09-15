@@ -20,7 +20,7 @@
 | 接流槽位 | **green**（web `127.0.0.1:3200`，worker health `3201`） |
 | 回退候选 | blue Web 运行中未接流（旧镜像 `40ebfc40`）；blue Worker 已停止。不做 schema 降级 |
 | 公网 | **开放**（`/`、`/login`、`/register` 均 200；未登录 session 401） |
-| 注册开关 | `GOODGOOD_EMAIL_REGISTRATION_ENABLED=false` |
+| 注册开关 | `GOODGOOD_EMAIL_REGISTRATION_ENABLED=true`（2026-09-15 站长要求打开） |
 
 ## 发布过程中修复的两个阻断
 
@@ -123,9 +123,15 @@ email 注册直接建 `active`（GG-090/ADR 0089 已取代 ADR 0020 的 pending 
 401；`/api/health/ready` 200；green Worker readiness `provider: ok`；
 队列深度 0；green Web/Worker 与依赖容器全部 healthy。
 
+打开注册后另做一次真实链路探针：`POST /api/auth/email/request` 返回 **202**
+且 `delivery: accepted`，即服务端已放行到发信阶段且 SMTP 接受。
+探针未创建任何账户（`users` 仍为 2）；仅留下一个未消费的挑战行。
+
 ## 附加记录的独立缺口（非本次引入）
 
 - 备份 timer `disabled`，自 2026-09-05 未自动运行。
 - blue Web 长期闲置占资源，可在观察期后退役。
-- 注册开关当前为 `false`；开放注册即意味着任何访问者可立得 200 积分并消费真实
-  O1Key 费用（ADR 0090 已显式记录该取舍）。
+- 注册开关已于开站后按站长要求打开为 `true`；开放注册即意味着任何访问者可立得 200 积分
+  并消费真实 O1Key 费用（ADR 0090 已显式记录该取舍）。站长账户与邀请码 405513 已在此之前建立。
+- 因开放注册，**累计功能**的开源仓（`private: false`）意味着任何人都能看到源码；
+  这与仓库长期设置一致，非本次变更。

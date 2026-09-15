@@ -493,7 +493,7 @@
   `65202c281c37eb8e7c2639ee850e9ffe1085cad98f5ef2a85995a4d55d124f3e`。
 - 槽位：**green 接流**（web `3200` / worker health `3201`）。blue Web 仍在运行但**未接流**，
   blue Worker **已停止**。Nginx upstream 备份 `production-active-upstream.blue.backup`。
-- 公网：**开放（200）**。注册开关：`false`。
+- 公网：**开放（200）**。注册开关：**`true`**（2026-09-15 站长要求打开）。
 - 数据：users 2（站长 `951565127@qq.com` + `lizhongyi1209@gmail.com`，均 active）、
   assets 1（private，`1024x1024`，owner 为 gmail 账户）、jobs 1（succeeded）、
   references 2（ready）、积分 200 / 280、邀请码使用 1。
