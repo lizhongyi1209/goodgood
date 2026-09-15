@@ -1,6 +1,6 @@
 # GG-097 — 累计功能生产重发布（全新上线）
 
-- 状态：计划已建立；邀请码改可选已本地实现/门禁/32131 切换完成；未部署
+- 状态：计划已建立；邀请码改可选已本地实现/门禁/32131 切换完成；**本地全功能手动测试进行中**；未部署
 - 用户需求：2026-09-15 当天把本地累计功能（GG-024 — GG-096）以**全新方式**发布到生产 `goodgood.o1key.com`；旧测试数据无需保留，所有人重新注册。
 - 最后更新：2026-09-15
 - 分支 / worktree：`feature/GG-096-production-auth-entry`（`31302f0`）/ F:/goodgood；发布分支建议 `release/GG-097-cumulative-alpha`
@@ -127,6 +127,49 @@
 - [ ] 创作、参考图、项目保存恢复、资产库、图片详情
 - [ ] 模型/价格管理、企业/分销、档案、灵感、问题反馈、JCoin 卡片
 - [ ] 视频入口保持未接通，不误发真实视频请求
+
+## 本地全功能测试窗口记录
+
+- 2026-09-15 09:42Z 窗口开工：只读复验环境（非凭交接描述）。
+  - Git：分支 `feature/GG-096-production-auth-entry`，HEAD `7e5cf2f`，仅 `.codex/` 未跟踪。
+  - 端口：32131（Web，PID 31644）、32142（Worker，PID 13180）、32143（provider，PID 30872）；
+    54449/56449/58045/58046/58049/58050 均由同一容器进程 PID 22432 监听。三者命令行均为
+    `scripts/local-checkpoint.mjs start workspace|worker|provider`，非陌生进程。
+  - `/api/health/version`：revision `7e5cf2fd…3430e` = `git rev-parse HEAD`，`build.verified=true`，
+    artifactHash `83791e5d…d68dd`。Worker/provider `/health/ready` 均 `ready`。
+  - 数据库（只读计数）：users=3、assets=2、projects=1、migrations=43、
+    最新 `0043_gg091_account_invitations.sql`。未做任何写入。
+  - 路由：`/`、`/login`、`/register` 均 200（SPA 壳，未登录态重定向需浏览器验证）。
+  - Web 启动配置取自 `.env.login-review`：`GOODGOOD_AUTH_MODE=email_otp`、
+    `GOODGOOD_ALLOW_LOCAL_AUTH=false`、SMTP 指向本机 58046、`GOODGOOD_EMAIL_REGISTRATION_ENABLED=true`；
+    `start workspace` 覆盖 `GOODGOOD_AUTH_PUBLIC_ORIGIN=http://127.0.0.1:32131`，
+    `server/auth/email-operations.mjs:66` 据此校验 Origin，无需改文件。
+- 待用户逐条回填「用户人工验收清单」；agent 不代跑、不代填。
+
+### 问题 1 — 参考图上传失败（已修复，待用户复测）
+
+- 现象：用户在创作区上传本地图片，前端提示上传失败并要求移除失败项。
+- 定位（复现证据，非推断）：
+  - 数据库只读查询：`09:44`、`09:45` 四条 `reference_assets` 停留在 `pending`；
+    `09:14` 的两条 `ready` 是上一窗口 32141 会话留下的。
+  - 浏览器直传是 `PUT` 预签名 URL 到 `http://127.0.0.1:58049`，带 `content-type` 头，
+    必然先发 CORS 预检。`OPTIONS` 携带 `Origin: http://127.0.0.1:32131` 实测 **403 且无
+    `Access-Control-Allow-Origin`**；同一预检换成 `32141` 则 200。桶 CORS 只放行旧端口。
+  - 用签发路径重放 `PUT`（带 Origin）得 200，说明服务端本身可用，是浏览器侧被预检拦下，
+    HTTP 层永远收不到该请求。
+- 根因：`scripts/local-checkpoint.mjs` 把服务端口设为 32131 并覆盖
+  `OBJECT_STORAGE_UPLOAD_ALLOWED_ORIGINS`，但 `.env.login-review` 的
+  `OBJECT_STORAGE_PROVISIONING_MODE=verify` 让 `prepareObjectStorage`
+  （`server/generation/resources.mjs:45`）只 `HeadBucket` 就返回，从不重写桶 CORS 规则。
+  规则停留在更早以 `manage` 模式运行时写入的 32141，之后换端口无人纠正。
+- 修复 `736a959`：本地启动派生实际服务来源、改用 `manage` 模式纳管桶规则。
+  生产仍为 `verify`（CORS 由云厂商控制台管理），不受影响。
+- 验证：定向 2/2；`npm run check:local` 560 项（534 通过/26 隔离跳过/0 失败）；
+  `build:checkpoint` + `verify:checkpoint` 通过（revision `736a959`，artifactHash `8eadf939…`）；
+  32131 已切换，PID 28416，`build.verified=true` 且 revision 与 HEAD 一致。
+  重启后预检 `Origin: 32131` 返 200，且 `32141` 已从规则中消失——证明是代码在纳管，
+  不是一次性手工改桶。
+- 未处理：上述 4 条 `pending` 参考图行保留原样，未清理、未改状态；由用户在前端移除。
 
 ## 实现与证据
 
