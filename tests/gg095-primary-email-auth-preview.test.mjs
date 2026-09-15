@@ -29,3 +29,19 @@ test("GG095 starts the primary workspace with email OTP and no local account pre
   assert.match(launcher, /GOODGOOD_LOCAL_AUTH_DEFAULT_TOKEN: ""/);
   assert.match(launcher, /GOODGOOD_LOCAL_AUTH_TOKENS: ""/);
 });
+
+test("GG095 workspace start keeps object storage CORS on the served origin", async () => {
+  const launcher = await readFile(
+    new URL("../scripts/local-checkpoint.mjs", import.meta.url),
+    "utf8",
+  );
+
+  // Verify mode never rewrites the bucket rule, so a stale origin silently
+  // fails every browser upload preflight; the local launcher must manage it.
+  assert.match(launcher, /OBJECT_STORAGE_PROVISIONING_MODE: "manage"/);
+  assert.match(
+    launcher,
+    /const webOrigins = \[[\s\S]*?`http:\/\/127\.0\.0\.1:\$\{port\}`[\s\S]*?`http:\/\/localhost:\$\{port\}`[\s\S]*?\]\.join\(","\)/,
+  );
+  assert.match(launcher, /OBJECT_STORAGE_UPLOAD_ALLOWED_ORIGINS: webOrigins/);
+});

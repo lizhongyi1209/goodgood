@@ -52,6 +52,12 @@ if (command === "build") {
     }
     const role = mode === "worker" ? "worker" : mode === "provider" ? "mock-generation" : "web";
     const port = mode === "login" ? "32191" : "32131";
+    // Browsers presign-time need object storage to admit this page's origin;
+    // a stale bucket CORS rule fails the preflight before the PUT is ever sent.
+    const webOrigins = [
+      `http://127.0.0.1:${port}`,
+      `http://localhost:${port}`,
+    ].join(",");
     const authenticationOverrides = emailWeb
       ? {
           GOODGOOD_AUTH_COOKIE_NAME:
@@ -72,7 +78,8 @@ if (command === "build") {
       WORKER_HEALTH_PORT: "32142",
       MOCK_GENERATION_HOST: "127.0.0.1",
       MOCK_GENERATION_PORT: "32143",
-      OBJECT_STORAGE_UPLOAD_ALLOWED_ORIGINS: "http://127.0.0.1:" + port + ",http://localhost:" + port,
+      OBJECT_STORAGE_PROVISIONING_MODE: "manage",
+      OBJECT_STORAGE_UPLOAD_ALLOWED_ORIGINS: webOrigins,
     });
     // Workers and providers don't load dist; the same source snapshot still binds all roles.
     assert.equal((await artifactFingerprint(root)).hash, build.artifactHash);
