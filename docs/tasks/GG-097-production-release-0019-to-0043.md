@@ -29,14 +29,14 @@
 - **B2 main 落后 224 提交 —— 待处理。** `git rev-list --left-right --count main...HEAD` 原为 `0 224`；`18fe779`（Sharp 安全候选）与 `42fc8d8` 均已是 HEAD 祖先，是纯快进关系。CI 只从 `push: main` / PR / 手动触发运行，GHCR 镜像只在受信任 main 发布。注意本地 `main` = `bab17fd`，`origin/main` = `42fc8d8`。
 - **B3 24 个迁移对旧 Web 的前向兼容 —— 未审计。** 路线甲下蓝绿期间旧 Web 可能并行接流；若选乙则蓝绿窗口问题消失。
 - **B4 门禁证据时效 —— 操作约束。** `artifact-security` 168h、`production-preflight` 72h，其余四项 **24h**；证据一 collect 必须一口气走到切流。
-- **B5 注册即创作。** 邀请码放开后，`createEmailOwner` 建立的账户直接是 `active`（非 pending），即**注册即可创作**。若要保持受控 alpha 的审批收口，需依赖 `GOODGOOD_EMAIL_REGISTRATION_ENABLED` 开关，而不是邀请码。**用户需确认这项取舍。**
+- **B5 注册即创作 —— 已确认采用「站长先注册再放行」。** `createEmailOwner` 建立的账户直接是 `active`（非 pending），故 `GOODGOOD_EMAIL_REGISTRATION_ENABLED` 是唯一收口开关。`server/auth/email-repository.mjs:330` 的关门判断先于邀请码校验，且只作用于**未绑定**邮箱：已绑定用户即使注册关闭仍可登录。发布时序为：关闭注册部署 → 站长注册首账户并 bootstrap → 打开注册放行。
 
 ## 实施步骤
 
 ### 阶段 0 — 决策
 
 - 0.1 选定路线甲 / 乙。
-- 0.2 确认 B5 取舍：注册即创作（当前实现）还是发布期先关注册开关、逐个放行。
+- 0.2 ~~确认 B5 取舍~~ —— 已确认：站长先注册，随后再打开注册开关（见阶段 5.0—5.4）。
 - 0.3 记录发布授权范围：合并 main / 推送 / CI 发布 / 生产迁移 / 切流窗口 / 一次真实生成。
 - 0.4 确认生产主机可访问、备份新鲜、维护标记可用。
 
@@ -54,6 +54,15 @@
 - 2.2 判断旧 Web（`65ceb168`）的读写路径在迁移后是否仍成功；关注 `users`、`credit_accounts`、`assets`、`projects`、`jobs`、`auth_*`。
 - 2.3 产出不兼容项清单；有任一项不兼容则切流必须停写（进维护）而非并行。
 - 2.4 结论写入本卡。选路线乙时本阶段可跳过。
+
+**初步静态扫描结果（2026-09-15，agent 预审）：**
+
+- `0020`—`0043` 共 24 个迁移中**没有** `DROP TABLE`、`DROP COLUMN`、`TRUNCATE`，也没有 `DELETE FROM`。
+- 唯一的破坏性 `ALTER` 是 `0026_gg030_creative_workspace_scope.sql:72-104` 的 `SET NOT NULL`，其前文先对六张表做回填并 `RAISE EXCEPTION` 校验回填完整性，自洽。
+- `0029_gg052_cent_credits_and_models.sql` 会**关闭**旧 `credit` 单位账户并新建 `credit-cny-cent` 账户（2 倍换算）。它先以 `ACCESS EXCLUSIVE` 锁检查无活动 job、无冻结预留、无 pending 订单，否则直接 `RAISE EXCEPTION`。此迁移**不可撤销**，且会改变积分单位语义。
+- 结论：结构层面为加法式迁移，风险集中在**并行窗口内的旧 Web 读写**与 0029 的排空前置。选路线甲时阶段 4.1 的排空检查必须实做，不能假定通过。
+
+**路线甲对"全新发布"的影响：** 不影响功能内容。两条路线最终都得到同一套 `0043` schema 与同一份代码；差别只在数据库历史。生产用户/文件为 0，甲路线没有业务数据可损坏，且不触碰既有备份/恢复链；乙路线需把 `0001`—`0043` 全量重放，其中 `0012` 等迁移涉及固定 UUID 夹具清理，步骤更多、不可逆边界更多。
 
 ### 阶段 3 — 主机候选（不接流量）
 
@@ -73,12 +82,14 @@
 
 ### 阶段 5 — 站长初始化与真实链路冒烟
 
+- 5.0 确认 runtime.env 中 `GOODGOOD_EMAIL_REGISTRATION_ENABLED=false`，使放行前只有站长能建账户。
 - 5.1 站长用真实邮箱验证码在 `/register` 创建首个账户（无需邀请码），确认恰好 100 欢迎积分。
 - 5.2 `bootstrap-site-owner` 先 dry-run 核对掩码账户，再 `--execute`。
 - 5.3 站长在账户区确认自动生成的六位邀请码已显示。
-- 5.4 用第二个真实邮箱走 `/register`（可带站长邀请码）验证注册链路。
-- 5.5 一次**明确授权**的真实生图：1K、1:1、1 张，验证 reserve → settle、资产私有、重新登录可见。
-- 5.6 用另一账户验证该资产不可读（跨账户拒绝）。
+- 5.4 将 `GOODGOOD_EMAIL_REGISTRATION_ENABLED` 置回 `true` 并重启 Web；确认已绑定的站长账户在关/开两态下均可登录。
+- 5.5 用第二个真实邮箱走 `/register`（可带站长邀请码）验证开放注册链路。
+- 5.6 一次**明确授权**的真实生图：1K、1:1、1 张，验证 reserve → settle、资产私有、重新登录可见。
+- 5.7 用另一账户验证该资产不可读（跨账户拒绝）。
 
 ### 阶段 6 — 恢复、监控与门禁
 
