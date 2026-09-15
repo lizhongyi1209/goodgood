@@ -1,4 +1,5 @@
 import { readFile, statfs } from "node:fs/promises";
+import os from "node:os";
 import { GenerationRequestError } from "../generation/api.mjs";
 
 export const HOST_RESOURCE_THRESHOLDS = Object.freeze({
@@ -10,6 +11,19 @@ export function parseMemAvailable(meminfo) {
   const match = /^MemAvailable:\s+(\d+)\s+kB$/m.exec(meminfo);
   if (!match) throw new Error("/proc/meminfo does not report MemAvailable.");
   return Number.parseInt(match[1], 10) * 1024;
+}
+
+// Windows and macOS do not expose /proc/meminfo, and statfs has no POSIX root to
+// measure there. Both probes fall back to portable equivalents so a local run
+// observes real host pressure instead of reporting the observation unavailable
+// and latching generation off for the life of the process.
+function readMemoryInfo() {
+  if (process.platform === "linux") return readFile("/proc/meminfo", "utf8");
+  return Promise.resolve(`MemAvailable: ${Math.floor(os.freemem() / 1024)} kB\n`);
+}
+
+function readRootFilesystem() {
+  return statfs(process.platform === "win32" ? process.cwd() : "/", { bigint: true });
 }
 
 export function rootDiskUsagePercent(filesystem) {
@@ -28,12 +42,12 @@ export function rootDiskUsagePercent(filesystem) {
 }
 
 export async function probeHostResources({
-  readMeminfo = () => readFile("/proc/meminfo", "utf8"),
-  readRootFilesystem = () => statfs("/", { bigint: true }),
+  readMeminfo = readMemoryInfo,
+  readRootFilesystem: readFilesystem = readRootFilesystem,
 } = {}) {
   const [meminfo, filesystem] = await Promise.all([
     readMeminfo(),
-    readRootFilesystem(),
+    readFilesystem(),
   ]);
   return Object.freeze({
     availableMemoryBytes: parseMemAvailable(meminfo),

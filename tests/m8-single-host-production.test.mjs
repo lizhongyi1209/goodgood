@@ -71,6 +71,25 @@ test("host resource policy uses the exact memory and root-disk boundaries", () =
   );
 });
 
+test("host resource probing observes real pressure on non-Linux hosts", async () => {
+  const { probeHostResources } = await import(
+    "../server/runtime/host-resource-admission.mjs"
+  );
+
+  // /proc/meminfo does not exist off Linux. A probe that throws there latches
+  // generation off for the life of the process, so a local run must observe the
+  // real host instead of reporting the observation unavailable.
+  const snapshot = await probeHostResources();
+  assert.ok(Number.isFinite(snapshot.availableMemoryBytes));
+  assert.ok(snapshot.availableMemoryBytes > 0);
+  assert.ok(Number.isFinite(snapshot.rootDiskUsagePercent));
+  assert.ok(snapshot.rootDiskUsagePercent >= 0);
+  assert.ok(snapshot.rootDiskUsagePercent <= 100);
+  const evaluation = evaluateHostResourceAdmission(snapshot);
+  assert.equal(evaluation.allowed, evaluation.reasons.length === 0);
+  assert.ok(Array.isArray(evaluation.reasons));
+});
+
 test("resource protection latches for operator review and a new process can recover", async () => {
   let probes = 0;
   const logs = [];
