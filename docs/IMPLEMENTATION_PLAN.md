@@ -1,25 +1,28 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-15
-- Current phase: GG-097 cumulative production re-release (0019 → 0043).
-- Current objective: 本地全功能测试已完成，转入发布执行（合并 main → CI 镜像 → 生产迁移 → 切流 → 站长初始化 → 门禁）。
-- Previous objective: GG-096 production-shaped authentication entry（本地完成，未部署）。
+- Current phase: GG-097 累计功能生产发布——**已执行完成，公网停留维护页**。
+- Current objective: 解决 alpha 门禁未通过的两项（member-journey 契约冲突、operations 通知通道），再决定是否解除维护开放公网。
+- Previous objective: 本地全功能测试 → 合并 main → CI 镜像 → 迁移 0043 → 切流 → 站长初始化。
 
 ## Current checkpoint
 
-- Task [GG-097](tasks/GG-097-production-release-0019-to-0043.md)：全新方式重发布。本地全功能测试窗口已完成，产出 6 个提交，HEAD `69a22bb`（代码末位 `f2bbbc`）。
-- 本窗口已修（均已提交、门禁通过、32131 已重建切换）：本地上传 CORS 过期来源；mock provider 改为实现真实 O1Key 契约；本地 worker 默认改走真实 provider（令牌在仓库外）；生成被 Linux 专用资源门锁死。
-- **真实链路已本地验证通过**（用户实测）：真实 O1Key 出图成功、消费记录正常。接口侧另验：令牌鉴权、`/v1/models` 对比 15/15 模型名全部存在、参考图上传契约。
-- 已解除：首个账户死锁——邀请码可选后站长可用真实邮箱验证码创建首账户并自动获得邀请码。
-- 已定：路线甲（原地前向迁移 0019→0043）；B5 采用「站长先注册再放行」（见 ADR 0089）。
-- 仍未决：B2 main 落后（`git rev-list --left-right --count origin/main...HEAD` = `0 175`，纯快进）；B3 迁移 0020—0043 对旧 Web 前向兼容未审计；B4 alpha 门禁四项证据仅 24h 有效。
-- Task [GG-096](tasks/GG-096-production-auth-entry.md)：本地实现与门禁完成，未部署。
-- [跨窗口交接](DEVELOPMENT_HANDOFF.md)记录实际功能、启动命令、依赖/端口、命名 SQL runner、验证边界。
-- 本地栈：32131 Web + 32142 worker（`provider: o1key`，真实计费）；32143 mock provider 在真实模式下按设计不启动。原DB0043与数据保留，PID 以端口实时核验。
-- 线上仍goodgood.o1key.com的65ceb168/0019原镜像；测试用户清理已完成（含站长），本地功能未部署。staging-goodgood.o1key.com不是测试入口。
-- 当前验证：本窗口末次完整 `check:local` 563 项（537 通过/26 隔离跳过/0 失败）；checkpoint 重建/核验通过，32131 revision = HEAD 且 `build.verified=true`。
-- Next action: 用户批准发布授权范围后，新窗口执行阶段 1（合并 main、CI 产出不可变镜像）与阶段 2（迁移前向兼容审计）。
-- Blockers: B2 main 未合并；B3 迁移兼容未审计；B4 证据时效；发布授权范围未记录。
+- Task [GG-097](tasks/GG-097-production-release-0019-to-0043.md)：**已部署但未开放**。
+  生产身份 `89afedb` / 镜像 `sha256:72ac3253…` / 迁移 `0043` / **green 接流**。
+- 已完成：阶段 1—5（含一次真实生图 reserve→settle、私有限读、跨账户拒绝 404）、阶段 6.1—6.4。
+- 门禁 `production:alpha-gate` **`ok: false`**，两项如实 `fail`：
+  - `controlled-alpha-member-journey`——门禁硬要求 `welcomeCredits === 100` 且
+    `pendingBeforeApproval === true`；产品实际 200 积分且 email 注册直接 `active`
+    （GG-090/ADR 0089 已取代 ADR 0020 的 pending 模型）。**门禁契约与产品行为不一致。**
+  - `controlled-alpha-operations`——主机不存在任何对外通知通道，`notificationDelivered: false`。
+- 公网 503 维护中；`GOODGOOD_EMAIL_REGISTRATION_ENABLED=false`。
+- 线上入口仍为 `goodgood.o1key.com`（当前返回维护页）；`staging-goodgood.o1key.com` 仅保留名称，不是测试入口。
+- 生产数据：users 2（站长 951565127@qq.com、lizhongyi1209@gmail.com，均 active）、assets 1（private）。
+- 附带修复：`c343351`（Next 16.3.3）、`89afedb`（Debian libpcre2）——两者都是 main CI
+  发布镜像的硬阻断，非顺手改动。
+- 独立缺口（已记录未处理）：备份 timer `disabled`；blue Web 闲置占用；本地 32131/32142 未恢复。
+- Next action: 站长在三选一中定夺（接入通知渠道 / 更新门禁契约 / 维持维护态）。
+- Blockers: 上述两项门禁未通过。
 
 ## Verification sequence
 

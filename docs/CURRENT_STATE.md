@@ -1,10 +1,10 @@
 # GoodGood 当前状态
 
-- 最后核对：2026-09-15完成GG-097本地全功能测试窗口（本地上传、mock契约、真实provider、资源门四项修复）；生产部署身份仍为2026-09-09记录，不是实时监控。
-- 产品阶段：已开放的 `controlled-alpha-v1`，不是完整 seed/付费生产就绪。
-- 正式入口：https://goodgood.o1key.com
-- 当前工作：GG-097累计功能生产重发布。本地测试窗口已完成并**首次在本地通过真实 O1Key 链路出图**（用户实测，消费记录正常）；本地栈现由真实provider驱动（worker `provider: o1key`，32143 mock 在真实模式下不启动）。路线甲（原地迁移 0019→0043）与「站长先注册再放行」已定。发布本身尚未开工，等待明确授权范围。
-- 下一个普通产品需求从 GG-097 分配，以BACKLOG核验占用；不要自动恢复搁置的 C6。
+- 最后核对：2026-09-15完成GG-097生产发布执行（合并main→CI镜像→迁移0043→切流green→站长初始化→真实生图与跨账户拒绝）。**公网当前处于维护页(503)**：alpha门禁如实未通过（见下），未解除维护，因此站点尚未对外开放。
+- 产品阶段：已部署 `controlled-alpha-v1` 但**未开放**（维护中）；不是完整 seed/付费生产就绪。
+- 正式入口：https://goodgood.o1key.com（返回 503 维护页）
+- 当前工作：GG-097累计功能生产重发布。生产身份已从 `65ceb168`/`0019` 前移到 `89afedb`/`0043`，green槽位接流、唯一green Worker；站长账户与首个邀请码已建立。**门禁未通过的两项**：`controlled-alpha-member-journey`（门禁硬要求100欢迎积分与pending门，产品实际为200积分且email注册直接active）与`controlled-alpha-operations`（主机无任何对外通知通道）。解除维护需先解决这两项。
+- 下一个普通产品需求从 GG-098 分配，以BACKLOG核验占用；不要自动恢复搁置的 C6。
 
 ## GG-093 本地运行边界
 
@@ -47,12 +47,12 @@
 
 | 项目 | 最近核验记录 |
 | --- | --- |
-| 源码 revision | `65ceb16823138dd220813fbc3ae5672234fd1f43` |
-| 镜像 | `ghcr.io/lizhongyi1209/goodgood@sha256:40ebfc40ced1963f02250bd8518823567e25692f82c31793817760cdb58db2cb` |
-| 数据库迁移 | `0019_gg021_nano_banana_pro_prices.sql` |
-| 配置契约 checksum | `98b82bc6760206c1316b3d6ca44db519dd3843c0aae74e9aff16d711d8618da6` |
-| 活跃进程 | blue Web + 1 个 blue Worker；PostgreSQL/Valkey 健康 |
-| 回退候选 | 旧 green Web 健康并停止接流；旧 green Worker 已停止，不做 schema 降级 |
+| 源码 revision | `89afedbc7363c9a1f8195271178f0ab1d607ffae` |
+| 镜像 | `ghcr.io/lizhongyi1209/goodgood@sha256:72ac3253b3cde4b51a9a022b8378be34fe7841979855ef2fa97b773fc76d16e4` |
+| 数据库迁移 | `0043_gg091_account_invitations.sql`（43 条，59 张 public 表） |
+| 配置契约 checksum | `6358dc04d5bcfb352e85a768cf7f880379edde8033846cbdae92f5fd0531a4e8` |
+| 活跃进程 | **green** Web + 1 个 green Worker；PostgreSQL/Valkey 健康 |
+| 回退候选 | blue Web 仍运行但停止接流（旧镜像 `40ebfc40`）；blue Worker 已停止，不做 schema 降级 |
 | 主机 | 香港 2 vCPU / 4 GiB / 50 GiB；Web、Worker、PostgreSQL、Valkey 同机 |
 | 对象与备份 | 私有 R2；加密异机数据库备份，目标 RPO 1h / RTO 4h |
 | 本地 | Windows 开发；Compose 使用本地 PostgreSQL/Valkey/RustFS/mock |
@@ -96,7 +96,8 @@ SSH 别名 `goodgood-staging` 是历史命名，指向现有生产主机，不�
   均通过完整质量门禁及实际运行时 HIGH/CRITICAL 扫描。安全候选为 main `18fe779b`、镜像
   `sha256:b441e16685c77842e18cefcdbcae00c2e50d25350fe598ea2e462dd61758f152`；它没有自动部署，
   上表仍是当前生产身份。
-- 完整非敏感证据：[本次累计发布记录](releases/2026-09-09-cumulative-alpha-release.md)。
+- 完整非敏感证据：[本次累计发布记录](releases/2026-09-15-cumulative-alpha-release.md)。
+  上一次发布的证据见 [2026-09-09 记录](releases/2026-09-09-cumulative-alpha-release.md)。
 
 ## 仓库与搁置工作
 

@@ -29,7 +29,18 @@
 - **B2 main 落后 224 提交 —— 待处理。** `git rev-list --left-right --count main...HEAD` 原为 `0 224`；`18fe779`（Sharp 安全候选）与 `42fc8d8` 均已是 HEAD 祖先，是纯快进关系。CI 只从 `push: main` / PR / 手动触发运行，GHCR 镜像只在受信任 main 发布。注意本地 `main` = `bab17fd`，`origin/main` = `42fc8d8`。
 - **B3 24 个迁移对旧 Web 的前向兼容 —— 未审计。** 路线甲下蓝绿期间旧 Web 可能并行接流；若选乙则蓝绿窗口问题消失。
 - **B4 门禁证据时效 —— 操作约束。** `artifact-security` 168h、`production-preflight` 72h，其余四项 **24h**；证据一 collect 必须一口气走到切流。
-- **B5 注册即创作 —— 已确认采用「站长先注册再放行」。** `createEmailOwner` 建立的账户直接是 `active`（非 pending），故 `GOODGOOD_EMAIL_REGISTRATION_ENABLED` 是唯一收口开关。`server/auth/email-repository.mjs:330` 的关门判断先于邀请码校验，且只作用于**未绑定**邮箱：已绑定用户即使注册关闭仍可登录。发布时序为：关闭注册部署 → 站长注册首账户并 bootstrap → 打开注册放行。
+- **B5 注册即创作 —— 已确认采用「站长先注册再放行」，但原记录的时序是错的（2026-09-15 实做时更正）。**
+  `createEmailOwner` 建立的账户直接是 `active`（非 pending），故 `GOODGOOD_EMAIL_REGISTRATION_ENABLED`
+  是唯一收口开关。**原记录称关门判断「只作用于未绑定邮箱」不成立**：
+  `server/auth/email-repository.mjs:331-339` 的条件是
+  `if (!identity && !input.registrationEnabled)`——**任何未绑定邮箱**都被拒，
+  包括站长本人；对外只返回 `EMAIL_REGISTRATION_CLOSED`「当前暂不开放新账号注册。」
+  （`server/auth/email-operations.mjs:364-370`）。
+  因此「关闭注册部署 → 站长注册 → 打开注册」这条时序**执行不通**，实际采用：
+  ① 临时将 `GOODGOOD_EMAIL_REGISTRATION_ENABLED=true` 并开公网 →
+  ② 站长注册首账户（此窗口对公网任何人也开放，故必须最短）→
+  ③ 立即恢复 `false` 并退回维护页 → ④ `bootstrap-site-owner` 设站长。
+  「已绑定用户即使注册关闭仍可登录」这句是对的，登录路径不受该开关影响。
 
 ## 实施步骤
 
@@ -189,6 +200,73 @@
 - 3.4 非活动槽位启动候选 Web，跑 `candidate-health-invariants`：live/ready、公网合成、队列、数据库、积分。
 - 3.5 确认只有一个活动 Worker；旧 Worker 按 bounded grace 停止。
 
+### 阶段 3—5 执行结果（2026-09-15，实际已执行）
+
+**阶段 3（主机候选）**
+
+- 3.0 候选源码：主机 `/opt/goodgood-production/repository` 是 detached HEAD 且**无候选对象、
+  无 GitHub 凭据**（私有仓库匿名拉不到）。按「服务器拉镜像、不从工作目录构建」的契约，
+  用 `git bundle` 把**精确** `89afedb`（只含一个 ref，完整历史）送到主机，在
+  `/opt/goodgood-production/candidate-89afedb` 独立检出。`git status` 干净、
+  `git rev-parse HEAD` 与 `release.env` 精确相等。**未改动主机原 `repository/` 目录**
+  （仍停在 `65ceb168`，保留为历史）。
+- 3.1 六个凭据齐全（`root:goodgood-production-secrets 0640`）：`auth-client-secret`(32B)、
+  `email-otp-secret`(64B，本次生成)、`email-smtp-password`(12B，站长经剪切板提供)、
+  `o1key-api-key`(51B)、`r2-access-key-id`(32B)、`r2-secret-access-key`(64B)。
+  `release.env` 换成新身份；`runtime.env` 按 email 模式重组（旧版备份为
+  `runtime.env.pre-89afedb` 与 `releases/runtime-65ceb168-0019.env`）。
+- 3.2 **preflight 12/12 全 pass**，含 `authentication:smtp-authentication`
+  （实连 `smtpdm-ap-southeast-1.aliyuncs.com:465` 并 `verify()`，**未发信**）。
+  证据 `checkedAt 2026-09-15T14:44:15.733Z`、reference `gg097-preflight-20260915`。
+- 3.3 **工件证据 5/5 全 pass**，含 `github-artifact-integrity`——本地字节 SHA-256
+  `3605168ba0de8482f4eee6bc3bd9d2e7d151a33c8384f7027bfb7ddbc431f97d` 与 GitHub 记录一致。
+  reference `github:run:34981296562/artifact:10401841455`。
+  注意：导入器**只校验并打印**，按设计由操作者把 `evidence` 对象原样写进 manifest。
+- 3.4 候选 Web 起在**非活动槽位 green**（`3200`）：live/ready 200、revision 精确匹配、
+  `/`·`/login`·`/register` 200、未登录 `/api/auth/session` 401。
+  **未跑名为 `candidate-health-invariants` 的独立命令**——仓库无此脚本（`package.json`
+  无对应项），以等价的直接探针替代，如实记录以免把探针说成工具产出。
+- 3.5 恰好一个 Worker：blue Worker 以 300s bounded grace 停止，再起 green Worker。
+
+**阶段 4（迁移与切流）**
+
+- 4.1 排空检查实做：`jobs_active=0`、`frozen_personal=0`、`pending_orders=0`、
+  `users=0`、`assets=0`、`migrations=19`。
+- 4.2 进维护窗口后执行**一次**前向迁移：`0020`—`0043` 共 24 个全部 `migration.applied`，
+  `migration.complete` 报 `count:43`、`localFixturesEnabled:false`。
+  **未重放任何历史迁移**；迁移后 `0019` checksum 仍为
+  `12b253518ce174549f88e389a43b6af15dcd7858892d3f776a4d798022372b3e`（未变）。
+  结果：43 条迁移、59 张 public 表、0 用户 0 资产 0 job、`managed_models=9`、`workspaces=0`。
+- 4.3 green Worker readiness 200，body 为
+  `{"database":"ok","objectStorage":"ok","provider":"ok","queue":"ok","runtime":"ok"}`。
+- 4.4 `production-active-upstream.conf` 从 `127.0.0.1:3100` 原子替换为 `3200`，
+  `nginx -t` 通过后 reload；旧文件备份为 `production-active-upstream.blue.backup`。
+- 4.5 切流后复核：公网仍 503（维护中，预期）、经 `3200` 的 `/`·`/login`·`/register` 200、
+  未登录 session 401、version revision 精确、队列深度 0。
+
+**阶段 5（站长初始化）——已执行部分**
+
+- 5.0 与 5.4 的**时序按代码实际更正**（见上文 B5）。
+- 5.1 站长账户已建：`756eb90a-d57c-465d-987e-63d7cf1d6e88` / 951565127@qq.com /
+  `status=active` / `tier=seed` / 工作区自动创建 / 邮箱绑定 `self_service`。
+  **欢迎积分为 200，不是 100**——`WELCOME_CREDIT_AMOUNT = 200n`
+  （`server/billing/repository.mjs:22`），单位 `credit-cny-cent` 与扣费同单位，
+  单张 20 积分，metadata 记 `images: 10`。本卡 5.1 与验收清单里的「100」是旧文案，已更正。
+- 5.2 `bootstrap-site-owner` dry-run 命中 `95*******@qq.com`/`active` 后 `--execute` 成功：
+  `administration.site_owner_bootstrapped`，`system_role_assignments` 有且仅有
+  `site_owner`，审计行 `bootstrap_site_owner`、`prev=active -> active`、
+  `reason=initial_site_owner_bootstrap`、幂等键 `site-owner-bootstrap:v1:739d…`。
+- 5.3 邀请码已自动分配：**405513**。
+- 5.4 / 5.5 / 5.6 / 5.7 **未完成**——见下方「待站长验收」。注册开关已回到 `false`，
+  维护页已恢复，公网 503。
+
+
+- 3.1 在 `/etc/goodgood/production/` 安装 release.env / runtime.env（`root:root 0600`）与六个凭据文件（`root:<group> 0640`）。
+- 3.2 `npm run production:preflight -- --release-file ... --runtime-env-file ... --evidence-reference <记录名>`，确认全通过并取得 evidence 对象。
+- 3.3 `npm run production:artifact-evidence -- ...` 导入 CI 工件，取得 `artifact-security` 对象。
+- 3.4 非活动槽位启动候选 Web，跑 `candidate-health-invariants`：live/ready、公网合成、队列、数据库、积分。
+- 3.5 确认只有一个活动 Worker；旧 Worker 按 bounded grace 停止。
+
 ### 阶段 4 — 迁移与切流
 
 - 4.1 确认无活动 job、无冻结积分、队列为空。
@@ -200,7 +278,7 @@
 ### 阶段 5 — 站长初始化与真实链路冒烟
 
 - 5.0 确认 runtime.env 中 `GOODGOOD_EMAIL_REGISTRATION_ENABLED=false`，使放行前只有站长能建账户。
-- 5.1 站长用真实邮箱验证码在 `/register` 创建首个账户（无需邀请码），确认恰好 100 欢迎积分。
+- 5.1 站长用真实邮箱验证码在 `/register` 创建首个账户（无需邀请码），确认欢迎积分。
 - 5.2 `bootstrap-site-owner` 先 dry-run 核对掩码账户，再 `--execute`。
 - 5.3 站长在账户区确认自动生成的六位邀请码已显示。
 - 5.4 将 `GOODGOOD_EMAIL_REGISTRATION_ENABLED` 置回 `true` 并重启 Web；确认已绑定的站长账户在关/开两态下均可登录。
@@ -219,6 +297,41 @@
 - 6.7 `npm run production:alpha-gate -- --evidence-file /var/lib/goodgood-production/controlled-alpha/readiness.json`，必须全 `pass`。
 - 6.8 复查后解除维护，立即检查公网 root / login / pending / 创作行为。
 
+**阶段 6 执行结果（2026-09-15）**
+
+- **6.1 通过。** `goodgood-production-postgres-backup-automated run`：
+  本地明文归档 277656 字节 / SHA-256 `6ee7862ca7d3980e7ff8dbc88af0a556ca783107a1a0cd22c90a174a35783895`，
+  上传 Restic 后**按设计删除本地明文**（工具含 `trap cleanup EXIT`）。
+  异机快照 `c49b2fc11366bda5636521614823faa3b3bcf96fcfd7e56e4a2534cedd380f3a`，
+  时间 `2026-09-15 23:06:38 +08`，距操作仅数分钟 → RPO 充分。
+  仓库完整性 `check`：103 快照 / 88 packs / `no errors were found`。
+  保留策略确认为 `--keep-daily 14 --keep-weekly 8 --keep-monthly 12`，与门禁要求一致。
+  **但备份 timer 为 `inactive` / `disabled`（见下方未完成项）。**
+- **6.2 通过。** `restore-latest-drill`：`off_host_restore_drill=passed`，
+  `public_tables=59`、`public_rows=163`、`migrations=43`、
+  `active_sessions_observed=1`、`active_generation_jobs=0`，
+  `network=none`、`storage=tmpfs`。归档 SHA-256 与 6.1 一致。
+- **6.3 通过。** 标记已启用状态下再次 `enable --execute` 幂等成功，
+  `origin_verification=passed`；公网 root/login/register 均 503，
+  返回的是受审静态资产（`index.html`，`noindex, nofollow`）。
+- **6.4 部分完成。** 观测值：`MemAvailable` **2.27 GiB**（阈值 500 MiB）、
+  根盘 **41%**（止损阈值 80%）、green web/worker 与 blue web 三者
+  `restarts=0` 且 `healthy`、队列 `DBSIZE=0`。
+  **operator 与通知通道无法记录**——见 6.5。
+- **6.5 未完成，且我无法自行完成。** 主机上**不存在任何对外告警/通知通道**：
+  ADR 0016 把监控平台与通知路由交给独立责任方，生产从未接入。
+  没有任何渠道可供"触发一次非计费测试信号并确认送达"，凭空断言 `notificationDelivered: true`
+  属于伪造证据，不做。因此 `controlled-alpha-operations` 中
+  `notificationDelivered` 保持 `false`。
+- **6.6 / 6.7 / 6.8 未完成**，取决于 6.5、站长验收（5.4—5.7）与第二个账户。
+
+**阶段 6 暴露的独立问题（不属本卡范围，但影响 RPO 承诺）**
+
+- `goodgood-postgres-backup.timer` 处于 `disabled`；最后一次自动运行是 **2026-09-05**。
+  也就是说 09-05 之后的恢复点（含本次 `c49b2fc1`）**都是手动或发布时产生的**，
+  不存在「RPO ≤ 60 分钟」的持续保障。这是既有缺口，不是本次发布引入的。
+  是否启用 timer 属于新的生产变更，需站长单独决定，本卡不擅自启用。
+
 ### 阶段 7 — 收尾
 
 - 7.1 更新 `CURRENT_STATE.md`：新 revision、digest、迁移 `0043`、活跃槽位、回退候选。
@@ -231,7 +344,7 @@
 
 - [ ] `/login` 直接访问与刷新正常，无邀请码字段
 - [ ] `/register` 直接访问与刷新正常，邀请码标注「选填」
-- [ ] **不填邀请码即可注册**，注册后获 100 欢迎积分
+- [ ] **不填邀请码即可注册**，注册后获 200 欢迎积分（= 单张 20 积分 × 10 张）
 - [ ] 填无效邀请码被拒（`INVITATION_INVALID`），清空后可再次提交
 - [ ] 填有效邀请码可注册
 - [ ] 登录/注册子导航与 URL 同步
@@ -366,6 +479,54 @@
 
 ## 恢复工作
 
-- 尚未完成：路线决策、B5 取舍、main 合并、迁移审计、主机候选、迁移切流、站长初始化、门禁证据。
-- 阻塞/风险：B2 main 未合并；B3 迁移兼容未审计（路线甲）；B4 证据 24h 时效；B5 注册即创作需用户确认；2 vCPU / 4 GiB 需容纳候选槽位。
-- 下一步：用户选定路线甲/乙并确认 B5，记录发布授权范围；随后执行阶段 1.1—1.2 与阶段 2 迁移审计。
+**当前生产事实（2026-09-15）**
+
+- 身份：revision `89afedbc7363c9a1f8195271178f0ab1d607ffae`、镜像
+  `ghcr.io/lizhongyi1209/goodgood@sha256:72ac3253b3cde4b51a9a022b8378be34fe7841979855ef2fa97b773fc76d16e4`、
+  迁移 `0043_gg091_account_invitations.sql`、runtime-config
+  `6358dc04d5bcfb352e85a768cf7f880379edde8033846cbdae92f5fd0531a4e8`。
+- 槽位：**green 接流**（web `3200` / worker health `3201`）。blue Web 仍在运行但**未接流**，
+  blue Worker **已停止**。Nginx upstream 备份 `production-active-upstream.blue.backup`。
+- 公网：**503 维护页**。注册开关：`false`。
+- 数据：users 2（站长 `951565127@qq.com` + `lizhongyi1209@gmail.com`，均 active）、
+  assets 1（private，`1024x1024`，owner 为 gmail 账户）、jobs 1（succeeded）、
+  积分 200 / 180、邀请码使用 1。
+
+**已完成**
+
+- 阶段 1 合并与 CI（含两个安全阻断修复 `c343351`、`89afedb`）。
+- 阶段 2 迁移前向兼容审计：无不可兼容项。
+- 阶段 3 候选与证据（preflight 12/12、工件证据 5/5）。
+- 阶段 4 迁移 0019→0043 与切流（43 迁移、59 表、0019 checksum 未变）。
+- 阶段 5.1—5.3、5.5—5.7：站长账户、bootstrap、邀请码、开放注册链路、
+  一次真实生图（reserve→settle）、私有限读、跨账户拒绝（404 `ASSET_NOT_FOUND`）。
+- 阶段 6.1—6.4：恢复点 `c49b2fc1`、隔离恢复演练通过、维护重入通过、运维观测。
+
+**未完成 / 阻塞**
+
+- 阶段 6.5 **通知渠道不存在**：主机无任何对外告警通道（ADR 0016 未落地）。
+  已按站长指示如实记为未接入，`notificationDelivered: false`。
+- 阶段 6.7 alpha 门禁 **`ok: false`**，两项 `fail`：
+  - `controlled-alpha-member-journey`：门禁硬要求 `welcomeCredits === 100` 且
+    `pendingBeforeApproval === true` / `generationBlockedWhilePending === true`，
+    但产品实际为 **200** 积分、且 email 注册路径直接 `active`（GG-090/ADR 0089 已取代
+    ADR 0020 的 pending 模型）。**门禁契约与当前产品行为不一致**，需产品决策：
+    要么更新门禁契约以反映 email 注册模型，要么恢复 pending 门。
+  - `controlled-alpha-operations`：取决于 6.5 的通知渠道。
+- 阶段 6.8 解除维护：**未执行**，门禁未通过，公网保持 503。
+- `GOODGOOD_EMAIL_REGISTRATION_ENABLED` 目前为 `false`，公网仍受维护页拦截。
+
+**需要站长决定的下一步（三选一）**
+
+1. **接入通知渠道**后重跑 6.5 与 6.7；同时决定如何解决门禁与 email 注册模型的契约冲突。
+2. **更新门禁契约**（把 `welcomeCredits` 改为 200、把 pending 要求改为 email 模型的等价要求），
+   走 ADR 后重跑门禁。这是改产品验收标准，需独立评审。
+3. **保持维护状态**不动，作为已部署但未开放的中间态长期存在（不推荐：
+    站长已能登录，但公网用户看不到站点）。
+
+**其他已记录的独立缺口**
+
+- 备份 timer `disabled`（自 2026-09-05 未自动运行），站长指示「不动，只记录」。
+- 主机 2 vCPU / 4 GiB 同时跑 green Web+Worker 与 blue Web，`MemAvailable` 2.27 GiB，
+  余量可接受但 blue Web 长期闲置占用资源，可在观察期后退役。
+- 本地 32131/32142 栈在 `npm ci` 前被停止，**尚未恢复**。

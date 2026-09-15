@@ -1,7 +1,7 @@
 # 当前任务与优先级 · 当前与最近交付
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
-| GG-097 | 累计功能生产重发布（0019→0043） | 邀请码改可选（ADR0089）本地完成、门禁通过、32131已切换；待用户选定发布路线与授权 | [任务](tasks/GG-097-production-release-0019-to-0043.md) |
+| GG-097 | 累计功能生产重发布（0019→0043） | **已部署未开放**：`89afedb`/`0043`/green槽位已上线，站长账户与邀请码405513已建，一次真实生图与跨账户拒绝(404)通过；alpha门禁如实未通过两项，公网保持503维护页 | [任务](tasks/GG-097-production-release-0019-to-0043.md) / [发布记录](releases/2026-09-15-cumulative-alpha-release.md) |
 | GG-096 | 上线规格登录与注册入口 | 本地实现/门禁/32131切换完成；独立/login与/register、固定子导航、安全returnTo；未部署，发布见GG-097 | [任务](tasks/GG-096-production-auth-entry.md) / [ADR](decisions/0088-addressable-login-registration-entry.md) |
 | GG-094—095 | 登录/注册邀请码状态与主测试入口 | GG094用户验收通过；GG095已将32131切为无预设账户的邮箱登录并停用32191，门禁/运行核验通过；未部署 | [GG094](tasks/GG-094-registration-invitation-visibility.md) / [GG095](tasks/GG-095-primary-email-auth-test-flow.md) |
 | GG-093 | 废弃Docker清理与构建版本交接 | 已完成本地交付；删除37容器/9旧应用镜像/5空网络，回收21.92GB构建缓存，34卷保留；构建指纹与启动核验已加入，未部署 | [任务](tasks/GG-093-docker-cleanup-build-handoff.md) |
