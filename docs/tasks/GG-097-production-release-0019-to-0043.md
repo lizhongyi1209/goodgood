@@ -64,6 +64,62 @@
 
 **路线甲对"全新发布"的影响：** 不影响功能内容。两条路线最终都得到同一套 `0043` schema 与同一份代码；差别只在数据库历史。生产用户/文件为 0，甲路线没有业务数据可损坏，且不触碰既有备份/恢复链；乙路线需把 `0001`—`0043` 全量重放，其中 `0012` 等迁移涉及固定 UUID 夹具清理，步骤更多、不可逆边界更多。
 
+### 阶段 2 执行结果（2026-09-15，路线甲）
+
+**生产只读核验（ssh `goodgood-staging` → 现有生产主机）：**
+
+- 已应用迁移 19 条，最新 `0019_gg021_nano_banana_pro_prices.sql`，其 checksum
+  `12b253518ce174549f88e389a43b6af15dcd7858892d3f776a4d798022372b3e` 与本地 HEAD 的
+  `sha256sum migrations/0019…` **完全一致**。→ `applyMigrations` 的已应用 checksum 校验
+  不会因历史文件被改写而中断，可以安全向前追加 0020—0043。
+- 业务行数：users 0 / assets 0 / jobs 0 / credit_accounts 0 / payment_orders 0 /
+  冻结积分 0。与 GG-091 清理后记录一致，**没有业务数据可损坏**，0026 回填与 0029 排空
+  前置天然满足。
+- 运行槽位：`goodgood-production-blue-web-1`、`goodgood-production-blue-worker-1`
+  均在跑且 healthy；`goodgood-production-green-web-1`（旧镜像 `fe52e0093336`）健康但
+  **未接流**。`/etc/nginx/goodgood/production-active-upstream.conf` 指向 `127.0.0.1:3100`
+  （blue）。green Worker 不存在。维护标记 `/etc/goodgood/production/maintenance.enabled`
+  **当前不存在**，即公网正在接流。
+- 依赖：`goodgood-production-dependencies-postgres-1` / `-valkey-1` 健康；另有
+  `goodgood-staging-dependencies-*` 三个容器仍在跑（历史 staging 栈，本次不触碰）。
+
+**24 个迁移的逐条静态审计（2.1）：**
+
+| 迁移 | 变更类型 | 对旧 Web（`65ceb168`）的影响 |
+| --- | --- | --- |
+| 0020 | `credit_accounts`/`credit_ledger_entries` 加列 + 回填 + 收紧 CHECK | 加列有默认值；旧代码不写这两列时按 0 通过 |
+| 0021 | 新增表 + 索引；仅放宽 `administrative_actions` 类型/状态枚举 | 兼容（旧值仍在允许集合内） |
+| 0022 | 放宽 `credit_ledger_entries` 四个 CHECK（新增 transfer 类型） | 兼容 |
+| 0023 | 新增 `auth_email_*`/`auth_rate_limits`/`auth_events` 表 | 兼容（旧 Web 不读不写） |
+| 0024 | 新增 workspace 表族 + `users` AFTER INSERT 触发器建个人工作区 | 兼容（旧 Web 插入 users 时触发器自动补） |
+| 0025 | 新增 workspace 积分/预算表族 | 兼容 |
+| 0026 | 六张创作表加 `workspace_id`/`creator_owner_id` 并 **SET NOT NULL**；`creation_drafts` 换主键；`projects`/`generation_jobs` 的幂等唯一索引改为含 workspace 列 | **唯一的破坏性结构变更**。回填后空库无残留；`goodgood_assign_creative_workspace` BEFORE 触发器自动补 workspace_id，旧 Web 的裸 INSERT 仍成功；幂等索引为**放宽**，不产生新冲突。`creation_drafts_pkey` 改为 `(workspace_id, creator_owner_id)`：旧代码按 `owner_id` 定位，该列仍在表中 |
+| 0027 | 放宽 `workspace_audit_events` 动作枚举 | 兼容 |
+| 0028 | 放宽 model/quality 枚举 | 兼容 |
+| 0029 | **积分单位换汇**：旧 `credit` 账户置 `closed`，新建 `credit-cny-cent`（×2）；重写 prices/products；新增 `managed_models` | 空库下全部子句影响 0 行。非空库风险：旧 Web 只读 `credit_accounts` 且过滤/读取 `unit`（`server/auth/repository.mjs:66` 等按 `credit-cny-cent` 过滤），旧镜像则读旧 unit；账号为 0 故无影响。**不可撤销** |
+| 0030—0034 | 保价、新增线路/质量 CHECK、归档约束 | 兼容（加约束或放宽枚举） |
+| 0035—0041 | 新增表（档案、灵感、JCoin、问题反馈） | 兼容 |
+| 0042 | 新增注册邀请表 | 兼容 |
+| 0043 | 新增 `account_invitations`/`account_invitation_uses` + `users` AFTER INSERT 触发器发码 | **旧 Web 插入 users 时会被新触发器自动发一个邀请码**，无副作用；旧 Web 不读该表 |
+
+- **全程无** `DROP TABLE`、`DROP COLUMN`、`TRUNCATE`、`DELETE FROM`。
+- **2.3 不兼容项清单：无。** 唯一非加法项是 0026 的主键替换与两处幂等索引替换，已逐条
+  判定为「触发器自动补 + 索引放宽」，旧 Web 读写路径仍然成功。
+- **2.4 结论：切流不强制停写，但本任务仍按维护窗口执行**（见下方决策），原因不是结构
+  不兼容，而是：① 0029 不可撤销且改变积分单位语义；② 蓝绿存在但 green 仍是旧镜像，
+  本轮是「原地前向迁移 + 提交候选镜像」，不是真正的零停写蓝绿；③ 公网当前无任何站长
+  账户，短暂维护的代价远低于风险。
+
+**阶段 2 需求变更（新增前置条件，需站长提供）：**
+
+- 阶段 3.1 要求六个凭据文件，主机当前**只有四个**（`auth-client-secret`、`o1key-api-key`、
+  `r2-access-key-id`、`r2-secret-access-key`）。缺失的是 `email-otp-secret` 与
+  `email-smtp-password`。
+- `email-otp-secret` 由我生成（≥32 随机字节，`root:goodgood-production-secrets 0640`）。
+- `email-smtp-password` **只能由站长在服务器上直接安装**：阿里云 Direct Mail
+  新加坡 SMTP（`smtpdm-ap-southeast-1.aliyuncs.com:465`）的当前密码不在本仓库、本机或
+  任何历史记录中，我不能读取、不能猜测、不能写在命令行。这是阶段 3 的硬阻塞。
+
 ### 阶段 3 — 主机候选（不接流量）
 
 - 3.1 在 `/etc/goodgood/production/` 安装 release.env / runtime.env（`root:root 0600`）与六个凭据文件（`root:<group> 0640`）。
