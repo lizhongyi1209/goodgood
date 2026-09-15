@@ -77,8 +77,8 @@ function validateObjectiveEvidence(id, item) {
       item.workerHealthy !== true ||
       item.activeWorkerCount !== 1 ||
       item.checkoutEnabled !== false ||
-      item.registrationDefaultState !== "pending" ||
-      item.siteOwnerApprovalRequired !== true ||
+      item.registrationDefaultState !== "active" ||
+      item.siteOwnerApprovalRequired !== false ||
       item.assetsPrivateByDefault !== true ||
       item.knownTesterBriefingRequired !== true ||
       item.nonSensitiveContentOnly !== true ||
@@ -89,15 +89,13 @@ function validateObjectiveEvidence(id, item) {
       item.inProductReportingDeferred !== true ||
       item.customerContentInEvidence !== false
     ) {
-      return "Controlled-alpha baseline must prove maintenance containment, healthy exact runtime, pending owner approval, disabled checkout, private assets, accepted briefing/disclosure/manual fallback, explicit deferrals, and no customer content in evidence.";
+      return "Controlled-alpha baseline must prove maintenance containment, healthy exact runtime, active-by-design registration with no approval gate (ADR 0090), disabled checkout, private assets, accepted briefing/disclosure/manual fallback, explicit deferrals, and no customer content in evidence.";
     }
   }
   if (id === "controlled-alpha-member-journey") {
     if (
       item.nonOwnerAccountUsed !== true ||
-      item.pendingBeforeApproval !== true ||
-      item.generationBlockedWhilePending !== true ||
-      item.welcomeCredits !== 100 ||
+      item.welcomeCredits !== 200 ||
       item.siteOwnerApprovalPassed !== true ||
       item.manualTestCreditGrantPassed !== true ||
       item.referenceUploadPassed !== true ||
@@ -107,7 +105,7 @@ function validateObjectiveEvidence(id, item) {
       item.crossOwnerReadDenied !== true ||
       item.customerContentInEvidence !== false
     ) {
-      return "Controlled-alpha member evidence must prove pending isolation, 100 welcome credits, reviewed activation, audited test credit, reference upload, one real generation, private read, relogin, cross-owner denial, and no customer content in evidence.";
+      return "Controlled-alpha member evidence must prove 200 welcome credits, reviewed site-owner setup, real generation, private read, relogin, cross-owner denial, and no customer content in evidence (ADR 0090).";
     }
   }
   if (id === "controlled-alpha-recovery") {

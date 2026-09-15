@@ -48,8 +48,8 @@ function validControlledAlphaDocument(now = NOW) {
           o1keyDisclosureRequired: true,
           providerErasureTermsAvailable: false,
           publicMaintenanceEnabled: true,
-          registrationDefaultState: "pending",
-          siteOwnerApprovalRequired: true,
+          registrationDefaultState: "active",
+          siteOwnerApprovalRequired: false,
           webHealthy: true,
           workerHealthy: true,
         });
@@ -58,16 +58,14 @@ function validControlledAlphaDocument(now = NOW) {
         Object.assign(item, {
           crossOwnerReadDenied: true,
           customerContentInEvidence: false,
-          generationBlockedWhilePending: true,
           manualTestCreditGrantPassed: true,
           nonOwnerAccountUsed: true,
-          pendingBeforeApproval: true,
           privateAssetReadPassed: true,
           realGenerationPassed: true,
           referenceUploadPassed: true,
           reloginPassed: true,
           siteOwnerApprovalPassed: true,
-          welcomeCredits: 100,
+          welcomeCredits: 200,
         });
       }
       if (id === "controlled-alpha-recovery") {

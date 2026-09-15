@@ -25,9 +25,12 @@ workstation.
 ## Fixed launch boundary
 
 - Mode: `controlled-alpha-v1`.
-- Registration: public and uncapped, but every new account starts `pending`.
+- Registration: public and uncapped; a verified email creates an `active` owner
+  directly (ADR 0090). The only admission control is
+  `GOODGOOD_EMAIL_REGISTRATION_ENABLED`.
 - Admission: the site owner activates only a personally selected and briefed
-  tester.
+  tester when registration is closed. While registration is open, any verified
+  mailbox can create an owner without review.
 - Credit: 100 welcome credits plus the existing audited manual test-credit
   grant. Checkout remains disabled.
 - Content: non-sensitive, non-confidential test material only; disclose O1Key
@@ -49,8 +52,9 @@ workstation.
    503 response during the rollout. On the private path confirm the candidate
    Web and exactly one candidate Worker are healthy, the prior Worker is stopped,
    dependencies are healthy, checkout is disabled, and no resource stop is active.
-4. Confirm new registration still maps to `pending`, site-owner-only approval
-   remains available, and R2 stays private. Do not create a user, generation, or
+4. Confirm the registration switch state matches the intended admission window,
+   that a verified mailbox creates an `active` owner with no review step
+   (ADR 0090), and that R2 stays private. Do not create a user, generation, or
    object in this step.
 5. Record the controlled-alpha briefing, provider disclosure, non-sensitive-
    content rule, manual fallback, and explicit automated-deletion/reporting
@@ -66,10 +70,12 @@ enabled.
 Use one intentionally selected non-owner account and non-sensitive disposable
 test media. Capture aggregate results only.
 
-1. Register and prove `pending`, exactly 100 welcome credits, generation denial,
-   refresh, logout, and login behavior before approval.
-2. From `/admin/users`, approve the account and perform one small audited manual
-   test-credit grant; verify no payment record is created.
+1. Register a non-owner account with a real mailbox and record its `active`
+   status, exactly 200 welcome credits, and logout/login behavior. Registration
+   is open only while `GOODGOOD_EMAIL_REGISTRATION_ENABLED=true`, and any
+   verified mailbox can create an owner during that window (ADR 0090).
+2. From `/admin/users`, perform one small audited manual test-credit grant;
+   verify no payment record is created.
 3. Upload one reference, submit one real generation, verify reserve/settle,
    private generated-asset read, and relogin.
 4. Prove a different owner cannot read the generated asset. Suspend the test
