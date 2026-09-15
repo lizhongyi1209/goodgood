@@ -356,8 +356,8 @@ export function createEmailOtpOperations({
             ? "INVITATION_REQUIRED"
             : "INVITATION_INVALID",
           result.outcome === "invitation_required"
-            ? "请输入邀请码。"
-            : "邀请码无效。",
+            ? "该账户待开通，请输入邀请码。"
+            : "邀请码无效，请修正或清空后重试。",
           403,
         );
       }

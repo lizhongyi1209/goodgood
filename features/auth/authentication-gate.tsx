@@ -160,7 +160,7 @@ export function AuthenticationGate({
       const verifiedReturnTo = await verifyEmailAuthenticationCode(
         challenge.id,
         code,
-        registrationRequired ? invitationCode : undefined,
+        invitationCode.trim() ? invitationCode : undefined,
         email,
       );
       await onAuthenticated(verifiedReturnTo);
@@ -418,7 +418,7 @@ export function AuthenticationGate({
                   <span className="authentication-input-shell">
                     <ShieldCheck aria-hidden="true" size={16} />
                     <Input
-                      aria-label="邀请码"
+                      aria-label="邀请码（选填）"
                       aria-invalid={errorTarget === "invitation"}
                       autoComplete="off"
                       className="authentication-invitation-input"
@@ -436,7 +436,7 @@ export function AuthenticationGate({
                         }
                       }}
                       pattern="[0-9]{6}"
-                      placeholder="邀请码"
+                      placeholder="邀请码（选填）"
                       type="text"
                       value={invitationCode}
                     />
@@ -459,7 +459,7 @@ export function AuthenticationGate({
                   busy !== null ||
                   !challenge ||
                   code.length !== 6 ||
-                  (registrationRequired && invitationCode.length !== 6) ||
+                  (invitationCode.length > 0 && invitationCode.length !== 6) ||
                   !email.trim()
                 }
                 type="submit"

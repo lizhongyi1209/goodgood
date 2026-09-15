@@ -135,12 +135,9 @@ test(
         verify(first, code, first.code === "000000" ? "111111" : "000000"),
         (e) => e.code === "EMAIL_CODE_INVALID",
       );
+      // A supplied but unknown six-digit code still fails closed.
       await assert.rejects(
-        verify(first),
-        (e) => e.code === "INVITATION_REQUIRED",
-      );
-      await assert.rejects(
-        verify(first, "GG-invalid"),
+        verify(first, first.code === "000000" ? "111111" : "000000"),
         (e) => e.code === "INVITATION_INVALID",
       );
       assert.equal(await ownerFor("creator@example.invalid"), undefined);
@@ -183,6 +180,21 @@ test(
           )
         ).rows[0].n,
         1,
+      );
+
+      // Registration without an invitation code is now allowed and records no inviter.
+      const noInvite = await challenge("no-invite@example.invalid");
+      await verify(noInvite);
+      const noInviteOwner = await ownerFor("no-invite@example.invalid");
+      assert.equal(noInviteOwner.status, "active");
+      assert.equal(
+        (
+          await pool.query(
+            "SELECT count(*)::int AS n FROM account_invitation_uses WHERE registered_owner_id=$1",
+            [noInviteOwner.id],
+          )
+        ).rows[0].n,
+        0,
       );
 
       const a = await challenge("parallel-a@example.invalid");

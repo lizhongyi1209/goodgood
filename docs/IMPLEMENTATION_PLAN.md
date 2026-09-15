@@ -1,21 +1,24 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-15
-- Current phase: GG-096 production-shaped authentication entry.
-- Current objective: 提供独立/login与/register、固定子导航和安全认证回跳，并在门禁后更新32131。
-- Previous objective: GG082最小发行讨论；GG081积分类型/充值登记/运营与并发本地实现验证保留。
+- Current phase: GG-097 production release (0019 → 0043).
+- Current objective: 把 `cd9af10` 经 main/CI 发布到生产，完成站长初始化与真实链路冒烟。计划见任务卡；**未开工**。
+- Previous objective: GG-096 production-shaped authentication entry（本地完成，未部署）。
 
 ## Current checkpoint
 
-- Task [GG-096](tasks/GG-096-production-auth-entry.md)：feature/GG-096-production-auth-entry / F:/goodgood；基线为GG095提交18c338f，保留累计功能与本地数据，.codex不改。
+- Task [GG-097](tasks/GG-097-production-release-0019-to-0043.md)：发布计划已建立，未开工；发布分支建议从 `cd9af10` 切 `release/GG-097-cumulative-alpha`。
+- 阻断项：B1 邮件验证码模式下生产零账户无法创建首个账户（`server/auth/email-repository.mjs:348-357` 要求 active 用户的邀请码；`server/admin/bootstrap-site-owner.mjs:54-72` 要求账户已登录过）——需用户在 OIDC 先行 / 一次性写库 / 暂缓 GG-096 三条路径中选择；B2 main 落后 224 提交（`0 224`），CI 只从 main 发布镜像；B3 迁移 0020—0043 对旧 Web 的前向兼容未审计；B4 alpha 门禁四项证据仅 24h 有效。
+- 已核实：`18fe779`、`42fc8d8` 均为 HEAD 祖先，main 与 HEAD 为纯快进关系；`origin/main` = `42fc8d8`，本地 `main` = `bab17fd`。
+- Task [GG-096](tasks/GG-096-production-auth-entry.md)：feature/GG-096-production-auth-entry / F:/goodgood；本地实现与门禁完成，32131 对应 HEAD 且 verified，未部署。
 - GG093标记`goodgood-local-2026-09-15-gg093`仍指向历史基线；新窗口从GG095最终提交接续，不从不含累计功能的main开始。
 - [跨窗口交接](DEVELOPMENT_HANDOFF.md)记录实际功能、启动命令、依赖/端口、命名SQL runner、验证边界。AGENTS/WORKFLOW/README已同步。
 - GG096沿用唯一工作区32131、mock Worker32142、provider32143；32131使用email_otp与本地Mailpit，不使用local auth默认账户。`/login`、`/register`为测试入口，受保护页跳登录并保留安全returnTo。原DB0043与数据保留，最终PID以端口实时核验，不写死在交接文档。
 - GG094将普通登录初始态的邀请码移除；正确邮件码收到`INVITATION_REQUIRED`后切换注册并保留邮件码，`INVITATION_INVALID`保持注册态；待开通账户直接进入注册态。邀请码占位仅为“邀请码”，输入规格与邮箱/验证码一致。发送成功后修改邮箱会清除旧挑战，但保留并继续刷新原发送冷却，不能立即向新地址重发。
 - 线上仍goodgood.o1key.com的65ceb168/0019原镜像；测试用户清理已完成（含站长），本地功能未部署。staging-goodgood.o1key.com不是测试入口。
 - 当前验证：GG096定向34/34；完整`check:local`为559项（533通过/26隔离跳过/0失败）；最终提交的checkpoint构建/核验通过，32131对应Git HEAD且version verified、email_code、无Cookie session 401；32191无监听。根路由/双tab/邀请码可见性及390px无溢出通过。未发送邮件、注册用户或调用真实provider。
-- Next action: 用户手动测试`http://127.0.0.1:32131/login`与`/register`；生产不部署。
-- Blockers: 无；上线/新站长初始化/真实provider需独立范围，本次只保存本地版本。
+- Next action: 用户就 B1 选定认证路径并记录发布授权范围；agent 随后执行阶段 2 迁移前向兼容审计（不依赖 B1，且是切流安全前置）。
+- Blockers: B1 认证首账户死锁（最高）；B2 main 未合并；B3 迁移兼容未审计；B4 证据时效；2 vCPU / 4 GiB 需容纳候选槽位。
 
 ## Verification sequence
 

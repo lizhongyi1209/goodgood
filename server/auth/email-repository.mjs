@@ -345,31 +345,31 @@ export async function completeEmailChallenge(
       );
       pendingOwner = owner.rows[0]?.status === "pending";
     }
+    if (pendingOwner && !input.invitationCode)
+      return Object.freeze({ outcome: "invitation_required" });
     if (!identity || pendingOwner) {
-      if (!input.invitationCode)
-        return Object.freeze({ outcome: "invitation_required" });
       const inviteCode = normalizeAccountInvitationCode(input.invitationCode);
-      const match = inviteCode
-        ? await client.query(
-            "SELECT i.owner_id FROM account_invitations i JOIN users u ON u.id=i.owner_id WHERE i.code=$1 AND u.status='active' FOR SHARE OF i,u",
-            [inviteCode],
-          )
-        : { rows: [] };
-      invitation = match.rows[0];
-      if (!invitation) {
-        await client.query(
-          "UPDATE auth_email_challenges SET failed_attempts=failed_attempts+1, invalidated_at=CASE WHEN failed_attempts+1 >= $3 THEN $2 ELSE invalidated_at END, updated_at=$2 WHERE id=$1",
-          [input.challengeId, input.now, EMAIL_OTP_MAX_FAILURES],
+      if (inviteCode) {
+        const match = await client.query(
+          "SELECT i.owner_id FROM account_invitations i JOIN users u ON u.id=i.owner_id WHERE i.code=$1 AND u.status='active' FOR SHARE OF i,u",
+          [inviteCode],
         );
-        await recordEvent(client, {
-          eventType: "email_code_rejected",
-          outcome: "rejected",
-          challengeId: input.challengeId,
-          requestId: input.requestId,
-          subjectHash: input.subjectHash,
-          detail: { reason: "invitation_invalid" },
-        });
-        return Object.freeze({ outcome: "invitation_invalid" });
+        invitation = match.rows[0];
+        if (!invitation) {
+          await client.query(
+            "UPDATE auth_email_challenges SET failed_attempts=failed_attempts+1, invalidated_at=CASE WHEN failed_attempts+1 >= $3 THEN $2 ELSE invalidated_at END, updated_at=$2 WHERE id=$1",
+            [input.challengeId, input.now, EMAIL_OTP_MAX_FAILURES],
+          );
+          await recordEvent(client, {
+            eventType: "email_code_rejected",
+            outcome: "rejected",
+            challengeId: input.challengeId,
+            requestId: input.requestId,
+            subjectHash: input.subjectHash,
+            detail: { reason: "invitation_invalid" },
+          });
+          return Object.freeze({ outcome: "invitation_invalid" });
+        }
       }
     }
     if (!identity) {

@@ -1,7 +1,8 @@
 # 当前任务与优先级 · 当前与最近交付
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
-| GG-096 | 上线规格登录与注册入口 | 本地实现/门禁/checkpoint/32131切换完成；独立/login与/register、固定子导航、安全returnTo及pending/新用户注册流；待用户手测，未部署 | [任务](tasks/GG-096-production-auth-entry.md) / [ADR](decisions/0088-addressable-login-registration-entry.md) |
+| GG-097 | 累计功能生产发布（0019→0043） | 计划已建立，未开工；阻断于认证首账户死锁（B1）与发布授权 | [任务](tasks/GG-097-production-release-0019-to-0043.md) |
+| GG-096 | 上线规格登录与注册入口 | 本地实现/门禁/32131切换完成；独立/login与/register、固定子导航、安全returnTo；未部署，发布见GG-097 | [任务](tasks/GG-096-production-auth-entry.md) / [ADR](decisions/0088-addressable-login-registration-entry.md) |
 | GG-094—095 | 登录/注册邀请码状态与主测试入口 | GG094用户验收通过；GG095已将32131切为无预设账户的邮箱登录并停用32191，门禁/运行核验通过；未部署 | [GG094](tasks/GG-094-registration-invitation-visibility.md) / [GG095](tasks/GG-095-primary-email-auth-test-flow.md) |
 | GG-093 | 废弃Docker清理与构建版本交接 | 已完成本地交付；删除37容器/9旧应用镜像/5空网络，回收21.92GB构建缓存，34卷保留；构建指纹与启动核验已加入，未部署 | [任务](tasks/GG-093-docker-cleanup-build-handoff.md) |
 | GG-092 | 保存版本/AGENTS与无上下文交接 | 当前累计版本已保存；09-15重启工作区32131/登录32191，ready200，本地未发布 | [任务](tasks/GG-092-development-handoff.md) |
@@ -35,10 +36,9 @@
 | GG-057 | 站长管理导航与本地登录恢复 | 本地完成；门禁 432 通过/16 跳过，32141 登录/导航/返回与窄屏检查通过；用户当前价格/启禁和历史保留，未发布 | [任务](tasks/GG-057-admin-navigation.md) |
 | GG-056 | Banana 2 三线路与试价条目移除 | 本地完成；门禁 427 通过/16 跳过，SQL/运行/Chrome 通过；用户价格/历史保留，试价目录已移除，未发布 | [任务](tasks/GG-056-banana2-lines.md) |
 | GG-055 | Gemini 官方单张图片成本核对 | 本地分析含五参考图/长提示词敏感性表；区分输出/整单与 Banana 2 输入假设，文档验证 15/15，未改价/发布 | [任务](tasks/GG-055-gemini-image-costs.md) |
-| GG-054 | Banana 三线路与分线路定价 | Pro 与通用功能本地验证完成；用户已补 Banana 2 ID，后续 GG-056 保价接通并移除试价条目，未发布 | [任务](tasks/GG-054-banana-lines.md) |
-| GG-053 | 精简模型列表与规格价格布局 | 本地完成并验证；名称一次、规格价格对齐、自动编号与折叠接入详情，门禁 413 通过/15 opt-in 跳过，32141 页面已更新保留；未发布 | [任务](tasks/GG-053-clear-model-pricing.md) |
-| GG-052 | 人民币积分与站长模型管理 | 本地完成并验证；门禁 413 通过/15 opt-in 跳过，1 元/100 积分、添加/启禁/规格定价与试算，32141 页面已保留，视频正式结算未接，未发布 | [任务](tasks/GG-052-model-management.md) |
-| GG-051 | 重新评估积分定价体系与站长定价面板 | Runway 人民币计价方向获认可，ADR 0062；等值单位与面板已在 GG-052 本地实现，费率供用户试定，未发布 | [任务](tasks/GG-051-credit-pricing-reassessment.md) |
+| GG-054 | Banana 三线路与分线路定价 | Pro 与通用功能本地验证完成；后续 GG-056 保价接通并移除试价条目，未发布 | [任务](tasks/GG-054-banana-lines.md) |
+| GG-053 | 精简模型列表与规格价格布局 | 本地完成并验证；名称一次、规格价格对齐、自动编号与折叠接入详情，门禁 413 通过/15 opt-in 跳过，原页面保留；未发布 | [任务](tasks/GG-053-clear-model-pricing.md) |
+| GG-052 | 人民币积分与站长模型管理 | 本地完成并验证；1 元/100 积分、添加/启禁/规格定价与试算，门禁 413 通过/15 跳过，未发布 | [任务](tasks/GG-052-model-management.md) / [GG-051](tasks/GG-051-credit-pricing-reassessment.md) |
 | GG-050 | 移除页面右上角常驻返回入口 | 本地完成且用户已验收；门禁 403 通过/14 opt-in 跳过、原 Chrome 企业/积分/资产检查通过，不新增替代导航，未发布 | [任务](tasks/GG-050-remove-page-return-actions.md) |
 | GG-049 | 企业与分销身份及功能分离 | 本地门禁 398 通过/14 opt-in 跳过、原 Chrome 企业四标签/旧链接检查完成，待用户验收；保留历史，未发布 | [任务](tasks/GG-049-separate-business-roles.md) |
 | GG-048 | 面向企业管理员的概览 | 本地页面/代码门禁/文档复验/原 Chrome 企业桌面检查完成，待布局确认；周期统计待接入，未发布 | [任务](tasks/GG-048-enterprise-overview.md) |
@@ -92,7 +92,7 @@
 | GG-060 | 站长管理标题层级与功能栏简化 | 本地完整门禁、桌面/窄屏及历史保留检查通过，原页面已更新，未发布 | [任务](tasks/GG-060-management-heading-hierarchy.md) |
 | GG-061 | 账户操作记录移为独立审计日志 | 本地门禁、桌面/窄屏与历史保留检查通过，原页面已更新，未发布 | [任务](tasks/GG-061-audit-log-section.md) |
 | GG-062 | GPT 图片三线路与独立定价 | 本地门禁、隔离 SQL、原页面与历史保留检查通过，未发布 | [任务](tasks/GG-062-gpt-image-lines.md) |
-## 已明确搁置（不得自动恢复） · 最后同步2026-09-15；GG-024—096已占用，下一个需求从GG-097分配
+## 已明确搁置（不得自动恢复） · 最后同步2026-09-15；GG-024—097已占用，下一个需求从GG-098分配
 | ID | 事项 | 恢复条件 | 入口 |
 | --- | --- | --- | --- |
 | GG-900 | C6 自动账户删除/身份删除/举报与内容处理 | 站长明确要求并重审生产差异 | [保全与恢复](tasks/GG-900-deferred-c6.md) |

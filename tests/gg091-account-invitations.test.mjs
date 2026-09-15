@@ -27,10 +27,10 @@ test("six-digit invitation preserves leading zeroes and rejects old/invalid code
     assert.equal(normalizeAccountInvitationCode(code), null);
 });
 
-test("email invitation outcomes issue no session cookies and preserve old login", async () => {
+test("optional invitation keeps invalid-code rejection and issues no session cookie", async () => {
   const binding = "b".repeat(32),
     challengeId = "90000000-0000-4000-8000-000000000001";
-  let outcome = "invitation_required",
+  let outcome = "succeeded",
     completed;
   const operations = createEmailOtpOperations({
     config,
@@ -64,10 +64,7 @@ test("email invitation outcomes issue no session cookies and preserve old login"
       cookie: `${config.cookieName}_login=${binding}`,
     }),
   };
-  await assert.rejects(
-    operations.verifyCode({ challengeId, code: "123456" }, request),
-    (e) => e.code === "INVITATION_REQUIRED",
-  );
+  // A supplied but unknown invitation code still fails closed.
   outcome = "invitation_invalid";
   await assert.rejects(
     operations.verifyCode(
@@ -77,6 +74,13 @@ test("email invitation outcomes issue no session cookies and preserve old login"
     (e) => e.code === "INVITATION_INVALID",
   );
   assert.equal(completed.invitationCode, "123456");
+  // A pending account without an invitation still needs one to open.
+  outcome = "invitation_required";
+  await assert.rejects(
+    operations.verifyCode({ challengeId, code: "123456" }, request),
+    (e) => e.code === "INVITATION_REQUIRED",
+  );
+  // No invitation supplied is now a valid registration path.
   outcome = "succeeded";
   assert.equal(
     (await operations.verifyCode({ challengeId, code: "123456" }, request))

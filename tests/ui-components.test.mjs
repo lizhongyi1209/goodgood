@@ -259,17 +259,17 @@ test("keeps authentication global, passwordless, and recoverable", async () => {
   assert.match(authenticationGate, /placeholder="验证码"/);
   assert.match(authenticationGate, /发送验证码/);
   assert.match(authenticationGate, /registrationRequired && \(/);
-  assert.match(authenticationGate, /placeholder="邀请码"/);
+  assert.match(authenticationGate, /placeholder="邀请码（选填）"/);
   assert.doesNotMatch(authenticationGate, /邀请码（新用户填写）/);
   assert.match(authenticationGate, /setAuthenticationMode\("register"\)/);
   assert.match(authenticationGate, /onModeChange\?\.\("register"\)/);
   assert.match(
     authenticationGate,
-    /registrationRequired \? invitationCode : undefined/,
+    /invitationCode\.trim\(\) \? invitationCode : undefined/,
   );
   assert.match(accountAccessGate, /initialRegistrationRequired/);
   assert.doesNotMatch(authenticationGate, /修改邮箱|使用邀请码注册|setRegister\(/);
-  assert.match(authenticationGate, /aria-label="邀请码"/);
+  assert.match(authenticationGate, /aria-label="邀请码[^"]*"/);
   assert.match(authenticationGate, /autoComplete="one-time-code"/);
   assert.match(authenticationGate, /disabled=\{!challenge \|\| busy !== null\}/);
   assert.match(authenticationGate, /\$\{resendRemaining\}s/);

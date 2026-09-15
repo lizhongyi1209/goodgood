@@ -1,6 +1,7 @@
 # Decision records
 
 - `0088-addressable-login-registration-entry.md` — accepted addressable `/login` and `/register` pages, visible mode navigation and safe protected-route return for GG-096; partially supersedes ADR 0087's single-form UI.
+- `0089-optional-invitation-registration.md` — 邀请码改为可选，未填可注册、填了必须有效，pending 账户仍需邀请码；解除 GG-097 生产首个账户死锁。
 
 - `0085-private-problem-feedback.md` — accepted private support tickets, up to five verified images, own status/replies and active owner handling for GG-087.
 
