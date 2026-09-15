@@ -1,20 +1,20 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-15
-- Current phase: GG-093 retired Docker cleanup and build provenance handoff.
-- Current objective: 完成按授权的旧GoodGood Docker清理，保留现用依赖/历史卷，并以可验证构建指纹交接本地版本。
+- Current phase: GG-094 login/registration invitation visibility correction.
+- Current objective: 登录状态隐藏邀请码，仅在新用户注册或待开通账户流程显示一致规格的邀请码输入。
 - Previous objective: GG082最小发行讨论；GG081积分类型/充值登记/运营与并发本地实现验证保留。
 
 ## Current checkpoint
 
-- Task [GG-093](tasks/GG-093-docker-cleanup-build-handoff.md)：chore/GG-093-docker-cleanup-build-handoff / F:/goodgood；基线bc0e053保留f68ba81/a73835f，.codex不改。
-- 本地版本标记`goodgood-local-2026-09-15-gg093`已指向本任务最终提交；新窗口从此检查点的后续版本分支，不从不含累计功能的main开始。
+- Task [GG-094](tasks/GG-094-registration-invitation-visibility.md)：fix/GG-094-registration-invitation-visibility / F:/goodgood；基线为GG093标签提交a42f3bd，保留累计功能与本地数据，.codex不改。
+- GG093标记`goodgood-local-2026-09-15-gg093`仍指向基线；GG094提交与可验证构建完成后从该新提交接续，不从不含累计功能的main开始。
 - [跨窗口交接](DEVELOPMENT_HANDOFF.md)记录实际功能、启动命令、依赖/端口、命名SQL runner、验证边界。AGENTS/WORKFLOW/README已同步。
 - 09-15已从当前累计版本重建并重启工作区32131、登录32191、mock Worker32142、provider32143；服务使用loopback依赖与本地Mailpit，原DB0043与数据保留。最终PID以端口实时核验，不写死在交接文档。
-- 此前完整门禁a88bdc3 524通过/26跳过、GG091/GG029/GG031 SQL各1/1；最后邀请码文本/入口焦点样式按用户要求仅构建，手验结果未记录。
+- GG094将普通登录初始态的邀请码移除；正确邮件码收到`INVITATION_REQUIRED`后切换注册并保留邮件码，`INVITATION_INVALID`保持注册态；待开通账户直接进入注册态。邀请码占位仅为“邀请码”，输入规格与邮箱/验证码一致。
 - 线上仍goodgood.o1key.com的65ceb168/0019原镜像；测试用户清理已完成（含站长），本地功能未部署。staging-goodgood.o1key.com不是测试入口。
-- 当前验证：GG093构建来源定向测试5/5，文档连续性测试与diff检查通过；清理后Docker仅保留7个当前容器、34个卷，旧GoodGood端口无监听；完整门禁与四服务ready/version核验结果记录在交接页。
-- Next action: 新窗口从GG093标签开始，先运行verify:checkpoint及/api/health/version，再分配GG-094；生产不部署。
+- 当前验证：GG094认证UI契约18/18、邮箱OTP及邀请码契约17/17、lint/typecheck和完整本地测试退出0；未执行真实邮件、注册或provider调用。构建/服务重启与页面手验结果在任务卡记录。
+- Next action: 生成GG094可验证构建、重启32131/32191并核对登录初始态；随后由用户在 `32191/create` 完成新用户注册态手动验收。生产不部署。
 - Blockers: 无；上线/新站长初始化/真实provider需独立范围，本次只保存本地版本。
 
 ## Verification sequence

@@ -205,6 +205,10 @@ test("keeps authentication global, passwordless, and recoverable", async () => {
     path.join(root, "features/auth/authentication-gate.tsx"),
     "utf8",
   );
+  const accountAccessGate = await readFile(
+    path.join(root, "features/auth/account-access-gate.tsx"),
+    "utf8",
+  );
   const adminPage = await readFile(
     path.join(root, "features/admin/account-management-page.tsx"),
     "utf8",
@@ -226,6 +230,7 @@ test("keeps authentication global, passwordless, and recoverable", async () => {
   assert.match(css, /\.authentication-card[^}]*calc\(100vw - 32px\)/s);
   assert.match(css, /\.authentication-email-input[^}]*height:\s*var\(--control-lg\)/s);
   assert.match(css, /\.authentication-code-input[^}]*height:\s*var\(--control-lg\)/s);
+  assert.match(css, /\.authentication-invitation-input[^}]*height:\s*var\(--control-lg\)/s);
   assert.match(
     css,
     /\.authentication-email-input:focus-visible[^}]*border-color:\s*var\(--accent\)[^}]*box-shadow:\s*none/s,
@@ -251,8 +256,16 @@ test("keeps authentication global, passwordless, and recoverable", async () => {
   assert.match(authenticationGate, /authentication-mode-title/);
   assert.match(authenticationGate, /placeholder="验证码"/);
   assert.match(authenticationGate, /发送验证码/);
-  assert.match(authenticationGate, /邀请码（新用户填写）/);
-  assert.doesNotMatch(authenticationGate, /修改邮箱|使用邀请码注册|setRegister/);
+  assert.match(authenticationGate, /registrationRequired && \(/);
+  assert.match(authenticationGate, /placeholder="邀请码"/);
+  assert.doesNotMatch(authenticationGate, /邀请码（新用户填写）/);
+  assert.match(authenticationGate, /setRegistrationRequired\(true\)/);
+  assert.match(
+    authenticationGate,
+    /registrationRequired \? invitationCode : undefined/,
+  );
+  assert.match(accountAccessGate, /initialRegistrationRequired/);
+  assert.doesNotMatch(authenticationGate, /修改邮箱|使用邀请码注册|setRegister\(/);
   assert.match(authenticationGate, /aria-label="邀请码"/);
   assert.match(authenticationGate, /autoComplete="one-time-code"/);
   assert.match(authenticationGate, /disabled=\{!challenge \|\| busy !== null\}/);

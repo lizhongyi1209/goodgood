@@ -17,11 +17,13 @@ import {
 export function AuthenticationGate({
   initialError,
   initialEmail = "",
+  initialRegistrationRequired = false,
   onAuthenticated,
   onHostedLogin,
 }: {
   initialError: string | null;
   initialEmail?: string;
+  initialRegistrationRequired?: boolean;
   onAuthenticated: () => Promise<void>;
   onHostedLogin: () => void;
 }) {
@@ -29,6 +31,9 @@ export function AuthenticationGate({
   const [email, setEmail] = useState(initialEmail);
   const emailRef = useRef(initialEmail);
   const [invitationCode, setInvitationCode] = useState("");
+  const [registrationRequired, setRegistrationRequired] = useState(
+    initialRegistrationRequired,
+  );
   const [challenge, setChallenge] =
     useState<EmailAuthenticationChallenge | null>(null);
   const [code, setCode] = useState("");
@@ -123,7 +128,7 @@ export function AuthenticationGate({
       await verifyEmailAuthenticationCode(
         challenge.id,
         code,
-        invitationCode,
+        registrationRequired ? invitationCode : undefined,
         email,
       );
       await onAuthenticated();
@@ -137,6 +142,7 @@ export function AuthenticationGate({
         reason instanceof AuthenticationBoundaryError &&
         ["INVITATION_REQUIRED", "INVITATION_INVALID"].includes(reason.code)
       ) {
+        setRegistrationRequired(true);
         setErrorTarget("invitation");
       } else setErrorTarget("code");
     } finally {
@@ -154,6 +160,8 @@ export function AuthenticationGate({
     if (changed) {
       setChallenge(null);
       setCode("");
+      setInvitationCode("");
+      setRegistrationRequired(initialRegistrationRequired);
       setResendAvailableAt(0);
     }
   };
@@ -262,7 +270,7 @@ export function AuthenticationGate({
         ) : (
           <>
             <h2 className="authentication-mode-title" id="authentication-title">
-              登录
+              {registrationRequired ? "注册" : "登录"}
             </h2>
             <form
               className="authentication-form"
@@ -328,30 +336,36 @@ export function AuthenticationGate({
                 </Button>
               </div>
 
-              {
-                <span className="authentication-input-shell">
-                  <ShieldCheck aria-hidden="true" size={16} />
-                  <Input
-                    aria-label="邀请码"
-                    aria-invalid={errorTarget === "invitation"}
-                    autoComplete="off"
-                    maxLength={6}
-                    inputMode="numeric"
-                    placeholder="邀请码（新用户填写）"
-                    disabled={busy !== null}
-                    value={invitationCode}
-                    onChange={(event) => {
-                      setInvitationCode(
-                        event.target.value.replace(/\D/g, "").slice(0, 6),
-                      );
-                      if (errorTarget === "invitation") {
-                        setError(null);
-                        setErrorTarget(null);
-                      }
-                    }}
-                  />
-                </span>
-              }
+              {registrationRequired && (
+                <div className="authentication-invitation-field">
+                  <span className="authentication-input-shell">
+                    <ShieldCheck aria-hidden="true" size={16} />
+                    <Input
+                      aria-label="邀请码"
+                      aria-invalid={errorTarget === "invitation"}
+                      autoComplete="off"
+                      className="authentication-invitation-input"
+                      disabled={busy !== null}
+                      id="authentication-invitation"
+                      inputMode="numeric"
+                      maxLength={6}
+                      onChange={(event) => {
+                        setInvitationCode(
+                          event.target.value.replace(/\D/g, "").slice(0, 6),
+                        );
+                        if (errorTarget === "invitation") {
+                          setError(null);
+                          setErrorTarget(null);
+                        }
+                      }}
+                      pattern="[0-9]{6}"
+                      placeholder="邀请码"
+                      type="text"
+                      value={invitationCode}
+                    />
+                  </span>
+                </div>
+              )}
               {challenge?.delivery === "unknown" && (
                 <div className="authentication-notice">
                   发送状态待确认，请稍后重试。
@@ -368,6 +382,7 @@ export function AuthenticationGate({
                   busy !== null ||
                   !challenge ||
                   code.length !== 6 ||
+                  (registrationRequired && invitationCode.length !== 6) ||
                   !email.trim()
                 }
                 type="submit"

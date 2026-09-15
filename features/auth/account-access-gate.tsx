@@ -27,6 +27,7 @@ export function AccountAccessGate({
       <AuthenticationGate
         initialError={null}
         initialEmail={session.user.email ?? ""}
+        initialRegistrationRequired
         onAuthenticated={async () => {
           onRefresh();
         }}

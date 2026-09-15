@@ -108,9 +108,9 @@ runner只在loopback54449创建固定命名的新空库，拒绝已存在库，�
 
 线上仍65ceb168/迁移0019/原blue镜像，当前本地累计功能没有部署。2026-09-14已按授权删全部10测试账户（含站长）及29对象，用户/文件0；事前/事后加密备份和服务器审计保留。不要再执行清理或自动恢复测试站长；新站长初始化/生产登录发布必须另列明确范围。
 
-下一步：新窗口从GG093标签接新需求（GG-094起），先执行`verify:checkpoint`和version/端口核验，保持原数据；上线、真实发信、生图/视频付费调用均非本次交接授权。
+当前GG094从GG093标签基线修正登录/注册邀请码显示：普通登录不展示邀请码，服务端确认新用户或待开通账户时才进入注册态。新窗口从GG094提交继续，先执行`verify:checkpoint`和version/端口核验，保持原数据；上线、真实发信、生图/视频付费调用均非本次交接授权。
 
-本次最终重启须记录工作区/登录Web的version接口`build.verified=true`、Worker/provider readiness及Mailpit 200；Chrome表单仍由用户自行检查。忽略.env.login-review保存本机Mailpit模式，不能将其配置用于生产。
+GG094完成构建后须重新记录工作区/登录Web的version接口`build.verified=true`、Worker/provider readiness及Mailpit 200；登录初始态可自动只读检查，新用户注册态仍由用户自行检查，尚未记录页面验收通过。登录入口为 `http://127.0.0.1:32191/create`，邮件查看入口为 `http://127.0.0.1:58045`。忽略.env.login-review保存本机Mailpit模式，不能将其配置用于生产。
 
 ## 提交正确但打开旧页面的排查
 

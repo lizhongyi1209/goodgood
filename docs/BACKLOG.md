@@ -1,9 +1,10 @@
 # 当前任务与优先级 · 当前与最近交付
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
+| GG-094 | 登录与注册邀请码按状态显示 | 本地实现并验证；登录隐藏邀请码，服务端要求注册后才显示同规格六码输入；待用户在32191验收，未部署 | [任务](tasks/GG-094-registration-invitation-visibility.md) |
 | GG-093 | 废弃Docker清理与构建版本交接 | 已完成本地交付；删除37容器/9旧应用镜像/5空网络，回收21.92GB构建缓存，34卷保留；构建指纹与启动核验已加入，未部署 | [任务](tasks/GG-093-docker-cleanup-build-handoff.md) |
 | GG-092 | 保存版本/AGENTS与无上下文交接 | 当前累计版本已保存；09-15重启工作区32131/登录32191，ready200，本地未发布 | [任务](tasks/GG-092-development-handoff.md) |
-| GG-091 | 账户唯一邀请码、简洁登录与线上测试清理 | 原功能已验证；邀请码纯文本与账户入口无外框补充由用户手验，32141已更新；线上10测试用户/29文件清理完成，功能未部署 | [GG091](tasks/GG-091-account-invitation-login.md) / [前版GG090](tasks/GG-090-invitation-registration.md) |
+| GG-091 | 账户唯一邀请码、简洁登录与线上测试清理 | 原功能已验证；登录/注册邀请码显示由GG094修正并待32191手验；线上10测试用户/29文件清理完成，功能未部署 | [GG091](tasks/GG-091-account-invitation-login.md) / [GG094](tasks/GG-094-registration-invitation-visibility.md) / [前版GG090](tasks/GG-090-invitation-registration.md) |
 | GG-088—089 | 下拉向下/站长管理功能排序 | 本地完成；522/25、桌面/390px通过；32141已更新，未部署 | [GG088](tasks/GG-088-feedback-select-downward.md) / [GG089](tasks/GG-089-admin-navigation-order.md) |
 | GG-087 | 私有问题反馈与站长处理 | 实现验证完成；522/25、SQL/UI通过，原32141已更新；未部署 | [任务](tasks/GG-087-problem-feedback.md) |
 | GG-085 | JCOIN发行批次卡片 | 本地完成；门禁515/24、桌面/390px通过；原32141卡片已更新，发行规则/原数据保留，未部署 | [GG085](tasks/GG-085-jcoin-batch-cards.md) / [GG086](tasks/GG-086-jcoin-live-progress.md) |
@@ -90,11 +91,10 @@
 | GG-060 | 站长管理标题层级与功能栏简化 | 本地完整门禁、桌面/窄屏及历史保留检查通过，原页面已更新，未发布 | [任务](tasks/GG-060-management-heading-hierarchy.md) |
 | GG-061 | 账户操作记录移为独立审计日志 | 本地门禁、桌面/窄屏与历史保留检查通过，原页面已更新，未发布 | [任务](tasks/GG-061-audit-log-section.md) |
 | GG-062 | GPT 图片三线路与独立定价 | 本地门禁、隔离 SQL、原页面与历史保留检查通过，未发布 | [任务](tasks/GG-062-gpt-image-lines.md) |
-GG-024—GG-093 已由任务占用（GG-047 为另一工作树的 agent 范围配置）；下一个普通产品需求从 **GG-094** 分配并检查是否已被占用。每次 alpha 发布仍须取得新鲜、精确绑定候选的证据并通过门禁；本次证据不能复用。完整发布证据见[累计发布记录](releases/2026-09-09-cumulative-alpha-release.md)。
 ## 已明确搁置（不得自动恢复）
 | ID | 事项 | 恢复条件 | 入口 |
 | --- | --- | --- | --- |
 | GG-900 | C6 自动账户删除/身份删除/举报与内容处理 | 站长明确要求并重审生产差异 | [保全与恢复](tasks/GG-900-deferred-c6.md) |
 | GG-901 | 完整 seed、外部删除条款、复杂监控/响应 | 扩大服务范围或风险需要，另行确认 | [ADR 0024](decisions/0024-controlled-alpha-before-full-seed-readiness.md) |
 | GG-902 | 收款/国内支付宝等商业化 | 站长重新确认且合规条件就绪 | [ADR 0010](decisions/0010-domestic-alipay-after-icp-with-manual-credit-operations.md) |
-最后同步：2026-09-15。这里是索引，细节以任务卡为准；不是自动执行所有项目的授权。不为未经提出的功能预先排期；发现缺陷可登记，不能伪称已获产品批准。
+最后同步：2026-09-15。GG-024—094已占用（GG-047为另一工作树范围）；下一个普通需求从GG-095分配。这里是索引，细节以任务卡为准；不是自动执行所有项目的授权。每次alpha发布仍需新鲜、精确绑定候选的证据；未提出的功能不预排期。
