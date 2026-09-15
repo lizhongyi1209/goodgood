@@ -1,8 +1,9 @@
 import { gptPricingQualities } from "../../shared/contracts/gpt-quality-pricing.mjs";
 import { NormalizedProviderError } from "./provider.mjs";
-import { isBananaModel, isValidImageLine } from "../../shared/contracts/banana-lines.mjs";
+import { BANANA_LINES, isBananaModel, isValidImageLine } from "../../shared/contracts/banana-lines.mjs";
 import {
   DEFAULT_GPT_IMAGE_OUTPUT_FORMAT,
+  SUPPORTED_GENERATION_MODEL_IDS,
   SUPPORTED_GPT_IMAGE_BACKGROUNDS,
   SUPPORTED_GPT_IMAGE_OUTPUT_FORMATS,
   SUPPORTED_GPT_IMAGE_QUALITIES,
@@ -157,7 +158,7 @@ function normalizeFailure(error) {
   return Object.freeze({ ...FAILURE_COPY.INTERNAL_ERROR, code: "INTERNAL_ERROR" });
 }
 
-function normalizeOutput(output, index) {
+function normalizeOutput(output, index, allowInsecureLoopback) {
   let url;
   try {
     url = new URL(output?.url);
@@ -165,7 +166,7 @@ function normalizeOutput(output, index) {
     throw protocolError();
   }
   if (
-    url.protocol !== "https:" ||
+    !isAcceptedAssetUrl(url, allowInsecureLoopback) ||
     typeof output?.mime_type !== "string" ||
     !output.mime_type.startsWith("image/")
   ) {
@@ -190,7 +191,7 @@ function normalizeProgress(value, state) {
 
 export function normalizeUsGatewayTask(
   payload,
-  { expectedOutputCount = 1 } = {},
+  { allowInsecureLoopback = false, expectedOutputCount = 1 } = {},
 ) {
   if (![1, 2, 4].includes(expectedOutputCount)) throw protocolError();
   const taskId = payload?.task_id;
@@ -205,7 +206,11 @@ export function normalizeUsGatewayTask(
 
   const rawOutputs = payload.data?.images ?? [];
   if (!Array.isArray(rawOutputs)) throw protocolError();
-  const outputs = Object.freeze(rawOutputs.map(normalizeOutput));
+  const outputs = Object.freeze(
+    rawOutputs.map((output, index) =>
+      normalizeOutput(output, index, allowInsecureLoopback),
+    ),
+  );
   const failures = Object.freeze(
     state === "failed" ? [normalizeFailure(payload.error)] : [],
   );
@@ -268,6 +273,32 @@ function assertLoopbackOrHttps(baseUrl, allowInsecureLoopback) {
   return url.href.replace(/\/$/, "");
 }
 
+// The provider returns absolute asset and upload URLs. They must be HTTPS in
+// production; the same local-only escape hatch that lets the gateway itself run
+// on loopback also covers these, and never applies when the flag is off.
+function isAcceptedAssetUrl(url, allowInsecureLoopback) {
+  if (url.protocol === "https:") return true;
+  return (
+    allowInsecureLoopback &&
+    url.protocol === "http:" &&
+    (url.hostname === "127.0.0.1" || url.hostname === "localhost")
+  );
+}
+
+// A reference is posted to the provider as a link the provider will fetch. A
+// loopback or plain-HTTP link would either fail upstream or invite SSRF, so the
+// adapter only forwards one under the same local-only loopback flag.
+function assertUploadedReferenceUrl(rawUrl, allowInsecureLoopback) {
+  let url;
+  try {
+    url = new URL(String(rawUrl ?? ""));
+  } catch {
+    throw protocolError();
+  }
+  if (!isAcceptedAssetUrl(url, allowInsecureLoopback)) throw protocolError();
+  return url.href;
+}
+
 function sanitizeFileName(value) {
   const fileName = String(value ?? "reference.png")
     .replaceAll("\\", "/")
@@ -309,7 +340,7 @@ async function parseResponse(response, { submission = false } = {}) {
   }
 }
 
-function normalizeTemporaryUpload(payload, expectedMimeType, nowSeconds) {
+function normalizeTemporaryUpload(payload, expectedMimeType, nowSeconds, allowInsecureLoopback) {
   let url;
   try {
     url = new URL(payload?.url);
@@ -317,7 +348,7 @@ function normalizeTemporaryUpload(payload, expectedMimeType, nowSeconds) {
     throw protocolError();
   }
   if (
-    url.protocol !== "https:" ||
+    !isAcceptedAssetUrl(url, allowInsecureLoopback) ||
     payload.content_type !== expectedMimeType ||
     !Number.isInteger(payload.size) ||
     payload.size <= 0 ||
@@ -372,11 +403,11 @@ function validateJob(job, route) {
   }
 }
 
-function generationPayload({ job, route, uploadedReferences }) {
+function generationPayload({ job, route, uploadedReferences, allowInsecureLoopback = false }) {
   const common = {
     images: uploadedReferences.map((reference) => ({
       fileData: {
-        fileUri: reference.url,
+        fileUri: assertUploadedReferenceUrl(reference.url, allowInsecureLoopback),
         mimeType: reference.contentType,
       },
     })),
@@ -403,6 +434,24 @@ function generationPayload({ job, route, uploadedReferences }) {
       : {}),
     ...(job.google_search ? { google_search: true } : {}),
   };
+}
+
+// Every provider model the O1Key routes can address. The local mock accepts
+// exactly this set, so it cannot drift into accepting a model the real adapter
+// would never send.
+function o1keyRoutes() {
+  return SUPPORTED_GENERATION_MODEL_IDS.flatMap((modelId) => [
+    getUsGatewayRoute(modelId),
+    ...BANANA_LINES.map(({ id }) => getUsGatewayRoute(modelId, id)),
+  ]).filter(Boolean);
+}
+
+export const O1KEY_PROVIDER_ROUTES_BY_MODEL = Object.freeze(
+  new Map(o1keyRoutes().map((route) => [route.providerModel, route])),
+);
+
+export function o1keyRouteForProviderModel(providerModel) {
+  return O1KEY_PROVIDER_ROUTES_BY_MODEL.get(providerModel) ?? null;
 }
 
 export function createUsGatewayAdapter({
@@ -452,7 +501,10 @@ export function createUsGatewayAdapter({
       `/async/v1/tasks/${encodeURIComponent(taskId)}`,
       { method: "GET" },
     );
-    return normalizeUsGatewayTask(payload, { expectedOutputCount });
+    return normalizeUsGatewayTask(payload, {
+      allowInsecureLoopback,
+      expectedOutputCount,
+    });
   }
 
   async function uploadReference(reference) {
@@ -471,6 +523,7 @@ export function createUsGatewayAdapter({
       payload,
       validated.mimeType,
       Math.floor(now() / 1_000),
+      allowInsecureLoopback,
     );
   }
 
@@ -503,7 +556,14 @@ export function createUsGatewayAdapter({
     }
     await onSubmissionStart();
     const payload = await request("/async/v1/generateImage", {
-      body: JSON.stringify(generationPayload({ job, route, uploadedReferences })),
+      body: JSON.stringify(
+        generationPayload({
+          allowInsecureLoopback,
+          job,
+          route,
+          uploadedReferences,
+        }),
+      ),
       headers: { "content-type": "application/json" },
       method: "POST",
       submission: true,

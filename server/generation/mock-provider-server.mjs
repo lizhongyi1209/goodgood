@@ -1,17 +1,23 @@
 import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import path from "node:path";
+import { o1keyRouteForProviderModel } from "./us-gateway-adapter.mjs";
+import {
+  getGptImage2PixelSize,
+  isGptImageModelId,
+} from "./capabilities.mjs";
+import { gptPricingQualities } from "../../shared/contracts/gpt-quality-pricing.mjs";
 
 const HEADERS = {
   "cache-control": "no-store",
   "content-type": "application/json; charset=utf-8",
 };
 
-const GPT_IMAGE_MODEL_IDS = new Set([
-  "gpt-image-2.5-sunburst",
-  "gpt-image-2",
-  "gpt-image-2.5-flare",
-]);
+// The mock speaks the recorded O1Key image API contract, not a GoodGood-shaped
+// shortcut, so a local run exercises the real adapter's request construction,
+// response normalization, and reference upload path. It resolves the model of an
+// incoming request through the same O1Key route table the adapter sends from, so
+// it accepts exactly the models production can address.
 
 function sendJson(response, statusCode, payload, headers = {}) {
   response.writeHead(statusCode, { ...HEADERS, ...headers });
@@ -29,12 +35,17 @@ async function readJson(request) {
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
 
+async function readBody(request) {
+  const chunks = [];
+  for await (const chunk of request) chunks.push(chunk);
+  return Buffer.concat(chunks);
+}
+
 function findMockImagePath() {
-  const candidates = [
+  return [
     path.resolve(process.cwd(), "public/nano-fashion.png"),
     path.resolve(process.cwd(), "dist/client/nano-fashion.png"),
   ];
-  return candidates;
 }
 
 export function createMockProviderServer({ apiKey, host, port }) {
@@ -42,11 +53,14 @@ export function createMockProviderServer({ apiKey, host, port }) {
   let imageBytes;
   const tasksById = new Map();
   const tasksByIdempotencyKey = new Map();
+  const uploadsById = new Map();
+  let submissionCount = 0;
 
   function encodeTaskId(task, idempotencyKey) {
     return `mock_${Buffer.from(
       JSON.stringify({
         completionPoll: task.completionPoll,
+        count: task.count,
         idempotencyKey,
         outcome: task.shouldTimeout
           ? "timeout"
@@ -75,6 +89,59 @@ export function createMockProviderServer({ apiKey, host, port }) {
     }
   }
 
+  // Rejects anything the real adapter would not have produced, so a drift
+  // between the GoodGood payload builder and the recorded provider contract
+  // fails locally instead of at the first production generation.
+  function validateGenerationPayload(body) {
+    const route = o1keyRouteForProviderModel(body.model);
+    if (!route) return "unknown_model";
+    if (typeof body.prompt !== "string" || !body.prompt) return "missing_prompt";
+    if (!Array.isArray(body.images)) return "missing_images";
+    for (const image of body.images) {
+      if (
+        typeof image?.fileData?.fileUri !== "string" ||
+        typeof image?.fileData?.mimeType !== "string" ||
+        !image.fileData.mimeType.startsWith("image/")
+      ) {
+        return "invalid_reference";
+      }
+      if (!uploadsById.has(image.fileData.fileUri)) {
+        return "unregistered_reference";
+      }
+    }
+    if (isGptImageModelId(route.productModelId)) {
+      if (!route.outputCounts.includes(body.n)) return "invalid_output_count";
+      // The adapter must send the exact pixel size the catalog defines for this
+      // aspect ratio and resolution, not a bucket label or a provider default.
+      const expectedSize = route.resolutions
+        .map((resolution) => getGptImage2PixelSize(body.aspect_ratio, resolution))
+        .find((size) => size === body.size);
+      if (!expectedSize) return "invalid_size";
+      if (!["auto", "transparent"].includes(body.background)) return "invalid_background";
+      if (!["auto", "jpeg", "png", "webp"].includes(body.output_format)) {
+        return "invalid_output_format";
+      }
+      const qualities = gptPricingQualities(route.productModelId).map((item) => item.id);
+      if (!["auto", ...qualities].includes(body.quality)) return "invalid_quality";
+      if (body.background === "transparent" && body.output_format === "jpeg") {
+        return "invalid_transparency_format";
+      }
+      return null;
+    }
+    if (body.response_modalities?.join(",") !== "TEXT,IMAGE") {
+      return "invalid_response_modalities";
+    }
+    if (!route.aspectRatios.includes(body.aspect_ratio)) return "invalid_aspect_ratio";
+    if (!["1K", "2K", "4K"].includes(body.size)) return "invalid_resolution";
+    if (body.thinking_level !== undefined && body.thinking_level !== "high") {
+      return "invalid_thinking_level";
+    }
+    if (body.google_search !== undefined && typeof body.google_search !== "boolean") {
+      return "invalid_google_search";
+    }
+    return null;
+  }
+
   const server = createServer(async (request, response) => {
     try {
       const requestOrigin = `http://${request.headers.host ?? "127.0.0.1"}`;
@@ -92,10 +159,7 @@ export function createMockProviderServer({ apiKey, host, port }) {
         });
         return;
       }
-      if (
-        request.method === "GET" &&
-        url.pathname === "/v1/assets/nano-fashion.png"
-      ) {
+      if (request.method === "GET" && url.pathname === "/v1/assets/nano-fashion.png") {
         response.writeHead(200, {
           "cache-control": "public, max-age=3600",
           "content-length": imageBytes.length,
@@ -108,41 +172,69 @@ export function createMockProviderServer({ apiKey, host, port }) {
         sendJson(response, 401, { error: "unauthorized" });
         return;
       }
-      if (request.method === "POST" && url.pathname === "/v1/generations") {
-        const body = await readJson(request);
-        const requestedCount = body.count ?? 1;
-        const validCount = GPT_IMAGE_MODEL_IDS.has(body.modelId)
-          ? [1, 2, 4].includes(requestedCount)
-          : body.modelId === "nano-banana-2" ? [1, 2, 4].includes(requestedCount) : body.modelId === "nano-banana-pro" && requestedCount === 1;
-        if (!validCount) {
-          sendJson(response, 400, { error: "unsupported_model" });
+
+      // Reference uploads: the adapter posts multipart and reuses the returned
+      // URL as fileData.fileUri in the generation payload.
+      if (request.method === "POST" && url.pathname === "/v1/o1key/uploads") {
+        const raw = await readBody(request);
+        const contentType = /content-type: (image\/[a-z+.-]+)/i.exec(raw.toString("latin1"))?.[1];
+        if (!contentType) {
+          sendJson(response, 400, { error: "missing_content_type" });
           return;
         }
-        const existingTaskId = tasksByIdempotencyKey.get(body.idempotencyKey);
-        if (existingTaskId) {
-          sendJson(response, 200, { state: "queued", taskId: existingTaskId });
-          return;
-        }
-        const prompt = String(body.prompt ?? "");
-        const shouldTimeout = /timeout|超时/i.test(prompt);
-        const completionPoll = /slow|慢速/i.test(prompt) ? 12 : 3;
-        const failurePrompt = /error|报错|失败|拒绝/i.test(prompt);
-        const shouldReject = failurePrompt && !body.retryOfJobId;
-        const task = {
-          polls: 0,
-          count: requestedCount,
-          completionPoll,
-          shouldReject,
-          shouldTimeout,
-        };
-        const taskId = encodeTaskId(task, body.idempotencyKey);
-        tasksById.set(taskId, task);
-        tasksByIdempotencyKey.set(body.idempotencyKey, taskId);
-        sendJson(response, 202, { state: "queued", taskId });
+        const name = /filename="([^"]*)"/i.exec(raw.toString("latin1"))?.[1] ?? "reference.png";
+        const uploadUrl = `${url.origin}/v1/o1key/uploads/${uploadsById.size}?file=${encodeURIComponent(name)}`;
+        uploadsById.set(uploadUrl, { contentType, name });
+        sendJson(response, 200, {
+          content_type: contentType,
+          expires_at: Math.floor(Date.now() / 1000) + 3_600,
+          filename: name,
+          size: raw.length,
+          url: uploadUrl,
+        });
+        return;
+      }
+      if (request.method === "GET" && url.pathname.startsWith("/v1/o1key/uploads/")) {
+        sendJson(response, 200, { service: "goodgood-mock-generation", upload: url.pathname });
         return;
       }
 
-      const match = /^\/v1\/generations\/([^/]+)$/.exec(url.pathname);
+      if (request.method === "POST" && url.pathname === "/async/v1/generateImage") {
+        const body = await readJson(request);
+        const invalid = validateGenerationPayload(body);
+        if (invalid) {
+          console.error(
+            JSON.stringify({ event: "mock_generation.payload_rejected", reason: invalid }),
+          );
+          sendJson(response, 400, { error: invalid });
+          return;
+        }
+        // One job fans out into several provider tasks, so the key must be
+        // unique per submission; content alone would collapse them into one.
+        const idempotencyKey = `${body.model}:${body.prompt}:${submissionCount}`;
+        submissionCount += 1;
+        const existingTaskId = tasksByIdempotencyKey.get(idempotencyKey);
+        if (existingTaskId) {
+          sendJson(response, 202, { task_id: existingTaskId });
+          return;
+        }
+        const count = body.n ?? 1;
+        const failurePrompt = /error|报错|失败|拒绝/i.test(body.prompt);
+        const task = {
+          completionPoll: /slow|慢速/i.test(body.prompt) ? 12 : 2,
+          count,
+          polls: 0,
+          shouldReject: failurePrompt,
+          shouldTimeout: /timeout|超时/i.test(body.prompt),
+        };
+        const taskId = encodeTaskId(task, idempotencyKey);
+        tasksById.set(taskId, task);
+        tasksByIdempotencyKey.set(idempotencyKey, taskId);
+        sendJson(response, 202, { task_id: taskId });
+        return;
+      }
+
+      const match = /^\/async\/v1\/tasks\/([^/]+)$/.exec(url.pathname);
       if (request.method === "GET" && match) {
         const taskId = decodeURIComponent(match[1]);
         const task = tasksById.get(taskId) ?? decodeTask(taskId);
@@ -152,27 +244,41 @@ export function createMockProviderServer({ apiKey, host, port }) {
         }
         tasksById.set(taskId, task);
         task.polls += 1;
-        if (task.shouldReject && task.polls >= 2) {
+        if (task.shouldReject && task.polls >= 2 && task.polls < 4) {
           sendJson(response, 200, {
-            error: { code: "MODEL_REJECTED", retryable: true },
-            state: "failed",
+            error: { code: "MODEL_REJECTED", message: "content was rejected" },
+            progress: 100,
+            status: "FAILURE",
+            task_id: taskId,
+          });
+          return;
+        }
+        if (task.shouldReject) {
+          sendJson(response, 200, {
+            error: { code: "MODEL_REJECTED", message: "content was rejected" },
+            progress: 100,
+            status: "FAILURE",
+            task_id: taskId,
           });
           return;
         }
         if (task.shouldTimeout || task.polls < task.completionPoll) {
-          sendJson(response, 200, { state: "processing" });
+          sendJson(response, 200, {
+            progress: Math.min(task.polls * 10, 90),
+            status: "IN_PROGRESS",
+            task_id: taskId,
+          });
           return;
         }
-        const output = {
-            height: 1402,
-            mimeType: "image/png",
-            url: `${url.origin}/v1/assets/nano-fashion.png`,
-            width: 1122,
-          };
+        const image = {
+          mime_type: "image/png",
+          url: `${url.origin}/v1/assets/nano-fashion.png`,
+        };
         sendJson(response, 200, {
-          output,
-          outputs: Array.from({ length: task.count }, () => output),
-          state: "succeeded",
+          data: { images: Array.from({ length: task.count }, () => image) },
+          progress: 100,
+          status: "SUCCESS",
+          task_id: taskId,
         });
         return;
       }

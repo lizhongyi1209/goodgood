@@ -11,6 +11,7 @@ import {
   SUPPORTED_GENERATION_RESOLUTIONS,
 } from "../server/generation/capabilities.mjs";
 import { createMockProviderServer } from "../server/generation/mock-provider-server.mjs";
+import { createGenerationProvider } from "../server/generation/provider-router.mjs";
 
 const validInput = Object.freeze({
   aspectRatio: "1:1",
@@ -157,7 +158,7 @@ test("composer submits the selected ratio and resolution without a default-only 
   assert.match(workspace, /isGenerationCountSupported/);
 });
 
-test("mock provider is idempotent and exposes success, rejection, and timeout outcomes", async (context) => {
+test("mock provider serves the O1Key contract and exposes success, rejection, and timeout outcomes", async (context) => {
   const apiKey = "m3-unit-key";
   const mock = createMockProviderServer({
     apiKey,
@@ -173,56 +174,146 @@ test("mock provider is idempotent and exposes success, rejection, and timeout ou
     authorization: `Bearer ${apiKey}`,
     "content-type": "application/json",
   };
+  const providerConfig = {
+    allowInsecureLoopback: true,
+    apiKey,
+    baseUrl: origin,
+    kind: "mock",
+    pollIntervalMs: 1,
+    requestTimeoutMs: 1_000,
+    timeoutMs: 5_000,
+  };
+  function jobFor(prompt, count = 1) {
+    return {
+      aspect_ratio: "1:1",
+      model_id: "nano-banana-2",
+      prompt,
+      requested_count: count,
+      resolution: "1K",
+    };
+  }
 
-  async function create(prompt, idempotencyKey, retryOfJobId = null) {
-    const response = await fetch(`${origin}/v1/generations`, {
-      body: JSON.stringify({
-        idempotencyKey,
-        modelId: "nano-banana-2",
-        prompt,
-        retryOfJobId,
-      }),
+  // Uploads must be real: the generation payload may only cite a fileUri the
+  // upload endpoint actually issued, exactly as the real provider requires.
+  const unregistered = await fetch(`${origin}/async/v1/generateImage`, {
+    body: JSON.stringify({
+      images: [
+        { fileData: { fileUri: `${origin}/not-issued.png`, mimeType: "image/png" } },
+      ],
+      model: "gemini-3.1-flash-image-c-sp",
+      prompt: "success",
+      aspect_ratio: "1:1",
+      response_modalities: ["TEXT", "IMAGE"],
+      size: "1K",
+    }),
+    headers,
+    method: "POST",
+  });
+  assert.equal(unregistered.status, 400);
+  assert.equal((await unregistered.json()).error, "unregistered_reference");
+
+  async function run(prompt, count = 1, expectedOutputCount = count) {
+    const provider = createGenerationProvider({
+      config: { objectStorage: { bucket: "goodgood-private" }, provider: providerConfig },
+      publicStorage: null,
+    });
+    const attempt = {
+      provider: provider.route.provider,
+      provider_model: provider.route.providerModel,
+      route_version: provider.route.routeVersion,
+    };
+    provider.assertAttempt(attempt);
+    const taskId = await provider.createTask({
+      attempt,
+      job: jobFor(prompt, count),
+    });
+    return provider.pollTask({
+      expectedOutputCount,
+      onRefining: async () => {},
+      taskId,
+    });
+  }
+
+  const outputs = await run("success");
+  assert.equal(outputs.length, 1);
+  assert.ok(outputs[0].url.endsWith("/v1/assets/nano-fashion.png"));
+  assert.equal((await fetch(outputs[0].url)).status, 200);
+
+  await assert.rejects(
+    () => run("模拟 error"),
+    (error) => error.code === "MODEL_REJECTED",
+  );
+
+  await assert.rejects(
+    () => run("模拟 timeout"),
+    (error) => error.code === "MODEL_TIMEOUT",
+  );
+
+  const batch = await run("batch", 4);
+  assert.equal(batch.length, 4);
+});
+
+test("mock provider rejects a generation payload the real adapter would not send", async (context) => {
+  const apiKey = "m3-unit-key";
+  const mock = createMockProviderServer({ apiKey, host: "127.0.0.1", port: 0 });
+  await mock.listen();
+  context.after(() => mock.close());
+  const address = mock.address();
+  assert.ok(address && typeof address === "object");
+  const origin = `http://127.0.0.1:${address.port}`;
+  const headers = {
+    authorization: `Bearer ${apiKey}`,
+    "content-type": "application/json",
+  };
+  const base = {
+    aspect_ratio: "1:1",
+    images: [],
+    model: "gemini-3.1-flash-image-c-sp",
+    prompt: "compose",
+    response_modalities: ["TEXT", "IMAGE"],
+    size: "1K",
+  };
+
+  async function submit(overrides) {
+    const response = await fetch(`${origin}/async/v1/generateImage`, {
+      body: JSON.stringify({ ...base, ...overrides }),
       headers,
       method: "POST",
     });
-    assert.ok(response.ok);
-    return response.json();
+    return (await response.json()).error;
   }
 
-  async function poll(taskId) {
-    const response = await fetch(`${origin}/v1/generations/${taskId}`, {
+  assert.equal(await submit({ model: "nano-banana-2-mock-v1" }), "unknown_model");
+  assert.equal(await submit({ response_modalities: ["IMAGE"] }), "invalid_response_modalities");
+  assert.equal(await submit({ aspect_ratio: "7:3" }), "invalid_aspect_ratio");
+  assert.equal(await submit({ size: "1K " }), "invalid_resolution");
+  assert.equal(await submit({ thinking_level: "low" }), "invalid_thinking_level");
+  assert.equal(await submit({ prompt: "" }), "missing_prompt");
+  assert.equal(await submit({ images: [{ fileData: { mimeType: "image/png" } }] }), "invalid_reference");
+  const gptBase = {
+    aspect_ratio: "1:1",
+    background: "auto",
+    images: [],
+    model: "gpt-image-2-sd",
+    n: 1,
+    output_format: "jpeg",
+    prompt: "compose",
+    quality: "auto",
+    size: "1024x1024",
+  };
+  async function submitGpt(overrides) {
+    const response = await fetch(`${origin}/async/v1/generateImage`, {
+      body: JSON.stringify({ ...gptBase, ...overrides }),
       headers,
+      method: "POST",
     });
-    assert.ok(response.ok);
-    return response.json();
+    return (await response.json()).error;
   }
-
-  const created = await create("success", "unit-success");
-  const duplicate = await create("success", "unit-success");
-  assert.equal(duplicate.taskId, created.taskId);
-  assert.equal((await poll(created.taskId)).state, "processing");
-  assert.equal((await poll(created.taskId)).state, "processing");
-  const succeeded = await poll(created.taskId);
-  assert.equal(succeeded.state, "succeeded");
-  assert.deepEqual(
-    { width: succeeded.output.width, height: succeeded.output.height },
-    { width: 1122, height: 1402 },
-  );
-  assert.equal((await fetch(succeeded.output.url)).status, 200);
-
-  const rejected = await create("模拟 error", "unit-failure");
-  await poll(rejected.taskId);
-  assert.equal((await poll(rejected.taskId)).error.code, "MODEL_REJECTED");
-  const retry = await create("模拟 error", "unit-retry", "failed-job");
-  await poll(retry.taskId);
-  await poll(retry.taskId);
-  assert.equal((await poll(retry.taskId)).state, "succeeded");
-
-  const timeout = await create("模拟 timeout", "unit-timeout");
-  for (let index = 0; index < 4; index += 1) {
-    assert.equal((await poll(timeout.taskId)).state, "processing");
-  }
-});
+  assert.equal(await submitGpt({ size: "1K" }), "invalid_size");
+  assert.equal(await submitGpt({ aspect_ratio: "1:1", size: "2048x1024" }), "invalid_size");
+  assert.equal(await submitGpt({ n: 3 }), "invalid_output_count");
+  assert.equal(await submitGpt({ background: "transparent", output_format: "jpeg" }), "invalid_transparency_format");
+  assert.equal(await submitGpt({ quality: "ultra" }), "invalid_quality");});
 
 test("M3 migration is versioned while production removes local fixture identities", async () => {
   const [migration, cleanup, localSeeder, runner, runtime, schema] = await Promise.all([

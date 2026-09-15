@@ -1,39 +1,51 @@
 import {
   NormalizedProviderError,
-  createProviderTask,
   downloadProviderOutput,
-  pollProviderTask,
 } from "./provider.mjs";
-import { readPrivateObject, signAssetRead } from "./storage.mjs";
+import { readPrivateObject } from "./storage.mjs";
 import { BANANA_LINES, supportsImageLines, isBananaModel, isBananaLineReady, isValidImageLine } from "../../shared/contracts/banana-lines.mjs";
 import {
+  US_GATEWAY_GPT_IMAGE_25_FLARE_ROUTE,
+  US_GATEWAY_GPT_IMAGE_25_SUNBURST_ROUTE,
+  US_GATEWAY_GPT_IMAGE_2_ROUTE,
+  US_GATEWAY_NANO_BANANA_2_ROUTE,
   createUsGatewayAdapter,
   getUsGatewayRoute,
 } from "./us-gateway-adapter.mjs";
 
-export const MOCK_PROVIDER_ROUTE = Object.freeze({
-  provider: "goodgood-mock",
-  providerModel: "nano-banana-2-mock-v1",
-  routeVersion: "m3-mock-v1",
-});
+// The local mock provider speaks the recorded O1Key image API contract, so a
+// mock route is the O1Key route for the same model and line, relabelled with the
+// local provider identity. That keeps the attempt ledger honest about which
+// provider ran, while letting the local stack drive the real adapter instead of
+// a parallel GoodGood-only request shape that production never uses. Routes are
+// memoized: a route is re-resolved per job and downstream code compares routes
+// by identity.
+const LOCAL_ROUTE_CACHE = new Map();
 
-export const MOCK_GPT_IMAGE_2_ROUTE = Object.freeze({
-  provider: "goodgood-mock",
-  providerModel: "gpt-image-2-mock-v1",
-  routeVersion: "m3-mock-gpt-image-2-v1",
-});
+function localRouteFor(route) {
+  let local = LOCAL_ROUTE_CACHE.get(route);
+  if (!local) {
+    local = Object.freeze({
+      ...route,
+      provider: "goodgood-mock",
+      routeVersion: route.routeVersion.replace(/^o1key-/, "mock-o1key-contract-"),
+    });
+    LOCAL_ROUTE_CACHE.set(route, local);
+  }
+  return local;
+}
 
-export const MOCK_GPT_IMAGE_25_SUNBURST_ROUTE = Object.freeze({
-  provider: "goodgood-mock",
-  providerModel: "gpt-image-2.5-sunburst-mock-v1",
-  routeVersion: "m3-mock-gpt-image-2.5-sunburst-v1",
-});
+export const MOCK_PROVIDER_ROUTE = localRouteFor(US_GATEWAY_NANO_BANANA_2_ROUTE);
 
-export const MOCK_GPT_IMAGE_25_FLARE_ROUTE = Object.freeze({
-  provider: "goodgood-mock",
-  providerModel: "gpt-image-2.5-flare-mock-v1",
-  routeVersion: "m3-mock-gpt-image-2.5-flare-v1",
-});
+export const MOCK_GPT_IMAGE_2_ROUTE = localRouteFor(US_GATEWAY_GPT_IMAGE_2_ROUTE);
+
+export const MOCK_GPT_IMAGE_25_SUNBURST_ROUTE = localRouteFor(
+  US_GATEWAY_GPT_IMAGE_25_SUNBURST_ROUTE,
+);
+
+export const MOCK_GPT_IMAGE_25_FLARE_ROUTE = localRouteFor(
+  US_GATEWAY_GPT_IMAGE_25_FLARE_ROUTE,
+);
 
 const MOCK_PROVIDER_ROUTES = Object.freeze({
   "nano-banana-2": MOCK_PROVIDER_ROUTE,
@@ -41,25 +53,40 @@ const MOCK_PROVIDER_ROUTES = Object.freeze({
   "gpt-image-2": MOCK_GPT_IMAGE_2_ROUTE,
   "gpt-image-2.5-flare": MOCK_GPT_IMAGE_25_FLARE_ROUTE,
 });
+// Lines O1Key does not route still need a local-only route so the workspace can
+// exercise an unconnected line without pretending it is a real provider route.
 const MOCK_BANANA_LINE_ROUTES = Object.freeze(Object.fromEntries(
   ["nano-banana-2", "nano-banana-pro", "gpt-image-2", "gpt-image-2.5-sunburst", "gpt-image-2.5-flare"].map((modelId) => [modelId, Object.freeze(Object.fromEntries(
-    BANANA_LINES.map(({ id }) => [id, modelId === "nano-banana-2" && id === "special" ? MOCK_PROVIDER_ROUTE : Object.freeze({
-      provider: "goodgood-mock", productModelId: modelId, imageLine: id,
-      providerModel: `${modelId}-${id}-mock-v1`, routeVersion: `m3-mock-${modelId}-${id}-v1`,
-    })]),
+    BANANA_LINES.map(({ id }) => {
+      const route = getUsGatewayRoute(modelId, id);
+      return [id, route ? localRouteFor(route) : Object.freeze({
+        provider: "goodgood-mock", productModelId: modelId, imageLine: id,
+        providerModel: `${modelId}-${id}-mock-v1`, routeVersion: `m3-mock-${modelId}-${id}-v1`,
+      })];
+    }),
   ))]),
 ));
+
+// A mock route carries the local provider identity but the O1Key request
+// contract, so the adapter must be built from the O1Key route it mirrors. An
+// O1Key route mirrors itself.
+export function o1keyRouteForMockRoute(route) {
+  if (route?.provider === "o1key") return route;
+  if (route?.provider !== "goodgood-mock") return null;
+  const mirrored = getUsGatewayRoute(route.productModelId, route.imageLine);
+  if (!mirrored || mirrored.providerModel !== route.providerModel) return null;
+  return mirrored;
+}
 
 export function generationProviderRouteForModel(providerKind, modelId, imageLine) {
   if (!isValidImageLine(modelId, imageLine)) throw new Error("Invalid image line.");
   if (supportsImageLines(modelId) && !isBananaLineReady(modelId, imageLine)) throw new Error("Image line is not connected.");
-  if (providerKind === "o1key") {
-    const route = getUsGatewayRoute(modelId, imageLine);
-    if (route) return route;
-  } else if (providerKind === "mock") {
-    const route = (isBananaModel(modelId) || (supportsImageLines(modelId) && imageLine !== undefined)) ? MOCK_BANANA_LINE_ROUTES[modelId]?.[imageLine ?? "special"] : MOCK_PROVIDER_ROUTES[modelId];
-    if (route) return route;
+  const routed = getUsGatewayRoute(modelId, imageLine);
+  if (routed) {
+    return providerKind === "mock" ? localRouteFor(routed) : routed;
   }
+  const fallback = MOCK_BANANA_LINE_ROUTES[modelId]?.[imageLine ?? "special"];
+  if (providerKind === "mock" && fallback) return fallback;
   throw new Error(`No ${providerKind} generation route for ${modelId}.`);
 }
 
@@ -197,6 +224,11 @@ function o1keyTaskState(route, job, taskId) {
   });
 }
 
+// Called after every dispatch with the task ids persisted so far, so the token
+// must describe what exists now. A job that expects one task keeps the bare task
+// id; a job that needs more encodes the set from the first dispatch, so a crash
+// after dispatch one is still recoverable as a partial task set. Keying off the
+// expected total instead rejected the first dispatch of a four-output job.
 function o1keyTaskToken(
   route,
   job,
@@ -214,16 +246,23 @@ export function createGenerationProvider({
   route = generationProviderRouteForModel(config.provider.kind, "nano-banana-2"),
   storage,
 }) {
-  if (config.provider.kind === "o1key") {
-    if (getUsGatewayRoute(route.productModelId, route.imageLine) !== route) {
-      throw new Error("The selected route does not match the O1Key provider.");
+  {
+    // The local mock serves the recorded O1Key contract, so every provider kind
+    // runs the same adapter. A mock route is the O1Key route for its model and
+    // line under a local provider identity; the adapter is always built from the
+    // route that owns the request contract.
+    const adapterRoute = o1keyRouteForMockRoute(route);
+    if (!adapterRoute) {
+      throw new Error(
+        `The selected route does not match the ${config.provider.kind} provider.`,
+      );
     }
     const adapter = createUsGatewayAdapter({
       allowInsecureLoopback: config.provider.allowInsecureLoopback,
       apiKey: config.provider.apiKey,
       baseUrl: config.provider.baseUrl,
       requestTimeoutMs: config.provider.requestTimeoutMs,
-      route,
+      route: adapterRoute,
     });
     return Object.freeze({
       route,
@@ -327,52 +366,4 @@ export function createGenerationProvider({
       },
     });
   }
-
-  if (![...Object.values(MOCK_PROVIDER_ROUTES), ...Object.values(MOCK_BANANA_LINE_ROUTES).flatMap(Object.values)].includes(route)) {
-    throw new Error("The selected route does not match the mock provider.");
-  }
-
-  return Object.freeze({
-    route,
-    submissionPolicy: "idempotent",
-
-    assertAttempt(attempt) {
-      assertAttemptRoute(attempt, route);
-    },
-
-    isTaskSubmissionComplete({ taskId }) {
-      return typeof taskId === "string" && taskId.length > 0;
-    },
-
-    async createTask({ attempt, job }) {
-      const references = await Promise.all(
-        (job.reference_snapshot ?? []).map(async (reference) => ({
-          id: reference.id,
-          ordinal: reference.ordinal,
-          url: await signAssetRead({
-            bucket: config.objectStorage.bucket,
-            key: reference.objectKey,
-            publicStorage,
-          }),
-        })),
-      );
-      return createProviderTask({
-        attempt,
-        config: config.provider,
-        job,
-        references,
-      });
-    },
-
-    downloadOutput: downloadProviderOutput,
-
-    async pollTask({ expectedOutputCount, onRefining, taskId }) {
-      const outputs = await pollProviderTask({
-        config: config.provider,
-        onRefining,
-        taskId,
-      });
-      return validateOutputCount(outputs, expectedOutputCount);
-    },
-  });
 }
