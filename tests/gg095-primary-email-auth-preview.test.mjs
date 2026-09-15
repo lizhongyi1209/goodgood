@@ -45,3 +45,38 @@ test("GG095 workspace start keeps object storage CORS on the served origin", asy
   );
   assert.match(launcher, /OBJECT_STORAGE_UPLOAD_ALLOWED_ORIGINS: webOrigins/);
 });
+
+test("local worker calls the real provider by default and keeps the token outside the repo", async () => {
+  const launcher = await readFile(
+    new URL("../scripts/local-checkpoint.mjs", import.meta.url),
+    "utf8",
+  );
+
+  // Local runs must exercise the contract production uses, so the real provider
+  // is the default; mock stays reachable as an explicit opt-out.
+  assert.match(
+    launcher,
+    /environment\.LOCAL_GENERATION_PROVIDER_KIND \?\? "o1key"/,
+  );
+  assert.match(launcher, /GENERATION_PROVIDER_KIND: "o1key"/);
+  assert.match(launcher, /GENERATION_PROVIDER_KIND: "mock"/);
+  // A mock provider process alongside a real-provider worker would make the
+  // active route ambiguous, so that combination is refused outright.
+  assert.match(
+    launcher,
+    /The mock provider process must not start while the worker calls the real provider\./,
+  );
+  // The token must never sit inside the repository, whatever .gitignore says.
+  assert.match(
+    launcher,
+    /The real provider token file must live outside the repository\./,
+  );
+  assert.match(
+    launcher,
+    /GENERATION_API_KEY_FILE: await readRealProviderTokenFile\(\)/,
+  );
+  assert.doesNotMatch(launcher, /GENERATION_API_KEY: environment\./);
+  // An operator must never have to guess which provider a running stack calls.
+  assert.match(launcher, /LOCAL WORKER -> REAL O1KEY PROVIDER/);
+  assert.match(launcher, /LOCAL WORKER -> MOCK PROVIDER/);
+});
