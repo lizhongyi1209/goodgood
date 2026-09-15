@@ -48,6 +48,67 @@
 - 1.4 等 PR CI 全绿（check:local + 两次 Trivy + 镜像构建）。PR 不发布镜像。
 - 1.5 合并 main，触发 main CI，取得不可变 GHCR digest、完整 revision、最新迁移文件名、runtime-config checksum，以及 `artifact-security-evidence.json` 的工件 ID 与 SHA-256。
 
+**阶段 1 执行结果（2026-09-15）：**
+
+- 1.1 通过：`origin/main` = `42fc8d8`，`git merge-base --is-ancestor origin/main HEAD` 退出 0，
+  `git rev-list --left-right --count origin/main...HEAD` = `0 177`，**纯快进**。
+- 1.2 通过：`npm ci` 成功（为保证锁文件可被镜像内的 npm 读取，先停了本机 32131/32142
+  两个已识别 GoodGood 进程）；`check:local` 563 项 / 537 通过 / 26 隔离跳过 / 0 失败。
+- 1.3 完成：`release/GG-097-cumulative-alpha` 已推送。**没有开 PR**——本机无 `gh` CLI，
+  无法创建 PR。改用直接快进 `main` 的路径（分支为快进关系，等价且不引入合并提交）。
+- 1.4 **首次 main CI 失败，已定位并修复（见下）。**
+- 1.5 待 CI 绿后取得 digest 等身份信息。
+
+#### CI 失败 1 — Next.js CRITICAL（已修复 `c343351`）
+
+- main CI run `34972549492`：`completed / failure`，倒在第 6 步
+  `Scan locked production dependencies`（Trivy），后续镜像构建与发布全部 `skipped`。
+  这就是 GHCR 上 `5d5ab3a` 一直 404 的原因——**该 tag 从未产生**，不是 CI 还在跑。
+- 发现：`next 16.2.11` 的 `CVE-2026-75604` / `GHSA-2xp9-vwfh-vxw4`，CRITICAL，
+  状态 `fixed`，修复版 `15.5.24, 16.3.3`。CI 用 `ignore-unfixed: true`，此项必须真修。
+- 这与 GG-023 记录的**同一条** advisory 一致。GG-023 当时把它明确留给了运行时镜像
+  Trivy 门禁判定（原文：「仍由实际 runtime 镜像 Trivy 门禁 fail-closed 判定」）。
+  该门禁现在判了，本修复是走完当初预留的路径，不是新决定。
+- 处置：`next` 与 `eslint-config-next` 及全部 `@next/*` 族对齐到 **16.3.3**
+  （扫描器给出的最低修复版，不顺手多跨补丁）。`tests/ci-workflow.test.mjs` 是故意的
+  版本钉死契约，按新版本更新两处断言。
+- 附带修复：**锁文件必须用镜像里的 npm 重新生成**。本地 npm 11.6.2 生成的
+  `package-lock.json` 缺少嵌套 `@emnapi/core@1.10.0` / `@emnapi/runtime@1.10.0` 记录，
+  而镜像构建阶段的 npm 11.19.0 会因此 `npm ci` 失败（EUSAGE）。
+  **本地 `npm ci` 通过并不能证明镜像能构建**——此坑只有实际 `docker build` 才暴露。
+
+#### CI 失败 2 — Debian libpcre2（已修复 `89afedb`）
+
+- 修完 Next 后本地构建镜像并用**同版本 Trivy 0.70.0** 扫描，发现新的、与 Next 无关的
+  发现：`libpcre2-8-0 10.42-1` 的 `CVE-2026-86145`、`CVE-2026-89161`，均为 HIGH 且
+  `fixed` 到 `10.42-1+deb12u1`。CI 的镜像扫描是 `vuln-type: os,library`，**会命中**。
+- 根因：`node:24.20.0-bookworm-slim@sha256:ba849c60…` base 早于 Debian 的修复构建，
+  而 runtime 阶段原本不做任何 OS 补丁。
+- 处置：在 runtime 阶段只取该安全更新
+  （`apt-get install -y --no-install-recommends --only-upgrade libpcre2-8-0`），
+  不做全量 `apt-get upgrade`，保持 base 与其余包不变。
+
+#### 本地等效验证（对最终候选镜像 `goodgood:next1633-check2`）
+
+用与 CI 同版本 Trivy 0.70.0 逐项复跑 CI 的门禁，结果：
+
+| CI 步骤 | 本地结果 |
+| --- | --- |
+| `npm run check:local` | 563 项 / 537 通过 / 26 隔离跳过 / 0 失败 |
+| Trivy 依赖扫描 | 根 `package-lock.json` **0 项** |
+| `docker build` | 成功 |
+| runtime import smoke | `IMPORT_SMOKE_OK` |
+| Trivy 镜像扫描 `os,library` | **0 项**，`--exit-code 1` 退出 0 |
+
+- 依赖扫描剩余 3 项位于 `work/sites-42ad465/`（未跟踪的历史 worktree 副本），
+  CI 的干净 checkout 中不存在，不影响 CI。
+- 探针镜像里出现的 `brace-expansion` / `ip-address` / `tar` 属 npm 自带依赖树；
+  真实镜像已删除 npm，故不出现（这正是真实镜像只报 pcre2 的原因）。
+- **本地复验不等于 CI 通过**：CI 在 Linux 上执行同样的 `check:local` 与构建，
+  最终判定仍以 CI 为准。
+
+（未做：1.5 的 digest / artifact 工件 ID 与 SHA-256，需 CI 绿后取得。）
+
 ### 阶段 2 — 迁移前向兼容审计（可与阶段 1 并行）
 
 - 2.1 逐个读 `migrations/0020` — `0043`，列出所有 `ALTER TABLE`、`DROP`、`ADD COLUMN ... NOT NULL`、重命名、约束/索引变更。
