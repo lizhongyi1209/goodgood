@@ -1,6 +1,6 @@
 # GG-097 — 累计功能生产重发布（全新上线）
 
-- 状态：计划已建立；邀请码改可选已本地实现/门禁/32131 切换完成；**本地全功能手动测试进行中**；未部署
+- 状态：计划已建立；邀请码改可选已本地实现/门禁/32131 切换完成；本地全功能手动测试进行中（已修上传 CORS、mock 契约）；未部署
 - 用户需求：2026-09-15 当天把本地累计功能（GG-024 — GG-096）以**全新方式**发布到生产 `goodgood.o1key.com`；旧测试数据无需保留，所有人重新注册。
 - 最后更新：2026-09-15
 - 分支 / worktree：`feature/GG-096-production-auth-entry`（`31302f0`）/ F:/goodgood；发布分支建议 `release/GG-097-cumulative-alpha`
@@ -170,6 +170,37 @@
   重启后预检 `Origin: 32131` 返 200，且 `32141` 已从规则中消失——证明是代码在纳管，
   不是一次性手工改桶。
 - 未处理：上述 4 条 `pending` 参考图行保留原样，未清理、未改状态；由用户在前端移除。
+
+### 问题 2 — 本地 mock 与真实 provider 协议不一致（已修复，待用户复测出图）
+
+- 用户问题：「发布到线上后不匹配怎么办」——本地出图全绿能否证明真实链路可用。
+- 定位：`server/generation/mock-provider-server.mjs` 说自己的协议
+  （`POST /v1/generations`，`{modelId, prompt, count, idempotencyKey}`），
+  而生产走 `server/generation/us-gateway-adapter.mjs`
+  （`POST /async/v1/generateImage`，`{model, prompt, images, aspect_ratio,
+  response_modalities, size, thinking_level}`，参考图先经 `/v1/o1key/uploads`）。
+  `provider-router.mjs` 按 kind 分成两条互不相关的分支。**结论：本地跑通只证明
+  GoodGood 侧生命周期（预留/结算/释放、队列、私有资产、UI 状态），完全没有执行过
+  生产使用的报文构造与响应归一化代码。**
+- 修复 `15cc1f5`：
+  - mock 改为实现 O1Key 的四个端点，并按模型对应的 O1Key 路由校验报文，
+    拒绝未知模型、错误的 response_modalities / aspect_ratio / size / 像素尺寸 /
+    输出张数 / quality / background / output_format，以及未经过上传端点签发的引用。
+  - `provider-router.mjs` 统一由 adapter 驱动所有 provider kind；mock 路由改为
+    「同一 model+line 的 O1Key 路由 + 本地 provider 身份」，路由对象记忆化以保证
+    身份比较成立。
+  - 顺带修 `15cc1f5` 暴露的既有缺陷：`o1keyTaskToken` 按「期望总数」而非
+    「已派发数」编码，导致四张输出的任务在**第一次**派发时就被判为非法任务集。
+  - loopback 例外同样覆盖返回的资源/上传 URL；转发给 provider 的引用除非显式开启
+    本地例外否则必须 HTTPS（该开关在生产环境被 `config.mjs` 直接禁止）。
+- 验证：定向 m3 5/5、m5 12/12；`npm run check:local` 561 项（535 通过/26 隔离跳过/0 失败）；
+  `build:checkpoint` + `verify:checkpoint` 通过（revision `15cc1f5`，artifactHash `53848d46…`）；
+  web/worker/provider 三者全部重启并 ready，web `build.verified=true` 且 revision 与 HEAD 一致。
+  运行中直接探针：旧协议报文 → `unknown_model`，缺 `response_modalities` →
+  `invalid_response_modalities`，未上传引用 → `unregistered_reference`。
+- 仍未覆盖：真实 provider 的鉴权、配额、模型可用性与真实计费对账——只能由发布后
+  一次明确授权的真实调用覆盖（阶段 5.6）。
+- 数据：users 4、assets 2、references 17、jobs 2，未做任何清理或重置。
 
 ## 实现与证据
 
