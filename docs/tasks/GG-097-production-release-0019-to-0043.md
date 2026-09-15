@@ -128,9 +128,41 @@
 - [ ] 模型/价格管理、企业/分销、档案、灵感、问题反馈、JCoin 卡片
 - [ ] 视频入口保持未接通，不误发真实视频请求
 
-## 本地全功能测试窗口记录
+### 问题 3 — 本地默认改走真实 provider（已实现，用户实测通过）
 
-- 2026-09-15 09:42Z 窗口开工：只读复验环境（非凭交接描述）。
+- 用户要求：本地测试必须能真实调用接口，否则无法高效修复线上问题；用户提供
+  本地专用令牌，预算充足，默认即真实 API。
+- 实现 `cfb8331`：`start worker` 默认 `o1key`（`LOCAL_GENERATION_PROVIDER_KIND=mock`
+  可退回）；令牌从**仓库外**路径读取
+  （`%USERPROFILE%\.claude\goodgood-local-secrets\o1key-api-key.txt`，可用
+  `GOODGOOD_LOCAL_O1KEY_KEY_FILE` 覆盖），启动器断言该路径不在仓库内；令牌缺失或为空
+  直接报错退出，不静默回退 mock；worker 启动打印 provider 身份横幅；真实模式下拒绝
+  同时启动 mock provider 进程。
+- 接口验证（均不计生成费）：
+  - 令牌鉴权：`GET /async/v1/tasks/<不存在>` → 404「任务不存在」（错令牌对照为 401）。
+  - **模型名一致性**：`GET /v1/models` 对比本项目 15 个 provider 模型 → **15/15 存在，
+    0 缺失**。此项专门覆盖「配置模型名在上游不存在」这类只在首次真实调用才暴露的漂移。
+  - 参考图上传：真实 PNG → 200，返回 https URL、整数 `expires_at`、24h 过期，
+    完全满足 adapter 的 `normalizeTemporaryUpload` 校验。
+  - worker readiness 的 `provider: ok` 走 `probeGenerationResources`，首次对真实端点通过。
+- **用户已实测真实生成通过，接口可用、消费记录正常。** 这是本地首次完成端到端真实
+  链路（真实 provider → 真实扣费 → 本地持久化）。
+- 未覆盖：真实 provider 的配额上限与异常/退避分支；发布后仍建议做一次受控冒烟。
+
+### 问题 4 — 本地生成被资源保护门锁死（已修复）
+
+- 现象：用户点击生成报「服务器正在保护生成资源，请稍后再试。你的输入内容已保留。」
+- 根因：`server/runtime/host-resource-admission.mjs` 为 Linux 编写，读
+  `/proc/meminfo` 与 `statfs("/")`；Windows 上两者均抛错，落入
+  `resource-observation-unavailable` 分支，且 `protection` 一旦置位**不再重探**，
+  等于把生成功能锁死到进程重启。
+- 修复 `f2bbbcd`：非 Linux 改用 `os.freemem()` 与「工作目录所在文件系统」；
+  Linux 路径未改动。本机实测可用内存 14.17 GB、盘用率 58%，均在阈值内。
+- 验证：m8 定向 7/7；`npm run check:local` 563 项（537 通过/26 隔离跳过/0 失败）；
+  checkpoint 重建并重启 32131（revision `f2bbbc`，`build.verified=true`）。
+- 注意：该文件生产同样生效，但生产走的是未改动的 Linux 分支。
+
+## 本地全功能测试窗口记录- 2026-09-15 09:42Z 窗口开工：只读复验环境（非凭交接描述）。
   - Git：分支 `feature/GG-096-production-auth-entry`，HEAD `7e5cf2f`，仅 `.codex/` 未跟踪。
   - 端口：32131（Web，PID 31644）、32142（Worker，PID 13180）、32143（provider，PID 30872）；
     54449/56449/58045/58046/58049/58050 均由同一容器进程 PID 22432 监听。三者命令行均为
@@ -189,8 +221,13 @@
   - `provider-router.mjs` 统一由 adapter 驱动所有 provider kind；mock 路由改为
     「同一 model+line 的 O1Key 路由 + 本地 provider 身份」，路由对象记忆化以保证
     身份比较成立。
-  - 顺带修 `15cc1f5` 暴露的既有缺陷：`o1keyTaskToken` 按「期望总数」而非
-    「已派发数」编码，导致四张输出的任务在**第一次**派发时就被判为非法任务集。
+  - 顺带修正 mock 的幂等键：原先只由 `model/prompt/张数/引用数` 推导，四张输出的
+    任务会被折叠成同一个 task。改为一任务一提交的计数器键。
+    （**更正**：本卡曾记录「修了 `o1keyTaskToken` 按期望总数编码的既有缺陷」。
+    该说法不成立——该函数自本窗口起点起实现未变，我曾修改过一次，但在为调试备份
+    文件时误执行 `git checkout server/generation/provider-router.mjs` 一并回退，
+    重新应用时遗漏了它。四张输出任务转绿的真正原因是上面的幂等键修正。
+    该函数当前仍按期望总数编码，行为正确，未改动。）
   - loopback 例外同样覆盖返回的资源/上传 URL；转发给 provider 的引用除非显式开启
     本地例外否则必须 HTTPS（该开关在生产环境被 `config.mjs` 直接禁止）。
 - 验证：定向 m3 5/5、m5 12/12；`npm run check:local` 561 项（535 通过/26 隔离跳过/0 失败）；
