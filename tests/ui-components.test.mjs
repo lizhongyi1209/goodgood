@@ -271,6 +271,20 @@ test("keeps authentication global, passwordless, and recoverable", async () => {
   assert.match(authenticationGate, /disabled=\{!challenge \|\| busy !== null\}/);
   assert.match(authenticationGate, /\$\{resendRemaining\}s/);
   assert.match(authenticationGate, /重发/);
+  assert.match(authenticationGate, /\}, \[resendAvailableAt\]\)/);
+  const sendCodeBlock = authenticationGate.match(
+    /const sendCode = async \(\) => \{[\s\S]*?const verifyCode/,
+  )?.[0];
+  assert.ok(sendCodeBlock);
+  assert.match(
+    sendCodeBlock,
+    /setResendAvailableAt\([\s\S]*?emailRef\.current/,
+  );
+  const updateEmailBlock = authenticationGate.match(
+    /const updateEmail = \(value: string\) => \{[\s\S]*?const updateCode/,
+  )?.[0];
+  assert.ok(updateEmailBlock);
+  assert.doesNotMatch(updateEmailBlock, /setResendAvailableAt\(0\)/);
   assert.doesNotMatch(authenticationGate, /InputOTPSlot/);
   assert.match(emailPolicy, /EMAIL_OTP_RESEND_SECONDS = 60/);
   assert.match(creationPage, /当前创作内容已保留/);

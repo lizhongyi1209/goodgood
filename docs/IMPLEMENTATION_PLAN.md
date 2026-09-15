@@ -11,10 +11,10 @@
 - GG093标记`goodgood-local-2026-09-15-gg093`仍指向基线；GG094提交与可验证构建完成后从该新提交接续，不从不含累计功能的main开始。
 - [跨窗口交接](DEVELOPMENT_HANDOFF.md)记录实际功能、启动命令、依赖/端口、命名SQL runner、验证边界。AGENTS/WORKFLOW/README已同步。
 - 09-15已从当前累计版本重建并重启工作区32131、登录32191、mock Worker32142、provider32143；服务使用loopback依赖与本地Mailpit，原DB0043与数据保留。最终PID以端口实时核验，不写死在交接文档。
-- GG094将普通登录初始态的邀请码移除；正确邮件码收到`INVITATION_REQUIRED`后切换注册并保留邮件码，`INVITATION_INVALID`保持注册态；待开通账户直接进入注册态。邀请码占位仅为“邀请码”，输入规格与邮箱/验证码一致。
+- GG094将普通登录初始态的邀请码移除；正确邮件码收到`INVITATION_REQUIRED`后切换注册并保留邮件码，`INVITATION_INVALID`保持注册态；待开通账户直接进入注册态。邀请码占位仅为“邀请码”，输入规格与邮箱/验证码一致。发送成功后修改邮箱会清除旧挑战，但保留并继续刷新原发送冷却，不能立即向新地址重发。
 - 线上仍goodgood.o1key.com的65ceb168/0019原镜像；测试用户清理已完成（含站长），本地功能未部署。staging-goodgood.o1key.com不是测试入口。
-- 当前验证：GG094认证UI契约18/18、邮箱OTP及邀请码契约17/17、lint/typecheck和完整本地测试退出0；未执行真实邮件、注册或provider调用。构建/服务重启与页面手验结果在任务卡记录。
-- Next action: 生成GG094可验证构建、重启32131/32191并核对登录初始态；随后由用户在 `32191/create` 完成新用户注册态手动验收。生产不部署。
+- 当前验证：加入换邮箱保留发送冷却后，定向回归43/43、完整`check:local`为555项（529通过/26跳过/0失败），diff检查通过；需在最终提交后刷新checkpoint构建与32131/32191。未发送邮件、注册用户或调用真实provider。
+- Next action: 由用户在 `32191/create` 手动完成登录与新用户注册态页面验收并反馈；生产不部署。
 - Blockers: 无；上线/新站长初始化/真实provider需独立范围，本次只保存本地版本。
 
 ## Verification sequence

@@ -81,10 +81,14 @@ export function AuthenticationGate({
   }, [methodAttempt]);
 
   useEffect(() => {
-    if (!challenge) return;
-    const timer = window.setInterval(() => setNow(Date.now()), 1_000);
+    if (resendAvailableAt <= Date.now()) return;
+    const timer = window.setInterval(() => {
+      const current = Date.now();
+      setNow(current);
+      if (current >= resendAvailableAt) window.clearInterval(timer);
+    }, 1_000);
     return () => window.clearInterval(timer);
-  }, [challenge]);
+  }, [resendAvailableAt]);
 
   const resendRemaining = Math.max(
     0,
@@ -101,12 +105,13 @@ export function AuthenticationGate({
         snapshot,
         `${window.location.pathname}${window.location.search}`,
       );
+      const sentAt = Date.now();
+      setNow(sentAt);
+      setResendAvailableAt(sentAt + next.resendAfterSeconds * 1_000);
       if (emailRef.current.trim().toLowerCase() !== snapshot.toLowerCase())
         return;
       setChallenge(next);
       setCode("");
-      setNow(Date.now());
-      setResendAvailableAt(Date.now() + next.resendAfterSeconds * 1_000);
     } catch (reason) {
       setError(
         reason instanceof Error
@@ -162,7 +167,6 @@ export function AuthenticationGate({
       setCode("");
       setInvitationCode("");
       setRegistrationRequired(initialRegistrationRequired);
-      setResendAvailableAt(0);
     }
   };
 
