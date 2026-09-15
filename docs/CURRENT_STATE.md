@@ -1,9 +1,10 @@
 # GoodGood 当前状态
 
-- 最后核对：2026-09-15完成GG-097生产发布执行（合并main→CI镜像→迁移0043→切流green→站长初始化→真实生图与跨账户拒绝）。**公网当前处于维护页(503)**：alpha门禁如实未通过（见下），未解除维护，因此站点尚未对外开放。
-- 产品阶段：已部署 `controlled-alpha-v1` 但**未开放**（维护中）；不是完整 seed/付费生产就绪。
-- 正式入口：https://goodgood.o1key.com（返回 503 维护页）
-- 当前工作：GG-097累计功能生产重发布。生产身份已从 `65ceb168`/`0019` 前移到 `89afedb`/`0043`，green槽位接流、唯一green Worker；站长账户与首个邀请码已建立。**门禁未通过的两项**：`controlled-alpha-member-journey`（门禁硬要求100欢迎积分与pending门，产品实际为200积分且email注册直接active）与`controlled-alpha-operations`（主机无任何对外通知通道）。解除维护需先解决这两项。
+- 最后核对：2026-09-15完成GG-097生产发布并**解除维护开放公网**。生产身份 `5b65601` / 迁移 `0043` / green 接流。站长已明确授权带着 `controlled-alpha-operations` 未通过的缺口开站（主机无告警通道，站长决定以后再做）。
+- 产品阶段：已开放的 `controlled-alpha-v1`，不是完整 seed/付费生产就绪。
+- 正式入口：https://goodgood.o1key.com
+- 当前工作：GG-097累计功能生产重发布**已完成并开放**。累计功能（GG-024—GG-096）已从 `65ceb168`/`0019` 前移到 `5b65601`/`0043`。注册开关当前为 **false**（站长已注册、邀请码 405513 已建立，放行时机由站长决定）。
+- **已知缺口（站长 2026-09-15 明确授权接受）**：`controlled-alpha-operations` 未通过——主机无任何对外告警通道，站点异常不会自动通知。见发布记录。
 - 下一个普通产品需求从 GG-098 分配，以BACKLOG核验占用；不要自动恢复搁置的 C6。
 
 ## GG-093 本地运行边界
@@ -47,14 +48,14 @@
 
 | 项目 | 最近核验记录 |
 | --- | --- |
-| 源码 revision | `89afedbc7363c9a1f8195271178f0ab1d607ffae` |
-| 镜像 | `ghcr.io/lizhongyi1209/goodgood@sha256:72ac3253b3cde4b51a9a022b8378be34fe7841979855ef2fa97b773fc76d16e4` |
+| 源码 revision | `5b656013807b0fdaeb22b3cbb5b7af029c9ec16e` |
+| 镜像 | `ghcr.io/lizhongyi1209/goodgood@sha256:71df51455abd7e6b98fda399a1b1b691e794056e4317a4704076aa0e6ba8b75a` |
 | 数据库迁移 | `0043_gg091_account_invitations.sql`（43 条，59 张 public 表） |
-| 配置契约 checksum | `6358dc04d5bcfb352e85a768cf7f880379edde8033846cbdae92f5fd0531a4e8` |
+| 配置契约 checksum | `65202c281c37eb8e7c2639ee850e9ffe1085cad98f5ef2a85995a4d55d124f3e` |
 | 活跃进程 | **green** Web + 1 个 green Worker；PostgreSQL/Valkey 健康 |
-| 回退候选 | blue Web 仍运行但停止接流（旧镜像 `40ebfc40`）；blue Worker 已停止，不做 schema 降级 |
+| 回退候选 | blue Web 运行中未接流（旧镜像 `40ebfc40`）；blue Worker 已停止，不做 schema 降级 |
 | 主机 | 香港 2 vCPU / 4 GiB / 50 GiB；Web、Worker、PostgreSQL、Valkey 同机 |
-| 对象与备份 | 私有 R2；加密异机数据库备份，目标 RPO 1h / RTO 4h |
+| 对象与备份 | 私有 R2；加密异机备份，本次发布点快照 `c49b2fc1`。**备份 timer 自 2026-09-05 起 disabled** |
 | 本地 | Windows 开发；Compose 使用本地 PostgreSQL/Valkey/RustFS/mock |
 
 没有常驻远程测试环境。`staging-goodgood.o1key.com` 仅保留名称，非当前测试入口。

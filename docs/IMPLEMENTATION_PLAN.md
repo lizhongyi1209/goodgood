@@ -1,28 +1,30 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-15
-- Current phase: GG-097 累计功能生产发布——**已执行完成，公网停留维护页**。
-- Current objective: 解决 alpha 门禁未通过的两项（member-journey 契约冲突、operations 通知通道），再决定是否解除维护开放公网。
-- Previous objective: 本地全功能测试 → 合并 main → CI 镜像 → 迁移 0043 → 切流 → 站长初始化。
+- Current phase: GG-097 累计功能生产发布——**已部署并开放公网**。
+- Current objective: 观察已开放站点；`controlled-alpha-operations`（告警通道）站长决定以后再做，开站经其明确授权。
+- Previous objective: 合并 main → CI 镜像 → 迁移 0043 → 切流 → 站长初始化 → 门禁对齐。
 
 ## Current checkpoint
 
-- Task [GG-097](tasks/GG-097-production-release-0019-to-0043.md)：**已部署但未开放**。
-  生产身份 `89afedb` / 镜像 `sha256:72ac3253…` / 迁移 `0043` / **green 接流**。
-- 已完成：阶段 1—5（含一次真实生图 reserve→settle、私有限读、跨账户拒绝 404）、阶段 6.1—6.4。
-- 门禁 `production:alpha-gate` **`ok: false`**，两项如实 `fail`：
-  - `controlled-alpha-member-journey`——门禁硬要求 `welcomeCredits === 100` 且
-    `pendingBeforeApproval === true`；产品实际 200 积分且 email 注册直接 `active`
-    （GG-090/ADR 0089 已取代 ADR 0020 的 pending 模型）。**门禁契约与产品行为不一致。**
-  - `controlled-alpha-operations`——主机不存在任何对外通知通道，`notificationDelivered: false`。
-- 公网 503 维护中；`GOODGOOD_EMAIL_REGISTRATION_ENABLED=false`。
-- 线上入口仍为 `goodgood.o1key.com`（当前返回维护页）；`staging-goodgood.o1key.com` 仅保留名称，不是测试入口。
-- 生产数据：users 2（站长 951565127@qq.com、lizhongyi1209@gmail.com，均 active）、assets 1（private）。
+- Task [GG-097](tasks/GG-097-production-release-0019-to-0043.md)：**已部署并开放**。
+  生产身份 `5b65601` / 镜像 `sha256:71df5145…` / 迁移 `0043` / **green 接流**。
+- 已完成：阶段 1—7。含一次真实生图（reserve→settle）、私有限读、跨账户拒绝 404、
+  手动赠送测试积分、参考图上传。
+- 门禁 `production:alpha-gate` **`ok: false`**：五项 `pass`，`controlled-alpha-operations`
+  如实 `fail`——主机无任何对外告警通道。**站长 2026-09-15 授权带着该缺口开站**，
+  并决定通知渠道以后再做。
+- 契约已按 **ADR 0090** 对齐：确认「注册即激活」为目标行为，欢迎积分为 200。
+- 公网开放中；`GOODGOOD_EMAIL_REGISTRATION_ENABLED=false`。
+- 线上入口为 `goodgood.o1key.com`；`staging-goodgood.o1key.com` 仅保留名称，不是测试入口。
+- 生产数据：users 2（站长 951565127@qq.com、lizhongyi1209@gmail.com）、
+  assets 1（private）、references 2（ready）。
 - 附带修复：`c343351`（Next 16.3.3）、`89afedb`（Debian libpcre2）——两者都是 main CI
-  发布镜像的硬阻断，非顺手改动。
-- 独立缺口（已记录未处理）：备份 timer `disabled`；blue Web 闲置占用；本地 32131/32142 未恢复。
-- Next action: 站长在三选一中定夺（接入通知渠道 / 更新门禁契约 / 维持维护态）。
-- Blockers: 上述两项门禁未通过。
+  发布镜像的硬阻断。
+- 独立缺口（已记录未处理）：备份 timer `disabled`（自 09-05）；blue Web 闲置占用；
+  无告警通道。
+- Next action: 无待办发布步骤；观察期后再评估通知渠道与 blue 退役。
+- Blockers: 无阻塞执行项；`operations` 缺口为已知并已授权接受。
 
 ## Verification sequence
 

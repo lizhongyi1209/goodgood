@@ -1,10 +1,10 @@
 # GG-097 — 累计功能生产重发布（全新上线）
 
-- 状态：计划已建立；邀请码改可选已本地实现/门禁/32131 切换完成；本地全功能手动测试进行中（已修上传 CORS、mock 契约）；未部署
+- 状态：**已完成并开放公网**。生产身份 `5b65601` / 迁移 `0043` / green 接流；门禁五项 pass、`controlled-alpha-operations` 如实 fail 并经站长明确授权带缺口开站。
 - 用户需求：2026-09-15 当天把本地累计功能（GG-024 — GG-096）以**全新方式**发布到生产 `goodgood.o1key.com`；旧测试数据无需保留，所有人重新注册。
 - 最后更新：2026-09-15
-- 分支 / worktree：`feature/GG-096-production-auth-entry`（`31302f0`）/ F:/goodgood；发布分支建议 `release/GG-097-cumulative-alpha`
-- 基线：本地 HEAD `31302f0`；生产仍为 `65ceb168` / 迁移 `0019`
+- 分支 / worktree：`main`（`5b65601`）/ F:/goodgood；发布分支 `release/GG-097-cumulative-alpha`
+- 基线：本地 HEAD `5b65601`；生产已为 `5b65601` / 迁移 `0043`（旧为 `65ceb168` / `0019`）
 
 ## 范围与验收
 
@@ -479,18 +479,24 @@
 
 ## 恢复工作
 
+**下一步**
+
+- 无待办发布步骤。站点已开放，观察运行状态。
+- 待站长决定：通知渠道（已同意「以后再做」）与 blue Web 是否退役。
+- 若需变更生产，按新的任务卡与授权范围执行；不要重放历史迁移或旧转换脚本。
+
 **当前生产事实（2026-09-15）**
 
-- 身份：revision `89afedbc7363c9a1f8195271178f0ab1d607ffae`、镜像
-  `ghcr.io/lizhongyi1209/goodgood@sha256:72ac3253b3cde4b51a9a022b8378be34fe7841979855ef2fa97b773fc76d16e4`、
+- 身份：revision `5b656013807b0fdaeb22b3cbb5b7af029c9ec16e`、镜像
+  `ghcr.io/lizhongyi1209/goodgood@sha256:71df51455abd7e6b98fda399a1b1b691e794056e4317a4704076aa0e6ba8b75a`、
   迁移 `0043_gg091_account_invitations.sql`、runtime-config
-  `6358dc04d5bcfb352e85a768cf7f880379edde8033846cbdae92f5fd0531a4e8`。
+  `65202c281c37eb8e7c2639ee850e9ffe1085cad98f5ef2a85995a4d55d124f3e`。
 - 槽位：**green 接流**（web `3200` / worker health `3201`）。blue Web 仍在运行但**未接流**，
   blue Worker **已停止**。Nginx upstream 备份 `production-active-upstream.blue.backup`。
-- 公网：**503 维护页**。注册开关：`false`。
+- 公网：**开放（200）**。注册开关：`false`。
 - 数据：users 2（站长 `951565127@qq.com` + `lizhongyi1209@gmail.com`，均 active）、
   assets 1（private，`1024x1024`，owner 为 gmail 账户）、jobs 1（succeeded）、
-  积分 200 / 180、邀请码使用 1。
+  references 2（ready）、积分 200 / 280、邀请码使用 1。
 
 **已完成**
 
@@ -527,13 +533,19 @@
 
 **剩余工作**
 
-- 契约改动需要**新镜像**才在主机生效（`alpha-gate` 在主机候选源码目录上运行）。
-  待 CI 产出新 revision 镜像后，把该 revision 送到主机、重跑门禁。
-- 阶段 6.8 解除维护：待门禁全 `pass` 后执行。
+- **已完成开站。** 站长 2026-09-15 明确授权「带着 `controlled-alpha-operations` 缺口开站」，
+  并决定通知渠道以后再做。维护标记已移除，
+  `/`、`/login`、`/register` 均 200，未登录 session 401，readiness 200，队列 0。
+- 门禁最终结果：`artifact-security` / `production-preflight` / `controlled-alpha-boundary` /
+  `controlled-alpha-member-journey` / `controlled-alpha-recovery` 五项 **pass**；
+  `controlled-alpha-operations` 如实 **fail**（主机无告警通道，已授权接受）。
+- `manualTestCreditGrantPassed` 与 `referenceUploadPassed` 由站长在浏览器实测通过后填 `true`
+  （前者 180→280 无支付记录，后者 `reference_assets` 2 条 `ready`），非默认假定。
 
 **其他已记录的独立缺口**
 
 - 备份 timer `disabled`（自 2026-09-05 未自动运行），站长指示「不动，只记录」。
 - 主机 2 vCPU / 4 GiB 同时跑 green Web+Worker 与 blue Web，`MemAvailable` 2.27 GiB，
   余量可接受但 blue Web 长期闲置占用资源，可在观察期后退役。
-- 本地 32131/32142 栈已恢复（revision `f3522d3` 及之后）。
+- 无任何对外告警通道（已授权接受的缺口）。
+- 本地 32131/32142 栈已恢复。
