@@ -56,6 +56,19 @@ export function safeReturnTo(value) {
   if (parsed.origin !== "https://goodgood.invalid") {
     throw authenticationRequestError("AUTH_RETURN_TO_INVALID");
   }
+  let decodedPath;
+  try {
+    decodedPath = decodeURIComponent(parsed.pathname);
+  } catch {
+    throw authenticationRequestError("AUTH_RETURN_TO_INVALID");
+  }
+  if (
+    decodedPath.startsWith("//") ||
+    /[\u0000-\u001f\u007f\\]/.test(decodedPath) ||
+    new Set(["/login", "/register"]).has(decodedPath.replace(/\/+$/, ""))
+  ) {
+    throw authenticationRequestError("AUTH_RETURN_TO_INVALID");
+  }
   return `${parsed.pathname}${parsed.search}${parsed.hash}`;
 }
 
@@ -99,7 +112,7 @@ export function authenticationApiError(error, requestId = newRequestId()) {
 export function authenticationErrorRedirect(error, requestId = newRequestId()) {
   const failure = authenticationApiError(error, requestId);
   const code = failure.body.error.code;
-  return `/?authError=${encodeURIComponent(code)}`;
+  return `/login?authError=${encodeURIComponent(code)}&returnTo=%2Fcreate`;
 }
 
 export function createAuthenticationOperations({

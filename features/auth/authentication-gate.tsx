@@ -6,6 +6,11 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  authenticationEntryPath,
+  safeAuthenticationReturnTo,
+  type AuthenticationMode,
+} from "./authentication-navigation";
+import {
   AuthenticationBoundaryError,
   readAuthenticationMethod,
   readEmailAuthenticationChallenge,
@@ -15,25 +20,34 @@ import {
 } from "./http-auth-boundary";
 
 export function AuthenticationGate({
+  entryPage = false,
   initialError,
   initialEmail = "",
+  initialMode = "login",
   initialRegistrationRequired = false,
   onAuthenticated,
   onHostedLogin,
+  onModeChange,
+  returnTo,
 }: {
+  entryPage?: boolean;
   initialError: string | null;
   initialEmail?: string;
+  initialMode?: AuthenticationMode;
   initialRegistrationRequired?: boolean;
-  onAuthenticated: () => Promise<void>;
+  onAuthenticated: (returnTo?: string) => Promise<void>;
   onHostedLogin: () => void;
+  onModeChange?: (mode: AuthenticationMode) => void;
+  returnTo?: string;
 }) {
   const [method, setMethod] = useState<"email_code" | "hosted" | null>(null);
   const [email, setEmail] = useState(initialEmail);
   const emailRef = useRef(initialEmail);
   const [invitationCode, setInvitationCode] = useState("");
-  const [registrationRequired, setRegistrationRequired] = useState(
-    initialRegistrationRequired,
+  const [authenticationMode, setAuthenticationMode] = useState<AuthenticationMode>(
+    initialRegistrationRequired ? "register" : initialMode,
   );
+  const registrationRequired = authenticationMode === "register";
   const [challenge, setChallenge] =
     useState<EmailAuthenticationChallenge | null>(null);
   const [code, setCode] = useState("");
@@ -49,6 +63,19 @@ export function AuthenticationGate({
   const [resendAvailableAt, setResendAvailableAt] = useState(0);
 
   useEffect(() => {
+    if (!entryPage) {
+      const currentReturnTo = safeAuthenticationReturnTo(
+        `${window.location.pathname}${window.location.search}${window.location.hash}`,
+      );
+      window.location.replace(
+        authenticationEntryPath(
+          initialRegistrationRequired ? "register" : "login",
+          currentReturnTo,
+        ),
+      );
+      return;
+    }
+
     let active = true;
     void readAuthenticationMethod()
       .then(async (value) => {
@@ -78,7 +105,7 @@ export function AuthenticationGate({
     return () => {
       active = false;
     };
-  }, [methodAttempt]);
+  }, [entryPage, initialRegistrationRequired, methodAttempt]);
 
   useEffect(() => {
     if (resendAvailableAt <= Date.now()) return;
@@ -103,7 +130,7 @@ export function AuthenticationGate({
     try {
       const next = await requestEmailAuthenticationCode(
         snapshot,
-        `${window.location.pathname}${window.location.search}`,
+        safeAuthenticationReturnTo(returnTo),
       );
       const sentAt = Date.now();
       setNow(sentAt);
@@ -130,13 +157,13 @@ export function AuthenticationGate({
     setError(null);
     setErrorTarget(null);
     try {
-      await verifyEmailAuthenticationCode(
+      const verifiedReturnTo = await verifyEmailAuthenticationCode(
         challenge.id,
         code,
         registrationRequired ? invitationCode : undefined,
         email,
       );
-      await onAuthenticated();
+      await onAuthenticated(verifiedReturnTo);
     } catch (reason) {
       setError(
         reason instanceof Error
@@ -147,7 +174,8 @@ export function AuthenticationGate({
         reason instanceof AuthenticationBoundaryError &&
         ["INVITATION_REQUIRED", "INVITATION_INVALID"].includes(reason.code)
       ) {
-        setRegistrationRequired(true);
+        setAuthenticationMode("register");
+        onModeChange?.("register");
         setErrorTarget("invitation");
       } else setErrorTarget("code");
     } finally {
@@ -166,7 +194,6 @@ export function AuthenticationGate({
       setChallenge(null);
       setCode("");
       setInvitationCode("");
-      setRegistrationRequired(initialRegistrationRequired);
     }
   };
 
@@ -186,6 +213,24 @@ export function AuthenticationGate({
         : challenge
           ? "重发"
           : "发送验证码";
+
+  const selectAuthenticationMode = (mode: AuthenticationMode) => {
+    setAuthenticationMode(mode);
+    setError(null);
+    setErrorTarget(null);
+    onModeChange?.(mode);
+  };
+
+  if (!entryPage) {
+    return (
+      <div className="authentication-gate" role="status" aria-label="正在前往登录页面">
+        <div className="authentication-card authentication-loading">
+          <LoaderCircle className="animate-spin" size={20} />
+          <span>正在前往登录页面</span>
+        </div>
+      </div>
+    );
+  }
 
   if (busy === "loading" && method === null) {
     return (
@@ -273,15 +318,43 @@ export function AuthenticationGate({
           </>
         ) : (
           <>
-            <h2 className="authentication-mode-title" id="authentication-title">
-              {registrationRequired ? "注册" : "登录"}
-            </h2>
+            <h2 className="sr-only" id="authentication-title">GoodGood 账户</h2>
+            <div
+              aria-label="账户入口"
+              className="authentication-mode-tabs"
+              role="tablist"
+            >
+              {(["login", "register"] as const).map((mode) => (
+                <button
+                  aria-controls="authentication-form"
+                  aria-selected={authenticationMode === mode}
+                  className="authentication-mode-tab"
+                  id={`authentication-mode-${mode}`}
+                  key={mode}
+                  onClick={() => selectAuthenticationMode(mode)}
+                  onKeyDown={(event) => {
+                    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+                    event.preventDefault();
+                    const nextMode = mode === "login" ? "register" : "login";
+                    selectAuthenticationMode(nextMode);
+                    document.getElementById(`authentication-mode-${nextMode}`)?.focus();
+                  }}
+                  role="tab"
+                  tabIndex={authenticationMode === mode ? 0 : -1}
+                  type="button"
+                >
+                  {mode === "login" ? "登录" : "注册"}
+                </button>
+              ))}
+            </div>
             <form
               className="authentication-form"
+              id="authentication-form"
               onSubmit={(event) => {
                 event.preventDefault();
                 void verifyCode();
               }}
+              role="tabpanel"
             >
               <div className="authentication-email-field">
                 <span className="authentication-input-shell">
@@ -394,7 +467,13 @@ export function AuthenticationGate({
                 {busy === "verifying" && (
                   <LoaderCircle className="animate-spin" />
                 )}
-                {busy === "verifying" ? "验证中" : "确认"}
+                {busy === "verifying"
+                  ? registrationRequired
+                    ? "正在注册"
+                    : "正在登录"
+                  : registrationRequired
+                    ? "注册"
+                    : "登录"}
               </Button>
             </form>
           </>

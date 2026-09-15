@@ -35,4 +35,23 @@ test("renders the GoodGood creation entry surface", async () => {
   assert.match(html, />Nano Banana 2</);
   assert.match(html, />描述你想创作的画面</);
   assert.doesNotMatch(html, />生成记录</);
+
+  for (const pathname of ["/login?returnTo=%2Fcreate", "/register?returnTo=%2Fcreate"]) {
+    const authenticationResponse = await worker.fetch(
+      new Request(`http://localhost${pathname}`, {
+        headers: { accept: "text/html" },
+      }),
+      {
+        ASSETS: {
+          fetch: async () => new Response("Not found", { status: 404 }),
+        },
+      },
+      {
+        waitUntil() {},
+        passThroughOnException() {},
+      },
+    );
+    assert.equal(authenticationResponse.status, 200);
+    assert.match(await authenticationResponse.text(), /正在确认登录状态/);
+  }
 });

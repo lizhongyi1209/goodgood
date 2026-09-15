@@ -103,13 +103,13 @@ import {
 import {
   SESSION_EXPIRED_EVENT,
   authenticationErrorMessage,
-  beginAuthentication,
   readAuthenticationSession,
   signOut,
   type AuthenticationSession,
 } from "@/features/auth/http-auth-boundary";
 import { AccountAccessGate } from "@/features/auth/account-access-gate";
 import { AuthenticationGate } from "@/features/auth/authentication-gate";
+import { authenticationEntryPath } from "@/features/auth/authentication-navigation";
 import { SiteOwnerManagementView } from "@/features/admin/site-owner-management-view";
 import {
   listAssets,
@@ -2128,7 +2128,12 @@ export default function Home({
 
   const handleLogin = () => {
     setAuthenticationError(null);
-    beginAuthentication(`${window.location.pathname}${window.location.search}`);
+    window.location.assign(
+      authenticationEntryPath(
+        "login",
+        `${window.location.pathname}${window.location.search}${window.location.hash}`,
+      ),
+    );
   };
 
   const handleLogout = async () => {

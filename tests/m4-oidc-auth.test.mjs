@@ -568,7 +568,10 @@ test("callback failures expire the one-time browser-binding cookie", async () =>
     true,
   );
   assert.equal(response.statusCode, 303);
-  assert.equal(response.headers.location, "/?authError=AUTH_SIGN_IN_CANCELLED");
+  assert.equal(
+    response.headers.location,
+    "/login?authError=AUTH_SIGN_IN_CANCELLED&returnTo=%2Fcreate",
+  );
   assert.match(
     response.headers["set-cookie"],
     /^__Host-goodgood_session_login=;/,

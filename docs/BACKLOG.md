@@ -1,7 +1,8 @@
 # 当前任务与优先级 · 当前与最近交付
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
-| GG-094—095 | 登录/注册邀请码状态与主测试入口 | GG094用户验收通过；GG095本地实现与门禁完成，待构建切换32131并停用32191；未部署 | [GG094](tasks/GG-094-registration-invitation-visibility.md) / [GG095](tasks/GG-095-primary-email-auth-test-flow.md) |
+| GG-096 | 上线规格登录与注册入口 | 本地实现/门禁/checkpoint/32131切换完成；独立/login与/register、固定子导航、安全returnTo及pending/新用户注册流；待用户手测，未部署 | [任务](tasks/GG-096-production-auth-entry.md) / [ADR](decisions/0088-addressable-login-registration-entry.md) |
+| GG-094—095 | 登录/注册邀请码状态与主测试入口 | GG094用户验收通过；GG095已将32131切为无预设账户的邮箱登录并停用32191，门禁/运行核验通过；未部署 | [GG094](tasks/GG-094-registration-invitation-visibility.md) / [GG095](tasks/GG-095-primary-email-auth-test-flow.md) |
 | GG-093 | 废弃Docker清理与构建版本交接 | 已完成本地交付；删除37容器/9旧应用镜像/5空网络，回收21.92GB构建缓存，34卷保留；构建指纹与启动核验已加入，未部署 | [任务](tasks/GG-093-docker-cleanup-build-handoff.md) |
 | GG-092 | 保存版本/AGENTS与无上下文交接 | 当前累计版本已保存；09-15重启工作区32131/登录32191，ready200，本地未发布 | [任务](tasks/GG-092-development-handoff.md) |
 | GG-091 | 账户唯一邀请码、简洁登录与线上测试清理 | 原功能已验证；登录/注册邀请码显示由GG094修正并待32191手验；线上10测试用户/29文件清理完成，功能未部署 | [GG091](tasks/GG-091-account-invitation-login.md) / [GG094](tasks/GG-094-registration-invitation-visibility.md) / [前版GG090](tasks/GG-090-invitation-registration.md) |
@@ -91,10 +92,9 @@
 | GG-060 | 站长管理标题层级与功能栏简化 | 本地完整门禁、桌面/窄屏及历史保留检查通过，原页面已更新，未发布 | [任务](tasks/GG-060-management-heading-hierarchy.md) |
 | GG-061 | 账户操作记录移为独立审计日志 | 本地门禁、桌面/窄屏与历史保留检查通过，原页面已更新，未发布 | [任务](tasks/GG-061-audit-log-section.md) |
 | GG-062 | GPT 图片三线路与独立定价 | 本地门禁、隔离 SQL、原页面与历史保留检查通过，未发布 | [任务](tasks/GG-062-gpt-image-lines.md) |
-## 已明确搁置（不得自动恢复）
+## 已明确搁置（不得自动恢复） · 最后同步2026-09-15；GG-024—096已占用，下一个需求从GG-097分配
 | ID | 事项 | 恢复条件 | 入口 |
 | --- | --- | --- | --- |
 | GG-900 | C6 自动账户删除/身份删除/举报与内容处理 | 站长明确要求并重审生产差异 | [保全与恢复](tasks/GG-900-deferred-c6.md) |
 | GG-901 | 完整 seed、外部删除条款、复杂监控/响应 | 扩大服务范围或风险需要，另行确认 | [ADR 0024](decisions/0024-controlled-alpha-before-full-seed-readiness.md) |
 | GG-902 | 收款/国内支付宝等商业化 | 站长重新确认且合规条件就绪 | [ADR 0010](decisions/0010-domestic-alipay-after-icp-with-manual-credit-operations.md) |
-最后同步：2026-09-15。GG-024—094已占用（GG-047为另一工作树范围）；下一个普通需求从GG-095分配。这里是索引，细节以任务卡为准；不是自动执行所有项目的授权。每次alpha发布仍需新鲜、精确绑定候选的证据；未提出的功能不预排期。

@@ -1,5 +1,7 @@
 # Decision records
 
+- `0088-addressable-login-registration-entry.md` — accepted addressable `/login` and `/register` pages, visible mode navigation and safe protected-route return for GG-096; partially supersedes ADR 0087's single-form UI.
+
 - `0085-private-problem-feedback.md` — accepted private support tickets, up to five verified images, own status/replies and active owner handling for GG-087.
 
 - `0084-jcoin-runtime-and-private-user-view.md` — accepted first-batch runtime, private own-balance/history without supply data, owner-only plan/lifecycle and independent durable consumption processing for GG-084.

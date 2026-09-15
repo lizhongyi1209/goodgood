@@ -246,20 +246,23 @@ test("keeps authentication global, passwordless, and recoverable", async () => {
   assert.match(creationPage, /<OrganizationManagementView[\s\S]*enabled=\{Boolean\(authenticationSession/);
   assert.match(organizationPage, /if \(!enabled\) return/);
   assert.match(authenticationGate, /authentication-brand-stacked/);
-  assert.match(authenticationGate, /authentication-mode-title/);
+  assert.match(authenticationGate, /className="authentication-mode-tabs"/);
   assert.match(authenticationGate, /className="authentication-form"/);
   assert.match(authenticationGate, /className="authentication-input-shell"/);
   assert.match(
     authenticationGate,
     /authentication-email-input[\s\S]*authentication-code-input[\s\S]*authentication-send-code[\s\S]*authentication-submit/,
   );
-  assert.match(authenticationGate, /authentication-mode-title/);
+  assert.match(authenticationGate, /role="tablist"/);
+  assert.match(authenticationGate, /role="tab"/);
+  assert.match(authenticationGate, /aria-selected={authenticationMode === mode}/);
   assert.match(authenticationGate, /placeholder="验证码"/);
   assert.match(authenticationGate, /发送验证码/);
   assert.match(authenticationGate, /registrationRequired && \(/);
   assert.match(authenticationGate, /placeholder="邀请码"/);
   assert.doesNotMatch(authenticationGate, /邀请码（新用户填写）/);
-  assert.match(authenticationGate, /setRegistrationRequired\(true\)/);
+  assert.match(authenticationGate, /setAuthenticationMode\("register"\)/);
+  assert.match(authenticationGate, /onModeChange\?\.\("register"\)/);
   assert.match(
     authenticationGate,
     /registrationRequired \? invitationCode : undefined/,

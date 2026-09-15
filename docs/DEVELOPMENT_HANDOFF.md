@@ -1,8 +1,8 @@
 # 当前开发版本与跨窗口交接
 
-- 日期：2026-09-15；任务GG-093；本地分支chore/GG-093-docker-cleanup-build-handoff，最终提交后标签为goodgood-local-2026-09-15-gg093。
+- 日期：2026-09-15；当前任务GG-096；本地分支feature/GG-096-production-auth-entry，基线提交18c338f；GG093标签继续作为历史构建交接点。
 - 当前项目入口：F:/goodgood；累计代码包含a73835f、GG081—091与GG092交接。`.codex/`是用户本地设置，保留不提交；生产未部署。
-- 新窗口先读AGENTS/CURRENT_STATE/WORKFLOW/IMPLEMENTATION_PLAN/BACKLOG，然后本页；新任务从GG-094分配。不要从main或旧GG024工作树开始。
+- 新窗口先读AGENTS/CURRENT_STATE/WORKFLOW/IMPLEMENTATION_PLAN/BACKLOG，然后本页；新任务从GG-097分配。不要从main或旧GG024工作树开始。
 
 ## 先确认版本，避免退回历史
 
@@ -27,7 +27,7 @@ git merge-base --is-ancestor bb782c0 HEAD
 - 积分后台用枚举下拉分类，充值登记须可信支付证据；站长默认运营看板，统计现金充值与并发，8项导航顺序见GG089。
 - JCOIN总量1亿，用户回馈池50%；一期100万枚、每100有效充值消费积分2枚，正常约50万元消费分完；发完为止无期限。上海2026-09-18起算，初始未开启；不兑换、不锚定人民币、不向普通用户展示总池/批次额度。站长管理批次卡片/进度；创作池与后续批次另行实施。
 - 私有问题反馈支持最多5张图、类型、文字、状态与回复；类型菜单始终向下。
-- 每账户一个固定唯一随机6位数字邀请码，可无限邀请；新用户邮件码+活动邀请者邀请码均有效才开户，老active可只用邮件码登录。统一单一表单，邮箱可直接编辑，换邮箱作废旧挑战；新用户200欢迎积分仅一次。
+- 每账户一个固定唯一随机6位数字邀请码，可无限邀请；新用户邮件码+活动邀请者邀请码均有效才开户，老active可只用邮件码登录。GG096提供独立`/login`与`/register`及固定子导航；登录隐藏邀请码、注册直接显示。邮箱可直接编辑，换邮箱作废旧挑战但不解除发送冷却；新用户200欢迎积分仅一次。
 - 邀请码在本人余额下方仅普通文本，没有整行点击或复制按钮。账户入口无焦点外框，键盘焦点用浅色背景。最后两处样式按用户要求未做自动/browser验证，不能宣称最新样式已全量验收。
 - 精确规则/边界以GG081、GG083—091任务及ADR0087为准，专题文档中明确标号的旧规则属于历史，不优先于新决定。
 
@@ -35,7 +35,7 @@ git merge-base --is-ancestor bb782c0 HEAD
 
 | 组件 | 当前入口 | 本次记录的进程/来源 |
 | --- | --- | --- |
-| 工作区Web | http://127.0.0.1:32131 | `node scripts/local-checkpoint.mjs start workspace`；邮箱验证码、无local账户预设；端口实时核验PID，代码由version接口证明 |
+| 工作区Web | http://127.0.0.1:32131/login | `node scripts/local-checkpoint.mjs start workspace`；`/register`为注册入口；邮箱验证码、无local账户预设；端口实时核验PID，代码由version接口证明 |
 | mock Worker | http://127.0.0.1:32142/health/ready | `node scripts/local-checkpoint.mjs start worker`；mock-only |
 | mock provider | http://127.0.0.1:32143/health/ready | `node scripts/local-checkpoint.mjs start provider`；mock-only |
 | PostgreSQL | loopback54449/goodgood | goodgood-gg052-postgres-1，最新0043 |
@@ -108,7 +108,7 @@ runner只在loopback54449创建固定命名的新空库，拒绝已存在库，�
 
 GG094已获用户手动验收。GG095将该登录流程并入32131，取消工作区local auth账户预设并停用32191。新窗口从GG095提交继续，先执行`verify:checkpoint`和version/端口核验，保持原数据；上线、真实发信、生图/视频付费调用均非本次交接授权。
 
-GG095最终提交后重新构建并更新32131；version接口须为该revision且`build.verified=true`，未登录session须401，32191须无监听，Worker/provider readiness保持200。登录入口为 `http://127.0.0.1:32131/create`，邮件查看入口为 `http://127.0.0.1:58045`。忽略.env.login-review保存本机Mailpit模式，不能将其配置用于生产。
+GG096最终提交已完成checkpoint重建并替换32131 Web；version与`git rev-parse HEAD`一致且`build.verified=true`，认证方式email_code，无Cookie session 401，32191无监听，Worker/provider readiness保持200。根路由跳`/login?returnTo=%2F`；登录无邀请码、注册有邀请码，390px无横向溢出。登录/注册入口为 `http://127.0.0.1:32131/login` 与 `/register`，邮件查看入口为 `http://127.0.0.1:58045`。忽略.env.login-review保存本机Mailpit模式，不能将其配置用于生产。
 
 ## 提交正确但打开旧页面的排查
 

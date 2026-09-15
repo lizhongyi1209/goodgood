@@ -1,5 +1,7 @@
 # Navigation and route contract
 
+GG-096本地新增可直接访问的`/login`与`/register`：两页共享固定“登录 / 注册”子导航，登录隐藏邀请码、注册直接显示邀请码。受保护页面未登录时进入`/login?returnTo=...`；仅允许站内非认证页目标，无效值回退`/create`。邮箱、验证码、邀请码和挑战ID不进入URL。该入口尚未部署生产，见ADR0088。
+
 GG-093本地交接新增只读`GET /api/health/version`，返回受`start:checkpoint`验证的Git revision/源码与产物指纹；无构建身份时`build`为null。该接口仅用于本地版本核验，不是产品业务API，POST返回405。
 
 GG-091 /api/auth/session新增本人account.invitationCode；POST /api/auth/email/verify可传email并校验与挑战收件地址一致，六位invitationCode对新用户/旧pending必需。移除GG090后台query/create/revoke邀请码路由；码随用户创建自动分配，用户无改码/发额外码接口。
@@ -218,6 +220,8 @@ when their persistence and navigation behavior exist:
 
 | Route | Purpose |
 | --- | --- |
+| `/login` | 本地候选：邮箱验证码登录；未登录保护页的统一入口 |
+| `/register` | 本地候选：邮箱验证码与六位邀请码注册 |
 | `/create` | Clean or active creation session |
 | `/projects` | Project index |
 | `/projects/:projectId` | Restore and continue a project |

@@ -1,6 +1,6 @@
 # GG-063 quality pricing
 
-GG-091统一表单：邮箱→发送验证码→填写邮件码/新用户邀请码→确认。邮箱可以直接改，新地址须重新发码；异步发信响应仅绑定请求时地址。缺码/无效码不注册，正确邮件码可修正邀请码重试；既有active无需填写邀请码。每账户固定六位码可无限邀请，本人菜单积分下方纯文本展示；暂停邀请者的码不可用于新注册。后台不再额外发码。
+GG-096认证入口：受保护页未登录进入`/login`，可用固定子导航切换`/register`；登录只显示邮箱/邮件码，注册直接增加邀请码。登录提交发现新邮箱时自动切注册并保留邮箱、挑战和邮件码。安全`returnTo`恢复原站内业务页，认证字段不入URL。GG-091的邀请码规则继续有效：缺码/无效码不注册，既有active无需邀请码；每账户固定六位码可无限邀请，暂停邀请者的码不可用于新注册。
 
 GG-090已有账户默认邮箱登录；新用户点击使用邀请码注册，填写邮箱、邮件码及邀请码，双验证后直接进入工作区。登录时有效邮件码发现未开通/新邮箱，会提示邀请码并切换注册，保留邮件码；无效邀请码可修正再试，达到挑战失败上限须重新发码。旧pending会话使用邀请码开通，重新验证邮箱；暂停仍人工恢复。站长邀请码只生成成功当次显示明文，关闭后不可重读；响应丢失重试显示对应提示，停用后再生成。
 
@@ -146,16 +146,18 @@ the line; accepted tasks retain the choice and quote after disable/reprice.
 
 - On first load, confirm the GoodGood session before enabling owner-scoped
   work; keep the loading state quiet and blocking.
-- Signed-out and expired sessions use one global recovery surface. The selected
-  email mode keeps the mailbox, `发送验证码`, six-digit code, and `登录` action
-  visible in one form; first successful verification also registers. Password,
-  phone, and social login are absent. OIDC rollback mode keeps its hosted button.
+- Signed-out and expired sessions use the addressable `/login` recovery page and
+  preserve a validated same-origin business `returnTo`. Email mode keeps fixed
+  `登录 / 注册` navigation: login shows mailbox and six-digit code, while register
+  adds the six-digit invitation. A new mailbox discovered during login switches
+  to register without discarding its challenge or code. Password, phone, and
+  social login are absent. OIDC rollback mode keeps its hosted button.
 - Sending is user-initiated. Before a challenge exists the code control is
-  disabled. After a successful send, the mailbox is locked to that challenge,
-  the same send control shows a 60-second resend countdown, and `修改邮箱`
-  explicitly resets the form. Focused mailbox/code inputs change border only,
-  without a focus shadow. Refresh restores only a browser-bound active challenge;
-  mailbox/code never enters a URL or localStorage.
+  disabled. After a successful send, the same control shows a 60-second resend
+  countdown. Editing the mailbox invalidates the old challenge/code but does not
+  shorten that cooldown. Focused mailbox/code/invitation inputs change border
+  only, without a focus shadow. Refresh restores only a browser-bound active
+  challenge; mailbox/code/invitation never enters a URL or localStorage.
 - Invalid/replayed/expired/cross-browser codes use stable copy and keep the
   current creative state. Uncertain delivery asks the user to wait/check mail;
   it does not claim inbox delivery or automatically send a second message.
