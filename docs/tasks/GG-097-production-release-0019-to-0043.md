@@ -505,28 +505,35 @@
 **未完成 / 阻塞**
 
 - 阶段 6.5 **通知渠道不存在**：主机无任何对外告警通道（ADR 0016 未落地）。
-  已按站长指示如实记为未接入，`notificationDelivered: false`。
-- 阶段 6.7 alpha 门禁 **`ok: false`**，两项 `fail`：
-  - `controlled-alpha-member-journey`：门禁硬要求 `welcomeCredits === 100` 且
-    `pendingBeforeApproval === true` / `generationBlockedWhilePending === true`，
-    但产品实际为 **200** 积分、且 email 注册路径直接 `active`（GG-090/ADR 0089 已取代
-    ADR 0020 的 pending 模型）。**门禁契约与当前产品行为不一致**，需产品决策：
-    要么更新门禁契约以反映 email 注册模型，要么恢复 pending 门。
-  - `controlled-alpha-operations`：取决于 6.5 的通知渠道。
-- 阶段 6.8 解除维护：**未执行**，门禁未通过，公网保持 503。
-- `GOODGOOD_EMAIL_REGISTRATION_ENABLED` 目前为 `false`，公网仍受维护页拦截。
+  已按站长指示如实记为未接入，`notificationDelivered: false`。站长 2026-09-15 决定：
+  **通知渠道后面再做**，不阻塞本次上线。
+- `controlled-alpha-operations`：仍取决于 6.5，保持 `fail`。
 
-**需要站长决定的下一步（三选一）**
+**已解决：门禁契约与产品行为不一致（ADR 0090，`5b65601`）**
 
-1. **接入通知渠道**后重跑 6.5 与 6.7；同时决定如何解决门禁与 email 注册模型的契约冲突。
-2. **更新门禁契约**（把 `welcomeCredits` 改为 200、把 pending 要求改为 email 模型的等价要求），
-   走 ADR 后重跑门禁。这是改产品验收标准，需独立评审。
-3. **保持维护状态**不动，作为已部署但未开放的中间态长期存在（不推荐：
-    站长已能登录，但公网用户看不到站点）。
+- 站长 2026-09-15 明确：「我接受任何人注册成功后就激活。」
+  → 写入 **ADR 0090**：「注册即激活」是目标行为而非缺陷；准入收口唯一依赖
+  `GOODGOOD_EMAIL_REGISTRATION_ENABLED`；欢迎积分为 **200**。
+- 门禁验证项据此对齐：`controlled-alpha-boundary` 改为要求
+  `registrationDefaultState === "active"`、`siteOwnerApprovalRequired === false`；
+  `controlled-alpha-member-journey` 的 `welcomeCredits` 改为 `200`，并移除描述已放弃
+  pending 模型的两项。**未放宽任何其他门禁**（维护遏制、私有资产、恢复演练、通知送达、
+  跨账户拒绝全部不变）。
+- **更正一处自身错误**：此前本卡记录的 `controlled-alpha-boundary` 为 `pass`，
+  但其 `registrationDefaultState: "pending"` 与 `siteOwnerApprovalRequired: true`
+  是**不实值**——生产库 `pending` 用户为 0、审批审计为 0。契约修正后该两项已改为
+  实际值，当时的 `pass` 属填报错误，已在主机保留
+  `readiness.json.passclaimed` 作为对照，不掩盖。
+
+**剩余工作**
+
+- 契约改动需要**新镜像**才在主机生效（`alpha-gate` 在主机候选源码目录上运行）。
+  待 CI 产出新 revision 镜像后，把该 revision 送到主机、重跑门禁。
+- 阶段 6.8 解除维护：待门禁全 `pass` 后执行。
 
 **其他已记录的独立缺口**
 
 - 备份 timer `disabled`（自 2026-09-05 未自动运行），站长指示「不动，只记录」。
 - 主机 2 vCPU / 4 GiB 同时跑 green Web+Worker 与 blue Web，`MemAvailable` 2.27 GiB，
   余量可接受但 blue Web 长期闲置占用资源，可在观察期后退役。
-- 本地 32131/32142 栈在 `npm ci` 前被停止，**尚未恢复**。
+- 本地 32131/32142 栈已恢复（revision `f3522d3` 及之后）。
