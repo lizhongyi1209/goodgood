@@ -1,6 +1,6 @@
 # Production implementation plan
 
-- Last synchronized: 2026-09-15
+- Last synchronized: 2026-09-17
 - Current phase: GG-097 累计功能生产发布——**已部署并开放公网**。
 - Current objective: 观察已开放站点；`controlled-alpha-operations`（告警通道）站长决定以后再做，开站经其明确授权。
 - Previous objective: 合并 main → CI 镜像 → 迁移 0043 → 切流 → 站长初始化 → 门禁对齐。
@@ -15,15 +15,16 @@
   如实 `fail`——主机无任何对外告警通道。**站长 2026-09-15 授权带着该缺口开站**，
   并决定通知渠道以后再做。
 - 契约已按 **ADR 0090** 对齐：确认「注册即激活」为目标行为，欢迎积分为 200。
-- 公网开放中；`GOODGOOD_EMAIL_REGISTRATION_ENABLED=false`。
+- 公网开放中；`GOODGOOD_EMAIL_REGISTRATION_ENABLED=true`（2026-09-15 站长要求打开，注册即激活并立得 200 积分，见 ADR 0090）。
 - 线上入口为 `goodgood.o1key.com`；`staging-goodgood.o1key.com` 仅保留名称，不是测试入口。
-- 生产数据：users 2（站长 951565127@qq.com、lizhongyi1209@gmail.com）、
-  assets 1（private）、references 2（ready）。
+- 生产数据（2026-09-17 首轮核对）：users 21（全部 active）、assets 60、
+  references 44、jobs 56（51 成功 / 5 失败）、累计结算 1900 积分；
+  运营手动登记充值 4 笔共 15100 积分。
 - 附带修复：`c343351`（Next 16.3.3）、`89afedb`（Debian libpcre2）——两者都是 main CI
   发布镜像的硬阻断。
 - 独立缺口（已记录未处理）：备份 timer `disabled`（自 09-05）；blue Web 闲置占用；
   无告警通道。
-- Next action: 无待办发布步骤；观察期后再评估通知渠道与 blue 退役。
+- Next action: 无待办发布步骤；观察期，评估通知渠道、自动备份与 blue 退役。
 - Blockers: 无阻塞执行项；`operations` 缺口为已知并已授权接受。
 
 ## Verification sequence

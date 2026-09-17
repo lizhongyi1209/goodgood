@@ -494,9 +494,10 @@
 - 槽位：**green 接流**（web `3200` / worker health `3201`）。blue Web 仍在运行但**未接流**，
   blue Worker **已停止**。Nginx upstream 备份 `production-active-upstream.blue.backup`。
 - 公网：**开放（200）**。注册开关：**`true`**（2026-09-15 站长要求打开）。
-- 数据：users 2（站长 `951565127@qq.com` + `lizhongyi1209@gmail.com`，均 active）、
-  assets 1（private，`1024x1024`，owner 为 gmail 账户）、jobs 1（succeeded）、
-  references 2（ready）、积分 200 / 280、邀请码使用 1。
+- 数据（2026-09-17 首轮真实运行核对）：users 21（全部 active）、assets 60、
+  references 44、jobs 56（51 成功 / 5 失败）、累计结算 1900 积分、冻结 0；
+  运营手动登记充值 4 笔共 15100 积分（支付宝 ×2、支付宝收款、微信）。
+  站长 951565127@qq.com 余额 180，邀请码 405513。
 
 **已完成**
 
