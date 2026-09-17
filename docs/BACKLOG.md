@@ -1,12 +1,17 @@
 # 当前任务与优先级 · 当前与最近交付
+
+> **部署状态（2026-09-17）**：GG-024—GG-096 已在 GG-097 一并上线
+> （`goodgood.o1key.com`，`5b65601`/`0043`）。各行「未部署」是历史状态；当前事实见
+> [CURRENT_STATE](CURRENT_STATE.md)。仍搁置：C6、支付结算、Seedance 正式视频结算。
+
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
 | GG-097 | 累计功能生产重发布（0019→0043） | **已完成并开放**：`5b65601`/`0043`/green槽位上线，站长账户+邀请码405513，真实生图、跨账户拒绝404、赠送积分、参考图上传均通过；门禁五项pass、`operations`如实fail并经站长授权带缺口开站 | [任务](tasks/GG-097-production-release-0019-to-0043.md) / [发布记录](releases/2026-09-15-cumulative-alpha-release.md) |
-| GG-096 | 上线规格登录与注册入口 | 本地实现/门禁/32131切换完成；独立/login与/register、固定子导航、安全returnTo；未部署，发布见GG-097 | [任务](tasks/GG-096-production-auth-entry.md) / [ADR](decisions/0088-addressable-login-registration-entry.md) |
+| GG-096 | 上线规格登录与注册入口 | 已随 GG-097 上线；独立/login与/register、固定子导航、安全returnTo。**邀请码已改为选填**（ADR 0089），注册即 active 并得 200 积分（ADR 0090） | [任务](tasks/GG-096-production-auth-entry.md) / [ADR](decisions/0088-addressable-login-registration-entry.md) |
 | GG-094—095 | 登录/注册邀请码状态与主测试入口 | GG094用户验收通过；GG095已将32131切为无预设账户的邮箱登录并停用32191，门禁/运行核验通过；未部署 | [GG094](tasks/GG-094-registration-invitation-visibility.md) / [GG095](tasks/GG-095-primary-email-auth-test-flow.md) |
 | GG-093 | 废弃Docker清理与构建版本交接 | 已完成本地交付；删除37容器/9旧应用镜像/5空网络，回收21.92GB构建缓存，34卷保留；构建指纹与启动核验已加入，未部署 | [任务](tasks/GG-093-docker-cleanup-build-handoff.md) |
 | GG-092 | 保存版本/AGENTS与无上下文交接 | 当前累计版本已保存；09-15重启工作区32131/登录32191，ready200，本地未发布 | [任务](tasks/GG-092-development-handoff.md) |
-| GG-091 | 账户唯一邀请码、简洁登录与线上测试清理 | 原功能已验证；登录/注册邀请码显示由GG094修正并待32191手验；线上10测试用户/29文件清理完成，功能未部署 | [GG091](tasks/GG-091-account-invitation-login.md) / [GG094](tasks/GG-094-registration-invitation-visibility.md) / [前版GG090](tasks/GG-090-invitation-registration.md) |
+| GG-091 | 账户唯一邀请码、简洁登录与线上测试清理 | 已随 GG-097 上线；线上 10 个测试用户/29 文件清理已完成（**勿重跑**），此后账户为 09-15 后重建 | [GG091](tasks/GG-091-account-invitation-login.md) / [GG094](tasks/GG-094-registration-invitation-visibility.md) / [前版GG090](tasks/GG-090-invitation-registration.md) |
 | GG-088—089 | 下拉向下/站长管理功能排序 | 本地完成；522/25、桌面/390px通过；32141已更新，未部署 | [GG088](tasks/GG-088-feedback-select-downward.md) / [GG089](tasks/GG-089-admin-navigation-order.md) |
 | GG-087 | 私有问题反馈与站长处理 | 实现验证完成；522/25、SQL/UI通过，原32141已更新；未部署 | [任务](tasks/GG-087-problem-feedback.md) |
 | GG-085 | JCOIN发行批次卡片 | 本地完成；门禁515/24、桌面/390px通过；原32141卡片已更新，发行规则/原数据保留，未部署 | [GG085](tasks/GG-085-jcoin-batch-cards.md) / [GG086](tasks/GG-086-jcoin-live-progress.md) |
@@ -86,12 +91,7 @@
 | GG-039 | 视频生成数量 1/2/4 与独立并发任务 | 本地完成并验证，待用户检查；未真实并发实测/发布 | [任务](tasks/GG-039-video-count-concurrency.md) |
 | GG-040 | 图片/视频 `---` 批量提示词与数量乘积并发 | 本地门禁与 Chrome 验证通过，待用户检查；未真实批量实测/发布 | [任务](tasks/GG-040-batch-prompts.md) |
 | GG-041 | 移除图片/视频批量提示词重复说明 | 本地门禁与现有 Chrome 验证通过，待用户检查；并发与报价不变，未发布 | [任务](tasks/GG-041-remove-batch-prompt-summary.md) |
-| GG-042 | 参数抽屉覆盖成品区 | 本地门禁与现有 Chrome 桌面/窄屏验证通过，待用户检查；未发布 | [任务](tasks/GG-042-parameter-drawer-overlay.md) |
-| GG-043 | 放大 1:1 素材缩略图与视频模式点击预览 | 本地门禁通过，用户完成页面检查；最新候选已启动 32140 供真实接口站长全排查，未发布 | [任务](tasks/GG-043-larger-reference-previews.md) / [运行记录](tasks/GG-036-seedance-page-smoke.md) |
-| GG-059 | 大厅统一站长管理与右侧企业/模型/账户切换 | 本地门禁、浏览器与配置/历史保留检查完成，原页面已更新，未发布 | [任务](tasks/GG-059-site-owner-workspace.md) |
-| GG-060 | 站长管理标题层级与功能栏简化 | 本地完整门禁、桌面/窄屏及历史保留检查通过，原页面已更新，未发布 | [任务](tasks/GG-060-management-heading-hierarchy.md) |
-| GG-061 | 账户操作记录移为独立审计日志 | 本地门禁、桌面/窄屏与历史保留检查通过，原页面已更新，未发布 | [任务](tasks/GG-061-audit-log-section.md) |
-| GG-062 | GPT 图片三线路与独立定价 | 本地门禁、隔离 SQL、原页面与历史保留检查通过，未发布 | [任务](tasks/GG-062-gpt-image-lines.md) |
+| GG-042—GG-062 | 抽屉/缩略图/站长导航/审计/GPT线路等 | 均已随 GG-097 上线 | [GG042](tasks/GG-042-parameter-drawer-overlay.md) · [GG043](tasks/GG-043-larger-reference-previews.md) · [GG059](tasks/GG-059-site-owner-workspace.md) · [GG060](tasks/GG-060-management-heading-hierarchy.md) · [GG061](tasks/GG-061-audit-log-section.md) · [GG062](tasks/GG-062-gpt-image-lines.md) |
 ## 已明确搁置（不得自动恢复） · 最后同步2026-09-15；GG-024—097已占用，下一个需求从GG-098分配
 | ID | 事项 | 恢复条件 | 入口 |
 | --- | --- | --- | --- |

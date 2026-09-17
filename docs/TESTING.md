@@ -1,6 +1,10 @@
 # GG-063 verification
 
-GG-093当前本地环境、Docker清理、构建指纹与恢复命令见[DEVELOPMENT_HANDOFF.md](DEVELOPMENT_HANDOFF.md)；下方有任务标号的旧端口与测试数是对应阶段记录，以该交接的当前端口和验证边界为准，不运行旧fixture/转换脚本。构建来源定向测试见`tests/gg093-build-provenance.test.mjs`，生产未部署。
+GG-093当前本地环境、Docker清理、构建指纹与恢复命令见[DEVELOPMENT_HANDOFF.md](DEVELOPMENT_HANDOFF.md)；下方有任务标号的旧端口与测试数是对应阶段记录，以该交接的当前端口和验证边界为准，不运行旧fixture/转换脚本。构建来源定向测试见`tests/gg093-build-provenance.test.mjs`。
+
+**生产已于 2026-09-15 部署并开放**（GG-097，`goodgood.o1key.com` / revision `5b65601` /
+迁移 `0043`）。下方标有任务号的段落是各阶段的历史验证记录，不代表当前部署状态；
+当前事实见 [CURRENT_STATE.md](CURRENT_STATE.md)。
 
 GG-091替代GG090旧单次码测试：六位字符串/前导零/拒长码，验证码与email匹配、缺码/错码、同邀请码并发两个成功、同邮件挑战一次性、每用户仅1唯一code、活动邀请人要求、旧pending/暂停、200欢迎一次、注册事务回滚及挑战清理。命名goodgood_gg091_invitation_test*、loopback54449、INTEGRATION/NO_WORKER及空库/无peer守卫；UI仅专用Mailpit无Worker栈，原预览不写fixtures。授权线上清理仅服务器新备份/命名无Worker克隆演练及精确用户/对象清单，生产身份/配置保持，详见操作记录。
 

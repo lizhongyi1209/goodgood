@@ -1,6 +1,6 @@
 # Navigation and route contract
 
-GG-096本地新增可直接访问的`/login`与`/register`：两页共享固定“登录 / 注册”子导航，登录隐藏邀请码、注册直接显示邀请码。受保护页面未登录时进入`/login?returnTo=...`；仅允许站内非认证页目标，无效值回退`/create`。邮箱、验证码、邀请码和挑战ID不进入URL。该入口尚未部署生产，见ADR0088。
+GG-096新增可直接访问的`/login`与`/register`：两页共享固定“登录 / 注册”子导航，登录隐藏邀请码、注册直接显示邀请码（**选填**，见 ADR 0089）。受保护页面未登录时进入`/login?returnTo=...`；仅允许站内非认证页目标，无效值回退`/create`。邮箱、验证码、邀请码和挑战ID不进入URL。**该入口已于 2026-09-15 随 GG-097 部署生产并开放**（`goodgood.o1key.com`）。
 
 GG-093本地交接新增只读`GET /api/health/version`，返回受`start:checkpoint`验证的Git revision/源码与产物指纹；无构建身份时`build`为null。该接口仅用于本地版本核验，不是产品业务API，POST返回405。
 
@@ -220,8 +220,8 @@ when their persistence and navigation behavior exist:
 
 | Route | Purpose |
 | --- | --- |
-| `/login` | 本地候选：邮箱验证码登录；未登录保护页的统一入口 |
-| `/register` | 本地候选：邮箱验证码与六位邀请码注册 |
+| `/login` | 邮箱验证码登录；未登录保护页的统一入口（已上线） |
+| `/register` | 邮箱验证码注册；邀请码**选填**，注册即 active 并得 200 积分（已上线） |
 | `/create` | Clean or active creation session |
 | `/projects` | Project index |
 | `/projects/:projectId` | Restore and continue a project |

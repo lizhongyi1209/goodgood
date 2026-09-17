@@ -1,6 +1,12 @@
 # Development and deployment
 
-GG-093当前本地环境、Docker清理、构建指纹与恢复命令见[DEVELOPMENT_HANDOFF.md](DEVELOPMENT_HANDOFF.md)；下方有任务标号的旧端口与测试数是对应阶段记录，以该交接的当前端口和验证边界为准，不运行旧fixture/转换脚本。生产未部署。
+GG-093当前本地环境、Docker清理、构建指纹与恢复命令见[DEVELOPMENT_HANDOFF.md](DEVELOPMENT_HANDOFF.md)；下方有任务标号的旧端口与测试数是对应阶段记录，以该交接的当前端口和验证边界为准，不运行旧fixture/转换脚本。
+
+**生产已于 2026-09-15 部署并开放**（GG-097）：`goodgood.o1key.com`，revision `5b65601`、
+迁移 `0043`、green 槽位接流，公网与注册均开放。当前权威部署事实见
+[CURRENT_STATE.md](CURRENT_STATE.md) 与 [发布记录](releases/2026-09-15-cumulative-alpha-release.md)。
+下方所有标有任务号的段落仍是各自阶段的记录，**不代表当前部署状态**；
+生产变更必须另开任务卡并取得明确授权。
 
 GG-091本地功能仅新增0043账户码/邀请关系及触发器补齐，替换原32141 Web；保持原local配置/用户数据/Worker，不发真实邮件。注册UI在命名隔离SMTP无Worker栈验收。线上全部测试用户清理已按独立授权完成，现有0019/镜像不变，见操作记录；不是累计功能上线。不要将已删除的站长测试身份恢复或运行旧转换脚本。
 
@@ -448,16 +454,20 @@ commit the manifest or pass mailbox contents in a command-line flag.
 
 ### Production authentication configuration
 
-The deployed mode is still Authing OIDC. [ADR 0045](decisions/0045-goodgood-owned-email-otp.md)
-selects email-only authentication for the next approved authentication release;
-follow [EMAIL_AUTH_PLAN.md](EMAIL_AUTH_PLAN.md) for its implementation and
-cutover requirements. GG-029 now has local production-secret mounts, mode-aware
-release preflight, and a reviewed-owner binding command, but no live secret has
-been installed and no owner has been migrated. Do not set `email_otp` in
-production until the remaining delivery matrix, external alert delivery,
-exact-candidate CI/security evidence, migration/rollback rehearsal, and cutover
-authorization pass. GG-028's custom Authing domain is no longer the target for
-this work.
+**The deployed mode is `email_otp` since the 2026-09-15 GG-097 release**
+(`goodgood.o1key.com`, revision `5b65601`). [ADR 0045](decisions/0045-goodgood-owned-email-otp.md)
+selected email-only authentication; it is now live. The retained Authing client
+secret stays installed only for the rollback window. Registration is open, and a
+verified mailbox creates an `active` owner directly per
+[ADR 0090](decisions/0090-registration-activates-account.md); the superseded
+`pending` admission model of ADR 0020 no longer applies.
+
+The remaining delivery-matrix and external-alert requirements below were **not**
+fully satisfied at cutover: the site was opened with the site owner's explicit
+authorization while `controlled-alpha-operations` stays `fail` because no
+outbound notification channel exists. See
+[the release receipt](releases/2026-09-15-cumulative-alpha-release.md).
+GG-028's custom Authing domain is no longer the target for this work.
 
 The candidate Web process recognizes these email-mode values; none belongs in
 browser code, the image, or the generation Worker:
