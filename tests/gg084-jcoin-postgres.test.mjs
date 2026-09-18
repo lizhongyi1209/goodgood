@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { randomUUID } from 'node:crypto';
+import { readdir } from 'node:fs/promises';
 import pg from 'pg';
 import { applyMigrations } from '../server/persistence/migrate.mjs';
 import { grantCredits, runCreditTransaction } from '../server/billing/repository.mjs';
@@ -8,6 +9,11 @@ import { recordManualPayment } from '../server/billing/manual-payment.mjs';
 import { createPaymentOrderInTransaction, settlePaymentOrderInTransaction } from '../server/billing/payment-repository.mjs';
 import { changeJcoinPlan, processJcoinRewards, readJcoinPlan, readOwnJcoin } from '../server/jcoin/repository.mjs';
 import { JCOIN_START } from '../shared/contracts/jcoin.mjs';
+
+const expectedLatestMigration = (await readdir(new URL('../migrations', import.meta.url)))
+  .filter((name) => /^\d{4}_[a-z0-9_]+\.sql$/.test(name))
+  .sort()
+  .at(-1);
 
 test('GG084 disposable PostgreSQL proves issuance, provenance, rollback, refunds and fixed cap', {
   skip:process.env.GOODGOOD_GG084_INTEGRATION!=='1', timeout:60_000,
@@ -21,7 +27,7 @@ test('GG084 disposable PostgreSQL proves issuance, provenance, rollback, refunds
   try {
     assert.equal((await pool.query("SELECT tablename FROM pg_tables WHERE schemaname='public'")).rowCount,0);
     assert.equal((await pool.query('SELECT pid FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid()')).rowCount,0,'No Worker or other clients may attach to fixtures');
-    assert.equal((await applyMigrations({databaseUrl:url.href,logger:{log(){}}})).at(-1),'0043_gg091_account_invitations.sql');
+    assert.equal((await applyMigrations({databaseUrl:url.href,logger:{log(){}}})).at(-1),expectedLatestMigration);
     const actor=randomUUID(), names=new Map();
     const addUser=async(name)=>{const id=randomUUID(),email=`gg084-${name}@example.invalid`;names.set(id,email);await pool.query("INSERT INTO users(id,email,status) VALUES ($1,$2,'active')",[id,email]);return id;};
     await pool.query("INSERT INTO users(id,email,status) VALUES ($1,'gg084-owner@example.invalid','active')",[actor]);

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import test from "node:test";
 import {
   deriveReleaseMetadata,
@@ -128,6 +128,10 @@ test("runtime build dependencies exclude the vulnerable image-size release", asy
 });
 
 test("release metadata is deterministic and records the current migration", async () => {
+  const latestMigration = (await readdir(new URL("../migrations", import.meta.url)))
+    .filter((name) => /^\d{4}_[a-z0-9_]+\.sql$/.test(name))
+    .sort()
+    .at(-1);
   const first = await deriveReleaseMetadata({
     repository: "Lizhongyi1209/GoodGood",
   });
@@ -137,13 +141,13 @@ test("release metadata is deterministic and records the current migration", asyn
 
   assert.deepEqual(first, second);
   assert.equal(first.imageName, "ghcr.io/lizhongyi1209/goodgood");
-  assert.equal(first.migrationVersion, "0043_gg091_account_invitations.sql");
+  assert.equal(first.migrationVersion, latestMigration);
   assert.match(first.runtimeConfigVersion, /^[a-f0-9]{64}$/);
   assert.equal(
     githubOutput(first),
     [
       "image-name=ghcr.io/lizhongyi1209/goodgood",
-      "migration-version=0043_gg091_account_invitations.sql",
+      `migration-version=${latestMigration}`,
       `runtime-config-version=${first.runtimeConfigVersion}`,
       "",
     ].join("\n"),

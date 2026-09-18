@@ -6,7 +6,7 @@ import { readFile } from 'node:fs/promises';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createServer } from 'vite';
-import { ADMIN_CREDIT_TYPES } from '../shared/contracts/admin-credit-types.mjs';
+import { ADMIN_CREDIT_TYPES, ADMIN_CREDIT_AMOUNT_MAX } from '../shared/contracts/admin-credit-types.mjs';
 import { createAdminCreditGrant } from '../server/admin/api.mjs';
 import { createAdminNodeApiHandler } from '../server/admin/node-api.mjs';
 import { createPaymentOrder } from '../server/billing/payment-api.mjs';
@@ -23,7 +23,7 @@ test('GG081 active owner and structured input are required before any grant',asy
   for(const ownerContext of [null,{...owner,systemRole:'member'},{...owner,accessStatus:'suspended'}]) {
     await assert.rejects(createAdminCreditGrant({...base,ownerContext,input:valid,repository:{}}),e=>[401,403].includes(e.status));
   }
-  for(const input of [{...valid,creditGrantType:'充值'},{...valid,amount:true},{...valid,amount:'100'},{...valid,amount:0},{...valid,amount:5001},{...valid,amount:1.1},{...valid,reason:'x'},
+  for(const input of [{...valid,creditGrantType:'充值'},{...valid,amount:true},{...valid,amount:'100'},{...valid,amount:0},{...valid,amount:ADMIN_CREDIT_AMOUNT_MAX+1},{...valid,amount:1.1},{...valid,reason:'x'},
     {...valid,creditGrantType:'paid_recharge'}, {...valid,creditGrantType:'paid_recharge',paymentConfirmed:'true',receiptReference:'receipt-081'},
     {...valid,creditGrantType:'paid_recharge',paymentConfirmed:true,receiptReference:'short'}, {...valid,receiptReference:'receipt-081'}]) {
     await assert.rejects(createAdminCreditGrant({...base,input,repository:{}}),e=>e.status===400);

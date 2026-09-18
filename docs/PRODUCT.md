@@ -10,7 +10,7 @@ JCOIN当前决定见[ADR0081](decisions/0081-jcoin-batch-accumulation.md)：每�
 
 [ADR0084](decisions/0084-jcoin-runtime-and-private-user-view.md)：个人平台币页只显示自己的余额、累计获得、退款撤回与分页流水，接口不返回发行总量/批次额度。站长管理查看固定库存及一期计划，开启、暂停、恢复和手动处理；迁移初始为未开启，9.18前不奖励。成功消费中的可靠正式充值部分按比例奖励，小额同样累计，已退款不奖励、事后退款撤回原实际奖励且不释放本期发行额度。混合测试资金或缺支付证据保守排除；创作池、企业来源、正式视频及下一批配置另行实施。
 
-GG-081本地候选允许站长按充值/赠送/活动奖励/测试/服务补偿/其他增加个人积分，默认测试；类型独立于备注。充值登记已确认收款，凭证唯一，100积分/CNY，单次1—5000，赠品独立记赠送。站长入口默认运营看板，统计真实充值与生成任务并发；GG-084在此基础上接入一期消费奖励。参见[ADR0080](decisions/0080-classified-admin-credit-grants-and-operations.md)。
+GG-081本地候选允许站长按充值/赠送/活动奖励/测试/服务补偿/其他增加个人积分，默认测试；类型独立于备注。充值登记已确认收款，凭证唯一，100积分/CNY，单次1—1000000（上限1万元），赠品独立记赠送。站长入口默认运营看板，统计真实充值与生成任务并发；GG-084在此基础上接入一期消费奖励。参见[ADR0080](decisions/0080-classified-admin-credit-grants-and-operations.md)。
 
 GG-080 proposes a separate JCOIN reward system, continuing candidate a73835f.
 The owner confirmed a fixed 100,000,000 supply cap and a 50,000,000 user-benefit

@@ -7,6 +7,7 @@
 
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
+| GG-098 | 单次充值上限提到 1 万元并改为手动输入 | 本地完成；上限 5000→1,000,000 积分（含迁移 `0044`）、删除快捷选项；门禁 563/0 失败、隔离 PostgreSQL 实测通过；**未部署** | [任务](tasks/GG-098-manual-grant-ceiling.md) |
 | GG-097 | 累计功能生产重发布（0019→0043） | **已完成并开放**：`5b65601`/`0043`/green槽位上线，邀请码405513；门禁五项pass、`operations`如实fail（**唯一原因：无告警通道**，备份正常）并经授权带缺口开站；09-17 恢复演练通过（59表/2403行/43迁移）；**待排查：参考图校验超时** | [任务](tasks/GG-097-production-release-0019-to-0043.md) / [发布记录](releases/2026-09-15-cumulative-alpha-release.md) / [演练与缺陷](operations/2026-09-17-production-restore-drill.md) |
 | GG-096 | 上线规格登录与注册入口 | 已随 GG-097 上线；独立/login与/register、固定子导航、安全returnTo。**邀请码已改为选填**（ADR 0089），注册即 active 并得 200 积分（ADR 0090） | [任务](tasks/GG-096-production-auth-entry.md) / [ADR](decisions/0088-addressable-login-registration-entry.md) |
 | GG-094—095 | 登录/注册邀请码状态与主测试入口 | GG094用户验收通过；GG095已把32131切为邮箱登录并停用32191，门禁/运行核验通过；未部署 | [GG094](tasks/GG-094-registration-invitation-visibility.md) / [GG095](tasks/GG-095-primary-email-auth-test-flow.md) |

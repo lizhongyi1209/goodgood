@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { AuthenticationError, sessionExpiredError } from "../auth/errors.mjs";
 import { BillingPersistenceError } from "../billing/repository.mjs";
 import { PaymentError } from "../billing/payment-errors.mjs";
-import { ADMIN_CREDIT_TYPES } from "../../shared/contracts/admin-credit-types.mjs";
+import { ADMIN_CREDIT_TYPES, ADMIN_CREDIT_AMOUNT_MAX } from "../../shared/contracts/admin-credit-types.mjs";
 import { getGenerationResources } from "../generation/resources.mjs";
 import { newRequestId } from "../observability/http.mjs";
 import { AdministrationError, adminAccessDeniedError } from "./errors.mjs";
@@ -211,10 +211,10 @@ export async function createAdminTestCreditGrant({
   const key = requireIdempotencyKey(idempotencyKey);
   const reason = requireText(input?.reason, "赠送原因", 2, 200);
   const amount = Number(input?.amount);
-  if (!Number.isSafeInteger(amount) || amount < 1 || amount > 5_000) {
+  if (!Number.isSafeInteger(amount) || amount < 1 || amount > ADMIN_CREDIT_AMOUNT_MAX) {
     throw new AdministrationError(
       "ADMIN_CREDIT_AMOUNT_INVALID",
-      "单次测试积分必须是 1 到 5000 之间的整数。",
+      `单次测试积分必须是 1 到 ${ADMIN_CREDIT_AMOUNT_MAX} 之间的整数。`,
       400,
     );
   }
@@ -250,8 +250,8 @@ export async function createAdminCreditGrant({
   const key = requireIdempotencyKey(idempotencyKey);
   const reason = requireText(input?.reason, "操作原因", 2, 200);
   const amount = input?.amount;
-  if (!Number.isSafeInteger(amount) || amount < 1 || amount > 5_000) {
-    throw new AdministrationError("ADMIN_CREDIT_AMOUNT_INVALID", "单次积分必须是 1 到 5000 之间的整数。", 400);
+  if (!Number.isSafeInteger(amount) || amount < 1 || amount > ADMIN_CREDIT_AMOUNT_MAX) {
+    throw new AdministrationError("ADMIN_CREDIT_AMOUNT_INVALID", `单次积分必须是 1 到 ${ADMIN_CREDIT_AMOUNT_MAX} 之间的整数。`, 400);
   }
   const creditGrantType = input?.creditGrantType;
   if (!ADMIN_CREDIT_TYPES.includes(creditGrantType)) {

@@ -516,7 +516,7 @@ querying targets; account lists do not leak into URLs/logs; review actions and
 test-credit grants are idempotent and append-auditable; grant rollback is
 atomic; legacy test-credit grants never create payment orders. GG-081 paid_recharge alone creates a receipt-backed normal order. Loading, empty, failure, retry,
 and mutation-conflict states are required for the management page. The fast
-suite also fixes the 1-5000 grant bound, CSRF-only header, server-derived actor,
+suite also fixes the 1-1,000,000 grant bound, CSRF-only header, server-derived actor,
 dry-run-first bootstrap parser, three-state migration, and visible
 loading/empty/failure/audit controls. The populated management surface also
 locks timestamp formatting to compatible `dateStyle` plus `timeStyle` options;

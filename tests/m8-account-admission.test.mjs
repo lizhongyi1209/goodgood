@@ -7,6 +7,7 @@ import {
   readAdminDashboard,
   updateAdminAccountStatus,
 } from "../server/admin/api.mjs";
+import { ADMIN_CREDIT_AMOUNT_MAX } from "../shared/contracts/admin-credit-types.mjs";
 import { createAdminNodeApiHandler } from "../server/admin/node-api.mjs";
 import { changeAccountAccess } from "../server/admin/repository.mjs";
 import { parseSiteOwnerBootstrapArguments } from "../server/runtime/bootstrap-site-owner.mjs";
@@ -217,7 +218,20 @@ test("review transitions and test-credit grants use server-owned actors and limi
   assert.equal(grantInput.amount, 500);
   assert.match(grantInput.ledgerIdempotencyKey, /^admin-grant:v1:[0-9a-f]{64}$/);
 
-  for (const amount of [0, -1, 5001, 1.5]) {
+  // The ceiling is the site owner's RMB 10,000 per-entry maximum, so the bound
+  // itself must be accepted and only one credit beyond it rejected.
+  assert.equal(ADMIN_CREDIT_AMOUNT_MAX, 1_000_000);
+  await createAdminTestCreditGrant({
+    idempotencyKey: "grant-ceiling",
+    input: { amount: ADMIN_CREDIT_AMOUNT_MAX, reason: "单次上限充值" },
+    ownerContext: SITE_OWNER,
+    repository,
+    resources: { pool: {} },
+    targetOwnerId,
+  });
+  assert.equal(grantInput.amount, ADMIN_CREDIT_AMOUNT_MAX);
+
+  for (const amount of [0, -1, ADMIN_CREDIT_AMOUNT_MAX + 1, 1.5]) {
     await assert.rejects(
       createAdminTestCreditGrant({
         idempotencyKey: `invalid-${String(amount)}`,
@@ -389,8 +403,9 @@ test("account management surface includes loading, empty, failure and grants; au
   assert.match(source, /账户列表加载失败/);
   assert.doesNotMatch(source, /最近操作记录/);
   assert.match(await readFile(new URL("../features/admin/audit-log-view.tsx", import.meta.url), "utf8"), /审计日志/);
-  assert.match(source, /\[100, 500, 1000\]/);
-  assert.match(source, /Number\(amount\) > 5000/);
+  assert.doesNotMatch(source, /\[100, 500, 1000\]/);
+  assert.doesNotMatch(source, /admin-action-presets/);
+  assert.match(source, /Number\(amount\) > ADMIN_CREDIT_AMOUNT_MAX/);
   assert.match(source, /x-goodgood-admin-action/);
 });
 
@@ -422,7 +437,7 @@ test("all account actions share an opaque GoodGood dialog surface", async () => 
   );
   assert.match(styles, /\.admin-action-dialog-overlay[^}]*backdrop-filter:\s*blur\(2px\)/);
   assert.match(styles, /\.admin-action-dialog-footer[^}]*flex-direction:\s*row/);
-  assert.match(source, /aria-pressed=\{amount === String\(preset\)\}/);
+  assert.doesNotMatch(source, /aria-pressed=\{amount === String\(preset\)\}/);
   assert.match(
     styles,
     /\.admin-action-presets \[data-slot="button"\]\[aria-pressed="true"\][^}]*background:\s*var\(--accent\)[^}]*color:\s*var\(--white\)/,

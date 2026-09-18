@@ -8,7 +8,7 @@ GG-087迁移0041新增feedback_tickets、feedback_images、feedback_events；票
 
 GG-084迁移0040增加jcoin_treasury、jcoin_batches、jcoin_accounts、jcoin_source_events、jcoin_ledger_entries、jcoin_administrative_actions。bigint atoms为1e-8 JCOIN；前端金额用精确十进制字符串，不能用Number累计。初始总库存1亿/用户池5000万、分配一期100万且草稿、每有效当前积分2000000 atoms，起算2026-09-17T16:00:00Z；不种用户奖励。账户balance=earned-reversed，库存与批次issued保留累计发行量，recovered独立记录且不退额度。来源credit ledger ID唯一，奖励/撤回流水与管理动作不可变，退款指向原实际奖励且唯一。所有衍生写入同事务；不改原积分/订单数据或执行历史转换。资格要求正式manual订单与grant、用户、单位、金额、支付时间一致；历史credit_transfers沿上游核对，混合测试或缺证据不发。
 
-GG-081迁移0039为administrative_actions添加credit_grant_type及grant_credits约束，原测试审计以历史action_type解释为test，不回填备注或改账。新类型与积分流水一一关联；充值额等于当前积分数（人民币分），正常不可变支付订单保留价格快照。内部商品每数量一条version1，不进入客户列表。每日现金以paid_at、币种/金额快照为准；并发来自started_at至completed_at/当前时刻，无可靠历史返回null。
+GG-081迁移0039为administrative_actions添加credit_grant_type及grant_credits约束，原测试审计以历史action_type解释为test，不回填备注或改账。GG-098迁移0044把该状态约束的单次发放上限由5000放宽到1000000（其余子句逐字不变，不改既有行）；共享常量ADMIN_CREDIT_AMOUNT_MAX是代码侧唯一来源。新类型与积分流水一一关联；充值额等于当前积分数（人民币分），正常不可变支付订单保留价格快照。内部商品每数量一条version1，不进入客户列表。每日现金以paid_at、币种/金额快照为准；并发来自started_at至completed_at/当前时刻，无可靠历史返回null。
 
 GG-074 migration0037 adds prompt_visibility(public default/hidden) and
 comparison_mode(side_by_side default/hover). inspiration_generation_prompts has

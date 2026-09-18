@@ -4,7 +4,7 @@ import {
   runCreditTransaction,
 } from "../billing/repository.mjs";
 import { AdministrationError, adminAccessDeniedError } from "./errors.mjs";
-import { ADMIN_CREDIT_TYPES } from "../../shared/contracts/admin-credit-types.mjs";
+import { ADMIN_CREDIT_TYPES, ADMIN_CREDIT_AMOUNT_MAX } from "../../shared/contracts/admin-credit-types.mjs";
 import { createPaymentOrderInTransaction, settlePaymentOrderInTransaction } from "../billing/payment-repository.mjs";
 
 function accountFromRow(row) {
@@ -553,7 +553,7 @@ export function grantClassifiedCredits(pool, {
   actorOwnerId, amount, creditGrantType, idempotencyKey, ledgerIdempotencyKey,
   operationHash, reason, receiptReference, targetOwnerId,
 }) {
-  if (!ADMIN_CREDIT_TYPES.includes(creditGrantType) || !Number.isSafeInteger(amount) || amount < 1 || amount > 5000) {
+  if (!ADMIN_CREDIT_TYPES.includes(creditGrantType) || !Number.isSafeInteger(amount) || amount < 1 || amount > ADMIN_CREDIT_AMOUNT_MAX) {
     throw new AdministrationError("ADMIN_REQUEST_INVALID", "积分类型或数量无效。", 400);
   }
   return runCreditTransaction(pool, async (client) => {

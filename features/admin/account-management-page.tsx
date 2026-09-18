@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ADMIN_CREDIT_TYPES, ADMIN_CREDIT_TYPE_LABELS } from "@/shared/contracts/admin-credit-types.mjs";
+import { ADMIN_CREDIT_TYPES, ADMIN_CREDIT_AMOUNT_MAX, ADMIN_CREDIT_TYPE_LABELS } from "@/shared/contracts/admin-credit-types.mjs";
 import {
   Select,
   SelectContent,
@@ -559,22 +559,8 @@ export function AccountManagementPage({ workspaceSession, embedded = false, onMa
                 </div>
                 <div className="admin-action-field">
                   <label htmlFor="grant-amount">积分数量</label>
-                  <div className="admin-action-presets">
-                    {[100, 500, 1000].map((preset) => (
-                      <Button
-                        key={preset}
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        aria-pressed={amount === String(preset)}
-                        onClick={() => { setAmount(String(preset)); setPaymentConfirmed(false); }}
-                      >
-                        {preset}
-                      </Button>
-                    ))}
-                  </div>
-                  <Input id="grant-amount" inputMode="numeric" min={1} max={5000} type="number" value={amount} onChange={(event) => { setAmount(event.target.value); setPaymentConfirmed(false); }} />
-                  <p className="admin-action-help">单次最多 5000 积分，只允许正整数。</p>
+                  <Input id="grant-amount" inputMode="numeric" min={1} max={ADMIN_CREDIT_AMOUNT_MAX} type="number" value={amount} onChange={(event) => { setAmount(event.target.value); setPaymentConfirmed(false); }} />
+                  <p className="admin-action-help">单次最多 {ADMIN_CREDIT_AMOUNT_MAX} 积分（¥10,000），只允许正整数。</p>
                 </div>
                 {creditGrantType === "paid_recharge" && <>
                   <div className="admin-action-field">
@@ -653,7 +639,7 @@ export function AccountManagementPage({ workspaceSession, embedded = false, onMa
             <Button variant="ghost" disabled={mutating} onClick={() => setSelected(null)}>取消</Button>
             <Button
               variant={selected?.action === "suspend" ? "destructive" : "default"}
-              disabled={mutating || reason.trim().length < 2 || (selected?.action === "grant" && creditGrantType === "paid_recharge" && (!paymentConfirmed || receiptReference.trim().length < 8)) || (selected?.action === "grant" && (!Number.isInteger(Number(amount)) || Number(amount) < 1 || Number(amount) > 5000)) || (selected?.action === "role" && businessRole === (selected.account.businessRole ?? "none")) || (selected?.action === "parent" && parentOwnerId === (selected.account.directParentId ?? "none")) || (selected?.action === "organization" && organizationName.trim().length < 2)}
+              disabled={mutating || reason.trim().length < 2 || (selected?.action === "grant" && creditGrantType === "paid_recharge" && (!paymentConfirmed || receiptReference.trim().length < 8)) || (selected?.action === "grant" && (!Number.isInteger(Number(amount)) || Number(amount) < 1 || Number(amount) > ADMIN_CREDIT_AMOUNT_MAX)) || (selected?.action === "role" && businessRole === (selected.account.businessRole ?? "none")) || (selected?.action === "parent" && parentOwnerId === (selected.account.directParentId ?? "none")) || (selected?.action === "organization" && organizationName.trim().length < 2)}
               onClick={() => void runAction()}
             >
               {mutating && <LoaderCircle className="animate-spin" />}确认

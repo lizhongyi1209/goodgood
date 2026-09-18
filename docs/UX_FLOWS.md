@@ -232,8 +232,8 @@ the line; accepted tasks retain the choice and quote after disable/reprice.
 - Test-credit grant is a compact dialog showing the selected account, current
   balance, validated grant amount, required reason, and final confirmation. It
   appends ledger/audit evidence and never looks like a customer payment.
-- The dialog provides 100/500/1000 presets and a positive-integer custom field;
-  one grant may not exceed 5000 credits.
+- The dialog takes a manual positive-integer amount with no preset buttons;
+  one grant may not exceed 1,000,000 credits (RMB 10,000 at 100 credits per CNY).
 - Routine review and grants happen in this surface. The one-time site-owner
   bootstrap remains an out-of-band security operation, not a public signup
   shortcut.

@@ -219,8 +219,8 @@ or directly rewrites a balance.
 The implemented access projection uses `pending | active | suspended`; the
 initial tier is `seed`, and one immutable `site_owner` assignment is created
 only through the dry-run-first server bootstrap. The `/admin/users` browser
-boundary can approve, suspend, restore, and grant at most 5000 test credits per
-audited operation.
+boundary can approve, suspend, restore, and grant at most 1,000,000 test credits per
+audited operation (RMB 10,000 at 100 credits per CNY; migration 0044).
 
 The reference boundary is now implemented locally. The authenticated
 web API creates owner-scoped pending records and short-lived signed PUT URLs;

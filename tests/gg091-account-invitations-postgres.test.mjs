@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import pg from "pg";
 import { randomUUID } from "node:crypto";
+import { readdir } from "node:fs/promises";
 import { applyMigrations } from "../server/persistence/migrate.mjs";
 import { loadAuthenticationConfig } from "../server/auth/config.mjs";
 import { createEmailOtpOperations } from "../server/auth/email-operations.mjs";
@@ -38,7 +39,10 @@ test(
         (
           await applyMigrations({ databaseUrl: url.href, logger: { log() {} } })
         ).at(-1),
-        "0043_gg091_account_invitations.sql",
+        (await readdir(new URL("../migrations", import.meta.url)))
+          .filter((name) => /^\d{4}_[a-z0-9_]+\.sql$/.test(name))
+          .sort()
+          .at(-1),
       );
       const adminId = randomUUID();
       await pool.query(
