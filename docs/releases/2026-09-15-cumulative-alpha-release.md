@@ -100,8 +100,13 @@ ADR 0016 把监控平台与通知路由交给独立责任方，生产从未接�
 
 **该缺口的实际含义**：站点出现故障、数据库异常、磁盘/内存触顶、备份停止或
 provider 持续失败时，**不会有任何自动通知**。站长需主动查看主机状态或依赖用户反馈。
-此外 `goodgood-postgres-backup.timer` 自 2026-09-05 起为 `disabled`，
-不存在 RPO ≤ 60 分钟的持续备份保障（站长指示「不动，只记录」）。
+
+> **2026-09-17 更正**：本节早期版本写的「此外 `goodgood-postgres-backup.timer`
+> 自 2026-09-05 起为 `disabled`，不存在 RPO ≤ 60 分钟的持续备份保障」**是错的**，
+> 已作废。真正 `disabled` 的是历史 staging timer `goodgood-postgres-backup.timer`；
+> 生产用的是 `goodgood-production-postgres-backup.timer`，自 2026-09-06 12:00 起
+> `enabled`/`active`、每 30 分钟一次。2026-09-17 首轮恢复演练通过（见文末）。
+> **`operations` 项仍然 `fail` 的唯一原因是缺少对外告警通道**，与备份无关。
 
 ## 门禁契约的一次修正（ADR 0090，`5b65601`）
 
@@ -149,9 +154,29 @@ email 注册直接建 `active`（GG-090/ADR 0089 已取代 ADR 0020 的 pending 
 
 ## 附加记录的独立缺口（非本次引入）
 
-- 备份 timer `disabled`，自 2026-09-05 未自动运行。
+- ~~备份 timer `disabled`，自 2026-09-05 未自动运行。~~ **2026-09-17 更正：此条不成立。**
+  见上节更正说明与文末恢复演练记录。
 - blue Web 长期闲置占资源，可在观察期后退役。
 - 注册开关已于开站后按站长要求打开为 `true`；开放注册即意味着任何访问者可立得 200 积分
   并消费真实 O1Key 费用（ADR 0090 已显式记录该取舍）。站长账户与邀请码 405513 已在此之前建立。
 - 因开放注册，**累计功能**的开源仓（`private: false`）意味着任何人都能看到源码；
   这与仓库长期设置一致，非本次变更。
+
+## 第二轮核对与首次生产恢复演练（2026-09-17）
+
+- 增长中的实时计数（当日）：users 25（全 `active`）、assets 79、generation_jobs 98
+  （70 成功 / 28 失败）、参考素材 94 `ready` / 7 `pending` / 12 `rejected`；
+  上一节的 21/60/44/56 是当日更早的快照。
+- **首次恢复演练通过**：维护窗口 17:09:25–17:10:31（约 66 秒）。演练前先触发一次新备份，
+  取最新快照 `ce191630`（17:09:37）。`restore_drill=passed`、`network=none`、
+  `storage=tmpfs`，还原 **59 张 public 表 / 2403 行 / 43 个迁移**，与生产 schema 一致；
+  观察到的会话 29（ADR 0042 允许保留）、活动生成 job 0。Restic 仓库当时 90 个快照，
+  `check --read-data` 60/60 packs 无错误。归档 SHA-256
+  `70f5e737e2a31eaa9ee43409b35e5e8fa39e00409f812008d4534549e6db7b80`。
+  演练容器与临时归档已清理，生产库未被写入。
+- 演练后公网 `/`、`/login`、`/register` 均 200；维护标记已移除并核验 `maintenance=disabled`。
+- 操作边界：本次只使用既有 `goodgood-production-maintenance`（enable）与备份/演练脚本；
+  关闭维护按审查步骤手工移除标记后 `nginx -t` + reload，未改动应用镜像、迁移或生产数据。
+- **发现独立缺陷（未修复）**：当日 nginx 记录 41 次 `/api/references/*` 上游超时，
+  集中在 15:48–16:12（本次操作之前）。素材最终全部 `ready`，但校验耗时最长 5 分 56 秒，
+  超过 70s 读超时，用户会看到失败提示。详见 `CURRENT_STATE.md` 的「待排查的线上缺陷」。

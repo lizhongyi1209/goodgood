@@ -1,5 +1,12 @@
 # Development and deployment
 
+> **当前生效的只有两段**：本节下方的生产现状，以及文末的
+> [生产热修清单](#production-hotfix-checklist-2026-09-17)（2026-09-17 新增）。
+> `compose.staging.yaml` / `staging:preflight` / `staging:release` 那一整套
+> **没有对应环境**——`staging-goodgood.o1key.com` 只是保留名，见
+> [CURRENT_STATE.md](CURRENT_STATE.md)。其余标有任务号的段落是各自阶段的**历史记录**，
+> 不代表当前部署状态。生产变更必须另开任务卡并取得明确授权。
+
 GG-093当前本地环境、Docker清理、构建指纹与恢复命令见[DEVELOPMENT_HANDOFF.md](DEVELOPMENT_HANDOFF.md)；下方有任务标号的旧端口与测试数是对应阶段记录，以该交接的当前端口和验证边界为准，不运行旧fixture/转换脚本。
 
 **生产已于 2026-09-15 部署并开放**（GG-097）：`goodgood.o1key.com`，revision `5b65601`、
@@ -1447,6 +1454,14 @@ and include them in the operator's encrypted backup retention and access policy.
 
 ### Automated encrypted staging database backups
 
+> **命名警告（2026-09-17 实测澄清）**：本节描述的是**已退役的 staging 路径**，
+> 它安装的是 `goodgood-postgres-backup.{service,timer}`。
+> 生产用的是同目录下的另一套 `goodgood-production-postgres-backup.{service,timer}`，
+> **自 2026-09-06 12:00 起 `enabled`/`active`，每 30 分钟运行一次**。
+> 两者名字只差 `production-`，历史上被混为一谈，导致「生产无自动备份」的错误结论
+> 写进了发布记录与 `CURRENT_STATE.md`。判断生产备份状态一律以
+> `systemctl is-enabled goodgood-production-postgres-backup.timer` 为准。
+
 ADR 0014 selects a separate private Cloudflare R2 bucket named
 `goodgood-postgres-backups`. Do not reuse the `goodgood` application-object
 bucket or any application credential. In Cloudflare, create the bucket first,
@@ -1758,3 +1773,72 @@ checks, and observation or slot reversion. The command always reports
 `executed: false` and `executionAvailable: false`; it accepts no execution flag
 and cannot change production. Implementing those phases still requires the
 separately reviewed host/state-service and executable release change.
+
+<a id="production-hotfix-checklist-2026-09-17"></a>
+
+## 生产热修清单（2026-09-17）
+
+**适用**：已批准的线上小范围调整。不含数据重置、凭据轮换、初始转换或 C6 工作。
+**前提**：另开任务卡并取得站长明确的发布范围授权。本地实现与验证不等于授权上线。
+
+上一次完整发布是 GG-097，其步骤见任务卡；下面只保留**每次热修都要重做**的部分。
+
+### 已核验的主机事实
+
+| 项 | 值 |
+| --- | --- |
+| 生产目录 | `/opt/goodgood-production/`（root-only，含 `compose.production.yaml` 与 `candidate-<rev>/` 检出） |
+| 受保护配置 | `/etc/goodgood/production/`（`release.env` / `runtime.env` / `secrets/`） |
+| 发布证据目录 | `/var/lib/goodgood-production/`（`controlled-alpha/readiness.json`） |
+| 槽位 | green Web `127.0.0.1:3200` / worker health `3201`；blue Web `3100` / worker `3101` |
+| Compose 项目名 | `goodgood-production-green` / `goodgood-production-blue`（`infra/production/slots/*.env`） |
+| 当前上游 | `/etc/nginx/goodgood/production-active-upstream.conf` → `127.0.0.1:3200` |
+| 上游备份 | 同目录 `production-active-upstream.<旧版本>.conf` / `.blue.backup` |
+| 维护控制 | `sudo /usr/local/sbin/goodgood-production-maintenance enable --execute`（**无 disable 动作**） |
+| 备份/演练 | `sudo /usr/local/sbin/goodgood-production-postgres-backup-automated run \| check \| restore-latest-drill` |
+
+### 每次热修都要重做的步骤
+
+1. **本地**：`fix/GG-xxx-*` 分支实现 → 定向测试 → 一次 `npm run check:local`。
+   若最后一次提交含代码/测试/构建输入改动，验收前重跑
+   `npm run build:checkpoint` + `npm run verify:checkpoint`（纯文档提交不需要）。
+2. **合入 main**：只合入本次已验证的 diff。`git push` 后 **CI 是唯一构建者**，
+   服务器按 digest 拉取；不在服务器上从源码构建。
+3. **门禁证据（每次重新生成，禁止复用上一次）**：
+   - `npm run production:preflight -- --release-file /etc/goodgood/production/release.env
+     --runtime-env-file /etc/goodgood/production/runtime.env --evidence-reference <本次记录名>`
+     → 只有全通过才产生 evidence 对象（有效期 72h）。
+   - `npm run production:artifact-evidence -- ...` 导入该 CI run 的
+     `artifact-security-evidence.json`（仓库根，未压缩原件；外层门禁只认 24h）。
+   - 证据必须绑定**本次候选**的完整 Git revision。
+   - `npm run production:alpha-gate -- --evidence-file
+     /var/lib/goodgood-production/controlled-alpha/readiness.json`
+   - `controlled-alpha-operations` 目前仍会 `fail`（无告警通道，站长已授权接受）；
+     其余各项必须 `pass`，不得把 `fail` 写成通过。
+4. **起非活动槽位**：在 `candidate-<rev>/` 检出该 revision，用对应 `slots/*.env`
+   启动候选 Web（**先不启动候选 Worker**），核对 live/ready 与
+   `GET /api/health/version` 返回的 `build.verified` 与 revision。
+5. **单 Worker 交接**：有迁移时先停活动 Worker 并按有界宽限排空，起候选 Worker，
+   readiness 失败则恢复原 Worker。**绝不故意同时跑两个生产 Worker。**
+   本次若无迁移，Worker 可沿用。
+6. **原子切流**：改 `/etc/nginx/goodgood/production-active-upstream.conf` 指向新槽位，
+   先备份当前上游文件，`nginx -t` 通过后才 `nginx -s reload`；
+   校验失败立即还原该文件。
+7. **切流后复查**：公网 `/`、`/login`、`/register` 200；未登录 `/api/auth/session` 401；
+   readiness 200；队列深度与冻结积分；候选 Web/Worker `restarts=0`；
+   `MemAvailable` > 500 MiB、根盘 < 80%。
+8. **记录**：更新 `CURRENT_STATE.md`、发布记录/任务卡，明确「已部署」与回退候选。
+
+### 硬边界
+
+- **数据库迁移必须向后兼容**，且只跑一次。`0020`—`0043` 全部是加表加列，
+  无 `drop`/`rename`/`set not null`——热修候选不得破坏这个性质。
+- **绝不降级 schema**。回退只换应用镜像，不反向跑迁移；不兼容时只能向前修。
+- **blue 回退候选是 `65ceb168`（label 声明迁移 `0019`），已落后 24 个迁移**。
+  静态检查未发现破坏性 DDL，但**从未验证过旧镜像在 `0043` schema 上的实际行为**；
+  在验证之前，不要把 blue 当作已验证的回退路径。
+- **恢复演练需要短暂公网 503**（见上表），且 `maintenance-control.sh` 没有 disable 动作；
+  关闭维护需按审查步骤移除 `/etc/goodgood/production/maintenance.enabled` 后 `nginx -t` + reload，
+  并立即验证公网 200。
+- **绝不重放** GG-091 清理、历史转换脚本或旧迁移 into 生产。
+- 一次真实生图属**单独授权**，热修不得默认调用付费 provider。

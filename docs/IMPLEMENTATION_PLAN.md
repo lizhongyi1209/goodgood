@@ -17,15 +17,20 @@
 - 契约已按 **ADR 0090** 对齐：确认「注册即激活」为目标行为，欢迎积分为 200。
 - 公网开放中；`GOODGOOD_EMAIL_REGISTRATION_ENABLED=true`（2026-09-15 站长要求打开，注册即激活并立得 200 积分，见 ADR 0090）。
 - 线上入口为 `goodgood.o1key.com`；`staging-goodgood.o1key.com` 仅保留名称，不是测试入口。
-- 生产数据（2026-09-17 首轮核对）：users 21（全部 active）、assets 60、
-  references 44、jobs 56（51 成功 / 5 失败）、累计结算 1900 积分；
-  运营手动登记充值 4 笔共 15100 积分。
+- 生产数据（2026-09-17 第二轮核对）：users 25（全部 active）、assets 79、
+  references 94 ready / 7 pending / 12 rejected、generation_jobs 98（70 成功 / 28 失败）、
+  累计结算 1900 积分；运营手动登记充值 4 笔共 15100 积分。
 - 附带修复：`c343351`（Next 16.3.3）、`89afedb`（Debian libpcre2）——两者都是 main CI
   发布镜像的硬阻断。
-- 独立缺口（已记录未处理）：备份 timer `disabled`（自 09-05）；blue Web 闲置占用；
-  无告警通道。
-- Next action: 无待办发布步骤；观察期，评估通知渠道、自动备份与 blue 退役。
+- **2026-09-17 首次生产恢复演练通过**：快照 `ce191630`、59 表 / 2403 行 / 43 迁移、
+  `network=none` + `tmpfs`；维护窗口约 66 秒。文档中「备份 timer disabled、无自动备份」
+  的旧结论**已更正为错误**——生产 timer 自 09-06 起每 30 分钟一次，仓库 90 快照校验无错误。
+- 独立缺口（已记录未处理）：**仅剩无告警通道**；blue Web 闲置占用待退役。
+  （原列的「备份 timer disabled」不成立，已删除。）
+- Next action: 无待办发布步骤；观察期，可评估通知渠道与 blue 退役。
 - Blockers: 无阻塞执行项；`operations` 缺口为已知并已授权接受。
+- 待排查缺陷：参考图 `/api/references/*` 校验最长近 6 分钟，超过 nginx 70s 读超时，
+  用户看到上传失败而素材实际入库。未定位根因，未修改。
 
 ## Verification sequence
 

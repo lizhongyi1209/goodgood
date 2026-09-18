@@ -1,11 +1,11 @@
 # GoodGood 当前状态
 
-- 最后核对：2026-09-17完成GG-097生产发布后的首轮真实运行核对。生产身份 `5b65601` / 迁移 `0043` / green 接流；公网与注册均开放。
+- 最后核对：2026-09-17完成GG-097生产发布后的第二轮核对，含**首次生产恢复演练**。生产身份 `5b65601` / 迁移 `0043` / green 接流；公网与注册均开放。
 - 产品阶段：已开放的 `controlled-alpha-v1`，不是完整 seed/付费生产就绪。
 - 正式入口：https://goodgood.o1key.com
-- 当前工作：GG-097累计功能生产重发布**已完成并开放**。累计功能（GG-024—GG-096）已从 `65ceb168`/`0019` 前移到 `5b65601`/`0043`。注册自 2026-09-15 起开放，**已有真实用户在使用**：21 个账户（全部 `active`）、60 个生成资产、44 张参考素材、56 个任务（51 成功 / 5 失败），累计结算 1900 积分。站长账户 951565127@qq.com，邀请码 405513。
+- 当前工作：GG-097累计功能生产重发布**已完成并开放**。累计功能（GG-024—GG-096）已从 `65ceb168`/`0019` 前移到 `5b65601`/`0043`。注册自 2026-09-15 起开放，**已有真实用户在使用**：25 个账户（全部 `active`）、79 个生成资产、参考素材 94 `ready` / 7 `pending` / 12 `rejected`、生成任务 98（70 成功 / 28 失败），累计结算 1900 积分。站长账户 951565127@qq.com，邀请码 405513。
 - 充值：运营已按「登记已收到的充值款」录入 4 笔，共 15100 积分（支付宝 ×2、支付宝收款、微信）。这不是自动支付，支付/支付宝结算仍搁置。
-- **已知缺口（站长 2026-09-15 明确授权接受）**：`controlled-alpha-operations` 未通过——主机无任何对外告警通道；备份 timer 自 2026-09-05 起 `disabled`（无自动备份）。见发布记录。
+- **已知缺口（站长 2026-09-15 明确授权接受）**：`controlled-alpha-operations` 未通过——主机无任何对外告警通道。**备份本身不是缺口**：生产备份 timer `enabled`/`active`，每 30 分钟一次，2026-09-17 首次恢复演练通过（见下）。见发布记录。
 - 下一个普通产品需求从 GG-098 分配，以BACKLOG核验占用；不要自动恢复搁置的 C6。
 
 ## GG-093 本地运行边界
@@ -19,8 +19,9 @@
 
 ## 已上线的能力与边界
 
-- Authing Google/邮箱验证码登录；后端验证身份并使用 GoodGood 自有会话。新账户为
-  `pending`、获得 100 欢迎积分，由站长在 `/admin/users` 审核后才能创作。
+- Authing Google/邮箱验证码登录；后端验证身份并使用 GoodGood 自有会话。新账户注册即
+  `active`、立得 **200** 欢迎积分，可立即创作；准入收口唯一依赖
+  `GOODGOOD_EMAIL_REGISTRATION_ENABLED`（ADR 0090，取代 ADR 0020 的 `pending` 审批模型）。
 - Nano Banana 2 支持 14 种宽高比、`1K / 2K / 4K`、每批 `1 / 2 / 4` 张与
   `10 / 20 / 40` 积分。新请求固定但不展示高思考，O1Key 顶层发送
   `thinking_level: "high"`；Google Search 可选，响应模态为 `TEXT + IMAGE`。
@@ -56,7 +57,7 @@
 | 活跃进程 | **green** Web + 1 个 green Worker；PostgreSQL/Valkey 健康 |
 | 回退候选 | blue Web 运行中未接流（旧镜像 `40ebfc40`）；blue Worker 已停止，不做 schema 降级 |
 | 主机 | 香港 2 vCPU / 4 GiB / 50 GiB；Web、Worker、PostgreSQL、Valkey 同机 |
-| 对象与备份 | 私有 R2；加密异机备份，本次发布点快照 `c49b2fc1`。**备份 timer 自 2026-09-05 起 disabled** |
+| 对象与备份 | 私有 R2；加密异机备份 Restic → `goodgood-postgres-backups/production`。timer `goodgood-production-postgres-backup.timer` **`enabled`/`active`**，每 30 分钟一次。2026-09-17 演练点快照 `ce191630`，**恢复演练通过** |
 | 本地 | Windows 开发；Compose 使用本地 PostgreSQL/Valkey/RustFS/mock |
 
 没有常驻远程测试环境。`staging-goodgood.o1key.com` 仅保留名称，非当前测试入口。
@@ -72,6 +73,23 @@ SSH 别名 `goodgood-staging` 是历史命名，指向现有生产主机，不�
   `https://goodgood.o1key.com/login` 与 `/register`，已上线开放。本地工作区测试服务仍为 32131
   （`http://127.0.0.1:32131/login`），邮件查看入口 `http://127.0.0.1:58045`。
   不自动注册或重置数据。完整记录：[GG091清理](operations/2026-09-14-gg091-test-user-cleanup.md)。
+
+## 首次生产恢复演练（2026-09-17）
+
+「备份 timer `disabled`、无自动备份」的旧结论**是错的**：真正 `disabled` 的是历史 staging
+timer `goodgood-postgres-backup.timer`；生产 `goodgood-production-postgres-backup.timer`
+**`enabled`/`active`，自 2026-09-06 12:00 起每 30 分钟一次**。演练前仓库 90 个快照，
+`check --read-data` 60/60 packs 无错误。因此 `operations` 项 `fail` 的唯一原因就是缺少告警通道。
+
+首轮正式演练（维护窗口 17:09:25–17:10:31，约 66 秒）：快照 `ce191630`，
+**`restore_drill=passed`**、`network=none`+`tmpfs`，还原 **59 表 / 2403 行 / 43 迁移**；
+演练容器与临时归档已清理，生产库未写入。`maintenance-control.sh` **无 disable 动作**。
+
+## 待排查缺陷：参考图校验超时（2026-09-17 发现，未修）
+
+当日 41 次 `/api/references/*` 上游超时（15:48–16:12，早于本次操作），素材最终全部 `ready`
+但校验最长 **5 分 56 秒**，超过 nginx 70s 读超时——**用户看到失败提示，素材其实已入库**。
+未定位根因，未做任何修改。完整证据：[演练与缺陷记录](operations/2026-09-17-production-restore-drill.md)。
 
 ## 最近验证（2026-09-09发布证据，清理后事实见上节）
 

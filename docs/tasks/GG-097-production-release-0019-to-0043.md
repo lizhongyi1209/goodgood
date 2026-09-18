@@ -1,8 +1,8 @@
 # GG-097 — 累计功能生产重发布（全新上线）
 
-- 状态：**已完成并开放公网**。生产身份 `5b65601` / 迁移 `0043` / green 接流；门禁五项 pass、`controlled-alpha-operations` 如实 fail 并经站长明确授权带缺口开站。
+- 状态：**已完成并开放公网**。生产身份 `5b65601` / 迁移 `0043` / green 接流；门禁五项 pass、`controlled-alpha-operations` 如实 fail 并经站长明确授权带缺口开站（唯一原因：无对外告警通道）。2026-09-17 补做首次生产恢复演练并通过。
 - 用户需求：2026-09-15 当天把本地累计功能（GG-024 — GG-096）以**全新方式**发布到生产 `goodgood.o1key.com`；旧测试数据无需保留，所有人重新注册。
-- 最后更新：2026-09-15
+- 最后更新：2026-09-17（补第二轮核对与首次恢复演练；更正备份结论）
 - 分支 / worktree：`main`（`5b65601`）/ F:/goodgood；发布分支 `release/GG-097-cumulative-alpha`
 - 基线：本地 HEAD `5b65601`；生产已为 `5b65601` / 迁移 `0043`（旧为 `65ceb168` / `0019`）
 
@@ -306,7 +306,7 @@
   时间 `2026-09-15 23:06:38 +08`，距操作仅数分钟 → RPO 充分。
   仓库完整性 `check`：103 快照 / 88 packs / `no errors were found`。
   保留策略确认为 `--keep-daily 14 --keep-weekly 8 --keep-monthly 12`，与门禁要求一致。
-  **但备份 timer 为 `inactive` / `disabled`（见下方未完成项）。**
+  **此处原写「备份 timer 为 `inactive`/`disabled`」是查错了对象**——见下方更正。
 - **6.2 通过。** `restore-latest-drill`：`off_host_restore_drill=passed`，
   `public_tables=59`、`public_rows=163`、`migrations=43`、
   `active_sessions_observed=1`、`active_generation_jobs=0`，
@@ -327,10 +327,33 @@
 
 **阶段 6 暴露的独立问题（不属本卡范围，但影响 RPO 承诺）**
 
-- `goodgood-postgres-backup.timer` 处于 `disabled`；最后一次自动运行是 **2026-09-05**。
+- ~~`goodgood-postgres-backup.timer` 处于 `disabled`；最后一次自动运行是 **2026-09-05**。
   也就是说 09-05 之后的恢复点（含本次 `c49b2fc1`）**都是手动或发布时产生的**，
   不存在「RPO ≤ 60 分钟」的持续保障。这是既有缺口，不是本次发布引入的。
-  是否启用 timer 属于新的生产变更，需站长单独决定，本卡不擅自启用。
+  是否启用 timer 属于新的生产变更，需站长单独决定，本卡不擅自启用。~~
+
+  **2026-09-17 更正：以上整段不成立，是我查错了 timer 对象。**
+  `goodgood-postgres-backup.timer` 是已退役的 **staging** timer（09-04 安装，确实 disabled）。
+  生产用的是 `goodgood-production-postgres-backup.timer`：`enabled`、`active`，
+  **自 2026-09-06 12:00 起每 30 分钟运行一次**（`OnCalendar=*:00,30`、`RandomizedDelaySec=5m`）。
+  因此 09-05 之后一直存在 ≤ 60 分钟的持续恢复点保障，`c49b2fc1` 只是发布时点的快照，
+  不是唯一的恢复点。当天实测仓库 90 个快照、`check --read-data` 60/60 packs 无错误。
+  **结论：不存在「无自动备份」缺口，也无需站长决定是否启用 timer。**
+  2026-09-17 已完成首轮正式恢复演练，见 `CURRENT_STATE.md`。
+
+### 阶段 8 — 第二轮核对与首次恢复演练（2026-09-17）
+
+- 8.1 更正上述备份结论；确认生产 timer `enabled`/`active` 与既有快照。
+- 8.2 在约 66 秒维护窗口（17:09:25–17:10:31）内：触发新备份 →
+  `restore-latest-drill` → 关闭维护并验证公网 200。
+- 8.3 演练结果：快照 `ce191630`（17:09:37），`restore_drill=passed`，
+  `network=none`/`storage=tmpfs`，**59 张 public 表 / 2403 行 / 43 个迁移**，
+  会话 29、活动生成 job 0；归档 SHA-256 `70f5e737…7b80`。演练容器与临时归档已清理。
+- 8.4 未改动应用镜像、迁移、生产数据或凭据；关闭维护按审查步骤手工移除标记后
+  `nginx -t` + reload。
+- 8.5 **新发现未修缺陷**：当日 nginx 41 次 `/api/references/*` 上游超时
+  （15:48–16:12，早于本次操作），素材最终全部 `ready` 但校验最长 5 分 56 秒，
+  超过 70s 读超时。另记 `rejected` 12 条（`UPLOAD_DECODE_INVALID`）。见 `CURRENT_STATE.md`。
 
 ### 阶段 7 — 收尾
 
@@ -481,8 +504,10 @@
 
 **下一步**
 
-- 无待办发布步骤。站点已开放，观察运行状态。
+- 无待办发布步骤。站点已开放，观察运行状态。热修路径见
+  `docs/DEPLOYMENT.md` 的「生产热修清单（2026-09-17）」。
 - 待站长决定：通知渠道（已同意「以后再做」）与 blue Web 是否退役。
+- **待排查缺陷**：参考图 `/api/references/*` 校验耗时最长近 6 分钟，超过 nginx 70s 读超时。
 - 若需变更生产，按新的任务卡与授权范围执行；不要重放历史迁移或旧转换脚本。
 
 **当前生产事实（2026-09-15）**
@@ -494,10 +519,11 @@
 - 槽位：**green 接流**（web `3200` / worker health `3201`）。blue Web 仍在运行但**未接流**，
   blue Worker **已停止**。Nginx upstream 备份 `production-active-upstream.blue.backup`。
 - 公网：**开放（200）**。注册开关：**`true`**（2026-09-15 站长要求打开）。
-- 数据（2026-09-17 首轮真实运行核对）：users 21（全部 active）、assets 60、
-  references 44、jobs 56（51 成功 / 5 失败）、累计结算 1900 积分、冻结 0；
-  运营手动登记充值 4 笔共 15100 积分（支付宝 ×2、支付宝收款、微信）。
+- 数据（2026-09-17 第二轮核对）：users 25（全部 active）、assets 79、
+  references 94 ready / 7 pending / 12 rejected、generation_jobs 98（70 成功 / 28 失败）、
+  累计结算 1900 积分、冻结 0；运营手动登记充值 4 笔共 15100 积分（支付宝 ×2、支付宝收款、微信）。
   站长 951565127@qq.com 余额 180，邀请码 405513。
+  （上一行「21/60/44/56」是当日更早的首轮快照，已被本行取代。）
 
 **已完成**
 
@@ -546,7 +572,9 @@
 **其他已记录的独立缺口**
 
 - 备份 timer `disabled`（自 2026-09-05 未自动运行），站长指示「不动，只记录」。
+  **2026-09-17 更正：此条不成立**，见「阶段 6 暴露的独立问题」下的更正说明与阶段 8。
 - 主机 2 vCPU / 4 GiB 同时跑 green Web+Worker 与 blue Web，`MemAvailable` 2.27 GiB，
   余量可接受但 blue Web 长期闲置占用资源，可在观察期后退役。
-- 无任何对外告警通道（已授权接受的缺口）。
+- 无任何对外告警通道（已授权接受的缺口，**这是 `operations` 项 `fail` 的唯一原因**）。
 - 本地 32131/32142 栈已恢复。
+- 参考图校验耗时缺陷（见阶段 8.5），未定位根因、未修改。
