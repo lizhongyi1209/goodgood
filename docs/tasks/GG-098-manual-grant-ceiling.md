@@ -4,7 +4,8 @@
 - 用户需求：站长当前单次充值最多 50 元（5000 积分）。改为单次最高 1 万元
   （1,000,000 积分）；删掉快捷积分选项，改为总是手动输入。
 - 最后更新：2026-09-19
-- 分支 / worktree：`feature/GG-098-manual-grant-ceiling` / F:/goodgood
+- 分支 / worktree：`feature/GG-096-production-auth-entry`（F:/goodgood，单窗口工作区；提交
+  `210b340` 起）→ 合入 `main` 发布
 - 基线：`d5741a0`（生产仍为 `5b65601` / 迁移 `0043`，见 CURRENT_STATE）
 
 ## 范围与验收
