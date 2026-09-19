@@ -54,6 +54,24 @@ grant-type 块逐字相同），没有放宽任何其他条件，不修改/删�
   `gg091-account-invitations-postgres`、`gg081-classified-credit-grants`。
 - 未做：真实浏览器点击提交（需本地栈与账户）；未部署。
 
+## 本地站长身份（2026-09-19 调整）
+
+验收时发现登录后是「个人」而非站长。原因：**本地与线上是两套独立数据库**，
+`951565127@qq.com` 在本地只是 09-15 注册的普通 `active` 账户；本地站长是种子固定账户
+`m3-local@goodgood.invalid`（`00000000-0000-4000-8000-000000000001`，`seed` 来源）。
+
+- `accounts:bootstrap-site-owner` 是一次性的（已有站长即拒绝），UI 也只改企业/分销身份，
+  没有转移站长的入口。
+- `system_role_assignments` 有 **append-only 触发器**
+  （`goodgood_reject_immutable_mutation`），删除被数据库拒绝——追加是该表唯一合法写入方式，
+  也是生产库的实际形态（生产同样只有追加记录）。
+- 处理：**追加**一条站长授权给 `0803ec37-9383-4c0c-8625-554c95811bf9`（`951565127@qq.com`），
+  沿用原 `operation_hash`，`assigned_by_operator_id='local-operator-transfer'`，
+  `idempotency_key='local-owner-grant-951565127-20260919'`。原种子行保留，未修改任何既有行。
+- 用户已确认「保留现有数据」，未重置本地库。登录后需**重新登录**使会话带上新角色。
+- `assertSiteOwner` 只校验调用者自身是否有 `site_owner` 行，不要求唯一，故本地存在两个站长
+  不影响功能；这是本地测试便利，**不是生产形态**。
+
 ## 恢复工作
 
 - 本地：`npm run build:checkpoint` + `verify:checkpoint` 后 `node scripts/local-checkpoint.mjs
