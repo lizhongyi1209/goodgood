@@ -1,9 +1,10 @@
 # GG-098 — 单次充值上限提升到 1 万元，改为手动输入
 
-- 状态：本地实现与验证完成；**UI 已由站长验收通过（2026-09-19）**；未部署
+- 状态：**已上线**（2026-09-21）。生产 `7888554` / 迁移 `0044` / blue 接流。
+  完整发布记录见 [2026-09-21 发布记录](../releases/2026-09-21-gg098-manual-grant-ceiling.md)。
 - 用户需求：站长当前单次充值最多 50 元（5000 积分）。改为单次最高 1 万元
   （1,000,000 积分）；删掉快捷积分选项，改为总是手动输入。
-- 最后更新：2026-09-19
+- 最后更新：2026-09-21
 - 分支 / worktree：`feature/GG-096-production-auth-entry`（F:/goodgood，单窗口工作区；提交
   `210b340` 起）→ 合入 `main` 发布
 - 基线：`d5741a0`（生产仍为 `5b65601` / 迁移 `0043`，见 CURRENT_STATE）
@@ -54,6 +55,24 @@ grant-type 块逐字相同），没有放宽任何其他条件，不修改/删�
   写死，避免以后每次调参/加迁移都要改测试：`ci-workflow`、`gg084-jcoin-postgres`、
   `gg091-account-invitations-postgres`、`gg081-classified-credit-grants`。
 - 未做：真实浏览器点击提交（需本地栈与账户）；未部署。
+
+## 发布（2026-09-21）
+
+按 `DEPLOYMENT.md` 的生产热修清单执行，**首次带迁移的热修发布**。完整细节见
+[发布记录](../releases/2026-09-21-gg098-manual-grant-ceiling.md)，此处只记要点：
+
+- 身份：`7888554` / 镜像 `sha256:7deeab8c…3270` / 迁移 `0044` / 配置契约未变；
+  CI run `35449483809` 两个 job 全通过；工件 `10585568052`。
+- 顺序：恢复点 `36f2a437` → preflight 全通过 → 工件证据导入 → blue 候选 Web →
+  迁移 `0044` → 停 green Worker → 起 blue Worker → 原子换上游 + `nginx -t` + reload。
+- 切流后：公网 `/`、`/login`、`/register` 200；未登录 session 401；队列/活动任务/冻结均 0。
+- 真实生图冒烟（单独授权）：真实邮箱验证码登录 → Nano Banana 2 / 1K / 1:1 / 1 张成功，
+  reserve→settle 各 1 次、冻结归零、余额 8976→8956；私有读取自有 200 / 未认证 401。
+- **未完成**：跨账户拒绝未实测（站长指示不再测试）；未跑完整 `production:alpha-gate`。
+- **发布中修复的主机隐患**：主机 `compose.production.yaml` 是旧版（web 缺 email OTP/SMTP
+  两个 secret），blue 候选首次启动崩溃；已用本次 revision 的 compose 覆盖。详见 CURRENT_STATE。
+- 回退候选：green Web（`71df5145` = `5b65601`）运行中未接流；**回退兼容性未演练**，
+  发布经站长同意接受该风险。
 
 ## 验收（2026-09-19）
 

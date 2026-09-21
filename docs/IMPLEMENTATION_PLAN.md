@@ -1,33 +1,33 @@
 # Production implementation plan
 
-- Last synchronized: 2026-09-17
-- Current phase: GG-097 累计功能生产发布——**已部署并开放公网**。
-- Current objective: 观察已开放站点；`controlled-alpha-operations`（告警通道）站长决定以后再做，开站经其明确授权。
-- Previous objective: 合并 main → CI 镜像 → 迁移 0043 → 切流 → 站长初始化 → 门禁对齐。
+- Last synchronized: 2026-09-21
+- Current phase: GG-098 热修已上线——**blue 接流**，公网开放。
+- Current objective: 观察已开放站点；`controlled-alpha-operations`（告警通道）站长决定以后再做。
+- Previous objective: 单次手动积分上限提到 ¥10,000（含迁移 `0044`）并发布。
 
 ## Current checkpoint
 
-- Task [GG-097](tasks/GG-097-production-release-0019-to-0043.md)：**已部署并开放**。
-  生产身份 `5b65601` / 镜像 `sha256:71df5145…` / 迁移 `0043` / **green 接流**。
-- 已完成：阶段 1—7。含一次真实生图（reserve→settle）、私有限读、跨账户拒绝 404、
-  手动赠送测试积分、参考图上传。
-- 门禁 `production:alpha-gate` **`ok: false`**：五项 `pass`，`controlled-alpha-operations`
-  如实 `fail`——主机无任何对外告警通道。**站长 2026-09-15 授权带着该缺口开站**，
-  并决定通知渠道以后再做。
-- 契约已按 **ADR 0090** 对齐：确认「注册即激活」为目标行为，欢迎积分为 200。
-- 公网开放中；`GOODGOOD_EMAIL_REGISTRATION_ENABLED=true`（2026-09-15 站长要求打开，注册即激活并立得 200 积分，见 ADR 0090）。
+- Task [GG-098](tasks/GG-098-manual-grant-ceiling.md)：**已部署**。
+  生产身份 `7888554` / 镜像 `sha256:7deeab8c…3270` / 迁移 `0044` / **blue 接流**。
+  完整记录见 [发布记录](releases/2026-09-21-gg098-manual-grant-ceiling.md)。
+- 这是**首次带迁移的热修发布**，走 `DEPLOYMENT.md` 的生产热修清单：恢复点 → blue 候选 →
+  迁移 → 单 Worker 交接 → 原子换上游。切流后公网 200、session 401、队列/活动任务/冻结均 0。
+- 真实生图冒烟（站长 2026-09-21 单独授权）：真实邮箱验证码登录 →Nano Banana 2 / 1K /
+  1:1 / 1 张成功，reserve→settle 各 1 次、冻结归零，私有读取自有 200 / 未认证 401。
+  **跨账户拒绝未实测**（站长指示不再测试），该项不得写成 `pass`；本次未跑完整 alpha 门禁。
+- **发布中发现的主机隐患已修复**：主机 `compose.production.yaml` 是旧版本（web 只绑 4 个
+  secret，缺 email OTP/SMTP），导致 blue 候选首次启动崩溃。已用本次 revision 覆盖，
+  旧版留 `.pre-gg098-backup`。**起槽位前必须先核对主机 compose 与候选 revision 一致。**
+- GG-097 [任务卡](tasks/GG-097-production-release-0019-to-0043.md)：累计功能发布，已被本次取代；
+  其门禁为五项 `pass` + `controlled-alpha-operations` `fail`（站长授权带缺口开站）。
 - 线上入口为 `goodgood.o1key.com`；`staging-goodgood.o1key.com` 仅保留名称，不是测试入口。
-- 生产数据（2026-09-17 第二轮核对）：users 25（全部 active）、assets 79、
-  references 94 ready / 7 pending / 12 rejected、generation_jobs 98（70 成功 / 28 失败）、
-  累计结算 1900 积分；运营手动登记充值 4 笔共 15100 积分。
-- 附带修复：`c343351`（Next 16.3.3）、`89afedb`（Debian libpcre2）——两者都是 main CI
-  发布镜像的硬阻断。
-- **2026-09-17 首次生产恢复演练通过**：快照 `ce191630`、59 表 / 2403 行 / 43 迁移、
-  `network=none` + `tmpfs`；维护窗口约 66 秒。文档中「备份 timer disabled、无自动备份」
-  的旧结论**已更正为错误**——生产 timer 自 09-06 起每 30 分钟一次，仓库 90 快照校验无错误。
-- 独立缺口（已记录未处理）：**仅剩无告警通道**；blue Web 闲置占用待退役。
-  （原列的「备份 timer disabled」不成立，已删除。）
-- Next action: 无待办发布步骤；观察期，可评估通知渠道与 blue 退役。
+- 生产数据（2026-09-21 核对）：users 28、assets 166、references 141 ready、
+  generation_jobs 201（151 成功 / 50 失败）；运营手动登记充值 4 笔共 15100 积分。
+- **2026-09-17 首次生产恢复演练通过**：快照 `ce191630`、59 表 / 2403 行 / 43 迁移；
+  维护窗口约 66 秒。「备份 timer disabled、无自动备份」的旧结论**已更正为错误**。
+- 独立缺口（已记录未处理）：**仅剩无告警通道**；green Web 未接流待退役。
+- Next action: 无待办发布步骤。可选：补 `controlled-alpha-operations` 取证、
+  评估告警通道、退役 green、修参考图校验超时缺陷。
 - Blockers: 无阻塞执行项；`operations` 缺口为已知并已授权接受。
 - 待排查缺陷：参考图 `/api/references/*` 校验最长近 6 分钟，超过 nginx 70s 读超时，
   用户看到上传失败而素材实际入库。未定位根因，未修改。

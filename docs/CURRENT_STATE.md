@@ -1,12 +1,12 @@
 # GoodGood 当前状态
 
-- 最后核对：2026-09-17完成GG-097生产发布后的第二轮核对，含**首次生产恢复演练**。生产身份 `5b65601` / 迁移 `0043` / green 接流；公网与注册均开放。
+- 最后核对：2026-09-21完成GG-098生产发布核对与真实生图冒烟。生产身份 `7888554` / 迁移 `0044` / **blue 接流**；公网与注册均开放。
 - 产品阶段：已开放的 `controlled-alpha-v1`，不是完整 seed/付费生产就绪。
 - 正式入口：https://goodgood.o1key.com
-- 当前工作：GG-097累计功能生产重发布**已完成并开放**。累计功能（GG-024—GG-096）已从 `65ceb168`/`0019` 前移到 `5b65601`/`0043`。注册自 2026-09-15 起开放，**已有真实用户在使用**：25 个账户（全部 `active`）、79 个生成资产、参考素材 94 `ready` / 7 `pending` / 12 `rejected`、生成任务 98（70 成功 / 28 失败），累计结算 1900 积分。站长账户 951565127@qq.com，邀请码 405513。
+- 当前工作：**GG-098 已上线**（单次手动积分上限 5000 → 1,000,000 即 ¥10,000，删除快捷选项，改为手动输入）。此前 GG-097 已把累计功能（GG-024—GG-096）前移到 `5b65601`/`0043`，本次是**首次带迁移的热修发布**。注册自 2026-09-15 起开放，**已有真实用户在使用**：28 个账户、166 个生成资产、参考素材 141 `ready`、生成任务 201（151 成功 / 50 失败）。站长账户 951565127@qq.com，邀请码 405513。
 - 充值：运营已按「登记已收到的充值款」录入 4 笔，共 15100 积分（支付宝 ×2、支付宝收款、微信）。这不是自动支付，支付/支付宝结算仍搁置。
 - **已知缺口（站长 2026-09-15 明确授权接受）**：`controlled-alpha-operations` 未通过——主机无任何对外告警通道。**备份本身不是缺口**：生产备份 timer `enabled`/`active`，每 30 分钟一次，2026-09-17 首次恢复演练通过（见下）。见发布记录。
-- 下一个普通产品需求从 GG-098 分配，以BACKLOG核验占用；不要自动恢复搁置的 C6。
+- 下一个普通产品需求从 **GG-099** 分配，以BACKLOG核验占用；不要自动恢复搁置的 C6。
 
 ## GG-093 本地运行边界
 
@@ -50,14 +50,14 @@
 
 | 项目 | 最近核验记录 |
 | --- | --- |
-| 源码 revision | `5b656013807b0fdaeb22b3cbb5b7af029c9ec16e` |
-| 镜像 | `ghcr.io/lizhongyi1209/goodgood@sha256:71df51455abd7e6b98fda399a1b1b691e794056e4317a4704076aa0e6ba8b75a` |
-| 数据库迁移 | `0043_gg091_account_invitations.sql`（43 条，59 张 public 表） |
+| 源码 revision | `7888554a4650b1b06dbce4293c52e8c018e5c71b` |
+| 镜像 | `ghcr.io/lizhongyi1209/goodgood@sha256:7deeab8c0257e9127326eb2fc14b5beecf370f5a22408361f613465a0b432270` |
+| 数据库迁移 | `0044_gg098_raise_manual_grant_ceiling.sql`（44 条，59 张 public 表） |
 | 配置契约 checksum | `65202c281c37eb8e7c2639ee850e9ffe1085cad98f5ef2a85995a4d55d124f3e` |
-| 活跃进程 | **green** Web + 1 个 green Worker；PostgreSQL/Valkey 健康 |
-| 回退候选 | blue Web 运行中未接流（旧镜像 `40ebfc40`）；blue Worker 已停止，不做 schema 降级 |
+| 活跃进程 | **blue** Web + 1 个 blue Worker；PostgreSQL/Valkey 健康 |
+| 回退候选 | green Web 运行中未接流（旧镜像 `71df5145` = `5b65601`）；green Worker 已停止。**回退未演练**，不做 schema 降级 |
 | 主机 | 香港 2 vCPU / 4 GiB / 50 GiB；Web、Worker、PostgreSQL、Valkey 同机 |
-| 对象与备份 | 私有 R2；加密异机备份 Restic → `goodgood-postgres-backups/production`。timer `goodgood-production-postgres-backup.timer` **`enabled`/`active`**，每 30 分钟一次。2026-09-17 演练点快照 `ce191630`，**恢复演练通过** |
+| 对象与备份 | 私有 R2；加密异机备份 Restic → `goodgood-postgres-backups/production`。timer `goodgood-production-postgres-backup.timer` **`enabled`/`active`**，每 30 分钟一次（77 个快照）。2026-09-17 演练点快照 `ce191630`，**恢复演练通过**；发布前恢复点 `36f2a437` |
 | 本地 | Windows 开发；Compose 使用本地 PostgreSQL/Valkey/RustFS/mock |
 
 没有常驻远程测试环境。`staging-goodgood.o1key.com` 仅保留名称，非当前测试入口。
@@ -74,53 +74,59 @@ SSH 别名 `goodgood-staging` 是历史命名，指向现有生产主机，不�
   （`http://127.0.0.1:32131/login`），邮件查看入口 `http://127.0.0.1:58045`。
   不自动注册或重置数据。完整记录：[GG091清理](operations/2026-09-14-gg091-test-user-cleanup.md)。
 
+## GG-098 热修发布（2026-09-21）
+
+**首次带迁移的热修发布**，用 `DEPLOYMENT.md` 的生产热修清单。完整记录见
+[GG-098 发布记录](releases/2026-09-21-gg098-manual-grant-ceiling.md)。
+
+- 身份：`7888554` / `sha256:7deeab8c…3270` / 迁移 `0044` / 配置契约未变；CI run `35449483809`。
+- `0044` 只把单次发放上限 `5000` → `1000000`，其余子句照抄 `0039`，不改既有行。
+- 流程：恢复点 `36f2a437` → blue 候选 Web → 迁移 → 停 green Worker → 起 blue Worker →
+  原子换上游 + `nginx -t` + reload。切流后公网 200、session 401、队列/活动任务/冻结均 0。
+- 真实生图冒烟（单独授权）：真实邮箱验证码登录 → Nano Banana 2 / 1K / 1:1 / 1 张成功，
+  reserve→settle 各 1 次、冻结归零；私有读取自有 200 / 未认证 401。
+  **跨账户拒绝未实测**，该项不得写成 `pass`；本次未跑完整 `production:alpha-gate`。
+
+## 发布中发现的主机隐患：旧的 compose.production.yaml（2026-09-21）
+
+blue 候选**首次启动即崩溃**（`GOODGOOD_EMAIL_OTP_SECRET_FILE could not be read`）。根因是
+主机 `/opt/goodgood-production/compose.production.yaml` **是旧版本**：web 只绑定 4 个 secret，
+缺 `goodgood_email_otp_secret` 与 `goodgood_email_smtp_password`（由 `d1af9ca` 引入）。
+green 正常只因它当初用较新 compose 起过后**再未重建**，故上次发布未暴露。
+
+已用本次 revision 的 compose 覆盖（旧版留 `compose.production.yaml.pre-gg098-backup`）。
+**起槽位前必须先核对主机 compose 与候选 revision 一致，否则新槽位必崩。**
+另注：`blue.env`/`green.env` 在主机位于 `/etc/goodgood/production/slots/`，不是仓库路径。
+
 ## 首次生产恢复演练（2026-09-17）
 
 「备份 timer `disabled`、无自动备份」的旧结论**是错的**：真正 `disabled` 的是历史 staging
-timer `goodgood-postgres-backup.timer`；生产 `goodgood-production-postgres-backup.timer`
-**`enabled`/`active`，自 2026-09-06 12:00 起每 30 分钟一次**。演练前仓库 90 个快照，
-`check --read-data` 60/60 packs 无错误。因此 `operations` 项 `fail` 的唯一原因就是缺少告警通道。
+timer；生产 `goodgood-production-postgres-backup.timer` **`enabled`/`active`，每 30 分钟一次**。
+因此 `operations` 项 `fail` 的唯一原因就是缺少告警通道。
 
-首轮正式演练（维护窗口 17:09:25–17:10:31，约 66 秒）：快照 `ce191630`，
-**`restore_drill=passed`**、`network=none`+`tmpfs`，还原 **59 表 / 2403 行 / 43 迁移**；
-演练容器与临时归档已清理，生产库未写入。`maintenance-control.sh` **无 disable 动作**。
+首轮演练（维护窗口约 66 秒）：快照 `ce191630`，**`restore_drill=passed`**、
+`network=none`+`tmpfs`，还原 **59 表 / 2403 行 / 43 迁移**。`maintenance-control.sh`
+**无 disable 动作**；关闭维护需手工移除 `/etc/goodgood/production/maintenance.enabled`。
 
 ## 待排查缺陷：参考图校验超时（2026-09-17 发现，未修）
 
-当日 41 次 `/api/references/*` 上游超时（15:48–16:12，早于本次操作），素材最终全部 `ready`
-但校验最长 **5 分 56 秒**，超过 nginx 70s 读超时——**用户看到失败提示，素材其实已入库**。
-未定位根因，未做任何修改。完整证据：[演练与缺陷记录](operations/2026-09-17-production-restore-drill.md)。
+当日 41 次 `/api/references/*` 上游超时，素材最终全部 `ready` 但校验最长 **5 分 56 秒**，
+超过 nginx 70s 读超时——**用户看到失败提示，素材其实已入库**。未定位根因。
+完整证据：[演练与缺陷记录](operations/2026-09-17-production-restore-drill.md)。
 
 ## 最近验证（2026-09-09发布证据，清理后事实见上节）
 
-- 发布候选 `65ceb168` 的 GitHub main CI run `34298537112` 全部通过；不可变镜像与
-  artifact evidence `10084128969` 匹配，生产 preflight 23/23 通过。
-- 迁移 0013—0019 后，精确候选 controlled-alpha 门禁 8/8 通过；公网维护只在门禁通过后
-  解除。公网首页/readiness 为 200，未登录资产/账单为 401，登录入口为 302。
-- 获授权的历史修复只更新 1 条孤立 attempt 为 failed；修复前后均无活动 job、无冻结积分，
-  未修改 provider task、资产、积分或错误证据。
-- 获授权且仅执行 1 次真实 Nano Banana 2 生图：1K、1:1、1 张，约 23 秒成功；余额
-  115→105，1 次 reserve、1 次 settle、冻结归零，生成 1 个私有 Asset。持久快照确认
-  隐藏高思考、Google Search 关闭与 O1Key v4 路由；参考素材和生成资产跨所有者读取均拒绝。
-- 当次发布备份 `/var/backups/goodgood-production/production-auto-20260909T014459Z.dump`
-  为 106122 字节，SHA-256 为
-  `99a6a09a1570fbf93ee69c27f27f3e2df324225b983c45f17bbb6854fd1211a3`；隔离恢复演练
-  通过，22 个 public 表、140 行、19 个迁移，无网络、tmpfs 存储，实际约 12.7 秒。
-- 切流后只有 1 个 Worker，队列为 0，活动 job/attempt 为 0，冻结积分为 0；blue Web/Worker
-  重启计数均为 0，近期日志无错误。维护标记已移除。
-- 可见 Chrome 标签页成功打开并显示 `GoodGood · AI 视觉创作`；后续页面树读取两次超时，
-  因此没有把本次验证误写成完整浏览器 UI 流程。HTTP、数据库、队列、对象与真实 provider
-  验证均已完成。
-- 发布记录合并后的 main 镜像在 2026-09-09 新 Trivy 数据库中检出 Sharp 0.35.0 的
-  `GHSA-rgj7-g3m4-5g8c`（HIGH，0.35.4 修复）；源码校验通过、镜像发布失败。线上仍是上表
-  已通过原候选门禁的镜像；GG-023 负责升级依赖并恢复 CI，部署新候选前不得额外复用已耗尽的
-  单次真实生图授权。
-- GG-023 随后将 Sharp 固定到 0.35.4；PR run `34303864503` 和 main run `34304055572`
-  均通过完整质量门禁及实际运行时 HIGH/CRITICAL 扫描。安全候选为 main `18fe779b`、镜像
-  `sha256:b441e16685c77842e18cefcdbcae00c2e50d25350fe598ea2e462dd61758f152`；它没有自动部署，
-  上表仍是当前生产身份。
-- 完整非敏感证据：[本次累计发布记录](releases/2026-09-15-cumulative-alpha-release.md)。
-  上一次发布的证据见 [2026-09-09 记录](releases/2026-09-09-cumulative-alpha-release.md)。
+## 历史验证（2026-09-09，已被后续发布取代）
+
+- 发布候选 `65ceb168` 的 CI run `34298537112` 通过，artifact evidence `10084128969` 匹配，
+  preflight 23/23；迁移 0013—0019 后门禁 8/8 通过。公网首页/readiness 200、未登录 401。
+- 获授权 1 次真实 Nano Banana 2 生图（1K、1:1、1 张）：reserve/settle 各 1 次、冻结归零、
+  1 个私有 Asset；跨所有者读取拒绝。
+- 当次备份 `production-auto-20260909T014459Z.dump`（106122 字节，SHA-256 `99a6a09a…`）
+  隔离演练通过：22 表 / 140 行 / 19 迁移，无网络 + tmpfs。
+- 同期发现并修复 Sharp `GHSA-rgj7-g3m4-5g8c`，GG-023 固定 0.35.4 后 CI 恢复
+  （安全候选 `18fe779b`）。完整证据：
+  [2026-09-09 记录](releases/2026-09-09-cumulative-alpha-release.md)。
 
 ## 仓库与搁置工作
 

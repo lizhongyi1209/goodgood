@@ -1,9 +1,9 @@
 # 当前开发版本与跨窗口交接
 
-- 日期：2026-09-17；当前任务GG-097（累计功能生产重发布）**已完成并上线**；本地分支`main`，HEAD `5ecffe5`；GG093标签继续作为历史构建交接点。
+- 日期：2026-09-21；GG-098（单次手动积分上限提升到 ¥10,000）**已上线**；本地分支`main`，HEAD `7888554`；GG093标签继续作为历史构建交接点。
 - 当前项目入口：F:/goodgood；累计代码包含a73835f、GG081—091与GG092交接。`.codex/`是用户本地设置，保留不提交。
-- **生产已部署并开放**：`goodgood.o1key.com`，revision `5b65601` / 迁移 `0043` / green 槽位。详见CURRENT_STATE.md与[发布记录](releases/2026-09-15-cumulative-alpha-release.md)。
-- 新窗口先读AGENTS/CURRENT_STATE/WORKFLOW/IMPLEMENTATION_PLAN/BACKLOG，然后本页；**新任务从GG-098分配**。
+- **生产已部署并开放**：`goodgood.o1key.com`，revision `7888554` / 迁移 `0044` / **blue 槽位**接流。详见CURRENT_STATE.md与[发布记录](releases/2026-09-21-gg098-manual-grant-ceiling.md)。
+- 新窗口先读AGENTS/CURRENT_STATE/WORKFLOW/IMPLEMENTATION_PLAN/BACKLOG，然后本页；**新任务从GG-099分配**。
 
 ## 先确认版本，避免退回历史
 
@@ -126,31 +126,38 @@ runner只在loopback54449创建固定命名的新空库，拒绝已存在库，�
 
 ## 生产事实与下一步
 
-**生产已上线并开放**（2026-09-15 完成，2026-09-17 核对）：
+**生产已上线并开放**（GG-097 2026-09-15 完成，GG-098 2026-09-21 上线）：
 
-- 入口 `goodgood.o1key.com`；revision `5b65601`、镜像 `sha256:71df5145…`、迁移 `0043`、
-  配置契约 `65202c28…`；**green 槽位接流**（web `3200` / worker health `3201`）。
-- blue Web 仍在跑但**未接流**（旧镜像 `40ebfc40`），blue Worker 已停止。
-  Nginx upstream 备份在主机 `/etc/nginx/goodgood/production-active-upstream.blue.backup`。
+- 入口 `goodgood.o1key.com`；revision `7888554`、镜像 `sha256:7deeab8c…3270`、迁移 `0044`、
+  配置契约 `65202c28…`；**blue 槽位接流**（web `3100` / worker health `3101`）。
+- green Web 仍在运行但**未接流**（`71df5145` = `5b65601`/`0043`），green Worker 已停止。
+  Nginx upstream 备份在主机 `/etc/nginx/goodgood/production-active-upstream.pre-gg098-green.conf`。
 - **公网与注册均开放**。注册收口唯一依赖 `GOODGOOD_EMAIL_REGISTRATION_ENABLED`（当前 `true`）。
-- 真实数据（09-17 第二轮）：users 25（全 active）、assets 79、参考素材 94 ready / 7 pending /
-  12 rejected、生成任务 98（70 成功 / 28 失败）、累计结算 1900 积分、冻结 0；
-  运营手动登记充值 4 笔共 15100 积分。
-- **授权测试用户清理（GG-091）已执行完毕，不要重跑**；线上账户是 09-15 之后重新建立的，
-  含站长 `951565127@qq.com`（邀请码 405513）。
+- 真实数据（09-21 核对）：users 28、assets 166、references 141 ready、
+  生成任务 201（151 成功 / 50 失败）；运营手动登记充值 4 笔共 15100 积分；冻结 0。
+- **授权测试用户清理（GG-091）已执行完毕，不要重跑**；线上站长 `951565127@qq.com`（邀请码 405513）。
+- GG-098 上线了什么：单次手动积分发放上限 `5000` → `1,000,000`（含迁移 `0044`），删除快捷按钮，
+  始终手动输入。这是**首次带迁移的热修发布**。完整发布记录：[GG-098 发布记录](releases/2026-09-21-gg098-manual-grant-ceiling.md)。
+
+**发布中发现的主机隐患（2026-09-21）**：
+
+主机 `/opt/goodgood-production/compose.production.yaml` 是旧版本（web 只绑 4 个 secret，
+缺 email OTP/SMTP），导致 blue 候选首次启动崩溃。已用本次 revision 的 compose 覆盖，
+旧版留 `.pre-gg098-backup`。**下次起槽位前必须先核对主机 compose 与候选 revision 一致**。
+另注：`blue.env`/`green.env` 在主机实际位于 `/etc/goodgood/production/slots/`，不是仓库路径。
 
 **唯一的门禁缺口**：
 
 1. **无任何对外告警通道**——`controlled-alpha-operations` 门禁项如实为 `fail`，
    站长授权带着该缺口开站，通知渠道「以后再做」。
 
-**此前记录的「备份 timer disabled」已于 2026-09-17 更正为不成立**：那是历史 staging
-timer。生产 `goodgood-production-postgres-backup.timer` 自 2026-09-06 起 `enabled`/`active`、
+**此前记录的「备份 timer disabled」已更正为不成立**：那是历史 staging timer。
+生产 `goodgood-production-postgres-backup.timer` 自 2026-09-06 起 `enabled`/`active`、
 每 30 分钟一次；2026-09-17 首轮恢复演练通过（快照 `ce191630`，59 表 / 2403 行 / 43 迁移）。
 演练需要**短暂公网 503 维护窗口**，关闭维护无现成 disable 动作。
 
 **下一步**：无待办发布步骤。若需改动生产，另开任务卡并取得明确授权；
-不要重放历史迁移、旧转换脚本或 GG-091 清理。
+不要重放历史迁移、旧转换脚本或 GG-091 清理。**新任务从 GG-099 分配。**
 **待排查缺陷**：参考图 `/api/references/*` 校验耗时最长近 6 分钟，超过 nginx 70s 读超时，
 用户会看到上传失败（素材实际入库）。未定位根因、未修改。
 

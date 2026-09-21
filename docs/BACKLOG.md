@@ -1,14 +1,14 @@
 # 当前任务与优先级 · 当前与最近交付
 
-> **部署状态（2026-09-17）**：GG-024—GG-096 已在 GG-097 一并上线（`goodgood.o1key.com`，
-> `5b65601`/`0043`）；各行「未部署」是历史状态，当前事实见
-> [CURRENT_STATE](CURRENT_STATE.md)，热修路径见
-> [DEPLOYMENT](DEPLOYMENT.md#production-hotfix-checklist-2026-09-17)。
+> **部署状态（2026-09-21）**：**GG-098 已上线**（`7888554`/`0044`，blue 接流，首次带迁移的热修）。
+> 此前 GG-024—GG-096 已在 GG-097 上线；各行「未部署」是历史状态。当前事实见
+> [CURRENT_STATE](CURRENT_STATE.md)，发布流程见
+> [DEPLOYMENT](DEPLOYMENT.md#production-hotfix-checklist-2026-09-17)。下一需求从 **GG-099** 分配。
 
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
-| GG-098 | 单次充值上限提到 1 万元并改为手动输入 | 本地完成；上限 5000→1,000,000 积分（含迁移 `0044`）、删除快捷选项；门禁 563/0 失败、隔离 PostgreSQL 实测通过；**未部署** | [任务](tasks/GG-098-manual-grant-ceiling.md) |
-| GG-097 | 累计功能生产重发布（0019→0043） | **已完成并开放**：`5b65601`/`0043`/green槽位上线，邀请码405513；门禁五项pass、`operations`如实fail（**唯一原因：无告警通道**，备份正常）并经授权带缺口开站；09-17 恢复演练通过（59表/2403行/43迁移）；**待排查：参考图校验超时** | [任务](tasks/GG-097-production-release-0019-to-0043.md) / [发布记录](releases/2026-09-15-cumulative-alpha-release.md) / [演练与缺陷](operations/2026-09-17-production-restore-drill.md) |
+| GG-098 | 单次充值上限提到 1 万元并改为手动输入 | **已上线**（2026-09-21）：`7888554`/`0044`/blue 接流；上限 5000→1,000,000、删除快捷选项；含迁移 `0044`；真实生图冒烟通过。**跨账户拒绝未实测** | [任务](tasks/GG-098-manual-grant-ceiling.md) / [发布记录](releases/2026-09-21-gg098-manual-grant-ceiling.md) |
+| GG-097 | 累计功能生产重发布（0019→0043） | **已完成并开放**：`5b65601`/`0043`，曾被 green 接流（已被 GG-098 取代）；门禁五项pass、`operations`如实fail（**唯一原因：无告警通道**，备份正常）；09-17 恢复演练通过；**待排查：参考图校验超时** | [任务](tasks/GG-097-production-release-0019-to-0043.md) / [发布记录](releases/2026-09-15-cumulative-alpha-release.md) / [演练与缺陷](operations/2026-09-17-production-restore-drill.md) |
 | GG-096 | 上线规格登录与注册入口 | 已随 GG-097 上线；独立/login与/register、固定子导航、安全returnTo。**邀请码已改为选填**（ADR 0089），注册即 active 并得 200 积分（ADR 0090） | [任务](tasks/GG-096-production-auth-entry.md) / [ADR](decisions/0088-addressable-login-registration-entry.md) |
 | GG-094—095 | 登录/注册邀请码状态与主测试入口 | GG094用户验收通过；GG095已把32131切为邮箱登录并停用32191，门禁/运行核验通过；未部署 | [GG094](tasks/GG-094-registration-invitation-visibility.md) / [GG095](tasks/GG-095-primary-email-auth-test-flow.md) |
 | GG-093 | 废弃Docker清理与构建版本交接 | 已完成本地交付；删除37容器/9旧应用镜像/5空网络，回收21.92GB构建缓存，34卷保留；构建指纹与启动核验已加入，未部署 | [任务](tasks/GG-093-docker-cleanup-build-handoff.md) |
@@ -88,7 +88,7 @@
 | GG-040 | 图片/视频 `---` 批量提示词与数量乘积并发 | 本地门禁与 Chrome 验证通过，待用户检查；未真实批量实测/发布 | [任务](tasks/GG-040-batch-prompts.md) |
 | GG-041 | 移除图片/视频批量提示词重复说明 | 本地门禁与现有 Chrome 验证通过，待用户检查；并发与报价不变，未发布 | [任务](tasks/GG-041-remove-batch-prompt-summary.md) |
 | GG-042—GG-062 | 抽屉/缩略图/站长导航/审计/GPT线路等 | 均已随 GG-097 上线 | [GG042](tasks/GG-042-parameter-drawer-overlay.md) · [GG043](tasks/GG-043-larger-reference-previews.md) · [GG059](tasks/GG-059-site-owner-workspace.md) · [GG060](tasks/GG-060-management-heading-hierarchy.md) · [GG061](tasks/GG-061-audit-log-section.md) · [GG062](tasks/GG-062-gpt-image-lines.md) |
-## 已明确搁置（不得自动恢复） · 最后同步2026-09-15；GG-024—097已占用，下一个需求从GG-098分配
+## 已明确搁置（不得自动恢复） · 最后同步2026-09-21；GG-024—098已占用，下一个需求从GG-099分配
 | ID | 事项 | 恢复条件 | 入口 |
 | --- | --- | --- | --- |
 | GG-900 | C6 自动账户删除/身份删除/举报与内容处理 | 站长明确要求并重审生产差异 | [保全与恢复](tasks/GG-900-deferred-c6.md) |
