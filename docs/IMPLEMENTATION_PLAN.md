@@ -1,9 +1,9 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-22
-- Current phase: GG-099 发布策略变更已完成本地实现与验证；公网仍开放。
-- Current objective: 保持单槽位 Compose 作为唯一未来发布路径；生产主机迁移另行授权。
-- Previous objective: 单次手动积分上限提到 ¥10,000（含迁移 `0044`）并发布。
+- Current phase: GG-100 生产主机单槽位迁移与旧 blue/green 清理已完成；公网开放且复验通过。
+- Current objective: 维持唯一 `goodgood-production` 应用项目；后续发布只按 ADR 0091 原地替换。
+- Previous objective: GG-099 仓库发布契约切换到单槽位 Compose。
 
 ## Current checkpoint
 
@@ -24,14 +24,16 @@
   ADR 0091 已接受；仓库已从 blue/green 发布切换到固定 `goodgood-production` Compose
   项目；独立 active-upstream、槽位 env 和双上游示例已删除。定向测试 35/35，
   `npm run check:local` 537 通过/26 隔离跳过/0 失败。未执行生产主机迁移。
+- Task [GG-100](tasks/GG-100-production-single-slot-host-cleanup.md)：**生产执行完成**。
+  恢复点 `71e758c4`；固定项目 Web/Worker healthy、restarts 0，公网 200/session 401；
+  旧 4 容器、2 网络、槽位/动态 upstream 与 14 个无引用旧镜像已清理，生产数据卷完整。
 - 线上入口为 `goodgood.o1key.com`；`staging-goodgood.o1key.com` 仅保留名称，不是测试入口。
 - 生产数据（2026-09-21 核对）：users 28、assets 166、references 141 ready、
   generation_jobs 201（151 成功 / 50 失败）；运营手动登记充值 4 笔共 15100 积分。
 - **2026-09-17 首次生产恢复演练通过**：快照 `ce191630`、59 表 / 2403 行 / 43 迁移；
   维护窗口约 66 秒。「备份 timer disabled、无自动备份」的旧结论**已更正为错误**。
-- 独立缺口（已记录未处理）：**仅剩无告警通道**；历史双槽位遗留的主机清理待另行授权。
-- Next action: 新窗口只按 ADR 0091 和当前单槽位文档准备发布；生产主机迁移另立任务并单独授权。
-  下一个普通产品需求从 GG-100 分配。
+- 独立缺口（已记录未处理）：**仅剩无告警通道**。
+- Next action: 无待办发布步骤；下一普通产品需求从 GG-101 分配。
 - Blockers: 无阻塞执行项；`operations` 缺口为已知并已授权接受。
 - 待排查缺陷：参考图 `/api/references/*` 校验最长近 6 分钟，超过 nginx 70s 读超时，
   用户看到上传失败而素材实际入库。未定位根因，未修改。

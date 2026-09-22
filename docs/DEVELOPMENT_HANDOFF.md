@@ -1,9 +1,9 @@
 # 当前开发版本与跨窗口交接
 
-- 日期：2026-09-22；GG-098（单次手动积分上限提升到 ¥10,000）**已上线**；当前工作分支 `chore/GG-099-single-slot-compose-release` 基于 `main@eaf78c6`，GG-099 变更尚未提交；GG093标签继续作为历史构建交接点。
+- 日期：2026-09-22；GG-100 生产主机单槽位迁移与旧 blue/green 清理**已完成**；GG-099 基线 `fe58305`，当前分支 `chore/GG-100-production-single-slot-host-cleanup`；GG093标签继续作为历史构建交接点。
 - 当前项目入口：F:/goodgood；累计代码包含a73835f、GG081—091与GG092交接。`.codex/`是用户本地设置，保留不提交。
-- **生产已部署并开放**：`goodgood.o1key.com`，revision `7888554` / 迁移 `0044`。未来发布按 GG-099 的单槽位 Compose 决策执行；详见 CURRENT_STATE.md 与 [发布记录](releases/2026-09-21-gg098-manual-grant-ceiling.md)。
-- 新窗口先读AGENTS/CURRENT_STATE/WORKFLOW/IMPLEMENTATION_PLAN/BACKLOG，然后本页；**新任务从GG-100分配**。
+- **生产已部署并开放**：`goodgood.o1key.com`，revision `7888554` / 迁移 `0044` / 配置 `b3d7310a…ddf3`；应用仅 `goodgood-production` 单项目。详见 CURRENT_STATE.md 与 [GG-100 记录](operations/2026-09-22-gg100-single-slot-host-cleanup.md)。
+- 新窗口先读AGENTS/CURRENT_STATE/WORKFLOW/IMPLEMENTATION_PLAN/BACKLOG，然后本页；**下一普通任务从GG-101分配**。
 
 ## 先确认版本，避免退回历史
 
@@ -130,10 +130,8 @@ runner只在loopback54449创建固定命名的新空库，拒绝已存在库，�
 
 - 入口 `goodgood.o1key.com`；revision `7888554`、镜像 `sha256:7deeab8c…3270`、迁移 `0044`、
   配置契约 `65202c28…`；当前线上事实以 `CURRENT_STATE.md` 为准。
-- GG-099 已接受单槽位发布决策：未来固定使用 `goodgood-production` Compose（Web `3100` /
-  Worker health `3101`），不再启动第二个应用槽位或切换 Nginx upstream。
-- 当前主机仍保留 GG-098 的 blue/green 命名容器事实；清理或迁移它们属于另一个须明确授权的
-  生产维护任务，不能因仓库契约已更新而写成主机已经完成迁移。
+- GG-100 已把主机迁移到固定 `goodgood-production` Compose（Web `3100` / Worker health `3101`）；
+  旧 blue/green 容器、网络、槽位文件和动态 upstream 已清理，未来不得恢复。
 - **公网与注册均开放**。注册收口唯一依赖 `GOODGOOD_EMAIL_REGISTRATION_ENABLED`（当前 `true`）。
 - 真实数据（09-21 核对）：users 28、assets 166、references 141 ready、
   生成任务 201（151 成功 / 50 失败）；运营手动登记充值 4 笔共 15100 积分；冻结 0。

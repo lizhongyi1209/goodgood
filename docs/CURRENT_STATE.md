@@ -1,26 +1,25 @@
 # GoodGood 当前状态
 
-- 最后核对：2026-09-21完成GG-098生产发布核对与真实生图冒烟。生产身份 `7888554` / 迁移 `0044`；公网与注册均开放。
+- 最后核对：2026-09-22完成GG-100单槽位主机迁移与旧 blue/green 清理。生产身份 `7888554` / 迁移 `0044` / 配置契约 `b3d7310a…ddf3`；公网与注册均开放。
 - 产品阶段：已开放的 `controlled-alpha-v1`，不是完整 seed/付费生产就绪。
 - 正式入口：https://goodgood.o1key.com
-- 当前工作：**GG-098 已上线**（单次手动积分上限 5000 → 1,000,000 即 ¥10,000，删除快捷选项，改为手动输入）。此前 GG-097 已把累计功能（GG-024—GG-096）前移到 `5b65601`/`0043`，本次是**首次带迁移的热修发布**。注册自 2026-09-15 起开放，**已有真实用户在使用**：28 个账户、166 个生成资产、参考素材 141 `ready`、生成任务 201（151 成功 / 50 失败）。站长账户 951565127@qq.com，邀请码 405513。
+- 当前工作：**GG-100 已完成生产主机清理**，应用统一为固定 `goodgood-production` Compose；GG-098 功能仍为当前应用版本。注册自 2026-09-15 起开放，**已有真实用户在使用**：30 个账户、240 个生成资产、参考素材 181 `ready`、生成任务 279（223 成功 / 56 失败）。站长账户 951565127@qq.com，邀请码 405513。
 - 充值：运营已按「登记已收到的充值款」录入 4 笔，共 15100 积分（支付宝 ×2、支付宝收款、微信）。这不是自动支付，支付/支付宝结算仍搁置。
 - **已知缺口（站长 2026-09-15 明确授权接受）**：`controlled-alpha-operations` 未通过——主机无任何对外告警通道。**备份本身不是缺口**：生产备份 timer `enabled`/`active`，每 30 分钟一次，2026-09-17 首次恢复演练通过（见下）。见发布记录。
-- 下一个普通产品需求从 **GG-100** 分配，以BACKLOG核验占用；不要自动恢复搁置的 C6。
+- GG-100 生产主机单槽位迁移与旧 blue/green 清理已完成；下一普通产品需求从 **GG-101** 分配。不要自动恢复搁置的 C6。
 
-## GG-099 发布策略变更（2026-09-22）
+## GG-099 / GG-100 单槽位发布（2026-09-22）
 
-- 未来生产发布取消 blue/green 槽位和 Nginx 上游切流，统一使用单一 `goodgood-production` Docker Compose 项目（Web `3100`、Worker `3101`）。
-- 维护窗口内原地替换同一项目，始终一个 Worker；迁移只前进一次，失败只恢复旧应用镜像，不降级 schema。**本次未执行生产主机变更**，下次操作须独立授权并按 ADR 0091 核验。
+- ADR 0091 取消 blue/green 和 Nginx 切流；生产已迁移为唯一 `goodgood-production` 项目（Web/Worker `3100/3101`），healthy、restarts 0。
+- 旧容器、网络、槽位/动态 upstream 与 14 个无引用镜像已清理；生产状态、秘密、备份和卷保留。恢复点 `71e758c4`，活动任务/冻结积分/Valkey 均为 0。
+- 后续只在同一项目原地替换，迁移只前进、schema 不降级。完整记录：[GG-100 主机清理](operations/2026-09-22-gg100-single-slot-host-cleanup.md)。
 
 ## GG-093 本地运行边界
 
 - 当前仅保留goodgood-gg052的PostgreSQL/Valkey/RustFS、gg044 Mailpit及无关项目容器；全部34个卷保留。旧GoodGood应用容器、镜像、空网络和构建缓存已按任务卡清理，生产主机与数据未触碰。
 - 新版本须运行`npm run build:checkpoint`和`npm run verify:checkpoint`；启动脚本拒绝源码、Git revision或产物指纹不匹配。Web的`/api/health/version`返回`build.verified`与revision，作为跨窗口页面来源核验。
 - GG-097起本地 worker 默认调用**真实** O1Key（真实计费），令牌从仓库外
-  `%USERPROFILE%\.claude\goodgood-local-secrets\o1key-api-key.txt` 读取；
-  在`.env.local-review`设`LOCAL_GENERATION_PROVIDER_KIND=mock`可退回 mock。
-  真实模式下 32143 mock provider 不启动，32131/32142 为活动进程。
+  `%USERPROFILE%\.claude\goodgood-local-secrets\o1key-api-key.txt` 读取；`.env.local-review` 可显式改为 mock。
 
 ## 已上线的能力与边界
 
@@ -58,9 +57,9 @@
 | 源码 revision | `7888554a4650b1b06dbce4293c52e8c018e5c71b` |
 | 镜像 | `ghcr.io/lizhongyi1209/goodgood@sha256:7deeab8c0257e9127326eb2fc14b5beecf370f5a22408361f613465a0b432270` |
 | 数据库迁移 | `0044_gg098_raise_manual_grant_ceiling.sql`（44 条，59 张 public 表） |
-| 配置契约 checksum | `65202c281c37eb8e7c2639ee850e9ffe1085cad98f5ef2a85995a4d55d124f3e` |
-| 活跃进程 | 主机仍运行 GG-098 留下的 blue 命名 Web + 1 个 Worker；PostgreSQL/Valkey 健康。该名称是待另行清理的部署事实，不是未来发布槽位 |
-| 主机遗留 / 发布回退 | 旧 green Web 仍是历史部署遗留，不再是批准的回退路径；未来只在同一 `goodgood-production` Compose 项目恢复旧应用镜像 |
+| 配置契约 checksum | `b3d7310a7f345b96bcb614509f29f9706de3784bdb1b80f82d4be9534b18ddf3` |
+| 活跃进程 | 固定 `goodgood-production` Web + 1 个 Worker；PostgreSQL/Valkey 健康；旧 blue/green 应用项目不存在 |
+| 发布回退 | 只在同一 `goodgood-production` Compose 项目恢复兼容的旧应用镜像；不切换槽位或 Nginx upstream |
 | 主机 | 香港 2 vCPU / 4 GiB / 50 GiB；Web、Worker、PostgreSQL、Valkey 同机 |
 | 对象与备份 | 私有 R2；加密异机备份 Restic → `goodgood-postgres-backups/production`。timer `goodgood-production-postgres-backup.timer` **`enabled`/`active`**，每 30 分钟一次（77 个快照）。2026-09-17 演练点快照 `ce191630`，**恢复演练通过**；发布前恢复点 `36f2a437` |
 | 本地 | Windows 开发；Compose 使用本地 PostgreSQL/Valkey/RustFS/mock |
