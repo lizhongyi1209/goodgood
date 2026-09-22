@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { PRODUCTION_RUNTIME_ADAPTER_ID } from "./production-runtime-adapter.mjs";
 
-export const PRODUCTION_EVIDENCE_SCHEMA_VERSION = 2;
+export const PRODUCTION_EVIDENCE_SCHEMA_VERSION = 3;
 
 export const REQUIRED_PRODUCTION_CHECKS = Object.freeze([
   Object.freeze({ id: "artifact-security", maxAgeHours: 24 }),
@@ -202,7 +202,7 @@ function validateObjectiveEvidence(id, item) {
   if (id === "candidate-health-invariants") {
     if (
       item.runtimeAdapter !== PRODUCTION_RUNTIME_ADAPTER_ID ||
-      item.isolatedCandidatePassed !== true ||
+      item.replacementHealthPassed !== true ||
       item.migrationAppliedOnce !== true ||
       item.liveReadyPassed !== true ||
       item.publicSyntheticPassed !== true ||
@@ -210,7 +210,7 @@ function validateObjectiveEvidence(id, item) {
       item.databaseInvariantPassed !== true ||
       item.creditInvariantPassed !== true
     ) {
-      return "Candidate evidence must prove the selected runtime adapter, isolated candidate, one migration, live/ready, public synthetic, queue, database, and credit invariants.";
+      return "Replacement evidence must prove the selected single-slot runtime adapter, one migration, live/ready, public synthetic, queue, database, and credit invariants.";
     }
   }
   if (id === "rollback-rehearsal") {
@@ -226,7 +226,7 @@ function validateObjectiveEvidence(id, item) {
       item.creditFingerprintUnchanged !== true ||
       item.schemaDowngradeAttempted !== false
     ) {
-      return "Rollback evidence must retain a distinct prior release and prove web/worker recovery, stable queue/database/credit state, and no schema downgrade on the selected runtime adapter.";
+      return "Rollback evidence must retain a distinct prior release and prove same-project web/worker recovery, stable queue/database/credit state, and no schema downgrade on the selected runtime adapter.";
     }
   }
   return null;

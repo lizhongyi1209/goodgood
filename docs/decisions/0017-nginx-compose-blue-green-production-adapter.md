@@ -1,7 +1,11 @@
 # ADR 0017: Nginx and Compose blue/green production adapter
 
-- Status: Accepted
+- Status: Superseded by ADR 0091 for future production releases
 - Date: 2026-09-05
+
+ADR 0091 retires this blue/green adapter for future releases. The sections
+below remain an immutable record of the earlier decision and are not an
+operational procedure for new windows.
 
 ## Context
 

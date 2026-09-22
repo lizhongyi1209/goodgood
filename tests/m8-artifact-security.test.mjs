@@ -42,7 +42,7 @@ function readinessDocument(overrides = {}) {
       runtimeConfigVersion: RUNTIME_VERSION,
       ...overrides,
     },
-    schemaVersion: 2,
+    schemaVersion: 3,
   };
 }
 

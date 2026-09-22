@@ -1,12 +1,17 @@
 # GoodGood 当前状态
 
-- 最后核对：2026-09-21完成GG-098生产发布核对与真实生图冒烟。生产身份 `7888554` / 迁移 `0044` / **blue 接流**；公网与注册均开放。
+- 最后核对：2026-09-21完成GG-098生产发布核对与真实生图冒烟。生产身份 `7888554` / 迁移 `0044`；公网与注册均开放。
 - 产品阶段：已开放的 `controlled-alpha-v1`，不是完整 seed/付费生产就绪。
 - 正式入口：https://goodgood.o1key.com
 - 当前工作：**GG-098 已上线**（单次手动积分上限 5000 → 1,000,000 即 ¥10,000，删除快捷选项，改为手动输入）。此前 GG-097 已把累计功能（GG-024—GG-096）前移到 `5b65601`/`0043`，本次是**首次带迁移的热修发布**。注册自 2026-09-15 起开放，**已有真实用户在使用**：28 个账户、166 个生成资产、参考素材 141 `ready`、生成任务 201（151 成功 / 50 失败）。站长账户 951565127@qq.com，邀请码 405513。
 - 充值：运营已按「登记已收到的充值款」录入 4 笔，共 15100 积分（支付宝 ×2、支付宝收款、微信）。这不是自动支付，支付/支付宝结算仍搁置。
 - **已知缺口（站长 2026-09-15 明确授权接受）**：`controlled-alpha-operations` 未通过——主机无任何对外告警通道。**备份本身不是缺口**：生产备份 timer `enabled`/`active`，每 30 分钟一次，2026-09-17 首次恢复演练通过（见下）。见发布记录。
-- 下一个普通产品需求从 **GG-099** 分配，以BACKLOG核验占用；不要自动恢复搁置的 C6。
+- 下一个普通产品需求从 **GG-100** 分配，以BACKLOG核验占用；不要自动恢复搁置的 C6。
+
+## GG-099 发布策略变更（2026-09-22）
+
+- 未来生产发布取消 blue/green 槽位和 Nginx 上游切流，统一使用单一 `goodgood-production` Docker Compose 项目（Web `3100`、Worker `3101`）。
+- 维护窗口内原地替换同一项目，始终一个 Worker；迁移只前进一次，失败只恢复旧应用镜像，不降级 schema。**本次未执行生产主机变更**，下次操作须独立授权并按 ADR 0091 核验。
 
 ## GG-093 本地运行边界
 
@@ -54,8 +59,8 @@
 | 镜像 | `ghcr.io/lizhongyi1209/goodgood@sha256:7deeab8c0257e9127326eb2fc14b5beecf370f5a22408361f613465a0b432270` |
 | 数据库迁移 | `0044_gg098_raise_manual_grant_ceiling.sql`（44 条，59 张 public 表） |
 | 配置契约 checksum | `65202c281c37eb8e7c2639ee850e9ffe1085cad98f5ef2a85995a4d55d124f3e` |
-| 活跃进程 | **blue** Web + 1 个 blue Worker；PostgreSQL/Valkey 健康 |
-| 回退候选 | green Web 运行中未接流（旧镜像 `71df5145` = `5b65601`）；green Worker 已停止。**回退未演练**，不做 schema 降级 |
+| 活跃进程 | 主机仍运行 GG-098 留下的 blue 命名 Web + 1 个 Worker；PostgreSQL/Valkey 健康。该名称是待另行清理的部署事实，不是未来发布槽位 |
+| 主机遗留 / 发布回退 | 旧 green Web 仍是历史部署遗留，不再是批准的回退路径；未来只在同一 `goodgood-production` Compose 项目恢复旧应用镜像 |
 | 主机 | 香港 2 vCPU / 4 GiB / 50 GiB；Web、Worker、PostgreSQL、Valkey 同机 |
 | 对象与备份 | 私有 R2；加密异机备份 Restic → `goodgood-postgres-backups/production`。timer `goodgood-production-postgres-backup.timer` **`enabled`/`active`**，每 30 分钟一次（77 个快照）。2026-09-17 演练点快照 `ce191630`，**恢复演练通过**；发布前恢复点 `36f2a437` |
 | 本地 | Windows 开发；Compose 使用本地 PostgreSQL/Valkey/RustFS/mock |
@@ -74,10 +79,10 @@ SSH 别名 `goodgood-staging` 是历史命名，指向现有生产主机，不�
   （`http://127.0.0.1:32131/login`），邮件查看入口 `http://127.0.0.1:58045`。
   不自动注册或重置数据。完整记录：[GG091清理](operations/2026-09-14-gg091-test-user-cleanup.md)。
 
-## GG-098 热修发布（2026-09-21）
-
+## GG-098 热修发布历史（2026-09-21）
 **首次带迁移的热修发布**，用 `DEPLOYMENT.md` 的生产热修清单。完整记录见
-[GG-098 发布记录](releases/2026-09-21-gg098-manual-grant-ceiling.md)。
+[GG-098 发布记录](releases/2026-09-21-gg098-manual-grant-ceiling.md)。该流程仅为历史事实，
+不作为新窗口的操作模板。
 
 - 身份：`7888554` / `sha256:7deeab8c…3270` / 迁移 `0044` / 配置契约未变；CI run `35449483809`。
 - `0044` 只把单次发放上限 `5000` → `1000000`，其余子句照抄 `0039`，不改既有行。
@@ -95,8 +100,8 @@ blue 候选**首次启动即崩溃**（`GOODGOOD_EMAIL_OTP_SECRET_FILE could not
 green 正常只因它当初用较新 compose 起过后**再未重建**，故上次发布未暴露。
 
 已用本次 revision 的 compose 覆盖（旧版留 `compose.production.yaml.pre-gg098-backup`）。
-**起槽位前必须先核对主机 compose 与候选 revision 一致，否则新槽位必崩。**
-另注：`blue.env`/`green.env` 在主机位于 `/etc/goodgood/production/slots/`，不是仓库路径。
+**未来发布前必须先核对主机 Compose 与候选 revision 一致，否则原地替换必崩。**
+单槽位项目名和端口已固定在 `compose.production.yaml` 与 Nginx 配置中；主机上的生产配置仍以受保护目录为准。
 
 ## 首次生产恢复演练（2026-09-17）
 

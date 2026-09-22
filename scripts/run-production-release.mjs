@@ -9,7 +9,7 @@ import {
   PRODUCTION_RUNTIME_ADAPTER,
 } from "./production-runtime-adapter.mjs";
 
-export const PRODUCTION_RELEASE_PLAN_SCHEMA_VERSION = 2;
+export const PRODUCTION_RELEASE_PLAN_SCHEMA_VERSION = 3;
 
 export function parseProductionReleaseArguments(argumentsList) {
   if (

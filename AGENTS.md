@@ -138,6 +138,9 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
   current checkpoint in `docs/IMPLEMENTATION_PLAN.md`. Update CURRENT_STATE
   only when facts change. Record exact verification and the next action or
   blocker; do not invent progress if the plan did not change.
+- Future production releases use the single-slot Compose policy in ADR 0091.
+  Do not restore blue/green slots, dual application Compose projects, or Nginx
+  upstream switching from historical ADR 0017/GG-097/GG-098 records.
 
 ## Local development
 

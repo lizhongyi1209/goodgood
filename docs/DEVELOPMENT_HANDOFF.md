@@ -1,9 +1,9 @@
 # 当前开发版本与跨窗口交接
 
-- 日期：2026-09-21；GG-098（单次手动积分上限提升到 ¥10,000）**已上线**；本地分支`main`，HEAD `7888554`；GG093标签继续作为历史构建交接点。
+- 日期：2026-09-22；GG-098（单次手动积分上限提升到 ¥10,000）**已上线**；当前工作分支 `chore/GG-099-single-slot-compose-release` 基于 `main@eaf78c6`，GG-099 变更尚未提交；GG093标签继续作为历史构建交接点。
 - 当前项目入口：F:/goodgood；累计代码包含a73835f、GG081—091与GG092交接。`.codex/`是用户本地设置，保留不提交。
-- **生产已部署并开放**：`goodgood.o1key.com`，revision `7888554` / 迁移 `0044` / **blue 槽位**接流。详见CURRENT_STATE.md与[发布记录](releases/2026-09-21-gg098-manual-grant-ceiling.md)。
-- 新窗口先读AGENTS/CURRENT_STATE/WORKFLOW/IMPLEMENTATION_PLAN/BACKLOG，然后本页；**新任务从GG-099分配**。
+- **生产已部署并开放**：`goodgood.o1key.com`，revision `7888554` / 迁移 `0044`。未来发布按 GG-099 的单槽位 Compose 决策执行；详见 CURRENT_STATE.md 与 [发布记录](releases/2026-09-21-gg098-manual-grant-ceiling.md)。
+- 新窗口先读AGENTS/CURRENT_STATE/WORKFLOW/IMPLEMENTATION_PLAN/BACKLOG，然后本页；**新任务从GG-100分配**。
 
 ## 先确认版本，避免退回历史
 
@@ -129,9 +129,11 @@ runner只在loopback54449创建固定命名的新空库，拒绝已存在库，�
 **生产已上线并开放**（GG-097 2026-09-15 完成，GG-098 2026-09-21 上线）：
 
 - 入口 `goodgood.o1key.com`；revision `7888554`、镜像 `sha256:7deeab8c…3270`、迁移 `0044`、
-  配置契约 `65202c28…`；**blue 槽位接流**（web `3100` / worker health `3101`）。
-- green Web 仍在运行但**未接流**（`71df5145` = `5b65601`/`0043`），green Worker 已停止。
-  Nginx upstream 备份在主机 `/etc/nginx/goodgood/production-active-upstream.pre-gg098-green.conf`。
+  配置契约 `65202c28…`；当前线上事实以 `CURRENT_STATE.md` 为准。
+- GG-099 已接受单槽位发布决策：未来固定使用 `goodgood-production` Compose（Web `3100` /
+  Worker health `3101`），不再启动第二个应用槽位或切换 Nginx upstream。
+- 当前主机仍保留 GG-098 的 blue/green 命名容器事实；清理或迁移它们属于另一个须明确授权的
+  生产维护任务，不能因仓库契约已更新而写成主机已经完成迁移。
 - **公网与注册均开放**。注册收口唯一依赖 `GOODGOOD_EMAIL_REGISTRATION_ENABLED`（当前 `true`）。
 - 真实数据（09-21 核对）：users 28、assets 166、references 141 ready、
   生成任务 201（151 成功 / 50 失败）；运营手动登记充值 4 笔共 15100 积分；冻结 0。
@@ -142,9 +144,10 @@ runner只在loopback54449创建固定命名的新空库，拒绝已存在库，�
 **发布中发现的主机隐患（2026-09-21）**：
 
 主机 `/opt/goodgood-production/compose.production.yaml` 是旧版本（web 只绑 4 个 secret，
-缺 email OTP/SMTP），导致 blue 候选首次启动崩溃。已用本次 revision 的 compose 覆盖，
-旧版留 `.pre-gg098-backup`。**下次起槽位前必须先核对主机 compose 与候选 revision 一致**。
-另注：`blue.env`/`green.env` 在主机实际位于 `/etc/goodgood/production/slots/`，不是仓库路径。
+缺 email OTP/SMTP），导致 GG-098 候选首次启动崩溃。已用本次 revision 的 compose 覆盖，
+旧版留 `.pre-gg098-backup`。**下次原地替换前必须先核对主机 Compose 与候选 revision 一致**。
+
+GG-097/GG-098 的双槽位和上游切换只属于历史发布记录；新窗口不得复用。
 
 **唯一的门禁缺口**：
 

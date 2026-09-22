@@ -24,7 +24,7 @@ const RELEASE_BOUND_IDS = new Set([
 
 function validEvidenceDocument() {
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     release: {
       image: `ghcr.io/lizhongyi1209/goodgood@sha256:${"a".repeat(64)}`,
       migration: "0010_m6_payment_sandbox.sql",
@@ -74,7 +74,7 @@ function validEvidenceDocument() {
         Object.assign(item, {
           creditInvariantPassed: true,
           databaseInvariantPassed: true,
-          isolatedCandidatePassed: true,
+          replacementHealthPassed: true,
           liveReadyPassed: true,
           migrationAppliedOnce: true,
           publicSyntheticPassed: true,

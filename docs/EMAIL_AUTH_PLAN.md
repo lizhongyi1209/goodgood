@@ -290,7 +290,8 @@ SMTP `verify()`，不会发信。合成邮箱的真实容器链路、390×844 �
 P0 已开通 Direct Mail 并完成发信子域 DNS。**2026-09-15 的 GG-097 发布已完成上述全部剩余项**：
 生产 OTP/SMTP 秘密已安装（`email-otp-secret` 由本地生成、`email-smtp-password` 由站长安装），
 `GOODGOOD_AUTH_MODE` 已从 Authing OIDC 切为 `email_otp`，生产数据已迁移到 `0043`，
-镜像已推送并按摘要部署，green 槽位已接流，公网与注册均开放。
+镜像已推送并按摘要部署，公网与注册均开放。该段仅记录历史发布结果；未来发布按
+ADR 0091 的单槽位 Compose 规则执行。
 preflight 的 `authentication:smtp-authentication` 已对真实 SMTP 端点通过 `verify()`（未发信）。
 当前权威状态见 [CURRENT_STATE.md](CURRENT_STATE.md) 与
 [2026-09-15 发布记录](releases/2026-09-15-cumulative-alpha-release.md)。

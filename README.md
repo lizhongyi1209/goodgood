@@ -66,6 +66,8 @@ npm run check:local
 本地验收后提交干净候选，CI 验证不可变镜像，经批准再发布到现有香港主机。
 Git 提交、CI 通过、镜像上传都不等于已经上线；记录部署 revision/digest。
 当前没有常驻远程 staging，blue/green 也不是两套隔离的用户数据库。
+未来生产发布只使用固定的 `goodgood-production` Compose 项目和 Nginx 上游；
+旧双槽位流程仅保留在明确标记的历史发布记录中。
 
 品牌使用 Double G / GoodGood 字标、宫墙红和飞鸿发送标记。保持既有产品语言，
 按 [PROJECT_MAP.md](docs/PROJECT_MAP.md) 逐步调整模块，不做无关整站重写。

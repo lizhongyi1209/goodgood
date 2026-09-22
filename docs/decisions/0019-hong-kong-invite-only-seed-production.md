@@ -11,13 +11,16 @@
   site-owner review, and production-data treatment
 - Refined by: ADR 0021 for clean conversion of the existing Hong Kong host,
   local preproduction, and reservation rather than activation of a staging host
+- Refined by: ADR 0091 for future single-project production releases; the
+  blue/green adapter mentioned below is historical context only
 
 ## Context
 
 M7 has proved the public Hong Kong staging path with isolated test data, real
 Authing login, real O1Key generation, private R2 assets, application rollback,
 and an encrypted off-host PostgreSQL restore. M8 has also selected a managed
-production-state baseline and a non-executable blue/green release adapter, but
+production-state baseline and what was then a non-executable blue/green release
+adapter (now superseded by ADR 0091), but
 ADR 0018 left the production region unset while ICP filing and domestic Alipay
 were considered part of one paid-production decision.
 

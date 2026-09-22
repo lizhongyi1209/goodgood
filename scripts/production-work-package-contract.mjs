@@ -20,8 +20,6 @@ export const PRODUCTION_WORK_PACKAGE_FILES = Object.freeze([
   "infra/production/conversion-manifest.example.json",
   "infra/production/maintenance/index.html",
   "infra/production/maintenance-control.sh",
-  "infra/production/nginx/active-upstream.blue.example.conf",
-  "infra/production/nginx/active-upstream.green.example.conf",
   "infra/production/nginx/cloudflare-origin-only.conf",
   "infra/production/nginx/goodgood.conf",
   "infra/production/postgres-backup.env.example",
@@ -30,8 +28,6 @@ export const PRODUCTION_WORK_PACKAGE_FILES = Object.freeze([
   "infra/production/r2-inventory.env.example",
   "infra/production/release.env.example",
   "infra/production/runtime.env.example",
-  "infra/production/slots/blue.env",
-  "infra/production/slots/green.env",
   "infra/production/systemd/goodgood-production-postgres-backup.service",
   "infra/production/systemd/goodgood-production-postgres-backup.timer",
   "infra/production/systemd/goodgood-production-postgres-maintenance.service",
@@ -112,12 +108,12 @@ export function inspectProductionWorkPackage({
     rejectText(compose, /goodgood-staging|rustfs|\n\s*ports:/i, "production dependency Compose");
   });
 
-  check("blue-green-application", () => {
+  check("single-slot-application", () => {
     const compose = source("compose.production.yaml");
     for (const expected of [
-      "GOODGOOD_PRODUCTION_COMPOSE_PROJECT",
-      "127.0.0.1:${GOODGOOD_PRODUCTION_WEB_PORT",
-      "127.0.0.1:${GOODGOOD_PRODUCTION_WORKER_HEALTH_PORT",
+      "name: goodgood-production",
+      '127.0.0.1:3100:3000',
+      '127.0.0.1:3101:3001',
       "stop_grace_period: 5m",
       "read_only: true",
       "goodgood-production-state",
@@ -138,15 +134,7 @@ export function inspectProductionWorkPackage({
     }
     requireText(source("infra/production/release.env.example"), "GOODGOOD_R2_INVENTORY_ENV_FILE=/etc/goodgood/production/r2-inventory.env", "production release environment");
     requireText(source("infra/production/runtime.env.example"), "GOODGOOD_FAKE_PAYMENT_ENABLED=false", "production runtime environment");
-    for (const [slot, webPort, workerPort] of [
-      ["blue", "3100", "3101"],
-      ["green", "3200", "3201"],
-    ]) {
-      const slotFile = source(`infra/production/slots/${slot}.env`);
-      requireText(slotFile, `GOODGOOD_PRODUCTION_COMPOSE_PROJECT=goodgood-production-${slot}`, `${slot} slot`);
-      requireText(slotFile, `GOODGOOD_PRODUCTION_WEB_PORT=${webPort}`, `${slot} slot`);
-      requireText(slotFile, `GOODGOOD_PRODUCTION_WORKER_HEALTH_PORT=${workerPort}`, `${slot} slot`);
-    }
+    rejectText(compose, /blue|green|slot/i, "production application Compose");
   });
 
   check("fail-closed-maintenance-ingress", () => {
@@ -155,7 +143,7 @@ export function inspectProductionWorkPackage({
       "infra/production/nginx/cloudflare-origin-only.conf",
     );
     const markerPosition = nginx.indexOf("/etc/goodgood/production/maintenance.enabled");
-    const proxyPosition = nginx.indexOf("proxy_pass http://goodgood_active");
+    const proxyPosition = nginx.indexOf("proxy_pass http://goodgood_web");
     requireCondition(markerPosition >= 0 && markerPosition < proxyPosition, "maintenance marker must be evaluated before proxying.");
     requireText(originAllowlist, "allow 127.0.0.1;", "production origin allowlist");
     requireText(originAllowlist, "allow ::1;", "production origin allowlist");
@@ -165,9 +153,12 @@ export function inspectProductionWorkPackage({
       "alias /var/www/goodgood-production/maintenance/index.html;",
       "Retry-After 300",
       "server_name goodgood.o1key.com;",
+      "upstream goodgood_web",
+      "server 127.0.0.1:3100;",
     ]) {
       requireText(nginx, expected, "production Nginx site");
     }
+    rejectText(nginx, /production-active-upstream|goodgood_active/i, "production Nginx site");
     const control = source("infra/production/maintenance-control.sh");
     for (const expected of [
       "plan-enable)",

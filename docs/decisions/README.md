@@ -1,5 +1,7 @@
 # Decision records
 
+- `0091-single-slot-compose-release.md` — future production releases use one fixed Compose project; supersedes ADR 0017's blue/green procedure.
+
 - `0088-addressable-login-registration-entry.md` — accepted addressable `/login` and `/register` pages, visible mode navigation and safe protected-route return for GG-096; partially supersedes ADR 0087's single-form UI.
 - `0089-optional-invitation-registration.md` — 邀请码改为可选，未填可注册、填了必须有效，pending 账户仍需邀请码；解除 GG-097 生产首个账户死锁。
 - `0090-registration-activates-account.md` — 确认「注册即激活」为目标行为，准入收口唯一依赖注册开关，欢迎积分为 200；门禁验证项与 ADR 0020 的 pending 模型解耦。
@@ -62,7 +64,7 @@ Current records:
 - `0014-encrypted-off-host-staging-postgres-backups.md`
 - `0015-production-observability-and-release-gate.md`
 - `0016-defer-monitoring-platform-implementation.md`
-- `0017-nginx-compose-blue-green-production-adapter.md`
+- `0017-nginx-compose-blue-green-production-adapter.md` — historical; superseded for future releases by ADR 0091.
 - `0018-alibaba-cloud-managed-production-state-baseline.md`
 - `0019-hong-kong-invite-only-seed-production.md`
 - `0020-owner-reviewed-accounts-and-site-owner-console.md`

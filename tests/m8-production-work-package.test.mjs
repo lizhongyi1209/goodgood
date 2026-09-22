@@ -25,7 +25,7 @@ test("local production work-package rehearsal passes without any execution path"
     result.checks.map(({ id, status }) => [id, status]),
     [
       ["bounded-production-state", "pass"],
-      ["blue-green-application", "pass"],
+      ["single-slot-application", "pass"],
       ["fail-closed-maintenance-ingress", "pass"],
       ["production-backup-policy", "pass"],
       ["metadata-only-r2-inventory", "pass"],
@@ -132,7 +132,7 @@ test("work package contains no local/live executor or R2 deletion implementation
     JSON.parse(packageJson).scripts["production:work-package"],
     "node scripts/run-production-work-package.mjs",
   );
-  assert.ok(PRODUCTION_WORK_PACKAGE_FILES.length >= 27);
+  assert.ok(PRODUCTION_WORK_PACKAGE_FILES.length >= 25);
 });
 
 test("ongoing production restore observes sessions but blocks active generation", async () => {

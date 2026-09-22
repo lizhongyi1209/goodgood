@@ -477,16 +477,15 @@ the generation plane. Large image bytes should use signed direct object-storage
 transfer whenever possible; do not proxy completed images through the app
 server.
 
-ADR 0017 selects the provider-neutral initial production runtime adapter without
-choosing an infrastructure SKU or changing the documented Hong Kong
-control-plane direction: Alibaba Cloud ESA targets one Linux Nginx origin with
-two loopback-only Compose application slots.
-Only one slot receives Web traffic and only one Worker consumes the production
-queue. The inactive Web candidate is checked before a bounded Worker handoff and
-an atomic Nginx upstream replacement. PostgreSQL, Valkey, and private R2 remain
-outside both slots. Rollback restores the prior Web upstream and Worker but
-never downgrades schema. The checked-in planner describes this adapter and has
-no execution path.
+ADR 0091 supersedes ADR 0017 for future production releases without changing
+the documented Hong Kong control-plane direction: Alibaba Cloud ESA targets one
+Linux Nginx origin and one fixed `goodgood-production` Compose project.
+The Web upstream remains fixed at loopback `3100`, and only one Worker consumes
+the production queue. A reviewed maintenance window protects the in-place Web
+and Worker replacement; PostgreSQL, Valkey, and private R2 remain outside the
+application replacement boundary. Rollback restores the prior application image
+and Worker in the same project but never downgrades schema. The checked-in
+planner describes this adapter and has no execution path.
 
 ADR 0021 selects the already purchased Alibaba Cloud Hong Kong Simple
 Application Server as the initial unpaid seed-production control plane. Its
@@ -499,7 +498,7 @@ profile remains a future scale-out direction rather than a seed-launch gate.
 There is no persistent remote staging environment in this phase. The operator
 workstation owns mock and production-shaped local testing with test-only data
 and credentials; CI produces the immutable candidate. The production host
-performs a bounded inactive-Web candidate check, single-Worker handoff, public
+performs a bounded same-project replacement check, single-Worker handoff, public
 synthetic verification, and rollback rehearsal. Local success never substitutes
 for production callback, storage, resource-headroom, recovery, or release
 evidence. `staging-goodgood.o1key.com` remains reserved and inactive.

@@ -6,20 +6,24 @@
   `productionRegion` and invitation-only launch sequence
 - Superseded in part by: ADR 0021 for the initial unpaid seed-production
   topology; this managed profile remains the future scale-out target
+- Superseded in part by: ADR 0091 for the production application release
+  topology; any future scale-out profile still uses one fixed Compose project
 
 ## Context
 
-ADR 0017 fixes the production application release mechanics but deliberately
-leaves the host capacity, region, PostgreSQL, and Redis-compatible service
+ADR 0017 originally fixed the production application release mechanics but was
+later superseded by ADR 0091. This decision leaves the host capacity, region,
+PostgreSQL, and Redis-compatible service
 unselected. An executable release adapter cannot be reviewed until those
 boundaries are explicit. The M7 Hong Kong Simple Application Server remains a
 test-data staging host; its colocated PostgreSQL and Valkey topology is not a
 paid-production durability design.
 
 The current CI workflow publishes one image without a multi-platform build, so
-the repository has no evidence that its immutable candidate supports ARM. The
-blue/green adapter can temporarily run two Web processes, one Worker, Nginx,
-Docker, and the delegated telemetry collector on one application host. Its
+the repository has no evidence that its immutable candidate supports ARM. At
+the time of this decision, the now-superseded blue/green adapter could
+temporarily run two Web processes, one Worker, Nginx, Docker, and the delegated
+telemetry collector on one application host. Its
 database pool currently permits ten connections per Web or Worker process.
 
 Alibaba Cloud documents that a regular website ICP filing requires a server in
@@ -43,7 +47,7 @@ Relevant vendor facts were checked on 2026-09-05:
 Select infrastructure profile `alibaba-managed-state-v1` for initial paid
 production, without provisioning it:
 
-- run ADR 0017's Nginx/Compose application slots on one Alibaba Cloud ECS
+- run ADR 0091's fixed Nginx/Compose application project on one Alibaba Cloud ECS
   x86_64 Linux host with Ubuntu 24.04 LTS, at least 4 vCPUs, 16 GiB memory, and
   a 100 GiB ESSD system disk. Use a current-generation general-purpose x86
   family and pay-as-you-go billing through rehearsal; check regional inventory
@@ -62,7 +66,7 @@ production, without provisioning it:
   meet the one-hour RPO. Native same-service backups are not the sole recovery
   copy: ADR 0015 still requires a separately encrypted, off-host recovery
   repository, a four-hour restore objective, and the full retention set;
-- retain private Cloudflare R2 for image bytes. Neither application slots nor
+- retain private Cloudflare R2 for image bytes. Neither the application project nor
   the ECS system disk own durable user state;
 - leave `productionRegion` unset until the ICP-filed domain and access topology
   are reviewed. Hong Kong remains the accepted staging/control-plane direction.
@@ -86,6 +90,6 @@ no purchase, production deployment, or executable-adapter authority.
   master-replica, or private connectivity, provisioning stops; it does not
   silently choose ARM, RDS Basic Edition, a single-node queue, or public state
   endpoints.
-- ADR 0017 remains non-executable until a later change supplies and rehearses
-  the reviewed Compose/Nginx/locking implementation against provisioned
-  no-customer infrastructure.
+- ADR 0091 remains non-executable until a later change supplies and rehearses
+  the reviewed single-project Compose/Nginx/locking implementation against
+  provisioned no-customer infrastructure.

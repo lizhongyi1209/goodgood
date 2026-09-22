@@ -1,4 +1,4 @@
-name: ${GOODGOOD_PRODUCTION_COMPOSE_PROJECT:?Select the reviewed blue or green slot}
+name: goodgood-production
 
 x-goodgood-production-app: &goodgood-production-app
   image: ${GOODGOOD_RELEASE_IMAGE:?Set the immutable GoodGood GHCR digest}
@@ -41,7 +41,7 @@ services:
       HOST: 0.0.0.0
       PORT: 3000
     ports:
-      - "127.0.0.1:${GOODGOOD_PRODUCTION_WEB_PORT:?Select the reviewed slot web port}:3000"
+      - "127.0.0.1:3100:3000"
     networks:
       - goodgood-production-state
       - goodgood-production-egress
@@ -62,7 +62,7 @@ services:
       WORKER_HEALTH_HOST: 0.0.0.0
       WORKER_HEALTH_PORT: 3001
     ports:
-      - "127.0.0.1:${GOODGOOD_PRODUCTION_WORKER_HEALTH_PORT:?Select the reviewed slot Worker health port}:3001"
+      - "127.0.0.1:3101:3001"
     networks:
       - goodgood-production-state
       - goodgood-production-egress

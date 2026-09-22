@@ -115,8 +115,8 @@ stop, repeated provider failure, or unavailable operator notification.
 The following work is deliberately deferred from controlled alpha and must not
 be reported as complete: production deployment of migration 0020 and the
 content-report UI; automated account deletion, its Authing management
-credential, and deletion-register recovery; written O1Key erasure terms; the
-full blue/green rollback rehearsal; Grafana/complex dashboards; the formal
+credential, and deletion-register recovery; written O1Key erasure terms;
+Grafana/complex dashboards; the formal
 primary/secondary incident model; customer checkout; domestic Alipay; and the
 applicable ICP/domain review.
 

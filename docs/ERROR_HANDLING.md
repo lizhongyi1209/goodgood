@@ -601,13 +601,14 @@ details are reduced to non-secret check failures. The production release
 planner returns `plan: null`, `executed: false`, and a failed gate when any
 required evidence is not current. It deliberately rejects execution arguments
 and cannot pull, migrate, start, switch, or roll back production.
-Its ADR 0017 adapter permits only one active production Worker. A candidate Web
-failure leaves the active slot untouched; a candidate Worker handoff failure
-restores the prior Worker before any Nginx switch. Invalid proposed Nginx
-configuration restores the retained upstream bytes without reload. A post-switch
-failure reverts the upstream and Worker, repeats public/state fingerprints, and
-never attempts a schema downgrade. Failure to prove any of those outcomes emits
-no passing candidate-health or rollback evidence.
+Its ADR 0091 adapter permits one fixed production Compose project and only one
+production Worker. A replacement failure keeps maintenance enabled and restores
+the prior application image and Worker in that same project. Nginx keeps the
+fixed `127.0.0.1:3100` upstream; no release step rewrites or switches it. A
+failure after reopening public traffic restores maintenance first, then repeats
+public/state fingerprints after the compatible application recovery, and never
+attempts a schema downgrade. Failure to prove any of those outcomes emits no
+passing candidate-health or rollback evidence.
 
 ADR 0021's single-host seed profile fails closed before conversion when the
 existing Hong Kong host cannot prove its expected x86_64, 2-vCPU, 4-GiB,

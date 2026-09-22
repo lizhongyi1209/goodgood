@@ -1,6 +1,10 @@
-# GoodGood 首次正式环境转换运行手册
+# GoodGood 首次正式环境转换运行手册（历史文件）
 
-状态：**仅供本地审阅与演练，不构成任何线上操作授权。**
+状态：**历史转换文件，仅供本地审阅与演练，不构成任何线上操作授权。**
+
+自 ADR 0091 起，未来生产发布不得使用本文件中曾经描述的 blue/green
+槽位和上游切换步骤。持续发布统一按 `docs/DEPLOYMENT.md` 的单槽位
+`goodgood-production` Compose 流程执行；本文件中的旧转换步骤保留仅为审计历史。
 
 本手册落实 ADR 0021：把现有香港主机从 M7 测试环境干净转换为首个
 GoodGood 正式环境。执行窗口最多 4 小时。维护页必须先于冻结测试写入，
@@ -14,8 +18,8 @@ GoodGood 正式环境。执行窗口最多 4 小时。维护页必须先于冻�
 - 依赖项目：`goodgood-production-dependencies`。
 - 正式卷：`goodgood-production-postgres-data`、
   `goodgood-production-valkey-data`；与所有 `goodgood-staging-*` 卷隔离。
-- 应用槽位：blue=`3100/3101`，green=`3200/3201`；一个 Worker 进程并发处理
-  已接受任务，容器停止宽限 5 分钟。
+- 应用项目：`goodgood-production`，Web/Worker 使用 `3100/3101`；一个 Worker
+  进程并发处理已接受任务，容器停止宽限 5 分钟。
 - 对象：现有私有 R2 `goodgood` bucket，仅在精确盘点、另行批准的测试对象
   清除、空桶核验和凭据轮换后继续使用。
 - 恢复：正式 PostgreSQL 每 30 分钟触发备份，随机延迟最多 5 分钟；
@@ -32,11 +36,9 @@ GoodGood 正式环境。执行窗口最多 4 小时。维护页必须先于冻�
 | --- | --- | --- |
 | `compose.production.dependencies.yaml` | `/opt/goodgood-production/compose.production.dependencies.yaml` | `root:root 0644` |
 | `compose.production.yaml` | `/opt/goodgood-production/compose.production.yaml` | `root:root 0644` |
-| `infra/production/slots/{blue,green}.env` | `/etc/goodgood/production/slots/{blue,green}.env` | `root:root 0644` |
 | `infra/production/r2-inventory.env.example` | `/etc/goodgood/production/r2-inventory.env` | `root:root 0600` |
 | `infra/production/nginx/goodgood.conf` | `/etc/nginx/sites-enabled/goodgood.conf` | `root:root 0644` |
 | `infra/production/nginx/cloudflare-origin-only.conf` | `/etc/nginx/snippets/goodgood-cloudflare-origin-only.conf` | `root:root 0644` |
-| reviewed active-upstream file | `/etc/nginx/goodgood/production-active-upstream.conf` | `root:root 0644` |
 | `infra/production/maintenance/index.html` | `/var/www/goodgood-production/maintenance/index.html` | `root:root 0644` |
 | `infra/production/maintenance-control.sh` | `/usr/local/sbin/goodgood-production-maintenance` | `root:root 0755` |
 | `infra/production/postgres-backup-restore.sh` | `/usr/local/sbin/goodgood-production-postgres` | `root:root 0755` |
@@ -122,7 +124,7 @@ maintenance marker，静态维护门禁会失效并触发入口关闭。
 
 ### C0 — 进入维护（目标 0–10 分钟）
 
-1. 确认 blue upstream 示例指向 `127.0.0.1:3100`，安装全部生产 Nginx
+1. 确认固定 upstream 示例指向 `127.0.0.1:3100`，安装全部生产 Nginx
    文件和维护资源，但先不 reload。
 2. `sudo nginx -t` 通过。
 3. 取得 `production-ingress-maintenance` 操作批准后执行：
@@ -225,21 +227,22 @@ OIDC discovery preflight。任何旧 callback、inline secret、错误权限或�
 
 ### C5 — 迁移、初始站长和 isolated candidate（目标 170–225 分钟）
 
-1. 选择 blue 作为首次槽位。release 文件绑定同一 CI digest/revision/migration/
-   runtimeConfigVersion，Compose 只读取 production runtime 和 secret 路径。
+1. 使用固定 `goodgood-production` Compose 项目。release 文件绑定同一 CI
+   digest/revision/migration/runtimeConfigVersion，Compose 只读取 production
+   runtime 和 secret 路径。
 2. 以 `--profile release run --rm migrate` 执行一次前向 migration；重复运行必须
    checksum/idempotency 通过。不得降级 schema。迁移 0012 后，在第一次真实登录
    前必须证明 users、auth identities/sessions、credit accounts/ledger、content、
    role 和 administrative action 均为零；本地 fixture seeder 在 production 禁用。
-3. 先只启动 blue Web，在 loopback `3100` 完成 `/live`、`/ready`、数据库、队列、
+3. 启动 Web，在 loopback `3100` 完成 `/live`、`/ready`、数据库、队列、
    R2、O1Key 和 release-label 校验。资源余量必须仍满足 500 MiB/80% 安全线。
 4. 通过私有 operator 路径完成正式 Authing 登录：返回身份在新数据库中创建
    `pending` member，恰好一个 100 welcome grant，无旧内容、角色或 session。
 5. 对该稳定 owner ID 运行 `bootstrap-site-owner` dry-run，取得独立批准后再
    `--execute`；核验审计记录和 `site_owner` 唯一性。
-6. 启动一个 blue Worker。核验 health `3101`；不得并行启动 green Worker。
+6. 启动唯一 Worker。核验 health `3101`；不得启动第二个生产 Worker。
 
-检查点 R5：isolated candidate 失败时停 blue Web/Worker，保留生产数据库用于
+检查点 R5：替换后的 Web/Worker 失败时停止该 Compose 项目，保留生产数据库用于
 诊断，保持维护。migration 只允许 forward fix，不能 schema rollback。
 
 ### C6 — 完整产品、恢复和回滚证明（目标 225–235 分钟）
@@ -253,8 +256,8 @@ OIDC discovery preflight。任何旧 callback、inline secret、错误权限或�
 - 上传 reference、提交一次真实生成、credit reserve/settle、R2 私有签名读取、
   asset/project 恢复和跨 owner 拒绝通过。不得为了失败自动重提付费任务。
 - 生产 backup `run` 和异地 `restore-latest-drill` 通过，RPO/RTO 证据满足门禁。
-- 在 green loopback 只启动 Web candidate，验证后模拟一次 blue↔green upstream
-  变更和回退；Worker 必须先 drain 旧进程再启动新进程，任意时刻只有一个。
+- 在固定 loopback 只启动替换后的 Web，验证同一 Compose 项目内的应用恢复；Worker
+  必须先 drain 旧进程再启动新进程，任意时刻只有一个。
   回滚后数据库、队列和 credit fingerprints 不变，`schemaDowngradeAttempted=false`。
 - 执行以下固定种子门禁和只读计划；两者均通过。不得把延期的 ICP/domain 或
   Alipay 项改写为 `pass`，也不得用完整付费门禁失败替代种子门禁结果：
@@ -286,9 +289,9 @@ OIDC discovery preflight。任何旧 callback、inline secret、错误权限或�
 
 本仓库不提供 public-open 执行命令，避免把作业包审阅误当作流量授权。若 4 小时
 到期或公开后 synthetic 失败，立即恢复 maintenance marker/受控 503；若应用
-回滚，切回先前健康槽位和 Worker，但绝不降级 schema 或恢复 staging 公网。
+回滚，恢复同一 Compose 项目的先前健康镜像和 Worker，但绝不降级 schema 或恢复 staging 公网。
 
-检查点 R7：首次公开后产生的数据即为正式数据。只能做应用槽位回滚或前向修复，
+检查点 R7：首次公开后产生的数据即为正式数据。只能做同一 Compose 项目的应用回滚或前向修复，
 不能重置 PostgreSQL、Valkey、R2、身份映射或 credit ledger。
 
 ## 七日后清理（不属于转换窗口）

@@ -429,13 +429,13 @@ tables/rows/migrations; once the application schema exists, the same tool
 retains its active-session/job quiescence check and full table/row/migration
 comparison.
 
-M8 production-runtime coverage fixes ADR 0017's Nginx/Compose blue and green
-loopback slots, external durable-state boundary, single-active-Worker handoff,
-atomic upstream-switch intent, and forward-fix-only schema rule. Passing
-candidate-health evidence must name the selected adapter and prove isolated
-startup, exactly one migration, live/ready, public synthetic, queue, database,
-and credit checks. Passing rollback evidence must retain a distinct prior
-revision and prove Web/Worker and queue recovery, unchanged database/credit
+M8 production-runtime coverage fixes ADR 0091's fixed Compose project, loopback
+Web/Worker ports, external durable-state boundary, single-active-Worker
+handoff, maintenance-window replacement, and forward-fix-only schema rule.
+Passing candidate-health evidence must name the selected adapter and prove
+exactly one migration, live/ready, public synthetic, queue, database, and
+credit checks. Passing rollback evidence must retain a distinct prior revision
+and prove same-project Web/Worker and queue recovery, unchanged database/credit
 fingerprints, and no schema downgrade. The planner remains non-executable.
 M8 production-infrastructure coverage fixes ADR 0021's selected
 `alibaba-hong-kong-single-host-seed-v1` profile at the existing 2-vCPU / 4-GiB /
@@ -469,8 +469,8 @@ staging only as a private diagnostic source.
 Production work-package coverage performs a deterministic, local-only rehearsal
 of the exact checked-in conversion materials. It proves production PostgreSQL
 and Valkey are resource-bounded, internally networked, production-named, and
-free of staging/RustFS bindings; blue/green Web/Worker slots have exact loopback
-ports and five-minute Worker drain; Nginx evaluates the maintenance marker
+free of staging/RustFS bindings; the fixed Compose Web/Worker ports and
+five-minute Worker drain are exact; Nginx evaluates the maintenance marker
 before proxying and stops ingress when activation cannot prove HTTP 503; and
 the Cloudflare allowlist stays deny-by-default. It also fixes the half-hour
 backup schedule, isolated Restic prefix, `24h + 14/8/12` retention, no-network
@@ -479,7 +479,7 @@ release-config checksum coverage. R2 tests cover empty and sorted inventories,
 stable hash approval binding, tamper rejection, current-version scope, and a
 planner that always reports `executed:false`/`executionAvailable:false`. Static
 coverage rejects child-process/live execution and any R2 delete implementation.
-Shell parsing and both production Compose slot interpolations are additionally
+Shell parsing and the fixed production Compose interpolation are additionally
 checked locally without starting containers.
 ADR 0042 coverage keeps the ongoing-production restore drill fail-closed on a
 missing reviewed maintenance marker or any active generation job while allowing
@@ -1065,7 +1065,7 @@ database/queue. Live 32140 auth continues to use actual data, while UI-only
 - No secrets or real user assets in the diff.
 - Database migrations are reviewed and have rollback/forward-fix notes.
 - Staging checks use test accounts and test buckets.
-- A smoke test passes after deployment before traffic switch.
+- A smoke test passes after the fixed Compose replacement before maintenance is removed.
 - The exact revision-tagged production image has already passed the staging
   smoke test; production does not rebuild it.
 - `IMPLEMENTATION_PLAN.md` records the completed slice, verification result,

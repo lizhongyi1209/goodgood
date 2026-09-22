@@ -1,33 +1,37 @@
 # Production implementation plan
 
-- Last synchronized: 2026-09-21
-- Current phase: GG-098 热修已上线——**blue 接流**，公网开放。
-- Current objective: 观察已开放站点；`controlled-alpha-operations`（告警通道）站长决定以后再做。
+- Last synchronized: 2026-09-22
+- Current phase: GG-099 发布策略变更已完成本地实现与验证；公网仍开放。
+- Current objective: 保持单槽位 Compose 作为唯一未来发布路径；生产主机迁移另行授权。
 - Previous objective: 单次手动积分上限提到 ¥10,000（含迁移 `0044`）并发布。
 
 ## Current checkpoint
 
 - Task [GG-098](tasks/GG-098-manual-grant-ceiling.md)：**已部署**。
-  生产身份 `7888554` / 镜像 `sha256:7deeab8c…3270` / 迁移 `0044` / **blue 接流**。
+  生产身份 `7888554` / 镜像 `sha256:7deeab8c…3270` / 迁移 `0044`。
   完整记录见 [发布记录](releases/2026-09-21-gg098-manual-grant-ceiling.md)。
-- 这是**首次带迁移的热修发布**，走 `DEPLOYMENT.md` 的生产热修清单：恢复点 → blue 候选 →
-  迁移 → 单 Worker 交接 → 原子换上游。切流后公网 200、session 401、队列/活动任务/冻结均 0。
+- 这是**首次带迁移的热修发布**，属于旧 blue/green 流程的历史记录；切换后的公网 200、
+  session 401、队列/活动任务/冻结均 0。未来发布不再复用该流程。
 - 真实生图冒烟（站长 2026-09-21 单独授权）：真实邮箱验证码登录 →Nano Banana 2 / 1K /
   1:1 / 1 张成功，reserve→settle 各 1 次、冻结归零，私有读取自有 200 / 未认证 401。
   **跨账户拒绝未实测**（站长指示不再测试），该项不得写成 `pass`；本次未跑完整 alpha 门禁。
 - **发布中发现的主机隐患已修复**：主机 `compose.production.yaml` 是旧版本（web 只绑 4 个
-  secret，缺 email OTP/SMTP），导致 blue 候选首次启动崩溃。已用本次 revision 覆盖，
-  旧版留 `.pre-gg098-backup`。**起槽位前必须先核对主机 compose 与候选 revision 一致。**
+  secret，缺 email OTP/SMTP），导致旧发布候选首次启动崩溃。已用本次 revision 覆盖，
+  旧版留 `.pre-gg098-backup`。未来原地替换前必须核对主机 Compose 与候选 revision 一致。
 - GG-097 [任务卡](tasks/GG-097-production-release-0019-to-0043.md)：累计功能发布，已被本次取代；
   其门禁为五项 `pass` + `controlled-alpha-operations` `fail`（站长授权带缺口开站）。
+- Task [GG-099](tasks/GG-099-single-slot-compose-release.md)：**本地已完成**。
+  ADR 0091 已接受；仓库已从 blue/green 发布切换到固定 `goodgood-production` Compose
+  项目；独立 active-upstream、槽位 env 和双上游示例已删除。定向测试 35/35，
+  `npm run check:local` 537 通过/26 隔离跳过/0 失败。未执行生产主机迁移。
 - 线上入口为 `goodgood.o1key.com`；`staging-goodgood.o1key.com` 仅保留名称，不是测试入口。
 - 生产数据（2026-09-21 核对）：users 28、assets 166、references 141 ready、
   generation_jobs 201（151 成功 / 50 失败）；运营手动登记充值 4 笔共 15100 积分。
 - **2026-09-17 首次生产恢复演练通过**：快照 `ce191630`、59 表 / 2403 行 / 43 迁移；
   维护窗口约 66 秒。「备份 timer disabled、无自动备份」的旧结论**已更正为错误**。
-- 独立缺口（已记录未处理）：**仅剩无告警通道**；green Web 未接流待退役。
-- Next action: 无待办发布步骤。可选：补 `controlled-alpha-operations` 取证、
-  评估告警通道、退役 green、修参考图校验超时缺陷。
+- 独立缺口（已记录未处理）：**仅剩无告警通道**；历史双槽位遗留的主机清理待另行授权。
+- Next action: 新窗口只按 ADR 0091 和当前单槽位文档准备发布；生产主机迁移另立任务并单独授权。
+  下一个普通产品需求从 GG-100 分配。
 - Blockers: 无阻塞执行项；`operations` 缺口为已知并已授权接受。
 - 待排查缺陷：参考图 `/api/references/*` 校验最长近 6 分钟，超过 nginx 70s 读超时，
   用户看到上传失败而素材实际入库。未定位根因，未修改。

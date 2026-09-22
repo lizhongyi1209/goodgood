@@ -10,7 +10,7 @@
 GG-093当前本地环境、Docker清理、构建指纹与恢复命令见[DEVELOPMENT_HANDOFF.md](DEVELOPMENT_HANDOFF.md)；下方有任务标号的旧端口与测试数是对应阶段记录，以该交接的当前端口和验证边界为准，不运行旧fixture/转换脚本。
 
 **生产已于 2026-09-15 部署并开放**（GG-097）：`goodgood.o1key.com`，revision `5b65601`、
-迁移 `0043`、green 槽位接流，公网与注册均开放。当前权威部署事实见
+迁移 `0043`，公网与注册均开放。当前权威部署事实见
 [CURRENT_STATE.md](CURRENT_STATE.md) 与 [发布记录](releases/2026-09-15-cumulative-alpha-release.md)。
 下方所有标有任务号的段落仍是各自阶段的记录，**不代表当前部署状态**；
 生产变更必须另开任务卡并取得明确授权。
@@ -87,8 +87,10 @@ conversion sections below retain valuable procedures and rationale; they are
 not pending work and do not authorize another reset, bucket purge, identity
 rotation, maintenance change, or fresh production conversion.
 
-Blue/green slots share production state; an inactive slot is not an isolated
-test database. Host evidence must be refreshed for the exact candidate under
+Future production releases use the single-slot Compose policy in ADR 0091. The
+fixed `goodgood-production` project replaces the Web/Worker in a reviewed
+maintenance window; Nginx keeps one upstream and no second application project
+is started. Host evidence must be refreshed for the exact release under
 the approved live scope. A main commit, CI pass, or GHCR publication never
 deploys by itself. For ADR 0024's alpha gate use its specific requirements, not
 the paid or full-seed readiness claim. GG-003 extracted the read-only alpha CLI
@@ -99,19 +101,20 @@ npm run production:alpha-gate -- --evidence-file \
   /var/lib/goodgood-production/controlled-alpha/readiness.json
 ```
 
-The alpha document uses production evidence schema v2. Artifact evidence is
+The alpha document uses production evidence schema v3. Artifact evidence is
 valid for at most seven days, preflight for at most 72 hours, and the remaining
 alpha checks for at most 24 hours. Every item is bound to the candidate Git SHA;
 an old schema, old SHA, stale timestamp, wrong mode, or blocked item fails closed.
 The CLI only verifies evidence: it does not create credentials, generate an
-image, apply a migration, switch a slot, or change public maintenance.
+image, apply a migration, replace the production Compose project, or change
+public maintenance.
 
 ## Environments
 
 | Environment | Purpose | Data |
 | --- | --- | --- |
 | Local | Feature development and API contract tests | Local/test only |
-| Host candidate | Exact-digest, inactive-slot and no-customer release rehearsal | No imported staging data; production state invariants are read-only until the reviewed migration step |
+| Host candidate | Exact-digest, no-customer release rehearsal for the fixed Compose project | No imported staging data; production state invariants are read-only until the reviewed migration step |
 | Production | Customer traffic | Production data |
 
 Never use production credentials in local `.env` files or browser bundles.
@@ -1001,9 +1004,10 @@ npm run staging:release -- rollback \
 Use rollback only when the prior application image is compatible with the
 current additive schema. For an irreversible or incompatible migration, keep
 the application on the current image and use a reviewed forward fix. The first
-single-stack staging deploy may briefly replace containers; public
-zero/low-downtime traffic switching still requires the selected reverse-proxy
-and blue/green host layout described below.
+single-stack staging deploy may briefly replace containers; the selected
+production adapter is single-slot. Production releases briefly replace the
+fixed Compose containers inside a reviewed maintenance window and keep the
+existing Nginx upstream unchanged.
 
 The deployed maintenance role preserves the dry-run-first manual-payment
 contract. After the release is healthy, a trusted operator can invoke it with
@@ -1196,13 +1200,18 @@ Create the first Hong Kong staging environment only after:
 - CI verifies and publishes a revision-tagged image without embedded secrets;
 - environment variables and recovery commands are documented.
 
-## Zero/low-downtime deployment
+## Production release shape
 
 1. Build and test before touching the running instance.
-2. Start the new version on a separate container/port.
-3. Run health/readiness checks and compatible migrations.
-4. Switch the reverse proxy to the healthy version.
-5. Keep the prior version available for rollback.
+2. Enter the reviewed maintenance window and enable the static maintenance
+   marker; the fixed Nginx upstream remains unchanged.
+3. Pull the exact immutable image with the `goodgood-production` Compose
+   project, stop the Worker/Web in that project, and run one compatible
+   forward migration.
+4. Replace the Web, verify health/readiness and database/queue invariants, then
+   start the only production Worker.
+5. Remove maintenance after the checks pass. If readiness fails, restore the
+   prior application image in the same Compose project; never downgrade schema.
 6. Observe errors, queue latency, and database health before cleanup.
 
 For a host size or provider migration: snapshot and back up PostgreSQL and
@@ -1212,28 +1221,25 @@ and retain the old instance until rollback evidence is complete.
 
 ### Selected production runtime adapter
 
-ADR 0017 selects `nginx-compose-blue-green-v1` as the initial runtime adapter.
-ADR 0021 keeps it as the preferred adapter on the existing Hong Kong host, but
-the inactive-Web overlap and resource limits must be revalidated against the
-2-vCPU / 4-GiB boundary before an executable adapter is enabled.
+ADR 0091 selects `nginx-compose-single-slot-v1` for future production
+releases. ADR 0017's blue/green adapter is superseded and must not be used.
 
-- Host Nginx is the only origin ingress behind Alibaba Cloud ESA.
-- Two independent application-only Compose projects use fixed loopback ports:
-  blue Web/Worker health on `3100/3101`, green on `3200/3201`.
-- PostgreSQL, Valkey, and private R2 remain outside both slots.
-- One root-owned release lock serializes changes. Root-owned release state
-  retains the active slot, exact candidate identity, and prior upstream bytes.
-- Start only the inactive Web candidate. Keep its Worker stopped until isolated
-  candidate checks and the single reviewed forward migration pass.
-- Stop the active Worker with bounded grace, start the candidate Worker, and
-  restore the prior Worker if its readiness fails. Never run both production
-  Workers intentionally as a blue/green validation mechanism.
-- Replace the Nginx upstream include atomically on the same filesystem, run
-  `nginx -t`, and reload only after validation. Restore the retained include if
-  validation fails.
-- After the switch, repeat public synthetic, queue, database, and credit
-  fingerprints. Rollback restores the prior upstream and Worker without a
-  schema downgrade.
+- Host Nginx is the only origin ingress behind Alibaba Cloud ESA and keeps one
+  fixed upstream to Web `127.0.0.1:3100`.
+- One application-only Compose project named `goodgood-production` runs Web
+  and at most one Worker; Worker health is on `127.0.0.1:3101`.
+- PostgreSQL, Valkey, and private R2 remain outside the application service
+  replacement boundary, with PostgreSQL and Valkey still operated by the
+  production dependency Compose project.
+- A root-owned release lock serializes changes. A reviewed maintenance window
+  enables the static maintenance marker before the Web/Worker replacement.
+- The exact immutable CI image is pulled by Compose. The host does not build
+  from source and no second application slot is started.
+- Run the additive migration once, verify the replaced Web, start the single
+  Worker, then remove maintenance through the separately reviewed host
+  procedure. Never switch an Nginx upstream between slots.
+- If readiness fails, restore the prior application image and Worker in the
+  same Compose project. Never downgrade the database schema.
 
 `production:release-plan` reports this adapter, its selected infrastructure
 profile, and ordered phases only after the complete paid-production gate passes.
@@ -1245,11 +1251,11 @@ passes its no-customer conversion, and the executable adapter passes a separate
 resource-headroom review.
 
 Passing `candidate-health-invariants` evidence must set
-`runtimeAdapter: nginx-compose-blue-green-v1` and prove isolated candidate
-startup, exactly one migration, live/ready, public synthetic, queue, database,
+`runtimeAdapter: nginx-compose-single-slot-v1` and prove same-project replacement
+health, exactly one migration, live/ready, public synthetic, queue, database,
 and credit checks. Passing `rollback-rehearsal` evidence must name a distinct
-retained prior revision and prove Web/Worker rollback, queue recovery, unchanged
-database/credit fingerprints, and `schemaDowngradeAttempted: false`.
+retained prior revision and prove same-project Web/Worker recovery, queue recovery,
+unchanged database/credit fingerprints, and `schemaDowngradeAttempted: false`.
 
 The separate initial-conversion planner binds the accepted source/target volume
 names, reused `goodgood` bucket, production Authing URLs, static maintenance
@@ -1270,7 +1276,7 @@ public asset to be installed and activated only by the later reviewed runbook.
 
 The exact local conversion work package is defined by
 `infra/production/CONVERSION_RUNBOOK.md`. It adds separate, resource-bounded
-production PostgreSQL/Valkey state; blue/green application Compose with fixed
+production PostgreSQL/Valkey state; single-slot application Compose with fixed
 loopback ports and five-minute Worker drain; a fail-closed static-maintenance
 Nginx boundary; metadata-only R2 inventory and exact deletion preview; isolated
 encrypted PostgreSQL backup/restore automation; Authing and production-secret
@@ -1294,10 +1300,10 @@ reviewed operator actions during the four-hour maintenance window.
 
 `compose.production.dependencies.yaml` keeps PostgreSQL and Valkey on the
 internal `goodgood-production-state` network without host ports and creates only
-the production-named volumes. `compose.production.yaml` joins application slots
-to that external state network, gives network egress only to roles that require
-it, keeps the Web/Worker ports on loopback, and does not include local mock
-services. The production backup timer runs at minute 00 and 30 with no more than
+the production-named volumes. `compose.production.yaml` joins the single
+application project to that external state network, gives network egress only
+to roles that require it, keeps the Web/Worker ports on loopback, and does not
+include local mock services. The production backup timer runs at minute 00 and 30 with no more than
 five minutes of randomized delay, retaining all points within 24 hours plus 14
 daily, 8 weekly, and 12 monthly points in the isolated Restic `/production`
 prefix. A successful off-host restore drill remains mandatory before opening.
@@ -1767,9 +1773,9 @@ If any item required by the selected gate is missing, stale, failed, or blocked,
 the result contains no plan and exits nonzero. A passing seed result uses the
 distinct `seed-production-release-dry-run` action and does not represent paid
 approval. A fully passing selected gate yields digest-bound phases for ADR
-0017's exclusive release lock, inactive Web slot, one forward migration,
-candidate checks, single-Worker handoff, atomic Nginx switch, public invariant
-checks, and observation or slot reversion. The command always reports
+0091's exclusive release lock, maintenance window, same-project Web replacement,
+one forward migration, single-Worker handoff, public invariant checks, and
+application-image rollback. The command always reports
 `executed: false` and `executionAvailable: false`; it accepts no execution flag
 and cannot change production. Implementing those phases still requires the
 separately reviewed host/state-service and executable release change.
@@ -1790,10 +1796,9 @@ separately reviewed host/state-service and executable release change.
 | 生产目录 | `/opt/goodgood-production/`（root-only，含 `compose.production.yaml` 与 `candidate-<rev>/` 检出） |
 | 受保护配置 | `/etc/goodgood/production/`（`release.env` / `runtime.env` / `secrets/`） |
 | 发布证据目录 | `/var/lib/goodgood-production/`（`controlled-alpha/readiness.json`） |
-| 槽位 | green Web `127.0.0.1:3200` / worker health `3201`；blue Web `3100` / worker `3101` |
-| Compose 项目名 | `goodgood-production-green` / `goodgood-production-blue`（`infra/production/slots/*.env`） |
-| 当前上游 | `/etc/nginx/goodgood/production-active-upstream.conf` → `127.0.0.1:3200` |
-| 上游备份 | 同目录 `production-active-upstream.<旧版本>.conf` / `.blue.backup` |
+| Compose 项目 | `goodgood-production`；Web `127.0.0.1:3100` / Worker health `3101` |
+| 当前上游 | `goodgood.conf` 内固定 `127.0.0.1:3100`，发布不生成或替换独立上游文件 |
+| 应用回退 | 同一 Compose 项目恢复上一个已验证镜像；不通过第二槽位回退 |
 | 维护控制 | `sudo /usr/local/sbin/goodgood-production-maintenance enable --execute`（**无 disable 动作**） |
 | 备份/演练 | `sudo /usr/local/sbin/goodgood-production-postgres-backup-automated run \| check \| restore-latest-drill` |
 
@@ -1810,33 +1815,30 @@ separately reviewed host/state-service and executable release change.
      → 只有全通过才产生 evidence 对象（有效期 72h）。
    - `npm run production:artifact-evidence -- ...` 导入该 CI run 的
      `artifact-security-evidence.json`（仓库根，未压缩原件；外层门禁只认 24h）。
-   - 证据必须绑定**本次候选**的完整 Git revision。
+   - 证据必须绑定**本次候选**的完整 Git revision，并使用 schema v3。
    - `npm run production:alpha-gate -- --evidence-file
      /var/lib/goodgood-production/controlled-alpha/readiness.json`
    - `controlled-alpha-operations` 目前仍会 `fail`（无告警通道，站长已授权接受）；
      其余各项必须 `pass`，不得把 `fail` 写成通过。
-4. **起非活动槽位**：在 `candidate-<rev>/` 检出该 revision，用对应 `slots/*.env`
-   启动候选 Web（**先不启动候选 Worker**），核对 live/ready 与
-   `GET /api/health/version` 返回的 `build.verified` 与 revision。
-5. **单 Worker 交接**：有迁移时先停活动 Worker 并按有界宽限排空，起候选 Worker，
-   readiness 失败则恢复原 Worker。**绝不故意同时跑两个生产 Worker。**
-   本次若无迁移，Worker 可沿用。
-6. **原子切流**：改 `/etc/nginx/goodgood/production-active-upstream.conf` 指向新槽位，
-   先备份当前上游文件，`nginx -t` 通过后才 `nginx -s reload`；
-   校验失败立即还原该文件。
-7. **切流后复查**：公网 `/`、`/login`、`/register` 200；未登录 `/api/auth/session` 401；
-   readiness 200；队列深度与冻结积分；候选 Web/Worker `restarts=0`；
+4. **进入维护**：按审查过的主机程序启用维护标记；固定 Nginx 上游不更换，
+   对外只返回维护页。
+5. **原地替换**：在 `candidate-<rev>/` 核对本次 revision，停 Worker 并按有界宽限排空，
+   用生产 Compose 拉取不可变镜像、执行一次迁移并替换 Web。**绝不启动第二个生产 Worker。**
+6. **恢复单 Worker**：核对 Web `live/ready`、`build.verified`、revision 和数据库/队列状态后，
+   启动唯一 Worker；readiness 失败则在同一 Compose 项目恢复上一镜像。
+7. **恢复公开**：按审查过的主机程序移除维护标记并 reload Nginx；不修改上游目标。
+8. **发布后复查**：公网 `/`、`/login`、`/register` 200；未登录 `/api/auth/session` 401；
+   readiness 200；队列深度与冻结积分；Web/Worker `restarts=0`；
    `MemAvailable` > 500 MiB、根盘 < 80%。
-8. **记录**：更新 `CURRENT_STATE.md`、发布记录/任务卡，明确「已部署」与回退候选。
+9. **记录**：更新 `CURRENT_STATE.md`、发布记录/任务卡，明确「已部署」与同项目应用回退状态。
 
 ### 硬边界
 
 - **数据库迁移必须向后兼容**，且只跑一次。`0020`—`0043` 全部是加表加列，
   无 `drop`/`rename`/`set not null`——热修候选不得破坏这个性质。
 - **绝不降级 schema**。回退只换应用镜像，不反向跑迁移；不兼容时只能向前修。
-- **blue 回退候选是 `65ceb168`（label 声明迁移 `0019`），已落后 24 个迁移**。
-  静态检查未发现破坏性 DDL，但**从未验证过旧镜像在 `0043` schema 上的实际行为**；
-  在验证之前，不要把 blue 当作已验证的回退路径。
+- **不再存在 blue/green 回退候选**。应用回退只恢复同一 Compose 项目中的上一镜像；
+  旧镜像是否兼容当前 schema 必须在每次发布前单独核验。
 - **恢复演练需要短暂公网 503**（见上表），且 `maintenance-control.sh` 没有 disable 动作；
   关闭维护需按审查步骤移除 `/etc/goodgood/production/maintenance.enabled` 后 `nginx -t` + reload，
   并立即验证公网 200。

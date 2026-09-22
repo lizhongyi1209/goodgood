@@ -119,7 +119,8 @@ or retains maintenance and opens an incident.
      /var/lib/goodgood-production/controlled-alpha/readiness.json
    ```
 
-   A nonzero result keeps maintenance enabled and blocks slot promotion.
+   A nonzero result keeps maintenance enabled and blocks reopening the fixed
+   production Compose project.
 
 ### Controlled-alpha owner handoff
 

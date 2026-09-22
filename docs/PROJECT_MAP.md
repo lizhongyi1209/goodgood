@@ -66,17 +66,17 @@ describes ownership in the clean integration baseline, not live-release proof.
 | `scripts/production-preflight-contract.mjs` / `scripts/verify-production-preflight.mjs` | Read-only Linux-host configuration, source/image identity, secret-file, and live OIDC preflight that emits revision-bound evidence only on success |
 | `scripts/artifact-security-*.mjs` / `scripts/import-artifact-security-evidence.mjs` | Main-CI evidence creation plus GitHub run/job/artifact-digest verification that emits exact-candidate artifact evidence only on success |
 | `scripts/production-infrastructure-profile.mjs` | ADR 0021's selected existing 2-vCPU / 4-GiB / 50-GiB Hong Kong seed-host contract plus ADR 0018's separately named, unauthorized managed scale-out option |
-| `scripts/production-runtime-adapter.mjs` | ADR 0017's non-executable Nginx/Compose blue-green slot, single-Worker handoff, and traffic-switch contract |
-| `scripts/run-production-release.mjs` | Full-gate production release planner with ordered ADR 0017 adapter phases and no mutation or command-execution path |
+| `scripts/production-runtime-adapter.mjs` | ADR 0091's non-executable single-slot Compose release, maintenance window, and single-Worker handoff contract |
+| `scripts/run-production-release.mjs` | Full-gate production release planner with ordered ADR 0091 single-slot phases and no mutation or command-execution path |
 | `scripts/production-conversion-contract.mjs` / `scripts/run-production-conversion.mjs` | Exact-target, fail-closed initial-conversion manifest validation and dry-run planning with no execution path |
-| `scripts/production-work-package-contract.mjs` / `scripts/run-production-work-package.mjs` | Deterministic local inspection of the complete single-host conversion package; validates state, slots, maintenance, backup, R2 preview, checklists, rollback, and release binding without live execution |
+| `scripts/production-work-package-contract.mjs` / `scripts/run-production-work-package.mjs` | Deterministic local inspection of the complete single-host package; validates state, one Compose project, maintenance, backup, R2 preview, checklists, rollback, and release binding without live execution |
 | `server/generation/r2-inventory-contract.mjs` / `server/runtime/r2-inventory.mjs` | Exact current-object metadata inventory/fingerprint and read-only R2 listing role; deletion remains an unavailable separately approved operation |
 | `scripts/run-o1key-local.mjs` | Interactive isolated O1Key smoke launcher with a worker-only temporary secret file |
 | `Dockerfile` / `.dockerignore` | One non-root Linux application image and its build-context boundary |
 | `compose.yaml` | Pinned web/worker/mock plus PostgreSQL, Valkey, RustFS, one-shot migration, and opt-in maintenance topology |
 | `compose.staging.yaml` / `compose.staging.dependencies.yaml` / `infra/staging/` | Digest-only app roles, a separately operated resource-bounded test-data dependency stack, host bootstrap/install helpers, and non-secret staging templates; real secrets remain outside the checkout |
 | `compose.o1key-local.yaml` | Explicit local worker override for the O1Key route and mounted key file |
-| `compose.production*.yaml` / `infra/production/` | Resource-bounded production state and blue/green app topology, exact four-hour conversion runbook, maintenance/Nginx boundary, backup automation, slot/systemd templates, and non-secret manifests; credentials, approvals, and operational evidence stay outside Git |
+| `compose.production*.yaml` / `infra/production/` | Resource-bounded production state and single-slot app topology, maintenance/Nginx boundary, backup automation, systemd templates, and non-secret manifests; credentials, approvals, and operational evidence stay outside Git |
 | `.openai/hosting.json` | Retained historical Sites identity; not the current production target or an app secret |
 | `AGENTS.md` / `docs/CURRENT_STATE.md` / `docs/WORKFLOW.md` | Stable agent contract, actual snapshot, and repeatable development/release workflow |
 | `docs/BACKLOG.md` / `docs/tasks/` | Task priorities, acceptance, exact progress and resumable next steps |

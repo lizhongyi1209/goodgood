@@ -76,7 +76,7 @@ function completeEvidenceDocument() {
         Object.assign(item, {
           creditInvariantPassed: true,
           databaseInvariantPassed: true,
-          isolatedCandidatePassed: true,
+          replacementHealthPassed: true,
           liveReadyPassed: true,
           migrationAppliedOnce: true,
           publicSyntheticPassed: true,
@@ -105,7 +105,7 @@ function completeEvidenceDocument() {
       revision: REVISION,
       runtimeConfigVersion: "c".repeat(64),
     },
-    schemaVersion: 2,
+    schemaVersion: 3,
   };
 }
 
@@ -116,7 +116,7 @@ test("production release planner exposes an immutable plan only after the full g
   });
 
   assert.equal(result.ok, true);
-  assert.equal(result.schemaVersion, 2);
+  assert.equal(result.schemaVersion, 3);
   assert.equal(result.executed, false);
   assert.equal(result.executionAvailable, false);
   assert.equal(result.gate.ok, true);
@@ -126,12 +126,14 @@ test("production release planner exposes an immutable plan only after the full g
     PRODUCTION_INFRASTRUCTURE_PROFILE_ID,
   );
   assert.equal(result.plan.candidate.revision, REVISION);
-  assert.equal(result.plan.steps.length, 8);
+  assert.equal(result.plan.steps.length, 9);
   assert.equal(result.plan.steps[0].id, "lock-and-snapshot-active");
-  assert.equal(result.plan.steps[1].id, "stage-inactive-web");
-  assert.equal(result.plan.steps[4].id, "handoff-single-worker");
-  assert.equal(result.plan.steps[5].id, "switch-nginx-upstream");
-  assert.equal(result.plan.steps.at(-1).id, "observe-or-revert-slot");
+  assert.equal(result.plan.steps[1].id, "enter-maintenance");
+  assert.equal(result.plan.steps[2].id, "prepare-single-slot-image");
+  assert.equal(result.plan.steps[4].id, "start-and-verify-single-slot-web");
+  assert.equal(result.plan.steps[5].id, "start-single-worker");
+  assert.equal(result.plan.steps[6].id, "verify-public-and-open");
+  assert.equal(result.plan.steps.at(-1).id, "observe-or-restore-image");
   assert.ok(result.plan.steps.every(({ purpose }) => !purpose.includes(":latest")));
 });
 
@@ -406,15 +408,13 @@ test("production release CLI is plan-only and has no process execution path", as
     "host-colocated-valkey",
     "private-r2",
   ]);
-  assert.deepEqual(
-    PRODUCTION_RUNTIME_ADAPTER.slots.map(({ webPort, workerHealthPort }) => [
-      webPort,
-      workerHealthPort,
-    ]),
-    [
-      [3100, 3101],
-      [3200, 3201],
-    ],
+  assert.equal(PRODUCTION_RUNTIME_ADAPTER.composeProject, "goodgood-production");
+  assert.equal(PRODUCTION_RUNTIME_ADAPTER.webPort, 3100);
+  assert.equal(PRODUCTION_RUNTIME_ADAPTER.workerHealthPort, 3101);
+  assert.equal(PRODUCTION_RUNTIME_ADAPTER.ingressRouting, "fixed-nginx-upstream");
+  assert.equal(
+    PRODUCTION_RUNTIME_ADAPTER.maintenance,
+    "root-owned-maintenance-marker-during-in-place-replacement",
   );
   assert.equal(
     PRODUCTION_RUNTIME_ADAPTER.schemaRollback,
