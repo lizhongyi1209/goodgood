@@ -3,11 +3,11 @@
 > **部署状态（2026-09-23）**：GG-100 已把现有 `7888554`/`0044` 应用迁移到唯一
 > `goodgood-production` 项目并清理旧 blue/green 残留。此前 GG-024—GG-096 已在 GG-097 上线；各行「未部署」是历史状态。当前事实见
 > [CURRENT_STATE](CURRENT_STATE.md)，发布流程见
-> [DEPLOYMENT](DEPLOYMENT.md#production-hotfix-checklist-2026-09-17)。GG-101 仅调整本地开发契约，未部署；GG-102 正在使本地真实视频默认可用，未部署。
+> [DEPLOYMENT](DEPLOYMENT.md#production-hotfix-checklist-2026-09-17)。GG-101/102 仅调整本地开发契约，未部署；本地图片和视频默认接真实 O1Key。
 
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
-| GG-102 | 本地开发视频默认连接真实 Seedance | **实施中，未部署**：共用仓库外 O1Key 开发凭据，无手动视频开关；结果仍为临时预览 | [任务](tasks/GG-102-real-video-development.md) / [ADR](decisions/0093-default-real-video-in-local-development.md) |
+| GG-102 | 本地开发视频默认连接真实 Seedance | **本地实现与验证完成，未部署**：共用仓库外 O1Key 开发凭据，无手动视频开关；结果仍为临时预览 | [任务](tasks/GG-102-real-video-development.md) / [ADR](decisions/0093-default-real-video-in-local-development.md) |
 | GG-101 | 本地开发环境强制使用真实线上接口 | **本地实现完成，未部署**：默认 Compose/checkpoint Web与Worker真实O1Key、仓库外专用开发密钥且缺失失败；mock仅限隔离自动化测试 | [任务](tasks/GG-101-real-online-local-development.md) / [ADR](decisions/0092-real-online-interfaces-for-local-development.md) |
 | GG-100 | 生产主机迁移到单一 Compose 并清理旧 blue/green 残留 | **生产执行完成**：固定 `goodgood-production` Web/Worker healthy、旧 4 容器/2 网络/槽位与动态上游残留已删；恢复点 `71e758c4`，数据卷完整，公网 200 | [任务](tasks/GG-100-production-single-slot-host-cleanup.md) / [记录](operations/2026-09-22-gg100-single-slot-host-cleanup.md) / [ADR](decisions/0091-single-slot-compose-release.md) |
 | GG-099 | 取消 blue/green，统一单槽位 Compose 发布 | **本地已完成**：ADR 0091 已接受；发布契约、Compose/Nginx、门禁和当前文档均已切换，旧槽位/动态上游文件已删除；门禁 537 通过/26 隔离跳过/0 失败；未执行生产主机迁移 | [任务](tasks/GG-099-single-slot-compose-release.md) / [ADR](decisions/0091-single-slot-compose-release.md) |

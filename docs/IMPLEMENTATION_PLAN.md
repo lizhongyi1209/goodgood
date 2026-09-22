@@ -1,7 +1,7 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-23
-- Current phase: GG-102 本地真实视频默认可用已实现并通过代码门禁，运行时核验中；生产仍为 GG-098。
+- Current phase: GG-102 本地真实图片/视频开发环境已实现并验证，未部署；生产仍为 GG-098。
 - Current objective: 配置好的本地图片/视频开发环境都连接真实 O1Key，视频无需单独开关。
 - Previous objective: GG-101 本地开发真实线上接口策略。
 
@@ -31,17 +31,18 @@
   ADR 0092 已接受；默认 Compose 与 checkpoint Web/Worker 强制真实 O1Key，专用开发密钥
   存于仓库外且缺失失败；mock 只保留给 `mock-tests` 隔离自动化测试，不连接真实 Worker。
   Compose 双配置解析通过；门禁 566 项、540 通过/26 隔离跳过/0 失败；未执行真实生成。
-- Task [GG-102](tasks/GG-102-real-video-development.md)：**本地代码与门禁完成，运行时核验中，未部署**。
+- Task [GG-102](tasks/GG-102-real-video-development.md)：**本地实现与验证完成，未部署**。
   ADR 0093 已接受；本地 checkpoint/Compose 默认为视频使用同一仓库外 O1Key 开发凭据，
   Vite serve 只在本地运行时注入。视频仍为临时文生视频预览；正式任务/计费/资产未接。
-  `check:local` 542 通过/26 隔离跳过/0 失败；待重建并核验 32131/32142 来源与视频状态。
+  `check:local` 542 通过/26 隔离跳过/0 失败；checkpoint 来源验证、32131/32142
+  就绪、视频默认可用和真实单张图片生成成功；未提交付费视频任务。
 - 线上入口为 `goodgood.o1key.com`；`staging-goodgood.o1key.com` 仅保留名称，不是测试入口。
 - 生产数据（2026-09-21 核对）：users 28、assets 166、references 141 ready、
   generation_jobs 201（151 成功 / 50 失败）；运营手动登记充值 4 笔共 15100 积分。
 - **2026-09-17 首次生产恢复演练通过**：快照 `ce191630`、59 表 / 2403 行 / 43 迁移；
   维护窗口约 66 秒。「备份 timer disabled、无自动备份」的旧结论**已更正为错误**。
 - 独立缺口（已记录未处理）：**仅剩无告警通道**。
-- Next action: 重建并启动 GG-102 checkpoint，核验图片与视频接口及页面来源；下一普通产品需求从 GG-103 分配。
+- Next action: 用户可从 32131 开始真实接口的后续功能开发；正式视频持久任务/计费/资产需单独实现，生产发布需独立授权。下一普通产品需求从 GG-103 分配。
 - Blockers: 无阻塞执行项；`operations` 缺口为已知并已授权接受。
 - 待排查缺陷：参考图 `/api/references/*` 校验最长近 6 分钟，超过 nginx 70s 读超时，
   用户看到上传失败而素材实际入库。未定位根因，未修改。

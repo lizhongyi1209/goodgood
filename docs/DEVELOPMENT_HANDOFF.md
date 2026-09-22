@@ -36,10 +36,12 @@ git merge-base --is-ancestor bb782c0 HEAD
 
 ## 当前本地预览与依赖（保留用户数据）
 
-GG-102 进行中：本地开发视频将与图片共用仓库外专用 O1Key 凭据，配置完成后默认提供
-真实 Seedance 文生视频入口，无需单独手动开关。视频结果仍是临时预览，非正式任务、
-积分或资产记录；每次用户提交可能计费。完成新的构建/端口核验前，下表中的运行入口
-仍只代表旧构建，不作为 GG-102 已生效证据。
+GG-102 已在本地验证：视频与图片共用仓库外专用 O1Key 凭据，默认提供真实 Seedance
+文生视频入口，无需单独手动开关。32131 的 `/api/video/preview` 返回
+`available:true,persistence:false`，32142 为真实 O1Key Worker；Vite serve 也返回相同
+状态。视频结果仍是临时预览，非正式任务、积分或资产记录；每次用户提交可能计费。
+真实图片单张 1K 本地生成成功，积分 180→160；本次未提交付费视频任务。每次恢复后
+仍须核对 `/api/health/version` 的 `build.verified=true` 且 revision 等于当前 Git HEAD。
 
 | 组件 | 当前入口 | 本次记录的进程/来源 |
 | --- | --- | --- |
@@ -49,7 +51,8 @@ GG-102 进行中：本地开发视频将与图片共用仓库外专用 O1Key 凭
 | Valkey | loopback56449/db0 | goodgood-gg052-valkey-1 |
 | RustFS | loopback58049/58050 | goodgood-gg052-object-storage-1，桶goodgood-gg052-local |
 
-GG-101起本地 Web/Worker **强制调用真实 O1Key**（真实计费）。令牌只从仓库外路径读取：
+GG-101起本地 Web/Worker **强制调用真实 O1Key**（真实计费）；GG-102起本地视频
+无需额外开关。令牌只从仓库外路径读取：
 
 ~~~text
 %USERPROFILE%\.claude\goodgood-local-secrets\o1key-api-key.txt
