@@ -39,7 +39,9 @@ failure/retry tests never call a billable provider.
 UI-only rendering and unit tests are not runnable integration environments and
 do not require external credentials. This decision also does not enable an
 unfinished product integration: Seedance durable jobs, billing, and assets stay
-disconnected until a separate product decision authorizes them.
+disconnected until a separate product decision authorizes them. ADR 0093 later
+made the existing transient Seedance path default-on for configured local
+development; it does not change this durable product boundary.
 
 ## Consequences
 

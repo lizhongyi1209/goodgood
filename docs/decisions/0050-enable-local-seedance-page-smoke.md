@@ -1,6 +1,6 @@
 # ADR 0050 — 仅在本机开放 Seedance 页面实测入口
 
-- Status: Accepted
+- Status: Superseded by ADR 0093 for local default availability; historical scope retained
 - Date: 2026-09-12
 - Supersedes: ADR 0049 中“浏览器提交入口暂不开放”的本地验证边界；不改变其正式产品边界
 

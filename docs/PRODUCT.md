@@ -111,11 +111,12 @@ duplicating a release log.
   Video references may come from local files or reusable
   image, video, and audio assets in the owner's library. The current frontend
   receives real generated/uploaded images; durable video and audio rows remain
-  empty until the mixed-media asset API is connected. It does not yet upload new
-  video-mode files, submit, quote, persist, or present video results; those remain
-  pending the authenticated durable job and pricing contract. The server-side
-  O1Key transport adapter already owns the Seedance material/video endpoint and
-  payload mapping without exposing a browser submission route.
+  empty until the mixed-media asset API is connected. Configured local development
+  offers a real text-to-video Seedance preview on user submission, with transient
+  results only. New video-mode file upload, quote, durable submission, billing,
+  and persistence remain pending the authenticated durable job contract. The
+  server-side O1Key transport adapter owns the Seedance material/video endpoints
+  without exposing an upstream credential to the browser.
   Local reference upload is one explicit `上传素材` action capable of images,
   videos, and audio. It never creates an upstream reusable material automatically.
   `创建素材` is a separate opt-in flow for user-selected references. Historical

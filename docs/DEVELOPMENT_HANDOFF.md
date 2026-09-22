@@ -36,6 +36,11 @@ git merge-base --is-ancestor bb782c0 HEAD
 
 ## 当前本地预览与依赖（保留用户数据）
 
+GG-102 进行中：本地开发视频将与图片共用仓库外专用 O1Key 凭据，配置完成后默认提供
+真实 Seedance 文生视频入口，无需单独手动开关。视频结果仍是临时预览，非正式任务、
+积分或资产记录；每次用户提交可能计费。完成新的构建/端口核验前，下表中的运行入口
+仍只代表旧构建，不作为 GG-102 已生效证据。
+
 | 组件 | 当前入口 | 本次记录的进程/来源 |
 | --- | --- | --- |
 | 工作区Web | http://127.0.0.1:32131/login | `node scripts/local-checkpoint.mjs start workspace`；`/register`为注册入口；邮箱验证码、无local账户预设；端口实时核验PID，代码由version接口证明 |

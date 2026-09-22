@@ -81,9 +81,10 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
 - Models and copy are fixed until a product decision changes them:
   `Nano Banana 2 — 快速，批量`; `Nano Banana Pro — 高质量资产，视觉优先`;
   `GPT IMAGE 2.5 sunburst`; `GPT IMAGE 2`; `GPT IMAGE 2.5 flare`.
-- Creation exposes attached `图片 / 视频` modes. Seedance transport and an
-  opt-in local preview exist; durable video jobs/billing/assets remain unconnected.
-  Never send video through the image API or enable real preview calls implicitly.
+- Creation exposes attached `图片 / 视频` modes. Configured local development
+  exposes real Seedance by default; durable video jobs/billing/assets remain
+  unconnected. Never send video through the image API or submit without a user
+  action.
 - Resolution UI and domain values use `1K / 2K / 4K`. Asset metadata pairs the
   requested value with decoded pixel dimensions when available. Generation count defaults to 1.
 - New generation batches appear first. Generated assets enter the asset library

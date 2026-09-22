@@ -478,10 +478,10 @@ descriptions to fill space.
   nonempty prompt segment (one job when no separator is used).
   Active styling and the creation stream communicate progress without blocking
   another click. There is no product-side concurrent-job count ceiling.
-- By default, video Feihong remains unavailable and must not call the image
-  generation boundary or render a synthetic result. GG-036 may enable a
-  loopback-only page-smoke route with an explicit file credential; that route
-  supports text-to-video only, uses GG-039 independent concurrent 1/2/4 slots,
+- In a configured local development workspace, video Feihong is available by
+  default through the loopback-only real Seedance route. It never calls the image
+  generation boundary or renders a synthetic result. This route supports
+  text-to-video only, uses GG-039 independent concurrent 1/2/4 slots,
   polls each returned task ID, and labels the playable result as local and
   not persisted. Reference media stays in the draft and blocks this temporary
   submission until the durable upload/material boundary exists.

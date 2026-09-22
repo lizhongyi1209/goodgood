@@ -45,7 +45,7 @@ export function assertLocalPreviewRequest(request, { mutating = false } = {}) {
 }
 
 export function resolveLocalSeedancePreviewConfig(environment = process.env) {
-  if (environment.NODE_ENV === "production") {
+  if (environment.NODE_ENV === "production" && environment.GOODGOOD_LOCAL_DEVELOPMENT_RUNTIME !== "true") {
     unavailable("生产环境禁止启用本地 Seedance 实测接口。");
   }
   if (environment.GOODGOOD_LOCAL_SEEDANCE_PREVIEW !== "true") unavailable();

@@ -72,17 +72,21 @@ if (command === "build") {
           GOODGOOD_LOCAL_AUTH_TOKENS: "",
         }
       : {};
+    const providerFile = await resolveLocalProviderTokenFile({
+      repositoryRoot: root,
+    });
     const providerOverrides = {
       GENERATION_API_BASE_URL: "https://cf-api.o1key.com",
       GENERATION_API_KEY: "",
-      GENERATION_API_KEY_FILE: await resolveLocalProviderTokenFile({
-        repositoryRoot: root,
-      }),
+      GENERATION_API_KEY_FILE: providerFile,
       GENERATION_POLL_INTERVAL_MS: "1000",
       GENERATION_POLL_TIMEOUT_MS: "180000",
       GENERATION_PROVIDER_ALLOW_INSECURE_LOOPBACK: "false",
       GENERATION_PROVIDER_KIND: "o1key",
       GENERATION_REQUEST_TIMEOUT_MS: "30000",
+      GOODGOOD_LOCAL_DEVELOPMENT_RUNTIME: "true",
+      GOODGOOD_LOCAL_SEEDANCE_PREVIEW: "true",
+      GOODGOOD_LOCAL_SEEDANCE_API_KEY_FILE: providerFile,
     };
     Object.assign(process.env, environment, authenticationOverrides, providerOverrides, {
       GOODGOOD_REVISION: build.revision,

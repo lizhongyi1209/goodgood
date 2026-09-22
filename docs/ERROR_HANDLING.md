@@ -244,9 +244,10 @@ Nano-only options on another model return `M3_SLICE_UNSUPPORTED` before credit
 reservation or provider submission. The provider adapter repeats this
 fail-closed model isolation check.
 
-The GG-036 Seedance page-smoke route fails closed unless the process is
-non-production, the request targets loopback, the explicit preview flag is true,
-and an absolute file credential is readable. Cross-origin writes are rejected.
+The local Seedance route fails closed unless the request targets loopback, the
+development runtime has enabled video with an absolute file credential, and the
+credential is readable. Built local runtimes carry an explicit local marker;
+public production requests remain unavailable. Cross-origin writes are rejected.
 Provider rejection or polling failure appears in the local video result while
 the prompt and parameters stay intact; the browser never retries the POST or
 falls back to the image route. Reference media blocks the temporary text-only

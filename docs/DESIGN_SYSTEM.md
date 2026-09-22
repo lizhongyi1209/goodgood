@@ -267,8 +267,9 @@ individual icon. Upload, settings, and send align to the same 40px box.
 - The credit quote is quiet 11px metadata beside the settings/send actions. It
   shows the per-image rate and, for 2/4 outputs, the selected batch total. It has
   no filled chip, border, icon, or payment emphasis.
-- Before video pricing exists, the same location reads `接口待接入` without a
-  fake price. Video output controls use resolution, duration, and sound; they
+- Before video pricing exists, the same location reads `接口可用` in configured
+  local development and `接口待接入` elsewhere, without a fake price. Video output
+  controls use resolution, duration, and sound; they
   retain the existing quiet segmented and slider language.
 
 ## Page-header navigation

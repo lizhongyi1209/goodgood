@@ -67,8 +67,9 @@ test("every local development role uses the real provider and keeps its token ou
   );
   assert.match(
     launcher,
-    /GENERATION_API_KEY_FILE: await resolveLocalProviderTokenFile\(/,
+    /const providerFile = await resolveLocalProviderTokenFile\(/,
   );
+  assert.match(launcher, /GENERATION_API_KEY_FILE: providerFile/);
   assert.doesNotMatch(launcher, /GENERATION_API_KEY: environment\./);
   // An operator must never have to guess which provider a running stack calls.
   assert.match(launcher, /LOCAL WORKER -> REAL O1KEY PROVIDER/);

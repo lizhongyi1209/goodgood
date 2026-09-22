@@ -10,20 +10,29 @@ const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
 
 const { d1, r2 } = hostingConfig;
 
-function loadLocalSeedancePreviewVars() {
-  const keyFile = process.env.GOODGOOD_LOCAL_SEEDANCE_API_KEY_FILE?.trim();
+function loadLocalSeedancePreviewVars(command: string) {
+  if (command !== "serve") return {};
+  const profile = process.env.USERPROFILE ?? process.env.HOME;
+  const keyFile = process.env.GOODGOOD_LOCAL_O1KEY_KEY_FILE?.trim()
+    ?? (profile ? path.join(profile, ".claude", "goodgood-local-secrets", "o1key-api-key.txt") : "");
   const absoluteKeyFile = Boolean(
     keyFile && (path.isAbsolute(keyFile) || path.win32.isAbsolute(keyFile)),
   );
-  if (process.env.GOODGOOD_LOCAL_SEEDANCE_PREVIEW !== "true" || !absoluteKeyFile || !keyFile) {
+  if (!absoluteKeyFile || !keyFile) {
     return {};
+  }
+  const relative = path.relative(process.cwd(), path.resolve(keyFile));
+  if (relative === "" || (!relative.startsWith(`..${path.sep}`) && relative !== ".." && !path.isAbsolute(relative))) {
+    throw new Error("The real Seedance development key must live outside the repository.");
   }
   let apiKey = "";
   try {
     apiKey = readFileSync(keyFile, "utf8").trim();
-  } catch {
-    // The route reports an unavailable state without exposing the operator path.
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return {};
+    throw error;
   }
+  if (!apiKey || /[\r\n]/.test(apiKey)) throw new Error("The real Seedance development key must be one non-empty token.");
   return {
     GOODGOOD_LOCAL_SEEDANCE_PREVIEW: "true",
     GOODGOOD_LOCAL_SEEDANCE_KEY_PATH: keyFile,
@@ -31,35 +40,10 @@ function loadLocalSeedancePreviewVars() {
   };
 }
 
-const localSeedancePreviewVars = loadLocalSeedancePreviewVars();
-
 // macOS Seatbelt blocks FSEvents, so Codex previews need polling for HMR.
 const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
 
-const localBindingConfig = {
-  main: "./worker/index.ts",
-  compatibility_flags: ["nodejs_compat"],
-  vars: localSeedancePreviewVars,
-  d1_databases: d1
-    ? [
-        {
-          binding: d1,
-          database_name: "site-creator-d1",
-          database_id: SITE_CREATOR_PLACEHOLDER_DATABASE_ID,
-        },
-      ]
-    : [],
-  r2_buckets: r2
-    ? [
-        {
-          binding: r2,
-          bucket_name: "site-creator-r2",
-        },
-      ]
-    : [],
-};
-
-export default defineConfig(async () => {
+export default defineConfig(async ({ command }) => {
   // Keep Wrangler and Miniflare state project-local. These are non-secret tool
   // settings; application environment belongs in ignored `.env*` files.
   process.env.WRANGLER_WRITE_LOGS ??= "false";
@@ -68,6 +52,22 @@ export default defineConfig(async () => {
 
   // Wrangler snapshots its log path while the Cloudflare plugin is imported.
   const { cloudflare } = await import("@cloudflare/vite-plugin");
+
+  const localBindingConfig = {
+    main: "./worker/index.ts",
+    compatibility_flags: ["nodejs_compat"],
+    vars: loadLocalSeedancePreviewVars(command),
+    d1_databases: d1
+      ? [{
+          binding: d1,
+          database_name: "site-creator-d1",
+          database_id: SITE_CREATOR_PLACEHOLDER_DATABASE_ID,
+        }]
+      : [],
+    r2_buckets: r2
+      ? [{ binding: r2, bucket_name: "site-creator-r2" }]
+      : [],
+  };
 
   return {
     build: {

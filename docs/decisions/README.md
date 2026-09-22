@@ -143,3 +143,4 @@ ADR 0053 adds standalone-delimited concurrent prompt batches for GG-040.
 - `0087-account-owned-invitations.md` — 账户固定六位数字码无限邀请、统一简洁验证表单与授权线上测试数据清理。
 - `0091-single-slot-compose-release.md` — future production releases use one fixed Compose project and no blue/green switch.
 - `0092-real-online-interfaces-for-local-development.md` — runnable local development uses real online provider interfaces with external development credentials; mocks are test-only.
+- `0093-default-real-video-in-local-development.md` — configured local development makes real Seedance text-to-video available by default without enabling durable production video jobs.

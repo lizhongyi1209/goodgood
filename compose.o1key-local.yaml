@@ -9,6 +9,9 @@ services:
       GENERATION_POLL_INTERVAL_MS: "1000"
       GENERATION_POLL_TIMEOUT_MS: "180000"
       GENERATION_REQUEST_TIMEOUT_MS: "30000"
+      GOODGOOD_LOCAL_DEVELOPMENT_RUNTIME: "true"
+      GOODGOOD_LOCAL_SEEDANCE_PREVIEW: "true"
+      GOODGOOD_LOCAL_SEEDANCE_API_KEY_FILE: /run/secrets/goodgood_o1key_api_key
     secrets:
       - goodgood_o1key_api_key
 
