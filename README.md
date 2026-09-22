@@ -39,7 +39,7 @@ npm ci
 npm run dev:local
 ```
 
-界面预览不需要秘密，使用输出的本地 URL。持久化、任务/积分等用隔离的本地栈：
+纯界面渲染不需要秘密，使用输出的本地 URL。持久化、任务/积分和真实接口联调用隔离的本地栈：
 
 ```bash
 npm run stack:config
@@ -48,8 +48,14 @@ npm run stack:verify
 npm run stack:down
 ```
 
-本地默认 PostgreSQL、Valkey、RustFS、mock provider 和测试身份；`stack:down`
-保留数据卷。不要使用生产数据/凭据，也不要把 UI 预览当成真实集成测试。
+本地 PostgreSQL、Valkey、RustFS、身份和数据保持隔离，但 Web/Worker 强制连接真实
+O1Key；专用开发密钥从仓库外
+`%USERPROFILE%\.claude\goodgood-local-secrets\o1key-api-key.txt`（或
+`GOODGOOD_LOCAL_O1KEY_KEY_FILE`）读取，缺失时拒绝启动。真实生成会计费；绝不复用生产
+凭据、数据库、R2、队列或用户数据。`stack:down` 保留数据卷。
+
+mock 仅用于不计费的确定性自动化测试，入口名称明确为
+`stack:mock-test:*`；它不是开发环境或真实接口验收证据。
 
 交付前运行：
 

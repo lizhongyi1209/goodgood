@@ -130,6 +130,7 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
 - Iterate with the smallest relevant tests. Run `npm run check:local` once after
   code stabilizes, and repeat it only when later edits can invalidate that gate.
   Documentation-only changes use the documentation tests and diff checks.
+- Runnable local development uses real online interfaces with external development credentials; local state stays isolated, production state stays forbidden, and mocks are only for named test stacks.
 - Treat every real-provider request as potentially billable. Never let fixtures
   or synthetic jobs share a database or queue with a real-provider Worker.
   Opt-in write tests require an explicitly named disposable database/stack with
@@ -150,8 +151,7 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
 - Start the local development server from the repository root with
   `npm run dev:local`; use the local URL printed by Vite and press `Ctrl+C` to
   stop it.
-- UI-only preview needs no secrets; durable behavior needs the local Compose
-  stack. Production uses real Authing/O1Key/private R2 and protected secrets.
+- UI-only rendering needs no secrets. Durable local development uses local Compose state plus real O1Key; missing external development credentials fail closed. Production uses separate protected secrets.
   See `docs/DEVELOPMENT_HANDOFF.md` for the preserved local preview and named SQL
   tests, and `docs/DEPLOYMENT.md` for release work; never use production data locally.
 

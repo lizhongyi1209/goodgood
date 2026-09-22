@@ -217,11 +217,12 @@ engine. The target local stack is:
 
 Use one application image for `web` and `worker` initially, with different
 commands. Keep state, uploads, logs, and secrets outside the image. A clean
-checkout must be able to start the documented local stack without relying on
-undeclared software or production credentials.
+checkout starts the documented local runtime only after an external dedicated
+development credential is present; production credentials are never valid here.
 
-M5's O1Key image path is selectable only through an explicit worker override;
-the base Compose stack remains fixed to the mock provider. The accepted MVP uses
+ADR 0092 makes the standard local Compose and checkpoint development paths use
+the real O1Key endpoint for both Web readiness and Worker generation. The mock
+provider remains only in the explicit `mock-tests` profile. The accepted MVP uses
 `https://cf-api.o1key.com`, the special-price
 `gemini-3.1-flash-image-c-sp` model, all 14 product-defined aspect ratios, and
 `1K` / `2K` / `4K`. GG-010 adds `1 / 2 / 4` Banana outputs by submitting one
@@ -303,7 +304,7 @@ npm run stack:o1key-local -- --web-port 3000
 ```
 
 The launcher requests the O1Key key with invisible input, writes it to a
-permission-limited temporary file, and mounts that file into only the worker at
+permission-limited temporary file, and mounts that file into Web and Worker at
 `/run/secrets/goodgood_o1key_api_key`. It uses the isolated Compose project
 `goodgood-o1key-local`, so it does not replace the normal local or Authing stack.
 After the operator presses Enter, it stops the isolated containers while
@@ -322,7 +323,7 @@ host publication is loopback-only.
 | --- | ---: | --- |
 | `web` | `127.0.0.1:3000` | None |
 | `worker` health | `127.0.0.1:3001` | None |
-| `mock-generation` health | `127.0.0.1:3002` | None |
+| `mock-generation` health（仅 `mock-tests`） | `127.0.0.1:3002` | None |
 | `postgres` | `127.0.0.1:5432` | `postgres-data` |
 | `valkey` | `127.0.0.1:6379` | `valkey-data` |
 | `object-storage` API / console | `127.0.0.1:9000` / `9001` | `object-storage-data` |
@@ -337,10 +338,27 @@ npm run stack:verify
 npm run stack:down
 ```
 
-The defaults in `compose.yaml` are explicitly local-only credentials. Override
-their documented names through the shell or an untracked `.env`; never reuse
-them outside local development. Port names are also overridable, which avoids
-stopping an unrelated local service when a default is occupied.
+The standard commands always merge `compose.o1key-local.yaml`: Web and Worker
+use `https://cf-api.o1key.com`, and the dedicated development key is read from
+`%USERPROFILE%\.claude\goodgood-local-secrets\o1key-api-key.txt` or the external
+path in `GOODGOOD_LOCAL_O1KEY_KEY_FILE`. Missing, in-repository, empty, or
+multiline key files fail closed. Real generation requests are billable.
+
+PostgreSQL, Valkey, RustFS, identities, queues, and user assets stay local.
+Production credentials, databases, R2 objects, queues, and user data are never
+valid local inputs. Port names remain overridable to avoid stopping an
+unrelated local service when a default is occupied.
+
+The mock provider is not a development fallback. It is available only to
+deterministic automated tests through the explicitly named commands. They use
+the separate `goodgood-mock-tests` Compose project, network, and named volumes:
+
+```bash
+npm run stack:mock-test:config
+npm run stack:mock-test:up
+npm run stack:mock-test:verify
+npm run stack:mock-test:down
+```
 
 The local web role validates either of two configured Bearer tokens against the
 `auth_identities` mapping. For browser continuity it issues the configured

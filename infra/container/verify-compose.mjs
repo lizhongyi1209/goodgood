@@ -16,11 +16,6 @@ const probes = [
     name: "worker",
     url: `http://127.0.0.1:${environmentPort("GOODGOOD_WORKER_HEALTH_PORT", 3001)}/health/ready`,
   }),
-  probeHttp({
-    expectedJsonStatus: "ready",
-    name: "mock-generation",
-    url: `http://127.0.0.1:${environmentPort("GOODGOOD_MOCK_GENERATION_PORT", 3002)}/health/ready`,
-  }),
   probeTcp({
     name: "postgres",
     port: environmentPort("GOODGOOD_POSTGRES_PORT", 5432),
@@ -35,6 +30,16 @@ const probes = [
     url: `http://127.0.0.1:${environmentPort("GOODGOOD_OBJECT_STORAGE_PORT", 9000)}/health/ready`,
   }),
 ];
+
+if (process.argv.includes("--include-mock")) {
+  probes.push(
+    probeHttp({
+      expectedJsonStatus: "ready",
+      name: "mock-generation",
+      url: `http://127.0.0.1:${environmentPort("GOODGOOD_MOCK_GENERATION_PORT", 3002)}/health/ready`,
+    }),
+  );
+}
 
 try {
   const ready = await Promise.all(probes);

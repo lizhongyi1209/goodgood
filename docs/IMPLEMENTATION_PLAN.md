@@ -1,9 +1,9 @@
 # Production implementation plan
 
-- Last synchronized: 2026-09-22
-- Current phase: GG-100 生产主机单槽位迁移与旧 blue/green 清理已完成；公网开放且复验通过。
-- Current objective: 维持唯一 `goodgood-production` 应用项目；后续发布只按 ADR 0091 原地替换。
-- Previous objective: GG-099 仓库发布契约切换到单槽位 Compose。
+- Last synchronized: 2026-09-23
+- Current phase: GG-101 本地开发真实线上接口策略已实现并验证，未部署；生产仍为 GG-098。
+- Current objective: 本地可运行开发环境强制真实 O1Key，mock 仅限显式隔离自动化测试。
+- Previous objective: GG-100 生产主机单槽位迁移与旧 blue/green 清理。
 
 ## Current checkpoint
 
@@ -27,13 +27,17 @@
 - Task [GG-100](tasks/GG-100-production-single-slot-host-cleanup.md)：**生产执行完成**。
   恢复点 `71e758c4`；固定项目 Web/Worker healthy、restarts 0，公网 200/session 401；
   旧 4 容器、2 网络、槽位/动态 upstream 与 14 个无引用旧镜像已清理，生产数据卷完整。
+- Task [GG-101](tasks/GG-101-real-online-local-development.md)：**本地实现完成，未部署**。
+  ADR 0092 已接受；默认 Compose 与 checkpoint Web/Worker 强制真实 O1Key，专用开发密钥
+  存于仓库外且缺失失败；mock 只保留给 `mock-tests` 隔离自动化测试，不连接真实 Worker。
+  Compose 双配置解析通过；门禁 566 项、540 通过/26 隔离跳过/0 失败；未执行真实生成。
 - 线上入口为 `goodgood.o1key.com`；`staging-goodgood.o1key.com` 仅保留名称，不是测试入口。
 - 生产数据（2026-09-21 核对）：users 28、assets 166、references 141 ready、
   generation_jobs 201（151 成功 / 50 失败）；运营手动登记充值 4 笔共 15100 积分。
 - **2026-09-17 首次生产恢复演练通过**：快照 `ce191630`、59 表 / 2403 行 / 43 迁移；
   维护窗口约 66 秒。「备份 timer disabled、无自动备份」的旧结论**已更正为错误**。
 - 独立缺口（已记录未处理）：**仅剩无告警通道**。
-- Next action: 无待办发布步骤；下一普通产品需求从 GG-101 分配。
+- Next action: 用户可用专用开发凭据进行真实本地验收；下一普通产品需求从 GG-102 分配。
 - Blockers: 无阻塞执行项；`operations` 缺口为已知并已授权接受。
 - 待排查缺陷：参考图 `/api/references/*` 校验最长近 6 分钟，超过 nginx 70s 读超时，
   用户看到上传失败而素材实际入库。未定位根因，未修改。
@@ -83,9 +87,9 @@
 
 ## New-session recovery
 
-1. 打开F:/goodgood；读AGENTS/CURRENT_STATE/WORKFLOW/本页/BACKLOG与DEVELOPMENT_HANDOFF。核验本地标记、bb782c0/a73835f祖先，当前chore/GG-092-development-handoff；main不能代替此检查点。
+1. 打开F:/goodgood；读AGENTS/CURRENT_STATE/WORKFLOW/本页/BACKLOG与DEVELOPMENT_HANDOFF。核验bb782c0/a73835f及GG-100 `de699e1`祖先；GG-101分支为chore/GG-101-real-online-local-development，提交身份以任务卡最新记录为准。
 2. GG091 worktree及旧GG024/C6分支均保留；新窗口不bulk merge/reset旧版本，不覆盖.codex/未提交用户内容。
-3. 当前mock工作区32131/32142/32143及邮箱表单32191；依赖54449/56449/58049见交接。运行代码f68ba81，PID只是记录，先核验再停；根目录.env.local-review忽略，不打印凭据。
+3. 当前开发契约只允许真实O1Key Web/Worker；历史32143 mock只可属于显式测试栈。依赖54449/56449/58049见交接；PID只是记录，先核验再停；根目录.env文件和仓库外开发密钥均不打印。
 4. 使用交接中的启动/定向SQL命令；不fixture原用户数据、不进入真实provider32140栈、不重放线上清理。
 
 ## History and update policy

@@ -7,6 +7,8 @@ import { pathToFileURL } from "node:url";
 const PROJECT_NAME = "goodgood-email-smtp-local";
 const COMPOSE_ARGUMENTS = Object.freeze([
   "compose",
+  "--profile",
+  "mock-tests",
   "--project-name",
   PROJECT_NAME,
   "-f",

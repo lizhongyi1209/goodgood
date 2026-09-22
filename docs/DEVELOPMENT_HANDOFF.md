@@ -1,9 +1,9 @@
 # 当前开发版本与跨窗口交接
 
-- 日期：2026-09-22；GG-100 生产主机单槽位迁移与旧 blue/green 清理**已完成**；GG-099 基线 `fe58305`，当前分支 `chore/GG-100-production-single-slot-host-cleanup`；GG093标签继续作为历史构建交接点。
+- 日期：2026-09-23；GG-101 本地真实线上接口策略**已实现，未部署**；当前分支 `chore/GG-101-real-online-local-development`，基线含 GG-100 `de699e1`；GG093标签继续作为历史构建交接点。
 - 当前项目入口：F:/goodgood；累计代码包含a73835f、GG081—091与GG092交接。`.codex/`是用户本地设置，保留不提交。
 - **生产已部署并开放**：`goodgood.o1key.com`，revision `7888554` / 迁移 `0044` / 配置 `b3d7310a…ddf3`；应用仅 `goodgood-production` 单项目。详见 CURRENT_STATE.md 与 [GG-100 记录](operations/2026-09-22-gg100-single-slot-host-cleanup.md)。
-- 新窗口先读AGENTS/CURRENT_STATE/WORKFLOW/IMPLEMENTATION_PLAN/BACKLOG，然后本页；**下一普通任务从GG-101分配**。
+- 新窗口先读AGENTS/CURRENT_STATE/WORKFLOW/IMPLEMENTATION_PLAN/BACKLOG，然后本页；**下一普通任务从GG-102分配**。
 
 ## 先确认版本，避免退回历史
 
@@ -40,22 +40,21 @@ git merge-base --is-ancestor bb782c0 HEAD
 | --- | --- | --- |
 | 工作区Web | http://127.0.0.1:32131/login | `node scripts/local-checkpoint.mjs start workspace`；`/register`为注册入口；邮箱验证码、无local账户预设；端口实时核验PID，代码由version接口证明 |
 | 真实 worker | http://127.0.0.1:32142/health/ready | `node scripts/local-checkpoint.mjs start worker`；**真实 O1Key，真实计费** |
-| mock provider | http://127.0.0.1:32143/health/ready | 仅在 `LOCAL_GENERATION_PROVIDER_KIND=mock` 时启动；真实模式下按设计不启动 |
 | PostgreSQL | loopback54449/goodgood | goodgood-gg052-postgres-1，最新0043 |
 | Valkey | loopback56449/db0 | goodgood-gg052-valkey-1 |
 | RustFS | loopback58049/58050 | goodgood-gg052-object-storage-1，桶goodgood-gg052-local |
 
-GG-097起本地 worker **默认调用真实 O1Key**（真实计费）。令牌只从仓库外路径读取：
+GG-101起本地 Web/Worker **强制调用真实 O1Key**（真实计费）。令牌只从仓库外路径读取：
 
 ~~~text
 %USERPROFILE%\.claude\goodgood-local-secrets\o1key-api-key.txt
 （可用 GOODGOOD_LOCAL_O1KEY_KEY_FILE 覆盖；启动器拒绝仓库内路径）
 ~~~
 
-令牌缺失或为空时启动器直接报错退出，**不会**静默回退 mock。要临时离线，在
-`.env.local-review` 设 `LOCAL_GENERATION_PROVIDER_KIND=mock` 并同时启动 32143。
-worker 启动横幅会打印当前 provider 身份。绝不要把生产令牌放进该文件，也不要
-把该令牌复制进仓库、文档或聊天记录。
+令牌缺失、位于仓库内、为空或多行时启动器直接报错退出，**不会**回退 mock。
+worker 启动横幅会打印真实 provider 与计费提示。只能放专用开发令牌，绝不要放生产
+令牌，也不要把值复制进仓库、文档或聊天记录。mock 仅由 `stack:mock-test:*` 的隔离
+自动化测试 profile 启动，不能作为开发环境或线上接口验收证据。
 
 ## GG-097 本地测试窗口结论（2026-09-15）
 
@@ -77,14 +76,13 @@ npm run verify:checkpoint
 node scripts/local-checkpoint.mjs start workspace
 ~~~
 
-`build:checkpoint`构建`dist/client`与`dist/server`，写入忽略的`dist/goodgood-build.json`，绑定当前Git revision、源码指纹、产物指纹和文件数。`verify:checkpoint`会拒绝缺失/过期/篡改产物；`start workspace`仅接受loopback依赖、Mailpit、mock provider及email_otp配置，并显式清空local auth账户预设。主测试入口使用32131；worker/provider使用32142/32143健康端口。`start login`保留为诊断兼容命令但正常流程不启动32191。
+`build:checkpoint`构建`dist/client`与`dist/server`，写入忽略的`dist/goodgood-build.json`，绑定当前Git revision、源码指纹、产物指纹和文件数。`verify:checkpoint`会拒绝缺失/过期/篡改产物；`start workspace`仅接受loopback状态依赖、Mailpit、真实 O1Key及email_otp配置，并显式清空local auth账户预设。主入口使用32131；worker使用32142健康端口。`start login`保留为诊断兼容命令但正常流程不启动32191；`start provider`已移除。
 
 启动后检查：
 
 ~~~powershell
 Invoke-RestMethod http://127.0.0.1:32131/api/health/version
 Invoke-RestMethod http://127.0.0.1:32142/health/ready
-Invoke-RestMethod http://127.0.0.1:32143/health/ready
 ~~~
 
 Web响应的`build.verified`必须为`true`且revision等于`git rev-parse HEAD`；仅有`/api/health/ready`返回200不能证明页面来自当前提交。构建产物`dist/`被忽略，不提交到Git；旧Docker `goodgood:gg027-local`已删除，不能再作为当前版本依据。
@@ -97,11 +95,11 @@ PID是交接时的记录，不是以后可直接kill的授权目标。先用Get-
 
 Node >=22.13.0，npm；本机记录v24.12.0/npm11.6.2。切换版本后用npm ci恢复锁定依赖，忽略旧node_modules/dist。普通UI开发用npm run dev:local，按Vite实际打印的URL访问；它不能替代有数据的32131原预览。
 
-根目录已有忽略的.env.local-review，仅本机localhost mock/local配置。未提交、不打印、不复制到报告；没有生产凭据。它为当前命名Compose读取现有本地配置，不能替代其他机器的独立环境安装。若文件或容器缺失，按DEPLOYMENT的独立本地栈步骤配置，不运行旧数据转换，也不从生产导入。
+根目录已有忽略的.env.local-review，保留本机loopback状态服务配置；其中历史 mock/provider 值不再控制开发运行时。未提交、不打印、不复制到报告；不得含生产凭据。它不能替代其他机器的独立环境安装。若文件或容器缺失，按DEPLOYMENT的独立本地栈步骤配置，不运行旧数据转换，也不从生产导入。
 
 当前工作区入口为32131。完成提交后使用上方`build:checkpoint`与`start`命令；若端口占用，先核验命令行和工作目录，只停止已识别的GoodGood进程，保留Worker/provider/容器。
 
-Web readiness为/api/health/ready；Worker/provider用表内/health/ready。仅Web替换无需迁移；不要运行db:migrate去重播已记录的迁移，新增迁移须按新任务范围保护原历史。若mock provider或Worker确实已停止，先核验没有重复实例，再用`node scripts/local-checkpoint.mjs start provider|worker`恢复；不借此启动真实provider。
+Web readiness为/api/health/ready；Worker用表内/health/ready。仅Web替换无需迁移；不要运行db:migrate去重播已记录的迁移，新增迁移须按新任务范围保护原历史。若Worker确实已停止，先核验没有重复实例，再用`node scripts/local-checkpoint.mjs start worker`恢复；该命令只允许真实 O1Key。
 
 ## 验证与安全SQL测试
 

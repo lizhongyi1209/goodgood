@@ -118,7 +118,7 @@ function usage() {
     "Usage:",
     "  npm run stack:o1key-local -- [--web-port 3000]",
     "",
-    "The O1Key API key is requested invisibly and mounted only into the worker.",
+    "The O1Key API key is requested invisibly and mounted into Web and Worker.",
   ].join("\n");
 }
 

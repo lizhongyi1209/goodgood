@@ -6,6 +6,10 @@ import { pathToFileURL } from "node:url";
 
 const COMPOSE_ARGUMENTS = Object.freeze([
   "compose",
+  "--project-name",
+  "goodgood-authing-local",
+  "--profile",
+  "mock-tests",
   "-f",
   "compose.yaml",
   "-f",

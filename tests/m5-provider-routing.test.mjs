@@ -713,7 +713,7 @@ test("provider task evidence advances only from the expected durable token", asy
   ]);
 });
 
-test("O1Key local runner mounts an invisible temporary key into only the worker", async () => {
+test("O1Key local runner mounts an invisible temporary key into web and worker", async () => {
   assert.deepEqual(parseO1KeyArguments(["--web-port", "3200"]), {
     help: false,
     webPort: "3200",
@@ -735,7 +735,8 @@ test("O1Key local runner mounts an invisible temporary key into only the worker"
   assert.match(composeOverride, /GENERATION_PROVIDER_KIND: o1key/);
   assert.match(composeOverride, /GENERATION_API_KEY: ""/);
   assert.match(composeOverride, /GENERATION_API_KEY_FILE: \/run\/secrets\/goodgood_o1key_api_key/);
-  assert.doesNotMatch(composeOverride, /web:[\s\S]*goodgood_o1key_api_key/);
+  assert.match(composeOverride, /web:[\s\S]*goodgood_o1key_api_key/);
+  assert.match(composeOverride, /worker:[\s\S]*goodgood_o1key_api_key/);
   assert.match(launcher, /goodgood-o1key-local/);
   assert.match(launcher, /mode: 0o600/);
   assert.match(packageJson, /"stack:o1key-local"/);

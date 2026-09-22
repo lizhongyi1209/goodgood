@@ -46,37 +46,30 @@ test("GG095 workspace start keeps object storage CORS on the served origin", asy
   assert.match(launcher, /OBJECT_STORAGE_UPLOAD_ALLOWED_ORIGINS: webOrigins/);
 });
 
-test("local worker calls the real provider by default and keeps the token outside the repo", async () => {
-  const launcher = await readFile(
-    new URL("../scripts/local-checkpoint.mjs", import.meta.url),
-    "utf8",
-  );
+test("every local development role uses the real provider and keeps its token outside the repo", async () => {
+  const [launcher, secretHelper] = await Promise.all([
+    readFile(new URL("../scripts/local-checkpoint.mjs", import.meta.url), "utf8"),
+    readFile(new URL("../scripts/local-provider-secret.mjs", import.meta.url), "utf8"),
+  ]);
 
-  // Local runs must exercise the contract production uses, so the real provider
-  // is the default; mock stays reachable as an explicit opt-out.
-  assert.match(
-    launcher,
-    /environment\.LOCAL_GENERATION_PROVIDER_KIND \?\? "o1key"/,
-  );
+  // Runnable development roles have no mock opt-out. Deterministic mocks are
+  // reserved for separately named automated-test stacks.
   assert.match(launcher, /GENERATION_PROVIDER_KIND: "o1key"/);
-  assert.match(launcher, /GENERATION_PROVIDER_KIND: "mock"/);
-  // A mock provider process alongside a real-provider worker would make the
-  // active route ambiguous, so that combination is refused outright.
-  assert.match(
-    launcher,
-    /The mock provider process must not start while the worker calls the real provider\./,
-  );
+  assert.match(launcher, /GENERATION_API_BASE_URL: "https:\/\/cf-api\.o1key\.com"/);
+  assert.doesNotMatch(launcher, /GENERATION_PROVIDER_KIND: "mock"/);
+  assert.doesNotMatch(launcher, /LOCAL_GENERATION_API_BASE_URL/);
+  assert.doesNotMatch(launcher, /LOCAL_GENERATION_PROVIDER_KIND/);
+  assert.doesNotMatch(launcher, /"provider"/);
   // The token must never sit inside the repository, whatever .gitignore says.
   assert.match(
-    launcher,
+    secretHelper,
     /The real provider token file must live outside the repository\./,
   );
   assert.match(
     launcher,
-    /GENERATION_API_KEY_FILE: await readRealProviderTokenFile\(\)/,
+    /GENERATION_API_KEY_FILE: await resolveLocalProviderTokenFile\(/,
   );
   assert.doesNotMatch(launcher, /GENERATION_API_KEY: environment\./);
   // An operator must never have to guess which provider a running stack calls.
   assert.match(launcher, /LOCAL WORKER -> REAL O1KEY PROVIDER/);
-  assert.match(launcher, /LOCAL WORKER -> MOCK PROVIDER/);
 });

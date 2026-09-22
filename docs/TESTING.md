@@ -6,6 +6,11 @@ GG-093当前本地环境、Docker清理、构建指纹与恢复命令见[DEVELOP
 迁移 `0043`）。下方标有任务号的段落是各阶段的历史验证记录，不代表当前部署状态；
 当前事实见 [CURRENT_STATE.md](CURRENT_STATE.md)。
 
+GG-101 起，可运行的本地开发环境必须使用真实线上 O1Key 和仓库外专用开发密钥；
+真实生成会计费。`npm run check:local`、fixture、重试/失败路径和 SQL 集成验证继续使用
+无 Worker 或显式 `mock-tests` 隔离栈，绝不能进入真实 Worker 的数据库/队列。mock
+结果只证明确定性代码行为，不作为线上接口兼容证据。
+
 GG-091替代GG090旧单次码测试：六位字符串/前导零/拒长码，验证码与email匹配、缺码/错码、同邀请码并发两个成功、同邮件挑战一次性、每用户仅1唯一code、活动邀请人要求、旧pending/暂停、200欢迎一次、注册事务回滚及挑战清理。命名goodgood_gg091_invitation_test*、loopback54449、INTEGRATION/NO_WORKER及空库/无peer守卫；UI仅专用Mailpit无Worker栈，原预览不写fixtures。授权线上清理仅服务器新备份/命名无Worker克隆演练及精确用户/对象清单，生产身份/配置保持，详见操作记录。
 
 GG-090使用命名空库goodgood_gg090_invitation_test*、loopback54449、显式INTEGRATION/NO_WORKER及0其他连接；完整42迁移，虚拟邮件捕获、真实PG测试双码/状态、并发使用、停用竞态、回滚及角色复核。UI测试用专用DB/Redis db12/private bucket与本地Mailpit，不连接Worker/真实SMTP/provider。原32141仅只读验证和新增空表，无fixtures/真实信件。
@@ -539,9 +544,13 @@ logout callbacks documented in `docs/DEPLOYMENT.md`, exercise the browser, and
 press Enter in the launcher terminal to stop the stack and remove the secret.
 This local flow does not replace the public HTTPS staging matrix.
 
+Start this path only with `npm run stack:mock-test:up`, verify it with
+`npm run stack:mock-test:verify`, then run
 `GOODGOOD_M3_INTEGRATION=1 node --test tests/m3-compose-integration.test.mjs`
-is the opt-in destructive-process integration test against the disposable local
-test stack. It proves all fifteen migration reruns, explicit idempotent local-
+and finish with `npm run stack:mock-test:down`. This is the opt-in
+destructive-process integration test against the disposable
+`goodgood-mock-tests` project with its own network and named volumes.
+It proves all fifteen migration reruns, explicit idempotent local-
 fixture seeding, authentication enforcement,
 two-owner idempotency isolation, cross-owner reference/job denial, signed direct
 reference PUT and CORS, server-side decoded validation and rejected-record
@@ -874,7 +883,7 @@ The timestamped result of the latest verified gate belongs in
   rejects an active-attempt route mismatch, resumes polling, fully decodes a
   downloaded image before storage, retries bounded transient result delivery,
   and loads a mutually exclusive direct or file-based credential. The local
-  launcher/Compose contract mounts its temporary key into only the worker.
+  launcher/Compose contract mounts its temporary key into Web and Worker.
 - The accepted O1Key at-most-once tests prove reference uploads finish before
   the billable submission guard, the guard is a one-way persisted transition,
   ambiguous transport failure becomes `SUBMISSION_UNKNOWN`, and neither the

@@ -71,11 +71,12 @@ describes ownership in the clean integration baseline, not live-release proof.
 | `scripts/production-conversion-contract.mjs` / `scripts/run-production-conversion.mjs` | Exact-target, fail-closed initial-conversion manifest validation and dry-run planning with no execution path |
 | `scripts/production-work-package-contract.mjs` / `scripts/run-production-work-package.mjs` | Deterministic local inspection of the complete single-host package; validates state, one Compose project, maintenance, backup, R2 preview, checklists, rollback, and release binding without live execution |
 | `server/generation/r2-inventory-contract.mjs` / `server/runtime/r2-inventory.mjs` | Exact current-object metadata inventory/fingerprint and read-only R2 listing role; deletion remains an unavailable separately approved operation |
-| `scripts/run-o1key-local.mjs` | Interactive isolated O1Key smoke launcher with a worker-only temporary secret file |
+| `scripts/run-local-stack.mjs` / `scripts/local-provider-secret.mjs` | Default real-O1Key local Compose lifecycle and fail-closed external development-key validation |
+| `scripts/run-o1key-local.mjs` | Interactive isolated O1Key smoke launcher with a temporary secret mounted into Web and Worker |
 | `Dockerfile` / `.dockerignore` | One non-root Linux application image and its build-context boundary |
-| `compose.yaml` | Pinned web/worker/mock plus PostgreSQL, Valkey, RustFS, one-shot migration, and opt-in maintenance topology |
+| `compose.yaml` | Pinned Web/Worker plus PostgreSQL, Valkey, RustFS, one-shot migration, opt-in maintenance, and test-profile-only mock topology |
 | `compose.staging.yaml` / `compose.staging.dependencies.yaml` / `infra/staging/` | Digest-only app roles, a separately operated resource-bounded test-data dependency stack, host bootstrap/install helpers, and non-secret staging templates; real secrets remain outside the checkout |
-| `compose.o1key-local.yaml` | Explicit local worker override for the O1Key route and mounted key file |
+| `compose.o1key-local.yaml` | Required local-development Web/Worker override for the real O1Key route and mounted development key file |
 | `compose.production*.yaml` / `infra/production/` | Resource-bounded production state and single-slot app topology, maintenance/Nginx boundary, backup automation, systemd templates, and non-secret manifests; credentials, approvals, and operational evidence stay outside Git |
 | `.openai/hosting.json` | Retained historical Sites identity; not the current production target or an app secret |
 | `AGENTS.md` / `docs/CURRENT_STATE.md` / `docs/WORKFLOW.md` | Stable agent contract, actual snapshot, and repeatable development/release workflow |

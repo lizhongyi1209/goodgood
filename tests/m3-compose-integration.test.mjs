@@ -23,6 +23,7 @@ const enabled = process.env.GOODGOOD_M3_INTEGRATION === "1";
 const webOrigin = process.env.GOODGOOD_M3_WEB_ORIGIN ?? "http://127.0.0.1:3000";
 const composeEnvironment = {
   ...process.env,
+  COMPOSE_PROJECT_NAME: "goodgood-mock-tests",
   GOODGOOD_WEB_PORT:
     process.env.GOODGOOD_WEB_PORT ?? new URL(webOrigin).port ?? "3000",
 };

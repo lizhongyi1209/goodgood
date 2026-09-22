@@ -148,7 +148,7 @@ these signals do not install a monitoring collector or notification transport.
 The OIDC contracts below still apply to the deployed runtime until a separately
 approved cutover.
 
-M3 implements one production-shaped local generation path: the browser submits
+M3's deterministic automated-test path submits
 an idempotent request, PostgreSQL transactionally creates a batch, job, audit
 event, and queue outbox record, Valkey delivers it at least once, the worker
 polls the HTTP mock provider, RustFS stores the image, PostgreSQL records the
@@ -161,6 +161,8 @@ The active Worker ignores a second delivery of an in-flight job, and any
 unexpired lease blocks another claim even when the Worker identity matches.
 After object upload, the Worker reports success only when the asset and job
 terminal state commit together; a terminal loser removes its unaccepted object.
+ADR 0092 keeps that mock path test-only; runnable local development replaces the
+provider boundary with real O1Key while retaining isolated local state.
 The creation client owns a stable run key per click so the temporary pending job
 and later durable job remain one visible run. It keeps an unbounded registry of
 overlapping active and failed runs; this is presentation state, never provider

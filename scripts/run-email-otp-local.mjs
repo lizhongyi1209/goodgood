@@ -18,6 +18,8 @@ const environment = {
 };
 const baseArguments = [
   "compose",
+  "--profile",
+  "mock-tests",
   "--project-name",
   "goodgood-gg029",
   "-f",

@@ -34,12 +34,14 @@ function close(server) {
 }
 
 test("compose contract pins the complete local dependency stack", async () => {
-  const [compose, dockerfile, environmentExample, packageJson] =
+  const [compose, o1keyCompose, dockerfile, environmentExample, packageJson, localStackRunner] =
     await Promise.all([
       readFile(new URL("../compose.yaml", import.meta.url), "utf8"),
+      readFile(new URL("../compose.o1key-local.yaml", import.meta.url), "utf8"),
       readFile(new URL("../Dockerfile", import.meta.url), "utf8"),
       readFile(new URL("../.env.example", import.meta.url), "utf8"),
       readFile(new URL("../package.json", import.meta.url), "utf8"),
+      readFile(new URL("../scripts/run-local-stack.mjs", import.meta.url), "utf8"),
     ]);
   const packageData = JSON.parse(packageJson);
 
@@ -70,6 +72,7 @@ test("compose contract pins the complete local dependency stack", async () => {
   assert.match(compose, /condition: service_completed_successfully/);
   assert.match(compose, /OBJECT_STORAGE_PUBLIC_ENDPOINT:/);
   assert.match(compose, /OBJECT_STORAGE_UPLOAD_ALLOWED_ORIGINS:/);
+  assert.match(compose, /^    profiles: \["mock-tests"\]$/m);
   for (const mapping of [
     "GOODGOOD_WEB_PORT:-3000}:3000",
     "GOODGOOD_WORKER_HEALTH_PORT:-3001}:3001",
@@ -86,16 +89,35 @@ test("compose contract pins the complete local dependency stack", async () => {
   assert.match(compose, /^    driver: bridge$/m);
   assert.doesNotMatch(compose, /internal: true/);
 
-  assert.equal(packageData.scripts["stack:config"], "docker compose config --quiet");
+  assert.equal(
+    packageData.scripts["stack:config"],
+    "node scripts/run-local-stack.mjs config",
+  );
   assert.equal(
     packageData.scripts["stack:up"],
-    "docker compose up --build --detach --wait",
+    "node scripts/run-local-stack.mjs up",
   );
   assert.equal(
     packageData.scripts["stack:verify"],
     "node infra/container/verify-compose.mjs",
   );
-  assert.equal(packageData.scripts["stack:down"], "docker compose down");
+  assert.equal(
+    packageData.scripts["stack:down"],
+    "node scripts/run-local-stack.mjs down",
+  );
+  assert.equal(
+    packageData.scripts["stack:mock-test:up"],
+    "docker compose --project-name goodgood-mock-tests --profile mock-tests up --build --detach --wait",
+  );
+  assert.match(localStackRunner, /compose\.o1key-local\.yaml/);
+  assert.match(localStackRunner, /resolveLocalProviderTokenFile/);
+  assert.match(localStackRunner, /生成请求会产生真实费用/);
+  assert.match(o1keyCompose, /^  web:$/m);
+  assert.match(o1keyCompose, /^  worker:$/m);
+  assert.equal(
+    (o1keyCompose.match(/goodgood_o1key_api_key/g) ?? []).length >= 4,
+    true,
+  );
   assert.equal(
     packageData.scripts["references:cleanup"],
     "node server/runtime/reference-cleanup.mjs",
@@ -141,7 +163,7 @@ test("compose contract pins the complete local dependency stack", async () => {
     "GOODGOOD_LOCAL_POSTGRES_PASSWORD",
     "GOODGOOD_LOCAL_OBJECT_STORAGE_ACCESS_KEY",
     "GOODGOOD_LOCAL_OBJECT_STORAGE_SECRET_KEY",
-    "GOODGOOD_LOCAL_GENERATION_API_KEY",
+    "GOODGOOD_TEST_GENERATION_API_KEY",
     "GOODGOOD_ALLOW_LOCAL_AUTH",
     "GOODGOOD_AUTH_MODE",
     "GOODGOOD_AUTH_ISSUER",

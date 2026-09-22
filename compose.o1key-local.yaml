@@ -1,9 +1,10 @@
 services:
-  worker:
-    environment:
+  web:
+    environment: &goodgood-o1key-environment
       GENERATION_API_BASE_URL: https://cf-api.o1key.com
       GENERATION_API_KEY: ""
       GENERATION_API_KEY_FILE: /run/secrets/goodgood_o1key_api_key
+      GENERATION_PROVIDER_ALLOW_INSECURE_LOOPBACK: "false"
       GENERATION_PROVIDER_KIND: o1key
       GENERATION_POLL_INTERVAL_MS: "1000"
       GENERATION_POLL_TIMEOUT_MS: "180000"
@@ -11,6 +12,12 @@ services:
     secrets:
       - goodgood_o1key_api_key
 
+  worker:
+    environment:
+      <<: *goodgood-o1key-environment
+    secrets:
+      - goodgood_o1key_api_key
+
 secrets:
   goodgood_o1key_api_key:
-    file: ${GOODGOOD_O1KEY_API_KEY_FILE:?Set GOODGOOD_O1KEY_API_KEY_FILE through the O1Key local runner}
+    file: ${GOODGOOD_O1KEY_API_KEY_FILE:?Use npm run stack:up with an external development key file}

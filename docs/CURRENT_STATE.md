@@ -1,12 +1,12 @@
 # GoodGood 当前状态
 
-- 最后核对：2026-09-22完成GG-100单槽位主机迁移与旧 blue/green 清理。生产身份 `7888554` / 迁移 `0044` / 配置契约 `b3d7310a…ddf3`；公网与注册均开放。
+- 最后核对：2026-09-23完成GG-101本地真实线上接口策略；生产事实未变。生产身份 `7888554` / 迁移 `0044` / 配置契约 `b3d7310a…ddf3`；公网与注册均开放。
 - 产品阶段：已开放的 `controlled-alpha-v1`，不是完整 seed/付费生产就绪。
 - 正式入口：https://goodgood.o1key.com
-- 当前工作：**GG-100 已完成生产主机清理**，应用统一为固定 `goodgood-production` Compose；GG-098 功能仍为当前应用版本。注册自 2026-09-15 起开放，**已有真实用户在使用**：30 个账户、240 个生成资产、参考素材 181 `ready`、生成任务 279（223 成功 / 56 失败）。站长账户 951565127@qq.com，邀请码 405513。
+- 当前工作：**GG-101 已完成本地开发策略调整，未部署**；可运行的本地开发环境强制真实 O1Key，mock 仅用于隔离自动化测试。生产应用仍为 GG-098 功能和固定 `goodgood-production` Compose。注册自 2026-09-15 起开放，**已有真实用户在使用**：30 个账户、240 个生成资产、参考素材 181 `ready`、生成任务 279（223 成功 / 56 失败）。站长账户 951565127@qq.com，邀请码 405513。
 - 充值：运营已按「登记已收到的充值款」录入 4 笔，共 15100 积分（支付宝 ×2、支付宝收款、微信）。这不是自动支付，支付/支付宝结算仍搁置。
 - **已知缺口（站长 2026-09-15 明确授权接受）**：`controlled-alpha-operations` 未通过——主机无任何对外告警通道。**备份本身不是缺口**：生产备份 timer `enabled`/`active`，每 30 分钟一次，2026-09-17 首次恢复演练通过（见下）。见发布记录。
-- GG-100 生产主机单槽位迁移与旧 blue/green 清理已完成；下一普通产品需求从 **GG-101** 分配。不要自动恢复搁置的 C6。
+- GG-100 生产主机单槽位迁移与旧 blue/green 清理已完成；GG-101 仅改变本地开发契约，未触碰生产；下一普通产品需求从 **GG-102** 分配。不要自动恢复搁置的 C6。
 
 ## GG-099 / GG-100 单槽位发布（2026-09-22）
 
@@ -14,12 +14,13 @@
 - 旧容器、网络、槽位/动态 upstream 与 14 个无引用镜像已清理；生产状态、秘密、备份和卷保留。恢复点 `71e758c4`，活动任务/冻结积分/Valkey 均为 0。
 - 后续只在同一项目原地替换，迁移只前进、schema 不降级。完整记录：[GG-100 主机清理](operations/2026-09-22-gg100-single-slot-host-cleanup.md)。
 
-## GG-093 本地运行边界
+## GG-101 本地运行边界
 
 - 当前仅保留goodgood-gg052的PostgreSQL/Valkey/RustFS、gg044 Mailpit及无关项目容器；全部34个卷保留。旧GoodGood应用容器、镜像、空网络和构建缓存已按任务卡清理，生产主机与数据未触碰。
 - 新版本须运行`npm run build:checkpoint`和`npm run verify:checkpoint`；启动脚本拒绝源码、Git revision或产物指纹不匹配。Web的`/api/health/version`返回`build.verified`与revision，作为跨窗口页面来源核验。
-- GG-097起本地 worker 默认调用**真实** O1Key（真实计费），令牌从仓库外
-  `%USERPROFILE%\.claude\goodgood-local-secrets\o1key-api-key.txt` 读取；`.env.local-review` 可显式改为 mock。
+- Web/Worker 均强制调用**真实** O1Key（真实计费），开发令牌从仓库外
+  `%USERPROFILE%\.claude\goodgood-local-secrets\o1key-api-key.txt` 读取；缺失即停止，不能改为 mock。
+- 本地 PostgreSQL/Valkey/RustFS、身份与数据继续隔离；生产秘密、数据库、R2、队列和用户数据禁止进入本地。mock 只存在于显式 `mock-tests` 自动化测试栈，完整门禁不产生真实 provider 请求。
 
 ## 已上线的能力与边界
 
@@ -62,7 +63,7 @@
 | 发布回退 | 只在同一 `goodgood-production` Compose 项目恢复兼容的旧应用镜像；不切换槽位或 Nginx upstream |
 | 主机 | 香港 2 vCPU / 4 GiB / 50 GiB；Web、Worker、PostgreSQL、Valkey 同机 |
 | 对象与备份 | 私有 R2；加密异机备份 Restic → `goodgood-postgres-backups/production`。timer `goodgood-production-postgres-backup.timer` **`enabled`/`active`**，每 30 分钟一次（77 个快照）。2026-09-17 演练点快照 `ce191630`，**恢复演练通过**；发布前恢复点 `36f2a437` |
-| 本地 | Windows 开发；Compose 使用本地 PostgreSQL/Valkey/RustFS/mock |
+| 本地 | Windows 开发；Compose 使用本地 PostgreSQL/Valkey/RustFS + 真实 O1Key 开发凭据；mock 仅限隔离测试 profile |
 
 没有常驻远程测试环境。`staging-goodgood.o1key.com` 仅保留名称，非当前测试入口。
 SSH 别名 `goodgood-staging` 是历史命名，指向现有生产主机，不能据名字当作测试机。
