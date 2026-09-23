@@ -12,6 +12,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { CreationModeSwitch } from "@/features/creation/creation-mode-switch";
 import { useParameterDrawerViewport } from "@/features/creation/use-parameter-drawer-viewport";
+import { useComposerFileDrop } from "@/features/creation/use-composer-file-drop";
 import { SeedanceModelIcon } from "@/features/models/seedance-model-icon";
 import { getRatioFrame } from "@/features/creation/generation-options";
 import { VideoMaterialCreationDialog } from "@/features/creation/video-material-creation-dialog";
@@ -39,10 +40,12 @@ import {
 } from "@/features/creation/video-generation-options";
 import {
   AudioLines,
+  CircleAlert,
   ChevronDown,
   Film,
   ImagePlus,
   Images,
+  LoaderCircle,
   SlidersHorizontal,
   Upload,
   Volume2,
@@ -70,8 +73,10 @@ export type VideoCreationComposerProps = Readonly<{
   onModeChange: (mode: CreationMode) => void;
   onPromptChange: (prompt: string) => void;
   onReferenceFiles: (files: readonly File[]) => void;
+  onDropFiles?: (files: readonly File[]) => void;
   onOpenReferenceLibrary: () => void;
   onRemoveReference: (reference: VideoReference) => void;
+  onRetryReference?: (reference: VideoReference) => void;
   onGenerationModeChange: (generationMode: VideoGenerationMode) => void;
   onModelChange: (modelId: VideoGenerationModelId) => void;
   onProviderLineChange: (line: VideoProviderLine) => void;
@@ -98,7 +103,7 @@ function resizePromptTextarea(element: HTMLTextAreaElement) {
 }
 
 const referenceAcceptByMediaType = {
-  image: "image/jpeg,image/png,image/webp,image/heic,image/heif",
+  image: "image/jpeg,image/png,image/webp",
   video: "video/mp4,video/quicktime",
   audio: "audio/wav,audio/x-wav,audio/mpeg",
 } as const satisfies Readonly<Record<VideoReferenceMediaType, string>>;
@@ -129,8 +134,10 @@ export function VideoCreationComposer({
   onModeChange,
   onPromptChange,
   onReferenceFiles,
+  onDropFiles,
   onOpenReferenceLibrary,
   onRemoveReference,
+  onRetryReference,
   onGenerationModeChange,
   onModelChange,
   onProviderLineChange,
@@ -200,14 +207,18 @@ export function VideoCreationComposer({
   };
 
   const composerRef = useParameterDrawerViewport(drawerOpen);
+  const fileDrop = useComposerFileDrop(onDropFiles ?? onReferenceFiles);
 
   return (
     <section
       ref={composerRef}
-      className={`composer video-composer ${drawerOpen ? "drawer-open" : ""}`}
+      className={`composer video-composer ${drawerOpen ? "drawer-open" : ""} ${fileDrop.dragActive ? "is-file-drop-target" : ""}`}
       aria-label="视频生成区域"
+      onDragEnter={fileDrop.onDragEnter}
+      onDragOver={fileDrop.onDragOver}
+      onDragLeave={fileDrop.onDragLeave}
+      onDrop={fileDrop.onDrop}
     >
-      <CreationModeSwitch value={mode} onChange={onModeChange} />
 
       <input
         ref={referenceInputRef}
@@ -218,6 +229,79 @@ export function VideoCreationComposer({
         disabled={!canUploadReference}
         onChange={handleFileChange}
       />
+
+      {references.length > 0 && (
+        <div className="reference-tray video-reference-tray" aria-label="已添加的视频创作素材">
+          <div className="reference-thumbnails">
+            {references.map((reference, index) => {
+              const ordinal = references
+                .slice(0, index + 1)
+                .filter((item) => item.mediaType === reference.mediaType).length;
+              const mediaLabel = reference.mediaType === "image"
+                ? `图片 ${ordinal}`
+                : reference.mediaType === "video"
+                  ? `视频 ${ordinal}`
+                  : `音频 ${ordinal}`;
+              const previewLabel = generationMode === "first_last_frame"
+                ? videoReferenceRoleLabel(reference.role)
+                : mediaLabel.replace(" ", "");
+              return (
+                <div
+                  className={`reference-thumbnail video-reference-thumbnail ${reference.mediaType} ${reference.status ?? "ready"}`}
+                  key={reference.id}
+                  role="group"
+                  aria-label={`${mediaLabel}，${reference.name}，${videoReferenceRoleLabel(reference.role)}`}
+                  title={reference.errorMessage ?? (reference.size > 0
+                    ? `${reference.name} · ${formatFileSize(reference.size)}`
+                    : reference.name)}
+                >
+                  <button
+                    type="button"
+                    className="video-reference-preview-trigger"
+                    aria-label={`放大预览${mediaLabel}，${reference.name}`}
+                    aria-haspopup="dialog"
+                    onClick={(event) => { previewTriggerRef.current = event.currentTarget; setPreviewReferenceId(reference.id); }}
+                  >
+                  {reference.mediaType === "image" ? (
+                    <PrivateObjectImage src={reference.url} alt={mediaLabel} loading="eager" />
+                  ) : reference.mediaType === "video" ? (
+                    <video src={reference.url} muted playsInline preload="metadata" aria-label={mediaLabel} />
+                  ) : (
+                    <span className="video-reference-placeholder"><AudioLines size={22} /></span>
+                  )}
+                  <span className="reference-thumbnail-ordinal">{previewLabel}</span>
+                  </button>
+                  {reference.status === "uploading" && (
+                    <span className="reference-thumbnail-status" aria-label={`${mediaLabel}正在上传`}><LoaderCircle size={15} /></span>
+                  )}
+                  {reference.status === "failed" && (
+                    <>
+                      <span className="reference-thumbnail-status" aria-label={`${mediaLabel}上传失败`}><CircleAlert size={15} /></span>
+                      {onRetryReference && <button className="reference-thumbnail-retry" aria-label={`重试上传${mediaLabel}`}
+                        onClick={(event) => { event.stopPropagation(); onRetryReference(reference); }}>重试</button>}
+                    </>
+                  )}
+                  <button
+                    className="reference-thumbnail-remove"
+                    aria-label={`移除${mediaLabel}`}
+                    onClick={(event) => { event.stopPropagation(); onRemoveReference(reference); }}
+                  >
+                    <X size={8} strokeWidth={2.2} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {references.some((reference) => reference.status === "failed") && (
+        <div className="reference-upload-errors" role="alert">
+          {references.filter((reference) => reference.status === "failed").map((reference) => (
+            <p key={reference.id}>{reference.name}：{reference.errorMessage ?? "上传失败，请重试。"}</p>
+          ))}
+        </div>
+      )}
 
       <div className="prompt-row">
         <div className="reference-control">
@@ -293,60 +377,7 @@ export function VideoCreationComposer({
         </div>
       </div>
 
-      {references.length > 0 && (
-        <div className="reference-tray video-reference-tray" aria-label="已添加的视频创作素材">
-          <div className="reference-thumbnails">
-            {references.map((reference, index) => {
-              const ordinal = references
-                .slice(0, index + 1)
-                .filter((item) => item.mediaType === reference.mediaType).length;
-              const mediaLabel = reference.mediaType === "image"
-                ? `图片 ${ordinal}`
-                : reference.mediaType === "video"
-                  ? `视频 ${ordinal}`
-                  : `音频 ${ordinal}`;
-              const previewLabel = generationMode === "first_last_frame"
-                ? videoReferenceRoleLabel(reference.role)
-                : mediaLabel.replace(" ", "");
-              return (
-                <div
-                  className={`reference-thumbnail video-reference-thumbnail ${reference.mediaType}`}
-                  key={reference.id}
-                  role="group"
-                  aria-label={`${mediaLabel}，${reference.name}，${videoReferenceRoleLabel(reference.role)}`}
-                  title={reference.size > 0
-                    ? `${reference.name} · ${formatFileSize(reference.size)}`
-                    : reference.name}
-                >
-                  <button
-                    type="button"
-                    className="video-reference-preview-trigger"
-                    aria-label={`放大预览${mediaLabel}，${reference.name}`}
-                    aria-haspopup="dialog"
-                    onClick={(event) => { previewTriggerRef.current = event.currentTarget; setPreviewReferenceId(reference.id); }}
-                  >
-                  {reference.mediaType === "image" ? (
-                    <PrivateObjectImage src={reference.url} alt={mediaLabel} />
-                  ) : reference.mediaType === "video" ? (
-                    <video src={reference.url} muted playsInline preload="metadata" aria-label={mediaLabel} />
-                  ) : (
-                    <span className="video-reference-placeholder"><AudioLines size={22} /></span>
-                  )}
-                  <span className="reference-thumbnail-ordinal">{previewLabel}</span>
-                  </button>
-                  <button
-                    className="reference-thumbnail-remove"
-                    aria-label={`移除${mediaLabel}`}
-                    onClick={(event) => { event.stopPropagation(); onRemoveReference(reference); }}
-                  >
-                    <X size={8} strokeWidth={2.2} />
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      <CreationModeSwitch value={mode} onChange={onModeChange} />
 
       <div className="parameter-drawer" aria-hidden={!drawerOpen} inert={!drawerOpen}>
         <div className="drawer-overflow">

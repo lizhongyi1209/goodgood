@@ -73,7 +73,7 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
   default. Parameters expand downward as one attached drawer.
 - Prompt textarea auto-grows to eight lines, then scrolls. Tool positions remain
   stable while it grows.
-- Reference images live in a tray below the prompt, never inside its text area.
+- Reference images live in a tray above the prompt, never inside its text area.
   Use moderately enlarged responsive 1:1 centered previews and horizontal
   overflow. Maximum: 10. At the limit, the add control is disabled.
 - Parameter groups read as aspect ratio, model, then output; aspect ratio starts
@@ -81,7 +81,7 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
 - Models and copy are fixed until a product decision changes them:
   `Nano Banana 2 — 快速，批量`; `Nano Banana Pro — 高质量资产，视觉优先`;
   `GPT IMAGE 2.5 sunburst`; `GPT IMAGE 2`; `GPT IMAGE 2.5 flare`.
-- Creation exposes attached `图片 / 视频` modes. Configured local development
+- Creation exposes attached `图片 / 视频` modes below the prompt. Configured local development
   exposes real Seedance by default; durable video jobs/billing/assets remain
   unconnected. Never send video through the image API or submit without a user
   action.

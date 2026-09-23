@@ -188,7 +188,7 @@ individual icon. Upload, settings, and send align to the same 40px box.
   0055), not an in-flow expansion. Raise the open composer one stacking level;
   retain shallow elevation and joined edges. Opening must not move results.
   Long drawers scroll within the viewport space below the prompt/reference tray.
-- A compact `图片 / 视频` segmented control is attached above the prompt row.
+- A compact `图片 / 视频` segmented control is attached below the prompt row.
   It uses the same white/soft surfaces and restrained Palace Red selected state;
   it is a creation-mode choice, not another navigation bar.
 - Prompt is the flexible column. Left and right controls remain top-aligned and

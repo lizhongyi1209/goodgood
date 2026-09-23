@@ -1,5 +1,7 @@
+import { PRIVATE_IMAGE_UPLOAD_MAX_BYTES } from "../../shared/contracts/upload-limits.mjs";
+
 export const REFERENCE_LIMITS = Object.freeze({
-  maxBytes: 20 * 1024 * 1024,
+  maxBytes: PRIVATE_IMAGE_UPLOAD_MAX_BYTES,
   maxDimension: 8_192,
   maxPixels: 40_000_000,
   maxReferences: 10,

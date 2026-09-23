@@ -1,5 +1,13 @@
 # Architecture
 
+GG-104 adds `server/video-materials` for owner-scoped signed upload intents,
+R2/RustFS object validation, status, and reusable video listing. Browser files
+travel directly to private object storage using a short-lived signed PUT;
+the browser never receives storage or provider credentials. Image uploads keep
+the existing reference API. The video picker uses signed private reads; video
+generation remains text-only when references are present. Both Node and
+framework routes share the same service.
+
 GG-093本地版本交接由`scripts/local-build-provenance.mjs`绑定Git revision、源码指纹和`dist/client`/`dist/server`产物指纹；`scripts/local-checkpoint.mjs start`只允许本地mock依赖并在导入Web前注入已验证身份。`/api/health/version`不参与业务鉴权，仅报告当前进程是否由该受保护流程启动。
 
 GG-091独立account-invitations验证器与0043用户插入触发器自动分配唯一六位码；邮箱事务验证正确邮件码/预期email后共享锁活动邀请者，再记录account_invitation_uses并提交账户/欢迎积分/Session/挑战。邀请码无限复用，注册者邀请关系唯一；不消耗原码。旧0042仅历史表，旧后台操作路径移除。

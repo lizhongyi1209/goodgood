@@ -50,6 +50,8 @@ export type VideoReference = Readonly<{
   role: VideoReferenceRole;
   size: number;
   url: string;
+  status?: "uploading" | "ready" | "failed";
+  errorMessage?: string;
 }>;
 
 export type VideoReferenceLimits = Readonly<{
@@ -282,15 +284,16 @@ export function videoReferenceFileError(
   if (videoReferenceMediaTypeForFile(file) !== mediaType) {
     return `${file.name} 的文件格式不受支持`;
   }
-  const maximum = mediaType === "image" ? 30 : mediaType === "video" ? 200 : 15;
-  if (file.size >= maximum * 1024 * 1024) return `${file.name} 必须小于 ${maximum} MB`;
+  const maximum = mediaType === "image" ? 20 : mediaType === "video" ? 200 : 15;
+  if (file.size > maximum * 1024 * 1024) return `${file.name} 超过上传上限，请选择 ${maximum} MB 以内的${mediaType === "image" ? "图片" : mediaType === "video" ? "视频" : "音频"}。`;
+  if (file.size === 0) return `${file.name} 是空文件，请重新选择。`;
   return null;
 }
 
 export function videoReferenceMediaTypeForFile(
   file: Pick<File, "type">,
 ): VideoReferenceMediaType | null {
-  if (["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"].includes(file.type)) {
+  if (["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
     return "image";
   }
   if (["video/mp4", "video/quicktime"].includes(file.type)) return "video";

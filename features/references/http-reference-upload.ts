@@ -15,7 +15,7 @@ type UploadIntent = Readonly<{
 }>;
 
 type ReferenceApiError = Readonly<{
-  error?: Readonly<{ message?: string; retryable?: boolean }>;
+  error?: Readonly<{ code?: string; message?: string; requestId?: string; retryable?: boolean }>;
 }>;
 
 const UPLOAD_CONCURRENCY = 2;
@@ -57,10 +57,10 @@ export type ReferenceUploadResult = Readonly<{
 async function parseJson<T>(response: Response): Promise<T> {
   const payload = (await response.json().catch(() => ({}))) as T | ReferenceApiError;
   if (!response.ok) {
+    const failure = (payload as ReferenceApiError).error;
     throw new ReferenceUploadHttpError(
-      (payload as ReferenceApiError).error?.message ??
-        "参考图上传失败，请稍后重试。",
-      (payload as ReferenceApiError).error?.retryable ??
+      `${failure?.message ?? "参考图上传失败，请稍后重试。"}${failure?.requestId ? `（请求 ${failure.requestId}）` : ""}`,
+      failure?.retryable ??
         (response.status === 408 || response.status === 429 || response.status >= 500),
     );
   }
@@ -81,7 +81,7 @@ async function putWithRetry(intent: UploadIntent, file: File): Promise<void> {
       });
       if (response.ok) return;
       if (![408, 429].includes(response.status) && response.status < 500) {
-        throw new ReferenceUploadHttpError("参考图直传失败，请重试上传。", false);
+        throw new ReferenceUploadHttpError(`参考图直传失败（HTTP ${response.status}），请重试上传。`, false);
       }
     } catch (error) {
       if (error instanceof ReferenceUploadHttpError && !error.retryable) throw error;
@@ -103,10 +103,11 @@ async function recoverCompletion(referenceId: string, workspaceId: string | null
         id: string;
         name: string;
         status: "pending" | "ready" | "rejected" | "expired";
+        errorCode?: string;
       }>>(response);
       if (status.status === "ready") return { id: status.id, name: status.name, status: "ready" as const };
       if (status.status === "rejected" || status.status === "expired") {
-        throw new ReferenceUploadHttpError("参考图未通过校验，请重新上传。", false);
+        throw new ReferenceUploadHttpError(`参考图未通过校验${status.errorCode ? `（${status.errorCode}）` : ""}，请重新上传。`, false);
       }
     } catch (error) {
       if (error instanceof ReferenceUploadHttpError && !error.retryable) throw error;

@@ -14,6 +14,7 @@ import type { ReferenceMaterial } from "@/features/references/http-reference-lib
 import { ReferenceQuickEditor } from "@/features/references/reference-quick-editor";
 import { CreationModeSwitch } from "@/features/creation/creation-mode-switch";
 import { useParameterDrawerViewport } from "@/features/creation/use-parameter-drawer-viewport";
+import { useComposerFileDrop } from "@/features/creation/use-composer-file-drop";
 import type { CreationMode } from "@/features/creation/video-generation-options";
 import {
   DEFAULT_GPT_IMAGE_OUTPUT_FORMAT,
@@ -100,6 +101,7 @@ export type CreationComposerProps = Readonly<{
   onPromptChange: (prompt: string) => void;
   onModeChange: (mode: CreationMode) => void;
   onReferenceFiles: (files: readonly File[]) => void;
+  onDropFiles?: (files: readonly File[]) => void;
   onOpenReferenceLibrary?: () => void;
   onRemoveReference: (reference: GenerationReference) => void;
   onRetryReference?: (reference: GenerationReference) => void;
@@ -179,6 +181,7 @@ export function CreationComposer({
   onPromptChange,
   onModeChange,
   onReferenceFiles,
+  onDropFiles,
   onOpenReferenceLibrary = () => {},
   onRemoveReference,
   onRetryReference,
@@ -249,84 +252,18 @@ export function CreationComposer({
   };
 
   const composerRef = useParameterDrawerViewport(drawerOpen);
+  const fileDrop = useComposerFileDrop(onDropFiles ?? onReferenceFiles);
 
   return (
     <section
       ref={composerRef}
-      className={`composer ${drawerOpen ? "drawer-open" : ""} ${isGenerating ? "is-generating" : ""}`}
+      className={`composer ${drawerOpen ? "drawer-open" : ""} ${isGenerating ? "is-generating" : ""} ${fileDrop.dragActive ? "is-file-drop-target" : ""}`}
       aria-label="图像生成区域"
+      onDragEnter={fileDrop.onDragEnter}
+      onDragOver={fileDrop.onDragOver}
+      onDragLeave={fileDrop.onDragLeave}
+      onDrop={fileDrop.onDrop}
     >
-      {showModeSwitch && <CreationModeSwitch value={mode} onChange={onModeChange} />}
-      <div className="prompt-row">
-        <div className="reference-control">
-          <input
-            ref={referenceInputRef}
-            className="reference-input"
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            multiple
-            disabled={references.length >= MAX_GENERATION_REFERENCES}
-            onChange={handleReferenceChange}
-          />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className="reference-button"
-                aria-label={references.length >= MAX_GENERATION_REFERENCES ? "参考图片已达到上限" : "添加参考图片，最多 10 张"}
-                disabled={references.length >= MAX_GENERATION_REFERENCES}
-              >
-                <ImagePlus size={18} />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="reference-source-menu" align="start" sideOffset={7}>
-              <DropdownMenuItem onSelect={openFilePicker}>
-                <Upload size={15} />
-                上传本地图片
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={onOpenReferenceLibrary}>
-                <Images size={15} />
-                从资产库选择
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-        <textarea
-          ref={promptInputRef}
-          aria-label={promptLabel}
-          value={prompt}
-          rows={1}
-          placeholder={promptPlaceholder}
-          onChange={(event) => {
-            onPromptChange(event.target.value);
-            resizePromptTextarea(event.currentTarget);
-          }}
-        />
-        <div className="prompt-actions">
-          <span
-            className="composer-price"
-            aria-label={billingDescription}
-            title={billingDescription}
-          >
-            {billingLabel}
-          </span>
-          {!parametersHidden && <button
-            className={`prompt-action settings-toggle ${drawerOpen ? "active" : ""}`}
-            aria-label="展开生成参数"
-            aria-expanded={drawerOpen}
-            onClick={() => onDrawerOpenChange(!drawerOpen)}
-          >
-            <SlidersHorizontal size={18} />
-          </button>}
-          <button
-            className={`send-button ${isGenerating ? "generating" : ""}`}
-            aria-label={isGenerating ? "继续生成图片" : "生成图片"}
-            onClick={onGenerate}
-          >
-            <span className="feihong-icon" aria-hidden="true" />
-          </button>
-        </div>
-      </div>
-
       {references.length > 0 && (
         <div className="reference-tray" aria-label="已添加的参考图片">
           <div className="reference-thumbnails">
@@ -377,6 +314,7 @@ export function CreationComposer({
                   event.dataTransfer.dropEffect = "move";
                 }}
                 onDrop={(event) => {
+                  if (Array.from(event.dataTransfer.types).includes("Files")) return;
                   event.preventDefault();
                   const sourceId = event.dataTransfer.getData("text/plain") || draggedReferenceId;
                   if (sourceId && sourceId !== image.id) onReorderReference?.(sourceId, image.id);
@@ -465,6 +403,86 @@ export function CreationComposer({
           </div>
         </div>
       )}
+
+      {references.some((image) => image.status === "failed") && (
+        <div className="reference-upload-errors" role="alert">
+          {references.filter((image) => image.status === "failed").map((image) => (
+            <p key={image.id}>{image.name}：{image.errorMessage ?? "上传失败，请重试。"}</p>
+          ))}
+        </div>
+      )}
+
+      <div className="prompt-row">
+        <div className="reference-control">
+          <input
+            ref={referenceInputRef}
+            className="reference-input"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            disabled={references.length >= MAX_GENERATION_REFERENCES}
+            onChange={handleReferenceChange}
+          />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="reference-button"
+                aria-label={references.length >= MAX_GENERATION_REFERENCES ? "参考图片已达到上限" : "添加参考图片，最多 10 张"}
+                disabled={references.length >= MAX_GENERATION_REFERENCES}
+              >
+                <ImagePlus size={18} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="reference-source-menu" align="start" sideOffset={7}>
+              <DropdownMenuItem onSelect={openFilePicker}>
+                <Upload size={15} />
+                上传本地图片
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={onOpenReferenceLibrary}>
+                <Images size={15} />
+                从资产库选择
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        <textarea
+          ref={promptInputRef}
+          aria-label={promptLabel}
+          value={prompt}
+          rows={1}
+          placeholder={promptPlaceholder}
+          onChange={(event) => {
+            onPromptChange(event.target.value);
+            resizePromptTextarea(event.currentTarget);
+          }}
+        />
+        <div className="prompt-actions">
+          <span
+            className="composer-price"
+            aria-label={billingDescription}
+            title={billingDescription}
+          >
+            {billingLabel}
+          </span>
+          {!parametersHidden && <button
+            className={`prompt-action settings-toggle ${drawerOpen ? "active" : ""}`}
+            aria-label="展开生成参数"
+            aria-expanded={drawerOpen}
+            onClick={() => onDrawerOpenChange(!drawerOpen)}
+          >
+            <SlidersHorizontal size={18} />
+          </button>}
+          <button
+            className={`send-button ${isGenerating ? "generating" : ""}`}
+            aria-label={isGenerating ? "继续生成图片" : "生成图片"}
+            onClick={onGenerate}
+          >
+            <span className="feihong-icon" aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+
+      {showModeSwitch && <CreationModeSwitch value={mode} onChange={onModeChange} />}
 
       {!parametersHidden && <div className="parameter-drawer" aria-hidden={!drawerOpen} inert={!drawerOpen}>
         <div className="drawer-overflow">

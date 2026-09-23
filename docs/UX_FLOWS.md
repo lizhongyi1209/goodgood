@@ -357,7 +357,7 @@ descriptions to fill space.
   mode; results stay in place. Toggle closes it without losing values. Closed
   controls are inert; long drawers scroll internally within available viewport
   space, including after prompt growth or page scrolling (ADR 0055).
-- `图片 / 视频` is always visible as a quiet segmented control attached above
+- `图片 / 视频` is always visible as a quiet segmented control attached below
   the prompt row. Image remains the default. Switching affects only the active
   composer and preserves separate in-memory inputs; it never alters an active
   image job or sends a request.
@@ -378,6 +378,13 @@ descriptions to fill space.
 - References: the add control offers local upload or selection from the owner's
   uploaded materials. Append in upload/selection order, deduplicate by stable
   reference ID, and enforce the shared maximum of 10.
+- The tray sits above the prompt in both modes. External images/videos may be
+  dropped anywhere on the composer; dropping video in image mode opens video
+  mode without submitting. Internal image dragging still reorders thumbnails.
+- Check each file before creating its preview. JPEG/PNG/WebP images have a
+  20 MiB original upload limit; MP4/MOV videos have a 200 MiB limit. Rejected
+  files stay out of the tray and name the allowed limit or format. Failed
+  uploads keep the local preview, show a safe reason, and offer retry/removal.
 - A selected reference appears immediately from its local file, with a small
   uploading indicator while the original transfers and is validated in the
   background. Up to two files upload concurrently; one rejected file does not
@@ -414,12 +421,12 @@ descriptions to fill space.
   the editor state for retry.
 - Send is blocked while any retained reference is uploading or failed. Ready
   references preserve their tray order in the submitted batch snapshot.
-- Video mode accepts local image, MP4/MOV, and WAV/MP3 references for frontend
+- Video mode accepts local JPEG/PNG/WebP, MP4/MOV, and WAV/MP3 references for frontend
   composition. It also offers `从资产库选择` as one media-aware picker for image,
   video, and audio assets, preserving stable asset IDs and private read URLs
-  without transferring bytes again. Generated images and uploaded images feed
-  the current frontend; video/audio filters remain truthful empty states until
-  their durable API is connected. Images from either source may be marked
+  without transferring bytes again. Generated images, uploaded images, and
+  uploaded videos feed the current frontend; audio filters remain empty until
+  its durable API is connected. Images from either source may be marked
   `首帧 / 尾帧 / 参考图`; selected videos and audio become reference media.
   Selection respects the model's per-type and total-media limits, and IDs already
   present in the video tray are disabled. Video settings default to `多模态`, where
@@ -431,15 +438,17 @@ descriptions to fill space.
   音频1` ordinals, while first/last-frame displays only `首帧 / 尾帧`.
   The source menu has one `上传素材` action rather than separate media-type rows;
   its native picker accepts only image, video, and audio MIME types still allowed
-  by the active mode. Uploading creates an ordinary session reference only.
+  by the active mode. Images use the private reference store; uploaded videos
+  enter an owner-scoped private library after validation and can be reused.
+  Audio remains session-only.
   `创建素材` is a separate, opt-in selection dialog with nothing preselected and
   a concurrent-processing promise. Until the material API arrives, its commit action
   is visibly unavailable rather than simulating a returned material ID.
   Before final video submission, every historical created material is checked
   again. Valid items may proceed; expired, evicted, or indeterminate items keep
   the draft intact, block submission, and offer `重新创建`.
-  Local object URLs remain session-only until
-  backend upload and durable mixed-media contracts exist.
+  Local object URLs give immediate previews while image/video uploads finish.
+  The current text-only video preview still refuses to submit with references.
 - Settings: attached downward overlay drawer above results; closing it must not reset values or move results.
 - Settings read from aspect ratio to model to output; aspect ratio is the leftmost
   wide-screen group and stays first through responsive reflow.

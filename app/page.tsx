@@ -92,6 +92,8 @@ import {
   type LocalVideoPreviewAvailability,
 } from "@/features/creation/http-video-preview-boundary";
 import { uploadReferenceFiles } from "@/features/references/http-reference-upload";
+import { listPrivateVideoMaterials, uploadPrivateVideoMaterial, type PrivateVideoMaterial } from "@/features/creation/http-video-materials";
+import { PRIVATE_IMAGE_MIME_TYPES, PRIVATE_IMAGE_UPLOAD_MAX_BYTES } from "@/shared/contracts/upload-limits.mjs";
 import {
   listReferenceMaterials,
   type ReferenceMaterial,
@@ -479,6 +481,7 @@ export default function Home({
   const referenceObjectUrlsRef = useRef(new Set<string>());
   const referenceUploadFilesRef = useRef(new Map<string, File>());
   const videoReferenceObjectUrlsRef = useRef(new Set<string>());
+  const videoReferenceFilesRef = useRef(new Map<string, File>());
   const assetPulseTimerRef = useRef<number | null>(null);
   const detailWheelTimerRef = useRef<number | null>(null);
   const detailThumbnailRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -559,6 +562,9 @@ export default function Home({
   const [assetSection, setAssetSection] = useState<"generated" | "materials">("generated");
   const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>([]);
   const [referenceMaterials, setReferenceMaterials] = useState<readonly ReferenceMaterial[]>([]);
+  const [privateVideoMaterials, setPrivateVideoMaterials] = useState<readonly PrivateVideoMaterial[]>([]);
+  const [privateVideoMaterialsLoading, setPrivateVideoMaterialsLoading] = useState(true);
+  const [privateVideoMaterialsError, setPrivateVideoMaterialsError] = useState<string | null>(null);
   const [referenceMaterialsLoading, setReferenceMaterialsLoading] = useState(true);
   const [referenceMaterialsError, setReferenceMaterialsError] = useState<string | null>(null);
   const [referenceLibraryOpen, setReferenceLibraryOpen] = useState(false);
@@ -1231,6 +1237,7 @@ export default function Home({
     referenceUploadFilesRef.current.clear();
     videoReferenceObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
     videoReferenceObjectUrlsRef.current.clear();
+    videoReferenceFilesRef.current.clear();
   }, []);
 
   useEffect(() => {
@@ -1255,6 +1262,30 @@ export default function Home({
     return () => {
       active = false;
     };
+  }, [authenticationSession, workspaceAccessReady, workspaceId]);
+
+  useEffect(() => {
+    if (authenticationSession === undefined) return;
+    if (authenticationSession === null || authenticationSession.access.status !== "active") return;
+    if (authenticationSession.preview) {
+      const resetPreviewMaterials = window.setTimeout(() => {
+        setPrivateVideoMaterials([]);
+        setPrivateVideoMaterialsError(null);
+        setPrivateVideoMaterialsLoading(false);
+      }, 0);
+      return () => window.clearTimeout(resetPreviewMaterials);
+    }
+    if (!workspaceAccessReady) return;
+    let active = true;
+    void listPrivateVideoMaterials(workspaceId)
+      .then((materials) => {
+        if (active) { setPrivateVideoMaterials(materials); setPrivateVideoMaterialsError(null); }
+      })
+      .catch((error) => {
+        if (active) setPrivateVideoMaterialsError(error instanceof Error ? error.message : "视频素材暂时无法读取，请重试。");
+      })
+      .finally(() => { if (active) setPrivateVideoMaterialsLoading(false); });
+    return () => { active = false; };
   }, [authenticationSession, workspaceAccessReady, workspaceId]);
 
   useEffect(() => {
@@ -1669,15 +1700,66 @@ export default function Home({
     setVideoGenerationMode(generationMode);
   };
 
+  const reloadPrivateVideoMaterials = async () => {
+    if (!authenticationSession || authenticationSession.access.status !== "active" || authenticationSession.preview) return;
+    setPrivateVideoMaterialsLoading(true);
+    try {
+      setPrivateVideoMaterials(await listPrivateVideoMaterials(workspaceId));
+      setPrivateVideoMaterialsError(null);
+    } catch (error) {
+      setPrivateVideoMaterialsError(error instanceof Error ? error.message : "视频素材暂时无法读取，请重试。");
+    } finally {
+      setPrivateVideoMaterialsLoading(false);
+    }
+  };
+
+  const uploadVideoReferenceFile = (clientId: string, file: File, mediaType: VideoReferenceMediaType, previewUrl: string) => {
+    if (mediaType === "audio") return;
+    if (mediaType === "image") {
+      void uploadReferenceFiles([{ clientId, file }], (_id, reference) => {
+        if (!videoReferenceObjectUrlsRef.current.has(previewUrl)) return;
+        if (reference.status === "ready") videoReferenceFilesRef.current.delete(clientId);
+        setVideoReferences((current) => current.map((item) => item.id === clientId
+          ? { ...item, id: reference.status === "ready" ? reference.id : clientId,
+            status: reference.status === "ready" ? "ready" : "failed",
+            errorMessage: reference.errorMessage }
+          : item));
+      }, workspaceId).then(([result]) => {
+        if (result?.reference.status === "ready") void reloadReferenceMaterials();
+      });
+      return;
+    }
+    void uploadPrivateVideoMaterial(clientId, file, workspaceId)
+      .then((material) => {
+        if (!videoReferenceObjectUrlsRef.current.has(previewUrl)) return;
+        videoReferenceFilesRef.current.delete(clientId);
+        setVideoReferences((current) => current.map((item) => item.id === clientId
+          ? { ...item, id: material.id, status: "ready", errorMessage: undefined }
+          : item));
+        void reloadPrivateVideoMaterials();
+      })
+      .catch((error) => {
+        if (!videoReferenceObjectUrlsRef.current.has(previewUrl)) return;
+        setVideoReferences((current) => current.map((item) => item.id === clientId
+          ? { ...item, status: "failed", errorMessage: error instanceof Error ? error.message : "视频上传失败，请重试。" }
+          : item));
+      });
+  };
+
   const handleVideoReferenceFiles = (files: readonly File[]) => {
     if (!files.length) return;
     const nextReferences = [...videoReferences];
     let rejectedCount = 0;
+    const pendingUploads: Array<{ id: string; file: File; mediaType: VideoReferenceMediaType; url: string }> = [];
     for (const file of files) {
       const mediaType = videoReferenceMediaTypeForFile(file);
       if (!mediaType) {
         rejectedCount += 1;
-        toast.error(`${file.name} 的文件格式不受支持`);
+        toast.error(file.type.startsWith("image/")
+          ? `${file.name} 格式不受支持，请使用 JPEG、PNG 或 WebP 图片（20 MB 以内）。`
+          : file.type.startsWith("video/")
+            ? `${file.name} 格式不受支持，请使用 MP4 或 MOV 视频（200 MB 以内）。`
+            : `${file.name} 的文件格式不受支持，请使用图片、MP4/MOV 视频或 WAV/MP3 音频。`);
         continue;
       }
       const fileError = videoReferenceFileError(file, mediaType);
@@ -1715,7 +1797,9 @@ export default function Home({
       }
       const url = URL.createObjectURL(file);
       videoReferenceObjectUrlsRef.current.add(url);
-      nextReferences.push({ ...candidate, url });
+      if (mediaType !== "audio") videoReferenceFilesRef.current.set(candidate.id, file);
+      nextReferences.push({ ...candidate, url, status: mediaType === "audio" ? "ready" : "uploading" });
+      if (mediaType !== "audio") pendingUploads.push({ id: candidate.id, file, mediaType, url });
     }
     if (nextReferences.length !== videoReferences.length) {
       setVideoReferences([...normalizeVideoReferencesForMode(
@@ -1723,12 +1807,20 @@ export default function Home({
         videoGenerationMode,
       )]);
     }
-    if (rejectedCount === 0) {
-      toast.success(`已添加 ${files.length} 个参考素材`);
-    }
+    pendingUploads.forEach((item) => uploadVideoReferenceFile(item.id, item.file, item.mediaType, item.url));
+    if (rejectedCount === 0 && pendingUploads.length === 0) toast.success(`已添加 ${files.length} 个参考素材`);
+  };
+
+  const retryVideoReferenceUpload = (reference: VideoReference) => {
+    const file = videoReferenceFilesRef.current.get(reference.id);
+    if (!file) { toast.info("原始文件已不在当前页面，请重新选择素材。"); return; }
+    setVideoReferences((current) => current.map((item) => item.id === reference.id
+      ? { ...item, status: "uploading", errorMessage: undefined } : item));
+    uploadVideoReferenceFile(reference.id, file, reference.mediaType, reference.url);
   };
 
   const removeVideoReference = (reference: VideoReference) => {
+    videoReferenceFilesRef.current.delete(reference.id);
     if (videoReferenceObjectUrlsRef.current.delete(reference.url)) {
       URL.revokeObjectURL(reference.url);
     }
@@ -1775,6 +1867,23 @@ export default function Home({
   const handleReferenceFiles = (files: readonly File[]) => {
     if (!files.length) return;
 
+    const eligible = files.filter((file) => {
+      if (!PRIVATE_IMAGE_MIME_TYPES.includes(file.type)) {
+        toast.error(`${file.name} 格式不受支持，请使用 JPEG、PNG 或 WebP 图片。`);
+        return false;
+      }
+      if (file.size < 1) {
+        toast.error(`${file.name} 是空文件，请重新选择图片。`);
+        return false;
+      }
+      if (file.size > PRIVATE_IMAGE_UPLOAD_MAX_BYTES) {
+        toast.error(`${file.name} 超过上传上限，单张图片需在 20 MB 以内。`);
+        return false;
+      }
+      return true;
+    });
+    if (!eligible.length) return;
+
     const remaining = MAX_GENERATION_REFERENCES - referenceImages.length;
     if (remaining <= 0) {
       toast.info(`最多可添加 ${MAX_GENERATION_REFERENCES} 张参考图`);
@@ -1783,7 +1892,7 @@ export default function Home({
 
     composerEditRevisionRef.current += 1;
 
-    const accepted = files.slice(0, remaining).map((file) => {
+    const accepted = eligible.slice(0, remaining).map((file) => {
       const clientId = globalThis.crypto.randomUUID();
       const url = URL.createObjectURL(file);
       referenceObjectUrlsRef.current.add(url);
@@ -1798,7 +1907,7 @@ export default function Home({
       };
     });
     setReferenceImages((current) => [...current, ...accepted]);
-    if (files.length > remaining) toast.info(`已添加 ${accepted.length} 张，参考图最多 ${MAX_GENERATION_REFERENCES} 张`);
+    if (eligible.length > remaining) toast.info(`已添加 ${accepted.length} 张，参考图最多 ${MAX_GENERATION_REFERENCES} 张`);
     void uploadReferenceFiles(
       accepted.map(({ clientId, file }) => ({ clientId, file })),
       (clientId, reference) => {
@@ -1856,6 +1965,16 @@ export default function Home({
         toast.error(result?.reference.errorMessage ?? "参考图上传失败，请重试。");
       }
     });
+  };
+
+  const handleComposerDropFiles = (files: readonly File[]) => {
+    if (files.some((file) => videoReferenceMediaTypeForFile(file) === "video")) {
+      if (creationMode !== "video") setCreationMode("video");
+      handleVideoReferenceFiles(files);
+      return;
+    }
+    if (creationMode === "video") handleVideoReferenceFiles(files);
+    else handleReferenceFiles(files);
   };
 
   const reloadReferenceMaterials = async () => {
@@ -1986,6 +2105,14 @@ export default function Home({
       width: material.width,
       height: material.height,
     })),
+    ...privateVideoMaterials.map((material): VideoAssetMaterial => ({
+      id: material.id,
+      mediaType: "video",
+      name: material.name,
+      size: material.size,
+      source: "uploaded",
+      url: material.url,
+    })),
   ].filter((material, index, materials) =>
     materials.findIndex((candidate) => candidate.id === material.id) === index
   );
@@ -2017,10 +2144,10 @@ export default function Home({
     ? filteredVideoAssetMaterials
     : imageReferenceLibraryMaterials;
   const activeReferenceLibraryLoading = referenceLibraryTarget === "video"
-    ? videoAssetMaterials.length === 0 && (assetsLoading || referenceMaterialsLoading)
+    ? videoAssetMaterials.length === 0 && (assetsLoading || referenceMaterialsLoading || privateVideoMaterialsLoading)
     : referenceMaterialsLoading;
   const activeReferenceLibraryError = referenceLibraryTarget === "video"
-    ? videoAssetMaterials.length === 0 ? assetsError ?? referenceMaterialsError : null
+    ? videoAssetMaterials.length === 0 ? assetsError ?? referenceMaterialsError ?? privateVideoMaterialsError : null
     : referenceMaterialsError;
   const videoAssetMediaCounts = {
     image: videoAssetMaterials.filter((material) => material.mediaType === "image").length,
@@ -2082,7 +2209,7 @@ export default function Home({
     setSelectedReferenceMaterialIds([]);
     setReferenceLibraryOpen(true);
     void reloadReferenceMaterials();
-    if (target === "video") void reloadAssets();
+    if (target === "video") { void reloadAssets(); void reloadPrivateVideoMaterials(); }
   };
 
   const toggleReferenceMaterial = (materialId: string) => {
@@ -2174,6 +2301,21 @@ export default function Home({
     );
   };
 
+  const handleUseVideoMaterial = (material: PrivateVideoMaterial) => {
+    const addedCount = addMaterialsToVideoReferences([{
+      id: material.id, mediaType: "video", name: material.name,
+      size: material.size, source: "uploaded", url: material.url,
+    }]);
+    if (addedCount === 0) return;
+    setCreationMode("video");
+    toast.success("视频素材已加入创作器");
+    if (!workspaceId) navigateWorkspace(currentProject
+      ? { kind: "project", projectId: currentProject.id }
+      : { kind: "create" });
+    setActiveView("create");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handleLogout = async () => {
     try {
       const redirecting = await signOut();
@@ -2249,6 +2391,8 @@ export default function Home({
     if (!workspaceId) navigateWorkspace({ kind: "assets" });
     setActiveView("assets");
     void reloadAssets();
+    void reloadReferenceMaterials();
+    void reloadPrivateVideoMaterials();
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -3250,6 +3394,7 @@ export default function Home({
               onModeChange={handleCreationModeChange}
               onPromptChange={handlePromptChange}
               onReferenceFiles={handleReferenceFiles}
+              onDropFiles={handleComposerDropFiles}
               onOpenReferenceLibrary={() => openReferenceLibrary("image")}
               onRemoveReference={removeReference}
               onRetryReference={retryReferenceUpload}
@@ -3292,8 +3437,10 @@ export default function Home({
               onModeChange={handleCreationModeChange}
               onPromptChange={setVideoPrompt}
               onReferenceFiles={handleVideoReferenceFiles}
+              onDropFiles={handleComposerDropFiles}
               onOpenReferenceLibrary={() => openReferenceLibrary("video")}
               onRemoveReference={removeVideoReference}
+              onRetryReference={retryVideoReferenceUpload}
               onGenerationModeChange={handleVideoGenerationModeChange}
               onModelChange={handleVideoModelChange}
               onProviderLineChange={setVideoProviderLine}
@@ -3498,24 +3645,40 @@ export default function Home({
               </header>
 
               {assetSection === "materials" ? (
-                referenceMaterialsLoading ? (
+                referenceMaterialsLoading || privateVideoMaterialsLoading ? (
                   <div className="asset-library-state" role="status"><LoaderCircle size={18} />正在读取上传素材</div>
-                ) : referenceMaterialsError ? (
+                ) : referenceMaterialsError || privateVideoMaterialsError ? (
                   <div className="asset-library-state asset-library-error" role="alert">
                     <CircleAlert size={18} />
-                    <span>{referenceMaterialsError}</span>
-                    <button onClick={() => void reloadReferenceMaterials()}><RefreshCw size={14} />重试</button>
+                    <span>{referenceMaterialsError ?? privateVideoMaterialsError}</span>
+                    <button onClick={() => { void reloadReferenceMaterials(); void reloadPrivateVideoMaterials(); }}><RefreshCw size={14} />重试</button>
                   </div>
-                ) : referenceMaterials.length === 0 ? (
+                ) : referenceMaterials.length === 0 && privateVideoMaterials.length === 0 ? (
                   <div className="asset-library-state asset-library-empty">
                     <ImagePlus size={20} />
                     <strong>还没有上传素材</strong>
-                    <span>在创作器上传参考图后，会自动保存在这里。</span>
+                    <span>在创作器上传图片或视频后，会自动保存在这里。</span>
                   </div>
                 ) : (
-                  <div className="reference-material-grid">
-                    <div className="reference-material-masonry desktop-reference-material-masonry">{renderReferenceMaterialColumns(4)}</div>
-                    <div className="reference-material-masonry mobile-reference-material-masonry">{renderReferenceMaterialColumns(2)}</div>
+                  <div className="uploaded-material-sections">
+                    {privateVideoMaterials.length > 0 && <section aria-label="上传的视频素材">
+                      <h2>视频素材</h2>
+                      <div className="uploaded-video-grid">{privateVideoMaterials.map((material) => (
+                        <article className="reference-material-card" key={material.id}>
+                          <video src={material.url} muted playsInline preload="metadata" controls aria-label={material.name} />
+                          <div className="reference-material-copy">
+                            <strong title={material.name}>{material.name}</strong>
+                            <span>{formatMaterialSize(material.size)}</span>
+                            <small>{formatProjectUpdated(material.uploadedAt)}</small>
+                          </div>
+                          <button className="reference-material-use" onClick={() => handleUseVideoMaterial(material)}><Plus size={14} />用于创作</button>
+                        </article>
+                      ))}</div>
+                    </section>}
+                    {referenceMaterials.length > 0 && <div className="reference-material-grid">
+                      <div className="reference-material-masonry desktop-reference-material-masonry">{renderReferenceMaterialColumns(4)}</div>
+                      <div className="reference-material-masonry mobile-reference-material-masonry">{renderReferenceMaterialColumns(2)}</div>
+                    </div>}
                   </div>
                 )
               ) : assetRouteError ? (
@@ -3660,7 +3823,7 @@ export default function Home({
                   <span>{activeReferenceLibraryError}</span>
                   <button onClick={() => {
                     void reloadReferenceMaterials();
-                    if (referenceLibraryTarget === "video") void reloadAssets();
+                    if (referenceLibraryTarget === "video") { void reloadAssets(); void reloadPrivateVideoMaterials(); }
                   }}><RefreshCw size={14} />重试</button>
                 </div>
               ) : activeReferenceLibraryMaterials.length === 0 ? (

@@ -6,6 +6,7 @@
 
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
+| GG-104 | 创作器拖拽上传、错误反馈、视频素材入库与布局 | 本地代码与门禁通过；待本地迁移及运行预览，未部署 | [任务](tasks/GG-104-media-dropzone-layout.md) / [ADR](decisions/0095-composer-drop-and-private-video-materials.md) |
 | GG-103 | 多参考图即时预览、上传恢复与模型输入控制 | **本地实现与验证完成，未部署**：原图继续入库，模型输入副本单张最多 10 MB；门禁 549/26/0，32131/32142 已更新并健康 | [任务](tasks/GG-103-reference-input-optimization.md) / [ADR](decisions/0094-reference-preview-and-provider-inputs.md) |
 | GG-102 | 本地开发视频默认连接真实 Seedance | **本地实现与验证完成，未部署**：共用仓库外 O1Key 开发凭据，无手动视频开关；结果仍为临时预览 | [任务](tasks/GG-102-real-video-development.md) / [ADR](decisions/0093-default-real-video-in-local-development.md) |
 | GG-101 | 本地开发环境强制使用真实线上接口 | **本地实现完成，未部署**：默认 Compose/checkpoint Web与Worker真实O1Key、仓库外专用开发密钥且缺失失败；mock仅限隔离自动化测试 | [任务](tasks/GG-101-real-online-local-development.md) / [ADR](decisions/0092-real-online-interfaces-for-local-development.md) |
@@ -86,13 +87,12 @@
 | GG-034 | 图片 / 视频创作模式与 Seedance 前端 | 前端实现、默认多模态/首尾帧、无备注统一上传、显式并发素材创建选择、历史素材复检决策、统一媒体资产选择；待用户检查，不接真实视频接口 | [任务](tasks/GG-034-video-creation-frontend.md) |
 | GG-035 | Seedance 线路与 O1Key 接口契约 | 线路 UI、标准 Doubao/备用 HC adapter、端点契约与一次标准线路真实视频均已验证；暂不接定价和产品提交 | [任务](tasks/GG-035-seedance-provider-lines.md) |
 | GG-036 | Seedance 页面真实接口实测 | 最新候选 32140 真实接口本地全栈已启动；企业测试账号准备完成，Chrome 登录交用户操作；不接视频定价/持久化/生产 | [任务](tasks/GG-036-seedance-page-smoke.md) |
-| GG-037 | 图片与视频混排、紧凑状态及统一详情样式模拟 | 用户已确认布局；不接真实生成/持久化 | [任务](tasks/GG-037-mixed-media-style-preview.md) |
-| GG-038 | Seedance ByteDance 品牌图标 | 本地门禁与现有 Chrome 验证通过；只改图标，未发布 | [任务](tasks/GG-038-seedance-brand-icon.md) |
+| GG-037—038 | 图片与视频混排样式、Seedance 品牌图标 | 用户已确认布局；图标已验证，历史本地任务 | [GG037](tasks/GG-037-mixed-media-style-preview.md) · [GG038](tasks/GG-038-seedance-brand-icon.md) |
 | GG-039 | 视频生成数量 1/2/4 与独立并发任务 | 本地完成并验证，待用户检查；未真实并发实测/发布 | [任务](tasks/GG-039-video-count-concurrency.md) |
-| GG-040 | 图片/视频 `---` 批量提示词与数量乘积并发 | 本地门禁与 Chrome 验证通过，待用户检查；未真实批量实测/发布 | [任务](tasks/GG-040-batch-prompts.md) |
-| GG-041 | 移除图片/视频批量提示词重复说明 | 本地门禁与现有 Chrome 验证通过，待用户检查；并发与报价不变，未发布 | [任务](tasks/GG-041-remove-batch-prompt-summary.md) |
+| GG-040—041 | 图片/视频 `---` 批量提示词与数量乘积并发、去重说明 | 本地门禁与 Chrome 验证通过，待用户检查；未真实批量实测/发布 | [GG040](tasks/GG-040-batch-prompts.md) · [GG041](tasks/GG-041-remove-batch-prompt-summary.md) |
 | GG-042—GG-062 | 抽屉/缩略图/站长导航/审计/GPT线路等 | 均已随 GG-097 上线 | [GG042](tasks/GG-042-parameter-drawer-overlay.md) · [GG043](tasks/GG-043-larger-reference-previews.md) · [GG059](tasks/GG-059-site-owner-workspace.md) · [GG060](tasks/GG-060-management-heading-hierarchy.md) · [GG061](tasks/GG-061-audit-log-section.md) · [GG062](tasks/GG-062-gpt-image-lines.md) |
-## 已明确搁置（不得自动恢复） · 最后同步2026-09-23；GG-024—103已占用，下一个需求从GG-104分配
+
+## 已明确搁置（不得自动恢复） · 最后同步2026-09-23；GG-024—104已占用，下一个需求从GG-105分配
 | ID | 事项 | 恢复条件 | 入口 |
 | --- | --- | --- | --- |
 | GG-900 | C6 自动账户删除/身份删除/举报与内容处理 | 站长明确要求并重审生产差异 | [保全与恢复](tasks/GG-900-deferred-c6.md) |

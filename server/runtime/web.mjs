@@ -23,6 +23,7 @@ import { createGenerationNodeApiHandler } from "../generation/node-api.mjs";
 import { createCreationDraftNodeApiHandler } from "../drafts/node-api.mjs";
 import { createDistributionNodeApiHandler } from "../distribution/node-api.mjs";
 import { createReferenceNodeApiHandler } from "../references/node-api.mjs";
+import { createVideoMaterialNodeApiHandler } from "../video-materials/node-api.mjs";
 import { createProjectNodeApiHandler } from "../projects/node-api.mjs";
 import { createOrganizationNodeApiHandler } from "../organizations/node-api.mjs";
 import { observeHttpRequest } from "../observability/http.mjs";
@@ -84,6 +85,7 @@ const handleProfileNodeApi = createProfileNodeApiHandler({ authenticate });
 const handleInspirationNodeApi = createInspirationNodeApiHandler({ authenticate });
 const handleBillingNodeApi = createBillingNodeApiHandler({ authenticate });
 const handleReferenceNodeApi = createReferenceNodeApiHandler({ authenticate });
+const handleVideoMaterialNodeApi = createVideoMaterialNodeApiHandler({ authenticate });
 const handleProjectNodeApi = createProjectNodeApiHandler({ authenticate });
 const handleOrganizationNodeApi = createOrganizationNodeApiHandler({ authenticate });
 const defaultSessionCookie = localSessionCookie(authenticationConfig);
@@ -120,6 +122,9 @@ server.on("request", (request, response) => {
     )
     .then((handled) =>
       handled ? true : handleReferenceNodeApi(request, response),
+    )
+    .then((handled) =>
+      handled ? true : handleVideoMaterialNodeApi(request, response),
     )
     .then((handled) =>
       handled ? true : handleProjectNodeApi(request, response),
