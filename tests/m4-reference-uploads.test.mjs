@@ -32,7 +32,7 @@ test("reference upload intents enforce type, size, count, and stable IDs", () =>
   assert.throws(
     () =>
       validateReferenceUploadRequest({
-        files: [{ ...validUpload, byteSize: 20 * 1024 * 1024 + 1 }],
+        files: [{ ...validUpload, byteSize: 200 * 1024 * 1024 + 1 }],
       }),
     (error) => error.code === "UPLOAD_TOO_LARGE",
   );

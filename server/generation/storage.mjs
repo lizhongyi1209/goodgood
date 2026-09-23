@@ -41,7 +41,8 @@ export async function readPrivateObject({ bucket, key, maxBytes, storage }) {
   if (!response.Body || typeof response.Body.transformToByteArray !== "function") {
     throw new Error("Private object body is unavailable.");
   }
-  const bytes = Buffer.from(await response.Body.transformToByteArray());
+  const data = await response.Body.transformToByteArray();
+  const bytes = Buffer.from(data.buffer, data.byteOffset, data.byteLength);
   if (!bytes.length) throw new Error("Private object is empty.");
   if (Number.isFinite(maxBytes) && bytes.length > maxBytes) {
     throw new Error("Private object exceeds the allowed size.");

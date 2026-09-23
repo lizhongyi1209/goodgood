@@ -381,8 +381,8 @@ descriptions to fill space.
 - The tray sits above the prompt in both modes. External images/videos may be
   dropped anywhere on the composer; dropping video in image mode opens video
   mode without submitting. Internal image dragging still reorders thumbnails.
-- Check each file before creating its preview. JPEG/PNG/WebP images have a
-  20 MiB original upload limit; MP4/MOV videos have a 200 MiB limit. Rejected
+- Check each file before creating its preview. JPEG/PNG/WebP images and
+  MP4/MOV videos have a 200 MiB original upload limit. Rejected
   files stay out of the tray and name the allowed limit or format. Failed
   uploads keep the local preview, show a safe reason, and offer retry/removal.
 - A selected reference appears immediately from its local file, with a small

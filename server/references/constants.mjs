@@ -6,7 +6,7 @@ export const REFERENCE_LIMITS = Object.freeze({
   maxPixels: 40_000_000,
   maxReferences: 10,
   minDimension: 64,
-  uploadTtlSeconds: 10 * 60,
+  uploadTtlSeconds: 30 * 60,
 });
 
 export const REFERENCE_MIME_BY_FORMAT = Object.freeze({

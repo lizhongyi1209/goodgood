@@ -75,7 +75,7 @@ export function validateReferenceUploadRequest(payload) {
     if (byteSize > REFERENCE_LIMITS.maxBytes) {
       throw new ReferenceRequestError(
         "UPLOAD_TOO_LARGE",
-        "单张参考图不能超过 20 MB。",
+        "单张参考图不能超过 200 MB。",
       );
     }
     return { byteSize, clientId, mimeType, name };
@@ -116,7 +116,7 @@ export async function inspectReferenceImage({ bytes, declaredMimeType }) {
   if (bytes.length > REFERENCE_LIMITS.maxBytes) {
     throw new ReferenceRequestError(
       "UPLOAD_TOO_LARGE",
-      "单张参考图不能超过 20 MB。",
+      "单张参考图不能超过 200 MB。",
     );
   }
 

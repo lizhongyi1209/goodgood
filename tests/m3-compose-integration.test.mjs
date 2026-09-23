@@ -608,7 +608,7 @@ test(
       body: JSON.stringify({
         files: [
           {
-            byteSize: 20 * 1024 * 1024 + 1,
+            byteSize: 200 * 1024 * 1024 + 1,
             clientId: `m4-oversized-${suffix}`,
             mimeType: "image/png",
             name: "oversized.png",

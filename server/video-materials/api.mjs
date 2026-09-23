@@ -11,7 +11,7 @@ import { PRIVATE_VIDEO_UPLOAD_MAX_BYTES, PRIVATE_VIDEO_MIME_TYPES } from "../../
 
 export const VIDEO_MATERIAL_LIMITS = Object.freeze({
   maxBytes: PRIVATE_VIDEO_UPLOAD_MAX_BYTES,
-  uploadTtlSeconds: 10 * 60,
+  uploadTtlSeconds: 30 * 60,
   mimeTypes: PRIVATE_VIDEO_MIME_TYPES,
 });
 

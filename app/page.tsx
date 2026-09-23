@@ -1756,7 +1756,7 @@ export default function Home({
       if (!mediaType) {
         rejectedCount += 1;
         toast.error(file.type.startsWith("image/")
-          ? `${file.name} 格式不受支持，请使用 JPEG、PNG 或 WebP 图片（20 MB 以内）。`
+          ? `${file.name} 格式不受支持，请使用 JPEG、PNG 或 WebP 图片（200 MB 以内）。`
           : file.type.startsWith("video/")
             ? `${file.name} 格式不受支持，请使用 MP4 或 MOV 视频（200 MB 以内）。`
             : `${file.name} 的文件格式不受支持，请使用图片、MP4/MOV 视频或 WAV/MP3 音频。`);
@@ -1877,7 +1877,7 @@ export default function Home({
         return false;
       }
       if (file.size > PRIVATE_IMAGE_UPLOAD_MAX_BYTES) {
-        toast.error(`${file.name} 超过上传上限，单张图片需在 20 MB 以内。`);
+        toast.error(`${file.name} 超过上传上限，单张图片需在 200 MB 以内。`);
         return false;
       }
       return true;

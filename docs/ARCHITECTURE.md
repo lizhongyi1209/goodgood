@@ -1,5 +1,10 @@
 # Architecture
 
+GG-105 raises private reference originals to 200 MiB, matching private video
+materials, while the Worker still derives image model inputs within its per-file
+and batch budgets. Signed PUTs have a 30-minute window; private object reads
+avoid a second full-size byte copy. Avatar and editor export limits are separate.
+
 GG-104 adds `server/video-materials` for owner-scoped signed upload intents,
 R2/RustFS object validation, status, and reusable video listing. Browser files
 travel directly to private object storage using a short-lived signed PUT;

@@ -745,8 +745,8 @@ job is deferred to the real gateway milestone.
 GG-077：下架/不可用案例不增加查看或使用；载入固定预设前先验证参数和可用报价。查看/使用的交互UUID跨effect重入和重试保持，报价刷新不增加使用。实际生成仍通过原子预留和版本冲突/积分不足恢复，不在浏览器拼接隐藏参数。
 # GG-104 upload failures
 
-The composer checks image type and 20 MiB original size, video type and
-200 MiB size before adding a preview. Each accepted file displays a local
+The composer checks image and video type and 200 MiB original size before
+adding a preview. Each accepted file displays a local
 preview while uploading. A failed file stays visible with a safe server
 message, HTTP status or request ID when supplied, plus retry and removal.
 Authentication, workspace and private-object errors do not expose SQL, keys,

@@ -30,7 +30,7 @@ test("GG-104 validates video type, size and container header before readiness", 
   const valid = { clientId: "local-1", name: "镜头.mov", mimeType: "video/quicktime", byteSize: 1024 };
   assert.deepEqual(validateVideoUploadRequest(valid), valid);
   assert.equal(VIDEO_MATERIAL_LIMITS.maxBytes, 200 * 1024 * 1024);
-  assert.equal(PRIVATE_IMAGE_UPLOAD_MAX_BYTES, 20 * 1024 * 1024);
+  assert.equal(PRIVATE_IMAGE_UPLOAD_MAX_BYTES, 200 * 1024 * 1024);
   assert.throws(() => validateVideoUploadRequest({ ...valid, byteSize: VIDEO_MATERIAL_LIMITS.maxBytes + 1 }),
     (error) => error.code === "UPLOAD_TOO_LARGE");
   assert.throws(() => validateVideoUploadRequest({ ...valid, mimeType: "video/webm" }),

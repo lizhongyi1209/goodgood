@@ -4,6 +4,7 @@ import {
 } from "./provider.mjs";
 import { readPrivateObject } from "./storage.mjs";
 import { prepareProviderReference, providerReferenceByteBudget } from "./reference-inputs.mjs";
+import { PRIVATE_IMAGE_UPLOAD_MAX_BYTES } from "../../shared/contracts/upload-limits.mjs";
 import { BANANA_LINES, supportsImageLines, isBananaModel, isBananaLineReady, isValidImageLine } from "../../shared/contracts/banana-lines.mjs";
 import {
   US_GATEWAY_GPT_IMAGE_25_FLARE_ROUTE,
@@ -299,7 +300,7 @@ export function createGenerationProvider({
           const object = await readPrivateObject({
             bucket: config.objectStorage.bucket,
             key: reference.objectKey,
-            maxBytes: 20 * 1024 * 1024,
+            maxBytes: PRIVATE_IMAGE_UPLOAD_MAX_BYTES,
             storage,
           });
           const prepared = await prepareProviderReference({
