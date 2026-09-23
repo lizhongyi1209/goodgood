@@ -6,7 +6,7 @@
 
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
-| GG-103 | 多参考图即时预览、上传恢复与模型输入控制 | **本地实现与代码验证完成，未部署**：原图继续入库，模型输入副本单张最多 10 MB；门禁 549/26/0，本地预览待更新 | [任务](tasks/GG-103-reference-input-optimization.md) / [ADR](decisions/0094-reference-preview-and-provider-inputs.md) |
+| GG-103 | 多参考图即时预览、上传恢复与模型输入控制 | **本地实现与验证完成，未部署**：原图继续入库，模型输入副本单张最多 10 MB；门禁 549/26/0，32131/32142 已更新并健康 | [任务](tasks/GG-103-reference-input-optimization.md) / [ADR](decisions/0094-reference-preview-and-provider-inputs.md) |
 | GG-102 | 本地开发视频默认连接真实 Seedance | **本地实现与验证完成，未部署**：共用仓库外 O1Key 开发凭据，无手动视频开关；结果仍为临时预览 | [任务](tasks/GG-102-real-video-development.md) / [ADR](decisions/0093-default-real-video-in-local-development.md) |
 | GG-101 | 本地开发环境强制使用真实线上接口 | **本地实现完成，未部署**：默认 Compose/checkpoint Web与Worker真实O1Key、仓库外专用开发密钥且缺失失败；mock仅限隔离自动化测试 | [任务](tasks/GG-101-real-online-local-development.md) / [ADR](decisions/0092-real-online-interfaces-for-local-development.md) |
 | GG-100 | 生产主机迁移到单一 Compose 并清理旧 blue/green 残留 | **生产执行完成**：固定 `goodgood-production` Web/Worker healthy、旧 4 容器/2 网络/槽位与动态上游残留已删；恢复点 `71e758c4`，数据卷完整，公网 200 | [任务](tasks/GG-100-production-single-slot-host-cleanup.md) / [记录](operations/2026-09-22-gg100-single-slot-host-cleanup.md) / [ADR](decisions/0091-single-slot-compose-release.md) |
