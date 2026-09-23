@@ -15,7 +15,7 @@ export const VIDEO_MATERIAL_LIMITS = Object.freeze({
   mimeTypes: PRIVATE_VIDEO_MIME_TYPES,
 });
 
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function ownerIdFromContext(ownerContext) {
   if (!ownerContext?.ownerId) throw sessionExpiredError();
@@ -59,10 +59,10 @@ async function findVideoMaterial(pool, { ownerId, workspaceId, materialId }) {
   return result.rows[0] ?? null;
 }
 
-export async function createVideoMaterialUpload({ file, ownerContext, workspaceId = /** @type {string | null} */ (null) }) {
+export async function createVideoMaterialUpload({ file, ownerContext, workspaceId = /** @type {string | null} */ (null), resourcesOverride = null }) {
   const ownerId = ownerIdFromContext(ownerContext);
   const validated = validateVideoUploadRequest(file);
-  const resources = await getGenerationResources();
+  const resources = resourcesOverride ?? await getGenerationResources();
   await prepareObjectStorage(resources);
   const workspace = await resolveWorkspaceAccess(resources.pool, { ownerId, workspaceId, write: true });
   const materialId = randomUUID();
@@ -99,10 +99,10 @@ export function validateVideoObjectHeader(bytes, mimeType) {
   }
 }
 
-export async function completeVideoMaterialUpload({ materialId, ownerContext, workspaceId = /** @type {string | null} */ (null) }) {
+export async function completeVideoMaterialUpload({ materialId, ownerContext, workspaceId = /** @type {string | null} */ (null), resourcesOverride = null }) {
   validateId(materialId);
   const ownerId = ownerIdFromContext(ownerContext);
-  const resources = await getGenerationResources();
+  const resources = resourcesOverride ?? await getGenerationResources();
   const row = await findVideoMaterial(resources.pool, { materialId, ownerId, workspaceId });
   if (!row) throw new ReferenceRequestError("VIDEO_MATERIAL_NOT_FOUND", "未找到该视频素材。", 404);
   if (row.upload_state === "ready") return { id: row.id, name: row.original_file_name, status: "ready" };
@@ -146,19 +146,19 @@ export async function completeVideoMaterialUpload({ materialId, ownerContext, wo
   return { id: materialId, name: row.original_file_name, status: "ready" };
 }
 
-export async function getVideoMaterialStatus({ materialId, ownerContext, workspaceId = /** @type {string | null} */ (null) }) {
+export async function getVideoMaterialStatus({ materialId, ownerContext, workspaceId = /** @type {string | null} */ (null), resourcesOverride = null }) {
   validateId(materialId);
   const ownerId = ownerIdFromContext(ownerContext);
-  const resources = await getGenerationResources();
+  const resources = resourcesOverride ?? await getGenerationResources();
   const row = await findVideoMaterial(resources.pool, { materialId, ownerId, workspaceId });
   if (!row) throw new ReferenceRequestError("VIDEO_MATERIAL_NOT_FOUND", "未找到该视频素材。", 404);
   return { id: row.id, name: row.original_file_name, status: row.upload_state,
     ...(row.error_code ? { errorCode: row.error_code } : {}) };
 }
 
-export async function listVideoMaterials({ ownerContext, workspaceId = /** @type {string | null} */ (null) }) {
+export async function listVideoMaterials({ ownerContext, workspaceId = /** @type {string | null} */ (null), resourcesOverride = null }) {
   const ownerId = ownerIdFromContext(ownerContext);
-  const resources = await getGenerationResources();
+  const resources = resourcesOverride ?? await getGenerationResources();
   const workspace = await resolveWorkspaceAccess(resources.pool, { ownerId, workspaceId });
   const result = await resources.pool.query(`SELECT id, object_key, original_file_name, declared_mime_type,
       declared_byte_size, uploaded_at FROM video_materials

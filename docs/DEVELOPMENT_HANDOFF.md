@@ -1,6 +1,6 @@
 # 当前开发版本与跨窗口交接
 
-- 日期：2026-09-23；GG-104 拖拽上传与视频素材入库**代码/门禁通过，待本地运行验证，未部署**；当前分支 `codex/GG-104-media-dropzone-layout`，基线为 GG-103 `1f24318`。
+- 日期：2026-09-23；GG-104 拖拽上传与视频素材入库**本地实现/门禁/运行预览完成，未部署**；当前分支 `codex/GG-104-media-dropzone-layout`，基线为 GG-103 `1f24318`。
 - 当前项目入口：F:/goodgood；累计代码包含a73835f、GG081—091与GG092交接。`.codex/`是用户本地设置，保留不提交。
 - **生产已部署并开放**：`goodgood.o1key.com`，revision `7888554` / 迁移 `0044` / 配置 `b3d7310a…ddf3`；应用仅 `goodgood-production` 单项目。详见 CURRENT_STATE.md 与 [GG-100 记录](operations/2026-09-22-gg100-single-slot-host-cleanup.md)。
 - 新窗口先读AGENTS/CURRENT_STATE/WORKFLOW/IMPLEMENTATION_PLAN/BACKLOG，然后本页；**下一普通任务从GG-105分配**。
@@ -36,11 +36,13 @@ git merge-base --is-ancestor bb782c0 HEAD
 
 ## 当前本地预览与依赖（保留用户数据）
 
-GG-104 代码门禁 579 项（553 通过/26 隔离跳过/0 失败）。拖入图片/视频
+GG-104 代码门禁 581 项（555 通过/26 隔离跳过/0 失败）。拖入图片/视频
 立即本地预览并后台上传；上传前图片 20 MiB、视频 200 MiB 限制，失败原因可见；
-新增迁移 0045 与私有视频素材库。当前 32131 仍为 GG-103，须先验证本地数据库目标、
-仅前进应用 0045，再提交构建 GG-104 检查点和替换 Web；不执行带真实 Worker 的
-fixture/生成测试。运行验证结果以 GG-104 任务卡更新为准。
+新增迁移 0045 与私有视频素材库。本地数据库原停在 0043；通用迁移器因更早的
+0001 校验值不符安全停止，旧记录未重置。核对目标、活动任务 0 及提交 SQL 后，
+只在本地事务中前进 0044/0045，当前记录 45 条；32131 已由 GG-104 检查点启动，
+版本、页面、未登录视频素材 401 与 32142 真实 Worker 健康均核对。未写测试素材到
+真实 Worker 共用数据库，也未做真实文件上传端到端测试，见 GG-104 任务卡。
 
 GG-103 代码门禁已通过（575 项：549 通过/26 隔离跳过/0 失败）。参考图选择后
 本地立即预览、后台最多两张同时直传；上传完成超时会查询真实素材状态。Worker
@@ -60,7 +62,7 @@ GG-102 已在本地验证：视频与图片共用仓库外专用 O1Key 凭据，
 | --- | --- | --- |
 | 工作区Web | http://127.0.0.1:32131/login | `node scripts/local-checkpoint.mjs start workspace`；`/register`为注册入口；邮箱验证码、无local账户预设；端口实时核验PID，代码由version接口证明 |
 | 真实 worker | http://127.0.0.1:32142/health/ready | `node scripts/local-checkpoint.mjs start worker`；**真实 O1Key，真实计费** |
-| PostgreSQL | loopback54449/goodgood | goodgood-gg052-postgres-1，最新0043 |
+| PostgreSQL | loopback54449/goodgood | goodgood-gg052-postgres-1，最新0045 |
 | Valkey | loopback56449/db0 | goodgood-gg052-valkey-1 |
 | RustFS | loopback58049/58050 | goodgood-gg052-object-storage-1，桶goodgood-gg052-local |
 

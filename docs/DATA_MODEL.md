@@ -817,7 +817,7 @@ GG-077 migration0038：parameter_visibility(public/prompt_hidden/hidden)与旧pr
 Migration `0045_gg104_private_video_materials.sql` adds `video_materials` without
 converting existing image references. Each record belongs to one active owner
 and workspace, names one private object key, records declared MP4/MOV MIME and
-1–200 MiB size, and moves `pending → ready` only after the object size, type,
+1-byte to 200-MiB size, and moves `pending → ready` only after the object size, type,
 and container header are checked. `rejected` and `expired` are not listed for
 reuse; the reference cleanup command removes their old objects and rows after
 24 hours. Ready materials remain in the library. Video references are not

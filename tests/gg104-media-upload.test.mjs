@@ -2,8 +2,10 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { Readable } from "node:stream";
 import test from "node:test";
+import { S3Client } from "@aws-sdk/client-s3";
 import { createVideoMaterialNodeApiHandler } from "../server/video-materials/node-api.mjs";
-import { validateVideoObjectHeader, validateVideoUploadRequest, VIDEO_MATERIAL_LIMITS } from "../server/video-materials/api.mjs";
+import { createVideoMaterialUpload, completeVideoMaterialUpload, getVideoMaterialStatus,
+  listVideoMaterials, validateVideoObjectHeader, validateVideoUploadRequest, VIDEO_MATERIAL_LIMITS } from "../server/video-materials/api.mjs";
 import { cleanupExpiredVideoUploads } from "../server/video-materials/cleanup.mjs";
 import { PRIVATE_IMAGE_UPLOAD_MAX_BYTES } from "../shared/contracts/upload-limits.mjs";
 
@@ -107,4 +109,92 @@ test("GG-104 cleanup previews old unfinished videos and deletes only on execute"
   assert.deepEqual(result, { eligible: 1, deleted: 1, failed: 0 });
   assert.equal(storageCalls[0].Bucket, "disposable-test-bucket");
   assert.match(queries.at(-1)[0], /DELETE FROM video_materials/);
+});
+
+function fakeVideoResources({ storedSize = 32 } = {}) {
+  let row = null;
+  const publicStorage = new S3Client({
+    credentials: { accessKeyId: "disposable", secretAccessKey: "disposable-secret" },
+    endpoint: "http://127.0.0.1:58049", forcePathStyle: true, region: "us-east-1",
+  });
+  const pool = { async query(sql, values) {
+    if (sql.includes("FROM users u")) {
+      return ["owner-a", "owner-b"].includes(values[0])
+        ? { rows: [{ workspace_id: "workspace-a", kind: "organization", status: "active",
+          membership_status: "active", membership_role: "org_member" }] }
+        : { rows: [] };
+    }
+    if (sql.startsWith("INSERT INTO video_materials")) {
+      row = {
+        id: values[0], owner_id: values[1], workspace_id: values[2], object_key: values[3],
+        original_file_name: values[4], declared_mime_type: values[5], declared_byte_size: values[6],
+        expires_at: new Date(Date.now() + 600_000), upload_state: "pending",
+      };
+      return { rows: [{ expires_at: row.expires_at }], rowCount: 1 };
+    }
+    if (sql.startsWith("SELECT * FROM video_materials")) {
+      return { rows: row && row.id === values[0] && row.workspace_id === values[1] && row.owner_id === values[2]
+        ? [row] : [], rowCount: row ? 1 : 0 };
+    }
+    if (sql.startsWith("UPDATE video_materials SET upload_state='ready'")) {
+      row = { ...row, upload_state: "ready", uploaded_at: new Date() };
+      return { rows: [row], rowCount: 1 };
+    }
+    if (sql.startsWith("UPDATE video_materials SET upload_state='rejected'")) {
+      row = { ...row, upload_state: "rejected", error_code: values[2] };
+      return { rowCount: 1 };
+    }
+    if (sql.includes("FROM video_materials") && sql.includes("ORDER BY uploaded_at")) {
+      return { rows: row?.upload_state === "ready" && row.workspace_id === values[0] && row.owner_id === values[1]
+        ? [row] : [], rowCount: row?.upload_state === "ready" ? 1 : 0 };
+    }
+    throw Error(`Unexpected SQL: ${sql.slice(0, 80)}`);
+  } };
+  const header = Buffer.from([0, 0, 0, 32, 102, 116, 121, 112, 105, 115, 111, 109, 0, 0, 0, 0]);
+  const storage = { async send(command) {
+    if (command.constructor.name === "HeadBucketCommand" || command.constructor.name === "PutBucketCorsCommand") return {};
+    if (command.constructor.name === "HeadObjectCommand") return { ContentLength: storedSize, ContentType: "video/mp4" };
+    if (command.constructor.name === "GetObjectCommand") return { Body: { async transformToByteArray() { return header; } } };
+    throw Error(`Unexpected storage command: ${command.constructor.name}`);
+  } };
+  return {
+    config: { objectStorage: { bucket: "disposable-video-test", provisioningMode: "manage", uploadAllowedOrigins: ["http://127.0.0.1:32131"] } },
+    pool, publicStorage, storage,
+  };
+}
+
+test("GG-104 video intent, validation, listing and owner isolation complete without provider", async () => {
+  const resourcesOverride = fakeVideoResources();
+  const ownerContext = { ownerId: "owner-a" };
+  const intent = await createVideoMaterialUpload({
+    file: { clientId: "video-a", name: "test.mp4", mimeType: "video/mp4", byteSize: 32 },
+    ownerContext, resourcesOverride,
+  });
+  assert.equal(intent.material.status, "uploading");
+  assert.match(intent.material.id, /^[0-9a-f-]{36}$/i);
+  assert.match(intent.uploadUrl, /^http:\/\/127\.0\.0\.1:58049\/disposable-video-test\//);
+  assert.equal(intent.headers["content-type"], "video/mp4");
+  const ready = await completeVideoMaterialUpload({ materialId: intent.material.id, ownerContext, resourcesOverride });
+  assert.equal(ready.status, "ready");
+  assert.equal((await getVideoMaterialStatus({ materialId: ready.id, ownerContext, resourcesOverride })).status, "ready");
+  const materials = await listVideoMaterials({ ownerContext, resourcesOverride });
+  assert.equal(materials.materials.length, 1);
+  assert.equal(materials.materials[0].id, ready.id);
+  assert.match(materials.materials[0].url, /^http:\/\/127\.0\.0\.1:58049\//);
+  assert.equal((await listVideoMaterials({ ownerContext: { ownerId: "owner-b" }, resourcesOverride })).materials.length, 0);
+  await assert.rejects(getVideoMaterialStatus({ materialId: ready.id,
+    ownerContext: { ownerId: "owner-b" }, resourcesOverride }), (error) => error.status === 404);
+});
+
+test("GG-104 rejects a stored video size mismatch before library visibility", async () => {
+  const resourcesOverride = fakeVideoResources({ storedSize: 31 });
+  const ownerContext = { ownerId: "owner-a" };
+  const intent = await createVideoMaterialUpload({
+    file: { clientId: "video-b", name: "test.mp4", mimeType: "video/mp4", byteSize: 32 },
+    ownerContext, resourcesOverride,
+  });
+  assert.match(intent.material.id, /^[0-9a-f-]{36}$/i);
+  await assert.rejects(completeVideoMaterialUpload({ materialId: intent.material.id, ownerContext, resourcesOverride }),
+    (error) => error.code === "UPLOAD_SIZE_MISMATCH");
+  assert.equal((await listVideoMaterials({ ownerContext, resourcesOverride })).materials.length, 0);
 });
