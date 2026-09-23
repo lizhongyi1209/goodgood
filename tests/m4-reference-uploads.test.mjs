@@ -189,6 +189,10 @@ test("reference HTTP routes preserve the authenticated owner context", async () 
         calls.push(input);
         return { references: [{ id: "reference-a" }] };
       },
+      async getReferenceUploadStatus(input) {
+        calls.push(input);
+        return { id: input.referenceId, name: "服装参考.png", status: "ready" };
+      },
       async readReferenceAssetContent(input) {
         calls.push(input);
         return { bytes: Buffer.from("image-bytes"), mimeType: "image/png" };
@@ -228,6 +232,19 @@ test("reference HTTP routes preserve the authenticated owner context", async () 
     workspaceId: null,
   });
 
+  const statusResponse = responseRecorder();
+  await handler(requestFor({
+    method: "GET",
+    url: "/api/references/20000000-0000-4000-8000-000000000001/status",
+  }), statusResponse);
+  assert.equal(statusResponse.statusCode, 200);
+  assert.equal(JSON.parse(statusResponse.body).status, "ready");
+  assert.deepEqual(calls[2], {
+    ownerContext,
+    referenceId: "20000000-0000-4000-8000-000000000001",
+    workspaceId: null,
+  });
+
   const listResponse = responseRecorder();
   await handler(
     requestFor({ method: "GET", url: "/api/references" }),
@@ -238,7 +255,7 @@ test("reference HTTP routes preserve the authenticated owner context", async () 
   assert.deepEqual(JSON.parse(listResponse.body), {
     references: [{ id: "reference-a" }],
   });
-  assert.deepEqual(calls[2], { ownerContext, workspaceId: null });
+  assert.deepEqual(calls[3], { ownerContext, workspaceId: null });
 
   const contentResponse = responseRecorder();
   await handler(
@@ -252,7 +269,7 @@ test("reference HTTP routes preserve the authenticated owner context", async () 
   assert.equal(contentResponse.headers["content-type"], "image/png");
   assert.equal(contentResponse.headers["content-length"], "11");
   assert.deepEqual(contentResponse.rawBody, Buffer.from("image-bytes"));
-  assert.deepEqual(calls[3], {
+  assert.deepEqual(calls[4], {
     ownerContext,
     referenceId: "20000000-0000-4000-8000-000000000001",
     workspaceId: null,

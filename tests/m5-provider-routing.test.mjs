@@ -149,7 +149,7 @@ test("O1Key worker route reads private reference bytes, uploads, and resumes pol
   context.after(() => fake.close());
   const address = fake.address();
   assert.ok(address && typeof address === "object");
-  const storedBytes = Buffer.from("decoded-reference-bytes");
+  const storedBytes = await readFile(new URL("../public/nano-fashion.png", import.meta.url));
   const storageReads = [];
   const storage = {
     async send(command) {
@@ -268,6 +268,7 @@ test("Nano Banana 2 fans four outputs into durable single-image O1Key tasks", as
   context.after(() => fake.close());
   const address = fake.address();
   assert.ok(address && typeof address === "object");
+  const storedBytes = await readFile(new URL("../public/nano-fashion.png", import.meta.url));
   const storageReads = [];
   const storage = {
     async send(command) {
@@ -275,10 +276,10 @@ test("Nano Banana 2 fans four outputs into durable single-image O1Key tasks", as
       return {
         Body: {
           async transformToByteArray() {
-            return Buffer.from("one-reference-upload");
+            return storedBytes;
           },
         },
-        ContentLength: 20,
+        ContentLength: storedBytes.length,
         ContentType: "image/png",
       };
     },

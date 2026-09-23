@@ -110,6 +110,13 @@ user-authorized model administration, with audit and history comparison.
 
 # Testing strategy
 
+GG-103 targeted tests cover local upload state and retry, two-file transfer
+concurrency, independent failure of one selected file, owner-scoped completion
+status, and provider input preparation for small, large, transparent and invalid
+images. The O1Key adapter rejects inputs above 10,000,000 bytes before upload.
+These injected tests never call the real model; a live provider compatibility
+check would be billable and needs its own explicit run.
+
 GG-062 covers nine exact GPT mappings, legacy routes/hashes, 567 injected
 non-billable ratio/resolution/count payloads with five references/long prompts,
 independent quotes, availability and state restore. Server rendering verifies

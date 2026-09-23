@@ -102,6 +102,7 @@ export type CreationComposerProps = Readonly<{
   onReferenceFiles: (files: readonly File[]) => void;
   onOpenReferenceLibrary?: () => void;
   onRemoveReference: (reference: GenerationReference) => void;
+  onRetryReference?: (reference: GenerationReference) => void;
   onReorderReference?: (sourceId: string, targetId: string) => void;
   referenceEditorMaterials?: readonly ReferenceMaterial[];
   onSaveReferenceEdit?: (source: GenerationReference, file: File) => Promise<void>;
@@ -180,6 +181,7 @@ export function CreationComposer({
   onReferenceFiles,
   onOpenReferenceLibrary = () => {},
   onRemoveReference,
+  onRetryReference,
   onReorderReference,
   referenceEditorMaterials = [],
   onSaveReferenceEdit,
@@ -354,7 +356,7 @@ export function CreationComposer({
                 onDragStart={(event) => {
                   if (
                     event.target instanceof Element &&
-                    event.target.closest(".reference-thumbnail-remove")
+                    event.target.closest(".reference-thumbnail-remove, .reference-thumbnail-retry")
                   ) {
                     event.preventDefault();
                     return;
@@ -410,7 +412,7 @@ export function CreationComposer({
                   }
                 }}
               >
-                <PrivateObjectImage src={image.url} alt={`参考图 ${index + 1}`} />
+                <PrivateObjectImage src={image.url} alt={`参考图 ${index + 1}`} loading="eager" />
                 <span className="reference-thumbnail-ordinal">图 {index + 1}</span>
                 {image.status !== "ready" && (
                   <span
@@ -427,6 +429,16 @@ export function CreationComposer({
                       <CircleAlert size={15} />
                     )}
                   </span>
+                )}
+                {image.status === "failed" && onRetryReference && (
+                  <button
+                    className="reference-thumbnail-retry"
+                    aria-label={`重试上传参考图 ${index + 1}`}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onRetryReference(image);
+                    }}
+                  >重试</button>
                 )}
                 <button
                   className="reference-thumbnail-remove"

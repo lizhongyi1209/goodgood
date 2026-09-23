@@ -1,5 +1,6 @@
 import { gptPricingQualities } from "../../shared/contracts/gpt-quality-pricing.mjs";
 import { NormalizedProviderError } from "./provider.mjs";
+import { PROVIDER_REFERENCE_LIMITS } from "./reference-inputs.mjs";
 import { BANANA_LINES, isBananaModel, isValidImageLine } from "../../shared/contracts/banana-lines.mjs";
 import {
   DEFAULT_GPT_IMAGE_OUTPUT_FORMAT,
@@ -103,7 +104,7 @@ export function getUsGatewayRoute(modelId, imageLine) {
 
 const TERMINAL_STATES = new Set(["failed", "succeeded"]);
 const STATE_ORDER = Object.freeze({ queued: 0, running: 1, failed: 2, succeeded: 2 });
-const MAX_REFERENCE_BYTES = 20 * 1024 * 1024;
+const MAX_REFERENCE_BYTES = PROVIDER_REFERENCE_LIMITS.maxBytesPerImage;
 const MAX_REFERENCES = 10;
 export const US_GATEWAY_FAILURE_CONFIRMATION_POLLS = 3;
 

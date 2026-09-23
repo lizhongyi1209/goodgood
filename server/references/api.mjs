@@ -121,6 +121,30 @@ export async function readReferenceAssetContent({
   };
 }
 
+export async function getReferenceUploadStatus({
+  referenceId,
+  ownerContext,
+  workspaceId = DEFAULT_WORKSPACE_ID,
+}) {
+  validateReferenceIds([{ id: referenceId }]);
+  const ownerId = ownerIdFromContext(ownerContext);
+  const resources = await getGenerationResources();
+  const row = await findReferenceAsset(resources.pool, {
+    ownerId,
+    referenceId,
+    workspaceId,
+  });
+  if (!row) {
+    throw new ReferenceRequestError("REFERENCE_NOT_FOUND", "未找到该参考图。", 404);
+  }
+  return {
+    id: row.id,
+    name: row.original_file_name,
+    status: row.upload_state,
+    ...(row.error_code ? { errorCode: row.error_code } : {}),
+  };
+}
+
 export async function createReferenceUploads({
   files,
   ownerContext,

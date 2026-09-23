@@ -1,9 +1,9 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-23
-- Current phase: GG-102 本地真实图片/视频开发环境已实现并验证，未部署；生产仍为 GG-098。
-- Current objective: 配置好的本地图片/视频开发环境都连接真实 O1Key，视频无需单独开关。
-- Previous objective: GG-101 本地开发真实线上接口策略。
+- Current phase: GG-103 多参考图上传与模型输入优化本地实现及代码验证完成，待更新 32131 预览；生产仍为 GG-098。
+- Current objective: 参考图本地即时预览、后台可恢复上传；Nano Banana/GPT Image 实际输入单图最多 10 MB。
+- Previous objective: GG-102 本地图片/视频默认使用真实线上接口。
 
 ## Current checkpoint
 
@@ -36,16 +36,21 @@
   Vite serve 只在本地运行时注入。视频仍为临时文生视频预览；正式任务/计费/资产未接。
   `check:local` 542 通过/26 隔离跳过/0 失败；checkpoint 来源验证、32131/32142
   就绪、视频默认可用和真实单张图片生成成功；未提交付费视频任务。
+- Task [GG-103](tasks/GG-103-reference-input-optimization.md)：**本地实现及代码验证完成；未部署**。
+  ADR 0094 已接受；本地 blob 立即预览、两张并发直传、可重试与完成状态查询；
+  Worker 保留原图并生成单张不超过 10,000,000 字节、总量不超过 32,000,000
+  字节的输入副本。完整门禁 575 项：549 通过/26 隔离跳过/0 失败；
+  未发起真实付费生图，32131 预览待更新。
 - 线上入口为 `goodgood.o1key.com`；`staging-goodgood.o1key.com` 仅保留名称，不是测试入口。
 - 生产数据（2026-09-21 核对）：users 28、assets 166、references 141 ready、
   generation_jobs 201（151 成功 / 50 失败）；运营手动登记充值 4 笔共 15100 积分。
 - **2026-09-17 首次生产恢复演练通过**：快照 `ce191630`、59 表 / 2403 行 / 43 迁移；
   维护窗口约 66 秒。「备份 timer disabled、无自动备份」的旧结论**已更正为错误**。
 - 独立缺口（已记录未处理）：**仅剩无告警通道**。
-- Next action: 用户可从 32131 开始真实接口的后续功能开发；正式视频持久任务/计费/资产需单独实现，生产发布需独立授权。下一普通产品需求从 GG-103 分配。
+- Next action: 提交 GG-103 当前分支，构建并核验 32131 本地预览来源；正式视频持久任务/计费/资产需单独实现，生产发布需独立授权。
 - Blockers: 无阻塞执行项；`operations` 缺口为已知并已授权接受。
-- 待排查缺陷：参考图 `/api/references/*` 校验最长近 6 分钟，超过 nginx 70s 读超时，
-  用户看到上传失败而素材实际入库。未定位根因，未修改。
+- 参考图校验最长近 6 分钟、超过 nginx 70s 读超时的服务端性能根因仍待排查；
+  GG-103 前端通过 owner-scoped 状态查询避免把已入库素材误报为失败。
 
 ## Verification sequence
 

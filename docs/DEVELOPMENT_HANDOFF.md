@@ -1,9 +1,9 @@
 # 当前开发版本与跨窗口交接
 
-- 日期：2026-09-23；GG-101 本地真实线上接口策略**已实现，未部署**；当前分支 `chore/GG-101-real-online-local-development`，基线含 GG-100 `de699e1`；GG093标签继续作为历史构建交接点。
+- 日期：2026-09-23；GG-103 参考图优化**本地实现与代码验证完成，未部署**；当前分支 `codex/GG-103-reference-input-optimization`，基线为 GG-102 `bd4b3a1`；GG093标签继续作为历史构建交接点。
 - 当前项目入口：F:/goodgood；累计代码包含a73835f、GG081—091与GG092交接。`.codex/`是用户本地设置，保留不提交。
 - **生产已部署并开放**：`goodgood.o1key.com`，revision `7888554` / 迁移 `0044` / 配置 `b3d7310a…ddf3`；应用仅 `goodgood-production` 单项目。详见 CURRENT_STATE.md 与 [GG-100 记录](operations/2026-09-22-gg100-single-slot-host-cleanup.md)。
-- 新窗口先读AGENTS/CURRENT_STATE/WORKFLOW/IMPLEMENTATION_PLAN/BACKLOG，然后本页；**下一普通任务从GG-102分配**。
+- 新窗口先读AGENTS/CURRENT_STATE/WORKFLOW/IMPLEMENTATION_PLAN/BACKLOG，然后本页；**下一普通任务从GG-104分配**。
 
 ## 先确认版本，避免退回历史
 
@@ -35,6 +35,12 @@ git merge-base --is-ancestor bb782c0 HEAD
 - 精确规则/边界以GG081、GG083—091任务及ADR0087为准，专题文档中明确标号的旧规则属于历史，不优先于新决定。
 
 ## 当前本地预览与依赖（保留用户数据）
+
+GG-103 代码门禁已通过（575 项：549 通过/26 隔离跳过/0 失败）。参考图选择后
+本地立即预览、后台最多两张同时直传；上传完成超时会查询真实素材状态。Worker
+对 Nano Banana/GPT Image 实际上传 O1Key 的副本限制单张 10,000,000 字节、
+整批 32,000,000 字节；原图仍保留在私有素材库。尚未进行真实付费多参考图
+生成，后续启动必须使用当前提交重新构建检查点，不得沿用 GG-102 产物。
 
 GG-102 已在本地验证：视频与图片共用仓库外专用 O1Key 凭据，默认提供真实 Seedance
 文生视频入口，无需单独手动开关。32131 的 `/api/video/preview` 返回

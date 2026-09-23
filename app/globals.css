@@ -272,11 +272,14 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .reference-thumbnail.is-drag-target { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
 .reference-thumbnail img { width: 100%; height: 100%; display: block; border-radius: inherit; object-fit: cover; object-position: center; }
 .reference-thumbnail-ordinal { min-width: 25px; height: 17px; padding: 0 5px; position: absolute; left: 4px; bottom: 4px; z-index: 2; border-radius: 5px; background: rgba(35,35,42,.72); display: inline-flex; align-items: center; justify-content: center; color: white; font-size: 8px; font-weight: 650; line-height: 1; pointer-events: none; backdrop-filter: blur(4px); }
-.reference-thumbnail.uploading img, .reference-thumbnail.failed img { opacity: .48; }
+.reference-thumbnail.failed img { opacity: .48; }
 .reference-thumbnail-status { position: absolute; inset: 0; border-radius: inherit; display: grid; place-items: center; color: #696973; }
+.reference-thumbnail.uploading .reference-thumbnail-status { inset: auto 5px 5px auto; width: 19px; height: 19px; border-radius: 50%; background: rgba(255,255,255,.88); }
 .reference-thumbnail-status svg { filter: drop-shadow(0 1px 3px rgba(255,255,255,.8)); }
 .reference-thumbnail.uploading .reference-thumbnail-status svg { animation: status-spin 1.1s linear infinite; }
 .reference-thumbnail.failed .reference-thumbnail-status { color: var(--accent-deep); }
+.reference-thumbnail-retry { position: absolute; right: 4px; bottom: 4px; z-index: 3; padding: 3px 5px; border-radius: 5px; background: rgba(255,255,255,.92); color: var(--accent-deep); font-size: 10px; font-weight: 650; }
+.reference-thumbnail-retry:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .reference-thumbnail-remove { width: 16px; height: 16px; position: absolute; top: 3px; right: 3px; z-index: 3; padding: 0; border: 1px solid rgba(218,218,223,.88); border-radius: 50%; background: rgba(255,255,255,.9); display: grid; place-items: center; color: #666670; box-shadow: 0 1px 4px rgba(28,28,34,.08); }
 .reference-thumbnail-remove::before { content: ""; position: absolute; inset: -4px; border-radius: 50%; }
 .reference-thumbnail-remove:hover { background: white; color: var(--accent-deep); box-shadow: 0 2px 7px rgba(28,28,34,.14); transform: scale(1.06); }

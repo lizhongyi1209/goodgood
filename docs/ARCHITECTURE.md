@@ -234,6 +234,15 @@ private objects through the selected provider route. The mock route creates
 fresh signed GET URLs; the O1Key route reads the bytes server-side and creates
 temporary provider attachments. Browser blob URLs and storage credentials never
 enter the persisted generation contract.
+GG-103 uses those blob URLs for immediate tray previews and limits direct PUTs
+to two at a time. An owner-scoped upload-status read reconciles completion
+requests whose HTTP response times out after server validation succeeds. The
+O1Key image Worker prepares ordered provider input copies from the private
+originals before billable submission: at most 10,000,000 bytes each, 32,000,000
+bytes total across up to 10 references, 4,096 pixels per edge and 8 million
+pixels per copy. Copies are temporary; reusable originals remain intact. These
+are GoodGood limits for its current O1Key route, not one shared official API
+limit for Gemini and OpenAI.
 An authenticated reference-list read exposes the same accepted rows as reusable
 materials, newest first, and signs their private objects without returning raw
 object keys. Composer reuse submits the existing stable reference ID, so the

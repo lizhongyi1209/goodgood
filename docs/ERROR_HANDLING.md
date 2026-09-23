@@ -139,8 +139,10 @@ these recovery actions creates assets, generation tasks or allocations.
 | --- | --- | --- | --- |
 | Input | `INVALID_PROMPT` | Composer field/toast | Focus and correct |
 | Generation capability | `M3_SLICE_UNSUPPORTED` | Composer/toast | Keep inputs and choose a model-supported ratio/count combination |
-| Reference upload | `UPLOAD_TYPE_INVALID`, `UPLOAD_DECODE_INVALID`, `UPLOAD_TOO_LARGE` | Reference tray item | Remove/replace |
+| Reference upload | `UPLOAD_TYPE_INVALID`, `UPLOAD_DECODE_INVALID`, `UPLOAD_TOO_LARGE` | Reference tray item | Retry after changing the file, or remove |
+| Reference transfer/completion | Network error or completion timeout | Reference tray item | Retry transient PUT; query owner-scoped status before reporting a completion failure; retain the local file for explicit retry |
 | Reference readiness | `REFERENCE_NOT_READY` | Composer/toast | Wait for upload or remove failed item |
+| Reference model input | `REFERENCE_INPUT_INVALID` | Failed batch in stream | Keep prompt/references; reduce or replace the image and explicitly retry generation |
 | Reference cleanup | `OBJECT_DELETE_FAILED` | Operator evidence/logs | Keep row, release lease, retry a later bounded run |
 | Quota | `INSUFFICIENT_POINTS` | Submission action | Explain and manage plan |
 | Price | `PRICE_NOT_AVAILABLE` | Submission action | Keep inputs and retry after configuration recovers |

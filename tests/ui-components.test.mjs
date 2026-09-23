@@ -614,6 +614,109 @@ test("uploads references directly and reports both ready and failed states", asy
   }
 });
 
+test("reference upload retries transient transfer failure and reconciles timed-out validation", async () => {
+  const { uploadReferenceFiles } = await vite.ssrLoadModule(
+    "/features/references/http-reference-upload.ts",
+  );
+  const originalFetch = globalThis.fetch;
+  const file = { name: "大图.png", size: 8_000_000, type: "image/png" };
+  const updates = [];
+  let putCalls = 0;
+  let statusCalls = 0;
+  try {
+    globalThis.fetch = async (input) => {
+      const url = String(input);
+      if (url === "/api/references") {
+        return Response.json({ uploads: [{
+          clientId: "client-large",
+          expiresAt: new Date(Date.now() + 60_000).toISOString(),
+          headers: { "content-type": "image/png" },
+          reference: { id: "20000000-0000-4000-8000-000000000009", name: file.name, status: "uploading" },
+          uploadUrl: "https://storage.invalid/large-put",
+        }] }, { status: 201 });
+      }
+      if (url === "https://storage.invalid/large-put") {
+        putCalls += 1;
+        return new Response(null, { status: putCalls === 1 ? 503 : 200 });
+      }
+      if (url.endsWith("/complete")) {
+        return Response.json({ error: { message: "Gateway timeout", retryable: true } }, { status: 504 });
+      }
+      if (url.endsWith("/status")) {
+        statusCalls += 1;
+        return Response.json({ id: "20000000-0000-4000-8000-000000000009", name: file.name, status: "ready" });
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    };
+    const result = await uploadReferenceFiles(
+      [{ clientId: "client-large", file }],
+      (_clientId, reference) => updates.push(reference),
+    );
+    assert.equal(result[0].reference.status, "ready");
+    assert.equal(updates[0].status, "ready");
+    assert.equal(putCalls, 2);
+    assert.equal(statusCalls, 1);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("one invalid reference does not block other files and direct uploads stay bounded", async () => {
+  const { uploadReferenceFiles } = await vite.ssrLoadModule(
+    "/features/references/http-reference-upload.ts",
+  );
+  const originalFetch = globalThis.fetch;
+  const files = ["invalid", "first", "second", "third"].map((name) => ({
+    name: `${name}.png`, size: 128, type: "image/png",
+  }));
+  let inFlight = 0;
+  let maxInFlight = 0;
+  const completed = [];
+  try {
+    globalThis.fetch = async (input, options = {}) => {
+      const url = String(input);
+      if (url === "/api/references") {
+        const { files: requested } = JSON.parse(options.body);
+        const { clientId, name } = requested[0];
+        if (name === "invalid.png") {
+          return Response.json({ error: { message: "图片无效", retryable: false } }, { status: 400 });
+        }
+        return Response.json({ uploads: [{
+          clientId,
+          expiresAt: new Date(Date.now() + 60_000).toISOString(),
+          headers: { "content-type": "image/png" },
+          reference: { id: clientId, name, status: "uploading" },
+          uploadUrl: `https://storage.invalid/${clientId}`,
+        }] }, { status: 201 });
+      }
+      if (url.startsWith("https://storage.invalid/")) {
+        inFlight += 1;
+        maxInFlight = Math.max(maxInFlight, inFlight);
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        inFlight -= 1;
+        return new Response(null, { status: 200 });
+      }
+      if (url.endsWith("/complete")) {
+        const id = url.split("/").at(-2);
+        return Response.json({ id, name: `${id}.png`, status: "ready" });
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    };
+    const items = files.map((file, index) => ({
+      clientId: ["invalid", "first", "second", "third"][index], file,
+    }));
+    const results = (await Promise.all([
+      uploadReferenceFiles(items.slice(0, 2), (clientId, reference) => completed.push({ clientId, status: reference.status })),
+      uploadReferenceFiles(items.slice(2), (clientId, reference) => completed.push({ clientId, status: reference.status })),
+    ])).flat();
+    assert.deepEqual(results.map((result) => result.reference.status), ["failed", "ready", "ready", "ready"]);
+    assert.equal(completed.length, 4);
+    assert.equal(maxInFlight, 2);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("project HTTP boundary covers empty, success, and preserved failure paths", async () => {
   const { listProjects, saveProject } = await vite.ssrLoadModule(
     "/features/projects/http-project-boundary.ts",

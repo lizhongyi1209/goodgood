@@ -378,9 +378,15 @@ descriptions to fill space.
 - References: the add control offers local upload or selection from the owner's
   uploaded materials. Append in upload/selection order, deduplicate by stable
   reference ID, and enforce the shared maximum of 10.
-- A selected reference appears immediately with a restrained uploading overlay.
-  It becomes ready only after direct upload and server-side decoded validation;
-  failure remains on that tray item with removal/replacement recovery.
+- A selected reference appears immediately from its local file, with a small
+  uploading indicator while the original transfers and is validated in the
+  background. Up to two files upload concurrently; one rejected file does not
+  stop the others. The tray retains a failed file for retry or removal during
+  the current page session. A timed-out completion is reconciled against the
+  owner-scoped material status before the tray declares failure.
+- It becomes ready only after direct upload and server-side decoded validation.
+  The reusable material keeps the original. Generation prepares a bounded
+  model input copy without delaying the upload preview.
 - The tray uses moderately enlarged responsive 1:1 centered crops and scrolls
   horizontally without wrapping: 96px desktop / 80px mobile (ADR 0056).
 - Every tray item shows `图 1…图 10` at the lower left. Dragging one item onto

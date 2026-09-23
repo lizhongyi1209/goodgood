@@ -1,6 +1,7 @@
 import {
   completeReferenceUpload,
   createReferenceUploads,
+  getReferenceUploadStatus,
   listReferenceAssets,
   readReferenceAssetContent,
   referenceApiError,
@@ -32,6 +33,7 @@ async function readJson(request) {
 const DEFAULT_OPERATIONS = Object.freeze({
   completeReferenceUpload,
   createReferenceUploads,
+  getReferenceUploadStatus,
   listReferenceAssets,
   readReferenceAssetContent,
 });
@@ -90,6 +92,19 @@ export function createReferenceNodeApiHandler({
           "content-type": content.mimeType,
         });
         response.end(content.bytes);
+        return true;
+      }
+
+      const statusMatch = /^\/api\/references\/([^/]+)\/status$/.exec(
+        url.pathname,
+      );
+      if (statusMatch && request.method === "GET") {
+        referenceId = decodeURIComponent(statusMatch[1]);
+        sendJson(response, 200, await operations.getReferenceUploadStatus({
+          ownerContext,
+          referenceId,
+          workspaceId,
+        }));
         return true;
       }
 

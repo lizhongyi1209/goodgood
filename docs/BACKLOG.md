@@ -2,11 +2,11 @@
 
 > **部署状态（2026-09-23）**：GG-100 已把现有 `7888554`/`0044` 应用迁移到唯一
 > `goodgood-production` 项目并清理旧 blue/green 残留。此前 GG-024—GG-096 已在 GG-097 上线；各行「未部署」是历史状态。当前事实见
-> [CURRENT_STATE](CURRENT_STATE.md)，发布流程见
-> [DEPLOYMENT](DEPLOYMENT.md#production-hotfix-checklist-2026-09-17)。GG-101/102 仅调整本地开发契约，未部署；本地图片和视频默认接真实 O1Key。
+> [CURRENT_STATE](CURRENT_STATE.md)，发布流程见 [DEPLOYMENT](DEPLOYMENT.md#production-hotfix-checklist-2026-09-17)。GG-101/102/103 仅在本地，图片和视频开发环境默认接真实 O1Key。
 
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
+| GG-103 | 多参考图即时预览、上传恢复与模型输入控制 | **本地实现与代码验证完成，未部署**：原图继续入库，模型输入副本单张最多 10 MB；门禁 549/26/0，本地预览待更新 | [任务](tasks/GG-103-reference-input-optimization.md) / [ADR](decisions/0094-reference-preview-and-provider-inputs.md) |
 | GG-102 | 本地开发视频默认连接真实 Seedance | **本地实现与验证完成，未部署**：共用仓库外 O1Key 开发凭据，无手动视频开关；结果仍为临时预览 | [任务](tasks/GG-102-real-video-development.md) / [ADR](decisions/0093-default-real-video-in-local-development.md) |
 | GG-101 | 本地开发环境强制使用真实线上接口 | **本地实现完成，未部署**：默认 Compose/checkpoint Web与Worker真实O1Key、仓库外专用开发密钥且缺失失败；mock仅限隔离自动化测试 | [任务](tasks/GG-101-real-online-local-development.md) / [ADR](decisions/0092-real-online-interfaces-for-local-development.md) |
 | GG-100 | 生产主机迁移到单一 Compose 并清理旧 blue/green 残留 | **生产执行完成**：固定 `goodgood-production` Web/Worker healthy、旧 4 容器/2 网络/槽位与动态上游残留已删；恢复点 `71e758c4`，数据卷完整，公网 200 | [任务](tasks/GG-100-production-single-slot-host-cleanup.md) / [记录](operations/2026-09-22-gg100-single-slot-host-cleanup.md) / [ADR](decisions/0091-single-slot-compose-release.md) |
@@ -92,7 +92,7 @@
 | GG-040 | 图片/视频 `---` 批量提示词与数量乘积并发 | 本地门禁与 Chrome 验证通过，待用户检查；未真实批量实测/发布 | [任务](tasks/GG-040-batch-prompts.md) |
 | GG-041 | 移除图片/视频批量提示词重复说明 | 本地门禁与现有 Chrome 验证通过，待用户检查；并发与报价不变，未发布 | [任务](tasks/GG-041-remove-batch-prompt-summary.md) |
 | GG-042—GG-062 | 抽屉/缩略图/站长导航/审计/GPT线路等 | 均已随 GG-097 上线 | [GG042](tasks/GG-042-parameter-drawer-overlay.md) · [GG043](tasks/GG-043-larger-reference-previews.md) · [GG059](tasks/GG-059-site-owner-workspace.md) · [GG060](tasks/GG-060-management-heading-hierarchy.md) · [GG061](tasks/GG-061-audit-log-section.md) · [GG062](tasks/GG-062-gpt-image-lines.md) |
-## 已明确搁置（不得自动恢复） · 最后同步2026-09-23；GG-024—102已占用，下一个需求从GG-103分配
+## 已明确搁置（不得自动恢复） · 最后同步2026-09-23；GG-024—103已占用，下一个需求从GG-104分配
 | ID | 事项 | 恢复条件 | 入口 |
 | --- | --- | --- | --- |
 | GG-900 | C6 自动账户删除/身份删除/举报与内容处理 | 站长明确要求并重审生产差异 | [保全与恢复](tasks/GG-900-deferred-c6.md) |

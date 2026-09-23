@@ -3,6 +3,7 @@ import {
   downloadProviderOutput,
 } from "./provider.mjs";
 import { readPrivateObject } from "./storage.mjs";
+import { prepareProviderReference, providerReferenceByteBudget } from "./reference-inputs.mjs";
 import { BANANA_LINES, supportsImageLines, isBananaModel, isBananaLineReady, isValidImageLine } from "../../shared/contracts/banana-lines.mjs";
 import {
   US_GATEWAY_GPT_IMAGE_25_FLARE_ROUTE,
@@ -291,7 +292,9 @@ export function createGenerationProvider({
         if (taskState.submissionStarted) throw submissionUnknownError();
         const taskIds = [...taskState.taskIds];
         const expectedTaskCount = expectedO1KeyTaskCount(route, job);
-        const references = [];
+        const uploadedReferences = [];
+        const referenceCount = job.reference_snapshot?.length ?? 0;
+        const byteBudget = referenceCount ? providerReferenceByteBudget(referenceCount) : 0;
         for (const reference of job.reference_snapshot ?? []) {
           const object = await readPrivateObject({
             bucket: config.objectStorage.bucket,
@@ -299,13 +302,13 @@ export function createGenerationProvider({
             maxBytes: 20 * 1024 * 1024,
             storage,
           });
-          references.push({
+          const prepared = await prepareProviderReference({
             bytes: object.bytes,
             mimeType: object.contentType,
             name: reference.name,
-          });
+          }, byteBudget);
+          uploadedReferences.push(await adapter.uploadReference(prepared));
         }
-        const uploadedReferences = await adapter.prepareReferences(references);
         while (taskIds.length < expectedTaskCount) {
           const submissionToken = taskIds.length === 0
             ? null

@@ -477,6 +477,7 @@ export default function Home({
   workspaceId = null,
 }: Readonly<{ workspaceId?: string | null }> = {}) {
   const referenceObjectUrlsRef = useRef(new Set<string>());
+  const referenceUploadFilesRef = useRef(new Map<string, File>());
   const videoReferenceObjectUrlsRef = useRef(new Set<string>());
   const assetPulseTimerRef = useRef<number | null>(null);
   const detailWheelTimerRef = useRef<number | null>(null);
@@ -783,6 +784,7 @@ export default function Home({
   const applyCreationDraft = useCallback((draft: CreationDraftRecord | null) => {
     referenceObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
     referenceObjectUrlsRef.current.clear();
+    referenceUploadFilesRef.current.clear();
     const state = draft?.state ?? {
       aspectRatio: "1:1" as const,
       count: 1 as const,
@@ -1226,6 +1228,7 @@ export default function Home({
   useEffect(() => () => {
     referenceObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
     referenceObjectUrlsRef.current.clear();
+    referenceUploadFilesRef.current.clear();
     videoReferenceObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
     videoReferenceObjectUrlsRef.current.clear();
   }, []);
@@ -1410,6 +1413,7 @@ export default function Home({
         };
         referenceObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
         referenceObjectUrlsRef.current.clear();
+        referenceUploadFilesRef.current.clear();
         loadedProjectIdRef.current = restoredProject.id;
         setCurrentProject({ id: restoredProject.id, name: restoredProject.name });
         setCreationBatches(restoredBatches);
@@ -1783,6 +1787,7 @@ export default function Home({
       const clientId = globalThis.crypto.randomUUID();
       const url = URL.createObjectURL(file);
       referenceObjectUrlsRef.current.add(url);
+      referenceUploadFilesRef.current.set(clientId, file);
       return {
         clientId,
         file,
@@ -1797,6 +1802,12 @@ export default function Home({
     void uploadReferenceFiles(
       accepted.map(({ clientId, file }) => ({ clientId, file })),
       (clientId, reference) => {
+        const pending = accepted.find((item) => item.clientId === clientId);
+        if (!pending || !referenceObjectUrlsRef.current.has(pending.url)) return;
+        referenceUploadFilesRef.current.delete(clientId);
+        if (reference.status === "failed") {
+          referenceUploadFilesRef.current.set(reference.id, pending.file);
+        }
         setReferenceImages((current) =>
           current.map((item) =>
             item.id === clientId
@@ -1817,6 +1828,32 @@ export default function Home({
         toast.warning(`${readyCount} 张上传完成，${results.length - readyCount} 张失败`);
       } else {
         toast.error("参考图上传失败，请移除失败项后重试");
+      }
+    });
+  };
+
+  const retryReferenceUpload = (image: ReferenceImage) => {
+    const file = referenceUploadFilesRef.current.get(image.id);
+    if (!file) {
+      toast.info("原始文件已不在当前页面，请重新选择参考图。");
+      return;
+    }
+    setReferenceImages((current) => current.map((item) =>
+      item.id === image.id ? { ...item, errorMessage: undefined, status: "uploading" } : item,
+    ));
+    void uploadReferenceFiles([{ clientId: image.id, file }], (clientId, reference) => {
+      if (!referenceObjectUrlsRef.current.has(image.url)) return;
+      referenceUploadFilesRef.current.delete(clientId);
+      if (reference.status === "failed") referenceUploadFilesRef.current.set(reference.id, file);
+      setReferenceImages((current) => current.map((item) =>
+        item.id === clientId ? { ...reference, url: item.url } : item,
+      ));
+    }, workspaceId).then(([result]) => {
+      if (result?.reference.status === "ready") {
+        void reloadReferenceMaterials();
+        toast.success("参考图上传完成");
+      } else {
+        toast.error(result?.reference.errorMessage ?? "参考图上传失败，请重试。");
       }
     });
   };
@@ -2115,6 +2152,7 @@ export default function Home({
 
   const removeReference = (image: ReferenceImage) => {
     composerEditRevisionRef.current += 1;
+    referenceUploadFilesRef.current.delete(image.id);
     if (referenceObjectUrlsRef.current.delete(image.url)) {
       URL.revokeObjectURL(image.url);
     }
@@ -2296,6 +2334,7 @@ export default function Home({
     clearPersistedCreationDraft();
     referenceObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
     referenceObjectUrlsRef.current.clear();
+    referenceUploadFilesRef.current.clear();
     videoReferenceObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
     videoReferenceObjectUrlsRef.current.clear();
     loadedProjectIdRef.current = null;
@@ -3213,6 +3252,7 @@ export default function Home({
               onReferenceFiles={handleReferenceFiles}
               onOpenReferenceLibrary={() => openReferenceLibrary("image")}
               onRemoveReference={removeReference}
+              onRetryReference={retryReferenceUpload}
               onReorderReference={reorderReference}
               referenceEditorMaterials={referenceMaterials}
               onSaveReferenceEdit={handleSaveReferenceEdit}
