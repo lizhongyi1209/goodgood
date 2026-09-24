@@ -31,7 +31,7 @@ export async function handleFeedbackHttp(request,{authenticateSession,resources,
       if([...form.keys()].some(k=>!['category','message','images'].includes(k))||form.getAll('message').length!==1||form.getAll('category').length!==1||form.getAll('images').length>5)throw new FeedbackError('FEEDBACK_INVALID','反馈字段无效，最多5张图片。');
       const files=[];
       for(const file of form.getAll('images')){
-        if(typeof file==='string'||file.size>FEEDBACK_LIMITS.imageBytes)throw new FeedbackError('FEEDBACK_INVALID','单张图片最多10 MB。');
+        if(typeof file==='string'||file.size>FEEDBACK_LIMITS.imageBytes)throw new FeedbackError('FEEDBACK_INVALID','单张图片最多20 MB。');
         files.push({mimeType:file.type,bytes:Buffer.from(await file.arrayBuffer())});
       }
       return json(await operations.createFeedback({...args,input:{category:form.get('category'),message:form.get('message')},files,idempotencyKey:request.headers.get('idempotency-key')}),201);

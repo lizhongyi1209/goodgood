@@ -23,7 +23,7 @@ export function FeedbackForm({onSubmitted,onBusyChange}:{onSubmitted:(id:string)
   useEffect(()=>{const current=urls.current;return()=>{for(const url of current)URL.revokeObjectURL(url);current.clear();};},[]);
   const add=(files:File[])=>{
     setError('');if(images.length+files.length>5){setError('最多可提交5张图片，请减少选择数量。');return;}
-    if(files.some(f=>!['image/jpeg','image/png','image/webp'].includes(f.type)||f.size<1||f.size>FEEDBACK_LIMITS.imageBytes)){setError('图片仅支持JPEG、PNG、WebP，单张最多10 MB。');return;}
+    if(files.some(f=>!['image/jpeg','image/png'].includes(f.type)||f.size<1||f.size>FEEDBACK_LIMITS.imageBytes)){setError('图片仅支持JPG/JPEG、PNG，单张最多20 MB。');return;}
     setImages(previous=>[...previous,...files.map(file=>{const url=URL.createObjectURL(file);urls.current.add(url);return {id:crypto.randomUUID(),file,url};})]);
   };
   const send=async()=>{
@@ -36,9 +36,9 @@ export function FeedbackForm({onSubmitted,onBusyChange}:{onSubmitted:(id:string)
   return <form className="feedback-form" onSubmit={e=>{e.preventDefault();void send();}}>
     <div className="feedback-field"><label htmlFor="feedback-category">问题类型</label><CategorySelect value={category} onChange={setCategory} disabled={busy}/></div>
     <div className="feedback-field"><label htmlFor="feedback-message">反馈信息</label><Textarea id="feedback-message" rows={5} maxLength={4000} placeholder="请描述遇到的问题、操作步骤，以及你期望的结果。" value={message} disabled={busy} onChange={e=>setMessage(e.target.value)}/><span className="feedback-note">{Array.from(message).length} / 4000</span></div>
-    <div className="feedback-field"><span id="feedback-images-label">问题图片 · {images.length} / 5</span><input ref={input} aria-labelledby="feedback-images-label" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden disabled={busy||images.length>=5} onChange={e=>{add(Array.from(e.target.files??[]));e.target.value='';}}/>
+    <div className="feedback-field"><span id="feedback-images-label">问题图片 · {images.length} / 5</span><input ref={input} aria-labelledby="feedback-images-label" type="file" accept="image/jpeg,image/png" multiple hidden disabled={busy||images.length>=5} onChange={e=>{add(Array.from(e.target.files??[]));e.target.value='';}}/>
       <div className="feedback-image-tray">{images.map((image,index)=><div key={image.id} className="feedback-preview"><img src={image.url} alt={`待提交的问题图片${index+1}`}/><Button type="button" variant="ghost" size="icon" aria-label={`移除问题图片${index+1}`} disabled={busy} onClick={()=>{URL.revokeObjectURL(image.url);urls.current.delete(image.url);setImages(previous=>previous.filter(i=>i.id!==image.id));}}><X size={14}/></Button></div>)}<Button type="button" variant="ghost" disabled={busy||images.length>=5} onClick={()=>input.current?.click()}><ImagePlus size={17}/>添加图片</Button></div>
-      <p className="feedback-note">最多5张，单张10 MB。支持JPEG、PNG、WebP；图片长宽64–8192像素，总像素最多4000万。仅你和站长可查看。</p></div>
+      <p className="feedback-note">最多5张，单张20 MB。支持JPG/JPEG、PNG；图片长宽64–8192像素，总像素最多4000万。仅你和站长可查看。</p></div>
     {error&&<p className="feedback-error" role="alert">{error}</p>}<Button type="submit" disabled={busy||!message.trim()}>{busy?<><LoaderCircle size={16} className="animate-spin"/>正在提交</>:'提交反馈'}</Button>
   </form>;
 }

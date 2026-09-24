@@ -152,3 +152,4 @@ ADR 0053 adds standalone-delimited concurrent prompt batches for GG-040.
 - `0095-composer-drop-and-private-video-materials.md` — composer file drops, visible upload errors, revised control order, and reusable private video originals.
 - `0096-200-mib-private-media-uploads.md` — private reference originals and video materials accept up to 200 MiB while model image inputs remain bounded.
 - `0101-private-card-image-previews.md` — owner-scoped 512 px WebP cards and pickers, OSS signed processing for local cloud references, and original-only focused views/downloads.
+- `0102-asset-history-library-and-upload.md` — separate generated history and automatic personal-library views, private folders/audio, and 20 MiB new uploads.

@@ -13,7 +13,7 @@ const owner={ownerId:'87000000-0000-4000-8000-000000000001'};
 test('feedback validates types, meaningful text, five real-image inputs and bounded sizes',()=>{
   const file={mimeType:'image/png',bytes:Buffer.from('image')};
   assert.equal(validateFeedback({category:'generation',message:'  描述问题  '},Array(5).fill(file)).message,'描述问题');
-  for(const [input,files] of [[{category:'__proto__',message:'x'},[]],[{category:'other',message:' '},[]],[{category:'other',message:'x'.repeat(4001)},[]],[{category:'other',message:'x'},Array(6).fill(file)],[{category:'other',message:'x'},[{...file,mimeType:'image/svg+xml'}]],[{category:'other',message:'x'},[{...file,bytes:Buffer.alloc(10485761)}]]])assert.throws(()=>validateFeedback(input,files),e=>e.status===400);
+  for(const [input,files] of [[{category:'__proto__',message:'x'},[]],[{category:'other',message:' '},[]],[{category:'other',message:'x'.repeat(4001)},[]],[{category:'other',message:'x'},Array(6).fill(file)],[{category:'other',message:'x'},[{...file,mimeType:'image/svg+xml'}]],[{category:'other',message:'x'},[{...file,mimeType:'image/webp'}]],[{category:'other',message:'x'},[{...file,bytes:Buffer.alloc(20971521)}]]])assert.throws(()=>validateFeedback(input,files),e=>e.status===400);
   assert.deepEqual(validateFeedbackAction({status:'resolved',message:'已修复',version:1}),{status:'resolved',message:'已修复',version:1});
   for(const input of [{status:'madeup',version:1},{status:'open',version:0},{status:'open',version:1,message:'x'.repeat(4001)}])assert.throws(()=>validateFeedbackAction(input));
   for(const cursor of ['invalid',Buffer.from(JSON.stringify({id:owner.ownerId,at:'invalid'})).toString('base64url')])assert.throws(()=>validateFeedbackCursor(cursor));
@@ -41,7 +41,7 @@ test('feedback SSR exposes labelled fields, limit, login/loading, private detail
   const root=fileURLToPath(new URL('..',import.meta.url)),dir=new URL('../work/gg087-render/',import.meta.url);await mkdir(dir,{recursive:true});
   const bundle=await build({entryPoints:[`${root}/features/feedback/feedback-view.tsx`],bundle:true,platform:'node',format:'esm',packages:'external',alias:{'@':root},loader:{'.css':'empty'},write:false,logLevel:'silent'});
   const file=new URL('feedback.mjs',dir);await writeFile(file,bundle.outputFiles[0].text);const views=await import(file.href);
-  const form=renderToStaticMarkup(React.createElement(views.FeedbackForm,{onSubmitted(){}}));for(const text of ['问题类型','反馈信息','问题图片','单张10 MB','提交反馈'])assert.match(form,new RegExp(text));assert.match(form,/accept="image\/jpeg,image\/png,image\/webp"/);
+  const form=renderToStaticMarkup(React.createElement(views.FeedbackForm,{onSubmitted(){}}));for(const text of ['问题类型','反馈信息','问题图片','单张20 MB','提交反馈'])assert.match(form,new RegExp(text));assert.match(form,/accept="image\/jpeg,image\/png"/);
   assert.match(renderToStaticMarkup(React.createElement(views.ProblemFeedbackView,{session:undefined,onLogin(){}})),/正在确认账户/);
   assert.match(renderToStaticMarkup(React.createElement(views.ProblemFeedbackView,{session:null,onLogin(){}})),/登录 GoodGood/);
   const html=renderToStaticMarkup(React.createElement(views.FeedbackDetailContent,{detail:{category:'generation',message:'<script>alert(1)</script>',status:'processing',createdAt:'2026-09-14T00:00:00Z'}}));assert.match(html,/处理中/);assert.doesNotMatch(html,/<script>/);assert.match(html,/&lt;script&gt;/);

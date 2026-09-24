@@ -45,7 +45,7 @@ export async function readReferenceObject({ bucket, key, storage }) {
   if ((object.ContentLength ?? 0) > REFERENCE_LIMITS.maxBytes) {
     throw new ReferenceRequestError(
       "UPLOAD_TOO_LARGE",
-      "单张参考图不能超过 200 MB。",
+      "单张参考图不能超过 20 MB。",
     );
   }
   if (!object.Body?.transformToByteArray) {

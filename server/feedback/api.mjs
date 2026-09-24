@@ -15,7 +15,7 @@ export function validateFeedback(input,files=[]) {
   const category=input?.category,message=typeof input?.message==='string'?input.message.trim():'';
   if(!owns(FEEDBACK_CATEGORIES,category)||!message||Array.from(message).length>FEEDBACK_LIMITS.message||message.includes('\0'))throw invalid('请选择问题类型，并填写1–4000字反馈信息。');
   if(!Array.isArray(files)||files.length>5)throw invalid('最多可提交5张图片。');
-  for(const file of files)if(!['image/png','image/jpeg','image/webp'].includes(file?.mimeType)||!Buffer.isBuffer(file.bytes)||file.bytes.length<1||file.bytes.length>FEEDBACK_LIMITS.imageBytes)throw invalid('图片仅支持JPEG、PNG、WebP，单张最多10 MB。');
+  for(const file of files)if(!['image/png','image/jpeg'].includes(file?.mimeType)||!Buffer.isBuffer(file.bytes)||file.bytes.length<1||file.bytes.length>FEEDBACK_LIMITS.imageBytes)throw invalid('图片仅支持JPG/JPEG、PNG，单张最多20 MB。');
   return {category,message};
 }
 export function validateFeedbackAction(input) {

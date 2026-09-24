@@ -1,5 +1,17 @@
 # GG-063 verification
 
+## GG-115 targeted verification
+
+Run `node --test tests/gg115-asset-workspace.test.mjs
+tests/gg104-media-upload.test.mjs` before the full gate. Cover empty folder
+list, generated identity under placement, owner/workspace rejection, MP3
+intent/content validation, ready-only listing, 20 MiB and strict format
+boundaries, and dry-run cleanup. Use a named disposable SQL target with no
+real-provider Worker for migration verification. Browser acceptance checks
+default history, folder/upload flows, refresh persistence, image preview bytes,
+keyboard dialog behavior, and narrow layout. No synthetic generation or
+upload fixture may run against a real-provider Worker or production state.
+
 GG-093当前本地环境、Docker清理、构建指纹与恢复命令见[DEVELOPMENT_HANDOFF.md](DEVELOPMENT_HANDOFF.md)；下方有任务标号的旧端口与测试数是对应阶段记录，以该交接的当前端口和验证边界为准，不运行旧fixture/转换脚本。构建来源定向测试见`tests/gg093-build-provenance.test.mjs`。
 
 **生产已于 2026-09-15 部署并开放**（GG-097，`goodgood.o1key.com` / revision `5b65601` /

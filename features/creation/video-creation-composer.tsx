@@ -104,9 +104,9 @@ function resizePromptTextarea(element: HTMLTextAreaElement) {
 }
 
 const referenceAcceptByMediaType = {
-  image: "image/jpeg,image/png,image/webp",
-  video: "video/mp4,video/quicktime",
-  audio: "audio/wav,audio/x-wav,audio/mpeg",
+  image: "image/jpeg,image/png",
+  video: "video/mp4",
+  audio: "audio/mpeg",
 } as const satisfies Readonly<Record<VideoReferenceMediaType, string>>;
 
 function formatFileSize(size: number) {

@@ -2,6 +2,8 @@ import path from "node:path";
 import { handleLocalBuildVersion } from "./local-build-identity.mjs";
 import { startProdServer } from "vinext/server/prod-server";
 import { createAssetNodeApiHandler } from "../assets/node-api.mjs";
+import { createAudioMaterialNodeApiHandler } from "../audio-materials/node-api.mjs";
+import { createAssetOrganizationNodeApiHandler } from "../assets/organization-node-api.mjs";
 import { createProfileNodeApiHandler } from "../profile/node-api.mjs";
 import { createInspirationNodeApiHandler } from "../inspiration/node-api.mjs";
 import { createAdminNodeApiHandler } from "../admin/node-api.mjs";
@@ -81,6 +83,8 @@ const handleFeedbackNodeApi = createFeedbackNodeApiHandler({ authenticateSession
 const handleCreationDraftNodeApi = createCreationDraftNodeApiHandler({ authenticate });
 const handleDistributionNodeApi = createDistributionNodeApiHandler({ authenticate });
 const handleAssetNodeApi = createAssetNodeApiHandler({ authenticate });
+const handleAudioMaterialNodeApi = createAudioMaterialNodeApiHandler({ authenticate });
+const handleAssetOrganizationNodeApi = createAssetOrganizationNodeApiHandler({ authenticate });
 const handleProfileNodeApi = createProfileNodeApiHandler({ authenticate });
 const handleInspirationNodeApi = createInspirationNodeApiHandler({ authenticate });
 const handleBillingNodeApi = createBillingNodeApiHandler({ authenticate });
@@ -126,12 +130,14 @@ server.on("request", (request, response) => {
     .then((handled) =>
       handled ? true : handleVideoMaterialNodeApi(request, response),
     )
+    .then((handled) => handled ? true : handleAudioMaterialNodeApi(request, response))
     .then((handled) =>
       handled ? true : handleProjectNodeApi(request, response),
     )
     .then((handled) =>
       handled ? true : handleAssetNodeApi(request, response),
     )
+    .then((handled) => handled ? true : handleAssetOrganizationNodeApi(request, response))
     .then((handled) => handled ? true : handleProfileNodeApi(request, response))
     .then((handled) => handled ? true : handleInspirationNodeApi(request, response))
     .then((handled) =>

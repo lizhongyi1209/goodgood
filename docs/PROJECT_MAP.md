@@ -1,5 +1,15 @@
 # Project map
 
+GG-115 moves the asset page presentation into
+`features/assets/asset-workspace.tsx` and its CSS module. The feature's
+`http-asset-organization.ts` and `http-audio-materials.ts` call owner-scoped
+Node/Next routes. `server/assets/organization.mjs` persists folder/tag
+metadata; `server/audio-materials/` owns private MP3 upload lifecycle;
+`server/assets/cleanup-unfinished-upload.mjs` is shared by audio and video.
+`shared/contracts/upload-limits.mjs` is the common new-upload limit/type
+contract. `app/page.tsx` remains the source-list orchestration and image-detail
+entry until a later feature boundary migration.
+
 GG-091账户码分配在0043，邮箱验证及邀请关系在server/auth；AccountInvitation是账户菜单复用展示/复制边界。移除旧后台额外发码feature/API，保留历史0042模型；不扩展根page的业务持久化逻辑。
 
 GG-090邀请码后端为server/auth/invitations.mjs/invitation-http.mjs/invitation-route.ts，邮箱完成事务继续server/auth/email-repository.mjs；管理UI为features/admin/invitation-management.tsx嵌入账户管理，注册/开通在features/auth，不扩展app/page.tsx。

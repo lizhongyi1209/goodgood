@@ -1,5 +1,17 @@
 # GG-063 quality pricing errors
 
+## GG-115 asset recovery
+
+The upload dialog rejects unsupported format or files above 20 MiB before
+requesting an intent. A failed image/video/MP3 transfer stays on its own row
+for retry; other rows continue. A lost completion response is checked against
+owner-scoped upload status. A successful upload that cannot be assigned to a
+folder remains in the unclassified library and reports the organization error.
+Folder name/tag validation and foreign item IDs fail without changing existing
+metadata. History and library have separate loading/error states, so a media
+library outage does not conceal generated history. Existing old-format media
+remain readable; a new upload of those formats is rejected.
+
 GG-091缺邀请码提示“请输入邀请码”，格式/邀请者暂停/不存在统一“邀请码无效”；码无限复用，无已消耗错误。expected email与验证码挑战不一致统一验证码无效；失败次数和现有限流保持。分配码或Session失败回滚整个注册与邀请关系，不留多码/半账户；发送中改地址的旧异步响应不附着新地址。
 
 GG-090有效邮件码后缺邀请码返回INVITATION_REQUIRED（403）提示补填；无效/已用/停用统一INVITATION_INVALID（403），不回显码，计入挑战失败次数。错误邮件码仍统一旧无效提示，不查/消耗邀请码。事务失败整体回滚，无用户/欢迎积分/Session半成品；已提交响应丢失后可新验证码正常登录既有账户。后台生成重放不再返回明文，停用对应未使用码后重建；无数据库权限/停用站长403，已用码停用409。

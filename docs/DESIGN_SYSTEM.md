@@ -1,5 +1,15 @@
 # Design system
 
+## GG-115 asset workspace
+
+Use the light GoodGood surface for two quiet tabs (`生成记录`, `个人资产库`). History
+has compact media pills with counts, dates, and image cards. Library folders
+are simple white cards; media cards use private thumbnails, restrained metadata,
+and small organize actions. The upload dialog reuses the site's accessible
+dialog primitive, exposes supported formats/20 MB limit, and shows per-file
+states. Generated outputs are listed automatically. The earlier batch/gallery
+asset styling below is historical for this local iteration.
+
 GG-091账户入口默认/悬停/展开/焦点均无状态外框，键盘焦点复用浅色背景；菜单关闭后返回焦点不产生红色描边。
 
 GG-091邮箱模式只有邮箱、验证码/发送、邀请码（新用户填写）、确认，标题“登录”；无模式切换、成功发信说明或修改邮箱按钮。邮箱发送后及发送期间可编辑，更改地址清挑战/码；错误就地简短显示。本人账户菜单积分下方展示六位邀请码，使用普通文本行，无点击/悬停填充或复制按钮，手机菜单同序；站长账户列表积分下方也显示各账户码。

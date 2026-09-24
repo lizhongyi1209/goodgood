@@ -1,6 +1,21 @@
 # Architecture
 
-GG-105 raises private reference originals to 200 MiB, matching private video
+## GG-115 asset boundaries
+
+`features/assets/asset-workspace.tsx` presents history and personal library
+over the existing generated, reference, and video lists plus private MP3
+materials. `features/assets/http-asset-organization.ts` and
+`server/assets/organization.mjs` own optional folder/tag metadata; these
+queries check workspace membership and the actual asset owner before writes.
+`server/audio-materials/` follows the existing signed direct upload and
+post-upload validation pattern. `server/assets/cleanup-unfinished-upload.mjs`
+handles expired pending/rejected video and audio objects without touching ready
+materials. New upload contracts live in `shared/contracts/upload-limits.mjs`:
+20 MiB each, JPEG/PNG/MP4/MP3. Preview cards continue through the reusable
+owner-checked 512 px WebP route; detail and download retain original semantics.
+The older GG-105 limit below is historical and superseded by ADR 0102.
+
+GG-105 historically raised private reference originals to 200 MiB, matching private video
 materials, while the Worker still derives image model inputs within its per-file
 and batch budgets. Signed PUTs have a 30-minute window; private object reads
 avoid a second full-size byte copy. Avatar and editor export limits are separate.

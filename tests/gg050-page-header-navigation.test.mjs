@@ -24,7 +24,6 @@ const noReturn = (text) => assert.doesNotMatch(text, /返回创作|企业列表|
 
 test("GG-050 four workspace page headers retain the accepted absence of return replacements", async () => {
   const cases = [
-    ["app/page.tsx", "asset-library-header"],
     ["features/billing/credit-activity-view.tsx", "credit-activity-header"],
     ["features/distribution/business-management-view.tsx", "organization-header"],
     ["features/organizations/organization-management-page.tsx", "organization-header"],
@@ -34,8 +33,11 @@ test("GG-050 four workspace page headers retain the accepted absence of return r
     noReturn(text);
     assert.doesNotMatch(text, /breadcrumb|返回列表|返回上级|history\.back|href="\/create"/);
   }
-  const assets = header(await source("app/page.tsx"), "asset-library-header");
-  assert.match(assets, /生成图片[\s\S]*上传素材[\s\S]*批次[\s\S]*画廊/);
+  const assets = await source("features/assets/asset-workspace.tsx");
+  const assetHeaderStart = assets.indexOf('<header className={styles.header}>');
+  const assetHeader = assets.slice(assetHeaderStart, assets.indexOf('</header>', assetHeaderStart));
+  noReturn(assetHeader);
+  assert.match(assets, /生成记录[\s\S]*个人资产库/);
 });
 
 test("GG-057 shared site-owner navigation marks either page and links directly to management and creation", async () => {
@@ -111,7 +113,8 @@ test("GG-050 distributor headers stay return-free in loading, denial, populated 
 test("GG-050 error-body recovery, close, new creation and logout remain explicitly wired", async () => {
   const page = await source("app/page.tsx");
   assert.match(page, /onClick=\{handleProjectsNav\}[^>]*>[\s\S]*?返回项目/);
-  assert.match(page, /onClick=\{handleAssetNav\}[^>]*>[\s\S]*?返回资产库/);
+  assert.match(page, /<AssetWorkspace[\s\S]*onRetry=/);
+  assert.match(await source("features/assets/asset-workspace.tsx"), /role="alert"[\s\S]*onRetry\(\)/);
   assert.match(page, /className="new-creation-button" onClick=\{requestNewCreation\}/);
   assert.match(page, /aria-label="关闭图片详情" onClick=\{closeImageDetail\}/);
   assert.match(page, /返回个人创作/);

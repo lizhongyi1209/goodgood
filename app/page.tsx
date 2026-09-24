@@ -57,7 +57,6 @@ import {
   formatPixelDimensions,
   formatGenerationResolution,
   getGenerationPixelDimensions,
-  getSharedPixelDimensions,
   getGenerationRatio,
   getGenerationResolutionLabel,
   gptImageBackgroundLabel,
@@ -93,6 +92,8 @@ import {
 } from "@/features/creation/http-video-preview-boundary";
 import { uploadReferenceFiles } from "@/features/references/http-reference-upload";
 import { listPrivateVideoMaterials, uploadPrivateVideoMaterial, type PrivateVideoMaterial } from "@/features/creation/http-video-materials";
+import { listPrivateAudioMaterials, type PrivateAudioMaterial } from "@/features/assets/http-audio-materials";
+import { AssetWorkspace, type GeneratedAssetCard } from "@/features/assets/asset-workspace";
 import { PRIVATE_IMAGE_MIME_TYPES, PRIVATE_IMAGE_UPLOAD_MAX_BYTES } from "@/shared/contracts/upload-limits.mjs";
 import {
   listReferenceMaterials,
@@ -218,7 +219,6 @@ import {
   Check,
   CircleAlert,
   CircleDot,
-  Clock3,
   Coins,
   Compass,
   Download,
@@ -455,11 +455,6 @@ function formatProjectUpdated(updatedAt: string) {
   }).format(updated);
 }
 
-function formatMaterialSize(byteSize: number) {
-  if (byteSize >= 1024 * 1024) return `${(byteSize / 1024 / 1024).toFixed(1)} MB`;
-  return `${Math.max(1, Math.round(byteSize / 1024))} KB`;
-}
-
 function perImageCreditAmount(total: string, count: GenerationCount): string {
   try {
     return (BigInt(total) / BigInt(count)).toString();
@@ -558,11 +553,11 @@ export default function Home({
   const [assetBatches, setAssetBatches] = useState<AssetBatch[]>(initialAssetBatches);
   const [assetsLoading, setAssetsLoading] = useState(true);
   const [assetsError, setAssetsError] = useState<string | null>(null);
-  const [assetMode, setAssetMode] = useState<"batches" | "gallery">("batches");
-  const [assetSection, setAssetSection] = useState<"generated" | "materials">("generated");
-  const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>([]);
   const [referenceMaterials, setReferenceMaterials] = useState<readonly ReferenceMaterial[]>([]);
   const [privateVideoMaterials, setPrivateVideoMaterials] = useState<readonly PrivateVideoMaterial[]>([]);
+  const [privateAudioMaterials, setPrivateAudioMaterials] = useState<readonly PrivateAudioMaterial[]>([]);
+  const [privateAudioMaterialsLoading, setPrivateAudioMaterialsLoading] = useState(true);
+  const [privateAudioMaterialsError, setPrivateAudioMaterialsError] = useState<string | null>(null);
   const [privateVideoMaterialsLoading, setPrivateVideoMaterialsLoading] = useState(true);
   const [privateVideoMaterialsError, setPrivateVideoMaterialsError] = useState<string | null>(null);
   const [referenceMaterialsLoading, setReferenceMaterialsLoading] = useState(true);
@@ -630,6 +625,11 @@ export default function Home({
   const totalCreationImages = creationBatches.reduce((total, batch) => total + batch.images.length, 0);
   const creationDetailItems = getDetailImages(creationBatches);
   const assetDetailItems = getDetailImages(assetBatches);
+  const generatedAssetCards: GeneratedAssetCard[] = assetDetailItems.map((item) => ({
+    id: item.image.id, detailKey: item.key, createdAt: item.batch.createdAt,
+    previewUrl: item.image.previewUrl, name: `生成图片 ${item.batch.id} · ${item.index + 1}`,
+    prompt: item.batch.prompt, width: item.image.width, height: item.image.height,
+  }));
   const activeDetail = detailItems[detailIndex] ?? null;
   const activeDetailModel = activeDetail
     ? { ...getGenerationModel(activeDetail.batch.modelId), name: activeDetail.batch.catalogModelName ?? getGenerationModel(activeDetail.batch.modelId).name }
@@ -1265,6 +1265,24 @@ export default function Home({
   }, [authenticationSession, workspaceAccessReady, workspaceId]);
 
   useEffect(() => {
+    if (authenticationSession === undefined || authenticationSession === null || authenticationSession.access.status !== "active") return;
+    if (authenticationSession.preview) {
+      const reset = window.setTimeout(() => {
+        setPrivateAudioMaterials([]); setPrivateAudioMaterialsError(null); setPrivateAudioMaterialsLoading(false);
+      }, 0);
+      return () => window.clearTimeout(reset);
+    }
+    if (!workspaceAccessReady) return;
+    let active = true;
+    void listPrivateAudioMaterials(workspaceId).then((materials) => {
+      if (active) { setPrivateAudioMaterials(materials); setPrivateAudioMaterialsError(null); }
+    }).catch((error) => {
+      if (active) setPrivateAudioMaterialsError(error instanceof Error ? error.message : "音频素材暂时无法读取，请重试。");
+    }).finally(() => { if (active) setPrivateAudioMaterialsLoading(false); });
+    return () => { active = false; };
+  }, [authenticationSession, workspaceAccessReady, workspaceId]);
+
+  useEffect(() => {
     if (authenticationSession === undefined) return;
     if (authenticationSession === null || authenticationSession.access.status !== "active") return;
     if (authenticationSession.preview) {
@@ -1338,7 +1356,6 @@ export default function Home({
         if (!active) return;
         const batches = records.map(generationJobToAssetBatch);
         setAssetBatches(batches);
-        setSelectedAssetIds([]);
         setAssetsError(null);
       })
       .catch((error) => {
@@ -1713,6 +1730,14 @@ export default function Home({
     }
   };
 
+  const reloadPrivateAudioMaterials = async () => {
+    if (!authenticationSession || authenticationSession.access.status !== "active" || authenticationSession.preview) return;
+    setPrivateAudioMaterialsLoading(true);
+    try { setPrivateAudioMaterials(await listPrivateAudioMaterials(workspaceId)); setPrivateAudioMaterialsError(null); }
+    catch (error) { setPrivateAudioMaterialsError(error instanceof Error ? error.message : "音频素材暂时无法读取，请重试。"); }
+    finally { setPrivateAudioMaterialsLoading(false); }
+  };
+
   const uploadVideoReferenceFile = (clientId: string, file: File, mediaType: VideoReferenceMediaType, previewUrl: string) => {
     if (mediaType === "audio") return;
     if (mediaType === "image") {
@@ -1756,10 +1781,10 @@ export default function Home({
       if (!mediaType) {
         rejectedCount += 1;
         toast.error(file.type.startsWith("image/")
-          ? `${file.name} 格式不受支持，请使用 JPEG、PNG 或 WebP 图片（200 MB 以内）。`
+          ? `${file.name} 格式不受支持，请使用 JPG/JPEG 或 PNG 图片（20 MB 以内）。`
           : file.type.startsWith("video/")
-            ? `${file.name} 格式不受支持，请使用 MP4 或 MOV 视频（200 MB 以内）。`
-            : `${file.name} 的文件格式不受支持，请使用图片、MP4/MOV 视频或 WAV/MP3 音频。`);
+            ? `${file.name} 格式不受支持，请使用 MP4 视频（20 MB 以内）。`
+            : `${file.name} 的文件格式不受支持，请使用 JPG/JPEG、PNG、MP4 或 MP3（20 MB 以内）。`);
         continue;
       }
       const fileError = videoReferenceFileError(file, mediaType);
@@ -1877,7 +1902,7 @@ export default function Home({
         return false;
       }
       if (file.size > PRIVATE_IMAGE_UPLOAD_MAX_BYTES) {
-        toast.error(`${file.name} 超过上传上限，单张图片需在 200 MB 以内。`);
+        toast.error(`${file.name} 超过上传上限，单张图片需在 20 MB 以内。`);
         return false;
       }
       return true;
@@ -2115,6 +2140,10 @@ export default function Home({
       source: "uploaded",
       url: material.url,
     })),
+    ...privateAudioMaterials.map((material): VideoAssetMaterial => ({
+      id: material.id, mediaType: "audio", name: material.name, size: material.size,
+      source: "uploaded", url: material.url,
+    })),
   ].filter((material, index, materials) =>
     materials.findIndex((candidate) => candidate.id === material.id) === index
   );
@@ -2147,10 +2176,10 @@ export default function Home({
     ? filteredVideoAssetMaterials
     : imageReferenceLibraryMaterials;
   const activeReferenceLibraryLoading = referenceLibraryTarget === "video"
-    ? videoAssetMaterials.length === 0 && (assetsLoading || referenceMaterialsLoading || privateVideoMaterialsLoading)
+    ? videoAssetMaterials.length === 0 && (assetsLoading || referenceMaterialsLoading || privateVideoMaterialsLoading || privateAudioMaterialsLoading)
     : referenceMaterialsLoading;
   const activeReferenceLibraryError = referenceLibraryTarget === "video"
-    ? videoAssetMaterials.length === 0 ? assetsError ?? referenceMaterialsError ?? privateVideoMaterialsError : null
+    ? videoAssetMaterials.length === 0 ? assetsError ?? referenceMaterialsError ?? privateVideoMaterialsError ?? privateAudioMaterialsError : null
     : referenceMaterialsError;
   const videoAssetMediaCounts = {
     image: videoAssetMaterials.filter((material) => material.mediaType === "image").length,
@@ -2319,6 +2348,21 @@ export default function Home({
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const handleUseAudioMaterial = (material: PrivateAudioMaterial) => {
+    const addedCount = addMaterialsToVideoReferences([{
+      id: material.id, mediaType: "audio", name: material.name,
+      size: material.size, source: "uploaded", url: material.url,
+    }]);
+    if (addedCount === 0) return;
+    setCreationMode("video");
+    toast.success("音频素材已加入创作器");
+    if (!workspaceId) navigateWorkspace(currentProject
+      ? { kind: "project", projectId: currentProject.id }
+      : { kind: "create" });
+    setActiveView("create");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handleLogout = async () => {
     try {
       const redirecting = await signOut();
@@ -2363,7 +2407,6 @@ export default function Home({
     try {
       const batches = (await listAssets(workspaceId)).map(generationJobToAssetBatch);
       setAssetBatches(batches);
-      setSelectedAssetIds([]);
     } catch (error) {
       setAssetsError(
         error instanceof Error ? error.message : "资产库暂时无法读取，请重试。",
@@ -2396,6 +2439,7 @@ export default function Home({
     void reloadAssets();
     void reloadReferenceMaterials();
     void reloadPrivateVideoMaterials();
+    void reloadPrivateAudioMaterials();
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -2684,10 +2728,6 @@ export default function Home({
     } finally {
       setProjectSaving(false);
     }
-  };
-
-  const toggleAssetSelection = (assetId: string) => {
-    setSelectedAssetIds((current) => current.includes(assetId) ? current.filter((id) => id !== assetId) : [...current, assetId]);
   };
 
   const recordCompletedGeneration = (
@@ -3084,86 +3124,6 @@ export default function Home({
       {items.filter((_, itemIndex) => itemIndex % columnCount === columnIndex).map(renderCreationItem)}
     </div>
   ));
-
-  const getAssetGalleryItems = (dateLabel: string): AssetGalleryItem[] => assetDetailItems
-    .filter((item) => item.batch.dateLabel === dateLabel);
-
-  const renderAssetGalleryCard = (item: AssetGalleryItem) => {
-    const isSelected = selectedAssetIds.includes(item.key);
-    const itemModel = { ...getGenerationModel(item.batch.modelId), name: item.batch.catalogModelName ?? getGenerationModel(item.batch.modelId).name };
-    const itemRatio = getGenerationRatio(item.batch.aspectRatio);
-    return (
-      <article
-        className={isSelected ? "asset-gallery-card selected" : "asset-gallery-card"}
-        key={item.key}
-        style={{ aspectRatio: `${item.ratio}` }}
-        role="button"
-        tabIndex={0}
-        aria-label={`查看 ${itemRatio.label} 图片详情`}
-        onClick={() => openImageDetail(assetDetailItems, item.key, "assets")}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            openImageDetail(assetDetailItems, item.key, "assets");
-          }
-        }}
-      >
-        <PrivateObjectImage
-          src={item.image.previewUrl}
-          alt={`${item.batch.id} 画廊图片 ${item.index + 1}`}
-          style={{ objectPosition: item.image.previewPosition }}
-        />
-        <button
-          className="asset-gallery-check"
-          aria-label={`${isSelected ? "取消选择" : "选择"}这张图片`}
-          aria-pressed={isSelected}
-          onClick={(event) => { event.stopPropagation(); toggleAssetSelection(item.key); }}
-        ><Check size={12} /></button>
-        <span className="asset-gallery-caption"><strong>{item.batch.parametersHidden?"预设效果":formatGenerationResolution(item.batch.resolution, item.image)}</strong><small>{item.batch.parametersHidden?item.batch.time:`${itemRatio.label} · ${item.batch.time} · ${itemModel.name}`}</small></span>
-      </article>
-    );
-  };
-
-  const renderAssetGalleryColumns = (dateLabel: string, columnCount: number) => {
-    const items = getAssetGalleryItems(dateLabel);
-    return Array.from({ length: columnCount }, (_, columnIndex) => (
-      <div className="asset-gallery-column" key={`asset-gallery-column-${dateLabel}-${columnCount}-${columnIndex}`}>
-        {items.filter((_, itemIndex) => itemIndex % columnCount === columnIndex).map(renderAssetGalleryCard)}
-      </div>
-    ));
-  };
-
-  const renderReferenceMaterialCard = (material: ReferenceMaterial) => {
-    const alreadyUsed = referenceImages.some((reference) => reference.id === material.id);
-    return (
-      <article className="reference-material-card" key={material.id}>
-        <div className="reference-material-image" style={{ aspectRatio: `${material.width} / ${material.height}` }}>
-          <PrivateObjectImage src={material.previewUrl} alt={material.name} />
-        </div>
-        <div className="reference-material-copy">
-          <strong title={material.name}>{material.name}</strong>
-          <span>{material.width} × {material.height} · {formatMaterialSize(material.byteSize)}</span>
-          <small>{formatProjectUpdated(material.uploadedAt)}</small>
-        </div>
-        <button
-          className="reference-material-use"
-          disabled={alreadyUsed || referenceImages.length >= MAX_GENERATION_REFERENCES}
-          onClick={() => handleUseReferenceMaterial(material)}
-        >
-          {alreadyUsed ? <><Check size={14} />已在创作中</> : <><Plus size={14} />用于创作</>}
-        </button>
-      </article>
-    );
-  };
-
-  const renderReferenceMaterialColumns = (columnCount: number) =>
-    Array.from({ length: columnCount }, (_, columnIndex) => (
-      <div className="reference-material-column" key={`reference-material-column-${columnCount}-${columnIndex}`}>
-        {referenceMaterials
-          .filter((_, materialIndex) => materialIndex % columnCount === columnIndex)
-          .map(renderReferenceMaterialCard)}
-      </div>
-    ));
 
   return (
     <main className="app-shell">
@@ -3629,135 +3589,24 @@ export default function Home({
               onAccountChange={handleCreditAccountChange}
             />
           ) : (
-            <section className="asset-library-view" aria-label="资产库">
-              <header className="asset-library-header">
-                <div><small>GOODGOOD ASSETS</small><h1>资产库</h1><p>{assetSection === "generated" ? "每一次生成，都按任务批次完整保留。" : "上传一次，随时作为参考素材再次使用。"}</p></div>
-                <div className="asset-library-controls">
-                  <div className="asset-view-toggle asset-section-toggle" aria-label="资产类型">
-                    <button className={assetSection === "generated" ? "active" : ""} aria-pressed={assetSection === "generated"} onClick={() => setAssetSection("generated")}><Images size={14} />生成图片</button>
-                    <button className={assetSection === "materials" ? "active" : ""} aria-pressed={assetSection === "materials"} onClick={() => setAssetSection("materials")}><ImagePlus size={14} />上传素材</button>
-                  </div>
-                  {assetSection === "generated" && (
-                    <div className="asset-view-toggle" aria-label="生成图片展示模式">
-                      <button className={assetMode === "batches" ? "active" : ""} aria-pressed={assetMode === "batches"} onClick={() => setAssetMode("batches")}><Clock3 size={14} />批次</button>
-                      <button className={assetMode === "gallery" ? "active" : ""} aria-pressed={assetMode === "gallery"} onClick={() => setAssetMode("gallery")}><LayoutGrid size={14} />画廊</button>
-                    </div>
-                  )}
-                  {assetSection === "generated" && assetMode === "gallery" && selectedAssetIds.length > 0 && <span className="asset-selection-summary">已选 {selectedAssetIds.length}</span>}
-                </div>
-              </header>
-
-              {assetSection === "materials" ? (
-                referenceMaterialsLoading || privateVideoMaterialsLoading ? (
-                  <div className="asset-library-state" role="status"><LoaderCircle size={18} />正在读取上传素材</div>
-                ) : referenceMaterialsError || privateVideoMaterialsError ? (
-                  <div className="asset-library-state asset-library-error" role="alert">
-                    <CircleAlert size={18} />
-                    <span>{referenceMaterialsError ?? privateVideoMaterialsError}</span>
-                    <button onClick={() => { void reloadReferenceMaterials(); void reloadPrivateVideoMaterials(); }}><RefreshCw size={14} />重试</button>
-                  </div>
-                ) : referenceMaterials.length === 0 && privateVideoMaterials.length === 0 ? (
-                  <div className="asset-library-state asset-library-empty">
-                    <ImagePlus size={20} />
-                    <strong>还没有上传素材</strong>
-                    <span>在创作器上传图片或视频后，会自动保存在这里。</span>
-                  </div>
-                ) : (
-                  <div className="uploaded-material-sections">
-                    {privateVideoMaterials.length > 0 && <section aria-label="上传的视频素材">
-                      <h2>视频素材</h2>
-                      <div className="uploaded-video-grid">{privateVideoMaterials.map((material) => (
-                        <article className="reference-material-card" key={material.id}>
-                          <video src={material.url} muted playsInline preload="metadata" controls aria-label={material.name} />
-                          <div className="reference-material-copy">
-                            <strong title={material.name}>{material.name}</strong>
-                            <span>{formatMaterialSize(material.size)}</span>
-                            <small>{formatProjectUpdated(material.uploadedAt)}</small>
-                          </div>
-                          <button className="reference-material-use" onClick={() => handleUseVideoMaterial(material)}><Plus size={14} />用于创作</button>
-                        </article>
-                      ))}</div>
-                    </section>}
-                    {referenceMaterials.length > 0 && <div className="reference-material-grid">
-                      <div className="reference-material-masonry desktop-reference-material-masonry">{renderReferenceMaterialColumns(4)}</div>
-                      <div className="reference-material-masonry mobile-reference-material-masonry">{renderReferenceMaterialColumns(2)}</div>
-                    </div>}
-                  </div>
-                )
-              ) : assetRouteError ? (
-                <div className="asset-library-state asset-library-error" role="alert">
-                  <CircleAlert size={18} />
-                  <span>{assetRouteError}</span>
-                  <button onClick={retryAssetRoute}><RefreshCw size={14} />重试</button>
-                  <button onClick={handleAssetNav}><Images size={14} />返回资产库</button>
-                </div>
-              ) : assetsLoading ? (
-                <div className="asset-library-state" role="status"><LoaderCircle size={18} />正在读取资产</div>
-              ) : assetsError ? (
-                <div className="asset-library-state asset-library-error" role="alert">
-                  <CircleAlert size={18} />
-                  <span>{assetsError}</span>
-                  <button onClick={() => void reloadAssets()}><RefreshCw size={14} />重试</button>
-                </div>
-              ) : assetBatches.length === 0 ? (
-                <div className="asset-library-state asset-library-empty">
-                  <Images size={20} />
-                  <strong>资产库还是空的</strong>
-                  <span>完成一次生成后，图片会自动保存在这里。</span>
-                </div>
-              ) : assetMode === "batches" ? Array.from(new Set(assetBatches.map((batch) => batch.dateLabel))).map((dateLabel) => (
-                <section className="asset-date-group" key={dateLabel}>
-                  <h2>{dateLabel}</h2>
-                  <div className="asset-batch-list">
-                    {assetBatches.filter((batch) => batch.dateLabel === dateLabel).map((batch) => {
-                      const batchRatio = getGenerationRatio(batch.aspectRatio);
-                      const batchModel = { ...getGenerationModel(batch.modelId), name: batch.catalogModelName ?? getGenerationModel(batch.modelId).name };
-                      return (
-                        <article className="asset-batch-row" key={batch.id}>
-                          <div className="asset-batch-time"><strong>{batch.time}</strong><small>{batch.id}</small></div>
-                          <div className={`asset-batch-images asset-${batchRatio.mode} asset-count-${batch.images.length}`}>
-                            {batch.images.map((image, index) => (
-                              <button
-                                className="asset-image-frame"
-                                key={`${batch.id}-${image.id}`}
-                                style={{ aspectRatio: `${batchRatio.value}` }}
-                                aria-label={`查看 ${batch.id} 生成结果 ${index + 1}`}
-                                onClick={() => openImageDetail(assetDetailItems, `${batch.id}-${image.id}`, "assets")}
-                              >
-                                <PrivateObjectImage
-                                  src={image.previewUrl}
-                                  alt={`${batch.id} 生成结果 ${index + 1}`}
-                                  style={{ objectPosition: image.previewPosition }}
-                                />
-                              </button>
-                            ))}
-                          </div>
-                          <div className="asset-batch-details">
-                            <p>{batch.prompt}</p>
-                            <div className="asset-batch-meta">
-                              <span>{batchModel.name}</span>{!batch.parametersHidden&&<><span>{batchRatio.label}</span><span>{formatGenerationResolution(batch.resolution, getSharedPixelDimensions(batch.images))}</span></>}<span>{batch.count} 张</span>{batch.referenceCount > 0 && <span>{batch.referenceCount} 张参考</span>}
-                            </div>
-                          </div>
-                          <button className="asset-batch-more" aria-label="批次更多操作"><MoreHorizontal size={18} /></button>
-                        </article>
-                      );
-                    })}
-                  </div>
-                </section>
-              )) : (
-                <div className="asset-gallery-mode">
-                  {Array.from(new Set(assetBatches.map((batch) => batch.dateLabel))).map((dateLabel) => (
-                    <section className="asset-gallery-date-group" key={dateLabel}>
-                      <h2>{dateLabel}</h2>
-                      <div className="asset-gallery-masonry-frame">
-                        <div className="asset-gallery-masonry desktop-asset-gallery-masonry">{renderAssetGalleryColumns(dateLabel, 4)}</div>
-                        <div className="asset-gallery-masonry mobile-asset-gallery-masonry">{renderAssetGalleryColumns(dateLabel, 2)}</div>
-                      </div>
-                    </section>
-                  ))}
-                </div>
-              )}
-            </section>
+            <AssetWorkspace
+              workspaceId={workspaceId}
+              enabled={Boolean(authenticationSession && !authenticationSession.preview && authenticationSession.access.status === "active")}
+              generated={generatedAssetCards}
+              references={referenceMaterials}
+              videos={privateVideoMaterials}
+              audios={privateAudioMaterials}
+              historyLoading={assetsLoading}
+              libraryLoading={assetsLoading || referenceMaterialsLoading || privateVideoMaterialsLoading || privateAudioMaterialsLoading}
+              historyError={assetRouteError ?? assetsError}
+              libraryError={assetRouteError ?? assetsError ?? referenceMaterialsError ?? privateVideoMaterialsError ?? privateAudioMaterialsError}
+              onRetry={() => { retryAssetRoute(); void reloadReferenceMaterials(); void reloadPrivateVideoMaterials(); void reloadPrivateAudioMaterials(); }}
+              onRefresh={async () => { await Promise.all([reloadAssets(), reloadReferenceMaterials(), reloadPrivateVideoMaterials(), reloadPrivateAudioMaterials()]); }}
+              onOpenGenerated={(key) => openImageDetail(assetDetailItems, key, "assets")}
+              onUseReference={handleUseReferenceMaterial}
+              onUseVideo={handleUseVideoMaterial}
+              onUseAudio={handleUseAudioMaterial}
+            />
           )}
         </div>
       </section>

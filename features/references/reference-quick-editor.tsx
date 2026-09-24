@@ -329,22 +329,20 @@ function roundedTimestamp() {
   return `${now.getFullYear()}${piece(now.getMonth() + 1)}${piece(now.getDate())}_${piece(now.getHours())}${piece(now.getMinutes())}${piece(now.getSeconds())}`;
 }
 
-function editedFilename(name: string, extension: "png" | "webp") {
+function editedFilename(name: string) {
   const base = name.replace(/\.[^.]+$/, "").replace(/[\\/:*?"<>|]+/g, "_").trim() || "GoodGood素材";
-  return `${base}_编辑_${roundedTimestamp()}.${extension}`;
+  return `${base}_编辑_${roundedTimestamp()}.png`;
 }
 
 function canvasBlob(
   canvas: HTMLCanvasElement,
-  type: "image/png" | "image/webp",
-  quality?: number,
+  type: "image/png",
 ) {
   return new Promise<Blob>((resolve, reject) => {
     try {
       canvas.toBlob(
         (blob) => blob ? resolve(blob) : reject(new Error("图片导出失败，请重试。")),
         type,
-        quality,
       );
     } catch {
       reject(new Error("图片无法安全导出，请关闭后重新打开素材再试。"));
@@ -395,16 +393,11 @@ async function exportEditedReference(
     null,
   );
 
-  let blob = await canvasBlob(canvas, "image/png");
-  let extension: "png" | "webp" = "png";
-  if (blob.size > MAX_EDITED_REFERENCE_BYTES) {
-    blob = await canvasBlob(canvas, "image/webp", 0.95);
-    extension = "webp";
-  }
+  const blob = await canvasBlob(canvas, "image/png");
   if (blob.size > MAX_EDITED_REFERENCE_BYTES) {
     throw new Error("编辑后的图片超过 20MB，请缩小裁剪范围后重试。" );
   }
-  return new File([blob], editedFilename(name, extension), { type: blob.type });
+  return new File([blob], editedFilename(name), { type: blob.type });
 }
 
 export type ReferenceQuickEditorProps = Readonly<{
@@ -1002,7 +995,7 @@ export function ReferenceQuickEditor({
                       <input
                         ref={localStickerInputRef}
                         type="file"
-                        accept="image/jpeg,image/png,image/webp"
+                        accept="image/jpeg,image/png"
                         hidden
                         onChange={handleLocalSticker}
                       />

@@ -12,7 +12,6 @@ export const REFERENCE_LIMITS = Object.freeze({
 export const REFERENCE_MIME_BY_FORMAT = Object.freeze({
   jpeg: "image/jpeg",
   png: "image/png",
-  webp: "image/webp",
 });
 
 export const REFERENCE_MIME_TYPES = Object.freeze(

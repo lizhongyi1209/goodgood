@@ -39,16 +39,18 @@ test("private object URLs render as direct browser images", async () => {
 });
 
 test("workspace and composer route private previews through the direct primitive", async () => {
-  const [source, composer] = await Promise.all([
+  const [source, composer, workspace] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(
       new URL("../features/creation/creation-composer.tsx", import.meta.url),
       "utf8",
     ),
+    readFile(new URL("../features/assets/asset-workspace.tsx", import.meta.url), "utf8"),
   ]);
 
   assert.match(source, /import \{ PrivateObjectImage \}/);
-  assert.ok((source.match(/<PrivateObjectImage/g) ?? []).length >= 7);
+  assert.ok(((source + workspace).match(/<PrivateObjectImage/g) ?? []).length >= 7);
+  assert.match(workspace, /src=\{item\.previewUrl/);
   assert.doesNotMatch(
     source,
     /<Image[\s\S]{0,160}src=\{[^}\n]*previewUrl/,

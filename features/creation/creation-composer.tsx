@@ -418,7 +418,7 @@ export function CreationComposer({
             ref={referenceInputRef}
             className="reference-input"
             type="file"
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/jpeg,image/png"
             multiple
             disabled={references.length >= MAX_GENERATION_REFERENCES}
             onChange={handleReferenceChange}

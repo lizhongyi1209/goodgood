@@ -1,5 +1,16 @@
 # Product definition
 
+## GG-115 asset workspace decision
+
+`/assets` defaults to `生成记录`: durable generated outputs grouped by date with
+`全部 / 图片 / 视频 / 音频` counts. `个人资产库` shows the same generated objects together
+with accepted uploads; generation automatically enters the library. Users can
+create folders, move items, and add tags without copying media or turning
+projects into folders. New uploads in every entry point are limited to 20 MiB
+per file and JPG/JPEG, PNG, MP4, or MP3. Older WebP/MOV/WAV and larger stored
+files remain readable. This decision supersedes earlier 200 MiB upload copy in
+this document; see [ADR 0102](decisions/0102-asset-history-library-and-upload.md).
+
 GG-096以ADR0088取代GG091的单一认证表单界面：提供独立`/login`、`/register`与固定登录/注册子导航；登录隐藏邀请码，注册直接显示邀请码。**邀请码已改为选填**（ADR 0089）：不填即可注册，填了必须有效。GG091账户规则不变：每账户固定唯一6位数字邀请码、可无限邀请，显示本人积分下方；邀请码为分享标识，不授予角色或奖励。**注册成功即建 `active` 账户并得 200 欢迎积分，可立即创作；准入收口唯一依赖 `GOODGOOD_EMAIL_REGISTRATION_ENABLED`**（ADR 0090，废弃 pending 审批模型）。**已于 2026-09-15 随 GG-097 部署生产并开放。**线上测试账户清理已独立执行，见GG091任务。
 
 GG-090本地新注册入口改为邀请码：有效邮箱验证码及活动未使用单人邀请码共同创建已开通账户，无等待审核。已有用户邮箱登录；旧待审核用户新验证邮箱补码开通，暂停账户不自动恢复。站长在账户管理生成/停用/查看邀请码使用状态；邀请码明文生成时显示一次。不代表已部署生产。

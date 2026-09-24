@@ -1,5 +1,19 @@
 # GG-063 quality pricing
 
+## GG-115 assets flow
+
+Open `/assets` into generation history; media filters show truthful counts and
+empty states (transient video previews are not history). Switch to personal
+library for folders and all saved generated/uploaded media. The root lists all
+items, while an opened folder narrows the grid; search checks names and tags.
+`上传资产` opens a focused dialog: select multiple supported files, choose folder
+and optional tags, then see each upload's ready/failure state. A completed
+upload remains in the library even if folder assignment fails. The same private
+image/video upload boundaries are reused by the composer and library; MP3 has a
+private material boundary. Files above 20 MiB and formats outside JPG/JPEG,
+PNG, MP4, MP3 are rejected before transfer. Earlier upload limits in this file
+describe historical checkpoints.
+
 GG-096认证入口：受保护页未登录进入`/login`，可用固定子导航切换`/register`；登录只显示邮箱/邮件码，注册直接增加邀请码。登录提交发现新邮箱时自动切注册并保留邮箱、挑战和邮件码。安全`returnTo`恢复原站内业务页，认证字段不入URL。GG-091的邀请码规则继续有效：缺码/无效码不注册，既有active无需邀请码；每账户固定六位码可无限邀请，暂停邀请者的码不可用于新注册。
 
 GG-090已有账户默认邮箱登录；新用户点击使用邀请码注册，填写邮箱、邮件码及邀请码，双验证后直接进入工作区。登录时有效邮件码发现未开通/新邮箱，会提示邀请码并切换注册，保留邮件码；无效邀请码可修正再试，达到挑战失败上限须重新发码。旧pending会话使用邀请码开通，重新验证邮箱；暂停仍人工恢复。站长邀请码只生成成功当次显示明文，关闭后不可重读；响应丢失重试显示对应提示，停用后再生成。

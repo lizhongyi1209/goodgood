@@ -63,7 +63,7 @@ export function validateReferenceUploadRequest(payload) {
     if (!REFERENCE_MIME_TYPES.includes(mimeType)) {
       throw new ReferenceRequestError(
         "UPLOAD_TYPE_INVALID",
-        "仅支持 JPEG、PNG 或 WebP 参考图。",
+        "仅支持 JPG/JPEG 或 PNG 参考图。",
       );
     }
     if (!Number.isInteger(byteSize) || byteSize < 1) {
@@ -75,7 +75,7 @@ export function validateReferenceUploadRequest(payload) {
     if (byteSize > REFERENCE_LIMITS.maxBytes) {
       throw new ReferenceRequestError(
         "UPLOAD_TOO_LARGE",
-        "单张参考图不能超过 200 MB。",
+        "单张参考图不能超过 20 MB。",
       );
     }
     return { byteSize, clientId, mimeType, name };
@@ -116,7 +116,7 @@ export async function inspectReferenceImage({ bytes, declaredMimeType }) {
   if (bytes.length > REFERENCE_LIMITS.maxBytes) {
     throw new ReferenceRequestError(
       "UPLOAD_TOO_LARGE",
-      "单张参考图不能超过 200 MB。",
+      "单张参考图不能超过 20 MB。",
     );
   }
 
@@ -133,7 +133,7 @@ export async function inspectReferenceImage({ bytes, declaredMimeType }) {
   } catch {
     throw new ReferenceRequestError(
       "UPLOAD_DECODE_INVALID",
-      "参考图无法完整解码，请重新导出为 JPEG、PNG 或 WebP。",
+      "参考图无法完整解码，请重新导出为 JPEG 或 PNG。",
     );
   }
 

@@ -322,8 +322,9 @@ test("asset list and fresh download URL are wired into both runtimes", async () 
   assert.match(boundary, /\/api\/assets\/\$\{encodeURIComponent\(assetId\)\}\/download-url/);
   assert.match(page, /assetsLoading/);
   assert.match(page, /assetsError/);
-  assert.match(page, /assetBatches\.length === 0/);
+  assert.match(page, /generated=\{generatedAssetCards\}/);
   assert.match(page, /void reloadAssets\(\)/);
-  assert.match(page, /正在读取资产/);
-  assert.match(page, /资产库还是空的/);
+  const workspace = await readFile(new URL("../features/assets/asset-workspace.tsx", import.meta.url), "utf8");
+  assert.match(workspace, /正在读取资产/);
+  assert.match(workspace, /还没有生成记录/);
 });

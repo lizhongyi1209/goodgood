@@ -39,13 +39,13 @@ export function validateVideoUploadRequest(file) {
     throw new ReferenceRequestError("INVALID_UPLOAD_REQUEST", "视频上传文件信息无效。", 400);
   }
   if (!VIDEO_MATERIAL_LIMITS.mimeTypes.includes(mimeType)) {
-    throw new ReferenceRequestError("UPLOAD_TYPE_INVALID", "仅支持 MP4 或 MOV 视频。", 400);
+    throw new ReferenceRequestError("UPLOAD_TYPE_INVALID", "仅支持 MP4 视频。", 400);
   }
   if (!Number.isInteger(byteSize) || byteSize < 1) {
     throw new ReferenceRequestError("UPLOAD_SIZE_INVALID", "视频文件大小无效。", 400);
   }
   if (byteSize > VIDEO_MATERIAL_LIMITS.maxBytes) {
-    throw new ReferenceRequestError("UPLOAD_TOO_LARGE", "单个视频不能超过 200 MB。", 400);
+    throw new ReferenceRequestError("UPLOAD_TOO_LARGE", "单个视频不能超过 20 MB。", 400);
   }
   return { clientId, name, mimeType, byteSize };
 }
@@ -89,14 +89,11 @@ export async function createVideoMaterialUpload({ file, ownerContext, workspaceI
 
 export function validateVideoObjectHeader(bytes, mimeType) {
   if (!Buffer.isBuffer(bytes) || bytes.length < 12 || bytes.toString("ascii", 4, 8) !== "ftyp") {
-    throw new ReferenceRequestError("UPLOAD_CONTENT_INVALID", "视频文件格式无效，请上传 MP4 或 MOV。", 400);
+    throw new ReferenceRequestError("UPLOAD_CONTENT_INVALID", "视频文件格式无效，请上传 MP4。", 400);
   }
   const brand = bytes.toString("ascii", 8, 12);
-  if (mimeType === "video/quicktime") {
-    if (brand !== "qt  ") throw new ReferenceRequestError("UPLOAD_TYPE_MISMATCH", "文件内容与 MOV 格式不符。", 400);
-  } else if (brand === "qt  ") {
-    throw new ReferenceRequestError("UPLOAD_TYPE_MISMATCH", "文件内容为 MOV，请按 MOV 格式上传。", 400);
-  }
+  if (mimeType !== "video/mp4" || brand === "qt  ")
+    throw new ReferenceRequestError("UPLOAD_TYPE_MISMATCH", "文件内容与 MP4 格式不符。", 400);
 }
 
 export async function completeVideoMaterialUpload({ materialId, ownerContext, workspaceId = /** @type {string | null} */ (null), resourcesOverride = null }) {

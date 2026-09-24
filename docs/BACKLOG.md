@@ -4,6 +4,7 @@
 
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
+| GG-115 | 生成记录、个人资产库、文件夹与 20 MB 上传 | 本地门禁 566/26/0、迁移 0046 已验证；待 5173/32131 页面验收，未部署 | [任务](tasks/GG-115-asset-workspace.md) / [ADR](decisions/0102-asset-history-library-and-upload.md) |
 | GG-114 | 私有缩略图共用接口与后续画布复用规范 | 本地代码/门禁 564/26/0、5173/32131 HTTP 通过；未部署 | [任务](tasks/GG-114-reusable-image-delivery.md) / [ADR](decisions/0101-private-card-image-previews.md) |
 | GG-113 | 资产库图片卡片与选择器使用私有 WebP 缩略图 | 本地代码/门禁 563/26/0、真实只读转换与 5173/32131 HTTP 通过；待站长页面复核，未部署 | [任务](tasks/GG-113-private-image-previews.md) / [ADR](decisions/0101-private-card-image-previews.md) |
 | GG-112 | 本地登录投递真实邮箱验证码 | 本地完成并验收：门禁 559/26/0、SMTP 预检 5/5；真实收信、登录及刷新会话正常；应用未部署 | [任务](tasks/GG-112-real-email-local-login.md) / [ADR](decisions/0100-local-real-email-delivery.md) |
@@ -79,8 +80,7 @@
 | GG-015 | GPT IMAGE 2 质量、背景与输出格式 | 已上线；透明输出仍可人工验收 | [任务](tasks/GG-015-gpt-image-options.md) |
 | GG-016 | Nano Banana 2 隐藏并固定高思考 | 已上线；真实 Nano 冒烟通过 | [任务](tasks/GG-016-banana-hidden-high-thinking.md) |
 | GG-017 | 上传参考图沉淀为可复用素材 | 已上线；生产边界验证通过 | [任务](tasks/GG-017-reusable-reference-library.md) |
-| GG-018 | 参考图拖拽排序并显示图号 | 已上线 | [任务](tasks/GG-018-reference-ordering.md) |
-| GG-019 | 参考图完整大图与精简删除按钮 | 已上线 | [任务](tasks/GG-019-reference-large-preview.md) |
+| GG-018—019 | 参考图排序、图号、完整大图与精简删除 | 已上线 | [GG018](tasks/GG-018-reference-ordering.md) · [GG019](tasks/GG-019-reference-large-preview.md) |
 | GG-020 | 参考图裁剪、画笔、贴图、箭头与 bbox 编辑 | 已上线；移动端触控仍可人工复核 | [任务](tasks/GG-020-reference-quick-editor.md) |
 | GG-021 | Nano Banana Pro 单张定价 15 积分 | 已上线报价；生成路由仍关闭 | [任务](tasks/GG-021-nano-banana-pro-pricing.md) |
 | GG-022 | 修复 alpha 后续发布的隔离恢复演练 | 已上线并通过真实恢复/发布验收 | [任务](tasks/GG-022-ongoing-production-restore.md) |

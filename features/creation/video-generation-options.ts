@@ -1,4 +1,4 @@
-import { PRIVATE_IMAGE_UPLOAD_MAX_BYTES, PRIVATE_VIDEO_UPLOAD_MAX_BYTES } from "@/shared/contracts/upload-limits.mjs";
+import { PRIVATE_AUDIO_UPLOAD_MAX_BYTES, PRIVATE_IMAGE_UPLOAD_MAX_BYTES, PRIVATE_VIDEO_UPLOAD_MAX_BYTES } from "@/shared/contracts/upload-limits.mjs";
 
 export type CreationMode = "image" | "video";
 
@@ -286,7 +286,7 @@ export function videoReferenceFileError(
   if (videoReferenceMediaTypeForFile(file) !== mediaType) {
     return `${file.name} 的文件格式不受支持`;
   }
-  const maximumBytes = mediaType === "image" ? PRIVATE_IMAGE_UPLOAD_MAX_BYTES : mediaType === "video" ? PRIVATE_VIDEO_UPLOAD_MAX_BYTES : 15 * 1024 * 1024;
+  const maximumBytes = mediaType === "image" ? PRIVATE_IMAGE_UPLOAD_MAX_BYTES : mediaType === "video" ? PRIVATE_VIDEO_UPLOAD_MAX_BYTES : PRIVATE_AUDIO_UPLOAD_MAX_BYTES;
   const maximumMb = maximumBytes / (1024 * 1024);
   if (file.size > maximumBytes) return `${file.name} 超过上传上限，请选择 ${maximumMb} MB 以内的${mediaType === "image" ? "图片" : mediaType === "video" ? "视频" : "音频"}。`;
   if (file.size === 0) return `${file.name} 是空文件，请重新选择。`;
@@ -296,10 +296,10 @@ export function videoReferenceFileError(
 export function videoReferenceMediaTypeForFile(
   file: Pick<File, "type">,
 ): VideoReferenceMediaType | null {
-  if (["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+  if (["image/jpeg", "image/png"].includes(file.type)) {
     return "image";
   }
-  if (["video/mp4", "video/quicktime"].includes(file.type)) return "video";
-  if (["audio/wav", "audio/x-wav", "audio/mpeg"].includes(file.type)) return "audio";
+  if (file.type === "video/mp4") return "video";
+  if (file.type === "audio/mpeg") return "audio";
   return null;
 }
