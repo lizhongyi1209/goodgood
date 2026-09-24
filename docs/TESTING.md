@@ -789,7 +789,7 @@ The timestamped result of the latest verified gate belongs in
 - Unified creation slots keep their keys, columns, and submission order when a
   multi-output run changes from active skeletons to successful images; the
   corresponding durable batch is not rendered twice.
-- Feihong send availability during active generation and concurrent skeletons.
+- Upward-arrow send availability during active generation and concurrent skeletons.
 - Inline failed batch preserves prompt/settings and retries.
 - Project restore and `新建创作` behavior.
 - Project index/detail direct access, refresh, back/forward, and unsaved composer

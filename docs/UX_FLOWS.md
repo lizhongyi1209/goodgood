@@ -488,12 +488,12 @@ descriptions to fill space.
   replacing values inside an immutable generation snapshot.
 - Keep the active server quote next to the composer actions as plain metadata,
   for example `10 积分/张 · 共 40`; do not turn it into a purchase call-to-action.
-- Send: Feihong mark. It remains available while earlier jobs generate; each
+- Send: upward arrow in a circular button. It remains available while earlier jobs generate; each
   click freezes the current composer values and submits one independent job per
   nonempty prompt segment (one job when no separator is used).
   Active styling and the creation stream communicate progress without blocking
   another click. There is no product-side concurrent-job count ceiling.
-- In a configured local development workspace, video Feihong is available by
+- In a configured local development workspace, video send is available by
   default through the loopback-only real Seedance route. It never calls the image
   generation boundary or renders a synthetic result. This route supports
   text-to-video only, uses GG-039 independent concurrent 1/2/4 slots,

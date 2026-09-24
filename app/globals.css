@@ -389,14 +389,13 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .prompt-action { background: transparent; color: #777782; }
 .prompt-action:hover { background: var(--soft); color: var(--ink); }
 .prompt-action.active { background: linear-gradient(180deg,#f8efee 0%,#f1dedd 100%); color: var(--accent-deep); }
-.send-button { background: transparent; color: var(--accent); }
-.send-button:hover { background: linear-gradient(180deg,#d14d50 0%,#ad272c 52%,#851b21 100%); color: white; }
-.send-button:disabled { cursor: wait; background: #f6e7e6; color: var(--accent); }
-.feihong-icon { width: 22px; height: 20px; display: block; background: currentColor; -webkit-mask: url("/feihong-send.png") center / contain no-repeat; mask: url("/feihong-send.png") center / contain no-repeat; transition: transform .2s cubic-bezier(.2,.7,.2,1); }
-.send-button:hover .feihong-icon { transform: translate(1px,-1px); }
-.send-button.generating .feihong-icon { animation: feihong-flight 1.15s cubic-bezier(.35,.05,.3,1) infinite; }
+.send-button { border-radius: 50%; background: var(--accent); color: white; transition: background-color .16s ease; }
+.send-button:hover:not(:disabled) { background: var(--accent-deep); }
+.send-button:focus-visible { outline: 2px solid var(--accent-deep); outline-offset: 2px; }
+.send-button:disabled { cursor: not-allowed; background: var(--accent-soft); color: var(--accent); }
+.send-button.generating { box-shadow: 0 0 0 2px var(--accent-soft); }
+.send-arrow { display: block; }
 .composer.is-generating { border-color: rgba(181,43,48,.22); }
-@keyframes feihong-flight { 0% { opacity: 1; transform: translate(0,0) scale(1); } 42% { opacity: 0; transform: translate(15px,-11px) scale(.8); } 43% { opacity: 0; transform: translate(-10px,8px) scale(.75); } 100% { opacity: 1; transform: translate(0,0) scale(1); } }
 .parameter-drawer { position: absolute; top: 100%; left: -1px; right: -1px; z-index: 1; display: grid; grid-template-rows: 0fr; visibility: hidden; pointer-events: none; background: var(--white); border: 1px solid #dedee4; border-top-color: var(--line); border-radius: 0 0 var(--radius-lg) var(--radius-lg); box-shadow: 0 12px 24px rgba(33,33,43,.06); transition: grid-template-rows .28s ease; }
 .drawer-open .parameter-drawer { grid-template-rows: 1fr; visibility: visible; pointer-events: auto; }
 .drawer-overflow { min-height: 0; max-height: var(--parameter-drawer-max-height,calc(100dvh - 160px)); overflow: hidden; border-radius: inherit; }

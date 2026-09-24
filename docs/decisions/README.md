@@ -1,5 +1,7 @@
 # Decision records
 
+- `0098-up-arrow-composer-send.md` — image and video composer send actions use an upward arrow; supersedes ADR 0002's Feihong send symbol.
+
 - `0091-single-slot-compose-release.md` — future production releases use one fixed Compose project; supersedes ADR 0017's blue/green procedure.
 
 - `0088-addressable-login-registration-entry.md` — accepted addressable `/login` and `/register` pages, visible mode navigation and safe protected-route return for GG-096; partially supersedes ADR 0087's single-form UI.

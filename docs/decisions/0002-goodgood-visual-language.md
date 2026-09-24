@@ -1,6 +1,6 @@
 # ADR 0002: GoodGood visual language
 
-- Status: Accepted
+- Status: Accepted; send symbol superseded by ADR 0098
 - Date: 2026-08-27
 
 ## Context

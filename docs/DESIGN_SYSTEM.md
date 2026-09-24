@@ -113,8 +113,8 @@ and contrast—not large shadows or glossy decoration.
 - Control heights: 32px compact, 40px default, 48px large/form.
 - Type: 11px metadata, 12px compact UI, 14px body/control, 20px section title.
 - Radius: 8px compact, 12px control/group, 16px major surface.
-- Icon size: normally 15–18px inside 40px controls. The Feihong silhouette is
-  optically sized at roughly 22 × 20px.
+- Icon size: normally 15–18px inside 40px controls. The composer send arrow is
+  20px inside the same 40px circular control in image and video modes.
 
 Control size is determined by the global system, not by the visual mass of an
 individual icon. Upload, settings, and send align to the same 40px box.
@@ -169,7 +169,8 @@ individual icon. Upload, settings, and send align to the same 40px box.
 
 - `public/goodgood-mark.svg`: connected Double G brand mark.
 - `public/goodgood-wordmark.svg`: custom wordmark; do not replace with text.
-- `public/feihong-send.png`: mask source for the send/generate action.
+- Composer send/generate action: Lucide upward arrow in a Palace Red circle
+  (ADR 0098). `public/feihong-send.png` remains a loading illustration.
 - Creation navigation: Brush.
 - Explore: Compass.
 - Projects: Folder.
@@ -232,7 +233,7 @@ individual icon. Upload, settings, and send align to the same 40px box.
   after model capability copy and before generation mode. It reads `标准 / 备用`,
   defaults to `标准`, and never resets another video value when changed.
 - Video output adds `生成数量` with `1 / 2 / 4`, default 1, below sound. Reuse
-  the existing quiet segmented controls. Feihong remains available while earlier
+  the existing quiet segmented controls. Send remains available while earlier
   videos run; compact stream status, not a disabled send action, shows progress.
 - Video mode keeps the same tray silhouette for local image, video, and audio
   references. It uses exactly one compact lower-left overlay: multimodal shows

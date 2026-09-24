@@ -39,6 +39,7 @@ import {
   type VideoResolution,
 } from "@/features/creation/video-generation-options";
 import {
+  ArrowUp,
   AudioLines,
   CircleAlert,
   ChevronDown,
@@ -367,12 +368,12 @@ export function VideoCreationComposer({
             <SlidersHorizontal size={18} />
           </button>
           <button
-            className="send-button"
+            className={`send-button ${isGenerating ? "generating" : ""}`}
             aria-label={isGenerating ? "继续生成视频" : "生成视频"}
             disabled={!interfaceAvailable}
             onClick={onGenerate}
           >
-            <span className="feihong-icon" aria-hidden="true" />
+            <ArrowUp className="send-arrow" size={20} strokeWidth={2.5} aria-hidden="true" />
           </button>
         </div>
       </div>

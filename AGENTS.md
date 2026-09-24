@@ -69,7 +69,7 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
 - The creation surface is a working tool, never a marketing or editorial hero.
 - The empty creation state stays quiet: small brand mark, one primary sentence,
   one secondary sentence; no fake examples or parameter explanation.
-- The composer shows prompt, reference upload, settings, and Feihong send by
+- The composer shows prompt, reference upload, settings, and upward-arrow send by
   default. Parameters expand downward as one attached drawer.
 - Prompt textarea auto-grows to eight lines, then scrolls. Tool positions remain
   stable while it grows.
@@ -111,8 +111,8 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
 - Do not introduce blue as the primary accent, neon/Neo-Tech styling, magazine
   rules, warm ivory/limestone palettes, large editorial typography, or strong
   panel separation.
-- Use the Double G mark and custom GoodGood wordmark. The Feihong mark is the
-  send action, not the creation-navigation icon.
+- Use the Double G mark and custom GoodGood wordmark. The creation send action
+  uses an upward arrow in both image and video modes (ADR 0098).
 
 ## Engineering rules
 

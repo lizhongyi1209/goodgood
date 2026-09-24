@@ -53,6 +53,7 @@ import {
 import nanoBananaIcon from "@lobehub/icons-static-svg/icons/nanobanana-color.svg";
 import openAiIcon from "@lobehub/icons-static-svg/icons/openai.svg";
 import {
+  ArrowUp,
   CircleAlert,
   ChevronDown,
   ImagePlus,
@@ -477,7 +478,7 @@ export function CreationComposer({
             aria-label={isGenerating ? "继续生成图片" : "生成图片"}
             onClick={onGenerate}
           >
-            <span className="feihong-icon" aria-hidden="true" />
+            <ArrowUp className="send-arrow" size={20} strokeWidth={2.5} aria-hidden="true" />
           </button>
         </div>
       </div>
