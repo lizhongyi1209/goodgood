@@ -1,6 +1,6 @@
 # 当前开发版本与跨窗口交接
 
-- 日期：2026-09-24；GG-110 在 GG-107 `4d5ad94` 上修复 5173 参考图上传预览的运行配置。原 5173 为演示会话、`/api/references` 503；现已切换到仅监听 loopback 的真实本地会话，接口边界与门禁通过，真实文件尚待用户验收。分支 `fix/GG-110-functional-upload-preview`，工作树 `F:/goodgood-worktrees/GG-107`；32131 仍运行 GG-105 已验证检查点，生产未变。
+- 日期：2026-09-24；GG-110 在 GG-107 `4d5ad94` 上修复 5173 参考图上传预览的运行配置。5173 仅监听 loopback，`/api` 代理到本地 32131 Node Web，RustFS 直传已用真实 JPEG 验证 `ready / accepted`。分支 `fix/GG-110-functional-upload-preview`，工作树 `F:/goodgood-worktrees/GG-107`；32131 运行已验证 `35b1f12` 检查点，32142 Worker 当前未启动。生产未变。
 - 当前项目入口：F:/goodgood；累计代码包含a73835f、GG081—091与GG092交接。`.codex/`是用户本地设置，保留不提交。
 - **生产已部署并开放**：`goodgood.o1key.com`，revision `7888554` / 迁移 `0044` / 配置 `b3d7310a…ddf3`；应用仅 `goodgood-production` 单项目。详见 CURRENT_STATE.md 与 [GG-100 记录](operations/2026-09-22-gg100-single-slot-host-cleanup.md)。
 - 新窗口先读AGENTS/CURRENT_STATE/WORKFLOW/IMPLEMENTATION_PLAN/BACKLOG，然后本页；GG-106 OSS 文档在原 `F:/goodgood` 工作树继续，GG-107 位于 `F:/goodgood-worktrees/GG-107`。
@@ -36,25 +36,24 @@ git merge-base --is-ancestor bb782c0 HEAD
 
 ## 当前本地预览与依赖（保留用户数据）
 
-GG-105 本地代码已运行；按用户要求未跑自动测试，等待用户手动刷新验收。GG-104
+GG-105 的 200 MiB 大文件仍待手动验收；GG-110 已验证普通 JPEG 参考图上传。GG-104
 旧门禁 581 项（555 通过/26 隔离跳过/0 失败）。拖入图片/视频立即本地预览并后台上传；
 参考原图与视频均为 200 MiB，模型输入仍为单张 10 MB/整批 32 MB，失败原因可见；
 新增迁移 0045 与私有视频素材库。本地数据库原停在 0043；通用迁移器因更早的
 0001 校验值不符安全停止，旧记录未重置。核对目标、活动任务 0 及提交 SQL 后，
-只在本地事务中前进 0044/0045，当前记录 45 条；32131 已由 GG-105 检查点启动，
-版本来源和 32142 真实 Worker 健康已核对。未写测试素材到
-真实 Worker 共用数据库，也未做真实文件上传端到端测试，见 GG-104 任务卡。
+只在本地事务中前进 0044/0045，当前记录 45 条；32131 已由 GG-110 检查点重启，
+版本来源已核对，32142 Worker 当前停止。GG-110 的普通 JPEG 上传已完成端到端本地验证；GG-105 大文件与 GG-104 视频素材仍未做真实文件端到端验收，见各任务卡。
 
 GG-103 代码门禁已通过（575 项：549 通过/26 隔离跳过/0 失败）。参考图选择后
 本地立即预览、后台最多两张同时直传；上传完成超时会查询真实素材状态。Worker
 对 Nano Banana/GPT Image 实际上传 O1Key 的副本限制单张 10,000,000 字节、
 整批 32,000,000 字节；原图仍保留在私有素材库。尚未进行真实付费多参考图
-生成。32131 Web 检查点来源与 32142 真实 O1Key Worker 健康状态已核验；
+生成。GG-103 当时核对了 32131 Web 检查点来源与 32142 真实 O1Key Worker 健康状态；
 后续启动必须使用当前提交重新构建检查点，不得沿用 GG-102 产物。
 
 GG-102 已在本地验证：视频与图片共用仓库外专用 O1Key 凭据，默认提供真实 Seedance
 文生视频入口，无需单独手动开关。32131 的 `/api/video/preview` 返回
-`available:true,persistence:false`，32142 为真实 O1Key Worker；Vite serve 也返回相同
+`available:true,persistence:false`；32142 设计为真实 O1Key Worker，当前未启动；Vite serve 也返回相同
 状态。视频结果仍是临时预览，非正式任务、积分或资产记录；每次用户提交可能计费。
 真实图片单张 1K 本地生成成功，积分 180→160；本次未提交付费视频任务。每次恢复后
 仍须核对 `/api/health/version` 的 `build.verified=true` 且 revision 等于当前 Git HEAD。
@@ -62,7 +61,7 @@ GG-102 已在本地验证：视频与图片共用仓库外专用 O1Key 凭据，
 | 组件 | 当前入口 | 本次记录的进程/来源 |
 | --- | --- | --- |
 | 工作区Web | http://127.0.0.1:32131/login | `node scripts/local-checkpoint.mjs start workspace`；`/register`为注册入口；邮箱验证码、无local账户预设；端口实时核验PID，代码由version接口证明 |
-| 真实 worker | http://127.0.0.1:32142/health/ready | `node scripts/local-checkpoint.mjs start worker`；**真实 O1Key，真实计费** |
+| 真实 worker | http://127.0.0.1:32142/health/ready | 当前未启动；需要生成时核验队列后运行 `node scripts/local-checkpoint.mjs start worker`；**真实 O1Key，真实计费** |
 | PostgreSQL | loopback54449/goodgood | goodgood-gg052-postgres-1，最新0045 |
 | Valkey | loopback56449/db0 | goodgood-gg052-valkey-1 |
 | RustFS | loopback58049/58050 | goodgood-gg052-object-storage-1，桶goodgood-gg052-local |
@@ -106,7 +105,7 @@ node scripts/local-checkpoint.mjs start workspace
 
 ~~~powershell
 Invoke-RestMethod http://127.0.0.1:32131/api/health/version
-Invoke-RestMethod http://127.0.0.1:32142/health/ready
+# 仅在生成 Worker 已启动时检查：Invoke-RestMethod http://127.0.0.1:32142/health/ready
 ~~~
 
 Web响应的`build.verified`必须为`true`且revision等于`git rev-parse HEAD`；仅有`/api/health/ready`返回200不能证明页面来自当前提交。构建产物`dist/`被忽略，不提交到Git；旧Docker `goodgood:gg027-local`已删除，不能再作为当前版本依据。
@@ -117,7 +116,9 @@ PID是交接时的记录，不是以后可直接kill的授权目标。先用Get-
 
 ## 启动与恢复
 
-Node >=22.13.0，npm；本机记录v24.12.0/npm11.6.2。切换版本后用npm ci恢复锁定依赖，忽略旧node_modules/dist。普通纯 UI 开发用 `npm run dev:local`，它使用演示会话，不能上传真实素材。需在热更新预览中使用本地素材和邮箱会话时，先启动 GG-110 当前提交的已验证 32131 Node Web 与本地 Compose 依赖，再从 GG-110 工作树运行 `npm run dev:workspace -- --env-file F:\goodgood\.env.login-review --port 5173`。该入口验证状态服务在 loopback、真实 O1Key 开发密钥位于仓库外，并将 5173 的 `/api` 全部代理到 32131，避开 Vite Worker 跨请求复用 PostgreSQL 连接的失败。图片上传无需启动 32142 Worker；若要进行生成，须另行核验并启动唯一 Worker。两个端口共享本地会话 cookie，浏览器直传的 RustFS CORS 包含 5173 和 32131。实际端口以 Vite 输出为准；停止进程用 Ctrl+C。
+Node >=22.13.0，npm；本机记录v24.12.0/npm11.6.2。切换版本后用npm ci恢复锁定依赖，忽略旧node_modules/dist。普通纯 UI 开发用 `npm run dev:local`，它使用演示会话，不能上传真实素材。需在热更新预览中使用本地素材和邮箱会话时，先启动已验证的 GG-110 32131 Node Web 与本地 Compose 依赖，再从 GG-110 工作树运行 `npm run dev:workspace -- --env-file F:\goodgood\.env.login-review --port 5173`。该入口验证状态服务在 loopback、真实 O1Key 开发密钥位于仓库外，并将 5173 的 `/api` 全部代理到 32131，避开 Vite Worker 跨请求复用 PostgreSQL 连接的失败。图片上传无需启动 32142 Worker；若要进行生成，须另行核验并启动唯一 Worker。两个端口共享本地会话 cookie，浏览器直传的 RustFS CORS 包含 5173 和 32131。实际端口以 Vite 输出为准；停止进程用 Ctrl+C。
+
+本机 GG-110 工作树中已有从根目录本地配置复制的忽略文件 `.env.login-review`，不提交。其 32131 Web 检查点需在该工作树运行 `npm run verify:checkpoint` 后用 `node scripts/local-checkpoint.mjs start workspace` 启动；若 Git revision 或源码改变，先提交并重新运行 `npm run build:checkpoint`。当前进程 PID/版本必须重新核验，不能沿用本页记录。
 
 根目录已有忽略的.env.local-review，保留本机loopback状态服务配置；其中历史 mock/provider 值不再控制开发运行时。未提交、不打印、不复制到报告；不得含生产凭据。它不能替代其他机器的独立环境安装。若文件或容器缺失，按DEPLOYMENT的独立本地栈步骤配置，不运行旧数据转换，也不从生产导入。
 
