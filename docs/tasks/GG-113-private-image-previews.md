@@ -1,6 +1,7 @@
 # GG-113 — private image previews for cards and selectors
 
-- Status: code and local tests verified; runtime switch pending; not deployed.
+- Status: code, local tests, real storage reads, and local HTTP verified;
+  operator visual review pending; not deployed.
 - Baseline: GG-112 `85eea1a`; branch `feature/GG-113-private-image-previews`;
   worktree `F:/goodgood-worktrees/GG-113`.
 - Decision: [ADR 0101](../decisions/0101-private-card-image-previews.md).
@@ -32,11 +33,14 @@ route is fetched only for an explicit full image, edit, or download action.
 - Targeted route, signature, presentation, Sharp, and documentation tests pass.
   `npm run check:local`: 589 tests, 563 passed, 26 isolated skips, 0 failed;
   lint has 16 existing warnings and no errors.
-- Checkpoint build, local HTTP verification, and exact final revision are pending.
-- Keep GG-112 5173/32131 services running until GG-113 can replace them from
-  a verified committed checkpoint; leave the real-provider Worker stopped.
+- First GG-113 checkpoint `ea8445f` built and verified; 32131 and 5173 serve
+  that revision. `/create` and readiness return 200; private asset/reference
+  preview and original routes reject anonymous GET with 401. Real SMTP/cloud
+  local configuration stays enabled; no email was sent or generation submitted.
+- Handoff condition: rebuild/restart after the final documentation commit and
+  verify both services report that exact HEAD. Keep the real-provider Worker stopped.
 
 ## 下一步
 
-Finish the full local gate, commit the exact checkpoint, and verify 5173/32131
-serve the new preview routes without changing production objects.
+The operator can refresh the asset library and check card transfers, picker
+images, and focused original details with the existing local account.

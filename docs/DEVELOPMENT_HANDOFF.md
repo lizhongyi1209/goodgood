@@ -1,14 +1,16 @@
 # 当前开发版本与跨窗口交接
 
-## GG-113 资产卡片与选择器缩略图（实现中）
+## GG-113 资产卡片与选择器缩略图（本地已验证）
 
 隔离工作树 `F:/goodgood-worktrees/GG-113` 从 GG-112 已验证提交 `85eea1a` 创建。
 站长选择资产库全部图片卡片和选择器；[任务卡](tasks/GG-113-private-image-previews.md)
 及 [ADR 0101](decisions/0101-private-card-image-previews.md) 记录范围。OSS 测试前缀
 真实图片的只读转换探测为 2,380,052 → 30,556 字节，生成 288 × 512 WebP。
-当前 5173/32131 仍运行 GG-112；GG-113 的 `check:local` 563/26/0，
-OSS 与 RustFS 真实只读缩略图转换均通过，精确检查点尚待切换。
-新检查点运行前，继续保留 GG-112 会话和服务；32142 Worker 保持关闭。
+GG-113 的 `check:local` 563/26/0，OSS 与 RustFS 真实只读缩略图转换均通过。
+5173 Vite 和 32131 Web 已从 GG-113 工作树运行：首次运行检查点 `ea8445f` 的
+`build.verified=true`，`/create` 和 `/api/health/ready` 均 200，私有预览与原图
+接口未登录均 401。保持本地真实 SMTP 与 `local-dev/references/` OSS 模式；
+32142 Worker 关闭。每次新提交仍须重新构建并重启精确检查点。
 
 ## GG-112 本地真实邮件验证码（已验收）
 
@@ -175,11 +177,11 @@ Web响应的`build.verified`必须为`true`且revision等于`git rev-parse HEAD`
 
 PID是交接时的记录，不是以后可直接kill的授权目标。先用Get-NetTCPConnection/Get-CimInstance核验端口、命令行、目录；不要停陌生进程或重载用户带未提交草稿的浏览器标签。原预览账户/作品/反馈保留，禁止fixture/reset/自动重新初始化。
 
-当前32131使用email_otp并保留原用户数据，不配置local auth token/default token，也不自动写入登录Cookie；使用新的`goodgood_workspace_email_session` Cookie名称，旧local/32191 Cookie不会形成预设登录。邮件仅进入现有本地Mailpit（SMTP58046，查看http://127.0.0.1:58045），不向外发信。独立32191正常流程已停用。
+当前32131使用email_otp并保留原用户数据，不配置local auth token/default token，也不自动写入登录Cookie；使用`goodgood_workspace_email_session` Cookie名称，旧local/32191 Cookie不会形成预设登录。GG-112/113 工作区通过显式 `--email-env-file` 使用真实 TLS SMTP，Mailpit 容器虽保留但不接收当前验证码；缺少该选项时才回到本地 Mailpit。独立32191正常流程已停用。
 
 ## 启动与恢复
 
-Node >=22.13.0，npm；本机记录v24.12.0/npm11.6.2。切换版本后用npm ci恢复锁定依赖，忽略旧node_modules/dist。普通纯 UI 开发用 `npm run dev:local`，它使用演示会话，不能上传真实素材。需在热更新预览中使用本地素材和邮箱会话时，先启动已验证的 GG-110 32131 Node Web 与本地 Compose 依赖，再从 GG-110 工作树运行 `npm run dev:workspace -- --env-file F:\goodgood\.env.login-review --port 5173`。该入口验证状态服务在 loopback、真实 O1Key 开发密钥位于仓库外，并将 5173 的 `/api` 全部代理到 32131，避开 Vite Worker 跨请求复用 PostgreSQL 连接的失败。图片上传无需启动 32142 Worker；若要进行生成，须另行核验并启动唯一 Worker。两个端口共享本地会话 cookie，浏览器直传的 RustFS CORS 包含 5173 和 32131。实际端口以 Vite 输出为准；停止进程用 Ctrl+C。
+Node >=22.13.0，npm；本机记录v24.12.0/npm11.6.2。切换版本后用npm ci恢复锁定依赖，忽略旧node_modules/dist。普通纯 UI 开发用 `npm run dev:local`，它使用演示会话，不能上传真实素材。需在热更新预览中使用本地素材和真实邮箱会话时，先从 GG-113 工作树按本文首段的双外部配置启动已验证的 32131 Web，再运行 `npm run dev:workspace -- --env-file .env.login-review --port 5173`。该入口验证状态服务在 loopback、真实 O1Key 开发密钥位于仓库外，并将 5173 的 `/api` 全部代理到 32131，避开 Vite Worker 跨请求复用 PostgreSQL 连接的失败。上传与缩略图读取无需启动 32142 Worker；若要生成，须另行核验并启动唯一 Worker。两个端口共享本地会话 cookie；OSS 直传与 RustFS CORS 来源见 GG-111 配置。实际端口以 Vite 输出为准；停止进程用 Ctrl+C。
 
 本机 GG-110 工作树中已有从根目录本地配置复制的忽略文件 `.env.login-review`，不提交。其 32131 Web 检查点需在该工作树运行 `npm run verify:checkpoint` 后用 `node scripts/local-checkpoint.mjs start workspace` 启动；若 Git revision 或源码改变，先提交并重新运行 `npm run build:checkpoint`。当前进程 PID/版本必须重新核验，不能沿用本页记录。
 

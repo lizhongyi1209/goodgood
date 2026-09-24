@@ -5,7 +5,7 @@
 
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
-| GG-113 | 资产库图片卡片与选择器使用私有 WebP 缩略图 | 代码与门禁已过：563/26/0，OSS/RustFS 真实只读转换通过；待 5173/32131 切换验收，未部署 | [任务](tasks/GG-113-private-image-previews.md) / [ADR](decisions/0101-private-card-image-previews.md) |
+| GG-113 | 资产库图片卡片与选择器使用私有 WebP 缩略图 | 本地代码/门禁 563/26/0、真实只读转换与 5173/32131 HTTP 通过；待站长页面复核，未部署 | [任务](tasks/GG-113-private-image-previews.md) / [ADR](decisions/0101-private-card-image-previews.md) |
 | GG-112 | 本地登录投递真实邮箱验证码 | 本地完成并验收：门禁 559/26/0、SMTP 预检 5/5；真实收信、登录及刷新会话正常；应用未部署 | [任务](tasks/GG-112-real-email-local-login.md) / [ADR](decisions/0100-local-real-email-delivery.md) |
 | GG-111 | 本地 5173 直传生产 OSS 的隔离前缀 | 本地实现并验收：门禁 558/26/0；5173 与 32131 均来自 GG-111；真实 PNG 上传 `ready / accepted`，切换页面服务后刷新仍可见；应用未部署 | [任务](tasks/GG-111-cloud-reference-upload-development.md) / [ADR](decisions/0099-local-upload-probes-in-production-oss-bucket.md) |
 | GG-110 | 5173 创作参考图预览接入本地上传 | 本地门禁、检查点和真实 JPEG 上传通过；数据库 `ready / accepted`，未部署 | [任务](tasks/GG-110-functional-reference-upload-preview.md) |
