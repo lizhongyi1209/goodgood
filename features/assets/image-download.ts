@@ -134,7 +134,7 @@ export async function saveImageToLocal(
   link.download = imageDownloadFilename(
     input.createdAt,
     input.ordinal,
-    input.previewUrl,
+    downloadUrl,
   );
   link.style.display = "none";
   try {

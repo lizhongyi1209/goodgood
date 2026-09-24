@@ -41,6 +41,9 @@ export function httpRouteForPath(pathname) {
       /^\/api\/references\/[^/]+\/content$/,
       "/api/references/:referenceId/content",
     ],
+    [/^\/api\/references\/[^/]+\/preview$/, "/api/references/:referenceId/preview"],
+    [/^\/api\/assets\/[^/]+\/preview$/, "/api/assets/:assetId/preview"],
+    [/^\/api\/assets\/[^/]+\/content$/, "/api/assets/:assetId/content"],
     [/^\/api\/billing\/orders\/[^/]+$/, "/api/billing/orders/:orderId"],
   ];
   return routes.find(([pattern]) => pattern.test(pathname))?.[1] ?? pathname;

@@ -2091,7 +2091,8 @@ export default function Home({
       name: `生成图片 ${batch.id} · ${index + 1}`,
       size: 0,
       source: "generated",
-      url: image.previewUrl,
+      url: image.detailUrl ?? image.previewUrl,
+      previewUrl: image.previewUrl,
       width: image.width,
       height: image.height,
     }))),
@@ -2102,6 +2103,7 @@ export default function Home({
       size: material.byteSize,
       source: "uploaded",
       url: material.url,
+      previewUrl: material.previewUrl,
       width: material.width,
       height: material.height,
     })),
@@ -2137,6 +2139,7 @@ export default function Home({
     size: material.byteSize,
     source: "uploaded",
     url: material.url,
+    previewUrl: material.previewUrl,
     width: material.width,
     height: material.height,
   }));
@@ -3135,7 +3138,7 @@ export default function Home({
     return (
       <article className="reference-material-card" key={material.id}>
         <div className="reference-material-image" style={{ aspectRatio: `${material.width} / ${material.height}` }}>
-          <PrivateObjectImage src={material.url} alt={material.name} />
+          <PrivateObjectImage src={material.previewUrl} alt={material.name} />
         </div>
         <div className="reference-material-copy">
           <strong title={material.name}>{material.name}</strong>
@@ -3872,7 +3875,7 @@ export default function Home({
                       >
                         <span className={`reference-library-picker-image ${material.mediaType}`}>
                           {material.mediaType === "image" ? (
-                            <PrivateObjectImage src={material.url} alt="" />
+                            <PrivateObjectImage src={material.previewUrl ?? material.url} alt="" />
                           ) : material.mediaType === "video" ? (
                             <video src={material.url} muted preload="metadata" aria-label={material.name} />
                           ) : (
@@ -3933,7 +3936,7 @@ export default function Home({
                   style={{ aspectRatio: `${activeDetail.ratio}`, width: `min(calc(100% - 72px), ${activeDetail.ratio * 82}dvh)` }}
                 >
                   <PrivateObjectImage
-                    src={activeDetail.image.previewUrl}
+                    src={activeDetail.image.detailUrl ?? activeDetail.image.previewUrl}
                     alt={`${activeDetailModel?.name} 生成图片 ${activeDetail.index + 1}`}
                     loading="eager"
                     style={{ objectPosition: activeDetail.image.previewPosition }}

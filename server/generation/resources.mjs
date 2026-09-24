@@ -8,6 +8,7 @@ import pg from "pg";
 import { createClient } from "redis";
 import { loadGenerationConfig } from "./config.mjs";
 import { routeLocalCloudReferences } from "./local-cloud-reference.mjs";
+import { addCloudCardPreviewProcessing } from "./storage.mjs";
 
 const { Pool } = pg;
 let resourcesPromise;
@@ -117,12 +118,28 @@ async function createResources(environment) {
         region: config.cloudReference.region,
       })
     : null;
+  const cloudReferencePreview = config.cloudReference
+    ? new S3Client({
+        credentials: {
+          accessKeyId: config.cloudReference.accessKeyId,
+          secretAccessKey: config.cloudReference.secretAccessKey,
+        },
+        endpoint: config.cloudReference.publicEndpoint,
+        bucketEndpoint: true,
+        forcePathStyle: false,
+        region: config.cloudReference.region,
+      })
+    : null;
+  if (cloudReferencePreview) addCloudCardPreviewProcessing(cloudReferencePreview);
   if (cloudReferenceData) {
     Object.defineProperty(publicStorage, "cloudReferenceClient", {
       value: cloudReferenceData,
     });
     Object.defineProperty(publicStorage, "cloudReferenceBucketEndpoint", {
       value: config.cloudReference.publicEndpoint,
+    });
+    Object.defineProperty(publicStorage, "cloudReferencePreviewClient", {
+      value: cloudReferencePreview,
     });
   }
   const storage = routeLocalCloudReferences(localStorage,
@@ -152,6 +169,7 @@ export async function closeGenerationResources() {
     current.pool.end(),
     current.storage.destroy(),
     current.publicStorage.destroy(),
+    current.publicStorage.cloudReferencePreviewClient?.destroy(),
     current.cloudReferenceBucket?.destroy(),
   ]);
 }

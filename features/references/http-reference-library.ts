@@ -10,6 +10,7 @@ export type ReferenceMaterial = Readonly<{
   status: "ready";
   uploadedAt: string;
   url: string;
+  previewUrl: string;
   width: number;
 }>;
 

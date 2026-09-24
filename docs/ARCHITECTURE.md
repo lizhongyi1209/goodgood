@@ -370,7 +370,16 @@ context as a project or confirming a clean creation clears it.
 The authenticated asset library now reloads successful accepted outputs from
 PostgreSQL through `GET /api/assets`. The repository constrains jobs, batches,
 and assets to the same resolved owner, sorts by submission time newest-first,
-and the presentation boundary signs every private object URL on each read.
+and the presentation boundary gives stable owner-checked preview and content
+routes; it no longer signs originals into a library listing.
+GG-113 separates card and picker images from originals: `GET /api/assets/:id/preview`
+and `GET /api/references/:id/preview` authenticate the owner before returning
+512 px WebP. Local RustFS originals stream through Sharp; local OSS references
+redirect to an OSS signed GET with `x-oss-process` included in its signature.
+Focused detail resolves the owner-checked content route and redirects to a
+fresh signed original; explicit download resolves a new signed URL. No
+derived object is stored, and a thumbnail failure never falls back to the full
+original inside a grid.
 Image download resolves a new signed read through the owner-scoped stable Asset
 ID at click time; it never reuses the expiring preview URL retained in browser
 state. The API returns only the short-lived URL, and the browser still transfers
@@ -379,10 +388,10 @@ Loading, empty, and retryable failure states replace stale in-memory assumptions
 after reload; representative mock batches remain available only in no-auth
 preview mode. Signed private-object images render directly from browser to
 object storage. The shared primitive covers restored draft/project reference
-thumbnails as well as generated assets and project covers. These images do not
-pass through the application image optimizer, which avoids proxying user bytes,
-preserves the expiring signature, and keeps private-IP SSRF protection enabled
-for all server-side fetches.
+thumbnails as well as generated assets and project covers. The shared image
+primitive does not invoke the application image optimizer; the explicit preview
+routes above are the only card-size transformations and preserve private-IP
+SSRF protection for server-side fetches.
 
 The durable generation capability admits `nano-banana-2` across 14 ratios and
 the three GPT image product IDs `gpt-image-2.5-sunburst`, `gpt-image-2`, and

@@ -100,8 +100,9 @@ test("asset presentation exposes decoded pixel dimensions", () => {
     {
       height: 4800,
       id: "asset-4k",
+      detailUrl: "https://storage.invalid/asset-4k",
       previewPosition: "50% 50%",
-      previewUrl: "https://storage.invalid/asset-4k",
+      previewUrl: "/api/assets/asset-4k/preview",
       width: 3584,
     },
   ]);
@@ -170,15 +171,17 @@ test("generation presentation preserves every accepted Asset in ordinal order", 
     {
       height: 1024,
       id: "asset-1",
+      detailUrl: "https://storage.invalid/asset-1",
       previewPosition: "50% 50%",
-      previewUrl: "https://storage.invalid/asset-1",
+      previewUrl: "/api/assets/asset-1/preview",
       width: 1024,
     },
     {
       height: 1024,
       id: "asset-2",
+      detailUrl: "https://storage.invalid/asset-2",
       previewPosition: "50% 50%",
-      previewUrl: "https://storage.invalid/asset-2",
+      previewUrl: "/api/assets/asset-2/preview",
       width: 1024,
     },
   ]);

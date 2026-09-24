@@ -1,5 +1,15 @@
 # 当前开发版本与跨窗口交接
 
+## GG-113 资产卡片与选择器缩略图（实现中）
+
+隔离工作树 `F:/goodgood-worktrees/GG-113` 从 GG-112 已验证提交 `85eea1a` 创建。
+站长选择资产库全部图片卡片和选择器；[任务卡](tasks/GG-113-private-image-previews.md)
+及 [ADR 0101](decisions/0101-private-card-image-previews.md) 记录范围。OSS 测试前缀
+真实图片的只读转换探测为 2,380,052 → 30,556 字节，生成 288 × 512 WebP。
+当前 5173/32131 仍运行 GG-112；GG-113 的 `check:local` 563/26/0，
+OSS 与 RustFS 真实只读缩略图转换均通过，精确检查点尚待切换。
+新检查点运行前，继续保留 GG-112 会话和服务；32142 Worker 保持关闭。
+
 ## GG-112 本地真实邮件验证码（已验收）
 
 基于 GG-111 `6067cda` 的独立工作树 `F:/goodgood-worktrees/GG-112`。5173 已经通过
@@ -29,8 +39,8 @@ RustFS。站长明确指定本地开发复用生产 OSS 桶；仅在显式启用
 参见 [ADR 0099](decisions/0099-local-upload-probes-in-production-oss-bucket.md) 与
 [任务卡](tasks/GG-111-cloud-reference-upload-development.md)。
 
-当前 5173 Vite 与 32131 Node Web 均从 GG-111 工作树运行；站长在页面服务切换后
-再次刷新，确认参考图仍在、页面正常。32142 真实 O1Key Worker 保持关闭。
+GG-111 验收时，5173 Vite 与 32131 Node Web 均从 GG-111 工作树运行；站长在页面服务切换后
+再次刷新，确认参考图仍在、页面正常。当前服务已由 GG-112 接续，32142 真实 O1Key Worker 保持关闭。
 
 云端配置按 `infra/local/cloud-upload.env.example` 放在**仓库和工作树之外**，并将
 RAM AccessKey ID / Secret 放在两个单独的仓库外文件；不要把值、CSV 内容、签名 URL

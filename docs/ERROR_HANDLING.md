@@ -528,7 +528,8 @@ current server draft, pauses further autosave, and requires an explicit
 `保留当前内容` or `恢复云端草稿` choice. Foreign references normalize to
 `DRAFT_REFERENCE_NOT_READY` without disclosing ownership. Direct project routes
 do not consume or overwrite the root draft. Restored reference thumbnails use
-their fresh private-object signatures browser-direct. A client-side thumbnail
+an owner-scoped preview route, which signs OSS processing or streams a local
+WebP transform. A client-side thumbnail
 load failure keeps the reference record and tray item available for retry or
 removal; it must not clear the draft or weaken server-side private-network
 protections.

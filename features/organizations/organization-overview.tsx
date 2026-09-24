@@ -96,7 +96,7 @@ export function OrganizationOverviewContent({ dashboard, mutating, onAdjustBudge
         <DialogHeader className="admin-action-dialog-header"><DialogTitle>团队成品详情</DialogTitle>
           <DialogDescription>{selected?.batch.creator.email} · {selected && new Intl.DateTimeFormat("zh-CN", { dateStyle: "medium", timeStyle: "short" }).format(new Date(selected.batch.createdAt))}</DialogDescription></DialogHeader>
         {selected && <div className="organization-overview-detail-body"><div className="organization-overview-detail-stage">
-          <PrivateObjectImage key={`${selected.output.id}-${imageAttempt}`} src={selected.output.previewUrl} alt={selected.batch.input.prompt} loading="eager"
+          <PrivateObjectImage key={`${selected.output.id}-${imageAttempt}`} src={selected.output.detailUrl ?? selected.output.previewUrl} alt={selected.batch.input.prompt} loading="eager"
             onLoad={() => setImageState("ready")} onError={() => setImageState("failed")} style={{ objectFit: "contain", opacity: imageState === "ready" ? 1 : 0 }} />
           {imageState === "loading" && <span role="status">正在加载图片</span>}
           {imageState === "failed" && <div role="alert"><p>图片暂时无法加载</p><Button size="sm" variant="ghost" onClick={() => { setImageState("loading"); setImageAttempt((value) => value + 1); }}>重试</Button>

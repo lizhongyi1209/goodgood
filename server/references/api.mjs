@@ -19,7 +19,7 @@ import {
   markReferenceReady,
   markReferenceRejected,
 } from "./repository.mjs";
-import { signAssetRead } from "../generation/storage.mjs";
+import { readCardPreview, signCloudCardPreview } from "../generation/storage.mjs";
 import { newLocalCloudReferenceKey } from "../generation/local-cloud-reference.mjs";
 import { readReferenceObject, signReferenceUpload } from "./storage.mjs";
 import {
@@ -46,7 +46,7 @@ function publicReference(row) {
   };
 }
 
-function publicReusableReference(row, url) {
+function publicReusableReference(row) {
   return {
     byteSize: Number(row.byte_size ?? 0),
     height: Number(row.pixel_height ?? 0),
@@ -55,9 +55,38 @@ function publicReusableReference(row, url) {
     name: row.original_file_name,
     status: "ready",
     uploadedAt: new Date(row.uploaded_at).toISOString(),
-    url,
+    url: `/api/references/${encodeURIComponent(row.id)}/content`,
+    previewUrl: `/api/references/${encodeURIComponent(row.id)}/preview`,
     width: Number(row.pixel_width ?? 0),
   };
+}
+
+export async function readReferenceAssetPreview({
+  referenceId,
+  ownerContext,
+  workspaceId = DEFAULT_WORKSPACE_ID,
+}) {
+  validateReferenceIds([{ id: referenceId }]);
+  const ownerId = ownerIdFromContext(ownerContext);
+  const resources = await getGenerationResources();
+  const row = await findReferenceAsset(resources.pool, {
+    ownerId,
+    referenceId,
+    workspaceId,
+  });
+  if (!row || row.upload_state !== "ready" || row.moderation_state !== "accepted" || row.object_deleted_at) {
+    throw new ReferenceRequestError("REFERENCE_NOT_FOUND", "未找到可读取的参考图素材。", 404);
+  }
+  const url = await signCloudCardPreview({
+    key: row.object_key,
+    publicStorage: resources.publicStorage,
+  });
+  if (url) return { redirectUrl: url };
+  return readCardPreview({
+    bucket: resources.config.objectStorage.bucket,
+    key: row.object_key,
+    storage: resources.storage,
+  });
 }
 
 export async function listReferenceAssets({
@@ -71,18 +100,7 @@ export async function listReferenceAssets({
     workspaceId,
   });
   return {
-    references: await Promise.all(
-      rows.map(async (row) =>
-        publicReusableReference(
-          row,
-          await signAssetRead({
-            bucket: resources.config.objectStorage.bucket,
-            key: row.object_key,
-            publicStorage: resources.publicStorage,
-          }),
-        ),
-      ),
-    ),
+    references: rows.map(publicReusableReference),
   };
 }
 

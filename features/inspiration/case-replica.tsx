@@ -355,7 +355,7 @@ export function CaseReplica({
                 {job.outputs.map((output) => (
                   <PrivateObjectImage
                     key={output.id}
-                    src={output.previewUrl}
+                    src={output.detailUrl ?? output.previewUrl}
                     alt={`${title} · 复刻结果`}
                   />
                 ))}
@@ -403,7 +403,7 @@ export function CaseReplica({
                     setLibraryOpen(false);
                   }}
                 >
-                  <PrivateObjectImage src={item.url} alt={item.name} />
+                  <PrivateObjectImage src={item.previewUrl} alt={item.name} />
                   <span>{item.name}</span>
                 </button>
               ))}

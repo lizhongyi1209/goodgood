@@ -141,6 +141,7 @@ export type GenerationInputSnapshot = Readonly<{
 
 export type GenerationOutput = Readonly<{
   id: string;
+  detailUrl?: string;
   height?: number;
   previewUrl: string;
   previewPosition: string;

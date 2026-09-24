@@ -324,7 +324,7 @@ export function OrganizationManagementView({
       <div className="organization-section-heading"><div><h2>团队资产</h2><p>仅展示企业生成结果，不开放员工的原始参考素材。</p></div></div>
       {assets.length === 0 ? <div className="organization-state">企业资产库还是空的</div> : <div className="organization-assets-grid">{assets.flatMap((batch) => batch.outputs.map((output, index) => <article className="organization-asset-card" key={output.id}>
         <div className="organization-asset-image" style={{ aspectRatio: output.width && output.height ? `${output.width}/${output.height}` : "1/1" }}><PrivateObjectImage src={output.previewUrl} alt="企业生成资产" style={{ objectFit: "contain" }} />
-          <Button className="organization-download" size="icon" variant="ghost" disabled={downloadingAssetId === output.id} onClick={() => void downloadAsset(batch, output.id, index + 1, output.previewUrl)}>{downloadingAssetId === output.id ? <LoaderCircle className="animate-spin" /> : <Download />}<span className="sr-only">下载图片</span></Button>
+          <Button className="organization-download" size="icon" variant="ghost" disabled={downloadingAssetId === output.id} onClick={() => void downloadAsset(batch, output.id, index + 1, output.detailUrl ?? output.previewUrl)}>{downloadingAssetId === output.id ? <LoaderCircle className="animate-spin" /> : <Download />}<span className="sr-only">下载图片</span></Button>
         </div><div className="organization-asset-meta"><strong>{batch.creator.email}</strong><p>{batch.input.prompt}</p><span>{formatDate(batch.createdAt)} · {batch.input.modelId} · {batch.input.resolution}</span></div>
       </article>))}</div>}
     </>}

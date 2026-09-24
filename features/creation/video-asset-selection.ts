@@ -18,6 +18,7 @@ export type VideoAssetMaterial = Readonly<{
   size: number;
   source: "generated" | "uploaded";
   url: string;
+  previewUrl?: string;
   width?: number;
   height?: number;
   durationSeconds?: number;

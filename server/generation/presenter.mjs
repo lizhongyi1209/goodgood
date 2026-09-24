@@ -1,38 +1,23 @@
-import { signAssetRead } from "./storage.mjs";
 import { publicGenerationJob } from "./repository.mjs";
 
 export async function presentGenerationJob(
-  resources,
+  _resources,
   row,
   { includeReferenceUrls = true } = {},
 ) {
-  const [signedAssets, signedReferences] = await Promise.all([
-    Promise.all(
-      (row.assets ?? []).map(async (asset) => [
-        asset.id,
-        await signAssetRead({
-          bucket: resources.config.objectStorage.bucket,
-          key: asset.object_key,
-          publicStorage: resources.publicStorage,
-        }),
-      ]),
-    ),
-    includeReferenceUrls
-      ? Promise.all(
-          (row.reference_snapshot ?? []).map(async (reference) => [
-            reference.id,
-            await signAssetRead({
-              bucket: resources.config.objectStorage.bucket,
-              key: reference.objectKey,
-              publicStorage: resources.publicStorage,
-            }),
-          ]),
-        )
-      : Promise.resolve([]),
+  const assetUrls = (row.assets ?? []).map((asset) => [
+    asset.id,
+    `/api/assets/${encodeURIComponent(asset.id)}/content`,
   ]);
+  const referenceUrls = includeReferenceUrls
+    ? (row.reference_snapshot ?? []).map((reference) => [
+        reference.id,
+        `/api/references/${encodeURIComponent(reference.id)}/content`,
+      ])
+    : [];
   return publicGenerationJob(
     row,
-    new Map(signedAssets),
-    new Map(signedReferences),
+    new Map(assetUrls),
+    new Map(referenceUrls),
   );
 }

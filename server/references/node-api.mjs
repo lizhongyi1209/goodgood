@@ -4,6 +4,7 @@ import {
   getReferenceUploadStatus,
   listReferenceAssets,
   readReferenceAssetContent,
+  readReferenceAssetPreview,
   referenceApiError,
 } from "./api.mjs";
 import { requestIdFor } from "../observability/http.mjs";
@@ -36,6 +37,7 @@ const DEFAULT_OPERATIONS = Object.freeze({
   getReferenceUploadStatus,
   listReferenceAssets,
   readReferenceAssetContent,
+  readReferenceAssetPreview,
 });
 
 export function createReferenceNodeApiHandler({
@@ -92,6 +94,28 @@ export function createReferenceNodeApiHandler({
           "content-type": content.mimeType,
         });
         response.end(content.bytes);
+        return true;
+      }
+
+      const previewMatch = /^\/api\/references\/([^/]+)\/preview$/.exec(url.pathname);
+      if (previewMatch && request.method === "GET") {
+        referenceId = decodeURIComponent(previewMatch[1]);
+        const preview = await operations.readReferenceAssetPreview({
+          ownerContext,
+          referenceId,
+          workspaceId,
+        });
+        if (preview.redirectUrl) {
+          response.writeHead(302, { "cache-control": "private, no-store", location: preview.redirectUrl });
+          response.end();
+        } else {
+          response.writeHead(200, {
+            "cache-control": "private, no-store",
+            "content-length": String(preview.bytes.length),
+            "content-type": preview.mimeType,
+          });
+          response.end(preview.bytes);
+        }
         return true;
       }
 

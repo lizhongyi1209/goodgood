@@ -1,4 +1,4 @@
-import { assetApiError, getAssetDownloadUrl, listAssets } from "./api.mjs";
+import { assetApiError, getAssetDownloadUrl, listAssets, readAssetPreview } from "./api.mjs";
 import { requestIdFor } from "../observability/http.mjs";
 import { workspaceIdFromRequest } from "../organizations/request.mjs";
 
@@ -12,7 +12,7 @@ function sendJson(response, statusCode, payload, headers = {}) {
   response.end(JSON.stringify(payload));
 }
 
-const DEFAULT_OPERATIONS = Object.freeze({ getAssetDownloadUrl, listAssets });
+const DEFAULT_OPERATIONS = Object.freeze({ getAssetDownloadUrl, listAssets, readAssetPreview });
 
 export function createAssetNodeApiHandler({
   authenticate,
@@ -27,10 +27,36 @@ export function createAssetNodeApiHandler({
     const downloadUrlMatch = url.pathname.match(
       /^\/api\/assets\/([^/]+)\/download-url$/,
     );
-    if (url.pathname !== "/api/assets" && !downloadUrlMatch) return false;
+    const previewMatch = url.pathname.match(/^\/api\/assets\/([^/]+)\/preview$/);
+    const contentMatch = url.pathname.match(/^\/api\/assets\/([^/]+)\/content$/);
+    if (url.pathname !== "/api/assets" && !downloadUrlMatch && !previewMatch && !contentMatch) return false;
     try {
       const ownerContext = await authenticate(request);
       const workspaceId = workspaceIdFromRequest(request);
+      if (contentMatch && request.method === "GET") {
+        const original = await operations.getAssetDownloadUrl({
+          assetId: decodeURIComponent(contentMatch[1]),
+          ownerContext,
+          workspaceId,
+        });
+        response.writeHead(302, { "cache-control": "private, no-store", location: original.url });
+        response.end();
+        return true;
+      }
+      if (previewMatch && request.method === "GET") {
+        const preview = await operations.readAssetPreview({
+          assetId: decodeURIComponent(previewMatch[1]),
+          ownerContext,
+          workspaceId,
+        });
+        response.writeHead(200, {
+          "cache-control": "private, no-store",
+          "content-length": String(preview.bytes.length),
+          "content-type": preview.mimeType,
+        });
+        response.end(preview.bytes);
+        return true;
+      }
       if (downloadUrlMatch && request.method === "GET") {
         sendJson(
           response,

@@ -1022,7 +1022,7 @@ export function ReferenceQuickEditor({
                             })}
                           >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img alt="" src={material.url} />
+                            <img alt="" src={material.previewUrl} />
                           </button>
                         ))}
                         {materials.length === 0 && <small>资产库暂无可用素材</small>}

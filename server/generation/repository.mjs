@@ -176,8 +176,9 @@ export function publicGenerationJob(
       return previewUrl
         ? [{
             id: asset.id,
+            detailUrl: previewUrl,
             previewPosition: "50% 50%",
-            previewUrl,
+            previewUrl: `/api/assets/${encodeURIComponent(asset.id)}/preview`,
             ...(asset.pixel_width != null && asset.pixel_height != null
               ? { height: asset.pixel_height, width: asset.pixel_width }
               : {}),
