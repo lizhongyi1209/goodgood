@@ -131,6 +131,7 @@ function ModelIcon({ icon }: { icon: GenerationModelIcon }) {
         alt=""
         width={isNanoBanana ? 26 : 25}
         height={isNanoBanana ? 26 : 25}
+        unoptimized
       />
     </span>
   );

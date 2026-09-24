@@ -6,7 +6,7 @@
 
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
-| GG-107 | 创作输入框生成按钮改为向上箭头 | 本地构建与独立预览已启动；未运行自动测试或浏览器目视验收，未部署 | [任务](tasks/GG-107-composer-send-arrow.md) / [ADR](decisions/0098-up-arrow-composer-send.md) |
+| GG-107 | 创作输入框生成按钮改为向上箭头 | 按钮比例获用户确认；模型 SVG 预览 400 已修复并构建，待刷新复核；未部署 | [任务](tasks/GG-107-composer-send-arrow.md) / [ADR](decisions/0098-up-arrow-composer-send.md) |
 | GG-105 | 图片与视频素材上传上限统一到 200 MB | 本地代码已运行，自动测试未执行；待用户手动刷新验收，未部署 | [任务](tasks/GG-105-media-upload-200mb.md) / [ADR](decisions/0096-200-mib-private-media-uploads.md) |
 | GG-104 | 创作器拖拽上传、错误反馈、视频素材入库与布局 | 本地实现、门禁与运行预览通过；真实文件端到端未测，未部署 | [任务](tasks/GG-104-media-dropzone-layout.md) / [ADR](decisions/0095-composer-drop-and-private-video-materials.md) |
 | GG-103 | 多参考图即时预览、上传恢复与模型输入控制 | **本地实现与验证完成，未部署**：原图继续入库，模型输入副本单张最多 10 MB；门禁 549/26/0，32131/32142 已更新并健康 | [任务](tasks/GG-103-reference-input-optimization.md) / [ADR](decisions/0094-reference-preview-and-provider-inputs.md) |

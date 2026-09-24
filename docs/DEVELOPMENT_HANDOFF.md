@@ -1,6 +1,6 @@
 # 当前开发版本与跨窗口交接
 
-- 日期：2026-09-24；GG-107 创作发送箭头已在独立工作树完成代码与本地构建，5173 预览可达，待浏览器目视验收，未部署。分支 `codex/GG-107-composer-send-arrow`，基线 GG-105 `60beb04`；原 32131 仍运行 GG-105 检查点。
+- 日期：2026-09-24；GG-107 发送箭头比例已获用户确认；模型 SVG 因 `next/image` 优化 `data:` 地址而在 5173 预览返回 400，现已跳过优化并重建，待刷新复核，未部署。分支 `codex/GG-107-composer-send-arrow`，基线 GG-105 `60beb04`；原 32131 仍运行 GG-105 检查点。
 - 当前项目入口：F:/goodgood；累计代码包含a73835f、GG081—091与GG092交接。`.codex/`是用户本地设置，保留不提交。
 - **生产已部署并开放**：`goodgood.o1key.com`，revision `7888554` / 迁移 `0044` / 配置 `b3d7310a…ddf3`；应用仅 `goodgood-production` 单项目。详见 CURRENT_STATE.md 与 [GG-100 记录](operations/2026-09-22-gg100-single-slot-host-cleanup.md)。
 - 新窗口先读AGENTS/CURRENT_STATE/WORKFLOW/IMPLEMENTATION_PLAN/BACKLOG，然后本页；GG-106 OSS 文档在原 `F:/goodgood` 工作树继续，GG-107 位于 `F:/goodgood-worktrees/GG-107`。
