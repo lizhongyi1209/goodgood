@@ -6,6 +6,7 @@
 
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
+| GG-110 | 5173 创作参考图预览接入本地上传 | 5173 已切换到真实本地会话，门禁与接口边界通过；真实文件上传待用户人工验收，未部署 | [任务](tasks/GG-110-functional-reference-upload-preview.md) |
 | GG-107 | 创作输入框生成按钮改为向上箭头 | 按钮比例获用户确认；模型 SVG 预览 400 已修复并构建，待刷新复核；未部署 | [任务](tasks/GG-107-composer-send-arrow.md) / [ADR](decisions/0098-up-arrow-composer-send.md) |
 | GG-105 | 图片与视频素材上传上限统一到 200 MB | 本地代码已运行，自动测试未执行；待用户手动刷新验收，未部署 | [任务](tasks/GG-105-media-upload-200mb.md) / [ADR](decisions/0096-200-mib-private-media-uploads.md) |
 | GG-104 | 创作器拖拽上传、错误反馈、视频素材入库与布局 | 本地实现、门禁与运行预览通过；真实文件端到端未测，未部署 | [任务](tasks/GG-104-media-dropzone-layout.md) / [ADR](decisions/0095-composer-drop-and-private-video-materials.md) |
@@ -85,10 +86,7 @@
 | GG-024—026 | 站长弹框样式、积分记录页、本地预览整合 | 均已合入 GG-026 并随 GG-097 上线 | [GG024](tasks/GG-024-admin-dialog-styles.md) · [GG025](tasks/GG-025-credit-activity.md) · [GG026](tasks/GG-026-local-feature-integration.md) |
 | GG-027 | 企业/分销身份、直属下级与充值来源积分划拨 | 本地完成；账户身份、菜单、筛选与无边框普通按钮规范已复验，待用户决定是否发布准备 | [任务](tasks/GG-027-distributor-credit-transfers.md) |
 | GG-028—032 | Authing 域名/邮箱验证码/企业工作区整条线 | GG-028 被 GG-029 取代；GG-029—032 已随后续累计功能上线 | [GG029](tasks/GG-029-email-otp-plan.md) · [GG030](tasks/GG-030-enterprise-workspace.md) · [GG031](tasks/GG-031-email-enterprise-integration.md) · [GG032](tasks/GG-032-complete-base-email-enterprise.md) |
-| GG-033 | 新增 GPT IMAGE 2.5 sunburst/flare 并更新 GPT IMAGE 2 provider ID | 本地实现、完整门禁与三模型真实出图完成；待用户检查，未推送/未合入/未部署 | [任务](tasks/GG-033-gpt-image-25-models.md) |
-| GG-034 | 图片 / 视频创作模式与 Seedance 前端 | 前端实现、默认多模态/首尾帧、无备注统一上传、显式并发素材创建选择、历史素材复检决策、统一媒体资产选择；待用户检查，不接真实视频接口 | [任务](tasks/GG-034-video-creation-frontend.md) |
-| GG-035 | Seedance 线路与 O1Key 接口契约 | 线路 UI、标准 Doubao/备用 HC adapter、端点契约与一次标准线路真实视频均已验证；暂不接定价和产品提交 | [任务](tasks/GG-035-seedance-provider-lines.md) |
-| GG-036 | Seedance 页面真实接口实测 | 最新候选 32140 真实接口本地全栈已启动；企业测试账号准备完成，Chrome 登录交用户操作；不接视频定价/持久化/生产 | [任务](tasks/GG-036-seedance-page-smoke.md) |
+| GG-033—036 | GPT IMAGE 2.5 模型与 Seedance 创作/接口实测 | 历史本地实现及实测记录；后续范围与状态以各任务卡为准 | [GG033](tasks/GG-033-gpt-image-25-models.md) · [GG034](tasks/GG-034-video-creation-frontend.md) · [GG035](tasks/GG-035-seedance-provider-lines.md) · [GG036](tasks/GG-036-seedance-page-smoke.md) |
 | GG-037—038 | 图片与视频混排样式、Seedance 品牌图标 | 用户已确认布局；图标已验证，历史本地任务 | [GG037](tasks/GG-037-mixed-media-style-preview.md) · [GG038](tasks/GG-038-seedance-brand-icon.md) |
 | GG-039 | 视频生成数量 1/2/4 与独立并发任务 | 本地完成并验证，待用户检查；未真实并发实测/发布 | [任务](tasks/GG-039-video-count-concurrency.md) |
 | GG-040—041 | 图片/视频 `---` 批量提示词与数量乘积并发、去重说明 | 本地门禁与 Chrome 验证通过，待用户检查；未真实批量实测/发布 | [GG040](tasks/GG-040-batch-prompts.md) · [GG041](tasks/GG-041-remove-batch-prompt-summary.md) |

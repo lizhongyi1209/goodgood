@@ -1079,6 +1079,10 @@ callback or persistence, disabled read/page/write paths, and preview-session
 gating. All fixture data stays in memory; never seed it into the real-provider
 database/queue. Live 32140 auth continues to use actual data, while UI-only
 5173 uses its existing preview session without credentials.
+GG-110 adds an explicit `dev:workspace` mode for the same Vite port. Its
+unauthenticated reference and session APIs must return 401; the plain
+`dev:local` preview still uses the UI-only session. HTTP boundary checks do
+not prove that a browser completed a signed PUT or server-side image decode.
 
 - Dependency install is locked and reproducible.
 - Lint, full TypeScript check, build, and automated tests pass.

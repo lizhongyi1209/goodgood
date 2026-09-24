@@ -1,6 +1,6 @@
 # 当前开发版本与跨窗口交接
 
-- 日期：2026-09-24；GG-107 发送箭头比例已获用户确认；模型 SVG 因 `next/image` 优化 `data:` 地址而在 5173 预览返回 400，现已跳过优化并重建，待刷新复核，未部署。分支 `codex/GG-107-composer-send-arrow`，基线 GG-105 `60beb04`；原 32131 仍运行 GG-105 检查点。
+- 日期：2026-09-24；GG-110 在 GG-107 `4d5ad94` 上修复 5173 参考图上传预览的运行配置。原 5173 为演示会话、`/api/references` 503；现已切换到仅监听 loopback 的真实本地会话，接口边界与门禁通过，真实文件尚待用户验收。分支 `fix/GG-110-functional-upload-preview`，工作树 `F:/goodgood-worktrees/GG-107`；32131 仍运行 GG-105 已验证检查点，生产未变。
 - 当前项目入口：F:/goodgood；累计代码包含a73835f、GG081—091与GG092交接。`.codex/`是用户本地设置，保留不提交。
 - **生产已部署并开放**：`goodgood.o1key.com`，revision `7888554` / 迁移 `0044` / 配置 `b3d7310a…ddf3`；应用仅 `goodgood-production` 单项目。详见 CURRENT_STATE.md 与 [GG-100 记录](operations/2026-09-22-gg100-single-slot-host-cleanup.md)。
 - 新窗口先读AGENTS/CURRENT_STATE/WORKFLOW/IMPLEMENTATION_PLAN/BACKLOG，然后本页；GG-106 OSS 文档在原 `F:/goodgood` 工作树继续，GG-107 位于 `F:/goodgood-worktrees/GG-107`。
@@ -117,7 +117,7 @@ PID是交接时的记录，不是以后可直接kill的授权目标。先用Get-
 
 ## 启动与恢复
 
-Node >=22.13.0，npm；本机记录v24.12.0/npm11.6.2。切换版本后用npm ci恢复锁定依赖，忽略旧node_modules/dist。普通UI开发用npm run dev:local，按Vite实际打印的URL访问；它不能替代有数据的32131原预览。
+Node >=22.13.0，npm；本机记录v24.12.0/npm11.6.2。切换版本后用npm ci恢复锁定依赖，忽略旧node_modules/dist。普通纯 UI 开发用 `npm run dev:local`，它使用演示会话，不能上传真实素材。需在热更新预览中使用本地素材和邮箱会话时，先启动已验证的 32131 Web、32142 Worker 与本地 Compose 依赖，再从 GG-110 工作树运行 `npm run dev:workspace -- --env-file F:\goodgood\.env.login-review --port 5173`。该入口验证所有状态服务在 loopback、真实 O1Key 开发密钥位于仓库外，并把邮箱登录 API 接到 32131；5173 参考图接口使用当前工作树代码。两个端口共享本地会话 cookie，浏览器直传的 RustFS CORS 包含 5173 和 32131。实际端口以 Vite 输出为准；停止进程用 Ctrl+C。
 
 根目录已有忽略的.env.local-review，保留本机loopback状态服务配置；其中历史 mock/provider 值不再控制开发运行时。未提交、不打印、不复制到报告；不得含生产凭据。它不能替代其他机器的独立环境安装。若文件或容器缺失，按DEPLOYMENT的独立本地栈步骤配置，不运行旧数据转换，也不从生产导入。
 
