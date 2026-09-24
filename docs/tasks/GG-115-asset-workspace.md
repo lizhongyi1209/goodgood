@@ -1,6 +1,6 @@
 # GG-115 — Asset history and personal library
 
-- Status: local implementation, gate, and checkpoint HTTP smoke verified; authenticated browser acceptance pending; not deployed.
+- Status: local implementation and authenticated asset-page acceptance complete; not deployed.
 - Baseline: GG-114 `3665087`; branch `feature/GG-115-asset-workspace`;
   worktree `F:/goodgood-worktrees/GG-115`.
 - Decision: [ADR 0102](../decisions/0102-asset-history-library-and-upload.md).
@@ -42,9 +42,13 @@ navigation.
   32131 Web now serve GG-115: `/assets`, readiness, and proxied version return
   200; unauthenticated organization/audio routes return 401. Worker 32142
   stays off. Production remains unchanged.
+- After the `d292126` documentation checkpoint, the owner confirmed on 5173
+  that generation history opens by default, personal library switches normally,
+  and a test JPG/PNG remains visible and previewable after upload and refresh.
+  Folder organization and MP3/MP4 browser uploads were not separately exercised
+  in that acceptance; their routes/contracts have automated coverage.
 
 ## 下一步
 
-Inspect authenticated history, personal library, folder organization, a
-disposable image upload, preview, and refresh on 5173. Record browser evidence
-and any remaining limitation before closing the local acceptance.
+Local GG-115 scope is accepted. Future production deployment is a separate
+authorized task; keep 5173/32131 running for the next local feature.
