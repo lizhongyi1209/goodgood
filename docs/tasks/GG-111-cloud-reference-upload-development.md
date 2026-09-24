@@ -1,5 +1,6 @@
 # GG-111 — local browser uploads to OSS
 
+- Status: implemented and locally verified; application code not deployed.
 - Baseline: GG-110 `65fa299`; branch `feature/GG-111-cloud-development-upload`;
   worktree `F:/goodgood-worktrees/GG-111`.
 - Decision: [ADR 0099](../decisions/0099-local-upload-probes-in-production-oss-bucket.md).
@@ -27,11 +28,21 @@
   GET 200 with byte comparison, then exact-key DELETE 204.
 - `npm run check:local`: 584 tests, 558 passed, 26 isolated skips, 0 failed;
   lint had 16 pre-existing warnings and 0 errors.
-- Application API and browser upload: pending verified GG-111 checkpoint startup.
+- Verified checkpoint `2674c90` ran on 32131 with cloud mode, reported
+  `build.verified=true` and readiness 200. Port 5173 `/create` and its API
+  proxy returned 200 with that backend revision.
+- The operator uploaded a real PNG through 5173 and confirmed it remained
+  visible after refresh. Read-only local database inspection found the newest
+  reference `ready / accepted`, `image/png`, 2,380,052 bytes, 940×1672 pixels,
+  with a `local-dev/references/` key. OSS HEAD returned 200 and the same byte
+  count. The previous RustFS reference belonged to the same local owner.
+- The Windows cross-drive external-file guard was corrected in `2674c90`;
+  `npm run check:local` was repeated afterward with the same 558 pass,
+  26 isolated skips, 0 failures. Production application remains GG-098.
 
 ## 下一步
 
-Start the verified GG-111 Web checkpoint with external credential paths,
-then perform one disposable local-prefix browser upload and inspect the local
-ready record and refresh recovery. Do not use a production user object for
-the probe.
+Keep the opt-in cloud mode only for requested local testing. Before a future
+checkpoint restart, build from the then-current committed revision. Continue
+new feature work in a new isolated branch; GG-106 production OSS application
+cutover remains independent.

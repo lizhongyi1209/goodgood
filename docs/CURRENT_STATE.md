@@ -1,12 +1,12 @@
 # GoodGood 当前状态
 
-- 最后核对：2026-09-24 GG-110 在 5173 已完成真实 JPEG 参考图本地上传，32131 运行已验证检查点；GG-105 大文件上传仍待手动验收，生产事实未变。生产身份 `7888554` / 迁移 `0044` / 配置契约 `b3d7310a…ddf3`；公网与注册均开放。
+- 最后核对：2026-09-24 GG-111 在 5173 已完成生产 OSS 桶测试前缀的真实 PNG 参考图直传与刷新恢复；32131 运行已验证 GG-111 检查点。生产应用仍为 `7888554` / 迁移 `0044` / 配置契约 `b3d7310a…ddf3`；公网与注册均开放。
 - 产品阶段：已开放的 `controlled-alpha-v1`，不是完整 seed/付费生产就绪。
 - 正式入口：https://goodgood.o1key.com
-- 当前工作：**GG-110 的 5173 本地真实参考图上传已验收，未部署**；32131 Node Web 运行 GG-110 已验证检查点，32142 真实 O1Key Worker 当前停止。GG-105 的 200 MiB 大文件上传仍待手动验收。配置好的本地图片/视频都默认接真实 O1Key，mock 仅用于隔离自动化测试；当前未触发生成。视频生成仍为临时文生视频预览，正式任务/积分未接；GG-104 新增可复用的上传视频素材。生产应用仍为 GG-098 功能和固定 `goodgood-production` Compose。注册自 2026-09-15 起开放，**已有真实用户在使用**：30 个账户、240 个生成资产、参考素材 181 `ready`、生成任务 279（223 成功 / 56 失败）。站长账户 951565127@qq.com，邀请码 405513。
+- 当前工作：**GG-111 的 5173 本地参考图直传 OSS 已验收，未部署应用代码**；32131 Node Web 运行 GG-111 已验证检查点，32142 真实 O1Key Worker 当前停止。新本地素材只写 `o1key-goodgood/local-dev/references/`；旧本地素材仍读 RustFS。GG-105 的 200 MiB 大文件上传仍待手动验收。配置好的本地图片/视频默认接真实 O1Key，mock 仅用于隔离自动化测试；本次未触发生成。视频生成仍为临时文生视频预览，正式任务/积分未接；GG-104 新增可复用的上传视频素材。生产应用仍为 GG-098 功能和固定 `goodgood-production` Compose。注册自 2026-09-15 起开放，**已有真实用户在使用**：30 个账户、240 个生成资产、参考素材 181 `ready`、生成任务 279（223 成功 / 56 失败）。站长账户 951565127@qq.com，邀请码 405513。
 - 充值：运营已按「登记已收到的充值款」录入 4 笔，共 15100 积分（支付宝 ×2、支付宝收款、微信）。这不是自动支付，支付/支付宝结算仍搁置。
 - **已知缺口（站长 2026-09-15 明确授权接受）**：`controlled-alpha-operations` 未通过——主机无任何对外告警通道。**备份本身不是缺口**：生产备份 timer `enabled`/`active`，每 30 分钟一次，2026-09-17 首次恢复演练通过（见下）。见发布记录。
-- GG-100 生产主机单槽位迁移与旧 blue/green 清理已完成；GG-101—105、GG-107 与 GG-110 仅本地实现，未触碰生产；GG-106 OSS 决策工作在另一工作树继续。不要自动恢复搁置的 C6。
+- GG-100 生产主机单槽位迁移与旧 blue/green 清理已完成；GG-101—105、GG-107、GG-110 与 GG-111 应用代码仅本地实现。GG-111 按站长明确选择在生产 OSS 桶追加 5173 CORS 并写入独立测试前缀；未改生产应用、数据库或既有对象。GG-106 OSS 决策工作在另一工作树继续。不要自动恢复搁置的 C6。
 
 ## GG-099 / GG-100 单槽位发布（2026-09-22）
 
@@ -22,7 +22,7 @@
 - 新版本须运行`npm run build:checkpoint`和`npm run verify:checkpoint`；启动脚本拒绝源码、Git revision或产物指纹不匹配。Web的`/api/health/version`返回`build.verified`与revision，作为跨窗口页面来源核验。
 - Web/Worker 均强制调用**真实** O1Key（真实计费），开发令牌从仓库外
   `%USERPROFILE%\.claude\goodgood-local-secrets\o1key-api-key.txt` 读取；缺失即停止，不能改为 mock。
-- 本地 PostgreSQL/Valkey/RustFS、身份与数据继续隔离；生产秘密、数据库、R2、队列和用户数据禁止进入本地。mock 只存在于显式 `mock-tests` 自动化测试栈，完整门禁不产生真实 provider 请求。
+- 本地 PostgreSQL/Valkey/RustFS、身份与数据继续隔离；GG-111 经站长明确授权例外使用仓库外现有 OSS RAM 密钥，只操作生产桶 `local-dev/references/` 前缀。生产数据库、R2、队列和既有用户对象不进入本地。mock 只存在于显式 `mock-tests` 自动化测试栈，完整门禁不产生真实 provider 请求。
 
 ## 已上线的能力与边界
 
@@ -65,7 +65,7 @@
 | 发布回退 | 只在同一 `goodgood-production` Compose 项目恢复兼容的旧应用镜像；不切换槽位或 Nginx upstream |
 | 主机 | 香港 2 vCPU / 4 GiB / 50 GiB；Web、Worker、PostgreSQL、Valkey 同机 |
 | 对象与备份 | 私有 R2；加密异机备份 Restic → `goodgood-postgres-backups/production`。timer `goodgood-production-postgres-backup.timer` **`enabled`/`active`**，每 30 分钟一次（77 个快照）。2026-09-17 演练点快照 `ce191630`，**恢复演练通过**；发布前恢复点 `36f2a437` |
-| 本地 | Windows 开发；Compose 使用本地 PostgreSQL/Valkey/RustFS + 真实 O1Key 开发凭据；mock 仅限隔离测试 profile |
+| 本地 | Windows 开发；Compose 使用本地 PostgreSQL/Valkey/RustFS + 真实 O1Key 开发凭据；GG-111 显式参考图模式另用生产 OSS 桶的 `local-dev/references/` 前缀；mock 仅限隔离测试 profile |
 
 没有常驻远程测试环境。`staging-goodgood.o1key.com` 仅保留名称，非当前测试入口。
 SSH 别名 `goodgood-staging` 是历史命名，指向现有生产主机，不能据名字当作测试机。

@@ -39,3 +39,11 @@ local RustFS mode remains in use; no silent cloud fallback occurs.
   previews require this opt-in mode when that checkpoint is restarted.
 - This decision does not authorize a production application release or change
   the GG-106 production cutover work.
+
+## Verification
+
+On 2026-09-24 both local and production browser origins passed PUT preflight.
+A disposable local-prefix object passed signed PUT, private GET with byte
+comparison, and exact-key deletion. The 5173 page then uploaded a real PNG;
+the local reference became `ready / accepted`, OSS HEAD matched its byte size,
+and the operator confirmed it remained visible after refresh.

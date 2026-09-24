@@ -23,8 +23,10 @@ node scripts/local-checkpoint.mjs start workspace --cloud-env-file C:\Users\Admi
 密钥。RAM 身份读取桶 CORS 返回 `AccessDenied 403`，站长已在 OSS 控制台追加
 5173 规则；`upload-goodgood.o1key.cn` 的 PUT 预检现返回 200，允许来源、方法及
 `content-type` 均正确。OSS HeadBucket 200；以全新可丢弃 `local-dev/references/`
-对象执行签名 PUT 200、私有 GET 200 和字节比对、精确 DELETE 204。尚须在 GG-111
-本地检查点经 GoodGood API 完成真实图片登记、直传、校验及刷新恢复。
+对象执行签名 PUT 200、私有 GET 200 和字节比对、精确 DELETE 204。随后 GG-111
+`2674c90` 已验证检查点在 32131 启动，5173 代理该版本；站长实传 PNG 并确认刷新
+仍可见。本地记录 `ready / accepted`、2,380,052 字节、940×1672 像素，OSS HEAD
+200 且长度一致。32142 Worker 未启动，本次未触发 O1Key 生成。
 
 - 日期：2026-09-24；GG-110 在 GG-107 `4d5ad94` 上修复 5173 参考图上传预览的运行配置。5173 仅监听 loopback，`/api` 代理到本地 32131 Node Web，RustFS 直传已用真实 JPEG 验证 `ready / accepted`。分支 `fix/GG-110-functional-upload-preview`，工作树 `F:/goodgood-worktrees/GG-107`；32131 运行已验证 `35b1f12` 检查点，32142 Worker 当前未启动。生产未变。
 - 当前项目入口：F:/goodgood；累计代码包含a73835f、GG081—091与GG092交接。`.codex/`是用户本地设置，保留不提交。
