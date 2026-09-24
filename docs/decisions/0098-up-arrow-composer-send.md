@@ -12,8 +12,11 @@ symbol. The creator has requested a familiar upward arrow at this action.
 ## Decision
 
 - Use the same upward arrow icon for image and video generation buttons.
-- Keep the existing action size, position, accessible names, click behavior,
-  availability rules, and support for submissions while earlier jobs run.
+- Keep the 40px action target and position, with a 32px visible circle and a 17px
+  arrow. Use a 22px composer corner radius on wide screens and 18px on mobile;
+  the attached parameter drawer follows that radius.
+- Keep accessible names, click behavior, availability rules, and support for
+  submissions while earlier jobs run.
 - Use the Palace Red accent for the button. Keep Feihong as an existing loading
   illustration where it is already used, outside the composer action.
 

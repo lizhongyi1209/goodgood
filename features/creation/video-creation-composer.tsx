@@ -373,7 +373,7 @@ export function VideoCreationComposer({
             disabled={!interfaceAvailable}
             onClick={onGenerate}
           >
-            <ArrowUp className="send-arrow" size={20} strokeWidth={2.5} aria-hidden="true" />
+            <ArrowUp className="send-arrow" size={17} strokeWidth={2.2} aria-hidden="true" />
           </button>
         </div>
       </div>

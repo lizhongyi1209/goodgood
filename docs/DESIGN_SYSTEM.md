@@ -114,10 +114,12 @@ and contrast—not large shadows or glossy decoration.
 - Type: 11px metadata, 12px compact UI, 14px body/control, 20px section title.
 - Radius: 8px compact, 12px control/group, 16px major surface.
 - Icon size: normally 15–18px inside 40px controls. The composer send arrow is
-  20px inside the same 40px circular control in image and video modes.
+  17px inside a 32px visible circle, with a 40px action target in both modes.
 
 Control size is determined by the global system, not by the visual mass of an
 individual icon. Upload, settings, and send align to the same 40px box.
+The composer shell uses 22px outer corners on wide screens and 18px on mobile;
+the attached parameter drawer matches those corners.
 
 ## Surfaces and separation
 
