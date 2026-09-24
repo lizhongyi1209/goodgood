@@ -152,7 +152,7 @@ async function assertExternalFile(file) {
     "Cloud credentials and configuration need absolute external paths.");
   const resolved = await realpath(file);
   const relative = path.relative(root, resolved);
-  assert.ok(relative === ".." || relative.startsWith(`..${path.sep}`),
+  assert.ok(path.isAbsolute(relative) || relative === ".." || relative.startsWith(`..${path.sep}`),
     "Cloud credentials and configuration must stay outside the repository.");
   return resolved;
 }
