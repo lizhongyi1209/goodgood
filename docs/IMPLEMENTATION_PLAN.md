@@ -1,8 +1,8 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-24
-- Current phase: GG-106 OSS 签名 PUT/GET、匿名拒绝和随机对象删除均已在云端验证；生产应用仍为 GG-098。本工作树从 GG-100 单槽位基线准备仅含 GG-106 应用改动的发布候选。
-- Current objective: 验证独立 GG-106 候选、配置生产密钥并准备单槽应用切换，保留旧 R2 对象与独立 Restic 备份。
+- Current phase: GG-106 OSS 私有读写已在云端验证；独立候选已通过本地门禁并推送。三个新密钥文件已安装到生产主机受保护目录，运行中的生产应用仍为 GG-098。
+- Current objective: 取得独立 GG-106 候选的 CI 不可变镜像，配置生产运行文件并完成预检，再准备单槽应用切换；保留旧 R2 对象与独立 Restic 备份。
 - Previous objective: GG-100 生产主机单槽位迁移与旧 blue/green 清理。
 
 ## Current checkpoint
@@ -36,8 +36,8 @@
 - **2026-09-17 首次生产恢复演练通过**：快照 `ce191630`、59 表 / 2403 行 / 43 迁移；
   维护窗口约 66 秒。「备份 timer disabled、无自动备份」的旧结论**已更正为错误**。
 - 独立缺口（已记录未处理）：**仅剩无告警通道**。
-- Next action: 验证 GG-106 独立候选不包含 GG-101—105 的未发布应用改动，完成发布预检和生产密钥安装计划；按 [OSS 切换清单](operations/gg106-oss-cutover.md)执行获批的单槽发布。
-- Blockers: 独立候选尚未完成门禁与生产密钥安装；应用生产发布未开始。`operations` 缺口为已知并已授权接受。
+- Next action: 核对独立候选的 CI 结果，并通过仅发布 main 的工作流取得对应不可变镜像；更新受保护的生产 `release.env` / `runtime.env`，运行只读预检。完成审阅后按 [OSS 切换清单](operations/gg106-oss-cutover.md)执行单槽发布。
+- Blockers: CI 不可变镜像尚未取得，生产运行文件尚未切到 OSS，应用生产发布未开始。`operations` 缺口为已知并已授权接受。
 - 待排查缺陷：参考图 `/api/references/*` 校验最长近 6 分钟，超过 nginx 70s 读超时，
   用户看到上传失败而素材实际入库。未定位根因，未修改。
 

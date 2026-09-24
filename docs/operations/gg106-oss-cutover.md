@@ -160,9 +160,17 @@ random text key under `oss/gg106-probe/`. PUT returned 200; signed ESA GET
 returned 200 with byte-for-byte matching content. Anonymous ESA GET and
 anonymous direct-OSS HEAD returned 403. The exact disposable key was then
 deleted: OSS returned 204 and signed ESA GET returned 404. No historical asset
-was touched. Production host secret installation and application deployment
-remain pending. The original development branch also carries unreleased GG-101--105 changes;
+was touched. At that probe checkpoint, production host secret installation and
+application deployment remained pending. The original development branch also carries unreleased GG-101--105 changes;
 isolate the reviewed release scope before deploying the application.
+
+An isolated candidate was created from the GG-100 single-slot baseline and
+passed the full local gate (542 passed, 26 isolated skips, no failures). It was
+pushed to its own remote branch. The three new secret files were installed on
+the production host through SSH; metadata confirms root ownership, production
+secret group 986, and mode 0640. Running containers and protected runtime
+configuration were not changed. An immutable CI image and preflight remain
+pending.
 
 ## Prepare a disposable positive probe
 

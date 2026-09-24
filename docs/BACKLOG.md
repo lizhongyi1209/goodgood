@@ -7,7 +7,7 @@
 
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
-| GG-106 | 新应用对象写入阿里云 OSS，保留旧 R2 对象 | 云端签名读写及私有访问边界验证通过，随机探针已删除；独立生产候选正在准备，应用未部署 | [任务](tasks/GG-106-oss-object-storage.md) / [ADR](decisions/0097-private-oss-object-storage.md) |
+| GG-106 | 新应用对象写入阿里云 OSS，保留旧 R2 对象 | 云端私有读写通过；独立候选已推送并通过本地门禁，生产密钥已安装；应用未部署 | [任务](tasks/GG-106-oss-object-storage.md) / [ADR](decisions/0097-private-oss-object-storage.md) |
 | GG-100 | 生产主机迁移到单一 Compose 并清理旧 blue/green 残留 | **生产执行完成**：固定 `goodgood-production` Web/Worker healthy、旧 4 容器/2 网络/槽位与动态上游残留已删；恢复点 `71e758c4`，数据卷完整，公网 200 | [任务](tasks/GG-100-production-single-slot-host-cleanup.md) / [记录](operations/2026-09-22-gg100-single-slot-host-cleanup.md) / [ADR](decisions/0091-single-slot-compose-release.md) |
 | GG-099 | 取消 blue/green，统一单槽位 Compose 发布 | **本地已完成**：ADR 0091 已接受；发布契约、Compose/Nginx、门禁和当前文档均已切换，旧槽位/动态上游文件已删除；门禁 537 通过/26 隔离跳过/0 失败；未执行生产主机迁移 | [任务](tasks/GG-099-single-slot-compose-release.md) / [ADR](decisions/0091-single-slot-compose-release.md) |
 | GG-098 | 单次充值上限提到 1 万元并改为手动输入 | **已上线（历史发布记录）**（2026-09-21）：`7888554`/`0044`；上限 5000→1,000,000、删除快捷选项；含迁移 `0044`；真实生图冒烟通过。**跨账户拒绝未实测**。未来不复用当时的双槽位流程 | [任务](tasks/GG-098-manual-grant-ceiling.md) / [发布记录](releases/2026-09-21-gg098-manual-grant-ceiling.md) |
