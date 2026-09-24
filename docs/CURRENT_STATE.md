@@ -1,12 +1,12 @@
 # GoodGood 当前状态
 
-- 最后核对：2026-09-22完成GG-100单槽位主机迁移与旧 blue/green 清理。生产身份 `7888554` / 迁移 `0044` / 配置契约 `b3d7310a…ddf3`；公网与注册均开放。
+- 最后核对：2026-09-24 GG-106 OSS 应用切换完成。生产身份 `d04b727` / 迁移 `0044` / 配置契约 `5efd131a…8885`；公网与注册均开放。
 - 产品阶段：已开放的 `controlled-alpha-v1`，不是完整 seed/付费生产就绪。
 - 正式入口：https://goodgood.o1key.com
-- 当前工作：**GG-100 已完成生产主机清理**，应用统一为固定 `goodgood-production` Compose；GG-098 功能仍为当前应用版本。注册自 2026-09-15 起开放，**已有真实用户在使用**：30 个账户、240 个生成资产、参考素材 181 `ready`、生成任务 279（223 成功 / 56 失败）。站长账户 951565127@qq.com，邀请码 405513。
+- 当前工作：**GG-106 已在固定 `goodgood-production` Compose 项目发布**；新应用对象按 `oss/` 键写入私有阿里云 OSS，历史对象仍从 R2 读取，数据库 Restic 备份仍在独立 R2 仓库。2026-09-22 的用户/资产计数是历史快照，不能当作当前实时计数。
 - 充值：运营已按「登记已收到的充值款」录入 4 笔，共 15100 积分（支付宝 ×2、支付宝收款、微信）。这不是自动支付，支付/支付宝结算仍搁置。
-- **已知缺口（站长 2026-09-15 明确授权接受）**：`controlled-alpha-operations` 未通过——主机无任何对外告警通道。**备份本身不是缺口**：生产备份 timer `enabled`/`active`，每 30 分钟一次，2026-09-17 首次恢复演练通过（见下）。见发布记录。
-- GG-100 生产主机单槽位迁移与旧 blue/green 清理已完成。GG-106 云端私有 OSS 的签名写入和读取已验证，随机探针已删除；独立应用候选已推送并通过本地门禁，三个新密钥文件已安装到生产主机。生产运行文件和应用仍按 GG-098 使用 R2。不要自动恢复搁置的 C6。
+- **已知缺口（站长 2026-09-15 明确授权接受）**：`controlled-alpha-operations` 未通过——主机无任何对外告警通道。**备份本身不是缺口**：生产备份 timer `enabled`/`active`，每 30 分钟一次，2026-09-24 最新隔离恢复演练通过。见发布记录。
+- GG-100 单槽位主机迁移已完成。GG-106 候选 `d04b727` 的 CI、生产预检、同槽位替换及公网探测均通过；生产 Web/Worker 各一，健康且重启次数为 0。历史 R2 对象 HEAD、OSS 探针 HEAD、应用签发的 ESA HEAD 均为 200；两个素材域名匿名 HEAD 均为 403。真实账号的浏览器上传、新生成存储和跨账号拒绝尚未在此版本实测；模型计费探测未获本次授权。详见 [GG-106 发布记录](releases/2026-09-24-gg106-oss-cutover.md)。不要自动恢复搁置的 C6。
 
 ## GG-099 / GG-100 单槽位发布（2026-09-22）
 
@@ -43,7 +43,7 @@
 - 真实后端任务、原子积分预留/结算/释放、可靠队列、私有结果读取、资产库、项目保存恢复、
   创作草稿均已上线。GG-004 的重复派发/同 Worker 重入竞态已修复。
 - 侧栏只显示积分余额；当前模型的单张和批次价格仍在创作器内显示。
-- 保持香港现有服务器和私有 R2。支付/支付宝、自动账户删除、举报界面、完整外部删除条款、
+- 保持香港现有服务器；新应用对象用私有 OSS，历史对象和独立数据库备份继续用私有 R2。支付/支付宝、自动账户删除、举报界面、完整外部删除条款、
   Grafana/复杂监控与大规模上线配套仍搁置。
 - 不设置用户任务数或生成并发上限。持久队列用于可靠投递/恢复；可用内存低于 500 MiB
   或根磁盘使用率达到 80% 时继续阻止新生成。
@@ -54,14 +54,14 @@
 
 | 项目 | 最近核验记录 |
 | --- | --- |
-| 源码 revision | `7888554a4650b1b06dbce4293c52e8c018e5c71b` |
-| 镜像 | `ghcr.io/lizhongyi1209/goodgood@sha256:7deeab8c0257e9127326eb2fc14b5beecf370f5a22408361f613465a0b432270` |
+| 源码 revision | `d04b72752065d3ecc31b7b5bc7ca7ecc0988ebfa` |
+| 镜像 | `ghcr.io/lizhongyi1209/goodgood@sha256:d183628ba6335a7debc1b564088041b8ecb058d1e91819be7d8e693e6f903a6e` |
 | 数据库迁移 | `0044_gg098_raise_manual_grant_ceiling.sql`（44 条，59 张 public 表） |
-| 配置契约 checksum | `b3d7310a7f345b96bcb614509f29f9706de3784bdb1b80f82d4be9534b18ddf3` |
+| 配置契约 checksum | `5efd131aa1f6243f987c97498ca5e99571e99c4d4da1d0bc2cff4c468bff8885` |
 | 活跃进程 | 固定 `goodgood-production` Web + 1 个 Worker；PostgreSQL/Valkey 健康；旧 blue/green 应用项目不存在 |
-| 发布回退 | 只在同一 `goodgood-production` Compose 项目恢复兼容的旧应用镜像；不切换槽位或 Nginx upstream |
+| 发布回退 | GG-098 不认识新的 `oss/` 键；一旦产生 OSS 记录，不能只回退旧镜像。同一 GG-106 双读镜像可按 ADR 0098 显式临时恢复 R2 写入；不切换槽位或 Nginx upstream |
 | 主机 | 香港 2 vCPU / 4 GiB / 50 GiB；Web、Worker、PostgreSQL、Valkey 同机 |
-| 对象与备份 | 私有 R2；加密异机备份 Restic → `goodgood-postgres-backups/production`。timer `goodgood-production-postgres-backup.timer` **`enabled`/`active`**，每 30 分钟一次（77 个快照）。2026-09-17 演练点快照 `ce191630`，**恢复演练通过**；发布前恢复点 `36f2a437` |
+| 对象与备份 | 新对象私有 OSS `o1key-goodgood`；历史对象私有 R2；加密异机备份 Restic → `goodgood-postgres-backups/production`。timer `goodgood-production-postgres-backup.timer` **`enabled`/`active`**。2026-09-24 新恢复点 `3b0a7627`，隔离恢复演练通过（59 表 / 6817 行 / 44 迁移） |
 | 本地 | Windows 开发；Compose 使用本地 PostgreSQL/Valkey/RustFS/mock |
 
 没有常驻远程测试环境。`staging-goodgood.o1key.com` 仅保留名称，非当前测试入口。

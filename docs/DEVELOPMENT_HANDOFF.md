@@ -1,9 +1,9 @@
 # 当前开发版本与跨窗口交接
 
-- 日期：2026-09-22；GG-100 生产主机单槽位迁移与旧 blue/green 清理**已完成**；GG-099 基线 `fe58305`，当前分支 `chore/GG-100-production-single-slot-host-cleanup`；GG093标签继续作为历史构建交接点。
+- 当前更新：2026-09-24；GG-106 独立候选 `d04b727` 已在生产单槽位部署。下文 GG-093—100 的本地端口、分支和构建叙述是历史交接记录，先以 [CURRENT_STATE](CURRENT_STATE.md)、[IMPLEMENTATION_PLAN](IMPLEMENTATION_PLAN.md) 和实时 Git/进程检查确定当前事实。
 - 当前项目入口：F:/goodgood；累计代码包含a73835f、GG081—091与GG092交接。`.codex/`是用户本地设置，保留不提交。
-- **生产已部署并开放**：`goodgood.o1key.com`，revision `7888554` / 迁移 `0044` / 配置 `b3d7310a…ddf3`；应用仅 `goodgood-production` 单项目。详见 CURRENT_STATE.md 与 [GG-100 记录](operations/2026-09-22-gg100-single-slot-host-cleanup.md)。
-- 新窗口先读AGENTS/CURRENT_STATE/WORKFLOW/IMPLEMENTATION_PLAN/BACKLOG，然后本页；**下一普通任务从GG-101分配**。
+- **生产已部署并开放**：`goodgood.o1key.com`，revision `d04b727` / 迁移 `0044` / 配置 `5efd131a…8885`；应用仅 `goodgood-production` 单项目。详见 CURRENT_STATE.md 与 [GG-106 发布记录](releases/2026-09-24-gg106-oss-cutover.md)。
+- 新窗口先读 AGENTS/CURRENT_STATE/WORKFLOW/IMPLEMENTATION_PLAN/BACKLOG，然后本页；任务 ID 按实际已用编号分配。原 `F:/goodgood` 开发工作树含尚未发布的 GG-101—105，不可并入 GG-106 生产候选。
 
 ## 先确认版本，避免退回历史
 

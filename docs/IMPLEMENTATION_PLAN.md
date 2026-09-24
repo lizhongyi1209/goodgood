@@ -1,9 +1,9 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-24
-- Current phase: GG-106 OSS 私有读写已在云端验证；独立候选已通过本地门禁并推送。三个新密钥文件已安装到生产主机受保护目录，运行中的生产应用仍为 GG-098。
-- Current objective: 取得独立 GG-106 候选的 CI 不可变镜像，配置生产运行文件并完成预检，再准备单槽应用切换；保留旧 R2 对象与独立 Restic 备份。
-- Previous objective: GG-100 生产主机单槽位迁移与旧 blue/green 清理。
+- Current phase: GG-106 独立候选 `d04b727` 已完成 CI、生产预检和单槽应用切换；公网开放，私有 OSS 与历史 R2 只读核验通过。
+- Current objective: 由已登录的正式账号验收浏览器直传、应用 `oss/` 新记录、本人预览和跨账号拒绝；新生成存储须另获计费探测授权。保持独立 R2 Restic 备份和旧素材。
+- Previous objective: GG-106 私有 OSS 云端读写、独立候选和生产发布。
 
 ## Current checkpoint
 
@@ -27,9 +27,9 @@
 - Task [GG-100](tasks/GG-100-production-single-slot-host-cleanup.md)：**生产执行完成**。
   恢复点 `71e758c4`；固定项目 Web/Worker healthy、restarts 0，公网 200/session 401；
   旧 4 容器、2 网络、槽位/动态 upstream 与 14 个无引用旧镜像已清理，生产数据卷完整。
-- Task [GG-106](tasks/GG-106-oss-object-storage.md)：**云端受控读写通过，独立应用候选准备中，未部署**。
+- Task [GG-106](tasks/GG-106-oss-object-storage.md)：**生产已部署，浏览器验收仍有余项**。
   ESA 守卫已发布；专用 RAM 凭据的签名 PUT 200、签名 ESA GET 200 且内容一致，匿名 ESA/OSS 403。随机探针精确删除 204，签名读回 404。新应用对象拟写入 `oss/`，旧对象由原 R2 读取。
-  从 GG-100 基线 `de699e1` 隔离 GG-106 应用变更；定向测试 13/13、文档测试 8/8，`npm run check:local` 542 通过/26 隔离跳过/0 失败；尚未发布。
+  从 GG-100 基线 `de699e1` 隔离 GG-106 应用变更；定向测试 13/13、文档测试 8/8，`npm run check:local` 542 通过/26 隔离跳过/0 失败。2026-09-24 生产发布 `d04b727`，CI run `35983011527` 两项通过、工件完整性与预检通过；同槽 Web/Worker ready、重启 0，公网 200/session 401，历史 R2 与 OSS/ESA 签名 HEAD 200，匿名 HEAD 403。最新 Restic 快照 `3b0a7627` 隔离恢复通过。见 [发布记录](releases/2026-09-24-gg106-oss-cutover.md)。
   ADR 0098 增加明确启用的故障恢复模式：同一双读版本可临时向 R2 写入；正常生产预检强制关闭此模式。改动后定向测试 13/13、文档测试 8/8、完整门禁 542/26/0 已复验。
 - 线上入口为 `goodgood.o1key.com`；`staging-goodgood.o1key.com` 仅保留名称，不是测试入口。
 - 生产数据（2026-09-21 核对）：users 28、assets 166、references 141 ready、
@@ -37,8 +37,8 @@
 - **2026-09-17 首次生产恢复演练通过**：快照 `ce191630`、59 表 / 2403 行 / 43 迁移；
   维护窗口约 66 秒。「备份 timer disabled、无自动备份」的旧结论**已更正为错误**。
 - 独立缺口（已记录未处理）：**仅剩无告警通道**。
-- Next action: 核对独立候选的 CI 结果，并通过仅发布 main 的工作流取得对应不可变镜像；更新受保护的生产 `release.env` / `runtime.env`，运行只读预检。完成审阅后按 [OSS 切换清单](operations/gg106-oss-cutover.md)执行单槽发布。
-- Blockers: CI 不可变镜像尚未取得，生产运行文件尚未切到 OSS，应用生产发布未开始。`operations` 缺口为已知并已授权接受。
+- Next action: 在真实登录会话上传一张非私人测试图，核对 `oss/` 记录、OSS 私有对象、本人预览、匿名与跨账号拒绝；若需要生成结果入 OSS 的端到端核验，先取得一次真实模型调用的计费授权。保持 `OBJECT_STORAGE_EMERGENCY_R2_WRITES=false`。
+- Blockers: 当前浏览器自动化连接失败，应用层上传与所有者隔离未在此版本实测；真实模型调用未授权。本次未重跑完整 alpha 门禁，`operations` 无告警通道的既有 `fail` 已获接受，不能写作 pass。
 - 待排查缺陷：参考图 `/api/references/*` 校验最长近 6 分钟，超过 nginx 70s 读超时，
   用户看到上传失败而素材实际入库。未定位根因，未修改。
 
@@ -87,10 +87,10 @@
 
 ## New-session recovery
 
-1. 打开F:/goodgood；读AGENTS/CURRENT_STATE/WORKFLOW/本页/BACKLOG与DEVELOPMENT_HANDOFF。核验本地标记、bb782c0/a73835f祖先，当前chore/GG-092-development-handoff；main不能代替此检查点。
-2. GG091 worktree及旧GG024/C6分支均保留；新窗口不bulk merge/reset旧版本，不覆盖.codex/未提交用户内容。
-3. 当前mock工作区32131/32142/32143及邮箱表单32191；依赖54449/56449/58049见交接。运行代码f68ba81，PID只是记录，先核验再停；根目录.env.local-review忽略，不打印凭据。
-4. 使用交接中的启动/定向SQL命令；不fixture原用户数据、不进入真实provider32140栈、不重放线上清理。
+1. 打开 F:/goodgood，读 AGENTS/CURRENT_STATE/WORKFLOW/本页/BACKLOG 与 DEVELOPMENT_HANDOFF；先运行 `git status --short --branch`、`git worktree list`、`git log -5 --oneline`。生产已部署提交为 `d04b727`，但原 `F:/goodgood` 工作树仍可能停在含 GG-101—105 本地变更的开发分支；分支名或 `main` 都不能代替生产身份核验。
+2. 新普通需求从确认的当前检查点开隔离分支/工作树；不得 bulk merge 搁置的 C6 或顺带发布 GG-101—105。保留 `.codex/`、其他未提交内容和所有生产/本地数据。
+3. 本地端口、依赖、是否启用真实 O1Key 以实时检查和 DEVELOPMENT_HANDOFF 为准；任何真实 provider 请求可能计费，不以旧 PID 或旧截图作为当前事实。凭据只保留仓库外，不打印。
+4. 本次 GG-106 余项是正式账号浏览器上传与所有者隔离；计费生成探测需另获授权。不得重放线上清理或历史转换。
 
 ## History and update policy
 
