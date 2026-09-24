@@ -3,11 +3,11 @@
 > **部署状态（2026-09-24）**：GG-100 已把现有 `7888554`/`0044` 应用迁移到唯一
 > `goodgood-production` 项目并清理旧 blue/green 残留。此前 GG-024—GG-096 已在 GG-097 上线；各行「未部署」是历史状态。当前事实见
 > [CURRENT_STATE](CURRENT_STATE.md)，发布流程见
-> [DEPLOYMENT](DEPLOYMENT.md#production-hotfix-checklist-2026-09-17)。GG-106 应用已于 2026-09-24 部署；真实账号浏览器上传与此版本的新生成存储仍待验收。
+> [DEPLOYMENT](DEPLOYMENT.md#production-hotfix-checklist-2026-09-17)。GG-106 应用已于 2026-09-24 部署；新生成素材的 `oss/` 记录与私有 HEAD 已核对，真实账号浏览器上传/预览仍待验收。
 
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
-| GG-106 | 新应用对象写入阿里云 OSS，保留旧 R2 对象 | **生产已部署** `d04b727`：CI、预检、单槽健康、公网和双存储私有读核验通过；浏览器上传、新生成存储与跨账号拒绝待实测，未进行计费模型探测 | [任务](tasks/GG-106-oss-object-storage.md) / [发布记录](releases/2026-09-24-gg106-oss-cutover.md) / [ADR](decisions/0097-private-oss-object-storage.md) |
+| GG-106 | 新应用对象写入阿里云 OSS，保留旧 R2 对象 | **生产已部署** `d04b727`：CI、预检、单槽健康、公网和双存储私有读核验通过；一条新生成素材的 `oss/` 记录与私有 HEAD 通过；浏览器上传/预览及跨账号拒绝待实测，发布探测未调用计费模型 | [任务](tasks/GG-106-oss-object-storage.md) / [发布记录](releases/2026-09-24-gg106-oss-cutover.md) / [ADR](decisions/0097-private-oss-object-storage.md) |
 | GG-100 | 生产主机迁移到单一 Compose 并清理旧 blue/green 残留 | **生产执行完成**：固定 `goodgood-production` Web/Worker healthy、旧 4 容器/2 网络/槽位与动态上游残留已删；恢复点 `71e758c4`，数据卷完整，公网 200 | [任务](tasks/GG-100-production-single-slot-host-cleanup.md) / [记录](operations/2026-09-22-gg100-single-slot-host-cleanup.md) / [ADR](decisions/0091-single-slot-compose-release.md) |
 | GG-099 | 取消 blue/green，统一单槽位 Compose 发布 | **本地已完成**：ADR 0091 已接受；发布契约、Compose/Nginx、门禁和当前文档均已切换，旧槽位/动态上游文件已删除；门禁 537 通过/26 隔离跳过/0 失败；未执行生产主机迁移 | [任务](tasks/GG-099-single-slot-compose-release.md) / [ADR](decisions/0091-single-slot-compose-release.md) |
 | GG-098 | 单次充值上限提到 1 万元并改为手动输入 | **已上线（历史发布记录）**（2026-09-21）：`7888554`/`0044`；上限 5000→1,000,000、删除快捷选项；含迁移 `0044`；真实生图冒烟通过。**跨账户拒绝未实测**。未来不复用当时的双槽位流程 | [任务](tasks/GG-098-manual-grant-ceiling.md) / [发布记录](releases/2026-09-21-gg098-manual-grant-ceiling.md) |

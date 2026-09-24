@@ -1,8 +1,8 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-24
-- Current phase: GG-106 独立候选 `d04b727` 已完成 CI、生产预检和单槽应用切换；公网开放，私有 OSS 与历史 R2 只读核验通过。
-- Current objective: 由已登录的正式账号验收浏览器直传、应用 `oss/` 新记录、本人预览和跨账号拒绝；新生成存储须另获计费探测授权。保持独立 R2 Restic 备份和旧素材。
+- Current phase: GG-106 独立候选 `d04b727` 已完成 CI、生产预检和单槽应用切换；公网开放，私有 OSS 与历史 R2 只读核验通过。已观察到 1 条成功的新生成素材落入 `oss/` 并通过私有 HEAD。
+- Current objective: 由已登录的正式账号验收浏览器直传、本人预览和跨账号拒绝；若由发布人员主动发起新的计费生成探测，须另获授权。保持独立 R2 Restic 备份和旧素材。
 - Previous objective: GG-106 私有 OSS 云端读写、独立候选和生产发布。
 
 ## Current checkpoint
@@ -30,14 +30,14 @@
 - Task [GG-106](tasks/GG-106-oss-object-storage.md)：**生产已部署，浏览器验收仍有余项**。
   ESA 守卫已发布；专用 RAM 凭据的签名 PUT 200、签名 ESA GET 200 且内容一致，匿名 ESA/OSS 403。随机探针精确删除 204，签名读回 404。新应用对象拟写入 `oss/`，旧对象由原 R2 读取。
   从 GG-100 基线 `de699e1` 隔离 GG-106 应用变更；定向测试 13/13、文档测试 8/8，`npm run check:local` 542 通过/26 隔离跳过/0 失败。2026-09-24 生产发布 `d04b727`，CI run `35983011527` 两项通过、工件完整性与预检通过；同槽 Web/Worker ready、重启 0，公网 200/session 401，历史 R2 与 OSS/ESA 签名 HEAD 200，匿名 HEAD 403。最新 Restic 快照 `3b0a7627` 隔离恢复通过。见 [发布记录](releases/2026-09-24-gg106-oss-cutover.md)。
-  ADR 0098 增加明确启用的故障恢复模式：同一双读版本可临时向 R2 写入；正常生产预检强制关闭此模式。改动后定向测试 13/13、文档测试 8/8、完整门禁 542/26/0 已复验。
+  ADR 0098 增加明确启用的故障恢复模式：同一双读版本可临时向 R2 写入；正常生产预检强制关闭此模式。改动后定向测试 13/13、文档测试 8/8、完整门禁 542/26/0 已复验。发布后观察到 1 条 `succeeded` 新生成素材使用 `oss/` 键，OSS/签名 ESA HEAD 200、匿名 ESA HEAD 403；只检查元数据，未由发布探测触发计费模型。
 - 线上入口为 `goodgood.o1key.com`；`staging-goodgood.o1key.com` 仅保留名称，不是测试入口。
 - 生产数据（2026-09-21 核对）：users 28、assets 166、references 141 ready、
   generation_jobs 201（151 成功 / 50 失败）；运营手动登记充值 4 笔共 15100 积分。
 - **2026-09-17 首次生产恢复演练通过**：快照 `ce191630`、59 表 / 2403 行 / 43 迁移；
   维护窗口约 66 秒。「备份 timer disabled、无自动备份」的旧结论**已更正为错误**。
 - 独立缺口（已记录未处理）：**仅剩无告警通道**。
-- Next action: 在真实登录会话上传一张非私人测试图，核对 `oss/` 记录、OSS 私有对象、本人预览、匿名与跨账号拒绝；若需要生成结果入 OSS 的端到端核验，先取得一次真实模型调用的计费授权。保持 `OBJECT_STORAGE_EMERGENCY_R2_WRITES=false`。
+- Next action: 在真实登录会话上传一张非私人测试图，核对 `oss/` 记录、OSS 私有对象、本人预览、匿名与跨账号拒绝。保持 `OBJECT_STORAGE_EMERGENCY_R2_WRITES=false`；若需由发布人员主动触发新生成，再取得计费授权。
 - Blockers: 当前浏览器自动化连接失败，应用层上传与所有者隔离未在此版本实测；真实模型调用未授权。本次未重跑完整 alpha 门禁，`operations` 无告警通道的既有 `fail` 已获接受，不能写作 pass。
 - 待排查缺陷：参考图 `/api/references/*` 校验最长近 6 分钟，超过 nginx 70s 读超时，
   用户看到上传失败而素材实际入库。未定位根因，未修改。
