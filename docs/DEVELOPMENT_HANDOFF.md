@@ -1,6 +1,6 @@
 # 当前开发版本与跨窗口交接
 
-## GG-115 资产记录与个人资产库（本地待切换）
+## GG-115 资产记录与个人资产库（本地运行中）
 
 独立工作树 `F:/goodgood-worktrees/GG-115` 从 GG-114 `3665087` 创建，任务卡
 [GG-115](tasks/GG-115-asset-workspace.md) 与 [ADR 0102](decisions/0102-asset-history-library-and-upload.md)
@@ -11,7 +11,9 @@ RustFS 私有对象和数据库记录。开发库 `127.0.0.1:54449/goodgood` 已
 `0046`；真实生成 Worker `32142` 保持关闭，生产未变。
 
 本地门禁 `npm run check:local` 通过：592 项中 566 通过、26 项隔离跳过、0 失败。
-提交并构建精确检查点后，将 5173/32131 从 GG-114 切至 GG-115，复核服务版本。
+提交 `eb751eb` 已构建并验证为精确检查点；5173 Vite 与 32131 Web 已切至 GG-115。
+`/assets`、就绪、代理版本均为 200，组织和音频接口未登录返回 401；32142 Worker 关闭。
+已请求站长使用现有本地账号验收个人资产库的实际上传、预览和刷新，结果待回填。
 继续沿用下文的仓库外真实邮件及云端参考图配置，不能将其复制进 Git。
 
 ## GG-114 私有图片共用入口（本地已验证）
@@ -35,7 +37,7 @@ URL；`server/images/private-preview.mjs` 在资源接口完成所有者检查�
 GG-113 的 `check:local` 563/26/0，OSS 与 RustFS 真实只读缩略图转换均通过。
 5173 Vite 和 32131 Web 曾从 GG-113 工作树运行：首次运行检查点 `ea8445f` 的
 `build.verified=true`，`/create` 和 `/api/health/ready` 均 200，私有预览与原图
-接口未登录均 401。现已切到 GG-114，仍保持本地真实 SMTP 与
+接口未登录均 401。当前已切到 GG-115，仍保持本地真实 SMTP 与
 `local-dev/references/` OSS 模式；32142 Worker 关闭。
 
 ## GG-112 本地真实邮件验证码（已验收）
@@ -207,7 +209,7 @@ PID是交接时的记录，不是以后可直接kill的授权目标。先用Get-
 
 ## 启动与恢复
 
-Node >=22.13.0，npm；本机记录v24.12.0/npm11.6.2。切换版本后用npm ci恢复锁定依赖，忽略旧node_modules/dist。普通纯 UI 开发用 `npm run dev:local`，它使用演示会话，不能上传真实素材。需在热更新预览中使用本地素材和真实邮箱会话时，先从 GG-114 工作树按本文首段的双外部配置启动已验证的 32131 Web，再运行 `npm run dev:workspace -- --env-file .env.login-review --port 5173`。该入口验证状态服务在 loopback、真实 O1Key 开发密钥位于仓库外，并将 5173 的 `/api` 全部代理到 32131，避开 Vite Worker 跨请求复用 PostgreSQL 连接的失败。上传与缩略图读取无需启动 32142 Worker；若要生成，须另行核验并启动唯一 Worker。两个端口共享本地会话 cookie；OSS 直传与 RustFS CORS 来源见 GG-111 配置。实际端口以 Vite 输出为准；停止进程用 Ctrl+C。
+Node >=22.13.0，npm；本机记录v24.12.0/npm11.6.2。切换版本后用npm ci恢复锁定依赖，忽略旧node_modules/dist。普通纯 UI 开发用 `npm run dev:local`，它使用演示会话，不能上传真实素材。需在热更新预览中使用本地素材和真实邮箱会话时，先从 GG-115 工作树按本文首段的双外部配置启动已验证的 32131 Web，再运行 `npm run dev:workspace -- --env-file .env.login-review --port 5173`。该入口验证状态服务在 loopback、真实 O1Key 开发密钥位于仓库外，并将 5173 的 `/api` 全部代理到 32131，避开 Vite Worker 跨请求复用 PostgreSQL 连接的失败。上传与缩略图读取无需启动 32142 Worker；若要生成，须另行核验并启动唯一 Worker。两个端口共享本地会话 cookie；OSS 直传与 RustFS CORS 来源见 GG-111 配置。实际端口以 Vite 输出为准；停止进程用 Ctrl+C。
 
 本机 GG-110 工作树中已有从根目录本地配置复制的忽略文件 `.env.login-review`，不提交。其 32131 Web 检查点需在该工作树运行 `npm run verify:checkpoint` 后用 `node scripts/local-checkpoint.mjs start workspace` 启动；若 Git revision 或源码改变，先提交并重新运行 `npm run build:checkpoint`。当前进程 PID/版本必须重新核验，不能沿用本页记录。
 

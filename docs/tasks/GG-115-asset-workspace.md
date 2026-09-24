@@ -1,6 +1,6 @@
 # GG-115 — Asset history and personal library
 
-- Status: local implementation and gate verified; checkpoint/browser acceptance pending; not deployed.
+- Status: local implementation, gate, and checkpoint HTTP smoke verified; authenticated browser acceptance pending; not deployed.
 - Baseline: GG-114 `3665087`; branch `feature/GG-115-asset-workspace`;
   worktree `F:/goodgood-worktrees/GG-115`.
 - Decision: [ADR 0102](../decisions/0102-asset-history-library-and-upload.md).
@@ -38,11 +38,13 @@ navigation.
   lint/typecheck/build pass (16 existing lint warnings).
 - Local database confirmed on `127.0.0.1:54449/goodgood`, Worker 32142 off;
   migration `0046` applied transactionally and verified 45→46 entries.
-- 5173/32131 still serve GG-114 until checkpoint switch. Production remains
-  unchanged.
+- Commit `eb751eb` built and verified as the exact checkpoint. 5173 Vite and
+  32131 Web now serve GG-115: `/assets`, readiness, and proxied version return
+  200; unauthenticated organization/audio routes return 401. Worker 32142
+  stays off. Production remains unchanged.
 
 ## 下一步
 
-Commit GG-115, build/verify its exact checkpoint, switch 5173/32131 while
-keeping services on, and inspect authenticated asset and upload flows. Record
-browser evidence and any remaining limitation before handoff.
+Inspect authenticated history, personal library, folder organization, a
+disposable image upload, preview, and refresh on 5173. Record browser evidence
+and any remaining limitation before closing the local acceptance.

@@ -4,7 +4,7 @@
 
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
-| GG-115 | 生成记录、个人资产库、文件夹与 20 MB 上传 | 本地门禁 566/26/0、迁移 0046 已验证；待 5173/32131 页面验收，未部署 | [任务](tasks/GG-115-asset-workspace.md) / [ADR](decisions/0102-asset-history-library-and-upload.md) |
+| GG-115 | 生成记录、个人资产库、文件夹与 20 MB 上传 | 本地门禁 566/26/0、迁移 0046、检查点与 5173/32131 HTTP 已验证；待登录页面验收，未部署 | [任务](tasks/GG-115-asset-workspace.md) / [ADR](decisions/0102-asset-history-library-and-upload.md) |
 | GG-114 | 私有缩略图共用接口与后续画布复用规范 | 本地代码/门禁 564/26/0、5173/32131 HTTP 通过；未部署 | [任务](tasks/GG-114-reusable-image-delivery.md) / [ADR](decisions/0101-private-card-image-previews.md) |
 | GG-113 | 资产库图片卡片与选择器使用私有 WebP 缩略图 | 本地代码/门禁 563/26/0、真实只读转换与 5173/32131 HTTP 通过；待站长页面复核，未部署 | [任务](tasks/GG-113-private-image-previews.md) / [ADR](decisions/0101-private-card-image-previews.md) |
 | GG-112 | 本地登录投递真实邮箱验证码 | 本地完成并验收：门禁 559/26/0、SMTP 预检 5/5；真实收信、登录及刷新会话正常；应用未部署 | [任务](tasks/GG-112-real-email-local-login.md) / [ADR](decisions/0100-local-real-email-delivery.md) |
