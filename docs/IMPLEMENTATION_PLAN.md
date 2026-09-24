@@ -49,7 +49,7 @@
   ADR 0096 已接受：私有参考原图与视频素材上限 200 MiB，签名上传 30 分钟；模型输入单张 10 MB、总量 32 MB 保持。用户要求不执行自动测试；检查点构建/来源及 Web/Worker 健康已核对，真实大文件上传未测。GG-104 门禁结果不得算作 GG-105 验证。
 - Task [GG-107](tasks/GG-107-composer-send-arrow.md)：**按钮比例已获用户确认；模型图标 SVG 预览 400 已修复并构建，待刷新复核，未部署**。ADR 0098 接受向上箭头替换飞鸿发送符号；图片和视频创作按钮共享外观。GG-106 OSS 决策与文档在另一独立工作树继续，未并入本分支。
 - Task [GG-110](tasks/GG-110-functional-reference-upload-preview.md)：**本地代码、门禁、检查点运行与真实 JPEG 上传通过，未部署**。5173 旧 React 依赖请求已兼容；登录后 API 改接本地 Node Web，避免 Vite Worker PostgreSQL 跨请求复用；模型 SVG 使用稳定公共路径。`check:local` 555 通过/26 隔离跳过/0 失败。32131 已运行已验证 `35b1f12` 检查点；真实 JPEG 登记 201、完成校验 200、数据库 `ready / accepted`。
-- Task [GG-111](tasks/GG-111-cloud-reference-upload-development.md)：基于 GG-110 `65fa299`，独立工作树 `F:/goodgood-worktrees/GG-111`。站长明确选择复用生产 OSS 桶与现有 RAM 密钥；ADR 0099 将本地写入限制到 `local-dev/references/`，旧本地素材走 RustFS。最终 `check:local` 558 通过/26 隔离跳过/0 失败。5173 与线上 OSS 来源的 CORS 预检均 200；临时前缀对象签名 PUT/GET/DELETE 为 200/200/204。32131 已验证 `2674c90` 检查点，真实 PNG 上传 `ready / accepted`、OSS HEAD 200 且刷新仍可见；未部署应用代码。
+- Task [GG-111](tasks/GG-111-cloud-reference-upload-development.md)：基于 GG-110 `65fa299`，独立工作树 `F:/goodgood-worktrees/GG-111`。站长明确选择复用生产 OSS 桶与现有 RAM 密钥；ADR 0099 将本地写入限制到 `local-dev/references/`，旧本地素材走 RustFS。最终 `check:local` 558 通过/26 隔离跳过/0 失败。5173 与线上 OSS 来源的 CORS 预检均 200；临时前缀对象签名 PUT/GET/DELETE 为 200/200/204。32131 运行从当前工作树 HEAD 构建的已验证检查点；真实 PNG 上传 `ready / accepted`、OSS HEAD 200。5173 Vite 也来自 GG-111，站长切换后再次刷新确认图片仍在、页面正常；未部署应用代码。
 - 线上入口为 `goodgood.o1key.com`；`staging-goodgood.o1key.com` 仅保留名称，不是测试入口。
 - 生产数据（2026-09-21 核对）：users 28、assets 166、references 141 ready、
   generation_jobs 201（151 成功 / 50 失败）；运营手动登记充值 4 笔共 15100 积分。

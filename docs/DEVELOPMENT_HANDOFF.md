@@ -1,12 +1,15 @@
 # 当前开发版本与跨窗口交接
 
-## GG-111 本地页面连接 OSS 参考图直传（待云端验收）
+## GG-111 本地页面连接 OSS 参考图直传（已验收）
 
 GG-111 在 `F:/goodgood-worktrees/GG-111`，基于 GG-110 `65fa299`。默认本地上传仍写
 RustFS。站长明确指定本地开发复用生产 OSS 桶；仅在显式启用云端模式时，新参考图写入
 `o1key-goodgood/local-dev/references/`，本地数据库与原 RustFS 素材继续保留。
 参见 [ADR 0099](decisions/0099-local-upload-probes-in-production-oss-bucket.md) 与
 [任务卡](tasks/GG-111-cloud-reference-upload-development.md)。
+
+当前 5173 Vite 与 32131 Node Web 均从 GG-111 工作树运行；站长在页面服务切换后
+再次刷新，确认参考图仍在、页面正常。32142 真实 O1Key Worker 保持关闭。
 
 云端配置按 `infra/local/cloud-upload.env.example` 放在**仓库和工作树之外**，并将
 RAM AccessKey ID / Secret 放在两个单独的仓库外文件；不要把值、CSV 内容、签名 URL
@@ -24,9 +27,10 @@ node scripts/local-checkpoint.mjs start workspace --cloud-env-file C:\Users\Admi
 5173 规则；`upload-goodgood.o1key.cn` 的 PUT 预检现返回 200，允许来源、方法及
 `content-type` 均正确。OSS HeadBucket 200；以全新可丢弃 `local-dev/references/`
 对象执行签名 PUT 200、私有 GET 200 和字节比对、精确 DELETE 204。随后 GG-111
-`2674c90` 已验证检查点在 32131 启动，5173 代理该版本；站长实传 PNG 并确认刷新
+`2674c90` 代码检查点在 32131 启动，5173 代理该版本；站长实传 PNG 并确认刷新
 仍可见。本地记录 `ready / accepted`、2,380,052 字节、940×1672 像素，OSS HEAD
-200 且长度一致。32142 Worker 未启动，本次未触发 O1Key 生成。
+200 且长度一致。后续文档提交也须重建检查点，使 32131 的 `build.revision` 与
+工作树 HEAD 一致。本次未触发 O1Key 生成。
 
 - 日期：2026-09-24；GG-110 在 GG-107 `4d5ad94` 上修复 5173 参考图上传预览的运行配置。5173 仅监听 loopback，`/api` 代理到本地 32131 Node Web，RustFS 直传已用真实 JPEG 验证 `ready / accepted`。分支 `fix/GG-110-functional-upload-preview`，工作树 `F:/goodgood-worktrees/GG-107`；32131 运行已验证 `35b1f12` 检查点，32142 Worker 当前未启动。生产未变。
 - 当前项目入口：F:/goodgood；累计代码包含a73835f、GG081—091与GG092交接。`.codex/`是用户本地设置，保留不提交。

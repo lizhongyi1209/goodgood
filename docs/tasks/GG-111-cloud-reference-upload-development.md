@@ -39,6 +39,9 @@
 - The Windows cross-drive external-file guard was corrected in `2674c90`;
   `npm run check:local` was repeated afterward with the same 558 pass,
   26 isolated skips, 0 failures. Production application remains GG-098.
+- The 5173 Vite process was moved from GG-110 to this GG-111 worktree. Its
+  `/create` and API proxy returned 200, the proxy reported the verified GG-111
+  backend revision, and the operator refreshed again: image present, page normal.
 
 ## 下一步
 

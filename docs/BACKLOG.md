@@ -5,7 +5,7 @@
 
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
-| GG-111 | 本地 5173 直传生产 OSS 的隔离前缀 | 本地实现并验收：门禁 558/26/0，OSS 预检和临时对象读写通过；真实 PNG 上传后 `ready / accepted`，刷新仍可见；应用未部署 | [任务](tasks/GG-111-cloud-reference-upload-development.md) / [ADR](decisions/0099-local-upload-probes-in-production-oss-bucket.md) |
+| GG-111 | 本地 5173 直传生产 OSS 的隔离前缀 | 本地实现并验收：门禁 558/26/0；5173 与 32131 均来自 GG-111；真实 PNG 上传 `ready / accepted`，切换页面服务后刷新仍可见；应用未部署 | [任务](tasks/GG-111-cloud-reference-upload-development.md) / [ADR](decisions/0099-local-upload-probes-in-production-oss-bucket.md) |
 | GG-110 | 5173 创作参考图预览接入本地上传 | 本地门禁、检查点和真实 JPEG 上传通过；数据库 `ready / accepted`，未部署 | [任务](tasks/GG-110-functional-reference-upload-preview.md) |
 | GG-107 | 创作输入框生成按钮改为向上箭头 | 按钮比例获用户确认；模型 SVG 预览 400 已修复并构建，待刷新复核；未部署 | [任务](tasks/GG-107-composer-send-arrow.md) / [ADR](decisions/0098-up-arrow-composer-send.md) |
 | GG-105 | 图片与视频素材上传上限统一到 200 MB | 本地代码已运行，自动测试未执行；待用户手动刷新验收，未部署 | [任务](tasks/GG-105-media-upload-200mb.md) / [ADR](decisions/0096-200-mib-private-media-uploads.md) |
