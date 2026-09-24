@@ -5,6 +5,7 @@
 
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
+| GG-112 | 本地登录投递真实邮箱验证码 | 代码和 SMTP 认证已验证：门禁 559/26/0、远端认证预检 5/5；运行切换与真实收信待核验，应用未部署 | [任务](tasks/GG-112-real-email-local-login.md) / [ADR](decisions/0100-local-real-email-delivery.md) |
 | GG-111 | 本地 5173 直传生产 OSS 的隔离前缀 | 本地实现并验收：门禁 558/26/0；5173 与 32131 均来自 GG-111；真实 PNG 上传 `ready / accepted`，切换页面服务后刷新仍可见；应用未部署 | [任务](tasks/GG-111-cloud-reference-upload-development.md) / [ADR](decisions/0099-local-upload-probes-in-production-oss-bucket.md) |
 | GG-110 | 5173 创作参考图预览接入本地上传 | 本地门禁、检查点和真实 JPEG 上传通过；数据库 `ready / accepted`，未部署 | [任务](tasks/GG-110-functional-reference-upload-preview.md) |
 | GG-107 | 创作输入框生成按钮改为向上箭头 | 按钮比例获用户确认；模型 SVG 预览 400 已修复并构建，待刷新复核；未部署 | [任务](tasks/GG-107-composer-send-arrow.md) / [ADR](decisions/0098-up-arrow-composer-send.md) |
@@ -91,8 +92,7 @@
 | GG-039 | 视频生成数量 1/2/4 与独立并发任务 | 本地完成并验证，待用户检查；未真实并发实测/发布 | [任务](tasks/GG-039-video-count-concurrency.md) |
 | GG-040—041 | 图片/视频 `---` 批量提示词与数量乘积并发、去重说明 | 本地门禁与 Chrome 验证通过，待用户检查；未真实批量实测/发布 | [GG040](tasks/GG-040-batch-prompts.md) · [GG041](tasks/GG-041-remove-batch-prompt-summary.md) |
 | GG-042—GG-062 | 抽屉/缩略图/站长导航/审计/GPT线路等 | 均已随 GG-097 上线 | [GG042](tasks/GG-042-parameter-drawer-overlay.md) · [GG043](tasks/GG-043-larger-reference-previews.md) · [GG059](tasks/GG-059-site-owner-workspace.md) · [GG060](tasks/GG-060-management-heading-hierarchy.md) · [GG061](tasks/GG-061-audit-log-section.md) · [GG062](tasks/GG-062-gpt-image-lines.md) |
-
-## 已明确搁置（不得自动恢复） · 最后同步2026-09-23；GG-024—104已占用，下一个需求从GG-105分配
+## 已明确搁置（不得自动恢复） · 最后同步2026-09-24；GG-024—112已占用，下一个需求从GG-113分配
 | ID | 事项 | 恢复条件 | 入口 |
 | --- | --- | --- | --- |
 | GG-900 | C6 自动账户删除/身份删除/举报与内容处理 | 站长明确要求并重审生产差异 | [保全与恢复](tasks/GG-900-deferred-c6.md) |

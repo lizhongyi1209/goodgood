@@ -1,8 +1,8 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-24
-- Current phase: GG-111 显式 OSS 直传模式已通过本地门禁、OSS 前缀临时对象 PUT/GET/DELETE，以及 5173 真实 PNG 上传、数据库 ready/accepted 和刷新恢复。生产应用仍为 GG-098。
-- Current objective: 让持续开发预览使用本地真实会话、素材服务和对象存储，同时保持纯 UI 预览入口独立。
+- Current phase: GG-112 本地真实邮件验证码投递实施中；GG-111 显式 OSS 直传模式已完成验收。生产应用仍为 GG-098。
+- Current objective: 在保留本地身份与数据隔离的前提下，让 5173 登录验证码进入真实邮箱。
 - Previous objective: GG-107 创作发送箭头与模型 SVG 预览修复，待浏览器复核；GG-105 大文件上传仍待人工验收。
 
 ## Current checkpoint
@@ -50,13 +50,14 @@
 - Task [GG-107](tasks/GG-107-composer-send-arrow.md)：**按钮比例已获用户确认；模型图标 SVG 预览 400 已修复并构建，待刷新复核，未部署**。ADR 0098 接受向上箭头替换飞鸿发送符号；图片和视频创作按钮共享外观。GG-106 OSS 决策与文档在另一独立工作树继续，未并入本分支。
 - Task [GG-110](tasks/GG-110-functional-reference-upload-preview.md)：**本地代码、门禁、检查点运行与真实 JPEG 上传通过，未部署**。5173 旧 React 依赖请求已兼容；登录后 API 改接本地 Node Web，避免 Vite Worker PostgreSQL 跨请求复用；模型 SVG 使用稳定公共路径。`check:local` 555 通过/26 隔离跳过/0 失败。32131 已运行已验证 `35b1f12` 检查点；真实 JPEG 登记 201、完成校验 200、数据库 `ready / accepted`。
 - Task [GG-111](tasks/GG-111-cloud-reference-upload-development.md)：基于 GG-110 `65fa299`，独立工作树 `F:/goodgood-worktrees/GG-111`。站长明确选择复用生产 OSS 桶与现有 RAM 密钥；ADR 0099 将本地写入限制到 `local-dev/references/`，旧本地素材走 RustFS。最终 `check:local` 558 通过/26 隔离跳过/0 失败。5173 与线上 OSS 来源的 CORS 预检均 200；临时前缀对象签名 PUT/GET/DELETE 为 200/200/204。32131 运行从当前工作树 HEAD 构建的已验证检查点；真实 PNG 上传 `ready / accepted`、OSS HEAD 200。5173 Vite 也来自 GG-111，站长切换后再次刷新确认图片仍在、页面正常；未部署应用代码。
+- Task [GG-112](tasks/GG-112-real-email-local-login.md)：基于 GG-111 `6067cda`，独立工作树 `F:/goodgood-worktrees/GG-112`。站长选择现有发信账号给本地真实验证码投递；ADR 0100 记录对 ADR 0092 凭据隔离的限域例外。新工作区启动选项只加载仓库外 SMTP 配置和独立密码文件，远程 SMTP 需 TLS/账号预检；本地身份与数据库保持隔离。`check:local` 559 通过/26 隔离跳过/0 失败，真实 SMTP 认证预检 5/5 通过且未发信；32131 切换及真实收信/登录待核验。生产应用未变。
 - 线上入口为 `goodgood.o1key.com`；`staging-goodgood.o1key.com` 仅保留名称，不是测试入口。
 - 生产数据（2026-09-21 核对）：users 28、assets 166、references 141 ready、
   generation_jobs 201（151 成功 / 50 失败）；运营手动登记充值 4 笔共 15100 积分。
 - **2026-09-17 首次生产恢复演练通过**：快照 `ce191630`、59 表 / 2403 行 / 43 迁移；
   维护窗口约 66 秒。「备份 timer disabled、无自动备份」的旧结论**已更正为错误**。
 - 独立缺口（已记录未处理）：**仅剩无告警通道**。
-- Next action: GG-111 已完成，按新需求从当前已验证检查点另开隔离分支继续开发；GG-106 生产 OSS 应用切换仍独立。GG-105 的 200 MiB 大文件验收仍待办；浏览器自动控制按用户要求暂不处理。
+- Next action: 完成 GG-112 门禁并准备仓库外 SMTP 密码文件，核验 SMTP 认证后把 32131 切到 GG-112 检查点，人工核对真实收信和 5173 登录；GG-106 生产 OSS 应用切换仍独立。GG-105 的 200 MiB 大文件验收仍待办；浏览器自动控制按用户要求暂不处理。
 - Blockers: 无阻塞执行项；`operations` 缺口为已知并已授权接受。
 - 参考图校验最长近 6 分钟、超过 nginx 70s 读超时的服务端性能根因仍待排查；
   GG-103 前端通过 owner-scoped 状态查询避免把已入库素材误报为失败。

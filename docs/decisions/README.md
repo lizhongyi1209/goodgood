@@ -1,5 +1,6 @@
 # Decision records
 
+- `0100-local-real-email-delivery.md` — opt-in local SMTP delivery with the existing sender, external password file, TLS authentication preflight, and isolated local identities.
 - `0099-local-upload-probes-in-production-oss-bucket.md` — explicitly opted-in local reference uploads use only a `local-dev/references/` prefix in the production OSS bucket, with local database and older RustFS objects retained.
 - `0098-up-arrow-composer-send.md` — image and video composer send actions use an upward arrow; supersedes ADR 0002's Feihong send symbol.
 

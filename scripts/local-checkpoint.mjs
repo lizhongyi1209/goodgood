@@ -6,7 +6,9 @@ import { fileURLToPath } from "node:url";
 import { parseEnv } from "node:util";
 import { artifactFingerprint, assertCommittedSource, currentRevision, recordBuild, sourceFingerprint, verifyBuild } from "./local-build-provenance.mjs";
 import { resolveLocalProviderTokenFile } from "./local-provider-secret.mjs";
+import { loadLocalEmailSmtpEnvironment } from "./local-email-smtp.mjs";
 import { setVerifiedLocalBuildIdentity } from "../server/runtime/local-build-identity.mjs";
+import { runAuthenticationPreflight } from "../server/auth/preflight.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 
@@ -29,13 +31,26 @@ if (command === "build") {
     console.log(JSON.stringify({ event: "checkpoint.build_verified", ...build }));
   } else {
     const mode = process.argv[3];
-    const cloudFile = process.argv[4] === "--cloud-env-file" ? process.argv[5] : null;
+    const options = process.argv.slice(4);
     assert.ok(["workspace", "login", "worker"].includes(mode) &&
-      (process.argv.length === 4 || (mode === "workspace" && process.argv.length === 6 && cloudFile)),
-      "Expected workspace, login, worker, or workspace --cloud-env-file <external path>");
+      options.length % 2 === 0, "Expected workspace, login, or worker with paired options.");
+    const allowedOptions = new Set(["--cloud-env-file", "--email-env-file"]);
+    const selected = new Map();
+    for (let index = 0; index < options.length; index += 2) {
+      assert.ok(allowedOptions.has(options[index]) && options[index + 1] &&
+        !selected.has(options[index]), "Expected unique --cloud-env-file or --email-env-file options.");
+      selected.set(options[index], options[index + 1]);
+    }
+    const cloudFile = selected.get("--cloud-env-file");
+    const emailFile = selected.get("--email-env-file");
+    assert.ok(mode === "workspace" || (!cloudFile && !emailFile),
+      "External cloud and email configuration is available only for workspace.");
     const emailWeb = mode === "workspace" || mode === "login";
     const envFile = emailWeb ? ".env.login-review" : ".env.local-review";
     const environment = parseEnv(await readFile(path.join(root, envFile), "utf8"));
+    const emailEnvironment = emailFile
+      ? await loadLocalEmailSmtpEnvironment(emailFile, root)
+      : {};
     const cloudEnvironment = cloudFile
       ? parseEnv(await readFile(await assertExternalFile(cloudFile), "utf8"))
       : {};
@@ -69,8 +84,10 @@ if (command === "build") {
     if (emailWeb) {
       assert.equal(environment.GOODGOOD_AUTH_MODE, "email_otp");
       assert.equal(environment.GOODGOOD_ALLOW_LOCAL_AUTH, "false");
-      assert.equal(environment.GOODGOOD_EMAIL_SMTP_HOST, "127.0.0.1");
-      assert.equal(environment.GOODGOOD_EMAIL_SMTP_PORT, "58046");
+      if (!emailFile) {
+        assert.equal(environment.GOODGOOD_EMAIL_SMTP_HOST, "127.0.0.1");
+        assert.equal(environment.GOODGOOD_EMAIL_SMTP_PORT, "58046");
+      }
     } else {
       assert.equal(environment.GOODGOOD_AUTH_MODE, "local");
       assert.equal(environment.GOODGOOD_ALLOW_LOCAL_AUTH, "true");
@@ -113,7 +130,8 @@ if (command === "build") {
       GOODGOOD_LOCAL_SEEDANCE_PREVIEW: "true",
       GOODGOOD_LOCAL_SEEDANCE_API_KEY_FILE: providerFile,
     };
-    Object.assign(process.env, environment, cloudEnvironment, authenticationOverrides, providerOverrides, {
+    Object.assign(process.env, environment, cloudEnvironment, emailEnvironment,
+      authenticationOverrides, providerOverrides, {
       GOODGOOD_REVISION: build.revision,
       GOODGOOD_PROCESS: role,
       HOST: "127.0.0.1",
@@ -123,6 +141,13 @@ if (command === "build") {
       OBJECT_STORAGE_PROVISIONING_MODE: "manage",
       OBJECT_STORAGE_UPLOAD_ALLOWED_ORIGINS: webOrigins,
     });
+    if (emailFile) {
+      const preflight = await runAuthenticationPreflight({
+        allowLoopback: true,
+        environment: process.env,
+      });
+      assert.ok(preflight.ok, "Real email SMTP preflight failed; Web was not started.");
+    }
     // Workers and providers don't load dist; the same source snapshot still binds all roles.
     assert.equal((await artifactFingerprint(root)).hash, build.artifactHash);
     setVerifiedLocalBuildIdentity(build);
@@ -136,6 +161,7 @@ if (command === "build") {
         pid: process.pid,
         provider: "o1key",
         referenceStorage: cloudFile ? "cloud-development" : "local-rustfs",
+        emailDelivery: emailFile ? "real-smtp" : "local-mailpit",
       }),
     );
     if (role === "worker") {

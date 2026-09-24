@@ -1,5 +1,24 @@
 # 当前开发版本与跨窗口交接
 
+## GG-112 本地真实邮件验证码（实施中）
+
+基于 GG-111 `6067cda` 的独立工作树 `F:/goodgood-worktrees/GG-112`。5173 已经通过
+32131 使用真实 GoodGood 邮箱验证码 API；GG-112 只将 32131 的邮件投递从 Mailpit
+切为显式配置的 TLS SMTP。站长选用现有发信账号；本地数据库、用户及会话继续隔离，
+不导入生产身份。见[任务卡](tasks/GG-112-real-email-local-login.md)和
+[ADR 0100](decisions/0100-local-real-email-delivery.md)。
+
+将 `infra/local/email-smtp.env.example` 的内容复制到仓库外，单独创建密码文件，
+再用以下命令启动已验证的 32131 工作区；5173 仍代理此服务：
+
+~~~powershell
+node scripts/local-checkpoint.mjs start workspace --cloud-env-file C:\Users\Admin\AppData\Local\GoodGood\local-cloud-upload\cloud-upload.env --email-env-file C:\Users\Admin\AppData\Local\GoodGood\local-real-email\email-smtp.env
+~~~
+
+真实邮件模式启动前执行 SMTP TLS/认证 `verify()`，不发送信件。浏览器里手动发送
+验证码才会发真实邮件。凭据准备、32131 切换、实际收信与登录尚待核验；切换前现有
+5173/32131 继续运行 GG-111 检查点及 Mailpit。
+
 ## GG-111 本地页面连接 OSS 参考图直传（已验收）
 
 GG-111 在 `F:/goodgood-worktrees/GG-111`，基于 GG-110 `65fa299`。默认本地上传仍写
