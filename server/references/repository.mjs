@@ -4,7 +4,7 @@ import { ReferencePersistenceError } from "./errors.mjs";
 
 export async function createPendingReferenceAssets(
   pool,
-  { files, ownerId, uploadTtlSeconds, workspaceId = null },
+  { files, ownerId, uploadTtlSeconds, workspaceId = null, newKey = (key) => key },
 ) {
   const client = await pool.connect();
   try {
@@ -17,7 +17,7 @@ export async function createPendingReferenceAssets(
     const assets = [];
     for (const file of files) {
       const id = randomUUID();
-      const objectKey = `references/${workspace.id}/${ownerId}/${id}/original`;
+      const objectKey = newKey(`references/${workspace.id}/${ownerId}/${id}/original`);
       const result = await client.query(
         `INSERT INTO reference_assets (
            id, owner_id, workspace_id, creator_owner_id, object_key,

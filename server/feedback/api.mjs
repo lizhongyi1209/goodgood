@@ -1,6 +1,7 @@
 import {createHash,randomUUID} from 'node:crypto';
 import {PutObjectCommand,GetObjectCommand,DeleteObjectCommand} from '@aws-sdk/client-s3';
 import {getGenerationResources,prepareObjectStorage} from '../generation/resources.mjs';
+import {newObjectKey} from '../generation/object-storage-routing.mjs';
 import {AuthenticationError,sessionExpiredError} from '../auth/errors.mjs';
 import {inspectReferenceImage} from '../references/validation.mjs';
 import {FEEDBACK_CATEGORIES,FEEDBACK_STATUSES,FEEDBACK_LIMITS} from '../../shared/contracts/feedback.mjs';
@@ -85,7 +86,7 @@ export async function createFeedback({ownerContext,input,files=[],idempotencyKey
     if(files.length)await prepareObjectStorage(resources);
     await client.query('INSERT INTO feedback_tickets(id,owner_id,category,message,request_key,fingerprint) VALUES($1,$2,$3,$4,$5,$6)',[ticketId,ownerContext.ownerId,value.category,value.message,requestKey,hash]);
     for(const [index,file] of files.entries()){
-      const objectKey=`feedback/${ownerContext.ownerId}/${ticketId}/${index+1}`;stored.push(objectKey);
+      const objectKey=newObjectKey(`feedback/${ownerContext.ownerId}/${ticketId}/${index+1}`,resources.config.objectStorage);stored.push(objectKey);
       await resources.storage.send(new PutObjectCommand({Bucket:resources.config.objectStorage.bucket,Key:objectKey,Body:file.bytes,ContentType:file.mimeType}));
       await client.query('INSERT INTO feedback_images(ticket_id,position,object_key,mime_type,byte_size) VALUES($1,$2,$3,$4,$5)',[ticketId,index+1,objectKey,file.mimeType,file.bytes.length]);
     }

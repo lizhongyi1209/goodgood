@@ -1,9 +1,9 @@
 # Production implementation plan
 
-- Last synchronized: 2026-09-22
-- Current phase: GG-100 生产主机单槽位迁移与旧 blue/green 清理已完成；公网开放且复验通过。
-- Current objective: 维持唯一 `goodgood-production` 应用项目；后续发布只按 ADR 0091 原地替换。
-- Previous objective: GG-099 仓库发布契约切换到单槽位 Compose。
+- Last synchronized: 2026-09-24
+- Current phase: GG-106 OSS 签名 PUT/GET、匿名拒绝和随机对象删除均已在云端验证；生产应用仍为 GG-098。本工作树从 GG-100 单槽位基线准备仅含 GG-106 应用改动的发布候选。
+- Current objective: 验证独立 GG-106 候选、配置生产密钥并准备单槽应用切换，保留旧 R2 对象与独立 Restic 备份。
+- Previous objective: GG-100 生产主机单槽位迁移与旧 blue/green 清理。
 
 ## Current checkpoint
 
@@ -27,14 +27,17 @@
 - Task [GG-100](tasks/GG-100-production-single-slot-host-cleanup.md)：**生产执行完成**。
   恢复点 `71e758c4`；固定项目 Web/Worker healthy、restarts 0，公网 200/session 401；
   旧 4 容器、2 网络、槽位/动态 upstream 与 14 个无引用旧镜像已清理，生产数据卷完整。
+- Task [GG-106](tasks/GG-106-oss-object-storage.md)：**云端受控读写通过，独立应用候选准备中，未部署**。
+  ESA 守卫已发布；专用 RAM 凭据的签名 PUT 200、签名 ESA GET 200 且内容一致，匿名 ESA/OSS 403。随机探针精确删除 204，签名读回 404。新应用对象拟写入 `oss/`，旧对象由原 R2 读取。
+  从 GG-100 基线 `de699e1` 隔离 GG-106 应用变更；定向测试 13/13、文档测试 8/8，`npm run check:local` 542 通过/26 隔离跳过/0 失败；尚未发布。
 - 线上入口为 `goodgood.o1key.com`；`staging-goodgood.o1key.com` 仅保留名称，不是测试入口。
 - 生产数据（2026-09-21 核对）：users 28、assets 166、references 141 ready、
   generation_jobs 201（151 成功 / 50 失败）；运营手动登记充值 4 笔共 15100 积分。
 - **2026-09-17 首次生产恢复演练通过**：快照 `ce191630`、59 表 / 2403 行 / 43 迁移；
   维护窗口约 66 秒。「备份 timer disabled、无自动备份」的旧结论**已更正为错误**。
 - 独立缺口（已记录未处理）：**仅剩无告警通道**。
-- Next action: 无待办发布步骤；下一普通产品需求从 GG-101 分配。
-- Blockers: 无阻塞执行项；`operations` 缺口为已知并已授权接受。
+- Next action: 验证 GG-106 独立候选不包含 GG-101—105 的未发布应用改动，完成发布预检和生产密钥安装计划；按 [OSS 切换清单](operations/gg106-oss-cutover.md)执行获批的单槽发布。
+- Blockers: 独立候选尚未完成门禁与生产密钥安装；应用生产发布未开始。`operations` 缺口为已知并已授权接受。
 - 待排查缺陷：参考图 `/api/references/*` 校验最长近 6 分钟，超过 nginx 70s 读超时，
   用户看到上传失败而素材实际入库。未定位根因，未修改。
 

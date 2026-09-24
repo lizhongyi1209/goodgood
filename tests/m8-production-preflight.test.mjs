@@ -15,6 +15,9 @@ const EMAIL_SMTP_SECRET = "production-email-smtp-secret-that-must-not-appear";
 const GENERATION_SECRET = "production-generation-secret-that-must-not-appear";
 const STORAGE_ACCESS_KEY = "production-storage-key-that-must-not-appear";
 const STORAGE_SECRET = "production-storage-secret-that-must-not-appear";
+const OSS_ACCESS_KEY = "production-oss-access-key-that-must-not-appear";
+const OSS_SECRET = "production-oss-secret-that-must-not-appear";
+const ASSET_READ_SECRET = "production-asset-read-secret-that-must-not-appear";
 const DATABASE_SECRET = "production-database-secret-that-must-not-appear";
 const REVISION = "b".repeat(40);
 const RUNTIME_VERSION = "c".repeat(64);
@@ -109,6 +112,9 @@ async function productionFixture(context) {
   const generationSecretFile = path.join(secretDirectory, "o1key-api-key");
   const storageAccessKeyFile = path.join(secretDirectory, "r2-access-key-id");
   const storageSecretFile = path.join(secretDirectory, "r2-secret-access-key");
+  const ossAccessKeyFile = path.join(secretDirectory, "oss-access-key-id");
+  const ossSecretFile = path.join(secretDirectory, "oss-secret-access-key");
+  const assetReadSecretFile = path.join(secretDirectory, "asset-read-secret");
   const secretGroupId = 12000;
   const release = {
     GOODGOOD_AUTH_CLIENT_SECRET_SOURCE_FILE: authSecretFile,
@@ -117,6 +123,9 @@ async function productionFixture(context) {
     GOODGOOD_GENERATION_API_KEY_SOURCE_FILE: generationSecretFile,
     GOODGOOD_OBJECT_STORAGE_ACCESS_KEY_ID_SOURCE_FILE: storageAccessKeyFile,
     GOODGOOD_OBJECT_STORAGE_SECRET_ACCESS_KEY_SOURCE_FILE: storageSecretFile,
+    GOODGOOD_OSS_ACCESS_KEY_ID_SOURCE_FILE: ossAccessKeyFile,
+    GOODGOOD_OSS_SECRET_ACCESS_KEY_SOURCE_FILE: ossSecretFile,
+    GOODGOOD_ASSET_READ_SECRET_SOURCE_FILE: assetReadSecretFile,
     GOODGOOD_PRODUCTION_ORIGIN: ORIGIN,
     GOODGOOD_PRODUCTION_SECRET_GID: String(secretGroupId),
     GOODGOOD_RELEASE_IMAGE: IMAGE,
@@ -143,18 +152,24 @@ async function productionFixture(context) {
     GOODGOOD_FAKE_PAYMENT_ENABLED: "false",
     NODE_ENV: "production",
     OBJECT_STORAGE_ACCESS_KEY_ID_FILE:
-      "/run/secrets/goodgood_object_storage_access_key_id",
-    OBJECT_STORAGE_BUCKET: "goodgood-production",
+      "/run/secrets/goodgood_oss_access_key_id",
+    OBJECT_STORAGE_BUCKET: "o1key-goodgood",
     OBJECT_STORAGE_ENDPOINT:
-      "https://production-account.r2.cloudflarestorage.com",
-    OBJECT_STORAGE_FORCE_PATH_STYLE: "true",
+      "https://s3.oss-cn-guangzhou.aliyuncs.com",
+    OBJECT_STORAGE_FORCE_PATH_STYLE: "false",
     OBJECT_STORAGE_PROVISIONING_MODE: "verify",
-    OBJECT_STORAGE_PROVIDER_KIND: "r2",
+    OBJECT_STORAGE_PROVIDER_KIND: "oss",
     OBJECT_STORAGE_PUBLIC_ENDPOINT:
-      "https://production-account.r2.cloudflarestorage.com",
-    OBJECT_STORAGE_REGION: "auto",
+      "https://upload-goodgood.o1key.cn",
+    OBJECT_STORAGE_ASSET_READ_ORIGIN: "https://oss-goodgood.o1key.cn",
+    OBJECT_STORAGE_ASSET_READ_SECRET_FILE: "/run/secrets/goodgood_asset_read_secret",
+    OBJECT_STORAGE_REGION: "cn-guangzhou",
     OBJECT_STORAGE_SECRET_ACCESS_KEY_FILE:
-      "/run/secrets/goodgood_object_storage_secret_access_key",
+      "/run/secrets/goodgood_oss_secret_access_key",
+    LEGACY_R2_ENDPOINT: "https://production-account.r2.cloudflarestorage.com",
+    LEGACY_R2_BUCKET: "goodgood",
+    LEGACY_R2_ACCESS_KEY_ID_FILE: "/run/secrets/goodgood_object_storage_access_key_id",
+    LEGACY_R2_SECRET_ACCESS_KEY_FILE: "/run/secrets/goodgood_object_storage_secret_access_key",
     OBJECT_STORAGE_UPLOAD_ALLOWED_ORIGINS: ORIGIN,
     REDIS_URL: "redis://production-valkey:6379",
   };
@@ -166,6 +181,9 @@ async function productionFixture(context) {
     writeFile(generationSecretFile, `${GENERATION_SECRET}\n`),
     writeFile(storageAccessKeyFile, `${STORAGE_ACCESS_KEY}\n`),
     writeFile(storageSecretFile, `${STORAGE_SECRET}\n`),
+    writeFile(ossAccessKeyFile, `${OSS_ACCESS_KEY}\n`),
+    writeFile(ossSecretFile, `${OSS_SECRET}\n`),
+    writeFile(assetReadSecretFile, `${ASSET_READ_SECRET}\n`),
     writeFile(releaseFile, serializeEnvironment(release)),
     writeFile(runtimeFile, serializeEnvironment(runtime)),
   ]);
@@ -238,6 +256,9 @@ test("production preflight emits one exact-candidate evidence item without secre
     GENERATION_SECRET,
     STORAGE_ACCESS_KEY,
     STORAGE_SECRET,
+    OSS_ACCESS_KEY,
+    OSS_SECRET,
+    ASSET_READ_SECRET,
     DATABASE_SECRET,
   ]) {
     assert.doesNotMatch(serialized, new RegExp(secret));

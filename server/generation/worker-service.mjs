@@ -19,6 +19,7 @@ import {
   discardGeneratedAsset,
   storeGeneratedAsset,
 } from "./storage.mjs";
+import { newObjectKey } from "./object-storage-routing.mjs";
 
 const INTERNAL_ERROR = Object.freeze({
   code: "INTERNAL_ERROR",
@@ -97,6 +98,7 @@ export async function storeProviderOutputs({
   outputs,
   storage,
   store = storeGeneratedAsset,
+  objectStorage = { providerKind: "r2" },
 }) {
   if (!Array.isArray(outputs) || outputs.length !== job.requested_count) {
     throw new NormalizedProviderError({
@@ -114,7 +116,10 @@ export async function storeProviderOutputs({
       const storageScope = job.workspace_id
         ? `${job.workspace_id}/${job.owner_id}`
         : job.owner_id;
-      const objectKey = `generated/${storageScope}/${job.id}-${ordinal}.${generatedObjectExtension(downloaded.contentType)}`;
+      const objectKey = newObjectKey(
+        `generated/${storageScope}/${job.id}-${ordinal}.${generatedObjectExtension(downloaded.contentType)}`,
+        objectStorage,
+      );
       objectKeys.push(objectKey);
       await store({
         bucket,
@@ -281,6 +286,7 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
       job,
       outputs,
       storage,
+      objectStorage: config.objectStorage,
     });
     stage = "generation-completion";
     const completion = await completeGenerationJob(pool, {

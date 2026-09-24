@@ -20,6 +20,7 @@ import {
   markReferenceRejected,
 } from "./repository.mjs";
 import { signAssetRead } from "../generation/storage.mjs";
+import { newObjectKey } from "../generation/object-storage-routing.mjs";
 import { readReferenceObject, signReferenceUpload } from "./storage.mjs";
 import {
   inspectReferenceImage,
@@ -135,6 +136,7 @@ export async function createReferenceUploads({
     ownerId,
     uploadTtlSeconds: REFERENCE_LIMITS.uploadTtlSeconds,
     workspaceId,
+    newKey: (key) => newObjectKey(key, resources.config.objectStorage),
   });
 
   return {

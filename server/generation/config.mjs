@@ -44,6 +44,28 @@ function objectStorageProvisioningMode(value) {
   return mode;
 }
 
+function objectStorageProviderKind(value) {
+  const kind = value ?? "r2";
+  if (kind !== "r2" && kind !== "oss") {
+    throw new Error("OBJECT_STORAGE_PROVIDER_KIND must be r2 or oss.");
+  }
+  return kind;
+}
+
+function httpsOrigin(value, name) {
+  let url;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error(`${name} must be an absolute HTTPS origin.`);
+  }
+  if (url.protocol !== "https:" || url.username || url.password || url.port ||
+      url.pathname !== "/" || url.search || url.hash) {
+    throw new Error(`${name} must be an HTTPS origin without path or query.`);
+  }
+  return url.origin;
+}
+
 function secretValue(environment, directName, fileName) {
   const direct = environment[directName]?.trim();
   const file = environment[fileName]?.trim();
@@ -74,6 +96,46 @@ function providerApiKey(environment) {
 
 export function loadGenerationConfig(environment = process.env) {
   const kind = providerKind(environment.GENERATION_PROVIDER_KIND);
+  const storageKind = objectStorageProviderKind(
+    environment.OBJECT_STORAGE_PROVIDER_KIND,
+  );
+  const legacyR2 = storageKind === "oss"
+    ? Object.freeze({
+        accessKeyId: secretValue(
+          environment, "LEGACY_R2_ACCESS_KEY_ID", "LEGACY_R2_ACCESS_KEY_ID_FILE",
+        ),
+        bucket: required(environment, "LEGACY_R2_BUCKET"),
+        endpoint: required(environment, "LEGACY_R2_ENDPOINT"),
+        region: "auto",
+        secretAccessKey: secretValue(
+          environment, "LEGACY_R2_SECRET_ACCESS_KEY", "LEGACY_R2_SECRET_ACCESS_KEY_FILE",
+        ),
+      })
+    : null;
+  const ossReadOrigin = storageKind === "oss"
+    ? httpsOrigin(
+        required(environment, "OBJECT_STORAGE_ASSET_READ_ORIGIN"),
+        "OBJECT_STORAGE_ASSET_READ_ORIGIN",
+      )
+    : null;
+  const ossReadSecret = storageKind === "oss"
+    ? secretValue(
+        environment,
+        "OBJECT_STORAGE_ASSET_READ_SECRET",
+        "OBJECT_STORAGE_ASSET_READ_SECRET_FILE",
+      )
+    : null;
+  if (storageKind === "oss") {
+    if (ossReadSecret.length < 32) {
+      throw new Error("OBJECT_STORAGE_ASSET_READ_SECRET must have at least 32 characters.");
+    }
+    if (environment.OBJECT_STORAGE_FORCE_PATH_STYLE !== "false" ||
+        environment.OBJECT_STORAGE_PROVISIONING_MODE !== "verify") {
+      throw new Error("OSS requires virtual-hosted addressing and verify-only provisioning.");
+    }
+    httpsOrigin(required(environment, "OBJECT_STORAGE_PUBLIC_ENDPOINT"),
+      "OBJECT_STORAGE_PUBLIC_ENDPOINT");
+  }
   const allowInsecureLoopback =
     environment.GENERATION_PROVIDER_ALLOW_INSECURE_LOOPBACK === "true";
   if (allowInsecureLoopback && environment.NODE_ENV === "production") {
@@ -91,6 +153,7 @@ export function loadGenerationConfig(environment = process.env) {
         "OBJECT_STORAGE_ACCESS_KEY_ID_FILE",
       ),
       bucket: required(environment, "OBJECT_STORAGE_BUCKET"),
+      providerKind: storageKind,
       endpoint: required(environment, "OBJECT_STORAGE_ENDPOINT"),
       forcePathStyle: environment.OBJECT_STORAGE_FORCE_PATH_STYLE !== "false",
       uploadAllowedOrigins: commaSeparated(
@@ -109,7 +172,10 @@ export function loadGenerationConfig(environment = process.env) {
         "OBJECT_STORAGE_SECRET_ACCESS_KEY",
         "OBJECT_STORAGE_SECRET_ACCESS_KEY_FILE",
       ),
+      assetReadOrigin: ossReadOrigin,
+      assetReadSecret: ossReadSecret,
     }),
+    legacyR2,
     provider: Object.freeze({
       allowInsecureLoopback,
       apiKey: providerApiKey(environment),
@@ -171,6 +237,26 @@ export function inspectGenerationConfiguration(environment = process.env) {
     }
     if (!environment.GENERATION_API_KEY && !environment.GENERATION_API_KEY_FILE) {
       names.push("GENERATION_API_KEY or GENERATION_API_KEY_FILE");
+    }
+    if (environment.OBJECT_STORAGE_PROVIDER_KIND === "oss") {
+      names.push(
+        "OBJECT_STORAGE_PUBLIC_ENDPOINT",
+        "OBJECT_STORAGE_ASSET_READ_ORIGIN",
+        "LEGACY_R2_ENDPOINT",
+        "LEGACY_R2_BUCKET",
+      );
+      if (!environment.OBJECT_STORAGE_ASSET_READ_SECRET &&
+          !environment.OBJECT_STORAGE_ASSET_READ_SECRET_FILE) {
+        names.push("OBJECT_STORAGE_ASSET_READ_SECRET or OBJECT_STORAGE_ASSET_READ_SECRET_FILE");
+      }
+      if (!environment.LEGACY_R2_ACCESS_KEY_ID &&
+          !environment.LEGACY_R2_ACCESS_KEY_ID_FILE) {
+        names.push("LEGACY_R2_ACCESS_KEY_ID or LEGACY_R2_ACCESS_KEY_ID_FILE");
+      }
+      if (!environment.LEGACY_R2_SECRET_ACCESS_KEY &&
+          !environment.LEGACY_R2_SECRET_ACCESS_KEY_FILE) {
+        names.push("LEGACY_R2_SECRET_ACCESS_KEY or LEGACY_R2_SECRET_ACCESS_KEY_FILE");
+      }
     }
     return {
       configured: false,

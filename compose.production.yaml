@@ -52,6 +52,9 @@ services:
       - goodgood_generation_api_key
       - goodgood_object_storage_access_key_id
       - goodgood_object_storage_secret_access_key
+      - goodgood_oss_access_key_id
+      - goodgood_oss_secret_access_key
+      - goodgood_asset_read_secret
 
   worker:
     <<: *goodgood-production-app
@@ -70,6 +73,9 @@ services:
       - goodgood_generation_api_key
       - goodgood_object_storage_access_key_id
       - goodgood_object_storage_secret_access_key
+      - goodgood_oss_access_key_id
+      - goodgood_oss_secret_access_key
+      - goodgood_asset_read_secret
 
   migrate:
     <<: *goodgood-production-app
@@ -109,6 +115,9 @@ services:
       - goodgood_generation_api_key
       - goodgood_object_storage_access_key_id
       - goodgood_object_storage_secret_access_key
+      - goodgood_oss_access_key_id
+      - goodgood_oss_secret_access_key
+      - goodgood_asset_read_secret
 
   email-auth-status:
     <<: *goodgood-production-app
@@ -185,6 +194,12 @@ secrets:
     file: ${GOODGOOD_OBJECT_STORAGE_ACCESS_KEY_ID_SOURCE_FILE:?Set the R2 access-key file path}
   goodgood_object_storage_secret_access_key:
     file: ${GOODGOOD_OBJECT_STORAGE_SECRET_ACCESS_KEY_SOURCE_FILE:?Set the R2 secret-key file path}
+  goodgood_oss_access_key_id:
+    file: ${GOODGOOD_OSS_ACCESS_KEY_ID_SOURCE_FILE:?Set the OSS access-key file path}
+  goodgood_oss_secret_access_key:
+    file: ${GOODGOOD_OSS_SECRET_ACCESS_KEY_SOURCE_FILE:?Set the OSS secret-key file path}
+  goodgood_asset_read_secret:
+    file: ${GOODGOOD_ASSET_READ_SECRET_SOURCE_FILE:?Set the ESA read-token secret file path}
 
 networks:
   goodgood-production-state:

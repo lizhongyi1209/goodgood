@@ -31,6 +31,9 @@ const RELEASE_VARIABLES = Object.freeze([
   "GOODGOOD_GENERATION_API_KEY_SOURCE_FILE",
   "GOODGOOD_OBJECT_STORAGE_ACCESS_KEY_ID_SOURCE_FILE",
   "GOODGOOD_OBJECT_STORAGE_SECRET_ACCESS_KEY_SOURCE_FILE",
+  "GOODGOOD_OSS_ACCESS_KEY_ID_SOURCE_FILE",
+  "GOODGOOD_OSS_SECRET_ACCESS_KEY_SOURCE_FILE",
+  "GOODGOOD_ASSET_READ_SECRET_SOURCE_FILE",
   "GOODGOOD_PRODUCTION_SECRET_GID",
 ]);
 
@@ -41,6 +44,9 @@ const SOURCE_SECRET_NAMES = Object.freeze([
   "GOODGOOD_GENERATION_API_KEY_SOURCE_FILE",
   "GOODGOOD_OBJECT_STORAGE_ACCESS_KEY_ID_SOURCE_FILE",
   "GOODGOOD_OBJECT_STORAGE_SECRET_ACCESS_KEY_SOURCE_FILE",
+  "GOODGOOD_OSS_ACCESS_KEY_ID_SOURCE_FILE",
+  "GOODGOOD_OSS_SECRET_ACCESS_KEY_SOURCE_FILE",
+  "GOODGOOD_ASSET_READ_SECRET_SOURCE_FILE",
 ]);
 
 const SECRET_SOURCE_FILENAMES = Object.freeze({
@@ -50,6 +56,9 @@ const SECRET_SOURCE_FILENAMES = Object.freeze({
   GOODGOOD_GENERATION_API_KEY_SOURCE_FILE: "o1key-api-key",
   GOODGOOD_OBJECT_STORAGE_ACCESS_KEY_ID_SOURCE_FILE: "r2-access-key-id",
   GOODGOOD_OBJECT_STORAGE_SECRET_ACCESS_KEY_SOURCE_FILE: "r2-secret-access-key",
+  GOODGOOD_OSS_ACCESS_KEY_ID_SOURCE_FILE: "oss-access-key-id",
+  GOODGOOD_OSS_SECRET_ACCESS_KEY_SOURCE_FILE: "oss-secret-access-key",
+  GOODGOOD_ASSET_READ_SECRET_SOURCE_FILE: "asset-read-secret",
 });
 
 function check(id, status, detail) {
@@ -324,7 +333,10 @@ function validateRuntime(release, releaseEnvironment, runtime) {
     runtime.GOODGOOD_EMAIL_SMTP_PASSWORD ||
     runtime.GENERATION_API_KEY ||
     runtime.OBJECT_STORAGE_ACCESS_KEY_ID ||
-    runtime.OBJECT_STORAGE_SECRET_ACCESS_KEY
+    runtime.OBJECT_STORAGE_SECRET_ACCESS_KEY ||
+    runtime.LEGACY_R2_ACCESS_KEY_ID ||
+    runtime.LEGACY_R2_SECRET_ACCESS_KEY ||
+    runtime.OBJECT_STORAGE_ASSET_READ_SECRET
   ) {
     throw new Error("Application and object-storage credentials must be file-backed.");
   }
@@ -353,10 +365,11 @@ function validateRuntime(release, releaseEnvironment, runtime) {
     throw new Error("GENERATION_API_KEY_FILE must use the fixed container secret path.");
   }
   if (
-    runtime.OBJECT_STORAGE_ACCESS_KEY_ID_FILE !==
-      STAGING_OBJECT_STORAGE_ACCESS_KEY_PATH ||
-    runtime.OBJECT_STORAGE_SECRET_ACCESS_KEY_FILE !==
-      STAGING_OBJECT_STORAGE_SECRET_KEY_PATH
+    runtime.OBJECT_STORAGE_ACCESS_KEY_ID_FILE !== "/run/secrets/goodgood_oss_access_key_id" ||
+    runtime.OBJECT_STORAGE_SECRET_ACCESS_KEY_FILE !== "/run/secrets/goodgood_oss_secret_access_key" ||
+    runtime.OBJECT_STORAGE_ASSET_READ_SECRET_FILE !== "/run/secrets/goodgood_asset_read_secret" ||
+    runtime.LEGACY_R2_ACCESS_KEY_ID_FILE !== STAGING_OBJECT_STORAGE_ACCESS_KEY_PATH ||
+    runtime.LEGACY_R2_SECRET_ACCESS_KEY_FILE !== STAGING_OBJECT_STORAGE_SECRET_KEY_PATH
   ) {
     throw new Error("Object-storage credentials must use the fixed container secret paths.");
   }
@@ -376,12 +389,12 @@ function validateRuntime(release, releaseEnvironment, runtime) {
     throw new Error("Production generation must use the accepted HTTPS O1Key route.");
   }
   if (
-    runtime.OBJECT_STORAGE_PROVIDER_KIND !== "r2" ||
-    runtime.OBJECT_STORAGE_REGION !== "auto" ||
+    runtime.OBJECT_STORAGE_PROVIDER_KIND !== "oss" ||
+    runtime.OBJECT_STORAGE_REGION !== "cn-guangzhou" ||
     runtime.OBJECT_STORAGE_PROVISIONING_MODE !== "verify" ||
-    runtime.OBJECT_STORAGE_FORCE_PATH_STYLE !== "true"
+    runtime.OBJECT_STORAGE_FORCE_PATH_STYLE !== "false"
   ) {
-    throw new Error("Production object storage must use least-privilege R2 verification mode.");
+    throw new Error("Production object storage must use private Guangzhou OSS verification mode.");
   }
 
   const database = parseUrl(
@@ -411,19 +424,28 @@ function validateRuntime(release, releaseEnvironment, runtime) {
     ["https:"],
   );
   if (
-    !storageEndpoint.hostname.endsWith(".r2.cloudflarestorage.com") ||
+    storageEndpoint.origin !== "https://s3.oss-cn-guangzhou.aliyuncs.com" ||
     storageEndpoint.port ||
     publicStorageEndpoint.port ||
-    storageEndpoint.origin !== publicStorageEndpoint.origin ||
+    publicStorageEndpoint.origin !== "https://upload-goodgood.o1key.cn" ||
     !["", "/"].includes(storageEndpoint.pathname) ||
     !["", "/"].includes(publicStorageEndpoint.pathname) ||
     storageEndpoint.search ||
     publicStorageEndpoint.search
   ) {
-    throw new Error("Private and signed-browser storage must use one R2 S3 API origin.");
+    throw new Error("OSS operations and signed browser uploads must use the accepted HTTPS endpoints.");
   }
-  if (!/^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$/.test(required(runtime, "OBJECT_STORAGE_BUCKET"))) {
-    throw new Error("OBJECT_STORAGE_BUCKET must be a concrete lowercase bucket name.");
+  if (required(runtime, "OBJECT_STORAGE_BUCKET") !== "o1key-goodgood" ||
+      required(runtime, "OBJECT_STORAGE_ASSET_READ_ORIGIN") !== "https://oss-goodgood.o1key.cn" ||
+      required(runtime, "LEGACY_R2_BUCKET") !== "goodgood") {
+    throw new Error("OSS read origin and current/legacy buckets must match the accepted cutover.");
+  }
+  const legacyEndpoint = parseUrl(required(runtime, "LEGACY_R2_ENDPOINT"),
+    "LEGACY_R2_ENDPOINT", ["https:"]);
+  if (!legacyEndpoint.hostname.endsWith(".r2.cloudflarestorage.com") ||
+      legacyEndpoint.port || legacyEndpoint.pathname !== "/" ||
+      legacyEndpoint.search) {
+    throw new Error("Historical R2 reads must use the private R2 S3 API endpoint.");
   }
 
   const uploadOrigins = required(
@@ -439,7 +461,14 @@ function validateRuntime(release, releaseEnvironment, runtime) {
     );
   }
 
-  const hostRuntime = runtimeEnvironmentForHost(releaseEnvironment, runtime);
+  const hostRuntime = {
+    ...runtimeEnvironmentForHost(releaseEnvironment, runtime),
+    OBJECT_STORAGE_ACCESS_KEY_ID_FILE: releaseEnvironment.GOODGOOD_OSS_ACCESS_KEY_ID_SOURCE_FILE,
+    OBJECT_STORAGE_SECRET_ACCESS_KEY_FILE: releaseEnvironment.GOODGOOD_OSS_SECRET_ACCESS_KEY_SOURCE_FILE,
+    OBJECT_STORAGE_ASSET_READ_SECRET_FILE: releaseEnvironment.GOODGOOD_ASSET_READ_SECRET_SOURCE_FILE,
+    LEGACY_R2_ACCESS_KEY_ID_FILE: releaseEnvironment.GOODGOOD_OBJECT_STORAGE_ACCESS_KEY_ID_SOURCE_FILE,
+    LEGACY_R2_SECRET_ACCESS_KEY_FILE: releaseEnvironment.GOODGOOD_OBJECT_STORAGE_SECRET_ACCESS_KEY_SOURCE_FILE,
+  };
   const auth = loadAuthenticationConfig(hostRuntime);
   loadGenerationConfig(hostRuntime);
   if (auth.mode === "oidc") {

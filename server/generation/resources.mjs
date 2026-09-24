@@ -1,18 +1,20 @@
 import {
   CreateBucketCommand,
   HeadBucketCommand,
+  PutObjectCommand,
   PutBucketCorsCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
 import pg from "pg";
 import { createClient } from "redis";
 import { loadGenerationConfig } from "./config.mjs";
+import { isOssObjectKey } from "./object-storage-routing.mjs";
 
 const { Pool } = pg;
 let resourcesPromise;
 const storagePreparation = new WeakMap();
 
-function createS3Client(storage, endpoint) {
+function createS3Client(storage, endpoint, options = {}) {
   return new S3Client({
     credentials: {
       accessKeyId: storage.accessKeyId,
@@ -21,7 +23,40 @@ function createS3Client(storage, endpoint) {
     endpoint,
     forcePathStyle: storage.forcePathStyle,
     region: storage.region,
+    ...options,
   });
+}
+
+export function routeStorageByKey(primary, ossData, ossBucketEndpoint, legacy, legacyBucket) {
+  return {
+    send(command) {
+      const key = command.input?.Key;
+      if (key && !isOssObjectKey(key)) {
+        // R2 is retained for historical objects. New keys must carry oss/.
+        if (command instanceof PutObjectCommand) {
+          throw new Error("New objects cannot be written to legacy R2.");
+        }
+        return legacy.send(new command.constructor({
+          ...command.input,
+          Bucket: legacyBucket,
+        }));
+      }
+      if (key) {
+        // New-object data APIs use the OSS-bound CNAME. Mainland default
+        // public endpoints can reject data APIs for newer OSS accounts.
+        return ossData.send(new command.constructor({
+          ...command.input,
+          Bucket: ossBucketEndpoint,
+        }));
+      }
+      return primary.send(command);
+    },
+    destroy() {
+      primary.destroy();
+      ossData.destroy();
+      legacy.destroy();
+    },
+  };
 }
 
 export async function ensureObjectStorageBucket(client, bucket) {
@@ -45,6 +80,9 @@ export function prepareObjectStorage(resources) {
       if (provisioningMode === "verify") {
         await resources.storage.send(new HeadBucketCommand({ Bucket: bucket }));
         return;
+      }
+      if (resources.config.objectStorage.providerKind === "oss") {
+        throw new Error("OSS bucket provisioning and CORS are console-managed.");
       }
       await ensureObjectStorageBucket(resources.storage, bucket);
       await resources.storage.send(
@@ -86,11 +124,41 @@ async function createResources(environment) {
       JSON.stringify({ event: "redis.error", message: error.message }),
     );
   });
-  const storage = createS3Client(config.objectStorage, config.objectStorage.endpoint);
+  const primaryStorage = createS3Client(
+    config.objectStorage, config.objectStorage.endpoint,
+  );
+  const legacyStorage = config.legacyR2
+    ? createS3Client({ ...config.legacyR2, forcePathStyle: true }, config.legacyR2.endpoint)
+    : null;
+  const ossDataStorage = legacyStorage
+    ? createS3Client(config.objectStorage, config.objectStorage.publicEndpoint,
+        { bucketEndpoint: true, forcePathStyle: false })
+    : null;
+  const storage = legacyStorage
+    ? routeStorageByKey(primaryStorage, ossDataStorage,
+        config.objectStorage.publicEndpoint, legacyStorage, config.legacyR2.bucket)
+    : primaryStorage;
   const publicStorage = createS3Client(
     config.objectStorage,
     config.objectStorage.publicEndpoint,
+    config.objectStorage.providerKind === "oss"
+      ? { bucketEndpoint: true, forcePathStyle: false }
+      : {},
   );
+  if (config.objectStorage.providerKind === "oss") {
+    // S3 bucketEndpoint treats Bucket as the full CNAME URL when presigning PUT.
+    Object.defineProperties(publicStorage, {
+      uploadBucket: { value: config.objectStorage.publicEndpoint },
+      readRoute: {
+        value: {
+          legacyBucket: config.legacyR2.bucket,
+          legacyClient: legacyStorage,
+          origin: config.objectStorage.assetReadOrigin,
+          secret: config.objectStorage.assetReadSecret,
+        },
+      },
+    });
+  }
 
   return { config, pool, publicStorage, redis, storage };
 }

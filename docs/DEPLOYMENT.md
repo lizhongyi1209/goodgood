@@ -1649,6 +1649,14 @@ credit grant, or provider resubmission.
 
 #### Production preflight evidence
 
+GG-106 changes the application object store to private OSS while retaining
+historical R2 reads. Its pending, ordered cloud and host cutover checks are in
+[the GG-106 OSS cutover checklist](operations/gg106-oss-cutover.md). The older
+six-file R2 examples below describe the pre-GG-106 email cutover and are not a
+complete secret inventory for an OSS candidate. The OSS candidate adds three
+secret files and still mounts the two historical R2 files. The separate R2
+Restic backup configuration remains independent.
+
 Use `infra/production/release.env.example` and
 `infra/production/runtime.env.example` only as templates. Install their live
 copies as `/etc/goodgood/production/release.env` and `runtime.env`, owned by
@@ -1677,7 +1685,8 @@ The command is read-only: it checks the Git revision and derived runtime
 contract, inspects the existing candidate image labels, validates the
 production origin/callback, file ownership and modes, rejects local auth, fake
 payment, loopback dependencies, mutable or mismatched candidates, placeholder
-values, non-R2 object storage, and inline credentials. It then performs the
+values, a storage provider inconsistent with the candidate contract, and inline
+credentials. It then performs the
 selected mode's live authentication check: Authing discovery for OIDC, or SMTP
 connection/authentication verification for email without sending mail. It never
 pulls, builds, deploys, migrates, or starts the candidate.

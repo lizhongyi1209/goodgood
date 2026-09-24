@@ -15,7 +15,11 @@ export function signReferenceUpload({
 }) {
   return getSignedUrl(
     publicStorage,
-    new PutObjectCommand({ Bucket: bucket, ContentType: contentType, Key: key }),
+    new PutObjectCommand({
+      Bucket: publicStorage.uploadBucket ?? bucket,
+      ContentType: contentType,
+      Key: key,
+    }),
     { expiresIn: REFERENCE_LIMITS.uploadTtlSeconds },
   );
 }

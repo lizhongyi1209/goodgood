@@ -4,6 +4,7 @@ import {
   PutObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { isOssObjectKey, signOssAssetRead } from "./object-storage-routing.mjs";
 
 export async function storeGeneratedAsset({
   bucket,
@@ -53,9 +54,13 @@ export async function readPrivateObject({ bucket, key, maxBytes, storage }) {
 }
 
 export function signAssetRead({ bucket, key, publicStorage }) {
+  const route = publicStorage.readRoute;
+  if (route && isOssObjectKey(key)) {
+    return signOssAssetRead({ key, origin: route.origin, secret: route.secret });
+  }
   return getSignedUrl(
-    publicStorage,
-    new GetObjectCommand({ Bucket: bucket, Key: key }),
+    route?.legacyClient ?? publicStorage,
+    new GetObjectCommand({ Bucket: route?.legacyBucket ?? bucket, Key: key }),
     { expiresIn: 15 * 60 },
   );
 }
