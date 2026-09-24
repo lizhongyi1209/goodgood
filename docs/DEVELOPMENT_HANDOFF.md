@@ -117,7 +117,7 @@ PID是交接时的记录，不是以后可直接kill的授权目标。先用Get-
 
 ## 启动与恢复
 
-Node >=22.13.0，npm；本机记录v24.12.0/npm11.6.2。切换版本后用npm ci恢复锁定依赖，忽略旧node_modules/dist。普通纯 UI 开发用 `npm run dev:local`，它使用演示会话，不能上传真实素材。需在热更新预览中使用本地素材和邮箱会话时，先启动已验证的 32131 Web、32142 Worker 与本地 Compose 依赖，再从 GG-110 工作树运行 `npm run dev:workspace -- --env-file F:\goodgood\.env.login-review --port 5173`。该入口验证所有状态服务在 loopback、真实 O1Key 开发密钥位于仓库外，并把邮箱登录 API 接到 32131；5173 参考图接口使用当前工作树代码。两个端口共享本地会话 cookie，浏览器直传的 RustFS CORS 包含 5173 和 32131。实际端口以 Vite 输出为准；停止进程用 Ctrl+C。
+Node >=22.13.0，npm；本机记录v24.12.0/npm11.6.2。切换版本后用npm ci恢复锁定依赖，忽略旧node_modules/dist。普通纯 UI 开发用 `npm run dev:local`，它使用演示会话，不能上传真实素材。需在热更新预览中使用本地素材和邮箱会话时，先启动 GG-110 当前提交的已验证 32131 Node Web 与本地 Compose 依赖，再从 GG-110 工作树运行 `npm run dev:workspace -- --env-file F:\goodgood\.env.login-review --port 5173`。该入口验证状态服务在 loopback、真实 O1Key 开发密钥位于仓库外，并将 5173 的 `/api` 全部代理到 32131，避开 Vite Worker 跨请求复用 PostgreSQL 连接的失败。图片上传无需启动 32142 Worker；若要进行生成，须另行核验并启动唯一 Worker。两个端口共享本地会话 cookie，浏览器直传的 RustFS CORS 包含 5173 和 32131。实际端口以 Vite 输出为准；停止进程用 Ctrl+C。
 
 根目录已有忽略的.env.local-review，保留本机loopback状态服务配置；其中历史 mock/provider 值不再控制开发运行时。未提交、不打印、不复制到报告；不得含生产凭据。它不能替代其他机器的独立环境安装。若文件或容器缺失，按DEPLOYMENT的独立本地栈步骤配置，不运行旧数据转换，也不从生产导入。
 

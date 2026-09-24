@@ -1,5 +1,5 @@
 import vinext from "vinext";
-import { defineConfig, type ProxyOptions } from "vite";
+import { defineConfig, type Plugin, type ProxyOptions } from "vite";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import hostingConfig from "./.openai/hosting.json";
@@ -87,7 +87,7 @@ function loadLocalLiveDevVars(command: string) {
 
 // macOS Seatbelt blocks FSEvents, so Codex previews need polling for HMR.
 const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
-function localAuthProxy(origin: string): ProxyOptions {
+function localWorkspaceApiProxy(origin: string): ProxyOptions {
   return {
     target: "http://127.0.0.1:32131",
     changeOrigin: true,
@@ -101,6 +101,27 @@ function localAuthProxy(origin: string): ProxyOptions {
     configure(proxy) {
       proxy.on("proxyReq", (request) => {
         request.setHeader("origin", "http://127.0.0.1:32131");
+      });
+    },
+  };
+}
+
+function legacyLiveDepPaths(): Plugin {
+  return {
+    name: "goodgood-legacy-live-dep-paths",
+    configureServer(server) {
+      server.middlewares.use((request, _response, next) => {
+        if (request.url?.startsWith("/node_modules/.vite/deps/")) {
+          const url = new URL(request.url, "http://127.0.0.1");
+          url.pathname = url.pathname.replace(
+            "/node_modules/.vite/deps/",
+            "/node_modules/.vite-workspace/deps/",
+          );
+          // The former optimizer hash is no longer valid after the cache move.
+          url.searchParams.delete("v");
+          request.url = url.pathname + url.search;
+        }
+        next();
       });
     },
   };
@@ -155,8 +176,7 @@ export default defineConfig(async ({ command }) => {
       ...(liveDev
         ? {
             proxy: {
-              "/api/auth/method": localAuthProxy(process.env.GOODGOOD_AUTH_PUBLIC_ORIGIN!),
-              "/api/auth/email": localAuthProxy(process.env.GOODGOOD_AUTH_PUBLIC_ORIGIN!),
+              "/api": localWorkspaceApiProxy(process.env.GOODGOOD_AUTH_PUBLIC_ORIGIN!),
             },
           }
         : {}),
@@ -165,6 +185,7 @@ export default defineConfig(async ({ command }) => {
         : {}),
     },
     plugins: [
+      ...(liveDev ? [legacyLiveDepPaths()] : []),
       vinext(),
       sites(),
       cloudflare({

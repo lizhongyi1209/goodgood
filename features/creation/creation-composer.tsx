@@ -50,8 +50,6 @@ import {
   type GptImageOutputFormat,
   type GptImageQuality,
 } from "@/shared/contracts/generation";
-import nanoBananaIcon from "@lobehub/icons-static-svg/icons/nanobanana-color.svg";
-import openAiIcon from "@lobehub/icons-static-svg/icons/openai.svg";
 import {
   ArrowUp,
   CircleAlert,
@@ -127,7 +125,7 @@ function ModelIcon({ icon }: { icon: GenerationModelIcon }) {
   return (
     <span className={`model-icon ${icon}`}>
       <Image
-        src={isNanoBanana ? nanoBananaIcon : openAiIcon}
+        src={isNanoBanana ? "/model-icons/nanobanana-color.svg" : "/model-icons/openai.svg"}
         alt=""
         width={isNanoBanana ? 26 : 25}
         height={isNanoBanana ? 26 : 25}

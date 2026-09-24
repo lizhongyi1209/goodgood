@@ -1,7 +1,7 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-24
-- Current phase: GG-110 修复 5173 创作参考图上传不可用；5173 已切换并通过接口边界和本地门禁，Vite 依赖缓存冲突已修复，浏览器控制重连及真实文件上传待验收。生产仍为 GG-098。
+- Current phase: GG-110 修复 5173 创作参考图上传不可用；旧依赖路径兼容已通过，正在恢复本地 Node Web 以解决登录后的持久化 API 500，真实文件上传待验收。生产仍为 GG-098。
 - Current objective: 让持续开发预览使用本地真实会话、素材服务和对象存储，同时保持纯 UI 预览入口独立。
 - Previous objective: GG-107 创作发送箭头与模型 SVG 预览修复，待浏览器复核；GG-105 大文件上传仍待人工验收。
 
@@ -48,14 +48,14 @@
 - Task [GG-105](tasks/GG-105-media-upload-200mb.md)：**本地代码已运行；用户手动验收待执行，未部署**。
   ADR 0096 已接受：私有参考原图与视频素材上限 200 MiB，签名上传 30 分钟；模型输入单张 10 MB、总量 32 MB 保持。用户要求不执行自动测试；检查点构建/来源及 Web/Worker 健康已核对，真实大文件上传未测。GG-104 门禁结果不得算作 GG-105 验证。
 - Task [GG-107](tasks/GG-107-composer-send-arrow.md)：**按钮比例已获用户确认；模型图标 SVG 预览 400 已修复并构建，待刷新复核，未部署**。ADR 0098 接受向上箭头替换飞鸿发送符号；图片和视频创作按钮共享外观。GG-106 OSS 决策与文档在另一独立工作树继续，未并入本分支。
-- Task [GG-110](tasks/GG-110-functional-reference-upload-preview.md)：**本地实现、门禁与 5173 运行边界通过；真实文件上传待人工验收，未部署**。5173 原来是演示会话，上传接口返回 503；现为真实邮箱会话与本地素材服务，未登录参考图 401，异源登录 POST 403。`check:local` 555 通过/26 隔离跳过/0 失败。
+- Task [GG-110](tasks/GG-110-functional-reference-upload-preview.md)：**本地代码与门禁通过，检查点运行及真实上传待验收，未部署**。5173 原来是演示会话，上传接口返回 503；Vite 旧 React 依赖请求已兼容。用户截图暴露登录后的 Vite Worker PostgreSQL 跨请求复用，故 API 改接本地 Node Web；模型 SVG 改为稳定公共路径。`check:local` 555 通过/26 隔离跳过/0 失败，32131 重启待完成。
 - 线上入口为 `goodgood.o1key.com`；`staging-goodgood.o1key.com` 仅保留名称，不是测试入口。
 - 生产数据（2026-09-21 核对）：users 28、assets 166、references 141 ready、
   generation_jobs 201（151 成功 / 50 失败）；运营手动登记充值 4 笔共 15100 积分。
 - **2026-09-17 首次生产恢复演练通过**：快照 `ce191630`、59 表 / 2403 行 / 43 迁移；
   维护窗口约 66 秒。「备份 timer disabled、无自动备份」的旧结论**已更正为错误**。
 - 独立缺口（已记录未处理）：**仅剩无告警通道**。
-- Next action: 恢复 Codex 浏览器控制连接后，在 5173 刷新并用现有本地账户人工上传普通参考图；若仍失败，记录完整提示与请求阶段。GG-107 图标与 GG-105 大文件验收仍独立待办。
+- Next action: 构建并启动已验证的本地 Node Web，核对 5173 API 和 RustFS CORS 后请用户刷新上传普通参考图；若仍失败，记录完整提示与请求阶段。浏览器自动控制仍不可用。GG-105 大文件验收独立待办。
 - Blockers: 无阻塞执行项；`operations` 缺口为已知并已授权接受。
 - 参考图校验最长近 6 分钟、超过 nginx 70s 读超时的服务端性能根因仍待排查；
   GG-103 前端通过 owner-scoped 状态查询避免把已入库素材误报为失败。
