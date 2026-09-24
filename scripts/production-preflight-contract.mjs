@@ -390,6 +390,7 @@ function validateRuntime(release, releaseEnvironment, runtime) {
   }
   if (
     runtime.OBJECT_STORAGE_PROVIDER_KIND !== "oss" ||
+    runtime.OBJECT_STORAGE_EMERGENCY_R2_WRITES !== "false" ||
     runtime.OBJECT_STORAGE_REGION !== "cn-guangzhou" ||
     runtime.OBJECT_STORAGE_PROVISIONING_MODE !== "verify" ||
     runtime.OBJECT_STORAGE_FORCE_PATH_STYLE !== "false"

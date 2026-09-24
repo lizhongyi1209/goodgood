@@ -4,6 +4,7 @@ import {
   PutObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { isOssObjectKey } from "../generation/object-storage-routing.mjs";
 import { REFERENCE_LIMITS } from "./constants.mjs";
 import { ReferenceRequestError } from "./errors.mjs";
 
@@ -13,10 +14,13 @@ export function signReferenceUpload({
   key,
   publicStorage,
 }) {
+  const legacy = publicStorage.readRoute && !isOssObjectKey(key)
+    ? publicStorage.readRoute
+    : null;
   return getSignedUrl(
-    publicStorage,
+    legacy?.legacyClient ?? publicStorage,
     new PutObjectCommand({
-      Bucket: publicStorage.uploadBucket ?? bucket,
+      Bucket: legacy?.legacyBucket ?? publicStorage.uploadBucket ?? bucket,
       ContentType: contentType,
       Key: key,
     }),

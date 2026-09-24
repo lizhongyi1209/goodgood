@@ -159,6 +159,7 @@ async function productionFixture(context) {
     OBJECT_STORAGE_FORCE_PATH_STYLE: "false",
     OBJECT_STORAGE_PROVISIONING_MODE: "verify",
     OBJECT_STORAGE_PROVIDER_KIND: "oss",
+    OBJECT_STORAGE_EMERGENCY_R2_WRITES: "false",
     OBJECT_STORAGE_PUBLIC_ENDPOINT:
       "https://upload-goodgood.o1key.cn",
     OBJECT_STORAGE_ASSET_READ_ORIGIN: "https://oss-goodgood.o1key.cn",
@@ -367,6 +368,7 @@ test("production preflight blocks unsafe runtime modes and inline credentials", 
       GOODGOOD_LOCAL_AUTH_TOKENS: `${GENERATION_SECRET}=subject`,
     },
     { ...fixture.runtime, OBJECT_STORAGE_ENDPOINT: "https://storage.example.com" },
+    { ...fixture.runtime, OBJECT_STORAGE_EMERGENCY_R2_WRITES: "true" },
     { ...fixture.runtime, REDIS_URL: "redis://127.0.0.1:6379" },
   ]) {
     const report = await runFixture(fixture, { runtimeEnvironment });

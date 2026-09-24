@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import test from "node:test";
-import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { GetObjectCommand, HeadBucketCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { readFile } from "node:fs/promises";
 import {
   isOssObjectKey,
@@ -22,6 +22,9 @@ test("new OSS keys are distinct from historical R2 keys", () => {
     "oss/references/a/original");
   assert.equal(newObjectKey("references/a/original", { providerKind: "r2" }),
     "references/a/original");
+  assert.equal(newObjectKey("references/a/original", {
+    providerKind: "oss", emergencyR2Writes: true,
+  }), "references/a/original");
   assert.equal(isOssObjectKey("oss/references/a/original"), true);
   assert.equal(isOssObjectKey("references/a/original"), false);
 });
@@ -78,6 +81,14 @@ test("OSS upload uses the direct CNAME and historical reads stay on R2", async (
     }));
     assert.equal(upload.origin, "https://upload-goodgood.o1key.cn");
     assert.equal(upload.pathname, "/oss/references/a/original");
+    const emergencyUpload = new URL(await signReferenceUpload({
+      bucket: "o1key-goodgood",
+      contentType: "image/png",
+      key: "references/a/original",
+      publicStorage: uploadClient,
+    }));
+    assert.equal(emergencyUpload.host, "account.r2.cloudflarestorage.com");
+    assert.equal(emergencyUpload.pathname, "/goodgood/references/a/original");
     const oldRead = new URL(await signAssetRead({
       bucket: "o1key-goodgood",
       key: "generated/old.png",
@@ -118,6 +129,19 @@ test("object operations route by key and reject new writes to R2", async () => {
     { name: "oss", bucket: "https://upload-goodgood.o1key.cn", key: "oss/generated/new" },
     { name: "r2", bucket: "goodgood", key: "generated/old" },
   ]);
+  const emergencyRoute = routeStorageByKey(client("primary"), client("oss"),
+    "https://upload-goodgood.o1key.cn", client("r2"), "goodgood",
+    { allowLegacyWrites: true });
+  await emergencyRoute.send(new PutObjectCommand({
+    Bucket: "o1key-goodgood", Key: "generated/emergency", Body: "x",
+  }));
+  assert.deepEqual(calls.at(-1), {
+    name: "r2", bucket: "goodgood", key: "generated/emergency",
+  });
+  await emergencyRoute.send(new HeadBucketCommand({ Bucket: "o1key-goodgood" }));
+  assert.deepEqual(calls.at(-1), {
+    name: "r2", bucket: "goodgood", key: undefined,
+  });
 });
 
 test("ESA bypass guard accepts only matching unexpired read tokens", async () => {

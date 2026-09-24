@@ -2,6 +2,7 @@
 
 - `0091-single-slot-compose-release.md` — future production releases use one fixed Compose project; supersedes ADR 0017's blue/green procedure.
 - `0097-private-oss-object-storage.md` — private OSS application objects, ESA authorized reads, direct uploads, and retained historical R2 storage; application deployment pending.
+- `0098-emergency-dual-read-r2-write-recovery.md` — incident-only R2 writes on the GG-106 dual-read application; normal OSS preflight rejects the override.
 
 - `0088-addressable-login-registration-entry.md` — accepted addressable `/login` and `/register` pages, visible mode navigation and safe protected-route return for GG-096; partially supersedes ADR 0087's single-form UI.
 - `0089-optional-invitation-registration.md` — 邀请码改为可选，未填可注册、填了必须有效，pending 账户仍需邀请码；解除 GG-097 生产首个账户死锁。

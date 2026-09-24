@@ -1656,6 +1656,9 @@ six-file R2 examples below describe the pre-GG-106 email cutover and are not a
 complete secret inventory for an OSS candidate. The OSS candidate adds three
 secret files and still mounts the two historical R2 files. The separate R2
 Restic backup configuration remains independent.
+Normal GG-106 preflight requires `OBJECT_STORAGE_EMERGENCY_R2_WRITES=false`.
+ADR 0098 documents a separate, explicit incident recovery mode on the same
+dual-read application image; it is not an ordinary release setting.
 
 Use `infra/production/release.env.example` and
 `infra/production/runtime.env.example` only as templates. Install their live

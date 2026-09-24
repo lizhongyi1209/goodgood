@@ -99,6 +99,14 @@ export function loadGenerationConfig(environment = process.env) {
   const storageKind = objectStorageProviderKind(
     environment.OBJECT_STORAGE_PROVIDER_KIND,
   );
+  const emergencySetting = environment.OBJECT_STORAGE_EMERGENCY_R2_WRITES ?? "false";
+  if (emergencySetting !== "false" && emergencySetting !== "true") {
+    throw new Error("OBJECT_STORAGE_EMERGENCY_R2_WRITES must be false or true.");
+  }
+  const emergencyR2Writes = emergencySetting === "true";
+  if (emergencyR2Writes && storageKind !== "oss") {
+    throw new Error("Emergency R2 writes require OSS dual-read routing.");
+  }
   const legacyR2 = storageKind === "oss"
     ? Object.freeze({
         accessKeyId: secretValue(
@@ -154,6 +162,7 @@ export function loadGenerationConfig(environment = process.env) {
       ),
       bucket: required(environment, "OBJECT_STORAGE_BUCKET"),
       providerKind: storageKind,
+      emergencyR2Writes,
       endpoint: required(environment, "OBJECT_STORAGE_ENDPOINT"),
       forcePathStyle: environment.OBJECT_STORAGE_FORCE_PATH_STYLE !== "false",
       uploadAllowedOrigins: commaSeparated(

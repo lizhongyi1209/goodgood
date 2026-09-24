@@ -27,13 +27,17 @@ function createS3Client(storage, endpoint, options = {}) {
   });
 }
 
-export function routeStorageByKey(primary, ossData, ossBucketEndpoint, legacy, legacyBucket) {
+export function routeStorageByKey(primary, ossData, ossBucketEndpoint, legacy, legacyBucket,
+  { allowLegacyWrites = false } = {}) {
   return {
     send(command) {
       const key = command.input?.Key;
+      if (!key && allowLegacyWrites && command instanceof HeadBucketCommand) {
+        return legacy.send(new HeadBucketCommand({ Bucket: legacyBucket }));
+      }
       if (key && !isOssObjectKey(key)) {
-        // R2 is retained for historical objects. New keys must carry oss/.
-        if (command instanceof PutObjectCommand) {
+        // Legacy writes are reserved for the explicit emergency recovery mode.
+        if (command instanceof PutObjectCommand && !allowLegacyWrites) {
           throw new Error("New objects cannot be written to legacy R2.");
         }
         return legacy.send(new command.constructor({
@@ -136,7 +140,8 @@ async function createResources(environment) {
     : null;
   const storage = legacyStorage
     ? routeStorageByKey(primaryStorage, ossDataStorage,
-        config.objectStorage.publicEndpoint, legacyStorage, config.legacyR2.bucket)
+        config.objectStorage.publicEndpoint, legacyStorage, config.legacyR2.bucket,
+        { allowLegacyWrites: config.objectStorage.emergencyR2Writes })
     : primaryStorage;
   const publicStorage = createS3Client(
     config.objectStorage,

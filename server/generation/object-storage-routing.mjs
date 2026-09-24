@@ -8,7 +8,7 @@ export function isOssObjectKey(key) {
 }
 
 export function newObjectKey(relativeKey, objectStorage) {
-  return objectStorage.providerKind === "oss"
+  return objectStorage.providerKind === "oss" && !objectStorage.emergencyR2Writes
     ? `${OSS_KEY_PREFIX}${relativeKey}`
     : relativeKey;
 }

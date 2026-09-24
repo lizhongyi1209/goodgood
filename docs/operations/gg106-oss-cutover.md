@@ -226,5 +226,12 @@ pending.
 
 The prior GG-098 application does not understand `oss/` keys. Once new OSS
 objects are written, a rollback to GG-098 alone will make those records
-unreadable. Prepare a dual-read compatible rollback image or a forward fix
-before admitting new writes. Do not move or delete historical R2 objects.
+unreadable. The GG-106 image keeps both reads available. For an incident that
+requires new writes to return temporarily to R2, use ADR 0098's explicit
+`OBJECT_STORAGE_EMERGENCY_R2_WRITES=true` only on that same dual-read image.
+Drain active jobs and incomplete uploads, switch the single Web/Worker pair
+together, and verify R2 upload plus reads from both stores. Normal preflight
+rejects this emergency setting, so do not present it as an approved ordinary
+release. To resume OSS, restore `false`, recheck the OSS route, and restart the
+single pair together. Do not move or delete historical R2 objects. An OSS read
+outage for already-written OSS objects is not repaired by this write fallback.

@@ -1,6 +1,6 @@
 # ADR 0097: Private Alibaba Cloud OSS for application objects
 
-- Status: Accepted for implementation; deployment and signed transport verification pending
+- Status: Accepted; ESA guard and signed transport verified, application deployment pending
 - Date: 2026-09-23
 - Supersedes: ADR 0012 for application assets only after a verified cutover
 
@@ -38,8 +38,8 @@ origin access. ESA's bypass edge-function mode can check that token without
 proxying large object response bodies through the function. Its native OSS
 origin type, rather than S3-compatible origin type, is required for the
 discounted OSS CDN-origin egress classification. This is a proposed application
-design; the current deny-all function protects the live ESA host until token
-validation replaces it.
+design. At decision time a deny-all function protected the live ESA host;
+the signed bypass guard has since been published and verified.
 
 ## Decision
 
@@ -67,17 +67,21 @@ Keep old R2 objects without moving or deleting them. Preserve their existing
 library and project visibility by routing keys with the new `oss/` prefix to
 OSS and unprefixed historical keys to R2. The current single global bucket
 cannot address both stores. Keep the independent Restic backup repository on
-R2. New object writes to R2 are rejected after cutover; historical reads and
-existing cleanup behavior remain active. Credentials stay outside source control.
+R2. New object writes to R2 are rejected during normal operation after cutover;
+ADR 0098 permits an explicit incident-only dual-read recovery mode. Historical
+reads and existing cleanup behavior remain active. Credentials stay outside
+source control.
 
-## Decisions still required
+## Verification and remaining release boundary
 
 - `upload-goodgood.o1key.cn` is bound to the OSS bucket, its certificate is
   installed, and independent DNS/TLS/CORS preflight verification passed.
 - An actual private object returned anonymous 403 through ESA and direct OSS.
-  Signed access through the replacement edge guard is still unverified.
-- Evidence that the ESA origin is native OSS private STS remains to be recorded
-  from the operator's configuration or a signed read probe after deployment.
+  Signed GET/HEAD through the published guard returned 200. A dedicated RAM
+  identity signed a direct OSS PUT (200); ESA readback matched byte for byte,
+  and the disposable key was deleted (204, subsequent signed read 404).
+- The private OSS origin was verified by the signed read probe. The exact
+  console origin configuration has not been independently captured.
 - Cutover and rollback boundary for active jobs and incomplete uploads.
 
 ## Consequences
