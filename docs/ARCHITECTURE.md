@@ -380,6 +380,18 @@ Focused detail resolves the owner-checked content route and redirects to a
 fresh signed original; explicit download resolves a new signed URL. No
 derived object is stored, and a thumbnail failure never falls back to the full
 original inside a grid.
+GG-114 puts this reusable delivery boundary in
+`server/images/private-preview.mjs`: after a resource API has checked the
+owner/workspace and visibility, call `readPrivateImagePreview({ bucket, key,
+storage, publicStorage })`. Its result is either `{ bytes, mimeType }` or
+`{ redirectUrl }`; callers must support both. The fixed card preset is shared
+by asset and reference routes. Browser and server code use
+`privateImageUrls("asset" | "reference", id)` from
+`shared/private-image-urls.mjs` for stable owner-checked preview/content
+routes, and card surfaces render the preview URL with `PrivateObjectImage`.
+Future canvas thumbnails use the same URL; full-resolution editing explicitly
+uses the content URL. A larger canvas preview requires a separate named preset
+and measured use case, not a caller-supplied OSS transform query.
 Image download resolves a new signed read through the owner-scoped stable Asset
 ID at click time; it never reuses the expiring preview URL retained in browser
 state. The API returns only the short-lived URL, and the browser still transfers

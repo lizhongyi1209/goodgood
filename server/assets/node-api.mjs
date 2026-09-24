@@ -49,12 +49,17 @@ export function createAssetNodeApiHandler({
           ownerContext,
           workspaceId,
         });
-        response.writeHead(200, {
-          "cache-control": "private, no-store",
-          "content-length": String(preview.bytes.length),
-          "content-type": preview.mimeType,
-        });
-        response.end(preview.bytes);
+        if (preview.redirectUrl) {
+          response.writeHead(302, { "cache-control": "private, no-store", location: preview.redirectUrl });
+          response.end();
+        } else {
+          response.writeHead(200, {
+            "cache-control": "private, no-store",
+            "content-length": String(preview.bytes.length),
+            "content-type": preview.mimeType,
+          });
+          response.end(preview.bytes);
+        }
         return true;
       }
       if (downloadUrlMatch && request.method === "GET") {

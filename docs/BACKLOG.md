@@ -1,10 +1,10 @@
 # 当前任务与优先级 · 当前与最近交付
 
-> **部署状态（2026-09-23）**：GG-100 已把现有 `7888554`/`0044` 应用迁移到唯一 `goodgood-production` 项目并清理旧 blue/green 残留。此前 GG-024—GG-096 已在 GG-097 上线；各行「未部署」是历史状态。当前事实见
-> [CURRENT_STATE](CURRENT_STATE.md)，发布流程见 [DEPLOYMENT](DEPLOYMENT.md#production-hotfix-checklist-2026-09-17)。GG-101/102/103 仅在本地，图片和视频开发环境默认接真实 O1Key。
+> **部署状态（2026-09-23）**：GG-100 已把现有 `7888554`/`0044` 应用迁移到唯一 `goodgood-production` 项目并清理旧 blue/green 残留。此前 GG-024—GG-096 已在 GG-097 上线；各行「未部署」是历史状态。当前事实见 [CURRENT_STATE](CURRENT_STATE.md)，发布流程见 [DEPLOYMENT](DEPLOYMENT.md#production-hotfix-checklist-2026-09-17)。GG-101/102/103 仅在本地，图片和视频开发环境默认接真实 O1Key。
 
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
+| GG-114 | 私有缩略图共用接口与后续画布复用规范 | 本地代码/门禁 564/26/0 通过；运行检查点待切换，未部署 | [任务](tasks/GG-114-reusable-image-delivery.md) / [ADR](decisions/0101-private-card-image-previews.md) |
 | GG-113 | 资产库图片卡片与选择器使用私有 WebP 缩略图 | 本地代码/门禁 563/26/0、真实只读转换与 5173/32131 HTTP 通过；待站长页面复核，未部署 | [任务](tasks/GG-113-private-image-previews.md) / [ADR](decisions/0101-private-card-image-previews.md) |
 | GG-112 | 本地登录投递真实邮箱验证码 | 本地完成并验收：门禁 559/26/0、SMTP 预检 5/5；真实收信、登录及刷新会话正常；应用未部署 | [任务](tasks/GG-112-real-email-local-login.md) / [ADR](decisions/0100-local-real-email-delivery.md) |
 | GG-111 | 本地 5173 直传生产 OSS 的隔离前缀 | 本地实现并验收：门禁 558/26/0；5173 与 32131 均来自 GG-111；真实 PNG 上传 `ready / accepted`，切换页面服务后刷新仍可见；应用未部署 | [任务](tasks/GG-111-cloud-reference-upload-development.md) / [ADR](decisions/0099-local-upload-probes-in-production-oss-bucket.md) |

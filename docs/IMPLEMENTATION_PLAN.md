@@ -1,8 +1,8 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-24
-- Current phase: GG-113 资产库图片卡片与选择器缩略图代码、门禁、真实存储只读转换与 5173/32131 运行 HTTP 已验证。生产应用仍为 GG-098。
-- Current objective: 卡片与选择器传输 512 px WebP，详情与明确下载保留原图，并维持所有者隔离。
+- Current phase: GG-114 把已验证的 GG-113 私有缩略图处理与 URL 收拢为共用接口；本地代码/门禁通过，运行检查点待切换。生产应用仍为 GG-098。
+- Current objective: 为后续自由画布复用既有私有预览与原图入口；资源接口先检查所有者与可见性，再调用共用缩略图方法。
 - Previous objective: GG-107 创作发送箭头与模型 SVG 预览修复，待浏览器复核；GG-105 大文件上传仍待人工验收。
 
 ## Current checkpoint
@@ -52,13 +52,14 @@
 - Task [GG-111](tasks/GG-111-cloud-reference-upload-development.md)：基于 GG-110 `65fa299`，独立工作树 `F:/goodgood-worktrees/GG-111`。站长明确选择复用生产 OSS 桶与现有 RAM 密钥；ADR 0099 将本地写入限制到 `local-dev/references/`，旧本地素材走 RustFS。最终 `check:local` 558 通过/26 隔离跳过/0 失败。5173 与线上 OSS 来源的 CORS 预检均 200；临时前缀对象签名 PUT/GET/DELETE 为 200/200/204。32131 运行从当前工作树 HEAD 构建的已验证检查点；真实 PNG 上传 `ready / accepted`、OSS HEAD 200。5173 Vite 也来自 GG-111，站长切换后再次刷新确认图片仍在、页面正常；未部署应用代码。
 - Task [GG-112](tasks/GG-112-real-email-local-login.md)：基于 GG-111 `6067cda`，独立工作树 `F:/goodgood-worktrees/GG-112`。站长选择现有发信账号给本地真实验证码投递；ADR 0100 记录对 ADR 0092 凭据隔离的限域例外。新工作区启动选项只加载仓库外 SMTP 配置和独立密码文件，远程 SMTP 需 TLS/账号预检；本地身份与数据库保持隔离。`check:local` 559 通过/26 隔离跳过/0 失败，真实 SMTP 认证预检 5/5 通过。32131 已运行 GG-112 已验证 Web，5173 Vite 也来自 GG-112；站长确认真实收信、登录及刷新会话正常。生产应用未变。
 - Task [GG-113](tasks/GG-113-private-image-previews.md)：基于 GG-112 `85eea1a` 的隔离分支。站长选定资产库所有卡片与选择器；ADR 0101 确定 OSS 签名实时处理及 RustFS 流式 WebP 缩略图，详情/下载继续原图，列表不签发原图地址。`check:local` 563/26/0；真实 OSS 对象只读转换 2,380,052 → 30,556 字节、RustFS 生成图 684,367 → 27,844 字节。首次 GG-113 检查点 `ea8445f` 的 5173/32131 页面/就绪 200、未登录私有图片 401、代理来源核对通过，未部署。
+- Task [GG-114](tasks/GG-114-reusable-image-delivery.md)：基于 GG-113 `1ecbc1c`；共用 `privateImageUrls` 与 `readPrivateImagePreview`，资产/参考图继续分别先做权限检查，固定 512 px WebP 规格与详情原图语义不变。`check:local` 590 项：564 通过/26 隔离跳过/0 失败；运行检查点待切换，未部署。
 - 线上入口为 `goodgood.o1key.com`；`staging-goodgood.o1key.com` 仅保留名称，不是测试入口。
 - 生产数据（2026-09-21 核对）：users 28、assets 166、references 141 ready、
   generation_jobs 201（151 成功 / 50 失败）；运营手动登记充值 4 笔共 15100 积分。
 - **2026-09-17 首次生产恢复演练通过**：快照 `ce191630`、59 表 / 2403 行 / 43 迁移；
   维护窗口约 66 秒。「备份 timer disabled、无自动备份」的旧结论**已更正为错误**。
 - 独立缺口（已记录未处理）：**仅剩无告警通道**。
-- Next action: 保持 GG-113 的 5173/32131 开启，供站长在资产库复核卡片网络大小和选择/详情交互；GG-106 生产 OSS 应用切换仍独立，GG-105 的 200 MiB 大文件验收仍待办；浏览器自动控制按用户要求暂不处理。
+- Next action: 构建并核验 GG-114 检查点，将 5173/32131 从 GG-113 切到已验证新提交后保留服务；再由站长复核卡片网络大小和选择/详情交互。GG-106 生产 OSS 应用切换仍独立，GG-105 的 200 MiB 大文件验收仍待办；浏览器自动控制按用户要求暂不处理。
 - Blockers: 无阻塞执行项；`operations` 缺口为已知并已授权接受。
 - 参考图校验最长近 6 分钟、超过 nginx 70s 读超时的服务端性能根因仍待排查；
   GG-103 前端通过 owner-scoped 状态查询避免把已入库素材误报为失败。

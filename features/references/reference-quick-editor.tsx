@@ -30,6 +30,7 @@ import {
   X,
 } from "lucide-react";
 import { Dialog as DialogPrimitive } from "radix-ui";
+import { privateImageUrls } from "@/shared/private-image-urls.mjs";
 
 import {
   AlertDialog,
@@ -474,7 +475,7 @@ export function ReferenceQuickEditor({
     let active = true;
     const localStickerUrls = localStickerUrlsRef.current;
     loadCanvasImage(
-      `/api/references/${encodeURIComponent(reference.id)}/content`,
+      privateImageUrls("reference", reference.id).contentUrl,
     ).then((image) => {
       if (!active) return;
       sourceImageRef.current = image;
@@ -1017,7 +1018,7 @@ export function ReferenceQuickEditor({
                             onClick={() => void addSticker({
                               height: material.height,
                               name: material.name,
-                              src: `/api/references/${encodeURIComponent(material.id)}/content`,
+                              src: privateImageUrls("reference", material.id).contentUrl,
                               width: material.width,
                             })}
                           >

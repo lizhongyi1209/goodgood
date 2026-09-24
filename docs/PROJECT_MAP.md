@@ -26,6 +26,7 @@ describes ownership in the clean integration baseline, not live-release proof.
 | `features/drafts/` | Browser authenticated root-draft read/save/delete and conflict boundary |
 | `features/navigation/` | Stable workspace route parsing, URL generation, and browser-history notification |
 | `features/assets/` | Browser owner-scoped durable asset-list HTTP boundary |
+| `shared/private-image-urls.mjs` | Stable owner-checked asset/reference preview and content URL helper for browser and server, including future canvas callers |
 | `features/auth/` | Browser session read, login/logout redirect, and global expiry signal |
 | `features/models/` | Stable GoodGood model catalog and presentation mapping |
 | `shared/contracts/` | Provider-independent generation, draft, project, pricing, and credit domain values and records |
@@ -51,6 +52,7 @@ describes ownership in the clean integration baseline, not live-release proof.
 | `server/projects/` | Owner-scoped project validation, idempotent persistence, signed presentation, and Node API |
 | `server/drafts/` | One-per-owner expiring root drafts, optimistic versioning, ready-reference validation, and Node API |
 | `server/assets/` | Authenticated asset-library listing, normalized errors, and Node API |
+| `server/images/private-preview.mjs` | Shared fixed 512 px WebP preview delivery after each resource API checks owner and visibility; OSS processed redirect or streamed private WebP |
 | `features/billing/` | Browser HTTP boundary, exact billing-summary helpers, and the owner credit-activity view |
 | `server/billing/` | Server-owned immutable generation/payment products, authenticated account/order/activity boundaries, period-spend and batch-trace projections, signed fake-payment callbacks, dry-run-first operator manual-payment recording, and transaction-composable credit grant/reserve/settle/release/refund persistence |
 | `server/persistence/` | Versioned migration runner |

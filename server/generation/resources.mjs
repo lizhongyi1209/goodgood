@@ -8,7 +8,7 @@ import pg from "pg";
 import { createClient } from "redis";
 import { loadGenerationConfig } from "./config.mjs";
 import { routeLocalCloudReferences } from "./local-cloud-reference.mjs";
-import { addCloudCardPreviewProcessing } from "./storage.mjs";
+import { addCloudCardPreviewProcessing } from "../images/private-preview.mjs";
 
 const { Pool } = pg;
 let resourcesPromise;

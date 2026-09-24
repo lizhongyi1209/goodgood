@@ -5,7 +5,8 @@ import {
   findOwnerAssetGenerationJobs,
 } from "../generation/repository.mjs";
 import { getGenerationResources } from "../generation/resources.mjs";
-import { readCardPreview, signAssetRead } from "../generation/storage.mjs";
+import { signAssetRead } from "../generation/storage.mjs";
+import { readPrivateImagePreview } from "../images/private-preview.mjs";
 import { newRequestId } from "../observability/http.mjs";
 import { OrganizationError } from "../organizations/errors.mjs";
 
@@ -83,9 +84,10 @@ export async function readAssetPreview({
   const resources = await getGenerationResources();
   const asset = await findOwnerAsset(resources.pool, { assetId, ownerId, workspaceId });
   if (!asset) throw new AssetRequestError("ASSET_NOT_FOUND", "未找到这张图片。", 404);
-  return readCardPreview({
+  return readPrivateImagePreview({
     bucket: resources.config.objectStorage.bucket,
     key: asset.object_key,
+    publicStorage: resources.publicStorage,
     storage: resources.storage,
   });
 }

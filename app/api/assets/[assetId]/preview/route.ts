@@ -20,6 +20,12 @@ export async function GET(request: Request, context: { params: Promise<{ assetId
       ownerContext: await authenticate(request),
       workspaceId: workspaceIdFromRequest(request),
     });
+    if ("redirectUrl" in preview) {
+      return new Response(null, {
+        status: 302,
+        headers: { "cache-control": "private, no-store", location: preview.redirectUrl },
+      });
+    }
     return new Response(new Uint8Array(preview.bytes), {
       headers: {
         "cache-control": "private, no-store",

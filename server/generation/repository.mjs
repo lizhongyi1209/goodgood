@@ -1,4 +1,5 @@
 import { modelQualityPriceContext } from "../../shared/contracts/gpt-quality-pricing.mjs";
+import { privateImageUrls } from "../../shared/private-image-urls.mjs";
 import {lockHiddenPreset} from '../inspiration/preset.mjs';
 import { createHash, randomUUID } from "node:crypto";
 import { supportsImageLines } from "../../shared/contracts/banana-lines.mjs";
@@ -178,7 +179,7 @@ export function publicGenerationJob(
             id: asset.id,
             detailUrl: previewUrl,
             previewPosition: "50% 50%",
-            previewUrl: `/api/assets/${encodeURIComponent(asset.id)}/preview`,
+            previewUrl: privateImageUrls("asset", asset.id).previewUrl,
             ...(asset.pixel_width != null && asset.pixel_height != null
               ? { height: asset.pixel_height, width: asset.pixel_width }
               : {}),

@@ -19,8 +19,9 @@ import {
   markReferenceReady,
   markReferenceRejected,
 } from "./repository.mjs";
-import { readCardPreview, signCloudCardPreview } from "../generation/storage.mjs";
+import { readPrivateImagePreview } from "../images/private-preview.mjs";
 import { newLocalCloudReferenceKey } from "../generation/local-cloud-reference.mjs";
+import { privateImageUrls } from "../../shared/private-image-urls.mjs";
 import { readReferenceObject, signReferenceUpload } from "./storage.mjs";
 import {
   inspectReferenceImage,
@@ -55,8 +56,8 @@ function publicReusableReference(row) {
     name: row.original_file_name,
     status: "ready",
     uploadedAt: new Date(row.uploaded_at).toISOString(),
-    url: `/api/references/${encodeURIComponent(row.id)}/content`,
-    previewUrl: `/api/references/${encodeURIComponent(row.id)}/preview`,
+    url: privateImageUrls("reference", row.id).contentUrl,
+    previewUrl: privateImageUrls("reference", row.id).previewUrl,
     width: Number(row.pixel_width ?? 0),
   };
 }
@@ -77,14 +78,10 @@ export async function readReferenceAssetPreview({
   if (!row || row.upload_state !== "ready" || row.moderation_state !== "accepted" || row.object_deleted_at) {
     throw new ReferenceRequestError("REFERENCE_NOT_FOUND", "未找到可读取的参考图素材。", 404);
   }
-  const url = await signCloudCardPreview({
-    key: row.object_key,
-    publicStorage: resources.publicStorage,
-  });
-  if (url) return { redirectUrl: url };
-  return readCardPreview({
+  return readPrivateImagePreview({
     bucket: resources.config.objectStorage.bucket,
     key: row.object_key,
+    publicStorage: resources.publicStorage,
     storage: resources.storage,
   });
 }

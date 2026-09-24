@@ -1,4 +1,5 @@
 import { publicGenerationJob } from "./repository.mjs";
+import { privateImageUrls } from "../../shared/private-image-urls.mjs";
 
 export async function presentGenerationJob(
   _resources,
@@ -7,12 +8,12 @@ export async function presentGenerationJob(
 ) {
   const assetUrls = (row.assets ?? []).map((asset) => [
     asset.id,
-    `/api/assets/${encodeURIComponent(asset.id)}/content`,
+    privateImageUrls("asset", asset.id).contentUrl,
   ]);
   const referenceUrls = includeReferenceUrls
     ? (row.reference_snapshot ?? []).map((reference) => [
         reference.id,
-        `/api/references/${encodeURIComponent(reference.id)}/content`,
+        privateImageUrls("reference", reference.id).contentUrl,
       ])
     : [];
   return publicGenerationJob(

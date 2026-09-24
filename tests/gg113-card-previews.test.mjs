@@ -6,8 +6,9 @@ import sharp from "sharp";
 import { sessionExpiredError } from "../server/auth/errors.mjs";
 import { createAssetNodeApiHandler } from "../server/assets/node-api.mjs";
 import { presentGenerationJob } from "../server/generation/presenter.mjs";
-import { addCloudCardPreviewProcessing, CARD_PREVIEW_PROCESS, readCardPreview, signCloudCardPreview } from "../server/generation/storage.mjs";
+import { addCloudCardPreviewProcessing, CARD_PREVIEW_PROCESS, readPrivateImagePreview } from "../server/images/private-preview.mjs";
 import { createReferenceNodeApiHandler } from "../server/references/node-api.mjs";
+import { privateImageUrls } from "../shared/private-image-urls.mjs";
 
 function request(url, owner = "owner-a") {
   const value = Readable.from([]);
@@ -31,7 +32,7 @@ test("legacy private images are streamed into bounded WebP cards", async () => {
   const original = await sharp({
     create: { width: 1600, height: 2400, channels: 3, background: "#dc9145" },
   }).jpeg({ quality: 95 }).toBuffer();
-  const card = await readCardPreview({
+  const card = await readPrivateImagePreview({
     bucket: "private-local", key: "references/original.jpg",
     storage: { send: async () => ({ ContentLength: original.length, Body: Readable.from([original]) }) },
   });
@@ -51,18 +52,31 @@ test("private OSS card processing is signed, while the original URL remains sepa
   const processed = new S3Client(options);
   addCloudCardPreviewProcessing(processed);
   try {
-    const signed = new URL(await signCloudCardPreview({
+    const preview = await readPrivateImagePreview({
+      bucket: "private-local", storage: { send: async () => { throw new Error("cloud preview must not read original"); } },
       key: "local-dev/references/a/original.jpg",
       publicStorage: {
         cloudReferenceClient: normal,
         cloudReferencePreviewClient: processed,
         cloudReferenceBucketEndpoint: "https://upload-dev.example.cn",
       },
-    }));
+    });
+    const signed = new URL(preview.redirectUrl);
     assert.equal(signed.searchParams.get("x-oss-process"), CARD_PREVIEW_PROCESS);
     assert.ok(signed.searchParams.has("X-Amz-Signature"));
     assert.equal(signed.pathname, "/local-dev/references/a/original.jpg");
   } finally { normal.destroy(); processed.destroy(); }
+});
+
+test("private image URLs are stable for assets and references", () => {
+  assert.deepEqual(privateImageUrls("asset", "a/b"), {
+    previewUrl: "/api/assets/a%2Fb/preview", contentUrl: "/api/assets/a%2Fb/content",
+  });
+  assert.deepEqual(privateImageUrls("reference", "ref-1"), {
+    previewUrl: "/api/references/ref-1/preview", contentUrl: "/api/references/ref-1/content",
+  });
+  assert.throws(() => privateImageUrls("other", "ref-1"), TypeError);
+  assert.throws(() => privateImageUrls("asset", ""), TypeError);
 });
 
 test("a generation listing exposes only stable owner-checked image URLs", async () => {
@@ -109,6 +123,15 @@ test("preview routes require an owner and return only transformed bytes or a sig
   const anonymousAsset = response();
   await asset(request("/api/assets/20000000-0000-4000-8000-000000000001/preview", ""), anonymousAsset);
   assert.equal(anonymousAsset.statusCode, 401);
+
+  const cloudAsset = createAssetNodeApiHandler({
+    authenticate,
+    operations: { async readAssetPreview() { return { redirectUrl: "https://upload-dev.example.cn/processed?signed=1" }; } },
+  });
+  const cloudAssetResponse = response();
+  await cloudAsset(request("/api/assets/20000000-0000-4000-8000-000000000001/preview"), cloudAssetResponse);
+  assert.equal(cloudAssetResponse.statusCode, 302);
+  assert.equal(cloudAssetResponse.headers.location, "https://upload-dev.example.cn/processed?signed=1");
 
   const reference = createReferenceNodeApiHandler({
     authenticate,
