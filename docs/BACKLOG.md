@@ -6,7 +6,7 @@
 
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
-| GG-110 | 5173 创作参考图预览接入本地上传 | 5173 已切换到真实本地会话，门禁与接口边界通过；真实文件上传待用户人工验收，未部署 | [任务](tasks/GG-110-functional-reference-upload-preview.md) |
+| GG-110 | 5173 创作参考图预览接入本地上传 | 5173 已切换到真实本地会话，门禁与接口边界通过，Vite 缓存冲突已修复；浏览器控制重连与真实文件上传待验收，未部署 | [任务](tasks/GG-110-functional-reference-upload-preview.md) |
 | GG-107 | 创作输入框生成按钮改为向上箭头 | 按钮比例获用户确认；模型 SVG 预览 400 已修复并构建，待刷新复核；未部署 | [任务](tasks/GG-107-composer-send-arrow.md) / [ADR](decisions/0098-up-arrow-composer-send.md) |
 | GG-105 | 图片与视频素材上传上限统一到 200 MB | 本地代码已运行，自动测试未执行；待用户手动刷新验收，未部署 | [任务](tasks/GG-105-media-upload-200mb.md) / [ADR](decisions/0096-200-mib-private-media-uploads.md) |
 | GG-104 | 创作器拖拽上传、错误反馈、视频素材入库与布局 | 本地实现、门禁与运行预览通过；真实文件端到端未测，未部署 | [任务](tasks/GG-104-media-dropzone-layout.md) / [ADR](decisions/0095-composer-drop-and-private-video-materials.md) |

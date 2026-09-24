@@ -16,4 +16,6 @@
 - 临时 5175：`/create` 200；`/api/auth/method` 200 `email_code`；`/api/auth/email/challenge` 200；空邮箱请求 400 `EMAIL_ADDRESS_INVALID`，证明代理来源校验通过且未发送验证码；未登录的 `/api/auth/session`、`/api/references` 均 401。
 - 核对原 5173 进程来自 GG-107 工作树后，将其替换为 `dev:workspace`。新进程仅监听 `127.0.0.1:5173`；`/create` 200、登录方式 200、未登录会话与参考图均 401。异源登录 POST 403，同源但空邮箱 400。没有真实登录、文件上传或付费生成。
 - `npm run check:local`：581 项，555 通过、26 隔离跳过、0 失败；lint 16 条既有警告、0 错误。`git diff --check` 无错误。
+- 用户刷新时遇到 Vite `504 (Outdated Optimize Dep)`。将运行中的 `dev:workspace` 依赖缓存移到 `node_modules/.vite-workspace`，避免 `check:local` 构建重新优化默认缓存后使浏览器请求的 URL 过期。修复后在门禁前后核对 `/create` 与新 `react-dom.js` 均返回 200；复跑 `check:local` 仍为 555 通过、26 隔离跳过、0 失败。
+- 浏览器自动验收暂被 Codex 本机浏览器控制连接阻断：5173 和 10808 可达，Chrome 扩展已安装在当前 Profile 1，但控制工具返回 `nodeRepl.fetch request failed`，原生桌面控制管道也不可用。已按官方步骤请用户在桌面端核对“计算机使用”并重新打开扩展侧栏；收到重连反馈后继续真实上传验收。
 - 下一步：用户刷新 5173，以现有本地账号上传普通 JPEG/PNG/WebP，记录 ready 或完整错误。真实文件端到端成功不得仅凭接口边界宣称。

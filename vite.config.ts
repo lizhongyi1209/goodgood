@@ -134,6 +134,9 @@ export default defineConfig(async ({ command }) => {
   };
 
   return {
+    // Builds used by check:local re-optimize the default cache. Keep the live
+    // workspace cache separate so an open browser never sees stale dep URLs.
+    cacheDir: liveDev ? "node_modules/.vite-workspace" : undefined,
     build: {
       rollupOptions: { external: ["sharp"] },
     },
