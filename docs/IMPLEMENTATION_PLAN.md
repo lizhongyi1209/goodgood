@@ -1,7 +1,7 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-24
-- Current phase: GG-110 本地开发参考图上传已通过真实 JPEG 验收；5173 使用本地 Node Web 与 RustFS，未部署。生产仍为 GG-098。
+- Current phase: GG-111 显式 OSS 直传模式已通过本地门禁与 OSS 前缀临时对象 PUT/GET/DELETE；5173 CORS 预检已变为 200。本地 GoodGood API 与浏览器上传验收待完成。生产应用仍为 GG-098。
 - Current objective: 让持续开发预览使用本地真实会话、素材服务和对象存储，同时保持纯 UI 预览入口独立。
 - Previous objective: GG-107 创作发送箭头与模型 SVG 预览修复，待浏览器复核；GG-105 大文件上传仍待人工验收。
 
@@ -49,13 +49,14 @@
   ADR 0096 已接受：私有参考原图与视频素材上限 200 MiB，签名上传 30 分钟；模型输入单张 10 MB、总量 32 MB 保持。用户要求不执行自动测试；检查点构建/来源及 Web/Worker 健康已核对，真实大文件上传未测。GG-104 门禁结果不得算作 GG-105 验证。
 - Task [GG-107](tasks/GG-107-composer-send-arrow.md)：**按钮比例已获用户确认；模型图标 SVG 预览 400 已修复并构建，待刷新复核，未部署**。ADR 0098 接受向上箭头替换飞鸿发送符号；图片和视频创作按钮共享外观。GG-106 OSS 决策与文档在另一独立工作树继续，未并入本分支。
 - Task [GG-110](tasks/GG-110-functional-reference-upload-preview.md)：**本地代码、门禁、检查点运行与真实 JPEG 上传通过，未部署**。5173 旧 React 依赖请求已兼容；登录后 API 改接本地 Node Web，避免 Vite Worker PostgreSQL 跨请求复用；模型 SVG 使用稳定公共路径。`check:local` 555 通过/26 隔离跳过/0 失败。32131 已运行已验证 `35b1f12` 检查点；真实 JPEG 登记 201、完成校验 200、数据库 `ready / accepted`。
+- Task [GG-111](tasks/GG-111-cloud-reference-upload-development.md)：基于 GG-110 `65fa299`，独立工作树 `F:/goodgood-worktrees/GG-111`。站长明确选择复用生产 OSS 桶与现有 RAM 密钥；ADR 0099 将本地写入限制到 `local-dev/references/`，旧本地素材走 RustFS。`check:local` 558 通过/26 隔离跳过/0 失败。站长已追加 5173 CORS，预检 200；OSS HeadBucket 200，临时前缀对象签名 PUT/GET/DELETE 为 200/200/204。GG-111 检查点与应用上传待验收。
 - 线上入口为 `goodgood.o1key.com`；`staging-goodgood.o1key.com` 仅保留名称，不是测试入口。
 - 生产数据（2026-09-21 核对）：users 28、assets 166、references 141 ready、
   generation_jobs 201（151 成功 / 50 失败）；运营手动登记充值 4 笔共 15100 积分。
 - **2026-09-17 首次生产恢复演练通过**：快照 `ce191630`、59 表 / 2403 行 / 43 迁移；
   维护窗口约 66 秒。「备份 timer disabled、无自动备份」的旧结论**已更正为错误**。
 - 独立缺口（已记录未处理）：**仅剩无告警通道**。
-- Next action: 用户可继续指定下一项功能或优化；GG-105 的 200 MiB 大文件验收仍独立待办。Codex 浏览器自动控制仍不可用，按用户要求暂不处理。
+- Next action: 提交并构建 GG-111 已验证检查点，在 32131 启动显式 OSS 模式；通过 5173 完成一张可丢弃参考图的真实登记、直传、校验和刷新恢复。GG-105 的 200 MiB 大文件验收仍独立待办；浏览器自动控制按用户要求暂不处理。
 - Blockers: 无阻塞执行项；`operations` 缺口为已知并已授权接受。
 - 参考图校验最长近 6 分钟、超过 nginx 70s 读超时的服务端性能根因仍待排查；
   GG-103 前端通过 owner-scoped 状态查询避免把已入库素材误报为失败。

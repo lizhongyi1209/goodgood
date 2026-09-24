@@ -1,5 +1,31 @@
 # 当前开发版本与跨窗口交接
 
+## GG-111 本地页面连接 OSS 参考图直传（待云端验收）
+
+GG-111 在 `F:/goodgood-worktrees/GG-111`，基于 GG-110 `65fa299`。默认本地上传仍写
+RustFS。站长明确指定本地开发复用生产 OSS 桶；仅在显式启用云端模式时，新参考图写入
+`o1key-goodgood/local-dev/references/`，本地数据库与原 RustFS 素材继续保留。
+参见 [ADR 0099](decisions/0099-local-upload-probes-in-production-oss-bucket.md) 与
+[任务卡](tasks/GG-111-cloud-reference-upload-development.md)。
+
+云端配置按 `infra/local/cloud-upload.env.example` 放在**仓库和工作树之外**，并将
+RAM AccessKey ID / Secret 放在两个单独的仓库外文件；不要把值、CSV 内容、签名 URL
+或用户图片放进 Git、日志或聊天。GG-111 启动器只接受该配置中的六个指定字段，
+校验数据库、旧素材库仍为本机隔离栈。现有 5173 Vite 可继续代理到 32131，但 32131
+必须先以 GG-111 的已提交检查点重新构建并重启：
+
+~~~powershell
+npm run build:checkpoint
+node scripts/local-checkpoint.mjs start workspace --cloud-env-file C:\Users\Admin\AppData\Local\GoodGood\local-cloud-upload\cloud-upload.env
+~~~
+
+已在本机仓库外准备上述配置和凭据文件，来源为站长明确指定的现有 RAM 密钥，未打印
+密钥。RAM 身份读取桶 CORS 返回 `AccessDenied 403`，站长已在 OSS 控制台追加
+5173 规则；`upload-goodgood.o1key.cn` 的 PUT 预检现返回 200，允许来源、方法及
+`content-type` 均正确。OSS HeadBucket 200；以全新可丢弃 `local-dev/references/`
+对象执行签名 PUT 200、私有 GET 200 和字节比对、精确 DELETE 204。尚须在 GG-111
+本地检查点经 GoodGood API 完成真实图片登记、直传、校验及刷新恢复。
+
 - 日期：2026-09-24；GG-110 在 GG-107 `4d5ad94` 上修复 5173 参考图上传预览的运行配置。5173 仅监听 loopback，`/api` 代理到本地 32131 Node Web，RustFS 直传已用真实 JPEG 验证 `ready / accepted`。分支 `fix/GG-110-functional-upload-preview`，工作树 `F:/goodgood-worktrees/GG-107`；32131 运行已验证 `35b1f12` 检查点，32142 Worker 当前未启动。生产未变。
 - 当前项目入口：F:/goodgood；累计代码包含a73835f、GG081—091与GG092交接。`.codex/`是用户本地设置，保留不提交。
 - **生产已部署并开放**：`goodgood.o1key.com`，revision `7888554` / 迁移 `0044` / 配置 `b3d7310a…ddf3`；应用仅 `goodgood-production` 单项目。详见 CURRENT_STATE.md 与 [GG-100 记录](operations/2026-09-22-gg100-single-slot-host-cleanup.md)。

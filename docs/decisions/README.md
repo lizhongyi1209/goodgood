@@ -1,5 +1,6 @@
 # Decision records
 
+- `0099-local-upload-probes-in-production-oss-bucket.md` — explicitly opted-in local reference uploads use only a `local-dev/references/` prefix in the production OSS bucket, with local database and older RustFS objects retained.
 - `0098-up-arrow-composer-send.md` — image and video composer send actions use an upward arrow; supersedes ADR 0002's Feihong send symbol.
 
 - `0091-single-slot-compose-release.md` — future production releases use one fixed Compose project; supersedes ADR 0017's blue/green procedure.

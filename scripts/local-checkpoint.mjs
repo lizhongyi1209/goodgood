@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { readFile, rm } from "node:fs/promises";
+import { readFile, realpath, rm } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseEnv } from "node:util";
@@ -29,10 +29,32 @@ if (command === "build") {
     console.log(JSON.stringify({ event: "checkpoint.build_verified", ...build }));
   } else {
     const mode = process.argv[3];
-    assert.ok(["workspace", "login", "worker"].includes(mode) && process.argv.length === 4, "Expected workspace, login, or worker");
+    const cloudFile = process.argv[4] === "--cloud-env-file" ? process.argv[5] : null;
+    assert.ok(["workspace", "login", "worker"].includes(mode) &&
+      (process.argv.length === 4 || (mode === "workspace" && process.argv.length === 6 && cloudFile)),
+      "Expected workspace, login, worker, or workspace --cloud-env-file <external path>");
     const emailWeb = mode === "workspace" || mode === "login";
     const envFile = emailWeb ? ".env.login-review" : ".env.local-review";
     const environment = parseEnv(await readFile(path.join(root, envFile), "utf8"));
+    const cloudEnvironment = cloudFile
+      ? parseEnv(await readFile(await assertExternalFile(cloudFile), "utf8"))
+      : {};
+    const cloudNames = [
+      "GOODGOOD_LOCAL_CLOUD_UPLOAD_BUCKET",
+      "GOODGOOD_LOCAL_CLOUD_UPLOAD_REGION",
+      "GOODGOOD_LOCAL_CLOUD_UPLOAD_ENDPOINT",
+      "GOODGOOD_LOCAL_CLOUD_UPLOAD_PUBLIC_ENDPOINT",
+      "GOODGOOD_LOCAL_CLOUD_UPLOAD_ACCESS_KEY_ID_FILE",
+      "GOODGOOD_LOCAL_CLOUD_UPLOAD_SECRET_ACCESS_KEY_FILE",
+    ];
+    if (cloudFile) {
+      assert.deepEqual(Object.keys(cloudEnvironment).sort(), [...cloudNames].sort(),
+        "Cloud environment file must contain exactly the documented six settings.");
+      await Promise.all([
+        assertExternalFile(cloudEnvironment.GOODGOOD_LOCAL_CLOUD_UPLOAD_ACCESS_KEY_ID_FILE),
+        assertExternalFile(cloudEnvironment.GOODGOOD_LOCAL_CLOUD_UPLOAD_SECRET_ACCESS_KEY_FILE),
+      ]);
+    }
     // Every runnable local development role uses the same real online provider
     // contract as production. The dedicated development token stays outside the
     // repository and is read per start; there is no runtime mock fallback.
@@ -91,7 +113,7 @@ if (command === "build") {
       GOODGOOD_LOCAL_SEEDANCE_PREVIEW: "true",
       GOODGOOD_LOCAL_SEEDANCE_API_KEY_FILE: providerFile,
     };
-    Object.assign(process.env, environment, authenticationOverrides, providerOverrides, {
+    Object.assign(process.env, environment, cloudEnvironment, authenticationOverrides, providerOverrides, {
       GOODGOOD_REVISION: build.revision,
       GOODGOOD_PROCESS: role,
       HOST: "127.0.0.1",
@@ -113,6 +135,7 @@ if (command === "build") {
         artifactHash: build.artifactHash,
         pid: process.pid,
         provider: "o1key",
+        referenceStorage: cloudFile ? "cloud-development" : "local-rustfs",
       }),
     );
     if (role === "worker") {
@@ -122,4 +145,14 @@ if (command === "build") {
     }
     await import("../server/runtime/" + role + ".mjs");
   }
+}
+
+async function assertExternalFile(file) {
+  assert.ok(path.isAbsolute(file) || path.win32.isAbsolute(file),
+    "Cloud credentials and configuration need absolute external paths.");
+  const resolved = await realpath(file);
+  const relative = path.relative(root, resolved);
+  assert.ok(relative === ".." || relative.startsWith(`..${path.sep}`),
+    "Cloud credentials and configuration must stay outside the repository.");
+  return resolved;
 }

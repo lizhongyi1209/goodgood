@@ -4,6 +4,7 @@ import {
   PutObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { cloudReferenceReadClient } from "./local-cloud-reference.mjs";
 
 export async function storeGeneratedAsset({
   bucket,
@@ -54,9 +55,10 @@ export async function readPrivateObject({ bucket, key, maxBytes, storage }) {
 }
 
 export function signAssetRead({ bucket, key, publicStorage }) {
+  const cloud = cloudReferenceReadClient(publicStorage, key);
   return getSignedUrl(
-    publicStorage,
-    new GetObjectCommand({ Bucket: bucket, Key: key }),
+    cloud ?? publicStorage,
+    new GetObjectCommand({ Bucket: cloud ? publicStorage.cloudReferenceBucketEndpoint : bucket, Key: key }),
     { expiresIn: 15 * 60 },
   );
 }

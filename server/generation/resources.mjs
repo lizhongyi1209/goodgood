@@ -7,6 +7,7 @@ import {
 import pg from "pg";
 import { createClient } from "redis";
 import { loadGenerationConfig } from "./config.mjs";
+import { routeLocalCloudReferences } from "./local-cloud-reference.mjs";
 
 const { Pool } = pg;
 let resourcesPromise;
@@ -44,6 +45,11 @@ export function prepareObjectStorage(resources) {
         resources.config.objectStorage;
       if (provisioningMode === "verify") {
         await resources.storage.send(new HeadBucketCommand({ Bucket: bucket }));
+        if (resources.cloudReferenceBucket) {
+          await resources.cloudReferenceBucket.send(new HeadBucketCommand({
+            Bucket: resources.config.cloudReference.bucket,
+          }));
+        }
         return;
       }
       await ensureObjectStorageBucket(resources.storage, bucket);
@@ -63,6 +69,11 @@ export function prepareObjectStorage(resources) {
           },
         }),
       );
+      if (resources.cloudReferenceBucket) {
+        await resources.cloudReferenceBucket.send(new HeadBucketCommand({
+          Bucket: resources.config.cloudReference.bucket,
+        }));
+      }
     })().catch((error) => {
       storagePreparation.delete(resources);
       throw error;
@@ -86,13 +97,38 @@ async function createResources(environment) {
       JSON.stringify({ event: "redis.error", message: error.message }),
     );
   });
-  const storage = createS3Client(config.objectStorage, config.objectStorage.endpoint);
+  const localStorage = createS3Client(config.objectStorage, config.objectStorage.endpoint);
   const publicStorage = createS3Client(
     config.objectStorage,
     config.objectStorage.publicEndpoint,
   );
+  const cloudReferenceBucket = config.cloudReference
+    ? createS3Client(config.cloudReference, config.cloudReference.endpoint)
+    : null;
+  const cloudReferenceData = config.cloudReference
+    ? new S3Client({
+        credentials: {
+          accessKeyId: config.cloudReference.accessKeyId,
+          secretAccessKey: config.cloudReference.secretAccessKey,
+        },
+        endpoint: config.cloudReference.publicEndpoint,
+        bucketEndpoint: true,
+        forcePathStyle: false,
+        region: config.cloudReference.region,
+      })
+    : null;
+  if (cloudReferenceData) {
+    Object.defineProperty(publicStorage, "cloudReferenceClient", {
+      value: cloudReferenceData,
+    });
+    Object.defineProperty(publicStorage, "cloudReferenceBucketEndpoint", {
+      value: config.cloudReference.publicEndpoint,
+    });
+  }
+  const storage = routeLocalCloudReferences(localStorage,
+    cloudReferenceData, config.cloudReference?.publicEndpoint);
 
-  return { config, pool, publicStorage, redis, storage };
+  return { cloudReferenceBucket, config, pool, publicStorage, redis, storage };
 }
 
 export async function connectGenerationQueue(resources) {
@@ -116,6 +152,7 @@ export async function closeGenerationResources() {
     current.pool.end(),
     current.storage.destroy(),
     current.publicStorage.destroy(),
+    current.cloudReferenceBucket?.destroy(),
   ]);
 }
 

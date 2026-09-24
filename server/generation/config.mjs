@@ -74,6 +74,9 @@ function providerApiKey(environment) {
 
 export function loadGenerationConfig(environment = process.env) {
   const kind = providerKind(environment.GENERATION_PROVIDER_KIND);
+  const cloudReference = environment.GOODGOOD_LOCAL_CLOUD_UPLOAD_BUCKET
+    ? loadLocalCloudReferenceConfig(environment)
+    : null;
   const allowInsecureLoopback =
     environment.GENERATION_PROVIDER_ALLOW_INSECURE_LOOPBACK === "true";
   if (allowInsecureLoopback && environment.NODE_ENV === "production") {
@@ -110,6 +113,7 @@ export function loadGenerationConfig(environment = process.env) {
         "OBJECT_STORAGE_SECRET_ACCESS_KEY_FILE",
       ),
     }),
+    cloudReference,
     provider: Object.freeze({
       allowInsecureLoopback,
       apiKey: providerApiKey(environment),
@@ -137,6 +141,48 @@ export function loadGenerationConfig(environment = process.env) {
       "GENERATION_WORKER_LEASE_MS",
     ),
   });
+}
+
+function httpsOrigin(value, name) {
+  let url;
+  try { url = new URL(value); } catch { throw new Error(`${name} must be an HTTPS origin.`); }
+  if (url.protocol !== "https:" || url.username || url.password || url.port ||
+      url.pathname !== "/" || url.search || url.hash) {
+    throw new Error(`${name} must be an HTTPS origin without a path or query.`);
+  }
+  return url.origin;
+}
+
+function loadLocalCloudReferenceConfig(environment) {
+  if (environment.GOODGOOD_LOCAL_DEVELOPMENT_RUNTIME !== "true" ||
+      environment.NODE_ENV === "production") {
+    throw new Error("Cloud reference uploads are restricted to local development.");
+  }
+  const database = new URL(required(environment, "DATABASE_URL"));
+  if (database.hostname !== "127.0.0.1" || database.port !== "54449" ||
+      database.pathname !== "/goodgood" ||
+      environment.OBJECT_STORAGE_ENDPOINT !== "http://127.0.0.1:58049" ||
+      environment.OBJECT_STORAGE_BUCKET !== "goodgood-gg052-local") {
+    throw new Error("Cloud reference uploads require the isolated local database and RustFS legacy store.");
+  }
+  const bucket = required(environment, "GOODGOOD_LOCAL_CLOUD_UPLOAD_BUCKET");
+  const region = required(environment, "GOODGOOD_LOCAL_CLOUD_UPLOAD_REGION");
+  const endpoint = httpsOrigin(required(environment, "GOODGOOD_LOCAL_CLOUD_UPLOAD_ENDPOINT"),
+    "GOODGOOD_LOCAL_CLOUD_UPLOAD_ENDPOINT");
+  const publicEndpoint = httpsOrigin(required(environment, "GOODGOOD_LOCAL_CLOUD_UPLOAD_PUBLIC_ENDPOINT"),
+    "GOODGOOD_LOCAL_CLOUD_UPLOAD_PUBLIC_ENDPOINT");
+  if (environment.GOODGOOD_LOCAL_CLOUD_UPLOAD_ACCESS_KEY_ID ||
+      environment.GOODGOOD_LOCAL_CLOUD_UPLOAD_SECRET_ACCESS_KEY) {
+    throw new Error("Cloud upload credentials must use external *_FILE paths.");
+  }
+  const accessKeyId = secretValue(environment,
+    "GOODGOOD_LOCAL_CLOUD_UPLOAD_ACCESS_KEY_ID",
+    "GOODGOOD_LOCAL_CLOUD_UPLOAD_ACCESS_KEY_ID_FILE");
+  const secretAccessKey = secretValue(environment,
+    "GOODGOOD_LOCAL_CLOUD_UPLOAD_SECRET_ACCESS_KEY",
+    "GOODGOOD_LOCAL_CLOUD_UPLOAD_SECRET_ACCESS_KEY_FILE");
+  return Object.freeze({ bucket, region, endpoint, publicEndpoint,
+    accessKeyId, secretAccessKey });
 }
 
 export function inspectGenerationConfiguration(environment = process.env) {

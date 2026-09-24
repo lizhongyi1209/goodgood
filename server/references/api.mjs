@@ -20,6 +20,7 @@ import {
   markReferenceRejected,
 } from "./repository.mjs";
 import { signAssetRead } from "../generation/storage.mjs";
+import { newLocalCloudReferenceKey } from "../generation/local-cloud-reference.mjs";
 import { readReferenceObject, signReferenceUpload } from "./storage.mjs";
 import {
   inspectReferenceImage,
@@ -159,6 +160,7 @@ export async function createReferenceUploads({
     ownerId,
     uploadTtlSeconds: REFERENCE_LIMITS.uploadTtlSeconds,
     workspaceId,
+    newKey: (key) => newLocalCloudReferenceKey(key, resources.config.cloudReference),
   });
 
   return {

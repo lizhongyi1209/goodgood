@@ -4,6 +4,7 @@ import {
   PutObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { cloudReferenceReadClient } from "../generation/local-cloud-reference.mjs";
 import { REFERENCE_LIMITS } from "./constants.mjs";
 import { ReferenceRequestError } from "./errors.mjs";
 
@@ -13,9 +14,11 @@ export function signReferenceUpload({
   key,
   publicStorage,
 }) {
+  const cloud = cloudReferenceReadClient(publicStorage, key);
   return getSignedUrl(
-    publicStorage,
-    new PutObjectCommand({ Bucket: bucket, ContentType: contentType, Key: key }),
+    cloud ?? publicStorage,
+    new PutObjectCommand({ Bucket: cloud ? publicStorage.cloudReferenceBucketEndpoint : bucket,
+      ContentType: contentType, Key: key }),
     { expiresIn: REFERENCE_LIMITS.uploadTtlSeconds },
   );
 }
