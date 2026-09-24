@@ -1,6 +1,6 @@
 # GG-114 — Reusable private image delivery
 
-- Status: local code and gate verified; runtime checkpoint pending; not deployed.
+- Status: local code, gate, and runtime HTTP verified; not deployed.
 - Baseline: GG-113 `1ecbc1c`; branch `feature/GG-114-reusable-image-delivery`;
   worktree `F:/goodgood-worktrees/GG-114`.
 - Decision: [ADR 0101](../decisions/0101-private-card-image-previews.md) remains in force.
@@ -28,10 +28,16 @@ state or lifecycle, not to wrap stateless helpers.
   lint has 16 existing warnings and no errors. The first parallel gate had a
   transient timeout in an unchanged O1Key polling test; that test passed alone
   and the complete gate passed on repeat.
-- Runtime checkpoint switch pending; GG-113 services remain running until GG-114
-  is built and verified.
+- First GG-114 runtime checkpoint `4e55a36` built and verified. 32131 Web and
+  5173 Vite run from this worktree; `/create`, readiness, and proxied version
+  return 200, with the Web revision matching the verified build. Anonymous
+  asset/reference preview GETs return 401. Local cloud and real SMTP config
+  remain attached; 32142 real-provider Worker remains stopped. Any later
+  documentation commit requires a new build and Web restart at that exact HEAD.
 
 ## 下一步
 
-Complete the common API, run the local gate, update the exact checkpoint, and
-verify that 5173 and 32131 serve it while keeping the real-provider Worker off.
+Keep 5173 and 32131 open for the operator to check image card transfer sizes,
+picker selection, and focused original details. A future free canvas should
+use the shared URL helper and owner-checked preview first; define a new named
+size only after its zoom and detail needs are known.
