@@ -1,7 +1,6 @@
 # GG-112 — real email delivery for local login
 
-- Status: code and SMTP authentication verified; browser mailbox smoke pending;
-  production application unchanged.
+- Status: implemented and locally verified; production application unchanged.
 - Baseline: GG-111 `6067cda`; branch `feature/GG-112-real-email-local-login`;
   worktree `F:/goodgood-worktrees/GG-112`.
 - Decision: existing email OTP and GoodGood session remain authoritative. The
@@ -29,10 +28,17 @@
 - The external configuration points to the operator-provided password file;
   no password was printed or committed. Authentication preflight passed all
   five checks, including `smtp-authentication`, without sending mail.
-- Real mailbox receipt and browser login remain unverified.
+- Verified 32131 Web ran `49e5f7d` with `emailDelivery: real-smtp`, cloud
+  reference upload mode, readiness 200, and `build.verified=true`. The 5173
+  proxy returned `email_code` and `/login` 200.
+- The operator received a real code, signed in through 5173, refreshed, and
+  confirmed the session remained active. No production account was imported.
+- The 5173 Vite server was then moved to the GG-112 worktree. Its `/login`,
+  authentication method and proxied Web version returned 200, `email_code`
+  and the verified GG-112 revision respectively.
 
 ## 下一步
 
-Commit and build the verified checkpoint, switch 32131 to real SMTP while
-preserving the 5173 Vite service, then ask the operator to confirm mailbox
-receipt/login through 5173. Record the final runtime revision and result.
+Keep the opt-in SMTP mode and external password file for continued local
+development. Rebuild/restart from the exact future committed revision before
+using 32131; preserve the local identity database and cloud upload mode.

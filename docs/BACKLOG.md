@@ -5,7 +5,7 @@
 
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
-| GG-112 | 本地登录投递真实邮箱验证码 | 代码和 SMTP 认证已验证：门禁 559/26/0、远端认证预检 5/5；运行切换与真实收信待核验，应用未部署 | [任务](tasks/GG-112-real-email-local-login.md) / [ADR](decisions/0100-local-real-email-delivery.md) |
+| GG-112 | 本地登录投递真实邮箱验证码 | 本地完成并验收：门禁 559/26/0、SMTP 预检 5/5；真实收信、登录及刷新会话正常；应用未部署 | [任务](tasks/GG-112-real-email-local-login.md) / [ADR](decisions/0100-local-real-email-delivery.md) |
 | GG-111 | 本地 5173 直传生产 OSS 的隔离前缀 | 本地实现并验收：门禁 558/26/0；5173 与 32131 均来自 GG-111；真实 PNG 上传 `ready / accepted`，切换页面服务后刷新仍可见；应用未部署 | [任务](tasks/GG-111-cloud-reference-upload-development.md) / [ADR](decisions/0099-local-upload-probes-in-production-oss-bucket.md) |
 | GG-110 | 5173 创作参考图预览接入本地上传 | 本地门禁、检查点和真实 JPEG 上传通过；数据库 `ready / accepted`，未部署 | [任务](tasks/GG-110-functional-reference-upload-preview.md) |
 | GG-107 | 创作输入框生成按钮改为向上箭头 | 按钮比例获用户确认；模型 SVG 预览 400 已修复并构建，待刷新复核；未部署 | [任务](tasks/GG-107-composer-send-arrow.md) / [ADR](decisions/0098-up-arrow-composer-send.md) |
