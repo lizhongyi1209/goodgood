@@ -394,8 +394,8 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .prompt-row textarea.has-overflow::-webkit-scrollbar-thumb:hover { background: #9f9fa9; }
 .prompt-actions { display: flex; align-items: center; gap: var(--space-1); }
 .composer-price { min-width: 70px; color: var(--quiet); font-size: 10px; text-align: right; white-space: nowrap; }
-.video-interface-state { color: #52525b; }
-.video-interface-state[aria-label="本地视频实测接口可用"] { color: #6d7b61; }
+.video-interface-state { color: var(--muted); }
+.video-interface-state[aria-label="本地视频实测接口可用"] { color: var(--ink); font-weight: 650; }
 .prompt-action, .send-button { width: var(--control-md); height: var(--control-md); border: 0; border-radius: 10px; display: grid; place-items: center; }
 .prompt-action { background: transparent; color: #777782; }
 .prompt-action:hover { background: var(--soft); color: var(--ink); }
@@ -512,7 +512,7 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .video-preview-result-title strong { color: #45454e; font-size: 12px; font-weight: 650; }
 .video-preview-result-title small { color: #9999a2; font-size: 9px; }
 .video-preview-status { min-height: 26px; padding: 0 8px; border-radius: 999px; background: #f3f3f5; display: inline-flex; align-items: center; gap: 5px; color: #777781; font-size: 9px; white-space: nowrap; }
-.video-preview-status.completed { background: #eef2eb; color: #65725b; }
+.video-preview-status.completed { background: var(--fill-selected); color: var(--ink); }
 .video-preview-status.failed { background: #eff0f1; color: #52525b; }
 .video-preview-result video { width: 100%; max-height: min(68vh,720px); display: block; background: #17171a; object-fit: contain; }
 .video-preview-pending, .video-preview-error { min-height: 280px; padding: 30px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; }
