@@ -12,6 +12,11 @@ default history, folder/upload flows, refresh persistence, image preview bytes,
 keyboard dialog behavior, and narrow layout. No synthetic generation or
 upload fixture may run against a real-provider Worker or production state.
 
+GG-117 已删除全部灵感测试文件与其 opt-in 环境（GG-073、GG-074、GG-075、GG-076、GG-077），
+以及 `deleteGeneratedAsset` 的 409 `ASSET_PUBLISHED` 用例。下方仍出现的 gg073—gg077 段落
+是历史验证记录，不再是可执行的验证入口；见
+[ADR 0104](decisions/0104-inspiration-feature-retirement.md)。
+
 GG-093当前本地环境、Docker清理、构建指纹与恢复命令见[DEVELOPMENT_HANDOFF.md](DEVELOPMENT_HANDOFF.md)；下方有任务标号的旧端口与测试数是对应阶段记录，以该交接的当前端口和验证边界为准，不运行旧fixture/转换脚本。构建来源定向测试见`tests/gg093-build-provenance.test.mjs`。
 
 **生产已于 2026-09-15 部署并开放**（GG-097，`goodgood.o1key.com` / revision `5b65601` /
@@ -41,27 +46,15 @@ GG-084 `node --test tests/gg084-jcoin.test.mjs`验证精确金额、当前/历�
 
 GG-081快速测试覆盖活动站长/CSRF、严格分类与金额、收款确认、类型/凭证指纹、稳定重试键、内部商品拒绝、现金精度/未知峰值/审计渲染。gg081-credits-postgres.test.mjs需GOODGOOD_GG081_INTEGRATION=1、GOODGOOD_GG081_NO_WORKER=1及GOODGOOD_GG081_DATABASE_URL指向loopback的goodgood_gg081_credits_test*空数据库；拒绝其他连接。全迁移后验证正常来源/订单/审计、并发重放与凭证竞争、CLI互斥、价目/目标失败回滚、旧测试来源、自身并发及暂停权限。gg071-operations-postgres.test.mjs沿用其命名隔离契约，补现金币种/假支付/账期、跨日峰值/同刻交接/缺历史、当前running/refining及queued。两者无provider或Worker调用，默认跳过；本轮单独隔离运行2/2通过。
 
-GG-076 tests cover output-first frame, board selected-mode preview, ratio and non-nested interactive controls. Isolated mock/no-Worker UI verifies pointer entry/move/leave restoring output, detail opening, keyboard range and narrow layout.
-
-GG-075 render tests cover reference-thumbnail selection, effect-only and no-reference states, visible enabled/disabled comparison modes and publication consent/content validation. Browser QA uses a separate named mock/no-Worker database, changes no user prices or publications, and confirms missing consent feedback and live comparison selection.
-
-GG-074 tests cover hidden/public DTOs, optional supplement joining, custom prompt
-validation, modes, routes and accessible pointer wipe. Opt-in SQL requires exact
-goodgood_gg074_presets_test_20260914 loopback DB, integration/no-Worker flags,
-empty schema and zero peer connections. It verifies atomic private input, one
-reservation per idempotent submission, removal blocking, frozen retry, completion
-and no secret in public records/derived publication. The fixture publishes its
-current20-credit quote through the normal immutable price-version writer.
-UI uses a separate named disposable mock stack; never real-provider32140.
-
-GG-073 feature tests cover recipe privacy, consent/bounds, active/ownership and
-shared DTOs, HTTP methods/action gates, rendered read/empty/like/comparison/settings.
-Opt-in gg073-inspiration-postgres requires explicit loopback named empty
-goodgood_gg073_inspiration_test*, INTEGRATION/NO_WORKER flags and no peer connections.
-It covers concurrent publish/likes, personal-only source and selected references,
-attribution snapshot/cleanup protection, recipe privacy, author/owner removal,
-republish rules, retries and exact microsecond pagination. Separate disposable
-UI fixture DB has no Worker; never fixture the user preview or real-provider32140.
+GG-117 删除了 GG-073—GG-077 的灵感测试文件（`tests/gg073-inspiration*.mjs`、
+`gg074-inspiration-*.mjs`、`gg075-inspiration-publish-controls.test.mjs`、
+`gg076-inspiration-hover-preview.test.mjs`、`gg077-inspiration-*.mjs`）。随之作废的
+opt-in 环境包括 GG-073 的 `goodgood_gg073_inspiration_test*`、GG-074 的
+`goodgood_gg074_presets_test_20260914` 与 GG-077 的
+`GOODGOOD_GG077_INTEGRATION=1` / `GOODGOOD_GG077_NO_WORKER=1` /
+`goodgood_gg077_visibility_test_20260914`；这些命名数据库不再需要建立或保留。
+`deleteGeneratedAsset` 的 409 `ASSET_PUBLISHED` 用例同批删除。见
+[ADR 0104](decisions/0104-inspiration-feature-retirement.md)。
 
 GG-072 targeted tests: profile validation/owner gates/read-only defaults,
 transaction/rollback/version/duplicate/foreign avatar cases, private HTTP action
@@ -1107,4 +1100,4 @@ not prove that a browser completed a signed PUT or server-side image decode.
 - `IMPLEMENTATION_PLAN.md` records the completed slice, verification result,
   remaining debt, and next action.
 
-GG-077：定向测试验证三档可见性、固定参数覆盖防伪、公开投影脱敏与计数UI；opt-in GOODGOOD_GG077_INTEGRATION=1必须配GOODGOOD_GG077_NO_WORKER=1及精确loopback临时数据库goodgood_gg077_visibility_test_20260914。SQL覆盖去重、并发统计、下架不计数、报价不计数、私有参数生成/重试/结算与资产DTO。不得指向32140真实Worker数据库。
+GG-077：定向测试验证三档可见性、固定参数覆盖防伪、公开投影脱敏与计数UI；opt-in GOODGOOD_GG077_INTEGRATION=1必须配GOODGOOD_GG077_NO_WORKER=1及精确loopback临时数据库goodgood_gg077_visibility_test_20260914。SQL覆盖去重、并发统计、下架不计数、报价不计数、私有参数生成/重试/结算与资产DTO。不得指向32140真实Worker数据库。GG-117（ADR 0104）已删除该测试文件与 opt-in 环境，灵感板块整体下线后不再需要该隔离库。

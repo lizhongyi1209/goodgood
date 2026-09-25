@@ -19,17 +19,11 @@ GG-091本地功能仅新增0043账户码/邀请关系及触发器补齐，替换
 
 GG-090为本地候选，仅新增0042邀请码空表供原32141站长验收并替换Web；无需Worker变更，不切换原local认证或发送真实邮件。真实邮件注册UI通过命名隔离Mailpit/无Worker栈验收。生产需单独授权迁移0042并采用email_otp配置；历史OIDC不能新注册，既有绑定可登录。不得旧脚本批量激活/重置旧账户。
 
-GG-074 is local only. Scoped migration0037 preserves old case content/defaults,
-prices, profiles and financial history; apply before GG074 Web/Worker because the
-Worker reads the private prompt table. Never replay/reset old migration checksums.
-UI fixtures use their named temporary DB/isolated Redis15 and optional mock-only
-Worker health32145; original user preview32141/32142 stays a separate database.
-
-GG-073 migration0036/shared case APIs are local candidates only. Apply only this
-scoped migration to32141 mock data; preserve old checksum records, user-set
-models/prices, assets and ledgers. Publication/deployment to production requires
-specific scope approval. UI fixtures use a named disposable DB without a Worker;
-source object paths are an explicit temporary fixture namespace, not user uploads.
+GG-074 的迁移 0037 与 GG-073 的迁移 0036 本地候选已随灵感板块整体下线退役（ADR 0104）：
+两段描述的是已删除的表与接口，不再是可执行步骤。唯一前向路径是 GG-117 的删除迁移
+（子表优先：inspiration_likes、inspiration_events、inspiration_generation_prompts、
+inspiration_interactions、最后 inspiration_cases），且必须在生产单独授权并记录恢复点后执行。
+0036/0037/0038 文件保留为历史记录，不得重放或改写校验和。
 
 GG-072 adds migration0035/profile API and cleanup protection; local candidate
 only. Original32141 mock stack retains users/prices/financial history. Current

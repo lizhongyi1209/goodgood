@@ -335,17 +335,15 @@ test("asset list and fresh download URL are wired into both runtimes", async () 
   assert.match(workspace, /styles\.cardOverlay/);
 });
 
-test("generated asset deletion is owner scoped, clears organization, and keeps the batch", async () => {
+test("generated asset deletion is owner scoped and clears organization before the row", async () => {
   const assetId = "20000000-0000-4000-8000-000000000001";
   const objectKey = "generated/owner-a/asset.png";
-  let publishedRows = [];
   let assetRow = { id: assetId, object_key: objectKey, workspace_id: "workspace-a" };
   const statements = [];
   const deletedKeys = [];
   const client = {
     async query(sql, values = []) {
       statements.push([sql, values]);
-      if (/FROM inspiration_cases/.test(sql)) return { rows: publishedRows };
       if (sql === "BEGIN" || sql === "COMMIT" || sql === "ROLLBACK") return { rowCount: 0, rows: [] };
       if (/^DELETE FROM asset_organization/.test(sql)) return { rowCount: 1, rows: [] };
       if (/^DELETE FROM assets/.test(sql)) {
@@ -383,20 +381,6 @@ test("generated asset deletion is owner scoped, clears organization, and keeps t
   };
   const { deleteGeneratedAsset } = await import("../server/assets/api.mjs");
 
-  // A published inspiration case blocks the row delete instead of silently
-  // removing the asset or leaving the case dangling.
-  publishedRows = [{ id: "case-a" }];
-  await assert.rejects(
-    deleteGeneratedAsset({
-      assetId,
-      ownerContext: { ownerId: "owner-a" },
-      resourcesOverride,
-    }),
-    (error) => error.code === "ASSET_PUBLISHED" && error.status === 409,
-  );
-  assert.equal(deletedKeys.length, 0);
-
-  publishedRows = [];
   const removed = await deleteGeneratedAsset({
     assetId,
     ownerContext: { ownerId: "owner-a" },
@@ -422,8 +406,8 @@ test("generated asset deletion is owner scoped, clears organization, and keeps t
     }),
     (error) => error.code === "WORKSPACE_ACCESS_DENIED",
   );
-  // The 409 attempt opened a transaction and rolled it back; only the second
-  // call reached COMMIT.
-  assert.equal(statements.filter(([sql]) => sql === "BEGIN").length, 2);
-  assert.equal(statements.filter(([sql]) => sql === "ROLLBACK").length, 1);
+  // The denied owner is rejected while resolving the workspace, before the
+  // transaction opens, so the successful delete above is the only one.
+  assert.equal(statements.filter(([sql]) => sql === "BEGIN").length, 1);
+  assert.equal(statements.filter(([sql]) => sql === "ROLLBACK").length, 0);
 });

@@ -1,6 +1,5 @@
 import { modelQualityPriceContext } from "../../shared/contracts/gpt-quality-pricing.mjs";
 import { privateImageUrls } from "../../shared/private-image-urls.mjs";
-import {lockHiddenPreset} from '../inspiration/preset.mjs';
 import { createHash, randomUUID } from "node:crypto";
 import { supportsImageLines } from "../../shared/contracts/banana-lines.mjs";
 import { requireEnabledImageModel } from "../admin/models.mjs";
@@ -68,7 +67,6 @@ export function hashGenerationInput(input) {
         outputFormat: modelOptions.outputFormat,
         projectId: input.projectId ?? null,
         prompt: input.prompt,
-        ...(input.presetFingerprint ? {presetFingerprint:input.presetFingerprint} : {}),
         ...(input.composerPrompt ? { composerPrompt: input.composerPrompt } : {}),
         references: input.references.map(({ id, name }, index) => ({
           id,
@@ -102,7 +100,6 @@ export function hashOrganizationGenerationCreditOperation({
 }
 
 export function generationInputFromRow(row, referenceUrls = new Map()) {
-  if(row.parameters_hidden) return {parametersHidden:true,modelId:'nano-banana-2',catalogModelName:'预设效果',aspectRatio:'1:1',resolution:'1K',count:1,prompt:row.prompt,references:(row.reference_snapshot??[]).map(r=>({id:r.id,name:r.name,status:'ready',url:referenceUrls.get(r.id)??''}))};
   return {
     aspectRatio: row.aspect_ratio,
     background: row.background ?? "auto",
@@ -193,7 +190,6 @@ export function publicGenerationJob(
 
 const JOB_SELECT = `
   SELECT j.*,
-         EXISTS(SELECT 1 FROM inspiration_generation_prompts gp WHERE gp.job_id=j.id AND gp.parameters_hidden) AS parameters_hidden,
          b.prompt,
          b.project_id,
          b.reference_snapshot,
@@ -376,15 +372,10 @@ export async function createGenerationJob(
     ownerId,
     retryOfJobId = null,
     workspaceId = null,
-    presetCaseId = null,
-    presetSupplement = null,
-    presetParametersHidden = false,
-    frozenPreset = null,
   },
 ) {
   const modelOptions = requiredGenerationModelOptions(input);
-  const presetFingerprint=presetCaseId?`${presetCaseId}:${presetSupplement}`:frozenPreset?createHash('sha256').update(frozenPreset.effective_prompt).digest('hex'):null;
-  const inputHash = hashGenerationInput({...input,presetFingerprint});
+  const inputHash = hashGenerationInput(input);
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -438,12 +429,9 @@ export async function createGenerationJob(
       if (quote.version !== input.expectedPriceVersion) throw new GenerationPersistenceError("PRICE_CHANGED", "模型价格已更新，请刷新报价后重新提交。尚未扣除积分。", 409);
     }
 
-    if (input.projectId || input.references.length || presetCaseId) {
+    if (input.projectId || input.references.length) {
       await lockReferenceLifecycle(client);
     }
-    if((presetCaseId||frozenPreset)&&workspace.kind!=='personal') throw new GenerationPersistenceError('INSPIRATION_FORBIDDEN','预设效果仅支持个人创作。',403);
-    const effectivePrompt=presetCaseId?await lockHiddenPreset(client,presetCaseId,presetSupplement):frozenPreset?.effective_prompt;
-    const visiblePrompt=presetCaseId?`预设效果（原提示词隐藏）${presetSupplement?`\n补充提示词：${presetSupplement}`:''}`:input.prompt;
     if (input.references.length) {
       const currentReferences = await findReadyReferences(client, {
         lock: true,
@@ -487,6 +475,10 @@ export async function createGenerationJob(
 
     const batchId = randomUUID();
     const jobId = randomUUID();
+    // Each batch stores the slice prompt that produced it, not the whole
+    // composer text: `projectComposerPrompt` above is the project-level value
+    // and belongs only to the projects row. GG-040 relies on this split.
+    const visiblePrompt = input.prompt;
     const references = input.references.map(({ id, name, objectKey }, index) => ({
       id,
       name,
@@ -559,7 +551,6 @@ export async function createGenerationJob(
        ) VALUES ($1, $2, $3, $4, $3, $5, $6)`,
       [jobId, batchId, ownerId, workspace.id, idempotencyKey, retryOfJobId],
     );
-    if(effectivePrompt) await client.query('INSERT INTO inspiration_generation_prompts(job_id,case_id,effective_prompt,parameters_hidden) VALUES($1,$2,$3,$4)',[jobId,presetCaseId??frozenPreset.case_id,effectivePrompt,presetParametersHidden||frozenPreset?.parameters_hidden||false]);
     await client.query("UPDATE generation_batches SET catalog_model_id=$2,catalog_model_name=$3 WHERE id=$1",
       [batchId, managedModel.id, managedModel.name]);
     if (workspace.kind === "organization") {

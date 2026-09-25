@@ -1,5 +1,6 @@
 # GG-076: 灵感卡片滑动预览与详情默认效果图
 
+- Retired: 2026-09-25 by [GG-117](GG-117-inspiration-retirement.md) / [ADR 0104](../decisions/0104-inspiration-feature-retirement.md); historical record only.
 - Status: Implemented and verified locally; not deployed
 - Branch: fix/GG-076-inspiration-hover-preview
 - Worktree: F:/goodgood-worktrees/GG-076

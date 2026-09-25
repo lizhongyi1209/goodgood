@@ -35,16 +35,16 @@ utility, beneficiary rules, classified grant implementation and issuance remain 
 No wallet, token issuance, pricing conversion or management change is implemented
 by this planning task; existing consumption-credit rules remain authoritative.
 
-GG-074 supersedes the publication Sheet/always-public prompt via ADR0077.
-Authors edit a case on a dedicated page and choose public/hidden reusable prompt.
-Public reuse is editable; hidden reuse has a preset badge and optional supplement,
-combined only server-side. Comparison supports side-by-side or pointer wipe.
-
-GG-073 introduces inspiration cases: explicit selected personal image sharing
-with before/after, immutable prompt/parameters and author attribution, active-user
-likes and recipe reuse. Authors withdraw their own; site owners remove any case.
-Shared reads stay authenticated; private profiles/unselected/enterprise media
-remain private. Publication extends the private-only GG-072 scope via ADR0076.
+GG-117 retired the inspiration board outright. The case-publish/reuse surface
+that GG-073 through GG-077 built — public and hidden case prompts, before/after
+comparison, likes, view/use statistics and recipe reuse — was removed, and its
+five tables are dropped. No case is migrated. The images and their generation
+and billing history remain; only the publication layer is gone. See
+[ADR 0104](decisions/0104-inspiration-feature-retirement.md); the earlier
+[ADR 0076](decisions/0076-shareable-inspiration-cases.md),
+[ADR 0077](decisions/0077-inspiration-editor-private-presets.md) and
+[ADR 0078](decisions/0078-inspiration-visibility-and-statistics.md) are
+historical records of the retired design.
 
 GG-072 adds a private personal profile: avatar, name, unique @handle and the
 user's accepted personal generated images. All works are visible to their owner
@@ -278,8 +278,5 @@ authorization, and budget rules are fixed in ADR 0046. None of these enterprise
 capabilities are part of the current production scope until implementation,
 verification, and a separate release approval complete.
 
-GG-077：灵感参数可见性为公开全部、仅隐藏提示词、隐藏参数和提示词。完全隐藏使用后端固定预设；大厅显示查看和使用统计，分别按打开详情和载入复刻配置计数，并非独立访客/生成成功数。
-
-GG-078：取消灵感大厅与详情的点赞入口，历史点赞数据保留。大厅查看/使用并排，仅显示图标与数字，保留无障碍名称。
-
-GG-079按用户澄清恢复灵感大厅和详情点赞，替代GG-078取消点赞规则。大厅三项统计仅图标数字同行。
+GG-077—GG-079 的灵感参数可见性、大厅查看/使用统计与点赞规则已随灵感板块整体下线
+作废，见 [ADR 0104](decisions/0104-inspiration-feature-retirement.md)；原决策记录保留为历史。

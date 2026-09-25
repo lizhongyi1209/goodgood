@@ -6,10 +6,6 @@ import "@/features/profile/profile.css";
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type WheelEvent as ReactWheelEvent } from "react";
 import Image from "next/image";
 import {PersonalProfileView,ProfileAvatar,usePersonalProfile} from "@/features/profile/personal-profile";
-import {InspirationBoard} from "@/features/inspiration/inspiration-board";
-import {CaseEditor} from "@/features/inspiration/case-editor";
-import {CaseReplica} from "@/features/inspiration/case-replica";
-import type {UseCaseResult} from "@/features/inspiration/http-inspiration-boundary";
 import { CreationComposer } from "@/features/creation/creation-composer";
 import { supportsImageLines, imageLineName } from "@/shared/contracts/banana-lines.mjs";
 import type { BananaLine } from "@/shared/contracts/generation";
@@ -229,7 +225,6 @@ import {
   MessageSquare,
   ImagePlus,
   Images,
-  LayoutGrid,
   LoaderCircle,
   LogIn,
   LogOut,
@@ -252,7 +247,6 @@ type AssetBatch = {
   modelId: GenerationModelId;
   catalogModelId?: string;
   catalogModelName?: string;
-  parametersHidden?: boolean;
   imageLine?: BananaLine;
   aspectRatio: GenerationAspectRatio;
   resolution: GenerationResolution;
@@ -265,11 +259,10 @@ type AssetBatch = {
   referenceCount: number;
   images: readonly GenerationOutput[];
 };
-type ActiveView = "create" | "profile" | "inspiration" | "inspirationEditor" | "inspirationReplica" | "projects" | "assets" | "credits" | "jcoin" | "feedback" | "distribution" | "organizations" | "admin";
+type ActiveView = "create" | "profile" | "projects" | "assets" | "credits" | "jcoin" | "feedback" | "distribution" | "organizations" | "admin";
 type DestructiveCreationIntent =
   | { kind: "new" }
-  | { kind: "project"; projectId: string; projectName: string }
-  | { kind: "inspiration"; value: UseCaseResult };
+  | { kind: "project"; projectId: string; projectName: string };
 type DraftConflictState = Readonly<{
   currentDraft: CreationDraftRecord | null;
 }>;
@@ -411,7 +404,6 @@ function generationJobToAssetBatch(job: GenerationJob): AssetBatch {
     ...(job.input.imageLine ? { imageLine: job.input.imageLine } : {}),
     catalogModelId: job.input.catalogModelId,
     catalogModelName: job.input.catalogModelName,
-    parametersHidden: job.input.parametersHidden,
     prompt: job.input.prompt,
     referenceCount: job.input.references.length,
     resolution: job.input.resolution,
@@ -540,7 +532,6 @@ export default function Home({
   const [videoPreviewRuns, setVideoPreviewRuns] = useState<readonly VideoPreviewRun[]>([]);
   const [videoDetailKey, setVideoDetailKey] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<ActiveView>("create");
-  const [inspirationRoute,setInspirationRoute] = useState<{kind:"edit"|"use";id:string}|null>(null);
   const [adminTab, setAdminTab] = useState<"models" | "users" | "audit" | "operations" | "logs" | "jcoin" | "feedback">("models");
   const [organizationRoute, setOrganizationRoute] = useState<{ id: string; tab: OrganizationManagementTab } | null>(null);
   const [businessStylePreview, setBusinessStylePreview] = useState(false);
@@ -929,16 +920,10 @@ export default function Home({
       }
       setRouteProjectId(null);
       setProjectRestoringId(null);
-      if(route.kind==='inspirationEdit'||route.kind==='inspirationUse') {
-        setInspirationRoute({kind:route.kind==='inspirationEdit'?'edit':'use',id:route.kind==='inspirationEdit'?route.assetId:route.caseId});
-        setActiveView(route.kind==='inspirationEdit'?'inspirationEditor':'inspirationReplica');return;
-      }
       setActiveView(route.kind === "projects"
         ? "projects"
         : route.kind === "profile"
           ? "profile"
-        : route.kind === "inspiration"
-          ? "inspiration"
         : route.kind === "assets"
           ? "assets"
           : route.kind === "credits"
@@ -2423,12 +2408,6 @@ export default function Home({
     window.scrollTo({top:0,behavior:"smooth"});
   };
 
-  const handleInspirationNav = () => {
-    if(workspaceId) {window.location.assign("/inspiration");return;}
-    navigateWorkspace({kind:"inspiration"});
-    window.scrollTo({top:0,behavior:"smooth"});
-  };
-
   const handleAssetNav = () => {
     if (workspaceId) { window.location.assign("/assets"); return; }
     if (assetPulseTimerRef.current) window.clearTimeout(assetPulseTimerRef.current);
@@ -2623,37 +2602,8 @@ export default function Home({
       startNewCreation();
       return;
     }
-    if(intent.kind === "inspiration") {applyInspirationCase(intent.value);return;}
     clearPersistedCreationDraft();
     continueProjectRestore(intent.projectId);
-  };
-
-  const applyInspirationCase = (value:UseCaseResult) => {
-    startNewCreation();
-    const recipe=value.recipe;
-    if(!recipe) return;
-    composerEditRevisionRef.current+=1;
-    setPrompt(recipe.prompt);
-    setSelectedModel(recipe.modelId);
-    setSelectedCatalogModelId(recipe.catalogModelId);
-    setImageLine(recipe.imageLine??"special");
-    setSelectedRatio(resolveGenerationAspectRatioForModel(recipe.modelId,recipe.aspectRatio));
-    setResolution(recipe.resolution);
-    setGenerationCount(1);
-    setThinkingLevel(resolveGenerationThinkingLevelForModel(recipe.modelId));
-    setGoogleSearch(resolveGoogleSearchForModel(recipe.modelId,recipe.googleSearch??false));
-    const options=resolveGptImageOptionsForModel(recipe.modelId,recipe);
-    setQuality(options.quality);setBackground(options.background);setOutputFormat(options.outputFormat);
-    setDrawerOpen(true);
-    toast.info(value.referenceCount?`效果已载入，请上传自己的 ${value.referenceCount} 张参考图，确认参数后生成。`:"效果已载入，请确认参数后生成。");
-    if(!billingSummary?.models?.some(model=>model.id===(recipe.catalogModelId??recipe.modelId))) toast.info("原作模型暂不可用，请在参数中选择可用模型。");
-  };
-  const [initialCaseUse,setInitialCaseUse]=useState<UseCaseResult|null>(null);
-  const requestInspirationCase = (value:UseCaseResult) => {
-    if(value.promptVisibility==='hidden') {setInitialCaseUse(value);navigateWorkspace({kind:"inspirationUse",caseId:value.caseId});return;}
-    if(isGenerating||isVideoGenerating) {toast.info("仍有任务正在生成，请等待完成后再使用案例。");return;}
-    if(hasUnsavedCreationChanges) {setDestructiveCreationIntent({kind:"inspiration",value});return;}
-    applyInspirationCase(value);
   };
 
   const retryProjectRoute = () => {
@@ -3035,10 +2985,6 @@ export default function Home({
     }
   };
 
-  const publishInspirationAsset = (assetId:string) => {
-    setDetailOpen(false);
-    navigateWorkspace({kind:'inspirationEdit',assetId});
-  };
   const closeImageDetail = () => {
     setDetailOpen(false);
     if (workspaceId) {
@@ -3155,7 +3101,6 @@ export default function Home({
               <Network size={17} /><span>分销管理</span>
             </button>
           )}
-          <button className={`side-nav-item ${["inspiration","inspirationEditor","inspirationReplica"].includes(activeView) ? "active" : ""}`} onClick={handleInspirationNav}><LayoutGrid size={17} /><span>灵感板</span></button>
           {authenticationSession?.account.role === "site_owner" && (
             <button
               className={`side-nav-item ${siteOwnerManagementActive ? "active" : ""}`}
@@ -3247,7 +3192,6 @@ export default function Home({
         <header className="mobile-bar">
           <div className="mobile-brand" role="img" aria-label="GoodGood"><Image className="brand-mark" src="/goodgood-mark.svg" alt="" width={27} height={20} /><Image className="wordmark-image" src="/goodgood-wordmark.svg" alt="" width={84} height={19} /></div>
           <div className="mobile-account">
-            {authenticationSession?.access.status === "active"&&<button className="top-avatar" aria-label="灵感板" onClick={handleInspirationNav}><LayoutGrid size={16}/></button>}
             {organizationNavigationVisible && authenticationSession?.account.role !== "site_owner" && (
               <button className="top-avatar" aria-label="企业管理" onClick={handleOrganizationNav}><Building2 size={16} /></button>
             )}
@@ -3546,12 +3490,6 @@ export default function Home({
                 </div>
               )}
             </section>
-          ) : activeView === 'inspirationEditor' && inspirationRoute ? (
-            authenticationSession?.access.status==='active'&&!authenticationSession.preview&&<CaseEditor key={inspirationRoute.id} assetId={inspirationRoute.id} onCancel={handleInspirationNav} onPublished={()=>{toast.success('案例已发布到灵感板');handleInspirationNav();}}/>
-          ) : activeView === 'inspirationReplica' && inspirationRoute ? (
-            authenticationSession?.access.status==='active'&&!authenticationSession.preview&&<CaseReplica key={inspirationRoute.id} caseId={inspirationRoute.id} initialValue={initialCaseUse?.caseId===inspirationRoute.id?initialCaseUse:null} onReturn={handleInspirationNav} onCompleted={()=>{void reloadAssets();void readBillingSummary().then(setBillingSummary).catch(()=>undefined);}}/>
-          ) : activeView === "inspiration" ? (
-            <InspirationBoard enabled={Boolean(authenticationSession&&!authenticationSession.preview&&authenticationSession.access.status==="active")} onUse={requestInspirationCase}/>
           ) : activeView === "profile" ? (
             <PersonalProfileView state={personalProfile} works={assetDetailItems.map(item=>({key:item.key,url:item.image.previewUrl,ratio:item.image.width && item.image.height ? item.image.width/item.image.height : item.ratio,alt:item.batch.prompt}))} worksLoading={assetsLoading} worksError={assetsError ?? assetRouteError} onRetryWorks={()=>void reloadAssets()} onOpenWork={key=>openImageDetail(assetDetailItems,key,"profile")} onCreate={handleCreateNav}/>
           ) : activeView === "feedback" ? (
@@ -3809,7 +3747,6 @@ export default function Home({
                     <strong>{activeDetailModel?.name}</strong>
                   </div>
                   <div className="image-detail-actions">
-                    {!workspaceId&&!authenticationSession?.preview&&<button className="download-button" aria-label="发布灵感案例" title="发布灵感案例" onClick={()=>publishInspirationAsset(activeDetail.image.id)}><LayoutGrid size={17}/></button>}
                     <button className="download-button" disabled={downloadingImageKeys.includes(`${activeDetail.batch.id}-${activeDetail.image.id}`)} aria-label={downloadingImageKeys.includes(`${activeDetail.batch.id}-${activeDetail.image.id}`) ? "正在下载图片" : "下载图片"} onClick={() => void downloadImage(activeDetail.batch, activeDetail.image, activeDetail.index)}>{downloadingImageKeys.includes(`${activeDetail.batch.id}-${activeDetail.image.id}`) ? <LoaderCircle className="download-spinner" size={17} /> : <Download size={17} />}</button>
                   </div>
                 </header>
@@ -3821,7 +3758,7 @@ export default function Home({
 
                 <div className="image-detail-section">
                   <span>生成参数</span>
-                  {activeDetail.batch.parametersHidden?<p>预设参数已隐藏</p>:<dl className="image-detail-parameters">
+                  <dl className="image-detail-parameters">
                     <div><dt>模型</dt><dd>{activeDetailModel?.name}</dd></div>
                     <div><dt>画面比例</dt><dd>{activeDetailRatio?.label}</dd></div>
                     <div><dt>分辨率</dt><dd>{formatGenerationResolution(activeDetail.batch.resolution, activeDetail.image)}</dd></div>
@@ -3839,7 +3776,7 @@ export default function Home({
                       </>
                     )}
                     <div><dt>任务编号</dt><dd>{activeDetail.batch.id}</dd></div>
-                  </dl>}
+                  </dl>
                 </div>
 
                 <div className="image-detail-wheel-hint">
@@ -3885,7 +3822,7 @@ export default function Home({
             <DialogDescription>
               {destructiveCreationIntent?.kind === "project"
                 ? `打开“${destructiveCreationIntent.projectName}”会覆盖当前提示词、参考图和生成参数。`
-                : destructiveCreationIntent?.kind === "inspiration" ? `使用“${destructiveCreationIntent.value.title}”会开启新创作，并替换当前提示词、参考图和参数。` : "新建创作会清空当前提示词、参考图和生成参数。"}
+                : "新建创作会清空当前提示词、参考图和生成参数。"}
             </DialogDescription>
             <div className="unsaved-changes-actions">
               <button
@@ -3898,7 +3835,7 @@ export default function Home({
               >
                 {destructiveCreationIntent?.kind === "project"
                   ? "放弃修改并打开"
-                  : destructiveCreationIntent?.kind === "inspiration" ? "使用案例并新建" : "放弃修改并新建"}
+                  : "放弃修改并新建"}
               </button>
             </div>
           </DialogPrimitive.Content>

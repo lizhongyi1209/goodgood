@@ -1,5 +1,6 @@
 # GG-074: 案例编辑页与隐藏预设
 
+- Retired: 2026-09-25 by [GG-117](GG-117-inspiration-retirement.md) / [ADR 0104](../decisions/0104-inspiration-feature-retirement.md); historical record only.
 - Status: Implemented and verified locally; not deployed
 - Branch: feature/GG-074-inspiration-editor
 - Worktree: F:/goodgood-worktrees/GG-074

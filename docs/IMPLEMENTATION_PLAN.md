@@ -1,12 +1,19 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-25
-- Current phase: GG-116 生成历史纯图片网格与卡片下载/删除/放大已完成本地实现与门禁，待重建检查点后浏览器验收；生产应用仍为 GG-098。
-- Current objective: 重建 GG-116 检查点并在 5173 验收四点（历史页签、扁平网格、悬停操作、删除后即时移除）；生产部署须另行确定范围。
-- Previous objective: GG-115 资产页生成记录/个人资产库与 20 MiB 上传已通过门禁、迁移 0046、检查点和站长页面验收。
+- Current phase: GG-116 与 GG-117 均已在工作树完成代码与门禁；两处待办都不是代码问题，而是需要单独授权的破坏性/浏览器步骤。生产应用仍为 GG-098。
+- Current objective: 待站长确认后可丢弃案例数据后，统计灵感表行数并在隔离库执行 `0047`；同时重建检查点在 5173 验收 GG-116 的生成历史改动。
+- Previous objective: GG-116 生成历史纯图片网格与卡片下载/删除/放大已完成本地实现与门禁，待重建检查点后浏览器验收。
 
 ## Current checkpoint
 
+- Task [GG-117](tasks/GG-117-inspiration-retirement.md)：**工作树文档与代码移除完成，破坏性迁移未执行**。
+  ADR 0104 已接受，退役 ADR 0076/0077/0078 并修订单个 ADR 0103 段落；`app/inspiration/`、
+  `app/api/inspiration/`、`features/inspiration/`、`server/inspiration/`、
+  `shared/contracts/inspiration.mjs` 已删除，专题文档已清理，BACKLOG 保持 100 行。
+  五张灵感表按子表优先删除，生产执行需单独授权；`ASSET_PUBLISHED` 检查及其测试同批移除。
+- Task [GG-116](tasks/GG-116-asset-history-actions.md)：**本地实现与门禁完成，待浏览器验收**。
+  ADR 0103 硬删除生成图片；兼容 `app/page.tsx` 调用点的旧卡片命名已由 GG-117 移除。
 - Task [GG-098](tasks/GG-098-manual-grant-ceiling.md)：**已部署**。
   生产身份 `7888554` / 镜像 `sha256:7deeab8c…3270` / 迁移 `0044`。
   完整记录见 [发布记录](releases/2026-09-21-gg098-manual-grant-ceiling.md)。
@@ -60,7 +67,7 @@
 - **2026-09-17 首次生产恢复演练通过**：快照 `ce191630`、59 表 / 2403 行 / 43 迁移；
   维护窗口约 66 秒。「备份 timer disabled、无自动备份」的旧结论**已更正为错误**。
 - 独立缺口（已记录未处理）：**仅剩无告警通道**。
-- Next action: 等待下一项本地功能需求，保持 5173/32131 可用和 Worker 32142 关闭。生产部署另开任务；GG-105 旧 200 MiB 方案已由 ADR 0102 对新上传取代。
+- Next action: 向站长回报灵感表行数需求并取得丢弃授权；确认后编写删除迁移、移除 `ASSET_PUBLISHED` 检查及其测试，跑一次本地门禁。生产删除与 GG-116 浏览器验收均另开窗口。
 - Blockers: 无阻塞执行项；`operations` 缺口为已知并已授权接受。
 - 参考图校验最长近 6 分钟、超过 nginx 70s 读超时的服务端性能根因仍待排查；
   GG-103 前端通过 owner-scoped 状态查询避免把已入库素材误报为失败。

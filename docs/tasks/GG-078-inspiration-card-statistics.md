@@ -1,5 +1,6 @@
 # GG-078 — 简化灵感统计
 
+- 已退役：2026-09-25，由 [GG-117](GG-117-inspiration-retirement.md) / [ADR 0104](../decisions/0104-inspiration-feature-retirement.md) 整体下线；本卡仅作历史记录。
 - 请求：去掉点赞，查看和使用同一行，只保留图标与数字。
 - 基线：核验 main bab17fd，FF 接续 GG07746aa397；fix/GG-078-inspiration-card-statistics，F:/goodgood-worktrees/GG-078。
 - 决策：按用户最新要求调整 ADR0078 的统计展示，取消大厅与详情的点赞入口，已有记录不删除；查看/使用计数规则不变。

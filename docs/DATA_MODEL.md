@@ -28,6 +28,9 @@ job_id PK/FK, case_id FK and effective_prompt(1–8001 chars). It is server-only
 visible batch prompts keep only a preset label and supplement. New private input,
 job, reservation and outbox are one transaction. Hidden-derived assets cannot be
 published as reusable cases; normal own asset inspection remains available.
+**Dropped by GG-117** (ADR 0104): the inspiration feature was removed and
+`inspiration_generation_prompts` no longer exists. `prompt_visibility` and
+`comparison_mode` go with `inspiration_cases`.
 
 GG-073 migration0036 adds inspiration_cases (source asset, optional original
 reference, title/notes, immutable prompt/parameters/author snapshot, soft removal),
@@ -37,6 +40,23 @@ author withdrawal permits fresh publication, owner removal blocks same-source
 republish. Cleanup pins selected before/author avatar until withdrawal. Source
 assets/jobs/billing remain intact. Shared signed links expire normally; removal
 blocks new API reads but cannot recall already viewed/downloaded media.
+**Dropped by GG-117** (ADR 0104): all three tables are removed and their case
+rows are discarded without migration. The `assets`, `generation_jobs` and
+`credit_ledger` rows the paragraph refers to survive the drop.
+
+GG-117 drops all five inspiration tables, children before parent so no foreign
+key is left dangling. The drop order is written out in
+`migrations/0047_gg117_drop_inspiration.sql`, which is the authoritative record
+and is not repeated here: the four child tables hold no foreign keys among
+themselves, so only the parent's position relative to them matters, and that
+migration is where the executable order lives. The case table is the only one
+referencing assets(id), reference_assets(id) and users(id), so it is dropped
+last. Migrations 0036–0038 and the schema definitions remain the historical
+record of what existed; the drop migration supersedes them forward and is not
+reversible.
+That migration is written and verified locally but is not applied to any live
+database yet; execution against production is a separate step that needs its own
+authorization and backup.
 
 GG-072 migration0035 adds personal_profiles keyed by owner with display_name,
 unique lowercase handle, optional avatar_reference_id, positive optimistic
@@ -823,7 +843,7 @@ model ID as stable domain data. Each accepted Asset's `pixel_width` and
 in asset presentation. The UI may omit missing compatibility dimensions but
 must never infer them from the nominal tier, model, ratio, or CSS.
 
-GG-077 migration0038：parameter_visibility(public/prompt_hidden/hidden)与旧prompt_visibility一致约束；旧案例自动保持语义。view_count/use_count非负bigint从零开始。inspiration_interactions以案例/用户/动作/交互UUID为主键，原子增量去重。私有生成表parameters_hidden标记持续到重试，公开任务/资产投影屏蔽实际参数。
+GG-077 migration0038：parameter_visibility(public/prompt_hidden/hidden)与旧prompt_visibility一致约束；旧案例自动保持语义。view_count/use_count非负bigint从零开始。inspiration_interactions以案例/用户/动作/交互UUID为主键，原子增量去重。私有生成表parameters_hidden标记持续到重试，公开任务/资产投影屏蔽实际参数。**GG-117（ADR 0104）删除本段全部对象**：inspiration_interactions 与案例上的 parameter_visibility/view_count/use_count 随五张灵感表一并 drop；inspiration_generation_prompts 本身也在这五张表之内，其 parameters_hidden 列随该表一起消失，没有留存字段。私有生成参数屏蔽这一行为属于生成链路，不在本次下线范围内。
 # GG-104 private video materials
 
 Migration `0045_gg104_private_video_materials.sql` adds `video_materials` without

@@ -1,9 +1,13 @@
 # ADR 0077: Case editor and private prompt presets
 
-- Status: Accepted
+- Status: Retired by ADR 0104 (2026-09-25)
 - Task: GG-074
 - Date: 2026-09-14
 - Supersedes: ADR0076 publication Sheet and always-visible prompt decisions
+
+ADR 0104 retires this decision together with ADR 0076: the case editor, the
+private preset table and the reproduction page were removed and their tables
+dropped. The text below is retained history, not current behavior.
 
 ## Decision
 

@@ -26,53 +26,6 @@ const timestamps = {
     .notNull(),
 };
 
-export const inspirationCases = pgTable("inspiration_cases", {
-  id: uuid("id").primaryKey(),
-  ownerId: uuid("owner_id").notNull().references(() => users.id),
-  sourceAssetId: uuid("source_asset_id").notNull().references(() => assets.id),
-  beforeReferenceId: uuid("before_reference_id").references(() => referenceAssets.id),
-  title: text("title").notNull(), description: text("description").notNull().default(""),
-  parameterVisibility:text('parameter_visibility').notNull().default('public'),
-  viewCount:bigint('view_count',{mode:'number'}).notNull().default(0),useCount:bigint('use_count',{mode:'number'}).notNull().default(0),
-  promptVisibility: text("prompt_visibility").notNull().default('public'),
-  comparisonMode: text("comparison_mode").notNull().default('side_by_side'),
-  prompt: text("prompt").notNull(), parameters: jsonb("parameters").notNull(),
-  authorSnapshot: jsonb("author_snapshot").notNull(),
-  createdAt: timestamp("created_at",{withTimezone:true}).notNull().defaultNow(),
-  deletedAt: timestamp("deleted_at",{withTimezone:true}),
-  deletedBy: uuid("deleted_by").references(() => users.id),
-}, (table) => [
-  uniqueIndex("inspiration_cases_active_source_idx").on(table.ownerId,table.sourceAssetId).where(sql`${table.deletedAt} is null`),
-  index("inspiration_cases_directory_idx").on(table.createdAt.desc(),table.id.desc()).where(sql`${table.deletedAt} is null`),
-  index("inspiration_cases_before_idx").on(table.beforeReferenceId).where(sql`${table.deletedAt} is null`),
-  check("inspiration_cases_title_check",sql`char_length(${table.title}) between 1 and 60`),
-  check("inspiration_cases_description_check",sql`char_length(${table.description}) <= 1000`),
-  check("inspiration_cases_parameters_check",sql`jsonb_typeof(${table.parameters}) = 'object'`),
-  check("inspiration_cases_author_snapshot_check",sql`jsonb_typeof(${table.authorSnapshot}) = 'object'`),
-  check('inspiration_cases_parameter_visibility_check',sql`${table.parameterVisibility} in ('public','prompt_hidden','hidden') and (${table.promptVisibility}='hidden')=(${table.parameterVisibility}<>'public')`),
-  check('inspiration_cases_view_count_check',sql`${table.viewCount}>=0`),check('inspiration_cases_use_count_check',sql`${table.useCount}>=0`),
-  check('inspiration_cases_prompt_visibility_check',sql`${table.promptVisibility} in ('public','hidden')`),
-  check('inspiration_cases_comparison_mode_check',sql`${table.comparisonMode} in ('side_by_side','hover')`),
-]);
-export const inspirationLikes = pgTable("inspiration_likes", {
-  caseId: uuid("case_id").notNull().references(() => inspirationCases.id),
-  ownerId: uuid("owner_id").notNull().references(() => users.id),
-  createdAt: timestamp("created_at",{withTimezone:true}).notNull().defaultNow(),
-},table=>[primaryKey({columns:[table.caseId,table.ownerId]})]);
-export const inspirationGenerationPrompts = pgTable('inspiration_generation_prompts',{
-  jobId:uuid('job_id').primaryKey().references(()=>generationJobs.id),
-  caseId:uuid('case_id').notNull().references(()=>inspirationCases.id),
-  effectivePrompt:text('effective_prompt').notNull(),
-  parametersHidden:boolean('parameters_hidden').notNull().default(false),
-},table=>[check('inspiration_generation_prompts_effective_prompt_check',sql`char_length(${table.effectivePrompt}) between 1 and 8001`)]);
-export const inspirationEvents = pgTable("inspiration_events", {
-  id: uuid("id").primaryKey(),
-  caseId: uuid("case_id").notNull().references(() => inspirationCases.id),
-  actorOwnerId: uuid("actor_owner_id").notNull().references(() => users.id),
-  action: text("action").notNull(),
-  createdAt: timestamp("created_at",{withTimezone:true}).notNull().defaultNow(),
-},table=>[check("inspiration_events_action_check",sql`${table.action} in ('publish','withdraw','owner_remove')`)]);
-
 export const personalProfiles = pgTable("personal_profiles", {
   ownerId: uuid("owner_id").primaryKey().references(() => users.id),
   displayName: text("display_name").notNull(),
@@ -2422,10 +2375,6 @@ export const generationQueueOutbox = pgTable(
       .where(sql`${table.dispatchedAt} is null`),
   ],
 );
-
-export const inspirationInteractions=pgTable('inspiration_interactions',{
-  caseId:uuid('case_id').notNull().references(()=>inspirationCases.id),ownerId:uuid('owner_id').notNull().references(()=>users.id),action:text('action').notNull(),interactionId:uuid('interaction_id').notNull(),createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),
-},t=>[primaryKey({columns:[t.caseId,t.ownerId,t.action,t.interactionId]}),check('inspiration_interactions_action_check',sql`${t.action} in ('view','use')`)]);
 
 export const jcoinTreasury=pgTable('jcoin_treasury',{
   symbol:text('symbol').primaryKey(),supplyAtoms:bigint('supply_atoms',{mode:'bigint'}).notNull(),userPoolAtoms:bigint('user_pool_atoms',{mode:'bigint'}).notNull(),assignedAtoms:bigint('assigned_atoms',{mode:'bigint'}).notNull(),issuedAtoms:bigint('issued_atoms',{mode:'bigint'}).notNull().default(BigInt(0)),recoveredAtoms:bigint('recovered_atoms',{mode:'bigint'}).notNull().default(BigInt(0)),updatedAt:timestamp('updated_at',{withTimezone:true}).notNull().defaultNow(),

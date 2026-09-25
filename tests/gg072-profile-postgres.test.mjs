@@ -17,7 +17,6 @@ test('GG-072 disposable SQL profile persistence, unique handles, versions and ow
    CREATE TABLE workspaces(id uuid PRIMARY KEY,kind text,name text,status text,personal_owner_id uuid);
    CREATE TABLE workspace_memberships(id uuid,workspace_id uuid,owner_id uuid,role text,status text);
    CREATE TABLE reference_assets(id uuid PRIMARY KEY,owner_id uuid,creator_owner_id uuid,workspace_id uuid,upload_state text,moderation_state text,object_key text,object_deleted_at timestamptz,cleanup_lease_owner uuid,cleanup_lease_expires_at timestamptz,cleanup_eligible_at timestamptz,expires_at timestamptz,error_code text);
-   CREATE TABLE inspiration_cases(before_reference_id uuid,author_snapshot jsonb,deleted_at timestamptz);
    CREATE TABLE generation_batches(owner_id uuid,reference_snapshot jsonb);
    CREATE TABLE projects(owner_id uuid,reference_snapshot jsonb);
    CREATE TABLE creation_drafts(owner_id uuid,reference_snapshot jsonb,expires_at timestamptz);`);
@@ -35,6 +34,10 @@ test('GG-072 disposable SQL profile persistence, unique handles, versions and ow
   assert.equal((await readPersonalProfile({ownerContext,resources})).displayName,'Jony');assert.equal((await readPersonalProfile({ownerContext:{ownerId:id(2)},resources})).handle,null);
   await assert.rejects(readPersonalProfile({ownerContext:{ownerId:id(3)},resources}),error=>error.status===403);
   // Even an expired avatar stays protected in the shared cleanup projection.
+  // GG-117 removed the inspiration_cases disjunct from HAS_PERSISTED_REFERENCE,
+  // so personal_profiles.avatar_reference_id is now the sole source of this
+  // protected count: dropping that clause fails here loudly instead of leaving
+  // an expired avatar silently eligible for cleanup.
   await pool.query(`UPDATE reference_assets SET upload_state='expired',expires_at=now()-interval '1 day' WHERE id=$1`,[id(10)]);
   const cleanup=await inspectReferenceCleanup(pool,{now:new Date()});assert.equal(cleanup.protected,1);assert.equal(cleanup.eligibleToStage,0);
   assert.equal((await updatePersonalProfile({ownerContext,input:{...input,version:2,avatarReferenceId:null},resources})).version,3);

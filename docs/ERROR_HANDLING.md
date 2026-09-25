@@ -24,22 +24,6 @@ GG-084个人/站长边界复用登录失效401；未启用或非站长403 JCOIN_
 
 GG-081未知类型/非法数量返回400；未确认充值返回ADMIN_PAYMENT_CONFIRMATION_REQUIRED，凭证内容不合规则ADMIN_REQUEST_INVALID；重复凭证返回ADMIN_PAYMENT_RECEIPT_CONFLICT（409），价目冲突ADMIN_PAYMENT_PRODUCT_CONFLICT（409），同键不同操作ADMIN_IDEMPOTENCY_CONFLICT（409）。身份/CSRF在入账前拒绝，事务失败回滚订单/账本/审计。表单保留编辑并重用相同内容键；历史峰值缺时间为null/暂无统计，不伪造为零。
 
-GG-075: unchecked publication confirmation produces an accessible inline alert beside the checkbox, retains edits and sends no publish request. Required title/preset whitespace is rejected explicitly. No available original reference is an explained state rather than hidden controls. Backend consent/ownership checks remain unchanged.
-
-GG-074 missing/removed/non-hidden preset rejects new submissions before reserve.
-Insufficient balance, unavailable model/line, stale price or unready references
-use existing billing/generation errors. Idempotent replay returns the accepted
-job; failed-job retry retains private input. Preset provider failures never expose
-provider error text that might echo hidden content. Editor publish errors retain
-all fields; list/recipe/library read errors offer retry.
-
-GG-073 separates directory/detail loading, empty/error/retry and action errors.
-Consent/input/source/before failures retain publish fields; withdrawn or hidden
-cases return404, forbidden removal403 and removed-source republish403. Like
-failures preserve prior state. Recipes with unavailable domain options return409.
-Unknown errors return safe503 without SQL/provider/storage secrets. Use does not
-submit generation; current pricing/provider failures remain in creator recovery.
-
 GG-072 has independent profile/works loading, empty, error and retry states.
 PROFILE_INVALID/PROFILE_AVATAR_INVALID preserve edits; PROFILE_HANDLE_TAKEN409
 asks for a different handle; PROFILE_CONFLICT409 offers reload before editing.

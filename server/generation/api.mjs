@@ -1,6 +1,4 @@
-import {readPresetParameters,presetGenerationInput} from '../inspiration/private-parameters.mjs';
 import { AdministrationError } from "../admin/errors.mjs";
-import { frozenPresetForJob } from '../inspiration/preset.mjs';
 import { AuthenticationError, sessionExpiredError } from "../auth/errors.mjs";
 import { parsePromptBatch } from "../../shared/contracts/prompt-batch.mjs";
 import { BillingPersistenceError } from "../billing/repository.mjs";
@@ -136,16 +134,10 @@ export async function submitGeneration({
   input,
   ownerContext,
   workspaceId = DEFAULT_WORKSPACE_ID,
-  presetCaseId = null,
 }) {
   const resources = await getGenerationResources();
   const ownerId = ownerIdFromContext(ownerContext);
-  if(presetCaseId!==null&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(presetCaseId)) throw new GenerationRequestError('INSPIRATION_NOT_FOUND','案例标识无效。',404);
-  const supplement=presetCaseId?(typeof input?.prompt==='string'?input.prompt.trim():null):null;
-  if(presetCaseId&&(supplement===null||supplement.length>4000||input.projectId||input.composerPrompt)) throw new GenerationRequestError('INVALID_PROMPT','补充提示词最多 4000 个字符。');
-  const preset=presetCaseId?await readPresetParameters(resources.pool,presetCaseId,{ownerId,idempotencyKey:validateIdempotencyKey(idempotencyKey)}):null;
-  const submittedInput=presetCaseId?{...presetGenerationInput(preset,input),prompt:supplement||'预设'}:input;
-  const validatedInput = validateM3GenerationInput(submittedInput);
+  const validatedInput = validateM3GenerationInput(input);
   if (
     validatedInput.projectId &&
     !(await findProject(resources.pool, {
@@ -169,7 +161,6 @@ export async function submitGeneration({
     );
   }
   const result = await createGenerationJob(resources.pool, {
-    presetCaseId,presetSupplement:supplement,presetParametersHidden:preset?.hidden??false,
     idempotencyKey: validateIdempotencyKey(idempotencyKey),
     input: {
       ...validatedInput,
@@ -232,9 +223,7 @@ export async function retryGeneration({
   if (!source) {
     throw new GenerationRequestError("GENERATION_NOT_FOUND", "未找到该生成任务。", 404);
   }
-  const frozenPreset=await frozenPresetForJob(resources.pool,jobId);
   const result = await createGenerationJob(resources.pool, {
-    frozenPreset,
     idempotencyKey: validateIdempotencyKey(idempotencyKey),
     input: persistedGenerationInputFromRow(source),
     ownerId: ownerIdFromContext(ownerContext),

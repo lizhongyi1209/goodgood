@@ -40,7 +40,8 @@
 - `app/page.tsx`：传入删除回调；删除成功后从 `assetBatches` 派生数据移除该图，
   并刷新资产库。
 - `server/assets/api.mjs`：新增 `deleteGeneratedAsset`；按 owner/workspace 限权，
-  事务内先删组织行再删资产行，提交后删存储对象；已有未删除灵感案例时返回 409。
+  事务内先删组织行再删资产行，提交后删存储对象。当时的「已有未删除灵感案例时返回 409」
+  已由 GG-117（ADR 0104）随灵感表删除一并移除。
 - `server/assets/node-api.mjs`、`app/api/assets/[assetId]/route.ts`：暴露
   `DELETE /api/assets/{assetId}`。
 - `features/assets/http-asset-boundary.ts`：新增 `deleteAsset`。
@@ -51,9 +52,10 @@
   `image-download`、`m5-private-asset-image` 共 22/22 通过，含新增的删除用例。
 - `npm run check:local`：593 项、**567 通过 / 26 隔离跳过 / 0 失败**；lint 16 条
   已有 warning、0 error；typecheck 通过。
-- 新增测试覆盖：owner/workspace 越权被拒、已发布灵感案例返回 409 且不删字节、
+- 新增测试覆盖：owner/workspace 越权被拒、
   组织行先于资产行删除且在同一事务、对象删除在 COMMIT 之后、事务计数
-  （2 次 BEGIN / 1 次 ROLLBACK / 1 次 COMMIT）。
+  （2 次 BEGIN / 1 次 ROLLBACK / 1 次 COMMIT）。「已发布灵感案例返回 409 且不删字节」
+  一条已由 GG-117 连同 409 检查一起删除。
 - 文档测试要求 ADR 索引与 100 行 BACKLOG 上限，已同步；为此合并了 BACKLOG 中
   GG-001/002 与 GG-116/117 两行。
 - 尚未在浏览器验收：本地 5173/32131 仍运行 GG-115 检查点，需要重建检查点后才能看

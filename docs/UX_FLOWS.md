@@ -26,24 +26,12 @@ GG-084个人平台币页从桌面左下或手机账户菜单进入，保持当�
 
 GG-081站长入口进入/admin/operations，既有管理深链接保留。增加积分弹窗默认测试，下拉六类；充值才显示凭证及已收款确认，数量或凭证修改后重新确认，充值赠品另记赠送。失败保留编辑与同内容幂等键，成功关闭并刷新余额/审计。看板展示现金充值金额/笔数/人数/积分、当前生成并发、排队、每日峰值；缺历史显示暂无统计，刷新更新时间戳，提交数量不再作为指标。
 
-GG-076 hover cases preview on board cards and details. Show full processed output at rest; enter/move reveals before with pointer-following seam, leave restores output. Detail/editor range supports keyboard/touch; board cover stays one case-opening button without nested inputs.
-
-GG-075: editor always shows 效果对比. Select an available original reference as 变化前, with the generated output as 效果图; choose 左右并排 or 鼠标划过 and preview immediately. No reference explains effect-only output. Submit remains clickable before consent, announces the missing confirmation inline and focuses the checkbox; checking clears the message. No request is sent until consent and required fields are valid.
-
-GG-074 image-detail 发布灵感案例 opens a dedicated editing page, not a Sheet.
-Edit title/description/prompt, visibility, selected before image and comparison;
-review/consent precede publication. Public cases load editable creation. Hidden
-cases open reproduction with empty optional supplement, own uploads/library and
-current quote. Empty supplement is valid; failed submissions retain input/results
-and offer retry. Original creative draft stays independent. No automatic submit.
-
-GG-073: own image detail → share preview → title/optional notes/before choice →
-explicit consent → publish. Inspiration card opens before/after/detail and likes.
-Use starts personal creation with prompt/parameters, count1, no original reference
-IDs/signatures/project/history price. Unsaved edits require confirmation and active
-jobs block switching. Replace personal references and confirm current settings/
-price manually before generation. Unavailable original models are explicit.
-Author withdraw and owner removal require confirmation; originals/billing remain.
+GG-117 removed the case-publish/reuse/preview flows that GG-073 through GG-077
+defined: the board entry, the dedicated case editor, the 发布灵感案例 control on
+image detail, hover previews, comparison settings, likes and the view/use
+statistics are gone, and no route replaces them. The flows below are retained as
+a record of the retired design. See
+[ADR 0104](decisions/0104-inspiration-feature-retirement.md).
 
 GG-072: account menu → personal profile in the same shell, leaving the composer
 intact. Mobile avatar opens an account menu with profile and logout. Edit name/handle/avatar, save or cancel;
@@ -700,8 +688,5 @@ access and all server authorization remain unchanged (ADR 0067).
 - Inline error panel: durable job failure with recovery actions.
 - Asset navigation cue: completed assets arrived; clear when assets is opened.
 
-GG-077：编辑页三档参数可见性实时预览。完全隐藏复刻仅提供自己的参考图、可选补充与积分报价，移除参数入口。大厅打开成功记查看，载入成功记使用；同一动作的重发和预设页初始化去重。
-
-GG-078：灵感卡片统计与署名同一行，查看/使用只显示图标和数字；大厅与详情不再提供点赞按钮，计数语义保持。
-
-GG-079：大厅与详情恢复点赞/取消入口，沿用既有幂等后端；点赞、查看、使用图标数字在同一行。详情效果与对比在各自内容区域水平居中。
+GG-077、GG-078、GG-079 描述的参数可见性档位、大厅查看/使用去重统计与点赞规则已随灵感板块整体下线移除，
+不再有对应页面或端点；见 [ADR 0104](decisions/0104-inspiration-feature-retirement.md)。

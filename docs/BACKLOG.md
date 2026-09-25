@@ -4,7 +4,7 @@
 
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
-| GG-116·117 | 生成历史纯图片网格与卡片下载/删除/放大；灵感板块整体下线并删表 | GG-116 实现中；GG-117 待做，破坏性迁移需单独授权 | [GG116](tasks/GG-116-asset-history-actions.md) / [ADR](decisions/0103-generated-asset-hard-delete.md) · [GG117](tasks/GG-117-inspiration-retirement.md) |
+| GG-116·117 | 生成历史纯图片网格与卡片下载/删除/放大；灵感板块整体下线并删表 | GG-116 本地实现/门禁完成，待浏览器验收；GG-117 文档与代码移除已在工作树完成，破坏性删除迁移待授权 | [GG116](tasks/GG-116-asset-history-actions.md) / [ADR](decisions/0103-generated-asset-hard-delete.md) · [GG117](tasks/GG-117-inspiration-retirement.md) / [ADR](decisions/0104-inspiration-feature-retirement.md) |
 | GG-115 | 生成记录、个人资产库、文件夹与 20 MB 上传 | 本地门禁 566/26/0、迁移 0046、检查点与 5173/32131 HTTP 已验证；站长确认默认历史、个人库及测试图上传刷新预览，未部署 | [任务](tasks/GG-115-asset-workspace.md) / [ADR](decisions/0102-asset-history-library-and-upload.md) |
 | GG-114 | 私有缩略图共用接口与后续画布复用规范 | 本地代码/门禁 564/26/0、5173/32131 HTTP 通过；未部署 | [任务](tasks/GG-114-reusable-image-delivery.md) / [ADR](decisions/0101-private-card-image-previews.md) |
 | GG-113 | 资产库图片卡片与选择器使用私有 WebP 缩略图 | 本地代码/门禁 563/26/0、真实只读转换与 5173/32131 HTTP 通过；待站长页面复核，未部署 | [任务](tasks/GG-113-private-image-previews.md) / [ADR](decisions/0101-private-card-image-previews.md) |
@@ -92,7 +92,7 @@
 | GG-037—039 | 图片/视频混排、Seedance 图标、视频数量与并发 | 布局与图标已确认；数量/并发本地验证，未真实并发实测/发布 | [GG037](tasks/GG-037-mixed-media-style-preview.md) · [GG038](tasks/GG-038-seedance-brand-icon.md) · [GG039](tasks/GG-039-video-count-concurrency.md) |
 | GG-040—041 | 图片/视频 `---` 批量提示词与数量乘积并发、去重说明 | 本地门禁与 Chrome 验证通过，待用户检查；未真实批量实测/发布 | [GG040](tasks/GG-040-batch-prompts.md) · [GG041](tasks/GG-041-remove-batch-prompt-summary.md) |
 | GG-042—GG-062 | 抽屉/缩略图/站长导航/审计/GPT线路等 | 均已随 GG-097 上线 | [GG042](tasks/GG-042-parameter-drawer-overlay.md) · [GG043](tasks/GG-043-larger-reference-previews.md) · [GG059](tasks/GG-059-site-owner-workspace.md) · [GG060](tasks/GG-060-management-heading-hierarchy.md) · [GG061](tasks/GG-061-audit-log-section.md) · [GG062](tasks/GG-062-gpt-image-lines.md) |
-## 已明确搁置（不得自动恢复） · 最后同步2026-09-25；GG-024—117已占用，下一个需求从GG-118分配
+## 已明确搁置（不得自动恢复） · 最后同步2026-09-25；GG-024—118已占用，下一个需求从GG-119分配
 | ID | 事项 | 恢复条件 | 入口 |
 | --- | --- | --- | --- |
 | GG-900 | C6 自动账户删除/身份删除/举报与内容处理 | 站长明确要求并重审生产差异 | [保全与恢复](tasks/GG-900-deferred-c6.md) |

@@ -1,5 +1,6 @@
 # GG-077 — 灵感参数可见性与查看/使用统计
 
+- 已退役：2026-09-25，由 [GG-117](GG-117-inspiration-retirement.md) / [ADR 0104](../decisions/0104-inspiration-feature-retirement.md) 整体下线；本卡仅作历史记录。
 - 请求：三档参数可见性；大厅查看数和使用数。
 - 分支：feature/GG-077-inspiration-visibility-statistics；F:/goodgood-worktrees/GG-077。
 - 基线：核验 main bab17fd，FF 接续用户已验收累计 GG-076 371b001；不引入 C6。

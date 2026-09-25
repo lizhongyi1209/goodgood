@@ -52,7 +52,7 @@ test("GG-115 organization lists empty state and keeps generated object identity 
   };
   const resourcesOverride = { pool };
   assert.deepEqual(await listAssetOrganization({ ownerContext: owner, resourcesOverride }), { folders: [], arrangements: [] });
-  const folder = (await createAssetFolder({ input: { name: "灵感" }, ownerContext: owner, resourcesOverride })).folder;
+  const folder = (await createAssetFolder({ input: { name: "人物" }, ownerContext: owner, resourcesOverride })).folder;
   const placed = await saveAssetOrganization({ kind: "generated", assetId, input: { folderId: folder.id, tags: ["人物"] },
     ownerContext: owner, resourcesOverride });
   assert.deepEqual(placed, { kind: "generated", id: assetId, folderId: folder.id, tags: ["人物"] });

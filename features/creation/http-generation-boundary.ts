@@ -36,7 +36,7 @@ const createIdempotencyKey = () =>
 
 function generationRequestPayload(input: GenerationInputSnapshot) {
   return {
-    ...(input.parametersHidden?{prompt:input.prompt,expectedPriceVersion:input.expectedPriceVersion}:input),
+    ...input,
     references: input.references.map((reference) => ({ id: reference.id })),
   };
 }
@@ -138,7 +138,6 @@ async function postAndPoll({
       headers: {
         "content-type": "application/json",
         "idempotency-key": createIdempotencyKey(),
-        ...(endpoint.startsWith('/api/inspiration/') ? {'x-goodgood-inspiration-action':'1'} : {}),
         ...workspaceRequestHeaders(workspaceId),
       },
       method: "POST",
@@ -159,7 +158,6 @@ async function postAndPoll({
 
 export function createHttpGenerationBoundary(
   workspaceId: string | null = null,
-  presetCaseId?: string,
 ): HttpGenerationBoundary {
   return Object.freeze({
     retry(failedJob, observer) {
@@ -173,7 +171,7 @@ export function createHttpGenerationBoundary(
     service: {
       submit(input, observer) {
         return postAndPoll({
-          endpoint: presetCaseId ? `/api/inspiration/${encodeURIComponent(presetCaseId)}/generate` : "/api/generations",
+          endpoint: "/api/generations",
           input,
           observer,
           workspaceId,

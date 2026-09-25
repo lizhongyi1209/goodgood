@@ -1,8 +1,12 @@
 # ADR 0076: Shareable image effect cases
 
-- Status: Accepted
+- Status: Retired by ADR 0104 (2026-09-25)
 - Task: GG-073
 - Date: 2026-09-14
+
+ADR 0104 retires this decision: the inspiration board was removed outright and
+its five tables dropped. The sections below remain an immutable record of the
+earlier decision; they are not a description of the current product.
 
 ## Context
 

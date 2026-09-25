@@ -1,5 +1,6 @@
 # GG-079 — 恢复点赞与详情图片居中
 
+- 已退役：2026-09-25，由 [GG-117](GG-117-inspiration-retirement.md) / [ADR 0104](../decisions/0104-inspiration-feature-retirement.md) 整体下线；本卡仅作历史记录。
 - 请求：点赞保留；灵感详情图片水平居中。
 - 基线：main bab17fd，FF接续 GG07824a1711；fix/GG-079-inspiration-likes-centered-detail，F:/goodgood-worktrees/GG-079。
 - 决策：ADR0078 按用户澄清恢复点赞；统计三项图标数字并排，保留无障碍名称。仅调整详情图片居中，不改变对比模式。

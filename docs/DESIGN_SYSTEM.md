@@ -28,20 +28,13 @@ GG-084沿用轻量个人工作区与站长功能栏，Palace Red突出自己的�
 
 GG-081继续使用同一admin-action-dialog及Radix Select/Checkbox：积分类型有显式label，默认测试，充值动态展开凭证与收款确认；不增加独立支付页。看板延续operations-metrics/可横向滚动日表，趋势按钮支持键盘及aria-pressed。现金带¥，峰值缺失显示暂无统计及—，排队与当前并发分开。
 
-GG-076 hover cases preview on board cards and details. Show full processed output at rest; enter/move reveals before with pointer-following seam, leave restores output. Detail/editor range supports keyboard/touch; board cover stays one case-opening button without nested inputs.
-
-GG-075 uses the same LayoutGrid icon for inspiration navigation and image-detail publication. Effect comparison is a visible labelled section, with selectable original-reference thumbnails, an effect-only option and explicit empty state. Modes remain visible when unavailable.
-
-GG-074 case editor uses the creator shell with a quiet heading, left editing
-fields and right live image/settings preview; one column below900px. Public/hidden
-and comparison radios have plain explanations. Pointer wipe preserves decoded
-aspect ratio and contained images, with a visible seam and touch/keyboard range.
-Hidden reproduction clearly separates preset badge from optional supplement.
-
-GG-073: quiet inspiration heading/search, responsive image cards with original
-ratio, author and like action. 720px right Sheet shows contained before/after,
-prompt, original settings and one recipe-use action; mobile full width.
-Publish preview and removal confirmation reuse Sheet/Checkbox/AlertDialog.
+GG-117 removed the inspiration surface entirely, so its visual entries no longer
+apply: the shared LayoutGrid navigation icon and image-detail publication control,
+the quiet board heading/search and 720px case Sheet, the case editor shell, the
+hover preview seam, and the centered detail images are all gone with the feature.
+See [ADR 0104](decisions/0104-inspiration-feature-retirement.md). The
+canvas/soft/ink/muted/line/Palace Red tokens those views reused are shared and
+stay in use.
 
 GG-072 uses a quiet profile identity row (circular centered avatar, name, muted
 @handle, one edit button) above responsive image works preserving their ratios.
@@ -464,6 +457,4 @@ and error-body recovery actions retain their current semantics and focus behavio
 - No decorative constant movement. Respect `prefers-reduced-motion` for every
   new animation.
 
-GG-077：参数可见性使用同一单选组的三档选项。大厅卡片署名右侧用轻量 Eye/Sparkles 图标与数字并排显示查看/使用数（GG-078），不显示中文统计解释；GG-079恢复点赞图标数字到相同行，保持效果图为主体；隐藏参数详情用一句预设说明代替参数列表。
-
-GG-079：灵感详情图片/划过比较框使用水平居中；左右比较的每一张图在各自列内居中，保持contain和比例，不影响大厅卡片。
+GG-077、GG-079 的灵感参数可见性单选组、大厅查看/使用/点赞图标数字行、隐藏参数说明与详情居中规则随灵感板块整体下线一并移除，不再有对应界面；见 [ADR 0104](decisions/0104-inspiration-feature-retirement.md)。

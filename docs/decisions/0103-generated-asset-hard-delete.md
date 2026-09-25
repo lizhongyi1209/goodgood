@@ -3,7 +3,7 @@
 - Status: Accepted for GG-116 local implementation
 - Date: 2026-09-25
 - Task: GG-116
-- Relates to: ADR 0102 (asset history grouped by date), ADR 0073 (inspiration cases)
+- Relates to: ADR 0102 (asset history grouped by date), ADR 0076 (inspiration cases), ADR 0104 (inspiration retirement)
 
 ## Context
 
@@ -16,8 +16,8 @@ Enlarge reuses the existing focused image detail view. Download reuses
 `saveImageToLocal`. Delete has no prior implementation: `server/assets/api.mjs`
 exposed only `listAssets`, `getAssetDownloadUrl`, and `readAssetPreview`, and the
 `assets` table carries three `ON DELETE RESTRICT` inbound foreign keys
-(`owner_id`, `batch_id`, `job_id`) plus `inspiration_cases.source_asset_id`.
-The operator chose hard delete and per-image granularity.
+(`owner_id`, `batch_id`, `job_id`); `inspiration_cases.source_asset_id` was a
+fourth at the time. The operator chose hard delete and per-image granularity.
 
 ## Decision
 
@@ -36,19 +36,25 @@ The operator chose hard delete and per-image granularity.
   image therefore does not refund credits, and a batch may show fewer surviving
   outputs than its recorded `count`. This is accepted: the action means "delete
   this image", not "delete this generation".
-- `inspiration_cases.source_asset_id` references `assets(id)` with no cascade and
-  soft-deletes rows rather than removing them, so a published case genuinely
-  blocks the row delete. The API detects this and returns HTTP 409 with a
+- `inspiration_cases.source_asset_id` referenced `assets(id)` with no cascade and
+  soft-deleted rows rather than removing them, so a published case genuinely
+  blocked the row delete. The API detected this and returned HTTP 409 with a
   message telling the operator to remove the case first. It never silently
-  deletes published content, and it never removes the asset while leaving the
-  case dangling.
+  deleted published content, and it never removed the asset while leaving the
+  case dangling. **Retired by ADR 0104**: the feature and all five inspiration
+  tables were dropped, so no publication can block a delete any more. The
+  `ASSET_PUBLISHED` probe and its test were removed in the same change as the
+  table drop; deletion now proceeds directly to the organization and asset rows.
 - Authorization reuses the existing owner/workspace resolution. The delete
   lookup mirrors `findOwnerAsset`'s ownership and workspace predicates but does
   not require `j.state = 'succeeded'` or `a.moderation_state = 'accepted'`, so a
   rejected or otherwise unlisted output the operator can still see in history
   remains deletable.
-- Retiring the inspiration feature and dropping its tables is a separate,
-  destructive task and is not part of this decision.
+- Retiring the inspiration feature and dropping its tables was originally
+  deferred as a separate, destructive task. It has since been executed under
+  ADR 0104 / GG-117, which removes the `ASSET_PUBLISHED` behavior recorded
+  above; see that decision for the five dropped tables and the child-first
+  order.
 
 ## Consequences
 
@@ -59,6 +65,7 @@ return the batch and the gallery shows the remaining outputs; the UI must
 therefore remove the deleted image from client state and re-read the library
 rather than assume the batch disappears.
 
-`inspiration_cases` currently prevents deleting any asset that was published as
-a case. Until the inspiration feature is retired, that returns a 409 rather than
-succeeding.
+`inspiration_cases` used to prevent deleting any asset that was published as a
+case, returning a 409 rather than succeeding. ADR 0104 removed that feature and
+its tables, and the check went with them, so deletion is now never blocked by a
+publication. The conflict error code no longer exists in `server/assets/api.mjs`.

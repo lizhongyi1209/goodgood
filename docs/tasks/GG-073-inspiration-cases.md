@@ -1,5 +1,6 @@
 # GG-073: 灵感板可复用案例
 
+- Retired: 2026-09-25 by [GG-117](GG-117-inspiration-retirement.md) / [ADR 0104](../decisions/0104-inspiration-feature-retirement.md); historical record only.
 - Status: Implemented and locally verified; not deployed
 - Branch: feature/GG-073-inspiration-cases
 - Worktree: F:/goodgood-worktrees/GG-073

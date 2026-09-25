@@ -120,21 +120,6 @@ export async function deleteGeneratedAsset({
   const client = await resources.pool.connect();
   try {
     await client.query("BEGIN");
-    // inspiration_cases.source_asset_id references assets(id) without a cascade
-    // and soft-deletes rows, so a published case blocks the delete outright.
-    const published = await client.query(
-      `SELECT id FROM inspiration_cases
-        WHERE owner_id = $1 AND source_asset_id = $2 AND deleted_at IS NULL
-        LIMIT 1`,
-      [ownerId, assetId],
-    );
-    if (published.rows[0]) {
-      throw new AssetRequestError(
-        "ASSET_PUBLISHED",
-        "这张图片已发布为灵感案例，请先删除对应案例再删除图片。",
-        409,
-      );
-    }
     // asset_organization has no foreign key to assets, so it would silently
     // keep orphaned folder membership and tags.
     await client.query(

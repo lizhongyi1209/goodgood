@@ -5,7 +5,6 @@ import { createAssetNodeApiHandler } from "../assets/node-api.mjs";
 import { createAudioMaterialNodeApiHandler } from "../audio-materials/node-api.mjs";
 import { createAssetOrganizationNodeApiHandler } from "../assets/organization-node-api.mjs";
 import { createProfileNodeApiHandler } from "../profile/node-api.mjs";
-import { createInspirationNodeApiHandler } from "../inspiration/node-api.mjs";
 import { createAdminNodeApiHandler } from "../admin/node-api.mjs";
 import { createBillingNodeApiHandler } from "../billing/node-api.mjs";
 import { createJcoinNodeApiHandler } from '../jcoin/node-api.mjs';
@@ -86,7 +85,6 @@ const handleAssetNodeApi = createAssetNodeApiHandler({ authenticate });
 const handleAudioMaterialNodeApi = createAudioMaterialNodeApiHandler({ authenticate });
 const handleAssetOrganizationNodeApi = createAssetOrganizationNodeApiHandler({ authenticate });
 const handleProfileNodeApi = createProfileNodeApiHandler({ authenticate });
-const handleInspirationNodeApi = createInspirationNodeApiHandler({ authenticate });
 const handleBillingNodeApi = createBillingNodeApiHandler({ authenticate });
 const handleReferenceNodeApi = createReferenceNodeApiHandler({ authenticate });
 const handleVideoMaterialNodeApi = createVideoMaterialNodeApiHandler({ authenticate });
@@ -139,7 +137,6 @@ server.on("request", (request, response) => {
     )
     .then((handled) => handled ? true : handleAssetOrganizationNodeApi(request, response))
     .then((handled) => handled ? true : handleProfileNodeApi(request, response))
-    .then((handled) => handled ? true : handleInspirationNodeApi(request, response))
     .then((handled) =>
       handled ? true : handleOrganizationNodeApi(request, response),
     )

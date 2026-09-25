@@ -1,5 +1,6 @@
 # GG-075: 灵感发布图标、效果对比与确认反馈
 
+- Retired: 2026-09-25 by [GG-117](GG-117-inspiration-retirement.md) / [ADR 0104](../decisions/0104-inspiration-feature-retirement.md); historical record only.
 - Status: Implemented and verified locally; not deployed
 - Branch: fix/GG-075-inspiration-publish-controls
 - Worktree: F:/goodgood-worktrees/GG-075

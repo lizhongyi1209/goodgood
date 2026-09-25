@@ -24,9 +24,9 @@
 
 - `0079-jcoin-reward-planning.md` — proposed JCOIN consumption-reward design for GG-080; confirmed name/supply/user-pool separated from unapproved allocation rates, utility and issuance.
 
-- `0077-inspiration-editor-private-presets.md` — dedicated case editor, prompt visibility, server-only preset reproduction and pointer-wipe comparison for GG-074.
+- `0077-inspiration-editor-private-presets.md` — dedicated case editor, prompt visibility, server-only preset reproduction and pointer-wipe comparison for GG-074; historical, retired by ADR 0104.
 
-- `0076-shareable-inspiration-cases.md` — explicit personal effect publication, immutable before/after and parameters, reuse, likes and owner withdrawal for GG-073.
+- `0076-shareable-inspiration-cases.md` — explicit personal effect publication, immutable before/after and parameters, reuse, likes and owner withdrawal for GG-073; historical, retired by ADR 0104.
 
 - `0075-private-personal-profile.md` — private own profile, unique handle, validated avatar and personal image works for GG-072.
 
@@ -44,7 +44,10 @@
 Use an ADR when a change affects product vocabulary, a confirmed UX invariant,
 data ownership, provider boundaries, security, routes, or deployment topology.
 
-Status values: `Proposed`, `Accepted`, `Superseded`, `Rejected`.
+Status values: `Proposed`, `Accepted`, `Superseded`, `Retired`, `Rejected`.
+`Retired` marks a decision whose feature was removed outright rather than
+replaced; record it as `Retired by ADR NNNN (date)` and leave the original text
+intact.
 
 Each ADR contains context, decision, consequences, and the superseding ADR when
 applicable. Never rewrite an accepted historical ADR to make a later choice look
@@ -140,7 +143,7 @@ ADR 0053 adds standalone-delimited concurrent prompt batches for GG-040.
 
 - `0068-gpt-image-provider-lines.md` ? GPT image three-line routing, independent pricing and preserved legacy accepted routes for GG-062.
 
-- `0078-inspiration-visibility-and-statistics.md` — three visibility modes, fixed private parameters and durable deduplicated case statistics for GG-077.
+- `0078-inspiration-visibility-and-statistics.md` — three visibility modes, fixed private parameters and durable deduplicated case statistics for GG-077; historical, retired by ADR 0104.
 
 - `0086-invitation-email-registration.md` — 邮箱与邀请码共同注册，替代新账户待审核入口。
 
@@ -154,3 +157,4 @@ ADR 0053 adds standalone-delimited concurrent prompt batches for GG-040.
 - `0101-private-card-image-previews.md` — owner-scoped 512 px WebP cards and pickers, OSS signed processing for local cloud references, and original-only focused views/downloads.
 - `0102-asset-history-library-and-upload.md` — separate generated history and automatic personal-library views, private folders/audio, and 20 MiB new uploads.
 - `0103-generated-asset-hard-delete.md` — caption-free newest-first history grid, hard delete of one generated asset with organization cleanup, retained job/batch and credits, and a published-case conflict.
+- `0104-inspiration-feature-retirement.md` — 灵感板块整体下线：五个灵感表按子表优先顺序删除、案例数据直接丢弃不迁移、`ASSET_PUBLISHED` 检查与测试同批移除；0076/0077/0078 由此退役，生产执行需单独授权。

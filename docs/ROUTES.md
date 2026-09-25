@@ -28,17 +28,12 @@ GG-084新增个人`/jcoin`，桌面左下平台币入口、手机账户菜单“
 
 GG-081本地新增POST /api/admin/users/:ownerId/credit-grants，活动site_owner及x-goodgood-admin-action=1/Idempotency-Key必需。amount为1—5000整数，creditGrantType为共享英文枚举，reason为2—200字符；paid_recharge另需paymentConfirmed=true及8—200字符receiptReference。其他类型不收凭证，旧test-credit-grants兼容接口仍只测试赠送。站长默认/admin/operations；运营dashboard返回concurrent/queued/measuredAt及daily peak与recharge*，移除jobs/pending旧指标。
 
-GG-074 adds same-shell /inspiration/edit/:assetId and /inspiration/use/:caseId.
-Neither URL includes prompts. POST /api/inspiration/:id/generate is personal-only,
-authenticated active, action-header/idempotency guarded and normal quote/billing
-protected. Publish/generate bodies allow32KiB for edited Chinese prompts; other
-case POSTs retain8KiB. Hidden detail/use DTOs contain no original prompt.
+GG-074 的 `/inspiration/edit/:assetId`、`/inspiration/use/:caseId` 与
+`POST /api/inspiration/:id/generate` 已随灵感板块整体下线移除（ADR 0104）。
 
-GG-073 implements `/inspiration`, entered from sidebar or mobile bar. Private
-GET `/api/inspiration` lists first20; POST `/list` accepts search/keyset cursor,
-POST `/prepare` reviews own asset and POST base publishes selected content.
-GET `/:id` detail; POST `/:id/{like,use,withdraw}` enforce authenticated active
-users, desired like state, action header and bounded inputs. No public route.
+GG-073 的 `/inspiration` 入口与 `GET /api/inspiration`、`POST /list`、`POST /prepare`、
+`POST` 基础路径、`GET /:id`、`POST /:id/{like,use,withdraw}` 已随灵感板块整体下线移除
+（ADR 0104）；不存在兼容路由或重定向。
 
 GG-072 adds private `/profile` inside the creator shell and owner-bound
 GET/PATCH `/api/profile`. No `/@handle` or public lookup. Image detail retains
@@ -71,7 +66,6 @@ this shell; audit moves the prior account-page recent-action list into its own v
 | 探索 | Placeholder | No view or route yet |
 | 项目 | Implemented | `/projects` index and `/projects/:projectId` restore |
 | 资产库 | Implemented | `/assets` generated batch/gallery and uploaded-material sections |
-| 灵感板 | Implemented locally | `/inspiration` selected effect cases, before/after, recipe reuse, likes and audited owner withdrawal |
 | 帮助 | Placeholder | No view or route yet |
 | 图片详情 | Implemented | `/assets/:assetId` over its preserved source scope |
 | 账户管理 | Implemented | `/admin/users`, visible and callable only by the site owner |
@@ -310,4 +304,4 @@ do not create separate draft or history state.
   `org_owner`/`org_admin` controls never reuse `/admin/users`, and hidden
   navigation is never treated as authorization.
 
-GG-077：现有灵感资源新增POST /api/inspiration/:id/view与quote；view使用交互UUID，quote只返回积分金额和报价版本，均要求有效会话和动作头。use可带交互UUID；预设页复用大厅已载入结果，直接访问则分配自己的UUID。GET详情与列表不计数。
+GG-077：现有灵感资源新增POST /api/inspiration/:id/view与quote；view使用交互UUID，quote只返回积分金额和报价版本，均要求有效会话和动作头。use可带交互UUID；预设页复用大厅已载入结果，直接访问则分配自己的UUID。GET详情与列表不计数。该端点已随灵感板块整体下线移除（ADR 0104）。
