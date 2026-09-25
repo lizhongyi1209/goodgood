@@ -81,7 +81,7 @@ import {
 import type { GenerationReference } from "@/shared/contracts/generation";
 
 const MAX_EDITED_REFERENCE_BYTES = 20 * 1024 * 1024;
-const EDITOR_COLORS = ["#b52b30", "#292933", "#ffffff"] as const;
+const EDITOR_COLORS = ["#1a1a1a", "#8a8a94", "#ffffff"] as const;
 
 type NaturalSize = Readonly<{ height: number; width: number }>;
 type Viewport = Readonly<{
@@ -313,7 +313,7 @@ function drawEditorDocument(
     context.rotate((sticker.rotation * Math.PI) / 180);
     context.drawImage(image, -width / 2, -height / 2, width, height);
     if (selectedStickerId === sticker.id) {
-      context.strokeStyle = "#b52b30";
+      context.strokeStyle = EDITOR_COLORS[0];
       context.lineWidth = 1.5;
       context.setLineDash([5, 4]);
       context.strokeRect(-width / 2, -height / 2, width, height);
@@ -586,7 +586,7 @@ export function ReferenceQuickEditor({
         { x: topLeft.x, y: bottomRight.y },
       ]) {
         context.fillStyle = "#ffffff";
-        context.strokeStyle = "#b52b30";
+        context.strokeStyle = EDITOR_COLORS[0];
         context.lineWidth = 1.5;
         context.beginPath();
         context.arc(point.x, point.y, 5, 0, Math.PI * 2);
@@ -611,8 +611,8 @@ export function ReferenceQuickEditor({
         natural,
       );
       context.save();
-      context.fillStyle = "rgba(181,43,48,.09)";
-      context.strokeStyle = "#b52b30";
+      context.fillStyle = "rgba(17,17,17,.06)";
+      context.strokeStyle = EDITOR_COLORS[0];
       context.lineWidth = 1.5;
       context.setLineDash([7, 5]);
       context.fillRect(start.x, start.y, end.x - start.x, end.y - start.y);

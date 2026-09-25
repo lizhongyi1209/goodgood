@@ -33,7 +33,8 @@ test("declares the GoodGood visual and interaction invariants", async () => {
     "utf8",
   );
 
-  assert.match(css, /--accent:\s*#b52b30/);
+  assert.match(css, /--action:\s*#1a1a1a/);
+  assert.doesNotMatch(css, /--accent(-deep|-light|-soft)?:/);
   assert.match(css, /--control-md:\s*40px/);
   assert.match(css, /\.prompt-row textarea\.has-overflow[^}]*scrollbar-width:\s*thin/s);
   assert.match(css, /\.creation-masonry-frame[^}]*border-radius:\s*15px/s);
@@ -42,13 +43,13 @@ test("declares the GoodGood visual and interaction invariants", async () => {
   assert.match(css, /\.reference-library-picker-image[^}]*aspect-ratio:\s*1/s);
   assert.match(css, /\.reference-material-masonry[^}]*grid-template-columns:\s*repeat\(4/s);
   assert.match(css, /\.reference-thumbnail-ordinal[^}]*left:\s*4px;[^}]*bottom:\s*4px/s);
-  assert.match(css, /\.reference-thumbnail\.is-drag-target[^}]*border-color:\s*var\(--accent\)/s);
+  assert.match(css, /\.reference-thumbnail\.is-drag-target[^}]*border-color:\s*var\(--action\)/s);
   assert.match(css, /\.reference-thumbnail-remove[^}]*width:\s*16px;[^}]*height:\s*16px;[^}]*top:\s*3px;[^}]*right:\s*3px/s);
   assert.match(css, /\.reference-editor-body[^}]*grid-template-columns:\s*72px minmax\(0,1fr\)/s);
   assert.match(css, /\.reference-editor-stage canvas[^}]*width:\s*100%;[^}]*height:\s*100%;[^}]*touch-action:\s*none/s);
   assert.match(css, /\.reference-editor-discard-overlay[^}]*background:\s*rgba\(24,24,30,\.34\)/s);
   assert.match(css, /\.reference-editor-discard-dialog[^}]*background:\s*var\(--white\)[^}]*box-shadow:/s);
-  assert.match(css, /\.reference-editor-discard-dialog \[data-slot="alert-dialog-action"\][^}]*background:\s*var\(--accent\)/s);
+  assert.match(css, /\.reference-editor-discard-dialog \[data-slot="alert-dialog-action"\][^}]*background:\s*var\(--action\)/s);
   assert.doesNotMatch(creationPage, /reference-library-picker-image" style=/);
   assert.match(creationComposer, /draggable=\{canReorderReferences\}/);
   assert.match(creationComposer, /onReorderReference\?\.\(sourceId, image\.id\)/);
@@ -98,8 +99,8 @@ test("declares the GoodGood visual and interaction invariants", async () => {
   assert.match(detailActions, /className="download-button"/);
   assert.doesNotMatch(detailActions, /Bookmark|toggleSave|savedImages/);
   assert.doesNotMatch(creationPage, /const \[savedImages, setSavedImages\]|const toggleSave/);
-  assert.match(css, /\.creation-card \.download-button:not\(:disabled\):hover\s*\{[^}]*color:\s*var\(--accent-deep\)[^}]*box-shadow:/s);
-  assert.match(css, /\.creation-card \.download-button:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--accent\)/s);
+  assert.match(css, /\.creation-card \.download-button:not\(:disabled\):hover\s*\{[^}]*color:\s*var\(--ink\)[^}]*box-shadow:/s);
+  assert.match(css, /\.creation-card \.download-button:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--action\)/s);
   assert.match(css, /\.creation-card \.download-button:not\(:disabled\):active\s*\{[^}]*transform:\s*scale\(\.96\)/s);
   assert.match(creationPage, /saveImageToLocal\(\s*\{[\s\S]*createdAt: batch\.createdAt,[\s\S]*ordinal: index \+ 1,[\s\S]*previewUrl: image\.previewUrl,/);
   assert.match(
@@ -141,7 +142,7 @@ test("declares the GoodGood visual and interaction invariants", async () => {
   assert.doesNotMatch(accountCard, /account-identity-badge|account-credit-balance|account-session-action/);
   assert.match(css, /\.account-menu \{[^}]*width:\s*224px[^}]*box-shadow:/s);
   assert.match(css, /\.account-menu-detail > svg \{[^}]*color:\s*#6f6f7b/s);
-  assert.match(css, /\.account-menu-detail \.account-menu-credit \{[^}]*color:\s*var\(--accent-deep\)/s);
+  assert.match(css, /\.account-menu-detail \.account-menu-credit \{[^}]*color:\s*var\(--ink\)/s);
   assert.doesNotMatch(css, /\.account-menu-detail:has\(\.account-menu-credit\)/);
 });
 
@@ -233,11 +234,11 @@ test("keeps authentication global, passwordless, and recoverable", async () => {
   assert.match(css, /\.authentication-invitation-input[^}]*height:\s*var\(--control-lg\)/s);
   assert.match(
     css,
-    /\.authentication-email-input:focus-visible[^}]*border-color:\s*var\(--accent\)[^}]*box-shadow:\s*none/s,
+    /\.authentication-email-input:focus-visible[^}]*border-color:\s*var\(--action\)[^}]*box-shadow:\s*none/s,
   );
   assert.match(
     css,
-    /\.authentication-code-input:focus-visible[^}]*border-color:\s*var\(--accent\)[^}]*box-shadow:\s*none/s,
+    /\.authentication-code-input:focus-visible[^}]*border-color:\s*var\(--action\)[^}]*box-shadow:\s*none/s,
   );
   assert.match(creationPage, /<AuthenticationGate/);
   assert.match(adminPage, /<AuthenticationGate/);

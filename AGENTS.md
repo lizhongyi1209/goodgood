@@ -104,11 +104,11 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
 
 - Light, white, image-first canvas inspired by Midjourney's spatial continuity,
   not a visual copy.
-- Brand accent: Palace Red family defined in `app/globals.css` and
-  `docs/DESIGN_SYSTEM.md`.
+- Achromatic interface palette in `app/globals.css` and `DESIGN_SYSTEM.md`
+  (ADR 0105): black type and icons, gray state fills, near-black primary action.
 - Use rounded geometry, minimal borders, transparent/default icon buttons, and
   shallow hover fills. Avoid heavy shadows and navigation shadows.
-- Do not introduce blue as the primary accent, neon/Neo-Tech styling, magazine
+- Do not introduce any chromatic accent, blue, neon/Neo-Tech styling, magazine
   rules, warm ivory/limestone palettes, large editorial typography, or strong
   panel separation.
 - Use the Double G mark and custom GoodGood wordmark. The creation send action

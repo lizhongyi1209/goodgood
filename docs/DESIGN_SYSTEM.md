@@ -71,13 +71,16 @@ GG-067 video rows show two compact mutually exclusive rate rows (无参考视频
 resolutions and both rates; calculation and optional JSON parsing share one
 quiet surface. Adaptive width stays unchanged.
 
-GoodGood is a bright, premium visual workspace: continuous white/light space,
-quiet interface chrome, compact rounded controls, and vivid imagery. Palace Red
-adds authorship and cultural character without turning the interface into a red
-surface.
+GoodGood is a bright, premium visual workspace: continuous white space, quiet
+interface chrome, compact rounded controls, and vivid imagery. The interface
+itself is achromatic — black type and icons over white and light gray — so the
+generated images are the only saturated thing on the page. See
+[ADR 0105](decisions/0105-achromatic-interface-palette.md); Palace Red is no
+longer a token or a current visual rule, and entries below that still name it
+describe historical builds.
 
 GG-054/GG-062 Banana and GPT line choice reuses the compact rounded segmented controls beneath
-the model selector. Selection uses Palace Red; unavailable choices retain native
+the model selector. Selection uses the near-black action fill; unavailable choices retain native
 disabled and accessible pressed states. The pricing list keeps one model name
 with three compact aligned line rows and RMB/credit units. Desktop shares the
 resolution header; narrow screens repeat it once per model, not per line. The
@@ -95,20 +98,27 @@ Canonical CSS tokens currently live in `app/globals.css`.
 
 | Token | Value | Role |
 | --- | --- | --- |
-| `--canvas` | `#f8f8fa` | Main application canvas |
+| `--canvas` | `#ffffff` | Main application canvas |
 | `--white` | `#ffffff` | Active surfaces and segmented controls |
-| `--ink` | `#292933` | Primary neutral text |
-| `--muted` | `#737381` | Secondary copy |
-| `--quiet` | `#9999a7` | Metadata and helper copy |
-| `--line` | `#e5e5e9` | Necessary structural edge only |
-| `--soft` | `#f0f0f3` | Hover and neutral control fill |
-| `--accent` | `#b52b30` | Palace Red action/selection |
-| `--accent-deep` | `#8f2025` | Active text and pressed state |
-| `--accent-light` | `#cf4548` | Highlight/material gradient |
-| `--accent-soft` | `#f5e8e7` | Restrained selected surface |
+| `--ink` | `#111111` | Primary text, icons, and active state |
+| `--muted` | `#52525b` | Secondary copy |
+| `--quiet` | `#6b6b76` | Metadata and helper copy |
+| `--line` | `#e6e6e9` | Necessary structural edge only |
+| `--soft` | `#f0f0f2` | Hover and neutral control fill |
+| `--fill-hover` | `#ececef` | Pointer hover on interactive surfaces |
+| `--fill-selected` | `#f0f0f2` | Selected / current-navigation surface |
+| `--fill-active` | `#e6e6ea` | Pressed and open state fill |
+| `--action` | `#1a1a1a` | Primary action fill |
+| `--action-hover` | `#000000` | Primary action hover and pressed |
+| `--action-fg` | `#ffffff` | Text and icons on the action fill |
+| `--focus` | `#111111` | Focus ring, against white and gray fills |
+| `--danger` | `#111111` | Error / destructive emphasis |
+| `--danger-surface` | `#f0f0f2` | Error and destructive surface |
 
-Palace Red should gain depth through small tonal gradients, hover transitions,
-and contrast—not large shadows or glossy decoration.
+There is no chromatic accent token. Depth comes from weight, size, spacing, and
+gray fill — not from hue, and not from large shadows or glossy decoration.
+Error, warning, and success states are carried by icon, wording, weight, and
+placement; they must never rely on color alone.
 
 ## Scale
 
@@ -128,7 +138,7 @@ the attached parameter drawer matches those corners.
 
 - GG-059 embeds site-owner enterprise/model/account content beside the retained
   lobby sidebar. GG-060 removes its duplicate visible context title: the upper
-  row only exposes wrapping 40px function links using Palace Red selection;
+  row only exposes wrapping 40px function links using the gray selected surface;
   the current content page supplies the sole 20px primary title with a secondary
   description. Embedded admin content omits duplicate brand/header,
   outer viewport height and padding; Chinese font settings remain scoped there.
@@ -149,15 +159,13 @@ the attached parameter drawer matches those corners.
 - Ordinary actions—including navigation, return, retry, search, row actions,
   and cancel—have no outer border and remain transparent with neutral text and
   icon color at rest. Their hover may use only the quiet `--soft` surface.
-- An ordinary button must not use Palace Red or another status-colored fill in
-  its default state. Accent fill is reserved for an explicit selected/pressed
-  state or a final commit/confirmation action; text and icons on that fill are
-  always white.
+- An ordinary button must not use a status-colored fill in its default state.
+  Action fill is reserved for an explicit selected/pressed state or a final
+  commit/confirmation action; text and icons on that fill are always white.
 - Form fields and select triggers may retain a neutral structural border. Focus
-  is communicated with a Palace Red outline or ring, not a persistent colored
-  background.
-- Default icon hover: `--soft`; active navigation may use `--accent-soft` or a
-  subtle light-to-deep Palace Red gradient.
+  is communicated with a near-black outline or ring, not a persistent fill.
+- Default icon hover: `--soft`; active navigation uses the `--fill-selected`
+  gray tile.
 - Avoid persistent navigation shadows. Composer may use a very shallow neutral
   elevation to remain legible while sticky.
 - Authentication recovery is a compact white card over a softened canvas, not
@@ -166,15 +174,16 @@ the attached parameter drawer matches those corners.
   single-column form: left-aligned stacked brand, a small underlined mode label,
   full-width email, code/send row, then one neutral dark login action. It fits a
   390px mobile viewport. Secondary send/modify states stay quiet. Email and code
-  focus is a Palace Red border with no input shadow; authentication errors use
-  restrained Palace Red copy and fill. OIDC rollback mode may retain its combined
+  focus is a near-black border with no input shadow; authentication errors use
+  a strong neutral heading with an icon and explanatory copy, since no
+  chromatic error color exists. OIDC rollback mode may retain its combined
   hosted-login label until cutover.
 
 ## Brand and icons
 
 - `public/goodgood-mark.svg`: connected Double G brand mark.
 - `public/goodgood-wordmark.svg`: custom wordmark; do not replace with text.
-- Composer send/generate action: Lucide upward arrow in a Palace Red circle
+- Composer send/generate action: Lucide upward arrow in a near-black circle
   (ADR 0098). `public/feihong-send.png` remains a loading illustration.
 - Creation navigation: Brush.
 - Explore: Compass.
@@ -195,7 +204,7 @@ the attached parameter drawer matches those corners.
   retain shallow elevation and joined edges. Opening must not move results.
   Long drawers scroll within the viewport space below the prompt/reference tray.
 - A compact `图片 / 视频` segmented control is attached below the prompt row.
-  It uses the same white/soft surfaces and restrained Palace Red selected state;
+  It uses the same white/soft surfaces and the restrained gray selected state;
   it is a creation-mode choice, not another navigation bar.
 - Prompt is the flexible column. Left and right controls remain top-aligned and
   fixed while the textarea grows.
@@ -209,7 +218,7 @@ the attached parameter drawer matches those corners.
   submitted order. Keep the sizes in shared responsive tokens and do not show a
   redundant tray heading or total.
 - Reference drag feedback uses a restrained opacity change on the moving item
-  and a Palace Red inset edge on the current destination; it must not resize or
+  and a near-black inset edge on the current destination; it must not resize or
   reflow the tray before the drop.
 - Clicking a ready reference opens a focused, viewport-contained quick editor.
   The default view shows the complete source with `object-fit: contain` and keeps
@@ -264,7 +273,7 @@ the attached parameter drawer matches those corners.
   when the drawer reflows or stacks.
 - Both Banana models show the GG-054 three-line control under the model selector;
   Nano Banana 2 also places its Google Search control below the line choice.
-  Use quiet labels and the existing Palace Red selected/on treatment;
+  Use quiet labels and the existing gray selected/on treatment;
   hiding the control must not leave an empty panel for other models.
 - All three GPT image models use the same attached, quiet segmented-control treatment directly
   under the model selector for `质量`, `背景`, and `输出格式`. Keep the groups in
@@ -296,7 +305,7 @@ and error-body recovery actions retain their current semantics and focus behavio
   gives identity and current balance separate, non-interactive 13px rows, then
   separates the logout action below. Identity is one of `站长`, `个人`, `企业`,
   or `分销商`; site-owner identity takes precedence over any business-role value.
-  The exact numeric balance retains Palace Red emphasis. Per-image price, batch
+  The exact numeric balance retains ink emphasis. Per-image price, batch
   total, and
   approximate remaining image count do not repeat there; generation pricing
   remains beside the composer actions.
@@ -316,7 +325,7 @@ and error-body recovery actions retain their current semantics and focus behavio
 ## Site-owner account management
 
 - GG-057 shares the account/model header under `站长管理`: quiet white sticky
-  chrome, one matching content width, two compact navigation links, Palace Red
+  chrome, one matching content width, two compact navigation links, near-black
   current-page fill/text plus `aria-current`, and the direct creation action.
   GG-058 removes header logout and sets an explicit Chinese sans-serif fallback
   stack with no synthesized font weights on these two page bodies.
@@ -325,7 +334,7 @@ and error-body recovery actions retain their current semantics and focus behavio
   decorative management hero.
 
 - Treat `/admin/users` as a compact working surface, not a marketing page. Use
-  the existing light canvas, quiet chrome, rounded controls, and Palace Red only
+  the existing light canvas, quiet chrome, rounded controls, and near-black only
   for selection or the primary confirmed action.
 - Use no decorative imagery. Desktop favors a readable account table; narrow
   layouts use stacked account rows without hiding status, tier, or the primary
@@ -357,7 +366,7 @@ and error-body recovery actions retain their current semantics and focus behavio
   `划拨记录` tabs, not in enterprise management or standalone main navigation.
   Each account displays one identity; no enterprise/distributor toggle or combined
   badge. Enterprise management contains only its four company tabs.
-  Reuse the light account-table/list language and Palace Red
+  Reuse the light account-table/list language and near-black
   only for the selected state or final confirmed allocation; do not introduce a
   sales dashboard, wallet hero, earnings chart, or commerce illustration.
 - Show personal total credit and `可分配积分` as a compact inline facts row,
@@ -374,7 +383,7 @@ and error-body recovery actions retain their current semantics and focus behavio
   yields no rows; do not label a partial empty result as empty full history.
 - The allocation dialog mirrors the compact site-owner credit dialog: explicit
   target, transferable balance, integer amount, optional remark, and one final
-  Palace Red action. Completion shows the public transfer reference. There is
+  Near-black action. Completion shows the public transfer reference. There is
   no price, currency, payment, order, commission, revenue, or reclaim control.
 - Loading, empty, first-read failure, stale-relationship conflict, insufficient
   transferable balance, and mutation progress preserve layout and keyboard/
@@ -402,7 +411,7 @@ and error-body recovery actions retain their current semantics and focus behavio
   consumed, reserved, and remaining credit. Wide layouts use a readable table;
   narrow layouts use stacked labeled fields and retain the primary action.
 - Invitation, role/status, and budget dialogs preserve their page context.
-  Confirmed allocation uses Palace Red only for the final action; current/new
+  Confirmed allocation uses the near-black action only for the final action; current/new
   amounts and company unallocated capacity are visually distinct without wallet
   or checkout styling.
 - Team Assets keep the normal gallery-first presentation. Creator and usage
@@ -432,7 +441,7 @@ and error-body recovery actions retain their current semantics and focus behavio
   outputs are already in the asset library, so creation cards and image detail
   expose only download rather than a duplicate bookmark action.
 - Creation-card download controls provide visible hover, focus, and pressed
-  feedback through the Palace Red accent and a shallow elevation change.
+  feedback through the near-black action and a shallow elevation change.
 - Generated assets retain their original color in creation, project, asset, and
   detail views. Do not apply ordinal-based saturation, contrast, hue, brightness,
   or other presentation filters to make outputs appear artificially varied.
@@ -447,7 +456,7 @@ and error-body recovery actions retain their current semantics and focus behavio
   unsaved creation state. The confirmation itself is an opaque white card over
   a restrained secondary veil; canvas or page content must never show through
   its text and actions. Keep `继续编辑` visually quiet and the explicit discard
-  action Palace Red; do not use a generic browser confirmation.
+  action near-black; do not use a generic browser confirmation.
 
 ## Motion
 

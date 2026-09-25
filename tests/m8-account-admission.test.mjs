@@ -429,7 +429,7 @@ test("all account actions share an opaque GoodGood dialog surface", async () => 
   assert.match(dialogPrimitive, /overlayClassName\?: string/);
   assert.match(dialogPrimitive, /<DialogOverlay className=\{overlayClassName\} \/>/);
   assert.match(styles, /--color-background:\s*var\(--white\)/);
-  assert.match(styles, /--color-primary:\s*var\(--accent\)/);
+  assert.match(styles, /--color-primary:\s*var\(--action\)/);
   assert.match(styles, /--color-input:\s*var\(--line\)/);
   assert.match(
     styles,
@@ -440,7 +440,7 @@ test("all account actions share an opaque GoodGood dialog surface", async () => 
   assert.doesNotMatch(source, /aria-pressed=\{amount === String\(preset\)\}/);
   assert.match(
     styles,
-    /\.admin-action-presets \[data-slot="button"\]\[aria-pressed="true"\][^}]*background:\s*var\(--accent\)[^}]*color:\s*var\(--white\)/,
+    /\.admin-action-presets \[data-slot="button"\]\[aria-pressed="true"\][^}]*background:\s*var\(--action\)[^}]*color:\s*var\(--white\)/,
   );
 });
 

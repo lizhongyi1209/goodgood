@@ -104,7 +104,7 @@ test("reference editor history records a gesture once and supports undo and redo
   const live = {
     ...start,
     strokes: [{
-      color: "#b52b30",
+      color: "#1a1a1a",
       id: "stroke-1",
       points: [{ x: 0.1, y: 0.1 }, { x: 0.3, y: 0.3 }],
       width: 0.02,
