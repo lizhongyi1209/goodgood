@@ -1,4 +1,4 @@
-import { assetApiError, getAssetDownloadUrl, listAssets, readAssetPreview } from "./api.mjs";
+import { assetApiError, deleteGeneratedAsset, getAssetDownloadUrl, listAssets, readAssetPreview } from "./api.mjs";
 import { requestIdFor } from "../observability/http.mjs";
 import { workspaceIdFromRequest } from "../organizations/request.mjs";
 
@@ -12,7 +12,7 @@ function sendJson(response, statusCode, payload, headers = {}) {
   response.end(JSON.stringify(payload));
 }
 
-const DEFAULT_OPERATIONS = Object.freeze({ getAssetDownloadUrl, listAssets, readAssetPreview });
+const DEFAULT_OPERATIONS = Object.freeze({ deleteGeneratedAsset, getAssetDownloadUrl, listAssets, readAssetPreview });
 
 export function createAssetNodeApiHandler({
   authenticate,
@@ -29,7 +29,8 @@ export function createAssetNodeApiHandler({
     );
     const previewMatch = url.pathname.match(/^\/api\/assets\/([^/]+)\/preview$/);
     const contentMatch = url.pathname.match(/^\/api\/assets\/([^/]+)\/content$/);
-    if (url.pathname !== "/api/assets" && !downloadUrlMatch && !previewMatch && !contentMatch) return false;
+    const assetMatch = url.pathname.match(/^\/api\/assets\/([^/]+)$/);
+    if (url.pathname !== "/api/assets" && !downloadUrlMatch && !previewMatch && !contentMatch && !assetMatch) return false;
     try {
       const ownerContext = await authenticate(request);
       const workspaceId = workspaceIdFromRequest(request);
@@ -79,6 +80,18 @@ export function createAssetNodeApiHandler({
           response,
           200,
           await operations.listAssets({ ownerContext, workspaceId }),
+        );
+        return true;
+      }
+      if (assetMatch && request.method === "DELETE") {
+        sendJson(
+          response,
+          200,
+          await operations.deleteGeneratedAsset({
+            assetId: decodeURIComponent(assetMatch[1]),
+            ownerContext,
+            workspaceId,
+          }),
         );
         return true;
       }

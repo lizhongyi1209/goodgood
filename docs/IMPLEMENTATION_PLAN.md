@@ -1,9 +1,9 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-25
-- Current phase: GG-115 资产页生成记录/个人资产库与 20 MiB 严格格式上传已完成本地门禁、隔离库迁移 0046、精确检查点、5173/32131 HTTP 和站长登录页面验收。生产应用仍为 GG-098。
-- Current objective: 保持 GG-115 的 5173/32131 本地服务可用，等待下一项开发需求；生产部署须另行确定范围。
-- Previous objective: GG-107 创作发送箭头与模型 SVG 预览修复，待浏览器复核；GG-105 大文件上传仍待人工验收。
+- Current phase: GG-116 生成历史纯图片网格与卡片下载/删除/放大已完成本地实现与门禁，待重建检查点后浏览器验收；生产应用仍为 GG-098。
+- Current objective: 重建 GG-116 检查点并在 5173 验收四点（历史页签、扁平网格、悬停操作、删除后即时移除）；生产部署须另行确定范围。
+- Previous objective: GG-115 资产页生成记录/个人资产库与 20 MiB 上传已通过门禁、迁移 0046、检查点和站长页面验收。
 
 ## Current checkpoint
 

@@ -275,6 +275,32 @@ export async function findOwnerAssetGenerationJobs(
   return result.rows;
 }
 
+/**
+ * Deletion uses the same ownership and workspace predicates as `findOwnerAsset`
+ * but intentionally omits the job-state and moderation-state filters: an output
+ * the operator can still see in history must remain deletable even when its job
+ * did not succeed cleanly or moderation did not mark it accepted.
+ */
+export async function findOwnerAssetForDeletion(
+  pool,
+  { assetId, ownerId, workspaceId = null },
+) {
+  const workspace = await resolveWorkspaceAccess(pool, { ownerId, workspaceId });
+  const result = await pool.query(
+    `SELECT a.id, a.object_key, a.workspace_id
+       FROM assets a
+       JOIN generation_jobs j ON j.id = a.job_id
+       JOIN generation_batches b ON b.id = a.batch_id
+      WHERE a.id = $1
+        AND a.owner_id = $2
+        AND j.owner_id = $2
+        AND b.owner_id = $2
+        AND a.workspace_id = $3 AND j.workspace_id = $3 AND b.workspace_id = $3`,
+    [assetId, ownerId, workspace.id],
+  );
+  return result.rows[0] ?? null;
+}
+
 export async function findOwnerAsset(
   pool,
   { assetId, ownerId, workspaceId = null },

@@ -627,7 +627,7 @@ export default function Home({
   const assetDetailItems = getDetailImages(assetBatches);
   const generatedAssetCards: GeneratedAssetCard[] = assetDetailItems.map((item) => ({
     id: item.image.id, detailKey: item.key, createdAt: item.batch.createdAt,
-    previewUrl: item.image.previewUrl, name: `生成图片 ${item.batch.id} · ${item.index + 1}`,
+    previewUrl: item.image.previewUrl, ordinal: item.index + 1,
     prompt: item.batch.prompt, width: item.image.width, height: item.image.height,
   }));
   const activeDetail = detailItems[detailIndex] ?? null;
@@ -3602,6 +3602,15 @@ export default function Home({
               libraryError={assetRouteError ?? assetsError ?? referenceMaterialsError ?? privateVideoMaterialsError ?? privateAudioMaterialsError}
               onRetry={() => { retryAssetRoute(); void reloadReferenceMaterials(); void reloadPrivateVideoMaterials(); void reloadPrivateAudioMaterials(); }}
               onRefresh={async () => { await Promise.all([reloadAssets(), reloadReferenceMaterials(), reloadPrivateVideoMaterials(), reloadPrivateAudioMaterials()]); }}
+              onDeleteGenerated={async (assetId) => {
+                // Drop the image locally first so the grid updates immediately,
+                // then re-read assets: the server keeps the batch, so a batch
+                // whose last image was deleted must disappear on its own.
+                setAssetBatches((current) => current
+                  .map((batch) => ({ ...batch, images: batch.images.filter((image) => image.id !== assetId) }))
+                  .filter((batch) => batch.images.length > 0));
+                await reloadAssets();
+              }}
               onOpenGenerated={(key) => openImageDetail(assetDetailItems, key, "assets")}
               onUseReference={handleUseReferenceMaterial}
               onUseVideo={handleUseVideoMaterial}

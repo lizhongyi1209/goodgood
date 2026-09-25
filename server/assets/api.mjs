@@ -2,10 +2,11 @@ import { AuthenticationError, sessionExpiredError } from "../auth/errors.mjs";
 import { presentGenerationJob } from "../generation/presenter.mjs";
 import {
   findOwnerAsset,
+  findOwnerAssetForDeletion,
   findOwnerAssetGenerationJobs,
 } from "../generation/repository.mjs";
 import { getGenerationResources } from "../generation/resources.mjs";
-import { signAssetRead } from "../generation/storage.mjs";
+import { signAssetRead, discardGeneratedAsset } from "../generation/storage.mjs";
 import { readPrivateImagePreview } from "../images/private-preview.mjs";
 import { newRequestId } from "../observability/http.mjs";
 import { OrganizationError } from "../organizations/errors.mjs";
@@ -90,6 +91,82 @@ export async function readAssetPreview({
     publicStorage: resources.publicStorage,
     storage: resources.storage,
   });
+}
+
+/**
+ * Hard delete for one generated asset. The owning job and batch are retained so
+ * settled credit-ledger entries and job history stay intact; only the asset row,
+ * its organization metadata, and the stored object are removed.
+ */
+export async function deleteGeneratedAsset({
+  assetId,
+  ownerContext,
+  workspaceId = DEFAULT_WORKSPACE_ID,
+  resourcesOverride = null,
+}) {
+  const ownerId = ownerIdFromContext(ownerContext);
+  if (typeof assetId !== "string" || !UUID_PATTERN.test(assetId)) {
+    throw new AssetRequestError("ASSET_NOT_FOUND", "未找到这张图片。", 404);
+  }
+  const resources = resourcesOverride ?? await getGenerationResources();
+  const asset = await findOwnerAssetForDeletion(resources.pool, {
+    assetId,
+    ownerId,
+    workspaceId,
+  });
+  if (!asset) {
+    throw new AssetRequestError("ASSET_NOT_FOUND", "未找到这张图片。", 404);
+  }
+  const client = await resources.pool.connect();
+  try {
+    await client.query("BEGIN");
+    // inspiration_cases.source_asset_id references assets(id) without a cascade
+    // and soft-deletes rows, so a published case blocks the delete outright.
+    const published = await client.query(
+      `SELECT id FROM inspiration_cases
+        WHERE owner_id = $1 AND source_asset_id = $2 AND deleted_at IS NULL
+        LIMIT 1`,
+      [ownerId, assetId],
+    );
+    if (published.rows[0]) {
+      throw new AssetRequestError(
+        "ASSET_PUBLISHED",
+        "这张图片已发布为灵感案例，请先删除对应案例再删除图片。",
+        409,
+      );
+    }
+    // asset_organization has no foreign key to assets, so it would silently
+    // keep orphaned folder membership and tags.
+    await client.query(
+      `DELETE FROM asset_organization
+        WHERE workspace_id = $1 AND owner_id = $2
+          AND asset_kind = 'generated' AND asset_id = $3`,
+      [asset.workspace_id, ownerId, assetId],
+    );
+    const removed = await client.query(
+      `DELETE FROM assets WHERE id = $1 AND owner_id = $2 AND workspace_id = $3`,
+      [assetId, ownerId, asset.workspace_id],
+    );
+    // A concurrent delete of the same image leaves nothing to remove; report it
+    // rather than claiming a success that deleted no rows.
+    if (!removed.rowCount) {
+      throw new AssetRequestError("ASSET_NOT_FOUND", "未找到这张图片。", 404);
+    }
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
+  // Delete bytes only after the rows are durable; the reverse order could leave
+  // a surviving row pointing at a missing object.
+  await discardGeneratedAsset({
+    bucket: resources.config.objectStorage.bucket,
+    key: asset.object_key,
+    storage: resources.storage,
+  });
+  return { id: assetId, deleted: true };
 }
 
 export function assetApiError(error, requestId = newRequestId()) {

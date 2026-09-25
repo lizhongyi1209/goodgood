@@ -327,4 +327,103 @@ test("asset list and fresh download URL are wired into both runtimes", async () 
   const workspace = await readFile(new URL("../features/assets/asset-workspace.tsx", import.meta.url), "utf8");
   assert.match(workspace, /正在读取资产/);
   assert.match(workspace, /还没有生成记录/);
+  assert.match(workspace, /生成历史/);
+  // History shows the image alone: no caption, no date headings.
+  assert.doesNotMatch(workspace, /styles\.cardCaption/);
+  assert.doesNotMatch(workspace, /styles\.dateGroup/);
+  assert.match(workspace, /styles\.historyGrid/);
+  assert.match(workspace, /styles\.cardOverlay/);
+});
+
+test("generated asset deletion is owner scoped, clears organization, and keeps the batch", async () => {
+  const assetId = "20000000-0000-4000-8000-000000000001";
+  const objectKey = "generated/owner-a/asset.png";
+  let publishedRows = [];
+  let assetRow = { id: assetId, object_key: objectKey, workspace_id: "workspace-a" };
+  const statements = [];
+  const deletedKeys = [];
+  const client = {
+    async query(sql, values = []) {
+      statements.push([sql, values]);
+      if (/FROM inspiration_cases/.test(sql)) return { rows: publishedRows };
+      if (sql === "BEGIN" || sql === "COMMIT" || sql === "ROLLBACK") return { rowCount: 0, rows: [] };
+      if (/^DELETE FROM asset_organization/.test(sql)) return { rowCount: 1, rows: [] };
+      if (/^DELETE FROM assets/.test(sql)) {
+        if (!assetRow) return { rowCount: 0, rows: [] };
+        assetRow = null;
+        return { rowCount: 1, rows: [] };
+      }
+      throw Error(`Unexpected SQL: ${sql.slice(0, 80)}`);
+    },
+    release() {},
+  };
+  const pool = {
+    async query(sql, values = []) {
+      if (/JOIN workspaces w/.test(sql)) {
+        // Only owner-a resolves a workspace, so owner-b is rejected before any
+        // asset lookup happens.
+        return values[0] === "owner-a"
+          ? { rows: [{ kind: "personal", status: "active", workspace_id: "workspace-a" }] }
+          : { rows: [] };
+      }
+      return { rows: assetRow ? [assetRow] : [] };
+    },
+    async connect() { return client; },
+  };
+  const storage = {
+    async send(command) {
+      deletedKeys.push({ name: command.constructor.name, key: command.input?.Key });
+      return {};
+    },
+  };
+  const resourcesOverride = {
+    config: { objectStorage: { bucket: "disposable-assets" } },
+    pool,
+    storage,
+  };
+  const { deleteGeneratedAsset } = await import("../server/assets/api.mjs");
+
+  // A published inspiration case blocks the row delete instead of silently
+  // removing the asset or leaving the case dangling.
+  publishedRows = [{ id: "case-a" }];
+  await assert.rejects(
+    deleteGeneratedAsset({
+      assetId,
+      ownerContext: { ownerId: "owner-a" },
+      resourcesOverride,
+    }),
+    (error) => error.code === "ASSET_PUBLISHED" && error.status === 409,
+  );
+  assert.equal(deletedKeys.length, 0);
+
+  publishedRows = [];
+  const removed = await deleteGeneratedAsset({
+    assetId,
+    ownerContext: { ownerId: "owner-a" },
+    resourcesOverride,
+  });
+  assert.deepEqual(removed, { id: assetId, deleted: true });
+  // Organization metadata is cleared before the asset row, in one transaction.
+  const organizationDelete = statements.findIndex(([sql]) => /^DELETE FROM asset_organization/.test(sql));
+  const assetDelete = statements.findIndex(([sql]) => /^DELETE FROM assets/.test(sql));
+  assert.ok(organizationDelete > -1 && assetDelete > organizationDelete);
+  assert.equal(statements.filter(([sql]) => sql === "COMMIT").length, 1);
+  // Bytes go last so a failed transaction cannot strand a row without an object.
+  assert.deepEqual(deletedKeys, [
+    { name: "DeleteObjectCommand", key: objectKey },
+  ]);
+
+  // An owner with no access to the resolved workspace cannot delete its assets.
+  await assert.rejects(
+    deleteGeneratedAsset({
+      assetId,
+      ownerContext: { ownerId: "owner-b" },
+      resourcesOverride,
+    }),
+    (error) => error.code === "WORKSPACE_ACCESS_DENIED",
+  );
+  // The 409 attempt opened a transaction and rolled it back; only the second
+  // call reached COMMIT.
+  assert.equal(statements.filter(([sql]) => sql === "BEGIN").length, 2);
+  assert.equal(statements.filter(([sql]) => sql === "ROLLBACK").length, 1);
 });

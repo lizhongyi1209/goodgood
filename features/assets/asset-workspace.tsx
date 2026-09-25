@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AudioLines, ChevronLeft, CircleAlert, Folder, FolderPlus, ImagePlus, Images, LoaderCircle, Pencil, Plus, RefreshCw, Search, Upload, X } from "lucide-react";
+import { AudioLines, ChevronLeft, CircleAlert, Download, Folder, FolderPlus, ImagePlus, Images, LoaderCircle, Pencil, Plus, RefreshCw, Search, Trash2, Upload, X, ZoomIn } from "lucide-react";
 import { Dialog, DialogDescription, DialogOverlay, DialogPortal, DialogTitle } from "@/components/ui/dialog";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
@@ -10,13 +10,15 @@ import type { ReferenceMaterial } from "@/features/references/http-reference-lib
 import { uploadPrivateVideoMaterial, type PrivateVideoMaterial } from "@/features/creation/http-video-materials";
 import { uploadPrivateAudioMaterial, type PrivateAudioMaterial } from "@/features/assets/http-audio-materials";
 import { createAssetFolder, deleteAssetFolder, listAssetOrganization, renameAssetFolder, saveAssetOrganization, type AssetArrangement, type AssetFolder, type OrganizedAssetKind } from "@/features/assets/http-asset-organization";
+import { deleteAsset, readAssetDownloadUrl } from "@/features/assets/http-asset-boundary";
+import { ImageDownloadError, saveImageToLocal } from "@/features/assets/image-download";
 import { PRIVATE_AUDIO_UPLOAD_MAX_BYTES, PRIVATE_IMAGE_UPLOAD_MAX_BYTES, PRIVATE_VIDEO_UPLOAD_MAX_BYTES } from "@/shared/contracts/upload-limits.mjs";
 import styles from "./asset-workspace.module.css";
 
 type Media = "image" | "video" | "audio";
 type Filter = "all" | Media;
 export type GeneratedAssetCard = Readonly<{
-  id: string; detailKey: string; createdAt: string; previewUrl: string; name: string;
+  id: string; detailKey: string; createdAt: string; previewUrl: string; ordinal: number;
   prompt: string; width?: number; height?: number;
 }>;
 type LibraryItem = Readonly<{
@@ -38,6 +40,7 @@ type Props = Readonly<{
   libraryError: string | null;
   onRetry: () => void;
   onRefresh: () => Promise<void>;
+  onDeleteGenerated: (assetId: string) => Promise<void>;
   onOpenGenerated: (detailKey: string) => void;
   onUseReference: (material: ReferenceMaterial) => void;
   onUseVideo: (material: PrivateVideoMaterial) => void;
@@ -61,6 +64,17 @@ function bytesLabel(value?: number) {
   return `${(value / 1024 / 1024).toFixed(1)} MB`;
 }
 
+/**
+ * History cards no longer render a caption, so the synthesized internal name
+ * (`生成图片 {batch} · {n}`) must not leak into visible or assistive text.
+ * Derive a short readable label from the prompt instead; the library view still
+ * shows its card labels, so it reuses this name.
+ */
+function imageLabel(item: GeneratedAssetCard) {
+  const prompt = item.prompt.trim().replace(/\s+/g, " ");
+  return prompt ? `生成图片：${prompt.slice(0, 60)}` : "生成图片";
+}
+
 function uploadError(file: File): string | null {
   const allowed: Readonly<Record<string, { extensions: readonly string[]; max: number }>> = {
     "image/jpeg": { extensions: ["jpg", "jpeg"], max: PRIVATE_IMAGE_UPLOAD_MAX_BYTES },
@@ -77,7 +91,7 @@ function uploadError(file: File): string | null {
 
 export function AssetWorkspace({ workspaceId, enabled, generated, references, videos, audios,
   historyLoading, libraryLoading, historyError, libraryError,
-  onRetry, onRefresh, onOpenGenerated, onUseReference, onUseVideo, onUseAudio }: Props) {
+  onRetry, onRefresh, onDeleteGenerated, onOpenGenerated, onUseReference, onUseVideo, onUseAudio }: Props) {
   const [section, setSection] = useState<"history" | "library">("history");
   const [filter, setFilter] = useState<Filter>("all");
   const [folderId, setFolderId] = useState<string | null>(null);
@@ -90,6 +104,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
   const [actionError, setActionError] = useState<string | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [preview, setPreview] = useState<{ name: string; url: string } | null>(null);
+  const [historyBusyId, setHistoryBusyId] = useState<string | null>(null);
   const [rows, setRows] = useState<readonly UploadRow[]>([]);
   const [uploadFolderId, setUploadFolderId] = useState<string | null>(null);
   const [uploadTags, setUploadTags] = useState("");
@@ -109,7 +124,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
 
   const items = useMemo<readonly LibraryItem[]>(() => [
     ...generated.map((item) => ({ id: item.id, kind: "generated" as const, media: "image" as const,
-      name: item.name, createdAt: item.createdAt, previewUrl: item.previewUrl, detailKey: item.detailKey })),
+      name: imageLabel(item), createdAt: item.createdAt, previewUrl: item.previewUrl, detailKey: item.detailKey })),
     ...references.map((item) => ({ id: item.id, kind: "reference" as const, media: "image" as const,
       name: item.name, createdAt: item.uploadedAt, previewUrl: item.previewUrl, size: item.byteSize })),
     ...videos.map((item) => ({ id: item.id, kind: "video" as const, media: "video" as const,
@@ -125,14 +140,39 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
   });
   const visible = baseItems.filter((item) => filter === "all" || item.media === filter);
   const history = generated.filter(() => filter === "all" || filter === "image");
-  const grouped = new Map<string, GeneratedAssetCard[]>();
-  for (const item of history) {
-    const key = dateLabel(item.createdAt);
-    grouped.set(key, [...(grouped.get(key) ?? []), item]);
-  }
   const activeFolder = organization.folders.find((item) => item.id === folderId);
   const loading = section === "history" ? historyLoading : libraryLoading;
   const error = section === "history" ? historyError : libraryError;
+
+  async function downloadGenerated(item: GeneratedAssetCard) {
+    if (historyBusyId) return;
+    setHistoryBusyId(item.id); setActionError(null);
+    try {
+      await saveImageToLocal(
+        { assetId: item.id, createdAt: item.createdAt, ordinal: item.ordinal, previewUrl: item.previewUrl },
+        { resolveDownloadUrl: (assetId) => readAssetDownloadUrl(assetId, workspaceId) },
+      );
+    } catch (cause) {
+      console.error("[GoodGood] image download failed", {
+        assetId: item.id,
+        message: cause instanceof Error ? cause.message : String(cause),
+        stage: cause instanceof ImageDownloadError ? cause.stage : "unknown",
+      });
+      setActionError("下载失败，请重试。");
+    } finally { setHistoryBusyId(null); }
+  }
+
+  async function deleteGenerated(item: GeneratedAssetCard) {
+    if (historyBusyId) return;
+    if (!window.confirm("删除这张图片？该操作不可恢复，已结算的积分不会退回。")) return;
+    setHistoryBusyId(item.id); setActionError(null);
+    try {
+      await deleteAsset(item.id, workspaceId);
+      await onDeleteGenerated(item.id);
+    } catch (cause) {
+      setActionError(cause instanceof Error ? cause.message : "删除失败，请重试。");
+    } finally { setHistoryBusyId(null); }
+  }
 
   async function updateOrganization(kind: OrganizedAssetKind, id: string, nextFolder: string | null, tags: readonly string[]) {
     setBusy(true); setActionError(null);
@@ -216,7 +256,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
       {section === "library" && <button className={styles.primaryButton} onClick={() => { setRows([]); setUploadTags(""); setActionError(null); setUploadFolderId(folderId); setUploadOpen(true); }}><Upload size={16}/>上传资产</button>}
     </header>
     <div className={styles.tabs} role="tablist" aria-label="资产分类">
-      <button role="tab" aria-selected={section === "history"} className={section === "history" ? styles.activeTab : ""} onClick={() => { setSection("history"); setFilter("all"); }}>生成记录</button>
+      <button role="tab" aria-selected={section === "history"} className={section === "history" ? styles.activeTab : ""} onClick={() => { setSection("history"); setFilter("all"); }}>生成历史</button>
       <button role="tab" aria-selected={section === "library"} className={section === "library" ? styles.activeTab : ""} onClick={() => { setSection("library"); setFilter("all"); }}>个人资产库</button>
     </div>
     {section === "library" && <div className={styles.tools}>
@@ -236,7 +276,14 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
     </div>
     {(error || organizationError || actionError) && <div className={styles.error} role="alert"><CircleAlert size={16}/>{actionError ?? error ?? organizationError}<button onClick={() => { setActionError(null); onRetry(); setRevision((current) => current + 1); }}><RefreshCw size={14}/>重试</button></div>}
     {(loading || (section === "library" && organizationLoading)) && <div className={styles.state} role="status"><LoaderCircle className={styles.spinner} size={18}/>正在读取资产</div>}
-    {!loading && section === "history" && (history.length ? Array.from(grouped, ([date, records]) => <section key={date} className={styles.dateGroup}><h2>{date}</h2><div className={styles.grid}>{records.map((item) => <button key={item.detailKey} className={styles.mediaCard} onClick={() => onOpenGenerated(item.detailKey)} aria-label={`查看 ${item.name}`}><span className={styles.mediaFrame}><PrivateObjectImage src={item.previewUrl} alt={item.name}/></span><span className={styles.cardCaption}>{item.name}</span></button>)}</div></section>) : <div className={styles.state}><Images size={22}/><strong>{filter === "all" || filter === "image" ? "还没有生成记录" : `还没有生成${mediaFilters.find((item) => item.id === filter)?.label}记录`}</strong><span>完成生成后，结果会显示在这里。</span></div>)}
+    {!loading && section === "history" && (history.length ? <div className={styles.historyGrid}>{history.map((item) => <article key={item.detailKey} className={styles.historyCard}>
+      <button className={styles.mediaFrame} onClick={() => onOpenGenerated(item.detailKey)} aria-label="查看图片详情"><PrivateObjectImage src={item.previewUrl} alt={imageLabel(item)}/></button>
+      <div className={styles.cardOverlay}>
+        <button disabled={historyBusyId === item.id} onClick={() => void downloadGenerated(item)} aria-label="下载图片" title="下载"><Download size={17}/></button>
+        <button disabled={historyBusyId === item.id} onClick={() => void deleteGenerated(item)} aria-label="删除图片" title="删除"><Trash2 size={17}/></button>
+        <button disabled={historyBusyId === item.id} onClick={() => onOpenGenerated(item.detailKey)} aria-label="查看图片详情" title="查看图片详情"><ZoomIn size={17}/></button>
+      </div>
+    </article>)}</div> : <div className={styles.state}><Images size={22}/><strong>{filter === "all" || filter === "image" ? "还没有生成记录" : `还没有生成${mediaFilters.find((item) => item.id === filter)?.label}记录`}</strong><span>完成生成后，结果会显示在这里。</span></div>)}
     {!loading && !organizationLoading && section === "library" && (visible.length ? <div className={styles.grid}>{visible.map((item) => {
       const arrangement = arrangements.get(`${item.kind}:${item.id}`);
       const open = () => { if (item.detailKey) onOpenGenerated(item.detailKey); };

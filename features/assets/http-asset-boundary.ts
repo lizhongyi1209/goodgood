@@ -18,6 +18,11 @@ type AssetDownloadUrlResponse = Readonly<{
   url?: string;
 }>;
 
+type AssetDeleteResponse = Readonly<{
+  id?: string;
+  deleted?: boolean;
+}>;
+
 export class AssetBoundaryError extends Error {
   readonly code: string;
   readonly retryable: boolean;
@@ -82,4 +87,29 @@ export async function readAssetDownloadUrl(
     );
   }
   return url;
+}
+
+export async function deleteAsset(
+  assetId: string,
+  workspaceId: string | null = null,
+): Promise<void> {
+  const response = await goodGoodApiFetch(
+    `/api/assets/${encodeURIComponent(assetId)}`,
+    {
+      cache: "no-store",
+      headers: workspaceRequestHeaders(workspaceId),
+      method: "DELETE",
+    },
+  );
+  const payload = (await response.json()) as
+    | AssetDeleteResponse
+    | AssetApiErrorEnvelope;
+  if (!response.ok || (payload as AssetDeleteResponse).deleted !== true) {
+    const failure = payload as AssetApiErrorEnvelope;
+    throw new AssetBoundaryError(
+      failure.error?.code ?? "ASSET_DELETE_FAILED",
+      failure.error?.message ?? "图片暂时无法删除，请重试。",
+      failure.error?.retryable ?? false,
+    );
+  }
 }
