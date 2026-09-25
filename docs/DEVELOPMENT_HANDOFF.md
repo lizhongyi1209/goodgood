@@ -1,6 +1,34 @@
 # 当前开发版本与跨窗口交接
 
-## GG-115 资产记录与个人资产库（本地运行中）
+## GG-116 / GG-117（本地运行中）
+
+当前运行来自工作树 `F:/goodgood-worktrees/GG-116`，分支
+`feature/GG-116-asset-history-actions`，HEAD `eb9c5f6`。
+
+- **GG-116**：`/assets` 历史分区改名为「生成历史」，历史为无标题无日期的扁平网格、
+  最近在前；卡片悬停出现下载/删除/放大。删除为硬删除（删资产行 + 整理行 + 存储对象，
+  保留 job/batch 与已结算积分）。见[任务卡](tasks/GG-116-asset-history-actions.md) /
+  [ADR 0103](decisions/0103-generated-asset-hard-delete.md)。
+- **GG-117**：灵感板块代码与路由整体移除，五张灵感表已写删除迁移
+  `migrations/0047_gg117_drop_inspiration.sql`。见[任务卡](tasks/GG-117-inspiration-retirement.md) /
+  [ADR 0104](decisions/0104-inspiration-feature-retirement.md)。
+
+**2026-09-25 本地执行状态**：开发库 `127.0.0.1:54449/goodgood` 已应用 `0047`，五张灵感表
+已删除（删除前 `inspiration_cases` 3 行、`events` 4 行、`interactions` 10 行，
+均为 2026-09-14 的本地测试数据）。32131 Web（PID 36184，`build.verified=true`、
+revision `eb9c5f6`、provider `o1key`、`cloud-development`、`real-smtp`）与 5173 Vite
+（PID 35316）已切至本工作树；**32142 Worker 已停止**——它是 GG-115 旧代码，会查询
+已删除的 `inspiration_generation_prompts`，恢复它前必须先重建检查点。
+
+门禁：GG-116 `593 项 / 567 通过 / 26 跳过 / 0 失败`；GG-117 `575 项 / 552 通过 /
+23 跳过 / 0 失败`（测试数下降与删除 8 个灵感测试文件一致）。生产仍为 GG-098，未部署。
+
+**环境注意（本工作树）**：`npm run db:migrate` 在此库**不可用**——16 个已应用迁移的
+校验和不匹配（45/46 由工作树 CRLF 重编码解释，`0029_gg052_cent_credits_and_models.sql`
+是真实漂移，应用后被改过）。不要为跑通而改写这些历史校验和；本次是单独精确应用 `0047`
+并按其文件内容记录校验和。另需 `.env.local-review` / `.env.login-review` 副本才能启动。
+
+## GG-115 资产记录与个人资产库（已由 GG-116 取代）
 
 独立工作树 `F:/goodgood-worktrees/GG-115` 从 GG-114 `3665087` 创建，任务卡
 [GG-115](tasks/GG-115-asset-workspace.md) 与 [ADR 0102](decisions/0102-asset-history-library-and-upload.md)
