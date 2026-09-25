@@ -5,6 +5,36 @@ import pg from "pg";
 
 const { Pool } = pg;
 
+/**
+ * Line endings are not semantic in SQL, but hashing the file's raw bytes made
+ * every recorded checksum depend on how the file happened to land on disk. With
+ * `core.autocrlf=true` on Windows the same unchanged migration can hash
+ * differently from one checkout to the next, which made `db:migrate` refuse a
+ * database that was in fact fully up to date. Normalize before hashing so the
+ * checksum identifies the migration's content, not its checkout encoding.
+ */
+export function migrationChecksum(sql) {
+  return createHash("sha256").update(sql.replace(/\r\n/g, "\n")).digest("hex");
+}
+
+/**
+ * Rows written before checksums were normalized hold a hash of whatever
+ * line-ending mixture was on disk at the time. Accept those legacy forms so an
+ * untouched migration is not reported as edited, while a real content change
+ * still fails: only byte-identical content under a different line-ending
+ * encoding can match.
+ */
+export function matchesRecordedChecksum(recorded, sql) {
+  if (recorded === migrationChecksum(sql)) return true;
+  const legacy = [
+    sql,
+    sql.replace(/\r\n/g, "\n").replace(/\n/g, "\r\n"),
+  ];
+  return legacy.some(
+    (variant) => createHash("sha256").update(variant).digest("hex") === recorded,
+  );
+}
+
 export async function applyMigrations({
   databaseUrl,
   migrationsDirectory = path.resolve(process.cwd(), "migrations"),
@@ -28,13 +58,13 @@ export async function applyMigrations({
 
     for (const version of migrationFiles) {
       const sql = await readFile(path.join(migrationsDirectory, version), "utf8");
-      const checksum = createHash("sha256").update(sql).digest("hex");
+      const checksum = migrationChecksum(sql);
       const existing = await pool.query(
         "SELECT checksum FROM goodgood_schema_migrations WHERE version = $1",
         [version],
       );
       if (existing.rowCount) {
-        if (existing.rows[0].checksum !== checksum) {
+        if (!matchesRecordedChecksum(existing.rows[0].checksum, sql)) {
           throw new Error(`Applied migration ${version} has a different checksum.`);
         }
         continue;
