@@ -17,6 +17,14 @@ RustFS 私有对象和数据库记录。开发库 `127.0.0.1:54449/goodgood` 已
 文件夹操作及 MP3/MP4 浏览器上传未在这次人工验收中单独覆盖，自动化路由/契约测试已通过。
 继续沿用下文的仓库外真实邮件及云端参考图配置，不能将其复制进 Git。
 
+2026-09-25 按站长要求重启本地服务（无代码改动，未触发生成）：32131 Web（PID 29976，
+`build.verified=true`、revision `4a899b8`）、32142 真实 O1Key Worker（PID 2620）、5173 Vite
+同时运行；32142 期间处于**真实计费**状态。三项环境事实记入[任务卡](tasks/GG-115-asset-workspace.md)：
+Docker Desktop 重启后对象存储主机端口可能被 Windows 保留区间 TCP `58026-58125` 占住（提权
+`net stop/start winnat` 后用 `GOODGOOD_OBJECT_STORAGE_PORT=58049` 重建该容器，数据卷保留）；
+`check:local` 会覆盖 `dist/` 并删除构建来源记录，须重新 `build:checkpoint`；本工作树需要
+`.env.local-review` 副本才能启动 worker。
+
 ## GG-114 私有图片共用入口（本地已验证）
 
 当前独立工作树 `F:/goodgood-worktrees/GG-114` 基于 GG-113 `1ecbc1c`。
