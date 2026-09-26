@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AudioLines, Check, ChevronDown, ChevronRight, CircleAlert, Download, Folder, FolderPlus, Grid2X2, ImagePlus, List, LoaderCircle, Minus, MoreHorizontal, Pencil, Plus, RefreshCw, Search, Trash2, Upload, WandSparkles, X } from "lucide-react";
 import { Dialog, DialogDescription, DialogOverlay, DialogPortal, DialogTitle } from "@/components/ui/dialog";
 import { Dialog as DialogPrimitive } from "radix-ui";
@@ -165,6 +165,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
   const [quickRefreshError, setQuickRefreshError] = useState<string | null>(null);
   const [draggingFolderFiles, setDraggingFolderFiles] = useState(false);
   const quickFileInput = useRef<HTMLInputElement>(null);
+  const fileGrid = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!enabled) { setOrganizationLoading(false); return; }
@@ -197,12 +198,33 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
   const rootFolders = !folderId && filter === "all" && sourceFilter === "all"
     ? organization.folders.filter((folder) => folder.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())) : [];
   const visibleKeys = visible.map((item) => `${item.kind}:${item.id}`);
+  const visibleGridKeys = visibleKeys.join("|");
   const selectedVisibleCount = visibleKeys.filter((key) => selectedKeys.includes(key)).length;
   const activeFolder = organization.folders.find((item) => item.id === folderId);
   const quickReadyCount = quickRows.filter((row) => row.state === "ready").length;
   const quickFailedRows = quickRows.filter((row) => row.state === "failed");
   const loading = historyLoading || libraryLoading;
   const error = historyError ?? libraryError;
+
+  useLayoutEffect(() => {
+    const grid = fileGrid.current;
+    if (viewMode !== "grid" || !grid || typeof ResizeObserver === "undefined") return;
+    const cards = Array.from(grid.children) as HTMLElement[];
+    const placeCard = (card: HTMLElement) => {
+      const gap = Number.parseFloat(getComputedStyle(grid).columnGap) || 0;
+      const span = `span ${Math.ceil(card.getBoundingClientRect().height + gap)}`;
+      if (card.style.gridRowEnd !== span) card.style.gridRowEnd = span;
+    };
+    cards.forEach(placeCard);
+    grid.classList.add(styles.masonryReady);
+    const observer = new ResizeObserver((entries) => entries.forEach((entry) => placeCard(entry.target as HTMLElement)));
+    cards.forEach((card) => observer.observe(card));
+    return () => {
+      observer.disconnect();
+      grid.classList.remove(styles.masonryReady);
+      cards.forEach((card) => { card.style.gridRowEnd = ""; });
+    };
+  }, [viewMode, visibleGridKeys, loading, organizationLoading]);
 
   useEffect(() => {
     const available = new Set(items.map((item) => `${item.kind}:${item.id}`));
@@ -527,7 +549,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
         {(visible.length > 0 || activeFolder) && <button className={styles.listSelect} role="checkbox" aria-checked={visible.length > 0 && selectedVisibleCount === visible.length ? true : selectedVisibleCount > 0 ? "mixed" : false} aria-label={selectedVisibleCount === visible.length && visible.length > 0 ? "取消全选可见文件" : "全选可见文件"} disabled={busy || visible.length === 0} onClick={toggleVisibleSelection}>{selectedVisibleCount === visible.length && visible.length > 0 ? <Check size={12}/> : selectedVisibleCount > 0 ? <Minus size={12}/> : null}</button>}
         <span className={styles.nameHeading}>名称</span><span>修改日期</span><span>大小</span>
       </div>}
-      {visible.length || (viewMode === "list" && rootFolders.length) ? <div className={viewMode === "grid" ? styles.fileGrid : styles.fileList}>
+      {visible.length || (viewMode === "list" && rootFolders.length) ? <div ref={fileGrid} className={viewMode === "grid" ? styles.fileGrid : styles.fileList}>
         {viewMode === "list" && rootFolders.map(renderFolderRow)}{visible.map(renderFile)}
       </div> : activeFolder && !search.trim() && filter === "all" && sourceFilter === "all" ? <div className={`${styles.folderUploadEmpty} ${draggingFolderFiles ? styles.folderUploadDragging : ""}`} aria-label={`上传文件到${activeFolder.name}`} onDragOver={(event) => { event.preventDefault(); if (!busy) setDraggingFolderFiles(true); }} onDragLeave={() => setDraggingFolderFiles(false)} onDrop={(event) => { event.preventDefault(); setDraggingFolderFiles(false); chooseQuickFiles(event.dataTransfer.files); }}><Upload size={27} strokeWidth={1.7}/><button disabled={busy} onClick={() => quickFileInput.current?.click()}>上传文件</button></div> : <div className={styles.state}><ImagePlus size={22}/><strong>{folderId ? "没有匹配的资产" : search || filter !== "all" || sourceFilter !== "all" ? "没有匹配的资产" : "还没有资产"}</strong><span>生成结果会自动保存，也可以上传 JPG/JPEG、PNG、MP4 或 MP3。</span></div>}
     </section>}

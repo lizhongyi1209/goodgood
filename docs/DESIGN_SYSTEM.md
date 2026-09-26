@@ -11,7 +11,9 @@ selection circle on folder tiles, matching file cards. Selected folders use the
 same dark floating bar with count, red Delete and close; file-only Download and
 Move stay hidden. The `项目` section contains asset files, not saved creative
 projects. In grid mode images preserve their aspect ratios in close masonry
-columns, capped at six with responsive reductions. Videos keep their native
+columns. On wide screens, the six columns span the full asset content width
+through the right edge below `新建`; narrower screens reduce the column count.
+Videos keep their native
 ratio, hide the grid caption, and preview muted/looping while visible unless
 reduced motion is requested. Hover/focus adds a faint neutral veil to folder
 covers and file previews, then reveals a top-right menu and bottom-right empty

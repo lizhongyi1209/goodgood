@@ -39,6 +39,9 @@
   columns.
 - Operator follow-up invoking `$impeccable`: folder and media covers and names
   should keep the default arrow cursor on hover instead of the hand cursor.
+- Operator follow-up invoking `$impeccable`: the asset grid currently places
+  files in four of six available columns. Six populated columns should span
+  the content width, with the right edge aligned below `新建`.
 
 ## Scope and acceptance
 
@@ -69,6 +72,9 @@
   motion.
 - Folder and media covers and names use the default arrow cursor. Their menu
   and selection controls remain separately actionable.
+- On wide screens, the first six files occupy all six columns across the asset
+  content width. Additional files continue in close masonry below them while
+  preserving each image and video ratio; narrower screens reduce columns.
 - In an opened folder, provide a breadcrumb back to assets, folder search and
   the existing view switch. An empty folder offers direct picker/drop upload;
   show real row outcomes and failed-file retry in a compact progress tray.
@@ -163,6 +169,15 @@
   retain their pointer cursor. `npm run check:local` passed: **583 tests / 560
   pass / 23 skip / 0 fail**; build/typecheck pass, lint 0 errors / 109 existing
   warnings. The operator will inspect the cursor behavior in 5173.
+- The prior CSS multi-column layout balanced eight files into four occupied
+  columns. The grid now establishes six columns across the full content width
+  on wide screens and measures each tile for close masonry placement. Its
+  ResizeObserver updates spans when an image, video or viewport changes size;
+  the grid falls back to ordinary rows without that API. The right edge now
+  shares the asset header's content edge below `新建`. Impeccable's layout
+  detector returned no findings. `npm run check:local` passed: **583 tests /
+  560 pass / 23 skip / 0 fail**; build/typecheck pass, lint 0 errors / 109
+  existing warnings. The operator will review the rendered alignment in 5173.
 - The existing 32131 Web was replaced with a verified local checkpoint after
   build/verify passed. `/api/health/version` reported `build.verified=true`;
   32131 readiness and 5173 `/assets` returned HTTP 200. 5173 and local Docker
@@ -177,7 +192,7 @@ The operator checks 5173 for the folder interior, direct empty-state upload,
 upper-right direct upload from the root and `测试` folder, upload tray,
 new-folder/rename dialog, folder tile menu and selection bar, list folder
 checkboxes, default arrow cursor/hover veil/empty selector/open menu, submenu frame, portrait and
-landscape video previews, six-column layout, combined folder/file rows, heading alignment,
+landscape video previews, six columns filled to the header's right edge, combined folder/file rows, heading alignment,
 row hover/menu/selection, the tag-free upload/menu, toolbar order and red
 Delete, uploaded-file deletion, masonry, source filters, grid/list switch and
 narrow screens. Address that feedback before any release decision; production

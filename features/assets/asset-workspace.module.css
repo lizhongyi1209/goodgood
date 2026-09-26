@@ -36,8 +36,9 @@
 .folderName, .folder small { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 3px; }
 .folderName { border: 0; background: transparent; color: var(--ink); text-align: left; font-size: 12px; font-weight: 620; }
 .folder small { margin-top: 3px; color: #898990; font-size: 11px; }
-.fileGrid { column-count: 6; column-gap: 13px; }
-.fileGrid .fileCard { display: inline-block; width: 100%; margin: 0 0 13px; break-inside: avoid; vertical-align: top; }
+.fileGrid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); align-items: start; gap: 13px; }
+.fileGrid.masonryReady { grid-auto-flow: row dense; grid-auto-rows: 1px; row-gap: 0; }
+.fileGrid .fileCard { width: 100%; align-self: start; }
 .fileCard { min-width: 0; position: relative; color: var(--ink); }
 .fileVisual { position: relative; overflow: hidden; border-radius: 14px; background: #f4f4f5; }
 .fileGrid .fileVisual::after { content: ""; position: absolute; z-index: 1; inset: 0; background: rgba(0,0,0,.07); opacity: 0; pointer-events: none; transition: opacity .16s ease; }
@@ -139,15 +140,14 @@
 .previewDialog button { border: 0; border-radius: 8px; background: #f3f3f5; padding: 7px 14px; color: var(--ink); font-size: 12px; }
 .workspace button:focus-visible, .workspace input:focus-visible, .workspace select:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .workspace .folderDialog input:focus-visible { outline: none; }
-@media (max-width: 1180px) { .fileGrid { column-count: 5; } .folders { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
-@media (max-width: 900px) { .fileGrid { column-count: 4; } .folders { grid-template-columns: repeat(4, minmax(0, 1fr)); } .header { flex-wrap: wrap; } .headerTools { width: 100%; } }
+@media (max-width: 1180px) { .fileGrid, .folders { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+@media (max-width: 900px) { .fileGrid, .folders { grid-template-columns: repeat(4, minmax(0, 1fr)); } .header { flex-wrap: wrap; } .headerTools { width: 100%; } }
 @media (max-width: 640px) {
   .header { align-items: flex-start; }
   .headerTools { flex-wrap: wrap; gap: 7px; }
   .search { order: 2; flex: 1 1 100%; width: 100%; }
   .folders { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-  .fileGrid { column-count: 2; column-gap: 9px; }
-  .fileGrid .fileCard { margin-bottom: 9px; }
+  .fileGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
   .fileList .fileInfo { grid-template-columns: minmax(0,1fr) 72px; }
   .listHead { grid-template-columns: 36px minmax(0,1fr) 72px; }
   .listHead .listSelect, .fileList .listSelect { left: -9px; }
