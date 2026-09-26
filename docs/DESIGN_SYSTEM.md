@@ -1,5 +1,14 @@
 # Design system
 
+## GG-122 standalone Hero preview
+
+The isolated `/hero` preview uses the supplied centered title, copy, two calls
+to action and three-image fan. It inherits GoodGood's white, achromatic
+tokens and wordmark. The supplied image URLs are preview material, not claims
+of GoodGood-generated work. The demo's unverified social-proof count is absent.
+Subtle entry motion respects reduced-motion settings; the page does not alter
+the creation workspace's quiet empty state or its navigation.
+
 ## GG-121 asset browser
 
 `资产` uses the existing bright, achromatic workspace. A compact title sits

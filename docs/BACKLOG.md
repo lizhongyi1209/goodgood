@@ -1,9 +1,9 @@
 # 当前任务与优先级 · 当前与最近交付
-
 > **部署状态（2026-09-23）**：GG-100 已把现有 `7888554`/`0044` 应用迁移到唯一 `goodgood-production` 项目并清理旧 blue/green 残留。此前 GG-024—GG-096 已在 GG-097 上线；各行「未部署」是历史状态。当前事实见 [CURRENT_STATE](CURRENT_STATE.md)，发布流程见 [DEPLOYMENT](DEPLOYMENT.md#production-hotfix-checklist-2026-09-17)。GG-101/102/103 仅在本地，图片和视频开发环境默认接真实 O1Key。
 
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
+| GG-122 | 独立 Hero 页面 | 组件、CTA 与 `/hero` 本地预览已完成，门禁 560/23/0；待站长手动视觉验收，未部署 | [任务](tasks/GG-122-standalone-hero-page.md) |
 | GG-116·117·119·120·121 | 生成图片操作；灵感下线；左上角字标；共享 Impeccable 技能；统一资产页 | GG-121 hover/菜单、默认箭头光标、视频原比例自动预览与铺满内容宽度的最多六列网格已精修；文件夹选择/删除/页内重命名和直传已完成，本地门禁 560/23/0，待站长手动验收；GG-116/119 待站长验收；GG-117 本地迁移已执行、生产未部署；GG-120 Codex 已发现、Claude 待合入确认 | [GG116](tasks/GG-116-asset-history-actions.md) / [ADR](decisions/0103-generated-asset-hard-delete.md) · [GG117](tasks/GG-117-inspiration-retirement.md) / [ADR](decisions/0104-inspiration-feature-retirement.md) · [GG119](tasks/GG-119-wordmark-only-workspace-brand.md) · [GG120](tasks/GG-120-shared-impeccable-skill.md) · [GG121](tasks/GG-121-unified-asset-browser.md) / [ADR 0106](decisions/0106-unified-asset-library-surface.md) / [ADR 0107](decisions/0107-asset-selection-and-tag-retirement.md) |
 | GG-115 | 生成记录、个人资产库、文件夹与 20 MB 上传 | 本地门禁 566/26/0、迁移 0046、检查点与 5173/32131 HTTP 已验证；站长确认默认历史、个人库及测试图上传刷新预览，未部署 | [任务](tasks/GG-115-asset-workspace.md) / [ADR](decisions/0102-asset-history-library-and-upload.md) |
 | GG-114 | 私有缩略图共用接口与后续画布复用规范 | 本地代码/门禁 564/26/0、5173/32131 HTTP 通过；未部署 | [任务](tasks/GG-114-reusable-image-delivery.md) / [ADR](decisions/0101-private-card-image-previews.md) |

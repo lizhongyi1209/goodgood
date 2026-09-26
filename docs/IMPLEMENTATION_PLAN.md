@@ -1,12 +1,14 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-26
-- Current phase: GG-121 已按站长反馈精修文件夹/素材 hover、默认箭头光标、未选空心选择器、菜单持续可见、移动子菜单边框、视频原比例静音可见自动预览与铺满内容宽度的六列网格；本地门禁通过，5173 保留热更新预览，待站长手动验收。此前文件夹选择/删除、页内重命名和直传已完成。32131 Web 仍为上一已验证检查点（后续仅改资产页 UI），GG-116/119 同待验收，GG-120 已由 Codex 发现；GG-117 隔离开发库迁移已执行，生产应用仍为 GG-098。
-- Current objective: 站长在 5173 检查素材是否先铺满六列、网格右缘是否与「新建」对齐，再检查箭头光标、hover 遮罩/空选择器/菜单、移动子菜单边框、横竖视频预览，并复核文件夹选择、重命名/删除及上传。GG-120 的 Claude Code 发现留到本分支合入后验证。
+- Current phase: GG-122 独立 `/hero` 页面、提供的三图组件和 CTA 已在 GG-116 工作树本地实现，门禁通过，待站长手动视觉验收；`/` 与 `/create` 继续是创作工作台，未部署。GG-121 资产页六列网格等本地改动同待验收。32131 Web 仍为上一已验证检查点，5173 为热更新预览；GG-116/119 同待验收，GG-120 已由 Codex 发现；GG-117 隔离开发库迁移已执行，生产应用仍为 GG-098。
+- Current objective: 站长在 5173 手动检查 `/hero` 的布局、示例图片、动效和两个 CTA，随后复核 GG-121 资产页六列对齐与交互。GG-120 的 Claude Code 发现留到本分支合入后验证。
 - Previous objective: GG-120 从 `F:/goodgood` 新开 Codex 会话确认 `$impeccable` 自动发现，现已完成。
 
 ## Current checkpoint
 
+- Task [GG-122](tasks/GG-122-standalone-hero-page.md)：**独立 Hero 页面本地实现与门禁完成，待站长手动浏览器验收**。
+  复用已有 shadcn Button、Tailwind 与 TypeScript，新增 `motion`、`react-wrap-balancer`、`Hero10` 和 CTA helper；`/hero` 使用站长提供的三张示例图片、准确的 GoodGood 文案与现有路由 CTA，不展示未经证实的客户数量。`check:local` 583 项 / 560 通过 / 23 跳过 / 0 失败；新增的 `<img>` 带来 1 条 lint 警告，总计 110 条、0 错误。未改生产，未做浏览器验收。
 - Task [GG-121](tasks/GG-121-unified-asset-browser.md)：**hover/视频/六列布局精修、文件夹操作与直传、本地门禁完成，待站长手动浏览器验收**。
   ADR 0106 统一 `资产` 页面；hover 增加轻遮罩，封面/名称保持默认箭头光标，未选控件不显示勾，打开的菜单按钮保持可见，移动子菜单同框；视频网格隐藏标题、按原比例静音可见循环预览，布局最多六列并铺满内容宽度，保持素材原比例和紧凑排列。文件夹卡片和列表行支持选择，复用底部操作栏但只显示删除，重命名复用新建文件夹弹框；文件夹内页与右上角上传无中间弹框。ADR 0107 取消标签，文件选择栏保留下载/移动/红底白字删除。最新 `check:local` 583 项 / 560 通过 / 23 跳过 / 0 失败。上一检查点的 `build:checkpoint` / `verify:checkpoint` 通过；32131 仍运行该检查点，5173 是当前 UI 热更新预览。未改生产、未进行真实上传/删除/重命名或浏览器验收。
 - Task [GG-120](tasks/GG-120-shared-impeccable-skill.md)：**Codex 已在 `F:/goodgood` 新会话发现，Claude Code 待合入后确认**。

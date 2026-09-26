@@ -1,5 +1,13 @@
 # Product definition
 
+## GG-122 standalone Hero preview
+
+`/hero` is a standalone local preview of a GoodGood introduction, separate
+from the signed-in creation workspace. It uses the supplied three-image Hero
+component, truthful product copy and links to existing creation and asset
+routes. The sample customer-count claim is omitted. `/` and `/create` remain
+working creation tools, with no new navigation entry or release decision.
+
 ## GG-121 unified asset surface
 
 `/assets` is named `资产` and shows generated results and accepted uploads in

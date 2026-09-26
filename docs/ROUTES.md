@@ -1,5 +1,13 @@
 # Navigation and route contract
 
+## GG-122 local Hero preview
+
+`/hero` is a standalone public preview route for the supplied Hero component.
+It is unlisted and marked noindex while under local review. Its calls to
+action link to the existing `/create` and `/assets` routes; their existing
+authentication rules apply. `/` remains a compatible creation entry and no
+workspace navigation route changes.
+
 ## GG-115 local asset routes
 
 `/assets` has two in-page views: default generation history and personal
