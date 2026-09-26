@@ -22,8 +22,13 @@
   `git diff --check` 通过。应用代码未改，按仓库流程未重跑 `check:local`。
 - 后续新会话验证发现：Codex 使用 `$impeccable`，Claude Code 使用 `/impeccable`；本会话的技能目录快照不会因仓库新文件自动刷新。
 - 现有 `F:/goodgood` 的未跟踪 `.claude/` 安装保持原状；将本分支合入该工作树前，应先审查那里的同名未跟踪文件，避免覆盖。
+- 2026-09-26 用户澄清 Agent 平台从 `F:/goodgood` 启动。已将本分支的 56 个
+  `.agents/skills/impeccable` 文件复制到该目录作为本机未跟踪副本；入口文件
+  哈希一致，原有 `.claude/` 未改动。当前会话的技能目录快照仍未列出 Impeccable，
+  因此自动发现尚未验证。合入本分支前需处理该未跟踪副本，避免同名文件冲突。
 
 ## 下一步
 
-提交后，在新的 Codex 和 Claude Code 项目会话中分别确认技能被发现。
+从 `F:/goodgood` 启动新的 Codex 会话，确认 `$impeccable` 被发现；本分支合入后，
+再分别确认 Codex 与 Claude Code 的项目级发现。
 引擎相关命令仅在明确需要时另行验证，不改变当前 5173/32131 服务。

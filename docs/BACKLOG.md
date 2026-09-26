@@ -4,7 +4,7 @@
 
 | ID | 事项 | 状态 | 入口 |
 | --- | --- | --- | --- |
-| GG-116·117·119·120 | 生成历史与卡片操作；灵感下线；左上角字标；共享 Impeccable 技能 | GG-116/119 待站长浏览器验收；GG-117 本地迁移已执行、生产未部署；GG-120 本地静态验证完成，待新会话发现确认 | [GG116](tasks/GG-116-asset-history-actions.md) / [ADR](decisions/0103-generated-asset-hard-delete.md) · [GG117](tasks/GG-117-inspiration-retirement.md) / [ADR](decisions/0104-inspiration-feature-retirement.md) · [GG119](tasks/GG-119-wordmark-only-workspace-brand.md) · [GG120](tasks/GG-120-shared-impeccable-skill.md) |
+| GG-116·117·119·120 | 生成历史与卡片操作；灵感下线；左上角字标；共享 Impeccable 技能 | GG-116/119 待站长浏览器验收；GG-117 本地迁移已执行、生产未部署；GG-120 本地静态验证完成，`F:/goodgood` 已放入本机技能副本，待新会话发现确认 | [GG116](tasks/GG-116-asset-history-actions.md) / [ADR](decisions/0103-generated-asset-hard-delete.md) · [GG117](tasks/GG-117-inspiration-retirement.md) / [ADR](decisions/0104-inspiration-feature-retirement.md) · [GG119](tasks/GG-119-wordmark-only-workspace-brand.md) · [GG120](tasks/GG-120-shared-impeccable-skill.md) |
 | GG-115 | 生成记录、个人资产库、文件夹与 20 MB 上传 | 本地门禁 566/26/0、迁移 0046、检查点与 5173/32131 HTTP 已验证；站长确认默认历史、个人库及测试图上传刷新预览，未部署 | [任务](tasks/GG-115-asset-workspace.md) / [ADR](decisions/0102-asset-history-library-and-upload.md) |
 | GG-114 | 私有缩略图共用接口与后续画布复用规范 | 本地代码/门禁 564/26/0、5173/32131 HTTP 通过；未部署 | [任务](tasks/GG-114-reusable-image-delivery.md) / [ADR](decisions/0101-private-card-image-previews.md) |
 | GG-113 | 资产库图片卡片与选择器使用私有 WebP 缩略图 | 本地代码/门禁 563/26/0、真实只读转换与 5173/32131 HTTP 通过；待站长页面复核，未部署 | [任务](tasks/GG-113-private-image-previews.md) / [ADR](decisions/0101-private-card-image-previews.md) |

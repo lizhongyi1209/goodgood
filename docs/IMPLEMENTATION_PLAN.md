@@ -2,7 +2,7 @@
 
 - Last synchronized: 2026-09-26
 - Current phase: GG-116 生成历史与 GG-119 左上角字标待站长手动浏览器验收；GG-120 项目级 Claude/Codex 共享技能已完成本地静态验证，待新会话发现确认；GG-117 隔离开发库迁移已执行，生产应用仍为 GG-098。
-- Current objective: 新会话分别确认 GG-120 在 Codex 和 Claude Code 中被发现；站长在 5173 复核 GG-116 生成历史和 GG-119 字标。
+- Current objective: 从实际 Agent 启动目录 `F:/goodgood` 新开 Codex 会话确认 GG-120 的 `$impeccable` 自动发现；本分支合入后再确认 Claude Code；站长在 5173 复核 GG-116 生成历史和 GG-119 字标。
 - Previous objective: GG-118 无彩色配色并入本线并清除两处残留绿色状态色，检查点 `33902d8`。
 
 ## Current checkpoint
