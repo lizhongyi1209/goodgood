@@ -24,6 +24,15 @@ organization failures remain recoverable.
 `新建文件夹` opens an in-page dialog with focus in the name field. Empty names
 cannot submit. Enter creates, while Cancel, Escape or outside click closes;
 creation failure stays in the dialog with the entered name available to edit.
+Opening a folder clears root search/filter state and shows a breadcrumb back to
+`资产`. Its search only narrows that folder. Empty grid and list views offer a
+large upload target; list headings remain visible. The button opens the native
+file picker, and dropping files on the target uses the same upload path. Files
+are validated and uploaded into the captured folder. A fixed progress tray
+shows real per-file states, completed count, errors and retry for failed rows;
+closing it does not change uploaded assets. After refresh, the folder shows the
+new file in the active grid/list view. A failed folder assignment is reported
+as an uploaded file needing organization from all assets.
 
 ## GG-115 assets flow
 

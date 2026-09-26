@@ -1,14 +1,14 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-26
-- Current phase: GG-121 新建文件夹按站长参考图改为页内弹框，本地实现与门禁完成；5173 保留热更新预览，待站长手动验收。32131 Web 仍为上一已验证检查点（后续仅改资产页 UI），GG-116/119 同待验收，GG-120 已由 Codex 发现；GG-117 隔离开发库迁移已执行，生产应用仍为 GG-098。
-- Current objective: 站长在 5173 检查新建文件夹弹框及此前的列表对齐、行悬停/菜单、工具栏顺序/红色删除、标签退役和文件删除，同时复核瀑布流、来源筛选和窄屏。GG-120 的 Claude Code 发现留到本分支合入后验证。
+- Current phase: GG-121 文件夹内页按站长六张截图实现路径标题、空态上传区与上传状态托盘，本地门禁完成；5173 保留热更新预览，待站长手动验收。32131 Web 仍为上一已验证检查点（后续仅改资产页 UI），GG-116/119 同待验收，GG-120 已由 Codex 发现；GG-117 隔离开发库迁移已执行，生产应用仍为 GG-098。
+- Current objective: 站长在 5173 检查文件夹网格/列表空态、原生选文件、上传状态和结果，以及此前的新建文件夹弹框、列表对齐、行悬停/菜单与文件操作。GG-120 的 Claude Code 发现留到本分支合入后验证。
 - Previous objective: GG-120 从 `F:/goodgood` 新开 Codex 会话确认 `$impeccable` 自动发现，现已完成。
 
 ## Current checkpoint
 
-- Task [GG-121](tasks/GG-121-unified-asset-browser.md)：**新建文件夹页内弹框与本地门禁完成，待站长手动浏览器验收**。
-  ADR 0106 统一 `资产` 页面，列表合并根文件夹与文件、选择框位于行外，名称表头/缩略图对齐首个分类、右侧行菜单；ADR 0107 取消标签，选择栏仅下载/移动/红底白字删除，上传图片/视频/音频与生成图片均可确认后永久删除。最新 `check:local` 583 项 / 560 通过 / 23 跳过 / 0 失败。上一检查点的 `build:checkpoint` / `verify:checkpoint` 通过；32131 仍运行该检查点，5173 是当前 UI 热更新预览。未改生产、未进行真实删除或浏览器验收。
+- Task [GG-121](tasks/GG-121-unified-asset-browser.md)：**文件夹内页、空态直传与本地门禁完成，待站长手动浏览器验收**。
+  ADR 0106 统一 `资产` 页面，文件夹内页提供路径标题、搜索、网格/列表空态上传区与上传状态托盘；ADR 0107 取消标签，选择栏仅下载/移动/红底白字删除，上传图片/视频/音频与生成图片均可确认后永久删除。最新 `check:local` 583 项 / 560 通过 / 23 跳过 / 0 失败。上一检查点的 `build:checkpoint` / `verify:checkpoint` 通过；32131 仍运行该检查点，5173 是当前 UI 热更新预览。未改生产、未进行真实删除或浏览器验收。
 - Task [GG-120](tasks/GG-120-shared-impeccable-skill.md)：**Codex 已在 `F:/goodgood` 新会话发现，Claude Code 待合入后确认**。
   `.agents/skills/impeccable` 为唯一资料目录，`.claude/skills/impeccable` 为 Claude 发现入口；两个入口格式校验通过、100 个链接无断链、文档测试 8/8；自动 hooks 未启用。
 - Task [GG-119](tasks/GG-119-wordmark-only-workspace-brand.md)：**本地实现与门禁完成，待站长手动浏览器复核**。

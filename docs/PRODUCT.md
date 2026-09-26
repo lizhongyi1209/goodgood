@@ -12,6 +12,9 @@ and permanently delete generated images or uploaded images, videos, and audio
 after confirmation. Asset tags are no longer offered; existing metadata is
 preserved. See [ADR 0106](decisions/0106-unified-asset-library-surface.md) and
 [ADR 0107](decisions/0107-asset-selection-and-tag-retirement.md).
+Inside a folder, creators can search its files and upload new media directly
+from the empty state; uploaded files are assigned to that folder and surface in
+the same grid or list after refresh.
 
 ## GG-115 asset workspace decision
 

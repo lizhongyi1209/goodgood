@@ -15,6 +15,12 @@ the agent does not perform browser acceptance. No real-provider request is
 needed for this UI change.
 For the in-page new-folder dialog, verify the empty disabled action, Enter,
 Cancel/Escape/outside dismissal, pending state and recoverable server error.
+For an empty folder, inspect breadcrumb return, folder-scoped search and the
+absence of root media tabs. Check the upload target in both grid and list,
+native file selection/drop, pending/completed/failed tray states and folder
+placement after refresh. Upload outcome counters are real row states, not byte
+progress. Do not use a real uploaded file in automated or browser-agent tests;
+the operator is manually checking this flow at 5173.
 
 ## GG-115 targeted verification
 

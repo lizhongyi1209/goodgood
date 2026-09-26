@@ -22,6 +22,10 @@
   thumbnails and the `名称` heading align with the first media category above.
 - Operator follow-up: replace the browser-native new-folder prompt with the
   centered in-page dialog shown in the supplied screenshot.
+- Operator follow-up: six screenshots define the opened-folder surface: root
+  breadcrumb and folder name, no root media tabs, folder-scoped search, empty
+  upload target in grid/list, native file picker, bottom-right upload status,
+  then the newly uploaded file in grid/list.
 
 ## Scope and acceptance
 
@@ -40,6 +44,9 @@
 - In list mode, place root folders before files under one header. The selection
   gutter offers per-file and visible-file selection; folder rows open and expose
   rename/delete but do not pretend to support folder download or nesting.
+- In an opened folder, provide a breadcrumb back to assets, folder search and
+  the existing view switch. An empty folder offers direct picker/drop upload;
+  show real row outcomes and failed-file retry in a compact progress tray.
 - No browser acceptance by the agent; the operator will check the running 5173
   page manually. No production action.
 
@@ -92,6 +99,14 @@
   API and persistence rules are unchanged. Latest `npm run check:local` passed:
   **583 tests / 560 pass / 23 skip / 0 fail**, build/typecheck pass, lint 0
   errors / 109 existing warnings. Manual visual review is pending.
+- Folder interior now hides root media tabs, retains grid/list controls and
+  shows the empty upload target under list headings or directly under the
+  breadcrumb in grid mode. Direct uploads reuse the existing media APIs and
+  owner-scoped folder assignment. The progress tray reports row states/counts
+  without fabricated byte percentages; failures keep their message and can be
+  retried. API/persistence rules remain unchanged. Latest `npm run check:local`:
+  **583 tests / 560 pass / 23 skip / 0 fail**, build/typecheck pass, lint 0
+  errors / 109 existing warnings. Manual 5173 review pending.
 - The existing 32131 Web was replaced with a verified local checkpoint after
   build/verify passed. `/api/health/version` reported `build.verified=true`;
   32131 readiness and 5173 `/assets` returned HTTP 200. 5173 and local Docker
@@ -102,7 +117,8 @@
 
 ## 下一步
 
-The operator checks 5173 for the new-folder dialog, combined folder/file rows, heading alignment,
+The operator checks 5173 for the folder interior, direct empty-state upload,
+upload tray, new-folder dialog, combined folder/file rows, heading alignment,
 row hover/menu/selection, the tag-free upload/menu, toolbar order and red
 Delete, uploaded-file deletion, masonry, source filters, grid/list switch and
 narrow screens. Address that feedback before any release decision; production

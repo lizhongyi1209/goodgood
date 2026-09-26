@@ -23,6 +23,14 @@ not GoodGood's resumable creative projects.
   asset files. Opening a folder narrows the same file collection. Creative
   projects remain separate resumable sessions and are not turned into folders
   or duplicated as file cards. Document formats are outside this slice.
+- An opened folder uses a clickable `资产 / 文件夹名` breadcrumb, folder-scoped
+  search and the same grid/list controls. Media categories are hidden inside
+  the folder. When no file matches an unfiltered empty folder, show a large
+  upload target; in list mode, keep the table headings above it. Choosing or
+  dropping files uploads directly to that folder and reports per-file outcomes
+  in a dismissible progress tray. Do not invent byte percentages when the
+  upload boundary does not expose them. Existing ownership and 20 MiB/media
+  constraints remain in force.
 - In list mode, show root folders first and files below them in one table under
   the same `名称 / 修改日期 / 大小` headings; omit the grid-only section headings and
   empty-folder placeholder. A folder row opens that folder and exposes rename

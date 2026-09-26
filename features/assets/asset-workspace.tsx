@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AudioLines, Check, ChevronDown, ChevronLeft, CircleAlert, Download, Folder, FolderPlus, Grid2X2, ImagePlus, List, LoaderCircle, Minus, MoreHorizontal, Pencil, Plus, RefreshCw, Search, Trash2, Upload, WandSparkles, X } from "lucide-react";
+import { AudioLines, Check, ChevronDown, ChevronRight, CircleAlert, Download, Folder, FolderPlus, Grid2X2, ImagePlus, List, LoaderCircle, Minus, MoreHorizontal, Pencil, Plus, RefreshCw, Search, Trash2, Upload, WandSparkles, X } from "lucide-react";
 import { Dialog, DialogDescription, DialogOverlay, DialogPortal, DialogTitle } from "@/components/ui/dialog";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -127,7 +127,14 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
   const [preview, setPreview] = useState<{ name: string; url: string; media: Media } | null>(null);
   const [rows, setRows] = useState<readonly UploadRow[]>([]);
   const [uploadFolderId, setUploadFolderId] = useState<string | null>(null);
+  const [quickRows, setQuickRows] = useState<readonly UploadRow[]>([]);
+  const [quickUploadFolderId, setQuickUploadFolderId] = useState<string | null>(null);
+  const [quickUploading, setQuickUploading] = useState(false);
+  const [quickTrayCollapsed, setQuickTrayCollapsed] = useState(false);
+  const [quickRefreshError, setQuickRefreshError] = useState<string | null>(null);
+  const [draggingFolderFiles, setDraggingFolderFiles] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+  const quickFileInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!enabled) { setOrganizationLoading(false); return; }
@@ -161,6 +168,8 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
   const visibleKeys = visible.map((item) => `${item.kind}:${item.id}`);
   const selectedVisibleCount = visibleKeys.filter((key) => selectedKeys.includes(key)).length;
   const activeFolder = organization.folders.find((item) => item.id === folderId);
+  const quickReadyCount = quickRows.filter((row) => row.state === "ready").length;
+  const quickFailedRows = quickRows.filter((row) => row.state === "failed");
   const loading = historyLoading || libraryLoading;
   const error = historyError ?? libraryError;
 
@@ -267,6 +276,14 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
     });
   }
 
+  function openFolder(id: string) {
+    setFolderId(id);
+    setFilter("all");
+    setSourceFilter("all");
+    setSearch("");
+    setSelectedKeys([]);
+  }
+
   async function addFolder() {
     const name = newFolderName.trim();
     if (busy || !name) return;
@@ -301,37 +318,79 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
     }))]);
   }
 
+  async function uploadRowToFolder(row: UploadRow, destinationFolderId: string | null): Promise<string | null> {
+    const validation = uploadError(row.file);
+    if (validation) throw new Error(validation);
+    let kind: OrganizedAssetKind;
+    let id: string;
+    if (row.file.type.startsWith("image/")) {
+      const [result] = await uploadReferenceFiles([{ clientId: row.id, file: row.file }], () => {}, workspaceId);
+      if (result?.reference.status !== "ready") throw new Error(result?.reference.errorMessage ?? "图片上传失败，请重试。");
+      kind = "reference"; id = result.reference.id;
+    } else if (row.file.type === "video/mp4") {
+      const result = await uploadPrivateVideoMaterial(row.id, row.file, workspaceId);
+      kind = "video"; id = result.id;
+    } else {
+      const result = await uploadPrivateAudioMaterial(row.id, row.file, workspaceId);
+      kind = "audio"; id = result.id;
+    }
+    if (!destinationFolderId) return null;
+    try {
+      await saveAssetOrganization(kind, id, { folderId: destinationFolderId, tags: [] }, workspaceId);
+      return null;
+    } catch (cause) {
+      return `上传成功，但未能放入文件夹：${cause instanceof Error ? cause.message : "请到全部资产中移动文件。"}`;
+    }
+  }
+
   async function uploadAll() {
+    if (busy) return;
     setBusy(true); setActionError(null);
     let uploaded = false;
-    for (const row of rows.filter((item) => item.state === "waiting" || item.state === "failed")) {
-      const validation = uploadError(row.file);
-      if (validation) { setRows((current) => current.map((item) => item.id === row.id ? { ...item, state: "failed", message: validation } : item)); continue; }
-      setRows((current) => current.map((item) => item.id === row.id ? { ...item, state: "uploading", message: undefined } : item));
-      try {
-        let kind: OrganizedAssetKind;
-        let id: string;
-        if (row.file.type.startsWith("image/")) {
-          const [result] = await uploadReferenceFiles([{ clientId: row.id, file: row.file }], () => {}, workspaceId);
-          if (result?.reference.status !== "ready") throw new Error(result?.reference.errorMessage ?? "图片上传失败，请重试。");
-          kind = "reference"; id = result.reference.id;
-        } else if (row.file.type === "video/mp4") {
-          const result = await uploadPrivateVideoMaterial(row.id, row.file, workspaceId);
-          kind = "video"; id = result.id;
-        } else {
-          const result = await uploadPrivateAudioMaterial(row.id, row.file, workspaceId);
-          kind = "audio"; id = result.id;
+    try {
+      for (const row of rows.filter((item) => item.state === "waiting" || item.state === "failed")) {
+        setRows((current) => current.map((item) => item.id === row.id ? { ...item, state: "uploading", message: undefined } : item));
+        try {
+          const warning = await uploadRowToFolder(row, uploadFolderId);
+          uploaded = true;
+          if (warning) setActionError(warning);
+          setRows((current) => current.map((item) => item.id === row.id ? { ...item, state: "ready", message: warning ?? undefined } : item));
+        } catch (cause) {
+          setRows((current) => current.map((item) => item.id === row.id ? { ...item, state: "failed", message: cause instanceof Error ? cause.message : "上传失败，请重试。" } : item));
         }
-        uploaded = true;
-        try { if (uploadFolderId) await saveAssetOrganization(kind, id, { folderId: uploadFolderId, tags: [] }, workspaceId); }
-        catch (cause) { setActionError(`上传成功，但整理失败：${cause instanceof Error ? cause.message : "请在资产卡片中重试。"}`); }
-        setRows((current) => current.map((item) => item.id === row.id ? { ...item, state: "ready", message: undefined } : item));
-      } catch (cause) {
-        setRows((current) => current.map((item) => item.id === row.id ? { ...item, state: "failed", message: cause instanceof Error ? cause.message : "上传失败，请重试。" } : item));
       }
-    }
-    if (uploaded) { await onRefresh(); setRevision((current) => current + 1); }
-    setBusy(false);
+      if (uploaded) { await onRefresh(); setRevision((current) => current + 1); }
+    } catch (cause) { setActionError(cause instanceof Error ? cause.message : "上传完成，但列表刷新失败，请重试。"); }
+    finally { setBusy(false); }
+  }
+
+  async function uploadQuickRows(targets: readonly UploadRow[], destinationFolderId: string) {
+    if (busy || !targets.length) return;
+    setBusy(true); setQuickUploading(true); setQuickRefreshError(null);
+    let uploaded = false;
+    try {
+      for (const row of targets) {
+        setQuickRows((current) => current.map((item) => item.id === row.id ? { ...item, state: "uploading", message: undefined } : item));
+        try {
+          const warning = await uploadRowToFolder(row, destinationFolderId);
+          uploaded = true;
+          setQuickRows((current) => current.map((item) => item.id === row.id ? { ...item, state: "ready", message: warning ?? undefined } : item));
+        } catch (cause) {
+          setQuickRows((current) => current.map((item) => item.id === row.id ? { ...item, state: "failed", message: cause instanceof Error ? cause.message : "上传失败，请重试。" } : item));
+        }
+      }
+      if (uploaded) { await onRefresh(); setRevision((current) => current + 1); }
+    } catch (cause) { setQuickRefreshError(cause instanceof Error ? cause.message : "上传完成，但列表刷新失败，请刷新页面。"); }
+    finally { setQuickUploading(false); setBusy(false); }
+  }
+
+  function chooseQuickFiles(files: FileList | null) {
+    if (!files || !folderId || busy || files.length === 0) return;
+    const picked = Array.from(files, (file): UploadRow => ({ id: crypto.randomUUID(), file, state: "waiting" }));
+    setQuickRows(picked);
+    setQuickUploadFolderId(folderId);
+    setQuickTrayCollapsed(false);
+    void uploadQuickRows(picked, folderId);
   }
 
   function openItem(item: LibraryItem) {
@@ -356,8 +415,8 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
 
   function renderFolderRow(folder: AssetFolder) {
     return <article className={`${styles.fileCard} ${styles.folderRow}`} key={`folder:${folder.id}`}>
-      <button className={styles.folderVisual} aria-label={`打开文件夹 ${folder.name}`} onClick={() => { setFolderId(folder.id); setSelectedKeys([]); }}><Folder size={20}/></button>
-      <div className={styles.fileInfo}><button title={folder.name} onClick={() => { setFolderId(folder.id); setSelectedKeys([]); }}>{folder.name}</button><time dateTime={folder.createdAt}>{dateLabel(folder.createdAt)}</time><small>—</small></div>
+      <button className={styles.folderVisual} aria-label={`打开文件夹 ${folder.name}`} onClick={() => openFolder(folder.id)}><Folder size={20}/></button>
+      <div className={styles.fileInfo}><button title={folder.name} onClick={() => openFolder(folder.id)}>{folder.name}</button><time dateTime={folder.createdAt}>{dateLabel(folder.createdAt)}</time><small>—</small></div>
       <DropdownMenu><DropdownMenuTrigger asChild><button className={styles.moreButton} aria-label={`${folder.name} 的更多操作`} title="更多操作" disabled={busy}><MoreHorizontal size={19}/></button></DropdownMenuTrigger><DropdownMenuContent align="end" className={styles.fileMenu}>
         <DropdownMenuItem onSelect={() => void editFolder("rename", folder)}><Pencil size={16}/>重命名</DropdownMenuItem>
         <DropdownMenuItem variant="destructive" onSelect={() => void editFolder("delete", folder)}><Trash2 size={16}/>删除文件夹</DropdownMenuItem>
@@ -387,8 +446,9 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
   }
 
   return <section className={styles.workspace} aria-label="资产">
+    <input ref={quickFileInput} type="file" accept=".jpg,.jpeg,.png,.mp4,.mp3,image/jpeg,image/png,video/mp4,audio/mpeg" multiple hidden onChange={(event) => { chooseQuickFiles(event.target.files); event.target.value = ""; }}/>
     <header className={styles.header}>
-      <h1>资产</h1>
+      {activeFolder ? <h1 className={styles.folderBreadcrumb}><button aria-label="返回全部资产" onClick={() => { setFolderId(null); setSearch(""); setSelectedKeys([]); }}>资产</button><ChevronRight size={18} aria-hidden="true"/><span>{activeFolder.name}</span></h1> : <h1>资产</h1>}
       <div className={styles.headerTools}>
         <div className={styles.iconGroup} role="group" aria-label="文件来源">
           <button className={sourceFilter === "uploaded" ? styles.iconActive : ""} aria-label="已上传" title="已上传" aria-pressed={sourceFilter === "uploaded"} onClick={() => { setSourceFilter(sourceFilter === "uploaded" ? "all" : "uploaded"); setSelectedKeys([]); }}><Upload size={17}/></button>
@@ -398,34 +458,37 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
           <button className={viewMode === "grid" ? styles.iconActive : ""} aria-label="网格视图" title="网格视图" aria-pressed={viewMode === "grid"} onClick={() => setViewMode("grid")}><Grid2X2 size={17}/></button>
           <button className={viewMode === "list" ? styles.iconActive : ""} aria-label="列表视图" title="列表视图" aria-pressed={viewMode === "list"} onClick={() => setViewMode("list")}><List size={18}/></button>
         </div>
-        <label className={styles.search}><Search size={16}/><input value={search} onChange={(event) => { setSearch(event.target.value); setSelectedKeys([]); }} placeholder="搜索资产" aria-label="搜索资产" /></label>
+        <label className={styles.search}><Search size={16}/><input value={search} onChange={(event) => { setSearch(event.target.value); setSelectedKeys([]); }} placeholder={activeFolder ? "在此文件夹中搜索" : "搜索资产"} aria-label={activeFolder ? "在此文件夹中搜索" : "搜索资产"} /></label>
         <DropdownMenu><DropdownMenuTrigger asChild><button className={styles.primaryButton}>新建<ChevronDown size={15}/></button></DropdownMenuTrigger><DropdownMenuContent align="end" className={styles.fileMenu}>
           <DropdownMenuItem onSelect={() => { setRows([]); setActionError(null); setUploadFolderId(folderId); setUploadOpen(true); }}><Upload size={16}/>上传文件</DropdownMenuItem>
           <DropdownMenuItem disabled={busy} onSelect={() => { setNewFolderName(""); setFolderDialogError(null); setFolderDialogOpen(true); }}><FolderPlus size={16}/>新建文件夹</DropdownMenuItem>
         </DropdownMenuContent></DropdownMenu>
       </div>
     </header>
-    <div className={styles.filters} role="group" aria-label="资产类型">
+    {!activeFolder && <div className={styles.filters} role="group" aria-label="资产类型">
       {mediaFilters.map((choice) => <button key={choice.id} className={filter === choice.id ? styles.selectedFilter : ""} aria-pressed={filter === choice.id} onClick={() => { setFilter(choice.id); setSelectedKeys([]); }}>{choice.label}</button>)}
-    </div>
-    {activeFolder && <div className={styles.folderActions}><button onClick={() => { setFolderId(null); setSelectedKeys([]); }}><ChevronLeft size={15}/>全部资产</button><span>/ {activeFolder.name}</span><button disabled={busy} title="重命名文件夹" aria-label="重命名文件夹" onClick={() => void editFolder("rename")}><Pencil size={15}/></button><button disabled={busy} onClick={() => void editFolder("delete")}>删除文件夹</button></div>}
+    </div>}
     {(error || organizationError || actionError) && <div className={styles.error} role="alert"><CircleAlert size={16}/>{actionError ?? error ?? organizationError}<button onClick={() => { setActionError(null); onRetry(); setRevision((current) => current + 1); }}><RefreshCw size={14}/>重试</button></div>}
     {(loading || organizationLoading) && <div className={styles.state} role="status"><LoaderCircle className={styles.spinner} size={18}/>正在读取资产</div>}
     {!loading && !organizationLoading && viewMode === "grid" && rootFolders.length > 0 && <section className={styles.folderSection} aria-label="文件夹"><h2>文件夹</h2>
-      <div className={styles.folders}>{rootFolders.map((folder) => <button className={styles.folder} key={folder.id} onClick={() => { setFolderId(folder.id); setSelectedKeys([]); }}>
+      <div className={styles.folders}>{rootFolders.map((folder) => <button className={styles.folder} key={folder.id} onClick={() => openFolder(folder.id)}>
         <span className={styles.folderArt}><Folder size={38} strokeWidth={1.8}/></span><strong>{folder.name}</strong><small>{items.filter((item) => arrangements.get(`${item.kind}:${item.id}`)?.folderId === folder.id).length} 个项目</small>
       </button>)}</div>
     </section>}
     {!loading && !organizationLoading && <section className={styles.filesSection} aria-label={viewMode === "list" ? "资产列表" : "项目"}>
-      {viewMode === "grid" && <h2>{activeFolder ? activeFolder.name : "项目"}</h2>}
-      {viewMode === "list" && (rootFolders.length > 0 || visible.length > 0) && <div className={`${styles.listHead} ${selectedKeys.length ? styles.listSelecting : ""}`}>
-        {visible.length > 0 && <button className={styles.listSelect} role="checkbox" aria-checked={selectedVisibleCount === visible.length ? true : selectedVisibleCount > 0 ? "mixed" : false} aria-label={selectedVisibleCount === visible.length ? "取消全选可见文件" : "全选可见文件"} disabled={busy} onClick={toggleVisibleSelection}>{selectedVisibleCount === visible.length ? <Check size={12}/> : selectedVisibleCount > 0 ? <Minus size={12}/> : null}</button>}
+      {viewMode === "grid" && !activeFolder && <h2>项目</h2>}
+      {viewMode === "list" && (activeFolder || rootFolders.length > 0 || visible.length > 0) && <div className={`${styles.listHead} ${selectedKeys.length ? styles.listSelecting : ""}`}>
+        {(visible.length > 0 || activeFolder) && <button className={styles.listSelect} role="checkbox" aria-checked={visible.length > 0 && selectedVisibleCount === visible.length ? true : selectedVisibleCount > 0 ? "mixed" : false} aria-label={selectedVisibleCount === visible.length && visible.length > 0 ? "取消全选可见文件" : "全选可见文件"} disabled={busy || visible.length === 0} onClick={toggleVisibleSelection}>{selectedVisibleCount === visible.length && visible.length > 0 ? <Check size={12}/> : selectedVisibleCount > 0 ? <Minus size={12}/> : null}</button>}
         <span className={styles.nameHeading}>名称</span><span>修改日期</span><span>大小</span>
       </div>}
-      {visible.length || (viewMode === "list" && rootFolders.length) ? <div className={viewMode === "grid" ? styles.fileGrid : styles.fileList}>
+      {visible.length || (viewMode === "list" && rootFolders.length) ? <div className={viewMode === "grid" ? `${styles.fileGrid} ${activeFolder ? styles.folderFileGrid : ""}` : styles.fileList}>
         {viewMode === "list" && rootFolders.map(renderFolderRow)}{visible.map(renderFile)}
-      </div> : <div className={styles.state}><ImagePlus size={22}/><strong>{folderId ? "文件夹里还没有资产" : search || filter !== "all" || sourceFilter !== "all" ? "没有匹配的资产" : "还没有资产"}</strong><span>生成结果会自动保存，也可以上传 JPG/JPEG、PNG、MP4 或 MP3。</span></div>}
+      </div> : activeFolder && !search.trim() && filter === "all" && sourceFilter === "all" ? <div className={`${styles.folderUploadEmpty} ${draggingFolderFiles ? styles.folderUploadDragging : ""}`} aria-label={`上传文件到${activeFolder.name}`} onDragOver={(event) => { event.preventDefault(); if (!busy) setDraggingFolderFiles(true); }} onDragLeave={() => setDraggingFolderFiles(false)} onDrop={(event) => { event.preventDefault(); setDraggingFolderFiles(false); chooseQuickFiles(event.dataTransfer.files); }}><Upload size={27} strokeWidth={1.7}/><button disabled={busy} onClick={() => quickFileInput.current?.click()}>上传文件</button></div> : <div className={styles.state}><ImagePlus size={22}/><strong>{folderId ? "没有匹配的资产" : search || filter !== "all" || sourceFilter !== "all" ? "没有匹配的资产" : "还没有资产"}</strong><span>生成结果会自动保存，也可以上传 JPG/JPEG、PNG、MP4 或 MP3。</span></div>}
     </section>}
+    {quickRows.length > 0 && <aside className={styles.uploadTray} aria-label="文件上传进度" aria-live="polite">
+      <div className={styles.uploadTrayHead}><strong>{quickUploading ? `正在上传 ${quickRows.length} 个文件` : quickFailedRows.length > 0 ? `${quickFailedRows.length} 个文件上传失败` : quickRows.some((row) => row.message) ? "上传完成，部分文件未归档" : "上传完成"}</strong><span>{quickReadyCount}/{quickRows.length}</span><button aria-label={quickTrayCollapsed ? "展开上传详情" : "收起上传详情"} aria-expanded={!quickTrayCollapsed} onClick={() => setQuickTrayCollapsed((current) => !current)}><ChevronDown size={16}/></button>{!quickUploading && <button aria-label="关闭上传进度" onClick={() => { setQuickRows([]); setQuickRefreshError(null); }}><X size={15}/></button>}</div>
+      {!quickTrayCollapsed && <div className={styles.uploadTrayBody}><ul>{quickRows.map((row) => <li key={row.id}><span className={styles.uploadTrayIcon}>{row.state === "ready" ? <Check size={16}/> : row.state === "failed" ? <CircleAlert size={16}/> : <LoaderCircle className={styles.spinner} size={16}/>}</span><span className={styles.uploadTrayText}><strong title={row.file.name}>{row.file.name}</strong><small className={row.state === "failed" || row.message ? styles.uploadTrayError : ""}>{row.message ?? ({ waiting: "等待上传", uploading: "正在上传…", ready: "已上传", failed: "上传失败" }[row.state])}</small></span></li>)}</ul>{quickRefreshError && <p role="alert" className={styles.uploadTrayError}>{quickRefreshError}</p>}{quickFailedRows.length > 0 && !quickUploading && quickUploadFolderId && <button className={styles.uploadTrayRetry} onClick={() => void uploadQuickRows(quickFailedRows, quickUploadFolderId)}>重试失败文件</button>}</div>}
+    </aside>}
     {selectedItems.length > 0 && <div className={styles.selectionBar} role="toolbar" aria-label="已选资产操作">
       <span>已选择 {selectedItems.length} 个</span>
       <button disabled={busy} onClick={() => void downloadItems(selectedItems)}><Download size={16}/>下载</button>

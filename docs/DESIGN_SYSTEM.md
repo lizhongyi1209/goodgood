@@ -24,6 +24,13 @@ source of blue/yellow accent colors or document-file support.
 `新建文件夹` opens a centered, compact in-page dialog with a dim overlay, one
 labelled name field and quiet `取消 / 创建` actions. The input focus ring stays
 achromatic; the Create action remains disabled for an empty name.
+Inside a folder, the heading becomes a quiet root breadcrumb plus the active
+folder name. Media tabs disappear, search copy becomes folder-specific, and a
+wide dashed upload target fills the empty state. List mode keeps its column
+headings before that target. A small bottom-right upload tray shows actual
+pending, completed and failed states with counts; it does not imply a measured
+percentage that the API cannot provide. An opened folder uses a compact
+six-column image grid on wide screens, reflowing at narrower widths.
 
 ## GG-115 asset workspace
 

@@ -3,6 +3,11 @@
 .workspace button:disabled { cursor: default; opacity: .55; }
 .header { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 20px; }
 .header h1 { flex: none; margin: 0; font-size: 24px; letter-spacing: -.04em; }
+.header h1.folderBreadcrumb { min-width: 0; flex: 0 1 auto; display: flex; align-items: center; gap: 12px; }
+.folderBreadcrumb button { flex: none; padding: 0; border: 0; background: transparent; color: #88888e; font: inherit; letter-spacing: inherit; }
+.folderBreadcrumb button:hover { color: var(--ink); }
+.folderBreadcrumb svg { flex: none; color: #aaaab0; }
+.folderBreadcrumb span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .headerTools { min-width: 0; display: flex; align-items: center; gap: 10px; margin-left: auto; }
 .headerTools .primaryButton { flex: none; }
 .iconGroup { display: flex; align-items: center; gap: 2px; }
@@ -17,10 +22,6 @@
 .filters button { padding: 8px 14px; border: 0; border-radius: 18px; background: transparent; color: #707077; font-size: 12px; }
 .filters button:hover { background: #f5f5f6; }
 .filters button.selectedFilter { background: var(--fill-selected); color: var(--ink); font-weight: 650; }
-.folderActions { display: flex; align-items: center; gap: 8px; min-width: 0; margin-bottom: 24px; color: #696970; font-size: 12px; }
-.folderActions span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.folderActions button { display: inline-flex; align-items: center; gap: 5px; padding: 5px; border: 0; border-radius: 7px; background: transparent; color: #606067; font-size: 12px; }
-.folderActions button:hover { background: #f3f3f4; color: var(--ink); }
 .folderSection { margin-bottom: 34px; }
 .folderSection h2, .filesSection h2 { margin: 0 0 16px; font-size: 15px; font-weight: 680; letter-spacing: -.02em; }
 .folders { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 200px)); gap: 16px; }
@@ -31,6 +32,7 @@
 .folder strong { font-size: 12px; font-weight: 620; }
 .folder small { margin-top: 3px; color: #898990; font-size: 11px; }
 .fileGrid { column-count: 5; column-gap: 13px; }
+.fileGrid.folderFileGrid { column-count: 6; }
 .fileGrid .fileCard { display: inline-block; width: 100%; margin: 0 0 13px; break-inside: avoid; vertical-align: top; }
 .fileCard { min-width: 0; position: relative; color: var(--ink); }
 .fileVisual { position: relative; overflow: hidden; border-radius: 14px; background: #f4f4f5; }
@@ -80,6 +82,28 @@
 .selectionBar button.deleteAction:hover:not(:disabled) { background: #b52b2b; }
 .selectionBar button.deleteAction:disabled { opacity: .55; cursor: not-allowed; }
 .selectionBar button.closeSelection { width: 30px; padding: 0; background: transparent; }
+.folderUploadEmpty { min-height: 320px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 17px; border: 1px dashed #dfdfe2; border-radius: 28px; color: var(--ink); }
+.folderUploadDragging { border-color: #77777d; background: #f8f8f9; }
+.folderUploadEmpty button { padding: 7px 10px; border: 0; border-radius: 10px; background: #f5f5f6; color: var(--ink); font-size: 12px; }
+.folderUploadEmpty button:hover:not(:disabled) { background: #eaeaeb; }
+.listHead + .folderUploadEmpty { margin-top: 12px; }
+.uploadTray { position: fixed; z-index: 46; right: 16px; bottom: 16px; width: min(384px, calc(100vw - 32px)); overflow: hidden; border: 1px solid #e8e8eb; border-radius: 14px; background: white; color: var(--ink); box-shadow: 0 5px 18px rgba(20,20,22,.09); }
+.uploadTrayHead { min-height: 44px; display: flex; align-items: center; gap: 9px; padding: 0 14px; }
+.uploadTrayHead strong { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 650; }
+.uploadTrayHead span { color: #77777f; font-size: 11px; }
+.uploadTrayHead button { width: 23px; height: 23px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 6px; background: transparent; color: #77777f; }
+.uploadTrayHead button:hover { background: #f1f1f2; color: var(--ink); }
+.uploadTrayHead button[aria-expanded="false"] svg { transform: rotate(180deg); }
+.uploadTrayBody { max-height: min(280px, 45vh); overflow: auto; border-top: 1px solid #f0f0f1; padding: 10px 14px; }
+.uploadTrayBody ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.uploadTrayBody li { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.uploadTrayIcon { width: 31px; height: 31px; flex: none; display: grid; place-items: center; border: 1px solid #ebebed; border-radius: 9px; color: #55555c; }
+.uploadTrayText { min-width: 0; display: grid; gap: 2px; }
+.uploadTrayText strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; font-weight: 540; }
+.uploadTrayText small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #77777f; font-size: 11px; }
+.uploadTrayError { color: var(--danger) !important; font-size: 11px; }
+.uploadTrayRetry { margin-top: 10px; padding: 5px 8px; border: 0; border-radius: 7px; background: #f1f1f2; color: var(--ink); font-size: 11px; }
+.uploadTrayRetry:hover { background: #e6e6e8; }
 .folderDialogOverlay { position: fixed; z-index: 50; inset: 0; background: rgba(0,0,0,.17); }
 .folderDialog { position: fixed; z-index: 51; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(520px, calc(100vw - 32px)); padding: 21px 20px 19px; border-radius: 18px; background: white; box-shadow: 0 10px 30px rgba(20,20,22,.12); }
 .folderDialog h2 { margin: 0 0 15px; color: var(--ink); font-size: 18px; font-weight: 680; letter-spacing: -.02em; }
@@ -129,14 +153,15 @@
 .previewDialog button { border: 0; border-radius: 8px; background: #f3f3f5; padding: 7px 14px; color: var(--ink); font-size: 12px; }
 .workspace button:focus-visible, .workspace input:focus-visible, .workspace select:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .workspace .folderDialog input:focus-visible { outline: none; }
-@media (max-width: 1180px) { .fileGrid { column-count: 4; } }
-@media (max-width: 900px) { .fileGrid { column-count: 3; } .header { flex-wrap: wrap; } .headerTools { width: 100%; } }
+@media (max-width: 1180px) { .fileGrid { column-count: 4; } .fileGrid.folderFileGrid { column-count: 5; } }
+@media (max-width: 900px) { .fileGrid { column-count: 3; } .fileGrid.folderFileGrid { column-count: 4; } .header { flex-wrap: wrap; } .headerTools { width: 100%; } }
 @media (max-width: 640px) {
   .header { align-items: flex-start; }
   .headerTools { flex-wrap: wrap; gap: 7px; }
   .search { order: 2; flex: 1 1 100%; width: 100%; }
   .folders { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
   .fileGrid { column-count: 2; column-gap: 9px; }
+  .fileGrid.folderFileGrid { column-count: 2; }
   .fileGrid .fileCard { margin-bottom: 9px; }
   .fileList .fileInfo { grid-template-columns: minmax(0,1fr) 72px; }
   .listHead { grid-template-columns: 36px minmax(0,1fr) 72px; }
@@ -146,7 +171,7 @@
   .selectionBar > span { padding: 0 5px; }
   .selectionBar button { padding: 0 7px; }
   .fields { grid-template-columns: 1fr; }
-  .folderActions { flex-wrap: wrap; }
+  .folderUploadEmpty { min-height: 250px; border-radius: 20px; }
 }
 @media (hover: none) { .moreButton, .selectButton, .listSelect { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } .moreButton, .selectButton { transition: none; } }
