@@ -67,7 +67,7 @@ export function VideoMaterialCreationDialog({
               <div className="video-material-creation-empty">
                 <ImageIcon size={20} />
                 <strong>还没有可选择的参考素材</strong>
-                <span>先上传素材或从资产库加入，再选择需要创建的项目。</span>
+                <span>先上传素材或从资产加入，再选择需要创建的项目。</span>
               </div>
             ) : (
               <div className="video-material-creation-list" role="group" aria-label="选择需要创建的素材">

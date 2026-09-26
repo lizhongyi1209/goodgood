@@ -1,5 +1,16 @@
 # GG-063 verification
 
+## GG-121 unified asset browser
+
+Run `node --test tests/gg121-unified-asset-browser.test.mjs
+tests/gg050-page-header-navigation.test.mjs tests/m4-assets.test.mjs` before
+the full local gate. Confirm combined media/source/folder/tag filtering,
+text-only categories, source and view accessibility names, loading/error copy,
+and the generated delete boundary. The operator will inspect grid/list layout,
+hover/selection, the floating toolbar and narrow screens manually at 5173;
+the agent does not perform browser acceptance. No real-provider request is
+needed for this UI change.
+
 ## GG-115 targeted verification
 
 Run `node --test tests/gg115-asset-workspace.test.mjs

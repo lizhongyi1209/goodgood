@@ -1,13 +1,15 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-26
-- Current phase: GG-116 生成历史与 GG-119 左上角字标待站长手动浏览器验收；GG-120 项目级 Claude/Codex 共享技能已完成本地静态验证，待新会话发现确认；GG-117 隔离开发库迁移已执行，生产应用仍为 GG-098。
-- Current objective: 从实际 Agent 启动目录 `F:/goodgood` 新开 Codex 会话确认 GG-120 的 `$impeccable` 自动发现；本分支合入后再确认 Claude Code；站长在 5173 复核 GG-116 生成历史和 GG-119 字标。
-- Previous objective: GG-118 无彩色配色并入本线并清除两处残留绿色状态色，检查点 `33902d8`。
+- Current phase: GG-121 统一资产页本地实现与门禁完成，待站长在 5173 手动验收；GG-116/119 同待验收，GG-120 已由 Codex 发现；GG-117 隔离开发库迁移已执行，生产应用仍为 GG-098。
+- Current objective: 站长在 5173 检查 GG-121 文件夹/项目布局、图片比例与悬停、选择工具栏、来源筛选和网格/列表；按反馈修正。GG-120 的 Claude Code 发现留到本分支合入后验证。
+- Previous objective: GG-120 从 `F:/goodgood` 新开 Codex 会话确认 `$impeccable` 自动发现，现已完成。
 
 ## Current checkpoint
 
-- Task [GG-120](tasks/GG-120-shared-impeccable-skill.md)：**本地整理与静态验证完成，待新会话发现确认**。
+- Task [GG-121](tasks/GG-121-unified-asset-browser.md)：**本地实现与门禁完成，待站长手动浏览器验收**。
+  ADR 0106 统一 `资产` 页面，类型仅文字、来源为图标、文件夹与文件分区、图片瀑布流及网格/列表、选择工具栏；`check:local` 579 项 / 556 通过 / 23 跳过 / 0 失败；未改生产或重启服务。
+- Task [GG-120](tasks/GG-120-shared-impeccable-skill.md)：**Codex 已在 `F:/goodgood` 新会话发现，Claude Code 待合入后确认**。
   `.agents/skills/impeccable` 为唯一资料目录，`.claude/skills/impeccable` 为 Claude 发现入口；两个入口格式校验通过、100 个链接无断链、文档测试 8/8；自动 hooks 未启用。
 - Task [GG-119](tasks/GG-119-wordmark-only-workspace-brand.md)：**本地实现与门禁完成，待站长手动浏览器复核**。
   工作区左上角仅保留字标；`check:local` 577 项 / 554 通过 / 23 跳过 / 0 失败。生产未部署。

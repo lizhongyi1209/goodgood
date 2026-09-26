@@ -65,7 +65,7 @@ this shell; audit moves the prior account-page recent-action list into its own v
 | 创作 | Implemented | `/create`, with `/` as a compatible entry |
 | 探索 | Placeholder | No view or route yet |
 | 项目 | Implemented | `/projects` index and `/projects/:projectId` restore |
-| 资产库 | Implemented | `/assets` generated batch/gallery and uploaded-material sections |
+| 资产 | Implemented locally | `/assets` one generated/uploaded file collection with media/source filters, folders and grid/list views; saved creative projects remain on `/projects` |
 | 帮助 | Placeholder | No view or route yet |
 | 图片详情 | Implemented | `/assets/:assetId` over its preserved source scope |
 | 账户管理 | Implemented | `/admin/users`, visible and callable only by the site owner |

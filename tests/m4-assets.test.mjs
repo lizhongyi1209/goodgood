@@ -326,13 +326,13 @@ test("asset list and fresh download URL are wired into both runtimes", async () 
   assert.match(page, /void reloadAssets\(\)/);
   const workspace = await readFile(new URL("../features/assets/asset-workspace.tsx", import.meta.url), "utf8");
   assert.match(workspace, /正在读取资产/);
-  assert.match(workspace, /还没有生成记录/);
-  assert.match(workspace, /生成历史/);
-  // History shows the image alone: no caption, no date headings.
+  assert.match(workspace, /还没有资产/);
+  assert.match(workspace, /<h1>资产<\/h1>/);
+  // The shared image grid shows the image alone: no caption or date headings.
   assert.doesNotMatch(workspace, /styles\.cardCaption/);
   assert.doesNotMatch(workspace, /styles\.dateGroup/);
-  assert.match(workspace, /styles\.historyGrid/);
-  assert.match(workspace, /styles\.cardOverlay/);
+  assert.match(workspace, /styles\.fileGrid/);
+  assert.match(workspace, /styles\.selectButton/);
 });
 
 test("generated asset deletion is owner scoped and clears organization before the row", async () => {

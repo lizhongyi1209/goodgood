@@ -60,7 +60,7 @@ test("GG-034 video composer exposes creator parameters and multimedia references
     composer,
     /generationMode === "first_last_frame" \? "仅图片" : "图片 \/ 视频 \/ 音频"/,
   );
-  assert.match(composer, /从资产库选择/);
+  assert.match(composer, /从资产选择/);
   assert.match(composer, /onOpenReferenceLibrary/);
   assert.doesNotMatch(composer, />上传图片/);
   assert.doesNotMatch(composer, />上传视频/);

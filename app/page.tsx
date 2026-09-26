@@ -1346,7 +1346,7 @@ export default function Home({
       .catch((error) => {
         if (!active) return;
         setAssetsError(
-          error instanceof Error ? error.message : "资产库暂时无法读取，请重试。",
+          error instanceof Error ? error.message : "资产暂时无法读取，请重试。",
         );
       })
       .finally(() => {
@@ -2394,7 +2394,7 @@ export default function Home({
       setAssetBatches(batches);
     } catch (error) {
       setAssetsError(
-        error instanceof Error ? error.message : "资产库暂时无法读取，请重试。",
+        error instanceof Error ? error.message : "资产暂时无法读取，请重试。",
       );
     } finally {
       setAssetsLoading(false);
@@ -3084,7 +3084,7 @@ export default function Home({
           <button className="side-nav-item"><Compass size={17} /><span>探索</span></button>
           <button className={`side-nav-item ${activeView === "projects" ? "active" : ""}`} onClick={handleProjectsNav}><FolderOpen size={17} /><span>项目</span></button>
           <button className={`side-nav-item asset-nav ${activeView === "assets" ? "active" : ""} ${assetPulse ? "has-new-assets" : ""}`} onClick={handleAssetNav}>
-            <Images size={17} /><span>资产库</span>
+            <Images size={17} /><span>资产</span>
             {newAssetCount > 0 && <em className="asset-new-count">+{newAssetCount}</em>}
           </button>
           {organizationNavigationVisible && authenticationSession?.account.role !== "site_owner" && (
@@ -3568,7 +3568,7 @@ export default function Home({
           <DialogPrimitive.Content className="reference-library-dialog">
             <header className="reference-library-dialog-header">
               <div>
-                <DialogTitle>从资产库选择</DialogTitle>
+                <DialogTitle>从资产选择</DialogTitle>
                 <DialogDescription>
                   {referenceLibraryTarget === "video"
                     ? videoGenerationMode === "first_last_frame"
@@ -3637,7 +3637,7 @@ export default function Home({
                       : `暂无${videoAssetMediaFilters.find((filter) => filter.id === videoAssetMediaFilter)?.label}资产`
                     : "还没有上传素材"}</strong>
                   <span>{referenceLibraryTarget === "video"
-                    ? "资产库中的图片、视频和音频会按类型显示在这里。"
+                    ? "资产中的图片、视频和音频会按类型显示在这里。"
                     : "关闭窗口后，从参考图按钮选择“上传本地图片”。"}</span>
                 </div>
               ) : (

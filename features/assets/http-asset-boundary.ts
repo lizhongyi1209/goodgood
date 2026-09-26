@@ -49,7 +49,7 @@ export async function listAssets(
     const failure = payload as AssetApiErrorEnvelope;
     throw new AssetBoundaryError(
       failure.error?.code ?? "ASSET_LIBRARY_UNAVAILABLE",
-      failure.error?.message ?? "资产库暂时无法读取，请重试。",
+      failure.error?.message ?? "资产暂时无法读取，请重试。",
       failure.error?.retryable ?? false,
     );
   }

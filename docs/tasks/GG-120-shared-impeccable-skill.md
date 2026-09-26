@@ -1,6 +1,6 @@
 # GG-120 — Impeccable 项目级共享技能
 
-- 状态：本地整理与静态验证完成，待新会话确认自动发现；未部署。
+- 状态：本地整理与静态验证完成；Codex 已在 `F:/goodgood` 新会话发现 `$impeccable`；Claude Code 待本分支合入后确认；未部署。
 - 请求：2026-09-26 站长要求将现有 Impeccable 整理为项目级通用技能，同时支持 Codex。
 - 工作树 / 分支：`F:/goodgood-worktrees/GG-116` / `feature/GG-116-asset-history-actions`；按本会话要求不切换分支。
 - 来源：`F:/goodgood/.claude/skills/impeccable` 的本地未跟踪 4.4.0 安装；仅复制，原目录保持原状。
@@ -26,6 +26,9 @@
   `.agents/skills/impeccable` 文件复制到该目录作为本机未跟踪副本；入口文件
   哈希一致，原有 `.claude/` 未改动。当前会话的技能目录快照仍未列出 Impeccable，
   因此自动发现尚未验证。合入本分支前需处理该未跟踪副本，避免同名文件冲突。
+- 随后从 `F:/goodgood` 启动的新 Codex 会话把 `r7/impeccable/SKILL.md` 列入
+  可用技能，并按 `$impeccable` 处理 GG-121。Codex 自动发现已确认；Claude Code
+  尚未在共享入口合入后核验。
 
 ## 下一步
 

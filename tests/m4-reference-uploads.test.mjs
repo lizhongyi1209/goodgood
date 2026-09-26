@@ -316,6 +316,6 @@ test("reference material API is wired into both authenticated runtimes", async (
   assert.match(runtime, /createReferenceNodeApiHandler/);
   assert.match(boundary, /goodGoodApiFetch\("\/api\/references"/);
   assert.match(page, /上传素材/);
-  assert.match(page, /从资产库选择/);
+  assert.match(page, /从资产选择/);
   assert.match(page, /referenceLibraryOpen/);
 });

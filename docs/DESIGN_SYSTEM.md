@@ -1,8 +1,23 @@
 # Design system
 
+## GG-121 asset browser
+
+`资产` uses the existing bright, achromatic workspace. A compact title sits
+beside source icons (`已上传`, `已生成`), grid/list controls, search and a near-black
+`新建` menu. Media categories are text-only quiet pills without counts. Folder
+tiles have centered line icons in near-square white surfaces, with name and
+item count below. The `项目` section contains asset files, not saved creative
+projects. In grid mode images preserve their aspect ratios in close masonry
+columns; only hover/focus reveals a top-right menu and bottom-right selection
+circle. List mode uses a compact thumbnail, name, date and size. Selection is
+visible in a restrained near-black floating toolbar with supported actions.
+Keep keyboard and touch controls reachable and source icon labels in Chinese
+tooltips. The four supplied ChatGPT screenshots are layout references, not a
+source of blue/yellow accent colors or document-file support.
+
 ## GG-115 asset workspace
 
-Use the light GoodGood surface for two quiet tabs (`生成记录`, `个人资产库`). History
+Historical GG-115 styling used two quiet tabs (`生成记录`, `个人资产库`). History
 has compact media pills with counts, dates, and image cards. Library folders
 are simple white cards; media cards use private thumbnails, restrained metadata,
 and small organize actions. The upload dialog reuses the site's accessible

@@ -32,6 +32,9 @@
   {uuid} · n」这类内部标识。
 - 个人资产库分区行为保持不变（仍显示名称、时间与整理操作）。
 
+GG-121 / ADR 0106 subsequently replaced the separate history/library
+presentation with one asset surface; GG-116's hard-delete behavior remains.
+
 ## Implementation
 
 - `features/assets/asset-workspace.tsx`：页签与空状态文案改名；历史渲染改为扁平

@@ -391,7 +391,7 @@ export function CreationComposer({
             {references.length < MAX_GENERATION_REFERENCES && (
               <button
                 className="reference-add-more"
-                aria-label="从资产库继续添加参考图片"
+                aria-label="从资产继续添加参考图片"
                 onClick={onOpenReferenceLibrary}
               >
                 <Plus size={15} />
@@ -438,7 +438,7 @@ export function CreationComposer({
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={onOpenReferenceLibrary}>
                 <Images size={15} />
-                从资产库选择
+                从资产选择
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

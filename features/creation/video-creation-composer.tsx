@@ -327,7 +327,7 @@ export function VideoCreationComposer({
                 disabled={referenceTotalRemaining <= 0}
                 onSelect={onOpenReferenceLibrary}
               >
-                <Images size={15} />从资产库选择
+                <Images size={15} />从资产选择
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -355,7 +355,7 @@ export function VideoCreationComposer({
           <span
             className="composer-price video-interface-state"
             aria-label={interfaceAvailable ? "本地视频实测接口可用" : interfaceLabel}
-            title={interfaceAvailable ? "本地实测模式，不计入资产库" : "视频接口与计价将在下一阶段接入"}
+            title={interfaceAvailable ? "本地实测模式，不计入资产" : "视频接口与计价将在下一阶段接入"}
           >
             {interfaceLabel}
           </span>
@@ -559,7 +559,7 @@ export function VideoCreationComposer({
               <div className="video-interface-note">
                 <Upload size={12} />
                 {interfaceAvailable
-                  ? "本地实测接口已启用，结果不会写入资产库"
+                  ? "本地实测接口已启用，结果不会写入资产"
                   : "当前仅保存于本次页面会话，接口接入后再上传"}
               </div>
             </div>

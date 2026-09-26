@@ -1,0 +1,44 @@
+# ADR 0106: Unified asset surface and file selection
+
+- Status: Accepted for GG-121 local implementation
+- Date: 2026-09-26
+- Task: GG-121
+- Supersedes: ADR 0102's separate history/library presentation and visible media counts; object ownership, upload and folder rules remain in force.
+
+## Context
+
+The operator supplied four visual references for a calmer asset browser. The
+current `/assets` surface separates generated history from the personal library,
+repeats media filters with counts, and presents uploaded files as metadata cards.
+The operator confirmed that the reference's `项目` section means asset files,
+not GoodGood's resumable creative projects.
+
+## Decision
+
+- Name the page and navigation entry `资产`. Show one combined owner-scoped view
+  of generated and uploaded assets, sorted newest first. `全部 / 图片 / 视频 / 音频`
+  are text-only filters without counts. Source buttons for `已上传` and `已生成`
+  sit beside the grid/list controls as icon-only toggles with Chinese tooltips.
+- Show folders as large, quiet folder tiles above a `项目` section containing
+  asset files. Opening a folder narrows the same file collection. Creative
+  projects remain separate resumable sessions and are not turned into folders
+  or duplicated as file cards. Document formats are outside this slice.
+- The image grid preserves each image's aspect ratio in a compact masonry
+  arrangement. Hover or keyboard focus reveals file actions and a distinct
+  bottom-right selection control; opening the image still enters its existing
+  detail/preview. A floating toolbar appears for selected files, with actions
+  backed by current capabilities. Grid and list are alternate views of the same
+  filtered files.
+- Generated-image deletion retains ADR 0103's hard-delete confirmation and
+  ownership boundary. Uploaded-material deletion is not introduced by this
+  visual change; the selection toolbar only exposes deletion when every
+  selected file supports it.
+- Keep GoodGood's achromatic design and accessible focus, keyboard, touch,
+  loading, empty and error behavior. Reference screenshots guide layout and
+  interaction, not a literal copy of the source product.
+
+## Consequences
+
+The source filter now provides the generated-only history view without a
+separate page tab. This is a browser/UI change; no schema migration, new media
+type, production deployment or new project semantics are required.

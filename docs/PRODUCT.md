@@ -1,9 +1,20 @@
 # Product definition
 
+## GG-121 unified asset surface
+
+`/assets` is named `资产` and shows generated results and accepted uploads in
+one newest-first collection. Text-only `全部 / 图片 / 视频 / 音频` tabs filter media;
+icon-only `已上传 / 已生成` controls filter origin. Folders organize the same files
+without copying them. The `项目` heading on this asset page labels asset files,
+not saved creative projects; those remain separate resumable sessions. Users can
+switch between masonry grid and file list, select files, move or download them,
+and delete selected generated images under ADR 0103. Uploaded-file deletion is
+not yet supported. See [ADR 0106](decisions/0106-unified-asset-library-surface.md).
+
 ## GG-115 asset workspace decision
 
-`/assets` defaults to `生成记录`: durable generated outputs grouped by date with
-`全部 / 图片 / 视频 / 音频` counts. `个人资产库` shows the same generated objects together
+Historical GG-115 presentation: `/assets` defaulted to `生成记录`, grouped by date
+with `全部 / 图片 / 视频 / 音频` counts. `个人资产库` showed the same generated objects together
 with accepted uploads; generation automatically enters the library. Users can
 create folders, move items, and add tags without copying media or turning
 projects into folders. New uploads in every entry point are limited to 20 MiB

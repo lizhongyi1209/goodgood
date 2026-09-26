@@ -1,5 +1,6 @@
 # Decision records
 
+- `0106-unified-asset-library-surface.md` — one `资产` surface with text media filters, source icons, folders and asset files, masonry/list views and capability-correct selection actions; supersedes ADR 0102's separate view/count presentation.
 - `0105-achromatic-interface-palette.md` — the interface palette is achromatic: black type and icons, light gray state fills, near-black primary action, no chromatic accent. Replaces ADR 0002's Palace Red accent role.
 
 - `0100-local-real-email-delivery.md` — opt-in local SMTP delivery with the existing sender, external password file, TLS authentication preflight, and isolated local identities.

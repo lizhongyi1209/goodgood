@@ -1002,7 +1002,7 @@ export function ReferenceQuickEditor({
                       <button className="reference-editor-local-sticker" onClick={() => localStickerInputRef.current?.click()}>
                         <ImagePlus size={14} />本地贴图
                       </button>
-                      <div className="reference-editor-material-strip" aria-label="从资产库添加贴图">
+                      <div className="reference-editor-material-strip" aria-label="从资产添加贴图">
                         {materials.slice(0, 24).map((material) => (
                           <button
                             key={material.id}
@@ -1019,7 +1019,7 @@ export function ReferenceQuickEditor({
                             <img alt="" src={material.previewUrl} />
                           </button>
                         ))}
-                        {materials.length === 0 && <small>资产库暂无可用素材</small>}
+                        {materials.length === 0 && <small>资产中暂无可用素材</small>}
                       </div>
                       {selectedSticker && (
                         <div className="reference-editor-sticker-transform" aria-label="贴图变换">

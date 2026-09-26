@@ -1,8 +1,21 @@
 # GG-063 quality pricing
 
+## GG-121 unified asset flow
+
+Open `/assets` into one file collection. Media tabs and uploaded/generated icon
+filters narrow it without changing file identity; search matches names and tags.
+Folders appear above the `项目` file section, and opening one narrows the same
+grid or list. Grid images keep their real ratios. Hover/focus reveals the card
+menu and a separate bottom-right selection button; clicking the image opens its
+existing detail or private preview. Selection exposes a floating toolbar for
+move, download, and supported contextual actions. `Esc` or the close control
+clears selection. Generated-image delete confirms hard deletion; uploaded media
+has no delete action. Grid/list switching retains filters and selection. The
+upload dialog and recoverable organization behavior stay as in GG-115.
+
 ## GG-115 assets flow
 
-Open `/assets` into generation history; media filters show truthful counts and
+Historical GG-115 flow: open `/assets` into generation history; media filters showed counts and
 empty states (transient video previews are not history). Switch to personal
 library for folders and all saved generated/uploaded media. The root lists all
 items, while an opened folder narrows the grid; search checks names and tags.

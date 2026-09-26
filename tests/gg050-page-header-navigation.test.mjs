@@ -37,7 +37,9 @@ test("GG-050 four workspace page headers retain the accepted absence of return r
   const assetHeaderStart = assets.indexOf('<header className={styles.header}>');
   const assetHeader = assets.slice(assetHeaderStart, assets.indexOf('</header>', assetHeaderStart));
   noReturn(assetHeader);
-  assert.match(assets, /生成历史[\s\S]*个人资产库/);
+  assert.match(assets, /<h1>资产<\/h1>/);
+  assert.match(assets, /aria-label="资产类型"/);
+  assert.doesNotMatch(assets, /生成历史[\s\S]*个人资产库/);
 });
 
 test("GG-057 shared site-owner navigation marks either page and links directly to management and creation", async () => {

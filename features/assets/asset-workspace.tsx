@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AudioLines, ChevronLeft, CircleAlert, Download, Folder, FolderPlus, ImagePlus, Images, LoaderCircle, Pencil, Plus, RefreshCw, Search, Trash2, Upload, X, ZoomIn } from "lucide-react";
+import { AudioLines, Check, ChevronDown, ChevronLeft, CircleAlert, Download, Folder, FolderPlus, Grid2X2, ImagePlus, List, LoaderCircle, MoreHorizontal, Pencil, Plus, RefreshCw, Search, Trash2, Upload, WandSparkles, X } from "lucide-react";
 import { Dialog, DialogDescription, DialogOverlay, DialogPortal, DialogTitle } from "@/components/ui/dialog";
 import { Dialog as DialogPrimitive } from "radix-ui";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import { uploadReferenceFiles } from "@/features/references/http-reference-upload";
 import type { ReferenceMaterial } from "@/features/references/http-reference-library";
@@ -17,6 +18,8 @@ import styles from "./asset-workspace.module.css";
 
 type Media = "image" | "video" | "audio";
 type Filter = "all" | Media;
+type SourceFilter = "all" | "uploaded" | "generated";
+type ViewMode = "grid" | "list";
 export type GeneratedAssetCard = Readonly<{
   id: string; detailKey: string; createdAt: string; previewUrl: string; ordinal: number;
   prompt: string; width?: number; height?: number;
@@ -24,7 +27,9 @@ export type GeneratedAssetCard = Readonly<{
 type LibraryItem = Readonly<{
   id: string; kind: OrganizedAssetKind; media: Media; name: string; createdAt: string;
   previewUrl?: string; url?: string; size?: number; detailKey?: string;
+  width?: number; height?: number; ordinal?: number;
 }>;
+type ArrangementLookup = ReadonlyMap<string, AssetArrangement>;
 type UploadRow = Readonly<{ id: string; file: File; state: "waiting" | "uploading" | "ready" | "failed"; message?: string }>;
 
 type Props = Readonly<{
@@ -52,6 +57,18 @@ const mediaFilters: readonly Readonly<{ id: Filter; label: string }>[] = [
   { id: "video", label: "视频" }, { id: "audio", label: "音频" },
 ];
 
+export function filterAssetFiles(items: readonly LibraryItem[], arrangements: ArrangementLookup,
+  folderId: string | null, search: string, media: Filter, source: SourceFilter): readonly LibraryItem[] {
+  const query = search.trim().toLocaleLowerCase();
+  return items.filter((item) => {
+    const arrangement = arrangements.get(`${item.kind}:${item.id}`);
+    return (!folderId || arrangement?.folderId === folderId) &&
+      (!query || `${item.name} ${arrangement?.tags.join(" ") ?? ""}`.toLocaleLowerCase().includes(query)) &&
+      (media === "all" || item.media === media) &&
+      (source === "all" || (source === "generated" ? item.kind === "generated" : item.kind !== "generated"));
+  });
+}
+
 function dateLabel(value: string) {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? "日期未知" : new Intl.DateTimeFormat("zh-CN", {
@@ -65,10 +82,9 @@ function bytesLabel(value?: number) {
 }
 
 /**
- * History cards no longer render a caption, so the synthesized internal name
+ * Image tiles do not render a caption, so the synthesized internal name
  * (`生成图片 {batch} · {n}`) must not leak into visible or assistive text.
- * Derive a short readable label from the prompt instead; the library view still
- * shows its card labels, so it reuses this name.
+ * Derive a short readable label from the prompt for assistive text and list view.
  */
 function imageLabel(item: GeneratedAssetCard) {
   const prompt = item.prompt.trim().replace(/\s+/g, " ");
@@ -92,8 +108,10 @@ function uploadError(file: File): string | null {
 export function AssetWorkspace({ workspaceId, enabled, generated, references, videos, audios,
   historyLoading, libraryLoading, historyError, libraryError,
   onRetry, onRefresh, onDeleteGenerated, onOpenGenerated, onUseReference, onUseVideo, onUseAudio }: Props) {
-  const [section, setSection] = useState<"history" | "library">("history");
   const [filter, setFilter] = useState<Filter>("all");
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [selectedKeys, setSelectedKeys] = useState<readonly string[]>([]);
   const [folderId, setFolderId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [organization, setOrganization] = useState<{ folders: readonly AssetFolder[]; arrangements: readonly AssetArrangement[] }>({ folders: [], arrangements: [] });
@@ -103,8 +121,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
-  const [preview, setPreview] = useState<{ name: string; url: string } | null>(null);
-  const [historyBusyId, setHistoryBusyId] = useState<string | null>(null);
+  const [preview, setPreview] = useState<{ name: string; url: string; media: Media } | null>(null);
   const [rows, setRows] = useState<readonly UploadRow[]>([]);
   const [uploadFolderId, setUploadFolderId] = useState<string | null>(null);
   const [uploadTags, setUploadTags] = useState("");
@@ -124,54 +141,114 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
 
   const items = useMemo<readonly LibraryItem[]>(() => [
     ...generated.map((item) => ({ id: item.id, kind: "generated" as const, media: "image" as const,
-      name: imageLabel(item), createdAt: item.createdAt, previewUrl: item.previewUrl, detailKey: item.detailKey })),
+      name: imageLabel(item), createdAt: item.createdAt, previewUrl: item.previewUrl, detailKey: item.detailKey,
+      width: item.width, height: item.height, ordinal: item.ordinal })),
     ...references.map((item) => ({ id: item.id, kind: "reference" as const, media: "image" as const,
-      name: item.name, createdAt: item.uploadedAt, previewUrl: item.previewUrl, size: item.byteSize })),
+      name: item.name, createdAt: item.uploadedAt, previewUrl: item.previewUrl, url: item.url,
+      size: item.byteSize, width: item.width, height: item.height })),
     ...videos.map((item) => ({ id: item.id, kind: "video" as const, media: "video" as const,
       name: item.name, createdAt: item.uploadedAt, url: item.url, size: item.size })),
     ...audios.map((item) => ({ id: item.id, kind: "audio" as const, media: "audio" as const,
       name: item.name, createdAt: item.uploadedAt, url: item.url, size: item.size })),
   ].sort((a, b) => b.createdAt.localeCompare(a.createdAt)), [generated, references, videos, audios]);
   const arrangements = useMemo(() => new Map(organization.arrangements.map((entry) => [`${entry.kind}:${entry.id}`, entry])), [organization]);
-  const baseItems = items.filter((item) => {
-    const arrangement = arrangements.get(`${item.kind}:${item.id}`);
-    return (!folderId || arrangement?.folderId === folderId) &&
-      (!search.trim() || `${item.name} ${arrangement?.tags.join(" ") ?? ""}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
-  });
-  const visible = baseItems.filter((item) => filter === "all" || item.media === filter);
-  const history = generated.filter(() => filter === "all" || filter === "image");
+  const visible = filterAssetFiles(items, arrangements, folderId, search, filter, sourceFilter);
+  const selectedItems = items.filter((item) => selectedKeys.includes(`${item.kind}:${item.id}`));
   const activeFolder = organization.folders.find((item) => item.id === folderId);
-  const loading = section === "history" ? historyLoading : libraryLoading;
-  const error = section === "history" ? historyError : libraryError;
+  const loading = historyLoading || libraryLoading;
+  const error = historyError ?? libraryError;
 
-  async function downloadGenerated(item: GeneratedAssetCard) {
-    if (historyBusyId) return;
-    setHistoryBusyId(item.id); setActionError(null);
-    try {
+  useEffect(() => {
+    const available = new Set(items.map((item) => `${item.kind}:${item.id}`));
+    setSelectedKeys((current) => current.every((key) => available.has(key)) ? current : current.filter((key) => available.has(key)));
+  }, [items]);
+
+  useEffect(() => {
+    if (!selectedKeys.length) return;
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") setSelectedKeys([]); };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [selectedKeys.length]);
+
+  async function downloadItem(item: LibraryItem) {
+    if (item.kind === "generated") {
       await saveImageToLocal(
-        { assetId: item.id, createdAt: item.createdAt, ordinal: item.ordinal, previewUrl: item.previewUrl },
+        { assetId: item.id, createdAt: item.createdAt, ordinal: item.ordinal ?? 1, previewUrl: item.previewUrl! },
         { resolveDownloadUrl: (assetId) => readAssetDownloadUrl(assetId, workspaceId) },
       );
+      return;
+    }
+    if (!item.url) throw new Error("文件地址暂时不可用，请刷新后重试。");
+    const response = await fetch(item.url, { cache: "no-store" });
+    if (!response.ok) throw new Error("文件下载失败，请刷新后重试。");
+    const blob = await response.blob();
+    if (!blob.size) throw new Error("文件内容为空，请刷新后重试。");
+    const objectUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = objectUrl; link.download = item.name; link.hidden = true;
+    document.body.appendChild(link);
+    try { link.click(); } finally { link.remove(); window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000); }
+  }
+
+  async function downloadItems(targets: readonly LibraryItem[]) {
+    if (busy || !targets.length) return;
+    setBusy(true); setActionError(null);
+    try {
+      for (const item of targets) await downloadItem(item);
     } catch (cause) {
-      console.error("[GoodGood] image download failed", {
-        assetId: item.id,
+      console.error("[GoodGood] asset download failed", {
         message: cause instanceof Error ? cause.message : String(cause),
         stage: cause instanceof ImageDownloadError ? cause.stage : "unknown",
       });
-      setActionError("下载失败，请重试。");
-    } finally { setHistoryBusyId(null); }
+      setActionError(cause instanceof Error ? cause.message : "下载失败，请重试。");
+    } finally { setBusy(false); }
   }
 
-  async function deleteGenerated(item: GeneratedAssetCard) {
-    if (historyBusyId) return;
-    if (!window.confirm("删除这张图片？该操作不可恢复，已结算的积分不会退回。")) return;
-    setHistoryBusyId(item.id); setActionError(null);
+  async function deleteGeneratedItems(targets: readonly LibraryItem[]) {
+    if (busy || !targets.length || targets.some((item) => item.kind !== "generated")) return;
+    if (!window.confirm(`删除选中的 ${targets.length} 张图片？该操作不可恢复，已结算的积分不会退回。`)) return;
+    setBusy(true); setActionError(null);
     try {
-      await deleteAsset(item.id, workspaceId);
-      await onDeleteGenerated(item.id);
+      for (const item of targets) {
+        await deleteAsset(item.id, workspaceId);
+        setSelectedKeys((current) => current.filter((key) => key !== `${item.kind}:${item.id}`));
+        await onDeleteGenerated(item.id);
+      }
     } catch (cause) {
       setActionError(cause instanceof Error ? cause.message : "删除失败，请重试。");
-    } finally { setHistoryBusyId(null); }
+    } finally { setBusy(false); }
+  }
+
+  async function moveItems(targets: readonly LibraryItem[], nextFolder: string | null) {
+    if (busy || !targets.length) return;
+    setBusy(true); setActionError(null);
+    try {
+      for (const item of targets) {
+        const arrangement = arrangements.get(`${item.kind}:${item.id}`);
+        await saveAssetOrganization(item.kind, item.id, { folderId: nextFolder, tags: arrangement?.tags ?? [] }, workspaceId);
+        setSelectedKeys((current) => current.filter((key) => key !== `${item.kind}:${item.id}`));
+      }
+    } catch (cause) { setActionError(cause instanceof Error ? cause.message : "移动失败，请重试。"); }
+    finally { setRevision((current) => current + 1); setBusy(false); }
+  }
+
+  function applyItemToCreation(item: LibraryItem) {
+    if (item.kind === "reference") { const material = references.find((value) => value.id === item.id); if (material) onUseReference(material); }
+    else if (item.kind === "video") { const material = videos.find((value) => value.id === item.id); if (material) onUseVideo(material); }
+    else if (item.kind === "audio") { const material = audios.find((value) => value.id === item.id); if (material) onUseAudio(material); }
+    setSelectedKeys([]);
+  }
+
+  function toggleSelection(item: LibraryItem) {
+    const key = `${item.kind}:${item.id}`;
+    setSelectedKeys((current) => current.includes(key) ? current.filter((value) => value !== key) : [...current, key]);
+  }
+
+  function editTags(item: LibraryItem) {
+    const arrangement = arrangements.get(`${item.kind}:${item.id}`);
+    const value = window.prompt("标签，用逗号分隔", arrangement?.tags.join("，") ?? "");
+    if (value != null) void updateOrganization(item.kind, item.id, arrangement?.folderId ?? null,
+      value.split(/[,，]/).map((tag) => tag.trim()).filter(Boolean));
   }
 
   async function updateOrganization(kind: OrganizedAssetKind, id: string, nextFolder: string | null, tags: readonly string[]) {
@@ -250,60 +327,90 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
     setBusy(false);
   }
 
+  function openItem(item: LibraryItem) {
+    if (item.detailKey) { onOpenGenerated(item.detailKey); return; }
+    if (item.url) setPreview({ name: item.name, url: item.url, media: item.media });
+  }
+
+  function renderFile(item: LibraryItem) {
+    const key = `${item.kind}:${item.id}`;
+    const selected = selectedKeys.includes(key);
+    const aspectRatio = item.width && item.height ? `${item.width} / ${item.height}` : undefined;
+    return <article className={`${styles.fileCard} ${selected ? styles.isSelected : ""}`} key={key}>
+      <div className={styles.fileVisual}>
+        {item.media === "image" ? <button className={styles.mediaFrame} style={{ aspectRatio }} onClick={() => openItem(item)} aria-label={`查看 ${item.name}`}>
+          <PrivateObjectImage src={item.previewUrl!} alt={item.name}/>
+        </button> : item.media === "video" ? <button className={styles.mediaFrame} onClick={() => openItem(item)} aria-label={`查看 ${item.name}`}>
+          <video src={item.url} muted preload="metadata" aria-hidden="true"/>
+        </button> : <button className={styles.audioFrame} onClick={() => openItem(item)} aria-label={`播放 ${item.name}`}><AudioLines size={30}/></button>}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild><button className={styles.moreButton} aria-label={`${item.name} 的更多操作`} title="更多操作" disabled={busy}><MoreHorizontal size={19}/></button></DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className={styles.fileMenu}>
+            <DropdownMenuItem onSelect={() => void downloadItems([item])}><Download size={16}/>下载</DropdownMenuItem>
+            {item.kind !== "generated" && <DropdownMenuItem onSelect={() => applyItemToCreation(item)}><Plus size={16}/>用于创作</DropdownMenuItem>}
+            <DropdownMenuSub><DropdownMenuSubTrigger><Folder size={16}/>移动到</DropdownMenuSubTrigger><DropdownMenuSubContent>
+              <DropdownMenuItem onSelect={() => void moveItems([item], null)}>未分类</DropdownMenuItem>
+              {organization.folders.map((folder) => <DropdownMenuItem key={folder.id} onSelect={() => void moveItems([item], folder.id)}>{folder.name}</DropdownMenuItem>)}
+            </DropdownMenuSubContent></DropdownMenuSub>
+            <DropdownMenuItem onSelect={() => editTags(item)}><Pencil size={16}/>编辑标签</DropdownMenuItem>
+            {item.kind === "generated" && <DropdownMenuItem variant="destructive" onSelect={() => void deleteGeneratedItems([item])}><Trash2 size={16}/>删除</DropdownMenuItem>}
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <button className={styles.selectButton} aria-label={`${selected ? "取消选择" : "选择"} ${item.name}`} aria-pressed={selected} title={selected ? "取消选择" : "选择"} disabled={busy} onClick={() => toggleSelection(item)}><Check size={15}/></button>
+      </div>
+      <div className={styles.fileInfo}><button title={item.name} onClick={() => openItem(item)}>{item.name}</button><time dateTime={item.createdAt}>{dateLabel(item.createdAt)}</time><small>{item.size ? bytesLabel(item.size) : "—"}</small></div>
+    </article>;
+  }
+
   return <section className={styles.workspace} aria-label="资产">
     <header className={styles.header}>
-      <div><h1>资产</h1><p>{section === "history" ? "生成结果会自动保存在个人资产库。" : "整理创作结果和上传素材。"}</p></div>
-      {section === "library" && <button className={styles.primaryButton} onClick={() => { setRows([]); setUploadTags(""); setActionError(null); setUploadFolderId(folderId); setUploadOpen(true); }}><Upload size={16}/>上传资产</button>}
-    </header>
-    <div className={styles.tabs} role="tablist" aria-label="资产分类">
-      <button role="tab" aria-selected={section === "history"} className={section === "history" ? styles.activeTab : ""} onClick={() => { setSection("history"); setFilter("all"); }}>生成历史</button>
-      <button role="tab" aria-selected={section === "library"} className={section === "library" ? styles.activeTab : ""} onClick={() => { setSection("library"); setFilter("all"); }}>个人资产库</button>
-    </div>
-    {section === "library" && <div className={styles.tools}>
-      {activeFolder ? <div className={styles.folderActions}><button onClick={() => setFolderId(null)}><ChevronLeft size={15}/>个人资产库</button><span>/ {activeFolder.name}</span><button disabled={busy} title="重命名文件夹" aria-label="重命名文件夹" onClick={() => void editFolder("rename")}><Pencil size={15}/></button><button disabled={busy} onClick={() => void editFolder("delete")}>删除文件夹</button></div> :
-        <button onClick={() => void addFolder()} disabled={busy} className={styles.plainButton}><FolderPlus size={17}/>新建文件夹</button>}
-      <label className={styles.search}><Search size={16}/><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="搜索资产或标签" aria-label="搜索资产或标签" /></label>
-    </div>}
-    {section === "library" && !folderId && organization.folders.length > 0 && <div className={styles.folders}>
-      {organization.folders.map((folder) => <button className={styles.folder} key={folder.id} onClick={() => setFolderId(folder.id)}><Folder size={25}/><strong>{folder.name}</strong><span>{items.filter((item) => arrangements.get(`${item.kind}:${item.id}`)?.folderId === folder.id).length} 项</span></button>)}
-    </div>}
-    <div className={styles.filters} role="group" aria-label="媒体类型">
-      {mediaFilters.map((choice) => {
-        const source = section === "history" ? generated.map(() => "image" as Media) : baseItems.map((item) => item.media);
-        const count = choice.id === "all" ? source.length : source.filter((media) => media === choice.id).length;
-        return <button key={choice.id} className={filter === choice.id ? styles.selectedFilter : ""} onClick={() => setFilter(choice.id)}>{choice.label}<span>{count}</span></button>;
-      })}
-    </div>
-    {(error || organizationError || actionError) && <div className={styles.error} role="alert"><CircleAlert size={16}/>{actionError ?? error ?? organizationError}<button onClick={() => { setActionError(null); onRetry(); setRevision((current) => current + 1); }}><RefreshCw size={14}/>重试</button></div>}
-    {(loading || (section === "library" && organizationLoading)) && <div className={styles.state} role="status"><LoaderCircle className={styles.spinner} size={18}/>正在读取资产</div>}
-    {!loading && section === "history" && (history.length ? <div className={styles.historyGrid}>{history.map((item) => <article key={item.detailKey} className={styles.historyCard}>
-      <button className={styles.mediaFrame} onClick={() => onOpenGenerated(item.detailKey)} aria-label="查看图片详情"><PrivateObjectImage src={item.previewUrl} alt={imageLabel(item)}/></button>
-      <div className={styles.cardOverlay}>
-        <button disabled={historyBusyId === item.id} onClick={() => void downloadGenerated(item)} aria-label="下载图片" title="下载"><Download size={17}/></button>
-        <button disabled={historyBusyId === item.id} onClick={() => void deleteGenerated(item)} aria-label="删除图片" title="删除"><Trash2 size={17}/></button>
-        <button disabled={historyBusyId === item.id} onClick={() => onOpenGenerated(item.detailKey)} aria-label="查看图片详情" title="查看图片详情"><ZoomIn size={17}/></button>
-      </div>
-    </article>)}</div> : <div className={styles.state}><Images size={22}/><strong>{filter === "all" || filter === "image" ? "还没有生成记录" : `还没有生成${mediaFilters.find((item) => item.id === filter)?.label}记录`}</strong><span>完成生成后，结果会显示在这里。</span></div>)}
-    {!loading && !organizationLoading && section === "library" && (visible.length ? <div className={styles.grid}>{visible.map((item) => {
-      const arrangement = arrangements.get(`${item.kind}:${item.id}`);
-      const open = () => { if (item.detailKey) onOpenGenerated(item.detailKey); };
-      return <article className={styles.mediaCard} key={`${item.kind}:${item.id}`}>
-        {item.media === "image" ? <button className={styles.mediaFrame} onClick={() => {
-          if (item.detailKey) { open(); return; }
-          const material = references.find((value) => value.id === item.id);
-          if (material) setPreview({ name: material.name, url: material.url });
-        }} aria-label={`查看 ${item.name}`}><PrivateObjectImage src={item.previewUrl!} alt={item.name}/></button> :
-          item.media === "video" ? <div className={styles.mediaFrame}><video src={item.url} controls preload="none" aria-label={item.name}/></div> :
-          <div className={styles.audioFrame}><AudioLines size={34}/><audio src={item.url} controls preload="none" aria-label={item.name}/></div>}
-        <div className={styles.cardCopy}><strong title={item.name}>{item.name}</strong><small>{dateLabel(item.createdAt)} {bytesLabel(item.size)}</small>
-          <div className={styles.cardActions}>
-            {item.kind !== "generated" && <button onClick={() => { if (item.kind === "reference") { const material = references.find((value) => value.id === item.id); if (material) onUseReference(material); } else if (item.kind === "video") { const material = videos.find((value) => value.id === item.id); if (material) onUseVideo(material); } else { const material = audios.find((value) => value.id === item.id); if (material) onUseAudio(material); } }}>用于创作</button>}
-            <label>文件夹<select aria-label={`整理 ${item.name} 到文件夹`} disabled={busy} value={arrangement?.folderId ?? ""} onChange={(event) => void updateOrganization(item.kind, item.id, event.target.value || null, arrangement?.tags ?? [])}><option value="">未分类</option>{organization.folders.map((folder) => <option value={folder.id} key={folder.id}>{folder.name}</option>)}</select></label>
-            <button onClick={() => { const value = window.prompt("标签，用逗号分隔", arrangement?.tags.join("，") ?? ""); if (value != null) void updateOrganization(item.kind, item.id, arrangement?.folderId ?? null, value.split(/[,，]/).map((tag) => tag.trim()).filter(Boolean)); }}>标签{arrangement?.tags.length ? ` ${arrangement.tags.length}` : ""}</button>
-          </div>
+      <h1>资产</h1>
+      <div className={styles.headerTools}>
+        <div className={styles.iconGroup} role="group" aria-label="文件来源">
+          <button className={sourceFilter === "uploaded" ? styles.iconActive : ""} aria-label="已上传" title="已上传" aria-pressed={sourceFilter === "uploaded"} onClick={() => { setSourceFilter(sourceFilter === "uploaded" ? "all" : "uploaded"); setSelectedKeys([]); }}><Upload size={17}/></button>
+          <button className={sourceFilter === "generated" ? styles.iconActive : ""} aria-label="已生成" title="已生成" aria-pressed={sourceFilter === "generated"} onClick={() => { setSourceFilter(sourceFilter === "generated" ? "all" : "generated"); setSelectedKeys([]); }}><WandSparkles size={17}/></button>
         </div>
-      </article>;
-    })}</div> : <div className={styles.state}><ImagePlus size={22}/><strong>{folderId ? "文件夹里还没有资产" : search || filter !== "all" ? "没有匹配的资产" : "个人资产库还是空的"}</strong><span>生成结果会自动入库，也可以上传 JPG/JPEG、PNG、MP4 或 MP3。</span></div>)}
+        <div className={styles.iconGroup} role="group" aria-label="视图模式">
+          <button className={viewMode === "grid" ? styles.iconActive : ""} aria-label="网格视图" title="网格视图" aria-pressed={viewMode === "grid"} onClick={() => setViewMode("grid")}><Grid2X2 size={17}/></button>
+          <button className={viewMode === "list" ? styles.iconActive : ""} aria-label="列表视图" title="列表视图" aria-pressed={viewMode === "list"} onClick={() => setViewMode("list")}><List size={18}/></button>
+        </div>
+        <label className={styles.search}><Search size={16}/><input value={search} onChange={(event) => { setSearch(event.target.value); setSelectedKeys([]); }} placeholder="搜索资产" aria-label="搜索资产或标签" /></label>
+        <DropdownMenu><DropdownMenuTrigger asChild><button className={styles.primaryButton}>新建<ChevronDown size={15}/></button></DropdownMenuTrigger><DropdownMenuContent align="end" className={styles.fileMenu}>
+          <DropdownMenuItem onSelect={() => { setRows([]); setUploadTags(""); setActionError(null); setUploadFolderId(folderId); setUploadOpen(true); }}><Upload size={16}/>上传文件</DropdownMenuItem>
+          <DropdownMenuItem disabled={busy} onSelect={() => void addFolder()}><FolderPlus size={16}/>新建文件夹</DropdownMenuItem>
+        </DropdownMenuContent></DropdownMenu>
+      </div>
+    </header>
+    <div className={styles.filters} role="group" aria-label="资产类型">
+      {mediaFilters.map((choice) => <button key={choice.id} className={filter === choice.id ? styles.selectedFilter : ""} aria-pressed={filter === choice.id} onClick={() => { setFilter(choice.id); setSelectedKeys([]); }}>{choice.label}</button>)}
+    </div>
+    {activeFolder && <div className={styles.folderActions}><button onClick={() => { setFolderId(null); setSelectedKeys([]); }}><ChevronLeft size={15}/>全部资产</button><span>/ {activeFolder.name}</span><button disabled={busy} title="重命名文件夹" aria-label="重命名文件夹" onClick={() => void editFolder("rename")}><Pencil size={15}/></button><button disabled={busy} onClick={() => void editFolder("delete")}>删除文件夹</button></div>}
+    {(error || organizationError || actionError) && <div className={styles.error} role="alert"><CircleAlert size={16}/>{actionError ?? error ?? organizationError}<button onClick={() => { setActionError(null); onRetry(); setRevision((current) => current + 1); }}><RefreshCw size={14}/>重试</button></div>}
+    {(loading || organizationLoading) && <div className={styles.state} role="status"><LoaderCircle className={styles.spinner} size={18}/>正在读取资产</div>}
+    {!loading && !organizationLoading && !folderId && <section className={styles.folderSection} aria-label="文件夹"><h2>文件夹</h2>
+      {organization.folders.length ? <div className={styles.folders}>{organization.folders.map((folder) => <button className={styles.folder} key={folder.id} onClick={() => { setFolderId(folder.id); setSelectedKeys([]); }}>
+        <span className={styles.folderArt}><Folder size={38} strokeWidth={1.8}/></span><strong>{folder.name}</strong><small>{items.filter((item) => arrangements.get(`${item.kind}:${item.id}`)?.folderId === folder.id).length} 个项目</small>
+      </button>)}</div> : <p className={styles.folderEmpty}>还没有文件夹</p>}
+    </section>}
+    {!loading && !organizationLoading && <section className={styles.filesSection} aria-label="项目"><h2>{activeFolder ? activeFolder.name : "项目"}</h2>
+      {viewMode === "list" && visible.length > 0 && <div className={styles.listHead}><span>名称</span><span>修改日期</span><span>大小</span></div>}
+      {visible.length ? <div className={viewMode === "grid" ? styles.fileGrid : styles.fileList}>{visible.map(renderFile)}</div> : <div className={styles.state}><ImagePlus size={22}/><strong>{folderId ? "文件夹里还没有资产" : search || filter !== "all" || sourceFilter !== "all" ? "没有匹配的资产" : "还没有资产"}</strong><span>生成结果会自动保存，也可以上传 JPG/JPEG、PNG、MP4 或 MP3。</span></div>}
+    </section>}
+    {selectedItems.length > 0 && <div className={styles.selectionBar} role="toolbar" aria-label="已选资产操作">
+      <span>已选择 {selectedItems.length} 个</span>
+      {selectedItems.length === 1 && selectedItems[0].kind !== "generated" && <button className={styles.selectionPrimary} disabled={busy} onClick={() => applyItemToCreation(selectedItems[0])}><Plus size={16}/>用于创作</button>}
+      <DropdownMenu><DropdownMenuTrigger asChild><button disabled={busy}><Folder size={16}/>移动</button></DropdownMenuTrigger><DropdownMenuContent side="top" align="center" className={styles.fileMenu}>
+        <DropdownMenuItem onSelect={() => void moveItems(selectedItems, null)}>未分类</DropdownMenuItem>
+        {organization.folders.map((folder) => <DropdownMenuItem key={folder.id} onSelect={() => void moveItems(selectedItems, folder.id)}>{folder.name}</DropdownMenuItem>)}
+      </DropdownMenuContent></DropdownMenu>
+      <button disabled={busy} onClick={() => void downloadItems(selectedItems)}><Download size={16}/>下载</button>
+      {selectedItems.every((item) => item.kind === "generated") && <button className={styles.deleteAction} disabled={busy} onClick={() => void deleteGeneratedItems(selectedItems)}><Trash2 size={16}/>删除</button>}
+      <DropdownMenu><DropdownMenuTrigger asChild><button className={styles.moreSelection} aria-label="更多已选操作" title="更多" disabled={busy}><MoreHorizontal size={17}/></button></DropdownMenuTrigger><DropdownMenuContent side="top" align="end" className={styles.fileMenu}>
+        {selectedItems.length === 1 && <DropdownMenuItem onSelect={() => editTags(selectedItems[0])}><Pencil size={16}/>编辑标签</DropdownMenuItem>}
+        <DropdownMenuItem onSelect={() => setSelectedKeys([])}><X size={16}/>取消选择</DropdownMenuItem>
+      </DropdownMenuContent></DropdownMenu>
+      <button className={styles.closeSelection} aria-label="取消选择" title="取消选择" disabled={busy} onClick={() => setSelectedKeys([])}><X size={17}/></button>
+    </div>}
     <Dialog open={uploadOpen} onOpenChange={(open) => { if (!busy) setUploadOpen(open); }}><DialogPortal><DialogOverlay/><DialogPrimitive.Content className={styles.dialog} aria-describedby="asset-upload-description" onEscapeKeyDown={(event) => { if (busy) event.preventDefault(); }} onPointerDownOutside={(event) => { if (busy) event.preventDefault(); }}>
       <header><div><DialogTitle>上传资产</DialogTitle><DialogDescription id="asset-upload-description">JPG/JPEG、PNG、MP4、MP3；单个文件不超过 20 MB。</DialogDescription></div><button aria-label="关闭上传" disabled={busy} onClick={() => setUploadOpen(false)}><X size={19}/></button></header>
       <div className={styles.dialogBody}>
@@ -315,6 +422,6 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
       </div>
       <footer><button onClick={() => setUploadOpen(false)} disabled={busy}>关闭</button><button className={styles.primaryButton} onClick={() => void uploadAll()} disabled={busy || !rows.some((row) => row.state !== "ready")}>{busy ? "上传中…" : "保存"}</button></footer>
     </DialogPrimitive.Content></DialogPortal></Dialog>
-    <Dialog open={Boolean(preview)} onOpenChange={(open) => { if (!open) setPreview(null); }}><DialogPortal><DialogOverlay/><DialogPrimitive.Content className={styles.previewDialog} aria-describedby="asset-preview-description"><DialogTitle>{preview?.name ?? "图片预览"}</DialogTitle><DialogDescription id="asset-preview-description">上传图片原图预览</DialogDescription>{preview && <PrivateObjectImage src={preview.url} alt={preview.name}/>}<button onClick={() => setPreview(null)}>关闭</button></DialogPrimitive.Content></DialogPortal></Dialog>
+    <Dialog open={Boolean(preview)} onOpenChange={(open) => { if (!open) setPreview(null); }}><DialogPortal><DialogOverlay/><DialogPrimitive.Content className={styles.previewDialog} aria-describedby="asset-preview-description"><DialogTitle>{preview?.name ?? "文件预览"}</DialogTitle><DialogDescription id="asset-preview-description">已上传文件预览</DialogDescription>{preview?.media === "image" && <PrivateObjectImage src={preview.url} alt={preview.name}/>} {preview?.media === "video" && <video src={preview.url} controls autoPlay aria-label={preview.name}/>} {preview?.media === "audio" && <audio src={preview.url} controls autoPlay aria-label={preview.name}/>}<button onClick={() => setPreview(null)}>关闭</button></DialogPrimitive.Content></DialogPortal></Dialog>
   </section>;
 }
