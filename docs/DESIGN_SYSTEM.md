@@ -1,5 +1,9 @@
 # Design system
 
+## GG-124 画布初始界面
+
+画布承接现有白色、无彩色工作区，在导航中使用现有灰阶选中态。内容区为纯白 React Flow 平面，不绘制网格、示例节点、标题或引导卡。右下角只放一个经 GoodGood 灰阶样式调整的 React Flow UI 缩放选择器；不显示 React Flow 默认角标。首版不为尚未定义的节点与素材操作预留可见工具栏。
+
 ## GG-123 component adoption
 
 `components/ui` is the shared shadcn layer for controls, labels, inputs, dialogs

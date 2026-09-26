@@ -1,5 +1,9 @@
 # GG-063 quality pricing
 
+## GG-124 画布初始流程
+
+在桌面工作区点击 `画布`，或直接访问 `/canvas`，进入空白画布。拖动画布可平移，滚轮或右下角缩放选择器可调整视图；离开画布后仍可返回原有创作或项目页面，已有创作状态不由画布入口清空。首版没有画布文档、节点、保存提示或上传入口。
+
 ## GG-121 unified asset flow
 
 Open `/assets` into one file collection. Media tabs and uploaded/generated icon

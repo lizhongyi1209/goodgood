@@ -71,6 +71,7 @@
     "@hookform/resolvers": "^5.7.1",
     "@lobehub/icons-static-svg": "1.94.0",
     "@shadcn/react": "^0.3.0",
+    "@xyflow/react": "^12.12.0",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "cmdk": "^1.1.1",

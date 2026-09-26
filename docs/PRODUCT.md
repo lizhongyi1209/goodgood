@@ -1,5 +1,9 @@
 # Product definition
 
+## GG-124 画布创作初始界面
+
+`/canvas` 是共享工作区中的独立画布创作入口。首版只提供纯白空画布与视图平移、缩放，不放示例节点、背景网格或引导说明；现有 `/create` 图片/视频创作流程保持原状。画布内容保存、素材放置与生成交互待后续产品决定，不由空白界面暗示已支持。
+
 ## GG-122 standalone Hero preview
 
 `/hero` is a standalone local preview of a GoodGood introduction, separate

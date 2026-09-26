@@ -92,6 +92,7 @@ import { uploadReferenceFiles } from "@/features/references/http-reference-uploa
 import { listPrivateVideoMaterials, uploadPrivateVideoMaterial, type PrivateVideoMaterial } from "@/features/creation/http-video-materials";
 import { listPrivateAudioMaterials, type PrivateAudioMaterial } from "@/features/assets/http-audio-materials";
 import { AssetWorkspace, type GeneratedAssetCard } from "@/features/assets/asset-workspace";
+import { CanvasWorkspace } from "@/features/canvas/canvas-workspace";
 import { PRIVATE_IMAGE_MIME_TYPES, PRIVATE_IMAGE_UPLOAD_MAX_BYTES } from "@/shared/contracts/upload-limits.mjs";
 import {
   listReferenceMaterials,
@@ -222,6 +223,7 @@ import {
   Download,
   FolderOpen,
   FolderPlus,
+  Frame,
   Film,
   HelpCircle,
   MessageSquare,
@@ -261,7 +263,7 @@ type AssetBatch = {
   referenceCount: number;
   images: readonly GenerationOutput[];
 };
-type ActiveView = "create" | "profile" | "projects" | "assets" | "credits" | "jcoin" | "feedback" | "distribution" | "organizations" | "admin";
+type ActiveView = "create" | "canvas" | "profile" | "projects" | "assets" | "credits" | "jcoin" | "feedback" | "distribution" | "organizations" | "admin";
 type DestructiveCreationIntent =
   | { kind: "new" }
   | { kind: "project"; projectId: string; projectName: string };
@@ -924,6 +926,8 @@ export default function Home({
       setProjectRestoringId(null);
       setActiveView(route.kind === "projects"
         ? "projects"
+        : route.kind === "canvas"
+          ? "canvas"
         : route.kind === "profile"
           ? "profile"
         : route.kind === "assets"
@@ -2435,6 +2439,12 @@ export default function Home({
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const handleCanvasNav = () => {
+    if (workspaceId) { window.location.assign("/canvas"); return; }
+    navigateWorkspace({ kind: "canvas" });
+    setActiveView("canvas");
+  };
+
   const reloadProjects = async () => {
     if (!authenticationSession || authenticationSession.access.status !== "active") return;
     if (authenticationSession.preview) {
@@ -3083,6 +3093,7 @@ export default function Home({
 
         <nav className="side-nav" aria-label="主导航">
           <button className={`side-nav-item ${activeView === "create" ? "active" : ""}`} onClick={handleCreateNav}><Brush size={17} strokeWidth={1.8} /><span>创作</span></button>
+          <button className={`side-nav-item ${activeView === "canvas" ? "active" : ""}`} aria-label="画布" title="画布" onClick={handleCanvasNav}><Frame size={17} strokeWidth={1.8} /><span>画布</span></button>
           <button className="side-nav-item"><Compass size={17} /><span>探索</span></button>
           <button className={`side-nav-item ${activeView === "projects" ? "active" : ""}`} onClick={handleProjectsNav}><FolderOpen size={17} /><span>项目</span></button>
           <button className={`side-nav-item asset-nav ${activeView === "assets" ? "active" : ""} ${assetPulse ? "has-new-assets" : ""}`} onClick={handleAssetNav}>
@@ -3245,7 +3256,7 @@ export default function Home({
           </div>
         </header>
 
-        <div className={`content-wrap ${activeView !== "create" ? "asset-content-wrap" : ""}`}>
+        <div className={`content-wrap ${activeView === "canvas" ? "canvas-content-wrap" : activeView !== "create" ? "asset-content-wrap" : ""}`}>
           {workspaceId && workspaceAccessReady && <div className="legacy-organization-context">
             <span>{activeWorkspace?.name} · 企业历史创作</span><button onClick={() => window.location.assign("/create")}>返回个人创作</button>
           </div>}
@@ -3448,7 +3459,9 @@ export default function Home({
               )}
             </section>
           )}
-          </> : activeView === "projects" ? (
+          </> : activeView === "canvas" ? (
+            <CanvasWorkspace />
+          ) : activeView === "projects" ? (
             <section className="project-library-view" aria-label="项目">
               <header className="asset-library-header project-library-header">
                 <div><small>GOODGOOD PROJECTS</small><h1>项目</h1><p>保存完整的创作过程，随时恢复并继续创作。</p></div>

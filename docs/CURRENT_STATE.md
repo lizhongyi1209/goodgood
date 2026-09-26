@@ -1,5 +1,6 @@
 # GoodGood 当前状态
 
+- 本地新进展（2026-09-26）：GG-124 `/canvas` 纯白空画布已接入 React Flow 与 React Flow UI 缩放选择器，隐藏默认角标；`check:local` 585 项 / 562 通过 / 23 跳过 / 0 失败。仅供 5173 热更新预览，待站长手动验收；32131 已验证检查点及生产应用均未因本任务替换。
 - 最后核对：2026-09-26 GG-121 取消资产标签，选择栏仅下载/移动/红底白字删除，上传图片/视频/音频与生成图片均可确认后永久删除；本地门禁 560/23/0，现有 32131 Web 已替换为已验证检查点，5173 保持运行；未做浏览器验收、真实删除或生产发布。此前 GG-115 本地门禁 566/26/0 通过，隔离开发库迁移 0046 已事务验证；站长确认默认历史、个人库切换与测试图上传刷新预览正常。512 px WebP 真实 OSS/RustFS 只读转换沿用 GG-113 验证；GG-112 真实邮件收信/登录与 GG-111 生产 OSS 桶测试前缀上传的既有验收保持，本次未重复发信/上传。生产应用仍为 `7888554` / 迁移 `0044` / 配置契约 `b3d7310a…ddf3`；公网与注册均开放。
 - 产品阶段：已开放的 `controlled-alpha-v1`，不是完整 seed/付费生产就绪。
 - 正式入口：https://goodgood.o1key.com
@@ -17,7 +18,6 @@
 ## GG-101 本地运行边界
 
 - GG-102 已配置本地真实 Seedance 默认入口；图片一次真实 1K 单张生成成功。视频未提交付费任务，持久化仍未接；核验详见[任务卡](tasks/GG-102-real-video-development.md)。
-
 - 当前仅保留goodgood-gg052的PostgreSQL/Valkey/RustFS、gg044 Mailpit及无关项目容器；全部34个卷保留。旧GoodGood应用容器、镜像、空网络和构建缓存已按任务卡清理，生产主机与数据未触碰。
 - 新版本须运行`npm run build:checkpoint`和`npm run verify:checkpoint`；启动脚本拒绝源码、Git revision或产物指纹不匹配。Web的`/api/health/version`返回`build.verified`与revision，作为跨窗口页面来源核验。
 - Web/Worker 均强制调用**真实** O1Key（真实计费），开发令牌从仓库外

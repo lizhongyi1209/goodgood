@@ -1,7 +1,7 @@
 export const WORKSPACE_NAVIGATION_EVENT = "goodgood:workspace-navigation";
 
 /**
- * @typedef {{ kind: "create" } | { kind: "profile" } | { kind: "projects" } | { kind: "project", projectId: string } | { kind: "assets" } | { kind: "asset", assetId: string } | { kind: "credits" } | { kind: "jcoin" } | { kind: "feedback" } | { kind: "distribution", tab?: "transfers" } | { kind: "admin", tab: "models" | "users" | "audit" | "operations" | "logs" | "jcoin" | "feedback" } | { kind: "enterpriseAccounts", tab: "accounts" | "transfers" } | { kind: "organizations", organizationId?: string, tab?: "overview" | "members" | "usage" | "assets" }} WorkspaceRoute
+ * @typedef {{ kind: "create" } | { kind: "canvas" } | { kind: "profile" } | { kind: "projects" } | { kind: "project", projectId: string } | { kind: "assets" } | { kind: "asset", assetId: string } | { kind: "credits" } | { kind: "jcoin" } | { kind: "feedback" } | { kind: "distribution", tab?: "transfers" } | { kind: "admin", tab: "models" | "users" | "audit" | "operations" | "logs" | "jcoin" | "feedback" } | { kind: "enterpriseAccounts", tab: "accounts" | "transfers" } | { kind: "organizations", organizationId?: string, tab?: "overview" | "members" | "usage" | "assets" }} WorkspaceRoute
  */
 
 /**
@@ -15,6 +15,7 @@ export function parseWorkspaceRoute(pathname) {
   if (normalized === "/" || normalized === "/create") {
     return { kind: "create" };
   }
+  if (normalized === "/canvas") return { kind: "canvas" };
   if (normalized === "/projects") return { kind: "projects" };
   const projectMatch = normalized.match(/^\/projects\/([^/]+)$/);
   if (projectMatch) {
@@ -64,6 +65,7 @@ export function parseWorkspaceRoute(pathname) {
  * @param {WorkspaceRoute} route
  */
 export function workspaceRouteHref(route) {
+  if (route.kind === "canvas") return "/canvas";
   if (route.kind === "projects") return "/projects";
   if (route.kind === "project") {
     return `/projects/${encodeURIComponent(route.projectId)}`;
