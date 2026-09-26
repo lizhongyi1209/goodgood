@@ -44,8 +44,8 @@ test("GG-035 adds a standard-default video line without changing Seedance 2.5 ca
     /id: "seedance-2-5"[\s\S]*duration: Object\.freeze\(\{ min: 4, max: 30 \}\)[\s\S]*imageLimit: 30[\s\S]*videoLimit: 10[\s\S]*audioLimit: 10[\s\S]*totalLimit: 50/,
   );
   assert.match(composer, /<label>线路<\/label>/);
-  assert.match(composer, /aria-label="视频生成线路"/);
-  assert.match(composer, /onProviderLineChange\(option\.id\)/);
+  assert.match(composer, /<ParameterChoiceGroup[^>]*label="视频生成线路"[^>]*value=\{providerLine\}/);
+  assert.match(composer, /onValueChange=\{onProviderLineChange\}/);
   assert.match(page, /useState<VideoProviderLine>\(DEFAULT_VIDEO_PROVIDER_LINE\)/);
   assert.match(page, /providerLine=\{videoProviderLine\}/);
   assert.match(page, /onProviderLineChange=\{setVideoProviderLine\}/);

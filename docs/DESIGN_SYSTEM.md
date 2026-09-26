@@ -11,6 +11,9 @@ shared checkbox with an indeterminate select-all state, while its hover
 placement and floating actions keep the current asset layout. AI Elements is
 installed per component when its data and interaction model matches a real
 GoodGood surface; it does not redefine the generation or private-asset API.
+Image and video parameter choices share a controlled shadcn ToggleGroup while
+keeping their established selected and disabled styles. Asset selection actions
+use the shared Button primitive with the existing destructive visual treatment.
 
 ## GG-122 standalone Hero preview
 

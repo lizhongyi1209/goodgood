@@ -99,7 +99,7 @@ test("GG-039 HTTP fan-out sends four single-task POSTs and polls each returned I
 test("GG-039 exposes independent count and repeat-submit controls with compact local cards", async () => {
   const read = (name) => readFile(name, "utf8");
   const [composer, page, detail, boundary] = await Promise.all([read("features/creation/video-creation-composer.tsx"), read("app/page.tsx"), read("features/creation/video-preview-detail.tsx"), read("features/creation/http-video-preview-boundary.ts")]);
-  assert.match(composer, /aria-label="视频生成数量"/);
+  assert.match(composer, /<ParameterChoiceGroup[^>]*label="视频生成数量"[^>]*value=\{generationCount\}/);
   assert.match(composer, /disabled=\{!interfaceAvailable\}/);
   assert.doesNotMatch(page, /if \(isVideoGenerating\) return/);
   assert.match(page, /generationCount=\{videoGenerationCount\}/);

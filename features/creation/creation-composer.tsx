@@ -14,6 +14,7 @@ import type { ReferenceMaterial } from "@/features/references/http-reference-lib
 import { ReferenceQuickEditor } from "@/features/references/reference-quick-editor";
 import { CreationModeSwitch } from "@/features/creation/creation-mode-switch";
 import { CreationPromptTextarea } from "@/features/creation/creation-prompt-textarea";
+import { ParameterChoiceGroup } from "@/features/creation/parameter-choice-group";
 import { useParameterDrawerViewport } from "@/features/creation/use-parameter-drawer-viewport";
 import { useComposerFileDrop } from "@/features/creation/use-composer-file-drop";
 import type { CreationMode } from "@/features/creation/video-generation-options";
@@ -461,19 +462,13 @@ export function CreationComposer({
                   <text x="60" y="59" textAnchor="middle" fill="#3c3c45" fontSize="10">{activeRatio.label}</text>
                 </svg>
                 <div className="ratio-editor">
-                  <div className="ratio-modes" aria-label="画面方向">
-                    {GENERATION_RATIO_MODES.map(([mode, label]) => (
-                      <button
-                        key={mode}
-                        className={activeRatio.mode === mode ? "selected" : ""}
-                        onClick={() => onAspectRatioChange(
-                          getDefaultGenerationRatioForModelMode(modelId, mode),
-                        )}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
+                  <ParameterChoiceGroup
+                    label="画面方向"
+                    className="ratio-modes"
+                    value={activeRatio.mode}
+                    options={GENERATION_RATIO_MODES.map(([value, label]) => ({ value, label }))}
+                    onValueChange={(mode) => onAspectRatioChange(getDefaultGenerationRatioForModelMode(modelId, mode))}
+                  />
                   <Slider
                     className="ratio-slider"
                     min={0}
@@ -547,19 +542,13 @@ export function CreationComposer({
                       <strong>谷歌搜索</strong>
                       <small>使用 Google Search 辅助生成</small>
                     </span>
-                    <div className="google-search-options" aria-label="谷歌搜索">
-                      {[false, true].map((enabled) => (
-                        <button
-                          type="button"
-                          key={String(enabled)}
-                          className={googleSearch === enabled ? "selected" : ""}
-                          aria-pressed={googleSearch === enabled}
-                          onClick={() => onGoogleSearchChange(enabled)}
-                        >
-                          {enabled ? "开启" : "关闭"}
-                        </button>
-                      ))}
-                    </div>
+                    <ParameterChoiceGroup
+                      label="谷歌搜索"
+                      className="google-search-options"
+                      value={googleSearch}
+                      options={[{ value: false, label: "关闭" }, { value: true, label: "开启" }]}
+                      onValueChange={onGoogleSearchChange}
+                    />
                   </div>
                 </div>
               )}
@@ -568,56 +557,37 @@ export function CreationComposer({
                   <div className="gpt-image-option-section">
                     <label>质量</label>
                     {managedModel && modelSpecificationPrices(managedModel, imageLine)[resolution]?.qualities && <p className="text-xs text-zinc-500">自动质量按最高档计价；手动选择档位可降低费用。</p>}
-                    <div className={`gpt-image-option-options quality ${getGptImageQualityOptions(modelId).length > 4 ? "extended" : ""}`} aria-label="质量">
-                      {getGptImageQualityOptions(modelId).map((option) => (
-                        <button
-                          type="button"
-                          key={option.value}
-                          className={quality === option.value ? "selected" : ""}
-                          aria-pressed={quality === option.value}
-                          onClick={() => onQualityChange(option.value)}
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </div>
+                    <ParameterChoiceGroup
+                      label="质量"
+                      className={`gpt-image-option-options quality ${getGptImageQualityOptions(modelId).length > 4 ? "extended" : ""}`}
+                      value={quality}
+                      options={getGptImageQualityOptions(modelId)}
+                      onValueChange={onQualityChange}
+                    />
                   </div>
                   <div className="gpt-image-option-section">
                     <label>背景</label>
-                    <div className="gpt-image-option-options background" aria-label="背景">
-                      {GPT_IMAGE_BACKGROUND_OPTIONS.map((option) => (
-                        <button
-                          type="button"
-                          key={option.value}
-                          className={background === option.value ? "selected" : ""}
-                          aria-pressed={background === option.value}
-                          onClick={() => onBackgroundChange(option.value)}
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </div>
+                    <ParameterChoiceGroup
+                      label="背景"
+                      className="gpt-image-option-options background"
+                      value={background}
+                      options={GPT_IMAGE_BACKGROUND_OPTIONS}
+                      onValueChange={onBackgroundChange}
+                    />
                   </div>
                   <div className="gpt-image-option-section">
                     <label>输出格式</label>
-                    <div className="gpt-image-option-options format" aria-label="输出格式">
-                      {GPT_IMAGE_OUTPUT_FORMAT_OPTIONS.map((option) => {
-                        const disabled = background === "transparent" && option.value === "jpeg";
-                        return (
-                          <button
-                            type="button"
-                            key={option.value}
-                            className={outputFormat === option.value ? "selected" : ""}
-                            aria-pressed={outputFormat === option.value}
-                            disabled={disabled}
-                            title={disabled ? "透明背景仅支持 PNG 或 WebP" : undefined}
-                            onClick={() => onOutputFormatChange(option.value)}
-                          >
-                            {option.label}
-                          </button>
-                        );
-                      })}
-                    </div>
+                    <ParameterChoiceGroup
+                      label="输出格式"
+                      className="gpt-image-option-options format"
+                      value={outputFormat}
+                      options={GPT_IMAGE_OUTPUT_FORMAT_OPTIONS.map((option) => ({
+                        ...option,
+                        disabled: background === "transparent" && option.value === "jpeg",
+                        title: background === "transparent" && option.value === "jpeg" ? "透明背景仅支持 PNG 或 WebP" : undefined,
+                      }))}
+                      onValueChange={onOutputFormatChange}
+                    />
                   </div>
                 </div>
               )}
@@ -625,38 +595,29 @@ export function CreationComposer({
             <div className="parameter-group output-group">
               <div className="output-section">
                 <label>分辨率</label>
-                <div className="resolution-options">
-                  {GENERATION_RESOLUTION_OPTIONS.map((option) => (
-                    <button
-                      key={option.value}
-                      className={resolution === option.value ? "selected" : ""}
-                      onClick={() => onResolutionChange(option.value)}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
+                <ParameterChoiceGroup
+                  label="分辨率"
+                  className="resolution-options"
+                  value={resolution}
+                  options={GENERATION_RESOLUTION_OPTIONS}
+                  onValueChange={onResolutionChange}
+                />
               </div>
               <div className="output-section">
                 <label>生成数量</label>
-                <div className="choice-row compact">
-                  {GENERATION_COUNTS.map((generationCount) => (
-                    <button
-                      key={generationCount}
-                      className={count === generationCount ? "selected" : ""}
-                      aria-pressed={count === generationCount}
-                      disabled={!isGenerationCountSupported(modelId, generationCount)}
-                      title={
-                        isGenerationCountSupported(modelId, generationCount)
-                          ? `生成 ${generationCount} 张`
-                          : "当前模型仅支持生成 1 张"
-                      }
-                      onClick={() => onCountChange(generationCount)}
-                    >
-                      {generationCount}
-                    </button>
-                  ))}
-                </div>
+                <ParameterChoiceGroup
+                  label="生成数量"
+                  className="choice-row compact"
+                  value={count}
+                  options={GENERATION_COUNTS.map((generationCount) => ({
+                    value: generationCount,
+                    label: generationCount,
+                    disabled: !isGenerationCountSupported(modelId, generationCount),
+                    title: isGenerationCountSupported(modelId, generationCount)
+                      ? `生成 ${generationCount} 张` : "当前模型仅支持生成 1 张",
+                  }))}
+                  onValueChange={onCountChange}
+                />
               </div>
             </div>
           </div>

@@ -190,9 +190,9 @@ test("hides fixed Nano thinking and shows only the Google Search control", async
   assert.match(composer, /modelId === "nano-banana-2"/);
   assert.doesNotMatch(composer, /思考程度|banana-thinking|thinkingLevel/);
   assert.match(composer, />谷歌搜索</);
-  assert.match(composer, /aria-label="谷歌搜索"/);
-  assert.match(composer, /enabled \? "开启" : "关闭"/);
-  assert.match(composer, /googleSearch === enabled/);
+  assert.match(composer, /<ParameterChoiceGroup[^>]*label="谷歌搜索"[^>]*value=\{googleSearch\}/);
+  assert.match(composer, /options=\{\[\{ value: false, label: "关闭" \}, \{ value: true, label: "开启" \}\]\}/);
+  assert.match(composer, /onValueChange=\{onGoogleSearchChange\}/);
   assert.match(page, /useState<GenerationThinkingLevel>\("high"\)/);
   assert.match(page, /useState\(false\)/);
   assert.doesNotMatch(page, /onThinkingLevelChange|handleThinkingLevelChange|<dt>思考程度<\/dt>/);

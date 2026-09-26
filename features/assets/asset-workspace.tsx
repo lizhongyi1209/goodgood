@@ -563,13 +563,13 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
     </aside>}
     {(selectedItems.length > 0 || selectedFolders.length > 0) && <div className={styles.selectionBar} role="toolbar" aria-label={selectedFolders.length ? "已选文件夹操作" : "已选资产操作"}>
       <span>已选择 {selectedFolders.length || selectedItems.length} 个</span>
-      {selectedItems.length > 0 && <button disabled={busy} onClick={() => void downloadItems(selectedItems)}><Download size={16}/>下载</button>}
-      {selectedItems.length > 0 && <DropdownMenu><DropdownMenuTrigger asChild><button disabled={busy}><Folder size={16}/>移动</button></DropdownMenuTrigger><DropdownMenuContent side="top" align="center" className={styles.fileMenu}>
+      {selectedItems.length > 0 && <Button type="button" variant="secondary" size="sm" disabled={busy} onClick={() => void downloadItems(selectedItems)}><Download size={16}/>下载</Button>}
+      {selectedItems.length > 0 && <DropdownMenu><DropdownMenuTrigger asChild><Button type="button" variant="secondary" size="sm" disabled={busy}><Folder size={16}/>移动</Button></DropdownMenuTrigger><DropdownMenuContent side="top" align="center" className={styles.fileMenu}>
         <DropdownMenuItem onSelect={() => void moveItems(selectedItems, null)}>未分类</DropdownMenuItem>
         {organization.folders.map((folder) => <DropdownMenuItem key={folder.id} onSelect={() => void moveItems(selectedItems, folder.id)}>{folder.name}</DropdownMenuItem>)}
       </DropdownMenuContent></DropdownMenu>}
-      <button className={styles.deleteAction} disabled={busy} onClick={() => selectedFolders.length ? void deleteFolders(selectedFolders) : void deleteItems(selectedItems)}><Trash2 size={16}/>删除</button>
-      <button className={styles.closeSelection} aria-label="取消选择" title="取消选择" disabled={busy} onClick={() => { setSelectedKeys([]); setSelectedFolderIds([]); }}><X size={17}/></button>
+      <Button type="button" variant="destructive" size="sm" className={styles.deleteAction} disabled={busy} onClick={() => selectedFolders.length ? void deleteFolders(selectedFolders) : void deleteItems(selectedItems)}><Trash2 size={16}/>删除</Button>
+      <Button type="button" variant="ghost" size="icon-sm" className={styles.closeSelection} aria-label="取消选择" title="取消选择" disabled={busy} onClick={() => { setSelectedKeys([]); setSelectedFolderIds([]); }}><X size={17}/></Button>
     </div>}
     <Dialog open={folderDialogOpen} onOpenChange={(open) => { if (!busy) { setFolderDialogOpen(open); if (!open) setFolderDialogError(null); } }}><DialogContent className={styles.folderDialog} overlayClassName={styles.folderDialogOverlay} showCloseButton={false} onEscapeKeyDown={(event) => { if (busy) event.preventDefault(); }} onPointerDownOutside={(event) => { if (busy) event.preventDefault(); }}>
       <DialogTitle>{editingFolderId ? "重命名文件夹" : "新建文件夹"}</DialogTitle>

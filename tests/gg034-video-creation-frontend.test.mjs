@@ -74,14 +74,14 @@ test("GG-034 video composer exposes creator parameters and multimedia references
   assert.match(materialCreation, /接口待接入/);
   assert.match(composer, /生成模式/);
   assert.match(composer, /VIDEO_GENERATION_MODE_OPTIONS\.map/);
-  assert.match(composer, /aria-label="视频生成模式"/);
+  assert.match(composer, /<ParameterChoiceGroup[^>]*label="视频生成模式"[^>]*value=\{generationMode\}/);
   assert.match(composer, /referenceLimits\.imageLimit - referenceCounts\.image/);
   assert.match(composer, /`图片 \$\{ordinal\}`/);
   assert.match(composer, /generationMode === "first_last_frame"[\s\S]*videoReferenceRoleLabel\(reference\.role\)[\s\S]*mediaLabel\.replace\(" ", ""\)/);
   assert.doesNotMatch(composer, /设置\$\{mediaLabel\}用途/);
   assert.doesNotMatch(composer, /className="video-reference-role/);
   assert.match(composer, /接口待接入/);
-  assert.match(composer, /aria-label="视频生成数量"/);
+  assert.match(composer, /<ParameterChoiceGroup[^>]*label="视频生成数量"[^>]*value=\{generationCount\}/);
 });
 
 test("GG-034 reuses image, video, and audio assets without uploading them again", async () => {

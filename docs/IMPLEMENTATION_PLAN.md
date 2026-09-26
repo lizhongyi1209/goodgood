@@ -1,14 +1,14 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-26
-- Current phase: GG-123 全应用公共 UI 分阶段整合的第一阶段已在 GG-116 本地实现并通过门禁，待站长手动浏览器验收；后续页面仍待逐步整合。GG-122 独立 `/hero` 与 GG-121 资产页视觉改动也待站长验收。32131 Web 仍为上一已验证检查点，5173 为热更新预览；生产应用仍为 GG-098，未部署。
-- Current objective: 站长在 5173 检查图片/视频输入八行上限、资产网格/列表选择与混合全选、搜索和文件夹弹框；之后继续创作参数与资产操作栏的组件整合。GG-122 Hero 与 GG-121 资产视觉验收继续待站长执行。
+- Current phase: GG-123 全应用公共 UI 分阶段整合的第二阶段已在 GG-116 本地实现并通过门禁；前两阶段待站长手动浏览器验收，后续页面仍待逐步整合。GG-122 独立 `/hero` 与 GG-121 资产页视觉改动也待站长验收。32131 Web 仍为上一已验证检查点，5173 为热更新预览；生产应用仍为 GG-098，未部署。
+- Current objective: 站长在 5173 检查图片/视频参数单选与资产选择栏，以及第一阶段输入、搜索、文件夹弹框；之后按功能分组处理账户、站长和其他表单页。
 - Previous objective: GG-122 独立 `/hero` 页面本地实现与门禁完成，待站长手动视觉验收。
 
 ## Current checkpoint
 
-- Task [GG-123](tasks/GG-123-shadcn-ai-elements-adoption.md)：**全应用公共 UI 分阶段整合；首批本地实现与门禁完成，待站长验收**。
-  复用已有 shadcn Textarea、Checkbox、Input、Label、Button、DialogContent；图片/视频创作共用八行输入，资产选择支持混合态。AI Elements 按实际数据契约匹配后再安装；本次不改生成接口和业务行为。定向测试 15/15；`check:local` 583 项 / 560 通过 / 23 跳过 / 0 失败，lint 0 错误/110 警告。未改生产、未做浏览器验收。
+- Task [GG-123](tasks/GG-123-shadcn-ai-elements-adoption.md)：**全应用公共 UI 分阶段整合；第二批本地实现与门禁完成；前两批待站长验收**。
+  首批复用 shadcn Textarea、Checkbox、Input、Label、Button、DialogContent；第二批图片/视频创作参数复用 ToggleGroup，资产选择栏复用 Button。AI Elements 按实际数据契约匹配后再安装；不改生成接口和业务行为。第二批定向测试 40/40；`check:local` 583 项 / 560 通过 / 23 跳过 / 0 失败，lint 0 错误/110 警告。未改生产、未做浏览器验收。
 - Task [GG-122](tasks/GG-122-standalone-hero-page.md)：**独立 Hero 页面本地实现与门禁完成，待站长手动浏览器验收**。
   复用已有 shadcn Button、Tailwind 与 TypeScript，新增 `motion`、`react-wrap-balancer`、`Hero10` 和 CTA helper；`/hero` 使用站长提供的三张示例图片、准确的 GoodGood 文案与现有路由 CTA，不展示未经证实的客户数量。`check:local` 583 项 / 560 通过 / 23 跳过 / 0 失败；新增的 `<img>` 带来 1 条 lint 警告，总计 110 条、0 错误。未改生产，未做浏览器验收。
 - Task [GG-121](tasks/GG-121-unified-asset-browser.md)：**hover/视频/六列布局精修、文件夹操作与直传、本地门禁完成，待站长手动浏览器验收**。

@@ -12,6 +12,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { CreationModeSwitch } from "@/features/creation/creation-mode-switch";
 import { CreationPromptTextarea } from "@/features/creation/creation-prompt-textarea";
+import { ParameterChoiceGroup } from "@/features/creation/parameter-choice-group";
 import { useParameterDrawerViewport } from "@/features/creation/use-parameter-drawer-viewport";
 import { useComposerFileDrop } from "@/features/creation/use-composer-file-drop";
 import { SeedanceModelIcon } from "@/features/models/seedance-model-icon";
@@ -362,19 +363,13 @@ export function VideoCreationComposer({
                   <rect x={ratioFrame.x} y={ratioFrame.y} width={ratioFrame.width} height={ratioFrame.height} rx="6" fill="none" stroke="#50505a" strokeWidth="1.25" />
                   <text x="60" y="59" textAnchor="middle" fill="#3c3c45" fontSize="10">{activeRatio.label}</text>
                 </svg>
-                <div className="video-ratio-options" aria-label="视频画面比例">
-                  {VIDEO_RATIO_OPTIONS.map((option) => (
-                    <button
-                      type="button"
-                      key={option.id}
-                      className={aspectRatio === option.id ? "selected" : ""}
-                      aria-pressed={aspectRatio === option.id}
-                      onClick={() => onAspectRatioChange(option.id)}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
+                <ParameterChoiceGroup
+                  label="视频画面比例"
+                  className="video-ratio-options"
+                  value={aspectRatio}
+                  options={VIDEO_RATIO_OPTIONS.map((option) => ({ value: option.id, label: option.label }))}
+                  onValueChange={onAspectRatioChange}
+                />
               </div>
             </div>
 
@@ -435,35 +430,23 @@ export function VideoCreationComposer({
               </div>
               <div className="video-generation-mode-control">
                 <label>线路</label>
-                <div className="choice-row compact video-generation-mode-options" aria-label="视频生成线路">
-                  {VIDEO_PROVIDER_LINE_OPTIONS.map((option) => (
-                    <button
-                      type="button"
-                      key={option.id}
-                      className={providerLine === option.id ? "selected" : ""}
-                      aria-pressed={providerLine === option.id}
-                      onClick={() => onProviderLineChange(option.id)}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
+                <ParameterChoiceGroup
+                  label="视频生成线路"
+                  className="choice-row compact video-generation-mode-options"
+                  value={providerLine}
+                  options={VIDEO_PROVIDER_LINE_OPTIONS.map((option) => ({ value: option.id, label: option.label }))}
+                  onValueChange={onProviderLineChange}
+                />
               </div>
               <div className="video-generation-mode-control">
                 <label>生成模式</label>
-                <div className="choice-row compact video-generation-mode-options" aria-label="视频生成模式">
-                  {VIDEO_GENERATION_MODE_OPTIONS.map((option) => (
-                    <button
-                      type="button"
-                      key={option.id}
-                      className={generationMode === option.id ? "selected" : ""}
-                      aria-pressed={generationMode === option.id}
-                      onClick={() => onGenerationModeChange(option.id)}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
+                <ParameterChoiceGroup
+                  label="视频生成模式"
+                  className="choice-row compact video-generation-mode-options"
+                  value={generationMode}
+                  options={VIDEO_GENERATION_MODE_OPTIONS.map((option) => ({ value: option.id, label: option.label }))}
+                  onValueChange={onGenerationModeChange}
+                />
                 <small>{VIDEO_GENERATION_MODE_OPTIONS.find((option) => option.id === generationMode)?.description}</small>
               </div>
             </div>
@@ -471,19 +454,13 @@ export function VideoCreationComposer({
             <div className="parameter-group output-group video-output-group">
               <div className="output-section">
                 <label>清晰度</label>
-                <div className={`resolution-options video-resolution-options columns-${activeModel.capabilities.resolutions.length}`}>
-                  {activeModel.capabilities.resolutions.map((option) => (
-                    <button
-                      type="button"
-                      key={option}
-                      className={resolution === option ? "selected" : ""}
-                      aria-pressed={resolution === option}
-                      onClick={() => onResolutionChange(option)}
-                    >
-                      {option}
-                    </button>
-                  ))}
-                </div>
+                <ParameterChoiceGroup
+                  label="清晰度"
+                  className={`resolution-options video-resolution-options columns-${activeModel.capabilities.resolutions.length}`}
+                  value={resolution}
+                  options={activeModel.capabilities.resolutions.map((option) => ({ value: option, label: option }))}
+                  onValueChange={onResolutionChange}
+                />
               </div>
               <div className="output-section video-duration-section">
                 <label>时长 <strong>{durationSeconds} 秒</strong></label>
@@ -502,28 +479,26 @@ export function VideoCreationComposer({
               </div>
               <div className="output-section">
                 <label>声音</label>
-                <div className="choice-row compact video-audio-options" aria-label="生成声音">
-                  {[true, false].map((enabled) => (
-                    <button
-                      type="button"
-                      key={String(enabled)}
-                      className={generateAudio === enabled ? "selected" : ""}
-                      aria-pressed={generateAudio === enabled}
-                      onClick={() => onGenerateAudioChange(enabled)}
-                    >
-                      {enabled ? <Volume2 size={13} /> : <X size={13} />}
-                      {enabled ? "有声" : "静音"}
-                    </button>
-                  ))}
-                </div>
+                <ParameterChoiceGroup
+                  label="生成声音"
+                  className="choice-row compact video-audio-options"
+                  value={generateAudio}
+                  options={[
+                    { value: true, label: <><Volume2 size={13} />有声</> },
+                    { value: false, label: <><X size={13} />静音</> },
+                  ]}
+                  onValueChange={onGenerateAudioChange}
+                />
               </div>
               <div className="output-section">
                 <label>生成数量</label>
-                <div className="choice-row compact video-count-options" aria-label="视频生成数量">
-                  {VIDEO_GENERATION_COUNTS.map((count) => (
-                    <button type="button" key={count} className={generationCount === count ? "selected" : ""} aria-pressed={generationCount === count} onClick={() => onGenerationCountChange(count)}>{count}</button>
-                  ))}
-                </div>
+                <ParameterChoiceGroup
+                  label="视频生成数量"
+                  className="choice-row compact video-count-options"
+                  value={generationCount}
+                  options={VIDEO_GENERATION_COUNTS.map((count) => ({ value: count, label: count }))}
+                  onValueChange={onGenerationCountChange}
+                />
               </div>
               <div className="video-interface-note">
                 <Upload size={12} />
