@@ -124,8 +124,8 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
 - Prefer feature boundaries over extending `app/page.tsx`. The current monolith
   is prototype debt; follow the target map in `docs/PROJECT_MAP.md` when a
   feature receives real backend behavior.
-- Reuse existing Radix/Shadcn primitives. Keep keyboard behavior, focus states,
-  labels, reduced motion, and responsive behavior intact.
+- Reuse Radix/Shadcn primitives; add AI Elements per `docs/DESIGN_SYSTEM.md`.
+  Keep keyboard, focus, labels, reduced motion, and responsive behavior intact.
 - Do not add speculative routes or functionality while refactoring.
 - Update documentation, tests, and error behavior in the same change as code.
 - Iterate with the smallest relevant tests. Run `npm run check:local` once after

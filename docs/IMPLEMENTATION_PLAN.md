@@ -1,14 +1,14 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-26
-- Current phase: GG-123 全应用公共 UI 分阶段整合的前三阶段已在 GG-116 本地实现并通过门禁，待站长手动浏览器验收。GG-122 独立 `/hero` 与 GG-121 资产页视觉改动也待站长验收。32131 Web 仍为上一已验证检查点，5173 为热更新预览；生产应用仍为 GG-098，未部署。
-- Current objective: 站长在 5173 检查创作、资产、个人资料、项目保存与站长运营筛选；AI Elements 待真实数据契约匹配时引入。
+- Current phase: GG-123 前三阶段公共 UI 已通过门禁；按站长后续要求，第四阶段 AI Elements 项目 CLI 已安装且门禁通过。前三阶段待站长手动浏览器验收；GG-122 独立 `/hero` 与 GG-121 资产页视觉改动也待站长验收。32131 Web 仍为上一已验证检查点，5173 为热更新预览；生产应用仍为 GG-098，未部署。
+- Current objective: 站长在 5173 检查创作、资产、个人资料、项目保存与站长运营筛选；新功能按真实数据契约添加对应 AI Elements 组件。
 - Previous objective: GG-122 独立 `/hero` 页面本地实现与门禁完成，待站长手动视觉验收。
 
 ## Current checkpoint
 
-- Task [GG-123](tasks/GG-123-shadcn-ai-elements-adoption.md)：**全应用公共 UI 分阶段整合；前三批本地实现与门禁完成，待站长验收**。
-  首批创作输入与资产表单复用 shadcn 原语；第二批创作参数与资产选择栏复用 ToggleGroup/Button；第三批个人资料、项目保存、模型开关和运营筛选复用 Input/Label/Button/Checkbox/Select。剩余原生输入为隐藏文件选择器。AI Elements 按实际数据契约匹配后再安装；不改生成接口和业务行为。第三批定向测试 25 通过 / 1 跳过 / 0 失败；`check:local` 583 项 / 560 通过 / 23 跳过 / 0 失败，lint 0 错误/110 警告。未改生产、未做浏览器验收。
+- Task [GG-123](tasks/GG-123-shadcn-ai-elements-adoption.md)：**前三批公共 UI 本地实现与门禁完成；第四批 AI Elements CLI 已安装且门禁通过；待站长验收**。
+  前三批复用 shadcn 原语覆盖创作、资产、个人资料、项目保存、模型开关和运营筛选。第四批固定 `ai-elements@1.9.0` 开发依赖及安全的按需添加命令；当前无 AI Elements UI 组件、AI SDK 或网关配置。`check:local` 584 项 / 561 通过 / 23 跳过 / 0 失败。后续真实功能逐个加组件，不改现有生成接口。未改生产、未做浏览器验收。
 - Task [GG-122](tasks/GG-122-standalone-hero-page.md)：**独立 Hero 页面本地实现与门禁完成，待站长手动浏览器验收**。
   复用已有 shadcn Button、Tailwind 与 TypeScript，新增 `motion`、`react-wrap-balancer`、`Hero10` 和 CTA helper；`/hero` 使用站长提供的三张示例图片、准确的 GoodGood 文案与现有路由 CTA，不展示未经证实的客户数量。`check:local` 583 项 / 560 通过 / 23 跳过 / 0 失败；新增的 `<img>` 带来 1 条 lint 警告，总计 110 条、0 错误。未改生产，未做浏览器验收。
 - Task [GG-121](tasks/GG-121-unified-asset-browser.md)：**hover/视频/六列布局精修、文件夹操作与直传、本地门禁完成，待站长手动浏览器验收**。
