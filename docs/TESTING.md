@@ -21,6 +21,10 @@ native file selection/drop, pending/completed/failed tray states and folder
 placement after refresh. Upload outcome counters are real row states, not byte
 progress. Do not use a real uploaded file in automated or browser-agent tests;
 the operator is manually checking this flow at 5173.
+At both the asset root and inside a folder, `新建 → 上传文件` should open the
+system file picker with no in-page upload dialog or save step. On selection,
+verify the same tray and root-unclassified/current-folder placement; canceling
+the picker should leave the page and tray unchanged.
 
 ## GG-115 targeted verification
 

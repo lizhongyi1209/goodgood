@@ -31,6 +31,11 @@ not GoodGood's resumable creative projects.
   in a dismissible progress tray. Do not invent byte percentages when the
   upload boundary does not expose them. Existing ownership and 20 MiB/media
   constraints remain in force.
+- The upper-right `新建 → 上传文件` action opens the native file picker directly.
+  Selected files begin uploading immediately and use the same progress tray as
+  the empty-folder upload target. Files chosen inside a folder are assigned to
+  that folder; files chosen at the root remain unclassified. No in-page upload
+  dialog or extra save step is shown.
 - In list mode, show root folders first and files below them in one table under
   the same `名称 / 修改日期 / 大小` headings; omit the grid-only section headings and
   empty-folder placeholder. A folder row opens that folder and exposes rename

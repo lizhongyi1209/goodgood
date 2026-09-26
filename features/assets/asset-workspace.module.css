@@ -125,27 +125,6 @@
 @keyframes assetSpin { to { transform: rotate(360deg); } }
 .error { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 10px 12px; border-radius: 9px; background: var(--danger-surface); color: var(--danger); font-size: 11px; }
 .error button { display: inline-flex; align-items: center; gap: 4px; border: 0; background: none; color: inherit; font-size: 11px; }
-.backdrop { position: fixed; z-index: 1000; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(27, 24, 27, .42); }
-.dialog { position: fixed; z-index: 51; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(650px, calc(100% - 40px)); max-height: min(85vh, 850px); display: flex; flex-direction: column; overflow: hidden; border-radius: 16px; background: white; box-shadow: 0 20px 60px rgba(20, 20, 30, .16); }
-.dialog header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 20px 22px 13px; border-bottom: 1px solid #ededf0; }
-.dialog header h2 { margin: 0; font-size: 16px; }
-.dialog header p { margin: 6px 0 0; color: var(--quiet); font-size: 11px; }
-.dialog header button, .uploadRows button { padding: 3px; border: 0; background: none; color: #9999a2; }
-.dialogBody { min-height: 180px; overflow: auto; padding: 18px 22px; }
-.pickFiles { width: 120px; height: 116px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; border: 1px dashed #dddde3; border-radius: 11px; background: var(--soft); color: #777782; font-size: 11px; }
-.pickFiles:hover { border-color: var(--ink); color: var(--ink); }
-.uploadRows { margin: 15px 0; padding: 0; list-style: none; }
-.uploadRows li { display: flex; align-items: center; gap: 9px; padding: 8px 0; border-bottom: 1px solid #f1f1f3; font-size: 11px; }
-.uploadRows li span { min-width: 0; flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.uploadRows small { color: #92929b; }
-.uploadRows em { max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); font-style: normal; }
-.uploadRows em.failed { color: var(--danger); }
-.fields { display: grid; grid-template-columns: minmax(0, 320px); gap: 14px; margin-top: 18px; }
-.fields label { display: grid; gap: 6px; color: #666670; font-size: 11px; }
-.fields select { width: 100%; min-height: 34px; border: 1px solid #e5e5e9; border-radius: 8px; background: white; color: var(--ink); padding: 0 9px; font-size: 12px; }
-.dialogError { color: var(--danger); font-size: 11px; }
-.dialog footer { display: flex; justify-content: flex-end; gap: 9px; padding: 13px 22px; border-top: 1px solid #ededf0; }
-.dialog footer > button:first-child { border: 0; background: #f3f3f5; border-radius: 8px; color: #666670; padding: 0 14px; font-size: 12px; }
 .previewDialog { position: fixed; z-index: 51; inset: 4vh 4vw; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 16px; border-radius: 14px; background: white; color: var(--ink); }
 .previewDialog img { min-height: 0; max-width: 100%; max-height: calc(92vh - 105px); object-fit: contain; }
 .previewDialog video { min-height: 0; max-width: 100%; max-height: calc(92vh - 105px); }
@@ -170,7 +149,6 @@
   .selectionBar { bottom: 10px; gap: 4px; padding: 7px; border-radius: 18px; }
   .selectionBar > span { padding: 0 5px; }
   .selectionBar button { padding: 0 7px; }
-  .fields { grid-template-columns: 1fr; }
   .folderUploadEmpty { min-height: 250px; border-radius: 20px; }
 }
 @media (hover: none) { .moreButton, .selectButton, .listSelect { opacity: 1; } }

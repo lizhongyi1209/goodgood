@@ -15,6 +15,9 @@ preserved. See [ADR 0106](decisions/0106-unified-asset-library-surface.md) and
 Inside a folder, creators can search its files and upload new media directly
 from the empty state; uploaded files are assigned to that folder and surface in
 the same grid or list after refresh.
+The upper-right upload action also opens the system file picker directly. It
+uploads to the current folder, or leaves files unclassified from the asset root,
+and reports outcomes in the upload tray without an intermediate dialog.
 
 ## GG-115 asset workspace decision
 

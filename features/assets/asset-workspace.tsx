@@ -123,17 +123,13 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
   const [folderDialogOpen, setFolderDialogOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [folderDialogError, setFolderDialogError] = useState<string | null>(null);
-  const [uploadOpen, setUploadOpen] = useState(false);
   const [preview, setPreview] = useState<{ name: string; url: string; media: Media } | null>(null);
-  const [rows, setRows] = useState<readonly UploadRow[]>([]);
-  const [uploadFolderId, setUploadFolderId] = useState<string | null>(null);
   const [quickRows, setQuickRows] = useState<readonly UploadRow[]>([]);
   const [quickUploadFolderId, setQuickUploadFolderId] = useState<string | null>(null);
   const [quickUploading, setQuickUploading] = useState(false);
   const [quickTrayCollapsed, setQuickTrayCollapsed] = useState(false);
   const [quickRefreshError, setQuickRefreshError] = useState<string | null>(null);
   const [draggingFolderFiles, setDraggingFolderFiles] = useState(false);
-  const fileInput = useRef<HTMLInputElement>(null);
   const quickFileInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -311,13 +307,6 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
     finally { setBusy(false); }
   }
 
-  function chooseFiles(files: FileList | null) {
-    if (!files) return;
-    setRows((current) => [...current, ...Array.from(files, (file): UploadRow => ({
-      id: crypto.randomUUID(), file, state: "waiting", message: uploadError(file) ?? undefined,
-    }))]);
-  }
-
   async function uploadRowToFolder(row: UploadRow, destinationFolderId: string | null): Promise<string | null> {
     const validation = uploadError(row.file);
     if (validation) throw new Error(validation);
@@ -343,28 +332,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
     }
   }
 
-  async function uploadAll() {
-    if (busy) return;
-    setBusy(true); setActionError(null);
-    let uploaded = false;
-    try {
-      for (const row of rows.filter((item) => item.state === "waiting" || item.state === "failed")) {
-        setRows((current) => current.map((item) => item.id === row.id ? { ...item, state: "uploading", message: undefined } : item));
-        try {
-          const warning = await uploadRowToFolder(row, uploadFolderId);
-          uploaded = true;
-          if (warning) setActionError(warning);
-          setRows((current) => current.map((item) => item.id === row.id ? { ...item, state: "ready", message: warning ?? undefined } : item));
-        } catch (cause) {
-          setRows((current) => current.map((item) => item.id === row.id ? { ...item, state: "failed", message: cause instanceof Error ? cause.message : "上传失败，请重试。" } : item));
-        }
-      }
-      if (uploaded) { await onRefresh(); setRevision((current) => current + 1); }
-    } catch (cause) { setActionError(cause instanceof Error ? cause.message : "上传完成，但列表刷新失败，请重试。"); }
-    finally { setBusy(false); }
-  }
-
-  async function uploadQuickRows(targets: readonly UploadRow[], destinationFolderId: string) {
+  async function uploadQuickRows(targets: readonly UploadRow[], destinationFolderId: string | null) {
     if (busy || !targets.length) return;
     setBusy(true); setQuickUploading(true); setQuickRefreshError(null);
     let uploaded = false;
@@ -385,7 +353,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
   }
 
   function chooseQuickFiles(files: FileList | null) {
-    if (!files || !folderId || busy || files.length === 0) return;
+    if (!files || busy || files.length === 0) return;
     const picked = Array.from(files, (file): UploadRow => ({ id: crypto.randomUUID(), file, state: "waiting" }));
     setQuickRows(picked);
     setQuickUploadFolderId(folderId);
@@ -460,7 +428,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
         </div>
         <label className={styles.search}><Search size={16}/><input value={search} onChange={(event) => { setSearch(event.target.value); setSelectedKeys([]); }} placeholder={activeFolder ? "在此文件夹中搜索" : "搜索资产"} aria-label={activeFolder ? "在此文件夹中搜索" : "搜索资产"} /></label>
         <DropdownMenu><DropdownMenuTrigger asChild><button className={styles.primaryButton}>新建<ChevronDown size={15}/></button></DropdownMenuTrigger><DropdownMenuContent align="end" className={styles.fileMenu}>
-          <DropdownMenuItem onSelect={() => { setRows([]); setActionError(null); setUploadFolderId(folderId); setUploadOpen(true); }}><Upload size={16}/>上传文件</DropdownMenuItem>
+          <DropdownMenuItem disabled={busy} onSelect={() => quickFileInput.current?.click()}><Upload size={16}/>上传文件</DropdownMenuItem>
           <DropdownMenuItem disabled={busy} onSelect={() => { setNewFolderName(""); setFolderDialogError(null); setFolderDialogOpen(true); }}><FolderPlus size={16}/>新建文件夹</DropdownMenuItem>
         </DropdownMenuContent></DropdownMenu>
       </div>
@@ -487,7 +455,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
     </section>}
     {quickRows.length > 0 && <aside className={styles.uploadTray} aria-label="文件上传进度" aria-live="polite">
       <div className={styles.uploadTrayHead}><strong>{quickUploading ? `正在上传 ${quickRows.length} 个文件` : quickFailedRows.length > 0 ? `${quickFailedRows.length} 个文件上传失败` : quickRows.some((row) => row.message) ? "上传完成，部分文件未归档" : "上传完成"}</strong><span>{quickReadyCount}/{quickRows.length}</span><button aria-label={quickTrayCollapsed ? "展开上传详情" : "收起上传详情"} aria-expanded={!quickTrayCollapsed} onClick={() => setQuickTrayCollapsed((current) => !current)}><ChevronDown size={16}/></button>{!quickUploading && <button aria-label="关闭上传进度" onClick={() => { setQuickRows([]); setQuickRefreshError(null); }}><X size={15}/></button>}</div>
-      {!quickTrayCollapsed && <div className={styles.uploadTrayBody}><ul>{quickRows.map((row) => <li key={row.id}><span className={styles.uploadTrayIcon}>{row.state === "ready" ? <Check size={16}/> : row.state === "failed" ? <CircleAlert size={16}/> : <LoaderCircle className={styles.spinner} size={16}/>}</span><span className={styles.uploadTrayText}><strong title={row.file.name}>{row.file.name}</strong><small className={row.state === "failed" || row.message ? styles.uploadTrayError : ""}>{row.message ?? ({ waiting: "等待上传", uploading: "正在上传…", ready: "已上传", failed: "上传失败" }[row.state])}</small></span></li>)}</ul>{quickRefreshError && <p role="alert" className={styles.uploadTrayError}>{quickRefreshError}</p>}{quickFailedRows.length > 0 && !quickUploading && quickUploadFolderId && <button className={styles.uploadTrayRetry} onClick={() => void uploadQuickRows(quickFailedRows, quickUploadFolderId)}>重试失败文件</button>}</div>}
+      {!quickTrayCollapsed && <div className={styles.uploadTrayBody}><ul>{quickRows.map((row) => <li key={row.id}><span className={styles.uploadTrayIcon}>{row.state === "ready" ? <Check size={16}/> : row.state === "failed" ? <CircleAlert size={16}/> : <LoaderCircle className={styles.spinner} size={16}/>}</span><span className={styles.uploadTrayText}><strong title={row.file.name}>{row.file.name}</strong><small className={row.state === "failed" || row.message ? styles.uploadTrayError : ""}>{row.message ?? ({ waiting: "等待上传", uploading: "正在上传…", ready: "已上传", failed: "上传失败" }[row.state])}</small></span></li>)}</ul>{quickRefreshError && <p role="alert" className={styles.uploadTrayError}>{quickRefreshError}</p>}{quickFailedRows.length > 0 && !quickUploading && <button className={styles.uploadTrayRetry} onClick={() => void uploadQuickRows(quickFailedRows, quickUploadFolderId)}>重试失败文件</button>}</div>}
     </aside>}
     {selectedItems.length > 0 && <div className={styles.selectionBar} role="toolbar" aria-label="已选资产操作">
       <span>已选择 {selectedItems.length} 个</span>
@@ -508,17 +476,6 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
         {folderDialogError && <p id="new-asset-folder-error" role="alert" className={styles.folderDialogError}>{folderDialogError}</p>}
         <div className={styles.folderDialogActions}><button type="button" disabled={busy} onClick={() => setFolderDialogOpen(false)}>取消</button><button type="submit" disabled={busy || !newFolderName.trim()}>{busy ? "创建中…" : "创建"}</button></div>
       </form>
-    </DialogPrimitive.Content></DialogPortal></Dialog>
-    <Dialog open={uploadOpen} onOpenChange={(open) => { if (!busy) setUploadOpen(open); }}><DialogPortal><DialogOverlay/><DialogPrimitive.Content className={styles.dialog} aria-describedby="asset-upload-description" onEscapeKeyDown={(event) => { if (busy) event.preventDefault(); }} onPointerDownOutside={(event) => { if (busy) event.preventDefault(); }}>
-      <header><div><DialogTitle>上传资产</DialogTitle><DialogDescription id="asset-upload-description">JPG/JPEG、PNG、MP4、MP3；单个文件不超过 20 MB。</DialogDescription></div><button aria-label="关闭上传" disabled={busy} onClick={() => setUploadOpen(false)}><X size={19}/></button></header>
-      <div className={styles.dialogBody}>
-        <input ref={fileInput} type="file" accept=".jpg,.jpeg,.png,.mp4,.mp3,image/jpeg,image/png,video/mp4,audio/mpeg" multiple hidden onChange={(event) => { chooseFiles(event.target.files); event.target.value = ""; }}/>
-        <button className={styles.pickFiles} onClick={() => fileInput.current?.click()} disabled={busy}><Plus size={22}/><span>添加文件</span></button>
-        {rows.length > 0 && <ul className={styles.uploadRows}>{rows.map((row) => <li key={row.id}><span title={row.file.name}>{row.file.name}</span><small>{bytesLabel(row.file.size)}</small><em className={row.message ? styles.failed : ""}>{row.message ?? ({ waiting: "等待上传", uploading: "上传中", ready: "已完成", failed: "失败" }[row.state])}</em><button aria-label={`移除 ${row.file.name}`} disabled={busy} onClick={() => setRows((current) => current.filter((item) => item.id !== row.id))}><X size={14}/></button></li>)}</ul>}
-        <div className={styles.fields}><label>保存位置<select value={uploadFolderId ?? ""} disabled={busy} onChange={(event) => setUploadFolderId(event.target.value || null)}><option value="">未分类</option>{organization.folders.map((folder) => <option key={folder.id} value={folder.id}>{folder.name}</option>)}</select></label></div>
-        {actionError && <p className={styles.dialogError} role="alert">{actionError}</p>}
-      </div>
-      <footer><button onClick={() => setUploadOpen(false)} disabled={busy}>关闭</button><button className={styles.primaryButton} onClick={() => void uploadAll()} disabled={busy || !rows.some((row) => row.state !== "ready")}>{busy ? "上传中…" : "保存"}</button></footer>
     </DialogPrimitive.Content></DialogPortal></Dialog>
     <Dialog open={Boolean(preview)} onOpenChange={(open) => { if (!open) setPreview(null); }}><DialogPortal><DialogOverlay/><DialogPrimitive.Content className={styles.previewDialog} aria-describedby="asset-preview-description"><DialogTitle>{preview?.name ?? "文件预览"}</DialogTitle><DialogDescription id="asset-preview-description">已上传文件预览</DialogDescription>{preview?.media === "image" && <PrivateObjectImage src={preview.url} alt={preview.name}/>} {preview?.media === "video" && <video src={preview.url} controls autoPlay aria-label={preview.name}/>} {preview?.media === "audio" && <audio src={preview.url} controls autoPlay aria-label={preview.name}/>}<button onClick={() => setPreview(null)}>关闭</button></DialogPrimitive.Content></DialogPortal></Dialog>
   </section>;

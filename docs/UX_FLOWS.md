@@ -19,8 +19,10 @@ More action or tag editor. `Esc` or close clears selection. Delete asks for
 confirmation and permanently removes generated images or uploaded media; the
 generated-image notice says settled credits are not refunded. The file menu
 retains `用于创作` where applicable. Grid/list switching retains filters and
-selection. The upload dialog offers folder placement without tags; upload and
-organization failures remain recoverable.
+selection. `新建 → 上传文件` opens the native file picker directly and starts
+uploading after selection. The current folder is captured as the destination;
+uploads from the root remain unclassified. The bottom-right tray reports upload
+and organization failures and offers retry without an in-page upload dialog.
 `新建文件夹` opens an in-page dialog with focus in the name field. Empty names
 cannot submit. Enter creates, while Cancel, Escape or outside click closes;
 creation failure stays in the dialog with the entered name available to edit.

@@ -26,6 +26,8 @@
   breadcrumb and folder name, no root media tabs, folder-scoped search, empty
   upload target in grid/list, native file picker, bottom-right upload status,
   then the newly uploaded file in grid/list.
+- Operator follow-up: on the `测试` folder page, the upper-right `上传文件`
+  action should open the system file picker directly, with no upload dialog.
 
 ## Scope and acceptance
 
@@ -47,6 +49,9 @@
 - In an opened folder, provide a breadcrumb back to assets, folder search and
   the existing view switch. An empty folder offers direct picker/drop upload;
   show real row outcomes and failed-file retry in a compact progress tray.
+- The upper-right upload action uses the same direct picker and progress tray.
+  At the root, new files remain unclassified; inside a folder, they are placed
+  in that folder. Canceling the picker leaves the page unchanged.
 - No browser acceptance by the agent; the operator will check the running 5173
   page manually. No production action.
 
@@ -107,6 +112,13 @@
   retried. API/persistence rules remain unchanged. Latest `npm run check:local`:
   **583 tests / 560 pass / 23 skip / 0 fail**, build/typecheck pass, lint 0
   errors / 109 existing warnings. Manual 5173 review pending.
+- The upper-right upload menu now opens the native picker directly and starts
+  the shared tray upload flow on selection. The old upload dialog, duplicate
+  upload state and its CSS were removed. Root uploads remain unclassified;
+  folder uploads capture the current folder. Failed rows can be retried for
+  either destination. `npm run check:local` passed: **583 tests / 560 pass /
+  23 skip / 0 fail**, build/typecheck pass, lint 0 errors / 109 existing
+  warnings. The operator will check the picker and actual upload manually.
 - The existing 32131 Web was replaced with a verified local checkpoint after
   build/verify passed. `/api/health/version` reported `build.verified=true`;
   32131 readiness and 5173 `/assets` returned HTTP 200. 5173 and local Docker
@@ -118,7 +130,8 @@
 ## 下一步
 
 The operator checks 5173 for the folder interior, direct empty-state upload,
-upload tray, new-folder dialog, combined folder/file rows, heading alignment,
+upper-right direct upload from the root and `测试` folder, upload tray,
+new-folder dialog, combined folder/file rows, heading alignment,
 row hover/menu/selection, the tag-free upload/menu, toolbar order and red
 Delete, uploaded-file deletion, masonry, source filters, grid/list switch and
 narrow screens. Address that feedback before any release decision; production

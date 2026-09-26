@@ -31,6 +31,9 @@ headings before that target. A small bottom-right upload tray shows actual
 pending, completed and failed states with counts; it does not imply a measured
 percentage that the API cannot provide. An opened folder uses a compact
 six-column image grid on wide screens, reflowing at narrower widths.
+The upper-right `新建 → 上传文件` entry opens the native file picker directly;
+the same bottom-right tray reports uploads from both the root and folders. Do
+not show an intermediate upload dialog or save button.
 
 ## GG-115 asset workspace
 
