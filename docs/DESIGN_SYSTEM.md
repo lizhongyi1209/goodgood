@@ -14,6 +14,9 @@ GoodGood surface; it does not redefine the generation or private-asset API.
 Image and video parameter choices share a controlled shadcn ToggleGroup while
 keeping their established selected and disabled styles. Asset selection actions
 use the shared Button primitive with the existing destructive visual treatment.
+Profile editing, project saving, model line switches and operations filters use
+the shared Input, Label, Button, Checkbox and Select primitives. Hidden native
+file pickers and media-specific controls keep their feature behavior.
 
 ## GG-122 standalone Hero preview
 

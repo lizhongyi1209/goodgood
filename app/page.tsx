@@ -5,6 +5,8 @@ import "@/features/profile/profile.css";
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type WheelEvent as ReactWheelEvent } from "react";
 import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {PersonalProfileView,ProfileAvatar,usePersonalProfile} from "@/features/profile/personal-profile";
 import { CreationComposer } from "@/features/creation/creation-composer";
 import { supportsImageLines, imageLineName } from "@/shared/contracts/banana-lines.mjs";
@@ -3854,13 +3856,13 @@ export default function Home({
               </div>
               <label className="project-name-field">
                 <span>项目名称</span>
-                <input value={projectName} onChange={(event) => setProjectName(event.target.value)} autoFocus maxLength={32} />
+                <Input value={projectName} onChange={(event) => setProjectName(event.target.value)} autoFocus maxLength={32} />
               </label>
             </div>
             {projectSaveError && <p className="project-save-error" role="alert">{projectSaveError}</p>}
             <div className="project-save-actions">
-              <button className="project-save-cancel" disabled={projectSaving} onClick={() => setProjectDrawerOpen(false)}>取消</button>
-              <button className="project-save-confirm" disabled={projectSaving || !projectName.trim()} onClick={() => void saveCurrentProject()}>{projectSaving ? "正在保存" : currentProject ? "保存更改" : "保存项目"}</button>
+              <Button type="button" variant="secondary" className="project-save-cancel" disabled={projectSaving} onClick={() => setProjectDrawerOpen(false)}>取消</Button>
+              <Button type="button" className="project-save-confirm" disabled={projectSaving || !projectName.trim()} onClick={() => void saveCurrentProject()}>{projectSaving ? "正在保存" : currentProject ? "保存更改" : "保存项目"}</Button>
             </div>
           </div>
         </DrawerContent>

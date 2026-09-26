@@ -12,6 +12,7 @@ import {
   LoaderCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
   Collapsible,
@@ -785,20 +786,19 @@ export function ModelManagementPage({
                       </div>
                     </div>
                     <label className="flex items-center gap-2 text-xs text-zinc-500">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         checked={draft.lines[pricingLine].enabled}
                         disabled={
                           !isBananaLineReady(draft.adapterId, pricingLine)
                         }
-                        onChange={(event) =>
+                        onCheckedChange={(checked) =>
                           setDraft({
                             ...draft,
                             lines: {
                               ...draft.lines!,
                               [pricingLine]: {
                                 ...draft.lines![pricingLine],
-                                enabled: event.target.checked,
+                                enabled: checked === true,
                               },
                             },
                           })
@@ -858,11 +858,10 @@ export function ModelManagementPage({
                     <h3 className="text-sm font-medium">规格售价</h3>
                     {qualities.length > 0 && (
                       <label className="mt-3 flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={qualityMode}
-                          onChange={(event) =>
-                            toggleQualityMode(event.target.checked)
+                          onCheckedChange={(checked) =>
+                            toggleQualityMode(checked === true)
                           }
                         />
                         按质量分别定价
@@ -1051,12 +1050,11 @@ export function ModelManagementPage({
                   </section>
                 )}
                 <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     disabled={!template.ready}
                     checked={draft.enabled}
-                    onChange={(event) =>
-                      setDraft({ ...draft, enabled: event.target.checked })
+                    onCheckedChange={(checked) =>
+                      setDraft({ ...draft, enabled: checked === true })
                     }
                   />
                   启用模型

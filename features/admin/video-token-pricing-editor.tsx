@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import { SEEDANCE_LINES } from "@/shared/contracts/seedance-models.mjs";
 import type { SeedanceLine } from "@/shared/contracts/model-management";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -132,10 +133,9 @@ export function VideoTokenPricingEditor({
             </div>
           </div>
           <label className="flex items-center gap-2 text-xs text-zinc-500">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={enabled}
-              onChange={(event) => onEnabledChange?.(event.target.checked)}
+              onCheckedChange={(checked) => onEnabledChange?.(checked === true)}
             />
             启用{line === "standard" ? "标准" : "备用"}线路
           </label>
