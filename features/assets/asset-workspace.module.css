@@ -53,8 +53,8 @@
 .selectButton { right: 9px; bottom: 9px; width: 24px; height: 24px; background: white; color: transparent; }
 .moreButton:hover { background: rgba(31,31,33,.84); }
 .selectButton:hover { background: #f0f0f1; }
-.selectButton[aria-pressed="true"] { color: var(--ink); }
-.fileCard:hover .moreButton, .fileCard:hover .selectButton, .fileCard:focus-within .moreButton, .fileCard:focus-within .selectButton, .fileCard:has(.moreButton[data-state="open"]) .selectButton, .folder:hover .moreButton, .folder:hover .selectButton, .folder:focus-within .moreButton, .folder:focus-within .selectButton, .folder:has(.moreButton[data-state="open"]) .selectButton, .moreButton[data-state="open"], .selectButton[aria-pressed="true"] { opacity: 1; }
+.selectButton[data-state="checked"] { background: white; color: var(--ink); }
+.fileCard:hover .moreButton, .fileCard:hover .selectButton, .fileCard:focus-within .moreButton, .fileCard:focus-within .selectButton, .fileCard:has(.moreButton[data-state="open"]) .selectButton, .folder:hover .moreButton, .folder:hover .selectButton, .folder:focus-within .moreButton, .folder:focus-within .selectButton, .folder:has(.moreButton[data-state="open"]) .selectButton, .moreButton[data-state="open"], .selectButton[data-state="checked"] { opacity: 1; }
 .fileMenu { min-width: 158px; border-color: #e8e8ea; border-radius: 11px; outline: none; background: white; color: var(--ink); box-shadow: 0 8px 24px rgba(20,20,22,.10); }
 .fileInfo { display: none; }
 .fileGrid .fileCard:has(.audioFrame) .fileInfo { display: block; padding: 7px 2px 2px; }
@@ -76,7 +76,9 @@
 .fileList .moreButton:hover { background: #e9e9eb; color: var(--ink); }
 .fileList .moreButton svg { width: 17px; }
 .listSelect { position: absolute; top: 50%; left: -28px; width: 15px; height: 15px; display: grid; place-items: center; padding: 0; border: 1px solid #d8d8dc; border-radius: 5px; background: white; color: white; opacity: 0; transform: translateY(-50%); }
-.listSelect[aria-checked="true"], .listSelect[aria-checked="mixed"] { border-color: var(--ink); background: var(--ink); color: white; }
+.listSelect[data-state="checked"], .listSelect[data-state="indeterminate"] { border-color: var(--ink); background: var(--ink); color: white; }
+.listSelect[data-state="indeterminate"] [data-slot="checkbox-indicator"] svg { display: none; }
+.listSelect[data-state="indeterminate"] [data-slot="checkbox-indicator"]::after { content: ""; display: block; width: 8px; height: 2px; border-radius: 2px; background: currentColor; }
 .listHead .listSelect { top: 0; transform: none; }
 .listHead:hover .listSelect, .listHead:focus-within .listSelect, .listHead.listSelecting .listSelect, .fileList .fileCard:hover .listSelect, .fileList .fileCard:focus-within .listSelect, .fileList .listSelecting .listSelect { opacity: 1; }
 .fileList .fileInfo { grid-column: 2; display: grid; grid-template-columns: minmax(0,1fr) 170px 100px; gap: 10px; align-items: center; font-size: 12px; }
@@ -112,8 +114,8 @@
 .uploadTrayError { color: var(--danger) !important; font-size: 11px; }
 .uploadTrayRetry { margin-top: 10px; padding: 5px 8px; border: 0; border-radius: 7px; background: #f1f1f2; color: var(--ink); font-size: 11px; }
 .uploadTrayRetry:hover { background: #e6e6e8; }
-.folderDialogOverlay { position: fixed; z-index: 50; inset: 0; background: rgba(0,0,0,.17); }
-.folderDialog { position: fixed; z-index: 51; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(520px, calc(100vw - 32px)); padding: 21px 20px 19px; border-radius: 18px; background: white; box-shadow: 0 10px 30px rgba(20,20,22,.12); }
+.folderDialogOverlay[data-slot="dialog-overlay"] { position: fixed; z-index: 50; inset: 0; background: rgba(0,0,0,.17); }
+.folderDialog[data-slot="dialog-content"] { position: fixed; z-index: 51; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(520px, calc(100vw - 32px)); max-width: none; gap: 0; padding: 21px 20px 19px; border: 0; border-radius: 18px; background: white; box-shadow: 0 10px 30px rgba(20,20,22,.12); }
 .folderDialog h2 { margin: 0 0 15px; color: var(--ink); font-size: 18px; font-weight: 680; letter-spacing: -.02em; }
 .folderDialog form { display: grid; gap: 9px; }
 .folderDialog label { color: var(--ink); font-size: 13px; }

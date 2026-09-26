@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useRef, useState, type ChangeEvent } from "react";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import {
   DropdownMenu,
@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider";
 import { CreationModeSwitch } from "@/features/creation/creation-mode-switch";
+import { CreationPromptTextarea } from "@/features/creation/creation-prompt-textarea";
 import { useParameterDrawerViewport } from "@/features/creation/use-parameter-drawer-viewport";
 import { useComposerFileDrop } from "@/features/creation/use-composer-file-drop";
 import { SeedanceModelIcon } from "@/features/models/seedance-model-icon";
@@ -90,19 +91,6 @@ export type VideoCreationComposerProps = Readonly<{
   onGenerate: () => void;
 }>;
 
-function resizePromptTextarea(element: HTMLTextAreaElement) {
-  element.style.height = "auto";
-  const styles = window.getComputedStyle(element);
-  const lineHeight = Number.parseFloat(styles.lineHeight);
-  const verticalPadding =
-    Number.parseFloat(styles.paddingTop) + Number.parseFloat(styles.paddingBottom);
-  const maxHeight = lineHeight * 8 + verticalPadding;
-  element.style.height = `${Math.min(element.scrollHeight, maxHeight)}px`;
-  const hasOverflow = element.scrollHeight > maxHeight;
-  element.style.overflowY = hasOverflow ? "auto" : "hidden";
-  element.classList.toggle("has-overflow", hasOverflow);
-}
-
 const referenceAcceptByMediaType = {
   image: "image/jpeg,image/png",
   video: "video/mp4",
@@ -150,7 +138,6 @@ export function VideoCreationComposer({
   onDrawerOpenChange,
   onGenerate,
 }: VideoCreationComposerProps) {
-  const promptInputRef = useRef<HTMLTextAreaElement>(null);
   const referenceInputRef = useRef<HTMLInputElement>(null);
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const [materialCreationOpen, setMaterialCreationOpen] = useState(false);
@@ -187,19 +174,6 @@ export function VideoCreationComposer({
     : interfaceAvailable
       ? "接口可用"
       : "接口待接入";
-
-  useEffect(() => {
-    const element = promptInputRef.current;
-    if (!element) return;
-    const handleResize = () => resizePromptTextarea(element);
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  useEffect(() => {
-    if (promptInputRef.current) resizePromptTextarea(promptInputRef.current);
-  }, [prompt]);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
@@ -340,16 +314,11 @@ export function VideoCreationComposer({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <textarea
-          ref={promptInputRef}
-          aria-label="视频描述"
+        <CreationPromptTextarea
+          label="视频描述"
           value={prompt}
-          rows={1}
           placeholder="描述画面、动作、镜头和声音…"
-          onChange={(event) => {
-            onPromptChange(event.target.value);
-            resizePromptTextarea(event.currentTarget);
-          }}
+          onValueChange={onPromptChange}
         />
         <div className="prompt-actions">
           <span

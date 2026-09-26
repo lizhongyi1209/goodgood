@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useRef, useState, type ChangeEvent } from "react";
 import Image from "next/image";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import {
@@ -13,6 +13,7 @@ import { Slider } from "@/components/ui/slider";
 import type { ReferenceMaterial } from "@/features/references/http-reference-library";
 import { ReferenceQuickEditor } from "@/features/references/reference-quick-editor";
 import { CreationModeSwitch } from "@/features/creation/creation-mode-switch";
+import { CreationPromptTextarea } from "@/features/creation/creation-prompt-textarea";
 import { useParameterDrawerViewport } from "@/features/creation/use-parameter-drawer-viewport";
 import { useComposerFileDrop } from "@/features/creation/use-composer-file-drop";
 import type { CreationMode } from "@/features/creation/video-generation-options";
@@ -134,21 +135,6 @@ function ModelIcon({ icon }: { icon: GenerationModelIcon }) {
   );
 }
 
-function resizePromptTextarea(element: HTMLTextAreaElement) {
-  element.style.height = "auto";
-  const styles = window.getComputedStyle(element);
-  const lineHeight = Number.parseFloat(styles.lineHeight);
-  const verticalPadding =
-    Number.parseFloat(styles.paddingTop) +
-    Number.parseFloat(styles.paddingBottom);
-  const maxHeight = lineHeight * 8 + verticalPadding;
-  const nextHeight = Math.min(element.scrollHeight, maxHeight);
-  const hasOverflow = element.scrollHeight > maxHeight;
-  element.style.height = `${nextHeight}px`;
-  element.style.overflowY = hasOverflow ? "auto" : "hidden";
-  element.classList.toggle("has-overflow", hasOverflow);
-}
-
 export function CreationComposer({
   showModeSwitch = true,
   promptLabel = '画面描述',
@@ -198,7 +184,6 @@ export function CreationComposer({
   onGenerate,
 }: CreationComposerProps) {
   const referenceInputRef = useRef<HTMLInputElement>(null);
-  const promptInputRef = useRef<HTMLTextAreaElement>(null);
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const [draggedReferenceId, setDraggedReferenceId] = useState<string | null>(null);
   const [dragTargetReferenceId, setDragTargetReferenceId] = useState<string | null>(null);
@@ -221,19 +206,6 @@ export function CreationComposer({
     resolution,
   );
   const ratioFrame = getRatioFrame(activeRatio.value);
-
-  useEffect(() => {
-    const element = promptInputRef.current;
-    if (!element) return;
-    const handleResize = () => resizePromptTextarea(element);
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  useEffect(() => {
-    if (promptInputRef.current) resizePromptTextarea(promptInputRef.current);
-  }, [prompt]);
 
   const handleReferenceChange = (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
@@ -443,16 +415,11 @@ export function CreationComposer({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <textarea
-          ref={promptInputRef}
-          aria-label={promptLabel}
+        <CreationPromptTextarea
+          label={promptLabel}
           value={prompt}
-          rows={1}
+          onValueChange={onPromptChange}
           placeholder={promptPlaceholder}
-          onChange={(event) => {
-            onPromptChange(event.target.value);
-            resizePromptTextarea(event.currentTarget);
-          }}
         />
         <div className="prompt-actions">
           <span

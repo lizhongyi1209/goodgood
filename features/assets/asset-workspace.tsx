@@ -1,10 +1,14 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { AudioLines, Check, ChevronDown, ChevronRight, CircleAlert, Download, Folder, FolderPlus, Grid2X2, ImagePlus, List, LoaderCircle, Minus, MoreHorizontal, Pencil, Plus, RefreshCw, Search, Trash2, Upload, WandSparkles, X } from "lucide-react";
-import { Dialog, DialogDescription, DialogOverlay, DialogPortal, DialogTitle } from "@/components/ui/dialog";
+import { AudioLines, Check, ChevronDown, ChevronRight, CircleAlert, Download, Folder, FolderPlus, Grid2X2, ImagePlus, List, LoaderCircle, MoreHorizontal, Pencil, Plus, RefreshCw, Search, Trash2, Upload, WandSparkles, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogOverlay, DialogPortal, DialogTitle } from "@/components/ui/dialog";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import { uploadReferenceFiles } from "@/features/references/http-reference-upload";
 import type { ReferenceMaterial } from "@/features/references/http-reference-library";
@@ -476,7 +480,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
   function renderFolderRow(folder: AssetFolder) {
     const selected = selectedFolderIds.includes(folder.id);
     return <article className={`${styles.fileCard} ${styles.folderRow} ${selected ? styles.isSelected : ""} ${selectedFolderIds.length ? styles.listSelecting : ""}`} key={`folder:${folder.id}`}>
-      <button className={styles.listSelect} role="checkbox" aria-checked={selected} aria-label={`${selected ? "取消选择" : "选择"}文件夹 ${folder.name}`} disabled={busy} onClick={() => toggleFolderSelection(folder)}>{selected && <Check size={12}/>}</button>
+      <Checkbox className={styles.listSelect} checked={selected} aria-label={`${selected ? "取消选择" : "选择"}文件夹 ${folder.name}`} disabled={busy} onCheckedChange={() => toggleFolderSelection(folder)}/>
       <button className={styles.folderVisual} aria-label={`打开文件夹 ${folder.name}`} onClick={() => openFolder(folder.id)}><Folder size={20}/></button>
       <div className={styles.fileInfo}><button title={folder.name} onClick={() => openFolder(folder.id)}>{folder.name}</button><time dateTime={folder.createdAt}>{dateLabel(folder.createdAt)}</time><small>—</small></div>
       {renderFolderMenu(folder)}
@@ -489,7 +493,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
     const listMode = viewMode === "list";
     const aspectRatio = item.width && item.height ? `${item.width} / ${item.height}` : undefined;
     return <article className={`${styles.fileCard} ${selected ? styles.isSelected : ""} ${selectedKeys.length ? styles.listSelecting : ""}`} key={key}>
-      {listMode && <button className={styles.listSelect} role="checkbox" aria-checked={selected} aria-label={`${selected ? "取消选择" : "选择"} ${item.name}`} disabled={busy} onClick={() => toggleSelection(item)}>{selected && <Check size={12}/>}</button>}
+      {listMode && <Checkbox className={styles.listSelect} checked={selected} aria-label={`${selected ? "取消选择" : "选择"} ${item.name}`} disabled={busy} onCheckedChange={() => toggleSelection(item)}/>}
       <div className={styles.fileVisual}>
         {item.media === "image" ? <button className={styles.mediaFrame} style={{ aspectRatio }} onClick={() => openItem(item)} aria-label={`查看 ${item.name}`}>
           <PrivateObjectImage src={item.previewUrl!} alt={item.name}/>
@@ -497,7 +501,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
           <VideoTilePreview url={item.url} play={!listMode}/>
         </button> : <button className={styles.audioFrame} onClick={() => openItem(item)} aria-label={`播放 ${item.name}`}><AudioLines size={30}/></button>}
         {!listMode && renderFileMenu(item)}
-        {!listMode && <button className={styles.selectButton} aria-label={`${selected ? "取消选择" : "选择"} ${item.name}`} aria-pressed={selected} title={selected ? "取消选择" : "选择"} disabled={busy} onClick={() => toggleSelection(item)}>{selected && <Check size={15}/>}</button>}
+        {!listMode && <Checkbox className={styles.selectButton} checked={selected} aria-label={`${selected ? "取消选择" : "选择"} ${item.name}`} title={selected ? "取消选择" : "选择"} disabled={busy} onCheckedChange={() => toggleSelection(item)}/>}
       </div>
       <div className={styles.fileInfo}><button title={item.name} onClick={() => openItem(item)}>{item.name}</button><time dateTime={item.createdAt}>{dateLabel(item.createdAt)}</time><small>{item.size ? bytesLabel(item.size) : "—"}</small></div>
       {listMode && renderFileMenu(item)}
@@ -517,7 +521,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
           <button className={viewMode === "grid" ? styles.iconActive : ""} aria-label="网格视图" title="网格视图" aria-pressed={viewMode === "grid"} onClick={() => setViewMode("grid")}><Grid2X2 size={17}/></button>
           <button className={viewMode === "list" ? styles.iconActive : ""} aria-label="列表视图" title="列表视图" aria-pressed={viewMode === "list"} onClick={() => setViewMode("list")}><List size={18}/></button>
         </div>
-        <label className={styles.search}><Search size={16}/><input value={search} onChange={(event) => { setSearch(event.target.value); setSelectedKeys([]); setSelectedFolderIds([]); }} placeholder={activeFolder ? "在此文件夹中搜索" : "搜索资产"} aria-label={activeFolder ? "在此文件夹中搜索" : "搜索资产"} /></label>
+        <label className={styles.search}><Search size={16}/><Input className="h-full border-0 px-0 py-0 shadow-none focus-visible:border-0 focus-visible:ring-0" value={search} onChange={(event) => { setSearch(event.target.value); setSelectedKeys([]); setSelectedFolderIds([]); }} placeholder={activeFolder ? "在此文件夹中搜索" : "搜索资产"} aria-label={activeFolder ? "在此文件夹中搜索" : "搜索资产"} /></label>
         <DropdownMenu><DropdownMenuTrigger asChild><button className={styles.primaryButton}>新建<ChevronDown size={15}/></button></DropdownMenuTrigger><DropdownMenuContent align="end" className={styles.fileMenu}>
           <DropdownMenuItem disabled={busy} onSelect={() => quickFileInput.current?.click()}><Upload size={16}/>上传文件</DropdownMenuItem>
           <DropdownMenuItem disabled={busy} onSelect={() => openFolderDialog()}><FolderPlus size={16}/>新建文件夹</DropdownMenuItem>
@@ -536,7 +540,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
           <div className={styles.folderVisualArea}>
             <button className={styles.folderArt} aria-label={`打开文件夹 ${folder.name}`} onClick={() => openFolder(folder.id)}><Folder size={38} strokeWidth={1.8}/></button>
             {renderFolderMenu(folder)}
-            <button className={styles.selectButton} aria-label={`${selected ? "取消选择" : "选择"}文件夹 ${folder.name}`} aria-pressed={selected} title={selected ? "取消选择" : "选择"} disabled={busy} onClick={() => toggleFolderSelection(folder)}>{selected && <Check size={15}/>}</button>
+            <Checkbox className={styles.selectButton} checked={selected} aria-label={`${selected ? "取消选择" : "选择"}文件夹 ${folder.name}`} title={selected ? "取消选择" : "选择"} disabled={busy} onCheckedChange={() => toggleFolderSelection(folder)}/>
           </div>
           <button className={styles.folderName} title={folder.name} onClick={() => openFolder(folder.id)}>{folder.name}</button>
           <small>{items.filter((item) => arrangements.get(`${item.kind}:${item.id}`)?.folderId === folder.id).length} 个项目</small>
@@ -546,7 +550,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
     {!loading && !organizationLoading && <section className={styles.filesSection} aria-label={viewMode === "list" ? "资产列表" : "项目"}>
       {viewMode === "grid" && !activeFolder && <h2>项目</h2>}
       {viewMode === "list" && (activeFolder || rootFolders.length > 0 || visible.length > 0) && <div className={`${styles.listHead} ${selectedKeys.length || selectedFolderIds.length ? styles.listSelecting : ""}`}>
-        {(visible.length > 0 || activeFolder) && <button className={styles.listSelect} role="checkbox" aria-checked={visible.length > 0 && selectedVisibleCount === visible.length ? true : selectedVisibleCount > 0 ? "mixed" : false} aria-label={selectedVisibleCount === visible.length && visible.length > 0 ? "取消全选可见文件" : "全选可见文件"} disabled={busy || visible.length === 0} onClick={toggleVisibleSelection}>{selectedVisibleCount === visible.length && visible.length > 0 ? <Check size={12}/> : selectedVisibleCount > 0 ? <Minus size={12}/> : null}</button>}
+        {(visible.length > 0 || activeFolder) && <Checkbox className={styles.listSelect} checked={visible.length > 0 && selectedVisibleCount === visible.length ? true : selectedVisibleCount > 0 ? "indeterminate" : false} aria-label={selectedVisibleCount === visible.length && visible.length > 0 ? "取消全选可见文件" : "全选可见文件"} disabled={busy || visible.length === 0} onCheckedChange={toggleVisibleSelection}/>}
         <span className={styles.nameHeading}>名称</span><span>修改日期</span><span>大小</span>
       </div>}
       {visible.length || (viewMode === "list" && rootFolders.length) ? <div ref={fileGrid} className={viewMode === "grid" ? styles.fileGrid : styles.fileList}>
@@ -567,16 +571,16 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
       <button className={styles.deleteAction} disabled={busy} onClick={() => selectedFolders.length ? void deleteFolders(selectedFolders) : void deleteItems(selectedItems)}><Trash2 size={16}/>删除</button>
       <button className={styles.closeSelection} aria-label="取消选择" title="取消选择" disabled={busy} onClick={() => { setSelectedKeys([]); setSelectedFolderIds([]); }}><X size={17}/></button>
     </div>}
-    <Dialog open={folderDialogOpen} onOpenChange={(open) => { if (!busy) { setFolderDialogOpen(open); if (!open) setFolderDialogError(null); } }}><DialogPortal><DialogPrimitive.Overlay className={styles.folderDialogOverlay}/><DialogPrimitive.Content className={styles.folderDialog} onEscapeKeyDown={(event) => { if (busy) event.preventDefault(); }} onPointerDownOutside={(event) => { if (busy) event.preventDefault(); }}>
+    <Dialog open={folderDialogOpen} onOpenChange={(open) => { if (!busy) { setFolderDialogOpen(open); if (!open) setFolderDialogError(null); } }}><DialogContent className={styles.folderDialog} overlayClassName={styles.folderDialogOverlay} showCloseButton={false} onEscapeKeyDown={(event) => { if (busy) event.preventDefault(); }} onPointerDownOutside={(event) => { if (busy) event.preventDefault(); }}>
       <DialogTitle>{editingFolderId ? "重命名文件夹" : "新建文件夹"}</DialogTitle>
       <DialogDescription className="sr-only">输入文件夹名称后{editingFolderId ? "保存" : "创建"}。</DialogDescription>
       <form onSubmit={(event) => { event.preventDefault(); void saveFolder(); }}>
-        <label htmlFor="asset-folder-name">文件夹名称</label>
-        <input id="asset-folder-name" autoFocus maxLength={64} value={newFolderName} disabled={busy} aria-invalid={Boolean(folderDialogError)} aria-describedby={folderDialogError ? "asset-folder-error" : undefined} onFocus={(event) => { if (editingFolderId) event.currentTarget.select(); }} onChange={(event) => { setNewFolderName(event.target.value); if (folderDialogError) setFolderDialogError(null); }}/>
+        <Label htmlFor="asset-folder-name">文件夹名称</Label>
+        <Input id="asset-folder-name" autoFocus maxLength={64} value={newFolderName} disabled={busy} aria-invalid={Boolean(folderDialogError)} aria-describedby={folderDialogError ? "asset-folder-error" : undefined} onFocus={(event) => { if (editingFolderId) event.currentTarget.select(); }} onChange={(event) => { setNewFolderName(event.target.value); if (folderDialogError) setFolderDialogError(null); }}/>
         {folderDialogError && <p id="asset-folder-error" role="alert" className={styles.folderDialogError}>{folderDialogError}</p>}
-        <div className={styles.folderDialogActions}><button type="button" disabled={busy} onClick={() => setFolderDialogOpen(false)}>取消</button><button type="submit" disabled={busy || !newFolderName.trim()}>{busy ? editingFolderId ? "保存中…" : "创建中…" : editingFolderId ? "保存" : "创建"}</button></div>
+        <div className={styles.folderDialogActions}><Button type="button" variant="secondary" disabled={busy} onClick={() => setFolderDialogOpen(false)}>取消</Button><Button type="submit" disabled={busy || !newFolderName.trim()}>{busy ? editingFolderId ? "保存中…" : "创建中…" : editingFolderId ? "保存" : "创建"}</Button></div>
       </form>
-    </DialogPrimitive.Content></DialogPortal></Dialog>
+    </DialogContent></Dialog>
     <Dialog open={Boolean(preview)} onOpenChange={(open) => { if (!open) setPreview(null); }}><DialogPortal><DialogOverlay/><DialogPrimitive.Content className={styles.previewDialog} aria-describedby="asset-preview-description"><DialogTitle>{preview?.name ?? "文件预览"}</DialogTitle><DialogDescription id="asset-preview-description">已上传文件预览</DialogDescription>{preview?.media === "image" && <PrivateObjectImage src={preview.url} alt={preview.name}/>} {preview?.media === "video" && <video src={preview.url} controls autoPlay aria-label={preview.name}/>} {preview?.media === "audio" && <audio src={preview.url} controls autoPlay aria-label={preview.name}/>}<button onClick={() => setPreview(null)}>关闭</button></DialogPrimitive.Content></DialogPortal></Dialog>
   </section>;
 }

@@ -1,5 +1,17 @@
 # Design system
 
+## GG-123 component adoption
+
+`components/ui` is the shared shadcn layer for controls, labels, inputs, dialogs
+and selection semantics. Feature components own GoodGood-specific visual layout,
+private media and generation behavior. Reuse the existing primitives before
+writing a second control. Image and video creation share a single prompt field
+that keeps the established eight-line growth limit. Asset selection uses the
+shared checkbox with an indeterminate select-all state, while its hover
+placement and floating actions keep the current asset layout. AI Elements is
+installed per component when its data and interaction model matches a real
+GoodGood surface; it does not redefine the generation or private-asset API.
+
 ## GG-122 standalone Hero preview
 
 The isolated `/hero` preview uses the supplied centered title, copy, two calls
