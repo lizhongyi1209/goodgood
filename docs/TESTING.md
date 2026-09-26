@@ -25,6 +25,13 @@ At both the asset root and inside a folder, `新建 → 上传文件` should ope
 system file picker with no in-page upload dialog or save step. On selection,
 verify the same tray and root-unclassified/current-folder placement; canceling
 the picker should leave the page and tray unchanged.
+For the grid refinement, inspect up to six columns at wide width and reduced
+counts at narrower widths. Hover and focus on folder/image/video covers should
+show a subtle neutral veil, an empty unselected circle, and a persistent menu
+trigger while its menu is open. The Move submenu should match its parent border.
+Video grid tiles should omit titles, preserve portrait/landscape source ratios,
+and preview silently only while visible; reduced-motion preference should pause
+them. List video thumbnails remain compact and the detail player remains usable.
 For folders, inspect hover/focus and touch access to the tile menu and selection
 button; list rows should expose the same actions. Folder selection should show
 only count, red Delete and close, clear file selection, and be dismissible with

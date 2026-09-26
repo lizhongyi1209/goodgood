@@ -11,8 +11,13 @@ selection circle on folder tiles, matching file cards. Selected folders use the
 same dark floating bar with count, red Delete and close; file-only Download and
 Move stay hidden. The `项目` section contains asset files, not saved creative
 projects. In grid mode images preserve their aspect ratios in close masonry
-columns; only hover/focus reveals a top-right menu and bottom-right selection
-circle. List mode puts folders and files into one quiet table, with a narrow
+columns, capped at six with responsive reductions. Videos keep their native
+ratio, hide the grid caption, and preview muted/looping while visible unless
+reduced motion is requested. Hover/focus adds a faint neutral veil to folder
+covers and file previews, then reveals a top-right menu and bottom-right empty
+selection circle. The check appears only after selection. An open menu keeps its
+trigger and veil visible; Move submenus use the same soft border and shadow as
+their parent. List mode puts folders and files into one quiet table, with a narrow
 selection gutter outside the rows, compact icons/thumbnails, name, date and
 size. The `名称` heading and icon/thumb column align with the first media
 category above, while date and size align with their values. Rows gain a shallow

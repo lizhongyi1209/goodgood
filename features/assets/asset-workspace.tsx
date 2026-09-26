@@ -105,6 +105,38 @@ function uploadError(file: File): string | null {
   return null;
 }
 
+function VideoTilePreview({ url, play }: { url?: string; play: boolean }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !url || !play) return;
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let visible = false;
+    const syncPlayback = () => {
+      if (visible && document.visibilityState === "visible" && !motion.matches) void video.play().catch(() => {});
+      else video.pause();
+    };
+    const observer = new IntersectionObserver(([entry]) => {
+      visible = Boolean(entry?.isIntersecting);
+      syncPlayback();
+    }, { threshold: 0.1 });
+    observer.observe(video);
+    motion.addEventListener("change", syncPlayback);
+    document.addEventListener("visibilitychange", syncPlayback);
+    video.addEventListener("canplay", syncPlayback);
+    return () => {
+      observer.disconnect();
+      motion.removeEventListener("change", syncPlayback);
+      document.removeEventListener("visibilitychange", syncPlayback);
+      video.removeEventListener("canplay", syncPlayback);
+      video.pause();
+    };
+  }, [url, play]);
+
+  return <video ref={videoRef} src={url} muted playsInline loop preload="metadata" aria-hidden="true"/>;
+}
+
 export function AssetWorkspace({ workspaceId, enabled, generated, references, videos, audios,
   historyLoading, libraryLoading, historyError, libraryError,
   onRetry, onRefresh, onDeleteGenerated, onOpenGenerated, onUseReference, onUseVideo, onUseAudio }: Props) {
@@ -403,7 +435,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
       <DropdownMenuContent align="end" className={styles.fileMenu}>
         <DropdownMenuItem onSelect={() => void downloadItems([item])}><Download size={16}/>下载</DropdownMenuItem>
         {item.kind !== "generated" && <DropdownMenuItem onSelect={() => applyItemToCreation(item)}><Plus size={16}/>用于创作</DropdownMenuItem>}
-        <DropdownMenuSub><DropdownMenuSubTrigger><Folder size={16}/>移动到</DropdownMenuSubTrigger><DropdownMenuSubContent>
+        <DropdownMenuSub><DropdownMenuSubTrigger><Folder size={16}/>移动到</DropdownMenuSubTrigger><DropdownMenuSubContent className={styles.fileMenu}>
           <DropdownMenuItem onSelect={() => void moveItems([item], null)}>未分类</DropdownMenuItem>
           {organization.folders.map((folder) => <DropdownMenuItem key={folder.id} onSelect={() => void moveItems([item], folder.id)}>{folder.name}</DropdownMenuItem>)}
         </DropdownMenuSubContent></DropdownMenuSub>
@@ -440,10 +472,10 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
         {item.media === "image" ? <button className={styles.mediaFrame} style={{ aspectRatio }} onClick={() => openItem(item)} aria-label={`查看 ${item.name}`}>
           <PrivateObjectImage src={item.previewUrl!} alt={item.name}/>
         </button> : item.media === "video" ? <button className={styles.mediaFrame} onClick={() => openItem(item)} aria-label={`查看 ${item.name}`}>
-          <video src={item.url} muted preload="metadata" aria-hidden="true"/>
+          <VideoTilePreview url={item.url} play={!listMode}/>
         </button> : <button className={styles.audioFrame} onClick={() => openItem(item)} aria-label={`播放 ${item.name}`}><AudioLines size={30}/></button>}
         {!listMode && renderFileMenu(item)}
-        {!listMode && <button className={styles.selectButton} aria-label={`${selected ? "取消选择" : "选择"} ${item.name}`} aria-pressed={selected} title={selected ? "取消选择" : "选择"} disabled={busy} onClick={() => toggleSelection(item)}><Check size={15}/></button>}
+        {!listMode && <button className={styles.selectButton} aria-label={`${selected ? "取消选择" : "选择"} ${item.name}`} aria-pressed={selected} title={selected ? "取消选择" : "选择"} disabled={busy} onClick={() => toggleSelection(item)}>{selected && <Check size={15}/>}</button>}
       </div>
       <div className={styles.fileInfo}><button title={item.name} onClick={() => openItem(item)}>{item.name}</button><time dateTime={item.createdAt}>{dateLabel(item.createdAt)}</time><small>{item.size ? bytesLabel(item.size) : "—"}</small></div>
       {listMode && renderFileMenu(item)}
@@ -482,7 +514,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
           <div className={styles.folderVisualArea}>
             <button className={styles.folderArt} aria-label={`打开文件夹 ${folder.name}`} onClick={() => openFolder(folder.id)}><Folder size={38} strokeWidth={1.8}/></button>
             {renderFolderMenu(folder)}
-            <button className={styles.selectButton} aria-label={`${selected ? "取消选择" : "选择"}文件夹 ${folder.name}`} aria-pressed={selected} title={selected ? "取消选择" : "选择"} disabled={busy} onClick={() => toggleFolderSelection(folder)}><Check size={15}/></button>
+            <button className={styles.selectButton} aria-label={`${selected ? "取消选择" : "选择"}文件夹 ${folder.name}`} aria-pressed={selected} title={selected ? "取消选择" : "选择"} disabled={busy} onClick={() => toggleFolderSelection(folder)}>{selected && <Check size={15}/>}</button>
           </div>
           <button className={styles.folderName} title={folder.name} onClick={() => openFolder(folder.id)}>{folder.name}</button>
           <small>{items.filter((item) => arrangements.get(`${item.kind}:${item.id}`)?.folderId === folder.id).length} 个项目</small>
@@ -495,7 +527,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
         {(visible.length > 0 || activeFolder) && <button className={styles.listSelect} role="checkbox" aria-checked={visible.length > 0 && selectedVisibleCount === visible.length ? true : selectedVisibleCount > 0 ? "mixed" : false} aria-label={selectedVisibleCount === visible.length && visible.length > 0 ? "取消全选可见文件" : "全选可见文件"} disabled={busy || visible.length === 0} onClick={toggleVisibleSelection}>{selectedVisibleCount === visible.length && visible.length > 0 ? <Check size={12}/> : selectedVisibleCount > 0 ? <Minus size={12}/> : null}</button>}
         <span className={styles.nameHeading}>名称</span><span>修改日期</span><span>大小</span>
       </div>}
-      {visible.length || (viewMode === "list" && rootFolders.length) ? <div className={viewMode === "grid" ? `${styles.fileGrid} ${activeFolder ? styles.folderFileGrid : ""}` : styles.fileList}>
+      {visible.length || (viewMode === "list" && rootFolders.length) ? <div className={viewMode === "grid" ? styles.fileGrid : styles.fileList}>
         {viewMode === "list" && rootFolders.map(renderFolderRow)}{visible.map(renderFile)}
       </div> : activeFolder && !search.trim() && filter === "all" && sourceFilter === "all" ? <div className={`${styles.folderUploadEmpty} ${draggingFolderFiles ? styles.folderUploadDragging : ""}`} aria-label={`上传文件到${activeFolder.name}`} onDragOver={(event) => { event.preventDefault(); if (!busy) setDraggingFolderFiles(true); }} onDragLeave={() => setDraggingFolderFiles(false)} onDrop={(event) => { event.preventDefault(); setDraggingFolderFiles(false); chooseQuickFiles(event.dataTransfer.files); }}><Upload size={27} strokeWidth={1.7}/><button disabled={busy} onClick={() => quickFileInput.current?.click()}>上传文件</button></div> : <div className={styles.state}><ImagePlus size={22}/><strong>{folderId ? "没有匹配的资产" : search || filter !== "all" || sourceFilter !== "all" ? "没有匹配的资产" : "还没有资产"}</strong><span>生成结果会自动保存，也可以上传 JPG/JPEG、PNG、MP4 或 MP3。</span></div>}
     </section>}

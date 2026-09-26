@@ -8,7 +8,11 @@ In grid mode, folders appear above the `项目` file section; in list mode, root
 folders lead the same table as files. Opening one narrows the same collection.
 Grid images keep their real ratios. Hover/focus reveals the card menu and a
 separate bottom-right selection button; clicking the image opens its existing
-detail or private preview. List rows show a selection box outside the left row
+detail or private preview. The hover veil and empty selector indicate an
+available action without suggesting selection. A check appears only after the
+selector is activated, and an open menu keeps its trigger visible. Video tiles
+hide their title, keep the source ratio and play a muted loop while visible;
+offscreen and reduced-motion previews pause. List rows show a selection box outside the left row
 edge, leaving the header and thumbnails aligned with the category controls;
 the right edge has a hover/focus menu. Selecting one file reveals all file
 boxes and a top select-all box for visible files. Folder tiles expose a

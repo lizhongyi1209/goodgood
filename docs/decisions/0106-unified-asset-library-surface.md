@@ -58,6 +58,12 @@ not GoodGood's resumable creative projects.
   detail/preview. A floating toolbar appears for selected files, with actions
   backed by current capabilities. Grid and list are alternate views of the same
   filtered files.
+- Refine folder and media hover with a subtle neutral veil. An unselected
+  selection circle remains empty until clicked; an open action menu keeps its
+  trigger visible. The Move submenu shares the parent menu border and shadow.
+  The grid uses at most six responsive columns. Video tiles hide their captions,
+  keep the video's intrinsic aspect ratio and play muted, looping previews only
+  while visible; reduced-motion preference pauses the preview.
 - The initial selection toolbar only exposed deletion for generated images;
   ADR 0107 supersedes that scope after the operator explicitly confirmed
   permanent deletion for uploaded images, videos, and audio too.

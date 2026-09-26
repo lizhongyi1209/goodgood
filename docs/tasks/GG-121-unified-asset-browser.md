@@ -32,6 +32,11 @@
   as file cards. The shared bottom toolbar should show only Delete for folders,
   omitting Move and Start Chat. The folder's top-right menu should offer Delete
   and Rename, with Rename using the New Folder dialog layout.
+- Operator follow-up invoking `$impeccable`: add a light hover veil to folders
+  and media; keep unselected circles empty and menu triggers visible while open;
+  match the Move submenu frame to the parent; remove grid video titles, show
+  videos at source ratio with automatic previews; cap responsive grid at six
+  columns.
 
 ## Scope and acceptance
 
@@ -55,6 +60,11 @@
   selection reuses the floating toolbar with count, red Delete and close only.
   Delete confirms that the contained assets return to the root. Rename uses
   the in-page New Folder dialog pattern, with the existing name prefilled.
+- Folder and media hover uses a faint achromatic veil. Unselected grid controls
+  remain empty; open menus retain their trigger. The Move submenu matches its
+  parent frame. The grid shows up to six columns; video tiles keep their native
+  ratio, hide titles and preview silently only while visible, honoring reduced
+  motion.
 - In an opened folder, provide a breadcrumb back to assets, folder search and
   the existing view switch. An empty folder offers direct picker/drop upload;
   show real row outcomes and failed-file retry in a compact progress tray.
@@ -136,6 +146,14 @@
   `npm run check:local` passed: **583 tests / 560 pass / 23 skip / 0 fail**;
   build/typecheck pass, lint 0 errors / 109 existing warnings. No real folder
   was renamed or deleted; operator browser review is pending.
+- The hover refinement adds a restrained veil and leaves selection circles
+  empty until selected. Open menus keep their trigger visible; the Move submenu
+  now uses the parent menu frame. Video grid cards have no caption or forced
+  4:3 crop; intrinsic dimensions control their height. A muted loop plays only
+  while the grid preview is visible and motion is allowed. Both root and folder
+  masonry cap at six responsive columns. `npm run check:local` passed: **583
+  tests / 560 pass / 23 skip / 0 fail**; build/typecheck pass, lint 0 errors /
+  109 existing warnings. Browser hover/video review remains with the operator.
 - The existing 32131 Web was replaced with a verified local checkpoint after
   build/verify passed. `/api/health/version` reported `build.verified=true`;
   32131 readiness and 5173 `/assets` returned HTTP 200. 5173 and local Docker
@@ -149,7 +167,8 @@
 The operator checks 5173 for the folder interior, direct empty-state upload,
 upper-right direct upload from the root and `测试` folder, upload tray,
 new-folder/rename dialog, folder tile menu and selection bar, list folder
-checkboxes, combined folder/file rows, heading alignment,
+checkboxes, hover veil/empty selector/open menu, submenu frame, portrait and
+landscape video previews, six-column layout, combined folder/file rows, heading alignment,
 row hover/menu/selection, the tag-free upload/menu, toolbar order and red
 Delete, uploaded-file deletion, masonry, source filters, grid/list switch and
 narrow screens. Address that feedback before any release decision; production
