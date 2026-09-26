@@ -8,11 +8,13 @@ import {
   useRef,
   useState,
   type ChangeEvent,
+  type DragEvent,
 } from "react";
 import { useNodesState, type ReactFlowInstance } from "@xyflow/react";
-import { ArrowLeft, ArrowUp, ImagePlus, LoaderCircle, X } from "lucide-react";
+import { ArrowLeft, ArrowUp, ImagePlus, LoaderCircle, Maximize2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -49,15 +51,16 @@ import {
   type GenerationReference,
   type GenerationResolution,
 } from "@/shared/contracts/generation";
-import { PRIVATE_IMAGE_MIME_TYPES, PRIVATE_IMAGE_UPLOAD_MAX_BYTES } from "@/shared/contracts/upload-limits.mjs";
-import { CanvasWorkspace, type CanvasNode } from "./canvas-workspace";
+import { CanvasWorkspace, type CanvasNode, type CanvasSourceNode } from "./canvas-workspace";
 import { upsertCanvasJobNodes } from "./canvas-job-nodes.mjs";
+import { canvasImagePositions, selectCanvasImageFiles } from "./canvas-local-images.mjs";
 import styles from "./canvas-page.module.css";
 
 type CanvasReference = {
   clientId: string;
   file: File;
   previewUrl: string;
+  sourceNodeId?: string;
   reference: GenerationReference;
 };
 
@@ -104,9 +107,12 @@ export function CanvasPage() {
   const [count, setCount] = useState<GenerationCount>(1);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [dropActive, setDropActive] = useState(false);
+  const [previewImage, setPreviewImage] = useState<{ name: string; url: string } | null>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState<CanvasNode>([]);
   const [flow, setFlow] = useState<ReactFlowInstance<CanvasNode> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const canvasInputRef = useRef<HTMLInputElement>(null);
   const objectUrlsRef = useRef(new Set<string>());
   const busyRef = useRef(false);
 
@@ -205,7 +211,6 @@ export function CanvasPage() {
     prompt.trim() && !referencesBusy && !referencesFailed && !insufficientCredits &&
     !billingLoading && !billingError && !submitting,
   );
-
   const upload = (items: CanvasReference[]) => {
     void uploadReferenceFiles(items.map(({ clientId, file }) => ({ clientId, file })), (clientId, reference) => {
       setReferences((current) => current.map((item) => item.clientId === clientId
@@ -214,31 +219,88 @@ export function CanvasPage() {
     });
   };
 
-  const addReferences = (event: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? []);
-    event.target.value = "";
+  const addReferenceFiles = (files: File[], sourceNodeId?: string) => {
     if (!files.length) return;
+    if (session?.access.status !== "active" || session.preview) { setFormError("当前无法上传参考图，请确认登录状态。"); return; }
+    if (sourceNodeId && references.some((item) => item.sourceNodeId === sourceNodeId)) return;
     const accepted: CanvasReference[] = [];
-    for (const file of files) {
+    const { accepted: validFiles, errors } = selectCanvasImageFiles(files);
+    setFormError(errors[0] ?? null);
+    for (const file of validFiles) {
       if (references.length + accepted.length >= MAX_GENERATION_REFERENCES) {
         setFormError(`最多可添加 ${MAX_GENERATION_REFERENCES} 张参考图。`);
         break;
-      }
-      if (!PRIVATE_IMAGE_MIME_TYPES.includes(file.type) || file.size < 1 || file.size > PRIVATE_IMAGE_UPLOAD_MAX_BYTES) {
-        setFormError(`${file.name} 无法上传。请选择 20 MB 以内的 JPEG 或 PNG 图片。`);
-        continue;
       }
       const clientId = globalThis.crypto.randomUUID();
       const previewUrl = URL.createObjectURL(file);
       objectUrlsRef.current.add(previewUrl);
       accepted.push({
-        clientId, file, previewUrl,
+        clientId, file, previewUrl, sourceNodeId,
         reference: { id: clientId, name: file.name, status: "uploading", url: previewUrl },
       });
     }
     if (!accepted.length) return;
     setReferences((current) => [...current, ...accepted]);
     upload(accepted);
+  };
+
+  const addReferences = (event: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = "";
+    addReferenceFiles(files);
+  };
+
+  const addCanvasImages = (files: File[], screenPoint: { x: number; y: number }) => {
+    const { accepted, errors } = selectCanvasImageFiles(files);
+    setFormError(errors[0] ?? null);
+    if (!accepted.length) return;
+    const point = flow?.screenToFlowPosition(screenPoint) ?? { x: 0, y: 0 };
+    const positions = canvasImagePositions(point, accepted.length);
+    const added: CanvasSourceNode[] = accepted.map((file, index) => {
+      const id = `local-${globalThis.crypto.randomUUID()}`;
+      const previewUrl = URL.createObjectURL(file);
+      objectUrlsRef.current.add(previewUrl);
+      return {
+        id,
+        type: "sourceImage",
+        position: positions[index],
+        data: {
+          file,
+          name: file.name,
+          previewUrl,
+          onPreview: () => setPreviewImage({ name: file.name, url: previewUrl }),
+          onUseReference: () => addReferenceFiles([file], id),
+          onRemove: () => {
+            setNodes((current) => current.filter((node) => node.id !== id));
+            setPreviewImage((current) => current?.url === previewUrl ? null : current);
+            URL.revokeObjectURL(previewUrl);
+            objectUrlsRef.current.delete(previewUrl);
+          },
+        },
+      };
+    });
+    setNodes((current) => [...current, ...added]);
+  };
+
+  const chooseCanvasImages = (event: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = "";
+    if (!files.length) return;
+    addCanvasImages(files, { x: window.innerWidth / 2, y: window.innerHeight * 0.4 });
+  };
+
+  const onCanvasDragOver = (event: DragEvent<HTMLElement>) => {
+    if (!Array.from(event.dataTransfer.types).includes("Files")) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
+    setDropActive(true);
+  };
+
+  const onCanvasDrop = (event: DragEvent<HTMLElement>) => {
+    if (!event.dataTransfer.files.length) return;
+    event.preventDefault();
+    setDropActive(false);
+    addCanvasImages(Array.from(event.dataTransfer.files), { x: event.clientX, y: event.clientY });
   };
 
   const removeReference = (clientId: string) => {
@@ -314,19 +376,43 @@ export function CanvasPage() {
     void runJob(snapshot);
   };
 
+  const renderedNodes = nodes.map((node) => {
+    if (node.type !== "sourceImage") return node;
+    const reference = references.find((item) => item.sourceNodeId === node.id);
+    return {
+      ...node,
+      data: {
+        ...node.data,
+        referenceStatus: reference?.reference.status,
+        onUseReference: () => addReferenceFiles([node.data.file], node.id),
+      },
+    };
+  });
+
   if (session && session.access.status !== "active") {
     return <AccountAccessGate session={session} onRefresh={() => void refreshSession()} onLogout={() => void signOut()} />;
   }
 
   return (
-    <main className={styles.page}>
-      <CanvasWorkspace nodes={nodes} onInit={setFlow} onNodesChange={onNodesChange} />
+    <main
+      className={styles.page}
+      onDragOver={onCanvasDragOver}
+      onDragLeave={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDropActive(false);
+      }}
+      onDrop={onCanvasDrop}
+    >
+      <CanvasWorkspace nodes={renderedNodes} onInit={setFlow} onNodesChange={onNodesChange} />
+      {dropActive && <div className={styles.dropOverlay} aria-hidden="true">松开以添加图片到画布</div>}
       <header className={styles.header}>
         <a className={styles.back} href="/create" aria-label="返回创作"><ArrowLeft size={18} /></a>
         <Image src="/goodgood-wordmark.svg" alt="GoodGood" width={87} height={20} />
         <span className={styles.headerDivider} aria-hidden="true" />
         <span className={styles.headerTitle}>画布创作</span>
         <span className={styles.headerSpacer} />
+        <input ref={canvasInputRef} className={styles.srOnly} type="file" accept="image/jpeg,image/png" multiple onChange={chooseCanvasImages} aria-label="从电脑添加图片到画布" />
+        <Button type="button" variant="ghost" size="sm" className={styles.headerAction} onClick={() => canvasInputRef.current?.click()} title="从电脑添加图片到画布"><ImagePlus size={16} aria-hidden="true" /><span>添加图片</span></Button>
+        <Button type="button" variant="ghost" size="icon-sm" className={styles.headerAction} disabled={!nodes.length} onClick={() => void flow?.fitView({ padding: 0.18, duration: 180 })} aria-label="适应画布" title="适应画布"><Maximize2 size={16} aria-hidden="true" /></Button>
         {billing && <span className={styles.balance}>{billing.account.availableCredits} 积分</span>}
       </header>
 
@@ -402,6 +488,12 @@ export function CanvasPage() {
           </div>
         )}
       </section>
+      <Dialog open={Boolean(previewImage)} onOpenChange={(open) => { if (!open) setPreviewImage(null); }}>
+        <DialogContent className={styles.previewDialog}>
+          <DialogTitle className={styles.srOnly}>{previewImage?.name ?? "查看图片"}</DialogTitle>
+          {previewImage && <PrivateObjectImage src={previewImage.url} alt={previewImage.name} className={styles.previewImage} loading="eager" />}
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }

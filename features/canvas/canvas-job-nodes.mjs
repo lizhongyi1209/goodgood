@@ -1,5 +1,5 @@
 /**
- * @typedef {import("@xyflow/react").Node<import("./canvas-result-node").CanvasResultNodeData, "imageResult">} CanvasNode
+ * @typedef {import("./canvas-workspace").CanvasNode} CanvasNode
  * @param {CanvasNode[]} current
  * @param {string} runKey
  * @param {import("@/shared/contracts/generation").GenerationJob} job

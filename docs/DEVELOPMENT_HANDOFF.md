@@ -1,5 +1,9 @@
 # 当前开发版本与跨窗口交接
 
+## GG-126（当前 5173 热更新预览）
+
+现有工作树与分支保持 `F:/goodgood-worktrees/GG-116` / `feature/GG-116-asset-history-actions`。GG-126 在独立 `/canvas` 中接入电脑 JPEG/PNG 拖入、文件选择、临时原比例节点、查看/参考/移除及适应视野；拖入不上传。`npm run check:local` 590 项 / 567 通过 / 23 跳过 / 0 失败；5173 `/canvas` HTTP 200。站长自行浏览器验收，未自动提交真实上传/付费生成；32131 检查点与生产应用未替换。下一步见 [GG-126 任务卡](tasks/GG-126-canvas-local-image-drop.md)。
+
 ## GG-116 / GG-117 / GG-119 / GG-121（本地运行中）
 
 当前工作树为 `F:/goodgood-worktrees/GG-116`，分支

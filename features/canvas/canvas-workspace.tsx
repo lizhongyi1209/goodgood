@@ -9,11 +9,14 @@ import {
 
 import { ZoomSelect } from "@/components/ui/zoom-select";
 import { CanvasResultNode, type CanvasResultNodeData } from "./canvas-result-node";
+import { CanvasSourceNode as CanvasSourceImageNode, type CanvasSourceNodeData } from "./canvas-source-node";
 import styles from "./canvas-workspace.module.css";
 
-export type CanvasNode = Node<CanvasResultNodeData, "imageResult">;
+export type CanvasResultNodeType = Node<CanvasResultNodeData, "imageResult">;
+export type CanvasSourceNode = Node<CanvasSourceNodeData, "sourceImage">;
+export type CanvasNode = CanvasResultNodeType | CanvasSourceNode;
 
-const nodeTypes = { imageResult: CanvasResultNode };
+const nodeTypes = { imageResult: CanvasResultNode, sourceImage: CanvasSourceImageNode };
 
 export function CanvasWorkspace({
   nodes,

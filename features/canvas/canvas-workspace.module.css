@@ -9,14 +9,75 @@
   cursor: default;
 }
 
-.canvas :global(.react-flow__node-imageResult) {
+.canvas :global(.react-flow__node-imageResult),
+.canvas :global(.react-flow__node-sourceImage) {
   border: 0;
   background: transparent;
 }
 
-.canvas :global(.react-flow__node-imageResult.selected) .resultNode {
+.canvas :global(.react-flow__node-imageResult.selected) .resultNode,
+.canvas :global(.react-flow__node-sourceImage.selected) .sourceNode {
   outline: 2px solid #27272a;
   outline-offset: 2px;
+}
+
+.sourceNode {
+  position: relative;
+  width: fit-content;
+  max-width: 238px;
+  overflow: hidden;
+  border: 1px solid #e7e7e9;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 6px 24px rgb(0 0 0 / 5%);
+}
+
+.sourceImage {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 238px;
+  max-height: 320px;
+}
+
+.sourceFailure {
+  display: grid;
+  place-items: center;
+  width: 238px;
+  height: 158px;
+  color: #71717a;
+  font-size: 12px;
+}
+
+.sourceActions {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  left: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 140ms ease;
+}
+
+.sourceNode:hover .sourceActions,
+.sourceNode:focus-within .sourceActions,
+.canvas :global(.react-flow__node-sourceImage.selected) .sourceActions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sourceActions button { box-shadow: 0 1px 5px rgb(0 0 0 / 10%); }
+
+@media (hover: none) {
+  .sourceActions { opacity: 1; pointer-events: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sourceActions { transition: none; }
 }
 
 .resultNode {

@@ -1,5 +1,7 @@
 # Project map
 
+GG-126 keeps local file intake in `features/canvas/canvas-local-images.mjs` and `canvas-page.tsx`; `canvas-source-node.tsx` renders a temporary React Flow image node. The existing reference uploader is called only after the user explicitly selects “用作参考”, and existing result nodes retain their positions and behavior. No server-side canvas feature is added.
+
 GG-125 makes `app/canvas/page.tsx` a standalone route backed by
 `features/canvas/canvas-page.tsx`. `canvas-workspace.tsx` owns React Flow and
 temporary result nodes; `canvas-result-node.tsx` renders job states, while

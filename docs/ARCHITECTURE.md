@@ -1,5 +1,9 @@
 # Architecture
 
+## GG-126 local canvas image ownership
+
+`features/canvas/canvas-local-images.mjs` validates desktop files using the existing private image type/size contract and computes drop positions. `canvas-page.tsx` owns temporary `File` objects and object URLs; React Flow `sourceImage` nodes render them without a network request. Only an explicit “use as reference” action passes the original file through `uploadReferenceFiles` into the existing owner-scoped reference service. Object URLs are revoked when their node/tray entry is removed or the page unmounts. A canvas node removal is local UI state and does not delete a previously uploaded reference or any durable asset. No canvas API or database migration is added.
+
 ## GG-125 standalone canvas boundary
 
 `app/canvas/page.tsx` mounts a dedicated client surface instead of `app/page.tsx`'s lobby shell. The canvas page reads the existing session and billing summary, uploads private references through `features/references/http-reference-upload.ts`, and submits image snapshots through `features/creation/http-generation-boundary.ts`. React Flow nodes represent the current page's observed job state and are not persisted; successful jobs and assets remain owned by the existing backend. No new provider, billing, database or canvas API is introduced.

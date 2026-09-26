@@ -1,0 +1,29 @@
+import { PRIVATE_IMAGE_MIME_TYPES, PRIVATE_IMAGE_UPLOAD_MAX_BYTES } from "../../shared/contracts/upload-limits.mjs";
+
+/**
+ * @template {{name: string, type: string, size: number}} T
+ * @param {Iterable<T>} files
+ * @returns {{accepted: T[], errors: string[]}}
+ */
+export function selectCanvasImageFiles(files) {
+  /** @type {T[]} */
+  const accepted = [];
+  const errors = [];
+  for (const file of files) {
+    if (!PRIVATE_IMAGE_MIME_TYPES.includes(file.type) || file.size < 1 || file.size > PRIVATE_IMAGE_UPLOAD_MAX_BYTES) {
+      errors.push(`${file.name} 无法添加。请选择 20 MB 以内的 JPEG 或 PNG 图片。`);
+      continue;
+    }
+    accepted.push(file);
+  }
+  return { accepted, errors };
+}
+
+/** @param {{x: number, y: number}} point @param {number} count */
+export function canvasImagePositions(point, count) {
+  const spacing = 254;
+  return Array.from({ length: count }, (_, index) => ({
+    x: point.x - (count * spacing - 16) / 2 + index * spacing,
+    y: point.y - 120,
+  }));
+}

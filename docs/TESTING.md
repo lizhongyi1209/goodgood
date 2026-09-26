@@ -1,5 +1,9 @@
 # GG-063 verification
 
+## GG-126 local canvas images
+
+Run `node --test tests/gg125-canvas-image-generation.test.mjs tests/gg126-canvas-local-images.test.mjs` for accepted/rejected file types and sizes, empty input, multiple-image placement, and retention of local nodes through generation state changes. Typecheck and lint cover the React Flow source node, shadcn preview dialog and event handlers. Then run `npm run check:local` once after code stabilizes. The operator will manually inspect local drag/drop, file selection, the preview and reference action on 5173; automated tests do not upload real files or submit billable jobs.
+
 ## GG-125 standalone canvas
 
 Run `node --test tests/gg124-canvas-route.test.mjs tests/gg125-canvas-image-generation.test.mjs` before the full local gate. Verify that `/canvas` has its own page, leaves the shared workspace by a normal link, and keeps node positions through queued/running/succeeded/failed and retry transitions. Typecheck and build verify the React Flow and shadcn integration. The operator will manually inspect the 5173 route, reference upload, quote/controls, generation and asset detail navigation. Automated tests and agent browser work must not submit a real, billable generation or upload fixture.

@@ -6,7 +6,7 @@ import { CircleAlert, LoaderCircle, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import type { GenerationJob } from "@/shared/contracts/generation";
-import type { CanvasNode } from "./canvas-workspace";
+import type { CanvasResultNodeType } from "./canvas-workspace";
 import styles from "./canvas-workspace.module.css";
 
 export type CanvasResultNodeData = Record<string, unknown> & {
@@ -15,7 +15,7 @@ export type CanvasResultNodeData = Record<string, unknown> & {
   onRetry: () => void;
 };
 
-export function CanvasResultNode({ data }: NodeProps<CanvasNode>) {
+export function CanvasResultNode({ data }: NodeProps<CanvasResultNodeType>) {
   const { job, index, onRetry } = data;
   const output = job.outputs[index];
 
