@@ -48,6 +48,7 @@ next-env.d.ts
 /.sites-runtime/
 /outputs/
 /work/
+/.impeccable/
 
 # application runtime data and user assets
 /data/

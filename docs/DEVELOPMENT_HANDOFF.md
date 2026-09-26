@@ -10,6 +10,11 @@ GG-119 左上角仅保留字标的本地改动可从 5173 热更新看到，3213
 站长会自行浏览器验收。`check:local` 577 项 / 554 通过 / 23 跳过 / 0 失败。
 见 [GG-119 任务卡](tasks/GG-119-wordmark-only-workspace-brand.md)。
 
+GG-120 将 Impeccable 4.4.0 的项目级资料放在 `.agents/skills/impeccable/`，
+Claude Code 通过 `.claude/skills/impeccable/SKILL.md` 指向同一份内容；自动 hooks 未启用，
+引擎未下载或运行。两份入口静态校验通过，详情见
+[GG-120 任务卡](tasks/GG-120-shared-impeccable-skill.md)。新会话再确认实际发现。
+
 - **GG-116**：`/assets` 历史分区改名为「生成历史」，历史为无标题无日期的扁平网格、
   最近在前；卡片悬停出现下载/删除/放大。删除为硬删除（删资产行 + 整理行 + 存储对象，
   保留 job/batch 与已结算积分）。见[任务卡](tasks/GG-116-asset-history-actions.md) /
