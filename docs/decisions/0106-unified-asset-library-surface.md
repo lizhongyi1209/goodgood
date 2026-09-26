@@ -1,6 +1,6 @@
 # ADR 0106: Unified asset surface and file selection
 
-- Status: Accepted for GG-121 local implementation
+- Status: Accepted for GG-121 local implementation; selection actions and tag controls superseded by ADR 0107
 - Date: 2026-09-26
 - Task: GG-121
 - Supersedes: ADR 0102's separate history/library presentation and visible media counts; object ownership, upload and folder rules remain in force.
@@ -29,10 +29,9 @@ not GoodGood's resumable creative projects.
   detail/preview. A floating toolbar appears for selected files, with actions
   backed by current capabilities. Grid and list are alternate views of the same
   filtered files.
-- Generated-image deletion retains ADR 0103's hard-delete confirmation and
-  ownership boundary. Uploaded-material deletion is not introduced by this
-  visual change; the selection toolbar only exposes deletion when every
-  selected file supports it.
+- The initial selection toolbar only exposed deletion for generated images;
+  ADR 0107 supersedes that scope after the operator explicitly confirmed
+  permanent deletion for uploaded images, videos, and audio too.
 - Keep GoodGood's achromatic design and accessible focus, keyboard, touch,
   loading, empty and error behavior. Reference screenshots guide layout and
   interaction, not a literal copy of the source product.

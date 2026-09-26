@@ -23,13 +23,14 @@ const arrangements = new Map([
   ["video:v", { folderId: "folder-1", tags: [] }],
 ]);
 
-test("GG-121 filters a single asset collection by media, source, folder and tags", () => {
+test("GG-121 filters a single asset collection by media, source, folder and file name", () => {
   const ids = (folder, query, media, source) => filterAssetFiles(files, arrangements, folder, query, media, source).map((item) => item.id);
   assert.deepEqual(ids(null, "", "all", "all"), ["g", "r", "v", "a"]);
   assert.deepEqual(ids(null, "", "image", "generated"), ["g"]);
   assert.deepEqual(ids(null, "", "image", "uploaded"), ["r"]);
   assert.deepEqual(ids("folder-1", "", "all", "all"), ["r", "v"]);
-  assert.deepEqual(ids("folder-1", " 海报 ", "all", "uploaded"), ["r"]);
+  assert.deepEqual(ids("folder-1", " 人物 ", "all", "uploaded"), ["r"]);
+  assert.deepEqual(ids("folder-1", " 海报 ", "all", "uploaded"), []);
   assert.deepEqual(ids("folder-1", "", "audio", "all"), []);
 });
 

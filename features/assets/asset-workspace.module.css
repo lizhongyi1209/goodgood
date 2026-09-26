@@ -69,10 +69,9 @@
 .selectionBar > span { padding: 0 12px; font-size: 12px; }
 .selectionBar button { min-height: 30px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 10px; border: 0; border-radius: 18px; background: #404042; color: white; font-size: 12px; }
 .selectionBar button:hover:not(:disabled) { background: #565658; }
-.selectionBar button.selectionPrimary { background: white; color: var(--ink); }
-.selectionBar button.selectionPrimary:hover:not(:disabled) { background: #ebebed; }
-.selectionBar button.deleteAction { background: #555557; }
-.selectionBar button.moreSelection { width: 30px; padding: 0; }
+.selectionBar button.deleteAction { background: #c83232; color: white; }
+.selectionBar button.deleteAction:hover:not(:disabled) { background: #b52b2b; }
+.selectionBar button.deleteAction:disabled { opacity: .55; cursor: not-allowed; }
 .selectionBar button.closeSelection { width: 30px; padding: 0; background: transparent; }
 .state { min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #9797a0; text-align: center; font-size: 11px; }
 .state strong { color: #666670; font-size: 13px; }
@@ -95,9 +94,9 @@
 .uploadRows small { color: #92929b; }
 .uploadRows em { max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); font-style: normal; }
 .uploadRows em.failed { color: var(--danger); }
-.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; }
+.fields { display: grid; grid-template-columns: minmax(0, 320px); gap: 14px; margin-top: 18px; }
 .fields label { display: grid; gap: 6px; color: #666670; font-size: 11px; }
-.fields select, .fields input { width: 100%; min-height: 34px; border: 1px solid #e5e5e9; border-radius: 8px; background: white; color: var(--ink); padding: 0 9px; font-size: 12px; }
+.fields select { width: 100%; min-height: 34px; border: 1px solid #e5e5e9; border-radius: 8px; background: white; color: var(--ink); padding: 0 9px; font-size: 12px; }
 .dialogError { color: var(--danger); font-size: 11px; }
 .dialog footer { display: flex; justify-content: flex-end; gap: 9px; padding: 13px 22px; border-top: 1px solid #ededf0; }
 .dialog footer > button:first-child { border: 0; background: #f3f3f5; border-radius: 8px; color: #666670; padding: 0 14px; font-size: 12px; }

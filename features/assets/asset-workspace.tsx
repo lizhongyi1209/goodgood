@@ -11,7 +11,7 @@ import type { ReferenceMaterial } from "@/features/references/http-reference-lib
 import { uploadPrivateVideoMaterial, type PrivateVideoMaterial } from "@/features/creation/http-video-materials";
 import { uploadPrivateAudioMaterial, type PrivateAudioMaterial } from "@/features/assets/http-audio-materials";
 import { createAssetFolder, deleteAssetFolder, listAssetOrganization, renameAssetFolder, saveAssetOrganization, type AssetArrangement, type AssetFolder, type OrganizedAssetKind } from "@/features/assets/http-asset-organization";
-import { deleteAsset, readAssetDownloadUrl } from "@/features/assets/http-asset-boundary";
+import { deleteAsset, deleteUploadedAsset, readAssetDownloadUrl } from "@/features/assets/http-asset-boundary";
 import { ImageDownloadError, saveImageToLocal } from "@/features/assets/image-download";
 import { PRIVATE_AUDIO_UPLOAD_MAX_BYTES, PRIVATE_IMAGE_UPLOAD_MAX_BYTES, PRIVATE_VIDEO_UPLOAD_MAX_BYTES } from "@/shared/contracts/upload-limits.mjs";
 import styles from "./asset-workspace.module.css";
@@ -63,7 +63,7 @@ export function filterAssetFiles(items: readonly LibraryItem[], arrangements: Ar
   return items.filter((item) => {
     const arrangement = arrangements.get(`${item.kind}:${item.id}`);
     return (!folderId || arrangement?.folderId === folderId) &&
-      (!query || `${item.name} ${arrangement?.tags.join(" ") ?? ""}`.toLocaleLowerCase().includes(query)) &&
+      (!query || item.name.toLocaleLowerCase().includes(query)) &&
       (media === "all" || item.media === media) &&
       (source === "all" || (source === "generated" ? item.kind === "generated" : item.kind !== "generated"));
   });
@@ -124,7 +124,6 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
   const [preview, setPreview] = useState<{ name: string; url: string; media: Media } | null>(null);
   const [rows, setRows] = useState<readonly UploadRow[]>([]);
   const [uploadFolderId, setUploadFolderId] = useState<string | null>(null);
-  const [uploadTags, setUploadTags] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -204,19 +203,29 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
     } finally { setBusy(false); }
   }
 
-  async function deleteGeneratedItems(targets: readonly LibraryItem[]) {
-    if (busy || !targets.length || targets.some((item) => item.kind !== "generated")) return;
-    if (!window.confirm(`删除选中的 ${targets.length} 张图片？该操作不可恢复，已结算的积分不会退回。`)) return;
+  async function deleteItems(targets: readonly LibraryItem[]) {
+    if (busy || !targets.length) return;
+    const creditNotice = targets.some((item) => item.kind === "generated") ? "已结算的生成积分不会退回。" : "";
+    if (!window.confirm(`永久删除选中的 ${targets.length} 个文件？该操作不可恢复。${creditNotice}`)) return;
     setBusy(true); setActionError(null);
+    let deletionFailed = false;
     try {
       for (const item of targets) {
-        await deleteAsset(item.id, workspaceId);
+        if (item.kind === "generated") await deleteAsset(item.id, workspaceId);
+        else await deleteUploadedAsset(item.kind, item.id, workspaceId);
         setSelectedKeys((current) => current.filter((key) => key !== `${item.kind}:${item.id}`));
-        await onDeleteGenerated(item.id);
+        if (item.kind === "generated") await onDeleteGenerated(item.id);
       }
     } catch (cause) {
+      deletionFailed = true;
       setActionError(cause instanceof Error ? cause.message : "删除失败，请重试。");
-    } finally { setBusy(false); }
+    } finally {
+      // A storage failure can follow a committed row change; refresh even when
+      // the request failed so a removed file does not remain selectable.
+      try { await onRefresh(); }
+      catch (cause) { if (!deletionFailed) setActionError(cause instanceof Error ? cause.message : "文件已删除，但刷新失败，请重试。"); }
+      setBusy(false);
+    }
   }
 
   async function moveItems(targets: readonly LibraryItem[], nextFolder: string | null) {
@@ -242,22 +251,6 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
   function toggleSelection(item: LibraryItem) {
     const key = `${item.kind}:${item.id}`;
     setSelectedKeys((current) => current.includes(key) ? current.filter((value) => value !== key) : [...current, key]);
-  }
-
-  function editTags(item: LibraryItem) {
-    const arrangement = arrangements.get(`${item.kind}:${item.id}`);
-    const value = window.prompt("标签，用逗号分隔", arrangement?.tags.join("，") ?? "");
-    if (value != null) void updateOrganization(item.kind, item.id, arrangement?.folderId ?? null,
-      value.split(/[,，]/).map((tag) => tag.trim()).filter(Boolean));
-  }
-
-  async function updateOrganization(kind: OrganizedAssetKind, id: string, nextFolder: string | null, tags: readonly string[]) {
-    setBusy(true); setActionError(null);
-    try {
-      await saveAssetOrganization(kind, id, { folderId: nextFolder, tags }, workspaceId);
-      setRevision((current) => current + 1);
-    } catch (cause) { setActionError(cause instanceof Error ? cause.message : "整理资产失败，请重试。"); }
-    finally { setBusy(false); }
   }
 
   async function addFolder() {
@@ -291,10 +284,6 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
   }
 
   async function uploadAll() {
-    const tags = uploadTags.split(/[,，]/).map((tag) => tag.trim()).filter(Boolean);
-    if (tags.length > 8 || tags.some((tag) => tag.length > 24) || new Set(tags.map((tag) => tag.toLocaleLowerCase())).size !== tags.length) {
-      setActionError("最多填写 8 个不重复标签，每个不超过 24 字。"); return;
-    }
     setBusy(true); setActionError(null);
     let uploaded = false;
     for (const row of rows.filter((item) => item.state === "waiting" || item.state === "failed")) {
@@ -316,7 +305,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
           kind = "audio"; id = result.id;
         }
         uploaded = true;
-        try { if (uploadFolderId || tags.length) await saveAssetOrganization(kind, id, { folderId: uploadFolderId, tags }, workspaceId); }
+        try { if (uploadFolderId) await saveAssetOrganization(kind, id, { folderId: uploadFolderId, tags: [] }, workspaceId); }
         catch (cause) { setActionError(`上传成功，但整理失败：${cause instanceof Error ? cause.message : "请在资产卡片中重试。"}`); }
         setRows((current) => current.map((item) => item.id === row.id ? { ...item, state: "ready", message: undefined } : item));
       } catch (cause) {
@@ -352,8 +341,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
               <DropdownMenuItem onSelect={() => void moveItems([item], null)}>未分类</DropdownMenuItem>
               {organization.folders.map((folder) => <DropdownMenuItem key={folder.id} onSelect={() => void moveItems([item], folder.id)}>{folder.name}</DropdownMenuItem>)}
             </DropdownMenuSubContent></DropdownMenuSub>
-            <DropdownMenuItem onSelect={() => editTags(item)}><Pencil size={16}/>编辑标签</DropdownMenuItem>
-            {item.kind === "generated" && <DropdownMenuItem variant="destructive" onSelect={() => void deleteGeneratedItems([item])}><Trash2 size={16}/>删除</DropdownMenuItem>}
+            <DropdownMenuItem variant="destructive" onSelect={() => void deleteItems([item])}><Trash2 size={16}/>删除</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
         <button className={styles.selectButton} aria-label={`${selected ? "取消选择" : "选择"} ${item.name}`} aria-pressed={selected} title={selected ? "取消选择" : "选择"} disabled={busy} onClick={() => toggleSelection(item)}><Check size={15}/></button>
@@ -374,9 +362,9 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
           <button className={viewMode === "grid" ? styles.iconActive : ""} aria-label="网格视图" title="网格视图" aria-pressed={viewMode === "grid"} onClick={() => setViewMode("grid")}><Grid2X2 size={17}/></button>
           <button className={viewMode === "list" ? styles.iconActive : ""} aria-label="列表视图" title="列表视图" aria-pressed={viewMode === "list"} onClick={() => setViewMode("list")}><List size={18}/></button>
         </div>
-        <label className={styles.search}><Search size={16}/><input value={search} onChange={(event) => { setSearch(event.target.value); setSelectedKeys([]); }} placeholder="搜索资产" aria-label="搜索资产或标签" /></label>
+        <label className={styles.search}><Search size={16}/><input value={search} onChange={(event) => { setSearch(event.target.value); setSelectedKeys([]); }} placeholder="搜索资产" aria-label="搜索资产" /></label>
         <DropdownMenu><DropdownMenuTrigger asChild><button className={styles.primaryButton}>新建<ChevronDown size={15}/></button></DropdownMenuTrigger><DropdownMenuContent align="end" className={styles.fileMenu}>
-          <DropdownMenuItem onSelect={() => { setRows([]); setUploadTags(""); setActionError(null); setUploadFolderId(folderId); setUploadOpen(true); }}><Upload size={16}/>上传文件</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => { setRows([]); setActionError(null); setUploadFolderId(folderId); setUploadOpen(true); }}><Upload size={16}/>上传文件</DropdownMenuItem>
           <DropdownMenuItem disabled={busy} onSelect={() => void addFolder()}><FolderPlus size={16}/>新建文件夹</DropdownMenuItem>
         </DropdownMenuContent></DropdownMenu>
       </div>
@@ -398,17 +386,12 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
     </section>}
     {selectedItems.length > 0 && <div className={styles.selectionBar} role="toolbar" aria-label="已选资产操作">
       <span>已选择 {selectedItems.length} 个</span>
-      {selectedItems.length === 1 && selectedItems[0].kind !== "generated" && <button className={styles.selectionPrimary} disabled={busy} onClick={() => applyItemToCreation(selectedItems[0])}><Plus size={16}/>用于创作</button>}
+      <button disabled={busy} onClick={() => void downloadItems(selectedItems)}><Download size={16}/>下载</button>
       <DropdownMenu><DropdownMenuTrigger asChild><button disabled={busy}><Folder size={16}/>移动</button></DropdownMenuTrigger><DropdownMenuContent side="top" align="center" className={styles.fileMenu}>
         <DropdownMenuItem onSelect={() => void moveItems(selectedItems, null)}>未分类</DropdownMenuItem>
         {organization.folders.map((folder) => <DropdownMenuItem key={folder.id} onSelect={() => void moveItems(selectedItems, folder.id)}>{folder.name}</DropdownMenuItem>)}
       </DropdownMenuContent></DropdownMenu>
-      <button disabled={busy} onClick={() => void downloadItems(selectedItems)}><Download size={16}/>下载</button>
-      {selectedItems.every((item) => item.kind === "generated") && <button className={styles.deleteAction} disabled={busy} onClick={() => void deleteGeneratedItems(selectedItems)}><Trash2 size={16}/>删除</button>}
-      <DropdownMenu><DropdownMenuTrigger asChild><button className={styles.moreSelection} aria-label="更多已选操作" title="更多" disabled={busy}><MoreHorizontal size={17}/></button></DropdownMenuTrigger><DropdownMenuContent side="top" align="end" className={styles.fileMenu}>
-        {selectedItems.length === 1 && <DropdownMenuItem onSelect={() => editTags(selectedItems[0])}><Pencil size={16}/>编辑标签</DropdownMenuItem>}
-        <DropdownMenuItem onSelect={() => setSelectedKeys([])}><X size={16}/>取消选择</DropdownMenuItem>
-      </DropdownMenuContent></DropdownMenu>
+      <button className={styles.deleteAction} disabled={busy} onClick={() => void deleteItems(selectedItems)}><Trash2 size={16}/>删除</button>
       <button className={styles.closeSelection} aria-label="取消选择" title="取消选择" disabled={busy} onClick={() => setSelectedKeys([])}><X size={17}/></button>
     </div>}
     <Dialog open={uploadOpen} onOpenChange={(open) => { if (!busy) setUploadOpen(open); }}><DialogPortal><DialogOverlay/><DialogPrimitive.Content className={styles.dialog} aria-describedby="asset-upload-description" onEscapeKeyDown={(event) => { if (busy) event.preventDefault(); }} onPointerDownOutside={(event) => { if (busy) event.preventDefault(); }}>
@@ -417,7 +400,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
         <input ref={fileInput} type="file" accept=".jpg,.jpeg,.png,.mp4,.mp3,image/jpeg,image/png,video/mp4,audio/mpeg" multiple hidden onChange={(event) => { chooseFiles(event.target.files); event.target.value = ""; }}/>
         <button className={styles.pickFiles} onClick={() => fileInput.current?.click()} disabled={busy}><Plus size={22}/><span>添加文件</span></button>
         {rows.length > 0 && <ul className={styles.uploadRows}>{rows.map((row) => <li key={row.id}><span title={row.file.name}>{row.file.name}</span><small>{bytesLabel(row.file.size)}</small><em className={row.message ? styles.failed : ""}>{row.message ?? ({ waiting: "等待上传", uploading: "上传中", ready: "已完成", failed: "失败" }[row.state])}</em><button aria-label={`移除 ${row.file.name}`} disabled={busy} onClick={() => setRows((current) => current.filter((item) => item.id !== row.id))}><X size={14}/></button></li>)}</ul>}
-        <div className={styles.fields}><label>保存位置<select value={uploadFolderId ?? ""} disabled={busy} onChange={(event) => setUploadFolderId(event.target.value || null)}><option value="">未分类</option>{organization.folders.map((folder) => <option key={folder.id} value={folder.id}>{folder.name}</option>)}</select></label><label>标签（可选）<input value={uploadTags} disabled={busy} onChange={(event) => setUploadTags(event.target.value)} placeholder="多个标签用逗号分隔" /></label></div>
+        <div className={styles.fields}><label>保存位置<select value={uploadFolderId ?? ""} disabled={busy} onChange={(event) => setUploadFolderId(event.target.value || null)}><option value="">未分类</option>{organization.folders.map((folder) => <option key={folder.id} value={folder.id}>{folder.name}</option>)}</select></label></div>
         {actionError && <p className={styles.dialogError} role="alert">{actionError}</p>}
       </div>
       <footer><button onClick={() => setUploadOpen(false)} disabled={busy}>关闭</button><button className={styles.primaryButton} onClick={() => void uploadAll()} disabled={busy || !rows.some((row) => row.state !== "ready")}>{busy ? "上传中…" : "保存"}</button></footer>

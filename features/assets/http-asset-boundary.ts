@@ -113,3 +113,23 @@ export async function deleteAsset(
     );
   }
 }
+
+export async function deleteUploadedAsset(
+  kind: "reference" | "video" | "audio",
+  assetId: string,
+  workspaceId: string | null = null,
+): Promise<void> {
+  const response = await goodGoodApiFetch(
+    `/api/asset-files/${kind}/${encodeURIComponent(assetId)}`,
+    { cache: "no-store", headers: workspaceRequestHeaders(workspaceId), method: "DELETE" },
+  );
+  const payload = (await response.json()) as AssetDeleteResponse | AssetApiErrorEnvelope;
+  if (!response.ok || (payload as AssetDeleteResponse).deleted !== true) {
+    const failure = payload as AssetApiErrorEnvelope;
+    throw new AssetBoundaryError(
+      failure.error?.code ?? "ASSET_DELETE_FAILED",
+      failure.error?.message ?? "文件暂时无法删除，请重试。",
+      failure.error?.retryable ?? false,
+    );
+  }
+}

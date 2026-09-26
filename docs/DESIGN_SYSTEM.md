@@ -10,7 +10,9 @@ item count below. The `项目` section contains asset files, not saved creative
 projects. In grid mode images preserve their aspect ratios in close masonry
 columns; only hover/focus reveals a top-right menu and bottom-right selection
 circle. List mode uses a compact thumbnail, name, date and size. Selection is
-visible in a restrained near-black floating toolbar with supported actions.
+visible in a restrained near-black floating toolbar with count, Download, Move,
+Delete, and close. Delete alone uses a red fill with white icon and text by the
+operator's explicit ADR 0107 exception; the rest remains achromatic.
 Keep keyboard and touch controls reachable and source icon labels in Chinese
 tooltips. The four supplied ChatGPT screenshots are layout references, not a
 source of blue/yellow accent colors or document-file support.

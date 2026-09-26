@@ -1,4 +1,4 @@
-import { assetApiError, deleteGeneratedAsset, getAssetDownloadUrl, listAssets, readAssetPreview } from "./api.mjs";
+import { assetApiError, deleteGeneratedAsset, deleteUploadedAsset, getAssetDownloadUrl, listAssets, readAssetPreview } from "./api.mjs";
 import { requestIdFor } from "../observability/http.mjs";
 import { workspaceIdFromRequest } from "../organizations/request.mjs";
 
@@ -12,7 +12,7 @@ function sendJson(response, statusCode, payload, headers = {}) {
   response.end(JSON.stringify(payload));
 }
 
-const DEFAULT_OPERATIONS = Object.freeze({ deleteGeneratedAsset, getAssetDownloadUrl, listAssets, readAssetPreview });
+const DEFAULT_OPERATIONS = Object.freeze({ deleteGeneratedAsset, deleteUploadedAsset, getAssetDownloadUrl, listAssets, readAssetPreview });
 
 export function createAssetNodeApiHandler({
   authenticate,
@@ -30,7 +30,8 @@ export function createAssetNodeApiHandler({
     const previewMatch = url.pathname.match(/^\/api\/assets\/([^/]+)\/preview$/);
     const contentMatch = url.pathname.match(/^\/api\/assets\/([^/]+)\/content$/);
     const assetMatch = url.pathname.match(/^\/api\/assets\/([^/]+)$/);
-    if (url.pathname !== "/api/assets" && !downloadUrlMatch && !previewMatch && !contentMatch && !assetMatch) return false;
+    const uploadedMatch = url.pathname.match(/^\/api\/asset-files\/([^/]+)\/([^/]+)$/);
+    if (url.pathname !== "/api/assets" && !downloadUrlMatch && !previewMatch && !contentMatch && !assetMatch && !uploadedMatch) return false;
     try {
       const ownerContext = await authenticate(request);
       const workspaceId = workspaceIdFromRequest(request);
@@ -93,6 +94,13 @@ export function createAssetNodeApiHandler({
             workspaceId,
           }),
         );
+        return true;
+      }
+      if (uploadedMatch && request.method === "DELETE") {
+        sendJson(response, 200, await operations.deleteUploadedAsset({
+          kind: decodeURIComponent(uploadedMatch[1]), assetId: decodeURIComponent(uploadedMatch[2]),
+          ownerContext, workspaceId,
+        }));
         return true;
       }
       sendJson(

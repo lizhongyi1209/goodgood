@@ -1,5 +1,16 @@
 # Architecture
 
+## GG-121 asset deletion boundary
+
+The asset selection bar calls the existing generated-image deletion endpoint
+or `/api/asset-files/:kind/:assetId` for uploaded references, videos, and
+audio. `server/assets/api.mjs` validates the fixed kind set and UUID, checks
+workspace access and concrete file ownership, removes folder metadata in the
+same transaction as the row change, then deletes private bytes. Reference
+rows become inaccessible tombstones so profile/history foreign keys remain
+valid; video/audio rows are removed. The local Node API and Next route expose
+the same operation. There is no schema migration or provider call.
+
 ## GG-115 asset boundaries
 
 `features/assets/asset-workspace.tsx` presents history and personal library

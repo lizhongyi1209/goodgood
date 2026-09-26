@@ -1,6 +1,6 @@
 # ADR 0105: Achromatic interface palette
 
-- Status: Accepted
+- Status: Accepted; ADR 0107 adds a narrow red exception for the asset selection Delete button
 - Date: 2026-09-25
 - Task: GG-118
 - Supersedes: ADR 0002 for the interface accent role (identity section only)

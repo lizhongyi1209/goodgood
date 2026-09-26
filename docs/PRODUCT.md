@@ -8,8 +8,10 @@ icon-only `已上传 / 已生成` controls filter origin. Folders organize the s
 without copying them. The `项目` heading on this asset page labels asset files,
 not saved creative projects; those remain separate resumable sessions. Users can
 switch between masonry grid and file list, select files, move or download them,
-and delete selected generated images under ADR 0103. Uploaded-file deletion is
-not yet supported. See [ADR 0106](decisions/0106-unified-asset-library-surface.md).
+and permanently delete generated images or uploaded images, videos, and audio
+after confirmation. Asset tags are no longer offered; existing metadata is
+preserved. See [ADR 0106](decisions/0106-unified-asset-library-surface.md) and
+[ADR 0107](decisions/0107-asset-selection-and-tag-retirement.md).
 
 ## GG-115 asset workspace decision
 

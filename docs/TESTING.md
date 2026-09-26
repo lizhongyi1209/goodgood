@@ -3,10 +3,12 @@
 ## GG-121 unified asset browser
 
 Run `node --test tests/gg121-unified-asset-browser.test.mjs
+tests/gg121-uploaded-asset-delete.test.mjs
 tests/gg050-page-header-navigation.test.mjs tests/m4-assets.test.mjs` before
-the full local gate. Confirm combined media/source/folder/tag filtering,
+the full local gate. Confirm combined media/source/folder/name filtering,
 text-only categories, source and view accessibility names, loading/error copy,
-and the generated delete boundary. The operator will inspect grid/list layout,
+the generated and uploaded delete boundaries, including owner/workspace denial,
+transaction rollback and storage failure. The operator will inspect grid/list layout,
 hover/selection, the floating toolbar and narrow screens manually at 5173;
 the agent does not perform browser acceptance. No real-provider request is
 needed for this UI change.

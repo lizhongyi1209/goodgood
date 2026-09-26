@@ -1,5 +1,16 @@
 # GG-063 quality pricing errors
 
+## GG-121 uploaded asset deletion
+
+The confirmation names permanent removal; selected generated images also state
+that settled credits are not refunded. An invalid ID or foreign owner's file
+returns a non-enumerating 404. A failed database transaction rolls back folder
+and file changes and never deletes bytes. If private storage deletion fails
+after the database commit, the API reports `ASSET_DELETE_INCOMPLETE` and the
+browser refreshes its asset lists so the removed file cannot be selected again.
+The logged file ID, kind, and private object key allow support to finish object cleanup. A failed
+refresh also leaves a visible retry error.
+
 ## GG-115 asset recovery
 
 The upload dialog rejects unsupported format or files above 20 MiB before

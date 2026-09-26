@@ -1,5 +1,16 @@
 # GG-063 quality pricing
 
+## GG-121 explicit asset deletion
+
+An owner-confirmed delete removes `asset_organization` and the uploaded
+material within one workspace-scoped transaction, then removes its private
+object. `reference_assets` retains a row with `upload_state='expired'` and
+`error_code='USER_DELETED'` to satisfy existing profile/history foreign keys;
+successful byte removal sets `object_deleted_at`. Video/audio material rows
+are deleted. No new table or migration is required. Explicit deletion can
+invalidate references in a saved draft, project, or profile; those records do
+not recreate the removed private object.
+
 ## GG-115 additive migration 0046
 
 `asset_folders` stores owner/workspace scoped names. `asset_organization`

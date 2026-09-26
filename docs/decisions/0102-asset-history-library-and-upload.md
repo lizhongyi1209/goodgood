@@ -1,6 +1,6 @@
 # ADR 0102: Asset history, personal library, and 20 MiB uploads
 
-- Status: Accepted for GG-115 local implementation; separate history/library presentation and visible counts superseded by ADR 0106
+- Status: Accepted for GG-115 local implementation; separate history/library presentation and visible counts superseded by ADR 0106; user-facing tags superseded by ADR 0107
 - Date: 2026-09-25
 - Supersedes: ADR 0096's 200 MiB limit for new private image and video uploads
 - Task: GG-115

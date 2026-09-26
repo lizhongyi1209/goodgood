@@ -3,15 +3,18 @@
 ## GG-121 unified asset flow
 
 Open `/assets` into one file collection. Media tabs and uploaded/generated icon
-filters narrow it without changing file identity; search matches names and tags.
+filters narrow it without changing file identity; search matches file names.
 Folders appear above the `项目` file section, and opening one narrows the same
 grid or list. Grid images keep their real ratios. Hover/focus reveals the card
 menu and a separate bottom-right selection button; clicking the image opens its
 existing detail or private preview. Selection exposes a floating toolbar for
-move, download, and supported contextual actions. `Esc` or the close control
-clears selection. Generated-image delete confirms hard deletion; uploaded media
-has no delete action. Grid/list switching retains filters and selection. The
-upload dialog and recoverable organization behavior stay as in GG-115.
+Download, Move, and Delete, followed by a close control. There is no toolbar
+More action or tag editor. `Esc` or close clears selection. Delete asks for
+confirmation and permanently removes generated images or uploaded media; the
+generated-image notice says settled credits are not refunded. The file menu
+retains `用于创作` where applicable. Grid/list switching retains filters and
+selection. The upload dialog offers folder placement without tags; upload and
+organization failures remain recoverable.
 
 ## GG-115 assets flow
 

@@ -1,5 +1,6 @@
 # Decision records
 
+- `0107-asset-selection-and-tag-retirement.md` — removes asset tag controls and search, simplifies the selection toolbar to download/move/delete, and permits its red destructive action.
 - `0106-unified-asset-library-surface.md` — one `资产` surface with text media filters, source icons, folders and asset files, masonry/list views and capability-correct selection actions; supersedes ADR 0102's separate view/count presentation.
 - `0105-achromatic-interface-palette.md` — the interface palette is achromatic: black type and icons, light gray state fills, near-black primary action, no chromatic accent. Replaces ADR 0002's Palace Red accent role.
 
