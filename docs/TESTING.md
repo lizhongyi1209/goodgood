@@ -1,5 +1,9 @@
 # GG-063 verification
 
+## GG-125 standalone canvas
+
+Run `node --test tests/gg124-canvas-route.test.mjs tests/gg125-canvas-image-generation.test.mjs` before the full local gate. Verify that `/canvas` has its own page, leaves the shared workspace by a normal link, and keeps node positions through queued/running/succeeded/failed and retry transitions. Typecheck and build verify the React Flow and shadcn integration. The operator will manually inspect the 5173 route, reference upload, quote/controls, generation and asset detail navigation. Automated tests and agent browser work must not submit a real, billable generation or upload fixture.
+
 ## GG-121 unified asset browser
 
 Run `node --test tests/gg121-unified-asset-browser.test.mjs

@@ -1,5 +1,9 @@
 # Architecture
 
+## GG-125 standalone canvas boundary
+
+`app/canvas/page.tsx` mounts a dedicated client surface instead of `app/page.tsx`'s lobby shell. The canvas page reads the existing session and billing summary, uploads private references through `features/references/http-reference-upload.ts`, and submits image snapshots through `features/creation/http-generation-boundary.ts`. React Flow nodes represent the current page's observed job state and are not persisted; successful jobs and assets remain owned by the existing backend. No new provider, billing, database or canvas API is introduced.
+
 ## GG-121 asset deletion boundary
 
 The asset selection bar calls the existing generated-image deletion endpoint

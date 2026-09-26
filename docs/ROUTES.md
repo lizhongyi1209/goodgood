@@ -1,12 +1,12 @@
 # Navigation and route contract
 
-## GG-124 local canvas entry
+## GG-125 standalone canvas entry
 
-`/canvas` mounts the shared authenticated workspace and opens the new empty
-canvas view. The desktop sidebar exposes `画布` beside `创作`; direct access,
-refresh, Back and Forward resolve to the same view. This initial route has no
-canvas document ID, save endpoint or node-specific URL. Existing creation and
-project routes are unchanged.
+`/canvas` mounts its own full-viewport page outside the shared workspace shell.
+The sidebar uses a normal link, and the canvas returns to `/create`. Direct
+access and refresh load the same standalone tool; transient node layout is not
+restored. Generated images open existing `/assets/:assetId` details. There is no
+canvas document ID, save endpoint or node-specific URL.
 
 ## GG-122 local Hero preview
 
@@ -65,7 +65,7 @@ creation state. Logs use date ranges, event/state filters and keyset pagination.
 
 ## Current implementation
 
-The shared workspace mounts at `/`, `/create`, `/canvas`, `/projects`,
+The shared workspace mounts at `/`, `/create`, `/projects`,
 `/projects/:projectId`, `/assets`, `/assets/:assetId`, `/credits`, `/distribution`,
 `/distribution/transfers`, and `/organizations` with organization detail and
 legacy `/organizations/accounts` and `/organizations/transfers` compatibility subroutes. `/create` is the
@@ -79,7 +79,7 @@ this shell; audit moves the prior account-page recent-action list into its own v
 | Visible navigation | Current status | Current behavior |
 | --- | --- | --- |
 | 创作 | Implemented | `/create`, with `/` as a compatible entry |
-| 画布 | Implemented locally | `/canvas` empty React Flow canvas; no saved canvas documents yet |
+| 画布 | Implemented locally | Standalone `/canvas` with image generation and temporary React Flow result nodes; no saved canvas documents yet |
 | 探索 | Placeholder | No view or route yet |
 | 项目 | Implemented | `/projects` index and `/projects/:projectId` restore |
 | 资产 | Implemented locally | `/assets` one generated/uploaded file collection with media/source filters, folders and grid/list views; saved creative projects remain on `/projects` |

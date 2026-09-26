@@ -229,7 +229,6 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 }
 
 .content-wrap { width: auto; margin: 0; padding: 17px 30px 50px 16px; }
-.content-wrap.canvas-content-wrap { height: 100dvh; padding: 0; }
 .composer { --composer-radius: 22px; position: sticky; top: 17px; z-index: 24; background: var(--white); border: 1px solid #dedee4; border-radius: var(--composer-radius); box-shadow: 0 8px 24px rgba(33,33,43,.045), inset 0 1px 0 rgba(255,255,255,.8); overflow: visible; transition: box-shadow .25s, border-color .25s; }
 .composer.drawer-open { z-index: 25; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
 .composer:focus-within { border-color: #cacacf; box-shadow: 0 12px 30px rgba(33,33,43,.07); }
@@ -1167,7 +1166,6 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
   .sidebar { display: none; }
   .mobile-bar { height: 62px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; }
   .content-wrap { width: auto; padding: 8px 10px 40px; }
-  .content-wrap.canvas-content-wrap { height: calc(100dvh - 62px); padding: 0; }
   .composer { --composer-radius: 18px; top: 8px; }
   .creation-mode-row { min-height: 33px; padding: 0 7px 6px; }
   .creation-mode-switch button { height: 26px; min-width: 61px; padding: 0 8px; }

@@ -1,0 +1,90 @@
+.page {
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  background: #fff;
+  color: #18181b;
+}
+
+.header {
+  position: absolute;
+  z-index: 5;
+  top: 20px;
+  left: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 36px;
+  pointer-events: none;
+}
+
+.header > * { pointer-events: auto; }
+.back { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 9px; color: #3f3f46; }
+.back:hover, .back:focus-visible { background: #f3f3f4; }
+.back:focus-visible { outline: 2px solid #27272a; outline-offset: 2px; }
+.headerDivider { height: 17px; width: 1px; background: #e4e4e7; }
+.headerTitle { color: #52525b; font-size: 13px; font-weight: 500; white-space: nowrap; }
+.headerSpacer { flex: 1; }
+.balance { padding: 7px 10px; border-radius: 8px; background: #fafafa; color: #71717a; font-size: 12px; white-space: nowrap; }
+
+.composer {
+  position: absolute;
+  z-index: 6;
+  bottom: 22px;
+  left: 50%;
+  width: min(720px, calc(100vw - 148px));
+  transform: translateX(-50%);
+  padding: 10px;
+  border: 1px solid #e4e4e7;
+  border-radius: 19px;
+  background: #fff;
+  box-shadow: 0 10px 34px rgb(0 0 0 / 7%);
+}
+
+.referenceTray { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 11px; }
+.reference { position: relative; flex: 0 0 52px; width: 52px; height: 52px; border-radius: 9px; background: #f4f4f5; }
+.reference img { display: block; width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
+.referenceRemove { position: absolute; top: -5px; right: -5px; display: grid; place-items: center; width: 18px; height: 18px; border: 1px solid #e4e4e7; border-radius: 50%; background: #fff; }
+.referenceRemove:hover, .referenceRemove:focus-visible { background: #f4f4f5; }
+.referenceStatus { position: absolute; left: 3px; bottom: 3px; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 6px; background: #fff; }
+.referenceRetry { position: absolute; inset: auto 2px 2px; border-radius: 5px; background: #fff; font-size: 10px; }
+
+.prompt { display: block; width: 100%; min-height: 58px; max-height: 188px; resize: none; overflow-y: auto; border: 0; box-shadow: none; padding: 11px 10px; background: transparent; font-size: 14px; line-height: 22px; }
+.prompt:focus-visible { border: 0; box-shadow: none; outline: none; }
+.tools { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 2px; }
+.tools button:focus-visible { outline: 2px solid #27272a; outline-offset: 2px; }
+.modelSelect, .smallSelect, .countSelect { height: 32px; border-color: transparent; background: #f4f4f5; box-shadow: none; font-size: 12px; }
+.modelSelect:hover, .smallSelect:hover, .countSelect:hover { background: #eaeaed; }
+.modelSelect { max-width: 190px; }
+.smallSelect { min-width: 68px; }
+.countSelect { min-width: 78px; }
+.toolSpacer { flex: 1; }
+.generate { min-width: 78px; border-radius: 9px; }
+.loadingIcon { animation: canvas-spin 1.1s linear infinite; }
+.quote, .message { padding: 8px 9px 1px; font-size: 11px; line-height: 16px; }
+.quote { color: #a1a1aa; }
+.message { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: #52525b; }
+.message button { flex: none; text-decoration: underline; text-underline-offset: 2px; }
+.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+@keyframes canvas-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .loadingIcon { animation: none; } }
+
+@media (max-width: 800px) {
+  .composer { width: min(620px, calc(100vw - 30px)); bottom: 14px; }
+  .page :global(.react-flow__panel.bottom.right) { bottom: 208px; }
+}
+
+@media (max-width: 560px) {
+  .header { top: 12px; left: 12px; right: 12px; gap: 8px; }
+  .headerTitle { font-size: 12px; }
+  .balance { font-size: 10px; padding: 5px 7px; }
+  .composer { bottom: 8px; padding: 8px; border-radius: 15px; }
+  .modelSelect { max-width: 140px; }
+  .smallSelect { min-width: 60px; }
+  .countSelect { min-width: 67px; }
+  .tools { gap: 4px; }
+  .page :global(.react-flow__panel.bottom.right) { bottom: 244px; }
+}

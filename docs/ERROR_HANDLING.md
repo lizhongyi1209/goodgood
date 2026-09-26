@@ -1,5 +1,9 @@
 # GG-063 quality pricing errors
 
+## GG-125 canvas generation recovery
+
+The standalone canvas redirects a missing session to login with a safe `/canvas` return. Pending or suspended accounts use the existing access gate. A missing billing quote, insufficient credits, invalid prompt or unready reference prevents submission; read errors retain the composer and offer retry. Failed reference uploads stay in the tray for retry or removal. An accepted job stays visible while polling; a failed job keeps an error node and an explicit retry action. Durable failures use the backend retry endpoint, while a request that never gained a durable job ID can be submitted again only by user action. Canvas node positions are in memory and are lost on refresh; durable assets remain in the asset library.
+
 ## GG-121 uploaded asset deletion
 
 The confirmation names permanent removal; selected generated images also state

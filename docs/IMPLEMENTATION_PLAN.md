@@ -1,13 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-26
-- Current phase: GG-124 画布初始界面本地实现与门禁完成，待站长在 5173 手动验收；GG-123 公共 UI、GG-122 Hero 与 GG-121 资产视觉改动同样待验收。32131 Web 仍为上一已验证检查点，生产应用仍为 GG-098，未部署。
-- Current objective: 站长检查 `/canvas` 纯白画布、平移与缩放；后续再确定节点、素材和保存行为。
+- Current phase: GG-125 独立画布与常用图片生成本地实现及门禁完成，待站长在 5173 手动验收；GG-123 公共 UI、GG-122 Hero 与 GG-121 资产视觉改动同样待验收。32131 Web 仍为上一已验证检查点，生产应用仍为 GG-098，未部署。
+- Current objective: 站长检查 `/canvas` 独立布局、参考图、报价及生成结果；后续再决定画布保存、连线与视频。
 - Previous objective: GG-123 前三阶段公共 UI 整合与 AI Elements CLI 安装通过门禁；待站长手动验收。
 
 ## Current checkpoint
 
-- Task [GG-124](tasks/GG-124-canvas-creation-foundation.md)：**React Flow / React Flow UI 画布初始界面本地实现与门禁完成，待站长手动验收**。`/canvas` 与共享侧栏连通，纯白空画布可平移缩放、右下角灰阶缩放选择器、默认角标隐藏；无节点、保存或后端调用。`check:local` 585 项 / 562 通过 / 23 跳过 / 0 失败；32131 与生产未更新。
+- Task [GG-125](tasks/GG-125-standalone-canvas-image-generation.md)：**独立 `/canvas` 与常用图片生成本地实现及门禁完成，待站长手动验收**。按 [ADR 0108](decisions/0108-standalone-canvas-image-generation.md) 替代 [GG-124](tasks/GG-124-canvas-creation-foundation.md) 的共享壳层空白界面。复用真实登录/报价/参考图/生成边界，结果在临时 React Flow 节点显示；纯白画布与缩放保留。`check:local` 587 项 / 564 通过 / 23 跳过 / 0 失败；32131 与生产未更新。
 - Task [GG-123](tasks/GG-123-shadcn-ai-elements-adoption.md)：**前三批公共 UI 本地实现与门禁完成；第四批 AI Elements CLI 已安装且门禁通过；待站长验收**。
   前三批复用 shadcn 原语覆盖创作、资产、个人资料、项目保存、模型开关和运营筛选。第四批固定 `ai-elements@1.9.0` 开发依赖及安全的按需添加命令；当前无 AI Elements UI 组件、AI SDK 或网关配置。`check:local` 584 项 / 561 通过 / 23 跳过 / 0 失败。后续真实功能逐个加组件，不改现有生成接口。未改生产、未做浏览器验收。
 - Task [GG-122](tasks/GG-122-standalone-hero-page.md)：**独立 Hero 页面本地实现与门禁完成，待站长手动浏览器验收**。

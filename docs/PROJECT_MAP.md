@@ -1,10 +1,11 @@
 # Project map
 
-GG-124 adds `features/canvas/canvas-workspace.tsx` as the empty React Flow
-surface. `components/ui/zoom-select.tsx` adapts the React Flow UI control to
-GoodGood's shadcn and grayscale styles. `/canvas` reuses the shared workspace
-shell and `features/navigation/workspace-route.mjs`; there is no canvas server
-boundary or persistence yet.
+GG-125 makes `app/canvas/page.tsx` a standalone route backed by
+`features/canvas/canvas-page.tsx`. `canvas-workspace.tsx` owns React Flow and
+temporary result nodes; `canvas-result-node.tsx` renders job states, while
+`components/ui/zoom-select.tsx` adapts React Flow UI's Zoom Select. The page
+reuses existing auth, billing, reference upload and generation boundaries;
+there is no canvas server boundary or persistence yet.
 
 GG-115 moves the asset page presentation into
 `features/assets/asset-workspace.tsx` and its CSS module. The feature's
