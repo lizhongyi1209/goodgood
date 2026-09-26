@@ -7,7 +7,7 @@
 
 ## Current checkpoint
 
-- Task [GG-125](tasks/GG-125-standalone-canvas-image-generation.md)：**独立 `/canvas` 与常用图片生成本地实现及门禁完成，待站长手动验收**。按 [ADR 0108](decisions/0108-standalone-canvas-image-generation.md) 替代 [GG-124](tasks/GG-124-canvas-creation-foundation.md) 的共享壳层空白界面。复用真实登录/报价/参考图/生成边界，结果在临时 React Flow 节点显示；纯白画布与缩放保留。`check:local` 587 项 / 564 通过 / 23 跳过 / 0 失败；32131 与生产未更新。
+- Task [GG-125](tasks/GG-125-standalone-canvas-image-generation.md)：**独立 `/canvas` 与常用图片生成本地实现及门禁完成，待站长手动验收**。按 [ADR 0108](decisions/0108-standalone-canvas-image-generation.md) 替代 [GG-124](tasks/GG-124-canvas-creation-foundation.md) 的共享壳层空白界面。复用真实登录/报价/参考图/生成边界，结果在临时 React Flow 节点显示；纯白画布与缩放保留。修复 Vite RSC 入口解析及 favicon 后，5173 两个 GET 均 HTTP 200；`check:local` 587 项 / 564 通过 / 23 跳过 / 0 失败。32131 与生产未更新。
 - Task [GG-123](tasks/GG-123-shadcn-ai-elements-adoption.md)：**前三批公共 UI 本地实现与门禁完成；第四批 AI Elements CLI 已安装且门禁通过；待站长验收**。
   前三批复用 shadcn 原语覆盖创作、资产、个人资料、项目保存、模型开关和运营筛选。第四批固定 `ai-elements@1.9.0` 开发依赖及安全的按需添加命令；当前无 AI Elements UI 组件、AI SDK 或网关配置。`check:local` 584 项 / 561 通过 / 23 跳过 / 0 失败。后续真实功能逐个加组件，不改现有生成接口。未改生产、未做浏览器验收。
 - Task [GG-122](tasks/GG-122-standalone-hero-page.md)：**独立 Hero 页面本地实现与门禁完成，待站长手动浏览器验收**。
