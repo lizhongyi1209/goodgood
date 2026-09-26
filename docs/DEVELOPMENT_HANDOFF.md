@@ -1,13 +1,15 @@
 # 当前开发版本与跨窗口交接
 
-## GG-116 / GG-117 / GG-119（本地运行中）
+## GG-116 / GG-117 / GG-119 / GG-121（本地运行中）
 
 当前工作树为 `F:/goodgood-worktrees/GG-116`，分支
 `feature/GG-116-asset-history-actions`。2026-09-26 站长提供的运行状态：32131 Web
 （PID 34132，检查点 `33902d8`）、5173 热更新预览（PID 34300）、
-`goodgood-gg052` Docker 栈 healthy；这些服务已脱离会话运行，无需重启。
-GG-119 左上角仅保留字标的本地改动可从 5173 热更新看到，32131 仍是先前检查点；
-站长会自行浏览器验收。`check:local` 577 项 / 554 通过 / 23 跳过 / 0 失败。
+`goodgood-gg052` Docker 栈 healthy；这些是原 GG-119 交接时的 PID/版本，不能当作当前运行事实。
+GG-121 取消标签、简化选择栏并补齐上传文件删除后，只替换了原 32131 Web，5173 与 Docker 保持运行；
+`build:checkpoint`、`verify:checkpoint` 和 `check:local` 通过（583 项 / 560 通过 / 23 跳过 / 0 失败）。
+替换后 32131 `/api/health/version` 为已验证构建，32131 ready 与 5173 `/assets` 均为 200；
+新窗口须再次读取版本接口核对实际 revision/PID。站长会自行浏览器验收，未进行真实删除。
 见 [GG-119 任务卡](tasks/GG-119-wordmark-only-workspace-brand.md)。
 
 GG-120 将 Impeccable 4.4.0 的项目级资料放在 `.agents/skills/impeccable/`，

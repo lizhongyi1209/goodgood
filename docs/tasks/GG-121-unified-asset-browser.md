@@ -58,14 +58,17 @@
 - Correction `npm run check:local`: **583 tests / 560 pass / 23 skip / 0 fail**;
   build and typecheck pass, lint 0 errors / 109 warnings. No destructive real
   file test or provider request was made.
+- The existing 32131 Web was replaced with a verified local checkpoint after
+  build/verify passed. `/api/health/version` reported `build.verified=true`;
+  32131 readiness and 5173 `/assets` returned HTTP 200. 5173 and local Docker
+  were not restarted. These are runtime checks, not browser acceptance.
 - Browser layout and interaction have not been accepted by the agent; the
   operator will inspect 5173 manually. No real-provider generation, destructive
   test delete, production change or runtime restart was performed.
 
 ## 下一步
 
-Update the existing 32131 local Web checkpoint so 5173's proxied uploaded-file
-DELETE endpoint matches this code. The operator then checks 5173 for the tag-free
+The operator checks 5173 for the tag-free
 upload/menu, toolbar order and red Delete, uploaded-file deletion, masonry,
 hover/selection, source filters, grid/list switch and narrow screens. Address
 that feedback before any release decision; production deployment remains a
