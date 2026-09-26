@@ -6,7 +6,10 @@
 beside source icons (`已上传`, `已生成`), grid/list controls, search and a near-black
 `新建` menu. Media categories are text-only quiet pills without counts. Folder
 tiles have centered line icons in near-square white surfaces, with name and
-item count below. The `项目` section contains asset files, not saved creative
+item count below. Hover/focus reveals a top-right menu and bottom-right
+selection circle on folder tiles, matching file cards. Selected folders use the
+same dark floating bar with count, red Delete and close; file-only Download and
+Move stay hidden. The `项目` section contains asset files, not saved creative
 projects. In grid mode images preserve their aspect ratios in close masonry
 columns; only hover/focus reveals a top-right menu and bottom-right selection
 circle. List mode puts folders and files into one quiet table, with a narrow
@@ -24,6 +27,8 @@ source of blue/yellow accent colors or document-file support.
 `新建文件夹` opens a centered, compact in-page dialog with a dim overlay, one
 labelled name field and quiet `取消 / 创建` actions. The input focus ring stays
 achromatic; the Create action remains disabled for an empty name.
+Rename uses that same dialog with the current name prefilled and selected, and
+`取消 / 保存` actions.
 Inside a folder, the heading becomes a quiet root breadcrumb plus the active
 folder name. Media tabs disappear, search copy becomes folder-specific, and a
 wide dashed upload target fills the empty state. List mode keeps its column

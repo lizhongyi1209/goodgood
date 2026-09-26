@@ -25,11 +25,13 @@
 .folderSection { margin-bottom: 34px; }
 .folderSection h2, .filesSection h2 { margin: 0 0 16px; font-size: 15px; font-weight: 680; letter-spacing: -.02em; }
 .folders { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 200px)); gap: 16px; }
-.folder { min-width: 0; padding: 0; border: 0; background: transparent; text-align: left; }
-.folderArt { width: 100%; aspect-ratio: 1; display: grid; place-items: center; margin-bottom: 9px; border: 1px solid #efeff0; border-radius: 16px; background: white; color: var(--ink); box-shadow: 0 5px 16px rgba(20,20,20,.04); }
-.folder:hover .folderArt, .folder:focus-visible .folderArt { background: #fafafa; border-color: #dadadd; }
-.folder strong, .folder small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 3px; }
-.folder strong { font-size: 12px; font-weight: 620; }
+.folder { min-width: 0; text-align: left; }
+.folderVisualArea { position: relative; margin-bottom: 9px; }
+.folderArt { width: 100%; aspect-ratio: 1; display: grid; place-items: center; padding: 0; border: 1px solid #efeff0; border-radius: 16px; background: white; color: var(--ink); box-shadow: 0 5px 16px rgba(20,20,20,.04); }
+.folder:hover .folderArt, .folder:focus-within .folderArt { background: #fafafa; border-color: #dadadd; }
+.folder.isSelected .folderArt { outline: 2px solid var(--ink); outline-offset: 2px; }
+.folderName, .folder small { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 3px; }
+.folderName { border: 0; background: transparent; color: var(--ink); text-align: left; font-size: 12px; font-weight: 620; }
 .folder small { margin-top: 3px; color: #898990; font-size: 11px; }
 .fileGrid { column-count: 5; column-gap: 13px; }
 .fileGrid.folderFileGrid { column-count: 6; }
@@ -46,7 +48,7 @@
 .selectButton { right: 9px; bottom: 9px; width: 24px; height: 24px; background: white; color: transparent; }
 .moreButton:hover { background: rgba(31,31,33,.84); }
 .selectButton:hover, .selectButton[aria-pressed="true"] { color: var(--ink); }
-.fileCard:hover .moreButton, .fileCard:hover .selectButton, .fileCard:focus-within .moreButton, .fileCard:focus-within .selectButton, .selectButton[aria-pressed="true"] { opacity: 1; }
+.fileCard:hover .moreButton, .fileCard:hover .selectButton, .fileCard:focus-within .moreButton, .fileCard:focus-within .selectButton, .folder:hover .moreButton, .folder:hover .selectButton, .folder:focus-within .moreButton, .folder:focus-within .selectButton, .selectButton[aria-pressed="true"] { opacity: 1; }
 .fileMenu { min-width: 158px; border-color: #e8e8ea; border-radius: 11px; background: white; color: var(--ink); box-shadow: 0 8px 24px rgba(20,20,22,.10); }
 .fileInfo { display: none; }
 .fileGrid .fileCard:has(.audioFrame) .fileInfo, .fileGrid .fileCard:has(video) .fileInfo { display: block; padding: 7px 2px 2px; }

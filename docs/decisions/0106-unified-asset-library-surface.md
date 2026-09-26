@@ -42,9 +42,16 @@ not GoodGood's resumable creative projects.
   and delete in its row menu. File rows show a selection box outside the left
   row edge and a right hover/focus menu; the `名称` heading and thumbnail column
   align with the first media category above. The top selection box selects
-  visible files only because folder download and folder movement are not
-  supported. This refines the
+  visible files only. Folder and file selections are separate because folder
+  download and movement are not supported. This refines the
   grid/list presentation after the operator supplied full-page list references.
+- Folder tiles also reveal a top-right menu and bottom-right selection control
+  on hover/focus. The folder menu offers Rename and Delete; Rename uses the same
+  in-page dialog layout and validation as New Folder. Selected folders use the
+  existing floating selection bar with count, red Delete and close only. List
+  folder rows expose the same selection action. File and folder selections are
+  mutually exclusive. Deleting a folder keeps its assets and returns them to
+  the unclassified root, as in the existing folder API.
 - The image grid preserves each image's aspect ratio in a compact masonry
   arrangement. Hover or keyboard focus reveals file actions and a distinct
   bottom-right selection control; opening the image still enters its existing

@@ -18,6 +18,9 @@ the same grid or list after refresh.
 The upper-right upload action also opens the system file picker directly. It
 uploads to the current folder, or leaves files unclassified from the asset root,
 and reports outcomes in the upload tray without an intermediate dialog.
+Folders can be selected in grid or list view. Their selection bar offers Delete
+and close; folder download and movement are deferred. Deleting a folder returns
+its contents to the asset root. Folder Rename uses an in-page name dialog.
 
 ## GG-115 asset workspace decision
 

@@ -11,10 +11,13 @@ separate bottom-right selection button; clicking the image opens its existing
 detail or private preview. List rows show a selection box outside the left row
 edge, leaving the header and thumbnails aligned with the category controls;
 the right edge has a hover/focus menu. Selecting one file reveals all file
-boxes and a top select-all box for visible files. Folders open or offer
-rename/delete but do not enter file selection because folder move/download are
-unsupported. Selection exposes a floating toolbar for
-Download, Move, and Delete, followed by a close control. There is no toolbar
+boxes and a top select-all box for visible files. Folder tiles expose a
+top-right Rename/Delete menu and bottom-right selection button; list folder
+rows offer the same menu and an outside selection box. Folder and file selection
+are mutually exclusive. Selected folders use the same floating toolbar with
+count, Delete and close; their contained files return to the root when the
+folder is deleted. File selection exposes Download, Move, Delete and close.
+There is no toolbar
 More action or tag editor. `Esc` or close clears selection. Delete asks for
 confirmation and permanently removes generated images or uploaded media; the
 generated-image notice says settled credits are not refunded. The file menu
@@ -23,9 +26,10 @@ selection. `新建 → 上传文件` opens the native file picker directly and s
 uploading after selection. The current folder is captured as the destination;
 uploads from the root remain unclassified. The bottom-right tray reports upload
 and organization failures and offers retry without an in-page upload dialog.
-`新建文件夹` opens an in-page dialog with focus in the name field. Empty names
-cannot submit. Enter creates, while Cancel, Escape or outside click closes;
-creation failure stays in the dialog with the entered name available to edit.
+`新建文件夹` opens an in-page dialog with focus in the name field. Rename opens
+the same dialog with the current name selected. Empty names cannot submit.
+Enter saves, while Cancel, Escape or outside click closes; a create or rename
+failure stays in the dialog with the entered name available to edit.
 Opening a folder clears root search/filter state and shows a breadcrumb back to
 `资产`. Its search only narrows that folder. Empty grid and list views offer a
 large upload target; list headings remain visible. The button opens the native

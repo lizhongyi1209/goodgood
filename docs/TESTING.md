@@ -25,6 +25,14 @@ At both the asset root and inside a folder, `新建 → 上传文件` should ope
 system file picker with no in-page upload dialog or save step. On selection,
 verify the same tray and root-unclassified/current-folder placement; canceling
 the picker should leave the page and tray unchanged.
+For folders, inspect hover/focus and touch access to the tile menu and selection
+button; list rows should expose the same actions. Folder selection should show
+only count, red Delete and close, clear file selection, and be dismissible with
+Escape. The menu Delete and selection-bar Delete should confirm that contained
+assets return to the root. Rename should open the in-page dialog with the old
+name selected, then cover empty input, Enter, Cancel/Escape/outside dismissal,
+and a recoverable server error. Do not perform a real folder deletion in agent
+testing; the operator will verify it manually.
 
 ## GG-115 targeted verification
 

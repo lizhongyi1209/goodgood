@@ -28,6 +28,10 @@
   then the newly uploaded file in grid/list.
 - Operator follow-up: on the `测试` folder page, the upper-right `上传文件`
   action should open the system file picker directly, with no upload dialog.
+- Operator follow-up: folder tiles need the same bottom-right selection control
+  as file cards. The shared bottom toolbar should show only Delete for folders,
+  omitting Move and Start Chat. The folder's top-right menu should offer Delete
+  and Rename, with Rename using the New Folder dialog layout.
 
 ## Scope and acceptance
 
@@ -44,8 +48,13 @@
   Move, Delete and close; delete confirms permanent removal for all file kinds.
   Preserve owner/workspace checks and generated-image credit notice.
 - In list mode, place root folders before files under one header. The selection
-  gutter offers per-file and visible-file selection; folder rows open and expose
-  rename/delete but do not pretend to support folder download or nesting.
+  gutter offers per-file and visible-file selection; folder rows open, select,
+  and expose rename/delete. Folder and file selections remain separate; folder
+  download, movement and nesting are unsupported.
+- Grid folder tiles reveal menu and selection controls on hover/focus. Folder
+  selection reuses the floating toolbar with count, red Delete and close only.
+  Delete confirms that the contained assets return to the root. Rename uses
+  the in-page New Folder dialog pattern, with the existing name prefilled.
 - In an opened folder, provide a breadcrumb back to assets, folder search and
   the existing view switch. An empty folder offers direct picker/drop upload;
   show real row outcomes and failed-file retry in a compact progress tray.
@@ -119,6 +128,14 @@
   either destination. `npm run check:local` passed: **583 tests / 560 pass /
   23 skip / 0 fail**, build/typecheck pass, lint 0 errors / 109 existing
   warnings. The operator will check the picker and actual upload manually.
+- Folder tiles now share file-card hover/focus menu and selection controls;
+  list folder rows have an outside selection box. Folder and file selections
+  cannot mix. The shared selection bar offers only count, Delete and close for
+  folders; deletion confirms that their assets return to the root. Rename and
+  New Folder use the same in-page dialog, including pending/error states.
+  `npm run check:local` passed: **583 tests / 560 pass / 23 skip / 0 fail**;
+  build/typecheck pass, lint 0 errors / 109 existing warnings. No real folder
+  was renamed or deleted; operator browser review is pending.
 - The existing 32131 Web was replaced with a verified local checkpoint after
   build/verify passed. `/api/health/version` reported `build.verified=true`;
   32131 readiness and 5173 `/assets` returned HTTP 200. 5173 and local Docker
@@ -131,7 +148,8 @@
 
 The operator checks 5173 for the folder interior, direct empty-state upload,
 upper-right direct upload from the root and `测试` folder, upload tray,
-new-folder dialog, combined folder/file rows, heading alignment,
+new-folder/rename dialog, folder tile menu and selection bar, list folder
+checkboxes, combined folder/file rows, heading alignment,
 row hover/menu/selection, the tag-free upload/menu, toolbar order and red
 Delete, uploaded-file deletion, masonry, source filters, grid/list switch and
 narrow screens. Address that feedback before any release decision; production
