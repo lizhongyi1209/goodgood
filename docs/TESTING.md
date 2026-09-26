@@ -13,6 +13,8 @@ hover/selection, list folders/rows, visible-file select-all, aligned columns,
 the single-row top toolbar and narrow screens manually at 5173;
 the agent does not perform browser acceptance. No real-provider request is
 needed for this UI change.
+For the in-page new-folder dialog, verify the empty disabled action, Enter,
+Cancel/Escape/outside dismissal, pending state and recoverable server error.
 
 ## GG-115 targeted verification
 

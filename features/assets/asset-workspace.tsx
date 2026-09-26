@@ -120,6 +120,9 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
   const [revision, setRevision] = useState(0);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [folderDialogOpen, setFolderDialogOpen] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [folderDialogError, setFolderDialogError] = useState<string | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [preview, setPreview] = useState<{ name: string; url: string; media: Media } | null>(null);
   const [rows, setRows] = useState<readonly UploadRow[]>([]);
@@ -265,11 +268,15 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
   }
 
   async function addFolder() {
-    const name = window.prompt("文件夹名称");
-    if (name == null) return;
-    setBusy(true); setActionError(null);
-    try { await createAssetFolder(name, workspaceId); setRevision((current) => current + 1); }
-    catch (cause) { setActionError(cause instanceof Error ? cause.message : "创建文件夹失败，请重试。"); }
+    const name = newFolderName.trim();
+    if (busy || !name) return;
+    setBusy(true); setFolderDialogError(null);
+    try {
+      await createAssetFolder(name, workspaceId);
+      setFolderDialogOpen(false);
+      setNewFolderName("");
+      setRevision((current) => current + 1);
+    } catch (cause) { setFolderDialogError(cause instanceof Error ? cause.message : "创建文件夹失败，请重试。"); }
     finally { setBusy(false); }
   }
 
@@ -394,7 +401,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
         <label className={styles.search}><Search size={16}/><input value={search} onChange={(event) => { setSearch(event.target.value); setSelectedKeys([]); }} placeholder="搜索资产" aria-label="搜索资产" /></label>
         <DropdownMenu><DropdownMenuTrigger asChild><button className={styles.primaryButton}>新建<ChevronDown size={15}/></button></DropdownMenuTrigger><DropdownMenuContent align="end" className={styles.fileMenu}>
           <DropdownMenuItem onSelect={() => { setRows([]); setActionError(null); setUploadFolderId(folderId); setUploadOpen(true); }}><Upload size={16}/>上传文件</DropdownMenuItem>
-          <DropdownMenuItem disabled={busy} onSelect={() => void addFolder()}><FolderPlus size={16}/>新建文件夹</DropdownMenuItem>
+          <DropdownMenuItem disabled={busy} onSelect={() => { setNewFolderName(""); setFolderDialogError(null); setFolderDialogOpen(true); }}><FolderPlus size={16}/>新建文件夹</DropdownMenuItem>
         </DropdownMenuContent></DropdownMenu>
       </div>
     </header>
@@ -429,6 +436,16 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
       <button className={styles.deleteAction} disabled={busy} onClick={() => void deleteItems(selectedItems)}><Trash2 size={16}/>删除</button>
       <button className={styles.closeSelection} aria-label="取消选择" title="取消选择" disabled={busy} onClick={() => setSelectedKeys([])}><X size={17}/></button>
     </div>}
+    <Dialog open={folderDialogOpen} onOpenChange={(open) => { if (!busy) { setFolderDialogOpen(open); if (!open) setFolderDialogError(null); } }}><DialogPortal><DialogPrimitive.Overlay className={styles.folderDialogOverlay}/><DialogPrimitive.Content className={styles.folderDialog} onEscapeKeyDown={(event) => { if (busy) event.preventDefault(); }} onPointerDownOutside={(event) => { if (busy) event.preventDefault(); }}>
+      <DialogTitle>新建文件夹</DialogTitle>
+      <DialogDescription className="sr-only">输入文件夹名称后创建。</DialogDescription>
+      <form onSubmit={(event) => { event.preventDefault(); void addFolder(); }}>
+        <label htmlFor="new-asset-folder-name">文件夹名称</label>
+        <input id="new-asset-folder-name" autoFocus maxLength={64} value={newFolderName} disabled={busy} aria-invalid={Boolean(folderDialogError)} aria-describedby={folderDialogError ? "new-asset-folder-error" : undefined} onChange={(event) => { setNewFolderName(event.target.value); if (folderDialogError) setFolderDialogError(null); }}/>
+        {folderDialogError && <p id="new-asset-folder-error" role="alert" className={styles.folderDialogError}>{folderDialogError}</p>}
+        <div className={styles.folderDialogActions}><button type="button" disabled={busy} onClick={() => setFolderDialogOpen(false)}>取消</button><button type="submit" disabled={busy || !newFolderName.trim()}>{busy ? "创建中…" : "创建"}</button></div>
+      </form>
+    </DialogPrimitive.Content></DialogPortal></Dialog>
     <Dialog open={uploadOpen} onOpenChange={(open) => { if (!busy) setUploadOpen(open); }}><DialogPortal><DialogOverlay/><DialogPrimitive.Content className={styles.dialog} aria-describedby="asset-upload-description" onEscapeKeyDown={(event) => { if (busy) event.preventDefault(); }} onPointerDownOutside={(event) => { if (busy) event.preventDefault(); }}>
       <header><div><DialogTitle>上传资产</DialogTitle><DialogDescription id="asset-upload-description">JPG/JPEG、PNG、MP4、MP3；单个文件不超过 20 MB。</DialogDescription></div><button aria-label="关闭上传" disabled={busy} onClick={() => setUploadOpen(false)}><X size={19}/></button></header>
       <div className={styles.dialogBody}>

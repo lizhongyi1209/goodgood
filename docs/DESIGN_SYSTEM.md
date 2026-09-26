@@ -21,6 +21,9 @@ operator's explicit ADR 0107 exception; the rest remains achromatic.
 Keep keyboard and touch controls reachable and source icon labels in Chinese
 tooltips. The four supplied ChatGPT screenshots are layout references, not a
 source of blue/yellow accent colors or document-file support.
+`新建文件夹` opens a centered, compact in-page dialog with a dim overlay, one
+labelled name field and quiet `取消 / 创建` actions. The input focus ring stays
+achromatic; the Create action remains disabled for an empty name.
 
 ## GG-115 asset workspace
 

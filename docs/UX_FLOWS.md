@@ -21,6 +21,9 @@ generated-image notice says settled credits are not refunded. The file menu
 retains `用于创作` where applicable. Grid/list switching retains filters and
 selection. The upload dialog offers folder placement without tags; upload and
 organization failures remain recoverable.
+`新建文件夹` opens an in-page dialog with focus in the name field. Empty names
+cannot submit. Enter creates, while Cancel, Escape or outside click closes;
+creation failure stays in the dialog with the entered name available to edit.
 
 ## GG-115 assets flow
 

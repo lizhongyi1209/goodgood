@@ -20,6 +20,8 @@
   GoodGood's file types and the previously accepted selection toolbar actions.
 - Operator follow-up: move the list selection boxes outside the row content so
   thumbnails and the `名称` heading align with the first media category above.
+- Operator follow-up: replace the browser-native new-folder prompt with the
+  centered in-page dialog shown in the supplied screenshot.
 
 ## Scope and acceptance
 
@@ -84,6 +86,12 @@
   external checkboxes within the viewport. The repeated `npm run check:local`
   passed: **583 tests / 560 pass / 23 skip / 0 fail**, typecheck/build pass,
   lint 0 errors / 109 existing warnings. Manual 5173 review is pending.
+- The new-folder control now opens a Radix dialog with a labelled 64-character
+  input, disabled empty submit, Enter and dismissal behavior. The dialog stays
+  open with its value and a local error when the create API fails. The folder
+  API and persistence rules are unchanged. Latest `npm run check:local` passed:
+  **583 tests / 560 pass / 23 skip / 0 fail**, build/typecheck pass, lint 0
+  errors / 109 existing warnings. Manual visual review is pending.
 - The existing 32131 Web was replaced with a verified local checkpoint after
   build/verify passed. `/api/health/version` reported `build.verified=true`;
   32131 readiness and 5173 `/assets` returned HTTP 200. 5173 and local Docker
@@ -94,7 +102,7 @@
 
 ## 下一步
 
-The operator checks 5173 for combined folder/file rows, heading alignment,
+The operator checks 5173 for the new-folder dialog, combined folder/file rows, heading alignment,
 row hover/menu/selection, the tag-free upload/menu, toolbar order and red
 Delete, uploaded-file deletion, masonry, source filters, grid/list switch and
 narrow screens. Address that feedback before any release decision; production
