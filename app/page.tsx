@@ -3075,7 +3075,6 @@ export default function Home({
     <main className="app-shell">
       <aside className="sidebar">
         <div className="sidebar-brand" role="img" aria-label="GoodGood">
-          <Image className="brand-mark" src="/goodgood-mark.svg" alt="" width={29} height={22} />
           <Image className="wordmark-image sidebar-wordmark" src="/goodgood-wordmark.svg" alt="" width={89} height={20} />
         </div>
 
@@ -3190,7 +3189,7 @@ export default function Home({
 
       <section className="main-stage">
         <header className="mobile-bar">
-          <div className="mobile-brand" role="img" aria-label="GoodGood"><Image className="brand-mark" src="/goodgood-mark.svg" alt="" width={27} height={20} /><Image className="wordmark-image" src="/goodgood-wordmark.svg" alt="" width={84} height={19} /></div>
+          <div className="mobile-brand" role="img" aria-label="GoodGood"><Image className="wordmark-image" src="/goodgood-wordmark.svg" alt="" width={84} height={19} /></div>
           <div className="mobile-account">
             {organizationNavigationVisible && authenticationSession?.account.role !== "site_owner" && (
               <button className="top-avatar" aria-label="企业管理" onClick={handleOrganizationNav}><Building2 size={16} /></button>

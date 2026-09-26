@@ -82,8 +82,7 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .app-shell { min-height: 100vh; display: grid; grid-template-columns: 206px minmax(0, 1fr); background: var(--canvas); }
 
 .sidebar { height: 100vh; position: sticky; top: 0; padding: 24px 15px 15px; background: var(--canvas); display: flex; flex-direction: column; z-index: 30; }
-.sidebar-brand { height: 42px; padding: 0 10px; display: flex; align-items: center; gap: 9px; }
-.brand-mark { width: 29px; height: 22px; flex: 0 0 auto; display: block; }
+.sidebar-brand { height: 42px; padding: 0 10px; display: flex; align-items: center; }
 .wordmark-image { width: 89px; height: 20px; display: block; }
 .side-nav { margin-top: 32px; display: flex; flex-direction: column; gap: 4px; }
 .side-nav-item { width: 100%; min-height: 44px; padding: 0 var(--space-3); border: 0; background: transparent; border-radius: var(--radius-md); display: flex; align-items: center; gap: var(--space-3); color: #6f6f7b; font-size: 13px; text-align: left; }
@@ -117,11 +116,10 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .main-stage { min-width: 0; background: var(--canvas); }
 .top-avatar { width: 34px; height: 34px; }
 .mobile-bar { display: none; }
-.mobile-brand { display: flex; align-items: center; gap: 8px; }
+.mobile-brand { display: flex; align-items: center; }
 .mobile-account { display: flex; align-items: center; gap: 8px; }
 .mobile-credit-balance { padding: 5px 8px; border: 0; border-radius: 999px; background: var(--soft); color: var(--quiet); font-size: 10px; font-variant-numeric: tabular-nums; }
 .mobile-credit-balance.has-error { color: var(--ink); }
-.mobile-brand .brand-mark { width: 27px; height: 20px; }
 .mobile-brand .wordmark-image { width: 84px; height: 19px; }
 
 .authentication-gate { position: fixed; inset: 0; z-index: 100; padding: 24px; background: linear-gradient(180deg,rgba(255,255,255,.72),rgba(248,248,250,.96)); backdrop-filter: blur(10px) saturate(.82); display: grid; place-items: center; }
@@ -1138,8 +1136,8 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
   .app-shell { grid-template-columns: 76px minmax(0, 1fr); }
   .sidebar { padding: 22px 10px 14px; }
   .sidebar-brand { justify-content: center; padding: 0; }
-  .sidebar-wordmark, .side-nav-item span, .account-card-username, .account-card-more { display: none; }
-  .brand-mark { width: 31px; height: 23px; }
+  .sidebar-wordmark { width: 56px; height: auto; }
+  .side-nav-item span, .account-card-username, .account-card-more { display: none; }
   .side-nav-item { justify-content: center; padding: 0; }
   .asset-new-count { min-width: 18px; height: 18px; position: absolute; top: 3px; right: 3px; margin: 0; padding: 0 4px; border: 2px solid var(--canvas); font-size: 7px; }
   .account-card { display: flex; justify-content: center; padding: 9px 0; }

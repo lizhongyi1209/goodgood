@@ -1,9 +1,14 @@
 # 当前开发版本与跨窗口交接
 
-## GG-116 / GG-117（本地运行中）
+## GG-116 / GG-117 / GG-119（本地运行中）
 
-当前运行来自工作树 `F:/goodgood-worktrees/GG-116`，分支
-`feature/GG-116-asset-history-actions`，HEAD `eb9c5f6`。
+当前工作树为 `F:/goodgood-worktrees/GG-116`，分支
+`feature/GG-116-asset-history-actions`。2026-09-26 站长提供的运行状态：32131 Web
+（PID 34132，检查点 `33902d8`）、5173 热更新预览（PID 34300）、
+`goodgood-gg052` Docker 栈 healthy；这些服务已脱离会话运行，无需重启。
+GG-119 左上角仅保留字标的本地改动可从 5173 热更新看到，32131 仍是先前检查点；
+站长会自行浏览器验收。`check:local` 577 项 / 554 通过 / 23 跳过 / 0 失败。
+见 [GG-119 任务卡](tasks/GG-119-wordmark-only-workspace-brand.md)。
 
 - **GG-116**：`/assets` 历史分区改名为「生成历史」，历史为无标题无日期的扁平网格、
   最近在前；卡片悬停出现下载/删除/放大。删除为硬删除（删资产行 + 整理行 + 存储对象，
@@ -13,7 +18,7 @@
   `migrations/0047_gg117_drop_inspiration.sql`。见[任务卡](tasks/GG-117-inspiration-retirement.md) /
   [ADR 0104](decisions/0104-inspiration-feature-retirement.md)。
 
-**2026-09-25 本地执行状态**：开发库 `127.0.0.1:54449/goodgood` 已应用 `0047`，五张灵感表
+**2026-09-25 历史本地执行状态**：开发库 `127.0.0.1:54449/goodgood` 已应用 `0047`，五张灵感表
 已删除（删除前 `inspiration_cases` 3 行、`events` 4 行、`interactions` 10 行，
 均为 2026-09-14 的本地测试数据）。32131 Web（PID 36184，`build.verified=true`、
 revision `eb9c5f6`、provider `o1key`、`cloud-development`、`real-smtp`）与 5173 Vite

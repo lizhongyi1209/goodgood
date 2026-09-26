@@ -1,17 +1,19 @@
 # Production implementation plan
 
-- Last synchronized: 2026-09-25
-- Current phase: GG-116 与 GG-117 均已在工作树完成代码与门禁；两处待办都不是代码问题，而是需要单独授权的破坏性/浏览器步骤。生产应用仍为 GG-098。
-- Current objective: 待站长确认后可丢弃案例数据后，统计灵感表行数并在隔离库执行 `0047`；同时重建检查点在 5173 验收 GG-116 的生成历史改动。
-- Previous objective: GG-116 生成历史纯图片网格与卡片下载/删除/放大已完成本地实现与门禁，待重建检查点后浏览器验收。
+- Last synchronized: 2026-09-26
+- Current phase: GG-116 生成历史与 GG-119 左上角字标调整均已完成本地代码和门禁，待站长手动浏览器验收；GG-117 隔离开发库迁移已执行，生产应用仍为 GG-098。
+- Current objective: 站长在 5173 复核 GG-116 生成历史和 GG-119 桌面、折叠侧栏、手机顶栏字标；根据反馈做最小调整。
+- Previous objective: GG-118 无彩色配色并入本线并清除两处残留绿色状态色，检查点 `33902d8`。
 
 ## Current checkpoint
 
-- Task [GG-117](tasks/GG-117-inspiration-retirement.md)：**工作树文档与代码移除完成，破坏性迁移未执行**。
+- Task [GG-119](tasks/GG-119-wordmark-only-workspace-brand.md)：**本地实现与门禁完成，待站长手动浏览器复核**。
+  工作区左上角仅保留字标；`check:local` 577 项 / 554 通过 / 23 跳过 / 0 失败。生产未部署。
+- Task [GG-117](tasks/GG-117-inspiration-retirement.md)：**工作树文档与代码移除完成，隔离开发库迁移已执行；生产未执行**。
   ADR 0104 已接受，退役 ADR 0076/0077/0078 并修订单个 ADR 0103 段落；`app/inspiration/`、
   `app/api/inspiration/`、`features/inspiration/`、`server/inspiration/`、
   `shared/contracts/inspiration.mjs` 已删除，专题文档已清理，BACKLOG 保持 100 行。
-  五张灵感表按子表优先删除，生产执行需单独授权；`ASSET_PUBLISHED` 检查及其测试同批移除。
+  五张灵感表已从隔离开发库删除，生产执行需单独授权；`ASSET_PUBLISHED` 检查及其测试同批移除。
 - Task [GG-116](tasks/GG-116-asset-history-actions.md)：**本地实现与门禁完成，待浏览器验收**。
   ADR 0103 硬删除生成图片；兼容 `app/page.tsx` 调用点的旧卡片命名已由 GG-117 移除。
 - Task [GG-098](tasks/GG-098-manual-grant-ceiling.md)：**已部署**。

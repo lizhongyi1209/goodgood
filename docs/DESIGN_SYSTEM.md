@@ -183,6 +183,9 @@ the attached parameter drawer matches those corners.
 
 - `public/goodgood-mark.svg`: connected Double G brand mark.
 - `public/goodgood-wordmark.svg`: custom wordmark; do not replace with text.
+- The shared workspace's upper-left brand shows only the wordmark on desktop,
+  compact sidebar, and mobile. The Double G mark remains available in other
+  brand contexts and the quiet creation empty state.
 - Composer send/generate action: Lucide upward arrow in a near-black circle
   (ADR 0098). `public/feihong-send.png` remains a loading illustration.
 - Creation navigation: Brush.
