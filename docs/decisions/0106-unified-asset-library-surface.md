@@ -23,6 +23,13 @@ not GoodGood's resumable creative projects.
   asset files. Opening a folder narrows the same file collection. Creative
   projects remain separate resumable sessions and are not turned into folders
   or duplicated as file cards. Document formats are outside this slice.
+- In list mode, show root folders first and files below them in one table under
+  the same `名称 / 修改日期 / 大小` headings; omit the grid-only section headings and
+  empty-folder placeholder. A folder row opens that folder and exposes rename
+  and delete in its row menu. File rows show a left selection box and a right
+  hover/focus menu. The top selection box selects visible files only because
+  folder download and folder movement are not supported. This refines the
+  grid/list presentation after the operator supplied full-page list references.
 - The image grid preserves each image's aspect ratio in a compact masonry
   arrangement. Hover or keyboard focus reveals file actions and a distinct
   bottom-right selection control; opening the image still enters its existing

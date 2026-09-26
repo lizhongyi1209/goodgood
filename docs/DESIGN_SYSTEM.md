@@ -9,7 +9,11 @@ tiles have centered line icons in near-square white surfaces, with name and
 item count below. The `项目` section contains asset files, not saved creative
 projects. In grid mode images preserve their aspect ratios in close masonry
 columns; only hover/focus reveals a top-right menu and bottom-right selection
-circle. List mode uses a compact thumbnail, name, date and size. Selection is
+circle. List mode puts folders and files into one quiet table, with a narrow
+selection gutter, compact icons/thumbnails, name, date and size. The `名称`
+heading aligns with the icon/thumb column while date and size align with their
+values. Rows gain a shallow gray fill on hover/selection; a More trigger sits
+at the far right of a hovered/focused row. Selection is
 visible in a restrained near-black floating toolbar with count, Download, Move,
 Delete, and close. Delete alone uses a red fill with white icon and text by the
 operator's explicit ADR 0107 exception; the rest remains achromatic.

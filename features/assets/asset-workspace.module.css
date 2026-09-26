@@ -1,13 +1,14 @@
 .workspace { width: 100%; max-width: 1420px; margin: 0 auto; color: var(--ink); }
 .workspace button { cursor: pointer; }
 .workspace button:disabled { cursor: default; opacity: .55; }
-.header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 18px; margin-bottom: 20px; }
-.header h1 { margin: 0; font-size: 24px; letter-spacing: -.04em; }
-.headerTools { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.header { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 20px; }
+.header h1 { flex: none; margin: 0; font-size: 24px; letter-spacing: -.04em; }
+.headerTools { min-width: 0; display: flex; align-items: center; gap: 10px; margin-left: auto; }
+.headerTools .primaryButton { flex: none; }
 .iconGroup { display: flex; align-items: center; gap: 2px; }
 .iconGroup button { width: 34px; height: 34px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: transparent; color: #77777f; }
 .iconGroup button:hover, .iconGroup button.iconActive { background: var(--fill-selected); color: var(--ink); }
-.search { display: flex; align-items: center; gap: 7px; width: min(240px, 100%); height: 35px; padding: 0 13px; border: 1px solid #e5e5e8; border-radius: 20px; color: #8a8a91; }
+.search { flex: 0 1 240px; display: flex; align-items: center; gap: 7px; min-width: 130px; width: 240px; height: 35px; padding: 0 13px; border: 1px solid #e5e5e8; border-radius: 20px; color: #8a8a91; }
 .search:focus-within { border-color: #88888e; }
 .search input { min-width: 0; width: 100%; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: 12px; }
 .primaryButton { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 35px; padding: 0 14px; color: white; background: var(--action); border: 0; border-radius: 20px; font-size: 12px; font-weight: 650; }
@@ -22,7 +23,6 @@
 .folderActions button:hover { background: #f3f3f4; color: var(--ink); }
 .folderSection { margin-bottom: 34px; }
 .folderSection h2, .filesSection h2 { margin: 0 0 16px; font-size: 15px; font-weight: 680; letter-spacing: -.02em; }
-.folderEmpty { margin: 0; color: #8a8a91; font-size: 12px; }
 .folders { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 200px)); gap: 16px; }
 .folder { min-width: 0; padding: 0; border: 0; background: transparent; text-align: left; }
 .folderArt { width: 100%; aspect-ratio: 1; display: grid; place-items: center; margin-bottom: 9px; border: 1px solid #efeff0; border-radius: 16px; background: white; color: var(--ink); box-shadow: 0 5px 16px rgba(20,20,20,.04); }
@@ -51,18 +51,26 @@
 .fileInfo button { width: 100%; overflow: hidden; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
 .fileGrid .fileInfo button { display: block; font-size: 11px; font-weight: 600; }
 .fileGrid .fileInfo time, .fileGrid .fileInfo small { display: none; }
-.listHead { display: grid; grid-template-columns: minmax(0,1fr) 170px 100px; gap: 10px; padding: 0 12px 10px 66px; border-bottom: 1px solid #ececee; color: #88888e; font-size: 11px; }
-.fileList .fileCard { display: grid; grid-template-columns: 44px minmax(0,1fr); align-items: center; gap: 12px; min-height: 58px; padding: 6px 12px; border-bottom: 1px solid #f1f1f2; }
-.fileList .fileCard:hover, .fileList .fileCard.isSelected { background: #f7f7f8; }
-.fileList .fileVisual { width: 44px; height: 44px; border-radius: 8px; }
-.fileList .mediaFrame, .fileList .audioFrame { width: 44px; height: 44px; min-height: 0; aspect-ratio: 1 !important; }
+.listHead { display: grid; grid-template-columns: 24px 36px minmax(0,1fr) 170px 100px; align-items: center; gap: 10px; padding: 0 12px 10px; border-bottom: 1px solid #ececee; color: #88888e; font-size: 11px; }
+.listHead .nameHeading { grid-column: 2 / span 2; }
+.fileList .fileCard { display: grid; grid-template-columns: 24px 36px minmax(0,1fr); align-items: center; gap: 10px; min-height: 60px; margin: 1px 0; padding: 6px 12px; border-radius: 12px; }
+.fileList .folderRow .fileInfo button { font-weight: 560; }
+.fileList .fileCard:hover, .fileList .fileCard.isSelected { background: #f4f4f5; }
+.fileList .fileCard.isSelected .fileVisual { outline: none; }
+.fileList .fileVisual, .fileList .folderVisual { grid-column: 2; width: 36px; height: 36px; border-radius: 9px; }
+.fileList .folderVisual { display: grid; place-items: center; padding: 0; border: 1px solid #e9e9eb; background: white; color: var(--ink); }
+.fileList .mediaFrame, .fileList .audioFrame { width: 36px; height: 36px; min-height: 0; aspect-ratio: 1 !important; }
 .fileList .mediaFrame img, .fileList .mediaFrame video { width: 100%; height: 100%; aspect-ratio: 1; object-fit: cover; }
-.fileList .audioFrame svg { width: 20px; }
-.fileList .moreButton { top:2px; right:2px; width:19px; height:19px; }
-.fileList .moreButton svg { width:14px; }
-.fileList .selectButton { right: 2px; bottom: 2px; width: 19px; height: 19px; }
-.fileList .selectButton svg { width: 12px; }
-.fileList .fileInfo { display: grid; grid-template-columns: minmax(0,1fr) 170px 100px; gap: 10px; align-items: center; font-size: 12px; }
+.fileList .audioFrame svg { width: 18px; }
+.fileList .moreButton { top: 50%; right: 12px; width: 28px; height: 28px; transform: translateY(-50%); background: transparent; color: #77777f; }
+.fileList .moreButton:hover { background: #e9e9eb; color: var(--ink); }
+.fileList .moreButton svg { width: 17px; }
+.listSelect { width: 15px; height: 15px; display: grid; place-items: center; justify-self: center; padding: 0; border: 1px solid #d8d8dc; border-radius: 5px; background: white; color: white; opacity: 0; }
+.listSelect[aria-checked="true"], .listSelect[aria-checked="mixed"] { border-color: var(--ink); background: var(--ink); color: white; }
+.fileList .listSelect { grid-column: 1; }
+.listHead:hover .listSelect, .listHead:focus-within .listSelect, .listHead.listSelecting .listSelect, .fileList .fileCard:hover .listSelect, .fileList .fileCard:focus-within .listSelect, .fileList .listSelecting .listSelect { opacity: 1; }
+.listSelectSpacer { grid-column: 1; width: 24px; }
+.fileList .fileInfo { grid-column: 3; display: grid; grid-template-columns: minmax(0,1fr) 170px 100px; gap: 10px; align-items: center; font-size: 12px; }
 .fileList .fileInfo button { font-size: 12px; font-weight: 540; }
 .fileList .fileInfo time, .fileList .fileInfo small { color: #88888f; font-size: 11px; }
 .selectionBar { position: fixed; z-index: 45; left: 50%; bottom: 22px; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; max-width: calc(100vw - 24px); padding: 9px 12px; border-radius: 24px; background: #252527; color: white; box-shadow: 0 8px 24px rgba(0,0,0,.16); white-space: nowrap; }
@@ -107,15 +115,16 @@
 .previewDialog button { border: 0; border-radius: 8px; background: #f3f3f5; padding: 7px 14px; color: var(--ink); font-size: 12px; }
 .workspace button:focus-visible, .workspace input:focus-visible, .workspace select:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 @media (max-width: 1180px) { .fileGrid { column-count: 4; } }
-@media (max-width: 900px) { .fileGrid { column-count: 3; } .headerTools { width: 100%; } }
+@media (max-width: 900px) { .fileGrid { column-count: 3; } .header { flex-wrap: wrap; } .headerTools { width: 100%; } }
 @media (max-width: 640px) {
   .header { align-items: flex-start; }
-  .headerTools { gap: 7px; }
+  .headerTools { flex-wrap: wrap; gap: 7px; }
   .search { order: 2; flex: 1 1 100%; width: 100%; }
   .folders { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
   .fileGrid { column-count: 2; column-gap: 9px; }
   .fileGrid .fileCard { margin-bottom: 9px; }
-  .fileList .fileInfo, .listHead { grid-template-columns: minmax(0,1fr) 72px; }
+  .fileList .fileInfo { grid-template-columns: minmax(0,1fr) 72px; }
+  .listHead { grid-template-columns: 24px 36px minmax(0,1fr) 72px; }
   .fileList .fileInfo small, .listHead span:last-child { display: none; }
   .selectionBar { bottom: 10px; gap: 4px; padding: 7px; border-radius: 18px; }
   .selectionBar > span { padding: 0 5px; }
@@ -123,5 +132,5 @@
   .fields { grid-template-columns: 1fr; }
   .folderActions { flex-wrap: wrap; }
 }
-@media (hover: none) { .moreButton, .selectButton { opacity: 1; } }
+@media (hover: none) { .moreButton, .selectButton, .listSelect { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } .moreButton, .selectButton { transition: none; } }

@@ -9,7 +9,8 @@ the full local gate. Confirm combined media/source/folder/name filtering,
 text-only categories, source and view accessibility names, loading/error copy,
 the generated and uploaded delete boundaries, including owner/workspace denial,
 transaction rollback and storage failure. The operator will inspect grid/list layout,
-hover/selection, the floating toolbar and narrow screens manually at 5173;
+hover/selection, list folders/rows, visible-file select-all, aligned columns,
+the single-row top toolbar and narrow screens manually at 5173;
 the agent does not perform browser acceptance. No real-provider request is
 needed for this UI change.
 

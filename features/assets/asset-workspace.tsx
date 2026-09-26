@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AudioLines, Check, ChevronDown, ChevronLeft, CircleAlert, Download, Folder, FolderPlus, Grid2X2, ImagePlus, List, LoaderCircle, MoreHorizontal, Pencil, Plus, RefreshCw, Search, Trash2, Upload, WandSparkles, X } from "lucide-react";
+import { AudioLines, Check, ChevronDown, ChevronLeft, CircleAlert, Download, Folder, FolderPlus, Grid2X2, ImagePlus, List, LoaderCircle, Minus, MoreHorizontal, Pencil, Plus, RefreshCw, Search, Trash2, Upload, WandSparkles, X } from "lucide-react";
 import { Dialog, DialogDescription, DialogOverlay, DialogPortal, DialogTitle } from "@/components/ui/dialog";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -153,6 +153,10 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
   const arrangements = useMemo(() => new Map(organization.arrangements.map((entry) => [`${entry.kind}:${entry.id}`, entry])), [organization]);
   const visible = filterAssetFiles(items, arrangements, folderId, search, filter, sourceFilter);
   const selectedItems = items.filter((item) => selectedKeys.includes(`${item.kind}:${item.id}`));
+  const rootFolders = !folderId && filter === "all" && sourceFilter === "all"
+    ? organization.folders.filter((folder) => folder.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())) : [];
+  const visibleKeys = visible.map((item) => `${item.kind}:${item.id}`);
+  const selectedVisibleCount = visibleKeys.filter((key) => selectedKeys.includes(key)).length;
   const activeFolder = organization.folders.find((item) => item.id === folderId);
   const loading = historyLoading || libraryLoading;
   const error = historyError ?? libraryError;
@@ -253,6 +257,13 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
     setSelectedKeys((current) => current.includes(key) ? current.filter((value) => value !== key) : [...current, key]);
   }
 
+  function toggleVisibleSelection() {
+    setSelectedKeys((current) => {
+      const allSelected = visibleKeys.every((key) => current.includes(key));
+      return allSelected ? current.filter((key) => !visibleKeys.includes(key)) : [...new Set([...current, ...visibleKeys])];
+    });
+  }
+
   async function addFolder() {
     const name = window.prompt("文件夹名称");
     if (name == null) return;
@@ -262,15 +273,15 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
     finally { setBusy(false); }
   }
 
-  async function editFolder(action: "rename" | "delete") {
-    if (!activeFolder) return;
-    if (action === "delete" && !window.confirm(`删除文件夹“${activeFolder.name}”？其中资产会回到全部资产。`)) return;
-    const name = action === "rename" ? window.prompt("文件夹名称", activeFolder.name) : null;
+  async function editFolder(action: "rename" | "delete", target: AssetFolder | undefined = activeFolder) {
+    if (!target) return;
+    if (action === "delete" && !window.confirm(`删除文件夹“${target.name}”？其中资产会回到全部资产。`)) return;
+    const name = action === "rename" ? window.prompt("文件夹名称", target.name) : null;
     if (action === "rename" && name == null) return;
     setBusy(true); setActionError(null);
     try {
-      if (action === "rename") await renameAssetFolder(activeFolder.id, name!, workspaceId);
-      else { await deleteAssetFolder(activeFolder.id, workspaceId); setFolderId(null); }
+      if (action === "rename") await renameAssetFolder(target.id, name!, workspaceId);
+      else { await deleteAssetFolder(target.id, workspaceId); if (folderId === target.id) setFolderId(null); }
       setRevision((current) => current + 1);
     } catch (cause) { setActionError(cause instanceof Error ? cause.message : "文件夹操作失败，请重试。"); }
     finally { setBusy(false); }
@@ -321,32 +332,51 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
     if (item.url) setPreview({ name: item.name, url: item.url, media: item.media });
   }
 
+  function renderFileMenu(item: LibraryItem) {
+    return <DropdownMenu>
+      <DropdownMenuTrigger asChild><button className={styles.moreButton} aria-label={`${item.name} 的更多操作`} title="更多操作" disabled={busy}><MoreHorizontal size={19}/></button></DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className={styles.fileMenu}>
+        <DropdownMenuItem onSelect={() => void downloadItems([item])}><Download size={16}/>下载</DropdownMenuItem>
+        {item.kind !== "generated" && <DropdownMenuItem onSelect={() => applyItemToCreation(item)}><Plus size={16}/>用于创作</DropdownMenuItem>}
+        <DropdownMenuSub><DropdownMenuSubTrigger><Folder size={16}/>移动到</DropdownMenuSubTrigger><DropdownMenuSubContent>
+          <DropdownMenuItem onSelect={() => void moveItems([item], null)}>未分类</DropdownMenuItem>
+          {organization.folders.map((folder) => <DropdownMenuItem key={folder.id} onSelect={() => void moveItems([item], folder.id)}>{folder.name}</DropdownMenuItem>)}
+        </DropdownMenuSubContent></DropdownMenuSub>
+        <DropdownMenuItem variant="destructive" onSelect={() => void deleteItems([item])}><Trash2 size={16}/>删除</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>;
+  }
+
+  function renderFolderRow(folder: AssetFolder) {
+    return <article className={`${styles.fileCard} ${styles.folderRow}`} key={`folder:${folder.id}`}>
+      <span className={styles.listSelectSpacer} aria-hidden="true"/>
+      <button className={styles.folderVisual} aria-label={`打开文件夹 ${folder.name}`} onClick={() => { setFolderId(folder.id); setSelectedKeys([]); }}><Folder size={20}/></button>
+      <div className={styles.fileInfo}><button title={folder.name} onClick={() => { setFolderId(folder.id); setSelectedKeys([]); }}>{folder.name}</button><time dateTime={folder.createdAt}>{dateLabel(folder.createdAt)}</time><small>—</small></div>
+      <DropdownMenu><DropdownMenuTrigger asChild><button className={styles.moreButton} aria-label={`${folder.name} 的更多操作`} title="更多操作" disabled={busy}><MoreHorizontal size={19}/></button></DropdownMenuTrigger><DropdownMenuContent align="end" className={styles.fileMenu}>
+        <DropdownMenuItem onSelect={() => void editFolder("rename", folder)}><Pencil size={16}/>重命名</DropdownMenuItem>
+        <DropdownMenuItem variant="destructive" onSelect={() => void editFolder("delete", folder)}><Trash2 size={16}/>删除文件夹</DropdownMenuItem>
+      </DropdownMenuContent></DropdownMenu>
+    </article>;
+  }
+
   function renderFile(item: LibraryItem) {
     const key = `${item.kind}:${item.id}`;
     const selected = selectedKeys.includes(key);
+    const listMode = viewMode === "list";
     const aspectRatio = item.width && item.height ? `${item.width} / ${item.height}` : undefined;
-    return <article className={`${styles.fileCard} ${selected ? styles.isSelected : ""}`} key={key}>
+    return <article className={`${styles.fileCard} ${selected ? styles.isSelected : ""} ${selectedKeys.length ? styles.listSelecting : ""}`} key={key}>
+      {listMode && <button className={styles.listSelect} role="checkbox" aria-checked={selected} aria-label={`${selected ? "取消选择" : "选择"} ${item.name}`} disabled={busy} onClick={() => toggleSelection(item)}>{selected && <Check size={12}/>}</button>}
       <div className={styles.fileVisual}>
         {item.media === "image" ? <button className={styles.mediaFrame} style={{ aspectRatio }} onClick={() => openItem(item)} aria-label={`查看 ${item.name}`}>
           <PrivateObjectImage src={item.previewUrl!} alt={item.name}/>
         </button> : item.media === "video" ? <button className={styles.mediaFrame} onClick={() => openItem(item)} aria-label={`查看 ${item.name}`}>
           <video src={item.url} muted preload="metadata" aria-hidden="true"/>
         </button> : <button className={styles.audioFrame} onClick={() => openItem(item)} aria-label={`播放 ${item.name}`}><AudioLines size={30}/></button>}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild><button className={styles.moreButton} aria-label={`${item.name} 的更多操作`} title="更多操作" disabled={busy}><MoreHorizontal size={19}/></button></DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className={styles.fileMenu}>
-            <DropdownMenuItem onSelect={() => void downloadItems([item])}><Download size={16}/>下载</DropdownMenuItem>
-            {item.kind !== "generated" && <DropdownMenuItem onSelect={() => applyItemToCreation(item)}><Plus size={16}/>用于创作</DropdownMenuItem>}
-            <DropdownMenuSub><DropdownMenuSubTrigger><Folder size={16}/>移动到</DropdownMenuSubTrigger><DropdownMenuSubContent>
-              <DropdownMenuItem onSelect={() => void moveItems([item], null)}>未分类</DropdownMenuItem>
-              {organization.folders.map((folder) => <DropdownMenuItem key={folder.id} onSelect={() => void moveItems([item], folder.id)}>{folder.name}</DropdownMenuItem>)}
-            </DropdownMenuSubContent></DropdownMenuSub>
-            <DropdownMenuItem variant="destructive" onSelect={() => void deleteItems([item])}><Trash2 size={16}/>删除</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <button className={styles.selectButton} aria-label={`${selected ? "取消选择" : "选择"} ${item.name}`} aria-pressed={selected} title={selected ? "取消选择" : "选择"} disabled={busy} onClick={() => toggleSelection(item)}><Check size={15}/></button>
+        {!listMode && renderFileMenu(item)}
+        {!listMode && <button className={styles.selectButton} aria-label={`${selected ? "取消选择" : "选择"} ${item.name}`} aria-pressed={selected} title={selected ? "取消选择" : "选择"} disabled={busy} onClick={() => toggleSelection(item)}><Check size={15}/></button>}
       </div>
       <div className={styles.fileInfo}><button title={item.name} onClick={() => openItem(item)}>{item.name}</button><time dateTime={item.createdAt}>{dateLabel(item.createdAt)}</time><small>{item.size ? bytesLabel(item.size) : "—"}</small></div>
+      {listMode && renderFileMenu(item)}
     </article>;
   }
 
@@ -375,14 +405,20 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
     {activeFolder && <div className={styles.folderActions}><button onClick={() => { setFolderId(null); setSelectedKeys([]); }}><ChevronLeft size={15}/>全部资产</button><span>/ {activeFolder.name}</span><button disabled={busy} title="重命名文件夹" aria-label="重命名文件夹" onClick={() => void editFolder("rename")}><Pencil size={15}/></button><button disabled={busy} onClick={() => void editFolder("delete")}>删除文件夹</button></div>}
     {(error || organizationError || actionError) && <div className={styles.error} role="alert"><CircleAlert size={16}/>{actionError ?? error ?? organizationError}<button onClick={() => { setActionError(null); onRetry(); setRevision((current) => current + 1); }}><RefreshCw size={14}/>重试</button></div>}
     {(loading || organizationLoading) && <div className={styles.state} role="status"><LoaderCircle className={styles.spinner} size={18}/>正在读取资产</div>}
-    {!loading && !organizationLoading && !folderId && <section className={styles.folderSection} aria-label="文件夹"><h2>文件夹</h2>
-      {organization.folders.length ? <div className={styles.folders}>{organization.folders.map((folder) => <button className={styles.folder} key={folder.id} onClick={() => { setFolderId(folder.id); setSelectedKeys([]); }}>
+    {!loading && !organizationLoading && viewMode === "grid" && rootFolders.length > 0 && <section className={styles.folderSection} aria-label="文件夹"><h2>文件夹</h2>
+      <div className={styles.folders}>{rootFolders.map((folder) => <button className={styles.folder} key={folder.id} onClick={() => { setFolderId(folder.id); setSelectedKeys([]); }}>
         <span className={styles.folderArt}><Folder size={38} strokeWidth={1.8}/></span><strong>{folder.name}</strong><small>{items.filter((item) => arrangements.get(`${item.kind}:${item.id}`)?.folderId === folder.id).length} 个项目</small>
-      </button>)}</div> : <p className={styles.folderEmpty}>还没有文件夹</p>}
+      </button>)}</div>
     </section>}
-    {!loading && !organizationLoading && <section className={styles.filesSection} aria-label="项目"><h2>{activeFolder ? activeFolder.name : "项目"}</h2>
-      {viewMode === "list" && visible.length > 0 && <div className={styles.listHead}><span>名称</span><span>修改日期</span><span>大小</span></div>}
-      {visible.length ? <div className={viewMode === "grid" ? styles.fileGrid : styles.fileList}>{visible.map(renderFile)}</div> : <div className={styles.state}><ImagePlus size={22}/><strong>{folderId ? "文件夹里还没有资产" : search || filter !== "all" || sourceFilter !== "all" ? "没有匹配的资产" : "还没有资产"}</strong><span>生成结果会自动保存，也可以上传 JPG/JPEG、PNG、MP4 或 MP3。</span></div>}
+    {!loading && !organizationLoading && <section className={styles.filesSection} aria-label={viewMode === "list" ? "资产列表" : "项目"}>
+      {viewMode === "grid" && <h2>{activeFolder ? activeFolder.name : "项目"}</h2>}
+      {viewMode === "list" && (rootFolders.length > 0 || visible.length > 0) && <div className={`${styles.listHead} ${selectedKeys.length ? styles.listSelecting : ""}`}>
+        {visible.length > 0 ? <button className={styles.listSelect} role="checkbox" aria-checked={selectedVisibleCount === visible.length ? true : selectedVisibleCount > 0 ? "mixed" : false} aria-label={selectedVisibleCount === visible.length ? "取消全选可见文件" : "全选可见文件"} disabled={busy} onClick={toggleVisibleSelection}>{selectedVisibleCount === visible.length ? <Check size={12}/> : selectedVisibleCount > 0 ? <Minus size={12}/> : null}</button> : <span className={styles.listSelectSpacer} aria-hidden="true"/>}
+        <span className={styles.nameHeading}>名称</span><span>修改日期</span><span>大小</span>
+      </div>}
+      {visible.length || (viewMode === "list" && rootFolders.length) ? <div className={viewMode === "grid" ? styles.fileGrid : styles.fileList}>
+        {viewMode === "list" && rootFolders.map(renderFolderRow)}{visible.map(renderFile)}
+      </div> : <div className={styles.state}><ImagePlus size={22}/><strong>{folderId ? "文件夹里还没有资产" : search || filter !== "all" || sourceFilter !== "all" ? "没有匹配的资产" : "还没有资产"}</strong><span>生成结果会自动保存，也可以上传 JPG/JPEG、PNG、MP4 或 MP3。</span></div>}
     </section>}
     {selectedItems.length > 0 && <div className={styles.selectionBar} role="toolbar" aria-label="已选资产操作">
       <span>已选择 {selectedItems.length} 个</span>
