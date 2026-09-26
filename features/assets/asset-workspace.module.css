@@ -1,6 +1,7 @@
 .workspace { width: 100%; max-width: 1420px; margin: 0 auto; color: var(--ink); }
 .workspace button { cursor: pointer; }
 .workspace button:disabled { cursor: default; opacity: .55; }
+.workspace .folderArt, .workspace .folderName, .workspace .folderVisual, .workspace .mediaFrame, .workspace .audioFrame, .workspace .fileInfo button { cursor: default; }
 .header { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 20px; }
 .header h1 { flex: none; margin: 0; font-size: 24px; letter-spacing: -.04em; }
 .header h1.folderBreadcrumb { min-width: 0; flex: 0 1 auto; display: flex; align-items: center; gap: 12px; }

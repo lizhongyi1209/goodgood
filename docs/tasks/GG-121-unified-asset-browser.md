@@ -37,6 +37,8 @@
   match the Move submenu frame to the parent; remove grid video titles, show
   videos at source ratio with automatic previews; cap responsive grid at six
   columns.
+- Operator follow-up invoking `$impeccable`: folder and media covers and names
+  should keep the default arrow cursor on hover instead of the hand cursor.
 
 ## Scope and acceptance
 
@@ -65,6 +67,8 @@
   parent frame. The grid shows up to six columns; video tiles keep their native
   ratio, hide titles and preview silently only while visible, honoring reduced
   motion.
+- Folder and media covers and names use the default arrow cursor. Their menu
+  and selection controls remain separately actionable.
 - In an opened folder, provide a breadcrumb back to assets, folder search and
   the existing view switch. An empty folder offers direct picker/drop upload;
   show real row outcomes and failed-file retry in a compact progress tray.
@@ -154,6 +158,11 @@
   masonry cap at six responsive columns. `npm run check:local` passed: **583
   tests / 560 pass / 23 skip / 0 fail**; build/typecheck pass, lint 0 errors /
   109 existing warnings. Browser hover/video review remains with the operator.
+- Folder and media cover buttons and their name buttons now use the default
+  arrow cursor, including grid and list views; menu and selection controls
+  retain their pointer cursor. `npm run check:local` passed: **583 tests / 560
+  pass / 23 skip / 0 fail**; build/typecheck pass, lint 0 errors / 109 existing
+  warnings. The operator will inspect the cursor behavior in 5173.
 - The existing 32131 Web was replaced with a verified local checkpoint after
   build/verify passed. `/api/health/version` reported `build.verified=true`;
   32131 readiness and 5173 `/assets` returned HTTP 200. 5173 and local Docker
@@ -167,7 +176,7 @@
 The operator checks 5173 for the folder interior, direct empty-state upload,
 upper-right direct upload from the root and `测试` folder, upload tray,
 new-folder/rename dialog, folder tile menu and selection bar, list folder
-checkboxes, hover veil/empty selector/open menu, submenu frame, portrait and
+checkboxes, default arrow cursor/hover veil/empty selector/open menu, submenu frame, portrait and
 landscape video previews, six-column layout, combined folder/file rows, heading alignment,
 row hover/menu/selection, the tag-free upload/menu, toolbar order and red
 Delete, uploaded-file deletion, masonry, source filters, grid/list switch and

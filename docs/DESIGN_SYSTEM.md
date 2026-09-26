@@ -17,7 +17,9 @@ reduced motion is requested. Hover/focus adds a faint neutral veil to folder
 covers and file previews, then reveals a top-right menu and bottom-right empty
 selection circle. The check appears only after selection. An open menu keeps its
 trigger and veil visible; Move submenus use the same soft border and shadow as
-their parent. List mode puts folders and files into one quiet table, with a narrow
+their parent. Folder covers, media previews and their names keep the default
+arrow cursor on hover; menu and selection controls keep their action cursor.
+List mode puts folders and files into one quiet table, with a narrow
 selection gutter outside the rows, compact icons/thumbnails, name, date and
 size. The `名称` heading and icon/thumb column align with the first media
 category above, while date and size align with their values. Rows gain a shallow
