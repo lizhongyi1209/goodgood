@@ -18,6 +18,8 @@
   share one table, file checkboxes live in a left gutter, row menus appear at
   the far right, and the top header stays on one row at desktop widths. Retain
   GoodGood's file types and the previously accepted selection toolbar actions.
+- Operator follow-up: move the list selection boxes outside the row content so
+  thumbnails and the `名称` heading align with the first media category above.
 
 ## Scope and acceptance
 
@@ -76,6 +78,12 @@
   list selection controls. Latest `npm run check:local`: **583 tests / 560 pass /
   23 skip / 0 fail** after the touch visibility adjustment; build and
   typecheck pass, lint 0 errors / 109 existing warnings.
+- The list selection column is now positioned outside header/row content;
+  thumbnail and `名称` start at the same inset as the first category label.
+  Date/size columns retain their alignment, and narrow screens keep the
+  external checkboxes within the viewport. The repeated `npm run check:local`
+  passed: **583 tests / 560 pass / 23 skip / 0 fail**, typecheck/build pass,
+  lint 0 errors / 109 existing warnings. Manual 5173 review is pending.
 - The existing 32131 Web was replaced with a verified local checkpoint after
   build/verify passed. `/api/health/version` reported `build.verified=true`;
   32131 readiness and 5173 `/assets` returned HTTP 200. 5173 and local Docker

@@ -8,10 +8,12 @@ In grid mode, folders appear above the `项目` file section; in list mode, root
 folders lead the same table as files. Opening one narrows the same collection.
 Grid images keep their real ratios. Hover/focus reveals the card menu and a
 separate bottom-right selection button; clicking the image opens its existing
-detail or private preview. List rows show a left selection box and a right
-hover/focus menu; selecting one file reveals all file boxes and a top select-all
-box for visible files. Folders open or offer rename/delete but do not enter
-file selection because folder move/download are unsupported. Selection exposes a floating toolbar for
+detail or private preview. List rows show a selection box outside the left row
+edge, leaving the header and thumbnails aligned with the category controls;
+the right edge has a hover/focus menu. Selecting one file reveals all file
+boxes and a top select-all box for visible files. Folders open or offer
+rename/delete but do not enter file selection because folder move/download are
+unsupported. Selection exposes a floating toolbar for
 Download, Move, and Delete, followed by a close control. There is no toolbar
 More action or tag editor. `Esc` or close clears selection. Delete asks for
 confirmation and permanently removes generated images or uploaded media; the

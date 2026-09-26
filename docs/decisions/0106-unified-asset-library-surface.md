@@ -26,9 +26,11 @@ not GoodGood's resumable creative projects.
 - In list mode, show root folders first and files below them in one table under
   the same `名称 / 修改日期 / 大小` headings; omit the grid-only section headings and
   empty-folder placeholder. A folder row opens that folder and exposes rename
-  and delete in its row menu. File rows show a left selection box and a right
-  hover/focus menu. The top selection box selects visible files only because
-  folder download and folder movement are not supported. This refines the
+  and delete in its row menu. File rows show a selection box outside the left
+  row edge and a right hover/focus menu; the `名称` heading and thumbnail column
+  align with the first media category above. The top selection box selects
+  visible files only because folder download and folder movement are not
+  supported. This refines the
   grid/list presentation after the operator supplied full-page list references.
 - The image grid preserves each image's aspect ratio in a compact masonry
   arrangement. Hover or keyboard focus reveals file actions and a distinct

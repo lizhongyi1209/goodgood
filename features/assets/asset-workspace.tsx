@@ -349,7 +349,6 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
 
   function renderFolderRow(folder: AssetFolder) {
     return <article className={`${styles.fileCard} ${styles.folderRow}`} key={`folder:${folder.id}`}>
-      <span className={styles.listSelectSpacer} aria-hidden="true"/>
       <button className={styles.folderVisual} aria-label={`打开文件夹 ${folder.name}`} onClick={() => { setFolderId(folder.id); setSelectedKeys([]); }}><Folder size={20}/></button>
       <div className={styles.fileInfo}><button title={folder.name} onClick={() => { setFolderId(folder.id); setSelectedKeys([]); }}>{folder.name}</button><time dateTime={folder.createdAt}>{dateLabel(folder.createdAt)}</time><small>—</small></div>
       <DropdownMenu><DropdownMenuTrigger asChild><button className={styles.moreButton} aria-label={`${folder.name} 的更多操作`} title="更多操作" disabled={busy}><MoreHorizontal size={19}/></button></DropdownMenuTrigger><DropdownMenuContent align="end" className={styles.fileMenu}>
@@ -413,7 +412,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
     {!loading && !organizationLoading && <section className={styles.filesSection} aria-label={viewMode === "list" ? "资产列表" : "项目"}>
       {viewMode === "grid" && <h2>{activeFolder ? activeFolder.name : "项目"}</h2>}
       {viewMode === "list" && (rootFolders.length > 0 || visible.length > 0) && <div className={`${styles.listHead} ${selectedKeys.length ? styles.listSelecting : ""}`}>
-        {visible.length > 0 ? <button className={styles.listSelect} role="checkbox" aria-checked={selectedVisibleCount === visible.length ? true : selectedVisibleCount > 0 ? "mixed" : false} aria-label={selectedVisibleCount === visible.length ? "取消全选可见文件" : "全选可见文件"} disabled={busy} onClick={toggleVisibleSelection}>{selectedVisibleCount === visible.length ? <Check size={12}/> : selectedVisibleCount > 0 ? <Minus size={12}/> : null}</button> : <span className={styles.listSelectSpacer} aria-hidden="true"/>}
+        {visible.length > 0 && <button className={styles.listSelect} role="checkbox" aria-checked={selectedVisibleCount === visible.length ? true : selectedVisibleCount > 0 ? "mixed" : false} aria-label={selectedVisibleCount === visible.length ? "取消全选可见文件" : "全选可见文件"} disabled={busy} onClick={toggleVisibleSelection}>{selectedVisibleCount === visible.length ? <Check size={12}/> : selectedVisibleCount > 0 ? <Minus size={12}/> : null}</button>}
         <span className={styles.nameHeading}>名称</span><span>修改日期</span><span>大小</span>
       </div>}
       {visible.length || (viewMode === "list" && rootFolders.length) ? <div className={viewMode === "grid" ? styles.fileGrid : styles.fileList}>
