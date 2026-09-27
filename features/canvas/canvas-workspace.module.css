@@ -21,6 +21,24 @@
   outline-offset: 2px;
 }
 
+.imageNode {
+  position: relative;
+}
+
+.imageNode::after {
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0 / 4%);
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 140ms ease;
+}
+
+.imageNode:hover::after {
+  opacity: 1;
+}
+
 .sourceNode {
   position: relative;
   width: fit-content;
@@ -49,35 +67,8 @@
   font-size: 12px;
 }
 
-.sourceActions {
-  position: absolute;
-  right: 8px;
-  bottom: 8px;
-  left: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 5px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 140ms ease;
-}
-
-.sourceNode:hover .sourceActions,
-.sourceNode:focus-within .sourceActions,
-.canvas :global(.react-flow__node-sourceImage.selected) .sourceActions {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.sourceActions button { box-shadow: 0 1px 5px rgb(0 0 0 / 10%); }
-
-@media (hover: none) {
-  .sourceActions { opacity: 1; pointer-events: auto; }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .sourceActions { transition: none; }
+  .imageNode::after { transition: none; }
 }
 
 .resultNode {

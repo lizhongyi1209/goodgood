@@ -1,5 +1,6 @@
 # Decision records
 
+- `0109-quiet-canvas-image-hover.md` — canvas image nodes show only a shallow neutral hover veil; removes GG-126's local-node action overlay while keeping dragging, result detail and the separate reference picker.
 - `0108-standalone-canvas-image-generation.md` — standalone full-viewport `/canvas` and the first image-generation tools, superseding GG-124's shared-shell empty canvas.
 - `0107-asset-selection-and-tag-retirement.md` — removes asset tag controls and search, simplifies the selection toolbar to download/move/delete, and permits its red destructive action.
 - `0106-unified-asset-library-surface.md` — one `资产` surface with text media filters, source icons, folders and asset files, masonry/list views and capability-correct selection actions; supersedes ADR 0102's separate view/count presentation.

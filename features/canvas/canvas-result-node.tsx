@@ -45,7 +45,7 @@ export function CanvasResultNode({ data }: NodeProps<CanvasResultNodeType>) {
   }
 
   return (
-    <article className={styles.resultNode}>
+    <article className={`${styles.resultNode} ${styles.imageNode}`}>
       <a className="nodrag" href={`/assets/${encodeURIComponent(output.id)}`} aria-label={`查看生成图片 ${index + 1}`}>
         <PrivateObjectImage
           src={output.previewUrl}

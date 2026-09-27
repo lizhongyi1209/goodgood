@@ -10,11 +10,10 @@ import {
   type ChangeEvent,
   type DragEvent,
 } from "react";
-import { useNodesState, type ReactFlowInstance } from "@xyflow/react";
+import { useNodesState, type NodeChange, type ReactFlowInstance } from "@xyflow/react";
 import { ArrowLeft, ArrowUp, ImagePlus, LoaderCircle, Maximize2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -60,7 +59,6 @@ type CanvasReference = {
   clientId: string;
   file: File;
   previewUrl: string;
-  sourceNodeId?: string;
   reference: GenerationReference;
 };
 
@@ -108,7 +106,6 @@ export function CanvasPage() {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [dropActive, setDropActive] = useState(false);
-  const [previewImage, setPreviewImage] = useState<{ name: string; url: string } | null>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState<CanvasNode>([]);
   const [flow, setFlow] = useState<ReactFlowInstance<CanvasNode> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -219,10 +216,9 @@ export function CanvasPage() {
     });
   };
 
-  const addReferenceFiles = (files: File[], sourceNodeId?: string) => {
+  const addReferenceFiles = (files: File[]) => {
     if (!files.length) return;
     if (session?.access.status !== "active" || session.preview) { setFormError("当前无法上传参考图，请确认登录状态。"); return; }
-    if (sourceNodeId && references.some((item) => item.sourceNodeId === sourceNodeId)) return;
     const accepted: CanvasReference[] = [];
     const { accepted: validFiles, errors } = selectCanvasImageFiles(files);
     setFormError(errors[0] ?? null);
@@ -235,7 +231,7 @@ export function CanvasPage() {
       const previewUrl = URL.createObjectURL(file);
       objectUrlsRef.current.add(previewUrl);
       accepted.push({
-        clientId, file, previewUrl, sourceNodeId,
+        clientId, file, previewUrl,
         reference: { id: clientId, name: file.name, status: "uploading", url: previewUrl },
       });
     }
@@ -265,17 +261,8 @@ export function CanvasPage() {
         type: "sourceImage",
         position: positions[index],
         data: {
-          file,
           name: file.name,
           previewUrl,
-          onPreview: () => setPreviewImage({ name: file.name, url: previewUrl }),
-          onUseReference: () => addReferenceFiles([file], id),
-          onRemove: () => {
-            setNodes((current) => current.filter((node) => node.id !== id));
-            setPreviewImage((current) => current?.url === previewUrl ? null : current);
-            URL.revokeObjectURL(previewUrl);
-            objectUrlsRef.current.delete(previewUrl);
-          },
         },
       };
     });
@@ -287,6 +274,16 @@ export function CanvasPage() {
     event.target.value = "";
     if (!files.length) return;
     addCanvasImages(files, { x: window.innerWidth / 2, y: window.innerHeight * 0.4 });
+  };
+
+  const handleNodesChange = (changes: NodeChange<CanvasNode>[]) => {
+    const removed = new Set(changes.filter((change) => change.type === "remove").map((change) => change.id));
+    for (const node of nodes) {
+      if (node.type !== "sourceImage" || !removed.has(node.id)) continue;
+      URL.revokeObjectURL(node.data.previewUrl);
+      objectUrlsRef.current.delete(node.data.previewUrl);
+    }
+    onNodesChange(changes);
   };
 
   const onCanvasDragOver = (event: DragEvent<HTMLElement>) => {
@@ -376,19 +373,6 @@ export function CanvasPage() {
     void runJob(snapshot);
   };
 
-  const renderedNodes = nodes.map((node) => {
-    if (node.type !== "sourceImage") return node;
-    const reference = references.find((item) => item.sourceNodeId === node.id);
-    return {
-      ...node,
-      data: {
-        ...node.data,
-        referenceStatus: reference?.reference.status,
-        onUseReference: () => addReferenceFiles([node.data.file], node.id),
-      },
-    };
-  });
-
   if (session && session.access.status !== "active") {
     return <AccountAccessGate session={session} onRefresh={() => void refreshSession()} onLogout={() => void signOut()} />;
   }
@@ -402,7 +386,7 @@ export function CanvasPage() {
       }}
       onDrop={onCanvasDrop}
     >
-      <CanvasWorkspace nodes={renderedNodes} onInit={setFlow} onNodesChange={onNodesChange} />
+      <CanvasWorkspace nodes={nodes} onInit={setFlow} onNodesChange={handleNodesChange} />
       {dropActive && <div className={styles.dropOverlay} aria-hidden="true">松开以添加图片到画布</div>}
       <header className={styles.header}>
         <a className={styles.back} href="/create" aria-label="返回创作"><ArrowLeft size={18} /></a>
@@ -488,12 +472,6 @@ export function CanvasPage() {
           </div>
         )}
       </section>
-      <Dialog open={Boolean(previewImage)} onOpenChange={(open) => { if (!open) setPreviewImage(null); }}>
-        <DialogContent className={styles.previewDialog}>
-          <DialogTitle className={styles.srOnly}>{previewImage?.name ?? "查看图片"}</DialogTitle>
-          {previewImage && <PrivateObjectImage src={previewImage.url} alt={previewImage.name} className={styles.previewImage} loading="eager" />}
-        </DialogContent>
-      </Dialog>
     </main>
   );
 }

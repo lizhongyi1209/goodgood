@@ -83,8 +83,6 @@
 .quote { color: #a1a1aa; }
 .message { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: #52525b; }
 .message button { flex: none; text-decoration: underline; text-underline-offset: 2px; }
-.previewDialog { display: grid; place-items: center; width: fit-content; max-width: 90vw; max-height: 90dvh; padding: 16px; border: 0; box-shadow: 0 12px 40px rgb(0 0 0 / 12%); }
-.previewImage { display: block; width: auto; height: auto; max-width: calc(90vw - 32px); max-height: calc(90dvh - 32px); object-fit: contain; }
 .srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
 @keyframes canvas-spin { to { transform: rotate(360deg); } }

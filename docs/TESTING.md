@@ -1,12 +1,16 @@
 # GG-063 verification
 
+## GG-128 quiet canvas image hover
+
+Run the GG-125/GG-126 focused canvas tests, typecheck and the full local gate. The operator will inspect the existing 5173 `/canvas` preview: local and generated images should show only a shallow neutral hover veil, without node action buttons on hover or selection; image dragging, result detail navigation and the separate composer reference picker should remain usable. Do not submit real uploads or billable generation in automated checks.
+
 ## GG-127 asset grid resize fix
 
 Run the asset workspace tests and typecheck, then one full `check:local`. The regression is a browser ResizeObserver delivery warning; the operator will refresh the existing 5173 `/assets` tab to confirm the vinext overlay no longer appears. The agent's HTTP check proves route availability only and is not a substitute for that manual interaction check.
 
 ## GG-126 local canvas images
 
-Run `node --test tests/gg125-canvas-image-generation.test.mjs tests/gg126-canvas-local-images.test.mjs` for accepted/rejected file types and sizes, empty input, multiple-image placement, and retention of local nodes through generation state changes. Typecheck and lint cover the React Flow source node, shadcn preview dialog and event handlers. Then run `npm run check:local` once after code stabilizes. The operator will manually inspect local drag/drop, file selection, the preview and reference action on 5173; automated tests do not upload real files or submit billable jobs.
+Run `node --test tests/gg125-canvas-image-generation.test.mjs tests/gg126-canvas-local-images.test.mjs` for accepted/rejected file types and sizes, empty input, multiple-image placement, and retention of local nodes through generation state changes. Typecheck and lint cover the React Flow source node and event handlers. Then run `npm run check:local` once after code stabilizes. The operator will manually inspect local drag/drop and file selection on 5173; the former node preview/reference actions were removed by GG-128. Automated tests do not upload real files or submit billable jobs.
 
 ## GG-125 standalone canvas
 
