@@ -1,13 +1,14 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-27
-- Current phase: GG-129 画布图片移动指针与原比例缩放本地实现及门禁完成，待站长手动检查；GG-128 轻量悬停同样待手动验收。生产应用仍为 GG-098，未部署。
-- Current objective: 站长在现有 5173 `/canvas` 手动检查图片移动指针与缩放，然后继续反馈画布需求。
-- Previous objective: GG-128 画布图片轻量悬停通过门禁，待站长手动确认。
+- Current phase: GG-130 画布图片默认箭头、贴图细蓝框与四角等比缩放本地实现及门禁完成，待站长手动验收；GG-129 的指针与单角样式由 ADR 0110 替换。生产应用仍为 GG-098，未部署。
+- Current objective: 站长在现有 5173 `/canvas` 手动检查图片默认箭头、贴图细蓝框与四角等比缩放。
+- Previous objective: GG-129 图片缩放通过门禁；本轮按站长纠正替换其指针与单角视觉。
 
 ## Current checkpoint
 
-- Task [GG-129](tasks/GG-129-canvas-image-resize.md)：**本地实现与门禁完成，待站长手动验收**。按 [ADR 0109 补充](decisions/0109-quiet-canvas-image-hover.md) 将图片主体指针改为 `move`，选中已加载图片时显示右下角灰阶缩放点；缩放保持原始比例且只影响临时节点。同一生成输出的缩放尺寸随状态更新保留。定向画布与文档测试 14/14，`check:local` 591 项 / 568 通过 / 23 跳过 / 0 失败，5173 `/canvas` HTTP 200；未做浏览器验收、检查点替换或生产部署。
+- Task [GG-130](tasks/GG-130-canvas-image-selection-frame.md)：**本地实现与门禁完成，待站长手动验收**。按 [ADR 0110](decisions/0110-canvas-image-selection-frame.md) 将图片主体恢复系统默认箭头，选中框改为紧贴图片的一像素蓝线，并在四角设置等比缩放点；保留 GG-128 的浅灰悬停反馈与 GG-129 的节点缩放逻辑。定向画布测试 6/6、文档测试 8/8，`check:local` 591 项 / 568 通过 / 23 跳过 / 0 失败，5173 `/canvas` HTTP 200；未做浏览器验收、检查点替换或生产部署。
+- Task [GG-129](tasks/GG-129-canvas-image-resize.md)：**历史本地实现；指针与单角样式由 GG-130 替换**。按 [ADR 0109 补充](decisions/0109-quiet-canvas-image-hover.md) 实现原比例缩放及同一生成输出的尺寸保留；原 `move` 指针与右下角灰阶点已由 [ADR 0110](decisions/0110-canvas-image-selection-frame.md) 替代。原门禁 591 项 / 568 通过 / 23 跳过 / 0 失败；未做浏览器验收、检查点替换或生产部署。
 - Task [GG-128](tasks/GG-128-quiet-canvas-image-hover.md)：**本地实现与门禁完成，待站长手动验收**。按 [ADR 0109](decisions/0109-quiet-canvas-image-hover.md) 移除本地图片图上查看/参考/移除操作与预览弹框；本地图与生成图悬停仅留浅灰遮罩，拖动、结果详情和输入区参考图入口保留。定向画布测试 5/5、文档测试 8/8，`check:local` 590 项 / 567 通过 / 23 跳过 / 0 失败，5173 `/canvas` HTTP 200。未做浏览器验收、检查点替换或生产部署。
 - Task [GG-127](tasks/GG-127-asset-resize-observer-loop.md)：**资产瀑布流 ResizeObserver 修复与本地门禁完成，待站长手动浏览器确认**。尺寸观察回调只收集卡片，下一动画帧统一写网格行高，清理时取消未执行帧；不改变六列布局、比例或资产数据。定向资产/文档测试 10/10，`check:local` 590 项 / 567 通过 / 23 跳过 / 0 失败，5173 `/assets` HTTP 200。生产未变。
 - Task [GG-126](tasks/GG-126-canvas-local-image-drop.md)：**本地图片拖放与轻量操作本地实现及门禁完成，待站长手动验收**。本地 JPEG/PNG 即时成为临时可移动图片节点；顶部文件选择和适应视野、节点大图预览/明确加入参考/移除，复用既有 20 MiB 校验和私有上传。拖入不触发网络写入或付费生成，节点/布局不保存。最终 `check:local` 590 项 / 567 通过 / 23 跳过 / 0 失败，Lint 0 错误、110 条既有警告，5173 `/canvas` HTTP 200。32131 和生产未替换。
@@ -82,7 +83,7 @@
 - **2026-09-17 首次生产恢复演练通过**：快照 `ce191630`、59 表 / 2403 行 / 43 迁移；
   维护窗口约 66 秒。「备份 timer disabled、无自动备份」的旧结论**已更正为错误**。
 - 独立缺口（已记录未处理）：**仅剩无告警通道**。
-- Next action: 站长手动确认 5173 `/canvas` 图片指针与缩放；GG-127 `/assets` 覆盖层亦待站长刷新确认。
+- Next action: 站长手动确认 5173 `/canvas` 图片默认箭头、贴图细蓝框与四角等比缩放；GG-127 `/assets` 覆盖层亦待站长刷新确认。
 - Blockers: 无阻塞执行项；`operations` 缺口为已知并已授权接受。
 - 参考图校验最长近 6 分钟、超过 nginx 70s 读超时的服务端性能根因仍待排查；
   GG-103 前端通过 owner-scoped 状态查询避免把已入库素材误报为失败。

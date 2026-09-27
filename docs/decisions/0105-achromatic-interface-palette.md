@@ -1,6 +1,6 @@
 # ADR 0105: Achromatic interface palette
 
-- Status: Accepted; ADR 0107 adds a narrow red exception for the asset selection Delete button
+- Status: Accepted; ADR 0107 adds a narrow red exception for asset Delete, and ADR 0110 adds a narrow blue exception for the canvas image selection frame
 - Date: 2026-09-25
 - Task: GG-118
 - Supersedes: ADR 0002 for the interface accent role (identity section only)

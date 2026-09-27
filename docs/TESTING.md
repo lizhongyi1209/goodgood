@@ -1,5 +1,9 @@
 # GG-063 verification
 
+## GG-130 canvas image selection frame
+
+Run the focused GG-125/GG-126 canvas and documentation tests, then one full `npm run check:local`. The operator will manually inspect 5173 `/canvas`: local and generated image bodies show the normal arrow, a selected loaded image has a flush one-pixel blue frame and four small corner controls, and each corner uses the matching diagonal resize cursor while preserving the image ratio. Hover retains only the shallow veil; generated result detail navigation remains available. Do not submit real uploads or billable generation for this check. The GG-129 description below is historical.
+
 ## GG-129 canvas image resize
 
 Run the focused GG-125/GG-126 canvas tests for image sizing and result-node size retention, then typecheck and one full `check:local`. The operator will inspect the existing 5173 `/canvas`: image bodies use a move cursor without grab/grabbing; a selected loaded image shows only one bottom-right resize point; dragging it scales the card without stretching the image; moving, result detail navigation and input-area reference selection remain usable. Browser acceptance belongs to the operator; do not submit real uploads or billable generation in automated checks.

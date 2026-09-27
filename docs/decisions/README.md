@@ -1,5 +1,7 @@
 # Decision records
 
+- `0110-canvas-image-selection-frame.md` — default arrow over canvas images, flush fine blue selection frame and four diagonal resize controls; a scoped exception to ADR 0105, replacing GG-129's visual choices.
+
 - `0109-quiet-canvas-image-hover.md` — canvas image nodes show only a shallow neutral hover veil; removes GG-126's local-node action overlay while keeping dragging, result detail and the separate reference picker.
 - `0108-standalone-canvas-image-generation.md` — standalone full-viewport `/canvas` and the first image-generation tools, superseding GG-124's shared-shell empty canvas.
 - `0107-asset-selection-and-tag-retirement.md` — removes asset tag controls and search, simplifies the selection toolbar to download/move/delete, and permits its red destructive action.

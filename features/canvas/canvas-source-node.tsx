@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { NodeResizeControl, useReactFlow, type NodeProps } from "@xyflow/react";
+import { useReactFlow, type NodeProps } from "@xyflow/react";
 
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import { initialCanvasImageSize } from "./canvas-image-size.mjs";
+import { CanvasImageResizeControls } from "./canvas-image-resize-controls";
 import type { CanvasNode, CanvasSourceNode as CanvasSourceNodeType } from "./canvas-workspace";
 import styles from "./canvas-workspace.module.css";
 
@@ -40,15 +41,7 @@ export function CanvasSourceNode({ id, data, selected }: NodeProps<CanvasSourceN
             />}
       </article>
       {selected && data.imageSized && !imageFailed && (
-        <NodeResizeControl
-          position="bottom-right"
-          keepAspectRatio
-          minWidth={48}
-          minHeight={48}
-          maxWidth={960}
-          maxHeight={960}
-          className={styles.resizeControl}
-        />
+        <CanvasImageResizeControls />
       )}
     </>
   );

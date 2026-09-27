@@ -22,13 +22,13 @@
 .imageNode,
 .imageNode a,
 .imageNode img {
-  cursor: move;
+  cursor: default;
 }
 
-.canvas :global(.react-flow__node-imageResult.selected) .resultNode,
-.canvas :global(.react-flow__node-sourceImage.selected) .sourceNode {
-  outline: 2px solid #27272a;
-  outline-offset: 2px;
+.canvas :global(.react-flow__node-imageResult.selected) .resultNode.imageNode,
+.canvas :global(.react-flow__node-sourceImage.selected) .sourceNode.imageNode {
+  outline: 1px solid #3b82f6;
+  outline-offset: 0;
 }
 
 .imageNode {
@@ -54,7 +54,7 @@
   width: 100%;
   height: 100%;
   overflow: hidden;
-  border: 1px solid #e7e7e9;
+  border: 0;
   border-radius: 14px;
   background: #fff;
   box-shadow: 0 6px 24px rgb(0 0 0 / 5%);
@@ -83,7 +83,7 @@
 .resultNode {
   width: 238px;
   overflow: hidden;
-  border: 1px solid #e7e7e9;
+  border: 0;
   border-radius: 14px;
   background: #fff;
   box-shadow: 0 6px 24px rgb(0 0 0 / 5%);
@@ -114,12 +114,12 @@
 }
 
 .resizeControl:global(.react-flow__resize-control.handle) {
-  width: 13px;
-  height: 13px;
-  border: 2px solid #fff;
-  border-radius: 4px;
-  background: #27272a;
-  box-shadow: 0 0 0 1px #27272a;
+  width: 10px;
+  height: 10px;
+  border: 1px solid #3b82f6;
+  border-radius: 2px;
+  background: #fff;
+  box-shadow: none;
 }
 
 .pendingNode { padding: 10px; }

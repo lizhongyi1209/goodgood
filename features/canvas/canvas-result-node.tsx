@@ -1,12 +1,13 @@
 "use client";
 
-import { NodeResizeControl, useReactFlow, type NodeProps } from "@xyflow/react";
+import { useReactFlow, type NodeProps } from "@xyflow/react";
 import { CircleAlert, LoaderCircle, RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import type { GenerationJob } from "@/shared/contracts/generation";
 import { initialCanvasImageSize } from "./canvas-image-size.mjs";
+import { CanvasImageResizeControls } from "./canvas-image-resize-controls";
 import type { CanvasNode, CanvasResultNodeType } from "./canvas-workspace";
 import styles from "./canvas-workspace.module.css";
 
@@ -68,15 +69,7 @@ export function CanvasResultNode({ id, data, selected }: NodeProps<CanvasResultN
         </a>
       </article>
       {selected && data.imageSized && (
-        <NodeResizeControl
-          position="bottom-right"
-          keepAspectRatio
-          minWidth={48}
-          minHeight={48}
-          maxWidth={960}
-          maxHeight={960}
-          className={styles.resizeControl}
-        />
+        <CanvasImageResizeControls />
       )}
     </>
   );

@@ -108,9 +108,9 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
   (ADR 0105): black type and icons, gray state fills, near-black primary action.
 - Use rounded geometry, minimal borders, transparent/default icon buttons, and
   shallow hover fills. Avoid heavy shadows and navigation shadows.
-- Do not introduce any chromatic accent, blue, neon/Neo-Tech styling, magazine
-  rules, warm ivory/limestone palettes, large editorial typography, or strong
-  panel separation.
+- Do not introduce chromatic accents, neon/Neo-Tech styling, magazine rules,
+  warm ivory/limestone palettes, large editorial type, or strong panels. ADR 0110
+  permits blue only on selected canvas image outlines and four resize handles.
 - Use the Double G mark and custom GoodGood wordmark. The creation send action
   uses an upward arrow in both image and video modes (ADR 0098).
 
