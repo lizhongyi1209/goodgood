@@ -260,6 +260,8 @@ export function CanvasPage() {
         id,
         type: "sourceImage",
         position: positions[index],
+        width: 238,
+        height: 158,
         data: {
           name: file.name,
           previewUrl,

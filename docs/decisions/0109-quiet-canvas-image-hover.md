@@ -18,3 +18,7 @@ The first draggable local image nodes showed Preview, Use as Reference and Remov
 ## Consequences
 
 Local image nodes are temporary and can still be selected and removed with React Flow's keyboard delete behavior; they have no on-image action control. Dropping a file still does not upload it or call a model. This does not change persisted assets, generation, billing or production.
+
+## GG-129 addendum (2026-09-27)
+
+The image body uses a move cursor instead of React Flow's default grab/grabbing cursor. Selecting a successfully loaded local or generated image reveals one small achromatic bottom-right resize control. It scales the card with its image aspect ratio; hover alone still reveals no controls or actions. Dimensions stay on temporary React Flow nodes and survive updates for the same generated output, without changing saved assets.

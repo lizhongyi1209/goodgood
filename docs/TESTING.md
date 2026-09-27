@@ -1,5 +1,9 @@
 # GG-063 verification
 
+## GG-129 canvas image resize
+
+Run the focused GG-125/GG-126 canvas tests for image sizing and result-node size retention, then typecheck and one full `check:local`. The operator will inspect the existing 5173 `/canvas`: image bodies use a move cursor without grab/grabbing; a selected loaded image shows only one bottom-right resize point; dragging it scales the card without stretching the image; moving, result detail navigation and input-area reference selection remain usable. Browser acceptance belongs to the operator; do not submit real uploads or billable generation in automated checks.
+
 ## GG-128 quiet canvas image hover
 
 Run the GG-125/GG-126 focused canvas tests, typecheck and the full local gate. The operator will inspect the existing 5173 `/canvas` preview: local and generated images should show only a shallow neutral hover veil, without node action buttons on hover or selection; image dragging, result detail navigation and the separate composer reference picker should remain usable. Do not submit real uploads or billable generation in automated checks.

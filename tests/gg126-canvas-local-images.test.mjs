@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { canvasImagePositions, selectCanvasImageFiles } from "../features/canvas/canvas-local-images.mjs";
+import { initialCanvasImageSize } from "../features/canvas/canvas-image-size.mjs";
 import { upsertCanvasJobNodes } from "../features/canvas/canvas-job-nodes.mjs";
 
 test("canvas accepts local JPEG and PNG while reporting invalid files", () => {
@@ -28,6 +29,16 @@ test("multiple dropped images are arranged around the drop point", () => {
     { x: 508, y: 280 },
   ]);
   assert.deepEqual(canvasImagePositions({ x: 500, y: 400 }, 0), []);
+});
+
+test("canvas image cards start within bounds without changing source proportions", () => {
+  const landscape = initialCanvasImageSize(1200, 800);
+  const portrait = initialCanvasImageSize(600, 1200);
+  assert.equal(landscape.width, 238);
+  assert.equal(landscape.width / landscape.height, 1200 / 800);
+  assert.deepEqual(portrait, { width: 160, height: 320 });
+  assert.deepEqual(initialCanvasImageSize(40, 20), { width: 40, height: 20 });
+  assert.equal(initialCanvasImageSize(0, 100), null);
 });
 
 test("new generation updates retain independently placed local images", () => {

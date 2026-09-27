@@ -1,23 +1,26 @@
 "use client";
 
-import type { NodeProps } from "@xyflow/react";
+import { NodeResizeControl, useReactFlow, type NodeProps } from "@xyflow/react";
 import { CircleAlert, LoaderCircle, RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import type { GenerationJob } from "@/shared/contracts/generation";
-import type { CanvasResultNodeType } from "./canvas-workspace";
+import { initialCanvasImageSize } from "./canvas-image-size.mjs";
+import type { CanvasNode, CanvasResultNodeType } from "./canvas-workspace";
 import styles from "./canvas-workspace.module.css";
 
 export type CanvasResultNodeData = Record<string, unknown> & {
   job: GenerationJob;
   index: number;
   onRetry: () => void;
+  imageSized?: boolean;
 };
 
-export function CanvasResultNode({ data }: NodeProps<CanvasResultNodeType>) {
+export function CanvasResultNode({ id, data, selected }: NodeProps<CanvasResultNodeType>) {
   const { job, index, onRetry } = data;
   const output = job.outputs[index];
+  const { updateNode } = useReactFlow<CanvasNode>();
 
   if (job.state === "failed" || job.state === "cancelled") {
     return (
@@ -45,15 +48,36 @@ export function CanvasResultNode({ data }: NodeProps<CanvasResultNodeType>) {
   }
 
   return (
-    <article className={`${styles.resultNode} ${styles.imageNode}`}>
-      <a className="nodrag" href={`/assets/${encodeURIComponent(output.id)}`} aria-label={`查看生成图片 ${index + 1}`}>
-        <PrivateObjectImage
-          src={output.previewUrl}
-          alt={`生成图片 ${index + 1}`}
-          className={styles.resultImage}
-          style={output.width && output.height ? { aspectRatio: `${output.width} / ${output.height}` } : undefined}
+    <>
+      <article className={`${styles.resultNode} ${styles.imageNode} ${data.imageSized ? styles.sizedNode : ""}`}>
+        <a href={`/assets/${encodeURIComponent(output.id)}`} aria-label={`查看生成图片 ${index + 1}`}>
+          <PrivateObjectImage
+            src={output.previewUrl}
+            alt={`生成图片 ${index + 1}`}
+            className={styles.resultImage}
+            style={output.width && output.height ? { aspectRatio: `${output.width} / ${output.height}` } : undefined}
+            onLoad={(event) => {
+              const size = initialCanvasImageSize(event.currentTarget.naturalWidth, event.currentTarget.naturalHeight);
+              if (!size) return;
+              updateNode(id, (node) => node.type !== "imageResult" || node.data.imageSized ? {} : {
+                ...size,
+                data: { ...node.data, imageSized: true },
+              });
+            }}
+          />
+        </a>
+      </article>
+      {selected && data.imageSized && (
+        <NodeResizeControl
+          position="bottom-right"
+          keepAspectRatio
+          minWidth={48}
+          minHeight={48}
+          maxWidth={960}
+          maxHeight={960}
+          className={styles.resizeControl}
         />
-      </a>
-    </article>
+      )}
+    </>
   );
 }

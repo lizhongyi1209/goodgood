@@ -15,6 +15,16 @@
   background: transparent;
 }
 
+.canvas :global(.react-flow__node-imageResult.draggable),
+.canvas :global(.react-flow__node-imageResult.draggable.dragging),
+.canvas :global(.react-flow__node-sourceImage.draggable),
+.canvas :global(.react-flow__node-sourceImage.draggable.dragging),
+.imageNode,
+.imageNode a,
+.imageNode img {
+  cursor: move;
+}
+
 .canvas :global(.react-flow__node-imageResult.selected) .resultNode,
 .canvas :global(.react-flow__node-sourceImage.selected) .sourceNode {
   outline: 2px solid #27272a;
@@ -41,8 +51,8 @@
 
 .sourceNode {
   position: relative;
-  width: fit-content;
-  max-width: 238px;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
   border: 1px solid #e7e7e9;
   border-radius: 14px;
@@ -52,10 +62,9 @@
 
 .sourceImage {
   display: block;
-  width: auto;
-  height: auto;
-  max-width: 238px;
-  max-height: 320px;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .sourceFailure {
@@ -80,12 +89,37 @@
   box-shadow: 0 6px 24px rgb(0 0 0 / 5%);
 }
 
+.sizedNode {
+  width: 100%;
+  height: 100%;
+}
+
+.sizedNode > a {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 .resultImage {
   display: block;
   width: 100%;
   height: auto;
   max-height: 320px;
   object-fit: contain;
+}
+
+.sizedNode .resultImage {
+  height: 100%;
+  max-height: none;
+}
+
+.resizeControl:global(.react-flow__resize-control.handle) {
+  width: 13px;
+  height: 13px;
+  border: 2px solid #fff;
+  border-radius: 4px;
+  background: #27272a;
+  box-shadow: 0 0 0 1px #27272a;
 }
 
 .pendingNode { padding: 10px; }

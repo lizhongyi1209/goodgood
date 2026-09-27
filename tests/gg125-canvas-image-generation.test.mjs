@@ -39,6 +39,17 @@ test("canvas result nodes keep their positions through progress, failure and ret
   const succeeded = upsertCanvasJobNodes(retried, "run-1", job("succeeded"), { x: 0, y: 0 }, retry);
   assert.equal(succeeded[0].data.job.outputs[0].id, "image-1");
   assert.equal(succeeded[1].data.job.outputs[1].id, "image-2");
+
+  const resized = succeeded.map((node, index) => index === 0
+    ? { ...node, width: 160, height: 320, data: { ...node.data, imageSized: true } }
+    : node);
+  const refreshed = upsertCanvasJobNodes(resized, "run-1", job("succeeded"), { x: 0, y: 0 }, retry);
+  assert.deepEqual({ width: refreshed[0].width, height: refreshed[0].height }, { width: 160, height: 320 });
+  assert.equal(refreshed[0].data.imageSized, true);
+  const replacement = { ...job("succeeded"), outputs: [{ id: "image-new" }, { id: "image-2" }] };
+  const replaced = upsertCanvasJobNodes(refreshed, "run-1", replacement, { x: 0, y: 0 }, retry);
+  assert.equal(replaced[0].width, undefined);
+  assert.equal(replaced[0].data.imageSized, false);
 });
 
 test("canvas route owns its page and leaves the main workspace", () => {
