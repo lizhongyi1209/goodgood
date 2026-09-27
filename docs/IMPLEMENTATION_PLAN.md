@@ -1,13 +1,14 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-27
-- Current phase: GG-134 根据站长截图收紧四角透明缩放命中区，本地门禁完成，待站长手动验收；GG-133 缩小圆角获站长正面反馈。生产应用仍为 GG-098，未部署。
-- Current objective: 站长在现有已登录 5173 `/canvas` 检查光标是否仅在圆角附近变化，旁边直边保持默认箭头，四角仍可等比缩放。
-- Previous objective: GG-134 移除可见四角样式并通过门禁；站长截图指出透明命中区仍覆盖到圆角旁直边。
+- Current phase: GG-135 画布图片移动对齐辅助线本地实现与门禁完成，待站长手动验收；GG-134 四角光标调整获站长「可以了」反馈。生产应用仍为 GG-098，未部署。
+- Current objective: 站长在现有已登录 5173 `/canvas` 移动单张及多张图片，确认靠近其他图片边缘或中心线时出现灰色辅助线，松开后消失，图片落点不吸附。
+- Previous objective: GG-134 收紧四角透明缩放命中区，通过门禁并获站长确认。
 
 ## Current checkpoint
 
-- Task [GG-134](tasks/GG-134-canvas-rounded-corner-resize-handles.md)：**命中区精修与本地门禁完成，待站长手动验收**。沿用 React Flow 官方 `NodeResizeControl` 的四角等比缩放与对角光标，可见控件保持移除；根据站长截图把 22px 方形透明区收紧为随卡片尺寸缩小的椭圆命中区。隔离浏览器验证椭圆外不再命中，定向测试 15/15，`check:local` 592 项 / 569 通过 / 23 跳过 / 0 失败，5173 `/canvas` HTTP 200；未替换检查点或部署生产。
+- Task [GG-135](tasks/GG-135-canvas-image-alignment-guides.md)：**本地实现与门禁完成，待站长手动验收**。React Flow 拖动回调读取已加载图片边界，比较移动组与其余图片的左右/上下边和中心线；`ViewportPortal` 绘制最多一条水平与一条垂直灰线，松开即清除，不吸附或改写节点。定向测试 19/19、TypeScript 通过，`check:local` 596 项 / 573 通过 / 23 跳过 / 0 失败，5173 `/canvas` HTTP 200；未做已登录浏览器验收、真实上传或付费生成，未替换 32131 检查点或部署生产。
+- Task [GG-134](tasks/GG-134-canvas-rounded-corner-resize-handles.md)：**四角透明命中区精修与本地门禁完成，站长确认「可以了」**。保留官方 `NodeResizeControl` 与四角等比缩放，椭圆透明命中区贴近圆角；站长随即提出 GG-135 对齐辅助线需求。
 - Task [GG-133](tasks/GG-133-canvas-proportional-image-corners.md)：**本地实现与门禁完成，待站长手动验收**。图片节点圆角由固定 14px 改为 `min(14px, 6%)`，仅应用于本地图片和生成图片，遮罩与细蓝选中轮廓沿用图片裁切；加载和失败节点不变。`check:local` 592 项 / 569 通过 / 23 跳过 / 0 失败，5173 `/canvas` HTTP 200；未替换检查点或部署生产。
 - Task [GG-132](tasks/GG-132-canvas-uncontrolled-resize.md)：**本地实现与门禁完成，站长确认缩放正常且报错消失**。React Flow 改用 `defaultNodes` 持有节点，页面仅镜像变化；本地图读取原始比例后以官方 `style` 设置初始尺寸，生成图使用已有宽高，四角缩放继续由官方 `NodeResizeControl` 处理。原受控模式连续缩放约 20 次报错，新模式稳定四角及连续 20 次立即缩放均为 0 次；诊断文件已清理。定向画布测试 8/8，`check:local` 592 项 / 569 通过 / 23 跳过 / 0 失败，5173 `/canvas` HTTP 200。未替换检查点或部署生产。
 - Task [GG-131](tasks/GG-131-canvas-resize-observer-loop.md)：**历史本地实现，已被 GG-132 替代**。跨帧测量回写曾通过 591 项 / 568 通过 / 23 跳过 / 0 失败门禁，但站长确认缩放正常时 vinext ResizeObserver 覆盖层仍出现，故不视为浏览器验收通过。

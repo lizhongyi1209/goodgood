@@ -4,6 +4,17 @@
   background: #fff;
 }
 
+.canvas :global(.react-flow__viewport-portal) {
+  z-index: 1001;
+  pointer-events: none;
+}
+
+.alignmentGuide {
+  position: absolute;
+  background: #a3a3a3;
+  pointer-events: none;
+}
+
 .canvas :global(.react-flow__pane),
 .canvas :global(.react-flow__pane.dragging) {
   cursor: default;

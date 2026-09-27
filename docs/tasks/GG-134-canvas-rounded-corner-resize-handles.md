@@ -1,6 +1,6 @@
 # GG-134 — 画布图片四角缩放控件精简
 
-- 状态：透明命中区收紧与本地门禁完成，待站长手动验收；沿用 `F:/goodgood-worktrees/GG-116` 的 `feature/GG-116-asset-history-actions`，不切分支；未部署。
+- 状态：透明命中区收紧与本地门禁完成，站长反馈「可以了」；沿用 `F:/goodgood-worktrees/GG-116` 的 `feature/GG-116-asset-history-actions`，不切分支；未部署。
 - 基线：GG-133 `ee5d19c`，工作区干净；站长确认图片缩小时圆角效果改善，并提出四角方形控件与圆角图片不协调。
 - 决策关系：按站长验收反馈再次修订 [ADR 0110](../decisions/0110-canvas-image-selection-frame.md) 的缩放控件外观；保留 React Flow 官方 `NodeResizeControl`、四角对应的对角缩放光标、等比缩放和尺寸限制。
 
@@ -25,4 +25,4 @@
 
 ## 下一步
 
-站长在已登录的 5173 `/canvas` 确认光标变化更靠近四个圆角，直边保持普通箭头，四角仍能缩放。
+站长已确认这一轮四角光标调整可以使用；后续对齐辅助线由 GG-135 跟进。
