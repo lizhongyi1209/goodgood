@@ -1,9 +1,5 @@
 # GG-063 verification
 
-## GG-135 canvas image alignment guides
-
-Run `node --test tests/gg135-canvas-alignment-guides.test.mjs` plus the focused canvas and documentation tests, then one `npm run check:local`. The pure helper must stay empty with no measured comparison image, choose the nearest horizontal and vertical edge/center anchors, hold a ten-screen-pixel tolerance across zoom levels, and return exact X/Y offsets without mutating inputs. Group snapping must preserve relative spacing and leave other nodes unchanged. On the existing authenticated 5173 `/canvas`, the operator will move two local or generated images near each other's edges and centers, check gray guides, and release to confirm exact axis alignment. Moving a selected group should compare its outer bounds to remaining images and shift as a whole. Away from the guide threshold, movement stays free. Lines clear on release, stay inert to pointer input, and never show during image resize or canvas pan. Actual browser acceptance belongs to the operator; avoid real uploads or billable generation.
-
 ## GG-134 canvas invisible corner resize targets
 
 Run the focused canvas and documentation tests, then one full `npm run check:local` after the CSS settles. On the existing authenticated 5173 `/canvas`, the operator will select and resize loaded local and generated images at all four corners: no square or arc should appear; the diagonal cursor should start near each rounded corner rather than along the adjacent straight edges. The smaller oval transparent target must still allow four-corner dragging with the same aspect ratio and size limits. Hover, image corner scaling, selected outline, asset-detail navigation and loading/failure states should remain as before. Agent HTTP checks and an isolated browser hit-test are not authenticated visual acceptance; avoid real uploads or billable generation.
