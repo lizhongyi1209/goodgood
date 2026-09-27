@@ -112,13 +112,6 @@ export function CanvasPage() {
   const canvasInputRef = useRef<HTMLInputElement>(null);
   const objectUrlsRef = useRef(new Set<string>());
   const busyRef = useRef(false);
-  const measuredChangesRef = useRef(new Map<string, Extract<NodeChange<CanvasNode>, { type: "dimensions" }>>());
-  const measureFrameRef = useRef<number | null>(null);
-
-  useEffect(() => () => {
-    if (measureFrameRef.current !== null) cancelAnimationFrame(measureFrameRef.current);
-    measuredChangesRef.current.clear();
-  }, []);
 
   const refreshSession = useCallback(async () => {
     try {
@@ -275,7 +268,8 @@ export function CanvasPage() {
         },
       };
     });
-    setNodes((current) => [...current, ...added]);
+    if (flow) flow.setNodes((current) => [...current, ...added]);
+    else setNodes((current) => [...current, ...added]);
   };
 
   const chooseCanvasImages = (event: ChangeEvent<HTMLInputElement>) => {
@@ -292,26 +286,7 @@ export function CanvasPage() {
       URL.revokeObjectURL(node.data.previewUrl);
       objectUrlsRef.current.delete(node.data.previewUrl);
     }
-    const immediate: NodeChange<CanvasNode>[] = [];
-    for (const change of changes) {
-      if (change.type === "dimensions" && change.resizing === undefined) {
-        // React Flow reports measurements inside ResizeObserver. Apply them next
-        // frame so the observed node is not rerendered during the same delivery.
-        if (!removed.has(change.id)) measuredChangesRef.current.set(change.id, change);
-      } else {
-        immediate.push(change);
-        if (change.type === "remove") measuredChangesRef.current.delete(change.id);
-      }
-    }
-    if (immediate.length) onNodesChange(immediate);
-    if (measuredChangesRef.current.size && measureFrameRef.current === null) {
-      measureFrameRef.current = requestAnimationFrame(() => {
-        measureFrameRef.current = null;
-        const measured = [...measuredChangesRef.current.values()];
-        measuredChangesRef.current.clear();
-        if (measured.length) onNodesChange(measured);
-      });
-    }
+    onNodesChange(changes);
   };
 
   const onCanvasDragOver = (event: DragEvent<HTMLElement>) => {
@@ -355,14 +330,17 @@ export function CanvasPage() {
     setFormError(null);
     const runKey = previous?.runKey ?? globalThis.crypto.randomUUID();
     const visibleCenter = flow?.screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight * 0.38 }) ?? { x: 0, y: 0 };
-    const rowBottom = nodes.reduce((bottom, node) => Math.max(bottom, node.position.y + 350), visibleCenter.y - 120);
-    const previousPosition = previous && nodes.find((node) => node.id === `canvas-${runKey}-0`)?.position;
+    const currentNodes = flow?.getNodes() ?? nodes;
+    const rowBottom = currentNodes.reduce((bottom, node) => Math.max(bottom, node.position.y + 350), visibleCenter.y - 120);
+    const previousPosition = previous && currentNodes.find((node) => node.id === `canvas-${runKey}-0`)?.position;
     const origin = previousPosition ?? {
       x: visibleCenter.x - (snapshot.count * 254 - 16) / 2,
-      y: nodes.length ? rowBottom + 24 : visibleCenter.y - 120,
+      y: currentNodes.length ? rowBottom + 24 : visibleCenter.y - 120,
     };
     const observe = (job: GenerationJob) => {
-      setNodes((current) => upsertCanvasJobNodes(current, runKey, job, origin, () => void runJob(job.input, { runKey, job })));
+      const upsert = (current: CanvasNode[]) => upsertCanvasJobNodes(current, runKey, job, origin, () => void runJob(job.input, { runKey, job }));
+      if (flow) flow.setNodes(upsert);
+      else setNodes(upsert);
       if (!job.id.startsWith("pending_") && job.state === "queued" || ["succeeded", "failed", "cancelled"].includes(job.state)) {
         void refreshBilling();
       }
@@ -414,7 +392,10 @@ export function CanvasPage() {
       }}
       onDrop={onCanvasDrop}
     >
-      <CanvasWorkspace nodes={nodes} onInit={setFlow} onNodesChange={handleNodesChange} />
+      <CanvasWorkspace onInit={(instance) => {
+        setFlow(instance);
+        if (nodes.length) instance.setNodes(nodes);
+      }} onNodesChange={handleNodesChange} />
       {dropActive && <div className={styles.dropOverlay} aria-hidden="true">松开以添加图片到画布</div>}
       <header className={styles.header}>
         <a className={styles.back} href="/create" aria-label="返回创作"><ArrowLeft size={18} /></a>

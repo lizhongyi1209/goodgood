@@ -1,8 +1,12 @@
 # GG-063 verification
 
-## GG-131 canvas resize observation
+## GG-132 canvas resize observation
 
-Run the focused GG-125/GG-126 canvas and documentation tests, typecheck, then one full `npm run check:local`. React Flow's measured dimension notifications must be applied in the next animation frame, while pointer-driven resize and position changes stay immediate; pending measurements for removed nodes and unmounted canvas must be discarded. The operator will manually drag all four corners on the existing 5173 `/canvas` and check that no vinext ResizeObserver overlay appears. HTTP 200 and automated tests do not replace that interaction check. Do not submit a real upload or billable generation.
+Use a local synthetic image without account data to compare the same four-corner resize in controlled `nodes` and React Flow-owned `defaultNodes` modes. Capture actual `window.error` events rather than hiding them: the controlled case reproduces the notification, while the settled uncontrolled case must resize at all four corners with zero `ResizeObserver loop completed with undelivered notifications.` events. Check that `onNodesChange` still mirrors positions and dimensions and that programmatic `setNodes` additions reach the canvas. Run the focused GG-125/GG-126 tests, typecheck, then one full `npm run check:local`. The operator will manually check the existing authenticated 5173 `/canvas`; the synthetic diagnostic does not establish authenticated acceptance. Do not submit real uploads or billable jobs.
+
+## GG-131 canvas resize observation (superseded by GG-132)
+
+The frame-delayed measurement implementation passed its local gate but did not remove the reported browser warning. GG-132 replaces it with React Flow-owned node state. The historical GG-131 verification did not establish browser acceptance.
 
 ## GG-130 canvas image selection frame
 

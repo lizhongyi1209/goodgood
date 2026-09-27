@@ -17,21 +17,21 @@ export type CanvasSourceNode = Node<CanvasSourceNodeData, "sourceImage">;
 export type CanvasNode = CanvasResultNodeType | CanvasSourceNode;
 
 const nodeTypes = { imageResult: CanvasResultNode, sourceImage: CanvasSourceImageNode };
+const initialNodes: CanvasNode[] = [];
+const initialEdges: [] = [];
 
 export function CanvasWorkspace({
-  nodes,
   onInit,
   onNodesChange,
 }: Readonly<{
-  nodes: CanvasNode[];
   onInit: (instance: ReactFlowInstance<CanvasNode>) => void;
   onNodesChange: (changes: NodeChange<CanvasNode>[]) => void;
 }>) {
   return (
     <section className={styles.canvas} aria-label="画布创作">
       <ReactFlow<CanvasNode>
-        nodes={nodes}
-        edges={[]}
+        defaultNodes={initialNodes}
+        defaultEdges={initialEdges}
         nodeTypes={nodeTypes}
         onInit={onInit}
         onNodesChange={onNodesChange}
