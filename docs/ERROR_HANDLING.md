@@ -1,5 +1,9 @@
 # GG-063 quality pricing errors
 
+## GG-127 asset grid resize recovery
+
+The asset masonry `ResizeObserver` batches observed card changes and writes grid spans on the next animation frame. This avoids synchronous observed-size feedback that browsers report as `ResizeObserver loop completed with undelivered notifications`; cleanup cancels a pending frame. The grid and list views retain their existing fallbacks and asset data is unaffected.
+
 ## GG-126 local canvas file errors
 
 The canvas rejects non-JPEG/PNG files, empty files and files over 20 MiB before creating object URLs. Invalid names receive an inline composer error while valid files in the same drop can still appear. A corrupt image shows a local preview failure and cannot be sent as a reference. A missing/non-active session or preview mode blocks the explicit reference upload. Existing reference upload failure stays in the tray for retry or removal; removing the local node does not discard a separate tray reference. Dropping a file prevents the browser's default file-navigation behavior. Temporary nodes and their previews are cleared on refresh.

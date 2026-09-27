@@ -221,10 +221,23 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
     };
     cards.forEach(placeCard);
     grid.classList.add(styles.masonryReady);
-    const observer = new ResizeObserver((entries) => entries.forEach((entry) => placeCard(entry.target as HTMLElement)));
+    const pendingCards = new Set<HTMLElement>();
+    let frame: number | null = null;
+    const observer = new ResizeObserver((entries) => {
+      entries.forEach((entry) => pendingCards.add(entry.target as HTMLElement));
+      if (frame !== null) return;
+      // Writing gridRowEnd inside ResizeObserver can trigger another resize before paint.
+      frame = requestAnimationFrame(() => {
+        frame = null;
+        pendingCards.forEach(placeCard);
+        pendingCards.clear();
+      });
+    });
     cards.forEach((card) => observer.observe(card));
     return () => {
       observer.disconnect();
+      if (frame !== null) cancelAnimationFrame(frame);
+      pendingCards.clear();
       grid.classList.remove(styles.masonryReady);
       cards.forEach((card) => { card.style.gridRowEnd = ""; });
     };

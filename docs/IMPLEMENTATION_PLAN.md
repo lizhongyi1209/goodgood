@@ -1,12 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-26
-- Current phase: GG-126 画布本地图片拖放与轻量操作本地实现及门禁完成，待站长在 5173 手动验收；GG-125 独立图片生成、GG-123 公共 UI、GG-122 Hero 与 GG-121 资产视觉改动同样待验收。32131 Web 仍为上一已验证检查点，生产应用仍为 GG-098，未部署。
-- Current objective: 站长检查 `/canvas` 多图拖入、文件选择、查看大图、参考图加入、移除与适应视野；之后再决定画布保存、资产库拖入或其他工具。
-- Previous objective: GG-125 独立画布与常用图片生成本地实现及门禁完成，待站长手动验收。
+- Current phase: GG-127 资产网格 ResizeObserver 报错本地修复与门禁完成，5173 `/assets` HTTP 200，待站长刷新页面手动确认；GG-126 画布本地图片、GG-125 独立生成、GG-123 公共 UI、GG-122 Hero 仍待验收。生产应用仍为 GG-098，未部署。
+- Current objective: 站长刷新 5173 `/assets` 检查 ResizeObserver 覆盖层是否消失，然后继续反馈新需求。
+- Previous objective: GG-126 画布本地图片拖放与轻量操作通过门禁，待站长手动验收。
 
 ## Current checkpoint
 
+- Task [GG-127](tasks/GG-127-asset-resize-observer-loop.md)：**资产瀑布流 ResizeObserver 修复与本地门禁完成，待站长手动浏览器确认**。尺寸观察回调只收集卡片，下一动画帧统一写网格行高，清理时取消未执行帧；不改变六列布局、比例或资产数据。定向资产/文档测试 10/10，`check:local` 590 项 / 567 通过 / 23 跳过 / 0 失败，5173 `/assets` HTTP 200。生产未变。
 - Task [GG-126](tasks/GG-126-canvas-local-image-drop.md)：**本地图片拖放与轻量操作本地实现及门禁完成，待站长手动验收**。本地 JPEG/PNG 即时成为临时可移动图片节点；顶部文件选择和适应视野、节点大图预览/明确加入参考/移除，复用既有 20 MiB 校验和私有上传。拖入不触发网络写入或付费生成，节点/布局不保存。最终 `check:local` 590 项 / 567 通过 / 23 跳过 / 0 失败，Lint 0 错误、110 条既有警告，5173 `/canvas` HTTP 200。32131 和生产未替换。
 - Task [GG-125](tasks/GG-125-standalone-canvas-image-generation.md)：**独立 `/canvas` 与常用图片生成本地实现及门禁完成，待站长手动验收**。按 [ADR 0108](decisions/0108-standalone-canvas-image-generation.md) 替代 [GG-124](tasks/GG-124-canvas-creation-foundation.md) 的共享壳层空白界面。复用真实登录/报价/参考图/生成边界，结果在临时 React Flow 节点显示；纯白画布与缩放保留。修复 Vite RSC 入口解析及 favicon 后，5173 两个 GET 均 HTTP 200；`check:local` 587 项 / 564 通过 / 23 跳过 / 0 失败。32131 与生产未更新。
 - Task [GG-123](tasks/GG-123-shadcn-ai-elements-adoption.md)：**前三批公共 UI 本地实现与门禁完成；第四批 AI Elements CLI 已安装且门禁通过；待站长验收**。
@@ -79,7 +80,7 @@
 - **2026-09-17 首次生产恢复演练通过**：快照 `ce191630`、59 表 / 2403 行 / 43 迁移；
   维护窗口约 66 秒。「备份 timer disabled、无自动备份」的旧结论**已更正为错误**。
 - 独立缺口（已记录未处理）：**仅剩无告警通道**。
-- Next action: 站长在现有 5173 热更新页面手动验收 GG-126 画布本地图片操作和 GG-125 图片生成；反馈具体问题后按需修复。画布持久化、资产库拖入及生产部署另行决定。
+- Next action: 站长在现有 5173 `/assets` 手动确认 ResizeObserver 覆盖层是否消失；画布及资产后续需求按站长反馈继续。
 - Blockers: 无阻塞执行项；`operations` 缺口为已知并已授权接受。
 - 参考图校验最长近 6 分钟、超过 nginx 70s 读超时的服务端性能根因仍待排查；
   GG-103 前端通过 owner-scoped 状态查询避免把已入库素材误报为失败。

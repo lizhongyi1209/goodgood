@@ -1,5 +1,9 @@
 # GG-063 verification
 
+## GG-127 asset grid resize fix
+
+Run the asset workspace tests and typecheck, then one full `check:local`. The regression is a browser ResizeObserver delivery warning; the operator will refresh the existing 5173 `/assets` tab to confirm the vinext overlay no longer appears. The agent's HTTP check proves route availability only and is not a substitute for that manual interaction check.
+
 ## GG-126 local canvas images
 
 Run `node --test tests/gg125-canvas-image-generation.test.mjs tests/gg126-canvas-local-images.test.mjs` for accepted/rejected file types and sizes, empty input, multiple-image placement, and retention of local nodes through generation state changes. Typecheck and lint cover the React Flow source node, shadcn preview dialog and event handlers. Then run `npm run check:local` once after code stabilizes. The operator will manually inspect local drag/drop, file selection, the preview and reference action on 5173; automated tests do not upload real files or submit billable jobs.
