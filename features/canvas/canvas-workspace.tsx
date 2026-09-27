@@ -10,7 +10,7 @@ import {
 } from "@xyflow/react";
 
 import { ZoomSelect } from "@/components/ui/zoom-select";
-import { canvasAlignmentGuides } from "./canvas-alignment-guides.mjs";
+import { canvasAlignmentGuides, snapCanvasNodes } from "./canvas-alignment-guides.mjs";
 import { CanvasResultNode, type CanvasResultNodeData } from "./canvas-result-node";
 import { CanvasSourceNode as CanvasSourceImageNode, type CanvasSourceNodeData } from "./canvas-source-node";
 import styles from "./canvas-workspace.module.css";
@@ -27,6 +27,19 @@ type GuideState = { guides: NonNullable<ReturnType<typeof canvasAlignmentGuides>
 function isLoadedImage(node: CanvasNode) {
   return !node.hidden && Boolean(node.data.imageSized) &&
     (node.type === "sourceImage" || node.type === "imageResult" && Boolean(node.data.job.outputs[node.data.index]));
+}
+
+function readAlignment(instance: ReactFlowInstance<CanvasNode>, node: CanvasNode | undefined, draggedNodes: CanvasNode[]) {
+  const dragged = draggedNodes.length ? draggedNodes : node ? [node] : [];
+  const moving = dragged.filter(isLoadedImage);
+  if (!moving.length) return null;
+  const draggedIds = new Set(dragged.map((item) => item.id));
+  const others = instance.getNodes()
+    .filter((item) => isLoadedImage(item) && !draggedIds.has(item.id))
+    .map((item) => instance.getNodesBounds([item.id]));
+  const zoom = instance.getViewport().zoom;
+  const guides = canvasAlignmentGuides(instance.getNodesBounds(moving.map((item) => item.id)), others, zoom);
+  return guides ? { guides, zoom, draggedIds } : null;
 }
 
 export function CanvasWorkspace({
@@ -50,18 +63,19 @@ export function CanvasWorkspace({
         onNodeDrag={(_, node, draggedNodes) => {
           const instance = flowRef.current;
           if (!instance) return;
-          const dragged = draggedNodes.length ? draggedNodes : [node];
-          const moving = dragged.filter(isLoadedImage);
-          const movingIds = new Set(dragged.map((item) => item.id));
-          if (!moving.length) { setGuideState(null); return; }
-          const others = instance.getNodes()
-            .filter((item) => isLoadedImage(item) && !movingIds.has(item.id))
-            .map((item) => instance.getNodesBounds([item.id]));
-          const zoom = instance.getViewport().zoom;
-          const guides = canvasAlignmentGuides(instance.getNodesBounds(moving.map((item) => item.id)), others, zoom);
-          setGuideState(guides ? { guides, zoom } : null);
+          const alignment = readAlignment(instance, node, draggedNodes);
+          setGuideState(alignment ? { guides: alignment.guides, zoom: alignment.zoom } : null);
         }}
-        onNodeDragStop={() => setGuideState(null)}
+        onNodeDragStop={(_, node, draggedNodes) => {
+          const instance = flowRef.current;
+          if (instance) {
+            const alignment = readAlignment(instance, node, draggedNodes);
+            if (alignment && (alignment.guides.offset.x || alignment.guides.offset.y)) {
+              instance.setNodes((current) => snapCanvasNodes(current, alignment.draggedIds, alignment.guides.offset));
+            }
+          }
+          setGuideState(null);
+        }}
         defaultViewport={{ x: 0, y: 0, zoom: 1 }}
         minZoom={0.25}
         maxZoom={2}

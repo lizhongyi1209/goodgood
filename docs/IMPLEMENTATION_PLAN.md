@@ -1,13 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-27
-- Current phase: GG-135 画布图片移动对齐辅助线本地实现与门禁完成，待站长手动验收；GG-134 四角光标调整获站长「可以了」反馈。生产应用仍为 GG-098，未部署。
-- Current objective: 站长在现有已登录 5173 `/canvas` 移动单张及多张图片，确认靠近其他图片边缘或中心线时出现灰色辅助线，松开后消失，图片落点不吸附。
-- Previous objective: GG-134 收紧四角透明缩放命中区，通过门禁并获站长确认。
+- Current phase: GG-135 画布图片辅助线与拖动落点吸附本地实现及门禁完成，待站长手动验收；纯视觉初版已由站长纠正。生产应用仍为 GG-098，未部署。
+- Current objective: 站长在现有已登录 5173 `/canvas` 移动单张及多张图片，确认靠近其他图片边缘或中心线时出现灰色辅助线，松开后准确对齐同一 X/Y 轴；离开阈值时仍自由移动。
+- Previous objective: GG-135 初版仅画辅助线不吸附，站长指出它不能帮助整理较多自由移动的图片。
 
 ## Current checkpoint
 
-- Task [GG-135](tasks/GG-135-canvas-image-alignment-guides.md)：**本地实现与门禁完成，待站长手动验收**。React Flow 拖动回调读取已加载图片边界，比较移动组与其余图片的左右/上下边和中心线；`ViewportPortal` 绘制最多一条水平与一条垂直灰线，松开即清除，不吸附或改写节点。定向测试 19/19、TypeScript 通过，`check:local` 596 项 / 573 通过 / 23 跳过 / 0 失败，5173 `/canvas` HTTP 200；未做已登录浏览器验收、真实上传或付费生成，未替换 32131 检查点或部署生产。
+- Task [GG-135](tasks/GG-135-canvas-image-alignment-guides.md)：**辅助线与实际落点吸附本地实现及门禁完成，待站长手动验收**。React Flow 拖动回调读取已加载图片边界，比较移动组与其余图片的左右/上下边和中心线；`ViewportPortal` 绘制最多一条水平与一条垂直灰线，松开时用计算偏移平移移动组，保留相对间距与自由移动。纯视觉版本 `4b3239c` 被站长纠正；修订版定向测试 5/5、TypeScript 通过，`check:local` 597 项 / 574 通过 / 23 跳过 / 0 失败，5173 `/canvas` HTTP 200；未做已登录浏览器验收、真实上传或付费生成，未替换 32131 检查点或部署生产。
 - Task [GG-134](tasks/GG-134-canvas-rounded-corner-resize-handles.md)：**四角透明命中区精修与本地门禁完成，站长确认「可以了」**。保留官方 `NodeResizeControl` 与四角等比缩放，椭圆透明命中区贴近圆角；站长随即提出 GG-135 对齐辅助线需求。
 - Task [GG-133](tasks/GG-133-canvas-proportional-image-corners.md)：**本地实现与门禁完成，待站长手动验收**。图片节点圆角由固定 14px 改为 `min(14px, 6%)`，仅应用于本地图片和生成图片，遮罩与细蓝选中轮廓沿用图片裁切；加载和失败节点不变。`check:local` 592 项 / 569 通过 / 23 跳过 / 0 失败，5173 `/canvas` HTTP 200；未替换检查点或部署生产。
 - Task [GG-132](tasks/GG-132-canvas-uncontrolled-resize.md)：**本地实现与门禁完成，站长确认缩放正常且报错消失**。React Flow 改用 `defaultNodes` 持有节点，页面仅镜像变化；本地图读取原始比例后以官方 `style` 设置初始尺寸，生成图使用已有宽高，四角缩放继续由官方 `NodeResizeControl` 处理。原受控模式连续缩放约 20 次报错，新模式稳定四角及连续 20 次立即缩放均为 0 次；诊断文件已清理。定向画布测试 8/8，`check:local` 592 项 / 569 通过 / 23 跳过 / 0 失败，5173 `/canvas` HTTP 200。未替换检查点或部署生产。
