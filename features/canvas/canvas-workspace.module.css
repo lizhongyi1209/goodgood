@@ -119,11 +119,13 @@
 }
 
 .resizeControl:global(.react-flow__resize-control.handle) {
-  width: 22px;
-  height: 22px;
+  width: clamp(10px, 20%, 16px);
+  height: clamp(10px, 20%, 16px);
   border: 0;
+  border-radius: 50%;
   background: transparent;
   box-shadow: none;
+  clip-path: ellipse(50% 50%);
 }
 
 .pendingNode { padding: 10px; }

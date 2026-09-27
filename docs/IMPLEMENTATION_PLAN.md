@@ -1,13 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-27
-- Current phase: GG-134 按站长视觉反馈移除四角可见圆弧、保留透明缩放区，本地门禁完成，待站长手动验收；GG-133 缩小圆角获站长正面反馈。生产应用仍为 GG-098，未部署。
-- Current objective: 站长在现有已登录 5173 `/canvas` 确认四角无可见控件，光标正确且仍可等比缩放。
-- Previous objective: GG-134 四角圆弧门禁通过，但站长反馈视觉效果不理想，要求移除可见控件。
+- Current phase: GG-134 根据站长截图收紧四角透明缩放命中区，本地门禁完成，待站长手动验收；GG-133 缩小圆角获站长正面反馈。生产应用仍为 GG-098，未部署。
+- Current objective: 站长在现有已登录 5173 `/canvas` 检查光标是否仅在圆角附近变化，旁边直边保持默认箭头，四角仍可等比缩放。
+- Previous objective: GG-134 移除可见四角样式并通过门禁；站长截图指出透明命中区仍覆盖到圆角旁直边。
 
 ## Current checkpoint
 
-- Task [GG-134](tasks/GG-134-canvas-rounded-corner-resize-handles.md)：**站长反馈后修订，本地门禁完成，待手动验收**。沿用 React Flow 官方 `NodeResizeControl` 的四角等比缩放与对角光标，移除白底方块与短暂尝试的蓝色圆弧，仅留 22px 透明命中区。修订版 `check:local` 592 项 / 569 通过 / 23 跳过 / 0 失败，5173 `/canvas` HTTP 200；未替换检查点或部署生产。
+- Task [GG-134](tasks/GG-134-canvas-rounded-corner-resize-handles.md)：**命中区精修与本地门禁完成，待站长手动验收**。沿用 React Flow 官方 `NodeResizeControl` 的四角等比缩放与对角光标，可见控件保持移除；根据站长截图把 22px 方形透明区收紧为随卡片尺寸缩小的椭圆命中区。隔离浏览器验证椭圆外不再命中，定向测试 15/15，`check:local` 592 项 / 569 通过 / 23 跳过 / 0 失败，5173 `/canvas` HTTP 200；未替换检查点或部署生产。
 - Task [GG-133](tasks/GG-133-canvas-proportional-image-corners.md)：**本地实现与门禁完成，待站长手动验收**。图片节点圆角由固定 14px 改为 `min(14px, 6%)`，仅应用于本地图片和生成图片，遮罩与细蓝选中轮廓沿用图片裁切；加载和失败节点不变。`check:local` 592 项 / 569 通过 / 23 跳过 / 0 失败，5173 `/canvas` HTTP 200；未替换检查点或部署生产。
 - Task [GG-132](tasks/GG-132-canvas-uncontrolled-resize.md)：**本地实现与门禁完成，站长确认缩放正常且报错消失**。React Flow 改用 `defaultNodes` 持有节点，页面仅镜像变化；本地图读取原始比例后以官方 `style` 设置初始尺寸，生成图使用已有宽高，四角缩放继续由官方 `NodeResizeControl` 处理。原受控模式连续缩放约 20 次报错，新模式稳定四角及连续 20 次立即缩放均为 0 次；诊断文件已清理。定向画布测试 8/8，`check:local` 592 项 / 569 通过 / 23 跳过 / 0 失败，5173 `/canvas` HTTP 200。未替换检查点或部署生产。
 - Task [GG-131](tasks/GG-131-canvas-resize-observer-loop.md)：**历史本地实现，已被 GG-132 替代**。跨帧测量回写曾通过 591 项 / 568 通过 / 23 跳过 / 0 失败门禁，但站长确认缩放正常时 vinext ResizeObserver 覆盖层仍出现，故不视为浏览器验收通过。
