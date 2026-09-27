@@ -1,13 +1,14 @@
 # Production implementation plan
 
 - Last synchronized: 2026-09-27
-- Current phase: GG-132 React Flow 画布节点所有权修复的本地实现与门禁完成，待站长手动浏览器复核；GG-131 的跨帧回写已被替代。生产应用仍为 GG-098，未部署。
-- Current objective: 站长在现有已登录 5173 `/canvas` 复核四角缩放、移动与 ResizeObserver 覆盖层；随后确定画布下一步功能。
-- Previous objective: GG-130 默认箭头、贴图细蓝框及四角缩放通过门禁；手动检查发现 ResizeObserver 报错。
+- Current phase: GG-133 画布图片缩小圆角同步调整的本地实现与门禁完成，待站长手动验收；GG-132 缩放正常且 ResizeObserver 报错消失已获站长确认。生产应用仍为 GG-098，未部署。
+- Current objective: 站长在现有已登录 5173 `/canvas` 检查小图圆角、遮罩与蓝色轮廓是否协调。
+- Previous objective: GG-132 使用 React Flow 持有节点、官方缩放控件和 `style` 初始尺寸，站长确认报错消失。
 
 ## Current checkpoint
 
-- Task [GG-132](tasks/GG-132-canvas-uncontrolled-resize.md)：**本地实现与门禁完成，待站长手动浏览器复核**。React Flow 改用 `defaultNodes` 持有节点，页面仅镜像变化；本地图读取原始比例后以官方 `style` 设置初始尺寸，生成图使用已有宽高，四角缩放继续由官方 `NodeResizeControl` 处理。原受控模式连续缩放约 20 次报错，新模式稳定四角及连续 20 次立即缩放均为 0 次；诊断文件已清理。定向画布测试 8/8，`check:local` 592 项 / 569 通过 / 23 跳过 / 0 失败，5173 `/canvas` HTTP 200。未做已登录浏览器验收、检查点替换或生产部署。
+- Task [GG-133](tasks/GG-133-canvas-proportional-image-corners.md)：**本地实现与门禁完成，待站长手动验收**。图片节点圆角由固定 14px 改为 `min(14px, 6%)`，仅应用于本地图片和生成图片，遮罩与细蓝选中轮廓沿用图片裁切；加载和失败节点不变。`check:local` 592 项 / 569 通过 / 23 跳过 / 0 失败，5173 `/canvas` HTTP 200；未替换检查点或部署生产。
+- Task [GG-132](tasks/GG-132-canvas-uncontrolled-resize.md)：**本地实现与门禁完成，站长确认缩放正常且报错消失**。React Flow 改用 `defaultNodes` 持有节点，页面仅镜像变化；本地图读取原始比例后以官方 `style` 设置初始尺寸，生成图使用已有宽高，四角缩放继续由官方 `NodeResizeControl` 处理。原受控模式连续缩放约 20 次报错，新模式稳定四角及连续 20 次立即缩放均为 0 次；诊断文件已清理。定向画布测试 8/8，`check:local` 592 项 / 569 通过 / 23 跳过 / 0 失败，5173 `/canvas` HTTP 200。未替换检查点或部署生产。
 - Task [GG-131](tasks/GG-131-canvas-resize-observer-loop.md)：**历史本地实现，已被 GG-132 替代**。跨帧测量回写曾通过 591 项 / 568 通过 / 23 跳过 / 0 失败门禁，但站长确认缩放正常时 vinext ResizeObserver 覆盖层仍出现，故不视为浏览器验收通过。
 - Task [GG-130](tasks/GG-130-canvas-image-selection-frame.md)：**本地实现与门禁完成，待站长手动验收**。按 [ADR 0110](decisions/0110-canvas-image-selection-frame.md) 将图片主体恢复系统默认箭头，选中框改为紧贴图片的一像素蓝线，并在四角设置等比缩放点；保留 GG-128 的浅灰悬停反馈与 GG-129 的节点缩放逻辑。定向画布测试 6/6、文档测试 8/8，`check:local` 591 项 / 568 通过 / 23 跳过 / 0 失败，5173 `/canvas` HTTP 200；未做浏览器验收、检查点替换或生产部署。
 - Task [GG-129](tasks/GG-129-canvas-image-resize.md)：**历史本地实现；指针与单角样式由 GG-130 替换**。按 [ADR 0109 补充](decisions/0109-quiet-canvas-image-hover.md) 实现原比例缩放及同一生成输出的尺寸保留；原 `move` 指针与右下角灰阶点已由 [ADR 0110](decisions/0110-canvas-image-selection-frame.md) 替代。原门禁 591 项 / 568 通过 / 23 跳过 / 0 失败；未做浏览器验收、检查点替换或生产部署。

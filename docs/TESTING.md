@@ -1,5 +1,9 @@
 # GG-063 verification
 
+## GG-133 canvas image corner scaling
+
+Run the focused canvas and documentation tests, then one full `npm run check:local` after the CSS settles. On the existing 5173 `/canvas`, the operator will resize a loaded local or generated image down toward the minimum: the image crop, shallow hover veil, and blue selection outline should share a smaller corner radius while the ordinary large image keeps its prior rounded shape. Loading, failure and the four resize controls should retain their existing styles. The agent's HTTP check is not visual acceptance.
+
 ## GG-132 canvas resize observation
 
 Use a local synthetic image without account data to compare the same four-corner resize in controlled `nodes` and React Flow-owned `defaultNodes` modes. Capture actual `window.error` events rather than hiding them: the controlled case reproduces the notification, while the uncontrolled case must resize at all four corners with zero `ResizeObserver loop completed with undelivered notifications.` events. Repeat immediate resize after node insertion, with its initial dimensions supplied through React Flow's documented `style` field. Check that `onNodesChange` still mirrors positions and dimensions and that programmatic `setNodes` additions reach the canvas. Run the focused GG-125/GG-126 tests, typecheck, then one full `npm run check:local`. The operator will manually check the existing authenticated 5173 `/canvas`; the synthetic diagnostic does not establish authenticated acceptance. Do not submit real uploads or billable jobs.
