@@ -112,6 +112,13 @@ export function CanvasPage() {
   const canvasInputRef = useRef<HTMLInputElement>(null);
   const objectUrlsRef = useRef(new Set<string>());
   const busyRef = useRef(false);
+  const measuredChangesRef = useRef(new Map<string, Extract<NodeChange<CanvasNode>, { type: "dimensions" }>>());
+  const measureFrameRef = useRef<number | null>(null);
+
+  useEffect(() => () => {
+    if (measureFrameRef.current !== null) cancelAnimationFrame(measureFrameRef.current);
+    measuredChangesRef.current.clear();
+  }, []);
 
   const refreshSession = useCallback(async () => {
     try {
@@ -285,7 +292,26 @@ export function CanvasPage() {
       URL.revokeObjectURL(node.data.previewUrl);
       objectUrlsRef.current.delete(node.data.previewUrl);
     }
-    onNodesChange(changes);
+    const immediate: NodeChange<CanvasNode>[] = [];
+    for (const change of changes) {
+      if (change.type === "dimensions" && change.resizing === undefined) {
+        // React Flow reports measurements inside ResizeObserver. Apply them next
+        // frame so the observed node is not rerendered during the same delivery.
+        if (!removed.has(change.id)) measuredChangesRef.current.set(change.id, change);
+      } else {
+        immediate.push(change);
+        if (change.type === "remove") measuredChangesRef.current.delete(change.id);
+      }
+    }
+    if (immediate.length) onNodesChange(immediate);
+    if (measuredChangesRef.current.size && measureFrameRef.current === null) {
+      measureFrameRef.current = requestAnimationFrame(() => {
+        measureFrameRef.current = null;
+        const measured = [...measuredChangesRef.current.values()];
+        measuredChangesRef.current.clear();
+        if (measured.length) onNodesChange(measured);
+      });
+    }
   };
 
   const onCanvasDragOver = (event: DragEvent<HTMLElement>) => {

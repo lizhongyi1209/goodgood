@@ -1,5 +1,9 @@
 # GG-063 verification
 
+## GG-131 canvas resize observation
+
+Run the focused GG-125/GG-126 canvas and documentation tests, typecheck, then one full `npm run check:local`. React Flow's measured dimension notifications must be applied in the next animation frame, while pointer-driven resize and position changes stay immediate; pending measurements for removed nodes and unmounted canvas must be discarded. The operator will manually drag all four corners on the existing 5173 `/canvas` and check that no vinext ResizeObserver overlay appears. HTTP 200 and automated tests do not replace that interaction check. Do not submit a real upload or billable generation.
+
 ## GG-130 canvas image selection frame
 
 Run the focused GG-125/GG-126 canvas and documentation tests, then one full `npm run check:local`. The operator will manually inspect 5173 `/canvas`: local and generated image bodies show the normal arrow, a selected loaded image has a flush one-pixel blue frame and four small corner controls, and each corner uses the matching diagonal resize cursor while preserving the image ratio. Hover retains only the shallow veil; generated result detail navigation remains available. Do not submit real uploads or billable generation for this check. The GG-129 description below is historical.
