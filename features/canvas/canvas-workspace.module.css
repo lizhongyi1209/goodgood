@@ -126,48 +126,6 @@
   box-shadow: none;
 }
 
-.resizeControl:global(.react-flow__resize-control.handle)::after {
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  box-sizing: border-box;
-  border: 2px solid transparent;
-  content: "";
-  pointer-events: none;
-}
-
-.resizeControl:global(.react-flow__resize-control.handle.top.left)::after {
-  top: 10px;
-  left: 10px;
-  border-top-color: #3b82f6;
-  border-left-color: #3b82f6;
-  border-top-left-radius: 7px;
-}
-
-.resizeControl:global(.react-flow__resize-control.handle.top.right)::after {
-  top: 10px;
-  right: 10px;
-  border-top-color: #3b82f6;
-  border-right-color: #3b82f6;
-  border-top-right-radius: 7px;
-}
-
-.resizeControl:global(.react-flow__resize-control.handle.bottom.left)::after {
-  bottom: 10px;
-  left: 10px;
-  border-bottom-color: #3b82f6;
-  border-left-color: #3b82f6;
-  border-bottom-left-radius: 7px;
-}
-
-.resizeControl:global(.react-flow__resize-control.handle.bottom.right)::after {
-  right: 10px;
-  bottom: 10px;
-  border-right-color: #3b82f6;
-  border-bottom-color: #3b82f6;
-  border-bottom-right-radius: 7px;
-}
-
 .pendingNode { padding: 10px; }
 .pendingImage { height: 226px; border-radius: 9px; background: #f3f3f4; }
 .pendingLabel { display: flex; align-items: center; gap: 7px; padding: 12px 3px 2px; color: #71717a; font-size: 12px; }

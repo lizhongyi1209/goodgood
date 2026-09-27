@@ -8,13 +8,13 @@
 
 ## Context
 
-The operator clarified that “移动” meant the computer's normal arrow cursor, not the CSS four-way move cursor. The selected image's dark two-pixel outline had a gap from the picture, and its single bottom-right handle felt too prominent. The requested selection affordance is a fine bright-blue frame touching the image and minimal resize controls on all four corners.
+The operator clarified that “移动” meant the computer's normal arrow cursor, not the CSS four-way move cursor. The selected image's dark two-pixel outline had a gap from the picture, and its single bottom-right handle felt too prominent. The requested selection affordance is a fine bright-blue frame touching the image and resize access at all four corners. The white square handles and the later GG-134 quarter arcs were both rejected after visual review.
 
 ## Decision
 
 - Image bodies use the system's default arrow on hover and while dragging. Dragging and clicking a generated image to open asset detail still work.
 - A selected, loaded local or generated image has a one-pixel `#3b82f6` outline with zero offset. The image card has no inner border or padding, so the frame touches the image.
-- Four compact blue quarter-arc controls sit flush with the image corners, without white square fills. Their transparent hit areas stay large enough to grab. Opposite corners use the standard matching diagonal resize cursors. Dragging any corner preserves the original aspect ratio and the existing size limits. GG-134 refines the original square handle appearance; it does not change the resize behavior.
+- Four transparent, visually hidden hit areas sit at the image corners. Opposite corners use the standard matching diagonal resize cursors. Dragging any corner preserves the original aspect ratio and the existing size limits. The selected image's blue outline is the only visible resize affordance; GG-134 removes both the original square handles and its brief quarter-arc experiment.
 - Hover alone keeps only the shallow neutral veil. The blue is solely a spatial selection/resize affordance on canvas images; it does not become a product accent, status color, focus token, or shared component color.
 
 ## Consequences

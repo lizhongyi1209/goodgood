@@ -1,8 +1,8 @@
 # GG-063 verification
 
-## GG-134 canvas rounded corner resize handles
+## GG-134 canvas invisible corner resize targets
 
-Run the focused canvas and documentation tests, then one full `npm run check:local` after the CSS settles. On the existing authenticated 5173 `/canvas`, the operator will select and resize loaded local and generated images at all four corners: controls should be small blue quarter-arcs close to the image edge, without square white fills; the transparent drag target should remain easy to grab and preserve diagonal cursors, aspect ratio and size limits. Hover, image corner scaling, selected outline, asset-detail navigation and loading/failure states should remain as before. Agent HTTP checks are not visual acceptance; avoid real uploads or billable generation.
+Run the focused canvas and documentation tests, then one full `npm run check:local` after the CSS settles. On the existing authenticated 5173 `/canvas`, the operator will select and resize loaded local and generated images at all four corners: no square or arc should appear; the transparent drag target should remain easy to grab and preserve diagonal cursors, aspect ratio and size limits. Hover, image corner scaling, selected outline, asset-detail navigation and loading/failure states should remain as before. Agent HTTP checks are not visual acceptance; avoid real uploads or billable generation.
 
 ## GG-133 canvas image corner scaling
 
