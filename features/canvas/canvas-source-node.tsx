@@ -33,7 +33,7 @@ export function CanvasSourceNode({ id, data, selected }: NodeProps<CanvasSourceN
                 const size = initialCanvasImageSize(event.currentTarget.naturalWidth, event.currentTarget.naturalHeight);
                 if (!size) return;
                 updateNode(id, (node) => node.type !== "sourceImage" || node.data.imageSized ? {} : {
-                  ...size,
+                  style: { ...node.style, ...size },
                   data: { ...node.data, imageSized: true },
                 });
               }}

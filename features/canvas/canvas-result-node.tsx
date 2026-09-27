@@ -61,7 +61,7 @@ export function CanvasResultNode({ id, data, selected }: NodeProps<CanvasResultN
               const size = initialCanvasImageSize(event.currentTarget.naturalWidth, event.currentTarget.naturalHeight);
               if (!size) return;
               updateNode(id, (node) => node.type !== "imageResult" || node.data.imageSized ? {} : {
-                ...size,
+                style: { ...node.style, ...size },
                 data: { ...node.data, imageSized: true },
               });
             }}

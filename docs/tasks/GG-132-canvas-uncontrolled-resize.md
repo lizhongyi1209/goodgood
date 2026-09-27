@@ -3,7 +3,7 @@
 - 状态：本地实现与门禁完成，待站长手动浏览器复核；继续使用 `F:/goodgood-worktrees/GG-116` 的 `feature/GG-116-asset-history-actions`，不切分支；未部署。
 - 基线：GG-131 `d65cc34`，工作区干净。
 - 现象：站长确认 GG-131 后四角缩放正常，但 vinext 的 `ResizeObserver loop completed with undelivered notifications.` 覆盖层仍出现。
-- 决策关系：仅修正 React Flow 节点状态所有权，不改变 [ADR 0110](../decisions/0110-canvas-image-selection-frame.md) 的视觉/交互；无需新 ADR。
+- 决策关系：修正 React Flow 节点状态和初始尺寸设置，不改变 [ADR 0110](../decisions/0110-canvas-image-selection-frame.md) 的视觉/交互；无需新 ADR。
 
 ## 诊断与验收
 
@@ -15,8 +15,10 @@
 ## 实施与验证
 
 - `CanvasWorkspace` 使用 React Flow 的 `defaultNodes`/`defaultEdges`。`CanvasPage` 用 `flow.setNodes` 添加本地图片与更新生成任务，只用 `onNodesChange` 保存供按钮与 blob 清理使用的状态镜像；移除 GG-131 的测量回写队列。没有注册全局错误屏蔽器。
+- 核对 [React Flow Node 文档](https://reactflow.dev/api-reference/types/node) 和 [NodeResizeControl 文档](https://reactflow.dev/api-reference/components/node-resize-control)：官方没有独立图片加载节点，推荐自定义节点展示图片；四角缩放沿用已安装的官方 `NodeResizeControl`，节点初始尺寸通过官方推荐的 `style` 设置，后续尺寸交给 React Flow。浏览器原生 `createImageBitmap` 仅用于读取本地文件比例；生成图优先使用已有输出宽高，未提供宽高时保留图片载入后的回退处理。
 - 临时合成图片诊断：受控节点右下角连续拖动从 240×300 到 360×450，捕获约 20 条 ResizeObserver 通知；同组件在 React Flow 持有节点后同样缩放为 360×450，通知 0。图片完成初始尺寸加载后，四角依次拖动均正常，镜像尺寸与节点同步，通知 0。诊断文件和浏览器会话已清理。
-- 定向画布测试 7/7，TypeScript 检查通过；`npm run check:local` 591 项 / 568 通过 / 23 跳过 / 0 失败，Lint 0 错误 / 110 条既有警告；现有 5173 `/canvas` HTTP 200。未在已登录浏览器验收、未执行真实上传或付费生成、未替换 32131 检查点或部署生产。
+- 追加诊断：首次尺寸调整后立即缩放在未预设尺寸时偶发 1 次通知，React Flow 的 `initialWidth/initialHeight` 方案在此样例中仍会报错；采用文档推荐的 `style` 初始尺寸后，隔离样例连续 20 次立即缩放均为 0 次。临时诊断文件和会话已清理。
+- 定向画布测试 8/8，TypeScript 检查通过；`npm run check:local` 592 项 / 569 通过 / 23 跳过 / 0 失败，Lint 0 错误 / 110 条既有警告；现有 5173 `/canvas` HTTP 200。未在已登录浏览器验收、未执行真实上传或付费生成、未替换 32131 检查点或部署生产。
 
 ## 下一步
 

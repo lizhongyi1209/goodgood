@@ -60,3 +60,17 @@ test("canvas route owns its page and leaves the main workspace", () => {
   assert.match(workspace, /href="\/canvas"/);
   assert.doesNotMatch(workspace, /<CanvasWorkspace/);
 });
+
+test("canvas result starts at metadata dimensions and keeps a later user resize", () => {
+  const output = { id: "sized-image", width: 1200, height: 1600 };
+  const succeeded = upsertCanvasJobNodes([], "sized", {
+    ...job("succeeded", 1), outputs: [output],
+  }, { x: 10, y: 20 }, () => {});
+  assert.deepEqual(succeeded[0].style, { width: 238, height: 317.3333333333333 });
+  assert.equal(succeeded[0].data.imageSized, true);
+  const resized = [{ ...succeeded[0], width: 180, height: 240 }];
+  const refreshed = upsertCanvasJobNodes(resized, "sized", {
+    ...job("succeeded", 1), outputs: [output],
+  }, { x: 10, y: 20 }, () => {});
+  assert.deepEqual({ width: refreshed[0].width, height: refreshed[0].height }, { width: 180, height: 240 });
+});

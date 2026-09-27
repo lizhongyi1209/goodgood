@@ -1,3 +1,5 @@
+import { initialCanvasImageSize } from "./canvas-image-size.mjs";
+
 /**
  * @typedef {import("./canvas-workspace").CanvasNode} CanvasNode
  * @param {CanvasNode[]} current
@@ -16,15 +18,27 @@ export function upsertCanvasJobNodes(current, runKey, job, origin, onRetry) {
     const id = `${prefix}${index}`;
     const previous = current.find((node) => node.id === id);
     const sameOutput = previous?.data?.job?.outputs?.[index]?.id === job.outputs[index]?.id && Boolean(job.outputs[index]);
+    const retainedSize = sameOutput && previous?.data.imageSized
+      ? previous.width && previous.height
+        ? { width: previous.width, height: previous.height }
+        : previous.style?.width && previous.style?.height
+          ? { style: { width: previous.style.width, height: previous.style.height } }
+          : null
+      : null;
+    const output = job.outputs[index];
+    const initialSize = output
+      ? initialCanvasImageSize(output.width ?? NaN, output.height ?? NaN)
+      : null;
+    const size = retainedSize ?? (initialSize
+      ? { style: { width: initialSize.width, height: initialSize.height } }
+      : null);
     return {
       id,
       type: "imageResult",
       position: previous?.position ?? { x: firstPosition.x + index * 254, y: firstPosition.y },
       ...(previous?.selected ? { selected: true } : {}),
-      ...(sameOutput && previous?.data.imageSized
-        ? { width: previous.width, height: previous.height }
-        : {}),
-      data: { job, index, onRetry, imageSized: sameOutput && previous?.data.imageSized },
+      ...(size ?? {}),
+      data: { job, index, onRetry, imageSized: Boolean(size) },
     };
   });
   return [...retained, ...updated];

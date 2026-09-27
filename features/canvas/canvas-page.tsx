@@ -52,6 +52,7 @@ import {
 } from "@/shared/contracts/generation";
 import { CanvasWorkspace, type CanvasNode, type CanvasSourceNode } from "./canvas-workspace";
 import { upsertCanvasJobNodes } from "./canvas-job-nodes.mjs";
+import { initialCanvasImageSize } from "./canvas-image-size.mjs";
 import { canvasImagePositions, selectCanvasImageFiles } from "./canvas-local-images.mjs";
 import styles from "./canvas-page.module.css";
 
@@ -69,6 +70,17 @@ type CanvasModel = {
 };
 
 const generationBoundary = createHttpGenerationBoundary();
+
+async function readCanvasImageSize(file: File) {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const size = initialCanvasImageSize(bitmap.width, bitmap.height);
+    bitmap.close();
+    return size;
+  } catch {
+    return null;
+  }
+}
 
 function availableModels(summary: BillingSummary | null): CanvasModel[] {
   if (!summary) return [];
@@ -111,6 +123,7 @@ export function CanvasPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const canvasInputRef = useRef<HTMLInputElement>(null);
   const objectUrlsRef = useRef(new Set<string>());
+  const mountedRef = useRef(true);
   const busyRef = useRef(false);
 
   const refreshSession = useCallback(async () => {
@@ -173,8 +186,12 @@ export function CanvasPage() {
     return () => window.removeEventListener(SESSION_EXPIRED_EVENT, expired);
   }, []);
   useEffect(() => {
+    mountedRef.current = true;
     const objectUrls = objectUrlsRef.current;
-    return () => objectUrls.forEach((url) => URL.revokeObjectURL(url));
+    return () => {
+      mountedRef.current = false;
+      objectUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
   }, []);
 
   const models = useMemo(() => availableModels(billing), [billing]);
@@ -246,12 +263,14 @@ export function CanvasPage() {
     addReferenceFiles(files);
   };
 
-  const addCanvasImages = (files: File[], screenPoint: { x: number; y: number }) => {
+  const addCanvasImages = async (files: File[], screenPoint: { x: number; y: number }) => {
     const { accepted, errors } = selectCanvasImageFiles(files);
     setFormError(errors[0] ?? null);
     if (!accepted.length) return;
     const point = flow?.screenToFlowPosition(screenPoint) ?? { x: 0, y: 0 };
     const positions = canvasImagePositions(point, accepted.length);
+    const sizes = await Promise.all(accepted.map(readCanvasImageSize));
+    if (!mountedRef.current) return;
     const added: CanvasSourceNode[] = accepted.map((file, index) => {
       const id = `local-${globalThis.crypto.randomUUID()}`;
       const previewUrl = URL.createObjectURL(file);
@@ -260,11 +279,11 @@ export function CanvasPage() {
         id,
         type: "sourceImage",
         position: positions[index],
-        width: 238,
-        height: 158,
+        style: { width: sizes[index]?.width ?? 238, height: sizes[index]?.height ?? 158 },
         data: {
           name: file.name,
           previewUrl,
+          imageSized: Boolean(sizes[index]),
         },
       };
     });
@@ -276,7 +295,7 @@ export function CanvasPage() {
     const files = Array.from(event.target.files ?? []);
     event.target.value = "";
     if (!files.length) return;
-    addCanvasImages(files, { x: window.innerWidth / 2, y: window.innerHeight * 0.4 });
+    void addCanvasImages(files, { x: window.innerWidth / 2, y: window.innerHeight * 0.4 });
   };
 
   const handleNodesChange = (changes: NodeChange<CanvasNode>[]) => {
@@ -300,7 +319,7 @@ export function CanvasPage() {
     if (!event.dataTransfer.files.length) return;
     event.preventDefault();
     setDropActive(false);
-    addCanvasImages(Array.from(event.dataTransfer.files), { x: event.clientX, y: event.clientY });
+    void addCanvasImages(Array.from(event.dataTransfer.files), { x: event.clientX, y: event.clientY });
   };
 
   const removeReference = (clientId: string) => {
