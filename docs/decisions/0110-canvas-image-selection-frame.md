@@ -14,7 +14,7 @@ The operator clarified that “移动” meant the computer's normal arrow curso
 
 - Image bodies use the system's default arrow on hover and while dragging. Dragging and clicking a generated image to open asset detail still work.
 - A selected, loaded local or generated image has a one-pixel `#3b82f6` outline with zero offset. The image card has no inner border or padding, so the frame touches the image.
-- Four small white controls with a blue hairline border sit at the image corners. Opposite corners use the standard matching diagonal resize cursors. Dragging any corner preserves the original aspect ratio and the existing size limits.
+- Four compact blue quarter-arc controls sit flush with the image corners, without white square fills. Their transparent hit areas stay large enough to grab. Opposite corners use the standard matching diagonal resize cursors. Dragging any corner preserves the original aspect ratio and the existing size limits. GG-134 refines the original square handle appearance; it does not change the resize behavior.
 - Hover alone keeps only the shallow neutral veil. The blue is solely a spatial selection/resize affordance on canvas images; it does not become a product accent, status color, focus token, or shared component color.
 
 ## Consequences

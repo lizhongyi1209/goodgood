@@ -17,6 +17,7 @@
 - `canvas-workspace.module.css` 只在 `.sourceNode.imageNode` 和 `.resultNode.imageNode` 上使用 `min(14px, 6%)`。常规 238px 宽图片保持 14px 上限；48px 宽图片的水平圆角随之减小到约 2.88px。两种图片的 `overflow: hidden` 继续统一裁切图片与悬停遮罩；选中轮廓沿用同一圆角。
 - 加载、失败节点继续使用固定 14px；四角官方 `NodeResizeControl` 的尺寸与行为未修改，没有新增 JS 尺寸监听。
 - `npm run check:local` 592 项 / 569 通过 / 23 跳过 / 0 失败，Lint 0 错误 / 110 条既有警告；现有 5173 `/canvas` HTTP 200。未做已登录浏览器视觉验收、真实上传/生成、32131 检查点替换或生产部署。
+- 站长反馈小图圆角效果「好多了」，随后要求四角缩放控件也贴合圆角；后续控件外观见 [GG-134](GG-134-canvas-rounded-corner-resize-handles.md)。
 
 ## 下一步
 
