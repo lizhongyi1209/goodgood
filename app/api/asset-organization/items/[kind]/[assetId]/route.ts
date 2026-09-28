@@ -1,4 +1,4 @@
-import { saveAssetOrganization } from "@/server/assets/organization.mjs";
+import { renameAssetItem, saveAssetOrganization } from "@/server/assets/organization.mjs";
 import { assetOrganizationFailure, assetOrganizationJson, organizationScope } from "../../../helpers";
 
 export const dynamic = "force-dynamic";
@@ -9,5 +9,12 @@ export async function PUT(request: Request, context: Context) {
   try {
     const { kind, assetId } = await context.params;
     return assetOrganizationJson(await saveAssetOrganization({ ...await organizationScope(request), kind, assetId, input: await request.json() }));
+  } catch (error) { return assetOrganizationFailure(error); }
+}
+
+export async function PATCH(request: Request, context: Context) {
+  try {
+    const { kind, assetId } = await context.params;
+    return assetOrganizationJson(await renameAssetItem({ ...await organizationScope(request), kind, assetId, input: await request.json() }));
   } catch (error) { return assetOrganizationFailure(error); }
 }

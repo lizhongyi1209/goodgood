@@ -1,9 +1,9 @@
 import { assetApiError } from "./api.mjs";
-import { createAssetFolder, deleteAssetFolder, listAssetOrganization, renameAssetFolder, saveAssetOrganization } from "./organization.mjs";
+import { createAssetFolder, deleteAssetFolder, listAssetOrganization, renameAssetFolder, renameAssetItem, saveAssetOrganization } from "./organization.mjs";
 import { requestIdFor } from "../observability/http.mjs";
 import { workspaceIdFromRequest } from "../organizations/request.mjs";
 
-const defaultOperations = Object.freeze({ createAssetFolder, deleteAssetFolder, listAssetOrganization, renameAssetFolder, saveAssetOrganization });
+const defaultOperations = Object.freeze({ createAssetFolder, deleteAssetFolder, listAssetOrganization, renameAssetFolder, renameAssetItem, saveAssetOrganization });
 
 async function readJson(request) {
   const chunks = [];
@@ -50,6 +50,10 @@ export function createAssetOrganizationNodeApiHandler({ authenticate, operations
       const item = /^\/api\/asset-organization\/items\/([^/]+)\/([^/]+)$/.exec(pathname);
       if (item && request.method === "PUT") {
         sendJson(response, 200, await operations.saveAssetOrganization({ ...scope, kind: decodeURIComponent(item[1]), assetId: decodeURIComponent(item[2]), input: await readJson(request) }));
+        return true;
+      }
+      if (item && request.method === "PATCH") {
+        sendJson(response, 200, await operations.renameAssetItem({ ...scope, kind: decodeURIComponent(item[1]), assetId: decodeURIComponent(item[2]), input: await readJson(request) }));
         return true;
       }
       sendJson(response, 405, { error: "method_not_allowed" });
