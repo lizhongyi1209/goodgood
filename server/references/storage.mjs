@@ -62,3 +62,13 @@ export async function readReferenceObject({ bucket, key, storage }) {
 export function deleteReferenceObject({ bucket, key, storage }) {
   return storage.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
 }
+
+export function storeReferenceObject({ bucket, bytes, checksum, contentType, key, storage }) {
+  return storage.send(new PutObjectCommand({
+    Body: bytes,
+    Bucket: bucket,
+    ContentType: contentType,
+    Key: key,
+    Metadata: { sha256: checksum },
+  }));
+}
