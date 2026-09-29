@@ -104,7 +104,7 @@ function generator(value) {
   record(value.draft, ["prompt", "modelKey", "ratio", "resolution", "count"]);
   const draft = value.draft;
   if (draft.modelKey !== null) string(draft.modelKey, 80);
-  if (typeof draft.ratio !== "string" || !/^\d{1,2}:\d{1,2}$/.test(draft.ratio) ||
+  if (typeof draft.ratio !== "string" || !(draft.ratio === "adaptive" || /^\d{1,2}:\d{1,2}$/.test(draft.ratio)) ||
     !RESOLUTIONS.has(draft.resolution) || ![1, 2, 4].includes(draft.count)) throw invalid();
   if (!Array.isArray(value.directReferenceIds) || value.directReferenceIds.length > 10) throw invalid();
   const directReferenceIds = value.directReferenceIds.map(uuid);

@@ -58,6 +58,11 @@ const LAUNCH_PRICES = Object.freeze([
     modelId: "nano-banana-pro",
     planContext: "standard",
   }),
+  ...[2, 4].map((count) => Object.freeze({
+    count,
+    modelId: "nano-banana-pro",
+    planContext: "standard",
+  })),
   ...GPT_IMAGE_LAUNCH_PRICES,
 ]);
 
@@ -150,7 +155,7 @@ export async function readBillingSummary({ ownerContext, resources = null }) {
                 ]
               : [undefined]
             ).flatMap((quality) =>
-              (model.adapterId === "nano-banana-pro" ? [1] : [1, 2, 4]).map(
+              [1, 2, 4].map(
                 (count) => ({
                   modelId: model.id,
                   count,

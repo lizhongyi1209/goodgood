@@ -344,9 +344,7 @@ export async function saveManagedModel({
                 ...gptPricingQualities(model.adapterId).map((item) => item.id),
               ]
             : [undefined]) {
-            for (const count of model.adapterId === "nano-banana-pro"
-              ? [1]
-              : [1, 2, 4]) {
+            for (const count of [1, 2, 4]) {
               await client.query(
                 `INSERT INTO price_versions (id,model_id,resolution,output_count,plan_context,version,credit_unit,credit_amount,effective_from)
               SELECT $1,$2,$3,$4,$7,COALESCE(MAX(version),0)+1,$5,$6,now() FROM price_versions

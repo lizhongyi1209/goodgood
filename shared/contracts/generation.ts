@@ -24,6 +24,7 @@ export function isGptImageModelId(
 }
 
 export const GENERATION_ASPECT_RATIOS = [
+  "adaptive",
   "1:8",
   "1:4",
   "9:16",

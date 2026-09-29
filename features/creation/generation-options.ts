@@ -184,6 +184,15 @@ export const GENERATION_RATIO_OPTIONS = [
   },
 ] as const satisfies readonly GenerationRatioOption[];
 
+export const ADAPTIVE_GENERATION_RATIO_OPTION: GenerationRatioOption = {
+  id: "adaptive",
+  label: "自适应",
+  // This is a layout fallback only. The provider chooses the actual pixels.
+  value: 1,
+  dimensions: GENERATION_RATIO_OPTIONS.find((option) => option.id === "1:1")!.dimensions,
+  mode: "square",
+};
+
 export const GPT_IMAGE_2_RATIO_IDS = [
   "9:16",
   "2:3",
@@ -304,6 +313,7 @@ export const DEFAULT_GPT_IMAGE_OUTPUT_FORMAT = "jpeg" as const;
 export function getGenerationRatio(
   ratio: GenerationAspectRatio,
 ): GenerationRatioOption {
+  if (ratio === "adaptive") return ADAPTIVE_GENERATION_RATIO_OPTION;
   const option = GENERATION_RATIO_OPTIONS.find((item) => item.id === ratio);
   if (!option) throw new Error(`Unknown generation ratio: ${ratio}`);
   return option;
@@ -316,6 +326,7 @@ export function findGenerationRatioByLabel(
 }
 
 export function getGenerationRatioIndex(ratio: GenerationAspectRatio): number {
+  if (ratio === "adaptive") return getGenerationRatioIndex("1:1");
   const index = GENERATION_RATIO_OPTIONS.findIndex((item) => item.id === ratio);
   if (index < 0) throw new Error(`Unknown generation ratio: ${ratio}`);
   return index;
@@ -334,10 +345,19 @@ export function getGenerationRatioOptions(
   );
 }
 
+export function getCanvasGenerationRatioOptions(
+  modelId: GenerationModelId,
+): readonly GenerationRatioOption[] {
+  const options = getGenerationRatioOptions(modelId);
+  return modelId === "nano-banana-2" || modelId === "nano-banana-pro"
+    ? [ADAPTIVE_GENERATION_RATIO_OPTION, ...options]
+    : options;
+}
+
 export function getGenerationCountOptions(
   modelId: GenerationModelId,
 ): readonly GenerationCount[] {
-  return modelId === "nano-banana-2" || isGptImageModelId(modelId)
+  return modelId === "nano-banana-2" || modelId === "nano-banana-pro" || isGptImageModelId(modelId)
     ? GENERATION_COUNTS
     : [1];
 }
@@ -428,6 +448,7 @@ export function getGenerationModelRatioIndex(
   modelId: GenerationModelId,
   ratio: GenerationAspectRatio,
 ): number {
+  if (ratio === "adaptive") return getGenerationModelRatioIndex(modelId, "1:1");
   const index = getGenerationRatioOptions(modelId).findIndex(
     (option) => option.id === ratio,
   );
@@ -455,6 +476,9 @@ export function resolveGenerationAspectRatioForModel(
   modelId: GenerationModelId,
   ratio: GenerationAspectRatio,
 ): GenerationAspectRatio {
+  if (ratio === "adaptive") {
+    return modelId === "nano-banana-2" || modelId === "nano-banana-pro" ? ratio : "1:1";
+  }
   const options = getGenerationRatioOptions(modelId);
   if (options.some((option) => option.id === ratio)) return ratio;
   const current = getGenerationRatio(ratio);

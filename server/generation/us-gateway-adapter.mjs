@@ -427,7 +427,7 @@ function generationPayload({ job, route, uploadedReferences, allowInsecureLoopba
   }
   return {
     ...common,
-    aspect_ratio: job.aspect_ratio,
+    ...(job.aspect_ratio === "adaptive" ? {} : { aspect_ratio: job.aspect_ratio }),
     response_modalities: ["TEXT", "IMAGE"],
     size: job.resolution,
     ...((job.thinking_level ?? "high") === "high"

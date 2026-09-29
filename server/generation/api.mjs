@@ -80,7 +80,7 @@ export function validateM3GenerationInput(payload) {
   ) {
     throw new GenerationRequestError(
       "M3_SLICE_UNSUPPORTED",
-      "当前模型不支持所选比例、分辨率或生成数量。Pro 支持单张输出。",
+      "当前模型不支持所选比例、分辨率或生成数量。",
     );
   }
   const modelOptions = normalizeGenerationModelOptions({

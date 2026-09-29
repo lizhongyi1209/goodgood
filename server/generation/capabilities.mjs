@@ -17,6 +17,7 @@ export const SUPPORTED_GPT_IMAGE_OUTPUT_FORMATS = Object.freeze(["png", "jpeg", 
 export const DEFAULT_GPT_IMAGE_OUTPUT_FORMAT = "jpeg";
 
 const NANO_BANANA_2_ASPECT_RATIOS = Object.freeze([
+  "adaptive",
   "1:8",
   "1:4",
   "9:16",
@@ -78,7 +79,7 @@ export const GENERATION_MODEL_CAPABILITIES = Object.freeze({
   "gpt-image-2.5-sunburst": GPT_IMAGE_CAPABILITY,
   "nano-banana-pro": Object.freeze({
     aspectRatios: Object.freeze(NANO_BANANA_2_ASPECT_RATIOS.filter((ratio) => !["1:8", "1:4", "4:1", "8:1"].includes(ratio))),
-    outputCounts: Object.freeze([1]),
+    outputCounts: SUPPORTED_NANO_BANANA_2_OUTPUT_COUNTS,
     resolutions: SUPPORTED_GENERATION_RESOLUTIONS,
   }),
   "gpt-image-2": GPT_IMAGE_CAPABILITY,

@@ -43,8 +43,10 @@ if (command === "build") {
     }
     const cloudFile = selected.get("--cloud-env-file");
     const emailFile = selected.get("--email-env-file");
-    assert.ok(mode === "workspace" || (!cloudFile && !emailFile),
-      "External cloud and email configuration is available only for workspace.");
+    assert.ok(!cloudFile || mode === "workspace" || mode === "worker",
+      "External cloud configuration is available only for workspace or worker.");
+    assert.ok(!emailFile || mode === "workspace",
+      "External email configuration is available only for workspace.");
     const emailWeb = mode === "workspace" || mode === "login";
     const envFile = emailWeb ? ".env.login-review" : ".env.local-review";
     const environment = parseEnv(await readFile(path.join(root, envFile), "utf8"));
@@ -160,7 +162,9 @@ if (command === "build") {
         artifactHash: build.artifactHash,
         pid: process.pid,
         provider: "o1key",
-        referenceStorage: cloudFile ? "cloud-development" : "local-rustfs",
+        referenceStorage: process.env.GOODGOOD_LOCAL_CLOUD_UPLOAD_BUCKET
+          ? "cloud-development"
+          : "local-rustfs",
         emailDelivery: emailFile ? "real-smtp" : "local-mailpit",
       }),
     );
