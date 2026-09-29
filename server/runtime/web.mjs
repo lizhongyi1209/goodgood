@@ -26,6 +26,7 @@ import { createDistributionNodeApiHandler } from "../distribution/node-api.mjs";
 import { createReferenceNodeApiHandler } from "../references/node-api.mjs";
 import { createVideoMaterialNodeApiHandler } from "../video-materials/node-api.mjs";
 import { createProjectNodeApiHandler } from "../projects/node-api.mjs";
+import { createCanvasProjectNodeApiHandler } from "../canvas-projects/node-api.mjs";
 import { createOrganizationNodeApiHandler } from "../organizations/node-api.mjs";
 import { observeHttpRequest } from "../observability/http.mjs";
 import {
@@ -89,6 +90,7 @@ const handleBillingNodeApi = createBillingNodeApiHandler({ authenticate });
 const handleReferenceNodeApi = createReferenceNodeApiHandler({ authenticate });
 const handleVideoMaterialNodeApi = createVideoMaterialNodeApiHandler({ authenticate });
 const handleProjectNodeApi = createProjectNodeApiHandler({ authenticate });
+const handleCanvasProjectNodeApi = createCanvasProjectNodeApiHandler({ authenticate });
 const handleOrganizationNodeApi = createOrganizationNodeApiHandler({ authenticate });
 const defaultSessionCookie = localSessionCookie(authenticationConfig);
 const { server } = await startProdServer({
@@ -131,6 +133,9 @@ server.on("request", (request, response) => {
     .then((handled) => handled ? true : handleAudioMaterialNodeApi(request, response))
     .then((handled) =>
       handled ? true : handleProjectNodeApi(request, response),
+    )
+    .then((handled) =>
+      handled ? true : handleCanvasProjectNodeApi(request, response),
     )
     .then((handled) =>
       handled ? true : handleAssetNodeApi(request, response),

@@ -247,6 +247,7 @@ export function createAuthenticationOperations({
         authenticated: true,
         user: {
           email: owner.email,
+          ...(owner.ownerId ? { id: owner.ownerId } : {}),
         },
       };
     },
