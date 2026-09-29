@@ -44,7 +44,7 @@ function position(value) {
 }
 
 function node(value) {
-  record(value, ["id", "type", "position", "size", "asset", "jobId", "index", "name", "metadata"]);
+  record(value, ["id", "type", "position", "size", "asset", "jobId", "index", "sequence", "name", "metadata"]);
   const type = value.type;
   if (!NODE_TYPES.has(type)) throw invalid();
   const result = { id: nodeId(value.id), type, position: position(value.position) };
@@ -64,12 +64,16 @@ function node(value) {
     throw invalid("未完成上传的素材只能保存在本机。");
   }
   if (value.jobId !== undefined) {
-    if (type !== "imageResult") throw invalid();
+    if (type !== "imageResult" && type !== "imageGenerator") throw invalid();
     result.jobId = uuid(value.jobId);
   } else if (type === "imageResult") throw invalid();
   if (value.index !== undefined) {
     if (type !== "imageResult" || !Number.isSafeInteger(value.index) || value.index < 0 || value.index > 1000) throw invalid();
     result.index = value.index;
+  }
+  if (value.sequence !== undefined) {
+    if (type !== "imageGenerator" || !Number.isSafeInteger(value.sequence) || value.sequence < 1 || value.sequence > 10_000_000) throw invalid();
+    result.sequence = value.sequence;
   }
   if (value.name !== undefined) {
     if (type === "imageGenerator" || type === "imageResult") throw invalid();
