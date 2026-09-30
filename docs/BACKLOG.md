@@ -1,9 +1,10 @@
 # 当前任务与优先级
 
-> 最后同步：2026-09-30。生产仍为 GG-098 应用和 GG-100 单槽 Compose；本地最新源码检查点是 GG-239 / \`goodgood-local-2026-09-30-gg239\`。历史详情保留在任务卡，不在本页重复转录。
+> 最后同步：2026-09-30。生产仍为 GG-098 应用和 GG-100 单槽 Compose；本地运行时代码为 GG-239 标签，最新流程检查点为 GG-240。历史详情保留在任务卡，不在本页重复转录。
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
+| GG-240 | 子 agent/worktree 创建、缓存、集成和退役规范已写入入口文档、任务模板与契约测试；未部署 | [任务](tasks/GG-240-subagent-worktree-hygiene.md) |
 | GG-239 | 当前 5173 累计源码、文档、迁移与测试收口为单一提交和标签；未部署 | [任务](tasks/GG-239-current-5173-checkpoint.md) |
 | GG-238 | 方形添加卡与图片查看器已合入 5173，静态审阅完成，待用户手验 | [任务](tasks/GG-238-canvas-asset-viewer.md) |
 | GG-237 | 项目 4/3/2/1 列响应布局与 4:3 封面已合入 5173，待用户手验 | [任务](tasks/GG-237-project-four-column-grid.md) |
@@ -14,7 +15,7 @@
 
 ## 下一步
 
-用户在 5173 手验 GG-237 和 GG-238。新需求从 GG-240 分配并从 GG-239 标签建立独立 worktree；生产发布另立任务并明确授权。
+用户在 5173 手验 GG-237 和 GG-238。新需求从 GG-240 检查点分配 GG-241+；只有并行写任务才建立 worktree，并在交接前按 WORKFLOW 收口。生产发布另立任务并明确授权。
 
 ## 全部任务卡索引
 
@@ -78,4 +79,4 @@
 
 [GG-231-canvas-selection-border.md](tasks/GG-231-canvas-selection-border.md) · [GG-232-project-card-interaction.md](tasks/GG-232-project-card-interaction.md) · [GG-233-canvas-asset-cards-and-add.md](tasks/GG-233-canvas-asset-cards-and-add.md) · [GG-234-canvas-asset-card-default-hover.md](tasks/GG-234-canvas-asset-card-default-hover.md) · [GG-235-asset-media-masonry.md](tasks/GG-235-asset-media-masonry.md) · [GG-236-project-card-default-frame.md](tasks/GG-236-project-card-default-frame.md) · [GG-237-project-four-column-grid.md](tasks/GG-237-project-four-column-grid.md) · [GG-238-canvas-asset-viewer.md](tasks/GG-238-canvas-asset-viewer.md)
 
-[GG-239-current-5173-checkpoint.md](tasks/GG-239-current-5173-checkpoint.md) · [GG-900-deferred-c6.md](tasks/GG-900-deferred-c6.md)
+[GG-239-current-5173-checkpoint.md](tasks/GG-239-current-5173-checkpoint.md) · [GG-240-subagent-worktree-hygiene.md](tasks/GG-240-subagent-worktree-hygiene.md) · [GG-900-deferred-c6.md](tasks/GG-900-deferred-c6.md)

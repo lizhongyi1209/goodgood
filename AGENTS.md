@@ -45,11 +45,11 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
 - A concise natural-language request is enough. The agent restores context,
   records scope/acceptance, allocates a task ID, and maintains its task card.
   Do not require the user to repeat earlier decisions or write a handoff essay.
-- New requests start isolated feature/fix branches from the verified current
-  checkpoint in IMPLEMENTATION_PLAN; use main only when it contains that baseline.
-  Verify Git ancestry before branching. Parallel windows use separate worktrees;
-  preserve unrelated edits.
-  Never start from or bulk-merge the parked C6 branch without explicit scope.
+- New requests start isolated branches from the verified IMPLEMENTATION_PLAN
+  checkpoint; use main only when it contains that baseline. Verify ancestry.
+  Parallel windows/subagents use registered worktrees and WORKFLOW's
+  create/own/integrate/retire gate. Never force-remove dirty worktrees or leave
+  child caches behind. Never bulk-merge parked C6 without explicit scope.
 - Save material decisions and resumable next steps during work, before waits,
   compaction, or handoff. Chat memory is not the project's source of truth.
 - Local implementation, tests, CI, image publication, and production deployment

@@ -85,6 +85,21 @@ test("keeps fast delivery and real-provider test isolation in every new-session 
   assert.match(testing, /site owner explicitly requests that\s+specific generation call/);
 });
 
+test("enforces a closed subagent and worktree lifecycle", async () => {
+  const agents = await readDocument("AGENTS.md");
+  const workflow = await readDocument("docs/WORKFLOW.md");
+  const template = await readDocument("docs/tasks/TEMPLATE.md");
+
+  assert.match(agents, /create\/own\/integrate\/retire gate/);
+  assert.match(workflow, /git worktree remove <path>/);
+  assert.match(workflow, /git worktree prune/);
+  assert.match(workflow, /禁止对 dirty worktree 执行 `--force`/);
+  assert.match(workflow, /零个未登记子 worktree/);
+  for (const field of ["子 agent/worktree 清单", "依赖/构建缓存", "创建数", "退役数", "保留 dirty 路径"]) {
+    assert.ok(template.includes(field), `task template missing ${field}`);
+  }
+});
+
 test("current context, task, and release links resolve inside the repository", async () => {
   const files = [
     "AGENTS.md", "README.md", "docs/README.md", "docs/CURRENT_STATE.md",
