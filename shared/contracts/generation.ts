@@ -48,7 +48,8 @@ export const GENERATION_RESOLUTIONS = ["1K", "2K", "4K"] as const;
 export type GenerationResolution = (typeof GENERATION_RESOLUTIONS)[number];
 
 export const GENERATION_COUNTS = [1, 2, 4] as const;
-export type GenerationCount = (typeof GENERATION_COUNTS)[number];
+export const CANVAS_NANO_GENERATION_COUNTS = [1, 2, 4, 8] as const;
+export type GenerationCount = (typeof CANVAS_NANO_GENERATION_COUNTS)[number];
 
 export const GENERATION_THINKING_LEVELS = ["low", "high"] as const;
 export type GenerationThinkingLevel =

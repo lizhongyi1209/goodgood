@@ -1,5 +1,6 @@
 import { AuthenticationError, sessionExpiredError } from "../auth/errors.mjs";
 import { getGenerationResources } from "../generation/resources.mjs";
+import { getGenerationModelCapability } from "../generation/capabilities.mjs";
 import { newRequestId } from "../observability/http.mjs";
 import {
   BillingPersistenceError,
@@ -54,11 +55,16 @@ const LAUNCH_PRICES = Object.freeze([
     planContext: "standard",
   }),
   Object.freeze({
+    count: 8,
+    modelId: "nano-banana-2",
+    planContext: "standard",
+  }),
+  Object.freeze({
     count: 1,
     modelId: "nano-banana-pro",
     planContext: "standard",
   }),
-  ...[2, 4].map((count) => Object.freeze({
+  ...[2, 4, 8].map((count) => Object.freeze({
     count,
     modelId: "nano-banana-pro",
     planContext: "standard",
@@ -155,7 +161,7 @@ export async function readBillingSummary({ ownerContext, resources = null }) {
                 ]
               : [undefined]
             ).flatMap((quality) =>
-              [1, 2, 4].map(
+              (getGenerationModelCapability(model.adapterId)?.outputCounts ?? []).map(
                 (count) => ({
                   modelId: model.id,
                   count,

@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { imagePriceContext } from "../../shared/contracts/banana-lines.mjs";
+import { getGenerationModelCapability } from "../generation/capabilities.mjs";
 import {
   creditBalanceDeltas,
   exactCreditAmount,
@@ -16,7 +17,6 @@ const PRODUCT_MODELS = new Set([
   "gpt-image-2.5-flare",
 ]);
 const RESOLUTIONS = new Set(["1K", "2K", "4K"]);
-const OUTPUT_COUNTS = new Set([1, 2, 4]);
 const ACTORS = new Set(["system", "worker", "operator", "payment", "owner"]);
 
 export const WELCOME_CREDIT_AMOUNT = 200n;
@@ -191,7 +191,9 @@ export async function publishGenerationPriceVersion(
 ) {
   if (!PRODUCT_MODELS.has(modelId)) throw new TypeError("Unsupported modelId.");
   if (!RESOLUTIONS.has(resolution)) throw new TypeError("Unsupported resolution.");
-  if (!OUTPUT_COUNTS.has(count)) throw new TypeError("Unsupported output count.");
+  if (!getGenerationModelCapability(modelId)?.outputCounts.includes(count)) {
+    throw new TypeError("Unsupported output count.");
+  }
   if (!Number.isInteger(version) || version < 1) {
     throw new TypeError("version must be a positive integer.");
   }

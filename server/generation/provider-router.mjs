@@ -6,6 +6,7 @@ import { readPrivateObject } from "./storage.mjs";
 import { prepareProviderReference, providerReferenceByteBudget } from "./reference-inputs.mjs";
 import { PRIVATE_IMAGE_UPLOAD_MAX_BYTES } from "../../shared/contracts/upload-limits.mjs";
 import { BANANA_LINES, supportsImageLines, isBananaModel, isBananaLineReady, isValidImageLine } from "../../shared/contracts/banana-lines.mjs";
+import { SUPPORTED_NANO_BANANA_2_OUTPUT_COUNTS } from "./capabilities.mjs";
 import {
   US_GATEWAY_GPT_IMAGE_25_FLARE_ROUTE,
   US_GATEWAY_GPT_IMAGE_25_SUNBURST_ROUTE,
@@ -166,7 +167,7 @@ function decodeO1KeyTaskState(
   taskId,
   { expectedTaskCount, legacySingle = false },
 ) {
-  if (![1, 2, 4].includes(expectedTaskCount)) throw taskSetError();
+  if (!SUPPORTED_NANO_BANANA_2_OUTPUT_COUNTS.includes(expectedTaskCount)) throw taskSetError();
   if (taskId === null || taskId === undefined || taskId === "") {
     return { submissionStarted: false, taskIds: [] };
   }

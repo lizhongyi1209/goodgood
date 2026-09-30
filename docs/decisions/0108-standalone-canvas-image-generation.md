@@ -19,3 +19,9 @@ The first `/canvas` mounted React Flow inside the main lobby shell and did not c
 ## Consequences
 
 Opening `/canvas` no longer preserves an in-memory `/create` form through a shared React shell. It does not erase the existing durable creation draft or projects. Refreshing `/canvas` clears its local node arrangement; saved canvas documents need a separate product and persistence decision. All actual provider calls remain behind explicit user submission and the GoodGood backend.
+
+## GG-203 addendum · canvas eight-image Nano batches (2026-09-30)
+
+The canvas image-settings count choices display numbers only. Nano Banana 2 and Nano Banana Pro now offer `1 / 2 / 4 / 8`, with one still the default. GPT canvas models and the lobby composer retain their existing `1 / 2 / 4` choices. Preserve saved count values and resolve an unsupported choice when changing to another model; do not silently submit eight to a GPT adapter.
+
+Eight Nano outputs use eight existing single-image provider requests in one recoverable task set, never a new native `n=8` parameter. All eight outputs must succeed before the existing atomic batch is stored and settled; failures retain the existing release policy. Before enqueueing, admission requires an active count-eight quote for the exact managed model, resolution and enabled line. Migration 0051 appends initial quotes at eight times each active single-image price and opens the generation-batch and price-record count constraints. Later managed-price edits publish count-eight versions for Nano adapters only. Missing quotes fail closed. Canvas project JSON accepts the new draft value without changing its schema version, while legacy lobby draft/project schemas and selection controls remain unchanged. The existing single-node stack and explicit expand/collapse control render all returned outputs. No request is submitted without the user's generation action.

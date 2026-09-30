@@ -1561,7 +1561,7 @@ export const priceVersions = pgTable(
     ),
     check(
       "price_versions_output_count_check",
-      sql`${table.outputCount} in (1, 2, 4)`,
+      sql`${table.outputCount} in (1, 2, 4, 8)`,
     ),
     check(
       "price_versions_plan_context_check",
@@ -1667,7 +1667,7 @@ export const generationBatches = pgTable(
     ),
     check(
       "generation_batches_count_check",
-      sql`${table.requestedCount} in (1, 2, 4)`,
+      sql`${table.requestedCount} in (1, 2, 4) or (${table.requestedCount} = 8 and ${table.modelId} in ('nano-banana-2', 'nano-banana-pro'))`,
     ),
     check(
       "generation_batches_thinking_level_check",
