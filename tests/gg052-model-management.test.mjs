@@ -236,11 +236,12 @@ test("saving publishes all image counts and specifications with immutable insert
   const prices = calls.filter((call) =>
     call.sql.includes("INSERT INTO price_versions"),
   );
-  assert.equal(prices.length, 9);
+  assert.equal(prices.length, 36);
   assert.deepEqual(
     prices.map((call) => call.values[5]),
-    ["21", "42", "84", "32", "64", "128", "53", "106", "212"],
+    [21, 32, 53].flatMap((amount) => Array.from({ length: 12 }, (_, index) => String(amount * (index + 1)))),
   );
+  assert.deepEqual(prices.map((call) => call.values[3]), ["1K", "2K", "4K"].flatMap(() => Array.from({ length: 12 }, (_, index) => index + 1)));
   assert.ok(prices.every((call) => call.values[4] === "credit-cny-cent"));
   assert.equal(
     calls.filter((call) =>

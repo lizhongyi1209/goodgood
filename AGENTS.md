@@ -110,8 +110,9 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
   shallow hover fills. Avoid heavy shadows and navigation shadows.
 - Do not introduce chromatic accents, neon/Neo-Tech styling, magazine rules,
   warm ivory/limestone palettes, large editorial type, or strong panels. ADR 0110
-  permits blue only on selected canvas image outlines; resize handles remain invisible.
-- Use the Double G mark and custom GoodGood wordmark. The creation send action
+  permits blue on canvas media outlines, and ADR 0108/GG-200 permits bright blue
+  on a connected edge only while hovered; resize handles remain invisible.
+- Use the shared square G in `public/goodgood-g-icon.svg` for every GoodGood logo (ADR 0116). The creation send action
   uses an upward arrow in both image and video modes (ADR 0098).
 
 ## Engineering rules
@@ -166,5 +167,4 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
 - Relevant docs and ADR status are current.
 - Task card distinguishes implemented, verified, and deployed; no unreported
   deferred changes are included in the release candidate.
-- `docs/IMPLEMENTATION_PLAN.md` accurately describes the handoff state and next
-  smallest useful slice.
+- `docs/IMPLEMENTATION_PLAN.md` accurately describes the handoff state and next smallest useful slice.

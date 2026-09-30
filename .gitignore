@@ -49,6 +49,7 @@ next-env.d.ts
 /outputs/
 /work/
 /.impeccable/
+/.playwright-cli/
 
 # application runtime data and user assets
 /data/

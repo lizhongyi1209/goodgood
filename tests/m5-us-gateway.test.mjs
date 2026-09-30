@@ -204,7 +204,7 @@ test("O1Key submission forwards every enabled aspect ratio and resolution", asyn
       submissionIndex += 1;
       assert.deepEqual(submitted, { taskId: `task_${submissionIndex}` });
       assert.deepEqual(gateway.submissions.at(-1).body, {
-        aspect_ratio: aspectRatio,
+        ...(aspectRatio === "adaptive" ? {} : { aspect_ratio: aspectRatio }),
         images: [],
         model: "gemini-3.1-flash-image-c-sp",
         prompt: "a silver future garment",
@@ -214,7 +214,7 @@ test("O1Key submission forwards every enabled aspect ratio and resolution", asyn
       });
     }
   }
-  assert.equal(gateway.submissions.length, 42);
+  assert.equal(gateway.submissions.length, 45);
   assert.equal(gateway.submissions[0].headers["idempotency-key"], undefined);
   assert.equal(gateway.submissions[0].body.callback_url, undefined);
 });
@@ -401,7 +401,7 @@ test("gateway transport and unsupported durable parameters fail closed", async (
   for (const jobOverrides of [
     { aspect_ratio: "10:1" },
     { model_id: "nano-banana-pro" },
-    { requested_count: 3 },
+    { requested_count: 13 },
     { resolution: "8K" },
   ]) {
     await assert.rejects(

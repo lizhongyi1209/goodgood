@@ -77,8 +77,8 @@ test("GG-050 credit/enterprise loading headings and enterprise denial omit retur
   for (const enabled of [false, true]) {
     const html = render(CreditActivityView, { enabled, onAccountChange: noop });
     noReturn(html);
-    assert.match(html, /<h1>积分记录<\/h1>[\s\S]*今日消耗[\s\S]*本周消耗[\s\S]*本月消耗/);
-    assert.match(html, /全部[\s\S]*消费[\s\S]*获得[\s\S]*退回/);
+    assert.match(html, /<h1>积分明细<\/h1>[\s\S]*今日消耗[\s\S]*本周消耗[\s\S]*本月消耗/);
+    assert.match(html, /aria-label="筛选积分明细状态"[\s\S]*日期[\s\S]*积分变化/);
   }
   const { OrganizationManagementView } = await vite.ssrLoadModule("/features/organizations/organization-management-page.tsx");
   for (const activeTab of ["overview", "members", "usage", "assets"]) for (const enabled of [false, true]) {
@@ -117,7 +117,7 @@ test("GG-050 error-body recovery, close, new creation and logout remain explicit
   assert.match(page, /onClick=\{handleProjectsNav\}[^>]*>[\s\S]*?返回项目/);
   assert.match(page, /<AssetWorkspace[\s\S]*onRetry=/);
   assert.match(await source("features/assets/asset-workspace.tsx"), /role="alert"[\s\S]*onRetry\(\)/);
-  assert.match(page, /className="new-creation-button" onClick=\{requestNewCreation\}/);
+  assert.match(page, /className="new-session-button"[\s\S]{0,160}onClick=\{requestNewCreation\}/);
   assert.match(page, /aria-label="关闭图片详情" onClick=\{closeImageDetail\}/);
   assert.match(page, /返回个人创作/);
   const enterprise = await source("features/organizations/organization-management-page.tsx");

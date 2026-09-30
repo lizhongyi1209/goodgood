@@ -17,7 +17,7 @@ export interface GenerationPriceVersion {
   id: string;
   modelId: string;
   resolution: "1K" | "2K" | "4K";
-  count: 1 | 2 | 4;
+  count: import("./generation").GenerationCount;
   planContext: string;
   version: number;
   creditUnit: string;
@@ -76,7 +76,7 @@ export interface BillingGenerationQuote {
     | "gpt-image-2"
     | "gpt-image-2.5-flare";
   resolution: "1K" | "2K" | "4K";
-  count: 1 | 2 | 4;
+  count: import("./generation").GenerationCount;
   planContext: string;
   priceVersion: number;
   creditUnit: string;

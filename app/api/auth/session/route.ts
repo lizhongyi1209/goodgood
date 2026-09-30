@@ -1,6 +1,3 @@
-import { authenticationApiError } from "@/server/auth/operations.mjs";
-import { getAuthenticationRuntime } from "@/server/auth/runtime-operations.mjs";
-
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
@@ -19,17 +16,19 @@ export async function GET(request: Request) {
         access: { status: "active" },
         authenticated: true,
         preview: true,
-        user: { email: "preview@goodgood.local" },
+        user: { email: "preview@goodgood.local", id: "preview-local" },
       },
       { headers: { "cache-control": "no-store" } },
     );
   }
   try {
+    const { getAuthenticationRuntime } = await import("@/server/auth/runtime-operations.mjs");
     const { operations } = await getAuthenticationRuntime();
     return Response.json(await operations.readSession(request), {
       headers: { "cache-control": "no-store" },
     });
   } catch (error) {
+    const { authenticationApiError } = await import("@/server/auth/operations.mjs");
     const failure = authenticationApiError(error);
     return Response.json(failure.body, {
       headers: { "cache-control": "no-store" },

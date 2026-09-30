@@ -55,6 +55,16 @@ export function validateProjectIdempotencyKey(value) {
   return value;
 }
 
+export function validateProjectRenameRequest(payload) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload) ||
+    Object.keys(payload).some((key) => key !== "name")) throw invalidProject();
+  const name = typeof payload.name === "string" ? payload.name.trim() : "";
+  if (!name || name.length > 32 || /[\u0000-\u001f\u007f]/.test(name)) {
+    throw invalidProject("项目名称需为 1 至 32 个字符。");
+  }
+  return { name };
+}
+
 export function validateProjectSaveRequest(payload) {
   if (!payload || typeof payload !== "object") throw invalidProject();
   const name = typeof payload.name === "string" ? payload.name.trim() : "";

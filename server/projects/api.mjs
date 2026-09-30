@@ -14,13 +14,16 @@ import {
 } from "./errors.mjs";
 import {
   createProject as createProjectRecord,
+  deleteProject as deleteProjectRecord,
   findProject,
   listProjects as listProjectRecords,
+  renameProject as renameProjectRecord,
   updateProject as updateProjectRecord,
 } from "./repository.mjs";
 import {
   validateProjectId,
   validateProjectIdempotencyKey,
+  validateProjectRenameRequest,
   validateProjectSaveRequest,
 } from "./validation.mjs";
 
@@ -168,6 +171,13 @@ export async function updateProject({
   const resources = await getGenerationResources();
   const ownerId = ownerIdFromContext(ownerContext);
   const validatedProjectId = validateProjectId(projectId);
+  if (input && typeof input === "object" && !Array.isArray(input) && !("state" in input)) {
+    const row = await renameProjectRecord(resources.pool, {
+      ...validateProjectRenameRequest(input), ownerId, projectId: validatedProjectId, workspaceId,
+    });
+    if (!row) throw new ProjectRequestError("PROJECT_NOT_FOUND", "未找到该项目。", 404);
+    return row;
+  }
   if (
     !(await findProject(resources.pool, {
       ownerId,
@@ -195,6 +205,15 @@ export async function updateProject({
     throw new ProjectRequestError("PROJECT_NOT_FOUND", "未找到该项目。", 404);
   }
   return presentProject(resources, row);
+}
+
+export async function deleteProject({ ownerContext, projectId, workspaceId = DEFAULT_WORKSPACE_ID }) {
+  const resources = await getGenerationResources();
+  const row = await deleteProjectRecord(resources.pool, {
+    ownerId: ownerIdFromContext(ownerContext), projectId: validateProjectId(projectId), workspaceId,
+  });
+  if (!row) throw new ProjectRequestError("PROJECT_NOT_FOUND", "未找到该项目。", 404);
+  return row;
 }
 
 export function projectApiError(

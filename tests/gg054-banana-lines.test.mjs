@@ -122,9 +122,9 @@ test("line selection changes the input hash; omitted and explicit special preser
     { imageLine: "arbitrary" },
     { imageLine: null },
     { modelId: "gpt-image-2", imageLine: "arbitrary" },
-    { count: 2 },
   ])
     assert.throws(() => validateM3GenerationInput(input(changes)));
+  assert.equal(validateM3GenerationInput(input({ count: 2 })).count, 2);
 });
 
 test("three independent specification prices never inherit the special discount", () => {
@@ -273,12 +273,16 @@ test("editing quality publishes only quality price versions and keeps special/de
   const published = calls.filter(({ sql }) =>
     sql.includes("INSERT INTO price_versions"),
   );
-  assert.equal(published.length, 3);
+  assert.equal(published.length, 36);
   assert.ok(
     published.every(
-      ({ values }) => values[5] === "55" && values[6] === "banana-quality",
+      ({ values }) => values[5] === String(55 * values[3]) && values[6] === "banana-quality",
     ),
   );
+  for (const resolution of ["1K", "2K", "4K"]) {
+    assert.deepEqual(published.filter(({ values }) => values[2] === resolution).map(({ values }) => values[3]),
+      Array.from({ length: 12 }, (_, index) => index + 1));
+  }
   assert.equal(
     calls.filter(({ sql }) => sql.includes("INSERT INTO managed_model_events"))
       .length,
@@ -326,11 +330,11 @@ test("billing exposes enabled line scopes and omits disabled or removed specific
                   id: "price",
                   model_id: managed.id,
                   resolution: values[1],
-                  output_count: 1,
+                  output_count: values[2],
                   plan_context: values[3],
                   version: 1,
                   credit_unit: "credit-cny-cent",
-                  credit_amount: values[3] === "standard" ? "30" : "42",
+                  credit_amount: String((values[3] === "standard" ? 30 : 42) * values[2]),
                   effective_from: managed.updated_at,
                 },
               ],
@@ -346,13 +350,13 @@ test("billing exposes enabled line scopes and omits disabled or removed specific
     summary.quotes.map((quote) => [
       quote.imageLine ?? "special",
       quote.resolution,
+      quote.count,
       quote.creditAmount,
     ]),
     [
-      ["special", "1K", "30"],
-      ["special", "2K", "30"],
-      ["special", "4K", "30"],
-      ["quality", "1K", "42"],
+      ...Array.from({ length: 12 }, (_, index) => index + 1).flatMap((count) =>
+        ["1K", "2K", "4K"].map((resolution) => ["special", resolution, count, String(30 * count)])),
+      ...Array.from({ length: 12 }, (_, index) => ["quality", "1K", index + 1, String(42 * (index + 1))]),
     ],
   );
 });
@@ -389,7 +393,7 @@ test("every Pro line sends its exact model ID across supported ratios/resolution
         });
         const body = requests.at(-1).body;
         assert.equal(body.model, route.providerModel);
-        assert.equal(body.aspect_ratio, aspectRatio);
+        assert.equal(body.aspect_ratio, aspectRatio === "adaptive" ? undefined : aspectRatio);
         assert.equal(body.size, resolution);
         assert.deepEqual(body.response_modalities, ["TEXT", "IMAGE"]);
         assert.equal(body.n, undefined);
@@ -411,7 +415,7 @@ test("every Pro line sends its exact model ID across supported ratios/resolution
     );
     assert.equal(requests.length, before);
   }
-  assert.equal(requests.length, 90);
+  assert.equal(requests.length, 99);
 });
 
 test("draft, project, history and unsaved checkpoints preserve the selected product line", () => {

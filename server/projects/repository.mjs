@@ -265,3 +265,69 @@ export async function listProjects(pool, { ownerId, workspaceId = null }) {
   );
   return result.rows;
 }
+
+export async function renameProject(pool, { name, ownerId, projectId, workspaceId = null }) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const workspace = await resolveWorkspaceAccess(client, { ownerId, workspaceId, write: true });
+    const existing = await client.query(
+      `SELECT id, name, updated_at FROM projects
+        WHERE id = $1 AND workspace_id = $2 AND creator_owner_id = $3
+          AND status = 'active' FOR UPDATE`,
+      [projectId, workspace.id, ownerId],
+    );
+    if (!existing.rows[0]) {
+      await client.query("COMMIT");
+      return null;
+    }
+    let row = existing.rows[0];
+    if (row.name !== name) {
+      const result = await client.query(
+        `UPDATE projects SET name = $4, version = version + 1, updated_at = now()
+          WHERE id = $1 AND workspace_id = $2 AND creator_owner_id = $3 AND status = 'active'
+          RETURNING id, name, updated_at`,
+        [projectId, workspace.id, ownerId, name],
+      );
+      row = result.rows[0];
+    }
+    await client.query("COMMIT");
+    return { id: row.id, name: row.name, updatedAt: new Date(row.updated_at).toISOString() };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function deleteProject(pool, { ownerId, projectId, workspaceId = null }) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const workspace = await resolveWorkspaceAccess(client, { ownerId, workspaceId, write: true });
+    const existing = await client.query(
+      `SELECT id, status FROM projects
+        WHERE id = $1 AND workspace_id = $2 AND creator_owner_id = $3 FOR UPDATE`,
+      [projectId, workspace.id, ownerId],
+    );
+    if (!existing.rows[0]) {
+      await client.query("COMMIT");
+      return null;
+    }
+    if (existing.rows[0].status !== "archived") {
+      await client.query(
+        `UPDATE projects SET status = 'archived', version = version + 1, updated_at = now()
+          WHERE id = $1 AND workspace_id = $2 AND creator_owner_id = $3`,
+        [projectId, workspace.id, ownerId],
+      );
+    }
+    await client.query("COMMIT");
+    return { id: projectId };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}

@@ -14,9 +14,10 @@
 .iconGroup { display: flex; align-items: center; gap: 2px; }
 .iconGroup button { width: 34px; height: 34px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: transparent; color: #77777f; }
 .iconGroup button:hover, .iconGroup button.iconActive { background: var(--fill-selected); color: var(--ink); }
-.search { flex: 0 1 240px; display: flex; align-items: center; gap: 7px; min-width: 130px; width: 240px; height: 35px; padding: 0 13px; border: 1px solid #e5e5e8; border-radius: 20px; color: #8a8a91; }
-.search:focus-within { border-color: #88888e; }
-.search input { min-width: 0; width: 100%; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: 12px; }
+.search { flex: 0 1 240px; display: flex; align-items: center; gap: 7px; min-width: 130px; width: 240px; height: 35px; padding: 0 13px; border: 1px solid #e5e5e8; border-radius: 20px; box-shadow: none; color: #8a8a91; }
+.search:focus-within { border-color: #88888e; box-shadow: none; }
+.searchAddon { flex: none; padding: 0; color: inherit; }
+.workspace .searchInput, .workspace .searchInput:focus, .workspace .searchInput:focus-visible { min-width: 0; width: 100%; height: 100%; padding: 0; border: 0; outline: 0; outline-offset: 0; box-shadow: none; background: transparent; color: var(--ink); font-size: 12px; }
 .primaryButton { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 35px; padding: 0 14px; color: white; background: var(--action); border: 0; border-radius: 20px; font-size: 12px; font-weight: 650; }
 .primaryButton:hover:not(:disabled) { background: var(--action-hover); }
 .filters { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 29px; }

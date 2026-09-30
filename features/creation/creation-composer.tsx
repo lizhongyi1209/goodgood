@@ -126,7 +126,8 @@ function ModelIcon({ icon }: { icon: GenerationModelIcon }) {
   return (
     <span className={`model-icon ${icon}`}>
       <Image
-        src={isNanoBanana ? "/model-icons/nanobanana-color.svg" : "/model-icons/openai.svg"}
+        src={isNanoBanana ? "/model-icons/nanobanana-color.svg"
+          : icon === "bytedance" ? "/model-icons/bytedance-color.svg" : "/model-icons/openai.svg"}
         alt=""
         width={isNanoBanana ? 26 : 25}
         height={isNanoBanana ? 26 : 25}

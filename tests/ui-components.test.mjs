@@ -115,8 +115,7 @@ test("declares the GoodGood visual and interaction invariants", async () => {
   const sidebarFooterStart = creationPage.indexOf('<div className="sidebar-footer">');
   const accountCardStart = creationPage.indexOf("<DropdownMenu>", sidebarFooterStart);
   const sidebarFooter = creationPage.slice(sidebarFooterStart, accountCardStart);
-  assert.ok(sidebarFooter.indexOf("帮助") < sidebarFooter.indexOf("积分记录"));
-  assert.match(sidebarFooter, /side-nav-item[^\n]*activeView === "credits"/);
+  assert.doesNotMatch(sidebarFooter, /帮助|积分记录|activeView === "credits"/);
   assert.doesNotMatch(sidebarFooter, /点击查看|sidebar-billing|sidebar-credit-action/);
   assert.doesNotMatch(css, /\.sidebar-billing|\.sidebar-credit-link|\.sidebar-credit-action/);
   const accountCard = creationPage.slice(
@@ -137,7 +136,7 @@ test("declares the GoodGood visual and interaction invariants", async () => {
   assert.match(accountTrigger, /className="account-card-more"/);
   assert.doesNotMatch(accountTrigger, /accountIdentity|billingSummary|退出登录/);
   assert.match(accountMenu, /<span>身份<\/span>[\s\S]*<strong>\{accountIdentity\}<\/strong>/);
-  assert.match(accountMenu, /<span>\{workspaceId \? "企业剩余额度" : "积分余额"\}<\/span>[\s\S]*className=\{billingSummary \? "account-menu-credit" : ""\}/);
+  assert.match(accountMenu, /<span>积分<\/span>[\s\S]*className=\{billingSummary \? "account-menu-credit" : ""\}/);
   assert.match(accountMenu, /<span>退出登录<\/span>/);
   assert.doesNotMatch(accountCard, /account-identity-badge|account-credit-balance|account-session-action/);
   assert.match(css, /\.account-menu \{[^}]*width:\s*224px[^}]*box-shadow:/s);

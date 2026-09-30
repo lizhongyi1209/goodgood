@@ -1,5 +1,221 @@
 # GG-063 verification
 
+## GG-238 explicit asset image viewing acceptance
+
+Keep source/diff-only canvas delivery; no install/tests/check:local/typecheck/build/browser/API/service/data/provider operation. Static review covers Radix asChild selector correctness, one/two-column square addition/masonry, independent expand controls, no nested button or drag/rename interference, scoped image order, original-resolution contain rendering, wheel/arrow limits and cleanup, modal Escape/trigger focus return, loading/failure/retry and reduced motion. Manual acceptance: compare addition tile width/height, hover without popup, expand a middle image, scroll/click/arrow to neighbors and boundaries, close to the existing canvas, retry a failed image, and check the shared uploaded-image asset-page viewer while generated metadata and video/audio previews retain their existing paths. Definitions/review are not executed or authenticated acceptance. See [task](tasks/GG-238-canvas-asset-viewer.md).
+
+## GG-235 asset media and masonry acceptance
+
+Carry the current canvas source/diff-only delivery constraint: do not run install, tests, check:local, typecheck, build or browser functional retests for this slice. Manual acceptance remains pending: refresh the existing asset panel, verify real images and decoded video first frames, one/two-column original ratios and ~8px packing, load/rename/upload height updates, bounded failure retry, folder/drag/keyboard behavior, and reduced motion. The root separately diagnosed actual local port failure with existing logs, local SELECT/S3 HEAD/RangeGET and preview reads, then restarted only existing object-storage/Valkey containers after confirming no active work. Five images and one video were readable afterwards; readiness/local-zero-state checks passed. This proves local storage/preview recovery, not authenticated UI acceptance. No fixtures, uploads or billable/provider requests were submitted. See [task](tasks/GG-235-asset-media-masonry.md).
+
+## GG-237 operator manual project-grid acceptance
+
+仅局部布局：两处TSX类名、具名容器及四级列数规则、4:3封面。静态核对选择器优先级、12px间距/名称省略/真实快照居中与hover/reduce-motion保持；精准回放后源等价和限定git diff --check通过。不新增镜像CSS测试、不tests/check/typecheck/build/浏览器/CUA/API或真实请求。站长手验内容宽度>=960px四列、720–959px三列、480–719px两列、更窄一列，卡片整体缩小，旧外框与hover反馈保留；本记录不是浏览器验收结论。
+
+## GG-236 operator manual project-frame acceptance
+
+纯局部CSS单规则，仅静态源码/选择器优先级与精准diff检查，不新增镜像样式测试；未tests/check/typecheck/build/浏览器/CUA或真实请求。站长手验画布/旧创作项目常态可见浅灰边界，hover/focus仍原1.015倍预览放大且底色一致；菜单/快照重试不误进入、不触发放大，pending/restoring及reduce-motion保持。既有GG232验收不能算作本任务的浏览器验证。
+
+## GG-232 卡片交互验证
+
+复用GG226前端10项和文档8项，18/18通过；build:local通过，check:local lint0错误/116警告后停于原IDB21/35类型错误，未运行全套。隔离work/gg232-ui-review组件无backend代理/密钥/写权限，在headless Chrome真实点击/键盘核验整卡进入、菜单/rename/delete取消/快照重试不误入、无继续按钮、灰色hover/focus和无黑框、reduce-motion；九类检查及保存白字通过，0pageerror/0写请求，截图已看。合成数据不代替登录现有账户手验；隔离51832服务停止，无真实项目/素材/provider写操作。
+
+## GG-226 / GG-227 项目管理与支持入口
+
+稳定源码针对GG226前后端、GG059导航、GG217退役导航与文档40/40通过；独立后端GG226/GG218/m4-projects25/25及typecheck通过。包含名称CAS/丢回包、隔离/rollback、已删GET/PUT410与本地清理失败、真实布局/日期/加载空失败状态；全部注入mock，不连接真实provider/活跃DB。build:local通过，check:local重跑后lint0错误/116警告，原IDB两处类型错误导致停止且全套测试未运行。精确回放HTTP200和单独tsc无项目新增错误；活跃树独立画布另有类型缺口，未覆盖。
+
+操作者在现有5173手验真实快照、菜单确认/错误重试、年月日日期及footer仅账户；自动验证未重命名/删除真实项目、上传或生成。后端迁移仅新增0056表，既有14表fingerprint完全保留、五项ready及代理来源verified70e10c6；详情见GG226任务卡。
+
+## GG-234 operator manual default-hover appearance acceptance
+
+纯局部CSS两个hunk，仅静态差异审阅，不新增镜像样式测试；未tests/check/typecheck/build/浏览器/CUA或真实请求。站长手验卡片鼠标移入/移出时填充和亮度一致，按下/键盘焦点及拖动正常，GG233添加/改名/预览流程保持。静态检查不代表视觉验收。
+
+## GG-233 operator manual asset-card and addition acceptance
+
+按站长持续要求，本任务不执行tests/check:local/typecheck/build/浏览器/CUA/API或真实上传；仅静态源码和差异审阅，新增逻辑定义不代表已通过。手验默认资产栏的两列卡片/窄屏一列：首位添加、文件夹1:1圆角并可进入、图片完整原比例无常驻名称。检查预览、拖入画布和双击/F2改名；新上传只入库、不得自动生成节点。
+
+隔离32764ce已精确合入GG-116。根静态审阅五源及十条未执行helper定义，覆盖四类格式/尺寸、URL协议/凭据、无referrer、MIME/签名/空响应、HTTP失败、声明与流大小、CORS、超时重试、取消；子菜单公开props/独立Portal、焦点、完成事件/卸载及文件夹重试均由源码核对，未执行行为验收。source/test归一化一致性与精确diff检查通过。
+
+用户主动手验文件选择/取消、各支持格式、逐项失败重试、上传中关闭后重新打开、成功后刷新保留；文件夹添加应归档到提交时目录，归档失败只重试归档。链接表单检查粘贴/Enter/箭头提交、错误时保留输入、JPEG/PNG直链成功和跨域/网页/超限/超时失败；已有素材、画布位置和保存不变。视觉及接口行为仍待站长手验。
+
+## GG-231 operator manual selection-stroke acceptance
+
+纯局部选框绘制修复，仅静态盒模型、焦点优先级、源码一致性与diff审阅；未运行测试/check:local/类型检查/构建/浏览器/CUA或真实请求，不新增镜像CSS测试。站长手验完成框选后共同外侧直边与图片1px描边重合、实线同粗，缩放和焦点状态仍显示；临时拖框为实线，名称/尺寸与可见批次仍包含在选框内，整体拖动/键盘/排列正常。静态审阅不代表已浏览器视觉验收。
+
+## GG-230 operator manual header-title acceptance
+
+纯默认top坐标修复，仅静态盒模型/diff审阅；不测试/check:local/类型检查/构建/浏览器或真实请求，不新增镜像CSS测试。站长手验桌面打开资产时标题与右侧头部同中心线，关闭/拉伸侧栏纵坐标稳定；窄屏既有换行和手机top12保留。源计算为两侧中心25px，不代表浏览器视觉验收。
+
+## GG-229 operator manual alignment-icon acceptance
+
+纯局部向量/样式变更，仅静态源审阅与diff检查，未测试/check:local/构建/浏览器或真实请求，不新增镜像CSS测试。站长手验与173615参考图同类的基准线/短实线、白底圆角/浅灰hover和水平/垂直分组；七项点击与键盘焦点、禁用状态及选区定位保持正常。静态审阅不代表已视觉验收。
+
+## GG-228 operator manual native-selection acceptance
+
+仅静态审阅和差异检查；不运行自动/浏览器复测、check:local或构建，不新增镜像CSS的测试。站长手验移动/框选/排列、页签和缩放按钮后无界面文字高亮；提示词、名称、资产改名、缩放输入仍能拖选/Ctrl+A/复制/编辑，节点选择与整体拖动继续生效。截图的具体触发手势未知，不能将静态修复记为已复现或功能验收。
+
+## GG-222 operator manual selection-arrangement acceptance
+
+按站长要求不执行测试、check:local、构建或浏览器复测；仅静态源码审阅和精确差异检查。几何定义覆盖可见矩形并集、metadata、展开/收起批次、六种对齐、混合尺寸网格和空/无效/no-op路径，定义不等于已验证。
+
+手验目标：Shift框选两项以上后出现七个常用排列图标；自动整理保持媒体比例、整批与连线，混合尺寸不重叠；六种对齐按可见占位生效。名称/尺寸和可见叠图不超出视觉选框，缩放、移动、批次收放后更新；仍能拖动选框整体移动并快捷键删除。正常稳定页面可撤销/重做、刷新恢复新位置；既有上传/生成忙时的历史挂起保护保持，不承诺新增忙时撤销。仅选中、视角、工具栏和临时批次收放不单独保存。
+
+## GG-219 operator manual header acceptance
+
+仅文字/图标尺寸与间距调整，按站长要求未运行自动测试、构建或浏览器复测，不添加镜像CSS数值的测试。静态差异检查，手验目标：Logo比之前更小、文字/功能图标一致且同中心线、名称编辑不改变字号或突然扩框，页功能保持。
+
+## GG-218 operator manual pages acceptance
+
+站长要求不复测，页面前后端本地整合只作静态审阅并补未执行定义，必要运行安装/编译/来源核对另外记录；不运行自动功能测试或代发真实上传/生图。后端11条/UI5条定义未执行。手验目标：旧项目恢复为页面1且节点不丢；新增至10页/第11页不可加；切页内容/撤销/设置独立，活动任务回原页且不重复；关闭二次确认且至少一页、资产库保留；刷新和断网恢复全部页，本地切换/视角不单独发云写；所有页投影剥离临时字段，保留GG-216准确保存提示。实际运行版本与0055应用证据已记录于任务卡，这些不是功能验收。
+
+删除弹框修正仅静态审阅：确认全局overlay70高于shadcn content50，局部改为overlay70/content71并沿现有灰黑样式对齐。站长手验白色弹框清晰且可点击、取消保留内容、确认删除整页、至少一页保护。未打开浏览器复测或代删用户页面。
+
+## GG-216 operator manual save-status acceptance
+
+仅静态审阅/diff check，隔离修复670e65e精准回放5173前端。未执行gg216-canvas-stale-upload-status.test.mjs四项定义、自动功能测试、浏览器复测、上传/生成、服务切换或数据库写；DB诊断仅只读。站长刷新指定画布，手验已失败的pending_占位不再显示素材上传，真实未上传文件及未确认提交仍保留正确提醒，离线/恢复与本地内容不丢失。该修复不是清除浏览器缓存或重发任务。
+
+## GG-214 operator manual Seedream acceptance
+
+按站长持续指示未执行check:local、自动功能测试、浏览器复测或真实provider请求。仅静态审阅/diff check，补未执行gg214-seedream-provider与billing定义：能力/像素表/PNG与URL数组、普通n1/无watermark与拆层、1..17及其他模型精确数量、稳定排序/缺元数据、loading/failure/未知提交不重复、单批次真实尺寸和暂存清理、目录价格/附加费/缺报价。隔离运行29e566d完成锁定依赖安装、启动必要build/verify与就绪来源核对；0054在零队列/冻结的本地54449前进至54条，画布项目1保留。Web25576/Worker30008五项ready均ok，5173代理同verified版本；这些不是功能验收。
+
+下一步站长在5173刷新画布，检查模型图标/参数只显示1K2K和比例、无数量、参考图报价变化、提示词和连线恢复；自行发起真实普通任务检查返回与尺寸。单图为普通模式预期；多输出兼容需要实际多返回或将来隔离测试证明，不能宣称拆层已开放。此前任务待手验项继续保留，生产未变。
+
+## GG-213 operator manual automatic-settings acceptance
+
+Added unexecuted definitions cover policy-gated GPT adaptive, unchanged legacy ratio capability, valid resolution/auto size mapping versus fixed pixels, actual adapter payload quality:auto/background:auto or transparent+PNG, transparentJPEG rejection, and GPT2 tier/trans enum constraints. Source review/diff checks only. Required local runtime compilation and provenance/readiness/version identity use257f959; no automated functional tests/check:local, browser retest, real generation/upload or production deployment. Operator checks centered adaptive labels, quality defaults/copy, transparent Switch keyboard/on/off/default, downward full settings, draft restore and their own optional real generation. Existing manual acceptance remains pending.
+
+## GG-211 / GG-212 operator manual acceptance
+
+Only source review and diff checks were performed. Added unexecuted test definitions cover documented GPT routing, legacy pinning, strict safe-decline classification, quality/background payload and policy hash/history, distinct fallback attempt, every canvas count1..12, invalid counts, quote context, count12 save/read, and GPT12 n=1 task sets with interruption recovery/uncertainty. No automated functional tests, browser retest, upload, provider generation or production deployment, per operator instruction.
+
+Necessary local runtime synchronization used npm ci and build/verify:checkpoint for99e645c, applied0052/0053 only to the preserved localhost54449 database after confirming no active jobs/outbox/reservations/queues, and checked readiness/version/proxy identity. These are runtime provenance checks, not functional acceptance. Operator manually checks the stepper for all five models, typing/keyboard/bounds, quote/count changes, GPT supported quality/background, real submission only at their choice, full batch output/expand, and refresh/duplicate restore. Transparent results should retain alpha; route attempt evidence may be inspected after the operator's own generation.
+
+## GG-210 operator manual context-menu-icon acceptance
+
+The operator opens the blank-canvas context menu and checks the image-with-sparkle icon to the left of `图片生成器`, vertically centered with the text. The entry retains its keyboard behavior and creates the same generator. Source review and `git diff --check` only; no tests, build, browser retest or provider request.
+
+## GG-209 operator manual compact-stack acceptance
+
+On an existing successful 2/4/8-output canvas generator, the operator checks that collapse shows the full first image and at most two narrow, unrotated rear edges. The control stays inside the first image's lower-right corner in both states. Expand reveals every output in order; collapse restores the compact preview. Dragging any visible image moves the whole batch, with one metadata row and no asset navigation or hover-driven swap. Check keyboard activation and reduced motion. Source review and `git diff --check` only; no tests, build, browser retest or provider request.
+
+## GG-208 operator manual default-count-summary acceptance
+
+The operator creates a new image generator and checks that its image-settings summary includes the default count: `自适应 · 2K · 1`. Selecting another supported count or switching generators must show that generator's effective count without `张`; the accessible name continues to identify `数量 X`. Source review and `git diff --check` only; no automated tests, build, browser retest or provider request under the standing instruction.
+
+## GG-206 operator manual sustained-edge-hover acceptance
+
+On the existing 5173 `/canvas`, the operator holds the pointer still on a connected curve for longer than one second: the centered scissors button appears without extinguishing the blue stroke. Move along the line, hover the button, and return to the same edge; highlighting should remain stable. Leave for empty space or a node, switch to another edge, click scissors, remove the edge by keyboard/node deletion, and leave the canvas: no old highlight or button should remain. Check early departure before one second, existing curve flow and reduced-motion behavior. The agent only reviews source and runs `git diff --check`; no automated test, build, browser retest or provider request is performed under the operator's standing instruction.
+
+## GG-203 operator manual eight-output acceptance
+
+The isolated local Web/Worker now include GG-203 and migration 0051 is applied. The operator checks that Nano Banana 2/Pro canvas count buttons read 1/2/4/8, default to 1, and a saved eight-count draft survives refresh. GPT and lobby remain 1/2/4. A missing eight-count quote prevents submission; a valid quote matches the current per-image price times eight for the same catalog model, resolution and line. If the operator explicitly chooses a billable request, verify eight ordered outputs in one movable batch, expand/collapse, one job and one atomic reservation/settlement flow. Relevant contract, billing-summary, task-set and canvas-project test definitions are updated but are not executed under the standing no-retest instruction. No automated tests, browser retests or real provider requests are run for this task; runtime-only compilation/health facts are recorded separately in the task card.
+
+## GG-189 operator manual Nano settings acceptance
+
+After the isolated local Web/Worker have been updated together and migration 0050 applied, the operator will inspect a new canvas generator under Nano Banana 2 and Pro: adaptive is the default, each offers 1/2/4 outputs, quotes match the managed per-image price times count, and image settings always open downward near the viewport bottom. An old saved generator retains its own ratio/count. If the operator elects to submit a billable request, check no-reference adaptive output, referenced adaptive output, multiple results, persisted job/credit amount, and refresh recovery; inspect generated asset dimensions instead of assuming a fixed pixel ratio. Missing price disables submission. No automated tests, build, browser retest or provider request is run during this implementation under the operator's standing instruction. Current 5173 over old 32131/32142 cannot prove the new backend behavior.
+
+## GG-179 operator manual outboard-handle acceptance
+
+In the local `/canvas` preview, confirm that source and generator connection dots sit beyond the node borders with visible whitespace, while the line attaches at each dot. Hover or select a node and observe a restrained breathing halo without movement of the dot itself. With reduced-motion preference, the halo must remain still. The operator performs this manual acceptance; automated/browser retest is deferred by request.
+
+## GG-178 operator manual connection-handle acceptance
+
+In the local `/canvas` preview, hover and select source images, completed results and generator nodes. The visible endpoint should be a restrained gray dot; the pointer should be able to start a line from the surrounding transparent area and finish near the generator's input dot. Confirm invalid targets are still rejected, while dragging an image body and resizing its corners still work. The operator performs this manual acceptance; no automated/browser retest is requested for this slice.
+
+## GG-167 operator manual generator/connection acceptance
+
+The operator requested no automated tests, builds, browser retests or real provider submissions during implementation. After the local runtime includes the new generated-asset import route, manually check: blank canvas has no chat; empty-pane right-click creates one placeholder without submitting; selection shows the same composer below it at 100% and another zoom; blank click/other-node click hides it; multiple generators retain separate prompts, specs and direct references; reference upload in one does not appear in another; connect a ready uploaded image, an image uploading/failing then retried, a ready generated result and a generated library image; only ready reference IDs enter a deliberately clicked generation request. Check ten-total limit, duplicate/reverse/video/audio rejection, edge deletion, node removal, narrow viewport and tab focus. This task's static `git diff --check` is not functional verification; 5173 HMR over an older 32131 checkpoint cannot demonstrate generated-asset import.
+
+## GG-161 operator manual canvas upload acceptance
+
+Per the operator's standing instruction, the agent does not run tests, builds, browser retests or a real upload for this change. The operator should drag one and several local JPEG/PNG files and an MP4 onto `/canvas`; check that local preview appears immediately, breathing continues for the actual upload duration, success selects each new node, and an open sidebar plus the asset library show each uploaded material. Check failed upload keeps the preview and allows retry, deletion during upload removes the node, and a ready video can preview again after its read URL expires. Existing library-item drag and generated result behavior should stay separate. Frontend HMR at 5173 and preexisting backend upload routes at 32131 are not end-to-end verification.
+
+## GG-159 operator manual canvas credit acceptance
+
+The operator will select the top-right credit balance on `/canvas` by mouse and
+keyboard and confirm the existing account dialog opens without navigating away.
+The dialog heading should read `积分明细`, and today/week/month spend should show
+numbers without a visible `积分` suffix. Close via button, Escape, and backdrop;
+the current canvas nodes, viewport, prompt, and references should remain in
+place. Check the same heading and summary on the lobby entry, balance refresh
+after the read, the existing profile link, narrow layout, and read failure.
+Per the standing instruction, the agent does not run tests, builds, or browser
+retests; the operator performs acceptance.
+
+## GG-156 operator manual credit usage acceptance
+
+The operator will open the lobby avatar menu at desktop and mobile widths, select
+the clickable `积分` row, and check that the white account dialog shows the gray
+navigation area, today/week/month summary, and four-column usage table. Confirm
+the former sidebar credit-record icon is absent, and the account navigation item
+reads `积分明细`. In the table's second header, check borderless `全部 / 已消耗 /
+已获取` filtering, including while the table is loading, empty, or showing a read
+error. Confirm keyboard selection, focus indication, and that the filter keeps
+working after changing back to `全部`. Check that load-more works across rows
+hidden as release/refund, and Escape/close return to
+the unchanged workspace. `/credits` should remain readable as a historical deep
+link. Verify the visible list omits return entries without changing the balance
+or internal ledger. Per the standing instruction, the agent does not run
+automated tests, builds, or browser retests; the operator performs acceptance.
+
+## GG-155 operator manual acceptance
+
+Per the operator's standing instruction, the agent does not run automated tests, builds, or browser retests for this slice. After the separate local 32131 runtime has been safely updated and local migration 0048 applied, the operator will drag generated images and uploaded images/videos/audio from root and folder lists to the unobscured canvas, check that dropping back in the sidebar adds nothing, move/select the temporary nodes, and confirm refresh clears nodes without changing stored assets or credits. Check that the 34px thumbnails crop around their center; only thumbnail hover/focus opens the larger full-media preview, while hovering names does not. Double-click and F2 should edit each kind's name; Enter/blur save, Escape cancels, invalid names show feedback, and refresh plus `/assets` show the saved display name. Also check inaccessible assets and read failures leave the page recoverable. Do not infer manual acceptance from code completion; the current 32131 checkpoint lacks this PATCH operation.
+
+## GG-152 preview session route
+
+The operator will manually open `/canvas` through the pure UI preview and confirm `/api/auth/session` returns the demo session without the Sharp/`endsWith` overlay. With the verified local workspace running, confirm the 5173 API proxy continues to read the real 32131 session. The agent did not run automated tests, a build, or a browser retest, per the standing instruction.
+
+## GG-151 canvas asset browser
+
+The operator will manually inspect the lower-left icon-only library trigger alongside the map and zoom controls; opening the full-height sidebar from the far left over the full-size canvas without moving existing node coordinates; the header, composer, lower-left map/zoom controls and drop cue yielding space to the overlay; the right-edge horizontal resize cursor without a dark hover border; live sidebar/control movement while dragging from the 248px default up to the responsive 400px cap without resizing the React Flow host; pointer cancellation leaving the prior width; retained width after closing/reopening and reset after refresh; and absence of the reported vinext ResizeObserver loop overlay. Also inspect that newly generated results land in the unobscured area, folder entry and return, image/video/audio rows with filename truncation, hover/focus previews, empty/loading/failed-read retry states, and narrow viewport placement. Confirm ordinary canvas use does not auto-close the sidebar and browsing does not add a canvas node or composer reference. Per the standing instruction, the agent does not run automated tests, builds or browser retests.
+
+## GG-150 inline canvas name
+
+The operator will manually inspect the 26px icon and adjacent name at equal visual height, text-edit cursor on hover, unchanged-width entry into editing, width growth and shrinkage with text, the 20-character cap, Enter/blur acceptance, Escape cancellation, empty-name fallback, long-name truncation at desktop and narrow widths, and unchanged G menu and credit balance. The title is intentionally temporary and should reset on refresh. Per the standing instruction, no automated tests or browser retest are run by the agent.
+
+## GG-149 canvas home menu
+
+The operator will manually inspect the standalone `/canvas` header: a 26px black circle with three white aperture-like pieces suggests G without overwhelming the adjacent canvas name; clicking it opens a one-item menu below, and `主页` returns to `/create`. Check keyboard focus/Esc and narrow-screen placement while the credit balance remains visible. Per the standing instruction, no automated tests or browser retest are run by the agent.
+
+## GG-148 canvas mini map
+
+The operator will manually inspect `/canvas` with empty and multiple image/video nodes: the lower-left mini map should show the node layout and a clearly outlined rectangular current viewport with a lightly faded outside area. The rectangle should follow viewport pan/zoom; dragging or scrolling within the map should navigate the existing canvas, and the left map button should hide/show the panel with an accessible pressed state. The percentage button should keep its 10%–800% menu without a trailing chevron and use the quieter type treatment. Check narrow screens for separation from the composer. Per the standing instruction, no automated tests or browser retest are run by the agent, and no real upload or billable generation is triggered.
+
+## GG-147 canvas reference previews
+
+The operator will manually inspect `/canvas` with one, multiple, and ten local reference images: square center crops and visible ordering; small full-image previews above each thumbnail on hover or keyboard focus without a black arrow; no black outline after clicking a thumbnail; equal circular number and remove badges inset from the image corners; top-right removal with automatic renumbering; touch-visible removal; upload progress, failure retry, and disabled add action at the ten-image limit. Check the text-only add action and narrow-screen two-row tools. Per the standing instruction, no automated tests or browser retest are run by the agent, and no real upload or billable generation is triggered by this change.
+
+## GG-146 local canvas video
+
+The operator will manually drop a valid MP4 together with an image, inspect aspect ratio, name/type icon, pixel dimensions and duration, resize to the icon-only width, hover to preview, leave and re-hover to confirm progress resumes, and remove the node. GG-183 removes FPS display and parsing; manually inspect a portrait video initially, after project refresh, and after proportional resize to ensure the selected outline follows the full picture. Invalid, empty, over-limit and undecodable files, hidden-tab pause and reduced-motion behavior remain manual follow-ups. Per the standing instruction, this implementation is not automatically or browser retested; no real upload or provider call is triggered.
+
+## GG-141 canvas AI composer
+
+The operator will manually inspect the canvas composer with empty and multi-line prompts, reference thumbnails, upload status and retry, model choices, every available resolution/aspect ratio/count, the quoted credit amount, unavailable-quote and insufficient-credit messages, keyboard submit, and the narrow-screen two-row layout. The existing GoodGood generation boundary remains in use. Per the standing instruction, no automated or browser retest is run and no real upload or generation is triggered by this change.
+
+## GG-140 canvas header simplification
+
+The operator will manually inspect `/canvas`: the top-right Add Image and Fit View buttons are absent, the credit balance stays in place, local JPEG/PNG drag and drop remains available, and the composer reference-image picker and lower-left Fit View item remain. Per the standing instruction, no automated or browser retest is run.
+
+## GG-139 credit icon
+
+The operator will manually inspect the filled lightning icon with a light outline in the canvas balance, mobile balance, credit navigation, account menu, credit activity, admin credit action and enterprise usage tab. The top-right balances show an icon and number without the visible word “积分”; accessible labels still identify credits. Platform currency keeps its coin icon. Per the operator's standing instruction, no automated or browser retest is run.
+
+## GG-138 canvas zoom menu
+
+The operator will manually inspect the existing 5173 `/canvas`: 100% at entry, a lower-left white menu with dark text that closes on outside click, editable 10%–800% bounds, zoom in/out, fit to screen, quick 50%/100%, no quick 800%, and a current value that follows wheel zoom. Check that initially added images occupy a moderate portion of the screen and that the control clears the composer on narrow screens. Per the operator's explicit instruction, this iteration and subsequent requests do not run automated tests or browser checks.
+
+For the fit-to-screen refinement, manually compare an unresized image at 100%, either fit action, and quick 50%. Fitting one small image should never enlarge it above 100%; 50% remains half the on-screen dimensions of 100%. Multi-image fitting may shrink further to keep all nodes in view. No automated or browser retest was run for this change.
+
+## GG-137 canvas image hover frame
+
+The operator will manually inspect loaded local and generated images on the existing 5173 `/canvas`: hovering should show the same square blue outline as selection without darkening the image or activating resize handles. Selected images keep their four-corner resize behavior. Per the operator's instruction, this iteration does not run automated tests or browser checks.
+
+## GG-136 square canvas images
+
+On the existing 5173 `/canvas`, the operator will inspect one loaded local image and one generated image: both image edges and the selected blue outline should be square. GG-137 changes the hover feedback from a veil to the same square blue outline. Check the existing four-corner aspect-ratio resize, default arrow and generated-image detail link. Loading and failure surfaces, composer thumbnails and asset cards remain outside this change. Per the operator's instruction, no further automated checks are run for these visual iterations.
+
 ## GG-134 canvas invisible corner resize targets
 
 Run the focused canvas and documentation tests, then one full `npm run check:local` after the CSS settles. On the existing authenticated 5173 `/canvas`, the operator will select and resize loaded local and generated images at all four corners: no square or arc should appear; the diagonal cursor should start near each rounded corner rather than along the adjacent straight edges. The smaller oval transparent target must still allow four-corner dragging with the same aspect ratio and size limits. Hover, image corner scaling, selected outline, asset-detail navigation and loading/failure states should remain as before. Agent HTTP checks and an isolated browser hit-test are not authenticated visual acceptance; avoid real uploads or billable generation.
@@ -121,9 +337,9 @@ GG-088定位修复用实际浏览器验证默认其他首次打开、选择首�
 
 GG-087定向验证类型/文字/0—5图片/大小/解码、分页、401/403/404、方法/header/安全错误、multipart、SSR字段/空/登录/详情。命名空库goodgood_gg087_feedback_test*、显式INTEGRATION/NO_WORKER及loopback54449，完整迁移和内存对象mock测试原子性/幂等/回滚、越权、回复/冲突、筛选/分页/事件历史；没有队列/Worker/provider。浏览器使用隔离无Worker栈合成图片验证全流程，不对原验收数据写fixtures。
 
-GG-086 tests/gg086-jcoin-progress.test.mjs覆盖整数精度、空/极小/接近封顶/封顶进度、15秒更新、失败保留/恢复、不重叠、隐藏/可见及取消迟到请求；GG084 SSR追加可访问进度条及部分/完成断言。全为内存只读测试，无数据库或provider调用。
+GG-086旧发行进度测试随功能删除，当前以GG-217退役测试为准。
 
-GG-084 `node --test tests/gg084-jcoin.test.mjs`验证精确金额、当前/历史单位、线性小额与50万元预算封顶、只返回自身DTO、身份/输入/分页/安全错误、Node方法/CSRF/请求限制、深链和SSR成功/空/加载状态。`gg084-jcoin-postgres.test.mjs`默认跳过；仅GOODGOOD_GG084_INTEGRATION=1、GOODGOOD_GG084_NO_WORKER=1及GOODGOOD_GG084_DATABASE_URL指向loopback54449的goodgood_gg084_jcoin_test*命名空库，拒绝非空库/其他客户端。全40迁移验证草稿、起算边界、历史单位、混合赠送、真假支付/缺来源/历史划拨、并发重放、个人分页、暂停退款、失败回滚重跑、最后一笔封顶、回收不重开、不可变账本及活动角色。无outbox、Redis或真实provider请求。临时Chrome页面用全fetch模拟验证实际工作区个人/站长桌面1280px/窄屏390px、空记录、分页、读取重试、开启失败重试/暂停/恢复与手机菜单；不接真实数据库。
+GG-084旧平台币功能/发行/SQL测试随功能退役删除，不再运行历史奖励测试。GG-217回归覆盖旧API410无资源、Worker正常生成/退出且无奖励定时器、导航消失及正常积分保持；不启动真实provider或写历史表。
 
 GG-081快速测试覆盖活动站长/CSRF、严格分类与金额、收款确认、类型/凭证指纹、稳定重试键、内部商品拒绝、现金精度/未知峰值/审计渲染。gg081-credits-postgres.test.mjs需GOODGOOD_GG081_INTEGRATION=1、GOODGOOD_GG081_NO_WORKER=1及GOODGOOD_GG081_DATABASE_URL指向loopback的goodgood_gg081_credits_test*空数据库；拒绝其他连接。全迁移后验证正常来源/订单/审计、并发重放与凭证竞争、CLI互斥、价目/目标失败回滚、旧测试来源、自身并发及暂停权限。gg071-operations-postgres.test.mjs沿用其命名隔离契约，补现金币种/假支付/账期、跨日峰值/同刻交接/缺历史、当前running/refining及queued。两者无provider或Worker调用，默认跳过；本轮单独隔离运行2/2通过。
 
@@ -1182,3 +1398,10 @@ not prove that a browser completed a signed PUT or server-side image decode.
   remaining debt, and next action.
 
 GG-077：定向测试验证三档可见性、固定参数覆盖防伪、公开投影脱敏与计数UI；opt-in GOODGOOD_GG077_INTEGRATION=1必须配GOODGOOD_GG077_NO_WORKER=1及精确loopback临时数据库goodgood_gg077_visibility_test_20260914。SQL覆盖去重、并发统计、下架不计数、报价不计数、私有参数生成/重试/结算与资产DTO。不得指向32140真实Worker数据库。GG-117（ADR 0104）已删除该测试文件与 opt-in 环境，灵感板块整体下线后不再需要该隔离库。
+# GG-173 manual canvas acceptance
+
+Per the operator's standing request, this local UI iteration does not run automated tests, builds, or browser retests. The operator will manually confirm: a new blank canvas gets a stable address and appears in Projects; name, node coordinates/size, connections, per-generator draft/reference inputs and viewport survive refresh; pending upload recovers from IndexedDB; offline writes show unsynced state and later synchronize; storage failure never claims saved; concurrent-tab edits preserve both versions. Static diff inspection only precedes that handoff. The local 32131 backend checkpoint with migration 0049 is running; functional behavior remains unverified until operator acceptance.
+
+# GG-175 manual content-scoped autosave acceptance
+
+The operator will manually confirm that pan, zoom, fit view, selection, hover and playback do not show a new save cycle or write the canvas-project API; the latest viewport still restores in the same browser. A new empty canvas appears in Projects after its initial creation. Moving/resizing nodes once, adding/removing nodes and edges, renaming, and editing a generator draft continue to persist and restore. Holding a node drag or resize should not generate intermediate project writes. Offline content edits retain the GG-173 unsynced indicator and recovery. Per the standing instruction, the agent does not run automated tests, builds, or browser feature retests; static diff inspection is the only gate before operator acceptance.

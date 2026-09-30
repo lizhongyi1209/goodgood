@@ -257,8 +257,7 @@ export function AuthenticationGate({
             role="img"
             aria-label="GoodGood"
           >
-            <Image src="/goodgood-mark.svg" alt="" width={29} height={22} />
-            <Image src="/goodgood-wordmark.svg" alt="" width={89} height={20} />
+            <Image src="/goodgood-g-icon.svg" alt="" width={32} height={32} />
           </div>
           <h2 id="authentication-title">登录暂时不可用</h2>
           <div className="authentication-error" role="alert">
@@ -293,14 +292,7 @@ export function AuthenticationGate({
           role="img"
           aria-label="GoodGood"
         >
-          {method === "email_code" ? (
-            <span className="authentication-brand-badge">
-              <Image src="/goodgood-mark.svg" alt="" width={22} height={17} />
-            </span>
-          ) : (
-            <Image src="/goodgood-mark.svg" alt="" width={29} height={22} />
-          )}
-          <Image src="/goodgood-wordmark.svg" alt="" width={89} height={20} />
+          <Image src="/goodgood-g-icon.svg" alt="" width={32} height={32} />
         </div>
         {method === "hosted" ? (
           <>

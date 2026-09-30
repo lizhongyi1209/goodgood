@@ -25,7 +25,7 @@ test("GG-033 exposes one shared GPT image capability family", () => {
   assert.deepEqual(GPT_IMAGE_MODEL_IDS, GPT_MODELS);
   for (const modelId of GPT_MODELS) {
     assert.equal(isGptImageModelId(modelId), true);
-    assert.deepEqual(GENERATION_MODEL_CAPABILITIES[modelId].outputCounts, [1, 2, 4]);
+    assert.deepEqual(GENERATION_MODEL_CAPABILITIES[modelId].outputCounts, Array.from({ length: 12 }, (_, index) => index + 1));
     assert.deepEqual(
       normalizeGenerationModelOptions({ modelId }),
       {

@@ -16,6 +16,7 @@ export type AuthenticationSession = Readonly<{
   authenticated: true;
   preview?: true;
   user: Readonly<{
+    id?: string;
     email: string | null;
   }>;
 }>;

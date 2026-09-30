@@ -16,6 +16,10 @@ import {
 } from "../server/billing/repository.mjs";
 
 const timestamp = "2026-09-02T00:00:00.000Z";
+const imageModelIds = ["nano-banana-2", "nano-banana-pro", "gpt-image-2.5-sunburst", "gpt-image-2", "gpt-image-2.5-flare"];
+const canvasCounts = Array.from({ length: 12 }, (_, index) => index + 1);
+const expectedModelQuotes = (modelId) => canvasCounts.flatMap((count) =>
+  ["1K", "2K", "4K"].map((resolution) => [resolution, count, String((modelId === "nano-banana-pro" ? 30 : 20) * count)]));
 
 function accountRow(overrides = {}) {
   return {
@@ -122,17 +126,16 @@ test("billing repository reads exact account state and all launch resolution pri
   );
 });
 
-test("preview billing publishes the same Nano Banana Pro single-image price", () => {
-  assert.deepEqual(
-    previewBillingSummary.quotes
-      .filter((quote) => quote.modelId === "nano-banana-pro")
-      .map((quote) => [quote.resolution, quote.count, quote.creditAmount]),
-    [
-      ["1K", 1, "30"],
-      ["2K", 1, "30"],
-      ["4K", 1, "30"],
-    ],
-  );
+test("preview billing publishes every canvas model/resolution/count quote through twelve", () => {
+  assert.equal(previewBillingSummary.quotes.length, 182);
+  for (const modelId of imageModelIds) {
+    assert.deepEqual(
+      previewBillingSummary.quotes
+        .filter((quote) => quote.modelId === modelId)
+        .map((quote) => [quote.resolution, quote.count, quote.creditAmount]),
+      expectedModelQuotes(modelId),
+    );
+  }
 });
 
 test("billing summary serializes exact credits without owner or account identifiers", async () => {
@@ -154,29 +157,7 @@ test("billing summary serializes exact credits without owner or account identifi
       quote.count,
       quote.creditAmount,
     ]),
-    [
-      ["nano-banana-2", "1K", 1, "20"],
-      ["nano-banana-2", "2K", 1, "20"],
-      ["nano-banana-2", "4K", 1, "20"],
-      ["nano-banana-2", "1K", 2, "40"],
-      ["nano-banana-2", "2K", 2, "40"],
-      ["nano-banana-2", "4K", 2, "40"],
-      ["nano-banana-2", "1K", 4, "80"],
-      ["nano-banana-2", "2K", 4, "80"],
-      ["nano-banana-2", "4K", 4, "80"],
-      ["nano-banana-pro", "1K", 1, "30"],
-      ["nano-banana-pro", "2K", 1, "30"],
-      ["nano-banana-pro", "4K", 1, "30"],
-      ...["gpt-image-2.5-sunburst", "gpt-image-2", "gpt-image-2.5-flare"]
-        .flatMap((modelId) => [1, 2, 4].flatMap((count) =>
-          ["1K", "2K", "4K"].map((resolution) => [
-            modelId,
-            resolution,
-            count,
-            String(20 * count),
-          ]),
-        )),
-    ],
+    imageModelIds.flatMap((modelId) => expectedModelQuotes(modelId).map((quote) => [modelId, ...quote])),
   );
   assert.equal("ownerId" in summary.account, false);
   assert.equal("id" in summary.account, false);
@@ -184,11 +165,7 @@ test("billing summary serializes exact credits without owner or account identifi
     summary.quotes
       .filter((quote) => quote.modelId === "nano-banana-pro")
       .map((quote) => [quote.resolution, quote.count, quote.creditAmount]),
-    [
-      ["1K", 1, "30"],
-      ["2K", 1, "30"],
-      ["4K", 1, "30"],
-    ],
+    expectedModelQuotes("nano-banana-pro"),
   );
 
   await assert.rejects(
@@ -210,6 +187,19 @@ test("billing summary serializes exact credits without owner or account identifi
   );
   assert.equal(normalized.status, 503);
   assert.equal(normalized.body.error.retryable, true);
+});
+
+test("an absent twelve-output quote fails closed rather than using a single-output price", async () => {
+  const pool = billingPool();
+  const query = pool.query.bind(pool);
+  pool.query = async (sql, values) => {
+    if (sql.includes("FROM price_versions") && values[0] === "nano-banana-2" && values[1] === "4K" && values[2] === 12) {
+      return { rowCount: 0, rows: [] };
+    }
+    return query(sql, values);
+  };
+  await assert.rejects(readBillingSummary({ ownerContext: { ownerId: "owner-a" }, resources: { pool } }),
+    (error) => error instanceof BillingPersistenceError && error.code === "PRICE_NOT_AVAILABLE");
 });
 
 test("billing HTTP route authenticates, remains read-only, and preserves owner context", async () => {
@@ -275,7 +265,7 @@ test("billing HTTP route authenticates, remains read-only, and preserves owner c
 });
 
 test("billing summary is wired into both runtimes and the shared workspace", async () => {
-  const [route, runtime, page, composer, boundary, contract] = await Promise.all([
+  const [route, runtime, page, composer, boundary, contract, activity] = await Promise.all([
     readFile(new URL("../app/api/billing/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../server/runtime/web.mjs", import.meta.url), "utf8"),
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
@@ -288,6 +278,7 @@ test("billing summary is wired into both runtimes and the shared workspace", asy
       "utf8",
     ),
     readFile(new URL("../shared/contracts/billing.ts", import.meta.url), "utf8"),
+    readFile(new URL("../features/billing/credit-activity-view.tsx", import.meta.url), "utf8"),
   ]);
   assert.match(route, /await readBillingSummary/);
   assert.match(route, /previewBillingSummary/);
@@ -297,10 +288,10 @@ test("billing summary is wired into both runtimes and the shared workspace", asy
   assert.match(contract, /BillingSummary/);
   assert.match(page, /billingLoading/);
   assert.match(page, /billingError/);
-  assert.match(page, /积分记录/);
+  assert.match(activity, /积分明细/);
   assert.match(page, /account-menu-credit/);
-  assert.match(page, /aria-label=\{billingSummary \? `\$\{workspaceId \? "企业剩余额度" : "积分余额"\} \$\{displayedAvailableCredits \?\? "--"\}`/);
-  assert.match(page, /<span>\{workspaceId \? "企业剩余额度" : "积分余额"\}<\/span>/);
+  assert.match(page, /aria-label=\{billingSummary \? `积分 \$\{displayedAvailableCredits \?\? "--"\}`/);
+  assert.match(page, /<span>积分<\/span>/);
   assert.match(page, /displayedAvailableCredits \?\? "暂不可用"/);
   assert.doesNotMatch(page, /点击查看/);
   assert.match(page, /billingSummary\.account\.availableCredits/);

@@ -1,5 +1,6 @@
 import { AuthenticationError, sessionExpiredError } from "../auth/errors.mjs";
 import { getGenerationResources } from "../generation/resources.mjs";
+import { getGenerationModelCapability } from "../generation/capabilities.mjs";
 import { newRequestId } from "../observability/http.mjs";
 import {
   BillingPersistenceError,
@@ -8,6 +9,11 @@ import {
 } from "./repository.mjs";
 import { PaymentError } from "./payment-errors.mjs";
 import { readManagedModels } from "../admin/models.mjs";
+import {
+  SEEDREAM_BASE_CREDITS,
+  SEEDREAM_MODEL_ID,
+  SEEDREAM_RESOLUTIONS,
+} from "../../shared/contracts/seedream-models.mjs";
 import {
   BANANA_LINES,
   supportsImageLines,
@@ -23,45 +29,26 @@ import {
   specificationOutputPrice,
 } from "../../shared/contracts/gpt-quality-pricing.mjs";
 
-const GPT_IMAGE_LAUNCH_PRICES = [
+const LAUNCH_PRICES = Object.freeze([
+  "nano-banana-2",
+  "nano-banana-pro",
   "gpt-image-2.5-sunburst",
   "gpt-image-2",
   "gpt-image-2.5-flare",
+  SEEDREAM_MODEL_ID,
 ].flatMap((modelId) =>
-  [1, 2, 4].map((count) =>
+  getGenerationModelCapability(modelId).outputCounts.map((count) =>
     Object.freeze({
       count,
       modelId,
       planContext: "standard",
     }),
   ),
-);
+));
 
-const LAUNCH_PRICES = Object.freeze([
-  Object.freeze({
-    count: 1,
-    modelId: "nano-banana-2",
-    planContext: "standard",
-  }),
-  Object.freeze({
-    count: 2,
-    modelId: "nano-banana-2",
-    planContext: "standard",
-  }),
-  Object.freeze({
-    count: 4,
-    modelId: "nano-banana-2",
-    planContext: "standard",
-  }),
-  Object.freeze({
-    count: 1,
-    modelId: "nano-banana-pro",
-    planContext: "standard",
-  }),
-  ...GPT_IMAGE_LAUNCH_PRICES,
-]);
-
-function previewCreditAmount({ count, modelId }) {
+function previewCreditAmount({ count, modelId }, resolution) {
+  if (modelId === SEEDREAM_MODEL_ID)
+    return String(SEEDREAM_BASE_CREDITS[resolution]);
   return String((modelId === "nano-banana-pro" ? 30 : 20) * count);
 }
 
@@ -104,10 +91,13 @@ export const previewBillingSummary = Object.freeze({
   }),
   quotes: Object.freeze(
     LAUNCH_PRICES.flatMap((launchPrice) =>
-      ["1K", "2K", "4K"].map((resolution) =>
+      (launchPrice.modelId === SEEDREAM_MODEL_ID
+        ? SEEDREAM_RESOLUTIONS
+        : ["1K", "2K", "4K"]
+      ).map((resolution) =>
         Object.freeze({
           ...launchPrice,
-          creditAmount: previewCreditAmount(launchPrice),
+          creditAmount: previewCreditAmount(launchPrice, resolution),
           creditUnit: "credit-cny-cent",
           priceVersion: 1,
           resolution,
@@ -150,11 +140,13 @@ export async function readBillingSummary({ ownerContext, resources = null }) {
                 ]
               : [undefined]
             ).flatMap((quality) =>
-              (model.adapterId === "nano-banana-pro" ? [1] : [1, 2, 4]).map(
+              (getGenerationModelCapability(model.adapterId)?.outputCounts ?? []).map(
                 (count) => ({
                   modelId: model.id,
                   count,
                   planContext: modelQualityPriceContext(model, line, quality),
+                  resolutions: getGenerationModelCapability(model.adapterId)
+                    .resolutions,
                 }),
               ),
             ),

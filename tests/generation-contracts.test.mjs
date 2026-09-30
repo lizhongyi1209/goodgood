@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test, { after } from "node:test";
 import { fileURLToPath } from "node:url";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 
 import { createServer } from "vite";
 import {
@@ -47,7 +49,7 @@ test("Banana and GPT lines survive snapshots and restore while default inputs ke
   assert.equal(createGenerationInputSnapshot({ ...draft, imageLine: "special" }).imageLine, undefined);
   assert.equal(createGenerationInputSnapshot({ ...draft, modelId: "gpt-image-2" }).imageLine, "quality");
   assert.equal(createGenerationInputSnapshot({ ...draft, modelId: "gpt-image-2", imageLine: "special" }).imageLine, undefined);
-  assert.deepEqual(getGenerationCountOptions("nano-banana-pro"), [1]);
+  assert.deepEqual(getGenerationCountOptions("nano-banana-pro"), [1, 2, 4]);
   assert.equal(getGenerationRatioOptions("nano-banana-pro").length, 10);
   const { findBillingQuote } = await vite.ssrLoadModule("/features/billing/http-billing-boundary.ts");
   const summary = { quotes: [
@@ -59,6 +61,88 @@ test("Banana and GPT lines survive snapshots and restore while default inputs ke
     assert.equal(findBillingQuote(summary, { ...draft, imageLine }).creditAmount, amount);
   }
   assert.equal(findBillingQuote({ quotes: summary.quotes.slice(0, 1) }, draft), null);
+});
+
+test("canvas models accept every count from one through twelve while lobby controls remain one/two/four", async () => {
+  const {
+    getCanvasGenerationCountOptions,
+    getGenerationCountOptions,
+    resolveCanvasGenerationCountForModel,
+    resolveGenerationCountForModel,
+  } = await vite.ssrLoadModule("/features/creation/generation-options.ts");
+  const { findBillingQuote } = await vite.ssrLoadModule("/features/billing/http-billing-boundary.ts");
+  const { calculateModelQuote } = await import("../shared/contracts/model-pricing.mjs");
+  const counts = Array.from({ length: 12 }, (_, index) => index + 1);
+  for (const modelId of ["nano-banana-2", "nano-banana-pro", "gpt-image-2", "gpt-image-2.5-sunburst", "gpt-image-2.5-flare"]) {
+    assert.deepEqual(getCanvasGenerationCountOptions(modelId), counts);
+    assert.deepEqual(getGenerationCountOptions(modelId), [1, 2, 4]);
+    assert.deepEqual(GENERATION_MODEL_CAPABILITIES[modelId].outputCounts, counts);
+    const model = { adapterId: modelId, mediaType: "image", prices: { "2K": { output: 30 } } };
+    for (const count of counts) {
+      assert.equal(resolveCanvasGenerationCountForModel(modelId, count), count);
+      assert.equal(resolveGenerationCountForModel(modelId, count), [1, 2, 4].includes(count) ? count : 1);
+      const selected = { modelId, resolution: "2K", count };
+      const quote = { ...selected, creditAmount: String(30 * count), priceVersion: 3 };
+      assert.equal(findBillingQuote({ quotes: [quote] }, selected), quote);
+      assert.equal(findBillingQuote({ quotes: [] }, selected), null);
+      assert.equal(findBillingQuote({ quotes: [{ ...quote, count: count === 1 ? 2 : 1 }] }, selected), null);
+      assert.equal(calculateModelQuote(model, selected), 30 * count);
+    }
+    for (const count of [0, 13, 1.5, "2", NaN, Infinity]) {
+      assert.equal(resolveCanvasGenerationCountForModel(modelId, count), 1);
+      assert.equal(calculateModelQuote(model, { resolution: "2K", count }), null);
+    }
+  }
+});
+
+test("canvas count admission rejects fractional or out-of-range values before persistence and preserves legacy entry limits", async () => {
+  const { validateM3GenerationInput } = await import("../server/generation/api.mjs");
+  for (const modelId of ["nano-banana-2", "nano-banana-pro", "gpt-image-2", "gpt-image-2.5-sunburst", "gpt-image-2.5-flare"]) {
+    const base = { prompt: "synthetic canvas batch", references: [], modelId, aspectRatio: "1:1", resolution: "2K" };
+    for (const count of Array.from({ length: 12 }, (_, index) => index + 1)) {
+      assert.equal(validateM3GenerationInput({ ...base, count, routingPolicy: "canvas-image-v1" }).count, count);
+    }
+    for (const count of [0, 13, 1.5, "2", null, NaN, Infinity]) {
+      assert.throws(() => validateM3GenerationInput({ ...base, count, routingPolicy: "canvas-image-v1" }),
+        (error) => error.code === "M3_SLICE_UNSUPPORTED");
+    }
+    assert.throws(() => validateM3GenerationInput({ ...base, count: 12 }),
+      (error) => error.code === "M3_SLICE_UNSUPPORTED");
+    for (const count of [1, 2, 4]) assert.equal(validateM3GenerationInput({ ...base, count }).count, count);
+  }
+});
+
+test("twelve-output quotes remain pinned to catalog, line, quality and resolution without browser multiplication", async () => {
+  const { findBillingQuote } = await vite.ssrLoadModule("/features/billing/http-billing-boundary.ts");
+  const selected = { modelId: "gpt-image-2.5-flare", catalogModelId: "flare-catalog", imageLine: "dedicated", quality: "max", resolution: "4K", count: 12 };
+  const quote = { ...selected, creditAmount: "1776", priceVersion: 5 };
+  assert.equal(findBillingQuote({ quotes: [quote] }, selected), quote);
+  for (const different of [
+    { count: 1 }, { imageLine: "special" }, { quality: "medium" },
+    { resolution: "2K" }, { catalogModelId: "other-catalog" },
+  ]) {
+    assert.equal(findBillingQuote({ quotes: [{ ...quote, ...different }] }, selected), null);
+  }
+});
+
+test("count input exposes numeric spinbutton semantics and disables only the relevant boundary action", async () => {
+  const { CanvasGenerationCountControl } = await vite.ssrLoadModule("/features/canvas/canvas-generation-count-control.tsx");
+  for (const [value, decrementDisabled, incrementDisabled] of [[1, true, false], [6, false, false], [12, false, true]]) {
+    const html = renderToStaticMarkup(React.createElement(CanvasGenerationCountControl, { value, onValueChange() {} }));
+    assert.match(html, /role="spinbutton"/);
+    assert.match(html, /inputmode="numeric"/i);
+    assert.match(html, /aria-valuemin="1"/);
+    assert.match(html, /aria-valuemax="12"/);
+    assert.match(html, new RegExp(`aria-valuenow="${value}"`));
+    assert.match(html, new RegExp(`value="${value}"`));
+    const decrement = /<button[^>]*aria-label="减少生成数量"[^>]*>/.exec(html)?.[0];
+    const increment = /<button[^>]*aria-label="增加生成数量"[^>]*>/.exec(html)?.[0];
+    assert.ok(decrement && increment);
+    assert.equal(decrement.includes('disabled=""'), decrementDisabled);
+    assert.equal(increment.includes('disabled=""'), incrementDisabled);
+  }
+  const disabled = renderToStaticMarkup(React.createElement(CanvasGenerationCountControl, { value: 6, disabled: true, onValueChange() {} }));
+  assert.equal((disabled.match(/disabled=""/g) ?? []).length, 3);
 });
 
 test("maps stable model IDs to fixed presentation copy", async () => {
@@ -82,6 +166,7 @@ test("maps stable model IDs to fixed presentation copy", async () => {
       { id: "gpt-image-2.5-sunburst", name: "GPT IMAGE 2.5 sunburst", description: "高真实感，提示词遵循" },
       { id: "gpt-image-2", name: "GPT IMAGE 2", description: "高真实感，提示词遵循" },
       { id: "gpt-image-2.5-flare", name: "GPT IMAGE 2.5 flare", description: "高真实感，提示词遵循" },
+      { id: "seedream-5.0-pro", name: "Seedream 5.0 Pro", description: "图像生成，参考图融合" },
     ],
   );
   assert.equal(findGenerationModelByName("Nano Banana Pro")?.id, "nano-banana-pro");

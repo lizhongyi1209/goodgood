@@ -4,6 +4,9 @@ import {
   getGenerationResources,
   prepareObjectStorage,
 } from "../generation/resources.mjs";
+import { findOwnerAsset } from "../generation/repository.mjs";
+import { readPrivateObject } from "../generation/storage.mjs";
+import { resolveWorkspaceAccess } from "../organizations/workspace-access.mjs";
 import { REFERENCE_LIMITS } from "./constants.mjs";
 import { newRequestId } from "../observability/http.mjs";
 import { OrganizationError } from "../organizations/errors.mjs";
@@ -13,6 +16,7 @@ import {
 } from "./errors.mjs";
 import {
   createPendingReferenceAssets,
+  createReadyReferenceFromGeneratedAsset,
   findReferenceAsset,
   findReusableReferenceAssets,
   markReferenceExpired,
@@ -22,7 +26,8 @@ import {
 import { readPrivateImagePreview } from "../images/private-preview.mjs";
 import { newLocalCloudReferenceKey } from "../generation/local-cloud-reference.mjs";
 import { privateImageUrls } from "../../shared/private-image-urls.mjs";
-import { readReferenceObject, signReferenceUpload } from "./storage.mjs";
+import { deleteReferenceObject, readReferenceObject, signReferenceUpload, storeReferenceObject } from "./storage.mjs";
+import { GENERATED_REFERENCE_SOURCE_LIMIT_BYTES, generatedAssetReferenceImage } from "./generated-asset-image.mjs";
 import {
   inspectReferenceImage,
   validateReferenceIds,
@@ -60,6 +65,99 @@ function publicReusableReference(row) {
     previewUrl: privateImageUrls("reference", row.id).previewUrl,
     width: Number(row.pixel_width ?? 0),
   };
+}
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function generatedReferenceId(assetId, revision) {
+  const digest = Buffer.from(createHash("sha256").update(`goodgood:generated-reference:v1:${assetId}:${revision}`).digest().subarray(0, 16));
+  digest[6] = (digest[6] & 0x0f) | 0x50;
+  digest[8] = (digest[8] & 0x3f) | 0x80;
+  const hex = digest.toString("hex");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+/** Copy one owner-scoped generated output into the ready reference collection. */
+export async function createReferenceFromGeneratedAsset({
+  assetId,
+  ownerContext,
+  workspaceId = DEFAULT_WORKSPACE_ID,
+}) {
+  if (typeof assetId !== "string" || !UUID_PATTERN.test(assetId)) {
+    throw new ReferenceRequestError("ASSET_NOT_FOUND", "未找到可用的生成图片。", 404);
+  }
+  const normalizedAssetId = assetId.toLowerCase();
+  const ownerId = ownerIdFromContext(ownerContext);
+  const resources = await getGenerationResources();
+  const workspace = await resolveWorkspaceAccess(resources.pool, { ownerId, workspaceId });
+  const asset = await findOwnerAsset(resources.pool, {
+    assetId: normalizedAssetId, ownerId, workspaceId,
+  });
+  if (!asset) throw new ReferenceRequestError("ASSET_NOT_FOUND", "未找到可用的生成图片。", 404);
+
+  let referenceId;
+  let objectKey;
+  // A user may delete a derived reference while keeping its source image.
+  // Move to the next stable slot rather than reviving the deleted tombstone.
+  for (let revision = 0; revision < 32; revision += 1) {
+    const candidateId = generatedReferenceId(normalizedAssetId, revision);
+    const candidateKey = newLocalCloudReferenceKey(
+      `references/${workspace.id}/${ownerId}/${candidateId}/original`,
+      resources.config.cloudReference,
+    );
+    const existing = await findReferenceAsset(resources.pool, {
+      ownerId, referenceId: candidateId, workspaceId,
+    });
+    if (existing?.object_key === candidateKey && existing.upload_state === "ready" &&
+        existing.moderation_state === "accepted" && !existing.object_deleted_at) {
+      return { id: existing.id, name: existing.original_file_name, status: "ready" };
+    }
+    if (!existing) {
+      referenceId = candidateId;
+      objectKey = candidateKey;
+      break;
+    }
+  }
+  if (!referenceId || !objectKey) {
+    throw new ReferenceRequestError("REFERENCE_CONFLICT", "该图片的参考图记录已达到可用上限。", 409);
+  }
+
+  let object;
+  try {
+    object = await readPrivateObject({
+      bucket: resources.config.objectStorage.bucket,
+      key: asset.object_key,
+      maxBytes: GENERATED_REFERENCE_SOURCE_LIMIT_BYTES,
+      storage: resources.storage,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === "Private object exceeds the allowed size.") {
+      throw new ReferenceRequestError("ASSET_TOO_LARGE", "生成图片过大，无法作为参考图。", 413);
+    }
+    throw error;
+  }
+  const image = await generatedAssetReferenceImage(object.bytes);
+  const checksum = createHash("sha256").update(image.bytes).digest("hex");
+  const extension = image.mimeType === "image/png" ? "png" : "jpg";
+  await prepareObjectStorage(resources);
+  const row = await createReadyReferenceFromGeneratedAsset(resources.pool, {
+    assetId: normalizedAssetId,
+    ownerId,
+    referenceId,
+    objectKey,
+    workspaceId,
+    file: { name: `generated-${normalizedAssetId.slice(0, 8)}.${extension}`,
+      mimeType: image.mimeType, byteSize: image.bytes.length,
+      width: image.width, height: image.height, checksum },
+    storeObject: async () => {
+      await storeReferenceObject({ bucket: resources.config.objectStorage.bucket,
+        bytes: image.bytes, checksum, contentType: image.mimeType,
+        key: objectKey, storage: resources.storage });
+    },
+    deleteObject: () => deleteReferenceObject({ bucket: resources.config.objectStorage.bucket,
+      key: objectKey, storage: resources.storage }),
+  });
+  return { id: row.id, name: row.original_file_name, status: "ready" };
 }
 
 export async function readReferenceAssetPreview({

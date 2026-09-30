@@ -20,8 +20,7 @@ export function AdminManagementHeader({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-4">
             <a href="/create" aria-label="GoodGood 创作" className="flex items-center gap-3 rounded-md focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-4">
-              <Image src="/goodgood-mark.svg" alt="" width={29} height={22} />
-              <Image src="/goodgood-wordmark.svg" alt="" width={89} height={20} />
+              <Image src="/goodgood-g-icon.svg" alt="" width={26} height={26} />
             </a>
             <span className="hidden border-l border-zinc-200 pl-4 text-sm font-medium text-zinc-600 sm:inline">站长管理</span>
           </div>

@@ -23,13 +23,25 @@ const COMPLETION_RECOVERY_MS = 8 * 60 * 1000;
 let activeUploads = 0;
 const waitingUploads: Array<() => void> = [];
 
-async function withUploadSlot<T>(work: () => Promise<T>): Promise<T> {
+async function withUploadSlot<T>(work: () => Promise<T>, signal?: AbortSignal): Promise<T> {
+  signal?.throwIfAborted();
   if (activeUploads >= UPLOAD_CONCURRENCY) {
-    await new Promise<void>((resolve) => waitingUploads.push(resolve));
+    await new Promise<void>((resolve, reject) => {
+      const next = () => { signal?.removeEventListener("abort", abort); resolve(); };
+      const abort = () => {
+        const index = waitingUploads.indexOf(next);
+        if (index >= 0) waitingUploads.splice(index, 1);
+        reject(signal?.reason ?? new DOMException("Upload cancelled", "AbortError"));
+      };
+      waitingUploads.push(next);
+      signal?.addEventListener("abort", abort, { once: true });
+      if (signal?.aborted) abort();
+    });
   } else {
     activeUploads += 1;
   }
   try {
+    signal?.throwIfAborted();
     return await work();
   } finally {
     const next = waitingUploads.shift();
@@ -67,37 +79,50 @@ async function parseJson<T>(response: Response): Promise<T> {
   return payload as T;
 }
 
-function pause(milliseconds: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+function pause(milliseconds: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => { signal?.removeEventListener("abort", abort); resolve(); }, milliseconds);
+    const abort = () => {
+      clearTimeout(timer);
+      signal?.removeEventListener("abort", abort);
+      reject(signal?.reason ?? new DOMException("Upload cancelled", "AbortError"));
+    };
+    signal?.addEventListener("abort", abort, { once: true });
+    if (signal?.aborted) abort();
+  });
 }
 
-async function putWithRetry(intent: UploadIntent, file: File): Promise<void> {
+async function putWithRetry(intent: UploadIntent, file: File, signal?: AbortSignal): Promise<void> {
   for (let attempt = 0; attempt < 3; attempt += 1) {
+    signal?.throwIfAborted();
     try {
       const response = await fetch(intent.uploadUrl, {
         body: file,
         headers: intent.headers,
         method: "PUT",
+        signal,
       });
       if (response.ok) return;
       if (![408, 429].includes(response.status) && response.status < 500) {
         throw new ReferenceUploadHttpError(`参考图直传失败（HTTP ${response.status}），请重试上传。`, false);
       }
     } catch (error) {
+      if (signal?.aborted) throw error;
       if (error instanceof ReferenceUploadHttpError && !error.retryable) throw error;
     }
-    if (attempt < 2) await pause(400 * (attempt + 1));
+    if (attempt < 2) await pause(400 * (attempt + 1), signal);
   }
   throw new ReferenceUploadHttpError("网络暂时无法上传参考图，请重试。", true);
 }
 
-async function recoverCompletion(referenceId: string, workspaceId: string | null) {
+async function recoverCompletion(referenceId: string, workspaceId: string | null, signal?: AbortSignal) {
   const deadline = Date.now() + COMPLETION_RECOVERY_MS;
   while (Date.now() < deadline) {
+    signal?.throwIfAborted();
     try {
       const response = await goodGoodApiFetch(
         `/api/references/${encodeURIComponent(referenceId)}/status`,
-        { cache: "no-store", headers: workspaceRequestHeaders(workspaceId) },
+        { cache: "no-store", headers: workspaceRequestHeaders(workspaceId), signal },
       );
       const status = await parseJson<Readonly<{
         id: string;
@@ -110,9 +135,10 @@ async function recoverCompletion(referenceId: string, workspaceId: string | null
         throw new ReferenceUploadHttpError(`参考图未通过校验${status.errorCode ? `（${status.errorCode}）` : ""}，请重新上传。`, false);
       }
     } catch (error) {
+      if (signal?.aborted) throw error;
       if (error instanceof ReferenceUploadHttpError && !error.retryable) throw error;
     }
-    await pause(3_000);
+    await pause(3_000, signal);
   }
   throw new Error("参考图校验尚未完成，请稍后从素材库重新添加，或重试上传。");
 }
@@ -134,9 +160,11 @@ async function uploadOne(
   item: PendingReferenceFile,
   onUpdate: (clientId: string, reference: GenerationReference) => void,
   workspaceId: string | null,
+  signal?: AbortSignal,
 ): Promise<ReferenceUploadResult> {
   let intent: UploadIntent | undefined;
   try {
+    signal?.throwIfAborted();
     const response = await goodGoodApiFetch("/api/references", {
       body: JSON.stringify({ files: [{
         byteSize: item.file.size,
@@ -149,26 +177,28 @@ async function uploadOne(
         ...workspaceRequestHeaders(workspaceId),
       },
       method: "POST",
+      signal,
     });
     const payload = await parseJson<Readonly<{ uploads: readonly UploadIntent[] }>>(response);
     intent = payload.uploads?.find((value) => value.clientId === item.clientId);
     if (!intent) throw new Error("上传服务返回了不完整的请求。");
 
-    await putWithRetry(intent, item.file);
+    await putWithRetry(intent, item.file, signal);
     let completed: Readonly<{ id: string; name: string; status: "ready" }>;
     try {
       completed = await parseJson<Readonly<{ id: string; name: string; status: "ready" }>>(
         await goodGoodApiFetch(
           `/api/references/${encodeURIComponent(intent.reference.id)}/complete`,
-          { headers: workspaceRequestHeaders(workspaceId), method: "POST" },
+          { headers: workspaceRequestHeaders(workspaceId), method: "POST", signal },
         ),
       );
       if (completed.status !== "ready" || !completed.id) {
         throw new ReferenceUploadHttpError("参考图校验结果尚未确认。", true);
       }
     } catch (error) {
+      if (signal?.aborted) throw error;
       if (error instanceof ReferenceUploadHttpError && !error.retryable) throw error;
-      completed = await recoverCompletion(intent.reference.id, workspaceId);
+      completed = await recoverCompletion(intent.reference.id, workspaceId, signal);
     }
     const reference: GenerationReference = Object.freeze({
       id: completed.id,
@@ -179,6 +209,7 @@ async function uploadOne(
     onUpdate(item.clientId, reference);
     return { clientId: item.clientId, reference };
   } catch (error) {
+    if (signal?.aborted) throw error;
     const reference = intent
       ? Object.freeze({
           errorMessage: error instanceof Error ? error.message : "参考图上传失败。",
@@ -197,8 +228,9 @@ export async function uploadReferenceFiles(
   items: readonly PendingReferenceFile[],
   onUpdate: (clientId: string, reference: GenerationReference) => void,
   workspaceId: string | null = null,
+  signal?: AbortSignal,
 ): Promise<readonly ReferenceUploadResult[]> {
   return Promise.all(items.map((item) => withUploadSlot(
-    () => uploadOne(item, onUpdate, workspaceId),
+    () => uploadOne(item, onUpdate, workspaceId, signal), signal,
   )));
 }

@@ -117,7 +117,7 @@ test("GG-117 the workspace router no longer resolves, renders or links the retir
   ]) {
     assert.deepEqual(parseWorkspaceRoute(pathname), {kind: "create"}, pathname);
   }
-  for (const kind of ["create", "profile", "projects", "assets", "credits", "jcoin", "feedback", "distribution", "organizations"]) {
+  for (const kind of ["create", "profile", "projects", "assets", "credits", "feedback", "distribution", "organizations"]) {
     assert.doesNotMatch(workspaceRouteHref({kind}), /inspiration/);
   }
   assert.doesNotMatch(await read("features/navigation/workspace-route.mjs"), /inspiration/i);
@@ -175,10 +175,14 @@ test("GG-117 the drop migration removes all five tables, children before parent"
   // comment explains why, which is why the comment is stripped first.)
   assert.doesNotMatch(statements, /CASCADE/i);
   assert.doesNotMatch(statements, /ALTER TABLE|CREATE TABLE|RENAME/i);
-  assert.ok(
-    migrations.indexOf(drop[0]) === migrations.length - 1,
-    "the drop must sort after every migration that creates the tables",
-  );
+  const dropIndex = migrations.indexOf(drop[0]);
+  for (const [index, name] of migrations.entries()) {
+    if (name === drop[0]) continue;
+    const migration = await readFile(path.join(root, "migrations", name), "utf8");
+    for (const table of droppedTables) if (new RegExp(`CREATE TABLE(?: IF NOT EXISTS)? \\"?${table}\\"?`, "i").test(migration)) {
+      assert.ok(index < dropIndex, `${table} must be created before the GG-117 drop`);
+    }
+  }
 });
 
 test("GG-117 the retired decision records stay indexed as history", async () => {

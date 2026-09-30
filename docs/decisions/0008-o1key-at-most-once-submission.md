@@ -4,6 +4,11 @@
 - Date: 2026-09-02
 - Amended: 2026-09-03
 
+### 2026-09-30 · GG-211 explicit decline exception
+
+New versioned canvas4K GPT requests may create one separate base-ID backup attempt only after a definitive structured no-channel rejection without any accepted taskID. The primary is recorded as declined and the backup has its own pinned route/ordinal; the same atomic batch reservation remains. Ambiguous submission, timeouts and ordinary server errors never qualify. See [ADR0108 GG-211](0108-standalone-canvas-image-generation.md#gg-211-addendum--canvas-gpt-resolution-routing-and-options-2026-09-30). This does not relax at-most-once recovery of accepted or uncertain provider submissions.
+
+
 ## Context
 
 GoodGood's M5 image route submits paid asynchronous work to O1Key

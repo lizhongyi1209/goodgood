@@ -1,5 +1,6 @@
 import {
   completeReferenceUpload,
+  createReferenceFromGeneratedAsset,
   createReferenceUploads,
   getReferenceUploadStatus,
   listReferenceAssets,
@@ -33,6 +34,7 @@ async function readJson(request) {
 
 const DEFAULT_OPERATIONS = Object.freeze({
   completeReferenceUpload,
+  createReferenceFromGeneratedAsset,
   createReferenceUploads,
   getReferenceUploadStatus,
   listReferenceAssets,
@@ -75,6 +77,16 @@ export function createReferenceNodeApiHandler({
             workspaceId,
           }),
         );
+        return true;
+      }
+
+      if (url.pathname === "/api/references/from-asset" && request.method === "POST") {
+        const payload = await readJson(request).catch(() => null);
+        sendJson(response, 200, await operations.createReferenceFromGeneratedAsset({
+          assetId: payload?.assetId,
+          ownerContext,
+          workspaceId,
+        }));
         return true;
       }
 

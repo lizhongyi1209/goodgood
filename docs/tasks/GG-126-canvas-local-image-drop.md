@@ -1,6 +1,6 @@
 # GG-126 — 本地图片进入画布
 
-- 后续变更：GG-128 按 [ADR 0109](../decisions/0109-quiet-canvas-image-hover.md) 移除了本任务的本地节点悬停操作与预览弹框；拖放、文件选择、节点移动和输入区参考图选择仍保留。
+- 后续变更：GG-128 按 [ADR 0109](../decisions/0109-quiet-canvas-image-hover.md) 移除了本任务的本地节点悬停操作与预览弹框；GG-140 按 [ADR 0108 补充](../decisions/0108-standalone-canvas-image-generation.md) 撤下顶部文件选择和适应画布按钮。画布拖放、节点移动和输入区参考图选择仍保留；左下角缩放菜单仍有适合屏幕。
 
 - 状态：本地实现与门禁完成，待站长手动浏览器验收；未部署。仅在 `F:/goodgood-worktrees/GG-116` 的现有 `feature/GG-116-asset-history-actions` 分支开发，未切分支。
 - 基线：GG-125 `3612c88`，`/canvas` 已独立并接入现有图片生成。

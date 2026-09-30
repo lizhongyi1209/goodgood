@@ -8,8 +8,10 @@ import { Dialog, DialogContent, DialogDescription, DialogOverlay, DialogPortal, 
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
+import { ImageViewer } from "./image-viewer";
 import { uploadReferenceFiles } from "@/features/references/http-reference-upload";
 import type { ReferenceMaterial } from "@/features/references/http-reference-library";
 import { uploadPrivateVideoMaterial, type PrivateVideoMaterial } from "@/features/creation/http-video-materials";
@@ -162,6 +164,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
   const [newFolderName, setNewFolderName] = useState("");
   const [folderDialogError, setFolderDialogError] = useState<string | null>(null);
   const [preview, setPreview] = useState<{ name: string; url: string; media: Media } | null>(null);
+  const [imagePreview, setImagePreview] = useState<Readonly<{ selectedKey: string; returnFocusTo: HTMLElement }> | null>(null);
   const [quickRows, setQuickRows] = useState<readonly UploadRow[]>([]);
   const [quickUploadFolderId, setQuickUploadFolderId] = useState<string | null>(null);
   const [quickUploading, setQuickUploading] = useState(false);
@@ -183,20 +186,26 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
     return () => { cancelled = true; };
   }, [enabled, workspaceId, revision]);
 
+  const displayNames = useMemo(() => new Map(organization.arrangements
+    .filter((entry) => entry.displayName)
+    .map((entry) => [`${entry.kind}:${entry.id}`, entry.displayName!])), [organization.arrangements]);
   const items = useMemo<readonly LibraryItem[]>(() => [
     ...generated.map((item) => ({ id: item.id, kind: "generated" as const, media: "image" as const,
-      name: imageLabel(item), createdAt: item.createdAt, previewUrl: item.previewUrl, detailKey: item.detailKey,
+      name: displayNames.get(`generated:${item.id}`) ?? imageLabel(item), createdAt: item.createdAt, previewUrl: item.previewUrl, detailKey: item.detailKey,
       width: item.width, height: item.height, ordinal: item.ordinal })),
     ...references.map((item) => ({ id: item.id, kind: "reference" as const, media: "image" as const,
-      name: item.name, createdAt: item.uploadedAt, previewUrl: item.previewUrl, url: item.url,
+      name: displayNames.get(`reference:${item.id}`) ?? item.name, createdAt: item.uploadedAt, previewUrl: item.previewUrl, url: item.url,
       size: item.byteSize, width: item.width, height: item.height })),
     ...videos.map((item) => ({ id: item.id, kind: "video" as const, media: "video" as const,
-      name: item.name, createdAt: item.uploadedAt, url: item.url, size: item.size })),
+      name: displayNames.get(`video:${item.id}`) ?? item.name, createdAt: item.uploadedAt, url: item.url, size: item.size })),
     ...audios.map((item) => ({ id: item.id, kind: "audio" as const, media: "audio" as const,
-      name: item.name, createdAt: item.uploadedAt, url: item.url, size: item.size })),
-  ].sort((a, b) => b.createdAt.localeCompare(a.createdAt)), [generated, references, videos, audios]);
+      name: displayNames.get(`audio:${item.id}`) ?? item.name, createdAt: item.uploadedAt, url: item.url, size: item.size })),
+  ].sort((a, b) => b.createdAt.localeCompare(a.createdAt)), [generated, references, videos, audios, displayNames]);
   const arrangements = useMemo(() => new Map(organization.arrangements.map((entry) => [`${entry.kind}:${entry.id}`, entry])), [organization]);
   const visible = filterAssetFiles(items, arrangements, folderId, search, filter, sourceFilter);
+  const previewImages = visible.filter((item) => item.kind === "reference" && item.media === "image" && item.url).map((item) => ({
+    key: `${item.kind}:${item.id}`, name: item.name, previewUrl: item.previewUrl ?? item.url!, sourceUrl: item.url!, width: item.width, height: item.height,
+  }));
   const selectedItems = items.filter((item) => selectedKeys.includes(`${item.kind}:${item.id}`));
   const selectedFolders = organization.folders.filter((folder) => selectedFolderIds.includes(folder.id));
   const rootFolders = !folderId && filter === "all" && sourceFilter === "all"
@@ -463,8 +472,9 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
     void uploadQuickRows(picked, folderId);
   }
 
-  function openItem(item: LibraryItem) {
+  function openItem(item: LibraryItem, trigger: HTMLButtonElement) {
     if (item.detailKey) { onOpenGenerated(item.detailKey); return; }
+    if (item.media === "image" && item.url) { setImagePreview({ selectedKey: `${item.kind}:${item.id}`, returnFocusTo: trigger }); return; }
     if (item.url) setPreview({ name: item.name, url: item.url, media: item.media });
   }
 
@@ -508,15 +518,15 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
     return <article className={`${styles.fileCard} ${selected ? styles.isSelected : ""} ${selectedKeys.length ? styles.listSelecting : ""}`} key={key}>
       {listMode && <Checkbox className={styles.listSelect} checked={selected} aria-label={`${selected ? "取消选择" : "选择"} ${item.name}`} disabled={busy} onCheckedChange={() => toggleSelection(item)}/>}
       <div className={styles.fileVisual}>
-        {item.media === "image" ? <button className={styles.mediaFrame} style={{ aspectRatio }} onClick={() => openItem(item)} aria-label={`查看 ${item.name}`}>
+        {item.media === "image" ? <button className={styles.mediaFrame} style={{ aspectRatio }} onClick={(event) => openItem(item, event.currentTarget)} aria-label={`查看 ${item.name}`}>
           <PrivateObjectImage src={item.previewUrl!} alt={item.name}/>
-        </button> : item.media === "video" ? <button className={styles.mediaFrame} onClick={() => openItem(item)} aria-label={`查看 ${item.name}`}>
+        </button> : item.media === "video" ? <button className={styles.mediaFrame} onClick={(event) => openItem(item, event.currentTarget)} aria-label={`查看 ${item.name}`}>
           <VideoTilePreview url={item.url} play={!listMode}/>
-        </button> : <button className={styles.audioFrame} onClick={() => openItem(item)} aria-label={`播放 ${item.name}`}><AudioLines size={30}/></button>}
+        </button> : <button className={styles.audioFrame} onClick={(event) => openItem(item, event.currentTarget)} aria-label={`播放 ${item.name}`}><AudioLines size={30}/></button>}
         {!listMode && renderFileMenu(item)}
         {!listMode && <Checkbox className={styles.selectButton} checked={selected} aria-label={`${selected ? "取消选择" : "选择"} ${item.name}`} title={selected ? "取消选择" : "选择"} disabled={busy} onCheckedChange={() => toggleSelection(item)}/>}
       </div>
-      <div className={styles.fileInfo}><button title={item.name} onClick={() => openItem(item)}>{item.name}</button><time dateTime={item.createdAt}>{dateLabel(item.createdAt)}</time><small>{item.size ? bytesLabel(item.size) : "—"}</small></div>
+      <div className={styles.fileInfo}><button title={item.name} onClick={(event) => openItem(item, event.currentTarget)}>{item.name}</button><time dateTime={item.createdAt}>{dateLabel(item.createdAt)}</time><small>{item.size ? bytesLabel(item.size) : "—"}</small></div>
       {listMode && renderFileMenu(item)}
     </article>;
   }
@@ -534,7 +544,10 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
           <button className={viewMode === "grid" ? styles.iconActive : ""} aria-label="网格视图" title="网格视图" aria-pressed={viewMode === "grid"} onClick={() => setViewMode("grid")}><Grid2X2 size={17}/></button>
           <button className={viewMode === "list" ? styles.iconActive : ""} aria-label="列表视图" title="列表视图" aria-pressed={viewMode === "list"} onClick={() => setViewMode("list")}><List size={18}/></button>
         </div>
-        <label className={styles.search}><Search size={16}/><Input className="h-full border-0 px-0 py-0 shadow-none focus-visible:border-0 focus-visible:ring-0" value={search} onChange={(event) => { setSearch(event.target.value); setSelectedKeys([]); setSelectedFolderIds([]); }} placeholder={activeFolder ? "在此文件夹中搜索" : "搜索资产"} aria-label={activeFolder ? "在此文件夹中搜索" : "搜索资产"} /></label>
+        <InputGroup className={styles.search}>
+          <InputGroupAddon className={styles.searchAddon}><Search size={16} aria-hidden="true"/></InputGroupAddon>
+          <InputGroupInput className={styles.searchInput} value={search} onChange={(event) => { setSearch(event.target.value); setSelectedKeys([]); setSelectedFolderIds([]); }} placeholder={activeFolder ? "在此文件夹中搜索" : "搜索资产"} aria-label={activeFolder ? "在此文件夹中搜索" : "搜索资产"} />
+        </InputGroup>
         <DropdownMenu><DropdownMenuTrigger asChild><button className={styles.primaryButton}>新建<ChevronDown size={15}/></button></DropdownMenuTrigger><DropdownMenuContent align="end" className={styles.fileMenu}>
           <DropdownMenuItem disabled={busy} onSelect={() => quickFileInput.current?.click()}><Upload size={16}/>上传文件</DropdownMenuItem>
           <DropdownMenuItem disabled={busy} onSelect={() => openFolderDialog()}><FolderPlus size={16}/>新建文件夹</DropdownMenuItem>
@@ -594,6 +607,8 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
         <div className={styles.folderDialogActions}><Button type="button" variant="secondary" disabled={busy} onClick={() => setFolderDialogOpen(false)}>取消</Button><Button type="submit" disabled={busy || !newFolderName.trim()}>{busy ? editingFolderId ? "保存中…" : "创建中…" : editingFolderId ? "保存" : "创建"}</Button></div>
       </form>
     </DialogContent></Dialog>
-    <Dialog open={Boolean(preview)} onOpenChange={(open) => { if (!open) setPreview(null); }}><DialogPortal><DialogOverlay/><DialogPrimitive.Content className={styles.previewDialog} aria-describedby="asset-preview-description"><DialogTitle>{preview?.name ?? "文件预览"}</DialogTitle><DialogDescription id="asset-preview-description">已上传文件预览</DialogDescription>{preview?.media === "image" && <PrivateObjectImage src={preview.url} alt={preview.name}/>} {preview?.media === "video" && <video src={preview.url} controls autoPlay aria-label={preview.name}/>} {preview?.media === "audio" && <audio src={preview.url} controls autoPlay aria-label={preview.name}/>}<button onClick={() => setPreview(null)}>关闭</button></DialogPrimitive.Content></DialogPortal></Dialog>
+    {imagePreview && <ImageViewer items={previewImages} selectedKey={imagePreview.selectedKey} returnFocusTo={imagePreview.returnFocusTo}
+      onSelect={(selectedKey) => setImagePreview((current) => current && ({ ...current, selectedKey }))} onClose={() => setImagePreview(null)} />}
+    <Dialog open={Boolean(preview)} onOpenChange={(open) => { if (!open) setPreview(null); }}><DialogPortal><DialogOverlay/><DialogPrimitive.Content className={styles.previewDialog} aria-describedby="asset-preview-description"><DialogTitle>{preview?.name ?? "文件预览"}</DialogTitle><DialogDescription id="asset-preview-description">已上传文件预览</DialogDescription>{preview?.media === "video" && <video src={preview.url} controls autoPlay aria-label={preview.name}/>} {preview?.media === "audio" && <audio src={preview.url} controls autoPlay aria-label={preview.name}/>}<button onClick={() => setPreview(null)}>关闭</button></DialogPrimitive.Content></DialogPortal></Dialog>
   </section>;
 }

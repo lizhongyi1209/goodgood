@@ -1,5 +1,13 @@
 # Decision records
 
+- `0118-expanded-desktop-sidebar-home.md` — expanded PC navigation and labelled Home entry; supersedes ADR0111 desktop icon-only presentation.
+
+- `0117-retire-jcoin.md` — retire platform-coin pages, navigation and reward processing; legacy APIs return 410 without resources; preserve historical data and normal credits.
+
+- `0116-unified-g-brand-icon.md` — every GoodGood logo uses the shared G, including favicon and maintenance.
+
+- `0114-durable-canvas-projects.md` — each canvas is an addressable, owner-scoped project with local-first autosave, versioned server sync, offline recovery and conflict preservation; supersedes ADR 0108's transient canvas lifetime.
+- `0111-workspace-icon-rail.md` — shared workspace uses a narrow icon-only desktop rail with the canvas G mark, accessible labels, and unchanged destinations.
 - `0110-canvas-image-selection-frame.md` — default arrow over canvas images, flush fine blue selection frame and four diagonal resize controls; a scoped exception to ADR 0105, replacing GG-129's visual choices.
 
 - `0109-quiet-canvas-image-hover.md` — canvas image nodes show only a shallow neutral hover veil; removes GG-126's local-node action overlay while keeping dragging, result detail and the separate reference picker.
@@ -166,3 +174,6 @@ ADR 0053 adds standalone-delimited concurrent prompt batches for GG-040.
 - `0102-asset-history-library-and-upload.md` — separate generated history and automatic personal-library views, private folders/audio, and 20 MiB new uploads.
 - `0103-generated-asset-hard-delete.md` — caption-free newest-first history grid, hard delete of one generated asset with organization cleanup, retained job/batch and credits, and a published-case conflict.
 - `0104-inspiration-feature-retirement.md` — 灵感板块整体下线：五个灵感表按子表优先顺序删除、案例数据直接丢弃不迁移、`ASSET_PUBLISHED` 检查与测试同批移除；0076/0077/0078 由此退役，生产执行需单独授权。
+- `0111-workspace-icon-rail.md` — 中大屏大厅使用窄图标栏及画布共用 G 标记，手机布局保留。
+- `0112-account-credit-usage-dialog.md` — 头像菜单积分用量弹框取代大厅左侧积分记录入口；退回仅从可见用量中隐藏，账本保留。
+- `0113-static-canvas-model-icons.md` — 画布模型列表继续使用 Lobe 单色图形，改从本地静态 SVG 读取，撤下 React 图标包总入口。

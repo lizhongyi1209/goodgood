@@ -21,6 +21,7 @@ type GenerationApiErrorEnvelope = Readonly<{
 }>;
 
 export type HttpGenerationBoundary = Readonly<{
+  resume: (job: GenerationJob, observer?: GenerationJobObserver) => Promise<GenerationJob>;
   retry: (
     failedJob: GenerationJob,
     observer?: GenerationJobObserver,
@@ -160,6 +161,9 @@ export function createHttpGenerationBoundary(
   workspaceId: string | null = null,
 ): HttpGenerationBoundary {
   return Object.freeze({
+    resume(job, observer) {
+      return pollJob(job, observer, workspaceId);
+    },
     retry(failedJob, observer) {
       return postAndPoll({
         endpoint: `/api/generations/${encodeURIComponent(failedJob.id)}/retry`,

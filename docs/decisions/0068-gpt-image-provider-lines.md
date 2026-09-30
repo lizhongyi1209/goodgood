@@ -5,6 +5,11 @@
 - Task: [GG-062](../tasks/GG-062-gpt-image-lines.md)
 - Extends: ADR 0064 的图片线路适用范围；Banana 专属参数与编排不变。
 
+## 2026-09-30 · GG-211 / GG-212 canvas-only amendment
+
+新画布输入由canvas-image-v1单独冻结分辨率路由：GPT2实际-c-sp/-c-sd，GPT2.5-sp/-sd，4K仅明确未接单时可无后缀备用；不改旧任务及大厅三线路。新画布多图1–12采用逐图任务集合，而非原生n=12；旧GPT输入仍单次n=1/2/4。质量2.5五档/2三档与auto/transparent遵循O1Key文档。见 [ADR0108 GG-211/212](0108-standalone-canvas-image-generation.md#gg-211-addendum--canvas-gpt-resolution-routing-and-options-2026-09-30)。下文为原大厅/旧输入规则。
+
+
 GPT IMAGE 2、2.5 sunburst、2.5 flare 共用特价/优质/专线与默认特价，仍各为一个模型条目。用户指定请求 ID 分别为产品 ID 加 `-sp`、`-sd` 与产品 ID 本身；映射保留在服务端。各线路独立启用、按 1K/2K/4K 每张固定人民币售价，1 元=100 积分；不按实际 token 追扣。
 
 原平价配置沿用为特价，原模型启用状态不变；优质与专线初始禁用且未定价。迁移只补齐空的 GPT 线路配置、扩展批次/草稿/项目线路约束，不改历史价格版本、积分、输入 hash、旧记录或已配置线路。新任务持久化默认特价；旧 GPT 批次空线路继续使用旧无后缀路由与版本，避免重启后改变已受理请求。

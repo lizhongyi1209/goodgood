@@ -76,12 +76,19 @@ export function validateM3GenerationInput(payload) {
       count: payload.count,
       modelId: payload.modelId,
       resolution: payload.resolution,
+      routingPolicy: payload.routingPolicy,
     })
   ) {
     throw new GenerationRequestError(
       "M3_SLICE_UNSUPPORTED",
-      "当前模型不支持所选比例、分辨率或生成数量。Pro 支持单张输出。",
+      "当前模型不支持所选比例、分辨率或生成数量。",
     );
+  }
+  if (payload.routingPolicy !== undefined && payload.routingPolicy !== "canvas-image-v1") {
+    throw new GenerationRequestError("M3_SLICE_UNSUPPORTED", "当前生成路由不可用。");
+  }
+  if (!payload.routingPolicy && !(payload.modelId.startsWith("nano-banana") ? [1, 2, 4, 8] : [1, 2, 4]).includes(payload.count)) {
+    throw new GenerationRequestError("M3_SLICE_UNSUPPORTED", "当前入口不支持所选生成数量。");
   }
   const modelOptions = normalizeGenerationModelOptions({
     imageLine: payload.imageLine,
@@ -103,6 +110,7 @@ export function validateM3GenerationInput(payload) {
     aspectRatio: payload.aspectRatio,
     count: payload.count,
     modelId: payload.modelId,
+    ...(payload.routingPolicy ? { routingPolicy: payload.routingPolicy } : {}),
     ...(payload.expectedPriceVersion ? { expectedPriceVersion: payload.expectedPriceVersion } : {}),
     ...(payload.catalogModelId ? { catalogModelId: payload.catalogModelId } : {}),
     ...(projectId ? { projectId } : {}),

@@ -1,5 +1,30 @@
 # Navigation and route contract
 
+## GG-238 画布内图片模态预览
+
+点击资产侧栏放大图标只打开当前canvas上的图片Dialog，不导航/assets/:id、不创建新URL、路由或history条目。既有生成资产详情仍由原/assets/:assetId处理；图片源仅复用原受权preview/content，未新增读取或持久化接口。见[任务](tasks/GG-238-canvas-asset-viewer.md)。
+
+## GG-226 项目管理契约
+
+现有/projects列表与/canvas/:projectId恢复不变。canvas detail GET/PUT保留，PATCH {name,expectedVersion}名称CAS，DELETE {expectedVersion:number|null}退役（null仅未同步本地项目）；列表附deletedProjectIds用于本地过滤，已退役GET/PUT为410 CANVAS_PROJECT_DELETED。旧projects detail原完整PATCH继续，额外PATCH {name}、无body DELETE归档；两类操作均在授权workspace/owner范围，删除不删素材。无新导航路由。
+
+## GG-220 Home入口语义
+
+Home为共享大厅首入口的展示/可访问语义，图标为Lucide Home、名称为「首页」。继续复用原主页和handleCreateNav，不新增`/home`路由，不重命名内部create生成枚举；`/`与`/create`原兼容关系保持。独立画布入口和返回规则不由本任务改动。
+
+
+## GG-218 pages within one canvas URL
+
+页面仍属于同一/canvas/:projectId和原/api/canvas-projects/:projectId，不为每页新增路由或provider调用。activePageId作为该owner/project的浏览器偏好，页切换不更换项目URL；新增/删除页面沿原项目内容CAS保存，旧v1项目默认页面1。
+
+## GG-155 canvas asset rename API
+
+`PATCH /api/asset-organization/items/:kind/:assetId` saves one owner/workspace-scoped display name for a generated image or uploaded reference, video, or audio material. It is separate from the existing `PUT` folder organization action. Neither route changes `/canvas` or `/assets` navigation, original storage identity, or generated asset detail URLs. The new PATCH route is unavailable from the current 5173 real-session proxy until its 32131 backend and local migration 0048 are updated.
+
+## GG-149 canvas home menu
+
+The `/canvas` upper-left G icon opens a menu with one `主页` link to `/create`, the canonical main workspace route and the former back-arrow destination. No new route or redirect is introduced. The menu replaces the prior back arrow, wordmark and canvas title; existing generated-asset links are unchanged.
+
 ## GG-125 standalone canvas entry
 
 `/canvas` mounts its own full-viewport page outside the shared workspace shell.
@@ -36,11 +61,11 @@ GG-091 /api/auth/session新增本人account.invitationCode；POST /api/auth/emai
 
 GG-090现有POST /api/auth/email/verify新增可选invitationCode；新邮箱/旧pending必填有效码，active/suspended现有账户无需码登录。新增POST /api/admin/invitations/query|create|revoke，活动站长、x-goodgood-admin-action=1、no-store、2KiB请求上限，create必需8—200字符Idempotency-Key；revoke输入id。入口位于账户管理，无新增站长一级标签。
 
-GG-089站长功能栏按运营看板 → 账户管理 → 总日志 → 企业管理 → 模型管理 → 用户反馈 → 平台币 → 审计日志排列；共享桌面/手机顺序。用户反馈仍指向/admin/feedback，个人侧栏仍为问题反馈，默认入口运营看板。
+GG-089站长功能栏按运营看板 → 账户管理 → 总日志 → 企业管理 → 模型管理 → 用户反馈 → 审计日志排列；共享桌面/手机顺序。用户反馈仍指向/admin/feedback，个人侧栏仍为问题反馈，默认入口运营看板。
 
 GG-087 /feedback个人页、/admin/feedback站长页保持同工作区。GET /api/feedback只返回自己的每20条游标列表；POST multipart及x-goodgood-feedback-action=1/Idempotency-Key创建；GET /:id详情、/:id/images/:position受所有者或活动站长保护。站长POST /api/admin/feedback列表、GET /:id详情、POST /:id/reply版本化状态/回复都需x-goodgood-admin-action=1，回复另需幂等键。
 
-GG-084新增个人`/jcoin`，桌面左下平台币入口、手机账户菜单“我的平台币”；离开企业历史工作区时回到个人域。GET `/api/jcoin?limit=20&cursor=…`只读，绑定已启用登录用户，limit为1—50，按原发生时间/ID分页；不接受目标用户切换，不返回发行库存、批次预算或来源支付详情。站长`/admin/jcoin`保留同工作区导航，活动site_owner独占no-store POST `/api/admin/jcoin/query`与`/action`；管理header必需，action仅start/pause/resume/process，8—200字符Idempotency-Key必需。预算、系数和日期来自固定一期计划，客户端不能传金额来铸币。站长默认入口仍为运营看板。
+GG-217撤下 `/jcoin` 与 `/admin/jcoin` 页面和工作区类型，旧URL按现有未知地址规则回到创作。旧 `/api/jcoin`、`/api/admin/jcoin/query`、`/api/admin/jcoin/action` 返回no-store 410「功能已移除」，不读写历史表。GG-084接口和发行契约已成为历史，正常 `/credits` 与积分API保持。
 
 GG-081本地新增POST /api/admin/users/:ownerId/credit-grants，活动site_owner及x-goodgood-admin-action=1/Idempotency-Key必需。amount为1—5000整数，creditGrantType为共享英文枚举，reason为2—200字符；paid_recharge另需paymentConfirmed=true及8—200字符receiptReference。其他类型不收凭证，旧test-credit-grants兼容接口仍只测试赠送。站长默认/admin/operations；运营dashboard返回concurrent/queued/measuredAt及daily peak与recharge*，移除jobs/pending旧指标。
 
@@ -88,8 +113,8 @@ this shell; audit moves the prior account-page recent-action list into its own v
 | 账户管理 | Implemented | `/admin/users`, visible and callable only by the site owner |
 | 模型管理 | Implemented locally | Site-owner `/admin/models`: add existing templates, enable/disable, edit RMB specification prices and test credit quotes |
 | 审计日志 | Implemented locally | Site-owner `/admin/audit`, latest 30 account actions in the shared workspace |
-| 积分记录 | Implemented | `/credits`, entered from the quiet row below `帮助` or the mobile balance |
-| 平台币 | Implemented locally | `/jcoin`，仅自己的统计和流水；`/admin/jcoin`仅站长计划与一期生命周期 |
+| 积分明细 | Implemented locally | Avatar menu and `/canvas` top-right balance open the same in-page dialog; `/credits` remains a compatible deep link without a sidebar entry |
+| 平台币 | Retired (GG-217) | 页面/入口和奖励处理移除，旧API410；历史数据保留 |
 | 企业历史创作 | Compatible local route | `/workspaces/:workspaceId/create`, after active-membership validation; no global selector |
 | 企业管理 | Implemented locally | Main sidebar `/organizations`; one managed company opens overview, multiple companies use a management-only directory; detail subroutes share the main shell |
 | 分销管理 | Implemented locally | Distributor-only main-sidebar `/distribution` customers/downstream and `/distribution/transfers` history |
@@ -133,6 +158,9 @@ ledger identifiers.
 credit activity with `all / spend / receive / return` filtering and opaque
 cursor pagination. A reserve and its settle/release closure project to one
 generation activity; refunds remain separate positive activities. The response
+retains `return` for compatibility; the current avatar-menu usage dialog only
+offers `all / spend / receive` and hides released/refunded display rows. This
+does not remove ledger entries or alter account balances. The response
 includes settled-spend totals for the Shanghai calendar day, Monday-based week,
 and month. Each item exposes a stable `image_generation / video_generation /
 other` category and optional asset-library batch reference, but never repeats
@@ -322,3 +350,6 @@ do not create separate draft or history state.
   navigation is never treated as authorization.
 
 GG-077：现有灵感资源新增POST /api/inspiration/:id/view与quote；view使用交互UUID，quote只返回积分金额和报价版本，均要求有效会话和动作头。use可带交互UUID；预设页复用大厅已载入结果，直接访问则分配自己的UUID。GET详情与列表不计数。该端点已随灵感板块整体下线移除（ADR 0104）。
+# GG-173 · 画布项目地址与接口
+
+`/canvas` 为新画布分配客户端 UUID 并替换为稳定 `/canvas/:projectId`；项目列表分别链接旧创作项目 `/projects/:projectId` 与画布项目 `/canvas/:projectId`。新 `GET /api/canvas-projects`、`GET /api/canvas-projects/:projectId`、`PUT /api/canvas-projects/:projectId` 是独立 owner/workspace-scoped 保存边界，PUT 使用 `expectedVersion`。旧 `/api/projects` 合同及创作项目恢复路径不变。见 [ADR 0114](decisions/0114-durable-canvas-projects.md)。

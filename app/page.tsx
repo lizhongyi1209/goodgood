@@ -5,7 +5,9 @@ import "@/features/profile/profile.css";
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type WheelEvent as ReactWheelEvent } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { CreditIcon } from "@/components/ui/credit-icon";
 import { Input } from "@/components/ui/input";
 import {PersonalProfileView,ProfileAvatar,usePersonalProfile} from "@/features/profile/personal-profile";
 import { CreationComposer } from "@/features/creation/creation-composer";
@@ -125,8 +127,8 @@ import {
   readBillingSummary,
 } from "@/features/billing/http-billing-boundary";
 import { CreditActivityView } from "@/features/billing/credit-activity-view";
+import { CreditUsageDialog } from "@/features/billing/credit-usage-dialog";
 import { ProblemFeedbackView } from '@/features/feedback/feedback-view';
-import { OwnJcoinView } from '@/features/jcoin/own-jcoin-view';
 import { BusinessManagementView } from "@/features/distribution/business-management-view";
 import { BusinessManagementStylePreview } from "@/features/distribution/business-management-style-preview";
 import { canonicalBusinessRoute } from "@/features/distribution/business-route.mjs";
@@ -147,6 +149,8 @@ import {
   readProject,
   saveProject,
 } from "@/features/projects/http-project-boundary";
+import { ProjectLibrary } from "@/features/projects/project-library";
+import { readCanvasProjectIndex, type CanvasProjectListItem } from "@/features/projects/canvas-project-index";
 import {
   createComposerCheckpoint,
   hasMeaningfulUnsavedChanges,
@@ -216,18 +220,16 @@ import {
   Building2,
   Check,
   CircleAlert,
-  CircleDot,
   Coins,
-  Compass,
   Download,
   FolderOpen,
   FolderPlus,
   Frame,
   Film,
-  HelpCircle,
+  Home as HomeIcon,
   MessageSquare,
   ImagePlus,
-  Images,
+  LibraryBig,
   LoaderCircle,
   LogIn,
   LogOut,
@@ -262,7 +264,7 @@ type AssetBatch = {
   referenceCount: number;
   images: readonly GenerationOutput[];
 };
-type ActiveView = "create" | "profile" | "projects" | "assets" | "credits" | "jcoin" | "feedback" | "distribution" | "organizations" | "admin";
+type ActiveView = "create" | "profile" | "projects" | "assets" | "credits" | "feedback" | "distribution" | "organizations" | "admin";
 type DestructiveCreationIntent =
   | { kind: "new" }
   | { kind: "project"; projectId: string; projectName: string };
@@ -434,22 +436,6 @@ function projectAssetBatches(project: ProjectRecord) {
     .map(generationJobToAssetBatch);
 }
 
-function formatProjectUpdated(updatedAt: string) {
-  const updated = new Date(updatedAt);
-  const today = new Date();
-  if (updated.toDateString() === today.toDateString()) {
-    return `今天 ${new Intl.DateTimeFormat("zh-CN", {
-      hour: "2-digit",
-      hour12: false,
-      minute: "2-digit",
-    }).format(updated)}`;
-  }
-  return new Intl.DateTimeFormat("zh-CN", {
-    month: "numeric",
-    day: "numeric",
-  }).format(updated);
-}
-
 function perImageCreditAmount(total: string, count: GenerationCount): string {
   try {
     return (BigInt(total) / BigInt(count)).toString();
@@ -535,7 +521,8 @@ export default function Home({
   const [videoPreviewRuns, setVideoPreviewRuns] = useState<readonly VideoPreviewRun[]>([]);
   const [videoDetailKey, setVideoDetailKey] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<ActiveView>("create");
-  const [adminTab, setAdminTab] = useState<"models" | "users" | "audit" | "operations" | "logs" | "jcoin" | "feedback">("models");
+  const [creditUsageOpen, setCreditUsageOpen] = useState(false);
+  const [adminTab, setAdminTab] = useState<"models" | "users" | "audit" | "operations" | "logs" | "feedback">("models");
   const [organizationRoute, setOrganizationRoute] = useState<{ id: string; tab: OrganizationManagementTab } | null>(null);
   const [businessStylePreview, setBusinessStylePreview] = useState(false);
   const [distributionTab, setDistributionTab] = useState<"children" | "transfers">("children");
@@ -561,8 +548,10 @@ export default function Home({
   const [videoAssetMediaFilter, setVideoAssetMediaFilter] = useState<VideoAssetMediaFilter>("all");
   const [selectedReferenceMaterialIds, setSelectedReferenceMaterialIds] = useState<readonly string[]>([]);
   const [projects, setProjects] = useState<ProjectRecord[]>([]);
+  const [canvasProjects, setCanvasProjects] = useState<CanvasProjectListItem[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(true);
   const [projectsError, setProjectsError] = useState<string | null>(null);
+  const [canvasProjectsError, setCanvasProjectsError] = useState<string | null>(null);
   const [currentProject, setCurrentProject] = useState<{ id: string; name: string } | null>(null);
   const [projectDrawerOpen, setProjectDrawerOpen] = useState(false);
   const [projectName, setProjectName] = useState("");
@@ -933,8 +922,6 @@ export default function Home({
             ? "credits"
           : route.kind === "feedback"
             ? "feedback"
-          : route.kind === "jcoin"
-            ? "jcoin"
           : route.kind === "distribution"
             ? "distribution"
           : route.kind === "organizations" || route.kind === "enterpriseAccounts"
@@ -1234,15 +1221,20 @@ export default function Home({
     if (authenticationSession.preview) return;
     if (!workspaceAccessReady) return;
     let active = true;
-    void listProjects(workspaceId)
-      .then((records) => {
+    const ownerKey = authenticationSession.user.id ?? authenticationSession.user.email ?? "";
+    void Promise.allSettled([listProjects(workspaceId), workspaceId
+      ? Promise.resolve({ projects: [] as CanvasProjectListItem[], warning: null })
+      : readCanvasProjectIndex(ownerKey)])
+      .then(([creative, canvas]) => {
         if (!active) return;
-        setProjects([...records]);
-        setProjectsError(null);
-      })
-      .catch((error) => {
-        if (!active) return;
-        setProjectsError(error instanceof Error ? error.message : "项目列表暂时不可用，请重试。");
+        if (creative.status === "fulfilled") {
+          setProjects([...creative.value]);
+          setProjectsError(null);
+        } else setProjectsError(creative.reason instanceof Error ? creative.reason.message : "项目列表暂时不可用，请重试。");
+        if (canvas.status === "fulfilled") {
+          setCanvasProjects([...canvas.value.projects]);
+          setCanvasProjectsError(canvas.value.warning);
+        } else setCanvasProjectsError(canvas.reason instanceof Error ? canvas.reason.message : "画布项目暂时无法读取，请重试。");
       })
       .finally(() => {
         if (active) setProjectsLoading(false);
@@ -2440,19 +2432,27 @@ export default function Home({
     if (!authenticationSession || authenticationSession.access.status !== "active") return;
     if (authenticationSession.preview) {
       setProjects([]);
+      setCanvasProjects([]);
       setProjectsError(null);
+      setCanvasProjectsError(null);
       setProjectsLoading(false);
       return;
     }
     setProjectsLoading(true);
     setProjectsError(null);
-    try {
-      setProjects([...(await listProjects(workspaceId))]);
-    } catch (error) {
-      setProjectsError(error instanceof Error ? error.message : "项目列表暂时不可用，请重试。");
-    } finally {
-      setProjectsLoading(false);
+    const [creative, canvas] = await Promise.allSettled([
+      listProjects(workspaceId),
+      workspaceId ? Promise.resolve({ projects: [] as CanvasProjectListItem[], warning: null })
+        : readCanvasProjectIndex(authenticationSession.user.id ?? authenticationSession.user.email ?? ""),
+    ]);
+    if (creative.status === "fulfilled") setProjects([...creative.value]);
+    else setProjectsError(creative.reason instanceof Error ? creative.reason.message : "项目列表暂时不可用，请重试。");
+    if (canvas.status === "fulfilled") {
+      setCanvasProjects([...canvas.value.projects]);
+      setCanvasProjectsError(canvas.value.warning);
     }
+    else setCanvasProjectsError(canvas.reason instanceof Error ? canvas.reason.message : "画布项目暂时无法读取，请重试。");
+    setProjectsLoading(false);
   };
 
   const handleProjectsNav = () => {
@@ -2464,19 +2464,13 @@ export default function Home({
   };
 
   const handleCreditsNav = () => {
-    if (workspaceId) { window.location.assign("/credits"); return; }
-    navigateWorkspace({ kind: "credits" });
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (authenticationSession?.access.status !== "active") return;
+    setCreditUsageOpen(true);
   };
 
   const handleFeedbackNav = () => {
     if (workspaceId) { window.location.assign("/feedback"); return; }
     navigateWorkspace({kind:"feedback"});
-  };
-  const handleJcoinNav = () => {
-    if (workspaceId) { window.location.assign('/jcoin'); return; }
-    navigateWorkspace({ kind: 'jcoin' });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDistributionNav = () => {
@@ -2822,7 +2816,7 @@ export default function Home({
       !(supportsImageLines(selectedModel) || isGptImageModelId(selectedModel)) ||
       !isGenerationCountSupported(selectedModel, generationCount)
     ) {
-      toast.error("当前模型不支持所选生成数量。Pro 支持单张输出。");
+      toast.error("当前模型不支持所选生成数量。");
       return;
     }
 
@@ -3077,28 +3071,26 @@ export default function Home({
   return (
     <main className="app-shell">
       <aside className="sidebar">
-        <div className="sidebar-brand" role="img" aria-label="GoodGood">
-          <Image className="wordmark-image sidebar-wordmark" src="/goodgood-wordmark.svg" alt="" width={89} height={20} />
-        </div>
-
-
+        <button className="sidebar-brand" type="button" aria-label="返回首页" onClick={handleCreateNav}>
+          <Image className="sidebar-brand-icon" src="/goodgood-g-icon.svg" alt="" width={26} height={26} />
+        </button>
         <nav className="side-nav" aria-label="主导航">
-          <button className={`side-nav-item ${activeView === "create" ? "active" : ""}`} onClick={handleCreateNav}><Brush size={17} strokeWidth={1.8} /><span>创作</span></button>
-          <a className="side-nav-item" aria-label="画布" title="画布" href="/canvas"><Frame size={17} strokeWidth={1.8} /><span>画布</span></a>
-          <button className="side-nav-item"><Compass size={17} /><span>探索</span></button>
-          <button className={`side-nav-item ${activeView === "projects" ? "active" : ""}`} onClick={handleProjectsNav}><FolderOpen size={17} /><span>项目</span></button>
-          <button className={`side-nav-item asset-nav ${activeView === "assets" ? "active" : ""} ${assetPulse ? "has-new-assets" : ""}`} onClick={handleAssetNav}>
-            <Images size={17} /><span>资产</span>
+          <button className={`side-nav-item ${activeView === "create" ? "active" : ""}`} data-nav="home" aria-label="首页" aria-current={activeView === "create" ? "page" : undefined} onClick={handleCreateNav}><HomeIcon size={17} strokeWidth={1.8} /><span>首页</span></button>
+          <Link className="side-nav-item" href="/canvas"><Frame size={17} strokeWidth={1.8} /><span>画布</span></Link>
+          <button className={`side-nav-item ${activeView === "projects" ? "active" : ""}`} aria-current={activeView === "projects" ? "page" : undefined} onClick={handleProjectsNav}><FolderOpen size={17} /><span>项目</span></button>
+          <button className={`side-nav-item asset-nav ${activeView === "assets" ? "active" : ""} ${assetPulse ? "has-new-assets" : ""}`} aria-label={newAssetCount > 0 ? `资产，新增 ${newAssetCount} 个` : "资产"} aria-current={activeView === "assets" ? "page" : undefined} onClick={handleAssetNav}>
+            <LibraryBig size={17} /><span>资产</span>
             {newAssetCount > 0 && <em className="asset-new-count">+{newAssetCount}</em>}
           </button>
           {organizationNavigationVisible && authenticationSession?.account.role !== "site_owner" && (
-            <button className={`side-nav-item ${activeView === "organizations" ? "active" : ""}`} onClick={handleOrganizationNav}>
+            <button className={`side-nav-item ${activeView === "organizations" ? "active" : ""}`} aria-current={activeView === "organizations" ? "page" : undefined} onClick={handleOrganizationNav}>
               <Building2 size={17} /><span>企业管理</span>
             </button>
           )}
           {authenticationSession?.account.businessRole === "distributor" && (
             <button
               className={`side-nav-item ${activeView === "distribution" ? "active" : ""}`}
+              aria-current={activeView === "distribution" ? "page" : undefined}
               onClick={handleDistributionNav}
             >
               <Network size={17} /><span>分销管理</span>
@@ -3107,6 +3099,7 @@ export default function Home({
           {authenticationSession?.account.role === "site_owner" && (
             <button
               className={`side-nav-item ${siteOwnerManagementActive ? "active" : ""}`}
+              aria-current={siteOwnerManagementActive ? "page" : undefined}
               onClick={handleOrganizationNav}
             >
               <UserRoundCog size={17} /><span>站长管理</span>
@@ -3115,17 +3108,6 @@ export default function Home({
         </nav>
 
         <div className="sidebar-footer">
-          <button className="side-nav-item"><HelpCircle size={17} /><span>帮助</span></button>
-          <button className={`side-nav-item ${activeView === "feedback" ? "active" : ""}`} onClick={handleFeedbackNav}><MessageSquare size={17}/><span>问题反馈</span></button>
-          {authenticationSession?.access.status === "active" && (
-            <button
-              className={`side-nav-item ${activeView === "credits" ? "active" : ""}`}
-              onClick={handleCreditsNav}
-            >
-              <Coins size={17} /><span>积分记录</span>
-            </button>
-          )}
-          {authenticationSession?.access.status === 'active' && <button className={`side-nav-item ${activeView === 'jcoin' ? 'active' : ''}`} onClick={handleJcoinNav}><Coins size={17}/><span>平台币</span></button>}
           {authenticationSession && accountIdentity ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -3156,11 +3138,11 @@ export default function Home({
                     <span>身份</span>
                     <strong>{accountIdentity}</strong>
                   </div>
-                  <div className="account-menu-detail">
-                    <CircleDot aria-hidden="true" size={17} />
-                    <span>{workspaceId ? "企业剩余额度" : "积分余额"}</span>
+                  <DropdownMenuItem className="account-menu-detail account-menu-credit-action" disabled={authenticationSession.access.status !== "active"} onSelect={handleCreditsNav}>
+                    <CreditIcon size={17} />
+                    <span>积分</span>
                     <strong
-                      aria-label={billingSummary ? `${workspaceId ? "企业剩余额度" : "积分余额"} ${displayedAvailableCredits ?? "--"}` : undefined}
+                      aria-label={billingSummary ? `积分 ${displayedAvailableCredits ?? "--"}` : undefined}
                       aria-live="polite"
                       className={billingSummary ? "account-menu-credit" : ""}
                       role="status"
@@ -3171,7 +3153,7 @@ export default function Home({
                           ? "暂不可用"
                           : displayedAvailableCredits ?? "暂不可用"}
                     </strong>
-                  </div>
+                  </DropdownMenuItem>
                   <AccountInvitation code={authenticationSession.account.invitationCode} />
                 </div>
                 <DropdownMenuSeparator />
@@ -3182,7 +3164,7 @@ export default function Home({
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <button className="account-card" type="button" onClick={handleLogin}>
+            <button className="account-card" type="button" aria-label="登录 GoodGood" onClick={handleLogin}>
               <span className="avatar">{accountInitials}</span>
               <strong className="account-card-username">登录 GoodGood</strong>
               <LogIn className="account-card-more" aria-hidden="true" size={17} />
@@ -3193,7 +3175,7 @@ export default function Home({
 
       <section className="main-stage">
         <header className="mobile-bar">
-          <div className="mobile-brand" role="img" aria-label="GoodGood"><Image className="wordmark-image" src="/goodgood-wordmark.svg" alt="" width={84} height={19} /></div>
+          <div className="mobile-brand" role="img" aria-label="GoodGood"><Image className="brand-icon" src="/goodgood-g-icon.svg" alt="" width={26} height={26} /></div>
           <div className="mobile-account">
             {organizationNavigationVisible && authenticationSession?.account.role !== "site_owner" && (
               <button className="top-avatar" aria-label="企业管理" onClick={handleOrganizationNav}><Building2 size={16} /></button>
@@ -3222,23 +3204,22 @@ export default function Home({
                   setBillingLoading(true);
                   setBillingError(null);
                   setBillingRevision((current) => current + 1);
-                }}>积分重试</button>
+                }} aria-label="重试读取积分余额"><CreditIcon className="size-[1em]" />重试</button>
               ) : (
-                <button className="mobile-credit-balance" onClick={handleCreditsNav} aria-label="查看积分记录">
-                  {billingLoading ? "--" : displayedAvailableCredits ?? "--"} 积分
+                <button className="mobile-credit-balance" disabled={authenticationSession.access.status !== "active"} onClick={handleCreditsNav} aria-label={`查看积分用量，余额 ${billingLoading ? "读取中" : displayedAvailableCredits ?? "暂不可用"}`}>
+                  <CreditIcon className="size-[1em]" />{billingLoading ? "--" : displayedAvailableCredits ?? "--"}
                 </button>
               )
             )}
-            {siteOwnerManagementActive ? <button className="top-avatar" aria-label="返回创作" onClick={handleCreateNav}><Brush size={16}/></button> : authenticationSession ? (
+            {siteOwnerManagementActive ? <button className="top-avatar" data-nav="home" aria-label="首页" onClick={handleCreateNav}><HomeIcon size={16}/></button> : authenticationSession ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild><button className="top-avatar" aria-label="打开账户菜单"><ProfileAvatar className="account-profile-avatar" url={personalProfile.profile?.avatarUrl} name={personalProfile.profile?.displayName ?? accountInitials}/></button></DropdownMenuTrigger>
                 <DropdownMenuContent align="end" collisionPadding={12}>
-                  <div className="account-menu-detail"><CircleDot size={17}/><span>积分余额</span><strong>{displayedAvailableCredits ?? "—"}</strong></div>
+                  <DropdownMenuItem className="account-menu-detail account-menu-credit-action" disabled={authenticationSession.access.status !== "active"} onSelect={handleCreditsNav}><CreditIcon size={17}/><span>积分</span><strong>{displayedAvailableCredits ?? "—"}</strong></DropdownMenuItem>
                   <AccountInvitation code={authenticationSession.account.invitationCode} />
                   <DropdownMenuSeparator/>
                   <DropdownMenuItem onSelect={handleProfileNav}><UserRoundCog size={16}/><span>个人资料</span></DropdownMenuItem>
                   <DropdownMenuItem onSelect={handleFeedbackNav}><MessageSquare size={16}/><span>问题反馈</span></DropdownMenuItem>
-                  {authenticationSession.access.status === 'active'&&<DropdownMenuItem onSelect={handleJcoinNav}><Coins size={16}/><span>我的平台币</span></DropdownMenuItem>}
                   <DropdownMenuSeparator/>
                   <DropdownMenuItem onSelect={()=>void handleLogout()}><LogOut size={16}/><span>退出登录</span></DropdownMenuItem>
                 </DropdownMenuContent>
@@ -3311,7 +3292,7 @@ export default function Home({
               onReorderReference={reorderReference}
               referenceEditorMaterials={referenceMaterials}
               onSaveReferenceEdit={handleSaveReferenceEdit}
-              modelOptions={billingSummary?.models?.filter((model) => model.mediaType === "image").map((model) => ({ id: model.adapterId as GenerationModelId, catalogId: model.id, name: model.name, description: model.description, icon: model.adapterId.startsWith("nano") ? "nano" : "openai", recommended: model.id === DEFAULT_GENERATION_MODEL_ID }))}
+              modelOptions={billingSummary?.models?.filter((model) => model.mediaType === "image" && model.adapterId !== "seedream-5.0-pro").map((model) => ({ id: model.adapterId as GenerationModelId, catalogId: model.id, name: model.name, description: model.description, icon: model.adapterId.startsWith("nano") ? "nano" : "openai", recommended: model.id === DEFAULT_GENERATION_MODEL_ID }))}
               catalogModelId={selectedCatalogModelId}
               onCatalogModelChange={(id, adapterId) => { handleModelChange(adapterId); setSelectedCatalogModelId(id); }}
               onModelChange={handleModelChange}
@@ -3392,7 +3373,7 @@ export default function Home({
 
           {authenticationSession?.preview && mixedMediaStylePreview ? <MixedMediaStylePreview /> : !isGenerating && !hasGenerationError && creationBatches.length === 0 && videoPreviewRuns.length === 0 ? (
             <section className="creation-empty-state" aria-label="尚未开始创作">
-              <Image src="/goodgood-mark.svg" alt="" width={32} height={24} />
+              <Image src="/goodgood-g-icon.svg" alt="" width={32} height={32} />
               <h2>{creationMode === "video" ? "描述你想创作的视频" : "描述你想创作的画面"}</h2>
               <p>{creationMode === "video" ? "输入提示词，或添加图片、视频和音频素材" : "输入提示词，或上传参考图片开始"}</p>
             </section>
@@ -3451,54 +3432,35 @@ export default function Home({
             </section>
           )}
           </> : activeView === "projects" ? (
-            <section className="project-library-view" aria-label="项目">
-              <header className="asset-library-header project-library-header">
-                <div><small>GOODGOOD PROJECTS</small><h1>项目</h1><p>保存完整的创作过程，随时恢复并继续创作。</p></div>
-                <button className="new-creation-button" onClick={requestNewCreation}><Plus size={15} />新建创作</button>
-              </header>
-              {projectsLoading ? (
-                <div className="project-library-state" role="status"><LoaderCircle size={18} />正在读取项目</div>
-              ) : projectsError ? (
-                <div className="project-library-state project-library-error" role="alert">
-                  <CircleAlert size={18} />
-                  <span>{projectsError}</span>
-                  <button onClick={() => void reloadProjects()}><RefreshCw size={14} />重试</button>
-                </div>
-              ) : projects.length === 0 ? (
-                <div className="project-library-state project-library-empty">
-                  <FolderOpen size={20} />
-                  <strong>还没有保存的项目</strong>
-                  <span>完成一次生成后，即可把当前创作保存为项目。</span>
-                </div>
-              ) : (
-                <div className="project-grid">
-                  {projects.map((project) => {
-                    const batches = projectAssetBatches(project);
-                    const imageCount = batches.reduce((total, batch) => total + batch.images.length, 0);
-                    const cover = batches[0]?.images[0] ?? null;
-                    const restoring = projectRestoringId === project.id;
-                    return (
-                      <article className="project-card" key={project.id}>
-                        <button disabled={restoring} className="project-cover" onClick={() => void restoreProject(project)} aria-label={`打开项目 ${project.name}`}>
-                          <PrivateObjectImage src={cover?.previewUrl ?? "/nano-fashion.png"} alt={`${project.name} 项目封面`} style={{ objectPosition: cover?.previewPosition ?? "50% 45%" }} />
-                          <span>{imageCount} 张图片</span>
-                        </button>
-                        <div className="project-card-footer">
-                          <div><h2>{project.name}</h2><p>{formatProjectUpdated(project.updatedAt)} · {project.batches.length} 个生成批次</p></div>
-                          <button disabled={restoring} onClick={() => void restoreProject(project)}>{restoring ? "正在恢复" : "继续创作"}</button>
-                        </div>
-                      </article>
-                    );
-                  })}
-                </div>
-              )}
-            </section>
+            <ProjectLibrary
+              key={`${authenticationSession?.user.id ?? authenticationSession?.user.email ?? ""}:${workspaceId ?? "personal"}`}
+              projects={projects} canvasProjects={canvasProjects}
+              ownerKey={authenticationSession?.user.id ?? authenticationSession?.user.email ?? ""}
+              workspaceId={workspaceId} loading={projectsLoading} error={projectsError ?? canvasProjectsError}
+              restoringId={projectRestoringId} busyProjectId={(isGenerating || isVideoGenerating || projectSaving) ? currentProject?.id ?? null : null}
+              onRetry={() => void reloadProjects()} onCreate={requestNewCreation} onRestore={restoreProject}
+              onProjectUpdated={(updated) => {
+                setProjects((items) => items.map((project) => project.id === updated.id ? { ...project, ...updated } : project));
+                setCurrentProject((current) => current?.id === updated.id ? { ...current, name: updated.name } : current);
+                if (currentProject?.id === updated.id) setProjectName(updated.name);
+              }}
+              onProjectDeleted={(id) => {
+                setProjects((items) => items.filter((project) => project.id !== id));
+                if (loadedProjectIdRef.current === id) loadedProjectIdRef.current = null;
+                setRouteProjectId((current) => current === id ? null : current);
+                if (currentProject?.id === id) {
+                  setCurrentProject(null); setProjectName(""); setProjectCreateKey(null);
+                  setComposerCheckpoint(emptyComposerCheckpoint);
+                }
+                setDestructiveCreationIntent((intent) => intent?.kind === "project" && intent.projectId === id ? null : intent);
+              }}
+              onCanvasUpdated={(updated) => setCanvasProjects((items) => items.map((project) => project.id === updated.id ? updated : project))}
+              onCanvasDeleted={(id) => setCanvasProjects((items) => items.filter((project) => project.id !== id))}
+            />
           ) : activeView === "profile" ? (
             <PersonalProfileView state={personalProfile} works={assetDetailItems.map(item=>({key:item.key,url:item.image.previewUrl,ratio:item.image.width && item.image.height ? item.image.width/item.image.height : item.ratio,alt:item.batch.prompt}))} worksLoading={assetsLoading} worksError={assetsError ?? assetRouteError} onRetryWorks={()=>void reloadAssets()} onOpenWork={key=>openImageDetail(assetDetailItems,key,"profile")} onCreate={handleCreateNav}/>
           ) : activeView === "feedback" ? (
             <ProblemFeedbackView session={authenticationSession} onLogin={handleLogin}/>
-          ) : activeView === "jcoin" ? (
-            <OwnJcoinView session={authenticationSession} onLogin={handleLogin}/>
           ) : activeView === "credits" ? (
             <CreditActivityView
               enabled={Boolean(authenticationSession && authenticationSession.access.status === "active")}
@@ -3560,6 +3522,12 @@ export default function Home({
           )}
         </div>
       </section>
+      <CreditUsageDialog
+        open={creditUsageOpen && authenticationSession?.access.status === "active"}
+        onOpenChange={setCreditUsageOpen}
+        onProfileClick={handleProfileNav}
+        onAccountChange={handleCreditAccountChange}
+      />
       <Dialog
         open={referenceLibraryOpen}
         onOpenChange={(open) => {

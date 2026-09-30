@@ -5,8 +5,8 @@ export const metadata: Metadata = {
   title: "GoodGood · AI 视觉创作",
   description: "GoodGood 在线 AI 视觉创作工作台",
   icons: {
-    icon: "/goodgood-mark.svg",
-    shortcut: "/goodgood-mark.svg",
+    icon: "/goodgood-g-icon.svg",
+    shortcut: "/goodgood-g-icon.svg",
   },
 };
 

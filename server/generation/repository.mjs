@@ -1,4 +1,5 @@
 import { modelQualityPriceContext } from "../../shared/contracts/gpt-quality-pricing.mjs";
+import { isSeedreamModel, seedreamQuoteCreditAmount } from "../../shared/contracts/seedream-pricing.mjs";
 import { privateImageUrls } from "../../shared/private-image-urls.mjs";
 import { createHash, randomUUID } from "node:crypto";
 import { supportsImageLines } from "../../shared/contracts/banana-lines.mjs";
@@ -20,6 +21,7 @@ import { lockReferenceLifecycle } from "../references/lifecycle-lock.mjs";
 import { findReadyReferences } from "../references/repository.mjs";
 import {
   isGptImageModelId,
+  isExpectedGenerationOutputCount,
   normalizeGenerationModelOptions,
 } from "./capabilities.mjs";
 
@@ -62,6 +64,7 @@ export function hashGenerationInput(input) {
         count: input.count,
         googleSearch: modelOptions.googleSearch,
         modelId: input.modelId,
+        ...(input.routingPolicy ? { routingPolicy: input.routingPolicy } : {}),
         ...(modelOptions.imageLine ? { imageLine: modelOptions.imageLine } : {}),
         ...(input.catalogModelId ? { catalogModelId: input.catalogModelId } : {}),
         outputFormat: modelOptions.outputFormat,
@@ -106,6 +109,7 @@ export function generationInputFromRow(row, referenceUrls = new Map()) {
     count: row.requested_count,
     googleSearch: row.google_search ?? false,
     modelId: row.model_id,
+    ...(row.provider_routing_policy ? { routingPolicy: row.provider_routing_policy } : {}),
     ...(row.image_line && row.image_line !== "special" ? { imageLine: row.image_line } : {}),
     ...(row.catalog_model_id ? { catalogModelId: row.catalog_model_id, catalogModelName: row.catalog_model_name } : {}),
     outputFormat:
@@ -133,6 +137,7 @@ export function persistedGenerationInputFromRow(row) {
     count: row.requested_count,
     googleSearch: row.google_search ?? false,
     modelId: row.model_id,
+    ...(row.provider_routing_policy ? { routingPolicy: row.provider_routing_policy } : {}),
     ...(row.image_line && row.image_line !== "special" ? { imageLine: row.image_line } : {}),
     ...(row.catalog_model_id ? { catalogModelId: row.catalog_model_id } : {}),
     outputFormat:
@@ -195,6 +200,7 @@ const JOB_SELECT = `
          b.reference_snapshot,
          b.model_id,
          b.image_line,
+         b.provider_routing_policy,
          b.catalog_model_id,
          b.catalog_model_name,
          b.aspect_ratio,
@@ -490,9 +496,9 @@ export async function createGenerationJob(
          id, owner_id, workspace_id, creator_owner_id, project_id,
          prompt, reference_snapshot, model_id,
          aspect_ratio, resolution, requested_count, thinking_level,
-         google_search, quality, background, output_format, input_hash, image_line
+         google_search, quality, background, output_format, input_hash, image_line, provider_routing_policy
        ) VALUES ($1, $2, $3, $2, $4, $5, $6::jsonb, $7, $8, $9, $10,
-                 $11, $12, $13, $14, $15, $16, $17)`,
+                 $11, $12, $13, $14, $15, $16, $17, $18)`,
       [
         batchId,
         ownerId,
@@ -511,6 +517,7 @@ export async function createGenerationJob(
         modelOptions.outputFormat,
         inputHash,
         supportsImageLines(input.modelId) ? input.imageLine ?? "special" : null,
+        input.routingPolicy ?? null,
       ],
     );
     if (input.projectId) {
@@ -554,12 +561,17 @@ export async function createGenerationJob(
     await client.query("UPDATE generation_batches SET catalog_model_id=$2,catalog_model_name=$3 WHERE id=$1",
       [batchId, managedModel.id, managedModel.name]);
     if (workspace.kind === "organization") {
-      const price = await findActiveGenerationPrice(client, {
+      const basePrice = await findActiveGenerationPrice(client, {
         count: input.count,
         modelId: input.catalogModelId ?? input.modelId,
         planContext: modelQualityPriceContext(managedModel, input.imageLine, input.quality),
         resolution: input.resolution,
       });
+      const quoted = isSeedreamModel(input.modelId)
+        ? seedreamQuoteCreditAmount(basePrice.creditAmount, basePrice.creditUnit, input.references.length) : null;
+      if (isSeedreamModel(input.modelId) && quoted === null) throw new GenerationPersistenceError("PRICE_NOT_AVAILABLE", "模型报价暂不可用，请刷新后重试。", 409);
+      const price = isSeedreamModel(input.modelId)
+        ? { ...basePrice, creditAmount: BigInt(quoted), creditUnit: "credit-cny-cent" } : basePrice;
       await client.query(
         `UPDATE generation_batches
             SET price_version_id = $2, quoted_credit_unit = $3,
@@ -662,8 +674,14 @@ export async function claimGenerationJob(
       return { claimed: false, reason: "missing" };
     }
     const job = locked.rows[0];
+    let attemptResult = await client.query(
+      `SELECT * FROM generation_attempts
+        WHERE job_id = $1 AND state IN ('created', 'submitted', 'running')
+        ORDER BY ordinal DESC LIMIT 1`,
+      [jobId],
+    );
     const resolvedAttemptRoute = attemptRouteForModel
-      ? attemptRouteForModel(job.model_id, job.image_line ?? undefined)
+      ? attemptRouteForModel(job.model_id, job.image_line ?? undefined, job, attemptResult.rows[0])
       : attemptRoute;
     if (
       !resolvedAttemptRoute?.routeVersion ||
@@ -711,12 +729,6 @@ export async function claimGenerationJob(
       [jobId, workerId, leaseMs],
     );
 
-    let attemptResult = await client.query(
-      `SELECT * FROM generation_attempts
-        WHERE job_id = $1 AND state IN ('created', 'submitted', 'running')
-        ORDER BY ordinal DESC LIMIT 1`,
-      [jobId],
-    );
     if (!attemptResult.rowCount) {
       const ordinal = Number(job.attempt_count) + 1;
       const attemptId = randomUUID();
@@ -785,6 +797,44 @@ export async function markProviderSubmissionStarted(pool, { attemptId }) {
   return result.rowCount === 1;
 }
 
+/** Switch only after a definitive no-channel rejection with no accepted task. */
+export async function createProviderFallbackAttempt(pool, { jobId, workerId, attemptId, fromRoute, toRoute }) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const locked = await client.query(`${JOB_SELECT} WHERE j.id = $1 FOR UPDATE OF j`, [jobId]);
+    const job = locked.rows[0];
+    if (!job || job.lease_owner !== workerId || job.provider_routing_policy !== "canvas-image-v1" ||
+      job.resolution !== "4K" || !["running", "refining"].includes(job.state) ||
+      fromRoute.tier !== "4K" || toRoute.tier !== "4K-backup" ||
+      fromRoute.productModelId !== job.model_id || toRoute.productModelId !== job.model_id ||
+      fromRoute.provider !== toRoute.provider) {
+      await client.query("ROLLBACK"); return null;
+    }
+    const rejected = await client.query(
+      `UPDATE generation_attempts SET state = 'failed', error_code = 'CAPACITY_BUSY',
+          error_message = '主渠道明确不可用，切换已批准备用渠道。', completed_at = now(), updated_at = now()
+        WHERE id = $1 AND job_id = $2 AND provider_task_id IS NULL AND state = 'submitted'
+          AND provider = $3 AND provider_model = $4 AND route_version = $5
+        RETURNING id`,
+      [attemptId, jobId, fromRoute.provider, fromRoute.providerModel, fromRoute.routeVersion],
+    );
+    if (!rejected.rowCount) { await client.query("ROLLBACK"); return null; }
+    const ordinal = Number(job.attempt_count) + 1;
+    const result = await client.query(
+      `INSERT INTO generation_attempts (id, job_id, ordinal, route_version, provider, provider_model, state, request_hash)
+        VALUES ($1,$2,$3,$4,$5,$6,'created',$7) RETURNING *`,
+      [randomUUID(), jobId, ordinal, toRoute.routeVersion, toRoute.provider, toRoute.providerModel, job.input_hash],
+    );
+    await client.query("UPDATE generation_jobs SET attempt_count = $2, updated_at = now() WHERE id = $1", [jobId, ordinal]);
+    await insertEvent(client, { eventType: "provider_fallback", fromState: job.state, toState: job.state, jobId,
+      detail: { reason: "channel_unavailable", fromModel: fromRoute.providerModel, toModel: toRoute.providerModel, ordinal } });
+    await client.query("COMMIT");
+    return result.rows[0];
+  } catch (error) { await client.query("ROLLBACK"); throw error; }
+  finally { client.release(); }
+}
+
 export async function renewGenerationLease(
   pool,
   { jobId, leaseMs, workerId },
@@ -846,7 +896,7 @@ export async function completeGenerationJob(
     const locked = await client.query(
       `SELECT j.state, j.owner_id, j.creator_owner_id, j.workspace_id,
               j.batch_id, j.lease_owner, j.credit_reservation_entry_id,
-              j.workspace_credit_reservation_entry_id, b.requested_count
+              j.workspace_credit_reservation_entry_id, b.requested_count, b.model_id
          FROM generation_jobs j
          JOIN generation_batches b ON b.id = j.batch_id
         WHERE j.id = $1 FOR UPDATE OF j`,
@@ -872,7 +922,7 @@ export async function completeGenerationJob(
 
     if (
       !Array.isArray(assets) ||
-      assets.length !== locked.rows[0].requested_count ||
+      !isExpectedGenerationOutputCount({ modelId: locked.rows[0].model_id, requestedCount: locked.rows[0].requested_count, actualCount: assets.length }) ||
       assets.some((asset, index) =>
         asset.ordinal !== index + 1 ||
         asset.ownerId !== locked.rows[0].owner_id ||

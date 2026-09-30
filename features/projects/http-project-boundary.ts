@@ -105,3 +105,26 @@ export async function saveProject(
     ),
   );
 }
+
+async function parseManagement<T>(response: Response): Promise<T> {
+  const payload = await response.json() as T | ProjectApiErrorEnvelope;
+  if (!response.ok) {
+    const failure = (payload as ProjectApiErrorEnvelope).error;
+    throw new ProjectBoundaryError(failure?.code ?? "PROJECT_UNAVAILABLE",
+      failure?.message ?? "项目操作未完成，请重试。", failure?.retryable ?? false);
+  }
+  return payload as T;
+}
+
+export function renameProject(projectId: string, name: string, workspaceId: string | null = null): Promise<Pick<ProjectRecord, "id" | "name" | "updatedAt">> {
+  return goodGoodApiFetch(`/api/projects/${encodeURIComponent(projectId)}`, {
+    method: "PATCH", headers: { "content-type": "application/json", ...workspaceRequestHeaders(workspaceId) },
+    body: JSON.stringify({ name }),
+  }).then((response) => parseManagement<Pick<ProjectRecord, "id" | "name" | "updatedAt">>(response));
+}
+
+export function deleteProject(projectId: string, workspaceId: string | null = null): Promise<{ id: string }> {
+  return goodGoodApiFetch(`/api/projects/${encodeURIComponent(projectId)}`, {
+    method: "DELETE", headers: workspaceRequestHeaders(workspaceId),
+  }).then((response) => parseManagement<{ id: string }>(response));
+}

@@ -1,6 +1,9 @@
 import { gptPricingQualities } from "@/shared/contracts/gpt-quality-pricing.mjs";
+import { SEEDREAM_ASPECT_RATIOS, SEEDREAM_PIXEL_SIZES } from "@/shared/contracts/seedream-models.mjs";
 import {
+  CANVAS_GENERATION_COUNTS,
   GENERATION_COUNTS,
+  GENERATION_RESOLUTIONS,
   isGptImageModelId,
   type GenerationCount,
   GenerationAspectRatio,
@@ -184,6 +187,15 @@ export const GENERATION_RATIO_OPTIONS = [
   },
 ] as const satisfies readonly GenerationRatioOption[];
 
+export const ADAPTIVE_GENERATION_RATIO_OPTION: GenerationRatioOption = {
+  id: "adaptive",
+  label: "自适应",
+  // This is a layout fallback only. The provider chooses the actual pixels.
+  value: 1,
+  dimensions: GENERATION_RATIO_OPTIONS.find((option) => option.id === "1:1")!.dimensions,
+  mode: "square",
+};
+
 export const GPT_IMAGE_2_RATIO_IDS = [
   "9:16",
   "2:3",
@@ -304,6 +316,7 @@ export const DEFAULT_GPT_IMAGE_OUTPUT_FORMAT = "jpeg" as const;
 export function getGenerationRatio(
   ratio: GenerationAspectRatio,
 ): GenerationRatioOption {
+  if (ratio === "adaptive") return ADAPTIVE_GENERATION_RATIO_OPTION;
   const option = GENERATION_RATIO_OPTIONS.find((item) => item.id === ratio);
   if (!option) throw new Error(`Unknown generation ratio: ${ratio}`);
   return option;
@@ -316,6 +329,7 @@ export function findGenerationRatioByLabel(
 }
 
 export function getGenerationRatioIndex(ratio: GenerationAspectRatio): number {
+  if (ratio === "adaptive") return getGenerationRatioIndex("1:1");
   const index = GENERATION_RATIO_OPTIONS.findIndex((item) => item.id === ratio);
   if (index < 0) throw new Error(`Unknown generation ratio: ${ratio}`);
   return index;
@@ -324,6 +338,7 @@ export function getGenerationRatioIndex(ratio: GenerationAspectRatio): number {
 export function getGenerationRatioOptions(
   modelId: GenerationModelId,
 ): readonly GenerationRatioOption[] {
+  if (modelId === "seedream-5.0-pro") return GENERATION_RATIO_OPTIONS.filter((option) => SEEDREAM_ASPECT_RATIOS.includes(option.id));
   if (modelId === "nano-banana-pro")
     return GENERATION_RATIO_OPTIONS.filter(
       (option) => !["1:8", "1:4", "4:1", "8:1"].includes(option.id),
@@ -334,12 +349,37 @@ export function getGenerationRatioOptions(
   );
 }
 
+export function getCanvasGenerationRatioOptions(
+  modelId: GenerationModelId,
+): readonly GenerationRatioOption[] {
+  return [ADAPTIVE_GENERATION_RATIO_OPTION, ...getGenerationRatioOptions(modelId)];
+}
+
+export function getCanvasGenerationResolutionOptions(modelId: GenerationModelId): readonly GenerationResolution[] {
+  return modelId === "seedream-5.0-pro" ? ["1K", "2K"] : GENERATION_RESOLUTIONS;
+}
+
 export function getGenerationCountOptions(
   modelId: GenerationModelId,
 ): readonly GenerationCount[] {
-  return modelId === "nano-banana-2" || isGptImageModelId(modelId)
+  return modelId === "nano-banana-2" || modelId === "nano-banana-pro" || isGptImageModelId(modelId)
     ? GENERATION_COUNTS
     : [1];
+}
+
+export function getCanvasGenerationCountOptions(
+  modelId: GenerationModelId,
+): readonly GenerationCount[] {
+  return modelId === "nano-banana-2" || modelId === "nano-banana-pro" || isGptImageModelId(modelId)
+    ? CANVAS_GENERATION_COUNTS
+    : [1];
+}
+
+export function resolveCanvasGenerationCountForModel(
+  modelId: GenerationModelId,
+  count: GenerationCount,
+): GenerationCount {
+  return getCanvasGenerationCountOptions(modelId).includes(count) ? count : 1;
 }
 
 export function isGenerationCountSupported(
@@ -428,6 +468,7 @@ export function getGenerationModelRatioIndex(
   modelId: GenerationModelId,
   ratio: GenerationAspectRatio,
 ): number {
+  if (ratio === "adaptive") return getGenerationModelRatioIndex(modelId, "1:1");
   const index = getGenerationRatioOptions(modelId).findIndex(
     (option) => option.id === ratio,
   );
@@ -442,6 +483,13 @@ export function getGenerationPixelDimensions(
   ratio: GenerationAspectRatio,
   resolution: GenerationResolution,
 ): PixelDimensions {
+  if (modelId === "seedream-5.0-pro") {
+    const sizes = SEEDREAM_PIXEL_SIZES as Readonly<Record<string, Partial<Record<GenerationResolution, string>>>>;
+    const size = sizes[ratio]?.[resolution];
+    if (!size) throw new Error(`Unsupported Seedream ratio or resolution: ${ratio} / ${resolution}`);
+    const [width, height] = size.split("x").map(Number);
+    return { width, height };
+  }
   if (isGptImageModelId(modelId)) {
     if (!GPT_IMAGE_2_RATIO_IDS.includes(ratio as GptImage2AspectRatio)) {
       throw new Error(`Unsupported generation ratio for ${modelId}: ${ratio}`);
@@ -455,6 +503,9 @@ export function resolveGenerationAspectRatioForModel(
   modelId: GenerationModelId,
   ratio: GenerationAspectRatio,
 ): GenerationAspectRatio {
+  if (ratio === "adaptive") {
+    return modelId === "nano-banana-2" || modelId === "nano-banana-pro" ? ratio : "1:1";
+  }
   const options = getGenerationRatioOptions(modelId);
   if (options.some((option) => option.id === ratio)) return ratio;
   const current = getGenerationRatio(ratio);
@@ -466,6 +517,14 @@ export function resolveGenerationAspectRatioForModel(
       ? option
       : nearest,
   ).id;
+}
+
+export function resolveCanvasGenerationAspectRatioForModel(
+  modelId: GenerationModelId,
+  ratio: GenerationAspectRatio,
+): GenerationAspectRatio {
+  // Canvas has its own provider-auto choice; the lobby keeps its fixed ratios.
+  return ratio === "adaptive" ? ratio : resolveGenerationAspectRatioForModel(modelId, ratio);
 }
 
 export function getDefaultGenerationRatioForModelMode(

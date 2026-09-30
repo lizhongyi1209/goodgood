@@ -38,18 +38,27 @@ test("private object URLs render as direct browser images", async () => {
   assert.doesNotMatch(html, /_vinext\/image|data-nimg|srcset=/);
 });
 
-test("workspace and composer route private previews through the direct primitive", async () => {
-  const [source, composer, workspace] = await Promise.all([
+test("workspace, composer, and canvas route private previews through the direct primitive", async () => {
+  const [source, composer, workspace, ...canvasSources] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(
       new URL("../features/creation/creation-composer.tsx", import.meta.url),
       "utf8",
     ),
     readFile(new URL("../features/assets/asset-workspace.tsx", import.meta.url), "utf8"),
+    ...[
+      "canvas-asset-add-card.tsx",
+      "canvas-asset-panel.tsx",
+      "canvas-generator-node.tsx",
+      "canvas-page.tsx",
+      "canvas-result-node.tsx",
+      "canvas-source-node.tsx",
+    ].map((name) => readFile(new URL(`../features/canvas/${name}`, import.meta.url), "utf8")),
   ]);
 
   assert.match(source, /import \{ PrivateObjectImage \}/);
-  assert.ok(((source + workspace).match(/<PrivateObjectImage/g) ?? []).length >= 7);
+  assert.ok(((source + workspace + canvasSources.join("\n")).match(/<PrivateObjectImage/g) ?? []).length >= 13);
+  assert.ok(canvasSources.every((text) => /import \{ PrivateObjectImage \}/.test(text)));
   assert.match(workspace, /src=\{item\.previewUrl/);
   assert.doesNotMatch(
     source,

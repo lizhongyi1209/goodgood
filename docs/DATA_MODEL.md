@@ -1,5 +1,50 @@
 # GG-063 quality pricing
 
+## GG-226 项目管理边界
+
+画布项目保留原canvas_projects文档，新增0056的canvas_project_deletions退役墓碑，记录project_id/workspace_id/owner_id以阻止旧tab自动保存复活，也覆盖尚未同步的本机项目。旧版创作项目复用status=archived，保留原批次与资产关联；不改既有迁移/计费/用户素材。名称更新只改name并维护version/updated_at/content_hash，不用卡片旧document覆盖内容。见[任务](tasks/GG-226-project-library-actions.md)。
+
+## GG-217 historical platform-coin data
+
+The six `jcoin_*` tables from migration0040 remain historical-only after ADR0117.
+Keep records and the applied migration checksum; no drop, reset or conversion.
+Current APIs and Worker no longer read/write these tables. Normal credit ledger,
+orders, settlement and refunds keep their existing tables and transaction rules.
+
+## GG-218 versioned canvas pages
+
+页面扩展采用schemaVersion2：pages为有序数组，每页有稳定id/name、nodes/edges/generators/convertedReferences/viewport；旧schemaVersion1仍读为页面1，不批量改写已有项目行。沿用canvas_projects原主键、workspace/owner、version CAS与单行JSON存储，无新路由或表列。0055已在隔离本地应用，仅放宽document CHECK为版本1/2并保留object与1MB限制，原项目行未改写。每项目1..10页，合计最多1000节点/3000连线；节点和边ID全项目唯一，连线不能跨页。仅页内容编辑/新增/删除更新项目内容；activePageId与各页视角是本地偏好。删除页不删除资产库或provider任务，至少保留一页。已有v2项目拒绝v1降级写，避免旧客户端遗漏其余页面。
+
+## GG-214 Seedream catalog and returned outputs
+
+0054仅新增Seedream managed model与两条standard/count1/current-unit不可变基础价格，1K30、2K60；既有同ID目录配置不覆盖，历史账本/任务/素材不重写。提交仍requested_count1，quoted_credit_amount冻结基础版本价格加第二张起每张2积分，并保留reference_snapshot；个人/企业账本沿原事务。实际1..17资产复用同batch与连续ordinal，尺寸来自解码，无图层字段或模式schema扩展。普通请求即使返回多个兼容输出也只结算接受时总报价；未来显式拆层15/30乘实际张数的规则已记录但未实现入口。
+
+## GG-213 automatic size and switch defaults
+
+GPT canvas draft ratio/aspect_ratio uses existing domain adaptive; new policy-bound input maps provider size to auto. Existing text field and schemaVersion1 generator draft already accept it, so no new migration, reset or price record. quality:auto and background:auto are new-generator defaults, prior explicit values remain. Opening transparency persists background:transparent and outputFormat:png, closing background:auto keeps valid current format. Input hash includes existing adaptive/quality/background/format values; decoded output dimensions remain actual pixels alongside requested resolution. Local migration count stays53 and original canvas project remains1.
+
+## GG-211 / GG-212 canvas options and counts
+
+`canvas_projects.document` schemaVersion1 generator drafts optionally retain quality (`auto/low/medium/high/xhigh/max`), background (`auto/transparent`) and outputFormat (`png/jpeg/webp`); absent legacy fields remain absent, transparent JPEG is invalid. Count is an integer1..12. References, node/edge identity, asset metadata and project versions are retained; legacy lobby draft/project count constraints stay1/2/4.
+
+0052 changes generation batch/price count checks to1..12 and appends missing immutable count prices from the same enabled model, resolution, complete line/quality context and effective single-image price. Existing active prices, history and balances are preserved; no single quote means no new quote.0053 adds nullable `provider_routing_policy` allowing only `canvas-image-v1` or NULL. NULL preserves historical hash/routing/native-count semantics; new policy is included in frozen identity and history. A safely declined4K primary and approved backup use separate attempt ordinals/providerModel/routeVersion, one reservation and one atomic batch result. The local preserved database now has53 migration rows and the original canvas project; no production migration.
+
+GG-203: Nano canvas generator JSON `draft.count` and `generation_batches.requested_count` may contain 8. Migration 0051 extends the batch check to permit 8 only for the two Nano adapter IDs and the price count check to include 8 (price records use managed catalog IDs). It appends count-eight versions from each enabled Nano line's active single-output quote, preserving the catalog model, resolution, plan context and credit unit; historical prices, jobs, assets and ledgers are unchanged. Missing single-output prices produce no new quote. No canvas document version, persisted column, legacy lobby draft or legacy project count change is needed.
+
+GG-189: `generation_batches.aspect_ratio` and canvas project generator draft `ratio` may contain the GoodGood domain value `adaptive` for Nano Banana 2/Pro. No column or canvas document version change is needed; server validation accepts this value and the provider adapter omits the corresponding upstream field. Pro 2/4 pricing adds versioned `price_versions` records via 0050, derived from active count-1 prices per model, resolution and plan context. No ledger record is created by migration; billable tasks still pin a quoted price version at submission.
+
+## GG-182 generator result binding
+
+An `imageGenerator` canvas node may now carry a stable positive `sequence` and an existing authorized `generation_jobs.id` in `jobId`. The first output is rendered on that generator; further outputs remain `imageResult` nodes with their existing `jobId`/`index` pair. The saved generator's `draft` retains the submitted prompt, catalog model key, ratio, resolution and count. The server validates the IDs and stores no provider key, signed image URL, callback or browser-only `localJob`. A local `pending_` submission ID stays in IndexedDB and is stripped from remote saves until the API returns a durable job ID. Restoring a durable job only reads/polls it; it never resubmits. Existing canvas documents without a sequence or generator job ID remain readable.
+
+## GG-167 transient canvas generator inputs
+
+The page stores `imageGenerator` nodes, their positions, per-generator prompt/model/specification draft and direct-reference associations only in memory. React Flow edges store source and target node IDs; connected reference status is derived from a ready `reference_assets` ID or a pending/failed authorized generated-asset import. No canvas tables or migration are introduced. Removing a connection removes the input association without deleting a persisted source asset or a previously created reference. The generated-asset import creates or reuses a normal owner/workspace-scoped `reference_assets` record only after the existing media validation and readiness rules; a `generated_assets` ID is never passed to generation as though it were a reference ID. Refreshing `/canvas` loses the node arrangement, edges and unsent drafts, while existing private assets and generation jobs stay durable.
+
+## GG-155 asset display names · additive migration 0048
+
+`asset_organization.display_name` is a nullable, owner/workspace-scoped user-facing alias, 1–255 characters when present. Existing rows keep `NULL` and continue showing their generated label or uploaded `original_file_name`. Alias-only organization rows are allowed; clearing folder membership and tags retains the row while the alias exists. Delete the row only when folder, tags and alias are all absent. The concrete asset kind and owner are validated before alias upsert. Rename does not rewrite the original filename, object key, media bytes, generation job, or billing ledger. Migration 0048 must be applied before running a server version that selects this column.
+
 ## GG-121 explicit asset deletion
 
 An owner-confirmed delete removes `asset_organization` and the uploaded
@@ -865,3 +910,6 @@ and container header are checked. `rejected` and `expired` are not listed for
 reuse; the reference cleanup command removes their old objects and rows after
 24 hours. Ready materials remain in the library. Video references are not
 generation inputs while the video preview is text-only.
+# GG-173 · CanvasProject
+
+迁移 0049 加入独立 `canvas_projects`：稳定 UUID、owner/workspace、名称、版本号、更新时刻和版本化 JSON 文档。文档仅保存可验证的节点/边/生成器草稿/ready 引用和兼容旧快照的视口字段，图片/视频/音频用现有资产 ID，生成结果用任务 ID；不保存 File、Blob/signed URL 或组件回调。GG-175 起视口改变本身不触发文档版本变化；仅在其他内容真正同步时顺带刷新服务器视口。日常最近视角按用户/项目键存在本机，恢复时优先于文档视口。浏览器 IndexedDB 另存同 ID 的待同步内容快照及待上传 File，按稳定用户 ID 隔离；服务端授权数据是最终同步版本。旧 `projects` 表仍代表至少有一批生成任务的创作会话。见 [ADR 0114](decisions/0114-durable-canvas-projects.md)。

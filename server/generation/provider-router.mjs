@@ -6,13 +6,16 @@ import { readPrivateObject } from "./storage.mjs";
 import { prepareProviderReference, providerReferenceByteBudget } from "./reference-inputs.mjs";
 import { PRIVATE_IMAGE_UPLOAD_MAX_BYTES } from "../../shared/contracts/upload-limits.mjs";
 import { BANANA_LINES, supportsImageLines, isBananaModel, isBananaLineReady, isValidImageLine } from "../../shared/contracts/banana-lines.mjs";
+import { SUPPORTED_NANO_BANANA_2_OUTPUT_COUNTS, isExpectedGenerationOutputCount, isSeedreamModelId } from "./capabilities.mjs";
 import {
   US_GATEWAY_GPT_IMAGE_25_FLARE_ROUTE,
   US_GATEWAY_GPT_IMAGE_25_SUNBURST_ROUTE,
   US_GATEWAY_GPT_IMAGE_2_ROUTE,
   US_GATEWAY_NANO_BANANA_2_ROUTE,
+  US_GATEWAY_SEEDREAM_5_PRO_ROUTE,
   createUsGatewayAdapter,
   getUsGatewayRoute,
+  getCanvasImageRoute,
 } from "./us-gateway-adapter.mjs";
 
 // The local mock provider speaks the recorded O1Key image API contract, so a
@@ -49,11 +52,14 @@ export const MOCK_GPT_IMAGE_25_FLARE_ROUTE = localRouteFor(
   US_GATEWAY_GPT_IMAGE_25_FLARE_ROUTE,
 );
 
+export const MOCK_SEEDREAM_5_PRO_ROUTE = localRouteFor(US_GATEWAY_SEEDREAM_5_PRO_ROUTE);
+
 const MOCK_PROVIDER_ROUTES = Object.freeze({
   "nano-banana-2": MOCK_PROVIDER_ROUTE,
   "gpt-image-2.5-sunburst": MOCK_GPT_IMAGE_25_SUNBURST_ROUTE,
   "gpt-image-2": MOCK_GPT_IMAGE_2_ROUTE,
   "gpt-image-2.5-flare": MOCK_GPT_IMAGE_25_FLARE_ROUTE,
+  "seedream-5.0-pro": MOCK_SEEDREAM_5_PRO_ROUTE,
 });
 // Lines O1Key does not route still need a local-only route so the workspace can
 // exercise an unconnected line without pretending it is a real provider route.
@@ -75,21 +81,36 @@ const MOCK_BANANA_LINE_ROUTES = Object.freeze(Object.fromEntries(
 export function o1keyRouteForMockRoute(route) {
   if (route?.provider === "o1key") return route;
   if (route?.provider !== "goodgood-mock") return null;
-  const mirrored = getUsGatewayRoute(route.productModelId, route.imageLine);
+  const mirrored = route.canvasPolicy
+    ? getCanvasImageRoute(route.productModelId, route.tier === "standard" ? "1K" : "4K", { fallback: route.tier === "4K-backup" })
+    : getUsGatewayRoute(route.productModelId, route.imageLine);
   if (!mirrored || mirrored.providerModel !== route.providerModel) return null;
   return mirrored;
 }
 
-export function generationProviderRouteForModel(providerKind, modelId, imageLine) {
+export function generationProviderRouteForModel(providerKind, modelId, imageLine, job, attempt) {
   if (!isValidImageLine(modelId, imageLine)) throw new Error("Invalid image line.");
   if (supportsImageLines(modelId) && !isBananaLineReady(modelId, imageLine)) throw new Error("Image line is not connected.");
-  const routed = getUsGatewayRoute(modelId, imageLine);
+  let routed = job?.provider_routing_policy === "canvas-image-v1"
+    ? getCanvasImageRoute(modelId, job.resolution) ?? getUsGatewayRoute(modelId, imageLine)
+    : getUsGatewayRoute(modelId, imageLine);
+  if (attempt && job?.provider_routing_policy === "canvas-image-v1" && job.resolution === "4K") {
+    const backup = getCanvasImageRoute(modelId, "4K", { fallback: true });
+    const candidate = backup && (providerKind === "mock" ? localRouteFor(backup) : backup);
+    if (candidate && attempt.provider_model === candidate.providerModel && attempt.route_version === candidate.routeVersion) routed = backup;
+  }
   if (routed) {
     return providerKind === "mock" ? localRouteFor(routed) : routed;
   }
   const fallback = MOCK_BANANA_LINE_ROUTES[modelId]?.[imageLine ?? "special"];
   if (providerKind === "mock" && fallback) return fallback;
   throw new Error(`No ${providerKind} generation route for ${modelId}.`);
+}
+
+export function generationProviderFallbackRoute(providerKind, route, job) {
+  if (job.provider_routing_policy !== "canvas-image-v1" || job.resolution !== "4K" || route.tier !== "4K") return null;
+  const backup = getCanvasImageRoute(job.model_id, "4K", { fallback: true });
+  return backup && (providerKind === "mock" ? localRouteFor(backup) : backup);
 }
 
 function assertAttemptRoute(attempt, route) {
@@ -111,11 +132,10 @@ function throwTerminalFailure(task) {
   });
 }
 
-function validateOutputCount(outputs, expectedOutputCount) {
+function validateOutputCount(outputs, expectedOutputCount, modelId) {
   if (
     !Array.isArray(outputs) ||
-    !Number.isInteger(expectedOutputCount) ||
-    outputs.length !== expectedOutputCount
+    !isExpectedGenerationOutputCount({ modelId, requestedCount: expectedOutputCount, actualCount: outputs.length })
   ) {
     throw new NormalizedProviderError({
       code: "INTERNAL_ERROR",
@@ -166,7 +186,7 @@ function decodeO1KeyTaskState(
   taskId,
   { expectedTaskCount, legacySingle = false },
 ) {
-  if (![1, 2, 4].includes(expectedTaskCount)) throw taskSetError();
+  if (!SUPPORTED_NANO_BANANA_2_OUTPUT_COUNTS.includes(expectedTaskCount)) throw taskSetError();
   if (taskId === null || taskId === undefined || taskId === "") {
     return { submissionStarted: false, taskIds: [] };
   }
@@ -212,7 +232,8 @@ export function decodeO1KeyTaskSet(
 }
 
 function expectedO1KeyTaskCount(route, job) {
-  return isBananaModel(route.productModelId) ? job.requested_count : 1;
+  if (isSeedreamModelId(route.productModelId)) return 1;
+  return isBananaModel(route.productModelId) || job.provider_routing_policy === "canvas-image-v1" ? job.requested_count : 1;
 }
 
 function o1keyTaskState(route, job, taskId) {
@@ -317,7 +338,7 @@ export function createGenerationProvider({
                 submissionStarted: true,
               });
           const task = await adapter.submitPrepared({
-            job,
+            job: expectedTaskCount > 1 ? { ...job, requested_count: 1 } : job,
             onSubmissionStart: () => onSubmissionStart(submissionToken),
             uploadedReferences,
           });
@@ -334,16 +355,15 @@ export function createGenerationProvider({
         });
       },
 
-      async pollTask({ expectedOutputCount, onRefining, taskId }) {
+      async pollTask({ expectedOutputCount, onRefining, taskId, job }) {
         let refiningNotified = false;
         const taskState = o1keyTaskState(route, {
+          ...job,
           requested_count: expectedOutputCount,
         }, taskId);
         if (taskState.submissionStarted) throw submissionUnknownError();
         const { taskIds } = taskState;
-        const expectedTaskCount = isBananaModel(route.productModelId)
-          ? expectedOutputCount
-          : 1;
+        const expectedTaskCount = expectedO1KeyTaskCount(route, { ...job, requested_count: expectedOutputCount });
         if (taskIds.length !== expectedTaskCount) throw taskSetError();
         const tasks = await Promise.all(taskIds.map((providerTaskId) =>
           adapter.waitForTerminal({
@@ -354,7 +374,7 @@ export function createGenerationProvider({
               }
             },
             expectedOutputCount:
-              isBananaModel(route.productModelId) ? 1 : expectedOutputCount,
+              expectedTaskCount > 1 ? 1 : expectedOutputCount,
             pollIntervalMs: config.provider.pollIntervalMs,
             taskId: providerTaskId,
             timeoutMs: config.provider.timeoutMs,
@@ -366,6 +386,7 @@ export function createGenerationProvider({
         return validateOutputCount(
           tasks.flatMap((task) => task.outputs),
           expectedOutputCount,
+          route.productModelId,
         );
       },
     });

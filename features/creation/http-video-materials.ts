@@ -18,6 +18,19 @@ type UploadIntent = Readonly<{
   headers: Readonly<Record<string, string>>;
 }>;
 
+function pause(milliseconds: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => { signal?.removeEventListener("abort", abort); resolve(); }, milliseconds);
+    const abort = () => {
+      clearTimeout(timer);
+      signal?.removeEventListener("abort", abort);
+      reject(signal?.reason ?? new DOMException("Upload cancelled", "AbortError"));
+    };
+    signal?.addEventListener("abort", abort, { once: true });
+    if (signal?.aborted) abort();
+  });
+}
+
 async function parseJson<T>(response: Response): Promise<T> {
   const value = (await response.json().catch(() => ({}))) as T | ApiError;
   if (!response.ok) {
@@ -28,9 +41,9 @@ async function parseJson<T>(response: Response): Promise<T> {
   return value as T;
 }
 
-export async function listPrivateVideoMaterials(workspaceId: string | null): Promise<readonly PrivateVideoMaterial[]> {
+export async function listPrivateVideoMaterials(workspaceId: string | null, signal?: AbortSignal): Promise<readonly PrivateVideoMaterial[]> {
   const response = await goodGoodApiFetch("/api/video-materials", {
-    cache: "no-store", headers: workspaceRequestHeaders(workspaceId),
+    cache: "no-store", headers: workspaceRequestHeaders(workspaceId), signal,
   });
   return (await parseJson<{ materials: readonly PrivateVideoMaterial[] }>(response)).materials;
 }
@@ -39,37 +52,43 @@ export async function uploadPrivateVideoMaterial(
   clientId: string,
   file: File,
   workspaceId: string | null,
+  signal?: AbortSignal,
 ): Promise<Readonly<{ id: string; name: string; status: "ready" }>> {
+  signal?.throwIfAborted();
   const intent = await parseJson<UploadIntent>(await goodGoodApiFetch("/api/video-materials", {
     method: "POST",
     headers: { "content-type": "application/json", ...workspaceRequestHeaders(workspaceId) },
     body: JSON.stringify({ file: { clientId, name: file.name, mimeType: file.type, byteSize: file.size } }),
+    signal,
   }));
   for (let attempt = 0; attempt < 3; attempt += 1) {
+    signal?.throwIfAborted();
     let response: Response;
     try {
-      response = await fetch(intent.uploadUrl, { method: "PUT", headers: intent.headers, body: file });
-    } catch {
+      response = await fetch(intent.uploadUrl, { method: "PUT", headers: intent.headers, body: file, signal });
+    } catch (error) {
+      if (signal?.aborted) throw error;
       if (attempt === 2) throw new Error("无法连接视频存储服务，请检查网络后重试。");
-      await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
+      await pause(400 * (attempt + 1), signal);
       continue;
     }
     if (response.ok) break;
     if (attempt === 2 || (response.status < 500 && ![408, 429].includes(response.status))) {
       throw new Error(`视频直传失败（HTTP ${response.status}），请检查网络或稍后重试。`);
     }
-    await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
+    await pause(400 * (attempt + 1), signal);
   }
   try {
     return await parseJson<{ id: string; name: string; status: "ready" }>(
       await goodGoodApiFetch(`/api/video-materials/${encodeURIComponent(intent.material.id)}/complete`, {
-        method: "POST", headers: workspaceRequestHeaders(workspaceId),
+        method: "POST", headers: workspaceRequestHeaders(workspaceId), signal,
       }),
     );
   } catch (error) {
+    if (signal?.aborted) throw error;
     // A lost completion response can follow a successful server validation.
     const response = await goodGoodApiFetch(`/api/video-materials/${encodeURIComponent(intent.material.id)}/status`, {
-      cache: "no-store", headers: workspaceRequestHeaders(workspaceId),
+      cache: "no-store", headers: workspaceRequestHeaders(workspaceId), signal,
     });
     const status = await parseJson<{ id: string; name: string; status: string; errorCode?: string }>(response);
     if (status.status === "ready") return { id: status.id, name: status.name, status: "ready" };

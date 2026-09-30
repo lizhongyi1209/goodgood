@@ -1,150 +1,40 @@
 # GoodGood 当前状态
-- 本地新进展（2026-09-27）：站长决定撤下 GG-135 画布图片拖动对齐功能；本地辅助线、吸附和专用代码已移除，图片保持自由移动。撤下版 `check:local` 592 项 / 569 通过 / 23 跳过 / 0 失败，5173 `/canvas` HTTP 200，待站长手动复核。未来可能改用选中图片后的预设排列，需求尚未确定。GG-134 四角透明命中区精修获站长「可以了」反馈；GG-133 小图圆角获「好多了」反馈；GG-132 缩放正常且 ResizeObserver 报错消失已获确认。未替换 32131 或生产。
-- 本地新进展（2026-09-27）：GG-129 画布图片移动指针与原比例缩放已通过 `check:local` 591 项 / 568 通过 / 23 跳过 / 0 失败，5173 `/canvas` HTTP 200，待站长手动验收。GG-128 移除画布图片节点的悬停操作，仅保留浅灰反馈；前一门禁 567/23/0。GG-127 修复打开 `/assets` 时可能出现的 ResizeObserver 开发覆盖层：瀑布流尺寸回调仅收集变化，下一动画帧再写行高。该任务同样通过 567/23/0 门禁，5173 `/assets` HTTP 200；待站长刷新页面手动确认。GG-126 在 GG-125 独立纯白 `/canvas` 上加入 JPEG/PNG 拖放、文件选择、临时原比例节点及适应视野；原有图上查看/参考/移除操作由 GG-128 取代。拖入不上传或生成。GG-124 共用空白壳层由 ADR 0108 替代；生产应用未因这些任务替换。
-- 最后核对：2026-09-26 GG-121 取消资产标签，选择栏仅下载/移动/红底白字删除，上传图片/视频/音频与生成图片均可确认后永久删除；本地门禁 560/23/0，现有 32131 Web 已替换为已验证检查点，5173 保持运行；未做浏览器验收、真实删除或生产发布。此前 GG-115 本地门禁 566/26/0 通过，隔离开发库迁移 0046 已事务验证；站长确认默认历史、个人库切换与测试图上传刷新预览正常。512 px WebP 真实 OSS/RustFS 只读转换沿用 GG-113 验证；GG-112 真实邮件收信/登录与 GG-111 生产 OSS 桶测试前缀上传的既有验收保持，本次未重复发信/上传。生产应用仍为 `7888554` / 迁移 `0044` / 配置契约 `b3d7310a…ddf3`；公网与注册均开放。
-- 产品阶段：已开放的 `controlled-alpha-v1`，不是完整 seed/付费生产就绪。
+
+- 最后核对：2026-09-30。
+- 产品阶段：公开的 `controlled-alpha-v1`；已有真实用户，尚未达到完整 seed、自动支付或完整运营告警就绪。
 - 正式入口：https://goodgood.o1key.com
-- 当前工作：**GG-121 统一资产页本地实现与门禁完成，待站长手动验收，未部署应用代码**；32131 Node Web 已运行 GG-121 已验证检查点，5173 代理它。GG-115 新图片仅 JPG/JPEG、PNG，视频仅 MP4，音频仅 MP3；旧素材可读，GG-105 旧 200 MiB 上传决定已被 ADR 0102 对新上传取代。GG-111 新本地参考图只写 `o1key-goodgood/local-dev/references/`；本地视频/音频与旧素材读写 RustFS。配置好的本地图片/视频默认接真实 O1Key，mock 仅用于隔离自动化测试；本次未触发生成。视频生成仍为临时文生视频预览，正式任务/积分未接。生产应用仍为 GG-098 功能和固定 `goodgood-production` Compose。注册自 2026-09-15 起开放，**已有真实用户在使用**：30 个账户、240 个生成资产、参考素材 181 `ready`、生成任务 279（223 成功 / 56 失败）。站长账户 951565127@qq.com，邀请码 405513。
-- 充值：运营已按「登记已收到的充值款」录入 4 笔，共 15100 积分（支付宝 ×2、支付宝收款、微信）。这不是自动支付，支付/支付宝结算仍搁置。
-- **已知缺口（站长 2026-09-15 明确授权接受）**：`controlled-alpha-operations` 未通过——主机无任何对外告警通道。**备份本身不是缺口**：生产备份 timer `enabled`/`active`，每 30 分钟一次，2026-09-17 首次恢复演练通过（见下）。见发布记录。
-- GG-100 生产主机单槽位迁移与旧 blue/green 清理已完成；GG-101—105、GG-107、GG-110—115 应用代码仅本地实现。GG-111 按站长明确选择在生产 OSS 桶追加 5173 CORS 并写入独立测试前缀；GG-112 使用现有真实发信账号给本地邮箱验证码投递；GG-113 只读转换、GG-114 共用接口与 GG-115 资产整理均没有改生产应用、数据库或既有对象。GG-106 OSS 决策工作在另一工作树继续。不要自动恢复搁置的 C6。
+- 当前本地代码检查点：[GG-239](tasks/GG-239-current-5173-checkpoint.md)，版本标签 `goodgood-local-2026-09-30-gg239`。该标签固定 5173 当前累计源码，取代把 `GG-116` 旧分支名当版本依据的做法。
+- 当前本地运行：Vite `127.0.0.1:5173` 从 `F:/goodgood-worktrees/GG-116` 提供前端；API 代理到已验证 Web `127.0.0.1:32131`，唯一真实开发 Worker 为 `127.0.0.1:32142`。本地代码和生产均未因 GG-239 发布。
 
-## GG-099 / GG-100 单槽位发布（2026-09-22）
+## 生产身份
 
-- ADR 0091 取消 blue/green 和 Nginx 切流；生产已迁移为唯一 `goodgood-production` 项目（Web/Worker `3100/3101`），healthy、restarts 0。
-- 旧容器、网络、槽位/动态 upstream 与 14 个无引用镜像已清理；生产状态、秘密、备份和卷保留。恢复点 `71e758c4`，活动任务/冻结积分/Valkey 均为 0。
-- 后续只在同一项目原地替换，迁移只前进、schema 不降级。完整记录：[GG-100 主机清理](operations/2026-09-22-gg100-single-slot-host-cleanup.md)。
+生产事实以 [GG-098 发布记录](releases/2026-09-21-gg098-manual-grant-ceiling.md) 为准。GG-100 后续只把同一应用迁移为单槽 `goodgood-production` Compose 并清理旧 blue/green 残留，没有更换应用镜像。
 
-## GG-101 本地运行边界
-
-- GG-102 已配置本地真实 Seedance 默认入口；图片一次真实 1K 单张生成成功。视频未提交付费任务，持久化仍未接；核验详见[任务卡](tasks/GG-102-real-video-development.md)。
-- 当前仅保留goodgood-gg052的PostgreSQL/Valkey/RustFS、gg044 Mailpit及无关项目容器；全部34个卷保留。旧GoodGood应用容器、镜像、空网络和构建缓存已按任务卡清理，生产主机与数据未触碰。
-- 新版本须运行`npm run build:checkpoint`和`npm run verify:checkpoint`；启动脚本拒绝源码、Git revision或产物指纹不匹配。Web的`/api/health/version`返回`build.verified`与revision，作为跨窗口页面来源核验。
-- Web/Worker 均强制调用**真实** O1Key（真实计费），开发令牌从仓库外
-  `%USERPROFILE%\.claude\goodgood-local-secrets\o1key-api-key.txt` 读取；缺失即停止，不能改为 mock。
-- 本地 PostgreSQL/Valkey/RustFS、身份与数据继续隔离；GG-111 经站长明确授权例外使用仓库外现有 OSS RAM 密钥，只操作生产桶 `local-dev/references/` 前缀；GG-112 明确复用现有真实 SMTP 账号，密码只在仓库外文件。生产数据库、R2、队列和既有用户对象不进入本地。mock 只存在于显式 `mock-tests` 自动化测试栈，完整门禁不产生真实 provider 请求。
-
-## 已上线的能力与边界
-
-- Authing Google/邮箱验证码登录；后端验证身份并使用 GoodGood 自有会话。新账户注册即
-  `active`、立得 **200** 欢迎积分，可立即创作；准入收口唯一依赖
-  `GOODGOOD_EMAIL_REGISTRATION_ENABLED`（ADR 0090，取代 ADR 0020 的 `pending` 审批模型）。
-- Nano Banana 2 支持 14 种宽高比、`1K / 2K / 4K`、每批 `1 / 2 / 4` 张与
-  `10 / 20 / 40` 积分。新请求固定但不展示高思考，O1Key 顶层发送
-  `thinking_level: "high"`；Google Search 可选，响应模态为 `TEXT + IMAGE`。
-- GPT IMAGE 2 使用 `gpt-image-2-c-sd`，支持 7 种比例对应的精确像素尺寸、
-  `1 / 2 / 4` 张和每张 10 积分；质量为自动/低/中/高，背景为自动/透明，输出格式
-  默认为 JPEG 并支持 PNG/WebP。透明背景会禁用 JPEG。
-- Nano Banana Pro 的 `1K / 2K / 4K` 单张标准报价均为 15 积分；provider 生成路由仍关闭，
-  当前只展示价格，不能生成。
-- 生成批次提交即形成稳定网格槽位，完成后原位替换；显示实际像素尺寸，不对原始结果
-  调色。创作卡片和图片详情不显示收藏图标；下载按 Asset ID 获取新签名并直接交给
-  浏览器下载管理器，使用短文件名。
-- 上传并校验的参考图成为所有者隔离的持久素材，可从资产库复用；托盘最多 10 张，
-  显示连续图号并支持拖拽或键盘调序。大图预览支持裁剪、画笔、贴图、箭头和 bbox，
-  编辑结果另存为新素材并替换当前引用，原素材保留。
-- 真实后端任务、原子积分预留/结算/释放、可靠队列、私有结果读取、资产库、项目保存恢复、
-  创作草稿均已上线。GG-004 的重复派发/同 Worker 重入竞态已修复。
-- 侧栏只显示积分余额；当前模型的单张和批次价格仍在创作器内显示。
-- 保持香港现有服务器和私有 R2。支付/支付宝、自动账户删除、举报界面、完整外部删除条款、
-  Grafana/复杂监控与大规模上线配套仍搁置。
-- 不设置用户任务数或生成并发上限。持久队列用于可靠投递/恢复；可用内存低于 500 MiB
-  或根磁盘使用率达到 80% 时继续阻止新生成。
-- 站长只激活已亲自确认测试边界的用户。不得宣传完整隐私删除、付费服务保障或完整
-  seed readiness 已经完成。
-
-## 生产身份与环境
-
-| 项目 | 最近核验记录 |
+| 项目 | 当前值 |
 | --- | --- |
 | 源码 revision | `7888554a4650b1b06dbce4293c52e8c018e5c71b` |
 | 镜像 | `ghcr.io/lizhongyi1209/goodgood@sha256:7deeab8c0257e9127326eb2fc14b5beecf370f5a22408361f613465a0b432270` |
-| 数据库迁移 | `0044_gg098_raise_manual_grant_ceiling.sql`（44 条，59 张 public 表） |
-| 配置契约 checksum | `b3d7310a7f345b96bcb614509f29f9706de3784bdb1b80f82d4be9534b18ddf3` |
-| 活跃进程 | 固定 `goodgood-production` Web + 1 个 Worker；PostgreSQL/Valkey 健康；旧 blue/green 应用项目不存在 |
-| 发布回退 | 只在同一 `goodgood-production` Compose 项目恢复兼容的旧应用镜像；不切换槽位或 Nginx upstream |
-| 主机 | 香港 2 vCPU / 4 GiB / 50 GiB；Web、Worker、PostgreSQL、Valkey 同机 |
-| 对象与备份 | 私有 R2；加密异机备份 Restic → `goodgood-postgres-backups/production`。timer `goodgood-production-postgres-backup.timer` **`enabled`/`active`**，每 30 分钟一次（77 个快照）。2026-09-17 演练点快照 `ce191630`，**恢复演练通过**；发布前恢复点 `36f2a437` |
-| 本地 | Windows 开发；Compose 使用本地 PostgreSQL/Valkey/RustFS + 真实 O1Key 开发凭据；GG-111 显式参考图模式另用生产 OSS 桶的 `local-dev/references/` 前缀；mock 仅限隔离测试 profile |
+| 数据库迁移 | `0044_gg098_raise_manual_grant_ceiling.sql` |
+| Compose | 唯一 `goodgood-production` 项目；Web/Worker `3100/3101` |
+| 注册 | 邮箱注册开放；新账户 `active`，欢迎积分 200 |
+| 备份 | PostgreSQL Restic timer `enabled`/`active`，每 30 分钟；2026-09-17 恢复演练通过 |
 
-没有常驻远程测试环境。`staging-goodgood.o1key.com` 仅保留名称，非当前测试入口。
-SSH 别名 `goodgood-staging` 是历史命名，指向现有生产主机，不能据名字当作测试机。
-生产目录 `/opt/goodgood-production`，受保护配置 `/etc/goodgood/production`；不得将生产
-数据或凭据复制回本地。主机地址和密钥不在本文存放。
+生产应用支持真实身份、积分、图片生成、私有素材、资产库、项目保存恢复、站长运营能力。视频仍是临时文生视频预览，正式视频任务、积分结算和资产入库未接通。Nano Banana Pro 只展示价格，生成路由关闭。支付仍由人工登记，不是自动支付。
 
-## GG-091 授权测试用户清理
+生产已知缺口只有对外告警通道；站长已于 2026-09-15 明确接受该 controlled-alpha 缺口。不得把本地 GG-101—239 的累计代码描述为已部署。
 
-- 2026-09-14按用户明确授权删全部10测试账户（含1站长）及关联15资产、13素材、37终态任务和29R2对象；用户/文件均0。事前加密备份及服务器命名无Worker隔离还原/清理演练通过，全局配置/迁移0019/现有镜像不变；Web/唯一Worker恢复healthy，公网首页/ready200，未登录Session401。
-- 清理后最新加密备份dd8f7ce6；发布时旧备份不是当前恢复点。
-- 当前生产站长账户为 `951565127@qq.com`（09-15 重建，邀请码 405513）；登录/注册入口为
-  `https://goodgood.o1key.com/login` 与 `/register`，已上线开放。本地工作区测试服务仍为 32131
-  （`http://127.0.0.1:32131/login`），邮件查看入口 `http://127.0.0.1:58045`。
-  不自动注册或重置数据。完整记录：[GG091清理](operations/2026-09-14-gg091-test-user-cleanup.md)。
+## 本地检查点
 
-## GG-098 热修发布历史（2026-09-21）
-**首次带迁移的热修发布**，用 `DEPLOYMENT.md` 的生产热修清单。完整记录见
-[GG-098 发布记录](releases/2026-09-21-gg098-manual-grant-ceiling.md)。该流程仅为历史事实，
-不作为新窗口的操作模板。
+GG-239 收口了 5173 中 GG-116—238 的累计实现，包括统一资产工作区、独立画布、持久画布项目与页面、真实画布生成、模型路由与计费、项目管理、资产面板、导航和近期视觉修复。详细范围与各自验证边界保留在 [BACKLOG](BACKLOG.md) 所列任务卡；当前入口文档不再复制历史逐项日志。
 
-- 身份：`7888554` / `sha256:7deeab8c…3270` / 迁移 `0044` / 配置契约未变；CI run `35449483809`。
-- `0044` 只把单次发放上限 `5000` → `1000000`，其余子句照抄 `0039`，不改既有行。
-- 流程：恢复点 `36f2a437` → blue 候选 Web → 迁移 → 停 green Worker → 起 blue Worker →
-  原子换上游 + `nginx -t` + reload。切流后公网 200、session 401、队列/活动任务/冻结均 0。
-- 真实生图冒烟（单独授权）：真实邮箱验证码登录 → Nano Banana 2 / 1K / 1:1 / 1 张成功，
-  reserve→settle 各 1 次、冻结归零；私有读取自有 200 / 未认证 401。
-  **跨账户拒绝未实测**，该项不得写成 `pass`；本次未跑完整 `production:alpha-gate`。
+当前本地后端来自已验证 revision `70e10c6ae6bd83542ba870f54059b54b999e9fdf`，Web 的 `/api/health/version` 报告 `build.verified=true`。本地 PostgreSQL 使用 `54449/goodgood`，迁移到 `0056`；Valkey 为 `56549`，RustFS 为 `58049/58050`，Mailpit 为 `58045/58046`。这些均为 loopback 开发资源。
 
-## 发布中发现的主机隐患：旧的 compose.production.yaml（2026-09-21）
+本地 Web/Worker 使用仓库外开发凭据调用真实 O1Key，请求可能计费。mock 只允许在显式隔离的 `mock-tests` 栈中运行；fixture 或合成任务不得进入真实 Worker 共用数据库或队列。生产数据库、R2、队列、密钥和真实用户数据不得复制到本地。
 
-blue 候选**首次启动即崩溃**（`GOODGOOD_EMAIL_OTP_SECRET_FILE could not be read`）。根因是
-主机 `/opt/goodgood-production/compose.production.yaml` **是旧版本**：web 只绑定 4 个 secret，
-缺 `goodgood_email_otp_secret` 与 `goodgood_email_smtp_password`（由 `d1af9ca` 引入）。
-green 正常只因它当初用较新 compose 起过后**再未重建**，故上次发布未暴露。
+## 当前边界
 
-已用本次 revision 的 compose 覆盖（旧版留 `compose.production.yaml.pre-gg098-backup`）。
-**未来发布前必须先核对主机 Compose 与候选 revision 一致，否则原地替换必崩。**
-单槽位项目名和端口已固定在 `compose.production.yaml` 与 Nginx 配置中；主机上的生产配置仍以受保护目录为准。
-
-## 首次生产恢复演练（2026-09-17）
-
-「备份 timer `disabled`、无自动备份」的旧结论**是错的**：真正 `disabled` 的是历史 staging
-timer；生产 `goodgood-production-postgres-backup.timer` **`enabled`/`active`，每 30 分钟一次**。
-因此 `operations` 项 `fail` 的唯一原因就是缺少告警通道。
-
-首轮演练（维护窗口约 66 秒）：快照 `ce191630`，**`restore_drill=passed`**、
-`network=none`+`tmpfs`，还原 **59 表 / 2403 行 / 43 迁移**。`maintenance-control.sh`
-**无 disable 动作**；关闭维护需手工移除 `/etc/goodgood/production/maintenance.enabled`。
-
-## 待排查缺陷：参考图校验超时（2026-09-17 发现，未修）
-
-当日 41 次 `/api/references/*` 上游超时，素材最终全部 `ready` 但校验最长 **5 分 56 秒**，
-超过 nginx 70s 读超时——**用户看到失败提示，素材其实已入库**。未定位根因。
-完整证据：[演练与缺陷记录](operations/2026-09-17-production-restore-drill.md)。
-
-## 历史验证（2026-09-09，已被后续发布取代）
-
-- 发布候选 `65ceb168` 的 CI run `34298537112` 通过，artifact evidence `10084128969` 匹配，
-  preflight 23/23；迁移 0013—0019 后门禁 8/8 通过。公网首页/readiness 200、未登录 401。
-- 获授权 1 次真实 Nano Banana 2 生图（1K、1:1、1 张）：reserve/settle 各 1 次、冻结归零、
-  1 个私有 Asset；跨所有者读取拒绝。
-- 当次备份 `production-auto-20260909T014459Z.dump`（106122 字节，SHA-256 `99a6a09a…`）
-  隔离演练通过：22 表 / 140 行 / 19 迁移，无网络 + tmpfs。
-- 同期发现并修复 Sharp `GHSA-rgj7-g3m4-5g8c`，GG-023 固定 0.35.4 后 CI 恢复
-  （安全候选 `18fe779b`）。完整证据：
-  [2026-09-09 记录](releases/2026-09-09-cumulative-alpha-release.md)。
-
-## 仓库与搁置工作
-
-- **main 现在包含全部累计功能**（GG-097 已把 `main` 快进到发布候选并推送）。旧文档所说
-  「main 不包含 GG081—091」已过期。main 或分支名仍不等于生产版本，新会话必须核对上面的
-  完整 revision、镜像摘要和迁移。
-- alpha 发布门禁每次发布仍须生成新鲜、绑定精确候选的证据，不能复用上一次结果。
-  2026-09-15 本次为五项 `pass` + `controlled-alpha-operations` `fail`（站长授权带缺口开站）。
-- 历史 C6 保存在 `archive/c6-deletion-content-safety-20260907`、独立 worktree 和已校验
-  bundle 中；其删除/举报/完整 seed 内容没有随本次候选发布。见 [GG-900](tasks/GG-900-deferred-c6.md)。
-- 完整旧计划在 `docs/history/`，仅按需追溯。
-
-## 更新规则
-
-仅在实际状态改变或重新核验后更新，替换旧摘要而非不断追加。代码完成、本地通过、CI 通过、
-已部署分别记录；未知写“未验证”。发布需同时更新本页和发布记录；任务进度写任务卡。
+- GG-239 是本地可恢复源码版本，不是生产 release、CI 镜像或部署授权。
+- 5173 是 Vite 热更新页面；提交后仍应以版本标签和 Git 状态判断源码，不能以端口或旧 PID 判断版本。
+- GG-235 已恢复本地对象存储/Valkey 端口并验证只读媒体链路；GG-236 的默认项目外框已获用户确认。GG-237 四列项目布局和 GG-238 图片查看器仍待用户手验。
+- C6 删除/内容安全分支继续停放，禁止自动恢复或批量合入。
+- 新任务从 GG-240 分配，并从 GG-239 标签指向的提交创建独立分支/worktree。

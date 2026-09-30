@@ -1,5 +1,69 @@
 # GG-063 quality pricing errors
 
+## GG-238 图片查看器加载与关闭
+
+查看器仅使用已经受权列表返回或同一受权图片content入口，loading/失败/空范围准确区分。大图失败显示有界的明确重试，缩略图失败不伪造素材，也不自动提交请求循环。切换或关闭卸载旧图片状态，滚轮节流/listener与缩略图滚动引用须清理；关闭不改变画布或资产数据。原GG235侧栏失败恢复保留。见[任务](tasks/GG-238-canvas-asset-viewer.md)。
+
+## GG-235 资产侧栏读取失败
+
+媒体 loading、最终失败与空库区分；图片 preview→受权 content 仅一次，最终失败显示独立重试，视频每次手动重试至多重新读取一次列表。源/成功列表轮次重挂载本地失败状态，异步重试在卸载或读取轮次变化后丢弃。没有自动循环请求、素材删除或假首帧。本次 preview503/socket hang up 实际对应本地 Docker 发布端口失效，原卷保留后恢复连通；不把图片占位符一概归因于签名过期。见[任务](tasks/GG-235-asset-media-masonry.md)。
+
+## GG-233 画布资产添加错误
+
+文件按现有JPEG/PNG、MP4、MP3及20MiB上限校验，上传失败保留失败项和重试入口，不生成可拖动的假素材。图片直链只接受HTTP(S)；网页、其他格式、跨域不允许读取、超限及下载超时在链接表单内说明原因并保留输入，可重试或使用文件上传。成功上传但归档失败应说明素材已保存于全部资产、归档未成功，不能重复上传已成功素材。正在读取列表、无素材与读取失败保持独立状态；未复测，待手验。
+
+## GG-226 项目操作错误
+
+重命名或删除失败显示在项目操作弹框并保留卡片/输入，可重试；提交中禁用重复提交，不能把断网当删除成功。版本冲突提示刷新重试，不发送旧画布document覆盖服务器内容。退役画布GET/PUT返回CANVAS_PROJECT_DELETED/410且retryable:false，保持现有同步器非retryable阻断；不使用VERSION_CONFLICT/409触发复制项目。快照失败单独重试而不阻碍项目操作/恢复，不显示假封面。见[任务](tasks/GG-226-project-library-actions.md)。
+
+## GG-216 terminal browser generation placeholders
+
+素材等待同步只由真实pendingFileId/pendingReferences判断。匹配ID且failed/cancelled并非SUBMISSION_UNKNOWN的pending_生成占位保留本地任务恢复与提示词/参数，但不再阻止已确认项目成为已保存。活跃/缺失或不匹配localJob以及恢复后的SUBMISSION_UNKNOWN占位继续dirty，并提示“生成请求尚未确认”，避免误报素材上传或丢失未确认请求。该判断覆盖全部页面；未知任务所在页禁删，不自动重发。IndexedDB文件失败、网络重试、CAS分叉和真实上传提醒保持。未读取所报告页面的IDB，现场只读云端诊断不代表已复现。
+
+## GG-214 Seedream output and quote failures
+
+拒绝不支持的4K/1.5K、多图请求数量、超限参考图或未配置报价。Seedream仅允许实际1..17有效图片，空/超限/错误MIME/不安全URL按现有provider失败处理；其他模型保持精确数量。任一结果下载/解码/存储失败，整批不成功，清理暂存对象并沿原失败结算与保留输入。未知提交不自动重复，无新增备用线路；不返回部分层成功。基础报价缺失时前端禁用生成，服务端拒绝预留，不依赖客户端金额。
+
+## GG-213 automatic GPT boundaries
+
+GPT adaptive without canvas-image-v1 remains unsupported at the API/legacy adapter boundary. Invalid resolution, unsupported quality or undocumented background:trans fail before provider submission; the Switch writes only auto/transparent and forcesPNG on enable. TransparentJPEG still rejects server-side. size:auto leaves actual dimensions to the provider, so completion metadata uses decoded pixels; fixed-ratio requests keep fixed sizes. No uncertainty/retry/atomic-batch changes or default reset of accepted jobs.
+
+## GG-211 / GG-212 canvas request boundaries
+
+数量0、13、小数、字符串或未知routingPolicy在后端拒绝；UI只向草稿写合法整数，报价必须匹配真实count与模型/线路/质量/分辨率上下文，缺报价维持禁止提交。保存保留合法质量/背景/格式字段，透明JPEG拒绝。GPT2不能提交xhigh/max。部分多图失败沿现有整批失败/预留释放，不能展示为完整成功。
+
+4K主渠道仅明确无可用渠道且没有taskID时，作为已拒绝的独立attempt记录，再创建一次无后缀备用attempt。认证、余额、配额、限流、审核、参数错误不备用；网络/超时/普通5xx/不可解析成功/已获部分任务ID都不重发。备用仍失败则沿原失败路径，未知提交仍SUBMISSION_UNKNOWN。恢复使用已固定routeVersion，不重送已受理任务；不改变积分reservation或复用primary attempt。生产与原数据保持。
+
+GG-203: count-eight is valid only for Nano generation. Missing count-eight quotes disable canvas submission and are rejected server-side before enqueue/reservation; do not infer eight-times-single amounts in the browser. A Nano task-set resume can hold one through eight known single-image task IDs, retaining the existing submission-unknown guard against duplicate billable requests. The final output count must be exactly eight; short, failed or unstoreable results retain the existing atomic failure and credit-release policy.
+
+GG-189: if a count-specific Nano Banana Pro quote is absent, the canvas disables generation and shows the existing unavailable-price message rather than multiplying a browser-side guess. The server likewise rejects unquoted submissions before enqueue or credit reservation. `adaptive` is validated as a Nano domain value, omitted in the provider payload, and rejected for GPT routes; provider or transport failure continues through the existing inline generator failure and retry flow. No automatic retry of potentially billable requests is added.
+
+## GG-167 connected canvas reference recovery
+
+A connection from a computer-dropped image can be drawn before its existing private upload finishes, but it stays pending and disables generation until the source receives a ready reference ID. Failure retains the source node and connected thumbnail with retry/remove actions. A generated-output connection invokes the owner-scoped generated-asset import; while pending it also blocks generation. Import denial, unsupported source bytes, size/validation errors or network failure appear on that thumbnail with explicit retry; no generated asset ID is ever submitted as a reference ID. Removing an edge or source cancels/ignores its pending browser request and removes it from the target generator's input. The server may already have completed a private import, which remains a normal personal reference asset. Missing 32131 runtime support for the new endpoint is a visible import failure until that local checkpoint is replaced; it is not reported as a successful connection. Creating/selecting a generator and drawing edges do not call a generation provider or debit credits.
+
+## GG-161 canvas upload and remote preview recovery
+
+Canvas JPEG/PNG/MP4 upload errors leave the original local preview and `File` attached to the temporary node, with the service message and an explicit retry. An abort caused by deleting the node or leaving the page does not surface a failure; the pending request and local Blob URL are cleaned up. A lost completion response uses the existing owner-scoped status recovery. A ready image whose authorized content cannot load falls back to its retained Blob preview until a retry is requested. A ready video whose signed read fails obtains a fresh signed URL through the existing owner list; if it still cannot load, the node shows a preview retry action. After authorized content loads, the local Blob is released, so a later read failure relies on that recovery action. Network failures do not charge generation credits and do not silently remove the node. Preview-only sessions cannot start a private upload.
+
+## GG-155 canvas asset drag and rename recovery
+
+Dragging a library item inside the sidebar is inert. A failed generated-original URL lookup or unavailable signed source leaves the canvas unchanged and reports an inline error; retry requires another drag. Image/video decode and audio playback failures stay visible in their temporary nodes. A rename with blank, overlong, or control-character content is rejected before sending; owner/workspace denial or a server failure keeps the editor and the previous persisted name, with the returned message available for retry. Escape cancels editing. Browser drag/drop cannot upload a duplicate asset or submit a billable job. The local 32131 runtime must first include the PATCH handler and database migration 0048; until then rename cannot be claimed operational in 5173's real-session proxy.
+
+## GG-152 preview session module loading
+
+The unauthenticated local UI preview returns its demo session before importing real authentication runtime dependencies. The previous top-level import pulled in Sharp through the storage preview module even when the preview branch did not need it; a native load failure inside the Vite/Worker runner surfaced as `Cannot read properties of undefined (reading 'endsWith')`. Real sessions retain their existing runtime and error mapping, with those modules loaded only on the real-session path. This fix has not been manually confirmed under the standing no-retest instruction.
+
+## GG-151 canvas asset browser recovery
+
+The canvas asset list loads on opening, displays an in-place loading state, and shows the returned error with a retry action if any read fails. Empty personal libraries and empty folders have separate messages. Missing or failed image/video URLs fall back to a media icon; demo sessions do not request private assets. Closing the sidebar restores the full canvas width without changing node coordinates. A retry only repeats existing read requests and cannot upload, bill or mutate an asset.
+
+The operator reported a vinext `ResizeObserver loop completed with undelivered notifications` overlay while continuously dragging the sidebar edge. A pointer-release-only mitigation broke the required live push behavior. Pointer movement now coalesces temporary CSS width writes into at most one animation frame at a time; the sidebar covers a fixed-size React Flow host and only the overlay controls move with the edge. React state commits only on release, and pointer cancellation restores the prior width. This removes the repeated React Flow host resize that accompanied dragging; disappearance of the overlay still awaits the operator's manual confirmation under the standing no-retest instruction.
+
+## GG-146 local canvas video recovery
+
+The canvas rejects non-MP4, empty and over-20-MiB video files before creating object URLs, reporting the first invalid file inline while still accepting valid files in a mixed drop. A video that cannot decode shows an inline preview failure. GG-183 removes FPS parsing and its unavailable marker; missing frame-rate metadata cannot block playback. Browser autoplay rejection leaves the play control visible. Removing a video node or leaving the canvas releases its object URL; GG-161 later added private upload and GG-173 durable canvas records, with their own recovery rules above.
+
 ## GG-127 asset grid resize recovery
 
 The asset masonry `ResizeObserver` batches observed card changes and writes grid spans on the next animation frame. This avoids synchronous observed-size feedback that browsers report as `ResizeObserver loop completed with undelivered notifications`; cleanup cancels a pending frame. The grid and list views retain their existing fallbacks and asset data is unaffected.
@@ -10,7 +74,7 @@ The canvas rejects non-JPEG/PNG files, empty files and files over 20 MiB before 
 
 ## GG-125 canvas generation recovery
 
-The standalone canvas redirects a missing session to login with a safe `/canvas` return. Pending or suspended accounts use the existing access gate. A missing billing quote, insufficient credits, invalid prompt or unready reference prevents submission; read errors retain the composer and offer retry. Failed reference uploads stay in the tray for retry or removal. An accepted job stays visible while polling; a failed job keeps an error node and an explicit retry action. Durable failures use the backend retry endpoint, while a request that never gained a durable job ID can be submitted again only by user action. Canvas node positions are in memory and are lost on refresh; durable assets remain in the asset library.
+The standalone canvas redirects a missing session to login with a safe `/canvas` return. Pending or suspended accounts use the existing access gate. A missing billing quote, insufficient credits, invalid prompt or unready reference prevents submission; read errors retain the composer and offer retry. Failed reference uploads stay in the tray for retry or removal. GG-182 keeps a new job's progress or failure on its originating generator and leaves its inputs and connected references intact; the next explicit Generate action starts another job. Existing legacy result nodes retain their retry action. A confirmed job ID is read and polled after reload, never resubmitted. A request that never gained a durable job ID is marked unconfirmed on local recovery and must not be replayed automatically because it might spend credits twice. Node positions, generator inputs and confirmed result IDs now follow ADR 0114's canvas-project save path; durable assets remain in the asset library.
 
 ## GG-121 uploaded asset deletion
 
@@ -773,3 +837,6 @@ Authentication, workspace and private-object errors do not expose SQL, keys,
 credentials or raw provider responses. Completion status reconciliation avoids
 marking a successfully validated file failed solely because its response was
 lost. A failed upload never sends a generation request.
+# GG-173 · Canvas save failures
+
+Canvas edits write to IndexedDB before remote autosave. An unreachable API or offline network keeps the local snapshot and shows “未同步”; reconnect and explicit retry resume the same versioned document. If IndexedDB is unavailable or out of quota, show a distinct local-storage failure and never claim “已保存”. A 409 version conflict preserves the dirty local graph as a new project ID while leaving the server's existing project untouched. A remote project that cannot be read and has no local snapshot blocks editing rather than replacing unknown content with an empty document. Pending local media keeps its File for retry; a generation submit without a confirmed server job ID is not replayed automatically because it might duplicate a paid request. See [ADR 0114](decisions/0114-durable-canvas-projects.md).

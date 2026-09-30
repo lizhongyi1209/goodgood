@@ -1,0 +1,70 @@
+.library { container: project-library / inline-size; }
+.grid:global(.project-grid) { grid-template-columns: minmax(0, 1fr); }
+@container project-library (min-width: 480px) {
+  .grid:global(.project-grid) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container project-library (min-width: 720px) {
+  .grid:global(.project-grid) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@container project-library (min-width: 960px) {
+  .grid:global(.project-grid) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+.preview { position: relative; width: 100%; height: 100%; background: #fff; }
+.previewContent { display: block; width: 100%; height: 100%; color: inherit; }
+.previewState { display: flex; height: 100%; padding: 16px; align-items: center; justify-content: center; gap: 8px; flex-direction: column; color: #71717a; font-size: 11px; text-align: center; }
+.previewState button, .previewRetry button { display: inline-flex; align-items: center; gap: 4px; padding: 5px 7px; border: 0; border-radius: 6px; background: #f4f4f5; color: #3f3f46; font-size: 11px; }
+.previewState button { position: relative; z-index: 2; pointer-events: auto; cursor: pointer; }
+.previewRetry { position: absolute; z-index: 2; right: 7px; bottom: 7px; left: 7px; display: flex; align-items: center; justify-content: space-between; gap: 5px; padding: 5px 7px; border-radius: 7px; background: rgb(255 255 255 / 94%); color: #52525b; font-size: 10px; pointer-events: auto; }
+.previewRetry button { cursor: pointer; }
+.snapshot { display: block; width: 100%; height: 100%; pointer-events: none; transition: transform 180ms ease; }
+.snapshotNode { width: 100%; height: 100%; overflow: hidden; border-radius: min(8px, 4%); }
+.snapshotImage { display: block; width: 100%; height: 100%; object-fit: contain; }
+.preview .snapshotNode .snapshotImage { object-fit: contain; transform: none; transition: none; }
+.snapshotVideo { position: relative; width: 100%; height: 100%; background: #f4f4f5; }
+.snapshotVideo video { display: block; width: 100%; height: 100%; object-fit: contain; }
+.snapshotVideo > svg { position: absolute; top: 50%; left: 50%; padding: 7px; box-sizing: content-box; transform: translate(-50%, -50%); border-radius: 50%; background: rgb(24 24 27 / 68%); color: #fff; }
+.snapshotAudio { display: flex; flex-direction: column; gap: 10px; height: 100%; padding: 11px; border: 1px solid #e4e4e7; border-radius: 9px; background: #fff; color: #27272a; font-size: 12px; }
+.snapshotAudio > div { display: flex; min-width: 0; align-items: center; gap: 7px; }
+.snapshotAudio > div > svg { flex: none; }
+.snapshotAudio span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.snapshotAudio audio { display: block; width: 100%; height: 36px; pointer-events: none; }
+.snapshotPlaceholder { display: grid; width: 100%; height: 100%; place-items: center; padding: 10px; background: #ededee; color: #71717a; font-size: 13px; }
+.card { position: relative; isolation: isolate; transition: background-color 180ms ease; }
+.card:global(.project-card) { background: #f4f4f5; }
+.card > :global(.project-cover) { aspect-ratio: 4 / 3; pointer-events: none; }
+.card > :global(.project-cover) img { transform: none; transition: transform 180ms ease; }
+.card > :global(.project-cover):hover img { transform: none; }
+.card[data-disabled="true"] > :global(.project-cover) { opacity: .62; }
+.cardEntry { position: absolute; z-index: 1; inset: 0; display: block; width: 100%; padding: 0; border: 0; border-radius: inherit; background: transparent; cursor: pointer; }
+.cardEntry:hover { background: transparent; }
+.cardEntry:focus-visible { outline: 2px solid #a1a1aa; outline-offset: 2px; }
+.cardEntry:disabled, .cardEntry[aria-disabled="true"] { cursor: default; pointer-events: none; }
+.card:has(.cardEntry:hover), .card:has(.cardEntry:focus-visible) { background: #f4f4f5; }
+.card:has(.cardEntry:hover) .snapshot,
+.card:has(.cardEntry:focus-visible) .snapshot,
+.card:has(.cardEntry:hover) .creativeCover img,
+.card:has(.cardEntry:focus-visible) .creativeCover img { transform: scale(1.015); }
+.actions { position: relative; z-index: 2; display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }
+.menuTrigger[data-slot="button"] { width: 30px; height: 32px; padding: 0; border: 0; border-radius: 8px; color: #71717a; cursor: pointer; box-shadow: none; }
+.menuTrigger[data-slot="button"]:is(:focus, :focus-visible, [data-state="open"]) { border: 0; outline: none; background: #e9e9ec; box-shadow: none; }
+.menuContent[data-slot="dropdown-menu-content"] { border: 0; outline: none; box-shadow: 0 4px 14px rgb(0 0 0 / 6%); }
+.menuContent [data-slot="dropdown-menu-item"] { cursor: pointer; }
+.menuContent [data-slot="dropdown-menu-item"]:is(:focus, :focus-visible, [data-highlighted]) { outline: none; background: #eeeef0; box-shadow: none; }
+.error { margin: 0; color: #3f3f46; font-size: 12px; }
+.pending[data-slot="button"] { opacity: .6; }
+.dialogOverlay[data-slot="dialog-overlay"] { z-index: 70; }
+.dialog[data-slot="dialog-content"] { z-index: 71; max-width: 380px; border: 0; border-radius: 18px; background: #fff; }
+.dialogLabel { display: grid; gap: 7px; color: #52525b; font-size: 12px; }
+.renameInput[data-slot="input"] { border: 0; outline: none; background: #f4f4f5; box-shadow: none; }
+.renameInput[data-slot="input"]:is(:focus, :focus-visible, [aria-invalid="true"]) { border: 0; outline: none; background: #e9e9ec; box-shadow: none; }
+.dialogActions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.confirm[data-slot="button"] { background: #18181b; color: #fff; }
+.preview button:focus-visible { outline: 2px solid #a1a1aa; outline-offset: -2px; }
+@media (prefers-reduced-motion: reduce) {
+  .card, .snapshot, .card > :global(.project-cover) img { transition: none; }
+  .card:has(.cardEntry:hover) .snapshot,
+  .card:has(.cardEntry:focus-visible) .snapshot,
+  .card:has(.cardEntry:hover) .creativeCover img,
+  .card:has(.cardEntry:focus-visible) .creativeCover img { transform: none; }
+  .previewState svg { animation: none; }
+}

@@ -25,7 +25,7 @@ test("GG-115 organization lists empty state and keeps generated object identity 
       queries.push([sql, values]);
       if (sql.includes("FROM users u")) return workspaceResult(values[0], values[1]);
       if (sql.startsWith("SELECT id,name,created_at FROM asset_folders")) return { rows: folders };
-      if (sql.startsWith("SELECT asset_kind,asset_id,folder_id,tags FROM asset_organization")) return { rows: arrangements };
+      if (sql.startsWith("SELECT asset_kind,asset_id,folder_id,tags,display_name FROM asset_organization")) return { rows: arrangements };
       if (sql.startsWith("INSERT INTO asset_folders")) {
         const row = { id: values[0], name: values[3], created_at: new Date() };
         folders.push(row);
@@ -34,8 +34,12 @@ test("GG-115 organization lists empty state and keeps generated object identity 
       if (sql.startsWith("SELECT id FROM assets")) return { rowCount: values[0] === assetId && values[2] === "owner-a" ? 1 : 0, rows: [{ id: assetId }] };
       if (sql.startsWith("SELECT id FROM asset_folders")) return { rowCount: folders.some((row) => row.id === values[0]) ? 1 : 0 };
       if (sql.startsWith("INSERT INTO asset_organization")) {
-        arrangements.push({ asset_kind: values[2], asset_id: values[3], folder_id: values[4], tags: values[5] });
+        arrangements.push({ asset_kind: values[2], asset_id: values[3], folder_id: values[4], tags: values[5], display_name: null });
         return { rowCount: 1 };
+      }
+      if (sql.startsWith("SELECT display_name FROM asset_organization")) {
+        const entry = arrangements.find((item) => item.asset_kind === values[2] && item.asset_id === values[3]);
+        return { rows: entry ? [{ display_name: entry.display_name }] : [], rowCount: entry ? 1 : 0 };
       }
       if (sql.startsWith("UPDATE asset_organization")) {
         for (const entry of arrangements) if (entry.folder_id === values[0]) entry.folder_id = null;
@@ -55,7 +59,7 @@ test("GG-115 organization lists empty state and keeps generated object identity 
   const folder = (await createAssetFolder({ input: { name: "人物" }, ownerContext: owner, resourcesOverride })).folder;
   const placed = await saveAssetOrganization({ kind: "generated", assetId, input: { folderId: folder.id, tags: ["人物"] },
     ownerContext: owner, resourcesOverride });
-  assert.deepEqual(placed, { kind: "generated", id: assetId, folderId: folder.id, tags: ["人物"] });
+  assert.deepEqual(placed, { kind: "generated", id: assetId, folderId: folder.id, tags: ["人物"], displayName: null });
   assert.equal((await listAssetOrganization({ ownerContext: owner, resourcesOverride })).arrangements[0].id, assetId);
   assert.match(queries.find(([sql]) => sql.startsWith("SELECT id FROM assets"))[0], /creator_owner_id=\$3/);
   await assert.rejects(saveAssetOrganization({ kind: "generated", assetId,

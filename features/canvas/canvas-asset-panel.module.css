@@ -1,0 +1,77 @@
+.panel { display: flex; flex-direction: column; container: canvasAssets / inline-size; width: 100%; height: 100%; color: #18181b; }
+.header { display: flex; align-items: center; gap: 7px; flex: none; height: 51px; min-width: 0; padding: 0 10px 0 15px; border-bottom: 1px solid #ededee; }
+.header h2 { margin: 0; font-size: 14px; font-weight: 600; }
+.back[data-slot="button"] { flex: none; height: 29px; gap: 3px; padding: 0 4px; color: #71717a; font-size: 12px; }
+.back[data-slot="button"]:hover { color: #18181b; }
+.folderTitle { min-width: 0; overflow: hidden; color: #18181b; font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.close[data-slot="button"] { flex: none; width: 28px; height: 28px; margin-left: auto; color: #71717a; }
+.close[data-slot="button"]:hover { color: #18181b; }
+.scroll { flex: 1; min-width: 0; min-height: 0; width: 100%; overflow: hidden; }
+/* Radix gives its viewport content display: table, which can expand to a long filename. */
+.scroll :global([data-slot="scroll-area-viewport"]) > div { display: block !important; width: 100%; }
+.rows { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; gap: 8px; min-width: 0; width: 100%; padding: 12px 16px 12px 12px; }
+.rows.masonryReady { grid-auto-flow: row dense; grid-auto-rows: 1px; row-gap: 0; }
+@container canvasAssets (min-width: 240px) { .rows { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+button.addCard[data-slot], .folderCard[data-slot="button"] { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; width: 100%; min-width: 0; height: auto; aspect-ratio: 1; padding: 12px; border: 0; border-radius: 12px; background: #eaeaec; color: #27272a; box-shadow: none; }
+button.addCard[data-slot] svg { width: 24px; height: 24px; }
+button.addCard[data-slot]:hover, .folderCard[data-slot="button"]:hover { background: #eaeaec; }
+button.addCard[data-slot]:active, .folderCard[data-slot="button"]:active { background: #e4e4e7; }
+button.addCard[data-slot]:focus-visible, .folderCard[data-slot="button"]:focus-visible { outline: 2px solid #71717a; outline-offset: 2px; }
+.folderIcon { display: grid; flex: none; place-items: center; color: #52525b; }
+.folderIcon svg { width: 28px; height: 28px; }
+.name { display: block; min-width: 0; max-width: 100%; overflow: hidden; color: #52525b; font-size: 12px; font-weight: 500; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
+.assetCard, .pendingCard { min-width: 0; width: 100%; }
+.assetCard { outline: none; }
+.visualFrame { position: relative; }
+.expand[data-slot="button"] { position: absolute; top: 5px; right: 5px; z-index: 1; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 8px; background: rgb(255 255 255 / 90%); color: #52525b; box-shadow: none; }
+.expand[data-slot="button"]:hover { background: #fff; color: #18181b; }
+.expand[data-slot="button"]:focus-visible { outline: 2px solid #71717a; outline-offset: 1px; box-shadow: none; }
+.visualTrigger { display: block; width: 100%; min-width: 0; border-radius: 10px; outline: none; cursor: grab; filter: brightness(0.97); }
+.visualTrigger:active { cursor: grabbing; }
+.visualTrigger:focus-visible { outline: 2px solid #71717a; outline-offset: 2px; }
+.thumbnail { position: relative; display: grid; place-items: center; overflow: hidden; width: 100%; border-radius: 10px; background: #f4f4f5; color: #52525b; }
+.thumbnail:has(> svg) { aspect-ratio: 1; }
+.thumbnail > svg { width: 28px; height: 28px; }
+.thumbnail img, .thumbnail video { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: contain; }
+.thumbnail[data-loading] img, .thumbnail[data-loading] video { visibility: hidden; }
+.mediaLoading { position: absolute; inset: 0; display: grid; place-items: center; color: #71717a; font-size: 10px; line-height: 1.4; pointer-events: none; }
+.mediaFailure { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 5px; padding: 6px 2px 0; color: #52525b; font-size: 10px; line-height: 1.4; }
+.mediaFailure p { flex: 1; min-width: 0; margin: 0; overflow-wrap: anywhere; }
+.mediaFailure [data-slot="button"] { flex: none; height: 26px; padding: 0 5px; border: 0; color: #27272a; font-size: 11px; box-shadow: none; }
+.mediaFailure [data-slot="button"]:focus-visible { outline: 1px solid #71717a; outline-offset: 1px; }
+.mediaLabel { display: block; padding: 6px 2px 0; color: #71717a; font-size: 11px; line-height: 1.4; }
+.renameForm { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding-top: 6px; }
+.nameInput[data-slot="input"] { width: 100%; min-width: 0; height: 28px; padding: 2px 5px; border: 1px solid #d4d4d8; border-radius: 5px; background: #fff; color: #18181b; font-size: 12px; box-shadow: none; }
+.nameInput[data-slot="input"]:focus-visible { border-color: #a1a1aa; outline: 1px solid #a1a1aa; outline-offset: 1px; box-shadow: none; }
+.nameError { color: #52525b; font-size: 10px; line-height: 1.4; }
+.addMenu[data-slot="dropdown-menu-content"], .linkMenu[data-slot="dropdown-menu-sub-content"] { min-width: 0; padding: 5px; border: 1px solid #e4e4e7; border-radius: 12px; background: #fff; color: #27272a; box-shadow: 0 4px 14px rgb(0 0 0 / 8%); }
+.addMenu[data-slot="dropdown-menu-content"] { width: 160px; }
+.addMenuItem[data-slot] { min-height: 36px; padding: 8px; border-radius: 7px; color: #27272a; font-size: 12px; }
+.addMenuItem[data-slot]:focus, .addMenuItem[data-state="open"] { background: #f4f4f5; color: #18181b; }
+.addMenuItem[data-slot] svg { color: #52525b; }
+.linkMenu[data-slot="dropdown-menu-sub-content"] { width: min(280px, calc(100vw - 24px)); padding: 8px; }
+.linkForm { min-width: 0; }
+.linkField { display: flex; align-items: center; gap: 4px; min-width: 0; border-radius: 7px; background: #f4f4f5; }
+.linkField:focus-within { outline: 1px solid #a1a1aa; }
+.linkField [data-slot="input"] { min-width: 0; height: 36px; padding: 8px; border: 0; border-radius: 7px; background: transparent; color: #27272a; font-size: 12px; box-shadow: none; }
+.linkField [data-slot="input"]:focus-visible { border: 0; outline: none; box-shadow: none; }
+.linkField [data-slot="button"] { flex: none; margin-right: 4px; border-radius: 6px; color: #27272a; }
+.linkField [data-slot="button"]:focus-visible { outline: 1px solid #71717a; box-shadow: none; }
+.linkStatus, .linkError { margin: 8px 2px 2px; color: #52525b; font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
+.pendingVisual { position: relative; display: grid; place-items: center; overflow: hidden; width: 100%; border-radius: 10px; background: #f4f4f5; color: #52525b; }
+.pendingVisual:has(> svg) { aspect-ratio: 1; }
+.pendingVisual img, .pendingVisual video { display: block; width: 100%; height: auto; object-fit: contain; }
+.pendingVisual[data-uploading]::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: radial-gradient(ellipse at 35% 35%, rgb(255 255 255 / 24%), transparent 70%), rgb(0 0 0 / 10%); pointer-events: none; animation: uploadBreath 1800ms ease-in-out infinite alternate; }
+@keyframes uploadBreath { to { opacity: 0.45; } }
+.uploadStatus { display: block; padding: 6px 2px 0; color: #71717a; font-size: 10px; line-height: 1.4; }
+.uploadFailure { padding: 6px 2px 0; color: #52525b; font-size: 11px; line-height: 1.4; }
+.uploadFailure p { margin: 0; overflow-wrap: anywhere; }
+.uploadActions { display: flex; align-items: center; justify-content: space-between; gap: 4px; margin-top: 4px; }
+.uploadActions [data-slot="button"] { height: 28px; padding: 0 5px; color: #27272a; font-size: 11px; }
+.state, .refreshError { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin: 0; padding: 20px 16px; color: #71717a; font-size: 12px; line-height: 1.5; }
+.state p, .refreshError p { margin: 0; overflow-wrap: anywhere; }
+.state button, .refreshError button { color: #18181b; }
+.refreshError { grid-column: 1 / -1; padding: 8px 0; }
+.empty { grid-column: 1 / -1; margin: 0; padding: 16px 8px; color: #71717a; font-size: 12px; text-align: center; }
+@media (pointer: coarse) { .addMenuItem[data-slot] { min-height: 44px; } .linkField [data-slot="input"] { height: 44px; font-size: 16px; } .linkField [data-slot="button"] { width: 40px; height: 40px; } }
+@media (prefers-reduced-motion: reduce) { .pendingVisual[data-uploading]::after { animation: none; } .addMenu[data-slot], .linkMenu[data-slot] { animation: none; } }

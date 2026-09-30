@@ -3,7 +3,7 @@ import { workspaceRequestHeaders } from "@/features/organizations/workspace-requ
 
 export type OrganizedAssetKind = "generated" | "reference" | "video" | "audio";
 export type AssetFolder = Readonly<{ id: string; name: string; createdAt: string }>;
-export type AssetArrangement = Readonly<{ kind: OrganizedAssetKind; id: string; folderId: string | null; tags: readonly string[] }>;
+export type AssetArrangement = Readonly<{ kind: OrganizedAssetKind; id: string; folderId: string | null; tags: readonly string[]; displayName?: string | null }>;
 export type AssetOrganization = Readonly<{ folders: readonly AssetFolder[]; arrangements: readonly AssetArrangement[] }>;
 
 async function parse<T>(response: Response): Promise<T> {
@@ -43,5 +43,12 @@ export async function saveAssetOrganization(kind: OrganizedAssetKind, id: string
   return parse(await goodGoodApiFetch(`/api/asset-organization/items/${kind}/${encodeURIComponent(id)}`, {
     method: "PUT", headers: { "content-type": "application/json", ...workspaceRequestHeaders(workspaceId) },
     body: JSON.stringify(value),
+  }));
+}
+
+export async function renameAssetItem(kind: OrganizedAssetKind, id: string, name: string, workspaceId: string | null): Promise<AssetArrangement> {
+  return parse(await goodGoodApiFetch(`/api/asset-organization/items/${kind}/${encodeURIComponent(id)}`, {
+    method: "PATCH", headers: { "content-type": "application/json", ...workspaceRequestHeaders(workspaceId) },
+    body: JSON.stringify({ name }),
   }));
 }

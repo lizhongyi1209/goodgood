@@ -1,5 +1,6 @@
 import {
   createProject,
+  deleteProject,
   listProjects,
   projectApiError,
   readProject,
@@ -36,6 +37,7 @@ function idempotencyKey(request) {
 
 const DEFAULT_OPERATIONS = Object.freeze({
   createProject,
+  deleteProject,
   listProjects,
   readProject,
   updateProject,
@@ -100,6 +102,10 @@ export function createProjectNodeApiHandler({
               workspaceId,
             }),
           );
+          return true;
+        }
+        if (request.method === "DELETE") {
+          sendJson(response, 200, await operations.deleteProject({ ownerContext, projectId, workspaceId }));
           return true;
         }
       }

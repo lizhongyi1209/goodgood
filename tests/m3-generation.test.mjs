@@ -8,7 +8,6 @@ import {
 } from "../server/generation/api.mjs";
 import {
   GENERATION_MODEL_CAPABILITIES,
-  SUPPORTED_GENERATION_RESOLUTIONS,
 } from "../server/generation/capabilities.mjs";
 import { createMockProviderServer } from "../server/generation/mock-provider-server.mjs";
 import { createGenerationProvider } from "../server/generation/provider-router.mjs";
@@ -31,9 +30,9 @@ test("generation input accepts model-owned ratios, resolutions, and output count
   assert.deepEqual(validateM3GenerationInput(validInput), validInput);
   for (const [modelId, capability] of Object.entries(GENERATION_MODEL_CAPABILITIES)) {
     for (const aspectRatio of capability.aspectRatios) {
-      for (const resolution of SUPPORTED_GENERATION_RESOLUTIONS) {
+      for (const resolution of capability.resolutions) {
         for (const count of capability.outputCounts) {
-          const input = { ...validInput, aspectRatio, count, modelId, resolution };
+          const input = { ...validInput, aspectRatio, count, modelId, resolution, routingPolicy: "canvas-image-v1" };
           assert.deepEqual(validateM3GenerationInput(input), input);
         }
       }
@@ -117,9 +116,11 @@ test("generation input accepts model-owned ratios, resolutions, and output count
     }).count,
     4,
   );
+  assert.equal(validateM3GenerationInput({
+    ...validInput, modelId: "nano-banana-pro", aspectRatio: "adaptive", count: 4,
+  }).aspectRatio, "adaptive");
   for (const unsupportedInput of [
     { ...validInput, aspectRatio: "10:1" },
-    { ...validInput, modelId: "nano-banana-pro", count: 2 },
     { ...validInput, resolution: "8K" },
     { ...validInput, aspectRatio: "4:5", modelId: "gpt-image-2" },
   ]) {

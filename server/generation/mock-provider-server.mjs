@@ -3,8 +3,10 @@ import { createServer } from "node:http";
 import path from "node:path";
 import { o1keyRouteForProviderModel } from "./us-gateway-adapter.mjs";
 import {
-  getGptImage2PixelSize,
+  GPT_IMAGE_2_PIXEL_SIZES,
+  SEEDREAM_PIXEL_SIZES,
   isGptImageModelId,
+  isSeedreamModelId,
 } from "./capabilities.mjs";
 import { gptPricingQualities } from "../../shared/contracts/gpt-quality-pricing.mjs";
 
@@ -97,6 +99,18 @@ export function createMockProviderServer({ apiKey, host, port }) {
     if (!route) return "unknown_model";
     if (typeof body.prompt !== "string" || !body.prompt) return "missing_prompt";
     if (!Array.isArray(body.images)) return "missing_images";
+    if (isSeedreamModelId(route.productModelId)) {
+      if (body.n !== 1) return "invalid_output_count";
+      if (body.images.length > 10) return "too_many_references";
+      if (body.images.some((image) => typeof image !== "string" || !uploadsById.has(image))) return "invalid_reference";
+      const validSizes = ["1K", "2K", ...Object.values(SEEDREAM_PIXEL_SIZES).flatMap((sizes) => Object.values(sizes))];
+      if (!validSizes.includes(body.size)) return "invalid_size";
+      if (body.output_format !== "png") return "invalid_output_format";
+      if (body.watermark !== undefined || body.layer_decomposition !== undefined) return "unsupported_seedream_option";
+      const allowedKeys = new Set(["model", "prompt", "images", "n", "size", "output_format"]);
+      if (Object.keys(body).some((key) => !allowedKeys.has(key))) return "unsupported_seedream_option";
+      return null;
+    }
     for (const image of body.images) {
       if (
         typeof image?.fileData?.fileUri !== "string" ||
@@ -111,11 +125,10 @@ export function createMockProviderServer({ apiKey, host, port }) {
     }
     if (isGptImageModelId(route.productModelId)) {
       if (!route.outputCounts.includes(body.n)) return "invalid_output_count";
-      // The adapter must send the exact pixel size the catalog defines for this
-      // aspect ratio and resolution, not a bucket label or a provider default.
-      const expectedSize = route.resolutions
-        .map((resolution) => getGptImage2PixelSize(body.aspect_ratio, resolution))
-        .find((size) => size === body.size);
+      // GPT sends only size, not a separate aspect_ratio. Adaptive uses the
+      // documented auto enum; fixed choices use the catalog's concrete pixels.
+      const expectedSize = body.size === "auto" ? "auto"
+        : Object.values(GPT_IMAGE_2_PIXEL_SIZES).flatMap((sizes) => Object.values(sizes)).find((size) => size === body.size);
       if (!expectedSize) return "invalid_size";
       if (!["auto", "transparent"].includes(body.background)) return "invalid_background";
       if (!["auto", "jpeg", "png", "webp"].includes(body.output_format)) {
@@ -131,7 +144,7 @@ export function createMockProviderServer({ apiKey, host, port }) {
     if (body.response_modalities?.join(",") !== "TEXT,IMAGE") {
       return "invalid_response_modalities";
     }
-    if (!route.aspectRatios.includes(body.aspect_ratio)) return "invalid_aspect_ratio";
+    if (body.aspect_ratio === undefined ? !route.aspectRatios.includes("adaptive") : body.aspect_ratio === "adaptive" || !route.aspectRatios.includes(body.aspect_ratio)) return "invalid_aspect_ratio";
     if (!["1K", "2K", "4K"].includes(body.size)) return "invalid_resolution";
     if (body.thinking_level !== undefined && body.thinking_level !== "high") {
       return "invalid_thinking_level";

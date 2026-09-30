@@ -1,0 +1,441 @@
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AudioLines, ChevronLeft, Folder, ImageOff, Maximize2, Play, X } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { PrivateObjectImage } from "@/components/ui/private-object-image";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { ImageViewer } from "@/features/assets/image-viewer";
+import { listAssets } from "@/features/assets/http-asset-boundary";
+import { listAssetOrganization, renameAssetItem, type AssetArrangement, type AssetFolder, type OrganizedAssetKind } from "@/features/assets/http-asset-organization";
+import { listPrivateAudioMaterials } from "@/features/assets/http-audio-materials";
+import { imageDownloadFilename } from "@/features/assets/image-download";
+import { listPrivateVideoMaterials } from "@/features/creation/http-video-materials";
+import { listReferenceMaterials } from "@/features/references/http-reference-library";
+import { privateImageUrls } from "@/shared/private-image-urls.mjs";
+import { CanvasAssetAddCard } from "./canvas-asset-add-card";
+import { CANVAS_ASSET_LIBRARY_UPDATED_EVENT } from "./canvas-asset-upload";
+import styles from "./canvas-asset-panel.module.css";
+
+export type CanvasLibraryAsset = Readonly<{
+  id: string;
+  kind: OrganizedAssetKind;
+  media: "image" | "video" | "audio";
+  name: string;
+  createdAt: string;
+  previewUrl?: string;
+  sourceUrl?: string;
+  width?: number;
+  height?: number;
+}>;
+
+type AssetPanelData = Readonly<{
+  folders: readonly AssetFolder[];
+  arrangements: readonly AssetArrangement[];
+  items: readonly CanvasLibraryAsset[];
+  mediaRevision: number;
+}>;
+
+type MediaDimensions = Readonly<{ width: number; height: number }>;
+
+function VideoPreview({ src, onReady, onDimensions, onError }: Readonly<{
+  src: string;
+  onReady: () => void;
+  onDimensions: (dimensions: MediaDimensions) => void;
+  onError: () => void;
+}>) {
+  const ready = (video: HTMLVideoElement) => {
+    if (!video.seeking && video.readyState >= 2) onReady();
+  };
+
+  return <video src={src} muted playsInline preload="metadata" onError={onError} aria-hidden="true"
+    onLoadedMetadata={(event) => {
+      const video = event.currentTarget;
+      if (video.videoWidth > 0 && video.videoHeight > 0) onDimensions({ width: video.videoWidth, height: video.videoHeight });
+      // A small real seek makes metadata-only thumbnails decode a frame without playing.
+      const firstFrame = Number.isFinite(video.duration) && video.duration > 0 ? Math.min(0.05, video.duration / 2) : 0.05;
+      try { video.currentTime = firstFrame; }
+      catch { ready(video); }
+    }}
+    onLoadedData={(event) => ready(event.currentTarget)}
+    onCanPlay={(event) => ready(event.currentTarget)}
+    onSeeked={(event) => ready(event.currentTarget)} />;
+}
+
+function AssetVisual({ item, src, onError }: Readonly<{
+  item: CanvasLibraryAsset;
+  src?: string;
+  onError: () => void;
+}>) {
+  const [loaded, setLoaded] = useState(false);
+  const [dimensions, setDimensions] = useState<MediaDimensions | null>(null);
+  const className = styles.thumbnail;
+  const ratio = item.width && item.height && item.width > 0 && item.height > 0 ? item.width / item.height
+    : dimensions ? dimensions.width / dimensions.height : 1;
+
+  if (item.media === "audio") {
+    return <span className={className}><AudioLines size={15} strokeWidth={1.7} aria-hidden="true" /></span>;
+  }
+  if (!src) {
+    return <span className={className} style={{ aspectRatio: ratio }}>
+      {item.media === "video" ? <Play size={15} aria-hidden="true" /> : <ImageOff size={15} aria-hidden="true" />}
+    </span>;
+  }
+  return <span className={className} style={{ aspectRatio: ratio }} data-loading={!loaded || undefined} aria-busy={!loaded}>
+    {item.media === "image"
+      ? <PrivateObjectImage src={src} alt="" loading="lazy" onError={onError}
+          onLoad={(event) => {
+            const image = event.currentTarget;
+            if (image.naturalWidth > 0 && image.naturalHeight > 0) setDimensions({ width: image.naturalWidth, height: image.naturalHeight });
+            setLoaded(true);
+          }} />
+      : <VideoPreview src={src} onReady={() => setLoaded(true)} onDimensions={setDimensions} onError={onError} />}
+    {!loaded && <span className={styles.mediaLoading} role="status">读取中…</span>}
+  </span>;
+}
+
+function AssetMedia({ item, editing, onRename, onExpand, refreshVideo }: Readonly<{
+  item: CanvasLibraryAsset;
+  editing: boolean;
+  onRename: () => void;
+  onExpand: (trigger: HTMLButtonElement) => void;
+  refreshVideo: (signal: AbortSignal) => Promise<string | null>;
+}>) {
+  const fallbackUrl = item.media === "image" ? item.sourceUrl : undefined;
+  const [phase, setPhase] = useState<"preview" | "content" | "failed">(item.previewUrl ? "preview" : fallbackUrl ? "content" : "failed");
+  const [attempt, setAttempt] = useState(0);
+  const [retrying, setRetrying] = useState(false);
+  const [retryError, setRetryError] = useState<string | null>(null);
+  const retryRef = useRef<AbortController | null>(null);
+  const mountedRef = useRef(false);
+  const src = phase === "preview" ? item.previewUrl : phase === "content" ? fallbackUrl : undefined;
+  const failed = item.media !== "audio" && phase === "failed";
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; retryRef.current?.abort(); };
+  }, []);
+
+  const mediaError = () => {
+    // A stale preview error must not advance the already selected content fallback.
+    setPhase((current) => current !== phase ? current
+      : current === "preview" && fallbackUrl && fallbackUrl !== item.previewUrl ? "content" : "failed");
+  };
+
+  const retry = async () => {
+    if (retryRef.current) return;
+    const controller = new AbortController();
+    retryRef.current = controller;
+    setRetrying(true);
+    setRetryError(null);
+    try {
+      if (item.media === "video") {
+        const url = await refreshVideo(controller.signal);
+        if (!url || controller.signal.aborted || !mountedRef.current) return;
+      }
+      if (!mountedRef.current || controller.signal.aborted) return;
+      setAttempt((current) => current + 1);
+      setPhase(item.previewUrl ? "preview" : fallbackUrl ? "content" : "failed");
+    } catch (cause) {
+      if (mountedRef.current && !controller.signal.aborted) setRetryError(cause instanceof Error ? cause.message : "媒体暂时无法读取，请重试。");
+    } finally {
+      if (retryRef.current === controller) retryRef.current = null;
+      if (mountedRef.current && !controller.signal.aborted) setRetrying(false);
+    }
+  };
+
+  const visualKey = `${src ?? "failed"}:${attempt}`;
+  return <>
+    <div className={styles.visualFrame}>
+        <span className={styles.visualTrigger} tabIndex={editing ? -1 : 0} role="button" title={item.name}
+          aria-label={`${item.media === "image" ? "图片" : item.media === "video" ? "视频" : "音频"} ${item.name}，双击或 F2 重命名`}
+          onDoubleClick={() => { if (!editing) onRename(); }}
+          onKeyDown={(event) => { if (!editing && ["F2", "Enter", " "].includes(event.key)) { event.preventDefault(); event.stopPropagation(); onRename(); } }}>
+          <AssetVisual key={visualKey} item={item} src={src} onError={mediaError} />
+        </span>
+      {item.media === "image" && <Button type="button" variant="ghost" size="icon-sm" className={styles.expand}
+        data-asset-media-control draggable={false} disabled={editing} aria-label={`查看大图 ${item.name}`} title="查看大图"
+        onDoubleClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}
+        onClick={(event) => { event.stopPropagation(); onExpand(event.currentTarget); }}><Maximize2 size={15} aria-hidden="true" /></Button>}
+    </div>
+    {failed && <div className={styles.mediaFailure} data-asset-media-control draggable={false}
+      onDragStart={(event) => { event.preventDefault(); event.stopPropagation(); }}
+      onDoubleClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+      <p role={retrying ? "status" : "alert"}>{retrying ? "正在重新读取…" : retryError ?? `${item.media === "video" ? "视频" : "图片"}暂时无法读取。`}</p>
+      <Button type="button" variant="ghost" size="sm" disabled={retrying} aria-label={`重新读取 ${item.name}`}
+        onClick={(event) => { event.stopPropagation(); void retry(); }}>重试</Button>
+    </div>}
+  </>;
+}
+
+export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragStart, onAssetDragEnd }: Readonly<{
+  enabled: boolean;
+  assetRevision: number;
+  onClose: () => void;
+  onAssetDragStart: (item: CanvasLibraryAsset) => void;
+  onAssetDragEnd: () => void;
+}>) {
+  const [data, setData] = useState<AssetPanelData | null>(null);
+  const [folderId, setFolderId] = useState<string | null>(null);
+  const [revision, setRevision] = useState(0);
+  const requestKey = `${enabled ? "enabled" : "disabled"}:${assetRevision}:${revision}`;
+  const [readState, setReadState] = useState({ key: requestKey, loading: enabled, error: null as string | null });
+  const currentReadState = readState.key === requestKey
+    ? readState
+    : { key: requestKey, loading: enabled, error: null };
+  const { loading, error } = currentReadState;
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [nameDraft, setNameDraft] = useState("");
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState(false);
+  const [imagePreview, setImagePreview] = useState<Readonly<{ selectedKey: string; returnFocusTo: HTMLElement }> | null>(null);
+  const renamePendingRef = useRef(false);
+  const cancelRenameRef = useRef(false);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const rowsRef = useRef<HTMLDivElement>(null);
+  const readEpochRef = useRef(0);
+  const assetDragBlockedRef = useRef(false);
+
+  useEffect(() => {
+    const grid = rowsRef.current;
+    if (!enabled || !grid || typeof ResizeObserver === "undefined") return;
+    const cards = new Set<HTMLElement>();
+    const pendingCards = new Set<HTMLElement>();
+    let frame: number | null = null;
+    let reconcile = true;
+    let measureAll = true;
+    let gridWidth = -1;
+
+    const flush = () => {
+      frame = null;
+      if (reconcile) {
+        reconcile = false;
+        const children = new Set(Array.from(grid.children).filter((child): child is HTMLElement => child instanceof HTMLElement));
+        for (const card of cards) {
+          if (children.has(card)) continue;
+          observer.unobserve(card);
+          cards.delete(card);
+          pendingCards.delete(card);
+        }
+        for (const card of children) {
+          if (cards.has(card)) continue;
+          cards.add(card);
+          observer.observe(card);
+        }
+      }
+      const gap = Number.parseFloat(getComputedStyle(grid).columnGap) || 0;
+      const targets = measureAll ? cards : pendingCards;
+      // Batch every read before any write; observers only schedule the next frame.
+      const spans = Array.from(targets, (card) => {
+        const box = card.getBoundingClientRect();
+        const hidden = card.hidden || box.width <= 0 || getComputedStyle(card).display === "none";
+        return { card, span: hidden || box.height <= 0 ? "" : `span ${Math.ceil(box.height + gap)}` };
+      });
+      measureAll = false;
+      pendingCards.clear();
+      for (const { card, span } of spans) if (card.style.gridRowEnd !== span) card.style.gridRowEnd = span;
+      grid.classList.add(styles.masonryReady);
+    };
+    const schedule = () => { if (frame === null) frame = requestAnimationFrame(flush); };
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.target === grid) {
+          if (gridWidth !== entry.contentRect.width) { gridWidth = entry.contentRect.width; measureAll = true; }
+        } else pendingCards.add(entry.target as HTMLElement);
+      }
+      schedule();
+    });
+    // Pending uploads and their hidden file input are owned by the add-card child.
+    const mutations = new MutationObserver(() => { reconcile = true; measureAll = true; schedule(); });
+    mutations.observe(grid, { childList: true });
+    observer.observe(grid);
+    schedule();
+    return () => {
+      observer.disconnect();
+      mutations.disconnect();
+      if (frame !== null) cancelAnimationFrame(frame);
+      pendingCards.clear();
+      grid.classList.remove(styles.masonryReady);
+      for (const card of cards) card.style.gridRowEnd = "";
+    };
+  }, [enabled]);
+
+  useEffect(() => {
+    const refresh = () => setRevision((current) => current + 1);
+    window.addEventListener(CANVAS_ASSET_LIBRARY_UPDATED_EVENT, refresh);
+    return () => window.removeEventListener(CANVAS_ASSET_LIBRARY_UPDATED_EVENT, refresh);
+  }, []);
+
+  useEffect(() => {
+    readEpochRef.current += 1;
+    if (!enabled) return;
+    let active = true;
+    void Promise.all([
+      listAssets(null),
+      listReferenceMaterials(null),
+      listPrivateVideoMaterials(null),
+      listPrivateAudioMaterials(null),
+      listAssetOrganization(null),
+    ]).then(([jobs, references, videos, audios, organization]) => {
+      if (!active) return;
+      readEpochRef.current += 1;
+      const names = new Map<string, string | null | undefined>(organization.arrangements.map((entry) => [`${entry.kind}:${entry.id}`, entry.displayName]));
+      const items: CanvasLibraryAsset[] = [
+        ...jobs.flatMap((job) => job.outputs.map((output, index) => ({
+          id: output.id, kind: "generated" as const, media: "image" as const,
+          name: names.get(`generated:${output.id}`) ?? imageDownloadFilename(job.createdAt, index + 1, output.previewUrl),
+          createdAt: job.createdAt, previewUrl: output.previewUrl, sourceUrl: privateImageUrls("asset", output.id).contentUrl, width: output.width, height: output.height,
+        }))),
+        ...references.map((item) => ({ id: item.id, kind: "reference" as const, media: "image" as const,
+          name: names.get(`reference:${item.id}`) ?? item.name, createdAt: item.uploadedAt, previewUrl: item.previewUrl, sourceUrl: item.url, width: item.width, height: item.height })),
+        ...videos.map((item) => ({ id: item.id, kind: "video" as const, media: "video" as const,
+          name: names.get(`video:${item.id}`) ?? item.name, createdAt: item.uploadedAt, previewUrl: item.url, sourceUrl: item.url })),
+        ...audios.map((item) => ({ id: item.id, kind: "audio" as const, media: "audio" as const,
+          name: names.get(`audio:${item.id}`) ?? item.name, createdAt: item.uploadedAt, sourceUrl: item.url })),
+      ].sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+      setData({ folders: organization.folders, arrangements: organization.arrangements, items, mediaRevision: readEpochRef.current });
+      setReadState({ key: requestKey, loading: false, error: null });
+    }).catch((cause: unknown) => {
+      if (active) {
+        readEpochRef.current += 1;
+        setReadState({
+          key: requestKey,
+          loading: false,
+          error: cause instanceof Error ? cause.message : "资产暂时无法读取，请重试。",
+        });
+      }
+    });
+    return () => { active = false; readEpochRef.current += 1; };
+  }, [enabled, requestKey]);
+
+  const activeFolder = data?.folders.find((folder) => folder.id === folderId) ?? null;
+  const visibleItems = useMemo(() => {
+    if (!data) return [];
+    if (!activeFolder) return data.items;
+    const membership = new Map(data.arrangements.map((entry) => [`${entry.kind}:${entry.id}`, entry.folderId]));
+    return data.items.filter((item) => membership.get(`${item.kind}:${item.id}`) === activeFolder.id);
+  }, [data, activeFolder]);
+  const readyAssetKeys = useMemo(() => new Set(data?.items.map((item) => `${item.kind}:${item.id}`) ?? []), [data]);
+  const previewImages = visibleItems.filter((item) => item.media === "image").map((item) => ({
+    key: `${item.kind}:${item.id}`, name: item.name,
+    previewUrl: item.previewUrl ?? item.sourceUrl ?? "",
+    sourceUrl: item.sourceUrl ?? item.previewUrl ?? "", width: item.width, height: item.height,
+  }));
+
+  const refreshVideo = async (item: CanvasLibraryAsset, signal: AbortSignal): Promise<string | null> => {
+    const epoch = readEpochRef.current;
+    const mediaRevision = data?.mediaRevision;
+    try {
+      const videos = await listPrivateVideoMaterials(null, signal);
+      if (signal.aborted || epoch !== readEpochRef.current) return null;
+      const video = videos.find((entry) => entry.id === item.id);
+      if (!video) throw new Error("此视频暂时不可用，请刷新资产列表。");
+      setData((current) => current && !signal.aborted && epoch === readEpochRef.current && current.mediaRevision === mediaRevision ? {
+        ...current,
+        items: current.items.map((entry) => entry.kind === item.kind && entry.id === item.id
+          ? { ...entry, previewUrl: video.url, sourceUrl: video.url } : entry),
+      } : current);
+      return video.url;
+    } catch (cause) {
+      if (signal.aborted || epoch !== readEpochRef.current) return null;
+      throw cause;
+    }
+  };
+
+  const beginRename = (item: CanvasLibraryAsset) => {
+    if (renamePendingRef.current) return;
+    cancelRenameRef.current = false;
+    setEditingKey(`${item.kind}:${item.id}`);
+    setNameDraft(item.name);
+    setNameError(null);
+  };
+
+  const saveName = async (item: CanvasLibraryAsset) => {
+    if (renamePendingRef.current) return;
+    const name = nameDraft.trim().replace(/\s+/g, " ");
+    if (!name || name.length > 255 || /[\u0000-\u001f\u007f]/.test(nameDraft)) {
+      setNameError("名称应为 1–255 个字符。");
+      nameInputRef.current?.focus();
+      return;
+    }
+    if (name === item.name) { setEditingKey(null); setNameError(null); return; }
+    renamePendingRef.current = true;
+    setRenaming(true);
+    setNameError(null);
+    try {
+      const saved = await renameAssetItem(item.kind, item.id, name, null);
+      setData((current) => current && ({
+        ...current,
+        items: current.items.map((entry) => entry.kind === item.kind && entry.id === item.id
+          ? { ...entry, name: saved.displayName ?? name } : entry),
+        arrangements: [...current.arrangements.filter((entry) => entry.kind !== item.kind || entry.id !== item.id), saved],
+      }));
+      setEditingKey(null);
+    } catch (cause) {
+      setNameError(cause instanceof Error ? cause.message : "重命名失败，请重试。");
+      requestAnimationFrame(() => nameInputRef.current?.focus());
+    } finally {
+      renamePendingRef.current = false;
+      setRenaming(false);
+    }
+  };
+
+  return <section className={styles.panel} aria-label="画布资产">
+    <header className={styles.header}>
+      {activeFolder ? <>
+        <Button type="button" variant="ghost" size="sm" className={styles.back} onClick={() => setFolderId(null)} aria-label="返回全部资产"><ChevronLeft size={16} aria-hidden="true" />资产</Button>
+        <span className={styles.folderTitle} title={activeFolder.name}>{activeFolder.name}</span>
+      </> : <h2>资产</h2>}
+      <Button type="button" variant="ghost" size="icon-sm" className={styles.close} onClick={onClose} aria-label="关闭资产列表"><X size={16} aria-hidden="true" /></Button>
+    </header>
+
+    {!enabled ? <p className={styles.state}>演示模式暂不提供资产浏览。</p>
+      : <ScrollArea className={styles.scroll}>
+          <div ref={rowsRef} className={styles.rows}>
+            <CanvasAssetAddCard folderId={activeFolder?.id ?? null} readyAssetKeys={readyAssetKeys} />
+            {loading && !data && <p className={styles.refreshError} role="status">正在读取资产…</p>}
+            {error && <div className={styles.refreshError} role="alert"><p>{error}</p><Button type="button" variant="ghost" size="sm" onClick={() => setRevision((current) => current + 1)}>重试读取</Button></div>}
+            {!activeFolder && data?.folders.map((folder) => <Button key={folder.id} type="button" variant="ghost" className={styles.folderCard} onClick={() => setFolderId(folder.id)} aria-label={`打开文件夹 ${folder.name}`}>
+              <span className={styles.folderIcon}><Folder size={28} strokeWidth={1.5} aria-hidden="true" /></span>
+              <span className={styles.name} title={folder.name}>{folder.name}</span>
+            </Button>)}
+              {visibleItems.map((item) => {
+                const key = `${item.kind}:${item.id}`;
+                const editing = editingKey === key;
+                return <div key={key} className={styles.assetCard} draggable={!editing}
+                  onPointerDownCapture={(event) => { assetDragBlockedRef.current = event.target instanceof Element && Boolean(event.target.closest("[data-asset-media-control]")); }}
+                  onDragStart={(event) => {
+                    if (editing || assetDragBlockedRef.current) { event.preventDefault(); return; }
+                    event.dataTransfer.effectAllowed = "copy";
+                    event.dataTransfer.setData("application/x-goodgood-canvas-asset", key);
+                    onAssetDragStart(item);
+                  }}
+                  onDragEnd={onAssetDragEnd}>
+                  <AssetMedia key={`${data?.mediaRevision}:${item.previewUrl ?? ""}:${item.sourceUrl ?? ""}`}
+                    item={item} editing={editing} onRename={() => beginRename(item)}
+                    onExpand={(trigger) => setImagePreview({ selectedKey: key, returnFocusTo: trigger })}
+                    refreshVideo={(signal) => refreshVideo(item, signal)} />
+                  {editing ? <form className={styles.renameForm} onSubmit={(event) => { event.preventDefault(); void saveName(item); }}>
+                    <Input ref={nameInputRef} autoFocus className={styles.nameInput} value={nameDraft} maxLength={255}
+                      aria-label={`重命名 ${item.name}`} aria-invalid={Boolean(nameError)} disabled={renaming}
+                      onFocus={(event) => event.currentTarget.select()}
+                      onChange={(event) => { setNameDraft(event.target.value); setNameError(null); }}
+                      onBlur={() => {
+                        if (cancelRenameRef.current) { cancelRenameRef.current = false; return; }
+                        if (!renamePendingRef.current && !nameError) void saveName(item);
+                      }}
+                      onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); cancelRenameRef.current = true; setEditingKey(null); setNameError(null); } }} />
+                    {nameError && <span className={styles.nameError} role="alert">{nameError}</span>}
+                  </form> : item.media !== "image" && <span className={styles.mediaLabel}>{item.media === "video" ? "视频" : "音频"}</span>}
+                </div>;
+              })}
+            {!loading && !error && !activeFolder && !data?.folders.length && !visibleItems.length && <p className={styles.empty}>还没有资产</p>}
+            {!loading && !error && activeFolder && !visibleItems.length && <p className={styles.empty}>此文件夹还没有素材</p>}
+          </div>
+        </ScrollArea>}
+    {enabled && imagePreview && <ImageViewer items={previewImages} selectedKey={imagePreview.selectedKey} returnFocusTo={imagePreview.returnFocusTo}
+      onSelect={(selectedKey) => setImagePreview((current) => current && ({ ...current, selectedKey }))} onClose={() => setImagePreview(null)} />}
+  </section>;
+}

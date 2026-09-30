@@ -45,11 +45,14 @@ test("GG-063 model-owned quality prices validate completeness, enable and flat c
     "gpt-image-2.5-flare",
   ]) {
     const model = validateManagedModel(make(id));
-    for (const { id: quality } of gptPricingQualities(id))
-      assert.equal(
-        calculateModelQuote(model, { resolution: "1K", count: 4, quality }),
-        model.lines.special.prices["1K"].qualities[quality] * 4,
-      );
+    for (const { id: quality } of gptPricingQualities(id)) {
+      for (const count of Array.from({ length: 12 }, (_, index) => index + 1)) {
+        assert.equal(
+          calculateModelQuote(model, { resolution: "1K", count, quality }),
+          model.lines.special.prices["1K"].qualities[quality] * count,
+        );
+      }
+    }
     assert.equal(
       calculateModelQuote(model, { resolution: "1K", quality: "auto" }),
       Math.max(...Object.values(model.prices["1K"].qualities)),

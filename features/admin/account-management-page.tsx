@@ -4,7 +4,6 @@ import { AdminManagementHeader } from "./admin-management-header";
 import {
   Building2,
   CheckCircle2,
-  Coins,
   LoaderCircle,
   Network,
   RefreshCw,
@@ -17,6 +16,7 @@ import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CreditIcon } from "@/components/ui/credit-icon";
 import {
   Dialog,
   DialogContent,
@@ -450,7 +450,7 @@ export function AccountManagementPage({ workspaceSession, embedded = false, onMa
                       {account.status === "pending" && <Button className="admin-account-primary-action" size="sm" variant="ghost" onClick={() => openAction(account, "approve")}><CheckCircle2 />通过</Button>}
                       {account.status === "active" && account.role !== "site_owner" && <Button className="admin-account-primary-action" size="sm" variant="ghost" onClick={() => openAction(account, "suspend")}><ShieldBan />暂停</Button>}
                       {account.status === "suspended" && <Button className="admin-account-primary-action" size="sm" variant="ghost" onClick={() => openAction(account, "restore")}><CheckCircle2 />恢复</Button>}
-                      <Button className="admin-account-secondary-action" size="sm" variant="ghost" onClick={() => openAction(account, "grant")}><Coins />积分</Button>
+                      <Button className="admin-account-secondary-action" size="sm" variant="ghost" onClick={() => openAction(account, "grant")}><CreditIcon />积分</Button>
                       {account.role !== "site_owner" && (
                         <>
                           <Button className="admin-account-secondary-action" size="sm" variant="ghost" onClick={() => openAction(account, "role")}><UserRoundCog />身份</Button>
@@ -503,7 +503,7 @@ export function AccountManagementPage({ workspaceSession, embedded = false, onMa
                           {account.status === "pending" && <Button className="admin-account-primary-action" size="sm" variant="ghost" onClick={() => openAction(account, "approve")}><CheckCircle2 />通过</Button>}
                           {account.status === "active" && account.role !== "site_owner" && <Button className="admin-account-primary-action" size="sm" variant="ghost" onClick={() => openAction(account, "suspend")}><ShieldBan />暂停</Button>}
                           {account.status === "suspended" && <Button className="admin-account-primary-action" size="sm" variant="ghost" onClick={() => openAction(account, "restore")}><CheckCircle2 />恢复</Button>}
-                          <Button className="admin-account-secondary-action" size="sm" variant="ghost" onClick={() => openAction(account, "grant")}><Coins />积分</Button>
+                          <Button className="admin-account-secondary-action" size="sm" variant="ghost" onClick={() => openAction(account, "grant")}><CreditIcon />积分</Button>
                           {account.role !== "site_owner" && (
                             <>
                               <Button className="admin-account-secondary-action" size="sm" variant="ghost" onClick={() => openAction(account, "role")}><UserRoundCog />身份</Button>

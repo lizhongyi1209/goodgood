@@ -2,6 +2,11 @@ import { modelSpecificationPrices } from "./banana-lines.mjs";
 
 import { specificationOutputPrice } from "./gpt-quality-pricing.mjs";
 import { SEEDANCE_MODEL_IDS, seedanceResolutions } from "./seedance-models.mjs";
+import {
+  SEEDREAM_MODEL_ID,
+  SEEDREAM_RESOLUTIONS,
+  seedreamReferenceSurcharge,
+} from "./seedream-models.mjs";
 
 export const CREDIT_UNIT = "credit-cny-cent";
 export const CREDITS_PER_CNY = 100;
@@ -22,6 +27,12 @@ export const MODEL_TEMPLATES = Object.freeze([
     resolutions: ["1K", "2K", "4K"],
     ready: true,
   })),
+  {
+    id: SEEDREAM_MODEL_ID,
+    mediaType: "image",
+    resolutions: SEEDREAM_RESOLUTIONS,
+    ready: true,
+  },
   ...SEEDANCE_MODEL_IDS.map((id) => ({
     id,
     mediaType: "video",
@@ -54,10 +65,23 @@ export function calculateModelQuote(
     count = 1,
     outputSeconds = 0,
     referenceSeconds = 0,
+    referenceCount = 0,
     imageLine = "special",
     quality = "auto",
   },
 ) {
+  const seedream =
+    (model.adapterId ?? model.adapter_id ?? model.id) === SEEDREAM_MODEL_ID;
+  const referenceSupplement = seedream
+    ? seedreamReferenceSurcharge(referenceCount)
+    : 0;
+  if (
+    seedream &&
+    (count !== 1 ||
+      !SEEDREAM_RESOLUTIONS.includes(resolution) ||
+      referenceSupplement === null)
+  )
+    return null;
   const specification = modelSpecificationPrices(model, imageLine)[resolution];
   if (specification?.billing === "tokens") return null;
   const price = specification
@@ -71,10 +95,11 @@ export function calculateModelQuote(
     !Number.isSafeInteger(price.output) ||
     price.output <= 0 ||
     !Number.isSafeInteger(count) ||
-    ![1, 2, 4].includes(count)
+    !(model.mediaType === "image" ? count >= 1 && count <= 12 : [1, 2, 4].includes(count))
   )
     return null;
-  if (model.mediaType === "image") return price.output * count;
+  if (model.mediaType === "image")
+    return price.output * count + referenceSupplement;
   if (
     !Number.isFinite(outputSeconds) ||
     outputSeconds <= 0 ||

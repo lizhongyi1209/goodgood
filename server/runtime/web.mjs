@@ -7,7 +7,6 @@ import { createAssetOrganizationNodeApiHandler } from "../assets/organization-no
 import { createProfileNodeApiHandler } from "../profile/node-api.mjs";
 import { createAdminNodeApiHandler } from "../admin/node-api.mjs";
 import { createBillingNodeApiHandler } from "../billing/node-api.mjs";
-import { createJcoinNodeApiHandler } from '../jcoin/node-api.mjs';
 import { createFeedbackNodeApiHandler } from '../feedback/http.mjs';
 import { loadAuthenticationConfig } from "../auth/config.mjs";
 import { createAuthenticationNodeApiHandler } from "../auth/node-api.mjs";
@@ -26,6 +25,7 @@ import { createDistributionNodeApiHandler } from "../distribution/node-api.mjs";
 import { createReferenceNodeApiHandler } from "../references/node-api.mjs";
 import { createVideoMaterialNodeApiHandler } from "../video-materials/node-api.mjs";
 import { createProjectNodeApiHandler } from "../projects/node-api.mjs";
+import { createCanvasProjectNodeApiHandler } from "../canvas-projects/node-api.mjs";
 import { createOrganizationNodeApiHandler } from "../organizations/node-api.mjs";
 import { observeHttpRequest } from "../observability/http.mjs";
 import {
@@ -77,7 +77,6 @@ const handleGenerationNodeApi = createGenerationNodeApiHandler({
   authenticate,
 });
 const handleAdminNodeApi = createAdminNodeApiHandler({ authenticate });
-const handleJcoinNodeApi = createJcoinNodeApiHandler({ authenticate });
 const handleFeedbackNodeApi = createFeedbackNodeApiHandler({ authenticateSession });
 const handleCreationDraftNodeApi = createCreationDraftNodeApiHandler({ authenticate });
 const handleDistributionNodeApi = createDistributionNodeApiHandler({ authenticate });
@@ -89,6 +88,7 @@ const handleBillingNodeApi = createBillingNodeApiHandler({ authenticate });
 const handleReferenceNodeApi = createReferenceNodeApiHandler({ authenticate });
 const handleVideoMaterialNodeApi = createVideoMaterialNodeApiHandler({ authenticate });
 const handleProjectNodeApi = createProjectNodeApiHandler({ authenticate });
+const handleCanvasProjectNodeApi = createCanvasProjectNodeApiHandler({ authenticate });
 const handleOrganizationNodeApi = createOrganizationNodeApiHandler({ authenticate });
 const defaultSessionCookie = localSessionCookie(authenticationConfig);
 const { server } = await startProdServer({
@@ -104,6 +104,26 @@ server.on("request", (request, response) => {
   if (handleLocalBuildVersion(request, response)) return;
   const url = new URL(request.url ?? "/", "http://localhost");
   if (
+    url.pathname === "/api/jcoin" ||
+    url.pathname === "/api/admin/jcoin/query" ||
+    url.pathname === "/api/admin/jcoin/action"
+  ) {
+    response.writeHead(410, {
+      "cache-control": "no-store",
+      "content-type": "application/json; charset=utf-8",
+    });
+    response.end(JSON.stringify({
+      error: { code: "FEATURE_REMOVED", message: "平台币功能已移除。" },
+    }));
+    return;
+  }
+  if (process.env.GOODGOOD_CANVAS_PROJECT_ONLY === "true" &&
+      url.pathname !== "/api/canvas-projects" && !url.pathname.startsWith("/api/canvas-projects/")) {
+    response.writeHead(404, { "cache-control": "no-store", "content-type": "application/json" });
+    response.end(JSON.stringify({ error: "not_found" }));
+    return;
+  }
+  if (
     defaultSessionCookie &&
     request.method === "GET" &&
     !url.pathname.startsWith("/api/") &&
@@ -113,7 +133,6 @@ server.on("request", (request, response) => {
     response.setHeader("set-cookie", defaultSessionCookie);
   }
   void handleAuthenticationNodeApi(request, response)
-    .then((handled) => (handled ? true : handleJcoinNodeApi(request, response)))
     .then((handled) => (handled ? true : handleFeedbackNodeApi(request, response)))
     .then((handled) => (handled ? true : handleAdminNodeApi(request, response)))
     .then((handled) =>
@@ -131,6 +150,9 @@ server.on("request", (request, response) => {
     .then((handled) => handled ? true : handleAudioMaterialNodeApi(request, response))
     .then((handled) =>
       handled ? true : handleProjectNodeApi(request, response),
+    )
+    .then((handled) =>
+      handled ? true : handleCanvasProjectNodeApi(request, response),
     )
     .then((handled) =>
       handled ? true : handleAssetNodeApi(request, response),

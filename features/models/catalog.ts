@@ -1,6 +1,6 @@
 import type { GenerationModelId } from "@/shared/contracts/generation";
 
-export type GenerationModelIcon = "nano" | "openai";
+export type GenerationModelIcon = "nano" | "openai" | "bytedance";
 
 export type GenerationModelPresentation = Readonly<{
   id: GenerationModelId;
@@ -46,6 +46,13 @@ export const GENERATION_MODEL_CATALOG = [
     name: "GPT IMAGE 2.5 flare",
     description: "高真实感，提示词遵循",
     icon: "openai",
+    recommended: false,
+  },
+  {
+    id: "seedream-5.0-pro",
+    name: "Seedream 5.0 Pro",
+    description: "图像生成，参考图融合",
+    icon: "bytedance",
     recommended: false,
   },
 ] as const satisfies readonly GenerationModelPresentation[];

@@ -1,149 +1,47 @@
 # Production implementation plan
 
-- Last synchronized: 2026-09-27
-- Current phase: 按站长决定撤下 GG-135 画布拖动辅助线与吸附，恢复自由移动；生产应用仍为 GG-098，未部署。
-- Current objective: 保持现有 `/canvas` 图片拖动、选中和四角缩放可用，等待站长提出下一项具体画布需求。
-- Previous objective: GG-135 尝试拖动时对齐提示和落点吸附，站长未验收并决定暂缓图片对齐；选中后点击预设排列仅是未来可能方向。
+- Last synchronized: 2026-09-30
+- Current phase: GG-239 将 `127.0.0.1:5173` 当前累计源码固化为本地版本 `goodgood-local-2026-09-30-gg239`，入口文档已去除重复历史转录；生产仍为 GG-098 应用和 GG-100 单槽 Compose。
+- Current objective: 以已通过完整本地门禁的 GG-239 标签作为所有新窗口和新任务的唯一源码起点，并保留未部署边界。
+- Previous objective: GG-238 方形添加卡与画布图片查看器已合入 5173，待用户手验。
 
 ## Current checkpoint
 
-- Task [GG-135](tasks/GG-135-canvas-image-alignment-guides.md)：**站长决定撤下，恢复自由移动；本地门禁通过**。拖动辅助线、落点吸附、计算模块和专用测试已移除；撤下版 `check:local` 592 项 / 569 通过 / 23 跳过 / 0 失败，5173 `/canvas` HTTP 200。保留 GG-134 的选中与四角缩放；待站长手动复核，未来预设排列另立需求。未替换 32131 检查点或部署生产。
-- Task [GG-134](tasks/GG-134-canvas-rounded-corner-resize-handles.md)：**四角透明命中区精修与本地门禁完成，站长确认「可以了」**。保留官方 `NodeResizeControl` 与四角等比缩放，椭圆透明命中区贴近圆角；站长随即提出 GG-135 对齐辅助线需求。
-- Task [GG-133](tasks/GG-133-canvas-proportional-image-corners.md)：**本地实现与门禁完成，待站长手动验收**。图片节点圆角由固定 14px 改为 `min(14px, 6%)`，仅应用于本地图片和生成图片，遮罩与细蓝选中轮廓沿用图片裁切；加载和失败节点不变。`check:local` 592 项 / 569 通过 / 23 跳过 / 0 失败，5173 `/canvas` HTTP 200；未替换检查点或部署生产。
-- Task [GG-132](tasks/GG-132-canvas-uncontrolled-resize.md)：**本地实现与门禁完成，站长确认缩放正常且报错消失**。React Flow 改用 `defaultNodes` 持有节点，页面仅镜像变化；本地图读取原始比例后以官方 `style` 设置初始尺寸，生成图使用已有宽高，四角缩放继续由官方 `NodeResizeControl` 处理。原受控模式连续缩放约 20 次报错，新模式稳定四角及连续 20 次立即缩放均为 0 次；诊断文件已清理。定向画布测试 8/8，`check:local` 592 项 / 569 通过 / 23 跳过 / 0 失败，5173 `/canvas` HTTP 200。未替换检查点或部署生产。
-- Task [GG-131](tasks/GG-131-canvas-resize-observer-loop.md)：**历史本地实现，已被 GG-132 替代**。跨帧测量回写曾通过 591 项 / 568 通过 / 23 跳过 / 0 失败门禁，但站长确认缩放正常时 vinext ResizeObserver 覆盖层仍出现，故不视为浏览器验收通过。
-- Task [GG-130](tasks/GG-130-canvas-image-selection-frame.md)：**本地实现与门禁完成，待站长手动验收**。按 [ADR 0110](decisions/0110-canvas-image-selection-frame.md) 将图片主体恢复系统默认箭头，选中框改为紧贴图片的一像素蓝线，并在四角设置等比缩放点；保留 GG-128 的浅灰悬停反馈与 GG-129 的节点缩放逻辑。定向画布测试 6/6、文档测试 8/8，`check:local` 591 项 / 568 通过 / 23 跳过 / 0 失败，5173 `/canvas` HTTP 200；未做浏览器验收、检查点替换或生产部署。
-- Task [GG-129](tasks/GG-129-canvas-image-resize.md)：**历史本地实现；指针与单角样式由 GG-130 替换**。按 [ADR 0109 补充](decisions/0109-quiet-canvas-image-hover.md) 实现原比例缩放及同一生成输出的尺寸保留；原 `move` 指针与右下角灰阶点已由 [ADR 0110](decisions/0110-canvas-image-selection-frame.md) 替代。原门禁 591 项 / 568 通过 / 23 跳过 / 0 失败；未做浏览器验收、检查点替换或生产部署。
-- Task [GG-128](tasks/GG-128-quiet-canvas-image-hover.md)：**本地实现与门禁完成，待站长手动验收**。按 [ADR 0109](decisions/0109-quiet-canvas-image-hover.md) 移除本地图片图上查看/参考/移除操作与预览弹框；本地图与生成图悬停仅留浅灰遮罩，拖动、结果详情和输入区参考图入口保留。定向画布测试 5/5、文档测试 8/8，`check:local` 590 项 / 567 通过 / 23 跳过 / 0 失败，5173 `/canvas` HTTP 200。未做浏览器验收、检查点替换或生产部署。
-- Task [GG-127](tasks/GG-127-asset-resize-observer-loop.md)：**资产瀑布流 ResizeObserver 修复与本地门禁完成，待站长手动浏览器确认**。尺寸观察回调只收集卡片，下一动画帧统一写网格行高，清理时取消未执行帧；不改变六列布局、比例或资产数据。定向资产/文档测试 10/10，`check:local` 590 项 / 567 通过 / 23 跳过 / 0 失败，5173 `/assets` HTTP 200。生产未变。
-- Task [GG-126](tasks/GG-126-canvas-local-image-drop.md)：**本地图片拖放与轻量操作本地实现及门禁完成，待站长手动验收**。本地 JPEG/PNG 即时成为临时可移动图片节点；顶部文件选择和适应视野、节点大图预览/明确加入参考/移除，复用既有 20 MiB 校验和私有上传。拖入不触发网络写入或付费生成，节点/布局不保存。最终 `check:local` 590 项 / 567 通过 / 23 跳过 / 0 失败，Lint 0 错误、110 条既有警告，5173 `/canvas` HTTP 200。32131 和生产未替换。
-- Task [GG-125](tasks/GG-125-standalone-canvas-image-generation.md)：**独立 `/canvas` 与常用图片生成本地实现及门禁完成，待站长手动验收**。按 [ADR 0108](decisions/0108-standalone-canvas-image-generation.md) 替代 [GG-124](tasks/GG-124-canvas-creation-foundation.md) 的共享壳层空白界面。复用真实登录/报价/参考图/生成边界，结果在临时 React Flow 节点显示；纯白画布与缩放保留。修复 Vite RSC 入口解析及 favicon 后，5173 两个 GET 均 HTTP 200；`check:local` 587 项 / 564 通过 / 23 跳过 / 0 失败。32131 与生产未更新。
-- Task [GG-123](tasks/GG-123-shadcn-ai-elements-adoption.md)：**前三批公共 UI 本地实现与门禁完成；第四批 AI Elements CLI 已安装且门禁通过；待站长验收**。
-  前三批复用 shadcn 原语覆盖创作、资产、个人资料、项目保存、模型开关和运营筛选。第四批固定 `ai-elements@1.9.0` 开发依赖及安全的按需添加命令；当前无 AI Elements UI 组件、AI SDK 或网关配置。`check:local` 584 项 / 561 通过 / 23 跳过 / 0 失败。后续真实功能逐个加组件，不改现有生成接口。未改生产、未做浏览器验收。
-- Task [GG-122](tasks/GG-122-standalone-hero-page.md)：**独立 Hero 页面本地实现与门禁完成，待站长手动浏览器验收**。
-  复用已有 shadcn Button、Tailwind 与 TypeScript，新增 `motion`、`react-wrap-balancer`、`Hero10` 和 CTA helper；`/hero` 使用站长提供的三张示例图片、准确的 GoodGood 文案与现有路由 CTA，不展示未经证实的客户数量。`check:local` 583 项 / 560 通过 / 23 跳过 / 0 失败；新增的 `<img>` 带来 1 条 lint 警告，总计 110 条、0 错误。未改生产，未做浏览器验收。
-- Task [GG-121](tasks/GG-121-unified-asset-browser.md)：**hover/视频/六列布局精修、文件夹操作与直传、本地门禁完成，待站长手动浏览器验收**。
-  ADR 0106 统一 `资产` 页面；hover 增加轻遮罩，封面/名称保持默认箭头光标，未选控件不显示勾，打开的菜单按钮保持可见，移动子菜单同框；视频网格隐藏标题、按原比例静音可见循环预览，布局最多六列并铺满内容宽度，保持素材原比例和紧凑排列。文件夹卡片和列表行支持选择，复用底部操作栏但只显示删除，重命名复用新建文件夹弹框；文件夹内页与右上角上传无中间弹框。ADR 0107 取消标签，文件选择栏保留下载/移动/红底白字删除。最新 `check:local` 583 项 / 560 通过 / 23 跳过 / 0 失败。上一检查点的 `build:checkpoint` / `verify:checkpoint` 通过；32131 仍运行该检查点，5173 是当前 UI 热更新预览。未改生产、未进行真实上传/删除/重命名或浏览器验收。
-- Task [GG-120](tasks/GG-120-shared-impeccable-skill.md)：**Codex 已在 `F:/goodgood` 新会话发现，Claude Code 待合入后确认**。
-  `.agents/skills/impeccable` 为唯一资料目录，`.claude/skills/impeccable` 为 Claude 发现入口；两个入口格式校验通过、100 个链接无断链、文档测试 8/8；自动 hooks 未启用。
-- Task [GG-119](tasks/GG-119-wordmark-only-workspace-brand.md)：**本地实现与门禁完成，待站长手动浏览器复核**。
-  工作区左上角仅保留字标；`check:local` 577 项 / 554 通过 / 23 跳过 / 0 失败。生产未部署。
-- Task [GG-117](tasks/GG-117-inspiration-retirement.md)：**工作树文档与代码移除完成，隔离开发库迁移已执行；生产未执行**。
-  ADR 0104 已接受，退役 ADR 0076/0077/0078 并修订单个 ADR 0103 段落；`app/inspiration/`、
-  `app/api/inspiration/`、`features/inspiration/`、`server/inspiration/`、
-  `shared/contracts/inspiration.mjs` 已删除，专题文档已清理，BACKLOG 保持 100 行。
-  五张灵感表已从隔离开发库删除，生产执行需单独授权；`ASSET_PUBLISHED` 检查及其测试同批移除。
-- Task [GG-116](tasks/GG-116-asset-history-actions.md)：**本地实现与门禁完成，待浏览器验收**。
-  ADR 0103 硬删除生成图片；兼容 `app/page.tsx` 调用点的旧卡片命名已由 GG-117 移除。
-- Task [GG-098](tasks/GG-098-manual-grant-ceiling.md)：**已部署**。
-  生产身份 `7888554` / 镜像 `sha256:7deeab8c…3270` / 迁移 `0044`。
-  完整记录见 [发布记录](releases/2026-09-21-gg098-manual-grant-ceiling.md)。
-- 这是**首次带迁移的热修发布**，属于旧 blue/green 流程的历史记录；切换后的公网 200、
-  session 401、队列/活动任务/冻结均 0。未来发布不再复用该流程。
-- 真实生图冒烟（站长 2026-09-21 单独授权）：真实邮箱验证码登录 →Nano Banana 2 / 1K /
-  1:1 / 1 张成功，reserve→settle 各 1 次、冻结归零，私有读取自有 200 / 未认证 401。
-  **跨账户拒绝未实测**（站长指示不再测试），该项不得写成 `pass`；本次未跑完整 alpha 门禁。
-- **发布中发现的主机隐患已修复**：主机 `compose.production.yaml` 是旧版本（web 只绑 4 个
-  secret，缺 email OTP/SMTP），导致旧发布候选首次启动崩溃。已用本次 revision 覆盖，
-  旧版留 `.pre-gg098-backup`。未来原地替换前必须核对主机 Compose 与候选 revision 一致。
-- GG-097 [任务卡](tasks/GG-097-production-release-0019-to-0043.md)：累计功能发布，已被本次取代；
-  其门禁为五项 `pass` + `controlled-alpha-operations` `fail`（站长授权带缺口开站）。
-- Task [GG-099](tasks/GG-099-single-slot-compose-release.md)：**本地已完成**。
-  ADR 0091 已接受；仓库已从 blue/green 发布切换到固定 `goodgood-production` Compose
-  项目；独立 active-upstream、槽位 env 和双上游示例已删除。定向测试 35/35，
-  `npm run check:local` 537 通过/26 隔离跳过/0 失败。未执行生产主机迁移。
-- Task [GG-100](tasks/GG-100-production-single-slot-host-cleanup.md)：**生产执行完成**。
-  恢复点 `71e758c4`；固定项目 Web/Worker healthy、restarts 0，公网 200/session 401；
-  旧 4 容器、2 网络、槽位/动态 upstream 与 14 个无引用旧镜像已清理，生产数据卷完整。
-- Task [GG-101](tasks/GG-101-real-online-local-development.md)：**本地实现完成，未部署**。
-  ADR 0092 已接受；默认 Compose 与 checkpoint Web/Worker 强制真实 O1Key，专用开发密钥
-  存于仓库外且缺失失败；mock 只保留给 `mock-tests` 隔离自动化测试，不连接真实 Worker。
-  Compose 双配置解析通过；门禁 566 项、540 通过/26 隔离跳过/0 失败；未执行真实生成。
-- Task [GG-102](tasks/GG-102-real-video-development.md)：**本地实现与验证完成，未部署**。
-  ADR 0093 已接受；本地 checkpoint/Compose 默认为视频使用同一仓库外 O1Key 开发凭据，
-  Vite serve 只在本地运行时注入。视频仍为临时文生视频预览；正式任务/计费/资产未接。
-  `check:local` 542 通过/26 隔离跳过/0 失败；checkpoint 来源验证、32131/32142
-  就绪、视频默认可用和真实单张图片生成成功；未提交付费视频任务。
-- Task [GG-103](tasks/GG-103-reference-input-optimization.md)：**本地实现与验证完成；未部署**。
-  ADR 0094 已接受；本地 blob 立即预览、两张并发直传、可重试与完成状态查询；
-  Worker 保留原图并生成单张不超过 10,000,000 字节、总量不超过 32,000,000
-  字节的输入副本。完整门禁 575 项：549 通过/26 隔离跳过/0 失败；
-  未发起真实付费生图。检查点构建/来源验证、32131 Web 版本和
-  32142 真实 O1Key Worker 健康检查通过；本地活动生成任务为 0。
-- Task [GG-104](tasks/GG-104-media-dropzone-layout.md)：**本地实现/门禁/运行预览完成；未部署**。
-  ADR 0095 已接受；图片/视频拖入即时预览、上传前 20/200 MiB 校验、可见失败原因、托盘与模式位置对调；0045 新增私有视频素材库并供视频选择器复用。
-  `check:local` 581 项：555 通过/26 隔离跳过/0 失败；视频上传/校验/复用/所有者隔离单元路径通过。本地数据库仅前进 0044/0045 至 45 条，32131 Web 检查点来源/页面和 32142 Worker 健康通过；浏览器检查两种布局。未发起付费生成，未做真实文件上传端到端测试。
-- Task [GG-105](tasks/GG-105-media-upload-200mb.md)：**本地代码已运行；用户手动验收待执行，未部署**。
-  ADR 0096 已接受：私有参考原图与视频素材上限 200 MiB，签名上传 30 分钟；模型输入单张 10 MB、总量 32 MB 保持。用户要求不执行自动测试；检查点构建/来源及 Web/Worker 健康已核对，真实大文件上传未测。GG-104 门禁结果不得算作 GG-105 验证。
-- Task [GG-107](tasks/GG-107-composer-send-arrow.md)：**按钮比例已获用户确认；模型图标 SVG 预览 400 已修复并构建，待刷新复核，未部署**。ADR 0098 接受向上箭头替换飞鸿发送符号；图片和视频创作按钮共享外观。GG-106 OSS 决策与文档在另一独立工作树继续，未并入本分支。
-- Task [GG-110](tasks/GG-110-functional-reference-upload-preview.md)：**本地代码、门禁、检查点运行与真实 JPEG 上传通过，未部署**。5173 旧 React 依赖请求已兼容；登录后 API 改接本地 Node Web，避免 Vite Worker PostgreSQL 跨请求复用；模型 SVG 使用稳定公共路径。`check:local` 555 通过/26 隔离跳过/0 失败。32131 已运行已验证 `35b1f12` 检查点；真实 JPEG 登记 201、完成校验 200、数据库 `ready / accepted`。
-- Task [GG-111](tasks/GG-111-cloud-reference-upload-development.md)：基于 GG-110 `65fa299`，独立工作树 `F:/goodgood-worktrees/GG-111`。站长明确选择复用生产 OSS 桶与现有 RAM 密钥；ADR 0099 将本地写入限制到 `local-dev/references/`，旧本地素材走 RustFS。最终 `check:local` 558 通过/26 隔离跳过/0 失败。5173 与线上 OSS 来源的 CORS 预检均 200；临时前缀对象签名 PUT/GET/DELETE 为 200/200/204。32131 运行从当前工作树 HEAD 构建的已验证检查点；真实 PNG 上传 `ready / accepted`、OSS HEAD 200。5173 Vite 也来自 GG-111，站长切换后再次刷新确认图片仍在、页面正常；未部署应用代码。
-- Task [GG-112](tasks/GG-112-real-email-local-login.md)：基于 GG-111 `6067cda`，独立工作树 `F:/goodgood-worktrees/GG-112`。站长选择现有发信账号给本地真实验证码投递；ADR 0100 记录对 ADR 0092 凭据隔离的限域例外。新工作区启动选项只加载仓库外 SMTP 配置和独立密码文件，远程 SMTP 需 TLS/账号预检；本地身份与数据库保持隔离。`check:local` 559 通过/26 隔离跳过/0 失败，真实 SMTP 认证预检 5/5 通过。32131 已运行 GG-112 已验证 Web，5173 Vite 也来自 GG-112；站长确认真实收信、登录及刷新会话正常。生产应用未变。
-- Task [GG-113](tasks/GG-113-private-image-previews.md)：基于 GG-112 `85eea1a` 的隔离分支。站长选定资产库所有卡片与选择器；ADR 0101 确定 OSS 签名实时处理及 RustFS 流式 WebP 缩略图，详情/下载继续原图，列表不签发原图地址。`check:local` 563/26/0；真实 OSS 对象只读转换 2,380,052 → 30,556 字节、RustFS 生成图 684,367 → 27,844 字节。首次 GG-113 检查点 `ea8445f` 的 5173/32131 页面/就绪 200、未登录私有图片 401、代理来源核对通过，未部署。
-- Task [GG-114](tasks/GG-114-reusable-image-delivery.md)：基于 GG-113 `1ecbc1c`；共用 `privateImageUrls` 与 `readPrivateImagePreview`，资产/参考图继续分别先做权限检查，固定 512 px WebP 规格与详情原图语义不变。`check:local` 590 项：564 通过/26 隔离跳过/0 失败；首个检查点 `4e55a36` 的 5173/32131 页面/就绪/版本 200、未登录私有预览 401，未部署。
-- Task [GG-115](tasks/GG-115-asset-workspace.md)：基于 GG-114 `3665087`，ADR 0102 将 `/assets` 默认改为按日期的生成记录，个人资产库汇总已生成和已上传媒体并整理文件夹/标签；新增 MP3 私有入库，所有新上传限 20 MiB 与 JPG/JPEG、PNG、MP4、MP3。`check:local` 592 项：566 通过/26 隔离跳过/0 失败；本地隔离库迁移 0046 从 45 到 46 已事务验证。GG-115 精确检查点在 5173/32131 运行，页面/就绪/代理版本 200，未认证新接口 401；站长确认默认历史、切换个人库、测试图上传后刷新仍显示且可预览。文件夹与 MP3/MP4 未单独人工实测；未部署生产。
-- 线上入口为 `goodgood.o1key.com`；`staging-goodgood.o1key.com` 仅保留名称，不是测试入口。
-- 生产数据（2026-09-21 核对）：users 28、assets 166、references 141 ready、
-  generation_jobs 201（151 成功 / 50 失败）；运营手动登记充值 4 笔共 15100 积分。
-- **2026-09-17 首次生产恢复演练通过**：快照 `ce191630`、59 表 / 2403 行 / 43 迁移；
-  维护窗口约 66 秒。「备份 timer disabled、无自动备份」的旧结论**已更正为错误**。
-- 独立缺口（已记录未处理）：**仅剩无告警通道**。
-- Next action: 站长在现有已登录 5173 `/canvas` 拖动四角确认 ResizeObserver 覆盖层是否消失、等比缩放是否正常；GG-127 `/assets` 覆盖层亦待站长刷新确认。
-- Blockers: 无阻塞执行项；`operations` 缺口为已知并已授权接受。
-- 参考图校验最长近 6 分钟、超过 nginx 70s 读超时的服务端性能根因仍待排查；
-  GG-103 前端通过 owner-scoped 状态查询避免把已入库素材误报为失败。
+- Task [GG-239](tasks/GG-239-current-5173-checkpoint.md)：当前 5173 工作区的代码、迁移、测试、ADR 和任务记录统一提交；版本标签为 `goodgood-local-2026-09-30-gg239`，分支为 `checkpoint/GG-239-current-5173`。
+- 5173 源码目录：`F:/goodgood-worktrees/GG-116`。目录名只是历史 worktree 名；版本必须由标签/提交确认。
+- 5173 API 代理：Web `32131` 为 verified `70e10c6ae6bd83542ba870f54059b54b999e9fdf`；唯一真实开发 Worker `32142` readiness 五项为 `ok`。
+- 本地依赖：PostgreSQL `54449`、Valkey `56549`、RustFS `58049/58050`、Mailpit `58045/58046`；数据库迁移为 `0056`。
+- GG-235 已恢复本地媒体只读链路；GG-236 外框已获用户确认；GG-237 和 GG-238 仍需用户在 5173 手验。
+- 生产身份继续为 revision `7888554a4650b1b06dbce4293c52e8c018e5c71b`、迁移 `0044_gg098_raise_manual_grant_ceiling.sql`，详见 [CURRENT_STATE](CURRENT_STATE.md)。GG-239 未部署。
+- 生产入口仍为 `https://goodgood.o1key.com`，预发布入口为 `https://staging-goodgood.o1key.com`；本地 5173、开发数据库与生产数据继续严格隔离。
+- 早期生产实施流水保存在 [2026-09-07 implementation log](history/2026-09-07-implementation-log.md)，仅在追溯历史时读取。
+- Next action: 用户刷新 5173 手验 GG-237 四列项目布局和 GG-238 图片查看器；任何后续实现从 GG-239 标签建立 GG-240+ 独立任务。
+- Blockers: 无源码收口阻塞；GG-237/GG-238 的浏览器手验尚未完成，生产发布未获授权。
 
 ## Verification sequence
 
-1. 先按DEVELOPMENT_HANDOFF核验当前检查点、Git祖先与实际端口；文档整理只跑文档/链接契约与diff检查。
-2. SQL恢复命令只创建命名空库且无Worker，原goodgood与生产不写fixtures；新功能按对应任务做最小定向验证。
-3. 代码稳定后一次npm run check:local，更新任务/文档；生产事实以CURRENT_STATE.md为准。
+1. 核对 `git describe --tags --exact-match` 为 `goodgood-local-2026-09-30-gg239`，`git status --short` 为空。
+2. 核对 `http://127.0.0.1:5173/`、`32131/api/health/version`、`32142/health/ready`；不得凭旧 PID 推断版本。
+3. 运行文档连续性测试、`git diff --check` 和一次 `npm run check:local`；准确记录通过、跳过或现有失败。
+4. 浏览器手验只覆盖尚未确认的 GG-237/GG-238；真实生成必须另获该次计费请求授权。
+5. 发布是独立任务，必须取得不可变 CI 镜像并按单槽 Compose 清单执行。
 
 ## Milestones
 
-| 阶段 | 状态 | 当前含义 |
+| 阶段 | 状态 | 说明 |
 | --- | --- | --- |
-| M0—M8 | 已完成基线 / controlled alpha 已开放 | 生产事实以 CURRENT_STATE 和发布收据为准 |
-| GG-090 | 本地实现/验证完成 | 双码active注册、站长单人邀请码；525/26、隔离SQL/邮件UI通过，32141已更新；历史M6价格断言见任务；未部署 |
-| GG-089 | 本地实现/验证完成 | 指定8项站长导航顺序/用户反馈标签；522/25、桌面/390px通过，32141已更新，未部署 |
-| GG-088 | 本地实现/验证完成 | 问题类型首次及改选后向下、桌面/390px和门禁522/25通过，32141已更新，未部署 |
-| GG-087 | 本地实现/验证完成 | 私有反馈5图/类型/状态/回复，522通过/25跳过、SQL/UI通过，原32141更新；未部署 |
-| GG-086 | 本地实现/验证完成 | 发行进度与15秒只读刷新、桌面/390px通过，原32141已更新；门禁详情见任务，未部署 |
-| GG-085 | 本地实现/验证完成 | 按期卡片、门禁515/24及桌面/390px通过，原32141已更新，未部署 |
-| GG-084 | 本地实现/验证完成 | 个人仅自己统计/记录，站长计划/一期生命周期；门禁515/24、SQL1/1、UI通过，未部署 |
-| GG-083 | 结构/首批参数规划完成 | 第一批100万枚/系数2、正常50万元有效消费、无期限/仅累计；GG084接续一期运行时 |
-| GG-082 | 历史最小发行讨论 | GG083接续；原兑换/服务面值建议否决，首期数值未确认，未实现/发币 |
-| GG-080 | 补充规划完成待澄清 | 消费驱动/9.18/分类方向已定，条件试算/文档通过，20%待澄清，未实施 |
-| GG-081 | 本地实现/验证完成 | 积分类型、真实充值登记与默认运营/现金/并发；门禁508/23、隔离SQL2/2及模拟页面通过，未部署 |
-| GG-023 | 本地安全候选已 CI 通过 | 尚未切生产，见任务卡 |
-| GG-024—GG-032 | 本地完整基础组合已验证 | 账户、积分、直属关系、来源划拨、OTP、企业及成员额度 |
-| GG-033 | 本地完成并真实验证 | 三个 GPT 图片模型，生产未发布 |
-| GG-034—GG-039 | 本地图片/视频工作区已验证 | Seedance 参数、线路、预览、混排/详情、数量并发；正式视频结算待接 |
-| GG-040—GG-043 | 本地完成并获页面检查 | 批量提示词、简化说明、抽屉与素材预览，未发布 |
-| GG-044—GG-049 | 本地完成，验收记录见任务卡 | 企业/分销独立管理、划拨归位、概览；GG-046 模拟未获认可，原真实本地企业页保留 |
-| GG-050 | 本地完成并获用户验收 | 删除五类常驻返回入口，不新增替代导航，未发布 |
-| GG-051 | 研究方向获认可 | Runway 人民币按规格计价，等值分析与 ADR 0062 |
-| GG-052 | 本地完成并验证 | 1 元/100 积分与站长模型面板；完整门禁、SQL/browser mock 验证通过，定价页已保留，未发布 |
-| GG-053 | 本地完成并验证 | 模型名称一次、规格价格对齐、自动内部编号与折叠接入详情；完整门禁与桌面/窄屏验收通过，原页面已更新保留，未发布 |
-| GG-054 | Pro 与通用功能本地完成并验证 | 原线路/定价候选完整验证；后续用户补齐 Banana 2 ID 接续 GG-056，未发布 |
-| GG-055 | 官方调研与文档验证完成 | 六规格输出成本、整单公式与五参考图/长文本敏感性；文档测试 15/15、diff 检查通过；未改价/发布 |
-| GG-056 | 本地完成并验证 | Banana 2 三线路、用户价格/历史保留、试价目录归档；门禁 427/16、SQL/运行/Chrome 通过，未发布 |
-| GG-057 | 本地完成并验证 | 站长导航与 local 登录恢复；门禁 432/16、运行/Chrome 检查与配置/历史保留通过，未发布 |
-| GG-058 | 本地调整与验证完成 | 站长字体/无页头退出；门禁 432/16、运行/Chrome 与历史保留通过，原 Windows 文字待用户复看，未发布 |
-| GG-059 | 本地完成并验证 | 大厅统一站长管理/右侧切换/窄屏返回；最终门禁 437/16、浏览器与历史保留通过，未发布 |
-| GG-060 | 本地完成并验证 | 顶部功能切换/唯一页面主标题；门禁 437/16、桌面窄屏与历史保留检查通过，未发布 |
-| GG-061 | 本地完成并验证 | 独立审计/四功能；门禁 439/16、原浏览器/窄屏与历史保留通过，未发布 |
-| GG-062 | 本地完成并验证 | GPT 图片三线路；门禁 445/16、隔离 SQL、原页面/窄屏与历史保留通过，未发布 |
-| 完整 C6 / M9 | 搁置 | 删除、举报、商业支付等，见 GG-900—GG-902 |
+| 生产 GG-098 / GG-100 | 已部署 | controlled alpha 应用 + 单槽 Compose；身份见 CURRENT_STATE |
+| GG-101—121 | 本地累计 | 真实本地接口、素材/资产工作区；具体边界见任务卡 |
+| GG-122—155 | 本地累计 | Hero、shadcn/AI Elements、独立画布、资产栏与运行兼容 |
+| GG-156—189 | 本地累计 | 积分明细、画布交互/持久化、真实生成与 Nano 多图 |
+| GG-190—218 | 本地累计 | 画布视觉、批次、模型路由、Seedream、平台币退役与多页面 |
+| GG-219—238 | 本地累计 | 导航、项目管理、选择/排列、资产面板和图片查看器 |
+| GG-239 | 本地检查点 | 当前 5173 累计源码首次形成单一可恢复提交和标签；未部署 |
 
 ## New-session recovery
 
-1. 打开F:/goodgood；读AGENTS/CURRENT_STATE/WORKFLOW/本页/BACKLOG与DEVELOPMENT_HANDOFF。核验bb782c0/a73835f及GG-100 `de699e1`祖先；GG-101分支为chore/GG-101-real-online-local-development，提交身份以任务卡最新记录为准。
-2. GG091 worktree及旧GG024/C6分支均保留；新窗口不bulk merge/reset旧版本，不覆盖.codex/未提交用户内容。
-3. 当前开发契约只允许真实O1Key Web/Worker；历史32143 mock只可属于显式测试栈。依赖54449/56449/58049见交接；PID只是记录，先核验再停；根目录.env文件和仓库外开发密钥均不打印。
-4. 使用交接中的启动/定向SQL命令；不fixture原用户数据、不进入真实provider32140栈、不重放线上清理。
-
-## History and update policy
-
-- 历史追溯：[2026-09-07 implementation log](history/2026-09-07-implementation-log.md)。
-- 细节写任务卡，生产事实写 CURRENT_STATE；本页仅维护一个当前检查点、验证顺序和下一步。
+1. 读 `AGENTS.md`、`CURRENT_STATE.md`、`WORKFLOW.md`、本文件、`BACKLOG.md` 和 `DEVELOPMENT_HANDOFF.md`。
+2. 使用 `git worktree list` 和 `git show goodgood-local-2026-09-30-gg239 --no-patch` 找到检查点；不得从旧 GG-116 分支名、main 或 parked C6 猜测最新源码。
+3. 新需求分配 GG-240+，从该标签提交创建独立分支/worktree；保留其它目录的未提交内容。
+4. 本地真实 Worker 可能计费；先检查活动任务、队列和冻结积分，再决定是否启动或切换服务。
+5. 生产操作必须另有明确授权，且生产事实以 CURRENT_STATE 和发布记录为准。

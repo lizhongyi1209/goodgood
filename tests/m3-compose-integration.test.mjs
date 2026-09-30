@@ -256,10 +256,10 @@ test(
       headers: authorization(),
     });
     assert.equal(authenticatedSession.status, 200);
-    assert.deepEqual(await authenticatedSession.json(), {
-      authenticated: true,
-      user: { email: "m3-local@goodgood.invalid" },
-    });
+    const session = await authenticatedSession.json();
+    assert.equal(session.authenticated, true);
+    assert.equal(session.user.email, "m3-local@goodgood.invalid");
+    assert.equal(session.user.id, "00000000-0000-4000-8000-000000000001");
     const signedOut = await fetch(`${webOrigin}/api/auth/logout`, {
       headers: { cookie: `goodgood_local_session=${ownerAToken}` },
       method: "POST",

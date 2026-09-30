@@ -59,7 +59,7 @@ test("Banana 2 routes send high thinking, search, long prompt and five reference
       aspect_ratio: "1:1", resolution: "1K", prompt: "synthetic" }, uploadedReferences }));
     assert.equal(sent, before);
   }
-  assert.equal(sent, 126);
+  assert.equal(sent, 135);
 });
 
 test("archive permissions and malformed input reject before opening persistence", async () => {

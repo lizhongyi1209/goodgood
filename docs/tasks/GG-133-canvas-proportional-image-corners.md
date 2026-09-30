@@ -1,6 +1,6 @@
 # GG-133 — 画布图片缩小时同步收小圆角
 
-- 状态：本地实现与门禁完成，待站长手动验收；继续使用 `F:/goodgood-worktrees/GG-116` 的 `feature/GG-116-asset-history-actions`，不切分支；未部署。
+- 状态：历史本地实现；动态圆角已按站长新要求由 GG-136 直角图片替代。继续使用 `F:/goodgood-worktrees/GG-116` 的 `feature/GG-116-asset-history-actions`，不切分支；未部署。
 - 基线：GG-132 `f378a06`；站长已确认四角缩放正常且 ResizeObserver 报错消失。
 - 现象：图片节点缩小时仍沿用固定 14px 圆角，小图的角显得过大。
 - 决策关系：延续 [ADR 0110](../decisions/0110-canvas-image-selection-frame.md) 的紧贴图片的圆角轮廓，仅调整圆角随尺寸变化；无需新 ADR。
@@ -21,4 +21,4 @@
 
 ## 下一步
 
-站长在现有已登录 5173 `/canvas` 缩小本地图或生成图，确认图片、浅灰悬停遮罩与细蓝选中轮廓的圆角同步收小。
+后续以 [GG-136 画布图片直角外形](GG-136-square-canvas-images.md) 为当前验收范围；本任务的动态圆角仅保留历史记录。

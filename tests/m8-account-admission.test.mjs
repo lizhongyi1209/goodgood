@@ -81,6 +81,7 @@ test("pending sessions expose only account state and waiting credits", async () 
       availableCredits: "100",
       businessRole: null,
       email: "pending@goodgood.invalid",
+      ownerId: "20000000-0000-4000-8000-000000000002",
       reservedCredits: "0",
       systemRole: "member",
     }),
@@ -98,7 +99,7 @@ test("pending sessions expose only account state and waiting credits", async () 
     },
     access: { status: "pending" },
     authenticated: true,
-    user: { email: "pending@goodgood.invalid" },
+    user: { email: "pending@goodgood.invalid", id: "20000000-0000-4000-8000-000000000002" },
   });
   assert.equal(productAuthenticatorCalled, false);
 });

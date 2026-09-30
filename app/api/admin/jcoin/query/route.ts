@@ -1,4 +1,9 @@
-import { jcoinRoute } from '@/server/jcoin/route';
-export const dynamic='force-dynamic';
-export const runtime='nodejs';
-export const POST=jcoinRoute('query');
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
+export function POST() {
+  return Response.json(
+    { error: { code: "FEATURE_REMOVED", message: "平台币功能已移除。" } },
+    { status: 410, headers: { "cache-control": "no-store" } },
+  );
+}

@@ -9,13 +9,20 @@ import {
   SUPPORTED_GPT_IMAGE_OUTPUT_FORMATS,
   SUPPORTED_GPT_IMAGE_QUALITIES,
   SUPPORTED_GENERATION_RESOLUTIONS,
+  SEEDREAM_MODEL_ID,
+  SEEDREAM_PROVIDER_MODEL_ID,
+  SEEDREAM_RESOLUTIONS,
   getGenerationModelCapability,
   getGptImage2PixelSize,
+  getSeedreamPixelSize,
+  isExpectedGenerationOutputCount,
   isGptImageModelId,
+  isSeedreamModelId,
   isSupportedGenerationInput,
 } from "./capabilities.mjs";
 
 export const US_GATEWAY_CONTRACT_VERSION = "o1key-image-api-2026-09-12";
+const LEGACY_GPT_OUTPUT_COUNTS = Object.freeze([1, 2, 4]);
 
 export const US_GATEWAY_NANO_BANANA_2_ROUTE = Object.freeze({
   aspectRatios: getGenerationModelCapability("nano-banana-2").aspectRatios,
@@ -29,7 +36,7 @@ export const US_GATEWAY_NANO_BANANA_2_ROUTE = Object.freeze({
 
 export const US_GATEWAY_GPT_IMAGE_2_ROUTE = Object.freeze({
   aspectRatios: getGenerationModelCapability("gpt-image-2").aspectRatios,
-  outputCounts: getGenerationModelCapability("gpt-image-2").outputCounts,
+  outputCounts: LEGACY_GPT_OUTPUT_COUNTS,
   productModelId: "gpt-image-2",
   provider: "o1key",
   providerModel: "gpt-image-2",
@@ -39,7 +46,7 @@ export const US_GATEWAY_GPT_IMAGE_2_ROUTE = Object.freeze({
 
 export const US_GATEWAY_GPT_IMAGE_25_SUNBURST_ROUTE = Object.freeze({
   aspectRatios: getGenerationModelCapability("gpt-image-2.5-sunburst").aspectRatios,
-  outputCounts: getGenerationModelCapability("gpt-image-2.5-sunburst").outputCounts,
+  outputCounts: LEGACY_GPT_OUTPUT_COUNTS,
   productModelId: "gpt-image-2.5-sunburst",
   provider: "o1key",
   providerModel: "gpt-image-2.5-sunburst",
@@ -49,12 +56,22 @@ export const US_GATEWAY_GPT_IMAGE_25_SUNBURST_ROUTE = Object.freeze({
 
 export const US_GATEWAY_GPT_IMAGE_25_FLARE_ROUTE = Object.freeze({
   aspectRatios: getGenerationModelCapability("gpt-image-2.5-flare").aspectRatios,
-  outputCounts: getGenerationModelCapability("gpt-image-2.5-flare").outputCounts,
+  outputCounts: LEGACY_GPT_OUTPUT_COUNTS,
   productModelId: "gpt-image-2.5-flare",
   provider: "o1key",
   providerModel: "gpt-image-2.5-flare",
   resolutions: SUPPORTED_GENERATION_RESOLUTIONS,
   routeVersion: "o1key-gpt-image-2.5-flare-v1",
+});
+
+export const US_GATEWAY_SEEDREAM_5_PRO_ROUTE = Object.freeze({
+  aspectRatios: getGenerationModelCapability(SEEDREAM_MODEL_ID).aspectRatios,
+  outputCounts: getGenerationModelCapability(SEEDREAM_MODEL_ID).outputCounts,
+  productModelId: SEEDREAM_MODEL_ID,
+  provider: "o1key",
+  providerModel: SEEDREAM_PROVIDER_MODEL_ID,
+  resolutions: SEEDREAM_RESOLUTIONS,
+  routeVersion: `o1key-${SEEDREAM_PROVIDER_MODEL_ID}-v1`,
 });
 
 export const US_GATEWAY_MVP_ROUTE = US_GATEWAY_NANO_BANANA_2_ROUTE;
@@ -64,7 +81,7 @@ function bananaRoute(productModelId, imageLine, providerModel) {
     productModelId, imageLine, providerModel,
     provider: "o1key",
     aspectRatios: getGenerationModelCapability(productModelId).aspectRatios,
-    outputCounts: getGenerationModelCapability(productModelId).outputCounts,
+    outputCounts: isGptImageModelId(productModelId) ? LEGACY_GPT_OUTPUT_COUNTS : getGenerationModelCapability(productModelId).outputCounts,
     resolutions: SUPPORTED_GENERATION_RESOLUTIONS,
     routeVersion: `o1key-${providerModel}-v1`,
   });
@@ -90,6 +107,54 @@ const GPT_PROVIDER_LINE_ROUTES = Object.freeze(Object.fromEntries(
   })]),
 ));
 
+const CANVAS_GPT_ROUTES = Object.freeze(Object.fromEntries(
+  ["gpt-image-2", "gpt-image-2.5-sunburst", "gpt-image-2.5-flare"].map((modelId) => {
+    const channelModel = modelId === "gpt-image-2" ? `${modelId}-c` : modelId;
+    const route = (tier, providerModel) => Object.freeze({
+      ...bananaRoute(modelId, "special", providerModel),
+      outputCounts: getGenerationModelCapability(modelId).outputCounts,
+      aspectRatios: Object.freeze(["adaptive", ...getGenerationModelCapability(modelId).aspectRatios]),
+      canvasPolicy: "canvas-image-v1", tier,
+      routeVersion: `o1key-canvas-${providerModel}-${tier}-v1`,
+    });
+    return [modelId, Object.freeze({
+      standard: route("standard", `${channelModel}-sp`),
+      fourK: route("4K", `${channelModel}-sd`),
+      backup: route("4K-backup", modelId),
+    })];
+  }),
+));
+
+export function getCanvasImageRoute(modelId, resolution, { fallback = false } = {}) {
+  const routes = CANVAS_GPT_ROUTES[modelId];
+  if (!routes) return null;
+  return fallback ? resolution === "4K" ? routes.backup : null
+    : resolution === "4K" ? routes.fourK : routes.standard;
+}
+
+function supportedRoute(route) {
+  return getUsGatewayRoute(route.productModelId, route.imageLine) === route ||
+    Object.values(CANVAS_GPT_ROUTES[route.productModelId] ?? {}).includes(route);
+}
+
+export function isExplicitImageChannelRejection(payload, status) {
+  if (!payload || typeof payload !== "object" || !payload.error || payload.task_id || payload.data?.task_id ||
+    [401, 403, 429].includes(status)) return false;
+  const error = payload.error;
+  const code = typeof error === "object" ? String(error.code ?? error.type ?? "").toLowerCase() : "";
+  const message = typeof error === "string" ? error : String(error.message ?? "");
+  if (/auth|api.?key|permission|quota|balance|billing|credit|rate.?limit|moderation|policy|safety|invalid.*(param|size|quality)|参数|余额|配额|限流|审核/i.test(`${code} ${message}`)) return false;
+  return ["no_available_channel", "channel_unavailable", "no_available_provider"].includes(code) ||
+    /no available (channel|provider)|channel unavailable|无可用渠道|没有可用渠道|渠道不可用/i.test(message);
+}
+
+class ImageChannelUnavailable extends NormalizedProviderError {
+  constructor() {
+    super({ code: "CAPACITY_BUSY", message: "当前图片生成渠道暂不可用，请稍后重试。", retryable: true });
+    this.channelUnavailable = true;
+  }
+}
+
 export function getUsGatewayRoute(modelId, imageLine) {
   if (!isValidImageLine(modelId, imageLine)) return null;
   if (isGptImageModelId(modelId) && imageLine !== undefined) return GPT_PROVIDER_LINE_ROUTES[modelId]?.[imageLine] ?? null;
@@ -99,6 +164,7 @@ export function getUsGatewayRoute(modelId, imageLine) {
     "gpt-image-2.5-sunburst": US_GATEWAY_GPT_IMAGE_25_SUNBURST_ROUTE,
     "gpt-image-2": US_GATEWAY_GPT_IMAGE_2_ROUTE,
     "gpt-image-2.5-flare": US_GATEWAY_GPT_IMAGE_25_FLARE_ROUTE,
+    [SEEDREAM_MODEL_ID]: US_GATEWAY_SEEDREAM_5_PRO_ROUTE,
   })[modelId] ?? null;
 }
 
@@ -159,7 +225,30 @@ function normalizeFailure(error) {
   return Object.freeze({ ...FAILURE_COPY.INTERNAL_ERROR, code: "INTERNAL_ERROR" });
 }
 
-function normalizeOutput(output, index, allowInsecureLoopback) {
+function seedreamOutputMetadata(output) {
+  const metadata = {};
+  if (Number.isSafeInteger(output.z_index) && output.z_index >= 0) metadata.zIndex = output.z_index;
+  if (typeof output.size === "string" && /^\d+x\d+$/.test(output.size)) metadata.size = output.size;
+  if (["png", "jpeg"].includes(output.output_format)) metadata.outputFormat = output.output_format;
+  for (const key of ["name", "description"]) {
+    if (typeof output[key] === "string") metadata[key] = output[key].slice(0, 2_000);
+  }
+  if (output.bounding_box && typeof output.bounding_box === "object") {
+    const box = {};
+    for (const key of ["absolute", "normalized"]) {
+      const coordinates = output.bounding_box[key];
+      if (Array.isArray(coordinates) && coordinates.length === 4 &&
+          coordinates.every((value) => Number.isFinite(value) && value >= 0) &&
+          (key !== "normalized" || coordinates.every((value) => value <= 1_000))) {
+        box[key] = Object.freeze([...coordinates]);
+      }
+    }
+    if (Object.keys(box).length) metadata.boundingBox = Object.freeze(box);
+  }
+  return Object.keys(metadata).length ? Object.freeze(metadata) : null;
+}
+
+function normalizeOutput(output, index, allowInsecureLoopback, productModelId) {
   let url;
   try {
     url = new URL(output?.url);
@@ -173,10 +262,12 @@ function normalizeOutput(output, index, allowInsecureLoopback) {
   ) {
     throw protocolError();
   }
+  const providerMetadata = isSeedreamModelId(productModelId) ? seedreamOutputMetadata(output) : null;
   return Object.freeze({
     id: `output-${index + 1}`,
     mimeType: output.mime_type,
     url: url.href,
+    ...(providerMetadata ? { providerMetadata } : {}),
   });
 }
 
@@ -192,9 +283,9 @@ function normalizeProgress(value, state) {
 
 export function normalizeUsGatewayTask(
   payload,
-  { allowInsecureLoopback = false, expectedOutputCount = 1 } = {},
+  { allowInsecureLoopback = false, expectedOutputCount = 1, productModelId } = {},
 ) {
-  if (![1, 2, 4].includes(expectedOutputCount)) throw protocolError();
+  if (!(isSeedreamModelId(productModelId) ? expectedOutputCount === 1 : [1, 2, 4].includes(expectedOutputCount))) throw protocolError();
   const taskId = payload?.task_id;
   if (typeof taskId !== "string" || !taskId) throw protocolError();
   const state = Object.freeze({
@@ -207,17 +298,23 @@ export function normalizeUsGatewayTask(
 
   const rawOutputs = payload.data?.images ?? [];
   if (!Array.isArray(rawOutputs)) throw protocolError();
+  if (state === "succeeded" && !isExpectedGenerationOutputCount({
+    modelId: productModelId, requestedCount: expectedOutputCount, actualCount: rawOutputs.length,
+  })) throw protocolError();
+  // Sort only when every item supplies an interpretable layer order. Partial
+  // metadata must not move an unlabelled base image behind labelled layers.
+  const orderedOutputs = isSeedreamModelId(productModelId) && rawOutputs.length &&
+    rawOutputs.every((output) => Number.isSafeInteger(output?.z_index) && output.z_index >= 0)
+      ? [...rawOutputs].sort((left, right) => left.z_index - right.z_index)
+      : rawOutputs;
   const outputs = Object.freeze(
-    rawOutputs.map((output, index) =>
-      normalizeOutput(output, index, allowInsecureLoopback),
+    orderedOutputs.map((output, index) =>
+      normalizeOutput(output, index, allowInsecureLoopback, productModelId),
     ),
   );
   const failures = Object.freeze(
     state === "failed" ? [normalizeFailure(payload.error)] : [],
   );
-  if (state === "succeeded" && outputs.length !== expectedOutputCount) {
-    throw protocolError();
-  }
   if (state !== "succeeded" && outputs.length !== 0) throw protocolError();
 
   return Object.freeze({
@@ -325,6 +422,15 @@ function validateReference(reference) {
 }
 
 async function parseResponse(response, { submission = false } = {}) {
+  let payload;
+  try { payload = await response.json(); } catch {
+    if (!response.ok && !(submission && response.status >= 500)) {
+      throw normalizedError(response.status === 429 || response.status >= 500 ? "CAPACITY_BUSY" : "INTERNAL_ERROR",
+        ![400, 401, 403].includes(response.status));
+    }
+    throw normalizedError(submission ? "SUBMISSION_UNKNOWN" : "INTERNAL_ERROR");
+  }
+  if (submission && isExplicitImageChannelRejection(payload, response.status)) throw new ImageChannelUnavailable();
   if (!response.ok) {
     if (submission && response.status >= 500) {
       throw normalizedError("SUBMISSION_UNKNOWN");
@@ -334,11 +440,7 @@ async function parseResponse(response, { submission = false } = {}) {
       : "INTERNAL_ERROR";
     throw normalizedError(code, response.status !== 400 && response.status !== 401 && response.status !== 403);
   }
-  try {
-    return await response.json();
-  } catch {
-    throw normalizedError(submission ? "SUBMISSION_UNKNOWN" : "INTERNAL_ERROR");
-  }
+  return payload;
 }
 
 function normalizeTemporaryUpload(payload, expectedMimeType, nowSeconds, allowInsecureLoopback) {
@@ -381,6 +483,8 @@ function validateJob(job, route) {
       : "png");
   if (
     job?.model_id !== route.productModelId ||
+    !route.outputCounts.includes(job?.requested_count) ||
+    (isSeedreamModelId(route.productModelId) && job?.image_line != null) ||
     (isBananaModel(route.productModelId) && (job?.image_line ?? "special") !== (route.imageLine ?? "special")) ||
     (isGptImageModelId(route.productModelId) && (job?.image_line ?? undefined) !== route.imageLine) ||
     !isSupportedGenerationInput({
@@ -388,6 +492,7 @@ function validateJob(job, route) {
       count: job?.requested_count,
       modelId: job?.model_id,
       resolution: job?.resolution,
+      routingPolicy: route.canvasPolicy ? job?.provider_routing_policy : undefined,
     }) ||
     !["low", "high"].includes(thinkingLevel) ||
     typeof googleSearch !== "boolean" ||
@@ -405,6 +510,16 @@ function validateJob(job, route) {
 }
 
 function generationPayload({ job, route, uploadedReferences, allowInsecureLoopback = false }) {
+  if (isSeedreamModelId(route.productModelId)) {
+    return {
+      images: uploadedReferences.map((reference) => assertUploadedReferenceUrl(reference.url, allowInsecureLoopback)),
+      model: route.providerModel,
+      prompt: job.prompt,
+      n: 1,
+      output_format: "png",
+      size: getSeedreamPixelSize(job.aspect_ratio, job.resolution),
+    };
+  }
   const common = {
     images: uploadedReferences.map((reference) => ({
       fileData: {
@@ -427,7 +542,7 @@ function generationPayload({ job, route, uploadedReferences, allowInsecureLoopba
   }
   return {
     ...common,
-    aspect_ratio: job.aspect_ratio,
+    ...(job.aspect_ratio === "adaptive" ? {} : { aspect_ratio: job.aspect_ratio }),
     response_modalities: ["TEXT", "IMAGE"],
     size: job.resolution,
     ...((job.thinking_level ?? "high") === "high"
@@ -444,7 +559,7 @@ function o1keyRoutes() {
   return SUPPORTED_GENERATION_MODEL_IDS.flatMap((modelId) => [
     getUsGatewayRoute(modelId),
     ...BANANA_LINES.map(({ id }) => getUsGatewayRoute(modelId, id)),
-  ]).filter(Boolean);
+  ]).filter(Boolean).concat(CANVAS_GPT_ROUTES["gpt-image-2"].standard, CANVAS_GPT_ROUTES["gpt-image-2"].fourK);
 }
 
 export const O1KEY_PROVIDER_ROUTES_BY_MODEL = Object.freeze(
@@ -475,7 +590,7 @@ export function createUsGatewayAdapter({
     throw new Error("Gateway failure confirmation polls must be a positive integer.");
   }
   const origin = assertLoopbackOrHttps(baseUrl, allowInsecureLoopback);
-  if (getUsGatewayRoute(route.productModelId, route.imageLine) !== route) {
+  if (!supportedRoute(route)) {
     throw new Error("A supported O1Key generation route is required.");
   }
 
@@ -505,6 +620,7 @@ export function createUsGatewayAdapter({
     return normalizeUsGatewayTask(payload, {
       allowInsecureLoopback,
       expectedOutputCount,
+      productModelId: route.productModelId,
     });
   }
 

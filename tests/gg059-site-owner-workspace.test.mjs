@@ -77,7 +77,7 @@ test("GG-059 admin entry points mount the same shell and management changes refr
   assert.match(managementEntry, /location.assign\("\/organizations"\)[\s\S]*navigateWorkspace\(\{ kind: "organizations" \}\)/);
   assert.match(page, /aria-label="站长管理"[\s\S]*?onClick=\{handleOrganizationNav\}/);
   assert.match(page, /onManagementChange=\{[\s\S]*?setBillingRevision[\s\S]*?workspaceDirectory.reload/);
-  assert.match(page, /siteOwnerManagementActive \? <button[^>]*aria-label="返回创作" onClick=\{handleCreateNav\}/);
+  assert.match(page, /siteOwnerManagementActive \? <button[^>]*data-nav="home" aria-label="首页" onClick=\{handleCreateNav\}><HomeIcon/);
   for (const name of ["model", "account"]) {
     const view = await readFile(new URL(`../features/admin/${name}-management-page.tsx`, import.meta.url), "utf8");
     assert.match(view, /if \(workspaceSession\) return;/);

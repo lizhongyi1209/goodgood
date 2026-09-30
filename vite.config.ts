@@ -87,9 +87,10 @@ function loadLocalLiveDevVars(command: string) {
 
 // macOS Seatbelt blocks FSEvents, so Codex previews need polling for HMR.
 const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
-function localWorkspaceApiProxy(origin: string): ProxyOptions {
+function localWorkspaceApiProxy(origin: string, port: 32131): ProxyOptions {
+  const target = `http://127.0.0.1:${port}`;
   return {
-    target: "http://127.0.0.1:32131",
+    target,
     changeOrigin: true,
     bypass(request, response) {
       if (request.method !== "GET" && request.headers.origin !== origin) {
@@ -100,7 +101,7 @@ function localWorkspaceApiProxy(origin: string): ProxyOptions {
     },
     configure(proxy) {
       proxy.on("proxyReq", (request) => {
-        request.setHeader("origin", "http://127.0.0.1:32131");
+        request.setHeader("origin", target);
       });
     },
   };
@@ -176,7 +177,7 @@ export default defineConfig(async ({ command }) => {
       ...(liveDev
         ? {
             proxy: {
-              "/api": localWorkspaceApiProxy(process.env.GOODGOOD_AUTH_PUBLIC_ORIGIN!),
+              "/api": localWorkspaceApiProxy(process.env.GOODGOOD_AUTH_PUBLIC_ORIGIN!, 32131),
             },
           }
         : {}),

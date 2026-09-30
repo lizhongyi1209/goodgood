@@ -30,7 +30,7 @@ export default function HeroPage() {
   return <main className="min-h-screen bg-background">
     <header className="mx-auto flex max-w-6xl items-center px-6 pt-7">
       <Link href="/create" aria-label="GoodGood，前往创作工作台">
-        <Image src="/goodgood-wordmark.svg" alt="GoodGood" width={100} height={23} priority />
+        <Image src="/goodgood-g-icon.svg" alt="GoodGood" width={32} height={32} priority />
       </Link>
     </header>
     <Hero10 {...hero} />

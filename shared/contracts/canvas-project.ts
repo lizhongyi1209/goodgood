@@ -1,0 +1,92 @@
+import type { GenerationAspectRatio, GenerationCount, GenerationResolution, GptImageQuality, GptImageBackground, GptImageOutputFormat } from "@/shared/contracts/generation";
+import type { GenerationJob } from "@/shared/contracts/generation";
+
+export type CanvasProjectNode = Readonly<{
+  id: string;
+  type: "sourceImage" | "sourceVideo" | "sourceAudio" | "imageGenerator" | "imageResult";
+  position: Readonly<{ x: number; y: number }>;
+  size?: Readonly<{ width: number; height: number }>;
+  asset?: Readonly<{ id: string; kind: "reference" | "generated" | "video" | "audio" }>;
+  jobId?: string;
+  index?: number;
+  sequence?: number;
+  name?: string;
+  metadata?: Readonly<{ pixelWidth?: number; pixelHeight?: number; durationSeconds?: number }>;
+  // Browser recovery only. Never send this field to the server.
+  pendingFileId?: string;
+  localJob?: GenerationJob;
+}>;
+
+export type CanvasProjectEdge = Readonly<{
+  id: string;
+  source: string;
+  target: string;
+  sourceHandle: string | null;
+  targetHandle: string | null;
+}>;
+
+export type CanvasProjectGenerator = Readonly<{
+  draft: Readonly<{
+    prompt: string;
+    modelKey: string | null;
+    ratio: GenerationAspectRatio;
+    resolution: GenerationResolution;
+    count: GenerationCount;
+    quality?: GptImageQuality;
+    background?: GptImageBackground;
+    outputFormat?: GptImageOutputFormat;
+  }>;
+  directReferenceIds: readonly string[];
+  // Browser recovery only. Files are stored separately in IndexedDB.
+  pendingReferences?: readonly Readonly<{ id: string; name: string }>[];
+}>;
+
+export const CANVAS_PROJECT_MAX_PAGES = 10;
+export const CANVAS_PROJECT_DEFAULT_PAGE_ID = "page-1";
+export const CANVAS_PROJECT_DEFAULT_PAGE_NAME = "页面1";
+
+export type CanvasPageDocument = Readonly<{
+  nodes: readonly CanvasProjectNode[];
+  edges: readonly CanvasProjectEdge[];
+  generators: Readonly<Record<string, CanvasProjectGenerator>>;
+  convertedReferences?: Readonly<Record<string, string>>;
+  viewport: Readonly<{ x: number; y: number; zoom: number }>;
+}>;
+
+export type CanvasProjectPage = CanvasPageDocument & Readonly<{
+  id: string;
+  name: string;
+}>;
+
+export type LegacyCanvasProjectDocument = CanvasPageDocument & Readonly<{
+  schemaVersion: 1;
+}>;
+
+export type PagedCanvasProjectDocument = Readonly<{
+  schemaVersion: 2;
+  pages: readonly CanvasProjectPage[];
+}>;
+
+export type CanvasProjectDocument = LegacyCanvasProjectDocument | PagedCanvasProjectDocument;
+
+/** Legacy documents remain unchanged in storage until a content edit is saved. */
+export function getCanvasProjectPages(document: CanvasProjectDocument): readonly CanvasProjectPage[] {
+  if (document.schemaVersion === 2) return document.pages;
+  const { schemaVersion: _schemaVersion, ...page } = document;
+  return [{ id: CANVAS_PROJECT_DEFAULT_PAGE_ID, name: CANVAS_PROJECT_DEFAULT_PAGE_NAME, ...page }];
+}
+
+export type CanvasProjectRecord = Readonly<{
+  id: string;
+  name: string;
+  version: number;
+  updatedAt: string;
+  document: CanvasProjectDocument;
+}>;
+
+export type CanvasProjectSummary = Readonly<{
+  id: string;
+  name: string;
+  version: number;
+  updatedAt: string;
+}>;

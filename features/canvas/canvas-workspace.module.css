@@ -1,8 +1,263 @@
 .canvas {
   position: absolute;
   inset: 0;
+  --canvas-controls-bottom: 0px;
+  --canvas-media-radius: min(8px, 4%);
   background: #fff;
 }
+.canvas:focus { outline: none; }
+
+.canvas :global(.react-flow__selection) { border-style: solid; }
+.canvas :global(.react-flow__nodesselection-rect),
+.canvas :global(.react-flow__nodesselection-rect:focus),
+.canvas :global(.react-flow__nodesselection-rect:focus-visible) {
+  border: 0;
+  outline: 1px solid #3b82f6;
+  outline-offset: 0;
+}
+
+.canvas :global(.react-flow[data-canvas-selection-visible="true"] .react-flow__nodesselection-rect) {
+  left: var(--canvas-selection-left, 0px);
+  top: var(--canvas-selection-top, 0px);
+  width: var(--canvas-selection-width) !important;
+  height: var(--canvas-selection-height) !important;
+}
+.selectionToolbar {
+  position: absolute;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 5px;
+  border: 1px solid #ededee;
+  border-radius: 14px;
+  background: #fff;
+  color: #27272a;
+  transform: translate(-50%, -100%);
+  pointer-events: auto;
+}
+.selectionToolbar[hidden] { display: none; }
+.selectionToolbar [data-slot="button"] {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 8px;
+  color: inherit;
+}
+.selectionToolbar [data-slot="button"] svg { width: 16px; height: 16px; }
+.selectionToolbar [data-group-start="true"] { margin-left: 6px; }
+.selectionToolbar [data-group-start="true"]::before { content: ""; position: absolute; left: -5px; top: 9px; width: 1px; height: 14px; background: #e4e4e7; pointer-events: none; }
+.selectionToolbar [data-slot="button"]:hover,
+.selectionToolbar [data-slot="button"]:active { background: #f0f0f2; }
+.selectionToolbar [data-slot="button"]:focus-visible { outline: 2px solid #18181b; outline-offset: 1px; }
+.selectionToolbar [data-slot="button"]:disabled { opacity: 0.4; }
+
+.canvas :global(.react-flow__edge.animated .react-flow__edge-path) {
+  stroke-dasharray: 7 4;
+  animation: referenceEdgeFlow 1.3s linear infinite;
+}
+.canvas :global(.react-flow__edge .react-flow__edge-path) {
+  transition: stroke 120ms ease;
+}
+.canvas :global(.react-flow__edge:hover .react-flow__edge-path),
+.canvas :global(.react-flow__edge[data-canvas-edge-hovered="true"] .react-flow__edge-path) {
+  stroke: #1687ff !important;
+}
+@keyframes referenceEdgeFlow { to { stroke-dashoffset: -11; } }
+
+.edgeDelete[data-slot="button"] {
+  position: absolute;
+  z-index: 6;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid #e4e4e7;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 9%);
+  color: #52525b;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+}
+.edgeDelete[data-slot="button"] svg { width: 15px; height: 15px; }
+.edgeDelete[data-slot="button"]:hover { background: #f4f4f5; color: #18181b; }
+.edgeDelete[data-slot="button"]:focus-visible { outline: 2px solid #18181b; outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  .canvas :global(.react-flow__edge .react-flow__edge-path) { transition: none; }
+  .canvas :global(.react-flow__edge.animated .react-flow__edge-path) { animation: none; stroke-dasharray: none; }
+}
+
+.canvasContextMenu[data-slot="context-menu-content"] {
+  min-width: 140px;
+  padding: 4px;
+  border-color: #e4e4e7;
+  border-radius: 10px;
+  background: #fff;
+  color: #18181b;
+  box-shadow: 0 8px 22px rgb(0 0 0 / 9%);
+}
+.canvasContextMenu [data-slot="context-menu-item"] { padding: 7px 9px; border-radius: 7px; font-size: 13px; }
+.shortcutsMenu[data-slot="popover-content"] { width: max-content; min-width: 218px; padding: 6px; border-color: #e4e4e7; border-radius: 10px; background: #fff; color: #18181b; box-shadow: 0 8px 22px rgb(0 0 0 / 9%); }
+.shortcutsMenu > div { display: flex; justify-content: space-between; gap: 16px; padding: 6px 8px; font-size: 12px; white-space: nowrap; }
+.shortcutsMenu kbd { color: #71717a; font: inherit; }
+
+.generatorNode {
+  position: relative;
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  overflow: hidden;
+  border-radius: var(--canvas-media-radius, min(8px, 4%));
+  background: #ededee;
+  color: #d4d4d8;
+}
+.generatorNode:hover { background: #e8e8ea; color: #c4c4ca; }
+.generatorShimmering,
+.generatorShimmering:hover { background: #e4e4e7; }
+.generatorShimmering::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 30%, rgb(255 255 255 / 72%) 50%, transparent 70%);
+  transform: translateX(-100%);
+  animation: canvasGeneratorShimmer 1.8s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes canvasGeneratorShimmer { to { transform: translateX(100%); } }
+.generatorImage { display: block; width: 100%; height: 100%; object-fit: contain; }
+.generatorBatch,
+.generatorBatch:hover { overflow: visible; isolation: isolate; background: transparent; color: inherit; }
+.generatorStackItem {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  background: #fff;
+  box-shadow: 0 2px 10px rgb(0 0 0 / 8%);
+  transform: translate(var(--canvas-stack-x, 0px), var(--canvas-stack-y, 0px));
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), opacity 180ms ease, box-shadow 180ms ease;
+}
+.generatorStackItemActive { box-shadow: 0 4px 14px rgb(0 0 0 / 10%); }
+.generatorStackItemHidden { opacity: 0; pointer-events: none; }
+.generatorStackToggle {
+  position: absolute;
+  z-index: 10;
+  bottom: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid rgb(0 0 0 / 10%);
+  border-radius: 50%;
+  background: rgb(255 255 255 / 92%);
+  box-shadow: 0 1px 6px rgb(0 0 0 / 9%);
+  color: #3f3f46;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background 120ms ease;
+}
+.generatorStackToggle:hover { background: #fff; }
+.generatorStackToggle:focus-visible { outline: 2px solid #3f3f46; outline-offset: 2px; }
+.generatorFailure { position: absolute; inset: auto 8px 8px; overflow: hidden; padding: 7px 9px; border-radius: 6px; background: rgb(255 255 255 / 92%); color: #3f3f46; font-size: 11px; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
+.canvas :global(.react-flow__node-imageGenerator.selected) .generatorNode:not(.generatorShimmering) { outline: 1px solid #71717a; outline-offset: 0; }
+.generatedGenerator:hover,
+.canvas :global(.react-flow__node-imageGenerator.selected) .generatedGenerator { outline: 1px solid #3b82f6; outline-offset: 0; }
+.generatorToolbar { max-height: max(180px, calc(100dvh - 210px)); overflow-y: auto; border-radius: 22px; background: #fff; box-shadow: 0 10px 30px rgb(0 0 0 / 7%); pointer-events: auto; }
+.generatorComposerHost { width: 100%; }
+.referenceOutputHandle:global(.react-flow__handle),
+.generatorInputHandle:global(.react-flow__handle) {
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  opacity: 0;
+  cursor: crosshair;
+  --handle-breath-state: paused;
+  transition: opacity 120ms ease;
+}
+.referenceOutputHandle::before,
+.generatorInputHandle::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgb(113 113 122 / 16%);
+  opacity: 0.25;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0.78);
+  animation: canvasHandleBreath 2.8s ease-in-out infinite;
+  animation-play-state: var(--handle-breath-state);
+}
+@keyframes canvasHandleBreath {
+  0%, 100% { opacity: 0.25; transform: translate(-50%, -50%) scale(0.78); }
+  50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.25); }
+}
+.referenceOutputHandle::after,
+.generatorInputHandle::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  border: 1px solid #fff;
+  border-radius: 50%;
+  background: #52525b;
+  box-shadow: 0 0 0 1px #a1a1aa;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  transition: box-shadow 120ms ease;
+}
+.canvas :global(.react-flow__node):hover .referenceOutputHandle,
+.canvas :global(.react-flow__node.selected) .referenceOutputHandle,
+.canvas :global(.react-flow__node):hover .generatorInputHandle,
+.canvas :global(.react-flow__node.selected) .generatorInputHandle,
+.canvas[data-connecting="true"] .generatorInputHandle,
+.referenceOutputHandle:hover,
+.generatorInputHandle:hover,
+.referenceOutputHandle:global(.connectingfrom),
+.generatorInputHandle:global(.connecting),
+.generatorInputHandle:global(.valid) { opacity: 1; --handle-breath-state: running; }
+.referenceOutputHandle:hover::after,
+.generatorInputHandle:hover::after,
+.referenceOutputHandle:global(.connectingfrom)::after,
+.generatorInputHandle:global(.valid)::after {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 5px rgb(113 113 122 / 22%);
+}
+.referenceOutputHandle:global(.react-flow__handle) { right: -11px; }
+.generatorInputHandle:global(.react-flow__handle) { left: -11px; }
+
+.assetsSidebar { position: absolute; z-index: 7; inset: 0 auto 0 0; width: var(--canvas-sidebar-width); overflow: hidden; border-right: 1px solid #ededee; background: #fff; }
+.assetsResizeHandle { position: absolute; z-index: 1; top: 0; right: 0; width: 10px; height: 100%; cursor: col-resize; touch-action: none; }
+.assetsResizeHandle:focus { outline: none; box-shadow: none; }
+.assetsResizeHandle:focus-visible { background: #f4f4f5; }
+.zoomPanel:global(.react-flow__panel.bottom.left) { bottom: var(--canvas-controls-bottom); left: calc(var(--canvas-sidebar-width) + 10px); }
+.assetsTrigger[data-slot="button"] { width: 32px; height: 32px; padding: 0; border-radius: 8px; background: #fff; color: #71717a; }
+.assetsTrigger[data-slot="button"]:hover, .assetsTrigger[aria-expanded="true"] { background: #f3f3f4; color: #27272a; }
+.shortcutsTrigger[data-slot="button"] { width: 32px; height: 32px; padding: 0; border-radius: 8px; background: #fff; color: #71717a; }
+.shortcutsTrigger[data-slot="button"]:hover, .shortcutsTrigger[data-state="open"] { background: #f3f3f4; color: #27272a; }
+.miniMap:global(.react-flow__panel.bottom.left) {
+  bottom: calc(var(--canvas-controls-bottom) + 42px);
+  left: calc(var(--canvas-sidebar-width) + 10px);
+  overflow: hidden;
+  border: 1px solid #e4e4e7;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 7%);
+}
+.miniMap :global(.react-flow__minimap-svg) { cursor: grab; }
+.miniMap :global(.react-flow__minimap-svg):active { cursor: grabbing; }
+
+@media (max-width: 800px) { .canvas { --canvas-controls-bottom: 208px; } }
+@media (max-width: 560px) { .canvas { --canvas-controls-bottom: 244px; } .assetsResizeHandle { display: none; } .generatorToolbar { border-radius: 17px; } }
 
 .canvas :global(.react-flow__pane),
 .canvas :global(.react-flow__pane.dragging) {
@@ -10,7 +265,10 @@
 }
 
 .canvas :global(.react-flow__node-imageResult),
-.canvas :global(.react-flow__node-sourceImage) {
+.canvas :global(.react-flow__node-sourceImage),
+.canvas :global(.react-flow__node-sourceVideo),
+.canvas :global(.react-flow__node-sourceAudio),
+.canvas :global(.react-flow__node-imageGenerator) {
   border: 0;
   background: transparent;
 }
@@ -19,36 +277,66 @@
 .canvas :global(.react-flow__node-imageResult.draggable.dragging),
 .canvas :global(.react-flow__node-sourceImage.draggable),
 .canvas :global(.react-flow__node-sourceImage.draggable.dragging),
+.canvas :global(.react-flow__node-sourceVideo.draggable),
+.canvas :global(.react-flow__node-sourceVideo.draggable.dragging),
+.canvas :global(.react-flow__node-sourceAudio.draggable),
+.canvas :global(.react-flow__node-sourceAudio.draggable.dragging),
 .imageNode,
 .imageNode a,
-.imageNode img {
+.imageNode img,
+.videoNode,
+.videoNode video {
   cursor: default;
 }
 
 .canvas :global(.react-flow__node-imageResult.selected) .resultNode.imageNode,
-.canvas :global(.react-flow__node-sourceImage.selected) .sourceNode.imageNode {
+.canvas :global(.react-flow__node-sourceImage.selected) .sourceNode.imageNode,
+.canvas :global(.react-flow__node-sourceVideo.selected) .videoNode,
+.canvas :global(.react-flow__node-sourceAudio.selected) .audioNode,
+.imageNode:hover,
+.videoNode:hover,
+.audioNode:hover {
   outline: 1px solid #3b82f6;
   outline-offset: 0;
 }
+.canvas :global(.react-flow__node-imageGenerator.draggable),
+.canvas :global(.react-flow__node-imageGenerator.draggable.dragging) { cursor: default; }
 
 .imageNode {
   position: relative;
 }
 
-.imageNode::after {
+.imageMetadata {
   position: absolute;
-  inset: 0;
-  background: rgb(0 0 0 / 4%);
-  content: "";
-  opacity: 0;
+  bottom: calc(100% + 6px);
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  color: #52525b;
+  font-size: 11px;
+  line-height: 16px;
   pointer-events: none;
-  transition: opacity 140ms ease;
 }
 
-.imageNode:hover::after {
-  opacity: 1;
+.imageMetadataName {
+  display: inline-flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
 }
 
+.imageMetadataName > svg { flex: none; }
+.imageMetadataNameText { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.generatorMetadataIcon { position: relative; display: inline-flex; flex: none; align-items: center; justify-content: center; width: 12px; height: 12px; }
+.generatorMetadataSparkle { position: absolute; top: -3px; right: -4px; width: 8px; height: 8px; fill: currentColor; background: #fff; }
+.imageMetadataSize { flex: none; color: #71717a; font-size: 10px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.imageMetadataCompact .imageMetadataName { flex: none; }
+.imageMetadataCompact .imageMetadataNameText { display: none; }
+.imageMetadataIconOnly .imageMetadataSize { display: none; }
 .sourceNode {
   position: relative;
   width: 100%;
@@ -67,6 +355,60 @@
   object-fit: contain;
 }
 
+.mediaUploading::before,
+.mediaUploading::after {
+  position: absolute;
+  content: "";
+  pointer-events: none;
+}
+.mediaUploading::before {
+  inset: 0;
+  background: rgb(0 0 0 / 16%);
+}
+.mediaUploading::after {
+  inset: 0;
+  background: radial-gradient(ellipse 95% 80% at 50% 48%, rgb(255 255 255 / 44%), rgb(255 255 255 / 19%) 58%, rgb(255 255 255 / 0%) 100%);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 42%), inset 0 0 28px rgb(255 255 255 / 22%);
+  animation: canvasImageGlassBreath 1.5s ease-in-out infinite;
+}
+@keyframes canvasImageGlassBreath {
+  0%, 100% { opacity: 0.28; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.035); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mediaUploading::after { display: none; }
+  .generatorShimmering::after { animation: none; opacity: 0; }
+  .generatorStackItem, .generatorStackToggle { transition: none; }
+  .referenceOutputHandle::before, .generatorInputHandle::before {
+    animation: none;
+    opacity: 0.3;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  .referenceOutputHandle:global(.react-flow__handle), .generatorInputHandle:global(.react-flow__handle),
+  .referenceOutputHandle::after, .generatorInputHandle::after { transition: none; }
+}
+
+.mediaUploadFailure {
+  position: absolute;
+  inset: auto 8px 8px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  padding: 6px 7px;
+  border: 1px solid rgb(0 0 0 / 9%);
+  border-radius: 6px;
+  background: rgb(255 255 255 / 94%);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 7%);
+  color: #3f3f46;
+  font-size: 11px;
+  line-height: 1.3;
+}
+.mediaUploadFailure span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mediaUploadFailure button { flex: none; padding: 2px 4px; border: 0; border-radius: 4px; background: #f4f4f5; color: #18181b; font: inherit; cursor: pointer; }
+.mediaUploadFailure button:hover { background: #e4e4e7; }
+.mediaUploadFailure button:focus-visible { outline: 1px solid #18181b; outline-offset: 1px; }
+
 .sourceFailure {
   display: grid;
   place-items: center;
@@ -74,10 +416,6 @@
   height: 158px;
   color: #71717a;
   font-size: 12px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .imageNode::after { transition: none; }
 }
 
 .resultNode {
@@ -91,8 +429,66 @@
 
 .sourceNode.imageNode,
 .resultNode.imageNode {
-  border-radius: min(14px, 6%);
+  border-radius: var(--canvas-media-radius, min(8px, 4%));
 }
+
+.videoNode {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: var(--canvas-media-radius, min(8px, 4%));
+  background: #f4f4f5;
+}
+.videoNodeReady { background: transparent; }
+
+.videoElement { display: block; width: 100%; height: 100%; object-fit: contain; }
+.videoNode .sourceFailure { width: 100%; height: 100%; padding: 12px; text-align: center; }
+.videoPlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  transform: translate(-50%, -50%);
+  border: 0;
+  border-radius: 50%;
+  background: rgb(24 24 27 / 68%);
+  color: #fff;
+  cursor: default;
+}
+.videoPlay:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.videoDuration {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  padding: 3px 6px;
+  border-radius: 6px;
+  background: rgb(24 24 27 / 72%);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  pointer-events: none;
+}
+.mediaUploading .videoPlay,
+.mediaUploading .videoDuration { opacity: 0; pointer-events: none; }
+.videoPreviewing .videoPlay,
+.videoPreviewing .videoDuration { opacity: 0; pointer-events: none; }
+.videoNodeTiny .videoPlay { width: 26px; height: 26px; }
+.videoNodeTiny .videoPlay svg { width: 13px; height: 13px; }
+.videoNodeTiny .videoDuration { bottom: 2px; left: 2px; padding: 1px 3px; font-size: 8px; }
+
+.audioNode { display: flex; flex-direction: column; gap: 10px; width: 260px; padding: 11px; border: 1px solid #e4e4e7; border-radius: 9px; background: #fff; }
+.audioNodeTitle { display: flex; align-items: center; gap: 7px; min-width: 0; color: #27272a; font-size: 12px; }
+.audioNodeTitle svg { flex: none; }
+.audioNodeTitle span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.audioPlayer { display: block; width: 100%; height: 36px; }
+.audioNodeError { margin: 0; color: #71717a; font-size: 11px; }
 
 .sizedNode {
   width: 100%;

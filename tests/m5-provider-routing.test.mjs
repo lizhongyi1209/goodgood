@@ -184,10 +184,10 @@ test("O1Key worker route reads private reference bytes, uploads, and resumes pol
 
   assert.deepEqual(provider.route, {
     aspectRatios: [
-      "1:8", "1:4", "9:16", "2:3", "3:4", "4:5", "1:1",
+      "adaptive", "1:8", "1:4", "9:16", "2:3", "3:4", "4:5", "1:1",
       "5:4", "4:3", "3:2", "16:9", "21:9", "4:1", "8:1",
     ],
-    outputCounts: [1, 2, 4],
+    outputCounts: Array.from({ length: 12 }, (_, index) => index + 1),
     productModelId: "nano-banana-2",
     provider: "o1key",
     providerModel: "gemini-3.1-flash-image-c-sp",
@@ -366,6 +366,114 @@ test("Nano Banana 2 fans four outputs into durable single-image O1Key tasks", as
       "https://assetcache.o1key.invalid/result-task-worker-4.png",
     ],
   );
+});
+
+test("both Nano adapters fan eight outputs into one recoverable task set", async (context) => {
+  const fake = createFakeO1Key();
+  await fake.listen();
+  context.after(() => fake.close());
+  const address = fake.address();
+  assert.ok(address && typeof address === "object");
+  for (const modelId of ["nano-banana-2", "nano-banana-pro"]) {
+    const provider = createGenerationProvider({
+      config: {
+        objectStorage: { bucket: "goodgood-private" },
+        provider: { allowInsecureLoopback: true, apiKey: API_KEY,
+          baseUrl: `http://127.0.0.1:${address.port}`, kind: "o1key",
+          pollIntervalMs: 1, requestTimeoutMs: 1_000, timeoutMs: 100 },
+      },
+      publicStorage: null,
+      route: generationProviderRouteForModel("o1key", modelId),
+      storage: {},
+    });
+    const job = { model_id: modelId, aspect_ratio: "1:1", resolution: "1K",
+      requested_count: 8, prompt: "synthetic eight-image batch", reference_snapshot: [] };
+    const priorSubmissions = fake.requests.filter((request) => request.operation === "submit").length;
+    const tokens = [];
+    const taskId = await provider.createTask({ job, onTaskCreated: async (token) => tokens.push(token) });
+    assert.deepEqual(tokens.map((token) => decodeO1KeyTaskSet(token, { expectedTaskCount: 8 }).length), [1, 2, 3, 4, 5, 6, 7, 8]);
+    const submissions = fake.requests.filter((request) => request.operation === "submit").slice(priorSubmissions);
+    assert.equal(submissions.length, 8);
+    assert.ok(submissions.every((request) => request.body.n === undefined));
+    assert.equal(provider.isTaskSubmissionComplete({ job, taskId }), true);
+    const outputs = await provider.pollTask({ expectedOutputCount: 8, taskId, onRefining: async () => {} });
+    assert.equal(outputs.length, 8);
+  }
+});
+
+test("new canvas GPT batches fan twelve single-image tasks into one ordered recoverable result", async (context) => {
+  const fake = createFakeO1Key();
+  await fake.listen();
+  context.after(() => fake.close());
+  const address = fake.address();
+  assert.ok(address && typeof address === "object");
+  for (const modelId of ["gpt-image-2", "gpt-image-2.5-sunburst", "gpt-image-2.5-flare"]) {
+    const job = { model_id: modelId, image_line: "special", aspect_ratio: "1:1", resolution: "2K",
+      requested_count: 12, provider_routing_policy: "canvas-image-v1",
+      prompt: "synthetic twelve-image canvas batch", reference_snapshot: [] };
+    const provider = createGenerationProvider({
+      config: { objectStorage: { bucket: "goodgood-private" }, provider: {
+        allowInsecureLoopback: true, apiKey: API_KEY, baseUrl: `http://127.0.0.1:${address.port}`,
+        kind: "o1key", pollIntervalMs: 1, requestTimeoutMs: 1_000, timeoutMs: 1_000,
+      } },
+      publicStorage: null, storage: {},
+      route: generationProviderRouteForModel("o1key", modelId, undefined, job),
+    });
+    const before = fake.taskIds.length;
+    const durable = [];
+    const taskId = await provider.createTask({ job, onTaskCreated: async (token) => durable.push(token) });
+    const submitted = fake.requests.filter((request) => request.operation === "submit").slice(before);
+    assert.equal(submitted.length, 12);
+    assert.ok(submitted.every((request) => request.body.n === 1));
+    assert.deepEqual(durable.map((token) => decodeO1KeyTaskSet(token, { expectedTaskCount: 12 }).length),
+      Array.from({ length: 12 }, (_, index) => index + 1));
+    const taskIds = decodeO1KeyTaskSet(taskId, { expectedTaskCount: 12 });
+    assert.deepEqual(taskIds, fake.taskIds.slice(before));
+    assert.equal(provider.isTaskSubmissionComplete({ job, taskId }), true);
+    assert.equal(await provider.createTask({ job, taskId }), taskId);
+    assert.equal(fake.taskIds.length, before + 12);
+    const outputs = await provider.pollTask({ job, expectedOutputCount: 12, taskId, onRefining: async () => {} });
+    assert.equal(outputs.length, 12);
+    assert.deepEqual(outputs.map((output) => output.url), taskIds.map((id) =>
+      id === "task-worker" ? "https://assetcache.o1key.invalid/result.png" : `https://assetcache.o1key.invalid/result-${id}.png`));
+  }
+});
+
+test("canvas GPT count twelve resumes after seven persisted tasks without repeating accepted submissions", async (context) => {
+  const fake = createFakeO1Key();
+  await fake.listen();
+  context.after(() => fake.close());
+  const address = fake.address();
+  assert.ok(address && typeof address === "object");
+  const job = { model_id: "gpt-image-2.5-flare", image_line: "special", aspect_ratio: "1:1", resolution: "2K",
+    requested_count: 12, provider_routing_policy: "canvas-image-v1",
+    prompt: "synthetic recoverable canvas batch", reference_snapshot: [] };
+  const provider = createGenerationProvider({
+    config: { objectStorage: { bucket: "goodgood-private" }, provider: {
+      allowInsecureLoopback: true, apiKey: API_KEY, baseUrl: `http://127.0.0.1:${address.port}`,
+      kind: "o1key", pollIntervalMs: 1, requestTimeoutMs: 1_000, timeoutMs: 1_000,
+    } }, publicStorage: null, storage: {},
+    route: generationProviderRouteForModel("o1key", job.model_id, undefined, job),
+  });
+  let persisted;
+  await assert.rejects(provider.createTask({ job, onTaskCreated: async (token) => {
+    persisted = token;
+    if (decodeO1KeyTaskSet(token, { expectedTaskCount: 12 }).length === 7) throw new Error("synthetic interrupted save");
+  } }), /synthetic interrupted save/);
+  assert.equal(fake.taskIds.length, 7);
+  assert.equal(provider.isTaskSubmissionComplete({ job, taskId: persisted }), false);
+  const remaining = [];
+  const taskId = await provider.createTask({ job, taskId: persisted, onTaskCreated: async (token) => remaining.push(token) });
+  assert.deepEqual(remaining.map((token) => decodeO1KeyTaskSet(token, { expectedTaskCount: 12 }).length), [8, 9, 10, 11, 12]);
+  assert.equal(fake.taskIds.length, 12);
+  assert.deepEqual(decodeO1KeyTaskSet(taskId, { expectedTaskCount: 12 }), fake.taskIds);
+  assert.ok(fake.requests.filter((request) => request.operation === "submit").every((request) => request.body.n === 1));
+  assert.equal((await provider.pollTask({ job, expectedOutputCount: 12, taskId, onRefining: async () => {} })).length, 12);
+
+  const uncertain = encodeO1KeyTaskSet(fake.taskIds.slice(0, 7), { submissionStarted: true });
+  await assert.rejects(provider.createTask({ job, taskId: uncertain }),
+    (error) => error.code === "SUBMISSION_UNKNOWN");
+  assert.equal(fake.taskIds.length, 12);
 });
 
 test("Nano Banana 2 resumes a partially persisted task set without resubmitting known tasks", async (context) => {

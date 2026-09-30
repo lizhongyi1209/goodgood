@@ -4,6 +4,7 @@ export const GENERATION_MODEL_IDS = [
   "gpt-image-2.5-sunburst",
   "gpt-image-2",
   "gpt-image-2.5-flare",
+  "seedream-5.0-pro",
 ] as const;
 
 export type GenerationModelId = (typeof GENERATION_MODEL_IDS)[number];
@@ -24,6 +25,7 @@ export function isGptImageModelId(
 }
 
 export const GENERATION_ASPECT_RATIOS = [
+  "adaptive",
   "1:8",
   "1:4",
   "9:16",
@@ -47,7 +49,8 @@ export const GENERATION_RESOLUTIONS = ["1K", "2K", "4K"] as const;
 export type GenerationResolution = (typeof GENERATION_RESOLUTIONS)[number];
 
 export const GENERATION_COUNTS = [1, 2, 4] as const;
-export type GenerationCount = (typeof GENERATION_COUNTS)[number];
+export const CANVAS_GENERATION_COUNTS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
+export type GenerationCount = (typeof CANVAS_GENERATION_COUNTS)[number];
 
 export const GENERATION_THINKING_LEVELS = ["low", "high"] as const;
 export type GenerationThinkingLevel =
@@ -103,6 +106,7 @@ export type GenerationInputDraft = {
   references: GenerationReference[];
   modelId: GenerationModelId;
   imageLine?: BananaLine;
+  routingPolicy?: "canvas-image-v1";
   catalogModelId?: string;
   expectedPriceVersion?: number;
   catalogModelName?: string;
@@ -124,6 +128,7 @@ export type GenerationInputSnapshot = Readonly<{
   references: readonly GenerationReference[];
   modelId: GenerationModelId;
   imageLine?: BananaLine;
+  routingPolicy?: "canvas-image-v1";
   catalogModelId?: string;
   expectedPriceVersion?: number;
   catalogModelName?: string;

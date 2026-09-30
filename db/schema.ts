@@ -1406,6 +1406,27 @@ export const creationDrafts = pgTable(
   ],
 );
 
+export const canvasProjects = pgTable(
+  "canvas_projects",
+  {
+    id: uuid("id").primaryKey(),
+    workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, { onDelete: "restrict" }),
+    ownerId: uuid("owner_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+    name: text("name").notNull(),
+    document: jsonb("document").notNull(),
+    contentHash: text("content_hash").notNull(),
+    version: integer("version").default(1).notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    index("canvas_projects_owner_updated_idx").on(table.workspaceId, table.ownerId, table.updatedAt, table.id),
+    check("canvas_projects_name_check", sql`char_length(${table.name}) between 1 and 20`),
+    check("canvas_projects_document_check", sql`jsonb_typeof(${table.document}) = 'object' and ${table.document}->>'schemaVersion' = '1' and pg_column_size(${table.document}) <= 1048576`),
+    check("canvas_projects_content_hash_check", sql`char_length(${table.contentHash}) = 64`),
+    check("canvas_projects_version_check", sql`${table.version} > 0`),
+  ],
+);
+
 export const projects = pgTable(
   "projects",
   {
@@ -1561,7 +1582,7 @@ export const priceVersions = pgTable(
     ),
     check(
       "price_versions_output_count_check",
-      sql`${table.outputCount} in (1, 2, 4)`,
+      sql`${table.outputCount} between 1 and 12`,
     ),
     check(
       "price_versions_plan_context_check",
@@ -1615,6 +1636,7 @@ export const generationBatches = pgTable(
     catalogModelName: text("catalog_model_name"),
     modelId: text("model_id").notNull(),
     imageLine: text("image_line"),
+    providerRoutingPolicy: text("provider_routing_policy"),
     aspectRatio: text("aspect_ratio").notNull(),
     resolution: text("resolution").notNull(),
     requestedCount: integer("requested_count").notNull(),
@@ -1667,7 +1689,11 @@ export const generationBatches = pgTable(
     ),
     check(
       "generation_batches_count_check",
-      sql`${table.requestedCount} in (1, 2, 4)`,
+      sql`${table.requestedCount} between 1 and 12`,
+    ),
+    check(
+      "generation_batches_provider_routing_policy_check",
+      sql`${table.providerRoutingPolicy} is null or ${table.providerRoutingPolicy} = 'canvas-image-v1'`,
     ),
     check(
       "generation_batches_thinking_level_check",
@@ -2376,6 +2402,8 @@ export const generationQueueOutbox = pgTable(
   ],
 );
 
+// Historical-only JCOIN schema (ADR 0117). Keep applied migration and records;
+// no current platform-coin API or reward processor uses these definitions.
 export const jcoinTreasury=pgTable('jcoin_treasury',{
   symbol:text('symbol').primaryKey(),supplyAtoms:bigint('supply_atoms',{mode:'bigint'}).notNull(),userPoolAtoms:bigint('user_pool_atoms',{mode:'bigint'}).notNull(),assignedAtoms:bigint('assigned_atoms',{mode:'bigint'}).notNull(),issuedAtoms:bigint('issued_atoms',{mode:'bigint'}).notNull().default(BigInt(0)),recoveredAtoms:bigint('recovered_atoms',{mode:'bigint'}).notNull().default(BigInt(0)),updatedAt:timestamp('updated_at',{withTimezone:true}).notNull().defaultNow(),
 },t=>[check('jcoin_treasury_fixed_inventory',sql`${t.symbol}='JCOIN' and ${t.supplyAtoms}=10000000000000000 and ${t.userPoolAtoms}=5000000000000000 and ${t.assignedAtoms}=100000000000000`),check('jcoin_treasury_inventory_bounds',sql`${t.issuedAtoms} between 0 and ${t.assignedAtoms} and ${t.recoveredAtoms} between 0 and ${t.issuedAtoms}`)]);
@@ -2449,4 +2477,15 @@ export const accountInvitationUses = pgTable("account_invitation_uses", {
 }, table => [
   index("account_invitation_uses_inviter_idx").on(table.inviterOwnerId),
   check("account_invitation_uses_not_self", sql`${table.registeredOwnerId} <> ${table.inviterOwnerId}`),
+]);
+
+export const canvasProjectDeletions = pgTable("canvas_project_deletions", {
+  // No project FK: a local-only project can be retired before its first PUT.
+  projectId: uuid("project_id").notNull(),
+  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id),
+  ownerId: uuid("owner_id").notNull().references(() => users.id),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }).notNull().defaultNow(),
+}, table => [
+  primaryKey({ columns: [table.projectId, table.workspaceId, table.ownerId] }),
+  index("canvas_project_deletions_owner_idx").on(table.workspaceId, table.ownerId, table.deletedAt.desc(), table.projectId.desc()),
 ]);

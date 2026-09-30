@@ -1,5 +1,80 @@
 # Architecture
 
+## GG-238 shared image viewer boundary
+
+A small asset image viewer extracts the existing asset detail stage/vertical rail and bounded wheel/arrow interaction for two real callers: the canvas asset panel and uploaded-image asset preview. Callers supply authorized current image scope, identity, name and preview/content URLs; the viewer owns only transient selection/display, loading/retry and dialog focus. The canvas editor, project state and backend remain separate, and existing generated metadata/download detail routes plus video/audio dialogs retain their current orchestration. No new data/provider/API or global CSS dependency is needed. See [task](tasks/GG-238-canvas-asset-viewer.md).
+
+## GG-226 项目列表管理
+
+项目功能放features/projects：name-only PATCH/DELETE边界、确认/错误/待处理状态和只读画布缩略快照。画布原GET/PUT保留，canvas列表补deletedProjectIds过滤已退役本机缓存；项目删除操作不调用素材删除或生成接口。server/projects与server/canvas-projects沿owner/workspace write授权和CAS；画布编辑器/同步器/节点源文件仍由独立会话维护。快照只读取已保存文档、受权素材/任务及本机文件，不启动Worker任务。见[任务](tasks/GG-226-project-library-actions.md)。
+
+## GG-217 platform-coin retirement
+
+JCOIN runtime modules/contracts are removed. Worker no longer imports or schedules
+rewards. Web/Next legacy APIs return no-store 410 without platform-coin resources.
+Normal generation queues, credit settlement and refunds remain independent.
+Historical migration0040 and its schema definitions remain; no drop/reset occurs.
+
+## GG-218 canvas page boundaries
+
+一个项目CAS保存有序多页文档，旧v1通过共享契约归为页面1，新v2 pages每项复用现有graph字段。服务端逐页结构验证并保持全项目上限，拒绝已有v2降级写；0055已在隔离本地应用，仅放宽JSON版本CHECK。本地同步签名涵盖全部页面内容而排除页视角/激活偏好；云端投影逐页剥离pendingFile/localJob等浏览器临时字段。前端保持一个ReactFlow视图，页graph/历史各自保留，后台上传/生成按全项目唯一node/page IDs定位，切页不取消任务或重发请求。
+
+## GG-214 Seedream provider and pricing boundary
+
+共享seedream-models定义产品ID、provider ID、文档像素表和参考图附加费。O1Key路由使用dola-seedream-5-0-pro-260628-ep，以单任务n1、PNG和images URL字符串提交；不传watermark/layer_decomposition，不使用GPT引用格式或扇出。仅Seedream允许实际输出1..17，adapter/router/Worker/完成事务共用数量规则；全部解码和存储完成才原子提交，任一失败清理暂存对象。前端与个人/企业积分预留共用精确报价转换，服务端冻结总额；真实provider凭据仍仅服务端。普通生图默认，拆层入口及图层编辑未包含。
+
+## GG-213 canvas-only GPT automatic size
+
+The canvas ratio options and resolver accept adaptive for GPT without widening lobby fixed-ratio capability. Generation API passes routingPolicy into input validation; only canvas-image-v1 may combine GPT with adaptive. Adapter validation gates adaptive by the selected canvas route and persisted policy; the provider payload maps it to size:auto. Fixed sizes/routes, quality-specific prices and prior accepted input hashes remain as stored. Model quality defaults already normalize to auto; frontend new drafts now use it explicitly. Existing optional draft fields handle the Switch's transparent+PNG/auto state; no migration or price publication is needed. Recorded mock contract validation reads GPT size directly (no separate aspect_ratio) and accepts documented auto. Local isolated257f959 replaces99e645c, preserving all local state.
+
+## GG-211 / GG-212 versioned canvas image submission
+
+New canvas snapshots carry `routingPolicy: canvas-image-v1`, frozen in the input hash and nullable `generation_batches.provider_routing_policy`. Canvas GPT routes select documented resolution IDs: GPT2 `gpt-image-2-c-sp/-c-sd`, GPT2.5 product ID plus `-sp/-sd`; 4K-only backup uses the base ID. Lobby/legacy jobs keep their original route identities and native GPT counts1/2/4. Each new canvas multi-output batch uses recoverable single-image task-set fan-out through12 and existing exact-count/atomic storage and billing. Shared model capability accepts1..12; the API enforces legacy entry bounds when the marker is absent.
+
+The adapter marks only explicit structured no-channel rejection, with no accepted taskID and no auth/quota/rate-limit/parameter/moderation failure, as safely declined. The worker transaction closes that primary submitted attempt and creates a separately pinned backup attempt once, retaining reservation and frozen input. Recovery chooses the active attempt's pinned backup route; submission uncertainty never triggers a backup. Quality/background/output format pass through generator draft, snapshot, exact quality quote and provider payload. Migration0052 extends only batch/price counts and missing active prices;0053 adds the policy column. Local runtime99e645c is isolated from the dirty frontend and production.
+
+## GG-203 canvas Nano count eight
+
+The shared generation/billing count types include 8, while lobby count choices retain 1/2/4. Canvas-specific options and count resolvers permit 8 only for Nano Banana 2/Pro. Server capabilities permit the same adapters; their existing provider fan-out issues eight single-image tasks and incrementally stores an ordered task set. Provider result normalization still expects one output for each Nano task, then the existing worker/repository enforce exactly eight assets before atomic completion and settlement. Managed-price publication and billing summary iterate each adapter's supported counts; count-eight requires a real active quote. Migration 0051 opens only generation-batch and price count checks and appends eight-times-single prices per enabled Nano line. Canvas JSON validates 8 without a new schema version; its generation requests keep `projectId:null`, leaving legacy lobby draft/project constraints unchanged. No provider payload `n=8` or partial success flow is introduced.
+
+## GG-189 canvas adaptive ratio and Pro multi-output
+
+Canvas drafts persist the domain ratio `adaptive` without changing the project document schema version or the generation batch column type. The generation validator allows it for both Nano adapters only; the O1Key adapter omits the `aspect_ratio` field for that value. Banana task fan-out already creates one provider task per requested image, so Pro 2/4 use the same task-set persistence and completion path as Banana 2. Billing must find an active count-specific price version before enqueueing; migration 0050 derives initial Pro 2/4 versions from each active single-image price, and later admin edits generate all counts. The current 5173 proxy to old 32131/32142 cannot execute this source change until a controlled local runtime update.
+
+## GG-167 canvas generator nodes and connected image references
+
+`canvas-workspace.tsx` keeps React Flow nodes internally owned and edges controlled by `CanvasPage`, adding a `sourceImage`/successful `imageResult` source Handle and an `imageGenerator` target Handle. The generator uses React Flow's `NodeToolbar` so the existing composer follows its selected node at screen scale without becoming part of the zoomed node geometry. A temporary page map keyed by generator ID owns prompt, model, ratio, resolution, count and directly uploaded reference files. Each controlled edge belongs to one target generator; the active reference tray and immutable generation input snapshot merge that generator's direct files with its incoming edges, counting both toward ten. Node/edge removal cancels pending client imports and removes transient input state. There is no canvas document endpoint or schema.
+
+Local `sourceImage` uploads already return a `reference_assets` ID after the existing signed PUT/completion flow. An image dragged from the asset library carries its true `reference` or `generated` kind and ID into the node. `imageResult` outputs and `generated` library assets are **not** reference IDs; the new owner-scoped `POST /api/references/from-asset` must validate the generated asset and create or reuse a ready private reference before a connected edge can be submitted. Until conversion returns ready, the edge is visually pending and the generation gate stays closed. The browser never fetches cross-origin signed source bytes for conversion. The 5173 frontend's current 32131 `b12f699` runtime predates this route and must be replaced with a reviewed local checkpoint for that path to work.
+
+## GG-161 canvas local media upload
+
+Computer-dropped JPEG/PNG and MP4 nodes use one canvas orchestration path while retaining their existing upload clients. Images reuse the owner-scoped reference intent, signed PUT, completion and status recovery, then read through `/api/references/:id/content`. MP4 files reuse the private video material intent, signed PUT, completion and status route, then obtain a signed read URL from the owner-scoped video list. Optional abort signals now cross each request and retry delay. React Flow owns temporary node state, local `File`/Blob previews and retries; successful assets live in existing private library records, while canvas positions remain unsaved. The open sidebar invalidates its existing lists after upload completion. Signed video read errors trigger a new authorized list read; no stable video content proxy is added. Existing library-item drag, generation nodes and audio are separate paths. No new endpoint or schema is required; the 5173 UI still proxies to the existing 32131 runtime.
+
+## GG-155 canvas library drag and asset names
+
+The canvas asset panel keeps the owner-scoped list response as the only source of draggable items. It passes an item identity and existing private read URL to `canvas-page.tsx` through an in-page drag reference; a branded DataTransfer type identifies the gesture without trusting a foreign drop payload. Generated images resolve the original URL through the existing download-url boundary on drop. Uploaded image/video/audio materials reuse their list URL. React Flow receives a temporary image/video/audio node, never another upload or generation request. The audio node uses native controls; its storage URL is not re-hosted. Existing local blob cleanup now revokes only URLs created by the canvas, so removing a library node cannot revoke a remote signed URL.
+
+Asset display names live in nullable `asset_organization.display_name` (migration 0048), shared across generated/reference/video/audio kinds. `PATCH /api/asset-organization/items/:kind/:assetId` checks the concrete owner's ready/accepted asset and writable workspace before upserting its alias. Existing `PUT` organization updates preserve the alias, including a move back to an unclassified folder. Both Next and Node local runtime handlers expose the same operation. The original uploaded filename, private object key, asset ID, and generation history remain unchanged. A 5173 UI session currently proxies all `/api` calls to the separately verified 32131 checkpoint; this new PATCH path cannot work there until an explicitly reviewed local runtime replacement and migration 0048.
+
+## GG-233 canvas library add boundary
+
+The canvas asset panel adds an explicit file/link entry ahead of library cards. It reuses the existing image reference, private video and private audio upload boundaries plus asset organization for the current folder. A public HTTP(S) image link is read by the browser with CORS, without remote credentials or a referrer, bounded to the existing image upload limit, then sent as a File through the same private image upload/completion path. No server URL fetcher, provider request, new endpoint or schema is introduced. Only ready server records become draggable library items; upload and folder-assignment failures remain distinct. This supersedes GG-151's read-only panel restriction; canvas graph content and node placement are unchanged.
+
+## GG-151 canvas asset browser
+
+`canvas-workspace.tsx` inserts an icon-only library trigger into the existing React Flow lower-left `ZoomSelect` Panel. `canvas-page.tsx` owns the open state and CSS sidebar width; opening mounts `canvas-asset-panel.tsx` above the left edge of a full-viewport React Flow container. The header, composer, MiniMap, ZoomSelect and drop cue follow the sidebar width; React Flow bounds and node coordinates stay unchanged. New generation placement derives its center from the visible area to the right of the overlaid sidebar. The panel reads existing personal asset, reference, video, audio and organization boundaries in parallel, maps them to a read-only list, and filters folder membership by the existing `(kind, id) -> folderId` arrangement. Private images use the existing native signed-URL image component; hover/focus previews use the shared tooltip primitive. The panel adds no endpoint, stored canvas document, mutation, provider request or schema change.
+
+The sidebar edge captures pointer movement (and accepts keyboard arrows) to set a page-local preferred width. Pointer events update a pending value; a single animation-frame callback writes a temporary CSS width for the sidebar and overlaid controls, so the layout follows the pointer without a React rerender for every raw event or a resize of the React Flow host. Pointer release commits the preferred width to page state, and cancellation removes the temporary width. The default remains 248px and the desktop maximum is 400px. No new resize observer or saved layout record is added.
+
+## GG-146 local canvas video nodes
+
+`canvas-local-images.mjs` now validates local MP4 drops against the existing 20 MiB video contract while leaving the composer reference picker image-only. `canvas-page.tsx` creates an object URL and a temporary React Flow `sourceVideo` node; `canvas-video-node.tsx` reads native pixel dimensions/duration and owns the muted HTML video element. `canvas-video-metadata.ts` lazy-loads MediaInfo WASM in the browser, serializes local-file reads, and supplies file-derived FPS only. The WASM is a cacheable static asset; no video bytes or parsing jobs reach GoodGood's backend. React Flow holds resize dimensions separately from original metadata. Removed nodes and page teardown revoke object URLs. No storage, billing, generation or schema change is added.
+
+## GG-145 canvas image metadata
+
+Canvas metadata remains local to React Flow nodes. Local files supply `File.name` and decoded natural pixel dimensions; generated outputs supply backend original dimensions when present and use the existing asset download filename rule for display. Loading a local file can fill missing dimensions; generated 512px preview dimensions are not used as original dimensions. Neither source changes the persisted asset schema or the node's resized CSS width/height. The shared metadata view renders above image pixels, not in the generation or private-asset API.
+
 ## GG-126 local canvas image ownership
 
 `features/canvas/canvas-local-images.mjs` validates desktop files using the existing private image type/size contract and computes drop positions. `canvas-page.tsx` owns temporary `File` objects and object URLs; React Flow `sourceImage` nodes render them without a network request. Only an explicit “use as reference” action passes the original file through `uploadReferenceFiles` into the existing owner-scoped reference service. Object URLs are revoked when their node/tray entry is removed or the page unmounts. A canvas node removal is local UI state and does not delete a previously uploaded reference or any durable asset. No canvas API or database migration is added.
@@ -63,7 +138,7 @@ application reads or writes them any more; `server/assets/api.mjs` no longer
 probes for a published case before deleting an asset. See
 [ADR 0104](decisions/0104-inspiration-feature-retirement.md).
 
-GG-084以features/jcoin、server/jcoin和shared/contracts/jcoin隔离运行时；app/page仅路由/导航接线。个人DTO显式投影自身统计/记录，平台计划只走站长API且数据库再次验证活动角色。独立处理器从已结算credit ledger核对真实manual支付与历史划拨，不在消费/退款事务中同步发币。Worker每15秒单飞处理一批至多200条，PG全局事务锁与唯一source使多Worker/手动重放幂等；失败仅记录事件/错误码，原生成队列继续。暂停/发完仍处理已奖励消费的退款，原消费时间决定资格与稳定分发顺序。仅一期生命周期，后续批次管理另行实施。
+历史GG-084（已退役）曾以features/jcoin、server/jcoin和shared/contracts/jcoin隔离运行时；app/page仅路由/导航接线。个人DTO显式投影自身统计/记录，平台计划只走站长API且数据库再次验证活动角色。独立处理器从已结算credit ledger核对真实manual支付与历史划拨，不在消费/退款事务中同步发币。Worker每15秒单飞处理一批至多200条，PG全局事务锁与唯一source使多Worker/手动重放幂等；失败仅记录事件/错误码，原生成队列继续。暂停/发完仍处理已奖励消费的退款，原消费时间决定资格与稳定分发顺序。仅一期生命周期，后续批次管理另行实施。
 
 GG-081通用积分入账端点复用身份/CSRF、事务与管理幂等。充值与manual命令共用凭证互斥，通过正常PaymentOrder与payment_funded账本原子入账；内部按数量不可变价目不进入客户目录，也不能经客户支付接口创建。其他五类为non_transferable。看板只读已确认manual订单现金和任务运行区间，假支付排除。见[ADR0080](decisions/0080-classified-admin-credit-grants-and-operations.md)。
 
@@ -910,3 +985,8 @@ filters, but they are deliberately excluded from today/week/month generation
 consumption totals because allocation is not product usage.
 
 GG-077：完全隐藏参数仅在服务器解析，忽略浏览器覆盖的模型/分辨率/数量等；真实参数供账单和Worker使用，统一public generation投影返回标记与无原参数的中性占位。原参数不进入案例/复刻DTO。观察到的输出像素不视为私有预设字段；站长查账仍保留实际计费上下文。
+# GG-173 · Canvas project boundary
+
+`/canvas/:id` uses an owner/workspace-scoped canvas-project API and PostgreSQL row with compare-and-swap version updates. The browser serializes stable React Flow graph data instead of raw node objects, first commits the latest edit and pending File to IndexedDB, then serializes remote PUTs. Authenticated API reads and existing media/job boundaries refresh private URLs during restore. A version conflict forks the local dirty graph under a new UUID. This is separate from the batch-backed creation `projects` repository; the project index composes both lists without reinterpreting either table. Local draft data and successful assets do not authorize generation; existing explicit submit and billing gates remain. See [ADR 0114](decisions/0114-durable-canvas-projects.md).
+
+GG-175 scopes remote autosave to normalized content. The React Flow subscription ignores viewport transform and active node drag/resize frames; a settled viewport is stored as a browser preference under owner/project, and content signatures skip unchanged local snapshots and unchanged remote payloads. Node geometry, edges, name, generator inputs and asset/result identity still use the GG-173 IndexedDB-first/CAS path. The existing server document viewport remains a fallback, not a reason to write on pan or zoom. See [GG-175](tasks/GG-175-canvas-content-scoped-autosave.md).

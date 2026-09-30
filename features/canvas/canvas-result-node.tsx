@@ -1,12 +1,14 @@
 "use client";
 
-import { useReactFlow, type NodeProps } from "@xyflow/react";
+import { Handle, Position, useReactFlow, type NodeProps } from "@xyflow/react";
 import { CircleAlert, LoaderCircle, RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
+import { imageDownloadFilename } from "@/features/assets/image-download";
 import type { GenerationJob } from "@/shared/contracts/generation";
 import { initialCanvasImageSize } from "./canvas-image-size.mjs";
+import { CanvasMediaMetadata } from "./canvas-media-metadata";
 import { CanvasImageResizeControls } from "./canvas-image-resize-controls";
 import type { CanvasNode, CanvasResultNodeType } from "./canvas-workspace";
 import styles from "./canvas-workspace.module.css";
@@ -18,7 +20,7 @@ export type CanvasResultNodeData = Record<string, unknown> & {
   imageSized?: boolean;
 };
 
-export function CanvasResultNode({ id, data, selected }: NodeProps<CanvasResultNodeType>) {
+export function CanvasResultNode({ id, data, selected, width }: NodeProps<CanvasResultNodeType>) {
   const { job, index, onRetry } = data;
   const output = job.outputs[index];
   const { updateNode } = useReactFlow<CanvasNode>();
@@ -50,27 +52,33 @@ export function CanvasResultNode({ id, data, selected }: NodeProps<CanvasResultN
 
   return (
     <>
+      <CanvasMediaMetadata
+        kind="image"
+        name={imageDownloadFilename(job.createdAt, index + 1, output.previewUrl)}
+        nodeWidth={width}
+        pixelWidth={output.width}
+        pixelHeight={output.height}
+      />
       <article className={`${styles.resultNode} ${styles.imageNode} ${data.imageSized ? styles.sizedNode : ""}`}>
-        <a href={`/assets/${encodeURIComponent(output.id)}`} aria-label={`查看生成图片 ${index + 1}`}>
-          <PrivateObjectImage
-            src={output.previewUrl}
-            alt={`生成图片 ${index + 1}`}
-            className={styles.resultImage}
-            style={output.width && output.height ? { aspectRatio: `${output.width} / ${output.height}` } : undefined}
-            onLoad={(event) => {
-              const size = initialCanvasImageSize(event.currentTarget.naturalWidth, event.currentTarget.naturalHeight);
-              if (!size) return;
-              updateNode(id, (node) => node.type !== "imageResult" || node.data.imageSized ? {} : {
-                style: { ...node.style, ...size },
-                data: { ...node.data, imageSized: true },
-              });
-            }}
-          />
-        </a>
+        <PrivateObjectImage
+          src={output.previewUrl}
+          alt={`生成图片 ${index + 1}`}
+          className={styles.resultImage}
+          style={output.width && output.height ? { aspectRatio: `${output.width} / ${output.height}` } : undefined}
+          onLoad={(event) => {
+            const size = initialCanvasImageSize(event.currentTarget.naturalWidth, event.currentTarget.naturalHeight);
+            if (!size) return;
+            updateNode(id, (node) => node.type !== "imageResult" || node.data.imageSized ? {} : {
+              style: { ...node.style, ...size },
+              data: { ...node.data, imageSized: true },
+            });
+          }}
+        />
       </article>
       {selected && data.imageSized && (
         <CanvasImageResizeControls />
       )}
+      {job.state === "succeeded" && <Handle type="source" id="reference" position={Position.Right} className={styles.referenceOutputHandle} aria-label="连接到图片生成器" />}
     </>
   );
 }

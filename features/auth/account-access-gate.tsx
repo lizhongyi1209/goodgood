@@ -45,8 +45,7 @@ export function AccountAccessGate({
           role="img"
           aria-label="GoodGood"
         >
-          <Image src="/goodgood-mark.svg" alt="" width={30} height={23} />
-          <Image src="/goodgood-wordmark.svg" alt="" width={94} height={22} />
+          <Image src="/goodgood-g-icon.svg" alt="" width={32} height={32} />
         </div>
         <div className="mb-5 flex size-11 items-center justify-center rounded-2xl bg-zinc-100 text-zinc-700">
           {pending ? (
