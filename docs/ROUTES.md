@@ -36,11 +36,11 @@ GG-091 /api/auth/session新增本人account.invitationCode；POST /api/auth/emai
 
 GG-090现有POST /api/auth/email/verify新增可选invitationCode；新邮箱/旧pending必填有效码，active/suspended现有账户无需码登录。新增POST /api/admin/invitations/query|create|revoke，活动站长、x-goodgood-admin-action=1、no-store、2KiB请求上限，create必需8—200字符Idempotency-Key；revoke输入id。入口位于账户管理，无新增站长一级标签。
 
-GG-089站长功能栏按运营看板 → 账户管理 → 总日志 → 企业管理 → 模型管理 → 用户反馈 → 平台币 → 审计日志排列；共享桌面/手机顺序。用户反馈仍指向/admin/feedback，个人侧栏仍为问题反馈，默认入口运营看板。
+GG-089站长功能栏按运营看板 → 账户管理 → 总日志 → 企业管理 → 模型管理 → 用户反馈 → 审计日志排列；共享桌面/手机顺序。用户反馈仍指向/admin/feedback，个人侧栏仍为问题反馈，默认入口运营看板。
 
 GG-087 /feedback个人页、/admin/feedback站长页保持同工作区。GET /api/feedback只返回自己的每20条游标列表；POST multipart及x-goodgood-feedback-action=1/Idempotency-Key创建；GET /:id详情、/:id/images/:position受所有者或活动站长保护。站长POST /api/admin/feedback列表、GET /:id详情、POST /:id/reply版本化状态/回复都需x-goodgood-admin-action=1，回复另需幂等键。
 
-GG-084新增个人`/jcoin`，桌面左下平台币入口、手机账户菜单“我的平台币”；离开企业历史工作区时回到个人域。GET `/api/jcoin?limit=20&cursor=…`只读，绑定已启用登录用户，limit为1—50，按原发生时间/ID分页；不接受目标用户切换，不返回发行库存、批次预算或来源支付详情。站长`/admin/jcoin`保留同工作区导航，活动site_owner独占no-store POST `/api/admin/jcoin/query`与`/action`；管理header必需，action仅start/pause/resume/process，8—200字符Idempotency-Key必需。预算、系数和日期来自固定一期计划，客户端不能传金额来铸币。站长默认入口仍为运营看板。
+GG-217撤下 `/jcoin` 与 `/admin/jcoin` 页面和工作区类型，旧URL按现有未知地址规则回到创作。旧 `/api/jcoin`、`/api/admin/jcoin/query`、`/api/admin/jcoin/action` 返回no-store 410「功能已移除」，不读写历史表。GG-084接口和发行契约已成为历史，正常 `/credits` 与积分API保持。
 
 GG-081本地新增POST /api/admin/users/:ownerId/credit-grants，活动site_owner及x-goodgood-admin-action=1/Idempotency-Key必需。amount为1—5000整数，creditGrantType为共享英文枚举，reason为2—200字符；paid_recharge另需paymentConfirmed=true及8—200字符receiptReference。其他类型不收凭证，旧test-credit-grants兼容接口仍只测试赠送。站长默认/admin/operations；运营dashboard返回concurrent/queued/measuredAt及daily peak与recharge*，移除jobs/pending旧指标。
 
@@ -89,7 +89,7 @@ this shell; audit moves the prior account-page recent-action list into its own v
 | 模型管理 | Implemented locally | Site-owner `/admin/models`: add existing templates, enable/disable, edit RMB specification prices and test credit quotes |
 | 审计日志 | Implemented locally | Site-owner `/admin/audit`, latest 30 account actions in the shared workspace |
 | 积分记录 | Implemented | `/credits`, entered from the quiet row below `帮助` or the mobile balance |
-| 平台币 | Implemented locally | `/jcoin`，仅自己的统计和流水；`/admin/jcoin`仅站长计划与一期生命周期 |
+| 平台币 | Retired (GG-217) | 页面/入口和奖励处理移除，旧API410；历史数据保留 |
 | 企业历史创作 | Compatible local route | `/workspaces/:workspaceId/create`, after active-membership validation; no global selector |
 | 企业管理 | Implemented locally | Main sidebar `/organizations`; one managed company opens overview, multiple companies use a management-only directory; detail subroutes share the main shell |
 | 分销管理 | Implemented locally | Distributor-only main-sidebar `/distribution` customers/downstream and `/distribution/transfers` history |

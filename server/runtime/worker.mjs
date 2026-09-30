@@ -18,7 +18,6 @@ import {
   processGenerationJob,
 } from "../generation/worker-service.mjs";
 import { createConcurrentJobRunner } from "../generation/concurrent-job-runner.mjs";
-import { processJcoinRewards } from '../jcoin/repository.mjs';
 
 const host = process.env.WORKER_HEALTH_HOST ?? "0.0.0.0";
 const port = parseRuntimePort(
@@ -43,16 +42,6 @@ await reconcileRecoverableJobs(resources.pool, resources.config.workerLeaseMs);
 await dispatchPendingJobs(resources.pool, resources.redis);
 const checks = await probeGenerationResources(resources);
 health.markReady(checks);
-
-let jcoinProcessing = null;
-function reconcileJcoin() {
-  if (stopping || jcoinProcessing) return;
-  jcoinProcessing = processJcoinRewards(resources.pool).catch(error => {
-    console.error(JSON.stringify({event:'worker.jcoin_reconciliation_failed',code:error?.code??'JCOIN_RECONCILIATION_FAILED',workerId}));
-  }).finally(() => { jcoinProcessing = null; });
-}
-const jcoinTimer = setInterval(reconcileJcoin, 15_000);
-reconcileJcoin();
 
 console.log(
   JSON.stringify({
@@ -135,7 +124,6 @@ const loop = (async () => {
 async function stop(signal) {
   if (stopping) return;
   stopping = true;
-  clearInterval(jcoinTimer);
   health.markNotReady("stopping");
   console.log(
     JSON.stringify({
@@ -149,7 +137,6 @@ async function stop(signal) {
   await loop;
   jobs.stopAccepting();
   await jobs.drain();
-  await jcoinProcessing;
   await closeGenerationResources();
   await health.close();
 }

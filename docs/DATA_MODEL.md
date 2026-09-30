@@ -1,5 +1,12 @@
 # GG-063 quality pricing
 
+## GG-217 historical platform-coin data
+
+The six `jcoin_*` tables from migration0040 remain historical-only after ADR0117.
+Keep records and the applied migration checksum; no drop, reset or conversion.
+Current APIs and Worker no longer read/write these tables. Normal credit ledger,
+orders, settlement and refunds keep their existing tables and transaction rules.
+
 ## GG-121 explicit asset deletion
 
 An owner-confirmed delete removes `asset_organization` and the uploaded

@@ -9,6 +9,7 @@ export function isSeedreamModel(modelId) {
 }
 
 // Keep the stored base price version unchanged; supplements use current credits.
+/** @returns {`${bigint}` | null} */
 export function seedreamQuoteCreditAmount(
   baseAmount,
   creditUnit,
@@ -23,7 +24,7 @@ export function seedreamQuoteCreditAmount(
     !/^[1-9]\d*$/.test(String(baseAmount))
   )
     return null;
-  return (
+  return /** @type {`${bigint}`} */ ((
     BigInt(currentCreditAmount(baseAmount, creditUnit)) + BigInt(supplement)
-  ).toString();
+  ).toString());
 }

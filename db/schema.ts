@@ -2381,6 +2381,8 @@ export const generationQueueOutbox = pgTable(
   ],
 );
 
+// Historical-only JCOIN schema (ADR 0117). Keep applied migration and records;
+// no current platform-coin API or reward processor uses these definitions.
 export const jcoinTreasury=pgTable('jcoin_treasury',{
   symbol:text('symbol').primaryKey(),supplyAtoms:bigint('supply_atoms',{mode:'bigint'}).notNull(),userPoolAtoms:bigint('user_pool_atoms',{mode:'bigint'}).notNull(),assignedAtoms:bigint('assigned_atoms',{mode:'bigint'}).notNull(),issuedAtoms:bigint('issued_atoms',{mode:'bigint'}).notNull().default(BigInt(0)),recoveredAtoms:bigint('recovered_atoms',{mode:'bigint'}).notNull().default(BigInt(0)),updatedAt:timestamp('updated_at',{withTimezone:true}).notNull().defaultNow(),
 },t=>[check('jcoin_treasury_fixed_inventory',sql`${t.symbol}='JCOIN' and ${t.supplyAtoms}=10000000000000000 and ${t.userPoolAtoms}=5000000000000000 and ${t.assignedAtoms}=100000000000000`),check('jcoin_treasury_inventory_bounds',sql`${t.issuedAtoms} between 0 and ${t.assignedAtoms} and ${t.recoveredAtoms} between 0 and ${t.issuedAtoms}`)]);

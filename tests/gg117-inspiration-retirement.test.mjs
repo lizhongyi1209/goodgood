@@ -117,7 +117,7 @@ test("GG-117 the workspace router no longer resolves, renders or links the retir
   ]) {
     assert.deepEqual(parseWorkspaceRoute(pathname), {kind: "create"}, pathname);
   }
-  for (const kind of ["create", "profile", "projects", "assets", "credits", "jcoin", "feedback", "distribution", "organizations"]) {
+  for (const kind of ["create", "profile", "projects", "assets", "credits", "feedback", "distribution", "organizations"]) {
     assert.doesNotMatch(workspaceRouteHref({kind}), /inspiration/);
   }
   assert.doesNotMatch(await read("features/navigation/workspace-route.mjs"), /inspiration/i);

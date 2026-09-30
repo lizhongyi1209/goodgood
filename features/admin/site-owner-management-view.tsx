@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, ChartNoAxesCombined, Coins, MessageSquare, ListFilter, LoaderCircle, ScrollText, SlidersHorizontal, UsersRound } from "lucide-react";
+import { Building2, ChartNoAxesCombined, MessageSquare, ListFilter, LoaderCircle, ScrollText, SlidersHorizontal, UsersRound } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import type { AuthenticationSession } from "@/features/auth/http-auth-boundary";
@@ -10,7 +10,6 @@ import { ModelManagementPage } from "./model-management-page";
 import { AuditLogView } from "./audit-log-view";
 import { SiteOperationsDashboard, SiteOperationsLog } from "./site-operations-view";
 import { FeedbackManagementView } from '@/features/feedback/feedback-view';
-import { JcoinManagementView } from '@/features/jcoin/jcoin-management-view';
 
 const tabs = [
   { id: "operations", label: "运营看板", icon: ChartNoAxesCombined, route: { kind: "admin", tab: "operations" } },
@@ -19,13 +18,12 @@ const tabs = [
   { id: "organizations", label: "企业管理", icon: Building2, route: { kind: "organizations" } },
   { id: "models", label: "模型管理", icon: SlidersHorizontal, route: { kind: "admin", tab: "models" } },
   { id: "feedback", label: "用户反馈", icon: MessageSquare, route: { kind: "admin", tab: "feedback" } },
-  { id: "jcoin", label: "平台币", icon: Coins, route: { kind: "admin", tab: "jcoin" } },
   { id: "audit", label: "审计日志", icon: ScrollText, route: { kind: "admin", tab: "audit" } },
 ] as const satisfies readonly { id: string; label: string; icon: typeof Building2; route: WorkspaceRoute }[];
 
 export function SiteOwnerManagementView({ session, activeTab, children, onLogin, onManagementChange }: {
   session: AuthenticationSession | null | undefined;
-  activeTab: "organizations" | "models" | "users" | "audit" | "operations" | "logs" | "jcoin" | "feedback";
+  activeTab: "organizations" | "models" | "users" | "audit" | "operations" | "logs" | "feedback";
   children?: ReactNode;
   onLogin: () => void;
   onManagementChange?: () => void;
@@ -50,7 +48,6 @@ export function SiteOwnerManagementView({ session, activeTab, children, onLogin,
     </header>
     {activeTab === "operations" ? <SiteOperationsDashboard />
       : activeTab === "feedback" ? <FeedbackManagementView />
-      : activeTab === "jcoin" ? <JcoinManagementView />
       : activeTab === "logs" ? <SiteOperationsLog />
       : activeTab === "models" ? <ModelManagementPage workspaceSession={session} embedded onManagementChange={onManagementChange} />
       : activeTab === "users" ? <AccountManagementPage workspaceSession={session} embedded onManagementChange={onManagementChange} />

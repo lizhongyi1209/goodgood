@@ -1,5 +1,7 @@
 # Decision records
 
+- `0117-retire-jcoin.md` — retire platform-coin pages, navigation and reward processing; legacy APIs return 410 without resources; preserve historical data and normal credits.
+
 - `0110-canvas-image-selection-frame.md` — default arrow over canvas images, flush fine blue selection frame and four diagonal resize controls; a scoped exception to ADR 0105, replacing GG-129's visual choices.
 
 - `0109-quiet-canvas-image-hover.md` — canvas image nodes show only a shallow neutral hover veil; removes GG-126's local-node action overlay while keeping dragging, result detail and the separate reference picker.

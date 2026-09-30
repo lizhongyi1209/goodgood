@@ -1,5 +1,12 @@
 # Architecture
 
+## GG-217 platform-coin retirement
+
+JCOIN runtime modules/contracts are removed. Worker no longer imports or schedules
+rewards. Web/Next legacy APIs return no-store 410 without platform-coin resources.
+Normal generation queues, credit settlement and refunds remain independent.
+Historical migration0040 and its schema definitions remain; no drop/reset occurs.
+
 ## GG-126 local canvas image ownership
 
 `features/canvas/canvas-local-images.mjs` validates desktop files using the existing private image type/size contract and computes drop positions. `canvas-page.tsx` owns temporary `File` objects and object URLs; React Flow `sourceImage` nodes render them without a network request. Only an explicit “use as reference” action passes the original file through `uploadReferenceFiles` into the existing owner-scoped reference service. Object URLs are revoked when their node/tray entry is removed or the page unmounts. A canvas node removal is local UI state and does not delete a previously uploaded reference or any durable asset. No canvas API or database migration is added.
@@ -63,7 +70,7 @@ application reads or writes them any more; `server/assets/api.mjs` no longer
 probes for a published case before deleting an asset. See
 [ADR 0104](decisions/0104-inspiration-feature-retirement.md).
 
-GG-084以features/jcoin、server/jcoin和shared/contracts/jcoin隔离运行时；app/page仅路由/导航接线。个人DTO显式投影自身统计/记录，平台计划只走站长API且数据库再次验证活动角色。独立处理器从已结算credit ledger核对真实manual支付与历史划拨，不在消费/退款事务中同步发币。Worker每15秒单飞处理一批至多200条，PG全局事务锁与唯一source使多Worker/手动重放幂等；失败仅记录事件/错误码，原生成队列继续。暂停/发完仍处理已奖励消费的退款，原消费时间决定资格与稳定分发顺序。仅一期生命周期，后续批次管理另行实施。
+历史GG-084（已退役）曾以features/jcoin、server/jcoin和shared/contracts/jcoin隔离运行时；app/page仅路由/导航接线。个人DTO显式投影自身统计/记录，平台计划只走站长API且数据库再次验证活动角色。独立处理器从已结算credit ledger核对真实manual支付与历史划拨，不在消费/退款事务中同步发币。Worker每15秒单飞处理一批至多200条，PG全局事务锁与唯一source使多Worker/手动重放幂等；失败仅记录事件/错误码，原生成队列继续。暂停/发完仍处理已奖励消费的退款，原消费时间决定资格与稳定分发顺序。仅一期生命周期，后续批次管理另行实施。
 
 GG-081通用积分入账端点复用身份/CSRF、事务与管理幂等。充值与manual命令共用凭证互斥，通过正常PaymentOrder与payment_funded账本原子入账；内部按数量不可变价目不进入客户目录，也不能经客户支付接口创建。其他五类为non_transferable。看板只读已确认manual订单现金和任务运行区间，假支付排除。见[ADR0080](decisions/0080-classified-admin-credit-grants-and-operations.md)。
 

@@ -7,7 +7,6 @@ import { createAssetOrganizationNodeApiHandler } from "../assets/organization-no
 import { createProfileNodeApiHandler } from "../profile/node-api.mjs";
 import { createAdminNodeApiHandler } from "../admin/node-api.mjs";
 import { createBillingNodeApiHandler } from "../billing/node-api.mjs";
-import { createJcoinNodeApiHandler } from '../jcoin/node-api.mjs';
 import { createFeedbackNodeApiHandler } from '../feedback/http.mjs';
 import { loadAuthenticationConfig } from "../auth/config.mjs";
 import { createAuthenticationNodeApiHandler } from "../auth/node-api.mjs";
@@ -78,7 +77,6 @@ const handleGenerationNodeApi = createGenerationNodeApiHandler({
   authenticate,
 });
 const handleAdminNodeApi = createAdminNodeApiHandler({ authenticate });
-const handleJcoinNodeApi = createJcoinNodeApiHandler({ authenticate });
 const handleFeedbackNodeApi = createFeedbackNodeApiHandler({ authenticateSession });
 const handleCreationDraftNodeApi = createCreationDraftNodeApiHandler({ authenticate });
 const handleDistributionNodeApi = createDistributionNodeApiHandler({ authenticate });
@@ -106,6 +104,20 @@ server.on("request", (request, response) => {
   if (handleLocalBuildVersion(request, response)) return;
   const url = new URL(request.url ?? "/", "http://localhost");
   if (
+    url.pathname === "/api/jcoin" ||
+    url.pathname === "/api/admin/jcoin/query" ||
+    url.pathname === "/api/admin/jcoin/action"
+  ) {
+    response.writeHead(410, {
+      "cache-control": "no-store",
+      "content-type": "application/json; charset=utf-8",
+    });
+    response.end(JSON.stringify({
+      error: { code: "FEATURE_REMOVED", message: "平台币功能已移除。" },
+    }));
+    return;
+  }
+  if (
     defaultSessionCookie &&
     request.method === "GET" &&
     !url.pathname.startsWith("/api/") &&
@@ -115,7 +127,6 @@ server.on("request", (request, response) => {
     response.setHeader("set-cookie", defaultSessionCookie);
   }
   void handleAuthenticationNodeApi(request, response)
-    .then((handled) => (handled ? true : handleJcoinNodeApi(request, response)))
     .then((handled) => (handled ? true : handleFeedbackNodeApi(request, response)))
     .then((handled) => (handled ? true : handleAdminNodeApi(request, response)))
     .then((handled) =>
