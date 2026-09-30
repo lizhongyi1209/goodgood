@@ -76,6 +76,7 @@ export function validateM3GenerationInput(payload) {
       count: payload.count,
       modelId: payload.modelId,
       resolution: payload.resolution,
+      routingPolicy: payload.routingPolicy,
     })
   ) {
     throw new GenerationRequestError(

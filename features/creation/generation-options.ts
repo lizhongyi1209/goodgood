@@ -349,10 +349,7 @@ export function getGenerationRatioOptions(
 export function getCanvasGenerationRatioOptions(
   modelId: GenerationModelId,
 ): readonly GenerationRatioOption[] {
-  const options = getGenerationRatioOptions(modelId);
-  return modelId === "nano-banana-2" || modelId === "nano-banana-pro"
-    ? [ADAPTIVE_GENERATION_RATIO_OPTION, ...options]
-    : options;
+  return [ADAPTIVE_GENERATION_RATIO_OPTION, ...getGenerationRatioOptions(modelId)];
 }
 
 export function getGenerationCountOptions(
@@ -506,6 +503,14 @@ export function resolveGenerationAspectRatioForModel(
       ? option
       : nearest,
   ).id;
+}
+
+export function resolveCanvasGenerationAspectRatioForModel(
+  modelId: GenerationModelId,
+  ratio: GenerationAspectRatio,
+): GenerationAspectRatio {
+  // Canvas has its own provider-auto choice; the lobby keeps its fixed ratios.
+  return ratio === "adaptive" ? ratio : resolveGenerationAspectRatioForModel(modelId, ratio);
 }
 
 export function getDefaultGenerationRatioForModelMode(

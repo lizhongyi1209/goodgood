@@ -97,6 +97,7 @@ const CANVAS_GPT_ROUTES = Object.freeze(Object.fromEntries(
     const route = (tier, providerModel) => Object.freeze({
       ...bananaRoute(modelId, "special", providerModel),
       outputCounts: getGenerationModelCapability(modelId).outputCounts,
+      aspectRatios: Object.freeze(["adaptive", ...getGenerationModelCapability(modelId).aspectRatios]),
       canvasPolicy: "canvas-image-v1", tier,
       routeVersion: `o1key-canvas-${providerModel}-${tier}-v1`,
     });
@@ -442,6 +443,7 @@ function validateJob(job, route) {
       count: job?.requested_count,
       modelId: job?.model_id,
       resolution: job?.resolution,
+      routingPolicy: route.canvasPolicy ? job?.provider_routing_policy : undefined,
     }) ||
     !["low", "high"].includes(thinkingLevel) ||
     typeof googleSearch !== "boolean" ||

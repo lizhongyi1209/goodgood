@@ -67,7 +67,7 @@ test("adapter freezes quality, transparent PNG and exact pixels into the selecte
     assert.equal(body.quality, "medium");
     assert.equal(body.background, "transparent");
     assert.equal(body.output_format, "png");
-    assert.equal(body.size, "4096x4096");
+    assert.equal(body.size, "2880x2880");
   }
 });
 

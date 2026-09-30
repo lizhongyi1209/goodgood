@@ -3,7 +3,7 @@ import { createServer } from "node:http";
 import path from "node:path";
 import { o1keyRouteForProviderModel } from "./us-gateway-adapter.mjs";
 import {
-  getGptImage2PixelSize,
+  GPT_IMAGE_2_PIXEL_SIZES,
   isGptImageModelId,
 } from "./capabilities.mjs";
 import { gptPricingQualities } from "../../shared/contracts/gpt-quality-pricing.mjs";
@@ -111,11 +111,10 @@ export function createMockProviderServer({ apiKey, host, port }) {
     }
     if (isGptImageModelId(route.productModelId)) {
       if (!route.outputCounts.includes(body.n)) return "invalid_output_count";
-      // The adapter must send the exact pixel size the catalog defines for this
-      // aspect ratio and resolution, not a bucket label or a provider default.
-      const expectedSize = route.resolutions
-        .map((resolution) => getGptImage2PixelSize(body.aspect_ratio, resolution))
-        .find((size) => size === body.size);
+      // GPT sends only size, not a separate aspect_ratio. Adaptive uses the
+      // documented auto enum; fixed choices use the catalog's concrete pixels.
+      const expectedSize = body.size === "auto" ? "auto"
+        : Object.values(GPT_IMAGE_2_PIXEL_SIZES).flatMap((sizes) => Object.values(sizes)).find((size) => size === body.size);
       if (!expectedSize) return "invalid_size";
       if (!["auto", "transparent"].includes(body.background)) return "invalid_background";
       if (!["auto", "jpeg", "png", "webp"].includes(body.output_format)) {

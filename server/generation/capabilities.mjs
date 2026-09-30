@@ -106,12 +106,13 @@ export function isSupportedGenerationResolution(modelId, value) {
   return getGenerationModelCapability(modelId)?.resolutions.includes(value) ?? false;
 }
 
-export function isSupportedGenerationInput({ aspectRatio, count, modelId, resolution }) {
+export function isSupportedGenerationInput({ aspectRatio, count, modelId, resolution, routingPolicy }) {
   const capability = getGenerationModelCapability(modelId);
   return Boolean(
     capability &&
     capability.outputCounts.includes(count) &&
-    capability.aspectRatios.includes(aspectRatio) &&
+    (capability.aspectRatios.includes(aspectRatio) ||
+      (routingPolicy === "canvas-image-v1" && isGptImageModelId(modelId) && aspectRatio === "adaptive")) &&
     capability.resolutions.includes(resolution),
   );
 }
@@ -168,6 +169,7 @@ export function normalizeGenerationModelOptions({
 }
 
 export function getGptImage2PixelSize(aspectRatio, resolution) {
+  if (aspectRatio === "adaptive" && SUPPORTED_GENERATION_RESOLUTIONS.includes(resolution)) return "auto";
   const size = GPT_IMAGE_2_PIXEL_SIZES[aspectRatio]?.[resolution];
   if (!size) {
     throw new Error("Unsupported GPT Image 2 aspect ratio or resolution.");
