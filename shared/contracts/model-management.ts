@@ -51,7 +51,7 @@ export type ManagedImageOption = Readonly<{
   catalogId: string;
   name: string;
   description: string;
-  icon: "nano" | "openai";
+  icon: "nano" | "openai" | "bytedance";
   recommended: boolean;
 }>;
 export type ModelDirectory = Readonly<{ models: readonly ManagedModel[] }>;

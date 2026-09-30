@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { imagePriceContext } from "../../shared/contracts/banana-lines.mjs";
 import { getGenerationModelCapability } from "../generation/capabilities.mjs";
+import { isSeedreamModel, seedreamQuoteCreditAmount } from "../../shared/contracts/seedream-pricing.mjs";
 import {
   creditBalanceDeltas,
   exactCreditAmount,
@@ -309,10 +310,11 @@ export async function listActiveGenerationPrices(
     count,
     modelId,
     planContext = "standard",
+    resolutions = RESOLUTIONS,
   },
 ) {
   const prices = [];
-  for (const resolution of RESOLUTIONS) {
+  for (const resolution of resolutions) {
     prices.push(
       await findActiveGenerationPrice(client, {
         at,
@@ -561,7 +563,7 @@ async function loadGenerationForReservation(client, { jobId, ownerId }) {
   const result = await client.query(
     `SELECT j.id AS job_id, j.credit_reservation_entry_id,
             b.id AS batch_id, b.model_id, b.catalog_model_id, b.image_line, b.resolution, b.requested_count,
-            b.price_version_id, b.quoted_credit_unit, b.quoted_credit_amount
+            b.price_version_id, b.quoted_credit_unit, b.quoted_credit_amount, b.reference_snapshot
        FROM generation_jobs j
        JOIN generation_batches b ON b.id = j.batch_id
       WHERE j.id = $1 AND j.owner_id = $2 AND b.owner_id = $2
@@ -669,13 +671,19 @@ export async function reserveGenerationCreditsInTransaction(
     };
   }
 
-  const price = await findActiveGenerationPrice(client, {
+  const basePrice = await findActiveGenerationPrice(client, {
     at,
     count: job.requested_count,
     modelId: job.catalog_model_id ?? job.model_id,
     planContext: planContext.includes(":gpt-") ? planContext : (job.image_line ? imagePriceContext(job.image_line) : planContext),
     resolution: job.resolution,
   });
+  let price = basePrice;
+  if (isSeedreamModel(job.model_id)) {
+    const quoted = seedreamQuoteCreditAmount(basePrice.creditAmount, basePrice.creditUnit, job.reference_snapshot?.length);
+    if (quoted === null) throw new BillingPersistenceError("PRICE_NOT_AVAILABLE", "模型报价暂不可用，请刷新后重试。", 409);
+    price = { ...basePrice, creditAmount: BigInt(quoted), creditUnit: "credit-cny-cent" };
+  }
   const accountResult = await client.query(
     `SELECT * FROM credit_accounts
       WHERE owner_id = $1 AND unit = $2

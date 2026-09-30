@@ -1,7 +1,9 @@
 import { gptPricingQualities } from "@/shared/contracts/gpt-quality-pricing.mjs";
+import { SEEDREAM_ASPECT_RATIOS, SEEDREAM_PIXEL_SIZES } from "@/shared/contracts/seedream-models.mjs";
 import {
   CANVAS_GENERATION_COUNTS,
   GENERATION_COUNTS,
+  GENERATION_RESOLUTIONS,
   isGptImageModelId,
   type GenerationCount,
   GenerationAspectRatio,
@@ -336,6 +338,7 @@ export function getGenerationRatioIndex(ratio: GenerationAspectRatio): number {
 export function getGenerationRatioOptions(
   modelId: GenerationModelId,
 ): readonly GenerationRatioOption[] {
+  if (modelId === "seedream-5.0-pro") return GENERATION_RATIO_OPTIONS.filter((option) => SEEDREAM_ASPECT_RATIOS.includes(option.id));
   if (modelId === "nano-banana-pro")
     return GENERATION_RATIO_OPTIONS.filter(
       (option) => !["1:8", "1:4", "4:1", "8:1"].includes(option.id),
@@ -350,6 +353,10 @@ export function getCanvasGenerationRatioOptions(
   modelId: GenerationModelId,
 ): readonly GenerationRatioOption[] {
   return [ADAPTIVE_GENERATION_RATIO_OPTION, ...getGenerationRatioOptions(modelId)];
+}
+
+export function getCanvasGenerationResolutionOptions(modelId: GenerationModelId): readonly GenerationResolution[] {
+  return modelId === "seedream-5.0-pro" ? ["1K", "2K"] : GENERATION_RESOLUTIONS;
 }
 
 export function getGenerationCountOptions(
@@ -476,6 +483,13 @@ export function getGenerationPixelDimensions(
   ratio: GenerationAspectRatio,
   resolution: GenerationResolution,
 ): PixelDimensions {
+  if (modelId === "seedream-5.0-pro") {
+    const sizes = SEEDREAM_PIXEL_SIZES as Readonly<Record<string, Partial<Record<GenerationResolution, string>>>>;
+    const size = sizes[ratio]?.[resolution];
+    if (!size) throw new Error(`Unsupported Seedream ratio or resolution: ${ratio} / ${resolution}`);
+    const [width, height] = size.split("x").map(Number);
+    return { width, height };
+  }
   if (isGptImageModelId(modelId)) {
     if (!GPT_IMAGE_2_RATIO_IDS.includes(ratio as GptImage2AspectRatio)) {
       throw new Error(`Unsupported generation ratio for ${modelId}: ${ratio}`);

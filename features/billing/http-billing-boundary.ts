@@ -1,4 +1,5 @@
 import { goodGoodApiFetch } from "@/features/auth/http-auth-boundary";
+import { isSeedreamModel, seedreamQuoteCreditAmount } from "@/shared/contracts/seedream-pricing.mjs";
 import type {
   CreditActivityFilter,
   CreditActivityPage,
@@ -125,6 +126,7 @@ export function findBillingQuote(
     modelId,
     resolution,
     quality = "auto",
+    referenceCount = 0,
   }: Readonly<{
     count: GenerationCount;
     catalogModelId?: string;
@@ -132,9 +134,10 @@ export function findBillingQuote(
     modelId: GenerationModelId;
     resolution: GenerationResolution;
     quality?: import("@/shared/contracts/generation").GptImageQuality;
+    referenceCount?: number;
   }>,
 ): BillingGenerationQuote | null {
-  return (
+  const quote = (
     summary?.quotes.find(
       (quote) =>
         quote.count === count &&
@@ -145,6 +148,9 @@ export function findBillingQuote(
         quote.resolution === resolution,
     ) ?? null
   );
+  if (!quote || !isSeedreamModel(modelId)) return quote;
+  const creditAmount = seedreamQuoteCreditAmount(quote.creditAmount, quote.creditUnit, referenceCount);
+  return creditAmount === null ? null : { ...quote, creditAmount, creditUnit: "credit-cny-cent" };
 }
 
 export function availableImageCount(

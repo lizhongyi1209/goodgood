@@ -4,7 +4,9 @@ import path from "node:path";
 import { o1keyRouteForProviderModel } from "./us-gateway-adapter.mjs";
 import {
   GPT_IMAGE_2_PIXEL_SIZES,
+  SEEDREAM_PIXEL_SIZES,
   isGptImageModelId,
+  isSeedreamModelId,
 } from "./capabilities.mjs";
 import { gptPricingQualities } from "../../shared/contracts/gpt-quality-pricing.mjs";
 
@@ -97,6 +99,18 @@ export function createMockProviderServer({ apiKey, host, port }) {
     if (!route) return "unknown_model";
     if (typeof body.prompt !== "string" || !body.prompt) return "missing_prompt";
     if (!Array.isArray(body.images)) return "missing_images";
+    if (isSeedreamModelId(route.productModelId)) {
+      if (body.n !== 1) return "invalid_output_count";
+      if (body.images.length > 10) return "too_many_references";
+      if (body.images.some((image) => typeof image !== "string" || !uploadsById.has(image))) return "invalid_reference";
+      const validSizes = ["1K", "2K", ...Object.values(SEEDREAM_PIXEL_SIZES).flatMap((sizes) => Object.values(sizes))];
+      if (!validSizes.includes(body.size)) return "invalid_size";
+      if (body.output_format !== "png") return "invalid_output_format";
+      if (body.watermark !== undefined || body.layer_decomposition !== undefined) return "unsupported_seedream_option";
+      const allowedKeys = new Set(["model", "prompt", "images", "n", "size", "output_format"]);
+      if (Object.keys(body).some((key) => !allowedKeys.has(key))) return "unsupported_seedream_option";
+      return null;
+    }
     for (const image of body.images) {
       if (
         typeof image?.fileData?.fileUri !== "string" ||

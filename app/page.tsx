@@ -3311,7 +3311,7 @@ export default function Home({
               onReorderReference={reorderReference}
               referenceEditorMaterials={referenceMaterials}
               onSaveReferenceEdit={handleSaveReferenceEdit}
-              modelOptions={billingSummary?.models?.filter((model) => model.mediaType === "image").map((model) => ({ id: model.adapterId as GenerationModelId, catalogId: model.id, name: model.name, description: model.description, icon: model.adapterId.startsWith("nano") ? "nano" : "openai", recommended: model.id === DEFAULT_GENERATION_MODEL_ID }))}
+              modelOptions={billingSummary?.models?.filter((model) => model.mediaType === "image" && model.adapterId !== "seedream-5.0-pro").map((model) => ({ id: model.adapterId as GenerationModelId, catalogId: model.id, name: model.name, description: model.description, icon: model.adapterId.startsWith("nano") ? "nano" : "openai", recommended: model.id === DEFAULT_GENERATION_MODEL_ID }))}
               catalogModelId={selectedCatalogModelId}
               onCatalogModelChange={(id, adapterId) => { handleModelChange(adapterId); setSelectedCatalogModelId(id); }}
               onModelChange={handleModelChange}

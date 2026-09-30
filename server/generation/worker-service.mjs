@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { NormalizedProviderError } from "./provider.mjs";
+import { isExpectedGenerationOutputCount } from "./capabilities.mjs";
 import {
   createGenerationProvider,
   generationProviderRouteForModel,
@@ -99,7 +100,7 @@ export async function storeProviderOutputs({
   storage,
   store = storeGeneratedAsset,
 }) {
-  if (!Array.isArray(outputs) || outputs.length !== job.requested_count) {
+  if (!Array.isArray(outputs) || !isExpectedGenerationOutputCount({ modelId: job.model_id, requestedCount: job.requested_count, actualCount: outputs.length })) {
     throw new NormalizedProviderError({
       code: "INTERNAL_ERROR",
       message: "生成服务返回的图片数量与请求不一致。输入内容已保留，请重试。",

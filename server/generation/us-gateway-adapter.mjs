@@ -9,9 +9,15 @@ import {
   SUPPORTED_GPT_IMAGE_OUTPUT_FORMATS,
   SUPPORTED_GPT_IMAGE_QUALITIES,
   SUPPORTED_GENERATION_RESOLUTIONS,
+  SEEDREAM_MODEL_ID,
+  SEEDREAM_PROVIDER_MODEL_ID,
+  SEEDREAM_RESOLUTIONS,
   getGenerationModelCapability,
   getGptImage2PixelSize,
+  getSeedreamPixelSize,
+  isExpectedGenerationOutputCount,
   isGptImageModelId,
+  isSeedreamModelId,
   isSupportedGenerationInput,
 } from "./capabilities.mjs";
 
@@ -56,6 +62,16 @@ export const US_GATEWAY_GPT_IMAGE_25_FLARE_ROUTE = Object.freeze({
   providerModel: "gpt-image-2.5-flare",
   resolutions: SUPPORTED_GENERATION_RESOLUTIONS,
   routeVersion: "o1key-gpt-image-2.5-flare-v1",
+});
+
+export const US_GATEWAY_SEEDREAM_5_PRO_ROUTE = Object.freeze({
+  aspectRatios: getGenerationModelCapability(SEEDREAM_MODEL_ID).aspectRatios,
+  outputCounts: getGenerationModelCapability(SEEDREAM_MODEL_ID).outputCounts,
+  productModelId: SEEDREAM_MODEL_ID,
+  provider: "o1key",
+  providerModel: SEEDREAM_PROVIDER_MODEL_ID,
+  resolutions: SEEDREAM_RESOLUTIONS,
+  routeVersion: `o1key-${SEEDREAM_PROVIDER_MODEL_ID}-v1`,
 });
 
 export const US_GATEWAY_MVP_ROUTE = US_GATEWAY_NANO_BANANA_2_ROUTE;
@@ -148,6 +164,7 @@ export function getUsGatewayRoute(modelId, imageLine) {
     "gpt-image-2.5-sunburst": US_GATEWAY_GPT_IMAGE_25_SUNBURST_ROUTE,
     "gpt-image-2": US_GATEWAY_GPT_IMAGE_2_ROUTE,
     "gpt-image-2.5-flare": US_GATEWAY_GPT_IMAGE_25_FLARE_ROUTE,
+    [SEEDREAM_MODEL_ID]: US_GATEWAY_SEEDREAM_5_PRO_ROUTE,
   })[modelId] ?? null;
 }
 
@@ -208,7 +225,30 @@ function normalizeFailure(error) {
   return Object.freeze({ ...FAILURE_COPY.INTERNAL_ERROR, code: "INTERNAL_ERROR" });
 }
 
-function normalizeOutput(output, index, allowInsecureLoopback) {
+function seedreamOutputMetadata(output) {
+  const metadata = {};
+  if (Number.isSafeInteger(output.z_index) && output.z_index >= 0) metadata.zIndex = output.z_index;
+  if (typeof output.size === "string" && /^\d+x\d+$/.test(output.size)) metadata.size = output.size;
+  if (["png", "jpeg"].includes(output.output_format)) metadata.outputFormat = output.output_format;
+  for (const key of ["name", "description"]) {
+    if (typeof output[key] === "string") metadata[key] = output[key].slice(0, 2_000);
+  }
+  if (output.bounding_box && typeof output.bounding_box === "object") {
+    const box = {};
+    for (const key of ["absolute", "normalized"]) {
+      const coordinates = output.bounding_box[key];
+      if (Array.isArray(coordinates) && coordinates.length === 4 &&
+          coordinates.every((value) => Number.isFinite(value) && value >= 0) &&
+          (key !== "normalized" || coordinates.every((value) => value <= 1_000))) {
+        box[key] = Object.freeze([...coordinates]);
+      }
+    }
+    if (Object.keys(box).length) metadata.boundingBox = Object.freeze(box);
+  }
+  return Object.keys(metadata).length ? Object.freeze(metadata) : null;
+}
+
+function normalizeOutput(output, index, allowInsecureLoopback, productModelId) {
   let url;
   try {
     url = new URL(output?.url);
@@ -222,10 +262,12 @@ function normalizeOutput(output, index, allowInsecureLoopback) {
   ) {
     throw protocolError();
   }
+  const providerMetadata = isSeedreamModelId(productModelId) ? seedreamOutputMetadata(output) : null;
   return Object.freeze({
     id: `output-${index + 1}`,
     mimeType: output.mime_type,
     url: url.href,
+    ...(providerMetadata ? { providerMetadata } : {}),
   });
 }
 
@@ -241,9 +283,9 @@ function normalizeProgress(value, state) {
 
 export function normalizeUsGatewayTask(
   payload,
-  { allowInsecureLoopback = false, expectedOutputCount = 1 } = {},
+  { allowInsecureLoopback = false, expectedOutputCount = 1, productModelId } = {},
 ) {
-  if (![1, 2, 4].includes(expectedOutputCount)) throw protocolError();
+  if (!(isSeedreamModelId(productModelId) ? expectedOutputCount === 1 : [1, 2, 4].includes(expectedOutputCount))) throw protocolError();
   const taskId = payload?.task_id;
   if (typeof taskId !== "string" || !taskId) throw protocolError();
   const state = Object.freeze({
@@ -256,17 +298,23 @@ export function normalizeUsGatewayTask(
 
   const rawOutputs = payload.data?.images ?? [];
   if (!Array.isArray(rawOutputs)) throw protocolError();
+  if (state === "succeeded" && !isExpectedGenerationOutputCount({
+    modelId: productModelId, requestedCount: expectedOutputCount, actualCount: rawOutputs.length,
+  })) throw protocolError();
+  // Sort only when every item supplies an interpretable layer order. Partial
+  // metadata must not move an unlabelled base image behind labelled layers.
+  const orderedOutputs = isSeedreamModelId(productModelId) && rawOutputs.length &&
+    rawOutputs.every((output) => Number.isSafeInteger(output?.z_index) && output.z_index >= 0)
+      ? [...rawOutputs].sort((left, right) => left.z_index - right.z_index)
+      : rawOutputs;
   const outputs = Object.freeze(
-    rawOutputs.map((output, index) =>
-      normalizeOutput(output, index, allowInsecureLoopback),
+    orderedOutputs.map((output, index) =>
+      normalizeOutput(output, index, allowInsecureLoopback, productModelId),
     ),
   );
   const failures = Object.freeze(
     state === "failed" ? [normalizeFailure(payload.error)] : [],
   );
-  if (state === "succeeded" && outputs.length !== expectedOutputCount) {
-    throw protocolError();
-  }
   if (state !== "succeeded" && outputs.length !== 0) throw protocolError();
 
   return Object.freeze({
@@ -436,6 +484,7 @@ function validateJob(job, route) {
   if (
     job?.model_id !== route.productModelId ||
     !route.outputCounts.includes(job?.requested_count) ||
+    (isSeedreamModelId(route.productModelId) && job?.image_line != null) ||
     (isBananaModel(route.productModelId) && (job?.image_line ?? "special") !== (route.imageLine ?? "special")) ||
     (isGptImageModelId(route.productModelId) && (job?.image_line ?? undefined) !== route.imageLine) ||
     !isSupportedGenerationInput({
@@ -461,6 +510,16 @@ function validateJob(job, route) {
 }
 
 function generationPayload({ job, route, uploadedReferences, allowInsecureLoopback = false }) {
+  if (isSeedreamModelId(route.productModelId)) {
+    return {
+      images: uploadedReferences.map((reference) => assertUploadedReferenceUrl(reference.url, allowInsecureLoopback)),
+      model: route.providerModel,
+      prompt: job.prompt,
+      n: 1,
+      output_format: "png",
+      size: getSeedreamPixelSize(job.aspect_ratio, job.resolution),
+    };
+  }
   const common = {
     images: uploadedReferences.map((reference) => ({
       fileData: {
@@ -561,6 +620,7 @@ export function createUsGatewayAdapter({
     return normalizeUsGatewayTask(payload, {
       allowInsecureLoopback,
       expectedOutputCount,
+      productModelId: route.productModelId,
     });
   }
 

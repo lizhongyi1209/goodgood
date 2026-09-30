@@ -1,4 +1,5 @@
 import { modelQualityPriceContext } from "../../shared/contracts/gpt-quality-pricing.mjs";
+import { isSeedreamModel, seedreamQuoteCreditAmount } from "../../shared/contracts/seedream-pricing.mjs";
 import { privateImageUrls } from "../../shared/private-image-urls.mjs";
 import { createHash, randomUUID } from "node:crypto";
 import { supportsImageLines } from "../../shared/contracts/banana-lines.mjs";
@@ -20,6 +21,7 @@ import { lockReferenceLifecycle } from "../references/lifecycle-lock.mjs";
 import { findReadyReferences } from "../references/repository.mjs";
 import {
   isGptImageModelId,
+  isExpectedGenerationOutputCount,
   normalizeGenerationModelOptions,
 } from "./capabilities.mjs";
 
@@ -559,12 +561,17 @@ export async function createGenerationJob(
     await client.query("UPDATE generation_batches SET catalog_model_id=$2,catalog_model_name=$3 WHERE id=$1",
       [batchId, managedModel.id, managedModel.name]);
     if (workspace.kind === "organization") {
-      const price = await findActiveGenerationPrice(client, {
+      const basePrice = await findActiveGenerationPrice(client, {
         count: input.count,
         modelId: input.catalogModelId ?? input.modelId,
         planContext: modelQualityPriceContext(managedModel, input.imageLine, input.quality),
         resolution: input.resolution,
       });
+      const quoted = isSeedreamModel(input.modelId)
+        ? seedreamQuoteCreditAmount(basePrice.creditAmount, basePrice.creditUnit, input.references.length) : null;
+      if (isSeedreamModel(input.modelId) && quoted === null) throw new GenerationPersistenceError("PRICE_NOT_AVAILABLE", "模型报价暂不可用，请刷新后重试。", 409);
+      const price = isSeedreamModel(input.modelId)
+        ? { ...basePrice, creditAmount: BigInt(quoted), creditUnit: "credit-cny-cent" } : basePrice;
       await client.query(
         `UPDATE generation_batches
             SET price_version_id = $2, quoted_credit_unit = $3,
@@ -889,7 +896,7 @@ export async function completeGenerationJob(
     const locked = await client.query(
       `SELECT j.state, j.owner_id, j.creator_owner_id, j.workspace_id,
               j.batch_id, j.lease_owner, j.credit_reservation_entry_id,
-              j.workspace_credit_reservation_entry_id, b.requested_count
+              j.workspace_credit_reservation_entry_id, b.requested_count, b.model_id
          FROM generation_jobs j
          JOIN generation_batches b ON b.id = j.batch_id
         WHERE j.id = $1 FOR UPDATE OF j`,
@@ -915,7 +922,7 @@ export async function completeGenerationJob(
 
     if (
       !Array.isArray(assets) ||
-      assets.length !== locked.rows[0].requested_count ||
+      !isExpectedGenerationOutputCount({ modelId: locked.rows[0].model_id, requestedCount: locked.rows[0].requested_count, actualCount: assets.length }) ||
       assets.some((asset, index) =>
         asset.ordinal !== index + 1 ||
         asset.ownerId !== locked.rows[0].owner_id ||

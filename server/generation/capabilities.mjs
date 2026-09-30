@@ -1,5 +1,10 @@
 import { gptPricingQualities } from "../../shared/contracts/gpt-quality-pricing.mjs";
 import { isValidImageLine } from "../../shared/contracts/banana-lines.mjs";
+import {
+  SEEDREAM_MODEL_ID, SEEDREAM_PROVIDER_MODEL_ID, SEEDREAM_RESOLUTIONS, SEEDREAM_PIXEL_SIZES,
+  SEEDREAM_MAX_OUTPUTS, SEEDREAM_ASPECT_RATIOS as SEEDREAM_FIXED_ASPECT_RATIOS,
+} from "../../shared/contracts/seedream-models.mjs";
+export { SEEDREAM_MODEL_ID, SEEDREAM_PROVIDER_MODEL_ID, SEEDREAM_RESOLUTIONS, SEEDREAM_PIXEL_SIZES };
 
 export const SUPPORTED_GENERATION_RESOLUTIONS = Object.freeze([
   "1K",
@@ -45,6 +50,30 @@ const GPT_IMAGE_2_ASPECT_RATIOS = Object.freeze([
   "16:9",
 ]);
 
+export const SEEDREAM_MAX_RETURNED_OUTPUTS = SEEDREAM_MAX_OUTPUTS;
+export const SEEDREAM_ASPECT_RATIOS = Object.freeze(["adaptive", ...SEEDREAM_FIXED_ASPECT_RATIOS]);
+
+export function isSeedreamModelId(modelId) {
+  return modelId === SEEDREAM_MODEL_ID;
+}
+
+export function getSeedreamPixelSize(aspectRatio, resolution) {
+  if (aspectRatio === "adaptive" && SEEDREAM_RESOLUTIONS.includes(resolution)) return resolution;
+  const size = SEEDREAM_PIXEL_SIZES[aspectRatio]?.[resolution];
+  if (!size) throw new Error("Unsupported Seedream aspect ratio or resolution.");
+  return size;
+}
+
+// Seedream accepts n=1 but may return a base image plus layers. Keep this
+// compatibility confined to that model; all other models retain exact counts.
+export function isExpectedGenerationOutputCount({ modelId, requestedCount, actualCount }) {
+  if (!Number.isSafeInteger(requestedCount) || requestedCount < 1 ||
+      !Number.isSafeInteger(actualCount) || actualCount < 1) return false;
+  return isSeedreamModelId(modelId)
+    ? requestedCount === 1 && actualCount <= SEEDREAM_MAX_RETURNED_OUTPUTS
+    : actualCount === requestedCount;
+}
+
 export const GPT_IMAGE_MODEL_IDS = Object.freeze([
   "gpt-image-2.5-sunburst",
   "gpt-image-2",
@@ -85,6 +114,11 @@ export const GENERATION_MODEL_CAPABILITIES = Object.freeze({
   }),
   "gpt-image-2": GPT_IMAGE_CAPABILITY,
   "gpt-image-2.5-flare": GPT_IMAGE_CAPABILITY,
+  [SEEDREAM_MODEL_ID]: Object.freeze({
+    aspectRatios: SEEDREAM_ASPECT_RATIOS,
+    outputCounts: Object.freeze([1]),
+    resolutions: SEEDREAM_RESOLUTIONS,
+  }),
 });
 
 export const SUPPORTED_GENERATION_MODEL_IDS = Object.freeze(

@@ -75,6 +75,7 @@ import {
   yuanToCredits,
 } from "@/shared/contracts/model-pricing.mjs";
 import type { ManagedModel } from "@/shared/contracts/model-management";
+import { isSeedreamModel } from "@/shared/contracts/seedream-pricing.mjs";
 
 type DraftPrices = Record<
   string,
@@ -480,6 +481,7 @@ export function ModelManagementPage({
     try {
       quote = calculateModelQuote(
         {
+          adapterId: draft.adapterId,
           mediaType: template.mediaType,
           prices: parsedPrices(draft, pricingLine),
         },
@@ -1026,7 +1028,10 @@ export function ModelManagementPage({
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {[1, 2, 4].map((value) => (
+                          {(isSeedreamModel(draft.adapterId)
+                            ? [1]
+                            : [1, 2, 4]
+                          ).map((value) => (
                             <SelectItem
                               key={value}
                               value={String(value)}

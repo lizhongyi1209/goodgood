@@ -6,12 +6,13 @@ import { readPrivateObject } from "./storage.mjs";
 import { prepareProviderReference, providerReferenceByteBudget } from "./reference-inputs.mjs";
 import { PRIVATE_IMAGE_UPLOAD_MAX_BYTES } from "../../shared/contracts/upload-limits.mjs";
 import { BANANA_LINES, supportsImageLines, isBananaModel, isBananaLineReady, isValidImageLine } from "../../shared/contracts/banana-lines.mjs";
-import { SUPPORTED_NANO_BANANA_2_OUTPUT_COUNTS } from "./capabilities.mjs";
+import { SUPPORTED_NANO_BANANA_2_OUTPUT_COUNTS, isExpectedGenerationOutputCount, isSeedreamModelId } from "./capabilities.mjs";
 import {
   US_GATEWAY_GPT_IMAGE_25_FLARE_ROUTE,
   US_GATEWAY_GPT_IMAGE_25_SUNBURST_ROUTE,
   US_GATEWAY_GPT_IMAGE_2_ROUTE,
   US_GATEWAY_NANO_BANANA_2_ROUTE,
+  US_GATEWAY_SEEDREAM_5_PRO_ROUTE,
   createUsGatewayAdapter,
   getUsGatewayRoute,
   getCanvasImageRoute,
@@ -51,11 +52,14 @@ export const MOCK_GPT_IMAGE_25_FLARE_ROUTE = localRouteFor(
   US_GATEWAY_GPT_IMAGE_25_FLARE_ROUTE,
 );
 
+export const MOCK_SEEDREAM_5_PRO_ROUTE = localRouteFor(US_GATEWAY_SEEDREAM_5_PRO_ROUTE);
+
 const MOCK_PROVIDER_ROUTES = Object.freeze({
   "nano-banana-2": MOCK_PROVIDER_ROUTE,
   "gpt-image-2.5-sunburst": MOCK_GPT_IMAGE_25_SUNBURST_ROUTE,
   "gpt-image-2": MOCK_GPT_IMAGE_2_ROUTE,
   "gpt-image-2.5-flare": MOCK_GPT_IMAGE_25_FLARE_ROUTE,
+  "seedream-5.0-pro": MOCK_SEEDREAM_5_PRO_ROUTE,
 });
 // Lines O1Key does not route still need a local-only route so the workspace can
 // exercise an unconnected line without pretending it is a real provider route.
@@ -128,11 +132,10 @@ function throwTerminalFailure(task) {
   });
 }
 
-function validateOutputCount(outputs, expectedOutputCount) {
+function validateOutputCount(outputs, expectedOutputCount, modelId) {
   if (
     !Array.isArray(outputs) ||
-    !Number.isInteger(expectedOutputCount) ||
-    outputs.length !== expectedOutputCount
+    !isExpectedGenerationOutputCount({ modelId, requestedCount: expectedOutputCount, actualCount: outputs.length })
   ) {
     throw new NormalizedProviderError({
       code: "INTERNAL_ERROR",
@@ -229,6 +232,7 @@ export function decodeO1KeyTaskSet(
 }
 
 function expectedO1KeyTaskCount(route, job) {
+  if (isSeedreamModelId(route.productModelId)) return 1;
   return isBananaModel(route.productModelId) || job.provider_routing_policy === "canvas-image-v1" ? job.requested_count : 1;
 }
 
@@ -382,6 +386,7 @@ export function createGenerationProvider({
         return validateOutputCount(
           tasks.flatMap((task) => task.outputs),
           expectedOutputCount,
+          route.productModelId,
         );
       },
     });
