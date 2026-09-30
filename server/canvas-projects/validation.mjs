@@ -6,6 +6,8 @@ const NODE_TYPES = new Set(["sourceImage", "sourceVideo", "sourceAudio", "imageG
 const ASSET_KINDS = new Set(["reference", "generated", "video", "audio"]);
 const RESOLUTIONS = new Set(["1K", "2K", "4K"]);
 const MAX_DOCUMENT_BYTES = 1024 * 1024;
+const MAX_PAGES = 10;
+const PAGE_CONTENT_KEYS = ["nodes", "edges", "generators", "convertedReferences", "viewport"];
 
 function invalid(message = "画布项目内容无效，请刷新后重试。") {
   return new CanvasProjectError("INVALID_CANVAS_PROJECT", message, 400);
@@ -135,14 +137,8 @@ export function validateCanvasProjectId(value) {
   return value;
 }
 
-export function validateCanvasProjectSave(value) {
-  record(value, ["expectedVersion", "name", "document"]);
-  if (value.expectedVersion !== null &&
-    (!Number.isSafeInteger(value.expectedVersion) || value.expectedVersion < 1)) throw invalid();
-  const name = string(value.name, 20).trim();
-  if (!name) throw invalid("画布名称不能为空。");
-  const source = record(value.document, ["schemaVersion", "nodes", "edges", "generators", "convertedReferences", "viewport"]);
-  if (source.schemaVersion !== 1 || !Array.isArray(source.nodes) || source.nodes.length > 1000 ||
+function pageContent(source) {
+  if (!Array.isArray(source.nodes) || source.nodes.length > 1000 ||
     !Array.isArray(source.edges) || source.edges.length > 3000) throw invalid();
   const nodes = source.nodes.map(node);
   const ids = new Set(nodes.map((item) => item.id));
@@ -150,14 +146,14 @@ export function validateCanvasProjectSave(value) {
   const edges = source.edges.map((item) => edge(item, ids));
   if (new Set(edges.map((item) => item.id)).size !== edges.length) throw invalid();
   record(source.generators, Object.keys(source.generators ?? {}));
-  const generators = {};
+  const generators = Object.create(null);
   for (const [id, value] of Object.entries(source.generators)) {
     nodeId(id);
     if (!nodes.some((item) => item.id === id && item.type === "imageGenerator")) throw invalid();
     generators[id] = generator(value);
   }
   if (nodes.some((item) => item.type === "imageGenerator" && !generators[item.id])) throw invalid();
-  const convertedReferences = {};
+  const convertedReferences = Object.create(null);
   if (source.convertedReferences !== undefined) {
     record(source.convertedReferences, Object.keys(source.convertedReferences ?? {}));
     const edgeIds = new Set(edges.map((item) => item.id));
@@ -172,7 +168,39 @@ export function validateCanvasProjectSave(value) {
     y: finite(source.viewport.y, -10_000_000, 10_000_000),
     zoom: finite(source.viewport.zoom, 0.01, 16),
   };
-  const document = { schemaVersion: 1, nodes, edges, generators, convertedReferences, viewport };
+  return { nodes, edges, generators, convertedReferences, viewport };
+}
+
+function page(value) {
+  record(value, ["id", "name", ...PAGE_CONTENT_KEYS]);
+  const name = string(value.name, 40).trim();
+  if (!name || Array.from(name).length > 20) throw invalid("页面名称应为 1–20 个字符。");
+  return { id: nodeId(value.id), name, ...pageContent(value) };
+}
+
+export function validateCanvasProjectSave(value) {
+  record(value, ["expectedVersion", "name", "document"]);
+  if (value.expectedVersion !== null &&
+    (!Number.isSafeInteger(value.expectedVersion) || value.expectedVersion < 1)) throw invalid();
+  const name = string(value.name, 20).trim();
+  if (!name) throw invalid("画布名称不能为空。");
+  let document;
+  if (value.document?.schemaVersion === 1) {
+    record(value.document, ["schemaVersion", ...PAGE_CONTENT_KEYS]);
+    document = { schemaVersion: 1, ...pageContent(value.document) };
+  } else {
+    record(value.document, ["schemaVersion", "pages"]);
+    if (value.document.schemaVersion !== 2 || !Array.isArray(value.document.pages) ||
+      value.document.pages.length < 1 || value.document.pages.length > MAX_PAGES) throw invalid();
+    const pages = value.document.pages.map(page);
+    const nodes = pages.flatMap((item) => item.nodes);
+    const edges = pages.flatMap((item) => item.edges);
+    if (new Set(pages.map((item) => item.id)).size !== pages.length ||
+      nodes.length > 1000 || edges.length > 3000 ||
+      new Set(nodes.map((item) => item.id)).size !== nodes.length ||
+      new Set(edges.map((item) => item.id)).size !== edges.length) throw invalid();
+    document = { schemaVersion: 2, pages };
+  }
   if (Buffer.byteLength(JSON.stringify({ name, document }), "utf8") > MAX_DOCUMENT_BYTES) {
     throw new CanvasProjectError("PAYLOAD_TOO_LARGE", "画布项目超过 1 MB 限制。", 413);
   }
