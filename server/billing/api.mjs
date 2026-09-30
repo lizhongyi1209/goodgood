@@ -24,53 +24,21 @@ import {
   specificationOutputPrice,
 } from "../../shared/contracts/gpt-quality-pricing.mjs";
 
-const GPT_IMAGE_LAUNCH_PRICES = [
+const LAUNCH_PRICES = Object.freeze([
+  "nano-banana-2",
+  "nano-banana-pro",
   "gpt-image-2.5-sunburst",
   "gpt-image-2",
   "gpt-image-2.5-flare",
 ].flatMap((modelId) =>
-  [1, 2, 4].map((count) =>
+  getGenerationModelCapability(modelId).outputCounts.map((count) =>
     Object.freeze({
       count,
       modelId,
       planContext: "standard",
     }),
   ),
-);
-
-const LAUNCH_PRICES = Object.freeze([
-  Object.freeze({
-    count: 1,
-    modelId: "nano-banana-2",
-    planContext: "standard",
-  }),
-  Object.freeze({
-    count: 2,
-    modelId: "nano-banana-2",
-    planContext: "standard",
-  }),
-  Object.freeze({
-    count: 4,
-    modelId: "nano-banana-2",
-    planContext: "standard",
-  }),
-  Object.freeze({
-    count: 8,
-    modelId: "nano-banana-2",
-    planContext: "standard",
-  }),
-  Object.freeze({
-    count: 1,
-    modelId: "nano-banana-pro",
-    planContext: "standard",
-  }),
-  ...[2, 4, 8].map((count) => Object.freeze({
-    count,
-    modelId: "nano-banana-pro",
-    planContext: "standard",
-  })),
-  ...GPT_IMAGE_LAUNCH_PRICES,
-]);
+));
 
 function previewCreditAmount({ count, modelId }) {
   return String((modelId === "nano-banana-pro" ? 30 : 20) * count);

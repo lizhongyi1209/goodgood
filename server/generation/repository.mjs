@@ -62,6 +62,7 @@ export function hashGenerationInput(input) {
         count: input.count,
         googleSearch: modelOptions.googleSearch,
         modelId: input.modelId,
+        ...(input.routingPolicy ? { routingPolicy: input.routingPolicy } : {}),
         ...(modelOptions.imageLine ? { imageLine: modelOptions.imageLine } : {}),
         ...(input.catalogModelId ? { catalogModelId: input.catalogModelId } : {}),
         outputFormat: modelOptions.outputFormat,
@@ -106,6 +107,7 @@ export function generationInputFromRow(row, referenceUrls = new Map()) {
     count: row.requested_count,
     googleSearch: row.google_search ?? false,
     modelId: row.model_id,
+    ...(row.provider_routing_policy ? { routingPolicy: row.provider_routing_policy } : {}),
     ...(row.image_line && row.image_line !== "special" ? { imageLine: row.image_line } : {}),
     ...(row.catalog_model_id ? { catalogModelId: row.catalog_model_id, catalogModelName: row.catalog_model_name } : {}),
     outputFormat:
@@ -133,6 +135,7 @@ export function persistedGenerationInputFromRow(row) {
     count: row.requested_count,
     googleSearch: row.google_search ?? false,
     modelId: row.model_id,
+    ...(row.provider_routing_policy ? { routingPolicy: row.provider_routing_policy } : {}),
     ...(row.image_line && row.image_line !== "special" ? { imageLine: row.image_line } : {}),
     ...(row.catalog_model_id ? { catalogModelId: row.catalog_model_id } : {}),
     outputFormat:
@@ -195,6 +198,7 @@ const JOB_SELECT = `
          b.reference_snapshot,
          b.model_id,
          b.image_line,
+         b.provider_routing_policy,
          b.catalog_model_id,
          b.catalog_model_name,
          b.aspect_ratio,
@@ -490,9 +494,9 @@ export async function createGenerationJob(
          id, owner_id, workspace_id, creator_owner_id, project_id,
          prompt, reference_snapshot, model_id,
          aspect_ratio, resolution, requested_count, thinking_level,
-         google_search, quality, background, output_format, input_hash, image_line
+         google_search, quality, background, output_format, input_hash, image_line, provider_routing_policy
        ) VALUES ($1, $2, $3, $2, $4, $5, $6::jsonb, $7, $8, $9, $10,
-                 $11, $12, $13, $14, $15, $16, $17)`,
+                 $11, $12, $13, $14, $15, $16, $17, $18)`,
       [
         batchId,
         ownerId,
@@ -511,6 +515,7 @@ export async function createGenerationJob(
         modelOptions.outputFormat,
         inputHash,
         supportsImageLines(input.modelId) ? input.imageLine ?? "special" : null,
+        input.routingPolicy ?? null,
       ],
     );
     if (input.projectId) {
@@ -662,8 +667,14 @@ export async function claimGenerationJob(
       return { claimed: false, reason: "missing" };
     }
     const job = locked.rows[0];
+    let attemptResult = await client.query(
+      `SELECT * FROM generation_attempts
+        WHERE job_id = $1 AND state IN ('created', 'submitted', 'running')
+        ORDER BY ordinal DESC LIMIT 1`,
+      [jobId],
+    );
     const resolvedAttemptRoute = attemptRouteForModel
-      ? attemptRouteForModel(job.model_id, job.image_line ?? undefined)
+      ? attemptRouteForModel(job.model_id, job.image_line ?? undefined, job, attemptResult.rows[0])
       : attemptRoute;
     if (
       !resolvedAttemptRoute?.routeVersion ||
@@ -711,12 +722,6 @@ export async function claimGenerationJob(
       [jobId, workerId, leaseMs],
     );
 
-    let attemptResult = await client.query(
-      `SELECT * FROM generation_attempts
-        WHERE job_id = $1 AND state IN ('created', 'submitted', 'running')
-        ORDER BY ordinal DESC LIMIT 1`,
-      [jobId],
-    );
     if (!attemptResult.rowCount) {
       const ordinal = Number(job.attempt_count) + 1;
       const attemptId = randomUUID();
@@ -783,6 +788,44 @@ export async function markProviderSubmissionStarted(pool, { attemptId }) {
     [attemptId],
   );
   return result.rowCount === 1;
+}
+
+/** Switch only after a definitive no-channel rejection with no accepted task. */
+export async function createProviderFallbackAttempt(pool, { jobId, workerId, attemptId, fromRoute, toRoute }) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const locked = await client.query(`${JOB_SELECT} WHERE j.id = $1 FOR UPDATE OF j`, [jobId]);
+    const job = locked.rows[0];
+    if (!job || job.lease_owner !== workerId || job.provider_routing_policy !== "canvas-image-v1" ||
+      job.resolution !== "4K" || !["running", "refining"].includes(job.state) ||
+      fromRoute.tier !== "4K" || toRoute.tier !== "4K-backup" ||
+      fromRoute.productModelId !== job.model_id || toRoute.productModelId !== job.model_id ||
+      fromRoute.provider !== toRoute.provider) {
+      await client.query("ROLLBACK"); return null;
+    }
+    const rejected = await client.query(
+      `UPDATE generation_attempts SET state = 'failed', error_code = 'CAPACITY_BUSY',
+          error_message = '主渠道明确不可用，切换已批准备用渠道。', completed_at = now(), updated_at = now()
+        WHERE id = $1 AND job_id = $2 AND provider_task_id IS NULL AND state = 'submitted'
+          AND provider = $3 AND provider_model = $4 AND route_version = $5
+        RETURNING id`,
+      [attemptId, jobId, fromRoute.provider, fromRoute.providerModel, fromRoute.routeVersion],
+    );
+    if (!rejected.rowCount) { await client.query("ROLLBACK"); return null; }
+    const ordinal = Number(job.attempt_count) + 1;
+    const result = await client.query(
+      `INSERT INTO generation_attempts (id, job_id, ordinal, route_version, provider, provider_model, state, request_hash)
+        VALUES ($1,$2,$3,$4,$5,$6,'created',$7) RETURNING *`,
+      [randomUUID(), jobId, ordinal, toRoute.routeVersion, toRoute.provider, toRoute.providerModel, job.input_hash],
+    );
+    await client.query("UPDATE generation_jobs SET attempt_count = $2, updated_at = now() WHERE id = $1", [jobId, ordinal]);
+    await insertEvent(client, { eventType: "provider_fallback", fromState: job.state, toState: job.state, jobId,
+      detail: { reason: "channel_unavailable", fromModel: fromRoute.providerModel, toModel: toRoute.providerModel, ordinal } });
+    await client.query("COMMIT");
+    return result.rows[0];
+  } catch (error) { await client.query("ROLLBACK"); throw error; }
+  finally { client.release(); }
 }
 
 export async function renewGenerationLease(

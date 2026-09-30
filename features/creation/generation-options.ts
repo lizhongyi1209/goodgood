@@ -1,5 +1,6 @@
 import { gptPricingQualities } from "@/shared/contracts/gpt-quality-pricing.mjs";
 import {
+  CANVAS_GENERATION_COUNTS,
   GENERATION_COUNTS,
   isGptImageModelId,
   type GenerationCount,
@@ -360,6 +361,21 @@ export function getGenerationCountOptions(
   return modelId === "nano-banana-2" || modelId === "nano-banana-pro" || isGptImageModelId(modelId)
     ? GENERATION_COUNTS
     : [1];
+}
+
+export function getCanvasGenerationCountOptions(
+  modelId: GenerationModelId,
+): readonly GenerationCount[] {
+  return modelId === "nano-banana-2" || modelId === "nano-banana-pro" || isGptImageModelId(modelId)
+    ? CANVAS_GENERATION_COUNTS
+    : [1];
+}
+
+export function resolveCanvasGenerationCountForModel(
+  modelId: GenerationModelId,
+  count: GenerationCount,
+): GenerationCount {
+  return getCanvasGenerationCountOptions(modelId).includes(count) ? count : 1;
 }
 
 export function isGenerationCountSupported(

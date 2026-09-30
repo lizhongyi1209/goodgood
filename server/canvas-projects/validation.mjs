@@ -81,9 +81,10 @@ function node(value) {
   }
   if (value.metadata !== undefined) {
     if (type === "imageGenerator" || type === "imageResult") throw invalid();
+    // Accept FPS from earlier snapshots, but stop carrying it into new saves.
     record(value.metadata, ["pixelWidth", "pixelHeight", "fps", "durationSeconds"]);
     result.metadata = {};
-    for (const key of ["pixelWidth", "pixelHeight", "fps", "durationSeconds"]) {
+    for (const key of ["pixelWidth", "pixelHeight", "durationSeconds"]) {
       if (value.metadata[key] === undefined) continue;
       result.metadata[key] = finite(value.metadata[key], 0, 1_000_000);
     }
@@ -105,17 +106,24 @@ function edge(value, ids) {
 
 function generator(value) {
   record(value, ["draft", "directReferenceIds"]);
-  record(value.draft, ["prompt", "modelKey", "ratio", "resolution", "count"]);
+  record(value.draft, ["prompt", "modelKey", "ratio", "resolution", "count", "quality", "background", "outputFormat"]);
   const draft = value.draft;
   if (draft.modelKey !== null) string(draft.modelKey, 80);
+  if (draft.quality !== undefined && !["auto", "low", "medium", "high", "xhigh", "max"].includes(draft.quality) ||
+    draft.background !== undefined && !["auto", "transparent"].includes(draft.background) ||
+    draft.outputFormat !== undefined && !["png", "jpeg", "webp"].includes(draft.outputFormat) ||
+    draft.background === "transparent" && draft.outputFormat === "jpeg") throw invalid();
   if (typeof draft.ratio !== "string" || !(draft.ratio === "adaptive" || /^\d{1,2}:\d{1,2}$/.test(draft.ratio)) ||
-    !RESOLUTIONS.has(draft.resolution) || ![1, 2, 4, 8].includes(draft.count)) throw invalid();
+    !RESOLUTIONS.has(draft.resolution) || !Number.isSafeInteger(draft.count) || draft.count < 1 || draft.count > 12) throw invalid();
   if (!Array.isArray(value.directReferenceIds) || value.directReferenceIds.length > 10) throw invalid();
   const directReferenceIds = value.directReferenceIds.map(uuid);
   if (new Set(directReferenceIds).size !== directReferenceIds.length) throw invalid();
   return {
     draft: { prompt: string(draft.prompt, 4000, { empty: true, multiline: true }), modelKey: draft.modelKey,
-      ratio: draft.ratio, resolution: draft.resolution, count: draft.count },
+      ratio: draft.ratio, resolution: draft.resolution, count: draft.count,
+      ...(draft.quality !== undefined ? { quality: draft.quality } : {}),
+      ...(draft.background !== undefined ? { background: draft.background } : {}),
+      ...(draft.outputFormat !== undefined ? { outputFormat: draft.outputFormat } : {}) },
     directReferenceIds,
   };
 }

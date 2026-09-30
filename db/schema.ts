@@ -1561,7 +1561,7 @@ export const priceVersions = pgTable(
     ),
     check(
       "price_versions_output_count_check",
-      sql`${table.outputCount} in (1, 2, 4, 8)`,
+      sql`${table.outputCount} between 1 and 12`,
     ),
     check(
       "price_versions_plan_context_check",
@@ -1615,6 +1615,7 @@ export const generationBatches = pgTable(
     catalogModelName: text("catalog_model_name"),
     modelId: text("model_id").notNull(),
     imageLine: text("image_line"),
+    providerRoutingPolicy: text("provider_routing_policy"),
     aspectRatio: text("aspect_ratio").notNull(),
     resolution: text("resolution").notNull(),
     requestedCount: integer("requested_count").notNull(),
@@ -1667,7 +1668,11 @@ export const generationBatches = pgTable(
     ),
     check(
       "generation_batches_count_check",
-      sql`${table.requestedCount} in (1, 2, 4) or (${table.requestedCount} = 8 and ${table.modelId} in ('nano-banana-2', 'nano-banana-pro'))`,
+      sql`${table.requestedCount} between 1 and 12`,
+    ),
+    check(
+      "generation_batches_provider_routing_policy_check",
+      sql`${table.providerRoutingPolicy} is null or ${table.providerRoutingPolicy} = 'canvas-image-v1'`,
     ),
     check(
       "generation_batches_thinking_level_check",

@@ -1,4 +1,4 @@
-import { isBananaModel, modelSpecificationPrices } from "./banana-lines.mjs";
+import { modelSpecificationPrices } from "./banana-lines.mjs";
 
 import { specificationOutputPrice } from "./gpt-quality-pricing.mjs";
 import { SEEDANCE_MODEL_IDS, seedanceResolutions } from "./seedance-models.mjs";
@@ -71,8 +71,7 @@ export function calculateModelQuote(
     !Number.isSafeInteger(price.output) ||
     price.output <= 0 ||
     !Number.isSafeInteger(count) ||
-    !([1, 2, 4].includes(count) ||
-      (count === 8 && model.mediaType === "image" && isBananaModel(model.adapterId)))
+    !(model.mediaType === "image" ? count >= 1 && count <= 12 : [1, 2, 4].includes(count))
   )
     return null;
   if (model.mediaType === "image") return price.output * count;

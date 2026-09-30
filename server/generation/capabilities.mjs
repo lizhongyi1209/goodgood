@@ -8,8 +8,9 @@ export const SUPPORTED_GENERATION_RESOLUTIONS = Object.freeze([
 ]);
 
 export const DURABLE_GENERATION_OUTPUT_COUNT = 1;
-export const SUPPORTED_GPT_IMAGE_2_OUTPUT_COUNTS = Object.freeze([1, 2, 4]);
-export const SUPPORTED_NANO_BANANA_2_OUTPUT_COUNTS = Object.freeze([1, 2, 4, 8]);
+export const SUPPORTED_CANVAS_GENERATION_OUTPUT_COUNTS = Object.freeze([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+export const SUPPORTED_GPT_IMAGE_2_OUTPUT_COUNTS = SUPPORTED_CANVAS_GENERATION_OUTPUT_COUNTS;
+export const SUPPORTED_NANO_BANANA_2_OUTPUT_COUNTS = SUPPORTED_CANVAS_GENERATION_OUTPUT_COUNTS;
 export const SUPPORTED_GENERATION_THINKING_LEVELS = Object.freeze(["low", "high"]);
 export const SUPPORTED_GPT_IMAGE_QUALITIES = Object.freeze(["auto", "low", "medium", "high", "xhigh", "max"]);
 export const SUPPORTED_GPT_IMAGE_BACKGROUNDS = Object.freeze(["auto", "transparent"]);

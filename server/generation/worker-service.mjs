@@ -3,9 +3,11 @@ import { NormalizedProviderError } from "./provider.mjs";
 import {
   createGenerationProvider,
   generationProviderRouteForModel,
+  generationProviderFallbackRoute,
 } from "./provider-router.mjs";
 import {
   claimGenerationJob,
+  createProviderFallbackAttempt,
   completeGenerationJob,
   deferGenerationJob,
   failGenerationJob,
@@ -152,8 +154,8 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
   const startedAt = Date.now();
   const { config, pool, publicStorage, storage } = resources;
   const claim = await claimGenerationJob(pool, {
-    attemptRouteForModel: (modelId, imageLine) =>
-      generationProviderRouteForModel(config.provider.kind, modelId, imageLine),
+    attemptRouteForModel: (modelId, imageLine, job, attempt) =>
+      generationProviderRouteForModel(config.provider.kind, modelId, imageLine, job, attempt),
     jobId,
     leaseMs: config.workerLeaseMs,
     workerId,
@@ -167,8 +169,9 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
     };
   }
 
-  const { attempt, job } = claim;
-  const provider = createGenerationProvider({
+  const { job } = claim;
+  let attempt = claim.attempt;
+  let provider = createGenerationProvider({
     config,
     publicStorage,
     route: claim.route,
@@ -228,7 +231,7 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
         persistedTaskId = nextTaskId;
         taskId = nextTaskId;
       };
-      const createdTaskId = await provider.createTask({
+      const submit = () => provider.createTask({
         attempt,
         job,
         onTaskCreated: persistTaskId,
@@ -251,6 +254,20 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
             : undefined,
         taskId,
       });
+      let createdTaskId;
+      try { createdTaskId = await submit(); }
+      catch (error) {
+        const backup = generationProviderFallbackRoute(config.provider.kind, provider.route, job);
+        if (!error.channelUnavailable || persistedTaskId || !backup) throw error;
+        const nextAttempt = await createProviderFallbackAttempt(pool, {
+          jobId, workerId, attemptId: attempt.id, fromRoute: provider.route, toRoute: backup,
+        });
+        if (!nextAttempt) throw new SupersededGenerationExecution();
+        attempt = nextAttempt;
+        provider = createGenerationProvider({ config, publicStorage, storage, route: backup });
+        provider.assertAttempt(attempt);
+        createdTaskId = await submit();
+      }
       if (createdTaskId !== persistedTaskId) {
         await persistTaskId(createdTaskId);
       }
@@ -259,6 +276,7 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
 
     stage = "provider-poll";
     const outputs = await provider.pollTask({
+      job,
       expectedOutputCount: job.requested_count,
       onRefining: async () => {
         await markGenerationRefining(pool, { jobId, workerId });
