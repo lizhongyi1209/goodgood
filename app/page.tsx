@@ -9,7 +9,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { CreditIcon } from "@/components/ui/credit-icon";
 import { Input } from "@/components/ui/input";
-import {PersonalProfileView,ProfileAvatar,usePersonalProfile} from "@/features/profile/personal-profile";
+import {ProfileAvatar,usePersonalProfile} from "@/features/profile/personal-profile";
+import {DEFAULT_PROFILE_NAME} from "@/shared/profile-policy.mjs";
 import { CreationComposer } from "@/features/creation/creation-composer";
 import { supportsImageLines, imageLineName } from "@/shared/contracts/banana-lines.mjs";
 import type { BananaLine } from "@/shared/contracts/generation";
@@ -264,7 +265,7 @@ type AssetBatch = {
   referenceCount: number;
   images: readonly GenerationOutput[];
 };
-type ActiveView = "create" | "profile" | "projects" | "assets" | "credits" | "feedback" | "distribution" | "organizations" | "admin";
+type ActiveView = "create" | "projects" | "assets" | "credits" | "feedback" | "distribution" | "organizations" | "admin";
 type DestructiveCreationIntent =
   | { kind: "new" }
   | { kind: "project"; projectId: string; projectName: string };
@@ -885,7 +886,7 @@ export default function Home({
         setActiveView(
           detailNavigation?.source === "creation"
             ? "create"
-            : detailNavigation?.source === "profile" ? "profile" : "assets",
+            : "assets",
         );
         return;
       }
@@ -912,10 +913,13 @@ export default function Home({
       }
       setRouteProjectId(null);
       setProjectRestoringId(null);
+      if (route.kind === "profile") {
+        // Retired personal home URLs open the existing account dialog.
+        navigateWorkspace({ kind: "create" }, { replace: true, notify: false });
+        setCreditUsageOpen(true);
+      }
       setActiveView(route.kind === "projects"
         ? "projects"
-        : route.kind === "profile"
-          ? "profile"
         : route.kind === "assets"
           ? "assets"
           : route.kind === "credits"
@@ -2396,13 +2400,6 @@ export default function Home({
     }
   };
 
-  const handleProfileNav = () => {
-    if(workspaceId) {window.location.assign("/profile");return;}
-    navigateWorkspace({kind:"profile"});
-    void reloadAssets();
-    window.scrollTo({top:0,behavior:"smooth"});
-  };
-
   const handleAssetNav = () => {
     if (workspaceId) { window.location.assign("/assets"); return; }
     if (assetPulseTimerRef.current) window.clearTimeout(assetPulseTimerRef.current);
@@ -3117,7 +3114,7 @@ export default function Home({
                   aria-label={`打开 ${accountEmail ?? "GoodGood 用户"} 的账户菜单`}
                 >
                   <ProfileAvatar className="account-profile-avatar" url={personalProfile.profile?.avatarUrl} name={personalProfile.profile?.displayName ?? accountInitials}/>
-                  <strong className="account-card-username">{personalProfile.profile?.version ? personalProfile.profile.displayName : accountEmail ?? "GoodGood 用户"}</strong>
+                  <strong className="account-card-username">{personalProfile.profile?.displayName ?? DEFAULT_PROFILE_NAME}</strong>
                   <MoreHorizontal className="account-card-more" aria-hidden="true" size={17} />
                 </button>
               </DropdownMenuTrigger>
@@ -3128,8 +3125,8 @@ export default function Home({
                 side="right"
                 sideOffset={10}
               >
-                <DropdownMenuItem onSelect={handleProfileNav}>
-                  <UserRoundCog aria-hidden="true" size={17} /><span>个人资料</span>
+                <DropdownMenuItem disabled={authenticationSession.access.status !== "active"} onSelect={handleCreditsNav}>
+                  <UserRoundCog aria-hidden="true" size={17} /><span>个人信息</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <div className="account-menu-details" role="group" aria-label="账户信息">
@@ -3218,7 +3215,7 @@ export default function Home({
                   <DropdownMenuItem className="account-menu-detail account-menu-credit-action" disabled={authenticationSession.access.status !== "active"} onSelect={handleCreditsNav}><CreditIcon size={17}/><span>积分</span><strong>{displayedAvailableCredits ?? "—"}</strong></DropdownMenuItem>
                   <AccountInvitation code={authenticationSession.account.invitationCode} />
                   <DropdownMenuSeparator/>
-                  <DropdownMenuItem onSelect={handleProfileNav}><UserRoundCog size={16}/><span>个人资料</span></DropdownMenuItem>
+                  <DropdownMenuItem disabled={authenticationSession.access.status !== "active"} onSelect={handleCreditsNav}><UserRoundCog size={16}/><span>个人信息</span></DropdownMenuItem>
                   <DropdownMenuItem onSelect={handleFeedbackNav}><MessageSquare size={16}/><span>问题反馈</span></DropdownMenuItem>
                   <DropdownMenuSeparator/>
                   <DropdownMenuItem onSelect={()=>void handleLogout()}><LogOut size={16}/><span>退出登录</span></DropdownMenuItem>
@@ -3457,8 +3454,6 @@ export default function Home({
               onCanvasUpdated={(updated) => setCanvasProjects((items) => items.map((project) => project.id === updated.id ? updated : project))}
               onCanvasDeleted={(id) => setCanvasProjects((items) => items.filter((project) => project.id !== id))}
             />
-          ) : activeView === "profile" ? (
-            <PersonalProfileView state={personalProfile} works={assetDetailItems.map(item=>({key:item.key,url:item.image.previewUrl,ratio:item.image.width && item.image.height ? item.image.width/item.image.height : item.ratio,alt:item.batch.prompt}))} worksLoading={assetsLoading} worksError={assetsError ?? assetRouteError} onRetryWorks={()=>void reloadAssets()} onOpenWork={key=>openImageDetail(assetDetailItems,key,"profile")} onCreate={handleCreateNav}/>
           ) : activeView === "feedback" ? (
             <ProblemFeedbackView session={authenticationSession} onLogin={handleLogin}/>
           ) : activeView === "credits" ? (
@@ -3525,7 +3520,6 @@ export default function Home({
       <CreditUsageDialog
         open={creditUsageOpen && authenticationSession?.access.status === "active"}
         onOpenChange={setCreditUsageOpen}
-        onProfileClick={handleProfileNav}
         onAccountChange={handleCreditAccountChange}
       />
       <Dialog

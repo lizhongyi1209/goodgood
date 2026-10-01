@@ -5,25 +5,23 @@ import {getGenerationResources} from '../generation/resources.mjs';
 import {signAssetRead} from '../generation/storage.mjs';
 import {lockReferenceLifecycle} from '../references/lifecycle-lock.mjs';
 import {newRequestId} from '../observability/http.mjs';
-import {DEFAULT_PROFILE_HANDLE,PROFILE_AVATAR_MAX_BYTES} from '../../shared/profile-policy.mjs';
+import {formatPublicUserId,normalizeProfileName,profileDisplayName,PROFILE_AVATAR_MAX_BYTES} from '../../shared/profile-policy.mjs';
 export class ProfileError extends Error {
  constructor(code,message,status=400) {super(message);this.code=code;this.status=status;}
 }
 export function validateProfileInput(input) {
- if(!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).some(key=>!['displayName','handle','avatarReferenceId','version'].includes(key))) throw new ProfileError('PROFILE_INVALID','资料内容无效，请检查后重试。');
- const displayName=typeof input.displayName==='string'?input.displayName.trim():'';
- const handle=typeof input.handle==='string'?input.handle.trim().replace(/^@/,'').toLowerCase():'';
- if(Array.from(displayName).length<1||Array.from(displayName).length>30||/[\p{Cc}\p{Cf}]/u.test(displayName)) throw new ProfileError('PROFILE_INVALID','名称需为 1–30 个字符。');
- if(!/^[a-z0-9_]{3,24}$/.test(handle)) throw new ProfileError('PROFILE_INVALID','用户名需为 3–24 位字母、数字或下划线。');
+ if(!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).some(key=>!['displayName','avatarReferenceId','version'].includes(key))) throw new ProfileError('PROFILE_INVALID','资料内容无效，请检查后重试。');
+ let displayName;
+ try {displayName=normalizeProfileName(input.displayName);} catch(error) {throw new ProfileError('PROFILE_INVALID',error.message);}
  if(!Number.isInteger(input.version)||input.version<0||input.version>2147483646) throw new ProfileError('PROFILE_INVALID','资料版本无效，请刷新后重试。');
  const avatarReferenceId=input.avatarReferenceId;
  if(avatarReferenceId!==null&&(typeof avatarReferenceId!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(avatarReferenceId))) throw new ProfileError('PROFILE_INVALID','头像无效，请重新上传。');
- return {displayName,handle,avatarReferenceId,version:input.version};
+ return {displayName,avatarReferenceId,version:input.version};
 }
 async function profileDto(row,resources) {
- return {displayName:row?.display_name??'GoodGood 用户',handle:row?.handle??DEFAULT_PROFILE_HANDLE,avatarReferenceId:row?.avatar_reference_id??null,avatarUrl:row?.object_key&&row.upload_state==='ready'&&row.moderation_state==='accepted'&&!row.object_deleted_at?await signAssetRead({bucket:resources.config.objectStorage.bucket,key:row.object_key,publicStorage:resources.publicStorage}):null,version:row?.version??0};
+ return {displayName:profileDisplayName(row?.display_name),publicUserId:formatPublicUserId(row?.public_user_id),avatarReferenceId:row?.avatar_reference_id??null,avatarUrl:row?.object_key&&row.upload_state==='ready'&&row.moderation_state==='accepted'&&!row.object_deleted_at?await signAssetRead({bucket:resources.config.objectStorage.bucket,key:row.object_key,publicStorage:resources.publicStorage}):null,version:row?.version??0};
 }
-const PROFILE_SELECT=`SELECT p.*,ra.object_key,ra.upload_state,ra.moderation_state,ra.object_deleted_at FROM personal_profiles p LEFT JOIN reference_assets ra ON ra.id=p.avatar_reference_id WHERE p.owner_id=$1`;
+const PROFILE_SELECT=`SELECT p.*,u.public_user_id,ra.object_key,ra.upload_state,ra.moderation_state,ra.object_deleted_at FROM users u LEFT JOIN personal_profiles p ON p.owner_id=u.id LEFT JOIN reference_assets ra ON ra.id=p.avatar_reference_id WHERE u.id=$1`;
 export async function readPersonalProfile({ownerContext,resources}) {
  if(!ownerContext?.ownerId) throw sessionExpiredError();
  resources??=await getGenerationResources();
@@ -41,10 +39,10 @@ export async function updatePersonalProfile({ownerContext,input,resources}) {
    const avatar=await client.query(`SELECT id FROM reference_assets WHERE id=$1 AND creator_owner_id=$2 AND owner_id=$2 AND workspace_id=$3 AND upload_state='ready' AND moderation_state='accepted' AND object_deleted_at IS NULL AND cleanup_lease_owner IS NULL AND (byte_size BETWEEN 1 AND $4 OR EXISTS (SELECT 1 FROM personal_profiles p WHERE p.owner_id=$2 AND p.avatar_reference_id=reference_assets.id)) FOR UPDATE`,[value.avatarReferenceId,ownerContext.ownerId,workspace.id,PROFILE_AVATAR_MAX_BYTES]);
    if(!avatar.rows.length) throw new ProfileError('PROFILE_AVATAR_INVALID','头像不可用，请选择不超过 2 MB 的 JPG/JPEG 或 PNG 图片。');
   }
-  const result=value.version===0?await client.query(`INSERT INTO personal_profiles(owner_id,display_name,handle,avatar_reference_id) VALUES($1,$2,$3,$4) ON CONFLICT(owner_id) DO NOTHING RETURNING *`,[ownerContext.ownerId,value.displayName,value.handle,value.avatarReferenceId]):await client.query(`UPDATE personal_profiles SET display_name=$2,handle=$3,avatar_reference_id=$4,version=version+1,updated_at=now() WHERE owner_id=$1 AND version=$5 RETURNING *`,[ownerContext.ownerId,value.displayName,value.handle,value.avatarReferenceId,value.version]);
+  const result=value.version===0?await client.query(`INSERT INTO personal_profiles(owner_id,display_name,avatar_reference_id) VALUES($1,$2,$3) ON CONFLICT(owner_id) DO NOTHING RETURNING *`,[ownerContext.ownerId,value.displayName,value.avatarReferenceId]):await client.query(`UPDATE personal_profiles SET display_name=$2,avatar_reference_id=$3,version=version+1,updated_at=now() WHERE owner_id=$1 AND version=$4 RETURNING *`,[ownerContext.ownerId,value.displayName,value.avatarReferenceId,value.version]);
   if(!result.rows.length) throw new ProfileError('PROFILE_CONFLICT','资料已在其他页面更新，请重新读取后再编辑。',409);
   const full=await client.query(PROFILE_SELECT,[ownerContext.ownerId]);const dto=await profileDto(full.rows[0],resources);await client.query('COMMIT');return dto;
- } catch(error) {await client.query('ROLLBACK');if(error.code==='23505') throw new ProfileError('PROFILE_HANDLE_TAKEN','这个用户名已被使用，请换一个。',409);throw error;} finally {client.release();}
+ } catch(error) {await client.query('ROLLBACK');throw error;} finally {client.release();}
 }
 export function profileActionRequested(request) {
  const headers=request.headers;return (typeof headers?.get==='function'?headers.get('x-goodgood-profile-action'):headers?.['x-goodgood-profile-action'])==='1';

@@ -2120,7 +2120,6 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       <CreditUsageDialog
         open={creditUsageOpen && session?.access.status === "active"}
         onOpenChange={setCreditUsageOpen}
-        onProfileClick={() => window.location.assign("/profile")}
         onAccountChange={handleCreditAccountChange}
       />
 

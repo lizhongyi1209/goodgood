@@ -84,10 +84,12 @@ GG-073 的 `/inspiration` 入口与 `GET /api/inspiration`、`POST /list`、`POS
 `POST` 基础路径、`GET /:id`、`POST /:id/{like,use,withdraw}` 已随灵感板块整体下线移除
 （ADR 0104）；不存在兼容路由或重定向。
 
-GG-072 adds private `/profile` inside the creator shell and owner-bound
-GET/PATCH `/api/profile`. No `/@handle` or public lookup. Image detail retains
-`profile` as history origin so close/back returns to personal works. Legacy
-enterprise context leaves for the personal route before showing this page.
+GG-254 retires the GG-072 personal home. Legacy `/profile` returns to `/create`
+and opens the existing account management dialog on personal information;
+there is no standalone account page. Historical asset-detail `profile` origins
+return to Assets. Owner-bound GET/PATCH `/api/profile` remains for username and
+avatar, now returning the immutable six-digit `publicUserId`; UUID ownership is
+unchanged. No `/@handle` or public account lookup exists.
 
 GG-071 adds `/admin/operations` (daily operating dashboard) and `/admin/logs`
 (task/credit tabs and right detail Sheet) to the owner management shell. Existing
