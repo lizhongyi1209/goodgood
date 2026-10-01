@@ -4,7 +4,7 @@
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
-| GG-266 | 已进入5173：几何Good Good字标与当前G匹配，放在大厅桌面/移动图标右侧；SVG/局部lint/编译通过，创建1/退役1，无缓存，用户验收 | [任务](tasks/GG-266-geometric-good-good-wordmark.md) |
+| GG-266 / GG-267 | 字标已进入5173；当前收小字标及整组Logo至内容宽度，保持几何字形/图标与桌面/移动位置 | [GG-266](tasks/GG-266-geometric-good-good-wordmark.md) / [GG-267](tasks/GG-267-compact-lobby-wordmark.md) |
 | GG-265 | 已进入5173：确认移动后原位置消失、目标保留同一素材，根层仅未归档；失败/刷新一致性与失效归属恢复，12/12、局部lint/编译通过，创建1/退役1 | [任务](tasks/GG-265-canvas-folder-move-membership.md) |
 | GG-264 | 已进入5173：默认完整适配，放大可填满整个中间区域；无计数/右列动态居中保持。本轮16/16、局部lint/编译通过，累计创建2/退役2，用户验收 | [任务](tasks/GG-264-image-detail-fill-and-centered-rail.md) |
 | GG-263 | 已进入5173：移除大厅「画布」，沿用项目页新建/已有画布入口；7/7、局部lint/模块编译通过，无辅助目录，用户验收 | [任务](tasks/GG-263-remove-lobby-canvas-entry.md) |

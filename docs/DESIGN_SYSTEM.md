@@ -500,10 +500,12 @@ the attached parameter drawer matches those corners.
   GG-149, with a black circle and three white geometric pieces. GG-266 pairs the
   unchanged 26px G with `public/goodgood-wordmark.svg` in lobby desktop/mobile
   navigation: custom outlined-path lettering reading **Good Good**, matching
-  the segmented G and rounded 4.3–4.6 unit strokes. The 132px wordmark sits 9px
+  the segmented G and rounded 4.3–4.6 unit strokes. GG-267 reduces the wordmark
+  from 132px to 108px (about 14px high) and places it 8px
   to the right, vertically centered; its width can shrink on mobile so account
   controls retain their space. The sidebar brand remains one 40px-high home
-  button. Authentication/account states, creation empty state, compact canvas,
+  button sized to its contents rather than the full row. Authentication/account
+  states, creation empty state, compact canvas,
   management, Hero and browser icons keep one G. Preserve accessible names and links.
 - SVG/ICO favicons and the self-contained maintenance page use the same geometry.
   Old Double G assets are historical only. [ADR 0116](decisions/0116-unified-g-brand-icon.md)
