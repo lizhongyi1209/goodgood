@@ -137,6 +137,17 @@ but are neither exposed nor writable. New profiles omit handle and use its
 historical database default. GET remains write-free; optimistic versions,
 avatar ownership and 2 MB new binding checks remain. See ADR 0075's GG-254 update.
 
+GG-259 migration0059 replaces registration-order display IDs with one-time
+random reassignment. `user_public_id_swaps` stores a sparse virtual remaining
+pool; the locked allocator's `next_id` remains consumed capacity, never the
+display number. Random UUID bits and rejection sampling select a remaining
+slot, swap in its last value, then shrink the pool transactionally. This permits
+all one million unique six-digit values without collision retries or prefilled
+rows, including the final allocation. Duplicate/rolled-back registrations do
+not consume capacity; deletion never returns numbers. Existing UUIDs/profiles
+and historical consumed capacity are preserved. After this transition, display
+IDs remain immutable; old migrations must never be replayed to renumber them.
+
 GG-071 introduces no persistence or billing mutation. Daily submissions use
 generation_jobs.submitted_at; outcomes use completed_at; settlement/refund/release
 use ledger.created_at, all in Asia/Shanghai calendar dates. Only settle contributes

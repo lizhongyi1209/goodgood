@@ -3,11 +3,12 @@
 - 最后核对：2026-10-01（本地服务；生产身份沿用原发布证据）。
 - 产品阶段：公开的 `controlled-alpha-v1`；已有真实用户，尚未达到完整 seed、自动支付或完整运营告警就绪。
 - 正式入口：https://goodgood.o1key.com
+- 最新账户调整：[GG-259](tasks/GG-259-random-user-id-stable-edit.md) `c6f6bb9` 已进入 5173；既有/新账户采用固定、不重复随机六位 ID，用户名编辑图标常驻，规则预留下方空间。12/12、隔离 SQL 2/2、局部 lint、实际模块编译通过，本地迁移到 0059，辅助目录退役，用户验收。
 - 当前画布详情后继：[GG-258](tasks/GG-258-canvas-detail-minimal.md) 移除右下角缩放按钮/倍率，非生成素材在标题下仅显示已知尺寸；10/10、相关 lint 及三个实际模块编译通过，规范已同步，保留滚轮/拖动/键盘操作。
 - 本地账户信息：[GG-254](tasks/GG-254-account-identity-editor.md) `422c32f` 已接入实际 5173/Web，仅保留用户名默认 mimi、稳定六位数字 ID；文字/头像旁侧确认保存、编辑区外取消和下方规则，撤去个人主页。20 项相关检查、资料 SQL 1/1、ID SQL 10/10、局部 lint、必要 Web 同步与本地 0058 完成，辅助目录退役。
 - 当前本地画布检查点：[GG-253](tasks/GG-253-canvas-media-detail.md) `896bce2`，真实素材信息独立列、图片平移/滚轮缩放、原比例内容缩略列和选中轻微抽出，取代 GG-249/251 的画布滚轮切图及原位放大；25 项定向、lint 和模块编译通过。
 - 当前画布子任务：[GG-255](tasks/GG-255-canvas-paste-image.md) `d4ea42c` 原生外部图片粘贴/进入页面直接粘贴，19/19；[GG-256](tasks/GG-256-canvas-folder-drop.md) `5183287` 图片拖入文件夹、状态动效与光标，8/8；[GG-257](tasks/GG-257-canvas-edge-hover-flow.md) `6f63a8f` 默认实线、hover 流动。相关代码/编译检查完成，三个辅助目录已退役，无子缓存；浏览器验收由用户负责。
-- 当前本地运行：Vite `127.0.0.1:5173` 从 `F:/goodgood-worktrees/GG-116` 提供前端；API 代理到 verified Web `41df2dc` / `127.0.0.1:32131`，唯一真实开发 Worker 为 `127.0.0.1:32142`、readiness ready。原云配置和数据卷保留，本地迁移到 0058；生产没有变化。
+- 当前本地运行：Vite `127.0.0.1:5173` 从 `F:/goodgood-worktrees/GG-116` 提供前端；API 代理到兼容 0059 的 verified Web `41df2dc` / `127.0.0.1:32131`，唯一真实开发 Worker 为 `127.0.0.1:32142`、readiness ready。原云配置和数据卷保留，本地迁移到 0059；生产没有变化。
 
 ## 生产身份
 

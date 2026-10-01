@@ -44,7 +44,7 @@
 
 - `0076-shareable-inspiration-cases.md` — explicit personal effect publication, immutable before/after and parameters, reuse, likes and owner withdrawal for GG-073; historical, retired by ADR 0104.
 
-- `0075-private-personal-profile.md` — GG-072 private profile history; GG-254 replaces it with one username, short numeric ID and local confirm editing, retiring handles/home/works.
+- `0075-private-personal-profile.md` — GG-072 profile history; GG-254 single username/local confirm editing and home retirement; GG-259 random six-digit IDs and stable rule spacing.
 
 - `0074-site-operations-and-global-log.md` — owner daily operations and cross-user task/credit lookup for GG-071; read-only personal/enterprise ledgers, same-shell pages and right details.
 - `0073-model-cards-and-pricing-sheet.md` — compact model cards, default-line summaries and same-page right pricing sheet for GG-070.

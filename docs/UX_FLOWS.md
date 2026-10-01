@@ -353,6 +353,11 @@ changes until complete. Failed saves preserve the draft, version conflicts offer
 reload. Six-digit user ID/email/invitation are text. Legacy `/profile` returns to
 `/create` and opens this dialog; no personal works page remains.
 
+GG-259 keeps the pencil visible before hover. Name/avatar rules reveal within
+their reserved wrapped space below the active editor, preserving field/label
+positions. User IDs are fixed six random decimal digits, unique and independent
+of registration order; existing display numbers are reassigned once.
+
 GG-071 owner operations: choose an end date and 7/30-day trend, click a daily
 bar/date to show that day's metrics. Logs: select tasks or credits, enter mailbox,
 task/batch ID, bounded calendar range and event/state, then query. Next page uses
