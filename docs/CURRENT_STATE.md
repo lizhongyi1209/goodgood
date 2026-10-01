@@ -3,7 +3,7 @@
 - 最后核对：2026-10-01（本地服务；生产身份沿用原发布证据）。
 - 产品阶段：公开的 `controlled-alpha-v1`；已有真实用户，尚未达到完整 seed、自动支付或完整运营告警就绪。
 - 正式入口：https://goodgood.o1key.com
-- 当前本地代码检查点：[GG-242](tasks/GG-242-canvas-image-preview.md)，基于 GG-239 标签 `goodgood-local-2026-09-30-gg239` 和 GG-241，增加生成图片的稳定受权地址恢复修复；具体分支见 IMPLEMENTATION_PLAN。
+- 当前本地代码检查点：[GG-243](tasks/GG-243-project-create-card.md) 已接入实际 5173 项目页首位新建卡片，保留 [GG-242](tasks/GG-242-canvas-image-preview.md) 的生成图片稳定受权地址修复与 Web 云配置；基于 GG-239/GG-241，共同分支与源码证据见 IMPLEMENTATION_PLAN。
 - 当前本地运行：Vite `127.0.0.1:5173` 从 `F:/goodgood-worktrees/GG-116` 提供前端；API 代理到已验证 Web `127.0.0.1:32131`，唯一真实开发 Worker 为 `127.0.0.1:32142`。GG-242 已补回 Web 云素材配置，原本地数据卷和迁移保留，生产没有变化。
 
 ## 生产身份

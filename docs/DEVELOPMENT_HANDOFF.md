@@ -1,10 +1,14 @@
 # 当前开发版本与跨窗口交接
 
 - 日期：2026-10-01。
-- 当前代码：GG-239 累计基线加 GG-242 `c3700b7` 图片恢复修复。
+- 当前代码：GG-239 累计基线加 GG-242 `c3700b7` 图片恢复、GG-243 `f647e13` 首位新建项目卡片；共同整合提交以当前 HEAD 和任务卡为准。
 - 当前交接检查点分支：`fix/GG-242-canvas-image-preview`（基于 GG-241）。
 - 当前 worktree：`F:/goodgood-worktrees/GG-116`。目录名是历史名称，不能再用来判断版本。
-- 状态：GG-242 已补回 Web 云素材配置并恢复图片预览；生成图片重开后使用稳定受权地址。GG-240 工作流规范保留，子 worktree 已退役；未部署生产。GG-237 与 GG-238 待用户手验。
+- 状态：GG-243 已整合实际 5173 源码，页头新建按钮撤下、首位卡片进入新画布；GG-242 云配置和画布图片恢复保留。浏览器验收由用户负责；未部署生产。
+
+## GG-243 大厅并行工作
+
+独立大厅实现分支 `feature/GG-243-home-project-card` 的代码 `f647e13` 已在 GG-242 收口 `00f7568` 后整合下表实际 5173 目录。保留双方源码和记录，不切换目录分支、不替换 Vite/Web/Worker。项目入口按 [ADR 0119](decisions/0119-project-create-card.md) 改为首位新建卡片，点击 `/canvas`。独立门禁 665/22/0、运行目录定向 14/14；共同完整门禁待记录。[任务卡](tasks/GG-243-project-create-card.md) 保留完整交付和退役证据。用户负责浏览器和预期验收。
 
 ## 先确认源码
 
@@ -16,13 +20,13 @@ git merge-base --is-ancestor goodgood-local-2026-09-30-gg239 HEAD
 git worktree list --porcelain
 ~~~
 
-新窗口以 IMPLEMENTATION_PLAN 指向的 GG-242 分支 HEAD 为检查点，并确认 GG-241 是其祖先。`main`、旧 GG-116 分支、其它 GG worktree 和 parked C6 都不是替代来源。新任务先核对未占用编号，GG-243 已有其他窗口在做；只在并行写任务时建立独立 worktree，不要让两个窗口编辑同一目录。
+新窗口以 IMPLEMENTATION_PLAN 指向的共同运行分支 HEAD 为检查点，并确认 GG-242 `00f7568` 与 GG-243 `f647e13` 都是其祖先。`main`、旧 GG-116 分支、其它 GG worktree 和 parked C6 都不是替代来源。新任务先核对未占用编号，只在并行写任务时建立独立 worktree，不要让两个窗口编辑同一目录。
 
 ## 当前本地运行
 
 | 组件 | 入口 | 当前来源/用途 |
 | --- | --- | --- |
-| Vite 页面 | `http://127.0.0.1:5173` | GG-116 当前分支含 GG-242 修复，热更新 |
+| Vite 页面 | `http://127.0.0.1:5173` | GG-116 当前分支含 GG-242/243，热更新 |
 | Node Web | `http://127.0.0.1:32131` | verified `70e10c6ae6bd83542ba870f54059b54b999e9fdf`；Vite `/api` 代理目标 |
 | Worker | `http://127.0.0.1:32142/health/ready` | 唯一真实开发 Worker；O1Key 请求可能计费 |
 | PostgreSQL | `127.0.0.1:54449/goodgood` | 本地隔离数据库，迁移 `0056` |

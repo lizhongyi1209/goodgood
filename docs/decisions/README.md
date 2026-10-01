@@ -177,3 +177,4 @@ ADR 0053 adds standalone-delimited concurrent prompt batches for GG-040.
 - `0111-workspace-icon-rail.md` — 中大屏大厅使用窄图标栏及画布共用 G 标记，手机布局保留。
 - `0112-account-credit-usage-dialog.md` — 头像菜单积分用量弹框取代大厅左侧积分记录入口；退回仅从可见用量中隐藏，账本保留。
 - `0113-static-canvas-model-icons.md` — 画布模型列表继续使用 Lobe 单色图形，改从本地静态 SVG 读取，撤下 React 图标包总入口。
+- `0119-project-create-card.md` — 项目页首位新建卡片直接进入既有新画布入口，取代页头新建创作按钮。

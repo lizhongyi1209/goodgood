@@ -3438,7 +3438,7 @@ export default function Home({
               ownerKey={authenticationSession?.user.id ?? authenticationSession?.user.email ?? ""}
               workspaceId={workspaceId} loading={projectsLoading} error={projectsError ?? canvasProjectsError}
               restoringId={projectRestoringId} busyProjectId={(isGenerating || isVideoGenerating || projectSaving) ? currentProject?.id ?? null : null}
-              onRetry={() => void reloadProjects()} onCreate={requestNewCreation} onRestore={restoreProject}
+              onRetry={() => void reloadProjects()} onRestore={restoreProject}
               onProjectUpdated={(updated) => {
                 setProjects((items) => items.map((project) => project.id === updated.id ? { ...project, ...updated } : project));
                 setCurrentProject((current) => current?.id === updated.id ? { ...current, name: updated.name } : current);
