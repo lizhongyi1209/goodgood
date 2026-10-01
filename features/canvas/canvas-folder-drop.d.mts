@@ -6,6 +6,10 @@ export type CanvasFolderDropData = Readonly<{
   arrangements: readonly AssetArrangement[];
   items: readonly Readonly<{ id: string; kind: string; media: string }>[];
 }>;
+export function selectCanvasFolderItems<T extends CanvasFolderDropData["items"][number]>(
+  data: (Omit<CanvasFolderDropData, "items"> & Readonly<{ items: readonly T[] }>) | null,
+  folderId?: string | null,
+): T[];
 export type CanvasFolderMovePlan = Readonly<{
   key: string;
   kind: "generated" | "reference";

@@ -19,7 +19,7 @@ import { listReferenceMaterials } from "@/features/references/http-reference-lib
 import { privateImageUrls } from "@/shared/private-image-urls.mjs";
 import { CanvasAssetAddCard } from "./canvas-asset-add-card";
 import { CANVAS_ASSET_LIBRARY_UPDATED_EVENT } from "./canvas-asset-upload";
-import { CANVAS_ASSET_DRAG_TYPE, createCanvasFolderMover, planCanvasFolderMove, type CanvasFolderMover, type CanvasFolderMoveState } from "./canvas-folder-drop.mjs";
+import { CANVAS_ASSET_DRAG_TYPE, createCanvasFolderMover, planCanvasFolderMove, selectCanvasFolderItems, type CanvasFolderMover, type CanvasFolderMoveState } from "./canvas-folder-drop.mjs";
 import { attachCanvasVideoPreviewPlayback, type CanvasVideoPreviewPlayback } from "./canvas-video-preview-playback.mjs";
 import styles from "./canvas-asset-panel.module.css";
 
@@ -476,12 +476,7 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
   }, [enabled, requestKey]);
 
   const activeFolder = data?.folders.find((folder) => folder.id === folderId) ?? null;
-  const visibleItems = useMemo(() => {
-    if (!data) return [];
-    if (!activeFolder) return data.items;
-    const membership = new Map(data.arrangements.map((entry) => [`${entry.kind}:${entry.id}`, entry.folderId]));
-    return data.items.filter((item) => membership.get(`${item.kind}:${item.id}`) === activeFolder.id);
-  }, [data, activeFolder]);
+  const visibleItems = useMemo(() => selectCanvasFolderItems(data, activeFolder?.id ?? null), [data, activeFolder]);
   const readyAssetKeys = useMemo(() => new Set(data?.items.map((item) => `${item.kind}:${item.id}`) ?? []), [data]);
   const previewMedia = visibleItems.filter((item) => item.media !== "audio").map((item) => ({
     key: `${item.kind}:${item.id}`, name: item.name, media: item.media as "image" | "video",
@@ -593,7 +588,7 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
     }}>
     <header className={styles.header}>
       {activeFolder ? <>
-        <Button type="button" variant="ghost" size="sm" className={styles.back} onClick={() => setFolderId(null)} aria-label="返回全部资产"><ChevronLeft size={16} aria-hidden="true" />资产</Button>
+        <Button type="button" variant="ghost" size="sm" className={styles.back} onClick={() => setFolderId(null)} aria-label="返回资产"><ChevronLeft size={16} aria-hidden="true" />资产</Button>
         <span className={styles.folderTitle} title={activeFolder.name}>{activeFolder.name}</span>
       </> : <h2>资产</h2>}
       <Button ref={closeButtonRef} type="button" variant="ghost" size="icon-sm" className={styles.close} onClick={onClose} aria-label="关闭资产列表"><X size={16} aria-hidden="true" /></Button>

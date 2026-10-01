@@ -1,5 +1,18 @@
 export const CANVAS_ASSET_DRAG_TYPE = "application/x-goodgood-canvas-asset";
 
+// The canvas root is the unclassified location, not a second copy of every
+// folder's contents. Missing folders fall back to root so no asset gets hidden.
+export function selectCanvasFolderItems(data, folderId = null) {
+  if (!data) return [];
+  const folders = new Set(data.folders.map((folder) => folder.id));
+  const activeFolderId = folders.has(folderId) ? folderId : null;
+  const membership = new Map(data.arrangements.map((entry) => [`${entry.kind}:${entry.id}`, entry.folderId]));
+  return data.items.filter((item) => {
+    const assignedFolderId = membership.get(`${item.kind}:${item.id}`);
+    return activeFolderId ? assignedFolderId === activeFolderId : !folders.has(assignedFolderId);
+  });
+}
+
 // Resolve only an image in the already authorized panel collection. The drag
 // payload identifies it; it never supplies a folder, URL, name or tags to save.
 export function planCanvasFolderMove(data, key, folderId) {
