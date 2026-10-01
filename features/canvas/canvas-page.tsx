@@ -336,7 +336,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
   const [edges, setEdges] = useState<Edge[]>([]);
   const [convertedReferences, setConvertedReferences] = useState<Record<string, GenerationReference>>({});
   const [mediaRevision, setMediaRevision] = useState(0);
-  const [textRevision, setTextRevision] = useState(0);
+  const [, setTextRevision] = useState(0);
   const [submittingGeneratorIds, setSubmittingGeneratorIds] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
   const [dropActive, setDropActive] = useState(false);
@@ -762,8 +762,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       return { edgeId: edge.id, reference, previewUrl: asset?.previewUrl ?? "" };
     });
   }, [activeGeneratorId, flow, edges, convertedReferences, mediaRevision]);
-  const linkedTextInputs = useMemo(() => collectCanvasTextInputs(flow?.getNodes() ?? [], edges, activeGeneratorId),
-    [activeGeneratorId, flow, edges, textRevision]);
+  const linkedTextInputs = collectCanvasTextInputs(flow?.getNodes() ?? [], edges, activeGeneratorId);
   const combinedPrompt = combineCanvasPrompt(linkedTextInputs, prompt);
   const promptTooLong = combinedPrompt.length > CANVAS_PROMPT_MAX_LENGTH;
   const displayReferences = [
@@ -927,7 +926,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     const offset = 32 * clipboard.pasteCount;
     const ids = new Map(clipboard.nodes.map((node) => [node.id, node.type === "imageGenerator"
       ? `generator-${crypto.randomUUID()}` : node.type === "imageResult"
-        ? `canvas-${crypto.randomUUID()}-0` : `asset-${crypto.randomUUID()}`] as const));
+        ? `canvas-${crypto.randomUUID()}-0` : node.type === "textEditor" ? `text-${crypto.randomUUID()}` : `asset-${crypto.randomUUID()}`] as const));
     let nextSequence = Math.max(0, ...instance.getNodes().filter((node) => node.type === "imageGenerator")
       .map((node) => node.data.sequence ?? 0));
     const pastedNodes: CanvasNode[] = clipboard.nodes.map((node) => {

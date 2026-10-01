@@ -105,8 +105,8 @@ test("browser and remote snapshots retain Markdown, plain output, geometry and t
 test("empty editor saves, multipage remote output retains text and independent generator drafts", () => {
   const first = snapshot([textNode("text-1", ""), generator], [edge()]);
   const second = snapshot([textNode("text-2", "下一页")], []);
-  const { schemaVersion: _one, ...one } = first;
-  const { schemaVersion: _two, ...two } = second;
+  const one = { ...first }; delete one.schemaVersion;
+  const two = { ...second }; delete two.schemaVersion;
   const doc = { schemaVersion: 2, pages: [{ id: "page-1", name: "页面1", ...one }, { id: "page-2", name: "页面2", ...two }] };
   const validated = validateCanvasProjectSave(save(remoteCanvasProjectDocument(doc)));
   assert.equal(validated.document.pages[0].nodes[0].text, "");
