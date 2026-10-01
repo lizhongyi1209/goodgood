@@ -1,5 +1,9 @@
 # Navigation and route contract
 
+## GG-243 项目页新建入口
+
+`/projects` 首位「新建项目」卡片链接到现有 `/canvas` 新建入口，画布继续使用原 UUID 初始化并将 URL 替换为 `/canvas/:projectId`。不增加路由、接口或命名中间页；该入口取代项目页原大厅新建创作按钮。见 [ADR 0119](decisions/0119-project-create-card.md)。
+
 ## GG-238 画布内图片模态预览
 
 点击资产侧栏放大图标只打开当前canvas上的图片Dialog，不导航/assets/:id、不创建新URL、路由或history条目。既有生成资产详情仍由原/assets/:assetId处理；图片源仅复用原受权preview/content，未新增读取或持久化接口。见[任务](tasks/GG-238-canvas-asset-viewer.md)。

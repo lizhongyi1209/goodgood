@@ -6,6 +6,10 @@
 - 当前 worktree：`F:/goodgood-worktrees/GG-116`。目录名是历史名称，不能再用来判断版本。
 - 状态：GG-241 已恢复 5173、Web/Worker 与原依赖。GG-239 累计源码和 GG-240 工作流规范均保留；未部署生产。GG-237 与 GG-238 待用户手验。
 
+## GG-243 大厅并行工作
+
+本会话大厅目录为 `F:/goodgood-worktrees/GG-243-home`，分支 `feature/GG-243-home-project-card`，基于 GG-241 `f1570de`；[任务卡](tasks/GG-243-project-create-card.md) 登记子 agent、文件边界、验证和退役。项目页入口按 [ADR 0119](decisions/0119-project-create-card.md) 改为首位新建卡片，点击现有 `/canvas`。GG-242 画布会话继续拥有下表 5173 目录和运行配置，本会话只在大厅目录实现/验收。独立 UI 验收不更改原数据、Web/Worker 或生产。
+
 ## 先确认源码
 
 ~~~powershell

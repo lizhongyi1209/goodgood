@@ -29,13 +29,13 @@
 - 子 agent/worktree 清单：`project_create_card` / `feature/GG-243-project-card-agent` / `F:/goodgood-worktrees/GG-243-project-card-agent`；从 GG-243 预登记提交创建。
 - 子文件边界：`features/projects/project-library.tsx`、`features/projects/project-library.module.css`、`app/page.tsx` 中仅 ProjectLibrary 的 onCreate 绑定、一个项目页入口 UI 回归测试文件。禁止修改 `features/canvas/**`、服务、数据库和入口文档。
 - 另一会话：GG-242 画布预览，活动目录 `F:/goodgood-worktrees/GG-116`；本任务不切换该目录分支、不操作其运行服务、不更改画布源码。整合交付以任务增量为边界。
-- 依赖/构建缓存：子 worktree 不安装、不构建、不启动服务；根集成目录核对 lockfile 后负责验证。避免完整依赖副本。
+- 依赖/构建缓存：子 worktree 不安装、不构建、不启动服务；根集成目录首次按原 lockfile 执行 `npm ci`，用于独立验收，避免干扰 GG-242 活动目录的缓存。根集成目录是本会话继续大厅工作的活动目录，安装仅此一份。
 - 退役条件：子 commit 已审阅/集成，目录干净且无使用进程后 `git worktree remove`，再 prune；根集成目录作为本会话大厅工作目录保留。
 - 交付与集成：待完成。
-- 收口：创建数 1（根集成目录），子目录尚未创建；退役数 0；保留 dirty 路径无本任务所属内容。
+- 收口：创建数 2（根集成目录和已登记子目录）；退役数 0；保留 dirty 路径无本任务所属内容。
 
 ## 恢复工作
 
 - 尚未完成：子 agent 实现、验证、审查集成、文档同步与子 worktree 退役。
 - 阻塞/风险：运行目录属于另一会话，禁止抢占；使用独立大厅目录完成验证。
-- 下一步：提交本任务预登记，创建已登记子 worktree 并分配实现。
+- 下一步：子 agent 在登记范围实现；根 agent 完成依赖安装后审阅、精确集成与验收。
