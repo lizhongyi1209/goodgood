@@ -45,7 +45,7 @@ export function AccountManagementPanels({ onAccountChange, pending = false, onPe
             <UserRoundCog size={16} aria-hidden="true" />个人信息
           </button>
           <button type="button" disabled={pending} className={styles.navigationButton} aria-current={section === "credits" ? "page" : undefined} onClick={() => setSection("credits")}>
-            <CreditIcon size={16} />积分明细
+            <CreditIcon size={16} fill="none" strokeWidth={1.7} />积分明细
           </button>
         </aside>
         <div className="credit-usage-content">

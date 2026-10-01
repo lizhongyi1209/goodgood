@@ -2,6 +2,7 @@ import { goodGoodApiFetch } from "@/features/auth/http-auth-boundary";
 import { isSeedreamModel, seedreamQuoteCreditAmount } from "@/shared/contracts/seedream-pricing.mjs";
 import type {
   CreditActivityFilter,
+  CreditActivityItem,
   CreditActivityPage,
   BillingGenerationQuote,
   BillingProducts,
@@ -13,6 +14,29 @@ import type {
   GenerationModelId,
   GenerationResolution,
 } from "@/shared/contracts/generation";
+
+// Optional fields keep the current verified Web readable while the explicit
+// activity-source contract is rolled out. A batch reference is never a task ID.
+export type CreditUsageActivityItem = CreditActivityItem & Readonly<{
+  taskId?: string | null;
+  projectId?: string | null;
+  projectName?: string | null;
+  modelName?: string | null;
+}>;
+export type CreditUsageDailyFreeQuota = Readonly<{
+  day: string;
+  timeZone: string;
+  limit: number;
+  used: number;
+  reserved: number;
+  remaining: number;
+  resetAt: string;
+  eligible: readonly unknown[];
+}>;
+export type CreditUsageActivityPage = Omit<CreditActivityPage, "items" | "dailyFreeQuota"> & Readonly<{
+  items: readonly CreditUsageActivityItem[];
+  dailyFreeQuota?: CreditUsageDailyFreeQuota | null;
+}>;
 
 type BillingApiErrorEnvelope = Readonly<{
   error?: Readonly<{
@@ -56,16 +80,19 @@ export async function readCreditActivities({
   cursor = null,
   filter = "all",
   limit = 20,
+  signal,
 }: Readonly<{
   cursor?: string | null;
   filter?: CreditActivityFilter;
   limit?: number;
-}> = {}): Promise<CreditActivityPage> {
-  const search = new URLSearchParams({ filter, limit: String(limit) });
+  signal?: AbortSignal;
+}> = {}): Promise<CreditUsageActivityPage> {
+  const search = new URLSearchParams({ filter, limit: String(limit), view: "usage" });
   if (cursor) search.set("cursor", cursor);
-  return billingPayload<CreditActivityPage>(
+  return billingPayload<CreditUsageActivityPage>(
     await goodGoodApiFetch(`/api/billing/activities?${search.toString()}`, {
       cache: "no-store",
+      signal,
     }),
   );
 }
