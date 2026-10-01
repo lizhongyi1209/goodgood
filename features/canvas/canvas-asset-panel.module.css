@@ -19,11 +19,26 @@ button.addCard[data-slot]:active, .folderCard[data-slot="button"]:active { backg
 button.addCard[data-slot]:focus-visible, .folderCard[data-slot="button"]:focus-visible { outline: 2px solid #71717a; outline-offset: 2px; }
 .folderIcon { display: grid; flex: none; place-items: center; color: #52525b; }
 .folderIcon svg { width: 28px; height: 28px; }
+.folderCard[data-slot="button"] { position: relative; overflow: hidden; transition: background 160ms ease, box-shadow 160ms ease, transform 160ms ease; }
+.folderCard[data-slot="button"][data-drop-available] { box-shadow: inset 0 0 0 1px #c4c4ca; }
+.folderCard[data-slot="button"][data-drop-hover] { background: #dedee1; box-shadow: inset 0 0 0 1px #71717a; }
+.folderCard[data-slot="button"][data-drop-hover] .folderIcon { transform: translateY(-2px); }
+.folderCard .folderIcon { transition: transform 160ms ease; }
+.folderDropHint { position: absolute; right: 5px; bottom: 7px; left: 5px; overflow: hidden; color: #71717a; font-size: 10px; font-weight: 400; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; }
+.folderCard[data-slot="button"][data-move-state="pending"] { background: #e4e4e7; }
+.folderCard[data-slot="button"][data-move-state="pending"]::after { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 20%, rgb(255 255 255 / 38%) 50%, transparent 80%); background-size: 240% 100%; pointer-events: none; animation: folderMoveSweep 1500ms ease-in-out infinite; }
+.folderCard[data-move-state="pending"] .folderIcon { animation: folderMoveBreath 1000ms ease-in-out infinite alternate; }
+.folderCard[data-slot="button"][data-move-state="succeeded"] { background: #e4e4e7; box-shadow: inset 0 0 0 1px #a1a1aa; }
+.folderCard[data-move-state="succeeded"] .folderIcon { animation: folderMoveReceive 280ms ease-out; }
+@keyframes folderMoveSweep { from { background-position: 160% 0; } to { background-position: -60% 0; } }
+@keyframes folderMoveBreath { to { opacity: 0.5; } }
+@keyframes folderMoveReceive { from { opacity: 0.4; transform: translateY(-3px) scale(0.85); } to { opacity: 1; transform: none; } }
 .name { display: block; min-width: 0; max-width: 100%; overflow: hidden; color: #52525b; font-size: 12px; font-weight: 500; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
 .assetCard, .pendingCard { min-width: 0; width: 100%; }
 .assetCard { outline: none; }
 .visualFrame { position: relative; }
-.expand[data-slot="button"] { position: absolute; top: 5px; right: 5px; z-index: 1; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 7px; background: rgb(255 255 255 / 90%); color: #52525b; box-shadow: none; }
+.expand[data-slot="button"] { position: absolute; top: 5px; right: 5px; z-index: 1; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 7px; background: rgb(255 255 255 / 90%); color: #52525b; box-shadow: none; cursor: grab; }
+.expand[data-slot="button"]:disabled { cursor: default; }
 .expand[data-slot="button"] svg { width: 14px; height: 14px; }
 .expand[data-slot="button"]:hover { background: #fff; color: #18181b; }
 .expand[data-slot="button"]:focus-visible { outline: 2px solid #71717a; outline-offset: 1px; box-shadow: none; }
@@ -31,9 +46,11 @@ button.addCard[data-slot]:focus-visible, .folderCard[data-slot="button"]:focus-v
   .expand[data-slot="button"] { opacity: 0; pointer-events: none; }
   .visualFrame:hover > .expand[data-slot="button"], .visualTrigger:focus-visible + .expand[data-slot="button"], .expand[data-slot="button"]:focus-visible { opacity: 1; pointer-events: auto; }
 }
-.visualTrigger { display: block; width: 100%; min-width: 0; border-radius: 10px; outline: none; cursor: grab; filter: brightness(0.97); }
-.visualTrigger:active { cursor: grabbing; }
+.visualTrigger { display: block; width: 100%; min-width: 0; border-radius: 10px; outline: none; cursor: default; filter: brightness(0.97); transition: opacity 160ms ease, transform 160ms ease; }
+.visualTrigger:active { cursor: default; }
 .visualTrigger:focus-visible { outline: 2px solid #71717a; outline-offset: 2px; }
+.assetCard[data-dragging] .visualTrigger { opacity: 0.65; }
+.assetCard[data-move-state="pending"] .visualTrigger { opacity: 0.45; transform: scale(0.97); }
 .thumbnail { position: relative; display: grid; place-items: center; overflow: hidden; width: 100%; border-radius: 10px; background: #f4f4f5; color: #52525b; }
 .thumbnail:has(> svg) { aspect-ratio: 1; }
 .thumbnail > svg { width: 28px; height: 28px; }
@@ -104,6 +121,10 @@ button.addCard[data-slot]:focus-visible, .folderCard[data-slot="button"]:focus-v
 .state p, .refreshError p { margin: 0; overflow-wrap: anywhere; }
 .state button, .refreshError button { color: #18181b; }
 .refreshError { grid-column: 1 / -1; padding: 8px 0; }
+.moveFeedback { display: flex; align-items: center; gap: 4px; grid-column: 1 / -1; min-width: 0; padding: 4px 0; color: #52525b; font-size: 11px; line-height: 1.4; }
+.moveFeedback p { flex: 1; min-width: 0; margin: 0; overflow-wrap: anywhere; }
+.moveFeedback [data-slot="button"] { flex: none; height: 28px; padding: 0 5px; color: #27272a; font-size: 11px; }
+.moveFeedback [data-slot="button"]:focus-visible { outline: 1px solid #71717a; outline-offset: 1px; }
 .empty { grid-column: 1 / -1; margin: 0; padding: 16px 8px; color: #71717a; font-size: 12px; text-align: center; }
 @media (pointer: coarse) { .addMenuItem[data-slot] { min-height: 44px; } .linkField [data-slot="input"] { height: 44px; font-size: 16px; } .linkField [data-slot="button"] { width: 40px; height: 40px; } }
-@media (prefers-reduced-motion: reduce) { .pendingVisual[data-uploading]::after { animation: none; } .addMenu[data-slot], .linkMenu[data-slot], .videoDialog[data-slot], .videoOverlay[data-slot] { animation: none; } .videoDialog button, .expand[data-slot], .videoPlay[data-slot] { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .pendingVisual[data-uploading]::after, .folderCard[data-move-state]::after, .folderCard[data-move-state] .folderIcon { animation: none; } .folderCard[data-slot="button"], .folderCard .folderIcon, .visualTrigger { transition: none; } .folderCard[data-slot="button"][data-drop-hover], .folderCard[data-slot="button"][data-drop-hover] .folderIcon, .assetCard[data-move-state="pending"] .visualTrigger { transform: none; } .addMenu[data-slot], .linkMenu[data-slot], .videoDialog[data-slot], .videoOverlay[data-slot] { animation: none; } .videoDialog button, .expand[data-slot], .videoPlay[data-slot] { transition: none; } }

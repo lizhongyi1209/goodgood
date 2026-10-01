@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { AudioLines, ChevronLeft, Folder, ImageOff, Maximize2, Pause, Play, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent } from "react";
+import { AudioLines, Check, ChevronLeft, Folder, FolderOpen, ImageOff, Maximize2, Pause, Play, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -11,7 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ImageViewer } from "@/features/assets/image-viewer";
 import { describeViewerGeneration, type ImageViewerMetadata } from "@/features/assets/image-viewer-details";
 import { listAssets } from "@/features/assets/http-asset-boundary";
-import { listAssetOrganization, renameAssetItem, type AssetArrangement, type AssetFolder, type OrganizedAssetKind } from "@/features/assets/http-asset-organization";
+import { listAssetOrganization, renameAssetItem, saveAssetOrganization, type AssetArrangement, type AssetFolder, type OrganizedAssetKind } from "@/features/assets/http-asset-organization";
 import { listPrivateAudioMaterials } from "@/features/assets/http-audio-materials";
 import { imageDownloadFilename } from "@/features/assets/image-download";
 import { listPrivateVideoMaterials } from "@/features/creation/http-video-materials";
@@ -19,6 +19,7 @@ import { listReferenceMaterials } from "@/features/references/http-reference-lib
 import { privateImageUrls } from "@/shared/private-image-urls.mjs";
 import { CanvasAssetAddCard } from "./canvas-asset-add-card";
 import { CANVAS_ASSET_LIBRARY_UPDATED_EVENT } from "./canvas-asset-upload";
+import { CANVAS_ASSET_DRAG_TYPE, createCanvasFolderMover, planCanvasFolderMove, type CanvasFolderMover, type CanvasFolderMoveState } from "./canvas-folder-drop.mjs";
 import { attachCanvasVideoPreviewPlayback, type CanvasVideoPreviewPlayback } from "./canvas-video-preview-playback.mjs";
 import styles from "./canvas-asset-panel.module.css";
 
@@ -251,6 +252,7 @@ function AssetMedia({ item, editing, onRename, onExpand, expandRef, refreshVideo
       {!expanded && item.media !== "audio" && <Button ref={expandRef} type="button" variant="ghost" size="icon-sm" className={styles.expand}
         data-asset-media-control draggable={false} disabled={editing}
         aria-label={`查看${item.media === "video" ? "视频" : "大图"} ${item.name}`} title={item.media === "video" ? "查看视频" : "查看大图"}
+        onDragStart={(event) => { event.preventDefault(); event.stopPropagation(); }}
         onDoubleClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}
         onClick={(event) => { event.stopPropagation(); onExpand?.(event.currentTarget); }}><Maximize2 size={14} aria-hidden="true" /></Button>}
     </div>
@@ -312,6 +314,9 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
   const [renaming, setRenaming] = useState(false);
   const [imagePreview, setImagePreview] = useState<Readonly<{ selectedKey: string; returnFocusTo: HTMLElement }> | null>(null);
   const [videoPreview, setVideoPreview] = useState<Readonly<{ selectedKey: string; returnFocusTo: HTMLElement }> | null>(null);
+  const [draggedKey, setDraggedKey] = useState<string | null>(null);
+  const [hoveredFolderId, setHoveredFolderId] = useState<string | null>(null);
+  const [moveState, setMoveState] = useState<CanvasFolderMoveState | null>(null);
   const renamePendingRef = useRef(false);
   const cancelRenameRef = useRef(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -320,6 +325,40 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
   const expandRefs = useRef(new Map<string, HTMLButtonElement>());
   const readEpochRef = useRef(0);
   const assetDragBlockedRef = useRef(false);
+  const draggedKeyRef = useRef<string | null>(null);
+  const dataRef = useRef(data);
+  const moverRef = useRef<CanvasFolderMover | null>(null);
+
+  useEffect(() => { dataRef.current = data; }, [data]);
+
+  useEffect(() => {
+    const mover = createCanvasFolderMover({
+      readData: () => dataRef.current,
+      save: (kind, id, value) => saveAssetOrganization(kind, id, value, null),
+      onState: setMoveState,
+      onSaved: (saved) => {
+        if (dataRef.current) dataRef.current = {
+          ...dataRef.current,
+          arrangements: [...dataRef.current.arrangements.filter((entry) => entry.kind !== saved.kind || entry.id !== saved.id), saved],
+        };
+        setData((current) => current && ({
+          ...current,
+          arrangements: [...current.arrangements.filter((entry) => entry.kind !== saved.kind || entry.id !== saved.id), saved],
+        }));
+        // Refresh through the existing library event, so an older list read
+        // cannot leave stale membership after the confirmed move.
+        window.dispatchEvent(new Event(CANVAS_ASSET_LIBRARY_UPDATED_EVENT));
+      },
+    });
+    moverRef.current = mover;
+    return () => { mover.dispose(); moverRef.current = null; };
+  }, []);
+
+  useEffect(() => {
+    if (moveState?.phase !== "succeeded") return;
+    const timer = window.setTimeout(() => setMoveState((current) => current === moveState ? null : current), 1800);
+    return () => window.clearTimeout(timer);
+  }, [moveState]);
 
   useEffect(() => {
     const grid = rowsRef.current;
@@ -451,6 +490,34 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
     metadata: data?.generationMetadata.get(`${item.kind}:${item.id}`),
   }));
   const previewVideo = videoPreview ? data?.items.find((item) => item.media === "video" && `${item.kind}:${item.id}` === videoPreview.selectedKey) : undefined;
+  const moving = moveState?.phase === "pending";
+
+  const finishAssetDrag = () => {
+    draggedKeyRef.current = null;
+    setDraggedKey(null);
+    setHoveredFolderId(null);
+    onAssetDragEnd();
+  };
+
+  const folderDragOver = (event: DragEvent<HTMLButtonElement>, folder: AssetFolder) => {
+    if (!Array.from(event.dataTransfer.types).includes(CANVAS_ASSET_DRAG_TYPE)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const canMove = !editingKey && !renamePendingRef.current && !moverRef.current?.isPending()
+      && Boolean(planCanvasFolderMove(data, draggedKeyRef.current, folder.id));
+    event.dataTransfer.dropEffect = canMove ? "move" : "none";
+    setHoveredFolderId(canMove ? folder.id : null);
+  };
+
+  const folderDrop = (event: DragEvent<HTMLButtonElement>, folder: AssetFolder) => {
+    if (!Array.from(event.dataTransfer.types).includes(CANVAS_ASSET_DRAG_TYPE)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const key = event.dataTransfer.getData(CANVAS_ASSET_DRAG_TYPE);
+    const ownDrag = key === draggedKeyRef.current;
+    finishAssetDrag();
+    if (ownDrag && !editingKey && !renamePendingRef.current) void moverRef.current?.move(key, folder.id);
+  };
 
   const refreshVideo = async (item: CanvasLibraryAsset, signal: AbortSignal): Promise<string | null> => {
     const epoch = readEpochRef.current;
@@ -473,7 +540,7 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
   };
 
   const beginRename = (item: CanvasLibraryAsset) => {
-    if (renamePendingRef.current) return;
+    if (renamePendingRef.current || moverRef.current?.isPending()) return;
     cancelRenameRef.current = false;
     setEditingKey(`${item.kind}:${item.id}`);
     setNameDraft(item.name);
@@ -510,7 +577,20 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
     }
   };
 
-  return <section className={styles.panel} aria-label="画布资产">
+  return <section className={styles.panel} aria-label="画布资产"
+    onDragOver={(event) => {
+      if (!Array.from(event.dataTransfer.types).includes(CANVAS_ASSET_DRAG_TYPE)) return;
+      event.preventDefault(); event.stopPropagation();
+      event.dataTransfer.dropEffect = "none";
+      setHoveredFolderId(null);
+    }}
+    onDragLeave={(event) => {
+      if (!(event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget))) setHoveredFolderId(null);
+    }}
+    onDrop={(event) => {
+      if (!Array.from(event.dataTransfer.types).includes(CANVAS_ASSET_DRAG_TYPE)) return;
+      event.preventDefault(); event.stopPropagation(); finishAssetDrag();
+    }}>
     <header className={styles.header}>
       {activeFolder ? <>
         <Button type="button" variant="ghost" size="sm" className={styles.back} onClick={() => setFolderId(null)} aria-label="返回全部资产"><ChevronLeft size={16} aria-hidden="true" />资产</Button>
@@ -525,22 +605,48 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
             <CanvasAssetAddCard folderId={activeFolder?.id ?? null} readyAssetKeys={readyAssetKeys} />
             {loading && !data && <p className={styles.refreshError} role="status">正在读取资产…</p>}
             {error && <div className={styles.refreshError} role="alert"><p>{error}</p><Button type="button" variant="ghost" size="sm" onClick={() => setRevision((current) => current + 1)}>重试读取</Button></div>}
-            {!activeFolder && data?.folders.map((folder) => <Button key={folder.id} type="button" variant="ghost" className={styles.folderCard} onClick={() => setFolderId(folder.id)} aria-label={`打开文件夹 ${folder.name}`}>
-              <span className={styles.folderIcon}><Folder size={28} strokeWidth={1.5} aria-hidden="true" /></span>
-              <span className={styles.name} title={folder.name}>{folder.name}</span>
-            </Button>)}
+            {moveState && <div className={moveState.phase === "failed" ? styles.moveFeedback : "sr-only"} role={moveState.phase === "failed" ? "alert" : "status"}>
+              <p>{moveState.phase === "pending" ? `正在移入「${moveState.folderName}」…`
+                : moveState.phase === "succeeded" ? `已移入「${moveState.folderName}」` : moveState.error}</p>
+              {moveState.phase === "failed" && <Button type="button" variant="ghost" size="sm"
+                onClick={() => { if (!renamePendingRef.current && !editingKey) void moverRef.current?.move(moveState.key, moveState.folderId); }}>重试移动</Button>}
+            </div>}
+            {!activeFolder && data?.folders.map((folder) => {
+              const available = Boolean(draggedKey && !moving && planCanvasFolderMove(data, draggedKey, folder.id));
+              const hovering = available && hoveredFolderId === folder.id;
+              const phase = moveState?.folderId === folder.id ? moveState.phase : null;
+              return <Button key={folder.id} type="button" variant="ghost" className={styles.folderCard}
+                data-drop-available={available || undefined} data-drop-hover={hovering || undefined} data-move-state={phase ?? undefined}
+                aria-busy={phase === "pending"} onClick={() => setFolderId(folder.id)} aria-label={`打开文件夹 ${folder.name}`}
+                onDragEnter={(event) => folderDragOver(event, folder)} onDragOver={(event) => folderDragOver(event, folder)}
+                onDragLeave={(event) => {
+                  if (!(event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget))) setHoveredFolderId((current) => current === folder.id ? null : current);
+                }}
+                onDrop={(event) => folderDrop(event, folder)}>
+                <span className={styles.folderIcon}>{phase === "succeeded" ? <Check size={28} strokeWidth={1.7} aria-hidden="true" />
+                  : hovering || phase === "pending" ? <FolderOpen size={28} strokeWidth={1.5} aria-hidden="true" /> : <Folder size={28} strokeWidth={1.5} aria-hidden="true" />}</span>
+                <span className={styles.name} title={folder.name}>{folder.name}</span>
+                {(available || phase === "pending" || phase === "succeeded") && <span className={styles.folderDropHint} aria-hidden="true">
+                  {phase === "pending" ? "正在整理…" : phase === "succeeded" ? "已移入" : hovering ? "松开移入" : "拖入整理"}
+                </span>}
+              </Button>;
+            })}
               {visibleItems.map((item) => {
                 const key = `${item.kind}:${item.id}`;
                 const editing = editingKey === key;
-                return <div key={key} className={styles.assetCard} draggable={!editing}
+                return <div key={key} className={styles.assetCard} draggable={!editing && !moving}
+                  data-dragging={draggedKey === key || undefined} data-move-state={moveState?.key === key ? moveState.phase : undefined}
                   onPointerDownCapture={(event) => { assetDragBlockedRef.current = event.target instanceof Element && Boolean(event.target.closest("[data-asset-media-control]")); }}
                   onDragStart={(event) => {
-                    if (editing || assetDragBlockedRef.current) { event.preventDefault(); return; }
-                    event.dataTransfer.effectAllowed = "copy";
-                    event.dataTransfer.setData("application/x-goodgood-canvas-asset", key);
+                    if (editing || editingKey || renamePendingRef.current || moverRef.current?.isPending() || assetDragBlockedRef.current
+                      || (event.target instanceof Element && event.target.closest("[data-asset-media-control]"))) { event.preventDefault(); return; }
+                    event.dataTransfer.effectAllowed = item.media === "image" ? "copyMove" : "copy";
+                    event.dataTransfer.setData(CANVAS_ASSET_DRAG_TYPE, key);
+                    draggedKeyRef.current = key;
+                    setDraggedKey(key);
                     onAssetDragStart(item);
                   }}
-                  onDragEnd={onAssetDragEnd}>
+                  onDragEnd={finishAssetDrag}>
                   <AssetMedia key={`${data?.mediaRevision}:${item.previewUrl ?? ""}:${item.sourceUrl ?? ""}`}
                     item={item} editing={editing} onRename={() => beginRename(item)}
                     expandRef={(trigger) => { if (trigger) expandRefs.current.set(key, trigger); else expandRefs.current.delete(key); }}
