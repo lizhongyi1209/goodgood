@@ -3,7 +3,7 @@
 - 最后核对：2026-10-01（本地服务；生产身份沿用原发布证据）。
 - 产品阶段：公开的 `controlled-alpha-v1`；已有真实用户，尚未达到完整 seed、自动支付或完整运营告警就绪。
 - 正式入口：https://goodgood.o1key.com
-- 当前本地代码检查点：[GG-244](tasks/GG-244-canvas-asset-hover.md) 已接入实际 5173 的资产 hover 小按钮、去除视频外置标签和节点式视频预览，完整代码门禁 674/22/0；保留 GG-243 首位新建卡片与 GG-242 图片/云配置，当前分支见 IMPLEMENTATION_PLAN。
+- 当前本地代码检查点：[GG-246](tasks/GG-246-asset-video-hover.md) 大厅视频默认暂停与 hover 预览已接入实际 5173，定向 11/11、共同完整门禁待收口；[GG-244](tasks/GG-244-canvas-asset-hover.md) 画布 hover/视频预览及 GG-243/242 保留。GG-245 链接读取仍独立推进，当前分支见 IMPLEMENTATION_PLAN。
 - 当前本地运行：Vite `127.0.0.1:5173` 从 `F:/goodgood-worktrees/GG-116` 提供前端；API 代理到已验证 Web `127.0.0.1:32131`，唯一真实开发 Worker 为 `127.0.0.1:32142`。GG-242 已补回 Web 云素材配置，原本地数据卷和迁移保留，生产没有变化。
 
 ## 生产身份

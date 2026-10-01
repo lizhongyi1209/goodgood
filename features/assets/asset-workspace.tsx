@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { AudioLines, Check, ChevronDown, ChevronRight, CircleAlert, Download, Folder, FolderPlus, Grid2X2, ImagePlus, List, LoaderCircle, MoreHorizontal, Pencil, Plus, RefreshCw, Search, Trash2, Upload, WandSparkles, X } from "lucide-react";
+import { AudioLines, Check, ChevronDown, ChevronRight, CircleAlert, Download, Folder, FolderPlus, Grid2X2, ImagePlus, List, LoaderCircle, MoreHorizontal, Pencil, Play, Plus, RefreshCw, Search, Trash2, Upload, WandSparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogOverlay, DialogPortal, DialogTitle } from "@/components/ui/dialog";
@@ -12,6 +12,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/in
 import { Label } from "@/components/ui/label";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import { ImageViewer } from "./image-viewer";
+import { attachAssetVideoHoverPlayback, type AssetVideoHoverPlayback } from "./asset-video-hover-playback.mjs";
 import { uploadReferenceFiles } from "@/features/references/http-reference-upload";
 import type { ReferenceMaterial } from "@/features/references/http-reference-library";
 import { uploadPrivateVideoMaterial, type PrivateVideoMaterial } from "@/features/creation/http-video-materials";
@@ -111,36 +112,35 @@ function uploadError(file: File): string | null {
   return null;
 }
 
-function VideoTilePreview({ url, play }: { url?: string; play: boolean }) {
+function VideoTilePreview({ url, enabled }: { url?: string; enabled: boolean }) {
+  const surfaceRef = useRef<HTMLSpanElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const playbackRef = useRef<AssetVideoHoverPlayback | null>(null);
+  const [playing, setPlaying] = useState(false);
 
   useEffect(() => {
+    const surface = surfaceRef.current;
     const video = videoRef.current;
-    if (!video || !url || !play) return;
-    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    let visible = false;
-    const syncPlayback = () => {
-      if (visible && document.visibilityState === "visible" && !motion.matches) void video.play().catch(() => {});
-      else video.pause();
-    };
-    const observer = new IntersectionObserver(([entry]) => {
-      visible = Boolean(entry?.isIntersecting);
-      syncPlayback();
-    }, { threshold: 0.1 });
-    observer.observe(video);
-    motion.addEventListener("change", syncPlayback);
-    document.addEventListener("visibilitychange", syncPlayback);
-    video.addEventListener("canplay", syncPlayback);
+    if (!surface || !video || !url) return;
+    const playback = attachAssetVideoHoverPlayback({
+      surface, video, documentTarget: document,
+      motion: window.matchMedia("(prefers-reduced-motion: reduce)"),
+      createObserver: (callback, options) => new IntersectionObserver(callback, options),
+      onPlayingChange: setPlaying,
+    });
+    playbackRef.current = playback;
     return () => {
-      observer.disconnect();
-      motion.removeEventListener("change", syncPlayback);
-      document.removeEventListener("visibilitychange", syncPlayback);
-      video.removeEventListener("canplay", syncPlayback);
-      video.pause();
+      playbackRef.current = null;
+      playback.dispose();
     };
-  }, [url, play]);
+  }, [url]);
 
-  return <video ref={videoRef} src={url} muted playsInline loop preload="metadata" aria-hidden="true"/>;
+  useEffect(() => { playbackRef.current?.setEnabled(enabled); }, [url, enabled]);
+
+  return <span ref={surfaceRef} className={styles.videoPreview} aria-hidden="true">
+    <video key={url} ref={videoRef} src={url} muted playsInline loop preload="metadata"/>
+    {!playing && <span className={styles.videoPlayIcon}><Play size={20} fill="currentColor" strokeWidth={1.5}/></span>}
+  </span>;
 }
 
 export function AssetWorkspace({ workspaceId, enabled, generated, references, videos, audios,
@@ -521,7 +521,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
         {item.media === "image" ? <button className={styles.mediaFrame} style={{ aspectRatio }} onClick={(event) => openItem(item, event.currentTarget)} aria-label={`查看 ${item.name}`}>
           <PrivateObjectImage src={item.previewUrl!} alt={item.name}/>
         </button> : item.media === "video" ? <button className={styles.mediaFrame} onClick={(event) => openItem(item, event.currentTarget)} aria-label={`查看 ${item.name}`}>
-          <VideoTilePreview url={item.url} play={!listMode}/>
+          <VideoTilePreview url={item.url} enabled={enabled && !busy && !preview && !imagePreview && !folderDialogOpen}/>
         </button> : <button className={styles.audioFrame} onClick={(event) => openItem(item, event.currentTarget)} aria-label={`播放 ${item.name}`}><AudioLines size={30}/></button>}
         {!listMode && renderFileMenu(item)}
         {!listMode && <Checkbox className={styles.selectButton} checked={selected} aria-label={`${selected ? "取消选择" : "选择"} ${item.name}`} title={selected ? "取消选择" : "选择"} disabled={busy} onCheckedChange={() => toggleSelection(item)}/>}
