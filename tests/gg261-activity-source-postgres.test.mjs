@@ -78,9 +78,13 @@ test("GG-261 isolated SQL verifies real source transactions, tombstones, frozen 
     assert.equal(canvasActivity.modelName, canvas.row.catalog_model_name);
     assert.equal(classicActivity.projectId, classic.id);
     assert.equal(classicActivity.projectName, "original classic");
+    // Force a real microsecond timestamp shared by more than one page. Public
+    // cursors serialize milliseconds; SQL must recover the exact ordering key.
+    await pool.query("ALTER TABLE credit_ledger_entries ALTER COLUMN created_at SET DEFAULT TIMESTAMPTZ '2026-10-01 00:00:00.123456+00'");
     for (let i = 0; i < 25; i += 1) await grantCredits(pool, {
       ownerId, amount: 1n, reason: "isolated visible page", idempotencyKey: `gg261-visible-${i}`,
     });
+    await pool.query("ALTER TABLE credit_ledger_entries ALTER COLUMN created_at SET DEFAULT now()");
     for (let i = 0; i < 8; i += 1) {
       const hidden = await createGenerationJob(pool, { ownerId, workspaceId, idempotencyKey: `gg261-hidden-job-${i}`, input });
       await releaseGenerationCredits(pool, { ownerId, jobId: hidden.row.id, idempotencyKey: `gg261-hidden-release-${i}` });

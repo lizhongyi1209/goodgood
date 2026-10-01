@@ -1,13 +1,13 @@
 # GG-260 · 积分明细与每日免费图片
 
-- 日期：2026-10-01；状态：已登记，开发中，未部署；浏览器验收由用户完成。
+- 日期：2026-10-01；状态：明细/图标源码已整合并代码验证，运行同步中；免费额度待规则，未部署；浏览器验收由用户完成。
 - 基线：`c6f6bb9`，含 GG-258 与并行 GG-259 源码；已核对 GG-258 祖先。集成分支 `feat/GG-260-credit-details-and-free-quota`，实际 5173 为 `F:/goodgood-worktrees/GG-116`。
 - 范围：顶部当前积分；表头「类型」；任务 ID 独立右列、缩略展示/小复制按钮；项目和模型记录；每页最多 20 条、真正分页；账户管理积分图标同形空心、选中不加粗。每日免费图片额度走实际计费与失败恢复链路，规则待用户补充；不执行真实生成或生产操作。
 - 决策：延续 ADR 0112 明细展示，新增免费额度需补 ADR，不用充值流水假装免费图片次数。
 - 子任务负责人/目录：UI 复用 `/root/canvas_folder_drop` 子 agent，`feat/GG-260-credit-details-ui` / `F:/goodgood-worktrees/GG-260-credit-details-ui`；只拥有 features/billing 前端、相关局部 CSS/纯辅助测试与本卡 UI 证据，不改后端/个人资料组件。
 - 后端子任务：GG-261 每日免费额度及活动来源契约，规则澄清期间先读计费/持久化与提出最小实现，不能自行决定免费适用模型/规格。独立分支/树登记见 GG-261。
 - 根负责共享契约协调、集成、定向检查、文档与 runtime 同步。子树不得安装依赖/构建缓存，复用 GG-116 唯一依赖；每个创建 1，精确集成、clean/服务检查后 Git remove/prune 退役，不清理其他工作树。
-- 下一步：UI 与后端两个子 agent 已启动；免费规则澄清与后端调查并行，确定契约后开发、定向验证并接入当前 5173。
+- 下一步：完成已验证来源接口的本地 0060/verified Web 同步和两个子树退役；免费图片数量、适用模型/规格待用户答复，确认后单独接续 quota 实现。
 
 ## UI 实施证据
 
@@ -21,3 +21,9 @@
 - 定向 ESLint（父绝对 bin + --config、无 cache）检查 view/boundary/dialog/helper/声明与三份相关测试，退出 0；无子 node_modules 仅 React detect 提示。旧 `m6-credit-activity.test.mjs` 最后接线断言同步为真实 pager/七列契约，其全文件待父整合后执行。`git diff --check` 通过。
 - 未执行：浏览器/Playwright、真实 provider/API 写入、Worker/DB 测试、安装、全量 build/typecheck/check:local。父负责实际模块编译、后端契约/免费政策、生成报价接线与统一交接。
 - 生命周期：本任务子树创建 1、待退役 1；无 node_modules/.next/dist/coverage/test-results/playwright-report 或运行服务。限定提交交付后 clean；父精确集成/检查后 Git remove/prune，禁止强删或新增缓存。
+
+## 根集成与验证
+
+- UI 子 `dbe7f38` 精确回放为 `e1d7f61`；后端子 `936da92` 回放为 `d9e5aff`。根已接线生成快照/恢复中的 canvasProjectId 和首次项目同步门控，保留旧请求形状与输入，不重发计费任务。
+- 根执行 UI 15/15、generation-contracts 12/12、来源/M6 15/15，均通过；21个相关代码/类型/测试文件局部 lint 0错误，画布仅7个既有警告。六个实际 billing Vite 模块 HTTP 200。
+- 命名临时库 `goodgood_gg261_source_test_20261001` 验证来源权限/冻结和分页。首次真实 SQL 揭示微秒时间戳被公共毫秒 cursor 截断；根修正按 owner+ID+毫秒区间恢复精确 SQL 时间，加入同一微秒时间的25条记录跨页验证，SQL 1/1通过；临时库每轮均删除，活动库没有 fixture。

@@ -207,6 +207,8 @@ test("credit activity cursor resolves an owner-scoped public reference before pa
     ownerId: OWNER_ID,
   });
   assert.match(calls[0].sql, /owner_id = \$1/);
+  assert.match(calls[0].sql, /created_at::text AS created_at/);
+  assert.match(calls[0].sql, /created_at >= \$2::timestamptz[\s\S]*created_at < \$2::timestamptz \+ interval '1 millisecond'/);
   assert.deepEqual(calls[0].values, [OWNER_ID, CREATED_AT, digest]);
   assert.deepEqual(calls[1].values.slice(0, 4), [
     OWNER_ID,

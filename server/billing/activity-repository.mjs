@@ -159,11 +159,14 @@ function activityFromRow(row) {
 
 async function resolveCursor(pool, { activityId, createdAt }, ownerId) {
   const digest = activityId.replace(/^act_/, "");
+  // Public dates have millisecond precision. Recover this exact owner's row,
+  // then retain SQL microseconds as text for the (timestamp, ID) page boundary.
   const result = await pool.query(
-    `SELECT id, created_at
+    `SELECT id, created_at::text AS created_at
        FROM credit_ledger_entries
       WHERE owner_id = $1
-        AND created_at = $2::timestamptz
+        AND created_at >= $2::timestamptz
+        AND created_at < $2::timestamptz + interval '1 millisecond'
         AND entry_type IN ('grant', 'reserve', 'refund', 'expire', 'adjust', 'transfer_out', 'transfer_in')
         AND md5('${ACTIVITY_REFERENCE_PREFIX}' || id::text) = $3
       LIMIT 1`,

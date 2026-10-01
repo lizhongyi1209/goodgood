@@ -1,5 +1,9 @@
 # GG-063 verification
 
+## GG-260/261 credit details and source verification
+
+Run the GG-260 pagination and in-memory UI/boundary tests, GG-261 source tests, M6 credit activity and generation snapshot contracts, plus scoped lint and actual Vite module compilation. Cover real balance strings, bounded replacement pages, buffered old-server overflow, filter/abort/late replies, failure retry and complete task-ID copying. The opt-in GG-261 PostgreSQL test requires an empty, explicitly named loopback `goodgood_gg261_source_test*` database and `GOODGOOD_GG261_NO_WORKER=1`; it verifies full migrations, true source authorization/rollback, frozen names after rename/deletion and filtering before LIMIT. Include more than 20 rows sharing a microsecond timestamp to verify public millisecond cursor recovery without loss or duplicates. Remove the disposable database afterward; never attach a Worker, provider or live queue. Source/API changes require one verified Web checkpoint build and local 0060, preserving existing data/cloud configuration. Browser acceptance belongs to the user; daily quota is not claimed implemented while its policy is pending.
+
 ## GG-253 free image preview verification
 
 GG-258 updates the existing SSR assertions: no zoom/fit buttons or scale overlay, known dimensions only for uploaded images/videos, quiet unknown dimensions, and unchanged real generation metadata/empty selection. Run the relevant SSR and navigation tests plus scoped lint, Vite module compilation and documentation continuity; user verifies the visible result.

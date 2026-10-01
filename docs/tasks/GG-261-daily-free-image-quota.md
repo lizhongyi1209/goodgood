@@ -1,12 +1,12 @@
 # GG-261 · 每日免费图片额度与明细来源契约
 
-- 日期：2026-10-01；状态：调查中，免费规则待用户补充，未部署。
+- 日期：2026-10-01；状态：来源契约已整合并代码/隔离 SQL 验证，运行同步中；免费规则待用户补充，未部署。
 - 基线：`c6f6bb9`；后端复用 `/root/canvas_paste_image` 子 agent，分支 `feat/GG-261-daily-free-quota` / `F:/goodgood-worktrees/GG-261-daily-free-quota` 已创建，创建 1/退役待集成。
 - 目标：每天每用户图片免费次数（用户示例 2 张）进入实际鉴权/计费/任务幂等与失败恢复；规则澄清期间不自行决定适用模型/规格。额度不是可转让充值积分；避免并发超额、重复请求、跨工作区重复享受和跨日错误释放。
 - 后端范围：billing summary/activities 的数据契约、真实任务 ID/项目/模型、可分页只读查询；计费预留/结算/释放与最小 quota 持久化迁移及对应定向测试。前端由 GG-260 拥有；后端提交独立，不改账户 profile/0059、画布样式或无关运行。
 - 预议契约：活动增加 taskId/projectName/projectId/modelName（非生成或不可恢复历史为 null），保留 batchReference 兼容；每页 20 上限。免费字段通过独立 dailyFreeQuota 摘要返回，UI 不合并货币积分余额。契约在实现前通知根/UI。
 - 隔离：无真实 provider/上传或 Worker 共用数据库/队列写测试；SQL 写测试只可在明确命名临时库且无 Worker，先核对有效目标。子树不安装依赖、不生成缓存或启动长期服务。根统一集成和必要 verified Web/迁移同步。
-- 下一步：先读现有实现和决策，提出最小计费方案/文件边界；收到明确免费政策后补 ADR 并开发。记录精确验证/提交后停止写入，根收口/退役。
+- 下一步：根完成 0060/verified Web 同步及子树退役；每日数量与适用模型/规格明确后，补免费 ADR 并实现实际 quota/预留/终态返还，Web/Worker 同时同步。
 
 ## 政策无关的明细来源（已实现、子树代码验证）
 
@@ -19,6 +19,8 @@
 - 子树定向 `gg261-credit-activity-source` + `m6-credit-activity` 15/15 通过；来源类型/API参数、保持旧hash、恢复/重试关联、owner/cursor隔离及usage分页投影已覆盖。9个相关源/类型/测试文件lint 0错误/警告，diff检查通过，均借用根唯一依赖、无子缓存。
 - 定义 `gg261-activity-source-postgres`，默认隔离跳过，等待根创建空的 `goodgood_gg261_source_test*` 一次性库。开启需 `GOODGOOD_GG261_INTEGRATION=1`、`GOODGOOD_GG261_DATABASE_URL=<显式loopback目标>`、`GOODGOOD_GG261_NO_WORKER=1`；先断言空public schema和无其他client，测试自行应用完整迁移。真实repository验证合法classic/canvas冻结、外owner/workspace/不存在/墓碑拒绝且jobs/batches/ledger/outbox不变、复合FK/互斥check、改名/删除保留来源、20+8条visible分页及跨owner/view游标拒绝。仅一次性库生成合成任务/outbox，没有Worker或provider调用；不得用活动goodgood库。
 - 未执行实际SQL、全量typecheck/build/gate、浏览器验收或真实API/provider写。父统一来源迁移/verified Web接线，不改变生产。
+
+- 根证据：子 `936da92` 精确回放为 `d9e5aff`；来源/M6 15/15、相关 lint 完成。新空白 `goodgood_gg261_source_test_20261001` 无 Worker，全迁移后真实 repository SQL 1/1通过并删除。初次 SQL 发现旧公共毫秒 cursor 无法匹配 PG 微秒时间；根改为按同 owner/digest/毫秒区间查找、SQL text 保留完整时间作排序界限，同一微秒25条跨页不丢不重。未改历史流水或活动库数据。
 
 ## 每日免费额度调查与待定规则
 

@@ -39,6 +39,21 @@ async function createSnapshot(prompt = "银灰色未来服装") {
   });
 }
 
+test("canvas project context survives immutable snapshots and restore without changing legacy payloads", async () => {
+  const { createGenerationInputSnapshot, restoreGenerationInputSnapshot } = await vite.ssrLoadModule("/features/creation/generation-snapshot.ts");
+  const draft = { prompt: "synthetic", references: [], modelId: "nano-banana-2", aspectRatio: "1:1", resolution: "1K", count: 1 };
+  const canvasProjectId = "12345678-1234-4234-8234-123456789012";
+  const snapshot = createGenerationInputSnapshot({ ...draft, routingPolicy: "canvas-image-v1", canvasProjectId });
+  assert.equal(snapshot.canvasProjectId, canvasProjectId);
+  assert.equal(snapshot.projectId, null);
+  assert.equal(restoreGenerationInputSnapshot(snapshot).canvasProjectId, canvasProjectId);
+  assert.ok(Object.isFrozen(snapshot));
+  for (const value of [undefined, null]) {
+    assert.equal(Object.hasOwn(createGenerationInputSnapshot({ ...draft, canvasProjectId: value }), "canvasProjectId"), false);
+    assert.equal(Object.hasOwn(restoreGenerationInputSnapshot(createGenerationInputSnapshot(draft)), "canvasProjectId"), false);
+  }
+});
+
 test("Banana and GPT lines survive snapshots and restore while default inputs keep their existing shape", async () => {
   const { createGenerationInputSnapshot, restoreGenerationInputSnapshot } = await vite.ssrLoadModule("/features/creation/generation-snapshot.ts");
   const { getGenerationCountOptions, getGenerationRatioOptions } = await vite.ssrLoadModule("/features/creation/generation-options.ts");

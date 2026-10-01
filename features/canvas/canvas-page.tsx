@@ -1484,6 +1484,12 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     if (displayReferences.length > MAX_GENERATION_REFERENCES) { setFormError(`最多可添加 ${MAX_GENERATION_REFERENCES} 张参考图。`); return; }
     if (billingLoading || billingError || !model || !selectedResolution || !quote) { setFormError("当前模型报价不可用，请刷新后重试。"); return; }
     if (insufficientCredits) { setFormError("可用积分不足，请先补充积分。"); return; }
+    const projectSync = projectSyncRef.current;
+    if (!projectSync || projectSync.snapshot.version === null) {
+      projectSync?.retry();
+      setFormError("项目正在同步，请稍后重试生成。");
+      return;
+    }
     const snapshot = createGenerationInputSnapshot({
       prompt,
       references: displayReferences.filter((item, index, all) =>
@@ -1497,6 +1503,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       resolution: selectedResolution,
       count: selectedCount,
       projectId: null,
+      canvasProjectId: projectSync.id,
     });
     setDraftsByGenerator((current) => ({ ...current, [activeGeneratorId]: {
       prompt, modelKey: model.catalogId ?? model.id, ratio: selectedRatio,
