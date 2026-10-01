@@ -130,9 +130,9 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
 - Do not add speculative routes or functionality while refactoring.
 - Update docs, tests, and error behavior with code. Verify behavior at code level;
   browser interaction and product acceptance belong to the user unless delegated.
-- Iterate with the smallest relevant tests. Run `npm run check:local` once after
-  code stabilizes, and repeat it only when later edits can invalidate that gate.
-  Documentation-only changes use the documentation tests and diff checks.
+- Default to scoped verification: small UI/copy/interaction changes need source/diff
+  review and relevant logic tests. Batch/release/full-gate triggers and documentation
+  checks follow WORKFLOW; older per-task gate notes are history.
 - Runnable local development uses real online interfaces with external development credentials; local state stays isolated, production state stays forbidden, and mocks are only for named test stacks.
 - Treat every real-provider request as potentially billable. Never let fixtures
   or synthetic jobs share a database or queue with a real-provider Worker.
@@ -161,7 +161,7 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
 ## Definition of done
 
 - Scope matches an accepted product decision.
-- `npm run check:local` passes on the supported local environment.
+- Required scoped checks pass; the full local gate is not a prerequisite for each small-change delivery.
 - New logic has tests for success, empty, loading, and failure paths where applicable.
 - No secret or real user asset enters the diff.
 - Relevant docs and ADR status are current.

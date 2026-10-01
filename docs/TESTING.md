@@ -1,5 +1,11 @@
 # GG-063 verification
 
+## GG-245 public image link verification
+
+Run `tests/gg245-canvas-image-link.test.mjs` and `tests/gg233-canvas-asset-addition.test.mjs`, then one complete local gate after integration. Use isolated DNS/transport/auth stubs and synthetic in-memory JPEG/PNG to verify authorized binary success, auth/workspace denial before network, actual bounded JSON, public address normalization and all-answer validation, connection pinning and TLS host options, every redirect, declared/streamed size, real decoding, timeout and disconnect cancellation. Client checks cover same-origin request, recoverable errors, File formation and cancellation. No loopback exception is added to the URL reader for tests.
+
+The provided cafe24 URL may be read into memory to verify the implemented downloader and decoded dimensions without saving an asset. Tests must not upload, generate, write to the real Worker database/queue, or forge a real session. Agent does not perform browser acceptance; the user verifies actual link import and visual expectations. Web runtime must include the new endpoint before delivery; Worker and migration remain unchanged. See [GG-245](tasks/GG-245-canvas-image-link-read.md).
+
 ## GG-246 asset video hover verification
 
 Run the targeted `tests/gg246-*.test.mjs` playback checks and existing asset-browser tests, then one complete `npm run check:local` after integration. Cover no playback on visibility alone, mouse-only intent, enter/leave, canplay after leaving, failed/pending play requests, offscreen/hidden/disabled/reduced-motion pause and disposal; review the component wiring and default centered decorative play hint without autoplay. The user inspects actual grid/list video hover, icon placement and existing view/menu/selection behavior at 5173. No browser acceptance or real media upload/provider request is performed by the agent.

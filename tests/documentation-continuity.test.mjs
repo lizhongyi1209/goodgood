@@ -79,7 +79,10 @@ test("keeps fast delivery and real-provider test isolation in every new-session 
 
   assert.match(agents, /smallest behaviorally\s+complete change/);
   assert.match(agents, /Never let fixtures\s+or synthetic jobs share a database or queue with a real-provider Worker/);
-  assert.match(workflow, /实现稳定后只跑一次 `npm run check:local`/);
+  assert.match(agents, /Default to scoped verification/);
+  assert.match(agents, /not a prerequisite for each small-change delivery/);
+  assert.match(workflow, /不为每个小需求跑全面检查/);
+  assert.match(workflow, /批次\/发布收口/);
   assert.match(workflow, /禁止让测试 outbox 进入真实\s+O1Key Worker/);
   assert.match(testing, /Never run a fixture-writing test against the active 3010 real-provider stack/);
   assert.match(testing, /site owner explicitly requests that\s+specific generation call/);

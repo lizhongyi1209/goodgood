@@ -28,7 +28,7 @@
 - 子分支 `fix/GG-245-image-link-agent`；唯一子目录 `F:/goodgood-worktrees/GG-245-image-link`，从本任务边界登记提交建立。
 - 子文件：`features/canvas/canvas-asset-addition.mjs`、`features/canvas/canvas-asset-add-card.tsx`、`server/references/image-link.mjs`、`server/references/api.mjs`、`server/references/node-api.mjs`、`app/api/references/read-link/route.ts`、`tests/gg233-canvas-asset-addition.test.mjs`、`tests/gg245-canvas-image-link.test.mjs`。
 - 依赖/构建缓存：默认零；不得安装/构建/启动服务或复制/链接 node_modules，不读秘密，不调用上传/生成，不写数据库/队列。需 Sharp 的定向测试由根使用现有集成依赖执行。
-- 收口：已登记，待创建 1；根完成精确整合、代码验证、干净/无缓存/无进程核对后退役，保留提交与分支。其他运行目录与 dirty worktree 保留。
+- 收口：创建 1，退役 0；根完成精确整合、代码验证、干净/无缓存/无进程核对后退役，保留提交与分支。其他运行目录与 dirty worktree 保留。
 
 ## 恢复工作
 

@@ -21,3 +21,7 @@ GG-233 在浏览器以 CORS 读取图片直链，再复用现有 File 上传。�
 替代 ADR 0108 GG-233 的 browser-only/no server URL fetcher 约束，仅增加受鉴权、只读、有界的公开图片读取边界。没有 provider 请求、数据库/对象写入、新素材模型或 Worker/迁移变更。需同步实际本地 Web，生产发布仍独立授权。
 
 自动验证覆盖公开地址解析与连接固定、重定向、格式/大小/超时/取消、授权及既有上传衔接。所给公开 URL 允许只读内存验证；真实资产导入、浏览器效果及是否满足预期由用户验收。
+
+## Implementation references
+
+使用本机 Node 24.12 的 [HTTP](https://nodejs.org/download/release/v24.12.0/docs/api/http.html) 与 [HTTPS](https://nodejs.org/download/release/v24.12.0/docs/api/https.html) 原生连接契约；特殊地址分类依据 [IANA IPv4](https://www.iana.org/assignments/iana-ipv4-special-registry) / [IPv6](https://www.iana.org/assignments/iana-ipv6-special-registry)，并精确阻止 [Azure WireServer 地址](https://learn.microsoft.com/en-us/azure/virtual-network/what-is-ip-address-168-63-129-16)。仅用于连接实现和分类审查，不执行内网或元数据探测。
