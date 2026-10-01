@@ -497,11 +497,16 @@ the attached parameter drawer matches those corners.
 ## Brand and icons
 
 - `public/goodgood-g-icon.svg`: every GoodGood logo uses the same square G from
-  GG-149, with a black circle and three white geometric pieces. Show one G in
-  desktop/mobile navigation, authentication and account states, creation empty
-  state, management, Hero and browser icons. Preserve accessible names and links.
+  GG-149, with a black circle and three white geometric pieces. GG-266 pairs the
+  unchanged 26px G with `public/goodgood-wordmark.svg` in lobby desktop/mobile
+  navigation: custom outlined-path lettering reading **Good Good**, matching
+  the segmented G and rounded 4.3–4.6 unit strokes. The 132px wordmark sits 9px
+  to the right, vertically centered; its width can shrink on mobile so account
+  controls retain their space. The sidebar brand remains one 40px-high home
+  button. Authentication/account states, creation empty state, compact canvas,
+  management, Hero and browser icons keep one G. Preserve accessible names and links.
 - SVG/ICO favicons and the self-contained maintenance page use the same geometry.
-  Old Double G and wordmark assets are historical only. [ADR 0116](decisions/0116-unified-g-brand-icon.md)
+  Old Double G assets are historical only. [ADR 0116](decisions/0116-unified-g-brand-icon.md)
   supersedes earlier brand and mobile-wordmark rules.
 - Composer send/generate action: Lucide upward arrow in a near-black circle
   (ADR 0098). `public/feihong-send.png` remains a loading illustration.

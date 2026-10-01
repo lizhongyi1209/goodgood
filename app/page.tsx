@@ -3066,8 +3066,9 @@ export default function Home({
   return (
     <main className="app-shell">
       <aside className="sidebar">
-        <button className="sidebar-brand" type="button" aria-label="返回首页" onClick={handleCreateNav}>
+        <button className="sidebar-brand" type="button" aria-label="Good Good，返回首页" onClick={handleCreateNav}>
           <Image className="sidebar-brand-icon" src="/goodgood-g-icon.svg" alt="" width={26} height={26} />
+          <Image className="brand-wordmark" src="/goodgood-wordmark.svg" alt="" width={132} height={17} />
         </button>
         <nav className="side-nav" aria-label="主导航">
           <button className={`side-nav-item ${activeView === "create" ? "active" : ""}`} data-nav="home" aria-label="首页" aria-current={activeView === "create" ? "page" : undefined} onClick={handleCreateNav}><HomeIcon size={17} strokeWidth={1.8} /><span>首页</span></button>
@@ -3169,7 +3170,10 @@ export default function Home({
 
       <section className="main-stage">
         <header className="mobile-bar">
-          <div className="mobile-brand" role="img" aria-label="GoodGood"><Image className="brand-icon" src="/goodgood-g-icon.svg" alt="" width={26} height={26} /></div>
+          <div className="mobile-brand" role="img" aria-label="Good Good">
+            <Image className="brand-icon" src="/goodgood-g-icon.svg" alt="" width={26} height={26} />
+            <Image className="brand-wordmark" src="/goodgood-wordmark.svg" alt="" width={132} height={17} />
+          </div>
           <div className="mobile-account">
             {organizationNavigationVisible && authenticationSession?.account.role !== "site_owner" && (
               <button className="top-avatar" aria-label="企业管理" onClick={handleOrganizationNav}><Building2 size={16} /></button>
