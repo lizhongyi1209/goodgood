@@ -4,7 +4,7 @@
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
-| GG-260 / GG-261 | 并行积分明细/每日免费额度任务已登记，由该会话继续开发；不计入 GG-259 已交付范围 | [GG-260](tasks/GG-260-credit-details-and-free-quota.md) / [GG-261](tasks/GG-261-daily-free-image-quota.md) |
+| GG-260 / GG-261 | 两子 agent 开发中：余额/类型/任务 ID 复制/项目模型/20条分页及空心图标；免费图片规则待用户，根负责契约/集成/退役 | [GG-260](tasks/GG-260-credit-details-and-free-quota.md) / [GG-261](tasks/GG-261-daily-free-image-quota.md) |
 | GG-259 | 已接入 5173：不重复随机六位 ID、常驻铅笔和下方规则预留空间；12/12、两组隔离 SQL 2/2、局部 lint，通过本地 0059，辅助目录退役，用户验收 | [任务](tasks/GG-259-random-user-id-stable-edit.md) |
 | GG-258 | 已进入 5173：去掉缩放覆盖层与非生成类型/缺参数说明，保留已知尺寸；10/10、相关 lint/编译通过，规范已同步，无新辅助目录，用户验收 | [任务](tasks/GG-258-canvas-detail-minimal.md) |
 | GG-257 | 已接入 5173：默认静止实线、连线/剪刀 hover 流动，reduced motion 始终静止；代码/编译检查通过，辅助目录退役，用户验收 | [任务](tasks/GG-257-canvas-edge-hover-flow.md) |

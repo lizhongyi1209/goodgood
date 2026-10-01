@@ -1,12 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-01
-- Current phase: GG-259 随机六位 ID、默认编辑图标和稳定规则间距已进入实际 5173；12/12、隔离 SQL 2/2、局部 lint、本地 0059 完成，辅助目录退役。GG-258 及此前画布交付保留，verified Web 仍为兼容的 41df2dc，生产仍为 GG-098/GG-100。
+- Current phase: GG-260 积分明细/固定分页/空心图标与 GG-261 来源契约/每日免费额度由两个独立子 agent 开发；免费模型/规格规则待用户回复。保留 GG-259 源码/0059、GG-258 及此前画布交付，verified Web 为 41df2dc，生产仍为 GG-098/GG-100。
 - Current objective: 用户刷新 5173 验收随机 ID 和稳定资料编辑，以及此前画布交付；并行 GG-260/261 继续独立推进，按 GG-247 定向验证。
 - Previous objective: GG-244 资产 hover 小按钮、无视频外置文字与节点式视频预览已进入实际 5173。
 
 ## Current checkpoint
 
+- 当前授权 [GG-260](tasks/GG-260-credit-details-and-free-quota.md) / [GG-261](tasks/GG-261-daily-free-image-quota.md)：登记提交 `62f4e26`；UI 复用 `/root/canvas_folder_drop`，独立 `GG-260-credit-details-ui`；后端复用 `/root/canvas_paste_image`，独立 `GG-261-daily-free-quota`，均从 `c6f6bb9` 创建且无需子依赖/构建缓存。双方源码待限定提交/集成；根已补画布 context 快照/恢复和首次同步门控，定向 SSR 1/1，待后端类型整合再 lint/编译。免费默认规则仍待用户，未发放额度。
 - Task [GG-258](tasks/GG-258-canvas-detail-minimal.md)：从干净 `821705e` 核对祖先后建立 `fix/GG-258-canvas-detail-minimal`；移除缩放按钮/倍率及无用样式，非生成素材只展示标题和已知尺寸。SSR/导航 10/10、相关 lint 零错误/警告、三个 Vite 模块编译 HTTP 200；保留滚轮/拖动/键盘及真实参数，无新 worktree/依赖/缓存。
 - Task [GG-259](tasks/GG-259-random-user-id-stable-edit.md)：独立 `d4ec0be` 回放为 `c6f6bb9`；现有/新增随机六位数字、不重号，常驻铅笔、下方提示预留换行高度。12/12、两组隔离 SQL 2/2、相关 lint、本地 0059 完成，创建 1/退役 1（初始编号/路径更正一次），API 兼容原 Web，不重建服务。
 - Task [GG-254](tasks/GG-254-account-identity-editor.md)：子 `bbf26d5` 精确回放为 `422c32f`；用户名默认 mimi、后端六位 ID、内容文字编辑、局部确认/外部撤销、头像确认后上传，撤去个人主页。定向 20/20、资料 SQL 1/1、ID SQL 10/10、相关 lint 完成；0058 与 verified Web `41df2dc` 同步，创建 1/退役 1。
@@ -38,7 +39,7 @@
 - 生产身份继续为 revision `7888554a4650b1b06dbce4293c52e8c018e5c71b`、迁移 `0044_gg098_raise_manual_grant_ceiling.sql`，详见 [CURRENT_STATE](CURRENT_STATE.md)。GG-239 未部署。
 - 生产入口仍为 `https://goodgood.o1key.com`，预发布入口为 `https://staging-goodgood.o1key.com`；本地 5173、开发数据库与生产数据继续严格隔离。
 - 早期生产实施流水保存在 [2026-09-07 implementation log](history/2026-09-07-implementation-log.md)，仅在追溯历史时读取。
-- Next action: 用户刷新 5173 验收 GG-259 随机 ID、常驻编辑图标、稳定规则间距及 GG-258 详情简化；GG-259 无待完成开发/运行步骤，GG-260/261 由并行会话继续。新需求从当前 HEAD 核对祖先后按范围推进。
+- Next action: 继续 GG-260 UI/分页与 GG-261 来源接口调查，免费政策明确后开发实际 quota 预留/结算/释放；精确整合、定向验证并退役两个子目录。GG-259/258 用户验收保留，无生产授权。
 - Blockers: 无代码或本地运行阻塞；浏览器验收由用户负责，不阻塞开发交付。生产发布未获授权。
 
 ## Verification sequence

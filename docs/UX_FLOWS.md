@@ -496,19 +496,23 @@ the line; accepted tasks retain the choice and quote after disable/reprice.
   logout. Selecting `积分` opens the account-management-style usage dialog over
   the current workspace; the compact mobile balance opens the same dialog.
   Closing it preserves the composer, project, and active generation. The dialog
-  shows settled spend for today, the current Monday-based week, and the month,
-  plus `全部 / 消费 / 获得` filtering and cursor pagination. `/credits` remains a
+  shows the current available balance and settled spend for today, the current
+  Monday-based week, and the month, plus `全部 / 消费 / 获得` filtering and
+  previous/next cursor pages of at most 20 rows. `/credits` remains a
   compatible deep link, not the primary entry.
 - A generation reservation is one user-facing record. While open it reads as
   processing and settlement changes it to consumed. Release and refund entries
   do not appear in the user-facing usage table; the original ledger remains
   intact. Raw reserve/settle rows and internal reasons never appear.
-- Each record identifies `图片生成 / 视频生成 / 其他变动`. Generation rows use
-  the same batch reference shown by the asset library; they do not repeat model,
-  resolution, count, prompt, or result-detail controls.
-- Credit-record loading, empty, first-page failure, retry, and load-more failure
-  preserve the page silhouette and any already loaded records. A successful
-  generation is traced in the asset library by its batch reference. Records
+- The `类型` column identifies `图片生成 / 视频生成 / 其他变动`. Generation
+  rows show the recorded project and model; unavailable historical context stays
+  empty. The rightmost `任务 ID` column abbreviates the real generation-job ID
+  and offers a small button to copy it in full, with local success/failure feedback.
+  Resolution, count, prompt and result controls remain in asset details.
+- Credit-record loading, empty, first-page failure, retry and next-page failure
+  preserve the page silhouette and any already loaded records. Selecting a page
+  replaces its rows; changing the filter returns to the first page. A successful
+  generation is traced by its task ID. Records
   before credit metering are not invented or backfilled.
 - First valid email verification (or deployed Authing login before cutover)
   provisions a new GoodGood owner in `pending` access state.

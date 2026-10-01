@@ -855,11 +855,18 @@ Contains ordering and membership metadata; never duplicate image bytes.
 - The read derives settled-spend totals for the Shanghai calendar day,
   Monday-based week, and month. Open reservations and releases do not count as
   spend; settlement time is the effective spend time.
-- Metered image-generation records expose the existing job ID used as the asset
-  library's batch reference. Future writers may persist stable
-  `activityCategory` and `batchReference` metadata for video or other metered
-  work. The public record omits model, resolution, count, prompt, and result
-  Asset details. Pre-M6 unmetered jobs have no ledger activity and are
+- Metered image-generation records expose the existing job ID as `taskId`,
+  retaining `batchReference` for compatibility. Authorized batch/project joins
+  expose recorded project ID/name and frozen catalog model name. Migration 0060
+  adds nullable `generation_batches.canvas_project_id` with an owner/workspace
+  foreign key and `source_project_name`, frozen at submission. Canvas context is
+  accepted only for `canvas-image-v1`, excluding deleted and foreign projects;
+  absent context preserves legacy input hashes. Existing projects are not
+  inferred for historical canvas jobs. `view=usage` hides released/refunded rows
+  before its 20-row limit and binds cursors to the view; default ledger reads
+  retain their prior limits/cursors. Resolution, count, prompt and result Asset
+  details remain private to their existing detail contracts. Pre-M6 unmetered
+  jobs have no ledger activity and are
   intentionally not assigned inferred charges.
 - Browser values and provider usage reports never directly mutate balances.
 - Pending accounts may hold welcome credit but cannot reserve or consume it.
