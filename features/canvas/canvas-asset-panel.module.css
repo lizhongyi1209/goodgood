@@ -95,6 +95,13 @@ button.addCard[data-slot]:focus-visible, .folderCard[data-slot="button"]:focus-v
 .nameError { color: #52525b; font-size: 10px; line-height: 1.4; }
 .addMenu[data-slot="dropdown-menu-content"], .linkMenu[data-slot="dropdown-menu-sub-content"] { min-width: 0; padding: 5px; border: 1px solid #e4e4e7; border-radius: 12px; background: #fff; color: #27272a; box-shadow: 0 4px 14px rgb(0 0 0 / 8%); }
 .addMenu[data-slot="dropdown-menu-content"] { width: 160px; }
+.assetContextMenu[data-slot="context-menu-content"] { min-width: 140px; padding: 5px; border: 1px solid #e4e4e7; border-radius: 12px; background: #fff; color: #27272a; box-shadow: 0 4px 14px rgb(0 0 0 / 8%); }
+.folderNameDialog[data-slot="dialog-content"] { width: min(360px, calc(100vw - 32px)); gap: 16px; border: 1px solid #e4e4e7; border-radius: 16px; padding: 20px; background: #fff; color: #18181b; box-shadow: none; }
+.folderNameDialog [data-slot="dialog-title"] { font-size: 14px; }
+.folderNameDialog [data-slot="input"] { box-shadow: none; }
+.folderNameDialog [data-slot="input"]:focus-visible { outline: 1px solid #a1a1aa; border-color: #a1a1aa; box-shadow: none; }
+.folderNameActions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.assetCard:focus-visible { outline: 1px solid #a1a1aa; outline-offset: 3px; border-radius: 10px; }
 .addMenuItem[data-slot] { min-height: 36px; padding: 8px; border-radius: 7px; color: #27272a; font-size: 12px; }
 .addMenuItem[data-slot]:focus, .addMenuItem[data-state="open"] { background: #f4f4f5; color: #18181b; }
 .addMenuItem[data-slot] svg { color: #52525b; }

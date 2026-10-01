@@ -1,23 +1,25 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent } from "react";
-import { AudioLines, Check, ChevronLeft, Folder, FolderOpen, ImageOff, Maximize2, Pause, Play, X } from "lucide-react";
+import { AudioLines, Check, ChevronLeft, Folder, FolderOpen, ImageOff, Maximize2, Pause, Pencil, Play, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ImageViewer } from "@/features/assets/image-viewer";
 import { describeViewerGeneration, type ImageViewerMetadata } from "@/features/assets/image-viewer-details";
-import { listAssets } from "@/features/assets/http-asset-boundary";
-import { listAssetOrganization, renameAssetItem, saveAssetOrganization, type AssetArrangement, type AssetFolder, type OrganizedAssetKind } from "@/features/assets/http-asset-organization";
+import { deleteAsset, deleteUploadedAsset, listAssets } from "@/features/assets/http-asset-boundary";
+import { createAssetFolder, deleteAssetFolder, listAssetOrganization, renameAssetFolder, renameAssetItem, saveAssetOrganization, type AssetArrangement, type AssetFolder, type OrganizedAssetKind } from "@/features/assets/http-asset-organization";
 import { listPrivateAudioMaterials } from "@/features/assets/http-audio-materials";
 import { imageDownloadFilename } from "@/features/assets/image-download";
 import { listPrivateVideoMaterials } from "@/features/creation/http-video-materials";
 import { listReferenceMaterials } from "@/features/references/http-reference-library";
 import { privateImageUrls } from "@/shared/private-image-urls.mjs";
 import { CanvasAssetAddCard } from "./canvas-asset-add-card";
+import { canvasAssetDeleteNotice, canvasFolderNameError, deleteCanvasLibraryEntry, nextCanvasFolderName, removeCanvasLibraryEntry, type CanvasLibraryDeleteTarget } from "./canvas-asset-management.mjs";
 import { CANVAS_ASSET_LIBRARY_UPDATED_EVENT } from "./canvas-asset-upload";
 import { CANVAS_ASSET_DRAG_TYPE, createCanvasFolderMover, planCanvasFolderMove, selectCanvasFolderItems, type CanvasFolderMover, type CanvasFolderMoveState } from "./canvas-folder-drop.mjs";
 import { attachCanvasVideoPreviewPlayback, type CanvasVideoPreviewPlayback } from "./canvas-video-preview-playback.mjs";
@@ -312,12 +314,19 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
   const [nameDraft, setNameDraft] = useState("");
   const [nameError, setNameError] = useState<string | null>(null);
   const [renaming, setRenaming] = useState(false);
+  const [editingFolder, setEditingFolder] = useState<AssetFolder | null>(null);
+  const [folderNameDraft, setFolderNameDraft] = useState("");
+  const [folderNameError, setFolderNameError] = useState<string | null>(null);
+  const [managing, setManaging] = useState(false);
+  const [managementError, setManagementError] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<Readonly<{ selectedKey: string; returnFocusTo: HTMLElement }> | null>(null);
   const [videoPreview, setVideoPreview] = useState<Readonly<{ selectedKey: string; returnFocusTo: HTMLElement }> | null>(null);
   const [draggedKey, setDraggedKey] = useState<string | null>(null);
   const [hoveredFolderId, setHoveredFolderId] = useState<string | null>(null);
   const [moveState, setMoveState] = useState<CanvasFolderMoveState | null>(null);
   const renamePendingRef = useRef(false);
+  const managementPendingRef = useRef(false);
+  const renameFromMenuRef = useRef(false);
   const cancelRenameRef = useRef(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const rowsRef = useRef<HTMLDivElement>(null);
@@ -432,6 +441,7 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
 
   useEffect(() => {
     readEpochRef.current += 1;
+    const epoch = readEpochRef.current;
     if (!enabled) return;
     let active = true;
     void Promise.all([
@@ -441,7 +451,7 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
       listPrivateAudioMaterials(null),
       listAssetOrganization(null),
     ]).then(([jobs, references, videos, audios, organization]) => {
-      if (!active) return;
+      if (!active || epoch !== readEpochRef.current) return;
       readEpochRef.current += 1;
       const names = new Map<string, string | null | undefined>(organization.arrangements.map((entry) => [`${entry.kind}:${entry.id}`, entry.displayName]));
       const items: CanvasLibraryAsset[] = [
@@ -463,7 +473,7 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
       setVideoPreview((current) => current && items.some((item) => item.media === "video" && `${item.kind}:${item.id}` === current.selectedKey) ? current : null);
       setReadState({ key: requestKey, loading: false, error: null });
     }).catch((cause: unknown) => {
-      if (active) {
+      if (active && epoch === readEpochRef.current) {
         readEpochRef.current += 1;
         setReadState({
           key: requestKey,
@@ -498,7 +508,7 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
     if (!Array.from(event.dataTransfer.types).includes(CANVAS_ASSET_DRAG_TYPE)) return;
     event.preventDefault();
     event.stopPropagation();
-    const canMove = !editingKey && !renamePendingRef.current && !moverRef.current?.isPending()
+    const canMove = !editingKey && !editingFolder && !managementPendingRef.current && !renamePendingRef.current && !moverRef.current?.isPending()
       && Boolean(planCanvasFolderMove(data, draggedKeyRef.current, folder.id));
     event.dataTransfer.dropEffect = canMove ? "move" : "none";
     setHoveredFolderId(canMove ? folder.id : null);
@@ -511,7 +521,7 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
     const key = event.dataTransfer.getData(CANVAS_ASSET_DRAG_TYPE);
     const ownDrag = key === draggedKeyRef.current;
     finishAssetDrag();
-    if (ownDrag && !editingKey && !renamePendingRef.current) void moverRef.current?.move(key, folder.id);
+    if (ownDrag && !editingKey && !editingFolder && !managementPendingRef.current && !renamePendingRef.current) void moverRef.current?.move(key, folder.id);
   };
 
   const refreshVideo = async (item: CanvasLibraryAsset, signal: AbortSignal): Promise<string | null> => {
@@ -535,7 +545,7 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
   };
 
   const beginRename = (item: CanvasLibraryAsset) => {
-    if (renamePendingRef.current || moverRef.current?.isPending()) return;
+    if (renamePendingRef.current || managementPendingRef.current || moverRef.current?.isPending()) return;
     cancelRenameRef.current = false;
     setEditingKey(`${item.kind}:${item.id}`);
     setNameDraft(item.name);
@@ -572,6 +582,80 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
     }
   };
 
+  const managementBlocked = managing || renaming || moving || Boolean(editingKey) || Boolean(editingFolder);
+  const restoreMenuFocus = (event: Event) => {
+    if (!renameFromMenuRef.current) return;
+    renameFromMenuRef.current = false;
+    event.preventDefault();
+  };
+  const startManagement = () => {
+    if (managementPendingRef.current || renamePendingRef.current || moverRef.current?.isPending()) return false;
+    managementPendingRef.current = true;
+    readEpochRef.current += 1;
+    setManaging(true);
+    setManagementError(null);
+    return true;
+  };
+  const finishManagement = () => {
+    managementPendingRef.current = false;
+    setManaging(false);
+    // A failed byte deletion may follow a committed metadata transaction.
+    window.dispatchEvent(new Event(CANVAS_ASSET_LIBRARY_UPDATED_EVENT));
+  };
+
+  const createFolder = async () => {
+    if (!dataRef.current || editingKey || editingFolder || !startManagement()) return;
+    try {
+      const saved = await createAssetFolder(nextCanvasFolderName(dataRef.current.folders), null);
+      setData((current) => current && ({ ...current, folders: [...current.folders, saved] }));
+      setFolderId(null);
+    } catch (cause) {
+      setManagementError(cause instanceof Error ? cause.message : "创建文件夹失败，请重试。");
+    } finally { finishManagement(); }
+  };
+
+  const beginFolderRename = (folder: AssetFolder) => {
+    if (managementBlocked || managementPendingRef.current || renamePendingRef.current || moverRef.current?.isPending()) return;
+    setEditingFolder(folder);
+    setFolderNameDraft(folder.name);
+    setFolderNameError(null);
+  };
+  const saveFolderName = async () => {
+    if (!editingFolder || managementPendingRef.current) return;
+    const name = folderNameDraft.trim().replace(/\s+/g, " ");
+    const validation = canvasFolderNameError(folderNameDraft);
+    if (validation) { setFolderNameError(validation); return; }
+    if (name === editingFolder.name) { setEditingFolder(null); return; }
+    if (!startManagement()) return;
+    try {
+      const saved = await renameAssetFolder(editingFolder.id, name, null);
+      setData((current) => current && ({ ...current, folders: current.folders.map((folder) => folder.id === saved.id ? saved : folder) }));
+      setEditingFolder(null);
+    } catch (cause) {
+      setFolderNameError(cause instanceof Error ? cause.message : "重命名失败，请重试。");
+    } finally { finishManagement(); }
+  };
+
+  const deleteEntry = async (target: CanvasLibraryDeleteTarget) => {
+    if (managementBlocked || managementPendingRef.current || !window.confirm(canvasAssetDeleteNotice(target)) || !startManagement()) return;
+    try {
+      await deleteCanvasLibraryEntry(target, {
+        deleteFolder: (id) => deleteAssetFolder(id, null),
+        deleteGenerated: (id) => deleteAsset(id, null),
+        deleteUploaded: (kind, id) => deleteUploadedAsset(kind, id, null),
+      });
+      setData((current) => removeCanvasLibraryEntry(current, target));
+      if (target.kind === "folder" && folderId === target.id) setFolderId(null);
+      if (target.kind !== "folder") {
+        const key = `${target.kind}:${target.id}`;
+        setImagePreview((current) => current?.selectedKey === key ? null : current);
+        setVideoPreview((current) => current?.selectedKey === key ? null : current);
+      }
+    } catch (cause) {
+      setManagementError(cause instanceof Error ? cause.message : "删除失败，请重试。");
+    } finally { finishManagement(); }
+  };
+
   return <section className={styles.panel} aria-label="画布资产"
     onDragOver={(event) => {
       if (!Array.from(event.dataTransfer.types).includes(CANVAS_ASSET_DRAG_TYPE)) return;
@@ -597,7 +681,10 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
     {!enabled ? <p className={styles.state}>演示模式暂不提供资产浏览。</p>
       : <ScrollArea className={styles.scroll}>
           <div ref={rowsRef} className={styles.rows}>
-            <CanvasAssetAddCard folderId={activeFolder?.id ?? null} readyAssetKeys={readyAssetKeys} />
+            <CanvasAssetAddCard folderId={activeFolder?.id ?? null} readyAssetKeys={readyAssetKeys}
+              folderBusy={managementBlocked || !data || loading} onCreateFolder={() => void createFolder()} />
+            {managementError && <div className={styles.refreshError} role="alert"><p>{managementError}</p><Button type="button" variant="ghost" size="sm" onClick={() => { setManagementError(null); setRevision((current) => current + 1); }}>刷新资产</Button></div>}
+            {managing && <p className="sr-only" role="status">正在更新资产…</p>}
             {loading && !data && <p className={styles.refreshError} role="status">正在读取资产…</p>}
             {error && <div className={styles.refreshError} role="alert"><p>{error}</p><Button type="button" variant="ghost" size="sm" onClick={() => setRevision((current) => current + 1)}>重试读取</Button></div>}
             {moveState && <div className={moveState.phase === "failed" ? styles.moveFeedback : "sr-only"} role={moveState.phase === "failed" ? "alert" : "status"}>
@@ -610,7 +697,8 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
               const available = Boolean(draggedKey && !moving && planCanvasFolderMove(data, draggedKey, folder.id));
               const hovering = available && hoveredFolderId === folder.id;
               const phase = moveState?.folderId === folder.id ? moveState.phase : null;
-              return <Button key={folder.id} type="button" variant="ghost" className={styles.folderCard}
+              return <ContextMenu key={folder.id}><ContextMenuTrigger asChild disabled={managementBlocked} onContextMenu={(event) => { if (managementBlocked) event.preventDefault(); }}>
+                <Button type="button" variant="ghost" className={styles.folderCard} data-canvas-asset-context-menu
                 data-drop-available={available || undefined} data-drop-hover={hovering || undefined} data-move-state={phase ?? undefined}
                 aria-busy={phase === "pending"} onClick={() => setFolderId(folder.id)} aria-label={`打开文件夹 ${folder.name}`}
                 onDragEnter={(event) => folderDragOver(event, folder)} onDragOver={(event) => folderDragOver(event, folder)}
@@ -624,16 +712,22 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
                 {(available || phase === "pending" || phase === "succeeded") && <span className={styles.folderDropHint} aria-hidden="true">
                   {phase === "pending" ? "正在整理…" : phase === "succeeded" ? "已移入" : hovering ? "松开移入" : "拖入整理"}
                 </span>}
-              </Button>;
+              </Button></ContextMenuTrigger>
+                <ContextMenuContent className={styles.assetContextMenu} onCloseAutoFocus={restoreMenuFocus}>
+                  <ContextMenuItem className={styles.addMenuItem} disabled={managementBlocked} onSelect={() => { renameFromMenuRef.current = true; beginFolderRename(folder); }}><Pencil size={14} aria-hidden="true" />重命名</ContextMenuItem>
+                  <ContextMenuItem className={styles.addMenuItem} disabled={managementBlocked} onSelect={() => void deleteEntry({ ...folder, kind: "folder" })}><Trash2 size={14} aria-hidden="true" />删除</ContextMenuItem>
+                </ContextMenuContent>
+              </ContextMenu>;
             })}
               {visibleItems.map((item) => {
                 const key = `${item.kind}:${item.id}`;
                 const editing = editingKey === key;
-                return <div key={key} className={styles.assetCard} draggable={!editing && !moving}
+                return <ContextMenu key={key}><ContextMenuTrigger asChild disabled={managementBlocked} onContextMenu={(event) => { if (managementBlocked) event.preventDefault(); }}>
+                  <div className={styles.assetCard} data-canvas-asset-context-menu tabIndex={0} aria-label={item.name} draggable={!editing && !moving && !managing}
                   data-dragging={draggedKey === key || undefined} data-move-state={moveState?.key === key ? moveState.phase : undefined}
                   onPointerDownCapture={(event) => { assetDragBlockedRef.current = event.target instanceof Element && Boolean(event.target.closest("[data-asset-media-control]")); }}
                   onDragStart={(event) => {
-                    if (editing || editingKey || renamePendingRef.current || moverRef.current?.isPending() || assetDragBlockedRef.current
+                    if (editing || editingKey || editingFolder || managementPendingRef.current || renamePendingRef.current || moverRef.current?.isPending() || assetDragBlockedRef.current
                       || (event.target instanceof Element && event.target.closest("[data-asset-media-control]"))) { event.preventDefault(); return; }
                     event.dataTransfer.effectAllowed = item.media === "image" ? "copyMove" : "copy";
                     event.dataTransfer.setData(CANVAS_ASSET_DRAG_TYPE, key);
@@ -663,12 +757,35 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
                       onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); cancelRenameRef.current = true; setEditingKey(null); setNameError(null); } }} />
                     {nameError && <span className={styles.nameError} role="alert">{nameError}</span>}
                   </form> : item.media === "audio" && <span className={styles.mediaLabel}>音频</span>}
-                </div>;
+                </div></ContextMenuTrigger>
+                  <ContextMenuContent className={styles.assetContextMenu} onCloseAutoFocus={restoreMenuFocus}>
+                    <ContextMenuItem className={styles.addMenuItem} disabled={managementBlocked} onSelect={() => { renameFromMenuRef.current = true; beginRename(item); }}><Pencil size={14} aria-hidden="true" />重命名</ContextMenuItem>
+                    <ContextMenuItem className={styles.addMenuItem} disabled={managementBlocked} onSelect={() => void deleteEntry(item)}><Trash2 size={14} aria-hidden="true" />删除</ContextMenuItem>
+                  </ContextMenuContent>
+                </ContextMenu>;
               })}
             {!loading && !error && !activeFolder && !data?.folders.length && !visibleItems.length && <p className={styles.empty}>还没有资产</p>}
             {!loading && !error && activeFolder && !visibleItems.length && <p className={styles.empty}>此文件夹还没有素材</p>}
           </div>
         </ScrollArea>}
+    <Dialog open={Boolean(editingFolder)} onOpenChange={(open) => { if (!open && !managementPendingRef.current) setEditingFolder(null); }}>
+      <DialogContent className={styles.folderNameDialog} showCloseButton={false}
+        onEscapeKeyDown={(event) => { if (managementPendingRef.current) event.preventDefault(); }}
+        onInteractOutside={(event) => { if (managementPendingRef.current) event.preventDefault(); }}>
+        <DialogTitle>重命名文件夹</DialogTitle>
+        <DialogDescription className="sr-only">修改文件夹名称，最多64个字符。取消保留原名称。</DialogDescription>
+        <form onSubmit={(event) => { event.preventDefault(); void saveFolderName(); }}>
+          <Input autoFocus aria-label="文件夹名称" maxLength={64} value={folderNameDraft} disabled={managing}
+            aria-invalid={Boolean(folderNameError)} onFocus={(event) => event.currentTarget.select()}
+            onChange={(event) => { setFolderNameDraft(event.target.value); setFolderNameError(null); }} />
+          {folderNameError && <p className={styles.nameError} role="alert">{folderNameError}</p>}
+          <div className={styles.folderNameActions}>
+            <Button type="button" variant="ghost" size="sm" disabled={managing} onClick={() => setEditingFolder(null)}>取消</Button>
+            <Button type="submit" size="sm" disabled={managing || !folderNameDraft.trim()}>{managing ? "保存中…" : "保存"}</Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
     {enabled && imagePreview && <ImageViewer mode="canvas" items={previewMedia} selectedKey={imagePreview.selectedKey} returnFocusTo={imagePreview.returnFocusTo}
       renderThumbnail={(selected) => {
         const item = visibleItems.find((asset) => `${asset.kind}:${asset.id}` === selected.key);

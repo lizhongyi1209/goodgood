@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowUp, AudioLines, Link, Plus, Upload, X } from "lucide-react";
+import { ArrowUp, AudioLines, FolderPlus, Link, Plus, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuPortal, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -21,9 +21,11 @@ type UploadRow = Readonly<{
   message?: string;
 }>;
 
-export function CanvasAssetAddCard({ folderId, readyAssetKeys }: Readonly<{
+export function CanvasAssetAddCard({ folderId, readyAssetKeys, onCreateFolder, folderBusy }: Readonly<{
   folderId: string | null;
   readyAssetKeys: ReadonlySet<string>;
+  onCreateFolder: () => void;
+  folderBusy: boolean;
 }>) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
@@ -178,6 +180,7 @@ export function CanvasAssetAddCard({ folderId, readyAssetKeys }: Readonly<{
         <Button type="button" variant="ghost" className={styles.addCard} aria-label="添加资产" disabled={busy}><Plus size={24} strokeWidth={1.5} aria-hidden="true" /></Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent side="right" align="start" sideOffset={8} collisionPadding={12} className={styles.addMenu}>
+        <DropdownMenuItem disabled={folderBusy} className={styles.addMenuItem} onSelect={onCreateFolder}><FolderPlus size={16} aria-hidden="true" />创建文件夹</DropdownMenuItem>
         <DropdownMenuItem disabled={busy} className={styles.addMenuItem} onSelect={() => { chosenFolderRef.current = folderId; inputRef.current?.click(); }}><Upload size={16} aria-hidden="true" />上传文件</DropdownMenuItem>
         <DropdownMenuSub open={linkOpen} onOpenChange={changeLinkOpen}>
           <DropdownMenuSubTrigger disabled={busy && !linkBusy} className={styles.addMenuItem}><Link size={16} aria-hidden="true" />链接</DropdownMenuSubTrigger>
