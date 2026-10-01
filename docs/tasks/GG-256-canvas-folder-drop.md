@@ -1,6 +1,6 @@
 # GG-256 — 画布资产光标与拖入文件夹
 
-- 状态：已实现，子树定向验证通过；待父精确集成/编译与退役。未部署，浏览器验收由用户完成。
+- 状态：已实现并精确接入实际 5173，子与根定向代码验证完成，辅助目录退役。未部署，浏览器验收由用户完成。
 - 日期：2026-10-01
 - 分支 / worktree：`feat/GG-256-canvas-folder-drop` / `F:/goodgood-worktrees/GG-256-canvas-folder-drop`
 - 源码基线：`896bce2`（含 GG-253 大图 pan/zoom、模型信息与 AssetVisual 缩略图复用）；HEAD 祖先核验通过。文档检查点尚为 GG-252，不能回退 main。
@@ -25,17 +25,18 @@
 - `node --test tests/gg256-canvas-folder-drop.test.mjs`：8/8，通过（身份与 tags、空/未知/同目录/非图片、安全无请求、防重复提交、成功前保留、失败/最新 tags 重试、卸载迟到成功/失败及通用错误）。均使用内存合成集合/Promise，无网络或真实资源写入。
 - 定向 lint：`node F:/goodgood-worktrees/GG-116/node_modules/eslint/bin/eslint.js --config F:/goodgood-worktrees/GG-116/eslint.config.mjs features/canvas/canvas-asset-panel.tsx features/canvas/canvas-folder-drop.mjs features/canvas/canvas-folder-drop.d.mts tests/gg256-canvas-folder-drop.test.mjs` 退出 0；仅无子 node_modules 的 React detect 提示，无 lint 错误。
 - `git diff --check` 通过；源审阅确认 GG-253 generationMetadata、AssetPreviewThumbnail、controls=false、ImageViewer renderThumbnail/renderVideo 未改变，Enter/Space/F2 改名和 folder 原按钮路径保持。
-- 未执行：浏览器/视觉验收、真实资产/API 写入、上传/生成、数据库/队列操作、安装、全量 gate/build/typecheck。父仅需集成后的相关模块编译/必要检查；本子树暂不跑全局文档索引测试，BACKLOG 统一登记由父完成。
+- 未执行：浏览器/视觉验收、真实资产/API 写入、上传/生成、数据库/队列操作、安装、全量 gate/build/typecheck。子树未运行全局文档索引测试；根负责最终共享文档检查，模块编译已完成。
+- 根交付：子提交 `df7cdf4` 精确回放为 `5183287`；根定向 8/8、四个相关代码/类型/测试文件 lint 零错误/警告。panel/helper/CSS 三个实际 Vite 模块编译 HTTP 200，folder mover 与 GG-253 元数据/缩略图接线确认保留。
 
 ## 子 agent/worktree 清单
 
 - 子 agent：`/root/canvas_folder_drop`；唯一可写树为上述 GG-256；父 agent 拥有 GG-116 集成树。
 - 文件边界：`features/canvas/canvas-asset-panel.tsx` / `.module.css`、最小 helper/声明/定向测试、本任务卡和 ADR 0120 追加。禁止修改并行 GG-255 的 canvas-page/workspace 入口及父共享状态文档。
-- 创建数：1（父已建立）；退役数：0（待父精确集成后退役）。
+- 创建数：1；集成数：1；退役数：1。父核对绝对所有权路径、clean（含 ignored）、无 reparse point/缓存/进程后以 Git remove/prune 退役，目录已不存在；其余 worktree 保留。
 - 保留 dirty 路径：交付限定提交后本树干净；不含其他任务改动。
 - 依赖/构建缓存：不创建 node_modules、dist、.next 或测试缓存；父使用唯一 GG-116 依赖做集成 lint/编译。
 - 退役条件：限定提交已审查/精确集成且本树干净；父执行 worktree remove/prune，不强删目录。
 
 ## 恢复工作 / 下一步
 
-父审阅限定提交并精确回放到 GG-116，做相关模块编译/必要检查；统一更新 BACKLOG/IMPLEMENTATION_PLAN/CURRENT_STATE/HANDOFF，确认本树干净后退役/prune（创建 1 / 待退役 1）。用户验收光标、靶区/请求/成功/失败动效、同文件夹安全无操作、独立查看/改名，以及原拖入画布行为。
+开发、精确集成、定向代码验证及干净目录退役完成，共享状态/交互规范同步。用户验收光标、靶区/请求/成功/失败动效、同文件夹安全无操作、独立查看/改名，以及原拖入画布行为；无待完成代码/运行步骤。

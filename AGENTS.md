@@ -93,8 +93,8 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
 - A creative session may be saved as a project and later restored with prompt,
   references, parameters, batches, and ordering. A project view must always
   offer `新建创作` to leave the project quickly.
-- Image detail is a focused three-zone view: large image, prompt/parameters,
-  vertical image rail. Wheel and arrow keys move through images.
+- Image detail uses image/info/rail zones. Asset-page wheel/arrows browse images;
+  canvas uses wheel zoom/drag pan and rail selection (ADR 0123/GG-253).
 - Batch and gallery layouts preserve real aspect ratios. Keep image gaps tight;
   only the outer silhouette receives rounded corners where images form a group.
 - Generation errors appear inline where results would appear. Preserve prompt,

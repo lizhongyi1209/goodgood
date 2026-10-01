@@ -1,12 +1,13 @@
 # 当前开发版本与跨窗口交接
 
 - 日期：2026-10-01。
+- 最新画布交付：GG-253 `896bce2` 图片自由预览与真实信息、GG-255 `d4ea42c` 原生图片粘贴、GG-256 `5183287` 文件夹拖入及动效、GG-257 `6f63a8f` 默认实线/hover 流动均进入 5173；定向 25/25、19/19、8/8 及相关 lint/模块编译完成。三个子 worktree 创建 3/退役 3，无依赖/构建缓存残留，浏览器验收交用户。
 - 最新追加：[GG-254](tasks/GG-254-account-identity-editor.md) `422c32f` 单一用户名默认 mimi、六位 ID 和局部确认/外部取消已进入 5173 与 verified Web；20 项相关检查、资料 SQL 1/1、ID SQL 10/10、局部 lint 通过，本地迁移到 0058，辅助目录退役。并行 GG-253 `896bce2` 与 GG-255 `41df2dc` 保留，文档后继不改变实际 Web 构建身份。
 - 当前追加：[GG-250](tasks/GG-250-inline-personal-information.md) `99fb14a` 已在个人信息内直接编辑头像、昵称/用户名并保存/取消，13 项功能、局部 lint 和最终文档 9/9；辅助目录退役，GG-249 后继 `8ee22d8` 保留。
-- 当前代码：GG-239 累计基线加 GG-242—246、GG-248 `520b452` 默认个人信息与 GG-249 画布完整预览/滚轮轮播；GG-249 15/15、相关 lint 和编译通过，无新增辅助目录/缓存。GG-245 源码 `7ddb78d`/verified Web 保留，最新前端以当前 HEAD 为准。
-- 当前交接检查点分支：`feat/GG-253-canvas-media-detail`，包含 GG-254 `422c32f`、GG-253 `896bce2`、GG-255 `41df2dc` 与此前功能；以当前 HEAD 为准，不按历史分支名推断源码。画布后续交接由并行会话继续。
+- 当前代码：GG-239 累计基线加 GG-242—257；画布详情滚轮现为缩放，缩略图直接展示资产内容，旧 GG-249/251 轮播为历史规则。GG-245 链接读取与 GG-254 后端保留，最新前端以当前 HEAD 为准。
+- 当前交接检查点分支：`feat/GG-253-canvas-media-detail`，源码检查点 `6f63a8f`，包含 GG-253—257 与此前功能；后继交接文档提交不改变 verified Web `41df2dc` 身份。
 - 当前 worktree：`F:/goodgood-worktrees/GG-116`。目录名是历史名称，不能再用来判断版本。
-- 状态：GG-251 根据用户截图修正 GG-249 的原图裁切、重叠与左向抽出；扩大详情框，完整画布适配及有间隙/原位放大已进入 5173。此前功能保留，用户负责浏览器验收，未部署生产。
+- 状态：当前画布请求均已开发、精确集成并代码验证；子目录经 clean/缓存/服务核对后以 Git remove/prune 退役。用户负责浏览器视觉、交互及预期验收，未部署生产。
 
 ## GG-245 公开图片链接交付
 
@@ -42,7 +43,7 @@ git worktree list --porcelain
 
 | 组件 | 入口 | 当前来源/用途 |
 | --- | --- | --- |
-| Vite 页面 | `http://127.0.0.1:5173` | GG-116 当前分支含 GG-242—246、GG-248/249，热更新 |
+| Vite 页面 | `http://127.0.0.1:5173` | GG-116 当前分支含 GG-242—257，热更新 |
 | Node Web | `http://127.0.0.1:32131` | GG-116 verified `41df2dcad421aa90bfbccf86a6a0a51d30bda4a0`；Vite `/api` 代理目标 |
 | Worker | `http://127.0.0.1:32142/health/ready` | GG-226 `70e10c6` 的唯一真实开发 Worker；O1Key 请求可能计费 |
 | PostgreSQL | `127.0.0.1:54449/goodgood` | 本地隔离数据库，迁移 `0058`；稳定数字 ID，不改 UUID/外键 |
@@ -99,8 +100,8 @@ node dist/local-checkpoint-portfix.mjs start workspace --cloud-env-file "$taskCl
 
 ## 生产边界
 
-生产仍是 [CURRENT_STATE](CURRENT_STATE.md) 记录的 GG-098 应用和 GG-100 单槽 `goodgood-production` Compose。GG-239—247 是本地代码/流程检查点，没有 CI 不可变镜像、生产预检或部署授权。未来发布只能按 ADR 0091 的单槽策略原地替换，不恢复历史 blue/green、双 Compose 项目或 Nginx upstream 切换。
+生产仍是 [CURRENT_STATE](CURRENT_STATE.md) 记录的 GG-098 应用和 GG-100 单槽 `goodgood-production` Compose。GG-239 之后的任务是本地代码/流程检查点，没有 CI 不可变镜像、生产预检或部署授权。未来发布只能按 ADR 0091 的单槽策略原地替换，不恢复历史 blue/green、双 Compose 项目或 Nginx upstream 切换。
 
 ## 下一步
 
-用户刷新 5173，验收 GG-245 所给链接导入及 GG-244/246/243/242/237/238。没有待完成的 GG-245 开发或本地运行步骤。后续需求从当前标签/分支 HEAD 核对祖先并新建隔离分支；只有并行编辑才新增 worktree，并在完成后退役。
+用户刷新 5173，验收 GG-253 图片平移/滚轮缩放/素材信息、GG-255 外部复制图片直接粘贴、GG-256 图片拖入文件夹及状态动效、GG-257 连线默认实线/hover 流动；原有未确认功能验收保留。无待完成代码或运行步骤。后续需求从当前 HEAD 核对祖先；只有并行编辑才新增 worktree，并在完成后退役。

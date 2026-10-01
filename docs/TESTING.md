@@ -1,8 +1,12 @@
 # GG-063 verification
 
-## GG-251 preview fit correction
+## GG-253 free image preview verification
 
-Run the GG-251 thumbnail geometry and GG-249 navigation tests, scoped viewer/helper lint and documentation continuity. Geometry checks must preserve clear gaps for mixed ratios and every selected position on desktop/mobile, including the enlarged item, empty/invalid dimensions and boundaries. Review the canvas's explicitly positioned media bounds and absolute native image contain sizing to prevent intrinsic grid overflow; retain video/focus/reduced-motion wiring. The user verifies actual complete-image fit, larger dialog and stationary thumbnail enlargement. No browser acceptance or full build/gate is performed.
+Run `tests/gg253-image-preview-navigation.test.mjs`, `tests/gg253-image-viewer-details.test.mjs`, retained GG-249 navigation and GG-244 playback checks, scoped lint and documentation continuity. Verify anchored wheel zoom and bounds, pointer capture/pan/cancel, fit/reset, keyboard controls, invalid/empty input, listener cleanup, real generation metadata and absent metadata. Review contain sizing, shared AssetVisual content thumbnails, selected drawer offset, native rail scrolling, focus return and reduced motion. The removed GG-251 geometry test described superseded carousel behavior. Actual Vite module compilation establishes code integration; visual/interaction acceptance belongs to the user. No full gate/build or real asset/provider write is needed.
+
+## GG-255—257 canvas gesture and edge verification
+
+Run `tests/gg255-canvas-clipboard.test.mjs` with GG-126 local-file validation, and `tests/gg256-canvas-folder-drop.test.mjs`, scoped source/type/test lint and actual Vite module compilation. Clipboard checks cover files/items de-duplication, direct body-focus arrival, editing/layer isolation, native internal selection markers, format/empty/size errors and duplicate prevention. Folder checks use in-memory data/promises for valid/invalid identity, current tags, no-op targets, pending guard, confirmed success, failure/retry and disposal; never write the real organization API or Worker state during verification. CSS-only GG-257 uses source/specificity review against React Flow styles and module compilation: default static solid, hover/shared scissors marker flow and reduced-motion static. Mirror CSS tests are unnecessary. Review drag/control separation, restrained state animation and reduced motion; user performs browser acceptance. Record integration and clean worktree retirement for each child, without duplicate dependencies or build caches.
 
 ## GG-249 canvas viewer verification
 
