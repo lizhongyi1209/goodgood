@@ -2172,7 +2172,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
 
       {composerHost && createPortal(<section className={`${styles.composer} ${styles.composerAttached}`} aria-label="图片生成工具">
         <CanvasTextPreview inputs={linkedTextInputs} onRemove={removeLinkedReference} disabled={generatorEditingLocked} />
-        {promptTooLong && <p role="alert" className={styles.error}>连接文本与补充描述合计 {combinedPrompt.length} 个字符，最多 4000 个字符。</p>}
+        {promptTooLong && <p role="alert" className={styles.message}>连接文本与补充描述合计 {combinedPrompt.length} 个字符，最多 4000 个字符。</p>}
         <input ref={inputRef} className={styles.srOnly} type="file" accept="image/jpeg,image/png" multiple onChange={addReferences} aria-label="选择参考图" />
         <TooltipProvider delayDuration={180}>
           <AttachmentGroup className={styles.referenceTray} role="group" aria-label="参考图">

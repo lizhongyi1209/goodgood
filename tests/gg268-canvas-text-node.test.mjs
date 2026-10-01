@@ -100,7 +100,7 @@ test("browser and remote snapshots retain Markdown, plain output, geometry and t
   assert.deepEqual(remote.nodes[0].size, { width: 360, height: 260 });
   assert.deepEqual(remote.edges, local.edges);
   const validated = validateCanvasProjectSave(save(remote));
-  assert.deepEqual(validated.document.nodes, remote.nodes);
+  assert.deepEqual(validated.document.nodes, JSON.parse(JSON.stringify(remote.nodes)));
 });
 test("empty editor saves, multipage remote output retains text and independent generator drafts", () => {
   const first = snapshot([textNode("text-1", ""), generator], [edge()]);

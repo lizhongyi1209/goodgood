@@ -86,14 +86,14 @@ export function CanvasTextNode({ id, data, selected, width, height }: NodeProps<
       </div>
     </NodeToolbar>
     <div className={`${styles.node} ${selected ? styles.selected : ""}`} style={{ fontSize: canvasTextFontSize(width, height) }}>
-      <div className={`${styles.body} nodrag nopan nowheel`} onKeyDown={(event) => event.stopPropagation()}
+      <div className={`${styles.body} nodrag nopan nowheel`} onKeyDown={(event) => event.stopPropagation()} onContextMenu={(event) => event.stopPropagation()}
         onFocus={() => { if (!selected) flow.setNodes((nodes) => nodes.map((node) => ({ ...node, selected: node.id === id }))); }}>
         <EditorContent editor={editor} className={styles.editor} />
         {!data.text && <span className={styles.placeholder} aria-hidden="true">写下提示词或想法…</span>}
       </div>
       {error && <span className={styles.error} role="alert">{error}</span>}
     </div>
-    <Handle type="source" id="text" position={Position.Right} className={styles.handle} aria-label="输出文本提示词" />
+    <Handle type="source" id="text" position={Position.Right} className={styles.handle} aria-label="输出文本提示词" title="文本提示词" />
     {selected && (["top-left", "top-right", "bottom-left", "bottom-right"] as const).map((position) =>
       <NodeResizeControl key={position} position={position} minWidth={180} minHeight={140} maxWidth={1400} maxHeight={1600} className={workspaceStyles.resizeControl} />)}
   </>;
