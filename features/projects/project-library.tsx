@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { CircleAlert, FolderOpen, LoaderCircle, MoreHorizontal, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -83,7 +84,7 @@ export function ProjectLibrary(props: Props) {
     {!props.loading && props.error && <div className="project-library-state project-library-error" role="alert"><CircleAlert size={18} /><span>{props.error}</span><button type="button" onClick={props.onRetry}><RefreshCw size={14} />重试</button></div>}
     <div className={`project-grid ${styles.grid}`}>
       <article className={`project-card ${styles.card}`}>
-        <a className={styles.cardEntry} href="/canvas" aria-label="新建项目" />
+        <Link className={styles.cardEntry} href="/canvas" prefetch={false} aria-label="新建项目" />
         <div className={`project-cover ${styles.createCover}`}><Plus size={28} strokeWidth={1.5} aria-hidden="true" /></div>
         <div className="project-card-footer"><div><h2>新建项目</h2></div></div>
       </article>
