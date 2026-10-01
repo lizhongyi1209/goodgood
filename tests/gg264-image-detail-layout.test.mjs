@@ -1,29 +1,32 @@
 import assert from "node:assert/strict";
 import { after, test } from "node:test";
-import { coverImageFrame } from "../features/assets/image-preview-navigation.mjs";
+import { fitImageFrame, INITIAL_IMAGE_VIEW, zoomImageView } from "../features/assets/image-preview-navigation.mjs";
 import { attachCenteredViewerRail } from "../features/assets/image-viewer-navigation.mjs";
 
-test("cover preserves the complete source ratio and fills both viewport axes", () => {
+test("initial fit shows the complete source while zoom can fill the entire viewport", () => {
   const viewport = { width: 900, height: 800 };
   for (const source of [{ width: 1792, height: 2390 }, { width: 2400, height: 800 }, { width: 100, height: 100 }]) {
-    const frame = coverImageFrame(viewport, source);
-    assert.ok(frame.width >= viewport.width && frame.height >= viewport.height);
+    const frame = fitImageFrame(viewport, source);
+    assert.ok(frame.width <= viewport.width && frame.height <= viewport.height);
     assert.ok(Math.abs(frame.width / frame.height - source.width / source.height) < 1e-10);
     assert.equal(frame.x + frame.width / 2, viewport.width / 2);
     assert.equal(frame.y + frame.height / 2, viewport.height / 2);
-    assert.ok(frame.x <= 0 && frame.y <= 0);
-    // Panning by the clipped offset exposes the original edge instead of a cropped file.
-    assert.equal(frame.x + -frame.x, 0);
+    assert.ok(frame.x >= 0 && frame.y >= 0);
+    const zoom = zoomImageView(INITIAL_IMAGE_VIEW, { x: viewport.width / 2, y: viewport.height / 2 }, Math.max(viewport.width / frame.width, viewport.height / frame.height));
+    assert.ok(frame.width * zoom.scale >= viewport.width - 1e-8);
+    assert.ok(frame.height * zoom.scale >= viewport.height - 1e-8);
+    assert.ok(zoom.x + frame.x * zoom.scale <= 1e-8);
+    assert.ok(zoom.y + frame.y * zoom.scale <= 1e-8);
   }
 });
 
-test("cover recomputes for resized stages and keeps unknown/loading sources finite", () => {
-  assert.deepEqual(coverImageFrame({ width: 300, height: 600 }, { width: 1200, height: 600 }), { x: -450, y: 0, width: 1200, height: 600 });
+test("initial fit recomputes for resized stages and keeps unknown/loading sources finite", () => {
+  assert.deepEqual(fitImageFrame({ width: 300, height: 600 }, { width: 1200, height: 600 }), { x: 0, y: 225, width: 300, height: 150 });
   for (const source of [{}, { width: NaN, height: 20 }, { width: 20, height: 0 }]) {
-    assert.deepEqual(coverImageFrame({ width: 300, height: 600 }, source), { x: 0, y: 0, width: 300, height: 600 });
+    assert.deepEqual(fitImageFrame({ width: 300, height: 600 }, source), { x: 0, y: 0, width: 300, height: 600 });
   }
-  assert.equal(coverImageFrame({ width: 0, height: 600 }, {}), null);
-  assert.equal(coverImageFrame({ width: 300, height: Infinity }, {}), null);
+  assert.equal(fitImageFrame({ width: 0, height: 600 }, {}), null);
+  assert.equal(fitImageFrame({ width: 300, height: Infinity }, {}), null);
 });
 
 const originalWindow = globalThis.window;

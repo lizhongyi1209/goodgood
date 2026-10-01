@@ -47,7 +47,7 @@ test("image canvas starts fitted without covering controls and retains keyboard 
   const html = renderToStaticMarkup(React.createElement(ImagePreviewCanvas, { name: "底图.png" }, React.createElement("span", { role: "status" }, "正在读取图片…")));
   assert.match(html, /translate\(0px,\s*0px\) scale\(1\)/);
   assert.doesNotMatch(html, /<button|role="group"|图片缩放/);
-  assert.match(html, /滚轮缩放；加减键缩放，0 填满画布，方向键移动/);
+  assert.match(html, /滚轮缩放；加减键缩放，0 适应画布，方向键移动/);
   assert.match(html, /正在读取图片/);
   assert.match(html, /tabindex="0"/);
 });

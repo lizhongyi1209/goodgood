@@ -1,12 +1,12 @@
 export const INITIAL_IMAGE_VIEW = Object.freeze({ scale: 1, x: 0, y: 0 });
 
 /** Keep the full source in the movable plane; clip only at the viewport. */
-export function coverImageFrame(viewport, source) {
+export function fitImageFrame(viewport, source) {
   if (![viewport.width, viewport.height].every((value) => Number.isFinite(value) && value > 0)) return null;
   if (![source.width, source.height].every((value) => Number.isFinite(value) && value > 0)) {
     return { x: 0, y: 0, width: viewport.width, height: viewport.height };
   }
-  const scale = Math.max(viewport.width / source.width, viewport.height / source.height);
+  const scale = Math.min(viewport.width / source.width, viewport.height / source.height);
   const width = source.width * scale;
   const height = source.height * scale;
   return { x: (viewport.width - width) / 2, y: (viewport.height - height) / 2, width, height };
