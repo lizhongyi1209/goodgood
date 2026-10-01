@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { AudioLines, ChevronLeft, Folder, ImageOff, Maximize2, Play, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { AudioLines, ChevronLeft, Folder, ImageOff, Maximize2, Pause, Play, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -17,6 +18,7 @@ import { listReferenceMaterials } from "@/features/references/http-reference-lib
 import { privateImageUrls } from "@/shared/private-image-urls.mjs";
 import { CanvasAssetAddCard } from "./canvas-asset-add-card";
 import { CANVAS_ASSET_LIBRARY_UPDATED_EVENT } from "./canvas-asset-upload";
+import { attachCanvasVideoPreviewPlayback, type CanvasVideoPreviewPlayback } from "./canvas-video-preview-playback.mjs";
 import styles from "./canvas-asset-panel.module.css";
 
 export type CanvasLibraryAsset = Readonly<{
@@ -40,50 +42,107 @@ type AssetPanelData = Readonly<{
 
 type MediaDimensions = Readonly<{ width: number; height: number }>;
 
-function VideoPreview({ src, onReady, onDimensions, onError }: Readonly<{
+function formatDuration(seconds: number | null) {
+  if (seconds === null || !Number.isFinite(seconds) || seconds < 0) return "--:--";
+  const whole = Math.floor(seconds);
+  const minutes = Math.floor(whole / 60);
+  const tail = String(whole % 60).padStart(2, "0");
+  return minutes >= 60
+    ? `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, "0")}:${tail}`
+    : `${String(minutes).padStart(2, "0")}:${tail}`;
+}
+
+function VideoPreview({ src, name, hovering, enabled, loaded, onReady, onDimensions, onError }: Readonly<{
   src: string;
+  name: string;
+  hovering: boolean;
+  enabled: boolean;
+  loaded: boolean;
   onReady: () => void;
   onDimensions: (dimensions: MediaDimensions) => void;
   onError: () => void;
 }>) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const playbackRef = useRef<CanvasVideoPreviewPlayback | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [duration, setDuration] = useState<number | null>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const playback = attachCanvasVideoPreviewPlayback(video, {
+      page: document, reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)"),
+    });
+    playbackRef.current = playback;
+    return () => { playbackRef.current = null; playback.dispose(); };
+  }, [src]);
+
+  useEffect(() => {
+    playbackRef.current?.setEnabled(enabled && loaded);
+    playbackRef.current?.setHovering(hovering);
+  }, [enabled, hovering, loaded, src]);
+
   const ready = (video: HTMLVideoElement) => {
     if (!video.seeking && video.readyState >= 2) onReady();
   };
 
-  return <video src={src} muted playsInline preload="metadata" onError={onError} aria-hidden="true"
-    onLoadedMetadata={(event) => {
-      const video = event.currentTarget;
-      if (video.videoWidth > 0 && video.videoHeight > 0) onDimensions({ width: video.videoWidth, height: video.videoHeight });
-      // A small real seek makes metadata-only thumbnails decode a frame without playing.
-      const firstFrame = Number.isFinite(video.duration) && video.duration > 0 ? Math.min(0.05, video.duration / 2) : 0.05;
-      try { video.currentTime = firstFrame; }
-      catch { ready(video); }
-    }}
-    onLoadedData={(event) => ready(event.currentTarget)}
-    onCanPlay={(event) => ready(event.currentTarget)}
-    onSeeked={(event) => ready(event.currentTarget)} />;
+  return <>
+    <video ref={videoRef} src={src} muted playsInline loop preload="metadata" onError={onError} aria-hidden="true"
+      onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)}
+      onClick={(event) => {
+        if (event.nativeEvent instanceof PointerEvent && event.nativeEvent.pointerType === "touch" && playing) playbackRef.current?.pause();
+      }}
+      onLoadedMetadata={(event) => {
+        const video = event.currentTarget;
+        if (video.videoWidth > 0 && video.videoHeight > 0) onDimensions({ width: video.videoWidth, height: video.videoHeight });
+        setDuration(Number.isFinite(video.duration) ? video.duration : null);
+        // A small real seek makes metadata-only thumbnails decode a frame without playing.
+        const firstFrame = Number.isFinite(video.duration) && video.duration > 0 ? Math.min(0.05, video.duration / 2) : 0.05;
+        try { video.currentTime = firstFrame; }
+        catch { ready(video); }
+      }}
+      onLoadedData={(event) => ready(event.currentTarget)}
+      onCanPlay={(event) => ready(event.currentTarget)}
+      onSeeked={(event) => ready(event.currentTarget)} />
+    {loaded && <>
+      <Button type="button" variant="ghost" size="icon-sm" className={styles.videoPlay} data-playing={playing || undefined}
+        data-asset-media-control draggable={false} disabled={!enabled} aria-label={`${playing ? "暂停" : "播放"} ${name}`}
+        onDoubleClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}
+        onClick={(event) => {
+          event.stopPropagation();
+          if (videoRef.current?.paused) playbackRef.current?.play(); else playbackRef.current?.pause();
+        }}>
+        {playing ? <Pause size={20} fill="currentColor" aria-hidden="true" /> : <Play size={20} fill="currentColor" aria-hidden="true" />}
+      </Button>
+      <span className={styles.videoDuration} data-playing={playing || undefined}>{formatDuration(duration)}</span>
+    </>}
+  </>;
 }
 
-function AssetVisual({ item, src, onError }: Readonly<{
+function AssetVisual({ item, src, hovering, playbackEnabled, expanded, onError }: Readonly<{
   item: CanvasLibraryAsset;
   src?: string;
+  hovering: boolean;
+  playbackEnabled: boolean;
+  expanded: boolean;
   onError: () => void;
 }>) {
   const [loaded, setLoaded] = useState(false);
   const [dimensions, setDimensions] = useState<MediaDimensions | null>(null);
-  const className = styles.thumbnail;
+  const className = `${styles.thumbnail} ${expanded ? styles.thumbnailExpanded : ""}`;
   const ratio = item.width && item.height && item.width > 0 && item.height > 0 ? item.width / item.height
     : dimensions ? dimensions.width / dimensions.height : 1;
+  const frameStyle = { aspectRatio: ratio, "--video-ratio": ratio } as CSSProperties;
 
   if (item.media === "audio") {
     return <span className={className}><AudioLines size={15} strokeWidth={1.7} aria-hidden="true" /></span>;
   }
   if (!src) {
-    return <span className={className} style={{ aspectRatio: ratio }}>
+    return <span className={className} style={frameStyle}>
       {item.media === "video" ? <Play size={15} aria-hidden="true" /> : <ImageOff size={15} aria-hidden="true" />}
     </span>;
   }
-  return <span className={className} style={{ aspectRatio: ratio }} data-loading={!loaded || undefined} aria-busy={!loaded}>
+  return <span className={className} style={frameStyle} data-loading={!loaded || undefined} aria-busy={!loaded}>
     {item.media === "image"
       ? <PrivateObjectImage src={src} alt="" loading="lazy" onError={onError}
           onLoad={(event) => {
@@ -91,23 +150,28 @@ function AssetVisual({ item, src, onError }: Readonly<{
             if (image.naturalWidth > 0 && image.naturalHeight > 0) setDimensions({ width: image.naturalWidth, height: image.naturalHeight });
             setLoaded(true);
           }} />
-      : <VideoPreview src={src} onReady={() => setLoaded(true)} onDimensions={setDimensions} onError={onError} />}
+      : <VideoPreview src={src} name={item.name} hovering={hovering} enabled={playbackEnabled} loaded={loaded}
+          onReady={() => setLoaded(true)} onDimensions={setDimensions} onError={onError} />}
     {!loaded && <span className={styles.mediaLoading} role="status">读取中…</span>}
   </span>;
 }
 
-function AssetMedia({ item, editing, onRename, onExpand, refreshVideo }: Readonly<{
+function AssetMedia({ item, editing, onRename, onExpand, expandRef, refreshVideo, expanded = false, playbackEnabled = true }: Readonly<{
   item: CanvasLibraryAsset;
   editing: boolean;
-  onRename: () => void;
-  onExpand: (trigger: HTMLButtonElement) => void;
+  onRename?: () => void;
+  onExpand?: (trigger: HTMLButtonElement) => void;
+  expandRef?: (trigger: HTMLButtonElement | null) => void;
   refreshVideo: (signal: AbortSignal) => Promise<string | null>;
+  expanded?: boolean;
+  playbackEnabled?: boolean;
 }>) {
   const fallbackUrl = item.media === "image" ? item.sourceUrl : undefined;
   const [phase, setPhase] = useState<"preview" | "content" | "failed">(item.previewUrl ? "preview" : fallbackUrl ? "content" : "failed");
   const [attempt, setAttempt] = useState(0);
   const [retrying, setRetrying] = useState(false);
   const [retryError, setRetryError] = useState<string | null>(null);
+  const [hovering, setHovering] = useState(false);
   const retryRef = useRef<AbortController | null>(null);
   const mountedRef = useRef(false);
   const src = phase === "preview" ? item.previewUrl : phase === "content" ? fallbackUrl : undefined;
@@ -147,18 +211,28 @@ function AssetMedia({ item, editing, onRename, onExpand, refreshVideo }: Readonl
   };
 
   const visualKey = `${src ?? "failed"}:${attempt}`;
+  const visual = <AssetVisual key={visualKey} item={item} src={src} hovering={hovering}
+    playbackEnabled={playbackEnabled && !editing} expanded={expanded} onError={mediaError} />;
   return <>
-    <div className={styles.visualFrame}>
-        <span className={styles.visualTrigger} tabIndex={editing ? -1 : 0} role="button" title={item.name}
+    <div className={expanded ? styles.videoPreviewFrame : styles.visualFrame}
+      onPointerEnter={(event) => { if (event.pointerType === "mouse" || event.pointerType === "pen") setHovering(true); }}
+      onPointerLeave={() => setHovering(false)}>
+      {expanded ? visual
+        : <span className={styles.visualTrigger} tabIndex={editing ? -1 : 0} role={item.media === "video" ? "group" : "button"} title={item.name}
           aria-label={`${item.media === "image" ? "图片" : item.media === "video" ? "视频" : "音频"} ${item.name}，双击或 F2 重命名`}
-          onDoubleClick={() => { if (!editing) onRename(); }}
-          onKeyDown={(event) => { if (!editing && ["F2", "Enter", " "].includes(event.key)) { event.preventDefault(); event.stopPropagation(); onRename(); } }}>
-          <AssetVisual key={visualKey} item={item} src={src} onError={mediaError} />
-        </span>
-      {item.media === "image" && <Button type="button" variant="ghost" size="icon-sm" className={styles.expand}
-        data-asset-media-control draggable={false} disabled={editing} aria-label={`查看大图 ${item.name}`} title="查看大图"
+          onDoubleClick={() => { if (!editing) onRename?.(); }}
+          onKeyDown={(event) => {
+            if (event.target === event.currentTarget && !editing && ["F2", "Enter", " "].includes(event.key)) {
+              event.preventDefault(); event.stopPropagation(); onRename?.();
+            }
+          }}>
+          {visual}
+        </span>}
+      {!expanded && item.media !== "audio" && <Button ref={expandRef} type="button" variant="ghost" size="icon-sm" className={styles.expand}
+        data-asset-media-control draggable={false} disabled={editing}
+        aria-label={`查看${item.media === "video" ? "视频" : "大图"} ${item.name}`} title={item.media === "video" ? "查看视频" : "查看大图"}
         onDoubleClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}
-        onClick={(event) => { event.stopPropagation(); onExpand(event.currentTarget); }}><Maximize2 size={15} aria-hidden="true" /></Button>}
+        onClick={(event) => { event.stopPropagation(); onExpand?.(event.currentTarget); }}><Maximize2 size={14} aria-hidden="true" /></Button>}
     </div>
     {failed && <div className={styles.mediaFailure} data-asset-media-control draggable={false}
       onDragStart={(event) => { event.preventDefault(); event.stopPropagation(); }}
@@ -168,6 +242,32 @@ function AssetMedia({ item, editing, onRename, onExpand, refreshVideo }: Readonl
         onClick={(event) => { event.stopPropagation(); void retry(); }}>重试</Button>
     </div>}
   </>;
+}
+
+function VideoViewer({ item, mediaRevision, refreshVideo, returnFocusTo, onClose }: Readonly<{
+  item: CanvasLibraryAsset;
+  mediaRevision: number;
+  refreshVideo: (signal: AbortSignal) => Promise<string | null>;
+  returnFocusTo: () => HTMLElement | null;
+  onClose: () => void;
+}>) {
+  return <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+    <DialogContent className={styles.videoDialog} overlayClassName={styles.videoOverlay} showCloseButton={false}
+      onEscapeKeyDown={(event) => { event.preventDefault(); event.stopPropagation(); onClose(); }}
+      onCloseAutoFocus={(event) => { event.preventDefault(); returnFocusTo()?.focus({ preventScroll: true }); }}
+      onKeyDown={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>
+      <DialogTitle className="sr-only">视频预览 {item.name}</DialogTitle>
+      <DialogDescription className="sr-only">悬停静音播放，播放按钮可手动播放或暂停。按 Escape 关闭。</DialogDescription>
+      <header className={styles.videoViewerHeader}>
+        <span title={item.name}>{item.name}</span>
+        <Button type="button" variant="ghost" size="icon-sm" className={styles.videoViewerClose} aria-label="关闭视频预览" onClick={onClose}>
+          <X size={16} aria-hidden="true" />
+        </Button>
+      </header>
+      <AssetMedia key={`${mediaRevision}:${item.previewUrl ?? ""}:${item.sourceUrl ?? ""}`} item={item} editing={false}
+        expanded refreshVideo={refreshVideo} />
+    </DialogContent>
+  </Dialog>;
 }
 
 export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragStart, onAssetDragEnd }: Readonly<{
@@ -191,10 +291,13 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
   const [nameError, setNameError] = useState<string | null>(null);
   const [renaming, setRenaming] = useState(false);
   const [imagePreview, setImagePreview] = useState<Readonly<{ selectedKey: string; returnFocusTo: HTMLElement }> | null>(null);
+  const [videoPreview, setVideoPreview] = useState<Readonly<{ selectedKey: string; returnFocusTo: HTMLElement }> | null>(null);
   const renamePendingRef = useRef(false);
   const cancelRenameRef = useRef(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const rowsRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const expandRefs = useRef(new Map<string, HTMLButtonElement>());
   const readEpochRef = useRef(0);
   const assetDragBlockedRef = useRef(false);
 
@@ -296,6 +399,7 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
           name: names.get(`audio:${item.id}`) ?? item.name, createdAt: item.uploadedAt, sourceUrl: item.url })),
       ].sort((left, right) => right.createdAt.localeCompare(left.createdAt));
       setData({ folders: organization.folders, arrangements: organization.arrangements, items, mediaRevision: readEpochRef.current });
+      setVideoPreview((current) => current && items.some((item) => item.media === "video" && `${item.kind}:${item.id}` === current.selectedKey) ? current : null);
       setReadState({ key: requestKey, loading: false, error: null });
     }).catch((cause: unknown) => {
       if (active) {
@@ -323,6 +427,7 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
     previewUrl: item.previewUrl ?? item.sourceUrl ?? "",
     sourceUrl: item.sourceUrl ?? item.previewUrl ?? "", width: item.width, height: item.height,
   }));
+  const previewVideo = videoPreview ? data?.items.find((item) => item.media === "video" && `${item.kind}:${item.id}` === videoPreview.selectedKey) : undefined;
 
   const refreshVideo = async (item: CanvasLibraryAsset, signal: AbortSignal): Promise<string | null> => {
     const epoch = readEpochRef.current;
@@ -388,7 +493,7 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
         <Button type="button" variant="ghost" size="sm" className={styles.back} onClick={() => setFolderId(null)} aria-label="返回全部资产"><ChevronLeft size={16} aria-hidden="true" />资产</Button>
         <span className={styles.folderTitle} title={activeFolder.name}>{activeFolder.name}</span>
       </> : <h2>资产</h2>}
-      <Button type="button" variant="ghost" size="icon-sm" className={styles.close} onClick={onClose} aria-label="关闭资产列表"><X size={16} aria-hidden="true" /></Button>
+      <Button ref={closeButtonRef} type="button" variant="ghost" size="icon-sm" className={styles.close} onClick={onClose} aria-label="关闭资产列表"><X size={16} aria-hidden="true" /></Button>
     </header>
 
     {!enabled ? <p className={styles.state}>演示模式暂不提供资产浏览。</p>
@@ -415,7 +520,12 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
                   onDragEnd={onAssetDragEnd}>
                   <AssetMedia key={`${data?.mediaRevision}:${item.previewUrl ?? ""}:${item.sourceUrl ?? ""}`}
                     item={item} editing={editing} onRename={() => beginRename(item)}
-                    onExpand={(trigger) => setImagePreview({ selectedKey: key, returnFocusTo: trigger })}
+                    expandRef={(trigger) => { if (trigger) expandRefs.current.set(key, trigger); else expandRefs.current.delete(key); }}
+                    playbackEnabled={!imagePreview && !previewVideo}
+                    onExpand={(trigger) => {
+                      if (item.media === "video") setVideoPreview({ selectedKey: key, returnFocusTo: trigger });
+                      else setImagePreview({ selectedKey: key, returnFocusTo: trigger });
+                    }}
                     refreshVideo={(signal) => refreshVideo(item, signal)} />
                   {editing ? <form className={styles.renameForm} onSubmit={(event) => { event.preventDefault(); void saveName(item); }}>
                     <Input ref={nameInputRef} autoFocus className={styles.nameInput} value={nameDraft} maxLength={255}
@@ -428,7 +538,7 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
                       }}
                       onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); cancelRenameRef.current = true; setEditingKey(null); setNameError(null); } }} />
                     {nameError && <span className={styles.nameError} role="alert">{nameError}</span>}
-                  </form> : item.media !== "image" && <span className={styles.mediaLabel}>{item.media === "video" ? "视频" : "音频"}</span>}
+                  </form> : item.media === "audio" && <span className={styles.mediaLabel}>音频</span>}
                 </div>;
               })}
             {!loading && !error && !activeFolder && !data?.folders.length && !visibleItems.length && <p className={styles.empty}>还没有资产</p>}
@@ -437,5 +547,11 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
         </ScrollArea>}
     {enabled && imagePreview && <ImageViewer items={previewImages} selectedKey={imagePreview.selectedKey} returnFocusTo={imagePreview.returnFocusTo}
       onSelect={(selectedKey) => setImagePreview((current) => current && ({ ...current, selectedKey }))} onClose={() => setImagePreview(null)} />}
+    {enabled && videoPreview && previewVideo && <VideoViewer item={previewVideo} mediaRevision={data?.mediaRevision ?? 0}
+      refreshVideo={(signal) => refreshVideo(previewVideo, signal)} onClose={() => setVideoPreview(null)}
+      returnFocusTo={() => {
+        const trigger = expandRefs.current.get(videoPreview.selectedKey) ?? videoPreview.returnFocusTo;
+        return trigger.isConnected ? trigger : closeButtonRef.current;
+      }} />}
   </section>;
 }
