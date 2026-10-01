@@ -1,5 +1,7 @@
 # 当前开发版本与跨窗口交接
 
+- 最新画布修正：[GG-273](tasks/GG-273-canvas-editor-inputs.md) `e7ae650/f51b6ba/b9ce4bf`：文档编辑器/H1-H3/一致圆点，生成器唯一接收端兼容图片文本和旧边；统一文件附件卡复用既有视频附件。30项相关检查、类型/lint/模块与必要构建通过；创建1/退役1，无新依赖/缓存。当前Web verified `b9ce4bf`，0060/云配置/唯一Worker保持，未部署，用户验收。
+
 - 最新账户/品牌：[GG-272](tasks/GG-272-account-created-and-brand-row.md) `c4b10b8`：个人信息新增真实只读创建时间（北京时间），桌面字标下移与项目标题同水平线、保留GG-271左侧对齐。22/22、局部lint/三个模块编译与必要Web构建通过，创建1/退役1、无子缓存；Web/5173为verified `c4b10b8`，0060/原云配置/唯一Worker保持，用户验收，未部署。
 
 - 日期：2026-10-01。
@@ -54,7 +56,7 @@ git worktree list --porcelain
 | 组件 | 入口 | 当前来源/用途 |
 | --- | --- | --- |
 | Vite 页面 | `http://127.0.0.1:5173` | GG-116当前分支含GG-242—265已交付范围，热更新 |
-| Node Web | `http://127.0.0.1:32131` | GG-116 verified `c4b10b8814d39bfa3c6b5160e2a90fe0c142aba8`；Vite `/api`代理目标，见GG-272 |
+| Node Web | `http://127.0.0.1:32131` | GG-116 verified `b9ce4bf88d4420f193d8fe42231de446f61c7135`；Vite `/api`代理目标，见GG-273 |
 | Worker | `http://127.0.0.1:32142/health/ready` | GG-226 `70e10c6` 的唯一真实开发 Worker；O1Key 请求可能计费 |
 | PostgreSQL | `127.0.0.1:54449/goodgood` | 本地隔离数据库，迁移 `0060`；新增授权来源，0059随机ID保持 |
 | Valkey | `127.0.0.1:56549/db0` | 本地队列/缓存 |

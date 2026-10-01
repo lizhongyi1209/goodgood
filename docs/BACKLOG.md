@@ -1,11 +1,11 @@
 # 当前任务与优先级
 
-> 最后同步：2026-10-01。GG-272创建时间与品牌标题对齐已进入5173/Web，22/22、lint/编译/必要构建通过，辅助目录已退役；GG-268/270及此前功能保留。verified Web `c4b10b8`、本地0060/原Worker保持，免费政策待用户，生产不变。
+> 最后同步：2026-10-01。GG-273按反馈完成编辑器样式/H1/H3/一致圆点、单一图片文本接收端及统一文件附件卡；30项相关检查、类型/lint/必要构建通过，创建1/退役1。Web `b9ce4bf`，保留GG-272及0060/原Worker，免费政策待用户，生产不变。
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
 | GG-272 / GG-262 | 已进入5173/Web：真实创建时间/北京时间、字标与标题同水平线；既有行内编辑/固定网格保持。22/22、lint/编译/必要构建通过，创建1/退役1 | [GG-272](tasks/GG-272-account-created-and-brand-row.md) / [GG-262](tasks/GG-262-profile-inline-edit-layout.md) |
-| GG-268 | 已进入5173/verified Web：可视化Markdown、选中格式栏/缩放排版、文本预览与前置提示词合并、多页保存；13/13、组合52/52、类型/lint/构建通过，创建1/退役1，用户验收 | [任务](tasks/GG-268-markdown-text-node.md) |
+| GG-268 / GG-273 | 已进入5173/Web：文档式编辑器/H1-H3/同样圆点、生成器单一图片文本端口、图片文本视频统一文件卡；旧边兼容与保存保持。GG-273相关30项/类型/lint/构建通过，创建1/退役1，用户验收 | [GG-268](tasks/GG-268-markdown-text-node.md) / [GG-273](tasks/GG-273-canvas-editor-inputs.md) |
 | GG-270 | 已进入5173：添加创建编号文件夹，文件夹右键改名，所有已保存素材右键删除；确认/失败恢复保持，子19/19、根组合52/52，创建1/退役1 | [任务](tasks/GG-270-canvas-asset-context-menu.md) |
 | GG-266 / GG-267 / GG-269 / GG-271 | 已进入5173：Good Good字标单独展示，尺寸与导航对齐后继见卡，最终标题位置由GG-272并行交付；源码/diff/编译证据保留，用户验收 | [GG-266](tasks/GG-266-geometric-good-good-wordmark.md) / [GG-267](tasks/GG-267-compact-lobby-wordmark.md) / [GG-269](tasks/GG-269-wordmark-only.md) / [GG-271](tasks/GG-271-wordmark-nav-alignment.md) |
 | GG-272 | 并行窗口：账户真实注册时间与品牌标题位置源码c4b10b8已精确进入；定向验证/Web同步及生命周期见其任务卡，归原窗口交付 | [任务](tasks/GG-272-account-created-and-brand-row.md) |
