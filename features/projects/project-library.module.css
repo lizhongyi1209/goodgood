@@ -34,6 +34,9 @@
 .card > :global(.project-cover) { aspect-ratio: 4 / 3; pointer-events: none; }
 .card > :global(.project-cover) img { transform: none; transition: transform 180ms ease; }
 .card > :global(.project-cover):hover img { transform: none; }
+.createCover:global(.project-cover) { display: grid; place-items: center; background: #ededee; color: #71717a; transition: background-color 180ms ease, color 180ms ease; }
+.card:has(.cardEntry:hover) .createCover,
+.card:has(.cardEntry:focus-visible) .createCover { background: #e9e9ec; color: #52525b; }
 .card[data-disabled="true"] > :global(.project-cover) { opacity: .62; }
 .cardEntry { position: absolute; z-index: 1; inset: 0; display: block; width: 100%; padding: 0; border: 0; border-radius: inherit; background: transparent; cursor: pointer; }
 .cardEntry:hover { background: transparent; }
@@ -61,7 +64,7 @@
 .confirm[data-slot="button"] { background: #18181b; color: #fff; }
 .preview button:focus-visible { outline: 2px solid #a1a1aa; outline-offset: -2px; }
 @media (prefers-reduced-motion: reduce) {
-  .card, .snapshot, .card > :global(.project-cover) img { transition: none; }
+  .card, .snapshot, .createCover, .card > :global(.project-cover) img { transition: none; }
   .card:has(.cardEntry:hover) .snapshot,
   .card:has(.cardEntry:focus-visible) .snapshot,
   .card:has(.cardEntry:hover) .creativeCover img,

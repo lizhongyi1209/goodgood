@@ -20,7 +20,7 @@ type Props = {
   projects: readonly ProjectRecord[]; canvasProjects: readonly CanvasProjectListItem[];
   ownerKey: string; workspaceId: string | null; loading: boolean; error: string | null;
   restoringId: string | null; busyProjectId: string | null;
-  onRetry: () => void; onCreate: () => void; onRestore: (project: ProjectRecord) => void;
+  onRetry: () => void; onRestore: (project: ProjectRecord) => void;
   onProjectUpdated: (project: Pick<ProjectRecord, "id" | "name" | "updatedAt">) => void;
   onProjectDeleted: (id: string) => void;
   onCanvasUpdated: (project: CanvasProjectListItem) => void;
@@ -79,12 +79,15 @@ export function ProjectLibrary(props: Props) {
     } finally { if (isCurrent()) setPending(false); }
   };
   return <section className={`project-library-view ${styles.library}`} aria-label="项目">
-    <header className="asset-library-header project-library-header"><div><h1>项目</h1><p>保存完整的创作过程，随时恢复并继续创作。</p></div><button type="button" className="new-creation-button" onClick={props.onCreate}><Plus size={16} />新建创作</button></header>
-    {props.loading ? <div className="project-library-state" role="status"><LoaderCircle size={18} />正在读取项目</div>
-      : props.projects.length === 0 && props.canvasProjects.length === 0 && !props.error ? <div className="project-library-state project-library-empty"><FolderOpen size={20} /><strong>还没有保存的项目</strong><span>打开画布或完成创作后，项目会出现在这里。</span></div>
-        : <>
-          {props.error && <div className="project-library-state project-library-error" role="alert"><CircleAlert size={18} /><span>{props.error}</span><button type="button" onClick={props.onRetry}><RefreshCw size={14} />重试</button></div>}
-          <div className={`project-grid ${styles.grid}`}>
+    <header className="asset-library-header project-library-header"><div><h1>项目</h1><p>保存完整的创作过程，随时恢复并继续创作。</p></div></header>
+    {!props.loading && props.error && <div className="project-library-state project-library-error" role="alert"><CircleAlert size={18} /><span>{props.error}</span><button type="button" onClick={props.onRetry}><RefreshCw size={14} />重试</button></div>}
+    <div className={`project-grid ${styles.grid}`}>
+      <article className={`project-card ${styles.card}`}>
+        <a className={styles.cardEntry} href="/canvas" aria-label="新建项目" />
+        <div className={`project-cover ${styles.createCover}`}><Plus size={28} strokeWidth={1.5} aria-hidden="true" /></div>
+        <div className="project-card-footer"><div><h2>新建项目</h2></div></div>
+      </article>
+      {!props.loading && <>
             {props.canvasProjects.map((project) => <article className={`project-card ${styles.card}`} key={`canvas-${project.id}`} data-disabled={pending || undefined}>
               <a className={styles.cardEntry} href={pending ? undefined : `/canvas/${encodeURIComponent(project.id)}`} aria-label={`打开画布项目 ${project.name}`} aria-disabled={pending || undefined} tabIndex={pending ? -1 : undefined} />
               <div className="project-cover canvas-project-cover"><CanvasProjectPreview project={project} ownerKey={props.ownerKey} /></div>
@@ -108,8 +111,10 @@ export function ProjectLibrary(props: Props) {
                 {restoring && <span className="project-local-status" role="status">正在恢复项目</span>}
               </article>;
             })}
-          </div>
-        </>}
+      </>}
+    </div>
+    {props.loading ? <div className="project-library-state" role="status"><LoaderCircle size={18} />正在读取项目</div>
+      : props.projects.length === 0 && props.canvasProjects.length === 0 && !props.error && <div className="project-library-state project-library-empty"><FolderOpen size={20} /><strong>还没有保存的项目</strong><span>打开画布或完成创作后，项目会出现在这里。</span></div>}
     {warning && <div className="project-library-state project-library-error" role="alert"><CircleAlert size={16} /><span>{warning}</span><button type="button" onClick={() => { setWarning(null); props.onRetry(); }}><RefreshCw size={14} />重试清理</button></div>}
     <Dialog open={target !== null} onOpenChange={(open) => { if (!open) close(); }}>
       <DialogContent className={styles.dialog} overlayClassName={styles.dialogOverlay} showCloseButton={!pending} onEscapeKeyDown={(event) => { if (pending) event.preventDefault(); }} onPointerDownOutside={(event) => { if (pending) event.preventDefault(); }}>
