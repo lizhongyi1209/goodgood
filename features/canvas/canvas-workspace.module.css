@@ -54,8 +54,8 @@
 .selectionToolbar [data-slot="button"]:disabled { opacity: 0.4; }
 
 .canvas :global(.react-flow__edge.animated .react-flow__edge-path) {
-  stroke-dasharray: 7 4;
-  animation: referenceEdgeFlow 1.3s linear infinite;
+  stroke-dasharray: none;
+  animation: none;
 }
 .canvas :global(.react-flow__edge .react-flow__edge-path) {
   transition: stroke 120ms ease;
@@ -63,6 +63,13 @@
 .canvas :global(.react-flow__edge:hover .react-flow__edge-path),
 .canvas :global(.react-flow__edge[data-canvas-edge-hovered="true"] .react-flow__edge-path) {
   stroke: #1687ff !important;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .canvas :global(.react-flow__edge.animated:hover .react-flow__edge-path),
+  .canvas :global(.react-flow__edge.animated[data-canvas-edge-hovered="true"] .react-flow__edge-path) {
+    stroke-dasharray: 7 4;
+    animation: referenceEdgeFlow 1.3s linear infinite;
+  }
 }
 @keyframes referenceEdgeFlow { to { stroke-dashoffset: -11; } }
 
