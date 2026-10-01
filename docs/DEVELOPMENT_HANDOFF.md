@@ -8,7 +8,7 @@
 
 ## GG-243 大厅并行工作
 
-本会话大厅目录为 `F:/goodgood-worktrees/GG-243-home`，分支 `feature/GG-243-home-project-card`，基于 GG-241 `f1570de`；[任务卡](tasks/GG-243-project-create-card.md) 登记子 agent、文件边界、验证和退役。项目页入口按 [ADR 0119](decisions/0119-project-create-card.md) 改为首位新建卡片，点击现有 `/canvas`。GG-242 画布会话继续拥有下表 5173 目录和运行配置，本会话只在大厅目录实现/验收。独立 UI 验收不更改原数据、Web/Worker 或生产。
+本会话大厅目录为 `F:/goodgood-worktrees/GG-243-home`，分支 `feature/GG-243-home-project-card`，基于 GG-241 `f1570de`，已验证代码 `f647e13`；[任务卡](tasks/GG-243-project-create-card.md) 登记子 agent、文件边界、验证和退役。项目页入口按 [ADR 0119](decisions/0119-project-create-card.md) 改为首位新建卡片，点击现有 `/canvas`。完整门禁 665 通过 / 22 隔离跳过 / 0 失败，子目录已退役。GG-242 画布会话继续拥有下表 5173 目录和运行配置，大厅增量尚未写入该目录；owner 收口后按任务卡精确整合。用户负责浏览器和预期验收，agent 只负责代码层开发/检查。
 
 ## 先确认源码
 
