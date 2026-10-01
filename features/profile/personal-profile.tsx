@@ -12,7 +12,22 @@ import {uploadReferenceFiles} from '@/features/references/http-reference-upload'
 import {listReferenceMaterials} from '@/features/references/http-reference-library';
 
 export type PersonalProfile={displayName:string;handle:string|null;avatarReferenceId:string|null;avatarUrl:string|null;version:number};
-type ProfileInput=Omit<PersonalProfile,'avatarUrl'|'handle'> & {handle:string};
+export type ProfileInput=Omit<PersonalProfile,'avatarUrl'|'handle'> & {handle:string};
+export function normalizeProfileInput(input:ProfileInput):ProfileInput {
+ const displayName=input.displayName.trim();
+ const handle=input.handle.trim().replace(/^@/,'').toLowerCase();
+ if(!/^[a-z0-9_]{3,24}$/.test(handle)) throw new Error('用户名需为 3–24 位字母、数字或下划线。');
+ if(!displayName||Array.from(displayName).length>30||/[\p{Cc}\p{Cf}]/u.test(displayName)) throw new Error('名称需为 1–30 个字符，不能包含控制字符。');
+ return {...input,displayName,handle};
+}
+export async function uploadProfileAvatar(file:File) {
+ if(!['image/jpeg','image/png'].includes(file.type)||file.size===0||file.size>20*1024*1024) throw new Error('请选择不超过 20 MB 的 JPG/JPEG 或 PNG 图片。');
+ const [reference]=await uploadReferenceFiles([{clientId:crypto.randomUUID(),file}],()=>{},null);
+ if(!reference||reference.reference.status!=='ready') throw new Error(reference?.reference.errorMessage??'头像上传失败，请重新选择图片。');
+ const material=(await listReferenceMaterials(null)).find(item=>item.id===reference.reference.id);
+ if(!material) throw new Error('头像暂时不可用，请重新上传。');
+ return material;
+}
 async function profileRequest(input?:ProfileInput):Promise<PersonalProfile> {
  const response=await goodGoodApiFetch('/api/profile',{cache:'no-store',...(input?{method:'PATCH',headers:{'content-type':'application/json','x-goodgood-profile-action':'1'},body:JSON.stringify(input)}:{})});
  const payload=await response.json() as PersonalProfile & {error?:{message?:string}};
@@ -24,17 +39,20 @@ export function usePersonalProfile(accountKey:string|null) {
  const [failure,setFailure]=useState<{key:string;message:string}|null>(null);
  const [revision,setRevision]=useState(0);
  const keyRef=useRef(accountKey);
+ const instanceRef=useRef({});
  useEffect(()=>{keyRef.current=accountKey;},[accountKey]);
  useEffect(()=>{
   if(!accountKey) return;
   let active=true;
-  void profileRequest().then(profile=>{if(active) {setRecord({key:accountKey,profile});setFailure(null);}}).catch(error=>{if(active) setFailure({key:accountKey,message:error instanceof Error?error.message:'个人资料暂时不可用。'});});
-  return ()=>{active=false;};
+  const read=()=>void profileRequest().then(profile=>{if(active) {setRecord({key:accountKey,profile});setFailure(null);}}).catch(error=>{if(active) setFailure({key:accountKey,message:error instanceof Error?error.message:'个人资料暂时不可用。'});});
+  const updated=(event:Event)=>{if((event as CustomEvent).detail!==instanceRef.current) setRevision(current=>current+1);};
+  read();window.addEventListener('goodgood:personal-profile-updated',updated);
+  return ()=>{active=false;window.removeEventListener('goodgood:personal-profile-updated',updated);};
  },[accountKey,revision]);
  const profile=record?.key===accountKey?record.profile:null;
  const error=failure?.key===accountKey?failure.message:null;
  const reload=useCallback(()=>{setRecord(null);setFailure(null);setRevision(current=>current+1);},[]);
- const save=async(input:ProfileInput)=>{const key=accountKey;const value=await profileRequest(input);if(key && keyRef.current===key) {setRecord({key,profile:value});setFailure(null);}return value;};
+ const save=async(input:ProfileInput)=>{const key=accountKey;const value=await profileRequest(input);if(key && keyRef.current===key) {setRecord({key,profile:value});setFailure(null);window.dispatchEvent(new CustomEvent('goodgood:personal-profile-updated',{detail:instanceRef.current}));}return value;};
  return {profile,error,loading:Boolean(accountKey&&!profile&&!error),reload,save};
 }
 
@@ -64,24 +82,20 @@ export function PersonalProfileView({state,works,worksLoading,worksError,onRetry
   setOpen(next);
  }
  async function upload(file:File) {
-  if(!['image/jpeg','image/png'].includes(file.type)||file.size>20*1024*1024) {setError('请选择不超过 20 MB 的 JPG/JPEG 或 PNG 图片。');return;}
   const request=++uploadRef.current;setUploading(true);setError(null);
   try {
-   const [reference]=await uploadReferenceFiles([{clientId:crypto.randomUUID(),file}],()=>{},null);
-   if(reference.reference.status!=='ready') throw new Error(reference.reference.errorMessage??'头像上传失败，请重新选择图片。');
-   const material=(await listReferenceMaterials(null)).find(item=>item.id===reference.reference.id);
-   if(!material) throw new Error('头像暂时不可用，请重新上传。');
+   const material=await uploadProfileAvatar(file);
    if(uploadRef.current===request) {setAvatarId(material.id);setAvatarUrl(material.url);}
   } catch(failure) {if(uploadRef.current===request) setError(failure instanceof Error?failure.message:'头像上传失败。');}
   finally {if(uploadRef.current===request) setUploading(false);}
  }
  async function submit(event:FormEvent) {
   event.preventDefault();if(!profile||busy||uploading) return;
-  const value=handle.trim().replace(/^@/,'').toLowerCase();
-  if(!/^[a-z0-9_]{3,24}$/.test(value)) {setError('用户名需为 3–24 位字母、数字或下划线。');return;}
-  if(!name.trim()||Array.from(name.trim()).length>30) {setError('名称需为 1–30 个字符。');return;}
+  let input:ProfileInput;
+  try {input=normalizeProfileInput({displayName:name,handle,avatarReferenceId:avatarId,version:profile.version});}
+  catch(failure) {setError(failure instanceof Error?failure.message:'请检查个人资料。');return;}
   setBusy(true);setError(null);
-  try {await state.save({displayName:name.trim(),handle:value,avatarReferenceId:avatarId,version:profile.version});setOpen(false);setSaved(true);} catch(failure) {setError(failure instanceof Error?failure.message:'保存失败，请重试。');} finally {setBusy(false);}
+  try {await state.save(input);setOpen(false);setSaved(true);} catch(failure) {setError(failure instanceof Error?failure.message:'保存失败，请重试。');} finally {setBusy(false);}
  }
  return <section className="personal-profile-view" aria-label="个人资料"><h1 className="profile-page-title">个人资料</h1>
   {!profile?<ProfileReadState loading={state.loading} error={state.error} onRetry={state.reload}/>:<header className="profile-heading"><ProfileAvatar url={profile.avatarUrl} name={profile.displayName}/><div className="profile-identity"><h2>{profile.displayName}</h2><p>{profile.handle?`@${profile.handle}`:'设置你的 @用户名'}</p><span>仅自己可见</span></div>

@@ -51,7 +51,7 @@ export function AccountManagementPanels({ onProfileClick, onAccountChange }: Pic
           </button>
         </aside>
         <div className="credit-usage-content">
-          {section === "information" ? <PersonalInformationPanel onEdit={onProfileClick} /> : <CreditActivityView enabled onAccountChange={onAccountChange} variant="dialog" />}
+          {section === "information" ? <PersonalInformationPanel /> : <CreditActivityView enabled onAccountChange={onAccountChange} variant="dialog" />}
         </div>
   </>;
 }
