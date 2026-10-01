@@ -1760,7 +1760,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
           } else if (saved.asset?.kind === "reference") {
             previewUrl = privateImageUrls("reference", saved.asset.id).contentUrl;
           } else if (saved.asset?.kind === "generated") {
-            previewUrl = await readAssetDownloadUrl(saved.asset.id, null).catch(() => "");
+            previewUrl = privateImageUrls("asset", saved.asset.id).contentUrl;
           } else if (saved.asset?.kind === "video") {
             previewUrl = videoMaterials.find((item) => item.id === saved.asset?.id)?.url ?? "";
           }
