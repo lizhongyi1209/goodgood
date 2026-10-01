@@ -69,6 +69,7 @@ export function hashGenerationInput(input) {
         ...(input.catalogModelId ? { catalogModelId: input.catalogModelId } : {}),
         outputFormat: modelOptions.outputFormat,
         projectId: input.projectId ?? null,
+        ...(input.canvasProjectId ? { canvasProjectId: input.canvasProjectId } : {}),
         prompt: input.prompt,
         ...(input.composerPrompt ? { composerPrompt: input.composerPrompt } : {}),
         references: input.references.map(({ id, name }, index) => ({
@@ -115,6 +116,7 @@ export function generationInputFromRow(row, referenceUrls = new Map()) {
     outputFormat:
       row.output_format ?? (isGptImageModelId(row.model_id) ? "jpeg" : "png"),
     projectId: row.project_id ?? null,
+    ...(row.canvas_project_id ? { canvasProjectId: row.canvas_project_id } : {}),
     prompt: row.prompt,
     references: (row.reference_snapshot ?? []).map((reference) => ({
       id: reference.id,
@@ -143,6 +145,7 @@ export function persistedGenerationInputFromRow(row) {
     outputFormat:
       row.output_format ?? (isGptImageModelId(row.model_id) ? "jpeg" : "png"),
     projectId: row.project_id ?? null,
+    ...(row.canvas_project_id ? { canvasProjectId: row.canvas_project_id } : {}),
     prompt: row.prompt,
     references: (row.reference_snapshot ?? []).map((reference) => ({
       id: reference.id,
@@ -197,6 +200,7 @@ const JOB_SELECT = `
   SELECT j.*,
          b.prompt,
          b.project_id,
+         b.canvas_project_id,
          b.reference_snapshot,
          b.model_id,
          b.image_line,
@@ -370,6 +374,24 @@ export async function findOrganizationAsset(
   return result.rows[0] ?? null;
 }
 
+export async function requireCanvasGenerationProject(client, { ownerId, workspaceId, canvasProjectId }) {
+  const result = await client.query(
+    `SELECT canvas.id, canvas.name FROM canvas_projects canvas
+      WHERE canvas.id = $1 AND canvas.workspace_id = $2 AND canvas.owner_id = $3
+        AND NOT EXISTS (
+          SELECT 1 FROM canvas_project_deletions deleted
+           WHERE deleted.project_id = canvas.id AND deleted.workspace_id = canvas.workspace_id
+             AND deleted.owner_id = canvas.owner_id
+        )
+      FOR SHARE OF canvas`,
+    [canvasProjectId, workspaceId, ownerId],
+  );
+  if (!result.rowCount) {
+    throw new GenerationPersistenceError("CANVAS_PROJECT_NOT_FOUND", "未找到可用的画布项目，请刷新后重试。", 404);
+  }
+  return result.rows[0];
+}
+
 export async function createGenerationJob(
   pool,
   {
@@ -438,6 +460,16 @@ export async function createGenerationJob(
     if (input.projectId || input.references.length) {
       await lockReferenceLifecycle(client);
     }
+
+    let sourceProjectName = null;
+    if (input.canvasProjectId) {
+      if (input.projectId || input.routingPolicy !== "canvas-image-v1") {
+        throw new GenerationPersistenceError("INVALID_PROJECT_CONTEXT", "生成请求的项目来源不一致。", 400);
+      }
+      const canvasProject = await requireCanvasGenerationProject(client, { ownerId, workspaceId: workspace.id,
+        canvasProjectId: input.canvasProjectId });
+      sourceProjectName = canvasProject.name;
+    }
     if (input.references.length) {
       const currentReferences = await findReadyReferences(client, {
         lock: true,
@@ -461,7 +493,7 @@ export async function createGenerationJob(
     let projectComposerPrompt = input.composerPrompt ?? input.prompt;
     if (input.projectId) {
       const project = await client.query(
-        `SELECT id, prompt FROM projects
+        `SELECT id, prompt, name FROM projects
           WHERE id = $1 AND workspace_id = $2 AND creator_owner_id = $3
             AND status = 'active'
           FOR UPDATE`,
@@ -474,6 +506,7 @@ export async function createGenerationJob(
           404,
         );
       }
+      sourceProjectName = project.rows[0].name;
       if (retryOfJobId && !input.composerPrompt) {
         projectComposerPrompt = promptContextForRetry(input.prompt, project.rows[0].prompt ?? "");
       }
@@ -520,6 +553,10 @@ export async function createGenerationJob(
         input.routingPolicy ?? null,
       ],
     );
+    if (input.projectId || input.canvasProjectId) {
+      await client.query("UPDATE generation_batches SET canvas_project_id = $2, source_project_name = $3 WHERE id = $1",
+        [batchId, input.canvasProjectId ?? null, sourceProjectName]);
+    }
     if (input.projectId) {
       await client.query(
         `UPDATE projects

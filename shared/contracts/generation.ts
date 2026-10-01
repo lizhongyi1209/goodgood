@@ -119,6 +119,7 @@ export type GenerationInputDraft = {
   background?: GptImageBackground;
   outputFormat?: GptImageOutputFormat;
   projectId?: string | null;
+  canvasProjectId?: string | null;
 };
 
 export type GenerationInputSnapshot = Readonly<{
@@ -141,6 +142,7 @@ export type GenerationInputSnapshot = Readonly<{
   background?: GptImageBackground;
   outputFormat?: GptImageOutputFormat;
   projectId?: string | null;
+  canvasProjectId?: string | null;
 }>;
 
 export type GenerationOutput = Readonly<{

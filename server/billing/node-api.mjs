@@ -111,6 +111,7 @@ export function createBillingNodeApiHandler({
                 cursor: url.searchParams.get("cursor"),
                 filter: url.searchParams.get("filter") ?? "all",
                 limit: url.searchParams.get("limit") ?? undefined,
+                ...(url.searchParams.has("view") ? { view: url.searchParams.get("view") } : {}),
               },
               ownerContext,
             }),

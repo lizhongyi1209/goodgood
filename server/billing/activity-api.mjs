@@ -7,6 +7,7 @@ import {
 } from "./activity-repository.mjs";
 
 const FILTERS = new Set(["all", "spend", "receive", "return"]);
+const VIEWS = new Set(["ledger", "usage"]);
 const ACTIVITY_ID_PATTERN = /^act_[0-9a-f]{32}$/;
 
 const DEFAULT_REPOSITORY = Object.freeze({
@@ -28,12 +29,12 @@ function requireOwner(ownerContext) {
   return ownerContext.ownerId;
 }
 
-function encodeCursor(cursor, filter) {
+function encodeCursor(cursor, filter, view) {
   if (!cursor) return null;
-  return Buffer.from(JSON.stringify({ ...cursor, filter }), "utf8").toString("base64url");
+  return Buffer.from(JSON.stringify({ ...cursor, filter, ...(view === "usage" ? { view } : {}) }), "utf8").toString("base64url");
 }
 
-function decodeCursor(value, filter) {
+function decodeCursor(value, filter, view) {
   if (value === null || value === undefined || value === "") return null;
   if (typeof value !== "string" || value.length < 4 || value.length > 500) {
     throw requestError("分页标识无效，请刷新后重试。");
@@ -43,6 +44,7 @@ function decodeCursor(value, filter) {
     if (
       !cursor ||
       cursor.filter !== filter ||
+      (cursor.view ?? "ledger") !== view ||
       !ACTIVITY_ID_PATTERN.test(cursor.activityId) ||
       typeof cursor.createdAt !== "string" ||
       Number.isNaN(Date.parse(cursor.createdAt))
@@ -73,15 +75,19 @@ function publicAccount(account) {
 
 function readInput(input = {}) {
   const filter = input.filter ?? "all";
+  const view = input.view ?? "ledger";
   if (!FILTERS.has(filter)) throw requestError("积分记录筛选无效。");
+  if (!VIEWS.has(view)) throw requestError("积分记录视图无效。");
   const limit = input.limit === undefined || input.limit === "" ? 20 : Number(input.limit);
-  if (!Number.isInteger(limit) || limit < 1 || limit > 50) {
-    throw requestError("每页记录数必须在 1 到 50 之间。");
+  const maximum = view === "usage" ? 20 : 50;
+  if (!Number.isInteger(limit) || limit < 1 || limit > maximum) {
+    throw requestError(`每页记录数必须在 1 到 ${maximum} 之间。`);
   }
   return {
-    cursor: decodeCursor(input.cursor, filter),
+    cursor: decodeCursor(input.cursor, filter, view),
     filter,
     limit,
+    view,
   };
 }
 
@@ -109,7 +115,7 @@ export async function readCreditActivities({
   return {
     account: publicAccount(account),
     items: activities.items,
-    nextCursor: encodeCursor(activities.next, query.filter),
+    nextCursor: encodeCursor(activities.next, query.filter, query.view),
     spendSummary,
   };
 }
@@ -182,7 +188,9 @@ export function readPreviewCreditActivities({ input = {} } = {}) {
       unit: "credit-cny-cent",
       version: "4",
     },
-    items: PREVIEW_ITEMS.filter((item) => previewMatches(item, query.filter)).slice(0, query.limit),
+    items: PREVIEW_ITEMS.filter((item) => (query.view !== "usage" || !["released", "refunded"].includes(item.status)) &&
+      previewMatches(item, query.filter)).slice(0, query.limit).map((item) => ({ ...item,
+        taskId: null, projectId: null, projectName: null, modelName: null })),
     nextCursor: null,
     spendSummary: {
       thisMonth: "60",

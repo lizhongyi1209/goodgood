@@ -54,12 +54,20 @@ export function validateM3GenerationInput(payload) {
   const references = Array.isArray(payload.references) ? payload.references : [];
   validateReferenceIds(references);
   const projectId = payload.projectId ?? null;
+  const canvasProjectId = payload.canvasProjectId ?? null;
   if (
     projectId !== null &&
     (typeof projectId !== "string" ||
       !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(projectId))
   ) {
     throw new GenerationRequestError("PROJECT_NOT_FOUND", "未找到该项目。", 404);
+  }
+  if (canvasProjectId !== null && (typeof canvasProjectId !== "string" ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(canvasProjectId))) {
+    throw new GenerationRequestError("CANVAS_PROJECT_NOT_FOUND", "未找到该画布项目。", 404);
+  }
+  if (canvasProjectId && (projectId || payload.routingPolicy !== "canvas-image-v1")) {
+    throw new GenerationRequestError("INVALID_PROJECT_CONTEXT", "生成请求的项目来源不一致。");
   }
   if (payload.catalogModelId !== undefined && (typeof payload.catalogModelId !== "string" || !/^[a-z0-9][a-z0-9._-]{1,79}$/.test(payload.catalogModelId))) throw new GenerationRequestError("INVALID_MODEL", "模型标识无效。");
   if (payload.expectedPriceVersion !== undefined && (!Number.isSafeInteger(payload.expectedPriceVersion) || payload.expectedPriceVersion < 1)) throw new GenerationRequestError("INVALID_QUOTE", "报价版本无效。");
@@ -114,6 +122,7 @@ export function validateM3GenerationInput(payload) {
     ...(payload.expectedPriceVersion ? { expectedPriceVersion: payload.expectedPriceVersion } : {}),
     ...(payload.catalogModelId ? { catalogModelId: payload.catalogModelId } : {}),
     ...(projectId ? { projectId } : {}),
+    ...(canvasProjectId ? { canvasProjectId } : {}),
     prompt,
     ...(composerPrompt ? { composerPrompt } : {}),
     references: references.map((reference) => ({ id: reference.id })),

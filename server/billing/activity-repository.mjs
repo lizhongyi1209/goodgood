@@ -58,11 +58,19 @@ function activityTrace(row) {
     return {
       batchReference: row.image_job_id,
       category: "image_generation",
+      taskId: row.image_job_id,
+      projectId: row.activity_project_id ?? null,
+      projectName: row.activity_project_name ?? null,
+      modelName: row.generation_model_name ?? null,
     };
   }
   return {
     batchReference: metadataBatchReference(row.metadata),
     category: metadataActivityCategory(row.metadata),
+    taskId: null,
+    projectId: null,
+    projectName: null,
+    modelName: null,
   };
 }
 
@@ -173,7 +181,7 @@ async function resolveCursor(pool, { activityId, createdAt }, ownerId) {
 
 export async function listCreditActivities(
   pool,
-  { cursor = null, filter = "all", limit = 20, ownerId },
+  { cursor = null, filter = "all", limit = 20, ownerId, view = "ledger" },
 ) {
   const resolvedCursor = cursor ? await resolveCursor(pool, cursor, ownerId) : null;
   const result = await pool.query(
@@ -182,7 +190,12 @@ export async function listCreditActivities(
             account.unit,
             closing.entry_type AS close_entry_type,
             closing.created_at AS closed_at,
-            job.id AS image_job_id
+            job.id AS image_job_id,
+            COALESCE(project.id, canvas.id) AS activity_project_id,
+            CASE WHEN COALESCE(project.id, canvas.id) IS NOT NULL
+              THEN COALESCE(batch.source_project_name, project.name, canvas.name)
+            END AS activity_project_name,
+            batch.catalog_model_name AS generation_model_name
        FROM credit_ledger_entries entry
        JOIN credit_accounts account
          ON account.id = entry.account_id AND account.owner_id = entry.owner_id
@@ -195,9 +208,22 @@ export async function listCreditActivities(
        ) closing ON entry.entry_type = 'reserve'
        LEFT JOIN generation_jobs job
          ON job.id = entry.related_job_id AND job.owner_id = entry.owner_id
+       LEFT JOIN generation_batches batch
+         ON batch.id = job.batch_id AND batch.workspace_id = job.workspace_id
+           AND batch.creator_owner_id = entry.owner_id
+       LEFT JOIN projects project
+         ON project.id = batch.project_id AND project.workspace_id = batch.workspace_id
+           AND project.creator_owner_id = entry.owner_id
+       LEFT JOIN canvas_projects canvas
+         ON canvas.id = batch.canvas_project_id AND canvas.workspace_id = batch.workspace_id
+           AND canvas.owner_id = entry.owner_id
       WHERE entry.owner_id = $1
         AND entry.reason <> 'credit_unit_exchange'
         AND entry.entry_type IN ('grant', 'reserve', 'refund', 'expire', 'adjust', 'transfer_out', 'transfer_in')
+        AND (NOT $6::boolean OR (
+          entry.entry_type <> 'refund'
+          AND NOT (entry.entry_type = 'reserve' AND COALESCE(closing.entry_type, 'open') = 'release')
+        ))
         AND (
           $2::text = 'all'
           OR ($2 = 'spend' AND (
@@ -228,6 +254,7 @@ export async function listCreditActivities(
       resolvedCursor?.created_at ?? null,
       resolvedCursor?.id ?? null,
       limit + 1,
+      view === "usage",
     ],
   );
   const hasMore = result.rows.length > limit;

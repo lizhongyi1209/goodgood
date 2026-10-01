@@ -136,6 +136,10 @@ export interface CreditActivityItem {
   status: CreditActivityStatus;
   category: CreditActivityCategory;
   batchReference: string | null;
+  taskId?: string | null;
+  projectId?: string | null;
+  projectName?: string | null;
+  modelName?: string | null;
   amount: SerializedCreditAmount;
   creditAmount: SerializedCreditAmount;
   unit: string;

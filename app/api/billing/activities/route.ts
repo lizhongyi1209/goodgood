@@ -24,6 +24,7 @@ function inputFrom(request: Request) {
     cursor: search.get("cursor"),
     filter: search.get("filter") ?? "all",
     limit: search.get("limit") ?? undefined,
+    ...(search.has("view") ? { view: search.get("view") } : {}),
   };
 }
 
