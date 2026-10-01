@@ -10,6 +10,19 @@ unless the user explicitly delegates it, or block development delivery waiting
 for manual acceptance. Record implemented, code-verified, user-accepted and
 deployed states separately; tests and service health do not prove user acceptance.
 
+## GG-244 asset hover and node-style video verification
+
+Agent scope is source review, targeted code verification and one stable local gate;
+browser acceptance belongs to the user. Review hover/focus-visible separation,
+independent play/view/rename/drag actions, ratio/metadata, loading/failure/retry,
+private URL refresh and Dialog close/focus restoration. Verify playback lifecycle
+with isolated code tests where available: hover/canplay, pause on leave/visibility,
+reduced motion/manual action, rejected or late play promises and listener cleanup.
+Do not add tests that mirror CSS sizes or run real uploads/provider requests.
+The user checks the smaller hover-only controls, no external video label, node-style
+preview, hover playback and image/video opening. Results belong in the task card;
+code checks do not establish visual or product acceptance.
+
 ## GG-238 explicit asset image viewing acceptance
 
 Keep source/diff-only canvas delivery; no install/tests/check:local/typecheck/build/browser/API/service/data/provider operation. Static review covers Radix asChild selector correctness, one/two-column square addition/masonry, independent expand controls, no nested button or drag/rename interference, scoped image order, original-resolution contain rendering, wheel/arrow limits and cleanup, modal Escape/trigger focus return, loading/failure/retry and reduced motion. Manual acceptance: compare addition tile width/height, hover without popup, expand a middle image, scroll/click/arrow to neighbors and boundaries, close to the existing canvas, retry a failed image, and check the shared uploaded-image asset-page viewer while generated metadata and video/audio previews retain their existing paths. Definitions/review are not executed or authenticated acceptance. See [task](tasks/GG-238-canvas-asset-viewer.md).

@@ -1,6 +1,6 @@
 # GG-244 — 画布资产 hover 按钮与视频预览
 
-- 状态：实施中
+- 状态：开发与代码验证完成，待用户浏览器验收
 - 用户需求：交给子 agent；画布打开资产后，图片与视频右上按钮仅 hover 出现并稍小，去掉视频下方文字，保留 hover 播放；预览样式参考画布视频节点。
 - 最后更新：2026-10-01
 - 分支 / worktree：`fix/GG-244-canvas-asset-hover` / `F:/goodgood-worktrees/GG-116`
@@ -18,21 +18,21 @@
 ## 实现与证据
 
 - 初始检查：资产面板图片按钮为 28px 常驻，视频只有静态首帧且下方显示「视频」；画布视频节点已有 hover 静音播放及播放/时长覆盖样式。
-- 已完成：基线祖先及干净状态核对，独立任务分支，范围与 ADR。
-- 验证：尚未执行本任务代码验证；集成后执行相关定向检查及一次 `npm run check:local`，不执行浏览器验收。
+- 已完成：子源提交 `b3f41ea`、测试补充 `b80fa64` 精确回放为 `be84c53`、`9d7d18c`，五个代码文件与子分支一致；24px hover 查看入口、无视频外置标签、节点式卡内/明确视频预览已进入当前 5173。
+- 验证：子与根集成目录的播放生命周期定向检查均 9/9；源码/差异审阅通过。稳定源码一次 `npm run check:local` 通过：lint 0 错误/129 条已有警告，类型/构建通过，696 项测试中 674 通过、22 隔离跳过、0 失败。5173 编译模块 HTTP 200 且包含节点式视频预览；没有执行浏览器验收。
 - 发布：未发布。
 
 ## 并行与 worktree 收口
 
 - 子 agent：`asset_hover`，源码实现；根 agent 负责文档、集成目录、审查、验证及退役。
 - 子分支 / 路径：`fix/GG-244-asset-hover-agent` / `F:/goodgood-worktrees/GG-244-asset-hover`，从登记后的本任务检查点创建。
-- 文件边界：子 agent 拥有 `features/canvas/canvas-asset-panel.tsx` 与 `features/canvas/canvas-asset-panel.module.css`；如需小型视频组件/播放 helper 与行为测试，先报告具体文件。根 agent 拥有任务卡、ADR、专题文档和入口/交接文档。
+- 文件边界：子 agent 拥有 `features/canvas/canvas-asset-panel.tsx` 与 `features/canvas/canvas-asset-panel.module.css`，另经根批准新增 `features/canvas/canvas-video-preview-playback.mjs`、同名 `.d.mts` 与 `tests/gg244-canvas-video-preview-playback.test.mjs`，用于纯播放生命周期及隔离事件测试。根 agent 拥有任务卡、ADR、专题文档和入口/交接文档。
 - 依赖/构建缓存：子 worktree 默认不安装依赖、不构建、不启动服务，不进行浏览器/API/provider 验收；根复用唯一当前集成目录做代码验证。
 - 退役条件：子提交已审查并精确集成，确认干净、无运行进程与缓存后使用 `git worktree remove`，再 prune；dirty 不强删。
-- 收口：计划创建 1，实际创建/退役数待记录。
+- 收口：创建 1，退役 1；子目录源码精确集成、完整门禁通过，确认干净、无忽略缓存/运行进程后以 `git worktree remove` 退役并 prune。历史 branch/commit 保留，未安装子依赖或构建。
 
 ## 恢复工作
 
-- 尚未完成：子实现、集成与代码验证、子 worktree 退役；用户后续浏览器验收。
+- 尚未完成：用户浏览器验收；代码开发、验证、集成与子 worktree 退役均完成。
 - 阻塞/风险：无。
-- 下一步：创建已登记子 worktree 并委托上述源码范围。
+- 下一步：用户刷新资产栏验收 hover 小按钮及节点式视频预览；后续开发保留本检查点。
