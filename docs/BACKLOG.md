@@ -4,7 +4,7 @@
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
-| GG-246 | 已接入实际 5173：大厅视频默认暂停、中心播放提示，仅 mouse hover 预览；定向 11/11，完整门禁待收口 | [任务](tasks/GG-246-asset-video-hover.md) |
+| GG-246 | 已接入实际 5173：大厅视频默认暂停、中心播放提示，仅 mouse hover 预览；定向 31/31、共同门禁 685/22/0、辅助目录退役，用户验收 | [任务](tasks/GG-246-asset-video-hover.md) |
 | GG-245 | 诊断完成：公开 JPEG 无 CORS 授权，拟新增受鉴权图片读取；待写 worktree | [任务](tasks/GG-245-canvas-image-link-read.md) |
 | GG-244 | 已接入当前 5173，定向 9/9，完整门禁 674/22/0；子目录退役，用户验收 | [任务](tasks/GG-244-canvas-asset-hover.md) |
 | GG-243 | 已接入实际 5173：首位新建卡片直接进入新画布；共同门禁 665/22/0、定向 14/14，辅助目录已退役，用户验收 | [任务](tasks/GG-243-project-create-card.md) |

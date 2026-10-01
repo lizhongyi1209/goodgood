@@ -1,13 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-01
-- Current phase: GG-246 大厅视频 hover 已接入实际 5173，完整代码门禁待收口；GG-244 完成，GG-245 链接读取并行推进；生产仍为 GG-098 应用和 GG-100 单槽 Compose。
+- Current phase: GG-246 大厅视频 hover 已接入实际 5173，代码验证与辅助目录退役完成；GG-244 保留，GG-245 链接读取并行推进；生产仍为 GG-098 应用和 GG-100 单槽 Compose。
 - Current objective: 恢复 GG-245 的正常公开图片链接添加，更新旧 browser-only 决定后交子 agent 实现，根集成验证与必要的本地 Web 同步；浏览器和产品验收由用户完成。
 - Previous objective: GG-244 资产 hover 小按钮、无视频外置文字与节点式视频预览已进入实际 5173。
 
 ## Current checkpoint
 
-- Task [GG-246](tasks/GG-246-asset-video-hover.md)：子提交 `c563d98`/根回放 `ec51488` 已整合到实际 `F:/goodgood-worktrees/GG-116`，基于 GG-244 收口 `dd8dca9`，仅修改大厅资产视频。定向 11/11，完整共同门禁待完成；子辅助目录已退役，根辅助目录待收口。不改变 GG-245 并行任务。
+- Task [GG-246](tasks/GG-246-asset-video-hover.md)：子提交 `c563d98`/根回放 `ec51488` 已整合为 `83a4306`，实际目录 `F:/goodgood-worktrees/GG-116`，基于 GG-244 收口 `dd8dca9`，仅修改大厅资产视频。定向 31/31、一次完整共同门禁 685 通过/22 隔离跳过/0 失败；5173 编译模块 HTTP 200 含新接线；辅助目录创建 2/退役 2。不改变 GG-245 并行任务。
 - Task [GG-244](tasks/GG-244-canvas-asset-hover.md)：分支 `fix/GG-244-canvas-asset-hover` 基于 `86ee3b7`；子提交精确回放 `be84c53`、`9d7d18c`，定向 9/9、完整门禁 674/22/0；子目录创建 1/退役 1，沿用 GG-242/243 与云配置。
 - Task [GG-245](tasks/GG-245-canvas-image-link-read.md)：只读诊断完成；有效 cafe24 JPEG 缺少 CORS 授权，需要受鉴权、公开地址固定解析和有界图片读取。写实现从 GG-244 收口后隔离分支开始。
 - Task [GG-243](tasks/GG-243-project-create-card.md)：独立实现 `f647e13` 及其记录分支已整合到 `F:/goodgood-worktrees/GG-116`；基线为 GG-242 收口 `00f7568`。首位新建卡片取代页头按钮，复用 `/canvas` 新建流程；不修改画布源码。
