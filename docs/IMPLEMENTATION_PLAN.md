@@ -2,11 +2,12 @@
 
 - Last synchronized: 2026-10-01
 - Current phase: GG-243 首位新建项目卡片已整合到实际 5173 目录，保留 GG-242 图片修复和云素材配置；生产仍为 GG-098 应用和 GG-100 单槽 Compose。
-- Current objective: GG-242/GG-243 共同检查点开发与代码验证完成，保持实际 5173 页面可验收；浏览器和产品验收由用户完成。
+- Current objective: GG-246 大厅资产页 hover 视频预览在独立目录开发；并行画布会话继续收口，最终接入实际 5173 后做代码验证，浏览器和产品验收由用户完成。
 - Previous objective: GG-243 独立分支已通过代码门禁，但遗漏接入 5173；本轮修正交付整合。
 
 ## Current checkpoint
 
+- Task [GG-246](tasks/GG-246-asset-video-hover.md)：从 verified `86ee3b7` 建隔离根/子分支，默认暂停与中心播放图标修订见 ADR 0121。当前独立实现尚未接入 5173；并行 GG-244 画布会话拥有活动目录及其未提交文档。
 - Task [GG-243](tasks/GG-243-project-create-card.md)：独立实现 `f647e13` 及其记录分支已整合到 `F:/goodgood-worktrees/GG-116`；基线为 GG-242 收口 `00f7568`。首位新建卡片取代页头按钮，复用 `/canvas` 新建流程；不修改画布源码。
 - 共同整合 `dec0025` 已通过实际运行目录完整门禁：665 通过/22 隔离跳过/0 失败；定向 14/14，5173 编译模块 HTTP 200、包含新卡片和 /canvas 入口。GG-242/243 均为祖先，本任务辅助目录创建 2/退役 2。当前分支名是历史名称，不能单凭名称推断范围。
 - Task [GG-242](tasks/GG-242-canvas-image-preview.md)：子 agent 最小源码修复已精确回放为 `c3700b7`；当前分支 `fix/GG-242-canvas-image-preview` 基于 GG-241 `f1570de`。GG-240 生命周期规范继续有效。

@@ -4,6 +4,7 @@
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
+| GG-246 | 开发中：大厅资产视频默认暂停与居中播放提示，真实鼠标 hover 才播放；子 agent 文件边界已登记 | [任务](tasks/GG-246-asset-video-hover.md) |
 | GG-243 | 已接入实际 5173：首位新建卡片直接进入新画布；共同门禁 665/22/0、定向 14/14，辅助目录已退役，用户验收 | [任务](tasks/GG-243-project-create-card.md) |
 | GG-242 | 预览开发完成；定向 23/23、只读抽查 13/13、完整门禁 661 通过/22 隔离跳过；子 worktree 已退役，用户自行验收 | [任务](tasks/GG-242-canvas-image-preview.md) |
 | GG-241 | 当前 5173、verified Web、唯一 Worker 和原本地依赖已恢复；原数据与迁移保留，无新增 worktree | [任务](tasks/GG-241-local-startup.md) |
