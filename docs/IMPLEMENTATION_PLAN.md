@@ -1,12 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-01
-- Current phase: GG-262资料编辑修复已进入5173，12项相关检查、局部lint/编译通过，创建1/退役1；GG-260/261明细/来源及此前功能保留，verified Web `9f9d788`和本地0060不变，免费政策待用户，生产仍为GG-098/GG-100。
-- Current objective: 用户刷新5173验收资料编辑及此前交付；免费数量/适用模型与规格明确后补ADR、实现真实quota。按GG-247定向验证，不把手验作为开发阻塞。
+- Current phase: GG-264图片详情铺满/无计数/缩略图居中已进入5173，22项相关检查与局部lint/编译通过，创建1/退役1；保留并行GG-263大厅导航与GG-262/260/261及此前功能，verified Web `9f9d788`/本地0060不变，免费政策待用户，生产仍为GG-098/GG-100。
+- Current objective: 用户刷新5173验收图片详情和此前交付；免费数量/适用模型与规格明确后补ADR、实现真实quota。按GG-247定向验证，不把手验作为开发阻塞。
 - Previous objective: GG-244 资产 hover 小按钮、无视频外置文字与节点式视频预览已进入实际 5173。
 
 ## Current checkpoint
 
+- 当前图片详情交付 [GG-264](tasks/GG-264-image-detail-fill-and-centered-rail.md)：基线`fa673fe`，登记时与另一窗口263撞号已更正；`6d20225`回放为`1c9ae74`并保留并行GG-263 `8725ae5`。主图等比铺满完整中间舞台、超出部分可拖动，无右下计数；缩略图含首尾动态居中并响应resize/加载。22/22、相关lint/五模块编译通过，创建1/退役1、无缓存，无Web/数据库变更。
 - 当前资料交付 [GG-262](tasks/GG-262-profile-inline-edit-layout.md)：从`c0d8d08`/登记后`ee2c9fc`建立隔离分支，`3338fa9`精确回放为`2f0d8fd`；透明下划线编辑、稳定文字/动作网格、无可见滚动条及统一14px图标。12/12、局部lint/两个实际模块编译通过；创建1/退役1、零子缓存，无Web重建/数据库变更，用户验收。
 - 当前交付 [GG-260](tasks/GG-260-credit-details-and-free-quota.md) / [GG-261](tasks/GG-261-daily-free-image-quota.md)：从 `c6f6bb9` 登记并创建两子树；UI `dbe7f38`→`e1d7f61`，来源 `936da92`→`d9e5aff`，根接线/微秒分页修复 `9f9d788`。UI15、生成12、来源/M615、账户/报价/导航24、隔离SQL1均通过；相关lint零错误（画布7既有警告）、实际模块编译通过。0060与verified Web完成，子树创建2/退役2、无缓存；免费额度尚未实现/发放。
 - Task [GG-258](tasks/GG-258-canvas-detail-minimal.md)：从干净 `821705e` 核对祖先后建立 `fix/GG-258-canvas-detail-minimal`；移除缩放按钮/倍率及无用样式，非生成素材只展示标题和已知尺寸。SSR/导航 10/10、相关 lint 零错误/警告、三个 Vite 模块编译 HTTP 200；保留滚轮/拖动/键盘及真实参数，无新 worktree/依赖/缓存。
@@ -23,14 +24,14 @@
 - Task [GG-249](tasks/GG-249-canvas-media-viewer.md)：从 `e857437` 新建 `fix/GG-249-canvas-media-viewer`，画布图片入口改为受限完整预览、无标题/滚动条的混合媒体轮播；15/15、相关 lint、四个 Vite 模块编译通过，无新增 worktree/缓存，用户验收。
 - Task [GG-248](tasks/GG-248-account-personal-information.md)：`b4a34a6` 回放为 `520b452`，六项真实资料、ID/邀请码复制与每次默认入口已接入实际目录；20/20、定向 lint，无全量检查，辅助目录创建 1/退役 1，不改变 GG-245 范围。
 - Task [GG-247](tasks/GG-247-targeted-verification.md)：用户要求高频小需求默认定向验证，完整门禁按批次/发布或必要回归执行，规则见 AGENTS/WORKFLOW；不改变 GG-245 的并行开发范围。
-- 当前集成分支`feat/GG-260-credit-details-and-free-quota`，目录`F:/goodgood-worktrees/GG-116`，源码检查点`2f0d8fd`含GG-262和GG-260/261及此前功能；文档后继HEAD是新任务基线。实际verified Web仍为`9f9d788`，免费政策待补，未授权生产。
+- 当前集成分支`fix/GG-263-remove-lobby-canvas-entry`，目录`F:/goodgood-worktrees/GG-116`，源码检查点`1c9ae74`含GG-264、并行GG-263与GG-262/260/261及此前功能；文档后继HEAD是新任务基线。实际verified Web仍为`9f9d788`，免费政策待补，未授权生产。
 - Task [GG-246](tasks/GG-246-asset-video-hover.md)：子提交 `c563d98`/根回放 `ec51488` 已整合为 `83a4306`，实际目录 `F:/goodgood-worktrees/GG-116`，基于 GG-244 收口 `dd8dca9`，仅修改大厅资产视频。定向 31/31、一次完整共同门禁 685 通过/22 隔离跳过/0 失败；5173 编译模块 HTTP 200 含新接线；辅助目录创建 2/退役 2。不改变 GG-245 并行任务。
 - Task [GG-244](tasks/GG-244-canvas-asset-hover.md)：分支 `fix/GG-244-canvas-asset-hover` 基于 `86ee3b7`；子提交精确回放 `be84c53`、`9d7d18c`，定向 9/9、完整门禁 674/22/0；子目录创建 1/退役 1，沿用 GG-242/243 与云配置。
 - Task [GG-245](tasks/GG-245-canvas-image-link-read.md)：子八文件 `e471c1c` 精确回放为 `7ddb78d`；34/34、定向 lint/typecheck、必要 checkpoint 构建通过，实际 cafe24 JPEG 新读取器下载/解码成功（900×1190）。ADR 0122 与原上传/归档保持，本地 Web 同步完成。
 - Task [GG-243](tasks/GG-243-project-create-card.md)：独立实现 `f647e13` 及其记录分支已整合到 `F:/goodgood-worktrees/GG-116`；基线为 GG-242 收口 `00f7568`。首位新建卡片取代页头按钮，复用 `/canvas` 新建流程；不修改画布源码。
 - 共同整合 `dec0025` 已通过实际运行目录完整门禁：665 通过/22 隔离跳过/0 失败；定向 14/14，5173 编译模块 HTTP 200、包含新卡片和 /canvas 入口。GG-242/243 均为祖先，本任务辅助目录创建 2/退役 2。当前分支名是历史名称，不能单凭名称推断范围。
 - Task [GG-242](tasks/GG-242-canvas-image-preview.md)：子 agent 最小源码修复已精确回放为 `c3700b7`，基于 GG-241 `f1570de`，继续保留。GG-240 生命周期规范继续有效。
-- 5173源码目录：`F:/goodgood-worktrees/GG-116`，当前代码含GG-239累计基线及GG-242—262已交付范围；目录名/旧标签不能代表最新代码，免费quota仍未实现。
+- 5173源码目录：`F:/goodgood-worktrees/GG-116`，当前代码含GG-239累计基线及GG-242—264已交付范围；目录名/旧标签不能代表最新代码，免费quota仍未实现。
 - 5173 API 代理：Web `32131` 为 GG-116 verified `9f9d788e31d6a671bf9b79a4f3294d6179310b06`，指纹见 GG-261；唯一真实开发 Worker `32142` 保留 GG-226 `70e10c6`、readiness ready。来源记录不需新Worker hook；将来free必须同步两角色，文档HEAD不是实际新构建身份。
 - 本地依赖：PostgreSQL `54449`、Valkey `56549`、RustFS `58049/58050`、Mailpit `58045/58046`；数据库迁移为 `0060`，0059随机ID与用户/任务/积分流水保持，0060仅新增授权来源列/约束。
 - 云参考图：Web 必须加载仓库外 `cloud-upload.env`，Worker 同样保持 `cloud-development`；否则 23 条 `local-dev/references/` 图像会读取失败，readiness 正常不能代替素材预览验证。
@@ -40,7 +41,7 @@
 - 生产身份继续为 revision `7888554a4650b1b06dbce4293c52e8c018e5c71b`、迁移 `0044_gg098_raise_manual_grant_ceiling.sql`，详见 [CURRENT_STATE](CURRENT_STATE.md)。GG-239 未部署。
 - 生产入口仍为 `https://goodgood.o1key.com`，预发布入口为 `https://staging-goodgood.o1key.com`；本地 5173、开发数据库与生产数据继续严格隔离。
 - 早期生产实施流水保存在 [2026-09-07 implementation log](history/2026-09-07-implementation-log.md)，仅在追溯历史时读取。
-- Next action: 用户验收GG-262资料编辑及GG-260/261明细/来源；每日免费数量/模型/规格明确后补ADR并开发quota/预留/终态释放，届时同步Web和Worker。本任务辅助目录已退役，已交付代码无待完成步骤，无生产授权。
+- Next action: 用户验收GG-264图片详情及GG-263大厅导航、此前资料/明细交付；每日免费数量/模型/规格明确后补ADR并开发quota/预留/终态释放，届时同步Web和Worker。本任务辅助目录已退役，已交付代码无待完成步骤，无生产授权。
 - Blockers: 已交付明细无代码/运行阻塞；免费政策仍缺每日数量和适用模型/规格，不因等待默认启用。浏览器验收由用户负责；生产发布未获授权。
 
 ## Verification sequence

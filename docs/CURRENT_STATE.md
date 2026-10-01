@@ -5,7 +5,7 @@
 - 正式入口：https://goodgood.o1key.com
 - 最新积分交付：[GG-260](tasks/GG-260-credit-details-and-free-quota.md) / [GG-261](tasks/GG-261-daily-free-image-quota.md) 明细余额、类型/项目/模型/任务 ID复制、20条分页、空心图标/普通选中文字已进入5173与Web `9f9d788`；67项相关代码/SQL检查、局部lint/编译完成，本地0060，创建2/退役2。免费图片政策待用户、未实现或启用，用户负责手验。
 - 最新账户调整：[GG-262](tasks/GG-262-profile-inline-edit-layout.md) `2f0d8fd` 已进入5173：透明下划线行内编辑、固定文字/动作位置、无可见滚动条及统一14px图标；12/12、局部lint/模块编译通过，创建1/退役1，用户验收。[GG-259](tasks/GG-259-random-user-id-stable-edit.md) `c6f6bb9` 的固定随机六位ID和规则预留空间保持，Web/数据库无变化。
-- 当前画布详情后继：[GG-258](tasks/GG-258-canvas-detail-minimal.md) 移除右下角缩放按钮/倍率，非生成素材在标题下仅显示已知尺寸；10/10、相关 lint 及三个实际模块编译通过，规范已同步，保留滚轮/拖动/键盘操作。
+- 当前图片详情后继：[GG-264](tasks/GG-264-image-detail-fill-and-centered-rail.md) `1c9ae74` 已进入5173：等比铺满整个中间区域，完整原图可平移/缩放查看，无右下计数，当前缩略图含首尾动态居中；22/22、相关lint/五模块编译通过，创建1/退役1，用户验收。[GG-258](tasks/GG-258-canvas-detail-minimal.md) 的简洁信息和无缩放覆盖控件保持。
 - 本地账户信息：[GG-254](tasks/GG-254-account-identity-editor.md) `422c32f` 已接入实际 5173/Web，仅保留用户名默认 mimi、稳定六位数字 ID；文字/头像旁侧确认保存、编辑区外取消和下方规则，撤去个人主页。20 项相关检查、资料 SQL 1/1、ID SQL 10/10、局部 lint、必要 Web 同步与本地 0058 完成，辅助目录退役。
 - 当前本地画布检查点：[GG-253](tasks/GG-253-canvas-media-detail.md) `896bce2`，真实素材信息独立列、图片平移/滚轮缩放、原比例内容缩略列和选中轻微抽出，取代 GG-249/251 的画布滚轮切图及原位放大；25 项定向、lint 和模块编译通过。
 - 当前画布子任务：[GG-255](tasks/GG-255-canvas-paste-image.md) `d4ea42c` 原生外部图片粘贴/进入页面直接粘贴，19/19；[GG-256](tasks/GG-256-canvas-folder-drop.md) `5183287` 图片拖入文件夹、状态动效与光标，8/8；[GG-257](tasks/GG-257-canvas-edge-hover-flow.md) `6f63a8f` 默认实线、hover 流动。相关代码/编译检查完成，三个辅助目录已退役，无子缓存；浏览器验收由用户负责。
