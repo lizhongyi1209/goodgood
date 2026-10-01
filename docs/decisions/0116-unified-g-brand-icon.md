@@ -8,9 +8,9 @@
 
 站长要求「将网站用到 logo 的地方都统一改用最新的 G 这个图标」。以当前画布 GG-149 的 `public/goodgood-g-icon.svg` 为唯一品牌图形：黑色圆底和三片白色几何形，保持原始 1:1 比例。
 
-所有 GoodGood 品牌展示（桌面与移动导航、登录/注册及错误/账户状态、创作空态、管理页、Hero 预览、浏览器 favicon 和维护页）只展示一个 G，不再组合旧 Double G 或 GoodGood 字标。保留既有品牌可访问名称和链接行为；功能图标及模型供应商图标不属于此变更。
+所有 GoodGood 品牌展示沿用同一个 G。GG-266（2026-10-01）按用户要求在大厅桌面导航与移动顶部的图标右侧展示新「Good Good」字标：G复用图标三片几何，o/d采用对应粗笔画与圆润轮廓，字标为本地SVG路径，不依赖系统字体。登录/注册及错误/账户状态、创作空态、紧凑画布、管理页、Hero预览、浏览器favicon和维护页保留单G。保留品牌可访问名称和链接行为；功能图标及模型供应商图标不属于此变更。
 
-这取代 AGENTS 与 DESIGN_SYSTEM 中要求 Double G/custom wordmark 的品牌展示决定，并扩展 GG-149/GG-153 的局部 G 使用规则。旧 SVG 文件保留作历史资源，无当前界面引用。
+这取代 AGENTS 与 DESIGN_SYSTEM 中旧 Double G/custom wordmark 的品牌展示决定，并扩展 GG-149/GG-153 的局部 G 使用规则。GG-266原位更新 `public/goodgood-wordmark.svg` 为新字标；旧Double G文件仅作为历史资源，无当前界面引用。见 [GG-266](../tasks/GG-266-geometric-good-good-wordmark.md)。
 
 ## Delivery boundary
 
