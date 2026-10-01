@@ -880,9 +880,9 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
 
   const copyCanvasSelection = () => {
     const instance = flowRef.current;
-    if (!instance) return;
+    if (!instance) return false;
     const selected = instance.getNodes().filter((node) => node.selected);
-    if (!selected.length) return;
+    if (!selected.length) return false;
     const ids = new Set(selected.map((node) => node.id));
     const current = latestProjectStateRef.current;
     const selectedEdges = current.edges.filter((edge) => ids.has(edge.source) && ids.has(edge.target));
@@ -896,7 +896,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
         current.convertedReferences[edge.id]?.status !== "ready"));
     if (unavailable) {
       setFormError("请等待选中素材或参考图准备完成后再复制。");
-      return;
+      return false;
     }
     const drafts = Object.fromEntries(selected.filter((node) => node.type === "imageGenerator")
       .map((node) => [node.id, current.draftsByGenerator[node.id] ?? DEFAULT_GENERATOR_DRAFT]));
@@ -908,6 +908,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     clipboardRef.current = { nodes: frame.nodes, edges: frame.edges, drafts: frame.drafts,
       references: frame.references, converted: frame.converted, pasteCount: 0 };
     setFormError(null);
+    return true;
   };
 
   const pasteCanvasSelection = () => {
@@ -2015,6 +2016,16 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
         }}
         onCopy={copyCanvasSelection}
         onPaste={pasteCanvasSelection}
+        onPasteImages={(files) => {
+          if (!projectReady || pageSwitching || !flow) return;
+          const bounds = document.getElementById("canvas-workspace-surface")?.getBoundingClientRect();
+          if (!bounds) return;
+          const coveredWidth = assetsOpen ? document.getElementById("canvas-asset-sidebar")?.getBoundingClientRect().width ?? 0 : 0;
+          void addCanvasMedia(files, {
+            x: bounds.left + coveredWidth + (bounds.width - coveredWidth) / 2,
+            y: bounds.top + bounds.height / 2,
+          });
+        }}
         onUndo={() => navigateCanvasHistory("undo")}
         onRedo={() => navigateCanvasHistory("redo")}
         onBeforeGraphEdit={captureCanvasHistory}

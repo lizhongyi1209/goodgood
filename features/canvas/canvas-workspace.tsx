@@ -29,6 +29,7 @@ import { CanvasAudioNode, type CanvasAudioNodeData } from "./canvas-audio-node";
 import { CanvasGeneratorNode, type CanvasGeneratorNodeData } from "./canvas-generator-node";
 import { CanvasGeneratorHostContext } from "./canvas-generator-host";
 import { CanvasSelectionControls } from "./canvas-selection-controls";
+import { handleCanvasClipboardCopy, handleCanvasClipboardPaste } from "./canvas-clipboard.mjs";
 import styles from "./canvas-workspace.module.css";
 
 export type CanvasResultNodeType = Node<CanvasResultNodeData, "imageResult">;
@@ -146,6 +147,7 @@ export function CanvasWorkspace({
   onClearSelection,
   onCopy,
   onPaste,
+  onPasteImages,
   onUndo,
   onRedo,
   onBeforeGraphEdit,
@@ -171,8 +173,9 @@ export function CanvasWorkspace({
   onDeleteEdge: (edgeId: string) => void;
   onSelectAll: () => void;
   onClearSelection: () => void;
-  onCopy: () => void;
+  onCopy: () => boolean;
   onPaste: () => void;
+  onPasteImages: (files: File[]) => void;
   onUndo: () => void;
   onRedo: () => void;
   onBeforeGraphEdit: () => void;
@@ -189,6 +192,7 @@ export function CanvasWorkspace({
   const resizeRef = useRef<SidebarResizeDrag | null>(null);
   const contextPointRef = useRef<{ x: number; y: number } | null>(null);
   const canvasRef = useRef<HTMLElement | null>(null);
+  const clipboardTokenRef = useRef<string | null>(null);
   const flowRef = useRef<ReactFlowInstance<CanvasNode> | null>(null);
   const edgeDeleteButtonRef = useRef<HTMLButtonElement | null>(null);
   const edgeDeletePathRef = useRef<SVGPathElement | null>(null);
@@ -212,12 +216,10 @@ export function CanvasWorkspace({
       onSelectAll();
       return;
     }
-    if (modifier && (key === "c" || key === "v" || key === "z" || key === "y")) {
+    if (modifier && (key === "z" || key === "y")) {
       event.preventDefault();
       event.stopPropagation();
-      if (key === "c" && !event.shiftKey) onCopy();
-      else if (key === "v" && !event.shiftKey) onPaste();
-      else if (key === "z") event.shiftKey ? onRedo() : onUndo();
+      if (key === "z") event.shiftKey ? onRedo() : onUndo();
       else if (key === "y" && !event.shiftKey) onRedo();
       return;
     }
@@ -384,6 +386,13 @@ export function CanvasWorkspace({
       <section id="canvas-workspace-surface" ref={canvasRef} className={styles.canvas} aria-label="画布创作" tabIndex={-1}
         data-connecting={connectionActive || undefined}
         onKeyDownCapture={handleCanvasKeyDown}
+        onCopyCapture={(event) => {
+          clipboardTokenRef.current ??= crypto.randomUUID();
+          handleCanvasClipboardCopy(event, { selectionToken: clipboardTokenRef.current, onCopySelection: onCopy });
+        }}
+        onPasteCapture={(event) => handleCanvasClipboardPaste(event, {
+          selectionToken: clipboardTokenRef.current, onPasteSelection: onPaste, onPasteImages,
+        })}
         onMouseMoveCapture={(event) => {
           if (!edgeDeleteVisibleRef.current) return;
           const point = positionEdgeDelete(event.clientX, event.clientY);
