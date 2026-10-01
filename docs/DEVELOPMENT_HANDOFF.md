@@ -1,10 +1,10 @@
 # 当前开发版本与跨窗口交接
 
 - 日期：2026-10-01。
-- 最新追加：[GG-252](tasks/GG-252-personal-info-cleanup.md) `4fd9be3` 简洁文字个人信息、默认 goder、2 MB 头像已进入 5173 与 verified Web；22/22、相关 lint、必要构建/同步通过，本地迁移到 0057，辅助目录退役。GG-251 与旧能力保留，文档后继不改变实际 Web 构建身份。
+- 最新追加：[GG-254](tasks/GG-254-account-identity-editor.md) `422c32f` 单一用户名默认 mimi、六位 ID 和局部确认/外部取消已进入 5173 与 verified Web；20 项相关检查、资料 SQL 1/1、ID SQL 10/10、局部 lint 通过，本地迁移到 0058，辅助目录退役。并行 GG-253 `896bce2` 与 GG-255 `41df2dc` 保留，文档后继不改变实际 Web 构建身份。
 - 当前追加：[GG-250](tasks/GG-250-inline-personal-information.md) `99fb14a` 已在个人信息内直接编辑头像、昵称/用户名并保存/取消，13 项功能、局部 lint 和最终文档 9/9；辅助目录退役，GG-249 后继 `8ee22d8` 保留。
 - 当前代码：GG-239 累计基线加 GG-242—246、GG-248 `520b452` 默认个人信息与 GG-249 画布完整预览/滚轮轮播；GG-249 15/15、相关 lint 和编译通过，无新增辅助目录/缓存。GG-245 源码 `7ddb78d`/verified Web 保留，最新前端以当前 HEAD 为准。
-- 当前交接检查点分支：`fix/GG-251-canvas-preview-fit`，从 `4152490` 核对 GG-249/250 祖先后建立；GG-251 的画布适配与有间隙/原位放大进入实际 5173，9/9 和相关 lint/编译通过。GG-245 历史标签和 verified Web `09c7060` 保留，当前前端不等于该历史构建。
+- 当前交接检查点分支：`feat/GG-253-canvas-media-detail`，包含 GG-254 `422c32f`、GG-253 `896bce2`、GG-255 `41df2dc` 与此前功能；以当前 HEAD 为准，不按历史分支名推断源码。画布后续交接由并行会话继续。
 - 当前 worktree：`F:/goodgood-worktrees/GG-116`。目录名是历史名称，不能再用来判断版本。
 - 状态：GG-251 根据用户截图修正 GG-249 的原图裁切、重叠与左向抽出；扩大详情框，完整画布适配及有间隙/原位放大已进入 5173。此前功能保留，用户负责浏览器验收，未部署生产。
 
@@ -36,16 +36,16 @@ git worktree list --porcelain
 
 新窗口以 IMPLEMENTATION_PLAN 指向的共同运行分支 HEAD 为检查点，并确认 GG-242 `00f7568` 与 GG-243 `f647e13` 都是其祖先。`main`、旧 GG-116 分支、其它 GG worktree 和 parked C6 都不是替代来源。新任务先核对未占用编号，只在并行写任务时建立独立 worktree，不要让两个窗口编辑同一目录。
 
-当前分支也须包含 GG-245 `7ddb78d`、Web 构建 `09c7060` 与 GG-248 `520b452`。构建 receipt 严格绑定 Git 提交；若当前 HEAD 与 receipt 不同，Web 重启前先按 `npm run build:checkpoint` 构建并核对，不伪造 revision。现有 Web 保持已验证 `09c7060`；GG-249 是前端局部变化，通过 Vite 热更新，不重启或重建服务。
+当前分支也须包含 GG-245 `7ddb78d`、GG-248 `520b452` 和 GG-254 `422c32f`。构建 receipt 严格绑定 Git 提交；若当前 HEAD 与 receipt 不同，Web 重启前先按 `npm run build:checkpoint` 构建并核对，不伪造 revision。现有 Web 是已验证 `41df2dc`，指纹见 GG-254；纯前端后继通过 Vite 热更新，文档后继不需要重启服务。
 
 ## 当前本地运行
 
 | 组件 | 入口 | 当前来源/用途 |
 | --- | --- | --- |
 | Vite 页面 | `http://127.0.0.1:5173` | GG-116 当前分支含 GG-242—246、GG-248/249，热更新 |
-| Node Web | `http://127.0.0.1:32131` | GG-116 verified `4fd9be3ee6050d14c7e035a17e3a24555b2f1770`；Vite `/api` 代理目标 |
+| Node Web | `http://127.0.0.1:32131` | GG-116 verified `41df2dcad421aa90bfbccf86a6a0a51d30bda4a0`；Vite `/api` 代理目标 |
 | Worker | `http://127.0.0.1:32142/health/ready` | GG-226 `70e10c6` 的唯一真实开发 Worker；O1Key 请求可能计费 |
-| PostgreSQL | `127.0.0.1:54449/goodgood` | 本地隔离数据库，迁移 `0057` |
+| PostgreSQL | `127.0.0.1:54449/goodgood` | 本地隔离数据库，迁移 `0058`；稳定数字 ID，不改 UUID/外键 |
 | Valkey | `127.0.0.1:56549/db0` | 本地队列/缓存 |
 | RustFS | `127.0.0.1:58049/58050` | 本地素材对象存储 |
 | Mailpit | `127.0.0.1:58045/58046` | 本地邮件开发 |

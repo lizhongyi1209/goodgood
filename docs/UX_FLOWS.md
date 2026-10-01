@@ -333,11 +333,15 @@ statistics are gone, and no route replaces them. The flows below are retained as
 a record of the retired design. See
 [ADR 0104](decisions/0104-inspiration-feature-retirement.md).
 
-GG-072: account menu → personal profile in the same shell, leaving the composer
-intact. Mobile avatar opens an account menu with profile and logout. Edit name/handle/avatar, save or cancel;
-upload/save disables dismissal until it finishes. Failed saves preserve inputs,
-duplicate handles can be corrected, and version conflicts offer reload. Works
-open existing image detail; closing restores profile and scroll position.
+GG-254 replaces GG-072's personal home: account menu → account dialog, with
+personal information selected first and credits as the other section. Username
+(default `mimi`) edits as plain contenteditable text; avatar stays a local file
+preview until its adjacent confirm icon is clicked. Rules appear below the active
+edit. Outside pointer/focus or Escape cancels unconfirmed changes; Enter focuses
+confirmation without saving. Confirmed upload/save disables dismissal and section
+changes until complete. Failed saves preserve the draft, version conflicts offer
+reload. Six-digit user ID/email/invitation are text. Legacy `/profile` returns to
+`/create` and opens this dialog; no personal works page remains.
 
 GG-071 owner operations: choose an end date and 7/30-day trend, click a daily
 bar/date to show that day's metrics. Logs: select tasks or credits, enter mailbox,

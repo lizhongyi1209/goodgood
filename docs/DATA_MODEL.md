@@ -126,6 +126,17 @@ partial unique index for all custom handles. It does not rewrite existing rows;
 unconfigured reads display `goder` without inserting. New avatar bindings must
 be at most 2 MB, while retaining an already saved avatar remains allowed.
 
+GG-254 migration0058 adds immutable `users.public_user_id`, unique integer
+0–999999 shown as six digits (including 000000). Existing users receive stable
+IDs in created-at/UUID order; a locked transactional singleton allocator assigns
+new IDs, does not consume numbers on duplicate/rolled-back registration, never
+recycles IDs and rejects allocation at one million. UUID identity and foreign
+keys remain unchanged. Profile DTO now exposes `publicUserId` and one editable
+`displayName` labeled username, default `mimi`; legacy handles stay in storage
+but are neither exposed nor writable. New profiles omit handle and use its
+historical database default. GET remains write-free; optimistic versions,
+avatar ownership and 2 MB new binding checks remain. See ADR 0075's GG-254 update.
+
 GG-071 introduces no persistence or billing mutation. Daily submissions use
 generation_jobs.submitted_at; outcomes use completed_at; settlement/refund/release
 use ledger.created_at, all in Asia/Shanghai calendar dates. Only settle contributes

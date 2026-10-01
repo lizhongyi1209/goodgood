@@ -87,7 +87,8 @@ GG-073 的 `/inspiration` 入口与 `GET /api/inspiration`、`POST /list`、`POS
 GG-254 retires the GG-072 personal home. Legacy `/profile` returns to `/create`
 and opens the existing account management dialog on personal information;
 there is no standalone account page. Historical asset-detail `profile` origins
-return to Assets. Owner-bound GET/PATCH `/api/profile` remains for username and
+load in the Assets section; browser back to an old `/profile` opens personal
+information through the compatibility flow. Owner-bound GET/PATCH `/api/profile` remains for username and
 avatar, now returning the immutable six-digit `publicUserId`; UUID ownership is
 unchanged. No `/@handle` or public account lookup exists.
 

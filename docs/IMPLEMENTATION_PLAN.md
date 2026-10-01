@@ -1,19 +1,21 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-01
-- Current phase: GG-252 简洁个人信息、共享默认 goder 和 2 MB 头像已进入实际 5173/Web；22/22、相关 lint、必要构建与本地 0057 完成，辅助目录退役。GG-251 和原功能保留，生产仍为 GG-098/GG-100。
-- Current objective: GG-252 文字展示、就地编辑和紧凑布局交用户验收；GG-251 手验保留，后续按 GG-247 定向验证推进。
+- Current phase: GG-254 单一用户名 mimi、六位 ID、局部确认/外部取消和个人主页退役已进入实际 5173/Web；20 项相关检查、资料 SQL 1/1、ID SQL 10/10、0058 与必要 Web 同步完成，辅助目录退役。并行 GG-253/255 保留，生产仍为 GG-098/GG-100。
+- Current objective: GG-254 交用户验收；并行会话继续画布任务及其文档/目录收口，后续按 GG-247 定向验证推进。
 - Previous objective: GG-244 资产 hover 小按钮、无视频外置文字与节点式视频预览已进入实际 5173。
 
 ## Current checkpoint
 
+- Task [GG-254](tasks/GG-254-account-identity-editor.md)：子 `bbf26d5` 精确回放为 `422c32f`；用户名默认 mimi、后端六位 ID、内容文字编辑、局部确认/外部撤销、头像确认后上传，撤去个人主页。定向 20/20、资料 SQL 1/1、ID SQL 10/10、相关 lint 完成；0058 与 verified Web `41df2dc` 同步，创建 1/退役 1。
+- 并行 [GG-253](tasks/GG-253-canvas-media-detail.md) `896bce2` 与 [GG-255](tasks/GG-255-canvas-paste-image.md) `41df2dc` / `d4ea42c` 源码完整保留；前端后继由 Vite 热更新，其验证、后续画布任务与辅助目录交接由该会话负责，不能把 GG-254 收口写成画布任务全部完成。
 - Task [GG-252](tasks/GG-252-personal-info-cleanup.md)：`2feef8c` 精确回放为 `4fd9be3`，默认文字资料、删除复制与解释、仅改动后显示操作；默认 goder 例外共享、自定义保持唯一，头像新上传/绑定 2 MB。22/22、lint、必要 Web 构建/同步、0057 已完成，创建 1/退役 1；并行 GG-251 `3e2add5` 保留。
 - Task [GG-251](tasks/GG-251-canvas-preview-fit.md)：从 `4152490` 核对 GG-249/250 祖先后创建 `fix/GG-251-canvas-preview-fit`；显式画布边界/完整适配、稍大浮层、按放大后尺寸保留间隙和原位 1.12 倍放大。9/9、相关 lint、实际 Vite 模块编译通过，无新增 worktree/缓存；用户验收。
 - Task [GG-250](tasks/GG-250-inline-personal-information.md)：独立 `9ea1002` 精确回放为 `99fb14a`，个人信息直接编辑头像、昵称/用户名并保存/取消；13/13 功能、相关 lint、最终文档 9/9，5173 编译接线通过，辅助目录创建 1/退役 1。保留并行 GG-249 文件及后继 `8ee22d8`。
 - Task [GG-249](tasks/GG-249-canvas-media-viewer.md)：从 `e857437` 新建 `fix/GG-249-canvas-media-viewer`，画布图片入口改为受限完整预览、无标题/滚动条的混合媒体轮播；15/15、相关 lint、四个 Vite 模块编译通过，无新增 worktree/缓存，用户验收。
 - Task [GG-248](tasks/GG-248-account-personal-information.md)：`b4a34a6` 回放为 `520b452`，六项真实资料、ID/邀请码复制与每次默认入口已接入实际目录；20/20、定向 lint，无全量检查，辅助目录创建 1/退役 1，不改变 GG-245 范围。
 - Task [GG-247](tasks/GG-247-targeted-verification.md)：用户要求高频小需求默认定向验证，完整门禁按批次/发布或必要回归执行，规则见 AGENTS/WORKFLOW；不改变 GG-245 的并行开发范围。
-- 当前集成分支 `fix/GG-251-canvas-preview-fit`，目录 `F:/goodgood-worktrees/GG-116`，包含 GG-252 `4fd9be3`、GG-251 `3e2add5` 及 GG-248—250；历史标签不代表最新源码。GG-252 的资料契约变化已同步 verified Web，文档后继不是新构建身份。
+- 当前集成分支 `feat/GG-253-canvas-media-detail`，目录 `F:/goodgood-worktrees/GG-116`，包含 GG-254 `422c32f`、GG-253 `896bce2`、GG-255 `41df2dc` 及此前检查点；历史标签不代表最新源码。GG-254 的资料契约变化已同步 verified Web，文档后继不是新构建身份。
 - Task [GG-246](tasks/GG-246-asset-video-hover.md)：子提交 `c563d98`/根回放 `ec51488` 已整合为 `83a4306`，实际目录 `F:/goodgood-worktrees/GG-116`，基于 GG-244 收口 `dd8dca9`，仅修改大厅资产视频。定向 31/31、一次完整共同门禁 685 通过/22 隔离跳过/0 失败；5173 编译模块 HTTP 200 含新接线；辅助目录创建 2/退役 2。不改变 GG-245 并行任务。
 - Task [GG-244](tasks/GG-244-canvas-asset-hover.md)：分支 `fix/GG-244-canvas-asset-hover` 基于 `86ee3b7`；子提交精确回放 `be84c53`、`9d7d18c`，定向 9/9、完整门禁 674/22/0；子目录创建 1/退役 1，沿用 GG-242/243 与云配置。
 - Task [GG-245](tasks/GG-245-canvas-image-link-read.md)：子八文件 `e471c1c` 精确回放为 `7ddb78d`；34/34、定向 lint/typecheck、必要 checkpoint 构建通过，实际 cafe24 JPEG 新读取器下载/解码成功（900×1190）。ADR 0122 与原上传/归档保持，本地 Web 同步完成。
@@ -21,8 +23,8 @@
 - 共同整合 `dec0025` 已通过实际运行目录完整门禁：665 通过/22 隔离跳过/0 失败；定向 14/14，5173 编译模块 HTTP 200、包含新卡片和 /canvas 入口。GG-242/243 均为祖先，本任务辅助目录创建 2/退役 2。当前分支名是历史名称，不能单凭名称推断范围。
 - Task [GG-242](tasks/GG-242-canvas-image-preview.md)：子 agent 最小源码修复已精确回放为 `c3700b7`，基于 GG-241 `f1570de`，继续保留。GG-240 生命周期规范继续有效。
 - 5173 源码目录：`F:/goodgood-worktrees/GG-116`。当前代码含 GG-239 累计基线、GG-242—246、GG-248 和 GG-249；目录名和旧标签不能单独代表最新代码。
-- 5173 API 代理：Web `32131` 为 GG-116 verified `4fd9be3ee6050d14c7e035a17e3a24555b2f1770`，指纹见 GG-252；唯一真实开发 Worker `32142` 保留 GG-226 `70e10c6`、readiness ready。文档后继 HEAD 不是新构建身份。
-- 本地依赖：PostgreSQL `54449`、Valkey `56549`、RustFS `58049/58050`、Mailpit `58045/58046`；数据库迁移为 `0057`，GG-252 仅调整默认名的唯一性例外，不改用户记录。
+- 5173 API 代理：Web `32131` 为 GG-116 verified `41df2dcad421aa90bfbccf86a6a0a51d30bda4a0`，指纹见 GG-254；唯一真实开发 Worker `32142` 保留 GG-226 `70e10c6`、readiness ready。文档后继 HEAD 不是新构建身份。
+- 本地依赖：PostgreSQL `54449`、Valkey `56549`、RustFS `58049/58050`、Mailpit `58045/58046`；数据库迁移为 `0058`，仅新增稳定数字 ID，UUID/外键及原资料不变。
 - 云参考图：Web 必须加载仓库外 `cloud-upload.env`，Worker 同样保持 `cloud-development`；否则 23 条 `local-dev/references/` 图像会读取失败，readiness 正常不能代替素材预览验证。
 - GG-242 验证：定向 23/23、只读预览 13/13；一次 `check:local` 通过（683 总数，661 通过、22 隔离跳过、0 失败）。浏览器验收交给用户。
 - 2026-10-01 启动前只读核对活动任务、待分发 outbox、冻结积分和两队列均为 0；保留原数据卷，没有执行迁移或生成。
@@ -30,7 +32,7 @@
 - 生产身份继续为 revision `7888554a4650b1b06dbce4293c52e8c018e5c71b`、迁移 `0044_gg098_raise_manual_grant_ceiling.sql`，详见 [CURRENT_STATE](CURRENT_STATE.md)。GG-239 未部署。
 - 生产入口仍为 `https://goodgood.o1key.com`，预发布入口为 `https://staging-goodgood.o1key.com`；本地 5173、开发数据库与生产数据继续严格隔离。
 - 早期生产实施流水保存在 [2026-09-07 implementation log](history/2026-09-07-implementation-log.md)，仅在追溯历史时读取。
-- Next action: 用户刷新 5173 验收 GG-252 简洁资料、点击文字就地编辑、默认 goder 与布局；GG-251/245 手验保留。新需求从当前 HEAD 核对祖先并按范围推进，没有待完成开发或运行步骤。
+- Next action: 用户刷新 5173 验收 GG-254 单一用户名、六位 ID、局部确认/外部取消；GG-253/255 及后续画布任务由并行会话继续交接。新需求从当前 HEAD 核对祖先并按范围推进，GG-254 没有待完成开发或运行步骤。
 - Blockers: 无代码或本地运行阻塞；浏览器验收由用户负责，不阻塞开发交付。生产发布未获授权。
 
 ## Verification sequence

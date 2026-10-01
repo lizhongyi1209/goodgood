@@ -44,7 +44,7 @@
 
 - `0076-shareable-inspiration-cases.md` — explicit personal effect publication, immutable before/after and parameters, reuse, likes and owner withdrawal for GG-073; historical, retired by ADR 0104.
 
-- `0075-private-personal-profile.md` — private own profile, unique handle, validated avatar and personal image works for GG-072.
+- `0075-private-personal-profile.md` — GG-072 private profile history; GG-254 replaces it with one username, short numeric ID and local confirm editing, retiring handles/home/works.
 
 - `0074-site-operations-and-global-log.md` — owner daily operations and cross-user task/credit lookup for GG-071; read-only personal/enterprise ledgers, same-shell pages and right details.
 - `0073-model-cards-and-pricing-sheet.md` — compact model cards, default-line summaries and same-page right pricing sheet for GG-070.
@@ -175,7 +175,7 @@ ADR 0053 adds standalone-delimited concurrent prompt batches for GG-040.
 - `0103-generated-asset-hard-delete.md` — caption-free newest-first history grid, hard delete of one generated asset with organization cleanup, retained job/batch and credits, and a published-case conflict.
 - `0104-inspiration-feature-retirement.md` — 灵感板块整体下线：五个灵感表按子表优先顺序删除、案例数据直接丢弃不迁移、`ASSET_PUBLISHED` 检查与测试同批移除；0076/0077/0078 由此退役，生产执行需单独授权。
 - `0111-workspace-icon-rail.md` — 中大屏大厅使用窄图标栏及画布共用 G 标记，手机布局保留。
-- `0112-account-credit-usage-dialog.md` — 头像菜单积分用量弹框取代大厅左侧积分记录入口；退回仅从可见用量中隐藏，账本保留。
+- `0112-account-credit-usage-dialog.md` — 账户管理默认个人信息与积分明细；GG-254 单一用户名、局部确认/外部取消和个人主页退役，账本保留。
 - `0113-static-canvas-model-icons.md` — 画布模型列表继续使用 Lobe 单色图形，改从本地静态 SVG 读取，撤下 React 图标包总入口。
 - `0119-project-create-card.md` — 项目页首位新建卡片直接进入既有新画布入口，取代页头新建创作按钮。
 - `0120-canvas-asset-hover-video-preview.md` — 画布资产图片/视频的较小查看按钮仅 hover 显示，视频预览沿用画布节点样式与 hover 播放。

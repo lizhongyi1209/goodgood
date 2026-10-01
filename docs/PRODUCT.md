@@ -131,10 +131,11 @@ and billing history remain; only the publication layer is gone. See
 [ADR 0078](decisions/0078-inspiration-visibility-and-statistics.md) are
 historical records of the retired design.
 
-GG-072 adds a private personal profile: avatar, name, unique @handle and the
-user's accepted personal generated images. All works are visible to their owner
-automatically. No public profile, publication controls or friends in this slice;
-enterprise images are excluded. ADR 0075 defines this new scope.
+GG-254 replaces GG-072's private profile/works page with personal information
+inside the existing account dialog. One username (default `mimi`) and avatar
+can be edited there; login email, stable six-digit user ID and invitation code
+remain visible. The separate @handle and personal home/works feature are retired;
+historical data remains. ADR 0075 records this replacement.
 
 ## One sentence
 
