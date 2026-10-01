@@ -1,6 +1,7 @@
 # 当前开发版本与跨窗口交接
 
 - 日期：2026-10-01。
+- 最新品牌：[GG-269](tasks/GG-269-wordmark-only.md) `f51777b`→`c30ccb3`，大厅桌面/移动仅展示108px Good Good字标，移除独立G及占位；源码/diff与5173页面/CSS编译通过，创建1/退役1，无缓存/服务变更，GG-268独立开发保留。
 - 最新比例：[GG-267](tasks/GG-267-compact-lobby-wordmark.md) `0dfd499`，字标收小至108px/约14px、间距8px，侧栏Logo按内容宽度展示、移动组合142px；只改三个CSS样式和两处尺寸，源码/diff与5173页面/CSS编译通过，创建0/退役0、无缓存/服务变更。
 - 最新字标：[GG-266](tasks/GG-266-geometric-good-good-wordmark.md) `b7f27e8`→`4756c7b`，大厅桌面/移动品牌图标右侧使用Good Good本地矢量字标，G沿用图标几何、o/d匹配笔画。SVG/局部lint（零错误、11既有警告）/页面与CSS编译及字标HTTP200通过；创建1/退役1，无依赖/构建缓存，约11.7MiB辅助目录及临时PNG已清理。ADR0116/DESIGN_SYSTEM已同步，无Web重建或数据库变化。
 - 最新移动修复：[GG-265](tasks/GG-265-canvas-folder-move-membership.md) 子`fb7cc90`→根`b1f364c`，画布根层仅未归档/失效归属素材，移动确认后原位置消失、目标保留同一素材，失败/重读规则保持。子与根12/12、局部lint/两模块编译通过，创建1/退役1、零缓存；无API/数据库/服务变更。
@@ -10,8 +11,8 @@
 - 最新画布交付：GG-253 `896bce2` 图片自由预览与真实信息、GG-255 `d4ea42c` 原生图片粘贴、GG-256 `5183287` 文件夹拖入及动效、GG-257 `6f63a8f` 默认实线/hover 流动均进入 5173；定向 25/25、19/19、8/8 及相关 lint/模块编译完成。三个子 worktree 创建 3/退役 3，无依赖/构建缓存残留，浏览器验收交用户。
 - 最新追加：[GG-254](tasks/GG-254-account-identity-editor.md) `422c32f` 单一用户名默认 mimi、六位 ID 和局部确认/外部取消已进入 5173 与 verified Web；20 项相关检查、资料 SQL 1/1、ID SQL 10/10、局部 lint 通过，本地迁移到 0058，辅助目录退役。并行 GG-253 `896bce2` 与 GG-255 `41df2dc` 保留，文档后继不改变实际 Web 构建身份。
 - 当前追加：[GG-250](tasks/GG-250-inline-personal-information.md) `99fb14a` 已在个人信息内直接编辑头像、昵称/用户名并保存/取消，13 项功能、局部 lint 和最终文档 9/9；辅助目录退役，GG-249 后继 `8ee22d8` 保留。
-- 当前代码：GG-239累计基线加GG-242—267已交付范围；最新前端字标比例为0dfd499，GG-266字形4756c7b与GG-265/264/263及此前功能保留。免费quota未实现，最新前端以当前HEAD为准。
-- 当前交接检查点分支：`fix/GG-267-compact-lobby-wordmark`，源码检查点`0dfd499`及文档后继HEAD是下一任务基线；本任务无新辅助目录，实际verified Web仍为9f9d788，纯前端修复不需重建/重启。
+- 当前代码：GG-239累计基线、GG-242—267及GG-269已交付范围；最新仅字标为c30ccb3，此前功能保留，GG-268仍独立开发。免费quota未实现，最新前端以当前HEAD为准。
+- 当前交接检查点分支：`fix/GG-267-compact-lobby-wordmark`，源码检查点`c30ccb3`及文档后继HEAD是下一任务基线；GG-269辅助目录已退役，实际verified Web仍为9f9d788，纯前端修复不需重建/重启。
 - 当前 worktree：`F:/goodgood-worktrees/GG-116`。目录名是历史名称，不能再用来判断版本。
 - 状态：当前画布请求均已开发、精确集成并代码验证；子目录经 clean/缓存/服务核对后以 Git remove/prune 退役。用户负责浏览器视觉、交互及预期验收，未部署生产。
 
@@ -110,4 +111,4 @@ node dist/local-checkpoint-portfix.mjs start workspace --cloud-env-file "$taskCl
 
 ## 下一步
 
-用户刷新5173验收GG-267收小字标及此前交付。已交付范围无待完成代码/运行步骤；免费每日数量和模型/规格待答复，确认后补ADR并开发0061 quota，必须一起升级Web/Worker。新需求从当前HEAD核对祖先；仅并行写任务建worktree，完成后退役。
+用户刷新5173验收GG-269仅字标及此前交付，GG-268按独立任务继续。已交付范围无待完成代码/运行步骤；免费每日数量和模型/规格待答复，确认后补ADR并开发0061 quota，必须一起升级Web/Worker。新需求从当前HEAD核对祖先；仅并行写任务建worktree，完成后退役。

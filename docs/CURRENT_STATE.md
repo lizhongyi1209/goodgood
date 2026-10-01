@@ -3,7 +3,7 @@
 - 最后核对：2026-10-01（本地服务；生产身份沿用原发布证据）。
 - 产品阶段：公开的 `controlled-alpha-v1`；已有真实用户，尚未达到完整 seed、自动支付或完整运营告警就绪。
 - 正式入口：https://goodgood.o1key.com
-- 最新大厅品牌：[GG-267](tasks/GG-267-compact-lobby-wordmark.md) `0dfd499`已进入5173，Good Good字标由132px收至108px/约14px，品牌按钮按内容宽度展示；源码/diff与页面/CSS编译通过，创建0/退役0，视觉验收交用户。[GG-266](tasks/GG-266-geometric-good-good-wordmark.md)几何字形和26px图标保留；后端/生产身份不变。
+- 最新大厅品牌：[GG-269](tasks/GG-269-wordmark-only.md) `c30ccb3`已进入5173，大厅桌面/移动仅展示108px/约14px的Good Good字标，移除独立G及占位；源码/diff与页面/CSS编译通过，创建1/退役1，视觉验收交用户。GG-266几何字形与GG-267尺寸保留；后端/生产身份不变。
 - 最新画布资产修复：[GG-265](tasks/GG-265-canvas-folder-move-membership.md) `b1f364c`已进入5173：确认移入文件夹后从原位置消失，目标显示同一素材；根层仅未归档/失效归属素材，失败和重新读取一致性保持。12/12、相关lint/两模块编译通过，创建1/退役1，未改变大厅全局集合或持久化，用户验收。
 - 最新积分交付：[GG-260](tasks/GG-260-credit-details-and-free-quota.md) / [GG-261](tasks/GG-261-daily-free-image-quota.md) 明细余额、类型/项目/模型/任务 ID复制、20条分页、空心图标/普通选中文字已进入5173与Web `9f9d788`；67项相关代码/SQL检查、局部lint/编译完成，本地0060，创建2/退役2。免费图片政策待用户、未实现或启用，用户负责手验。
 - 最新账户调整：[GG-262](tasks/GG-262-profile-inline-edit-layout.md) `2f0d8fd` 已进入5173：透明下划线行内编辑、固定文字/动作位置、无可见滚动条及统一14px图标；12/12、局部lint/模块编译通过，创建1/退役1，用户验收。[GG-259](tasks/GG-259-random-user-id-stable-edit.md) `c6f6bb9` 的固定随机六位ID和规则预留空间保持，Web/数据库无变化。
