@@ -70,7 +70,7 @@ npm ci
 npm run dev:local
 ~~~
 
-当前依赖已安装时无需为了恢复页面重复安装。代码稳定后只运行一次 `npm run check:local`。agent 负责代码开发、代码验证和集成；浏览器交互、视觉效果及是否符合预期由用户验收，除非用户明确委托。真实 provider 请求必须由用户明确授权该次生成；自动测试不得写入真实 Worker 共用数据库或队列。数据库写测试只允许显式命名的空白隔离栈且无真实 Worker。
+当前依赖已安装时无需为了恢复页面重复安装。按 GG-247 默认只执行相关定向验证，完整门禁用于批次/发布收口、确需全面回归或用户要求；后端运行改变才进行必要的 checkpoint 构建。agent 负责代码开发、代码验证和集成；浏览器交互、视觉效果及是否符合预期由用户验收，除非用户明确委托。真实 provider 请求必须由用户明确授权该次生成；自动测试不得写入真实 Worker 共用数据库或队列。数据库写测试只允许显式命名的空白隔离栈且无真实 Worker。
 
 本机现有 Valkey 端口为 56549，当前运行使用两个忽略的端口适配启动器：GG-226 的 `dist/local-checkpoint-portfix.mjs start workspace/worker`，以及 GG-116 的 `dist/local-live-dev-portfix.mjs --port 5173`。先验证后端构建并检查任务/队列，再启动 Web、单个 Worker、Vite；不要直接用仍断言 56449 的旧启动脚本。日志固定复用 `%TEMP%/goodgood-local-services/current-{web,worker,vite}.{out,err}.log`，不按任务积累副本。
 
