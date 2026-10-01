@@ -1,6 +1,6 @@
 # ADR 0106: Unified asset surface and file selection
 
-- Status: Accepted for GG-121 local implementation; selection actions and tag controls superseded by ADR 0107
+- Status: Accepted for GG-121 local implementation; selection actions and tag controls superseded by ADR 0107; visibility-triggered video previews superseded by [ADR 0121](0121-asset-video-hover-preview.md).
 - Date: 2026-09-26
 - Task: GG-121
 - Supersedes: ADR 0102's separate history/library presentation and visible media counts; object ownership, upload and folder rules remain in force.

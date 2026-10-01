@@ -1,5 +1,9 @@
 # GG-063 verification
 
+## GG-246 asset video hover verification
+
+Run the targeted `tests/gg246-*.test.mjs` playback checks and existing asset-browser tests, then one complete `npm run check:local` after integration. Cover no playback on visibility alone, mouse-only intent, enter/leave, canplay after leaving, failed/pending play requests, offscreen/hidden/disabled/reduced-motion pause and disposal; review the component wiring and default centered decorative play hint without autoplay. The user inspects actual grid/list video hover, icon placement and existing view/menu/selection behavior at 5173. No browser acceptance or real media upload/provider request is performed by the agent.
+
 ## Verification ownership
 
 User instruction on 2026-10-01: agents own implementation, code-level verification
@@ -296,8 +300,10 @@ counts at narrower widths. Hover and focus on folder/image/video covers should
 show a subtle neutral veil, an empty unselected circle, and a persistent menu
 trigger while its menu is open. The Move submenu should match its parent border.
 Video grid tiles should omit titles, preserve portrait/landscape source ratios,
-and preview silently only while visible; reduced-motion preference should pause
-them. List video thumbnails remain compact and the detail player remains usable.
+and, under ADR 0121/GG-246, remain paused with a centered play hint until mouse
+hover. Visible grid and list previews play silently only while hovered;
+reduced-motion preference should pause them. List video thumbnails remain compact
+and the detail player remains usable.
 For folders, inspect hover/focus and touch access to the tile menu and selection
 button; list rows should expose the same actions. Folder selection should show
 only count, red Delete and close, clear file selection, and be dismissible with
