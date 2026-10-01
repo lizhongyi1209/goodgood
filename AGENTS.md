@@ -112,7 +112,8 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
   warm ivory/limestone palettes, large editorial type, or strong panels. ADR 0110
   permits blue on canvas media outlines, and ADR 0108/GG-200 permits bright blue
   on a connected edge only while hovered; resize handles remain invisible.
-- Use the shared square G in `public/goodgood-g-icon.svg` for every GoodGood logo (ADR 0116). The creation send action
+- Brand icons use the shared G in `public/goodgood-g-icon.svg`; lobby navigation
+  uses only the Good Good wordmark (ADR 0116). The creation send action
   uses an upward arrow in both image and video modes (ADR 0098).
 
 ## Engineering rules
