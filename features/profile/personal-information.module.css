@@ -2,10 +2,12 @@
 .header { margin-bottom: 18px; }
 .header h1 { margin: 0; font-size: 19px; font-weight: 650; letter-spacing: -.02em; }
 .fields { margin: 0; }
-.fields > div { display: grid; grid-template-columns: 96px minmax(0, 1fr); align-items: center; gap: 16px; min-height: 48px; padding: 9px 0; }
+.fields > div { display: grid; grid-template-columns: 96px minmax(0, 1fr); align-items: start; gap: 16px; min-height: 48px; padding: 9px 0; }
 .fields > div:first-child { padding: 4px 0 18px; margin-bottom: 8px; border-bottom: 1px solid #ededed; }
-.fields dt { color: #777; font-size: 13px; }
+.fields dt { display: flex; align-items: center; min-height: 30px; color: #777; font-size: 13px; }
+.fields > div:first-child dt { min-height: 52px; }
 .fields dd { min-width: 0; margin: 0; overflow-wrap: anywhere; user-select: text; font-size: 13px; }
+.fields > div:nth-child(n + 3) dd { display: flex; align-items: center; min-height: 30px; }
 .identity { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; }
 .avatarButton { position: relative; padding: 0; border: 0; border-radius: 50%; background: transparent; cursor: pointer; }
 .avatarButton:focus-visible { outline: 2px solid #d4d4d4; outline-offset: 3px; }
@@ -13,23 +15,22 @@
 .avatarEdit { position: absolute; right: -2px; bottom: -2px; display: grid; place-items: center; width: 22px; height: 22px; border: 2px solid white; border-radius: 50%; background: #eee; color: #626262; }
 .identity .avatar { display: grid; flex: none; place-items: center; width: 52px; height: 52px; overflow: hidden; border-radius: 50%; background: #f1f1f1; color: #888; }
 .identity .avatar img { width: 100%; height: 100%; object-fit: cover; }
-.editableValue { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; min-height: 30px; padding: 4px 6px; margin-left: -6px; border: 0; border-radius: 6px; background: transparent; font: inherit; text-align: left; cursor: pointer; }
-.editableValue span { min-width: 0; overflow-wrap: anywhere; }
-.editableValue svg { flex: none; color: #999; opacity: 0; }
+.editableValue { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; height: 30px; padding: 0; border: 0; border-radius: 6px; background: transparent; font: inherit; text-align: left; cursor: pointer; }
+.editableValue span { min-width: 0; max-width: 300px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.editableValue svg { flex: none; width: 30px; color: #999; }
 .editableValue:hover, .editableValue:focus-visible { background: #f5f5f5; }
 .editableValue:focus-visible { outline: 2px solid #d4d4d4; outline-offset: 2px; }
-.editableValue:hover svg, .editableValue:focus-visible svg { opacity: 1; }
 .editableValue:disabled { cursor: default; }
 .editRegion { min-width: 0; }
-.nameEditor { display: flex; align-items: center; gap: 6px; }
-.editableText { min-width: 2em; max-width: min(100%, 300px); min-height: 30px; padding: 5px 0; white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; cursor: text; outline: none; }
+.nameEditor { display: flex; align-items: center; gap: 6px; height: 30px; }
+.editableText { min-width: 2em; max-width: min(100%, 300px); height: 30px; padding: 5px 0; overflow-x: auto; white-space: pre; font: inherit; cursor: text; outline: none; }
 .editableText:focus-visible { border-bottom: 1px solid #bbb; }
 .confirm { flex: none; width: 30px; height: 30px; color: #333; }
 .rules { margin: 5px 0 0; color: #888; font-size: 11px; line-height: 1.6; }
+.rules[aria-hidden="true"] { visibility: hidden; }
 .feedback { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 8px 0 0; font-size: 12px; color: #626262; }
 .userId { font-variant-numeric: tabular-nums; }
 @media (max-width: 720px) {
   .fields > div { grid-template-columns: 72px minmax(0, 1fr); gap: 12px; }
   .identity { gap: 10px; }
 }
-@media (hover: none) { .editableValue svg { opacity: 1; } }

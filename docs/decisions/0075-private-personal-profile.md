@@ -66,3 +66,23 @@ pointer/focus and Escape discard an unconfirmed draft. Pending confirmed writes
 cannot start a second edit. Guidance appears below the active edit; saves keep
 the existing optimistic version and owned-avatar checks. See
 [task](../tasks/GG-254-account-identity-editor.md).
+
+## GG-259 random public IDs and stable editing (2026-10-01)
+
+The user replaces GG-254's registration-order public numbers with six random
+decimal digits. Migration 0059 assigns existing accounts new public numbers
+once; internal UUID identity, ownership and links continue to use their original
+keys. The namespace remains 000000–999999 (one million values), zero-padded,
+unique and stable after assignment. Future registrations draw from remaining
+numbers without replacement using a sparse Fisher–Yates pool protected by the
+existing transactional allocator lock. UUID random bits with rejection sampling
+choose an unbiased remaining slot; no prefilled million-row table or collision
+retry is needed. Failed/duplicate registrations do not consume capacity, deleted
+accounts do not return their numbers, and historical capacity consumption is
+preserved during the one-time transition. Production execution remains separate.
+
+The username's pencil icon is visible by default. Name/avatar rules reserve
+their normal wrapped height even outside editing and become visible below the
+active editor. Labels and the single-line name keep their vertical position;
+outside-cancel and local confirmation stay as decided in GG-254. See
+[task](../tasks/GG-259-random-user-id-stable-edit.md).

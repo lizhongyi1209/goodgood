@@ -144,7 +144,7 @@ function PersonalInformationForm({ profile, session, onSave, onRetry, onPendingC
             </>}
             <input ref={fileInput} type="file" accept="image/jpeg,image/png" aria-label="选择头像文件" hidden disabled={busy} onChange={(event) => { const value = event.target.files?.[0]; event.target.value = ""; if (value) select(value); }} />
           </div>
-          {editing === "avatar" && <p id={`${hintId}-avatar`} className={styles.rules}>JPG/JPEG 或 PNG，最大 2 MB。头像居中裁切。</p>}
+          <p id={`${hintId}-avatar`} className={styles.rules} aria-hidden={editing !== "avatar"}>JPG/JPEG 或 PNG，最大 2 MB。头像居中裁切。</p>
           {editing === "avatar" && error && <div className={styles.feedback} role="alert">{error}{error.includes("其他页面") && <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={onRetry}>重新读取资料</Button>}</div>}
         </div>
       </dd></div>
@@ -161,9 +161,9 @@ function PersonalInformationForm({ profile, session, onSave, onRetry, onPendingC
                 {busy ? <LoaderCircle size={16} className="animate-spin" aria-hidden="true" /> : <Check size={16} aria-hidden="true" />}
               </Button>
             </div>
-            <p id={`${hintId}-name`} className={styles.rules}>1–30 个字符，支持中文、字母、数字和表情，不能换行。</p>
-            {error && <div className={styles.feedback} role="alert">{error}{error.includes("其他页面") && <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={onRetry}>重新读取资料</Button>}</div>}
-          </> : <button ref={nameTrigger} type="button" className={styles.editableValue} aria-label="修改用户名" disabled={busy} onClick={() => begin("name")}><span>{name}</span><Pencil size={12} aria-hidden="true" /></button>}
+          </> : <button ref={nameTrigger} type="button" className={styles.editableValue} aria-label="修改用户名" title={name} disabled={busy} onClick={() => begin("name")}><span>{name}</span><Pencil size={12} aria-hidden="true" /></button>}
+          <p id={`${hintId}-name`} className={styles.rules} aria-hidden={editing !== "name"}>1–30 个字符，支持中文、字母、数字和表情，不能换行。</p>
+          {editing === "name" && error && <div className={styles.feedback} role="alert">{error}{error.includes("其他页面") && <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={onRetry}>重新读取资料</Button>}</div>}
         </div>
       </dd></div>
       <div><dt>登录邮箱</dt><dd>{session?.user.email ?? "未提供"}</dd></div>
