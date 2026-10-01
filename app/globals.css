@@ -84,7 +84,7 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 
 .sidebar { height: 100vh; position: sticky; top: 0; padding: 12px 12px 10px; background: var(--canvas); display: flex; flex-direction: column; align-items: flex-start; overflow-y: auto; scrollbar-width: none; z-index: 30; }
 .sidebar::-webkit-scrollbar { display: none; }
-.sidebar-brand { width: fit-content; max-width: 100%; height: 40px; flex: none; padding: 0 6px; border: 0; border-radius: 12px; background: transparent; display: flex; align-items: center; justify-content: flex-start; }
+.sidebar-brand { width: fit-content; max-width: 100%; height: 40px; flex: none; padding: 0 12px; border: 0; border-radius: 12px; background: transparent; display: flex; align-items: center; justify-content: flex-start; }
 .sidebar-brand:hover { background: var(--soft); }
 .sidebar-brand:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .brand-wordmark { width: 108px; height: auto; min-width: 0; flex: 0 1 108px; display: block; }
