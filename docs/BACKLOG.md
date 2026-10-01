@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | GG-247 | 用户确认验证节奏：小需求定向检查即可交付，全量检查集中到批次/发布或必要回归 | [任务](tasks/GG-247-targeted-verification.md) |
 | GG-246 | 已接入实际 5173：大厅视频默认暂停、中心播放提示，仅 mouse hover 预览；定向 31/31、共同门禁 685/22/0、辅助目录退役，用户验收 | [任务](tasks/GG-246-asset-video-hover.md) |
-| GG-245 | ADR 0122 已登记：子 agent 实现受鉴权、有界公开图片读取，根集成/验证/同步 Web | [任务](tasks/GG-245-canvas-image-link-read.md) |
+| GG-245 | 源码 `7ddb78d` 已集成，34/34、lint/typecheck 和所给 JPEG 读取通过；本地 Web 同步中，用户验收 | [任务](tasks/GG-245-canvas-image-link-read.md) |
 | GG-244 | 已接入当前 5173，定向 9/9，完整门禁 674/22/0；子目录退役，用户验收 | [任务](tasks/GG-244-canvas-asset-hover.md) |
 | GG-243 | 已接入实际 5173：首位新建卡片直接进入新画布；共同门禁 665/22/0、定向 14/14，辅助目录已退役，用户验收 | [任务](tasks/GG-243-project-create-card.md) |
 | GG-242 | 预览开发完成；定向 23/23、只读抽查 13/13、完整门禁 661 通过/22 隔离跳过；子 worktree 已退役，用户自行验收 | [任务](tasks/GG-242-canvas-image-preview.md) |
