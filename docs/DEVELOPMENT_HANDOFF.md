@@ -1,10 +1,14 @@
 # 当前开发版本与跨窗口交接
 
 - 日期：2026-10-01。
-- 当前代码：GG-239 累计基线加 GG-242/243、GG-244 画布 hover/视频预览与 GG-246 大厅 hover 视频；共同整合 `83a4306`，完整门禁 685/22/0，具体证据见任务卡。
-- 当前交接检查点分支：`fix/GG-245-canvas-image-link-read`；GG-246 大厅改动基于 GG-244 收口 `dd8dca9` 整合，不切换运行目录分支。
+- 当前代码：GG-239 累计基线加 GG-242—246 实现；GG-245 源码 `7ddb78d` 已接入，34/34、lint/typecheck 与实际图片链接解码通过。GG-247 默认定向验证规范生效，历史完整门禁见各任务卡。
+- 当前交接检查点分支：`fix/GG-245-canvas-image-link-read`；本地标签 `goodgood-local-2026-10-01-gg245`，Web 已验证构建 `09c7060`，包含 GG-244/246。文档后继提交不代表新的构建身份。
 - 当前 worktree：`F:/goodgood-worktrees/GG-116`。目录名是历史名称，不能再用来判断版本。
-- 状态：GG-244/246 开发、代码验证和子目录退役完成；GG-245 链接读取按 ADR 0122 交唯一子目录实现，根负责集成和本地 Web 同步。GG-243 首位新建卡片与 GG-242 云配置/画布图片恢复保留，浏览器验收由用户负责；未部署生产。
+- 状态：GG-245 开发、代码验证、本地 Web 同步与唯一子目录退役完成；GG-244/246 和 GG-243/242 保留。浏览器和真实链接导入验收由用户负责，未部署生产。
+
+## GG-245 公开图片链接交付
+
+受鉴权同源 `POST /api/references/read-link` 读取公开 JPEG/PNG，保留原 File 上传与归档；公开 DNS 逐跳固定，时间/字节/真实解码及取消边界见 [ADR 0122](decisions/0122-authenticated-public-image-link-read.md)。34/34、定向 lint/typecheck、必要 checkpoint 构建通过；所给 cafe24 图片为 900×1190，已只读解码，未导入真实资产。Web 和代理健康身份/未登录 401、编译组件接线通过。子目录创建 1/退役 1，零子缓存，详见 [任务卡](tasks/GG-245-canvas-image-link-read.md)。
 
 ## GG-246 大厅资产视频交付
 
@@ -30,13 +34,15 @@ git worktree list --porcelain
 
 新窗口以 IMPLEMENTATION_PLAN 指向的共同运行分支 HEAD 为检查点，并确认 GG-242 `00f7568` 与 GG-243 `f647e13` 都是其祖先。`main`、旧 GG-116 分支、其它 GG worktree 和 parked C6 都不是替代来源。新任务先核对未占用编号，只在并行写任务时建立独立 worktree，不要让两个窗口编辑同一目录。
 
+当前标签/分支也须包含 GG-245 `7ddb78d` 与 Web 构建 `09c7060`。构建 receipt 严格绑定 Git 提交；若文档后继 HEAD 与 receipt 不同，重启前先按 `npm run build:checkpoint` 构建并核对，不伪造 revision。现有服务保持已验证 `09c7060`，本次只改交接文档不重启或重建。
+
 ## 当前本地运行
 
 | 组件 | 入口 | 当前来源/用途 |
 | --- | --- | --- |
-| Vite 页面 | `http://127.0.0.1:5173` | GG-116 当前分支含 GG-242/243，热更新 |
-| Node Web | `http://127.0.0.1:32131` | verified `70e10c6ae6bd83542ba870f54059b54b999e9fdf`；Vite `/api` 代理目标 |
-| Worker | `http://127.0.0.1:32142/health/ready` | 唯一真实开发 Worker；O1Key 请求可能计费 |
+| Vite 页面 | `http://127.0.0.1:5173` | GG-116 当前分支含 GG-242—246，热更新 |
+| Node Web | `http://127.0.0.1:32131` | GG-116 verified `09c70604d37a9b06eae9cbedc203c27c1b8c0cc1`；Vite `/api` 代理目标 |
+| Worker | `http://127.0.0.1:32142/health/ready` | GG-226 `70e10c6` 的唯一真实开发 Worker；O1Key 请求可能计费 |
 | PostgreSQL | `127.0.0.1:54449/goodgood` | 本地隔离数据库，迁移 `0056` |
 | Valkey | `127.0.0.1:56549/db0` | 本地队列/缓存 |
 | RustFS | `127.0.0.1:58049/58050` | 本地素材对象存储 |
@@ -72,14 +78,15 @@ npm run dev:local
 
 当前依赖已安装时无需为了恢复页面重复安装。按 GG-247 默认只执行相关定向验证，完整门禁用于批次/发布收口、确需全面回归或用户要求；后端运行改变才进行必要的 checkpoint 构建。agent 负责代码开发、代码验证和集成；浏览器交互、视觉效果及是否符合预期由用户验收，除非用户明确委托。真实 provider 请求必须由用户明确授权该次生成；自动测试不得写入真实 Worker 共用数据库或队列。数据库写测试只允许显式命名的空白隔离栈且无真实 Worker。
 
-本机现有 Valkey 端口为 56549，当前运行使用两个忽略的端口适配启动器：GG-226 的 `dist/local-checkpoint-portfix.mjs start workspace/worker`，以及 GG-116 的 `dist/local-live-dev-portfix.mjs --port 5173`。先验证后端构建并检查任务/队列，再启动 Web、单个 Worker、Vite；不要直接用仍断言 56449 的旧启动脚本。日志固定复用 `%TEMP%/goodgood-local-services/current-{web,worker,vite}.{out,err}.log`，不按任务积累副本。
+本机 Valkey 为 56549。GG-116 的两个忽略启动器用于 Web `dist/local-checkpoint-portfix.mjs start workspace` 和 Vite `dist/local-live-dev-portfix.mjs --port 5173`；GG-226 原 `dist/local-checkpoint-portfix.mjs start worker` 继续服务唯一 Worker。先核对构建和任务/队列，再启动所需角色，不重复启动 Worker，不用仍断言 56449 的旧入口。日志固定复用 `%TEMP%/goodgood-local-services/current-{web,worker,vite}.{out,err}.log`。
 
-**当前本机有已保存的云参考图，Web 启动不可遗漏云配置。**在 GG-226 目录分别启动所需角色，两个角色都显式传同一仓库外配置（现有 Worker 已从本地 env 加载，运行中不重复启动）：
+checkpoint 构建会清空 dist 中忽略的启动器。构建后从 scripts 对应原脚本仅适配 `./local-*` 导入到 `../scripts/local-*`、将原 Redis 断言替换为现有 `56549/0`，每种入口只保留一个副本；不能把适配器或环境文件纳入提交。
+
+**当前本机有已保存的云参考图，Web 启动不可遗漏云配置。**在 GG-116 目录启动所需 Web；若原 GG-226 Worker 停止，核对其构建/队列后才在该目录启动 Worker，两个角色使用原仓库外配置：
 
 ~~~powershell
 $taskCloudEnvironment = Join-Path $env:LOCALAPPDATA 'GoodGood/local-cloud-upload/cloud-upload.env'
 node dist/local-checkpoint-portfix.mjs start workspace --cloud-env-file "$taskCloudEnvironment"
-node dist/local-checkpoint-portfix.mjs start worker --cloud-env-file "$taskCloudEnvironment"
 ~~~
 
 核对角色 banner 的 `referenceStorage=cloud-development`；readiness 200 只覆盖基础依赖，仍须只读核对现有云参考图预览。缺少配置时保留数据并恢复原文件，禁止重传、改对象键或回退假图片。
@@ -90,8 +97,8 @@ node dist/local-checkpoint-portfix.mjs start worker --cloud-env-file "$taskCloud
 
 ## 生产边界
 
-生产仍是 [CURRENT_STATE](CURRENT_STATE.md) 记录的 GG-098 应用和 GG-100 单槽 `goodgood-production` Compose。GG-239—242 只是本地检查点，没有 CI 不可变镜像、生产预检或部署授权。未来发布只能按 ADR 0091 的单槽策略原地替换，不恢复历史 blue/green、双 Compose 项目或 Nginx upstream 切换。
+生产仍是 [CURRENT_STATE](CURRENT_STATE.md) 记录的 GG-098 应用和 GG-100 单槽 `goodgood-production` Compose。GG-239—247 是本地代码/流程检查点，没有 CI 不可变镜像、生产预检或部署授权。未来发布只能按 ADR 0091 的单槽策略原地替换，不恢复历史 blue/green、双 Compose 项目或 Nginx upstream 切换。
 
 ## 下一步
 
-子 agent 在已登记 GG-245 唯一写 worktree 完成八文件，根完成审查、集成验证、本地 Web 同步和退役。用户自行验收 GG-244/246/243/242/237/238。后续需求从当前分支 HEAD 核对祖先并新建隔离分支；只有并行编辑才新增 worktree，并在完成后退役。
+用户刷新 5173，验收 GG-245 所给链接导入及 GG-244/246/243/242/237/238。没有待完成的 GG-245 开发或本地运行步骤。后续需求从当前标签/分支 HEAD 核对祖先并新建隔离分支；只有并行编辑才新增 worktree，并在完成后退役。

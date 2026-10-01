@@ -1,12 +1,12 @@
 # 当前任务与优先级
 
-> 最后同步：2026-10-01。GG-245 图片链接 CORS 根因已确认，待实现；GG-244 资产 hover/视频预览已集成并验证，GG-243/242 保留。生产仍为 GG-098 应用和 GG-100 单槽 Compose。历史详情保留在任务卡，不在本页重复转录。
+> 最后同步：2026-10-01。GG-245 图片链接读取已开发、验证并同步实际 5173/Web，子目录已退役，用户验收；GG-244/246 视频 hover 与 GG-243/242 保留。GG-247 定向验证规范生效。生产仍为 GG-098 应用和 GG-100 单槽 Compose。
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
 | GG-247 | 用户确认验证节奏：小需求定向检查即可交付，全量检查集中到批次/发布或必要回归 | [任务](tasks/GG-247-targeted-verification.md) |
 | GG-246 | 已接入实际 5173：大厅视频默认暂停、中心播放提示，仅 mouse hover 预览；定向 31/31、共同门禁 685/22/0、辅助目录退役，用户验收 | [任务](tasks/GG-246-asset-video-hover.md) |
-| GG-245 | 源码 `7ddb78d` 已集成，34/34、lint/typecheck 和所给 JPEG 读取通过；本地 Web 同步中，用户验收 | [任务](tasks/GG-245-canvas-image-link-read.md) |
+| GG-245 | 源码 `7ddb78d`、34/34、lint/typecheck 与所给 JPEG 读取通过；verified Web 已同步，子目录退役，用户验收 | [任务](tasks/GG-245-canvas-image-link-read.md) |
 | GG-244 | 已接入当前 5173，定向 9/9，完整门禁 674/22/0；子目录退役，用户验收 | [任务](tasks/GG-244-canvas-asset-hover.md) |
 | GG-243 | 已接入实际 5173：首位新建卡片直接进入新画布；共同门禁 665/22/0、定向 14/14，辅助目录已退役，用户验收 | [任务](tasks/GG-243-project-create-card.md) |
 | GG-242 | 预览开发完成；定向 23/23、只读抽查 13/13、完整门禁 661 通过/22 隔离跳过；子 worktree 已退役，用户自行验收 | [任务](tasks/GG-242-canvas-image-preview.md) |
