@@ -1,13 +1,14 @@
 # 当前开发版本与跨窗口交接
 
 - 日期：2026-10-01。
+- 最新积分交付：GG-260 UI `e1d7f61`、GG-261来源 `d9e5aff` 与根接线/分页修复 `9f9d788` 已进入5173及verified Web，当前余额/类型/项目/模型/任务ID复制、20条前后分页、空心图标和普通选中字重完成。67项相关检查、必要构建/0060与创建2/退役2完成；免费政策待用户，尚未实现或启用。
 - 最新账户交付：[GG-259](tasks/GG-259-random-user-id-stable-edit.md) `c6f6bb9` 随机且不重复六位 ID、常驻编辑图标和稳定规则间距已进入 5173；12/12、隔离 SQL 2/2、局部 lint/编译通过，本地 0059 完成，辅助目录退役。API 兼容原 verified Web `41df2dc`，无需重建/重启服务。
 - 当前详情后继：[GG-258](tasks/GG-258-canvas-detail-minimal.md) 移除右下角缩放覆盖控件和非生成说明，保留标题/已知尺寸、滚轮/拖动/键盘；10/10、相关 lint 与三个实际模块编译完成，规范已同步，无新 worktree/依赖/缓存。
 - 最新画布交付：GG-253 `896bce2` 图片自由预览与真实信息、GG-255 `d4ea42c` 原生图片粘贴、GG-256 `5183287` 文件夹拖入及动效、GG-257 `6f63a8f` 默认实线/hover 流动均进入 5173；定向 25/25、19/19、8/8 及相关 lint/模块编译完成。三个子 worktree 创建 3/退役 3，无依赖/构建缓存残留，浏览器验收交用户。
 - 最新追加：[GG-254](tasks/GG-254-account-identity-editor.md) `422c32f` 单一用户名默认 mimi、六位 ID 和局部确认/外部取消已进入 5173 与 verified Web；20 项相关检查、资料 SQL 1/1、ID SQL 10/10、局部 lint 通过，本地迁移到 0058，辅助目录退役。并行 GG-253 `896bce2` 与 GG-255 `41df2dc` 保留，文档后继不改变实际 Web 构建身份。
 - 当前追加：[GG-250](tasks/GG-250-inline-personal-information.md) `99fb14a` 已在个人信息内直接编辑头像、昵称/用户名并保存/取消，13 项功能、局部 lint 和最终文档 9/9；辅助目录退役，GG-249 后继 `8ee22d8` 保留。
-- 当前代码：GG-239 累计基线加 GG-242—259；画布详情滚轮为缩放，缩略图直接展示资产内容，预览无缩放覆盖控件，旧 GG-249/251 轮播为历史规则。GG-259 随机 ID 与编辑布局已整合，最新前端以当前 HEAD 为准。
-- 当前交接检查点分支：`feat/GG-260-credit-details-and-free-quota`，当前 HEAD 含 GG-259 `c6f6bb9`、GG-258 `954a183` 与此前功能，GG-260/261 由并行会话继续；前端后继不改变 verified Web `41df2dc` 身份。
+- 当前代码：GG-239 累计基线加 GG-242—261 已交付范围；明细与来源源码为9f9d788，GG-259随机ID和此前画布预览/粘贴/拖文件夹/连线保留。免费quota未实现，最新前端以当前HEAD为准。
+- 当前交接检查点分支：`feat/GG-260-credit-details-and-free-quota`，源码检查点 `9f9d788` 及文档后继HEAD是下一任务基线；两子树已退役，实际verified Web为9f9d788，文档后继不改变构建身份。
 - 当前 worktree：`F:/goodgood-worktrees/GG-116`。目录名是历史名称，不能再用来判断版本。
 - 状态：当前画布请求均已开发、精确集成并代码验证；子目录经 clean/缓存/服务核对后以 Git remove/prune 退役。用户负责浏览器视觉、交互及预期验收，未部署生产。
 
@@ -39,16 +40,16 @@ git worktree list --porcelain
 
 新窗口以 IMPLEMENTATION_PLAN 指向的共同运行分支 HEAD 为检查点，并确认 GG-242 `00f7568` 与 GG-243 `f647e13` 都是其祖先。`main`、旧 GG-116 分支、其它 GG worktree 和 parked C6 都不是替代来源。新任务先核对未占用编号，只在并行写任务时建立独立 worktree，不要让两个窗口编辑同一目录。
 
-当前分支也须包含 GG-245 `7ddb78d`、GG-248 `520b452` 和 GG-254 `422c32f`。构建 receipt 严格绑定 Git 提交；若当前 HEAD 与 receipt 不同，Web 重启前先按 `npm run build:checkpoint` 构建并核对，不伪造 revision。现有 Web 是已验证 `41df2dc`，指纹见 GG-254；纯前端后继通过 Vite 热更新，文档后继不需要重启服务。
+当前分支也须包含 GG-245 `7ddb78d`、GG-248 `520b452`、GG-254 `422c32f` 和 GG-260/261 `9f9d788`。构建receipt严格绑定Git提交；HEAD与receipt不同时，Web重启前先按 `npm run build:checkpoint` 构建并核对，不伪造revision。现有Web为已验证9f9d788，指纹见GG-261；文档后继不需要立即重启服务。
 
 ## 当前本地运行
 
 | 组件 | 入口 | 当前来源/用途 |
 | --- | --- | --- |
-| Vite 页面 | `http://127.0.0.1:5173` | GG-116 当前分支含 GG-242—257，热更新 |
-| Node Web | `http://127.0.0.1:32131` | GG-116 verified `41df2dcad421aa90bfbccf86a6a0a51d30bda4a0`；Vite `/api` 代理目标 |
+| Vite 页面 | `http://127.0.0.1:5173` | GG-116 当前分支含GG-242—261已交付范围，热更新 |
+| Node Web | `http://127.0.0.1:32131` | GG-116 verified `9f9d788e31d6a671bf9b79a4f3294d6179310b06`；Vite `/api`代理目标 |
 | Worker | `http://127.0.0.1:32142/health/ready` | GG-226 `70e10c6` 的唯一真实开发 Worker；O1Key 请求可能计费 |
-| PostgreSQL | `127.0.0.1:54449/goodgood` | 本地隔离数据库，迁移 `0059`；稳定随机数字 ID，不改 UUID/外键 |
+| PostgreSQL | `127.0.0.1:54449/goodgood` | 本地隔离数据库，迁移 `0060`；新增授权来源，0059随机ID保持 |
 | Valkey | `127.0.0.1:56549/db0` | 本地队列/缓存 |
 | RustFS | `127.0.0.1:58049/58050` | 本地素材对象存储 |
 | Mailpit | `127.0.0.1:58045/58046` | 本地邮件开发 |
@@ -106,4 +107,4 @@ node dist/local-checkpoint-portfix.mjs start workspace --cloud-env-file "$taskCl
 
 ## 下一步
 
-用户刷新 5173，验收 GG-253 图片平移/滚轮缩放/素材信息、GG-255 外部复制图片直接粘贴、GG-256 图片拖入文件夹及状态动效、GG-257 连线默认实线/hover 流动；原有未确认功能验收保留。无待完成代码或运行步骤。后续需求从当前 HEAD 核对祖先；只有并行编辑才新增 worktree，并在完成后退役。
+用户刷新5173验收GG-260明细/图标与GG-261来源，以及此前画布交付。明细无待完成代码/运行步骤；免费每日数量和模型/规格待答复，确认后补ADR并开发0061 quota，必须一起升级Web/Worker。新需求从当前HEAD核对祖先；仅并行写任务建worktree，完成后退役。

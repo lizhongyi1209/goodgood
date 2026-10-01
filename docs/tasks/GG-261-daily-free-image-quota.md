@@ -1,12 +1,12 @@
 # GG-261 · 每日免费图片额度与明细来源契约
 
-- 日期：2026-10-01；状态：来源契约已整合并代码/隔离 SQL 验证，运行同步中；免费规则待用户补充，未部署。
-- 基线：`c6f6bb9`；后端复用 `/root/canvas_paste_image` 子 agent，分支 `feat/GG-261-daily-free-quota` / `F:/goodgood-worktrees/GG-261-daily-free-quota` 已创建，创建 1/退役待集成。
+- 日期：2026-10-01；状态：来源契约已整合、代码/隔离SQL验证并进入5173/Web；免费规则待用户补充，未部署。
+- 基线：`c6f6bb9`；后端复用 `/root/canvas_paste_image` 子agent，分支 `feat/GG-261-daily-free-quota` 保留；`F:/goodgood-worktrees/GG-261-daily-free-quota` 已精确整合并Git remove/prune退役，创建1/退役1，无子依赖/缓存/服务。
 - 目标：每天每用户图片免费次数（用户示例 2 张）进入实际鉴权/计费/任务幂等与失败恢复；规则澄清期间不自行决定适用模型/规格。额度不是可转让充值积分；避免并发超额、重复请求、跨工作区重复享受和跨日错误释放。
 - 后端范围：billing summary/activities 的数据契约、真实任务 ID/项目/模型、可分页只读查询；计费预留/结算/释放与最小 quota 持久化迁移及对应定向测试。前端由 GG-260 拥有；后端提交独立，不改账户 profile/0059、画布样式或无关运行。
 - 预议契约：活动增加 taskId/projectName/projectId/modelName（非生成或不可恢复历史为 null），保留 batchReference 兼容；每页 20 上限。免费字段通过独立 dailyFreeQuota 摘要返回，UI 不合并货币积分余额。契约在实现前通知根/UI。
 - 隔离：无真实 provider/上传或 Worker 共用数据库/队列写测试；SQL 写测试只可在明确命名临时库且无 Worker，先核对有效目标。子树不安装依赖、不生成缓存或启动长期服务。根统一集成和必要 verified Web/迁移同步。
-- 下一步：根完成 0060/verified Web 同步及子树退役；每日数量与适用模型/规格明确后，补免费 ADR 并实现实际 quota/预留/终态返还，Web/Worker 同时同步。
+- 下一步：每日数量与适用模型/规格明确后补免费ADR并实现quota/预留/终态返还，Web/Worker同时同步；已交付来源无待完成代码/运行步骤。
 
 ## 政策无关的明细来源（已实现、子树代码验证）
 
@@ -21,6 +21,7 @@
 - 未执行实际SQL、全量typecheck/build/gate、浏览器验收或真实API/provider写。父统一来源迁移/verified Web接线，不改变生产。
 
 - 根证据：子 `936da92` 精确回放为 `d9e5aff`；来源/M6 15/15、相关 lint 完成。新空白 `goodgood_gg261_source_test_20261001` 无 Worker，全迁移后真实 repository SQL 1/1通过并删除。初次 SQL 发现旧公共毫秒 cursor 无法匹配 PG 微秒时间；根改为按同 owner/digest/毫秒区间查找、SQL text 保留完整时间作排序界限，同一微秒25条跨页不丢不重。未改历史流水或活动库数据。
+- 运行交付：根 `9f9d788e31d6a671bf9b79a4f3294d6179310b06` checkpoint build/verify通过，sourceHash `e256cd039753a58f596e876f901db5201c9a5ad41a637e6f4b2b61e298be50e6`，artifactHash `498acdf8272bb7f75d3cf480beaee17d0766420733a79636215a5f20b29bea2f`、283 artifacts。本地54449/goodgood仅新增0060，users/jobs/ledger行数前后一致；迁移/重启前活动任务/outbox/冻结及两队列0。Web及5173代理verified同revision、activities未登录401，原cloud-development保留；Worker70e10c6仍ready，仅来源功能无需新关闭hook，免费尚未实现。
 
 ## 每日免费额度调查与待定规则
 
