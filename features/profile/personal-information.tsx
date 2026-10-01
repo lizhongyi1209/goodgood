@@ -137,9 +137,9 @@ function PersonalInformationForm({ profile, session, onSave, onRetry, onPendingC
               <span className={styles.avatarEdit}><Camera size={12} aria-hidden="true" /></span>
             </button>
             {editing === "avatar" && <>
-              {editProfile.avatarReferenceId && <Button type="button" variant="ghost" size="icon" aria-label="移除头像" title="移除头像" disabled={busy} onClick={() => { clearPreview(); setRemoveAvatar(true); setError(null); }}><Trash2 size={15} aria-hidden="true" /></Button>}
-              <Button type="button" variant="ghost" size="icon" className={styles.confirm} aria-label="确认保存头像" title="确认保存头像" disabled={busy || (!file && !removeAvatar)} onClick={() => void confirm("avatar")}>
-                {busy ? <LoaderCircle size={16} className="animate-spin" aria-hidden="true" /> : <Check size={16} aria-hidden="true" />}
+              {editProfile.avatarReferenceId && <Button type="button" variant="ghost" size="icon-xs" className={styles.confirm} aria-label="移除头像" title="移除头像" disabled={busy} onClick={() => { clearPreview(); setRemoveAvatar(true); setError(null); }}><Trash2 size={14} className="size-3.5" aria-hidden="true" /></Button>}
+              <Button type="button" variant="ghost" size="icon-xs" className={styles.confirm} aria-label="确认保存头像" title="确认保存头像" disabled={busy || (!file && !removeAvatar)} onClick={() => void confirm("avatar")}>
+                {busy ? <LoaderCircle size={14} className="size-3.5 animate-spin" aria-hidden="true" /> : <Check size={14} className="size-3.5" aria-hidden="true" />}
               </Button>
             </>}
             <input ref={fileInput} type="file" accept="image/jpeg,image/png" aria-label="选择头像文件" hidden disabled={busy} onChange={(event) => { const value = event.target.files?.[0]; event.target.value = ""; if (value) select(value); }} />
@@ -151,17 +151,17 @@ function PersonalInformationForm({ profile, session, onSave, onRetry, onPendingC
       <div><dt>用户名</dt><dd>
         <div ref={nameRoot} className={styles.editRegion}>
           {editing === "name" ? <>
-            <div className={styles.nameEditor}>
+            <div className={styles.nameEditor} data-editing="true">
               <span ref={nameText} className={styles.editableText} role="textbox" contentEditable={!busy} suppressContentEditableWarning aria-label="编辑用户名" aria-multiline="false" aria-describedby={`${hintId}-name`} aria-invalid={Boolean(error)} aria-busy={busy} spellCheck={false} onInput={() => setError(null)} onPaste={plainPaste} onKeyDown={(event) => {
                 if (event.nativeEvent.isComposing) return;
                 if (event.key === "Enter") { event.preventDefault(); confirmName.current?.focus(); }
                 if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); cancel(true); }
               }}>{editProfile.displayName}</span>
-              <Button ref={confirmName} type="button" variant="ghost" size="icon" className={styles.confirm} aria-label="确认保存用户名" title="确认保存用户名" disabled={busy} onClick={() => void confirm("name")}>
-                {busy ? <LoaderCircle size={16} className="animate-spin" aria-hidden="true" /> : <Check size={16} aria-hidden="true" />}
+              <Button ref={confirmName} type="button" variant="ghost" size="icon-xs" className={styles.confirm} aria-label="确认保存用户名" title="确认保存用户名" disabled={busy} onClick={() => void confirm("name")}>
+                {busy ? <LoaderCircle size={14} className="size-3.5 animate-spin" aria-hidden="true" /> : <Check size={14} className="size-3.5" aria-hidden="true" />}
               </Button>
             </div>
-          </> : <button ref={nameTrigger} type="button" className={styles.editableValue} aria-label="修改用户名" title={name} disabled={busy} onClick={() => begin("name")}><span>{name}</span><Pencil size={12} aria-hidden="true" /></button>}
+          </> : <button ref={nameTrigger} type="button" className={`${styles.nameEditor} ${styles.editableValue}`} data-editing="false" aria-label="修改用户名" title={name} disabled={busy} onClick={() => begin("name")}><span>{name}</span><Pencil size={14} className="size-3.5" aria-hidden="true" /></button>}
           <p id={`${hintId}-name`} className={styles.rules} aria-hidden={editing !== "name"}>1–30 个字符，支持中文、字母、数字和表情，不能换行。</p>
           {editing === "name" && error && <div className={styles.feedback} role="alert">{error}{error.includes("其他页面") && <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={onRetry}>重新读取资料</Button>}</div>}
         </div>

@@ -6,7 +6,7 @@
 - 参考：https://codefronts.com/components/tailwind-css-input-fields/tailwind-inline-edit-field/；详细页访问受限，已读取站点集合页的同组件说明（data-editing 控制统一状态）。不复用其 blur/Enter 自动保存行为。
 - 分支 / worktree：根负责 `fix/GG-262-profile-inline-edit-layout` / `F:/goodgood-worktrees/GG-262-profile-inline-edit`，基线 `c0d8d08` 含 GG-260/261 已交付来源/明细；实际 5173 在 GG-116，不切换其分支。
 - 文件边界：features/profile/personal-information.tsx / module.css、必要既有 SSR 断言和本卡；共享文档整合后收口，保护并行积分/免费额度源码。
-- 实现与证据：现有 contenteditable 按文字收缩且 overflow-x:auto，使 Windows 滚动条占据高度；改稳定网格文字区/操作区，隐藏溢出但保持文字可编辑，无底部按钮或输入框。
+- 实现与证据：现有 contenteditable 按文字收缩且 overflow-x:auto，使 Windows 滚动条占据高度；改响应宽度不超过 220px、32px 高的同一网格，文字占剩余宽度/动作固定24px。编辑用下划线，取消/阅读保持同位置；24px文字行零内边距、双轴隐藏溢出和无可见滚动条，所有动作图标明确14px并避开 Shadcn 默认 SVG 尺寸，规则仍预留真实高度。
 - 验证：仅相关资料 SSR/编辑流程、局部 lint、diff 与实际 Vite 模块编译；不做浏览器验收、全量构建/门禁、数据库迁移或真实上传/生成。
 - 恢复工作：创建 1 计划中/退役 0；辅助目录不安装依赖/产生构建缓存，精确整合后 clean/进程/路径核对并 Git 退役。
 - 下一步：隔离实现、精确回放、定向验证和文档/目录收口，交用户刷新验收。
