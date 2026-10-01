@@ -1,13 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-01
-- Current phase: GG-264图片详情铺满/无计数/缩略图居中已进入5173，22项相关检查与局部lint/编译通过，创建1/退役1；保留并行GG-263大厅导航与GG-262/260/261及此前功能，verified Web `9f9d788`/本地0060不变，免费政策待用户，生产仍为GG-098/GG-100。
+- Current phase: GG-264经用户澄清恢复默认完整适配、放大可填满整个区域；无计数/缩略图居中保持，已进入5173，本轮16项检查与局部lint/编译通过，累计创建2/退役2。保留并行GG-263及此前功能，verified Web `9f9d788`/本地0060不变，免费政策待用户，生产仍为GG-098/GG-100。
 - Current objective: 用户刷新5173验收图片详情和此前交付；免费数量/适用模型与规格明确后补ADR、实现真实quota。按GG-247定向验证，不把手验作为开发阻塞。
 - Previous objective: GG-244 资产 hover 小按钮、无视频外置文字与节点式视频预览已进入实际 5173。
 
 ## Current checkpoint
 
-- 当前图片详情交付 [GG-264](tasks/GG-264-image-detail-fill-and-centered-rail.md)：基线`fa673fe`，登记时与另一窗口263撞号已更正；`6d20225`回放为`1c9ae74`并保留并行GG-263 `8725ae5`。主图等比铺满完整中间舞台、超出部分可拖动，无右下计数；缩略图含首尾动态居中并响应resize/加载。22/22、相关lint/五模块编译通过，创建1/退役1、无缓存，无Web/数据库变更。
+- 当前图片详情交付 [GG-264](tasks/GG-264-image-detail-fill-and-centered-rail.md)：初版`1c9ae74`后用户澄清，从`f10e8b1`隔离修正`c48e68e`→`5409cce`，恢复初次打开/换图/复位完整contain适配，放大可铺满整个舞台；无计数/缩略图动态居中和并行GG-263保持。本轮16/16、相关lint/两模块编译通过，累计创建2/退役2、无缓存，无Web/数据库变更。
 - 当前资料交付 [GG-262](tasks/GG-262-profile-inline-edit-layout.md)：从`c0d8d08`/登记后`ee2c9fc`建立隔离分支，`3338fa9`精确回放为`2f0d8fd`；透明下划线编辑、稳定文字/动作网格、无可见滚动条及统一14px图标。12/12、局部lint/两个实际模块编译通过；创建1/退役1、零子缓存，无Web重建/数据库变更，用户验收。
 - 当前交付 [GG-260](tasks/GG-260-credit-details-and-free-quota.md) / [GG-261](tasks/GG-261-daily-free-image-quota.md)：从 `c6f6bb9` 登记并创建两子树；UI `dbe7f38`→`e1d7f61`，来源 `936da92`→`d9e5aff`，根接线/微秒分页修复 `9f9d788`。UI15、生成12、来源/M615、账户/报价/导航24、隔离SQL1均通过；相关lint零错误（画布7既有警告）、实际模块编译通过。0060与verified Web完成，子树创建2/退役2、无缓存；免费额度尚未实现/发放。
 - Task [GG-258](tasks/GG-258-canvas-detail-minimal.md)：从干净 `821705e` 核对祖先后建立 `fix/GG-258-canvas-detail-minimal`；移除缩放按钮/倍率及无用样式，非生成素材只展示标题和已知尺寸。SSR/导航 10/10、相关 lint 零错误/警告、三个 Vite 模块编译 HTTP 200；保留滚轮/拖动/键盘及真实参数，无新 worktree/依赖/缓存。
@@ -24,7 +24,7 @@
 - Task [GG-249](tasks/GG-249-canvas-media-viewer.md)：从 `e857437` 新建 `fix/GG-249-canvas-media-viewer`，画布图片入口改为受限完整预览、无标题/滚动条的混合媒体轮播；15/15、相关 lint、四个 Vite 模块编译通过，无新增 worktree/缓存，用户验收。
 - Task [GG-248](tasks/GG-248-account-personal-information.md)：`b4a34a6` 回放为 `520b452`，六项真实资料、ID/邀请码复制与每次默认入口已接入实际目录；20/20、定向 lint，无全量检查，辅助目录创建 1/退役 1，不改变 GG-245 范围。
 - Task [GG-247](tasks/GG-247-targeted-verification.md)：用户要求高频小需求默认定向验证，完整门禁按批次/发布或必要回归执行，规则见 AGENTS/WORKFLOW；不改变 GG-245 的并行开发范围。
-- 当前集成分支`fix/GG-263-remove-lobby-canvas-entry`，目录`F:/goodgood-worktrees/GG-116`，源码检查点`1c9ae74`含GG-264、并行GG-263与GG-262/260/261及此前功能；文档后继HEAD是新任务基线。实际verified Web仍为`9f9d788`，免费政策待补，未授权生产。
+- 当前集成分支`fix/GG-263-remove-lobby-canvas-entry`，目录`F:/goodgood-worktrees/GG-116`，源码检查点`5409cce`含GG-264澄清修正、并行GG-263与GG-262/260/261及此前功能；文档后继HEAD是新任务基线。实际verified Web仍为`9f9d788`，免费政策待补，未授权生产。
 - Task [GG-246](tasks/GG-246-asset-video-hover.md)：子提交 `c563d98`/根回放 `ec51488` 已整合为 `83a4306`，实际目录 `F:/goodgood-worktrees/GG-116`，基于 GG-244 收口 `dd8dca9`，仅修改大厅资产视频。定向 31/31、一次完整共同门禁 685 通过/22 隔离跳过/0 失败；5173 编译模块 HTTP 200 含新接线；辅助目录创建 2/退役 2。不改变 GG-245 并行任务。
 - Task [GG-244](tasks/GG-244-canvas-asset-hover.md)：分支 `fix/GG-244-canvas-asset-hover` 基于 `86ee3b7`；子提交精确回放 `be84c53`、`9d7d18c`，定向 9/9、完整门禁 674/22/0；子目录创建 1/退役 1，沿用 GG-242/243 与云配置。
 - Task [GG-245](tasks/GG-245-canvas-image-link-read.md)：子八文件 `e471c1c` 精确回放为 `7ddb78d`；34/34、定向 lint/typecheck、必要 checkpoint 构建通过，实际 cafe24 JPEG 新读取器下载/解码成功（900×1190）。ADR 0122 与原上传/归档保持，本地 Web 同步完成。
