@@ -5,7 +5,7 @@ import { ImageOff, Play, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
-import { adjacentViewerIndex, createViewerWheelStep } from "./image-viewer-navigation.mjs";
+import { adjacentViewerIndex, createViewerWheelStep, viewerThumbnailLayout } from "./image-viewer-navigation.mjs";
 import styles from "./image-viewer.module.css";
 
 export type ImageViewerItem = Readonly<{
@@ -60,19 +60,21 @@ function VideoThumbnail({ src }: Readonly<{ src: string }>) {
 function ThumbnailCarousel({ items, selectedKey, onSelect }: Pick<ViewerProps, "items" | "selectedKey" | "onSelect">) {
   const railRef = useRef<HTMLElement>(null);
   const index = Math.max(0, items.findIndex((item) => item.key === selectedKey));
+  const layout = viewerThumbnailLayout(items, index);
+  const compactLayout = viewerThumbnailLayout(items, index, true);
   useEffect(() => {
     const rail = railRef.current;
     if (rail?.contains(document.activeElement)) rail.querySelector<HTMLButtonElement>('[aria-current="true"]')?.focus({ preventScroll: true });
   }, [selectedKey]);
   // Only nearby frames are mounted; large libraries do not load every video.
-  const start = Math.max(0, index - 7);
+  const start = Math.max(0, index - 13);
   return <nav ref={railRef} className={styles.carousel} aria-label="当前范围图片和视频">
-    {items.slice(start, index + 8).map((item, offset) => {
+    {items.slice(start, index + 14).map((item, offset) => {
       const itemIndex = start + offset;
       const active = item.key === selectedKey;
-      const ratio = item.width && item.height && item.width > 0 && item.height > 0 ? item.width / item.height : 1;
       return <button key={item.key} type="button" className={styles.carouselThumbnail}
-        style={{ "--thumbnail-offset": itemIndex - index, "--thumbnail-ratio": ratio } as CSSProperties}
+        style={{ "--thumbnail-y": layout[itemIndex].offset, "--thumbnail-height": layout[itemIndex].height,
+          "--thumbnail-y-mobile": compactLayout[itemIndex].offset, "--thumbnail-height-mobile": compactLayout[itemIndex].height } as CSSProperties}
         aria-label={`查看第 ${itemIndex + 1} 个${item.media === "video" ? "视频" : "图片"}：${item.name}`}
         tabIndex={active ? 0 : -1}
         aria-current={active ? "true" : undefined} onClick={() => onSelect(item.key)}>
@@ -139,7 +141,7 @@ function ViewerBody({ items, selectedKey, onSelect, onClose, mode, renderVideo }
     if (["ArrowDown", "ArrowRight"].includes(event.key)) { event.preventDefault(); selectAdjacent(1); }
     if (["ArrowUp", "ArrowLeft"].includes(event.key)) { event.preventDefault(); selectAdjacent(-1); }
   }}>
-    <section ref={stageRef} className={styles.stage} aria-label="大图预览" onDragStart={(event) => event.preventDefault()}>
+    <section ref={stageRef} className={styles.stage} aria-label={mode === "canvas" ? "资产预览画布" : "大图预览"} onDragStart={(event) => event.preventDefault()}>
       <Button type="button" variant="ghost" size="icon" className={styles.close} aria-label={mode === "canvas" ? "关闭资产预览" : "关闭图片预览"} onClick={onClose}><X size={20} aria-hidden="true" /></Button>
       {mode === "canvas" ? <div className={styles.stageMedia}>{media}</div> : media}
       <div className={styles.caption}><span>{selected?.name ?? "图片预览"}</span><small>{index >= 0 ? index + 1 : "—"} / {items.length}</small></div>

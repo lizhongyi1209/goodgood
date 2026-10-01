@@ -1,5 +1,9 @@
 # GG-063 verification
 
+## GG-251 preview fit correction
+
+Run the GG-251 thumbnail geometry and GG-249 navigation tests, scoped viewer/helper lint and documentation continuity. Geometry checks must preserve clear gaps for mixed ratios and every selected position on desktop/mobile, including the enlarged item, empty/invalid dimensions and boundaries. Review the canvas's explicitly positioned media bounds and absolute native image contain sizing to prevent intrinsic grid overflow; retain video/focus/reduced-motion wiring. The user verifies actual complete-image fit, larger dialog and stationary thumbnail enlargement. No browser acceptance or full build/gate is performed.
+
 ## GG-249 canvas viewer verification
 
 Run `tests/gg249-image-viewer-navigation.test.mjs` and existing GG-244 playback tests, relevant source lint, documentation continuity and diff checks. Review explicit stage bounds/contain, current-scope media order, nearby-frame mounting, transform stacking, keyboard focus, Escape/return focus, retry and reduced motion. Vite module HTTP compilation can verify actual 5173 source integration; it does not establish browser acceptance. The user inspects image completeness, size, rail animation and mixed-media navigation. No full build/gate, real upload or provider request is needed for this scoped UI change.

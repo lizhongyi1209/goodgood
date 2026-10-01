@@ -25,18 +25,20 @@
 .thumbnail > .image, .thumbnail > .imageState { position: absolute; inset: 0; }
 .image video { display: block; width: 100%; height: 100%; object-fit: contain; }
 .thumbnailPlay { position: absolute; right: 4px; bottom: 4px; padding: 2px; width: 16px; height: 16px; border-radius: 50%; background: rgb(24 24 27 / 68%); color: #fff; }
-.canvasDialog[data-slot="dialog-content"] { inset: 50% auto auto 50%; width: min(1080px, calc(100vw - 48px)); height: min(760px, 82dvh); transform: translate(-50%, -50%); border-radius: 16px; }
+.canvasDialog[data-slot="dialog-content"] { inset: 50% auto auto 50%; width: min(1280px, calc(100vw - 32px)); height: min(900px, 92dvh); transform: translate(-50%, -50%); border-radius: 16px; }
 .canvasLayout { grid-template-columns: minmax(0, 1fr) 124px; }
-.canvasLayout .stage { display: flex; padding: 52px 28px 44px; }
-.canvasLayout .stageMedia { max-width: 880px; }
+.canvasLayout .stage { display: block; padding: 0; }
+.canvasLayout .stageMedia { position: absolute; inset: 48px 24px 40px; display: block; width: auto; height: auto; max-width: none; }
+.canvasLayout .stageMedia > .image { position: absolute; inset: 0; display: block; width: auto; height: auto; }
+.canvasLayout .image img, .canvasLayout .image video { position: absolute; inset: 0; width: 100%; height: 100%; min-width: 0; min-height: 0; object-fit: contain; }
 .carousel { position: relative; min-width: 0; min-height: 0; overflow: hidden; background: #fff; overscroll-behavior: contain; }
-.carouselThumbnail { position: absolute; top: 50%; right: 12px; width: 64px; height: clamp(32px, calc(64px / var(--thumbnail-ratio)), 76px); padding: 0; overflow: hidden; border: 0; border-radius: 7px; background: #f4f4f5; opacity: .65; cursor: pointer; transform-origin: right center; transform: translateY(calc(-50% + var(--thumbnail-offset) * 58px)); transition: transform 260ms cubic-bezier(.22, 1, .36, 1), opacity 180ms ease; }
-.carouselThumbnail[aria-current="true"] { z-index: 2; opacity: 1; transform: translate(-4px, -50%) scale(1.4); }
+.carouselThumbnail { position: absolute; top: 50%; right: 18px; width: 64px; height: calc(var(--thumbnail-height) * 1px); padding: 0; overflow: hidden; border: 0; border-radius: 7px; background: #f4f4f5; opacity: .65; cursor: pointer; transform-origin: center; transform: translateY(calc(-50% + var(--thumbnail-y) * 1px)); transition: transform 260ms cubic-bezier(.22, 1, .36, 1), opacity 180ms ease; }
+.carouselThumbnail[aria-current="true"] { z-index: 2; opacity: 1; transform: translateY(-50%) scale(1.12); }
 .carouselThumbnail:hover { opacity: 1; }
 .carouselThumbnail:focus-visible { z-index: 3; }
 .carouselThumbnail > .image, .carouselThumbnail > .imageState { position: absolute; inset: 0; }
 .dialog button:focus-visible { outline: 2px solid #71717a; outline-offset: 2px; box-shadow: none; }
 @keyframes imageIn { from { opacity: .4; } to { opacity: 1; } }
 @media (max-width: 600px) { .layout { grid-template-columns: minmax(0, 1fr) 72px; } .stage { padding: 56px 12px 44px; } .rail { padding-right: 4px; padding-left: 4px; } .thumbnail { width: 52px; } }
-@media (max-width: 600px) { .canvasDialog[data-slot="dialog-content"] { width: calc(100vw - 20px); height: min(680px, 86dvh); border-radius: 12px; } .canvasLayout { grid-template-columns: minmax(0, 1fr) 96px; } .canvasLayout .stage { padding: 48px 12px 40px; } .carouselThumbnail { right: 8px; width: 50px; height: clamp(28px, calc(50px / var(--thumbnail-ratio)), 64px); } }
+@media (max-width: 600px) { .canvasDialog[data-slot="dialog-content"] { width: calc(100vw - 16px); height: min(900px, 94dvh); border-radius: 12px; } .canvasLayout { grid-template-columns: minmax(0, 1fr) 96px; } .canvasLayout .stageMedia { inset: 48px 12px 40px; } .carouselThumbnail { right: 14px; width: 50px; height: calc(var(--thumbnail-height-mobile) * 1px); transform: translateY(calc(-50% + var(--thumbnail-y-mobile) * 1px)); } .carouselThumbnail[aria-current="true"] { transform: translateY(-50%) scale(1.12); } }
 @media (prefers-reduced-motion: reduce) { .dialog[data-slot], .overlay[data-slot], .stage > .image:not([data-loading]) img, .stageMedia > .image:not([data-loading]) img { animation: none; } .thumbnail, .dialog button { transition: none; } }
