@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ImageOff, Play, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
-import { adjacentViewerIndex, createViewerWheelStep, viewerThumbnailLayout } from "./image-viewer-navigation.mjs";
+import { adjacentViewerIndex, createViewerWheelStep } from "./image-viewer-navigation.mjs";
+import { ImagePreviewCanvas } from "./image-preview-canvas";
+import { ImageViewerDetails, type ImageViewerMetadata } from "./image-viewer-details";
 import styles from "./image-viewer.module.css";
 
 export type ImageViewerItem = Readonly<{
@@ -16,6 +18,7 @@ export type ImageViewerItem = Readonly<{
   width?: number;
   height?: number;
   media?: "image" | "video";
+  metadata?: ImageViewerMetadata;
 }>;
 
 type ViewerProps = Readonly<{
@@ -26,6 +29,7 @@ type ViewerProps = Readonly<{
   onClose: () => void;
   mode?: "canvas";
   renderVideo?: (item: ImageViewerItem) => ReactNode;
+  renderThumbnail?: (item: ImageViewerItem) => ReactNode;
 }>;
 
 function ViewerImage({ src, name, thumbnail = false }: Readonly<{ src: string; name: string; thumbnail?: boolean }>) {
@@ -57,28 +61,37 @@ function VideoThumbnail({ src }: Readonly<{ src: string }>) {
   </span>;
 }
 
-function ThumbnailCarousel({ items, selectedKey, onSelect }: Pick<ViewerProps, "items" | "selectedKey" | "onSelect">) {
+function ThumbnailCarousel({ items, selectedKey, onSelect, renderThumbnail }: Pick<ViewerProps, "items" | "selectedKey" | "onSelect" | "renderThumbnail">) {
   const railRef = useRef<HTMLElement>(null);
-  const index = Math.max(0, items.findIndex((item) => item.key === selectedKey));
-  const layout = viewerThumbnailLayout(items, index);
-  const compactLayout = viewerThumbnailLayout(items, index, true);
+  const thumbnailRefs = useRef(new Map<string, HTMLButtonElement>());
   useEffect(() => {
     const rail = railRef.current;
-    if (rail?.contains(document.activeElement)) rail.querySelector<HTMLButtonElement>('[aria-current="true"]')?.focus({ preventScroll: true });
-  }, [selectedKey]);
-  // Only nearby frames are mounted; large libraries do not load every video.
-  const start = Math.max(0, index - 13);
+    const thumbnail = thumbnailRefs.current.get(selectedKey);
+    if (!rail || !thumbnail) return;
+    if (rail.contains(document.activeElement)) thumbnail.focus({ preventScroll: true });
+    const reveal = () => {
+      const railBox = rail.getBoundingClientRect();
+      const box = thumbnail.getBoundingClientRect();
+      const offset = box.top < railBox.top ? box.top - railBox.top : box.bottom > railBox.bottom ? box.bottom - railBox.bottom : 0;
+      if (offset) rail.scrollTo({ top: rail.scrollTop + offset, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    };
+    reveal();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(reveal);
+    observer.observe(rail);
+    observer.observe(thumbnail);
+    return () => observer.disconnect();
+  }, [selectedKey, items]);
   return <nav ref={railRef} className={styles.carousel} aria-label="当前范围图片和视频">
-    {items.slice(start, index + 14).map((item, offset) => {
-      const itemIndex = start + offset;
+    {items.map((item, itemIndex) => {
       const active = item.key === selectedKey;
       return <button key={item.key} type="button" className={styles.carouselThumbnail}
-        style={{ "--thumbnail-y": layout[itemIndex].offset, "--thumbnail-height": layout[itemIndex].height,
-          "--thumbnail-y-mobile": compactLayout[itemIndex].offset, "--thumbnail-height-mobile": compactLayout[itemIndex].height } as CSSProperties}
+        ref={(element) => { if (element) thumbnailRefs.current.set(item.key, element); else thumbnailRefs.current.delete(item.key); }}
+        style={renderThumbnail ? undefined : { aspectRatio: item.width && item.height ? item.width / item.height : 1 }}
         aria-label={`查看第 ${itemIndex + 1} 个${item.media === "video" ? "视频" : "图片"}：${item.name}`}
         tabIndex={active ? 0 : -1}
         aria-current={active ? "true" : undefined} onClick={() => onSelect(item.key)}>
-        {item.media === "video" ? <VideoThumbnail key={item.previewUrl} src={item.previewUrl} />
+        {renderThumbnail ? renderThumbnail(item) : item.media === "video" ? <VideoThumbnail key={item.previewUrl} src={item.previewUrl} />
           : <ViewerImage key={item.previewUrl} src={item.previewUrl} name={item.name} thumbnail />}
       </button>;
     })}
@@ -86,8 +99,7 @@ function ThumbnailCarousel({ items, selectedKey, onSelect }: Pick<ViewerProps, "
 }
 
 // This body mounts inside the portal, so its native wheel target already exists.
-function ViewerBody({ items, selectedKey, onSelect, onClose, mode, renderVideo }: Omit<ViewerProps, "returnFocusTo">) {
-  const layoutRef = useRef<HTMLDivElement>(null);
+function ViewerBody({ items, selectedKey, onSelect, onClose, mode, renderVideo, renderThumbnail }: Omit<ViewerProps, "returnFocusTo">) {
   const stageRef = useRef<HTMLElement>(null);
   const railRef = useRef<HTMLDivElement>(null);
   const thumbnailRefs = useRef(new Map<string, HTMLButtonElement>());
@@ -98,7 +110,8 @@ function ViewerBody({ items, selectedKey, onSelect, onClose, mode, renderVideo }
   useEffect(() => { navigationRef.current = { items, selectedKey, onSelect }; }, [items, selectedKey, onSelect]);
 
   useEffect(() => {
-    const stage = mode === "canvas" ? layoutRef.current : stageRef.current;
+    if (mode === "canvas") return;
+    const stage = stageRef.current;
     if (!stage) return;
     const step = createViewerWheelStep();
     const wheel = (event: WheelEvent) => {
@@ -133,20 +146,25 @@ function ViewerBody({ items, selectedKey, onSelect, onClose, mode, renderVideo }
     if (next) onSelect(next.key);
   };
   const media = selected ? selected.media === "video" ? renderVideo?.(selected)
-    : <ViewerImage key={`${selected.key}:${selected.sourceUrl}`} src={selected.sourceUrl} name={selected.name} />
+    : mode === "canvas" ? <ImagePreviewCanvas key={`${selected.key}:${selected.sourceUrl}`} name={selected.name}>
+      <ViewerImage key={`${selected.key}:${selected.sourceUrl}`} src={selected.sourceUrl} name={selected.name} />
+    </ImagePreviewCanvas> : <ViewerImage key={`${selected.key}:${selected.sourceUrl}`} src={selected.sourceUrl} name={selected.name} />
     : <p className={styles.empty} role="status">{items.length ? "此资产已不在当前列表中，请选择右侧缩略图。" : "当前范围没有可预览的资产。"}</p>;
 
-  return <div ref={layoutRef} className={`${styles.layout} ${mode === "canvas" ? styles.canvasLayout : ""}`} onKeyDown={(event) => {
+  return <div className={`${styles.layout} ${mode === "canvas" ? styles.canvasLayout : ""}`} onKeyDown={(event) => {
     if (event.ctrlKey || event.metaKey || event.altKey) return;
     if (["ArrowDown", "ArrowRight"].includes(event.key)) { event.preventDefault(); selectAdjacent(1); }
     if (["ArrowUp", "ArrowLeft"].includes(event.key)) { event.preventDefault(); selectAdjacent(-1); }
   }}>
+    {mode === "canvas" && <ImageViewerDetails item={selected} />}
     <section ref={stageRef} className={styles.stage} aria-label={mode === "canvas" ? "资产预览画布" : "大图预览"} onDragStart={(event) => event.preventDefault()}>
       <Button type="button" variant="ghost" size="icon" className={styles.close} aria-label={mode === "canvas" ? "关闭资产预览" : "关闭图片预览"} onClick={onClose}><X size={20} aria-hidden="true" /></Button>
       {mode === "canvas" ? <div className={styles.stageMedia}>{media}</div> : media}
-      <div className={styles.caption}><span>{selected?.name ?? "图片预览"}</span><small>{index >= 0 ? index + 1 : "—"} / {items.length}</small></div>
+      <div className={`${styles.caption} ${mode === "canvas" ? styles.canvasCaption : ""}`}>
+        {mode !== "canvas" && <span>{selected?.name ?? "图片预览"}</span>}<small>{index >= 0 ? index + 1 : "—"} / {items.length}</small>
+      </div>
     </section>
-    {mode === "canvas" ? <ThumbnailCarousel items={items} selectedKey={selectedKey} onSelect={onSelect} /> : <nav className={styles.rail} aria-label="当前范围图片" onWheel={(event) => event.stopPropagation()}>
+    {mode === "canvas" ? <ThumbnailCarousel items={items} selectedKey={selectedKey} onSelect={onSelect} renderThumbnail={renderThumbnail} /> : <nav className={styles.rail} aria-label="当前范围图片" onWheel={(event) => event.stopPropagation()}>
       <span className={styles.railTitle}>图片</span>
       <div ref={railRef} className={styles.thumbnails}>
         {items.map((item, itemIndex) => <button key={item.key} type="button" className={styles.thumbnail}
@@ -166,9 +184,10 @@ export function ImageViewer({ returnFocusTo, onClose, ...props }: ViewerProps) {
     <DialogContent className={`${styles.dialog} ${props.mode === "canvas" ? styles.canvasDialog : ""}`} overlayClassName={styles.overlay} showCloseButton={false}
       onEscapeKeyDown={(event) => { event.preventDefault(); event.stopPropagation(); onClose(); }}
       onCloseAutoFocus={(event) => { event.preventDefault(); if (returnFocusTo?.isConnected) returnFocusTo.focus({ preventScroll: true }); }}
-      onKeyDown={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>
+      onKeyDown={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}
+      onWheel={(event) => event.stopPropagation()}>
       <DialogTitle className="sr-only">{props.mode === "canvas" ? "资产预览" : "图片预览"}</DialogTitle>
-      <DialogDescription className="sr-only">{props.mode === "canvas" ? "滚动鼠标或使用方向键切换图片和视频，点击右侧缩略图也可切换。视频可悬停或手动播放。" : "滚动大图区或使用方向键切换图片，右侧缩略图可滚动和点击。"}按 Escape 关闭。</DialogDescription>
+      <DialogDescription className="sr-only">{props.mode === "canvas" ? "左侧显示素材信息。拖动图片移动位置，滚轮缩放；点击右侧缩略图切换素材。视频可悬停或手动播放。" : "滚动大图区或使用方向键切换图片，右侧缩略图可滚动和点击。"}按 Escape 关闭。</DialogDescription>
       <ViewerBody {...props} onClose={onClose} />
     </DialogContent>
   </Dialog>;

@@ -46,6 +46,9 @@ button.addCard[data-slot]:focus-visible, .folderCard[data-slot="button"]:focus-v
 .videoDuration { position: absolute; bottom: 6px; left: 6px; padding: 2px 5px; border-radius: 5px; background: rgb(24 24 27 / 72%); color: #fff; font-size: 10px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.2; pointer-events: none; }
 .videoPlay[data-slot="button"][data-playing], .videoDuration[data-playing] { opacity: 0; pointer-events: none; }
 .videoPlay[data-slot="button"][data-playing]:focus-visible { opacity: 1; pointer-events: auto; }
+.previewThumbnail { display: block; width: 100%; }
+.videoThumbnailPlay { position: absolute; top: 50%; left: 50%; display: grid; place-items: center; width: 32px; height: 32px; transform: translate(-50%, -50%); border-radius: 50%; background: rgb(24 24 27 / 68%); color: #fff; pointer-events: none; }
+.videoThumbnailPlay[data-playing] { opacity: 0; }
 .mediaLoading { position: absolute; inset: 0; display: grid; place-items: center; color: #71717a; font-size: 10px; line-height: 1.4; pointer-events: none; }
 .mediaFailure { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 5px; padding: 6px 2px 0; color: #52525b; font-size: 10px; line-height: 1.4; }
 .mediaFailure p { flex: 1; min-width: 0; margin: 0; overflow-wrap: anywhere; }
