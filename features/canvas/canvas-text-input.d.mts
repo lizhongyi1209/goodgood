@@ -1,0 +1,10 @@
+import type { Connection, Edge } from "@xyflow/react";
+import type { CanvasNode } from "./canvas-workspace";
+export const CANVAS_TEXT_MAX_LENGTH: number;
+export const CANVAS_MARKDOWN_MAX_LENGTH: number;
+export const CANVAS_PROMPT_MAX_LENGTH: number;
+export type CanvasTextInput = { edgeId: string; nodeId: string; text: string; markdown: string };
+export function collectCanvasTextInputs(nodes: readonly CanvasNode[], edges: readonly Edge[], generatorId: string | null): CanvasTextInput[];
+export function combineCanvasPrompt(inputs: readonly Pick<CanvasTextInput, "text">[], additionalPrompt: string): string;
+export function canvasTextFontSize(width?: number, height?: number): number;
+export function isCanvasTextConnection(connection: Connection | Edge, nodes: readonly CanvasNode[], edges: readonly Edge[]): boolean;

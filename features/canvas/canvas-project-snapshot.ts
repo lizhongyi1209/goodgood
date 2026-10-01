@@ -59,6 +59,9 @@ function localJobWithoutEphemeralUrls(job: GenerationJob): GenerationJob {
 function persistNode(node: CanvasNode): CanvasProjectNode | null {
   if (!Number.isFinite(node.position.x) || !Number.isFinite(node.position.y)) return null;
   const base = { id: node.id, position: { ...node.position }, size: nodeGeometry(node) };
+  if (node.type === "textEditor") return {
+    ...base, type: "textEditor", markdown: node.data.markdown, text: node.data.text,
+  };
   if (node.type === "imageGenerator") return {
     ...base, type: "imageGenerator", sequence: node.data.sequence,
     ...(node.data.job ? { jobId: node.data.job.id, localJob: localJobWithoutEphemeralUrls(node.data.job) } : {}),
@@ -150,6 +153,7 @@ export function snapshotCanvasProject(input: {
 
 function remoteCanvasPageDocument(document: CanvasPageDocument): CanvasPageDocument {
   const nodes = document.nodes.filter((node) =>
+    node.type === "textEditor" ||
     node.type === "imageGenerator" ||
     node.type === "imageResult" && node.jobId && !node.jobId.startsWith("pending_") ||
     Boolean(node.asset?.id),

@@ -2,7 +2,7 @@ import { CanvasProjectError } from "./errors.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const NODE_ID = /^[A-Za-z0-9][A-Za-z0-9_:.\-]{0,159}$/;
-const NODE_TYPES = new Set(["sourceImage", "sourceVideo", "sourceAudio", "imageGenerator", "imageResult"]);
+const NODE_TYPES = new Set(["sourceImage", "sourceVideo", "sourceAudio", "imageGenerator", "imageResult", "textEditor"]);
 const ASSET_KINDS = new Set(["reference", "generated", "video", "audio"]);
 const RESOLUTIONS = new Set(["1K", "2K", "4K"]);
 const MAX_DOCUMENT_BYTES = 1024 * 1024;
@@ -46,10 +46,15 @@ function position(value) {
 }
 
 function node(value) {
-  record(value, ["id", "type", "position", "size", "asset", "jobId", "index", "sequence", "name", "metadata"]);
+  record(value, ["id", "type", "position", "size", "asset", "jobId", "index", "sequence", "name", "metadata", "markdown", "text"]);
   const type = value.type;
   if (!NODE_TYPES.has(type)) throw invalid();
   const result = { id: nodeId(value.id), type, position: position(value.position) };
+  if (type === "textEditor") {
+    result.markdown = string(value.markdown, 100_000, { empty: true, multiline: true });
+    result.text = string(value.text, 16_000, { empty: true, multiline: true });
+    if (value.metadata !== undefined || value.asset !== undefined) throw invalid();
+  } else if (value.markdown !== undefined || value.text !== undefined) throw invalid();
   if (value.size !== undefined) {
     record(value.size, ["width", "height"]);
     result.size = { width: finite(value.size.width, 1, 100_000), height: finite(value.size.height, 1, 100_000) };
@@ -162,6 +167,13 @@ function pageContent(source) {
   const ids = new Set(nodes.map((item) => item.id));
   if (ids.size !== nodes.length) throw invalid();
   const edges = source.edges.map((item) => edge(item, ids));
+  const byId = new Map(nodes.map((item) => [item.id, item]));
+  for (const item of edges) {
+    if (item.sourceHandle === "text" || item.targetHandle === "text" || byId.get(item.source)?.type === "textEditor" || byId.get(item.target)?.type === "textEditor") {
+      if (item.sourceHandle !== "text" || item.targetHandle !== "text" ||
+          byId.get(item.source)?.type !== "textEditor" || byId.get(item.target)?.type !== "imageGenerator") throw invalid();
+    }
+  }
   if (new Set(edges.map((item) => item.id)).size !== edges.length) throw invalid();
   record(source.generators, Object.keys(source.generators ?? {}));
   const generators = Object.create(null);

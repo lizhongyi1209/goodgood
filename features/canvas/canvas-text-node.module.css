@@ -1,0 +1,21 @@
+.label { position: absolute; bottom: calc(100% + 7px); left: 0; display: flex; align-items: center; gap: 5px; font-size: 11px; color: #71717a; white-space: nowrap; }
+.node { position: relative; width: 100%; height: 100%; background: #fff; border: 1px solid #e4e4e7; border-radius: 10px; overflow: hidden; }
+.selected { border-color: #a1a1aa; }
+.body { position: relative; height: 100%; padding: 18px; overflow: auto; cursor: text; }
+.editor { min-height: 100%; }
+.editor :global(.tiptap) { min-height: 100%; outline: none; line-height: 1.65; overflow-wrap: anywhere; color: #18181b; }
+.editor :global(.tiptap) > :first-child { margin-top: 0; }
+.editor :global(.tiptap) > :last-child { margin-bottom: 0; }
+.editor p { margin: 0 0 .65em; }
+.editor h1, .editor h2, .editor h3 { font-weight: 600; line-height: 1.35; margin: .8em 0 .4em; }
+.editor h1 { font-size: 1.6em; }.editor h2 { font-size: 1.35em; }.editor h3 { font-size: 1.15em; }
+.editor ul, .editor ol { padding-left: 1.4em; margin: .5em 0; }.editor ul { list-style: disc; }.editor ol { list-style: decimal; }
+.editor li p { margin: .15em 0; }.editor blockquote { border-left: 2px solid #d4d4d8; padding-left: .8em; margin: .6em 0; color: #71717a; }
+.editor pre { white-space: pre-wrap; border-radius: 5px; background: #f4f4f5; padding: .7em; margin: .6em 0; }
+.editor code { font-family: monospace; font-size: .9em; }.editor a { text-decoration: underline; }.editor strong { font-weight: 600; }
+.placeholder { position: absolute; left: 18px; top: 18px; color: #a1a1aa; pointer-events: none; }
+.toolbar { display: flex; gap: 2px; padding: 4px; border: 1px solid #e4e4e7; border-radius: 8px; background: #fff; }
+.toolbar button { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 5px; color: #18181b; }
+.toolbar button:hover, .toolbar button[aria-pressed="true"] { background: #f4f4f5; }.toolbar button:disabled { opacity: .3; }.toolbar button:focus-visible { outline: 1px solid #71717a; outline-offset: 1px; }
+.handle { width: 9px; height: 9px; border: 2px solid white; background: #71717a; }
+.error { position: absolute; bottom: 4px; left: 8px; right: 8px; font-size: 11px; background: #fff; color: #52525b; }

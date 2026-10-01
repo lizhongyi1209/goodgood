@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
-import { ImageIcon, Keyboard, LibraryBig, Scissors } from "lucide-react";
+import { ImageIcon, Keyboard, LibraryBig, Scissors, Type } from "lucide-react";
 import {
   ConnectionLineType,
   MiniMap,
@@ -27,6 +27,7 @@ import { CanvasSourceNode as CanvasSourceImageNode, type CanvasSourceNodeData } 
 import { CanvasVideoNode as CanvasSourceVideoNode, type CanvasVideoNodeData } from "./canvas-video-node";
 import { CanvasAudioNode, type CanvasAudioNodeData } from "./canvas-audio-node";
 import { CanvasGeneratorNode, type CanvasGeneratorNodeData } from "./canvas-generator-node";
+import { CanvasTextNode, type CanvasTextNodeData } from "./canvas-text-node";
 import { CanvasGeneratorHostContext } from "./canvas-generator-host";
 import { CanvasSelectionControls } from "./canvas-selection-controls";
 import { handleCanvasBodyClipboardPaste, handleCanvasClipboardCopy, handleCanvasClipboardPaste } from "./canvas-clipboard.mjs";
@@ -37,12 +38,13 @@ export type CanvasSourceNode = Node<CanvasSourceNodeData, "sourceImage">;
 export type CanvasVideoNode = Node<CanvasVideoNodeData, "sourceVideo">;
 export type CanvasAudioNodeType = Node<CanvasAudioNodeData, "sourceAudio">;
 export type CanvasGeneratorNodeType = Node<CanvasGeneratorNodeData, "imageGenerator">;
-export type CanvasNode = CanvasResultNodeType | CanvasSourceNode | CanvasVideoNode | CanvasAudioNodeType | CanvasGeneratorNodeType;
+export type CanvasTextNodeType = Node<CanvasTextNodeData, "textEditor">;
+export type CanvasNode = CanvasResultNodeType | CanvasSourceNode | CanvasVideoNode | CanvasAudioNodeType | CanvasGeneratorNodeType | CanvasTextNodeType;
 
 export const canvasReferenceEdgeStyle = { stroke: "#a1a1aa", strokeWidth: 1.2 } as const;
 export const canvasReferenceEdgeCurvature = 0.18;
 
-const nodeTypes = { imageResult: CanvasResultNode, sourceImage: CanvasSourceImageNode, sourceVideo: CanvasSourceVideoNode, sourceAudio: CanvasAudioNode, imageGenerator: CanvasGeneratorNode };
+const nodeTypes = { imageResult: CanvasResultNode, sourceImage: CanvasSourceImageNode, sourceVideo: CanvasSourceVideoNode, sourceAudio: CanvasAudioNode, imageGenerator: CanvasGeneratorNode, textEditor: CanvasTextNode };
 const initialNodes: CanvasNode[] = [];
 
 function CanvasProjectChangeObserver({ onChange }: Readonly<{ onChange: () => void }>) {
@@ -154,6 +156,7 @@ export function CanvasWorkspace({
   onConnect,
   isValidConnection,
   onCreateGenerator,
+  onCreateText,
   onComposerHostChange,
   onProjectGraphChange,
   onViewportSettled,
@@ -182,6 +185,7 @@ export function CanvasWorkspace({
   onConnect: (connection: Connection) => void;
   isValidConnection: (connection: Connection | Edge) => boolean;
   onCreateGenerator: (point: { x: number; y: number }) => void;
+  onCreateText: (point: { x: number; y: number }) => void;
   onComposerHostChange: (id: string, element: HTMLDivElement | null) => void;
   onProjectGraphChange: (settled?: boolean) => void;
   onViewportSettled: () => void;
@@ -292,6 +296,7 @@ export function CanvasWorkspace({
 
   useEffect(() => {
     const preventBrowserMenu = (event: MouseEvent) => {
+      if (event.target instanceof Element && event.target.closest('[data-canvas-asset-context-menu], [contenteditable="true"]')) return;
       if (event.target instanceof Element && event.target.classList.contains("react-flow__pane")) return;
       event.preventDefault();
     };
@@ -386,6 +391,7 @@ export function CanvasWorkspace({
       <ContextMenuTrigger
         asChild
         onContextMenu={(event) => {
+          if (event.target instanceof Element && event.target.closest('[contenteditable="true"]')) { contextPointRef.current = null; event.preventDefault(); return; }
           if (!(event.target instanceof Element && event.target.classList.contains("react-flow__pane"))) {
             event.preventDefault();
             contextPointRef.current = null;
@@ -554,6 +560,13 @@ export function CanvasWorkspace({
       </section>
       </ContextMenuTrigger>
       <ContextMenuContent className={styles.canvasContextMenu} onContextMenu={(event) => event.preventDefault()}>
+        <ContextMenuItem onSelect={() => {
+          if (contextPointRef.current) { onBeforeGraphEdit(); onCreateText(contextPointRef.current); }
+          contextPointRef.current = null;
+        }}>
+          <Type size={12} className="size-3" aria-hidden="true" />
+          <span>文本编辑器</span>
+        </ContextMenuItem>
         <ContextMenuItem onSelect={() => {
           if (contextPointRef.current) { onBeforeGraphEdit(); onCreateGenerator(contextPointRef.current); }
           contextPointRef.current = null;

@@ -3,7 +3,7 @@ import type { GenerationJob } from "@/shared/contracts/generation";
 
 export type CanvasProjectNode = Readonly<{
   id: string;
-  type: "sourceImage" | "sourceVideo" | "sourceAudio" | "imageGenerator" | "imageResult";
+  type: "sourceImage" | "sourceVideo" | "sourceAudio" | "imageGenerator" | "imageResult" | "textEditor";
   position: Readonly<{ x: number; y: number }>;
   size?: Readonly<{ width: number; height: number }>;
   asset?: Readonly<{ id: string; kind: "reference" | "generated" | "video" | "audio" }>;
@@ -11,6 +11,8 @@ export type CanvasProjectNode = Readonly<{
   index?: number;
   sequence?: number;
   name?: string;
+  markdown?: string;
+  text?: string;
   metadata?: Readonly<{ pixelWidth?: number; pixelHeight?: number; durationSeconds?: number }>;
   // Browser recovery only. Never send this field to the server.
   pendingFileId?: string;

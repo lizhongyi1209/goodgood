@@ -144,6 +144,7 @@ export function CanvasGeneratorNode({ id, data, selected }: NodeProps<CanvasGene
         {data.job?.state === "failed" || data.job?.state === "cancelled" ? <span className={styles.generatorFailure} role="alert">{data.job.error?.message ?? "生成未完成，请检查设置后重试。"}</span> : null}
       </div>
       <Handle type="target" id="reference" position={Position.Left} className={styles.generatorInputHandle} aria-label="连接参考图" />
+      <Handle type="target" id="text" position={Position.Left} style={{ top: "75%" }} className={styles.generatorInputHandle} aria-label="连接文本提示词" />
       <NodeToolbar position={Position.Bottom} offset={12} align={align} style={{ width: toolbarWidth }} className={`${styles.generatorToolbar} nodrag nopan nowheel`}>
         <div ref={setHost} className={styles.generatorComposerHost} />
       </NodeToolbar>

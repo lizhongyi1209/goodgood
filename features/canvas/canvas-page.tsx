@@ -77,6 +77,8 @@ import {
 import { CanvasWorkspace, canvasReferenceEdgeCurvature, canvasReferenceEdgeStyle, type CanvasAudioNodeType, type CanvasGeneratorNodeType, type CanvasNode, type CanvasSourceNode, type CanvasVideoNode } from "./canvas-workspace";
 import { CanvasGeneratorSettingsContent } from "./canvas-generator-settings-popover";
 import { CanvasGenerationCountControl } from "./canvas-generation-count-control";
+import { CanvasTextPreview } from "./canvas-text-preview";
+import { CANVAS_PROMPT_MAX_LENGTH, collectCanvasTextInputs, combineCanvasPrompt, isCanvasTextConnection } from "./canvas-text-input.mjs";
 import type { CanvasLibraryAsset } from "./canvas-asset-panel";
 import { upsertCanvasJobNodes } from "./canvas-job-nodes.mjs";
 import { initialCanvasImageSize } from "./canvas-image-size.mjs";
@@ -334,6 +336,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
   const [edges, setEdges] = useState<Edge[]>([]);
   const [convertedReferences, setConvertedReferences] = useState<Record<string, GenerationReference>>({});
   const [mediaRevision, setMediaRevision] = useState(0);
+  const [textRevision, setTextRevision] = useState(0);
   const [submittingGeneratorIds, setSubmittingGeneratorIds] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
   const [dropActive, setDropActive] = useState(false);
@@ -747,7 +750,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
   const selectedResolution = shownResolutions.includes(resolution) ? resolution : shownResolutions[0];
   const linkedReferences = useMemo<LinkedCanvasReference[]>(() => {
     if (!activeGeneratorId || !flow) return [];
-    return edges.filter((edge) => edge.target === activeGeneratorId).map((edge) => {
+    return edges.filter((edge) => edge.target === activeGeneratorId && edge.targetHandle !== "text").map((edge) => {
       const node = flow.getNode(edge.source);
       const asset = imageSourceAsset(node);
       const converted = convertedReferences[edge.id];
@@ -759,6 +762,10 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       return { edgeId: edge.id, reference, previewUrl: asset?.previewUrl ?? "" };
     });
   }, [activeGeneratorId, flow, edges, convertedReferences, mediaRevision]);
+  const linkedTextInputs = useMemo(() => collectCanvasTextInputs(flow?.getNodes() ?? [], edges, activeGeneratorId),
+    [activeGeneratorId, flow, edges, textRevision]);
+  const combinedPrompt = combineCanvasPrompt(linkedTextInputs, prompt);
+  const promptTooLong = combinedPrompt.length > CANVAS_PROMPT_MAX_LENGTH;
   const displayReferences = [
     ...references.map((item) => ({ key: item.clientId, kind: "direct" as const, reference: item.reference, previewUrl: item.previewUrl })),
     ...linkedReferences.map((item) => ({ key: item.edgeId, kind: "linked" as const, reference: item.reference, previewUrl: item.previewUrl })),
@@ -781,7 +788,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
   );
   const canGenerate = Boolean(
     session?.access.status === "active" && !session.preview && quote &&
-    prompt.trim() && !referencesBusy && !referencesFailed && !insufficientCredits &&
+    combinedPrompt.trim() && !promptTooLong && !referencesBusy && !referencesFailed && !insufficientCredits &&
     !billingLoading && !billingError && !generatorEditingLocked,
   );
   const upload = (generatorId: string, items: CanvasReference[]) => {
@@ -932,13 +939,14 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       } };
       if (node.type === "sourceImage") return { ...base, type: "sourceImage", data: { ...node.data } };
       if (node.type === "sourceAudio") return { ...base, type: "sourceAudio", data: { ...node.data } };
+      if (node.type === "textEditor") return { ...base, type: "textEditor", data: { ...node.data } };
       if (node.type === "imageResult") return { ...base, type: "imageResult", data: {
         ...node.data, onRetry: () => { void runJob(node.data.job.input); },
       } };
       return { ...base, type: "imageGenerator", data: { ...node.data, sequence: ++nextSequence } };
     });
     const pastedEdges = clipboard.edges.map((edge) => ({ ...edge,
-      id: `reference-${ids.get(edge.source)}-${ids.get(edge.target)}`,
+      id: `${edge.sourceHandle === "text" ? "text" : "reference"}-${ids.get(edge.source)}-${ids.get(edge.target)}`,
       source: ids.get(edge.source)!, target: ids.get(edge.target)!, selected: false,
     }));
     const pastedDrafts = Object.fromEntries(Object.entries(clipboard.drafts).map(([id, draft]) => [ids.get(id)!, { ...draft }]));
@@ -1198,6 +1206,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
 
   const isValidReferenceConnection = (connection: Connection | Edge) => {
     const instance = flowRef.current;
+    if (instance && isCanvasTextConnection(connection, instance.getNodes(), instance.getEdges())) return true;
     if (!instance || !connection.source || !connection.target || connection.source === connection.target ||
         connection.sourceHandle !== "reference" || connection.targetHandle !== "reference") return false;
     const source = instance.getNode(connection.source);
@@ -1205,7 +1214,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     const asset = imageSourceAsset(source);
     if (target?.type !== "imageGenerator" || !asset || (!asset.assetId && source?.type !== "sourceImage")) return false;
     if (source?.type === "sourceImage" && !asset.assetId && !source.data.uploadState) return false;
-    const existing = instance.getEdges().filter((edge) => edge.target === target.id);
+    const existing = instance.getEdges().filter((edge) => edge.target === target.id && edge.targetHandle !== "text");
     if (existing.length + (referencesByGenerator[target.id]?.length ?? 0) >= MAX_GENERATION_REFERENCES) return false;
     if (asset.assetId && !asset.generated && referencesByGenerator[target.id]?.some((item) =>
       item.reference.status === "ready" && item.reference.id === asset.assetId)) return false;
@@ -1218,8 +1227,8 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     captureCanvasHistory();
     const source = flowRef.current?.getNode(connection.source);
     const asset = imageSourceAsset(source);
-    if (!asset) return;
-    const id = `reference-${connection.source}-${connection.target}`;
+    if (!asset && source?.type !== "textEditor") return;
+    const id = `${connection.sourceHandle === "text" ? "text" : "reference"}-${connection.source}-${connection.target}`;
     const referenceEdge: BuiltInEdge = {
       ...connection,
       id,
@@ -1229,7 +1238,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       style: canvasReferenceEdgeStyle,
     };
     setEdges((current) => addEdge(referenceEdge, current));
-    if (asset.generated && asset.assetId) startGeneratedReferenceImport(id, asset.assetId, asset.name);
+    if (asset?.generated && asset.assetId) startGeneratedReferenceImport(id, asset.assetId, asset.name);
   };
 
   const changeEdges = (changes: EdgeChange[]) => {
@@ -1257,6 +1266,18 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       quality: "auto", background: "auto",
       resolution: models[0] ? defaultCanvasResolutionForModel(models[0].id) : DEFAULT_GENERATOR_DRAFT.resolution,
     } }));
+  };
+
+  const createText = (screenPoint: { x: number; y: number }) => {
+    const instance = flowRef.current;
+    if (!instance) return;
+    const position = instance.screenToFlowPosition(screenPoint);
+    if (!Number.isFinite(position.x) || !Number.isFinite(position.y)) return;
+    instance.setNodes((current) => [...current.map((node) => node.selected ? { ...node, selected: false } : node), {
+      id: `text-${crypto.randomUUID()}`, type: "textEditor", selected: true,
+      position: { x: position.x - 180, y: position.y - 130 }, style: { width: 360, height: 260 },
+      data: { markdown: "", text: "" },
+    }]);
   };
 
   const handleNodesChange = (changes: NodeChange<CanvasNode>[]) => {
@@ -1477,8 +1498,8 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     if (!activeGeneratorId) return;
     if (session?.access.status !== "active" || session.preview || generatorEditingLocked ||
         busyGeneratorIdsRef.current.has(activeGeneratorId)) return;
-    if (!prompt.trim()) { setFormError("请先输入画面描述。"); return; }
-    if (prompt.length > 4_000) { setFormError("画面描述不能超过 4000 个字符。"); return; }
+    if (!combinedPrompt.trim()) { setFormError("请先输入画面描述，或连接文本节点。"); return; }
+    if (promptTooLong) { setFormError("连接文本与补充描述合计不能超过 4000 个字符。"); return; }
     if (referencesBusy) { setFormError("参考图仍在上传，请稍候。"); return; }
     if (referencesFailed) { setFormError("请重试或移除上传失败的参考图。"); return; }
     if (displayReferences.length > MAX_GENERATION_REFERENCES) { setFormError(`最多可添加 ${MAX_GENERATION_REFERENCES} 张参考图。`); return; }
@@ -1491,7 +1512,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       return;
     }
     const snapshot = createGenerationInputSnapshot({
-      prompt,
+      prompt: combinedPrompt,
       references: displayReferences.filter((item, index, all) =>
         all.findIndex((candidate) => candidate.reference.id === item.reference.id) === index).map((item) => item.reference),
       modelId: model.id,
@@ -1736,6 +1757,10 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       const restoredNodes = await Promise.all(document.nodes.map(async (saved): Promise<CanvasNode | null> => {
         const style = saved.size ? { width: saved.size.width, height: saved.size.height } : undefined;
         const base = { id: saved.id, position: saved.position, ...(style ? { style } : {}) };
+        if (saved.type === "textEditor") return {
+          ...base, type: "textEditor", style: style ?? { width: 360, height: 260 },
+          data: { markdown: saved.markdown ?? "", text: saved.text ?? "" },
+        };
         if (saved.type === "imageGenerator") {
           const job = saved.jobId
             ? saved.jobId.startsWith("pending_") ? saved.localJob : await goodGoodApiFetch(
@@ -2036,8 +2061,8 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
         onUndo={() => navigateCanvasHistory("undo")}
         onRedo={() => navigateCanvasHistory("redo")}
         onBeforeGraphEdit={captureCanvasHistory}
-        onCreateGenerator={createGenerator} onComposerHostChange={handleComposerHostChange}
-        onProjectGraphChange={(settled) => { scheduleProjectSnapshot(settled); scheduleCanvasHistory(); }}
+        onCreateGenerator={createGenerator} onCreateText={createText} onComposerHostChange={handleComposerHostChange}
+        onProjectGraphChange={(settled) => { setTextRevision((value) => value + 1); scheduleProjectSnapshot(settled); scheduleCanvasHistory(); }}
         onViewportSettled={scheduleViewportPreference}
         onAssetDragStart={(item) => { draggedAssetRef.current = item; }}
         onAssetDragEnd={() => { draggedAssetRef.current = null; setDropActive(false); }}
@@ -2146,6 +2171,8 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
         onCancel={() => setDeletePageId(null)} onConfirm={() => void deleteProjectPage()} />
 
       {composerHost && createPortal(<section className={`${styles.composer} ${styles.composerAttached}`} aria-label="图片生成工具">
+        <CanvasTextPreview inputs={linkedTextInputs} onRemove={removeLinkedReference} disabled={generatorEditingLocked} />
+        {promptTooLong && <p role="alert" className={styles.error}>连接文本与补充描述合计 {combinedPrompt.length} 个字符，最多 4000 个字符。</p>}
         <input ref={inputRef} className={styles.srOnly} type="file" accept="image/jpeg,image/png" multiple onChange={addReferences} aria-label="选择参考图" />
         <TooltipProvider delayDuration={180}>
           <AttachmentGroup className={styles.referenceTray} role="group" aria-label="参考图">
@@ -2186,7 +2213,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
             ref={promptRef}
             id="canvas-prompt"
             className={`${styles.prompt} ${promptExpanded ? styles.promptExpanded : ""}`}
-            placeholder="描述你想生成的画面…"
+            placeholder={linkedTextInputs.length ? "补充画面描述（追加在连接文本之后）…" : "描述你想生成的画面…"}
             value={prompt}
             readOnly={generatorEditingLocked}
             maxLength={4000}
