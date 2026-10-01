@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { canvasAssetFileError, canvasImageLinkUrl, downloadCanvasImageLink } from "../features/canvas/canvas-asset-addition.mjs";
 import { PRIVATE_IMAGE_UPLOAD_MAX_BYTES } from "../shared/contracts/upload-limits.mjs";
 
-// Definitions only for GG-233: do not execute under the operator's no-retest instruction.
+// GG-245 updates and verifies the link-read contract; no real upload or provider call.
 const png = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1]);
 const jpeg = Uint8Array.from([0xff, 0xd8, 0xff, 1]);
 const file = (name, type, size = 1) => ({ name, type, size });
@@ -27,7 +27,7 @@ test("links require complete HTTP(S) and reject credentials and alternate scheme
   }
 });
 
-test("a public image becomes a normal File without credentials or a referrer", async () => {
+test("a public image becomes a normal File through the authenticated same-origin endpoint", async () => {
   let request;
   const result = await downloadCanvasImageLink("https://images.example/%E5%9B%BE%E7%89%87.webp?token=x", {
     fetchImplementation: async (url, options) => { request = { url, options }; return imageResponse(); },
@@ -35,11 +35,13 @@ test("a public image becomes a normal File without credentials or a referrer", a
   assert.equal(result.name, "图片.png");
   assert.equal(result.type, "image/png");
   assert.equal(result.size, png.length);
-  assert.equal(request.options.credentials, "omit");
-  assert.equal(request.options.referrerPolicy, "no-referrer");
-  assert.equal(request.options.mode, "cors");
+  assert.equal(request.url, "/api/references/read-link");
+  assert.equal(request.options.method, "POST");
+  assert.deepEqual(JSON.parse(request.options.body), { url: "https://images.example/%E5%9B%BE%E7%89%87.webp?token=x" });
+  assert.equal(request.options.credentials, "same-origin");
+  assert.equal(request.options.mode, "same-origin");
   assert.equal(request.options.cache, "no-store");
-  assert.equal(request.options.headers, undefined);
+  assert.deepEqual(request.options.headers, { "content-type": "application/json" });
 });
 
 test("JPEG MIME parameters and malformed filename escaping use a safe filename", async () => {
@@ -78,8 +80,16 @@ test("chunked downloads enforce actual bytes even without Content-Length", async
   assert.equal(cancelled, true);
 });
 
-test("CORS/network failure has an actionable direct-link message", async () => {
-  await assert.rejects(downloadCanvasImageLink("https://images.example/p.png", { fetchImplementation: async () => { throw new TypeError("Failed to fetch"); } }), /跨域访问.*上传文件/);
+test("network failure offers retry without blaming the public image's CORS headers", async () => {
+  await assert.rejects(downloadCanvasImageLink("https://images.example/p.png", { fetchImplementation: async () => { throw new TypeError("Failed to fetch"); } }), /检查网络.*上传文件/);
+});
+
+test("structured authorization and unsafe-link errors retain the server's recovery message", async () => {
+  for (const [status, message] of [[401, "登录已失效，请重新登录。"], [400, "图片链接须指向公开网络地址。"], [408, "读取图片超时，请重试。"]]) {
+    await assert.rejects(downloadCanvasImageLink("https://images.example/p.png", {
+      fetchImplementation: async () => Response.json({ error: { message } }, { status }),
+    }), { message });
+  }
 });
 
 test("a timed-out download aborts and permits a later retry", async () => {

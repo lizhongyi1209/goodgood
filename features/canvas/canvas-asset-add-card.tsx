@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuPortal, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
+import { goodGoodApiFetch } from "@/features/auth/http-auth-boundary";
 import { downloadCanvasImageLink } from "./canvas-asset-addition.mjs";
 import { archiveCanvasAssetUpload, CANVAS_ASSET_LIBRARY_UPDATED_EVENT, uploadCanvasAssetFile, type UploadedCanvasAsset } from "./canvas-asset-upload";
 import styles from "./canvas-asset-panel.module.css";
@@ -134,7 +135,7 @@ export function CanvasAssetAddCard({ folderId, readyAssetKeys }: Readonly<{
     try {
       let clientId = linkRowRef.current?.value === value ? linkRowRef.current.clientId : undefined;
       if (!clientId || !rowMapRef.current.has(clientId)) {
-        const file = await downloadCanvasImageLink(value, { signal: controller.signal });
+        const file = await downloadCanvasImageLink(value, { signal: controller.signal, fetchImplementation: goodGoodApiFetch });
         if (!mountedRef.current || controller.signal.aborted) return;
         clientId = makeRow(file, folderId).clientId;
         linkRowRef.current = { value, clientId };
@@ -160,6 +161,11 @@ export function CanvasAssetAddCard({ folderId, readyAssetKeys }: Readonly<{
     setRows([...rowMapRef.current.values()]);
   }
 
+  function changeLinkOpen(open: boolean) {
+    if (!open) downloadRef.current?.abort();
+    setLinkOpen(open);
+  }
+
   return <>
     <input ref={inputRef} type="file" accept=".jpg,.jpeg,.png,.mp4,.mp3,image/jpeg,image/png,video/mp4,audio/mpeg" multiple hidden
       onChange={(event) => {
@@ -167,13 +173,13 @@ export function CanvasAssetAddCard({ folderId, readyAssetKeys }: Readonly<{
         event.currentTarget.value = "";
         void uploadFiles(files, chosenFolderRef.current);
       }} />
-    <DropdownMenu open={menuOpen} onOpenChange={(open) => { setMenuOpen(open); if (!open) setLinkOpen(false); }}>
+    <DropdownMenu open={menuOpen} onOpenChange={(open) => { setMenuOpen(open); if (!open) changeLinkOpen(false); }}>
       <DropdownMenuTrigger asChild>
         <Button type="button" variant="ghost" className={styles.addCard} aria-label="添加资产" disabled={busy}><Plus size={24} strokeWidth={1.5} aria-hidden="true" /></Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent side="right" align="start" sideOffset={8} collisionPadding={12} className={styles.addMenu}>
         <DropdownMenuItem disabled={busy} className={styles.addMenuItem} onSelect={() => { chosenFolderRef.current = folderId; inputRef.current?.click(); }}><Upload size={16} aria-hidden="true" />上传文件</DropdownMenuItem>
-        <DropdownMenuSub open={linkOpen} onOpenChange={setLinkOpen}>
+        <DropdownMenuSub open={linkOpen} onOpenChange={changeLinkOpen}>
           <DropdownMenuSubTrigger disabled={busy && !linkBusy} className={styles.addMenuItem}><Link size={16} aria-hidden="true" />链接</DropdownMenuSubTrigger>
           <DropdownMenuPortal>
           <DropdownMenuSubContent sideOffset={8} collisionPadding={12} className={styles.linkMenu}>

@@ -6,10 +6,12 @@ import {
   listReferenceAssets,
   readReferenceAssetContent,
   readReferenceAssetPreview,
+  readReferenceImageLink,
   referenceApiError,
 } from "./api.mjs";
 import { requestIdFor } from "../observability/http.mjs";
 import { workspaceIdFromRequest } from "../organizations/request.mjs";
+import { readImageLinkRequest } from "./image-link.mjs";
 
 const JSON_HEADERS = {
   "cache-control": "no-store",
@@ -40,6 +42,7 @@ const DEFAULT_OPERATIONS = Object.freeze({
   listReferenceAssets,
   readReferenceAssetContent,
   readReferenceAssetPreview,
+  readReferenceImageLink,
 });
 
 export function createReferenceNodeApiHandler({
@@ -58,6 +61,37 @@ export function createReferenceNodeApiHandler({
     try {
       const ownerContext = await authenticate(request);
       const workspaceId = workspaceIdFromRequest(request);
+      if (url.pathname === "/api/references/read-link" && request.method === "POST") {
+        const controller = new AbortController();
+        const abort = () => controller.abort(new DOMException("Image read cancelled", "AbortError"));
+        const onResponseClose = () => { if (!response.writableFinished) abort(); };
+        // IncomingMessage's normal close follows a completed request body; it is not cancellation.
+        request.once("aborted", abort);
+        response.once("close", onResponseClose);
+        try {
+          if (request.aborted || response.destroyed) abort();
+          controller.signal.throwIfAborted();
+          const payload = await readImageLinkRequest(request);
+          controller.signal.throwIfAborted();
+          const content = await operations.readReferenceImageLink({
+            ownerContext, workspaceId, url: payload.url, signal: controller.signal,
+          });
+          controller.signal.throwIfAborted();
+          response.writeHead(200, {
+            "cache-control": "private, no-store",
+            "content-length": String(content.bytes.length),
+            "content-type": content.mimeType,
+            "x-content-type-options": "nosniff",
+          });
+          response.end(content.bytes);
+        } catch (error) {
+          if (!controller.signal.aborted) throw error;
+        } finally {
+          request.removeListener("aborted", abort);
+          response.removeListener("close", onResponseClose);
+        }
+        return true;
+      }
       if (url.pathname === "/api/references" && request.method === "GET") {
         sendJson(
           response,

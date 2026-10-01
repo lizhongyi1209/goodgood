@@ -26,7 +26,7 @@ export function canvasImageLinkUrl(value) {
 }
 
 /**
- * Download only in the user's browser. No application credentials or server proxy.
+ * Read validated bytes from GoodGood, then use the existing private File upload.
  * @param {string} value
  * @param {{signal?: AbortSignal, fetchImplementation?: typeof fetch, timeoutMs?: number}} [options]
  * @returns {Promise<File>}
@@ -39,10 +39,15 @@ export async function downloadCanvasImageLink(value, { signal, fetchImplementati
   signal?.addEventListener("abort", abort, { once: true });
   const timer = setTimeout(() => controller.abort(new DOMException("Image download timed out", "TimeoutError")), timeoutMs);
   try {
-    const response = await fetchImplementation(url.href, {
-      cache: "no-store", credentials: "omit", mode: "cors", referrerPolicy: "no-referrer", signal: controller.signal,
+    const response = await fetchImplementation("/api/references/read-link", {
+      method: "POST", body: JSON.stringify({ url: url.href }), headers: { "content-type": "application/json" },
+      cache: "no-store", credentials: "same-origin", mode: "same-origin", signal: controller.signal,
     });
-    if (!response.ok) throw new Error(`图片链接无法读取（HTTP ${response.status}），请检查链接或上传文件。`);
+    if (!response.ok) {
+      const failure = await response.json().catch(() => null);
+      const message = failure?.error?.message;
+      throw new Error(typeof message === "string" && message ? message : `图片链接无法读取（HTTP ${response.status}），请检查链接或上传文件。`);
+    }
     const type = response.headers.get("content-type")?.split(";", 1)[0].trim().toLowerCase();
     if (type !== "image/jpeg" && type !== "image/png") {
       await response.body?.cancel();
@@ -85,7 +90,7 @@ export async function downloadCanvasImageLink(value, { signal, fetchImplementati
   } catch (cause) {
     if (signal?.aborted) throw cause;
     if (controller.signal.aborted) throw new Error("读取图片超时，请重试或上传文件。");
-    if (cause instanceof TypeError) throw new Error("无法读取图片直链，请确认链接允许跨域访问，或改为上传文件。");
+    if (cause instanceof TypeError) throw new Error("暂时无法读取图片链接，请检查网络后重试，或改为上传文件。");
     throw cause;
   } finally {
     clearTimeout(timer);

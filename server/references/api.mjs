@@ -33,12 +33,25 @@ import {
   validateReferenceIds,
   validateReferenceUploadRequest,
 } from "./validation.mjs";
+import { readPublicImageLink } from "./image-link.mjs";
 
 const DEFAULT_WORKSPACE_ID = /** @type {string | null} */ (null);
 
 function ownerIdFromContext(ownerContext) {
   if (!ownerContext?.ownerId) throw sessionExpiredError();
   return ownerContext.ownerId;
+}
+
+/** Authorization precedes every remote DNS lookup/connection; this operation never writes assets. */
+export async function readReferenceImageLink({ ownerContext, workspaceId = DEFAULT_WORKSPACE_ID, url, signal }, {
+  getResources = getGenerationResources,
+  resolveAccess = resolveWorkspaceAccess,
+  readImageLink = readPublicImageLink,
+} = {}) {
+  const ownerId = ownerIdFromContext(ownerContext);
+  const resources = await getResources();
+  await resolveAccess(resources.pool, { ownerId, workspaceId });
+  return readImageLink(url, { signal });
 }
 
 function publicReference(row) {
