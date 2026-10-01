@@ -1,9 +1,9 @@
-# GG-263 · 图片详情铺满与缩略列居中
+# GG-264 · 图片详情铺满与缩略列居中
 
 - 日期：2026-10-01；状态：已登记，开发中，未部署。
 - 范围与验收：截图对应 canvas 模式的共享图片详情；去掉右下计数，主图按原比例铺满中间可用区域，超出部分沿既有平移查看；右侧当前缩略图切换/尺寸变化时垂直居中，包括第一/最后一张。资产页旧模式保持原合同。
-- 决定：用户明确改动 ADR 0123 的初始 contain；实施前为该 ADR 补 GG-263 addendum。仍沿用瞬时缩放/平移、键盘、加载/失败重试、关闭恢复焦点和减少动效；无持久化/API变化。
-- 分支 / worktree：根负责 `fix/GG-263-image-detail-fill` / `F:/goodgood-worktrees/GG-263-image-detail-fill`，基线 `fa673fe` 含 GG-262/260/261；实际5173在GG-116，不切换其分支。
+- 决定：用户明确改动 ADR 0123 的初始 contain；实施前为该 ADR 补 GG-264 addendum。仍沿用瞬时缩放/平移、键盘、加载/失败重试、关闭恢复焦点和减少动效；无持久化/API变化。
+- 分支 / worktree：根负责 `fix/GG-264-image-detail-fill` / `F:/goodgood-worktrees/GG-264-image-detail-fill`，基线 `fa673fe` 含 GG-262/260/261；实际5173在GG-116，不切换其分支。登记期间另一窗口占用GG-263移除大厅画布入口，故本任务即时改号264，保护其分支和源码。
 - 文件边界：features/assets/image-viewer.tsx / module.css、image-preview-canvas.tsx、两组 navigation mjs/d.mts、相关图片测试及必要任务/设计/交接文档；不修改并行画布节点/资产面板/积分源码。
 - 实现与证据：检查发现中间固定 inset 48px/16px/36px 和 contain；缩略列只保证可见，没有居中及首尾空间。待改真实尺寸 cover 几何和保留可移动完整图像，使用测量居中与首尾动态占位。
 - 验证：仅几何/导航及既有 SSR、相关 lint、实际Vite模块编译、文档和diff检查；浏览器交用户，不做全量门禁/构建或真实上传/生成。
