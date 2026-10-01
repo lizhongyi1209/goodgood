@@ -2,6 +2,8 @@
 
 ## GG-253 free image preview verification
 
+GG-258 updates the existing SSR assertions: no zoom/fit buttons or scale overlay, known dimensions only for uploaded images/videos, quiet unknown dimensions, and unchanged real generation metadata/empty selection. Run the relevant SSR and navigation tests plus scoped lint, Vite module compilation and documentation continuity; user verifies the visible result.
+
 Run `tests/gg253-image-preview-navigation.test.mjs`, `tests/gg253-image-viewer-details.test.mjs`, retained GG-249 navigation and GG-244 playback checks, scoped lint and documentation continuity. Verify anchored wheel zoom and bounds, pointer capture/pan/cancel, fit/reset, keyboard controls, invalid/empty input, listener cleanup, real generation metadata and absent metadata. Review contain sizing, shared AssetVisual content thumbnails, selected drawer offset, native rail scrolling, focus return and reduced motion. The removed GG-251 geometry test described superseded carousel behavior. Actual Vite module compilation establishes code integration; visual/interaction acceptance belongs to the user. No full gate/build or real asset/provider write is needed.
 
 ## GG-255—257 canvas gesture and edge verification

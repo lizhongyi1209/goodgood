@@ -29,20 +29,25 @@ test("generated detail uses actual catalog name, requested parameters and decode
 });
 
 test("uploaded and empty details do not invent generation information; optional parameters stay optional", () => {
-  const html = renderToStaticMarkup(React.createElement(ImageViewerDetails, { item: { name: "上传图片", width: 900, height: 1190 } }));
-  assert.match(html, /未提供生成模型与参数/);
-  assert.match(html, /900.*1190/);
-  assert.doesNotMatch(html, /Nano Banana|GPT IMAGE|<dt>模型/);
+  for (const media of ["image", "video"]) {
+    const html = renderToStaticMarkup(React.createElement(ImageViewerDetails, { item: { name: "上传素材", media, width: 900, height: 1190 } }));
+    assert.match(html, /<h2>上传素材<\/h2>/);
+    assert.match(html, /<dt>尺寸<\/dt><dd>900.*1190/);
+    assert.doesNotMatch(html, /图片素材|视频素材|未提供生成模型与参数|Nano Banana|GPT IMAGE|<dt>模型/);
+  }
+  const unknownSize = renderToStaticMarkup(React.createElement(ImageViewerDetails, { item: { name: "上传素材" } }));
+  assert.doesNotMatch(unknownSize, /<dl>|图片素材|视频素材|未提供生成模型与参数/);
   assert.match(renderToStaticMarkup(React.createElement(ImageViewerDetails, { item: null })), /请选择右侧素材/);
   const metadata = describeViewerGeneration({ ...input, catalogModelName: undefined, quality: undefined, background: undefined, outputFormat: undefined }, {});
   assert.equal(metadata.model, "GPT IMAGE 2");
   assert.ok(metadata.parameters.every((item) => !["质量", "背景", "输出格式"].includes(item.label)));
 });
 
-test("image canvas starts fitted with accessible zoom and fit controls while retaining loading content", () => {
+test("image canvas starts fitted without covering controls and retains keyboard access and loading content", () => {
   const html = renderToStaticMarkup(React.createElement(ImagePreviewCanvas, { name: "底图.png" }, React.createElement("span", { role: "status" }, "正在读取图片…")));
   assert.match(html, /translate\(0px,\s*0px\) scale\(1\)/);
-  for (const label of ["缩小图片", "放大图片", "适应画布"]) assert.ok(html.includes(`aria-label="${label}"`));
+  assert.doesNotMatch(html, /<button|role="group"|图片缩放/);
+  assert.match(html, /滚轮缩放；加减键缩放，0 适应画布，方向键移动/);
   assert.match(html, /正在读取图片/);
   assert.match(html, /tabindex="0"/);
 });

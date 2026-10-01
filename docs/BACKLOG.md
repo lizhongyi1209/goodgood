@@ -1,17 +1,18 @@
 # 当前任务与优先级
 
-> 最后同步：2026-10-01。GG-253 自由图片预览和 GG-255—257 粘贴/文件夹整理/hover 连线已进入实际 5173，代码验证与三个子目录退役完成，用户验收。保留 GG-254 verified Web/0058，按 GG-247 定向验证，生产仍为 GG-098/GG-100。
+> 最后同步：2026-10-01。GG-258 详情去掉缩放覆盖层/非生成说明，10/10、相关 lint/编译完成，用户验收；GG-253—257 和 GG-254 verified Web/0058 保留。按 GG-247 定向验证，生产仍为 GG-098/GG-100。
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
+| GG-259 | 已登记：随机六位 ID 与稳定资料编辑布局，由并行账户会话开发；尚未实施/验证/部署 | [任务](tasks/GG-259-random-user-id-stable-edit.md) |
+| GG-258 | 已进入 5173：去掉缩放覆盖层与非生成类型/缺参数说明，保留已知尺寸；10/10、相关 lint/编译通过，规范已同步，无新辅助目录，用户验收 | [任务](tasks/GG-258-canvas-detail-minimal.md) |
 | GG-257 | 已接入 5173：默认静止实线、连线/剪刀 hover 流动，reduced motion 始终静止；代码/编译检查通过，辅助目录退役，用户验收 | [任务](tasks/GG-257-canvas-edge-hover-flow.md) |
 | GG-256 | 已接入 5173：素材默认光标、查看 grab、图片拖入文件夹及状态动效/失败重试；8/8、相关 lint/编译通过，辅助目录退役，用户验收 | [任务](tasks/GG-256-canvas-folder-drop.md) |
 | GG-254 | 已接入 5173/Web：用户名默认 mimi、六位 ID、文字/头像旁侧确认及外部取消，个人主页退役；20 项相关检查、资料 SQL 1/1、ID SQL 10/10，0058/verified Web 同步，辅助目录退役，用户验收 | [任务](tasks/GG-254-account-identity-editor.md) |
 | GG-253 | 已接入 5173：独立素材信息、图片拖动/滚轮缩放、内容缩略列/选中抽出；25 项定向、相关 lint/编译通过，无新辅助目录，用户验收 | [任务](tasks/GG-253-canvas-media-detail.md) |
 | GG-255 | 已接入 5173：原生外部图片 Ctrl+V，body 焦点直接粘贴，编辑区/弹层隔离；19/19、相关 lint/编译通过，辅助目录退役，用户验收 | [任务](tasks/GG-255-canvas-paste-image.md) |
 | GG-252 | 已接入 5173/Web：简洁文字资料、默认 goder、2 MB 头像及紧凑布局；22/22、相关 lint，0057 与 verified Web 同步，辅助目录退役，用户验收 | [任务](tasks/GG-252-personal-info-cleanup.md) |
-| GG-251 | 已接入 5173：显式画布适配完整原图、稍大浮层、缩略图有间隙/原位放大；9/9、相关 lint 和编译通过，无新增辅助目录，用户验收 | [任务](tasks/GG-251-canvas-preview-fit.md) |
-| GG-249 | 已接入 5173：完整受限主图、无标题/滚动条的图片视频轮播；15/15、定向 lint 与编译通过，无新增辅助目录，用户验收 | [任务](tasks/GG-249-canvas-media-viewer.md) |
+| GG-249 / GG-251 | 历史画布详情轮播/原位放大已由 GG-253/258 取代；原验证证据保留在任务卡 | [GG-249](tasks/GG-249-canvas-media-viewer.md) / [GG-251](tasks/GG-251-canvas-preview-fit.md) |
 | GG-250 | 已接入 5173：个人信息直接编辑头像、昵称/用户名，当前面板保存/取消；13 项功能、局部 lint 与文档 9/9，辅助目录退役，用户验收 | [任务](tasks/GG-250-inline-personal-information.md) |
 | GG-248 | 已接入 5173：首位默认个人信息、六项资料与 ID/邀请码复制；20/20、定向 lint，辅助目录退役，用户验收 | [任务](tasks/GG-248-account-personal-information.md) |
 | GG-247 | 用户确认验证节奏：小需求定向检查即可交付，全量检查集中到批次/发布或必要回归 | [任务](tasks/GG-247-targeted-verification.md) |

@@ -38,10 +38,7 @@ export function ImageViewerDetails({ item }: Readonly<{ item: Readonly<{
         {item.metadata.parameters.map((parameter) => <div key={parameter.label}><dt>{parameter.label}</dt><dd>{parameter.value}</dd></div>)}
       </dl>
       {item.metadata.prompt && <><h3>提示词</h3><p className={styles.detailPrompt}>{item.metadata.prompt}</p></>}
-    </> : item ? <>
-      <p>{item.media === "video" ? "视频素材" : "图片素材"}</p>
-      {item.width && item.height ? <dl><div><dt>尺寸</dt><dd>{item.width} × {item.height}</dd></div></dl> : null}
-      <p className={styles.detailEmpty}>未提供生成模型与参数。</p>
-    </> : <p className={styles.detailEmpty}>请选择右侧素材。</p>}
+    </> : item ? (item.width && item.height ? <dl><div><dt>尺寸</dt><dd>{item.width} × {item.height}</dd></div></dl> : null)
+      : <p className={styles.detailEmpty}>请选择右侧素材。</p>}
   </aside>;
 }
