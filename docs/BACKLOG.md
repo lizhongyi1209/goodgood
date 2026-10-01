@@ -4,6 +4,7 @@
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
+| GG-243 | 实施中：项目页首位新建卡片，点击复用 /canvas 新建；独立大厅/子 worktree，避开 GG-242 画布会话 | [任务](tasks/GG-243-project-create-card.md) |
 | GG-241 | 当前 5173、verified Web、唯一 Worker 和原本地依赖已恢复；原数据与迁移保留，无新增 worktree | [任务](tasks/GG-241-local-startup.md) |
 | GG-240 | 子 agent/worktree 创建、缓存、集成和退役规范已写入入口文档、任务模板与契约测试；未部署 | [任务](tasks/GG-240-subagent-worktree-hygiene.md) |
 | GG-239 | 当前 5173 累计源码、文档、迁移与测试收口为单一提交和标签；未部署 | [任务](tasks/GG-239-current-5173-checkpoint.md) |
