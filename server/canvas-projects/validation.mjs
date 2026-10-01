@@ -170,8 +170,9 @@ function pageContent(source) {
   const byId = new Map(nodes.map((item) => [item.id, item]));
   for (const item of edges) {
     if (item.sourceHandle === "text" || item.targetHandle === "text" || byId.get(item.source)?.type === "textEditor" || byId.get(item.target)?.type === "textEditor") {
-      if (item.sourceHandle !== "text" || item.targetHandle !== "text" ||
+      if (item.sourceHandle !== "text" || !["reference", "text"].includes(item.targetHandle) ||
           byId.get(item.source)?.type !== "textEditor" || byId.get(item.target)?.type !== "imageGenerator") throw invalid();
+      item.targetHandle = "reference";
     }
   }
   if (new Set(edges.map((item) => item.id)).size !== edges.length) throw invalid();

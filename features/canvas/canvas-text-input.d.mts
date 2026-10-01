@@ -8,3 +8,4 @@ export function collectCanvasTextInputs(nodes: readonly CanvasNode[], edges: rea
 export function combineCanvasPrompt(inputs: readonly Pick<CanvasTextInput, "text">[], additionalPrompt: string): string;
 export function canvasTextFontSize(width?: number, height?: number): number;
 export function isCanvasTextConnection(connection: Connection | Edge, nodes: readonly CanvasNode[], edges: readonly Edge[]): boolean;
+export function normalizeCanvasInputEdge<T extends { sourceHandle?: string | null; targetHandle?: string | null }>(edge: T): T;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, type ChangeEvent } from "react";
-import { PrivateObjectImage } from "@/components/ui/private-object-image";
+import { InputAttachment } from "@/components/ui/input-attachment";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,13 +42,10 @@ import {
 } from "@/features/creation/video-generation-options";
 import {
   ArrowUp,
-  AudioLines,
-  CircleAlert,
   ChevronDown,
   Film,
   ImagePlus,
   Images,
-  LoaderCircle,
   SlidersHorizontal,
   Upload,
   Volume2,
@@ -97,11 +94,6 @@ const referenceAcceptByMediaType = {
   video: "video/mp4",
   audio: "audio/mpeg",
 } as const satisfies Readonly<Record<VideoReferenceMediaType, string>>;
-
-function formatFileSize(size: number) {
-  if (size >= 1024 * 1024) return `${(size / 1024 / 1024).toFixed(1)} MB`;
-  return `${Math.max(1, Math.round(size / 1024))} KB`;
-}
 
 export function VideoCreationComposer({
   modelOptions,
@@ -222,49 +214,11 @@ export function VideoCreationComposer({
                 ? videoReferenceRoleLabel(reference.role)
                 : mediaLabel.replace(" ", "");
               return (
-                <div
-                  className={`reference-thumbnail video-reference-thumbnail ${reference.mediaType} ${reference.status ?? "ready"}`}
-                  key={reference.id}
-                  role="group"
-                  aria-label={`${mediaLabel}，${reference.name}，${videoReferenceRoleLabel(reference.role)}`}
-                  title={reference.errorMessage ?? (reference.size > 0
-                    ? `${reference.name} · ${formatFileSize(reference.size)}`
-                    : reference.name)}
-                >
-                  <button
-                    type="button"
-                    className="video-reference-preview-trigger"
-                    aria-label={`放大预览${mediaLabel}，${reference.name}`}
-                    aria-haspopup="dialog"
-                    onClick={(event) => { previewTriggerRef.current = event.currentTarget; setPreviewReferenceId(reference.id); }}
-                  >
-                  {reference.mediaType === "image" ? (
-                    <PrivateObjectImage src={reference.url} alt={mediaLabel} loading="eager" />
-                  ) : reference.mediaType === "video" ? (
-                    <video src={reference.url} muted playsInline preload="metadata" aria-label={mediaLabel} />
-                  ) : (
-                    <span className="video-reference-placeholder"><AudioLines size={22} /></span>
-                  )}
-                  <span className="reference-thumbnail-ordinal">{previewLabel}</span>
-                  </button>
-                  {reference.status === "uploading" && (
-                    <span className="reference-thumbnail-status" aria-label={`${mediaLabel}正在上传`}><LoaderCircle size={15} /></span>
-                  )}
-                  {reference.status === "failed" && (
-                    <>
-                      <span className="reference-thumbnail-status" aria-label={`${mediaLabel}上传失败`}><CircleAlert size={15} /></span>
-                      {onRetryReference && <button className="reference-thumbnail-retry" aria-label={`重试上传${mediaLabel}`}
-                        onClick={(event) => { event.stopPropagation(); onRetryReference(reference); }}>重试</button>}
-                    </>
-                  )}
-                  <button
-                    className="reference-thumbnail-remove"
-                    aria-label={`移除${mediaLabel}`}
-                    onClick={(event) => { event.stopPropagation(); onRemoveReference(reference); }}
-                  >
-                    <X size={8} strokeWidth={2.2} />
-                  </button>
-                </div>
+                <InputAttachment key={reference.id} media={reference.mediaType} name={reference.name} description={previewLabel}
+                  url={reference.url} state={reference.status} error={reference.errorMessage}
+                  onPreview={(trigger) => { previewTriggerRef.current = trigger; setPreviewReferenceId(reference.id); }}
+                  onRetry={onRetryReference ? () => onRetryReference(reference) : undefined}
+                  onRemove={() => onRemoveReference(reference)} />
               );
             })}
           </div>

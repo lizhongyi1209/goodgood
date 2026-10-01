@@ -9,7 +9,7 @@ export function collectCanvasTextInputs(nodes, edges, generatorId) {
   const seen = new Set();
   return edges.flatMap((edge) => {
     const node = byId.get(edge.source);
-    if (edge.target !== generatorId || edge.sourceHandle !== "text" || edge.targetHandle !== "text" ||
+    if (edge.target !== generatorId || edge.sourceHandle !== "text" || !["reference", "text"].includes(edge.targetHandle) ||
         node?.type !== "textEditor" || seen.has(node.id) || !node.data.text?.trim()) return [];
     seen.add(node.id);
     return [{ edgeId: edge.id, nodeId: node.id, text: node.data.text, markdown: node.data.markdown ?? "" }];
@@ -30,6 +30,11 @@ export function isCanvasTextConnection(connection, nodes, edges) {
   const source = nodes.find((node) => node.id === connection.source);
   const target = nodes.find((node) => node.id === connection.target);
   return source?.type === "textEditor" && target?.type === "imageGenerator" &&
-    connection.sourceHandle === "text" && connection.targetHandle === "text" &&
-    !edges.some((edge) => edge.source === source.id && edge.target === target.id && edge.targetHandle === "text");
+    connection.sourceHandle === "text" && ["reference", "text"].includes(connection.targetHandle) &&
+    !edges.some((edge) => edge.source === source.id && edge.target === target.id && edge.sourceHandle === "text");
+}
+
+/** Legacy text targets attach to the one visible input without changing identities. */
+export function normalizeCanvasInputEdge(edge) {
+  return edge.sourceHandle === "text" && edge.targetHandle === "text" ? { ...edge, targetHandle: "reference" } : edge;
 }

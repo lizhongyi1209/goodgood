@@ -66,7 +66,8 @@ test("only text output to generator text input is connectable, no duplicate edge
   const nodes = [textNode(), generator];
   assert.equal(isCanvasTextConnection(edge(), nodes, []), true);
   assert.equal(isCanvasTextConnection(edge(), nodes, [edge()]), false);
-  assert.equal(isCanvasTextConnection({ ...edge(), targetHandle: "reference" }, nodes, []), false);
+  assert.equal(isCanvasTextConnection({ ...edge(), targetHandle: "reference" }, nodes, []), true);
+  assert.equal(isCanvasTextConnection({ ...edge(), targetHandle: "unknown" }, nodes, []), false);
   assert.equal(isCanvasTextConnection({ ...edge(), target: "text-1" }, nodes, []), false);
   assert.equal(isCanvasTextConnection(edge(), [generator], []), false);
 });
@@ -117,7 +118,7 @@ test("server rejects oversized text, wrong ports, non-text Markdown and media me
   for (const mutate of [
     (doc) => { doc.nodes[0].text = "x".repeat(16001); },
     (doc) => { doc.nodes[0].markdown = "x".repeat(100001); },
-    (doc) => { doc.edges[0].targetHandle = "reference"; },
+    (doc) => { doc.edges[0].targetHandle = "unknown"; },
     (doc) => { doc.edges[0].source = generator.id; },
     (doc) => { doc.nodes[1].markdown = "bad"; },
     (doc) => { doc.nodes[0].metadata = { pixelWidth: 20 }; },

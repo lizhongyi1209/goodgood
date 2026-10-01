@@ -5,6 +5,7 @@ import type { GenerationReference } from "@/shared/contracts/generation";
 import type { GenerationJob } from "@/shared/contracts/generation";
 import { privateImageUrls } from "@/shared/private-image-urls.mjs";
 import type { CanvasNode } from "./canvas-workspace";
+import { normalizeCanvasInputEdge } from "./canvas-text-input.mjs";
 
 export type SnapshotGeneratorDraft = CanvasPageDocument["generators"][string]["draft"];
 export type SnapshotDirectReference = Readonly<{
@@ -110,7 +111,7 @@ export function snapshotCanvasProject(input: {
   const ids = new Set(nodes.map((node) => node.id));
   const edges = input.edges
     .filter((edge) => ids.has(edge.source) && ids.has(edge.target))
-    .map((edge) => ({
+    .map((edge) => normalizeCanvasInputEdge({
       id: edge.id,
       source: edge.source,
       target: edge.target,
