@@ -5,7 +5,7 @@
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
 | GG-249 | 已接入 5173：完整受限主图、无标题/滚动条的图片视频轮播；15/15、定向 lint 与编译通过，无新增辅助目录，用户验收 | [任务](tasks/GG-249-canvas-media-viewer.md) |
-| GG-250 | 开发中：个人信息直接编辑头像、昵称和用户名，在当前面板保存/取消 | [任务](tasks/GG-250-inline-personal-information.md) |
+| GG-250 | 已接入 5173：个人信息直接编辑头像、昵称/用户名，当前面板保存/取消；13 项功能、局部 lint 与文档 9/9，辅助目录退役，用户验收 | [任务](tasks/GG-250-inline-personal-information.md) |
 | GG-248 | 已接入 5173：首位默认个人信息、六项资料与 ID/邀请码复制；20/20、定向 lint，辅助目录退役，用户验收 | [任务](tasks/GG-248-account-personal-information.md) |
 | GG-247 | 用户确认验证节奏：小需求定向检查即可交付，全量检查集中到批次/发布或必要回归 | [任务](tasks/GG-247-targeted-verification.md) |
 | GG-246 | 已接入实际 5173：大厅视频默认暂停、中心播放提示，仅 mouse hover 预览；定向 31/31、共同门禁 685/22/0、辅助目录退役，用户验收 | [任务](tasks/GG-246-asset-video-hover.md) |

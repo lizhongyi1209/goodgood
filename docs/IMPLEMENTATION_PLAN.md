@@ -1,16 +1,17 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-01
-- Current phase: GG-249 画布完整预览与滚轮缩略图轮播已接入实际 5173，15 项定向测试、相关 lint 和编译通过；GG-248 与 GG-245 verified Web 保留，生产仍为 GG-098 应用和 GG-100 单槽 Compose。
-- Current objective: GG-249 开发完成，交用户验收；后续继续按 GG-247 定向验证规范推进小需求。
+- Current phase: GG-250 个人信息直接编辑已接入实际 5173，13 项功能、相关 lint 与文档 9/9；并行 GG-249 完整预览与轮播也已收口，原功能和 verified Web 保留，生产仍为 GG-098/GG-100。
+- Current objective: GG-250 直接编辑/保存/取消与 GG-249 预览交用户验收；后续继续按 GG-247 定向验证规范推进小需求。
 - Previous objective: GG-244 资产 hover 小按钮、无视频外置文字与节点式视频预览已进入实际 5173。
 
 ## Current checkpoint
 
+- Task [GG-250](tasks/GG-250-inline-personal-information.md)：独立 `9ea1002` 精确回放为 `99fb14a`，个人信息直接编辑头像、昵称/用户名并保存/取消；13/13 功能、相关 lint、最终文档 9/9，5173 编译接线通过，辅助目录创建 1/退役 1。保留并行 GG-249 文件及后继 `8ee22d8`。
 - Task [GG-249](tasks/GG-249-canvas-media-viewer.md)：从 `e857437` 新建 `fix/GG-249-canvas-media-viewer`，画布图片入口改为受限完整预览、无标题/滚动条的混合媒体轮播；15/15、相关 lint、四个 Vite 模块编译通过，无新增 worktree/缓存，用户验收。
 - Task [GG-248](tasks/GG-248-account-personal-information.md)：`b4a34a6` 回放为 `520b452`，六项真实资料、ID/邀请码复制与每次默认入口已接入实际目录；20/20、定向 lint，无全量检查，辅助目录创建 1/退役 1，不改变 GG-245 范围。
 - Task [GG-247](tasks/GG-247-targeted-verification.md)：用户要求高频小需求默认定向验证，完整门禁按批次/发布或必要回归执行，规则见 AGENTS/WORKFLOW；不改变 GG-245 的并行开发范围。
-- 当前集成分支 `fix/GG-249-canvas-media-viewer`，目录 `F:/goodgood-worktrees/GG-116`，最新前端包含 GG-249 与 `520b452`；GG-245 历史标签 `goodgood-local-2026-10-01-gg245` 不代表最新前端。源码 `7ddb78d` 与 Web 构建 `09c7060` 保留，GG-245 子目录创建 1/退役 1、零子缓存，见任务卡。
+- 当前集成分支 `fix/GG-249-canvas-media-viewer`，目录 `F:/goodgood-worktrees/GG-116`，最新前端包含 GG-250 `99fb14a`、GG-249 `8ee22d8` 与 GG-248 `520b452`；GG-245 历史标签不代表最新前端。源码 `7ddb78d` 与 Web 构建 `09c7060` 保留，Web 不因 UI 修改重建。
 - Task [GG-246](tasks/GG-246-asset-video-hover.md)：子提交 `c563d98`/根回放 `ec51488` 已整合为 `83a4306`，实际目录 `F:/goodgood-worktrees/GG-116`，基于 GG-244 收口 `dd8dca9`，仅修改大厅资产视频。定向 31/31、一次完整共同门禁 685 通过/22 隔离跳过/0 失败；5173 编译模块 HTTP 200 含新接线；辅助目录创建 2/退役 2。不改变 GG-245 并行任务。
 - Task [GG-244](tasks/GG-244-canvas-asset-hover.md)：分支 `fix/GG-244-canvas-asset-hover` 基于 `86ee3b7`；子提交精确回放 `be84c53`、`9d7d18c`，定向 9/9、完整门禁 674/22/0；子目录创建 1/退役 1，沿用 GG-242/243 与云配置。
 - Task [GG-245](tasks/GG-245-canvas-image-link-read.md)：子八文件 `e471c1c` 精确回放为 `7ddb78d`；34/34、定向 lint/typecheck、必要 checkpoint 构建通过，实际 cafe24 JPEG 新读取器下载/解码成功（900×1190）。ADR 0122 与原上传/归档保持，本地 Web 同步完成。
@@ -27,7 +28,7 @@
 - 生产身份继续为 revision `7888554a4650b1b06dbce4293c52e8c018e5c71b`、迁移 `0044_gg098_raise_manual_grant_ceiling.sql`，详见 [CURRENT_STATE](CURRENT_STATE.md)。GG-239 未部署。
 - 生产入口仍为 `https://goodgood.o1key.com`，预发布入口为 `https://staging-goodgood.o1key.com`；本地 5173、开发数据库与生产数据继续严格隔离。
 - 早期生产实施流水保存在 [2026-09-07 implementation log](history/2026-09-07-implementation-log.md)，仅在追溯历史时读取。
-- Next action: 用户刷新 5173 验收 GG-249 的主图完整程度、浮层尺寸和缩略图轮播；GG-248/245 手验保留。新需求从当前分支 HEAD 核对源码祖先并按范围推进，没有待完成开发或运行步骤。
+- Next action: 用户刷新 5173 验收 GG-250 直接编辑/保存/取消和 GG-249 完整预览/轮播；GG-248 复制与 GG-245 手验保留。新需求从当前 HEAD 核对祖先并按范围推进，没有待完成开发或运行步骤。
 - Blockers: 无代码或本地运行阻塞；浏览器验收由用户负责，不阻塞开发交付。生产发布未获授权。
 
 ## Verification sequence
