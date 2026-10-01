@@ -4,6 +4,7 @@
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
+| GG-248 | 实施中：账户管理新增首位默认个人信息，六项资料与 ID/邀请码复制，复用既有编辑 | [任务](tasks/GG-248-account-personal-information.md) |
 | GG-247 | 用户确认验证节奏：小需求定向检查即可交付，全量检查集中到批次/发布或必要回归 | [任务](tasks/GG-247-targeted-verification.md) |
 | GG-246 | 已接入实际 5173：大厅视频默认暂停、中心播放提示，仅 mouse hover 预览；定向 31/31、共同门禁 685/22/0、辅助目录退役，用户验收 | [任务](tasks/GG-246-asset-video-hover.md) |
 | GG-245 | 源码 `7ddb78d`、34/34、lint/typecheck 与所给 JPEG 读取通过；verified Web 已同步，子目录退役，用户验收 | [任务](tasks/GG-245-canvas-image-link-read.md) |

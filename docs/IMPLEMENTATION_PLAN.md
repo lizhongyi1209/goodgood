@@ -7,6 +7,7 @@
 
 ## Current checkpoint
 
+- Task [GG-248](tasks/GG-248-account-personal-information.md)：独立开发账户管理默认个人信息，用户确认头像、昵称、用户名、邮箱、用户 ID 和邀请码；仅定向验证，不改变 GG-245 范围。
 - Task [GG-247](tasks/GG-247-targeted-verification.md)：用户要求高频小需求默认定向验证，完整门禁按批次/发布或必要回归执行，规则见 AGENTS/WORKFLOW；不改变 GG-245 的并行开发范围。
 - 当前集成分支 `fix/GG-245-canvas-image-link-read`，目录 `F:/goodgood-worktrees/GG-116`，交接标签 `goodgood-local-2026-10-01-gg245`；源码 `7ddb78d` 与 Web 构建 `09c7060` 均为祖先，保留 GG-244/246 与 GG-247。GG-245 子目录创建 1/退役 1、零子缓存，见任务卡。
 - Task [GG-246](tasks/GG-246-asset-video-hover.md)：子提交 `c563d98`/根回放 `ec51488` 已整合为 `83a4306`，实际目录 `F:/goodgood-worktrees/GG-116`，基于 GG-244 收口 `dd8dca9`，仅修改大厅资产视频。定向 31/31、一次完整共同门禁 685 通过/22 隔离跳过/0 失败；5173 编译模块 HTTP 200 含新接线；辅助目录创建 2/退役 2。不改变 GG-245 并行任务。

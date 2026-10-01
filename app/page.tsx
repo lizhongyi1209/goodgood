@@ -3206,7 +3206,7 @@ export default function Home({
                   setBillingRevision((current) => current + 1);
                 }} aria-label="重试读取积分余额"><CreditIcon className="size-[1em]" />重试</button>
               ) : (
-                <button className="mobile-credit-balance" disabled={authenticationSession.access.status !== "active"} onClick={handleCreditsNav} aria-label={`查看积分用量，余额 ${billingLoading ? "读取中" : displayedAvailableCredits ?? "暂不可用"}`}>
+                <button className="mobile-credit-balance" disabled={authenticationSession.access.status !== "active"} onClick={handleCreditsNav} aria-label={`打开账户管理，余额 ${billingLoading ? "读取中" : displayedAvailableCredits ?? "暂不可用"}`}>
                   <CreditIcon className="size-[1em]" />{billingLoading ? "--" : displayedAvailableCredits ?? "--"}
                 </button>
               )

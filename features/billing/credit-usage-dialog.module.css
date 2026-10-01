@@ -1,0 +1,6 @@
+.navigation .navigationButton[aria-current="page"] { background: #e7e7e7; color: #161616; font-weight: 600; }
+.navigation .navigationButton:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+@media (max-width: 720px) {
+  .dialog .navigation { flex-wrap: wrap; padding: 13px 14px 10px; }
+  .dialog .navigation > strong { flex: 1 0 100%; margin: 0 0 4px; padding-right: 40px; }
+}
