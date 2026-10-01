@@ -178,3 +178,4 @@ ADR 0053 adds standalone-delimited concurrent prompt batches for GG-040.
 - `0112-account-credit-usage-dialog.md` — 头像菜单积分用量弹框取代大厅左侧积分记录入口；退回仅从可见用量中隐藏，账本保留。
 - `0113-static-canvas-model-icons.md` — 画布模型列表继续使用 Lobe 单色图形，改从本地静态 SVG 读取，撤下 React 图标包总入口。
 - `0119-project-create-card.md` — 项目页首位新建卡片直接进入既有新画布入口，取代页头新建创作按钮。
+- `0120-canvas-asset-hover-video-preview.md` — 画布资产图片/视频的较小查看按钮仅 hover 显示，视频预览沿用画布节点样式与 hover 播放。

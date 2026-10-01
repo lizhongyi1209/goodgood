@@ -4,6 +4,7 @@
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
+| GG-244 | 实施中：资产 hover 小按钮、无视频外置文字与节点式视频预览；子 agent 开发，用户验收 | [任务](tasks/GG-244-canvas-asset-hover.md) |
 | GG-243 | 已接入实际 5173：首位新建卡片直接进入新画布；共同门禁 665/22/0、定向 14/14，辅助目录已退役，用户验收 | [任务](tasks/GG-243-project-create-card.md) |
 | GG-242 | 预览开发完成；定向 23/23、只读抽查 13/13、完整门禁 661 通过/22 隔离跳过；子 worktree 已退役，用户自行验收 | [任务](tasks/GG-242-canvas-image-preview.md) |
 | GG-241 | 当前 5173、verified Web、唯一 Worker 和原本地依赖已恢复；原数据与迁移保留，无新增 worktree | [任务](tasks/GG-241-local-startup.md) |
@@ -82,4 +83,4 @@
 
 [GG-231-canvas-selection-border.md](tasks/GG-231-canvas-selection-border.md) · [GG-232-project-card-interaction.md](tasks/GG-232-project-card-interaction.md) · [GG-233-canvas-asset-cards-and-add.md](tasks/GG-233-canvas-asset-cards-and-add.md) · [GG-234-canvas-asset-card-default-hover.md](tasks/GG-234-canvas-asset-card-default-hover.md) · [GG-235-asset-media-masonry.md](tasks/GG-235-asset-media-masonry.md) · [GG-236-project-card-default-frame.md](tasks/GG-236-project-card-default-frame.md) · [GG-237-project-four-column-grid.md](tasks/GG-237-project-four-column-grid.md) · [GG-238-canvas-asset-viewer.md](tasks/GG-238-canvas-asset-viewer.md)
 
-[GG-239-current-5173-checkpoint.md](tasks/GG-239-current-5173-checkpoint.md) · [GG-240-subagent-worktree-hygiene.md](tasks/GG-240-subagent-worktree-hygiene.md) · [GG-241-local-startup.md](tasks/GG-241-local-startup.md) · [GG-242-canvas-image-preview.md](tasks/GG-242-canvas-image-preview.md) · [GG-900-deferred-c6.md](tasks/GG-900-deferred-c6.md)
+[GG-239-current-5173-checkpoint.md](tasks/GG-239-current-5173-checkpoint.md) · [GG-240-subagent-worktree-hygiene.md](tasks/GG-240-subagent-worktree-hygiene.md) · [GG-241-local-startup.md](tasks/GG-241-local-startup.md) · [GG-242-canvas-image-preview.md](tasks/GG-242-canvas-image-preview.md) · [GG-243-project-create-card.md](tasks/GG-243-project-create-card.md) · [GG-244-canvas-asset-hover.md](tasks/GG-244-canvas-asset-hover.md) · [GG-900-deferred-c6.md](tasks/GG-900-deferred-c6.md)
