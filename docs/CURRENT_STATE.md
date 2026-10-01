@@ -3,8 +3,8 @@
 - 最后核对：2026-10-01（本地服务；生产身份沿用原发布证据）。
 - 产品阶段：公开的 `controlled-alpha-v1`；已有真实用户，尚未达到完整 seed、自动支付或完整运营告警就绪。
 - 正式入口：https://goodgood.o1key.com
-- 当前本地代码检查点：[GG-239](tasks/GG-239-current-5173-checkpoint.md)，版本标签 `goodgood-local-2026-09-30-gg239`。该标签固定 5173 当前累计源码，取代把 `GG-116` 旧分支名当版本依据的做法。
-- 当前本地运行：[GG-241](tasks/GG-241-local-startup.md) 已恢复 Vite `127.0.0.1:5173`，从 `F:/goodgood-worktrees/GG-116` 提供前端；API 代理到已验证 Web `127.0.0.1:32131`，唯一真实开发 Worker 为 `127.0.0.1:32142`。原本地数据卷和迁移保留，生产没有变化。
+- 当前本地代码检查点：[GG-242](tasks/GG-242-canvas-image-preview.md)，基于 GG-239 标签 `goodgood-local-2026-09-30-gg239` 和 GG-241，增加生成图片的稳定受权地址恢复修复；具体分支见 IMPLEMENTATION_PLAN。
+- 当前本地运行：Vite `127.0.0.1:5173` 从 `F:/goodgood-worktrees/GG-116` 提供前端；API 代理到已验证 Web `127.0.0.1:32131`，唯一真实开发 Worker 为 `127.0.0.1:32142`。GG-242 已补回 Web 云素材配置，原本地数据卷和迁移保留，生产没有变化。
 
 ## 生产身份
 
@@ -29,11 +29,13 @@ GG-239 收口了 5173 中 GG-116—238 的累计实现，包括统一资产工�
 
 当前本地后端来自已验证 revision `70e10c6ae6bd83542ba870f54059b54b999e9fdf`，Web 的 `/api/health/version` 报告 `build.verified=true`。本地 PostgreSQL 使用 `54449/goodgood`，迁移到 `0056`；Valkey 为 `56549`，RustFS 为 `58049/58050`，Mailpit 为 `58045/58046`。这些均为 loopback 开发资源。
 
+当前本地库包含云端 `local-dev/references/` 素材；Web/Worker 启动必须保留原仓库外云配置。GG-242 的 13 张既有图像只读抽查均预览 200、原图 Range 206；基础 readiness 不能证明云素材预览正常。
+
 本地 Web/Worker 使用仓库外开发凭据调用真实 O1Key，请求可能计费。mock 只允许在显式隔离的 `mock-tests` 栈中运行；fixture 或合成任务不得进入真实 Worker 共用数据库或队列。生产数据库、R2、队列、密钥和真实用户数据不得复制到本地。
 
 ## 当前边界
 
-- GG-239 是本地可恢复源码版本，不是生产 release、CI 镜像或部署授权。
+- GG-239—242 是本地可恢复检查点，不是生产 release、CI 镜像或部署授权。
 - 5173 是 Vite 热更新页面；提交后仍应以版本标签和 Git 状态判断源码，不能以端口或旧 PID 判断版本。
 - GG-235 已恢复本地对象存储/Valkey 端口并验证只读媒体链路；GG-236 的默认项目外框已获用户确认。GG-237 四列项目布局和 GG-238 图片查看器仍待用户手验。
 - C6 删除/内容安全分支继续停放，禁止自动恢复或批量合入。

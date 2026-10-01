@@ -1,30 +1,32 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-01
-- Current phase: GG-241 已恢复当前本地依赖、5173、verified Web 和唯一 Worker；运行时代码仍为 `goodgood-local-2026-09-30-gg239`，生产仍为 GG-098 应用和 GG-100 单槽 Compose。
-- Current objective: 保持当前本地项目可用，沿用原数据与已验证后端；不重复安装、构建或创建 worktree。
-- Previous objective: GG-240 为并行子 agent 和 worktree 建立强制登记、集成与退役闭环。
+- Current phase: GG-242 已补回 Web 云素材配置并修复画布生成图片的过期地址恢复；5173 包含该一行源码增量，生产仍为 GG-098 应用和 GG-100 单槽 Compose。
+- Current objective: 图片预览修复的代码开发、集成与一次本地门禁已完成，原素材与项目保留；浏览器和产品验收由用户完成，子 worktree 已退役。
+- Previous objective: GG-241 恢复当前本地依赖与 5173/Web/Worker；本轮补齐其遗漏的 Web 云参考图配置。
 
 ## Current checkpoint
 
-- Task [GG-241](tasks/GG-241-local-startup.md)：恢复现有本地服务并记录 Windows 保留端口故障的修复；分支为 `chore/GG-241-local-startup`，基线为 GG-240 `5b14466`。GG-240 生命周期规范继续有效。
-- 5173 源码目录：`F:/goodgood-worktrees/GG-116`。目录名只是历史 worktree 名；当前分支只增加流程文档和文档测试，运行时代码仍由 GG-239 标签确认。
+- Task [GG-242](tasks/GG-242-canvas-image-preview.md)：子 agent 最小源码修复已精确回放为 `c3700b7`；当前分支 `fix/GG-242-canvas-image-preview` 基于 GG-241 `f1570de`。GG-240 生命周期规范继续有效。
+- 5173 源码目录：`F:/goodgood-worktrees/GG-116`。当前代码为 GG-239 累计基线加 GG-242 图片恢复修复；目录名和旧标签不能单独代表最新代码。
 - 5173 API 代理：Web `32131` 为 verified `70e10c6ae6bd83542ba870f54059b54b999e9fdf`；唯一真实开发 Worker `32142` readiness 五项为 `ok`。
 - 本地依赖：PostgreSQL `54449`、Valkey `56549`、RustFS `58049/58050`、Mailpit `58045/58046`；数据库迁移为 `0056`。
+- 云参考图：Web 必须加载仓库外 `cloud-upload.env`，Worker 同样保持 `cloud-development`；否则 23 条 `local-dev/references/` 图像会读取失败，readiness 正常不能代替素材预览验证。
+- GG-242 验证：定向 23/23、只读预览 13/13；一次 `check:local` 通过（683 总数，661 通过、22 隔离跳过、0 失败）。浏览器验收交给用户。
 - 2026-10-01 启动前只读核对活动任务、待分发 outbox、冻结积分和两队列均为 0；保留原数据卷，没有执行迁移或生成。
 - GG-235 已恢复本地媒体只读链路；GG-236 外框已获用户确认；GG-237 和 GG-238 仍需用户在 5173 手验。
 - 生产身份继续为 revision `7888554a4650b1b06dbce4293c52e8c018e5c71b`、迁移 `0044_gg098_raise_manual_grant_ceiling.sql`，详见 [CURRENT_STATE](CURRENT_STATE.md)。GG-239 未部署。
 - 生产入口仍为 `https://goodgood.o1key.com`，预发布入口为 `https://staging-goodgood.o1key.com`；本地 5173、开发数据库与生产数据继续严格隔离。
 - 早期生产实施流水保存在 [2026-09-07 implementation log](history/2026-09-07-implementation-log.md)，仅在追溯历史时读取。
-- Next action: 用户在 5173 使用项目并手验 GG-237 四列项目布局和 GG-238 图片查看器；后续需求从 GG-241 当前检查点分配 GG-242+，仅在真实并行编辑时创建独立 worktree。
-- Blockers: 无源码收口阻塞；GG-237/GG-238 的浏览器手验尚未完成，生产发布未获授权。
+- Next action: 用户刷新当前画布确认 GG-242 预览恢复；原 GG-237/GG-238 手验保留。新需求从 GG-242 检查点分配未占用编号；GG-243 已在其他窗口实施。
+- Blockers: 无代码或本地运行阻塞；浏览器验收由用户负责，不阻塞开发交付。生产发布未获授权。
 
 ## Verification sequence
 
-1. 核对 GG-241 当前分支、GG-240 与 GG-239 祖先检查成功且 `git status --short` 为空；后端来源仍由 GG-226 已验证构建确认。
+1. 核对 GG-242 当前分支、GG-241 祖先检查成功且 `git status --short` 为空；后端来源仍由 GG-226 已验证构建确认。
 2. 核对 `http://127.0.0.1:5173/`、`32131/api/health/version`、`32142/health/ready`；不得凭旧 PID 推断版本。
 3. 纯文档流程任务运行文档连续性测试和 `git diff --check`；运行时代码稳定后再执行一次 `npm run check:local`，准确记录通过、跳过或现有失败。
-4. 浏览器手验只覆盖尚未确认的 GG-237/GG-238；真实生成必须另获该次计费请求授权。
+4. 浏览器交互及产品验收由用户完成，覆盖 GG-242 预览恢复和未确认的 GG-237/GG-238；agent 无需代验。真实生成必须另获该次计费请求授权。
 5. 发布是独立任务，必须取得不可变 CI 镜像并按单槽 Compose 清单执行。
 
 ## Milestones
@@ -40,11 +42,12 @@
 | GG-239 | 本地检查点 | 当前 5173 累计源码首次形成单一可恢复提交和标签；未部署 |
 | GG-240 | 流程检查点 | 子 agent/worktree 创建、缓存、集成、退役与脏目录保留形成可测试规范；未部署 |
 | GG-241 | 本地启动完成 | 原依赖、5173、Web/Worker 恢复，Windows 54449 端口冲突已处理；原数据保留，未部署 |
+| GG-242 | 本地预览恢复 | Web 云配置补回；画布重开 generated source 使用稳定受权 content URL，子 worktree 已退役 |
 
 ## New-session recovery
 
 1. 读 `AGENTS.md`、`CURRENT_STATE.md`、`WORKFLOW.md`、本文件、`BACKLOG.md` 和 `DEVELOPMENT_HANDOFF.md`。
-2. 使用 `git worktree list`、`git show chore/GG-241-local-startup --no-patch` 和 GG-239/GG-240 祖先检查找到当前检查点；不得从目录名、main 或 parked C6 猜测最新源码。
-3. 新需求分配 GG-242+ 并创建隔离分支；只有并行写任务才创建 worktree，并按 WORKFLOW 登记所有权、缓存和退役结果。
+2. 使用 `git worktree list`、`git show fix/GG-242-canvas-image-preview --no-patch` 和 GG-241 祖先检查找到当前检查点；不得从目录名、main 或 parked C6 猜测最新源码。
+3. 新需求核对并分配未占用编号，GG-243 为其他窗口活动任务；只有并行写任务才创建 worktree，并按 WORKFLOW 登记所有权、缓存和退役结果。
 4. 本地真实 Worker 可能计费；先检查活动任务、队列和冻结积分，再决定是否启动或切换服务。
 5. 生产操作必须另有明确授权，且生产事实以 CURRENT_STATE 和发布记录为准。

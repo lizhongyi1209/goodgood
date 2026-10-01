@@ -1,10 +1,10 @@
 # 当前开发版本与跨窗口交接
 
 - 日期：2026-10-01。
-- 当前运行时代码版本：`goodgood-local-2026-09-30-gg239`。
-- 当前交接检查点分支：`chore/GG-241-local-startup`（基于 GG-240）。
+- 当前代码：GG-239 累计基线加 GG-242 `c3700b7` 图片恢复修复。
+- 当前交接检查点分支：`fix/GG-242-canvas-image-preview`（基于 GG-241）。
 - 当前 worktree：`F:/goodgood-worktrees/GG-116`。目录名是历史名称，不能再用来判断版本。
-- 状态：GG-241 已恢复 5173、Web/Worker 与原依赖。GG-239 累计源码和 GG-240 工作流规范均保留；未部署生产。GG-237 与 GG-238 待用户手验。
+- 状态：GG-242 已补回 Web 云素材配置并恢复图片预览；生成图片重开后使用稳定受权地址。GG-240 工作流规范保留，子 worktree 已退役；未部署生产。GG-237 与 GG-238 待用户手验。
 
 ## 先确认源码
 
@@ -16,13 +16,13 @@ git merge-base --is-ancestor goodgood-local-2026-09-30-gg239 HEAD
 git worktree list --porcelain
 ~~~
 
-新窗口以 IMPLEMENTATION_PLAN 指向的 GG-241 分支 HEAD 为检查点，并确认 GG-239 标签、GG-240 提交是其祖先。`main`、旧 GG-116 分支、其它 GG worktree 和 parked C6 都不是替代来源。新任务从 GG-242 分配；只在并行写任务时建立独立 worktree，不要让两个窗口编辑同一目录。
+新窗口以 IMPLEMENTATION_PLAN 指向的 GG-242 分支 HEAD 为检查点，并确认 GG-241 是其祖先。`main`、旧 GG-116 分支、其它 GG worktree 和 parked C6 都不是替代来源。新任务先核对未占用编号，GG-243 已有其他窗口在做；只在并行写任务时建立独立 worktree，不要让两个窗口编辑同一目录。
 
 ## 当前本地运行
 
 | 组件 | 入口 | 当前来源/用途 |
 | --- | --- | --- |
-| Vite 页面 | `http://127.0.0.1:5173` | GG-239 源码目录，热更新 |
+| Vite 页面 | `http://127.0.0.1:5173` | GG-116 当前分支含 GG-242 修复，热更新 |
 | Node Web | `http://127.0.0.1:32131` | verified `70e10c6ae6bd83542ba870f54059b54b999e9fdf`；Vite `/api` 代理目标 |
 | Worker | `http://127.0.0.1:32142/health/ready` | 唯一真实开发 Worker；O1Key 请求可能计费 |
 | PostgreSQL | `127.0.0.1:54449/goodgood` | 本地隔离数据库，迁移 `0056` |
@@ -47,6 +47,7 @@ GG-239 包含 5173 中 GG-116—238 的累计本地实现。核心包括统一�
 - GG-239：只固化当前代码、清理入口文档和临时浏览器日志，不改变产品决定或生产运行。
 - GG-240：只增加子 agent/worktree 生命周期、缓存与退役规范和文档契约测试，不改变产品决定或运行时。
 - GG-241：恢复原本地服务和数据卷，复用已验证后端；没有安装依赖、构建、迁移、上传或生成。
+- GG-242：补回 Web 云参考图配置；13 张既有图像预览/原图只读抽查通过，子 agent 的单行生成图片恢复修复已整合。
 
 ## 启动和验证边界
 
@@ -57,9 +58,19 @@ npm ci
 npm run dev:local
 ~~~
 
-当前依赖已安装时无需为了恢复页面重复安装。代码稳定后只运行一次 `npm run check:local`。真实 provider 请求必须由用户明确授权该次生成；自动测试不得写入真实 Worker 共用数据库或队列。数据库写测试只允许显式命名的空白隔离栈且无真实 Worker。
+当前依赖已安装时无需为了恢复页面重复安装。代码稳定后只运行一次 `npm run check:local`。agent 负责代码开发、代码验证和集成；浏览器交互、视觉效果及是否符合预期由用户验收，除非用户明确委托。真实 provider 请求必须由用户明确授权该次生成；自动测试不得写入真实 Worker 共用数据库或队列。数据库写测试只允许显式命名的空白隔离栈且无真实 Worker。
 
 本机现有 Valkey 端口为 56549，当前运行使用两个忽略的端口适配启动器：GG-226 的 `dist/local-checkpoint-portfix.mjs start workspace/worker`，以及 GG-116 的 `dist/local-live-dev-portfix.mjs --port 5173`。先验证后端构建并检查任务/队列，再启动 Web、单个 Worker、Vite；不要直接用仍断言 56449 的旧启动脚本。日志固定复用 `%TEMP%/goodgood-local-services/current-{web,worker,vite}.{out,err}.log`，不按任务积累副本。
+
+**当前本机有已保存的云参考图，Web 启动不可遗漏云配置。**在 GG-226 目录分别启动所需角色，两个角色都显式传同一仓库外配置（现有 Worker 已从本地 env 加载，运行中不重复启动）：
+
+~~~powershell
+$taskCloudEnvironment = Join-Path $env:LOCALAPPDATA 'GoodGood/local-cloud-upload/cloud-upload.env'
+node dist/local-checkpoint-portfix.mjs start workspace --cloud-env-file "$taskCloudEnvironment"
+node dist/local-checkpoint-portfix.mjs start worker --cloud-env-file "$taskCloudEnvironment"
+~~~
+
+核对角色 banner 的 `referenceStorage=cloud-development`；readiness 200 只覆盖基础依赖，仍须只读核对现有云参考图预览。缺少配置时保留数据并恢复原文件，禁止重传、改对象键或回退假图片。
 
 并行任务必须按 [WORKFLOW](WORKFLOW.md) 先登记再创建。子 worktree 默认不重复安装依赖或执行完整构建；根 agent 完成集成验证后，退役所有已整合的干净目录，并逐项记录不能删除的 dirty worktree。禁止以文件系统强删代替 `git worktree remove`。
 
@@ -67,8 +78,8 @@ npm run dev:local
 
 ## 生产边界
 
-生产仍是 [CURRENT_STATE](CURRENT_STATE.md) 记录的 GG-098 应用和 GG-100 单槽 `goodgood-production` Compose。GG-239—241 只是本地检查点，没有 CI 不可变镜像、生产预检或部署授权。未来发布只能按 ADR 0091 的单槽策略原地替换，不恢复历史 blue/green、双 Compose 项目或 Nginx upstream 切换。
+生产仍是 [CURRENT_STATE](CURRENT_STATE.md) 记录的 GG-098 应用和 GG-100 单槽 `goodgood-production` Compose。GG-239—242 只是本地检查点，没有 CI 不可变镜像、生产预检或部署授权。未来发布只能按 ADR 0091 的单槽策略原地替换，不恢复历史 blue/green、双 Compose 项目或 Nginx upstream 切换。
 
 ## 下一步
 
-用户刷新 5173，先验收 GG-237 的 4/3/2/1 列响应布局，再验收 GG-238 的方形添加卡、图片查看器、滚轮/方向键/rail 切换和关闭后焦点返回。新代码任务从 GG-241 检查点新建 GG-242+ 分支；只有并行编辑才新增 worktree，并在完成后退役。
+用户刷新当前画布确认 GG-242 图片恢复与重试；GG-237/GG-238 原手验保留。新代码任务从 GG-242 检查点分配未占用编号的新分支；只有并行编辑才新增 worktree，并在完成后退役。

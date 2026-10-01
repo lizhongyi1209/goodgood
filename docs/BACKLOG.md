@@ -1,9 +1,10 @@
 # 当前任务与优先级
 
-> 最后同步：2026-10-01。生产仍为 GG-098 应用和 GG-100 单槽 Compose；本地运行时代码为 GG-239 标签，GG-241 已恢复本地服务并记录当前交接。历史详情保留在任务卡，不在本页重复转录。
+> 最后同步：2026-10-01。生产仍为 GG-098 应用和 GG-100 单槽 Compose；GG-242 已恢复画布云图片预览，并修复生成图片重开后的过期地址。历史详情保留在任务卡，不在本页重复转录。
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
+| GG-242 | 预览开发完成；定向 23/23、只读抽查 13/13、完整门禁 661 通过/22 隔离跳过；子 worktree 已退役，用户自行验收 | [任务](tasks/GG-242-canvas-image-preview.md) |
 | GG-241 | 当前 5173、verified Web、唯一 Worker 和原本地依赖已恢复；原数据与迁移保留，无新增 worktree | [任务](tasks/GG-241-local-startup.md) |
 | GG-240 | 子 agent/worktree 创建、缓存、集成和退役规范已写入入口文档、任务模板与契约测试；未部署 | [任务](tasks/GG-240-subagent-worktree-hygiene.md) |
 | GG-239 | 当前 5173 累计源码、文档、迁移与测试收口为单一提交和标签；未部署 | [任务](tasks/GG-239-current-5173-checkpoint.md) |
@@ -16,7 +17,7 @@
 
 ## 下一步
 
-用户在 5173 使用当前项目并手验 GG-237/GG-238。新需求从 GG-241 检查点分配 GG-242+；只有并行写任务才建立 worktree，并在交接前按 WORKFLOW 收口。生产发布另立任务并明确授权。
+用户刷新当前画布确认 GG-242 预览恢复；GG-237/GG-238 原手验保留。新需求从 GG-242 检查点分配未占用编号；GG-243 已有其他窗口在做。只有并行写任务才建立 worktree，并在交接前按 WORKFLOW 收口。生产发布另立任务并明确授权。
 
 ## 全部任务卡索引
 
@@ -80,4 +81,4 @@
 
 [GG-231-canvas-selection-border.md](tasks/GG-231-canvas-selection-border.md) · [GG-232-project-card-interaction.md](tasks/GG-232-project-card-interaction.md) · [GG-233-canvas-asset-cards-and-add.md](tasks/GG-233-canvas-asset-cards-and-add.md) · [GG-234-canvas-asset-card-default-hover.md](tasks/GG-234-canvas-asset-card-default-hover.md) · [GG-235-asset-media-masonry.md](tasks/GG-235-asset-media-masonry.md) · [GG-236-project-card-default-frame.md](tasks/GG-236-project-card-default-frame.md) · [GG-237-project-four-column-grid.md](tasks/GG-237-project-four-column-grid.md) · [GG-238-canvas-asset-viewer.md](tasks/GG-238-canvas-asset-viewer.md)
 
-[GG-239-current-5173-checkpoint.md](tasks/GG-239-current-5173-checkpoint.md) · [GG-240-subagent-worktree-hygiene.md](tasks/GG-240-subagent-worktree-hygiene.md) · [GG-241-local-startup.md](tasks/GG-241-local-startup.md) · [GG-900-deferred-c6.md](tasks/GG-900-deferred-c6.md)
+[GG-239-current-5173-checkpoint.md](tasks/GG-239-current-5173-checkpoint.md) · [GG-240-subagent-worktree-hygiene.md](tasks/GG-240-subagent-worktree-hygiene.md) · [GG-241-local-startup.md](tasks/GG-241-local-startup.md) · [GG-242-canvas-image-preview.md](tasks/GG-242-canvas-image-preview.md) · [GG-900-deferred-c6.md](tasks/GG-900-deferred-c6.md)

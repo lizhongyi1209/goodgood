@@ -128,7 +128,8 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
 - Reuse Radix/Shadcn primitives; add AI Elements per `docs/DESIGN_SYSTEM.md`.
   Keep keyboard, focus, labels, reduced motion, and responsive behavior intact.
 - Do not add speculative routes or functionality while refactoring.
-- Update documentation, tests, and error behavior in the same change as code.
+- Update docs, tests, and error behavior with code. Verify behavior at code level;
+  browser interaction and product acceptance belong to the user unless delegated.
 - Iterate with the smallest relevant tests. Run `npm run check:local` once after
   code stabilizes, and repeat it only when later edits can invalidate that gate.
   Documentation-only changes use the documentation tests and diff checks.
@@ -161,8 +162,7 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
 
 - Scope matches an accepted product decision.
 - `npm run check:local` passes on the supported local environment.
-- New logic has tests for success, empty, loading, and failure paths where
-  applicable.
+- New logic has tests for success, empty, loading, and failure paths where applicable.
 - No secret or real user asset enters the diff.
 - Relevant docs and ADR status are current.
 - Task card distinguishes implemented, verified, and deployed; no unreported
