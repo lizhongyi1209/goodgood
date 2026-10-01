@@ -119,10 +119,16 @@ test("a dialog or edit disables the background surface and prevents explicit pla
   playback.play();
   video.dispatchEvent(new Event("canplay"));
   assert.equal(video.playCalls, 1);
-  playback.setHovering(false);
-  playback.setEnabled(true);
-  assert.equal(video.playCalls, 1);
   playback.dispose();
+
+  const inactive = surface();
+  inactive.playback.setEnabled(false);
+  inactive.playback.play();
+  inactive.playback.setEnabled(true);
+  inactive.video.dispatchEvent(new Event("canplay"));
+  assert.equal(inactive.video.playCalls, 0);
+  assert.equal(inactive.video.paused, true);
+  inactive.playback.dispose();
 });
 
 test("a late play resolution after leaving is paused again", async () => {
