@@ -1,6 +1,9 @@
 export const CANVAS_SELECTION_CLIPBOARD_TYPE = "application/x-goodgood-canvas-selection";
 
 const ignoredTargetSelector = "input, textarea, select, button, a, [contenteditable], [role='button'], [role='textbox'], [role='menu'], [role='dialog'], .nokey";
+const openLayerSelector = ["[role='dialog']", "[role='alertdialog']", "[role='menu']"]
+  .map((selector) => `${selector}:not([hidden]):not([aria-hidden='true']):not([data-state='closed'])`)
+  .concat("[data-slot='popover-content'][data-state='open']").join(", ");
 
 export function isCanvasClipboardTarget(target, surface) {
   return Boolean(target && typeof target.closest === "function" && surface?.contains(target) &&
@@ -44,4 +47,17 @@ export function handleCanvasClipboardPaste(event, { selectionToken, onPasteSelec
   event.stopPropagation();
   onPasteImages(files);
   return true;
+}
+
+export function handleCanvasBodyClipboardPaste(event, { surface, ...options }) {
+  const page = surface?.ownerDocument;
+  if (!surface?.isConnected || event.currentTarget !== page ||
+      (event.target !== page.body && event.target !== page.documentElement) ||
+      (page.activeElement !== page.body && page.activeElement !== page.documentElement) ||
+      surface.closest("[inert], [aria-hidden='true']") || page.querySelector(openLayerSelector)) return false;
+  return handleCanvasClipboardPaste({
+    target: surface, currentTarget: surface, clipboardData: event.clipboardData,
+    defaultPrevented: event.defaultPrevented,
+    preventDefault: () => event.preventDefault(), stopPropagation: () => event.stopPropagation(),
+  }, options);
 }

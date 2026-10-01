@@ -29,7 +29,7 @@ import { CanvasAudioNode, type CanvasAudioNodeData } from "./canvas-audio-node";
 import { CanvasGeneratorNode, type CanvasGeneratorNodeData } from "./canvas-generator-node";
 import { CanvasGeneratorHostContext } from "./canvas-generator-host";
 import { CanvasSelectionControls } from "./canvas-selection-controls";
-import { handleCanvasClipboardCopy, handleCanvasClipboardPaste } from "./canvas-clipboard.mjs";
+import { handleCanvasBodyClipboardPaste, handleCanvasClipboardCopy, handleCanvasClipboardPaste } from "./canvas-clipboard.mjs";
 import styles from "./canvas-workspace.module.css";
 
 export type CanvasResultNodeType = Node<CanvasResultNodeData, "imageResult">;
@@ -201,6 +201,17 @@ export function CanvasWorkspace({
   const edgeHoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const edgeDeleteVisibleRef = useRef<string | null>(null);
   const [edgeDelete, setEdgeDelete] = useState<{ id: string; x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    const surface = canvasRef.current;
+    if (!surface) return;
+    const page = surface.ownerDocument;
+    const pasteFromBody = (event: ClipboardEvent) => handleCanvasBodyClipboardPaste(event, {
+      surface, selectionToken: clipboardTokenRef.current, onPasteSelection: onPaste, onPasteImages,
+    });
+    page.addEventListener("paste", pasteFromBody);
+    return () => page.removeEventListener("paste", pasteFromBody);
+  }, [onPaste, onPasteImages]);
 
   const handleCanvasKeyDown = (event: ReactKeyboardEvent<HTMLElement>) => {
     const target = event.target;

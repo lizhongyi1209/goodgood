@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   CANVAS_SELECTION_CLIPBOARD_TYPE,
+  handleCanvasBodyClipboardPaste,
   handleCanvasClipboardCopy,
   handleCanvasClipboardPaste,
   readCanvasClipboardImages,
@@ -32,6 +33,17 @@ function pasteOptions(selectionToken = "local-selection") {
   const uploaded = [];
   return { selectionToken, selected, uploaded,
     onPasteSelection: () => selected.push(true), onPasteImages: (files) => uploaded.push(files) };
+}
+
+function bodyEvent(data = clipboard([image()]), { layer = null, connected = true, inactive = false,
+  hiddenCanvas = false, htmlTarget = false } = {}) {
+  const page = { body: {}, documentElement: {},
+    querySelector: (selector) => layer && selector.includes(layer) ? {} : null };
+  page.activeElement = inactive ? {} : page.body;
+  const surface = { isConnected: connected, ownerDocument: page, contains: (target) => target === surface,
+    closest: (selector) => hiddenCanvas && selector.includes("[inert]") ? {} : null };
+  const paste = { ...event(data), target: htmlTarget ? page.documentElement : page.body, currentTarget: page };
+  return { paste, surface, page };
 }
 
 test("clipboard files are authoritative and upload multiple images once across files/items", () => {
@@ -158,4 +170,60 @@ test("clipboard images retain the existing drop format, empty-file and size vali
   assert.deepEqual(result.accepted, [good]);
   assert.equal(result.errors.length, 3);
   assert.match(result.errors.join(" "), /unsupported\.gif.*empty\.png.*oversized\.png/);
+});
+
+test("entering the mounted canvas with body focus supports paste without clicking first", () => {
+  for (const htmlTarget of [false, true]) {
+    const { paste, surface } = bodyEvent(clipboard([image()]), { htmlTarget });
+    const options = { ...pasteOptions(null), surface };
+    assert.equal(handleCanvasBodyClipboardPaste(paste, options), true);
+    assert.equal(options.uploaded.length, 1);
+    assert.equal(paste.defaultPrevented, true);
+    assert.equal(paste.stopped, true);
+  }
+});
+
+test("body paste cannot reach the canvas while a dialog, alert, menu or popover is open", () => {
+  for (const layer of ["[role='dialog']", "[role='alertdialog']", "[role='menu']", "[data-slot='popover-content']"]) {
+    const { paste, surface } = bodyEvent(clipboard([image()]), { layer });
+    const options = { ...pasteOptions(), surface };
+    assert.equal(handleCanvasBodyClipboardPaste(paste, options), false, layer);
+    assert.deepEqual(options.uploaded, [], layer);
+    assert.equal(paste.defaultPrevented, false, layer);
+  }
+});
+
+test("body bridge ignores another focused control, a hidden or detached canvas, and already handled events", () => {
+  for (const state of [{ inactive: true }, { connected: false }, { hiddenCanvas: true }]) {
+    const { paste, surface } = bodyEvent(clipboard([image()]), state);
+    const options = { ...pasteOptions(), surface };
+    assert.equal(handleCanvasBodyClipboardPaste(paste, options), false);
+    assert.deepEqual(options.uploaded, []);
+  }
+  const { paste, surface } = bodyEvent();
+  paste.defaultPrevented = true;
+  const options = { ...pasteOptions(), surface };
+  assert.equal(handleCanvasBodyClipboardPaste(paste, options), false);
+  assert.deepEqual(options.uploaded, []);
+});
+
+test("document bridge does not duplicate a paste originating on the canvas surface", () => {
+  const { paste, surface } = bodyEvent();
+  paste.target = surface;
+  const options = { ...pasteOptions(), surface };
+  assert.equal(handleCanvasBodyClipboardPaste(paste, options), false);
+  assert.deepEqual(options.uploaded, []);
+});
+
+test("body-focus paste retains internal selection markers and never imports a text URL", () => {
+  const { paste, surface } = bodyEvent(clipboard([], [], { [CANVAS_SELECTION_CLIPBOARD_TYPE]: "local-selection" }));
+  const options = { ...pasteOptions(), surface };
+  assert.equal(handleCanvasBodyClipboardPaste(paste, options), true);
+  assert.deepEqual(options.selected, [true]);
+  assert.deepEqual(options.uploaded, []);
+  const external = bodyEvent(clipboard([], [], { "text/plain": "https://example.com/image.png" }));
+  const externalOptions = { ...pasteOptions(), surface: external.surface };
+  assert.equal(handleCanvasBodyClipboardPaste(external.paste, externalOptions), false);
+  assert.deepEqual(externalOptions.uploaded, []);
+  assert.deepEqual(externalOptions.selected, []);
 });
