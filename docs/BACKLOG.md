@@ -4,7 +4,7 @@
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
-| GG-252 | 开发中：简洁文字资料、默认 goder、2 MB 头像及紧凑布局 | [任务](tasks/GG-252-personal-info-cleanup.md) |
+| GG-252 | 已接入 5173/Web：简洁文字资料、默认 goder、2 MB 头像及紧凑布局；22/22、相关 lint，0057 与 verified Web 同步，辅助目录退役，用户验收 | [任务](tasks/GG-252-personal-info-cleanup.md) |
 | GG-251 | 已接入 5173：显式画布适配完整原图、稍大浮层、缩略图有间隙/原位放大；9/9、相关 lint 和编译通过，无新增辅助目录，用户验收 | [任务](tasks/GG-251-canvas-preview-fit.md) |
 | GG-249 | 已接入 5173：完整受限主图、无标题/滚动条的图片视频轮播；15/15、定向 lint 与编译通过，无新增辅助目录，用户验收 | [任务](tasks/GG-249-canvas-media-viewer.md) |
 | GG-250 | 已接入 5173：个人信息直接编辑头像、昵称/用户名，当前面板保存/取消；13 项功能、局部 lint 与文档 9/9，辅助目录退役，用户验收 | [任务](tasks/GG-250-inline-personal-information.md) |

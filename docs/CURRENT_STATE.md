@@ -3,9 +3,9 @@
 - 最后核对：2026-10-01（本地服务；生产身份沿用原发布证据）。
 - 产品阶段：公开的 `controlled-alpha-v1`；已有真实用户，尚未达到完整 seed、自动支付或完整运营告警就绪。
 - 正式入口：https://goodgood.o1key.com
-- 本地账户信息：[GG-250](tasks/GG-250-inline-personal-information.md) `99fb14a` 已接入实际 5173，头像、昵称/用户名直接编辑并保存/取消；邮箱、用户 ID、邀请码只读及复制保留，13 项功能、相关 lint 与最终文档 9/9，辅助目录退役。
+- 本地账户信息：[GG-252](tasks/GG-252-personal-info-cleanup.md) `4fd9be3` 已接入实际 5173/Web，昵称/用户名文字展示并就地编辑，删除复制按钮/说明，默认 goder、头像 2 MB、紧凑布局；22/22、相关 lint、必要构建及本地 0057 完成，辅助目录退役。
 - 当前本地代码检查点：[GG-251](tasks/GG-251-canvas-preview-fit.md) 按用户截图修正原图裁切，扩大画布浮层并改为有间隙的原位缩略图放大；9/9、定向 lint 与编译通过，无新增 worktree/缓存。GG-249 滚轮导航、GG-248/250 个人信息与 [GG-245](tasks/GG-245-canvas-image-link-read.md) verified Web 保留。浏览器验收由用户负责，历史标签不代表最新前端。
-- 当前本地运行：Vite `127.0.0.1:5173` 从 `F:/goodgood-worktrees/GG-116` 提供前端；API 代理到已验证 Web `127.0.0.1:32131`，唯一真实开发 Worker 为 `127.0.0.1:32142`。GG-242 已补回 Web 云素材配置，原本地数据卷和迁移保留，生产没有变化。
+- 当前本地运行：Vite `127.0.0.1:5173` 从 `F:/goodgood-worktrees/GG-116` 提供前端；API 代理到 verified GG-252 Web `127.0.0.1:32131`，唯一真实开发 Worker 为 `127.0.0.1:32142`、readiness ready。原云配置和数据卷保留，本地迁移到 0057；生产没有变化。
 
 ## 生产身份
 
