@@ -1,21 +1,21 @@
 # 当前任务与优先级
 
-> 最后同步：2026-10-01。GG-269大厅品牌仅展示108px的Good Good字标，已进入5173，源码/diff与页面/CSS编译通过，创建1/退役1、无缓存；GG-268并行开发及此前交付保留。verified Web `9f9d788`、本地0060不变，免费政策待用户，生产仍为GG-098/GG-100。
+> 最后同步：2026-10-01。GG-268文本编辑器/生成器文本输入与GG-270画布资产创建文件夹/右键管理已进入5173，52/52、类型/局部lint/必要构建通过，创建2/退役2。verified Web `b1b3d1c`、0060/原Worker保持；并行GG-272归其窗口，免费政策待用户，生产无变更。
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
-| GG-266 / GG-267 / GG-269 | 已进入5173：108px/约14px Good Good字标单独展示，移除大厅G图标及占位；源码/diff/编译通过，GG-269创建1/退役1，用户验收 | [GG-266](tasks/GG-266-geometric-good-good-wordmark.md) / [GG-267](tasks/GG-267-compact-lobby-wordmark.md) / [GG-269](tasks/GG-269-wordmark-only.md) |
+| GG-268 | 已进入5173/verified Web：可视化Markdown、选中格式栏/缩放排版、文本预览与前置提示词合并、多页保存；13/13、组合52/52、类型/lint/构建通过，创建1/退役1，用户验收 | [任务](tasks/GG-268-markdown-text-node.md) |
+| GG-270 | 已进入5173：添加创建编号文件夹，文件夹右键改名，所有已保存素材右键删除；确认/失败恢复保持，子19/19、根组合52/52，创建1/退役1 | [任务](tasks/GG-270-canvas-asset-context-menu.md) |
+| GG-266 / GG-267 / GG-269 / GG-271 | 已进入5173：Good Good字标单独展示，尺寸与导航对齐后继见卡，最终标题位置由GG-272并行交付；源码/diff/编译证据保留，用户验收 | [GG-266](tasks/GG-266-geometric-good-good-wordmark.md) / [GG-267](tasks/GG-267-compact-lobby-wordmark.md) / [GG-269](tasks/GG-269-wordmark-only.md) / [GG-271](tasks/GG-271-wordmark-nav-alignment.md) |
+| GG-272 | 并行窗口：账户真实注册时间与品牌标题位置源码c4b10b8已精确进入；定向验证/Web同步及生命周期见其任务卡，归原窗口交付 | [任务](tasks/GG-272-account-created-and-brand-row.md) |
 | GG-265 | 已进入5173：确认移动后原位置消失、目标保留同一素材，根层仅未归档；失败/刷新一致性与失效归属恢复，12/12、局部lint/编译通过，创建1/退役1 | [任务](tasks/GG-265-canvas-folder-move-membership.md) |
 | GG-264 | 已进入5173：默认完整适配，放大可填满整个中间区域；无计数/右列动态居中保持。本轮16/16、局部lint/编译通过，累计创建2/退役2，用户验收 | [任务](tasks/GG-264-image-detail-fill-and-centered-rail.md) |
 | GG-263 | 已进入5173：移除大厅「画布」，沿用项目页新建/已有画布入口；7/7、局部lint/模块编译通过，无辅助目录，用户验收 | [任务](tasks/GG-263-remove-lobby-canvas-entry.md) |
 | GG-262 | 已进入5173：统一透明下划线行内编辑、固定文字/动作位置，无可见滚动条，14px图标；12/12、局部lint/模块编译通过，创建1/退役1，用户验收 | [任务](tasks/GG-262-profile-inline-edit-layout.md) |
 | GG-260 / GG-261 | 明细/来源已交付：余额/类型/任务 ID 复制/项目模型/20条分页、空心图标/普通字重；67 项相关检查、0060/Web 完成，创建2/退役2；免费规则待用户 | [GG-260](tasks/GG-260-credit-details-and-free-quota.md) / [GG-261](tasks/GG-261-daily-free-image-quota.md) |
-| GG-258 | 已进入 5173：去掉缩放覆盖层与非生成类型/缺参数说明，保留已知尺寸；10/10、相关 lint/编译通过，规范已同步，无新辅助目录，用户验收 | [任务](tasks/GG-258-canvas-detail-minimal.md) |
-| GG-256 / GG-257 | 画布文件夹拖入/状态动效与默认静态实线、hover流动已接入5173；定向检查完成，两辅助目录已退役，用户验收 | [GG-256](tasks/GG-256-canvas-folder-drop.md) / [GG-257](tasks/GG-257-canvas-edge-hover-flow.md) |
+| GG-249 / GG-251 / GG-253 / GG-258 | 当前素材信息/缩放/内容列/简洁说明已进入5173，旧轮播由后继取代、最终缩放以GG-264为准；定向/lint/编译证据见卡，用户验收 | [GG-249](tasks/GG-249-canvas-media-viewer.md) / [GG-251](tasks/GG-251-canvas-preview-fit.md) / [GG-253](tasks/GG-253-canvas-media-detail.md) / [GG-258](tasks/GG-258-canvas-detail-minimal.md) |
+| GG-255 / GG-256 / GG-257 | 画布外部图片粘贴/编辑区隔离、文件夹拖入/状态动效与默认实线/hover流动已接入5173；定向检查完成，辅助目录已退役，用户验收 | [GG-255](tasks/GG-255-canvas-paste-image.md) / [GG-256](tasks/GG-256-canvas-folder-drop.md) / [GG-257](tasks/GG-257-canvas-edge-hover-flow.md) |
 | GG-248 / GG-250 / GG-252 / GG-254 / GG-259 | 个人信息与直接编辑/随机六位ID记录，最终布局以GG-262为准；既有定向/SQL/服务证据保留在卡中，辅助目录已退役 | [GG-248](tasks/GG-248-account-personal-information.md) / [GG-250](tasks/GG-250-inline-personal-information.md) / [GG-252](tasks/GG-252-personal-info-cleanup.md) / [GG-254](tasks/GG-254-account-identity-editor.md) / [GG-259](tasks/GG-259-random-user-id-stable-edit.md) |
-| GG-253 | 已接入 5173：独立素材信息、图片拖动/滚轮缩放、内容缩略列/选中抽出；25 项定向、相关 lint/编译通过，无新辅助目录，用户验收 | [任务](tasks/GG-253-canvas-media-detail.md) |
-| GG-255 | 已接入 5173：原生外部图片 Ctrl+V，body 焦点直接粘贴，编辑区/弹层隔离；19/19、相关 lint/编译通过，辅助目录退役，用户验收 | [任务](tasks/GG-255-canvas-paste-image.md) |
-| GG-249 / GG-251 | 历史画布详情轮播/原位放大已由 GG-253/258 取代；原验证证据保留在任务卡 | [GG-249](tasks/GG-249-canvas-media-viewer.md) / [GG-251](tasks/GG-251-canvas-preview-fit.md) |
 | GG-247 | 用户确认验证节奏：小需求定向检查即可交付，全量检查集中到批次/发布或必要回归 | [任务](tasks/GG-247-targeted-verification.md) |
 | GG-246 | 已接入实际 5173：大厅视频默认暂停、中心播放提示，仅 mouse hover 预览；定向 31/31、共同门禁 685/22/0、辅助目录退役，用户验收 | [任务](tasks/GG-246-asset-video-hover.md) |
 | GG-245 | 源码 `7ddb78d`、34/34、lint/typecheck 与所给 JPEG 读取通过；verified Web 已同步，子目录退役，用户验收 | [任务](tasks/GG-245-canvas-image-link-read.md) |

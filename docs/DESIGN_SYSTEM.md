@@ -792,3 +792,5 @@ and error-body recovery actions retain their current semantics and focus behavio
   new animation.
 
 GG-077、GG-079 的灵感参数可见性单选组、大厅查看/使用/点赞图标数字行、隐藏参数说明与详情居中规则随灵感板块整体下线一并移除，不再有对应界面；见 [ADR 0104](decisions/0104-inspiration-feature-retirement.md)。
+
+GG-268 文本节点沿用白色画布与灰色细边框；节点上方小标签，选中时浮动紧凑Markdown图标工具栏。正文按节点尺寸在12–24px间调整，标题相对正文缩放，列表/引用/代码保持可读结构；超出节点内部滚动，画布缩放自然缩放整个内容。生成器的接收文本以灰边小卡在描述上方预览，默认最多三行，可展开；不展示Markdown源符号，不增加色彩强调。见ADR0124。

@@ -946,4 +946,6 @@ reuse; the reference cleanup command removes their old objects and rows after
 generation inputs while the video preview is text-only.
 # GG-173 · CanvasProject
 
+GG-268（ADR0124）在现有JSON文档新增`textEditor`节点，保存`markdown`（最多100000字符）与编辑器导出的`text`（最多16000字符）及通用位置/尺寸；无需SQL迁移。两个字段只允许用于文本节点，不接受素材/任务字段。`text → text`边仅允许文本节点到图片生成器，同页保存；原reference边兼容保留。生成器草稿只保存自身补充描述，提交时合并文本进入已有不可变GenerationInputSnapshot.prompt（4000字符），不向provider增加Markdown或节点协议。
+
 迁移 0049 加入独立 `canvas_projects`：稳定 UUID、owner/workspace、名称、版本号、更新时刻和版本化 JSON 文档。文档仅保存可验证的节点/边/生成器草稿/ready 引用和兼容旧快照的视口字段，图片/视频/音频用现有资产 ID，生成结果用任务 ID；不保存 File、Blob/signed URL 或组件回调。GG-175 起视口改变本身不触发文档版本变化；仅在其他内容真正同步时顺带刷新服务器视口。日常最近视角按用户/项目键存在本机，恢复时优先于文档视口。浏览器 IndexedDB 另存同 ID 的待同步内容快照及待上传 File，按稳定用户 ID 隔离；服务端授权数据是最终同步版本。旧 `projects` 表仍代表至少有一批生成任务的创作会话。见 [ADR 0114](decisions/0114-durable-canvas-projects.md)。

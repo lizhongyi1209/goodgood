@@ -1,7 +1,8 @@
 # 当前开发版本与跨窗口交接
 
 - 日期：2026-10-01。
-- 最新品牌：[GG-269](tasks/GG-269-wordmark-only.md) `f51777b`→`c30ccb3`，大厅桌面/移动仅展示108px Good Good字标，移除独立G及占位；源码/diff与5173页面/CSS编译通过，创建1/退役1，无缓存/服务变更，GG-268独立开发保留。
+- 最新画布：[GG-268](tasks/GG-268-markdown-text-node.md)文本编辑器与提示词输入、[GG-270](tasks/GG-270-canvas-asset-context-menu.md)文件夹创建及右键管理已进入5173；52/52、类型/局部lint、六个Vite模块和必要构建通过。两个隔离目录均退役，根锁解析缓存48675253字节已清理。本次Web为`b1b3d1c` verified/readiness200，0060/原cloud配置/唯一Worker保持。并行GG-272归其窗口，不由本任务声明交付。
+- 品牌历史：[GG-269](tasks/GG-269-wordmark-only.md) `f51777b`→`c30ccb3`，大厅桌面/移动仅展示108px Good Good字标，移除独立G及占位；源码/diff与5173页面/CSS编译通过，创建1/退役1，无缓存/服务变更；后续对齐见GG-271/272。
 - 最新比例：[GG-267](tasks/GG-267-compact-lobby-wordmark.md) `0dfd499`，字标收小至108px/约14px、间距8px，侧栏Logo按内容宽度展示、移动组合142px；只改三个CSS样式和两处尺寸，源码/diff与5173页面/CSS编译通过，创建0/退役0、无缓存/服务变更。
 - 最新字标：[GG-266](tasks/GG-266-geometric-good-good-wordmark.md) `b7f27e8`→`4756c7b`，大厅桌面/移动品牌图标右侧使用Good Good本地矢量字标，G沿用图标几何、o/d匹配笔画。SVG/局部lint（零错误、11既有警告）/页面与CSS编译及字标HTTP200通过；创建1/退役1，无依赖/构建缓存，约11.7MiB辅助目录及临时PNG已清理。ADR0116/DESIGN_SYSTEM已同步，无Web重建或数据库变化。
 - 最新移动修复：[GG-265](tasks/GG-265-canvas-folder-move-membership.md) 子`fb7cc90`→根`b1f364c`，画布根层仅未归档/失效归属素材，移动确认后原位置消失、目标保留同一素材，失败/重读规则保持。子与根12/12、局部lint/两模块编译通过，创建1/退役1、零缓存；无API/数据库/服务变更。
@@ -51,7 +52,7 @@ git worktree list --porcelain
 | 组件 | 入口 | 当前来源/用途 |
 | --- | --- | --- |
 | Vite 页面 | `http://127.0.0.1:5173` | GG-116当前分支含GG-242—265已交付范围，热更新 |
-| Node Web | `http://127.0.0.1:32131` | GG-116 verified `9f9d788e31d6a671bf9b79a4f3294d6179310b06`；Vite `/api`代理目标 |
+| Node Web | `http://127.0.0.1:32131` | GG-116本次 verified `b1b3d1cf9aca2923941bf7fbeab43397d6376b97`；Vite `/api`代理目标，GG-272后继以其卡为准 |
 | Worker | `http://127.0.0.1:32142/health/ready` | GG-226 `70e10c6` 的唯一真实开发 Worker；O1Key 请求可能计费 |
 | PostgreSQL | `127.0.0.1:54449/goodgood` | 本地隔离数据库，迁移 `0060`；新增授权来源，0059随机ID保持 |
 | Valkey | `127.0.0.1:56549/db0` | 本地队列/缓存 |
@@ -90,7 +91,7 @@ npm run dev:local
 
 本机 Valkey 为 56549。GG-116 的两个忽略启动器用于 Web `dist/local-checkpoint-portfix.mjs start workspace` 和 Vite `dist/local-live-dev-portfix.mjs --port 5173`；GG-226 原 `dist/local-checkpoint-portfix.mjs start worker` 继续服务唯一 Worker。先核对构建和任务/队列，再启动所需角色，不重复启动 Worker，不用仍断言 56449 的旧入口。日志固定复用 `%TEMP%/goodgood-local-services/current-{web,worker,vite}.{out,err}.log`。
 
-checkpoint 构建会清空 dist 中忽略的启动器。构建后从 scripts 对应原脚本仅适配 `./local-*` 导入到 `../scripts/local-*`、将原 Redis 断言替换为现有 `56549/0`，每种入口只保留一个副本；不能把适配器或环境文件纳入提交。
+checkpoint 构建会清空 dist 中忽略的启动器。构建后从 scripts 对应原脚本仅适配 `./local-*` 导入到 `../scripts/local-*`、允许旧本机`56449/0`配置并将有效REDIS_URL统一为现有`56549/0`（不能只替换断言），每种入口只保留一个副本；不能把适配器或环境文件纳入提交。
 
 **当前本机有已保存的云参考图，Web 启动不可遗漏云配置。**在 GG-116 目录启动所需 Web；若原 GG-226 Worker 停止，核对其构建/队列后才在该目录启动 Worker，两个角色使用原仓库外配置：
 
