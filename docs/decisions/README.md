@@ -180,3 +180,4 @@ ADR 0053 adds standalone-delimited concurrent prompt batches for GG-040.
 - `0119-project-create-card.md` — 项目页首位新建卡片直接进入既有新画布入口，取代页头新建创作按钮。
 - `0120-canvas-asset-hover-video-preview.md` — 画布资产图片/视频的较小查看按钮仅 hover 显示，视频预览沿用画布节点样式与 hover 播放。
 - `0121-asset-video-hover-preview.md` — 大厅资产页视频默认暂停并显示中心播放图标，仅真实鼠标 hover 时静音循环预览。
+- `0122-authenticated-public-image-link-read.md` — 公开图片直链经受鉴权、有界且固定公开 DNS 的后端读取，继续既有 File 上传和归档。

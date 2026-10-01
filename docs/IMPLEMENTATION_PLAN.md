@@ -1,15 +1,16 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-01
-- Current phase: GG-246 大厅视频 hover 已接入实际 5173，代码验证与辅助目录退役完成；GG-244 保留，GG-245 链接读取并行推进；生产仍为 GG-098 应用和 GG-100 单槽 Compose。
+- Current phase: GG-245 图片链接受鉴权读取已按 ADR 0122 登记，交子 agent 实现；GG-244/246 已接入实际 5173 并验证，生产仍为 GG-098 应用和 GG-100 单槽 Compose。
 - Current objective: 恢复 GG-245 的正常公开图片链接添加，更新旧 browser-only 决定后交子 agent 实现，根集成验证与必要的本地 Web 同步；浏览器和产品验收由用户完成。
 - Previous objective: GG-244 资产 hover 小按钮、无视频外置文字与节点式视频预览已进入实际 5173。
 
 ## Current checkpoint
 
+- 当前集成分支 `fix/GG-245-canvas-image-link-read`，目录 `F:/goodgood-worktrees/GG-116`；基线 `cea9fdd` 包含 GG-244 `dd8dca9` 和 GG-246 `83a4306`，门禁 685/22/0。GG-245 八文件写实现使用唯一登记子目录，根负责文档/门禁/本地 Web，见任务卡。
 - Task [GG-246](tasks/GG-246-asset-video-hover.md)：子提交 `c563d98`/根回放 `ec51488` 已整合为 `83a4306`，实际目录 `F:/goodgood-worktrees/GG-116`，基于 GG-244 收口 `dd8dca9`，仅修改大厅资产视频。定向 31/31、一次完整共同门禁 685 通过/22 隔离跳过/0 失败；5173 编译模块 HTTP 200 含新接线；辅助目录创建 2/退役 2。不改变 GG-245 并行任务。
 - Task [GG-244](tasks/GG-244-canvas-asset-hover.md)：分支 `fix/GG-244-canvas-asset-hover` 基于 `86ee3b7`；子提交精确回放 `be84c53`、`9d7d18c`，定向 9/9、完整门禁 674/22/0；子目录创建 1/退役 1，沿用 GG-242/243 与云配置。
-- Task [GG-245](tasks/GG-245-canvas-image-link-read.md)：只读诊断完成；有效 cafe24 JPEG 缺少 CORS 授权，需要受鉴权、公开地址固定解析和有界图片读取。写实现从 GG-244 收口后隔离分支开始。
+- Task [GG-245](tasks/GG-245-canvas-image-link-read.md)：有效 cafe24 JPEG 缺少 CORS 授权；ADR 0122 已接受，受鉴权、公开地址固定解析和有界图片读取正在实现，继续既有上传与归档。
 - Task [GG-243](tasks/GG-243-project-create-card.md)：独立实现 `f647e13` 及其记录分支已整合到 `F:/goodgood-worktrees/GG-116`；基线为 GG-242 收口 `00f7568`。首位新建卡片取代页头按钮，复用 `/canvas` 新建流程；不修改画布源码。
 - 共同整合 `dec0025` 已通过实际运行目录完整门禁：665 通过/22 隔离跳过/0 失败；定向 14/14，5173 编译模块 HTTP 200、包含新卡片和 /canvas 入口。GG-242/243 均为祖先，本任务辅助目录创建 2/退役 2。当前分支名是历史名称，不能单凭名称推断范围。
 - Task [GG-242](tasks/GG-242-canvas-image-preview.md)：子 agent 最小源码修复已精确回放为 `c3700b7`，基于 GG-241 `f1570de`，继续保留。GG-240 生命周期规范继续有效。
@@ -23,7 +24,7 @@
 - 生产身份继续为 revision `7888554a4650b1b06dbce4293c52e8c018e5c71b`、迁移 `0044_gg098_raise_manual_grant_ceiling.sql`，详见 [CURRENT_STATE](CURRENT_STATE.md)。GG-239 未部署。
 - 生产入口仍为 `https://goodgood.o1key.com`，预发布入口为 `https://staging-goodgood.o1key.com`；本地 5173、开发数据库与生产数据继续严格隔离。
 - 早期生产实施流水保存在 [2026-09-07 implementation log](history/2026-09-07-implementation-log.md)，仅在追溯历史时读取。
-- Next action: 根更新 GG-245 读取边界决定并分配唯一子写 worktree，精确集成、代码验证和本地 Web 同步；GG-244/243/242/237/238 浏览器验收由用户完成。
+- Next action: 子 agent 完成 GG-245 八文件；根精确集成、代码验证、本地 Web 同步并退役子目录。GG-244/246/243/242/237/238 浏览器验收由用户完成。
 - Blockers: 无代码或本地运行阻塞；浏览器验收由用户负责，不阻塞开发交付。生产发布未获授权。
 
 ## Verification sequence
@@ -54,7 +55,7 @@
 ## New-session recovery
 
 1. 读 `AGENTS.md`、`CURRENT_STATE.md`、`WORKFLOW.md`、本文件、`BACKLOG.md` 和 `DEVELOPMENT_HANDOFF.md`。
-2. 使用 `git worktree list`、`git show fix/GG-244-canvas-asset-hover --no-patch` 和 `86ee3b7` 祖先检查找到当前检查点；不得从目录名、main 或 parked C6 猜测最新源码。
+2. 使用 `git worktree list`、`git show fix/GG-245-canvas-image-link-read --no-patch` 和 `cea9fdd` 祖先检查找到当前检查点；不得从目录名、main 或 parked C6 猜测最新源码。
 3. GG-243 已整合共同运行目录；新需求核对并分配未占用编号，仅在并行写任务时创建 worktree，并按 WORKFLOW 登记所有权、缓存和退役结果。
 4. 本地真实 Worker 可能计费；先检查活动任务、队列和冻结积分，再决定是否启动或切换服务。
 5. 生产操作必须另有明确授权，且生产事实以 CURRENT_STATE 和发布记录为准。
