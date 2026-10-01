@@ -4,7 +4,7 @@
 - 产品阶段：公开的 `controlled-alpha-v1`；已有真实用户，尚未达到完整 seed、自动支付或完整运营告警就绪。
 - 正式入口：https://goodgood.o1key.com
 - 最新积分交付：[GG-260](tasks/GG-260-credit-details-and-free-quota.md) / [GG-261](tasks/GG-261-daily-free-image-quota.md) 明细余额、类型/项目/模型/任务 ID复制、20条分页、空心图标/普通选中文字已进入5173与Web `9f9d788`；67项相关代码/SQL检查、局部lint/编译完成，本地0060，创建2/退役2。免费图片政策待用户、未实现或启用，用户负责手验。
-- 最新账户调整：[GG-259](tasks/GG-259-random-user-id-stable-edit.md) `c6f6bb9` 已进入 5173；既有/新账户采用固定、不重复随机六位 ID，用户名编辑图标常驻，规则预留下方空间。12/12、隔离 SQL 2/2、局部 lint、实际模块编译通过，本地迁移到 0059，辅助目录退役，用户验收。
+- 最新账户调整：[GG-262](tasks/GG-262-profile-inline-edit-layout.md) `2f0d8fd` 已进入5173：透明下划线行内编辑、固定文字/动作位置、无可见滚动条及统一14px图标；12/12、局部lint/模块编译通过，创建1/退役1，用户验收。[GG-259](tasks/GG-259-random-user-id-stable-edit.md) `c6f6bb9` 的固定随机六位ID和规则预留空间保持，Web/数据库无变化。
 - 当前画布详情后继：[GG-258](tasks/GG-258-canvas-detail-minimal.md) 移除右下角缩放按钮/倍率，非生成素材在标题下仅显示已知尺寸；10/10、相关 lint 及三个实际模块编译通过，规范已同步，保留滚轮/拖动/键盘操作。
 - 本地账户信息：[GG-254](tasks/GG-254-account-identity-editor.md) `422c32f` 已接入实际 5173/Web，仅保留用户名默认 mimi、稳定六位数字 ID；文字/头像旁侧确认保存、编辑区外取消和下方规则，撤去个人主页。20 项相关检查、资料 SQL 1/1、ID SQL 10/10、局部 lint、必要 Web 同步与本地 0058 完成，辅助目录退役。
 - 当前本地画布检查点：[GG-253](tasks/GG-253-canvas-media-detail.md) `896bce2`，真实素材信息独立列、图片平移/滚轮缩放、原比例内容缩略列和选中轻微抽出，取代 GG-249/251 的画布滚轮切图及原位放大；25 项定向、lint 和模块编译通过。
