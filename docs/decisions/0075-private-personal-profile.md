@@ -69,6 +69,13 @@ the existing optimistic version and owned-avatar checks. See
 
 ## GG-259 random public IDs and stable editing (2026-10-01)
 
+GG-272 adds a read-only `创建时间` row in account management's personal information.
+It comes from the current owner's `users.created_at`, is exposed as ISO `createdAt`
+in the existing owner-scoped profile read/save response, and displays in
+Asia/Shanghai to the minute. It is not editable or accepted in profile writes;
+missing/invalid dates remain unavailable. No schema or account timestamp changes.
+See [GG-272](../tasks/GG-272-account-created-and-brand-row.md).
+
 The user replaces GG-254's registration-order public numbers with six random
 decimal digits. Migration 0059 assigns existing accounts new public numbers
 once; internal UUID identity, ownership and links continue to use their original

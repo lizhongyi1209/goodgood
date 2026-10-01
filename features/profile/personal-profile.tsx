@@ -9,7 +9,7 @@ import { uploadReferenceFiles } from "@/features/references/http-reference-uploa
 import { listReferenceMaterials } from "@/features/references/http-reference-library";
 import { normalizeProfileName, PROFILE_AVATAR_MAX_BYTES } from "@/shared/profile-policy.mjs";
 
-export type PersonalProfile = { displayName: string; publicUserId: string | null; avatarReferenceId: string | null; avatarUrl: string | null; version: number };
+export type PersonalProfile = { displayName: string; publicUserId: string | null; createdAt?: string | null; avatarReferenceId: string | null; avatarUrl: string | null; version: number };
 export type ProfileInput = Pick<PersonalProfile, "displayName" | "avatarReferenceId" | "version">;
 export function normalizeProfileInput(input: ProfileInput): ProfileInput {
   return { displayName: normalizeProfileName(input.displayName), avatarReferenceId: input.avatarReferenceId, version: input.version };

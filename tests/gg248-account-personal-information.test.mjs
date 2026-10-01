@@ -52,17 +52,28 @@ test("GG-248 loading and read failure preserve a clear state without displaying 
   assert.doesNotMatch(failure, /creator@example|account-owner-248/);
 });
 
+test("GG-272 creation time displays Shanghai midnight with minutes as a read-only time value", () => {
+  const createdAt = "2026-09-30T16:07:00.000Z";
+  const html = render({ profile: { ...profile, createdAt } });
+  assert.match(html, /<dt>创建时间<\/dt><dd><time dateTime="2026-09-30T16:07:00.000Z">2026-10-01 00:07<\/time><\/dd>/);
+  assert.doesNotMatch(html, /修改创建时间|编辑创建时间/);
+  for (const value of [undefined, null, "invalid-date"]) {
+    assert.match(render({ profile: { ...profile, createdAt: value } }), /<dt>创建时间<\/dt><dd>暂不可用<\/dd>/);
+  }
+});
+
 test("GG-254 unconfigured and old default usernames display mimi while missing identity stays truthful", () => {
   const html = render({ profile: { ...profile, displayName: "GoodGood 用户", publicUserId: null }, session: { ...session, user: { email: null }, account: {} } });
   assert.match(html, /aria-label="修改用户名"[^>]*><span>mimi<\/span>/);
   assert.match(html, /未提供/);
-  assert.equal((html.match(/暂不可用/g) ?? []).length, 2);
+  assert.equal((html.match(/暂不可用/g) ?? []).length, 3);
   assert.doesNotMatch(html, /复制|type="submit"/);
 });
 
 test("GG-250 shared profile edit normalization preserves the saved avatar/version and validates before writes", () => {
   const input = { displayName: "  新用户名  ", avatarReferenceId: null, version: 7 };
   assert.deepEqual(normalizeProfileInput(input), { ...input, displayName: "新用户名" });
+  assert.deepEqual(normalizeProfileInput({ ...input, createdAt: "2030-01-01T00:00:00Z" }), { ...input, displayName: "新用户名" });
   for (const value of [" ", "x".repeat(31), "a\u202eb"]) {
     assert.throws(() => normalizeProfileInput({ ...input, displayName: value }), /用户名/);
   }

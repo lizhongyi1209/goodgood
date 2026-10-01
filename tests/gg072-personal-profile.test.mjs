@@ -28,7 +28,7 @@ test("GG-254 read defaults are owner-scoped, include zero public ID and do not c
     calls++; assert.ok(!/INSERT|UPDATE/.test(sql)); assert.equal(values[0], id);
     return { rows: sql.includes("LEFT JOIN personal_profiles") ? [{ public_user_id: 0 }] : [{ workspace_id: id, kind: "personal", status: "active" }] };
   } } };
-  assert.deepEqual(await readPersonalProfile({ ownerContext: { ownerId: id }, resources }), { displayName: "mimi", publicUserId: "000000", avatarReferenceId: null, avatarUrl: null, version: 0 });
+  assert.deepEqual(await readPersonalProfile({ ownerContext: { ownerId: id }, resources }), { displayName: "mimi", publicUserId: "000000", createdAt: null, avatarReferenceId: null, avatarUrl: null, version: 0 });
   assert.equal(calls, 2);
 });
 function fakeResources({ avatar = false, conflict = false, duplicate = false, name = "我的名称" } = {}) {
@@ -54,7 +54,7 @@ function fakeResources({ avatar = false, conflict = false, duplicate = false, na
 }
 test("GG-254 saves transactionally without editing handles, checks versions and avatar ownership, and rolls back failures", async () => {
   const ok = fakeResources();
-  assert.deepEqual(await updatePersonalProfile({ ownerContext: { ownerId: id }, input, resources: ok.resources }), { displayName: "我的名称", publicUserId: "000072", avatarReferenceId: null, avatarUrl: null, version: 1 });
+  assert.deepEqual(await updatePersonalProfile({ ownerContext: { ownerId: id }, input, resources: ok.resources }), { displayName: "我的名称", publicUserId: "000072", createdAt: null, avatarReferenceId: null, avatarUrl: null, version: 1 });
   assert.equal(ok.queries.at(-1), "COMMIT"); assert.ok(ok.released);
   for (const scenario of [{ conflict: true }, { duplicate: true }, {}]) {
     const fake = fakeResources(scenario);

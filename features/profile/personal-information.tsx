@@ -20,6 +20,17 @@ type ViewProps = Readonly<{
 }>;
 type EditKind = "name" | "avatar";
 
+function formatCreationTime(value: string | null | undefined) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return null;
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("zh-CN", {
+    timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+  }).formatToParts(date).map(({ type, value }) => [type, value]));
+  return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}`;
+}
+
 function PersonalInformationForm({ profile, session, onSave, onRetry, onPendingChange }: Pick<ViewProps, "session" | "onSave" | "onRetry" | "onPendingChange"> & { profile: PersonalProfile }) {
   const [editing, setEditing] = useState<EditKind | null>(null);
   const [editProfile, setEditProfile] = useState(profile);
@@ -30,6 +41,7 @@ function PersonalInformationForm({ profile, session, onSave, onRetry, onPendingC
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const name = profileDisplayName(profile.displayName);
+  const creationTime = formatCreationTime(profile.createdAt);
   const nameRoot = useRef<HTMLDivElement>(null);
   const avatarRoot = useRef<HTMLDivElement>(null);
   const nameText = useRef<HTMLSpanElement>(null);
@@ -169,6 +181,7 @@ function PersonalInformationForm({ profile, session, onSave, onRetry, onPendingC
       <div><dt>登录邮箱</dt><dd>{session?.user.email ?? "未提供"}</dd></div>
       <div><dt>用户 ID</dt><dd className={styles.userId}>{profile.publicUserId ?? "暂不可用"}</dd></div>
       <div><dt>邀请码</dt><dd>{session?.account.invitationCode ?? "暂不可用"}</dd></div>
+      <div><dt>创建时间</dt><dd>{creationTime ? <time dateTime={profile.createdAt!}>{creationTime}</time> : "暂不可用"}</dd></div>
     </dl>
     {saved && <p className={styles.feedback} role="status">资料已保存</p>}
   </div>;

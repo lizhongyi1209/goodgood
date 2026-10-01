@@ -19,9 +19,9 @@ export function validateProfileInput(input) {
  return {displayName,avatarReferenceId,version:input.version};
 }
 async function profileDto(row,resources) {
- return {displayName:profileDisplayName(row?.display_name),publicUserId:formatPublicUserId(row?.public_user_id),avatarReferenceId:row?.avatar_reference_id??null,avatarUrl:row?.object_key&&row.upload_state==='ready'&&row.moderation_state==='accepted'&&!row.object_deleted_at?await signAssetRead({bucket:resources.config.objectStorage.bucket,key:row.object_key,publicStorage:resources.publicStorage}):null,version:row?.version??0};
+ return {displayName:profileDisplayName(row?.display_name),publicUserId:formatPublicUserId(row?.public_user_id),createdAt:row?.account_created_at==null?null:new Date(row.account_created_at).toISOString(),avatarReferenceId:row?.avatar_reference_id??null,avatarUrl:row?.object_key&&row.upload_state==='ready'&&row.moderation_state==='accepted'&&!row.object_deleted_at?await signAssetRead({bucket:resources.config.objectStorage.bucket,key:row.object_key,publicStorage:resources.publicStorage}):null,version:row?.version??0};
 }
-const PROFILE_SELECT=`SELECT p.*,u.public_user_id,ra.object_key,ra.upload_state,ra.moderation_state,ra.object_deleted_at FROM users u LEFT JOIN personal_profiles p ON p.owner_id=u.id LEFT JOIN reference_assets ra ON ra.id=p.avatar_reference_id WHERE u.id=$1`;
+const PROFILE_SELECT=`SELECT p.*,u.public_user_id,u.created_at AS account_created_at,ra.object_key,ra.upload_state,ra.moderation_state,ra.object_deleted_at FROM users u LEFT JOIN personal_profiles p ON p.owner_id=u.id LEFT JOIN reference_assets ra ON ra.id=p.avatar_reference_id WHERE u.id=$1`;
 export async function readPersonalProfile({ownerContext,resources}) {
  if(!ownerContext?.ownerId) throw sessionExpiredError();
  resources??=await getGenerationResources();
