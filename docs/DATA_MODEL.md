@@ -121,6 +121,11 @@ Existing accounts/jobs/ledgers/models are untouched. Avatar saves validate ready
 accepted, undeleted personal references owned/created by the user under the
 reference lifecycle lock; cleanup protects references used by saved profiles.
 
+GG-252 migration0057 allows the shared default handle `goder` to repeat, using a
+partial unique index for all custom handles. It does not rewrite existing rows;
+unconfigured reads display `goder` without inserting. New avatar bindings must
+be at most 2 MB, while retaining an already saved avatar remains allowed.
+
 GG-071 introduces no persistence or billing mutation. Daily submissions use
 generation_jobs.submitted_at; outcomes use completed_at; settlement/refund/release
 use ledger.created_at, all in Asia/Shanghai calendar dates. Only settle contributes

@@ -10,6 +10,7 @@ import {Label} from '@/components/ui/label';
 import {Sheet,SheetContent,SheetDescription,SheetHeader,SheetTitle,SheetTrigger} from '@/components/ui/sheet';
 import {uploadReferenceFiles} from '@/features/references/http-reference-upload';
 import {listReferenceMaterials} from '@/features/references/http-reference-library';
+import {DEFAULT_PROFILE_HANDLE,PROFILE_AVATAR_MAX_BYTES} from '@/shared/profile-policy.mjs';
 
 export type PersonalProfile={displayName:string;handle:string|null;avatarReferenceId:string|null;avatarUrl:string|null;version:number};
 export type ProfileInput=Omit<PersonalProfile,'avatarUrl'|'handle'> & {handle:string};
@@ -20,8 +21,11 @@ export function normalizeProfileInput(input:ProfileInput):ProfileInput {
  if(!displayName||Array.from(displayName).length>30||/[\p{Cc}\p{Cf}]/u.test(displayName)) throw new Error('名称需为 1–30 个字符，不能包含控制字符。');
  return {...input,displayName,handle};
 }
+export function validateProfileAvatarFile(file:Pick<File,'type'|'size'>) {
+ if(!['image/jpeg','image/png'].includes(file.type)||file.size===0||file.size>PROFILE_AVATAR_MAX_BYTES) throw new Error('请选择不超过 2 MB 的 JPG/JPEG 或 PNG 图片。');
+}
 export async function uploadProfileAvatar(file:File) {
- if(!['image/jpeg','image/png'].includes(file.type)||file.size===0||file.size>20*1024*1024) throw new Error('请选择不超过 20 MB 的 JPG/JPEG 或 PNG 图片。');
+ validateProfileAvatarFile(file);
  const [reference]=await uploadReferenceFiles([{clientId:crypto.randomUUID(),file}],()=>{},null);
  if(!reference||reference.reference.status!=='ready') throw new Error(reference?.reference.errorMessage??'头像上传失败，请重新选择图片。');
  const material=(await listReferenceMaterials(null)).find(item=>item.id===reference.reference.id);
@@ -78,7 +82,7 @@ export function PersonalProfileView({state,works,worksLoading,worksError,onRetry
  const profile=state.profile;
  function changeOpen(next:boolean) {
   if(busy||uploading) return;
-  if(next&&profile) {setName(profile.displayName);setHandle(profile.handle??'');setAvatarId(profile.avatarReferenceId);setAvatarUrl(profile.avatarUrl);setError(null);setSaved(false);}
+  if(next&&profile) {setName(profile.displayName);setHandle(profile.handle??DEFAULT_PROFILE_HANDLE);setAvatarId(profile.avatarReferenceId);setAvatarUrl(profile.avatarUrl);setError(null);setSaved(false);}
   setOpen(next);
  }
  async function upload(file:File) {
@@ -98,11 +102,11 @@ export function PersonalProfileView({state,works,worksLoading,worksError,onRetry
   try {await state.save(input);setOpen(false);setSaved(true);} catch(failure) {setError(failure instanceof Error?failure.message:'保存失败，请重试。');} finally {setBusy(false);}
  }
  return <section className="personal-profile-view" aria-label="个人资料"><h1 className="profile-page-title">个人资料</h1>
-  {!profile?<ProfileReadState loading={state.loading} error={state.error} onRetry={state.reload}/>:<header className="profile-heading"><ProfileAvatar url={profile.avatarUrl} name={profile.displayName}/><div className="profile-identity"><h2>{profile.displayName}</h2><p>{profile.handle?`@${profile.handle}`:'设置你的 @用户名'}</p><span>仅自己可见</span></div>
+  {!profile?<ProfileReadState loading={state.loading} error={state.error} onRetry={state.reload}/>:<header className="profile-heading"><ProfileAvatar url={profile.avatarUrl} name={profile.displayName}/><div className="profile-identity"><h2>{profile.displayName}</h2><p>@{profile.handle??DEFAULT_PROFILE_HANDLE}</p><span>仅自己可见</span></div>
    <Sheet open={open} onOpenChange={changeOpen}><SheetTrigger asChild><Button type="button" variant="secondary" className="profile-edit-button"><Pencil size={15}/>编辑资料</Button></SheetTrigger><SheetContent className="profile-editor-sheet" showCloseButton={false} onEscapeKeyDown={event=>{if(busy||uploading) event.preventDefault();}} onInteractOutside={event=>{if(busy||uploading) event.preventDefault();}}><SheetHeader><SheetTitle>编辑个人资料</SheetTitle><SheetDescription>设置名称、用户名和头像。</SheetDescription></SheetHeader><Button type="button" variant="ghost" size="icon" className="profile-sheet-close" aria-label="关闭编辑资料" disabled={busy||uploading} onClick={()=>changeOpen(false)}><X size={18}/></Button>
-    <form onSubmit={event=>void submit(event)}><div className="profile-avatar-editor"><ProfileAvatar url={avatarUrl} name={name||'我'}/><div><Button type="button" variant="secondary" disabled={busy||uploading} onClick={()=>fileRef.current?.click()}>{uploading?<LoaderCircle size={16}/>:<Camera size={16}/>}更换头像</Button>{avatarId&&<Button type="button" variant="ghost" disabled={busy||uploading} onClick={()=>{setAvatarId(null);setAvatarUrl(null);}}>移除头像</Button>}</div><input ref={fileRef} type="file" accept="image/jpeg,image/png" aria-label="上传头像" hidden onChange={event=>{const file=event.target.files?.[0];event.target.value='';if(file) void upload(file);}}/></div><p className="profile-field-hint">JPG/JPEG 或 PNG，最大 20 MB。头像会居中裁切。</p>
+    <form onSubmit={event=>void submit(event)}><div className="profile-avatar-editor"><ProfileAvatar url={avatarUrl} name={name||'我'}/><div><Button type="button" variant="secondary" disabled={busy||uploading} onClick={()=>fileRef.current?.click()}>{uploading?<LoaderCircle size={16}/>:<Camera size={16}/>}更换头像</Button>{avatarId&&<Button type="button" variant="ghost" disabled={busy||uploading} onClick={()=>{setAvatarId(null);setAvatarUrl(null);}}>移除头像</Button>}</div><input ref={fileRef} type="file" accept="image/jpeg,image/png" aria-label="上传头像" hidden onChange={event=>{const file=event.target.files?.[0];event.target.value='';if(file) void upload(file);}}/></div><p className="profile-field-hint">JPG/JPEG 或 PNG，最大 2 MB。头像会居中裁切。</p>
      <Label htmlFor="profile-name">名称</Label><Input id="profile-name" value={name} disabled={busy||uploading} autoComplete="nickname" onChange={event=>setName(event.target.value)} aria-describedby="profile-name-hint"/><p id="profile-name-hint" className="profile-field-hint">1–30 个字符</p>
-     <Label htmlFor="profile-handle">用户名</Label><div className="profile-handle-input"><span aria-hidden="true">@</span><Input id="profile-handle" value={handle} disabled={busy||uploading} autoComplete="off" autoCapitalize="none" spellCheck={false} onChange={event=>setHandle(event.target.value)} aria-describedby="profile-handle-hint"/></div><p id="profile-handle-hint" className="profile-field-hint">3–24 位字母、数字或下划线，不能与其他用户重复。</p>
+     <Label htmlFor="profile-handle">用户名</Label><div className="profile-handle-input"><span aria-hidden="true">@</span><Input id="profile-handle" value={handle} disabled={busy||uploading} autoComplete="off" autoCapitalize="none" spellCheck={false} onChange={event=>setHandle(event.target.value)} aria-describedby="profile-handle-hint"/></div><p id="profile-handle-hint" className="profile-field-hint">3–24 位字母、数字或下划线；默认 goder，其他用户名不可重复。</p>
      {error&&<div className="profile-save-error" role="alert">{error}{error.includes('其他页面')&&<Button type="button" variant="ghost" onClick={()=>{setOpen(false);state.reload();}}>重新读取资料</Button>}</div>}
      <footer><Button type="button" variant="secondary" disabled={busy||uploading} onClick={()=>changeOpen(false)}>取消</Button><Button type="submit" disabled={busy||uploading}>{busy?<><LoaderCircle size={15}/>保存中</>:'保存资料'}</Button></footer>
     </form></SheetContent></Sheet>

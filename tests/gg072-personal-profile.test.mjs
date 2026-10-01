@@ -5,6 +5,8 @@ import {createServer} from 'vite';
 import React from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {fileURLToPath} from 'node:url';
+import {readFile} from 'node:fs/promises';
+import {PROFILE_AVATAR_MAX_BYTES} from '../shared/profile-policy.mjs';
 import {ProfileError,profileApiError,validateProfileInput,readPersonalProfile,updatePersonalProfile} from '../server/profile/api.mjs';
 import {createProfileNodeApiHandler} from '../server/profile/node-api.mjs';
 import {parseWorkspaceRoute,workspaceRouteHref} from '../features/navigation/workspace-route.mjs';
@@ -22,11 +24,11 @@ test('GG-072 unauthenticated profile access fails before resources and suppresse
 });
 test('GG-072 read defaults are owner-scoped and do not create profile rows',async()=>{
  let calls=0;const resources={pool:{async query(sql,values){calls++;assert.ok(!/INSERT|UPDATE/.test(sql));assert.equal(values[0],id);return {rows:sql.includes('FROM users')?[{workspace_id:id,kind:'personal',status:'active'}]:[]};}}};
- assert.deepEqual(await readPersonalProfile({ownerContext:{ownerId:id},resources}),{displayName:'GoodGood 用户',handle:null,avatarReferenceId:null,avatarUrl:null,version:0});assert.equal(calls,2);
+ assert.deepEqual(await readPersonalProfile({ownerContext:{ownerId:id},resources}),{displayName:'GoodGood 用户',handle:'goder',avatarReferenceId:null,avatarUrl:null,version:0});assert.equal(calls,2);
 });
 function fakeResources({avatar=false,conflict=false,duplicate=false}={}) {
  const queries=[];let released=false;
- const client={async query(sql,values){queries.push(sql);if(sql.includes('FROM users')) return {rows:[{workspace_id:id,kind:'personal',status:'active'}]};if(sql.startsWith('SELECT id FROM reference_assets')) {assert.deepEqual(values,[id,id,id]);assert.match(sql,/creator_owner_id=\$2.*workspace_id=\$3.*moderation_state='accepted'/);return {rows:avatar?[{id}]:[]};}if(sql.startsWith('INSERT')||sql.startsWith('UPDATE')) {if(duplicate) throw Object.assign(new Error('private constraint'),{code:'23505'});return {rows:conflict?[]:[{owner_id:id}]};}if(sql.includes('FROM personal_profiles')) return {rows:[{display_name:'我的名称',handle:'jony',version:1}]};return {rows:[]};},release(){released=true;}};
+ const client={async query(sql,values){queries.push(sql);if(sql.includes('FROM users')) return {rows:[{workspace_id:id,kind:'personal',status:'active'}]};if(sql.startsWith('SELECT id FROM reference_assets')) {assert.deepEqual(values,[id,id,id,PROFILE_AVATAR_MAX_BYTES]);assert.match(sql,/creator_owner_id=\$2.*workspace_id=\$3.*moderation_state='accepted'/);assert.match(sql,/byte_size BETWEEN 1 AND \$4 OR EXISTS.*p\.owner_id=\$2 AND p\.avatar_reference_id=reference_assets\.id/);return {rows:avatar?[{id}]:[]};}if(sql.startsWith('INSERT')||sql.startsWith('UPDATE')) {if(duplicate) throw Object.assign(new Error('private constraint'),{code:'23505'});return {rows:conflict?[]:[{owner_id:id}]};}if(sql.includes('FROM personal_profiles')) return {rows:[{display_name:'我的名称',handle:'jony',version:1}]};return {rows:[]};},release(){released=true;}};
  return {resources:{pool:{async connect(){return client;}}},queries,get released(){return released;}};
 }
 test('GG-072 saves transactionally, checks version, ownership, readiness and rolls back failures',async()=>{
@@ -45,6 +47,14 @@ test('GG-072 private HTTP read/update, action-header gate, invalid JSON/size and
  assert.equal((await invoke('PATCH',JSON.stringify(input),{'x-goodgood-profile-action':'1'})).payload.handle,'jony');
  for(const body of ['{','x'.repeat(4097)]) assert.equal((await invoke('PATCH',body,{'x-goodgood-profile-action':'1'})).status,400);
  assert.equal((await invoke('DELETE')).status,405);assert.equal((await invoke('GET')).headers['cache-control'],'no-store');
+});
+test('GG-252 shared default is accepted by authenticated writes and its migration retains custom uniqueness without rewriting profiles',async()=>{
+ const result=await invoke('PATCH',JSON.stringify({...input,handle:' @GoDeR '}),{'x-goodgood-profile-action':'1'});
+ assert.equal(result.status,200);assert.equal(result.payload.handle,'goder');
+ const migration=await readFile(new URL('../migrations/0057_gg252_default_profile_handle.sql',import.meta.url),'utf8');
+ assert.match(migration,/CREATE UNIQUE INDEX personal_profiles_custom_handle_unique\s+ON personal_profiles\(handle\) WHERE handle <> 'goder'/);
+ assert.match(migration,/DROP CONSTRAINT personal_profiles_handle_key/);
+ assert.doesNotMatch(migration,/UPDATE\s|DELETE\s|DROP TABLE/i);
 });
 const root=fileURLToPath(new URL('..',import.meta.url));
 const vite=await createServer({appType:'custom',configFile:false,root,resolve:{alias:{'@':root}},server:{middlewareMode:true,hmr:false,ws:false}});after(()=>vite.close());

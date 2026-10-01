@@ -33,3 +33,12 @@ likes, biography or cross-user lookup in this slice. Enterprise works stay out.
 Adds a profile table and private owner API. Existing accounts, billing, model
 prices and asset ownership remain intact. A future public/social scope needs a
 separate publication/privacy decision; a handle does not make assets public.
+
+## GG-252 default handle and avatar limit (2026-10-01)
+
+Unconfigured users display `goder`. The shared default may repeat; custom handles
+retain the existing uniqueness, syntax and normalization rules. Migration 0057
+replaces the global handle constraint with a unique index excluding `goder`,
+without rewriting existing profiles. Reading an unconfigured profile still does
+not create a row. Avatar uploads and new avatar bindings are limited to 2 MB;
+existing saved avatars remain readable. See [task](../tasks/GG-252-personal-info-cleanup.md).

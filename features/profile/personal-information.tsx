@@ -1,46 +1,26 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Camera, Check, Copy, LoaderCircle } from "lucide-react";
+import { Camera, LoaderCircle, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { DEFAULT_PROFILE_HANDLE } from "@/shared/profile-policy.mjs";
 import { readAuthenticationSession, type AuthenticationSession } from "@/features/auth/http-auth-boundary";
 import { normalizeProfileInput, uploadProfileAvatar, ProfileAvatar, ProfileReadState, usePersonalProfile, type PersonalProfile, type ProfileInput } from "./personal-profile";
 import styles from "./personal-information.module.css";
 
-export async function copyAccountInformation(value: string, clipboard?: Pick<Clipboard, "writeText">) {
-  if (!value.trim()) throw new Error("暂无可复制的内容。");
-  if (!clipboard?.writeText) throw new Error("当前无法自动复制，请手动选择复制。");
-  await clipboard.writeText(value);
-}
-
-function CopyableValue({ value, label }: { value?: string; label: string }) {
-  const [message, setMessage] = useState("");
-  const [copied, setCopied] = useState(false);
-  const [busy, setBusy] = useState(false);
-  async function copy() {
-    if (!value || busy) return;
-    setBusy(true);
-    setMessage("");
-    setCopied(false);
-    try {
-      await copyAccountInformation(value, navigator.clipboard);
-      setCopied(true);
-      setMessage(`${label}已复制`);
-    } catch {
-      setMessage("复制失败，请手动选择复制。");
-    } finally { setBusy(false); }
-  }
-  return <div className={styles.copyable}>
-    <div className={styles.copyLine}>
-      <span className={styles.copyValue}>{value || "暂不可用"}</span>
-      <Button type="button" variant="ghost" size="sm" disabled={!value || busy} aria-label={`复制${label}`} onClick={() => void copy()}>
-        {copied ? <Check size={14} aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}{copied ? "已复制" : "复制"}
-      </Button>
-    </div>
-    {message && <span className={styles.copyMessage} role="status">{message}</span>}
-  </div>;
+function EditableValue({ value, label, pending, onChange, username = false }: { value: string; label: string; pending: boolean; onChange: (value: string) => void; username?: boolean }) {
+  const [editing, setEditing] = useState(false);
+  const originalRef = useRef(value);
+  if (editing) return <Input className={styles.inlineInput} autoFocus value={value} aria-label={label} disabled={pending}
+    autoComplete={username ? "off" : "nickname"} autoCapitalize={username ? "none" : undefined} spellCheck={username ? false : undefined}
+    onChange={(event) => onChange(event.target.value)} onBlur={() => setEditing(false)} onKeyDown={(event) => {
+      if (event.key === "Enter" && !event.nativeEvent.isComposing) { event.preventDefault(); setEditing(false); }
+      if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); onChange(originalRef.current); setEditing(false); }
+    }} />;
+  return <button type="button" className={styles.editableValue} aria-label={`修改${label}`} disabled={pending} onClick={() => { originalRef.current = value; setEditing(true); }}>
+    <span>{username ? "@" : ""}{value || "未设置"}</span><Pencil size={12} aria-hidden="true" />
+  </button>;
 }
 
 type ViewProps = Readonly<{
@@ -54,7 +34,7 @@ type ViewProps = Readonly<{
 
 function PersonalInformationForm({ profile, session, onSave, onRetry }: Pick<ViewProps, "session" | "onSave" | "onRetry"> & { profile: PersonalProfile }) {
   const [name, setName] = useState(profile.displayName);
-  const [handle, setHandle] = useState(profile.handle ?? "");
+  const [handle, setHandle] = useState(profile.handle ?? DEFAULT_PROFILE_HANDLE);
   const [avatarId, setAvatarId] = useState(profile.avatarReferenceId);
   const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl);
   const [error, setError] = useState<string | null>(null);
@@ -65,10 +45,10 @@ function PersonalInformationForm({ profile, session, onSave, onRetry }: Pick<Vie
   const uploadRef = useRef(0);
   useEffect(() => () => { uploadRef.current += 1; }, []);
   const pending = busy || uploading;
-  const dirty = name !== profile.displayName || handle !== (profile.handle ?? "") || avatarId !== profile.avatarReferenceId;
+  const dirty = name !== profile.displayName || handle !== (profile.handle ?? DEFAULT_PROFILE_HANDLE) || avatarId !== profile.avatarReferenceId;
   function changed() { setError(null); setSaved(false); }
   function cancel() {
-    setName(profile.displayName); setHandle(profile.handle ?? "");
+    setName(profile.displayName); setHandle(profile.handle ?? DEFAULT_PROFILE_HANDLE);
     setAvatarId(profile.avatarReferenceId); setAvatarUrl(profile.avatarUrl); changed();
   }
   async function upload(file: File) {
@@ -91,7 +71,7 @@ function PersonalInformationForm({ profile, session, onSave, onRetry }: Pick<Vie
     setBusy(true); changed();
     try {
       const value = await onSave(input);
-      setName(value.displayName); setHandle(value.handle ?? "");
+      setName(value.displayName); setHandle(value.handle ?? DEFAULT_PROFILE_HANDLE);
       setAvatarId(value.avatarReferenceId); setAvatarUrl(value.avatarUrl); setSaved(true);
     } catch (cause) { setError(cause instanceof Error ? cause.message : "保存失败，请重试。"); }
     finally { setBusy(false); }
@@ -108,33 +88,27 @@ function PersonalInformationForm({ profile, session, onSave, onRetry }: Pick<Vie
             {avatarId && <Button type="button" variant="ghost" size="sm" disabled={pending} onClick={() => { setAvatarId(null); setAvatarUrl(null); changed(); }}>移除头像</Button>}
           </div>
           <input ref={fileRef} type="file" accept="image/jpeg,image/png" aria-label="上传头像" hidden disabled={pending} onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; if (file) void upload(file); }} />
-        </div><p>JPG/JPEG 或 PNG，最大 20 MB，居中裁切</p>
+        </div>
       </dd></div>
-      <div><dt><Label htmlFor="account-information-name">昵称</Label></dt><dd>
-        <Input id="account-information-name" value={name} disabled={pending} autoComplete="nickname" aria-describedby="account-information-name-hint" onChange={(event) => { setName(event.target.value); changed(); }} />
-        <p id="account-information-name-hint">1–30 个字符</p>
-      </dd></div>
-      <div><dt><Label htmlFor="account-information-handle">用户名</Label></dt><dd>
-        <div className={styles.handleInput}><span aria-hidden="true">@</span><Input id="account-information-handle" value={handle} placeholder="设置用户名" disabled={pending} autoComplete="off" autoCapitalize="none" spellCheck={false} aria-describedby="account-information-handle-hint" onChange={(event) => { setHandle(event.target.value); changed(); }} /></div>
-        <p id="account-information-handle-hint">3–24 位字母、数字或下划线，不能与其他用户重复</p>
-      </dd></div>
-      <div><dt>登录邮箱<span className={styles.readOnly}>只读</span></dt><dd>{session?.user.email ?? "未提供"}<p>用于登录和接收验证码</p></dd></div>
-      <div><dt>用户 ID<span className={styles.readOnly}>只读</span></dt><dd><CopyableValue value={session?.user.id} label="用户 ID" /></dd></div>
-      <div><dt>邀请码<span className={styles.readOnly}>只读</span></dt><dd><CopyableValue value={session?.account.invitationCode} label="邀请码" /><p>分享给朋友，用于注册邀请</p></dd></div>
+      <div><dt>昵称</dt><dd><EditableValue value={name} label="昵称" pending={pending} onChange={(value) => { setName(value); changed(); }} /></dd></div>
+      <div><dt>用户名</dt><dd><EditableValue value={handle} label="用户名" pending={pending} username onChange={(value) => { setHandle(value); changed(); }} /></dd></div>
+      <div><dt>登录邮箱</dt><dd>{session?.user.email ?? "未提供"}</dd></div>
+      <div><dt>用户 ID</dt><dd>{session?.user.id ?? "暂不可用"}</dd></div>
+      <div><dt>邀请码</dt><dd>{session?.account.invitationCode ?? "暂不可用"}</dd></div>
     </dl>
     {error && <div className={styles.feedback} role="alert">{error}{error.includes("其他页面") && <Button type="button" variant="ghost" size="sm" disabled={pending} onClick={onRetry}>重新读取资料</Button>}</div>}
     {saved && <p className={styles.feedback} role="status">资料已保存</p>}
-    <footer className={styles.actions}>
+    {(dirty || pending) && <footer className={styles.actions}>
       <Button type="button" variant="secondary" disabled={pending || !dirty} onClick={cancel}>取消</Button>
       <Button type="submit" disabled={pending || !dirty}>{busy ? <><LoaderCircle size={14} className="animate-spin" aria-hidden="true" />保存中</> : "保存资料"}</Button>
-    </footer>
+    </footer>}
   </form>;
 }
 
 export function PersonalInformationView({ profile, session, loading, error, onRetry, onSave }: ViewProps) {
   return <section className={styles.information} aria-label="个人信息">
     <header className={styles.header}>
-      <div><h1>个人信息</h1><p>管理你的账户基础资料</p></div>
+      <h1>个人信息</h1>
     </header>
     {loading || error || !profile ? <ProfileReadState loading={loading || (!error && !profile)} error={error} onRetry={onRetry} />
       : <PersonalInformationForm key={session?.user.id ?? session?.user.email ?? "current-account"} profile={profile} session={session} onSave={onSave} onRetry={onRetry} />}

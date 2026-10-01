@@ -5,6 +5,7 @@ import {getGenerationResources} from '../generation/resources.mjs';
 import {signAssetRead} from '../generation/storage.mjs';
 import {lockReferenceLifecycle} from '../references/lifecycle-lock.mjs';
 import {newRequestId} from '../observability/http.mjs';
+import {DEFAULT_PROFILE_HANDLE,PROFILE_AVATAR_MAX_BYTES} from '../../shared/profile-policy.mjs';
 export class ProfileError extends Error {
  constructor(code,message,status=400) {super(message);this.code=code;this.status=status;}
 }
@@ -20,7 +21,7 @@ export function validateProfileInput(input) {
  return {displayName,handle,avatarReferenceId,version:input.version};
 }
 async function profileDto(row,resources) {
- return {displayName:row?.display_name??'GoodGood 用户',handle:row?.handle??null,avatarReferenceId:row?.avatar_reference_id??null,avatarUrl:row?.object_key&&row.upload_state==='ready'&&row.moderation_state==='accepted'&&!row.object_deleted_at?await signAssetRead({bucket:resources.config.objectStorage.bucket,key:row.object_key,publicStorage:resources.publicStorage}):null,version:row?.version??0};
+ return {displayName:row?.display_name??'GoodGood 用户',handle:row?.handle??DEFAULT_PROFILE_HANDLE,avatarReferenceId:row?.avatar_reference_id??null,avatarUrl:row?.object_key&&row.upload_state==='ready'&&row.moderation_state==='accepted'&&!row.object_deleted_at?await signAssetRead({bucket:resources.config.objectStorage.bucket,key:row.object_key,publicStorage:resources.publicStorage}):null,version:row?.version??0};
 }
 const PROFILE_SELECT=`SELECT p.*,ra.object_key,ra.upload_state,ra.moderation_state,ra.object_deleted_at FROM personal_profiles p LEFT JOIN reference_assets ra ON ra.id=p.avatar_reference_id WHERE p.owner_id=$1`;
 export async function readPersonalProfile({ownerContext,resources}) {
@@ -37,8 +38,8 @@ export async function updatePersonalProfile({ownerContext,input,resources}) {
   await client.query('BEGIN');await lockReferenceLifecycle(client);
   const workspace=await resolveWorkspaceAccess(client,{ownerId:ownerContext.ownerId,write:true});
   if(value.avatarReferenceId) {
-   const avatar=await client.query(`SELECT id FROM reference_assets WHERE id=$1 AND creator_owner_id=$2 AND owner_id=$2 AND workspace_id=$3 AND upload_state='ready' AND moderation_state='accepted' AND object_deleted_at IS NULL AND cleanup_lease_owner IS NULL FOR UPDATE`,[value.avatarReferenceId,ownerContext.ownerId,workspace.id]);
-   if(!avatar.rows.length) throw new ProfileError('PROFILE_AVATAR_INVALID','头像不可用，请重新上传。');
+   const avatar=await client.query(`SELECT id FROM reference_assets WHERE id=$1 AND creator_owner_id=$2 AND owner_id=$2 AND workspace_id=$3 AND upload_state='ready' AND moderation_state='accepted' AND object_deleted_at IS NULL AND cleanup_lease_owner IS NULL AND (byte_size BETWEEN 1 AND $4 OR EXISTS (SELECT 1 FROM personal_profiles p WHERE p.owner_id=$2 AND p.avatar_reference_id=reference_assets.id)) FOR UPDATE`,[value.avatarReferenceId,ownerContext.ownerId,workspace.id,PROFILE_AVATAR_MAX_BYTES]);
+   if(!avatar.rows.length) throw new ProfileError('PROFILE_AVATAR_INVALID','头像不可用，请选择不超过 2 MB 的 JPG/JPEG 或 PNG 图片。');
   }
   const result=value.version===0?await client.query(`INSERT INTO personal_profiles(owner_id,display_name,handle,avatar_reference_id) VALUES($1,$2,$3,$4) ON CONFLICT(owner_id) DO NOTHING RETURNING *`,[ownerContext.ownerId,value.displayName,value.handle,value.avatarReferenceId]):await client.query(`UPDATE personal_profiles SET display_name=$2,handle=$3,avatar_reference_id=$4,version=version+1,updated_at=now() WHERE owner_id=$1 AND version=$5 RETURNING *`,[ownerContext.ownerId,value.displayName,value.handle,value.avatarReferenceId,value.version]);
   if(!result.rows.length) throw new ProfileError('PROFILE_CONFLICT','资料已在其他页面更新，请重新读取后再编辑。',409);
