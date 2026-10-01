@@ -4,7 +4,7 @@
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
-| GG-243 | 已接入实际 5173：项目首位新建卡片直接进入新画布；独立门禁 665/22/0、运行目录定向 14/14；共同门禁待记录，用户验收 | [任务](tasks/GG-243-project-create-card.md) |
+| GG-243 | 已接入实际 5173：首位新建卡片直接进入新画布；共同门禁 665/22/0、定向 14/14，辅助目录已退役，用户验收 | [任务](tasks/GG-243-project-create-card.md) |
 | GG-242 | 预览开发完成；定向 23/23、只读抽查 13/13、完整门禁 661 通过/22 隔离跳过；子 worktree 已退役，用户自行验收 | [任务](tasks/GG-242-canvas-image-preview.md) |
 | GG-241 | 当前 5173、verified Web、唯一 Worker 和原本地依赖已恢复；原数据与迁移保留，无新增 worktree | [任务](tasks/GG-241-local-startup.md) |
 | GG-240 | 子 agent/worktree 创建、缓存、集成和退役规范已写入入口文档、任务模板与契约测试；未部署 | [任务](tasks/GG-240-subagent-worktree-hygiene.md) |

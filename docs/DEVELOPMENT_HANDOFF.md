@@ -8,7 +8,7 @@
 
 ## GG-243 大厅并行工作
 
-独立大厅实现分支 `feature/GG-243-home-project-card` 的代码 `f647e13` 已在 GG-242 收口 `00f7568` 后整合下表实际 5173 目录。保留双方源码和记录，不切换目录分支、不替换 Vite/Web/Worker。项目入口按 [ADR 0119](decisions/0119-project-create-card.md) 改为首位新建卡片，点击 `/canvas`。独立门禁 665/22/0、运行目录定向 14/14；共同完整门禁待记录。[任务卡](tasks/GG-243-project-create-card.md) 保留完整交付和退役证据。用户负责浏览器和预期验收。
+独立大厅实现 `f647e13` 已在 GG-242 收口 `00f7568` 后整合为共同提交 `dec0025`，源码进入下表实际 5173 目录。保留双方源码和记录，不切换目录分支、不替换 Vite/Web/Worker。项目入口按 [ADR 0119](decisions/0119-project-create-card.md) 改为首位新建卡片，点击 `/canvas`。共同完整门禁 665/22/0、定向 14/14；编译模块已确认包含新卡片。子目录与独立大厅辅助目录已退役，分支/提交保留。[任务卡](tasks/GG-243-project-create-card.md) 保留完整证据。用户负责浏览器和预期验收。
 
 ## 先确认源码
 

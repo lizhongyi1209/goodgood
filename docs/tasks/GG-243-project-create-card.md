@@ -1,6 +1,6 @@
 # GG-243 — 项目页首位新建画布卡片
 
-- 状态：已整合实际 5173 源码，运行目录定向检查通过，共同完整门禁进行中；待用户验收，未部署
+- 状态：已整合实际 5173 源码并通过共同完整门禁；开发交付完成，待用户验收，未部署
 - 用户需求：大厅优化由本会话负责；首项交给子 agent，将项目页新建按钮改为首位卡片，点击直接进入新画布。
 - 最后更新：2026-10-01
 - 实现分支：`feature/GG-243-home-project-card`；实际运行/整合分支与 worktree：`fix/GG-242-canvas-image-preview` / `F:/goodgood-worktrees/GG-116`
@@ -27,7 +27,8 @@
 - 用户补充：由用户完成浏览器和视觉/预期验收；agent 只负责代码开发与代码层验证。已停止浏览器操作，仅曾查询可用浏览器，未打开应用页面或执行交互。
 - 共同运行目录：2026-10-01 代码交付时 GG-242 的 `F:/goodgood-worktrees/GG-116` 正在改动四份入口文档和自身任务卡；本任务不向该目录写入，不抢占分支或运行服务。已验证任务增量待拥有该目录的会话整合。
 - 交付修正：用户刷新仍见旧页头按钮，根因是未把独立分支接入真实 5173。确认 GG-242 已提交 `00f7568` 且运行目录干净后，整合大厅分支，按双方实际事实解决入口文档冲突；不改变画布源码、原运行配置或服务进程。
-- 实际运行目录定向：`node --test tests/project-create-card.test.mjs tests/gg226-project-library.test.mjs` 14/14 通过；5173 提供的新项目模块 HTTP 200，旧 props.onCreate 绑定已移除，入口链接为 `/canvas`。共同门禁待记录。
+- 实际运行目录定向：`node --test tests/project-create-card.test.mjs tests/gg226-project-library.test.mjs` 14/14 通过；直接读取 5173 的编译模块并按 UTF-8 解码，HTTP 200、包含「新建项目」、旧 props.onCreate 绑定已移除、入口链接为 `/canvas`。没有进行浏览器交互验收。
+- 共同提交：`dec0025` 整合 GG-242 `00f7568` 和大厅分支 `213a4a1`。在实际运行目录执行 `npm run check:local` exit 0；TypeScript 与构建通过，687 项测试：665 通过 / 22 既有隔离跳过 / 0 失败。`git diff 00f7568 HEAD -- features/canvas` 为空，GG-242 源码修复完整保留。
 - 发布：未发布。
 
 ## 并行与 worktree 收口
@@ -36,13 +37,13 @@
 - 子 agent/worktree 清单：`project_create_card` / `feature/GG-243-project-card-agent` / `F:/goodgood-worktrees/GG-243-project-card-agent`；从 GG-243 预登记提交创建。
 - 子文件边界：`features/projects/project-library.tsx`、`features/projects/project-library.module.css`、`app/page.tsx` 中仅 ProjectLibrary 的 onCreate 绑定、一个项目页入口 UI 回归测试文件。禁止修改 `features/canvas/**`、服务、数据库和入口文档。
 - 另一会话：GG-242 画布预览，活动目录 `F:/goodgood-worktrees/GG-116`；本任务不切换该目录分支、不操作其运行服务、不更改画布源码。整合交付以任务增量为边界。
-- 依赖/构建缓存：子 worktree 不安装、不构建、不启动服务；根集成目录首次按原 lockfile 执行 `npm ci`，用于独立验收，避免干扰 GG-242 活动目录的缓存。根集成目录是本会话继续大厅工作的活动目录，安装仅此一份。
-- 退役条件：子 commit 已审阅/集成，目录干净且无使用进程后 `git worktree remove`，再 prune；根集成目录作为本会话大厅工作目录保留。
+- 依赖/构建缓存：子 worktree 不安装、不构建、不启动服务；独立大厅目录首次按 lockfile 安装依赖并验证，整合到实际运行目录后，辅助大厅目录连同其 node_modules/dist 缓存一起退役。
+- 退役条件：commit 已审阅/集成，目录干净且无使用进程后 `git worktree remove`，再 prune；实际 5173 目录保留。
 - 交付与集成：子 commit 已审阅/集成；子目录无改动、依赖副本或运行进程。
-- 收口：创建数 2（根集成目录和已登记子目录）；退役数 1（子目录已用 `git worktree remove` 退役并 prune）；根目录作为本会话活动大厅目录保留，无本任务所属 dirty 子目录和残留子缓存。没有生成第二份子依赖，磁盘前后值不作为验收要求。
+- 收口：创建数 2、退役数 2；子目录和已整合的 `F:/goodgood-worktrees/GG-243-home` 均干净、无使用进程，经路径和 Git 祖先核验后用 `git worktree remove` 退役并 prune，branch/commit 保留。无本任务所属 dirty 目录或子缓存；F 盘可用空间由 74,092,707,840 增至 75,739,684,864 字节，净增约 1.53 GiB（同时执行构建期间的净值）。
 
 ## 恢复工作
 
-- 尚未完成：共同完整门禁、辅助目录退役与用户验收；运行页面已接入大厅源码。
+- 尚未完成：用户浏览器/预期验收；开发、实际运行目录整合、代码检查和目录退役均完成。
 - 阻塞/风险：无；本次整合从 GG-242 干净收口提交开始。
-- 下一步：完成共同运行目录门禁、记录合并提交并退役已整合大厅辅助目录；用户验收首位新建卡片与新画布。
+- 下一步：用户刷新 `http://127.0.0.1:5173/projects` 验收首位新建卡片与新画布；后续大厅需求从共同运行目录当前 HEAD 核验后建立隔离分支。

@@ -2,13 +2,13 @@
 
 - Last synchronized: 2026-10-01
 - Current phase: GG-243 首位新建项目卡片已整合到实际 5173 目录，保留 GG-242 图片修复和云素材配置；生产仍为 GG-098 应用和 GG-100 单槽 Compose。
-- Current objective: 完成 GG-242/GG-243 共同检查点的代码验证与交接；浏览器和产品验收由用户完成。
+- Current objective: GG-242/GG-243 共同检查点开发与代码验证完成，保持实际 5173 页面可验收；浏览器和产品验收由用户完成。
 - Previous objective: GG-243 独立分支已通过代码门禁，但遗漏接入 5173；本轮修正交付整合。
 
 ## Current checkpoint
 
 - Task [GG-243](tasks/GG-243-project-create-card.md)：独立实现 `f647e13` 及其记录分支已整合到 `F:/goodgood-worktrees/GG-116`；基线为 GG-242 收口 `00f7568`。首位新建卡片取代页头按钮，复用 `/canvas` 新建流程；不修改画布源码。
-- 独立大厅门禁 665 通过/22 隔离跳过/0 失败；实际运行目录定向 14/14 通过，合并后完整门禁待记录。当前分支名 `fix/GG-242-canvas-image-preview` 是共同运行目录的历史名称，不能单凭名称推断任务范围。
+- 共同整合 `dec0025` 已通过实际运行目录完整门禁：665 通过/22 隔离跳过/0 失败；定向 14/14，5173 编译模块 HTTP 200、包含新卡片和 /canvas 入口。GG-242/243 均为祖先，本任务辅助目录创建 2/退役 2。当前分支名是历史名称，不能单凭名称推断范围。
 - Task [GG-242](tasks/GG-242-canvas-image-preview.md)：子 agent 最小源码修复已精确回放为 `c3700b7`；当前分支 `fix/GG-242-canvas-image-preview` 基于 GG-241 `f1570de`。GG-240 生命周期规范继续有效。
 - 5173 源码目录：`F:/goodgood-worktrees/GG-116`。当前代码为 GG-239 累计基线加 GG-242 图片恢复和 GG-243 新建项目卡片；目录名和旧标签不能单独代表最新代码。
 - 5173 API 代理：Web `32131` 为 verified `70e10c6ae6bd83542ba870f54059b54b999e9fdf`；唯一真实开发 Worker `32142` readiness 五项为 `ok`。
@@ -45,7 +45,7 @@
 | GG-240 | 流程检查点 | 子 agent/worktree 创建、缓存、集成、退役与脏目录保留形成可测试规范；未部署 |
 | GG-241 | 本地启动完成 | 原依赖、5173、Web/Worker 恢复，Windows 54449 端口冲突已处理；原数据保留，未部署 |
 | GG-242 | 本地预览恢复 | Web 云配置补回；画布重开 generated source 使用稳定受权 content URL，子 worktree 已退役 |
-| GG-243 | 已整合实际 5173 | 首位新建项目卡片直接进入新画布；独立门禁通过，共同门禁待记录，未部署 |
+| GG-243 | 已整合实际 5173 并验证 | 首位新建项目卡片直接进入新画布；共同门禁 665/22/0，辅助目录已退役，未部署 |
 
 ## New-session recovery
 
