@@ -52,12 +52,13 @@ test("canvas result nodes keep their positions through progress, failure and ret
   assert.equal(replaced[0].data.imageSized, false);
 });
 
-test("canvas route owns its page and leaves the main workspace", () => {
+test("canvas stays standalone and is entered through projects rather than lobby navigation", () => {
   const page = readFileSync(new URL("../app/canvas/page.tsx", import.meta.url), "utf8");
   const workspace = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
   assert.match(page, /CanvasPage/);
   assert.doesNotMatch(page, /\.\.\/page/);
-  assert.match(workspace, /href="\/canvas"/);
+  assert.doesNotMatch(workspace, /href="\/canvas"/);
+  assert.match(workspace, /onClick=\{handleProjectsNav\}/);
   assert.doesNotMatch(workspace, /<CanvasWorkspace/);
 });
 

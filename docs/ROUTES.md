@@ -1,5 +1,9 @@
 # Navigation and route contract
 
+## GG-263 大厅入口收敛
+
+大厅共享功能栏移除「画布」，由「项目」页的首位新建项目卡片进入 `/canvas`，已有画布项目继续链接 `/canvas/:projectId`。保留两个画布地址、直接访问/刷新、项目恢复与返回首页行为。见 [ADR 0108](decisions/0108-standalone-canvas-image-generation.md) 和 [任务](tasks/GG-263-remove-lobby-canvas-entry.md)。
+
 ## GG-245 图片链接读取
 
 `POST /api/references/read-link` 接收有界 `{url}` JSON，沿真实会话和 owner/workspace 授权返回经过验证的 JPEG/PNG 字节。仅用于明确图片直链添加，响应 `private, no-store` 与 `nosniff`；读取不写入素材，客户端继续既有上传/完成/目录归档。公开地址、逐跳 DNS 固定、超时/大小及取消边界见 [ADR 0122](decisions/0122-authenticated-public-image-link-read.md)。没有新增导航路由。
@@ -36,7 +40,8 @@ The `/canvas` upper-left G icon opens a menu with one `主页` link to `/create`
 ## GG-125 standalone canvas entry
 
 `/canvas` mounts its own full-viewport page outside the shared workspace shell.
-The sidebar uses a normal link, and the canvas returns to `/create`. Direct
+GG-263 removes the former sidebar link; the project page now supplies the
+normal links, and the canvas returns to `/create`. Direct
 access and refresh load the same standalone tool; transient node layout is not
 restored. Generated images open existing `/assets/:assetId` details. There is no
 canvas document ID, save endpoint or node-specific URL.

@@ -4,12 +4,12 @@
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
+| GG-263 | 已进入5173：移除大厅「画布」，沿用项目页新建/已有画布入口；7/7、局部lint/模块编译通过，无辅助目录，用户验收 | [任务](tasks/GG-263-remove-lobby-canvas-entry.md) |
 | GG-262 | 已进入5173：统一透明下划线行内编辑、固定文字/动作位置，无可见滚动条，14px图标；12/12、局部lint/模块编译通过，创建1/退役1，用户验收 | [任务](tasks/GG-262-profile-inline-edit-layout.md) |
 | GG-260 / GG-261 | 明细/来源已交付：余额/类型/任务 ID 复制/项目模型/20条分页、空心图标/普通字重；67 项相关检查、0060/Web 完成，创建2/退役2；免费规则待用户 | [GG-260](tasks/GG-260-credit-details-and-free-quota.md) / [GG-261](tasks/GG-261-daily-free-image-quota.md) |
 | GG-259 | 已接入 5173：不重复随机六位 ID、常驻铅笔和下方规则预留空间；12/12、两组隔离 SQL 2/2、局部 lint，通过本地 0059，辅助目录退役，用户验收 | [任务](tasks/GG-259-random-user-id-stable-edit.md) |
 | GG-258 | 已进入 5173：去掉缩放覆盖层与非生成类型/缺参数说明，保留已知尺寸；10/10、相关 lint/编译通过，规范已同步，无新辅助目录，用户验收 | [任务](tasks/GG-258-canvas-detail-minimal.md) |
-| GG-257 | 已接入 5173：默认静止实线、连线/剪刀 hover 流动，reduced motion 始终静止；代码/编译检查通过，辅助目录退役，用户验收 | [任务](tasks/GG-257-canvas-edge-hover-flow.md) |
-| GG-256 | 已接入 5173：素材默认光标、查看 grab、图片拖入文件夹及状态动效/失败重试；8/8、相关 lint/编译通过，辅助目录退役，用户验收 | [任务](tasks/GG-256-canvas-folder-drop.md) |
+| GG-256 / GG-257 | 画布文件夹拖入/状态动效与默认静态实线、hover流动已接入5173；定向检查完成，两辅助目录已退役，用户验收 | [GG-256](tasks/GG-256-canvas-folder-drop.md) / [GG-257](tasks/GG-257-canvas-edge-hover-flow.md) |
 | GG-248 / GG-250 / GG-252 / GG-254 | 个人信息与直接编辑迭代记录；最终默认名/编号以GG-259、布局以GG-262为准，原验证和Web证据保留在各卡 | [GG-248](tasks/GG-248-account-personal-information.md) / [GG-250](tasks/GG-250-inline-personal-information.md) / [GG-252](tasks/GG-252-personal-info-cleanup.md) / [GG-254](tasks/GG-254-account-identity-editor.md) |
 | GG-253 | 已接入 5173：独立素材信息、图片拖动/滚轮缩放、内容缩略列/选中抽出；25 项定向、相关 lint/编译通过，无新辅助目录，用户验收 | [任务](tasks/GG-253-canvas-media-detail.md) |
 | GG-255 | 已接入 5173：原生外部图片 Ctrl+V，body 焦点直接粘贴，编辑区/弹层隔离；19/19、相关 lint/编译通过，辅助目录退役，用户验收 | [任务](tasks/GG-255-canvas-paste-image.md) |

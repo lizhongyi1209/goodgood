@@ -5,7 +5,6 @@ import "@/features/profile/profile.css";
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type WheelEvent as ReactWheelEvent } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { CreditIcon } from "@/components/ui/credit-icon";
 import { Input } from "@/components/ui/input";
@@ -225,7 +224,6 @@ import {
   Download,
   FolderOpen,
   FolderPlus,
-  Frame,
   Film,
   Home as HomeIcon,
   MessageSquare,
@@ -3073,7 +3071,6 @@ export default function Home({
         </button>
         <nav className="side-nav" aria-label="主导航">
           <button className={`side-nav-item ${activeView === "create" ? "active" : ""}`} data-nav="home" aria-label="首页" aria-current={activeView === "create" ? "page" : undefined} onClick={handleCreateNav}><HomeIcon size={17} strokeWidth={1.8} /><span>首页</span></button>
-          <Link className="side-nav-item" href="/canvas"><Frame size={17} strokeWidth={1.8} /><span>画布</span></Link>
           <button className={`side-nav-item ${activeView === "projects" ? "active" : ""}`} aria-current={activeView === "projects" ? "page" : undefined} onClick={handleProjectsNav}><FolderOpen size={17} /><span>项目</span></button>
           <button className={`side-nav-item asset-nav ${activeView === "assets" ? "active" : ""} ${assetPulse ? "has-new-assets" : ""}`} aria-label={newAssetCount > 0 ? `资产，新增 ${newAssetCount} 个` : "资产"} aria-current={activeView === "assets" ? "page" : undefined} onClick={handleAssetNav}>
             <LibraryBig size={17} /><span>资产</span>

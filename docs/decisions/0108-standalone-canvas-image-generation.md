@@ -11,7 +11,7 @@ The first `/canvas` mounted React Flow inside the main lobby shell and did not c
 
 ## Decision
 
-- `/canvas` owns a full-viewport page. The main workspace links to it with a normal route transition; the canvas offers a compact return to creation.
+- `/canvas` owns a full-viewport page. GG-263 (2026-10-01) removes the main workspace's direct canvas navigation entry; users enter through the project page's new-project card or an existing canvas project. These remain normal route transitions, and the canvas keeps its return to creation.
 - The first canvas tool supports a prompt, up to ten private reference images, an available image model, aspect ratio, resolution and output count. It reads the existing billing catalog/quote and uses the same authenticated reference upload and durable image generation boundaries as `/create`. Video, node wiring and canvas persistence are later work.
 - A deliberate Generate action creates temporary result nodes on the canvas. In-progress, successful and failed states stay visible; successful images link to their existing asset detail. Node positions are local to this page and are not advertised as saved. Existing generation jobs and assets remain durable server records.
 - Keep the background pure white and use the installed React Flow UI zoom control. Do not add a grid, sample nodes or default attribution badge.
