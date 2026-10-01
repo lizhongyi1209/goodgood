@@ -114,6 +114,8 @@ That migration is written and verified locally but is not applied to any live
 database yet; execution against production is a separate step that needs its own
 authorization and backup.
 
+GG-272 adds authenticated read-only `PersonalProfile.createdAt` from `users.created_at`, projected as `account_created_at` separately from profile timestamps. Missing/invalid dates are unavailable; profile writes do not accept or modify this value. No migration or registration change.
+
 GG-072 migration0035 adds personal_profiles keyed by owner with display_name,
 unique lowercase handle, optional avatar_reference_id, positive optimistic
 version and timestamps. Reads return unconfigured defaults without writes.

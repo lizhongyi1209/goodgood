@@ -500,10 +500,13 @@ the attached parameter drawer matches those corners.
   **Good Good** lettering (GG-269), with no separate G icon or reserved gap.
   The custom paths match the segmented G and rounded 4.3–4.6 unit strokes;
   the GG-267 size remains 108px/about 14px high and may shrink on mobile so
-  account controls retain their space. The sidebar brand is one 40px-high home
+  account controls retain their space. The sidebar brand is one 32px-high home
   button sized to its contents, with vertically centered lettering. GG-271 uses
   the same 12px horizontal inset as navigation items, aligning the wordmark's
-  left edge with the navigation icon boxes beneath it.
+  left edge with the navigation icon boxes beneath it. GG-272 places its center
+  on the project title center: shared heading top 34px (28px at ≤1040px),
+  title line-height 36px, brand top margin heading-top minus 10px, navigation
+  gap 2px. The 108px lettering and mobile header stay unchanged.
 - `public/goodgood-g-icon.svg`: other brand icons use the same G from GG-149,
   with a black circle and three white geometric pieces. Authentication/account
   states, creation empty state, compact canvas, management, Hero and browser

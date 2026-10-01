@@ -355,6 +355,8 @@ changes until complete. Failed saves preserve the draft, version conflicts offer
 reload. Six-digit user ID/email/invitation are text. Legacy `/profile` returns to
 `/create` and opens this dialog; no personal works page remains.
 
+GG-272 displays account creation time as a read-only text row after invitation, using the account timestamp in Asia/Shanghai as YYYY-MM-DD HH:mm. Missing/invalid values show 暂不可用. Loading/error handling and inline name/avatar editing retain their existing behavior; this value cannot be edited or copied via a new control.
+
 GG-259 keeps the pencil visible before hover. Name/avatar rules reveal within
 their reserved wrapped space below the active editor, preserving field/label
 positions. User IDs are fixed six random decimal digits, unique and independent

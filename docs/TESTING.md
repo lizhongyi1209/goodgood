@@ -1,5 +1,9 @@
 # GG-063 verification
 
+## GG-272 account creation time and brand position
+
+Run the GG-072 profile API, GG-248 personal-information SSR, GG-254 edit transaction and GG-272 timestamp tests together: real account/profile timestamp separation, owner read/save stability, forged read-only input rejection, Shanghai midnight, absent/invalid timestamps and existing loading/failure/edit behavior. Use scoped lint and actual Vite compilation; one verified Web build/restart loads the new projection without migration or Worker changes. User owns visual acceptance; no live database write or real provider call.
+
 ## GG-268/270 canvas text inputs and asset menus
 
 Run `node --test tests/gg268-canvas-text-node.test.mjs tests/gg270-canvas-asset-management.test.mjs tests/gg256-canvas-folder-drop.test.mjs tests/gg265-canvas-folder-membership.test.mjs tests/gg173-canvas-projects.test.mjs tests/gg218-canvas-project-pages.test.mjs tests/gg218-canvas-project-pages-ui.test.mjs`: Markdown parsing/roundtrip and plain output, empty/edit/disconnect/order, prompt boundaries and immutable generation input, geometry, local/remote multi-page validation, folder naming/deletion/failure and original move membership. Use scoped lint, typecheck for the new node union, and one verified Web build because project validation changes. Keep 0060 and the existing Worker/cloud configuration. No browser acceptance, real upload/generation, live database writes or full gate is needed for this slice; user owns visual acceptance (GG-247).
