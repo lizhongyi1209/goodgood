@@ -3,7 +3,7 @@ import test, { after } from "node:test";
 import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { ReactFlowProvider } from "@xyflow/react";
+import { ReactFlow, ReactFlowProvider } from "@xyflow/react";
 import { createServer } from "vite";
 import { MarkdownManager } from "@tiptap/markdown";
 import StarterKit from "@tiptap/starter-kit";
@@ -17,7 +17,7 @@ after(() => vite.close());
 const { InputAttachment } = await vite.ssrLoadModule("/components/ui/input-attachment.tsx");
 const { CanvasGeneratorNode } = await vite.ssrLoadModule("/features/canvas/canvas-generator-node.tsx");
 const { CanvasTextNode } = await vite.ssrLoadModule("/features/canvas/canvas-text-node.tsx");
-const { snapshotCanvasProject } = await vite.ssrLoadModule("/features/canvas/canvas-project-snapshot.ts");
+const { snapshotCanvasProject, remoteCanvasProjectDocument } = await vite.ssrLoadModule("/features/canvas/canvas-project-snapshot.ts");
 const nodes = [
   { id: "text", type: "textEditor", position: { x: 0, y: 0 }, data: { markdown: "# 提示词", text: "提示词" } },
   { id: "generator", type: "imageGenerator", position: { x: 400, y: 0 }, data: { sequence: 1 } },
@@ -25,8 +25,12 @@ const nodes = [
 ];
 const textEdge = { id: "text-edge", source: "text", target: "generator", sourceHandle: "text", targetHandle: "reference" };
 const imageEdge = { id: "image-edge", source: "image", target: "generator", sourceHandle: "reference", targetHandle: "reference" };
-const withFlow = (component, node, selected = false) => React.createElement(ReactFlowProvider, { initialNodes: nodes },
-  React.createElement(component, { ...node, width: 360, height: 260, selected, positionAbsoluteX: 0, positionAbsoluteY: 0, dragging: false, isConnectable: true }));
+const withFlow = (component, node) => {
+  const initialNodes = [{ ...node, width: 360, height: 260, style: { width: 360, height: 260 } }];
+  return React.createElement(ReactFlowProvider, { initialNodes }, React.createElement(ReactFlow, {
+    nodes: initialNodes, nodeTypes: { [node.type]: component }, width: 800, height: 600,
+  }));
+};
 
 test("generator renders exactly one receiving handle for image and text", () => {
   const html = renderToStaticMarkup(withFlow(CanvasGeneratorNode, nodes[1]));
@@ -63,8 +67,8 @@ test("legacy text-target edges normalize without mutating IDs, original data or 
   assert.equal(isCanvasTextConnection(textEdge, nodes, [legacy]), false);
 });
 test("snapshot and server save accept shared ports and preserve old text connections", () => {
-  const document = snapshotCanvasProject({ nodes, edges: [imageEdge, { ...textEdge, targetHandle: "text" }],
-    draftsByGenerator: {}, referencesByGenerator: {}, convertedReferences: {}, viewport: { x: 0, y: 0, zoom: 1 } });
+  const document = remoteCanvasProjectDocument(snapshotCanvasProject({ nodes, edges: [imageEdge, { ...textEdge, targetHandle: "text" }],
+    draftsByGenerator: {}, referencesByGenerator: {}, convertedReferences: {}, viewport: { x: 0, y: 0, zoom: 1 } }));
   assert.equal(document.edges[1].targetHandle, "reference");
   for (const targetHandle of ["reference", "text"]) {
     const copy = structuredClone(document); copy.edges[1].targetHandle = targetHandle;

@@ -130,22 +130,9 @@
 }
 
 .referenceTray[data-slot="attachment-group"] { gap: 8px; padding: 2px 0 11px; }
-.reference[data-slot="attachment"] { position: relative; display: block; flex: 0 0 54px; min-width: 0; width: 54px; height: 68px; overflow: hidden; padding: 0; border: 0; border-radius: 15px; background: #f4f4f5; }
 .referenceAdd { display: flex; flex: 0 0 52px; flex-direction: column; align-items: center; justify-content: center; gap: 4px; width: 52px; height: 52px; padding: 0; border: 1px dashed #d4d4d8; border-radius: 9px; background: #fafafa; color: #71717a; font-size: 10px; line-height: 1.2; scroll-snap-align: start; }
 .referenceAdd:hover { background: #eaeaec; color: #71717a; }
 .referenceAdd:focus-visible { outline: 2px solid #71717a; outline-offset: 2px; }
-.reference[data-slot="attachment"]:focus-within { box-shadow: none; }
-.referenceImageTrigger { display: block; width: 100%; height: 100%; outline: none; }
-.referenceImageTrigger:focus-visible { outline: 1px solid #a1a1aa; outline-offset: -1px; }
-.referenceImageTrigger img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; }
-.referenceNumber { position: absolute; z-index: 1; top: 5px; left: 5px; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: rgb(24 24 27 / 78%); color: #fff; font-size: 10px; font-weight: 600; line-height: 1; pointer-events: none; }
-.referenceRemove { position: absolute; z-index: 2; top: 5px; right: 5px; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: rgb(24 24 27 / 86%); color: #fff; opacity: 0; pointer-events: none; }
-.reference:hover .referenceRemove, .reference:focus-within .referenceRemove { opacity: 1; pointer-events: auto; }
-.referenceRemove:hover, .referenceRemove:focus-visible { background: #18181b; }
-.referenceRemove:focus-visible { outline: 2px solid #18181b; outline-offset: 2px; }
-.referenceRetry { position: absolute; z-index: 1; inset: auto 2px 2px; border-radius: 5px; background: #fff; font-size: 10px; }
-.referencePreview[data-slot="tooltip-content"] { max-width: calc(100vw - 24px); max-height: calc(100dvh - 120px); padding: 3px; border: 1px solid #e4e4e7; border-radius: 9px; background: #fff; box-shadow: 0 8px 20px rgb(0 0 0 / 11%); }
-.referencePreview img { display: block; width: auto; height: auto; max-width: min(148px, calc(100vw - 32px)); max-height: min(192px, calc(100dvh - 128px)); border-radius: 6px; object-fit: contain; }
 
 .promptArea { position: relative; display: flex; align-items: flex-start; margin-bottom: 2px; }
 .prompt { display: block; flex: 1; min-width: 0; min-height: 70px; max-height: 188px; resize: none; overflow-y: auto; border: 0; box-shadow: none; padding: 10px 4px 18px; background: transparent; color: #18181b; font-size: 14px; line-height: 22px; }
@@ -219,7 +206,6 @@
 @keyframes canvas-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .loadingIcon { animation: none; } }
 @media (prefers-reduced-motion: reduce) { .promptScrollbar { transition: none; } }
-@media (hover: none) { .referenceRemove { opacity: 1; pointer-events: auto; } }
 @media (hover: none) { .pageTabDelete { opacity: 1; pointer-events: auto; } }
 
 @media (max-width: 980px) {
