@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { ImageOff, X } from "lucide-react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { ImageOff, Play, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
+import { adjacentViewerIndex, createViewerWheelStep } from "./image-viewer-navigation.mjs";
 import styles from "./image-viewer.module.css";
 
 export type ImageViewerItem = Readonly<{
@@ -14,6 +15,7 @@ export type ImageViewerItem = Readonly<{
   sourceUrl: string;
   width?: number;
   height?: number;
+  media?: "image" | "video";
 }>;
 
 type ViewerProps = Readonly<{
@@ -22,6 +24,8 @@ type ViewerProps = Readonly<{
   returnFocusTo: HTMLElement | null;
   onSelect: (key: string) => void;
   onClose: () => void;
+  mode?: "canvas";
+  renderVideo?: (item: ImageViewerItem) => ReactNode;
 }>;
 
 function ViewerImage({ src, name, thumbnail = false }: Readonly<{ src: string; name: string; thumbnail?: boolean }>) {
@@ -40,8 +44,48 @@ function ViewerImage({ src, name, thumbnail = false }: Readonly<{ src: string; n
   </span>;
 }
 
+function VideoThumbnail({ src }: Readonly<{ src: string }>) {
+  const [failed, setFailed] = useState(false);
+  return <span className={styles.image}>
+    {failed ? <ImageOff size={18} aria-hidden="true" /> : <video src={src} muted playsInline preload="metadata" aria-hidden="true"
+      onError={() => setFailed(true)} onLoadedMetadata={(event) => {
+        const video = event.currentTarget;
+        try { video.currentTime = Number.isFinite(video.duration) && video.duration > 0 ? Math.min(.05, video.duration / 2) : .05; }
+        catch { /* Keep the browser's initial frame if seeking is unavailable. */ }
+      }} />}
+    {!failed && <Play className={styles.thumbnailPlay} size={12} fill="currentColor" aria-hidden="true" />}
+  </span>;
+}
+
+function ThumbnailCarousel({ items, selectedKey, onSelect }: Pick<ViewerProps, "items" | "selectedKey" | "onSelect">) {
+  const railRef = useRef<HTMLElement>(null);
+  const index = Math.max(0, items.findIndex((item) => item.key === selectedKey));
+  useEffect(() => {
+    const rail = railRef.current;
+    if (rail?.contains(document.activeElement)) rail.querySelector<HTMLButtonElement>('[aria-current="true"]')?.focus({ preventScroll: true });
+  }, [selectedKey]);
+  // Only nearby frames are mounted; large libraries do not load every video.
+  const start = Math.max(0, index - 7);
+  return <nav ref={railRef} className={styles.carousel} aria-label="当前范围图片和视频">
+    {items.slice(start, index + 8).map((item, offset) => {
+      const itemIndex = start + offset;
+      const active = item.key === selectedKey;
+      const ratio = item.width && item.height && item.width > 0 && item.height > 0 ? item.width / item.height : 1;
+      return <button key={item.key} type="button" className={styles.carouselThumbnail}
+        style={{ "--thumbnail-offset": itemIndex - index, "--thumbnail-ratio": ratio } as CSSProperties}
+        aria-label={`查看第 ${itemIndex + 1} 个${item.media === "video" ? "视频" : "图片"}：${item.name}`}
+        tabIndex={active ? 0 : -1}
+        aria-current={active ? "true" : undefined} onClick={() => onSelect(item.key)}>
+        {item.media === "video" ? <VideoThumbnail key={item.previewUrl} src={item.previewUrl} />
+          : <ViewerImage key={item.previewUrl} src={item.previewUrl} name={item.name} thumbnail />}
+      </button>;
+    })}
+  </nav>;
+}
+
 // This body mounts inside the portal, so its native wheel target already exists.
-function ViewerBody({ items, selectedKey, onSelect, onClose }: Omit<ViewerProps, "returnFocusTo">) {
+function ViewerBody({ items, selectedKey, onSelect, onClose, mode, renderVideo }: Omit<ViewerProps, "returnFocusTo">) {
+  const layoutRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLElement>(null);
   const railRef = useRef<HTMLDivElement>(null);
   const thumbnailRefs = useRef(new Map<string, HTMLButtonElement>());
@@ -52,35 +96,24 @@ function ViewerBody({ items, selectedKey, onSelect, onClose }: Omit<ViewerProps,
   useEffect(() => { navigationRef.current = { items, selectedKey, onSelect }; }, [items, selectedKey, onSelect]);
 
   useEffect(() => {
-    const stage = stageRef.current;
+    const stage = mode === "canvas" ? layoutRef.current : stageRef.current;
     if (!stage) return;
-    let timer: number | null = null;
-    let total = 0;
-    let lastTime = 0;
-    let direction = 0;
+    const step = createViewerWheelStep();
     const wheel = (event: WheelEvent) => {
-      // Preserve browser pinch/zoom and horizontal gestures; rail scrolling is separate.
-      if (event.ctrlKey || event.metaKey || !event.deltaY || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
+      const direction = step(event, stage.clientHeight);
+      if (direction === null) return;
       event.preventDefault();
       event.stopPropagation();
       const navigation = navigationRef.current;
-      if (timer !== null || navigation.items.length < 2) return;
-      const nextDirection = Math.sign(event.deltaY);
-      if (direction !== nextDirection || event.timeStamp - lastTime > 180) total = 0;
-      direction = nextDirection;
-      lastTime = event.timeStamp;
-      total += event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? stage.clientHeight : 1);
-      if (Math.abs(total) < 18) return;
-      total = 0;
+      if (!direction || navigation.items.length < 2) return;
       const currentIndex = navigation.items.findIndex((item) => item.key === navigation.selectedKey);
-      const nextIndex = Math.max(0, Math.min(currentIndex + direction, navigation.items.length - 1));
+      const nextIndex = adjacentViewerIndex(currentIndex, navigation.items.length, direction);
       const next = navigation.items[nextIndex];
       if (next && next.key !== navigation.selectedKey) navigation.onSelect(next.key);
-      timer = window.setTimeout(() => { timer = null; total = 0; }, 280);
     };
     stage.addEventListener("wheel", wheel, { passive: false });
-    return () => { stage.removeEventListener("wheel", wheel); if (timer !== null) window.clearTimeout(timer); };
-  }, []);
+    return () => stage.removeEventListener("wheel", wheel);
+  }, [mode]);
 
   useEffect(() => {
     const rail = railRef.current;
@@ -94,22 +127,24 @@ function ViewerBody({ items, selectedKey, onSelect, onClose }: Omit<ViewerProps,
   }, [selectedKey, items]);
 
   const selectAdjacent = (direction: number) => {
-    const next = items[Math.max(0, Math.min(index + direction, items.length - 1))];
+    const next = items[adjacentViewerIndex(index, items.length, direction)];
     if (next) onSelect(next.key);
   };
+  const media = selected ? selected.media === "video" ? renderVideo?.(selected)
+    : <ViewerImage key={`${selected.key}:${selected.sourceUrl}`} src={selected.sourceUrl} name={selected.name} />
+    : <p className={styles.empty} role="status">{items.length ? "此资产已不在当前列表中，请选择右侧缩略图。" : "当前范围没有可预览的资产。"}</p>;
 
-  return <div className={styles.layout} onKeyDown={(event) => {
+  return <div ref={layoutRef} className={`${styles.layout} ${mode === "canvas" ? styles.canvasLayout : ""}`} onKeyDown={(event) => {
     if (event.ctrlKey || event.metaKey || event.altKey) return;
     if (["ArrowDown", "ArrowRight"].includes(event.key)) { event.preventDefault(); selectAdjacent(1); }
     if (["ArrowUp", "ArrowLeft"].includes(event.key)) { event.preventDefault(); selectAdjacent(-1); }
   }}>
     <section ref={stageRef} className={styles.stage} aria-label="大图预览" onDragStart={(event) => event.preventDefault()}>
-      <Button type="button" variant="ghost" size="icon" className={styles.close} aria-label="关闭图片预览" onClick={onClose}><X size={20} aria-hidden="true" /></Button>
-      {selected ? <ViewerImage key={`${selected.key}:${selected.sourceUrl}`} src={selected.sourceUrl} name={selected.name} />
-        : <p className={styles.empty} role="status">{items.length ? "此图片已不在当前列表中，请选择右侧图片。" : "当前范围没有图片。"}</p>}
+      <Button type="button" variant="ghost" size="icon" className={styles.close} aria-label={mode === "canvas" ? "关闭资产预览" : "关闭图片预览"} onClick={onClose}><X size={20} aria-hidden="true" /></Button>
+      {mode === "canvas" ? <div className={styles.stageMedia}>{media}</div> : media}
       <div className={styles.caption}><span>{selected?.name ?? "图片预览"}</span><small>{index >= 0 ? index + 1 : "—"} / {items.length}</small></div>
     </section>
-    <nav className={styles.rail} aria-label="当前范围图片" onWheel={(event) => event.stopPropagation()}>
+    {mode === "canvas" ? <ThumbnailCarousel items={items} selectedKey={selectedKey} onSelect={onSelect} /> : <nav className={styles.rail} aria-label="当前范围图片" onWheel={(event) => event.stopPropagation()}>
       <span className={styles.railTitle}>图片</span>
       <div ref={railRef} className={styles.thumbnails}>
         {items.map((item, itemIndex) => <button key={item.key} type="button" className={styles.thumbnail}
@@ -120,18 +155,18 @@ function ViewerBody({ items, selectedKey, onSelect, onClose }: Omit<ViewerProps,
           <ViewerImage key={item.previewUrl} src={item.previewUrl} name={item.name} thumbnail />
         </button>)}
       </div>
-    </nav>
+    </nav>}
   </div>;
 }
 
 export function ImageViewer({ returnFocusTo, onClose, ...props }: ViewerProps) {
   return <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
-    <DialogContent className={styles.dialog} overlayClassName={styles.overlay} showCloseButton={false}
+    <DialogContent className={`${styles.dialog} ${props.mode === "canvas" ? styles.canvasDialog : ""}`} overlayClassName={styles.overlay} showCloseButton={false}
       onEscapeKeyDown={(event) => { event.preventDefault(); event.stopPropagation(); onClose(); }}
       onCloseAutoFocus={(event) => { event.preventDefault(); if (returnFocusTo?.isConnected) returnFocusTo.focus({ preventScroll: true }); }}
       onKeyDown={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>
-      <DialogTitle className="sr-only">图片预览</DialogTitle>
-      <DialogDescription className="sr-only">滚动大图区或使用方向键切换图片，右侧缩略图可滚动和点击。按 Escape 关闭。</DialogDescription>
+      <DialogTitle className="sr-only">{props.mode === "canvas" ? "资产预览" : "图片预览"}</DialogTitle>
+      <DialogDescription className="sr-only">{props.mode === "canvas" ? "滚动鼠标或使用方向键切换图片和视频，点击右侧缩略图也可切换。视频可悬停或手动播放。" : "滚动大图区或使用方向键切换图片，右侧缩略图可滚动和点击。"}按 Escape 关闭。</DialogDescription>
       <ViewerBody {...props} onClose={onClose} />
     </DialogContent>
   </Dialog>;

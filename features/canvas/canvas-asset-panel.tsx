@@ -422,8 +422,8 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
     return data.items.filter((item) => membership.get(`${item.kind}:${item.id}`) === activeFolder.id);
   }, [data, activeFolder]);
   const readyAssetKeys = useMemo(() => new Set(data?.items.map((item) => `${item.kind}:${item.id}`) ?? []), [data]);
-  const previewImages = visibleItems.filter((item) => item.media === "image").map((item) => ({
-    key: `${item.kind}:${item.id}`, name: item.name,
+  const previewMedia = visibleItems.filter((item) => item.media !== "audio").map((item) => ({
+    key: `${item.kind}:${item.id}`, name: item.name, media: item.media as "image" | "video",
     previewUrl: item.previewUrl ?? item.sourceUrl ?? "",
     sourceUrl: item.sourceUrl ?? item.previewUrl ?? "", width: item.width, height: item.height,
   }));
@@ -545,7 +545,14 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
             {!loading && !error && activeFolder && !visibleItems.length && <p className={styles.empty}>此文件夹还没有素材</p>}
           </div>
         </ScrollArea>}
-    {enabled && imagePreview && <ImageViewer items={previewImages} selectedKey={imagePreview.selectedKey} returnFocusTo={imagePreview.returnFocusTo}
+    {enabled && imagePreview && <ImageViewer mode="canvas" items={previewMedia} selectedKey={imagePreview.selectedKey} returnFocusTo={imagePreview.returnFocusTo}
+      renderVideo={(selected) => {
+        const item = visibleItems.find((asset) => `${asset.kind}:${asset.id}` === selected.key);
+        return item && <div className={styles.viewerVideo}>
+          <AssetMedia key={`${item.id}:${data?.mediaRevision}:${item.previewUrl ?? ""}`} item={item} editing={false}
+            expanded refreshVideo={(signal) => refreshVideo(item, signal)} />
+        </div>;
+      }}
       onSelect={(selectedKey) => setImagePreview((current) => current && ({ ...current, selectedKey }))} onClose={() => setImagePreview(null)} />}
     {enabled && videoPreview && previewVideo && <VideoViewer item={previewVideo} mediaRevision={data?.mediaRevision ?? 0}
       refreshVideo={(signal) => refreshVideo(previewVideo, signal)} onClose={() => setVideoPreview(null)}

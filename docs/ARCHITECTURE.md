@@ -2,6 +2,8 @@
 
 ## GG-238 shared image viewer boundary
 
+GG-249 adds an opt-in canvas mode to this viewer: bounded stage, wheel-driven image/video thumbnail carousel and a caller-provided selected-video renderer. The canvas supplies its existing AssetMedia for playback and URL refresh; the viewer does not import canvas logic. Nearby thumbnail frames alone mount, and wheel normalization/adjacent-index logic is independently tested. Asset-page callers retain the original default layout. See [ADR 0123](decisions/0123-canvas-media-preview-carousel.md).
+
 A small asset image viewer extracts the existing asset detail stage/vertical rail and bounded wheel/arrow interaction for two real callers: the canvas asset panel and uploaded-image asset preview. Callers supply authorized current image scope, identity, name and preview/content URLs; the viewer owns only transient selection/display, loading/retry and dialog focus. The canvas editor, project state and backend remain separate, and existing generated metadata/download detail routes plus video/audio dialogs retain their current orchestration. No new data/provider/API or global CSS dependency is needed. See [task](tasks/GG-238-canvas-asset-viewer.md).
 
 ## GG-226 项目列表管理

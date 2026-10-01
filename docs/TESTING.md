@@ -1,5 +1,9 @@
 # GG-063 verification
 
+## GG-249 canvas viewer verification
+
+Run `tests/gg249-image-viewer-navigation.test.mjs` and existing GG-244 playback tests, relevant source lint, documentation continuity and diff checks. Review explicit stage bounds/contain, current-scope media order, nearby-frame mounting, transform stacking, keyboard focus, Escape/return focus, retry and reduced motion. Vite module HTTP compilation can verify actual 5173 source integration; it does not establish browser acceptance. The user inspects image completeness, size, rail animation and mixed-media navigation. No full build/gate, real upload or provider request is needed for this scoped UI change.
+
 ## GG-245 public image link verification
 
 Following GG-247, run `tests/gg245-canvas-image-link.test.mjs`, `tests/gg233-canvas-asset-addition.test.mjs` and the affected reference API tests. Use isolated DNS/transport/auth stubs and synthetic in-memory JPEG/PNG to verify authorized binary success, auth/workspace denial before network, actual bounded JSON, public address normalization and all-answer validation, connection pinning and TLS host options, every redirect, declared/streamed size, real decoding, timeout and disconnect cancellation. Client checks cover same-origin request, recoverable errors, File formation and cancellation. No loopback exception is added to the URL reader for tests. Build a verified checkpoint only because the actual Web must load the new route; do not run unrelated full-suite checks for this request.

@@ -3,7 +3,7 @@
 - 最后核对：2026-10-01（本地服务；生产身份沿用原发布证据）。
 - 产品阶段：公开的 `controlled-alpha-v1`；已有真实用户，尚未达到完整 seed、自动支付或完整运营告警就绪。
 - 正式入口：https://goodgood.o1key.com
-- 当前本地代码检查点：[GG-248](tasks/GG-248-account-personal-information.md) 默认个人信息与六项资料已接入实际 5173，20/20、定向 lint，辅助目录退役；[GG-245](tasks/GG-245-canvas-image-link-read.md) verified Web/链接读取和 GG-244/246/243/242 保留。GG-247 定向验证规范生效，浏览器验收由用户负责；历史标签 `goodgood-local-2026-10-01-gg245` 不代表最新前端。
+- 当前本地代码检查点：[GG-249](tasks/GG-249-canvas-media-viewer.md) 受限完整预览与滚轮图片/视频轮播已接入实际 5173，15/15、定向 lint 与编译通过，无新增 worktree/缓存；GG-248 默认个人信息与 [GG-245](tasks/GG-245-canvas-image-link-read.md) verified Web 保留。GG-247 定向验证规范生效，浏览器验收由用户负责；历史标签 `goodgood-local-2026-10-01-gg245` 不代表最新前端。
 - 当前本地运行：Vite `127.0.0.1:5173` 从 `F:/goodgood-worktrees/GG-116` 提供前端；API 代理到已验证 Web `127.0.0.1:32131`，唯一真实开发 Worker 为 `127.0.0.1:32142`。GG-242 已补回 Web 云素材配置，原本地数据卷和迁移保留，生产没有变化。
 
 ## 生产身份
