@@ -1,13 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-01
-- Current phase: GG-245 源码 `7ddb78d`、34 项定向验证、lint/typecheck 与所给 URL 解码通过，verified Web 同步及子目录退役完成；本地版本 `goodgood-local-2026-10-01-gg245`。GG-244/246 保留，生产仍为 GG-098 应用和 GG-100 单槽 Compose。
-- Current objective: GG-245 本地开发已交付，用户在 5173 验收图片链接导入和产品预期；后续需求按当前检查点和 GG-247 定向验证规范开发。
+- Current phase: GG-248 账户管理默认个人信息已接入实际 5173，20 项定向检查/相关 lint 与目录退役完成；GG-245 verified Web 及 GG-244/246 保留，生产仍为 GG-098 应用和 GG-100 单槽 Compose。
+- Current objective: GG-248 六项个人信息与默认入口开发完成，交用户验收；后续按 GG-247 定向验证规范推进小需求。
 - Previous objective: GG-244 资产 hover 小按钮、无视频外置文字与节点式视频预览已进入实际 5173。
 
 ## Current checkpoint
 
-- Task [GG-248](tasks/GG-248-account-personal-information.md)：独立开发账户管理默认个人信息，用户确认头像、昵称、用户名、邮箱、用户 ID 和邀请码；仅定向验证，不改变 GG-245 范围。
+- Task [GG-248](tasks/GG-248-account-personal-information.md)：`b4a34a6` 回放为 `520b452`，六项真实资料、ID/邀请码复制与每次默认入口已接入实际目录；20/20、定向 lint，无全量检查，辅助目录创建 1/退役 1，不改变 GG-245 范围。
 - Task [GG-247](tasks/GG-247-targeted-verification.md)：用户要求高频小需求默认定向验证，完整门禁按批次/发布或必要回归执行，规则见 AGENTS/WORKFLOW；不改变 GG-245 的并行开发范围。
 - 当前集成分支 `fix/GG-245-canvas-image-link-read`，目录 `F:/goodgood-worktrees/GG-116`，交接标签 `goodgood-local-2026-10-01-gg245`；源码 `7ddb78d` 与 Web 构建 `09c7060` 均为祖先，保留 GG-244/246 与 GG-247。GG-245 子目录创建 1/退役 1、零子缓存，见任务卡。
 - Task [GG-246](tasks/GG-246-asset-video-hover.md)：子提交 `c563d98`/根回放 `ec51488` 已整合为 `83a4306`，实际目录 `F:/goodgood-worktrees/GG-116`，基于 GG-244 收口 `dd8dca9`，仅修改大厅资产视频。定向 31/31、一次完整共同门禁 685 通过/22 隔离跳过/0 失败；5173 编译模块 HTTP 200 含新接线；辅助目录创建 2/退役 2。不改变 GG-245 并行任务。
