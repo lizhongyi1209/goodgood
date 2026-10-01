@@ -5,7 +5,7 @@ import { ImageOff, Play, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
-import { adjacentViewerIndex, createViewerWheelStep } from "./image-viewer-navigation.mjs";
+import { adjacentViewerIndex, attachCenteredViewerRail, createViewerWheelStep } from "./image-viewer-navigation.mjs";
 import { ImagePreviewCanvas } from "./image-preview-canvas";
 import { ImageViewerDetails, type ImageViewerMetadata } from "./image-viewer-details";
 import styles from "./image-viewer.module.css";
@@ -69,18 +69,10 @@ function ThumbnailCarousel({ items, selectedKey, onSelect, renderThumbnail }: Pi
     const thumbnail = thumbnailRefs.current.get(selectedKey);
     if (!rail || !thumbnail) return;
     if (rail.contains(document.activeElement)) thumbnail.focus({ preventScroll: true });
-    const reveal = () => {
-      const railBox = rail.getBoundingClientRect();
-      const box = thumbnail.getBoundingClientRect();
-      const offset = box.top < railBox.top ? box.top - railBox.top : box.bottom > railBox.bottom ? box.bottom - railBox.bottom : 0;
-      if (offset) rail.scrollTo({ top: rail.scrollTop + offset, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
-    };
-    reveal();
-    if (typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(reveal);
-    observer.observe(rail);
-    observer.observe(thumbnail);
-    return () => observer.disconnect();
+    return attachCenteredViewerRail(rail, items.flatMap((item) => {
+      const element = thumbnailRefs.current.get(item.key);
+      return element ? [element] : [];
+    }), thumbnail);
   }, [selectedKey, items]);
   return <nav ref={railRef} className={styles.carousel} aria-label="当前范围图片和视频">
     {items.map((item, itemIndex) => {
@@ -146,7 +138,7 @@ function ViewerBody({ items, selectedKey, onSelect, onClose, mode, renderVideo, 
     if (next) onSelect(next.key);
   };
   const media = selected ? selected.media === "video" ? renderVideo?.(selected)
-    : mode === "canvas" ? <ImagePreviewCanvas key={`${selected.key}:${selected.sourceUrl}`} name={selected.name}>
+    : mode === "canvas" ? <ImagePreviewCanvas key={`${selected.key}:${selected.sourceUrl}`} name={selected.name} width={selected.width} height={selected.height}>
       <ViewerImage key={`${selected.key}:${selected.sourceUrl}`} src={selected.sourceUrl} name={selected.name} />
     </ImagePreviewCanvas> : <ViewerImage key={`${selected.key}:${selected.sourceUrl}`} src={selected.sourceUrl} name={selected.name} />
     : <p className={styles.empty} role="status">{items.length ? "此资产已不在当前列表中，请选择右侧缩略图。" : "当前范围没有可预览的资产。"}</p>;
@@ -160,9 +152,9 @@ function ViewerBody({ items, selectedKey, onSelect, onClose, mode, renderVideo, 
     <section ref={stageRef} className={styles.stage} aria-label={mode === "canvas" ? "资产预览画布" : "大图预览"} onDragStart={(event) => event.preventDefault()}>
       <Button type="button" variant="ghost" size="icon" className={styles.close} aria-label={mode === "canvas" ? "关闭资产预览" : "关闭图片预览"} onClick={onClose}><X size={20} aria-hidden="true" /></Button>
       {mode === "canvas" ? <div className={styles.stageMedia}>{media}</div> : media}
-      <div className={`${styles.caption} ${mode === "canvas" ? styles.canvasCaption : ""}`}>
-        {mode !== "canvas" && <span>{selected?.name ?? "图片预览"}</span>}<small>{index >= 0 ? index + 1 : "—"} / {items.length}</small>
-      </div>
+      {mode !== "canvas" && <div className={styles.caption}>
+        <span>{selected?.name ?? "图片预览"}</span><small>{index >= 0 ? index + 1 : "—"} / {items.length}</small>
+      </div>}
     </section>
     {mode === "canvas" ? <ThumbnailCarousel items={items} selectedKey={selectedKey} onSelect={onSelect} renderThumbnail={renderThumbnail} /> : <nav className={styles.rail} aria-label="当前范围图片" onWheel={(event) => event.stopPropagation()}>
       <span className={styles.railTitle}>图片</span>

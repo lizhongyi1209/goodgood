@@ -2,6 +2,33 @@ export function adjacentViewerIndex(index, count, direction) {
   return count > 0 ? Math.max(0, Math.min(index + direction, count - 1)) : -1;
 }
 
+/** End spacers make every selection centerable, including a one-item rail. */
+export function attachCenteredViewerRail(rail, thumbnails, selected) {
+  if (!rail || !selected || !thumbnails.includes(selected)) return () => {};
+  const center = () => {
+    const height = rail.clientHeight;
+    if (!height) return;
+    const first = thumbnails[0].getBoundingClientRect();
+    const last = thumbnails.at(-1).getBoundingClientRect();
+    rail.style.paddingTop = `${Math.max(0, (height - first.height) / 2)}px`;
+    rail.style.paddingBottom = `${Math.max(0, (height - last.height) / 2)}px`;
+    const railBox = rail.getBoundingClientRect();
+    const box = selected.getBoundingClientRect();
+    const top = rail.scrollTop + box.top - railBox.top - (height - box.height) / 2;
+    rail.scrollTo({ top: Math.max(0, Math.min(top, rail.scrollHeight - height)),
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  };
+  center();
+  if (typeof ResizeObserver === "undefined") {
+    window.addEventListener("resize", center);
+    return () => window.removeEventListener("resize", center);
+  }
+  const observer = new ResizeObserver(center);
+  observer.observe(rail);
+  for (const thumbnail of thumbnails) observer.observe(thumbnail);
+  return () => observer.disconnect();
+}
+
 /** Returns null for gestures owned by the browser, 0 while accumulating/cooling. */
 export function createViewerWheelStep() {
   let total = 0;

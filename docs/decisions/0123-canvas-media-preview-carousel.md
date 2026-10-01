@@ -24,3 +24,9 @@ Move the asset title into a separate information region to the left of the image
 ## GG-258 addendum · unobstructed preview and quieter uploaded details (2026-10-01)
 
 Remove the bottom-right zoom/fit buttons and scale overlay from the canvas image detail so they cannot cover the media. Keep drag pan, wheel zoom and keyboard zoom/fit. Preserve the title in the information region; non-generated media displays only known dimensions below it, without image/video type copy or missing-generation explanations. Actual generated parameters and prompt, empty selection and media recovery remain. This replaces GG-253's visible zoom/fit control requirement without changing navigation or storage.
+
+## GG-264 addendum · filled image stage and centered selection (2026-10-01)
+
+The user requests the image to fill the entire middle region. Remove its fixed inner margins and bottom-right item count. Initially scale the complete original proportionally to cover the measured stage; overflow clips at the stage boundary and existing drag/zoom can reveal the original edges. Do not stretch or permanently crop the source. Keyboard 0/Home returns to this centered cover view. This supersedes the canvas entry's initial contain rule, while video playback and asset-page defaults remain.
+
+On opening, changing selection or resizing, center the selected thumbnail vertically within its rail. Dynamic space before the first item and after the last item makes end selections centerable too. Preserve actual thumbnail ratios, gaps, focus without native scroll jumps, hidden scrollbar and reduced-motion behavior. No image upload, provider call, URL, project persistence or backend change is required.
