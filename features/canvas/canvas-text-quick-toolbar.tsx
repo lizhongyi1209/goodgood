@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createPrivateTextAsset } from "@/features/assets/http-text-assets";
-import { textAssetDefaultName, textAssetInputError, type TextAssetInput } from "@/shared/contracts/text-assets.mjs";
+import { textAssetInputError, type TextAssetInput } from "@/shared/contracts/text-assets.mjs";
 import { CanvasTextGenerationContext } from "./canvas-text-generation-context";
 import type { CanvasTextNodeData } from "./canvas-text-node";
 import styles from "./canvas-text-node.module.css";
@@ -34,9 +34,9 @@ export function CanvasTextQuickToolbar({ data, nodeId, disabled = false }: Reado
     <div className={`${styles.toolbar} nodrag nopan nowheel`} role="toolbar" aria-label="文本快捷功能" data-canvas-text-toolbar={nodeId}>
       <Button type="button" variant="ghost" size="icon-xs" aria-label="设置模板" title="设置模板" disabled={!canSave}
         onMouseDown={(event) => event.preventDefault()} onClick={() => {
-          const title = textAssetDefaultName(data.text); attempted.current = false;
-          setSnapshot({ id: crypto.randomUUID(), name: title, markdown: data.markdown, text: data.text });
-          setName(title); setError(null);
+          attempted.current = false;
+          setSnapshot({ id: crypto.randomUUID(), name: "", markdown: data.markdown, text: data.text });
+          setName(""); setError(null);
         }}><BookmarkPlus size={14} className="size-3.5" aria-hidden="true" /></Button>
     </div>
     <Dialog open={Boolean(snapshot)} onOpenChange={(open) => { if (!open && !pending.current) setSnapshot(null); }}>
@@ -44,7 +44,8 @@ export function CanvasTextQuickToolbar({ data, nodeId, disabled = false }: Reado
         <DialogHeader><DialogTitle>保存提示词模板</DialogTitle><DialogDescription className="sr-only">命名并保存当前提示词内容。</DialogDescription></DialogHeader>
         <form onSubmit={(event) => { event.preventDefault(); void save(); }}>
           <Label htmlFor={`text-template-name-${nodeId}`}>模板名称</Label>
-          <Input id={`text-template-name-${nodeId}`} autoFocus maxLength={255} value={name} disabled={saving} onChange={(event) => {
+          <Input id={`text-template-name-${nodeId}`} autoFocus maxLength={255} value={name} disabled={saving}
+            placeholder="用途_主题_风格，例如：商品主图_护肤品_极简白底" onChange={(event) => {
             setName(event.target.value); setError(null);
             if (attempted.current) { setSnapshot((current) => current && ({ ...current, id: crypto.randomUUID() })); attempted.current = false; }
           }} />
