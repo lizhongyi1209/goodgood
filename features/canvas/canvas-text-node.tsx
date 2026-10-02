@@ -5,6 +5,7 @@ import { Extension, type Editor } from "@tiptap/core";
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import { Markdown } from "@tiptap/markdown";
 import StarterKit from "@tiptap/starter-kit";
+import { Slice } from "@tiptap/pm/model";
 import { Plugin } from "@tiptap/pm/state";
 import { Handle, NodeResizeControl, NodeToolbar, Position, useReactFlow, useStore, type NodeProps } from "@xyflow/react";
 import { Bold, FileText, Heading1, Heading2, Heading3, Italic, List, ListOrdered, Pilcrow, Redo2, Undo2 } from "lucide-react";
@@ -68,13 +69,16 @@ export function CanvasTextNode({ id, data, selected, width, height }: NodeProps<
     immediatelyRender: false,
     editorProps: {
       attributes: { "aria-label": "文本编辑器内容", "aria-multiline": "true", role: "textbox", spellcheck: "false" },
-      handlePaste(_view, event) {
+      handlePaste(view, event) {
         const text = event.clipboardData?.getData("text/plain");
-        if (!text || event.clipboardData?.getData("text/html")) return false;
-        // Plain Markdown pasted from other tools is rendered rather than displayed as source.
+        if (!text || event.clipboardData?.getData("text/html") || view.state.selection.$from.parent.type.spec.code) return false;
         const instance = editorRef.current;
-        if (!instance) return false;
-        instance.commands.insertContent(text, { contentType: "markdown" });
+        if (!instance?.markdown) return false;
+        // Open paragraph boundaries so pasted Markdown joins the text at the cursor.
+        const document = view.state.schema.nodeFromJSON(instance.markdown.parse(text));
+        const slice = Slice.maxOpen(document.content);
+        view.dispatch(view.state.tr.replaceSelection(slice).scrollIntoView()
+          .setMeta("paste", true).setMeta("uiEvent", "paste"));
         return true;
       },
     },
