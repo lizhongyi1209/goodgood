@@ -2,6 +2,8 @@
 
 ## GG-291 canvas text generation
 
+GG-296 adds server-authoritative interruption billing: succeeded20/cancelled10/failed0. Cancellation and socket disconnect close the locked job once; full settlement plus linked half-refund run atomically, with personal paid-credit provenance and organization member budgets retained. Successful late stops remain20; expiry/server failures still release all.0062 adds actual charge and organization refund relations; it needs migration/build/Web activation, not a browser refresh. See[ADR0129](decisions/0129-text-generation-interruption-billing.md).
+
 The model-only composer and streaming result reuse `CanvasMarkdownNode`; editing starts with double-click/Enter. `server/text-generation` owns authorization, one relay Chat Completions stream and independent durable text jobs/20-credit transactions. Request IDs prevent repeat execution; reads/cancellation never submit another provider request. Images resolve to existing authorized bytes and are resized only in memory; video inputs carry up to six JPEG representative frames after video ownership checks. No reference upload, image job or Worker queue is created. Project JSON persists draft/history/output and pending request ID; owner/page changes exclude late updates. Backend activation requires0061 and a new Web runtime. See [ADR0127](decisions/0127-canvas-text-generation.md).
 
 ## GG-283 generated reference reuse

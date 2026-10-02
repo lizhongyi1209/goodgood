@@ -7,7 +7,7 @@ import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { TextModelIcon } from "@/features/models/text-model-icon";
-import { TEXT_GENERATION_MODELS, DEFAULT_TEXT_GENERATION_MODEL, TEXT_GENERATION_CREDIT_COST, TEXT_GENERATION_MAX_PROMPT,
+import { TEXT_GENERATION_MODELS, DEFAULT_TEXT_GENERATION_MODEL, TEXT_GENERATION_CREDIT_COST, TEXT_GENERATION_CANCELLATION_CREDIT_COST, TEXT_GENERATION_MAX_PROMPT,
   TEXT_GENERATION_MAX_HISTORY, type CanvasTextGenerationDraft, type TextGenerationMessage, type TextGenerationModelId } from "@/shared/contracts/text-generation.mjs";
 import { CanvasMarkdownNode, type CanvasTextNodeData } from "./canvas-text-node";
 import { canvasMarkdownPlainText } from "./canvas-markdown";
@@ -81,7 +81,8 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
       signal.throwIfAborted();
       if (result.state !== "running") {
         if (result.markdown) updateResult(result.markdown);
-        if (result.state !== "succeeded") setError(result.error?.message ?? "上次生成未完成，已退回预留积分。");
+        if (result.state === "failed") setError(result.error?.message ?? "上次生成未完成，已退回预留积分。");
+        else if (result.state === "cancelled") setError("");
         return result;
       }
       await wait(signal);
@@ -110,7 +111,7 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
         endBusy(true);
       }).catch((failure: unknown) => {
         if (!live(controller)) return;
-        if (controller.signal.aborted) { setError("已停止生成。"); endBusy(true); return; }
+        if (controller.signal.aborted) { setError(""); endBusy(true); return; }
         setError(failure instanceof Error ? failure.message : "暂时无法恢复生成状态，请稍后重新打开画布。");
         endBusy(failure instanceof CanvasTextGenerationError && failure.code === "TEXT_GENERATION_NOT_FOUND");
       }).finally(() => { if (controllerRef.current === controller) controllerRef.current = null; });
@@ -188,7 +189,7 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
       clearInterval(ticker);
       if (queue && live(controller)) { markdown += queue; updateResult(markdown); }
       if (!live(controller)) return;
-      if (controller.signal.aborted) setError("已停止生成。");
+      if (controller.signal.aborted) setError("");
       else if (submitted && requestId && (!(failure instanceof CanvasTextGenerationError) ||
           ["TEXT_STREAM_INTERRUPTED", "TEXT_GENERATION_IN_PROGRESS", "TEXT_GENERATION_UNAVAILABLE"].includes(failure.code))) {
         clearPending = false;
@@ -197,7 +198,7 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
           if (result.state === "succeeded") { setError(""); updateDraft({ history: recentHistory([...history,
             { role: "user", content: prompt || "请分析输入素材。" }, { role: "assistant", content: result.markdown }]) }); return; }
         } catch (recoveryError) {
-          if (controller.signal.aborted) { clearPending = true; setError("已停止生成。"); }
+          if (controller.signal.aborted) { clearPending = true; setError(""); }
           if (!controller.signal.aborted) setError(recoveryError instanceof Error ? recoveryError.message : "暂时无法恢复生成状态，请稍后重新打开画布。");
           if (recoveryError instanceof CanvasTextGenerationError && recoveryError.code === "TEXT_GENERATION_NOT_FOUND") clearPending = true;
         }
@@ -240,9 +241,10 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
             <SelectTrigger className={styles.model} aria-label="文本生成模型"><span className={styles.modelName}><TextModelIcon icon={currentModel.icon} /><span>{currentModel.name}</span></span></SelectTrigger>
             <SelectContent position="popper" side="bottom" align="start">{TEXT_GENERATION_MODELS.map((model) => <SelectItem key={model.id} value={model.id}><span className={styles.modelName}><TextModelIcon icon={model.icon} /><span>{model.name}</span></span></SelectItem>)}</SelectContent>
           </Select>
-          <button type="button" className={styles.send} disabled={!context.enabled || !busy && Boolean(data.textGeneration.pendingRequestId)} aria-label={busy ? "停止文本生成" : `生成文本，消耗 ${TEXT_GENERATION_CREDIT_COST} 积分`}
-            title={busy ? "停止生成" : `生成 · ${TEXT_GENERATION_CREDIT_COST} 积分`} onClick={() => {
+          <button type="button" className={styles.send} disabled={!context.enabled || !busy && Boolean(data.textGeneration.pendingRequestId)} aria-label={busy ? `停止文本生成，中断扣 ${TEXT_GENERATION_CANCELLATION_CREDIT_COST} 积分` : `生成文本，消耗 ${TEXT_GENERATION_CREDIT_COST} 积分`}
+            title={busy ? `停止生成 · 中断扣 ${TEXT_GENERATION_CANCELLATION_CREDIT_COST} 积分` : `生成 · ${TEXT_GENERATION_CREDIT_COST} 积分`} onClick={() => {
               if (busy) {
+                setError("");
                 const requestId = data.textGeneration.pendingRequestId;
                 const pendingHistory = data.textGeneration.history ?? [];
                 controllerRef.current?.abort();
@@ -257,7 +259,7 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
                     if (!edited) updateResult(content);
                     setError("");
                     if (pendingHistory.at(-1)?.role === "user") updateDraft({ history: recentHistory([...pendingHistory, { role: "assistant", content }]) });
-                  } else if (result.state === "cancelled") setError("已停止生成，预留积分已退回。");
+                  } else if (result.state === "cancelled") setError("");
                 }).finally(() => contextRef.current.onBillingChanged()).catch(() => {});
               } else void generate();
             }}>

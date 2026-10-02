@@ -1,5 +1,9 @@
 # GG-063 verification
 
+## GG-296 interruption billing, unexecuted regression source
+
+`gg296-text-cancellation-billing.test.mjs` covers20/10/0 pricing, invalid terminal states, mixed paid/granted-credit partial refunds without frozen balances, and net10 usage versus raw20 ledger settlement. GG-291 regression source now covers socket interruption, repeat cancellation, late stop after success and server response failure. None were run under the user's code-only agreement; no build, lint, tests, browser/provider/SQL write checks or activation. Enterprise budget/refund and concurrency still need later delegated verification on a named disposable stack without a real-provider Worker. The preserved local stack remains0061/Web767e6db until new0062 and Web activation.
+
 ## GG-291 code-only delivery
 
 The user's agreement prohibits automatic compilation, lint, tests, code/diff checks and browser acceptance. None were run for GG-291; no real provider/database call was made. Unexecuted `gg291-text-generation.test.mjs` covers catalog/default/20-credit contract, invalid/empty inputs, fragmented SSE/high reasoning, lazy execution/cached replay, partial/empty/failing/cancelled streams, mixed single-port inputs/cycles and project validation, using only synthetic provider/transaction operations. GG-273 expectations follow renamed numbered editors. Real relay support, visual streaming/editing and billing activation remain user acceptance after separately applying0061 and activating Web; this task does not authorize write/provider checks on the preserved runtime or production.

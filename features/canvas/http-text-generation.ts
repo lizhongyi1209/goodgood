@@ -5,7 +5,7 @@ import type { TextGenerationMessage, TextGenerationModelId } from "@/shared/cont
 
 export type TextGenerationMedia = { kind: "image"; assetKind: "reference" | "generated"; assetId: string } |
   { kind: "video"; assetKind: "video"; assetId: string; frames: string[] };
-export type TextGenerationStatus = { requestId: string; state: "running" | "succeeded" | "failed" | "cancelled"; markdown: string; error: { code: string; message: string } | null };
+export type TextGenerationStatus = { requestId: string; state: "running" | "succeeded" | "failed" | "cancelled"; markdown: string; chargedCreditAmount: number; error: { code: string; message: string } | null };
 export class CanvasTextGenerationError extends Error {
   constructor(public code: string, message: string) { super(message); }
 }

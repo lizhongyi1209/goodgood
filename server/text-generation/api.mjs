@@ -11,8 +11,13 @@ import { streamTextProvider, textProviderConfig } from "./provider.mjs";
 function owner(context) { if (!context?.ownerId) throw sessionExpiredError(); return context.ownerId; }
 const activeGenerations = new Map();
 function publicJob(job) {
+  const chargedCreditAmount = Number(job.charged_credit_amount ?? (job.state === "succeeded" ? TEXT_GENERATION_CREDIT_COST : 0));
+  const cancelledMessage = chargedCreditAmount > 0
+    ? `已停止生成，扣除 ${chargedCreditAmount} 积分，退回 ${TEXT_GENERATION_CREDIT_COST - chargedCreditAmount} 积分。`
+    : "已停止生成，预留积分已退回。";
   return { requestId: job.id, state: job.state, markdown: job.output_markdown,
-    error: job.error_code ? { code: job.error_code, message: job.state === "cancelled" ? "已停止生成，预留积分已退回。" : "上次生成未完成，已退回预留积分。" } : null };
+    chargedCreditAmount,
+    error: job.error_code ? { code: job.error_code, message: job.state === "cancelled" ? cancelledMessage : "上次生成未完成，已退回预留积分。" } : null };
 }
 export async function getTextGeneration({ ownerContext, workspaceId, requestId }) {
   const ownerId = owner(ownerContext);
@@ -64,6 +69,14 @@ export async function prepareTextGeneration({ ownerContext, workspaceId, input: 
     try { return await close("cancelled", "TEXT_GENERATION_CANCELLED"); }
     finally { if (activeGenerations.get(job.id) === cancel) activeGenerations.delete(job.id); }
   };
+  const fail = async () => {
+    try { return await close("failed", "TEXT_GENERATION_INTERRUPTED"); }
+    finally {
+      // Commit the free failure before abort wakes the streaming cancellation path.
+      internal.abort();
+      if (activeGenerations.get(job.id) === cancel) activeGenerations.delete(job.id);
+    }
+  };
   if (created) activeGenerations.set(job.id, cancel);
   async function* events() {
     try {
@@ -91,7 +104,7 @@ export async function prepareTextGeneration({ ownerContext, workspaceId, input: 
       await cancel();
     }
   }
-  return { events: events(), cancel };
+  return { events: events(), cancel, fail };
 }
 
 export function encodeTextEvent(event) { return `data: ${JSON.stringify(event)}\n\n`; }

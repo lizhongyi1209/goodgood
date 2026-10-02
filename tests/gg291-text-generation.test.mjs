@@ -72,7 +72,7 @@ test("stream is lazy, settles once, and a successful replay never calls the prov
   assert.equal((await toEvents(replay.events))[1].text, "# 标题\n正文");
   assert.equal(calls, 1); assert.equal(state.reservations, 20); assert.equal(state.closes.length, 1);
 });
-test("empty/failing/cancelled streams release once and preserve partial output", async () => {
+test("empty/failing streams release and cancellations close once while preserving output", async () => {
   for (const [provider, expectedOutput] of [
     [async function* () {}, ""], [async function* () { yield "已写内容"; throw new TextGenerationError("TEXT_PROVIDER_UNAVAILABLE", "暂时不可用", 503); }, "已写内容"],
   ]) {
@@ -85,6 +85,39 @@ test("empty/failing/cancelled streams release once and preserve partial output",
   const prepared = await prepareTextGeneration({ ...state.options, input: input() });
   await prepared.cancel(); await toEvents(prepared.events);
   assert.equal(calls, 0); assert.equal(state.closes.length, 1); assert.equal(state.closes[0].state, "cancelled");
+});
+
+test("disconnect after receiving text closes once as cancelled without another provider call", async () => {
+  let calls = 0;
+  const state = fixture(async function* () { calls++; yield "部分内容"; yield "后续内容"; });
+  const controller = new AbortController();
+  const prepared = await prepareTextGeneration({ ...state.options, signal: controller.signal, input: input() });
+  const iterator = prepared.events[Symbol.asyncIterator]();
+  await iterator.next();
+  assert.equal((await iterator.next()).value.text, "部分内容");
+  controller.abort();
+  await iterator.next();
+  await prepared.cancel();
+  await prepared.cancel();
+  assert.equal(calls, 1);
+  assert.equal(state.closes.length, 1);
+  assert.equal(state.closes[0].state, "cancelled");
+  assert.equal(state.closes[0].output, "部分内容");
+});
+
+test("a late stop preserves success while a response failure remains a free failure", async () => {
+  const successful = fixture(async function* () { yield "已完成"; });
+  const completed = await prepareTextGeneration({ ...successful.options, input: input() });
+  await toEvents(completed.events);
+  await completed.cancel();
+  assert.equal(successful.closes.length, 1);
+  assert.equal(successful.closes[0].state, "succeeded");
+  const failed = fixture(async function* () { yield "不应运行"; });
+  const pending = await prepareTextGeneration({ ...failed.options, input: input() });
+  await pending.fail();
+  await pending.cancel();
+  assert.equal(failed.closes.length, 1);
+  assert.equal(failed.closes[0].state, "failed");
 });
 test("all input kinds share one port, generated text feeds images, duplicate/self/cyclic edges are rejected", () => {
   const nodes = [{ id: "text", type: "textEditor", data: { text: "输入", markdown: "输入" } },

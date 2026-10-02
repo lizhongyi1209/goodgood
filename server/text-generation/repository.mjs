@@ -6,6 +6,7 @@ import { resolveWorkspaceAccess } from "../organizations/workspace-access.mjs";
 import { CREDIT_UNIT } from "../../shared/contracts/model-pricing.mjs";
 import { getTextGenerationModel, TEXT_GENERATION_CREDIT_COST } from "../../shared/contracts/text-generation.mjs";
 import { TextGenerationError } from "./errors.mjs";
+import { textGenerationCreditOutcome, textCancellationPaymentFundedRefund } from "./credit-policy.mjs";
 
 const hash = (value) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 export function textGenerationSnapshot(input) {
@@ -68,30 +69,41 @@ export async function beginTextGeneration(pool, { input, ownerId, workspaceId })
   });
 }
 export async function finishTextGeneration(pool, { jobId, state, output = "", errorCode = null }) {
+  const { chargedAmount, refundedAmount } = textGenerationCreditOutcome(state);
   return runCreditTransaction(pool, async (client) => {
     // Match submit's workspace -> job -> account lock order, including organization budgets.
     await client.query("SELECT w.id FROM workspaces w JOIN text_generation_jobs t ON t.workspace_id=w.id WHERE t.id=$1 FOR UPDATE OF w", [jobId]);
     const rows = await client.query("SELECT * FROM text_generation_jobs WHERE id=$1 FOR UPDATE", [jobId]);
     const job = rows.rows[0];
     if (!job || job.state !== "running") return job;
-    const settle = state === "succeeded";
+    const settle = chargedAmount > 0;
     const entryType = settle ? "settle" : "release";
     const key = `text:${job.id}:${entryType}`;
+    const billingMetadata = { ...metadata(job), chargedCreditAmount: chargedAmount, refundedCreditAmount: refundedAmount };
     if (job.organization_reservation_entry_id) {
       const close = settle ? settleOrganizationGenerationCreditsInTransaction : releaseOrganizationGenerationCreditsInTransaction;
       await close(client, { jobId: job.id, workspaceId: job.workspace_id, actor: "system", idempotencyKey: key,
-        metadata: metadata(job), operationHash: hash({ jobId: job.id, type: entryType }), reason: `text_generation_${entryType}` });
+        refundAmount: settle ? BigInt(refundedAmount) : 0n,
+        metadata: billingMetadata, operationHash: hash({ jobId: job.id, type: entryType, chargedAmount, refundedAmount }), reason: `text_generation_${entryType}` });
     } else {
       const entries = await client.query("SELECT * FROM credit_ledger_entries WHERE id=$1", [job.credit_reservation_entry_id]);
       const entry = entries.rows[0];
       if (!entry) throw new TextGenerationError("TEXT_CREDIT_RESERVATION_MISSING", "积分预留记录暂不可用。", 503);
       const accounts = await client.query("SELECT * FROM credit_accounts WHERE id=$1 FOR UPDATE", [entry.account_id]);
-      await appendCreditEntryInTransaction(client, { accountRow: accounts.rows[0], actor: "system", amount: settle ? BigInt(entry.amount) : -BigInt(entry.amount),
+      const closed = await appendCreditEntryInTransaction(client, { accountRow: accounts.rows[0], actor: "system", amount: settle ? BigInt(entry.amount) : -BigInt(entry.amount),
         paymentFundedAmount: settle ? BigInt(entry.payment_funded_amount ?? 0) : -BigInt(entry.payment_funded_amount ?? 0),
-        entryType, idempotencyKey: key, priorEntryId: entry.id, metadata: metadata(job), reason: `text_generation_${entryType}`, relatedTextJobId: job.id });
+        entryType, idempotencyKey: key, priorEntryId: entry.id, metadata: billingMetadata, reason: `text_generation_${entryType}`, relatedTextJobId: job.id });
+      if (settle && refundedAmount > 0) {
+        // Close the full reservation once, then refund the unused half atomically.
+        const settledAccount = await client.query("SELECT * FROM credit_accounts WHERE id=$1 FOR UPDATE", [entry.account_id]);
+        await appendCreditEntryInTransaction(client, { accountRow: settledAccount.rows[0], actor: "system", amount: BigInt(refundedAmount),
+          paymentFundedAmount: textCancellationPaymentFundedRefund(-BigInt(entry.payment_funded_amount ?? 0)),
+          entryType: "refund", idempotencyKey: `text:${job.id}:cancel-refund`, priorEntryId: closed.entry.id,
+          metadata: billingMetadata, reason: "text_generation_cancellation_refund", relatedTextJobId: job.id });
+      }
     }
-    const updated = await client.query(`UPDATE text_generation_jobs SET state=$2,output_markdown=$3,error_code=$4,updated_at=now() WHERE id=$1 RETURNING *`,
-      [job.id, state, output, errorCode]);
+    const updated = await client.query(`UPDATE text_generation_jobs SET state=$2,output_markdown=$3,error_code=$4,charged_credit_amount=$5,updated_at=now() WHERE id=$1 RETURNING *`,
+      [job.id, state, output, errorCode, chargedAmount]);
     return updated.rows[0];
   });
 }

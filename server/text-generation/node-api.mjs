@@ -43,6 +43,7 @@ export function createTextGenerationNodeApiHandler({ authenticate, operations = 
         response.end(JSON.stringify({ error: { code: "TEXT_GENERATION_NOT_FOUND", message: "未找到该文本生成接口。" } }));
       }
     } catch (error) {
+      if (!controller.signal.aborted) await prepared?.fail?.();
       if (!controller.signal.aborted && !response.destroyed) {
         const failure = textGenerationError(error);
         if (!response.headersSent) {

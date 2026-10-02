@@ -79,7 +79,7 @@ function activityTrace(row) {
   };
 }
 
-function activityFromRow(row) {
+function activityFromRow(row, { view = "ledger" } = {}) {
   if (!ACTIVITY_ENTRY_TYPES.has(row.entry_type)) {
     throw new BillingPersistenceError(
       "CREDIT_ACTIVITY_UNAVAILABLE",
@@ -87,7 +87,10 @@ function activityFromRow(row) {
       503,
     );
   }
-  const amount = exactAmount(currentCreditAmount(row.amount, row.unit));
+  const netTextCharge = view === "usage" && row.entry_type === "reserve" && row.close_entry_type === "settle"
+    && metadataActivityCategory(row.metadata) === "text_generation" ? row.closing_metadata?.chargedCreditAmount : null;
+  const amount = netTextCharge == null ? exactAmount(currentCreditAmount(row.amount, row.unit))
+    : -exactAmount(currentCreditAmount(netTextCharge, row.unit));
   const absoluteAmount = amount < 0n ? -amount : amount;
   const trace = activityTrace(row);
   const base = {
@@ -198,6 +201,7 @@ export async function listCreditActivities(
             account.unit,
             closing.entry_type AS close_entry_type,
             closing.created_at AS closed_at,
+            closing.metadata AS closing_metadata,
             job.id AS image_job_id,
             COALESCE(project.id, canvas.id) AS activity_project_id,
             CASE WHEN COALESCE(project.id, canvas.id) IS NOT NULL
@@ -208,7 +212,7 @@ export async function listCreditActivities(
        JOIN credit_accounts account
          ON account.id = entry.account_id AND account.owner_id = entry.owner_id
        LEFT JOIN LATERAL (
-         SELECT closure.entry_type, closure.created_at
+         SELECT closure.entry_type, closure.created_at, closure.metadata
            FROM credit_ledger_entries closure
           WHERE closure.prior_entry_id = entry.id
             AND closure.entry_type IN ('settle', 'release')
@@ -268,7 +272,7 @@ export async function listCreditActivities(
   const hasMore = result.rows.length > limit;
   const selected = result.rows.slice(0, limit);
   return {
-    items: selected.map(activityFromRow),
+    items: selected.map((row) => activityFromRow(row, { view })),
     next: hasMore
       ? {
           activityId: publicActivityId(selected.at(-1).id),
@@ -286,7 +290,9 @@ export async function summarizeCreditActivitySpend(
     `WITH spend AS (
        SELECT CASE
                 WHEN entry.entry_type = 'reserve' AND closing.entry_type = 'settle'
-                  THEN -entry.amount
+                  THEN CASE WHEN entry.metadata->>'activityCategory' = 'text_generation'
+                    THEN COALESCE((closing.metadata->>'chargedCreditAmount')::bigint, -entry.amount)
+                    ELSE -entry.amount END
                 WHEN entry.entry_type IN ('expire', 'adjust') AND entry.amount < 0
                   THEN -entry.amount
                 ELSE 0
@@ -298,7 +304,7 @@ export async function summarizeCreditActivitySpend(
          FROM credit_ledger_entries entry
          JOIN credit_accounts account ON account.id=entry.account_id
          LEFT JOIN LATERAL (
-           SELECT closure.entry_type, closure.created_at
+           SELECT closure.entry_type, closure.created_at, closure.metadata
              FROM credit_ledger_entries closure
             WHERE closure.prior_entry_id = entry.id
               AND closure.entry_type IN ('settle', 'release')

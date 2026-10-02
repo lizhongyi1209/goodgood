@@ -5,6 +5,7 @@ export type CanvasTextGenerationDraft = Readonly<{ modelId: TextGenerationModelI
 export const TEXT_GENERATION_MODELS: readonly TextGenerationModel[];
 export const DEFAULT_TEXT_GENERATION_MODEL: TextGenerationModelId;
 export const TEXT_GENERATION_CREDIT_COST: number;
+export const TEXT_GENERATION_CANCELLATION_CREDIT_COST: number;
 export const TEXT_GENERATION_REASONING_EFFORT: "high";
 export const TEXT_GENERATION_MAX_PROMPT: number;
 export const TEXT_GENERATION_MAX_OUTPUT: number;

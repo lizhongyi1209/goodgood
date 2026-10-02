@@ -773,6 +773,7 @@ async function closeOrganizationReservationInTransaction(
     metadata,
     operationHash,
     reason,
+    refundAmount = 0n,
     workspaceId,
   },
 ) {
@@ -827,6 +828,10 @@ async function closeOrganizationReservationInTransaction(
     );
   }
   const settle = entryType === "settle";
+  const settlementRefund = exactCreditAmount(refundAmount, "refundAmount");
+  if (settlementRefund < 0n || settlementRefund >= amount || (!settle && settlementRefund !== 0n)) {
+    throw new OrganizationError("ORGANIZATION_CREDIT_REFUND_INVALID", "企业积分返还金额不正确。", 409);
+  }
   const closedBudget = reservation.budget_status === "closed";
   if (
     (settle || closedBudget) &&
@@ -906,6 +911,7 @@ async function closeOrganizationReservationInTransaction(
       JSON.stringify(metadata),
     ],
   );
+  const budgetEventId = randomUUID();
   await client.query(
     `INSERT INTO member_budget_events (
        id, workspace_id, member_budget_id, credit_ledger_entry_id,
@@ -914,7 +920,7 @@ async function closeOrganizationReservationInTransaction(
      ) VALUES ($1, $2, $3, $4, $5, $6, NULL, $7, $8, $9,
                $10, $11, $12, $13::jsonb)`,
     [
-      randomUUID(),
+      budgetEventId,
       workspaceId,
       reservation.member_budget_id,
       entry.rows[0].id,
@@ -929,12 +935,48 @@ async function closeOrganizationReservationInTransaction(
       JSON.stringify(metadata),
     ],
   );
+  if (settlementRefund > 0n) {
+    const refunded = await refundOrganizationSettlementInTransaction(client, {
+      reservation, settlementEntry: entry.rows[0], budgetEventId, amount: settlementRefund,
+      workspaceId, closedBudget, key: `${key}:refund`, fingerprint, serverActor, metadata,
+    });
+    return { ...refunded, created: true, entry: ledgerEntryFromRow(entry.rows[0]) };
+  }
   return {
     account: accountFromRow(accountUpdate.rows[0]),
     budget: budgetFromRow(budgetUpdate.rows[0]),
     created: true,
     entry: ledgerEntryFromRow(entry.rows[0]),
   };
+}
+
+async function refundOrganizationSettlementInTransaction(client, {
+  reservation, settlementEntry, budgetEventId, amount, workspaceId, closedBudget, key, fingerprint, serverActor, metadata,
+}) {
+  const account = await client.query(`UPDATE workspace_credit_accounts
+    SET available_balance=available_balance+$2, allocated_balance=allocated_balance+$3,
+      version=version+1, updated_at=now() WHERE id=$1 RETURNING *`,
+  [reservation.account_id, amount.toString(), closedBudget ? "0" : amount.toString()]);
+  const budget = await client.query(`UPDATE member_budgets
+    SET settled_usage=settled_usage-$2, credit_limit=credit_limit-$3,
+      version=version+1, updated_at=now()
+    WHERE id=$1 AND settled_usage >= $2 AND credit_limit >= $3 RETURNING *`,
+  [reservation.member_budget_id, amount.toString(), closedBudget ? amount.toString() : "0"]);
+  if (!account.rowCount || !budget.rowCount) {
+    throw new OrganizationError("ORGANIZATION_CREDIT_RESERVATION_INCONSISTENT", "企业积分返还状态不一致。", 409);
+  }
+  const reason = "text_generation_cancellation_refund";
+  const refund = await client.query(`INSERT INTO workspace_credit_ledger_entries
+    (id,account_id,workspace_id,member_budget_id,entry_type,amount,idempotency_key,operation_hash,reason,related_job_id,prior_entry_id,actor,metadata)
+    VALUES($1,$2,$3,$4,'refund',$5,$6,$7,$8,$9,$10,$11,$12::jsonb) RETURNING *`,
+  [randomUUID(), reservation.account_id, workspaceId, reservation.member_budget_id, amount.toString(), key,
+    fingerprint, reason, settlementEntry.related_job_id, settlementEntry.id, serverActor, JSON.stringify(metadata)]);
+  await client.query(`INSERT INTO member_budget_events
+    (id,workspace_id,member_budget_id,credit_ledger_entry_id,event_type,amount,actor_owner_id,actor,related_job_id,prior_event_id,reason,idempotency_key,operation_hash,metadata)
+    VALUES($1,$2,$3,$4,'refund',$5,NULL,$6,$7,$8,$9,$10,$11,$12::jsonb)`,
+  [randomUUID(), workspaceId, reservation.member_budget_id, refund.rows[0].id, amount.toString(), serverActor,
+    settlementEntry.related_job_id, budgetEventId, reason, key, fingerprint, JSON.stringify(metadata)]);
+  return { account: accountFromRow(account.rows[0]), budget: budgetFromRow(budget.rows[0]) };
 }
 
 export function settleOrganizationGenerationCreditsInTransaction(client, input) {
@@ -946,6 +988,7 @@ export function settleOrganizationGenerationCreditsInTransaction(client, input) 
     metadata: input.metadata ?? {},
     operationHash: input.operationHash,
     reason: input.reason ?? "organization generation settlement",
+    refundAmount: input.refundAmount ?? 0n,
     workspaceId: input.workspaceId,
   });
 }
