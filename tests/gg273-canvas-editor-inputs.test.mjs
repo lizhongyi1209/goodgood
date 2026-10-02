@@ -16,7 +16,7 @@ const vite = await createServer({ appType: "custom", configFile: false, root, es
 after(() => vite.close());
 const { InputAttachment } = await vite.ssrLoadModule("/components/ui/input-attachment.tsx");
 const { CanvasGeneratorNode } = await vite.ssrLoadModule("/features/canvas/canvas-generator-node.tsx");
-const { CanvasTextNode } = await vite.ssrLoadModule("/features/canvas/canvas-text-node.tsx");
+const { CanvasTextNode, CanvasTextFormatToolbar } = await vite.ssrLoadModule("/features/canvas/canvas-text-node.tsx");
 const { snapshotCanvasProject, remoteCanvasProjectDocument } = await vite.ssrLoadModule("/features/canvas/canvas-project-snapshot.ts");
 const nodes = [
   { id: "text", type: "textEditor", position: { x: 0, y: 0 }, data: { markdown: "# 提示词", text: "提示词" } },
@@ -25,8 +25,8 @@ const nodes = [
 ];
 const textEdge = { id: "text-edge", source: "text", target: "generator", sourceHandle: "text", targetHandle: "reference" };
 const imageEdge = { id: "image-edge", source: "image", target: "generator", sourceHandle: "reference", targetHandle: "reference" };
-const withFlow = (component, node) => {
-  const initialNodes = [{ ...node, width: 360, height: 260, style: { width: 360, height: 260 } }];
+const withFlow = (component, node, size = { width: 360, height: 260 }) => {
+  const initialNodes = [{ ...node, ...size, style: { ...size } }];
   return React.createElement(ReactFlowProvider, { initialNodes }, React.createElement(ReactFlow, {
     nodes: initialNodes, nodeTypes: { [node.type]: component }, width: 800, height: 600,
   }));
@@ -39,12 +39,32 @@ test("generator renders exactly one receiving handle for image and text", () => 
   assert.doesNotMatch(html, /data-handleid="text"/);
   assert.match(html, /连接图片或文本/);
 });
-test("text editor renders document chrome and the shared output-handle treatment", () => {
+test("text editor renders external metadata, a quiet writing area and an accessible corner grip", () => {
   const html = renderToStaticMarkup(withFlow(CanvasTextNode, nodes[0]));
   assert.match(html, /<header[^>]*>.*文本编辑器/s);
-  assert.match(html, /<footer[^>]*>.*Markdown/s);
+  assert.match(html, /<header[^>]*imageMetadata/);
+  assert.doesNotMatch(html, /<footer/);
+  assert.match(html, /aria-label="调整文本编辑器尺寸"/);
+  assert.match(html, /react-flow__resize-control nodrag bottom right handle/);
+  assert.match(html, /M7 17 17 7M13 19 19 13/);
+  assert.equal((html.match(/react-flow__resize-control/g) ?? []).length, 1);
   assert.match(html, /data-handleid="text"/);
   assert.match(html, /referenceOutputHandle/);
+});
+test("text-node resizing keeps the same body font at minimum, default and large dimensions", () => {
+  for (const size of [{ width: 180, height: 140 }, { width: 360, height: 260 }, { width: 720, height: 520 }]) {
+    const html = renderToStaticMarkup(withFlow(CanvasTextNode, nodes[0], size));
+    assert.match(html, /style="font-size:14px"/);
+    assert.match(html, /aria-label="调整文本编辑器尺寸"/);
+  }
+});
+test("editor toolbar exposes retained formatting while removed controls are absent", () => {
+  const html = renderToStaticMarkup(React.createElement(CanvasTextFormatToolbar, { editor: null }));
+  for (const label of ["正文", "一级标题 H1", "二级标题 H2", "三级标题 H3", "粗体", "斜体", "无序列表", "有序列表", "撤销文本编辑", "重做文本编辑"]) {
+    assert.ok(html.includes(`aria-label="${label}"`), label);
+  }
+  assert.doesNotMatch(html, /aria-label="(?:删除线|引用|代码块)"/);
+  assert.match(html, /disabled=""/); // Editor loading keeps visible controls inert until Tiptap mounts.
 });
 test("H1, H2 and H3 roundtrip as distinct Markdown heading levels", () => {
   const manager = new MarkdownManager({ extensions: [StarterKit] });

@@ -1,10 +1,10 @@
 # 当前任务与优先级
 
-> 最后同步：2026-10-02。GG-274电脑重启后恢复原本地依赖和5173/Web/唯一Worker，Web verified `80b8c0f`、页面/API/角色健康正常；GG-273累计源码、0060/原Worker/数据保持，免费政策待用户，生产不变。
+> 最后同步：2026-10-02。GG-275文本外置标题/完整书写区/双斜线尺寸柄与固定字号已进入5173，精简三项工具栏、修正真实尺寸保存；并行GG-276图片预览与用户手动检查约定保持。Web80b8c0f/原Worker/0060不变，免费政策待用户，生产不变。
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
-| GG-274 | 电脑重启后已恢复5173/Web/唯一Worker及原依赖；56549端口冲突已处理，Web verified80b8c0f、页面/API/ready正常，原数据保持，创建0/退役0 | [任务](tasks/GG-274-local-restart-after-reboot.md) |
+| GG-275 / GG-274 | 文本编辑器外置标题/双斜线尺寸柄/固定14px、精简工具栏和尺寸保存已进入5173；本窗口读取新约定前45/45，之后不自动检查，用户手验。本地服务/数据保持 | [GG-275](tasks/GG-275-text-editor-layout.md) / [GG-274](tasks/GG-274-local-restart-after-reboot.md) |
 | GG-272 / GG-262 | 已进入5173/Web：真实创建时间/北京时间、字标与标题同水平线；既有行内编辑/固定网格保持。22/22、lint/编译/必要构建通过，创建1/退役1 | [GG-272](tasks/GG-272-account-created-and-brand-row.md) / [GG-262](tasks/GG-262-profile-inline-edit-layout.md) |
 | GG-268 / GG-273 / GG-276 | 编辑器/单一混合端口已交付；GG-276已在5173恢复参考图片缩略与悬停预览，文本/视频文件卡保持，创建1/退役1。用户手动检查，后续agent只开发代码、不自动编译/检查 | [GG-268](tasks/GG-268-markdown-text-node.md) / [GG-273](tasks/GG-273-canvas-editor-inputs.md) / [GG-276](tasks/GG-276-restore-reference-previews.md) |
 | GG-270 | 已进入5173：添加创建编号文件夹，文件夹右键改名，所有已保存素材右键删除；确认/失败恢复保持，子19/19、根组合52/52，创建1/退役1 | [任务](tasks/GG-270-canvas-asset-context-menu.md) |

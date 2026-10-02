@@ -40,8 +40,9 @@ function finiteMetadata(value: unknown) {
 }
 
 function nodeGeometry(node: CanvasNode) {
-  const width = positiveSize(node.style?.width ?? node.width);
-  const height = positiveSize(node.style?.height ?? node.height);
+  // React Flow resizes text nodes via width/height while their initial style stays unchanged.
+  const width = positiveSize(node.type === "textEditor" ? node.width ?? node.style?.width : node.style?.width ?? node.width);
+  const height = positiveSize(node.type === "textEditor" ? node.height ?? node.style?.height : node.style?.height ?? node.height);
   return width && height ? { width, height } : undefined;
 }
 

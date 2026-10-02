@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-02
-- Current phase: GG-274本地服务已恢复；Windows保留端口冲突处理后原56549映射正常，5173/Web/唯一Worker健康，Web verified 80b8c0f；原数据与GG-273源码保持，生产不变。
-- Current objective: GG-276参考图缩略与悬停预览已恢复到5173；用户手动检查。后续agent只开发/修改代码，不自动运行编译或检查；免费政策仍待用户。
-- Previous objective: GG-273编辑器、统一接收端和文件附件卡已交付，30项相关检查通过，用户验收。
+- Current phase: GG-275文本编辑器外置标题/完整书写区/右下双斜线尺寸柄已进入5173；固定14px、精简工具栏与真实尺寸保存恢复完成。并行GG-276图片缩略/预览保持，原Web/Worker/0060与生产不变。
+- Current objective: 用户刷新5173手动检查GG-275文本布局和GG-276图片预览；后续agent只开发/修改代码，不自动运行编译或检查，免费政策仍待用户。
+- Previous objective: GG-274恢复本地服务；GG-276恢复参考图缩略与悬停预览，并确定后续用户手动检查约定。
 
 ## Current checkpoint
+
+- 当前文本布局 [GG-275](tasks/GG-275-text-editor-layout.md)：从干净`3bbf42e`核验祖先后建立`fix/GG-275-text-editor-layout`，根agent写入/子agent只读。外置元信息/完整书写区、框内右下双斜线32px柄，正文固定14px，精简三项工具栏，旧Markdown保持；修正文本真实尺寸保存。读取GG-276约定前已完成45/45相关检查、局部lint零错误/3既有警告、实际模块200，之后停止自动检查；创建0/退役0，无后端/服务/迁移变化，用户手验。
 
 - 当前纠正 [GG-276](tasks/GG-276-restore-reference-previews.md)：`cb6a4a0`→`3920306`恢复图片生成器54×68px真实缩略与悬停/焦点预览，文本附件/唯一混合端口保持；创建1/退役1，无后端/服务变化。用户要求本次及后续不自动编译/代码检查，手验由用户负责；并行GG-275未提交内容保留。
 
@@ -39,14 +41,14 @@
 - Task [GG-249](tasks/GG-249-canvas-media-viewer.md)：从 `e857437` 新建 `fix/GG-249-canvas-media-viewer`，画布图片入口改为受限完整预览、无标题/滚动条的混合媒体轮播；15/15、相关 lint、四个 Vite 模块编译通过，无新增 worktree/缓存，用户验收。
 - Task [GG-248](tasks/GG-248-account-personal-information.md)：`b4a34a6` 回放为 `520b452`，六项真实资料、ID/邀请码复制与每次默认入口已接入实际目录；20/20、定向 lint，无全量检查，辅助目录创建 1/退役 1，不改变 GG-245 范围。
 - Task [GG-247](tasks/GG-247-targeted-verification.md)：用户要求高频小需求默认定向验证，完整门禁按批次/发布或必要回归执行，规则见 AGENTS/WORKFLOW；不改变 GG-245 的并行开发范围。
-- 当前集成分支`fix/GG-267-compact-lobby-wordmark`，目录`F:/goodgood-worktrees/GG-116`，源码检查点`b9ce4bf`含GG-273及GG-272与此前功能；文档后继HEAD是下一任务基线。实际verified Web为`80b8c0f`，免费政策待补，生产未授权。
+- 当前集成分支`fix/GG-275-text-editor-layout`，目录`F:/goodgood-worktrees/GG-116`，当前HEAD含GG-275与已接入GG-276及此前功能并作为下一任务基线；`b9ce4bf`、`3bbf42e`与`3920306`须为祖先。实际verified Web保持`80b8c0f`，免费政策待补，生产未授权。
 - Task [GG-246](tasks/GG-246-asset-video-hover.md)：子提交 `c563d98`/根回放 `ec51488` 已整合为 `83a4306`，实际目录 `F:/goodgood-worktrees/GG-116`，基于 GG-244 收口 `dd8dca9`，仅修改大厅资产视频。定向 31/31、一次完整共同门禁 685 通过/22 隔离跳过/0 失败；5173 编译模块 HTTP 200 含新接线；辅助目录创建 2/退役 2。不改变 GG-245 并行任务。
 - Task [GG-244](tasks/GG-244-canvas-asset-hover.md)：分支 `fix/GG-244-canvas-asset-hover` 基于 `86ee3b7`；子提交精确回放 `be84c53`、`9d7d18c`，定向 9/9、完整门禁 674/22/0；子目录创建 1/退役 1，沿用 GG-242/243 与云配置。
 - Task [GG-245](tasks/GG-245-canvas-image-link-read.md)：子八文件 `e471c1c` 精确回放为 `7ddb78d`；34/34、定向 lint/typecheck、必要 checkpoint 构建通过，实际 cafe24 JPEG 新读取器下载/解码成功（900×1190）。ADR 0122 与原上传/归档保持，本地 Web 同步完成。
 - Task [GG-243](tasks/GG-243-project-create-card.md)：独立实现 `f647e13` 及其记录分支已整合到 `F:/goodgood-worktrees/GG-116`；基线为 GG-242 收口 `00f7568`。首位新建卡片取代页头按钮，复用 `/canvas` 新建流程；不修改画布源码。
 - 共同整合 `dec0025` 已通过实际运行目录完整门禁：665 通过/22 隔离跳过/0 失败；定向 14/14，5173 编译模块 HTTP 200、包含新卡片和 /canvas 入口。GG-242/243 均为祖先，本任务辅助目录创建 2/退役 2。当前分支名是历史名称，不能单凭名称推断范围。
 - Task [GG-242](tasks/GG-242-canvas-image-preview.md)：子 agent 最小源码修复已精确回放为 `c3700b7`，基于 GG-241 `f1570de`，继续保留。GG-240 生命周期规范继续有效。
-- 5173源码目录：`F:/goodgood-worktrees/GG-116`，当前累计源码含GG-242—273交付；目录名/旧标签不能代表最新代码，免费quota未实现。
+- 5173源码目录：`F:/goodgood-worktrees/GG-116`，当前累计源码含GG-242—276交付；目录名/旧标签不能代表最新代码，免费quota未实现。
 - 5173 API代理：Web `32131`为GG-116 verified `80b8c0f0b41aff4371e4673597bc4b483233e405`，指纹见GG-274；唯一真实开发Worker `32142`保持GG-226 `70e10c6`，将来quota需要同步两角色。文档HEAD不是新构建身份。
 - 本地依赖：PostgreSQL `54449`、Valkey `56549`、RustFS `58049/58050`、Mailpit `58045/58046`；数据库迁移为 `0060`，0059随机ID与用户/任务/积分流水保持，0060仅新增授权来源列/约束。
 - 云参考图：Web 必须加载仓库外 `cloud-upload.env`，Worker 同样保持 `cloud-development`；否则 23 条 `local-dev/references/` 图像会读取失败，readiness 正常不能代替素材预览验证。
@@ -56,7 +58,7 @@
 - 生产身份继续为 revision `7888554a4650b1b06dbce4293c52e8c018e5c71b`、迁移 `0044_gg098_raise_manual_grant_ceiling.sql`，详见 [CURRENT_STATE](CURRENT_STATE.md)。GG-239 未部署。
 - 生产入口仍为 `https://goodgood.o1key.com`，预发布入口为 `https://staging-goodgood.o1key.com`；本地 5173、开发数据库与生产数据继续严格隔离。
 - 早期生产实施流水保存在 [2026-09-07 implementation log](history/2026-09-07-implementation-log.md)，仅在追溯历史时读取。
-- Next action: 用户打开5173继续使用并验收GG-273及此前功能；新需求从当前文档HEAD核对祖先。免费政策明确后再开发quota，生产另获授权。
+- Next action: 用户刷新5173手动检查GG-275外置标题/尺寸柄/固定字号/精简工具栏与GG-276图片预览；新需求从当前HEAD继续开发，不自动编译/检查。免费政策明确后再开发quota，生产另获授权。
 - Blockers: 本地启动无阻塞；免费政策仍缺每日数量和适用模型/规格，浏览器验收由用户负责，生产未获授权。
 
 ## Verification sequence

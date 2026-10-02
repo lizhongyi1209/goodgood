@@ -1,6 +1,8 @@
 export const CANVAS_TEXT_MAX_LENGTH = 16_000;
 export const CANVAS_MARKDOWN_MAX_LENGTH = 100_000;
 export const CANVAS_PROMPT_MAX_LENGTH = 4_000;
+export const CANVAS_TEXT_FONT_SIZE = 14;
+export const CANVAS_TEXT_NODE_BOUNDS = Object.freeze({ minWidth: 180, minHeight: 140, maxWidth: 1400, maxHeight: 1600 });
 
 /** Edge order is the persisted input order; image references never enter prompts. */
 export function collectCanvasTextInputs(nodes, edges, generatorId) {
@@ -21,9 +23,17 @@ export function combineCanvasPrompt(inputs, additionalPrompt) {
     .map((text) => text.trim()).filter(Boolean).join("\n\n");
 }
 
-export function canvasTextFontSize(width, height) {
-  const scale = Math.min((width || 360) / 360, (height || 260) / 260);
-  return Math.max(12, Math.min(24, 14 * scale));
+export function canvasTextNodeSizeForKey(width, height, key, largeStep = false) {
+  if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(key)) return null;
+  const step = largeStep ? 40 : 10;
+  const currentWidth = Number.isFinite(width) && width > 0 ? width : 360;
+  const currentHeight = Number.isFinite(height) && height > 0 ? height : 260;
+  return {
+    width: Math.max(CANVAS_TEXT_NODE_BOUNDS.minWidth, Math.min(CANVAS_TEXT_NODE_BOUNDS.maxWidth,
+      currentWidth + (key === "ArrowRight" ? step : key === "ArrowLeft" ? -step : 0))),
+    height: Math.max(CANVAS_TEXT_NODE_BOUNDS.minHeight, Math.min(CANVAS_TEXT_NODE_BOUNDS.maxHeight,
+      currentHeight + (key === "ArrowDown" ? step : key === "ArrowUp" ? -step : 0))),
+  };
 }
 
 export function isCanvasTextConnection(connection, nodes, edges) {

@@ -5,8 +5,9 @@ import { createServer } from "vite";
 import { getSchema } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import { MarkdownManager } from "@tiptap/markdown";
+import { applyNodeChanges } from "@xyflow/react";
 import { validateCanvasProjectSave } from "../server/canvas-projects/validation.mjs";
-import { CANVAS_PROMPT_MAX_LENGTH, canvasTextFontSize, collectCanvasTextInputs, combineCanvasPrompt, isCanvasTextConnection } from "../features/canvas/canvas-text-input.mjs";
+import { CANVAS_PROMPT_MAX_LENGTH, canvasTextNodeSizeForKey, collectCanvasTextInputs, combineCanvasPrompt, isCanvasTextConnection } from "../features/canvas/canvas-text-input.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const vite = await createServer({ appType: "custom", configFile: false, root,
@@ -86,11 +87,32 @@ test("generation snapshot freezes the combined prompt while draft additions stay
   assert.equal(input.prompt, "画面描述\n\n补充");
   assert.equal(draft.prompt, "补充");
 });
-test("font sizing grows with node dimensions and remains readable at bounds", () => {
-  assert.equal(canvasTextFontSize(360, 260), 14);
-  assert.equal(canvasTextFontSize(720, 520), 24);
-  assert.equal(canvasTextFontSize(180, 140), 12);
-  assert.equal(canvasTextFontSize(), 14);
+test("keyboard resize adjusts only the requested dimension and Shift increases the step", () => {
+  assert.deepEqual(canvasTextNodeSizeForKey(360, 260, "ArrowRight"), { width: 370, height: 260 });
+  assert.deepEqual(canvasTextNodeSizeForKey(360, 260, "ArrowLeft"), { width: 350, height: 260 });
+  assert.deepEqual(canvasTextNodeSizeForKey(360, 260, "ArrowDown", true), { width: 360, height: 300 });
+  assert.deepEqual(canvasTextNodeSizeForKey(360, 260, "ArrowUp"), { width: 360, height: 250 });
+});
+test("keyboard resize respects bounds, missing geometry and unrelated keys", () => {
+  assert.deepEqual(canvasTextNodeSizeForKey(180, 140, "ArrowLeft"), { width: 180, height: 140 });
+  assert.deepEqual(canvasTextNodeSizeForKey(180, 140, "ArrowUp"), { width: 180, height: 140 });
+  assert.deepEqual(canvasTextNodeSizeForKey(1400, 1600, "ArrowRight", true), { width: 1400, height: 1600 });
+  assert.deepEqual(canvasTextNodeSizeForKey(1400, 1600, "ArrowDown"), { width: 1400, height: 1600 });
+  assert.deepEqual(canvasTextNodeSizeForKey(undefined, NaN, "ArrowRight"), { width: 370, height: 260 });
+  assert.equal(canvasTextNodeSizeForKey(360, 260, "Enter"), null);
+});
+test("React Flow resize persists visible text-node geometry without rewriting content or media geometry", () => {
+  const image = { id: "image", type: "sourceImage", position: { x: 0, y: 0 }, width: 300, height: 200,
+    style: { width: 480, height: 320 }, data: { assetId: "00000000-0000-4000-8000-000000000001", name: "reference.png" } };
+  const resized = applyNodeChanges([{ id: "text-1", type: "dimensions", dimensions: { width: 640, height: 420 }, setAttributes: true, resizing: false }],
+    [textNode(), generator, image]);
+  assert.equal(resized[0].style.width, 360); // Same stale initial style as the real resize control.
+  const remote = remoteCanvasProjectDocument(snapshot(resized));
+  const restored = validateCanvasProjectSave(save(remote)).document.nodes;
+  assert.deepEqual(restored[0].size, { width: 640, height: 420 });
+  assert.equal(restored[0].markdown, "**画面描述**");
+  assert.equal(restored[0].text, "画面描述");
+  assert.deepEqual(remote.nodes[2].size, { width: 480, height: 320 });
 });
 test("browser and remote snapshots retain Markdown, plain output, geometry and text edges", () => {
   const local = snapshot();

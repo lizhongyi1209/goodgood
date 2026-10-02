@@ -1,5 +1,7 @@
 # 当前开发版本与跨窗口交接
 
+- 最新文本布局：[GG-275](tasks/GG-275-text-editor-layout.md)，从`3bbf42e`隔离至`fix/GG-275-text-editor-layout`；外置元信息、完整书写区、右下双斜线柄，精简三项工具栏/内置页脚，正文固定14px，真实尺寸保存已修正。读取GG-276约定前已完成45/45相关检查、局部lint/实际编译，此后不自动检查；子agent只读，创建0/退役0，无后端/依赖/数据/服务变化。并行GG-276`3920306`/`f9965da`及用户手验约定保持。
+
 - 最新恢复：[GG-274](tasks/GG-274-local-restart-after-reboot.md)，2026-10-02电脑重启后恢复原依赖、5173、Web和唯一Worker；Web严格核验要求必要构建至`80b8c0f`，原GG-273源码指纹不变。Windows动态保留范围覆盖56549，经管理员临时停止WinNAT恢复原Valkey端口并恢复WinNAT Running；原卷/0060/云配置保持，无迁移或生成。
 
 - 最新画布修正：[GG-273](tasks/GG-273-canvas-editor-inputs.md) `e7ae650/f51b6ba/b9ce4bf`：文档编辑器/H1-H3/一致圆点，生成器唯一接收端兼容图片文本和旧边；统一文件附件卡复用既有视频附件。30项相关检查、类型/lint/模块与必要构建通过；创建1/退役1，无新依赖/缓存。当前Web verified `b9ce4bf`，0060/云配置/唯一Worker保持，未部署，用户验收。
@@ -18,8 +20,8 @@
 - 最新画布交付：GG-253 `896bce2` 图片自由预览与真实信息、GG-255 `d4ea42c` 原生图片粘贴、GG-256 `5183287` 文件夹拖入及动效、GG-257 `6f63a8f` 默认实线/hover 流动均进入 5173；定向 25/25、19/19、8/8 及相关 lint/模块编译完成。三个子 worktree 创建 3/退役 3，无依赖/构建缓存残留，浏览器验收交用户。
 - 最新追加：[GG-254](tasks/GG-254-account-identity-editor.md) `422c32f` 单一用户名默认 mimi、六位 ID 和局部确认/外部取消已进入 5173 与 verified Web；20 项相关检查、资料 SQL 1/1、ID SQL 10/10、局部 lint 通过，本地迁移到 0058，辅助目录退役。并行 GG-253 `896bce2` 与 GG-255 `41df2dc` 保留，文档后继不改变实际 Web 构建身份。
 - 当前追加：[GG-250](tasks/GG-250-inline-personal-information.md) `99fb14a` 已在个人信息内直接编辑头像、昵称/用户名并保存/取消，13 项功能、局部 lint 和最终文档 9/9；辅助目录退役，GG-249 后继 `8ee22d8` 保留。
-- 当前代码：GG-239累计及GG-242—273已集成源码；最新源码检查点`b9ce4bf`，各自验证证据保留，免费quota未实现。
-- 当前交接检查点分支：`fix/GG-267-compact-lobby-wordmark`，实际目录GG-116；源码`b9ce4bf`及文档后继HEAD是下一任务基线，当前verified Web为`80b8c0f`，辅助目录已退役。
+- 当前代码：GG-239累计及GG-242—276已集成源码；GG-275当前HEAD为下一任务基线，`b9ce4bf`/`3bbf42e`/`3920306`为祖先，各自证据保留，免费quota未实现。
+- 当前交接检查点分支：`fix/GG-275-text-editor-layout`，实际目录GG-116；当前HEAD是下一任务基线，当前verified Web保持`80b8c0f`，无需为本次UI修改重建后端。
 - 当前 worktree：`F:/goodgood-worktrees/GG-116`。目录名是历史名称，不能再用来判断版本。
 - 状态：当前画布请求均已开发、精确集成并代码验证；子目录经 clean/缓存/服务核对后以 Git remove/prune 退役。用户负责浏览器视觉、交互及预期验收，未部署生产。
 
@@ -57,7 +59,7 @@ git worktree list --porcelain
 
 | 组件 | 入口 | 当前来源/用途 |
 | --- | --- | --- |
-| Vite 页面 | `http://127.0.0.1:5173` | GG-116当前分支含GG-242—273已交付范围，热更新 |
+| Vite 页面 | `http://127.0.0.1:5173` | GG-116当前分支含GG-242—276已交付范围，热更新 |
 | Node Web | `http://127.0.0.1:32131` | GG-116 verified `80b8c0f0b41aff4371e4673597bc4b483233e405`；Vite `/api`代理目标，见GG-274 |
 | Worker | `http://127.0.0.1:32142/health/ready` | GG-226 `70e10c6` 的唯一真实开发 Worker；O1Key 请求可能计费 |
 | PostgreSQL | `127.0.0.1:54449/goodgood` | 本地隔离数据库，迁移 `0060`；新增授权来源，0059随机ID保持 |
@@ -118,4 +120,4 @@ node dist/local-checkpoint-portfix.mjs start workspace --cloud-env-file "$taskCl
 
 ## 下一步
 
-用户打开5173继续使用并验收GG-273及此前功能；已交付范围无代码/运行阻塞，辅助目录已退役。免费政策待用户明确后再开发quota/升级Web与Worker；新需求以当前HEAD核对祖先，生产另获授权。
+用户刷新5173手动检查GG-275/276及此前功能；后续仅开发代码，不自动编译/代码检查。已交付范围无代码/运行阻塞，本次无辅助目录；免费政策待用户明确后再开发quota/升级Web与Worker，新需求以当前HEAD核对祖先，生产另获授权。

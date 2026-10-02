@@ -1,7 +1,7 @@
-.node { display: flex; flex-direction: column; position: relative; width: 100%; height: 100%; background: #fff; border: 1px solid #dedee2; border-radius: 12px; overflow: hidden; color: #18181b; }
-.selected { border-color: #a1a1aa; }
-.header { display: flex; align-items: center; gap: 7px; flex-shrink: 0; height: 37px; padding: 0 15px; border-bottom: 1px solid #efeff1; font-size: 11px; font-weight: 500; color: #52525b; }
-.body { position: relative; flex: 1; min-height: 0; padding: 18px 22px; overflow: auto; cursor: text; scrollbar-width: thin; scrollbar-color: #d4d4d8 transparent; }
+.node { display: flex; flex-direction: column; position: relative; width: 100%; height: 100%; background: #fff; border: 1px solid #d4d4d8; border-radius: var(--canvas-media-radius, min(8px, 4%)); overflow: hidden; color: #18181b; }
+.node:hover, .selected { border-color: #71717a; }
+header.header { pointer-events: auto; cursor: default; }
+.body { position: relative; flex: 1; min-height: 0; padding: 16px 18px 38px; overflow: auto; cursor: text; scrollbar-width: thin; scrollbar-color: #d4d4d8 transparent; }
 .editor { height: 100%; min-height: 100%; }
 .editor :global(.tiptap) { min-height: 100%; outline: none; line-height: 1.7; overflow-wrap: anywhere; color: #18181b; caret-color: #18181b; }
 .editor :global(.tiptap)::selection, .editor :global(.tiptap) ::selection { background: #e4e4e7; }
@@ -14,9 +14,13 @@
 .editor pre { white-space: pre-wrap; border-radius: 6px; background: #f4f4f5; padding: .8em; margin: .8em 0; }
 .editor code { font-family: monospace; font-size: .9em; }.editor :not(pre) > code { border-radius: 3px; background: #f4f4f5; padding: .12em .3em; }
 .editor a { text-decoration: underline; text-underline-offset: 3px; }.editor strong { font-weight: 600; }
-.placeholder { position: absolute; left: 22px; right: 22px; top: 18px; color: #71717a; line-height: 1.7; pointer-events: none; }
-.footer { display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; height: 25px; padding: 0 15px; color: #71717a; font-size: 10px; font-variant-numeric: tabular-nums; }
+.placeholder { position: absolute; left: 18px; right: 18px; top: 16px; color: #71717a; line-height: 1.7; pointer-events: none; }
+.resizeControl:global(.react-flow__resize-control.handle.bottom.right) { left: auto; top: auto; right: 4px; bottom: 4px; translate: none; transform-origin: bottom right; width: 32px; height: 32px; border: 0; border-radius: 5px; background: transparent; z-index: 3; }
+.resizeGrip { display: grid; place-items: center; width: 100%; height: 100%; padding: 0; border: 0; border-radius: inherit; background: transparent; color: #71717a; cursor: nwse-resize; touch-action: none; }
+.resizeGrip:hover, .resizeGrip:active { color: #27272a; background: #f4f4f5; }
+.resizeGrip:focus-visible { outline: 1px solid #71717a; outline-offset: -2px; }
+.resizeGrip svg { pointer-events: none; }
 .toolbar { display: flex; align-items: center; gap: 2px; padding: 5px; max-width: calc(100vw - 24px); overflow-x: auto; border: 1px solid #e4e4e7; border-radius: 10px; background: #fff; scrollbar-width: none; }
 .toolbar button { position: relative; width: 27px; height: 27px; flex-shrink: 0; border-radius: 5px; color: #27272a; }.toolbar button:hover, .toolbar button[aria-pressed="true"] { background: #f0f0f2; }.toolbar button:disabled { opacity: .3; }.toolbar button:focus-visible { outline: 1px solid #71717a; outline-offset: 1px; box-shadow: none; }
 .toolbar button.groupStart { margin-left: 7px; }.groupStart::before { content: ""; position: absolute; left: -5px; width: 1px; height: 14px; background: #e4e4e7; }
-.error { position: absolute; bottom: 25px; left: 8px; right: 8px; font-size: 11px; background: #fff; color: #52525b; }
+.error { position: absolute; bottom: 8px; left: 18px; right: 44px; font-size: 11px; line-height: 1.5; background: #fff; color: #52525b; }

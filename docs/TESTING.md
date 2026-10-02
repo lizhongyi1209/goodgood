@@ -1,5 +1,9 @@
 # GG-063 verification
 
+## GG-275 text layout, fixed typography and resize recovery
+
+The updated GG-268/GG-273 tests cover fixed 14px body at minimum/default/large sizes, external metadata/no footer/one accessible diagonal grip, the actual toolbar without strike/quote/code-block controls, keyboard bounds/Shift steps, and real React Flow resize through snapshot/save. Legacy Markdown roundtrip and media geometry precedence remain. This window ran these plus GG-173/GG-218 (45/45) and scoped lint/actual-module compilation before reading the new GG-276 agreement. That agreement now controls further work: no automatic compilation, lint, tests, code checks or browser acceptance; the user performs checks unless explicitly delegated again.
+
 ## GG-272 account creation time and brand position
 
 Run the GG-072 profile API, GG-248 personal-information SSR, GG-254 edit transaction and GG-272 timestamp tests together: real account/profile timestamp separation, owner read/save stability, forged read-only input rejection, Shanghai midnight, absent/invalid timestamps and existing loading/failure/edit behavior. Use scoped lint and actual Vite compilation; one verified Web build/restart loads the new projection without migration or Worker changes. User owns visual acceptance; no live database write or real provider call.

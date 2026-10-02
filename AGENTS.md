@@ -111,7 +111,8 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
 - Do not introduce chromatic accents, neon/Neo-Tech styling, magazine rules,
   warm ivory/limestone palettes, large editorial type, or strong panels. ADR 0110
   permits blue on canvas media outlines, and ADR 0108/GG-200 permits bright blue
-  on a connected edge only while hovered; resize handles remain invisible.
+  on a connected edge only while hovered; media resize handles remain invisible.
+  Text nodes use a visible lower-right grip (ADR 0124 / GG-275).
 - Brand icons use `public/goodgood-g-icon.svg`; lobby navigation uses only the Good Good wordmark (ADR 0116).
   Creation sends use an upward arrow in both image and video modes (ADR 0098).
 
