@@ -1,12 +1,14 @@
 # 当前开发版本与跨窗口交接
 
+- 最新本地启用：[GG-300](tasks/GG-300-preset-activation.md)按用户委托构建b3844d25a7a4328d71bf79e9196ecdbbc18a504e，应用仅本地0062并将Web33072替换为33840；GG-297预设/保存校验及GG-296中断10规则已启用，预设仍一次20积分无额外费。32131/5173版本均verified，匿名preset-stream合法Origin返回401；GG-299图片hover及GG-298取消在同一构建。创建1/退役1，无测试/全面检查/浏览器或真实生成，原Vite27464/Worker31280及配置数据保持；用户刷新手验。文档后继不改变receipt，重启前仍按新HEAD构建。
+
 - 最新源码：[GG-299](tasks/GG-299-text-image-preview.md)d8b40d7已接入GG-116/5173，文本生成图片hover改为放大图，直接复用图片生成referencePreview样式，保留取消按钮。创建1/退役1，无编译/检查，用户手验。用户随后委托启用GG-297预设，明确无额外积分收费，待本地启用任务。
 
 - 最新源码：[GG-298](tasks/GG-298-text-input-remove.md)从e8b26df隔离884ffdd精确接入GG-116/5173；文本生成chat图片/文本/视频缩略可取消，沿图片生成右上角圆形X，复用removeLinkedReference取消对应连线及撤销/图保存，保留源节点/资产。生成及恢复请求时锁定；创建1/退役1，无编译/检查/后端/服务变化。用户刷新手验取消、撤销及保存恢复；GG-296/297后端待启用状态保持。
 
-- 最新源码：[GG-297](tasks/GG-297-text-generation-presets.md)从7230935隔离448c1ed精确接入GG-116/5173；模型旁预设首项结构化反推，输入区可移除Badge，额外提示词可空。实际指令仅后台定义，客户端保存ID/名称和草稿，复制/项目恢复保持；新preset-stream让旧Web明确拒绝，不回退普通计费调用。创建1/退役1，未编译/检查或服务变化。界面可手验，预设/保存校验与GG-296费用需后续应用新0062并构建Web启用；当前Web767e6db/数据库0061/原Worker保持。
+- 预设源码：[GG-297](tasks/GG-297-text-generation-presets.md)从7230935隔离448c1ed精确接入GG-116/5173；模型旁结构化反推、可移除Badge、额外提示词可空，后台隐藏指令及复制/保存恢复。原开发创建1/退役1，未自动编译/检查；后继GG-300已按用户委托构建/本地0062/Web启用，20积分无额外费，用户手验。
 
-- 最新源码：[GG-296](tasks/GG-296-text-cancel-half-credit.md)从9a122fd隔离c16e3bd精确接入GG-116；用户中断扣10退10，成功20/系统失败0，个人资金来源/企业额度退款及净额消费统计同事务一致。主动停止及恢复取消不显示左下角解释，部分文字保留；ADR0129已接受。创建1/退役1，未编译/检查/迁移或服务变化。仅前端进入5173；新扣费API/账本需后续应用0062_gg296_text_cancellation_half_credit.sql、构建重启Web后才生效。该0062是新独立迁移，不恢复GG-292；当前Web767e6db/数据库0061/唯一Worker保持。
+- 中断源码：[GG-296](tasks/GG-296-text-cancel-half-credit.md)从9a122fd隔离c16e3bd精确接入GG-116；中断扣10退10/成功20/系统失败0，退款来源/额度和净额统计一致，停止无左下角解释。原开发创建1/退役1，未自动编译/检查；后继GG-300构建/本地0062/Web已一并启用，历史取消不追扣。该0062独立于GG-292撤回，唯一Worker及生产保持。
 
 - 最新修复：[GG-295](tasks/GG-295-text-generation-tooltip.md)从d7147c5隔离2cd651c精确接入GG-116/5173；文本生成节点根部补TooltipProvider，修复选中带连接输入节点时报错，180ms延迟沿用已有预览。创建1/退役1，无编译/检查/服务或数据库变化；用户刷新后点击已有节点复验，无需重新生成。当前Web仍verified 767e6db，本地0061与唯一Worker保持。
 
@@ -47,7 +49,7 @@
 - 最新追加：[GG-254](tasks/GG-254-account-identity-editor.md) `422c32f` 单一用户名默认 mimi、六位 ID 和局部确认/外部取消已进入 5173 与 verified Web；20 项相关检查、资料 SQL 1/1、ID SQL 10/10、局部 lint 通过，本地迁移到 0058，辅助目录退役。并行 GG-253 `896bce2` 与 GG-255 `41df2dc` 保留，文档后继不改变实际 Web 构建身份。
 - 当前追加：[GG-250](tasks/GG-250-inline-personal-information.md) `99fb14a` 已在个人信息内直接编辑头像、昵称/用户名并保存/取消，13 项功能、局部 lint 和最终文档 9/9；辅助目录退役，GG-249 后继 `8ee22d8` 保留。
 - 当前代码：GG-239累计及GG-242—282已集成源码；实际GG-116当前HEAD为下一任务基线，最新裁剪`34f10b0/80a7e5e`与并行任务保留，各历史验证证据保留，免费quota未实现。
-- 当前交接检查点分支：`fix/GG-275-text-editor-layout`，实际目录GG-116；当前HEAD是下一任务基线，当前verified Web为GG-294 `767e6db`。文档后继不改变运行receipt，下一次重启前需构建当前HEAD，不伪造构建身份。
+- 当前交接检查点分支：`fix/GG-275-text-editor-layout`，实际目录GG-116；当前HEAD是下一任务基线，当前verified Web为GG-300 `b3844d2`。文档后继不改变运行receipt，下一次重启前需构建当前HEAD，不伪造构建身份。
 - 当前 worktree：`F:/goodgood-worktrees/GG-116`。目录名是历史名称，不能再用来判断版本。
 - 状态：当前画布请求已开发并精确集成；2026-10-02用户要求后不自动执行编译或检查，最新任务明确未验证，由用户手验。子目录经clean/路径/进程条件后以Git remove/prune退役，未部署生产。
 
@@ -79,16 +81,16 @@ git worktree list --porcelain
 
 新窗口以 IMPLEMENTATION_PLAN 指向的共同运行分支 HEAD 为检查点，并确认 GG-242 `00f7568` 与 GG-243 `f647e13` 都是其祖先。`main`、旧 GG-116 分支、其它 GG worktree 和 parked C6 都不是替代来源。新任务先核对未占用编号，只在并行写任务时建立独立 worktree，不要让两个窗口编辑同一目录。
 
-当前分支也须包含 GG-245 `7ddb78d`、GG-248 `520b452`、GG-254 `422c32f` 和 GG-260/261 `9f9d788`。构建receipt严格绑定Git提交；HEAD与receipt不同时，Web重启前先按 `npm run build:checkpoint` 构建并核对，不伪造revision。现有Web为已验证767e6db，指纹见GG-294；文档后继不需要立即重启服务。
+当前分支也须包含 GG-245 `7ddb78d`、GG-248 `520b452`、GG-254 `422c32f` 和 GG-260/261 `9f9d788`。构建receipt严格绑定Git提交；HEAD与receipt不同时，Web重启前先按 `npm run build:checkpoint` 构建并核对，不伪造revision。现有Web为已验证b3844d2，指纹见GG-300；文档后继不需要立即重启服务。
 
 ## 当前本地运行
 
 | 组件 | 入口 | 当前来源/用途 |
 | --- | --- | --- |
 | Vite 页面 | `http://127.0.0.1:5173` | GG-116当前分支含GG-242—276已交付范围，热更新 |
-| Node Web | `http://127.0.0.1:32131` | GG-116 verified `767e6db1af53912476c022f81f0d45c77845c402`；Vite `/api`代理目标，见GG-294 |
+| Node Web | `http://127.0.0.1:32131` | GG-116 verified `b3844d25a7a4328d71bf79e9196ecdbbc18a504e`；Vite `/api`代理目标，见GG-300 |
 | Worker | `http://127.0.0.1:32142/health/ready` | GG-226 `70e10c6` 的唯一真实开发 Worker；O1Key 请求可能计费 |
-| PostgreSQL | `127.0.0.1:54449/goodgood` | 本地隔离数据库，新增迁移 `0061`文本任务/积分关系；0059随机ID及0060授权来源保持 |
+| PostgreSQL | `127.0.0.1:54449/goodgood` | 本地隔离数据库，GG-300新增 `0062`文本实际费用/退款约束；0061文本任务及此前数据保持 |
 | Valkey | `127.0.0.1:56549/db0` | 本地队列/缓存 |
 | RustFS | `127.0.0.1:58049/58050` | 本地素材对象存储 |
 | Mailpit | `127.0.0.1:58045/58046` | 本地邮件开发 |
