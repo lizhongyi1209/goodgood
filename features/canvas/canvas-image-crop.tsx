@@ -270,8 +270,8 @@ export function CanvasImageCropEditor({ request, onClose, onCommit }: Readonly<{
               {group.presets.map((preset) => {
                 const aspect = preset.width / preset.height;
                 return <button type="button" key={preset.id} className={styles.preset} aria-pressed={presetId === preset.id} disabled={saving}
-                  title={preset.dimensions ? `${preset.label}，参考尺寸 ${preset.width} × ${preset.height}，按比例裁剪原图` : preset.label}
-                  onClick={() => { setRatio(aspect); setCrop(centeredCanvasCrop(natural!, aspect)); setPresetId(preset.id); resetInputDrafts(); }}>
+                  title={preset.dimensions ? `${preset.label}，预设尺寸 ${preset.width} × ${preset.height}，超出原图时等比缩小` : preset.label}
+                  onClick={() => { setRatio(aspect); setCrop(centeredCanvasCrop(natural!, aspect, preset.dimensions ? preset.width : undefined)); setPresetId(preset.id); resetInputDrafts(); }}>
                   <span className={styles.check}>{presetId === preset.id && <Check size={12} aria-hidden="true" />}</span>
                   <span className={styles.ratioIcon} aria-hidden="true"><span style={{ width: Math.min(14, 14 * aspect), height: Math.min(14, 14 / aspect) }} /></span>
                   <span>{preset.label}</span>{preset.dimensions && <span className={styles.presetDimensions}>{preset.width}×{preset.height}</span>}

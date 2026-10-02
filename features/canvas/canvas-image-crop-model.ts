@@ -68,8 +68,8 @@ function ratioSize(width: number, ratio: number, bounds: CanvasCropSize): Canvas
   return { width: clamp(Math.round(fittedWidth), 1, bounds.width), height: clamp(Math.round(fittedWidth / ratio), 1, bounds.height) };
 }
 
-export function centeredCanvasCrop(bounds: CanvasCropSize, ratio: number | null): CanvasCropRect {
-  const size = ratio ? ratioSize(bounds.width, ratio, bounds) : bounds;
+export function centeredCanvasCrop(bounds: CanvasCropSize, ratio: number | null, targetWidth = bounds.width): CanvasCropRect {
+  const size = ratio ? ratioSize(targetWidth, ratio, bounds) : bounds;
   return { ...size, x: Math.round((bounds.width - size.width) / 2), y: Math.round((bounds.height - size.height) / 2) };
 }
 
