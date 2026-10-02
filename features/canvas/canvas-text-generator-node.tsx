@@ -5,7 +5,7 @@ import { Handle, NodeToolbar, Position, useReactFlow, useStore, type NodeProps }
 import { ArrowUp, FileText, Film, LoaderCircle, Square } from "lucide-react";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { TextModelIcon } from "@/features/models/text-model-icon";
 import { TEXT_GENERATION_MODELS, DEFAULT_TEXT_GENERATION_MODEL, TEXT_GENERATION_CREDIT_COST, TEXT_GENERATION_MAX_PROMPT,
   TEXT_GENERATION_MAX_HISTORY, type CanvasTextGenerationDraft, type TextGenerationMessage, type TextGenerationModelId } from "@/shared/contracts/text-generation.mjs";
@@ -211,7 +211,7 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
 
   const currentModel = TEXT_GENERATION_MODELS.find((model) => model.id === data.textGeneration.modelId) ?? TEXT_GENERATION_MODELS[1];
   const showingResult = Boolean(data.markdown || busy || data.textGeneration.pendingRequestId);
-  return <>
+  return <TooltipProvider delayDuration={180}>
     <div className={workspaceStyles.imageMetadata}>
       <span className={workspaceStyles.imageMetadataName}>
         <span className={workspaceStyles.generatorMetadataIcon}><FileText size={12} /><svg className={workspaceStyles.generatorMetadataSparkle} viewBox="0 0 8 8" focusable="false"><path d="M4 .5 4.65 3.35 7.5 4 4.65 4.65 4 7.5 3.35 4.65 .5 4 3.35 3.35Z" /></svg></span>
@@ -267,5 +267,5 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
         {error && <p className={styles.error} role="alert">{error}</p>}
       </div>
     </NodeToolbar>
-  </>;
+  </TooltipProvider>;
 }
