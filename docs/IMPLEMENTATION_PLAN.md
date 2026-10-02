@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-02
-- Current phase: GG-304拖线预览亮色流动CSS源码0ad78b0已精确接入GG-116/5173，复用hover规则及减少动态效果静止实线；创建1/退役1，无编译/验证或服务/生产变化。GG-303批量源码/待更新Web及GG-300 b3844d2/本地0062/Web/唯一Worker保持。
-- Current objective: 用户刷新手验拖线亮色流动、连接完成/取消及减少动态效果；GG-303并发/乘积/恢复仍由用户手验，云端批量保存待用户更新后端。不自动编译/验证或运行真实请求。
-- Previous objective: GG-303批量源码b4a5d6e已接入，31be3bd记录未验证交付；保留GG-302清晰度排查及GG-300运行证据，生产未变。
+- Current phase: GG-305画布资产大图参数筛选源码5a4fb15已精确接入GG-116/5173；按模型支持及生成时使用状态显示，隐藏跨模型默认项和未使用的可选参数，预设不处理。创建1/退役1，回归来源只写未执行，无编译/验证、后端/服务或生产变化，GG-304/GG-303及GG-300运行保持。
+- Current objective: 用户刷新手验画布资产大图参数：Banana/Seedream无GPT专属项、未启用搜索/空参考图隐藏，GPT适用记录值保留；前序批量/拖线仍由用户验收，GG-303云端批量保存待用户更新Web。不自动编译/验证或运行真实请求。
+- Previous objective: GG-304拖线亮色流动源码0ad78b0已接入，1387b4c记录未验证交付；GG-303批量源码与待更新Web、GG-302排查及GG-300运行保持。
 
 ## Current checkpoint
+
+- 当前修复 [GG-305](tasks/GG-305-canvas-viewer-used-parameters.md)：基于1387b4c，登记ea78337后隔离167e864精确接入5a4fb15；详情参数按图片对应job.input、模型能力与provider发送条件筛选，Banana/Seedream无GPT专属项，空参考图/未开启搜索及低思考占位隐藏，GPT有效记录值和具体型号质量范围保留。仅元数据组装/回归来源与ADR0123细则，无生成/存储/后端/布局变化；用户确认预设暂不处理。创建1/退役1，未编译/验证或运行变化，用户刷新手验。
 
 - 当前样式 [GG-304](tasks/GG-304-canvas-connection-drag-flow.md)：基于31be3bd，登记a91b200后隔离30790ea精确接入0ad78b0；临时connection-path复用hover亮蓝/7 4/1.3s流动、reduce亮色静止实线，原贝塞尔/线宽/完成线/连接校验及剪刀保持。先补ADR0108与AGENTS/设计/交互规则，无TSX/后端/图存储变化；创建1/退役1，未编译/验证或服务变化，用户刷新手验。
 
