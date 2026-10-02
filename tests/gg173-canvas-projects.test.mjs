@@ -3,7 +3,6 @@ import test from "node:test";
 
 import { readCanvasProjectRecord, saveCanvasProjectRecord } from "../server/canvas-projects/repository.mjs";
 import { validateCanvasProjectSave } from "../server/canvas-projects/validation.mjs";
-import { PROMPT_DRAFT_MAX_LENGTH } from "../shared/contracts/generation-prompt-limits.mjs";
 
 const OWNER = "10000000-0000-4000-8000-000000000001";
 const OTHER_OWNER = "20000000-0000-4000-8000-000000000002";
@@ -36,7 +35,7 @@ test("canvas project v1 accepts a durable graph and rejects browser-only fields"
   bad.document.nodes[0].pendingFileId = "browser-blob";
   assert.throws(() => validateCanvasProjectSave(bad), (error) => error.code === "INVALID_CANVAS_PROJECT");
   const oversized = saveInput();
-  oversized.document.generators[GENERATOR].draft.prompt = "字".repeat(PROMPT_DRAFT_MAX_LENGTH + 1);
+  oversized.document.generators[GENERATOR].draft.prompt = "字".repeat(4001);
   assert.throws(() => validateCanvasProjectSave(oversized), (error) => error.code === "INVALID_CANVAS_PROJECT");
 });
 

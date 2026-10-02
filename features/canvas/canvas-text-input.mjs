@@ -1,8 +1,6 @@
-import { PROMPT_DRAFT_MAX_LENGTH } from "../../shared/contracts/generation-prompt-limits.mjs";
-
-export const CANVAS_TEXT_MAX_LENGTH = PROMPT_DRAFT_MAX_LENGTH;
+export const CANVAS_TEXT_MAX_LENGTH = 16_000;
 export const CANVAS_MARKDOWN_MAX_LENGTH = 100_000;
-export const CANVAS_PROMPT_MAX_LENGTH = PROMPT_DRAFT_MAX_LENGTH;
+export const CANVAS_PROMPT_MAX_LENGTH = 4_000;
 export const CANVAS_TEXT_FONT_SIZE = 14;
 export const CANVAS_TEXT_NODE_BOUNDS = Object.freeze({ minWidth: 180, minHeight: 140, maxWidth: 1400, maxHeight: 1600 });
 
@@ -23,19 +21,6 @@ export function collectCanvasTextInputs(nodes, edges, generatorId) {
 export function combineCanvasPrompt(inputs, additionalPrompt) {
   return [...inputs.map((input) => input.text), additionalPrompt]
     .map((text) => text.trim()).filter(Boolean).join("\n\n");
-}
-
-/** Swap text slots only: other inputs and generators keep their persisted order. */
-export function reorderCanvasTextInputs(edges, generatorId, edgeId, neighborEdgeId) {
-  const index = edges.findIndex((edge) => edge.id === edgeId);
-  const neighborIndex = edges.findIndex((edge) => edge.id === neighborEdgeId);
-  const belongs = (edge) => edge?.target === generatorId && edge.sourceHandle === "text" &&
-    ["reference", "text"].includes(edge.targetHandle);
-  if (index < 0 || neighborIndex < 0 || index === neighborIndex ||
-      !belongs(edges[index]) || !belongs(edges[neighborIndex])) return edges;
-  const reordered = [...edges];
-  [reordered[index], reordered[neighborIndex]] = [reordered[neighborIndex], reordered[index]];
-  return reordered;
 }
 
 export function canvasTextNodeSizeForKey(width, height, key, largeStep = false) {

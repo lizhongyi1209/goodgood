@@ -1,9 +1,5 @@
 # Product definition
 
-## GG-292 多模型图片提示词
-
-文本编辑器和图片生成器草稿可保存32,000字符；生成时对合并后的全文按当前模型限制，GPT Image 2/2.5及Nano Banana 2/Pro为32,000，Seedream 5.0 Pro暂为4,000。Banana与Seedream的值是应用边界；不把Gemini原生token限额当作字数。Seedream超过300汉字/600英文词只给写作建议。完整原文不自动截断、重写或摘要，切模型后继续保留。画布支持最终只读提示词预览及连接文本顺序调整，补充描述始终最后；点击生成才冻结快照。见 [ADR 0128](decisions/0128-model-prompt-limits-and-composition-preview.md)。
-
 ## GG-243 项目页创建入口
 
 项目列表第一项固定为「新建项目」卡片，点击直接建立一个新的空白画布。此入口取代本页原页头新建创作按钮，沿用已有画布持久化与恢复能力。见 [ADR 0119](decisions/0119-project-create-card.md)。

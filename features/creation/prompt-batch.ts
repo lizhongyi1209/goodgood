@@ -1,5 +1,4 @@
 import { parsePromptBatch } from "@/shared/contracts/prompt-batch.mjs";
-import { getGenerationPromptStatus } from "@/shared/contracts/generation-prompt-limits.mjs";
 import { createGenerationInputSnapshot } from "@/features/creation/generation-snapshot";
 import { createVideoPreviewRuns } from "@/features/creation/video-preview-runs";
 import type { GenerationInputDraft } from "@/shared/contracts/generation";
@@ -11,8 +10,7 @@ import type { TrackedGenerationRun } from "@/features/creation/generation-runs";
 export function createImagePromptBatch(draft: GenerationInputDraft) {
   const batch = parsePromptBatch(draft.prompt);
   if (!batch.prompts.length) throw new Error("请先输入画面描述，分隔符不能作为提示词。");
-  const status = getGenerationPromptStatus(draft.modelId, draft.prompt);
-  if (status.tooLong) throw new Error(status.errorMessage ?? "画面描述超过当前模型上限。");
+  if (draft.prompt.trim().length > 4_000) throw new Error("画面描述总长度不能超过 4000 个字符。");
   return Object.freeze(batch.prompts.map((prompt) => createGenerationInputSnapshot({
     ...draft, prompt,
     ...(batch.hasSeparator && draft.projectId ? { composerPrompt: draft.prompt.trim() } : {}),

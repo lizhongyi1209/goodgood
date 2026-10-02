@@ -10,7 +10,6 @@ import { Plugin } from "@tiptap/pm/state";
 import { Handle, NodeResizeControl, NodeToolbar, Position, useReactFlow, useStore, type NodeProps } from "@xyflow/react";
 import { Bold, FileText, Heading1, Heading2, Heading3, Italic, List, ListOrdered, Pilcrow, Redo2, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { countPromptCharacters } from "@/shared/contracts/generation-prompt-limits.mjs";
 import type { CanvasNode, CanvasTextNodeType } from "./canvas-workspace";
 import { CANVAS_MARKDOWN_MAX_LENGTH, CANVAS_TEXT_FONT_SIZE, CANVAS_TEXT_MAX_LENGTH, CANVAS_TEXT_NODE_BOUNDS, canvasTextNodeSizeForKey } from "./canvas-text-input.mjs";
 import styles from "./canvas-text-node.module.css";
@@ -57,7 +56,7 @@ export function CanvasTextNode({ id, data, selected, width, height }: NodeProps<
     addProseMirrorPlugins() {
       return [new Plugin({ filterTransaction: (transaction) => {
         if (!transaction.docChanged) return true;
-        const tooLong = countPromptCharacters(transaction.doc.textBetween(0, transaction.doc.content.size, "\n")) > CANVAS_TEXT_MAX_LENGTH ||
+        const tooLong = transaction.doc.textBetween(0, transaction.doc.content.size, "\n").length > CANVAS_TEXT_MAX_LENGTH ||
           (this.editor.markdown?.serialize(transaction.doc.toJSON()).length ?? 0) > CANVAS_MARKDOWN_MAX_LENGTH;
         setError(tooLong ? `文本最多 ${CANVAS_TEXT_MAX_LENGTH} 个字符。` : "");
         return !tooLong;

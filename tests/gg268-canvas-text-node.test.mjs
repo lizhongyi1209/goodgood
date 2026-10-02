@@ -73,10 +73,10 @@ test("only text output to generator text input is connectable, no duplicate edge
   assert.equal(isCanvasTextConnection(edge(), [generator], []), false);
 });
 test("prompt composition preserves text beyond the generation limit for explicit rejection", () => {
-  const combined = combineCanvasPrompt([{ text: "字".repeat(CANVAS_PROMPT_MAX_LENGTH) }], "附加");
-  assert.equal(combined.length, CANVAS_PROMPT_MAX_LENGTH + 4);
+  const combined = combineCanvasPrompt([{ text: "字".repeat(4000) }], "附加");
+  assert.equal(combined.length, 4004);
   assert.ok(combined.length > CANVAS_PROMPT_MAX_LENGTH);
-  assert.equal(combineCanvasPrompt([{ text: "字".repeat(CANVAS_PROMPT_MAX_LENGTH) }], "").length, CANVAS_PROMPT_MAX_LENGTH);
+  assert.equal(combineCanvasPrompt([{ text: "字".repeat(4000) }], "").length, CANVAS_PROMPT_MAX_LENGTH);
 });
 test("generation snapshot freezes the combined prompt while draft additions stay separate", () => {
   const node = textNode();
@@ -138,7 +138,7 @@ test("empty editor saves, multipage remote output retains text and independent g
 });
 test("server rejects oversized text, wrong ports, non-text Markdown and media metadata", () => {
   for (const mutate of [
-    (doc) => { doc.nodes[0].text = "x".repeat(CANVAS_PROMPT_MAX_LENGTH + 1); },
+    (doc) => { doc.nodes[0].text = "x".repeat(16001); },
     (doc) => { doc.nodes[0].markdown = "x".repeat(100001); },
     (doc) => { doc.edges[0].targetHandle = "unknown"; },
     (doc) => { doc.edges[0].source = generator.id; },

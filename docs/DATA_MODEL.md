@@ -1,9 +1,5 @@
 # GG-063 quality pricing
 
-## GG-292 提示词存储容量
-
-文本节点plain text与逐生成器prompt按Unicode码点允许32,000；Markdown仍沿100,000存储边界，文档仍有1MB总量限制。排序复用当前生成器文本edge在现有数组中的位置，不增JSON字段或版本。旧创作项目/creation_drafts通过0062放宽两个具名prompt CHECK至32,000，与服务端码点计数一致；迁移不改写原记录或历史SQL，不改变模型枚举、资产和计费。单次提交限额单独按模型检查，保存不能因切至较短限制模型删减草稿。迁移源码已添加但本次不执行；0061归并行GG-291。见 [ADR 0128](decisions/0128-model-prompt-limits-and-composition-preview.md)。
-
 ## GG-280 裁剪素材与项目保存
 
 裁剪选区、预设和锁定属于临时编辑会话，不加入canvas_projects JSON。完成产出的File复用待上传媒体本机保存及sourceImage节点；服务器完成后使用既有私有素材ID。源图素材和生成job/output记录不改写或删除；替换独立节点保留节点ID/连线，生成器裁剪则新增sourceImage。不添加SQL、路由、文件持久格式或生成快照字段。见 [ADR 0126](decisions/0126-canvas-image-crop.md)。

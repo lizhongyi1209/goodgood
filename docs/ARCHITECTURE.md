@@ -1,9 +1,5 @@
 # Architecture
 
-## GG-292 shared image prompt policy
-
-`shared/contracts/generation-prompt-limits.mjs` is the common submission policy and Unicode code-point counter used by canvas preview, creation batch construction and image API validation. It separates per-model submission limits, model-independent32,000-character storage capacity and Seedream writing advice. Native Gemini token budgets are documented, not approximated or enforced through a fake tokenizer. No new provider call is added. `canvas-prompt-preview.tsx` owns the read-only Dialog; text ordering swaps only existing text-edge slots, leaving immutable generation snapshots and ordered project JSON unchanged. Draft/project/cloud validation uses the same storage capacity; SQL constraints require additive0062 and Web activation later. See [ADR 0128](decisions/0128-model-prompt-limits-and-composition-preview.md).
-
 ## GG-283 generated reference reuse
 
 Canvas generated-image connections retain per-edge state and cancellation while `canvas-generated-reference-import.ts` shares an in-flight request and successful reference by source asset ID. Cancellation releases only its subscriber; the last subscriber aborts the request. Failures are not cached, identity changes/unmount dispose the pool, and asset-library changes invalidate successful results. Existing uploaded references continue to use their original IDs.

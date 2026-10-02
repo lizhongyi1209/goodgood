@@ -60,7 +60,6 @@ import { listPrivateAudioMaterials } from "@/features/assets/http-audio-material
 import { privateImageUrls } from "@/shared/private-image-urls.mjs";
 import { workspaceRequestHeaders } from "@/features/organizations/workspace-request";
 import type { BillingSummary } from "@/shared/contracts/billing";
-import { getGenerationPromptStatus } from "@/shared/contracts/generation-prompt-limits.mjs";
 import {
   isGptImageModelId,
   MAX_GENERATION_REFERENCES,
@@ -81,8 +80,7 @@ import { CanvasGenerationCountControl } from "./canvas-generation-count-control"
 import { createCanvasGeneratedReferenceImporter } from "./canvas-generated-reference-import";
 import { CANVAS_ASSET_LIBRARY_UPDATED_EVENT } from "./canvas-asset-upload";
 import { canvasCropImageForNode, type CanvasCropCommit } from "./canvas-image-crop-image";
-import { collectCanvasTextInputs, combineCanvasPrompt, isCanvasTextConnection, normalizeCanvasInputEdge, reorderCanvasTextInputs } from "./canvas-text-input.mjs";
-import { CanvasPromptPreview } from "./canvas-prompt-preview";
+import { CANVAS_PROMPT_MAX_LENGTH, collectCanvasTextInputs, combineCanvasPrompt, isCanvasTextConnection, normalizeCanvasInputEdge } from "./canvas-text-input.mjs";
 import type { CanvasLibraryAsset } from "./canvas-asset-panel";
 import { upsertCanvasJobNodes } from "./canvas-job-nodes.mjs";
 import { initialCanvasImageSize } from "./canvas-image-size.mjs";
@@ -784,8 +782,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     }
   }, [edges]);
   const combinedPrompt = combineCanvasPrompt(linkedTextInputs, prompt);
-  const promptStatus = getGenerationPromptStatus(model?.id, combinedPrompt);
-  const promptTooLong = promptStatus.tooLong;
+  const promptTooLong = combinedPrompt.length > CANVAS_PROMPT_MAX_LENGTH;
   const displayReferences = [
     ...references.map((item) => ({ key: item.clientId, kind: "direct" as const, reference: item.reference, previewUrl: item.previewUrl })),
     ...linkedReferences.map((item) => ({ key: item.edgeId, kind: "linked" as const, reference: item.reference, previewUrl: item.previewUrl })),
@@ -1469,20 +1466,6 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     setEdges((current) => current.filter((edge) => edge.id !== edgeId));
   };
 
-  const moveLinkedTextInput = (edgeId: string, direction: -1 | 1) => {
-    if (!activeGeneratorId || generatorEditingLocked) return;
-    const generatorId = activeGeneratorId;
-    const index = linkedTextInputs.findIndex((input) => input.edgeId === edgeId);
-    if (index < 0 || !linkedTextInputs[index + direction]) return;
-    captureCanvasHistory();
-    setEdges((current) => {
-      const inputs = collectCanvasTextInputs(flowRef.current?.getNodes() ?? [], current, generatorId);
-      const currentIndex = inputs.findIndex((input) => input.edgeId === edgeId);
-      const neighbor = currentIndex >= 0 ? inputs[currentIndex + direction] : undefined;
-      return neighbor ? reorderCanvasTextInputs(current, generatorId, edgeId, neighbor.edgeId) : current;
-    });
-  };
-
   const retryLinkedReference = (edgeId: string) => {
     const edge = edges.find((item) => item.id === edgeId);
     const node = edge ? flowRef.current?.getNode(edge.source) : undefined;
@@ -1583,7 +1566,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     if (session?.access.status !== "active" || session.preview || generatorEditingLocked ||
         busyGeneratorIdsRef.current.has(activeGeneratorId)) return;
     if (!combinedPrompt.trim()) { setFormError("请先输入画面描述，或连接文本节点。"); return; }
-    if (promptTooLong) { setFormError(promptStatus.errorMessage); return; }
+    if (promptTooLong) { setFormError("连接文本与补充描述合计不能超过 4000 个字符。"); return; }
     if (referencesBusy) { setFormError("参考图仍在上传，请稍候。"); return; }
     if (referencesFailed) { setFormError("请重试或移除上传失败的参考图。"); return; }
     if (displayReferences.length > MAX_GENERATION_REFERENCES) { setFormError(`最多可添加 ${MAX_GENERATION_REFERENCES} 张参考图。`); return; }
@@ -2256,6 +2239,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
         onCancel={() => setDeletePageId(null)} onConfirm={() => void deleteProjectPage()} />
 
       {composerHost && createPortal(<section className={`${styles.composer} ${styles.composerAttached}`} aria-label="图片生成工具">
+        {promptTooLong && <p role="alert" className={styles.message}>连接文本与补充描述合计 {combinedPrompt.length} 个字符，最多 4000 个字符。</p>}
         <input ref={inputRef} className={styles.srOnly} type="file" accept="image/jpeg,image/png" multiple onChange={addReferences} aria-label="选择参考图" />
         <TooltipProvider delayDuration={180}>
           <AttachmentGroup className={styles.referenceTray} role="group" aria-label="输入附件">
@@ -2315,8 +2299,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
             placeholder={linkedTextInputs.length ? "补充画面描述（追加在连接文本之后）…" : "描述你想生成的画面…"}
             value={prompt}
             readOnly={generatorEditingLocked}
-            aria-invalid={promptTooLong || undefined}
-            aria-describedby={promptTooLong ? "canvas-prompt-status" : undefined}
+            maxLength={4000}
             onScroll={syncPromptScrollbar}
             onChange={(event) => {
               updateGeneratorDraft({ prompt: event.target.value });
@@ -2347,8 +2330,6 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
             )}
           </span>
         </div>
-        <CanvasPromptPreview key={composerHost.id} prompt={combinedPrompt} additionalPrompt={prompt} modelName={model?.name ?? "当前模型"}
-          status={promptStatus} inputs={linkedTextInputs} editingLocked={generatorEditingLocked} onMove={moveLinkedTextInput} />
         <div className={styles.tools}>
           <Popover open={settingsOpen} onOpenChange={setSettingsOpen}>
             <PopoverTrigger asChild>

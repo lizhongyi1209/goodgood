@@ -14,8 +14,6 @@ import type { ReferenceMaterial } from "@/features/references/http-reference-lib
 import { ReferenceQuickEditor } from "@/features/references/reference-quick-editor";
 import { CreationModeSwitch } from "@/features/creation/creation-mode-switch";
 import { CreationPromptTextarea } from "@/features/creation/creation-prompt-textarea";
-import { getGenerationPromptStatus } from "@/shared/contracts/generation-prompt-limits.mjs";
-import promptStatusStyles from "./creation-prompt-status.module.css";
 import { ParameterChoiceGroup } from "@/features/creation/parameter-choice-group";
 import { useParameterDrawerViewport } from "@/features/creation/use-parameter-drawer-viewport";
 import { useComposerFileDrop } from "@/features/creation/use-composer-file-drop";
@@ -201,7 +199,6 @@ export function CreationComposer({
     ? references[previewReferenceIndex]
     : null;
   const activeModel = modelOptions?.find((model) => model.catalogId === (catalogModelId ?? modelId)) ?? getGenerationModel(modelId);
-  const promptStatus = getGenerationPromptStatus(modelId, prompt);
   const activeRatio = getGenerationRatio(aspectRatio);
   const ratioOptions = getGenerationRatioOptions(modelId);
   const ratioIndex = getGenerationModelRatioIndex(modelId, aspectRatio);
@@ -445,21 +442,12 @@ export function CreationComposer({
           <button
             className={`send-button ${isGenerating ? "generating" : ""}`}
             aria-label={isGenerating ? "继续生成图片" : "生成图片"}
-            disabled={promptStatus.tooLong}
             onClick={onGenerate}
           >
             <ArrowUp className="send-arrow" size={17} strokeWidth={2.2} aria-hidden="true" />
           </button>
         </div>
       </div>
-
-      {promptStatus.length > 0 && <div className={promptStatusStyles.status}>
-        {promptStatus.errorMessage && <p className={`${promptStatusStyles.message} ${promptStatusStyles.error}`} role="alert">{promptStatus.errorMessage}</p>}
-        {promptStatus.advice && <p className={promptStatusStyles.message}>{promptStatus.advice}</p>}
-        <span className={promptStatusStyles.count} aria-label={`提示词 ${promptStatus.length} / ${promptStatus.maxLength} 个字符`}>
-          {promptStatus.length.toLocaleString("zh-CN")} / {promptStatus.maxLength.toLocaleString("zh-CN")}
-        </span>
-      </div>}
 
       {showModeSwitch && <CreationModeSwitch value={mode} onChange={onModeChange} />}
 

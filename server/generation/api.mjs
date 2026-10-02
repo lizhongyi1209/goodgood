@@ -1,7 +1,6 @@
 import { AdministrationError } from "../admin/errors.mjs";
 import { AuthenticationError, sessionExpiredError } from "../auth/errors.mjs";
 import { parsePromptBatch } from "../../shared/contracts/prompt-batch.mjs";
-import { getGenerationPromptStatus } from "../../shared/contracts/generation-prompt-limits.mjs";
 import { BillingPersistenceError } from "../billing/repository.mjs";
 import {
   ReferencePersistenceError,
@@ -46,11 +45,10 @@ export function validateM3GenerationInput(payload) {
     throw new GenerationRequestError("INVALID_REQUEST", "生成请求格式不正确。");
   }
   const prompt = typeof payload.prompt === "string" ? payload.prompt.trim() : "";
-  const promptStatus = getGenerationPromptStatus(payload.modelId, prompt);
-  if (!prompt || promptStatus.tooLong) {
+  if (!prompt || prompt.length > 4_000) {
     throw new GenerationRequestError(
       "INVALID_PROMPT",
-      promptStatus.errorMessage ?? "请先输入画面描述。",
+      "请输入 1 至 4000 个字符的画面描述。",
     );
   }
   const references = Array.isArray(payload.references) ? payload.references : [];
@@ -76,9 +74,7 @@ export function validateM3GenerationInput(payload) {
   let composerPrompt;
   if (payload.composerPrompt !== undefined) {
     composerPrompt = typeof payload.composerPrompt === "string" ? payload.composerPrompt.trim() : "";
-    const composerStatus = getGenerationPromptStatus(payload.modelId, composerPrompt);
-    if (composerStatus.tooLong) throw new GenerationRequestError("INVALID_PROMPT", composerStatus.errorMessage);
-    if (!projectId || !composerPrompt || !parsePromptBatch(composerPrompt).prompts.includes(prompt)) {
+    if (!projectId || !composerPrompt || composerPrompt.length > 4_000 || !parsePromptBatch(composerPrompt).prompts.includes(prompt)) {
       throw new GenerationRequestError("INVALID_PROMPT", "批量提示词与当前项目输入不一致。");
     }
   }
