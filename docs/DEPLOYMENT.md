@@ -1,5 +1,9 @@
 # Development and deployment
 
+## GG-291 pending text backend activation
+
+This task delivered source only. Before using text generation, apply0061 through the separately authorized local workflow and build/start new Web; none was performed here. Text reuses server relay base/key or optional server-only `TEXT_GENERATION_API_BASE_URL` (root or `/v1`), `TEXT_GENERATION_API_KEY`/`TEXT_GENERATION_API_KEY_FILE`; never put these in browser env. The relay must support the five accepted model IDs; the service never silently switches/retries. Original image Worker/queue stay separate; Web recovers expired text reservations. This paragraph grants no production migration, restart or provider authority. See [GG-291](tasks/GG-291-canvas-text-generation.md).
+
 > **当前生效的只有两段**：本节下方的生产现状，以及文末的
 > [生产热修清单](#production-hotfix-checklist-2026-09-17)（2026-09-17 新增）。
 > `compose.staging.yaml` / `staging:preflight` / `staging:release` 那一整套

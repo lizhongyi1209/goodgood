@@ -1,5 +1,9 @@
 # Navigation and route contract
 
+## GG-291 text API
+
+`POST /api/text-generation/stream` accepts UUID/canvas/model/prompt/history and authorized media identities; returns SSE start/delta/done/error. `GET /api/text-generation/:requestId` reads current owner/workspace status/result with expiry recovery. `POST /api/text-generation/:requestId/cancel` stops an existing stream and closes its reservation without a new provider call. Node and route handlers share the same server boundary. No new browser URL. Endpoints require pending0061 and new Web activation. See [GG-291](tasks/GG-291-canvas-text-generation.md).
+
 ## GG-263 大厅入口收敛
 
 大厅共享功能栏移除「画布」，由「项目」页的首位新建项目卡片进入 `/canvas`，已有画布项目继续链接 `/canvas/:projectId`。保留两个画布地址、直接访问/刷新、项目恢复与返回首页行为。见 [ADR 0108](decisions/0108-standalone-canvas-image-generation.md) 和 [任务](tasks/GG-263-remove-lobby-canvas-entry.md)。

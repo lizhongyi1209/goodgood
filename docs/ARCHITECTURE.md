@@ -1,5 +1,9 @@
 # Architecture
 
+## GG-291 canvas text generation
+
+The model-only composer and streaming result reuse `CanvasMarkdownNode`; editing starts with double-click/Enter. `server/text-generation` owns authorization, one relay Chat Completions stream and independent durable text jobs/20-credit transactions. Request IDs prevent repeat execution; reads/cancellation never submit another provider request. Images resolve to existing authorized bytes and are resized only in memory; video inputs carry up to six JPEG representative frames after video ownership checks. No reference upload, image job or Worker queue is created. Project JSON persists draft/history/output and pending request ID; owner/page changes exclude late updates. Backend activation requires0061 and a new Web runtime. See [ADR0127](decisions/0127-canvas-text-generation.md).
+
 ## GG-283 generated reference reuse
 
 Canvas generated-image connections retain per-edge state and cancellation while `canvas-generated-reference-import.ts` shares an in-flight request and successful reference by source asset ID. Cancellation releases only its subscriber; the last subscriber aborts the request. Failures are not cached, identity changes/unmount dispose the pool, and asset-library changes invalidate successful results. Existing uploaded references continue to use their original IDs.

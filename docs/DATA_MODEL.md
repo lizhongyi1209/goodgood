@@ -1,5 +1,9 @@
 # GG-063 quality pricing
 
+## GG-291 text jobs and ledger relation
+
+Migration0061 adds `text_generation_jobs`: owner/workspace/canvas context, model, input hash/snapshot, state/result, reservation relations and expiry. Snapshots store asset IDs and frame hashes without private bytes/URLs or credentials. Personal credit entries gain `related_text_job_id`; reserve/close entries have exactly one image/text relation, preserving transfer constraints. Organization entries reuse generic job IDs and member budgets. Submission reserves20 current-unit credits, success settles, failure/cancel/expiry releases once. JSON v1/v2 accepts additive `textGenerator` nodes and nested model/prompt/history/pendingRequestId; original images/text retain their formats.0061 has not been applied. See [ADR0127](decisions/0127-canvas-text-generation.md).
+
 ## GG-280 裁剪素材与项目保存
 
 裁剪选区、预设和锁定属于临时编辑会话，不加入canvas_projects JSON。完成产出的File复用待上传媒体本机保存及sourceImage节点；服务器完成后使用既有私有素材ID。源图素材和生成job/output记录不改写或删除；替换独立节点保留节点ID/连线，生成器裁剪则新增sourceImage。不添加SQL、路由、文件持久格式或生成快照字段。见 [ADR 0126](decisions/0126-canvas-image-crop.md)。

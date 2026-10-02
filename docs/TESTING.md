@@ -1,5 +1,9 @@
 # GG-063 verification
 
+## GG-291 code-only delivery
+
+The user's agreement prohibits automatic compilation, lint, tests, code/diff checks and browser acceptance. None were run for GG-291; no real provider/database call was made. Unexecuted `gg291-text-generation.test.mjs` covers catalog/default/20-credit contract, invalid/empty inputs, fragmented SSE/high reasoning, lazy execution/cached replay, partial/empty/failing/cancelled streams, mixed single-port inputs/cycles and project validation, using only synthetic provider/transaction operations. GG-273 expectations follow renamed numbered editors. Real relay support, visual streaming/editing and billing activation remain user acceptance after separately applying0061 and activating Web; this task does not authorize write/provider checks on the preserved runtime or production.
+
 ## GG-275 text layout, fixed typography and resize recovery
 
 The updated GG-268/GG-273 tests cover fixed 14px body at minimum/default/large sizes, external metadata/no footer/one accessible diagonal grip, the actual toolbar without strike/quote/code-block controls, keyboard bounds/Shift steps, and real React Flow resize through snapshot/save. Legacy Markdown roundtrip and media geometry precedence remain. This window ran these plus GG-173/GG-218 (45/45) and scoped lint/actual-module compilation before reading the new GG-276 agreement. That agreement now controls further work: no automatic compilation, lint, tests, code checks or browser acceptance; the user performs checks unless explicitly delegated again.
