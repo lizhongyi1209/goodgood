@@ -1,5 +1,5 @@
 import { CanvasProjectError } from "./errors.mjs";
-import { getTextGenerationModel, DEFAULT_TEXT_GENERATION_MODEL, TEXT_GENERATION_MAX_PROMPT, TEXT_GENERATION_MAX_HISTORY } from "../../shared/contracts/text-generation.mjs";
+import { getTextGenerationModel, getTextGenerationPreset, DEFAULT_TEXT_GENERATION_MODEL, TEXT_GENERATION_MAX_PROMPT, TEXT_GENERATION_MAX_HISTORY } from "../../shared/contracts/text-generation.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const NODE_ID = /^[A-Za-z0-9][A-Za-z0-9_:.\-]{0,159}$/;
@@ -58,11 +58,13 @@ function node(value) {
   } else if (value.markdown !== undefined || value.text !== undefined) throw invalid();
   if (type === "textGenerator") {
     const draft = value.textGeneration ?? { modelId: DEFAULT_TEXT_GENERATION_MODEL, prompt: "" };
-    record(draft, ["modelId", "prompt", "history", "pendingRequestId"]);
+    record(draft, ["modelId", "prompt", "presetId", "history", "pendingRequestId"]);
     if (!getTextGenerationModel(draft.modelId)) throw invalid();
+    if (draft.presetId !== undefined && !getTextGenerationPreset(draft.presetId)) throw invalid();
     const history = draft.history ?? [];
     if (!Array.isArray(history) || history.length > TEXT_GENERATION_MAX_HISTORY) throw invalid();
     result.textGeneration = { modelId: draft.modelId, prompt: string(draft.prompt, TEXT_GENERATION_MAX_PROMPT, { empty: true, multiline: true }),
+      ...(draft.presetId ? { presetId: draft.presetId } : {}),
       history: history.map((message) => {
         record(message, ["role", "content"]);
         if (!["user", "assistant"].includes(message.role)) throw invalid();

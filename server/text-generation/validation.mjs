@@ -1,5 +1,6 @@
-import { getTextGenerationModel, TEXT_GENERATION_MAX_PROMPT, TEXT_GENERATION_MAX_MEDIA, TEXT_GENERATION_MAX_HISTORY, TEXT_GENERATION_MAX_OUTPUT } from "../../shared/contracts/text-generation.mjs";
+import { getTextGenerationModel, getTextGenerationPreset, TEXT_GENERATION_MAX_PROMPT, TEXT_GENERATION_MAX_MEDIA, TEXT_GENERATION_MAX_HISTORY, TEXT_GENERATION_MAX_OUTPUT } from "../../shared/contracts/text-generation.mjs";
 import { TextGenerationError } from "./errors.mjs";
+import { textGenerationPresetPrompt } from "./presets.mjs";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const invalid = () => { throw new TextGenerationError("INVALID_TEXT_GENERATION", "文本生成输入无效，请检查内容和附件。"); };
 export function textGenerationId(value) { if (typeof value !== "string" || !UUID.test(value)) invalid(); return value; }
@@ -8,6 +9,11 @@ export function validateTextGeneration(input) {
       typeof input.prompt !== "string" || input.prompt.length > TEXT_GENERATION_MAX_PROMPT ||
       !Array.isArray(input.media) || input.media.length > TEXT_GENERATION_MAX_MEDIA ||
       !Array.isArray(input.history) || input.history.length > TEXT_GENERATION_MAX_HISTORY) invalid();
+  if (input.presetId !== undefined && !getTextGenerationPreset(input.presetId)) invalid();
+  const presetPrompt = input.presetId === undefined ? null : textGenerationPresetPrompt(input.presetId);
+  if (input.presetId !== undefined && !presetPrompt) invalid();
+  const prompt = presetPrompt ? [presetPrompt, input.prompt.trim()].filter(Boolean).join("\n\n") : input.prompt;
+  if (prompt.length > TEXT_GENERATION_MAX_PROMPT) throw new TextGenerationError("TEXT_INPUT_TOO_LONG", "附加内容过长，请缩短后重试。");
   const history = input.history.map((message) => {
     if (!message || !["user", "assistant"].includes(message.role) || typeof message.content !== "string" ||
         message.content.length > (message.role === "user" ? TEXT_GENERATION_MAX_PROMPT : TEXT_GENERATION_MAX_OUTPUT)) invalid();
@@ -27,9 +33,9 @@ export function validateTextGeneration(input) {
         item.frames.some((frame) => typeof frame !== "string" || frame.length > 500_000 || !/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(frame))) invalid();
     return { kind: "video", assetKind: "video", assetId, frames: item.frames };
   });
-  if (!input.prompt.trim() && !media.length) throw new TextGenerationError("EMPTY_TEXT_PROMPT", "请输入内容或连接素材后再生成。");
+  if (!prompt.trim() && !media.length) throw new TextGenerationError("EMPTY_TEXT_PROMPT", "请输入内容、选择预设或连接素材后再生成。");
   return { requestId: textGenerationId(input.requestId), projectId: input.projectId ? textGenerationId(input.projectId) : null,
-    modelId: input.modelId, prompt: input.prompt, history, media };
+    modelId: input.modelId, ...(input.presetId ? { presetId: input.presetId } : {}), prompt, history, media };
 }
 export async function readTextGenerationJson(request) {
   const type = typeof request.headers?.get === "function" ? request.headers.get("content-type") : request.headers?.["content-type"];

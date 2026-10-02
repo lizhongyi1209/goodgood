@@ -1,8 +1,12 @@
 export type TextGenerationModelId = "gemini-3.1-pro-preview" | "claude-opus-5-5" | "doubao-seed-2.0-pro" | "gpt-6.1-sol" | "deepseek-v4-pro";
 export type TextGenerationModel = Readonly<{ id: TextGenerationModelId; name: string; icon: "gemini" | "claude" | "bytedance" | "openai" | "deepseek"; providerModel: string }>;
 export type TextGenerationMessage = Readonly<{ role: "user" | "assistant"; content: string }>;
-export type CanvasTextGenerationDraft = Readonly<{ modelId: TextGenerationModelId; prompt: string; history?: readonly TextGenerationMessage[]; pendingRequestId?: string }>;
+export type TextGenerationPresetId = "structured_reverse";
+export type TextGenerationPreset = Readonly<{ id: TextGenerationPresetId; name: string }>;
+export type CanvasTextGenerationDraft = Readonly<{ modelId: TextGenerationModelId; prompt: string; presetId?: TextGenerationPresetId; history?: readonly TextGenerationMessage[]; pendingRequestId?: string }>;
 export const TEXT_GENERATION_MODELS: readonly TextGenerationModel[];
+export const TEXT_GENERATION_PRESETS: readonly TextGenerationPreset[];
+export function getTextGenerationPreset(id: unknown): TextGenerationPreset | null;
 export const DEFAULT_TEXT_GENERATION_MODEL: TextGenerationModelId;
 export const TEXT_GENERATION_CREDIT_COST: number;
 export const TEXT_GENERATION_CANCELLATION_CREDIT_COST: number;

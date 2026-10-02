@@ -1,7 +1,7 @@
 import { goodGoodApiFetch } from "@/features/auth/http-auth-boundary";
 import { workspaceRequestHeaders } from "@/features/organizations/workspace-request";
 import { readServerSentEvents } from "@/shared/server-sent-events.mjs";
-import type { TextGenerationMessage, TextGenerationModelId } from "@/shared/contracts/text-generation.mjs";
+import type { TextGenerationMessage, TextGenerationModelId, TextGenerationPresetId } from "@/shared/contracts/text-generation.mjs";
 
 export type TextGenerationMedia = { kind: "image"; assetKind: "reference" | "generated"; assetId: string } |
   { kind: "video"; assetKind: "video"; assetId: string; frames: string[] };
@@ -25,10 +25,12 @@ export async function cancelCanvasTextGeneration(requestId: string, workspaceId:
   return response.json() as Promise<TextGenerationStatus>;
 }
 export async function streamCanvasTextGeneration(input: { requestId: string; projectId: string; modelId: TextGenerationModelId;
-  prompt: string; history: readonly TextGenerationMessage[]; media: TextGenerationMedia[] }, workspaceId: string | null,
+  prompt: string; presetId?: TextGenerationPresetId; history: readonly TextGenerationMessage[]; media: TextGenerationMedia[] }, workspaceId: string | null,
   signal: AbortSignal, observe: (event: { type: "start" | "delta" | "done"; text?: string }) => void) {
-  const response = await goodGoodApiFetch("/api/text-generation/stream", { method: "POST", signal,
+  // A separate route makes old backends reject presets instead of silently ignoring them in a paid request.
+  const response = await goodGoodApiFetch(input.presetId ? "/api/text-generation/preset-stream" : "/api/text-generation/stream", { method: "POST", signal,
     headers: { ...workspaceRequestHeaders(workspaceId), "content-type": "application/json" }, body: JSON.stringify(input) });
+  if (input.presetId && response.status === 404) throw new CanvasTextGenerationError("TEXT_PRESETS_NOT_READY", "预设功能暂未启用，请更新后端后重试。");
   if (!response.ok) return failure(response);
   if (!response.body || !response.headers.get("content-type")?.includes("text/event-stream")) throw new CanvasTextGenerationError("TEXT_STREAM_INTERRUPTED", "生成连接中断，正在保留内容。");
   let completed = false;

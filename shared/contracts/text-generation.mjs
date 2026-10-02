@@ -6,6 +6,12 @@ export const TEXT_GENERATION_MODELS = Object.freeze([
   { id: "deepseek-v4-pro", name: "DeepSeek V4 Pro", icon: "deepseek", providerModel: "deepseek-v4-pro" },
 ]);
 export const DEFAULT_TEXT_GENERATION_MODEL = "claude-opus-5-5";
+export const TEXT_GENERATION_PRESETS = Object.freeze([
+  { id: "structured_reverse", name: "结构化反推" },
+]);
+export function getTextGenerationPreset(id) {
+  return TEXT_GENERATION_PRESETS.find((preset) => preset.id === id) ?? null;
+}
 export const TEXT_GENERATION_CREDIT_COST = 20;
 export const TEXT_GENERATION_CANCELLATION_CREDIT_COST = TEXT_GENERATION_CREDIT_COST / 2;
 export const TEXT_GENERATION_REASONING_EFFORT = "high";

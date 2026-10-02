@@ -1,5 +1,9 @@
 # GG-063 verification
 
+## GG-297 presets, unexecuted regression source
+
+`gg297-text-generation-presets.test.mjs` covers the ID/name-only catalog, exact backend instruction, empty-extra input, appended custom input, retained images, unknown IDs/length rejection, idempotency snapshots and project persistence without hidden prompts, including legacy projects. No automatic build/lint/tests/code checks/browser/provider/SQL calls were run under the user's code-only agreement. User verifies menus/badges; actual preset generation needs updated Web, with pendingGG-296 new0062 before activation. Preset-stream404 on the old Web is deliberate and does not fall back to a paid ordinary request.
+
 ## GG-296 interruption billing, unexecuted regression source
 
 `gg296-text-cancellation-billing.test.mjs` covers20/10/0 pricing, invalid terminal states, mixed paid/granted-credit partial refunds without frozen balances, and net10 usage versus raw20 ledger settlement. GG-291 regression source now covers socket interruption, repeat cancellation, late stop after success and server response failure. None were run under the user's code-only agreement; no build, lint, tests, browser/provider/SQL write checks or activation. Enterprise budget/refund and concurrency still need later delegated verification on a named disposable stack without a real-provider Worker. The preserved local stack remains0061/Web767e6db until new0062 and Web activation.

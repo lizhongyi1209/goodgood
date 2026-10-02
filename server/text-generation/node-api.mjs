@@ -26,7 +26,7 @@ export function createTextGenerationNodeApiHandler({ authenticate, operations = 
         const result = await operations.getTextGeneration({ ownerContext, workspaceId, requestId: match[1] });
         response.writeHead(200, { "cache-control": "no-store", "content-type": "application/json; charset=utf-8" });
         response.end(JSON.stringify(result));
-      } else if (request.method === "POST" && pathname === "/api/text-generation/stream") {
+      } else if (request.method === "POST" && ["/api/text-generation/stream", "/api/text-generation/preset-stream"].includes(pathname)) {
         prepared = await operations.prepareTextGeneration({ ownerContext, workspaceId, input: await readTextGenerationJson(request), signal: controller.signal });
         controller.signal.throwIfAborted();
         response.writeHead(200, { "content-type": "text/event-stream; charset=utf-8", "cache-control": "no-store, no-transform", "x-accel-buffering": "no" });

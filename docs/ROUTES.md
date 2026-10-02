@@ -2,7 +2,7 @@
 
 ## GG-291 text API
 
-`POST /api/text-generation/stream` accepts UUID/canvas/model/prompt/history and authorized media identities; returns SSE start/delta/done/error. `GET /api/text-generation/:requestId` reads current owner/workspace status/result with expiry recovery. `POST /api/text-generation/:requestId/cancel` stops an existing stream and closes its reservation without a new provider call. Node and route handlers share the same server boundary. No new browser URL. Endpoints require pending0061 and new Web activation. See [GG-291](tasks/GG-291-canvas-text-generation.md).
+`POST /api/text-generation/stream` accepts UUID/canvas/model/prompt/history and authorized media identities; returns SSE start/delta/done/error. GG-297 adds `POST /api/text-generation/preset-stream` with optional presetId, sharing the same authorization/stream implementation; old Web404 prevents ignored presets and unintended paid calls. `GET /api/text-generation/:requestId` reads owner/workspace status/result with expiry recovery; `POST /api/text-generation/:requestId/cancel` closes the existing request without another provider call. No new browser URL.0061 was enabled locally by GG-294; GG-296 new0062 and GG-297 preset handling require subsequent Web activation. See[GG-291](tasks/GG-291-canvas-text-generation.md),[GG-297](tasks/GG-297-text-generation-presets.md).
 
 ## GG-263 大厅入口收敛
 

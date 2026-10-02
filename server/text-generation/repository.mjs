@@ -10,7 +10,7 @@ import { textGenerationCreditOutcome, textCancellationPaymentFundedRefund } from
 
 const hash = (value) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 export function textGenerationSnapshot(input) {
-  return { modelId: input.modelId, prompt: input.prompt, history: input.history, media: input.media.map(({ frames, ...item }) =>
+  return { modelId: input.modelId, ...(input.presetId ? { presetId: input.presetId } : {}), prompt: input.prompt, history: input.history, media: input.media.map(({ frames, ...item }) =>
     ({ ...item, ...(frames ? { frameChecksums: frames.map((frame) => hash(frame)) } : {}) })) };
 }
 function metadata(job) {

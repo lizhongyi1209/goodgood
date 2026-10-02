@@ -2,12 +2,14 @@
 
 import { useContext, useEffect, useRef, useState } from "react";
 import { Handle, NodeToolbar, Position, useReactFlow, useStore, type NodeProps } from "@xyflow/react";
-import { ArrowUp, FileText, Film, LoaderCircle, Square } from "lucide-react";
+import { ArrowUp, ChevronDown, FileText, Film, LoaderCircle, Square, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { TextModelIcon } from "@/features/models/text-model-icon";
-import { TEXT_GENERATION_MODELS, DEFAULT_TEXT_GENERATION_MODEL, TEXT_GENERATION_CREDIT_COST, TEXT_GENERATION_CANCELLATION_CREDIT_COST, TEXT_GENERATION_MAX_PROMPT,
+import { TEXT_GENERATION_MODELS, TEXT_GENERATION_PRESETS, getTextGenerationPreset, DEFAULT_TEXT_GENERATION_MODEL, TEXT_GENERATION_CREDIT_COST, TEXT_GENERATION_CANCELLATION_CREDIT_COST, TEXT_GENERATION_MAX_PROMPT,
   TEXT_GENERATION_MAX_HISTORY, type CanvasTextGenerationDraft, type TextGenerationMessage, type TextGenerationModelId } from "@/shared/contracts/text-generation.mjs";
 import { CanvasMarkdownNode, type CanvasTextNodeData } from "./canvas-text-node";
 import { canvasMarkdownPlainText } from "./canvas-markdown";
@@ -46,6 +48,7 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
   const inputs = canvasTextGenerationInputs(nodes, edges, id);
   const sequence = Math.max(1, nodes.filter((node) => node.type === "textGenerator").findIndex((node) => node.id === id) + 1);
   const label = `文本生成 ${sequence}`;
+  const currentPreset = getTextGenerationPreset(data.textGeneration.presetId);
   const screenLeft = useStore((state) => (state.nodeLookup.get(id)?.internals.positionAbsolute.x ?? 0) * state.transform[2] + state.transform[0]);
   const zoom = useStore((state) => state.transform[2]);
   const viewportWidth = useStore((state) => state.width);
@@ -141,9 +144,10 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
     const history: TextGenerationMessage[] = (data.textGeneration.history ?? []).map((message) => ({ ...message }));
     if (history.at(-1)?.role === "assistant") history[history.length - 1] = { role: "assistant", content: data.markdown };
     const prompt = [...inputs.filter((item) => item.kind === "text").map((item) => item.text ?? ""), data.textGeneration.prompt].map((text) => text.trim()).filter(Boolean).join("\n\n");
+    const historyPrompt = [currentPreset ? `[预设：${currentPreset.name}]` : "", prompt].filter(Boolean).join("\n\n") || "请分析输入素材。";
     try {
       if (inputs.some((item) => item.unavailable)) throw new Error("连接素材尚未准备好，请等待上传或生成完成。");
-      if (!prompt && !inputs.some((item) => item.kind !== "text")) throw new Error("请输入内容，或连接文本、图片、视频。");
+      if (!prompt && !currentPreset && !inputs.some((item) => item.kind !== "text")) throw new Error("请输入内容、选择预设，或连接文本、图片、视频。");
       if (prompt.length > TEXT_GENERATION_MAX_PROMPT) throw new Error("输入内容过长，请缩小需求后重试。");
       const projectId = context.beforeGenerate();
       startBusy();
@@ -159,7 +163,7 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
       controller.signal.throwIfAborted();
       requestId = crypto.randomUUID();
       latestRequestRef.current = requestId;
-      updateDraft({ pendingRequestId: requestId, history: recentHistory([...history, { role: "user", content: prompt || "请分析输入素材。" }]) });
+      updateDraft({ pendingRequestId: requestId, history: recentHistory([...history, { role: "user", content: historyPrompt }]) });
       clearPending = true;
       const draw = (all = false) => {
         if (!queue || !live(controller)) return;
@@ -171,7 +175,7 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
       ticker = setInterval(() => draw(reducedMotion), 32);
       submitted = true;
       await streamCanvasTextGeneration({ requestId, projectId, modelId: data.textGeneration.modelId ?? DEFAULT_TEXT_GENERATION_MODEL,
-        prompt, history: history.slice(-TEXT_GENERATION_MAX_HISTORY), media }, context.workspaceId, controller.signal, (event) => {
+        prompt, presetId: currentPreset?.id, history: history.slice(-TEXT_GENERATION_MAX_HISTORY), media }, context.workspaceId, controller.signal, (event) => {
         if (!live(controller)) return;
         if (event.type === "start") {
           updateResult("");
@@ -184,7 +188,7 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
       while (queue && live(controller)) { controller.signal.throwIfAborted(); await new Promise<void>((resolve) => setTimeout(resolve, 32)); }
       controller.signal.throwIfAborted();
       if (!live(controller)) return;
-      updateDraft({ history: recentHistory([...history, { role: "user", content: prompt || "请分析输入素材。" }, { role: "assistant", content: markdown }]) });
+      updateDraft({ history: recentHistory([...history, { role: "user", content: historyPrompt }, { role: "assistant", content: markdown }]) });
     } catch (failure) {
       clearInterval(ticker);
       if (queue && live(controller)) { markdown += queue; updateResult(markdown); }
@@ -196,7 +200,7 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
         setError("连接中断，正在恢复结果…");
         try { const result = await recover(requestId, controller.signal); clearPending = true;
           if (result.state === "succeeded") { setError(""); updateDraft({ history: recentHistory([...history,
-            { role: "user", content: prompt || "请分析输入素材。" }, { role: "assistant", content: result.markdown }]) }); return; }
+            { role: "user", content: historyPrompt }, { role: "assistant", content: result.markdown }]) }); return; }
         } catch (recoveryError) {
           if (controller.signal.aborted) { clearPending = true; setError(""); }
           if (!controller.signal.aborted) setError(recoveryError instanceof Error ? recoveryError.message : "暂时无法恢复生成状态，请稍后重新打开画布。");
@@ -233,14 +237,34 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
               {item.kind === "image" && item.previewUrl ? <PrivateObjectImage src={item.previewUrl} alt={item.name} /> : item.kind === "video" ? <Film aria-hidden="true" /> : <FileText aria-hidden="true" />}
             </span></TooltipTrigger><TooltipContent side="top" style={{ maxWidth: 280, whiteSpace: "pre-wrap" }}>{item.kind === "text" ? (item.text || "文本为空").slice(0, 400) : item.name}</TooltipContent></Tooltip>)}
         </div>}
-        <textarea ref={promptRef} className={styles.prompt} aria-label={`${label}的输入`} placeholder="输入内容…" value={data.textGeneration.prompt}
-          maxLength={TEXT_GENERATION_MAX_PROMPT} disabled={busy || !context.enabled} onChange={(event) => { updateDraft({ prompt: event.target.value }); setError(""); }}
-          onKeyDown={(event) => { if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && !event.nativeEvent.isComposing) { event.preventDefault(); void generate(); } }} />
+        <div className={styles.promptField}>
+          {currentPreset && <div className={styles.presetTags} aria-label="已选预设">
+            <Badge variant="secondary" className={styles.presetBadge}>
+              <span>{currentPreset.name}</span>
+              <button type="button" className={styles.presetRemove} aria-label={`移除预设：${currentPreset.name}`} disabled={busy || !context.enabled}
+                onClick={() => { updateDraft({ presetId: undefined }); setError(""); promptRef.current?.focus(); }}><X size={12} aria-hidden="true" /></button>
+            </Badge>
+          </div>}
+          <textarea ref={promptRef} className={styles.prompt} aria-label={`${label}的输入`} placeholder={currentPreset ? "补充要求（可选）…" : "输入内容…"} value={data.textGeneration.prompt}
+            maxLength={TEXT_GENERATION_MAX_PROMPT} disabled={busy || !context.enabled} onChange={(event) => { updateDraft({ prompt: event.target.value }); setError(""); }}
+            onKeyDown={(event) => { if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && !event.nativeEvent.isComposing) { event.preventDefault(); void generate(); } }} />
+        </div>
         <div className={styles.tools}>
+          <div className={styles.settings}>
           <Select value={currentModel.id} disabled={busy || !context.enabled} onValueChange={(modelId) => updateDraft({ modelId: modelId as TextGenerationModelId })}>
             <SelectTrigger className={styles.model} aria-label="文本生成模型"><span className={styles.modelName}><TextModelIcon icon={currentModel.icon} /><span>{currentModel.name}</span></span></SelectTrigger>
             <SelectContent position="popper" side="bottom" align="start">{TEXT_GENERATION_MODELS.map((model) => <SelectItem key={model.id} value={model.id}><span className={styles.modelName}><TextModelIcon icon={model.icon} /><span>{model.name}</span></span></SelectItem>)}</SelectContent>
           </Select>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild><button type="button" className={styles.presetTrigger} disabled={busy || !context.enabled} aria-label="选择文本生成预设">
+              <span>预设</span><ChevronDown size={12} aria-hidden="true" />
+            </button></DropdownMenuTrigger>
+            <DropdownMenuContent side="bottom" align="start" sideOffset={6} className={styles.presetMenu}>
+              {TEXT_GENERATION_PRESETS.map((preset) => <DropdownMenuCheckboxItem key={preset.id} checked={currentPreset?.id === preset.id}
+                onCheckedChange={(checked) => { updateDraft({ presetId: checked ? preset.id : undefined }); setError(""); }}>{preset.name}</DropdownMenuCheckboxItem>)}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          </div>
           <button type="button" className={styles.send} disabled={!context.enabled || !busy && Boolean(data.textGeneration.pendingRequestId)} aria-label={busy ? `停止文本生成，中断扣 ${TEXT_GENERATION_CANCELLATION_CREDIT_COST} 积分` : `生成文本，消耗 ${TEXT_GENERATION_CREDIT_COST} 积分`}
             title={busy ? `停止生成 · 中断扣 ${TEXT_GENERATION_CANCELLATION_CREDIT_COST} 积分` : `生成 · ${TEXT_GENERATION_CREDIT_COST} 积分`} onClick={() => {
               if (busy) {
