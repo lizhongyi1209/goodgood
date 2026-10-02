@@ -20,6 +20,7 @@ type Props = Omit<ComponentProps<typeof PrivateObjectImage>, "src" | "ref" | "on
   src: string; assetId?: string; kind?: "asset" | "reference"; detailEnabled?: boolean; onError?: () => void;
 };
 type Preview = { identity: string; url: string };
+const DETAIL_MIN_ZOOM = 3;
 
 /** Retain the low-resolution layer during loading and use only bounded derivatives. */
 export function CanvasAdaptiveImage({ src, assetId, kind = "asset", detailEnabled = true, onError, ...props }: Props) {
@@ -27,7 +28,7 @@ export function CanvasAdaptiveImage({ src, assetId, kind = "asset", detailEnable
   const imageRef = useRef<HTMLImageElement>(null);
   const errorRef = useRef(onError); errorRef.current = onError;
   const zoom = useStore((state) => state.transform[2]);
-  const [geometry, setGeometry] = useState({ width: 0, height: 0, visible: false });
+  const [visible, setVisible] = useState(false);
   const [readyIdentity, setReadyIdentity] = useState<string | null>(null);
   const [detail, setDetail] = useState(false);
   const [localPreview, setLocalPreview] = useState<Preview | null>(null);
@@ -35,48 +36,44 @@ export function CanvasAdaptiveImage({ src, assetId, kind = "asset", detailEnable
   const local = !assetId && (src.startsWith("blob:") || src.startsWith("data:"));
   const urls = assetId ? privateCanvasImageUrls(kind, assetId) : { previewUrl: src, detailPreviewUrl: src };
   const identity = `${scope?.identity ?? ""}:${assetId ? `${kind}:${assetId}` : src}`;
-  const physicalEdge = Math.max(geometry.width, geometry.height) * zoom * (typeof window === "undefined" ? 1 : window.devicePixelRatio || 1);
 
   useEffect(() => {
     const image = imageRef.current;
     if (!image) return;
-    const resize = new ResizeObserver(([entry]) => {
-      if (entry) setGeometry((current) => ({ ...current, width: entry.contentRect.width, height: entry.contentRect.height }));
-    });
     const visibility = new IntersectionObserver(([entry]) => {
-      if (entry) setGeometry((current) => ({ ...current, visible: entry.isIntersecting }));
+      if (entry) setVisible(entry.isIntersecting);
     }, { root: document.getElementById("canvas-workspace-surface"), rootMargin: "128px" });
-    resize.observe(image); visibility.observe(image);
-    return () => { resize.disconnect(); visibility.disconnect(); };
+    visibility.observe(image);
+    return () => visibility.disconnect();
   }, []);
 
   useEffect(() => {
-    const enlarged = zoom > 1.05 || geometry.width > 300 || geometry.height > 360;
-    const desired = detailEnabled && geometry.visible && readyIdentity === identity && enlarged && physicalEdge > (detail ? 420 : 560);
-    const timer = setTimeout(() => setDetail(desired), 180);
+    const desired = detailEnabled && visible && readyIdentity === identity && zoom >= DETAIL_MIN_ZOOM;
+    if (!desired) { setDetail(false); return; }
+    const timer = setTimeout(() => setDetail(true), 180);
     return () => clearTimeout(timer);
-  }, [detailEnabled, geometry.visible, geometry.width, geometry.height, physicalEdge, zoom, detail, readyIdentity, identity]);
+  }, [detailEnabled, visible, zoom, readyIdentity, identity]);
 
   useEffect(() => {
-    if (!scope || !local || !geometry.visible) return;
+    if (!scope || !local || !visible) return;
     let cancelled = false;
     const handle = scope.pool.acquire(src, 512);
     handle.promise.then((url) => { if (!cancelled) setLocalPreview({ identity, url }); })
       .catch(() => { if (!cancelled) errorRef.current?.(); });
     return () => { cancelled = true; handle.release(); };
-  }, [scope, local, src, identity, geometry.visible]);
+  }, [scope, local, src, identity, visible]);
 
   useEffect(() => {
     setHighPreview(null);
-    if (!scope || !detail || !geometry.visible || !detailEnabled || readyIdentity !== identity || (!assetId && !local)) return;
+    if (!scope || !detail || !visible || !detailEnabled || readyIdentity !== identity || (!assetId && !local)) return;
     let cancelled = false;
     const handle: Handle = scope.pool.acquire(urls.detailPreviewUrl, 2048);
     handle.promise.then((url) => { if (!cancelled) setHighPreview({ identity, url }); }).catch(() => {});
     return () => { cancelled = true; handle.release(); };
-  }, [scope, detail, geometry.visible, detailEnabled, readyIdentity, identity, assetId, local, urls.detailPreviewUrl]);
+  }, [scope, detail, visible, detailEnabled, readyIdentity, identity, assetId, local, urls.detailPreviewUrl]);
 
   const baseSrc = assetId ? urls.previewUrl : localPreview?.identity === identity ? localPreview.url : undefined;
-  const highSrc = detail && geometry.visible && detailEnabled && highPreview?.identity === identity ? highPreview.url : undefined;
+  const highSrc = zoom >= DETAIL_MIN_ZOOM && detail && visible && detailEnabled && highPreview?.identity === identity ? highPreview.url : undefined;
   return <span style={{ position: "relative", display: "block", width: "100%", height: "100%" }}>
     <PrivateObjectImage {...props} ref={imageRef} src={baseSrc}
       style={{ ...props.style, opacity: highSrc ? 0 : 1 }}
