@@ -4,7 +4,7 @@
 
 裁剪使用当前受权图片来源并真实解码；无法读取、解码或导出时在面板内说明失败，保留选择和取消/重试入口，不替换节点或假报完成。提交后的私有上传失败沿用既有节点失败提示、File本机保存与重试；不自动提交生成。取消、切页、节点删除或卸载应停止裁剪读取并释放临时URL，迟到结果不能写入其他页面。见 [GG-280](tasks/GG-280-canvas-image-crop.md)。
 
-GG-283修复生成图打开裁剪的跨域读取：先通过受权download-url取得新签名，再直接无凭据读取原始字节，避免content的跨源302产生opaque Origin；上传图仍读同源content。签名与原图请求均可取消，连接失败显示“原图连接失败，请重试。”。本地共享RustFS的CORS需包含32131及5173，Worker启动也保留5173；不接受null或通配origin。见 [任务](tasks/GG-283-canvas-crop-image-fetch.md)。
+GG-284修复生成图打开裁剪的跨域读取：先通过受权download-url取得新签名，再直接无凭据读取原始字节，避免content的跨源302产生opaque Origin；上传图仍读同源content。签名与原图请求均可取消，连接失败显示“原图连接失败，请重试。”。本地共享RustFS的CORS需包含32131及5173，Worker启动也保留5173；不接受null或通配origin。见 [任务](tasks/GG-284-canvas-crop-image-fetch.md)。
 
 ## GG-246 大厅资产视频预览未播放
 
