@@ -4,8 +4,13 @@
 .back[data-slot="button"] { flex: none; height: 29px; gap: 3px; padding: 0 4px; color: #71717a; font-size: 12px; }
 .back[data-slot="button"]:hover { color: #18181b; }
 .folderTitle { min-width: 0; overflow: hidden; color: #18181b; font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
-.close[data-slot="button"] { flex: none; width: 28px; height: 28px; margin-left: auto; color: #71717a; }
-.close[data-slot="button"]:hover { color: #18181b; }
+.filterTrigger[data-slot="button"] { flex: none; width: 28px; height: 28px; margin-left: auto; color: #71717a; }
+.filterTrigger[data-slot="button"]:hover, .filterTrigger[data-filtered] { background: #f4f4f5; color: #18181b; }
+.filterMenu { min-width: 154px; border-color: #e4e4e7; background: #fff; color: #18181b; }
+.filterOption { min-height: 32px; font-size: 12px; }
+.filterOption[data-highlighted] { background: #f4f4f5; color: #18181b; }
+.empty p { margin: 0; }
+.empty [data-slot="button"] { margin-top: 5px; color: #52525b; font-size: 12px; }
 .scroll { flex: 1; min-width: 0; min-height: 0; width: 100%; overflow: hidden; }
 /* Radix gives its viewport content display: table, which can expand to a long filename. */
 .scroll :global([data-slot="scroll-area-viewport"]) > div { display: block !important; width: 100%; }

@@ -1,6 +1,6 @@
 import { goodGoodApiFetch } from "@/features/auth/http-auth-boundary";
 import { workspaceRequestHeaders } from "@/features/organizations/workspace-request";
-import { TEXT_ASSETS_UPDATED_EVENT, type TextAsset, type TextAssetInput, type TextAssetSummary } from "@/shared/contracts/text-assets.mjs";
+import { TEXT_ASSETS_UPDATED_EVENT, type TextAsset, type TextAssetInput, type TextAssetSummary, type TextAssetsUpdatedDetail } from "@/shared/contracts/text-assets.mjs";
 export type { TextAsset, TextAssetSummary } from "@/shared/contracts/text-assets.mjs";
 
 async function parse<T>(response: Response): Promise<T> {
@@ -9,7 +9,9 @@ async function parse<T>(response: Response): Promise<T> {
     ? "文本模板功能尚未启用，请稍后重试。" : value.error?.message ?? "文本模板暂时不可用，请重试。");
   return value;
 }
-function changed(workspaceId: string | null) { window.dispatchEvent(new CustomEvent(TEXT_ASSETS_UPDATED_EVENT, { detail: { workspaceId } })); }
+function changed(workspaceId: string | null, addedAssetId?: string) {
+  window.dispatchEvent(new CustomEvent<TextAssetsUpdatedDetail>(TEXT_ASSETS_UPDATED_EVENT, { detail: { workspaceId, ...(addedAssetId ? { addedAssetId } : {}) } }));
+}
 export async function listPrivateTextAssets(workspaceId: string | null): Promise<readonly TextAssetSummary[]> {
   const response = await goodGoodApiFetch("/api/text-assets", { cache: "no-store", headers: workspaceRequestHeaders(workspaceId) });
   // The old backend has no text-assets route; keep existing media readable until activation.
@@ -30,7 +32,7 @@ export async function createPrivateTextAsset(input: TextAssetInput, workspaceId:
     method: "POST", headers: { "content-type": "application/json", ...workspaceRequestHeaders(workspaceId) }, body: JSON.stringify(input),
   }))).asset;
   if (!asset || asset.id !== input.id || asset.markdown !== input.markdown || asset.text !== input.text) throw new Error("模板保存结果暂时无法确认，请重试。");
-  changed(workspaceId); return asset;
+  changed(workspaceId, asset.id); return asset;
 }
 export async function deletePrivateTextAsset(id: string, workspaceId: string | null): Promise<void> {
   await parse(await goodGoodApiFetch(`/api/text-assets/${encodeURIComponent(id)}`, { method: "DELETE", headers: workspaceRequestHeaders(workspaceId) }));

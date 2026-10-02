@@ -21,6 +21,7 @@ import { ZoomSelect } from "@/components/ui/zoom-select";
 import { Button } from "@/components/ui/button";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { isTextAssetId, TEXT_ASSETS_UPDATED_EVENT, type TextAssetsUpdatedDetail } from "@/shared/contracts/text-assets.mjs";
 import { CanvasAssetPanel, type CanvasLibraryAsset } from "./canvas-asset-panel";
 import { CanvasResultNode, type CanvasResultNodeData } from "./canvas-result-node";
 import { CanvasSourceNode as CanvasSourceImageNode, type CanvasSourceNodeData } from "./canvas-source-node";
@@ -224,6 +225,27 @@ export function CanvasWorkspace({
   const edgeHoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const edgeDeleteVisibleRef = useRef<string | null>(null);
   const [edgeDelete, setEdgeDelete] = useState<{ id: string; x: number; y: number } | null>(null);
+  const [assetArrival, setAssetArrival] = useState<{ sequence: number } | null>(null);
+  const assetArrivalSequenceRef = useRef(0);
+
+  useEffect(() => {
+    setAssetArrival(null);
+    if (!assetLibraryEnabled || textGenerationContext.workspaceId !== null) return;
+    const received = (event: Event) => {
+      if (!(event instanceof CustomEvent)) return;
+      const detail = event.detail as Partial<TextAssetsUpdatedDetail> | null;
+      if (!detail || detail.workspaceId !== null || !isTextAssetId(detail.addedAssetId)) return;
+      setAssetArrival({ sequence: ++assetArrivalSequenceRef.current });
+    };
+    window.addEventListener(TEXT_ASSETS_UPDATED_EVENT, received);
+    return () => window.removeEventListener(TEXT_ASSETS_UPDATED_EVENT, received);
+  }, [assetLibraryEnabled, textGenerationContext.ownerKey, textGenerationContext.workspaceId]);
+
+  useEffect(() => {
+    if (!assetArrival) return;
+    const timer = window.setTimeout(() => setAssetArrival(null), 2500);
+    return () => window.clearTimeout(timer);
+  }, [assetArrival]);
 
   useEffect(() => {
     const surface = canvasRef.current;
@@ -355,7 +377,9 @@ export function CanvasWorkspace({
       return;
     }
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onAssetsOpenChange(false);
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      if (event.target instanceof Element && event.target.closest('[data-slot="dropdown-menu-content"], [data-slot="dialog-content"], [data-slot="popover-content"]')) return;
+      onAssetsOpenChange(false);
     };
     document.addEventListener("keydown", closeOnEscape);
     return () => document.removeEventListener("keydown", closeOnEscape);
@@ -365,7 +389,7 @@ export function CanvasWorkspace({
     <>
       {assetsOpen && (
         <aside id="canvas-asset-sidebar" className={styles.assetsSidebar} aria-label="资产列表">
-          <CanvasAssetPanel enabled={assetLibraryEnabled} assetRevision={assetRevision} onClose={() => onAssetsOpenChange(false)}
+          <CanvasAssetPanel enabled={assetLibraryEnabled} assetRevision={assetRevision}
             onAssetDragStart={onAssetDragStart} onAssetDragEnd={onAssetDragEnd} />
           <div className={styles.assetsResizeHandle} role="separator" aria-label="调整资产栏宽度"
             aria-orientation="vertical" aria-controls="canvas-asset-sidebar"
@@ -528,12 +552,18 @@ export function CanvasWorkspace({
           position="bottom-left"
           className={styles.zoomPanel}
           leadingControl={
-            <Button type="button" variant="ghost" size="icon-sm" className={styles.assetsTrigger}
-              aria-label="资产" title="资产" aria-expanded={assetsOpen}
-              aria-controls={assetsOpen ? "canvas-asset-sidebar" : undefined}
-              onClick={() => onAssetsOpenChange(!assetsOpen)}>
-              <LibraryBig size={16} strokeWidth={1.7} aria-hidden="true" />
-            </Button>
+            <span className={styles.assetsEntry}>
+              <Button type="button" variant="ghost" size="icon-sm" className={styles.assetsTrigger}
+                data-received={Boolean(assetArrival) || undefined}
+                aria-label={assetArrival ? "资产，提示词模板已添加" : "资产"} title="资产" aria-expanded={assetsOpen}
+                aria-controls={assetsOpen ? "canvas-asset-sidebar" : undefined}
+                onClick={() => onAssetsOpenChange(!assetsOpen)}>
+                <span key={assetArrival?.sequence ?? 0} className={`${styles.assetsEntryIcon} ${assetArrival ? styles.assetArrivalIcon : ""}`}>
+                  <LibraryBig size={16} strokeWidth={1.7} aria-hidden="true" />
+                </span>
+              </Button>
+              {assetArrival && <span key={assetArrival.sequence} className={styles.assetArrivalStatus} role="status">已添加到资产</span>}
+            </span>
           }
           miniMapOpen={miniMapOpen}
           onMiniMapToggle={() => setMiniMapOpen((current) => !current)}

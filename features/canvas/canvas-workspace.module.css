@@ -252,6 +252,16 @@
 .zoomPanel:global(.react-flow__panel.bottom.left) { bottom: var(--canvas-controls-bottom); left: calc(var(--canvas-sidebar-width) + 10px); }
 .assetsTrigger[data-slot="button"] { width: 32px; height: 32px; padding: 0; border-radius: 8px; background: #fff; color: #71717a; }
 .assetsTrigger[data-slot="button"]:hover, .assetsTrigger[aria-expanded="true"] { background: #f3f3f4; color: #27272a; }
+.assetsEntry { position: relative; display: inline-flex; }
+.assetsTrigger[data-received] { background: #ededee; color: #27272a; }
+.assetsEntryIcon { position: relative; display: grid; place-items: center; }
+.assetArrivalIcon svg { animation: assetReceive 480ms ease-out; }
+.assetArrivalIcon::after { content: ""; position: absolute; inset: -7px; border: 1px solid #a1a1aa; border-radius: 9px; pointer-events: none; animation: assetReceiveRing 900ms ease-out both; }
+.assetArrivalStatus { position: absolute; bottom: calc(100% + 9px); left: 0; padding: 6px 9px; border: 1px solid #e4e4e7; border-radius: 8px; background: #fff; color: #52525b; font-size: 11px; line-height: 1.4; white-space: nowrap; pointer-events: none; animation: assetReceiveLabel 180ms ease-out; }
+@keyframes assetReceive { 0% { transform: translateY(-3px) scale(.85); } 55% { transform: translateY(1px) scale(1.08); } 100% { transform: none; } }
+@keyframes assetReceiveRing { from { opacity: .7; transform: scale(.8); } to { opacity: 0; transform: scale(1.4); } }
+@keyframes assetReceiveLabel { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .assetArrivalIcon svg, .assetArrivalStatus { animation: none; } .assetArrivalIcon::after { display: none; } }
 .shortcutsTrigger[data-slot="button"] { width: 32px; height: 32px; padding: 0; border-radius: 8px; background: #fff; color: #71717a; }
 .shortcutsTrigger[data-slot="button"]:hover, .shortcutsTrigger[data-state="open"] { background: #f3f3f4; color: #27272a; }
 .miniMap:global(.react-flow__panel.bottom.left) {

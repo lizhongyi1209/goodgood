@@ -1,13 +1,18 @@
 export const CANVAS_ASSET_DRAG_TYPE = "application/x-goodgood-canvas-asset";
+export const CANVAS_ASSET_MEDIA_FILTERS = [
+  { id: "all", label: "全部" }, { id: "image", label: "图片" },
+  { id: "video", label: "视频" }, { id: "audio", label: "音频" }, { id: "text", label: "提示词模板" },
+];
 
 // The canvas root is the unclassified location, not a second copy of every
 // folder's contents. Missing folders fall back to root so no asset gets hidden.
-export function selectCanvasFolderItems(data, folderId = null) {
+export function selectCanvasFolderItems(data, folderId = null, media = "all") {
   if (!data) return [];
   const folders = new Set(data.folders.map((folder) => folder.id));
   const activeFolderId = folders.has(folderId) ? folderId : null;
   const membership = new Map(data.arrangements.map((entry) => [`${entry.kind}:${entry.id}`, entry.folderId]));
   return data.items.filter((item) => {
+    if (media !== "all" && item.media !== media) return false;
     const assignedFolderId = membership.get(`${item.kind}:${item.id}`);
     return activeFolderId ? assignedFolderId === activeFolderId : !folders.has(assignedFolderId);
   });

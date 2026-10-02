@@ -1,6 +1,8 @@
 import type { AssetArrangement, AssetFolder } from "@/features/assets/http-asset-organization";
 
 export const CANVAS_ASSET_DRAG_TYPE: "application/x-goodgood-canvas-asset";
+export type CanvasAssetMediaFilter = "all" | "image" | "video" | "audio" | "text";
+export const CANVAS_ASSET_MEDIA_FILTERS: readonly Readonly<{ id: CanvasAssetMediaFilter; label: string }>[];
 export type CanvasFolderDropData = Readonly<{
   folders: readonly AssetFolder[];
   arrangements: readonly AssetArrangement[];
@@ -9,6 +11,7 @@ export type CanvasFolderDropData = Readonly<{
 export function selectCanvasFolderItems<T extends CanvasFolderDropData["items"][number]>(
   data: (Omit<CanvasFolderDropData, "items"> & Readonly<{ items: readonly T[] }>) | null,
   folderId?: string | null,
+  media?: CanvasAssetMediaFilter,
 ): T[];
 export type CanvasFolderMovePlan = Readonly<{
   key: string;

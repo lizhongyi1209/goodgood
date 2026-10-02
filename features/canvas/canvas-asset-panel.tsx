@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent } from "react";
-import { AudioLines, Check, ChevronLeft, Folder, FolderOpen, ImageOff, Maximize2, Pause, Pencil, Play, Trash2, X } from "lucide-react";
+import { AudioLines, Check, ChevronLeft, Folder, FolderOpen, ImageOff, ListFilter, Maximize2, Pause, Pencil, Play, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -24,7 +25,7 @@ import { privateImageUrls } from "@/shared/private-image-urls.mjs";
 import { CanvasAssetAddCard } from "./canvas-asset-add-card";
 import { canvasAssetDeleteNotice, canvasFolderNameError, deleteCanvasLibraryEntry, nextCanvasFolderName, removeCanvasLibraryEntry, type CanvasLibraryDeleteTarget } from "./canvas-asset-management.mjs";
 import { CANVAS_ASSET_LIBRARY_UPDATED_EVENT } from "./canvas-asset-upload";
-import { CANVAS_ASSET_DRAG_TYPE, createCanvasFolderMover, planCanvasFolderMove, selectCanvasFolderItems, type CanvasFolderMover, type CanvasFolderMoveState } from "./canvas-folder-drop.mjs";
+import { CANVAS_ASSET_DRAG_TYPE, CANVAS_ASSET_MEDIA_FILTERS, createCanvasFolderMover, planCanvasFolderMove, selectCanvasFolderItems, type CanvasAssetMediaFilter, type CanvasFolderMover, type CanvasFolderMoveState } from "./canvas-folder-drop.mjs";
 import { attachCanvasVideoPreviewPlayback, type CanvasVideoPreviewPlayback } from "./canvas-video-preview-playback.mjs";
 import styles from "./canvas-asset-panel.module.css";
 
@@ -299,15 +300,15 @@ function VideoViewer({ item, mediaRevision, refreshVideo, returnFocusTo, onClose
   </Dialog>;
 }
 
-export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragStart, onAssetDragEnd }: Readonly<{
+export function CanvasAssetPanel({ enabled, assetRevision, onAssetDragStart, onAssetDragEnd }: Readonly<{
   enabled: boolean;
   assetRevision: number;
-  onClose: () => void;
   onAssetDragStart: (item: CanvasLibraryAsset) => void;
   onAssetDragEnd: () => void;
 }>) {
   const [data, setData] = useState<AssetPanelData | null>(null);
   const [folderId, setFolderId] = useState<string | null>(null);
+  const [mediaFilter, setMediaFilter] = useState<CanvasAssetMediaFilter>("all");
   const [revision, setRevision] = useState(0);
   const requestKey = `${enabled ? "enabled" : "disabled"}:${assetRevision}:${revision}`;
   const [readState, setReadState] = useState({ key: requestKey, loading: enabled, error: null as string | null });
@@ -337,7 +338,7 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
   const cancelRenameRef = useRef(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const rowsRef = useRef<HTMLDivElement>(null);
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const filterButtonRef = useRef<HTMLButtonElement>(null);
   const folderButtonRefs = useRef(new Map<string, HTMLButtonElement>());
   const folderRenameReturnFocusRef = useRef<HTMLButtonElement | null>(null);
   const expandRefs = useRef(new Map<string, HTMLButtonElement>());
@@ -509,7 +510,8 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
   }, [enabled, requestKey]);
 
   const activeFolder = data?.folders.find((folder) => folder.id === folderId) ?? null;
-  const visibleItems = useMemo(() => selectCanvasFolderItems(data, activeFolder?.id ?? null), [data, activeFolder]);
+  const visibleItems = useMemo(() => selectCanvasFolderItems(data, activeFolder?.id ?? null, mediaFilter), [data, activeFolder, mediaFilter]);
+  const mediaFilterLabel = CANVAS_ASSET_MEDIA_FILTERS.find((option) => option.id === mediaFilter)?.label ?? "全部";
   const readyAssetKeys = useMemo(() => new Set(data?.items.map((item) => `${item.kind}:${item.id}`) ?? []), [data]);
   const previewMedia = visibleItems.filter((item) => item.media === "image" || item.media === "video").map((item) => ({
     key: `${item.kind}:${item.id}`, name: item.name, media: item.media as "image" | "video",
@@ -639,7 +641,7 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
 
   const beginFolderRename = (folder: AssetFolder) => {
     if (managementBlocked || managementPendingRef.current || renamePendingRef.current || moverRef.current?.isPending()) return;
-    folderRenameReturnFocusRef.current = folderButtonRefs.current.get(folder.id) ?? closeButtonRef.current;
+    folderRenameReturnFocusRef.current = folderButtonRefs.current.get(folder.id) ?? filterButtonRef.current;
     setEditingFolder(folder);
     setFolderNameDraft(folder.name);
     setFolderNameError(null);
@@ -705,7 +707,21 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
         <Button type="button" variant="ghost" size="sm" className={styles.back} onClick={() => setFolderId(null)} aria-label="返回资产"><ChevronLeft size={16} aria-hidden="true" />资产</Button>
         <span className={styles.folderTitle} title={activeFolder.name}>{activeFolder.name}</span>
       </> : <h2>资产</h2>}
-      <Button ref={closeButtonRef} type="button" variant="ghost" size="icon-sm" className={styles.close} onClick={onClose} aria-label="关闭资产列表"><X size={16} aria-hidden="true" /></Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button ref={filterButtonRef} type="button" variant="ghost" size="icon-sm" className={styles.filterTrigger}
+            data-filtered={mediaFilter !== "all" || undefined} disabled={!enabled || managementBlocked}
+            aria-label={`筛选资产：${mediaFilterLabel}`} title={`筛选资产：${mediaFilterLabel}`}><ListFilter size={16} aria-hidden="true" /></Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" sideOffset={6} className={styles.filterMenu} onEscapeKeyDown={(event) => event.stopPropagation()}>
+          <DropdownMenuRadioGroup aria-label="资产类型" value={mediaFilter} onValueChange={(value) => {
+            const option = CANVAS_ASSET_MEDIA_FILTERS.find((item) => item.id === value);
+            if (option && !managementBlocked) setMediaFilter(option.id);
+          }}>
+            {CANVAS_ASSET_MEDIA_FILTERS.map((option) => <DropdownMenuRadioItem key={option.id} value={option.id} className={styles.filterOption} disabled={managementBlocked}>{option.label}</DropdownMenuRadioItem>)}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </header>
 
     {!enabled ? <p className={styles.state}>演示模式暂不提供资产浏览。</p>
@@ -798,8 +814,10 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
                   </ContextMenuContent>
                 </ContextMenu>;
               })}
-            {!loading && !error && !activeFolder && !data?.folders.length && !visibleItems.length && <p className={styles.empty}>还没有资产</p>}
-            {!loading && !error && activeFolder && !visibleItems.length && <p className={styles.empty}>此文件夹还没有素材</p>}
+            {!loading && !error && !visibleItems.length && (mediaFilter !== "all" || activeFolder || !data?.folders.length) && <div className={styles.empty} role="status">
+              <p>{mediaFilter !== "all" ? `当前${activeFolder ? "文件夹" : "列表"}没有${mediaFilterLabel}` : activeFolder ? "此文件夹还没有素材" : "还没有资产"}</p>
+              {mediaFilter !== "all" && <Button type="button" variant="ghost" size="sm" onClick={() => setMediaFilter("all")}>显示全部</Button>}
+            </div>}
           </div>
         </ScrollArea>}
     <Dialog open={Boolean(editingFolder)} onOpenChange={(open) => { if (!open && !managementPendingRef.current) setEditingFolder(null); }}>
@@ -808,7 +826,7 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
           event.preventDefault();
           const target = folderRenameReturnFocusRef.current;
           if (target?.isConnected) target.focus({ preventScroll: true });
-          else closeButtonRef.current?.focus({ preventScroll: true });
+          else filterButtonRef.current?.focus({ preventScroll: true });
           folderRenameReturnFocusRef.current = null;
         }}
         onEscapeKeyDown={(event) => { if (managementPendingRef.current) event.preventDefault(); }}
@@ -852,7 +870,7 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
       refreshVideo={(signal) => refreshVideo(previewVideo, signal)} onClose={() => setVideoPreview(null)}
       returnFocusTo={() => {
         const trigger = expandRefs.current.get(videoPreview.selectedKey) ?? videoPreview.returnFocusTo;
-        return trigger.isConnected ? trigger : closeButtonRef.current;
+        return trigger.isConnected ? trigger : filterButtonRef.current;
       }} />}
   </section>;
 }

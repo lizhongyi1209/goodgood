@@ -6,6 +6,36 @@ import { textAssetDefaultName, textAssetInputError, textAssetPreview, TEXT_ASSET
 import { createTextAsset, deleteTextAsset, getTextAsset, listTextAssets } from "../server/text-assets/api.mjs";
 import { createTextAssetNodeApiHandler } from "../server/text-assets/node-api.mjs";
 import { planCanvasFolderMove, selectCanvasFolderItems } from "../features/canvas/canvas-folder-drop.mjs";
+
+test("asset type filters preserve exact identity and current folder membership, including orphaned folders", () => {
+  const generated = Object.freeze({ id: "same-id", kind: "generated", media: "image" });
+  const reference = Object.freeze({ id: "uploaded", kind: "reference", media: "image" });
+  const template = Object.freeze({ id: "same-id", kind: "text", media: "text" });
+  const rootTemplate = Object.freeze({ id: "root-text", kind: "text", media: "text" });
+  const video = Object.freeze({ id: "video", kind: "video", media: "video" });
+  const audio = Object.freeze({ id: "audio", kind: "audio", media: "audio" });
+  const data = Object.freeze({
+    folders: Object.freeze([Object.freeze({ id: "folder" })]),
+    items: Object.freeze([generated, reference, template, rootTemplate, video, audio]),
+    arrangements: Object.freeze([
+      Object.freeze({ kind: "text", id: template.id, folderId: "folder" }),
+      Object.freeze({ kind: "reference", id: reference.id, folderId: "removed-folder" }),
+    ]),
+  });
+  const root = [generated, reference, rootTemplate, video, audio];
+  assert.deepEqual(selectCanvasFolderItems(data), root);
+  assert.deepEqual(selectCanvasFolderItems(data, null, "image"), [generated, reference]);
+  assert.deepEqual(selectCanvasFolderItems(data, null, "text"), [rootTemplate]);
+  assert.deepEqual(selectCanvasFolderItems(data, "folder", "text"), [template]);
+  assert.deepEqual(selectCanvasFolderItems(data, "folder", "image"), []);
+  assert.deepEqual(selectCanvasFolderItems(data, null, "video"), [video]);
+  assert.deepEqual(selectCanvasFolderItems(data, null, "audio"), [audio]);
+  assert.deepEqual(selectCanvasFolderItems(data, "removed-folder", "all"), root);
+  assert.deepEqual(selectCanvasFolderItems(data, null, "all"), root);
+  assert.deepEqual(selectCanvasFolderItems(null, null, "text"), []);
+  assert.deepEqual(data.items, [generated, reference, template, rootTemplate, video, audio]);
+  assert.equal(selectCanvasFolderItems(data, "folder", "text")[0], template);
+});
 import { deleteCanvasLibraryEntry, removeCanvasLibraryEntry } from "../features/canvas/canvas-asset-management.mjs";
 
 const owner = "30800000-0000-4000-8000-000000000001";
