@@ -6,6 +6,7 @@ import { CircleAlert, LoaderCircle, RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { CanvasAdaptiveImage } from "./canvas-adaptive-image";
+import { CanvasImageViewButton, canvasGenerationViewerItems } from "./canvas-image-view-button";
 import { imageDownloadFilename } from "@/features/assets/image-download";
 import type { GenerationJob } from "@/shared/contracts/generation";
 import { initialCanvasImageSize } from "./canvas-image-size.mjs";
@@ -15,6 +16,7 @@ import { CanvasImageCropToolbar, useCanvasImageCrop } from "./canvas-image-crop"
 import { canvasCropImageForNode } from "./canvas-image-crop-image";
 import type { CanvasNode, CanvasResultNodeType } from "./canvas-workspace";
 import styles from "./canvas-workspace.module.css";
+import assetStyles from "./canvas-asset-panel.module.css";
 
 export type CanvasResultNodeData = Record<string, unknown> & {
   job: GenerationJob;
@@ -66,7 +68,7 @@ export function CanvasResultNode({ id, data, selected, width }: NodeProps<Canvas
         pixelWidth={output.width}
         pixelHeight={output.height}
       />
-      <article data-canvas-crop-image={output.id} className={`${styles.resultNode} ${styles.imageNode} ${data.imageSized ? styles.sizedNode : ""}`}>
+      <article data-canvas-crop-image={output.id} className={`${styles.resultNode} ${styles.imageNode} ${assetStyles.visualFrame} ${data.imageSized ? styles.sizedNode : ""}`}>
         <CanvasAdaptiveImage
           src={output.previewUrl}
           assetId={output.id}
@@ -84,6 +86,8 @@ export function CanvasResultNode({ id, data, selected, width }: NodeProps<Canvas
           }}
           onError={() => setReadyPreview(null)}
         />
+        <CanvasImageViewButton items={canvasGenerationViewerItems([job])} imageKey={output.id}
+          disabled={Boolean(cropRequest) || readyPreview !== output.previewUrl} />
       </article>
       {selected && data.imageSized && cropRequest?.nodeId !== id && (
         <CanvasImageResizeControls />
