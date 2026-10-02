@@ -35,8 +35,8 @@ test("canvas project v1 accepts a durable graph and rejects browser-only fields"
   bad.document.nodes[0].pendingFileId = "browser-blob";
   assert.throws(() => validateCanvasProjectSave(bad), (error) => error.code === "INVALID_CANVAS_PROJECT");
   const oversized = saveInput();
-  oversized.document.generators[GENERATOR].draft.prompt = "字".repeat(4001);
-  assert.throws(() => validateCanvasProjectSave(oversized), (error) => error.code === "INVALID_CANVAS_PROJECT");
+  oversized.document.generators[GENERATOR].draft.prompt = "字".repeat(1024 * 1024);
+  assert.throws(() => validateCanvasProjectSave(oversized), (error) => error.code === "PAYLOAD_TOO_LARGE");
 });
 
 test("canvas project counts one through twelve round-trip and reject noninteger or out-of-range drafts", () => {

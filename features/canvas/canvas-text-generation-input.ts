@@ -2,6 +2,7 @@ import type { CanvasNode } from "./canvas-workspace";
 import type { Edge } from "@xyflow/react";
 import type { TextGenerationMedia } from "./http-text-generation";
 import { collectCanvasTextInputs } from "./canvas-text-input.mjs";
+import { canvasGeneratorOutputs } from "./canvas-image-prompt-batch.mjs";
 
 export type CanvasTextGenerationInput = { edgeId: string; nodeId: string; name: string; kind: "text" | "image" | "video";
   previewUrl?: string; text?: string; media?: Exclude<TextGenerationMedia, { kind: "video" }>;
@@ -27,8 +28,8 @@ export function canvasTextGenerationInputs(nodes: readonly CanvasNode[], edges: 
       media: source.data.assetId ? { kind: "image", assetKind: source.data.assetKind === "generated" ? "generated" : "reference", assetId: source.data.assetId } : undefined,
       unavailable: !source.data.assetId || Boolean(source.data.uploadState) }];
     if (source.type === "imageGenerator" || source.type === "imageResult") {
-      const job = source.data.job;
-      const output = job?.state === "succeeded" ? job.outputs[source.type === "imageResult" ? source.data.index : 0] : undefined;
+      const output = source.type === "imageGenerator" ? canvasGeneratorOutputs(source.data)[0]
+        : source.data.job.state === "succeeded" ? source.data.job.outputs[source.data.index] : undefined;
       return [{ ...base, kind: "image", name: "图片生成", previewUrl: output?.previewUrl,
         media: output ? { kind: "image", assetKind: "generated", assetId: output.id } : undefined, unavailable: !output }];
     }

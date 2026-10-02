@@ -5,6 +5,7 @@ import { PRIVATE_IMAGE_UPLOAD_MAX_BYTES } from "@/shared/contracts/upload-limits
 import { privateImageUrls } from "@/shared/private-image-urls.mjs";
 import type { CanvasNode } from "./canvas-workspace";
 import type { CanvasCropRect } from "./canvas-image-crop-model";
+import { canvasGeneratorJobs } from "./canvas-image-prompt-batch.mjs";
 
 export type CanvasCropImage = Readonly<{ nodeId: string; imageId: string; key: string; name: string; contentUrl: string }>;
 export type CanvasCropRequest = CanvasCropImage & Readonly<{ pageId: string; sessionId: string }>;
@@ -17,7 +18,10 @@ export function canvasCropImageForNode(node: CanvasNode | undefined, imageId?: s
     return { nodeId: node.id, imageId: node.data.assetId, key: `${kind}:${node.data.assetId}`, name: node.data.name,
       contentUrl: privateImageUrls(kind, node.data.assetId).contentUrl };
   }
-  const job = node?.type === "imageResult" || node?.type === "imageGenerator" ? node.data.job : null;
+  const job = node?.type === "imageGenerator"
+    ? canvasGeneratorJobs(node.data).find((item) => item.state === "succeeded" &&
+      (imageId ? item.outputs.some((output) => output.id === imageId) : item.outputs.length > 0))
+    : node?.type === "imageResult" ? node.data.job : null;
   if (!node || !job || job.state !== "succeeded") return null;
   const output = node.type === "imageResult" ? job.outputs[node.data.index]
     : job.outputs.find((item) => item.id === imageId) ?? job.outputs[0];

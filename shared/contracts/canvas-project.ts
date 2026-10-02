@@ -9,6 +9,7 @@ export type CanvasProjectNode = Readonly<{
   size?: Readonly<{ width: number; height: number }>;
   asset?: Readonly<{ id: string; kind: "reference" | "generated" | "video" | "audio" }>;
   jobId?: string;
+  jobIds?: readonly string[];
   index?: number;
   sequence?: number;
   name?: string;
@@ -19,6 +20,7 @@ export type CanvasProjectNode = Readonly<{
   // Browser recovery only. Never send this field to the server.
   pendingFileId?: string;
   localJob?: GenerationJob;
+  localJobs?: readonly GenerationJob[];
 }>;
 
 export type CanvasProjectEdge = Readonly<{

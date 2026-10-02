@@ -38,6 +38,7 @@ function documentResourceIds(document) {
     for (const node of page.nodes) {
       if (node.asset) ids[node.asset.kind].add(node.asset.id);
       if (node.jobId) ids.job.add(node.jobId);
+      for (const id of node.jobIds ?? []) ids.job.add(id);
     }
     for (const generator of Object.values(page.generators)) {
       for (const id of generator.directReferenceIds) ids.reference.add(id);

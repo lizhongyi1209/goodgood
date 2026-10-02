@@ -6,6 +6,7 @@ import type { GenerationJob } from "@/shared/contracts/generation";
 import { privateImageUrls } from "@/shared/private-image-urls.mjs";
 import type { CanvasNode } from "./canvas-workspace";
 import { normalizeCanvasInputEdge } from "./canvas-text-input.mjs";
+import { canvasGeneratorJobs } from "./canvas-image-prompt-batch.mjs";
 
 export type SnapshotGeneratorDraft = CanvasPageDocument["generators"][string]["draft"];
 export type SnapshotDirectReference = Readonly<{
@@ -22,9 +23,12 @@ export function pendingCanvasProjectContent(document: CanvasProjectDocument): "m
   }
   // A failed submission keeps its browser job for recovery. It is not a file
   // upload, and its prompt/settings are already part of the remote document.
-  if (pages.some((page) => page.nodes.some((node) => node.jobId?.startsWith("pending_") &&
-      !(node.localJob && node.localJob.id === node.jobId && ["failed", "cancelled"].includes(node.localJob.state) &&
-        node.localJob.error?.code !== "SUBMISSION_UNKNOWN")))) {
+  if (pages.some((page) => page.nodes.some((node) =>
+      (node.jobIds ?? (node.jobId ? [node.jobId] : [])).some((id) => {
+        const job = node.localJobs?.find((item) => item.id === id) ?? (node.localJob?.id === id ? node.localJob : undefined);
+        return id.startsWith("pending_") && !(job && ["failed", "cancelled"].includes(job.state) &&
+          job.error?.code !== "SUBMISSION_UNKNOWN");
+      })))) {
     return "generation";
   }
   return null;
@@ -68,10 +72,16 @@ function persistNode(node: CanvasNode): CanvasProjectNode | null {
     ...base, type: "textGenerator", markdown: node.data.markdown, text: node.data.text,
     textGeneration: node.data.textGeneration,
   };
-  if (node.type === "imageGenerator") return {
-    ...base, type: "imageGenerator", sequence: node.data.sequence,
-    ...(node.data.job ? { jobId: node.data.job.id, localJob: localJobWithoutEphemeralUrls(node.data.job) } : {}),
-  };
+  if (node.type === "imageGenerator") {
+    const jobs = canvasGeneratorJobs(node.data);
+    return {
+      ...base, type: "imageGenerator", sequence: node.data.sequence,
+      ...(jobs[0] ? { jobId: jobs[0].id,
+        ...(jobs.length > 1
+          ? { jobIds: jobs.map((job) => job.id), localJobs: jobs.map(localJobWithoutEphemeralUrls) }
+          : { localJob: localJobWithoutEphemeralUrls(jobs[0]) }) } : {}),
+    };
+  }
   if (node.type === "sourceImage") return {
     ...base,
     type: "sourceImage",
@@ -163,9 +173,15 @@ function remoteCanvasPageDocument(document: CanvasPageDocument): CanvasPageDocum
     node.type === "imageGenerator" ||
     node.type === "imageResult" && node.jobId && !node.jobId.startsWith("pending_") ||
     Boolean(node.asset?.id),
-  ).map(({ pendingFileId: _pendingFileId, localJob: _localJob, ...node }) =>
-    node.type === "imageGenerator" && node.jobId?.startsWith("pending_")
-      ? { ...node, jobId: undefined } : node);
+  ).map(({ pendingFileId: _pendingFileId, localJob: _localJob, localJobs: _localJobs, ...node }) => {
+    if (node.type !== "imageGenerator") return node;
+    if (!node.jobIds && !node.jobId?.startsWith("pending_")) return node;
+    const jobIds = node.jobIds?.filter((id) => !id.startsWith("pending_"));
+    return { ...node,
+      jobId: jobIds?.[0] ?? (node.jobId?.startsWith("pending_") ? undefined : node.jobId),
+      ...(node.jobIds ? { jobIds: jobIds?.length ? jobIds : undefined } : {}),
+    };
+  });
   const ids = new Set(nodes.map((node) => node.id));
   const edges = document.edges.filter((edge) => ids.has(edge.source) && ids.has(edge.target));
   const generators = Object.fromEntries(Object.entries(document.generators)

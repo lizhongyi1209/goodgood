@@ -1,5 +1,9 @@
 # Architecture
 
+## GG-303 canvas image prompt batches
+
+Canvas-only separator/job helpers and `canvas-generator-batch.ts` own per-segment concurrent submit/resume/retry. The page freezes inputs once, maintains ordered job slots and aggregate editing locks; the existing generator renders successful outputs in prompt order. Every segment uses the unchanged HTTP generation/provider/billing contract. Cloud graph validation accepts ordered jobIds and resource authorization checks all of them; existing JSON storage needs no migration. Text Markdown rules have an explicit plain-text separator. Current Web activation is separate and not performed by this code-only task. See[ADR0131](decisions/0131-canvas-concurrent-prompt-batches.md).
+
 ## GG-291 canvas text generation
 
 GG-297 keeps preset IDs/labels in shared contracts, and full instructions only in `server/text-generation/presets.mjs`. Validation rejects unknown IDs and bounds the resolved preset-plus-user prompt before reservation. Provider calls use resolved input; idempotent snapshots include the preset, while browser history/project JSON contain only its ID/name and user text. Preset requests use `preset-stream`, sharing the ordinary stream's implementation but failing closed on old Web versions. No additional schema or provider calls. See[ADR0130](decisions/0130-text-generation-presets.md).

@@ -81,6 +81,8 @@ import { createCanvasGeneratedReferenceImporter } from "./canvas-generated-refer
 import { CANVAS_ASSET_LIBRARY_UPDATED_EVENT } from "./canvas-asset-upload";
 import { canvasCropImageForNode, type CanvasCropCommit } from "./canvas-image-crop-image";
 import { CANVAS_PROMPT_MAX_LENGTH, collectCanvasTextInputs, combineCanvasPrompt, isCanvasTextConnection, isCanvasTextGenerationConnection, canvasConnectionCreatesCycle, normalizeCanvasInputEdge } from "./canvas-text-input.mjs";
+import { canvasGeneratorJobs, canvasGeneratorOutputs, canvasImageBatchCreditAmount, canvasImageJobIsActive, parseCanvasImagePrompts, recoverCanvasImageJob } from "./canvas-image-prompt-batch.mjs";
+import { pendingCanvasImageJob, runCanvasGeneratorBatch } from "./canvas-generator-batch";
 import { DEFAULT_TEXT_GENERATION_MODEL } from "@/shared/contracts/text-generation.mjs";
 import type { CanvasLibraryAsset } from "./canvas-asset-panel";
 import { upsertCanvasJobNodes } from "./canvas-job-nodes.mjs";
@@ -164,7 +166,7 @@ function canvasGraphIsStable(nodes: readonly CanvasNode[], references: Record<st
     (node.type !== "sourceImage" && node.type !== "sourceVideo" || !node.data.uploadState) &&
     (node.type !== "imageResult" || !node.data.job.id.startsWith("pending_")) &&
     (node.type !== "textGenerator" || !node.data.generating && !node.data.textGeneration.pendingRequestId) &&
-    (node.type !== "imageGenerator" || !node.data.job || !["queued", "running", "refining"].includes(node.data.job.state))) &&
+    (node.type !== "imageGenerator" || !canvasGeneratorJobs(node.data).some(canvasImageJobIsActive))) &&
     Object.values(references).every((items) => items.every((item) => item.reference.status === "ready")) &&
     Object.values(converted).every((item) => item.status === "ready");
 }
@@ -226,12 +228,15 @@ function redundantGeneratorBatchNodeIds(nodes: readonly CanvasNode[]) {
   const nodeById = new Map(nodes.map((node) => [node.id, node]));
   const redundant = new Set<string>();
   for (const generator of nodes) {
-    if (generator.type !== "imageGenerator" || generator.data.job?.state !== "succeeded") continue;
-    for (let index = 1; index < generator.data.job.outputs.length; index += 1) {
-      const id = `canvas-${generator.id}-${generator.data.job.id}-${index}`;
-      const candidate = nodeById.get(id);
-      if (candidate?.type === "imageResult" && candidate.data.job.id === generator.data.job.id && candidate.data.index === index) {
-        redundant.add(id);
+    if (generator.type !== "imageGenerator") continue;
+    for (const job of canvasGeneratorJobs(generator.data)) {
+      if (job.state !== "succeeded") continue;
+      for (let index = 1; index < job.outputs.length; index += 1) {
+        const id = `canvas-${generator.id}-${job.id}-${index}`;
+        const candidate = nodeById.get(id);
+        if (candidate?.type === "imageResult" && candidate.data.job.id === job.id && candidate.data.index === index) {
+          redundant.add(id);
+        }
       }
     }
   }
@@ -426,9 +431,8 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
   const activeGeneratorId = composerHost?.id ?? null;
   const submitting = activeGeneratorId ? submittingGeneratorIds.includes(activeGeneratorId) : false;
   const activeGeneratorNode = nodes.find((node) => node.id === activeGeneratorId);
-  const activeGeneratorJob = activeGeneratorNode?.type === "imageGenerator" ? activeGeneratorNode.data.job : undefined;
-  const generatorEditingLocked = submitting || Boolean(activeGeneratorJob &&
-    ["queued", "running", "refining"].includes(activeGeneratorJob.state));
+  const activeGeneratorJobs = activeGeneratorNode?.type === "imageGenerator" ? canvasGeneratorJobs(activeGeneratorNode.data) : [];
+  const generatorEditingLocked = submitting || activeGeneratorJobs.some(canvasImageJobIsActive);
   const { prompt, modelKey, ratio, resolution, count, quality, background, outputFormat } = activeGeneratorId
     ? draftsByGenerator[activeGeneratorId] ?? DEFAULT_GENERATOR_DRAFT
     : DEFAULT_GENERATOR_DRAFT;
@@ -784,7 +788,9 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     }
   }, [edges]);
   const combinedPrompt = combineCanvasPrompt(linkedTextInputs, prompt);
-  const promptTooLong = combinedPrompt.length > CANVAS_PROMPT_MAX_LENGTH;
+  const promptBatch = parseCanvasImagePrompts(combinedPrompt);
+  const oversizedPromptIndex = promptBatch.prompts.findIndex((item) => item.length > CANVAS_PROMPT_MAX_LENGTH);
+  const promptTooLong = oversizedPromptIndex >= 0;
   const displayReferences = [
     ...references.map((item) => ({ key: item.clientId, kind: "direct" as const, reference: item.reference, previewUrl: item.previewUrl })),
     ...linkedReferences.map((item) => ({ key: item.edgeId, kind: "linked" as const, reference: item.reference, previewUrl: item.previewUrl })),
@@ -802,12 +808,13 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     : null;
   const referencesBusy = displayReferences.some((item) => item.reference.status === "uploading");
   const referencesFailed = displayReferences.some((item) => item.reference.status === "failed");
+  const batchCreditAmount = quote ? canvasImageBatchCreditAmount(quote.creditAmount, Math.max(1, promptBatch.prompts.length)) : null;
   const insufficientCredits = Boolean(
-    quote && billing && BigInt(billing.account.availableCredits) < BigInt(quote.creditAmount),
+    batchCreditAmount && billing && BigInt(billing.account.availableCredits) < BigInt(batchCreditAmount),
   );
   const canGenerate = Boolean(
     session?.access.status === "active" && !session.preview && quote &&
-    combinedPrompt.trim() && !promptTooLong && !referencesBusy && !referencesFailed && !insufficientCredits &&
+    promptBatch.prompts.length && !promptTooLong && !referencesBusy && !referencesFailed && !insufficientCredits &&
     !billingLoading && !billingError && !generatorEditingLocked,
   );
   const upload = (generatorId: string, items: CanvasReference[]) => {
@@ -917,7 +924,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       (node.type === "sourceImage" || node.type === "sourceVideo") && Boolean(node.data.uploadState) ||
       node.type === "imageResult" && (node.data.job.state !== "succeeded" || !node.data.job.outputs[node.data.index]?.id) ||
       node.type === "textGenerator" && Boolean(node.data.generating || node.data.textGeneration.pendingRequestId) ||
-      node.type === "imageGenerator" && (Boolean(node.data.job && node.data.job.state !== "succeeded") ||
+      node.type === "imageGenerator" && (canvasGeneratorJobs(node.data).some((job) => job.state !== "succeeded") ||
         (current.referencesByGenerator[node.id] ?? []).some((item) => item.reference.status !== "ready")) ||
       selectedEdges.some((edge) => edge.source === node.id && imageSourceAsset(node)?.generated &&
         instance.getNode(edge.target)?.type !== "textGenerator" &&
@@ -1175,7 +1182,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     const expandedGenerator = createAdjacent && Array.from(document.querySelectorAll<HTMLElement>(".react-flow__node"))
       .find((element) => element.dataset.id === source.id)?.querySelector<HTMLElement>('[data-canvas-stack-expanded="true"]');
     const horizontalSpan = expandedGenerator && source.type === "imageGenerator"
-      ? (source.data.job?.outputs.length ?? 1) * (sourceWidth + 12) - 12 : sourceWidth;
+      ? Math.max(1, canvasGeneratorOutputs(source.data).length) * (sourceWidth + 12) - 12 : sourceWidth;
     const scale = Math.min(sourceWidth / width, sourceHeight / height);
     const size = createAdjacent ? initialCanvasImageSize(width, height) ?? { width: 238, height: 158 }
       : { width: width * scale, height: height * scale };
@@ -1533,47 +1540,53 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     }
   };
 
-  const runGeneratorJob = async (generatorId: string, snapshot: GenerationInputSnapshot, resumeJob?: GenerationJob) => {
-    if (busyGeneratorIdsRef.current.has(generatorId)) return;
+  const runGeneratorJobs = async (generatorId: string, action:
+    { snapshots: readonly GenerationInputSnapshot[] } | { resume: true } | { retryIndex: number }) => {
+    const generator = projectNode(generatorId);
+    const pageId = nodePageId(generatorId);
+    if (!pageId || generator?.type !== "imageGenerator" || busyGeneratorIdsRef.current.has(generatorId)) return;
+    const mode = "snapshots" in action ? "submit" : "resume" in action ? "resume" : "retry";
+    let jobs = "snapshots" in action ? action.snapshots.map(pendingCanvasImageJob) : [...canvasGeneratorJobs(generator.data)];
+    const retryIndex = "retryIndex" in action ? action.retryIndex : undefined;
+    if (!jobs.length || mode === "resume" && !jobs.some((job) => !job.id.startsWith("pending_") && canvasImageJobIsActive(job))) return;
+    const retryJob = retryIndex === undefined ? undefined : jobs[retryIndex];
+    if (mode === "retry" && (jobs.some(canvasImageJobIsActive) || !retryJob ||
+        !["failed", "cancelled"].includes(retryJob.state) || !retryJob.error?.retryable)) return;
     busyGeneratorIdsRef.current.add(generatorId);
-    if (nodePageId(generatorId) === activePageIdRef.current) historySuspendedRef.current = true;
+    if (pageId === activePageIdRef.current) historySuspendedRef.current = true;
     setSubmittingGeneratorIds((current) => [...current, generatorId]);
     setFormError(null);
-    const observe = (job: GenerationJob) => {
-      const pageId = nodePageId(generatorId);
-      const generator = projectNode(generatorId);
-      const previousJob = generator?.type === "imageGenerator" ? generator.data.job : undefined;
-      const changed = !previousJob || previousJob.id !== job.id || previousJob.state !== job.state ||
-        previousJob.outputs.length !== job.outputs.length ||
-        previousJob.outputs.some((output, index) => output.id !== job.outputs[index]?.id) ||
-        previousJob.error?.message !== job.error?.message;
-      if (!changed) return;
-      if (!pageId || !generator) {
-        if (["succeeded", "failed", "cancelled"].includes(job.state)) void refreshBilling();
-        if (job.state === "succeeded") setAssetRevision((current) => current + 1);
-        return;
-      }
+    const writeJobs = (resize = false) => {
+      const nextJobs = [...jobs];
       updatePageNodes(pageId, (current) => current.map((node) => {
         if (node.id !== generatorId || node.type !== "imageGenerator") return node;
-        const output = job.state === "succeeded" ? job.outputs[0] : undefined;
+        const output = resize ? canvasGeneratorOutputs({ jobs: nextJobs })[0] : undefined;
         const size = output ? initialCanvasImageSize(output.width ?? NaN, output.height ?? NaN) : null;
         return { ...node,
           ...(size ? { style: { ...node.style, ...size } } : {}),
-          data: { ...node.data, job, imageSized: Boolean(size) },
+          data: { ...node.data, job: nextJobs[0], jobs: nextJobs,
+            imageSized: size ? true : mode === "submit" && !canvasGeneratorOutputs({ jobs: nextJobs }).length ? false : node.data.imageSized },
         };
       }));
-      if ((!job.id.startsWith("pending_") && job.state === "queued") || ["succeeded", "failed", "cancelled"].includes(job.state)) {
+    };
+    writeJobs();
+    const observe = (job: GenerationJob, index: number) => {
+      const previousJob = jobs[index];
+      const changed = !previousJob || previousJob.id !== job.id || previousJob.state !== job.state ||
+        previousJob.outputs.length !== job.outputs.length ||
+        previousJob.outputs.some((output, index) => output.id !== job.outputs[index]?.id) ||
+        previousJob.error?.message !== job.error?.message || previousJob.error?.code !== job.error?.code;
+      if (!changed) return;
+      const firstOutputId = canvasGeneratorOutputs({ jobs })[0]?.id;
+      jobs = jobs.map((item, slot) => slot === index ? job : item);
+      writeJobs(firstOutputId !== canvasGeneratorOutputs({ jobs })[0]?.id);
+      if ((!job.id.startsWith("pending_") && previousJob?.id.startsWith("pending_")) || ["succeeded", "failed", "cancelled"].includes(job.state)) {
         void refreshBilling();
       }
       if (job.state === "succeeded") setAssetRevision((current) => current + 1);
     };
     try {
-      if (resumeJob) {
-        observe(resumeJob);
-        await generationBoundary.resume(resumeJob, observe);
-      } else {
-        await generationBoundary.service.submit(snapshot, observe);
-      }
+      await runCanvasGeneratorBatch({ jobs, mode, retryIndex, boundary: generationBoundary, observe });
     } finally {
       busyGeneratorIdsRef.current.delete(generatorId);
       setSubmittingGeneratorIds((current) => current.filter((id) => id !== generatorId));
@@ -1585,8 +1598,8 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     if (!activeGeneratorId) return;
     if (session?.access.status !== "active" || session.preview || generatorEditingLocked ||
         busyGeneratorIdsRef.current.has(activeGeneratorId)) return;
-    if (!combinedPrompt.trim()) { setFormError("请先输入画面描述，或连接文本节点。"); return; }
-    if (promptTooLong) { setFormError("连接文本与补充描述合计不能超过 4000 个字符。"); return; }
+    if (!promptBatch.prompts.length) { setFormError("请先输入画面描述，或连接文本节点。"); return; }
+    if (promptTooLong) { setFormError(`第 ${oversizedPromptIndex + 1} 段提示词超过 ${CANVAS_PROMPT_MAX_LENGTH} 个字符，请拆分后再生成。`); return; }
     if (linkedTextInputs.some((input) => {
       const node = flowRef.current?.getNode(input.nodeId);
       return node?.type === "textGenerator" && Boolean(node.data.generating || node.data.textGeneration.pendingRequestId);
@@ -1602,8 +1615,8 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       setFormError("项目正在同步，请稍后重试生成。");
       return;
     }
-    const snapshot = createGenerationInputSnapshot({
-      prompt: combinedPrompt,
+    const snapshots = promptBatch.prompts.map((segment) => createGenerationInputSnapshot({
+      prompt: segment,
       references: displayReferences.filter((item, index, all) =>
         all.findIndex((candidate) => candidate.reference.id === item.reference.id) === index).map((item) => item.reference),
       modelId: model.id,
@@ -1616,13 +1629,13 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       count: selectedCount,
       projectId: null,
       canvasProjectId: projectSync.id,
-    });
+    }));
     setDraftsByGenerator((current) => ({ ...current, [activeGeneratorId]: {
       prompt, modelKey: model.catalogId ?? model.id, ratio: selectedRatio,
       resolution: selectedResolution, count: selectedCount,
       ...gptOptions,
     } }));
-    void runGeneratorJob(activeGeneratorId, snapshot);
+    void runGeneratorJobs(activeGeneratorId, { snapshots });
   };
 
   projectSnapshotRef.current = async () => {
@@ -1858,21 +1871,19 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
             textGeneration: saved.textGeneration ?? { modelId: DEFAULT_TEXT_GENERATION_MODEL, prompt: "", history: [] } },
         };
         if (saved.type === "imageGenerator") {
-          const job = saved.jobId
-            ? saved.jobId.startsWith("pending_") ? saved.localJob : await goodGoodApiFetch(
-              `/api/generations/${encodeURIComponent(saved.jobId)}`, { cache: "no-store" },
-            ).then((response) => response.ok ? response.json() as Promise<GenerationJob> : Promise.reject()).catch(() => saved.localJob)
-            : undefined;
-          const restoredJob: GenerationJob | undefined = job?.id.startsWith("pending_") &&
-            ["queued", "running", "refining"].includes(job.state)
-            ? { ...job, state: "failed", error: {
-              code: "SUBMISSION_UNKNOWN", title: "生成状态未确认",
-              message: "请求可能仍在处理，请先检查资产库，再决定是否重新生成。", retryable: false,
-            } } : job;
+          const ids = saved.jobIds ?? (saved.jobId ? [saved.jobId] : saved.localJobs?.map((job) => job.id) ?? []);
+          const jobs = await Promise.all(ids.map(async (jobId) => {
+            const localJob = saved.localJobs?.find((job) => job.id === jobId) ?? (saved.localJob?.id === jobId ? saved.localJob : undefined);
+            const job = jobId.startsWith("pending_") ? localJob : await goodGoodApiFetch(
+              `/api/generations/${encodeURIComponent(jobId)}`, { cache: "no-store" },
+            ).then((response) => response.ok ? response.json() as Promise<GenerationJob> : Promise.reject()).catch(() => localJob);
+            if (!job) throw new Error("部分图片任务暂时无法读取，请重新加载画布后重试。");
+            return recoverCanvasImageJob(job);
+          }));
           const sequence = saved.sequence ?? document.nodes.filter((item) => item.type === "imageGenerator")
             .findIndex((item) => item.id === saved.id) + 1;
           return { ...base, type: "imageGenerator",
-            data: { sequence, job: restoredJob, imageSized: Boolean(style && restoredJob?.outputs[0]) } };
+            data: { sequence, job: jobs[0], jobs, imageSized: Boolean(style && canvasGeneratorOutputs({ jobs })[0]) } };
         }
         if (saved.type === "sourceImage" || saved.type === "sourceVideo") {
           let previewUrl = "";
@@ -2029,9 +2040,8 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
         if ((node?.type === "sourceImage" || node?.type === "sourceVideo") && node.data.uploadState === "failed" && localUploadsRef.current.has(node.id) && navigator.onLine) {
           startLocalUpload(node.id);
         }
-        if (node?.type === "imageGenerator" && node.data.job && !node.data.job.id.startsWith("pending_") &&
-            ["queued", "running", "refining"].includes(node.data.job.state) && navigator.onLine) {
-          void runGeneratorJob(node.id, node.data.job.input, node.data.job);
+        if (node?.type === "imageGenerator" && navigator.onLine) {
+          void runGeneratorJobs(node.id, { resume: true });
         }
       }
       if (navigator.onLine) for (const [generatorId, refs] of Object.entries(restoredReferences)) {
@@ -2097,9 +2107,8 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
         upload(generatorId, refs.filter((item) => item.file && item.reference.status === "failed"));
       }
       for (const node of pagesRef.current.flatMap((page) => projectPageNodes(page.id))) {
-        if (node.type === "imageGenerator" && node.data.job && !node.data.job.id.startsWith("pending_") &&
-            ["queued", "running", "refining"].includes(node.data.job.state)) {
-          void runGeneratorJob(node.id, node.data.job.input, node.data.job);
+        if (node.type === "imageGenerator") {
+          void runGeneratorJobs(node.id, { resume: true });
         }
       }
     };
@@ -2277,7 +2286,16 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
         onCancel={() => setDeletePageId(null)} onConfirm={() => void deleteProjectPage()} />
 
       {composerHost && createPortal(<section className={`${styles.composer} ${styles.composerAttached}`} aria-label="图片生成工具">
-        {promptTooLong && <p role="alert" className={styles.message}>连接文本与补充描述合计 {combinedPrompt.length} 个字符，最多 4000 个字符。</p>}
+        {activeGeneratorJobs.some((job) => job.state === "failed" || job.state === "cancelled") &&
+          <div className={styles.batchFailures} role="region" aria-label="未完成的提示词">
+            {activeGeneratorJobs.map((job, index) => job.state === "failed" || job.state === "cancelled"
+              ? <div key={job.id} className={styles.batchFailure}>
+                <p role="alert"><span>{activeGeneratorJobs.length > 1 ? `提示词 ${index + 1}：` : ""}{job.error?.message ?? "生成未完成，请检查设置后重试。"}</span></p>
+                {job.error?.retryable && <Button type="button" variant="ghost" size="sm" disabled={generatorEditingLocked || !session || session.access.status !== "active" || session.preview}
+                  aria-label={`重试第 ${index + 1} 段提示词`} onClick={() => { if (activeGeneratorId) void runGeneratorJobs(activeGeneratorId, { retryIndex: index }); }}>重试</Button>}
+              </div> : null)}
+          </div>}
+        {promptTooLong && <p role="alert" className={styles.message}>第 {oversizedPromptIndex + 1} 段提示词 {promptBatch.prompts[oversizedPromptIndex].length} 个字符，最多 {CANVAS_PROMPT_MAX_LENGTH} 个字符。</p>}
         <input ref={inputRef} className={styles.srOnly} type="file" accept="image/jpeg,image/png" multiple onChange={addReferences} aria-label="选择参考图" />
         <TooltipProvider delayDuration={180}>
           <AttachmentGroup className={styles.referenceTray} role="group" aria-label="输入附件">
@@ -2337,7 +2355,6 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
             placeholder={linkedTextInputs.length ? "补充画面描述（追加在连接文本之后）…" : "描述你想生成的画面…"}
             value={prompt}
             readOnly={generatorEditingLocked}
-            maxLength={4000}
             onScroll={syncPromptScrollbar}
             onChange={(event) => {
               updateGeneratorDraft({ prompt: event.target.value });
@@ -2446,10 +2463,10 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
               ))}
             </SelectContent>
           </Select>
-          <Button type="button" className={styles.generate} disabled={!canGenerate} onClick={generate} aria-busy={submitting} aria-label={quote ? `生成图片，本次 ${quote.creditAmount} 积分` : "生成图片，当前规格暂无报价"}>
+          <Button type="button" className={styles.generate} disabled={!canGenerate} onClick={generate} aria-busy={submitting} aria-label={batchCreditAmount ? `生成 ${promptBatch.prompts.length * selectedCount} 张图片，本次 ${batchCreditAmount} 积分` : "生成图片，当前规格暂无报价"}>
             <span className={styles.generateCost}>
               {submitting ? <LoaderCircle className={`size-[1em] ${styles.loadingIcon}`} /> : <CreditIcon className="size-[1em]" />}
-              {quote?.creditAmount ?? "—"}
+              {batchCreditAmount ?? "—"}
             </span>
           </Button>
         </div>

@@ -217,6 +217,10 @@
 .quote { color: #a1a1aa; }
 .message { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: #52525b; }
 .message button { flex: none; text-decoration: underline; text-underline-offset: 2px; }
+.batchFailures { display: grid; gap: 4px; max-height: 140px; overflow-y: auto; padding: 0 4px 8px; color: #52525b; }
+.batchFailure { display: flex; align-items: center; gap: 8px; font-size: 11px; line-height: 16px; }
+.batchFailure p { flex: 1; min-width: 0; margin: 0; overflow-wrap: anywhere; }
+.batchFailure button { flex: none; }
 .srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
 @keyframes canvas-spin { to { transform: rotate(360deg); } }

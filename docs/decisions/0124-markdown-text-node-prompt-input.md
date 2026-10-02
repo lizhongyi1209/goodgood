@@ -18,6 +18,11 @@ GG-273 editor presentation uses a visible document header, padded writing surfac
 
 [GG-301](../tasks/GG-301-text-divider.md) adds a horizontal-rule insertion button immediately after ordered lists and before the undo/redo group. Use the existing StarterKit `setHorizontalRule` command, a neutral horizontal-line icon and a thin gray rule in the editor; preserve native Markdown, selection/history and current editing/streaming locks. This is an additive toolbar entry with no new dependency or persistence contract.
 
+[ADR 0131 / GG-303](0131-canvas-concurrent-prompt-batches.md) makes a native
+horizontal rule output a standalone `---` line and splits composed canvas image
+prompts into concurrent jobs. It supersedes the combined-source 4000-character
+gate above with the existing per-segment API limit and ordered batch recovery.
+
 Project snapshots, cloud validation, local recovery, pages and canvas copy/paste preserve text nodes and edges. Existing schemaVersion1/2 and JSON storage remain; no database migration is required. Unknown node types and inappropriate fields remain rejected, and legacy documents retain their current behavior. Local Web must be rebuilt to accept the additive node fields; the generation Worker/provider contract does not change. No production deployment is authorized.
 
 Reference: [Tiptap Markdown basic usage](https://tiptap.dev/docs/editor/markdown/getting-started/basic-usage) and [React installation](https://tiptap.dev/docs/editor/getting-started/install/react).

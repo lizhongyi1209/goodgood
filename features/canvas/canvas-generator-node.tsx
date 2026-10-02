@@ -10,12 +10,14 @@ import { initialCanvasImageSize } from "./canvas-image-size.mjs";
 import { CanvasGeneratorHostContext } from "./canvas-generator-host";
 import { CanvasImageCropToolbar, useCanvasImageCrop } from "./canvas-image-crop";
 import { canvasCropImageForNode } from "./canvas-image-crop-image";
+import { canvasGeneratorJobs, canvasGeneratorOutputs, canvasImageJobIsActive } from "./canvas-image-prompt-batch.mjs";
 import type { CanvasGeneratorNodeType, CanvasNode } from "./canvas-workspace";
 import styles from "./canvas-workspace.module.css";
 
 export type CanvasGeneratorNodeData = Record<string, unknown> & {
   sequence?: number;
   job?: GenerationJob;
+  jobs?: readonly GenerationJob[];
   imageSized?: boolean;
 };
 
@@ -26,8 +28,9 @@ export function CanvasGeneratorNode({ id, data, selected }: NodeProps<CanvasGene
   const onHostChange = useContext(CanvasGeneratorHostContext);
   const setHost = useCallback((element: HTMLDivElement | null) => onHostChange(id, element), [id, onHostChange]);
   const flow = useReactFlow<CanvasNode>();
-  const outputs = data.job?.state === "succeeded" ? data.job.outputs : [];
-  const outputKey = `${data.job?.id ?? "empty"}:${outputs.map((item) => item.id).join(":")}`;
+  const jobs = canvasGeneratorJobs(data);
+  const outputs = canvasGeneratorOutputs(data);
+  const outputKey = jobs.map((job) => job.id).join(":");
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const output = outputs[0];
@@ -37,7 +40,7 @@ export function CanvasGeneratorNode({ id, data, selected }: NodeProps<CanvasGene
     typeof pixelHeight === "number" && Number.isFinite(pixelHeight) && pixelHeight > 0
     ? `${Math.round(pixelWidth)}×${Math.round(pixelHeight)}`
     : null;
-  const generating = data.job?.state === "queued" || data.job?.state === "running" || data.job?.state === "refining";
+  const generating = jobs.some(canvasImageJobIsActive);
   const screenLeft = useStore((state) => {
     const node = state.nodeLookup.get(id);
     return (node?.internals.positionAbsolute.x ?? 0) * state.transform[2] + state.transform[0];
@@ -127,7 +130,7 @@ export function CanvasGeneratorNode({ id, data, selected }: NodeProps<CanvasGene
         role={stacked ? "group" : "img"}
         aria-label={`图片生成 ${data.sequence ?? 1}${generating ? "，生成中" : output ? `，已生成 ${stackCount} 张图片` : ""}`}
         aria-busy={generating || undefined}>
-        {generating ? null : stacked ? outputs.map((item, index) => {
+        {generating && !output ? null : stacked ? outputs.map((item, index) => {
           const previewDepth = Math.min(index, 2);
           const hidden = !expanded && index > 2;
           return (
@@ -138,7 +141,7 @@ export function CanvasGeneratorNode({ id, data, selected }: NodeProps<CanvasGene
               aria-hidden={hidden || undefined}
               style={{ "--canvas-stack-x": `${expanded ? index * (nodeWidth + 12) : previewDepth * stackOffset}px`,
                 "--canvas-stack-y": `${expanded ? 0 : previewDepth * 4}px`,
-                zIndex: stackCount - index } as CSSProperties}>
+                zIndex: expanded ? 1 : Math.max(0, 3 - index) } as CSSProperties}>
               <PrivateObjectImage src={item.previewUrl} alt={`图片生成 ${data.sequence ?? 1} 的第 ${index + 1} 张结果`}
                 className={styles.generatorImage} loading="eager"
                 onLoad={(event) => markOutputReady(item, event.currentTarget)}
@@ -160,7 +163,8 @@ export function CanvasGeneratorNode({ id, data, selected }: NodeProps<CanvasGene
           }}>
           {expanded ? <ChevronsLeft size={14} aria-hidden="true" /> : <ChevronsRight size={14} aria-hidden="true" />}
         </button>}
-        {data.job?.state === "failed" || data.job?.state === "cancelled" ? <span className={styles.generatorFailure} role="alert">{data.job.error?.message ?? "生成未完成，请检查设置后重试。"}</span> : null}
+        {!selected && jobs.some((job) => job.state === "failed" || job.state === "cancelled")
+          ? <span className={styles.generatorFailure} role="alert">{jobs.length > 1 ? "部分提示词未完成，选中节点查看。" : jobs[0]?.error?.message ?? "生成未完成，请检查设置后重试。"}</span> : null}
       </div>
       <Handle type="target" id="reference" position={Position.Left} className={styles.generatorInputHandle} aria-label="连接图片或文本" title="图片或文本" />
       <NodeToolbar isVisible={cropRequest?.nodeId === id ? false : undefined} position={Position.Bottom} offset={12} align={align} style={{ width: toolbarWidth }} className={`${styles.generatorToolbar} nodrag nopan nowheel`}>

@@ -1,5 +1,9 @@
 # GG-063 quality pricing
 
+## GG-303 canvas image batch identities
+
+Canvas image generators optionally persist ordered `jobIds`, with `jobId` retaining the first durable identity for legacy single-job readers. Browser snapshots also retain ordered `localJobs` with private URLs normalized; these snapshots and temporary pending IDs never enter cloud writes. Existing schemaVersion1/2 JSON, owner/workspace/CAS and 1 MiB document envelope remain; no SQL migration. Every newly attached batch job is authorized by the existing generation-job resource query. The full generator draft is no longer capped at4000 in storage; the unchanged image API4000 applies to each segment before submission. Reopening polls every accepted active job without resubmitting, preserving successful siblings and source order. New validation requires updated Web; GG-303 edits source only. See[ADR0131](decisions/0131-canvas-concurrent-prompt-batches.md).
+
 ## GG-291 text jobs and ledger relation
 
 GG-297 adds optional `textGeneration.presetId` to canvas JSON, accepting only shared preset IDs. Existing nodes without a preset remain compatible; snapshot/restore/duplication retain the existing draft object. Browser JSON/history never store the hidden instruction. Server job snapshots include presetId and the resolved prompt for idempotency; no additional migration, but new project validation/provider preparation require updated Web. GG-296 new0062 remains pending independently.

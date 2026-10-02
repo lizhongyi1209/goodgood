@@ -28,6 +28,10 @@ frozen segment; it never retries other segments or sends the context to a model.
 
 ## Boundaries
 
+[ADR 0131](0131-canvas-concurrent-prompt-batches.md) extends concurrent per-segment
+jobs to canvas image generators, including Chinese separators, ordered recovery
+and per-segment prompt validation. The creation-mode rules above remain unchanged.
+
 This expands the single-prompt-per-click decision in UX flows and ADR 0052.
 Video remains the default-off, text-only local GG-036 boundary; no pricing,
 durable media, real-provider test, production deployment or concurrency ceiling

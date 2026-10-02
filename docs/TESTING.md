@@ -1,5 +1,9 @@
 # GG-063 verification
 
+## GG-303 batch regression source, not executed
+
+`gg303-canvas-prompt-batches.test.mjs` contains synthetic coverage for exact English/Chinese separator lines, CRLF/whitespace/empty/duplicate prompts, native Markdown rule output and connected composition, count/BigInt quote products, source drafts over4000 and65 segments, concurrent start/out-of-order results/failure, isolated retry/accepted-only resume, legacy/batch snapshots and local/remote recovery, private crop ownership and nonfirst-job authorization. GG-173 oversized-draft expectation now follows the existing document envelope. These sources were written only: no tests, compilation, lint, type/code/diff checks, HTTP/browser/provider calls or database changes were executed under the user's standing agreement. User manually verifies; cloud batch persistence needs later Web activation with new jobIds validation, without a migration.
+
 ## GG-297 presets, unexecuted regression source
 
 `gg297-text-generation-presets.test.mjs` covers the ID/name-only catalog, exact backend instruction, empty-extra input, appended custom input, retained images, unknown IDs/length rejection, idempotency snapshots and project persistence without hidden prompts, including legacy projects. No automatic build/lint/tests/code checks/browser/provider/SQL calls were run under the user's code-only agreement. User verifies menus/badges; actual preset generation needs updated Web, with pendingGG-296 new0062 before activation. Preset-stream404 on the old Web is deliberate and does not fall back to a paid ordinary request.

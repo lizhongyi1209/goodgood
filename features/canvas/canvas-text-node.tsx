@@ -12,6 +12,7 @@ import { Bold, FileText, Heading1, Heading2, Heading3, Italic, List, ListOrdered
 import { Button } from "@/components/ui/button";
 import type { CanvasNode, CanvasTextNodeType } from "./canvas-workspace";
 import { CANVAS_MARKDOWN_MAX_LENGTH, CANVAS_TEXT_FONT_SIZE, CANVAS_TEXT_MAX_LENGTH, CANVAS_TEXT_NODE_BOUNDS, canvasTextNodeSizeForKey } from "./canvas-text-input.mjs";
+import { canvasDocumentPlainText } from "./canvas-markdown";
 import styles from "./canvas-text-node.module.css";
 import workspaceStyles from "./canvas-workspace.module.css";
 
@@ -67,7 +68,7 @@ export function CanvasMarkdownNode({ id, data, selected, width, height, label, s
     addProseMirrorPlugins() {
       return [new Plugin({ filterTransaction: (transaction) => {
         if (!transaction.docChanged) return true;
-        const tooLong = transaction.doc.textBetween(0, transaction.doc.content.size, "\n").length > CANVAS_TEXT_MAX_LENGTH ||
+        const tooLong = canvasDocumentPlainText(transaction.doc).length > CANVAS_TEXT_MAX_LENGTH ||
           (this.editor.markdown?.serialize(transaction.doc.toJSON()).length ?? 0) > CANVAS_MARKDOWN_MAX_LENGTH;
         setError(tooLong ? `文本最多 ${CANVAS_TEXT_MAX_LENGTH} 个字符。` : "");
         return !tooLong;
@@ -96,7 +97,7 @@ export function CanvasMarkdownNode({ id, data, selected, width, height, label, s
       },
     },
     onUpdate({ editor: current }) {
-      flow.updateNodeData(id, { markdown: current.getMarkdown(), text: current.state.doc.textBetween(0, current.state.doc.content.size, "\n") });
+      flow.updateNodeData(id, { markdown: current.getMarkdown(), text: canvasDocumentPlainText(current.state.doc) });
     },
   });
   useEffect(() => { editorRef.current = editor; }, [editor]);
@@ -120,7 +121,11 @@ export function CanvasMarkdownNode({ id, data, selected, width, height, label, s
       editor.chain().setContent(data.markdown, { contentType: "markdown", emitUpdate: false }).setMeta("addToHistory", false).run();
       if (follow && body) body.scrollTop = body.scrollHeight;
     }
-  }, [data.markdown, editor, streaming]);
+    if (editor) {
+      const text = canvasDocumentPlainText(editor.state.doc);
+      if (text !== data.text) flow.updateNodeData(id, { text });
+    }
+  }, [data.markdown, data.text, editor, flow, id, streaming]);
   const selectNode = useCallback(() => {
     flow.setNodes((nodes) => nodes.map((node) => node.selected === (node.id === id) ? node : { ...node, selected: node.id === id }));
   }, [flow, id]);

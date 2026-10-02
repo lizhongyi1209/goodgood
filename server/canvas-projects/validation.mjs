@@ -47,7 +47,7 @@ function position(value) {
 }
 
 function node(value) {
-  record(value, ["id", "type", "position", "size", "asset", "jobId", "index", "sequence", "name", "metadata", "markdown", "text", "textGeneration"]);
+  record(value, ["id", "type", "position", "size", "asset", "jobId", "jobIds", "index", "sequence", "name", "metadata", "markdown", "text", "textGeneration"]);
   const type = value.type;
   if (!NODE_TYPES.has(type)) throw invalid();
   const result = { id: nodeId(value.id), type, position: position(value.position) };
@@ -90,6 +90,12 @@ function node(value) {
     if (type !== "imageResult" && type !== "imageGenerator") throw invalid();
     result.jobId = uuid(value.jobId);
   } else if (type === "imageResult") throw invalid();
+  if (value.jobIds !== undefined) {
+    if (type !== "imageGenerator" || !Array.isArray(value.jobIds) || !value.jobIds.length) throw invalid();
+    result.jobIds = value.jobIds.map(uuid);
+    if (new Set(result.jobIds).size !== result.jobIds.length ||
+        result.jobId && result.jobId !== result.jobIds[0]) throw invalid();
+  }
   if (value.index !== undefined) {
     if (type !== "imageResult" || !Number.isSafeInteger(value.index) || value.index < 0 || value.index > 1000) throw invalid();
     result.index = value.index;
@@ -142,7 +148,8 @@ function generator(value) {
   const directReferenceIds = value.directReferenceIds.map(uuid);
   if (new Set(directReferenceIds).size !== directReferenceIds.length) throw invalid();
   return {
-    draft: { prompt: string(draft.prompt, 4000, { empty: true, multiline: true }), modelKey: draft.modelKey,
+    // A batch source contains many per-job prompts; the document envelope bounds storage.
+    draft: { prompt: string(draft.prompt, MAX_DOCUMENT_BYTES, { empty: true, multiline: true }), modelKey: draft.modelKey,
       ratio: draft.ratio, resolution: draft.resolution, count: draft.count,
       ...(draft.quality !== undefined ? { quality: draft.quality } : {}),
       ...(draft.background !== undefined ? { background: draft.background } : {}),
