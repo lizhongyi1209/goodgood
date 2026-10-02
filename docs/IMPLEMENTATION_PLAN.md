@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-02
-- Current phase: GG-284生成图片打开裁剪的Failed to fetch已修复：受权原图直链读取、本地RustFS CORS补5173及Worker启动器origin修正；7/7针对性回归和预检通过，创建1/退役1，无编译/服务重启，原Web/Worker/0060与生产不变。
-- Current objective: 用户刷新画布重新打开生成图裁剪复验GG-284，并手验此前GG-280/283等交付；参考去重服务端仍待后续构建重启生效。其他任务仍默认不自动编译/检查，免费政策待用户。
+- Current phase: GG-285暂时隐藏图片生成器添加参考图缩略按钮，空附件区域收起，连线预览保持；已精确接入5173源码，创建1/退役1，无自动编译/检查或服务变更。
+- Current objective: 用户刷新画布手验GG-285隐藏入口及此前GG-284裁剪读取/GG-280/283等交付；参考去重服务端仍待后续构建重启生效。默认不自动编译/检查，免费政策待用户。
 - Previous objective: 子agent完成GG-280裁剪源码，根agent精确集成；并行GG-279文本缩略/GG-281文件夹卡/GG-282重命名弹框保留。
 
 ## Current checkpoint
+
+- 最新入口收起 [GG-285](tasks/GG-285-hide-generator-reference-add.md)：基于`6d230bf`，登记`5535022`，隔离源码`c3414a3`→`e7ac61a`；仅关闭添加按钮与空附件占位，图片/文本连线和既有预览保持。创建1/退役1，未编译/检查，无服务/生产变化，用户手验。
 
 - 最新裁剪读取修复 [GG-284](tasks/GG-284-canvas-crop-image-fetch.md)：`592c3e6`→`07e1ba3`；生成图解析download-url后直接无凭据读取，签名/字节请求可取消；共享本地桶此前仅32131，已备份并补两种5173 Origin，预检200/匹配ACAO，null仍403。Worker启动也保留5173，忽略启动器同步，无服务重启/构建；定向7/7，真实浏览器复验由用户完成。创建1/退役1，并行GG-283保持，初始撞号已纠正。
 
