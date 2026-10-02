@@ -133,6 +133,9 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
 - Default to scoped verification: small UI/copy/interaction changes need source/diff
   review and relevant logic tests. Batch/release/full-gate triggers and documentation
   checks follow WORKFLOW; older per-task gate notes are history.
+- User override (2026-10-02): implement and edit code only; the user manually checks
+  changes. Do not automatically run compilation, lint, tests, code checks or browser
+  acceptance unless the user delegates them again. This overrides default checks.
 - Runnable local development uses real online interfaces with external development credentials; local state stays isolated, production state stays forbidden, and mocks are only for named test stacks.
 - Treat every real-provider request as potentially billable. Never let fixtures
   or synthetic jobs share a database or queue with a real-provider Worker.

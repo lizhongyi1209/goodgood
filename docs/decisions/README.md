@@ -183,3 +183,4 @@ ADR 0053 adds standalone-delimited concurrent prompt batches for GG-040.
 - `0122-authenticated-public-image-link-read.md` — 公开图片直链经受鉴权、有界且固定公开 DNS 的后端读取，继续既有 File 上传和归档。
 - `0123-canvas-media-preview-carousel.md` — 画布图片放大使用受限浮层和完整图面，右列以滚轮切换图片/视频，选中缩略图向左放大置顶。
 - `0124-markdown-text-node-prompt-input.md` — 可视化Markdown文本节点、独立文本连线、接收内容在前/自身附加描述在后，沿用生成快照和项目保存。
+- `0125-canvas-reference-thumbnail-restoration.md` — 图片生成器参考图恢复真实缩略与悬停预览，仅取代GG-273图片文件卡展示，文本/视频和混合端口保持。

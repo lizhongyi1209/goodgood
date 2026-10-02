@@ -3,6 +3,7 @@
 - 最后核对：2026-10-02（GG-274本地重启；生产身份沿用原发布证据）。
 - 产品阶段：公开的 `controlled-alpha-v1`；已有真实用户，尚未达到完整 seed、自动支付或完整运营告警就绪。
 - 正式入口：https://goodgood.o1key.com
+- 最新图片展示后继：[GG-276](tasks/GG-276-restore-reference-previews.md) `3920306`已在5173恢复图片生成器原参考图缩略/悬停预览，文本文件卡和唯一混合端口保持；创建1/退役1，Web/Worker/数据库不变，用户手动检查。后续按用户要求仅开发代码，不自动编译/检查。
 - 最新纠正：[GG-273](tasks/GG-273-canvas-editor-inputs.md)文档式编辑器/H1-H3/一致输出圆点、生成器唯一图片文本接收端、160×52px统一文件附件卡已进入5173/Web，旧text边兼容，视频继续原流程。相关30项、类型/lint/模块/必要构建通过，创建1/退役1，0060/原Worker/生产保持；用户验收。
 - 最新本地画布：[GG-268](tasks/GG-268-markdown-text-node.md)所见即所得Markdown文本节点、选中工具栏/缩放排版及生成器文本预览/前置合并；[GG-270](tasks/GG-270-canvas-asset-context-menu.md)创建编号文件夹和右键重命名/删除已进入5173。本次52/52、类型/局部lint/实际模块和必要构建通过，创建2/退役2；Web同步为`b1b3d1c` verified、0060/Worker保持，用户验收，生产无变更。后继资料/品牌及当前Web身份见GG-272。
 - 最新账户/品牌：[GG-272](tasks/GG-272-account-created-and-brand-row.md) `c4b10b8`：个人信息新增真实只读创建时间（北京时间），桌面字标下移与项目标题同水平线、保留GG-271左侧对齐。22/22、局部lint/三个模块编译与必要Web构建通过，创建1/退役1、无子缓存；Web/5173为verified `c4b10b8`，0060/原云配置/唯一Worker保持，用户验收，未部署。

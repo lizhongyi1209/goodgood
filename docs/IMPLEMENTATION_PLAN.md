@@ -2,10 +2,12 @@
 
 - Last synchronized: 2026-10-02
 - Current phase: GG-274本地服务已恢复；Windows保留端口冲突处理后原56549映射正常，5173/Web/唯一Worker健康，Web verified 80b8c0f；原数据与GG-273源码保持，生产不变。
-- Current objective: 用户在恢复的5173继续使用并验收GG-273及此前功能；免费政策仍待用户。
+- Current objective: GG-276参考图缩略与悬停预览已恢复到5173；用户手动检查。后续agent只开发/修改代码，不自动运行编译或检查；免费政策仍待用户。
 - Previous objective: GG-273编辑器、统一接收端和文件附件卡已交付，30项相关检查通过，用户验收。
 
 ## Current checkpoint
+
+- 当前纠正 [GG-276](tasks/GG-276-restore-reference-previews.md)：`cb6a4a0`→`3920306`恢复图片生成器54×68px真实缩略与悬停/焦点预览，文本附件/唯一混合端口保持；创建1/退役1，无后端/服务变化。用户要求本次及后续不自动编译/代码检查，手验由用户负责；并行GG-275未提交内容保留。
 
 - 本次恢复 [GG-274](tasks/GG-274-local-restart-after-reboot.md)：从`80b8c0f`必要构建/来源核验后恢复Web，唯一Worker复用`70e10c6`；5173首页/画布/API代理200、两角色readiness五项ok，启动前任务/outbox/冻结/两队列0，迁移0060/原卷保持，WinNAT已恢复Running。创建0/退役0，无产品决定变化。
 
