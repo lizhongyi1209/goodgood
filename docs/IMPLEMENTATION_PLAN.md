@@ -7,6 +7,8 @@
 
 ## Current checkpoint
 
+- 最新排查 [GG-302](tasks/GG-302-canvas-image-quality-audit.md)：以03e1b43只读追踪画布→生成响应→私有preview→存储/已运行Worker，确认画布生成图片使用512px最长边/quality80 WebP且放大不切原图；原生成bytes未重采样，实际像素元数据与请求2K分开。仅排查及文档，未修改代码或运行，创建0/退役0；后续若优化应仅改画布大图读取，保留卡片预览策略，原GG-301及GG-300运行保持。
+
 - 当前源码 [GG-301](tasks/GG-301-text-divider.md)：从b3844d2隔离，6b56d36在GG-300后继d174d54后精确接入为9217c10；有序列表后、撤销前新增分割线，复用StarterKit原生命令，hr显示1px细灰线，Markdown/选择/历史/原编辑与流式锁保持。补充ADR0124，无依赖/后端/迁移或服务变化；创建1/退役1，未编译/验证，用户刷新5173手验，原GG-300运行身份及GG-292撤回保持。
 
 - 当前启用 [GG-300](tasks/GG-300-preset-activation.md)：基于d3a4717，隔离登记a708816精确接入b3844d2；用户授权预设启用且无额外费，checkpoint构建成功、本地仅0062及Web33072→33840已启用预设/保存校验与中断策略。32131/5173版本均verified b3844d25a7a4328d71bf79e9196ecdbbc18a504e，匿名preset-stream合法Origin返回401；无真实生成/测试或生产变化。Vite27464/Worker31280保持，创建1/退役1，临时启动器备份已清理，下一步用户手验；构建指纹见任务卡。
