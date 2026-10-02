@@ -2208,7 +2208,6 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
             {displayReferences.length < MAX_GENERATION_REFERENCES && (
               <button type="button" className={styles.referenceAdd} aria-label="添加参考图" onClick={() => inputRef.current?.click()}>
                 <ImageIcon size={14} strokeWidth={1.5} aria-hidden="true" />
-                <span aria-hidden="true">参考图</span>
               </button>
             )}
           </AttachmentGroup>
