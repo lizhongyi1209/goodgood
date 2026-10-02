@@ -130,8 +130,8 @@
 }
 
 .referenceTray[data-slot="attachment-group"] { gap: 8px; padding: 2px 0 11px; }
-.reference[data-slot="attachment"] { position: relative; display: block; flex: 0 0 54px; min-width: 0; width: 54px; height: 68px; overflow: hidden; padding: 0; border: 0; border-radius: 15px; background: #f4f4f5; }
-.referenceAdd { display: flex; flex: 0 0 54px; flex-direction: column; align-items: center; justify-content: center; gap: 6px; width: 54px; height: 68px; padding: 0; border: 0; border-radius: 15px; background: #f3f3f4; color: #a1a1aa; font-size: 10px; line-height: 1.2; scroll-snap-align: start; }
+.reference[data-slot="attachment"] { position: relative; display: block; flex: 0 0 54px; min-width: 0; width: 54px; height: 54px; overflow: hidden; padding: 0; border: 0; border-radius: 15px; background: #f4f4f5; }
+.referenceAdd { display: flex; flex: 0 0 54px; flex-direction: column; align-items: center; justify-content: center; gap: 6px; width: 54px; height: 54px; padding: 0; border: 0; border-radius: 15px; background: #f3f3f4; color: #a1a1aa; font-size: 10px; line-height: 1.2; scroll-snap-align: start; }
 .referenceAdd:hover { background: #eaeaec; color: #71717a; }
 .referenceAdd:focus-visible { outline: 2px solid #71717a; outline-offset: 2px; }
 .reference[data-slot="attachment"]:focus-within { box-shadow: none; }
