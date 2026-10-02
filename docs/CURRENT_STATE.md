@@ -1,9 +1,10 @@
 # GoodGood 当前状态
 
-- 最后核对：2026-10-02（GG-274本地重启；生产身份沿用原发布证据）。
+- 最后核对：2026-10-02（GG-294本地构建/0061/Web启用；生产身份沿用原发布证据）。
 - 产品阶段：公开的 `controlled-alpha-v1`；已有真实用户，尚未达到完整 seed、自动支付或完整运营告警就绪。
 - 正式入口：https://goodgood.o1key.com
-- 最新文本生成：[GG-291](tasks/GG-291-canvas-text-generation.md) `d41e5d3`→`046fa5d/2f6a91f`已接入5173源码：节点改名/编号、双击编辑，五模型/默认Claude/high、图文视频单端口、流式打字/停止/可编辑结果、保存恢复与固定20积分预留/结算/释放。创建1/退役1，无编译/检查/真实请求或服务变化，未部署；0061未应用，新API/保存/账本需新版Web后续激活，视频暂以代表画面处理且不含音轨。
+- 最新本地启用：[GG-294](tasks/GG-294-text-generation-test.md)隔离79db1ed→767e6db，将入口改为文本编辑→文本生成→图片生成；用户明确委托checkpoint构建成功，应用本地0061并替换32131 Web，5173代理同为verified新版。创建1/退役1，无其他代码检查/测试/浏览器或真实生成，原唯一Worker/云配置/数据及生产保持。
+- 最新文本生成：[GG-291](tasks/GG-291-canvas-text-generation.md)节点改名/编号、双击编辑，五模型/默认Claude/high、图文视频单端口、流式打字/停止/可编辑结果、保存恢复与固定20积分预留/结算/释放已随GG-294构建/0061/Web启用。用户手验，未部署；视频暂以代表画面处理且不含音轨。
 - 最新撤回：[GG-293](tasks/GG-293-revert-prompt-limits.md) `70302b3`→`fdd13ae`已接入5173所用源码：用户取消GG-292，恢复此前实现及原有校验，新模型策略/32,000存储/计数建议/全文预览排序与未执行0062源码已移除。创建1/退役1，未编译/验证或服务变更，GG-292不再待激活；GG-291独立实现后已精确接入，前序文本/裁剪及生产保持。
 - 最新文本编号：[GG-290](tasks/GG-290-canvas-text-editor-order.md) `8675cd9`已接入5173源码，标题/可访问编辑标签显示“文本编辑器 1、2、3…”，按当前页节点顺序编号，新建/复制排后，重开沿用保存顺序。创建1/退役1，未自动编译/检查，无服务变化，用户手验，未部署。
 - 最新文本选区：[GG-289](tasks/GG-289-canvas-text-selection-padding.md) `8521bcc`已接入5173源码，将内边距纳入可编辑区域并撤去外层点击重置光标，修复反向拖选取消；间距/滚动保持。创建1/退役1，未自动编译/检查，无服务变化，用户手验，未部署。
@@ -29,7 +30,7 @@
 - 本地账户信息：[GG-254](tasks/GG-254-account-identity-editor.md) `422c32f` 已接入实际 5173/Web，仅保留用户名默认 mimi、稳定六位数字 ID；文字/头像旁侧确认保存、编辑区外取消和下方规则，撤去个人主页。20 项相关检查、资料 SQL 1/1、ID SQL 10/10、局部 lint、必要 Web 同步与本地 0058 完成，辅助目录退役。
 - 当前本地画布检查点：[GG-253](tasks/GG-253-canvas-media-detail.md) `896bce2`，真实素材信息独立列、图片平移/滚轮缩放、原比例内容缩略列和选中轻微抽出，取代 GG-249/251 的画布滚轮切图及原位放大；25 项定向、lint 和模块编译通过。
 - 当前画布子任务：[GG-255](tasks/GG-255-canvas-paste-image.md) `d4ea42c` 原生外部图片粘贴/进入页面直接粘贴，19/19；[GG-256](tasks/GG-256-canvas-folder-drop.md) `5183287` 图片拖入文件夹、状态动效与光标，8/8；[GG-257](tasks/GG-257-canvas-edge-hover-flow.md) `6f63a8f` 默认实线、hover 流动。相关代码/编译检查完成，三个辅助目录已退役，无子缓存；浏览器验收由用户负责。
-- 当前本地运行：[GG-274](tasks/GG-274-local-restart-after-reboot.md)恢复后，Vite `127.0.0.1:5173` 从 `F:/goodgood-worktrees/GG-116` 提供前端；API代理verified Web `80b8c0f` / `127.0.0.1:32131`，唯一真实开发Worker `32142`保持原GG-226；两角色readiness正常，原云配置/数据卷/0060保持，生产未变。
+- 当前本地运行：[GG-294](tasks/GG-294-text-generation-test.md)启用后，Vite `127.0.0.1:5173` 从 `F:/goodgood-worktrees/GG-116` 提供前端；API代理verified Web `767e6db` / `127.0.0.1:32131`，唯一真实开发Worker `32142`保持原GG-226；原云配置/数据卷保持，数据库新增0061，生产未变。此次仅核对Web身份/启动及匿名接口边界，没有重新执行provider readiness或真实生成。
 
 ## 生产身份
 
@@ -52,7 +53,7 @@
 
 GG-239 收口了 5173 中 GG-116—238 的累计实现，包括统一资产工作区、独立画布、持久画布项目与页面、真实画布生成、模型路由与计费、项目管理、资产面板、导航和近期视觉修复。详细范围与各自验证边界保留在 [BACKLOG](BACKLOG.md) 所列任务卡；当前入口文档不再复制历史逐项日志。
 
-当前 Web 来自 GG-116 已验证 revision `80b8c0f0b41aff4371e4673597bc4b483233e405`，Web 和5173代理的 `/api/health/version` 均为 `build.verified=true`；原 GG-226 Worker `70e10c6ae6bd83542ba870f54059b54b999e9fdf` 继续运行。本地 PostgreSQL 使用 `54449/goodgood`，迁移到 `0060`；Valkey为`56549`，RustFS为`58049/58050`，Mailpit为`58045/58046`。均为loopback开发资源，最新构建/恢复证据见GG-274；GG-275仅UI/客户端尺寸修正，未重建后端，免费quota未实现，届时必须升级Worker。
+当前 Web 来自 GG-116 已验证 revision `767e6db1af53912476c022f81f0d45c77845c402`，Web 和5173代理的 `/api/health/version` 均为 `build.verified=true`；原 GG-226 Worker `70e10c6ae6bd83542ba870f54059b54b999e9fdf` 继续运行。本地 PostgreSQL 使用 `54449/goodgood`，迁移到 `0061`；Valkey为`56549`，RustFS为`58049/58050`，Mailpit为`58045/58046`。均为loopback开发资源，最新构建/迁移/启动证据见GG-294；免费quota未实现，届时必须升级Worker。文档后继不改变当前运行receipt，后续重启前按当前HEAD重新构建，不伪造revision。
 
 当前本地库包含云端 `local-dev/references/` 素材；Web/Worker 启动必须保留原仓库外云配置。GG-242 的 13 张既有图像只读抽查均预览 200、原图 Range 206；基础 readiness 不能证明云素材预览正常。
 
