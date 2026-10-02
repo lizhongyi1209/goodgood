@@ -4,6 +4,7 @@
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
+| GG-287 | 开发中：修复文本编辑器纯文本/Markdown粘贴额外换行，改用开放粘贴片段；用户手验，不自动编译/检查 | [任务](tasks/GG-287-canvas-text-paste.md) |
 | GG-286 | 开发中：裁剪参数面板完成按钮恢复主动作浅色文字；仅局部CSS，用户手验，不自动编译/检查 | [任务](tasks/GG-286-canvas-crop-action-color.md) |
 | GG-284 | 已接入5173：生成图先解析受权原图直链、请求可取消；本地CORS补5173及Worker启动origin保持。定向7/7、预检200，创建1/退役1；无局部编译，用户重新打开裁剪复验 | [任务](tasks/GG-284-canvas-crop-image-fetch.md) |
 | GG-280 | 已精确接入5173所用目录：快捷裁剪、W/H/比例锁、遮罩网格/拖拽、五组新预设，无LinkedIn；真实PNG/File上传和项目恢复。创建2/退役2，未编译/检查，用户手验 | [任务](tasks/GG-280-canvas-image-crop.md) |
