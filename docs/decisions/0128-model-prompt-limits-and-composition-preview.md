@@ -1,11 +1,13 @@
 # ADR 0128: Model prompt limits and final composition preview
 
-- Status: Accepted for GG-292, code-only implementation; user verification pending
+- Status: Withdrawn by user on 2026-10-02; reverted by GG-293, do not implement or activate
 - Date: 2026-10-02
 - Task: [GG-292](../tasks/GG-292-model-prompt-limits.md)
-- Supersedes: ADR 0124's fixed 4,000-character combined image prompt limit
+- Historical proposal to supersede ADR 0124; that supersession is withdrawn
 
 ## Decision
+
+The user cancelled this proposal and requested restoration to the implementation before GG-292. [GG-293](../tasks/GG-293-revert-prompt-limits.md) restores that implementation, including the prior input/storage validation. The proposal below is retained as history only. Its shared model limits, 32,000-character storage, counters/preview/order UI and unapplied0062 migration are removed. Do not build, migrate or reactivate GG-292; GG-291 remains independent.
 
 Use one shared prompt policy for image submission in the canvas, creation composer and backend. GPT Image 2 / 2.5 sunburst / 2.5 flare accept at most 32,000 characters. Nano Banana 2 / Pro initially use the same 32,000-character application boundary; Gemini's native limits are tokens, not characters, and include references/context. Do not display an estimated token count as a provider measurement. Seedream 5.0 Pro keeps the current 4,000-character application boundary until the intermediary contract is clarified. Its recommendation of up to 300 Chinese characters or 600 English words is advisory and never a submission gate.
 
