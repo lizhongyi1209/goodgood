@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-02
-- Current phase: GG-298文本生成chat素材取消已接入GG-116/5173源码884ffdd，沿图片生成X样式/移除连线路径，源节点及资产保留；创建1/退役1，未编译/检查。GG-297预设与GG-296中断半价待新0062/Web启用；现有Web767e6db/数据库0061/原Worker及生产保持。
-- Current objective: 用户刷新5173手验素材取消、撤销及保存恢复。GG-297预设界面也可手验；实际预设与半价需后续明确委托新0062/Web更新。默认仅开发，不自动编译/检查/迁移/重启，不恢复GG-292；免费政策待用户。
+- Current phase: GG-299图片hover放大图已接入5173；GG-300按用户明确委托启用预设，保持普通文本生成每次20积分，无额外费；必要构建/本地新0062/Web更新进行中。尚未启用或部署，原运行保持。
+- Current objective: 完成本地preset-stream/保存校验启用及必要运行身份核对，保留原数据/素材配置/唯一Worker。用户手验预设、图片hover及素材取消；不执行测试、lint、类型检查、全面检查或真实生成。
 - Previous objective: GG-292源码曾完成c696e29，但未编译/验证/激活，已被本次用户请求撤回；历史证据保留。
 
 ## Current checkpoint
+
+- 当前启用 [GG-300](tasks/GG-300-preset-activation.md)：基于d3a4717，用户授权启用预设、无额外积分收费；仅本地构建/必要0062/Web更新，沿既有20积分及中断10策略，执行前核对目标及活动任务。启用进行中，生产及原Worker保持。
 
 - 当前源码 [GG-299](tasks/GG-299-text-image-preview.md)：基于025196e，隔离d8b40d7精确接入GG-116/5173；文本生成图片hover显示PrivateObjectImage放大图，直接复用图片生成referencePreview样式，保留取消按钮、文本/视频提示。创建1/退役1，无编译/检查或运行变更，用户手验。用户随后明确委托启用GG-297预设，沿原文本生成20积分，无额外预设费用；本地启用工作待后续任务登记。
 
