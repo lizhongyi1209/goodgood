@@ -92,7 +92,7 @@ export function CanvasGeneratorNode({ id, data, selected }: NodeProps<CanvasGene
       second = requestAnimationFrame(() => {
         const surface = document.getElementById("canvas-workspace-surface");
         const toolbar = Array.from(document.querySelectorAll<HTMLElement>(".react-flow__node-toolbar"))
-          .find((element) => element.dataset.id === id);
+          .find((element) => element.dataset.id === id && element.classList.contains(styles.generatorToolbar));
         if (!surface || !toolbar) return;
         const overflow = toolbar.getBoundingClientRect().bottom - surface.getBoundingClientRect().bottom + 14;
         if (overflow > 0) {
@@ -106,7 +106,7 @@ export function CanvasGeneratorNode({ id, data, selected }: NodeProps<CanvasGene
 
   return (
     <>
-      <CanvasImageCropToolbar image={cropImage} selected={selected} />
+      <CanvasImageCropToolbar image={cropImage} selected={selected} offsetX={expanded && currentOutput ? outputs.indexOf(currentOutput) * (nodeWidth + 12) : 0} />
       <div className={`${styles.imageMetadata} ${nodeWidth < 110 ? styles.imageMetadataCompact : ""} ${nodeWidth < 90 ? styles.imageMetadataIconOnly : ""}`}>
         <span className={styles.imageMetadataName}>
           <span className={styles.generatorMetadataIcon}>

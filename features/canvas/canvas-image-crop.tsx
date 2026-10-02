@@ -20,13 +20,13 @@ export const CanvasImageCropContext = createContext<{
 
 export function useCanvasImageCrop() { return useContext(CanvasImageCropContext); }
 
-export function CanvasImageCropToolbar({ image, selected }: Readonly<{ image: CanvasCropImage | null; selected: boolean }>) {
+export function CanvasImageCropToolbar({ image, selected, offsetX = 0 }: Readonly<{ image: CanvasCropImage | null; selected: boolean; offsetX?: number }>) {
   const { request, openCrop } = useCanvasImageCrop();
   const zoom = useStore((state) => state.transform[2]);
   const selectedCount = useStore((state) => [...state.nodeLookup.values()].filter((node) => node.selected).length);
   if (!image || request) return null;
   return <NodeToolbar nodeId={image.nodeId} isVisible={selected && selectedCount === 1} position={Position.Top} offset={12 + 22 * zoom}>
-    <div className={`${styles.toolbar} nodrag nopan nowheel nokey`} role="toolbar" aria-label="图片快捷操作" onPointerDown={(event) => event.stopPropagation()}>
+    <div className={`${styles.toolbar} nodrag nopan nowheel nokey`} style={offsetX ? { transform: `translateX(${offsetX * zoom}px)` } : undefined} role="toolbar" aria-label="图片快捷操作" onPointerDown={(event) => event.stopPropagation()}>
       <Button type="button" variant="ghost" size="sm" onClick={(event) => { event.stopPropagation(); openCrop(image); }} aria-label="裁剪图片" title="裁剪图片">
         <Crop size={15} strokeWidth={1.7} aria-hidden="true" />裁剪
       </Button>
