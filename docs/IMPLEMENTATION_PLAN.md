@@ -7,6 +7,8 @@
 
 ## Current checkpoint
 
+- 当前源码 [GG-299](tasks/GG-299-text-image-preview.md)：基于025196e，隔离d8b40d7精确接入GG-116/5173；文本生成图片hover显示PrivateObjectImage放大图，直接复用图片生成referencePreview样式，保留取消按钮、文本/视频提示。创建1/退役1，无编译/检查或运行变更，用户手验。用户随后明确委托启用GG-297预设，沿原文本生成20积分，无额外预设费用；本地启用工作待后续任务登记。
+
 - 当前源码 [GG-298](tasks/GG-298-text-input-remove.md)：基于e8b26df，隔离884ffdd精确接入GG-116/5173；文本生成图片/文本/视频缩略右上角X，hover/焦点显示及触屏常显，复用removeLinkedReference移除对应连线/撤销/图保存，保留源节点及素材。生成/恢复请求及不可编辑时禁用；无新增上传或生成调用。创建1/退役1，无编译/检查、后端/迁移/服务或生产变化，用户手验。
 
 - 当前源码 [GG-297](tasks/GG-297-text-generation-presets.md)：基于7230935，隔离448c1ed→GG-116 0648cd5；ADR0130扩展模型旁预设，首项structured_reverse/结构化反推，输入区灰Badge可移除、附加文本可空且草稿保持。仅ID/名称进入客户端，后端展开精确指令/长度校验/幂等快照；原JSON草稿复制/保存恢复保留ID。新preset-stream与普通生成共享边界，旧Web404拒绝，避免忽略预设后计费。创建1/退役1，无自动检查、构建/迁移/服务或生产变化；后端与GG-296新0062待委托启用。
