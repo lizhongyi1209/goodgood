@@ -1,5 +1,9 @@
 # Architecture
 
+## GG-280 canvas image crop boundary
+
+Canvas crop geometry, export and temporary editor UI stay in small `features/canvas` modules. The canvas page owns node selection, original owner-scoped image resolution and the existing private-reference upload/project lifecycle. Only an explicit Complete action hands a cropped File to that lifecycle; no provider, billing, backend schema or public-cloud credential boundary is added. Source image/result replacement preserves graph identity while generator outputs create a separate image node and keep their immutable job. See [ADR 0126](decisions/0126-canvas-image-crop.md).
+
 ## GG-260/261 credit activity source boundary
 
 The shared billing view owns balance, type/project/model/task columns, clipboard feedback and fixed previous/next pagination. The server derives task IDs and authorized project/model metadata from persisted generation records; user labels never create backend enums. New canvas snapshots carry a separate `canvasProjectId`, never a legacy `projectId`; the generation transaction validates owner/workspace and deletion state, freezes the project name, and preserves absent-field legacy hashes. The canvas waits for its first project synchronization before submitting this context. Usage filtering occurs before the server page limit; the frontend also buffers old-server pages without dropping overflow. These reads do not grant credits or trigger generation. Daily free-image policy remains a separate pending decision. See [GG-260](tasks/GG-260-credit-details-and-free-quota.md) and [GG-261](tasks/GG-261-daily-free-image-quota.md).

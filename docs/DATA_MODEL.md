@@ -1,5 +1,9 @@
 # GG-063 quality pricing
 
+## GG-280 裁剪素材与项目保存
+
+裁剪选区、预设和锁定属于临时编辑会话，不加入canvas_projects JSON。完成产出的File复用待上传媒体本机保存及sourceImage节点；服务器完成后使用既有私有素材ID。源图素材和生成job/output记录不改写或删除；替换独立节点保留节点ID/连线，生成器裁剪则新增sourceImage。不添加SQL、路由、文件持久格式或生成快照字段。见 [ADR 0126](decisions/0126-canvas-image-crop.md)。
+
 ## GG-226 项目管理边界
 
 画布项目保留原canvas_projects文档，新增0056的canvas_project_deletions退役墓碑，记录project_id/workspace_id/owner_id以阻止旧tab自动保存复活，也覆盖尚未同步的本机项目。旧版创作项目复用status=archived，保留原批次与资产关联；不改既有迁移/计费/用户素材。名称更新只改name并维护version/updated_at/content_hash，不用卡片旧document覆盖内容。见[任务](tasks/GG-226-project-library-actions.md)。
