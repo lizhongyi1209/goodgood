@@ -2,10 +2,12 @@
 
 - Last synchronized: 2026-10-02
 - Current phase: GG-316图标修正源码04aa7e0→3a823d8已接入GG-116/5173：查看按钮逆向补偿画布缩放，24px按钮/14px图标/7px圆角/5px边距固定，共享背景纯白不透明。创建1/退役1，未编译或验证，无运行变化，GG-315及前序源码、GG-309已启用后端保持。
-- Current objective: 用户刷新5173手验不同缩放比例下查看按钮固定大小及白底；默认只开发代码，不自动编译、检查或浏览器验收，无需更新Web。
+- Current objective: GG-317三组提示词排查完成，确实创建3条任务，其中半蹲CAPACITY_BUSY失败且预留20全退，不是分组上限；无源码修改或自动重试。用户继续手验GG-316不同缩放比例下查看按钮固定大小/白底，需要时自行仅重试失败段；默认不自动编译、检查或浏览器验收。
 - Previous objective: GG-313模板名称格式/示例参考、GG-312画布300%高清门槛、GG-311模板保存/成功动效及类型筛选、GG-310前景色已交付源码；GG-309私有2K接口、批量校验及文本资产API/本地0063已启用。
 
 ## Current checkpoint
+
+- 最新只读排查 [GG-317](tasks/GG-317-canvas-three-prompt-audit.md)：当前源码d4894f6/原运行身份不变；核对本地真实画布/3条job及attempt，摸头/坐着成功、半蹲CAPACITY_BUSY无provider_task_id，账本reserve -20/release +20净0。分隔逻辑无两组上限，原始HTTP状态未保存，不断言具体429。创建0/退役0，无代码、运行、数据或真实provider请求；用户可单段重试，完整证据见任务卡。
 
 - 最新入口修正 [GG-316](tasks/GG-316-canvas-view-icon-consistency.md)：基于36c345e，登记5b05e92→fd69d74、隔离04aa7e0精确接入3a823d8；ADR0123先补固定屏幕尺寸及实色背景，共用查看按钮以1/zoom补偿及边距定位，共享expand背景#fff。原图标/hover/focus/触屏/详情和300%高清门槛保持。创建1/退役1，无编译/检查、API/迁移/运行或生产操作，用户刷新手验；GG-315及GG-309运行保持。
 

@@ -1,5 +1,7 @@
 # 当前开发版本与跨窗口交接
 
+- 最新排查：[GG-317](tasks/GG-317-canvas-three-prompt-audit.md)只读核对当前分组/提交及127.0.0.1:54449/goodgood真实记录，22:34批次确有3条有序任务，摸头/坐着成功1张、半蹲CAPACITY_BUSY失败0张/无上游任务ID；失败账本reserve -20/release +20净0。不是两组上限；原始HTTP状态未留存，不断言具体限流状态。创建0/退役0，无代码改动、自动重试、provider请求、测试/编译、迁移或重启，临时审计脚本清理。GG-316/315及前序源码、GG-309 Web287c4ca/0063、原Vite/唯一Worker保持；用户可选中生成器仅重试失败第2段。
+
 - 最新查看图标修正：[GG-316](tasks/GG-316-canvas-view-icon-consistency.md)登记5b05e92→fd69d74，隔离04aa7e0精确接入GG-116/5173为3a823d8；共用查看按钮逆向补偿zoom，24px/14px/7px圆角/5px边距按屏幕固定，共享expand白底#fff，原hover/focus/触屏和大图详情保持。创建1/退役1，无依赖/辅助缓存，未编译、检查、HTTP/浏览器或真实请求，无后端/运行变化；用户刷新手验。GG-315文字误报修正、GG-312的300%高清门槛及前序源码保持，Web287c4ca/0063和原Vite/唯一Worker沿GG-309证据。
 
 - 最新模板修复：[GG-315](tasks/GG-315-text-template-media-error.md)登记42d1c62，隔离c42ef94精确接入GG-116/5173为5be1e21；AssetMedia原仅排除audio，导致text没有媒体URL时误报图片失败，改为明确image/video才显示媒体错误/重试。正常1:1文字缩略/全文及真实文本错误、图片/视频回退保持，无API/存储变化。创建1/退役1，零依赖/辅助缓存，未编译或验证、HTTP/浏览器、运行或生产操作；用户刷新既有资产手验，无需重存模板或更新Web。GG-314/313/312/311及GG-309 Web287c4ca/0063、原Vite/唯一Worker保持。
