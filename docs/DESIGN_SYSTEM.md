@@ -2,6 +2,8 @@
 
 ## GG-291 文本节点
 
+GG-301在文本Markdown快捷栏的有序列表后增加“分割线”Minus图标，与列表同组；撤销/重做分组仍独立。内容中的hr为1px细灰横线，上下1em间距，沿原固定正文尺寸与编辑态。见[任务](tasks/GG-301-text-divider.md)。
+
 GG-299文本生成chat的图片hover直接复用图片生成referencePreview样式：白底细灰边、3px内距、等比图像及视口尺寸约束，8px间距，无箭头；54×54缩略及取消按钮保持。见[GG-299](tasks/GG-299-text-image-preview.md)。
 
 GG-298文本生成的54×54素材缩略沿图片生成右上角18px深灰圆形X样式，hover或焦点显示，触屏常显；移除按钮与缩略预览为相邻控件，保留原预览及卡片几何。见[GG-298](tasks/GG-298-text-input-remove.md)。

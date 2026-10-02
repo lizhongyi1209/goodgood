@@ -16,6 +16,8 @@ GG-273 editor presentation uses a visible document header, padded writing surfac
 
 [GG-290](../tasks/GG-290-canvas-text-editor-order.md) adds consecutive text-editor numbers to the external title and accessible editing label. Numbers follow text-node order within the current page, starting at 1; new/copied nodes append and deletion closes gaps. Existing persisted node order preserves the display on reopen, including legacy projects, without adding a stored field or changing prompt order.
 
+[GG-301](../tasks/GG-301-text-divider.md) adds a horizontal-rule insertion button immediately after ordered lists and before the undo/redo group. Use the existing StarterKit `setHorizontalRule` command, a neutral horizontal-line icon and a thin gray rule in the editor; preserve native Markdown, selection/history and current editing/streaming locks. This is an additive toolbar entry with no new dependency or persistence contract.
+
 Project snapshots, cloud validation, local recovery, pages and canvas copy/paste preserve text nodes and edges. Existing schemaVersion1/2 and JSON storage remain; no database migration is required. Unknown node types and inappropriate fields remain rejected, and legacy documents retain their current behavior. Local Web must be rebuilt to accept the additive node fields; the generation Worker/provider contract does not change. No production deployment is authorized.
 
 Reference: [Tiptap Markdown basic usage](https://tiptap.dev/docs/editor/markdown/getting-started/basic-usage) and [React installation](https://tiptap.dev/docs/editor/getting-started/install/react).

@@ -8,7 +8,7 @@ import StarterKit from "@tiptap/starter-kit";
 import { Slice } from "@tiptap/pm/model";
 import { Plugin } from "@tiptap/pm/state";
 import { Handle, NodeResizeControl, NodeToolbar, Position, useReactFlow, useStore, type NodeProps } from "@xyflow/react";
-import { Bold, FileText, Heading1, Heading2, Heading3, Italic, List, ListOrdered, Pilcrow, Redo2, Undo2 } from "lucide-react";
+import { Bold, FileText, Heading1, Heading2, Heading3, Italic, List, ListOrdered, Minus, Pilcrow, Redo2, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { CanvasNode, CanvasTextNodeType } from "./canvas-workspace";
 import { CANVAS_MARKDOWN_MAX_LENGTH, CANVAS_TEXT_FONT_SIZE, CANVAS_TEXT_MAX_LENGTH, CANVAS_TEXT_NODE_BOUNDS, canvasTextNodeSizeForKey } from "./canvas-text-input.mjs";
@@ -33,12 +33,13 @@ export function CanvasTextFormatToolbar({ editor, nodeId, enabled = true }: { ed
     { label: "斜体", Icon: Italic, run: () => editor?.chain().focus().toggleItalic().run(), active: state?.italic },
     { label: "无序列表", Icon: List, run: () => editor?.chain().focus().toggleBulletList().run(), active: state?.list },
     { label: "有序列表", Icon: ListOrdered, run: () => editor?.chain().focus().toggleOrderedList().run(), active: state?.ordered },
+    { label: "分割线", Icon: Minus, run: () => editor?.chain().focus().setHorizontalRule().run() },
     { label: "撤销文本编辑", Icon: Undo2, run: () => editor?.chain().focus().undo().run(), disabled: !state?.undo },
     { label: "重做文本编辑", Icon: Redo2, run: () => editor?.chain().focus().redo().run(), disabled: !state?.redo },
   ];
   return <div className={`${styles.toolbar} nodrag nopan nowheel`} role="toolbar" aria-label="Markdown 文本格式" data-canvas-text-toolbar={nodeId}>
     {actions.map(({ label, Icon, run, active, disabled }, index) => <Button key={label} type="button" variant="ghost" size="icon-xs" title={label} aria-label={label}
-      className={[4, 6, 8].includes(index) ? styles.groupStart : undefined}
+      className={[4, 6, 9].includes(index) ? styles.groupStart : undefined}
       aria-pressed={active} disabled={!editor || !enabled || disabled} onMouseDown={(event) => event.preventDefault()} onClick={run}>
       <Icon size={14} className="size-3.5" aria-hidden="true" />
     </Button>)}

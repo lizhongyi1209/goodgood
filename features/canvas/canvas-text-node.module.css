@@ -13,6 +13,7 @@ header.header { pointer-events: auto; cursor: default; }
 .editor h1 { font-size: 1.75em; }.editor h2 { font-size: 1.4em; }.editor h3 { font-size: 1.15em; }
 .editor ul, .editor ol { padding-left: 1.4em; margin: .6em 0; }.editor ul { list-style: disc; }.editor ol { list-style: decimal; }
 .editor li p { margin: .2em 0; }.editor blockquote { border-left: 1px solid #a1a1aa; padding-left: .9em; margin: .8em 0; color: #52525b; }
+.editor hr { height: 0; margin: 1em 0; border: 0; border-top: 1px solid #d4d4d8; }
 .editor pre { white-space: pre-wrap; border-radius: 6px; background: #f4f4f5; padding: .8em; margin: .8em 0; }
 .editor code { font-family: monospace; font-size: .9em; }.editor :not(pre) > code { border-radius: 3px; background: #f4f4f5; padding: .12em .3em; }
 .editor a { text-decoration: underline; text-underline-offset: 3px; }.editor strong { font-weight: 600; }
