@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-02
-- Current phase: GG-297预设菜单/结构化反推/可移除Badge、后端隐藏指令/空附加输入/项目保存恢复已接入GG-116源码；创建1/退役1，未编译/检查。实际预设和GG-296中断半价待新0062/Web启用；GG-295 Tooltip及GG-294构建767e6db/本地0061、原Worker/云配置/数据与GG-293撤回保持，未部署。
-- Current objective: 用户刷新5173手验预设菜单/标签/草稿保留；旧Web明确拒绝预设调用且不收费。后续明确委托应用0062_gg296_text_cancellation_half_credit.sql及构建/重启Web，启用预设、项目校验和中断半价。默认仅开发，不自动编译/检查/迁移/重启，不恢复GG-292；免费政策待用户。
+- Current phase: GG-298文本生成chat素材取消已接入GG-116/5173源码884ffdd，沿图片生成X样式/移除连线路径，源节点及资产保留；创建1/退役1，未编译/检查。GG-297预设与GG-296中断半价待新0062/Web启用；现有Web767e6db/数据库0061/原Worker及生产保持。
+- Current objective: 用户刷新5173手验素材取消、撤销及保存恢复。GG-297预设界面也可手验；实际预设与半价需后续明确委托新0062/Web更新。默认仅开发，不自动编译/检查/迁移/重启，不恢复GG-292；免费政策待用户。
 - Previous objective: GG-292源码曾完成c696e29，但未编译/验证/激活，已被本次用户请求撤回；历史证据保留。
 
 ## Current checkpoint
+
+- 当前源码 [GG-298](tasks/GG-298-text-input-remove.md)：基于e8b26df，隔离884ffdd精确接入GG-116/5173；文本生成图片/文本/视频缩略右上角X，hover/焦点显示及触屏常显，复用removeLinkedReference移除对应连线/撤销/图保存，保留源节点及素材。生成/恢复请求及不可编辑时禁用；无新增上传或生成调用。创建1/退役1，无编译/检查、后端/迁移/服务或生产变化，用户手验。
 
 - 当前源码 [GG-297](tasks/GG-297-text-generation-presets.md)：基于7230935，隔离448c1ed→GG-116 0648cd5；ADR0130扩展模型旁预设，首项structured_reverse/结构化反推，输入区灰Badge可移除、附加文本可空且草稿保持。仅ID/名称进入客户端，后端展开精确指令/长度校验/幂等快照；原JSON草稿复制/保存恢复保留ID。新preset-stream与普通生成共享边界，旧Web404拒绝，避免忽略预设后计费。创建1/退役1，无自动检查、构建/迁移/服务或生产变化；后端与GG-296新0062待委托启用。
 
