@@ -1,5 +1,15 @@
 # GG-063 quality pricing
 
+## GG-318 persisted failure diagnostics
+
+New provider_failed/provider_fallback events use existing JSONB
+`detail.diagnostic` version1: optional attemptId/ordinal, provider/model/route,
+normalized code, stage/phase/reason, HTTP method/endpoint template/status/duration,
+upstream request/task ID and error code/message, network name/code. Fields are
+allowlisted and bounded; no bodies, prompts, arbitrary headers, credentials,
+stacks or private URLs. Existing failure/credit-release transactions are reused;
+no migration or historical backfill. Ordinary job DTOs do not expose diagnostics.
+
 ## GG-303 canvas image batch identities
 
 Canvas image generators optionally persist ordered `jobIds`, with `jobId` retaining the first durable identity for legacy single-job readers. Browser snapshots also retain ordered `localJobs` with private URLs normalized; these snapshots and temporary pending IDs never enter cloud writes. Existing schemaVersion1/2 JSON, owner/workspace/CAS and 1 MiB document envelope remain; no SQL migration. Every newly attached batch job is authorized by the existing generation-job resource query. The full generator draft is no longer capped at4000 in storage; the unchanged image API4000 applies to each segment before submission. Reopening polls every accepted active job without resubmitting, preserving successful siblings and source order. New validation requires updated Web; GG-303 edits source only. See[ADR0131](decisions/0131-canvas-concurrent-prompt-batches.md).

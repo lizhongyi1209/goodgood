@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { NormalizedProviderError } from "./provider.mjs";
+import { sanitizeFailureDiagnostic } from "./failure-diagnostics.mjs";
 import { isExpectedGenerationOutputCount } from "./capabilities.mjs";
 import {
   createGenerationProvider,
@@ -262,6 +263,9 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
         if (!error.channelUnavailable || persistedTaskId || !backup) throw error;
         const nextAttempt = await createProviderFallbackAttempt(pool, {
           jobId, workerId, attemptId: attempt.id, fromRoute: provider.route, toRoute: backup,
+          diagnostics: sanitizeFailureDiagnostic({ ...error.diagnostics, stage, code: error.code,
+            attemptId: attempt.id, ordinal: attempt.ordinal, provider: attempt.provider,
+            providerModel: attempt.provider_model, routeVersion: attempt.route_version }, { secrets: [job.prompt] }),
         });
         if (!nextAttempt) throw new SupersededGenerationExecution();
         attempt = nextAttempt;
@@ -327,6 +331,9 @@ export async function processGenerationJob(resources, { jobId, workerId }) {
       await failGenerationJob(pool, {
         attemptId: attempt.id,
         error: normalizedError(error),
+        diagnostics: sanitizeFailureDiagnostic({ ...error.diagnostics, stage, code: error.code,
+          attemptId: attempt.id, ordinal: attempt.ordinal, provider: attempt.provider,
+          providerModel: attempt.provider_model, routeVersion: attempt.route_version }, { secrets: [job.prompt] }),
         jobId,
         workerId,
       });

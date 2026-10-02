@@ -1,5 +1,17 @@
 # GG-063 verification
 
+## GG-318 failure diagnostic regression source, not executed
+
+`tests/gg318-generation-failure-diagnostics.test.mjs` uses injected responses and
+in-memory repositories only: allowlist/redaction/bounds, unchanged success,
+HTTP429/503/missing task ID, malformed JSON/network cause, HTTP200 failure
+confirmation despite changing headers/timing, timeout, signed output exclusion,
+atomic failure events, bounded sanitized owner reads, legacy absence and rejection
+before non-owner reads. No DB, queue or real provider participates. Per user,
+no compilation, lint, tests, code/diff checks, browser acceptance, migration or
+restart was run. Web/Worker activation and manual acceptance are separate;
+original historical HTTP details cannot be recovered.
+
 ## GG-308 text-template regression source, not executed
 
 `tests/gg308-text-template-assets.test.mjs` uses an injected in-memory repository/HTTP boundary only, covering empty/invalid/oversized inputs, Unicode excerpts without changing full storage, immutable snapshots, identical retries and conflicting content, owner/workspace visibility, atomic organization deletion, bounded malformed HTTP bodies/failures, exact text asset folder/deletion identity and unchanged neighboring media. No database, queue or provider is attached. Existing Markdown/clipboard/project and text generation tests remain source only; per the user, no compilation, lint, tests, code/diff checks, SQL, browser/HTTP acceptance or real requests were run. User hand-checks single/double-click toolbar separation, template save/full content, square clipping and drag reuse after separately enabling Web/0063.

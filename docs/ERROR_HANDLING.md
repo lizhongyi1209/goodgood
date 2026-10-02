@@ -1,5 +1,15 @@
 # GG-063 quality pricing errors
 
+## GG-318 site-owner failure details
+
+Image failures keep existing normalized user errors, retryability, submission
+uncertainty, terminal confirmation and billing. Diagnostic reasons distinguish
+HTTP rejection, invalid JSON/protocol, network cause, upstream terminal failure,
+poll timeout and output processing; HTTP200 is kept when the request succeeds
+but its task fails. Final failure and approved channel rejection/fallback share
+existing atomic event writes. Owner-only global-log detail presents sanitized
+fields, never response bodies. Absent historical statuses/IDs are not inferred.
+
 ## GG-308 文本模板保存/读取
 
 GG-315：文字模板缩略直接展示previewText，不依赖图片/视频URL。画布通用卡片的媒体失败/重试区域仅针对image/video，text缺少媒体地址不会被误报为「图片暂时无法读取」；全文查看仍沿自己的文本API读取错误与重试，不掩盖真实文本失败。

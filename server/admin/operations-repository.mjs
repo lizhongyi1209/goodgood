@@ -1,4 +1,5 @@
 // Read-only projections. Do not merge reserves and settlements into balance deltas.
+import { sanitizeFailureDiagnostic } from "../generation/failure-diagnostics.mjs";
 export const LEDGER_SQL = `
   SELECT e.id, e.created_at, e.entry_type, e.related_job_id, e.prior_entry_id,
          e.amount * CASE WHEN a.unit='credit' THEN 2 ELSE 1 END AS credits,
@@ -145,6 +146,16 @@ export async function readOperationsDetail(pool, { kind, id }) {
   const timeline = jobId ? await pool.query(`WITH ledger AS (${LEDGER_SQL})
     SELECT l.*,u.email FROM ledger l LEFT JOIN users u ON u.id=l.user_id
     WHERE related_job_id=$1::uuid ORDER BY created_at,id LIMIT 100`,[jobId]) : { rows: [] };
+  const events = job.rows.length ? await pool.query(
+    `SELECT id,created_at,event_type,detail->'diagnostic' AS diagnostic
+       FROM generation_job_events WHERE job_id=$1::uuid
+         AND event_type IN ('provider_failed','provider_fallback')
+         AND detail->'diagnostic' IS NOT NULL AND detail->'diagnostic' <> 'null'::jsonb
+       ORDER BY sequence DESC LIMIT 50`, [jobId]) : { rows: [] };
+  const diagnostics = events.rows.slice().reverse().flatMap(row => {
+    const diagnostic = sanitizeFailureDiagnostic(row.diagnostic);
+    return diagnostic ? [{ id: String(row.id), createdAt: iso(row.created_at), type: row.event_type, diagnostic }] : [];
+  });
   return { job: job.rows[0] ? jobDto(job.rows[0]) : null, selected,
-    timeline: timeline.rows.map(ledgerDto) };
+    timeline: timeline.rows.map(ledgerDto), diagnostics };
 }

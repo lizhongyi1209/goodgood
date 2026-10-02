@@ -129,6 +129,7 @@ function throwTerminalFailure(task) {
     code: failure?.code ?? "INTERNAL_ERROR",
     message: failure?.message ?? "生成服务未能完成任务。输入内容已保留，请重试。",
     retryable: failure?.retryable !== false,
+    diagnostics: failure?.diagnostics,
   });
 }
 
@@ -378,6 +379,7 @@ export function createGenerationProvider({
             pollIntervalMs: config.provider.pollIntervalMs,
             taskId: providerTaskId,
             timeoutMs: config.provider.timeoutMs,
+            sensitiveValues: [job.prompt],
           })
         ));
         for (const task of tasks) {

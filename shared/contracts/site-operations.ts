@@ -16,4 +16,17 @@ export type OperationsDay = {
 };
 export type OperationsDashboard = { days: OperationsDay[]; concurrent: string; queued: string; measuredAt: string };
 export type OperationsLog = { items: (OperationsJob | OperationsCredit)[]; nextCursor: string | null };
-export type OperationsDetail = { job: OperationsJob | null; selected: OperationsCredit | null; timeline: OperationsCredit[] };
+export type OperationsFailureDiagnostic = {
+  version: 1; stage?: string; phase?: string; reason?: string; code?: string;
+  attemptId?: string; ordinal?: number; provider?: string; providerModel?: string; routeVersion?: string;
+  endpoint?: string; method?: "GET" | "POST"; httpStatus?: number; durationMs?: number;
+  upstreamRequestId?: string; upstreamTaskId?: string; upstreamCode?: string; upstreamMessage?: string;
+  networkName?: string; networkCode?: string;
+};
+export type OperationsFailureEvent = {
+  id: string; createdAt: string; type: string; diagnostic: OperationsFailureDiagnostic;
+};
+export type OperationsDetail = {
+  job: OperationsJob | null; selected: OperationsCredit | null; timeline: OperationsCredit[];
+  diagnostics?: OperationsFailureEvent[];
+};

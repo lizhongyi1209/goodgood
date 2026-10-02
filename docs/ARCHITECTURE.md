@@ -1,5 +1,16 @@
 # Architecture
 
+## GG-318 image failure diagnostics
+
+The image adapter captures allowlisted request metadata and explicit error fields.
+A shared sanitizer removes credentials, request content, URLs and opaque data and
+bounds strings. Non-enumerable diagnostics keep ordinary errors and task terminal
+confirmation fingerprints unchanged. Router/Worker propagation adds attempt/stage;
+existing failure and approved channel-fallback transactions persist sanitized job
+events with unchanged state/billing. Site-owner operations reads at most 50 events
+per task and sanitizes again. No new API, SQL migration, request or infrastructure;
+Web and the single real Worker require separate activation.
+
 ## GG-308 private text template assets
 
 CanvasMarkdownNode selects between quick actions and format controls using its existing edit state; empty text-generator cards share the disabled quick action. The save dialog freezes Markdown/plain text and a retry UUID. `server/text-assets` owns authenticated owner/workspace-scoped list/create/read/delete with bounded JSON and idempotent content checks; Node and App Router entry points share it. No generation queue, provider, billing or hidden preset instruction participates.

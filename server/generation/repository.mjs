@@ -1,4 +1,5 @@
 import { modelQualityPriceContext } from "../../shared/contracts/gpt-quality-pricing.mjs";
+import { sanitizeFailureDiagnostic } from "./failure-diagnostics.mjs";
 import { isSeedreamModel, seedreamQuoteCreditAmount } from "../../shared/contracts/seedream-pricing.mjs";
 import { privateImageUrls } from "../../shared/private-image-urls.mjs";
 import { createHash, randomUUID } from "node:crypto";
@@ -835,7 +836,7 @@ export async function markProviderSubmissionStarted(pool, { attemptId }) {
 }
 
 /** Switch only after a definitive no-channel rejection with no accepted task. */
-export async function createProviderFallbackAttempt(pool, { jobId, workerId, attemptId, fromRoute, toRoute }) {
+export async function createProviderFallbackAttempt(pool, { jobId, workerId, attemptId, fromRoute, toRoute, diagnostics }) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -865,7 +866,8 @@ export async function createProviderFallbackAttempt(pool, { jobId, workerId, att
     );
     await client.query("UPDATE generation_jobs SET attempt_count = $2, updated_at = now() WHERE id = $1", [jobId, ordinal]);
     await insertEvent(client, { eventType: "provider_fallback", fromState: job.state, toState: job.state, jobId,
-      detail: { reason: "channel_unavailable", fromModel: fromRoute.providerModel, toModel: toRoute.providerModel, ordinal } });
+      detail: { reason: "channel_unavailable", fromModel: fromRoute.providerModel, toModel: toRoute.providerModel, ordinal,
+        diagnostic: sanitizeFailureDiagnostic(diagnostics) } });
     await client.query("COMMIT");
     return result.rows[0];
   } catch (error) { await client.query("ROLLBACK"); throw error; }
@@ -1049,7 +1051,7 @@ export async function completeGenerationJob(
 
 export async function failGenerationJob(
   pool,
-  { attemptId, error, jobId, workerId },
+  { attemptId, error, jobId, workerId, diagnostics },
 ) {
   const client = await pool.connect();
   try {
@@ -1115,7 +1117,7 @@ export async function failGenerationJob(
       fromState: state,
       jobId,
       toState: "failed",
-      detail: { code: error.code },
+      detail: { code: error.code, diagnostic: sanitizeFailureDiagnostic(diagnostics ?? error.diagnostics) },
     });
     await client.query("COMMIT");
     return true;

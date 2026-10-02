@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { LoaderCircle, RefreshCw, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,6 +82,36 @@ export function OperationsLogContent({data,kind,onOpen}: {data:OperationsLog;kin
   })}</tbody></table></div>;
 }
 
+function OperationsFailureDiagnostics({data}: {data:OperationsDetail}) {
+  const events = data.diagnostics ?? [];
+  if (!events.length && data.job?.state !== "failed") return null;
+  const phases:Record<string,string> = {submission:"提交生成请求", "reference-upload":"上传参考素材", "task-poll":"查询生成任务", "output-download":"下载生成结果", "provider-request":"请求生成服务"};
+  const stages:Record<string,string> = {"attempt-validation":"校验任务", "provider-submission":"提交任务", "provider-poll":"等待生成结果", "output-storage":"保存生成结果", "generation-completion":"完成任务"};
+  const reasons:Record<string,string> = {"http-error":"HTTP 请求失败", "invalid-json":"上游响应不是有效 JSON", "invalid-task-response":"上游任务响应不符合约定", "invalid-upload-response":"素材上传响应不符合约定", "missing-task-id":"上游未返回任务 ID", "upstream-task-failed":"上游任务生成失败", "network-error":"网络请求失败", "poll-timeout":"等待生成结果超时", "output-error":"生成结果无法处理"};
+  return <section aria-label="失败诊断"><h3 className="mb-4 font-medium">失败诊断</h3>
+    {events.length ? <ol className="space-y-4">{events.map(event => {
+      const d = event.diagnostic;
+      const fields:[string,string|number|undefined][] = [
+        ["发生阶段", d.phase ? phases[d.phase] ?? d.phase : d.stage ? stages[d.stage] ?? d.stage : undefined],
+        ["失败原因", d.reason ? reasons[d.reason] ?? d.reason : undefined],
+        ["错误代码", d.code], ["HTTP 状态", d.httpStatus],
+        ["请求耗时", d.durationMs === undefined ? undefined : `${d.durationMs} ms`],
+        ["请求地址", d.endpoint ? `${d.method ?? ""} ${d.endpoint}`.trim() : undefined],
+        ["上游请求 ID", d.upstreamRequestId], ["上游任务 ID", d.upstreamTaskId],
+        ["上游错误代码", d.upstreamCode],
+        ["网络原因", [d.networkName,d.networkCode].filter(Boolean).join(" · ") || undefined],
+        ["服务 / 模型", [d.provider,d.providerModel].filter(Boolean).join(" · ") || undefined],
+        ["路由版本", d.routeVersion], ["尝试 ID", d.attemptId],
+      ];
+      return <li key={event.id} className="rounded-xl border border-zinc-200/70 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2"><span>{d.ordinal ? `第 ${d.ordinal} 次尝试 · ` : ""}{event.type === "provider_fallback" ? "主渠道失败，切换备用" : "请求失败"}</span><time className="text-xs text-zinc-500" dateTime={event.createdAt}>{dateTime(event.createdAt)}</time></div>
+        <dl className="operations-detail-fields mt-4 text-xs">{fields.flatMap(([label,value]) => value === undefined ? [] : [<Fragment key={label}><dt>{label}</dt><dd>{value}</dd></Fragment>])}</dl>
+        {d.upstreamMessage && <div className="mt-4"><p className="mb-2 text-xs text-zinc-500">上游错误信息</p><p className="whitespace-pre-wrap break-words text-xs leading-5 [overflow-wrap:anywhere]">{d.upstreamMessage}</p></div>}
+      </li>;
+    })}</ol> : <p className="text-xs text-zinc-500">此任务未记录详细诊断，仅保留错误代码。</p>}
+  </section>;
+}
+
 export function OperationsDetailContent({data}: {data:OperationsDetail}) {
   const {job,selected,timeline} = data;
   const settled = timeline.filter(item=>item.type==="settle").reduce((sum,item)=>sum-BigInt(item.credits),BigInt(0));
@@ -100,6 +130,7 @@ export function OperationsDetailContent({data}: {data:OperationsDetail}) {
       {job.errorCode&&<><dt>错误代码</dt><dd className="font-mono text-xs">{job.errorCode}</dd></>}
     </>:selected&&<><dt>用户</dt><dd>{selected.email??"企业资金池"}</dd><dt>资金来源</dt><dd>{selected.fundName??"个人积分"}</dd></>}
     </dl>
+    <OperationsFailureDiagnostics data={data}/>
     <section><h3 className="mb-4 font-medium">积分流水</h3><p className="mb-4 text-xs leading-5 text-zinc-400">预扣先冻结积分，结算确认消耗；两条记录只算一次实扣。释放归还预扣，退款归还已结算积分。</p>
       {(timeline.length?timeline:selected?[selected]:[]).length?<ol className="space-y-4">{(timeline.length?timeline:[selected!]).map(item=><li key={item.id} className="rounded-xl border border-zinc-200/70 p-4"><div className="flex items-center justify-between gap-3"><span>{operationLabels[item.type]??item.type}</span><span className="tabular-nums">{item.credits} 积分</span></div><p className="mt-2 text-xs text-zinc-500">{dateTime(item.createdAt)} · {item.fundName??"个人积分"}</p><p className="mt-2 break-all font-mono text-[11px] text-zinc-400">记录 {item.id}{item.priorId&&<> · 前序 {item.priorId}</>}</p></li>)}</ol>:<p className="text-zinc-500">未发现关联积分流水</p>}
     </section>
@@ -134,6 +165,6 @@ export function SiteOperationsLog() {
     <OperationsReadState loading={loading} error={error} onRetry={()=>setReload(value=>value+1)}/>
     {!loading&&!error&&data&&<><OperationsLogContent data={data} kind={request.kind} onOpen={id=>{focus.current=document.activeElement as HTMLElement;setOpened({kind:request.kind,id});}}/><div className="mt-4 flex items-center justify-end gap-3 text-xs text-zinc-500"><span>第 {page} 页 · {data.items.length} 条</span><Button variant="ghost" disabled={page===1} onClick={()=>{setPage(1);setRequest({...request,cursor:null});}}>回到首页</Button><Button variant="ghost" disabled={!data.nextCursor} onClick={()=>{setPage(value=>value+1);setRequest({...request,cursor:data.nextCursor});}}>下一页</Button></div></>}
     <p className="mt-4 text-xs text-zinc-400">北京时间 · 最多查询 90 天 · 仅包含已持久化记录；账户操作请查看审计日志。</p>
-    <Sheet open={!!opened} onOpenChange={open=>{if(!open)setOpened(null);}}><SheetContent side="right" showCloseButton={false} className="w-full gap-0 border-zinc-200 p-0 shadow-none sm:max-w-[640px]" onCloseAutoFocus={event=>{event.preventDefault();focus.current?.focus();}}><SheetHeader className="border-b border-zinc-200 p-6 pr-16"><SheetTitle>记录详情</SheetTitle><SheetDescription>关联任务与积分账本</SheetDescription><SheetClose asChild><Button variant="ghost" size="icon" className="absolute right-4 top-4" aria-label="关闭记录详情"><X size={16}/></Button></SheetClose></SheetHeader><div className="min-h-0 flex-1 overflow-y-auto p-6"><OperationsReadState loading={detailLoading} error={detailError} onRetry={()=>setDetailReload(value=>value+1)}/>{!detailLoading&&!detailError&&detail&&<OperationsDetailContent data={detail}/>}</div></SheetContent></Sheet>
+    <Sheet open={!!opened} onOpenChange={open=>{if(!open)setOpened(null);}}><SheetContent side="right" showCloseButton={false} className="w-full gap-0 border-zinc-200 p-0 shadow-none sm:max-w-[640px]" onCloseAutoFocus={event=>{event.preventDefault();focus.current?.focus();}}><SheetHeader className="border-b border-zinc-200 p-6 pr-16"><SheetTitle>记录详情</SheetTitle><SheetDescription>关联任务、失败诊断与积分账本</SheetDescription><SheetClose asChild><Button variant="ghost" size="icon" className="absolute right-4 top-4" aria-label="关闭记录详情"><X size={16}/></Button></SheetClose></SheetHeader><div className="min-h-0 flex-1 overflow-y-auto p-6"><OperationsReadState loading={detailLoading} error={detailError} onRetry={()=>setDetailReload(value=>value+1)}/>{!detailLoading&&!detailError&&detail&&<OperationsDetailContent data={detail}/>}</div></SheetContent></Sheet>
   </div>;
 }

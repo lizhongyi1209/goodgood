@@ -1,5 +1,6 @@
 import { gptPricingQualities } from "../../shared/contracts/gpt-quality-pricing.mjs";
 import { NormalizedProviderError } from "./provider.mjs";
+import { providerErrorFields, requestFailureContext, sanitizeFailureDiagnostic } from "./failure-diagnostics.mjs";
 import { PROVIDER_REFERENCE_LIMITS } from "./reference-inputs.mjs";
 import { BANANA_LINES, isBananaModel, isValidImageLine } from "../../shared/contracts/banana-lines.mjs";
 import {
@@ -149,8 +150,8 @@ export function isExplicitImageChannelRejection(payload, status) {
 }
 
 class ImageChannelUnavailable extends NormalizedProviderError {
-  constructor() {
-    super({ code: "CAPACITY_BUSY", message: "当前图片生成渠道暂不可用，请稍后重试。", retryable: true });
+  constructor(diagnostics) {
+    super({ code: "CAPACITY_BUSY", message: "当前图片生成渠道暂不可用，请稍后重试。", retryable: true, diagnostics });
     this.channelUnavailable = true;
   }
 }
@@ -197,11 +198,12 @@ const FAILURE_COPY = Object.freeze({
   }),
 });
 
-function normalizedError(code, retryable = FAILURE_COPY[code].retryable) {
+function normalizedError(code, retryable = FAILURE_COPY[code].retryable, diagnostics) {
   return new NormalizedProviderError({
     code,
     message: FAILURE_COPY[code].message,
     retryable,
+    diagnostics,
   });
 }
 
@@ -209,20 +211,17 @@ function protocolError() {
   return normalizedError("INTERNAL_ERROR");
 }
 
-function normalizeFailure(error) {
+function normalizeFailure(error, diagnostics) {
   const rawMessage = typeof error === "string" ? error : String(error?.message ?? "");
   const rawCode = typeof error === "object" ? String(error?.code ?? "") : "";
   const detail = `${rawCode} ${rawMessage}`.toLowerCase();
-  if (/moderation|policy|reject|safety|unsafe/.test(detail)) {
-    return Object.freeze({ ...FAILURE_COPY.MODEL_REJECTED, code: "MODEL_REJECTED" });
-  }
-  if (/timeout|timed out/.test(detail)) {
-    return Object.freeze({ ...FAILURE_COPY.MODEL_TIMEOUT, code: "MODEL_TIMEOUT" });
-  }
-  if (/429|capacity|busy|rate.?limit|overload/.test(detail)) {
-    return Object.freeze({ ...FAILURE_COPY.CAPACITY_BUSY, code: "CAPACITY_BUSY" });
-  }
-  return Object.freeze({ ...FAILURE_COPY.INTERNAL_ERROR, code: "INTERNAL_ERROR" });
+  const code = /moderation|policy|reject|safety|unsafe/.test(detail) ? "MODEL_REJECTED"
+    : /timeout|timed out/.test(detail) ? "MODEL_TIMEOUT"
+    : /429|capacity|busy|rate.?limit|overload/.test(detail) ? "CAPACITY_BUSY" : "INTERNAL_ERROR";
+  const failure = { ...FAILURE_COPY[code], code };
+  // Timing/header details must not change the terminal confirmation fingerprint.
+  Object.defineProperty(failure, "diagnostics", { value: sanitizeFailureDiagnostic(diagnostics) });
+  return Object.freeze(failure);
 }
 
 function seedreamOutputMetadata(output) {
@@ -283,7 +282,7 @@ function normalizeProgress(value, state) {
 
 export function normalizeUsGatewayTask(
   payload,
-  { allowInsecureLoopback = false, expectedOutputCount = 1, productModelId } = {},
+  { allowInsecureLoopback = false, expectedOutputCount = 1, productModelId, diagnostics } = {},
 ) {
   if (!(isSeedreamModelId(productModelId) ? expectedOutputCount === 1 : [1, 2, 4].includes(expectedOutputCount))) throw protocolError();
   const taskId = payload?.task_id;
@@ -313,7 +312,7 @@ export function normalizeUsGatewayTask(
     ),
   );
   const failures = Object.freeze(
-    state === "failed" ? [normalizeFailure(payload.error)] : [],
+    state === "failed" ? [normalizeFailure(payload.error, diagnostics)] : [],
   );
   if (state !== "succeeded" && outputs.length !== 0) throw protocolError();
 
@@ -421,26 +420,29 @@ function validateReference(reference) {
   };
 }
 
-async function parseResponse(response, { submission = false } = {}) {
+async function parseResponse(response, { submission = false, context, secrets = [] } = {}) {
   let payload;
   try { payload = await response.json(); } catch {
     if (!response.ok && !(submission && response.status >= 500)) {
       throw normalizedError(response.status === 429 || response.status >= 500 ? "CAPACITY_BUSY" : "INTERNAL_ERROR",
-        ![400, 401, 403].includes(response.status));
+        ![400, 401, 403].includes(response.status), { ...context, reason: "invalid-json" });
     }
-    throw normalizedError(submission ? "SUBMISSION_UNKNOWN" : "INTERNAL_ERROR");
+    throw normalizedError(submission ? "SUBMISSION_UNKNOWN" : "INTERNAL_ERROR", true, { ...context, reason: "invalid-json" });
   }
-  if (submission && isExplicitImageChannelRejection(payload, response.status)) throw new ImageChannelUnavailable();
+  const diagnostics = sanitizeFailureDiagnostic({ ...context, ...providerErrorFields(payload),
+    upstreamRequestId: context?.upstreamRequestId ?? providerErrorFields(payload).upstreamRequestId,
+    reason: "http-error" }, { secrets });
+  if (submission && isExplicitImageChannelRejection(payload, response.status)) throw new ImageChannelUnavailable(diagnostics);
   if (!response.ok) {
     if (submission && response.status >= 500) {
-      throw normalizedError("SUBMISSION_UNKNOWN");
+      throw normalizedError("SUBMISSION_UNKNOWN", true, diagnostics);
     }
     const code = response.status === 429 || response.status >= 500
       ? "CAPACITY_BUSY"
       : "INTERNAL_ERROR";
-    throw normalizedError(code, response.status !== 400 && response.status !== 401 && response.status !== 403);
+    throw normalizedError(code, response.status !== 400 && response.status !== 401 && response.status !== 403, diagnostics);
   }
-  return payload;
+  return { payload, diagnostics: sanitizeFailureDiagnostic({ ...diagnostics, reason: undefined }, { secrets }) };
 }
 
 function normalizeTemporaryUpload(payload, expectedMimeType, nowSeconds, allowInsecureLoopback) {
@@ -595,10 +597,14 @@ export function createUsGatewayAdapter({
   }
 
   async function request(path, options = {}) {
-    const { submission = false, ...requestOptions } = options;
+    const { submission = false, sensitiveValues = [], ...requestOptions } = options;
+    const secrets = [apiKey, ...sensitiveValues];
+    const startedAt = now();
+    const url = `${origin}${path}`;
+    const phase = submission ? "submission" : path === "/v1/o1key/uploads" ? "reference-upload" : "task-poll";
     let response;
     try {
-      response = await fetchImplementation(`${origin}${path}`, {
+      response = await fetchImplementation(url, {
         ...requestOptions,
         headers: {
           authorization: `Bearer ${apiKey}`,
@@ -606,22 +612,28 @@ export function createUsGatewayAdapter({
         },
         signal: requestOptions.signal ?? AbortSignal.timeout(requestTimeoutMs),
       });
-    } catch {
-      throw normalizedError(submission ? "SUBMISSION_UNKNOWN" : "CAPACITY_BUSY");
+    } catch (cause) {
+      throw normalizedError(submission ? "SUBMISSION_UNKNOWN" : "CAPACITY_BUSY", true,
+        requestFailureContext({ url, method: requestOptions.method, durationMs: now() - startedAt, phase, cause, secrets }));
     }
-    return parseResponse(response, { submission });
+    return parseResponse(response, { submission, secrets,
+      context: requestFailureContext({ url, method: requestOptions.method, response, durationMs: now() - startedAt, phase, secrets }) });
   }
 
-  async function getTask(taskId, expectedOutputCount) {
-    const payload = await request(
+  async function getTask(taskId, expectedOutputCount, sensitiveValues = []) {
+    const { payload, diagnostics } = await request(
       `/async/v1/tasks/${encodeURIComponent(taskId)}`,
-      { method: "GET" },
+      { method: "GET", sensitiveValues },
     );
-    return normalizeUsGatewayTask(payload, {
+    try { return normalizeUsGatewayTask(payload, {
       allowInsecureLoopback,
       expectedOutputCount,
       productModelId: route.productModelId,
-    });
+      diagnostics: sanitizeFailureDiagnostic({ ...diagnostics, upstreamTaskId: taskId, reason: "upstream-task-failed" }, { secrets: [apiKey, ...sensitiveValues] }),
+    }); } catch (error) {
+      if (!(error instanceof NormalizedProviderError)) throw error;
+      throw normalizedError(error.code, error.retryable, { ...diagnostics, reason: "invalid-task-response" });
+    }
   }
 
   async function uploadReference(reference) {
@@ -632,16 +644,19 @@ export function createUsGatewayAdapter({
       new Blob([validated.bytes], { type: validated.mimeType }),
       validated.fileName,
     );
-    const payload = await request("/v1/o1key/uploads", {
+    const { payload, diagnostics } = await request("/v1/o1key/uploads", {
       body: form,
       method: "POST",
     });
-    return normalizeTemporaryUpload(
+    try { return normalizeTemporaryUpload(
       payload,
       validated.mimeType,
       Math.floor(now() / 1_000),
       allowInsecureLoopback,
-    );
+    ); } catch (error) {
+      if (!(error instanceof NormalizedProviderError)) throw error;
+      throw normalizedError(error.code, error.retryable, { ...diagnostics, reason: "invalid-upload-response" });
+    }
   }
 
   async function prepareReferences(references = []) {
@@ -672,7 +687,7 @@ export function createUsGatewayAdapter({
       throw protocolError();
     }
     await onSubmissionStart();
-    const payload = await request("/async/v1/generateImage", {
+    const { payload, diagnostics } = await request("/async/v1/generateImage", {
       body: JSON.stringify(
         generationPayload({
           allowInsecureLoopback,
@@ -684,9 +699,10 @@ export function createUsGatewayAdapter({
       headers: { "content-type": "application/json" },
       method: "POST",
       submission: true,
+      sensitiveValues: [job.prompt],
     });
     if (typeof payload?.task_id !== "string" || !payload.task_id) {
-      throw normalizedError("SUBMISSION_UNKNOWN");
+      throw normalizedError("SUBMISSION_UNKNOWN", true, { ...diagnostics, reason: "missing-task-id" });
     }
     return Object.freeze({ taskId: payload.task_id });
   }
@@ -715,6 +731,7 @@ export function createUsGatewayAdapter({
       pollIntervalMs = 250,
       taskId,
       timeoutMs,
+      sensitiveValues = [],
     }) {
       if (!Number.isInteger(timeoutMs) || timeoutMs <= 0) {
         throw new Error("Gateway polling timeout must be a positive integer.");
@@ -724,7 +741,7 @@ export function createUsGatewayAdapter({
       let failureCandidate = null;
       let failureObservations = 0;
       while (now() < deadline) {
-        const incoming = await getTask(taskId, expectedOutputCount);
+        const incoming = await getTask(taskId, expectedOutputCount, sensitiveValues);
         if (incoming.state === "failed") {
           const sameFailure =
             failureCandidate &&
@@ -745,7 +762,9 @@ export function createUsGatewayAdapter({
         if (current.terminal) return current;
         await sleep(pollIntervalMs);
       }
-      throw normalizedError("MODEL_TIMEOUT");
+      throw normalizedError("MODEL_TIMEOUT", true, sanitizeFailureDiagnostic({
+        phase: "task-poll", reason: "poll-timeout", durationMs: timeoutMs, upstreamTaskId: taskId,
+      }, { secrets: [apiKey, ...sensitiveValues] }));
     },
   });
 }

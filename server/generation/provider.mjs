@@ -1,12 +1,14 @@
 import sharp from "sharp";
+import { requestFailureContext, sanitizeFailureDiagnostic } from "./failure-diagnostics.mjs";
 
 export class NormalizedProviderError extends Error {
-  constructor({ code, message, retryable = true, title = "本次生成未完成" }) {
+  constructor({ code, message, retryable = true, title = "本次生成未完成", diagnostics }) {
     super(message);
     this.name = "NormalizedProviderError";
     this.code = code;
     this.retryable = retryable;
     this.title = title;
+    Object.defineProperty(this, "diagnostics", { value: sanitizeFailureDiagnostic(diagnostics) });
   }
 }
 
@@ -16,16 +18,20 @@ async function providerFetch(
   timeoutMs = 5_000,
   fetchImplementation = fetch,
 ) {
+  const startedAt = Date.now();
+  const phase = String(url).includes("/v1/generations") ? "provider-request" : "output-download";
   let response;
   try {
     response = await fetchImplementation(url, {
       ...options,
       signal: AbortSignal.timeout(timeoutMs),
     });
-  } catch {
+  } catch (cause) {
     throw new NormalizedProviderError({
       code: "CAPACITY_BUSY",
       message: "生成服务暂时不可达。输入内容已保留，请稍后重试。",
+      diagnostics: requestFailureContext({ url, method: options.method, durationMs: Date.now() - startedAt,
+        phase, cause }),
     });
   }
 
@@ -33,6 +39,8 @@ async function providerFetch(
     throw new NormalizedProviderError({
       code: response.status === 429 ? "CAPACITY_BUSY" : "INTERNAL_ERROR",
       message: "生成服务暂时不可用。输入内容已保留，请稍后重试。",
+      diagnostics: { ...requestFailureContext({ url, method: options.method, response,
+        durationMs: Date.now() - startedAt, phase }), reason: "http-error" },
     });
   }
   return response;
@@ -113,6 +121,7 @@ export async function pollProviderTask({ config, onRefining, taskId }) {
 }
 
 async function downloadProviderOutputOnce(output, fetchImplementation) {
+  const startedAt = Date.now();
   const response = await providerFetch(
     output.url,
     {},
@@ -123,10 +132,13 @@ async function downloadProviderOutputOnce(output, fetchImplementation) {
     ?.split(";", 1)[0]
     .trim()
     .toLowerCase();
+  const diagnostics = () => ({ ...requestFailureContext({ url: output.url, response,
+    durationMs: Date.now() - startedAt, phase: "output-download" }), reason: "output-error" });
   if (!contentType?.startsWith("image/")) {
     throw new NormalizedProviderError({
       code: "INTERNAL_ERROR",
       message: "生成结果格式无法识别。输入内容已保留，请重试。",
+      diagnostics: diagnostics(),
     });
   }
   const bytes = Buffer.from(await response.arrayBuffer());
@@ -134,6 +146,7 @@ async function downloadProviderOutputOnce(output, fetchImplementation) {
     throw new NormalizedProviderError({
       code: "INTERNAL_ERROR",
       message: "生成结果大小异常。输入内容已保留，请重试。",
+      diagnostics: diagnostics(),
     });
   }
   let metadata;
@@ -143,6 +156,7 @@ async function downloadProviderOutputOnce(output, fetchImplementation) {
     throw new NormalizedProviderError({
       code: "INTERNAL_ERROR",
       message: "生成结果无法完整解码。输入内容已保留，请重试。",
+      diagnostics: diagnostics(),
     });
   }
   const decodedContentType = Object.freeze({
@@ -162,6 +176,7 @@ async function downloadProviderOutputOnce(output, fetchImplementation) {
     throw new NormalizedProviderError({
       code: "INTERNAL_ERROR",
       message: "生成结果格式无法识别。输入内容已保留，请重试。",
+      diagnostics: diagnostics(),
     });
   }
   try {
@@ -170,6 +185,7 @@ async function downloadProviderOutputOnce(output, fetchImplementation) {
     throw new NormalizedProviderError({
       code: "INTERNAL_ERROR",
       message: "生成结果无法完整解码。输入内容已保留，请重试。",
+      diagnostics: diagnostics(),
     });
   }
   return {
