@@ -38,3 +38,7 @@ Canvas asset details derive parameters from the image's authorized generation sn
 Quality, background and output format belong only to GPT Image models, using the existing model-specific quality range and option lists. Supported recorded values, including automatic values actually sent to GPT, remain visible; absent or unsupported values are not replaced with invented display defaults. Nano Banana 2 shows high thinking and Google Search only when its recorded values enabled the corresponding provider payload fields. Low thinking and disabled search are omitted; other models never display these Banana 2 options even if stale fields are present.
 
 The user corrected the unfinished preset request: preset information is outside this task. This clarifies GG-253's real-parameter display requirement without changing generation, persistence, provider behavior, billing, layout or authorization. Regression source is updated but compilation and verification remain delegated to the user.
+
+## GG-307 addendum · hidden Banana 2 thinking parameter (2026-10-02)
+
+The user requests that Nano Banana 2's thinking parameter remain hidden in canvas asset details, including snapshots with high thinking enabled. This supersedes GG-305's display of used high thinking; the original generation snapshot and provider payload are unchanged. Used Google Search and all other model/usage filters retain their existing display rules. This is a presentation change only, with compilation and verification still delegated to the user.

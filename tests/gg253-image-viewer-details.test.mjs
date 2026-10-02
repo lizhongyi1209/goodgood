@@ -55,11 +55,11 @@ test("non-GPT images omit legacy GPT defaults and unused search, thinking and re
   }
 });
 
-test("only Nano Banana 2 displays its enabled provider switches and recorded references", () => {
+test("Nano Banana 2 hides thinking while retaining used search, references and image line", () => {
   const enabled = { ...input, modelId: "nano-banana-2", imageLine: "dedicated", thinkingLevel: "high", googleSearch: true };
   const metadata = describeViewerGeneration(enabled, {});
   const parameters = new Map(metadata.parameters.map((item) => [item.label, item.value]));
-  assert.equal(parameters.get("思考"), "高");
+  assert.ok(!parameters.has("思考"));
   assert.equal(parameters.get("谷歌搜索"), "开启");
   assert.equal(parameters.get("参考图"), "1 张");
   assert.equal(parameters.get("线路"), "专线");

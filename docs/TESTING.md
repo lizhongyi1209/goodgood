@@ -2,6 +2,8 @@
 
 ## GG-305 parameter regression source, not executed
 
+GG-307 updates the existing high-thinking Nano Banana 2 assertion to require that thinking is absent while used search, references and image line remain. This regression source was edited only; no compilation, tests, code/diff checks or browser acceptance were run.
+
 `tests/gg253-image-viewer-details.test.mjs` adds coverage for normalized legacy defaults on Banana/Seedream, omitted unused references/search/thinking, enabled Nano Banana 2 options, unsupported stale options on other models, recorded GPT options and automatic values, and per-variant GPT quality ranges. Existing absent-metadata, missing-options, HTML escaping and viewer states remain covered. Per the user's code-only instruction, none of these tests, compilation, lint, diff/code checks or browser/HTTP acceptance were run; the user handles verification.
 
 ## GG-303 batch regression source, not executed

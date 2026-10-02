@@ -38,7 +38,7 @@ GG-290：外置标题按当前页面文本节点顺序显示“文本编辑器 1
 
 ## GG-253 画布资产自由图片预览
 
-GG-305：生成参数按该图片的受权生成记录和模型支持范围筛选，不从当前节点草稿或所有模型共用的默认字段补造。Banana/Seedream不显示GPT专属质量、背景或输出格式；参考图为空不显示。Nano Banana 2只显示实际启用的高思考/谷歌搜索，关闭或未记录的项隐藏，其他模型不展示这两项。GPT保留支持且已记录的值（包含实际发送的自动值），质量按具体GPT型号范围筛选；未使用和缺失值不出现。用户澄清暂不处理预设。见 [GG-305](tasks/GG-305-canvas-viewer-used-parameters.md) / [ADR 0123](decisions/0123-canvas-media-preview-carousel.md)。
+GG-305/GG-307：生成参数按该图片的受权生成记录和模型支持范围筛选，不从当前节点草稿或所有模型共用的默认字段补造。Banana/Seedream不显示GPT专属质量、背景或输出格式；参考图为空不显示。按GG-307补充要求，Nano Banana 2的思考参数始终隐藏，包括已开启高思考的记录；仅实际启用的谷歌搜索显示，关闭或未记录时隐藏，其他模型不展示这两项。GPT保留支持且已记录的值（包含实际发送的自动值），质量按具体GPT型号范围筛选；未使用和缺失值不出现。用户澄清暂不处理预设。见 [GG-305](tasks/GG-305-canvas-viewer-used-parameters.md) / [GG-307](tasks/GG-307-hide-banana-thinking-details.md) / [ADR 0123](decisions/0123-canvas-media-preview-carousel.md)。
 
 GG-264经用户澄清后：初次打开/换图/0或Home保持完整等比适配，放大过程中允许填满整个中间区域，超出视口的完整原图可拖动/缩放查看。右下不显示数量；选择或缩略图/窗口尺寸变化后，当前右侧缩略图自动垂直居中，第一/最后一张也支持。仅canvas模式适用，其他交互及资产页规则保持。见 [GG-264](tasks/GG-264-image-detail-fill-and-centered-rail.md)。
 

@@ -23,7 +23,6 @@ export function describeViewerGeneration(input: GenerationInputSnapshot, dimensi
   }
   // Repository defaults span all models; only show options used in this model's provider request.
   if (input.modelId === "nano-banana-2") {
-    if (input.thinkingLevel === "high") parameters.push({ label: "思考", value: "高" });
     if (input.googleSearch === true) parameters.push({ label: "谷歌搜索", value: "开启" });
   }
   if (isGptImageModelId(input.modelId)) {
