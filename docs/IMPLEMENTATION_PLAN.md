@@ -2,10 +2,12 @@
 
 - Last synchronized: 2026-10-02
 - Current phase: GG-275文本编辑器外置标题/完整书写区/右下双斜线尺寸柄已进入5173；固定14px、精简工具栏与真实尺寸保存恢复完成。并行GG-276图片缩略/预览保持，原Web/Worker/0060与生产不变。
-- Current objective: 用户刷新5173手动检查GG-275文本布局和GG-276图片预览；后续agent只开发/修改代码，不自动运行编译或检查，免费政策仍待用户。
+- Current objective: 用户刷新5173手动查看GG-277的1:1参考图缩略及GG-275文本布局；agent只开发/修改代码，不自动运行编译或检查，免费政策仍待用户。
 - Previous objective: GG-274恢复本地服务；GG-276恢复参考图缩略与悬停预览，并确定后续用户手动检查约定。
 
 ## Current checkpoint
+
+- 最新缩略调整 [GG-277](tasks/GG-277-square-reference-thumbnails.md)：`ad36891`→`07de752`，参考图片缩略与添加入口均为54×54px正方形，悬停预览保持。创建1/退役1，无服务/后端变化，按用户要求未编译或检查，用户手验。
 
 - 当前文本布局 [GG-275](tasks/GG-275-text-editor-layout.md)：从干净`3bbf42e`核验祖先后建立`fix/GG-275-text-editor-layout`，根agent写入/子agent只读。外置元信息/完整书写区、框内右下双斜线32px柄，正文固定14px，精简三项工具栏，旧Markdown保持；修正文本真实尺寸保存。读取GG-276约定前已完成45/45相关检查、局部lint零错误/3既有警告、实际模块200，之后停止自动检查；创建0/退役0，无后端/服务/迁移变化，用户手验。
 
