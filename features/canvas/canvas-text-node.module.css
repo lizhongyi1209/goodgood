@@ -31,6 +31,8 @@ header.header { pointer-events: auto; cursor: default; }
 .templateDialog form { display: grid; gap: 12px; }
 .templatePreview { width: 160px; border-radius: 8px; overflow: hidden; }
 .templateActions { display: flex; justify-content: flex-end; gap: 8px; }
+.templateActions [data-slot="button"][data-variant="secondary"] { color: var(--ink, #18181b); }
+.templateActions [data-slot="button"][data-variant="default"] { color: var(--action-fg, #fff); }
 .templateError { margin: 0; color: #52525b; font-size: 12px; line-height: 1.6; }
 .error { position: absolute; bottom: 8px; left: 18px; right: 44px; font-size: 11px; line-height: 1.5; background: #fff; color: #52525b; }
 .streaming .editor :global(.tiptap) > :last-child::after { content: ""; display: inline-block; width: 2px; height: 1em; margin-left: 3px; background: currentColor; vertical-align: text-bottom; animation: textCaret 900ms steps(1) infinite; }

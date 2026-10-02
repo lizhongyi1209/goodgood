@@ -50,7 +50,7 @@ export function CanvasTextQuickToolbar({ data, nodeId, disabled = false }: Reado
     </div>
     <Dialog open={Boolean(snapshot)} onOpenChange={(open) => { if (!open && !pending.current) setSnapshot(null); }}>
       <DialogContent className={styles.templateDialog} onPointerDown={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
-        <DialogHeader><DialogTitle>设置模板</DialogTitle><DialogDescription>将当前内容保存到资产。</DialogDescription></DialogHeader>
+        <DialogHeader><DialogTitle>设置模板</DialogTitle><DialogDescription className="sr-only">将当前内容保存到资产。</DialogDescription></DialogHeader>
         <form onSubmit={(event) => { event.preventDefault(); void save(); }}>
           <Label htmlFor={`text-template-name-${nodeId}`}>模板名称</Label>
           <Input id={`text-template-name-${nodeId}`} autoFocus maxLength={255} value={name} disabled={saving} onChange={(event) => {
