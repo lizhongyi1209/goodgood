@@ -35,6 +35,7 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
   contextRef.current = context;
   const controllerRef = useRef<AbortController | null>(null);
   const latestRequestRef = useRef<string | null>(null);
+  const renderedResultRef = useRef(data.markdown);
   const live = (controller: AbortController) => mountedRef.current && controllerRef.current === controller;
   const mountedRef = useRef(true);
   const [busy, setBusy] = useState(false);
@@ -63,7 +64,7 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
     flow.updateNodeData(id, (node) => node.type === "textGenerator" ? { textGeneration: { ...node.data.textGeneration, ...patch } } : {});
   };
   const updateResult = (markdown: string) => {
-    if (mountedRef.current) flow.updateNodeData(id, { markdown, text: canvasMarkdownPlainText(markdown) });
+    if (mountedRef.current) { renderedResultRef.current = markdown; flow.updateNodeData(id, { markdown, text: canvasMarkdownPlainText(markdown) }); }
   };
   const startBusy = () => {
     setBusy(true); setError(""); flow.updateNodeData(id, { generating: true });
@@ -249,8 +250,13 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
                   if (!mountedRef.current || latestRequestRef.current !== requestId) return;
                   if (result.state === "succeeded") {
                     // Generation can settle before the final characters finish animating.
-                    updateResult(result.markdown); setError("");
-                    if (pendingHistory.at(-1)?.role === "user") updateDraft({ history: recentHistory([...pendingHistory, { role: "assistant", content: result.markdown }]) });
+                    const current = flow.getNode(id);
+                    if (current?.type !== "textGenerator") return;
+                    const edited = current.data.markdown !== renderedResultRef.current;
+                    const content = edited ? current.data.markdown : result.markdown;
+                    if (!edited) updateResult(content);
+                    setError("");
+                    if (pendingHistory.at(-1)?.role === "user") updateDraft({ history: recentHistory([...pendingHistory, { role: "assistant", content }]) });
                   } else if (result.state === "cancelled") setError("已停止生成，预留积分已退回。");
                 }).finally(() => contextRef.current.onBillingChanged()).catch(() => {});
               } else void generate();
