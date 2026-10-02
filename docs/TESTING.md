@@ -1,5 +1,9 @@
 # GG-063 verification
 
+## GG-305 parameter regression source, not executed
+
+`tests/gg253-image-viewer-details.test.mjs` adds coverage for normalized legacy defaults on Banana/Seedream, omitted unused references/search/thinking, enabled Nano Banana 2 options, unsupported stale options on other models, recorded GPT options and automatic values, and per-variant GPT quality ranges. Existing absent-metadata, missing-options, HTML escaping and viewer states remain covered. Per the user's code-only instruction, none of these tests, compilation, lint, diff/code checks or browser/HTTP acceptance were run; the user handles verification.
+
 ## GG-303 batch regression source, not executed
 
 `gg303-canvas-prompt-batches.test.mjs` contains synthetic coverage for exact English/Chinese separator lines, CRLF/whitespace/empty/duplicate prompts, native Markdown rule output and connected composition, count/BigInt quote products, source drafts over4000 and65 segments, concurrent start/out-of-order results/failure, isolated retry/accepted-only resume, legacy/batch snapshots and local/remote recovery, private crop ownership and nonfirst-job authorization. GG-173 oversized-draft expectation now follows the existing document envelope. These sources were written only: no tests, compilation, lint, type/code/diff checks, HTTP/browser/provider calls or database changes were executed under the user's standing agreement. User manually verifies; cloud batch persistence needs later Web activation with new jobIds validation, without a migration.

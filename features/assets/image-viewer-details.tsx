@@ -1,8 +1,8 @@
-import { formatGenerationResolution, getGenerationRatio, gptImageBackgroundLabel, gptImageOutputFormatLabel,
-  gptImageQualityLabel } from "@/features/creation/generation-options";
+import { formatGenerationResolution, getGenerationRatio, getGptImageQualityOptions,
+  GPT_IMAGE_BACKGROUND_OPTIONS, GPT_IMAGE_OUTPUT_FORMAT_OPTIONS } from "@/features/creation/generation-options";
 import { getGenerationModel } from "@/features/models/catalog";
-import { imageLineName } from "@/shared/contracts/banana-lines.mjs";
-import type { GenerationInputSnapshot } from "@/shared/contracts/generation";
+import { imageLineName, isValidImageLine } from "@/shared/contracts/banana-lines.mjs";
+import { isGptImageModelId, type GenerationInputSnapshot } from "@/shared/contracts/generation";
 import styles from "./image-viewer.module.css";
 
 export type ImageViewerMetadata = Readonly<{
@@ -16,14 +16,24 @@ export function describeViewerGeneration(input: GenerationInputSnapshot, dimensi
     { label: "画面比例", value: getGenerationRatio(input.aspectRatio).label },
     { label: "分辨率", value: formatGenerationResolution(input.resolution, dimensions) },
     { label: "数量", value: `${input.count} 张` },
-    { label: "参考图", value: input.references.length ? `${input.references.length} 张` : "无" },
   ];
-  if (input.imageLine) parameters.push({ label: "线路", value: imageLineName(input.imageLine) });
-  if (input.thinkingLevel) parameters.push({ label: "思考", value: input.thinkingLevel === "high" ? "高" : "低" });
-  if (input.googleSearch !== undefined) parameters.push({ label: "谷歌搜索", value: input.googleSearch ? "开启" : "关闭" });
-  if (input.quality) parameters.push({ label: "质量", value: gptImageQualityLabel(input.quality) });
-  if (input.background) parameters.push({ label: "背景", value: gptImageBackgroundLabel(input.background) });
-  if (input.outputFormat) parameters.push({ label: "输出格式", value: gptImageOutputFormatLabel(input.outputFormat) });
+  if (input.references.length) parameters.push({ label: "参考图", value: `${input.references.length} 张` });
+  if (input.imageLine && isValidImageLine(input.modelId, input.imageLine)) {
+    parameters.push({ label: "线路", value: imageLineName(input.imageLine) });
+  }
+  // Repository defaults span all models; only show options used in this model's provider request.
+  if (input.modelId === "nano-banana-2") {
+    if (input.thinkingLevel === "high") parameters.push({ label: "思考", value: "高" });
+    if (input.googleSearch === true) parameters.push({ label: "谷歌搜索", value: "开启" });
+  }
+  if (isGptImageModelId(input.modelId)) {
+    const quality = getGptImageQualityOptions(input.modelId).find((option) => option.value === input.quality);
+    const background = GPT_IMAGE_BACKGROUND_OPTIONS.find((option) => option.value === input.background);
+    const outputFormat = GPT_IMAGE_OUTPUT_FORMAT_OPTIONS.find((option) => option.value === input.outputFormat);
+    if (quality) parameters.push({ label: "质量", value: quality.label });
+    if (background) parameters.push({ label: "背景", value: background.label });
+    if (outputFormat) parameters.push({ label: "输出格式", value: outputFormat.label });
+  }
   return { model: input.catalogModelName || getGenerationModel(input.modelId).name, prompt: input.prompt, parameters };
 }
 
