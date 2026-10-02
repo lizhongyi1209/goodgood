@@ -4,6 +4,7 @@
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
+| GG-318 | 开发中：图片请求失败脱敏诊断持久到既有事件，站长总日志详情查看；不改变请求/积分，不运行验证或激活 | [任务](tasks/GG-318-generation-failure-diagnostics.md) |
 | GG-317 | 排查完成：本地确实创建3条任务，摸头/坐着成功，半蹲CAPACITY_BUSY失败且20积分已全部释放；非两组上限，无代码/运行修改或真实请求 | [任务](tasks/GG-317-canvas-three-prompt-audit.md) |
 | GG-316 | 已接入5173源码3a823d8：画布查看按钮24px/图标14px保持固定屏幕尺寸，纯白不透明背景，资产入口同步；创建1/退役1，未编译或验证 | [任务](tasks/GG-316-canvas-view-icon-consistency.md) |
 | GG-315 | 已接入5173源码5be1e21：模板缩略不再误报图片失败，图片/视频及文本全文自身错误保持；创建1/退役1，未编译或验证，无后端变化 | [任务](tasks/GG-315-text-template-media-error.md) |

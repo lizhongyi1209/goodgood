@@ -20,8 +20,18 @@ Global log has task and ledger tabs, email/task/batch ID, calendar range, state
 or event filtering, bounded keyset pages and same-page detail Sheet. Task detail
 links the immutable submitted parameters and reserve/settle/release/refund
 timeline. Enterprise task consumption belongs to its actual creator; grants
-without a member belong to the enterprise fund. No raw provider errors, prompts,
-private URLs, credentials, payment references or arbitrary metadata are returned.
+without a member belong to the enterprise fund. No prompts, private URLs,
+credentials, payment references or arbitrary metadata are returned.
+
+GG-318 (2026-10-02) extends site-owner task details with an allowlisted, bounded
+failure diagnostic. Existing job events persist the attempt, worker stage,
+HTTP method/endpoint/status/duration, upstream request ID and sanitized error
+code/message or network cause. Response bodies and request bodies are not logged;
+only explicit error fields may be retained after redacting credentials, URLs,
+image data and long opaque strings. The read boundary sanitizes again. Ordinary
+users keep normalized errors. Historical absent diagnostics are not inferred.
+This introduces no migration, automatic retry, provider request or billing change;
+new Web and Worker code must be activated separately before capture is available.
 
 Three same-origin POST read endpoints reuse session/site-owner and CSRF gates.
 Search stays in bodies, never URLs. No migration, billing writes, paid requests,
