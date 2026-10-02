@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-02
-- Current phase: GG-316图标修正源码04aa7e0→3a823d8已接入GG-116/5173：查看按钮逆向补偿画布缩放，24px按钮/14px图标/7px圆角/5px边距固定，共享背景纯白不透明。创建1/退役1，未编译或验证，无运行变化，GG-315及前序源码、GG-309已启用后端保持。
-- Current objective: GG-317三组提示词排查完成，确实创建3条任务，其中半蹲CAPACITY_BUSY失败且预留20全退，不是分组上限；无源码修改或自动重试。用户继续手验GG-316不同缩放比例下查看按钮固定大小/白底，需要时自行仅重试失败段；默认不自动编译、检查或浏览器验收。
+- Current phase: GG-318失败诊断源码4443b25→a627d7f已接入GG-116/5173：图片请求/上游失败脱敏白名单随既有事件事务保存，站长总日志详情可读；创建1/退役1，未编译/检查或验证，无SQL迁移、运行/生产操作，Web287c4ca/0063及原Vite/唯一Worker保持。
+- Current objective: GG-318源码交付，待用户委托更新Web及唯一Worker后开始记录新失败并手验总日志详情；不重试历史任务，不推测缺失HTTP状态。默认不自动编译、检查或浏览器验收；GG-317确认三条任务/一条CAPACITY_BUSY失败且20全退的结果保持。
 - Previous objective: GG-313模板名称格式/示例参考、GG-312画布300%高清门槛、GG-311模板保存/成功动效及类型筛选、GG-310前景色已交付源码；GG-309私有2K接口、批量校验及文本资产API/本地0063已启用。
 
 ## Current checkpoint
+
+- 最新失败诊断 [GG-318](tasks/GG-318-generation-failure-diagnostics.md)：基于ea71443，登记4a2017f→9121d32，隔离4443b25精确接入a627d7f；ADR0074先扩展站长脱敏白名单，诊断非枚举不改变终态确认，现有provider_failed/provider_fallback事件记录阶段/尝试/HTTP/上游/路由。总日志详情受权读取最多50条并再次脱敏，历史/旧Web兼容。创建1/退役1，无依赖/缓存、编译/检查、测试、浏览器、真实请求或激活；无迁移或请求/积分变化。下次明确委托时同步激活Web及唯一Worker，新失败才有诊断，不能回填历史；当前运行沿GG-309及GG-317证据保持。
 
 - 最新只读排查 [GG-317](tasks/GG-317-canvas-three-prompt-audit.md)：当前源码d4894f6/原运行身份不变；核对本地真实画布/3条job及attempt，摸头/坐着成功、半蹲CAPACITY_BUSY无provider_task_id，账本reserve -20/release +20净0。分隔逻辑无两组上限，原始HTTP状态未保存，不断言具体429。创建0/退役0，无代码、运行、数据或真实provider请求；用户可单段重试，完整证据见任务卡。
 
