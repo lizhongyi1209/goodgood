@@ -107,7 +107,7 @@ button.folderCard[data-move-state="succeeded"] { background: #e4e4e7; box-shadow
 .folderNameInput[data-slot="input"]:focus-visible { outline: 1px solid #a1a1aa; outline-offset: 2px; }
 .folderNameDialog .nameError { margin: 0; font-size: 12px; }
 .folderNameActions { display: flex; justify-content: flex-end; gap: 8px; }
-.folderNameActions [data-slot="button"] { height: 32px; border-radius: 9px; padding: 0 12px; font-size: 12px; box-shadow: none; }
+.folderNameActions [data-slot="button"] { min-width: 76px; height: 32px; border-radius: 9px; padding: 0 12px; font-size: 12px; box-shadow: none; }
 .folderNameActions [data-slot="button"][data-variant="secondary"] { background: #f4f4f5; color: #52525b; }
 .folderNameActions [data-slot="button"][data-variant="secondary"]:hover { background: #e9e9ec; }
 .folderNameActions [data-slot="button"][data-variant="default"] { background: #18181b; color: #fff; }

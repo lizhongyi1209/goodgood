@@ -331,6 +331,8 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
   const nameInputRef = useRef<HTMLInputElement>(null);
   const rowsRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const folderButtonRefs = useRef(new Map<string, HTMLButtonElement>());
+  const folderRenameReturnFocusRef = useRef<HTMLButtonElement | null>(null);
   const expandRefs = useRef(new Map<string, HTMLButtonElement>());
   const readEpochRef = useRef(0);
   const assetDragBlockedRef = useRef(false);
@@ -596,11 +598,11 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
     setManagementError(null);
     return true;
   };
-  const finishManagement = () => {
+  const finishManagement = (refreshLibrary = true) => {
     managementPendingRef.current = false;
     setManaging(false);
     // A failed byte deletion may follow a committed metadata transaction.
-    window.dispatchEvent(new Event(CANVAS_ASSET_LIBRARY_UPDATED_EVENT));
+    if (refreshLibrary) window.dispatchEvent(new Event(CANVAS_ASSET_LIBRARY_UPDATED_EVENT));
   };
 
   const createFolder = async () => {
@@ -616,6 +618,7 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
 
   const beginFolderRename = (folder: AssetFolder) => {
     if (managementBlocked || managementPendingRef.current || renamePendingRef.current || moverRef.current?.isPending()) return;
+    folderRenameReturnFocusRef.current = folderButtonRefs.current.get(folder.id) ?? closeButtonRef.current;
     setEditingFolder(folder);
     setFolderNameDraft(folder.name);
     setFolderNameError(null);
@@ -633,7 +636,11 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
       setEditingFolder(null);
     } catch (cause) {
       setFolderNameError(cause instanceof Error ? cause.message : "重命名失败，请重试。");
-    } finally { finishManagement(); }
+    } finally {
+      // The saved folder is authoritative; avoid reloading/remounting every media preview.
+      // Restart an existing background read if startManagement invalidated it.
+      finishManagement(loading);
+    }
   };
 
   const deleteEntry = async (target: CanvasLibraryDeleteTarget) => {
@@ -698,7 +705,10 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
               const hovering = available && hoveredFolderId === folder.id;
               const phase = moveState?.folderId === folder.id ? moveState.phase : null;
               return <ContextMenu key={folder.id}><ContextMenuTrigger asChild disabled={managementBlocked} onContextMenu={(event) => { if (managementBlocked) event.preventDefault(); }}>
-                <Button type="button" variant="ghost" className={styles.folderCard} data-canvas-asset-context-menu
+                <Button ref={(button) => {
+                  if (button) folderButtonRefs.current.set(folder.id, button);
+                  else folderButtonRefs.current.delete(folder.id);
+                }} type="button" variant="ghost" className={styles.folderCard} data-canvas-asset-context-menu
                 data-drop-available={available || undefined} data-drop-hover={hovering || undefined} data-move-state={phase ?? undefined}
                 aria-busy={phase === "pending"} onClick={() => setFolderId(folder.id)} aria-label={`打开文件夹 ${folder.name}`}
                 onDragEnter={(event) => folderDragOver(event, folder)} onDragOver={(event) => folderDragOver(event, folder)}
@@ -770,6 +780,13 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
         </ScrollArea>}
     <Dialog open={Boolean(editingFolder)} onOpenChange={(open) => { if (!open && !managementPendingRef.current) setEditingFolder(null); }}>
       <DialogContent className={styles.folderNameDialog} overlayClassName={styles.folderNameOverlay} showCloseButton={false}
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          const target = folderRenameReturnFocusRef.current;
+          if (target?.isConnected) target.focus({ preventScroll: true });
+          else closeButtonRef.current?.focus({ preventScroll: true });
+          folderRenameReturnFocusRef.current = null;
+        }}
         onEscapeKeyDown={(event) => { if (managementPendingRef.current) event.preventDefault(); }}
         onInteractOutside={(event) => { if (managementPendingRef.current) event.preventDefault(); }}>
         <DialogHeader className={styles.folderNameHeader}>
