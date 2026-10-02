@@ -104,7 +104,6 @@ export function CanvasTextNode({ id, data, selected, width, height }: NodeProps<
     </header>
     <div className={`${styles.node} ${selected ? styles.selected : ""}`} style={{ fontSize: CANVAS_TEXT_FONT_SIZE }}>
       <div className={`${styles.body} nodrag nopan nowheel`} onKeyDown={(event) => event.stopPropagation()} onContextMenu={(event) => event.stopPropagation()}
-        onClick={(event) => { if (event.target === event.currentTarget) editor?.commands.focus("end"); }}
         onFocus={selectNode}>
         <EditorContent editor={editor} className={styles.editor} />
         {!data.text && <span className={styles.placeholder} aria-hidden="true">输入内容…</span>}
