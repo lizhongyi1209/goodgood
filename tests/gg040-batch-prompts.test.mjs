@@ -4,6 +4,7 @@ import { createRequire } from "node:module";
 import test from "node:test";
 import { build } from "esbuild";
 import { parsePromptBatch, promptBatchOutputCount, promptContextForRetry } from "../shared/contracts/prompt-batch.mjs";
+import { PROMPT_DRAFT_MAX_LENGTH } from "../shared/contracts/generation-prompt-limits.mjs";
 import { validateM3GenerationInput } from "../server/generation/api.mjs";
 import { hashGenerationInput } from "../server/generation/repository.mjs";
 
@@ -43,7 +44,8 @@ test("GG-040 image fan-out retains per-prompt counts and freezes shared options/
     assert.ok(snapshots.every((input) => input.references[0].name === "ref" && input.quality === "high" && input.background === "transparent" && input.outputFormat === "png"));
   }
   assert.throws(() => createImagePromptBatch({ ...imageInput, prompt: "---\n---" }), /请先输入/);
-  assert.throws(() => createImagePromptBatch({ ...imageInput, prompt: "A".repeat(4001) }), /4000/);
+  assert.equal(createImagePromptBatch({ ...imageInput, prompt: "A".repeat(PROMPT_DRAFT_MAX_LENGTH) })[0].prompt.length, PROMPT_DRAFT_MAX_LENGTH);
+  assert.throws(() => createImagePromptBatch({ ...imageInput, prompt: "A".repeat(PROMPT_DRAFT_MAX_LENGTH + 1) }), /32,000/);
   assert.equal(createImagePromptBatch({ ...imageInput, prompt: "plain prompt" }).length, 1);
 });
 
@@ -122,6 +124,7 @@ test("GG-040 project context is validated separately from model prompt and hash-
   assert.throws(() => validateM3GenerationInput({ ...snapshots[0], composerPrompt: "unrelated" }), /不一致/);
   assert.throws(() => validateM3GenerationInput({ ...snapshots[0], projectId: null }), /不一致/);
   assert.throws(() => validateM3GenerationInput({ ...snapshots[0], composerPrompt: "A".repeat(4001) }), /不一致/);
+  assert.throws(() => validateM3GenerationInput({ ...snapshots[0], composerPrompt: "A".repeat(PROMPT_DRAFT_MAX_LENGTH + 1) }), /32,000/);
   assert.notEqual(hashGenerationInput(input), hashGenerationInput({ ...input, composerPrompt: "提示词A\n---\nother" }));
   const repository = await readFile("server/generation/repository.mjs", "utf8");
   assert.match(repository, /input\.composerPrompt \?\? input\.prompt/);

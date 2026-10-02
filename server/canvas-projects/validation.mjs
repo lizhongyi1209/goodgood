@@ -1,4 +1,5 @@
 import { CanvasProjectError } from "./errors.mjs";
+import { countPromptCharacters, PROMPT_DRAFT_MAX_LENGTH } from "../../shared/contracts/generation-prompt-limits.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const NODE_ID = /^[A-Za-z0-9][A-Za-z0-9_:.\-]{0,159}$/;
@@ -19,8 +20,8 @@ function record(value, allowed) {
   return value;
 }
 
-function string(value, max, { empty = false, multiline = false } = {}) {
-  if (typeof value !== "string" || value.length > max || (!empty && !value.length) ||
+function string(value, max, { empty = false, multiline = false, characters = false } = {}) {
+  if (typeof value !== "string" || (characters ? countPromptCharacters(value) : value.length) > max || (!empty && !value.length) ||
     (multiline ? /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/ : /[\u0000-\u001f\u007f]/).test(value)) throw invalid();
   return value;
 }
@@ -52,7 +53,7 @@ function node(value) {
   const result = { id: nodeId(value.id), type, position: position(value.position) };
   if (type === "textEditor") {
     result.markdown = string(value.markdown, 100_000, { empty: true, multiline: true });
-    result.text = string(value.text, 16_000, { empty: true, multiline: true });
+    result.text = string(value.text, PROMPT_DRAFT_MAX_LENGTH, { empty: true, multiline: true, characters: true });
     if (value.metadata !== undefined || value.asset !== undefined) throw invalid();
   } else if (value.markdown !== undefined || value.text !== undefined) throw invalid();
   if (value.size !== undefined) {
@@ -126,7 +127,7 @@ function generator(value) {
   const directReferenceIds = value.directReferenceIds.map(uuid);
   if (new Set(directReferenceIds).size !== directReferenceIds.length) throw invalid();
   return {
-    draft: { prompt: string(draft.prompt, 4000, { empty: true, multiline: true }), modelKey: draft.modelKey,
+    draft: { prompt: string(draft.prompt, PROMPT_DRAFT_MAX_LENGTH, { empty: true, multiline: true, characters: true }), modelKey: draft.modelKey,
       ratio: draft.ratio, resolution: draft.resolution, count: draft.count,
       ...(draft.quality !== undefined ? { quality: draft.quality } : {}),
       ...(draft.background !== undefined ? { background: draft.background } : {}),

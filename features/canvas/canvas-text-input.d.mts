@@ -8,6 +8,7 @@ export const CANVAS_TEXT_NODE_BOUNDS: Readonly<{ minWidth: number; minHeight: nu
 export type CanvasTextInput = { edgeId: string; nodeId: string; text: string; markdown: string };
 export function collectCanvasTextInputs(nodes: readonly CanvasNode[], edges: readonly Edge[], generatorId: string | null): CanvasTextInput[];
 export function combineCanvasPrompt(inputs: readonly Pick<CanvasTextInput, "text">[], additionalPrompt: string): string;
+export function reorderCanvasTextInputs<T extends Edge>(edges: T[], generatorId: string, edgeId: string, neighborEdgeId: string): T[];
 export function canvasTextNodeSizeForKey(width: number | undefined, height: number | undefined, key: string, largeStep?: boolean): { width: number; height: number } | null;
 export function isCanvasTextConnection(connection: Connection | Edge, nodes: readonly CanvasNode[], edges: readonly Edge[]): boolean;
 export function normalizeCanvasInputEdge<T extends { sourceHandle?: string | null; targetHandle?: string | null }>(edge: T): T;

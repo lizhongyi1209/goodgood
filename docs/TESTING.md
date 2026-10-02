@@ -1,5 +1,9 @@
 # GG-063 verification
 
+## GG-292 model prompt limits and composition preview — not executed
+
+Per the standing user instruction, no compilation, lint, tests, type/diff checks, HTTP/browser acceptance, SQL application or provider request is run. New `tests/gg292-model-prompt-limits.test.mjs` regression source covers every model boundary/backend consistency, Unicode supplementary characters, independent32,000-character storage, Seedream soft advice/model switching, combined separator counts, empty/disconnected text, ordering isolation and cloud roundtrip. Existing GG-268/GG-173/GG-040 boundary expectations are updated without execution. User acceptance should inspect full read-only text/copy, ordering and save/reopen/undo, over-limit retention and model switching; larger backend saves require0062 and Web activation first. Do not apply migrations to production or attach verification jobs to a real provider Worker. This is implemented source, not verified behavior.
+
 ## GG-275 text layout, fixed typography and resize recovery
 
 The updated GG-268/GG-273 tests cover fixed 14px body at minimum/default/large sizes, external metadata/no footer/one accessible diagonal grip, the actual toolbar without strike/quote/code-block controls, keyboard bounds/Shift steps, and real React Flow resize through snapshot/save. Legacy Markdown roundtrip and media geometry precedence remain. This window ran these plus GG-173/GG-218 (45/45) and scoped lint/actual-module compilation before reading the new GG-276 agreement. That agreement now controls further work: no automatic compilation, lint, tests, code checks or browser acceptance; the user performs checks unless explicitly delegated again.

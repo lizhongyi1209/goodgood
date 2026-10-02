@@ -1,6 +1,6 @@
 # ADR 0124: Visual Markdown text nodes and generator text inputs
 
-- Status: Accepted for GG-268 local implementation; GG-273 and GG-275 revisions accepted
+- Status: Accepted for GG-268 local implementation; GG-273 and GG-275 revisions accepted; prompt limits superseded by ADR 0128
 - Date: 2026-10-01
 - Task: GG-268
 
@@ -16,6 +16,8 @@ GG-273 editor presentation uses a visible document header, padded writing surfac
 
 [GG-290](../tasks/GG-290-canvas-text-editor-order.md) adds consecutive text-editor numbers to the external title and accessible editing label. Numbers follow text-node order within the current page, starting at 1; new/copied nodes append and deletion closes gaps. Existing persisted node order preserves the display on reopen, including legacy projects, without adding a stored field or changing prompt order.
 
-Project snapshots, cloud validation, local recovery, pages and canvas copy/paste preserve text nodes and edges. Existing schemaVersion1/2 and JSON storage remain; no database migration is required. Unknown node types and inappropriate fields remain rejected, and legacy documents retain their current behavior. Local Web must be rebuilt to accept the additive node fields; the generation Worker/provider contract does not change. No production deployment is authorized.
+[GG-292](../tasks/GG-292-model-prompt-limits.md) / [ADR 0128](0128-model-prompt-limits-and-composition-preview.md) replaces the historical fixed 4,000-character combined limit with shared per-model submission limits and 32,000-character plain-text/draft capacity. It adds exact final-prompt preview and explicit input ordering through existing edge order. The original combination and immutable snapshot rules remain.
+
+Project snapshots, cloud validation, local recovery, pages and canvas copy/paste preserve text nodes and edges. Existing schemaVersion1/2 and JSON storage remain; text-node JSON requires no database migration. GG-292 separately widens existing creation-draft/project SQL prompt constraints. Unknown node types and inappropriate fields remain rejected, and legacy documents retain their current behavior. Local Web must be rebuilt to accept the additive node fields and changed validation; the generation Worker/provider contract does not change. No production deployment is authorized.
 
 Reference: [Tiptap Markdown basic usage](https://tiptap.dev/docs/editor/markdown/getting-started/basic-usage) and [React installation](https://tiptap.dev/docs/editor/getting-started/install/react).

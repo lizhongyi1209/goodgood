@@ -1,0 +1,4 @@
+.status { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 4px 12px; padding: 0 16px 8px; color: var(--muted); font-size: 11px; line-height: 1.6; }
+.count { margin-left: auto; color: var(--quiet); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.message { flex: 1 1 200px; margin: 0; overflow-wrap: anywhere; }
+.error { color: var(--ink); font-weight: 500; }

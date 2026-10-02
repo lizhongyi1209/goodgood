@@ -1,6 +1,7 @@
 import { validateReferenceIds } from "../references/validation.mjs";
 import { normalizeGenerationModelOptions } from "../generation/capabilities.mjs";
 import { ProjectRequestError } from "./errors.mjs";
+import { countPromptCharacters, PROMPT_DRAFT_MAX_LENGTH } from "../../shared/contracts/generation-prompt-limits.mjs";
 
 const MODEL_IDS = new Set([
   "nano-banana-2",
@@ -74,8 +75,8 @@ export function validateProjectSaveRequest(payload) {
   const state = payload.state;
   if (!state || typeof state !== "object") throw invalidProject();
   const prompt = typeof state.prompt === "string" ? state.prompt : null;
-  if (prompt === null || prompt.length > 4_000) {
-    throw invalidProject("项目提示词不能超过 4000 个字符。");
+  if (prompt === null || countPromptCharacters(prompt) > PROMPT_DRAFT_MAX_LENGTH) {
+    throw invalidProject(`项目提示词不能超过 ${PROMPT_DRAFT_MAX_LENGTH.toLocaleString("zh-CN")} 个字符。`);
   }
   if (state.catalogModelId !== undefined && (typeof state.catalogModelId !== "string" || !/^[a-z0-9][a-z0-9._-]{1,79}$/.test(state.catalogModelId))) throw invalidProject();
   if (!MODEL_IDS.has(state.modelId)) throw invalidProject();
