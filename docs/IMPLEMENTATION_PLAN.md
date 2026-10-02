@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-02
-- Current phase: GG-308文本快捷栏/模板资产源码4317bdb已精确接入GG-116/5173；单击快捷栏/双击格式栏、冻结全文私有资产及1:1裁切文字缩略/复用完成，创建1/退役1。未编译/验证；新文本API/0063未启用，GG-306/307及前序源码、GG-300运行沿原证据保持，本轮未部署或执行运行操作。
-- Current objective: 用户刷新手验两类文本节点工具栏切换；模板持久保存/全文与拖回复用须后续明确委托更新Web和本地0063，可连同GG-303批量校验/GG-306高清接口启用。不自动编译/验证、迁移、浏览器或真实请求，默认仍只开发代码。
-- Previous objective: GG-306预览源码f004e5f/e7e1f6f已接入，高清接口待更新Web；GG-307 ebd8ace/07a571c、GG-305及前序源码和GG-300运行保持。
+- Current phase: [GG-309](tasks/GG-309-canvas-preview-activation.md)按用户重启请求，已构建并启用verified 287c4ca、本地Web40244/必要0063；动态最高2048预览、GG-303云端批量校验及GG-308文本API生效，用户手验。仅修复实际构建阻塞的重复zoom声明，Vite27464/唯一Worker31280、cloud-development/local-mailpit及数据保持；创建2/退役2，无测试、浏览器、真实provider请求或生产操作。
+- Current objective: 用户刷新5173手验默认512、放大按需最高2048及缩回；当前云端批量校验/文本模板已启用。默认继续只开发代码，不自动编译、检查或浏览器验收。
+- Previous objective: GG-308/306/307及前序源码交付均保留，原待更新Web/0063已由本轮GG-309启用。
 
 ## Current checkpoint
+
+- 当前运行检查点 [GG-309](tasks/GG-309-canvas-preview-activation.md)按用户重启请求，已构建并启用verified 287c4ca、本地Web40244/必要0063；动态最高2048预览、GG-303云端批量校验及GG-308文本API生效，用户手验。仅修复实际构建阻塞的重复zoom声明，Vite27464/唯一Worker31280、cloud-development/local-mailpit及数据保持；创建2/退役2，无测试、浏览器、真实provider请求或生产操作。构建完整指纹及时间见任务卡；文档后继不改变已运行receipt，后续重启先构建新HEAD。下方源码交付时的待启用描述均为历史阶段。
 
 - 当前功能源码 [GG-308](tasks/GG-308-canvas-text-template-assets.md)：基于e7e1f6f，登记61895c5后隔离e95c52c精确接入4317bdb；文本节点selected只显示设置模板快捷栏，canEdit才显示格式栏，空/生成或恢复中禁用保存。命名弹窗冻结完整Markdown/纯文本及UUID，新增私有text资产API/0063、幂等冲突/owner-workspace权限与整理删除，列表摘要和全文分开。两处资产UI的1:1文字缩略/全文查看、原整理删除，资产页下载Markdown、画布原重命名及拖入独立textEditor复用完成，原图保存/撤销保持。ADR0133先记录决策，必要回归来源只写未运行；创建1/退役1，无编译/验证、运行或生产操作。持久保存需后续Web/0063启用，GG-306/307及前序源码保持。
 

@@ -1,5 +1,7 @@
 # 当前开发版本与跨窗口交接
 
+- 当前本地运行：[GG-309](tasks/GG-309-canvas-preview-activation.md)按用户重启请求，已构建并启用verified 287c4ca、本地Web40244/必要0063；动态最高2048预览、GG-303云端批量校验及GG-308文本API生效，用户手验。仅修复实际构建阻塞的重复zoom声明，Vite27464/唯一Worker31280、cloud-development/local-mailpit及数据保持；创建2/退役2，无测试、浏览器、真实provider请求或生产操作。两版本端点均verified，匿名两类canvas-preview均401。运行receipt仍绑定287c4ca，下次重启先构建当前HEAD；下方原任务待启用为历史交付状态，构建指纹见GG-309。
+
 - 最新文本资产源码：[GG-308](tasks/GG-308-canvas-text-template-assets.md)基于e7e1f6f，登记61895c5、隔离e95c52c→GG-116/5173源码4317bdb。单击两类文本节点显示设置模板快捷栏、双击/键盘编辑才显示格式栏；冻结当前完整内容/UUID保存私有text资产，两处资产列表1:1裁切文字缩略/全文查看、资产页Markdown下载和原整理删除、画布重命名及拖入独立文本节点完成。创建1/退役1，必要回归来源只写未运行，无依赖/构建缓存、编译/验证或运行/生产操作。新的text-assets API和0063迁移须后续明确委托更新Web/应用本地迁移，旧Web的媒体列表可读且模板保存明确失败；可连同GG-303云端批量校验/GG-306高清接口一起启用，不增加Worker或provider请求。当前GG-300 Web b3844d2/本地0062/唯一Worker沿原运行证据保持，本轮未探测或激活。
 
 - 最新显示源码：[GG-306](tasks/GG-306-canvas-adaptive-preview.md)从5a4fb15隔离3e75204精确接入GG-116/5173为f004e5f，保留并行GG-307 ebd8ace。资产拖入默认512，上传/生成结果共用视野/显示需求的按需2K组件，最长边2048，保留小图层，3并发/8闲置URL身份缓存，原实际尺寸不改为预览尺寸。新canvas-preview私有固定2K接口无SQL/存储写入；当前Web b3844d2未启用该接口，失败保留512，远程高清须后续用户委托构建/更新Web，可与GG-303云端批量校验一并启用。创建1/退役1，无编译/检查、浏览器或真实请求/运行变化，用户手验，原Worker/本地0062/配置数据及生产保持。
@@ -65,7 +67,7 @@
 - 最新追加：[GG-254](tasks/GG-254-account-identity-editor.md) `422c32f` 单一用户名默认 mimi、六位 ID 和局部确认/外部取消已进入 5173 与 verified Web；20 项相关检查、资料 SQL 1/1、ID SQL 10/10、局部 lint 通过，本地迁移到 0058，辅助目录退役。并行 GG-253 `896bce2` 与 GG-255 `41df2dc` 保留，文档后继不改变实际 Web 构建身份。
 - 当前追加：[GG-250](tasks/GG-250-inline-personal-information.md) `99fb14a` 已在个人信息内直接编辑头像、昵称/用户名并保存/取消，13 项功能、局部 lint 和最终文档 9/9；辅助目录退役，GG-249 后继 `8ee22d8` 保留。
 - 当前代码：GG-239累计及GG-242—282已集成源码；实际GG-116当前HEAD为下一任务基线，最新裁剪`34f10b0/80a7e5e`与并行任务保留，各历史验证证据保留，免费quota未实现。
-- 当前交接检查点分支：`fix/GG-275-text-editor-layout`，实际目录GG-116；当前HEAD是下一任务基线，当前verified Web为GG-300 `b3844d2`。文档后继不改变运行receipt，下一次重启前需构建当前HEAD，不伪造构建身份。
+- 当前交接检查点分支：`fix/GG-275-text-editor-layout`，实际目录GG-116；当前HEAD是下一任务基线，当前verified Web为GG-309 `287c4ca`。文档后继不改变运行receipt，下一次重启前需构建当前HEAD，不伪造构建身份。
 - 当前 worktree：`F:/goodgood-worktrees/GG-116`。目录名是历史名称，不能再用来判断版本。
 - 状态：当前画布请求已开发并精确集成；2026-10-02用户要求后不自动执行编译或检查，最新任务明确未验证，由用户手验。子目录经clean/路径/进程条件后以Git remove/prune退役，未部署生产。
 
@@ -97,7 +99,7 @@ git worktree list --porcelain
 
 新窗口以 IMPLEMENTATION_PLAN 指向的共同运行分支 HEAD 为检查点，并确认 GG-242 `00f7568` 与 GG-243 `f647e13` 都是其祖先。`main`、旧 GG-116 分支、其它 GG worktree 和 parked C6 都不是替代来源。新任务先核对未占用编号，只在并行写任务时建立独立 worktree，不要让两个窗口编辑同一目录。
 
-当前分支也须包含 GG-245 `7ddb78d`、GG-248 `520b452`、GG-254 `422c32f` 和 GG-260/261 `9f9d788`。构建receipt严格绑定Git提交；HEAD与receipt不同时，Web重启前先按 `npm run build:checkpoint` 构建并核对，不伪造revision。现有Web为已验证b3844d2，指纹见GG-300；文档后继不需要立即重启服务。
+当前分支也须包含 GG-245 `7ddb78d`、GG-248 `520b452`、GG-254 `422c32f` 和 GG-260/261 `9f9d788`。构建receipt严格绑定Git提交；HEAD与receipt不同时，Web重启前先按 `npm run build:checkpoint` 构建并核对，不伪造revision。现有Web为已验证287c4ca，指纹见GG-309；文档后继不需要立即重启服务。
 
 ## 当前本地运行
 
