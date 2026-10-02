@@ -14,10 +14,9 @@ import {
   type DragEvent,
 } from "react";
 import { addEdge, applyEdgeChanges, useNodesState, type BuiltInEdge, type Connection, type Edge, type EdgeChange, type NodeChange, type ReactFlowInstance } from "@xyflow/react";
-import { ChevronDown, ImageIcon, LoaderCircle, Maximize2, Minimize2, X } from "lucide-react";
+import { ChevronDown, FileText, ImageIcon, LoaderCircle, Maximize2, Minimize2, X } from "lucide-react";
 
 import { Attachment, AttachmentGroup } from "@/components/ui/attachment";
-import { InputAttachment } from "@/components/ui/input-attachment";
 import { Button } from "@/components/ui/button";
 import { CreditIcon } from "@/components/ui/credit-icon";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -2202,9 +2201,23 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
                   <button type="button" className={styles.referenceRemove} disabled={generatorEditingLocked} onClick={() => item.kind === "direct" ? removeReference(composerHost.id, item.key) : removeLinkedReference(item.key)} aria-label={`移除参考图 ${index + 1}：${item.reference.name}`}><X size={12} /></button>
                 </Attachment>
             ))}
-            {linkedTextInputs.map((item, index) => <InputAttachment key={item.edgeId} media="text" name={`文本${index + 1}.md`}
-              description={`文本 · ${Array.from(item.text).length} 字`} text={item.text} disabled={generatorEditingLocked}
-              onRemove={() => removeLinkedReference(item.edgeId)} />)}
+            {linkedTextInputs.map((item, index) => (
+              <Attachment key={item.edgeId} className={styles.reference} size="xs">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className={styles.referenceTextTrigger} tabIndex={0} aria-label={`预览文本 ${index + 1}`}>
+                      <FileText size={20} strokeWidth={1.5} aria-hidden="true" />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" align="center" sideOffset={8} hideArrow className={styles.referencePreview}>
+                    <p className={styles.referenceTextPreview}>{item.text.trim() || "暂无文本"}</p>
+                  </TooltipContent>
+                </Tooltip>
+                <button type="button" className={styles.referenceRemove} disabled={generatorEditingLocked} onClick={() => removeLinkedReference(item.edgeId)} aria-label={`移除文本 ${index + 1}`}>
+                  <X size={12} aria-hidden="true" />
+                </button>
+              </Attachment>
+            ))}
             {displayReferences.length < MAX_GENERATION_REFERENCES && (
               <button type="button" className={styles.referenceAdd} aria-label="添加参考图" onClick={() => inputRef.current?.click()}>
                 <ImageIcon size={14} strokeWidth={1.5} aria-hidden="true" />
