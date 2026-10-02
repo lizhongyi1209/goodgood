@@ -184,3 +184,4 @@ ADR 0053 adds standalone-delimited concurrent prompt batches for GG-040.
 - `0123-canvas-media-preview-carousel.md` — 画布图片放大使用受限浮层和完整图面，右列以滚轮切换图片/视频，选中缩略图向左放大置顶。
 - `0124-markdown-text-node-prompt-input.md` — 可视化Markdown文本节点、独立文本连线、接收内容在前/自身附加描述在后，沿用生成快照和项目保存。
 - `0125-canvas-reference-thumbnail-restoration.md` — 图片生成器参考图恢复真实缩略与悬停预览，仅取代GG-273图片文件卡展示，文本/视频和混合端口保持。
+- `0126-canvas-image-crop.md` — 图片名行上方快捷裁剪、图上选区和右侧预设面板；新增国内/电商分组、无LinkedIn，真实裁剪素材沿用私有上传与项目保存。
