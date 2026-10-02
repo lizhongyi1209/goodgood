@@ -4,6 +4,7 @@
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
+| GG-285 | 开发中：裁剪参数面板完成按钮恢复主动作浅色文字；仅局部CSS，用户手验，不自动编译/检查 | [任务](tasks/GG-285-canvas-crop-action-color.md) |
 | GG-284 | 已接入5173：生成图先解析受权原图直链、请求可取消；本地CORS补5173及Worker启动origin保持。定向7/7、预检200，创建1/退役1；无局部编译，用户重新打开裁剪复验 | [任务](tasks/GG-284-canvas-crop-image-fetch.md) |
 | GG-280 | 已精确接入5173所用目录：快捷裁剪、W/H/比例锁、遮罩网格/拖拽、五组新预设，无LinkedIn；真实PNG/File上传和项目恢复。创建2/退役2，未编译/检查，用户手验 | [任务](tasks/GG-280-canvas-image-crop.md) |
 | GG-275 / GG-274 | 文本编辑器外置标题/双斜线尺寸柄/固定14px、精简工具栏和尺寸保存已进入5173；本窗口读取新约定前45/45，之后不自动检查，用户手验。本地服务/数据保持 | [GG-275](tasks/GG-275-text-editor-layout.md) / [GG-274](tasks/GG-274-local-restart-after-reboot.md) |
