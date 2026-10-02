@@ -2,7 +2,7 @@
 
 ## GG-314 画布图片查看入口
 
-上传/资产拖入图片、独立生成结果及生成器输出右上复用画布资产面板的查看按钮：24px半透明白底、14px Maximize2、距边5px、浅灰图标，hover为纯白/深色图标及抓手光标。桌面仅图面hover或按钮focus-visible显示，无hover设备可操作；不增常驻文字，空态无查看入口，加载未就绪/裁剪中禁用。展开批次各图有入口，收起仅最前图有入口。点击复用既有canvas大图详情，关闭/Escape回入口，不触发拖动/连线/生成参数；原300%画布显示门槛保持。见[GG-314](tasks/GG-314-canvas-image-view-button.md)。
+上传/资产拖入图片、独立生成结果及生成器输出右上复用画布资产面板的查看按钮：GG-316统一为24px纯白不透明背景、14px Maximize2、7px圆角及距边5px，画布入口反向补偿zoom保持这些屏幕尺寸固定；浅灰图标，hover为深色图标及抓手光标。桌面仅图面hover或按钮focus-visible显示，无hover设备可操作；不增常驻文字，空态无查看入口，加载未就绪/裁剪中禁用。展开批次各图有入口，收起仅最前图有入口。点击复用既有canvas大图详情，关闭/Escape回入口，不触发拖动/连线/生成参数；原300%画布显示门槛保持。见[GG-314](tasks/GG-314-canvas-image-view-button.md)、[GG-316](tasks/GG-316-canvas-view-icon-consistency.md)。
 
 ## GG-306 画布图片清晰度
 
