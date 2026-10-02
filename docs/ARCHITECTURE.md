@@ -1,5 +1,11 @@
 # Architecture
 
+## GG-283 generated reference reuse
+
+Canvas generated-image connections retain per-edge state and cancellation while `canvas-generated-reference-import.ts` shares an in-flight request and successful reference by source asset ID. Cancellation releases only its subscriber; the last subscriber aborts the request. Failures are not cached, identity changes/unmount dispose the pool, and asset-library changes invalidate successful results. Existing uploaded references continue to use their original IDs.
+
+The generated-reference API retains owner/workspace authorization and stable reference slots. `createReadyReferenceFromGeneratedAsset` locks the authorized source asset and checks the derived reference before invoking the lazy image preparation callback. Concurrent callers therefore skip original-image reads/normalization as well as duplicate object writes. Preparation failures still roll back, and failed metadata writes retain object cleanup. No schema, provider submission or billing behavior changes. The frontend works with the existing API; the server-side optimization takes effect only after the Web is rebuilt/restarted.
+
 ## GG-280 canvas image crop boundary
 
 Canvas crop geometry, export and temporary editor UI stay in small `features/canvas` modules. The canvas page owns node selection, original owner-scoped image resolution and the existing private-reference upload/project lifecycle. Only an explicit Complete action hands a cropped File to that lifecycle; no provider, billing, backend schema or public-cloud credential boundary is added. Source image/result replacement preserves graph identity while generator outputs create a separate image node and keep their immutable job. See [ADR 0126](decisions/0126-canvas-image-crop.md).

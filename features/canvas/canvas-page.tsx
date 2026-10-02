@@ -77,6 +77,8 @@ import {
 import { CanvasWorkspace, canvasReferenceEdgeCurvature, canvasReferenceEdgeStyle, type CanvasAudioNodeType, type CanvasGeneratorNodeType, type CanvasNode, type CanvasSourceNode, type CanvasVideoNode } from "./canvas-workspace";
 import { CanvasGeneratorSettingsContent } from "./canvas-generator-settings-popover";
 import { CanvasGenerationCountControl } from "./canvas-generation-count-control";
+import { createCanvasGeneratedReferenceImporter } from "./canvas-generated-reference-import";
+import { CANVAS_ASSET_LIBRARY_UPDATED_EVENT } from "./canvas-asset-upload";
 import { canvasCropImageForNode, type CanvasCropCommit } from "./canvas-image-crop-image";
 import { CANVAS_PROMPT_MAX_LENGTH, collectCanvasTextInputs, combineCanvasPrompt, isCanvasTextConnection, normalizeCanvasInputEdge } from "./canvas-text-input.mjs";
 import type { CanvasLibraryAsset } from "./canvas-asset-panel";
@@ -355,6 +357,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
   const localUploadsRef = useRef(new Map<string, LocalCanvasUpload>());
   const referenceUploadsRef = useRef(new Map<string, AbortController>());
   const convertedUploadsRef = useRef(new Map<string, AbortController>());
+  const generatedReferenceImportsRef = useRef<ReturnType<typeof createCanvasGeneratedReferenceImporter> | null>(null);
   const draggedAssetRef = useRef<CanvasLibraryAsset | null>(null);
   const mountedRef = useRef(true);
   const busyRef = useRef(false);
@@ -709,6 +712,15 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
   }, []);
 
   const models = useMemo(() => availableModels(billing), [billing]);
+  useEffect(() => {
+    const invalidate = () => generatedReferenceImportsRef.current?.clearReady();
+    window.addEventListener(CANVAS_ASSET_LIBRARY_UPDATED_EVENT, invalidate);
+    return () => {
+      window.removeEventListener(CANVAS_ASSET_LIBRARY_UPDATED_EVENT, invalidate);
+      generatedReferenceImportsRef.current?.dispose();
+      generatedReferenceImportsRef.current = null;
+    };
+  }, [session?.user.id, session?.user.email]);
   useEffect(() => {
     if (!models.length) return;
     const defaultResolution = defaultCanvasResolutionForModel(models[0].id);
@@ -1231,18 +1243,10 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     setConvertedReferences((current) => ({ ...current, [edgeId]: { id: edgeId, name, url: "", status: "uploading" } }));
     void (async () => {
       try {
-        const response = await goodGoodApiFetch("/api/references/from-asset", {
-          method: "POST",
-          headers: { "content-type": "application/json", ...workspaceRequestHeaders(null) },
-          body: JSON.stringify({ assetId }),
-          signal: controller.signal,
-        });
-        const payload = await response.json() as { id?: string; name?: string; status?: string; error?: { message?: string } };
-        if (!response.ok) throw new Error(payload.error?.message ?? "无法将生成图片用作参考图，请重试。");
-        if (payload.status !== "ready" || !payload.id) throw new Error("参考图还未准备好，请重试。");
-        if (convertedUploadsRef.current.get(edgeId) !== controller) return;
-        const readyId = payload.id;
-        setConvertedReferences((current) => ({ ...current, [edgeId]: { id: readyId, name: payload.name ?? name, url: privateImageUrls("reference", readyId).contentUrl, status: "ready" } }));
+        const importer = generatedReferenceImportsRef.current ??= createCanvasGeneratedReferenceImporter();
+        const reference = await importer.read(assetId, name, controller.signal);
+        if (controller.signal.aborted || convertedUploadsRef.current.get(edgeId) !== controller) return;
+        setConvertedReferences((current) => ({ ...current, [edgeId]: reference }));
       } catch (cause) {
         if (controller.signal.aborted || convertedUploadsRef.current.get(edgeId) !== controller) return;
         setConvertedReferences((current) => ({ ...current, [edgeId]: {

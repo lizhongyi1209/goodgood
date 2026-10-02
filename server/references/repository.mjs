@@ -51,16 +51,18 @@ export async function createPendingReferenceAssets(
 
 /**
  * The derived reference ID is stable for one generated asset. Keep the source
- * authorization check and the object write in one transaction so concurrent
- * connections cannot create multiple reusable references for the same image.
+ * authorization check, image preparation and object write in one transaction.
+ * Concurrent connections reuse the existing reference before reading or decoding
+ * the original image, rather than only avoiding duplicate object writes.
  */
 export async function createReadyReferenceFromGeneratedAsset(
   pool,
-  { assetId, file, ownerId, referenceId, objectKey, workspaceId = null, storeObject, deleteObject },
+  { assetId, ownerId, referenceId, objectKey, workspaceId = null, prepareReference },
 ) {
   const client = await pool.connect();
   let stored = false;
   let committing = false;
+  let preparedReference;
   try {
     await client.query("BEGIN");
     const workspace = await resolveWorkspaceAccess(client, {
@@ -102,7 +104,9 @@ export async function createReadyReferenceFromGeneratedAsset(
       );
     }
 
-    await storeObject();
+    preparedReference = await prepareReference();
+    const file = preparedReference.file;
+    await preparedReference.storeObject();
     stored = true;
     const inserted = await client.query(
       `INSERT INTO reference_assets (
@@ -121,7 +125,7 @@ export async function createReadyReferenceFromGeneratedAsset(
     return inserted.rows[0];
   } catch (error) {
     if (stored && !committing) {
-      try { await deleteObject(); } catch (cleanupError) {
+      try { await preparedReference.deleteObject(); } catch (cleanupError) {
         console.error(JSON.stringify({ event: "reference.generated_copy_cleanup_failed",
           referenceId, message: cleanupError instanceof Error ? cleanupError.message : String(cleanupError) }));
       }

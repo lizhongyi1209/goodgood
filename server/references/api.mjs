@@ -135,40 +135,44 @@ export async function createReferenceFromGeneratedAsset({
     throw new ReferenceRequestError("REFERENCE_CONFLICT", "该图片的参考图记录已达到可用上限。", 409);
   }
 
-  let object;
-  try {
-    object = await readPrivateObject({
-      bucket: resources.config.objectStorage.bucket,
-      key: asset.object_key,
-      maxBytes: GENERATED_REFERENCE_SOURCE_LIMIT_BYTES,
-      storage: resources.storage,
-    });
-  } catch (error) {
-    if (error instanceof Error && error.message === "Private object exceeds the allowed size.") {
-      throw new ReferenceRequestError("ASSET_TOO_LARGE", "生成图片过大，无法作为参考图。", 413);
-    }
-    throw error;
-  }
-  const image = await generatedAssetReferenceImage(object.bytes);
-  const checksum = createHash("sha256").update(image.bytes).digest("hex");
-  const extension = image.mimeType === "image/png" ? "png" : "jpg";
-  await prepareObjectStorage(resources);
   const row = await createReadyReferenceFromGeneratedAsset(resources.pool, {
     assetId: normalizedAssetId,
     ownerId,
     referenceId,
     objectKey,
     workspaceId,
-    file: { name: `generated-${normalizedAssetId.slice(0, 8)}.${extension}`,
-      mimeType: image.mimeType, byteSize: image.bytes.length,
-      width: image.width, height: image.height, checksum },
-    storeObject: async () => {
-      await storeReferenceObject({ bucket: resources.config.objectStorage.bucket,
-        bytes: image.bytes, checksum, contentType: image.mimeType,
-        key: objectKey, storage: resources.storage });
+    prepareReference: async () => {
+      let object;
+      try {
+        object = await readPrivateObject({
+          bucket: resources.config.objectStorage.bucket,
+          key: asset.object_key,
+          maxBytes: GENERATED_REFERENCE_SOURCE_LIMIT_BYTES,
+          storage: resources.storage,
+        });
+      } catch (error) {
+        if (error instanceof Error && error.message === "Private object exceeds the allowed size.") {
+          throw new ReferenceRequestError("ASSET_TOO_LARGE", "生成图片过大，无法作为参考图。", 413);
+        }
+        throw error;
+      }
+      const image = await generatedAssetReferenceImage(object.bytes);
+      const checksum = createHash("sha256").update(image.bytes).digest("hex");
+      const extension = image.mimeType === "image/png" ? "png" : "jpg";
+      await prepareObjectStorage(resources);
+      return {
+        file: { name: `generated-${normalizedAssetId.slice(0, 8)}.${extension}`,
+          mimeType: image.mimeType, byteSize: image.bytes.length,
+          width: image.width, height: image.height, checksum },
+        storeObject: async () => {
+          await storeReferenceObject({ bucket: resources.config.objectStorage.bucket,
+            bytes: image.bytes, checksum, contentType: image.mimeType,
+            key: objectKey, storage: resources.storage });
+        },
+        deleteObject: () => deleteReferenceObject({ bucket: resources.config.objectStorage.bucket,
+          key: objectKey, storage: resources.storage }),
+      };
     },
-    deleteObject: () => deleteReferenceObject({ bucket: resources.config.objectStorage.bucket,
-      key: objectKey, storage: resources.storage }),
   });
   return { id: row.id, name: row.original_file_name, status: "ready" };
 }
