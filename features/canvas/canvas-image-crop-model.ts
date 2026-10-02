@@ -3,13 +3,12 @@ export type CanvasCropRect = CanvasCropSize & Readonly<{ x: number; y: number }>
 export type CanvasCropPoint = Readonly<{ x: number; y: number }>;
 export type CanvasCropCorner = "nw" | "ne" | "se" | "sw";
 
-type CropPreset = Readonly<{ id: string; label: string; width?: number; height?: number; original?: boolean; free?: boolean; dimensions?: boolean }>;
+type CropPreset = Readonly<{ id: string; label: string; width: number; height: number; dimensions?: boolean }>;
 type CropPresetGroup = Readonly<{ id: string; label: string; presets: readonly CropPreset[] }>;
 
 export const CANVAS_CROP_PRESET_GROUPS: readonly CropPresetGroup[] = [
   { id: "general", label: "通用", presets: [
-    { id: "free", label: "自由", free: true }, { id: "original", label: "原始比例", original: true },
-    ...[[1, 1], [2, 3], [9, 16], [4, 3], [3, 2], [16, 9]].map(([width, height]) => ({ id: `ratio-${width}-${height}`, label: `${width}:${height}`, width, height })),
+    ...[[1, 1], [3, 4], [2, 3], [9, 16], [4, 3], [3, 2], [16, 9]].map(([width, height]) => ({ id: `ratio-${width}-${height}`, label: `${width}:${height}`, width, height })),
   ] },
   { id: "xiaohongshu", label: "小红书", presets: [
     { id: "xiaohongshu-portrait", label: "竖版", width: 1080, height: 1440, dimensions: true },

@@ -55,7 +55,7 @@ export function CanvasImageCropEditor({ request, onClose, onCommit }: Readonly<{
   const [natural, setNatural] = useState<CanvasCropSize | null>(null);
   const [crop, setCrop] = useState<CanvasCropRect | null>(null);
   const [ratio, setRatio] = useState<number | null>(null);
-  const [presetId, setPresetId] = useState("original");
+  const [presetId, setPresetId] = useState("");
   const [openGroups, setOpenGroups] = useState<ReadonlySet<string>>(new Set());
   const [inputDrafts, setInputDrafts] = useState<Partial<Record<"width" | "height", string>>>({});
   const [loadRevision, setLoadRevision] = useState(0);
@@ -108,7 +108,6 @@ export function CanvasImageCropEditor({ request, onClose, onCommit }: Readonly<{
       setLoaded(result);
       setNatural(size);
       setCrop((current) => current ?? centeredCanvasCrop(size, null));
-      setRatio((current) => current ?? (presetId === "original" ? size.width / size.height : null));
       setLoading(false);
     }).catch((cause) => {
       if (controller.signal.aborted) return;
@@ -269,10 +268,10 @@ export function CanvasImageCropEditor({ request, onClose, onCommit }: Readonly<{
             </button>
             {openGroups.has(group.id) && <div id={`crop-${request.sessionId}-${group.id}`} className={styles.presetItems}>
               {group.presets.map((preset) => {
-                const aspect = preset.original ? natural!.width / natural!.height : preset.width && preset.height ? preset.width / preset.height : 1;
+                const aspect = preset.width / preset.height;
                 return <button type="button" key={preset.id} className={styles.preset} aria-pressed={presetId === preset.id} disabled={saving}
                   title={preset.dimensions ? `${preset.label}，参考尺寸 ${preset.width} × ${preset.height}，按比例裁剪原图` : preset.label}
-                  onClick={() => { const nextRatio = preset.free ? null : aspect; setRatio(nextRatio); setCrop(centeredCanvasCrop(natural!, nextRatio)); setPresetId(preset.id); resetInputDrafts(); }}>
+                  onClick={() => { setRatio(aspect); setCrop(centeredCanvasCrop(natural!, aspect)); setPresetId(preset.id); resetInputDrafts(); }}>
                   <span className={styles.check}>{presetId === preset.id && <Check size={12} aria-hidden="true" />}</span>
                   <span className={styles.ratioIcon} aria-hidden="true"><span style={{ width: Math.min(14, 14 * aspect), height: Math.min(14, 14 / aspect) }} /></span>
                   <span>{preset.label}</span>{preset.dimensions && <span className={styles.presetDimensions}>{preset.width}×{preset.height}</span>}

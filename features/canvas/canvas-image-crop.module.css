@@ -44,6 +44,7 @@
 .groupToggle:disabled, .preset:disabled, .dimension:has(input:disabled) { opacity: 0.5; }
 .actions { display: grid; flex: none; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px 6px 0; }
 .actions [data-slot="button"] { height: 32px; border-radius: 8px; font-size: 12px; }
+.actions [data-slot="button"][data-variant="default"] { color: var(--action-fg, #fff); }
 .status { display: flex; align-items: center; gap: 7px; min-height: 80px; padding: 12px 8px; color: #71717a; font-size: 12px; }
 .loadFailure { min-height: 80px; padding: 3px 8px 10px; }
 .loadFailure p, .error { margin: 0 0 8px; color: #52525b; font-size: 12px; line-height: 1.6; }
