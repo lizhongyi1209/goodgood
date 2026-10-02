@@ -34,6 +34,7 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
   const contextRef = useRef(context);
   contextRef.current = context;
   const controllerRef = useRef<AbortController | null>(null);
+  const latestRequestRef = useRef<string | null>(null);
   const live = (controller: AbortController) => mountedRef.current && controllerRef.current === controller;
   const mountedRef = useRef(true);
   const [busy, setBusy] = useState(false);
@@ -92,6 +93,7 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
     const node = flow.getNode(id);
     const pending = node?.type === "textGenerator" ? node.data.textGeneration.pendingRequestId : undefined;
     if (context.enabled && pending) {
+      latestRequestRef.current = pending;
       const controller = new AbortController();
       controllerRef.current = controller;
       startBusy();
@@ -107,12 +109,12 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
         endBusy(true);
       }).catch((failure: unknown) => {
         if (!live(controller)) return;
-        if (controller.signal.aborted) { setError("已停止生成，预留积分将退回。"); endBusy(true); return; }
+        if (controller.signal.aborted) { setError("已停止生成。"); endBusy(true); return; }
         setError(failure instanceof Error ? failure.message : "暂时无法恢复生成状态，请稍后重新打开画布。");
         endBusy(failure instanceof CanvasTextGenerationError && failure.code === "TEXT_GENERATION_NOT_FOUND");
       }).finally(() => { if (controllerRef.current === controller) controllerRef.current = null; });
     }
-    return () => { mountedRef.current = false; controllerRef.current?.abort(); controllerRef.current = null; };
+    return () => { mountedRef.current = false; latestRequestRef.current = null; controllerRef.current?.abort(); controllerRef.current = null; };
     // Restore only on mounting/owner/page changes; setting a request ID must not submit or start a second stream.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [context.enabled, context.ownerKey, context.pageId, flow, id]);
@@ -127,6 +129,7 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
     if (!context.enabled || controllerRef.current || busy) return;
     const controller = new AbortController();
     controllerRef.current = controller;
+    latestRequestRef.current = null;
     let requestId: string | null = null;
     let submitted = false;
     let clearPending = false;
@@ -153,6 +156,7 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
       }
       controller.signal.throwIfAborted();
       requestId = crypto.randomUUID();
+      latestRequestRef.current = requestId;
       updateDraft({ pendingRequestId: requestId, history: recentHistory([...history, { role: "user", content: prompt || "请分析输入素材。" }]) });
       clearPending = true;
       const draw = (all = false) => {
@@ -183,7 +187,7 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
       clearInterval(ticker);
       if (queue && live(controller)) { markdown += queue; updateResult(markdown); }
       if (!live(controller)) return;
-      if (controller.signal.aborted) setError("已停止生成，预留积分将退回。");
+      if (controller.signal.aborted) setError("已停止生成。");
       else if (submitted && requestId && (!(failure instanceof CanvasTextGenerationError) ||
           ["TEXT_STREAM_INTERRUPTED", "TEXT_GENERATION_IN_PROGRESS", "TEXT_GENERATION_UNAVAILABLE"].includes(failure.code))) {
         clearPending = false;
@@ -192,7 +196,7 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
           if (result.state === "succeeded") { setError(""); updateDraft({ history: recentHistory([...history,
             { role: "user", content: prompt || "请分析输入素材。" }, { role: "assistant", content: result.markdown }]) }); return; }
         } catch (recoveryError) {
-          if (controller.signal.aborted) { clearPending = true; setError("已停止生成，预留积分将退回。"); }
+          if (controller.signal.aborted) { clearPending = true; setError("已停止生成。"); }
           if (!controller.signal.aborted) setError(recoveryError instanceof Error ? recoveryError.message : "暂时无法恢复生成状态，请稍后重新打开画布。");
           if (recoveryError instanceof CanvasTextGenerationError && recoveryError.code === "TEXT_GENERATION_NOT_FOUND") clearPending = true;
         }
@@ -239,8 +243,16 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
             title={busy ? "停止生成" : `生成 · ${TEXT_GENERATION_CREDIT_COST} 积分`} onClick={() => {
               if (busy) {
                 const requestId = data.textGeneration.pendingRequestId;
+                const pendingHistory = data.textGeneration.history ?? [];
                 controllerRef.current?.abort();
-                if (requestId) void cancelCanvasTextGeneration(requestId, context.workspaceId).finally(() => contextRef.current.onBillingChanged()).catch(() => {});
+                if (requestId) void cancelCanvasTextGeneration(requestId, context.workspaceId).then((result) => {
+                  if (!mountedRef.current || latestRequestRef.current !== requestId) return;
+                  if (result.state === "succeeded") {
+                    // Generation can settle before the final characters finish animating.
+                    updateResult(result.markdown); setError("");
+                    if (pendingHistory.at(-1)?.role === "user") updateDraft({ history: recentHistory([...pendingHistory, { role: "assistant", content: result.markdown }]) });
+                  } else if (result.state === "cancelled") setError("已停止生成，预留积分已退回。");
+                }).finally(() => contextRef.current.onBillingChanged()).catch(() => {});
               } else void generate();
             }}>
             {busy ? <Square size={15} fill="currentColor" aria-hidden="true" /> : <><span className={styles.cost}>{TEXT_GENERATION_CREDIT_COST}</span><ArrowUp size={18} aria-hidden="true" /></>}
