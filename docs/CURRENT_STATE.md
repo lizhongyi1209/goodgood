@@ -1,6 +1,6 @@
 # GoodGood 当前状态
 
-- 最后核对：2026-10-01（本地服务；生产身份沿用原发布证据）。
+- 最后核对：2026-10-02（GG-274本地重启；生产身份沿用原发布证据）。
 - 产品阶段：公开的 `controlled-alpha-v1`；已有真实用户，尚未达到完整 seed、自动支付或完整运营告警就绪。
 - 正式入口：https://goodgood.o1key.com
 - 最新纠正：[GG-273](tasks/GG-273-canvas-editor-inputs.md)文档式编辑器/H1-H3/一致输出圆点、生成器唯一图片文本接收端、160×52px统一文件附件卡已进入5173/Web，旧text边兼容，视频继续原流程。相关30项、类型/lint/模块/必要构建通过，创建1/退役1，0060/原Worker/生产保持；用户验收。
@@ -13,7 +13,7 @@
 - 本地账户信息：[GG-254](tasks/GG-254-account-identity-editor.md) `422c32f` 已接入实际 5173/Web，仅保留用户名默认 mimi、稳定六位数字 ID；文字/头像旁侧确认保存、编辑区外取消和下方规则，撤去个人主页。20 项相关检查、资料 SQL 1/1、ID SQL 10/10、局部 lint、必要 Web 同步与本地 0058 完成，辅助目录退役。
 - 当前本地画布检查点：[GG-253](tasks/GG-253-canvas-media-detail.md) `896bce2`，真实素材信息独立列、图片平移/滚轮缩放、原比例内容缩略列和选中轻微抽出，取代 GG-249/251 的画布滚轮切图及原位放大；25 项定向、lint 和模块编译通过。
 - 当前画布子任务：[GG-255](tasks/GG-255-canvas-paste-image.md) `d4ea42c` 原生外部图片粘贴/进入页面直接粘贴，19/19；[GG-256](tasks/GG-256-canvas-folder-drop.md) `5183287` 图片拖入文件夹、状态动效与光标，8/8；[GG-257](tasks/GG-257-canvas-edge-hover-flow.md) `6f63a8f` 默认实线、hover 流动。相关代码/编译检查完成，三个辅助目录已退役，无子缓存；浏览器验收由用户负责。
-- 当前本地运行：Vite `127.0.0.1:5173` 从 `F:/goodgood-worktrees/GG-116` 提供前端；API代理verified Web `b9ce4bf` / `127.0.0.1:32131`，唯一真实开发Worker `32142`保持原GG-226；原云配置/数据卷/0060保持，生产未变。
+- 当前本地运行：[GG-274](tasks/GG-274-local-restart-after-reboot.md)恢复后，Vite `127.0.0.1:5173` 从 `F:/goodgood-worktrees/GG-116` 提供前端；API代理verified Web `80b8c0f` / `127.0.0.1:32131`，唯一真实开发Worker `32142`保持原GG-226；两角色readiness正常，原云配置/数据卷/0060保持，生产未变。
 
 ## 生产身份
 
