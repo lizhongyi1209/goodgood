@@ -2166,6 +2166,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
             if (!sync || sync.snapshot.version === null) { sync?.retry(); throw new Error("项目正在同步，请稍后重试生成。"); }
             return sync.id;
           }, onBillingChanged: () => { void refreshBilling(); },
+          onRemoveInput: removeLinkedReference,
         }}
         onProjectGraphChange={(settled) => { setTextRevision((value) => value + 1); scheduleProjectSnapshot(settled); scheduleCanvasHistory(); }}
         onViewportSettled={scheduleViewportPreference}

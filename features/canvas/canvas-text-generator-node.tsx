@@ -232,10 +232,16 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
     <NodeToolbar isVisible={selected} position={Position.Bottom} offset={14} align={align} className={`${workspaceStyles.generatorToolbar} nodrag nopan nowheel`} style={{ width: toolbarWidth }}>
       <div className={styles.composer} onPointerDown={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()} onContextMenu={(event) => event.stopPropagation()}>
         {inputs.length > 0 && <div className={styles.inputs} aria-label="连接输入">
-          {inputs.map((item) => <Tooltip key={item.edgeId}><TooltipTrigger asChild>
-            <span tabIndex={0} className={`${styles.attachment} ${item.unavailable ? styles.unavailable : ""}`} aria-label={item.name}>
-              {item.kind === "image" && item.previewUrl ? <PrivateObjectImage src={item.previewUrl} alt={item.name} /> : item.kind === "video" ? <Film aria-hidden="true" /> : <FileText aria-hidden="true" />}
-            </span></TooltipTrigger><TooltipContent side="top" style={{ maxWidth: 280, whiteSpace: "pre-wrap" }}>{item.kind === "text" ? (item.text || "文本为空").slice(0, 400) : item.name}</TooltipContent></Tooltip>)}
+          {inputs.map((item, index) => <div key={item.edgeId} className={styles.attachmentSlot}>
+            <Tooltip><TooltipTrigger asChild>
+              <span tabIndex={0} className={`${styles.attachment} ${item.unavailable ? styles.unavailable : ""}`} aria-label={item.name}>
+                {item.kind === "image" && item.previewUrl ? <PrivateObjectImage src={item.previewUrl} alt={item.name} /> : item.kind === "video" ? <Film aria-hidden="true" /> : <FileText aria-hidden="true" />}
+              </span></TooltipTrigger><TooltipContent side="top" style={{ maxWidth: 280, whiteSpace: "pre-wrap" }}>{item.kind === "text" ? (item.text || "文本为空").slice(0, 400) : item.name}</TooltipContent></Tooltip>
+            <button type="button" className={styles.attachmentRemove}
+              aria-label={`移除素材 ${index + 1}：${item.name}`}
+              disabled={busy || Boolean(data.textGeneration.pendingRequestId) || !context.enabled}
+              onClick={() => context.onRemoveInput(item.edgeId)}><X size={12} aria-hidden="true" /></button>
+          </div>)}
         </div>}
         <div className={styles.promptField}>
           {currentPreset && <div className={styles.presetTags} aria-label="已选预设">
