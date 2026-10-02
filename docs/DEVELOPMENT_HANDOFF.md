@@ -1,5 +1,7 @@
 # 当前开发版本与跨窗口交接
 
+- 最新查看图标修正：[GG-316](tasks/GG-316-canvas-view-icon-consistency.md)登记5b05e92→fd69d74，隔离04aa7e0精确接入GG-116/5173为3a823d8；共用查看按钮逆向补偿zoom，24px/14px/7px圆角/5px边距按屏幕固定，共享expand白底#fff，原hover/focus/触屏和大图详情保持。创建1/退役1，无依赖/辅助缓存，未编译、检查、HTTP/浏览器或真实请求，无后端/运行变化；用户刷新手验。GG-315文字误报修正、GG-312的300%高清门槛及前序源码保持，Web287c4ca/0063和原Vite/唯一Worker沿GG-309证据。
+
 - 最新模板修复：[GG-315](tasks/GG-315-text-template-media-error.md)登记42d1c62，隔离c42ef94精确接入GG-116/5173为5be1e21；AssetMedia原仅排除audio，导致text没有媒体URL时误报图片失败，改为明确image/video才显示媒体错误/重试。正常1:1文字缩略/全文及真实文本错误、图片/视频回退保持，无API/存储变化。创建1/退役1，零依赖/辅助缓存，未编译或验证、HTTP/浏览器、运行或生产操作；用户刷新既有资产手验，无需重存模板或更新Web。GG-314/313/312/311及GG-309 Web287c4ca/0063、原Vite/唯一Worker保持。
 
 - 最新图片入口：[GG-314](tasks/GG-314-canvas-image-view-button.md)登记b423afd→349070a，隔离3294d11精确接入GG-116/5173为0a66ee3；三类图片节点复用资产24px/14px hover查看按钮和现有canvas ImageViewer。上传/资产图用私有content/本地源；生成批次按job顺序和实际input展示，展开逐张入口/收起最前图，未就绪/裁剪中禁用，按钮事件独立，关闭/Escape回按钮，叠图绝对定位保持。创建1/退役1，无依赖/辅助缓存，未编译、检查、HTTP/浏览器或真实请求，无后端/运行变化；用户刷新手验，无需重启Web。并行GG-313命名及GG-312的300%门槛保持，Web287c4ca/0063和原Vite/唯一Worker沿GG-309运行证据。
