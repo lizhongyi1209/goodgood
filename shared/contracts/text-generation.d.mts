@@ -1,0 +1,13 @@
+export type TextGenerationModelId = "gemini-3.1-pro-preview" | "claude-opus-5-5" | "doubao-seed-2.0-pro" | "gpt-6.1-sol" | "deepseek-v4-pro";
+export type TextGenerationModel = Readonly<{ id: TextGenerationModelId; name: string; icon: "gemini" | "claude" | "bytedance" | "openai" | "deepseek"; providerModel: string }>;
+export type TextGenerationMessage = Readonly<{ role: "user" | "assistant"; content: string }>;
+export type CanvasTextGenerationDraft = Readonly<{ modelId: TextGenerationModelId; prompt: string; history?: readonly TextGenerationMessage[]; pendingRequestId?: string }>;
+export const TEXT_GENERATION_MODELS: readonly TextGenerationModel[];
+export const DEFAULT_TEXT_GENERATION_MODEL: TextGenerationModelId;
+export const TEXT_GENERATION_CREDIT_COST: number;
+export const TEXT_GENERATION_REASONING_EFFORT: "high";
+export const TEXT_GENERATION_MAX_PROMPT: number;
+export const TEXT_GENERATION_MAX_OUTPUT: number;
+export const TEXT_GENERATION_MAX_MEDIA: number;
+export const TEXT_GENERATION_MAX_HISTORY: number;
+export function getTextGenerationModel(id: unknown): TextGenerationModel | null;

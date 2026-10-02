@@ -115,7 +115,7 @@ export function CanvasGeneratorNode({ id, data, selected }: NodeProps<CanvasGene
               <path d="M4 0.5 4.65 3.35 7.5 4 4.65 4.65 4 7.5 3.35 4.65 0.5 4 3.35 3.35Z" />
             </svg>
           </span>
-          <span className={styles.imageMetadataNameText}>图片生成器 {data.sequence ?? 1}</span>
+          <span className={styles.imageMetadataNameText}>图片生成 {data.sequence ?? 1}</span>
         </span>
         {dimensions && <span className={styles.imageMetadataSize} aria-label={`原始尺寸 ${dimensions} 像素`}>{dimensions}</span>}
       </div>
@@ -125,7 +125,7 @@ export function CanvasGeneratorNode({ id, data, selected }: NodeProps<CanvasGene
         data-canvas-stack-count={stackCount}
         data-canvas-stack-expanded={expanded}
         role={stacked ? "group" : "img"}
-        aria-label={`图片生成器 ${data.sequence ?? 1}${generating ? "，生成中" : output ? `，已生成 ${stackCount} 张图片` : ""}`}
+        aria-label={`图片生成 ${data.sequence ?? 1}${generating ? "，生成中" : output ? `，已生成 ${stackCount} 张图片` : ""}`}
         aria-busy={generating || undefined}>
         {generating ? null : stacked ? outputs.map((item, index) => {
           const previewDepth = Math.min(index, 2);
@@ -139,13 +139,13 @@ export function CanvasGeneratorNode({ id, data, selected }: NodeProps<CanvasGene
               style={{ "--canvas-stack-x": `${expanded ? index * (nodeWidth + 12) : previewDepth * stackOffset}px`,
                 "--canvas-stack-y": `${expanded ? 0 : previewDepth * 4}px`,
                 zIndex: stackCount - index } as CSSProperties}>
-              <PrivateObjectImage src={item.previewUrl} alt={`图片生成器 ${data.sequence ?? 1} 的第 ${index + 1} 张结果`}
+              <PrivateObjectImage src={item.previewUrl} alt={`图片生成 ${data.sequence ?? 1} 的第 ${index + 1} 张结果`}
                 className={styles.generatorImage} loading="eager"
                 onLoad={(event) => markOutputReady(item, event.currentTarget)}
                 onError={() => setReadyOutputs((current) => { const next = new Set(current); next.delete(`${item.id}:${item.previewUrl}`); return next; })} />
             </div>
           );
-        }) : output ? <PrivateObjectImage src={output.previewUrl} alt={`图片生成器 ${data.sequence ?? 1} 的生成结果`} className={styles.generatorImage}
+        }) : output ? <PrivateObjectImage src={output.previewUrl} alt={`图片生成 ${data.sequence ?? 1} 的生成结果`} className={styles.generatorImage}
           loading="eager" onLoad={(event) => markOutputReady(output, event.currentTarget)}
           onError={() => setReadyOutputs((current) => { const next = new Set(current); next.delete(`${output.id}:${output.previewUrl}`); return next; })} />
           : <ImageIcon size={32} strokeWidth={1.35} aria-hidden="true" />}

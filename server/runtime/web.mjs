@@ -20,6 +20,8 @@ import {
   localSessionCookie,
 } from "../auth/request-authenticator.mjs";
 import { createGenerationNodeApiHandler } from "../generation/node-api.mjs";
+import { createTextGenerationNodeApiHandler } from "../text-generation/node-api.mjs";
+import { recoverExpiredTextGenerations } from "../text-generation/repository.mjs";
 import { createCreationDraftNodeApiHandler } from "../drafts/node-api.mjs";
 import { createDistributionNodeApiHandler } from "../distribution/node-api.mjs";
 import { createReferenceNodeApiHandler } from "../references/node-api.mjs";
@@ -76,6 +78,13 @@ const handleGenerationNodeApi = createGenerationNodeApiHandler({
   admitGeneration: hostGenerationAdmission.admitGeneration,
   authenticate,
 });
+const handleTextGenerationNodeApi = createTextGenerationNodeApiHandler({ authenticate });
+const textRecoveryTimer = setInterval(() => {
+  void recoverExpiredTextGenerations(runtimeResources.pool).catch(() => {
+    console.error(JSON.stringify({ event: "text_generation.recovery_unavailable" }));
+  });
+}, 60_000);
+textRecoveryTimer.unref();
 const handleAdminNodeApi = createAdminNodeApiHandler({ authenticate });
 const handleFeedbackNodeApi = createFeedbackNodeApiHandler({ authenticateSession });
 const handleCreationDraftNodeApi = createCreationDraftNodeApiHandler({ authenticate });
@@ -166,6 +175,9 @@ server.on("request", (request, response) => {
       handled ? true : handleBillingNodeApi(request, response),
     )
     .then((handled) =>
+      handled ? true : handleTextGenerationNodeApi(request, response),
+    )
+    .then((handled) =>
       handled ? true : handleGenerationNodeApi(request, response),
     )
     .then((handled) => {
@@ -197,6 +209,7 @@ function stop(signal) {
   }
 
   stopping = true;
+  clearInterval(textRecoveryTimer);
   console.log(
     JSON.stringify({
       event: "web.stopping",

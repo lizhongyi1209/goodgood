@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useReactFlow, type NodeProps } from "@xyflow/react";
+import { Handle, Position, useReactFlow, type NodeProps } from "@xyflow/react";
 import { Play } from "lucide-react";
 
 import { CanvasMediaMetadata } from "./canvas-media-metadata";
@@ -179,6 +179,7 @@ export function CanvasVideoNode({ id, data, selected, width }: NodeProps<CanvasV
         </div>}
       </article>
       {selected && data.videoSized && !videoUnavailable && <CanvasImageResizeControls />}
+      <Handle type="source" id="video" position={Position.Right} className={styles.referenceOutputHandle} aria-label="输出视频到文本生成" title="视频" />
     </>
   );
 }

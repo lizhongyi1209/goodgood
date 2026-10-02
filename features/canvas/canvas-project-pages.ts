@@ -29,6 +29,7 @@ export function canvasPageHasActiveWork(page: CanvasRuntimePage, options: {
   convertingEdgeIds: ReadonlySet<string>;
 }) {
   return page.nodes.some((node) => options.uploadingNodeIds.has(node.id) || options.busyGeneratorIds.has(node.id) ||
+    node.type === "textGenerator" && Boolean(node.data.generating || node.data.textGeneration.pendingRequestId) ||
     (node.type === "sourceImage" || node.type === "sourceVideo") && node.data.uploadState === "uploading" ||
     (node.type === "imageGenerator" || node.type === "imageResult") && Boolean(node.data.job &&
       (options.busyGeneratorIds.has(node.id) || ["queued", "running", "refining"].includes(node.data.job.state) ||

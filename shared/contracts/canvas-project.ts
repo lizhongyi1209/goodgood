@@ -1,9 +1,10 @@
 import type { GenerationAspectRatio, GenerationCount, GenerationResolution, GptImageQuality, GptImageBackground, GptImageOutputFormat } from "@/shared/contracts/generation";
 import type { GenerationJob } from "@/shared/contracts/generation";
+import type { CanvasTextGenerationDraft } from "@/shared/contracts/text-generation.mjs";
 
 export type CanvasProjectNode = Readonly<{
   id: string;
-  type: "sourceImage" | "sourceVideo" | "sourceAudio" | "imageGenerator" | "imageResult" | "textEditor";
+  type: "sourceImage" | "sourceVideo" | "sourceAudio" | "imageGenerator" | "imageResult" | "textEditor" | "textGenerator";
   position: Readonly<{ x: number; y: number }>;
   size?: Readonly<{ width: number; height: number }>;
   asset?: Readonly<{ id: string; kind: "reference" | "generated" | "video" | "audio" }>;
@@ -13,6 +14,7 @@ export type CanvasProjectNode = Readonly<{
   name?: string;
   markdown?: string;
   text?: string;
+  textGeneration?: CanvasTextGenerationDraft;
   metadata?: Readonly<{ pixelWidth?: number; pixelHeight?: number; durationSeconds?: number }>;
   // Browser recovery only. Never send this field to the server.
   pendingFileId?: string;

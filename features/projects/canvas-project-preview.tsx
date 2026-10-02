@@ -66,7 +66,7 @@ async function readPreview(project: CanvasProjectListItem, ownerKey: string): Pr
         const output = job?.outputs[node.type === "imageResult" ? node.index ?? 0 : 0];
         if (output) return { ...node, previewUrl: privateImageUrls("asset", output.id).previewUrl, media: "image" };
         return { ...node, label: job?.state === "failed" ? job.error?.title ?? "生成失败"
-          : job && ["queued", "running", "refining"].includes(job.state) ? "生成中" : node.type === "imageGenerator" ? "生图工具" : "暂无结果" };
+          : job && ["queued", "running", "refining"].includes(job.state) ? "生成中" : node.type === "imageGenerator" ? "图片生成" : "暂无结果" };
       }
       return node;
     }));
@@ -81,6 +81,9 @@ async function readPreview(project: CanvasProjectListItem, ownerKey: string): Pr
 }
 
 function SnapshotNode({ node, onFailure }: { node: PreviewNode; onFailure: () => void }) {
+  if (node.type === "textEditor" || node.type === "textGenerator") return <div style={{ height: "100%", padding: 16, overflow: "hidden", whiteSpace: "pre-wrap", fontSize: 14, lineHeight: 1.7 }}>
+    {node.text || (node.type === "textGenerator" ? "文本生成" : "文本编辑")}
+  </div>;
   if (node.media === "image" && node.previewUrl) return <PrivateObjectImage src={node.previewUrl} alt="" loading="eager" className={styles.snapshotImage} onError={onFailure} />;
   if (node.media === "video" && node.previewUrl) return <div className={styles.snapshotVideo}>
     <video src={node.previewUrl} muted playsInline preload="metadata" onLoadedMetadata={(event) => { event.currentTarget.currentTime = Math.min(0.05, event.currentTarget.duration || 0); }} onError={onFailure} />

@@ -28,6 +28,8 @@ import { CanvasVideoNode as CanvasSourceVideoNode, type CanvasVideoNodeData } fr
 import { CanvasAudioNode, type CanvasAudioNodeData } from "./canvas-audio-node";
 import { CanvasGeneratorNode, type CanvasGeneratorNodeData } from "./canvas-generator-node";
 import { CanvasTextNode, type CanvasTextNodeData } from "./canvas-text-node";
+import { CanvasTextGeneratorNode, type CanvasTextGeneratorNodeData } from "./canvas-text-generator-node";
+import { CanvasTextGenerationContext, type CanvasTextGenerationContextValue } from "./canvas-text-generation-context";
 import { CanvasGeneratorHostContext } from "./canvas-generator-host";
 import { CanvasSelectionControls } from "./canvas-selection-controls";
 import { CanvasImageCropContext, CanvasImageCropEditor } from "./canvas-image-crop";
@@ -41,12 +43,13 @@ export type CanvasVideoNode = Node<CanvasVideoNodeData, "sourceVideo">;
 export type CanvasAudioNodeType = Node<CanvasAudioNodeData, "sourceAudio">;
 export type CanvasGeneratorNodeType = Node<CanvasGeneratorNodeData, "imageGenerator">;
 export type CanvasTextNodeType = Node<CanvasTextNodeData, "textEditor">;
-export type CanvasNode = CanvasResultNodeType | CanvasSourceNode | CanvasVideoNode | CanvasAudioNodeType | CanvasGeneratorNodeType | CanvasTextNodeType;
+export type CanvasTextGeneratorNodeType = Node<CanvasTextGeneratorNodeData, "textGenerator">;
+export type CanvasNode = CanvasResultNodeType | CanvasSourceNode | CanvasVideoNode | CanvasAudioNodeType | CanvasGeneratorNodeType | CanvasTextNodeType | CanvasTextGeneratorNodeType;
 
 export const canvasReferenceEdgeStyle = { stroke: "#a1a1aa", strokeWidth: 1.2 } as const;
 export const canvasReferenceEdgeCurvature = 0.18;
 
-const nodeTypes = { imageResult: CanvasResultNode, sourceImage: CanvasSourceImageNode, sourceVideo: CanvasSourceVideoNode, sourceAudio: CanvasAudioNode, imageGenerator: CanvasGeneratorNode, textEditor: CanvasTextNode };
+const nodeTypes = { imageResult: CanvasResultNode, sourceImage: CanvasSourceImageNode, sourceVideo: CanvasSourceVideoNode, sourceAudio: CanvasAudioNode, imageGenerator: CanvasGeneratorNode, textEditor: CanvasTextNode, textGenerator: CanvasTextGeneratorNode };
 const initialNodes: CanvasNode[] = [];
 
 function CanvasProjectChangeObserver({ onChange }: Readonly<{ onChange: () => void }>) {
@@ -159,6 +162,8 @@ export function CanvasWorkspace({
   isValidConnection,
   onCreateGenerator,
   onCreateText,
+  onCreateTextGenerator,
+  textGenerationContext,
   onComposerHostChange,
   onProjectGraphChange,
   onViewportSettled,
@@ -191,6 +196,8 @@ export function CanvasWorkspace({
   isValidConnection: (connection: Connection | Edge) => boolean;
   onCreateGenerator: (point: { x: number; y: number }) => void;
   onCreateText: (point: { x: number; y: number }) => void;
+  onCreateTextGenerator: (point: { x: number; y: number }) => void;
+  textGenerationContext: CanvasTextGenerationContextValue;
   onComposerHostChange: (id: string, element: HTMLDivElement | null) => void;
   onProjectGraphChange: (settled?: boolean) => void;
   onViewportSettled: () => void;
@@ -430,6 +437,7 @@ export function CanvasWorkspace({
         }}
         onMouseLeave={hideEdgeDelete}>
       <CanvasGeneratorHostContext.Provider value={onComposerHostChange}>
+      <CanvasTextGenerationContext.Provider value={textGenerationContext}>
       <CanvasImageCropContext.Provider value={{ request: visibleCropRequest, openCrop: (image) => {
         if (cropEnabled) setCropRequest({ ...image, pageId: cropPageId, sessionId: crypto.randomUUID() });
       } }}>
@@ -550,6 +558,7 @@ export function CanvasWorkspace({
         />
       </ReactFlow>
       </CanvasImageCropContext.Provider>
+      </CanvasTextGenerationContext.Provider>
       </CanvasGeneratorHostContext.Provider>
       {visibleEdgeDelete && (
         <Button type="button" variant="outline" size="icon-xs" className={styles.edgeDelete}
@@ -581,7 +590,7 @@ export function CanvasWorkspace({
           contextPointRef.current = null;
         }}>
           <Type size={12} className="size-3" aria-hidden="true" />
-          <span>文本编辑器</span>
+          <span>文本编辑</span>
         </ContextMenuItem>
         <ContextMenuItem onSelect={() => {
           if (contextPointRef.current) { onBeforeGraphEdit(); onCreateGenerator(contextPointRef.current); }
@@ -593,7 +602,15 @@ export function CanvasWorkspace({
               <path d="M4 0.5 4.65 3.35 7.5 4 4.65 4.65 4 7.5 3.35 4.65 0.5 4 3.35 3.35Z" />
             </svg>
           </span>
-          <span>图片生成器</span>
+          <span>图片生成</span>
+        </ContextMenuItem>
+        <ContextMenuItem onSelect={() => {
+          if (contextPointRef.current) { onBeforeGraphEdit(); onCreateTextGenerator(contextPointRef.current); }
+          contextPointRef.current = null;
+        }}>
+          <span className={styles.generatorMetadataIcon} aria-hidden="true"><Type size={12} className="size-3" />
+            <svg className={`${styles.generatorMetadataSparkle} size-2`} viewBox="0 0 8 8" focusable="false"><path d="M4 .5 4.65 3.35 7.5 4 4.65 4.65 4 7.5 3.35 4.65 .5 4 3.35 3.35Z" /></svg>
+          </span><span>文本生成</span>
         </ContextMenuItem>
       </ContextMenuContent>
       </ContextMenu>

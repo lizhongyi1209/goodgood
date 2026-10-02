@@ -12,7 +12,7 @@ export function collectCanvasTextInputs(nodes, edges, generatorId) {
   return edges.flatMap((edge) => {
     const node = byId.get(edge.source);
     if (edge.target !== generatorId || edge.sourceHandle !== "text" || !["reference", "text"].includes(edge.targetHandle) ||
-        node?.type !== "textEditor" || seen.has(node.id) || !node.data.text?.trim()) return [];
+        !["textEditor", "textGenerator"].includes(node?.type) || seen.has(node.id) || !node.data.text?.trim()) return [];
     seen.add(node.id);
     return [{ edgeId: edge.id, nodeId: node.id, text: node.data.text, markdown: node.data.markdown ?? "" }];
   });
@@ -39,9 +39,39 @@ export function canvasTextNodeSizeForKey(width, height, key, largeStep = false) 
 export function isCanvasTextConnection(connection, nodes, edges) {
   const source = nodes.find((node) => node.id === connection.source);
   const target = nodes.find((node) => node.id === connection.target);
-  return source?.type === "textEditor" && target?.type === "imageGenerator" &&
+  return ["textEditor", "textGenerator"].includes(source?.type) && target?.type === "imageGenerator" &&
     connection.sourceHandle === "text" && ["reference", "text"].includes(connection.targetHandle) &&
-    !edges.some((edge) => edge.source === source.id && edge.target === target.id && edge.sourceHandle === "text");
+    !edges.some((edge) => edge.source === source.id && edge.target === target.id && edge.sourceHandle === "text") &&
+    !canvasConnectionCreatesCycle(connection, edges);
+}
+
+export function canvasConnectionCreatesCycle(connection, edges) {
+  if (connection.source === connection.target) return true;
+  const visited = new Set();
+  const pending = [connection.target];
+  while (pending.length) {
+    const id = pending.pop();
+    if (id === connection.source) return true;
+    if (visited.has(id)) continue;
+    visited.add(id);
+    for (const edge of edges) if (edge.source === id) pending.push(edge.target);
+  }
+  return false;
+}
+
+export function isCanvasTextGenerationConnection(connection, nodes, edges) {
+  const source = nodes.find((node) => node.id === connection.source);
+  const target = nodes.find((node) => node.id === connection.target);
+  if (!source || target?.type !== "textGenerator" || connection.targetHandle !== "reference" ||
+      canvasConnectionCreatesCycle(connection, edges) || edges.some((edge) => edge.source === source.id && edge.target === target.id)) return false;
+  const supported = ["textEditor", "textGenerator"].includes(source.type) && connection.sourceHandle === "text" ||
+    ["sourceImage", "imageResult", "imageGenerator"].includes(source.type) && connection.sourceHandle === "reference" ||
+    source.type === "sourceVideo" && connection.sourceHandle === "video";
+  const incoming = edges.filter((edge) => edge.target === target.id);
+  const media = incoming.filter((edge) => !["textEditor", "textGenerator"].includes(nodes.find((node) => node.id === edge.source)?.type));
+  return supported && incoming.length < 20 &&
+    (["textEditor", "textGenerator"].includes(source.type) || media.length < 10) &&
+    (source.type !== "sourceVideo" || media.filter((edge) => nodes.find((node) => node.id === edge.source)?.type === "sourceVideo").length < 3);
 }
 
 /** Legacy text targets attach to the one visible input without changing identities. */

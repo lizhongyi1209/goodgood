@@ -32,6 +32,7 @@ function otherActivityLabel(item: CreditActivityItem) {
 function categoryTitle(item: CreditActivityItem) {
   if (item.category === "image_generation") return "图片生成";
   if (item.category === "video_generation") return "视频生成";
+  if (item.category === "text_generation") return "文本生成";
   return otherActivityLabel(item);
 }
 function statusLabel(item: CreditActivityItem) {

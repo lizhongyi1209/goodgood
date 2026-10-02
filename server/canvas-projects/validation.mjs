@@ -1,8 +1,9 @@
 import { CanvasProjectError } from "./errors.mjs";
+import { getTextGenerationModel, DEFAULT_TEXT_GENERATION_MODEL, TEXT_GENERATION_MAX_PROMPT, TEXT_GENERATION_MAX_HISTORY } from "../../shared/contracts/text-generation.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const NODE_ID = /^[A-Za-z0-9][A-Za-z0-9_:.\-]{0,159}$/;
-const NODE_TYPES = new Set(["sourceImage", "sourceVideo", "sourceAudio", "imageGenerator", "imageResult", "textEditor"]);
+const NODE_TYPES = new Set(["sourceImage", "sourceVideo", "sourceAudio", "imageGenerator", "imageResult", "textEditor", "textGenerator"]);
 const ASSET_KINDS = new Set(["reference", "generated", "video", "audio"]);
 const RESOLUTIONS = new Set(["1K", "2K", "4K"]);
 const MAX_DOCUMENT_BYTES = 1024 * 1024;
@@ -46,15 +47,28 @@ function position(value) {
 }
 
 function node(value) {
-  record(value, ["id", "type", "position", "size", "asset", "jobId", "index", "sequence", "name", "metadata", "markdown", "text"]);
+  record(value, ["id", "type", "position", "size", "asset", "jobId", "index", "sequence", "name", "metadata", "markdown", "text", "textGeneration"]);
   const type = value.type;
   if (!NODE_TYPES.has(type)) throw invalid();
   const result = { id: nodeId(value.id), type, position: position(value.position) };
-  if (type === "textEditor") {
+  if (type === "textEditor" || type === "textGenerator") {
     result.markdown = string(value.markdown, 100_000, { empty: true, multiline: true });
     result.text = string(value.text, 16_000, { empty: true, multiline: true });
     if (value.metadata !== undefined || value.asset !== undefined) throw invalid();
   } else if (value.markdown !== undefined || value.text !== undefined) throw invalid();
+  if (type === "textGenerator") {
+    const draft = value.textGeneration ?? { modelId: DEFAULT_TEXT_GENERATION_MODEL, prompt: "" };
+    record(draft, ["modelId", "prompt", "history", "pendingRequestId"]);
+    if (!getTextGenerationModel(draft.modelId)) throw invalid();
+    const history = draft.history ?? [];
+    if (!Array.isArray(history) || history.length > TEXT_GENERATION_MAX_HISTORY) throw invalid();
+    result.textGeneration = { modelId: draft.modelId, prompt: string(draft.prompt, TEXT_GENERATION_MAX_PROMPT, { empty: true, multiline: true }),
+      history: history.map((message) => {
+        record(message, ["role", "content"]);
+        if (!["user", "assistant"].includes(message.role)) throw invalid();
+        return { role: message.role, content: string(message.content, message.role === "assistant" ? 16_000 : TEXT_GENERATION_MAX_PROMPT, { empty: true, multiline: true }) };
+      }), ...(draft.pendingRequestId ? { pendingRequestId: uuid(draft.pendingRequestId) } : {}) };
+  } else if (value.textGeneration !== undefined) throw invalid();
   if (value.size !== undefined) {
     record(value.size, ["width", "height"]);
     result.size = { width: finite(value.size.width, 1, 100_000), height: finite(value.size.height, 1, 100_000) };
@@ -169,9 +183,17 @@ function pageContent(source) {
   const edges = source.edges.map((item) => edge(item, ids));
   const byId = new Map(nodes.map((item) => [item.id, item]));
   for (const item of edges) {
-    if (item.sourceHandle === "text" || item.targetHandle === "text" || byId.get(item.source)?.type === "textEditor" || byId.get(item.target)?.type === "textEditor") {
+    const sourceType = byId.get(item.source)?.type;
+    const targetType = byId.get(item.target)?.type;
+    if (item.source === item.target) throw invalid();
+    if (targetType === "textGenerator") {
+      if (item.targetHandle !== "reference" || !(
+        ["textEditor", "textGenerator"].includes(sourceType) && item.sourceHandle === "text" ||
+        ["sourceImage", "imageResult", "imageGenerator"].includes(sourceType) && item.sourceHandle === "reference" ||
+        sourceType === "sourceVideo" && item.sourceHandle === "video")) throw invalid();
+    } else if (item.sourceHandle === "text" || item.targetHandle === "text" || sourceType === "textEditor" || sourceType === "textGenerator" || targetType === "textEditor") {
       if (item.sourceHandle !== "text" || !["reference", "text"].includes(item.targetHandle) ||
-          byId.get(item.source)?.type !== "textEditor" || byId.get(item.target)?.type !== "imageGenerator") throw invalid();
+          !["textEditor", "textGenerator"].includes(sourceType) || targetType !== "imageGenerator") throw invalid();
       item.targetHandle = "reference";
     }
   }

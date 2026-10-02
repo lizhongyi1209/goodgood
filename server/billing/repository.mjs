@@ -117,6 +117,7 @@ function entryFromRow(row) {
     priorEntryId: row.prior_entry_id ?? null,
     reason: row.reason,
     relatedJobId: row.related_job_id ?? null,
+    ...(row.related_text_job_id ? { relatedTextJobId: row.related_text_job_id } : {}),
     relatedPaymentRef: row.related_payment_ref ?? null,
   };
 }
@@ -350,6 +351,7 @@ export async function appendCreditEntryInTransaction(
     priorEntryId = null,
     reason,
     relatedJobId = null,
+    relatedTextJobId = null,
     relatedPaymentRef = null,
     verifyBeforeApply = async () => {},
   },
@@ -367,6 +369,7 @@ export async function appendCreditEntryInTransaction(
     priorEntryId,
     reason,
     relatedJobId,
+    ...(relatedTextJobId ? { relatedTextJobId } : {}),
     relatedPaymentRef,
   };
   const fingerprint = operationHash(operation);
@@ -459,8 +462,8 @@ export async function appendCreditEntryInTransaction(
     `INSERT INTO credit_ledger_entries (
        id, account_id, owner_id, entry_type, amount, payment_funded_amount, idempotency_key,
        operation_hash, reason, related_job_id, related_payment_ref,
-       prior_entry_id, actor, metadata
-     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14::jsonb)
+       prior_entry_id, actor, metadata, related_text_job_id
+     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14::jsonb, $15)
      RETURNING *`,
     [
       entryId,
@@ -477,6 +480,7 @@ export async function appendCreditEntryInTransaction(
       priorEntryId,
       actor,
       JSON.stringify(metadata),
+      relatedTextJobId,
     ],
   );
   return {

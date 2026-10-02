@@ -80,7 +80,8 @@ import { CanvasGenerationCountControl } from "./canvas-generation-count-control"
 import { createCanvasGeneratedReferenceImporter } from "./canvas-generated-reference-import";
 import { CANVAS_ASSET_LIBRARY_UPDATED_EVENT } from "./canvas-asset-upload";
 import { canvasCropImageForNode, type CanvasCropCommit } from "./canvas-image-crop-image";
-import { CANVAS_PROMPT_MAX_LENGTH, collectCanvasTextInputs, combineCanvasPrompt, isCanvasTextConnection, normalizeCanvasInputEdge } from "./canvas-text-input.mjs";
+import { CANVAS_PROMPT_MAX_LENGTH, collectCanvasTextInputs, combineCanvasPrompt, isCanvasTextConnection, isCanvasTextGenerationConnection, canvasConnectionCreatesCycle, normalizeCanvasInputEdge } from "./canvas-text-input.mjs";
+import { DEFAULT_TEXT_GENERATION_MODEL } from "@/shared/contracts/text-generation.mjs";
 import type { CanvasLibraryAsset } from "./canvas-asset-panel";
 import { upsertCanvasJobNodes } from "./canvas-job-nodes.mjs";
 import { initialCanvasImageSize } from "./canvas-image-size.mjs";
@@ -162,6 +163,7 @@ function canvasGraphIsStable(nodes: readonly CanvasNode[], references: Record<st
   return nodes.every((node) =>
     (node.type !== "sourceImage" && node.type !== "sourceVideo" || !node.data.uploadState) &&
     (node.type !== "imageResult" || !node.data.job.id.startsWith("pending_")) &&
+    (node.type !== "textGenerator" || !node.data.generating && !node.data.textGeneration.pendingRequestId) &&
     (node.type !== "imageGenerator" || !node.data.job || !["queued", "running", "refining"].includes(node.data.job.state))) &&
     Object.values(references).every((items) => items.every((item) => item.reference.status === "ready")) &&
     Object.values(converted).every((item) => item.status === "ready");
@@ -914,9 +916,11 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       (node.type === "sourceImage" || node.type === "sourceVideo" || node.type === "sourceAudio") && !node.data.assetId ||
       (node.type === "sourceImage" || node.type === "sourceVideo") && Boolean(node.data.uploadState) ||
       node.type === "imageResult" && (node.data.job.state !== "succeeded" || !node.data.job.outputs[node.data.index]?.id) ||
+      node.type === "textGenerator" && Boolean(node.data.generating || node.data.textGeneration.pendingRequestId) ||
       node.type === "imageGenerator" && (Boolean(node.data.job && node.data.job.state !== "succeeded") ||
         (current.referencesByGenerator[node.id] ?? []).some((item) => item.reference.status !== "ready")) ||
       selectedEdges.some((edge) => edge.source === node.id && imageSourceAsset(node)?.generated &&
+        instance.getNode(edge.target)?.type !== "textGenerator" &&
         current.convertedReferences[edge.id]?.status !== "ready"));
     if (unavailable) {
       setFormError("请等待选中素材或参考图准备完成后再复制。");
@@ -944,7 +948,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     const offset = 32 * clipboard.pasteCount;
     const ids = new Map(clipboard.nodes.map((node) => [node.id, node.type === "imageGenerator"
       ? `generator-${crypto.randomUUID()}` : node.type === "imageResult"
-        ? `canvas-${crypto.randomUUID()}-0` : node.type === "textEditor" ? `text-${crypto.randomUUID()}` : `asset-${crypto.randomUUID()}`] as const));
+        ? `canvas-${crypto.randomUUID()}-0` : node.type === "textEditor" ? `text-${crypto.randomUUID()}` : node.type === "textGenerator" ? `text-generator-${crypto.randomUUID()}` : `asset-${crypto.randomUUID()}`] as const));
     let nextSequence = Math.max(0, ...instance.getNodes().filter((node) => node.type === "imageGenerator")
       .map((node) => node.data.sequence ?? 0));
     const pastedNodes: CanvasNode[] = clipboard.nodes.map((node) => {
@@ -957,6 +961,8 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       if (node.type === "sourceImage") return { ...base, type: "sourceImage", data: { ...node.data } };
       if (node.type === "sourceAudio") return { ...base, type: "sourceAudio", data: { ...node.data } };
       if (node.type === "textEditor") return { ...base, type: "textEditor", data: { ...node.data } };
+      if (node.type === "textGenerator") return { ...base, type: "textGenerator", data: { ...node.data, generating: false,
+        textGeneration: { ...node.data.textGeneration, history: node.data.textGeneration.history?.map((message) => ({ ...message })), pendingRequestId: undefined } } };
       if (node.type === "imageResult") return { ...base, type: "imageResult", data: {
         ...node.data, onRetry: () => { void runJob(node.data.job.input); },
       } };
@@ -1273,9 +1279,10 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
 
   const isValidReferenceConnection = (connection: Connection | Edge) => {
     const instance = flowRef.current;
+    if (instance && isCanvasTextGenerationConnection(connection, instance.getNodes(), instance.getEdges())) return true;
     if (instance && isCanvasTextConnection(connection, instance.getNodes(), instance.getEdges())) return true;
     if (!instance || !connection.source || !connection.target || connection.source === connection.target ||
-        connection.sourceHandle !== "reference" || connection.targetHandle !== "reference") return false;
+        connection.sourceHandle !== "reference" || connection.targetHandle !== "reference" || canvasConnectionCreatesCycle(connection, instance.getEdges())) return false;
     const source = instance.getNode(connection.source);
     const target = instance.getNode(connection.target);
     const asset = imageSourceAsset(source);
@@ -1293,8 +1300,9 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     if (!isValidReferenceConnection(connection)) return;
     captureCanvasHistory();
     const source = flowRef.current?.getNode(connection.source);
+    const target = flowRef.current?.getNode(connection.target);
     const asset = imageSourceAsset(source);
-    if (!asset && source?.type !== "textEditor") return;
+    if (!asset && source?.type !== "textEditor" && source?.type !== "textGenerator" && !(source?.type === "sourceVideo" && target?.type === "textGenerator")) return;
     const id = `${connection.sourceHandle === "text" ? "text" : "reference"}-${connection.source}-${connection.target}`;
     const referenceEdge: BuiltInEdge = {
       ...connection,
@@ -1305,7 +1313,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       style: canvasReferenceEdgeStyle,
     };
     setEdges((current) => addEdge(referenceEdge, current));
-    if (asset?.generated && asset.assetId) startGeneratedReferenceImport(id, asset.assetId, asset.name);
+    if (target?.type === "imageGenerator" && asset?.generated && asset.assetId) startGeneratedReferenceImport(id, asset.assetId, asset.name);
   };
 
   const changeEdges = (changes: EdgeChange[]) => {
@@ -1344,6 +1352,18 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       id: `text-${crypto.randomUUID()}`, type: "textEditor", selected: true,
       position: { x: position.x - 180, y: position.y - 130 }, style: { width: 360, height: 260 },
       data: { markdown: "", text: "" },
+    }]);
+  };
+
+  const createTextGenerator = (screenPoint: { x: number; y: number }) => {
+    const instance = flowRef.current;
+    if (!instance) return;
+    const position = instance.screenToFlowPosition(screenPoint);
+    if (!Number.isFinite(position.x) || !Number.isFinite(position.y)) return;
+    instance.setNodes((current) => [...current.map((node) => node.selected ? { ...node, selected: false } : node), {
+      id: `text-generator-${crypto.randomUUID()}`, type: "textGenerator", selected: true,
+      position: { x: position.x - 119, y: position.y - 119 }, style: { width: 238, height: 238 },
+      data: { markdown: "", text: "", textGeneration: { modelId: DEFAULT_TEXT_GENERATION_MODEL, prompt: "", history: [] } },
     }]);
   };
 
@@ -1567,6 +1587,10 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
         busyGeneratorIdsRef.current.has(activeGeneratorId)) return;
     if (!combinedPrompt.trim()) { setFormError("请先输入画面描述，或连接文本节点。"); return; }
     if (promptTooLong) { setFormError("连接文本与补充描述合计不能超过 4000 个字符。"); return; }
+    if (linkedTextInputs.some((input) => {
+      const node = flowRef.current?.getNode(input.nodeId);
+      return node?.type === "textGenerator" && Boolean(node.data.generating || node.data.textGeneration.pendingRequestId);
+    })) { setFormError("连接的文本仍在生成，请稍候。"); return; }
     if (referencesBusy) { setFormError("参考图仍在上传，请稍候。"); return; }
     if (referencesFailed) { setFormError("请重试或移除上传失败的参考图。"); return; }
     if (displayReferences.length > MAX_GENERATION_REFERENCES) { setFormError(`最多可添加 ${MAX_GENERATION_REFERENCES} 张参考图。`); return; }
@@ -1827,6 +1851,11 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
         if (saved.type === "textEditor") return {
           ...base, type: "textEditor", style: style ?? { width: 360, height: 260 },
           data: { markdown: saved.markdown ?? "", text: saved.text ?? "" },
+        };
+        if (saved.type === "textGenerator") return {
+          ...base, type: "textGenerator", style: style ?? (saved.markdown ? { width: 360, height: 260 } : { width: 238, height: 238 }),
+          data: { markdown: saved.markdown ?? "", text: saved.text ?? "",
+            textGeneration: saved.textGeneration ?? { modelId: DEFAULT_TEXT_GENERATION_MODEL, prompt: "", history: [] } },
         };
         if (saved.type === "imageGenerator") {
           const job = saved.jobId
@@ -2129,7 +2158,15 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
         onUndo={() => navigateCanvasHistory("undo")}
         onRedo={() => navigateCanvasHistory("redo")}
         onBeforeGraphEdit={captureCanvasHistory}
-        onCreateGenerator={createGenerator} onCreateText={createText} onComposerHostChange={handleComposerHostChange}
+        onCreateGenerator={createGenerator} onCreateText={createText} onCreateTextGenerator={createTextGenerator} onComposerHostChange={handleComposerHostChange}
+        textGenerationContext={{ enabled: Boolean(projectReady && !pageSwitching && session?.access.status === "active" && !session.preview),
+          ownerKey: projectOwnerKeyRef.current ?? "", pageId: activePageId, workspaceId: null,
+          beforeGenerate: () => {
+            const sync = projectSyncRef.current;
+            if (!sync || sync.snapshot.version === null) { sync?.retry(); throw new Error("项目正在同步，请稍后重试生成。"); }
+            return sync.id;
+          }, onBillingChanged: () => { void refreshBilling(); },
+        }}
         onProjectGraphChange={(settled) => { setTextRevision((value) => value + 1); scheduleProjectSnapshot(settled); scheduleCanvasHistory(); }}
         onViewportSettled={scheduleViewportPreference}
         onAssetDragStart={(item) => { draggedAssetRef.current = item; }}

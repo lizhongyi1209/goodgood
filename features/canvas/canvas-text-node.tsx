@@ -17,7 +17,7 @@ import workspaceStyles from "./canvas-workspace.module.css";
 
 export type CanvasTextNodeData = { markdown: string; text: string } & Record<string, unknown>;
 
-export function CanvasTextFormatToolbar({ editor }: { editor: Editor | null }) {
+export function CanvasTextFormatToolbar({ editor, nodeId, enabled = true }: { editor: Editor | null; nodeId?: string; enabled?: boolean }) {
   const state = useEditorState({ editor, selector: ({ editor: current }) => current ? {
     paragraph: current.isActive("paragraph"), bold: current.isActive("bold"), italic: current.isActive("italic"),
     h1: current.isActive("heading", { level: 1 }), h2: current.isActive("heading", { level: 2 }), h3: current.isActive("heading", { level: 3 }),
@@ -36,19 +36,29 @@ export function CanvasTextFormatToolbar({ editor }: { editor: Editor | null }) {
     { label: "撤销文本编辑", Icon: Undo2, run: () => editor?.chain().focus().undo().run(), disabled: !state?.undo },
     { label: "重做文本编辑", Icon: Redo2, run: () => editor?.chain().focus().redo().run(), disabled: !state?.redo },
   ];
-  return <div className={`${styles.toolbar} nodrag nopan nowheel`} role="toolbar" aria-label="Markdown 文本格式">
+  return <div className={`${styles.toolbar} nodrag nopan nowheel`} role="toolbar" aria-label="Markdown 文本格式" data-canvas-text-toolbar={nodeId}>
     {actions.map(({ label, Icon, run, active, disabled }, index) => <Button key={label} type="button" variant="ghost" size="icon-xs" title={label} aria-label={label}
       className={[4, 6, 8].includes(index) ? styles.groupStart : undefined}
-      aria-pressed={active} disabled={!editor || disabled} onMouseDown={(event) => event.preventDefault()} onClick={run}>
+      aria-pressed={active} disabled={!editor || !enabled || disabled} onMouseDown={(event) => event.preventDefault()} onClick={run}>
       <Icon size={14} className="size-3.5" aria-hidden="true" />
     </Button>)}
   </div>;
 }
 
 export function CanvasTextNode({ id, data, selected, width, height }: NodeProps<CanvasTextNodeType>) {
+  const sequence = useStore((state) => Math.max(1, state.nodes.filter((node) => node.type === "textEditor").findIndex((node) => node.id === id) + 1));
+  return <CanvasMarkdownNode id={id} data={data} selected={selected} width={width} height={height} label={`文本编辑 ${sequence}`} />;
+}
+
+export function CanvasMarkdownNode({ id, data, selected, width, height, label, streaming = false, showHeader = true }: {
+  id: string; data: CanvasTextNodeData; selected?: boolean; width?: number; height?: number;
+  label: string; streaming?: boolean; showHeader?: boolean;
+}) {
   const flow = useReactFlow<CanvasNode>();
   const zoom = useStore((state) => state.transform[2]);
-  const sequence = useStore((state) => Math.max(1, state.nodes.filter((node) => node.type === "textEditor").findIndex((node) => node.id === id) + 1));
+  const [editing, setEditing] = useState(false);
+  const bodyRef = useRef<HTMLDivElement | null>(null);
+  const canEdit = Boolean(editing && selected && !streaming);
   const [error, setError] = useState("");
   const editorRef = useRef<Editor | null>(null);
   const limit = useMemo(() => Extension.create({
@@ -67,9 +77,10 @@ export function CanvasTextNode({ id, data, selected, width, height }: NodeProps<
     extensions: [StarterKit.configure({ link: { openOnClick: false } }), Markdown, limit],
     content: data.markdown,
     contentType: "markdown",
+    editable: false,
     immediatelyRender: false,
     editorProps: {
-      attributes: { "aria-label": `文本编辑器 ${sequence} 内容`, "aria-multiline": "true", role: "textbox", spellcheck: "false" },
+      attributes: { "aria-label": `${label} 内容`, "aria-multiline": "true", role: "textbox", spellcheck: "false" },
       handlePaste(view, event) {
         const text = event.clipboardData?.getData("text/plain");
         if (!text || event.clipboardData?.getData("text/html") || view.state.selection.$from.parent.type.spec.code) return false;
@@ -88,32 +99,68 @@ export function CanvasTextNode({ id, data, selected, width, height }: NodeProps<
     },
   });
   useEffect(() => { editorRef.current = editor; }, [editor]);
+  useEffect(() => { editor?.setEditable(canEdit, false); }, [canEdit, editor]);
+  useEffect(() => { if (!selected || streaming) setEditing(false); }, [selected, streaming]);
   useEffect(() => {
-    if (editor && editor.getMarkdown() !== data.markdown) editor.commands.setContent(data.markdown, { contentType: "markdown", emitUpdate: false });
-  }, [data.markdown, editor]);
+    if (!canEdit) return;
+    const page = bodyRef.current?.ownerDocument;
+    const outside = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element) || bodyRef.current?.contains(target) || target.closest("[data-canvas-text-toolbar]")?.getAttribute("data-canvas-text-toolbar") === id) return;
+      setEditing(false);
+    };
+    page?.addEventListener("pointerdown", outside, true);
+    return () => page?.removeEventListener("pointerdown", outside, true);
+  }, [canEdit, id]);
+  useEffect(() => {
+    const body = bodyRef.current;
+    const follow = Boolean(streaming && body && body.scrollHeight - body.scrollTop - body.clientHeight < 48);
+    if (editor && editor.getMarkdown() !== data.markdown) {
+      editor.chain().setContent(data.markdown, { contentType: "markdown", emitUpdate: false }).setMeta("addToHistory", false).run();
+      if (follow && body) body.scrollTop = body.scrollHeight;
+    }
+  }, [data.markdown, editor, streaming]);
   const selectNode = useCallback(() => {
     flow.setNodes((nodes) => nodes.map((node) => node.selected === (node.id === id) ? node : { ...node, selected: node.id === id }));
   }, [flow, id]);
+  const beginEditing = () => {
+    if (!editor || streaming) return;
+    selectNode();
+    setEditing(true);
+    editor.setEditable(true, false);
+    editor.commands.focus();
+  };
   return <>
-    <NodeToolbar isVisible={selected} position={Position.Top} offset={12 + 22 * zoom}>
-      <CanvasTextFormatToolbar editor={editor} />
+    <NodeToolbar isVisible={Boolean(selected && !streaming)} position={Position.Top} offset={12 + 22 * zoom}>
+      <CanvasTextFormatToolbar editor={editor} nodeId={id} enabled={canEdit} />
     </NodeToolbar>
-    <header className={`${workspaceStyles.imageMetadata} ${styles.header}`}>
+    {showHeader && <header className={`${workspaceStyles.imageMetadata} ${styles.header}`}>
       <span className={workspaceStyles.imageMetadataName}>
-        <FileText size={12} strokeWidth={1.5} aria-hidden="true" /><span className={workspaceStyles.imageMetadataNameText}>文本编辑器 {sequence}</span>
+        <FileText size={12} strokeWidth={1.5} aria-hidden="true" /><span className={workspaceStyles.imageMetadataNameText}>{label}</span>
       </span>
-    </header>
-    <div className={`${styles.node} ${selected ? styles.selected : ""}`} style={{ fontSize: CANVAS_TEXT_FONT_SIZE }}>
-      <div className={`${styles.body} nodrag nopan nowheel`} onKeyDown={(event) => event.stopPropagation()} onContextMenu={(event) => event.stopPropagation()}
+    </header>}
+    <div className={`${styles.node} ${selected ? styles.selected : ""} ${streaming ? styles.streaming : ""}`} style={{ fontSize: CANVAS_TEXT_FONT_SIZE }}>
+      <div ref={bodyRef} className={`${styles.body} ${canEdit ? `${styles.editing} nodrag nopan nowheel` : ""}`} tabIndex={streaming ? -1 : 0}
+        aria-label={canEdit ? undefined : `${label}，双击或按 Enter 编辑`}
+        onDoubleClick={(event) => { event.stopPropagation(); beginEditing(); }}
+        onKeyDown={(event) => {
+          if (canEdit) {
+            event.stopPropagation();
+            if (event.key === "Escape") { setEditing(false); editor?.commands.blur(); }
+          } else if (event.key === "Enter" || event.key === "F2") {
+            event.preventDefault(); event.stopPropagation(); beginEditing();
+          }
+        }}
+        onContextMenu={(event) => { if (canEdit) event.stopPropagation(); }}
         onFocus={selectNode}>
         <EditorContent editor={editor} className={styles.editor} />
-        {!data.text && <span className={styles.placeholder} aria-hidden="true">输入内容…</span>}
+        {!data.text && <span className={styles.placeholder} aria-hidden="true">{streaming ? "正在生成…" : "双击输入内容…"}</span>}
       </div>
       {error && <span className={styles.error} role="alert">{error}</span>}
     </div>
-    <Handle type="source" id="text" position={Position.Right} className={workspaceStyles.referenceOutputHandle} aria-label="输出文本提示词" title="文本提示词" />
+    <Handle type="source" id="text" position={Position.Right} className={workspaceStyles.referenceOutputHandle} aria-label={`输出${label}的文本提示词`} title="文本提示词" />
     <NodeResizeControl position="bottom-right" {...CANVAS_TEXT_NODE_BOUNDS} className={styles.resizeControl} onResizeStart={selectNode}>
-      <button type="button" className={`${styles.resizeGrip} nopan nowheel`} aria-label="调整文本编辑器尺寸" title="拖动调整尺寸，或使用方向键（Shift 加快）"
+      <button type="button" className={`${styles.resizeGrip} nopan nowheel`} aria-label={`调整${label}尺寸`} title="拖动调整尺寸，或使用方向键（Shift 加快）"
         onKeyDown={(event) => {
           event.stopPropagation();
           const size = canvasTextNodeSizeForKey(width, height, event.key, event.shiftKey);

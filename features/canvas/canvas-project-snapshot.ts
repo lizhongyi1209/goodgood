@@ -41,8 +41,8 @@ function finiteMetadata(value: unknown) {
 
 function nodeGeometry(node: CanvasNode) {
   // React Flow resizes text nodes via width/height while their initial style stays unchanged.
-  const width = positiveSize(node.type === "textEditor" ? node.width ?? node.style?.width : node.style?.width ?? node.width);
-  const height = positiveSize(node.type === "textEditor" ? node.height ?? node.style?.height : node.style?.height ?? node.height);
+  const width = positiveSize(["textEditor", "textGenerator"].includes(node.type ?? "") ? node.width ?? node.style?.width : node.style?.width ?? node.width);
+  const height = positiveSize(["textEditor", "textGenerator"].includes(node.type ?? "") ? node.height ?? node.style?.height : node.style?.height ?? node.height);
   return width && height ? { width, height } : undefined;
 }
 
@@ -63,6 +63,10 @@ function persistNode(node: CanvasNode): CanvasProjectNode | null {
   const base = { id: node.id, position: { ...node.position }, size: nodeGeometry(node) };
   if (node.type === "textEditor") return {
     ...base, type: "textEditor", markdown: node.data.markdown, text: node.data.text,
+  };
+  if (node.type === "textGenerator") return {
+    ...base, type: "textGenerator", markdown: node.data.markdown, text: node.data.text,
+    textGeneration: node.data.textGeneration,
   };
   if (node.type === "imageGenerator") return {
     ...base, type: "imageGenerator", sequence: node.data.sequence,
@@ -155,7 +159,7 @@ export function snapshotCanvasProject(input: {
 
 function remoteCanvasPageDocument(document: CanvasPageDocument): CanvasPageDocument {
   const nodes = document.nodes.filter((node) =>
-    node.type === "textEditor" ||
+    node.type === "textEditor" || node.type === "textGenerator" ||
     node.type === "imageGenerator" ||
     node.type === "imageResult" && node.jobId && !node.jobId.startsWith("pending_") ||
     Boolean(node.asset?.id),

@@ -18,13 +18,14 @@ export function canvasPreviewPage(document, activePageId) {
 export function canvasPreviewNodeSize(node) {
   if (node.size && node.size.width > 0 && node.size.height > 0) return node.size;
   if (node.type === "sourceAudio") return { width: 260, height: 86 };
+  if (node.type === "textEditor" || node.type === "textGenerator" && node.markdown) return { width: 360, height: 260 };
   const width = node.metadata?.pixelWidth;
   const height = node.metadata?.pixelHeight;
   if (width && height) {
     const scale = Math.min(1, 238 / width, 320 / height);
     return { width: width * scale, height: height * scale };
   }
-  return { width: 238, height: node.type === "imageGenerator" ? 238 : 158 };
+  return { width: 238, height: node.type === "imageGenerator" || node.type === "textGenerator" ? 238 : 158 };
 }
 
 /** @param {readonly import("../../shared/contracts/canvas-project").CanvasProjectNode[]} nodes */

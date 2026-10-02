@@ -48,6 +48,7 @@ export interface CreditLedgerEntry {
   idempotencyKey: string;
   reason: string;
   relatedJobId: string | null;
+  relatedTextJobId?: string;
   relatedPaymentRef: string | null;
   priorEntryId: string | null;
   actor: CreditActor;
@@ -122,6 +123,7 @@ export type CreditActivityStatus =
 export type CreditActivityCategory =
   | "image_generation"
   | "video_generation"
+  | "text_generation"
   | "other";
 
 export interface CreditActivitySpendSummary {

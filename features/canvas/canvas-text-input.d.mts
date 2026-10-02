@@ -10,4 +10,6 @@ export function collectCanvasTextInputs(nodes: readonly CanvasNode[], edges: rea
 export function combineCanvasPrompt(inputs: readonly Pick<CanvasTextInput, "text">[], additionalPrompt: string): string;
 export function canvasTextNodeSizeForKey(width: number | undefined, height: number | undefined, key: string, largeStep?: boolean): { width: number; height: number } | null;
 export function isCanvasTextConnection(connection: Connection | Edge, nodes: readonly CanvasNode[], edges: readonly Edge[]): boolean;
+export function isCanvasTextGenerationConnection(connection: Connection | Edge, nodes: readonly CanvasNode[], edges: readonly Edge[]): boolean;
+export function canvasConnectionCreatesCycle(connection: Connection | Edge, edges: readonly Edge[]): boolean;
 export function normalizeCanvasInputEdge<T extends { sourceHandle?: string | null; targetHandle?: string | null }>(edge: T): T;
