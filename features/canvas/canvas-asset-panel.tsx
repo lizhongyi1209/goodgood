@@ -773,7 +773,7 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
         onEscapeKeyDown={(event) => { if (managementPendingRef.current) event.preventDefault(); }}
         onInteractOutside={(event) => { if (managementPendingRef.current) event.preventDefault(); }}>
         <DialogHeader className={styles.folderNameHeader}>
-          <DialogTitle className={styles.folderNameTitle}>重命名文件夹</DialogTitle>
+          <DialogTitle className={styles.folderNameTitle}>重命名</DialogTitle>
           <DialogDescription className="sr-only">修改文件夹名称，最多64个字符。取消保留原名称。</DialogDescription>
         </DialogHeader>
         <form className={styles.folderNameForm} onSubmit={(event) => { event.preventDefault(); void saveFolderName(); }}>
