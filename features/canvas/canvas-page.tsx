@@ -253,6 +253,7 @@ const CANVAS_MODEL_LABELS: Partial<Record<GenerationModelId, string>> = {
 };
 
 const DEFAULT_CANVAS_NAME = "未命名画布";
+const SHOW_CANVAS_REFERENCE_ADD_BUTTON = false;
 
 const generationBoundary = createHttpGenerationBoundary();
 
@@ -2282,7 +2283,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
                 </button>
               </Attachment>
             ))}
-            {displayReferences.length < MAX_GENERATION_REFERENCES && (
+            {SHOW_CANVAS_REFERENCE_ADD_BUTTON && displayReferences.length < MAX_GENERATION_REFERENCES && (
               <button type="button" className={styles.referenceAdd} aria-label="添加参考图" onClick={() => inputRef.current?.click()}>
                 <ImageIcon size={14} strokeWidth={1.5} aria-hidden="true" />
               </button>
