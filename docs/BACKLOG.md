@@ -1,10 +1,10 @@
 # 当前任务与优先级
 
-> 最后同步：2026-10-02。GG-275文本外置标题/完整书写区/双斜线尺寸柄与固定字号已进入5173，精简三项工具栏、修正真实尺寸保存；并行GG-276图片预览与用户手动检查约定保持。Web80b8c0f/原Worker/0060不变，免费政策待用户，生产不变。
+> 最后同步：2026-10-02。GG-280画布图片裁剪源码已接入5173：名称行上方快捷栏、图上选区、W/H/比例锁、国内/电商预设和真实裁剪上传；创建2/退役2。此前文本/参考图与并行文件夹修改保持，未自动编译或检查，用户手验；Web80b8c0f/原Worker/0060与生产不变，免费政策待用户。
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
-| GG-280 | 开发中：子agent实现画布图片快捷裁剪，元信息上方工具栏、图上选区和右侧分组预设；新增国内/电商分组，无LinkedIn；仅代码，用户手验 | [任务](tasks/GG-280-canvas-image-crop.md) |
+| GG-280 | 已精确接入5173所用目录：快捷裁剪、W/H/比例锁、遮罩网格/拖拽、五组新预设，无LinkedIn；真实PNG/File上传和项目恢复。创建2/退役2，未编译/检查，用户手验 | [任务](tasks/GG-280-canvas-image-crop.md) |
 | GG-275 / GG-274 | 文本编辑器外置标题/双斜线尺寸柄/固定14px、精简工具栏和尺寸保存已进入5173；本窗口读取新约定前45/45，之后不自动检查，用户手验。本地服务/数据保持 | [GG-275](tasks/GG-275-text-editor-layout.md) / [GG-274](tasks/GG-274-local-restart-after-reboot.md) |
 | GG-272 / GG-262 | 已进入5173/Web：真实创建时间/北京时间、字标与标题同水平线；既有行内编辑/固定网格保持。22/22、lint/编译/必要构建通过，创建1/退役1 | [GG-272](tasks/GG-272-account-created-and-brand-row.md) / [GG-262](tasks/GG-262-profile-inline-edit-layout.md) |
 | GG-268 / GG-273 / GG-276 / GG-277 / GG-278 / GG-279 | 编辑器/单一混合端口已交付；参考图恢复预览，图片/文本及添加入口统一54×54px正方形，文本和添加仅图标，文本hover预览/移除保持，已进入5173；各子树均退役。用户手动检查，agent不自动编译/检查 | [GG-268](tasks/GG-268-markdown-text-node.md) / [GG-273](tasks/GG-273-canvas-editor-inputs.md) / [GG-276](tasks/GG-276-restore-reference-previews.md) / [GG-277](tasks/GG-277-square-reference-thumbnails.md) / [GG-278](tasks/GG-278-reference-add-icon-only.md) / [GG-279](tasks/GG-279-text-reference-thumbnails.md) |
