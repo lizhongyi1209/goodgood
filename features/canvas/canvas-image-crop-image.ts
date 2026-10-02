@@ -1,4 +1,5 @@
 import { goodGoodApiFetch } from "@/features/auth/http-auth-boundary";
+import { readAssetDownloadUrl } from "@/features/assets/http-asset-boundary";
 import { imageDownloadFilename } from "@/features/assets/image-download";
 import { PRIVATE_IMAGE_UPLOAD_MAX_BYTES } from "@/shared/contracts/upload-limits.mjs";
 import { privateImageUrls } from "@/shared/private-image-urls.mjs";
@@ -25,12 +26,33 @@ export function canvasCropImageForNode(node: CanvasNode | undefined, imageId?: s
     contentUrl: privateImageUrls("asset", output.id).contentUrl };
 }
 
-export async function loadCanvasCropImage(url: string, signal: AbortSignal) {
-  const response = await goodGoodApiFetch(url, { credentials: "same-origin", mode: "cors", signal });
+export async function readCanvasCropImageBlob(source: CanvasCropImage, signal: AbortSignal) {
+  signal.throwIfAborted();
+  let response: Response;
+  try {
+    if (source.key.startsWith("asset:")) {
+      // Following the same-origin content redirect taints the storage request's
+      // Origin. Resolve an authorized signature first, as image download does.
+      const url = await readAssetDownloadUrl(source.imageId, null, signal);
+      signal.throwIfAborted();
+      response = await fetch(url, { credentials: "omit", mode: "cors", signal });
+    } else {
+      response = await goodGoodApiFetch(source.contentUrl, { credentials: "same-origin", signal });
+    }
+  } catch (cause) {
+    signal.throwIfAborted();
+    if (cause instanceof TypeError) throw new Error("原图连接失败，请重试。", { cause });
+    throw cause;
+  }
   if (!response.ok) throw new Error("原图读取失败，请重试。");
   const blob = await response.blob();
   signal.throwIfAborted();
   if (!blob.size) throw new Error("原图内容为空，请重试。");
+  return blob;
+}
+
+export async function loadCanvasCropImage(source: CanvasCropImage, signal: AbortSignal) {
+  const blob = await readCanvasCropImageBlob(source, signal);
   const objectUrl = URL.createObjectURL(blob);
   const image = new window.Image();
   image.decoding = "async";

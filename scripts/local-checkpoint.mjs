@@ -101,7 +101,7 @@ if (command === "build") {
     const webOrigins = [
       `http://127.0.0.1:${port}`,
       `http://localhost:${port}`,
-      ...(mode === "workspace"
+      ...(mode === "workspace" || mode === "worker"
         ? ["http://127.0.0.1:5173", "http://localhost:5173"]
         : []),
     ].join(",");

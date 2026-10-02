@@ -101,7 +101,7 @@ export function CanvasImageCropEditor({ request, onClose, onCommit }: Readonly<{
     setLoading(true);
     setError(null);
     setLoaded(null);
-    void loadCanvasCropImage(request.contentUrl, controller.signal).then((result) => {
+    void loadCanvasCropImage(request, controller.signal).then((result) => {
       resource = result;
       if (controller.signal.aborted) { result.dispose(); return; }
       const size = { width: result.image.naturalWidth, height: result.image.naturalHeight };

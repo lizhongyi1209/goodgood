@@ -59,12 +59,14 @@ export async function listAssets(
 export async function readAssetDownloadUrl(
   assetId: string,
   workspaceId: string | null = null,
+  signal?: AbortSignal,
 ): Promise<string> {
   const response = await goodGoodApiFetch(
     `/api/assets/${encodeURIComponent(assetId)}/download-url`,
     {
       cache: "no-store",
       headers: workspaceRequestHeaders(workspaceId),
+      signal,
     },
   );
   const payload = (await response.json()) as
