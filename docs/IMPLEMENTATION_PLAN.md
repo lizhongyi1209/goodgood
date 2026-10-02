@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-02
-- Current phase: [GG-309](tasks/GG-309-canvas-preview-activation.md)按用户重启请求，已构建并启用verified 287c4ca、本地Web40244/必要0063；动态最高2048预览、GG-303云端批量校验及GG-308文本API生效，用户手验。仅修复实际构建阻塞的重复zoom声明，Vite27464/唯一Worker31280、cloud-development/local-mailpit及数据保持；创建2/退役2，无测试、浏览器、真实provider请求或生产操作。
-- Current objective: 用户刷新5173手验默认512、放大按需最高2048及缩回；当前云端批量校验/文本模板已启用。默认继续只开发代码，不自动编译、检查或浏览器验收。
-- Previous objective: GG-308/306/307及前序源码交付均保留，原待更新Web/0063已由本轮GG-309启用。
+- Current phase: GG-310模板弹窗去重及按钮前景色源码45bbba9→c3ba0d2已接入GG-116/5173；创建1/退役1，未编译或验证，无运行变化。另窗GG-309已启用的verified 287c4ca/Web40244/本地0063及原Vite/唯一Worker、数据保持。
+- Current objective: 用户刷新并重开文本编辑/文本生成结果的模板弹窗，手验无重复说明及取消深色字、保存/保存中白色字；默认仍只开发代码，不自动编译、检查或浏览器验收。
+- Previous objective: GG-309最高2048动态预览、GG-303云端批量校验及GG-308文本资产API/本地0063已启用，真实视觉/交互仍由用户手验。
 
 ## Current checkpoint
+
+- 最新修复源码 [GG-310](tasks/GG-310-text-template-dialog-copy-color.md)：基于287c4ca，登记a19be42、隔离45bbba9精确接入c3ba0d2，保留另窗GG-309 f5b0b59；重复保存说明改为sr-only，模板弹窗操作区按variant显式指定取消ink、保存action-fg。仅共享TSX/CSS及设计说明，原存储/工具栏/预览保持，无新ADR。创建1/退役1，未编译或验证、运行或生产操作，用户手验；运行receipt仍见下方GG-309。
 
 - 当前运行检查点 [GG-309](tasks/GG-309-canvas-preview-activation.md)按用户重启请求，已构建并启用verified 287c4ca、本地Web40244/必要0063；动态最高2048预览、GG-303云端批量校验及GG-308文本API生效，用户手验。仅修复实际构建阻塞的重复zoom声明，Vite27464/唯一Worker31280、cloud-development/local-mailpit及数据保持；创建2/退役2，无测试、浏览器、真实provider请求或生产操作。构建完整指纹及时间见任务卡；文档后继不改变已运行receipt，后续重启先构建新HEAD。下方源码交付时的待启用描述均为历史阶段。
 

@@ -1,10 +1,10 @@
 # 当前任务与优先级
 
-> 最后同步：2026-10-02。[GG-309](tasks/GG-309-canvas-preview-activation.md)按用户重启请求，已构建并启用verified 287c4ca、本地Web40244/必要0063；动态最高2048预览、GG-303云端批量校验及GG-308文本API生效，用户手验。仅修复实际构建阻塞的重复zoom声明，Vite27464/唯一Worker31280、cloud-development/local-mailpit及数据保持；创建2/退役2，无测试、浏览器、真实provider请求或生产操作。
+> 最后同步：2026-10-02。GG-310模板弹窗去重及按钮前景色源码c3ba0d2已接入5173，创建1/退役1，未编译或验证，用户手验。GG-309已启用的verified 287c4ca/Web40244/本地0063及原Vite/唯一Worker、数据保持；运行证据见其任务卡，本轮无运行或生产操作。
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
-| GG-310 | 已登记：模板弹窗去除重复可见说明，修正取消/保存及保存中按钮文字颜色；仅代码修改，待隔离实现 | [任务](tasks/GG-310-text-template-dialog-copy-color.md) |
+| GG-310 | 已接入5173源码c3ba0d2：模板弹窗说明仅无障碍可读，取消深色字/保存及保存中白色字；创建1/退役1，未编译或验证，无运行变化，用户手验 | [任务](tasks/GG-310-text-template-dialog-copy-color.md) |
 | GG-309 | 本地verified 287c4ca/Web40244/必要0063已启用最高2K预览、批量校验及文本资产API；创建2/退役2，原Vite/唯一Worker和数据保持，用户手验 | [任务](tasks/GG-309-canvas-preview-activation.md) |
 | GG-308 | 已接入5173源码4317bdb：单击快捷栏/双击格式栏，冻结文本为私有模板资产、1:1文字缩略/全文与拖回复用；创建1/退役1，未编译/验证；持久接口/本地0063已随GG-309启用，用户手验 | [任务](tasks/GG-308-canvas-text-template-assets.md) |
 | GG-306 | 已接入5173源码f004e5f：资产拖入/上传/生成结果默认512，放大按需最高2048；共享限并发/身份缓存、真实尺寸保留。创建1/退役1，未编译/验证；新2K私有接口已随GG-309启用，用户手验 | [任务](tasks/GG-306-canvas-adaptive-preview.md) |

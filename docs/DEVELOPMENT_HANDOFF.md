@@ -1,5 +1,7 @@
 # 当前开发版本与跨窗口交接
 
+- 最新弹窗修复源码：[GG-310](tasks/GG-310-text-template-dialog-copy-color.md)登记a19be42，隔离45bbba9精确接入GG-116/5173为c3ba0d2，保留GG-309 f5b0b59；设置模板重复说明仅供无障碍读取，操作区显式取消ink/保存action-fg，覆盖两类文本节点及保存中文字。创建1/退役1，无依赖/辅助缓存，未编译或验证、运行/数据或生产变化，用户刷新并重开弹窗手验；已启用Web/本地0063的事实沿下条GG-309记录。
+
 - 当前本地运行：[GG-309](tasks/GG-309-canvas-preview-activation.md)按用户重启请求，已构建并启用verified 287c4ca、本地Web40244/必要0063；动态最高2048预览、GG-303云端批量校验及GG-308文本API生效，用户手验。仅修复实际构建阻塞的重复zoom声明，Vite27464/唯一Worker31280、cloud-development/local-mailpit及数据保持；创建2/退役2，无测试、浏览器、真实provider请求或生产操作。两版本端点均verified，匿名两类canvas-preview均401。运行receipt仍绑定287c4ca，下次重启先构建当前HEAD；下方原任务待启用为历史交付状态，构建指纹见GG-309。
 
 - 最新文本资产源码：[GG-308](tasks/GG-308-canvas-text-template-assets.md)基于e7e1f6f，登记61895c5、隔离e95c52c→GG-116/5173源码4317bdb。单击两类文本节点显示设置模板快捷栏、双击/键盘编辑才显示格式栏；冻结当前完整内容/UUID保存私有text资产，两处资产列表1:1裁切文字缩略/全文查看、资产页Markdown下载和原整理删除、画布重命名及拖入独立文本节点完成。创建1/退役1，必要回归来源只写未运行，无依赖/构建缓存、编译/验证或运行/生产操作。新的text-assets API和0063迁移须后续明确委托更新Web/应用本地迁移，旧Web的媒体列表可读且模板保存明确失败；可连同GG-303云端批量校验/GG-306高清接口一起启用，不增加Worker或provider请求。当前GG-300 Web b3844d2/本地0062/唯一Worker沿原运行证据保持，本轮未探测或激活。
