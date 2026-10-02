@@ -77,6 +77,7 @@ import {
 import { CanvasWorkspace, canvasReferenceEdgeCurvature, canvasReferenceEdgeStyle, type CanvasAudioNodeType, type CanvasGeneratorNodeType, type CanvasNode, type CanvasSourceNode, type CanvasVideoNode } from "./canvas-workspace";
 import { CanvasGeneratorSettingsContent } from "./canvas-generator-settings-popover";
 import { CanvasGenerationCountControl } from "./canvas-generation-count-control";
+import { canvasCropImageForNode, type CanvasCropCommit } from "./canvas-image-crop-image";
 import { CANVAS_PROMPT_MAX_LENGTH, collectCanvasTextInputs, combineCanvasPrompt, isCanvasTextConnection, normalizeCanvasInputEdge } from "./canvas-text-input.mjs";
 import type { CanvasLibraryAsset } from "./canvas-asset-panel";
 import { upsertCanvasJobNodes } from "./canvas-job-nodes.mjs";
@@ -1059,8 +1060,15 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
         if (projectOwnerKeyRef.current) {
           const ownerKey = projectOwnerKeyRef.current;
           setTimeout(() => {
-            void projectSnapshotRef.current?.().then(() => removeLocalCanvasFile(ownerKey, id))
-              .then(() => projectSyncRef.current?.markFilePersistenceReady(id)).catch(() => {});
+            void projectSnapshotRef.current?.().then(async () => {
+              // Cropping reuses a ready node's ID. An older upload must not
+              // remove the replacement's pending File after its snapshot settles.
+              const node = projectNode(id);
+              if (localUploadsRef.current.has(id) || !node ||
+                  (node.type !== "sourceImage" && node.type !== "sourceVideo") || node.data.assetId !== readyAssetId) return;
+              await removeLocalCanvasFile(ownerKey, id);
+              if (projectOwnerKeyRef.current === ownerKey && !localUploadsRef.current.has(id)) projectSyncRef.current?.markFilePersistenceReady(id);
+            }).catch(() => {});
           }, 0);
         }
       } catch (cause) {
@@ -1131,6 +1139,57 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     scheduleProjectSnapshot(true);
     for (const node of added) startLocalUpload(node.id);
     } finally { finishPageOperation(); }
+  };
+
+  const commitCanvasCrop = ({ request, file, width, height }: CanvasCropCommit) => {
+    const instance = flowRef.current;
+    if (!mountedRef.current || !instance || !projectReady || pageSwitchingRef.current ||
+        request.pageId !== activePageIdRef.current || session?.access.status !== "active" || session.preview) return false;
+    const source = instance.getNode(request.nodeId);
+    const currentImage = canvasCropImageForNode(source, request.imageId);
+    if (!source || !source.selected || !currentImage || currentImage.key !== request.key || currentImage.imageId !== request.imageId) return false;
+    const createAdjacent = source.type === "imageGenerator";
+    if (!createAdjacent && source.type !== "sourceImage" && source.type !== "imageResult") return false;
+    const nodeId = createAdjacent ? `local-${crypto.randomUUID()}` : source.id;
+    const sourceWidth = source.measured?.width ?? source.width ?? (typeof source.style?.width === "number" ? source.style.width : 238);
+    const sourceHeight = source.measured?.height ?? source.height ?? (typeof source.style?.height === "number" ? source.style.height : 320);
+    const expandedGenerator = createAdjacent && Array.from(document.querySelectorAll<HTMLElement>(".react-flow__node"))
+      .find((element) => element.dataset.id === source.id)?.querySelector<HTMLElement>('[data-canvas-stack-expanded="true"]');
+    const horizontalSpan = expandedGenerator && source.type === "imageGenerator"
+      ? (source.data.job?.outputs.length ?? 1) * (sourceWidth + 12) - 12 : sourceWidth;
+    const scale = Math.min(sourceWidth / width, sourceHeight / height);
+    const size = createAdjacent ? initialCanvasImageSize(width, height) ?? { width: 238, height: 158 }
+      : { width: width * scale, height: height * scale };
+    captureCanvasHistory();
+    if (!createAdjacent) {
+      for (const edge of latestProjectStateRef.current.edges.filter((edge) => edge.source === nodeId)) forgetConvertedReference(edge.id);
+      localUploadsRef.current.get(nodeId)?.controller?.abort();
+      localUploadsRef.current.delete(nodeId);
+      releaseLocalPreview(nodeId);
+    }
+    const previewUrl = URL.createObjectURL(file);
+    objectUrlsRef.current.add(previewUrl);
+    localNodeUrlsRef.current.set(nodeId, previewUrl);
+    localUploadsRef.current.set(nodeId, { file, pageId: request.pageId, controller: null });
+    const cropped: CanvasSourceNode = {
+      ...(!createAdjacent ? source : {}),
+      id: nodeId,
+      type: "sourceImage",
+      selected: true,
+      position: createAdjacent ? { x: source.position.x + horizontalSpan + 32, y: source.position.y } : { ...source.position },
+      width: size.width,
+      height: size.height,
+      measured: undefined,
+      style: { ...(!createAdjacent ? source.style : {}), ...size },
+      data: { name: file.name, previewUrl, pixelWidth: width, pixelHeight: height, imageSized: true,
+        uploadState: "uploading", onRetryUpload: () => startLocalUpload(nodeId) },
+    };
+    updatePageNodes(request.pageId, (current) => createAdjacent
+      ? [...current.map((node) => node.selected ? { ...node, selected: false } : node), cropped]
+      : current.map((node) => node.id === nodeId ? cropped : node.selected ? { ...node, selected: false } : node));
+    startLocalUpload(nodeId);
+    scheduleProjectSnapshot(true);
+    return true;
   };
 
   const addLibraryAsset = async (item: CanvasLibraryAsset, screenPoint: { x: number; y: number }) => {
@@ -2033,6 +2092,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       onDrop={onCanvasDrop}
     >
       <CanvasWorkspace assetsOpen={assetsOpen} onAssetsOpenChange={setAssetsOpen} assetSidebarWidth={assetSidebarWidth} onAssetSidebarWidthChange={setAssetSidebarWidth} assetLibraryEnabled={Boolean(session && session.access.status === "active" && !session.preview)} assetRevision={assetRevision}
+        cropPageId={activePageId} cropEnabled={Boolean(projectReady && !pageSwitching && session?.access.status === "active" && !session.preview)} onCropCommit={commitCanvasCrop}
         edges={edges} onEdgesChange={changeEdges} onConnect={connectReference} isValidConnection={isValidReferenceConnection}
         onDeleteEdge={removeLinkedReference}
         onSelectAll={() => {

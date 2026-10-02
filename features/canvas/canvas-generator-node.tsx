@@ -8,6 +8,8 @@ import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import type { GenerationJob } from "@/shared/contracts/generation";
 import { initialCanvasImageSize } from "./canvas-image-size.mjs";
 import { CanvasGeneratorHostContext } from "./canvas-generator-host";
+import { CanvasImageCropToolbar, useCanvasImageCrop } from "./canvas-image-crop";
+import { canvasCropImageForNode } from "./canvas-image-crop-image";
 import type { CanvasGeneratorNodeType, CanvasNode } from "./canvas-workspace";
 import styles from "./canvas-workspace.module.css";
 
@@ -18,6 +20,9 @@ export type CanvasGeneratorNodeData = Record<string, unknown> & {
 };
 
 export function CanvasGeneratorNode({ id, data, selected }: NodeProps<CanvasGeneratorNodeType>) {
+  const { request: cropRequest } = useCanvasImageCrop();
+  const [selectedOutputId, setSelectedOutputId] = useState<string | null>(null);
+  const [readyOutputs, setReadyOutputs] = useState<ReadonlySet<string>>(new Set());
   const onHostChange = useContext(CanvasGeneratorHostContext);
   const setHost = useCallback((element: HTMLDivElement | null) => onHostChange(id, element), [id, onHostChange]);
   const flow = useReactFlow<CanvasNode>();
@@ -45,6 +50,13 @@ export function CanvasGeneratorNode({ id, data, selected }: NodeProps<CanvasGene
   const stacked = stackCount > 1;
   const stackOffset = Math.min(10, Math.max(6, nodeWidth * 0.03));
   const expanded = stacked && expandedKey === outputKey;
+  const currentOutput = expanded ? outputs.find((item) => item.id === selectedOutputId) ?? output : output;
+  const cropImage = currentOutput && readyOutputs.has(`${currentOutput.id}:${currentOutput.previewUrl}`)
+    ? canvasCropImageForNode({ id, type: "imageGenerator", data, position: { x: 0, y: 0 } }, currentOutput.id) : null;
+  const markOutputReady = (item: NonNullable<typeof output>, image: HTMLImageElement) => {
+    setReadyOutputs((current) => new Set([...current, `${item.id}:${item.previewUrl}`]));
+    if (item.id === output?.id) sizeGeneratorFromImage(image.naturalWidth, image.naturalHeight);
+  };
   useEffect(() => {
     bodyRef.current?.dispatchEvent(new CustomEvent("canvas-visible-bounds-change", { bubbles: true }));
   }, [expanded, nodeWidth, outputKey, stackCount]);
@@ -94,6 +106,7 @@ export function CanvasGeneratorNode({ id, data, selected }: NodeProps<CanvasGene
 
   return (
     <>
+      <CanvasImageCropToolbar image={cropImage} selected={selected} />
       <div className={`${styles.imageMetadata} ${nodeWidth < 110 ? styles.imageMetadataCompact : ""} ${nodeWidth < 90 ? styles.imageMetadataIconOnly : ""}`}>
         <span className={styles.imageMetadataName}>
           <span className={styles.generatorMetadataIcon}>
@@ -107,6 +120,7 @@ export function CanvasGeneratorNode({ id, data, selected }: NodeProps<CanvasGene
         {dimensions && <span className={styles.imageMetadataSize} aria-label={`原始尺寸 ${dimensions} 像素`}>{dimensions}</span>}
       </div>
       <div className={`${styles.generatorNode} ${output ? styles.generatedGenerator : ""} ${generating ? styles.generatorShimmering : ""} ${stacked ? styles.generatorBatch : ""}`}
+        data-canvas-crop-image={!stacked ? output?.id : undefined}
         ref={bodyRef}
         data-canvas-stack-count={stackCount}
         data-canvas-stack-expanded={expanded}
@@ -118,6 +132,8 @@ export function CanvasGeneratorNode({ id, data, selected }: NodeProps<CanvasGene
           const hidden = !expanded && index > 2;
           return (
             <div key={item.id}
+              data-canvas-crop-image={item.id}
+              onPointerDown={() => { if (expanded && !cropRequest) setSelectedOutputId(item.id); }}
               className={`${styles.generatorStackItem} ${index === 0 ? styles.generatorStackItemActive : ""} ${hidden ? styles.generatorStackItemHidden : ""}`}
               aria-hidden={hidden || undefined}
               style={{ "--canvas-stack-x": `${expanded ? index * (nodeWidth + 12) : previewDepth * stackOffset}px`,
@@ -125,13 +141,16 @@ export function CanvasGeneratorNode({ id, data, selected }: NodeProps<CanvasGene
                 zIndex: stackCount - index } as CSSProperties}>
               <PrivateObjectImage src={item.previewUrl} alt={`图片生成器 ${data.sequence ?? 1} 的第 ${index + 1} 张结果`}
                 className={styles.generatorImage} loading="eager"
-                onLoad={index === 0 ? (event) => sizeGeneratorFromImage(event.currentTarget.naturalWidth, event.currentTarget.naturalHeight) : undefined} />
+                onLoad={(event) => markOutputReady(item, event.currentTarget)}
+                onError={() => setReadyOutputs((current) => { const next = new Set(current); next.delete(`${item.id}:${item.previewUrl}`); return next; })} />
             </div>
           );
         }) : output ? <PrivateObjectImage src={output.previewUrl} alt={`图片生成器 ${data.sequence ?? 1} 的生成结果`} className={styles.generatorImage}
-          loading="eager" onLoad={(event) => sizeGeneratorFromImage(event.currentTarget.naturalWidth, event.currentTarget.naturalHeight)} />
+          loading="eager" onLoad={(event) => markOutputReady(output, event.currentTarget)}
+          onError={() => setReadyOutputs((current) => { const next = new Set(current); next.delete(`${output.id}:${output.previewUrl}`); return next; })} />
           : <ImageIcon size={32} strokeWidth={1.35} aria-hidden="true" />}
         {stacked && <button type="button" className={`${styles.generatorStackToggle} nodrag nopan nowheel`}
+          disabled={cropRequest?.nodeId === id}
           aria-label={expanded ? "收起本批图片" : `展开本批 ${stackCount} 张图片`}
           aria-expanded={expanded}
           onPointerDown={(event) => event.stopPropagation()}
@@ -144,7 +163,7 @@ export function CanvasGeneratorNode({ id, data, selected }: NodeProps<CanvasGene
         {data.job?.state === "failed" || data.job?.state === "cancelled" ? <span className={styles.generatorFailure} role="alert">{data.job.error?.message ?? "生成未完成，请检查设置后重试。"}</span> : null}
       </div>
       <Handle type="target" id="reference" position={Position.Left} className={styles.generatorInputHandle} aria-label="连接图片或文本" title="图片或文本" />
-      <NodeToolbar position={Position.Bottom} offset={12} align={align} style={{ width: toolbarWidth }} className={`${styles.generatorToolbar} nodrag nopan nowheel`}>
+      <NodeToolbar isVisible={cropRequest?.nodeId === id ? false : undefined} position={Position.Bottom} offset={12} align={align} style={{ width: toolbarWidth }} className={`${styles.generatorToolbar} nodrag nopan nowheel`}>
         <div ref={setHost} className={styles.generatorComposerHost} />
       </NodeToolbar>
     </>

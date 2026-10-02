@@ -7,6 +7,8 @@ import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import { initialCanvasImageSize } from "./canvas-image-size.mjs";
 import { CanvasMediaMetadata } from "./canvas-media-metadata";
 import { CanvasImageResizeControls } from "./canvas-image-resize-controls";
+import { CanvasImageCropToolbar, useCanvasImageCrop } from "./canvas-image-crop";
+import { canvasCropImageForNode } from "./canvas-image-crop-image";
 import type { CanvasNode, CanvasSourceNode as CanvasSourceNodeType } from "./canvas-workspace";
 import styles from "./canvas-workspace.module.css";
 
@@ -26,6 +28,8 @@ export type CanvasSourceNodeData = Record<string, unknown> & {
 };
 
 export function CanvasSourceNode({ id, data, selected, width }: NodeProps<CanvasSourceNodeType>) {
+  const { request: cropRequest } = useCanvasImageCrop();
+  const [readyPreview, setReadyPreview] = useState<string | null>(null);
   const [previewFailureState, setPreviewFailureState] = useState<{
     url: string;
     value: "remote" | "local" | null;
@@ -37,11 +41,14 @@ export function CanvasSourceNode({ id, data, selected, width }: NodeProps<Canvas
   const { updateNode } = useReactFlow<CanvasNode>();
   const localFallback = previewFailure === "remote" ? data.localPreviewUrl : undefined;
   const imageFailed = previewFailure === "local" || (previewFailure === "remote" && !localFallback);
+  const cropImage = !imageFailed && readyPreview === (localFallback ?? data.previewUrl)
+    ? canvasCropImageForNode({ id, type: "sourceImage", data, position: { x: 0, y: 0 } }) : null;
 
   return (
     <>
+      <CanvasImageCropToolbar image={cropImage} selected={selected} />
       {!imageFailed && <CanvasMediaMetadata kind="image" name={data.name} nodeWidth={width} pixelWidth={data.pixelWidth} pixelHeight={data.pixelHeight} />}
-      <article className={`${styles.sourceNode} ${imageFailed ? "" : styles.imageNode} ${data.uploadState === "uploading" ? styles.mediaUploading : ""}`} aria-label={`图片 ${data.name}`} aria-busy={data.uploadState === "uploading" || undefined}>
+      <article data-canvas-crop-image={data.assetId} className={`${styles.sourceNode} ${imageFailed ? "" : styles.imageNode} ${data.uploadState === "uploading" ? styles.mediaUploading : ""}`} aria-label={`图片 ${data.name}`} aria-busy={data.uploadState === "uploading" || undefined}>
         {imageFailed
           ? <div className={styles.sourceFailure} role="alert">图片无法预览</div>
           : <PrivateObjectImage
@@ -50,6 +57,7 @@ export function CanvasSourceNode({ id, data, selected, width }: NodeProps<Canvas
               className={styles.sourceImage}
               loading="eager"
               onLoad={(event) => {
+                setReadyPreview(localFallback ?? data.previewUrl);
                 if (data.assetId && event.currentTarget.currentSrc === new URL(data.previewUrl, window.location.href).href) data.onPreviewReady?.();
                 const pixelWidth = event.currentTarget.naturalWidth;
                 const pixelHeight = event.currentTarget.naturalHeight;
@@ -63,7 +71,7 @@ export function CanvasSourceNode({ id, data, selected, width }: NodeProps<Canvas
                   };
                 });
               }}
-              onError={() => setPreviewFailure(localFallback ? "local" : "remote")}
+              onError={() => { setReadyPreview(null); setPreviewFailure(localFallback ? "local" : "remote"); }}
             />}
         {data.assetId && previewFailure && <div className={`${styles.mediaUploadFailure} nodrag nopan`} role="alert">
           <span>图片已上传，预览暂不可用。</span>
@@ -74,7 +82,7 @@ export function CanvasSourceNode({ id, data, selected, width }: NodeProps<Canvas
           <button type="button" onClick={(event) => { event.stopPropagation(); data.onRetryUpload?.(); }}>重试</button>
         </div>}
       </article>
-      {selected && data.imageSized && !imageFailed && (
+      {selected && data.imageSized && !imageFailed && cropRequest?.nodeId !== id && (
         <CanvasImageResizeControls />
       )}
       {(data.assetId || data.uploadState) && <Handle type="source" id="reference" position={Position.Right} className={styles.referenceOutputHandle} aria-label="连接到图片生成器" />}

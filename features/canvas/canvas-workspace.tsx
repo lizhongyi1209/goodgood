@@ -30,6 +30,8 @@ import { CanvasGeneratorNode, type CanvasGeneratorNodeData } from "./canvas-gene
 import { CanvasTextNode, type CanvasTextNodeData } from "./canvas-text-node";
 import { CanvasGeneratorHostContext } from "./canvas-generator-host";
 import { CanvasSelectionControls } from "./canvas-selection-controls";
+import { CanvasImageCropContext, CanvasImageCropEditor } from "./canvas-image-crop";
+import type { CanvasCropCommit, CanvasCropRequest } from "./canvas-image-crop-image";
 import { handleCanvasBodyClipboardPaste, handleCanvasClipboardCopy, handleCanvasClipboardPaste } from "./canvas-clipboard.mjs";
 import styles from "./canvas-workspace.module.css";
 
@@ -160,6 +162,9 @@ export function CanvasWorkspace({
   onComposerHostChange,
   onProjectGraphChange,
   onViewportSettled,
+  cropPageId,
+  cropEnabled,
+  onCropCommit,
 }: Readonly<{
   onInit: (instance: ReactFlowInstance<CanvasNode>) => void;
   onNodesChange: (changes: NodeChange<CanvasNode>[]) => void;
@@ -189,7 +194,13 @@ export function CanvasWorkspace({
   onComposerHostChange: (id: string, element: HTMLDivElement | null) => void;
   onProjectGraphChange: (settled?: boolean) => void;
   onViewportSettled: () => void;
+  cropPageId: string;
+  cropEnabled: boolean;
+  onCropCommit: (commit: CanvasCropCommit) => boolean;
 }>) {
+  const [cropRequest, setCropRequest] = useState<CanvasCropRequest | null>(null);
+  const visibleCropRequest = cropEnabled && cropRequest?.pageId === cropPageId ? cropRequest : null;
+  useEffect(() => { setCropRequest(null); }, [cropPageId, cropEnabled]);
   const [miniMapOpen, setMiniMapOpen] = useState(true);
   const [connectionActive, setConnectionActive] = useState(false);
   const [miniMapWidth, setMiniMapWidth] = useState(200);
@@ -419,6 +430,9 @@ export function CanvasWorkspace({
         }}
         onMouseLeave={hideEdgeDelete}>
       <CanvasGeneratorHostContext.Provider value={onComposerHostChange}>
+      <CanvasImageCropContext.Provider value={{ request: visibleCropRequest, openCrop: (image) => {
+        if (cropEnabled) setCropRequest({ ...image, pageId: cropPageId, sessionId: crypto.randomUUID() });
+      } }}>
       <ReactFlow<CanvasNode>
         defaultNodes={initialNodes}
         edges={edges}
@@ -483,6 +497,7 @@ export function CanvasWorkspace({
       >
         <CanvasProjectChangeObserver onChange={onProjectGraphChange} />
         <CanvasSelectionControls onBeforeGraphEdit={onBeforeGraphEdit} onProjectGraphChange={onProjectGraphChange} />
+        {visibleCropRequest && <CanvasImageCropEditor key={visibleCropRequest.sessionId} request={visibleCropRequest} onClose={() => { setCropRequest(null); canvasRef.current?.focus({ preventScroll: true }); }} onCommit={onCropCommit} />}
         {miniMapOpen && (
           <MiniMap<CanvasNode>
             position="bottom-left"
@@ -534,6 +549,7 @@ export function CanvasWorkspace({
           </Popover>}
         />
       </ReactFlow>
+      </CanvasImageCropContext.Provider>
       </CanvasGeneratorHostContext.Provider>
       {visibleEdgeDelete && (
         <Button type="button" variant="outline" size="icon-xs" className={styles.edgeDelete}

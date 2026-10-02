@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Handle, Position, useReactFlow, type NodeProps } from "@xyflow/react";
 import { CircleAlert, LoaderCircle, RotateCcw } from "lucide-react";
 
@@ -10,6 +11,8 @@ import type { GenerationJob } from "@/shared/contracts/generation";
 import { initialCanvasImageSize } from "./canvas-image-size.mjs";
 import { CanvasMediaMetadata } from "./canvas-media-metadata";
 import { CanvasImageResizeControls } from "./canvas-image-resize-controls";
+import { CanvasImageCropToolbar, useCanvasImageCrop } from "./canvas-image-crop";
+import { canvasCropImageForNode } from "./canvas-image-crop-image";
 import type { CanvasNode, CanvasResultNodeType } from "./canvas-workspace";
 import styles from "./canvas-workspace.module.css";
 
@@ -24,6 +27,8 @@ export function CanvasResultNode({ id, data, selected, width }: NodeProps<Canvas
   const { job, index, onRetry } = data;
   const output = job.outputs[index];
   const { updateNode } = useReactFlow<CanvasNode>();
+  const { request: cropRequest } = useCanvasImageCrop();
+  const [readyPreview, setReadyPreview] = useState<string | null>(null);
 
   if (job.state === "failed" || job.state === "cancelled") {
     return (
@@ -52,6 +57,8 @@ export function CanvasResultNode({ id, data, selected, width }: NodeProps<Canvas
 
   return (
     <>
+      <CanvasImageCropToolbar selected={selected} image={readyPreview === output.previewUrl
+        ? canvasCropImageForNode({ id, type: "imageResult", data, position: { x: 0, y: 0 } }) : null} />
       <CanvasMediaMetadata
         kind="image"
         name={imageDownloadFilename(job.createdAt, index + 1, output.previewUrl)}
@@ -59,13 +66,14 @@ export function CanvasResultNode({ id, data, selected, width }: NodeProps<Canvas
         pixelWidth={output.width}
         pixelHeight={output.height}
       />
-      <article className={`${styles.resultNode} ${styles.imageNode} ${data.imageSized ? styles.sizedNode : ""}`}>
+      <article data-canvas-crop-image={output.id} className={`${styles.resultNode} ${styles.imageNode} ${data.imageSized ? styles.sizedNode : ""}`}>
         <PrivateObjectImage
           src={output.previewUrl}
           alt={`生成图片 ${index + 1}`}
           className={styles.resultImage}
           style={output.width && output.height ? { aspectRatio: `${output.width} / ${output.height}` } : undefined}
           onLoad={(event) => {
+            setReadyPreview(output.previewUrl);
             const size = initialCanvasImageSize(event.currentTarget.naturalWidth, event.currentTarget.naturalHeight);
             if (!size) return;
             updateNode(id, (node) => node.type !== "imageResult" || node.data.imageSized ? {} : {
@@ -73,9 +81,10 @@ export function CanvasResultNode({ id, data, selected, width }: NodeProps<Canvas
               data: { ...node.data, imageSized: true },
             });
           }}
+          onError={() => setReadyPreview(null)}
         />
       </article>
-      {selected && data.imageSized && (
+      {selected && data.imageSized && cropRequest?.nodeId !== id && (
         <CanvasImageResizeControls />
       )}
       {job.state === "succeeded" && <Handle type="source" id="reference" position={Position.Right} className={styles.referenceOutputHandle} aria-label="连接到图片生成器" />}
