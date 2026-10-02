@@ -1,10 +1,10 @@
-# GG-285 · 裁剪参数面板完成按钮文字颜色
+# GG-286 · 裁剪参数面板完成按钮文字颜色
 
 - 日期：2026-10-02；状态：开发中；只修改代码，不自动编译/验证，用户手验。
 - 请求：裁剪参数设置中的完成按钮字体颜色不对。
 - 范围/验收：完成按钮在深色底上使用既有action-fg浅色文字，包含处理中图标/文字；裁剪面板参数文字沿用既有黑灰层级。
 - 原因：全局未分层button color:inherit覆盖Shadcn默认按钮的Tailwind前景色，完成按钮继承了面板的深色文字；通过裁剪局部动作样式显式恢复主按钮前景。
-- 基线：实际GG-116 `6d230bf`，已核对祖先；登记后创建根agent独占的`fix/GG-285-canvas-crop-action-color` / `F:/goodgood-worktrees/GG-285-canvas-crop-action-color`，仅crop CSS及相关交接文档，无子agent。
+- 基线：实际GG-116 `6d230bf`，已核对祖先；登记后创建根agent独占的`fix/GG-286-canvas-crop-action-color` / `F:/goodgood-worktrees/GG-286-canvas-crop-action-color`，仅crop CSS及相关交接文档，无子agent。登记时发现GG-285被并行参考图入口任务占用，本任务更名GG-286，保留并行范围。
 - 决策：恢复ADR0105/0126的浅色面板与深色主按钮对比，不改变产品决定，无新ADR。
 - 检查：不运行编译、lint、测试、类型检查、代码检查或浏览器验收，不重启服务/调用provider。
 - 生命周期：计划创建1/退役1，不安装依赖或生成缓存；精确集成后原生Git remove/prune退役。
