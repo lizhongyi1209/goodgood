@@ -2,6 +2,8 @@
 
 ## GG-291 文本节点
 
+GG-299文本生成chat的图片hover直接复用图片生成referencePreview样式：白底细灰边、3px内距、等比图像及视口尺寸约束，8px间距，无箭头；54×54缩略及取消按钮保持。见[GG-299](tasks/GG-299-text-image-preview.md)。
+
 GG-298文本生成的54×54素材缩略沿图片生成右上角18px深灰圆形X样式，hover或焦点显示，触屏常显；移除按钮与缩略预览为相邻控件，保留原预览及卡片几何。见[GG-298](tasks/GG-298-text-input-remove.md)。
 
 GG-297在文本生成模型旁加入“预设”菜单，首项结构化反推；复用DropdownMenu和Badge。输入区标签为灰底深灰小圆角胶囊，含可访问名称和移除图标，不展示实际指令；生成期间菜单/标签锁定。预设与模型保持同一设置组，极窄宽度下发送按钮独立换行并靠右，避免挤压。见[ADR0130](decisions/0130-text-generation-presets.md)。

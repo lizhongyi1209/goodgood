@@ -19,6 +19,7 @@ import { canvasVideoFrames } from "./canvas-video-input";
 import { CanvasTextGenerationError, cancelCanvasTextGeneration, readCanvasTextGeneration, streamCanvasTextGeneration, type TextGenerationMedia } from "./http-text-generation";
 import type { CanvasNode, CanvasTextGeneratorNodeType } from "./canvas-workspace";
 import workspaceStyles from "./canvas-workspace.module.css";
+import pageStyles from "./canvas-page.module.css";
 import styles from "./canvas-text-generator-node.module.css";
 
 export type CanvasTextGeneratorNodeData = CanvasTextNodeData & { textGeneration: CanvasTextGenerationDraft; generating?: boolean };
@@ -236,7 +237,15 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
             <Tooltip><TooltipTrigger asChild>
               <span tabIndex={0} className={`${styles.attachment} ${item.unavailable ? styles.unavailable : ""}`} aria-label={item.name}>
                 {item.kind === "image" && item.previewUrl ? <PrivateObjectImage src={item.previewUrl} alt={item.name} /> : item.kind === "video" ? <Film aria-hidden="true" /> : <FileText aria-hidden="true" />}
-              </span></TooltipTrigger><TooltipContent side="top" style={{ maxWidth: 280, whiteSpace: "pre-wrap" }}>{item.kind === "text" ? (item.text || "文本为空").slice(0, 400) : item.name}</TooltipContent></Tooltip>
+              </span></TooltipTrigger>
+              {item.kind === "image" && item.previewUrl ? (
+                <TooltipContent side="top" align="center" sideOffset={8} hideArrow className={pageStyles.referencePreview}>
+                  <PrivateObjectImage src={item.previewUrl} alt={item.name} loading="eager" />
+                </TooltipContent>
+              ) : (
+                <TooltipContent side="top" style={{ maxWidth: 280, whiteSpace: "pre-wrap" }}>{item.kind === "text" ? (item.text || "文本为空").slice(0, 400) : item.name}</TooltipContent>
+              )}
+            </Tooltip>
             <button type="button" className={styles.attachmentRemove}
               aria-label={`移除素材 ${index + 1}：${item.name}`}
               disabled={busy || Boolean(data.textGeneration.pendingRequestId) || !context.enabled}
