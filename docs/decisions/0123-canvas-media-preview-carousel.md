@@ -7,6 +7,10 @@
 
 ## Decision
 
+### GG-314 picture node entry (2026-10-02)
+
+The user adds an explicit top-right expand button to canvas picture nodes, superseding GG-128's removal of that picture-view overlay only. Source pictures, standalone generation results and generator output pictures reuse the canvas asset panel's 24px expand button, 14px Maximize2 icon and hover/focus/touch visibility. Expanded batches expose each picture's entry; collapsed batches expose the front picture only. Opening reuses this canvas-mode ImageViewer, authorized original/local source reads, known dimensions and actual generation input metadata. Pointer/keyboard events on the button do not select/drag/connect nodes or open the generator composer; crop mode disables the entry. Close/Escape restore focus. Empty/error states do not introduce picture-view actions. The canvas300% display-preview gate from ADR0132 remains separate and unchanged.
+
 The canvas image expand action opens a bounded floating viewer. The complete original image fits within a stage with explicit available width and height. The right rail contains current-scope images and video frame previews, without a visible title or scrollbar. Vertical wheel gestures select adjacent items; thumbnails align to the right, pack closely and may overlap. The selected thumbnail scales toward the left above its neighbors, with smooth movement and scaling. Reduced motion disables animation.
 
 Keep click/arrow navigation, bounded ends, loading/retry, Escape and trigger focus restoration. Selected videos reuse the existing node-style canvas playback and private URL refresh. This is transient viewing only. The asset-page image viewer and original standalone video entry retain their current behavior. No backend, generation, upload or project persistence changes are required.
