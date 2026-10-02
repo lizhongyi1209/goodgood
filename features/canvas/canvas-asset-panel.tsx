@@ -204,7 +204,7 @@ function AssetMedia({ item, editing, onRename, onExpand, expandRef, refreshVideo
   const retryRef = useRef<AbortController | null>(null);
   const mountedRef = useRef(false);
   const src = phase === "preview" ? item.previewUrl : phase === "content" ? fallbackUrl : undefined;
-  const failed = item.media !== "audio" && phase === "failed";
+  const failed = (item.media === "image" || item.media === "video") && phase === "failed";
 
   useEffect(() => {
     mountedRef.current = true;
