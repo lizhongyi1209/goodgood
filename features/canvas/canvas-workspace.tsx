@@ -593,6 +593,14 @@ export function CanvasWorkspace({
           <span>文本编辑</span>
         </ContextMenuItem>
         <ContextMenuItem onSelect={() => {
+          if (contextPointRef.current) { onBeforeGraphEdit(); onCreateTextGenerator(contextPointRef.current); }
+          contextPointRef.current = null;
+        }}>
+          <span className={styles.generatorMetadataIcon} aria-hidden="true"><Type size={12} className="size-3" />
+            <svg className={`${styles.generatorMetadataSparkle} size-2`} viewBox="0 0 8 8" focusable="false"><path d="M4 .5 4.65 3.35 7.5 4 4.65 4.65 4 7.5 3.35 4.65 .5 4 3.35 3.35Z" /></svg>
+          </span><span>文本生成</span>
+        </ContextMenuItem>
+        <ContextMenuItem onSelect={() => {
           if (contextPointRef.current) { onBeforeGraphEdit(); onCreateGenerator(contextPointRef.current); }
           contextPointRef.current = null;
         }}>
@@ -603,14 +611,6 @@ export function CanvasWorkspace({
             </svg>
           </span>
           <span>图片生成</span>
-        </ContextMenuItem>
-        <ContextMenuItem onSelect={() => {
-          if (contextPointRef.current) { onBeforeGraphEdit(); onCreateTextGenerator(contextPointRef.current); }
-          contextPointRef.current = null;
-        }}>
-          <span className={styles.generatorMetadataIcon} aria-hidden="true"><Type size={12} className="size-3" />
-            <svg className={`${styles.generatorMetadataSparkle} size-2`} viewBox="0 0 8 8" focusable="false"><path d="M4 .5 4.65 3.35 7.5 4 4.65 4.65 4 7.5 3.35 4.65 .5 4 3.35 3.35Z" /></svg>
-          </span><span>文本生成</span>
         </ContextMenuItem>
       </ContextMenuContent>
       </ContextMenu>
