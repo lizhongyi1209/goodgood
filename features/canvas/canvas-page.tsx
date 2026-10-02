@@ -14,21 +14,23 @@ import {
   type DragEvent,
 } from "react";
 import { addEdge, applyEdgeChanges, useNodesState, type BuiltInEdge, type Connection, type Edge, type EdgeChange, type NodeChange, type ReactFlowInstance } from "@xyflow/react";
-import { ChevronDown, ImageIcon, LoaderCircle, Maximize2, Minimize2 } from "lucide-react";
+import { ChevronDown, ImageIcon, LoaderCircle, Maximize2, Minimize2, X } from "lucide-react";
 
-import { AttachmentGroup } from "@/components/ui/attachment";
+import { Attachment, AttachmentGroup } from "@/components/ui/attachment";
 import { InputAttachment } from "@/components/ui/input-attachment";
 import { Button } from "@/components/ui/button";
 import { CreditIcon } from "@/components/ui/credit-icon";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
+import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AccountAccessGate } from "@/features/auth/account-access-gate";
 import { authenticationEntryPath } from "@/features/auth/authentication-navigation";
 import {
@@ -97,6 +99,7 @@ import { readCanvasViewport, saveCanvasViewport, readCanvasActivePage, saveCanva
 import { CANVAS_PROJECT_DEFAULT_PAGE_ID, CANVAS_PROJECT_MAX_PAGES, getCanvasProjectPages } from "@/shared/contracts/canvas-project";
 import { canvasPageHasActiveWork, emptyCanvasRuntimePage, nextCanvasPageName, pagedCanvasProjectDocument, type CanvasRuntimePage } from "./canvas-project-pages";
 import { CanvasProjectPagesBar, CanvasPageDeleteDialog } from "./canvas-project-pages-bar";
+import canvasWorkspaceStyles from "./canvas-workspace.module.css";
 import styles from "./canvas-page.module.css";
 
 function clearCanvasInterfaceSelection(root: HTMLElement, target: EventTarget | null) {
@@ -2174,12 +2177,31 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       {composerHost && createPortal(<section className={`${styles.composer} ${styles.composerAttached}`} aria-label="图片生成工具">
         {promptTooLong && <p role="alert" className={styles.message}>连接文本与补充描述合计 {combinedPrompt.length} 个字符，最多 4000 个字符。</p>}
         <input ref={inputRef} className={styles.srOnly} type="file" accept="image/jpeg,image/png" multiple onChange={addReferences} aria-label="选择参考图" />
+        <TooltipProvider delayDuration={180}>
           <AttachmentGroup className={styles.referenceTray} role="group" aria-label="输入附件">
-            {displayReferences.map((item, index) => <InputAttachment key={item.key} media="image" name={item.reference.name}
-              description={`参考图 ${index + 1}`} url={item.previewUrl} state={item.reference.status} error={item.reference.errorMessage}
-              disabled={generatorEditingLocked}
-              onRetry={() => item.kind === "direct" ? retryReference(composerHost.id, item.key) : retryLinkedReference(item.key)}
-              onRemove={() => item.kind === "direct" ? removeReference(composerHost.id, item.key) : removeLinkedReference(item.key)} />)}
+            {displayReferences.map((item, index) => (
+                <Attachment
+                  className={`${styles.reference} ${item.reference.status === "uploading" ? canvasWorkspaceStyles.mediaUploading : ""}`}
+                  key={item.key}
+                  size="xs"
+                  state={item.reference.status === "uploading" ? "uploading" : item.reference.status === "failed" ? "error" : "done"}
+                  aria-busy={item.reference.status === "uploading" || undefined}
+                >
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className={styles.referenceImageTrigger} tabIndex={0} aria-label={`预览参考图 ${index + 1}：${item.reference.name}${item.reference.status === "uploading" ? "，上传中" : item.reference.status === "failed" ? "，上传失败" : ""}`}>
+                        <PrivateObjectImage src={item.previewUrl} alt={item.reference.name} />
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" align="center" sideOffset={8} hideArrow className={styles.referencePreview}>
+                      <PrivateObjectImage src={item.previewUrl} alt={item.reference.name} loading="eager" />
+                    </TooltipContent>
+                  </Tooltip>
+                  <span className={styles.referenceNumber} aria-hidden="true">{index + 1}</span>
+                  {item.reference.status === "failed" && <button type="button" className={styles.referenceRetry} disabled={generatorEditingLocked} onClick={() => item.kind === "direct" ? retryReference(composerHost.id, item.key) : retryLinkedReference(item.key)} aria-label={`重试参考图 ${item.reference.name}`}>重试</button>}
+                  <button type="button" className={styles.referenceRemove} disabled={generatorEditingLocked} onClick={() => item.kind === "direct" ? removeReference(composerHost.id, item.key) : removeLinkedReference(item.key)} aria-label={`移除参考图 ${index + 1}：${item.reference.name}`}><X size={12} /></button>
+                </Attachment>
+            ))}
             {linkedTextInputs.map((item, index) => <InputAttachment key={item.edgeId} media="text" name={`文本${index + 1}.md`}
               description={`文本 · ${Array.from(item.text).length} 字`} text={item.text} disabled={generatorEditingLocked}
               onRemove={() => removeLinkedReference(item.edgeId)} />)}
@@ -2190,6 +2212,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
               </button>
             )}
           </AttachmentGroup>
+        </TooltipProvider>
         <label className={styles.srOnly} htmlFor="canvas-prompt">画面描述</label>
         <div ref={promptAreaRef} className={styles.promptArea}>
           <Textarea
