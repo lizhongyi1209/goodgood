@@ -4,6 +4,7 @@
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
+| GG-311 | 已登记：提示词模板保存弹窗去预览/简化文案，成功资产入口动效，画布资产右上改类型筛选；仅代码修改 | [任务](tasks/GG-311-prompt-template-save-and-asset-filter.md) |
 | GG-310 | 已接入5173源码c3ba0d2：模板弹窗说明仅无障碍可读，取消深色字/保存及保存中白色字；创建1/退役1，未编译或验证，无运行变化，用户手验 | [任务](tasks/GG-310-text-template-dialog-copy-color.md) |
 | GG-309 | 本地verified 287c4ca/Web40244/必要0063已启用最高2K预览、批量校验及文本资产API；创建2/退役2，原Vite/唯一Worker和数据保持，用户手验 | [任务](tasks/GG-309-canvas-preview-activation.md) |
 | GG-308 | 已接入5173源码4317bdb：单击快捷栏/双击格式栏，冻结文本为私有模板资产、1:1文字缩略/全文与拖回复用；创建1/退役1，未编译/验证；持久接口/本地0063已随GG-309启用，用户手验 | [任务](tasks/GG-308-canvas-text-template-assets.md) |
