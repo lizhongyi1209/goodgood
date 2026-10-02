@@ -373,3 +373,6 @@ GG-077：现有灵感资源新增POST /api/inspiration/:id/view与quote；view�
 # GG-173 · 画布项目地址与接口
 
 `/canvas` 为新画布分配客户端 UUID 并替换为稳定 `/canvas/:projectId`；项目列表分别链接旧创作项目 `/projects/:projectId` 与画布项目 `/canvas/:projectId`。新 `GET /api/canvas-projects`、`GET /api/canvas-projects/:projectId`、`PUT /api/canvas-projects/:projectId` 是独立 owner/workspace-scoped 保存边界，PUT 使用 `expectedVersion`。旧 `/api/projects` 合同及创作项目恢复路径不变。见 [ADR 0114](decisions/0114-durable-canvas-projects.md)。
+## GG-308 私有文本资产接口（源码，待启用）
+
+`/api/text-assets` GET返回当前owner/workspace的模板摘要，POST冻结内容保存；`/api/text-assets/[assetId]` GET受权读取全文、DELETE删除及整理记录。Node/App Router共用实现，不新增页面URL；画布/资产页通过原入口使用文本查看弹窗。新增接口与0063需更新Web/迁移，本轮未启用，原媒体接口保持。

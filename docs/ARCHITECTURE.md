@@ -1,5 +1,11 @@
 # Architecture
 
+## GG-308 private text template assets
+
+CanvasMarkdownNode selects between quick actions and format controls using its existing edit state; empty text-generator cards share the disabled quick action. The save dialog freezes Markdown/plain text and a retry UUID. `server/text-assets` owns authenticated owner/workspace-scoped list/create/read/delete with bounded JSON and idempotent content checks; Node and App Router entry points share it. No generation queue, provider, billing or hidden preset instruction participates.
+
+The new text kind reuses asset organization, with a shared row lock on template moves to serialize deletion. Lists carry bounded plain-text excerpts; full text is read only through the authorized asset ID. Both asset surfaces render escaped React text in a square clipped thumbnail, use a cancelable/full-content viewer, and refresh through a scoped asset event. Canvas drops fetch authorized content and copy it into the existing textEditor schema, so project persistence and copied node content do not depend on the asset after insertion. Migration0063 and a rebuilt Web are separate activation steps; old Web returns no template entries and explicit save failure. See[ADR0133](decisions/0133-canvas-text-template-assets.md).
+
 ## GG-306 canvas image display derivatives
 
 CanvasAdaptiveImage keeps a native512 preview layer, observing viewport proximity and rendered size/device pixel density. Magnified visible images request the fixed2048 canvas-preview endpoint after180ms; an already-decoded blob overlays the retained preview, so failure/downgrade preserves the base. The identity-scoped pool deduplicates detail requests, limits fetch/decode concurrency to3, aborts unneeded subscriptions and retains at most8 inactive object URLs. Local pending Files produce512/2048 display blobs without changing uploads. Source dimensions remain independent of display dimensions.

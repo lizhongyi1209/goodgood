@@ -14,6 +14,9 @@ import { describeViewerGeneration, type ImageViewerMetadata } from "@/features/a
 import { deleteAsset, deleteUploadedAsset, listAssets } from "@/features/assets/http-asset-boundary";
 import { createAssetFolder, deleteAssetFolder, listAssetOrganization, renameAssetFolder, renameAssetItem, saveAssetOrganization, type AssetArrangement, type AssetFolder, type OrganizedAssetKind } from "@/features/assets/http-asset-organization";
 import { listPrivateAudioMaterials } from "@/features/assets/http-audio-materials";
+import { listPrivateTextAssets, deletePrivateTextAsset } from "@/features/assets/http-text-assets";
+import { TextAssetThumbnail, TextAssetViewer } from "@/features/assets/text-asset-preview";
+import { TEXT_ASSETS_UPDATED_EVENT } from "@/shared/contracts/text-assets.mjs";
 import { imageDownloadFilename } from "@/features/assets/image-download";
 import { listPrivateVideoMaterials } from "@/features/creation/http-video-materials";
 import { listReferenceMaterials } from "@/features/references/http-reference-library";
@@ -28,13 +31,14 @@ import styles from "./canvas-asset-panel.module.css";
 export type CanvasLibraryAsset = Readonly<{
   id: string;
   kind: OrganizedAssetKind;
-  media: "image" | "video" | "audio";
+  media: "image" | "video" | "audio" | "text";
   name: string;
   createdAt: string;
   previewUrl?: string;
   sourceUrl?: string;
   width?: number;
   height?: number;
+  previewText?: string;
 }>;
 
 type AssetPanelData = Readonly<{
@@ -141,6 +145,7 @@ function AssetVisual({ item, src, hovering, playbackEnabled, expanded, onError, 
     : dimensions ? dimensions.width / dimensions.height : 1;
   const frameStyle = { aspectRatio: ratio, "--video-ratio": ratio } as CSSProperties;
 
+  if (item.media === "text") return <span className={className} style={{ aspectRatio: 1 }}><TextAssetThumbnail text={item.previewText ?? ""} /></span>;
   if (item.media === "audio") {
     return <span className={className}><AudioLines size={15} strokeWidth={1.7} aria-hidden="true" /></span>;
   }
@@ -242,7 +247,7 @@ function AssetMedia({ item, editing, onRename, onExpand, expandRef, refreshVideo
       onPointerLeave={() => setHovering(false)}>
       {expanded ? visual
         : <span className={styles.visualTrigger} tabIndex={editing ? -1 : 0} role={item.media === "video" ? "group" : "button"} title={item.name}
-          aria-label={`${item.media === "image" ? "图片" : item.media === "video" ? "视频" : "音频"} ${item.name}，双击或 F2 重命名`}
+          aria-label={`${item.media === "image" ? "图片" : item.media === "video" ? "视频" : item.media === "text" ? "文本模板" : "音频"} ${item.name}，双击或 F2 重命名`}
           onDoubleClick={() => { if (!editing) onRename?.(); }}
           onKeyDown={(event) => {
             if (event.target === event.currentTarget && !editing && ["F2", "Enter", " "].includes(event.key)) {
@@ -253,7 +258,7 @@ function AssetMedia({ item, editing, onRename, onExpand, expandRef, refreshVideo
         </span>}
       {!expanded && item.media !== "audio" && <Button ref={expandRef} type="button" variant="ghost" size="icon-sm" className={styles.expand}
         data-asset-media-control draggable={false} disabled={editing}
-        aria-label={`查看${item.media === "video" ? "视频" : "大图"} ${item.name}`} title={item.media === "video" ? "查看视频" : "查看大图"}
+        aria-label={`查看${item.media === "video" ? "视频" : item.media === "text" ? "文本模板" : "大图"} ${item.name}`} title={item.media === "video" ? "查看视频" : item.media === "text" ? "查看文本模板" : "查看大图"}
         onDragStart={(event) => { event.preventDefault(); event.stopPropagation(); }}
         onDoubleClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}
         onClick={(event) => { event.stopPropagation(); onExpand?.(event.currentTarget); }}><Maximize2 size={14} aria-hidden="true" /></Button>}
@@ -321,6 +326,8 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
   const [managementError, setManagementError] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<Readonly<{ selectedKey: string; returnFocusTo: HTMLElement }> | null>(null);
   const [videoPreview, setVideoPreview] = useState<Readonly<{ selectedKey: string; returnFocusTo: HTMLElement }> | null>(null);
+  const [textPreview, setTextPreview] = useState<Readonly<{ id: string; name: string }> | null>(null);
+  const [textReadError, setTextReadError] = useState<string | null>(null);
   const [draggedKey, setDraggedKey] = useState<string | null>(null);
   const [hoveredFolderId, setHoveredFolderId] = useState<string | null>(null);
   const [moveState, setMoveState] = useState<CanvasFolderMoveState | null>(null);
@@ -437,13 +444,21 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
 
   useEffect(() => {
     const refresh = () => setRevision((current) => current + 1);
+    const textChanged = (event: Event) => {
+      if (!(event instanceof CustomEvent) || event.detail?.workspaceId === null) refresh();
+    };
     window.addEventListener(CANVAS_ASSET_LIBRARY_UPDATED_EVENT, refresh);
-    return () => window.removeEventListener(CANVAS_ASSET_LIBRARY_UPDATED_EVENT, refresh);
+    window.addEventListener(TEXT_ASSETS_UPDATED_EVENT, textChanged);
+    return () => {
+      window.removeEventListener(CANVAS_ASSET_LIBRARY_UPDATED_EVENT, refresh);
+      window.removeEventListener(TEXT_ASSETS_UPDATED_EVENT, textChanged);
+    };
   }, []);
 
   useEffect(() => {
     readEpochRef.current += 1;
     const epoch = readEpochRef.current;
+    setTextReadError(null);
     if (!enabled) return;
     let active = true;
     void Promise.all([
@@ -452,7 +467,11 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
       listPrivateVideoMaterials(null),
       listPrivateAudioMaterials(null),
       listAssetOrganization(null),
-    ]).then(([jobs, references, videos, audios, organization]) => {
+      listPrivateTextAssets(null).catch((cause) => {
+        if (active && epoch === readEpochRef.current) setTextReadError(cause instanceof Error ? cause.message : "文本模板暂时无法读取。");
+        return [];
+      }),
+    ]).then(([jobs, references, videos, audios, organization, templates]) => {
       if (!active || epoch !== readEpochRef.current) return;
       readEpochRef.current += 1;
       const names = new Map<string, string | null | undefined>(organization.arrangements.map((entry) => [`${entry.kind}:${entry.id}`, entry.displayName]));
@@ -468,6 +487,8 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
           name: names.get(`video:${item.id}`) ?? item.name, createdAt: item.uploadedAt, previewUrl: item.url, sourceUrl: item.url })),
         ...audios.map((item) => ({ id: item.id, kind: "audio" as const, media: "audio" as const,
           name: names.get(`audio:${item.id}`) ?? item.name, createdAt: item.uploadedAt, sourceUrl: item.url })),
+        ...templates.map((item) => ({ id: item.id, kind: "text" as const, media: "text" as const,
+          name: names.get(`text:${item.id}`) ?? item.name, createdAt: item.createdAt, previewText: item.previewText })),
       ].sort((left, right) => right.createdAt.localeCompare(left.createdAt));
       const generationMetadata = new Map(jobs.flatMap((job) => job.outputs.map((output) =>
         [`generated:${output.id}`, describeViewerGeneration(job.input, output)] as const)));
@@ -490,7 +511,7 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
   const activeFolder = data?.folders.find((folder) => folder.id === folderId) ?? null;
   const visibleItems = useMemo(() => selectCanvasFolderItems(data, activeFolder?.id ?? null), [data, activeFolder]);
   const readyAssetKeys = useMemo(() => new Set(data?.items.map((item) => `${item.kind}:${item.id}`) ?? []), [data]);
-  const previewMedia = visibleItems.filter((item) => item.media !== "audio").map((item) => ({
+  const previewMedia = visibleItems.filter((item) => item.media === "image" || item.media === "video").map((item) => ({
     key: `${item.kind}:${item.id}`, name: item.name, media: item.media as "image" | "video",
     previewUrl: item.previewUrl ?? item.sourceUrl ?? "",
     sourceUrl: item.sourceUrl ?? item.previewUrl ?? "", width: item.width, height: item.height,
@@ -650,6 +671,7 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
         deleteFolder: (id) => deleteAssetFolder(id, null),
         deleteGenerated: (id) => deleteAsset(id, null),
         deleteUploaded: (kind, id) => deleteUploadedAsset(kind, id, null),
+        deleteText: (id) => deletePrivateTextAsset(id, null),
       });
       setData((current) => removeCanvasLibraryEntry(current, target));
       if (target.kind === "folder" && folderId === target.id) setFolderId(null);
@@ -657,6 +679,7 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
         const key = `${target.kind}:${target.id}`;
         setImagePreview((current) => current?.selectedKey === key ? null : current);
         setVideoPreview((current) => current?.selectedKey === key ? null : current);
+        setTextPreview((current) => current?.id === target.id && target.kind === "text" ? null : current);
       }
     } catch (cause) {
       setManagementError(cause instanceof Error ? cause.message : "删除失败，请重试。");
@@ -739,7 +762,7 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
                   onDragStart={(event) => {
                     if (editing || editingKey || editingFolder || managementPendingRef.current || renamePendingRef.current || moverRef.current?.isPending() || assetDragBlockedRef.current
                       || (event.target instanceof Element && event.target.closest("[data-asset-media-control]"))) { event.preventDefault(); return; }
-                    event.dataTransfer.effectAllowed = item.media === "image" ? "copyMove" : "copy";
+                    event.dataTransfer.effectAllowed = item.media === "image" || item.media === "text" ? "copyMove" : "copy";
                     event.dataTransfer.setData(CANVAS_ASSET_DRAG_TYPE, key);
                     draggedKeyRef.current = key;
                     setDraggedKey(key);
@@ -749,9 +772,10 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
                   <AssetMedia key={`${data?.mediaRevision}:${item.previewUrl ?? ""}:${item.sourceUrl ?? ""}`}
                     item={item} editing={editing} onRename={() => beginRename(item)}
                     expandRef={(trigger) => { if (trigger) expandRefs.current.set(key, trigger); else expandRefs.current.delete(key); }}
-                    playbackEnabled={!imagePreview && !previewVideo}
+                    playbackEnabled={!imagePreview && !previewVideo && !textPreview}
                     onExpand={(trigger) => {
-                      if (item.media === "video") setVideoPreview({ selectedKey: key, returnFocusTo: trigger });
+                      if (item.media === "text") setTextPreview({ id: item.id, name: item.name });
+                      else if (item.media === "video") setVideoPreview({ selectedKey: key, returnFocusTo: trigger });
                       else setImagePreview({ selectedKey: key, returnFocusTo: trigger });
                     }}
                     refreshVideo={(signal) => refreshVideo(item, signal)} />
@@ -809,6 +833,8 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
         </form>
       </DialogContent>
     </Dialog>
+    {textReadError && <p className={styles.nameError} role="alert">{textReadError}<Button variant="ghost" size="sm" onClick={() => setRevision((value) => value + 1)}>重试</Button></p>}
+    <TextAssetViewer asset={enabled ? textPreview : null} workspaceId={null} onClose={() => setTextPreview(null)} />
     {enabled && imagePreview && <ImageViewer mode="canvas" items={previewMedia} selectedKey={imagePreview.selectedKey} returnFocusTo={imagePreview.returnFocusTo}
       renderThumbnail={(selected) => {
         const item = visibleItems.find((asset) => `${asset.kind}:${asset.id}` === selected.key);

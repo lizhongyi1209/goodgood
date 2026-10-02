@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import type { CanvasNode, CanvasTextNodeType } from "./canvas-workspace";
 import { CANVAS_MARKDOWN_MAX_LENGTH, CANVAS_TEXT_FONT_SIZE, CANVAS_TEXT_MAX_LENGTH, CANVAS_TEXT_NODE_BOUNDS, canvasTextNodeSizeForKey } from "./canvas-text-input.mjs";
 import { canvasDocumentPlainText } from "./canvas-markdown";
+import { CanvasTextQuickToolbar } from "./canvas-text-quick-toolbar";
 import styles from "./canvas-text-node.module.css";
 import workspaceStyles from "./canvas-workspace.module.css";
 
@@ -52,9 +53,9 @@ export function CanvasTextNode({ id, data, selected, width, height }: NodeProps<
   return <CanvasMarkdownNode id={id} data={data} selected={selected} width={width} height={height} label={`文本编辑 ${sequence}`} />;
 }
 
-export function CanvasMarkdownNode({ id, data, selected, width, height, label, streaming = false, showHeader = true }: {
+export function CanvasMarkdownNode({ id, data, selected, width, height, label, streaming = false, showHeader = true, templateDisabled = false }: {
   id: string; data: CanvasTextNodeData; selected?: boolean; width?: number; height?: number;
-  label: string; streaming?: boolean; showHeader?: boolean;
+  label: string; streaming?: boolean; showHeader?: boolean; templateDisabled?: boolean;
 }) {
   const flow = useReactFlow<CanvasNode>();
   const zoom = useStore((state) => state.transform[2]);
@@ -137,8 +138,9 @@ export function CanvasMarkdownNode({ id, data, selected, width, height, label, s
     editor.commands.focus();
   };
   return <>
-    <NodeToolbar isVisible={Boolean(selected && !streaming)} position={Position.Top} offset={12 + 22 * zoom}>
-      <CanvasTextFormatToolbar editor={editor} nodeId={id} enabled={canEdit} />
+    <NodeToolbar isVisible={Boolean(selected)} position={Position.Top} offset={12 + 22 * zoom}>
+      {canEdit ? <CanvasTextFormatToolbar editor={editor} nodeId={id} enabled />
+        : <CanvasTextQuickToolbar data={data} nodeId={id} disabled={streaming || templateDisabled} />}
     </NodeToolbar>
     {showHeader && <header className={`${workspaceStyles.imageMetadata} ${styles.header}`}>
       <span className={workspaceStyles.imageMetadataName}>

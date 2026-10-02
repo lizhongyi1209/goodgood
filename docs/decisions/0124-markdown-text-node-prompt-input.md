@@ -26,3 +26,4 @@ gate above with the existing per-segment API limit and ordered batch recovery.
 Project snapshots, cloud validation, local recovery, pages and canvas copy/paste preserve text nodes and edges. Existing schemaVersion1/2 and JSON storage remain; no database migration is required. Unknown node types and inappropriate fields remain rejected, and legacy documents retain their current behavior. Local Web must be rebuilt to accept the additive node fields; the generation Worker/provider contract does not change. No production deployment is authorized.
 
 Reference: [Tiptap Markdown basic usage](https://tiptap.dev/docs/editor/markdown/getting-started/basic-usage) and [React installation](https://tiptap.dev/docs/editor/getting-started/install/react).
+GG-308/ADR0133补充：选中未编辑时仅显示设置模板快捷栏，双击/键盘进入编辑才显示格式栏；设置模板将当前完整内容冻结为私有文本资产，1:1文字预览与资产复用不改变节点原Markdown/纯文本、端口和项目保存。见[ADR0133](0133-canvas-text-template-assets.md)。

@@ -1,0 +1,4 @@
+.thumbnail { display: block; position: relative; width: 100%; aspect-ratio: 1; overflow: hidden; border-radius: inherit; background: #f4f4f5; color: #3f3f46; text-align: left; }
+.thumbnail > span { position: absolute; inset: 0; display: block; overflow: hidden; padding: 14px; font-family: inherit; font-size: 12px; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
+.dialog { width: min(640px, calc(100vw - 32px)); max-height: 85dvh; }
+.content { min-height: 0; max-height: 65dvh; margin: 0; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-family: inherit; font-size: 14px; line-height: 1.7; }

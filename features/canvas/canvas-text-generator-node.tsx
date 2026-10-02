@@ -12,6 +12,7 @@ import { TextModelIcon } from "@/features/models/text-model-icon";
 import { TEXT_GENERATION_MODELS, TEXT_GENERATION_PRESETS, getTextGenerationPreset, DEFAULT_TEXT_GENERATION_MODEL, TEXT_GENERATION_CREDIT_COST, TEXT_GENERATION_CANCELLATION_CREDIT_COST, TEXT_GENERATION_MAX_PROMPT,
   TEXT_GENERATION_MAX_HISTORY, type CanvasTextGenerationDraft, type TextGenerationMessage, type TextGenerationModelId } from "@/shared/contracts/text-generation.mjs";
 import { CanvasMarkdownNode, type CanvasTextNodeData } from "./canvas-text-node";
+import { CanvasTextQuickToolbar } from "./canvas-text-quick-toolbar";
 import { canvasMarkdownPlainText } from "./canvas-markdown";
 import { canvasTextGenerationInputs } from "./canvas-text-generation-input";
 import { CanvasTextGenerationContext } from "./canvas-text-generation-context";
@@ -45,6 +46,7 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
   const [error, setError] = useState("");
   const promptRef = useRef<HTMLTextAreaElement>(null);
   const nodes = useStore((state) => state.nodes as CanvasNode[]);
+  const zoom = useStore((state) => state.transform[2]);
   const edges = useStore((state) => state.edges);
   const inputs = canvasTextGenerationInputs(nodes, edges, id);
   const sequence = Math.max(1, nodes.filter((node) => node.type === "textGenerator").findIndex((node) => node.id === id) + 1);
@@ -225,8 +227,11 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
       </span>
       {busy && <span className={styles.waiting} role="status"><LoaderCircle aria-hidden="true" />生成中</span>}
     </div>
-    {showingResult ? <CanvasMarkdownNode id={id} data={data} selected={selected} width={width} height={height} label={label} streaming={busy} showHeader={false} /> : <>
+    {showingResult ? <CanvasMarkdownNode id={id} data={data} selected={selected} width={width} height={height} label={label} streaming={busy} showHeader={false} templateDisabled={Boolean(data.textGeneration.pendingRequestId)} /> : <>
       <div className={workspaceStyles.generatorNode} role="img" aria-label={label}><FileText size={32} strokeWidth={1.35} aria-hidden="true" /></div>
+      <NodeToolbar isVisible={selected} position={Position.Top} offset={12 + 22 * zoom}>
+        <CanvasTextQuickToolbar data={data} nodeId={id} disabled />
+      </NodeToolbar>
       <Handle type="source" id="text" position={Position.Right} className={workspaceStyles.referenceOutputHandle} aria-label={`输出${label}的文本`} />
     </>}
     <Handle type="target" id="reference" position={Position.Left} className={workspaceStyles.generatorInputHandle} aria-label="接收文本、图片或视频" title="文本、图片、视频" />

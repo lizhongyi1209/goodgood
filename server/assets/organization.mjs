@@ -10,6 +10,7 @@ const ASSET_TABLES = Object.freeze({
   reference: { table: "reference_assets", condition: "upload_state='ready' AND moderation_state='accepted' AND object_deleted_at IS NULL" },
   video: { table: "video_materials", condition: "upload_state='ready'" },
   audio: { table: "audio_materials", condition: "upload_state='ready'" },
+  text: { table: "text_assets", condition: "TRUE" },
 });
 
 function ownerIdFromContext(ownerContext) {
@@ -156,7 +157,7 @@ export async function saveAssetOrganization({ kind, assetId, input, ownerContext
   try {
     await client.query("BEGIN");
     const workspace = await resolveWorkspaceAccess(client, { ownerId, workspaceId, write: true });
-    const asset = await client.query(`SELECT id FROM ${source.table} WHERE id=$1 AND workspace_id=$2 AND ${kind === "reference" ? "creator_owner_id" : kind === "generated" ? "creator_owner_id" : "owner_id"}=$3 AND ${source.condition}`, [assetId, workspace.id, ownerId]);
+    const asset = await client.query(`SELECT id FROM ${source.table} WHERE id=$1 AND workspace_id=$2 AND ${kind === "reference" ? "creator_owner_id" : kind === "generated" ? "creator_owner_id" : "owner_id"}=$3 AND ${source.condition}${kind === "text" ? " FOR SHARE" : ""}`, [assetId, workspace.id, ownerId]);
     if (!asset.rowCount) throw new AssetRequestError("ASSET_NOT_FOUND", "未找到可整理的资产。", 404);
     if (folderId) {
       const folder = await client.query(`SELECT id FROM asset_folders WHERE id=$1 AND workspace_id=$2 AND owner_id=$3`, [folderId, workspace.id, ownerId]);

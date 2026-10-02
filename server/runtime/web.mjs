@@ -21,6 +21,7 @@ import {
 } from "../auth/request-authenticator.mjs";
 import { createGenerationNodeApiHandler } from "../generation/node-api.mjs";
 import { createTextGenerationNodeApiHandler } from "../text-generation/node-api.mjs";
+import { createTextAssetNodeApiHandler } from "../text-assets/node-api.mjs";
 import { recoverExpiredTextGenerations } from "../text-generation/repository.mjs";
 import { createCreationDraftNodeApiHandler } from "../drafts/node-api.mjs";
 import { createDistributionNodeApiHandler } from "../distribution/node-api.mjs";
@@ -79,6 +80,7 @@ const handleGenerationNodeApi = createGenerationNodeApiHandler({
   authenticate,
 });
 const handleTextGenerationNodeApi = createTextGenerationNodeApiHandler({ authenticate });
+const handleTextAssetNodeApi = createTextAssetNodeApiHandler({ authenticate });
 const textRecoveryTimer = setInterval(() => {
   void recoverExpiredTextGenerations(runtimeResources.pool).catch(() => {
     console.error(JSON.stringify({ event: "text_generation.recovery_unavailable" }));
@@ -167,6 +169,7 @@ server.on("request", (request, response) => {
       handled ? true : handleAssetNodeApi(request, response),
     )
     .then((handled) => handled ? true : handleAssetOrganizationNodeApi(request, response))
+    .then((handled) => handled ? true : handleTextAssetNodeApi(request, response))
     .then((handled) => handled ? true : handleProfileNodeApi(request, response))
     .then((handled) =>
       handled ? true : handleOrganizationNodeApi(request, response),

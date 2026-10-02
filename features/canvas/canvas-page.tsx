@@ -42,6 +42,7 @@ import {
 import { findBillingQuote, readBillingSummary } from "@/features/billing/http-billing-boundary";
 import { CreditUsageDialog } from "@/features/billing/credit-usage-dialog";
 import { readAssetDownloadUrl } from "@/features/assets/http-asset-boundary";
+import { readPrivateTextAsset } from "@/features/assets/http-text-assets";
 import { createHttpGenerationBoundary } from "@/features/creation/http-generation-boundary";
 import {
   getCanvasGenerationRatioOptions,
@@ -1229,6 +1230,15 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     const position = canvasImagePositions(point, 1)[0];
     const finishPageOperation = beginPageOperation(pageId);
     try {
+      if (item.media === "text") {
+        const template = await readPrivateTextAsset(item.id, null);
+        if (!mountedRef.current) return;
+        const node: CanvasNode = { id: `text-${crypto.randomUUID()}`, type: "textEditor", position,
+          selected: true, style: { width: 360, height: 260 }, data: { markdown: template.markdown, text: template.text } };
+        captureCanvasHistory();
+        updatePageNodes(pageId, (current) => [...current.map((entry) => entry.selected ? { ...entry, selected: false } : entry), node]);
+        scheduleProjectSnapshot(true); setFormError(null); return;
+      }
       const sourceUrl = item.media === "image"
         ? privateImageUrls(item.kind === "generated" ? "asset" : "reference", item.id).previewUrl
         : item.sourceUrl ?? (item.kind === "generated" ? await readAssetDownloadUrl(item.id, null) : null);

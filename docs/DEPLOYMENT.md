@@ -1858,3 +1858,6 @@ separately reviewed host/state-service and executable release change.
   并立即验证公网 200。
 - **绝不重放** GG-091 清理、历史转换脚本或旧迁移 into 生产。
 - 一次真实生图属**单独授权**，热修不得默认调用付费 provider。
+## GG-308 待启用的文本模板资产
+
+GG-308只交付源码：新的私有文本资产API及`0063_gg308_text_template_assets.sql`未构建、迁移或重启。持久保存需后续明确委托对隔离本地状态应用0063并更新Web；不需要新Worker、provider或凭据，不动生产。可与GG-303批量项目校验/GG-306高清接口一起按后续明确任务启用。旧Web的媒体资产仍可读，文本保存明确失败而不假报成功。当前GG-300原Web/本地0062/唯一Worker的运行事实保持；不能把代码集成写成后端已启用。

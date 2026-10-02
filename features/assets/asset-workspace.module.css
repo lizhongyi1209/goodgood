@@ -62,6 +62,7 @@
 .fileMenu { min-width: 158px; border-color: #e8e8ea; border-radius: 11px; outline: none; background: white; color: var(--ink); box-shadow: 0 8px 24px rgba(20,20,22,.10); }
 .fileInfo { display: none; }
 .fileGrid .fileCard:has(.audioFrame) .fileInfo { display: block; padding: 7px 2px 2px; }
+.fileGrid .textAsset .fileInfo { display: block; padding: 7px 2px 2px; }
 .fileInfo button { width: 100%; overflow: hidden; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
 .fileGrid .fileInfo button { display: block; font-size: 11px; font-weight: 600; }
 .fileGrid .fileInfo time, .fileGrid .fileInfo small { display: none; }

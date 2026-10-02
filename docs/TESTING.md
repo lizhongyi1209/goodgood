@@ -1,5 +1,9 @@
 # GG-063 verification
 
+## GG-308 text-template regression source, not executed
+
+`tests/gg308-text-template-assets.test.mjs` uses an injected in-memory repository/HTTP boundary only, covering empty/invalid/oversized inputs, Unicode excerpts without changing full storage, immutable snapshots, identical retries and conflicting content, owner/workspace visibility, atomic organization deletion, bounded malformed HTTP bodies/failures, exact text asset folder/deletion identity and unchanged neighboring media. No database, queue or provider is attached. Existing Markdown/clipboard/project and text generation tests remain source only; per the user, no compilation, lint, tests, code/diff checks, SQL, browser/HTTP acceptance or real requests were run. User hand-checks single/double-click toolbar separation, template save/full content, square clipping and drag reuse after separately enabling Web/0063.
+
 ## GG-305 parameter regression source, not executed
 
 GG-307 updates the existing high-thinking Nano Banana 2 assertion to require that thinking is absent while used search, references and image line remain. This regression source was edited only; no compilation, tests, code/diff checks or browser acceptance were run.

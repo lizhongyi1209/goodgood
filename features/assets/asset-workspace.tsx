@@ -20,10 +20,13 @@ import { uploadPrivateAudioMaterial, type PrivateAudioMaterial } from "@/feature
 import { createAssetFolder, deleteAssetFolder, listAssetOrganization, renameAssetFolder, saveAssetOrganization, type AssetArrangement, type AssetFolder, type OrganizedAssetKind } from "@/features/assets/http-asset-organization";
 import { deleteAsset, deleteUploadedAsset, readAssetDownloadUrl } from "@/features/assets/http-asset-boundary";
 import { ImageDownloadError, saveImageToLocal } from "@/features/assets/image-download";
+import { listPrivateTextAssets, deletePrivateTextAsset, downloadPrivateTextAsset, type TextAssetSummary } from "./http-text-assets";
+import { TextAssetThumbnail, TextAssetViewer } from "./text-asset-preview";
+import { TEXT_ASSETS_UPDATED_EVENT } from "@/shared/contracts/text-assets.mjs";
 import { PRIVATE_AUDIO_UPLOAD_MAX_BYTES, PRIVATE_IMAGE_UPLOAD_MAX_BYTES, PRIVATE_VIDEO_UPLOAD_MAX_BYTES } from "@/shared/contracts/upload-limits.mjs";
 import styles from "./asset-workspace.module.css";
 
-type Media = "image" | "video" | "audio";
+type Media = "image" | "video" | "audio" | "text";
 type Filter = "all" | Media;
 type SourceFilter = "all" | "uploaded" | "generated";
 type ViewMode = "grid" | "list";
@@ -35,6 +38,7 @@ type LibraryItem = Readonly<{
   id: string; kind: OrganizedAssetKind; media: Media; name: string; createdAt: string;
   previewUrl?: string; url?: string; size?: number; detailKey?: string;
   width?: number; height?: number; ordinal?: number;
+  previewText?: string;
 }>;
 type ArrangementLookup = ReadonlyMap<string, AssetArrangement>;
 type UploadRow = Readonly<{ id: string; file: File; state: "waiting" | "uploading" | "ready" | "failed"; message?: string }>;
@@ -62,6 +66,7 @@ type Props = Readonly<{
 const mediaFilters: readonly Readonly<{ id: Filter; label: string }>[] = [
   { id: "all", label: "全部" }, { id: "image", label: "图片" },
   { id: "video", label: "视频" }, { id: "audio", label: "音频" },
+  { id: "text", label: "文本" },
 ];
 
 export function filterAssetFiles(items: readonly LibraryItem[], arrangements: ArrangementLookup,
@@ -72,7 +77,7 @@ export function filterAssetFiles(items: readonly LibraryItem[], arrangements: Ar
     return (!folderId || arrangement?.folderId === folderId) &&
       (!query || item.name.toLocaleLowerCase().includes(query)) &&
       (media === "all" || item.media === media) &&
-      (source === "all" || (source === "generated" ? item.kind === "generated" : item.kind !== "generated"));
+      (source === "all" || (source === "generated" ? item.kind === "generated" : ["reference", "video", "audio"].includes(item.kind)));
   });
 }
 
@@ -165,6 +170,10 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
   const [folderDialogError, setFolderDialogError] = useState<string | null>(null);
   const [preview, setPreview] = useState<{ name: string; url: string; media: Media } | null>(null);
   const [imagePreview, setImagePreview] = useState<Readonly<{ selectedKey: string; returnFocusTo: HTMLElement }> | null>(null);
+  const [textPreview, setTextPreview] = useState<Readonly<{ id: string; name: string }> | null>(null);
+  const [templates, setTemplates] = useState<readonly TextAssetSummary[]>([]);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [templatesError, setTemplatesError] = useState<string | null>(null);
   const [quickRows, setQuickRows] = useState<readonly UploadRow[]>([]);
   const [quickUploadFolderId, setQuickUploadFolderId] = useState<string | null>(null);
   const [quickUploading, setQuickUploading] = useState(false);
@@ -186,6 +195,23 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
     return () => { cancelled = true; };
   }, [enabled, workspaceId, revision]);
 
+  useEffect(() => {
+    let active = true; setTemplates([]); setTemplatesError(null);
+    if (!enabled) { setTemplatesLoading(false); return; }
+    setTemplatesLoading(true);
+    void listPrivateTextAssets(workspaceId).then((items) => { if (active) setTemplates(items); })
+      .catch((cause) => { if (active) setTemplatesError(cause instanceof Error ? cause.message : "文本模板读取失败。"); })
+      .finally(() => { if (active) setTemplatesLoading(false); });
+    return () => { active = false; };
+  }, [enabled, workspaceId, revision]);
+  useEffect(() => {
+    const changed = (event: Event) => {
+      if (!(event instanceof CustomEvent) || event.detail?.workspaceId === workspaceId) setRevision((value) => value + 1);
+    };
+    window.addEventListener(TEXT_ASSETS_UPDATED_EVENT, changed);
+    return () => window.removeEventListener(TEXT_ASSETS_UPDATED_EVENT, changed);
+  }, [workspaceId]);
+
   const displayNames = useMemo(() => new Map(organization.arrangements
     .filter((entry) => entry.displayName)
     .map((entry) => [`${entry.kind}:${entry.id}`, entry.displayName!])), [organization.arrangements]);
@@ -200,7 +226,9 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
       name: displayNames.get(`video:${item.id}`) ?? item.name, createdAt: item.uploadedAt, url: item.url, size: item.size })),
     ...audios.map((item) => ({ id: item.id, kind: "audio" as const, media: "audio" as const,
       name: displayNames.get(`audio:${item.id}`) ?? item.name, createdAt: item.uploadedAt, url: item.url, size: item.size })),
-  ].sort((a, b) => b.createdAt.localeCompare(a.createdAt)), [generated, references, videos, audios, displayNames]);
+    ...(enabled ? templates : []).map((item) => ({ id: item.id, kind: "text" as const, media: "text" as const,
+      name: displayNames.get(`text:${item.id}`) ?? item.name, createdAt: item.createdAt, previewText: item.previewText })),
+  ].sort((a, b) => b.createdAt.localeCompare(a.createdAt)), [generated, references, videos, audios, templates, enabled, displayNames]);
   const arrangements = useMemo(() => new Map(organization.arrangements.map((entry) => [`${entry.kind}:${entry.id}`, entry])), [organization]);
   const visible = filterAssetFiles(items, arrangements, folderId, search, filter, sourceFilter);
   const previewImages = visible.filter((item) => item.kind === "reference" && item.media === "image" && item.url).map((item) => ({
@@ -216,7 +244,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
   const activeFolder = organization.folders.find((item) => item.id === folderId);
   const quickReadyCount = quickRows.filter((row) => row.state === "ready").length;
   const quickFailedRows = quickRows.filter((row) => row.state === "failed");
-  const loading = historyLoading || libraryLoading;
+  const loading = historyLoading || libraryLoading || templatesLoading;
   const error = historyError ?? libraryError;
 
   useLayoutEffect(() => {
@@ -272,6 +300,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
   }, [selectedKeys.length, selectedFolderIds.length]);
 
   async function downloadItem(item: LibraryItem) {
+    if (item.kind === "text") { await downloadPrivateTextAsset(item.id, item.name, workspaceId); return; }
     if (item.kind === "generated") {
       await saveImageToLocal(
         { assetId: item.id, createdAt: item.createdAt, ordinal: item.ordinal ?? 1, previewUrl: item.previewUrl! },
@@ -314,6 +343,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
     try {
       for (const item of targets) {
         if (item.kind === "generated") await deleteAsset(item.id, workspaceId);
+        else if (item.kind === "text") { await deletePrivateTextAsset(item.id, workspaceId); setTemplates((current) => current.filter((entry) => entry.id !== item.id)); }
         else await deleteUploadedAsset(item.kind, item.id, workspaceId);
         setSelectedKeys((current) => current.filter((key) => key !== `${item.kind}:${item.id}`));
         if (item.kind === "generated") await onDeleteGenerated(item.id);
@@ -473,6 +503,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
   }
 
   function openItem(item: LibraryItem, trigger: HTMLButtonElement) {
+    if (item.kind === "text") { setTextPreview({ id: item.id, name: item.name }); return; }
     if (item.detailKey) { onOpenGenerated(item.detailKey); return; }
     if (item.media === "image" && item.url) { setImagePreview({ selectedKey: `${item.kind}:${item.id}`, returnFocusTo: trigger }); return; }
     if (item.url) setPreview({ name: item.name, url: item.url, media: item.media });
@@ -483,7 +514,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
       <DropdownMenuTrigger asChild><button className={styles.moreButton} aria-label={`${item.name} 的更多操作`} title="更多操作" disabled={busy}><MoreHorizontal size={19}/></button></DropdownMenuTrigger>
       <DropdownMenuContent align="end" className={styles.fileMenu}>
         <DropdownMenuItem onSelect={() => void downloadItems([item])}><Download size={16}/>下载</DropdownMenuItem>
-        {item.kind !== "generated" && <DropdownMenuItem onSelect={() => applyItemToCreation(item)}><Plus size={16}/>用于创作</DropdownMenuItem>}
+        {item.kind !== "generated" && item.kind !== "text" && <DropdownMenuItem onSelect={() => applyItemToCreation(item)}><Plus size={16}/>用于创作</DropdownMenuItem>}
         <DropdownMenuSub><DropdownMenuSubTrigger><Folder size={16}/>移动到</DropdownMenuSubTrigger><DropdownMenuSubContent className={styles.fileMenu}>
           <DropdownMenuItem onSelect={() => void moveItems([item], null)}>未分类</DropdownMenuItem>
           {organization.folders.map((folder) => <DropdownMenuItem key={folder.id} onSelect={() => void moveItems([item], folder.id)}>{folder.name}</DropdownMenuItem>)}
@@ -515,13 +546,15 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
     const selected = selectedKeys.includes(key);
     const listMode = viewMode === "list";
     const aspectRatio = item.width && item.height ? `${item.width} / ${item.height}` : undefined;
-    return <article className={`${styles.fileCard} ${selected ? styles.isSelected : ""} ${selectedKeys.length ? styles.listSelecting : ""}`} key={key}>
+    return <article className={`${styles.fileCard} ${item.media === "text" ? styles.textAsset : ""} ${selected ? styles.isSelected : ""} ${selectedKeys.length ? styles.listSelecting : ""}`} key={key}>
       {listMode && <Checkbox className={styles.listSelect} checked={selected} aria-label={`${selected ? "取消选择" : "选择"} ${item.name}`} disabled={busy} onCheckedChange={() => toggleSelection(item)}/>}
       <div className={styles.fileVisual}>
-        {item.media === "image" ? <button className={styles.mediaFrame} style={{ aspectRatio }} onClick={(event) => openItem(item, event.currentTarget)} aria-label={`查看 ${item.name}`}>
+        {item.media === "text" ? <button className={styles.mediaFrame} style={{ aspectRatio: 1 }} onClick={(event) => openItem(item, event.currentTarget)} aria-label={`查看文本模板 ${item.name}`}>
+          <TextAssetThumbnail text={item.previewText ?? ""}/>
+        </button> : item.media === "image" ? <button className={styles.mediaFrame} style={{ aspectRatio }} onClick={(event) => openItem(item, event.currentTarget)} aria-label={`查看 ${item.name}`}>
           <PrivateObjectImage src={item.previewUrl!} alt={item.name}/>
         </button> : item.media === "video" ? <button className={styles.mediaFrame} onClick={(event) => openItem(item, event.currentTarget)} aria-label={`查看 ${item.name}`}>
-          <VideoTilePreview url={item.url} enabled={enabled && !busy && !preview && !imagePreview && !folderDialogOpen}/>
+          <VideoTilePreview url={item.url} enabled={enabled && !busy && !preview && !imagePreview && !textPreview && !folderDialogOpen}/>
         </button> : <button className={styles.audioFrame} onClick={(event) => openItem(item, event.currentTarget)} aria-label={`播放 ${item.name}`}><AudioLines size={30}/></button>}
         {!listMode && renderFileMenu(item)}
         {!listMode && <Checkbox className={styles.selectButton} checked={selected} aria-label={`${selected ? "取消选择" : "选择"} ${item.name}`} title={selected ? "取消选择" : "选择"} disabled={busy} onCheckedChange={() => toggleSelection(item)}/>}
@@ -557,7 +590,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
     {!activeFolder && <div className={styles.filters} role="group" aria-label="资产类型">
       {mediaFilters.map((choice) => <button key={choice.id} className={filter === choice.id ? styles.selectedFilter : ""} aria-pressed={filter === choice.id} onClick={() => { setFilter(choice.id); setSelectedKeys([]); setSelectedFolderIds([]); }}>{choice.label}</button>)}
     </div>}
-    {(error || organizationError || actionError) && <div className={styles.error} role="alert"><CircleAlert size={16}/>{actionError ?? error ?? organizationError}<button onClick={() => { setActionError(null); onRetry(); setRevision((current) => current + 1); }}><RefreshCw size={14}/>重试</button></div>}
+    {(error || organizationError || actionError || templatesError) && <div className={styles.error} role="alert"><CircleAlert size={16}/>{actionError ?? error ?? organizationError ?? templatesError}<button onClick={() => { setActionError(null); onRetry(); setRevision((current) => current + 1); }}><RefreshCw size={14}/>重试</button></div>}
     {(loading || organizationLoading) && <div className={styles.state} role="status"><LoaderCircle className={styles.spinner} size={18}/>正在读取资产</div>}
     {!loading && !organizationLoading && viewMode === "grid" && rootFolders.length > 0 && <section className={styles.folderSection} aria-label="文件夹"><h2>文件夹</h2>
       <div className={styles.folders}>{rootFolders.map((folder) => {
@@ -607,6 +640,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
         <div className={styles.folderDialogActions}><Button type="button" variant="secondary" disabled={busy} onClick={() => setFolderDialogOpen(false)}>取消</Button><Button type="submit" disabled={busy || !newFolderName.trim()}>{busy ? editingFolderId ? "保存中…" : "创建中…" : editingFolderId ? "保存" : "创建"}</Button></div>
       </form>
     </DialogContent></Dialog>
+    <TextAssetViewer asset={enabled ? textPreview : null} workspaceId={workspaceId} onClose={() => setTextPreview(null)}/>
     {imagePreview && <ImageViewer items={previewImages} selectedKey={imagePreview.selectedKey} returnFocusTo={imagePreview.returnFocusTo}
       onSelect={(selectedKey) => setImagePreview((current) => current && ({ ...current, selectedKey }))} onClose={() => setImagePreview(null)} />}
     <Dialog open={Boolean(preview)} onOpenChange={(open) => { if (!open) setPreview(null); }}><DialogPortal><DialogOverlay/><DialogPrimitive.Content className={styles.previewDialog} aria-describedby="asset-preview-description"><DialogTitle>{preview?.name ?? "文件预览"}</DialogTitle><DialogDescription id="asset-preview-description">已上传文件预览</DialogDescription>{preview?.media === "video" && <video src={preview.url} controls autoPlay aria-label={preview.name}/>} {preview?.media === "audio" && <audio src={preview.url} controls autoPlay aria-label={preview.name}/>}<button onClick={() => setPreview(null)}>关闭</button></DialogPrimitive.Content></DialogPortal></Dialog>

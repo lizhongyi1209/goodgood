@@ -13,13 +13,13 @@ export function selectCanvasFolderItems(data, folderId = null) {
   });
 }
 
-// Resolve only an image in the already authorized panel collection. The drag
+// Resolve an image or text template in the already authorized panel collection. The drag
 // payload identifies it; it never supplies a folder, URL, name or tags to save.
 export function planCanvasFolderMove(data, key, folderId) {
   if (!data || typeof key !== "string" || typeof folderId !== "string") return null;
   const folder = data.folders.find((entry) => entry.id === folderId);
   const item = data.items.find((entry) => `${entry.kind}:${entry.id}` === key);
-  if (!folder || !item || item.media !== "image" || !["generated", "reference"].includes(item.kind)) return null;
+  if (!folder || !item || !(item.media === "image" && ["generated", "reference"].includes(item.kind) || item.media === "text" && item.kind === "text")) return null;
   const arrangement = data.arrangements.find((entry) => entry.kind === item.kind && entry.id === item.id);
   if (arrangement?.folderId === folderId) return null;
   return { key, kind: item.kind, id: item.id, folderId, folderName: folder.name, tags: [...(arrangement?.tags ?? [])] };

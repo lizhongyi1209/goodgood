@@ -1,7 +1,7 @@
 import { goodGoodApiFetch } from "@/features/auth/http-auth-boundary";
 import { workspaceRequestHeaders } from "@/features/organizations/workspace-request";
 
-export type OrganizedAssetKind = "generated" | "reference" | "video" | "audio";
+export type OrganizedAssetKind = "generated" | "reference" | "video" | "audio" | "text";
 export type AssetFolder = Readonly<{ id: string; name: string; createdAt: string }>;
 export type AssetArrangement = Readonly<{ kind: OrganizedAssetKind; id: string; folderId: string | null; tags: readonly string[]; displayName?: string | null }>;
 export type AssetOrganization = Readonly<{ folders: readonly AssetFolder[]; arrangements: readonly AssetArrangement[] }>;

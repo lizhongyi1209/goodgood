@@ -12,7 +12,7 @@ export function selectCanvasFolderItems<T extends CanvasFolderDropData["items"][
 ): T[];
 export type CanvasFolderMovePlan = Readonly<{
   key: string;
-  kind: "generated" | "reference";
+  kind: "generated" | "reference" | "text";
   id: string;
   folderId: string;
   folderName: string;
@@ -30,7 +30,7 @@ export type CanvasFolderMover = Readonly<{
 }>;
 export function createCanvasFolderMover(options: Readonly<{
   readData: () => CanvasFolderDropData | null;
-  save: (kind: "generated" | "reference", id: string, value: Readonly<{ folderId: string; tags: readonly string[] }>) => Promise<AssetArrangement>;
+  save: (kind: "generated" | "reference" | "text", id: string, value: Readonly<{ folderId: string; tags: readonly string[] }>) => Promise<AssetArrangement>;
   onSaved: (saved: AssetArrangement) => void;
   onState: (state: CanvasFolderMoveState) => void;
 }>): CanvasFolderMover;
