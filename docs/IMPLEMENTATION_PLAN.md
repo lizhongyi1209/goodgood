@@ -100,7 +100,7 @@ GG-291停止收尾保护同属当前构建：完成后仍在打字时以服务�
 - 生产身份继续为 revision `7888554a4650b1b06dbce4293c52e8c018e5c71b`、迁移 `0044_gg098_raise_manual_grant_ceiling.sql`，详见 [CURRENT_STATE](CURRENT_STATE.md)。GG-239 未部署。
 - 生产入口仍为 `https://goodgood.o1key.com`，预发布入口为 `https://staging-goodgood.o1key.com`；本地 5173、开发数据库与生产数据继续严格隔离。
 - 早期生产实施流水保存在 [2026-09-07 implementation log](history/2026-09-07-implementation-log.md)，仅在追溯历史时读取。
-- Next action: 用户刷新5173手动检查GG-275外置标题/尺寸柄/固定字号/精简工具栏与GG-276图片预览；新需求从当前HEAD继续开发，不自动编译/检查。免费政策明确后再开发quota，生产另获授权。
+- Next action: 用户刷新5173手验GG-297预设菜单/标签/附加草稿保留；实际预设及GG-296中断10规则待委托应用新0062并构建Web启用。新需求从当前HEAD继续开发，默认不自动编译/检查；免费政策与生产授权另列。
 - Blockers: 本地启动无阻塞；免费政策仍缺每日数量和适用模型/规格，浏览器验收由用户负责，生产未获授权。
 
 ## Verification sequence
