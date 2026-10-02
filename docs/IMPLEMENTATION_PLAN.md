@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-02
-- Current phase: GG-305画布资产大图参数筛选源码5a4fb15已精确接入GG-116/5173；按模型支持及生成时使用状态显示，隐藏跨模型默认项和未使用的可选参数，预设不处理。创建1/退役1，回归来源只写未执行，无编译/验证、后端/服务或生产变化，GG-304/GG-303及GG-300运行保持。
-- Current objective: 用户刷新手验画布资产大图参数：Banana/Seedream无GPT专属项、未启用搜索/空参考图隐藏，GPT适用记录值保留；前序批量/拖线仍由用户验收，GG-303云端批量保存待用户更新Web。不自动编译/验证或运行真实请求。
-- Previous objective: GG-304拖线亮色流动源码0ad78b0已接入，1387b4c记录未验证交付；GG-303批量源码与待更新Web、GG-302排查及GG-300运行保持。
+- Current phase: GG-307隐藏Banana 2大图思考参数源码ebd8ace已精确接入GG-116/5173，high记录也隐藏，生成请求/快照及其余GG-305参数规则保持；创建1/退役1，未编译/验证，无后端/服务或生产变化，GG-306并行工作区与前序源码/运行保持。
+- Current objective: 用户刷新手验画布资产大图，Banana 2思考始终隐藏；前序参数筛选、批量/拖线仍由用户验收，GG-303云端批量保存待用户更新Web。不自动编译/验证或运行真实请求。
+- Previous objective: GG-305参数筛选源码5a4fb15已接入，09dbe13记录未验证交付；GG-304/GG-303、GG-302排查及GG-300运行保持。
 
 ## Current checkpoint
+
+- 当前修正 [GG-307](tasks/GG-307-hide-banana-thinking-details.md)：基于09dbe13，登记e3fdb6d后隔离0e6d4f2精确接入ebd8ace；移除详情中的思考条目，包括Nano Banana 2 high记录。先补ADR0123覆盖GG-305的高思考显示规则，仅改展示/既有回归断言，生成请求/快照和其他参数保持。创建1/退役1，未编译/验证或运行变化，用户刷新手验；GG-306独立工作区保持。
 
 - 当前修复 [GG-305](tasks/GG-305-canvas-viewer-used-parameters.md)：基于1387b4c，登记ea78337后隔离167e864精确接入5a4fb15；详情参数按图片对应job.input、模型能力与provider发送条件筛选，Banana/Seedream无GPT专属项，空参考图/未开启搜索及低思考占位隐藏，GPT有效记录值和具体型号质量范围保留。仅元数据组装/回归来源与ADR0123细则，无生成/存储/后端/布局变化；用户确认预设暂不处理。创建1/退役1，未编译/验证或运行变化，用户刷新手验。
 
