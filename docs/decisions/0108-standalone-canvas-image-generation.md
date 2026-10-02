@@ -285,3 +285,15 @@ The operator replaces the canvas asset panel hover/focus preview with an explici
 ## GG-257 addendum · connected-edge flow only on hover (2026-10-01)
 
 The operator replaces GG-171's continuously flowing completed reference edges with stationary solid lines at rest. Enable the existing restrained dash flow only while the edge or its scissors control is hovered, using GG-206's shared transient hover marker. Leaving both restores the solid line immediately. Under reduced-motion preference, keep the line stationary and solid even during hover. Preserve GG-200's hover color, Bézier geometry, stroke width, hit area, one-second scissors delay and reference-disconnect behavior. This is a CSS-only refinement with no graph, persistence, upload, generation, billing or production change; code review is agent-owned and browser acceptance remains with the operator.
+
+## GG-304 addendum · active drag previews reuse hovered-edge styling (2026-10-02)
+
+While a user drags a connection from a canvas node port, the temporary connection
+preview uses the same `#1687ff` bright blue and `7 4`/1.3-second linear dash flow
+as a hovered completed edge. Extend the existing shared CSS rules to the preview
+path, preserving its Bézier curvature0.18, stroke width1.2 and React Flow lifecycle.
+Under reduced motion, retain the bright color with a stationary solid preview.
+Completed edges retain GG-257's default gray solid/hover flow states and scissors
+behavior. This supersedes the earlier gray/static drag-preview presentation only;
+no connection validation, graph/persistence, backend or runtime change. Per the
+user's code-only agreement, no compilation, checks or browser acceptance run.

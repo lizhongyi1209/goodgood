@@ -61,12 +61,14 @@
   transition: stroke 120ms ease;
 }
 .canvas :global(.react-flow__edge:hover .react-flow__edge-path),
-.canvas :global(.react-flow__edge[data-canvas-edge-hovered="true"] .react-flow__edge-path) {
+.canvas :global(.react-flow__edge[data-canvas-edge-hovered="true"] .react-flow__edge-path),
+.canvas :global(.react-flow__connection-path) {
   stroke: #1687ff !important;
 }
 @media (prefers-reduced-motion: no-preference) {
   .canvas :global(.react-flow__edge.animated:hover .react-flow__edge-path),
-  .canvas :global(.react-flow__edge.animated[data-canvas-edge-hovered="true"] .react-flow__edge-path) {
+  .canvas :global(.react-flow__edge.animated[data-canvas-edge-hovered="true"] .react-flow__edge-path),
+  .canvas :global(.react-flow__connection-path) {
     stroke-dasharray: 7 4;
     animation: referenceEdgeFlow 1.3s linear infinite;
   }
@@ -92,7 +94,8 @@
 .edgeDelete[data-slot="button"]:focus-visible { outline: 2px solid #18181b; outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) {
   .canvas :global(.react-flow__edge .react-flow__edge-path) { transition: none; }
-  .canvas :global(.react-flow__edge.animated .react-flow__edge-path) { animation: none; stroke-dasharray: none; }
+  .canvas :global(.react-flow__edge.animated .react-flow__edge-path),
+  .canvas :global(.react-flow__connection-path) { animation: none; stroke-dasharray: none; }
 }
 
 .canvasContextMenu[data-slot="context-menu-content"] {
