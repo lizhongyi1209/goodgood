@@ -5,7 +5,7 @@ import { AudioLines, Check, ChevronLeft, Folder, FolderOpen, ImageOff, Maximize2
 
 import { Button } from "@/components/ui/button";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -769,18 +769,24 @@ export function CanvasAssetPanel({ enabled, assetRevision, onClose, onAssetDragS
           </div>
         </ScrollArea>}
     <Dialog open={Boolean(editingFolder)} onOpenChange={(open) => { if (!open && !managementPendingRef.current) setEditingFolder(null); }}>
-      <DialogContent className={styles.folderNameDialog} showCloseButton={false}
+      <DialogContent className={styles.folderNameDialog} overlayClassName={styles.folderNameOverlay} showCloseButton={false}
         onEscapeKeyDown={(event) => { if (managementPendingRef.current) event.preventDefault(); }}
         onInteractOutside={(event) => { if (managementPendingRef.current) event.preventDefault(); }}>
-        <DialogTitle>重命名文件夹</DialogTitle>
-        <DialogDescription className="sr-only">修改文件夹名称，最多64个字符。取消保留原名称。</DialogDescription>
-        <form onSubmit={(event) => { event.preventDefault(); void saveFolderName(); }}>
-          <Input autoFocus aria-label="文件夹名称" maxLength={64} value={folderNameDraft} disabled={managing}
-            aria-invalid={Boolean(folderNameError)} onFocus={(event) => event.currentTarget.select()}
-            onChange={(event) => { setFolderNameDraft(event.target.value); setFolderNameError(null); }} />
-          {folderNameError && <p className={styles.nameError} role="alert">{folderNameError}</p>}
+        <DialogHeader className={styles.folderNameHeader}>
+          <DialogTitle className={styles.folderNameTitle}>重命名文件夹</DialogTitle>
+          <DialogDescription className="sr-only">修改文件夹名称，最多64个字符。取消保留原名称。</DialogDescription>
+        </DialogHeader>
+        <form className={styles.folderNameForm} onSubmit={(event) => { event.preventDefault(); void saveFolderName(); }}>
+          <label className={styles.folderNameField} htmlFor="canvas-folder-name">
+            <span>文件夹名称</span>
+            <Input id="canvas-folder-name" className={styles.folderNameInput} autoFocus maxLength={64} value={folderNameDraft} disabled={managing}
+              aria-invalid={Boolean(folderNameError)} aria-describedby={folderNameError ? "canvas-folder-name-error" : undefined}
+              onFocus={(event) => event.currentTarget.select()}
+              onChange={(event) => { setFolderNameDraft(event.target.value); setFolderNameError(null); }} />
+          </label>
+          {folderNameError && <p id="canvas-folder-name-error" className={styles.nameError} role="alert">{folderNameError}</p>}
           <div className={styles.folderNameActions}>
-            <Button type="button" variant="ghost" size="sm" disabled={managing} onClick={() => setEditingFolder(null)}>取消</Button>
+            <Button type="button" variant="secondary" size="sm" disabled={managing} onClick={() => setEditingFolder(null)}>取消</Button>
             <Button type="submit" size="sm" disabled={managing || !folderNameDraft.trim()}>{managing ? "保存中…" : "保存"}</Button>
           </div>
         </form>
