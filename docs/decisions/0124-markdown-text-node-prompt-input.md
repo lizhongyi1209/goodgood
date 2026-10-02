@@ -14,6 +14,8 @@ GG-273 editor presentation uses a visible document header, padded writing surfac
 
 [GG-275](../tasks/GG-275-text-editor-layout.md) supersedes the document chrome and resize presentation: use the image generator's external metadata row, a quiet rounded writing surface and a visible lower-right double-diagonal resize grip, with no internal header/status footer. The grip freely resizes width and height, supports keyboard and touch, and never changes text sizes or prompt content. The screenshot supplies layout and grip geometry; GoodGood retains its white achromatic palette. Existing text ports, prompt composition, persisted Markdown and bounds remain.
 
+[GG-290](../tasks/GG-290-canvas-text-editor-order.md) adds consecutive text-editor numbers to the external title and accessible editing label. Numbers follow text-node order within the current page, starting at 1; new/copied nodes append and deletion closes gaps. Existing persisted node order preserves the display on reopen, including legacy projects, without adding a stored field or changing prompt order.
+
 Project snapshots, cloud validation, local recovery, pages and canvas copy/paste preserve text nodes and edges. Existing schemaVersion1/2 and JSON storage remain; no database migration is required. Unknown node types and inappropriate fields remain rejected, and legacy documents retain their current behavior. Local Web must be rebuilt to accept the additive node fields; the generation Worker/provider contract does not change. No production deployment is authorized.
 
 Reference: [Tiptap Markdown basic usage](https://tiptap.dev/docs/editor/markdown/getting-started/basic-usage) and [React installation](https://tiptap.dev/docs/editor/getting-started/install/react).

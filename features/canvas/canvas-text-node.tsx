@@ -48,6 +48,7 @@ export function CanvasTextFormatToolbar({ editor }: { editor: Editor | null }) {
 export function CanvasTextNode({ id, data, selected, width, height }: NodeProps<CanvasTextNodeType>) {
   const flow = useReactFlow<CanvasNode>();
   const zoom = useStore((state) => state.transform[2]);
+  const sequence = useStore((state) => Math.max(1, state.nodes.filter((node) => node.type === "textEditor").findIndex((node) => node.id === id) + 1));
   const [error, setError] = useState("");
   const editorRef = useRef<Editor | null>(null);
   const limit = useMemo(() => Extension.create({
@@ -68,7 +69,7 @@ export function CanvasTextNode({ id, data, selected, width, height }: NodeProps<
     contentType: "markdown",
     immediatelyRender: false,
     editorProps: {
-      attributes: { "aria-label": "文本编辑器内容", "aria-multiline": "true", role: "textbox", spellcheck: "false" },
+      attributes: { "aria-label": `文本编辑器 ${sequence} 内容`, "aria-multiline": "true", role: "textbox", spellcheck: "false" },
       handlePaste(view, event) {
         const text = event.clipboardData?.getData("text/plain");
         if (!text || event.clipboardData?.getData("text/html") || view.state.selection.$from.parent.type.spec.code) return false;
@@ -99,7 +100,7 @@ export function CanvasTextNode({ id, data, selected, width, height }: NodeProps<
     </NodeToolbar>
     <header className={`${workspaceStyles.imageMetadata} ${styles.header}`}>
       <span className={workspaceStyles.imageMetadataName}>
-        <FileText size={12} strokeWidth={1.5} aria-hidden="true" /><span className={workspaceStyles.imageMetadataNameText}>文本编辑器</span>
+        <FileText size={12} strokeWidth={1.5} aria-hidden="true" /><span className={workspaceStyles.imageMetadataNameText}>文本编辑器 {sequence}</span>
       </span>
     </header>
     <div className={`${styles.node} ${selected ? styles.selected : ""}`} style={{ fontSize: CANVAS_TEXT_FONT_SIZE }}>
