@@ -4,6 +4,7 @@
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
+| GG-312 | 开发中：画布缩放达到300%才允许最高2K预览，低于300%保持512，节点尺寸/像素密度不提前触发；无自动编译/检查 | [任务](tasks/GG-312-canvas-preview-zoom-threshold.md) |
 | GG-311 | 已接入5173源码6e089c3：保存提示词模板/名称/保存，无弹窗预览；成功资产入口动效，右上类型筛选及空结果恢复；创建1/退役1，未编译或验证，无运行变化 | [任务](tasks/GG-311-prompt-template-save-and-asset-filter.md) |
 | GG-310 | 已接入5173源码c3ba0d2：模板弹窗说明仅无障碍可读，取消深色字/保存及保存中白色字；创建1/退役1，未编译或验证，无运行变化，用户手验 | [任务](tasks/GG-310-text-template-dialog-copy-color.md) |
 | GG-309 | 本地verified 287c4ca/Web40244/必要0063已启用最高2K预览、批量校验及文本资产API；创建2/退役2，原Vite/唯一Worker和数据保持，用户手验 | [任务](tasks/GG-309-canvas-preview-activation.md) |
