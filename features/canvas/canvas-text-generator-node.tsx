@@ -53,7 +53,6 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
   const label = `文本生成 ${sequence}`;
   const currentPreset = getTextGenerationPreset(data.textGeneration.presetId);
   const screenLeft = useStore((state) => (state.nodeLookup.get(id)?.internals.positionAbsolute.x ?? 0) * state.transform[2] + state.transform[0]);
-  const zoom = useStore((state) => state.transform[2]);
   const viewportWidth = useStore((state) => state.width);
   const nodeWidth = width ?? 238;
   const visibleLeft = typeof document === "undefined" ? 0 : document.getElementById("canvas-asset-sidebar")?.getBoundingClientRect().right ?? 0;
