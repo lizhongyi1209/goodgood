@@ -1,4 +1,4 @@
-import type { CSSProperties, ImgHTMLAttributes } from "react";
+import type { CSSProperties, ImgHTMLAttributes, Ref } from "react";
 
 type PrivateObjectImageProps = Readonly<{
   alt: string;
@@ -6,7 +6,8 @@ type PrivateObjectImageProps = Readonly<{
   loading?: ImgHTMLAttributes<HTMLImageElement>["loading"];
   onLoad?: ImgHTMLAttributes<HTMLImageElement>["onLoad"];
   onError?: ImgHTMLAttributes<HTMLImageElement>["onError"];
-  src: string;
+  src: string | undefined;
+  ref?: Ref<HTMLImageElement>;
   style?: CSSProperties;
 }>;
 
@@ -22,12 +23,14 @@ export function PrivateObjectImage({
   onLoad,
   onError,
   src,
+  ref,
   style,
 }: PrivateObjectImageProps) {
   return (
     // A native image is intentional for local blobs and expiring signatures.
     // eslint-disable-next-line @next/next/no-img-element
     <img
+      ref={ref}
       alt={alt}
       className={className}
       decoding="async"

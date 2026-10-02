@@ -31,6 +31,7 @@ import { CanvasTextNode, type CanvasTextNodeData } from "./canvas-text-node";
 import { CanvasTextGeneratorNode, type CanvasTextGeneratorNodeData } from "./canvas-text-generator-node";
 import { CanvasTextGenerationContext, type CanvasTextGenerationContextValue } from "./canvas-text-generation-context";
 import { CanvasGeneratorHostContext } from "./canvas-generator-host";
+import { CanvasImagePreviewProvider } from "./canvas-adaptive-image";
 import { CanvasSelectionControls } from "./canvas-selection-controls";
 import { CanvasImageCropContext, CanvasImageCropEditor } from "./canvas-image-crop";
 import type { CanvasCropCommit, CanvasCropRequest } from "./canvas-image-crop-image";
@@ -438,6 +439,7 @@ export function CanvasWorkspace({
         onMouseLeave={hideEdgeDelete}>
       <CanvasGeneratorHostContext.Provider value={onComposerHostChange}>
       <CanvasTextGenerationContext.Provider value={textGenerationContext}>
+      <CanvasImagePreviewProvider ownerKey={textGenerationContext.ownerKey}>
       <CanvasImageCropContext.Provider value={{ request: visibleCropRequest, openCrop: (image) => {
         if (cropEnabled) setCropRequest({ ...image, pageId: cropPageId, sessionId: crypto.randomUUID() });
       } }}>
@@ -558,6 +560,7 @@ export function CanvasWorkspace({
         />
       </ReactFlow>
       </CanvasImageCropContext.Provider>
+      </CanvasImagePreviewProvider>
       </CanvasTextGenerationContext.Provider>
       </CanvasGeneratorHostContext.Provider>
       {visibleEdgeDelete && (

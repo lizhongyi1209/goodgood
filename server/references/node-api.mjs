@@ -143,10 +143,11 @@ export function createReferenceNodeApiHandler({
         return true;
       }
 
-      const previewMatch = /^\/api\/references\/([^/]+)\/preview$/.exec(url.pathname);
+      const previewMatch = /^\/api\/references\/([^/]+)\/(preview|canvas-preview)$/.exec(url.pathname);
       if (previewMatch && request.method === "GET") {
         referenceId = decodeURIComponent(previewMatch[1]);
         const preview = await operations.readReferenceAssetPreview({
+          ...(previewMatch[2] === "canvas-preview" ? { canvasPreview: true } : {}),
           ownerContext,
           referenceId,
           workspaceId,

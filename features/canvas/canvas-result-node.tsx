@@ -5,7 +5,7 @@ import { Handle, Position, useReactFlow, type NodeProps } from "@xyflow/react";
 import { CircleAlert, LoaderCircle, RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { PrivateObjectImage } from "@/components/ui/private-object-image";
+import { CanvasAdaptiveImage } from "./canvas-adaptive-image";
 import { imageDownloadFilename } from "@/features/assets/image-download";
 import type { GenerationJob } from "@/shared/contracts/generation";
 import { initialCanvasImageSize } from "./canvas-image-size.mjs";
@@ -67,8 +67,9 @@ export function CanvasResultNode({ id, data, selected, width }: NodeProps<Canvas
         pixelHeight={output.height}
       />
       <article data-canvas-crop-image={output.id} className={`${styles.resultNode} ${styles.imageNode} ${data.imageSized ? styles.sizedNode : ""}`}>
-        <PrivateObjectImage
+        <CanvasAdaptiveImage
           src={output.previewUrl}
+          assetId={output.id}
           alt={`生成图片 ${index + 1}`}
           className={styles.resultImage}
           style={output.width && output.height ? { aspectRatio: `${output.width} / ${output.height}` } : undefined}

@@ -78,6 +78,7 @@ export async function readAssetPreview({
   assetId,
   ownerContext,
   workspaceId = DEFAULT_WORKSPACE_ID,
+  canvasPreview = false,
 }) {
   const ownerId = ownerIdFromContext(ownerContext);
   if (typeof assetId !== "string" || !UUID_PATTERN.test(assetId)) {
@@ -87,6 +88,7 @@ export async function readAssetPreview({
   const asset = await findOwnerAsset(resources.pool, { assetId, ownerId, workspaceId });
   if (!asset) throw new AssetRequestError("ASSET_NOT_FOUND", "未找到这张图片。", 404);
   return readPrivateImagePreview({
+    canvasPreview,
     bucket: resources.config.objectStorage.bucket,
     key: asset.object_key,
     publicStorage: resources.publicStorage,

@@ -1069,7 +1069,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
         const isVideo = upload.file.type === "video/mp4";
         const material = isVideo ? (await listPrivateVideoMaterials(null, controller.signal)).find((item) => item.id === readyAssetId) : null;
         if (isVideo && !material) throw new Error("视频已上传，但暂时无法读取，请点击重试。");
-        const previewUrl = isVideo ? material!.url : privateImageUrls("reference", readyAssetId).contentUrl;
+        const previewUrl = isVideo ? material!.url : privateImageUrls("reference", readyAssetId).previewUrl;
         if (!mountedRef.current || controller.signal.aborted || localUploadsRef.current.get(id) !== upload) return;
         const finish = (current: CanvasNode[]) => current.map((node) => node.id === id &&
           (node.type === "sourceImage" || node.type === "sourceVideo")
@@ -1229,13 +1229,16 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     const position = canvasImagePositions(point, 1)[0];
     const finishPageOperation = beginPageOperation(pageId);
     try {
-      const sourceUrl = item.sourceUrl ?? (item.kind === "generated" ? await readAssetDownloadUrl(item.id, null) : null);
+      const sourceUrl = item.media === "image"
+        ? privateImageUrls(item.kind === "generated" ? "asset" : "reference", item.id).previewUrl
+        : item.sourceUrl ?? (item.kind === "generated" ? await readAssetDownloadUrl(item.id, null) : null);
       if (!mountedRef.current) return;
       if (!sourceUrl) throw new Error("资产暂时无法读取，请重试。");
       const id = `asset-${globalThis.crypto.randomUUID()}`;
       const node: CanvasSourceNode | CanvasVideoNode | CanvasAudioNodeType = item.media === "image"
         ? { id, type: "sourceImage", position, style: { width: 238, height: 158 },
-            data: { name: item.name, previewUrl: sourceUrl, assetId: item.id, assetKind: item.kind === "generated" ? "generated" : "reference" } }
+            data: { name: item.name, previewUrl: privateImageUrls(item.kind === "generated" ? "asset" : "reference", item.id).previewUrl,
+              assetId: item.id, assetKind: item.kind === "generated" ? "generated" : "reference", pixelWidth: item.width, pixelHeight: item.height } }
         : item.media === "video"
           ? { id, type: "sourceVideo", position, style: { width: 238, height: 158 },
               data: { name: item.name, previewUrl: sourceUrl, assetId: item.id } }
@@ -1898,9 +1901,9 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
                 pageId: savedPages.find((page) => page.nodes.some((node) => node.id === saved.id))!.id, controller: null });
             }
           } else if (saved.asset?.kind === "reference") {
-            previewUrl = privateImageUrls("reference", saved.asset.id).contentUrl;
+            previewUrl = privateImageUrls("reference", saved.asset.id).previewUrl;
           } else if (saved.asset?.kind === "generated") {
-            previewUrl = privateImageUrls("asset", saved.asset.id).contentUrl;
+            previewUrl = privateImageUrls("asset", saved.asset.id).previewUrl;
           } else if (saved.asset?.kind === "video") {
             previewUrl = videoMaterials.find((item) => item.id === saved.asset?.id)?.url ?? "";
           }

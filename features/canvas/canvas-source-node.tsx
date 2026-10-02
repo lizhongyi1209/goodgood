@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Handle, Position, useReactFlow, type NodeProps } from "@xyflow/react";
 
-import { PrivateObjectImage } from "@/components/ui/private-object-image";
+import { CanvasAdaptiveImage } from "./canvas-adaptive-image";
 import { initialCanvasImageSize } from "./canvas-image-size.mjs";
 import { CanvasMediaMetadata } from "./canvas-media-metadata";
 import { CanvasImageResizeControls } from "./canvas-image-resize-controls";
@@ -51,23 +51,26 @@ export function CanvasSourceNode({ id, data, selected, width }: NodeProps<Canvas
       <article data-canvas-crop-image={data.assetId} className={`${styles.sourceNode} ${imageFailed ? "" : styles.imageNode} ${data.uploadState === "uploading" ? styles.mediaUploading : ""}`} aria-label={`图片 ${data.name}`} aria-busy={data.uploadState === "uploading" || undefined}>
         {imageFailed
           ? <div className={styles.sourceFailure} role="alert">图片无法预览</div>
-          : <PrivateObjectImage
+          : <CanvasAdaptiveImage
               src={localFallback ?? data.previewUrl}
+              assetId={localFallback ? undefined : data.assetId}
+              kind={data.assetKind === "generated" ? "asset" : "reference"}
               alt={data.name}
               className={styles.sourceImage}
               loading="eager"
               onLoad={(event) => {
                 setReadyPreview(localFallback ?? data.previewUrl);
-                if (data.assetId && event.currentTarget.currentSrc === new URL(data.previewUrl, window.location.href).href) data.onPreviewReady?.();
-                const pixelWidth = event.currentTarget.naturalWidth;
-                const pixelHeight = event.currentTarget.naturalHeight;
+                if (data.assetId && !localFallback) data.onPreviewReady?.();
+                // Preview pixels are display-only; retain the source's actual dimensions.
+                const pixelWidth = data.pixelWidth ?? event.currentTarget.naturalWidth;
+                const pixelHeight = data.pixelHeight ?? event.currentTarget.naturalHeight;
                 const size = initialCanvasImageSize(pixelWidth, pixelHeight);
                 if (!size) return;
                 updateNode(id, (node) => {
-                  if (node.type !== "sourceImage" || (node.data.imageSized && node.data.pixelWidth === pixelWidth && node.data.pixelHeight === pixelHeight)) return {};
+                  if (node.type !== "sourceImage" || node.data.imageSized) return {};
                   return {
                     ...(!node.data.imageSized ? { style: { ...node.style, ...size } } : {}),
-                    data: { ...node.data, imageSized: true, pixelWidth, pixelHeight },
+                    data: { ...node.data, imageSized: true },
                   };
                 });
               }}

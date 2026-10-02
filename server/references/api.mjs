@@ -181,6 +181,7 @@ export async function readReferenceAssetPreview({
   referenceId,
   ownerContext,
   workspaceId = DEFAULT_WORKSPACE_ID,
+  canvasPreview = false,
 }) {
   validateReferenceIds([{ id: referenceId }]);
   const ownerId = ownerIdFromContext(ownerContext);
@@ -194,6 +195,7 @@ export async function readReferenceAssetPreview({
     throw new ReferenceRequestError("REFERENCE_NOT_FOUND", "未找到可读取的参考图素材。", 404);
   }
   return readPrivateImagePreview({
+    canvasPreview,
     bucket: resources.config.objectStorage.bucket,
     key: row.object_key,
     publicStorage: resources.publicStorage,

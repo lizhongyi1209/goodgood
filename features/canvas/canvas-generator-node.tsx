@@ -4,7 +4,7 @@ import { useCallback, useContext, useEffect, useRef, useState, type CSSPropertie
 import { Handle, NodeToolbar, Position, useReactFlow, useStore, type NodeProps } from "@xyflow/react";
 import { ChevronsLeft, ChevronsRight, ImageIcon } from "lucide-react";
 
-import { PrivateObjectImage } from "@/components/ui/private-object-image";
+import { CanvasAdaptiveImage } from "./canvas-adaptive-image";
 import type { GenerationJob } from "@/shared/contracts/generation";
 import { initialCanvasImageSize } from "./canvas-image-size.mjs";
 import { CanvasGeneratorHostContext } from "./canvas-generator-host";
@@ -142,13 +142,13 @@ export function CanvasGeneratorNode({ id, data, selected }: NodeProps<CanvasGene
               style={{ "--canvas-stack-x": `${expanded ? index * (nodeWidth + 12) : previewDepth * stackOffset}px`,
                 "--canvas-stack-y": `${expanded ? 0 : previewDepth * 4}px`,
                 zIndex: expanded ? 1 : Math.max(0, 3 - index) } as CSSProperties}>
-              <PrivateObjectImage src={item.previewUrl} alt={`图片生成 ${data.sequence ?? 1} 的第 ${index + 1} 张结果`}
+              <CanvasAdaptiveImage src={item.previewUrl} assetId={item.id} detailEnabled={expanded || index === 0} alt={`图片生成 ${data.sequence ?? 1} 的第 ${index + 1} 张结果`}
                 className={styles.generatorImage} loading="eager"
                 onLoad={(event) => markOutputReady(item, event.currentTarget)}
                 onError={() => setReadyOutputs((current) => { const next = new Set(current); next.delete(`${item.id}:${item.previewUrl}`); return next; })} />
             </div>
           );
-        }) : output ? <PrivateObjectImage src={output.previewUrl} alt={`图片生成 ${data.sequence ?? 1} 的生成结果`} className={styles.generatorImage}
+        }) : output ? <CanvasAdaptiveImage src={output.previewUrl} assetId={output.id} alt={`图片生成 ${data.sequence ?? 1} 的生成结果`} className={styles.generatorImage}
           loading="eager" onLoad={(event) => markOutputReady(output, event.currentTarget)}
           onError={() => setReadyOutputs((current) => { const next = new Set(current); next.delete(`${output.id}:${output.previewUrl}`); return next; })} />
           : <ImageIcon size={32} strokeWidth={1.35} aria-hidden="true" />}

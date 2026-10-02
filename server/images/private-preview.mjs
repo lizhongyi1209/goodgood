@@ -7,6 +7,7 @@ import { cloudReferenceReadClient } from "../generation/local-cloud-reference.mj
 
 // Named, fixed preset. New surfaces reuse it until a different size is justified.
 export const CARD_PREVIEW_PROCESS = "image/resize,m_lfit,w_512,h_512/format,webp/quality,Q_80";
+export const CANVAS_PREVIEW_MAX_EDGE = 2048;
 
 export function addCloudCardPreviewProcessing(client) {
   client.middlewareStack.add(
@@ -21,12 +22,13 @@ export function addCloudCardPreviewProcessing(client) {
 
 /**
  * Return a private card image after the caller has checked owner and visibility.
- * Cloud references use OSS processing; other private objects stream through Sharp.
+ * Card cloud references use OSS processing; canvas details always stream bounded
+ * bytes through Sharp, including locally routed cloud references.
  * The result is either a short-lived processed redirect or WebP bytes.
  * @returns {Promise<{redirectUrl: string} | {bytes: Buffer, mimeType: string}>}
  */
-export async function readPrivateImagePreview({ bucket, key, storage, publicStorage }) {
-  if (cloudReferenceReadClient(publicStorage, key)) {
+export async function readPrivateImagePreview({ bucket, key, storage, publicStorage, canvasPreview = false }) {
+  if (!canvasPreview && cloudReferenceReadClient(publicStorage, key)) {
     return {
       redirectUrl: await getSignedUrl(
         publicStorage.cloudReferencePreviewClient,
@@ -50,8 +52,8 @@ export async function readPrivateImagePreview({ bucket, key, storage, publicStor
   });
   const transformer = sharp({ limitInputPixels: 268_435_456 })
     .rotate()
-    .resize(512, 512, { fit: "inside", withoutEnlargement: true })
-    .webp({ quality: 80 });
+    .resize(canvasPreview ? CANVAS_PREVIEW_MAX_EDGE : 512, canvasPreview ? CANVAS_PREVIEW_MAX_EDGE : 512, { fit: "inside", withoutEnlargement: true })
+    .webp({ quality: canvasPreview ? 90 : 80 });
   const output = transformer.toBuffer();
   const [, bytes] = await Promise.all([pipeline(object.Body, limit, transformer), output]);
   return { bytes, mimeType: "image/webp" };

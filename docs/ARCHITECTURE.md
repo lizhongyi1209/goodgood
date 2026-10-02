@@ -1,5 +1,11 @@
 # Architecture
 
+## GG-306 canvas image display derivatives
+
+CanvasAdaptiveImage keeps a native512 preview layer, observing viewport proximity and rendered size/device pixel density. Magnified visible images request the fixed2048 canvas-preview endpoint after180ms; an already-decoded blob overlays the retained preview, so failure/downgrade preserves the base. The identity-scoped pool deduplicates detail requests, limits fetch/decode concurrency to3, aborts unneeded subscriptions and retains at most8 inactive object URLs. Local pending Files produce512/2048 display blobs without changing uploads. Source dimensions remain independent of display dimensions.
+
+Asset/reference canvas-preview routes reuse existing authorization/visibility checks and stream a bounded WebP derivative throughSharp (also for locally routed cloud references), avoiding cross-origin redirect fetches. Existing preview/content routes and asset/attachment behavior remain. No arbitrary image transform, new provider call, SQL or object write; backend activation needs a new Web, while old Web leaves the native512 preview usable. See[ADR0132](decisions/0132-canvas-adaptive-image-previews.md).
+
 ## GG-303 canvas image prompt batches
 
 Canvas-only separator/job helpers and `canvas-generator-batch.ts` own per-segment concurrent submit/resume/retry. The page freezes inputs once, maintains ordered job slots and aggregate editing locks; the existing generator renders successful outputs in prompt order. Every segment uses the unchanged HTTP generation/provider/billing contract. Cloud graph validation accepts ordered jobIds and resource authorization checks all of them; existing JSON storage needs no migration. Text Markdown rules have an explicit plain-text separator. Current Web activation is separate and not performed by this code-only task. See[ADR0131](decisions/0131-canvas-concurrent-prompt-batches.md).

@@ -27,7 +27,7 @@ export function createAssetNodeApiHandler({
     const downloadUrlMatch = url.pathname.match(
       /^\/api\/assets\/([^/]+)\/download-url$/,
     );
-    const previewMatch = url.pathname.match(/^\/api\/assets\/([^/]+)\/preview$/);
+    const previewMatch = url.pathname.match(/^\/api\/assets\/([^/]+)\/(preview|canvas-preview)$/);
     const contentMatch = url.pathname.match(/^\/api\/assets\/([^/]+)\/content$/);
     const assetMatch = url.pathname.match(/^\/api\/assets\/([^/]+)$/);
     const uploadedMatch = url.pathname.match(/^\/api\/asset-files\/([^/]+)\/([^/]+)$/);
@@ -47,6 +47,7 @@ export function createAssetNodeApiHandler({
       }
       if (previewMatch && request.method === "GET") {
         const preview = await operations.readAssetPreview({
+          ...(previewMatch[2] === "canvas-preview" ? { canvasPreview: true } : {}),
           assetId: decodeURIComponent(previewMatch[1]),
           ownerContext,
           workspaceId,
