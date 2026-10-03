@@ -26,12 +26,21 @@ function fallbackFootprint(node, nodes) {
     height: Number(node.measured?.height ?? node.height ?? node.style?.height ?? node.size?.height ?? 238) };
 }
 
-function groupFrame(bounds) {
+function groupContentEnvelope(bounds) {
   // Match ResizeObserver's integer offset dimensions and round outwards so no
   // visible content is clipped. Parent sizing must not depend on its contents.
-  const x = Math.floor(bounds.x - 28); const y = Math.floor(bounds.y - 60);
-  const width = Math.max(200, Math.ceil(bounds.x + bounds.width + 28) - x);
-  const height = Math.max(120, Math.ceil(bounds.y + bounds.height + 28) - y);
+  const x = Math.floor(bounds.x - 28); const y = Math.floor(bounds.y - 28);
+  return { x, y, width: Math.ceil(bounds.x + bounds.width + 28) - x,
+    height: Math.ceil(bounds.y + bounds.height + 28) - y };
+}
+
+function groupFrame(bounds) {
+  const envelope = groupContentEnvelope(bounds);
+  const x = envelope.x; const width = Math.max(200, envelope.width);
+  const height = Math.max(120, envelope.height);
+  // The title is outside. Both padding and minimum-height whitespace belong
+  // equally above/below the visible content, while member positions stay fixed.
+  const y = height > envelope.height ? Math.round(bounds.y + bounds.height / 2 - height / 2) : envelope.y;
   return { position: { x, y }, width, height, style: { width, height } };
 }
 
@@ -41,8 +50,7 @@ export function canvasGroupContentBounds(nodes, groupId, footprints = []) {
   const members = nodes.filter((node) => node.parentId === groupId);
   const bounds = unionCanvasBounds(members.map((node) => byId.get(node.id) ?? fallbackFootprint(node, nodes)));
   if (!bounds) return null;
-  const frame = groupFrame(bounds);
-  return { ...frame.position, width: frame.width, height: frame.height };
+  return groupContentEnvelope(bounds);
 }
 
 export function canvasGroupFrameContainsContent(frame, content) {
@@ -121,10 +129,13 @@ export function fitCanvasGroups(nodes, footprints = []) {
       const width = Number(group.width ?? group.style?.width);
       const height = Number(group.height ?? group.style?.height);
       if (Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0) {
-        const x = Math.min(group.position.x, frame.position.x);
-        const y = Math.min(group.position.y, frame.position.y);
-        const nextWidth = Math.ceil(Math.max(group.position.x + width, frame.position.x + frame.width) - x);
-        const nextHeight = Math.ceil(Math.max(group.position.y + height, frame.position.y + frame.height) - y);
+        // A manual frame contains content, not the automatic frame's centered
+        // minimum-height whitespace. Preserve its placement even for tiny nodes.
+        const envelope = groupContentEnvelope(bounds);
+        const x = Math.min(group.position.x, envelope.x);
+        const y = Math.min(group.position.y, envelope.y);
+        const nextWidth = Math.max(200, Math.ceil(Math.max(group.position.x + width, envelope.x + envelope.width) - x));
+        const nextHeight = Math.max(120, Math.ceil(Math.max(group.position.y + height, envelope.y + envelope.height) - y));
         frame = { position: { x, y }, width: nextWidth, height: nextHeight, style: { width: nextWidth, height: nextHeight } };
       }
     }

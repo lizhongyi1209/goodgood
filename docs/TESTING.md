@@ -23,6 +23,15 @@ provider mounting fix with no backend activation or real-provider request.
 
 ## GG-326 group frame controls — source only
 
+GG-333 adds source regressions for balanced top/bottom padding around labels and
+expanded stacks, old 60px-top frame normalization without member movement,
+minimum-height centering with positive/negative/fractional coordinates and
+manual frames retaining uneven whitespace until explicitly switched to auto.
+No tests/build/checks or browser acceptance are run. User follow-up: refresh an
+existing automatic group, compare upper/lower spacing, expand/collapse results,
+move a member, try a small group and switch manual sizing back to fit-to-content.
+Horizontal spacing, content positions and saved manual geometry must remain.
+
 GG-332 is a local visual placement refinement with no new geometry or storage
 logic. No build/lint/typecheck, code/diff check, test or browser acceptance is
 run. User follow-up: selected grips stay inside all four corners and point to

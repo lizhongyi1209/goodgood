@@ -63,3 +63,20 @@ Keep native resizing, pointer target size, directional cursors, keyboard support
 and stable callbacks. Existing auto/manual bounds, whitespace, child positions,
 history and saved geometry remain unchanged. GG-330 already activated group
 server validation; this layout refinement needs no runtime or backend update.
+
+## GG-333 · Vertically centered automatic frames
+
+With the title outside the frame, remove the old 60px top reservation. Automatic
+groups use the same 28px padding above and below the members' visible envelope,
+including member labels and expanded stacks. When the 120px minimum height adds
+empty space, distribute it evenly about the visible content's vertical center.
+Keep integer frame geometry and a one-pixel tolerance for outward rounding.
+Horizontal sizing and member absolute positions remain unchanged.
+
+Manual frames retain the user's placement/whitespace. Their containment envelope
+is actual visible content plus padding, independent of automatic centering and
+minimum frame dimensions; native/keyboard resize still enforces 200px/120px.
+This prevents small manual groups from moving/expanding solely to match the
+automatic center. Only actual overflow expands a manual frame. Existing auto
+groups normalize on the next fit without moving their members; persistence and
+backend contracts do not change.

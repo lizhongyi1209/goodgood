@@ -87,6 +87,54 @@ test("GG-325 legacy style-only frames stabilize once while preserving saved cont
   assert.equal(fitCanvasGroups(stable), stable);
 });
 
+test("GG-333 automatic frames center visible labels/stacks and normalize the old top reservation", () => {
+  const before = origin();
+  const footprints = [
+    { id: "a", bounds: { x: 500, y: -142, width: 1500, height: 282 } },
+    { id: "b", bounds: { x: 930, y: 218, width: 360, height: 282 } },
+  ];
+  const grouped = createCanvasGroup(before, "group-1", footprints); const frame = grouped[0];
+  assert.equal(-142 - frame.position.y, 28);
+  assert.equal(frame.position.y + frame.height - 500, 28);
+  assert.equal(500 - frame.position.x, 28);
+  assert.equal(frame.position.x + frame.width - 2000, 28);
+  for (const id of ["a", "b", "outside"]) assert.deepEqual(absolute(grouped, id), absolute(before, id));
+  const legacy = grouped.map((node) => node.type === "group" ? {
+    ...node, position: { ...node.position, y: node.position.y - 32 }, height: node.height + 32,
+    style: { ...node.style, height: node.height + 32 },
+  } : node.parentId === "group-1" ? { ...node, position: { ...node.position, y: node.position.y + 32 } } : node);
+  const fitted = fitCanvasGroups(legacy, footprints);
+  assert.deepEqual(fitted[0].position, frame.position); assert.deepEqual(fitted[0].style, frame.style);
+  for (const id of ["a", "b", "outside"]) assert.deepEqual(absolute(fitted, id), absolute(before, id));
+  assert.equal(fitCanvasGroups(fitted, footprints), fitted);
+});
+
+test("GG-333 minimum-height whitespace and fractional coordinates remain vertically centered", () => {
+  for (const [y, height] of [[100, 10], [-100.8, 10.3], [100.3, 10.3], [100.3, 300.3]]) {
+    const before = [text("a", 500, y), text("b", 930, y)].map((node) => ({ ...node, style: { width: 80, height } }));
+    const grouped = createCanvasGroup(before, "group-1"); const frame = grouped[0];
+    const top = y - frame.position.y; const bottom = frame.position.y + frame.height - y - height;
+    assert(Math.abs(top - bottom) <= 1.001); assert(top >= 28 && bottom >= 28);
+    assert(Number.isInteger(frame.height) && frame.height >= 120);
+    if (height < 64) assert.equal(frame.height, 120);
+    for (const id of ["a", "b"]) assert.deepEqual(absolute(grouped, id), absolute(before, id));
+    assert.equal(fitCanvasGroups(grouped), grouped);
+  }
+});
+
+test("GG-333 automatic minimum-height centering does not reposition or expand a manual frame", () => {
+  const before = [text("a", 500, 100), text("b", 930, 100)].map((node) => ({ ...node, style: { width: 80, height: 10 } }));
+  const grouped = createCanvasGroup(before, "group-1"); const frame = grouped[0];
+  const manual = resizeCanvasGroup(grouped, frame.id, { x: frame.position.x, y: 40, width: frame.width, height: 120 });
+  assert.equal(manual[0].data.sizing, "manual");
+  assert.equal(fitCanvasGroups(manual), manual);
+  assert.equal(100 - manual[0].position.y, 60); assert.equal(manual[0].position.y + manual[0].height - 110, 50);
+  for (const id of ["a", "b"]) assert.deepEqual(absolute(manual, id), absolute(before, id));
+  const automatic = fitCanvasGroups(manual.map((node) => node.type === "group" ? { ...node, data: { ...node.data, sizing: "auto" } } : node));
+  assert.equal(automatic[0].position.y, 45); assert.equal(automatic[0].height, 120);
+  for (const id of ["a", "b"]) assert.deepEqual(absolute(automatic, id), absolute(before, id));
+});
+
 test("GG-326 manual top-left resize retains member positions and whitespace through fitting", () => {
   const grouped = createCanvasGroup(origin(), "group-1");
   const frame = grouped[0];
