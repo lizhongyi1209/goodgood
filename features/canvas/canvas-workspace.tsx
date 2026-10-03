@@ -43,6 +43,7 @@ import { canGroupCanvasSelection, createCanvasGroup, ungroupCanvasNodes } from "
 import { CanvasImageCropContext, CanvasImageCropEditor } from "./canvas-image-crop";
 import { CanvasImageCompareProvider } from "./canvas-image-compare";
 import { CanvasImageColorProvider } from "./canvas-image-color";
+import { CanvasImagePlacementProvider } from "./canvas-image-placement";
 import { CanvasImageMetadataProvider } from "./canvas-image-metadata";
 import { CanvasImageCleanupProvider, type CanvasImageCleanupCommit } from "./canvas-image-cleanup";
 import type { CanvasCropCommit, CanvasCropImage, CanvasCropRequest } from "./canvas-image-crop-image";
@@ -515,6 +516,7 @@ export function CanvasWorkspace({
         beforeRemove={textGenerationContext.beforeGenerate} onCommit={onImageCleanupCommit} onChanged={onImageCleanupChanged}>
       <CanvasImageMetadataProvider enabled={assetLibraryEnabled && !visibleCropRequest} ownerKey={textGenerationContext.ownerKey} pageKey={cropPageId} onCommit={onCropCommit}>
       <CanvasImageColorProvider enabled={cropEnabled && !visibleCropRequest} libraryEnabled={assetLibraryEnabled} ownerKey={textGenerationContext.ownerKey} pageKey={cropPageId} onCommit={onCropCommit}>
+      <CanvasImagePlacementProvider enabled={cropEnabled && !visibleCropRequest} libraryEnabled={assetLibraryEnabled} ownerKey={textGenerationContext.ownerKey} pageKey={cropPageId} onCommit={onCropCommit}>
       <CanvasImageCropContext.Provider value={{ request: visibleCropRequest, openCrop: (image) => {
         if (cropEnabled) setCropRequest({ ...image, pageId: cropPageId, sessionId: crypto.randomUUID() });
       } }}>
@@ -644,6 +646,7 @@ export function CanvasWorkspace({
         />
       </ReactFlow>
       </CanvasImageCropContext.Provider>
+      </CanvasImagePlacementProvider>
       </CanvasImageColorProvider>
       </CanvasImageMetadataProvider>
       </CanvasImageCleanupProvider>

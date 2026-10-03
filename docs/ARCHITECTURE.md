@@ -71,6 +71,12 @@ the existing store instead of creating another. Initial edges, empty default
 nodes and the existing 0.1–8 zoom range are preserved. Page/owner dialog cleanup,
 canvas persistence and service boundaries are unchanged.
 
+## GG-352 浏览器图片区域与贴图
+
+`canvas-image-placement-model.mjs/.d.mts`提供原图像素/视图映射、光标中心缩放、夹取bbox、旋转角锚定等比缩放、图层排序和合成绘制；纯计算不依赖业务/网络。`canvas-image-placement-context.ts`独立上下文保持热刷新实例一致。`canvas-image-placement.tsx/module.css`拥有临时单区域/多图层、受权源图、指针捕获、视图、取消/焦点和副本提交；`canvas-image-placement-picker.tsx`复用图片/参考图/组织列表API；`canvas-image-placement-image.ts`校验本地文件签名、大小/解码尺寸、释放URL并导出PNG。SVG预览与Canvas导出均使用相同原图中心/尺寸/旋转，不把缩放后屏幕坐标保存为bbox或贴图位置。
+
+源图沿裁剪受权字节读取，导出调用现有`CanvasCropCommit.createCopy`与页/身份/实际输出ID守卫；框选不创建文件，贴图确认才进入现有本地副本上传。临时图层与bbox不进入项目schema；无新API/迁移/模型请求/收费，纯客户端功能不要求启用新后台。
+
 ## GG-327 浏览器图片文件元数据
 
 GG-349新增纯模块`features/assets/image-metadata-presets.mjs`及类型声明：10套相机/镜头组合×10套曝光样例形成100组唯一拍摄参数，冻结池与可编辑返回副本分离，注入随机源支持合成回归。每个弹框用惰性ref持有Fisher–Yates轮换池，每轮无重复并保护轮间边界。共用非空判断只看15项可编辑字段，随机操作替换表单而不合并旧图片信息；原写副本流程/格式校验不变，无依赖/API/数据库或后台更新。

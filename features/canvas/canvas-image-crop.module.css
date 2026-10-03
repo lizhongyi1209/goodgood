@@ -1,4 +1,4 @@
-.toolbar { display: flex; padding: 4px; border: 1px solid #ededee; border-radius: 12px; background: #fff; color: #27272a; }
+.toolbar { display: flex; flex-wrap: wrap; width: max-content; max-width: calc(100vw - 32px); padding: 4px; border: 1px solid #ededee; border-radius: 12px; background: #fff; color: #27272a; }
 .toolbar [data-slot="button"] { gap: 6px; height: 30px; padding: 0 9px; border-radius: 8px; color: inherit; font-size: 12px; }
 .toolbar [data-slot="button"]:hover { background: #f0f0f2; }
 .imageLayer { position: fixed; z-index: 8; overflow: hidden; pointer-events: none; }
