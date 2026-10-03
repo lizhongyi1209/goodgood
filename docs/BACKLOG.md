@@ -4,6 +4,7 @@
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
+| GG-319 | 恢复中：电脑重启后原依赖/本地Web、唯一Worker及5173，必要来源构建同步启用GG-318；数据保持，无测试/真实请求 | [任务](tasks/GG-319-local-restart-after-reboot.md) |
 | GG-318 | 已接入源码a627d7f：图片失败诊断持久到既有事件/站长总日志详情，凭据/正文脱敏；创建1/退役1，未编译验证，待Web及唯一Worker激活，无迁移/重试/积分变化 | [任务](tasks/GG-318-generation-failure-diagnostics.md) |
 | GG-317 | 排查完成：本地确实创建3条任务，摸头/坐着成功，半蹲CAPACITY_BUSY失败且20积分已全部释放；非两组上限，无代码/运行修改或真实请求 | [任务](tasks/GG-317-canvas-three-prompt-audit.md) |
 | GG-316 | 已接入5173源码3a823d8：画布查看按钮24px/图标14px保持固定屏幕尺寸，纯白不透明背景，资产入口同步；创建1/退役1，未编译或验证 | [任务](tasks/GG-316-canvas-view-icon-consistency.md) |
