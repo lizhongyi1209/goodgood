@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-03
-- Current phase: GG-321子应用源码4398d08→4489d1d已接入GG-116/5173：固定图片插槽/独立单图任务/中央单槽重试及恢复完成，创建1/退役1，仅源码/回归来源未编译检查，无运行/生产操作。
-- Current objective: 用户刷新手验4张展开4位及单槽重试/兄弟保持；新imageSlots云校验须以后明确委托Web激活，旧Web明确本机保存。无需SQL迁移或Worker更新；当前GG-319 Web/唯一Worker419b097和原Vite/数据/SMTP保持，默认仅开发代码。
+- Current phase: GG-322子应用9920bde→0ce2360修正保存错误误判，用户授权一次必要构建和仅Web重启；verified0b5744d已启用GG-321图片插槽云校验，创建1/退役1，无测试或真实请求。
+- Current objective: 用户刷新手验4张展开4位、单槽重试/兄弟保持及云同步；当前Web25664/32131为0b5744d，唯一Worker28236/32142仍419b097，Vite33312/5173及原数据/SMTP保持。无SQL迁移/Worker更新；默认仍仅开发代码，后继文档不改变运行receipt。
 - Previous objective: GG-313模板名称格式/示例参考、GG-312画布300%高清门槛、GG-311模板保存/成功动效及类型筛选、GG-310前景色已交付源码；GG-309私有2K接口、批量校验及文本资产API/本地0063已启用。
 
 ## Current checkpoint
+
+- 最新修复/运行 [GG-322](tasks/GG-322-image-slot-sync-compatibility.md)：登记e2f228c，隔离9920bde精确接入0ce2360；不再以INVALID_CANVAS_PROJECT且含slots推断服务版本，显示实际平台错误/明确本机与云状态。截图根因是旧Web419b097无新imageSlots校验，保存失败不阻断生成提交；用户授权构建0b5744d并仅替换Web28248→25664，32131/5173版本verified、Web readiness均ok，已有槽云校验生效。唯一Worker419b097/Vite/原数据/SMTP保持，创建1/退役1，无检查/测试、浏览器、SQL/provider或生产操作。用户刷新手验；下方GG-321待启用为当时阶段。
 
 - 最新插槽交付 [GG-321](tasks/GG-321-image-result-slots.md)：基线ca54019、登记aa4967f，子隔离4398d08精确接入4489d1d，15文件；固定结果位置/先本机flush请求key、独立count1并发、中央单槽重试及未知幂等/旧count4/Seedream层恢复。云imageSlots规范输入/受权保存及旧Web本机提示完成，回归来源只写不运行。创建1/退役1，辅助工作区零依赖/缓存正常Git移除，子结束；无构建/检查、浏览器、SQL、provider或运行/生产操作，用户刷新手验，新云字段须后续Web激活，无迁移/Worker更新。
 

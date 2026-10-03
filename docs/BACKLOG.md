@@ -1,11 +1,11 @@
 # 当前任务与优先级
 
-> 最后同步：2026-10-03。GG-321子源码4398d08→4489d1d已接入5173：固定结果槽、逐张并发/中央单槽重试及恢复，创建1/退役1，只写回归未运行；新云imageSlots需以后更新Web，旧Web明确本机保存。GG-319 Web/唯一Worker419b097和原数据/SMTP保持，无运行或生产操作。
+> 最后同步：2026-10-03。GG-322子9920bde→0ce2360修正同步误报，用户授权必要构建并仅重启Web，verified0b5744d已启用GG-321插槽云校验；创建1/退役1。原唯一Worker419b097、Vite/数据/SMTP保持，无测试/真实生成或生产操作，用户刷新手验。
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
-| GG-322 | 已接入0ce2360：显示实际同步错误/保留本机与云状态；旧Web缺GG-321校验，用户授权必要构建及仅Web重启，待激活 | [任务](tasks/GG-322-image-slot-sync-compatibility.md) |
-| GG-321 | 已接入源码4489d1d：固定槽/单张并发/中央逐张重试、未知幂等及旧项目恢复；创建1/退役1，未编译检查，云字段待Web激活、无SQL/Worker更新 | [任务](tasks/GG-321-image-result-slots.md) |
+| GG-322 | 已接入0ce2360并仅Web启用verified0b5744d：实际同步错误、本机/云状态保持，新插槽校验生效；创建1/退役1，无测试/真实请求，用户手验 | [任务](tasks/GG-322-image-slot-sync-compatibility.md) |
+| GG-321 | 已接入源码4489d1d：固定槽/单张并发/中央逐张重试、未知幂等及旧项目恢复；创建1/退役1，回归未运行，后继GG-322 Web已启用云字段、无SQL/Worker更新 | [任务](tasks/GG-321-image-result-slots.md) |
 | GG-320 | 只读确认：当前local-mailpit，11:18登录验证码已进入本地邮件箱58045，未实际投递QQ；无服务或配置变化 | [任务](tasks/GG-320-local-email-delivery-audit.md) |
 | GG-319 | 本地恢复完成：Docker E盘原数据/依赖healthy，Web与唯一Worker419b097及5173正常；GG-318已启用，无迁移/测试/真实请求 | [任务](tasks/GG-319-local-restart-after-reboot.md) |
 | GG-318 | 源码a627d7f已交付，后继GG-319本地Web/唯一Worker419b097已启用诊断；既有事件/站长总日志，无迁移/历史回填，回归未运行 | [任务](tasks/GG-318-generation-failure-diagnostics.md) |
