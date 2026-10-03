@@ -1,5 +1,17 @@
 # GG-063 verification
 
+## GG-321 image slot regression source, not executed
+
+`tests/gg321-canvas-image-result-slots.test.mjs` is edited source only, covering
+four retained positions with two failures, concurrent out-of-order completion,
+single-slot retries retaining siblings, legacy count4 projecting/retrying count1,
+unknown request-key reuse, Seedream native layers and cloud URL removal. The
+implementation also retains the existing project job/reference authorization.
+Per user, no build, lint, typecheck, test run, code/diff checks, browser acceptance,
+SQL/queue operation, runtime restart or real provider request is performed.
+New imageSlots cloud validation requires a later delegated Web activation;
+Worker strategy and database schema need no changes.
+
 ## GG-318 failure diagnostic regression source, not executed
 
 `tests/gg318-generation-failure-diagnostics.test.mjs` uses injected responses and

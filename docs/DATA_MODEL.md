@@ -1,5 +1,23 @@
 # GG-063 quality pricing
 
+## GG-321 stable image result positions
+
+CanvasProjectNode adds optional `imageSlots` inside existing schemaVersion1/2 JSON.
+Each item retains stable `id`, optional `requestKey`, `jobId`, `retryOfJobId`,
+`outputIndex`, a canonical frozen `input` and optional normalized `error`. Runtime
+generator `data.slots` associates each position with its current job; localJob and
+localJobs plus blob/data/private runtime URLs are excluded from cloud documents.
+Accepted jobs and input reference identities use the existing owner/workspace
+resource authorization. The 1 MiB document limit remains; no SQL migration.
+
+For new requests there is one independent count1 job per requested image, grouped
+by prompt source order. Seedream's native layer outputs remain one native job.
+Old jobId/jobIds and count>1 jobs project into stable positions; a legacy failed
+position retries count1 without resubmitting its siblings. An unknown submission
+retains its requestKey so a user click can reconcile the same idempotent request.
+Old Web rejecting the new field must leave a local saved draft and explicitly
+report server synchronization unavailable. New Web activation is separate.
+
 ## GG-318 persisted failure diagnostics
 
 New provider_failed/provider_fallback events use existing JSONB
