@@ -1,13 +1,15 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-03
-- Current phase: GG-342价格提示已改，去除AI/公告本地后台已启用；必要构建与服务可用性核对通过，功能手验待用户完成，未部署生产。
-- Current objective: 本次受权本地更新完成。下一步用户刷新5173手验去除AI即时开始、成功副本下载及EXIF/ComfyUI/C2PA清理、10积分成功结算/失败回滚/重试幂等，以及公告管理/阅读与两账户实时提醒。沿GG-276未运行测试或浏览器验收，不自动进行真实扣费/Provider请求/公告发布或生产操作。
+- Current phase: GG-343悬停提示「去除AI识别」已交付源码；GG-342本地公告/清理后台保持，用户手验待办，未部署生产。
+- Current objective: 用户刷新5173手验去除AI悬停仅显示「去除AI识别」。原GG-342副本清理/收费/失败与幂等及公告管理/实时手验继续待办；本次仅文案，不构建/检查/测试/浏览器验收或后台操作。
 - Previous objective: GG-313模板名称格式/示例参考、GG-312画布300%高清门槛、GG-311模板保存/成功动效及类型筛选、GG-310前景色已交付源码；GG-309私有2K接口、批量校验及文本资产API/本地0063已启用。
 
 ## Current checkpoint
 
-- 当前应用源码检查点：67ffde7161f51ec3c4f73ae9dedabe210156a138；[GG-342](tasks/GG-342-cleanup-activation.md) GG-342已完成源码与受权本地启用：隔离ffe0ab3精确接入67ffde7161f51ec3c4f73ae9dedabe210156a138；按钮只显示「去除AI」，每次10积分放入悬停提示/无障碍名称，点击立即处理，无确认弹框。必要构建通过，0064公告与0065清理按序应用到127.0.0.1:54449/goodgood（65段迁移），现有账户/资产/积分流水总数迁移前后相同，无fixture或数据重置。仅Web9448替换为34460/32131，唯一Worker23800/32142与Vite33440/5173保持；Web/Worker readiness五项ok、首页200、API代理verified67ffde7，新清理/公告/公告管理接口未登录返回401 SESSION_EXPIRED。功能、收费与公告实时效果仍待用户手验；未运行lint/typecheck/测试/浏览器验收、真实处理/扣费/Provider请求、公告发布/统计fixture或生产部署。创建1/退役1，managed辅助工作区已确认归档，无子agent/依赖缓存。
+- 当前应用源码检查点：f09439732eeca6f8e28bc7e18adb6e5485cf5288；[GG-343](tasks/GG-343-cleanup-tooltip.md) GG-343已完成：隔离c8ce90c精确接入f09439732eeca6f8e28bc7e18adb6e5485cf5288；去除AI的title/aria-label仅为「去除AI识别」，移除积分、技术说明与该UI未使用常量导入。按钮短标签/处理中状态、即时执行及10积分服务端结算保持。仅源码/文档，未构建/检查/测试/浏览器验收，无迁移/服务/扣费或生产操作；GG-342既有后台启用receipt67ffde7保持，本轮未重查。创建1/退役1，辅助工作区managed归档，无依赖缓存/子agent；用户刷新5173手验。
+
+- GG-342历史源码及现有后台receipt检查点：67ffde7161f51ec3c4f73ae9dedabe210156a138；[GG-342](tasks/GG-342-cleanup-activation.md) GG-342已完成源码与受权本地启用：隔离ffe0ab3精确接入67ffde7161f51ec3c4f73ae9dedabe210156a138；按钮只显示「去除AI」，每次10积分放入悬停提示/无障碍名称，点击立即处理，无确认弹框。必要构建通过，0064公告与0065清理按序应用到127.0.0.1:54449/goodgood（65段迁移），现有账户/资产/积分流水总数迁移前后相同，无fixture或数据重置。仅Web9448替换为34460/32131，唯一Worker23800/32142与Vite33440/5173保持；Web/Worker readiness五项ok、首页200、API代理verified67ffde7，新清理/公告/公告管理接口未登录返回401 SESSION_EXPIRED。功能、收费与公告实时效果仍待用户手验；未运行lint/typecheck/测试/浏览器验收、真实处理/扣费/Provider请求、公告发布/统计fixture或生产部署。创建1/退役1，managed辅助工作区已确认归档，无子agent/依赖缓存。
 
 - 当前本地Web构建/运行receipt绑定上述67ffde7，后续交接文档提交不改实际运行身份；唯一Worker继续GG-330 verified94bee535。原GG-330及下方待启用段落为历史，本地启用事实以上述GG-342为准，生产保持原状。
 
