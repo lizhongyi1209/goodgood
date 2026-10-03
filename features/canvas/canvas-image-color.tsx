@@ -236,8 +236,8 @@ function ColorDialog({ request, libraryEnabled, onClose, onCommit }: Readonly<{
         <section className={styles.preview} aria-label="调色预览">
           <div className={styles.surface} ref={surfaceRef} aria-busy={!previewReady || matching} />
           <div className={styles.previewTools}>
-            <span className={styles.status} role="status">{!image ? "正在读取图片…" : matching ? "正在匹配参考色调…" : match ? "已按参考图调整" : reference ? "参考图暂时无法匹配" : "选择参考图，或手动调整"}</span>
-            <Button variant="ghost" size="sm" disabled={!previewReady || saving} aria-pressed={showOriginal} onClick={() => setShowOriginal((value) => !value)}><Eye size={14} strokeWidth={1.7} />{showOriginal ? "查看调整后" : "查看调整前"}</Button>
+            <span className="sr-only" role="status">{matching ? "正在匹配参考色调…" : ""}</span>
+            <Button variant="ghost" size="sm" disabled={!previewReady || saving} aria-pressed={showOriginal} onClick={() => setShowOriginal((value) => !value)}>{matching ? <LoaderCircle size={14} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Eye size={14} strokeWidth={1.7} aria-hidden="true" />}{showOriginal ? "查看调整后" : "查看调整前"}</Button>
           </div>
           {showOriginal && previewReady && <span className={styles.beforeLabel}>调整前</span>}
           {(!image || previewError) && <div className={styles.surfaceStatus} role={sourceError || previewError ? "alert" : "status"}>
@@ -262,8 +262,8 @@ function ColorDialog({ request, libraryEnabled, onClose, onCommit }: Readonly<{
         </aside>
       </div>
       <footer className={styles.footer}>
-        <span className={styles.saveMessage} role={saveError ? "alert" : undefined}>{saveError ?? "保存为新图片，保留原图"}</span>
-        <div><Button variant="ghost" onClick={cancel}>取消</Button><Button disabled={!ready || saving} onClick={() => { void save(); }}>{saving && <LoaderCircle size={15} className="animate-spin motion-reduce:animate-none" />}{saving ? "正在保存…" : "保存新图片"}</Button></div>
+        {saveError && <span className={styles.saveMessage} role="alert">{saveError}</span>}
+        <div><Button variant="ghost" onClick={cancel}>取消</Button><Button disabled={!ready || saving} onClick={() => { void save(); }}>{saving && <LoaderCircle size={15} className="animate-spin motion-reduce:animate-none" />}{saving ? "正在保存…" : "确定"}</Button></div>
       </footer>
     </DialogContent>
   </Dialog>;
