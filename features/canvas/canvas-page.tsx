@@ -1927,7 +1927,8 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
         const base = { id: saved.id, position: saved.position, ...(style ? { style } : {}),
           ...(saved.parentId ? { parentId: saved.parentId } : {}) };
         if (saved.type === "group") return { ...base, type: "group", zIndex: -1, dragHandle: CANVAS_GROUP_DRAG_HANDLE,
-          style: style ?? { width: 200, height: 120 }, data: { name: saved.name ?? "组", emoji: saved.emoji } };
+          width: saved.size?.width ?? 200, height: saved.size?.height ?? 120,
+          style: style ?? { width: 200, height: 120 }, data: { name: saved.name ?? "组", emoji: saved.emoji, sizing: saved.groupSizing } };
         if (saved.type === "textEditor") return {
           ...base, type: "textEditor", style: style ?? { width: 360, height: 260 },
           data: { markdown: saved.markdown ?? "", text: saved.text ?? "" },

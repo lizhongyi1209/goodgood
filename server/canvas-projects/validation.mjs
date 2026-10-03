@@ -48,7 +48,7 @@ function position(value) {
 }
 
 function node(value) {
-  record(value, ["id", "type", "position", "size", "asset", "jobId", "jobIds", "imageSlots", "index", "sequence", "name", "metadata", "markdown", "text", "textGeneration", "parentId", "emoji"]);
+  record(value, ["id", "type", "position", "size", "asset", "jobId", "jobIds", "imageSlots", "index", "sequence", "name", "metadata", "markdown", "text", "textGeneration", "parentId", "emoji", "groupSizing"]);
   const type = value.type;
   if (!NODE_TYPES.has(type)) throw invalid();
   const result = { id: nodeId(value.id), type, position: position(value.position) };
@@ -68,6 +68,10 @@ function node(value) {
     if ([...new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(emoji)].length !== 1 ||
         !/[\p{Extended_Pictographic}\p{Regional_Indicator}\u20e3]/u.test(emoji)) throw invalid();
     result.emoji = emoji;
+  }
+  if (value.groupSizing !== undefined) {
+    if (type !== "group" || !["auto", "manual"].includes(value.groupSizing)) throw invalid();
+    result.groupSizing = value.groupSizing;
   }
   if (type === "textEditor" || type === "textGenerator") {
     result.markdown = string(value.markdown, 100_000, { empty: true, multiline: true });

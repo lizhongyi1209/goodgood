@@ -4,6 +4,18 @@
 
 原图网络/受权/解码失败可重读；非 JPEG/PNG、超过20MiB或容器损坏明确拒绝。单独EXIF损坏而容器可处理时仍允许从另一照片提取或清除，不能宣称原参数已完整读取。提取无常用字段、不支持或失败不会覆盖原草稿。JSON、日期、分数/ISO/焦距及GPS配对/范围校验在保存前报错；作者/描述/版权支持中文，其他传统EXIF相机文本需ASCII。保存失败保留弹框与输入；副本接入画布后异步上传失败沿原节点重试。朝向EXIF清除需要的PNG副本若超20MiB，明确拒绝而不写入。关闭/换页/换身份中止读取，取消不修改资产。
 
+## GG-326 group frame and emoji recovery
+
+The emoji picker loads its locked catalog/Chinese locale as local chunks only
+when opened. Loading or failed chunk retrieval stays inside the popover, with
+retry; no label is cleared on failure. No runtime CDN catalog request is used.
+Native and keyboard frame resizing reject nonfinite/below-minimum geometry or
+an envelope that would exclude visible contents and padding. Manual geometry
+and sizing mode remain in browser recovery when the old Web rejects new fields.
+Server source validates the group-only enum; runtime activation is separate.
+GG-325 integer dimensions, complete native measurements and stale-plan-safe
+read/write frames remain; dragging/resizing suppresses automatic fitting.
+
 ## GG-323 group editing and recovery
 
 GG-325 addresses the reported build-group ResizeObserver loop at the geometry

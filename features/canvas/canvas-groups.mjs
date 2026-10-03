@@ -2,16 +2,6 @@ import { unionCanvasBounds } from "./canvas-selection-layout.mjs";
 
 export const CANVAS_GROUP_DRAG_HANDLE = ".canvas-group-drag-handle";
 export const CANVAS_GROUP_NAME_LIMIT = 80;
-export const CANVAS_GROUP_EMOJIS = [
-  { emoji: "🎨", label: "调色盘" }, { emoji: "✨", label: "闪光" },
-  { emoji: "💡", label: "灵感" }, { emoji: "📷", label: "相机" },
-  { emoji: "🎬", label: "场记板" }, { emoji: "🖼️", label: "画框" },
-  { emoji: "🌿", label: "植物" }, { emoji: "🌸", label: "花" },
-  { emoji: "🌙", label: "月亮" }, { emoji: "☀️", label: "太阳" },
-  { emoji: "🔥", label: "火焰" }, { emoji: "❤️", label: "爱心" },
-  { emoji: "⭐", label: "星星" }, { emoji: "📌", label: "图钉" },
-  { emoji: "📁", label: "文件夹" }, { emoji: "✅", label: "完成" },
-];
 
 export function canvasNodeAbsolutePosition(node, nodes) {
   const parent = node.parentId && nodes.find((item) => item.id === node.parentId && item.type === "group");
@@ -43,6 +33,39 @@ function groupFrame(bounds) {
   const width = Math.max(200, Math.ceil(bounds.x + bounds.width + 28) - x);
   const height = Math.max(120, Math.ceil(bounds.y + bounds.height + 28) - y);
   return { position: { x, y }, width, height, style: { width, height } };
+}
+
+/** Required visible-content envelope, also used by native resize constraints. */
+export function canvasGroupContentBounds(nodes, groupId, footprints = []) {
+  const byId = new Map(footprints.map((item) => [item.id, item.bounds]));
+  const members = nodes.filter((node) => node.parentId === groupId);
+  const bounds = unionCanvasBounds(members.map((node) => byId.get(node.id) ?? fallbackFootprint(node, nodes)));
+  if (!bounds) return null;
+  const frame = groupFrame(bounds);
+  return { ...frame.position, width: frame.width, height: frame.height };
+}
+
+export function canvasGroupFrameContainsContent(frame, content) {
+  return [frame.x, frame.y, frame.width, frame.height].every(Number.isFinite) &&
+    frame.width >= 200 && frame.height >= 120 && (!content ||
+      (frame.x <= content.x + 1 && frame.y <= content.y + 1 &&
+       frame.x + frame.width >= content.x + content.width - 1 &&
+       frame.y + frame.height >= content.y + content.height - 1));
+}
+
+/** Keyboard resizing follows the same content constraints as the native handles. */
+export function resizeCanvasGroup(nodes, groupId, frame, footprints = []) {
+  const group = nodes.find((node) => node.id === groupId && node.type === "group");
+  if (!group || !canvasGroupFrameContainsContent(frame, canvasGroupContentBounds(nodes, groupId, footprints))) return nodes;
+  const width = Math.round(frame.width); const height = Math.round(frame.height);
+  if (frame.x === group.position.x && frame.y === group.position.y && width === group.width && height === group.height) return nodes;
+  return nodes.map((node) => {
+    if (node.id === groupId) return { ...node, position: { x: frame.x, y: frame.y }, width, height,
+      style: { ...node.style, width, height }, data: { ...node.data, sizing: "manual" } };
+    if (node.parentId !== groupId) return node;
+    const absolute = canvasNodeAbsolutePosition(node, nodes);
+    return { ...node, position: { x: absolute.x - frame.x, y: absolute.y - frame.y } };
+  });
 }
 
 export function createCanvasGroup(nodes, id, footprints = []) {
@@ -91,7 +114,20 @@ export function fitCanvasGroups(nodes, footprints = []) {
     if (!members.length) continue;
     const bounds = unionCanvasBounds(members.map((node) => byId.get(node.id) ?? fallbackFootprint(node, nodes)));
     if (!bounds) continue;
-    const frame = groupFrame(bounds);
+    let frame = groupFrame(bounds);
+    if (group.data.sizing === "manual") {
+      // Retain the user's whitespace. Only expand when content leaves the frame;
+      // moving members back inward never shrinks a manually arranged group.
+      const width = Number(group.width ?? group.style?.width);
+      const height = Number(group.height ?? group.style?.height);
+      if (Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0) {
+        const x = Math.min(group.position.x, frame.position.x);
+        const y = Math.min(group.position.y, frame.position.y);
+        const nextWidth = Math.ceil(Math.max(group.position.x + width, frame.position.x + frame.width) - x);
+        const nextHeight = Math.ceil(Math.max(group.position.y + height, frame.position.y + frame.height) - y);
+        frame = { position: { x, y }, width: nextWidth, height: nextHeight, style: { width: nextWidth, height: nextHeight } };
+      }
+    }
     // A one-pixel deadband absorbs zoom/DOM rounding noise. Explicit dimensions
     // also keep a restored legacy frame independent of percentage child sizes.
     if (group.width !== Number(group.style?.width) || group.height !== Number(group.style?.height) ||

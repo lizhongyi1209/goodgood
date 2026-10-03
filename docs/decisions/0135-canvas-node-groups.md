@@ -25,3 +25,25 @@ New server validation activates only after a separately authorized Web update.
 The Impeccable Operate workflow refines the existing white/gray canvas; it does
 not replace its identity or add a chromatic interface accent. Emoji content is
 the user's optional label, independent of interface color tokens.
+
+## GG-326 · Manual frame layout and drag surfaces
+
+The user extends this decision on 2026-10-03: offer the full emoji catalog,
+manual frame dimensions, a default cursor over the center and whole-group
+movement from the frame itself. Use the already locked Emoji Mart native data
+with a Chinese picker, categories and search, loaded only when opened. Bundle
+data and locale locally; do not fetch an external catalog at runtime.
+
+New and legacy groups default to automatic visible-content bounds. Resizing a
+corner switches to persisted `groupSizing: "manual"`; preserve the user's empty
+space and expand only when visible content exceeds the frame. An “适应内容”
+action restores automatic sizing. Native resizing compensates child-relative
+positions when top/left edges change, preserving content in canvas coordinates.
+Prevent shrinking past visible content and the existing group padding.
+
+Title and four edge strips move the group through the existing drag handle.
+Four corner handles resize; the center passes through to the normal canvas
+interaction with the default cursor. No scaling of members or nested groups.
+Manual sizing survives history, clipboard and project restoration. The optional
+group-only enum extends existing JSON validation without a schema migration;
+activating Web validation remains a separately authorized runtime action.

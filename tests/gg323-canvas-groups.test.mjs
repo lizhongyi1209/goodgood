@@ -3,7 +3,8 @@ import test, { after } from "node:test";
 import { fileURLToPath } from "node:url";
 import { createServer } from "vite";
 import { canGroupCanvasSelection, createCanvasGroup, fitCanvasGroups, ungroupCanvasNodes,
-  canvasNodeAbsolutePosition, canvasSelectionWithMembers, canvasPastedNodeGeometry } from "../features/canvas/canvas-groups.mjs";
+  canvasNodeAbsolutePosition, canvasSelectionWithMembers, canvasPastedNodeGeometry,
+  canvasGroupContentBounds, canvasGroupFrameContainsContent, resizeCanvasGroup } from "../features/canvas/canvas-groups.mjs";
 import { canvasPreviewBounds } from "../features/projects/project-library-model.mjs";
 import { validateCanvasProjectSave } from "../server/canvas-projects/validation.mjs";
 
@@ -84,6 +85,78 @@ test("GG-325 legacy style-only frames stabilize once while preserving saved cont
   assert.equal(stable[0].width, stable[0].style.width); assert.equal(stable[0].height, stable[0].style.height);
   for (const id of ["a", "b", "outside"]) assert.deepEqual(absolute(stable, id), absolute(legacy, id));
   assert.equal(fitCanvasGroups(stable), stable);
+});
+
+test("GG-326 manual top-left resize retains member positions and whitespace through fitting", () => {
+  const grouped = createCanvasGroup(origin(), "group-1");
+  const frame = grouped[0];
+  const resized = resizeCanvasGroup(grouped, frame.id, {
+    x: frame.position.x - 100, y: frame.position.y - 80, width: frame.width + 240, height: frame.height + 200,
+  });
+  assert.equal(resized[0].data.sizing, "manual");
+  assert.deepEqual(resized[0].style, { width: frame.width + 240, height: frame.height + 200 });
+  for (const id of ["a", "b", "outside"]) assert.deepEqual(absolute(resized, id), absolute(grouped, id));
+  assert.equal(fitCanvasGroups(resized), resized);
+  const movedInside = resized.map((node) => node.id === "b" ? { ...node, position: { x: node.position.x - 60, y: node.position.y - 60 } } : node);
+  assert.equal(fitCanvasGroups(movedInside), movedInside);
+  const restored = fitCanvasGroups(resized.map((node) => node.type === "group" ? { ...node, data: { ...node.data, sizing: "auto" } } : node));
+  assert.deepEqual(restored[0].style, frame.style);
+  for (const id of ["a", "b"]) assert.deepEqual(absolute(restored, id), absolute(grouped, id));
+});
+
+test("GG-326 manual frames expand for visible stacks then retain the extra space", () => {
+  const grouped = createCanvasGroup(origin(), "group-1");
+  const frame = grouped[0];
+  const manual = resizeCanvasGroup(grouped, frame.id, {
+    ...frame.position, width: frame.width + 80, height: frame.height + 60,
+  });
+  const stack = [{ id: "a", bounds: { x: 380, y: -200, width: 1900, height: 360 } }];
+  const expanded = fitCanvasGroups(manual, stack);
+  assert(expanded[0].position.x < manual[0].position.x);
+  assert(expanded[0].position.y < manual[0].position.y);
+  assert(expanded[0].width > manual[0].width);
+  assert.equal(expanded[0].position.x + expanded[0].width, 2308);
+  assert.equal(expanded[0].position.y + expanded[0].height, manual[0].position.y + manual[0].height);
+  for (const id of ["a", "b", "outside"]) assert.deepEqual(absolute(expanded, id), absolute(manual, id));
+  assert.equal(fitCanvasGroups(expanded), expanded);
+  assert.equal(fitCanvasGroups(expanded, stack), expanded);
+});
+
+test("GG-326 resizing cannot shrink past visible content or accept invalid geometry", () => {
+  const grouped = createCanvasGroup(origin(), "group-1"); const frame = grouped[0];
+  const content = canvasGroupContentBounds(grouped, frame.id);
+  assert(canvasGroupFrameContainsContent({ ...frame.position, width: frame.width, height: frame.height }, content));
+  assert.equal(resizeCanvasGroup(grouped, frame.id, { ...frame.position, width: frame.width - 100, height: frame.height }), grouped);
+  assert.equal(resizeCanvasGroup(grouped, frame.id, { ...frame.position, width: NaN, height: frame.height }), grouped);
+  assert.equal(resizeCanvasGroup(grouped, "missing", { x: 0, y: 0, width: 200, height: 120 }), grouped);
+  assert.equal(canvasGroupContentBounds([], "missing"), null);
+  assert.equal(resizeCanvasGroup([], "missing", { x: 0, y: 0, width: 200, height: 120 }).length, 0);
+  const expandedStack = [{ id: "a", bounds: { x: 500, y: -120, width: 1900, height: 260 } }];
+  assert(!canvasGroupFrameContainsContent({ ...frame.position, width: frame.width + 100, height: frame.height }, canvasGroupContentBounds(grouped, frame.id, expandedStack)));
+});
+
+test("GG-326 manual sizing and diverse emoji survive cloud snapshots and clipboard geometry", () => {
+  const grouped = createCanvasGroup(origin(), "group-1"); const frame = grouped[0];
+  const manual = resizeCanvasGroup(grouped, frame.id, { ...frame.position, width: frame.width + 200, height: frame.height + 100 });
+  for (const emoji of ["🦊", "🍜", "🚀", "🇨🇳", "👩🏽‍🎨", "👨‍👩‍👧‍👦", "1️⃣"]) {
+    const labeled = manual.map((node) => node.type === "group" ? { ...node, data: { ...node.data, emoji } } : node);
+    const document = save(remoteCanvasProjectDocument(snapshot(labeled))).document;
+    assert.equal(document.nodes[0].groupSizing, "manual"); assert.equal(document.nodes[0].emoji, emoji);
+    assert.deepEqual(document.nodes[0].size, manual[0].style);
+  }
+  const copied = canvasSelectionWithMembers(manual);
+  const ids = new Map(copied.map((node) => [node.id, `copy-${node.id}`]));
+  const pasted = copied.map((node) => ({ ...node, id: ids.get(node.id), ...canvasPastedNodeGeometry(node, copied, ids, 32) }));
+  assert.equal(pasted[0].data.sizing, "manual"); assert.equal(fitCanvasGroups(pasted), pasted);
+  assert.deepEqual(absolute(pasted, "copy-a"), { x: 532, y: -88 });
+  const inFlight = manual.map((node) => node.type === "group" ? { ...node, width: node.width + 60 } : node);
+  assert.equal(snapshot(inFlight).nodes[0].size.width, manual[0].width + 60);
+  const auto = snapshot(grouped); assert.equal(auto.nodes[0].groupSizing, undefined);
+  assert.equal(save(auto).document.nodes[0].groupSizing, undefined);
+  for (const nodeId of ["a", "group-1"]) {
+    const invalid = { ...auto, nodes: auto.nodes.map((node) => node.id === nodeId ? { ...node, groupSizing: nodeId === "a" ? "manual" : "invalid" } : node) };
+    assert.throws(() => save(invalid), (error) => error.code === "INVALID_CANVAS_PROJECT");
+  }
 });
 
 test("group clipboard includes members and applies the paste offset only once", () => {

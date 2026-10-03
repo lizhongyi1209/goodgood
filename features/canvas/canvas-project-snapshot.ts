@@ -46,9 +46,9 @@ function finiteMetadata(value: unknown) {
 }
 
 function nodeGeometry(node: CanvasNode) {
-  // React Flow resizes text nodes via width/height while their initial style stays unchanged.
-  const width = positiveSize(["textEditor", "textGenerator"].includes(node.type ?? "") ? node.width ?? node.style?.width : node.style?.width ?? node.width);
-  const height = positiveSize(["textEditor", "textGenerator"].includes(node.type ?? "") ? node.height ?? node.style?.height : node.style?.height ?? node.height);
+  // Native resize changes width/height before initial style is synchronized.
+  const width = positiveSize(["textEditor", "textGenerator", "group"].includes(node.type ?? "") ? node.width ?? node.style?.width : node.style?.width ?? node.width);
+  const height = positiveSize(["textEditor", "textGenerator", "group"].includes(node.type ?? "") ? node.height ?? node.style?.height : node.style?.height ?? node.height);
   return width && height ? { width, height } : undefined;
 }
 
@@ -69,6 +69,7 @@ function persistNode(node: CanvasNode): CanvasProjectNode | null {
   const base = { id: node.id, position: { ...node.position }, size: nodeGeometry(node),
     ...(node.parentId ? { parentId: node.parentId } : {}) };
   if (node.type === "group") return { ...base, type: "group", name: node.data.name,
+    ...(node.data.sizing === "manual" ? { groupSizing: "manual" as const } : {}),
     ...(node.data.emoji ? { emoji: node.data.emoji } : {}) };
   if (node.type === "textEditor") return {
     ...base, type: "textEditor", markdown: node.data.markdown, text: node.data.text,

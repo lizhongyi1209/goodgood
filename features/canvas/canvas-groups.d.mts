@@ -3,7 +3,10 @@ type Footprint = { id: string; bounds: { x: number; y: number; width: number; he
 type PositionedNode = { id: string; type?: string; parentId?: string; position: { x: number; y: number } };
 export const CANVAS_GROUP_DRAG_HANDLE: string;
 export const CANVAS_GROUP_NAME_LIMIT: number;
-export const CANVAS_GROUP_EMOJIS: readonly { emoji: string; label: string }[];
+type Bounds = { x: number; y: number; width: number; height: number };
+export function canvasGroupContentBounds(nodes: CanvasNode[], groupId: string, footprints?: Footprint[]): Bounds | null;
+export function canvasGroupFrameContainsContent(frame: Bounds, content: Bounds | null): boolean;
+export function resizeCanvasGroup(nodes: CanvasNode[], groupId: string, frame: Bounds, footprints?: Footprint[]): CanvasNode[];
 export function canvasNodeAbsolutePosition(node: PositionedNode, nodes: readonly PositionedNode[]): { x: number; y: number };
 export function canvasSelectionWithMembers(nodes: CanvasNode[]): CanvasNode[];
 export function canGroupCanvasSelection(nodes: CanvasNode[]): boolean;

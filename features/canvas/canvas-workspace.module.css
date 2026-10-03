@@ -339,8 +339,12 @@
 
 .canvas :global(.react-flow__node-group) {
   padding: 0; border: 0; border-radius: 16px; background: transparent; box-shadow: none;
-  pointer-events: none;
+  /* Native draggable nodes set pointer-events inline. Only the group's named
+     header/edge/resize controls should intercept the otherwise empty center. */
+  pointer-events: none !important; cursor: default;
 }
+.canvas :global(.react-flow__node-group.draggable),
+.canvas :global(.react-flow__node-group.draggable.dragging) { cursor: default; }
 .canvas :global(.react-flow__node-group.selected) { box-shadow: none; }
 
 .imageMetadata {

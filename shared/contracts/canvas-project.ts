@@ -8,6 +8,7 @@ export type CanvasProjectNode = Readonly<{
   position: Readonly<{ x: number; y: number }>;
   parentId?: string;
   emoji?: string;
+  groupSizing?: "auto" | "manual";
   size?: Readonly<{ width: number; height: number }>;
   asset?: Readonly<{ id: string; kind: "reference" | "generated" | "video" | "audio" }>;
   jobId?: string;

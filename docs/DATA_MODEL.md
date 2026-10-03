@@ -8,10 +8,15 @@
 
 Existing schemaVersion1/2 page JSON accepts `type: group`, required nonempty
 `name` (maximum80 code units) and `size`, plus optional single-grapheme `emoji`.
+GG-326 adds optional group-only `groupSizing: "auto" | "manual"`; absent means
+automatic bounds. Runtime `data.sizing` is stored only when manual, and native
+width/height take priority over initial style during snapshots. Restored groups
+receive explicit dimensions and their sizing mode. Manual frames retain empty
+space, expanding only when visible member bounds exceed the saved geometry.
 Members retain optional `parentId` and parent-relative `position`. The parent
 must be a group in the same page; groups cannot have parents, media, job bindings
 or connections. Runtime frames use React Flow parent inheritance, negative base
-z-index and a header drag handle; these UI properties are not persisted.
+z-index and title/edge drag handles; these UI properties are not persisted.
 Snapshots/history/clipboard retain group geometry and member identity. Cloud
 filtering keeps the frame while pending uploads remain local; private resource
 authorization and the existing1MiB/1000-node/3000-edge envelope remain. No SQL
