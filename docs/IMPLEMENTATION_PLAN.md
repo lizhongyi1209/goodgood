@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-03
-- Current phase: GG-331文本生成chat宽度/间距与菜单关闭cd5fe3d→f86dd1b已接入GG-116/5173；480–640px及原视口限制、参数间距、非模态模型单选列表/点击输入关闭并保留焦点。创建1/退役1，未编译检查或浏览器验收，无后端更新，保留GG-330及既有源码。
-- Current objective: 用户刷新手验面板宽度/参数间距、打开模型列表后点击输入并继续输入、模型选择/Escape及窄屏/边栏；继续此前画布/文本UI/分组和图片元数据手验。默认仅开发代码，本轮无构建检查、HTTP/SQL/Provider或服务/生产操作；运行身份沿GG-330 Web9448/唯一Worker23800/Vite33440及verified94bee5354e5b1a77516235ee894a19a42767610e记录保持，后继源码/文档不改写已运行后台receipt。
+- Current phase: GG-332分组视觉细化20d29a3/cc1a86b→a06a1fd/2d44a19已接入GG-116/5173；文本节点式框内四角斜线图标、外框左上标题/emoji及选中时上方快捷栏。创建1/退役1，辅助工作区已归档，未编译检查或浏览器验收，无后端更新，保留另窗GG-331及GG-330运行/此前源码。
+- Current objective: 用户刷新选中组，手验框内四角图标/伸缩、外置名称双击或键盘改名/拖动、上方emoji/适应内容/解散及长名/缩放/切换选择；GG-331文本面板继续手验。默认仅开发代码，本轮无构建检查、HTTP/SQL/Provider或服务/生产操作；运行身份沿GG-330 Web9448/唯一Worker23800/Vite33440及verified94bee5354e5b1a77516235ee894a19a42767610e记录保持，后继源码/文档不改写已运行后台receipt。
 - Previous objective: GG-313模板名称格式/示例参考、GG-312画布300%高清门槛、GG-311模板保存/成功动效及类型筛选、GG-310前景色已交付源码；GG-309私有2K接口、批量校验及文本资产API/本地0063已启用。
 
 ## Current checkpoint
+
+- 最新分组视觉 [GG-332](tasks/GG-332-group-toolbar-layout.md)：核验f86dd1b及GG-330/326祖先，隔离20d29a3/cc1a86b精确接入最新1c74ff8为a06a1fd/2d44a19，保留另一窗口文本宽度/菜单交互。ADR0135先补位置决定，四角改文本节点16px双斜线、32px命中范围/框内4px，清除居中translate并对应角落旋转/缩放原点；外置名称/emoji复用imageMetadata字号/间距，原改名/拖动保持。原生NodeToolbar在标题上方，emoji/手动时适应内容/解散按既有白灰快捷栏排列，选中关闭清理emoji开关，14px图标明确。仅组TSX/CSS及必要文档，无几何/存储/接口变化；创建1/退役1，managed辅助已归档，零依赖缓存，无编译/lint/typecheck/代码diff检查/测试/浏览器验收或运行/生产操作。用户刷新手验，无后端更新，当前后台receipt沿GG-330。
 
 - 最新局部交互 [GG-331](tasks/GG-331-text-composer-spacing.md)：核验184458f，隔离12ac96d/cd5fe3d精确接入f241059/f86dd1b。文本生成chat480–640px、保留视口/资产边栏边界，固定底栏内距及12px模型/预设间距；原模态Select替换为现有非模态DropdownMenu单选，受控开关，输入点击/聚焦关闭且不抢焦点，切走节点/锁定关闭，预设同为非模态。仅TSX/CSS与设计/交互/手验说明，无产品决定/ADR/依赖/API/计费/存储变化，无后端更新；创建1/退役1，未构建、lint/typecheck、代码/diff检查、测试或浏览器验收，无HTTP/SQL/Provider/服务或生产操作。用户刷新手验，保留GG-330运行与前序任务。
 
