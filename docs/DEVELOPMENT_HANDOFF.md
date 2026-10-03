@@ -1,5 +1,7 @@
 # 当前开发版本与跨窗口交接
 
+- 最新组居中修复：[GG-333](tasks/GG-333-group-auto-centering.md)核验2e5b6d0，隔离a4b59bf精确接入7baf03b；旧框内标题60px上预留改为与下方相同28px，自动最小120px高度额外留白按可见内容中心分配，沿原标题/叠层测量，左右不变。实际content envelope与自动理想尺寸分离，手动框只包围实际内容/间距，不因自动居中移动或增长；父框拟合重算成员相对坐标以保持绝对位置，GG-325稳定读写和死区保持。仅组helper、必要回归来源/ADR及说明，无新持久/API/后台需求；创建1/退役1、managed辅助工作区已归档，零依赖缓存，未编译/lint/typecheck/代码diff检查/测试或浏览器验收，无HTTP/SQL/Provider/运行/生产操作。用户刷新5173手验自动上下等距/小组/展开与手动留白及切换适应内容，保留GG-332/331；运行沿GG-330 verified94bee535及原Web/唯一Worker/Vite/数据/SMTP记录，本轮未重查运行。
+
 - 最新分组视觉：[GG-332](tasks/GG-332-group-toolbar-layout.md)核验f86dd1b及GG-330/326祖先后隔离20d29a3/cc1a86b，保留另一窗口1c74ff8后精确接入a06a1fd/2d44a19。四角文本节点式16px双斜线/32px命中、框内4px及对应角落旋转/缩放原点；外置imageMetadata标题/emoji，原双击/Enter/F2编辑和标题移动保持；原生NodeToolbar上方emoji/适应内容/解散、固定屏幕尺寸与14px图标，取消选中清理emoji弹层。仅组TSX/CSS和必要ADR/设计/交互/手验说明，无几何/存储/后台变化。创建1/退役1，managed辅助工作区已归档，零依赖缓存；未编译、lint/typecheck、代码/diff检查、测试或浏览器验收，无HTTP/SQL/Provider/服务或生产操作。用户刷新5173手验三个位置与原操作，保留GG-331文本面板和此前源码；运行身份沿GG-330 Web9448/唯一Worker23800/Vite33440及verified94bee535 receipt，本轮未重查运行。组云校验此前已启用，无需新后台激活。
 
 - 最新文本输入细化：[GG-331](tasks/GG-331-text-composer-spacing.md)基线核验184458f，隔离12ac96d/cd5fe3d精确接入GG-116/5173为f241059/f86dd1b。chat加宽480–640px并保留视口/边栏收缩，参数间距/内距增大；非模态受控模型单选菜单、点击/聚焦输入关闭且不抢焦点，切走节点/锁定关闭，预设同为非模态。无新依赖、API、计费、持久字段或后台更新；创建1/退役1，辅助目录干净正常Git移除，无依赖/缓存/Node进程。未构建、lint/typecheck、代码/diff检查、测试/浏览器验收、HTTP/SQL/Provider或运行/生产操作，用户刷新手验。GG-330 Web9448/唯一Worker23800/Vite33440及94bee535后台receipt身份沿原记录保持，本轮未重查运行；未来重启仍按最新HEAD构建。
