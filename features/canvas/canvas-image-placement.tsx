@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
 import { useReactFlow, useStore } from "@xyflow/react";
-import { ArrowDown, ArrowUp, Copy, Hand, Images, Minus, Plus, Trash2, Upload, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Hand, Images, Minus, Plus, Trash2, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -10,15 +10,16 @@ import { canvasCropImageForNode, type CanvasCropCommit, type CanvasCropImage, ty
 import { CanvasImagePlacementContext, type ImagePlacementMode } from "./canvas-image-placement-context";
 import { exportStickerComposition, loadPlacementImage, type PlacementImage } from "./canvas-image-placement-image";
 import { PlacementAssetPicker } from "./canvas-image-placement-picker";
-import { MAX_STICKER_LAYERS, PLACEMENT_CORNERS, defaultPlacement, fitImageView, imagePoint, movePlacement, moveRegion, normalizeRotation, placementCorner, regionCoordinates, regionFromPoints, regionPrompt, reorderPlacementLayers, resizePlacement, resizeRegion, rotatePlacement, scalePlacement, zoomImageView, type ImagePlacementView, type PlacementCorner, type PlacementPoint, type PlacementRegion, type StickerPlacement } from "./canvas-image-placement-model.mjs";
+import { CanvasImageRegionEditor } from "./canvas-image-region";
+import { MAX_STICKER_LAYERS, PLACEMENT_CORNERS, defaultPlacement, fitImageView, imagePoint, movePlacement, normalizeRotation, placementCorner, reorderPlacementLayers, resizePlacement, rotatePlacement, scalePlacement, zoomImageView, type ImagePlacementView, type PlacementCorner, type PlacementPoint, type StickerPlacement } from "./canvas-image-placement-model.mjs";
 import type { CanvasNode } from "./canvas-workspace";
 import styles from "./canvas-image-placement.module.css";
 
 type PlacementRequest = CanvasCropRequest & Readonly<{ mode: ImagePlacementMode; ownerKey: string; trigger: HTMLButtonElement }>;
 type Sticker = Readonly<{ id: string; name: string; resource: PlacementImage; placement: StickerPlacement }>;
 type Drag = Readonly<{
-  pointerId: number; kind: "pan" | "draw" | "region-move" | "region-resize" | "layer-move" | "layer-resize" | "rotate";
-  start: PlacementPoint; view: ImagePlacementView; region: PlacementRegion | null; layer: Sticker | null; corner?: PlacementCorner;
+  pointerId: number; kind: "pan" | "layer-move" | "layer-resize" | "rotate";
+  start: PlacementPoint; view: ImagePlacementView; layer: Sticker | null; corner?: PlacementCorner;
 }>;
 const CORNER_NAMES = { nw: "左上", ne: "右上", se: "右下", sw: "左下" };
 
@@ -28,11 +29,12 @@ export function CanvasImagePlacementProvider({ children, enabled, libraryEnabled
   const [request, setRequest] = useState<PlacementRequest | null>(null);
   const visible = enabled && request?.ownerKey === ownerKey && request.pageId === pageKey ? request : null;
   useEffect(() => { setRequest(null); }, [enabled, ownerKey, pageKey]);
-  return <CanvasImagePlacementContext.Provider value={{ enabled, openPlacement: (image, mode, trigger) => {
+  return <CanvasImagePlacementContext.Provider value={{ enabled, regionKey: visible?.mode === "region" ? visible.key : null, openPlacement: (image, mode, trigger) => {
     if (enabled) setRequest({ ...image, mode, trigger, ownerKey, pageId: pageKey, sessionId: crypto.randomUUID() });
   } }}>
     {children}
-    {visible && <PlacementDialog key={visible.sessionId} request={visible} libraryEnabled={libraryEnabled} onCommit={onCommit} onClose={() => setRequest(null)} />}
+    {visible?.mode === "region" && <CanvasImageRegionEditor key={visible.sessionId} request={visible} onClose={() => setRequest(null)} />}
+    {visible?.mode === "sticker" && <PlacementDialog key={visible.sessionId} request={visible} libraryEnabled={libraryEnabled} onCommit={onCommit} onClose={() => setRequest(null)} />}
   </CanvasImagePlacementContext.Provider>;
 }
 
@@ -45,15 +47,11 @@ function PlacementDialog({ request, libraryEnabled, onCommit, onClose }: Readonl
   const [sourceError, setSourceError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
-  const [region, setRegion] = useState<PlacementRegion | null>(null);
-  const [normalized, setNormalized] = useState(false);
   const [layers, setLayers] = useState<readonly Sticker[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [assetOpen, setAssetOpen] = useState(false);
   const [adding, setAdding] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [copying, setCopying] = useState(false);
-  const [notice, setNotice] = useState("");
   const [view, setView] = useState<ImagePlacementView>({ x: 0, y: 0, scale: 1 });
   const [panMode, setPanMode] = useState(false);
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -65,11 +63,10 @@ function PlacementDialog({ request, libraryEnabled, onCommit, onClose }: Readonl
   const busyRef = useRef(false);
   const spaceRef = useRef(false);
   const closeRef = useRef(onClose); closeRef.current = onClose;
-  const title = request.mode === "region" ? "框选" : "贴图";
+  const title = "贴图";
   const size = base ? { width: base.image.naturalWidth, height: base.image.naturalHeight } : null;
   const selected = layers.find((layer) => layer.id === selectedId) ?? null;
   const disabled = !base || saving || adding;
-  const prompt = region && size ? regionPrompt(region, size, normalized) : "";
   const clipId = `placement-${request.sessionId}`;
 
   const updateLayers = (update: (current: readonly Sticker[]) => readonly Sticker[]) => {
@@ -137,15 +134,13 @@ function PlacementDialog({ request, libraryEnabled, onCommit, onClose }: Readonl
   const startDrag = (event: PointerEvent, kind: Drag["kind"], layer: Sticker | null = null, corner?: PlacementCorner) => {
     if (disabled || dragRef.current || !size || !viewportRef.current || event.button !== 0 && event.button !== 1) return;
     const actualKind = event.button === 1 || panMode || spaceRef.current ? "pan" : kind;
-    const point = screenPoint(event), pixel = imagePoint(point, view);
-    if (actualKind === "draw" && (pixel.x < 0 || pixel.x >= size.width || pixel.y < 0 || pixel.y >= size.height)) return;
+    const point = screenPoint(event);
     event.preventDefault(); event.stopPropagation();
     if (layer) setSelectedId(layer.id);
-    setError(null); setNotice("");
-    dragRef.current = { pointerId: event.pointerId, kind: actualKind, start: point, view, region, layer, corner };
+    setError(null);
+    dragRef.current = { pointerId: event.pointerId, kind: actualKind, start: point, view, layer, corner };
     viewportRef.current.setPointerCapture(event.pointerId);
     viewportRef.current.focus({ preventScroll: true });
-    if (actualKind === "draw") setRegion(null);
   };
   const pointerMove = (event: PointerEvent<HTMLDivElement>) => {
     const drag = dragRef.current;
@@ -155,10 +150,7 @@ function PlacementDialog({ request, libraryEnabled, onCommit, onClose }: Readonl
     if (drag.kind === "pan") { setView({ ...drag.view, x: drag.view.x + screen.x - drag.start.x, y: drag.view.y + screen.y - drag.start.y }); return; }
     const start = imagePoint(drag.start, drag.view), point = imagePoint(screen, drag.view);
     const delta = { x: point.x - start.x, y: point.y - start.y };
-    if (drag.kind === "draw") setRegion(regionFromPoints(start, point, size));
-    else if (drag.kind === "region-move" && drag.region) setRegion(moveRegion(drag.region, delta, size));
-    else if (drag.kind === "region-resize" && drag.region && drag.corner) setRegion(resizeRegion(drag.region, drag.corner, point, size));
-    else if (drag.layer) {
+    if (drag.layer) {
       const layer = drag.layer.placement;
       const next = drag.kind === "layer-move" ? movePlacement(layer, delta, size)
         : drag.kind === "layer-resize" && drag.corner ? resizePlacement(layer, drag.corner, point)
@@ -171,7 +163,7 @@ function PlacementDialog({ request, libraryEnabled, onCommit, onClose }: Readonl
     if (!drag || event.pointerId !== drag.pointerId) return;
     dragRef.current = null;
     if (cancel) {
-      setRegion(drag.region); setView(drag.view);
+      setView(drag.view);
       if (drag.layer) changeLayer(drag.layer.id, drag.layer.placement);
     }
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
@@ -192,7 +184,7 @@ function PlacementDialog({ request, libraryEnabled, onCommit, onClose }: Readonl
   const addImages = async (sources: readonly (File | CanvasCropImage)[]) => {
     const signal = lifecycle.current?.signal;
     if (!size || !signal || signal.aborted || busyRef.current || !sources.length) return;
-    busyRef.current = true; setAdding(true); setError(null); setNotice(""); dragRef.current = null;
+    busyRef.current = true; setAdding(true); setError(null); dragRef.current = null;
     const failures: string[] = [];
     try {
       for (const source of sources) {
@@ -215,17 +207,6 @@ function PlacementDialog({ request, libraryEnabled, onCommit, onClose }: Readonl
     } catch (cause) { if (!signal.aborted) setError(cause instanceof Error ? cause.message : "贴图读取失败，请重试。"); }
     finally { busyRef.current = false; if (!signal.aborted) setAdding(false); }
   };
-  const copy = async () => {
-    const signal = lifecycle.current?.signal;
-    if (!prompt || copying || !signal || signal.aborted) return;
-    setCopying(true); setError(null);
-    try {
-      if (!navigator.clipboard?.writeText) throw new Error("当前浏览器无法复制，请选中右侧文本手动复制。");
-      await navigator.clipboard.writeText(prompt);
-      if (!signal.aborted) setNotice("区域提示词已复制。");
-    } catch (cause) { if (!signal.aborted) setError(cause instanceof Error ? cause.message : "复制失败，请选中右侧文本手动复制。"); }
-    finally { if (!signal.aborted) setCopying(false); }
-  };
   const save = async () => {
     const signal = lifecycle.current?.signal;
     if (!base || !size || !layers.length || busyRef.current || !signal || signal.aborted) return;
@@ -246,17 +227,16 @@ function PlacementDialog({ request, libraryEnabled, onCommit, onClose }: Readonl
       onContextMenu={(event) => event.stopPropagation()}
       onCloseAutoFocus={(event) => { event.preventDefault(); if (request.trigger.isConnected) request.trigger.focus({ preventScroll: true }); }}>
       <header className={styles.header}><DialogTitle className={styles.title}>{title}</DialogTitle>
-        <DialogDescription className="sr-only">{request.mode === "region" ? "画框选择图片区域，复制坐标用于编辑提示词。" : "添加上层图片，调整位置、大小和旋转，保存新的图片。"}</DialogDescription>
+        <DialogDescription className="sr-only">添加上层图片，调整位置、大小和旋转，保存新的图片。</DialogDescription>
         <Button variant="ghost" size="icon" aria-label={`关闭${title}`} onClick={cancel}><X size={18} strokeWidth={1.7} /></Button>
       </header>
       <div className={styles.body}>
         <section className={styles.preview} aria-label={`${title}预览`}>
-          <div ref={viewportRef} className={styles.viewport} data-mode={request.mode} data-pan={panMode} tabIndex={0} aria-label="图片编辑视图，滚轮缩放，空格或平移按钮拖动画面"
+          <div ref={viewportRef} className={styles.viewport} data-mode="sticker" data-pan={panMode} tabIndex={0} aria-label="图片编辑视图，滚轮缩放，空格或平移按钮拖动画面"
             aria-busy={adding || saving || !base && !sourceError}
             onPointerDown={(event) => {
               if (disabled) return;
-              if (request.mode === "region") startDrag(event, "draw");
-              else if (panMode || spaceRef.current || event.button === 1) startDrag(event, "pan");
+              if (panMode || spaceRef.current || event.button === 1) startDrag(event, "pan");
               else setSelectedId(null);
             }} onPointerMove={pointerMove} onPointerUp={finishDrag} onPointerCancel={(event) => finishDrag(event, true)} onLostPointerCapture={(event) => finishDrag(event, true)}
             onBlur={() => { spaceRef.current = false; }} onKeyUp={(event) => { if (event.key === " ") spaceRef.current = false; }}
@@ -266,10 +246,9 @@ function PlacementDialog({ request, libraryEnabled, onCommit, onClose }: Readonl
               if (event.key === "+" || event.key === "=") { event.preventDefault(); zoom(1.2); return; }
               if (event.key === "-") { event.preventDefault(); zoom(1 / 1.2); return; }
               if (event.key === "0") { event.preventDefault(); fit(); return; }
-              if (event.key === "Delete" || event.key === "Backspace") { event.preventDefault(); if (request.mode === "region") setRegion(null); else removeSelected(); return; }
+              if (event.key === "Delete" || event.key === "Backspace") { event.preventDefault(); removeSelected(); return; }
               const delta = keyDelta(event);
-              if (delta && region && request.mode === "region") setRegion(moveRegion(region, delta, size));
-              else if (delta && selected) changeLayer(selected.id, movePlacement(selected.placement, delta, size));
+              if (delta && selected) changeLayer(selected.id, movePlacement(selected.placement, delta, size));
             }}>
             {base && size && <svg className={styles.imagePlane} width={size.width * view.scale} height={size.height * view.scale} viewBox={`0 0 ${size.width} ${size.height}`} style={{ left: view.x, top: view.y }} aria-label="编辑图片">
               <defs><clipPath id={clipId}><rect width={size.width} height={size.height} /></clipPath></defs>
@@ -278,17 +257,7 @@ function PlacementDialog({ request, libraryEnabled, onCommit, onClose }: Readonl
                 {layers.map((layer) => <g key={layer.id} transform={`translate(${layer.placement.cx} ${layer.placement.cy}) rotate(${layer.placement.rotation})`} onPointerDown={(event) => startDrag(event, "layer-move", layer)} className={styles.move}>
                   <image href={layer.resource.objectUrl} x={-layer.placement.width / 2} y={-layer.placement.height / 2} width={layer.placement.width} height={layer.placement.height} preserveAspectRatio="none" />
                 </g>)}
-                {request.mode === "region" && region && <path d={`M0 0H${size.width}V${size.height}H0Z M${region.x} ${region.y}h${region.width}v${region.height}h-${region.width}Z`} fill="#00000024" fillRule="evenodd" pointerEvents="none" />}
               </g>
-              {request.mode === "region" && region && <>
-                <rect {...region} fill="none" stroke="#fff" strokeWidth={3 / view.scale} pointerEvents="none" />
-                <rect {...region} fill="transparent" stroke="#242424" strokeWidth={1 / view.scale} className={styles.move} onPointerDown={(event) => startDrag(event, "region-move")} />
-                {PLACEMENT_CORNERS.map((corner) => <circle key={corner} cx={region.x + (corner.includes("w") ? 0 : region.width)} cy={region.y + (corner.includes("n") ? 0 : region.height)} r={6 / view.scale} strokeWidth={1 / view.scale} className={styles.corner} data-corner={corner}
-                  role="button" tabIndex={disabled ? -1 : 0} aria-label={`调整选框${CORNER_NAMES[corner]}角`} onPointerDown={(event) => startDrag(event, "region-resize", null, corner)} onKeyDown={(event) => {
-                    if (disabled) return; const delta = keyDelta(event);
-                    if (delta) setRegion(resizeRegion(region, corner, { x: region.x + (corner.includes("w") ? 0 : region.width) + delta.x, y: region.y + (corner.includes("n") ? 0 : region.height) + delta.y }, size));
-                  }} />)}
-              </>}
               {selected && <g transform={`translate(${selected.placement.cx} ${selected.placement.cy}) rotate(${selected.placement.rotation})`}>
                 <rect x={-selected.placement.width / 2} y={-selected.placement.height / 2} width={selected.placement.width} height={selected.placement.height} fill="none" stroke="#fff" strokeWidth={3 / view.scale} pointerEvents="none" />
                 <rect x={-selected.placement.width / 2} y={-selected.placement.height / 2} width={selected.placement.width} height={selected.placement.height} fill="transparent" stroke="#242424" strokeWidth={1 / view.scale} className={styles.move} onPointerDown={(event) => startDrag(event, "layer-move", selected)} />
@@ -318,29 +287,6 @@ function PlacementDialog({ request, libraryEnabled, onCommit, onClose }: Readonl
         </section>
         <aside className={styles.panel} aria-label={`${title}设置`}>
           <p className={styles.dimensions}>{size ? `原图 · ${size.width} × ${size.height}` : "原图尚未就绪"}</p>
-          {request.mode === "region" ? <>
-            <p className={styles.hint}>在图片上拖动画框，移动或调整四角定位区域。</p>
-            <div className={styles.actions}>
-              <Button variant="ghost" size="sm" disabled={disabled} onClick={() => { setRegion({ x: 0, y: 0, width: size!.width, height: size!.height }); setNotice(""); }}>选择整图</Button>
-              <Button variant="ghost" size="sm" disabled={disabled || !region} onClick={() => { setRegion(null); setNotice(""); }}>清除选框</Button>
-            </div>
-            <h3>区域坐标</h3>
-            <div className={styles.actions} role="group" aria-label="坐标单位">
-              <Button variant={normalized ? "ghost" : "secondary"} size="sm" aria-pressed={!normalized} onClick={() => { setNormalized(false); setNotice(""); }}>原图像素</Button>
-              <Button variant={normalized ? "secondary" : "ghost"} size="sm" aria-pressed={normalized} onClick={() => { setNormalized(true); setNotice(""); }}>0–1000</Button>
-            </div>
-            <p className={styles.coordinates}>{region && size ? `bbox=[${regionCoordinates(region, size, normalized).join(", ")}]` : "尚未框选区域"}</p>
-            {region && size && <div className={styles.fields}>
-              {(["x", "y", "width", "height"] as const).map((key) => <label key={key}><span>{{ x: "左侧位置", y: "顶部位置", width: "宽度", height: "高度" }[key]}（px）</span><Input type="number" step={1} disabled={disabled} value={region[key]} min={key === "width" || key === "height" ? 1 : 0} onChange={(event) => {
-                const value = Number(event.target.value); if (!Number.isFinite(value)) return;
-                const next = { ...region, [key]: Math.round(value) };
-                const x = Math.max(0, Math.min(size.width - 1, next.x)), y = Math.max(0, Math.min(size.height - 1, next.y));
-                setRegion({ x, y, width: Math.max(1, Math.min(size.width - x, next.width)), height: Math.max(1, Math.min(size.height - y, next.height)) }); setNotice("");
-              }} /></label>)}
-            </div>}
-            <h3>区域提示词</h3>
-            <textarea className={styles.prompt} readOnly value={prompt} placeholder="框选后可复制到提示词中" aria-label="可复制的区域编辑提示词" />
-          </> : <>
             <div className={styles.actions}>
               <Button variant="secondary" size="sm" disabled={disabled || layers.length >= MAX_STICKER_LAYERS} onClick={() => fileRef.current?.click()}><Upload size={14} />上传贴图</Button>
               <Button variant="ghost" size="sm" disabled={disabled || layers.length >= MAX_STICKER_LAYERS} aria-expanded={assetOpen} onClick={() => setAssetOpen((value) => !value)}><Images size={14} />从资产选择</Button>
@@ -372,14 +318,11 @@ function PlacementDialog({ request, libraryEnabled, onCommit, onClose }: Readonl
                 <Button variant="ghost" size="sm" disabled={disabled} onClick={removeSelected}><Trash2 size={14} />删除</Button>
               </div>
             </>}
-          </>}
           {error && <p className={styles.error} role="alert">{error}</p>}
         </aside>
       </div>
       <footer className={styles.footer}>
-        <p role="status" aria-live="polite">{notice}</p>
-        {request.mode === "region" ? <Button size="sm" disabled={!region || disabled || copying} onClick={() => void copy()}><Copy size={14} />{copying ? "正在复制…" : "复制区域提示词"}</Button>
-          : <Button size="sm" disabled={!layers.length || disabled} onClick={() => void save()}>{saving ? "正在保存…" : "确认贴图"}</Button>}
+        <Button size="sm" disabled={!layers.length || disabled} onClick={() => void save()}>{saving ? "正在保存…" : "确认贴图"}</Button>
       </footer>
     </DialogContent>
   </Dialog>;

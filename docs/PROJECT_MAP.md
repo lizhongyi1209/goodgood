@@ -1,5 +1,7 @@
 # Project map
 
+GG-354将原图直接框选放在`canvas-image-region.tsx/module.css`与`canvas-image-region-model.mjs/d.mts`：浮层定位/指针/复制及纯坐标模型；PlacementProvider按mode分流，context提供当前框选key供快捷栏隐藏。贴图仍在原placement编辑器，canvas-page/workspace及服务端不扩展。
+
 GG-352将图片框选/贴图放在`features/canvas/canvas-image-placement-*`与`canvas-image-placement.tsx/module.css`：纯几何/绘制模型、独立context、受权/本地图片加载及PNG导出、资产选择与编辑状态。`canvas-image-crop.tsx`仅新增快捷按钮，`canvas-workspace.tsx`仅挂载provider；沿现有副本提交上传，不扩展canvas-page业务或新增服务器。
 
 GG-126 keeps local file intake in `features/canvas/canvas-local-images.mjs` and `canvas-page.tsx`; `canvas-source-node.tsx` renders a temporary React Flow image node. The existing reference uploader is called only after the user explicitly selects “用作参考”, and existing result nodes retain their positions and behavior. No server-side canvas feature is added.

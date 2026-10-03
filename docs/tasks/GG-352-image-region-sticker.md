@@ -1,5 +1,7 @@
 # GG-352 · 图片框选与贴图
 
+- 后续范围修订：GG-354按用户要求将框选改为原图直接操作，右侧仅像素bbox与取消/复制，移除独立弹框、单位切换、长提示词和数值表。此卡其余框选弹框描述是原交付历史，当前以GG-354和修订ADR0141为准；贴图保持。
+
 - 日期：2026-10-03；状态：源码完成/已接入5173，用户手验待办，未部署生产。
 - 基线：GG-116干净985c1424307802b6ba21f5cc79b14ae0b065f286，核验含当前e8a4590与GG-349，保留GG-346/350更新。
 - 所有权：根agent，managed隔离`codex/GG-352-image-region-sticker`，`C:/Users/Admin/.codex/worktrees/gg-351-image-region-sticker/goodgood`；无子agent。新placement模型/声明、context、编辑器/样式/导出边界；只改原快捷栏与workspace的挂载点，相关文档/回归来源。

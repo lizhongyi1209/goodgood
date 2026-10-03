@@ -1,5 +1,7 @@
 # Architecture
 
+GG-354将框选从placement弹框分离为`canvas-image-region.tsx/module.css`：在document.body放置非模态透明原图操作浮层和右侧坐标框，用当前原图DOM边界、解码原图尺寸和ReactFlow视图变换校准，观察尺寸/滚动变化并裁去侧栏/顶部/底部覆盖区域。`canvas-image-region-model.mjs/d.mts`处理预览信箱区域、屏幕到原图坐标及面板位置/文本。原图只读取尺寸即释放解码资源；沿现有受权、身份/页/节点/实际图片校验和取消，不产生文件/后台请求。PlacementProvider按mode挂载原图框选或贴图弹框，context的regionKey隐藏当前图快捷栏；旧弹框框选状态/UI已移除，贴图加载/变换/输出保持。
+
 GG-345：添加数据Provider不再收集/读取生成参考图，不依赖ReactFlow来组装弹框请求；编辑器只保留当前图读取及单一确认保存分支。容器解析/普通编辑的凭证保留仍在内部实现，界面移除C2PA状态与技术说明，相关底层错误返回普通图片处理提示。无后端接口或持久化变化。
 
 GG-344：图片「添加数据」由受权素材能力控制开启；独立
@@ -73,7 +75,7 @@ canvas persistence and service boundaries are unchanged.
 
 ## GG-352 浏览器图片区域与贴图
 
-`canvas-image-placement-model.mjs/.d.mts`提供原图像素/视图映射、光标中心缩放、夹取bbox、旋转角锚定等比缩放、图层排序和合成绘制；纯计算不依赖业务/网络。`canvas-image-placement-context.ts`独立上下文保持热刷新实例一致。`canvas-image-placement.tsx/module.css`拥有临时单区域/多图层、受权源图、指针捕获、视图、取消/焦点和副本提交；`canvas-image-placement-picker.tsx`复用图片/参考图/组织列表API；`canvas-image-placement-image.ts`校验本地文件签名、大小/解码尺寸、释放URL并导出PNG。SVG预览与Canvas导出均使用相同原图中心/尺寸/旋转，不把缩放后屏幕坐标保存为bbox或贴图位置。
+`canvas-image-placement-model.mjs/.d.mts`提供原图像素/视图映射、光标中心缩放、夹取bbox、旋转角锚定等比缩放、图层排序和合成绘制；纯计算不依赖业务/网络。`canvas-image-placement-context.ts`独立上下文保持热刷新实例一致。`canvas-image-placement.tsx/module.css`拥有临时多图层、受权源图、指针捕获、视图、取消/焦点和副本提交；框选按GG-354分离为原图浮层。`canvas-image-placement-picker.tsx`复用图片/参考图/组织列表API；`canvas-image-placement-image.ts`校验本地文件签名、大小/解码尺寸、释放URL并导出PNG。SVG贴图预览与Canvas导出均使用相同原图中心/尺寸/旋转，不把缩放后屏幕坐标保存为bbox或贴图位置。
 
 源图沿裁剪受权字节读取，导出调用现有`CanvasCropCommit.createCopy`与页/身份/实际输出ID守卫；框选不创建文件，贴图确认才进入现有本地副本上传。临时图层与bbox不进入项目schema；无新API/迁移/模型请求/收费，纯客户端功能不要求启用新后台。
 
