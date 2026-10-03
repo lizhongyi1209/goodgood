@@ -4,6 +4,7 @@
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
+| GG-330 | 恢复中：5173/后台/原状态服务已停，Docker未运行；恢复原本地环境，必要启动构建，无测试或浏览器验收 | [任务](tasks/GG-330-local-connection-recovery.md) |
 | GG-329 | 已接入efe7aa6：画布工具Provider与ReactFlow共享同一祖先/store，修复元数据hook祖先错误；创建1/退役1，未编译检查/后端更新，用户刷新手验 | [任务](tasks/GG-329-reactflow-context.md) |
 | GG-326 | 已接入37eef68：完整emoji、四角缩放/保留留白/恢复自动、中央默认光标/边框整组移动；创建1/退役1，回归只写未运行，云字段待Web激活 | [任务](tasks/GG-326-group-frame-controls.md) |
 | GG-328 | 已接入a9952d7：紧凑composer/固定底栏/八行输入、真实阶段和编辑提示、统一发送可用性；创建1/退役1，无编译检查/后端更新，用户手验 | [任务](tasks/GG-328-text-generation-ui.md) |
