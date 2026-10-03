@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useReactFlow } from "@xyflow/react";
-import { Camera, ClipboardPaste, Copy, Download, RotateCcw, Trash2, Upload, X } from "lucide-react";
+import { Camera, ClipboardPaste, Copy, Download, RotateCcw, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -105,7 +105,6 @@ function CanvasImageMetadataDialog({ request, onClose, onCommit }: Readonly<{
   const [notice, setNotice] = useState("");
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pasteText, setPasteText] = useState("");
-  const fileRef = useRef<HTMLInputElement>(null);
   const lifecycle = useRef<AbortController | null>(null);
   const busyRef = useRef(false);
   const [referencesOpen, setReferencesOpen] = useState(false);
@@ -128,13 +127,13 @@ function CanvasImageMetadataDialog({ request, onClose, onCommit }: Readonly<{
         // to clean. Container corruption still fails closed here.
         const stripped = writeImageFileMetadata(bytes, {}, { clear: true });
         metadata = { ...readImageFileMetadata(stripped.bytes), hasMetadata: true };
-        metadataError = "原有元数据无法完整解析。你可以清除元数据后保存副本，或从另一张照片提取参数。";
+        metadataError = "原有元数据无法完整解析。你可以清除元数据后保存副本，或手动填写参数。";
       }
       const dimensions = await decodeDimensions(blob, controller.signal);
       controller.signal.throwIfAborted();
       setOriginal({ bytes, blob, metadata, ...dimensions }); setFields(metadata.fields); setLoading(false);
       setError(metadataError);
-      setNotice(Object.keys(metadata.fields).length ? "已填入这张图片现有的参数。" : metadata.hasMetadata ? "没有可编辑的拍摄参数；其他元数据可使用清除功能移除。" : "这张图片没有元数据，可从照片提取或手动填写。");
+      setNotice(Object.keys(metadata.fields).length ? "已填入这张图片现有的参数。" : metadata.hasMetadata ? "没有可编辑的拍摄参数；其他元数据可使用清除功能移除。" : "这张图片没有元数据，可手动填写或粘贴参数。");
     })().catch((cause) => { if (!controller.signal.aborted) { setLoading(false); setError(cause instanceof Error ? cause.message : "原图读取失败，请重试。"); } });
     return () => { controller.abort(); };
   }, [request, attempt]);
@@ -145,13 +144,13 @@ function CanvasImageMetadataDialog({ request, onClose, onCommit }: Readonly<{
     busyRef.current = true; setBusy("extract"); setError(null);
     try {
       const blob = await read(); signal.throwIfAborted();
-      if (blob.size > PRIVATE_IMAGE_UPLOAD_MAX_BYTES) throw new Error("请选择 20 MB 以内的 JPEG 或 PNG 照片。");
+      if (blob.size > PRIVATE_IMAGE_UPLOAD_MAX_BYTES) throw new Error("请选择 20 MB 以内的 JPEG 或 PNG 参考图。");
       const bytes = new Uint8Array(await blob.arrayBuffer()); signal.throwIfAborted();
       const metadata = readImageFileMetadata(bytes);
-      if (!Object.keys(metadata.fields).length) throw new Error("这张照片没有可提取的常用拍摄参数，请换一张原图；已填写内容已保留。");
+      if (!Object.keys(metadata.fields).length) throw new Error("这张参考图没有可提取的常用拍摄参数；已填写内容已保留。");
       setFields(metadata.fields); setClear(false); setReferencesOpen(false);
       setNotice(`已从「${sourceName}」提取参数，保存后写入图片副本。`);
-    } catch (cause) { if (!signal.aborted) setError(cause instanceof Error ? cause.message : "照片元数据提取失败，请重试。"); }
+    } catch (cause) { if (!signal.aborted) setError(cause instanceof Error ? cause.message : "参考图元数据提取失败，请重试。"); }
     finally { busyRef.current = false; if (!signal.aborted) setBusy(null); }
   };
 
@@ -195,7 +194,7 @@ function CanvasImageMetadataDialog({ request, onClose, onCommit }: Readonly<{
       onCloseAutoFocus={(event) => { event.preventDefault(); if (request.trigger.isConnected) request.trigger.focus({ preventScroll: true }); }}
       onKeyDown={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()} onWheel={(event) => event.stopPropagation()}>
       <header className={styles.header}>
-        <div><DialogTitle className={styles.title}>增加元数据</DialogTitle><DialogDescription className={styles.description}>提取照片参数或手动填写，保存为新的图片副本。</DialogDescription></div>
+        <div><DialogTitle className={styles.title}>增加元数据</DialogTitle><DialogDescription className={styles.description}>编辑当前图片的元数据，保存为新的图片副本。</DialogDescription></div>
         <DialogClose asChild><Button type="button" variant="ghost" size="icon-sm" aria-label="关闭元数据弹框"><X size={18} strokeWidth={1.5} /></Button></DialogClose>
       </header>
       <div className={styles.body} aria-busy={loading || busy !== null}>
@@ -207,10 +206,7 @@ function CanvasImageMetadataDialog({ request, onClose, onCommit }: Readonly<{
         {loading && <p className={styles.status} role="status">正在读取图片元数据…</p>}
         {!loading && !original && <Button type="button" variant="secondary" size="sm" onClick={() => setAttempt((value) => value + 1)}>重新读取原图</Button>}
         <div className={styles.tools}>
-          <input ref={fileRef} className="sr-only" type="file" accept="image/jpeg,image/png,.jpg,.jpeg,.png" tabIndex={-1} aria-label="选择提取元数据的照片" disabled={disabled}
-            onChange={(event) => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ""; if (file) void extract(async () => file, file.name); }} />
-          <Button type="button" variant="secondary" size="sm" disabled={disabled} onClick={() => fileRef.current?.click()}><Upload size={14} aria-hidden="true" />{busy === "extract" ? "正在提取…" : "从照片提取"}</Button>
-          {!!request.references.length && <Button type="button" variant="ghost" size="sm" disabled={disabled} aria-expanded={referencesOpen} onClick={() => setReferencesOpen((value) => !value)}>从参考图提取</Button>}
+          {!!request.references.length && <Button type="button" variant="ghost" size="sm" disabled={disabled} aria-expanded={referencesOpen} onClick={() => setReferencesOpen((value) => !value)}>{busy === "extract" ? "正在提取…" : "从参考图提取"}</Button>}
           <Button type="button" variant="ghost" size="sm" disabled={disabled || !Object.values(fields).some(Boolean)} onClick={() => void copy()}><Copy size={14} aria-hidden="true" />复制参数</Button>
           <Button type="button" variant="ghost" size="sm" disabled={disabled} aria-expanded={pasteOpen} onClick={() => setPasteOpen((value) => !value)}><ClipboardPaste size={14} aria-hidden="true" />粘贴参数</Button>
         </div>

@@ -1,5 +1,15 @@
 # GG-063 verification
 
+## GG-335 remove local photo metadata extraction — source only
+
+Following the GG-276 user agreement, no build, lint/typecheck, code/diff checks,
+tests or browser acceptance are run. This small removal needs no new test
+source. Manual follow-up: reopen the metadata dialog; the local photo import
+button/file picker must be absent and current-image fields still prefill.
+Empty images offer manual input or parameter paste. Existing reference
+extraction, copy/paste, restore, clear and copy save/download remain available.
+No metadata parser, backend, provider or runtime update is required.
+
 ## GG-334 invisible resize corners — source only
 
 No compilation, lint/typecheck, code/diff checks, test runs or browser acceptance
