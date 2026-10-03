@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-03
-- Current phase: GG-330本地连接恢复完成，Docker原E盘数据/依赖healthy，必要构建verified94bee5354e5b1a77516235ee894a19a42767610e启用Web9448/32131、唯一Worker23800/32142及Vite33440/5173；首页200、API代理verified、readiness均ok，保留GG-329/328/326/327及前序源码。创建0/退役0，无迁移或数据重置。
-- Current objective: 用户刷新原5173画布继续手验上下文错误修复、文本UI、分组和图片元数据。当前Web含分组云校验，不再待激活；默认仅开发代码，运行恢复只做必要构建/启动可用性核对，无测试、浏览器或真实Provider请求/生产操作。当前receipt严格绑定94bee5354e5b1a77516235ee894a19a42767610e，后继文档不改写运行身份。
+- Current phase: GG-331文本生成chat宽度/间距与菜单关闭cd5fe3d→f86dd1b已接入GG-116/5173；480–640px及原视口限制、参数间距、非模态模型单选列表/点击输入关闭并保留焦点。创建1/退役1，未编译检查或浏览器验收，无后端更新，保留GG-330及既有源码。
+- Current objective: 用户刷新手验面板宽度/参数间距、打开模型列表后点击输入并继续输入、模型选择/Escape及窄屏/边栏；继续此前画布/文本UI/分组和图片元数据手验。默认仅开发代码，本轮无构建检查、HTTP/SQL/Provider或服务/生产操作；运行身份沿GG-330 Web9448/唯一Worker23800/Vite33440及verified94bee5354e5b1a77516235ee894a19a42767610e记录保持，后继源码/文档不改写已运行后台receipt。
 - Previous objective: GG-313模板名称格式/示例参考、GG-312画布300%高清门槛、GG-311模板保存/成功动效及类型筛选、GG-310前景色已交付源码；GG-309私有2K接口、批量校验及文本资产API/本地0063已启用。
 
 ## Current checkpoint
+
+- 最新局部交互 [GG-331](tasks/GG-331-text-composer-spacing.md)：核验184458f，隔离12ac96d/cd5fe3d精确接入f241059/f86dd1b。文本生成chat480–640px、保留视口/资产边栏边界，固定底栏内距及12px模型/预设间距；原模态Select替换为现有非模态DropdownMenu单选，受控开关，输入点击/聚焦关闭且不抢焦点，切走节点/锁定关闭，预设同为非模态。仅TSX/CSS与设计/交互/手验说明，无产品决定/ADR/依赖/API/计费/存储变化，无后端更新；创建1/退役1，未构建、lint/typecheck、代码/diff检查、测试或浏览器验收，无HTTP/SQL/Provider/服务或生产操作。用户刷新手验，保留GG-330运行与前序任务。
 
 - 最新运行恢复 [GG-330](tasks/GG-330-local-connection-recovery.md)：当前a254a01登记94bee5354e5b1a77516235ee894a19a42767610e并必要构建，原5173/Web/Worker与Docker均已停止，无明确退出原因。Desktop初启回到C盘空状态，正常停止后仅恢复CustomWslDistroDir原E盘，再启动原依赖healthy；没有盘/卷或数据库重置。任务/冻结/队列只读均0；Web9448/32131、唯一Worker23800/32142和Vite33440/5173可用，首页200/API代理verified94bee5354e5b1a77516235ee894a19a42767610e、readiness五项ok。云素材/local-mailpit及现有数据保持，当前Web包括组云校验，无迁移、测试/浏览器/真实请求或部署，创建0/退役0。用户刷新继续手验，下方旧运行/待激活为历史阶段。
 

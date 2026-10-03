@@ -1,5 +1,7 @@
 # 当前开发版本与跨窗口交接
 
+- 最新文本输入细化：[GG-331](tasks/GG-331-text-composer-spacing.md)基线核验184458f，隔离12ac96d/cd5fe3d精确接入GG-116/5173为f241059/f86dd1b。chat加宽480–640px并保留视口/边栏收缩，参数间距/内距增大；非模态受控模型单选菜单、点击/聚焦输入关闭且不抢焦点，切走节点/锁定关闭，预设同为非模态。无新依赖、API、计费、持久字段或后台更新；创建1/退役1，辅助目录干净正常Git移除，无依赖/缓存/Node进程。未构建、lint/typecheck、代码/diff检查、测试/浏览器验收、HTTP/SQL/Provider或运行/生产操作，用户刷新手验。GG-330 Web9448/唯一Worker23800/Vite33440及94bee535后台receipt身份沿原记录保持，本轮未重查运行；未来重启仍按最新HEAD构建。
+
 - 最新本地运行：[GG-330](tasks/GG-330-local-connection-recovery.md)连接拒绝恢复完成；原5173/后台/Docker已停，日志未明确退出原因。Desktop初启回到C盘空目录，正常stop、备份设置并只恢复CustomWslDistroDir原E盘后原依赖healthy，无数据盘/卷或数据库重置。必要构建94bee5354e5b1a77516235ee894a19a42767610e，Web9448/32131、唯一Worker23800/32142和Vite监听33440/5173（启动器29228）可用；首页200/API代理verified、readiness均ok，启动前任务/冻结/队列只读均0。源码包括GG-329/328/326/327及组云校验，无迁移或新功能变更，用户刷新手验；创建0/退役0，无测试/lint/typecheck/浏览器/真实请求或部署，cloud-development/local-mailpit及原数据保留。两份忽略适配器构建后已恢复，临时备份清理，旧日志及设置备份保留仓库外。严格receipt绑定94bee5354e5b1a77516235ee894a19a42767610e，下方0b5744d/419b097及待激活为历史状态；再次启动先确认Docker原E盘路径/唯一Worker并按当前HEAD构建。
 
 - 最新上下文修复：[GG-329](tasks/GG-329-reactflow-context.md)从核验8c2997f隔离，7f0efdc/14ffdef精确接入GG-116/5173为47fd0b8/efe7aa6。CanvasWorkspace单一ReactFlowProvider覆盖工具Provider与ReactFlow，修复图片元数据hook祖先错误；已安装xyflow复用同一store，初始edges/空节点/缩放保持。保留GG-328文本UI/GG-326组框/GG-327元数据及前序源码；创建1/退役1，零依赖/缓存，未编译、lint/typecheck、代码/diff检查、测试或浏览器验收，无HTTP/SQL/provider/运行/生产操作。用户刷新后选中文本生成结果并打开图片元数据手验，无后台更新；原GG-322 Web0b5744d/唯一Worker419b097/Vite/数据/SMTP身份保持。

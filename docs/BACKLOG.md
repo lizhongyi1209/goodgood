@@ -1,10 +1,10 @@
 # 当前任务与优先级
 
-> 最后同步：2026-10-03。GG-330本地连接拒绝已恢复：Docker原E盘数据/依赖healthy，必要构建94bee5354e5b1a77516235ee894a19a42767610e启用Web9448/唯一Worker23800及Vite33440/5173，首页200/API代理verified、readiness正常。创建0/退役0，无迁移、重置、测试/浏览器或真实Provider请求；用户刷新继续手验GG-329/328/326/327。
+> 最后同步：2026-10-03。GG-331文本生成chat加宽/参数间距/模型列表点击输入关闭cd5fe3d→f86dd1b已接入5173，创建1/退役1，未编译检查或浏览器验收，无后端更新，用户刷新手验。保留GG-330运行恢复及GG-329/328/326/327源码；本轮无服务、数据或Provider操作。
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
-| GG-331 | 开发中：文本生成chat加宽、参数间距和点击输入框关闭模型列表；用户手验，无构建检查或运行变化 | [任务](tasks/GG-331-text-composer-spacing.md) |
+| GG-331 | 已接入f86dd1b：chat宽度480–640px/参数间距、非模态单选模型列表，点击输入关闭且保留焦点；创建1/退役1，无编译检查/后端更新，用户手验 | [任务](tasks/GG-331-text-composer-spacing.md) |
 | GG-330 | 本地已恢复verified94bee535：原E盘数据及依赖healthy、Web9448/唯一Worker23800/Vite33440，5173首页200；创建0/退役0，无测试/浏览器/真实请求，用户继续手验 | [任务](tasks/GG-330-local-connection-recovery.md) |
 | GG-329 | 已接入efe7aa6：画布工具Provider与ReactFlow共享同一祖先/store，修复元数据hook祖先错误；创建1/退役1，未编译检查/后端更新，用户刷新手验 | [任务](tasks/GG-329-reactflow-context.md) |
 | GG-326 | 已接入37eef68：完整emoji、四角缩放/保留留白/恢复自动、中央默认光标/边框整组移动；创建1/退役1，回归只写未运行，云字段已随GG-330 Web启用，用户手验 | [任务](tasks/GG-326-group-frame-controls.md) |

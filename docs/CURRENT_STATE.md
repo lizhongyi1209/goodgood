@@ -1,5 +1,7 @@
 # GoodGood 当前状态
 
+- 最新文本输入细化：[GG-331](tasks/GG-331-text-composer-spacing.md)cd5fe3d→f86dd1b已接入GG-116/5173。chat常规480–640px/原视口约束、参数底栏间距、非模态受控模型单选列表，点击/聚焦输入关闭且保留输入焦点，键盘沿Radix；预设也允许外部焦点。仅TSX/CSS/说明，无后端更新，创建1/退役1，未编译检查或浏览器验收，用户刷新手验；GG-330运行身份和原数据/SMTP保持，本轮未执行运行检查或服务操作。
+
 - 最新本地运行：[GG-330](tasks/GG-330-local-connection-recovery.md)已恢复连接拒绝，Docker正常停止后切回原E盘数据目录，原数据库/缓存/RustFS/Mailpit全部healthy；必要构建verified94bee5354e5b1a77516235ee894a19a42767610e启用Web9448/32131、唯一Worker23800/32142和Vite33440/5173，首页200/API代理verified、readiness五项均ok。源码含GG-329/328/326/327，组云校验已启用；创建0/退役0，无迁移、重置数据、测试/浏览器或真实Provider请求，未部署，用户刷新继续手验。当前receipt绑定94bee5354e5b1a77516235ee894a19a42767610e，原0b5744d/419b097及旧PID是历史身份，退出原因日志未明确。
 
 - 最新画布上下文修复：[GG-329](tasks/GG-329-reactflow-context.md)14ffdef→efe7aa6已接入GG-116/5173。图片元数据Provider原在ReactFlow隐式上下文外调用useReactFlow，现单一显式共享祖先覆盖画布工具与节点，初始化与缩放范围保持；保留GG-328/326/327源码。创建1/退役1，未编译检查/测试或浏览器验收，用户刷新手验；无后端更新，当前Web0b5744d/唯一Worker419b097/Vite及数据/SMTP保持，无服务或生产操作。
