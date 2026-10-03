@@ -179,7 +179,7 @@ export function CanvasVideoNode({ id, data, selected, width }: NodeProps<CanvasV
         </div>}
       </article>
       {selected && data.videoSized && !videoUnavailable && <CanvasImageResizeControls />}
-      <Handle type="source" id="video" position={Position.Right} className={styles.referenceOutputHandle} aria-label="输出视频到文本生成" title="视频" />
+      <Handle type="source" id="video" position={Position.Right} className={styles.referenceOutputHandle} aria-label="输出视频到提示词反推" title="视频" />
     </>
   );
 }

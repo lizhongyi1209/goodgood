@@ -19,7 +19,7 @@ export function canvasTextGenerationInputs(nodes: readonly CanvasNode[], edges: 
     const base = { edgeId: edge.id, nodeId: source.id };
     if (source.type === "textEditor" || source.type === "textGenerator") {
       const sequence = nodes.filter((node) => node.type === source.type).findIndex((node) => node.id === source.id) + 1;
-      return [{ ...base, kind: "text", name: `${source.type === "textEditor" ? "文本编辑" : "文本生成"} ${sequence}`,
+      return [{ ...base, kind: "text", name: `${source.type === "textEditor" ? "文本编辑" : "提示词反推"} ${sequence}`,
         text: texts.get(edge.id)?.text ?? "", unavailable: source.type === "textGenerator" && Boolean(source.data.generating || source.data.textGeneration.pendingRequestId) }];
     }
     if (source.type === "sourceVideo") return [{ ...base, kind: "video", name: source.data.name, previewUrl: source.data.previewUrl,

@@ -1,5 +1,9 @@
 # Product definition
 
+## GG-339 提示词反推显示命名
+
+画布右键入口与节点自动标题由「文本生成」改为「提示词反推」，首个预设名称由「结构化反推」改为「结构化提示词」。仅显示命名调整，内部textGenerator/structured_reverse和已有文本/图片/视频输入、生成/编辑/历史/计费保持。底栏模型按钮按图标、模型名称和箭头的内容宽度显示，预设紧随其后，不随输入框宽度拉伸。见 [GG-339](tasks/GG-339-prompt-reverse-ui.md)、[ADR0127](decisions/0127-canvas-text-generation.md) 和 [ADR0130](decisions/0130-text-generation-presets.md)。
+
 ## GG-337 画布原图下载
 
 画布图片和画布内资产列表的图片右键提供「下载」（GG-338将原「下载原图」文案收短）。下载当前文件的原始字节，不额外压缩、调整尺寸、转码或修改元数据；清理/裁剪副本下载自身文件。生成批次按实际点击的图片定位，上传中或失败但仍保留本地原始 File 的图片也可下载。资产列表适用于生成图与上传参考图。见 [GG-337](tasks/GG-337-original-download.md)、[GG-338](tasks/GG-338-download-label.md) 和 [ADR0034](decisions/0034-stable-generation-grid-and-download.md)。

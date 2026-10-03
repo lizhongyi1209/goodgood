@@ -1,5 +1,11 @@
 # GG-063 verification
 
+## GG-339 copy and model intrinsic width — manual acceptance pending
+
+纯显示文案/样式调整；既有GG297预设目录断言改为「结构化提示词」，稳定ID和隐藏指令断言保持，没有新增测试。沿GG-276用户约定未运行编译、lint/typecheck、代码/diff检查、测试或浏览器验收，无真实请求/运行变化。
+
+用户刷新手验：右键「提示词反推」及自动标题/连接名称，预设新标签选择/移除/旧项目恢复，默认Claude及较长Gemini/Doubao模型按钮按内容宽度、箭头紧邻、预设相邻；缩窄输入区时名称省略/自然换行，发送靠右。键盘选择、点击输入关闭模型菜单、生成中锁定与停止沿既有行为。见 [GG-339](tasks/GG-339-prompt-reverse-ui.md)。
+
 ## GG-337 canvas original-file download — unrun regression source
 
 新增`tests/gg337-canvas-image-download.test.mjs`合成回归来源：原Blob/二进制字节不变、空文件及准备/启动失败与URL回收、MIME扩展名、未加载预览的已保存源图、本地上传中/失败清理副本、稳定ID授权目标、实际批次/独立结果定位、无点击ID或失败批次拒绝回退、注入读取与取消。本轮沿GG-276用户约定只写来源，未运行编译、lint/typecheck、代码/diff检查、测试或浏览器验收；未调用应用HTTP/SQL/Provider。

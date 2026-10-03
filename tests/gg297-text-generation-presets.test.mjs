@@ -11,7 +11,7 @@ const request = (patch = {}) => ({ requestId: randomUUID(), projectId: randomUUI
   prompt: "", history: [], media: [], ...patch });
 
 test("preset catalog exposes only labels and IDs while the server adds the exact hidden instruction", () => {
-  assert.deepEqual(TEXT_GENERATION_PRESETS, [{ id: "structured_reverse", name: "结构化反推" }]);
+  assert.deepEqual(TEXT_GENERATION_PRESETS, [{ id: "structured_reverse", name: "结构化提示词" }]);
   const instruction = "根据图片生成JSON结构化中文提示词，包括主体描述、环境、光影、镜头语言、风格关键词。";
   assert.equal(textGenerationPresetPrompt("structured_reverse"), instruction);
   const input = validateTextGeneration(request({ presetId: "structured_reverse" }));

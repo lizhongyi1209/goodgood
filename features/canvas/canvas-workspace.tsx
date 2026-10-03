@@ -683,7 +683,7 @@ export function CanvasWorkspace({
         }}>
           <span className={styles.generatorMetadataIcon} aria-hidden="true"><Type size={12} className="size-3" />
             <svg className={`${styles.generatorMetadataSparkle} size-2`} viewBox="0 0 8 8" focusable="false"><path d="M4 .5 4.65 3.35 7.5 4 4.65 4.65 4 7.5 3.35 4.65 .5 4 3.35 3.35Z" /></svg>
-          </span><span>文本生成</span>
+          </span><span>提示词反推</span>
         </ContextMenuItem>
         <ContextMenuItem onSelect={() => {
           if (contextPointRef.current) { onBeforeGraphEdit(); onCreateGenerator(contextPointRef.current); }

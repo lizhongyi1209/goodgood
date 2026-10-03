@@ -51,7 +51,7 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
   const edges = useStore((state) => state.edges);
   const inputs = canvasTextGenerationInputs(nodes, edges, id);
   const sequence = Math.max(1, nodes.filter((node) => node.type === "textGenerator").findIndex((node) => node.id === id) + 1);
-  const label = `文本生成 ${sequence}`;
+  const label = `提示词反推 ${sequence}`;
   const currentPreset = getTextGenerationPreset(data.textGeneration.presetId);
   const combinedPrompt = [...inputs.filter((item) => item.kind === "text").map((item) => item.text ?? ""), data.textGeneration.prompt].map((text) => text.trim()).filter(Boolean).join("\n\n");
   const inputsPreparing = inputs.some((item) => item.unavailable);
@@ -294,7 +294,7 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
         <div className={styles.tools}>
           <div className={styles.settings}>
           <DropdownMenu modal={false} open={modelMenuOpen} onOpenChange={setModelMenuOpen}>
-            <DropdownMenuTrigger asChild><button type="button" disabled={editingLocked} className={styles.model} aria-label="文本生成模型"><span className={styles.modelName}><TextModelIcon icon={currentModel.icon} /><span>{currentModel.name}</span></span><ChevronDown size={14} aria-hidden="true" /></button></DropdownMenuTrigger>
+            <DropdownMenuTrigger asChild><button type="button" disabled={editingLocked} className={styles.model} aria-label="提示词反推模型"><span className={styles.modelName}><TextModelIcon icon={currentModel.icon} /><span>{currentModel.name}</span></span><ChevronDown size={14} aria-hidden="true" /></button></DropdownMenuTrigger>
             <DropdownMenuContent className={styles.modelMenu} side="bottom" align="start" sideOffset={6}
               onCloseAutoFocus={(event) => { if (document.activeElement === promptRef.current) event.preventDefault(); }}>
               <DropdownMenuRadioGroup value={currentModel.id} onValueChange={(modelId) => updateDraft({ modelId: modelId as TextGenerationModelId })}>
@@ -303,7 +303,7 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
             </DropdownMenuContent>
           </DropdownMenu>
           <DropdownMenu modal={false}>
-            <DropdownMenuTrigger asChild><button type="button" className={styles.presetTrigger} data-active={Boolean(currentPreset) || undefined} disabled={editingLocked} aria-label={currentPreset ? `预设：${currentPreset.name}` : "选择文本生成预设"}>
+            <DropdownMenuTrigger asChild><button type="button" className={styles.presetTrigger} data-active={Boolean(currentPreset) || undefined} disabled={editingLocked} aria-label={currentPreset ? `预设：${currentPreset.name}` : "选择提示词反推预设"}>
               <span>预设</span><ChevronDown size={12} aria-hidden="true" />
             </button></DropdownMenuTrigger>
             <DropdownMenuContent side="bottom" align="start" sideOffset={6} className={styles.presetMenu}>
@@ -313,7 +313,7 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
           </DropdownMenu>
           </div>
           <Tooltip><TooltipTrigger asChild><span className={styles.sendSlot} tabIndex={!context.enabled || !busy && !readyToGenerate ? 0 : undefined} aria-label={sendHint}>
-          <button type="button" className={styles.send} disabled={!context.enabled || !busy && !readyToGenerate} aria-label={busy ? `停止文本生成，中断扣 ${TEXT_GENERATION_CANCELLATION_CREDIT_COST} 积分` : `生成文本，消耗 ${TEXT_GENERATION_CREDIT_COST} 积分`} aria-keyshortcuts="Control+Enter Meta+Enter"
+          <button type="button" className={styles.send} disabled={!context.enabled || !busy && !readyToGenerate} aria-label={busy ? `停止提示词反推，中断扣 ${TEXT_GENERATION_CANCELLATION_CREDIT_COST} 积分` : `生成文本，消耗 ${TEXT_GENERATION_CREDIT_COST} 积分`} aria-keyshortcuts="Control+Enter Meta+Enter"
             onClick={() => {
               if (busy) {
                 setError("");

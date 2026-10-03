@@ -7,7 +7,7 @@ export const TEXT_GENERATION_MODELS = Object.freeze([
 ]);
 export const DEFAULT_TEXT_GENERATION_MODEL = "claude-opus-5-5";
 export const TEXT_GENERATION_PRESETS = Object.freeze([
-  { id: "structured_reverse", name: "结构化反推" },
+  { id: "structured_reverse", name: "结构化提示词" },
 ]);
 export function getTextGenerationPreset(id) {
   return TEXT_GENERATION_PRESETS.find((preset) => preset.id === id) ?? null;
