@@ -95,6 +95,10 @@ function CompareSurface({ current, comparison, pool }: Readonly<{ current: Compa
   const nextPositionRef = useRef(50);
   const ready = Boolean(currentPreview?.url && comparisonPreview?.url);
   const failed = currentPreview?.failed || comparisonPreview?.failed;
+  useEffect(() => {
+    if (frameRef.current !== null) { cancelAnimationFrame(frameRef.current); frameRef.current = null; }
+    nextPositionRef.current = 50; setPosition(50);
+  }, [comparison?.key]);
   useEffect(() => () => { if (frameRef.current !== null) cancelAnimationFrame(frameRef.current); }, []);
   const move = (event: PointerEvent<HTMLDivElement>) => {
     if (!ready) return;
@@ -176,7 +180,7 @@ function CanvasImageCompareDialog({ request, libraryEnabled, onClose }: Readonly
         <DialogDescription className="sr-only">选择参考图或资产图片，横向移动鼠标查看左右变化。方向键调整分界，Home 和 End 查看完整图片。</DialogDescription>
         <DialogClose asChild><Button variant="ghost" size="icon" className={styles.close} aria-label="关闭图片对比"><X size={18} strokeWidth={1.7} /></Button></DialogClose>
       </header>
-      <CompareSurface key={`${request.current.key}:${comparison?.key ?? "empty"}`} current={request.current} comparison={comparison} pool={pool} />
+      <CompareSurface current={request.current} comparison={comparison} pool={pool} />
       <div className={styles.caption}><span title={comparison?.name}>{comparison?.name ?? "对比图"}</span><span className={styles.hint}>移动鼠标查看对比</span><span title={request.current.name}>{request.current.name}</span></div>
       <section className={styles.picker} aria-label="选择对比图">
         <div className={styles.pickerHeader}>
