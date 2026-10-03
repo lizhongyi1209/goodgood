@@ -47,3 +47,19 @@ interaction with the default cursor. No scaling of members or nested groups.
 Manual sizing survives history, clipboard and project restoration. The optional
 group-only enum extends existing JSON validation without a schema migration;
 activating Web validation remains a separately authorized runtime action.
+
+## GG-332 · Outside title and toolbar, inside corner grips
+
+The user refines visual placement on 2026-10-03. Place the group name and optional
+emoji at the frame's upper-left outside edge, using the existing node-title
+typography/spacing. Keep double-click/keyboard renaming and title dragging.
+Move emoji editing, manual-mode fit-to-content and ungrouping to the selected
+node's top quick toolbar through the installed NodeToolbar, positioned above
+the title. Keep emoji content before the name; it is also editable in the toolbar.
+
+Replace the four border-centered square handles with the text editor's small
+diagonal grip icon, inset inside each corner and oriented toward that corner.
+Keep native resizing, pointer target size, directional cursors, keyboard support
+and stable callbacks. Existing auto/manual bounds, whitespace, child positions,
+history and saved geometry remain unchanged. GG-330 already activated group
+server validation; this layout refinement needs no runtime or backend update.

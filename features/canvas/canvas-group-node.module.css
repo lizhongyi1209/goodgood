@@ -10,26 +10,36 @@
 .top { top: -6px; } .bottom { bottom: -6px; }
 .left, .right { top: 10px; bottom: 10px; width: 12px; }
 .left { left: -6px; } .right { right: -6px; }
-.frame .resizeControl { width: 16px; height: 16px; border: 0; border-radius: 4px; background: transparent; pointer-events: auto; z-index: 2; }
-.resizeHandle { display: block; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 4px; background: transparent; cursor: inherit; touch-action: none; }
-.resizeHandle::after { content: ""; display: block; width: 8px; height: 8px; margin: auto; border: 1px solid #71717a; border-radius: 2px; background: #fff; }
-.resizeHandle:hover::after { border-color: #18181b; background: #f4f4f5; }
-.resizeHandle:focus-visible { outline: 2px solid #71717a; outline-offset: 2px; }
-.header { position: absolute; top: 12px; left: 14px; right: 14px; display: flex; align-items: center; gap: 4px; height: 28px; pointer-events: auto; cursor: grab; }
+.frame .resizeControl:global(.react-flow__resize-control.handle) { left: auto; top: auto; right: auto; bottom: auto; translate: none; width: 32px; height: 32px; border: 0; border-radius: 5px; background: transparent; pointer-events: auto; z-index: 2; }
+.frame .resizeControl:global(.top.left) { left: 4px; top: 4px; transform-origin: top left; }
+.frame .resizeControl:global(.top.right) { right: 4px; top: 4px; transform-origin: top right; }
+.frame .resizeControl:global(.bottom.left) { left: 4px; bottom: 4px; transform-origin: bottom left; }
+.frame .resizeControl:global(.bottom.right) { right: 4px; bottom: 4px; transform-origin: bottom right; }
+.resizeHandle { display: grid; place-items: center; width: 100%; height: 100%; padding: 0; border: 0; border-radius: inherit; background: transparent; color: #71717a; cursor: inherit; touch-action: none; }
+.resizeHandle:hover, .resizeHandle:active { color: #27272a; background: #f4f4f5; }
+.resizeHandle:focus-visible { outline: 1px solid #71717a; outline-offset: -2px; }
+.resizeHandle svg { pointer-events: none; }
+.resizeHandle[data-corner="top-left"] svg { transform: rotate(180deg); }
+.resizeHandle[data-corner="top-right"] svg { transform: rotate(-90deg); }
+.resizeHandle[data-corner="bottom-left"] svg { transform: rotate(90deg); }
+header.header { gap: 4px; pointer-events: auto; cursor: grab; }
+.header > svg { flex: none; }
 .header:active, .name:active { cursor: grabbing; }
-.name { min-width: 0; flex: 1; border: 0; background: transparent; padding: 4px 6px; text-align: left; font-size: 13px; line-height: 20px; font-weight: 500; color: #3f3f46; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: grab; border-radius: 6px; }
+.name { min-width: 0; max-width: 100%; border: 0; background: transparent; padding: 0; text-align: left; font: inherit; color: inherit; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: grab; border-radius: 4px; }
 .name:hover { background: rgb(0 0 0 / 4%); }
-.name:focus-visible { outline: 2px solid #a1a1aa; outline-offset: 2px; }
-.nameInput { flex: 1; min-width: 0; height: 28px; padding: 3px 6px; font-size: 13px; background: #fff; color: #18181b; border-color: #a1a1aa; box-shadow: none; }
-.emojiTrigger, .ungroup, .fitContent { flex: none; width: 28px; height: 28px; color: #71717a; cursor: pointer; }
-.emoji { font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif; font-size: 18px; line-height: 1; }
-.groupMark { display: flex; flex: none; color: #a1a1aa; }
-.ungroup { opacity: 0; pointer-events: none; transition: opacity 140ms ease; }
-.frame:hover .ungroup, .frame[data-selected] .ungroup, .frame:focus-within .ungroup { opacity: 1; pointer-events: auto; }
+.name:focus-visible { outline: 1px solid #71717a; outline-offset: 2px; }
+.nameInput { flex: 1; min-width: 0; max-width: 320px; height: 22px; padding: 2px 6px; font: inherit; background: #fff; color: #18181b; border-color: #a1a1aa; box-shadow: none; }
+.emoji, .titleEmoji { font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif; line-height: 1; }
+.emoji { font-size: 16px; }
+.titleEmoji { flex: none; font-size: 14px; }
+.toolbar { display: flex; align-items: center; gap: 2px; padding: 5px; max-width: calc(100vw - 24px); overflow-x: auto; border: 1px solid #e4e4e7; border-radius: 10px; background: #fff; pointer-events: auto; scrollbar-width: none; }
+.toolbar > button, .toolbar > .emojiTrigger { width: 27px; height: 27px; flex-shrink: 0; border-radius: 5px; color: #27272a; cursor: pointer; }
+.toolbar > button:hover { background: #f0f0f2; }
+.toolbar > button:focus-visible { outline: 1px solid #71717a; outline-offset: 1px; box-shadow: none; }
 .emojiMenu { width: min(352px, calc(100vw - 24px)); padding: 0; overflow: hidden; border-radius: 14px; color: #18181b; }
 .emojiPicker { --rgb-accent: 24, 24, 27; --rgb-background: 255, 255, 255; --rgb-color: 24, 24, 27; --rgb-input: 244, 244, 245; --border-radius: 0; --shadow: none; --font-size: 13px; }
 .emojiPicker > :global(em-emoji-picker) { width: 100%; height: min(380px, calc(var(--radix-popover-content-available-height) - 46px)); min-height: 220px; }
 .emojiStatus { display: flex; min-height: 220px; flex-direction: column; align-items: center; justify-content: center; gap: 8px; font-size: 13px; color: #52525b; }
 .clearEmoji { margin: 4px 8px 8px; width: calc(100% - 16px); height: 30px; color: #52525b; font-size: 12px; }
-@media (hover: none) { .ungroup { opacity: 1; pointer-events: auto; } .emojiTrigger, .ungroup, .fitContent { width: 32px; height: 32px; } .frame .resizeControl { width: 24px; height: 24px; } }
-@media (prefers-reduced-motion: reduce) { .frame, .ungroup { transition: none; } }
+@media (hover: none) { .toolbar > button, .toolbar > .emojiTrigger { width: 32px; height: 32px; } }
+@media (prefers-reduced-motion: reduce) { .frame { transition: none; } }

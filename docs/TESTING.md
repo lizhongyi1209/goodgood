@@ -23,6 +23,15 @@ provider mounting fix with no backend activation or real-provider request.
 
 ## GG-326 group frame controls — source only
 
+GG-332 is a local visual placement refinement with no new geometry or storage
+logic. No build/lint/typecheck, code/diff check, test or browser acceptance is
+run. User follow-up: selected grips stay inside all four corners and point to
+the corresponding corner; hover/focus/drag/arrows still resize; the outside
+upper-left name/emoji can be renamed and dragged; the top toolbar selects/clears
+emoji, restores auto fit and ungroups while preserving members. Check long
+names, zoom, narrow viewport, selection changes and keyboard focus. Group cloud
+validation was activated by GG-330; this refinement needs no backend update.
+
 Extend `tests/gg323-canvas-groups.test.mjs` with top-left resize without member
 jumps, retained manual whitespace, visible-stack expansion without later shrink,
 restore-auto behavior, invalid/empty geometry, manual clipboard offsets,
