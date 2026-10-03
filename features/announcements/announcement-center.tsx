@@ -55,7 +55,7 @@ function AnnouncementPost({ item, root, active, busy, onView, onLike }: { item: 
     </ItemContent>
   </article></Item>;
 }
-function ConnectedAnnouncementCenter({ owner, administrator, className }: { owner: string; administrator: boolean; className?: string }) {
+function ConnectedAnnouncementCenter({ owner, administrator, className, iconOnly = false }: { owner: string; administrator: boolean; className?: string; iconOnly?: boolean }) {
   const [open, setOpen] = useState(false), [paused, setPaused] = useState(false);
   const readingAway = useRef(false), scroll = useRef<HTMLDivElement | null>(null);
   const announcements = useAnnouncements(owner, readingAway);
@@ -70,8 +70,8 @@ function ConnectedAnnouncementCenter({ owner, administrator, className }: { owne
   };
   return <div className={`${styles.entry} ${className ?? ""}`}>
     <Sheet modal={false} open={open} onOpenChange={changeOpen}>
-      <SheetTrigger asChild><Button type="button" variant="ghost" size="sm" className={styles.trigger} data-arrival={arrival || undefined} aria-label={feed.unreadCount ? "打开公告，有未读公告" : "打开公告"}>
-        <Bell size={17} /><span className={styles.triggerText}>公告</span>{feed.unreadCount > 0 && <span className={styles.unreadDot} aria-hidden="true" />}
+      <SheetTrigger asChild><Button type="button" variant="ghost" size="sm" className={`${styles.trigger} ${iconOnly ? styles.iconOnly : ""}`} data-arrival={arrival || undefined} aria-label={feed.unreadCount ? "打开公告，有未读公告" : "打开公告"}>
+        <Bell size={17} />{!iconOnly && <span className={styles.triggerText}>公告</span>}{feed.unreadCount > 0 && <span className={styles.unreadDot} aria-hidden="true" />}
       </Button></SheetTrigger>
       <SheetContent showCloseButton={false} className={styles.panel} onKeyDown={(event) => event.stopPropagation()} onKeyUp={(event) => event.stopPropagation()}>
         <SheetHeader className={styles.panelHeader}>
@@ -98,9 +98,9 @@ function ConnectedAnnouncementCenter({ owner, administrator, className }: { owne
     </div>}
   </div>;
 }
-export function AnnouncementCenter({ session, className }: { session: AuthenticationSession | null | undefined; className?: string }) {
+export function AnnouncementCenter({ session, className, iconOnly = false }: { session: AuthenticationSession | null | undefined; className?: string; iconOnly?: boolean }) {
   if (!session || session.preview || session.access.status !== "active") return null;
   const owner = session.user.id ?? session.user.email;
   if (!owner) return null;
-  return <ConnectedAnnouncementCenter key={owner} owner={owner} administrator={session.account.role === "site_owner"} className={className} />;
+  return <ConnectedAnnouncementCenter key={owner} owner={owner} administrator={session.account.role === "site_owner"} className={className} iconOnly={iconOnly} />;
 }
