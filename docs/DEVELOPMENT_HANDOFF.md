@@ -1,5 +1,7 @@
 # 当前开发版本与跨窗口交接
 
+- 最新源码交付：GG-341「去除AI · 10积分」源码已精确接入3579444（隔离3c23d13，基线1c9ecbf，接入前8aaa0f9），保留GG-340铃铛及全部此前功能。JPEG/PNG内C2PA、EXIF/GPS及ComfyUI文本等统一清理；受权原图/幂等操作、个人充值来源/企业预算、ready副本和10积分同事务提交，失败回滚不收费；相邻画布副本/资产与余额刷新、跨页身份及未知结果原键恢复完成。元数据弹框移出清理按钮。ADR0138/0065及合成回归来源已写，未自动编译/lint/typecheck/代码diff检查/测试或浏览器验收，未SQL迁移/应用HTTP/Provider/后台/服务或生产操作；0064与0065和新Web需用户另行委托启用。创建1/退役1，managed辅助工作区已归档，干净无依赖缓存/子agent。运行receipt沿GG-330 verified94bee535/原Web/唯一Worker/Vite/数据/SMTP未重查。
+
 - GG-340入口细化：从核验1c9ecbf/40a67bb隔离codex/GG-340-announcement-icon，972303e→d4c1e80已接入GG-116。共享入口新增iconOnly、画布开启/大厅保持标签，34px按钮与未读点右上定位，aria-label/到达动效/提示/阅读保留；ADR0137同步。累计创建2/退役2，干净无Node的后续目录正常移除、分支保留，无自动验证/服务或数据操作；0064迁移与Web仍待用户委托。
 
 - 最新公告源码：[GG-340](tasks/GG-340-announcements.md)从核验c09d623隔离登记2b9c5e7/实现6ce5f38，归并f4bd4ff精确接入b25d670，最终52px大厅顶部预留55c9424→40a67bb。初始编号与另一窗口下载/反推UI登记相撞，公告最终GG-340，保留其GG-337/338/339及所有冲突文档内容；没有整体合并功能分支。首页/画布右上共享入口、非模态帖子流及有限到达提醒，站长`/admin/announcements`完整草稿/发布更新/重要/置顶/撤回/删除；实时SSE/Redis与断线ID快照、CAS稳定操作键、隐藏阅读/点赞指标。新增`0064_gg340_announcements.sql`未执行，新Web未启用，当前后台仍沿GG-330 receipt，单靠刷新不能使用完整公告。后续用户委托时先确认本地独立目标，再迁移并构建/重启Web，公告无需Worker重启；本轮无数据/服务/通知/Provider或生产操作。创建1/退役1，旧隔离目录已正常移除，codex/GG-340-announcements/55c9424保留；无依赖缓存/子agent、编译/lint/typecheck/代码diff检查、测试运行或浏览器验收。用户负责手验，定向回归只写在tests/gg340-announcements.test.mjs，当前应用源码检查点40a67bb。
