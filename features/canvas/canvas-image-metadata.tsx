@@ -16,6 +16,12 @@ import styles from "./canvas-image-metadata.module.css";
 type MetadataRequest = CanvasCropRequest & Readonly<{ trigger: HTMLButtonElement }>;
 type Original = Readonly<{ bytes: Uint8Array<ArrayBuffer>; blob: Blob; metadata: ReturnType<typeof readImageFileMetadata>; width: number; height: number }>;
 
+function editableMetadataFields(fields: ImageFileMetadataFields): ImageFileMetadataFields {
+  return Object.fromEntries(IMAGE_METADATA_FIELDS
+    .filter((field) => field.group !== "位置信息" && fields[field.key] !== undefined)
+    .map((field) => [field.key, fields[field.key]]));
+}
+
 export function CanvasImageMetadataProvider({ children, enabled, ownerKey, pageKey, onCommit }: Readonly<{
   children: ReactNode; enabled: boolean; ownerKey: string; pageKey: string; onCommit: (commit: CanvasCropCommit) => boolean;
 }>) {
@@ -41,7 +47,10 @@ async function decodeDimensions(blob: Blob, signal: AbortSignal) {
 
 async function metadataFile(original: Original, fields: ImageFileMetadataFields, name: string, signal: AbortSignal) {
   signal.throwIfAborted();
-  const result = writeImageFileMetadata(original.bytes, fields, { orientation: original.metadata.orientation });
+  // Preserve the target's existing coordinates; pasted parameters cannot add them.
+  const location = original.metadata.fields.latitude && original.metadata.fields.longitude
+    ? { latitude: original.metadata.fields.latitude, longitude: original.metadata.fields.longitude } : {};
+  const result = writeImageFileMetadata(original.bytes, { ...editableMetadataFields(fields), ...location }, { orientation: original.metadata.orientation });
   signal.throwIfAborted();
   if (result.bytes.length > PRIVATE_IMAGE_UPLOAD_MAX_BYTES) throw new Error("处理后的副本超过 20 MB，无法保存。请使用较小的原图。");
   const basename = name.replace(/\.[^.]+$/, "").replace(/[\\/:*?"<>|\u0000-\u001f]+/g, "_").slice(0, 100).trim() || "GoodGood图片";
@@ -91,9 +100,10 @@ function CanvasImageMetadataDialog({ request, onClose, onCommit }: Readonly<{
       }
       const dimensions = await decodeDimensions(blob, controller.signal);
       controller.signal.throwIfAborted();
-      setOriginal({ bytes, blob, metadata, ...dimensions }); setFields(metadata.fields); setLoading(false);
+      const editableFields = editableMetadataFields(metadata.fields);
+      setOriginal({ bytes, blob, metadata, ...dimensions }); setFields(editableFields); setLoading(false);
       setError(metadataError);
-      setNotice(Object.keys(metadata.fields).length ? "已填入这张图片现有的参数。" : "这张图片没有可填写的参数，可手动填写或粘贴。");
+      setNotice(Object.keys(editableFields).length ? "已填入这张图片现有的参数。" : "这张图片没有可填写的参数，可手动填写或粘贴。");
     })().catch((cause) => { if (!controller.signal.aborted) { setLoading(false); setError(metadataDialogError(cause, "原图读取失败，请重试。")); } });
     return () => { controller.abort(); };
   }, [request, attempt]);
@@ -152,7 +162,7 @@ function CanvasImageMetadataDialog({ request, onClose, onCommit }: Readonly<{
           <textarea id={`metadata-paste-${request.sessionId}`} value={pasteText} onChange={(event) => setPasteText(event.target.value)} rows={5} maxLength={20_000} placeholder="粘贴通过「复制参数」得到的内容" disabled={disabled} />
           <Button type="button" size="sm" variant="secondary" disabled={disabled || !pasteText.trim()} onClick={() => {
             try {
-              const values = parseImageMetadataJson(pasteText);
+              const values = editableMetadataFields(parseImageMetadataJson(pasteText));
               if (!Object.keys(values).length) throw new Error("粘贴内容中没有可填写的参数；已有内容已保留。");
               setFields(values); setError(null); setPasteOpen(false); setNotice("已填入粘贴的参数，点击「确认添加」保存。");
             } catch (cause) { setError(cause instanceof Error ? cause.message : "元数据 JSON 无效。"); }
@@ -160,10 +170,10 @@ function CanvasImageMetadataDialog({ request, onClose, onCommit }: Readonly<{
         </div>}
         <p className={styles.status} role="status" aria-live="polite">{notice}</p>
         {error && <p className={styles.error} role="alert">{error}</p>}
-        <div className={styles.form}>{["拍摄参数", "图片信息", "位置信息"].map((group) => <fieldset key={group} disabled={disabled}>
+        <div className={styles.form}>{["拍摄参数", "图片信息"].map((group) => <fieldset key={group} disabled={disabled}>
           <legend>{group}</legend><div className={styles.fields}>{IMAGE_METADATA_FIELDS.filter((field) => field.group === group).map((field) => <label key={field.key}>
             <span>{field.label}</span><Input value={fields[field.key] ?? ""} placeholder={field.placeholder} maxLength={500}
-              inputMode={group === "位置信息" ? "decimal" : undefined} onChange={(event) => {
+              onChange={(event) => {
                 setFields((current) => ({ ...current, [field.key]: event.target.value })); setError(null); setNotice("确认后将表单参数写入新图片。");
               }} />
           </label>)}</div>
