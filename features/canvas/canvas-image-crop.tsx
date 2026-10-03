@@ -47,9 +47,9 @@ export function CanvasImageCropToolbar({ image, selected, offsetX = 0 }: Readonl
       <Button type="button" variant="ghost" size="sm" disabled={!cleanup.enabled || cleanup.pendingKey !== null}
         onClick={(event) => { event.stopPropagation(); cleanup.remove(image); }}
         aria-label={`去除AI，${IMAGE_CLEANUP_CREDIT_COST}积分，清理文件内元数据`}
-        title="清除C2PA、EXIF及ComfyUI元数据；不处理隐形水印">
+        title={`每次${IMAGE_CLEANUP_CREDIT_COST}积分；清除C2PA、EXIF及ComfyUI元数据，不处理隐形水印`}>
         {cleanup.pendingKey === image.key ? <LoaderCircle size={15} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Eraser size={15} strokeWidth={1.7} aria-hidden="true" />}
-        {cleanup.pendingKey === image.key ? "处理中…" : "去除AI"}<span className="text-xs text-muted-foreground">{IMAGE_CLEANUP_CREDIT_COST}积分</span>
+        {cleanup.pendingKey === image.key ? "处理中…" : "去除AI"}
       </Button>
     </div>
   </NodeToolbar>;
