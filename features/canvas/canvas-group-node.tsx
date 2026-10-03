@@ -91,7 +91,7 @@ export function CanvasGroupNode({ id, data, selected }: NodeProps<CanvasGroupNod
           <Button type="button" variant="ghost" size="icon-xs" className={styles.emojiTrigger}
             aria-label={data.emoji ? "修改组 emoji" : "添加组 emoji"} title={data.emoji ? "修改 emoji" : "添加 emoji"}
             onDoubleClick={(event) => event.stopPropagation()}>
-            {data.emoji ? <span className={styles.emoji} aria-hidden="true">{data.emoji}</span> : <SmilePlus size={14} aria-hidden="true" />}
+            {data.emoji ? <span className={styles.emoji} aria-hidden="true">{data.emoji}</span> : <SmilePlus size={14} className="size-3.5" aria-hidden="true" />}
           </Button>
         </PopoverTrigger>
         <PopoverContent align="start" sideOffset={8} className={`${styles.emojiMenu} nodrag nopan nowheel nokey`} aria-label="选择组 emoji">
@@ -107,11 +107,11 @@ export function CanvasGroupNode({ id, data, selected }: NodeProps<CanvasGroupNod
           flow.setNodes((nodes) => fitCanvasGroups(nodes.map((node) => node.id === id && node.type === "group"
             ? { ...node, data: { ...node.data, sizing: "auto" } } : node), footprints));
           actions.onProjectGraphChange(true);
-        }}><Scan size={14} aria-hidden="true" /></Button>}
+        }}><Scan size={14} className="size-3.5" aria-hidden="true" /></Button>}
       <Button type="button" variant="ghost" size="icon-xs"
         aria-label="解散组" title="解散组，保留节点" onClick={() => {
           actions.onBeforeGraphEdit(); flow.setNodes((nodes) => ungroupCanvasNodes(nodes, [id])); actions.onProjectGraphChange(true);
-        }}><Ungroup size={14} aria-hidden="true" /></Button>
+        }}><Ungroup size={14} className="size-3.5" aria-hidden="true" /></Button>
       </div>
     </NodeToolbar>
     <div className={styles.frame} data-selected={selected || undefined}>
