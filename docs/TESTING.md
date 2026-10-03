@@ -1,5 +1,22 @@
 # GG-063 verification
 
+## GG-336 embedded C2PA detection/cleanup — unrun regression source
+
+Following GG-276, no compilation, lint/typecheck, code/diff checks, test runs
+or browser acceptance are performed. New synthetic source
+`tests/gg336-image-c2pa-metadata.test.mjs` covers empty JPEG/PNG, full/multipart
+JPEG stores including split description and XLBox headers, unrelated APP11
+with reused instance/label, metadata between progressive scans, multiple PNG
+caBX chunks, exact scan/IDAT/color retention, ordinary edit preservation,
+independent damaged EXIF, identifiable truncated stores, ambiguous JUMBF and
+invalid containers. It deliberately does not test certificate validation.
+Manual follow-up: reopen the dialog for ordinary and credential-bearing
+JPEG/PNG; while loading/failed, no premature absence result. Check presence,
+incomplete detection, clear/download/save copy, restore/cancel and unchanged
+source. Use an independent reader for the saved copy when manually verifying
+cleanup; no such verification has been performed by the agent. No runtime or
+backend update is required.
+
 ## GG-335 remove local photo metadata extraction — source only
 
 Following the GG-276 user agreement, no build, lint/typecheck, code/diff checks,

@@ -6,6 +6,7 @@ const PNG = [137, 80, 78, 71, 13, 10, 26, 10];
 const EXIF = [69, 120, 105, 102, 0, 0];
 const XMP = "http://ns.adobe.com/xap/1.0/\0";
 const MAX_BYTES = 20 * 1024 * 1024;
+const C2PA_STORE_UUID = [0x63, 0x32, 0x70, 0x61, 0x00, 0x11, 0x00, 0x10, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71];
 const TYPE_SIZE = { 1: 1, 2: 1, 3: 2, 4: 4, 5: 8, 7: 1, 9: 4, 10: 8 };
 
 export const IMAGE_METADATA_FIELDS = Object.freeze([
@@ -204,6 +205,77 @@ function isJpegMetadata(part) {
 }
 const PNG_METADATA = new Set(["eXIf", "tEXt", "zTXt", "iTXt", "tIME"]);
 
+// Presence detection only: no claims, signatures, certificates or remote
+// manifests are trusted or fetched. APP11 also carries unrelated JPEG data.
+function jumbfHeader(bytes, offset = 0) {
+  if (offset + 8 > bytes.length) return null;
+  const view = viewOf(bytes);
+  let length = view.getUint32(offset), headerSize = 8;
+  if (length === 1) {
+    if (offset + 16 > bytes.length) return null;
+    length = view.getUint32(offset + 8) * 0x100000000 + view.getUint32(offset + 12);
+    headerSize = 16;
+  }
+  if (length < headerSize || length > MAX_BYTES) return null;
+  return { length, headerSize, type: ascii(bytes.subarray(offset + 4, offset + 8)) };
+}
+
+function imageC2paParts(parts, format) {
+  const matched = new Set();
+  if (format === "png") {
+    // caBX is the reserved C2PA storage chunk; presence does not imply validity.
+    for (const part of parts) if (part.type === "caBX") matched.add(part);
+    return { matched, status: matched.size ? "present" : "absent", unsafe: false };
+  }
+  const groups = [];
+  const current = new Map();
+  let unreadable = false, unsafe = false;
+  for (const part of parts) {
+    if (part.marker !== 0xeb || !begins(part.data, [0x4a, 0x50])) continue;
+    if (part.data.length < 16) { unreadable = unsafe = true; continue; }
+    if (ascii(part.data.subarray(12, 16)) !== "jumb") continue;
+    const header = jumbfHeader(part.data, 8);
+    if (!header) { unreadable = unsafe = true; continue; }
+    const view = viewOf(part.data);
+    const sequence = view.getUint32(4);
+    const key = `${view.getUint16(2)}:${Array.from(part.data.subarray(8, 8 + header.headerSize)).join(",")}`;
+    let group = current.get(key);
+    if (!group || sequence === 1) {
+      group = { header, packets: [] };
+      groups.push(group); current.set(key, group);
+    }
+    group.packets.push({ part, sequence });
+  }
+  for (const group of groups) {
+    // JPEG XT repeats the root LBox/TBox (and XLBox when present) in every
+    // fragment. Keep that header once, then concatenate only box content.
+    const bytes = join([
+      group.packets[0].part.data.subarray(8, 8 + group.header.headerSize),
+      ...group.packets.map(({ part }) => part.data.subarray(8 + group.header.headerSize)),
+    ]);
+    const at = group.header.headerSize;
+    const description = jumbfHeader(bytes, at);
+    if (!description || description.type !== "jumd" || description.length < description.headerSize + 17) {
+      unreadable = unsafe = true; continue;
+    }
+    const uuidAt = at + description.headerSize;
+    if (uuidAt + 16 > bytes.length) { unreadable = unsafe = true; continue; }
+    if (!begins(bytes, C2PA_STORE_UUID, uuidAt)) continue;
+    for (const { part } of group.packets) matched.add(part);
+    const labelAt = uuidAt + 17;
+    const identified = (bytes[uuidAt + 16] & 2) !== 0 &&
+      labelAt + 5 <= at + description.length && begins(bytes, [99, 50, 112, 97, 0], labelAt);
+    if (group.packets.some((packet, index) => packet.sequence !== index + 1)) unreadable = unsafe = true;
+    if (!identified || at + description.length > bytes.length || bytes.length !== group.header.length) unreadable = true;
+  }
+  return { matched, status: unreadable ? "unreadable" : matched.size ? "present" : "absent", unsafe };
+}
+
+export function readImageFileC2pa(bytes) {
+  const { format, parts } = container(bytes);
+  return imageC2paParts(parts, format).status;
+}
+
 const xmlEscape = (text) => text.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[character]);
 function xmlText(text) {
   return text.replace(/<[^>]*>/g, "").replace(/&(#x[\da-f]+|#\d+|amp|lt|gt|quot|apos);/gi, (whole, entity) => {
@@ -253,15 +325,16 @@ function buildXmp(fields) {
 
 export function readImageFileMetadata(bytes) {
   const { format, parts } = container(bytes);
+  const c2pa = imageC2paParts(parts, format).status;
   const exifPart = format === "jpeg" ? parts.find((part) => part.marker === 0xe1 && begins(part.data, EXIF)) : parts.find((part) => part.type === "eXIf");
-  const hasMetadata = parts.some((part) => format === "jpeg"
+  const hasMetadata = c2pa !== "absent" || parts.some((part) => format === "jpeg"
     ? part.marker === 0xe1 || part.marker === 0xed || part.marker === 0xfe
     : PNG_METADATA.has(part.type));
   const tiff = exifPart ? (format === "jpeg" ? exifPart.data.subarray(6) : exifPart.data) : null;
   const parsed = tiff ? readTiff(tiff) : { fields: {}, orientation: 1 };
   const xmpFields = readXmp(parts, format);
   for (const [key, value] of Object.entries(xmpFields)) if (!parsed.fields[key]) parsed.fields[key] = value;
-  return { format, hasMetadata, ...parsed };
+  return { format, hasMetadata, c2pa, ...parsed };
 }
 
 export function validateImageMetadata(input) {
@@ -413,6 +486,8 @@ function pngChunk(type, payload) {
 
 export function writeImageFileMetadata(bytes, input, options = {}) {
   const { format, parts } = container(bytes);
+  const credentials = options.clear ? imageC2paParts(parts, format) : null;
+  if (credentials?.unsafe) throw new Error("图片中有无法完整识别的内容凭证数据，暂时无法安全清除。请使用完整原图。");
   const fields = options.clear ? {} : validateImageMetadata(input);
   const orientation = options.orientation ?? 1;
   const exif = !options.clear && (Object.keys(fields).length || orientation > 1) ? buildExif(fields, orientation) : null;
@@ -430,6 +505,7 @@ export function writeImageFileMetadata(bytes, input, options = {}) {
       segments.push(header, payload);
     }
     for (const part of parts) {
+      if (credentials?.matched.has(part)) continue;
       if (isJpegMetadata(part)) {
         // Retain JFIF version/density conventions but remove its thumbnail.
         if (part.marker === 0xe0 && begins(part.data, encoder.encode("JFIF\0")) && part.data.length >= 14) {
@@ -444,6 +520,7 @@ export function writeImageFileMetadata(bytes, input, options = {}) {
   }
   const chunks = [bytes.subarray(0, 8)];
   for (const part of parts) {
+    if (credentials?.matched.has(part)) continue;
     if (PNG_METADATA.has(part.type)) continue;
     chunks.push(bytes.subarray(part.start, part.end));
     if (part.type === "IHDR") {

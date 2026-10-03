@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
-import { IMAGE_METADATA_FIELDS, copyImageMetadataJson, parseImageMetadataJson, readImageFileMetadata, writeImageFileMetadata, type ImageFileMetadataFields } from "@/features/assets/image-file-metadata.mjs";
+import { IMAGE_METADATA_FIELDS, copyImageMetadataJson, parseImageMetadataJson, readImageFileC2pa, readImageFileMetadata, writeImageFileMetadata, type ImageFileMetadataFields } from "@/features/assets/image-file-metadata.mjs";
 import { PRIVATE_IMAGE_UPLOAD_MAX_BYTES } from "@/shared/contracts/upload-limits.mjs";
 import { privateImageUrls } from "@/shared/private-image-urls.mjs";
 import type { GenerationReference } from "@/shared/contracts/generation";
@@ -126,7 +126,7 @@ function CanvasImageMetadataDialog({ request, onClose, onCommit }: Readonly<{
         // A malformed EXIF profile need not make a decodable image impossible
         // to clean. Container corruption still fails closed here.
         const stripped = writeImageFileMetadata(bytes, {}, { clear: true });
-        metadata = { ...readImageFileMetadata(stripped.bytes), hasMetadata: true };
+        metadata = { ...readImageFileMetadata(stripped.bytes), hasMetadata: true, c2pa: readImageFileC2pa(bytes) };
         metadataError = "原有元数据无法完整解析。你可以清除元数据后保存副本，或手动填写参数。";
       }
       const dimensions = await decodeDimensions(blob, controller.signal);
@@ -205,6 +205,11 @@ function CanvasImageMetadataDialog({ request, onClose, onCommit }: Readonly<{
         </div>
         {loading && <p className={styles.status} role="status">正在读取图片元数据…</p>}
         {!loading && !original && <Button type="button" variant="secondary" size="sm" onClick={() => setAttempt((value) => value + 1)}>重新读取原图</Button>}
+        {original && <p className={styles.status} role="status">
+          {original.metadata.c2pa === "present" ? "发现内嵌 C2PA 内容凭证，尚未验证签名。" : original.metadata.c2pa === "unreadable" ? "内容凭证检测未完成：文件中的凭证数据无法完整识别。" : "未发现内嵌 C2PA 内容凭证。"}
+          {original.metadata.c2pa !== "absent" && " 清除元数据时会一并处理文件内凭证；普通编辑可能使原凭证失效。"}
+        </p>}
+        {original && original.metadata.c2pa !== "absent" && <p className={styles.status}>此处仅处理文件内数据，不清除隐形水印或外部凭证，也不用于判定图片是否由 AI 生成。</p>}
         <div className={styles.tools}>
           {!!request.references.length && <Button type="button" variant="ghost" size="sm" disabled={disabled} aria-expanded={referencesOpen} onClick={() => setReferencesOpen((value) => !value)}>{busy === "extract" ? "正在提取…" : "从参考图提取"}</Button>}
           <Button type="button" variant="ghost" size="sm" disabled={disabled || !Object.values(fields).some(Boolean)} onClick={() => void copy()}><Copy size={14} aria-hidden="true" />复制参数</Button>
@@ -238,7 +243,7 @@ function CanvasImageMetadataDialog({ request, onClose, onCommit }: Readonly<{
       </div>
       <footer className={styles.footer}>
         <Button type="button" variant="ghost" size="sm" disabled={disabled} onClick={() => {
-          setFields({}); setClear(true); setError(null); setNotice("已清空参数。保存或下载将移除拍摄、定位和文本元数据，保留图片显示所需的色彩信息。");
+          setFields({}); setClear(true); setError(null); setNotice("已清空参数。保存或下载将移除拍摄、定位、文本元数据及可识别的内嵌 C2PA 内容凭证，保留图片显示所需的色彩信息。");
         }}><Trash2 size={14} aria-hidden="true" />清除元数据</Button>
         <div><Button type="button" variant="secondary" size="sm" disabled={disabled || (!clear && !Object.values(fields).some(Boolean))} onClick={() => void commit(true)}><Download size={14} aria-hidden="true" />{busy === "download" ? "正在导出…" : "下载副本"}</Button>
           <Button type="button" size="sm" disabled={disabled || (!clear && !Object.values(fields).some(Boolean))} onClick={() => void commit(false)}>{busy === "save" ? "正在保存…" : "保存副本"}</Button></div>

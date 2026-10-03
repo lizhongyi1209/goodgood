@@ -1,5 +1,20 @@
 # Architecture
 
+## GG-336 embedded C2PA storage
+
+The browser file boundary adds presence detection independent of EXIF parsing.
+JPEG APP11 JPEG XT packets are grouped by instance and repeated root box
+header; the root JUMBF description uses the full C2PA store UUID and label.
+LBox/XLBox, description fragmentation and metadata between progressive scans
+are supported. Clear removes only matching C2PA packets and every PNG caBX
+chunk, preserving unrelated APP11 and encoded image/color payloads. Unknown
+truncated JUMBF is incomplete detection and blocks ambiguous cleanup; known
+C2PA UUID packets can still be removed as a group when incomplete. Ordinary
+editing retains embedded credential bytes with an invalidation notice.
+The dialog preserves original C2PA status during malformed-EXIF recovery.
+No claim/COSE/certificate validation, remote lookup, watermark processing,
+dependency, API or persisted fields are introduced; this is not AI detection.
+
 ## GG-329 shared canvas flow context
 
 CanvasWorkspace places one explicit ReactFlowProvider above the canvas tool
