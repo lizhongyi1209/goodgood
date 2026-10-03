@@ -273,7 +273,7 @@
 @media (prefers-reduced-motion: reduce) { .assetArrivalIcon svg, .assetArrivalStatus { animation: none; } .assetArrivalIcon::after { display: none; } }
 .shortcutsTrigger { width: 32px; height: 32px; padding: 0; border-radius: 8px; }
 .miniMap:global(.react-flow__panel.bottom.left) {
-  bottom: calc(var(--canvas-controls-bottom) + 42px);
+  bottom: calc(var(--canvas-controls-bottom) + 50px);
   left: calc(var(--canvas-sidebar-width) + 10px);
   overflow: hidden;
   border: 1px solid #e4e4e7;

@@ -1,9 +1,19 @@
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid #e4e4e7;
+  border-radius: 12px;
+  background: #fff;
+}
+
 /* Popover triggers replace data-slot, so style the native toolbar buttons. */
 .controls button {
   height: 32px;
   border-radius: 8px;
-  background: #fff;
-  color: #71717a;
+  background: transparent;
+  color: #111;
 }
 
 .controls button:not(:disabled):is(
@@ -16,5 +26,4 @@
   [data-received]
 ) {
   background: #f3f3f4;
-  color: #27272a;
 }

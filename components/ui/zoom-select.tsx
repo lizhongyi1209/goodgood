@@ -66,7 +66,7 @@ export function ZoomSelect({
   };
 
   return (
-    <Panel className={cn("flex items-center gap-1 rounded-md", styles.controls, className)} {...props}>
+    <Panel className={cn(styles.controls, className)} {...props}>
       {leadingControl}
       {onMiniMapToggle && (
         <Button
