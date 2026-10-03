@@ -813,7 +813,7 @@ export function CanvasAssetPanel({ enabled, assetRevision, downloadScopeKey, onA
                   </form> : item.media === "audio" && <span className={styles.mediaLabel}>音频</span>}
                 </div></ContextMenuTrigger>
                   <ContextMenuContent className={styles.assetContextMenu} onCloseAutoFocus={restoreMenuFocus}>
-                    {downloadTarget && <ContextMenuItem className={styles.addMenuItem} disabled={managementBlocked || downloadPendingKey !== null} onSelect={() => void downloadImage(downloadTarget)}><Download size={14} aria-hidden="true" />{downloadPendingKey === downloadTarget.key ? "正在下载…" : "下载原图"}</ContextMenuItem>}
+                    {downloadTarget && <ContextMenuItem className={styles.addMenuItem} disabled={managementBlocked || downloadPendingKey !== null} onSelect={() => void downloadImage(downloadTarget)}><Download size={14} aria-hidden="true" />{downloadPendingKey === downloadTarget.key ? "正在下载…" : "下载"}</ContextMenuItem>}
                     <ContextMenuItem className={styles.addMenuItem} disabled={managementBlocked} onSelect={() => { renameFromMenuRef.current = true; beginRename(item); }}><Pencil size={14} aria-hidden="true" />重命名</ContextMenuItem>
                     <ContextMenuItem className={styles.addMenuItem} disabled={managementBlocked} onSelect={() => void deleteEntry(item)}><Trash2 size={14} aria-hidden="true" />删除</ContextMenuItem>
                   </ContextMenuContent>

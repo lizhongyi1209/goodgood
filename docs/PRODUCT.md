@@ -2,7 +2,7 @@
 
 ## GG-337 画布原图下载
 
-画布图片和画布内资产列表的图片右键提供「下载原图」。下载当前文件的原始字节，不额外压缩、调整尺寸、转码或修改元数据；清理/裁剪副本下载自身文件。生成批次按实际点击的图片定位，上传中或失败但仍保留本地原始 File 的图片也可下载。资产列表适用于生成图与上传参考图。见 [GG-337](tasks/GG-337-original-download.md) 和 [ADR0034](decisions/0034-stable-generation-grid-and-download.md)。
+画布图片和画布内资产列表的图片右键提供「下载」（GG-338将原「下载原图」文案收短）。下载当前文件的原始字节，不额外压缩、调整尺寸、转码或修改元数据；清理/裁剪副本下载自身文件。生成批次按实际点击的图片定位，上传中或失败但仍保留本地原始 File 的图片也可下载。资产列表适用于生成图与上传参考图。见 [GG-337](tasks/GG-337-original-download.md)、[GG-338](tasks/GG-338-download-label.md) 和 [ADR0034](decisions/0034-stable-generation-grid-and-download.md)。
 
 ## GG-327 图片元数据工具
 

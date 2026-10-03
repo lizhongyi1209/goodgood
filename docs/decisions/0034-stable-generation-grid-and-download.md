@@ -8,6 +8,10 @@
 
 ## Context
 
+GG-338 copy refinement (2026-10-03): the operator shortens both canvas image
+and canvas asset-list context-menu labels from「下载原图」to「下载」. The exact
+original-byte download decision and progress/error behavior remain unchanged.
+
 GG-337 addendum (2026-10-03): the operator adds explicit original-image
 downloads to the canvas image context menu and the canvas asset-list context
 menu. Download the exact original object bytes, never a preview derivative,

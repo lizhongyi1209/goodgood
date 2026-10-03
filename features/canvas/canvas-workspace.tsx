@@ -668,7 +668,7 @@ export function CanvasWorkspace({
       </ContextMenuTrigger>
       <ContextMenuContent className={styles.canvasContextMenu} onContextMenu={(event) => event.preventDefault()}>
         {contextImage ? <ContextMenuItem disabled={!assetLibraryEnabled || downloadPendingKey !== null} onSelect={() => void downloadImage(contextImage)}>
-          <Download size={14} aria-hidden="true" /><span>{downloadPendingKey === contextImage.key ? "正在下载…" : "下载原图"}</span>
+          <Download size={14} aria-hidden="true" /><span>{downloadPendingKey === contextImage.key ? "正在下载…" : "下载"}</span>
         </ContextMenuItem> : <>
         <ContextMenuItem onSelect={() => {
           if (contextPointRef.current) { onBeforeGraphEdit(); onCreateText(contextPointRef.current); }
