@@ -1,5 +1,7 @@
 # 当前开发版本与跨窗口交接
 
+- 最新图片插槽：[GG-321](tasks/GG-321-image-result-slots.md)基线ca54019/登记aa4967f，子`/root/image_result_slots`隔离4398d08精确接入当前4489d1d。总数先固定槽/本机flush后逐张并发count1，逐槽合并状态，失败中央重试只一个位置且成功图/输出ID/展开状态保持；未知提交复用key，旧count4失败单槽新submit count1，Seedream原生层保持。15文件，imageSlots云冻结规范输入/任务引用受权及恢复完成，旧Web拒绝时明确仅本机保存。创建1/退役1、子结束/辅助零依赖缓存正常移除，无构建/检查/测试运行、浏览器、SQL/provider或运行操作；用户刷新手验。新云字段须以后更新Web，无迁移/Worker更新，当前GG-319 Web/唯一Worker419b097和原Vite/数据/SMTP保持。
+
 - 最新邮件核对：[GG-320](tasks/GG-320-local-email-delivery-audit.md)只读确认当前local-mailpit；11:18验证码请求202、邮件已进入http://127.0.0.1:58045/，真实QQ邮箱不会收到。没有重发/读取正文或切换SMTP，GG-319运行不变。
 
 - 最新本地运行：[GG-319](tasks/GG-319-local-restart-after-reboot.md)：GG-319电脑重启恢复完成：Docker原E盘数据目录恢复，原依赖healthy；构建419b097，Web28248/32131、唯一Worker28236/32142和Vite33312/5173可用，API代理verified、readiness均ok。GG-318已启用，无迁移/数据重置/测试/真实请求或部署，用户继续手验。

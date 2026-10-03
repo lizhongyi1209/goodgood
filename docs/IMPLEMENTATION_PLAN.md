@@ -1,13 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-03
-- Current phase: GG-321子agent在隔离工作区开发固定图片插槽与逐张重试，ADR0134/任务已登记；当前本地GG-319 Web/唯一Worker419b097和5173保持，GG-318已启用，无运行/生产操作。
-- Current objective: 请求4张展开4位，成功/失败位置稳定，只重试选定失败图；按冻结输入/幂等身份独立单图任务、旧多图项目及刷新恢复兼容。仅修改代码，默认不构建、检查、测试或浏览器验收；根负责文档/精确集成，子负责应用源码。
+- Current phase: GG-321子应用源码4398d08→4489d1d已接入GG-116/5173：固定图片插槽/独立单图任务/中央单槽重试及恢复完成，创建1/退役1，仅源码/回归来源未编译检查，无运行/生产操作。
+- Current objective: 用户刷新手验4张展开4位及单槽重试/兄弟保持；新imageSlots云校验须以后明确委托Web激活，旧Web明确本机保存。无需SQL迁移或Worker更新；当前GG-319 Web/唯一Worker419b097和原Vite/数据/SMTP保持，默认仅开发代码。
 - Previous objective: GG-313模板名称格式/示例参考、GG-312画布300%高清门槛、GG-311模板保存/成功动效及类型筛选、GG-310前景色已交付源码；GG-309私有2K接口、批量校验及文本资产API/本地0063已启用。
 
 ## Current checkpoint
 
-- 当前开发 [GG-321](tasks/GG-321-image-result-slots.md)：基线ca54019、登记aa4967f，子`/root/image_result_slots`在`F:/goodgood-worktrees/GG-321-image-result-slots`/feature分支负责应用代码，根仅维护文档。每请求图片独立count1任务/稳定槽、失败中央手动重试、冻结幂等输入及slots云受权验证；Seedream原生层保持，不新增并发/计费政策。创建1/退役0，禁止任何构建/检查/真实调用或服务操作，完成后根精确集成并收口；新云字段须后续Web激活。
+- 最新插槽交付 [GG-321](tasks/GG-321-image-result-slots.md)：基线ca54019、登记aa4967f，子隔离4398d08精确接入4489d1d，15文件；固定结果位置/先本机flush请求key、独立count1并发、中央单槽重试及未知幂等/旧count4/Seedream层恢复。云imageSlots规范输入/受权保存及旧Web本机提示完成，回归来源只写不运行。创建1/退役1，辅助工作区零依赖/缓存正常Git移除，子结束；无构建/检查、浏览器、SQL、provider或运行/生产操作，用户刷新手验，新云字段须后续Web激活，无迁移/Worker更新。
 
 - 最新只读邮件核对 [GG-320](tasks/GG-320-local-email-delivery-audit.md)：当前投递local-mailpit，11:18登录验证码已在本地58045收件箱，非真实QQ投递；无配置/服务变化，GG-319当前运行和手验目标保持。
 

@@ -1,5 +1,7 @@
 # GoodGood 当前状态
 
+- 最新插槽源码：[GG-321](tasks/GG-321-image-result-slots.md)子4398d08→4489d1d已接入GG-116/5173，按请求位置保留成功/失败/进行中，4张为4个count1任务，中央只重试所选位置，冻结/未知幂等和旧count4/Seedream层恢复兼容。云imageSlots校验已改源码，当前旧Web不支持时明确本机保存；须以后单独激活Web，无SQL/Worker更新。创建1/退役1，只写回归未运行，无编译/检查、真实调用或运行/生产操作，GG-319 Web/唯一Worker419b097、原Vite/数据/SMTP保持，用户刷新手验。
+
 - 最新本地运行：[GG-319](tasks/GG-319-local-restart-after-reboot.md)：GG-319电脑重启恢复完成：Docker原E盘数据目录恢复，原依赖healthy；构建419b097，Web28248/32131、唯一Worker28236/32142和Vite33312/5173可用，API代理verified、readiness均ok。GG-318已启用，无迁移/数据重置/测试/真实请求或部署，用户继续手验。
 
 - 最新失败诊断源码：[GG-318](tasks/GG-318-generation-failure-diagnostics.md)4443b25→a627d7f已接入GG-116/5173：图片HTTP/网络/协议/上游失败/超时及输出错误关联尝试阶段，现有事务保存脱敏白名单，站长总日志详情最多50条再次脱敏读取。无SQL迁移/请求或积分变化，历史原始详情不可回填。创建1/退役1，只写回归来源未编译/检查或验证；须另行激活Web及唯一Worker才开始记录，当前Web287c4ca/0063、原Vite/Worker70e10c6保持。
