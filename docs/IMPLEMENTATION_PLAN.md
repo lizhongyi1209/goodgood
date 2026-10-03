@@ -7,6 +7,9 @@
 
 ## Current checkpoint
 
+- 最新只读邮件核对 [GG-320](tasks/GG-320-local-email-delivery-audit.md)：当前投递local-mailpit，11:18登录验证码已在本地58045收件箱，非真实QQ投递；无配置/服务变化，GG-319当前运行和手验目标保持。
+
+
 - 最新恢复 [GG-319](tasks/GG-319-local-restart-after-reboot.md)：GG-319电脑重启恢复完成：Docker原E盘数据目录恢复，原依赖healthy；构建419b097，Web28248/32131、唯一Worker28236/32142和Vite33312/5173可用，API代理verified、readiness均ok。GG-318已启用，无迁移/数据重置/测试/真实请求或部署，用户继续手验。 构建receipt严格绑定419b097，后继文档不改变已运行身份；再次重启按GG-116当前HEAD构建和核对Docker原E盘目录，不启动旧GG-226 Worker。
 
 

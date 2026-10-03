@@ -1,5 +1,7 @@
 # 当前开发版本与跨窗口交接
 
+- 最新邮件核对：[GG-320](tasks/GG-320-local-email-delivery-audit.md)只读确认当前local-mailpit；11:18验证码请求202、邮件已进入http://127.0.0.1:58045/，真实QQ邮箱不会收到。没有重发/读取正文或切换SMTP，GG-319运行不变。
+
 - 最新本地运行：[GG-319](tasks/GG-319-local-restart-after-reboot.md)：GG-319电脑重启恢复完成：Docker原E盘数据目录恢复，原依赖healthy；构建419b097，Web28248/32131、唯一Worker28236/32142和Vite33312/5173可用，API代理verified、readiness均ok。GG-318已启用，无迁移/数据重置/测试/真实请求或部署，用户继续手验。
 
 - 最新失败诊断：[GG-318](tasks/GG-318-generation-failure-diagnostics.md)基于ea71443，登记4a2017f→9121d32、隔离4443b25→当前a627d7f。HTTP/网络/JSON/协议/上游失败/超时和输出错误元信息脱敏，Worker关联阶段/尝试/路由，随既有最终失败/备用切换事务保存；站长总日志任务详情最多50条再次脱敏读取，普通用户错误/积分/请求策略保持。创建1/退役1，辅助工作区干净退役；仅写代码/回归来源和文档，未编译、检查、测试/浏览器或运行/生产操作，无迁移/真实请求。当前Web287c4ca/0063、原Vite/唯一Worker70e10c6保持；须用户另行委托同步更新Web和唯一Worker才开始捕获新失败，旧HTTP详情无法回填，不自动重试。
