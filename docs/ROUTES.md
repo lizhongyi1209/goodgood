@@ -1,5 +1,18 @@
 # Navigation and route contract
 
+## GG-340 · 公告
+
+`/admin/announcements`为站长管理新分页，使用既有WorkspaceRoute协议与
+账户权限门控。大厅/画布右上角共享公告入口，不新增用户阅读路由。
+用户GET`/api/announcements`支持游标或已加载ID快照（最多100个）；
+GET`/api/announcements/:id`读取已发布帖，GET`/api/announcements/stream`
+提供SSE；POST`:id/like`及`:id/view`只操作当前用户状态。
+站长GET/POST`/api/admin/announcements`用于列表/生命周期操作，
+GET`:id`加载最新稿，GET`:id/stats`返回后台指标。站长状态过滤支持
+draft/published/withdrawn，不返回已删除稿；指标无前端入口。
+所有接口认证并重验启用账户，管理操作重验数据库站长角色；POST要求
+`x-goodgood-announcement-action: 1`且有界JSON。Next路由与独立Web桥接保持一致。
+
 ## GG-291 text API
 
 `POST /api/text-generation/stream` accepts UUID/canvas/model/prompt/history and authorized media identities; returns SSE start/delta/done/error. GG-297 adds `POST /api/text-generation/preset-stream` with optional presetId, sharing the same authorization/stream implementation; old Web404 prevents ignored presets and unintended paid calls. `GET /api/text-generation/:requestId` reads owner/workspace status/result with expiry recovery; `POST /api/text-generation/:requestId/cancel` closes the existing request without another provider call. No new browser URL.0061 was enabled locally by GG-294; GG-296 new0062 and GG-297 preset handling require subsequent Web activation. See[GG-291](tasks/GG-291-canvas-text-generation.md),[GG-297](tasks/GG-297-text-generation-presets.md).

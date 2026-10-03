@@ -1,5 +1,17 @@
 # Development and deployment
 
+## GG-340 · Announcement activation pending
+
+This task delivers source only. Migration`0064_gg340_announcements.sql` is not
+applied and current Web remains the GG-330 verified94bee535 receipt. Enabling
+the feature later requires explicit user scope: verify the named isolated local
+target, apply the additive migration via the existing migration workflow, then
+build/restart Web with current source. Announcements need no Worker changes.
+Do not silently run migrations/builds, publish a real announcement, write
+statistics fixtures or modify production. User acceptance/production approval
+remain distinct from implementation. SSE sends `x-accel-buffering: no` and
+15second heartbeat; a future approved proxy release must preserve streaming.
+
 ## GG-291 pending text backend activation
 
 This task delivered source only. Before using text generation, apply0061 through the separately authorized local workflow and build/start new Web; none was performed here. Text reuses server relay base/key or optional server-only `TEXT_GENERATION_API_BASE_URL` (root or `/v1`), `TEXT_GENERATION_API_KEY`/`TEXT_GENERATION_API_KEY_FILE`; never put these in browser env. The relay must support the five accepted model IDs; the service never silently switches/retries. Original image Worker/queue stay separate; Web recovers expired text reservations. This paragraph grants no production migration, restart or provider authority. See [GG-291](tasks/GG-291-canvas-text-generation.md).

@@ -1,5 +1,23 @@
 # GG-063 quality pricing errors
 
+## GG-340 · Announcements
+
+Public errors expose bounded messages/request IDs, never database/provider
+details. Authentication uses the existing session-expired boundary; inactive
+users and non-site-owners are rejected by database authorization.
+CAS/state conflicts retain draft text and require explicit reload/discard.
+Unknown write outcomes retry the same mutation ID/payload; new edits get a new
+ID and cannot overwrite an intervening revision. Publishing requires content;
+published rows cannot silently become drafts or be deleted before withdrawal.
+Withdrawn/deleted public posts return404 and stale view revisions409; the
+reader refreshes its authorized snapshot. Likes remain unchanged on failure.
+Committed publications succeed even if Redis broadcasting is unavailable,
+with safe transport diagnostics and reconnect/poll catch-up. Hidden pages
+release streams; aborted/canceled streams release timers/counts, stalled
+consumers coalesce refresh markers rather than queueing unlimited changes.
+Until migration0064 and a current Web are enabled, the client shows an honest
+inline unavailable state with retry rather than fabricated announcements.
+
 ## GG-337 canvas download failures
 
 原图授权/连接/非成功响应、空文件或本地Blob不可用时不生成替代预览下载，保留画布及原图片，用既有灰阶toast提供失败与重试。保存出口区分准备与启动失败，已创建的Object URL延迟回收；成功反馈为「图片下载已开始」，不宣称文件已落盘。重复点击在读取中禁用；切换身份/工作区/画布页、关闭组件主动取消读取并清除旧toast，不把取消显示为错误。见 [GG-337](tasks/GG-337-original-download.md)。

@@ -1,6 +1,7 @@
 "use client";
 
 import { AccountInvitation } from "@/features/auth/account-invitation";
+import { AnnouncementCenter } from "@/features/announcements/announcement-center";
 import "@/features/profile/profile.css";
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type WheelEvent as ReactWheelEvent } from "react";
@@ -521,7 +522,7 @@ export default function Home({
   const [videoDetailKey, setVideoDetailKey] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<ActiveView>("create");
   const [creditUsageOpen, setCreditUsageOpen] = useState(false);
-  const [adminTab, setAdminTab] = useState<"models" | "users" | "audit" | "operations" | "logs" | "feedback">("models");
+  const [adminTab, setAdminTab] = useState<"models" | "users" | "audit" | "operations" | "logs" | "feedback" | "announcements">("models");
   const [organizationRoute, setOrganizationRoute] = useState<{ id: string; tab: OrganizationManagementTab } | null>(null);
   const [businessStylePreview, setBusinessStylePreview] = useState(false);
   const [distributionTab, setDistributionTab] = useState<"children" | "transfers">("children");
@@ -3168,11 +3169,12 @@ export default function Home({
       </aside>
 
       <section className="main-stage">
-        <header className="mobile-bar">
+        <header className="mobile-bar has-announcements">
           <div className="mobile-brand" role="img" aria-label="Good Good">
             <Image className="brand-wordmark" src="/goodgood-wordmark.svg" alt="" width={108} height={14} />
           </div>
           <div className="mobile-account">
+            <AnnouncementCenter session={authenticationSession} className="lobby-announcements" />
             {organizationNavigationVisible && authenticationSession?.account.role !== "site_owner" && (
               <button className="top-avatar" aria-label="企业管理" onClick={handleOrganizationNav}><Building2 size={16} /></button>
             )}

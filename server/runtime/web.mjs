@@ -8,6 +8,8 @@ import { createProfileNodeApiHandler } from "../profile/node-api.mjs";
 import { createAdminNodeApiHandler } from "../admin/node-api.mjs";
 import { createBillingNodeApiHandler } from "../billing/node-api.mjs";
 import { createFeedbackNodeApiHandler } from '../feedback/http.mjs';
+import { createAnnouncementsNodeApiHandler } from "../announcements/http.mjs";
+import { closeAnnouncementStreams } from "../announcements/realtime.mjs";
 import { loadAuthenticationConfig } from "../auth/config.mjs";
 import { createAuthenticationNodeApiHandler } from "../auth/node-api.mjs";
 import { createAuthenticationOperations } from "../auth/operations.mjs";
@@ -89,6 +91,7 @@ const textRecoveryTimer = setInterval(() => {
 textRecoveryTimer.unref();
 const handleAdminNodeApi = createAdminNodeApiHandler({ authenticate });
 const handleFeedbackNodeApi = createFeedbackNodeApiHandler({ authenticateSession });
+const handleAnnouncementsNodeApi = createAnnouncementsNodeApiHandler({ authenticateSession, resources: runtimeResources });
 const handleCreationDraftNodeApi = createCreationDraftNodeApiHandler({ authenticate });
 const handleDistributionNodeApi = createDistributionNodeApiHandler({ authenticate });
 const handleAssetNodeApi = createAssetNodeApiHandler({ authenticate });
@@ -145,6 +148,7 @@ server.on("request", (request, response) => {
   }
   void handleAuthenticationNodeApi(request, response)
     .then((handled) => (handled ? true : handleFeedbackNodeApi(request, response)))
+    .then((handled) => (handled ? true : handleAnnouncementsNodeApi(request, response)))
     .then((handled) => (handled ? true : handleAdminNodeApi(request, response)))
     .then((handled) =>
       handled ? true : handleCreationDraftNodeApi(request, response),
@@ -212,6 +216,7 @@ function stop(signal) {
   }
 
   stopping = true;
+  void closeAnnouncementStreams(runtimeResources);
   clearInterval(textRecoveryTimer);
   console.log(
     JSON.stringify({

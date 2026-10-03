@@ -31,6 +31,7 @@ import { Switch } from "@/components/ui/switch";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AccountAccessGate } from "@/features/auth/account-access-gate";
+import { AnnouncementCenter } from "@/features/announcements/announcement-center";
 import { authenticationEntryPath } from "@/features/auth/authentication-navigation";
 import {
   readAuthenticationSession,
@@ -2353,6 +2354,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
           </button>
         )}
         {session?.access.status === "active" && <button type="button" className={styles.balance} aria-label={`打开账户管理，当前余额 ${billing?.account.availableCredits ?? (billingLoading ? "读取中" : "暂不可用")}`} onClick={() => setCreditUsageOpen(true)}><CreditIcon className="size-[1em]" />{billing?.account.availableCredits ?? "--"}</button>}
+        <AnnouncementCenter session={session} />
       </header>
 
       {!projectReady && <div className={styles.projectLoadOverlay} role={projectLoadError || sessionError ? "alert" : "status"}>

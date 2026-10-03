@@ -1,5 +1,21 @@
 # GG-063 verification
 
+## GG-340 · Announcements — unrun source and user acceptance
+
+Standing code-only collaboration remains: no build, lint/typecheck, code/diff
+checks, test runs or browser acceptance. `tests/gg340-announcements.test.mjs`
+contains only in-memory policy/DTO/cursor/authorization/HTTP/SSE regressions:
+empty draft vs required publication, bounds/invalid/control input, hidden
+metrics, forged role/write header, authenticated binding, committed-only
+notification, stream sharing/cap/cancel cleanup and admin navigation.
+It contains no real database, Redis, provider or external notification calls.
+Future SQL acceptance must use a separately named disposable stack with no
+real-provider Worker; do not populate the existing local development database
+with fixtures. User manual follow-up after explicit local activation: two
+active accounts, publication/update/withdraw/delete, likes/read dedup, unread
+after update, reconnect/refresh/hidden page/logout, reading position/new-post
+button, mobile/keyboard/reduced motion, and stale concurrent editing.
+
 ## GG-339 copy and model intrinsic width — manual acceptance pending
 
 纯显示文案/样式调整；既有GG297预设目录断言改为「结构化提示词」，稳定ID和隐藏指令断言保持，没有新增测试。沿GG-276用户约定未运行编译、lint/typecheck、代码/diff检查、测试或浏览器验收，无真实请求/运行变化。

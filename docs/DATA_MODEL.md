@@ -1,5 +1,21 @@
 # GG-063 quality pricing
 
+## GG-340 · Announcement domain (migration0064, not applied)
+
+`announcements` stores UUID identity, title<=100/codepoints and body<=12000,
+important/pinned flags, draft/published/withdrawn/deleted status, CAS version,
+publication_version, actors, last mutation ID/hash and timestamps. Published
+rows require nonempty content and publication metadata. Feed keyset order is
+pinned/published_at/id; admin order updated_at/id. Stored feed times truncate
+to milliseconds so JSON cursors preserve exact ordering, including tied times.
+`announcement_events` retains lifecycle actor/action/version; deletion is soft.
+`announcement_reads` and `announcement_likes` have announcement/user primary
+keys: reads measure unique actual viewers, revisions determine unread status;
+refresh/retry do not inflate either count. Views use expected publication
+revision and likes use explicit desired boolean. Public DTOs carry only content
+and current-user unread/liked state; aggregate statistics remain admin-only.
+No project JSON, credits, provider jobs or workspace ownership changes.
+
 ## GG-327 元数据副本
 
 常用 EXIF 参数只写入新 JPEG/PNG 文件；中文作者/描述使用 EXIF Unicode/XP 标签，版权等文本同时采用 XMP。不把拍摄参数存入 generation_jobs.input，不覆盖源资产，也不添加项目 JSON 字段。保存副本复用现有 private reference 文件与 sourceImage 节点：独立新ID、原始像素尺寸、上传状态和素材入库；源节点的job、分组关系、连线及历史均保持。复制 JSON 仅含允许字段/版本，不含私有URL、图片缩略、MakerNote或后台信息。

@@ -129,6 +129,12 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .main-stage { min-width: 0; background: var(--canvas); }
 .top-avatar { width: 34px; height: 34px; }
 .mobile-bar { display: none; }
+@media (min-width: 721px) {
+  .main-stage { position: relative; }
+  .mobile-bar.has-announcements { display: flex; position: absolute; right: 24px; top: 14px; z-index: 40; }
+  .mobile-bar.has-announcements .mobile-brand,
+  .mobile-bar.has-announcements .mobile-account > :not(.lobby-announcements) { display: none; }
+}
 .mobile-brand { min-width: 0; flex: 0 1 108px; display: flex; align-items: center; }
 .mobile-account { flex: none; display: flex; align-items: center; gap: 8px; }
 .mobile-credit-balance { padding: 5px 8px; border: 0; border-radius: 999px; background: var(--soft); color: var(--ink); display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-variant-numeric: tabular-nums; }

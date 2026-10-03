@@ -1,5 +1,22 @@
 # Architecture
 
+## GG-340 · Platform announcements
+
+`features/announcements` owns the shared entry, safe Markdown rendering,
+read lifecycle, HTTP boundary and site-owner editor. No canvas/store hooks or
+new provider dependencies are introduced. `server/announcements` owns policy,
+transactional repository, Request/Node adapters and Redis/SSE transport.
+The domain is platform-scoped: authenticated active users read published posts;
+database site-owner checks protect drafts, mutations and statistics.
+Publication commits before broadcasting only id/status/publicationVersion.
+The existing node-redis client provides one duplicated subscriber per Web
+resource set. Streams cap at four per user/process, heartbeat every15seconds,
+reauthenticate every60seconds and close during Web shutdown. Transport connect
+retries and committed-write broadcast waits are bounded; no new Worker exists.
+Visible clients reconnect/poll every30seconds; loaded-ID snapshots reconcile
+withdrawals without forcing new posts above the reader. HTML is never inserted;
+Markdown nodes render through React, links allow HTTP(S), no image fetching.
+
 ## GG-337 canvas original-file download
 
 `canvas-image-download.ts`按节点/资产稳定ID解析下载目标，批次必须指定实际输出ID；已保存图片沿`readCanvasCropImageBlob`原图受权读取，generated先刷新私有下载签名，reference走私有content端点。展示用preview/source URL不参与下载；保留的本地Blob URL仅读取原始File。共享`saveImageBlobToLocal`将原Blob交给浏览器，不经过图像解码或元数据处理，既有资产下载沿同一出口。下载hook按身份/工作区/画布页取消读取与旧反馈，防止过期请求发起下载。没有新API、持久字段或后台更新。见 [GG-337](tasks/GG-337-original-download.md)。
