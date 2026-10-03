@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-03
-- Current phase: GG-324图片对比隔离cdf6c02/97fd038已精确接入GG-116/5173为da10928/3e34fa7：裁剪右侧入口、实际参考优先/资产选择搜索、hover分界及键盘触屏完成；创建1/退役1，无构建/检查/验收，保留并行GG-323分组2fa0486。
-- Current objective: 用户刷新手验图片对比入口、所选输出的参考图、资产搜索、不同宽高比和hover/触屏/键盘；对比无需Web更新。GG-323分组新云字段仍待独立授权激活。GG-322 Web25664/32131 verified0b5744d、唯一Worker28236/32142仍419b097，Vite33312/5173和原数据/SMTP保持；默认仅开发代码。
+- Current phase: GG-325建组ResizeObserver报错源码d6aadee→faaad8a已接入GG-116/5173：整像素明确尺寸/独立框内容、等完整测量、持久坐标及读写分帧/过期计划取消；未编译检查或浏览器复现验收。保留GG-324图片对比da10928/3e34fa7及GG-323分组交互。
+- Current objective: 用户刷新重试建组，核对新建/已有组的报错、位置/叠图展开；GG-324对比继续手验。GG-323组云字段待独立授权激活Web；当前GG-322 Web25664/32131 verified0b5744d、唯一Worker28236/32142仍419b097，Vite33312/5173及原数据/SMTP保持，默认仅开发代码。
 - Previous objective: GG-313模板名称格式/示例参考、GG-312画布300%高清门槛、GG-311模板保存/成功动效及类型筛选、GG-310前景色已交付源码；GG-309私有2K接口、批量校验及文本资产API/本地0063已启用。
 
 ## Current checkpoint
+
+- 最新分组修复 [GG-325](tasks/GG-325-group-resize-loop.md)：基线8e9eeb8，隔离d6aadee精确接入faaad8a，保留已完成另窗GG-324。截图报错仅有覆盖层调用栈，未浏览器复现；修正浮点/百分比组尺寸及不完整测量重包围条件：向外取整、明确width-height、框absolute/inset、原生组/成员measure就绪，持久坐标及下一帧写入/过期计划取消，一像素死区。必要回归只写未运行，不屏蔽全局错误；创建1/退役1，辅助工作区已归档，零依赖缓存，无编译检查、数据/服务/provider或生产操作。用户刷新重试建组；组云字段仍待受权Web激活，无SQL/Worker更新。
 
 - 最新图片工具 [GG-324](tasks/GG-324-canvas-image-compare.md)：基线ba73fea，登记d8dc0d6→4e32799，隔离cdf6c02/97fd038精确接入da10928/3e34fa7；保留另一窗口GG-323及其文档。三类图片节点快捷栏裁剪右侧对比，当前图固定右侧、真实所选输出job.input参考优先左侧，资产按实际名称/日期及搜索；50%分界hover随鼠标、触屏/方向键/Shift/Home/End，居中等比完整适配。独立Dialog/有界2048预览池和原512缩略，无上传/生成/积分或持久字段；局部空/加载/失败、关闭回焦点/页身份清理完成。Impeccable沿既有Operate系统，创建1/退役1、零依赖缓存，无构建/检查/测试、浏览器/HTTP/SQL/provider或运行/生产操作，用户刷新手验，无需后端更新。
 
