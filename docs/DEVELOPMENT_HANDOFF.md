@@ -1,5 +1,7 @@
 # 当前开发版本与跨窗口交接
 
+- 最新公告源码：[GG-340](tasks/GG-340-announcements.md)从核验c09d623隔离登记2b9c5e7/实现6ce5f38，归并f4bd4ff精确接入b25d670，最终52px大厅顶部预留55c9424→40a67bb。初始编号与另一窗口下载/反推UI登记相撞，公告最终GG-340，保留其GG-337/338/339及所有冲突文档内容；没有整体合并功能分支。首页/画布右上共享入口、非模态帖子流及有限到达提醒，站长`/admin/announcements`完整草稿/发布更新/重要/置顶/撤回/删除；实时SSE/Redis与断线ID快照、CAS稳定操作键、隐藏阅读/点赞指标。新增`0064_gg340_announcements.sql`未执行，新Web未启用，当前后台仍沿GG-330 receipt，单靠刷新不能使用完整公告。后续用户委托时先确认本地独立目标，再迁移并构建/重启Web，公告无需Worker重启；本轮无数据/服务/通知/Provider或生产操作。创建1/退役1，旧隔离目录已正常移除，codex/GG-340-announcements/55c9424保留；无依赖缓存/子agent、编译/lint/typecheck/代码diff检查、测试运行或浏览器验收。用户负责手验，定向回归只写在tests/gg340-announcements.test.mjs，当前应用源码检查点40a67bb。
+
 - 最新命名/模型布局：[GG-339](tasks/GG-339-prompt-reverse-ui.md)基于干净36542d8，8087311→655213b已接入GG-116/5173。右键/自动标题/连接名称与无障碍入口改提示词反推，预设目录/菜单/Badge改结构化提示词；模型及设置组按内容宽度，箭头紧邻名称、预设相邻，窄屏省略/换行/发送靠右保持。仅文案/样式及既有目录预期来源，内部ID/隐藏指令/API/计费/保存不改，无后台激活需求。创建1/退役1，辅助已managed归档，无子agent/依赖缓存；未编译检查/测试/浏览器验收，无应用API/SQL/Provider/服务/生产操作，用户刷新手验。GG-338/337及GG-330运行receipt保持，本轮未重查运行。
 
 - 最新原始凭证分析：[GG-337](tasks/GG-337-original-download.md)第二份用户JPEG含6335字节C2PA，原始声明Google生成式AI创建/添加SynthID水印，claim生成器Google C2PA Core Generator Library。原始JUMBF/APP11及完整解码JSON在仓库外c2pa-114712目录交付；独立本地图片/三条声明哈希及随附公钥claim签名匹配，未验证根信任/撤销/时间戳或像素水印。未修改/外传/入Git用户图片、无应用代码或运行变化。此前清理副本无内嵌C2PA，二者未确认同图配对；GG-338源码/未运行应用检查和GG-330运行receipt保持。
