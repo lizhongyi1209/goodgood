@@ -4,6 +4,7 @@
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
+| GG-324 | 开发中：图片快捷栏裁剪右侧新增对比，当前图/参考优先/资产选择，hover分界与键盘触屏；Impeccable沿既有系统，无自动构建检查 | [任务](tasks/GG-324-canvas-image-compare.md) |
 | GG-323 | 已接入源码2fa0486：原生分组/框选建组、整组移动、双击改名/emoji，解散复制及恢复；创建1/退役1，无编译检查，用户手验；云新字段待受权Web激活 | [任务](tasks/GG-323-canvas-groups.md) |
 | GG-322 | 已接入0ce2360并仅Web启用verified0b5744d：实际同步错误、本机/云状态保持，新插槽校验生效；创建1/退役1，无测试/真实请求，用户手验 | [任务](tasks/GG-322-image-slot-sync-compatibility.md) |
 | GG-321 | 已接入源码4489d1d：固定槽/单张并发/中央逐张重试、未知幂等及旧项目恢复；创建1/退役1，回归未运行，后继GG-322 Web已启用云字段、无SQL/Worker更新 | [任务](tasks/GG-321-image-result-slots.md) |
