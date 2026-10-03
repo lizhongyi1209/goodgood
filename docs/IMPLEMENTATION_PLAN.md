@@ -1,11 +1,14 @@
 # Production implementation plan
 
-- Last synchronized: 2026-10-02
-- Current phase: GG-318失败诊断源码4443b25→a627d7f已接入GG-116/5173：图片请求/上游失败脱敏白名单随既有事件事务保存，站长总日志详情可读；创建1/退役1，未编译/检查或验证，无SQL迁移、运行/生产操作，Web287c4ca/0063及原Vite/唯一Worker保持。
-- Current objective: GG-318源码交付，待用户委托更新Web及唯一Worker后开始记录新失败并手验总日志详情；不重试历史任务，不推测缺失HTTP状态。默认不自动编译、检查或浏览器验收；GG-317确认三条任务/一条CAPACITY_BUSY失败且20全退的结果保持。
+- Last synchronized: 2026-10-03
+- Current phase: GG-319本地重启恢复完成，原Docker E盘数据/依赖恢复，419b097 Web及唯一Worker与5173可用，GG-318已启用；创建0/退役0，无迁移/测试或生产变化。
+- Current objective: 用户通过5173继续手验，新图片失败可在站长总日志详情排查；历史HTTP详情不可回填，默认仅开发代码，不自动编译/检查/浏览器验收或真实生成。
 - Previous objective: GG-313模板名称格式/示例参考、GG-312画布300%高清门槛、GG-311模板保存/成功动效及类型筛选、GG-310前景色已交付源码；GG-309私有2K接口、批量校验及文本资产API/本地0063已启用。
 
 ## Current checkpoint
+
+- 最新恢复 [GG-319](tasks/GG-319-local-restart-after-reboot.md)：GG-319电脑重启恢复完成：Docker原E盘数据目录恢复，原依赖healthy；构建419b097，Web28248/32131、唯一Worker28236/32142和Vite33312/5173可用，API代理verified、readiness均ok。GG-318已启用，无迁移/数据重置/测试/真实请求或部署，用户继续手验。 构建receipt严格绑定419b097，后继文档不改变已运行身份；再次重启按GG-116当前HEAD构建和核对Docker原E盘目录，不启动旧GG-226 Worker。
+
 
 - 最新失败诊断 [GG-318](tasks/GG-318-generation-failure-diagnostics.md)：基于ea71443，登记4a2017f→9121d32，隔离4443b25精确接入a627d7f；ADR0074先扩展站长脱敏白名单，诊断非枚举不改变终态确认，现有provider_failed/provider_fallback事件记录阶段/尝试/HTTP/上游/路由。总日志详情受权读取最多50条并再次脱敏，历史/旧Web兼容。创建1/退役1，无依赖/缓存、编译/检查、测试、浏览器、真实请求或激活；无迁移或请求/积分变化。下次明确委托时同步激活Web及唯一Worker，新失败才有诊断，不能回填历史；当前运行沿GG-309及GG-317证据保持。
 

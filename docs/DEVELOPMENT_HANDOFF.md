@@ -1,5 +1,7 @@
 # 当前开发版本与跨窗口交接
 
+- 最新本地运行：[GG-319](tasks/GG-319-local-restart-after-reboot.md)：GG-319电脑重启恢复完成：Docker原E盘数据目录恢复，原依赖healthy；构建419b097，Web28248/32131、唯一Worker28236/32142和Vite33312/5173可用，API代理verified、readiness均ok。GG-318已启用，无迁移/数据重置/测试/真实请求或部署，用户继续手验。
+
 - 最新失败诊断：[GG-318](tasks/GG-318-generation-failure-diagnostics.md)基于ea71443，登记4a2017f→9121d32、隔离4443b25→当前a627d7f。HTTP/网络/JSON/协议/上游失败/超时和输出错误元信息脱敏，Worker关联阶段/尝试/路由，随既有最终失败/备用切换事务保存；站长总日志任务详情最多50条再次脱敏读取，普通用户错误/积分/请求策略保持。创建1/退役1，辅助工作区干净退役；仅写代码/回归来源和文档，未编译、检查、测试/浏览器或运行/生产操作，无迁移/真实请求。当前Web287c4ca/0063、原Vite/唯一Worker70e10c6保持；须用户另行委托同步更新Web和唯一Worker才开始捕获新失败，旧HTTP详情无法回填，不自动重试。
 
 - 最新排查：[GG-317](tasks/GG-317-canvas-three-prompt-audit.md)只读核对当前分组/提交及127.0.0.1:54449/goodgood真实记录，22:34批次确有3条有序任务，摸头/坐着成功1张、半蹲CAPACITY_BUSY失败0张/无上游任务ID；失败账本reserve -20/release +20净0。不是两组上限；原始HTTP状态未留存，不断言具体限流状态。创建0/退役0，无代码改动、自动重试、provider请求、测试/编译、迁移或重启，临时审计脚本清理。GG-316/315及前序源码、GG-309 Web287c4ca/0063、原Vite/唯一Worker保持；用户可选中生成器仅重试失败第2段。
@@ -124,9 +126,9 @@ git worktree list --porcelain
 | 组件 | 入口 | 当前来源/用途 |
 | --- | --- | --- |
 | Vite 页面 | `http://127.0.0.1:5173` | GG-116当前分支含GG-242—276已交付范围，热更新 |
-| Node Web | `http://127.0.0.1:32131` | GG-116 verified `b3844d25a7a4328d71bf79e9196ecdbbc18a504e`；Vite `/api`代理目标，见GG-300 |
-| Worker | `http://127.0.0.1:32142/health/ready` | GG-226 `70e10c6` 的唯一真实开发 Worker；O1Key 请求可能计费 |
-| PostgreSQL | `127.0.0.1:54449/goodgood` | 本地隔离数据库，GG-300新增 `0062`文本实际费用/退款约束；0061文本任务及此前数据保持 |
+| Node Web | `http://127.0.0.1:32131` | GG-116 verified419b097；见GG-319 |
+| Worker | `http://127.0.0.1:32142/health/ready` | GG-116 verified419b097唯一真实Worker，GG-318已启用；旧GG-226不再启动 |
+| PostgreSQL | `127.0.0.1:54449/goodgood` | 原隔离数据/本地0063保持，GG-319无迁移 |
 | Valkey | `127.0.0.1:56549/db0` | 本地队列/缓存 |
 | RustFS | `127.0.0.1:58049/58050` | 本地素材对象存储 |
 | Mailpit | `127.0.0.1:58045/58046` | 本地邮件开发 |
@@ -161,11 +163,11 @@ npm run dev:local
 
 当前依赖已安装时无需为了恢复页面重复安装。按 GG-247 默认只执行相关定向验证，完整门禁用于批次/发布收口、确需全面回归或用户要求；后端运行改变才进行必要的 checkpoint 构建。agent 负责代码开发、代码验证和集成；浏览器交互、视觉效果及是否符合预期由用户验收，除非用户明确委托。真实 provider 请求必须由用户明确授权该次生成；自动测试不得写入真实 Worker 共用数据库或队列。数据库写测试只允许显式命名的空白隔离栈且无真实 Worker。
 
-本机 Valkey 为 56549。GG-116 的两个忽略启动器用于 Web `dist/local-checkpoint-portfix.mjs start workspace` 和 Vite `dist/local-live-dev-portfix.mjs --port 5173`；GG-226 原 `dist/local-checkpoint-portfix.mjs start worker` 继续服务唯一 Worker。先核对构建和任务/队列，再启动所需角色，不重复启动 Worker，不用仍断言 56449 的旧入口。日志固定复用 `%TEMP%/goodgood-local-services/current-{web,worker,vite}.{out,err}.log`。
+本机 Valkey 为 56549。GG-116 的两个忽略启动器用于 Web `dist/local-checkpoint-portfix.mjs start workspace` 和 Vite `dist/local-live-dev-portfix.mjs --port 5173`；GG-319后唯一Worker也使用GG-116的 `dist/local-checkpoint-portfix.mjs start worker`，旧GG-226不再启动。先核对构建和任务/队列，再启动所需角色，不重复启动 Worker，不用仍断言 56449 的旧入口。日志固定复用 `%TEMP%/goodgood-local-services/current-{web,worker,vite}.{out,err}.log`。
 
 checkpoint 构建会清空 dist 中忽略的启动器。构建后从 scripts 对应原脚本仅适配 `./local-*` 导入到 `../scripts/local-*`、允许旧本机`56449/0`配置并将有效REDIS_URL统一为现有`56549/0`（不能只替换断言），每种入口只保留一个副本；不能把适配器或环境文件纳入提交。
 
-**当前本机有已保存的云参考图，Web 启动不可遗漏云配置。**在 GG-116 目录启动所需 Web；若原 GG-226 Worker 停止，核对其构建/队列后才在该目录启动 Worker，两个角色使用原仓库外配置：
+**当前本机有已保存的云参考图，Web 启动不可遗漏云配置。**在 GG-116 目录启动所需 Web；若Worker停止，核对GG-116当前构建/队列后在同一目录启动唯一Worker，两个角色使用原仓库外配置：
 
 ~~~powershell
 $taskCloudEnvironment = Join-Path $env:LOCALAPPDATA 'GoodGood/local-cloud-upload/cloud-upload.env'

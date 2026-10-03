@@ -1,5 +1,7 @@
 # GoodGood 当前状态
 
+- 最新本地运行：[GG-319](tasks/GG-319-local-restart-after-reboot.md)：GG-319电脑重启恢复完成：Docker原E盘数据目录恢复，原依赖healthy；构建419b097，Web28248/32131、唯一Worker28236/32142和Vite33312/5173可用，API代理verified、readiness均ok。GG-318已启用，无迁移/数据重置/测试/真实请求或部署，用户继续手验。
+
 - 最新失败诊断源码：[GG-318](tasks/GG-318-generation-failure-diagnostics.md)4443b25→a627d7f已接入GG-116/5173：图片HTTP/网络/协议/上游失败/超时及输出错误关联尝试阶段，现有事务保存脱敏白名单，站长总日志详情最多50条再次脱敏读取。无SQL迁移/请求或积分变化，历史原始详情不可回填。创建1/退役1，只写回归来源未编译/检查或验证；须另行激活Web及唯一Worker才开始记录，当前Web287c4ca/0063、原Vite/Worker70e10c6保持。
 
 - 最新图标修正源码：[GG-316](tasks/GG-316-canvas-view-icon-consistency.md)04aa7e0→3a823d8已接入GG-116/5173：画布查看入口固定24px按钮/14px图标/7px圆角/5px边距，不随画布缩放变大，共享资产查看背景纯白不透明。创建1/退役1，未编译或验证，无运行变化；GG-315及前序源码、GG-309已启用Web/0063保持，用户刷新手验。
