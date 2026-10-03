@@ -2,7 +2,7 @@
 
 ## GG-353 · 画布左下工具状态
 
-资产、地图、快捷键和缩放入口共用32px高度/8px圆角，默认不透明白底和#71717a图标/文字；悬停、键盘焦点、按下、功能开启/弹层打开及资产到达提示统一#f3f3f4底和#27272a前景。图标继承按钮颜色，焦点环保持。状态色集中在ZoomSelect的CSS module，避免全局button继承色覆盖分层工具样式；弹层内部控件保持原样。见[GG-353](tasks/GG-353-canvas-control-colors.md)。
+资产、地图、快捷键和缩放入口共用32px高度/8px圆角，默认不透明白底和#71717a图标/文字；悬停、键盘焦点、按下、功能开启/弹层打开及资产到达提示统一#f3f3f4底和#27272a前景。图标继承按钮颜色，焦点环保持。状态色集中在ZoomSelect的CSS module，以工具区原生button为选择目标，避免PopoverTrigger替换data-slot后漏掉入口，以及全局button继承色覆盖分层工具样式；Portal弹层内部控件保持原样。见[GG-353](tasks/GG-353-canvas-control-colors.md)。
 
 ## GG-341 · 图片去除AI快捷按钮
 

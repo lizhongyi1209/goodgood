@@ -271,7 +271,7 @@
 @keyframes assetReceiveRing { from { opacity: .7; transform: scale(.8); } to { opacity: 0; transform: scale(1.4); } }
 @keyframes assetReceiveLabel { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .assetArrivalIcon svg, .assetArrivalStatus { animation: none; } .assetArrivalIcon::after { display: none; } }
-.shortcutsTrigger[data-slot="button"] { width: 32px; height: 32px; padding: 0; border-radius: 8px; }
+.shortcutsTrigger { width: 32px; height: 32px; padding: 0; border-radius: 8px; }
 .miniMap:global(.react-flow__panel.bottom.left) {
   bottom: calc(var(--canvas-controls-bottom) + 42px);
   left: calc(var(--canvas-sidebar-width) + 10px);

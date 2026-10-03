@@ -1,12 +1,12 @@
-/* Keep every supplied toolbar control above the global button color reset. */
-.controls button[data-slot="button"] {
+/* Popover triggers replace data-slot, so style the native toolbar buttons. */
+.controls button {
   height: 32px;
   border-radius: 8px;
   background: #fff;
   color: #71717a;
 }
 
-.controls button[data-slot="button"]:not(:disabled):is(
+.controls button:not(:disabled):is(
   :hover,
   :focus-visible,
   :active,
