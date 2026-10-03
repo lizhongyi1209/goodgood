@@ -4,6 +4,7 @@
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
+| GG-321 | 子agent开发中：图片固定插槽/逐张重试，成功/失败按请求位置展开，冻结输入及旧项目恢复兼容；仅源码 | [任务](tasks/GG-321-image-result-slots.md) |
 | GG-320 | 只读确认：当前local-mailpit，11:18登录验证码已进入本地邮件箱58045，未实际投递QQ；无服务或配置变化 | [任务](tasks/GG-320-local-email-delivery-audit.md) |
 | GG-319 | 本地恢复完成：Docker E盘原数据/依赖healthy，Web与唯一Worker419b097及5173正常；GG-318已启用，无迁移/测试/真实请求 | [任务](tasks/GG-319-local-restart-after-reboot.md) |
 | GG-318 | 源码a627d7f已交付，后继GG-319本地Web/唯一Worker419b097已启用诊断；既有事件/站长总日志，无迁移/历史回填，回归未运行 | [任务](tasks/GG-318-generation-failure-diagnostics.md) |
