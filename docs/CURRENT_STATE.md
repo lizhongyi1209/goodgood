@@ -1,5 +1,7 @@
 # GoodGood 当前状态
 
+- 已定位Seedream阻塞：[GG-355](tasks/GG-355-seedream-diagnosis.md) GG-355只读诊断完成：2026-10-03 22:14:49/22:14:52两次POST /api/generations返回503，Web日志均为generation_batches_model_check约束失败。已验证127.0.0.1:54449/goodgood（连接/事务只读）：Seedream目录启用且1K30/2K60报价存在，但generation_batches/projects/creation_drafts模型约束只含五个原有模型、缺seedream-5.0-pro；源码0054只加目录/价格未扩展约束。Seedream任务未落库，未到Worker/上游；按事务代码在预留积分前失败并回滚。当前请求仅诊断，未改代码/迁移/真实数据/服务或触发生成；后续修复应新增迁移放行三处约束，不重写已应用0054。GG-354源码检查点cc31fcce862f127400ac5a65ef26bf55743ea969及现有功能/运行保持；GG-350Worker原因采集待办继续。 另已确认db/schema.ts三处采用模型ID格式约束，与已应用SQL的五模型枚举不一致。
+
 - 最新框选：[GG-354](tasks/GG-354-inline-bbox.md) GG-354源码完成：隔离f6362fa868c019653695ba7a801f1753fec4aad1精确接入cc31fcce862f127400ac5a65ef26bf55743ea969；框选直接在画布原图拖框/移动/四角调整，无遮罩或独立弹框，右侧正常只显示原图像素bbox与取消/复制，复制仅一行坐标。浮层随原图/画布缩放移动，原图滚轮交现有画布；取消/Escape、空/加载/失败、切页/身份/源图守卫、键盘/触屏与资源释放已写。旧弹框框选状态/UI移除，贴图保留。保留GG-353连续工具栏008562243cd64a3d2f7fe57f618b9c4c36668ae2、GG-351顶部工具区及GG-346/350/349。GG-354合成回归仅写来源，沿GG-276未构建/lint/typecheck/代码检查/测试/浏览器验收，无应用HTTP/SQL/Provider/扣费/运行/后台或生产操作，既有receipt未重查。创建1/退役1，managed辅助确认归档，无子agent/依赖缓存。用户刷新5173手验原图框选/坐标复制/取消/画布缩放及原有贴图；GG-350仍待独立委托更新唯一Worker。
 
 - 最新左下工具：[GG-353](tasks/GG-353-canvas-control-colors.md) GG-353源码008562243cd64a3d2f7fe57f618b9c4c36668ae2：左下四个入口合为连续白色底板，浅灰细边/12px圆角、3px内距/2px间距；图标及缩放文字固定黑色#111，悬停/焦点/按下/开启仅改浅灰背景。原32px按钮、弹层/资产到达/焦点保持，地图上移8px保持10px间隙。创建0/退役0，无子agent/缓存；未编译/检查/测试/浏览器验收，无后台/数据/Provider/服务或生产操作，receipt未重查。用户刷新5173手验；GG-352/351/346及GG-350待独立启用Worker保持。

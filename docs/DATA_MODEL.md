@@ -1,5 +1,9 @@
 # GG-063 quality pricing
 
+## GG-355 · Seedream模型约束遗漏（只读确认，待修复）
+
+2026-10-03读取本地127.0.0.1:54449/goodgood确认，generation_batches/projects/creation_drafts的model_check仍使用0028的五模型列表、缺Seedream；0054只插入目录/报价，导致目录启用但任务无法落库。db/schema.ts三处已写通用模型ID格式约束，实际迁移未同步。修复需新增迁移修正三处限制，保持旧数据/模型目录/价格和已应用迁移内容；本次只诊断，无SQL写入。
+
 ## GG-341 · Image cleanup operations (migration0065, not applied)
 
 `image_cleanup_operations` binds UUID, owner/workspace, optional canvas project,

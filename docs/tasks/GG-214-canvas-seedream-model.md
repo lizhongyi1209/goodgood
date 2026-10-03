@@ -1,5 +1,7 @@
 # GG-214 · Seedream 5.0 Pro 画布接入
 
+- 2026-10-03后继GG-355只读定位：本地首次实际Seedream提交被generation_batches_model_check拒绝，原0054只加目录/报价而漏模型约束，三处实际SQL与schema.ts不一致。此前“接入”不代表真实调用已成功；当前需新迁移修复，见[GG-355](GG-355-seedream-diagnosis.md)。
+
 - 日期：2026-09-30。
 - 状态：前端与隔离本地 Web/Worker 已接入，待站长手动验收，未部署；未运行自动测试、浏览器复测或真实 provider 请求。
 - 来源：站长提供完整[O1Key Seedream文档](https://cf-api.o1key.com/docs/)；provider ID `dola-seedream-5-0-pro-260628-ep`，产品ID `seedream-5.0-pro`。
