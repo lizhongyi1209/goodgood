@@ -73,6 +73,8 @@ canvas persistence and service boundaries are unchanged.
 
 ## GG-327 浏览器图片文件元数据
 
+GG-349新增纯模块`features/assets/image-metadata-presets.mjs`及类型声明：10套相机/镜头组合×10套曝光样例形成100组唯一拍摄参数，冻结池与可编辑返回副本分离，注入随机源支持合成回归。每个弹框用惰性ref持有Fisher–Yates轮换池，每轮无重复并保护轮间边界。共用非空判断只看15项可编辑字段，随机操作替换表单而不合并旧图片信息；原写副本流程/格式校验不变，无依赖/API/数据库或后台更新。
+
 `features/assets/image-file-metadata.mjs` 是无依赖的 JPEG/PNG 容器与 EXIF/XMP 文件边界，编辑常用字段并清除信息，不复制 MakerNote/拍摄原图缩略或 donor 朝向。`canvas-image-metadata.tsx` 管理 Dialog、受权原图/参考图读取、临时表单、取消、下载和副本提交。复用裁剪的受权读取及现有本地上传，添加 `CanvasCropCommit.createCopy` 让所有图片类型都新增旁置副本；裁剪默认行为保持。元数据属于输出文件字节，生成/项目领域记录没有新增字段。无后台凭据、元数据外部服务、生成请求、SQL或运行时更新。
 
 ## GG-324 explicit canvas image comparison

@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Camera, ClipboardPaste, Copy, X } from "lucide-react";
+import { Camera, ClipboardPaste, Copy, Shuffle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import { IMAGE_METADATA_FIELDS, copyImageMetadataJson, parseImageMetadataJson, readImageFileC2pa, readImageFileMetadata, writeImageFileMetadata, type ImageFileMetadataFields } from "@/features/assets/image-file-metadata.mjs";
+import { createRandomImageMetadataPicker, hasImageMetadataContent } from "@/features/assets/image-metadata-presets.mjs";
 import { PRIVATE_IMAGE_UPLOAD_MAX_BYTES } from "@/shared/contracts/upload-limits.mjs";
 import { privateImageUrls } from "@/shared/private-image-urls.mjs";
 import { readCanvasCropImageBlob, type CanvasCropCommit, type CanvasCropImage, type CanvasCropRequest } from "./canvas-image-crop-image";
@@ -77,6 +78,7 @@ function CanvasImageMetadataDialog({ request, onClose, onCommit }: Readonly<{
   const [pasteText, setPasteText] = useState("");
   const lifecycle = useRef<AbortController | null>(null);
   const busyRef = useRef(false);
+  const randomPickerRef = useRef<ReturnType<typeof createRandomImageMetadataPicker> | null>(null);
   const previewUrl = privateImageUrls(request.key.startsWith("asset:") ? "asset" : "reference", request.imageId).previewUrl;
   const [previewFailed, setPreviewFailed] = useState(false);
 
@@ -103,13 +105,13 @@ function CanvasImageMetadataDialog({ request, onClose, onCommit }: Readonly<{
       const editableFields = editableMetadataFields(metadata.fields);
       setOriginal({ bytes, blob, metadata, ...dimensions }); setFields(editableFields); setLoading(false);
       setError(metadataError);
-      setNotice(Object.keys(editableFields).length ? "已填入这张图片现有的参数。" : "这张图片没有可填写的参数，可手动填写或粘贴。");
+      setNotice(Object.keys(editableFields).length ? "已填入这张图片现有的参数。" : "这张图片没有可填写的参数，可随机生成、手动填写或粘贴。");
     })().catch((cause) => { if (!controller.signal.aborted) { setLoading(false); setError(metadataDialogError(cause, "原图读取失败，请重试。")); } });
     return () => { controller.abort(); };
   }, [request, attempt]);
 
   const commit = async () => {
-    if (!original || busyRef.current || !lifecycle.current) return;
+    if (!original || !hasImageMetadataContent(fields) || busyRef.current || !lifecycle.current) return;
     const signal = lifecycle.current.signal;
     busyRef.current = true; setBusy("save"); setError(null);
     try {
@@ -121,6 +123,14 @@ function CanvasImageMetadataDialog({ request, onClose, onCommit }: Readonly<{
   };
 
   const disabled = loading || !original || busy !== null;
+  const hasContent = hasImageMetadataContent(fields);
+  const randomize = () => {
+    if (disabled) return;
+    randomPickerRef.current ??= createRandomImageMetadataPicker();
+    setFields(randomPickerRef.current());
+    setPasteText(""); setPasteOpen(false); setError(null);
+    setNotice("已随机填写拍摄参数，可继续修改。");
+  };
   const copy = async () => {
     if (busyRef.current) return;
     const signal = lifecycle.current?.signal;
@@ -154,7 +164,8 @@ function CanvasImageMetadataDialog({ request, onClose, onCommit }: Readonly<{
         {loading && <p className={styles.status} role="status">正在读取图片参数…</p>}
         {!loading && !original && <Button type="button" variant="secondary" size="sm" onClick={() => setAttempt((value) => value + 1)}>重新读取原图</Button>}
         <div className={styles.tools}>
-          <Button type="button" variant="ghost" size="sm" disabled={disabled || !Object.values(fields).some(Boolean)} onClick={() => void copy()}><Copy size={14} aria-hidden="true" />复制参数</Button>
+          <Button type="button" variant="ghost" size="sm" disabled={disabled} onClick={randomize}><Shuffle size={14} aria-hidden="true" />随机生成</Button>
+          <Button type="button" variant="ghost" size="sm" disabled={disabled || !hasContent} onClick={() => void copy()}><Copy size={14} aria-hidden="true" />复制参数</Button>
           <Button type="button" variant="ghost" size="sm" disabled={disabled} aria-expanded={pasteOpen} onClick={() => setPasteOpen((value) => !value)}><ClipboardPaste size={14} aria-hidden="true" />粘贴参数</Button>
         </div>
         {pasteOpen && <div className={styles.paste}>
@@ -180,7 +191,7 @@ function CanvasImageMetadataDialog({ request, onClose, onCommit }: Readonly<{
         </fieldset>)}</div>
       </div>
       <footer className={styles.footer}>
-        <Button type="button" size="sm" disabled={disabled || !Object.values(fields).some(Boolean)} onClick={() => void commit()}>{busy === "save" ? "正在添加…" : "确认添加"}</Button>
+        <Button type="button" size="sm" disabled={disabled || !hasContent} onClick={() => void commit()}>{busy === "save" ? "正在添加…" : "确认添加"}</Button>
       </footer>
     </DialogContent>
   </Dialog>;
