@@ -2312,6 +2312,8 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       {pageSwitching && <div className={styles.pageSwitchOverlay} aria-label="正在保存页面" />}
       {dropActive && <div className={styles.dropOverlay} aria-hidden="true">松开以添加素材到画布</div>}
       <header className={styles.header}>
+        <div className={styles.headerNavigation}>
+        <div className={styles.headerIdentity}>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button type="button" variant="ghost" size="icon" className={styles.brandTrigger} aria-label="GoodGood 菜单">
@@ -2370,10 +2372,12 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
             <span className={styles.canvasNameText}>{canvasName}</span>
           </Button>
         )}
+        </div>
         {projectReady && <CanvasProjectPagesBar pages={projectPages.map((page) => ({ ...page, deletingDisabled: pageDeletionDisabled(page.id) }))}
           activePageId={activePageId} busy={pageSwitching} onSwitch={(id) => void switchProjectPage(id)}
           onAdd={() => void addProjectPage()} onDeleteRequest={setDeletePageId} />}
-        <span className={styles.headerSpacer} />
+        </div>
+        {((projectReady && !session?.preview) || session?.access.status === "active") && <div className={styles.headerStatus}>
         {projectReady && !session?.preview && (
           <button type="button" className={styles.saveStatus}
             title={saveDetail ?? (saveState === "saved" ? "所有画布更改已保存" : "点击重试同步画布")}
@@ -2384,6 +2388,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
         )}
         {session?.access.status === "active" && <button type="button" className={styles.balance} aria-label={`打开账户管理，当前余额 ${billing?.account.availableCredits ?? (billingLoading ? "读取中" : "暂不可用")}`} onClick={() => setCreditUsageOpen(true)}><CreditIcon className="size-[1em]" />{billing?.account.availableCredits ?? "--"}</button>}
         <AnnouncementCenter session={session} iconOnly />
+        </div>}
       </header>
 
       {!projectReady && <div className={styles.projectLoadOverlay} role={projectLoadError || sessionError ? "alert" : "status"}>
