@@ -1,0 +1,8 @@
+# GG-347 · 添加数据移除还原
+
+- 日期：2026-10-03；用户确认关闭弹框再打开即可恢复原图参数，要求删除还原功能。
+- 基线：710a56b，已核验含62589ee应用检查点；managed隔离codex/GG-347-remove-reset，路径C:/Users/Admin/.codex/worktrees/gg-347-remove-reset/goodgood，无子agent。
+- 并行边界：GG-346校色已登记，主目录现有其BACKLOG未提交增量与0139/GG-346新文件；不覆盖、stash或提交对方内容。本任务只拥有添加数据还原按钮/处理与必要文档，BACKLOG单独精确登记。
+- 决策：先补ADR0136，移除还原按钮、restore处理和RotateCcw图标导入；仍在每次新打开时读取/预填当前图，关闭放弃未确认草稿。
+- 验证边界：沿GG-276只改源码/精确集成，不构建/lint/typecheck/代码diff检查/测试/浏览器验收，不迁移/服务/Provider/扣费或生产操作，GG-342运行receipt保持。
+- 状态：进行中，完成修改并精确接入后用户刷新手验。

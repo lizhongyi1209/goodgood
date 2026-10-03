@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Camera, ClipboardPaste, Copy, RotateCcw, X } from "lucide-react";
+import { Camera, ClipboardPaste, Copy, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -111,10 +111,6 @@ function CanvasImageMetadataDialog({ request, onClose, onCommit }: Readonly<{
   };
 
   const disabled = loading || !original || busy !== null;
-  const restore = () => {
-    if (!original) return;
-    setFields(original.metadata.fields); setError(null); setNotice("已还原这张图片原有的参数。");
-  };
   const copy = async () => {
     if (busyRef.current) return;
     const signal = lifecycle.current?.signal;
@@ -144,7 +140,6 @@ function CanvasImageMetadataDialog({ request, onClose, onCommit }: Readonly<{
         <div className={styles.current}>
           <span className={styles.preview}>{previewFailed ? <Camera size={22} aria-hidden="true" /> : <PrivateObjectImage src={previewUrl} alt="" onError={() => setPreviewFailed(true)} />}</span>
           <div><strong title={request.name}>{request.name}</strong><p>当前图片 · {original ? `${original.width} × ${original.height} · ${original.metadata.format.toUpperCase()}` : loading ? "正在读取原图" : "原图尚未读取"}</p></div>
-          <Button type="button" variant="ghost" size="sm" onClick={restore} disabled={disabled} aria-label="还原当前图片原有参数"><RotateCcw size={14} aria-hidden="true" />还原</Button>
         </div>
         {loading && <p className={styles.status} role="status">正在读取图片参数…</p>}
         {!loading && !original && <Button type="button" variant="secondary" size="sm" onClick={() => setAttempt((value) => value + 1)}>重新读取原图</Button>}
