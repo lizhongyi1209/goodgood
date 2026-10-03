@@ -4,6 +4,7 @@
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
+| GG-331 | 开发中：文本生成chat加宽、参数间距和点击输入框关闭模型列表；用户手验，无构建检查或运行变化 | [任务](tasks/GG-331-text-composer-spacing.md) |
 | GG-330 | 本地已恢复verified94bee535：原E盘数据及依赖healthy、Web9448/唯一Worker23800/Vite33440，5173首页200；创建0/退役0，无测试/浏览器/真实请求，用户继续手验 | [任务](tasks/GG-330-local-connection-recovery.md) |
 | GG-329 | 已接入efe7aa6：画布工具Provider与ReactFlow共享同一祖先/store，修复元数据hook祖先错误；创建1/退役1，未编译检查/后端更新，用户刷新手验 | [任务](tasks/GG-329-reactflow-context.md) |
 | GG-326 | 已接入37eef68：完整emoji、四角缩放/保留留白/恢复自动、中央默认光标/边框整组移动；创建1/退役1，回归只写未运行，云字段已随GG-330 Web启用，用户手验 | [任务](tasks/GG-326-group-frame-controls.md) |
