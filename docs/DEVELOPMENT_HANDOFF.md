@@ -1,5 +1,7 @@
 # 当前开发版本与跨窗口交接
 
+- 最新图片对比：[GG-324](tasks/GG-324-canvas-image-compare.md)基线ba73fea，根隔离cdf6c02/97fd038精确接入GG-116/5173为da10928/3e34fa7，保留另窗GG-323分组2fa0486；三类图片共享裁剪右侧对比入口，所选output真实参考优先、资产真实名称搜索/选取、hover分界与键盘触屏完成。当前图右侧/对比左侧、居中等比适配，受权最高2048读图/原512缩略，独立临时Dialog/有界池，关闭/页身份清理和局部错误重试；无上传/生成/保存字段或后端更新。Impeccable沿既有Operate样式，创建1/退役1、零依赖缓存，未运行构建/检查/测试、浏览器/HTTP/SQL/provider或运行/生产操作，用户刷新手验。GG-323云组字段仍待独立授权Web激活；实际GG-322 Web0b5744d/唯一Worker419b097及原Vite/数据/SMTP保持。
+
 - 最新分组源码：[GG-323](tasks/GG-323-canvas-groups.md)从0b5744d隔离并保留另窗ba73fea，2d51561精确接入当前GG-116/5173为2fa0486。Shift框选工具栏建组/Ctrl-Cmd-G、拖标题整体移动、双击或Enter/F2改名及emoji选择移除，解散/删除框保留成员，复制/裁剪/封面与本机恢复及每页历史适配完成。ADR0135/云group-parentId校验源码已补，无SQL或Worker更新；新云字段待用户另行委托Web激活。创建1/退役1，辅助工作区已归档，零依赖/缓存；未编译、检查、测试运行或浏览器验收，没有服务/provider/数据/生产操作。用户刷新手验；现有GG-322 Web0b5744d/唯一Worker419b097及原Vite/数据/SMTP保持。
 
 - 当前修复/运行：[GG-322](tasks/GG-322-image-slot-sync-compatibility.md)子9920bde→0ce2360接入GG-116；同步失败显示实际平台错误及本机已保存/尚未云同步，不再猜测服务版本。截图由旧Web419b097缺imageSlots校验触发，远端保存失败不会阻断单槽提交。用户授权必要构建及仅Web重启，Web25664/32131、5173代理verified0b5744d，Web readiness五项ok，GG-321云字段已生效；唯一Worker28236/32142仍419b097，Vite33312/5173及原数据0063/cloud-development/local-mailpit保持，无迁移/真实请求/检查或测试。创建1/退役1，辅助目录干净正常移除；用户刷新手验。运行receipt绑定0b5744d，下次启动先构建当前HEAD，不启动旧GG-226 Worker；下方待激活是历史阶段。
