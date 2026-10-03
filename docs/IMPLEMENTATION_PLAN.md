@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-03
-- Current phase: GG-337画布图片/画布资产列表右键下载原图18cb9aa→33525ab已接入GG-116/5173。下载当前原始文件字节/本地File Blob，批次实际点击定位，不额外压缩转码或修改元数据；清理副本下载自身。创建1/退役1、辅助已managed归档，合成回归只写未运行，未编译检查/浏览器验收，无后端更新，保留GG-336/335/334及此前源码。
-- Current objective: 用户已提交GG-337实际下载副本并明确要求分析，独立只读容器解析/解码确认当前文件无内嵌C2PA/EXIF/XMP/IPTC/注释，1792×2390、3,120,501字节，仅JFIF基本信息；receipt见任务卡。未提供清理前原文件，不据副本断言此前含凭证或前后像素一致；需对比时再由用户提供原文件。GG-336凭证提示/副本、GG-335入口移除和GG-334四角手验继续保留，应用全流程仍未验收。无构建检查、应用API/SQL/Provider或服务/生产操作；运行身份沿GG-330 Web9448/唯一Worker23800/Vite33440及verified94bee5354e5b1a77516235ee894a19a42767610e记录保持，后继源码/文档不改写已运行后台receipt。
+- Current phase: GG-338右键下载文案08f3387→98c82d4已接入GG-116/5173，画布图片与画布资产列表「下载原图」改为「下载」，仅两处文案和对应说明，原始文件下载行为保持。创建1/退役1、辅助已managed归档，未编译检查/测试/浏览器验收，无后台更新，保留GG-337文件核验及此前源码。
+- Current objective: 用户刷新手验两处右键「下载」文案。GG-337实际下载副本已独立只读确认无内嵌C2PA/EXIF/XMP/IPTC；缺原文件不判断前后变化，receipt见任务卡。应用全流程仍未验收，无构建检查、应用API/SQL/Provider或服务/生产操作；GG-330 verified94bee535/原Web/唯一Worker/Vite/数据/SMTP运行receipt保持。
 - Previous objective: GG-313模板名称格式/示例参考、GG-312画布300%高清门槛、GG-311模板保存/成功动效及类型筛选、GG-310前景色已交付源码；GG-309私有2K接口、批量校验及文本资产API/本地0063已启用。
 
 ## Current checkpoint
+
+- 最新下载文案 [GG-338](tasks/GG-338-download-label.md)：从干净17fae8a隔离08f3387精确接入98c82d4，两处右键「下载原图」改为「下载」，ADR0034/产品/交互/设计说明同步。只改文案，原始字节/目标/下载状态保持；创建1/退役1，managed辅助已归档，无子agent/缓存，未编译检查/测试/浏览器验收，无后台或运行更新。用户刷新手验，GG-337及此前源码/文件核验receipt保持。
 
 - 最新实际文件核验 [GG-337](tasks/GG-337-original-download.md)：用户下载并提交无元数据JPEG，独立只读完整容器解析和Pillow解码一致：1792×2390、3,120,501字节，仅APP0/JFIF，APP11/APP1/APP13/COM与EOI后数据均0，全文件未发现C2PA/JUMBF/Manifest Store UUID及EXIF/XMP/IPTC标识。当前副本无内嵌凭证；没有原文件，不验证此前是否有凭证或像素/压缩流前后相同。实际文件不进入Git、不修改或外部上传；应用测试/编译/浏览器验收仍未运行，服务/数据/Provider保持。该只读检查不改变下方源码交付的验证边界。
 
