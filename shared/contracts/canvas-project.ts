@@ -4,8 +4,10 @@ import type { CanvasTextGenerationDraft } from "@/shared/contracts/text-generati
 
 export type CanvasProjectNode = Readonly<{
   id: string;
-  type: "sourceImage" | "sourceVideo" | "sourceAudio" | "imageGenerator" | "imageResult" | "textEditor" | "textGenerator";
+  type: "sourceImage" | "sourceVideo" | "sourceAudio" | "imageGenerator" | "imageResult" | "textEditor" | "textGenerator" | "group";
   position: Readonly<{ x: number; y: number }>;
+  parentId?: string;
+  emoji?: string;
   size?: Readonly<{ width: number; height: number }>;
   asset?: Readonly<{ id: string; kind: "reference" | "generated" | "video" | "audio" }>;
   jobId?: string;

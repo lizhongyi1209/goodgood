@@ -11,6 +11,7 @@ import { listPrivateAudioMaterials } from "@/features/assets/http-audio-material
 import type { CanvasProjectNode } from "@/shared/contracts/canvas-project";
 import type { GenerationJob } from "@/shared/contracts/generation";
 import { privateImageUrls } from "@/shared/private-image-urls.mjs";
+import { canvasNodeAbsolutePosition } from "@/features/canvas/canvas-groups.mjs";
 import { canvasPreviewBounds, canvasPreviewNodeSize, canvasPreviewPage } from "./project-library-model.mjs";
 import type { CanvasProjectListItem } from "./canvas-project-index";
 import styles from "./project-library.module.css";
@@ -81,6 +82,7 @@ async function readPreview(project: CanvasProjectListItem, ownerKey: string): Pr
 }
 
 function SnapshotNode({ node, onFailure }: { node: PreviewNode; onFailure: () => void }) {
+  if (node.type === "group") return <div className={styles.snapshotGroup}><span>{node.emoji && `${node.emoji} `}{node.name}</span></div>;
   if (node.type === "textEditor" || node.type === "textGenerator") return <div style={{ height: "100%", padding: 16, overflow: "hidden", whiteSpace: "pre-wrap", fontSize: 14, lineHeight: 1.7 }}>
     {node.text || (node.type === "textGenerator" ? "文本生成" : "文本编辑")}
   </div>;
@@ -142,14 +144,17 @@ export function CanvasProjectPreview({ project, ownerKey }: { project: CanvasPro
                 const source = byId.get(edge.source); const target = byId.get(edge.target);
                 if (!source || !target) return null;
                 const sourceSize = canvasPreviewNodeSize(source); const targetSize = canvasPreviewNodeSize(target);
-                const x1 = source.position.x + sourceSize.width; const y1 = source.position.y + sourceSize.height / 2;
-                const x2 = target.position.x; const y2 = target.position.y + targetSize.height / 2;
+                const sourcePosition = canvasNodeAbsolutePosition(source, currentPreview.nodes);
+                const targetPosition = canvasNodeAbsolutePosition(target, currentPreview.nodes);
+                const x1 = sourcePosition.x + sourceSize.width; const y1 = sourcePosition.y + sourceSize.height / 2;
+                const x2 = targetPosition.x; const y2 = targetPosition.y + targetSize.height / 2;
                 const bend = Math.max(40, Math.abs(x2 - x1) / 2);
                 return <path key={edge.id} d={`M ${x1} ${y1} C ${x1 + bend} ${y1}, ${x2 - bend} ${y2}, ${x2} ${y2}`} fill="none" stroke="#a1a1aa" strokeWidth="1.5" />;
               })}
-              {currentPreview.nodes.map((node) => {
+              {[...currentPreview.nodes.filter((node) => node.type === "group"), ...currentPreview.nodes.filter((node) => node.type !== "group")].map((node) => {
                 const size = canvasPreviewNodeSize(node);
-                return <foreignObject key={node.id} x={node.position.x} y={node.position.y} width={size.width} height={size.height}>
+                const position = canvasNodeAbsolutePosition(node, currentPreview.nodes);
+                return <foreignObject key={node.id} x={position.x} y={position.y} width={size.width} height={size.height}>
                   <div className={styles.snapshotNode}><SnapshotNode node={node} onFailure={() => setMediaFailed(true)} /></div>
                 </foreignObject>;
               })}

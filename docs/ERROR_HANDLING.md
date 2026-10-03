@@ -1,5 +1,16 @@
 # GG-063 quality pricing errors
 
+## GG-323 group editing and recovery
+
+Empty/single-member selections do not create a frame. Empty names revert to the
+existing name, Escape cancels and IME confirmation keeps editing. Emoji can be
+cleared. Ungrouping/deleting only a frame never deletes its members or assets.
+Invalid/missing/cross-page parents, nested groups, group edges and malformed
+labels fail the normal canvas validation before a write. Older Web rejecting
+the additive group fields leaves the existing local draft dirty/offline with
+the real server error through GG-322; it must not claim cloud synchronization.
+Pending upload recovery remains attached to the original member IDs.
+
 ## GG-321 逐张错误恢复
 
 画布新图片批次使用每请求位置的独立单张任务。提交/轮询/上游失败或不确定受理

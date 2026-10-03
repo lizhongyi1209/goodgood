@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { Group } from "lucide-react";
 import { useReactFlow, useStoreApi } from "@xyflow/react";
 
 import { Button } from "@/components/ui/button";
 import { CanvasArrangementIcon } from "./canvas-arrangement-icon";
 import { arrangeCanvasSelection, generatorStackInsets, unionCanvasBounds } from "./canvas-selection-layout.mjs";
+import { canGroupCanvasSelection, createCanvasGroup } from "./canvas-groups.mjs";
 import type { CanvasNode } from "./canvas-workspace";
 import styles from "./canvas-workspace.module.css";
 
@@ -37,6 +39,7 @@ export function CanvasSelectionControls({ onBeforeGraphEdit, onProjectGraphChang
   const itemsRef = useRef<SelectionItem[]>([]);
   const refreshRef = useRef<() => void>(() => {});
   const disabledRef = useRef(true);
+  const groupButtonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     const surface = toolbarRef.current?.closest<HTMLElement>(".react-flow");
@@ -64,7 +67,8 @@ export function CanvasSelectionControls({ onBeforeGraphEdit, onProjectGraphChang
     const refresh = () => {
       frame = null;
       const state = store.getState();
-      const selected = state.nodes.filter((node) => node.selected && !node.hidden);
+      const selectedIds = new Set(state.nodes.filter((node) => node.selected && !node.hidden).map((node) => node.id));
+      const selected = state.nodes.filter((node) => selectedIds.has(node.id) && !selectedIds.has(node.parentId ?? ""));
       const key = JSON.stringify(selected.map((node) => node.id));
       if (key !== selectedKey) {
         selectedKey = key;
@@ -150,6 +154,7 @@ export function CanvasSelectionControls({ onBeforeGraphEdit, onProjectGraphChang
       else surface.removeAttribute("data-canvas-selection-visible");
       disabledRef.current = !show || selected.some((node) => node.dragging || node.resizing);
       for (const button of toolbar.querySelectorAll<HTMLButtonElement>("button")) button.disabled = disabledRef.current;
+      if (groupButtonRef.current) groupButtonRef.current.disabled = disabledRef.current || !canGroupCanvasSelection(state.nodes);
       if (!show || !visible || !body) {
         surface.style.removeProperty("--canvas-selection-left");
         surface.style.removeProperty("--canvas-selection-top");
@@ -206,10 +211,18 @@ export function CanvasSelectionControls({ onBeforeGraphEdit, onProjectGraphChang
 
   return (
     <div ref={toolbarRef} hidden className={`${styles.selectionToolbar} nodrag nopan nowheel nokey`}
-      role="toolbar" aria-label="排列选中节点"
+      role="toolbar" aria-label="选中节点操作"
       onPointerDown={(event) => event.stopPropagation()} onDoubleClick={(event) => event.stopPropagation()}>
+      <Button ref={groupButtonRef} type="button" variant="ghost" size="sm" data-canvas-group-action="true" aria-label="将选中节点建组" title="建组（Ctrl / ⌘ G）"
+        onClick={(event) => {
+          event.stopPropagation(); refreshRef.current();
+          if (disabledRef.current || !canGroupCanvasSelection(flow.getNodes())) return;
+          onBeforeGraphEdit();
+          flow.setNodes((nodes) => createCanvasGroup(nodes, `group-${crypto.randomUUID()}`, itemsRef.current));
+          onProjectGraphChange(true);
+        }}><Group size={15} aria-hidden="true" />建组</Button>
       {actions.map(({ action, label }) => <Button key={action} type="button" variant="ghost" size="icon-sm"
-        data-group-start={action === "top" || undefined}
+        data-group-start={action === "top" || action === "tidy" || undefined}
         aria-label={label} title={label} onClick={(event) => { event.stopPropagation(); arrange(action); }}>
         <CanvasArrangementIcon action={action} />
       </Button>)}

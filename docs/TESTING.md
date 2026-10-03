@@ -1,5 +1,17 @@
 # GG-063 verification
 
+## GG-323 group regression source, not executed
+
+`tests/gg323-canvas-groups.test.mjs` is source only: no-jump grouping/movement,
+empty/single selections, flat regrouping, expanded bounds/rebasing, clipboard
+offsets, local/cloud snapshots/name/emoji/size, absolute cover bounds, pending
+and failed uploads, legacy compatibility and invalid parents/nesting/edges/
+labels. Fixtures and injected Vite module loading never use a database, queue,
+provider or user project. Per the continuing code-only agreement, no build,
+lint, typecheck, tests, diff/code checks or browser acceptance were run. User
+manually checks grouping, dragging, rename/emoji, undo/redo, clipboard, page
+switches and refresh; cloud groups need later authorized Web activation.
+
 ## GG-321 image slot regression source, not executed
 
 `tests/gg321-canvas-image-result-slots.test.mjs` is edited source only, covering

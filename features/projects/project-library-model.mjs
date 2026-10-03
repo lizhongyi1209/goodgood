@@ -1,3 +1,5 @@
+import { canvasNodeAbsolutePosition } from "../canvas/canvas-groups.mjs";
+
 /** @param {string} value */
 export function formatProjectUpdated(value) {
   const date = new Date(value);
@@ -31,11 +33,11 @@ export function canvasPreviewNodeSize(node) {
 /** @param {readonly import("../../shared/contracts/canvas-project").CanvasProjectNode[]} nodes */
 export function canvasPreviewBounds(nodes) {
   if (!nodes.length) return { x: 0, y: 0, width: 592, height: 400 };
-  const sizes = nodes.map((node) => ({ node, size: canvasPreviewNodeSize(node) }));
-  const left = Math.min(...sizes.map(({ node }) => node.position.x));
-  const top = Math.min(...sizes.map(({ node }) => node.position.y));
-  const right = Math.max(...sizes.map(({ node, size }) => node.position.x + size.width));
-  const bottom = Math.max(...sizes.map(({ node, size }) => node.position.y + size.height));
+  const sizes = nodes.map((node) => ({ position: canvasNodeAbsolutePosition(node, nodes), size: canvasPreviewNodeSize(node) }));
+  const left = Math.min(...sizes.map(({ position }) => position.x));
+  const top = Math.min(...sizes.map(({ position }) => position.y));
+  const right = Math.max(...sizes.map(({ position, size }) => position.x + size.width));
+  const bottom = Math.max(...sizes.map(({ position, size }) => position.y + size.height));
   const padding = Math.max(24, Math.max(right - left, bottom - top) * 0.06);
   return { x: left - padding, y: top - padding, width: right - left + padding * 2, height: bottom - top + padding * 2 };
 }

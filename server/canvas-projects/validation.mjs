@@ -4,7 +4,7 @@ import { validateM3GenerationInput, validateIdempotencyKey } from "../generation
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const NODE_ID = /^[A-Za-z0-9][A-Za-z0-9_:.\-]{0,159}$/;
-const NODE_TYPES = new Set(["sourceImage", "sourceVideo", "sourceAudio", "imageGenerator", "imageResult", "textEditor", "textGenerator"]);
+const NODE_TYPES = new Set(["sourceImage", "sourceVideo", "sourceAudio", "imageGenerator", "imageResult", "textEditor", "textGenerator", "group"]);
 const ASSET_KINDS = new Set(["reference", "generated", "video", "audio"]);
 const RESOLUTIONS = new Set(["1K", "2K", "4K"]);
 const MAX_DOCUMENT_BYTES = 1024 * 1024;
@@ -48,10 +48,27 @@ function position(value) {
 }
 
 function node(value) {
-  record(value, ["id", "type", "position", "size", "asset", "jobId", "jobIds", "imageSlots", "index", "sequence", "name", "metadata", "markdown", "text", "textGeneration"]);
+  record(value, ["id", "type", "position", "size", "asset", "jobId", "jobIds", "imageSlots", "index", "sequence", "name", "metadata", "markdown", "text", "textGeneration", "parentId", "emoji"]);
   const type = value.type;
   if (!NODE_TYPES.has(type)) throw invalid();
   const result = { id: nodeId(value.id), type, position: position(value.position) };
+  if (value.parentId !== undefined) {
+    if (type === "group") throw invalid("组不能嵌套，请先解散组。");
+    result.parentId = nodeId(value.parentId);
+  }
+  if (type === "group") {
+    if (value.asset !== undefined || value.jobId !== undefined || value.metadata !== undefined || !value.size) throw invalid();
+    const name = string(value.name, 80).trim();
+    if (!name) throw invalid("组名称不能为空。");
+    result.name = name;
+  }
+  if (value.emoji !== undefined) {
+    if (type !== "group") throw invalid();
+    const emoji = string(value.emoji, 32);
+    if ([...new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(emoji)].length !== 1 ||
+        !/[\p{Extended_Pictographic}\p{Regional_Indicator}\u20e3]/u.test(emoji)) throw invalid();
+    result.emoji = emoji;
+  }
   if (type === "textEditor" || type === "textGenerator") {
     result.markdown = string(value.markdown, 100_000, { empty: true, multiline: true });
     result.text = string(value.text, 16_000, { empty: true, multiline: true });
@@ -112,7 +129,7 @@ function node(value) {
   }
   if (value.name !== undefined) {
     if (type === "imageGenerator" || type === "imageResult") throw invalid();
-    result.name = string(value.name, 255);
+    result.name = type === "group" ? result.name : string(value.name, 255);
   }
   if (value.metadata !== undefined) {
     if (type === "imageGenerator" || type === "imageResult") throw invalid();
@@ -232,9 +249,13 @@ function pageContent(source) {
   if (ids.size !== nodes.length) throw invalid();
   const edges = source.edges.map((item) => edge(item, ids));
   const byId = new Map(nodes.map((item) => [item.id, item]));
+  for (const item of nodes) {
+    if (item.parentId && byId.get(item.parentId)?.type !== "group") throw invalid("组成员必须属于当前页面中的组。");
+  }
   for (const item of edges) {
     const sourceType = byId.get(item.source)?.type;
     const targetType = byId.get(item.target)?.type;
+    if (sourceType === "group" || targetType === "group") throw invalid("请连接组内节点。");
     if (item.source === item.target) throw invalid();
     if (targetType === "textGenerator") {
       if (item.targetHandle !== "reference" || !(

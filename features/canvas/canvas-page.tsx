@@ -101,6 +101,7 @@ import {
   type LocalCanvasProject,
 } from "./canvas-project-local";
 import { CanvasProjectSync, localCanvasProjectFromRemote, type CanvasSaveState } from "./canvas-project-sync";
+import { CANVAS_GROUP_DRAG_HANDLE, canvasNodeAbsolutePosition, canvasPastedNodeGeometry, canvasSelectionWithMembers } from "./canvas-groups.mjs";
 import { snapshotCanvasProject } from "./canvas-project-snapshot";
 import { readCanvasViewport, saveCanvasViewport, readCanvasActivePage, saveCanvasActivePage } from "./canvas-project-session";
 import { CANVAS_PROJECT_DEFAULT_PAGE_ID, CANVAS_PROJECT_MAX_PAGES, getCanvasProjectPages } from "@/shared/contracts/canvas-project";
@@ -920,7 +921,11 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
   const copyCanvasSelection = () => {
     const instance = flowRef.current;
     if (!instance) return false;
-    const selected = instance.getNodes().filter((node) => node.selected);
+    const allNodes = instance.getNodes();
+    const chosen = canvasSelectionWithMembers(allNodes);
+    const chosenIds = new Set(chosen.map((node) => node.id));
+    const selected = chosen.map((node) => node.parentId && !chosenIds.has(node.parentId)
+      ? { ...node, parentId: undefined, extent: undefined, expandParent: undefined, position: canvasNodeAbsolutePosition(node, allNodes) } : node);
     if (!selected.length) return false;
     const ids = new Set(selected.map((node) => node.id));
     const current = latestProjectStateRef.current;
@@ -961,12 +966,14 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     const offset = 32 * clipboard.pasteCount;
     const ids = new Map(clipboard.nodes.map((node) => [node.id, node.type === "imageGenerator"
       ? `generator-${crypto.randomUUID()}` : node.type === "imageResult"
-        ? `canvas-${crypto.randomUUID()}-0` : node.type === "textEditor" ? `text-${crypto.randomUUID()}` : node.type === "textGenerator" ? `text-generator-${crypto.randomUUID()}` : `asset-${crypto.randomUUID()}`] as const));
+        ? `canvas-${crypto.randomUUID()}-0` : node.type === "group" ? `group-${crypto.randomUUID()}` : node.type === "textEditor" ? `text-${crypto.randomUUID()}` : node.type === "textGenerator" ? `text-generator-${crypto.randomUUID()}` : `asset-${crypto.randomUUID()}`] as const));
     let nextSequence = Math.max(0, ...instance.getNodes().filter((node) => node.type === "imageGenerator")
       .map((node) => node.data.sequence ?? 0));
     const pastedNodes: CanvasNode[] = clipboard.nodes.map((node) => {
       const id = ids.get(node.id)!;
-      const base = { ...node, id, position: { x: node.position.x + offset, y: node.position.y + offset }, selected: true };
+      const geometry = canvasPastedNodeGeometry(node, clipboard.nodes, ids, offset);
+      const base = { ...node, id, ...geometry, selected: !geometry.parentId };
+      if (node.type === "group") return { ...base, type: "group", data: { ...node.data } };
       if (node.type === "sourceVideo") return { ...base, type: "sourceVideo", data: {
         ...node.data, onRefreshSource: node.data.assetId
           ? () => refreshUploadedVideoSource(id, node.data.assetId!) : undefined,
@@ -1209,7 +1216,12 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       id: nodeId,
       type: "sourceImage",
       selected: true,
-      position: createAdjacent ? { x: source.position.x + horizontalSpan + 32, y: source.position.y } : { ...source.position },
+      position: createAdjacent ? (() => {
+        const pageNodes = request.pageId === activePageIdRef.current ? flowRef.current?.getNodes() ?? []
+          : pagesRef.current.find((page) => page.id === request.pageId)?.nodes ?? [];
+        const absolute = canvasNodeAbsolutePosition(source, pageNodes);
+        return { x: absolute.x + horizontalSpan + 32, y: absolute.y };
+      })() : { ...source.position },
       width: size.width,
       height: size.height,
       measured: undefined,
@@ -1535,7 +1547,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       y: canvasBounds ? canvasBounds.top + canvasBounds.height * 0.38 : window.innerHeight * 0.38,
     }) ?? { x: 0, y: 0 };
     const currentNodes = flow?.getNodes() ?? nodes;
-    const rowBottom = currentNodes.reduce((bottom, node) => Math.max(bottom, node.position.y + 350), visibleCenter.y - 120);
+    const rowBottom = currentNodes.reduce((bottom, node) => Math.max(bottom, canvasNodeAbsolutePosition(node, currentNodes).y + 350), visibleCenter.y - 120);
     const previousPosition = previous && currentNodes.find((node) => node.id === `canvas-${runKey}-0`)?.position;
     const origin = previousPosition ?? {
       x: visibleCenter.x - (snapshot.count * 254 - 16) / 2,
@@ -1912,7 +1924,10 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       ]);
       const restoredNodes = await Promise.all(document.nodes.map(async (saved): Promise<CanvasNode | null> => {
         const style = saved.size ? { width: saved.size.width, height: saved.size.height } : undefined;
-        const base = { id: saved.id, position: saved.position, ...(style ? { style } : {}) };
+        const base = { id: saved.id, position: saved.position, ...(style ? { style } : {}),
+          ...(saved.parentId ? { parentId: saved.parentId } : {}) };
+        if (saved.type === "group") return { ...base, type: "group", zIndex: -1, dragHandle: CANVAS_GROUP_DRAG_HANDLE,
+          style: style ?? { width: 200, height: 120 }, data: { name: saved.name ?? "组", emoji: saved.emoji } };
         if (saved.type === "textEditor") return {
           ...base, type: "textEditor", style: style ?? { width: 360, height: 260 },
           data: { markdown: saved.markdown ?? "", text: saved.text ?? "" },
@@ -2044,7 +2059,8 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
         return null;
       }));
       if (!active) return;
-      const allNodes = restoredNodes.filter((node): node is CanvasNode => node !== null);
+      const availableNodes = restoredNodes.filter((node): node is CanvasNode => node !== null);
+      const allNodes = [...availableNodes.filter((node) => node.type === "group"), ...availableNodes.filter((node) => node.type !== "group")];
       const allEdges = document.edges.map((edge) => ({
         ...normalizeCanvasInputEdge(edge),
         type: "default", animated: true,

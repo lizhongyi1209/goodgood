@@ -35,6 +35,8 @@
   color: #27272a;
   transform: translate(-50%, -100%);
   pointer-events: auto;
+  max-width: calc(100% - 16px);
+  overflow-x: auto;
 }
 .selectionToolbar[hidden] { display: none; }
 .selectionToolbar [data-slot="button"] {
@@ -44,7 +46,9 @@
   padding: 0;
   border-radius: 8px;
   color: inherit;
+  flex: none;
 }
+.selectionToolbar [data-canvas-group-action="true"] { width: auto; padding: 0 9px; gap: 6px; font-size: 12px; white-space: nowrap; }
 .selectionToolbar [data-slot="button"] svg { width: 16px; height: 16px; }
 .selectionToolbar [data-group-start="true"] { margin-left: 6px; }
 .selectionToolbar [data-group-start="true"]::before { content: ""; position: absolute; left: -5px; top: 9px; width: 1px; height: 14px; background: #e4e4e7; pointer-events: none; }
@@ -332,6 +336,12 @@
 .imageNode {
   position: relative;
 }
+
+.canvas :global(.react-flow__node-group) {
+  padding: 0; border: 0; border-radius: 16px; background: transparent; box-shadow: none;
+  pointer-events: none;
+}
+.canvas :global(.react-flow__node-group.selected) { box-shadow: none; }
 
 .imageMetadata {
   position: absolute;

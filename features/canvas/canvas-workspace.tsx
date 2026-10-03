@@ -34,6 +34,10 @@ import { CanvasTextGenerationContext, type CanvasTextGenerationContextValue } fr
 import { CanvasGeneratorHostContext } from "./canvas-generator-host";
 import { CanvasImagePreviewProvider } from "./canvas-adaptive-image";
 import { CanvasSelectionControls } from "./canvas-selection-controls";
+import { CanvasGroupNode, type CanvasGroupNodeType } from "./canvas-group-node";
+import { CanvasGroupActionsContext } from "./canvas-group-context";
+import { CanvasGroupBounds } from "./canvas-group-bounds";
+import { canGroupCanvasSelection, createCanvasGroup, ungroupCanvasNodes } from "./canvas-groups.mjs";
 import { CanvasImageCropContext, CanvasImageCropEditor } from "./canvas-image-crop";
 import type { CanvasCropCommit, CanvasCropRequest } from "./canvas-image-crop-image";
 import { handleCanvasBodyClipboardPaste, handleCanvasClipboardCopy, handleCanvasClipboardPaste } from "./canvas-clipboard.mjs";
@@ -46,12 +50,12 @@ export type CanvasAudioNodeType = Node<CanvasAudioNodeData, "sourceAudio">;
 export type CanvasGeneratorNodeType = Node<CanvasGeneratorNodeData, "imageGenerator">;
 export type CanvasTextNodeType = Node<CanvasTextNodeData, "textEditor">;
 export type CanvasTextGeneratorNodeType = Node<CanvasTextGeneratorNodeData, "textGenerator">;
-export type CanvasNode = CanvasResultNodeType | CanvasSourceNode | CanvasVideoNode | CanvasAudioNodeType | CanvasGeneratorNodeType | CanvasTextNodeType | CanvasTextGeneratorNodeType;
+export type CanvasNode = CanvasResultNodeType | CanvasSourceNode | CanvasVideoNode | CanvasAudioNodeType | CanvasGeneratorNodeType | CanvasTextNodeType | CanvasTextGeneratorNodeType | CanvasGroupNodeType;
 
 export const canvasReferenceEdgeStyle = { stroke: "#a1a1aa", strokeWidth: 1.2 } as const;
 export const canvasReferenceEdgeCurvature = 0.18;
 
-const nodeTypes = { imageResult: CanvasResultNode, sourceImage: CanvasSourceImageNode, sourceVideo: CanvasSourceVideoNode, sourceAudio: CanvasAudioNode, imageGenerator: CanvasGeneratorNode, textEditor: CanvasTextNode, textGenerator: CanvasTextGeneratorNode };
+const nodeTypes = { imageResult: CanvasResultNode, sourceImage: CanvasSourceImageNode, sourceVideo: CanvasSourceVideoNode, sourceAudio: CanvasAudioNode, imageGenerator: CanvasGeneratorNode, textEditor: CanvasTextNode, textGenerator: CanvasTextGeneratorNode, group: CanvasGroupNode };
 const initialNodes: CanvasNode[] = [];
 
 function CanvasProjectChangeObserver({ onChange }: Readonly<{ onChange: () => void }>) {
@@ -266,6 +270,19 @@ export function CanvasWorkspace({
 
     const modifier = (event.ctrlKey || event.metaKey) && !event.altKey;
     const key = event.key.toLowerCase();
+    if (modifier && key === "g") {
+      const flow = flowRef.current;
+      if (!flow) return;
+      event.preventDefault(); event.stopPropagation();
+      const nodes = flow.getNodes();
+      if (event.shiftKey) {
+        const groups = nodes.filter((node) => node.selected && node.type === "group").map((node) => node.id);
+        if (groups.length) { onBeforeGraphEdit(); flow.setNodes(ungroupCanvasNodes(nodes, groups)); onProjectGraphChange(true); }
+      } else if (canGroupCanvasSelection(nodes)) {
+        onBeforeGraphEdit(); flow.setNodes(createCanvasGroup(nodes, `group-${crypto.randomUUID()}`)); onProjectGraphChange(true);
+      }
+      return;
+    }
     if (modifier && !event.shiftKey && key === "a") {
       event.preventDefault();
       event.stopPropagation();
@@ -293,8 +310,12 @@ export function CanvasWorkspace({
       if (!nodes.length && !edges.length) return;
       event.stopPropagation();
       onBeforeGraphEdit();
+      const groupIds = nodes.filter((node) => node.type === "group").map((node) => node.id);
+      if (groupIds.length) flow.setNodes((current) => ungroupCanvasNodes(current, groupIds));
       // React Flow also removes connected edges and dispatches onEdgesChange/onNodesChange.
-      void flow.deleteElements({ nodes, edges }).finally(() => canvasRef.current?.focus({ preventScroll: true }));
+      void flow.deleteElements({ nodes: nodes.filter((node) => node.type !== "group"), edges }).finally(() => {
+        onProjectGraphChange(true); canvasRef.current?.focus({ preventScroll: true });
+      });
     }
   };
 
@@ -462,6 +483,7 @@ export function CanvasWorkspace({
         }}
         onMouseLeave={hideEdgeDelete}>
       <CanvasGeneratorHostContext.Provider value={onComposerHostChange}>
+      <CanvasGroupActionsContext.Provider value={{ onBeforeGraphEdit, onProjectGraphChange }}>
       <CanvasTextGenerationContext.Provider value={textGenerationContext}>
       <CanvasImagePreviewProvider ownerKey={textGenerationContext.ownerKey}>
       <CanvasImageCropContext.Provider value={{ request: visibleCropRequest, openCrop: (image) => {
@@ -530,6 +552,7 @@ export function CanvasWorkspace({
         style={{ backgroundColor: "#fff" }}
       >
         <CanvasProjectChangeObserver onChange={onProjectGraphChange} />
+        <CanvasGroupBounds />
         <CanvasSelectionControls onBeforeGraphEdit={onBeforeGraphEdit} onProjectGraphChange={onProjectGraphChange} />
         {visibleCropRequest && <CanvasImageCropEditor key={visibleCropRequest.sessionId} request={visibleCropRequest} onClose={() => { setCropRequest(null); canvasRef.current?.focus({ preventScroll: true }); }} onCommit={onCropCommit} />}
         {miniMapOpen && (
@@ -584,6 +607,8 @@ export function CanvasWorkspace({
               <div>取消选择 <kbd>Esc</kbd></div>
               <div>多选 <kbd>Ctrl / ⌘ 点击</kbd></div>
               <div>框选 <kbd>Shift 拖动</kbd></div>
+              <div>建组 <kbd>Ctrl / ⌘ G</kbd></div>
+              <div>解散选中组 <kbd>Ctrl / ⌘ ⇧ G</kbd></div>
               <div>移动节点 <kbd>方向键</kbd></div>
             </PopoverContent>
           </Popover>}
@@ -592,6 +617,7 @@ export function CanvasWorkspace({
       </CanvasImageCropContext.Provider>
       </CanvasImagePreviewProvider>
       </CanvasTextGenerationContext.Provider>
+      </CanvasGroupActionsContext.Provider>
       </CanvasGeneratorHostContext.Provider>
       {visibleEdgeDelete && (
         <Button type="button" variant="outline" size="icon-xs" className={styles.edgeDelete}

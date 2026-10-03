@@ -1,5 +1,19 @@
 # GG-063 quality pricing
 
+## GG-323 canvas groups
+
+Existing schemaVersion1/2 page JSON accepts `type: group`, required nonempty
+`name` (maximum80 code units) and `size`, plus optional single-grapheme `emoji`.
+Members retain optional `parentId` and parent-relative `position`. The parent
+must be a group in the same page; groups cannot have parents, media, job bindings
+or connections. Runtime frames use React Flow parent inheritance, negative base
+z-index and a header drag handle; these UI properties are not persisted.
+Snapshots/history/clipboard retain group geometry and member identity. Cloud
+filtering keeps the frame while pending uploads remain local; private resource
+authorization and the existing1MiB/1000-node/3000-edge envelope remain. No SQL
+migration or Worker change; new validation needs separately authorized Web
+activation. See[ADR0135](decisions/0135-canvas-node-groups.md).
+
 ## GG-321 stable image result positions
 
 CanvasProjectNode adds optional `imageSlots` inside existing schemaVersion1/2 JSON.

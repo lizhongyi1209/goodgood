@@ -1,4 +1,5 @@
 import { initialCanvasImageSize } from "./canvas-image-size.mjs";
+import { canvasNodeAbsolutePosition } from "./canvas-groups.mjs";
 
 /**
  * @typedef {import("./canvas-workspace").CanvasNode} CanvasNode
@@ -12,7 +13,8 @@ import { initialCanvasImageSize } from "./canvas-image-size.mjs";
 export function upsertCanvasJobNodes(current, runKey, job, origin, onRetry) {
   const count = job.state === "failed" || job.state === "cancelled" ? 1 : job.input.count;
   const prefix = `canvas-${runKey}-`;
-  const firstPosition = current.find((node) => node.id === `${prefix}0`)?.position ?? origin;
+  const firstNode = current.find((node) => node.id === `${prefix}0`);
+  const firstPosition = firstNode ? canvasNodeAbsolutePosition(firstNode, current) : origin;
   const retained = current.filter((node) => !node.id.startsWith(prefix));
   const updated = Array.from({ length: count }, (_, index) => {
     const id = `${prefix}${index}`;
@@ -35,6 +37,7 @@ export function upsertCanvasJobNodes(current, runKey, job, origin, onRetry) {
     return {
       id,
       type: "imageResult",
+      ...(previous?.parentId ? { parentId: previous.parentId } : {}),
       position: previous?.position ?? { x: firstPosition.x + index * 254, y: firstPosition.y },
       ...(previous?.selected ? { selected: true } : {}),
       ...(size ?? {}),

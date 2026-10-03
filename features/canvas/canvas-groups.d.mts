@@ -1,0 +1,13 @@
+import type { CanvasNode } from "./canvas-workspace";
+type Footprint = { id: string; bounds: { x: number; y: number; width: number; height: number } };
+type PositionedNode = { id: string; type?: string; parentId?: string; position: { x: number; y: number } };
+export const CANVAS_GROUP_DRAG_HANDLE: string;
+export const CANVAS_GROUP_NAME_LIMIT: number;
+export const CANVAS_GROUP_EMOJIS: readonly { emoji: string; label: string }[];
+export function canvasNodeAbsolutePosition(node: PositionedNode, nodes: readonly PositionedNode[]): { x: number; y: number };
+export function canvasSelectionWithMembers(nodes: CanvasNode[]): CanvasNode[];
+export function canGroupCanvasSelection(nodes: CanvasNode[]): boolean;
+export function createCanvasGroup(nodes: CanvasNode[], id: string, footprints?: Footprint[]): CanvasNode[];
+export function ungroupCanvasNodes(nodes: CanvasNode[], groupIds: readonly string[]): CanvasNode[];
+export function fitCanvasGroups(nodes: CanvasNode[], footprints?: Footprint[]): CanvasNode[];
+export function canvasPastedNodeGeometry(node: CanvasNode, copiedNodes: readonly CanvasNode[], ids: Map<string, string>, offset: number): { parentId: string | undefined; extent: undefined; expandParent: undefined; position: { x: number; y: number } };
