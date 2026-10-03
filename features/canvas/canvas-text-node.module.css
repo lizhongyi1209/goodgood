@@ -18,6 +18,7 @@ header.header { pointer-events: auto; cursor: default; }
 .editor code { font-family: monospace; font-size: .9em; }.editor :not(pre) > code { border-radius: 3px; background: #f4f4f5; padding: .12em .3em; }
 .editor a { text-decoration: underline; text-underline-offset: 3px; }.editor strong { font-weight: 600; }
 .placeholder { position: absolute; left: 18px; right: 18px; top: 16px; color: #71717a; line-height: 1.7; pointer-events: none; }
+.editHint { position: absolute; left: 18px; right: 48px; bottom: 10px; overflow: hidden; color: #71717a; font-size: 11px; line-height: 18px; white-space: nowrap; text-overflow: ellipsis; pointer-events: none; }
 .resizeControl:global(.react-flow__resize-control.handle.bottom.right) { left: auto; top: auto; right: 4px; bottom: 4px; translate: none; transform-origin: bottom right; width: 32px; height: 32px; border: 0; border-radius: 5px; background: transparent; z-index: 3; }
 .resizeGrip { display: grid; place-items: center; width: 100%; height: 100%; padding: 0; border: 0; border-radius: inherit; background: transparent; color: #71717a; cursor: nwse-resize; touch-action: none; }
 .resizeGrip:hover, .resizeGrip:active { color: #27272a; background: #f4f4f5; }

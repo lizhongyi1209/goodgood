@@ -41,6 +41,10 @@ switches and refresh; cloud groups need later authorized Web activation.
 
 Per the standing user instruction, implementation only: no build, lint/typecheck, code/diff check, test run, browser acceptance, runtime restart, SQL or real-provider request. User checks the adjacent action on uploaded/result/expanded-generator images, the actual output's references, default reference/fallback asset choices, searchable renamed assets, mouse/keyboard/touch split, different aspect ratios, loading/empty/failure retries and close/page/identity lifecycle. Existing authenticated maximum2048 preview and read-only library APIs are reused; no Web activation is needed.
 
+## GG-328 text generation manual verification boundary
+
+Per user, code only: no build, lint/typecheck, code/diff checks, test run, browser acceptance, HTTP/SQL/provider request or runtime restart. User verifies empty/preset/text/image/video input availability, eight-line prompt/width wrapping, small viewports and stable footer, full model names in menus, preparing/streaming/recovery labels, stop with existing20/10 billing and no stopped-success copy, selected result double-click/keyboard edit hints, formatting/paste and template saving. The shared Markdown component's new display props are optional; ordinary text editing keeps its behavior. This is a frontend refinement with no new dependencies, transport or persisted fields.
+
 ## GG-321 image slot regression source, not executed
 
 `tests/gg321-canvas-image-result-slots.test.mjs` is edited source only, covering

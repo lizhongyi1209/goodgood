@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Extension, type Editor } from "@tiptap/core";
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import { Markdown } from "@tiptap/markdown";
@@ -53,9 +53,10 @@ export function CanvasTextNode({ id, data, selected, width, height }: NodeProps<
   return <CanvasMarkdownNode id={id} data={data} selected={selected} width={width} height={height} label={`文本编辑 ${sequence}`} />;
 }
 
-export function CanvasMarkdownNode({ id, data, selected, width, height, label, streaming = false, showHeader = true, templateDisabled = false }: {
+export function CanvasMarkdownNode({ id, data, selected, width, height, label, streaming = false, showHeader = true, templateDisabled = false, className, emptyPlaceholder, showEditHint = false }: {
   id: string; data: CanvasTextNodeData; selected?: boolean; width?: number; height?: number;
   label: string; streaming?: boolean; showHeader?: boolean; templateDisabled?: boolean;
+  className?: string; emptyPlaceholder?: ReactNode; showEditHint?: boolean;
 }) {
   const flow = useReactFlow<CanvasNode>();
   const zoom = useStore((state) => state.transform[2]);
@@ -147,8 +148,8 @@ export function CanvasMarkdownNode({ id, data, selected, width, height, label, s
         <FileText size={12} strokeWidth={1.5} aria-hidden="true" /><span className={workspaceStyles.imageMetadataNameText}>{label}</span>
       </span>
     </header>}
-    <div className={`${styles.node} ${selected ? styles.selected : ""} ${streaming ? styles.streaming : ""}`} style={{ fontSize: CANVAS_TEXT_FONT_SIZE }}>
-      <div ref={bodyRef} className={`${styles.body} ${canEdit ? `${styles.editing} nodrag nopan nowheel` : ""}`} tabIndex={streaming ? -1 : 0}
+    <div className={`${styles.node} ${selected ? styles.selected : ""} ${streaming ? styles.streaming : ""} ${className ?? ""}`} style={{ fontSize: CANVAS_TEXT_FONT_SIZE }} data-canvas-text-document data-editing={canEdit || undefined} data-selected={selected || undefined} data-empty={!data.text || undefined}>
+      <div ref={bodyRef} className={`${styles.body} ${canEdit ? `${styles.editing} nodrag nopan nowheel` : ""}`} tabIndex={streaming ? -1 : 0} data-canvas-text-body
         aria-label={canEdit ? undefined : `${label}，双击或按 Enter 编辑`}
         onDoubleClick={(event) => { event.stopPropagation(); beginEditing(); }}
         onKeyDown={(event) => {
@@ -162,8 +163,9 @@ export function CanvasMarkdownNode({ id, data, selected, width, height, label, s
         onContextMenu={(event) => { if (canEdit) event.stopPropagation(); }}
         onFocus={selectNode}>
         <EditorContent editor={editor} className={styles.editor} />
-        {!data.text && <span className={styles.placeholder} aria-hidden="true">{streaming ? "正在生成…" : "双击输入内容…"}</span>}
+        {!data.text && <span className={styles.placeholder} aria-hidden="true">{emptyPlaceholder ?? (streaming ? "正在生成…" : "双击输入内容…")}</span>}
       </div>
+      {showEditHint && selected && !streaming && data.text && !error && <span className={styles.editHint} aria-hidden="true">{canEdit ? "Esc 退出编辑" : "双击编辑"}</span>}
       {error && <span className={styles.error} role="alert">{error}</span>}
     </div>
     <Handle type="source" id="text" position={Position.Right} className={workspaceStyles.referenceOutputHandle} aria-label={`输出${label}的文本提示词`} title="文本提示词" />
