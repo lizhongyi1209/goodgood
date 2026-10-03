@@ -6,6 +6,7 @@ import {
   ConnectionLineType,
   MiniMap,
   ReactFlow,
+  ReactFlowProvider,
   getBezierPath,
   useStoreApi,
   type ConnectionLineComponentProps,
@@ -484,6 +485,7 @@ export function CanvasWorkspace({
           }
         }}
         onMouseLeave={hideEdgeDelete}>
+      <ReactFlowProvider defaultNodes={initialNodes} initialEdges={edges} initialMinZoom={0.1} initialMaxZoom={8}>
       <CanvasGeneratorHostContext.Provider value={onComposerHostChange}>
       <CanvasGroupActionsContext.Provider value={{ onBeforeGraphEdit, onProjectGraphChange }}>
       <CanvasTextGenerationContext.Provider value={textGenerationContext}>
@@ -625,6 +627,7 @@ export function CanvasWorkspace({
       </CanvasTextGenerationContext.Provider>
       </CanvasGroupActionsContext.Provider>
       </CanvasGeneratorHostContext.Provider>
+      </ReactFlowProvider>
       {visibleEdgeDelete && (
         <Button type="button" variant="outline" size="icon-xs" className={styles.edgeDelete}
           ref={edgeDeleteButtonRef}
