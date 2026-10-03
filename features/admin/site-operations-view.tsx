@@ -87,7 +87,23 @@ function OperationsFailureDiagnostics({data}: {data:OperationsDetail}) {
   if (!events.length && data.job?.state !== "failed") return null;
   const phases:Record<string,string> = {submission:"提交生成请求", "reference-upload":"上传参考素材", "task-poll":"查询生成任务", "output-download":"下载生成结果", "provider-request":"请求生成服务"};
   const stages:Record<string,string> = {"attempt-validation":"校验任务", "provider-submission":"提交任务", "provider-poll":"等待生成结果", "output-storage":"保存生成结果", "generation-completion":"完成任务"};
-  const reasons:Record<string,string> = {"http-error":"HTTP 请求失败", "invalid-json":"上游响应不是有效 JSON", "invalid-task-response":"上游任务响应不符合约定", "invalid-upload-response":"素材上传响应不符合约定", "missing-task-id":"上游未返回任务 ID", "upstream-task-failed":"上游任务生成失败", "network-error":"网络请求失败", "poll-timeout":"等待生成结果超时", "output-error":"生成结果无法处理"};
+  const reasons:Record<string,string> = {
+    "http-error":"HTTP 请求失败", "invalid-json":"上游响应不是有效 JSON",
+    "invalid-task-response":"无法读取上游生成结果；此记录未保存具体异常字段，无法确定是否返回了 base64",
+    "invalid-upload-response":"素材上传响应不符合约定", "missing-task-id":"上游未返回任务 ID",
+    "upstream-task-failed":"上游任务生成失败", "network-error":"网络请求失败",
+    "poll-timeout":"等待生成结果超时", "output-error":"生成结果无法处理",
+    "task-id-invalid":"上游响应缺少有效任务 ID（task_id）",
+    "task-status-invalid":"上游任务状态缺失或无法识别（status）",
+    "task-images-invalid":"上游图片列表格式错误（data.images 应为数组）",
+    "task-image-count-mismatch":"上游声明生成成功，但返回的图片数量不符合请求要求",
+    "task-image-base64":"上游返回了 base64 图片数据，未提供可下载的图片链接；当前接口只接受图片 URL",
+    "task-image-url-missing":"上游图片结果缺少可下载链接（url）",
+    "task-image-url-invalid":"上游图片链接不是有效 URL（url）",
+    "task-image-url-unsupported":"上游图片链接协议不受支持；需要 HTTPS 链接，本地测试仅允许回环 HTTP",
+    "task-image-mime-invalid":"上游图片类型缺失或不是图片（mime_type 应为 image/*）",
+    "task-state-images-mismatch":"上游任务尚未成功，却已返回图片结果，任务状态与结果冲突",
+  };
   return <section aria-label="失败诊断"><h3 className="mb-4 font-medium">失败诊断</h3>
     {events.length ? <ol className="space-y-4">{events.map(event => {
       const d = event.diagnostic;
@@ -95,6 +111,8 @@ function OperationsFailureDiagnostics({data}: {data:OperationsDetail}) {
         ["发生阶段", d.phase ? phases[d.phase] ?? d.phase : d.stage ? stages[d.stage] ?? d.stage : undefined],
         ["失败原因", d.reason ? reasons[d.reason] ?? d.reason : undefined],
         ["错误代码", d.code], ["HTTP 状态", d.httpStatus],
+        ["异常图片", d.outputOrdinal === undefined ? undefined : `第 ${d.outputOrdinal} 张`],
+        ["请求图片数量", d.expectedOutputCount], ["返回图片数量", d.actualOutputCount],
         ["请求耗时", d.durationMs === undefined ? undefined : `${d.durationMs} ms`],
         ["请求地址", d.endpoint ? `${d.method ?? ""} ${d.endpoint}`.trim() : undefined],
         ["上游请求 ID", d.upstreamRequestId], ["上游任务 ID", d.upstreamTaskId],

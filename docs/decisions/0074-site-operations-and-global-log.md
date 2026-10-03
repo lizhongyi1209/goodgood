@@ -23,6 +23,13 @@ timeline. Enterprise task consumption belongs to its actual creator; grants
 without a member belong to the enterprise fund. No prompts, private URLs,
 credentials, payment references or arbitrary metadata are returned.
 
+GG-350 (2026-10-03) refines the existing protocol-failure reason allowlist to
+identify URL, explicitly observed inline base64, MIME, count and task-field/state
+failures. Only positive output ordinals and nonnegative integer output counts
+are added to diagnostic metadata. Historical generic records remain explicitly
+unspecified; no raw response/image data is retained or inferred after the fact.
+This does not add inline base64 support or change generation/billing behavior.
+
 GG-318 (2026-10-02) extends site-owner task details with an allowlisted, bounded
 failure diagnostic. Existing job events persist the attempt, worker stage,
 HTTP method/endpoint/status/duration, upstream request ID and sanitized error

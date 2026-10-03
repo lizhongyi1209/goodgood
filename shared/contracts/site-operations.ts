@@ -22,6 +22,7 @@ export type OperationsFailureDiagnostic = {
   endpoint?: string; method?: "GET" | "POST"; httpStatus?: number; durationMs?: number;
   upstreamRequestId?: string; upstreamTaskId?: string; upstreamCode?: string; upstreamMessage?: string;
   networkName?: string; networkCode?: string;
+  outputOrdinal?: number; expectedOutputCount?: number; actualOutputCount?: number;
 };
 export type OperationsFailureEvent = {
   id: string; createdAt: string; type: string; diagnostic: OperationsFailureDiagnostic;

@@ -207,8 +207,8 @@ function normalizedError(code, retryable = FAILURE_COPY[code].retryable, diagnos
   });
 }
 
-function protocolError() {
-  return normalizedError("INTERNAL_ERROR");
+function protocolError(reason, details = {}) {
+  return normalizedError("INTERNAL_ERROR", true, reason ? { ...details, reason } : undefined);
 }
 
 function normalizeFailure(error, diagnostics) {
@@ -247,19 +247,31 @@ function seedreamOutputMetadata(output) {
   return Object.keys(metadata).length ? Object.freeze(metadata) : null;
 }
 
+function hasInlineBase64(output) {
+  return /^data:image\/[^,]*;base64,/i.test(output?.url ?? "") ||
+    ["b64_json", "base64", "image_base64"].some(key =>
+      typeof output?.[key] === "string" && output[key].length > 0);
+}
+
 function normalizeOutput(output, index, allowInsecureLoopback, productModelId) {
+  const details = { outputOrdinal: index + 1 };
+  if (typeof output?.url !== "string" || !output.url.trim()) {
+    throw protocolError(hasInlineBase64(output) ? "task-image-base64" : "task-image-url-missing", details);
+  }
+  if (/^data:image\/[^,]*;base64,/i.test(output.url)) {
+    throw protocolError("task-image-base64", details);
+  }
   let url;
   try {
     url = new URL(output?.url);
   } catch {
-    throw protocolError();
+    throw protocolError("task-image-url-invalid", details);
   }
-  if (
-    !isAcceptedAssetUrl(url, allowInsecureLoopback) ||
-    typeof output?.mime_type !== "string" ||
-    !output.mime_type.startsWith("image/")
-  ) {
-    throw protocolError();
+  if (!isAcceptedAssetUrl(url, allowInsecureLoopback)) {
+    throw protocolError("task-image-url-unsupported", details);
+  }
+  if (typeof output?.mime_type !== "string" || !output.mime_type.startsWith("image/")) {
+    throw protocolError("task-image-mime-invalid", details);
   }
   const providerMetadata = isSeedreamModelId(productModelId) ? seedreamOutputMetadata(output) : null;
   return Object.freeze({
@@ -286,20 +298,28 @@ export function normalizeUsGatewayTask(
 ) {
   if (!(isSeedreamModelId(productModelId) ? expectedOutputCount === 1 : [1, 2, 4].includes(expectedOutputCount))) throw protocolError();
   const taskId = payload?.task_id;
-  if (typeof taskId !== "string" || !taskId) throw protocolError();
+  if (typeof taskId !== "string" || !taskId) throw protocolError("task-id-invalid");
   const state = Object.freeze({
     FAILURE: "failed",
     IN_PROGRESS: "running",
     SUBMITTED: "queued",
     SUCCESS: "succeeded",
   })[payload.status];
-  if (!state) throw protocolError();
+  if (!state) throw protocolError("task-status-invalid");
 
   const rawOutputs = payload.data?.images ?? [];
-  if (!Array.isArray(rawOutputs)) throw protocolError();
+  if (!Array.isArray(rawOutputs)) throw protocolError("task-images-invalid");
   if (state === "succeeded" && !isExpectedGenerationOutputCount({
     modelId: productModelId, requestedCount: expectedOutputCount, actualCount: rawOutputs.length,
-  })) throw protocolError();
+  })) {
+    // Record only the observed format, never the inline image bytes.
+    if (rawOutputs.length === 0 && hasInlineBase64(payload.data)) {
+      throw protocolError("task-image-base64");
+    }
+    throw protocolError("task-image-count-mismatch", {
+      expectedOutputCount, actualOutputCount: rawOutputs.length,
+    });
+  }
   // Sort only when every item supplies an interpretable layer order. Partial
   // metadata must not move an unlabelled base image behind labelled layers.
   const orderedOutputs = isSeedreamModelId(productModelId) && rawOutputs.length &&
@@ -314,7 +334,7 @@ export function normalizeUsGatewayTask(
   const failures = Object.freeze(
     state === "failed" ? [normalizeFailure(payload.error, diagnostics)] : [],
   );
-  if (state !== "succeeded" && outputs.length !== 0) throw protocolError();
+  if (state !== "succeeded" && outputs.length !== 0) throw protocolError("task-state-images-mismatch");
 
   return Object.freeze({
     failures,
@@ -632,7 +652,11 @@ export function createUsGatewayAdapter({
       diagnostics: sanitizeFailureDiagnostic({ ...diagnostics, upstreamTaskId: taskId, reason: "upstream-task-failed" }, { secrets: [apiKey, ...sensitiveValues] }),
     }); } catch (error) {
       if (!(error instanceof NormalizedProviderError)) throw error;
-      throw normalizedError(error.code, error.retryable, { ...diagnostics, reason: "invalid-task-response" });
+      throw normalizedError(error.code, error.retryable, {
+        ...diagnostics, upstreamTaskId: taskId,
+        ...error.diagnostics,
+        reason: error.diagnostics?.reason ?? "invalid-task-response",
+      });
     }
   }
 

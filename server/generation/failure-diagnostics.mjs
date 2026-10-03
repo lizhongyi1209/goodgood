@@ -1,7 +1,13 @@
 // Deliberately no request/response body, arbitrary headers, stack or URL query.
 const PHASES = new Set(["submission", "reference-upload", "task-poll", "output-download", "provider-request"]);
 const STAGES = new Set(["attempt-validation", "provider-submission", "provider-poll", "output-storage", "generation-completion"]);
-const REASONS = new Set(["http-error", "invalid-json", "invalid-task-response", "invalid-upload-response", "missing-task-id", "upstream-task-failed", "network-error", "poll-timeout", "output-error"]);
+const REASONS = new Set([
+  "http-error", "invalid-json", "invalid-task-response", "invalid-upload-response", "missing-task-id",
+  "upstream-task-failed", "network-error", "poll-timeout", "output-error",
+  "task-id-invalid", "task-status-invalid", "task-images-invalid", "task-image-count-mismatch",
+  "task-image-base64", "task-image-url-missing", "task-image-url-invalid", "task-image-url-unsupported",
+  "task-image-mime-invalid", "task-state-images-mismatch",
+]);
 
 export function redactDiagnosticText(value, secrets = [], limit = 1000) {
   if (typeof value !== "string" && typeof value !== "number") return undefined;
@@ -40,6 +46,10 @@ export function sanitizeFailureDiagnostic(input, { secrets = [] } = {}) {
   if (Number.isFinite(input.durationMs) && input.durationMs >= 0) result.durationMs = Math.min(Math.round(input.durationMs), 86_400_000);
   if (typeof input.attemptId === "string" && /^[0-9a-f-]{36}$/i.test(input.attemptId)) result.attemptId = input.attemptId;
   if (Number.isSafeInteger(input.ordinal) && input.ordinal > 0) result.ordinal = input.ordinal;
+  if (Number.isSafeInteger(input.outputOrdinal) && input.outputOrdinal > 0) result.outputOrdinal = input.outputOrdinal;
+  for (const key of ["expectedOutputCount", "actualOutputCount"]) {
+    if (Number.isSafeInteger(input[key]) && input[key] >= 0) result[key] = input[key];
+  }
   for (const key of ["upstreamRequestId", "upstreamTaskId", "upstreamCode", "networkName", "networkCode", "provider", "providerModel", "routeVersion", "code"]) {
     const value = identifier(input[key], secrets);
     if (value) result[key] = value;
