@@ -4,9 +4,8 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { Handle, NodeToolbar, Position, useReactFlow, useStore, type NodeProps } from "@xyflow/react";
 import { ArrowUp, ChevronDown, FileText, Film, LoaderCircle, Square, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
-import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { TextModelIcon } from "@/features/models/text-model-icon";
 import { TEXT_GENERATION_MODELS, TEXT_GENERATION_PRESETS, getTextGenerationPreset, DEFAULT_TEXT_GENERATION_MODEL, TEXT_GENERATION_CREDIT_COST, TEXT_GENERATION_CANCELLATION_CREDIT_COST, TEXT_GENERATION_MAX_PROMPT,
@@ -45,6 +44,7 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
   const [busy, setBusy] = useState(false);
   const [phase, setPhase] = useState<"preparing" | "generating" | "recovering">("preparing");
   const [error, setError] = useState("");
+  const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const promptRef = useRef<HTMLTextAreaElement>(null);
   const nodes = useStore((state) => state.nodes as CanvasNode[]);
   const zoom = useStore((state) => state.transform[2]);
@@ -68,7 +68,7 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
   const viewportWidth = useStore((state) => state.width);
   const nodeWidth = width ?? 238;
   const visibleLeft = typeof document === "undefined" ? 0 : document.getElementById("canvas-asset-sidebar")?.getBoundingClientRect().right ?? 0;
-  const desiredWidth = Math.min(520, Math.max(360, nodeWidth * zoom), Math.max(120, viewportWidth - visibleLeft - 30));
+  const desiredWidth = Math.min(640, Math.max(480, nodeWidth * zoom), Math.max(120, viewportWidth - visibleLeft - 30));
   const center = screenLeft + nodeWidth * zoom / 2;
   let align: "start" | "center" | "end" = "center";
   let toolbarWidth = desiredWidth;
@@ -77,6 +77,10 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
   } else if (center + desiredWidth / 2 > viewportWidth - 15) {
     align = "end"; toolbarWidth = Math.min(desiredWidth, Math.max(120, screenLeft + nodeWidth * zoom - visibleLeft - 15));
   }
+  useEffect(() => {
+    if (!selected || editingLocked) setModelMenuOpen(false);
+  }, [selected, editingLocked]);
+
   const updateDraft = (patch: Partial<CanvasTextGenerationDraft>) => {
     flow.updateNodeData(id, (node) => node.type === "textGenerator" ? { textGeneration: { ...node.data.textGeneration, ...patch } } : {});
   };
@@ -281,6 +285,7 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
             </Badge>
           </div>}
           <textarea ref={promptRef} className={styles.prompt} aria-label={`${label}的输入`} placeholder={currentPreset ? "补充要求（可选）…" : "描述你的需求，或连接素材…"} value={data.textGeneration.prompt}
+            onPointerDown={() => setModelMenuOpen(false)} onFocus={() => setModelMenuOpen(false)}
             maxLength={TEXT_GENERATION_MAX_PROMPT} disabled={editingLocked} onChange={(event) => { updateDraft({ prompt: event.target.value }); setError(""); }}
             onKeyDown={(event) => { if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && !event.nativeEvent.isComposing) { event.preventDefault(); void generate(); } }} />
           <div className={styles.promptMeta}>{!busy && (inputsPreparing || promptTooLong) ? <span className={styles.inputStatus} role="status">{inputsPreparing ? "素材准备中…" : "输入内容过长，请缩小需求"}</span> : <span className={styles.shortcut} aria-hidden="true">Ctrl / ⌘ + Enter</span>}</div>
@@ -288,11 +293,16 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
         </div>
         <div className={styles.tools}>
           <div className={styles.settings}>
-          <Select value={currentModel.id} disabled={editingLocked} onValueChange={(modelId) => updateDraft({ modelId: modelId as TextGenerationModelId })}>
-            <SelectTrigger className={styles.model} aria-label="文本生成模型"><span className={styles.modelName}><TextModelIcon icon={currentModel.icon} /><span>{currentModel.name}</span></span></SelectTrigger>
-            <SelectContent className={styles.modelMenu} position="popper" side="bottom" align="start">{TEXT_GENERATION_MODELS.map((model) => <SelectItem key={model.id} value={model.id}><span className={styles.modelName}><TextModelIcon icon={model.icon} /><span>{model.name}</span></span></SelectItem>)}</SelectContent>
-          </Select>
-          <DropdownMenu>
+          <DropdownMenu modal={false} open={modelMenuOpen} onOpenChange={setModelMenuOpen}>
+            <DropdownMenuTrigger asChild><button type="button" disabled={editingLocked} className={styles.model} aria-label="文本生成模型"><span className={styles.modelName}><TextModelIcon icon={currentModel.icon} /><span>{currentModel.name}</span></span><ChevronDown size={14} aria-hidden="true" /></button></DropdownMenuTrigger>
+            <DropdownMenuContent className={styles.modelMenu} side="bottom" align="start" sideOffset={6}
+              onCloseAutoFocus={(event) => { if (document.activeElement === promptRef.current) event.preventDefault(); }}>
+              <DropdownMenuRadioGroup value={currentModel.id} onValueChange={(modelId) => updateDraft({ modelId: modelId as TextGenerationModelId })}>
+                {TEXT_GENERATION_MODELS.map((model) => <DropdownMenuRadioItem key={model.id} value={model.id}><span className={styles.modelName}><TextModelIcon icon={model.icon} /><span>{model.name}</span></span></DropdownMenuRadioItem>)}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild><button type="button" className={styles.presetTrigger} data-active={Boolean(currentPreset) || undefined} disabled={editingLocked} aria-label={currentPreset ? `预设：${currentPreset.name}` : "选择文本生成预设"}>
               <span>预设</span><ChevronDown size={12} aria-hidden="true" />
             </button></DropdownMenuTrigger>

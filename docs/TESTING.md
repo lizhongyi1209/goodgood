@@ -1,5 +1,13 @@
 # GG-063 verification
 
+## GG-331 text composer — user acceptance only
+
+No build, lint/typecheck, code/diff checks, tests or browser acceptance are run.
+Manual follow-up: inspect the wider composer and spaced parameter row, open
+the model list and click the prompt once to close it and continue typing; select
+another model, use keyboard/Escape and inspect narrow viewport/sidebar reflow.
+Existing eight-line prompt, presets, generation and billing remain unchanged.
+
 ## GG-329 canvas context — user acceptance only
 
 No builds, lint/typecheck, code/diff checks, tests or browser acceptance are run,
