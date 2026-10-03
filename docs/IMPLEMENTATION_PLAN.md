@@ -2,10 +2,12 @@
 
 - Last synchronized: 2026-10-03
 - Current phase: GG-338右键下载文案08f3387→98c82d4已接入GG-116/5173，画布图片与画布资产列表「下载原图」改为「下载」，仅两处文案和对应说明，原始文件下载行为保持。创建1/退役1、辅助已managed归档，未编译检查/测试/浏览器验收，无后台更新，保留GG-337文件核验及此前源码。
-- Current objective: 用户刷新手验两处右键「下载」文案。GG-337实际下载副本已独立只读确认无内嵌C2PA/EXIF/XMP/IPTC；缺原文件不判断前后变化，receipt见任务卡。应用全流程仍未验收，无构建检查、应用API/SQL/Provider或服务/生产操作；GG-330 verified94bee535/原Web/唯一Worker/Vite/数据/SMTP运行receipt保持。
+- Current objective: GG-337第二份用户JPEG已只读提取完整C2PA：Google生成式AI创建/SynthID声明，图片与声明哈希、随附公钥的ES256 claim签名匹配，原始JUMBF/APP11及解码JSON在仓库外交付；未验证根信任/撤销/时间戳或像素水印。前一副本无内嵌C2PA，二者未确认同图配对，不据此判断清理前后变化；receipt见任务卡。用户手验GG-338两处「下载」文案，应用全流程仍未验收，无构建检查、应用API/SQL/Provider或服务/生产操作；GG-330运行receipt保持。
 - Previous objective: GG-313模板名称格式/示例参考、GG-312画布300%高清门槛、GG-311模板保存/成功动效及类型筛选、GG-310前景色已交付源码；GG-309私有2K接口、批量校验及文本资产API/本地0063已启用。
 
 ## Current checkpoint
+
+- 最新原始凭证提取 [GG-337](tasks/GG-337-original-download.md)：用户第二份JPEG含单段APP11/6335字节C2PA Manifest Store，声明Google生成式AI创建及不可见SynthID水印。独立读取claim/actions/hash/ingredient/签名与证书，按公开规范核验三条声明哈希、图片排除凭证后的哈希和随附叶证书公钥ES256 claim签名均匹配；未做完整信任链/撤销/时间戳或像素水印检测。原始二进制/完整解码JSON导出仓库外供用户查看，未修改/上传图片或改变应用代码/运行。前一副本仍确认无内嵌C2PA，但不是已确认同图配对，应用回归仍未运行。
 
 - 最新下载文案 [GG-338](tasks/GG-338-download-label.md)：从干净17fae8a隔离08f3387精确接入98c82d4，两处右键「下载原图」改为「下载」，ADR0034/产品/交互/设计说明同步。只改文案，原始字节/目标/下载状态保持；创建1/退役1，managed辅助已归档，无子agent/缓存，未编译检查/测试/浏览器验收，无后台或运行更新。用户刷新手验，GG-337及此前源码/文件核验receipt保持。
 

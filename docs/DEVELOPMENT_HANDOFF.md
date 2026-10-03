@@ -1,5 +1,7 @@
 # 当前开发版本与跨窗口交接
 
+- 最新原始凭证分析：[GG-337](tasks/GG-337-original-download.md)第二份用户JPEG含6335字节C2PA，原始声明Google生成式AI创建/添加SynthID水印，claim生成器Google C2PA Core Generator Library。原始JUMBF/APP11及完整解码JSON在仓库外c2pa-114712目录交付；独立本地图片/三条声明哈希及随附公钥claim签名匹配，未验证根信任/撤销/时间戳或像素水印。未修改/外传/入Git用户图片、无应用代码或运行变化。此前清理副本无内嵌C2PA，二者未确认同图配对；GG-338源码/未运行应用检查和GG-330运行receipt保持。
+
 - 最新下载文案：[GG-338](tasks/GG-338-download-label.md)基于干净17fae8a，08f3387→98c82d4已接入GG-116/5173。画布图片与资产侧栏图片右键「下载原图」改为「下载」，仅文案及对应说明，原始文件下载行为不变。创建1/退役1，managed辅助已归档，无子agent/缓存；未编译检查/测试/浏览器验收，无后台或运行更新，用户刷新手验；GG-337实际文件核验及GG-330运行receipt保持。
 
 - 最新实际文件核验：[GG-337](tasks/GG-337-original-download.md)用户提交下载的无元数据副本，独立只读JPEG全结构/尾部检查与Pillow解码成功，1792×2390、3,120,501字节，仅APP0/JFIF基本信息；无内嵌C2PA/EXIF/XMP/IPTC/注释及EOI后数据。完整SHA256/标记receipt见任务卡，原文件未提供，不判定原图是否曾有C2PA或前后像素/压缩流一致。未修改/上传用户图片或入Git，无应用回归、编译检查、浏览器或服务/数据/Provider操作。下一步仅在用户需要前后对比并提供原文件时继续只读分析，原运行receipt保持。
