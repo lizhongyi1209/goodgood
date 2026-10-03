@@ -1,5 +1,7 @@
 # 当前开发版本与跨窗口交接
 
+- 最新元数据入口：[GG-335](tasks/GG-335-remove-photo-extraction.md)从干净8bfa266隔离30f1a62→f411a48已接入GG-116/5173，关联组窗口idle。移除「从照片提取」/隐藏本地文件选择器及引用，更新当前图编辑/空状态/损坏提示；自动预填、实际参考图提取、参数复制粘贴/手填、清除/还原及副本下载保存保持。ADR0136/产品/交互/错误/手验说明同步；创建1/退役1，managed辅助已归档，无依赖缓存/子agent。未编译检查、测试或浏览器验收，无后台更新或HTTP/SQL/Provider/服务/生产操作；用户刷新并重开弹框手验。AI检测只调研说明，不新增功能；GG-334及此前源码保留，GG-330 verified94bee535和原Web/唯一Worker/Vite/数据/SMTP receipt保持，本轮未重查运行。
+
 - 最新透明缩放入口：[GG-334](tasks/GG-334-invisible-resize-corners.md)核验982a460含GG-333，从managed隔离cf79e22精确接入5c32b19。组/共享Markdown四角复用图片resizeControl与空白resizeHotspot，无SVG角标、悬停/拖动底色；原生定位/斜向cursor/缩放补偿及仅键盘focus-visible轮廓保持。文本左/上键盘角点固定对边，尺寸夹限按实际变化补偿位置，旧右下size API兼容；组稳定回调/内容约束/自动居中与手动留白保持，关联窗口idle、GG-331面板及此前改动保留。创建1/退役1，managed辅助工作区已归档，保留分支/提交，无依赖缓存/子agent。回归源码只写，未编译/lint/typecheck/代码diff检查/测试或浏览器验收，无HTTP/SQL/Provider/服务/生产操作，无新后台启用。用户刷新5173手验四角光标/拖动/键盘对边固定/夹限、组边框移动及保存恢复；运行身份沿GG-330 verified94bee535和原Web9448/唯一Worker23800/Vite33440/数据/SMTP receipt，本轮未重查运行。
 
 - 最新组居中修复：[GG-333](tasks/GG-333-group-auto-centering.md)核验2e5b6d0，隔离a4b59bf精确接入7baf03b；旧框内标题60px上预留改为与下方相同28px，自动最小120px高度额外留白按可见内容中心分配，沿原标题/叠层测量，左右不变。实际content envelope与自动理想尺寸分离，手动框只包围实际内容/间距，不因自动居中移动或增长；父框拟合重算成员相对坐标以保持绝对位置，GG-325稳定读写和死区保持。仅组helper、必要回归来源/ADR及说明，无新持久/API/后台需求；创建1/退役1、managed辅助工作区已归档，零依赖缓存，未编译/lint/typecheck/代码diff检查/测试或浏览器验收，无HTTP/SQL/Provider/运行/生产操作。用户刷新5173手验自动上下等距/小组/展开与手动留白及切换适应内容，保留GG-332/331；运行沿GG-330 verified94bee535及原Web/唯一Worker/Vite/数据/SMTP记录，本轮未重查运行。
