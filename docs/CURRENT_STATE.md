@@ -1,5 +1,7 @@
 # GoodGood 当前状态
 
+- 最新画布分组源码：[GG-323](tasks/GG-323-canvas-groups.md)独立2d51561→2fa0486已接入GG-116/5173，原生parentId整组移动、框选建组、双击改名、名称左侧emoji及解散/复制/本机保存恢复完成。浅灰组框按实际内容包围，封面同步处理坐标；ADR0135及新云校验为源码，新字段待另行委托更新Web，无SQL或Worker变化。创建1/退役1，辅助工作区已归档，未编译检查或功能验收，无运行/生产操作；用户刷新手验，GG-322当前Web0b5744d/唯一Worker419b097及原Vite/数据/SMTP保持。
+
 - 最新本地修复/运行：[GG-322](tasks/GG-322-image-slot-sync-compatibility.md)子9920bde→0ce2360只修正同步错误误判。旧Web419b097缺GG-321插槽校验；用户已授权必要构建及仅Web重启，当前Web25664/32131和5173代理verified0b5744d、readiness五项ok，新imageSlots云保存已启用。原唯一Worker28236/32142仍419b097、Vite33312/5173、数据0063/cloud-development/local-mailpit保持；创建1/退役1，无检查/测试、浏览器、SQL、真实生成或部署。用户刷新手验，下方待启用是历史交付阶段；完整receipt见任务卡。
 
 - 最新插槽源码：[GG-321](tasks/GG-321-image-result-slots.md)子4398d08→4489d1d已接入GG-116/5173，按请求位置保留成功/失败/进行中，4张为4个count1任务，中央只重试所选位置，冻结/未知幂等和旧count4/Seedream层恢复兼容。云imageSlots校验已改源码，当前旧Web不支持时明确本机保存；须以后单独激活Web，无SQL/Worker更新。创建1/退役1，只写回归未运行，无编译/检查、真实调用或运行/生产操作，GG-319 Web/唯一Worker419b097、原Vite/数据/SMTP保持，用户刷新手验。

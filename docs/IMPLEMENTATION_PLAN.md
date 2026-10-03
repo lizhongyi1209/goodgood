@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-03
-- Current phase: GG-322子应用9920bde→0ce2360修正保存错误误判，用户授权一次必要构建和仅Web重启；verified0b5744d已启用GG-321图片插槽云校验，创建1/退役1，无测试或真实请求。
-- Current objective: 用户刷新手验4张展开4位、单槽重试/兄弟保持及云同步；当前Web25664/32131为0b5744d，唯一Worker28236/32142仍419b097，Vite33312/5173及原数据/SMTP保持。无SQL迁移/Worker更新；默认仍仅开发代码，后继文档不改变运行receipt。
+- Current phase: GG-323分组源码2d51561→2fa0486已精确接入GG-116/5173：原生parentId整组移动、框选建组、就地改名/emoji、解散/复制及保存恢复完成；未编译检查或功能验收，新云字段待另行委托Web激活。
+- Current objective: 用户刷新手验建组/拖标题/双击改名/emoji及撤销复制、页面切换与本机恢复；组云保存需以后受权构建并仅更新Web，无SQL/Worker更新。GG-322已启用Web25664/32131 verified0b5744d、唯一Worker28236/32142仍419b097，Vite33312/5173和原数据/SMTP保持。
 - Previous objective: GG-313模板名称格式/示例参考、GG-312画布300%高清门槛、GG-311模板保存/成功动效及类型筛选、GG-310前景色已交付源码；GG-309私有2K接口、批量校验及文本资产API/本地0063已启用。
 
 ## Current checkpoint
+
+- 最新分组源码 [GG-323](tasks/GG-323-canvas-groups.md)：基线0b5744d，快进保留另窗ba73fea；隔离2d51561精确接入2fa0486，ADR0135先记录。自定义灰组框复用原生parentId移动、选择工具栏/快捷键建组、名称双击编辑和左侧emoji，成员单独编辑/连线及可见展开范围；解散/删除框、复制与裁剪、快照/云校验/恢复/封面及每页历史完成。必要回归来源只写未运行；创建1/退役1，辅助工作区已归档，无依赖/缓存或运行变化。用户刷新手验，本机恢复可用；新云组字段须另外更新Web，无SQL迁移或Worker变化，GG-322运行receipt保持。
 
 - 最新修复/运行 [GG-322](tasks/GG-322-image-slot-sync-compatibility.md)：登记e2f228c，隔离9920bde精确接入0ce2360；不再以INVALID_CANVAS_PROJECT且含slots推断服务版本，显示实际平台错误/明确本机与云状态。截图根因是旧Web419b097无新imageSlots校验，保存失败不阻断生成提交；用户授权构建0b5744d并仅替换Web28248→25664，32131/5173版本verified、Web readiness均ok，已有槽云校验生效。唯一Worker419b097/Vite/原数据/SMTP保持，创建1/退役1，无检查/测试、浏览器、SQL/provider或生产操作。用户刷新手验；下方GG-321待启用为当时阶段。
 

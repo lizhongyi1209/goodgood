@@ -1,5 +1,7 @@
 # 当前开发版本与跨窗口交接
 
+- 最新分组源码：[GG-323](tasks/GG-323-canvas-groups.md)从0b5744d隔离并保留另窗ba73fea，2d51561精确接入当前GG-116/5173为2fa0486。Shift框选工具栏建组/Ctrl-Cmd-G、拖标题整体移动、双击或Enter/F2改名及emoji选择移除，解散/删除框保留成员，复制/裁剪/封面与本机恢复及每页历史适配完成。ADR0135/云group-parentId校验源码已补，无SQL或Worker更新；新云字段待用户另行委托Web激活。创建1/退役1，辅助工作区已归档，零依赖/缓存；未编译、检查、测试运行或浏览器验收，没有服务/provider/数据/生产操作。用户刷新手验；现有GG-322 Web0b5744d/唯一Worker419b097及原Vite/数据/SMTP保持。
+
 - 当前修复/运行：[GG-322](tasks/GG-322-image-slot-sync-compatibility.md)子9920bde→0ce2360接入GG-116；同步失败显示实际平台错误及本机已保存/尚未云同步，不再猜测服务版本。截图由旧Web419b097缺imageSlots校验触发，远端保存失败不会阻断单槽提交。用户授权必要构建及仅Web重启，Web25664/32131、5173代理verified0b5744d，Web readiness五项ok，GG-321云字段已生效；唯一Worker28236/32142仍419b097，Vite33312/5173及原数据0063/cloud-development/local-mailpit保持，无迁移/真实请求/检查或测试。创建1/退役1，辅助目录干净正常移除；用户刷新手验。运行receipt绑定0b5744d，下次启动先构建当前HEAD，不启动旧GG-226 Worker；下方待激活是历史阶段。
 
 - 最新图片插槽：[GG-321](tasks/GG-321-image-result-slots.md)基线ca54019/登记aa4967f，子`/root/image_result_slots`隔离4398d08精确接入当前4489d1d。总数先固定槽/本机flush后逐张并发count1，逐槽合并状态，失败中央重试只一个位置且成功图/输出ID/展开状态保持；未知提交复用key，旧count4失败单槽新submit count1，Seedream原生层保持。15文件，imageSlots云冻结规范输入/任务引用受权及恢复完成，旧Web拒绝时明确仅本机保存。创建1/退役1、子结束/辅助零依赖缓存正常移除，无构建/检查/测试运行、浏览器、SQL/provider或运行操作；用户刷新手验。新云字段须以后更新Web，无迁移/Worker更新，当前GG-319 Web/唯一Worker419b097和原Vite/数据/SMTP保持。
