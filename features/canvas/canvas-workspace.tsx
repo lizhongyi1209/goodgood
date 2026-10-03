@@ -512,7 +512,7 @@ export function CanvasWorkspace({
       <CanvasImageCompareProvider enabled={cropEnabled} libraryEnabled={assetLibraryEnabled} pageKey={cropPageId} ownerKey={textGenerationContext.ownerKey}>
       <CanvasImageCleanupProvider enabled={cropEnabled && !visibleCropRequest} ownerKey={textGenerationContext.ownerKey} workspaceId={textGenerationContext.workspaceId} pageId={cropPageId}
         beforeRemove={textGenerationContext.beforeGenerate} onCommit={onImageCleanupCommit} onChanged={onImageCleanupChanged}>
-      <CanvasImageMetadataProvider enabled={cropEnabled && !visibleCropRequest} ownerKey={textGenerationContext.ownerKey} pageKey={cropPageId} onCommit={onCropCommit}>
+      <CanvasImageMetadataProvider enabled={assetLibraryEnabled && !visibleCropRequest} ownerKey={textGenerationContext.ownerKey} pageKey={cropPageId} onCommit={onCropCommit}>
       <CanvasImageCropContext.Provider value={{ request: visibleCropRequest, openCrop: (image) => {
         if (cropEnabled) setCropRequest({ ...image, pageId: cropPageId, sessionId: crypto.randomUUID() });
       } }}>

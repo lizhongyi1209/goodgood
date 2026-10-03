@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useReactFlow } from "@xyflow/react";
 import { Camera, ClipboardPaste, Copy, Download, RotateCcw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,13 +14,11 @@ import type { GenerationReference } from "@/shared/contracts/generation";
 import { canvasGeneratorJobs } from "./canvas-image-prompt-batch.mjs";
 import { readCanvasCropImageBlob, type CanvasCropCommit, type CanvasCropImage, type CanvasCropRequest } from "./canvas-image-crop-image";
 import type { CanvasNode } from "./canvas-workspace";
+import { CanvasImageMetadataContext } from "./canvas-image-metadata-context";
 import styles from "./canvas-image-metadata.module.css";
 
 type MetadataRequest = CanvasCropRequest & Readonly<{ references: readonly GenerationReference[]; trigger: HTMLButtonElement }>;
 type Original = Readonly<{ bytes: Uint8Array<ArrayBuffer>; blob: Blob; metadata: ReturnType<typeof readImageFileMetadata>; width: number; height: number }>;
-
-const MetadataContext = createContext<Readonly<{ enabled: boolean; openMetadata: (image: CanvasCropImage, trigger: HTMLButtonElement) => void }>>({ enabled: false, openMetadata: () => {} });
-export function useCanvasImageMetadata() { return useContext(MetadataContext); }
 
 export function CanvasImageMetadataProvider({ children, enabled, ownerKey, pageKey, onCommit }: Readonly<{
   children: ReactNode; enabled: boolean; ownerKey: string; pageKey: string; onCommit: (commit: CanvasCropCommit) => boolean;
@@ -29,7 +27,7 @@ export function CanvasImageMetadataProvider({ children, enabled, ownerKey, pageK
   const [request, setRequest] = useState<Readonly<{ value: MetadataRequest; ownerKey: string }> | null>(null);
   const visible = enabled && request?.ownerKey === ownerKey && request.value.pageId === pageKey ? request.value : null;
   useEffect(() => { setRequest(null); }, [enabled, ownerKey, pageKey]);
-  return <MetadataContext.Provider value={{ enabled, openMetadata: (image, trigger) => {
+  return <CanvasImageMetadataContext.Provider value={{ enabled, openMetadata: (image, trigger) => {
     if (!enabled) return;
     const node = flow.getNode(image.nodeId);
     const job = node?.type === "imageGenerator" ? canvasGeneratorJobs(node.data).find((item) => item.outputs.some((output) => output.id === image.imageId))
@@ -44,7 +42,7 @@ export function CanvasImageMetadataProvider({ children, enabled, ownerKey, pageK
   } }}>
     {children}
     {visible && <CanvasImageMetadataDialog key={visible.sessionId} request={visible} onClose={() => setRequest(null)} onCommit={onCommit} />}
-  </MetadataContext.Provider>;
+  </CanvasImageMetadataContext.Provider>;
 }
 
 async function decodeDimensions(blob: Blob, signal: AbortSignal) {
@@ -174,7 +172,7 @@ function CanvasImageMetadataDialog({ request, onClose, onCommit }: Readonly<{
       onCloseAutoFocus={(event) => { event.preventDefault(); if (request.trigger.isConnected) request.trigger.focus({ preventScroll: true }); }}
       onKeyDown={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()} onWheel={(event) => event.stopPropagation()}>
       <header className={styles.header}>
-        <div><DialogTitle className={styles.title}>增加元数据</DialogTitle><DialogDescription className={styles.description}>编辑当前图片的元数据，保存为新的图片副本。</DialogDescription></div>
+        <div><DialogTitle className={styles.title}>添加数据</DialogTitle><DialogDescription className={styles.description}>编辑当前图片的元数据，保存为新的图片副本。</DialogDescription></div>
         <DialogClose asChild><Button type="button" variant="ghost" size="icon-sm" aria-label="关闭元数据弹框"><X size={18} strokeWidth={1.5} /></Button></DialogClose>
       </header>
       <div className={styles.body} aria-busy={loading || busy !== null}>

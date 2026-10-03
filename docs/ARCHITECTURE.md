@@ -1,5 +1,10 @@
 # Architecture
 
+GG-344：图片「添加数据」由受权素材能力控制开启；独立
+`canvas-image-metadata-context.ts`承载Provider/工具栏共享上下文，避免编辑器
+模块热刷新引起上下文实例分离。原副本提交的身份、页、就绪及源图校验保持；
+无新API、数据库或后台更新。
+
 ## GG-341 · Paid image metadata cleanup
 
 `features/canvas/canvas-image-cleanup.tsx` owns immutable output selection,

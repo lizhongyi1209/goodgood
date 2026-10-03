@@ -13,7 +13,7 @@ import { canvasCropImageForNode, exportCanvasCrop, loadCanvasCropImage, type Can
 import { CANVAS_CROP_PRESET_GROUPS, centeredCanvasCrop, moveCanvasCrop, resizeCanvasCrop, setCanvasCropDimension, type CanvasCropCorner, type CanvasCropPoint, type CanvasCropRect, type CanvasCropSize } from "./canvas-image-crop-model";
 import { canvasImageCompareReferences, useCanvasImageCompare } from "./canvas-image-compare";
 import styles from "./canvas-image-crop.module.css";
-import { useCanvasImageMetadata } from "./canvas-image-metadata";
+import { useCanvasImageMetadata } from "./canvas-image-metadata-context";
 import { useCanvasImageCleanup } from "./canvas-image-cleanup";
 
 export const CanvasImageCropContext = createContext<{
@@ -40,8 +40,8 @@ export function CanvasImageCropToolbar({ image, selected, offsetX = 0 }: Readonl
       <Button type="button" variant="ghost" size="sm" onClick={(event) => { event.stopPropagation(); openCompare(image, canvasImageCompareReferences(flow.getNode(image.nodeId), image.imageId), event.currentTarget); }} aria-label="图片对比" title="图片对比">
         <SquareSplitHorizontal size={15} strokeWidth={1.7} aria-hidden="true" />对比
       </Button>
-      <Button type="button" variant="ghost" size="sm" disabled={!metadataEnabled} onClick={(event) => { event.stopPropagation(); openMetadata(image, event.currentTarget); }} aria-label="增加图片元数据" title="增加元数据">
-        <FilePenLine size={15} strokeWidth={1.7} aria-hidden="true" />增加元数据
+      <Button type="button" variant="ghost" size="sm" disabled={!metadataEnabled} onClick={(event) => { event.stopPropagation(); openMetadata(image, event.currentTarget); }} aria-label="添加数据" title="添加数据">
+        <FilePenLine size={15} strokeWidth={1.7} aria-hidden="true" />添加数据
       </Button>
       <Button type="button" variant="ghost" size="sm" disabled={!cleanup.enabled || cleanup.pendingKey !== null}
         onClick={(event) => { event.stopPropagation(); cleanup.remove(image); }}
