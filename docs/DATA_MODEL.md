@@ -1,5 +1,9 @@
 # GG-063 quality pricing
 
+## GG-327 元数据副本
+
+常用 EXIF 参数只写入新 JPEG/PNG 文件；中文作者/描述使用 EXIF Unicode/XP 标签，版权等文本同时采用 XMP。不把拍摄参数存入 generation_jobs.input，不覆盖源资产，也不添加项目 JSON 字段。保存副本复用现有 private reference 文件与 sourceImage 节点：独立新ID、原始像素尺寸、上传状态和素材入库；源节点的job、分组关系、连线及历史均保持。复制 JSON 仅含允许字段/版本，不含私有URL、图片缩略、MakerNote或后台信息。
+
 ## GG-323 canvas groups
 
 Existing schemaVersion1/2 page JSON accepts `type: group`, required nonempty

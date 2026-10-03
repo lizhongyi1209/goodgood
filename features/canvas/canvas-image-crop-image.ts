@@ -9,7 +9,7 @@ import { canvasGeneratorJobs } from "./canvas-image-prompt-batch.mjs";
 
 export type CanvasCropImage = Readonly<{ nodeId: string; imageId: string; key: string; name: string; contentUrl: string }>;
 export type CanvasCropRequest = CanvasCropImage & Readonly<{ pageId: string; sessionId: string }>;
-export type CanvasCropCommit = Readonly<{ request: CanvasCropRequest; file: File; width: number; height: number }>;
+export type CanvasCropCommit = Readonly<{ request: CanvasCropRequest; file: File; width: number; height: number; createCopy?: boolean }>;
 
 export function canvasCropImageForNode(node: CanvasNode | undefined, imageId?: string): CanvasCropImage | null {
   if (node?.type === "sourceImage") {

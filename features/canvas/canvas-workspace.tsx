@@ -40,6 +40,7 @@ import { CanvasGroupBounds } from "./canvas-group-bounds";
 import { canGroupCanvasSelection, createCanvasGroup, ungroupCanvasNodes } from "./canvas-groups.mjs";
 import { CanvasImageCropContext, CanvasImageCropEditor } from "./canvas-image-crop";
 import { CanvasImageCompareProvider } from "./canvas-image-compare";
+import { CanvasImageMetadataProvider } from "./canvas-image-metadata";
 import type { CanvasCropCommit, CanvasCropRequest } from "./canvas-image-crop-image";
 import { handleCanvasBodyClipboardPaste, handleCanvasClipboardCopy, handleCanvasClipboardPaste } from "./canvas-clipboard.mjs";
 import styles from "./canvas-workspace.module.css";
@@ -488,6 +489,7 @@ export function CanvasWorkspace({
       <CanvasTextGenerationContext.Provider value={textGenerationContext}>
       <CanvasImagePreviewProvider ownerKey={textGenerationContext.ownerKey}>
       <CanvasImageCompareProvider enabled={cropEnabled} libraryEnabled={assetLibraryEnabled} pageKey={cropPageId} ownerKey={textGenerationContext.ownerKey}>
+      <CanvasImageMetadataProvider enabled={cropEnabled && !visibleCropRequest} ownerKey={textGenerationContext.ownerKey} pageKey={cropPageId} onCommit={onCropCommit}>
       <CanvasImageCropContext.Provider value={{ request: visibleCropRequest, openCrop: (image) => {
         if (cropEnabled) setCropRequest({ ...image, pageId: cropPageId, sessionId: crypto.randomUUID() });
       } }}>
@@ -617,6 +619,7 @@ export function CanvasWorkspace({
         />
       </ReactFlow>
       </CanvasImageCropContext.Provider>
+      </CanvasImageMetadataProvider>
       </CanvasImageCompareProvider>
       </CanvasImagePreviewProvider>
       </CanvasTextGenerationContext.Provider>

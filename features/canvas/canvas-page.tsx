@@ -1181,14 +1181,14 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     } finally { finishPageOperation(); }
   };
 
-  const commitCanvasCrop = ({ request, file, width, height }: CanvasCropCommit) => {
+  const commitCanvasCrop = ({ request, file, width, height, createCopy = false }: CanvasCropCommit) => {
     const instance = flowRef.current;
     if (!mountedRef.current || !instance || !projectReady || pageSwitchingRef.current ||
         request.pageId !== activePageIdRef.current || session?.access.status !== "active" || session.preview) return false;
     const source = instance.getNode(request.nodeId);
     const currentImage = canvasCropImageForNode(source, request.imageId);
     if (!source || !source.selected || !currentImage || currentImage.key !== request.key || currentImage.imageId !== request.imageId) return false;
-    const createAdjacent = source.type === "imageGenerator";
+    const createAdjacent = source.type === "imageGenerator" || createCopy;
     if (!createAdjacent && source.type !== "sourceImage" && source.type !== "imageResult") return false;
     const nodeId = createAdjacent ? `local-${crypto.randomUUID()}` : source.id;
     const sourceWidth = source.measured?.width ?? source.width ?? (typeof source.style?.width === "number" ? source.style.width : 238);

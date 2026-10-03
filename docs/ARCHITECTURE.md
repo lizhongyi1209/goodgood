@@ -1,5 +1,9 @@
 # Architecture
 
+## GG-327 浏览器图片文件元数据
+
+`features/assets/image-file-metadata.mjs` 是无依赖的 JPEG/PNG 容器与 EXIF/XMP 文件边界，编辑常用字段并清除信息，不复制 MakerNote/拍摄原图缩略或 donor 朝向。`canvas-image-metadata.tsx` 管理 Dialog、受权原图/参考图读取、临时表单、取消、下载和副本提交。复用裁剪的受权读取及现有本地上传，添加 `CanvasCropCommit.createCopy` 让所有图片类型都新增旁置副本；裁剪默认行为保持。元数据属于输出文件字节，生成/项目领域记录没有新增字段。无后台凭据、元数据外部服务、生成请求、SQL或运行时更新。
+
 ## GG-324 explicit canvas image comparison
 
 CanvasImageCompareProvider scopes an ephemeral modal to the canvas page and owner. The existing crop toolbar exposes the adjacent action across source/result/generator nodes. Resolve references from the actual selected output's owning job input, never the active composer or a sibling slot. The dialog owns source selection and a bounded, disposable preview pool; only an explicit open acquires the existing authenticated canvas-preview derivative (maximum2048), while thumbnails use existing512 routes. Mouse motion stays in the comparison surface and is coalesced to animation frames, leaving asset lists unchanged. Read-only asset/reference/organization boundaries supply partial recovery and current display names. No new API, provider request, schema, project field or runtime activation.

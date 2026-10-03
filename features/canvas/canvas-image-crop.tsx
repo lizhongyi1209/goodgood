@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent } from "react";
 import { createPortal } from "react-dom";
 import { NodeToolbar, Position, useReactFlow, useStore } from "@xyflow/react";
-import { Check, ChevronDown, ChevronRight, Crop, Link2, LoaderCircle, SquareSplitHorizontal, Unlink2 } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, Crop, FilePenLine, Link2, LoaderCircle, SquareSplitHorizontal, Unlink2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import { canvasCropImageForNode, exportCanvasCrop, loadCanvasCropImage, type Can
 import { CANVAS_CROP_PRESET_GROUPS, centeredCanvasCrop, moveCanvasCrop, resizeCanvasCrop, setCanvasCropDimension, type CanvasCropCorner, type CanvasCropPoint, type CanvasCropRect, type CanvasCropSize } from "./canvas-image-crop-model";
 import { canvasImageCompareReferences, useCanvasImageCompare } from "./canvas-image-compare";
 import styles from "./canvas-image-crop.module.css";
+import { useCanvasImageMetadata } from "./canvas-image-metadata";
 
 export const CanvasImageCropContext = createContext<{
   request: CanvasCropRequest | null;
@@ -25,6 +26,7 @@ export function CanvasImageCropToolbar({ image, selected, offsetX = 0 }: Readonl
   const { request, openCrop } = useCanvasImageCrop();
   const { openCompare } = useCanvasImageCompare();
   const flow = useReactFlow<CanvasNode>();
+  const { enabled: metadataEnabled, openMetadata } = useCanvasImageMetadata();
   const zoom = useStore((state) => state.transform[2]);
   const selectedCount = useStore((state) => [...state.nodeLookup.values()].filter((node) => node.selected).length);
   if (!image || request) return null;
@@ -35,6 +37,9 @@ export function CanvasImageCropToolbar({ image, selected, offsetX = 0 }: Readonl
       </Button>
       <Button type="button" variant="ghost" size="sm" onClick={(event) => { event.stopPropagation(); openCompare(image, canvasImageCompareReferences(flow.getNode(image.nodeId), image.imageId), event.currentTarget); }} aria-label="图片对比" title="图片对比">
         <SquareSplitHorizontal size={15} strokeWidth={1.7} aria-hidden="true" />对比
+      </Button>
+      <Button type="button" variant="ghost" size="sm" disabled={!metadataEnabled} onClick={(event) => { event.stopPropagation(); openMetadata(image, event.currentTarget); }} aria-label="增加图片元数据" title="增加元数据">
+        <FilePenLine size={15} strokeWidth={1.7} aria-hidden="true" />增加元数据
       </Button>
     </div>
   </NodeToolbar>;

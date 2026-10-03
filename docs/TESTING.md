@@ -1,5 +1,9 @@
 # GG-063 verification
 
+## GG-327 元数据回归源码，未执行
+
+`tests/gg327-image-file-metadata.test.mjs` 仅合成容器/像素 fixture，覆盖 JPEG/PNG 空态、真实EXIF字段读写、大小端、中文XMP/XP、负曝光/GPS、高ISO、目标朝向保持、清除、渐进扫描间的元数据、ICC/IDAT/压缩字节保留、JSON/日期/边界/损坏输入。未连接数据库、Worker、真实图片或provider。按2026-10-02约定，本轮不运行编译/lint/typecheck/测试/代码或diff检查/浏览器验收。用户刷新后手验预填、照片/参考图提取、复制粘贴、清除、下载/保存副本、上传失败重试及原图保持。
+
 ## GG-323 group regression source, not executed
 
 GG-325 extends the same source with fractional bounds/explicit integer geometry,

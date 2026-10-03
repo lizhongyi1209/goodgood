@@ -1,5 +1,7 @@
 # Decision records
 
+- `0136-image-metadata-copies.md` — EXIF/XMP 参数提取、添加与清除，使用新图片副本，源资产和真实生成记录保持。
+
 - `0118-expanded-desktop-sidebar-home.md` — expanded PC navigation and labelled Home entry; supersedes ADR0111 desktop icon-only presentation.
 
 - `0117-retire-jcoin.md` — retire platform-coin pages, navigation and reward processing; legacy APIs return 410 without resources; preserve historical data and normal credits.
