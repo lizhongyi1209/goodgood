@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import styles from "./zoom-select.module.css";
 
 const rowClassName = "h-9 w-full justify-between rounded-md px-2.5 text-[13px] font-medium text-[#18181b] hover:bg-[#f4f4f5] hover:text-[#18181b] focus-visible:ring-[#a1a1aa]";
 
@@ -65,7 +66,7 @@ export function ZoomSelect({
   };
 
   return (
-    <Panel className={cn("flex items-center gap-1 rounded-md", className)} {...props}>
+    <Panel className={cn("flex items-center gap-1 rounded-md", styles.controls, className)} {...props}>
       {leadingControl}
       {onMiniMapToggle && (
         <Button
@@ -76,7 +77,7 @@ export function ZoomSelect({
           aria-label={miniMapOpen ? "隐藏画布地图" : "显示画布地图"}
           aria-pressed={miniMapOpen}
           title={miniMapOpen ? "隐藏画布地图" : "显示画布地图"}
-          className={cn("h-8 w-8 rounded-lg text-[#71717a] hover:bg-[#f3f3f4] hover:text-[#52525b]", miniMapOpen && "bg-[#f3f3f4] text-[#52525b]")}
+          className="h-8 w-8 rounded-lg"
         >
           <Map size={15} strokeWidth={1.7} aria-hidden="true" />
         </Button>
@@ -96,7 +97,7 @@ export function ZoomSelect({
             variant="ghost"
             size="sm"
             aria-label={`画布缩放，当前 ${percent}%`}
-            className="h-8 rounded-md bg-white/95 px-1.5 text-[12px] font-medium tabular-nums text-[#71717a] hover:bg-[#f3f3f3] hover:text-[#52525b]"
+            className="h-8 rounded-lg px-1.5 text-[12px] font-medium tabular-nums"
           >
             {percent}%
           </Button>
