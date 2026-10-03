@@ -1,6 +1,19 @@
 # Development and deployment
 
-## GG-341 · Source delivered; cleanup backend not activated
+## GG-342 · Local cleanup and announcement activation complete
+
+User explicitly authorized the necessary local build, pending migrations and Web
+update. Integrated source67ffde7 built successfully; only0064 announcements and
+0065 image cleanup applied in order to127.0.0.1:54449/goodgood (65 migrations).
+Existing account/asset/ledger counts unchanged; no fixtures, reset or provider call.
+Only Web9448 replaced with34460/32131; Worker23800/32142 and Vite33440/5173 remain.
+Web/Worker readiness passed, API proxy verified67ffde7; unauthenticated cleanup,
+announcements and admin announcement routes return401 SESSION_EXPIRED. Runtime
+availability is separate from functional user acceptance, which is still pending.
+No production deployment. Historical GG341/GG340 pending activation below is
+superseded locally by this receipt; full hashes and preserved adapters in GG-342.
+
+## GG-341 · Historical source delivery before GG-342 activation
 
 0065_gg341_image_cleanup.sql and the new Web route/billing column are source only.
 Activation requires explicit user delegation and verified named local target,
@@ -12,7 +25,7 @@ Production authority is absent. Preserve GG330 Web/unique Worker/Vite/data/SMTP
 receipts until an actual separately authorized activation is recorded. Automatic
 checks/manual user acceptance remain separate from activation and deployment.
 
-## GG-340 · Announcement activation pending
+## GG-340 · Historical announcement activation pending
 
 This task delivers source only. Migration`0064_gg340_announcements.sql` is not
 applied and current Web remains the GG-330 verified94bee535 receipt. Enabling

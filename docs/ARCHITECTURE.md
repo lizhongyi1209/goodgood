@@ -15,7 +15,9 @@ reserve/settle preserve payment-funded provenance; organization calls use the
 existing budget ledger. Copy and charge share one transaction. All references
 are ready private assets, independent of successful canvas insertion. API is
 unavailable on the old Web; no free browser fallback. Migration0065 precedes
-new Web activation, which remains separately authorized.
+new Web activation. GG-342 explicitly authorized and completed local0064/0065
+migration and Web activation; Worker remains unchanged. Functional acceptance
+and production deployment remain separate.
 
 ## GG-340 · Platform announcements
 

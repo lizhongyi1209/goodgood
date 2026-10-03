@@ -1,5 +1,17 @@
 # GG-063 verification
 
+## GG-342 · Authorized build and runtime availability
+
+Necessary local checkpoint build passed once for67ffde7. Pending0064/0065 applied
+to the named local target after checksum/target validation; account, asset and
+ledger counts unchanged. Web/Worker five-part readiness and Vite homepage passed;
+proxy version verified67ffde7. New cleanup, announcement and admin routes return
+401 SESSION_EXPIRED without a session. These are availability checks only.
+No lint/typecheck/test suites/browser acceptance or billable processing, publication
+and statistics fixtures were run. GG341 cleanup/billing and GG340 announcement
+functional acceptance below remain for the user; those source-delivery boundaries
+are historical, and local backend activation is now complete.
+
 ## GG-341 · Source-only cleanup and billing acceptance
 
 Following GG-276, no build/lint/typecheck/code checks/test runs/browser acceptance.

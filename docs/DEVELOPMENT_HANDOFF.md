@@ -1,5 +1,9 @@
 # 当前开发版本与跨窗口交接
 
+- 当前开发源码/运行：[GG-342](tasks/GG-342-cleanup-activation.md) GG-342已完成源码与受权本地启用：隔离ffe0ab3精确接入67ffde7161f51ec3c4f73ae9dedabe210156a138；按钮只显示「去除AI」，每次10积分放入悬停提示/无障碍名称，点击立即处理，无确认弹框。必要构建通过，0064公告与0065清理按序应用到127.0.0.1:54449/goodgood（65段迁移），现有账户/资产/积分流水总数迁移前后相同，无fixture或数据重置。仅Web9448替换为34460/32131，唯一Worker23800/32142与Vite33440/5173保持；Web/Worker readiness五项ok、首页200、API代理verified67ffde7，新清理/公告/公告管理接口未登录返回401 SESSION_EXPIRED。功能、收费与公告实时效果仍待用户手验；未运行lint/typecheck/测试/浏览器验收、真实处理/扣费/Provider请求、公告发布/统计fixture或生产部署。创建1/退役1，managed辅助工作区已确认归档，无子agent/依赖缓存。
+
+- 活跃目录F:/goodgood-worktrees/GG-116，分支fix/GG-275-text-editor-layout；当前Web构建receipt绑定67ffde7，后续纯交接文档提交不改变已启动进程的版本。cloud-development/local-mailpit及外部配置保持；dist两份忽略启动适配器已恢复，旧日志/manifest备份留在仓库外。未来重启必须先按届时HEAD构建，勿使用旧Worker启动新副本；完整hash与操作记录见GG-342。下方待启用描述是当时历史，GG-342已完成公告和清理的本地启用。
+
 - 最新源码交付：GG-341「去除AI · 10积分」源码已精确接入3579444（隔离3c23d13，基线1c9ecbf，接入前8aaa0f9），保留GG-340铃铛及全部此前功能。JPEG/PNG内C2PA、EXIF/GPS及ComfyUI文本等统一清理；受权原图/幂等操作、个人充值来源/企业预算、ready副本和10积分同事务提交，失败回滚不收费；相邻画布副本/资产与余额刷新、跨页身份及未知结果原键恢复完成。元数据弹框移出清理按钮。ADR0138/0065及合成回归来源已写，未自动编译/lint/typecheck/代码diff检查/测试或浏览器验收，未SQL迁移/应用HTTP/Provider/后台/服务或生产操作；0064与0065和新Web需用户另行委托启用。创建1/退役1，managed辅助工作区已归档，干净无依赖缓存/子agent。运行receipt沿GG-330 verified94bee535/原Web/唯一Worker/Vite/数据/SMTP未重查。
 
 - GG-340入口细化：从核验1c9ecbf/40a67bb隔离codex/GG-340-announcement-icon，972303e→d4c1e80已接入GG-116。共享入口新增iconOnly、画布开启/大厅保持标签，34px按钮与未读点右上定位，aria-label/到达动效/提示/阅读保留；ADR0137同步。累计创建2/退役2，干净无Node的后续目录正常移除、分支保留，无自动验证/服务或数据操作；0064迁移与Web仍待用户委托。

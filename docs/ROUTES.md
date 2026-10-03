@@ -1,5 +1,7 @@
 # Navigation and route contract
 
+GG-342已完成0064/0065及新Web本地启用；5173现有API代理连接verified67ffde7。未登录GET清理、公告与站长公告接口均返回401 SESSION_EXPIRED，确认路由已接通；受权处理、发布和实时效果待用户手验，不改变下方接口契约。
+
 ## GG-341 · 去除AI
 
 No new page route. Authenticated Node POST `/api/image-cleanup` accepts only
