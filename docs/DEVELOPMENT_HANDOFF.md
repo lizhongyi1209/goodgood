@@ -1,5 +1,7 @@
 # 当前开发版本与跨窗口交接
 
+- 最新上下文修复：[GG-329](tasks/GG-329-reactflow-context.md)从核验8c2997f隔离，7f0efdc/14ffdef精确接入GG-116/5173为47fd0b8/efe7aa6。CanvasWorkspace单一ReactFlowProvider覆盖工具Provider与ReactFlow，修复图片元数据hook祖先错误；已安装xyflow复用同一store，初始edges/空节点/缩放保持。保留GG-328文本UI/GG-326组框/GG-327元数据及前序源码；创建1/退役1，零依赖/缓存，未编译、lint/typecheck、代码/diff检查、测试或浏览器验收，无HTTP/SQL/provider/运行/生产操作。用户刷新后选中文本生成结果并打开图片元数据手验，无后台更新；原GG-322 Web0b5744d/唯一Worker419b097/Vite/数据/SMTP身份保持。
+
 - 最新文本生成细化：[GG-328](tasks/GG-328-text-generation-ui.md)根从b8e8916隔离，809d86b登记在并行5745472交接期间入当前HEAD，保留双方记录并3eb685d补BACKLOG，698544b精确接入a9952d7。紧凑360–520px/视口composer、上部滚动和固定底栏/八行输入，模型预设/生成停止与禁用原因、真实阶段/文档等待和编辑提示完成；合并输入/素材/pending/长度与快捷键共用条件。共享Markdown仅可选展示参数，原双击/编辑/模板、模型/计费/停止/流式/恢复保持，无新API/持久/后端更新。创建1/退役1，根辅助目录干净正常Git移除，零依赖缓存；未编译/lint/类型/代码检查/测试、浏览器/HTTP/SQL/provider或服务/生产操作，用户刷新5173手验。保留GG-32637eef68、GG-327及前序源码；组云字段仍待独立Web激活，运行身份仍沿GG-322 Web0b5744d/唯一Worker419b097/Vite和原数据/SMTP。
 
 - 最新分组排版：[GG-326](tasks/GG-326-group-frame-controls.md)独立b8e8916→f1fc6a0，保留并行已接入GG-327 c751455后精确接入37eef68；共享文档保留双方新增段落。完整本地按需emoji分类/搜索/最近使用/肤色，中文灰阶弹层/失败重试，既有锁定包只转直接依赖；中央透传/默认光标，四边/标题移动，选中四角原生缩放/内容约束与方向键，手动留白只扩展不缩回、可恢复适应内容，持久groupSizing/明确恢复尺寸完成。保留元数据/对比与GG-325完整测量/分帧/过期计划保护，另窗F:/goodgood-worktrees/GG-328-text-generation-ui仍独立。创建1/退役1，managed辅助工作区已归档，零依赖安装或构建缓存；未编译/lint/测试/代码检查或浏览器验收，用户刷新5173手验。组云字段仍需另行授权Web激活，无SQL/Worker更新；当前Web0b5744d/唯一Worker419b097/Vite及数据/SMTP保持，无服务/provider/生产操作。

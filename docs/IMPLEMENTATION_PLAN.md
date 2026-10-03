@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-03
-- Current phase: GG-328文本生成界面698544b→a9952d7已接入GG-116/5173：紧凑响应式composer、固定操作底栏、真实阶段/等待/结果编辑反馈与统一发送条件；创建1/退役1，未编译检查或浏览器验收。保留并行GG-326组框/emoji37eef68、GG-327元数据、GG-325测量修复和GG-324对比。
-- Current objective: 用户刷新5173手验文本生成空输入/预设/素材、固定底栏/八行prompt、流式/恢复/停止和结果双击编辑；无后台更新。GG-326分组/GG-327元数据继续手验，组云字段仍待独立授权激活Web。运行身份沿GG-322 Web25664/32131 verified0b5744d、唯一Worker28236/32142仍419b097，Vite33312/5173及原数据/SMTP保持；默认仅开发代码。
+- Current phase: GG-329共享画布上下文14ffdef→efe7aa6已接入GG-116/5173，修复图片元数据Provider在ReactFlow隐式上下文外调用hook；同一祖先/store覆盖所有画布工具与节点。创建1/退役1，未编译检查或浏览器验收，保留GG-328/326/327及前序源码。
+- Current objective: 用户刷新5173手验进入画布、选中文本生成结果、打开图片元数据及连线/缩放；继续既有GG-328文本UI与GG-326/327手验，无后台更新。组云字段仍待独立授权激活Web；运行身份沿GG-322 Web25664/32131 verified0b5744d、唯一Worker28236/32142仍419b097，Vite33312/5173及原数据/SMTP保持；默认仅开发代码。
 - Previous objective: GG-313模板名称格式/示例参考、GG-312画布300%高清门槛、GG-311模板保存/成功动效及类型筛选、GG-310前景色已交付源码；GG-309私有2K接口、批量校验及文本资产API/本地0063已启用。
 
 ## Current checkpoint
+
+- 最新上下文修复 [GG-329](tasks/GG-329-reactflow-context.md)：基线8c2997f，隔离7f0efdc/14ffdef精确接入47fd0b8/efe7aa6。CanvasWorkspace在工具Provider链外增加单一ReactFlowProvider，元数据useReactFlow与节点共享当前store；已安装xyflow复用外层上下文，初始化edges/空节点/10%–800%缩放保持。仅一个应用文件，无新产品决定/ADR/依赖/API/持久字段；创建1/退役1，未编译、lint/typecheck、代码/diff检查、测试或浏览器验收，无HTTP/SQL/provider/服务或生产操作，无后台更新。用户刷新手验，保留GG-328/326/327及前序任务。
 
 - 最新文本生成细化 [GG-328](tasks/GG-328-text-generation-ui.md)：基线b8e8916、登记809d86b，保留并行5745472/3eb685d登记/交接后隔离698544b精确接入a9952d7。360–520px/视口限制的composer、上部独立滚动/固定底栏、八行prompt及焦点灰边/快捷键提示；模型/预设/明确生成和停止/20积分、窄屏换行及禁用原因统一。生成与Ctrl/⌘+Enter共用合并输入/可用素材/预设/pending/长度判断；现有准备/流式/恢复阶段反馈、文档等待骨架和结果双击/Escape提示，普通文本编辑可选展示参数默认保持。Impeccable沿既有Operate系统，创建1/退役1、零依赖缓存，无构建/检查/测试、浏览器/HTTP/SQL/provider/运行或生产操作，无新API/持久/计费/后端更新。用户刷新手验，保留GG-326/327及前序任务。
 
