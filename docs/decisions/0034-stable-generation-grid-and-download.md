@@ -8,6 +8,18 @@
 
 ## Context
 
+GG-337 addendum (2026-10-03): the operator adds explicit original-image
+downloads to the canvas image context menu and the canvas asset-list context
+menu. Download the exact original object bytes, never a preview derivative,
+resize, decode/re-encode or metadata rewrite. The right-clicked batch output
+owns the target independent of selection. Pending/failed local source images
+may download their retained original File Blob; saved source/reference images
+use the owner-checked content boundary and generated assets use a fresh signed
+original URL. Existing metadata-cleaned/cropped copies download their own
+current file, not the earlier source. Preserve pane creation menus and other
+media/text/folder actions. Identity/page change or unmount cancels reads; empty
+or failed reads do not start a destination file. No backend/runtime change.
+
 The creation stream currently renders active skeletons in a separate masonry
 frame above completed images. A multi-image request therefore leaves unused
 columns while it runs, then moves every completed result into another frame and

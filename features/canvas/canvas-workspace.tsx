@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
-import { ImageIcon, Keyboard, LibraryBig, Scissors, Type } from "lucide-react";
+import { Download, ImageIcon, Keyboard, LibraryBig, Scissors, Type } from "lucide-react";
 import {
   ConnectionLineType,
   MiniMap,
@@ -20,6 +20,7 @@ import {
 
 import { ZoomSelect } from "@/components/ui/zoom-select";
 import { Button } from "@/components/ui/button";
+import { Toaster } from "@/components/ui/sonner";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { isTextAssetId, TEXT_ASSETS_UPDATED_EVENT, type TextAssetsUpdatedDetail } from "@/shared/contracts/text-assets.mjs";
@@ -42,7 +43,8 @@ import { canGroupCanvasSelection, createCanvasGroup, ungroupCanvasNodes } from "
 import { CanvasImageCropContext, CanvasImageCropEditor } from "./canvas-image-crop";
 import { CanvasImageCompareProvider } from "./canvas-image-compare";
 import { CanvasImageMetadataProvider } from "./canvas-image-metadata";
-import type { CanvasCropCommit, CanvasCropRequest } from "./canvas-image-crop-image";
+import type { CanvasCropCommit, CanvasCropImage, CanvasCropRequest } from "./canvas-image-crop-image";
+import { canvasImageDownloadForNode, useCanvasImageDownload } from "./canvas-image-download";
 import { handleCanvasBodyClipboardPaste, handleCanvasClipboardCopy, handleCanvasClipboardPaste } from "./canvas-clipboard.mjs";
 import styles from "./canvas-workspace.module.css";
 
@@ -222,6 +224,9 @@ export function CanvasWorkspace({
   const [miniMapWidth, setMiniMapWidth] = useState(200);
   const resizeRef = useRef<SidebarResizeDrag | null>(null);
   const contextPointRef = useRef<{ x: number; y: number } | null>(null);
+  const [contextImage, setContextImage] = useState<CanvasCropImage | null>(null);
+  const downloadScopeKey = `${textGenerationContext.ownerKey}:${textGenerationContext.workspaceId ?? "personal"}:${cropPageId}`;
+  const { download: downloadImage, pendingKey: downloadPendingKey } = useCanvasImageDownload(downloadScopeKey, assetLibraryEnabled);
   const canvasRef = useRef<HTMLElement | null>(null);
   const clipboardTokenRef = useRef<string | null>(null);
   const flowRef = useRef<ReactFlowInstance<CanvasNode> | null>(null);
@@ -362,6 +367,7 @@ export function CanvasWorkspace({
   useEffect(() => {
     const preventBrowserMenu = (event: MouseEvent) => {
       if (event.target instanceof Element && event.target.closest('[data-canvas-asset-context-menu], [contenteditable="true"]')) return;
+      if (event.target instanceof Element && event.target.closest(".react-flow__node-sourceImage, .react-flow__node-imageResult, .react-flow__node-imageGenerator")) return;
       if (event.target instanceof Element && event.target.classList.contains("react-flow__pane")) return;
       event.preventDefault();
     };
@@ -411,9 +417,10 @@ export function CanvasWorkspace({
 
   return (
     <>
+      <Toaster position="top-center" toastOptions={{ duration: 2200 }} />
       {assetsOpen && (
         <aside id="canvas-asset-sidebar" className={styles.assetsSidebar} aria-label="资产列表">
-          <CanvasAssetPanel enabled={assetLibraryEnabled} assetRevision={assetRevision}
+          <CanvasAssetPanel enabled={assetLibraryEnabled} assetRevision={assetRevision} downloadScopeKey={downloadScopeKey}
             onAssetDragStart={onAssetDragStart} onAssetDragEnd={onAssetDragEnd} />
           <div className={styles.assetsResizeHandle} role="separator" aria-label="调整资产栏宽度"
             aria-orientation="vertical" aria-controls="canvas-asset-sidebar"
@@ -454,11 +461,18 @@ export function CanvasWorkspace({
           />
         </aside>
       )}
-      <ContextMenu>
+      <ContextMenu key={downloadScopeKey} onOpenChange={(open) => { if (!open) { setContextImage(null); contextPointRef.current = null; } }}>
       <ContextMenuTrigger
         asChild
         onContextMenu={(event) => {
+          setContextImage(null);
+          contextPointRef.current = null;
           if (event.target instanceof Element && event.target.closest('[contenteditable="true"]')) { contextPointRef.current = null; event.preventDefault(); return; }
+          const nodeElement = event.target instanceof Element ? event.target.closest<HTMLElement>(".react-flow__node") : null;
+          const node = nodeElement?.dataset.id ? flowRef.current?.getNode(nodeElement.dataset.id) : undefined;
+          const imageId = event.target instanceof Element ? event.target.closest<HTMLElement>("[data-canvas-crop-image]")?.dataset.canvasCropImage : undefined;
+          const image = canvasImageDownloadForNode(node, imageId);
+          if (image) { setContextImage(image); return; }
           if (!(event.target instanceof Element && event.target.classList.contains("react-flow__pane"))) {
             event.preventDefault();
             contextPointRef.current = null;
@@ -653,6 +667,9 @@ export function CanvasWorkspace({
       </section>
       </ContextMenuTrigger>
       <ContextMenuContent className={styles.canvasContextMenu} onContextMenu={(event) => event.preventDefault()}>
+        {contextImage ? <ContextMenuItem disabled={!assetLibraryEnabled || downloadPendingKey !== null} onSelect={() => void downloadImage(contextImage)}>
+          <Download size={14} aria-hidden="true" /><span>{downloadPendingKey === contextImage.key ? "正在下载…" : "下载原图"}</span>
+        </ContextMenuItem> : <>
         <ContextMenuItem onSelect={() => {
           if (contextPointRef.current) { onBeforeGraphEdit(); onCreateText(contextPointRef.current); }
           contextPointRef.current = null;
@@ -680,6 +697,7 @@ export function CanvasWorkspace({
           </span>
           <span>图片生成</span>
         </ContextMenuItem>
+        </>}
       </ContextMenuContent>
       </ContextMenu>
     </>

@@ -1,5 +1,11 @@
 # GG-063 verification
 
+## GG-337 canvas original-file download — unrun regression source
+
+新增`tests/gg337-canvas-image-download.test.mjs`合成回归来源：原Blob/二进制字节不变、空文件及准备/启动失败与URL回收、MIME扩展名、未加载预览的已保存源图、本地上传中/失败清理副本、稳定ID授权目标、实际批次/独立结果定位、无点击ID或失败批次拒绝回退、注入读取与取消。本轮沿GG-276用户约定只写来源，未运行编译、lint/typecheck、代码/diff检查、测试或浏览器验收；未调用应用HTTP/SQL/Provider。
+
+用户手验：刷新后分别右键画布图片和资产侧栏图片下载，展开批次点击不同图片，保存清理副本后下载该副本，核对尺寸/格式/文件内容；测试失败重试、重复/切换取消及原空白创建/重命名/删除。收到用户实际下载的文件后再独立检查EXIF/XMP/IPTC/文本/C2PA，本轮尚未收到，不能据实现宣称已验证清理结果。见 [GG-337](tasks/GG-337-original-download.md)。
+
 ## GG-336 embedded C2PA detection/cleanup — unrun regression source
 
 Following GG-276, no compilation, lint/typecheck, code/diff checks, test runs

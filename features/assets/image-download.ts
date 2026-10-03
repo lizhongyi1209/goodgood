@@ -29,6 +29,12 @@ export class ImageDownloadError extends Error {
 
 const OBJECT_URL_RELEASE_DELAY_MS = 60_000;
 
+export function originalImageDownloadFilename(name: string, mimeType: string): string {
+  const extension = ({ "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif", "image/avif": "avif" } as Record<string, string>)[mimeType.split(";", 1)[0].trim().toLowerCase()];
+  const safeName = Array.from(name.replace(/[\\/:*?"<>|\u0000-\u001f]/g, "_").trim().replace(/[. ]+$/, "")).slice(0, 180).join("") || "GoodGood图片";
+  return extension ? `${safeName.replace(/\.[a-z0-9]{1,10}$/i, "")}.${extension}` : safeName;
+}
+
 export function imageDownloadFilename(
   createdAt: string,
   ordinal: number,
@@ -112,17 +118,27 @@ export async function saveImageToLocal(
     );
   }
 
+  let blob: Blob;
+  try {
+    blob = new Blob([bytes], { type: response.headers.get("content-type") ?? "application/octet-stream" });
+  } catch (error) {
+    throw new ImageDownloadError("prepare", "Image download could not be prepared.", error);
+  }
+  return saveImageBlobToLocal(blob, imageDownloadFilename(input.createdAt, input.ordinal, downloadUrl), dependencies);
+}
+
+// Hand the original Blob straight to the download manager. Do not decode,
+// resize, re-encode or edit file metadata on this path.
+export async function saveImageBlobToLocal(blob: Blob, filename: string, dependencies: ImageDownloadDependencies = {}): Promise<ImageDownloadResult> {
+  if (!blob.size) throw new ImageDownloadError("validate", "Image download returned an empty file.");
   const documentObject = dependencies.documentObject ?? document;
   const urlObject = dependencies.urlObject ?? URL;
   const schedule = dependencies.schedule ?? setTimeout;
   let objectUrl: string;
   let link: HTMLAnchorElement;
   try {
-    const blob = new Blob([bytes], {
-      type: response.headers.get("content-type") ?? "application/octet-stream",
-    });
-    objectUrl = urlObject.createObjectURL(blob);
     link = documentObject.createElement("a");
+    objectUrl = urlObject.createObjectURL(blob);
   } catch (error) {
     throw new ImageDownloadError(
       "prepare",
@@ -131,11 +147,7 @@ export async function saveImageToLocal(
     );
   }
   link.href = objectUrl;
-  link.download = imageDownloadFilename(
-    input.createdAt,
-    input.ordinal,
-    downloadUrl,
-  );
+  link.download = filename;
   link.style.display = "none";
   try {
     documentObject.body.appendChild(link);

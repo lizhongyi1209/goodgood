@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent } from "react";
-import { AudioLines, Check, ChevronLeft, Folder, FolderOpen, ImageOff, ListFilter, Maximize2, Pause, Pencil, Play, Trash2, X } from "lucide-react";
+import { AudioLines, Check, ChevronLeft, Download, Folder, FolderOpen, ImageOff, ListFilter, Maximize2, Pause, Pencil, Play, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
@@ -23,6 +23,7 @@ import { listPrivateVideoMaterials } from "@/features/creation/http-video-materi
 import { listReferenceMaterials } from "@/features/references/http-reference-library";
 import { privateImageUrls } from "@/shared/private-image-urls.mjs";
 import { CanvasAssetAddCard } from "./canvas-asset-add-card";
+import { canvasImageDownloadForAsset, useCanvasImageDownload } from "./canvas-image-download";
 import { canvasAssetDeleteNotice, canvasFolderNameError, deleteCanvasLibraryEntry, nextCanvasFolderName, removeCanvasLibraryEntry, type CanvasLibraryDeleteTarget } from "./canvas-asset-management.mjs";
 import { CANVAS_ASSET_LIBRARY_UPDATED_EVENT } from "./canvas-asset-upload";
 import { CANVAS_ASSET_DRAG_TYPE, CANVAS_ASSET_MEDIA_FILTERS, createCanvasFolderMover, planCanvasFolderMove, selectCanvasFolderItems, type CanvasAssetMediaFilter, type CanvasFolderMover, type CanvasFolderMoveState } from "./canvas-folder-drop.mjs";
@@ -300,12 +301,14 @@ function VideoViewer({ item, mediaRevision, refreshVideo, returnFocusTo, onClose
   </Dialog>;
 }
 
-export function CanvasAssetPanel({ enabled, assetRevision, onAssetDragStart, onAssetDragEnd }: Readonly<{
+export function CanvasAssetPanel({ enabled, assetRevision, downloadScopeKey, onAssetDragStart, onAssetDragEnd }: Readonly<{
   enabled: boolean;
   assetRevision: number;
+  downloadScopeKey: string;
   onAssetDragStart: (item: CanvasLibraryAsset) => void;
   onAssetDragEnd: () => void;
 }>) {
+  const { download: downloadImage, pendingKey: downloadPendingKey } = useCanvasImageDownload(downloadScopeKey, enabled);
   const [data, setData] = useState<AssetPanelData | null>(null);
   const [folderId, setFolderId] = useState<string | null>(null);
   const [mediaFilter, setMediaFilter] = useState<CanvasAssetMediaFilter>("all");
@@ -771,6 +774,7 @@ export function CanvasAssetPanel({ enabled, assetRevision, onAssetDragStart, onA
               {visibleItems.map((item) => {
                 const key = `${item.kind}:${item.id}`;
                 const editing = editingKey === key;
+                const downloadTarget = canvasImageDownloadForAsset(item);
                 return <ContextMenu key={key}><ContextMenuTrigger asChild disabled={managementBlocked} onContextMenu={(event) => { if (managementBlocked) event.preventDefault(); }}>
                   <div className={styles.assetCard} data-canvas-asset-context-menu tabIndex={0} aria-label={item.name} draggable={!editing && !moving && !managing}
                   data-dragging={draggedKey === key || undefined} data-move-state={moveState?.key === key ? moveState.phase : undefined}
@@ -809,6 +813,7 @@ export function CanvasAssetPanel({ enabled, assetRevision, onAssetDragStart, onA
                   </form> : item.media === "audio" && <span className={styles.mediaLabel}>音频</span>}
                 </div></ContextMenuTrigger>
                   <ContextMenuContent className={styles.assetContextMenu} onCloseAutoFocus={restoreMenuFocus}>
+                    {downloadTarget && <ContextMenuItem className={styles.addMenuItem} disabled={managementBlocked || downloadPendingKey !== null} onSelect={() => void downloadImage(downloadTarget)}><Download size={14} aria-hidden="true" />{downloadPendingKey === downloadTarget.key ? "正在下载…" : "下载原图"}</ContextMenuItem>}
                     <ContextMenuItem className={styles.addMenuItem} disabled={managementBlocked} onSelect={() => { renameFromMenuRef.current = true; beginRename(item); }}><Pencil size={14} aria-hidden="true" />重命名</ContextMenuItem>
                     <ContextMenuItem className={styles.addMenuItem} disabled={managementBlocked} onSelect={() => void deleteEntry(item)}><Trash2 size={14} aria-hidden="true" />删除</ContextMenuItem>
                   </ContextMenuContent>

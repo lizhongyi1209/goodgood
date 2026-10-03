@@ -1,5 +1,9 @@
 # Product definition
 
+## GG-337 画布原图下载
+
+画布图片和画布内资产列表的图片右键提供「下载原图」。下载当前文件的原始字节，不额外压缩、调整尺寸、转码或修改元数据；清理/裁剪副本下载自身文件。生成批次按实际点击的图片定位，上传中或失败但仍保留本地原始 File 的图片也可下载。资产列表适用于生成图与上传参考图。见 [GG-337](tasks/GG-337-original-download.md) 和 [ADR0034](decisions/0034-stable-generation-grid-and-download.md)。
+
 ## GG-327 图片元数据工具
 
 GG-336补充 JPEG/PNG 文件内 C2PA 内容凭证存在检测。元数据弹框显示发现/未发现/无法完整识别，检测不代表签名有效、实拍或 AI 生成判定。原「清除元数据」在保存/下载副本时一并移除可识别的内嵌凭证，源图保持；普通编辑保留凭证字节并提示可能失效。只处理文件内数据，不清除像素隐形水印或外部凭证。见 [GG-336](tasks/GG-336-c2pa-metadata.md) 与 [ADR0136](decisions/0136-image-metadata-copies.md)。

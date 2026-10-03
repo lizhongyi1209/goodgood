@@ -1,5 +1,9 @@
 # GG-063 quality pricing errors
 
+## GG-337 canvas download failures
+
+原图授权/连接/非成功响应、空文件或本地Blob不可用时不生成替代预览下载，保留画布及原图片，用既有灰阶toast提供失败与重试。保存出口区分准备与启动失败，已创建的Object URL延迟回收；成功反馈为「图片下载已开始」，不宣称文件已落盘。重复点击在读取中禁用；切换身份/工作区/画布页、关闭组件主动取消读取并清除旧toast，不把取消显示为错误。见 [GG-337](tasks/GG-337-original-download.md)。
+
 ## GG-329 React Flow ancestor error
 
 The image metadata provider called useReactFlow above ReactFlow's implicit

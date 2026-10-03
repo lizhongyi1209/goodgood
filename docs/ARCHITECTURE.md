@@ -1,5 +1,9 @@
 # Architecture
 
+## GG-337 canvas original-file download
+
+`canvas-image-download.ts`按节点/资产稳定ID解析下载目标，批次必须指定实际输出ID；已保存图片沿`readCanvasCropImageBlob`原图受权读取，generated先刷新私有下载签名，reference走私有content端点。展示用preview/source URL不参与下载；保留的本地Blob URL仅读取原始File。共享`saveImageBlobToLocal`将原Blob交给浏览器，不经过图像解码或元数据处理，既有资产下载沿同一出口。下载hook按身份/工作区/画布页取消读取与旧反馈，防止过期请求发起下载。没有新API、持久字段或后台更新。见 [GG-337](tasks/GG-337-original-download.md)。
+
 ## GG-336 embedded C2PA storage
 
 The browser file boundary adds presence detection independent of EXIF parsing.
