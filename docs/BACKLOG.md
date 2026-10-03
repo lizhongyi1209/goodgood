@@ -1,17 +1,17 @@
 # 当前任务与优先级
 
-> 最后同步：2026-10-03。GG-329共享画布上下文修复14ffdef→efe7aa6已接入5173，修复元数据Provider在ReactFlow隐式上下文外调用hook；创建1/退役1，未编译检查或浏览器验收，用户刷新手验。保留GG-328文本UI/GG-326分组/GG-327元数据及前序源码；当前运行保持，无后端更新或服务/数据/provider/生产变化。
+> 最后同步：2026-10-03。GG-330本地连接拒绝已恢复：Docker原E盘数据/依赖healthy，必要构建94bee5354e5b1a77516235ee894a19a42767610e启用Web9448/唯一Worker23800及Vite33440/5173，首页200/API代理verified、readiness正常。创建0/退役0，无迁移、重置、测试/浏览器或真实Provider请求；用户刷新继续手验GG-329/328/326/327。
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
-| GG-330 | 恢复中：5173/后台/原状态服务已停，Docker未运行；恢复原本地环境，必要启动构建，无测试或浏览器验收 | [任务](tasks/GG-330-local-connection-recovery.md) |
+| GG-330 | 本地已恢复verified94bee535：原E盘数据及依赖healthy、Web9448/唯一Worker23800/Vite33440，5173首页200；创建0/退役0，无测试/浏览器/真实请求，用户继续手验 | [任务](tasks/GG-330-local-connection-recovery.md) |
 | GG-329 | 已接入efe7aa6：画布工具Provider与ReactFlow共享同一祖先/store，修复元数据hook祖先错误；创建1/退役1，未编译检查/后端更新，用户刷新手验 | [任务](tasks/GG-329-reactflow-context.md) |
-| GG-326 | 已接入37eef68：完整emoji、四角缩放/保留留白/恢复自动、中央默认光标/边框整组移动；创建1/退役1，回归只写未运行，云字段待Web激活 | [任务](tasks/GG-326-group-frame-controls.md) |
+| GG-326 | 已接入37eef68：完整emoji、四角缩放/保留留白/恢复自动、中央默认光标/边框整组移动；创建1/退役1，回归只写未运行，云字段已随GG-330 Web启用，用户手验 | [任务](tasks/GG-326-group-frame-controls.md) |
 | GG-328 | 已接入a9952d7：紧凑composer/固定底栏/八行输入、真实阶段和编辑提示、统一发送可用性；创建1/退役1，无编译检查/后端更新，用户手验 | [任务](tasks/GG-328-text-generation-ui.md) |
 | GG-327 | 已接入27ec47a/5a488cc：JPEG/PNG元数据预填、照片/参考提取、复制粘贴、清除与下载/保存副本；创建1/退役1，辅助工作区已归档，无编译检查/后台变化，用户手验 | [任务](tasks/GG-327-image-metadata.md) |
 | GG-325 | 已接入faaad8a：建组测量循环源码修正，明确尺寸/完整测量/分帧写入，保留对比及分组；创建1/退役1，未编译检查或浏览器复验，用户重试 | [任务](tasks/GG-325-group-resize-loop.md) |
 | GG-324 | 已接入da10928/3e34fa7：裁剪右侧对比、实际参考优先/资产搜索、hover/键盘/触屏及局部失败重试；创建1/退役1，无编译检查/后端更新，用户手验 | [任务](tasks/GG-324-canvas-image-compare.md) |
-| GG-323 | 已接入源码2fa0486：原生分组/框选建组、整组移动、双击改名/emoji，解散复制及恢复；创建1/退役1，无编译检查，用户手验；云新字段待受权Web激活 | [任务](tasks/GG-323-canvas-groups.md) |
+| GG-323 | 已接入源码2fa0486：原生分组/框选建组、整组移动、双击改名/emoji，解散复制及恢复；创建1/退役1，原任务无编译检查，用户手验；云字段已随GG-330 Web启用 | [任务](tasks/GG-323-canvas-groups.md) |
 | GG-322 | 已接入0ce2360并仅Web启用verified0b5744d：实际同步错误、本机/云状态保持，新插槽校验生效；创建1/退役1，无测试/真实请求，用户手验 | [任务](tasks/GG-322-image-slot-sync-compatibility.md) |
 | GG-321 | 已接入源码4489d1d：固定槽/单张并发/中央逐张重试、未知幂等及旧项目恢复；创建1/退役1，回归未运行，后继GG-322 Web已启用云字段、无SQL/Worker更新 | [任务](tasks/GG-321-image-result-slots.md) |
 | GG-320 | 只读确认：当前local-mailpit，11:18登录验证码已进入本地邮件箱58045，未实际投递QQ；无服务或配置变化 | [任务](tasks/GG-320-local-email-delivery-audit.md) |

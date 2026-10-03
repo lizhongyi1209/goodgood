@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-03
-- Current phase: GG-329共享画布上下文14ffdef→efe7aa6已接入GG-116/5173，修复图片元数据Provider在ReactFlow隐式上下文外调用hook；同一祖先/store覆盖所有画布工具与节点。创建1/退役1，未编译检查或浏览器验收，保留GG-328/326/327及前序源码。
-- Current objective: 用户刷新5173手验进入画布、选中文本生成结果、打开图片元数据及连线/缩放；继续既有GG-328文本UI与GG-326/327手验，无后台更新。组云字段仍待独立授权激活Web；运行身份沿GG-322 Web25664/32131 verified0b5744d、唯一Worker28236/32142仍419b097，Vite33312/5173及原数据/SMTP保持；默认仅开发代码。
+- Current phase: GG-330本地连接恢复完成，Docker原E盘数据/依赖healthy，必要构建verified94bee5354e5b1a77516235ee894a19a42767610e启用Web9448/32131、唯一Worker23800/32142及Vite33440/5173；首页200、API代理verified、readiness均ok，保留GG-329/328/326/327及前序源码。创建0/退役0，无迁移或数据重置。
+- Current objective: 用户刷新原5173画布继续手验上下文错误修复、文本UI、分组和图片元数据。当前Web含分组云校验，不再待激活；默认仅开发代码，运行恢复只做必要构建/启动可用性核对，无测试、浏览器或真实Provider请求/生产操作。当前receipt严格绑定94bee5354e5b1a77516235ee894a19a42767610e，后继文档不改写运行身份。
 - Previous objective: GG-313模板名称格式/示例参考、GG-312画布300%高清门槛、GG-311模板保存/成功动效及类型筛选、GG-310前景色已交付源码；GG-309私有2K接口、批量校验及文本资产API/本地0063已启用。
 
 ## Current checkpoint
+
+- 最新运行恢复 [GG-330](tasks/GG-330-local-connection-recovery.md)：当前a254a01登记94bee5354e5b1a77516235ee894a19a42767610e并必要构建，原5173/Web/Worker与Docker均已停止，无明确退出原因。Desktop初启回到C盘空状态，正常停止后仅恢复CustomWslDistroDir原E盘，再启动原依赖healthy；没有盘/卷或数据库重置。任务/冻结/队列只读均0；Web9448/32131、唯一Worker23800/32142和Vite33440/5173可用，首页200/API代理verified94bee5354e5b1a77516235ee894a19a42767610e、readiness五项ok。云素材/local-mailpit及现有数据保持，当前Web包括组云校验，无迁移、测试/浏览器/真实请求或部署，创建0/退役0。用户刷新继续手验，下方旧运行/待激活为历史阶段。
 
 - 最新上下文修复 [GG-329](tasks/GG-329-reactflow-context.md)：基线8c2997f，隔离7f0efdc/14ffdef精确接入47fd0b8/efe7aa6。CanvasWorkspace在工具Provider链外增加单一ReactFlowProvider，元数据useReactFlow与节点共享当前store；已安装xyflow复用外层上下文，初始化edges/空节点/10%–800%缩放保持。仅一个应用文件，无新产品决定/ADR/依赖/API/持久字段；创建1/退役1，未编译、lint/typecheck、代码/diff检查、测试或浏览器验收，无HTTP/SQL/provider/服务或生产操作，无后台更新。用户刷新手验，保留GG-328/326/327及前序任务。
 

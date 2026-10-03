@@ -1,5 +1,7 @@
 # 当前开发版本与跨窗口交接
 
+- 最新本地运行：[GG-330](tasks/GG-330-local-connection-recovery.md)连接拒绝恢复完成；原5173/后台/Docker已停，日志未明确退出原因。Desktop初启回到C盘空目录，正常stop、备份设置并只恢复CustomWslDistroDir原E盘后原依赖healthy，无数据盘/卷或数据库重置。必要构建94bee5354e5b1a77516235ee894a19a42767610e，Web9448/32131、唯一Worker23800/32142和Vite监听33440/5173（启动器29228）可用；首页200/API代理verified、readiness均ok，启动前任务/冻结/队列只读均0。源码包括GG-329/328/326/327及组云校验，无迁移或新功能变更，用户刷新手验；创建0/退役0，无测试/lint/typecheck/浏览器/真实请求或部署，cloud-development/local-mailpit及原数据保留。两份忽略适配器构建后已恢复，临时备份清理，旧日志及设置备份保留仓库外。严格receipt绑定94bee5354e5b1a77516235ee894a19a42767610e，下方0b5744d/419b097及待激活为历史状态；再次启动先确认Docker原E盘路径/唯一Worker并按当前HEAD构建。
+
 - 最新上下文修复：[GG-329](tasks/GG-329-reactflow-context.md)从核验8c2997f隔离，7f0efdc/14ffdef精确接入GG-116/5173为47fd0b8/efe7aa6。CanvasWorkspace单一ReactFlowProvider覆盖工具Provider与ReactFlow，修复图片元数据hook祖先错误；已安装xyflow复用同一store，初始edges/空节点/缩放保持。保留GG-328文本UI/GG-326组框/GG-327元数据及前序源码；创建1/退役1，零依赖/缓存，未编译、lint/typecheck、代码/diff检查、测试或浏览器验收，无HTTP/SQL/provider/运行/生产操作。用户刷新后选中文本生成结果并打开图片元数据手验，无后台更新；原GG-322 Web0b5744d/唯一Worker419b097/Vite/数据/SMTP身份保持。
 
 - 最新文本生成细化：[GG-328](tasks/GG-328-text-generation-ui.md)根从b8e8916隔离，809d86b登记在并行5745472交接期间入当前HEAD，保留双方记录并3eb685d补BACKLOG，698544b精确接入a9952d7。紧凑360–520px/视口composer、上部滚动和固定底栏/八行输入，模型预设/生成停止与禁用原因、真实阶段/文档等待和编辑提示完成；合并输入/素材/pending/长度与快捷键共用条件。共享Markdown仅可选展示参数，原双击/编辑/模板、模型/计费/停止/流式/恢复保持，无新API/持久/后端更新。创建1/退役1，根辅助目录干净正常Git移除，零依赖缓存；未编译/lint/类型/代码检查/测试、浏览器/HTTP/SQL/provider或服务/生产操作，用户刷新5173手验。保留GG-32637eef68、GG-327及前序源码；组云字段仍待独立Web激活，运行身份仍沿GG-322 Web0b5744d/唯一Worker419b097/Vite和原数据/SMTP。
