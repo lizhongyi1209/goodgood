@@ -1,5 +1,9 @@
 # Development and deployment
 
+## GG-356 · Seedream本地约束修复
+
+用户于2026-10-04接续GG-355明确要求修复。新0066仅替换三张表模型ID限制，需通过直接迁移模块应用到已核验127.0.0.1:54449/goodgood：先确认历史内容校验和及唯一待应用0066，限制DDL锁等待/语句时间，迁移前后回读约束、目录/报价与行数。不得运行会写fixture的旧包装脚本、修改已应用0054、重置数据或重放生成。无JS运行时改动，不需构建/重启Web、Worker或Vite。这里的授权仅当前本地修复，生产仍未授权；应用结果见任务卡。
+
 ## GG-342 · Local cleanup and announcement activation complete
 
 User explicitly authorized the necessary local build, pending migrations and Web

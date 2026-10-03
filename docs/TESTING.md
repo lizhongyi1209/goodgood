@@ -1,5 +1,9 @@
 # GG-063 verification
 
+## GG-356 · 模型约束SQL升级（来源已写，未运行）
+
+新增gg356-model-constraints.test.mjs，只在显式GOODGOOD_GG356_MODEL_CONSTRAINT_TESTS=1与专用goodgood_gg356_model_constraints_test数据库运行；未来启用前确认该库无真实Provider Worker。临时事务schema仅有三张模型ID表，无任务/队列/outbox/积分/图片。先复现旧约束拒绝Seedream，执行实际0066后验证旧行未变、三表可写Seedream、非法ID仍拒绝，最终ROLLBACK回收全部合成状态。本轮遵GG-276不运行构建/lint/typecheck/代码检查/测试/浏览器验收；受权本地迁移应用/约束回读不属于生图测试，真实生成由用户触发。
+
 ## GG-354 · 原图直接框选（来源已写，未执行）
 
 新增`tests/gg354-inline-bbox.test.mjs`合成来源：非原图尺寸预览的留白定位、不同画布缩放/移动后的原图坐标、反向屏幕拖框越界夹取、右侧面板边缘/窄屏约束、原始像素bbox纯文本及空/原图未就绪。GG-352纯几何/贴图来源保留，旧归一化/长提示词助手不再用于界面。沿GG-276未执行任何构建/lint/typecheck/代码检查/测试/浏览器验收，无应用HTTP/SQL/Provider/扣费/服务或生产操作。
