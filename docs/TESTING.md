@@ -1,5 +1,7 @@
 # GG-063 verification
 
+- GG-356必要迁移核对：已受权执行当前本地0066迁移，前后约束/迁移校验和及数据保留读取完成；没有执行下述opt-in SQL测试或真实生成/浏览器验收。
+
 ## GG-356 · 模型约束SQL升级（来源已写，未运行）
 
 新增gg356-model-constraints.test.mjs，只在显式GOODGOOD_GG356_MODEL_CONSTRAINT_TESTS=1与专用goodgood_gg356_model_constraints_test数据库运行；未来启用前确认该库无真实Provider Worker。临时事务schema仅有三张模型ID表，无任务/队列/outbox/积分/图片。先复现旧约束拒绝Seedream，执行实际0066后验证旧行未变、三表可写Seedream、非法ID仍拒绝，最终ROLLBACK回收全部合成状态。本轮遵GG-276不运行构建/lint/typecheck/代码检查/测试/浏览器验收；受权本地迁移应用/约束回读不属于生图测试，真实生成由用户触发。

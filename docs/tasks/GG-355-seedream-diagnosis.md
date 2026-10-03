@@ -1,6 +1,6 @@
 # GG-355 · Seedream调用失败只读定位
 
-- 日期：2026-10-03；状态：诊断完成，修复待独立任务，未部署生产。
+- 日期：2026-10-03；状态：诊断完成；后继GG-356已于2026-10-04本地修复，未部署生产。
 - 用户请求：刚才尝试调用Seedream报错，查看原因；本次范围只定位，不自动提交模型/重放/修改运行数据。
 - 基线：GG-116干净16321f417c944ca1f9a4d88620b9aff94cb14065；应用源码检查点cc31fcce862f127400ac5a65ef26bf55743ea969。
 - 所有权：根agent，无子agent；隔离codex/GG-355-seedream-diagnosis，C:/Users/Admin/.codex/worktrees/gg-355-seedream-diagnosis/goodgood，只改诊断/交接文档。
