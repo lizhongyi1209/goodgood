@@ -76,7 +76,7 @@ export async function loadCanvasCropImage(source: CanvasCropImage, signal: Abort
       if (signal.aborted) abort();
     });
     signal.throwIfAborted();
-    return { image, objectUrl, dispose: () => { image.src = ""; URL.revokeObjectURL(objectUrl); } };
+    return { image, objectUrl, blob, dispose: () => { image.src = ""; URL.revokeObjectURL(objectUrl); } };
   } catch (cause) {
     image.onload = null;
     image.onerror = null;

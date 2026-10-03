@@ -1,5 +1,5 @@
 import { PRIVATE_IMAGE_UPLOAD_MAX_BYTES } from "@/shared/contracts/upload-limits.mjs";
-import { applyColorLut, type ColorLut } from "./canvas-image-color-model.mjs";
+import { applyColorLut, colorImageEncoding, type ColorLut } from "./canvas-image-color-model.mjs";
 
 export function readColorPixels(image: HTMLImageElement, longestEdge = 2048): ImageData {
   const factor = Math.min(1, longestEdge / Math.max(image.naturalWidth, image.naturalHeight));
@@ -130,7 +130,9 @@ export function createColorPreview(pixels: ImageData) {
   };
 }
 
-export async function exportColorImage(image: HTMLImageElement, lut: ColorLut, name: string, format: "png" | "jpeg", signal: AbortSignal): Promise<File> {
+export async function exportColorImage(image: HTMLImageElement, lut: ColorLut, name: string, original: Blob, signal: AbortSignal): Promise<File> {
+  signal.throwIfAborted();
+  const encoding = colorImageEncoding(new Uint8Array(await original.slice(0, 12).arrayBuffer()), name);
   signal.throwIfAborted();
   const width = image.naturalWidth, height = image.naturalHeight;
   if (!width || !height || width * height > 40000000 || Math.max(width, height) > 16384) throw new Error("图片尺寸过大，暂时无法保存调色副本。");
@@ -140,17 +142,14 @@ export async function exportColorImage(image: HTMLImageElement, lut: ColorLut, n
     if (!context) throw new Error("当前浏览器无法导出图片。");
     context.drawImage(image, 0, 0);
     const pixels = context.getImageData(0, 0, width, height);
-    if (format === "jpeg") for (let i = 3; i < pixels.data.length; i += 4) {
-      if (pixels.data[i] !== 255) throw new Error("这张图片包含透明区域，请使用 PNG 保存。");
-    }
     const output = await transformPixels(pixels.data, lut, signal);
     signal.throwIfAborted();
     context.putImageData(new ImageData(new Uint8ClampedArray(output), width, height), 0, 0);
-    const mime = format === "png" ? "image/png" : "image/jpeg";
-    const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob((value) => value ? resolve(value) : reject(new Error("图片导出失败，请重试。")), mime, .95));
+    const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob((value) => value ? resolve(value) : reject(new Error("图片导出失败，请重试。")), encoding.mimeType, .95));
     signal.throwIfAborted();
-    if (blob.size > PRIVATE_IMAGE_UPLOAD_MAX_BYTES) throw new Error(format === "png" ? "图片超过 20 MB，可选择 JPEG 后重试。" : "图片超过 20 MB，暂时无法保存。");
+    if (blob.type !== encoding.mimeType) throw new Error("当前浏览器无法按原图格式保存。");
+    if (blob.size > PRIVATE_IMAGE_UPLOAD_MAX_BYTES) throw new Error("图片超过 20 MB，暂时无法保存。");
     const basename = name.replace(/\.[^.]+$/, "").replace(/[\\/:*?"<>|]+/g, "_").trim() || "GoodGood图片";
-    return new File([blob], `${basename}_调色.${format === "png" ? "png" : "jpg"}`, { type: mime });
+    return new File([blob], `${basename}_调色.${encoding.extension}`, { type: encoding.mimeType });
   } finally { canvas.width = 0; canvas.height = 0; }
 }

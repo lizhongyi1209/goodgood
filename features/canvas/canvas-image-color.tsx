@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useReactFlow, useStore } from "@xyflow/react";
 import { Check, ChevronDown, Eye, ImageOff, LoaderCircle, RotateCcw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -135,7 +135,6 @@ function ColorDialog({ request, libraryEnabled, onClose, onCommit }: Readonly<{
   const [sourceAttempt, setSourceAttempt] = useState(0);
   const [matchAttempt, setMatchAttempt] = useState(0);
   const [showOriginal, setShowOriginal] = useState(false);
-  const [format, setFormat] = useState<"png" | "jpeg">("png");
   const [saving, setSaving] = useState(false);
   const [previewReady, setPreviewReady] = useState(false);
   const surfaceRef = useRef<HTMLDivElement>(null);
@@ -146,7 +145,6 @@ function ColorDialog({ request, libraryEnabled, onClose, onCommit }: Readonly<{
   const parametersRef = useRef(parameters); parametersRef.current = parameters;
   const closeRef = useRef(onClose); closeRef.current = onClose;
   const parametersKey = JSON.stringify(parameters);
-  const transparent = useMemo(() => Boolean(image && image.pixels.data.some((value, index) => index % 4 === 3 && value !== 255)), [image]);
   useEffect(() => {
     const controller = new AbortController(); lifecycleRef.current = controller;
     return () => { controller.abort(); if (frameRef.current !== null) cancelAnimationFrame(frameRef.current); };
@@ -216,7 +214,7 @@ function ColorDialog({ request, libraryEnabled, onClose, onCommit }: Readonly<{
       // Snapshot the committed parameters; an unfinished preview frame must not
       // make export save the previous slider value or the temporary before view.
       const lut = createColorLut(match ?? COLOR_IDENTITY, parametersRef.current);
-      const file = await exportColorImage(image.loaded.image, lut, request.name, format, controller.signal);
+      const file = await exportColorImage(image.loaded.image, lut, request.name, image.loaded.blob, controller.signal);
       controller.signal.throwIfAborted();
       if (!onCommit({ request, file, width: image.loaded.image.naturalWidth, height: image.loaded.image.naturalHeight, createCopy: true })) throw new Error("来源图片已变更，请重新打开调色。");
       closeRef.current();
@@ -261,9 +259,6 @@ function ColorDialog({ request, libraryEnabled, onClose, onCommit }: Readonly<{
             </div>)}
           </div>
           <Button variant="ghost" size="sm" className={styles.reset} disabled={saving || !image || matching} onClick={() => { setParameters(COLOR_DEFAULTS); setShowOriginal(false); setSaveError(null); }}><RotateCcw size={14} strokeWidth={1.7} />{match ? "恢复自动调整" : "重置调整"}</Button>
-          <label className={styles.format}><span>保存格式</span><select aria-label="保存格式" value={format} disabled={saving} onChange={(event) => setFormat(event.target.value === "jpeg" ? "jpeg" : "png")}>
-            <option value="png">PNG</option><option value="jpeg" disabled={transparent}>JPEG</option>
-          </select></label>
         </aside>
       </div>
       <footer className={styles.footer}>

@@ -4,6 +4,17 @@
 export const COLOR_LUT_SIZE = 33;
 export const COLOR_DEFAULTS = Object.freeze({ strength: 100, temperature: 0, tint: 0, saturation: 0, exposure: 0, contrast: 0 });
 export const COLOR_IDENTITY = Object.freeze({ offsetA: 0, offsetB: 0, gainA: 1, gainB: 1, centerA: 0, centerB: 0 });
+
+// Preserve the actual source encoding; filenames and HTTP MIME can be wrong.
+export function colorImageEncoding(bytes, name = "") {
+  if (bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255) {
+    return { mimeType: "image/jpeg", extension: /\.jpeg$/i.test(name) ? "jpeg" : "jpg" };
+  }
+  if ([137, 80, 78, 71, 13, 10, 26, 10].every((byte, index) => bytes[index] === byte)) {
+    return { mimeType: "image/png", extension: "png" };
+  }
+  throw new Error("原图格式暂不支持调色保存。");
+}
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const linear = (value) => value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4;
 const encoded = (value) => value <= .0031308 ? 12.92 * value : 1.055 * value ** (1 / 2.4) - .055;

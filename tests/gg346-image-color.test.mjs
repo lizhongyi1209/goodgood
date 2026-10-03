@@ -1,8 +1,19 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { COLOR_DEFAULTS, COLOR_IDENTITY, applyColorLut, colorStatistics, createColorLut, matchColorStatistics, rgbToOklab, transformColor } from "../features/canvas/canvas-image-color-model.mjs";
+import { COLOR_DEFAULTS, COLOR_IDENTITY, applyColorLut, colorImageEncoding, colorStatistics, createColorLut, matchColorStatistics, rgbToOklab, transformColor } from "../features/canvas/canvas-image-color-model.mjs";
 
 const solid = (r, g, b, alpha = 255) => new Uint8ClampedArray(Array.from({ length: 64 }, () => [r, g, b, alpha]).flat());
+
+test("color copies detect source JPEG or PNG encoding despite misleading names", () => {
+  assert.deepEqual(colorImageEncoding(new Uint8Array([255, 216, 255, 224]), "source.png"), { mimeType: "image/jpeg", extension: "jpg" });
+  assert.deepEqual(colorImageEncoding(new Uint8Array([255, 216, 255, 224]), "source.JPEG"), { mimeType: "image/jpeg", extension: "jpeg" });
+  assert.deepEqual(colorImageEncoding(new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]), "source.jpg"), { mimeType: "image/png", extension: "png" });
+});
+
+test("unknown or empty source encoding is rejected without silently converting", () => {
+  assert.throws(() => colorImageEncoding(new Uint8Array(), "image.png"), /原图格式/);
+  assert.throws(() => colorImageEncoding(new Uint8Array([71, 73, 70, 56]), "image.jpg"), /原图格式/);
+});
 
 test("matching a neutral reference reduces a moderate red cast and retains lightness", () => {
   const source = colorStatistics(solid(160, 140, 140));

@@ -1143,4 +1143,4 @@ GG-175 scopes remote autosave to normalized content. The React Flow subscription
 
 ## GG-346 · 本地参考校色边界
 
-canvas-image-color-context独立稳定上下文，Provider在ReactFlowProvider内部；工具栏沿canvasImageCompareReferences解析所选输出冻结输入。私有原图沿loadCanvasCropImage的受权下载，参考及资产列表沿既有边界。纯canvas-image-color-model以sRGB→OKLab稳健统计限制色度匹配，默认保留L；33³查找表共用WebGL二维图谱插值预览/Worker三线性导出，不使用CSS滤镜替代。预览最长2048、参考统计384，完整尺寸导出PNG/JPEG，20MiB上传上限与4000万像素/16384边限制；无Worker时分块让出UI，关闭终止Worker/请求/BlobURL/纹理/画布。原始节点/源图/页验证和相邻新副本沿onCropCommit(createCopy:true)，后台域/迁移/生成/积分保持；不需新后台构建。
+canvas-image-color-context独立稳定上下文，Provider在ReactFlowProvider内部；工具栏沿canvasImageCompareReferences解析所选输出冻结输入。私有原图沿loadCanvasCropImage的受权下载，参考及资产列表沿既有边界。纯canvas-image-color-model以sRGB→OKLab稳健统计限制色度匹配，默认保留L；33³查找表共用WebGL二维图谱插值预览/Worker三线性导出，不使用CSS滤镜替代。预览最长2048、参考统计384，读取原始Blob签名并沿实际JPEG/PNG编码完整尺寸导出，20MiB上传上限与4000万像素/16384边限制；无Worker时分块让出UI，关闭终止Worker/请求/BlobURL/纹理/画布。原始节点/源图/页验证和相邻新副本沿onCropCommit(createCopy:true)，后台域/迁移/生成/积分保持；不需新后台构建。

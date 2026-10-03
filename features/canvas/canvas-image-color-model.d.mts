@@ -5,6 +5,7 @@ export type ColorLut = Readonly<{ data: Uint8Array; size: number }>;
 export const COLOR_LUT_SIZE: number;
 export const COLOR_DEFAULTS: ColorParameters;
 export const COLOR_IDENTITY: ColorMatch;
+export function colorImageEncoding(bytes: Uint8Array, name?: string): Readonly<{ mimeType: "image/jpeg" | "image/png"; extension: "jpg" | "jpeg" | "png" }>;
 export function rgbToOklab(r: number, g: number, b: number): number[];
 export function oklabToRgb(L: number, a: number, b: number): number[];
 export function colorStatistics(pixels: Uint8ClampedArray): ColorStatistics;
