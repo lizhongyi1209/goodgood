@@ -234,11 +234,8 @@ function ColorDialog({ request, libraryEnabled, onClose, onCommit }: Readonly<{
       </header>
       <div className={styles.body}>
         <section className={styles.preview} aria-label="调色预览">
+          <span className="sr-only" role="status">{matching ? "正在匹配参考色调…" : ""}</span>
           <div className={styles.surface} ref={surfaceRef} aria-busy={!previewReady || matching} />
-          <div className={styles.previewTools}>
-            <span className="sr-only" role="status">{matching ? "正在匹配参考色调…" : ""}</span>
-            <Button variant="ghost" size="sm" disabled={!previewReady || saving} aria-pressed={showOriginal} onClick={() => setShowOriginal((value) => !value)}>{matching ? <LoaderCircle size={14} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Eye size={14} strokeWidth={1.7} aria-hidden="true" />}{showOriginal ? "查看调整后" : "查看调整前"}</Button>
-          </div>
           {showOriginal && previewReady && <span className={styles.beforeLabel}>调整前</span>}
           {(!image || previewError) && <div className={styles.surfaceStatus} role={sourceError || previewError ? "alert" : "status"}>
             {sourceError || previewError ? <><ImageOff size={24} strokeWidth={1.5} /><span>{sourceError || previewError}</span><Button variant="ghost" size="sm" onClick={() => setSourceAttempt((value) => value + 1)}>重试</Button></>
@@ -258,7 +255,10 @@ function ColorDialog({ request, libraryEnabled, onClose, onCommit }: Readonly<{
               <div className={styles.ends} aria-hidden="true"><span>{item.ends[0]}</span><span>{item.ends[1]}</span></div>
             </div>)}
           </div>
-          <Button variant="ghost" size="sm" className={styles.reset} disabled={saving || !image || matching} onClick={() => { setParameters(COLOR_DEFAULTS); setShowOriginal(false); setSaveError(null); }}><RotateCcw size={14} strokeWidth={1.7} />{match ? "恢复自动调整" : "重置调整"}</Button>
+          <div className={styles.panelActions}>
+            <Button variant="ghost" size="sm" disabled={!previewReady || saving} aria-pressed={showOriginal} onClick={() => setShowOriginal((value) => !value)}>{matching ? <LoaderCircle size={14} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Eye size={14} strokeWidth={1.7} aria-hidden="true" />}查看变化</Button>
+            <Button variant="ghost" size="sm" disabled={saving || !image || matching} onClick={() => { setParameters(COLOR_DEFAULTS); setShowOriginal(false); setSaveError(null); }}><RotateCcw size={14} strokeWidth={1.7} aria-hidden="true" />恢复自动</Button>
+          </div>
         </aside>
       </div>
       <footer className={styles.footer}>
