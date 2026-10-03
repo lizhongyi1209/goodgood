@@ -207,9 +207,8 @@ export class CanvasProjectSync {
           this.report("local-error", "项目版本冲突，本地副本创建失败；当前内容仍在页面中，请检查浏览器存储空间。");
         }
       } else {
-        const slotDocumentRejected = error instanceof CanvasProjectBoundaryError && error.code === "INVALID_CANVAS_PROJECT" &&
-          getCanvasProjectPages(this.current.document).some((page) => page.nodes.some((node) => node.imageSlots));
-        this.report("offline", slotDocumentRejected ? "服务器暂不支持图片插槽；当前画布已保存在本机，更新后台后可继续同步。"
+        const documentRejected = error instanceof CanvasProjectBoundaryError && error.code === "INVALID_CANVAS_PROJECT";
+        this.report("offline", documentRejected ? `画布尚未同步到服务器，当前内容已保存在本机。${error.message}`
           : error instanceof Error ? error.message : "网络不可用，画布已留在本机，恢复后重试。");
         if (!(error instanceof CanvasProjectBoundaryError) || error.retryable || error.status === 404) this.scheduleRetry();
         else this.retryBlocked = true;
