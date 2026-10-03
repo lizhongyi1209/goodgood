@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-03
-- Current phase: GG-319本地重启恢复完成，原Docker E盘数据/依赖恢复，419b097 Web及唯一Worker与5173可用，GG-318已启用；创建0/退役0，无迁移/测试或生产变化。
-- Current objective: 用户通过5173继续手验，新图片失败可在站长总日志详情排查；历史HTTP详情不可回填，默认仅开发代码，不自动编译/检查/浏览器验收或真实生成。
+- Current phase: GG-321子agent在隔离工作区开发固定图片插槽与逐张重试，ADR0134/任务已登记；当前本地GG-319 Web/唯一Worker419b097和5173保持，GG-318已启用，无运行/生产操作。
+- Current objective: 请求4张展开4位，成功/失败位置稳定，只重试选定失败图；按冻结输入/幂等身份独立单图任务、旧多图项目及刷新恢复兼容。仅修改代码，默认不构建、检查、测试或浏览器验收；根负责文档/精确集成，子负责应用源码。
 - Previous objective: GG-313模板名称格式/示例参考、GG-312画布300%高清门槛、GG-311模板保存/成功动效及类型筛选、GG-310前景色已交付源码；GG-309私有2K接口、批量校验及文本资产API/本地0063已启用。
 
 ## Current checkpoint
+
+- 当前开发 [GG-321](tasks/GG-321-image-result-slots.md)：基线ca54019、登记aa4967f，子`/root/image_result_slots`在`F:/goodgood-worktrees/GG-321-image-result-slots`/feature分支负责应用代码，根仅维护文档。每请求图片独立count1任务/稳定槽、失败中央手动重试、冻结幂等输入及slots云受权验证；Seedream原生层保持，不新增并发/计费政策。创建1/退役0，禁止任何构建/检查/真实调用或服务操作，完成后根精确集成并收口；新云字段须后续Web激活。
 
 - 最新只读邮件核对 [GG-320](tasks/GG-320-local-email-delivery-audit.md)：当前投递local-mailpit，11:18登录验证码已在本地58045收件箱，非真实QQ投递；无配置/服务变化，GG-319当前运行和手验目标保持。
 
