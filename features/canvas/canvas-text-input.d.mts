@@ -9,6 +9,7 @@ export type CanvasTextInput = { edgeId: string; nodeId: string; text: string; ma
 export function collectCanvasTextInputs(nodes: readonly CanvasNode[], edges: readonly Edge[], generatorId: string | null): CanvasTextInput[];
 export function combineCanvasPrompt(inputs: readonly Pick<CanvasTextInput, "text">[], additionalPrompt: string): string;
 export function canvasTextNodeSizeForKey(width: number | undefined, height: number | undefined, key: string, largeStep?: boolean): { width: number; height: number } | null;
+export function canvasTextNodeFrameForKey(frame: { x: number; y: number; width?: number; height?: number }, corner: "top-left" | "top-right" | "bottom-left" | "bottom-right", key: string, largeStep?: boolean): { x: number; y: number; width: number; height: number } | null;
 export function isCanvasTextConnection(connection: Connection | Edge, nodes: readonly CanvasNode[], edges: readonly Edge[]): boolean;
 export function isCanvasTextGenerationConnection(connection: Connection | Edge, nodes: readonly CanvasNode[], edges: readonly Edge[]): boolean;
 export function canvasConnectionCreatesCycle(connection: Connection | Edge, edges: readonly Edge[]): boolean;

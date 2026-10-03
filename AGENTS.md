@@ -113,8 +113,9 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
   permits blue on canvas media outlines, and ADR 0108/GG-200 permits bright blue
   on a connected edge while hovered and on a dragged connection preview (GG-304);
   media resize handles remain invisible.
-  Text nodes use a visible lower-right grip (ADR 0124 / GG-275); image crop mode
-  alone shows circular selection handles (ADR 0126 / GG-280).
+  Text and selected group nodes use invisible four-corner resize targets
+  (ADR 0124 / ADR 0135 / GG-334); image crop mode alone shows circular selection
+  handles (ADR 0126 / GG-280).
 - Brand icons use `public/goodgood-g-icon.svg`; lobby navigation uses only the Good Good wordmark (ADR 0116).
   Creation sends use an upward arrow in both image and video modes (ADR 0098).
 

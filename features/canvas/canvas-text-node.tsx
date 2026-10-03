@@ -11,13 +11,17 @@ import { Handle, NodeResizeControl, NodeToolbar, Position, useReactFlow, useStor
 import { Bold, FileText, Heading1, Heading2, Heading3, Italic, List, ListOrdered, Minus, Pilcrow, Redo2, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { CanvasNode, CanvasTextNodeType } from "./canvas-workspace";
-import { CANVAS_MARKDOWN_MAX_LENGTH, CANVAS_TEXT_FONT_SIZE, CANVAS_TEXT_MAX_LENGTH, CANVAS_TEXT_NODE_BOUNDS, canvasTextNodeSizeForKey } from "./canvas-text-input.mjs";
+import { CANVAS_MARKDOWN_MAX_LENGTH, CANVAS_TEXT_FONT_SIZE, CANVAS_TEXT_MAX_LENGTH, CANVAS_TEXT_NODE_BOUNDS, canvasTextNodeFrameForKey } from "./canvas-text-input.mjs";
 import { canvasDocumentPlainText } from "./canvas-markdown";
 import { CanvasTextQuickToolbar } from "./canvas-text-quick-toolbar";
 import styles from "./canvas-text-node.module.css";
 import workspaceStyles from "./canvas-workspace.module.css";
 
 export type CanvasTextNodeData = { markdown: string; text: string } & Record<string, unknown>;
+const resizeCorners = [
+  { position: "top-left", label: "左上角" }, { position: "top-right", label: "右上角" },
+  { position: "bottom-left", label: "左下角" }, { position: "bottom-right", label: "右下角" },
+] as const;
 
 export function CanvasTextFormatToolbar({ editor, nodeId, enabled = true }: { editor: Editor | null; nodeId?: string; enabled?: boolean }) {
   const state = useEditorState({ editor, selector: ({ editor: current }) => current ? {
@@ -169,20 +173,23 @@ export function CanvasMarkdownNode({ id, data, selected, width, height, label, s
       {error && <span className={styles.error} role="alert">{error}</span>}
     </div>
     <Handle type="source" id="text" position={Position.Right} className={workspaceStyles.referenceOutputHandle} aria-label={`输出${label}的文本提示词`} title="文本提示词" />
-    <NodeResizeControl position="bottom-right" {...CANVAS_TEXT_NODE_BOUNDS} className={styles.resizeControl} onResizeStart={selectNode}>
-      <button type="button" className={`${styles.resizeGrip} nopan nowheel`} aria-label={`调整${label}尺寸`} title="拖动调整尺寸，或使用方向键（Shift 加快）"
+    {resizeCorners.map(({ position, label: cornerLabel }) => <NodeResizeControl key={position} position={position}
+      {...CANVAS_TEXT_NODE_BOUNDS} className={`${workspaceStyles.resizeControl} ${styles.resizeControl}`} onResizeStart={selectNode}>
+      <button type="button" className={`${workspaceStyles.resizeHotspot} nodrag nopan nowheel nokey`}
+        aria-label={`调整${label}${cornerLabel}，方向键调整大小`} title="拖动调整尺寸，或使用方向键（Shift 加快）"
         onKeyDown={(event) => {
           event.stopPropagation();
-          const size = canvasTextNodeSizeForKey(width, height, event.key, event.shiftKey);
-          if (!size || event.ctrlKey || event.metaKey || event.altKey) return;
+          const { key, shiftKey } = event;
+          if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(key) || event.ctrlKey || event.metaKey || event.altKey) return;
           event.preventDefault();
           selectNode();
-          flow.updateNode(id, (node) => ({ ...size, style: { ...node.style, ...size } }));
-        }}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-          <path d="M7 17 17 7M13 19 19 13" />
-        </svg>
-      </button>
-    </NodeResizeControl>
+          flow.updateNode(id, (node) => {
+            const frame = canvasTextNodeFrameForKey({ ...node.position, width, height }, position, key, shiftKey);
+            if (!frame) return node;
+            const size = { width: frame.width, height: frame.height };
+            return { ...size, position: { x: frame.x, y: frame.y }, style: { ...node.style, ...size } };
+          });
+        }} />
+    </NodeResizeControl>)}
   </>;
 }

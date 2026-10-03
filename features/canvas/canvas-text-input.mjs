@@ -24,15 +24,27 @@ export function combineCanvasPrompt(inputs, additionalPrompt) {
 }
 
 export function canvasTextNodeSizeForKey(width, height, key, largeStep = false) {
+  const frame = canvasTextNodeFrameForKey({ x: 0, y: 0, width, height }, "bottom-right", key, largeStep);
+  return frame ? { width: frame.width, height: frame.height } : null;
+}
+
+/** Keyboard corners move in the arrow direction while the opposite edges stay fixed. */
+export function canvasTextNodeFrameForKey(frame, corner, key, largeStep = false) {
   if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(key)) return null;
   const step = largeStep ? 40 : 10;
-  const currentWidth = Number.isFinite(width) && width > 0 ? width : 360;
-  const currentHeight = Number.isFinite(height) && height > 0 ? height : 260;
+  const currentWidth = Number.isFinite(frame.width) && frame.width > 0 ? frame.width : 360;
+  const currentHeight = Number.isFinite(frame.height) && frame.height > 0 ? frame.height : 260;
+  const left = corner.endsWith("left"); const top = corner.startsWith("top");
+  const dx = key === "ArrowRight" ? step : key === "ArrowLeft" ? -step : 0;
+  const dy = key === "ArrowDown" ? step : key === "ArrowUp" ? -step : 0;
+  const width = Math.max(CANVAS_TEXT_NODE_BOUNDS.minWidth, Math.min(CANVAS_TEXT_NODE_BOUNDS.maxWidth,
+    currentWidth + (left ? -dx : dx)));
+  const height = Math.max(CANVAS_TEXT_NODE_BOUNDS.minHeight, Math.min(CANVAS_TEXT_NODE_BOUNDS.maxHeight,
+    currentHeight + (top ? -dy : dy)));
   return {
-    width: Math.max(CANVAS_TEXT_NODE_BOUNDS.minWidth, Math.min(CANVAS_TEXT_NODE_BOUNDS.maxWidth,
-      currentWidth + (key === "ArrowRight" ? step : key === "ArrowLeft" ? -step : 0))),
-    height: Math.max(CANVAS_TEXT_NODE_BOUNDS.minHeight, Math.min(CANVAS_TEXT_NODE_BOUNDS.maxHeight,
-      currentHeight + (key === "ArrowDown" ? step : key === "ArrowUp" ? -step : 0))),
+    x: frame.x + (left ? currentWidth - width : 0),
+    y: frame.y + (top ? currentHeight - height : 0),
+    width, height,
   };
 }
 

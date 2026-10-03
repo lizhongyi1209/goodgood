@@ -80,3 +80,13 @@ This prevents small manual groups from moving/expanding solely to match the
 automatic center. Only actual overflow expands a manual frame. Existing auto
 groups normalize on the next fit without moving their members; persistence and
 backend contracts do not change.
+
+## GG-334 · Invisible corner resizing
+
+On 2026-10-03 the user replaces GG-332's visible inside grips with the image
+nodes' transparent four-corner controls. Selected groups reuse the existing
+media hit area, native diagonal cursors and zoom compensation; hover/drag
+shows no icon or background. Empty labeled buttons preserve keyboard resizing
+and show an outline only on keyboard focus. Title/edge dragging, stable native
+callbacks, member containment, saved manual geometry and GG-333 automatic
+centering remain unchanged. No runtime or persistence change is required.

@@ -1,6 +1,6 @@
 # ADR 0124: Visual Markdown text nodes and generator text inputs
 
-- Status: Accepted for GG-268 local implementation; GG-273 and GG-275 revisions accepted
+- Status: Accepted for GG-268 local implementation; GG-273, GG-275 and GG-334 revisions accepted
 - Date: 2026-10-01
 - Task: GG-268
 
@@ -27,3 +27,13 @@ Project snapshots, cloud validation, local recovery, pages and canvas copy/paste
 
 Reference: [Tiptap Markdown basic usage](https://tiptap.dev/docs/editor/markdown/getting-started/basic-usage) and [React installation](https://tiptap.dev/docs/editor/getting-started/install/react).
 GG-308/ADR0133补充：选中未编辑时仅显示设置模板快捷栏，双击/键盘进入编辑才显示格式栏；设置模板将当前完整内容冻结为私有文本资产，1:1文字预览与资产复用不改变节点原Markdown/纯文本、端口和项目保存。见[ADR0133](0133-canvas-text-template-assets.md)。
+
+## GG-334 · Invisible four-corner text resizing
+
+The user replaces GG-275's visible lower-right grip with the image nodes'
+transparent corner hit areas. Text editor and shared Markdown result nodes
+support all four corners with native diagonal cursors and zoom compensation,
+without an icon or hover fill. Labeled empty buttons retain arrow/Shift keyboard
+resizing and focus-visible outlines. Moving a left/top corner keeps the opposite
+edge fixed, including at size limits; bounds, fixed typography, editor gestures,
+text content and persistence remain unchanged. No backend update is needed.

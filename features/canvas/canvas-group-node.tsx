@@ -118,15 +118,11 @@ export function CanvasGroupNode({ id, data, selected }: NodeProps<CanvasGroupNod
       {["top", "right", "bottom", "left"].map((edge) => <div key={edge} aria-hidden="true"
         className={`${styles.frameEdge} ${styles[edge]} canvas-group-drag-handle`} title="拖动边框移动整组" />)}
       {selected && corners.map(({ position, label }) => <NodeResizeControl key={position} position={position}
-        minWidth={200} minHeight={120} className={styles.resizeControl}
+        minWidth={200} minHeight={120} className={`${workspaceStyles.resizeControl} ${styles.resizeControl}`}
         onResizeStart={startResize} onResizeEnd={finishResize} shouldResize={allowResize}>
-        <button type="button" className={`${styles.resizeHandle} nopan nowheel nokey`} data-corner={position}
+        <button type="button" className={`${workspaceStyles.resizeHotspot} nodrag nopan nowheel nokey`}
           aria-label={`调整组框${label}，方向键调整大小`} title="拖动调整尺寸，或使用方向键（Shift 加快）"
-          onKeyDown={(event) => resizeWithKeyboard(event, position)}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-            <path d="M7 17 17 7M13 19 19 13" />
-          </svg>
-        </button>
+          onKeyDown={(event) => resizeWithKeyboard(event, position)} />
       </NodeResizeControl>)}
       <header className={`${workspaceStyles.imageMetadata} ${styles.header} canvas-group-drag-handle`}>
         {data.emoji ? <span className={styles.titleEmoji} aria-hidden="true">{data.emoji}</span>

@@ -19,11 +19,7 @@ header.header { pointer-events: auto; cursor: default; }
 .editor a { text-decoration: underline; text-underline-offset: 3px; }.editor strong { font-weight: 600; }
 .placeholder { position: absolute; left: 18px; right: 18px; top: 16px; color: #71717a; line-height: 1.7; pointer-events: none; }
 .editHint { position: absolute; left: 18px; right: 48px; bottom: 10px; overflow: hidden; color: #71717a; font-size: 11px; line-height: 18px; white-space: nowrap; text-overflow: ellipsis; pointer-events: none; }
-.resizeControl:global(.react-flow__resize-control.handle.bottom.right) { left: auto; top: auto; right: 4px; bottom: 4px; translate: none; transform-origin: bottom right; width: 32px; height: 32px; border: 0; border-radius: 5px; background: transparent; z-index: 3; }
-.resizeGrip { display: grid; place-items: center; width: 100%; height: 100%; padding: 0; border: 0; border-radius: inherit; background: transparent; color: #71717a; cursor: nwse-resize; touch-action: none; }
-.resizeGrip:hover, .resizeGrip:active { color: #27272a; background: #f4f4f5; }
-.resizeGrip:focus-visible { outline: 1px solid #71717a; outline-offset: -2px; }
-.resizeGrip svg { pointer-events: none; }
+.resizeControl:global(.react-flow__resize-control.handle) { z-index: 3; }
 .toolbar { display: flex; align-items: center; gap: 2px; padding: 5px; max-width: calc(100vw - 24px); overflow-x: auto; border: 1px solid #e4e4e7; border-radius: 10px; background: #fff; scrollbar-width: none; }
 .toolbar button { position: relative; width: 27px; height: 27px; flex-shrink: 0; border-radius: 5px; color: #27272a; }.toolbar button:hover, .toolbar button[aria-pressed="true"] { background: #f0f0f2; }.toolbar button:disabled { opacity: .3; }.toolbar button:focus-visible { outline: 1px solid #71717a; outline-offset: 1px; box-shadow: none; }
 .toolbar button.groupStart { margin-left: 7px; }.groupStart::before { content: ""; position: absolute; left: -5px; width: 1px; height: 14px; background: #e4e4e7; }

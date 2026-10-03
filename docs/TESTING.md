@@ -1,5 +1,20 @@
 # GG-063 verification
 
+## GG-334 invisible resize corners — source only
+
+No compilation, lint/typecheck, code/diff checks, test runs or browser acceptance
+are performed, following the GG-276 user agreement. Regression source
+`tests/gg334-canvas-text-corner-resize.test.mjs` covers all four text corners,
+arrow directions, fixed opposite edges, fractional/negative coordinates,
+Shift steps, partial and repeated size-limit clamps and absent measurements.
+The existing lower-right keyboard size API stays compatible; sources are unrun.
+Manual follow-up: refresh 5173, hover/drag each corner of a selected group and a
+text editor/shared Markdown result. There must be no grip icon or hover fill;
+diagonal cursors, native zoom compensation, keyboard focus/arrows, anchored
+opposite edges and saved geometry remain. Preserve group title/edge dragging,
+member absolute positions, automatic vertical centering and manual whitespace.
+No dependency, backend, provider or runtime update is required.
+
 ## GG-331 text composer — user acceptance only
 
 No build, lint/typecheck, code/diff checks, tests or browser acceptance are run.
@@ -34,8 +49,8 @@ Horizontal spacing, content positions and saved manual geometry must remain.
 
 GG-332 is a local visual placement refinement with no new geometry or storage
 logic. No build/lint/typecheck, code/diff check, test or browser acceptance is
-run. User follow-up: selected grips stay inside all four corners and point to
-the corresponding corner; hover/focus/drag/arrows still resize; the outside
+run. GG-334 supersedes its visible inside grips with transparent corner targets.
+User follow-up: hover/focus/drag/arrows still resize; the outside
 upper-left name/emoji can be renamed and dragged; the top toolbar selects/clears
 emoji, restores auto fit and ungroups while preserving members. Check long
 names, zoom, narrow viewport, selection changes and keyboard focus. Group cloud

@@ -565,6 +565,22 @@
   clip-path: ellipse(50% 50%);
 }
 
+.resizeHotspot {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  cursor: inherit;
+  touch-action: none;
+}
+
+.resizeHotspot:focus-visible {
+  outline: 1px solid #71717a;
+  outline-offset: -2px;
+}
+
 .pendingNode { padding: 10px; }
 .pendingImage { height: 226px; border-radius: 9px; background: #f3f3f4; }
 .pendingLabel { display: flex; align-items: center; gap: 7px; padding: 12px 3px 2px; color: #71717a; font-size: 12px; }

@@ -10,18 +10,7 @@
 .top { top: -6px; } .bottom { bottom: -6px; }
 .left, .right { top: 10px; bottom: 10px; width: 12px; }
 .left { left: -6px; } .right { right: -6px; }
-.frame .resizeControl:global(.react-flow__resize-control.handle) { left: auto; top: auto; right: auto; bottom: auto; translate: none; width: 32px; height: 32px; border: 0; border-radius: 5px; background: transparent; pointer-events: auto; z-index: 2; }
-.frame .resizeControl:global(.top.left) { left: 4px; top: 4px; transform-origin: top left; }
-.frame .resizeControl:global(.top.right) { right: 4px; top: 4px; transform-origin: top right; }
-.frame .resizeControl:global(.bottom.left) { left: 4px; bottom: 4px; transform-origin: bottom left; }
-.frame .resizeControl:global(.bottom.right) { right: 4px; bottom: 4px; transform-origin: bottom right; }
-.resizeHandle { display: grid; place-items: center; width: 100%; height: 100%; padding: 0; border: 0; border-radius: inherit; background: transparent; color: #71717a; cursor: inherit; touch-action: none; }
-.resizeHandle:hover, .resizeHandle:active { color: #27272a; background: #f4f4f5; }
-.resizeHandle:focus-visible { outline: 1px solid #71717a; outline-offset: -2px; }
-.resizeHandle svg { pointer-events: none; }
-.resizeHandle[data-corner="top-left"] svg { transform: rotate(180deg); }
-.resizeHandle[data-corner="top-right"] svg { transform: rotate(-90deg); }
-.resizeHandle[data-corner="bottom-left"] svg { transform: rotate(90deg); }
+.frame .resizeControl:global(.react-flow__resize-control.handle) { pointer-events: auto; z-index: 2; }
 header.header { gap: 4px; pointer-events: auto; cursor: grab; }
 .header > svg { flex: none; }
 .header:active, .name:active { cursor: grabbing; }
