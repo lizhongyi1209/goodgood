@@ -1,13 +1,15 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-03
-- Current phase: GG-350结果格式失败具体说明已交付源码；GG-349/346及GG-342既有后台保持，未部署生产。
-- Current objective: 用户刷新5173手验总日志旧格式失败的未知字段说明；新任务精确原因须另行委托更新唯一Worker。沿GG-276只改源码与回归来源，无自动验证/后台启用。
+- Current phase: GG-346调色确认按钮白字已交付源码；GG-350/349及原校色功能保留，既有后台保持，未部署生产。
+- Current objective: 用户刷新5173重开调色手验确认按钮白字/悬停/处理中；保存格式保留默认PNG与可选JPEG。GG-350新具体错误采集仍待另行委托更新唯一Worker；仅代码，无自动验证或后台启用。
 - Previous objective: GG-313模板名称格式/示例参考、GG-312画布300%高清门槛、GG-311模板保存/成功动效及类型筛选、GG-310前景色已交付源码；GG-309私有2K接口、批量校验及文本资产API/本地0063已启用。
 
 ## Current checkpoint
 
-- 当前应用源码检查点：df97afd7bc3a307fd73dbc65b8bb5d60c7880964；[GG-350](tasks/GG-350-generation-response-reasons.md) GG-350源码已接入df97afd7bc3a307fd73dbc65b8bb5d60c7880964（隔离d0277e0）：后台逐项解释base64无链接、URL、MIME、数量、任务字段与状态冲突，保留HTTP上下文和图片序号/数量；旧格式错误明确未记录具体异常字段，不推断或回填base64。合成回归来源已写未运行，沿GG-276未构建/lint/typecheck/代码检查/测试或浏览器验收，无新Provider请求、数据改写、服务重启或生产部署。创建1/退役1，无子agent/辅助依赖缓存。当前Web67ffde7/唯一Worker94bee535保持；用户刷新5173手验旧提示，新原因采集待另行委托更新唯一Worker。
+- 当前应用源码检查点：5353e0645dfe90c27ff6b89b6ffe0319e1373f23；[GG-346](tasks/GG-346-color-grade.md) GG-346小修源码5353e0645dfe90c27ff6b89b6ffe0319e1373f23：调色确认主按钮局部显式白字，避免全局继承覆盖；取消/背景/悬停/禁用/处理中保持原规则，保存格式仅解释而未改动。当前干净GG-116小改，创建0/退役0，无辅助缓存；未编译/检查/测试/浏览器验收，无后台/数据/Provider/扣费/服务或生产操作。用户刷新重开调色手验；GG-350新错误采集仍待另行委托更新唯一Worker，既有运行receipt保持未重查。
+
+- GG-350历史源码检查点：df97afd7bc3a307fd73dbc65b8bb5d60c7880964；[GG-350](tasks/GG-350-generation-response-reasons.md) GG-350源码已接入df97afd7bc3a307fd73dbc65b8bb5d60c7880964（隔离d0277e0）：后台逐项解释base64无链接、URL、MIME、数量、任务字段与状态冲突，保留HTTP上下文和图片序号/数量；旧格式错误明确未记录具体异常字段，不推断或回填base64。合成回归来源已写未运行，沿GG-276未构建/lint/typecheck/代码检查/测试或浏览器验收，无新Provider请求、数据改写、服务重启或生产部署。创建1/退役1，无子agent/辅助依赖缓存。当前Web67ffde7/唯一Worker94bee535保持；用户刷新5173手验旧提示，新原因采集待另行委托更新唯一Worker。
 
 - GG-349历史源码检查点：7fb9a329875f44cab8b6304b807ff6cf28e6ab19；[GG-349](tasks/GG-349-random-parameters.md) GG-349源码完成：隔离a7a8cac精确接入7fb9a329875f44cab8b6304b807ff6cf28e6ab19；添加数据新增「随机生成」，100组不同示例填入11项拍摄参数、清空4项图片信息/旧粘贴草稿，每轮无重复并避免轮间紧邻重复，可手改。确认添加只需任一可编辑字段trim后非空，原加载/处理锁定、格式校验及旁置副本保持。暂不新增EXIF字段/后台/收费；保留GG-346调色。合成回归仅写来源，沿GG-276未构建/lint/typecheck/代码diff检查/测试或浏览器验收，无应用API/SQL/Provider/扣费/迁移/服务或生产操作；GG-342既有后台receipt保持未重查。创建1/退役1，managed辅助已确认归档，无依赖缓存/子agent；用户刷新5173手验随机填入、图片信息清空、单项非空/全空和确认副本。
 
