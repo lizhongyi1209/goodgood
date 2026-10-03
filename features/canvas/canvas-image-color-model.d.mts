@@ -1,0 +1,14 @@
+export type ColorParameters = Readonly<{ strength: number; temperature: number; tint: number; saturation: number; exposure: number; contrast: number }>;
+export type ColorMatch = Readonly<{ offsetA: number; offsetB: number; gainA: number; gainB: number; centerA: number; centerB: number }>;
+export type ColorStatistics = Readonly<{ a: number; b: number; deviationA: number; deviationB: number }>;
+export type ColorLut = Readonly<{ data: Uint8Array; size: number }>;
+export const COLOR_LUT_SIZE: number;
+export const COLOR_DEFAULTS: ColorParameters;
+export const COLOR_IDENTITY: ColorMatch;
+export function rgbToOklab(r: number, g: number, b: number): number[];
+export function oklabToRgb(L: number, a: number, b: number): number[];
+export function colorStatistics(pixels: Uint8ClampedArray): ColorStatistics;
+export function matchColorStatistics(source: ColorStatistics, reference: ColorStatistics): ColorMatch;
+export function transformColor(r: number, g: number, b: number, match: ColorMatch, parameters: ColorParameters): number[];
+export function createColorLut(match: ColorMatch, parameters: ColorParameters, size?: number): ColorLut;
+export function applyColorLut(pixels: Uint8ClampedArray, lut: ColorLut, start?: number, end?: number): Uint8ClampedArray;

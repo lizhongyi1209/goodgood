@@ -977,3 +977,7 @@ lost. A failed upload never sends a generation request.
 # GG-173 · Canvas save failures
 
 Canvas edits write to IndexedDB before remote autosave. An unreachable API or offline network keeps the local snapshot and shows “未同步”; reconnect and explicit retry resume the same versioned document. If IndexedDB is unavailable or out of quota, show a distinct local-storage failure and never claim “已保存”. A 409 version conflict preserves the dirty local graph as a new project ID while leaving the server's existing project untouched. A remote project that cannot be read and has no local snapshot blocks editing rather than replacing unknown content with an empty document. Pending local media keeps its File for retry; a generation submit without a confirmed server job ID is not replayed automatically because it might duplicate a paid request. See [ADR 0114](decisions/0114-durable-canvas-projects.md).
+
+## GG-346 · 调色错误与取消
+
+当前图片读取/解码失败在图面重试；参考失败/无可用颜色在面板重新匹配或显式换图/仅手动，不选另一参考冒充成功。黑白/全透明当前图仍可手动预览，自动匹配给出明确提示。WebGL不可用用CPU预览，上下文丢失提示重开；导出失败保留参数，PNG超过20MiB提示可选JPEG，透明区域不允许JPEG，超过4000万像素/16384边不静默降分辨率。取消/Escape和身份/页/源节点失效取消任务，迟到结果不提交；双击保存由进行中锁合并。保存成功仅表示新File通过现有副本提交，实际上传失败仍由原上传状态/重试处理，不提前宣称云端已持久化。

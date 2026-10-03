@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent } from "react";
 import { createPortal } from "react-dom";
 import { NodeToolbar, Position, useReactFlow, useStore } from "@xyflow/react";
-import { Check, ChevronDown, ChevronRight, Crop, Eraser, FilePenLine, Link2, LoaderCircle, SquareSplitHorizontal, Unlink2 } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, Crop, Eraser, FilePenLine, Link2, LoaderCircle, Palette, SquareSplitHorizontal, Unlink2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import { canvasImageCompareReferences, useCanvasImageCompare } from "./canvas-im
 import styles from "./canvas-image-crop.module.css";
 import { useCanvasImageMetadata } from "./canvas-image-metadata-context";
 import { useCanvasImageCleanup } from "./canvas-image-cleanup";
+import { useCanvasImageColor } from "./canvas-image-color-context";
 
 export const CanvasImageCropContext = createContext<{
   request: CanvasCropRequest | null;
@@ -26,6 +27,7 @@ export function useCanvasImageCrop() { return useContext(CanvasImageCropContext)
 export function CanvasImageCropToolbar({ image, selected, offsetX = 0 }: Readonly<{ image: CanvasCropImage | null; selected: boolean; offsetX?: number }>) {
   const { request, openCrop } = useCanvasImageCrop();
   const { openCompare } = useCanvasImageCompare();
+  const color = useCanvasImageColor();
   const flow = useReactFlow<CanvasNode>();
   const { enabled: metadataEnabled, openMetadata } = useCanvasImageMetadata();
   const cleanup = useCanvasImageCleanup();
@@ -39,6 +41,9 @@ export function CanvasImageCropToolbar({ image, selected, offsetX = 0 }: Readonl
       </Button>
       <Button type="button" variant="ghost" size="sm" onClick={(event) => { event.stopPropagation(); openCompare(image, canvasImageCompareReferences(flow.getNode(image.nodeId), image.imageId), event.currentTarget); }} aria-label="图片对比" title="图片对比">
         <SquareSplitHorizontal size={15} strokeWidth={1.7} aria-hidden="true" />对比
+      </Button>
+      <Button type="button" variant="ghost" size="sm" disabled={!color.enabled} onClick={(event) => { event.stopPropagation(); color.openColor(image, canvasImageCompareReferences(flow.getNode(image.nodeId), image.imageId), event.currentTarget); }} aria-label="调色" title="调色">
+        <Palette size={15} strokeWidth={1.7} aria-hidden="true" />调色
       </Button>
       <Button type="button" variant="ghost" size="sm" disabled={!metadataEnabled} onClick={(event) => { event.stopPropagation(); openMetadata(image, event.currentTarget); }} aria-label="添加数据" title="添加数据">
         <FilePenLine size={15} strokeWidth={1.7} aria-hidden="true" />添加数据
