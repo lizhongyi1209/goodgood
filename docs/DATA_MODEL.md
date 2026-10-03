@@ -1,5 +1,21 @@
 # GG-063 quality pricing
 
+## GG-341 · Image cleanup operations (migration0065, not applied)
+
+`image_cleanup_operations` binds UUID, owner/workspace, optional canvas project,
+source kind/ID, normalized input hash, fixed10 credit amount and ready result
+reference/completion time. `running` exists only within the single uncommitted
+transaction; committed rows are succeeded, so no recovery lease/Worker is added.
+Personal `credit_ledger_entries.related_image_cleanup_id` FK joins the dedicated
+operation, and exactly one of image/text generation/cleanup relations is allowed.
+Unique reserve and existing reservation-close constraints prevent double charge.
+Organization related_job_id is already generic UUID and uses the same operation
+ID plus metadata activityCategory=image_cleanup; member budgets remain enforced.
+Ready reference checksum/dimensions/MIME describe the cleaned bytes, never the
+source. Session recovery stores IDs/name/project only, not image contents.
+`db/schema.ts` mirrors the new table/column; existing text relation from0061 is
+preserved in the relation constraint. No migration/data writes performed.
+
 ## GG-340 · Announcement domain (migration0064, not applied)
 
 `announcements` stores UUID identity, title<=100/codepoints and body<=12000,

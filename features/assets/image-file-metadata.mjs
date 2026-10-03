@@ -1,4 +1,4 @@
-// Browser-only JPEG/PNG container editing. Image payload and colour profiles
+// Pure JPEG/PNG container editing shared by the browser and paid server cleanup. Image payload and colour profiles
 // stay byte-for-byte intact; camera thumbnail/MakerNote offsets are never copied.
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();

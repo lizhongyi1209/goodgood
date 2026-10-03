@@ -82,6 +82,7 @@ import { CanvasGenerationCountControl } from "./canvas-generation-count-control"
 import { createCanvasGeneratedReferenceImporter } from "./canvas-generated-reference-import";
 import { CANVAS_ASSET_LIBRARY_UPDATED_EVENT } from "./canvas-asset-upload";
 import { canvasCropImageForNode, type CanvasCropCommit } from "./canvas-image-crop-image";
+import type { CanvasImageCleanupCommit } from "./canvas-image-cleanup";
 import { CANVAS_PROMPT_MAX_LENGTH, collectCanvasTextInputs, combineCanvasPrompt, isCanvasTextConnection, isCanvasTextGenerationConnection, canvasConnectionCreatesCycle, normalizeCanvasInputEdge } from "./canvas-text-input.mjs";
 import { canvasGeneratorJobs, canvasGeneratorOutputs, canvasImageBatchCreditAmount, canvasImageJobIsActive, parseCanvasImagePrompts, recoverCanvasImageJob } from "./canvas-image-prompt-batch.mjs";
 import { pendingCanvasImageJob, pendingCanvasImageSlots, retryCanvasImageSlot, runCanvasGeneratorSlots } from "./canvas-generator-batch";
@@ -1238,6 +1239,33 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     return true;
   };
 
+  const commitCanvasImageCleanup = ({ image, pageId, result }: CanvasImageCleanupCommit) => {
+    const instance = flowRef.current;
+    if (!mountedRef.current || !instance || !projectReady || pageSwitchingRef.current ||
+        pageId !== activePageIdRef.current || session?.access.status !== "active" || session.preview) return false;
+    const nodeId = `image-cleanup-${result.requestId}`;
+    if (instance.getNode(nodeId)) return true;
+    const source = instance.getNode(image.nodeId);
+    const current = canvasCropImageForNode(source, image.imageId);
+    if (!source || !current || current.key !== image.key) return false;
+    const r = result.reference;
+    const size = initialCanvasImageSize(r.width, r.height) ?? { width: 238, height: 158 };
+    const sourceWidth = source.measured?.width ?? source.width ?? (typeof source.style?.width === "number" ? source.style.width : 238);
+    const expandedGenerator = source.type === "imageGenerator" && Array.from(document.querySelectorAll<HTMLElement>(".react-flow__node"))
+      .find((element) => element.dataset.id === source.id)?.querySelector<HTMLElement>('[data-canvas-stack-expanded="true"]');
+    const span = expandedGenerator && source.type === "imageGenerator"
+      ? Math.max(1, canvasGeneratorResultSlots(source.data).length) * (sourceWidth + 12) - 12 : sourceWidth;
+    const absolute = canvasNodeAbsolutePosition(source, instance.getNodes());
+    const copy: CanvasSourceNode = { id: nodeId, type: "sourceImage", selected: true,
+      position: { x: absolute.x + span + 32, y: absolute.y }, width: size.width, height: size.height, style: size,
+      data: { name: r.name, assetId: r.id, assetKind: "reference", previewUrl: privateImageUrls("reference", r.id).previewUrl,
+        pixelWidth: r.width, pixelHeight: r.height, imageSized: true } };
+    captureCanvasHistory();
+    updatePageNodes(pageId, (nodes) => nodes.some((node) => node.id === nodeId) ? nodes
+      : [...nodes.map((node) => node.selected ? { ...node, selected: false } : node), copy]);
+    scheduleProjectSnapshot(true); return true;
+  };
+
   const addLibraryAsset = async (item: CanvasLibraryAsset, screenPoint: { x: number; y: number }) => {
     const pageId = activePageIdRef.current;
     if (!flow) return;
@@ -2230,6 +2258,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     >
       <CanvasWorkspace assetsOpen={assetsOpen} onAssetsOpenChange={setAssetsOpen} assetSidebarWidth={assetSidebarWidth} onAssetSidebarWidthChange={setAssetSidebarWidth} assetLibraryEnabled={Boolean(session && session.access.status === "active" && !session.preview)} assetRevision={assetRevision}
         cropPageId={activePageId} cropEnabled={Boolean(projectReady && !pageSwitching && session?.access.status === "active" && !session.preview)} onCropCommit={commitCanvasCrop}
+        onImageCleanupCommit={commitCanvasImageCleanup} onImageCleanupChanged={() => { void refreshBilling(); setAssetRevision((value) => value + 1); }}
         edges={edges} onEdgesChange={changeEdges} onConnect={connectReference} isValidConnection={isValidReferenceConnection}
         onDeleteEdge={removeLinkedReference}
         onSelectAll={() => {

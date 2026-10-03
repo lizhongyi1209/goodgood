@@ -1,5 +1,24 @@
 # GG-063 verification
 
+## GG-341 · Source-only cleanup and billing acceptance
+
+Following GG-276, no build/lint/typecheck/code checks/test runs/browser acceptance.
+`tests/gg341-image-cleanup.test.mjs` is unrun source: synthetic valid PNG with
+EXIF/GPS + ComfyUI prompt/workflow tEXt/zTXt/iTXt + caBX, unchanged IDAT/original,
+ordinary JPEG/PNG, rotated JPEG visual pixels, unsupported/empty/broken/oversized,
+strict IDs/price injection, personal10/funded provenance, organization actor/budget
+boundary calls, committed replay/changed-input conflict, rollback after stored
+copy, lostCOMMIT reply and trusted HTTP scope. Existing GG336 ambiguity/color/scan
+fixtures remain relevant. Synthetic transaction checks do not prove real SQL
+constraints, concurrent locks, object delivery or UI behavior. No database/HTTP/
+provider calls made. After separately authorized migration/Web activation, user
+acceptance: PNG prompt/workflow/eXIf plus C2PA absent in independently read downloaded
+copy; normal image stream unchanged, rotated orientation correct; exact10 personal
+and organization budget debit, insufficient/failure no debit, double clicks and
+lost reply/reload retry exactly once, library/adjacent copy and page/logout safety.
+Any future SQL fixtures require an explicitly named disposable stack without a
+real-provider Worker, never the preserved live development database.
+
 ## GG-340 · Announcements — unrun source and user acceptance
 
 Standing code-only collaboration remains: no build, lint/typecheck, code/diff

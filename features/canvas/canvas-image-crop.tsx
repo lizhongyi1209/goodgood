@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent } from "react";
 import { createPortal } from "react-dom";
 import { NodeToolbar, Position, useReactFlow, useStore } from "@xyflow/react";
-import { Check, ChevronDown, ChevronRight, Crop, FilePenLine, Link2, LoaderCircle, SquareSplitHorizontal, Unlink2 } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, Crop, Eraser, FilePenLine, Link2, LoaderCircle, SquareSplitHorizontal, Unlink2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,8 @@ import { CANVAS_CROP_PRESET_GROUPS, centeredCanvasCrop, moveCanvasCrop, resizeCa
 import { canvasImageCompareReferences, useCanvasImageCompare } from "./canvas-image-compare";
 import styles from "./canvas-image-crop.module.css";
 import { useCanvasImageMetadata } from "./canvas-image-metadata";
+import { useCanvasImageCleanup } from "./canvas-image-cleanup";
+import { IMAGE_CLEANUP_CREDIT_COST } from "@/shared/contracts/image-cleanup.mjs";
 
 export const CanvasImageCropContext = createContext<{
   request: CanvasCropRequest | null;
@@ -27,6 +29,7 @@ export function CanvasImageCropToolbar({ image, selected, offsetX = 0 }: Readonl
   const { openCompare } = useCanvasImageCompare();
   const flow = useReactFlow<CanvasNode>();
   const { enabled: metadataEnabled, openMetadata } = useCanvasImageMetadata();
+  const cleanup = useCanvasImageCleanup();
   const zoom = useStore((state) => state.transform[2]);
   const selectedCount = useStore((state) => [...state.nodeLookup.values()].filter((node) => node.selected).length);
   if (!image || request) return null;
@@ -40,6 +43,13 @@ export function CanvasImageCropToolbar({ image, selected, offsetX = 0 }: Readonl
       </Button>
       <Button type="button" variant="ghost" size="sm" disabled={!metadataEnabled} onClick={(event) => { event.stopPropagation(); openMetadata(image, event.currentTarget); }} aria-label="增加图片元数据" title="增加元数据">
         <FilePenLine size={15} strokeWidth={1.7} aria-hidden="true" />增加元数据
+      </Button>
+      <Button type="button" variant="ghost" size="sm" disabled={!cleanup.enabled || cleanup.pendingKey !== null}
+        onClick={(event) => { event.stopPropagation(); cleanup.remove(image); }}
+        aria-label={`去除AI，${IMAGE_CLEANUP_CREDIT_COST}积分，清理文件内元数据`}
+        title="清除C2PA、EXIF及ComfyUI元数据；不处理隐形水印">
+        {cleanup.pendingKey === image.key ? <LoaderCircle size={15} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Eraser size={15} strokeWidth={1.7} aria-hidden="true" />}
+        {cleanup.pendingKey === image.key ? "处理中…" : "去除AI"}<span className="text-xs text-muted-foreground">{IMAGE_CLEANUP_CREDIT_COST}积分</span>
       </Button>
     </div>
   </NodeToolbar>;

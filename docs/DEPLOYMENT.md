@@ -1,5 +1,17 @@
 # Development and deployment
 
+## GG-341 · Source delivered; cleanup backend not activated
+
+0065_gg341_image_cleanup.sql and the new Web route/billing column are source only.
+Activation requires explicit user delegation and verified named local target,
+applying outstanding migrations in order (including GG3400064), then building
+current integrated HEAD and updating only Web. Do not restart Worker or reset
+existing data; no fixtures/billable-provider calls needed. Starting new Web without
+0065 also breaks personal ledger writes, so migration must precede activation.
+Production authority is absent. Preserve GG330 Web/unique Worker/Vite/data/SMTP
+receipts until an actual separately authorized activation is recorded. Automatic
+checks/manual user acceptance remain separate from activation and deployment.
+
 ## GG-340 · Announcement activation pending
 
 This task delivers source only. Migration`0064_gg340_announcements.sql` is not

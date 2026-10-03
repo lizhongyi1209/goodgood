@@ -1,5 +1,22 @@
 # Architecture
 
+## GG-341 · Paid image metadata cleanup
+
+`features/canvas/canvas-image-cleanup.tsx` owns immutable output selection,
+identity/page lifecycle, bounded concurrent clicks and session recovery keys.
+`features/assets/http-image-cleanup.ts` is the authenticated HTTP boundary;
+`server/image-cleanup` owns strict input, source/workspace authorization,
+JPEG/PNG cleaning and atomic copy/credit persistence. The existing pure
+`image-file-metadata.mjs` container engine is reused server-side; installed
+Sharp validates decoding and applies EXIF orientation to PNG only when needed.
+No provider/external detector calls or new packages/Worker jobs. Source row,
+workspace and operation locks protect authorization and idempotence. Personal
+reserve/settle preserve payment-funded provenance; organization calls use the
+existing budget ledger. Copy and charge share one transaction. All references
+are ready private assets, independent of successful canvas insertion. API is
+unavailable on the old Web; no free browser fallback. Migration0065 precedes
+new Web activation, which remains separately authorized.
+
 ## GG-340 · Platform announcements
 
 `features/announcements` owns the shared entry, safe Markdown rendering,

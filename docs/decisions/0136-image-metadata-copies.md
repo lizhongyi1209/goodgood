@@ -1,8 +1,10 @@
 # ADR 0136 · 图片元数据副本
 
-- Status: Accepted for GG-327, amended by GG-335/GG-336
+- Status: Accepted for GG-327, amended by GG-335/GG-336; cleanup superseded by ADR0138/GG-341
 - Date: 2026-10-03
 - Extends: ADR0109 的只读图片标签与 ADR0108 的图片快捷操作
+
+GG-341将清理从本弹框移至「去除AI · 10积分」，执行与计费改由受权服务端，覆盖下方旧本地免费清理描述；参数编辑仍保持。见[ADR0138](0138-paid-image-metadata-cleanup.md)。
 
 用户新增从实拍图片提取参数、写入 AI 图片及清除元数据的图片工具。快捷工具栏提供「增加元数据」，使用共享 Radix 弹框与既有白灰样式。打开时读取所选原图并预填，不根据生成提示词虚构相机参数。可从当前图片的实际参考图提取，复制/粘贴结构化参数或手动编辑。
 

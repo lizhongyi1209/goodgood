@@ -1888,6 +1888,9 @@ export const creditLedgerEntries = pgTable(
       onDelete: "restrict",
     }),
     relatedPaymentRef: text("related_payment_ref"),
+    relatedImageCleanupId: uuid("related_image_cleanup_id").references(
+      (): AnyPgColumn => imageCleanupOperations.id, { onDelete: "restrict" },
+    ),
     priorEntryId: uuid("prior_entry_id").references(
       (): AnyPgColumn => creditLedgerEntries.id,
       { onDelete: "restrict" },
@@ -1925,6 +1928,9 @@ export const creditLedgerEntries = pgTable(
     uniqueIndex("credit_ledger_entries_reservation_close_unique")
       .on(table.priorEntryId)
       .where(sql`${table.entryType} in ('settle', 'release')`),
+    uniqueIndex("credit_ledger_image_cleanup_reserve_unique")
+      .on(table.relatedImageCleanupId)
+      .where(sql`${table.entryType} = 'reserve' and ${table.relatedImageCleanupId} is not null`),
     uniqueIndex("credit_ledger_entries_settlement_refund_unique")
       .on(table.priorEntryId)
       .where(sql`${table.entryType} = 'refund'`),
@@ -1961,9 +1967,9 @@ export const creditLedgerEntries = pgTable(
     ),
     check(
       "credit_ledger_entries_relation_check",
-      sql`(${table.entryType} in ('settle', 'release', 'refund') and ${table.priorEntryId} is not null and ${table.relatedJobId} is not null)
-        or (${table.entryType} = 'reserve' and ${table.priorEntryId} is null and ${table.relatedJobId} is not null)
-        or (${table.entryType} in ('transfer_out', 'transfer_in') and ${table.priorEntryId} is null and ${table.relatedJobId} is null and ${table.relatedPaymentRef} is null)
+      sql`(${table.entryType} in ('settle', 'release', 'refund') and ${table.priorEntryId} is not null and num_nonnulls(${table.relatedJobId}, related_text_job_id, ${table.relatedImageCleanupId}) = 1)
+        or (${table.entryType} = 'reserve' and ${table.priorEntryId} is null and num_nonnulls(${table.relatedJobId}, related_text_job_id, ${table.relatedImageCleanupId}) = 1)
+        or (${table.entryType} in ('transfer_out', 'transfer_in') and ${table.priorEntryId} is null and ${table.relatedJobId} is null and related_text_job_id is null and ${table.relatedImageCleanupId} is null and ${table.relatedPaymentRef} is null)
         or (${table.entryType} in ('grant', 'expire', 'adjust'))`,
     ),
   ],
@@ -2488,4 +2494,23 @@ export const canvasProjectDeletions = pgTable("canvas_project_deletions", {
 }, table => [
   primaryKey({ columns: [table.projectId, table.workspaceId, table.ownerId] }),
   index("canvas_project_deletions_owner_idx").on(table.workspaceId, table.ownerId, table.deletedAt.desc(), table.projectId.desc()),
+]);
+
+export const imageCleanupOperations = pgTable("image_cleanup_operations", {
+  id: uuid("id").primaryKey(),
+  ownerId: uuid("owner_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, { onDelete: "restrict" }),
+  canvasProjectId: uuid("canvas_project_id").references(() => canvasProjects.id, { onDelete: "restrict" }),
+  sourceKind: text("source_kind").notNull(), sourceId: uuid("source_id").notNull(), inputHash: text("input_hash").notNull(),
+  state: text("state").notNull(), creditAmount: bigint("credit_amount", { mode: "bigint" }).notNull().default(sql`10`),
+  resultReferenceId: uuid("result_reference_id").references(() => referenceAssets.id, { onDelete: "restrict" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+}, (table) => [
+  index("image_cleanup_owner_created_idx").on(table.ownerId, table.createdAt.desc()),
+  check("image_cleanup_source_check", sql`${table.sourceKind} in ('asset','reference')`),
+  check("image_cleanup_hash_check", sql`length(${table.inputHash}) = 64`),
+  check("image_cleanup_price_check", sql`${table.creditAmount} = 10`),
+  check("image_cleanup_state_check", sql`${table.state} in ('running','succeeded')`),
+  check("image_cleanup_result_check", sql`(${table.state} = 'running' and ${table.resultReferenceId} is null and ${table.completedAt} is null) or (${table.state} = 'succeeded' and ${table.resultReferenceId} is not null and ${table.completedAt} is not null)`),
 ]);

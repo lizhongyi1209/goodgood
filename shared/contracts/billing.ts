@@ -124,6 +124,7 @@ export type CreditActivityCategory =
   | "image_generation"
   | "video_generation"
   | "text_generation"
+  | "image_cleanup"
   | "other";
 
 export interface CreditActivitySpendSummary {

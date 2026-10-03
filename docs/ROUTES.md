@@ -1,5 +1,16 @@
 # Navigation and route contract
 
+## GG-341 · 去除AI
+
+No new page route. Authenticated Node POST `/api/image-cleanup` accepts only
+requestId/sourceKind(asset|reference)/sourceId/name/projectId. Workspace comes
+from the existing authenticated x-goodgood-workspace-id contract. Price,
+remote URLs and image blobs are rejected; the server reads an authorized original.
+A committed request returns requestId/chargedCredits(10)/ready reference identity,
+name/MIME/dimensions/bytes; replay returns the same copy. Wrong method405,
+invalid400/413, ownership404, insufficient409, undecodable422 and unavailable503.
+Old Web/missing0065 fail closed. Local Vite's existing /api proxy needs no change.
+
 ## GG-340 · 公告
 
 `/admin/announcements`为站长管理新分页，使用既有WorkspaceRoute协议与

@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useReactFlow } from "@xyflow/react";
-import { Camera, ClipboardPaste, Copy, Download, RotateCcw, Trash2, X } from "lucide-react";
+import { Camera, ClipboardPaste, Copy, Download, RotateCcw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -55,33 +55,14 @@ async function decodeDimensions(blob: Blob, signal: AbortSignal) {
   finally { image.close(); }
 }
 
-async function metadataFile(original: Original, fields: ImageFileMetadataFields, clear: boolean, name: string, signal: AbortSignal) {
+async function metadataFile(original: Original, fields: ImageFileMetadataFields, name: string, signal: AbortSignal) {
   signal.throwIfAborted();
-  let bytes = original.bytes;
-  let width = original.width, height = original.height;
-  if (clear && original.metadata.orientation > 1 && original.metadata.orientation <= 8) {
-    // Browser decoding honours EXIF orientation. PNG keeps these displayed pixels
-    // without carrying the orientation tag or recompressing them as JPEG.
-    let image: ImageBitmap;
-    try { image = await createImageBitmap(original.blob); }
-    catch (cause) { signal.throwIfAborted(); throw new Error("原图无法解码，无法保留图片朝向。请重试。", { cause }); }
-    const canvas = document.createElement("canvas");
-    try {
-      signal.throwIfAborted();
-      canvas.width = width = image.width; canvas.height = height = image.height;
-      const context = canvas.getContext("2d");
-      if (!context) throw new Error("当前浏览器无法保存图片朝向，请重试。");
-      context.drawImage(image, 0, 0);
-      const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob((value) => value ? resolve(value) : reject(new Error("图片导出失败，请重试。")), "image/png"));
-      bytes = new Uint8Array(await blob.arrayBuffer());
-    } finally { image.close(); canvas.width = 0; canvas.height = 0; }
-  }
-  const result = writeImageFileMetadata(bytes, fields, { clear, orientation: original.metadata.orientation });
+  const result = writeImageFileMetadata(original.bytes, fields, { orientation: original.metadata.orientation });
   signal.throwIfAborted();
   if (result.bytes.length > PRIVATE_IMAGE_UPLOAD_MAX_BYTES) throw new Error("处理后的副本超过 20 MB，无法保存。请使用较小的原图。");
   const basename = name.replace(/\.[^.]+$/, "").replace(/[\\/:*?"<>|\u0000-\u001f]+/g, "_").slice(0, 100).trim() || "GoodGood图片";
-  const file = new File([result.bytes], `${basename}_${clear ? "无元数据" : "元数据"}.${result.extension}`, { type: result.mimeType });
-  return { file, width, height };
+  const file = new File([result.bytes], `${basename}_元数据.${result.extension}`, { type: result.mimeType });
+  return { file, width: original.width, height: original.height };
 }
 
 function startDownload(file: File) {
@@ -97,7 +78,6 @@ function CanvasImageMetadataDialog({ request, onClose, onCommit }: Readonly<{
 }>) {
   const [original, setOriginal] = useState<Original | null>(null);
   const [fields, setFields] = useState<ImageFileMetadataFields>({});
-  const [clear, setClear] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<"extract" | "save" | "download" | "copy" | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -114,7 +94,7 @@ function CanvasImageMetadataDialog({ request, onClose, onCommit }: Readonly<{
   useEffect(() => {
     const controller = new AbortController();
     lifecycle.current = controller;
-    setLoading(true); setError(null); setOriginal(null); setClear(false); setNotice("");
+    setLoading(true); setError(null); setOriginal(null); setNotice("");
     void (async () => {
       const blob = await readCanvasCropImageBlob(request, controller.signal);
       if (blob.size > PRIVATE_IMAGE_UPLOAD_MAX_BYTES) throw new Error("请选择 20 MB 以内的 JPEG 或 PNG 原图。");
@@ -127,13 +107,13 @@ function CanvasImageMetadataDialog({ request, onClose, onCommit }: Readonly<{
         // to clean. Container corruption still fails closed here.
         const stripped = writeImageFileMetadata(bytes, {}, { clear: true });
         metadata = { ...readImageFileMetadata(stripped.bytes), hasMetadata: true, c2pa: readImageFileC2pa(bytes) };
-        metadataError = "原有元数据无法完整解析。你可以清除元数据后保存副本，或手动填写参数。";
+        metadataError = "原有元数据无法完整解析。可以手动填写参数，或关闭后使用「去除AI」。";
       }
       const dimensions = await decodeDimensions(blob, controller.signal);
       controller.signal.throwIfAborted();
       setOriginal({ bytes, blob, metadata, ...dimensions }); setFields(metadata.fields); setLoading(false);
       setError(metadataError);
-      setNotice(Object.keys(metadata.fields).length ? "已填入这张图片现有的参数。" : metadata.hasMetadata ? "没有可编辑的拍摄参数；其他元数据可使用清除功能移除。" : "这张图片没有元数据，可手动填写或粘贴参数。");
+      setNotice(Object.keys(metadata.fields).length ? "已填入这张图片现有的参数。" : metadata.hasMetadata ? "没有可编辑的拍摄参数；清理请使用图片快捷栏的「去除AI」。" : "这张图片没有元数据，可手动填写或粘贴参数。");
     })().catch((cause) => { if (!controller.signal.aborted) { setLoading(false); setError(cause instanceof Error ? cause.message : "原图读取失败，请重试。"); } });
     return () => { controller.abort(); };
   }, [request, attempt]);
@@ -148,7 +128,7 @@ function CanvasImageMetadataDialog({ request, onClose, onCommit }: Readonly<{
       const bytes = new Uint8Array(await blob.arrayBuffer()); signal.throwIfAborted();
       const metadata = readImageFileMetadata(bytes);
       if (!Object.keys(metadata.fields).length) throw new Error("这张参考图没有可提取的常用拍摄参数；已填写内容已保留。");
-      setFields(metadata.fields); setClear(false); setReferencesOpen(false);
+      setFields(metadata.fields); setReferencesOpen(false);
       setNotice(`已从「${sourceName}」提取参数，保存后写入图片副本。`);
     } catch (cause) { if (!signal.aborted) setError(cause instanceof Error ? cause.message : "参考图元数据提取失败，请重试。"); }
     finally { busyRef.current = false; if (!signal.aborted) setBusy(null); }
@@ -159,7 +139,7 @@ function CanvasImageMetadataDialog({ request, onClose, onCommit }: Readonly<{
     const signal = lifecycle.current.signal;
     busyRef.current = true; setBusy(download ? "download" : "save"); setError(null);
     try {
-      const result = await metadataFile(original, fields, clear, request.name, signal);
+      const result = await metadataFile(original, fields, request.name, signal);
       if (download) { startDownload(result.file); setNotice("已开始下载处理后的图片副本。"); }
       else if (onCommit({ request, ...result, createCopy: true })) onClose();
       else throw new Error("当前图片或页面已变化，请关闭弹框后重新打开。");
@@ -170,7 +150,7 @@ function CanvasImageMetadataDialog({ request, onClose, onCommit }: Readonly<{
   const disabled = loading || !original || busy !== null;
   const restore = () => {
     if (!original) return;
-    setFields(original.metadata.fields); setClear(false); setError(null); setNotice("已还原这张图片原有的参数。");
+    setFields(original.metadata.fields); setError(null); setNotice("已还原这张图片原有的参数。");
   };
   const copy = async () => {
     if (busyRef.current) return;
@@ -207,7 +187,7 @@ function CanvasImageMetadataDialog({ request, onClose, onCommit }: Readonly<{
         {!loading && !original && <Button type="button" variant="secondary" size="sm" onClick={() => setAttempt((value) => value + 1)}>重新读取原图</Button>}
         {original && <p className={styles.status} role="status">
           {original.metadata.c2pa === "present" ? "发现内嵌 C2PA 内容凭证，尚未验证签名。" : original.metadata.c2pa === "unreadable" ? "内容凭证检测未完成：文件中的凭证数据无法完整识别。" : "未发现内嵌 C2PA 内容凭证。"}
-          {original.metadata.c2pa !== "absent" && " 清除元数据时会一并处理文件内凭证；普通编辑可能使原凭证失效。"}
+          {original.metadata.c2pa !== "absent" && " 普通编辑可能使原凭证失效；清理请使用「去除AI」。"}
         </p>}
         {original && original.metadata.c2pa !== "absent" && <p className={styles.status}>此处仅处理文件内数据，不清除隐形水印或外部凭证，也不用于判定图片是否由 AI 生成。</p>}
         <div className={styles.tools}>
@@ -226,7 +206,7 @@ function CanvasImageMetadataDialog({ request, onClose, onCommit }: Readonly<{
             try {
               const values = parseImageMetadataJson(pasteText);
               if (!Object.keys(values).length) throw new Error("粘贴内容中没有可填写的参数；已有内容已保留。");
-              setFields(values); setClear(false); setError(null); setPasteOpen(false); setNotice("已填入粘贴的参数，保存后写入副本。");
+              setFields(values); setError(null); setPasteOpen(false); setNotice("已填入粘贴的参数，保存后写入副本。");
             } catch (cause) { setError(cause instanceof Error ? cause.message : "元数据 JSON 无效。"); }
           }}>填入参数</Button>
         </div>}
@@ -236,17 +216,15 @@ function CanvasImageMetadataDialog({ request, onClose, onCommit }: Readonly<{
           <legend>{group}</legend><div className={styles.fields}>{IMAGE_METADATA_FIELDS.filter((field) => field.group === group).map((field) => <label key={field.key}>
             <span>{field.label}</span><Input value={fields[field.key] ?? ""} placeholder={field.placeholder} maxLength={500}
               inputMode={group === "位置信息" ? "decimal" : undefined} onChange={(event) => {
-                setFields((current) => ({ ...current, [field.key]: event.target.value })); setClear(false); setError(null); setNotice("保存后将表单参数写入图片副本。");
+                setFields((current) => ({ ...current, [field.key]: event.target.value })); setError(null); setNotice("保存后将表单参数写入图片副本。");
               }} />
           </label>)}</div>
         </fieldset>)}</div>
       </div>
       <footer className={styles.footer}>
-        <Button type="button" variant="ghost" size="sm" disabled={disabled} onClick={() => {
-          setFields({}); setClear(true); setError(null); setNotice("已清空参数。保存或下载将移除拍摄、定位、文本元数据及可识别的内嵌 C2PA 内容凭证，保留图片显示所需的色彩信息。");
-        }}><Trash2 size={14} aria-hidden="true" />清除元数据</Button>
-        <div><Button type="button" variant="secondary" size="sm" disabled={disabled || (!clear && !Object.values(fields).some(Boolean))} onClick={() => void commit(true)}><Download size={14} aria-hidden="true" />{busy === "download" ? "正在导出…" : "下载副本"}</Button>
-          <Button type="button" size="sm" disabled={disabled || (!clear && !Object.values(fields).some(Boolean))} onClick={() => void commit(false)}>{busy === "save" ? "正在保存…" : "保存副本"}</Button></div>
+        <span className={styles.status}>清理请使用「去除AI」</span>
+        <div><Button type="button" variant="secondary" size="sm" disabled={disabled || !Object.values(fields).some(Boolean)} onClick={() => void commit(true)}><Download size={14} aria-hidden="true" />{busy === "download" ? "正在导出…" : "下载副本"}</Button>
+          <Button type="button" size="sm" disabled={disabled || !Object.values(fields).some(Boolean)} onClick={() => void commit(false)}>{busy === "save" ? "正在保存…" : "保存副本"}</Button></div>
       </footer>
     </DialogContent>
   </Dialog>;

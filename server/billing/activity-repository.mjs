@@ -41,7 +41,7 @@ function grantKind(row) {
 
 function metadataActivityCategory(metadata) {
   const value = metadata?.activityCategory;
-  return value === "image_generation" || value === "video_generation" || value === "text_generation"
+  return value === "image_generation" || value === "video_generation" || value === "text_generation" || value === "image_cleanup"
     ? value
     : "other";
 }
@@ -68,6 +68,11 @@ function activityTrace(row) {
     batchReference: metadataBatchReference(row.metadata), category: "text_generation",
     taskId: row.metadata.textGenerationJobId ?? null, projectId: row.metadata.projectId ?? null,
     projectName: row.metadata.projectName ?? null, modelName: row.metadata.modelName ?? null,
+  };
+  if (metadataActivityCategory(row.metadata) === "image_cleanup") return {
+    batchReference: metadataBatchReference(row.metadata), category: "image_cleanup",
+    taskId: row.metadata.imageCleanupId ?? null, projectId: row.metadata.projectId ?? null,
+    projectName: row.metadata.projectName ?? null, modelName: null,
   };
   return {
     batchReference: metadataBatchReference(row.metadata),
