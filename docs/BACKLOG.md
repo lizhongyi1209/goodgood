@@ -4,6 +4,7 @@
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
+| GG-329 | 开发中：修复元数据Provider在ReactFlow上下文外调用hook，统一画布共享祖先；无新产品决定/运行操作，用户手验 | [任务](tasks/GG-329-reactflow-context.md) |
 | GG-326 | 已接入37eef68：完整emoji、四角缩放/保留留白/恢复自动、中央默认光标/边框整组移动；创建1/退役1，回归只写未运行，云字段待Web激活 | [任务](tasks/GG-326-group-frame-controls.md) |
 | GG-328 | 已接入a9952d7：紧凑composer/固定底栏/八行输入、真实阶段和编辑提示、统一发送可用性；创建1/退役1，无编译检查/后端更新，用户手验 | [任务](tasks/GG-328-text-generation-ui.md) |
 | GG-327 | 已接入27ec47a/5a488cc：JPEG/PNG元数据预填、照片/参考提取、复制粘贴、清除与下载/保存副本；创建1/退役1，辅助工作区已归档，无编译检查/后台变化，用户手验 | [任务](tasks/GG-327-image-metadata.md) |
