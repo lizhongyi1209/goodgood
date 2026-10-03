@@ -8,7 +8,8 @@ or browser acceptance are performed. New synthetic source
 JPEG stores including split description and XLBox headers, unrelated APP11
 with reused instance/label, metadata between progressive scans, multiple PNG
 caBX chunks, exact scan/IDAT/color retention, ordinary edit preservation,
-independent damaged EXIF, identifiable truncated stores, ambiguous JUMBF and
+independent damaged EXIF, identifiable truncated stores, ambiguous JUMBF,
+missing/repeated packet sequence and
 invalid containers. It deliberately does not test certificate validation.
 Manual follow-up: reopen the dialog for ordinary and credential-bearing
 JPEG/PNG; while loading/failed, no premature absence result. Check presence,

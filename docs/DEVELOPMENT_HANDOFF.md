@@ -1,5 +1,7 @@
 # 当前开发版本与跨窗口交接
 
+- 最新内嵌凭证：[GG-336](tasks/GG-336-c2pa-metadata.md)基于干净242765d，隔离fe750a6→4f686a1已接入GG-116/5173，关联组窗口idle。元数据弹框识别JPEG C2PA JUMBF多片/XLBox与PNG caBX，原清除动作生成去除凭证副本；未知结构/分片序号歧义不宣称已清干净，不误删其他APP11，坏EXIF保留原凭证状态。普通编辑保留凭证字节并提示可能失效，识别存在不验签/判定AI，不处理水印/外部凭证；原参数/源图/副本路径保持。创建1/退役1，managed辅助已归档，无依赖缓存/子agent；合成回归只写未运行，无编译检查/测试/浏览器验收、后台更新或应用API/SQL/Provider/服务/生产操作。用户刷新重开弹框，手验提示/清除副本与独立读取、还原取消；GG-335/334及此前源码和GG-330 verified94bee535/原Web/唯一Worker/Vite/数据/SMTP receipt保持，本轮未重查运行。
+
 - 最新元数据入口：[GG-335](tasks/GG-335-remove-photo-extraction.md)从干净8bfa266隔离30f1a62→f411a48已接入GG-116/5173，关联组窗口idle。移除「从照片提取」/隐藏本地文件选择器及引用，更新当前图编辑/空状态/损坏提示；自动预填、实际参考图提取、参数复制粘贴/手填、清除/还原及副本下载保存保持。ADR0136/产品/交互/错误/手验说明同步；创建1/退役1，managed辅助已归档，无依赖缓存/子agent。未编译检查、测试或浏览器验收，无后台更新或HTTP/SQL/Provider/服务/生产操作；用户刷新并重开弹框手验。AI检测只调研说明，不新增功能；GG-334及此前源码保留，GG-330 verified94bee535和原Web/唯一Worker/Vite/数据/SMTP receipt保持，本轮未重查运行。
 
 - 最新透明缩放入口：[GG-334](tasks/GG-334-invisible-resize-corners.md)核验982a460含GG-333，从managed隔离cf79e22精确接入5c32b19。组/共享Markdown四角复用图片resizeControl与空白resizeHotspot，无SVG角标、悬停/拖动底色；原生定位/斜向cursor/缩放补偿及仅键盘focus-visible轮廓保持。文本左/上键盘角点固定对边，尺寸夹限按实际变化补偿位置，旧右下size API兼容；组稳定回调/内容约束/自动居中与手动留白保持，关联窗口idle、GG-331面板及此前改动保留。创建1/退役1，managed辅助工作区已归档，保留分支/提交，无依赖缓存/子agent。回归源码只写，未编译/lint/typecheck/代码diff检查/测试或浏览器验收，无HTTP/SQL/Provider/服务/生产操作，无新后台启用。用户刷新5173手验四角光标/拖动/键盘对边固定/夹限、组边框移动及保存恢复；运行身份沿GG-330 verified94bee535和原Web9448/唯一Worker23800/Vite33440/数据/SMTP receipt，本轮未重查运行。
