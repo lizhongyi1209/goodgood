@@ -2,6 +2,15 @@
 
 ## GG-323 group editing and recovery
 
+GG-325 addresses the reported build-group ResizeObserver loop at the geometry
+boundary: outward-rounded integer/explicit frame dimensions, absolutely inset
+frame content, complete native parent/member measurements, authoritative node
+coordinates and a later-frame write that discards stale read plans. Existing
+small rounding differences do not repeatedly resize the frame. No global error
+filter or observer override is installed. Browser reproduction/acceptance is
+still delegated to the user; the screenshot's concurrent old-Web cloud rejection
+remains a separate activation boundary.
+
 Empty/single-member selections do not create a frame. Empty names revert to the
 existing name, Escape cancels and IME confirmation keeps editing. Emoji can be
 cleared. Ungrouping/deleting only a frame never deletes its members or assets.

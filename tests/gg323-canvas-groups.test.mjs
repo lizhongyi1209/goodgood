@@ -58,6 +58,34 @@ test("bounds include expanded output footprints and rebase without member jumps"
   assert.equal(fitCanvasGroups(next, [{ id: "a", bounds: { x: 500, y: -142, width: 1500, height: 282 } }]), next);
 });
 
+test("GG-325 frames use explicit integer dimensions and absorb subpixel measurement noise", () => {
+  const before = [text("a", 500.3, -120.4), text("b", 930.6, 240.2)];
+  const grouped = createCanvasGroup(before, "group-1");
+  const frame = grouped[0];
+  assert(Number.isInteger(frame.width) && Number.isInteger(frame.height));
+  assert.deepEqual(frame.style, { width: frame.width, height: frame.height });
+  for (const id of ["a", "b"]) assert.deepEqual(absolute(grouped, id), absolute(before, id));
+  const footprints = before.map((node) => ({ id: node.id, bounds: { ...node.position, width: 360, height: 260 } }));
+  for (const delta of [0.01, -0.01, 0.1, -0.1]) {
+    const noise = footprints.map((item) => ({ ...item, bounds: { ...item.bounds, x: item.bounds.x + delta, width: item.bounds.width + delta } }));
+    assert.equal(fitCanvasGroups(grouped, noise), grouped);
+  }
+  const resized = fitCanvasGroups(grouped, [{ id: "a", bounds: { x: 500.3, y: -142.4, width: 1700.2, height: 282 } }]);
+  assert(resized[0].width > frame.width);
+  assert.deepEqual(resized[0].style, { width: resized[0].width, height: resized[0].height });
+  for (const id of ["a", "b"]) assert.deepEqual(absolute(resized, id), absolute(before, id));
+  assert.equal(fitCanvasGroups(resized, [{ id: "a", bounds: { x: 500.3, y: -142.4, width: 1700.2, height: 282 } }]), resized);
+});
+
+test("GG-325 legacy style-only frames stabilize once while preserving saved content", () => {
+  const grouped = createCanvasGroup(origin(), "group-1");
+  const legacy = grouped.map((node) => node.type === "group" ? { ...node, width: undefined, height: undefined } : node);
+  const stable = fitCanvasGroups(legacy);
+  assert.equal(stable[0].width, stable[0].style.width); assert.equal(stable[0].height, stable[0].style.height);
+  for (const id of ["a", "b", "outside"]) assert.deepEqual(absolute(stable, id), absolute(legacy, id));
+  assert.equal(fitCanvasGroups(stable), stable);
+});
+
 test("group clipboard includes members and applies the paste offset only once", () => {
   const grouped = createCanvasGroup(origin(), "group-1");
   const copied = canvasSelectionWithMembers(grouped);

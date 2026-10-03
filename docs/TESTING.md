@@ -2,6 +2,13 @@
 
 ## GG-323 group regression source, not executed
 
+GG-325 extends the same source with fractional bounds/explicit integer geometry,
+repeated subpixel measurement noise, expanded outputs, unchanged absolute member
+positions and one-time restoration of style-only frames. Not executed. Native
+observer scheduling waits for complete measurements, reads and writes in separate
+frames, cancels on unmount and discards plans invalidated by new state. No browser
+or synthetic writes to real projects/queues were performed.
+
 `tests/gg323-canvas-groups.test.mjs` is source only: no-jump grouping/movement,
 empty/single selections, flat regrouping, expanded bounds/rebasing, clipboard
 offsets, local/cloud snapshots/name/emoji/size, absolute cover bounds, pending

@@ -37,8 +37,12 @@ function fallbackFootprint(node, nodes) {
 }
 
 function groupFrame(bounds) {
-  return { position: { x: bounds.x - 28, y: bounds.y - 60 },
-    style: { width: Math.max(200, bounds.width + 56), height: Math.max(120, bounds.height + 88) } };
+  // Match ResizeObserver's integer offset dimensions and round outwards so no
+  // visible content is clipped. Parent sizing must not depend on its contents.
+  const x = Math.floor(bounds.x - 28); const y = Math.floor(bounds.y - 60);
+  const width = Math.max(200, Math.ceil(bounds.x + bounds.width + 28) - x);
+  const height = Math.max(120, Math.ceil(bounds.y + bounds.height + 28) - y);
+  return { position: { x, y }, width, height, style: { width, height } };
 }
 
 export function createCanvasGroup(nodes, id, footprints = []) {
@@ -88,8 +92,11 @@ export function fitCanvasGroups(nodes, footprints = []) {
     const bounds = unionCanvasBounds(members.map((node) => byId.get(node.id) ?? fallbackFootprint(node, nodes)));
     if (!bounds) continue;
     const frame = groupFrame(bounds);
-    if (Math.abs(frame.position.x - group.position.x) > 0.1 || Math.abs(frame.position.y - group.position.y) > 0.1 ||
-        Math.abs(frame.style.width - Number(group.style?.width)) > 0.1 || Math.abs(frame.style.height - Number(group.style?.height)) > 0.1) frames.set(group.id, frame);
+    // A one-pixel deadband absorbs zoom/DOM rounding noise. Explicit dimensions
+    // also keep a restored legacy frame independent of percentage child sizes.
+    if (group.width !== Number(group.style?.width) || group.height !== Number(group.style?.height) ||
+        Math.abs(frame.position.x - group.position.x) > 1 || Math.abs(frame.position.y - group.position.y) > 1 ||
+        Math.abs(frame.width - Number(group.style?.width)) > 1 || Math.abs(frame.height - Number(group.style?.height)) > 1) frames.set(group.id, frame);
   }
   if (!frames.size) return nodes;
   return nodes.map((node) => {

@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useReactFlow, useStoreApi } from "@xyflow/react";
-import { fitCanvasGroups } from "./canvas-groups.mjs";
+import { canvasNodeAbsolutePosition, fitCanvasGroups } from "./canvas-groups.mjs";
 import { generatorStackInsets } from "./canvas-selection-layout.mjs";
 import type { CanvasNode } from "./canvas-workspace";
 import styles from "./canvas-workspace.module.css";
@@ -12,6 +12,7 @@ export function CanvasGroupBounds() {
   const store = useStoreApi<CanvasNode>();
   useEffect(() => {
     let frame: number | null = null;
+    let commitFrame: number | null = null;
     let lastNodes: CanvasNode[] | null = null;
     let dirty = true;
     let memberKey = "";
@@ -34,11 +35,18 @@ export function CanvasGroupBounds() {
         }
       }
       if (!members.length) return;
+      // Reparenting initially leaves native measurements in flight. Never fit
+      // from guessed dimensions while ResizeObserver initializes the group.
+      const measuredIds = new Set([...members.map((node) => node.id), ...members.map((node) => node.parentId!)]);
+      if ([...measuredIds].some((id) => {
+        const node = state.nodeLookup.get(id);
+        return !node?.measured.width || !node.measured.height || !node.internals.handleBounds;
+      })) { dirty = true; return; }
       const zoom = state.transform[2];
       const footprints = members.flatMap((node) => {
         const internal = state.nodeLookup.get(node.id);
         if (!internal?.measured.width || !internal.measured.height) return [];
-        const position = internal.internals.positionAbsolute;
+        const position = canvasNodeAbsolutePosition(node, state.nodes);
         const width = internal.measured.width; const height = internal.measured.height;
         const element = state.domNode?.querySelector<HTMLElement>(`[data-id="${CSS.escape(node.id)}"]`);
         const metadata = element?.querySelector<HTMLElement>(`.${styles.imageMetadata}`);
@@ -58,7 +66,18 @@ export function CanvasGroupBounds() {
           width: width + left + Math.max(right, insets.right), height: height + top + insets.bottom } }];
       });
       const next = fitCanvasGroups(state.nodes, footprints);
-      if (next !== state.nodes) flow.setNodes(next);
+      if (commitFrame !== null) cancelAnimationFrame(commitFrame);
+      commitFrame = null;
+      if (next !== state.nodes) {
+        // Read layout in this frame; commit in the following frame. A native
+        // measurement/drag/undo arriving between them invalidates this plan.
+        const plannedNodes = state.nodes;
+        commitFrame = requestAnimationFrame(() => {
+          commitFrame = null;
+          if (store.getState().nodes !== plannedNodes) { dirty = true; schedule(); return; }
+          flow.setNodes(next);
+        });
+      }
     };
     const unsubscribe = store.subscribe(schedule);
     const surface = store.getState().domNode;
@@ -67,6 +86,7 @@ export function CanvasGroupBounds() {
     surface?.addEventListener("load", invalidate, true);
     schedule();
     return () => { unsubscribe(); observer.disconnect(); if (frame !== null) cancelAnimationFrame(frame);
+      if (commitFrame !== null) cancelAnimationFrame(commitFrame);
       surface?.removeEventListener("canvas-visible-bounds-change", invalidate); surface?.removeEventListener("load", invalidate, true); };
   }, [flow, store]);
   return null;
