@@ -9,6 +9,8 @@
 SUBMISSION_UNKNOWN不自动重复规则保持，新失败仍沿GG-318记录诊断。
 旧多张任务失败的单槽恢复不得重新提交其原count，须独立count1请求。
 
+GG-322：画布云同步被INVALID_CANVAS_PROJECT拒绝时，展示服务器实际平台错误并明确本机已保存、尚未云同步；不能仅凭包含slots就推断服务器版本。保留脏快照及同步阻断状态，不剥离插槽或伪报已同步。本机flush与生成提交、远端同步为不同路径，此保存错误不等同于重试生成失败。运行旧Web时须启用已有imageSlots校验才能恢复云同步，无SQL迁移或Worker更新。
+
 ## GG-318 site-owner failure details
 
 Image failures keep existing normalized user errors, retryability, submission

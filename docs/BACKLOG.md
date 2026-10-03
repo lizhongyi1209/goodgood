@@ -4,7 +4,7 @@
 
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
-| GG-322 | 子agent定位中：重试后图片插槽保存提示，旧Web缺新校验；仅Web必要激活许可待答复，不隐藏不同步或丢槽 | [任务](tasks/GG-322-image-slot-sync-compatibility.md) |
+| GG-322 | 已接入0ce2360：显示实际同步错误/保留本机与云状态；旧Web缺GG-321校验，用户授权必要构建及仅Web重启，待激活 | [任务](tasks/GG-322-image-slot-sync-compatibility.md) |
 | GG-321 | 已接入源码4489d1d：固定槽/单张并发/中央逐张重试、未知幂等及旧项目恢复；创建1/退役1，未编译检查，云字段待Web激活、无SQL/Worker更新 | [任务](tasks/GG-321-image-result-slots.md) |
 | GG-320 | 只读确认：当前local-mailpit，11:18登录验证码已进入本地邮件箱58045，未实际投递QQ；无服务或配置变化 | [任务](tasks/GG-320-local-email-delivery-audit.md) |
 | GG-319 | 本地恢复完成：Docker E盘原数据/依赖healthy，Web与唯一Worker419b097及5173正常；GG-318已启用，无迁移/测试/真实请求 | [任务](tasks/GG-319-local-restart-after-reboot.md) |
