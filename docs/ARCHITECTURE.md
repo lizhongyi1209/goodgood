@@ -1,5 +1,9 @@
 # Architecture
 
+## GG-324 explicit canvas image comparison
+
+CanvasImageCompareProvider scopes an ephemeral modal to the canvas page and owner. The existing crop toolbar exposes the adjacent action across source/result/generator nodes. Resolve references from the actual selected output's owning job input, never the active composer or a sibling slot. The dialog owns source selection and a bounded, disposable preview pool; only an explicit open acquires the existing authenticated canvas-preview derivative (maximum2048), while thumbnails use existing512 routes. Mouse motion stays in the comparison surface and is coalesced to animation frames, leaving asset lists unchanged. Read-only asset/reference/organization boundaries supply partial recovery and current display names. No new API, provider request, schema, project field or runtime activation.
+
 ## GG-321 per-request canvas image slots
 
 The generator projects results from stable slots rather than compacting only

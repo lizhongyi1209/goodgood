@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent } from "react";
 import { createPortal } from "react-dom";
 import { NodeToolbar, Position, useReactFlow, useStore } from "@xyflow/react";
-import { Check, ChevronDown, ChevronRight, Crop, Link2, LoaderCircle, Unlink2 } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, Crop, Link2, LoaderCircle, SquareSplitHorizontal, Unlink2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import type { CanvasNode } from "./canvas-workspace";
 import { canvasCropImageForNode, exportCanvasCrop, loadCanvasCropImage, type CanvasCropCommit, type CanvasCropImage, type CanvasCropRequest } from "./canvas-image-crop-image";
 import { CANVAS_CROP_PRESET_GROUPS, centeredCanvasCrop, moveCanvasCrop, resizeCanvasCrop, setCanvasCropDimension, type CanvasCropCorner, type CanvasCropPoint, type CanvasCropRect, type CanvasCropSize } from "./canvas-image-crop-model";
+import { canvasImageCompareReferences, useCanvasImageCompare } from "./canvas-image-compare";
 import styles from "./canvas-image-crop.module.css";
 
 export const CanvasImageCropContext = createContext<{
@@ -22,6 +23,8 @@ export function useCanvasImageCrop() { return useContext(CanvasImageCropContext)
 
 export function CanvasImageCropToolbar({ image, selected, offsetX = 0 }: Readonly<{ image: CanvasCropImage | null; selected: boolean; offsetX?: number }>) {
   const { request, openCrop } = useCanvasImageCrop();
+  const { openCompare } = useCanvasImageCompare();
+  const flow = useReactFlow<CanvasNode>();
   const zoom = useStore((state) => state.transform[2]);
   const selectedCount = useStore((state) => [...state.nodeLookup.values()].filter((node) => node.selected).length);
   if (!image || request) return null;
@@ -29,6 +32,9 @@ export function CanvasImageCropToolbar({ image, selected, offsetX = 0 }: Readonl
     <div className={`${styles.toolbar} nodrag nopan nowheel nokey`} style={offsetX ? { transform: `translateX(${offsetX * zoom}px)` } : undefined} role="toolbar" aria-label="图片快捷操作" onPointerDown={(event) => event.stopPropagation()}>
       <Button type="button" variant="ghost" size="sm" onClick={(event) => { event.stopPropagation(); openCrop(image); }} aria-label="裁剪图片" title="裁剪图片">
         <Crop size={15} strokeWidth={1.7} aria-hidden="true" />裁剪
+      </Button>
+      <Button type="button" variant="ghost" size="sm" onClick={(event) => { event.stopPropagation(); openCompare(image, canvasImageCompareReferences(flow.getNode(image.nodeId), image.imageId), event.currentTarget); }} aria-label="图片对比" title="图片对比">
+        <SquareSplitHorizontal size={15} strokeWidth={1.7} aria-hidden="true" />对比
       </Button>
     </div>
   </NodeToolbar>;

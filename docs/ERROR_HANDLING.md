@@ -11,6 +11,10 @@ the additive group fields leaves the existing local draft dirty/offline with
 the real server error through GG-322; it must not claim cloud synchronization.
 Pending upload recovery remains attached to the original member IDs.
 
+## GG-324 comparison recovery
+
+Image comparison is read-only. A failed detail preview offers local retry inside the modal, retains selection and never initiates generation/upload. Partial asset/reference/organization reads retain successful choices and offer list retry; loading, empty references/assets and search misses stay inside the picker. Closing or changing page/owner releases preview handles and object URLs; late list replies cannot update the closed dialog. Source assets, generation inputs and saved canvas content stay unchanged.
+
 ## GG-321 逐张错误恢复
 
 画布新图片批次使用每请求位置的独立单张任务。提交/轮询/上游失败或不确定受理

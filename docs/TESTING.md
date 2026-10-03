@@ -12,6 +12,10 @@ lint, typecheck, tests, diff/code checks or browser acceptance were run. User
 manually checks grouping, dragging, rename/emoji, undo/redo, clipboard, page
 switches and refresh; cloud groups need later authorized Web activation.
 
+## GG-324 user verification boundary
+
+Per the standing user instruction, implementation only: no build, lint/typecheck, code/diff check, test run, browser acceptance, runtime restart, SQL or real-provider request. User checks the adjacent action on uploaded/result/expanded-generator images, the actual output's references, default reference/fallback asset choices, searchable renamed assets, mouse/keyboard/touch split, different aspect ratios, loading/empty/failure retries and close/page/identity lifecycle. Existing authenticated maximum2048 preview and read-only library APIs are reused; no Web activation is needed.
+
 ## GG-321 image slot regression source, not executed
 
 `tests/gg321-canvas-image-result-slots.test.mjs` is edited source only, covering
