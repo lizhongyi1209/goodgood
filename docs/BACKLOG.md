@@ -5,11 +5,8 @@
 | ID | 当前状态 | 入口 |
 | --- | --- | --- |
 | GG-326 | 已接入37eef68：完整emoji、四角缩放/保留留白/恢复自动、中央默认光标/边框整组移动；创建1/退役1，回归只写未运行，云字段待Web激活 | [任务](tasks/GG-326-group-frame-controls.md) |
-<<<<<<< HEAD
-| GG-327 | 已接入27ec47a/5a488cc：JPEG/PNG元数据预填、照片/参考提取、复制粘贴、清除与下载/保存副本；创建1/退役1，辅助工作区已归档，无编译检查/后台变化，用户手验 | [任务](tasks/GG-327-image-metadata.md) |
-=======
 | GG-328 | 开发中：文本生成节点正文/提示词/素材与操作栏层级、状态及窄屏交互细化；保持现有生成/计费契约，Impeccable沿既有系统 | [任务](tasks/GG-328-text-generation-ui.md) |
->>>>>>> 809d86b (docs(GG-328): register text generation interaction refinement)
+| GG-327 | 已接入27ec47a/5a488cc：JPEG/PNG元数据预填、照片/参考提取、复制粘贴、清除与下载/保存副本；创建1/退役1，辅助工作区已归档，无编译检查/后台变化，用户手验 | [任务](tasks/GG-327-image-metadata.md) |
 | GG-325 | 已接入faaad8a：建组测量循环源码修正，明确尺寸/完整测量/分帧写入，保留对比及分组；创建1/退役1，未编译检查或浏览器复验，用户重试 | [任务](tasks/GG-325-group-resize-loop.md) |
 | GG-324 | 已接入da10928/3e34fa7：裁剪右侧对比、实际参考优先/资产搜索、hover/键盘/触屏及局部失败重试；创建1/退役1，无编译检查/后端更新，用户手验 | [任务](tasks/GG-324-canvas-image-compare.md) |
 | GG-323 | 已接入源码2fa0486：原生分组/框选建组、整组移动、双击改名/emoji，解散复制及恢复；创建1/退役1，无编译检查，用户手验；云新字段待受权Web激活 | [任务](tasks/GG-323-canvas-groups.md) |
