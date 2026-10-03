@@ -130,8 +130,7 @@ button { color: inherit; transition: color .18s ease, background .18s ease, box-
 .top-avatar { width: 34px; height: 34px; }
 .mobile-bar { display: none; }
 @media (min-width: 721px) {
-  .main-stage { position: relative; }
-  .mobile-bar.has-announcements { display: flex; position: absolute; right: 24px; top: 14px; z-index: 40; }
+  .mobile-bar.has-announcements:has(.lobby-announcements) { display: flex; height: 52px; padding: 0 24px; align-items: center; justify-content: flex-end; }
   .mobile-bar.has-announcements .mobile-brand,
   .mobile-bar.has-announcements .mobile-account > :not(.lobby-announcements) { display: none; }
 }
