@@ -6,6 +6,12 @@
 
 ## Decision
 
+GG-321/ADR0134 supersedes the per-segment multi-image job and compacted-output
+presentation below for newly submitted canvas batches: each requested image has
+an independent count1 job and a stable result slot, including failed positions.
+The original grouping/order/no-automatic-resubmission rules still apply; legacy
+multi-image jobs remain readable and individually retryable through slots.
+
 After composing connected text in edge order and the generator's own prompt,
 split on a standalone line of exactly `---`, `———` or `－－－`, allowing surrounding
 whitespace. Inline hyphens and longer rules remain literal. Normalize line

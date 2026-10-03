@@ -1,5 +1,14 @@
 # GG-063 quality pricing errors
 
+## GG-321 逐张错误恢复
+
+画布新图片批次使用每请求位置的独立单张任务。提交/轮询/上游失败或不确定受理
+只更新相应位置，既有成功任务不被整批错误覆盖；未接受的请求仍保留失败位置。
+用户明确点击中央重试才执行此槽的冻结单张输入，不自动付费重试；未知提交沿
+原幂等身份恢复，已确定失败按正常单张新尝试/报价计费。服务端积分归还及
+SUBMISSION_UNKNOWN不自动重复规则保持，新失败仍沿GG-318记录诊断。
+旧多张任务失败的单槽恢复不得重新提交其原count，须独立count1请求。
+
 ## GG-318 site-owner failure details
 
 Image failures keep existing normalized user errors, retryability, submission
