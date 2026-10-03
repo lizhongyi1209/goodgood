@@ -83,7 +83,8 @@ import { CANVAS_ASSET_LIBRARY_UPDATED_EVENT } from "./canvas-asset-upload";
 import { canvasCropImageForNode, type CanvasCropCommit } from "./canvas-image-crop-image";
 import { CANVAS_PROMPT_MAX_LENGTH, collectCanvasTextInputs, combineCanvasPrompt, isCanvasTextConnection, isCanvasTextGenerationConnection, canvasConnectionCreatesCycle, normalizeCanvasInputEdge } from "./canvas-text-input.mjs";
 import { canvasGeneratorJobs, canvasGeneratorOutputs, canvasImageBatchCreditAmount, canvasImageJobIsActive, parseCanvasImagePrompts, recoverCanvasImageJob } from "./canvas-image-prompt-batch.mjs";
-import { pendingCanvasImageJob, runCanvasGeneratorBatch } from "./canvas-generator-batch";
+import { pendingCanvasImageJob, pendingCanvasImageSlots, retryCanvasImageSlot, runCanvasGeneratorSlots } from "./canvas-generator-batch";
+import { canvasGeneratorSlots, canvasGeneratorResultSlots, canvasImageSlotCanRetry, recoverCanvasImageSlot, type CanvasImageSlot } from "./canvas-image-slots.mjs";
 import { DEFAULT_TEXT_GENERATION_MODEL } from "@/shared/contracts/text-generation.mjs";
 import type { CanvasLibraryAsset } from "./canvas-asset-panel";
 import { upsertCanvasJobNodes } from "./canvas-job-nodes.mjs";
@@ -371,6 +372,8 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
   const mountedRef = useRef(true);
   const busyRef = useRef(false);
   const busyGeneratorIdsRef = useRef(new Set<string>());
+  const busyImageSlotIdsRef = useRef(new Set<string>());
+  const retryImageSlotRef = useRef<(generatorId: string, index: number) => void>(() => {});
   const automaticResolutionGeneratorIdsRef = useRef(new Set<string>());
   const cancelCanvasNameRef = useRef(false);
   const projectSyncRef = useRef<CanvasProjectSync | null>(null);
@@ -433,6 +436,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
   const submitting = activeGeneratorId ? submittingGeneratorIds.includes(activeGeneratorId) : false;
   const activeGeneratorNode = nodes.find((node) => node.id === activeGeneratorId);
   const activeGeneratorJobs = activeGeneratorNode?.type === "imageGenerator" ? canvasGeneratorJobs(activeGeneratorNode.data) : [];
+  const activeGeneratorSlots = activeGeneratorNode?.type === "imageGenerator" ? canvasGeneratorSlots(activeGeneratorNode.data) : [];
   const generatorEditingLocked = submitting || activeGeneratorJobs.some(canvasImageJobIsActive);
   const { prompt, modelKey, ratio, resolution, count, quality, background, outputFormat } = activeGeneratorId
     ? draftsByGenerator[activeGeneratorId] ?? DEFAULT_GENERATOR_DRAFT
@@ -761,7 +765,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     ? resolutionOptions.filter((value) => Boolean(findBillingQuote(billing, {
         modelId: model.id,
         catalogModelId: model.catalogId,
-        count: selectedCount,
+        count: 1,
         resolution: value,
         quality: gptOptions.quality,
       })))
@@ -801,7 +805,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     ? findBillingQuote(billing, {
         modelId: model.id,
         catalogModelId: model.catalogId,
-        count: selectedCount,
+        count: 1,
         resolution: selectedResolution,
         quality: gptOptions.quality,
         referenceCount,
@@ -809,7 +813,8 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     : null;
   const referencesBusy = displayReferences.some((item) => item.reference.status === "uploading");
   const referencesFailed = displayReferences.some((item) => item.reference.status === "failed");
-  const batchCreditAmount = quote ? canvasImageBatchCreditAmount(quote.creditAmount, Math.max(1, promptBatch.prompts.length)) : null;
+  const batchCreditAmount = quote ? canvasImageBatchCreditAmount(quote.creditAmount,
+    Math.max(1, promptBatch.prompts.length) * (seedreamModel ? 1 : selectedCount)) : null;
   const insufficientCredits = Boolean(
     batchCreditAmount && billing && BigInt(billing.account.availableCredits) < BigInt(batchCreditAmount),
   );
@@ -974,7 +979,8 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       if (node.type === "imageResult") return { ...base, type: "imageResult", data: {
         ...node.data, onRetry: () => { void runJob(node.data.job.input); },
       } };
-      return { ...base, type: "imageGenerator", data: { ...node.data, sequence: ++nextSequence } };
+      return { ...base, type: "imageGenerator", data: { ...node.data, sequence: ++nextSequence,
+        onRetrySlot: (index: number) => retryImageSlotRef.current(id, index) } };
     });
     const pastedEdges = clipboard.edges.map((edge) => ({ ...edge,
       id: `${edge.sourceHandle === "text" ? "text" : "reference"}-${ids.get(edge.source)}-${ids.get(edge.target)}`,
@@ -1183,7 +1189,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     const expandedGenerator = createAdjacent && Array.from(document.querySelectorAll<HTMLElement>(".react-flow__node"))
       .find((element) => element.dataset.id === source.id)?.querySelector<HTMLElement>('[data-canvas-stack-expanded="true"]');
     const horizontalSpan = expandedGenerator && source.type === "imageGenerator"
-      ? Math.max(1, canvasGeneratorOutputs(source.data).length) * (sourceWidth + 12) - 12 : sourceWidth;
+      ? Math.max(1, canvasGeneratorResultSlots(source.data).length) * (sourceWidth + 12) - 12 : sourceWidth;
     const scale = Math.min(sourceWidth / width, sourceHeight / height);
     const size = createAdjacent ? initialCanvasImageSize(width, height) ?? { width: 238, height: 158 }
       : { width: width * scale, height: height * scale };
@@ -1352,7 +1358,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       .map((node) => node.data.sequence ?? 0)) + 1;
     const generator: CanvasGeneratorNodeType = {
       id, type: "imageGenerator", position: { x: position.x - size.width / 2, y: position.y - size.height / 2 },
-      style: size, data: { sequence },
+      style: size, data: { sequence, onRetrySlot: (index: number) => retryImageSlotRef.current(id, index) },
     };
     instance.setNodes((current) => [...current.map((node) => node.selected ? { ...node, selected: false } : node), generator]);
     automaticResolutionGeneratorIdsRef.current.add(id);
@@ -1557,55 +1563,88 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     { snapshots: readonly GenerationInputSnapshot[] } | { resume: true } | { retryIndex: number }) => {
     const generator = projectNode(generatorId);
     const pageId = nodePageId(generatorId);
-    if (!pageId || generator?.type !== "imageGenerator" || busyGeneratorIdsRef.current.has(generatorId)) return;
+    if (!pageId || generator?.type !== "imageGenerator" || session?.access.status !== "active" || session.preview) return;
     const mode = "snapshots" in action ? "submit" : "resume" in action ? "resume" : "retry";
-    let jobs = "snapshots" in action ? action.snapshots.map(pendingCanvasImageJob) : [...canvasGeneratorJobs(generator.data)];
+    if (mode === "submit" && busyGeneratorIdsRef.current.has(generatorId)) return;
+    let slots = "snapshots" in action ? pendingCanvasImageSlots(action.snapshots) : [...canvasGeneratorSlots(generator.data)];
     const retryIndex = "retryIndex" in action ? action.retryIndex : undefined;
-    if (!jobs.length || mode === "resume" && !jobs.some((job) => !job.id.startsWith("pending_") && canvasImageJobIsActive(job))) return;
-    const retryJob = retryIndex === undefined ? undefined : jobs[retryIndex];
-    if (mode === "retry" && (jobs.some(canvasImageJobIsActive) || !retryJob ||
-        !["failed", "cancelled"].includes(retryJob.state) || !retryJob.error?.retryable)) return;
+    if (!slots.length) return;
+    if (mode === "retry") {
+      const slot = retryIndex === undefined ? undefined : slots[retryIndex];
+      if (!slot || !canvasImageSlotCanRetry(slot) || busyImageSlotIdsRef.current.has(`${generatorId}:${slot.id}`)) return;
+      const unknown = slot.job.id.startsWith("pending_") && slot.requestKey && slot.job.error?.code === "SUBMISSION_UNKNOWN";
+      const singleQuote = findBillingQuote(billing, { modelId: slot.job.input.modelId,
+        catalogModelId: slot.job.input.catalogModelId, imageLine: slot.job.input.imageLine,
+        resolution: slot.job.input.resolution, quality: slot.job.input.quality, referenceCount: slot.job.input.references.length, count: 1 });
+      if (!unknown && (!singleQuote || billingLoading || billingError)) { setFormError("当前单张报价不可用，请刷新后重试。"); return; }
+      if (!unknown && singleQuote && billing && BigInt(billing.account.availableCredits) < BigInt(singleQuote.creditAmount)) {
+        setFormError("可用积分不足，请先补充积分。"); return;
+      }
+      slots = slots.map((item, index) => index === retryIndex ? retryCanvasImageSlot(item, singleQuote?.priceVersion) : item);
+    }
+    const runningSlots = slots.filter((slot, index) => !busyImageSlotIdsRef.current.has(`${generatorId}:${slot.id}`) &&
+      (mode === "submit" || mode === "retry" && index === retryIndex ||
+        mode === "resume" && !slot.job.id.startsWith("pending_") && canvasImageJobIsActive(slot.job) &&
+        slots.findIndex((item) => item.job.id === slot.job.id) === index));
+    if (!runningSlots.length) return;
+    for (const slot of runningSlots) busyImageSlotIdsRef.current.add(`${generatorId}:${slot.id}`);
     busyGeneratorIdsRef.current.add(generatorId);
     if (pageId === activePageIdRef.current) historySuspendedRef.current = true;
-    setSubmittingGeneratorIds((current) => [...current, generatorId]);
+    setSubmittingGeneratorIds((current) => current.includes(generatorId) ? current : [...current, generatorId]);
     setFormError(null);
-    const writeJobs = (resize = false) => {
-      const nextJobs = [...jobs];
+    const writeSlots = (update?: { job: GenerationJob; slot: CanvasImageSlot }) => {
       updatePageNodes(pageId, (current) => current.map((node) => {
         if (node.id !== generatorId || node.type !== "imageGenerator") return node;
-        const output = resize ? canvasGeneratorOutputs({ jobs: nextJobs })[0] : undefined;
-        const size = output ? initialCanvasImageSize(output.width ?? NaN, output.height ?? NaN) : null;
+        const before = canvasGeneratorOutputs(node.data)[0];
+        const nextSlots = update ? canvasGeneratorSlots(node.data).map((item) =>
+          (item.id === update.slot.id && item.requestKey === update.slot.requestKey ||
+            mode === "resume" && item.job.id === update.slot.job.id) ? { ...item, job: update.job } : item) : slots;
+        const nextJobs = canvasGeneratorJobs({ slots: nextSlots });
+        const output = canvasGeneratorOutputs({ slots: nextSlots })[0];
+        const resize = output && !before;
+        const size = resize ? initialCanvasImageSize(output.width ?? NaN, output.height ?? NaN) : null;
         return { ...node,
           ...(size ? { style: { ...node.style, ...size } } : {}),
-          data: { ...node.data, job: nextJobs[0], jobs: nextJobs,
-            imageSized: size ? true : mode === "submit" && !canvasGeneratorOutputs({ jobs: nextJobs }).length ? false : node.data.imageSized },
+          data: { ...node.data, job: nextJobs[0], jobs: nextJobs, slots: nextSlots,
+            onRetrySlot: (index: number) => retryImageSlotRef.current(generatorId, index),
+            imageSized: size ? true : mode === "submit" && !output ? false : node.data.imageSized },
         };
       }));
     };
-    writeJobs();
-    const observe = (job: GenerationJob, index: number) => {
-      const previousJob = jobs[index];
-      const changed = !previousJob || previousJob.id !== job.id || previousJob.state !== job.state ||
-        previousJob.outputs.length !== job.outputs.length ||
-        previousJob.outputs.some((output, index) => output.id !== job.outputs[index]?.id) ||
-        previousJob.error?.message !== job.error?.message || previousJob.error?.code !== job.error?.code;
-      if (!changed) return;
-      const firstOutputId = canvasGeneratorOutputs({ jobs })[0]?.id;
-      jobs = jobs.map((item, slot) => slot === index ? job : item);
-      writeJobs(firstOutputId !== canvasGeneratorOutputs({ jobs })[0]?.id);
-      if ((!job.id.startsWith("pending_") && previousJob?.id.startsWith("pending_")) || ["succeeded", "failed", "cancelled"].includes(job.state)) {
+    writeSlots();
+    const observe = (job: GenerationJob, slot: CanvasImageSlot) => {
+      const current = projectNode(generatorId);
+      const previous = current?.type === "imageGenerator" ? canvasGeneratorSlots(current.data).find((item) => item.id === slot.id)?.job : undefined;
+      if (previous?.id === job.id && previous.state === job.state && previous.updatedAt === job.updatedAt) return;
+      writeSlots({ job, slot });
+      if ((!job.id.startsWith("pending_") && previous?.id.startsWith("pending_")) ||
+          previous?.state !== job.state && ["succeeded", "failed", "cancelled"].includes(job.state)) {
         void refreshBilling();
       }
       if (job.state === "succeeded") setAssetRevision((current) => current + 1);
     };
+    const settled = (slot: CanvasImageSlot) => {
+      busyImageSlotIdsRef.current.delete(`${generatorId}:${slot.id}`);
+      if (![...busyImageSlotIdsRef.current].some((key) => key.startsWith(`${generatorId}:`))) {
+        busyGeneratorIdsRef.current.delete(generatorId);
+        setSubmittingGeneratorIds((current) => current.filter((id) => id !== generatorId));
+      }
+    };
     try {
-      await runCanvasGeneratorBatch({ jobs, mode, retryIndex, boundary: generationBoundary, observe });
+      // Save frozen inputs and request keys before the first potentially paid POST.
+      await projectSnapshotRef.current?.();
+      await runCanvasGeneratorSlots({ slots: runningSlots, resume: mode === "resume", boundary: generationBoundary, observe, settled });
+    } catch {
+      for (const slot of runningSlots) observe({ ...slot.job, state: "failed", error: {
+        code: "INTERNAL_ERROR", title: "请求尚未提交", message: "画布未能保存在本机。请检查存储空间后重试。", retryable: true,
+      } }, slot);
     } finally {
-      busyGeneratorIdsRef.current.delete(generatorId);
-      setSubmittingGeneratorIds((current) => current.filter((id) => id !== generatorId));
+      for (const slot of runningSlots) settled(slot);
       scheduleCanvasHistory();
     }
   };
+
+  retryImageSlotRef.current = (generatorId, index) => { void runGeneratorJobs(generatorId, { retryIndex: index }); };
 
   const generate = () => {
     if (!activeGeneratorId) return;
@@ -1884,6 +1923,29 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
             textGeneration: saved.textGeneration ?? { modelId: DEFAULT_TEXT_GENERATION_MODEL, prompt: "", history: [] } },
         };
         if (saved.type === "imageGenerator") {
+          if (saved.imageSlots) {
+            const loaded = new Map<string, Promise<GenerationJob>>();
+            const slots = await Promise.all(saved.imageSlots.map(async (slot): Promise<CanvasImageSlot> => {
+              let job: GenerationJob;
+              if (slot.jobId) {
+                const localJob = saved.localJobs?.find((item) => item.id === slot.jobId) ??
+                  (saved.localJob?.id === slot.jobId ? saved.localJob : undefined);
+                if (!loaded.has(slot.jobId)) loaded.set(slot.jobId, goodGoodApiFetch(`/api/generations/${encodeURIComponent(slot.jobId)}`, { cache: "no-store" })
+                  .then((response) => response.ok ? response.json() as Promise<GenerationJob> : Promise.reject())
+                  .catch(() => localJob ?? { ...pendingCanvasImageJob(slot.input), id: slot.jobId!, state: "queued" }));
+                job = await loaded.get(slot.jobId)!;
+              } else {
+                job = { ...pendingCanvasImageJob(slot.input), id: `pending_${slot.id}`,
+                  ...(slot.error ? { state: "failed" as const, error: slot.error } : {}) };
+              }
+              return recoverCanvasImageSlot({ id: slot.id, requestKey: slot.requestKey, retryOfJobId: slot.retryOfJobId,
+                outputIndex: slot.outputIndex, job });
+            }));
+            const jobs = canvasGeneratorJobs({ slots });
+            return { ...base, type: "imageGenerator", data: { sequence: saved.sequence ?? 1, job: jobs[0], jobs, slots,
+              onRetrySlot: (index: number) => retryImageSlotRef.current(saved.id, index),
+              imageSized: Boolean(style && canvasGeneratorOutputs({ slots })[0]) } };
+          }
           const ids = saved.jobIds ?? (saved.jobId ? [saved.jobId] : saved.localJobs?.map((job) => job.id) ?? []);
           const jobs = await Promise.all(ids.map(async (jobId) => {
             const localJob = saved.localJobs?.find((job) => job.id === jobId) ?? (saved.localJob?.id === jobId ? saved.localJob : undefined);
@@ -1896,7 +1958,8 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
           const sequence = saved.sequence ?? document.nodes.filter((item) => item.type === "imageGenerator")
             .findIndex((item) => item.id === saved.id) + 1;
           return { ...base, type: "imageGenerator",
-            data: { sequence, job: jobs[0], jobs, imageSized: Boolean(style && canvasGeneratorOutputs({ jobs })[0]) } };
+            data: { sequence, job: jobs[0], jobs, onRetrySlot: (index: number) => retryImageSlotRef.current(saved.id, index),
+              imageSized: Boolean(style && canvasGeneratorOutputs({ jobs })[0]) } };
         }
         if (saved.type === "sourceImage" || saved.type === "sourceVideo") {
           let previewUrl = "";
@@ -2301,11 +2364,11 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       {composerHost && createPortal(<section className={`${styles.composer} ${styles.composerAttached}`} aria-label="图片生成工具">
         {activeGeneratorJobs.some((job) => job.state === "failed" || job.state === "cancelled") &&
           <div className={styles.batchFailures} role="region" aria-label="未完成的提示词">
-            {activeGeneratorJobs.map((job, index) => job.state === "failed" || job.state === "cancelled"
-              ? <div key={job.id} className={styles.batchFailure}>
-                <p role="alert"><span>{activeGeneratorJobs.length > 1 ? `提示词 ${index + 1}：` : ""}{job.error?.message ?? "生成未完成，请检查设置后重试。"}</span></p>
-                {job.error?.retryable && <Button type="button" variant="ghost" size="sm" disabled={generatorEditingLocked || !session || session.access.status !== "active" || session.preview}
-                  aria-label={`重试第 ${index + 1} 段提示词`} onClick={() => { if (activeGeneratorId) void runGeneratorJobs(activeGeneratorId, { retryIndex: index }); }}>重试</Button>}
+            {activeGeneratorSlots.map((slot, index) => slot.job.state === "failed" || slot.job.state === "cancelled"
+              ? <div key={slot.id} className={styles.batchFailure}>
+                <p role="alert"><span>{activeGeneratorSlots.length > 1 ? `图片 ${index + 1}：` : ""}{slot.job.error?.message ?? "生成未完成，请检查设置后重试。"}</span></p>
+                {canvasImageSlotCanRetry(slot) && <Button type="button" variant="ghost" size="sm" disabled={!session || session.access.status !== "active" || session.preview}
+                  aria-label={`重试第 ${index + 1} 张图片`} onClick={() => { if (activeGeneratorId) void runGeneratorJobs(activeGeneratorId, { retryIndex: index }); }}>重试</Button>}
               </div> : null)}
           </div>}
         {promptTooLong && <p role="alert" className={styles.message}>第 {oversizedPromptIndex + 1} 段提示词 {promptBatch.prompts[oversizedPromptIndex].length} 个字符，最多 {CANVAS_PROMPT_MAX_LENGTH} 个字符。</p>}

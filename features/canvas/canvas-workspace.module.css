@@ -151,6 +151,13 @@
 }
 .generatorStackItemActive { box-shadow: 0 4px 14px rgb(0 0 0 / 10%); }
 .generatorStackItemHidden { opacity: 0; pointer-events: none; }
+.generatorSingleItem { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; }
+.generatorSlotEmpty { display: grid; place-items: center; background: #ededee; color: #c4c4ca; }
+.generatorSlotRetry { z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 10px 14px; border: 0; border-radius: 10px; background: transparent; color: #52525b; font-size: 12px; cursor: pointer; }
+.generatorSlotRetry:hover { background: #fff; color: #18181b; }
+.generatorSlotRetry:focus-visible { outline: 2px solid #52525b; outline-offset: 2px; }
+.generatorSlotRetry:disabled { opacity: .45; cursor: default; }
+.generatorSlotStatus { position: absolute; inset: auto 8px 10px; color: #71717a; font-size: 11px; line-height: 1.4; text-align: center; pointer-events: none; }
 .generatorStackToggle {
   position: absolute;
   z-index: 10;

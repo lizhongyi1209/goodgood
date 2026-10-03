@@ -1,5 +1,6 @@
 import { CanvasProjectError } from "./errors.mjs";
 import { getTextGenerationModel, getTextGenerationPreset, DEFAULT_TEXT_GENERATION_MODEL, TEXT_GENERATION_MAX_PROMPT, TEXT_GENERATION_MAX_HISTORY } from "../../shared/contracts/text-generation.mjs";
+import { validateM3GenerationInput, validateIdempotencyKey } from "../generation/api.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const NODE_ID = /^[A-Za-z0-9][A-Za-z0-9_:.\-]{0,159}$/;
@@ -47,7 +48,7 @@ function position(value) {
 }
 
 function node(value) {
-  record(value, ["id", "type", "position", "size", "asset", "jobId", "jobIds", "index", "sequence", "name", "metadata", "markdown", "text", "textGeneration"]);
+  record(value, ["id", "type", "position", "size", "asset", "jobId", "jobIds", "imageSlots", "index", "sequence", "name", "metadata", "markdown", "text", "textGeneration"]);
   const type = value.type;
   if (!NODE_TYPES.has(type)) throw invalid();
   const result = { id: nodeId(value.id), type, position: position(value.position) };
@@ -96,6 +97,11 @@ function node(value) {
     if (new Set(result.jobIds).size !== result.jobIds.length ||
         result.jobId && result.jobId !== result.jobIds[0]) throw invalid();
   }
+  if (value.imageSlots !== undefined) {
+    if (type !== "imageGenerator" || !Array.isArray(value.imageSlots)) throw invalid();
+    result.imageSlots = value.imageSlots.map(imageSlot);
+    if (new Set(result.imageSlots.map((slot) => slot.id)).size !== result.imageSlots.length) throw invalid();
+  }
   if (value.index !== undefined) {
     if (type !== "imageResult" || !Number.isSafeInteger(value.index) || value.index < 0 || value.index > 1000) throw invalid();
     result.index = value.index;
@@ -119,6 +125,41 @@ function node(value) {
     }
   }
   return result;
+}
+
+function imageSlot(value) {
+  record(value, ["id", "requestKey", "retryOfJobId", "jobId", "outputIndex", "input", "error"]);
+  record(value.input, ["prompt", "references", "modelId", "imageLine", "routingPolicy", "catalogModelId", "expectedPriceVersion",
+    "aspectRatio", "resolution", "count", "thinkingLevel", "googleSearch", "quality", "background", "outputFormat", "projectId", "canvasProjectId"]);
+  const names = new Map();
+  if (!Array.isArray(value.input.references)) throw invalid();
+  for (const reference of value.input.references) {
+    record(reference, ["id", "name", "status", "url"]);
+    if (reference.url !== "" || reference.status !== "ready") throw invalid();
+    names.set(uuid(reference.id), string(reference.name, 255));
+  }
+  let input;
+  try { input = validateM3GenerationInput(value.input); } catch { throw invalid(); }
+  if (input.routingPolicy !== "canvas-image-v1" || input.projectId || !input.canvasProjectId && !value.jobId) throw invalid();
+  const slot = { id: nodeId(value.id), input: { ...input, references: input.references.map(({ id }) => ({
+    id, name: names.get(id), status: "ready", url: "",
+  })) } };
+  if (value.requestKey !== undefined) {
+    try { slot.requestKey = validateIdempotencyKey(value.requestKey); } catch { throw invalid(); }
+  }
+  if (value.jobId !== undefined) slot.jobId = uuid(value.jobId);
+  if (value.retryOfJobId !== undefined) slot.retryOfJobId = uuid(value.retryOfJobId);
+  if (value.outputIndex !== undefined) {
+    if (!Number.isSafeInteger(value.outputIndex) || value.outputIndex < 0 || value.outputIndex > 1000) throw invalid();
+    slot.outputIndex = value.outputIndex;
+  }
+  if (value.error !== undefined) {
+    record(value.error, ["code", "title", "message", "retryable"]);
+    if (!["MODEL_TIMEOUT", "MODEL_REJECTED", "CAPACITY_BUSY", "SUBMISSION_UNKNOWN", "INTERNAL_ERROR"].includes(value.error.code) ||
+      typeof value.error.retryable !== "boolean") throw invalid();
+    slot.error = { code: value.error.code, title: string(value.error.title, 120), message: string(value.error.message, 1000), retryable: value.error.retryable };
+  }
+  return slot;
 }
 
 function edge(value, ids) {

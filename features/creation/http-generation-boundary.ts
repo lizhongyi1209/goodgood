@@ -25,8 +25,10 @@ export type HttpGenerationBoundary = Readonly<{
   retry: (
     failedJob: GenerationJob,
     observer?: GenerationJobObserver,
+    request?: Readonly<{ idempotencyKey: string }>,
   ) => Promise<GenerationJob>;
-  service: GenerationService;
+  service: GenerationService & { submit(input: GenerationInputSnapshot, observer?: GenerationJobObserver,
+    request?: Readonly<{ idempotencyKey: string }>): Promise<GenerationJob> };
 }>;
 
 const wait = (milliseconds: number) =>
@@ -68,11 +70,18 @@ function failedLocalJob(
   });
 }
 
+class GenerationHttpRejection extends Error {}
+
 async function parseJob(response: Response) {
-  const payload = (await response.json()) as GenerationJob | GenerationApiErrorEnvelope;
+  let payload: GenerationJob | GenerationApiErrorEnvelope;
+  try { payload = await response.json() as GenerationJob | GenerationApiErrorEnvelope; }
+  catch (error) {
+    if (!response.ok) throw new GenerationHttpRejection("生成服务拒绝了请求，请稍后重试。");
+    throw error;
+  }
   if (!response.ok) {
     const errorPayload = payload as GenerationApiErrorEnvelope;
-    throw new Error(errorPayload.error?.message ?? "生成服务暂时不可用。");
+    throw new GenerationHttpRejection(errorPayload.error?.message ?? "生成服务暂时不可用。");
   }
   return payload as GenerationJob;
 }
@@ -110,11 +119,13 @@ async function postAndPoll({
   input,
   observer,
   workspaceId,
+  idempotencyKey,
 }: Readonly<{
   endpoint: string;
   input: GenerationInputSnapshot;
   observer?: GenerationJobObserver;
   workspaceId?: string | null;
+  idempotencyKey?: string;
 }>) {
   const localId = `pending_${globalThis.crypto.randomUUID()}`;
   const timestamp = new Date().toISOString();
@@ -138,7 +149,7 @@ async function postAndPoll({
           : undefined,
       headers: {
         "content-type": "application/json",
-        "idempotency-key": createIdempotencyKey(),
+        "idempotency-key": idempotencyKey ?? createIdempotencyKey(),
         ...workspaceRequestHeaders(workspaceId),
       },
       method: "POST",
@@ -152,8 +163,12 @@ async function postAndPoll({
       input,
       error instanceof Error ? error.message : undefined,
     );
-    observer?.(failed);
-    return failed;
+    const result: GenerationJob = idempotencyKey && !(error instanceof GenerationHttpRejection)
+      ? { ...failed, error: { code: "SUBMISSION_UNKNOWN", title: "生成状态未确认", retryable: true,
+          message: "请求状态未确认。点击重试将查询同一请求，不会重复提交已接受的任务。" } }
+      : failed;
+    observer?.(result);
+    return result;
   }
 }
 
@@ -164,21 +179,23 @@ export function createHttpGenerationBoundary(
     resume(job, observer) {
       return pollJob(job, observer, workspaceId);
     },
-    retry(failedJob, observer) {
+    retry(failedJob, observer, request) {
       return postAndPoll({
         endpoint: `/api/generations/${encodeURIComponent(failedJob.id)}/retry`,
         input: failedJob.input,
         observer,
         workspaceId,
+        idempotencyKey: request?.idempotencyKey,
       });
     },
     service: {
-      submit(input, observer) {
+      submit(input, observer, request) {
         return postAndPoll({
           endpoint: "/api/generations",
           input,
           observer,
           workspaceId,
+          idempotencyKey: request?.idempotencyKey,
         });
       },
     },

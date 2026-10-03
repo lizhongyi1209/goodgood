@@ -1,5 +1,5 @@
 import type { GenerationAspectRatio, GenerationCount, GenerationResolution, GptImageQuality, GptImageBackground, GptImageOutputFormat } from "@/shared/contracts/generation";
-import type { GenerationJob } from "@/shared/contracts/generation";
+import type { GenerationJob, GenerationInputSnapshot, GenerationError } from "@/shared/contracts/generation";
 import type { CanvasTextGenerationDraft } from "@/shared/contracts/text-generation.mjs";
 
 export type CanvasProjectNode = Readonly<{
@@ -10,6 +10,7 @@ export type CanvasProjectNode = Readonly<{
   asset?: Readonly<{ id: string; kind: "reference" | "generated" | "video" | "audio" }>;
   jobId?: string;
   jobIds?: readonly string[];
+  imageSlots?: readonly CanvasProjectImageSlot[];
   index?: number;
   sequence?: number;
   name?: string;
@@ -21,6 +22,17 @@ export type CanvasProjectNode = Readonly<{
   pendingFileId?: string;
   localJob?: GenerationJob;
   localJobs?: readonly GenerationJob[];
+}>;
+
+/** Cloud-safe frozen inputs and idempotent request identities; runtime jobs stay local. */
+export type CanvasProjectImageSlot = Readonly<{
+  id: string;
+  requestKey?: string;
+  retryOfJobId?: string;
+  jobId?: string;
+  outputIndex?: number;
+  input: GenerationInputSnapshot;
+  error?: GenerationError;
 }>;
 
 export type CanvasProjectEdge = Readonly<{

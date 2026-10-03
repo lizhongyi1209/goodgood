@@ -33,12 +33,18 @@ async function isDeleted(client, { ownerId, projectId, workspaceId }) {
 
 function documentResourceIds(document) {
   const pages = document.schemaVersion === 2 ? document.pages : [document];
-  const ids = { reference: new Set(), generated: new Set(), video: new Set(), audio: new Set(), job: new Set() };
+  const ids = { reference: new Set(), generated: new Set(), video: new Set(), audio: new Set(), job: new Set(), canvas: new Set() };
   for (const page of pages) {
     for (const node of page.nodes) {
       if (node.asset) ids[node.asset.kind].add(node.asset.id);
       if (node.jobId) ids.job.add(node.jobId);
       for (const id of node.jobIds ?? []) ids.job.add(id);
+      for (const slot of node.imageSlots ?? []) {
+        if (slot.jobId) ids.job.add(slot.jobId);
+        if (slot.retryOfJobId) ids.job.add(slot.retryOfJobId);
+        for (const reference of slot.input.references) ids.reference.add(reference.id);
+        if (slot.input.canvasProjectId) ids.canvas.add(slot.input.canvasProjectId);
+      }
     }
     for (const generator of Object.values(page.generators)) {
       for (const id of generator.directReferenceIds) ids.reference.add(id);
@@ -48,8 +54,11 @@ function documentResourceIds(document) {
   return ids;
 }
 
-async function assertNewDocumentResources(client, { document, previousDocument, ownerId, workspace }) {
+async function assertNewDocumentResources(client, { document, previousDocument, ownerId, workspace, projectId }) {
   const ids = documentResourceIds(document);
+  // The containing project may be inserted in this transaction. Copied/forked
+  // frozen requests can retain a prior context only when it is still owned.
+  ids.canvas.delete(projectId);
   if (previousDocument) {
     const previousIds = documentResourceIds(previousDocument);
     for (const [kind, values] of Object.entries(ids)) {
@@ -79,6 +88,8 @@ async function assertNewDocumentResources(client, { document, previousDocument, 
       WHERE id = ANY($1::uuid[]) AND workspace_id = $2 AND owner_id = $3 AND upload_state = 'ready'`,
     job: `SELECT j.id FROM generation_jobs j
       WHERE j.id = ANY($1::uuid[]) AND j.workspace_id = $2 AND j.owner_id = $3`,
+    canvas: `SELECT id FROM canvas_projects
+      WHERE id = ANY($1::uuid[]) AND workspace_id = $2 AND owner_id = $3`,
   };
   for (const [kind, values] of Object.entries(ids)) {
     if (!values.size) continue;
@@ -145,7 +156,7 @@ export async function saveCanvasProjectRecord(pool, { ownerId, projectId, worksp
     );
     let current = await loadCurrent();
     if (input.expectedVersion === null && !current.rows[0]) {
-      await assertNewDocumentResources(client, { document: input.document, ownerId, workspace });
+      await assertNewDocumentResources(client, { document: input.document, ownerId, workspace, projectId });
       const inserted = await client.query(
         `INSERT INTO canvas_projects (id, workspace_id, owner_id, name, document, content_hash)
          VALUES ($1, $2, $3, $4, $5::jsonb, $6)
@@ -173,7 +184,7 @@ export async function saveCanvasProjectRecord(pool, { ownerId, projectId, worksp
       throw new CanvasProjectError("VERSION_CONFLICT", "画布已在其他位置更新，请刷新后重试。", 409);
     }
     await assertNewDocumentResources(client, {
-      document: input.document, previousDocument: current.rows[0].document, ownerId, workspace,
+      document: input.document, previousDocument: current.rows[0].document, ownerId, workspace, projectId,
     });
     const updated = await client.query(
       `UPDATE canvas_projects

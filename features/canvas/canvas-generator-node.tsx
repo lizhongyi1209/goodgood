@@ -2,7 +2,7 @@
 
 import { useCallback, useContext, useEffect, useRef, useState, type CSSProperties } from "react";
 import { Handle, NodeToolbar, Position, useReactFlow, useStore, type NodeProps } from "@xyflow/react";
-import { ChevronsLeft, ChevronsRight, ImageIcon } from "lucide-react";
+import { ChevronsLeft, ChevronsRight, ImageIcon, RotateCcw } from "lucide-react";
 
 import { CanvasAdaptiveImage } from "./canvas-adaptive-image";
 import { CanvasImageViewButton, canvasGenerationViewerItems } from "./canvas-image-view-button";
@@ -12,6 +12,7 @@ import { CanvasGeneratorHostContext } from "./canvas-generator-host";
 import { CanvasImageCropToolbar, useCanvasImageCrop } from "./canvas-image-crop";
 import { canvasCropImageForNode } from "./canvas-image-crop-image";
 import { canvasGeneratorJobs, canvasGeneratorOutputs, canvasImageJobIsActive } from "./canvas-image-prompt-batch.mjs";
+import { canvasGeneratorSlots, canvasGeneratorResultSlots, canvasImageSlotCanRetry, type CanvasImageSlot } from "./canvas-image-slots.mjs";
 import type { CanvasGeneratorNodeType, CanvasNode } from "./canvas-workspace";
 import styles from "./canvas-workspace.module.css";
 import assetStyles from "./canvas-asset-panel.module.css";
@@ -20,20 +21,24 @@ export type CanvasGeneratorNodeData = Record<string, unknown> & {
   sequence?: number;
   job?: GenerationJob;
   jobs?: readonly GenerationJob[];
+  slots?: readonly CanvasImageSlot[];
+  onRetrySlot?: (index: number) => void;
   imageSized?: boolean;
 };
 
 export function CanvasGeneratorNode({ id, data, selected }: NodeProps<CanvasGeneratorNodeType>) {
   const { request: cropRequest } = useCanvasImageCrop();
-  const [selectedOutputId, setSelectedOutputId] = useState<string | null>(null);
+  const [selectedSlotKey, setSelectedSlotKey] = useState<string | null>(null);
   const [readyOutputs, setReadyOutputs] = useState<ReadonlySet<string>>(new Set());
   const onHostChange = useContext(CanvasGeneratorHostContext);
   const setHost = useCallback((element: HTMLDivElement | null) => onHostChange(id, element), [id, onHostChange]);
   const flow = useReactFlow<CanvasNode>();
   const jobs = canvasGeneratorJobs(data);
   const outputs = canvasGeneratorOutputs(data);
+  const slots = canvasGeneratorSlots(data);
+  const resultSlots = canvasGeneratorResultSlots(data);
   const viewerImages = canvasGenerationViewerItems(jobs);
-  const outputKey = jobs.map((job) => job.id).join(":");
+  const outputKey = slots.map((slot) => slot.id).join(":");
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const output = outputs[0];
@@ -52,11 +57,12 @@ export function CanvasGeneratorNode({ id, data, selected }: NodeProps<CanvasGene
     const node = state.nodeLookup.get(id);
     return node?.measured?.width ?? (typeof node?.style?.width === "number" ? node.style.width : 238);
   });
-  const stackCount = outputs.length;
+  const stackCount = resultSlots.length;
   const stacked = stackCount > 1;
   const stackOffset = Math.min(10, Math.max(6, nodeWidth * 0.03));
   const expanded = stacked && expandedKey === outputKey;
-  const currentOutput = expanded ? outputs.find((item) => item.id === selectedOutputId) ?? output : output;
+  const currentResult = expanded ? resultSlots.find((item) => item.key === selectedSlotKey) ?? resultSlots[0] : resultSlots[0];
+  const currentOutput = currentResult?.output;
   const cropImage = currentOutput && readyOutputs.has(`${currentOutput.id}:${currentOutput.previewUrl}`)
     ? canvasCropImageForNode({ id, type: "imageGenerator", data, position: { x: 0, y: 0 } }, currentOutput.id) : null;
   const markOutputReady = (item: NonNullable<typeof output>, image: HTMLImageElement) => {
@@ -112,7 +118,7 @@ export function CanvasGeneratorNode({ id, data, selected }: NodeProps<CanvasGene
 
   return (
     <>
-      <CanvasImageCropToolbar image={cropImage} selected={selected} offsetX={expanded && currentOutput ? outputs.indexOf(currentOutput) * (nodeWidth + 12) : 0} />
+      <CanvasImageCropToolbar image={cropImage} selected={selected} offsetX={expanded && currentResult ? resultSlots.indexOf(currentResult) * (nodeWidth + 12) : 0} />
       <div className={`${styles.imageMetadata} ${nodeWidth < 110 ? styles.imageMetadataCompact : ""} ${nodeWidth < 90 ? styles.imageMetadataIconOnly : ""}`}>
         <span className={styles.imageMetadataName}>
           <span className={styles.generatorMetadataIcon}>
@@ -125,40 +131,53 @@ export function CanvasGeneratorNode({ id, data, selected }: NodeProps<CanvasGene
         </span>
         {dimensions && <span className={styles.imageMetadataSize} aria-label={`原始尺寸 ${dimensions} 像素`}>{dimensions}</span>}
       </div>
-      <div className={`${styles.generatorNode} ${assetStyles.visualFrame} ${output ? styles.generatedGenerator : ""} ${generating ? styles.generatorShimmering : ""} ${stacked ? styles.generatorBatch : ""}`}
-        data-canvas-crop-image={!stacked ? output?.id : undefined}
+      <div className={`${styles.generatorNode} ${assetStyles.visualFrame} ${output ? styles.generatedGenerator : ""} ${stacked ? styles.generatorBatch : ""}`}
+        data-canvas-crop-image={!stacked ? resultSlots[0]?.output?.id : undefined}
         ref={bodyRef}
         data-canvas-stack-count={stackCount}
         data-canvas-stack-expanded={expanded}
-        role={output ? "group" : "img"}
-        aria-label={`图片生成 ${data.sequence ?? 1}${generating ? "，生成中" : output ? `，已生成 ${stackCount} 张图片` : ""}`}
+        role={stackCount ? "group" : "img"}
+        aria-label={`图片生成 ${data.sequence ?? 1}${stackCount ? `，${stackCount} 个结果位置，已生成 ${outputs.length} 张` : ""}${generating ? "，生成中" : ""}`}
         aria-busy={generating || undefined}>
-        {generating && !output ? null : stacked ? outputs.map((item, index) => {
+        {stackCount ? resultSlots.map((slot, index) => {
+          const item = slot.output;
           const previewDepth = Math.min(index, 2);
           const hidden = !expanded && index > 2;
+          const active = canvasImageJobIsActive(slot.job);
+          const failed = ["failed", "cancelled"].includes(slot.job.state);
           return (
-            <div key={item.id}
-              data-canvas-crop-image={item.id}
-              onPointerDown={() => { if (expanded && !cropRequest) setSelectedOutputId(item.id); }}
-              className={`${styles.generatorStackItem} ${assetStyles.visualFrame} ${index === 0 ? styles.generatorStackItemActive : ""} ${hidden ? styles.generatorStackItemHidden : ""}`}
+            <div key={slot.key}
+              data-canvas-crop-image={item?.id}
+              data-canvas-result-slot={slot.id}
+              data-canvas-slot-state={slot.job.state}
+              onPointerDown={() => { if (expanded && !cropRequest) setSelectedSlotKey(slot.key); }}
+              className={`${stacked ? styles.generatorStackItem : styles.generatorSingleItem} ${assetStyles.visualFrame} ${index === 0 ? styles.generatorStackItemActive : ""} ${hidden ? styles.generatorStackItemHidden : ""} ${active ? styles.generatorShimmering : ""} ${!item ? styles.generatorSlotEmpty : ""}`}
               aria-hidden={hidden || undefined}
               style={{ position: "absolute", "--canvas-stack-x": `${expanded ? index * (nodeWidth + 12) : previewDepth * stackOffset}px`,
                 "--canvas-stack-y": `${expanded ? 0 : previewDepth * 4}px`,
                 zIndex: expanded ? 1 : Math.max(0, 3 - index) } as CSSProperties}>
-              <CanvasAdaptiveImage src={item.previewUrl} assetId={item.id} detailEnabled={expanded || index === 0} alt={`图片生成 ${data.sequence ?? 1} 的第 ${index + 1} 张结果`}
+              {item ? <CanvasAdaptiveImage src={item.previewUrl} assetId={item.id} detailEnabled={expanded || index === 0} alt={`图片生成 ${data.sequence ?? 1} 的第 ${index + 1} 张结果`}
                 className={styles.generatorImage} loading="eager"
                 onLoad={(event) => markOutputReady(item, event.currentTarget)}
                 onError={() => setReadyOutputs((current) => { const next = new Set(current); next.delete(`${item.id}:${item.previewUrl}`); return next; })} />
-              {(expanded || index === 0) && <CanvasImageViewButton items={viewerImages} imageKey={item.id}
+                : failed ? <>
+                  <button type="button" className={`${styles.generatorSlotRetry} nodrag nopan nowheel`}
+                    tabIndex={hidden || !expanded && index > 0 ? -1 : 0}
+                    disabled={!data.onRetrySlot || !canvasImageSlotCanRetry(slot) || Boolean(cropRequest)}
+                    aria-label={`重试第 ${index + 1} 张图片`} title={slot.job.error?.message}
+                    onPointerDown={(event) => event.stopPropagation()} onDoubleClick={(event) => event.stopPropagation()}
+                    onClick={(event) => { event.stopPropagation(); data.onRetrySlot?.(slot.slotIndex); }}>
+                    <RotateCcw size={18} aria-hidden="true" /><span>重试</span>
+                  </button>
+                  <span className={styles.generatorSlotStatus} role="status" title={slot.job.error?.message}>
+                    {slot.job.error?.code === "SUBMISSION_UNKNOWN" ? "状态待确认" : "生成未完成"}
+                  </span>
+                </> : <ImageIcon size={32} strokeWidth={1.35} aria-hidden="true" />}
+              {item && (expanded || index === 0) && <CanvasImageViewButton items={viewerImages} imageKey={item.id}
                 disabled={Boolean(cropRequest) || !readyOutputs.has(`${item.id}:${item.previewUrl}`)} />}
             </div>
           );
-        }) : output ? <CanvasAdaptiveImage src={output.previewUrl} assetId={output.id} alt={`图片生成 ${data.sequence ?? 1} 的生成结果`} className={styles.generatorImage}
-          loading="eager" onLoad={(event) => markOutputReady(output, event.currentTarget)}
-          onError={() => setReadyOutputs((current) => { const next = new Set(current); next.delete(`${output.id}:${output.previewUrl}`); return next; })} />
-          : <ImageIcon size={32} strokeWidth={1.35} aria-hidden="true" />}
-        {!stacked && output && <CanvasImageViewButton items={viewerImages} imageKey={output.id}
-          disabled={Boolean(cropRequest) || !readyOutputs.has(`${output.id}:${output.previewUrl}`)} />}
+        }) : <ImageIcon size={32} strokeWidth={1.35} aria-hidden="true" />}
         {stacked && <button type="button" className={`${styles.generatorStackToggle} nodrag nopan nowheel`}
           disabled={cropRequest?.nodeId === id}
           aria-label={expanded ? "收起本批图片" : `展开本批 ${stackCount} 张图片`}
@@ -170,8 +189,6 @@ export function CanvasGeneratorNode({ id, data, selected }: NodeProps<CanvasGene
           }}>
           {expanded ? <ChevronsLeft size={14} aria-hidden="true" /> : <ChevronsRight size={14} aria-hidden="true" />}
         </button>}
-        {!selected && jobs.some((job) => job.state === "failed" || job.state === "cancelled")
-          ? <span className={styles.generatorFailure} role="alert">{jobs.length > 1 ? "部分提示词未完成，选中节点查看。" : jobs[0]?.error?.message ?? "生成未完成，请检查设置后重试。"}</span> : null}
       </div>
       <Handle type="target" id="reference" position={Position.Left} className={styles.generatorInputHandle} aria-label="连接图片或文本" title="图片或文本" />
       <NodeToolbar isVisible={cropRequest?.nodeId === id ? false : undefined} position={Position.Bottom} offset={12} align={align} style={{ width: toolbarWidth }} className={`${styles.generatorToolbar} nodrag nopan nowheel`}>

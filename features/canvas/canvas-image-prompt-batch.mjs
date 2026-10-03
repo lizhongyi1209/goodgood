@@ -8,10 +8,14 @@ export function parseCanvasImagePrompts(prompt) {
 }
 
 export function canvasGeneratorJobs(data) {
+  if (data.slots) return [...new Map(data.slots.map((slot) => [slot.job.id, slot.job])).values()];
   return data.jobs ?? (data.job ? [data.job] : []);
 }
 
 export function canvasGeneratorOutputs(data) {
+  if (data.slots) return data.slots.flatMap((slot) => slot.job.state !== "succeeded" ? [] :
+    slot.job.input.modelId === "seedream-5.0-pro" ? slot.job.outputs :
+      slot.job.outputs[slot.outputIndex ?? 0] ? [slot.job.outputs[slot.outputIndex ?? 0]] : []);
   return canvasGeneratorJobs(data).flatMap((job) => job.state === "succeeded" ? job.outputs : []);
 }
 

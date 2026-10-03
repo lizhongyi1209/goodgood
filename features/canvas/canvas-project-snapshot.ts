@@ -7,6 +7,7 @@ import { privateImageUrls } from "@/shared/private-image-urls.mjs";
 import type { CanvasNode } from "./canvas-workspace";
 import { normalizeCanvasInputEdge } from "./canvas-text-input.mjs";
 import { canvasGeneratorJobs } from "./canvas-image-prompt-batch.mjs";
+import { canvasGeneratorSlots, canvasImageSlotFrozenInput } from "./canvas-image-slots.mjs";
 
 export type SnapshotGeneratorDraft = CanvasPageDocument["generators"][string]["draft"];
 export type SnapshotDirectReference = Readonly<{
@@ -24,6 +25,7 @@ export function pendingCanvasProjectContent(document: CanvasProjectDocument): "m
   // A failed submission keeps its browser job for recovery. It is not a file
   // upload, and its prompt/settings are already part of the remote document.
   if (pages.some((page) => page.nodes.some((node) =>
+      !node.imageSlots &&
       (node.jobIds ?? (node.jobId ? [node.jobId] : [])).some((id) => {
         const job = node.localJobs?.find((item) => item.id === id) ?? (node.localJob?.id === id ? node.localJob : undefined);
         return id.startsWith("pending_") && !(job && ["failed", "cancelled"].includes(job.state) &&
@@ -76,6 +78,13 @@ function persistNode(node: CanvasNode): CanvasProjectNode | null {
     const jobs = canvasGeneratorJobs(node.data);
     return {
       ...base, type: "imageGenerator", sequence: node.data.sequence,
+      ...(node.data.slots ? { imageSlots: canvasGeneratorSlots(node.data).map((slot) => ({
+        id: slot.id, requestKey: slot.requestKey, retryOfJobId: slot.retryOfJobId,
+        outputIndex: slot.outputIndex,
+        ...(!slot.job.id.startsWith("pending_") ? { jobId: slot.job.id } : {}),
+        input: canvasImageSlotFrozenInput(slot.job.input),
+        ...(slot.job.id.startsWith("pending_") && slot.job.error ? { error: slot.job.error } : {}),
+      })) } : {}),
       ...(jobs[0] ? { jobId: jobs[0].id,
         ...(jobs.length > 1
           ? { jobIds: jobs.map((job) => job.id), localJobs: jobs.map(localJobWithoutEphemeralUrls) }
