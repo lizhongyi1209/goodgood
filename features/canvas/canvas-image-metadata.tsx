@@ -48,7 +48,9 @@ export function CanvasImageMetadataProvider({ children, enabled, ownerKey, pageK
 }
 
 async function decodeDimensions(blob: Blob, signal: AbortSignal) {
-  const image = await createImageBitmap(blob);
+  let image: ImageBitmap;
+  try { image = await createImageBitmap(blob); }
+  catch (cause) { signal.throwIfAborted(); throw new Error("原图无法解码，请重新选择完整的 JPEG 或 PNG 图片。", { cause }); }
   try { signal.throwIfAborted(); return { width: image.width, height: image.height }; }
   finally { image.close(); }
 }
@@ -60,7 +62,9 @@ async function metadataFile(original: Original, fields: ImageFileMetadataFields,
   if (clear && original.metadata.orientation > 1 && original.metadata.orientation <= 8) {
     // Browser decoding honours EXIF orientation. PNG keeps these displayed pixels
     // without carrying the orientation tag or recompressing them as JPEG.
-    const image = await createImageBitmap(original.blob);
+    let image: ImageBitmap;
+    try { image = await createImageBitmap(original.blob); }
+    catch (cause) { signal.throwIfAborted(); throw new Error("原图无法解码，无法保留图片朝向。请重试。", { cause }); }
     const canvas = document.createElement("canvas");
     try {
       signal.throwIfAborted();
