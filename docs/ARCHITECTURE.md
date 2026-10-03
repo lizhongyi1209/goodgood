@@ -1,5 +1,23 @@
 # Architecture
 
+## GG-321 per-request canvas image slots
+
+The generator projects results from stable slots rather than compacting only
+successful job outputs. New canvas submissions fan each prompt/count into
+independent count1 jobs, with a persisted request key and frozen input per slot;
+Seedream's native layer outputs preserve their original job semantics. Initialize
+all positions before submitting, and update slots independently so concurrent
+completion and a chosen retry do not replace sibling state. Unknown POST recovery
+uses the same request key; confirmed failure retries create one normal single-image
+attempt. The server's existing generation idempotency/quote/credit rules remain.
+
+Slot persistence extends canvas JSON, not the SQL schema. The project boundary
+must validate the slot input and accepted job/reference ownership, remove local
+temporary IDs and private runtime URLs, and retain old jobId/jobIds documents.
+Each rendered image remains associated with its owning job/output for cropping,
+viewing and connecting. A new Web build is required for added cloud fields; current
+runtime is kept until the user explicitly delegates activation. See ADR0134.
+
 ## GG-318 image failure diagnostics
 
 The image adapter captures allowlisted request metadata and explicit error fields.
