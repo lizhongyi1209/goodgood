@@ -1,6 +1,6 @@
 # GG-340 · 实时平台公告
 
-- 后续入口细化：用户要求去掉画布「公告」两字、仅保留icon并确认新公告提醒。从核验1c9ecbf/40a67bb隔离codex/GG-340-announcement-icon、F:/goodgood-worktrees/GG-340-announcement-icon；只修改共享入口的iconOnly选项/圆点定位与画布调用，保留大厅标签/接收提醒/阅读面板与所有后端。ADR0137及设计说明同步；不构建检查/测试/浏览器验收，不启用迁移/Web。该后续隔离创建1/退役待办，累计创建2/退役1。
+- 后续入口细化：用户要求去掉画布「公告」两字、仅保留icon并确认新公告提醒。从核验1c9ecbf/40a67bb隔离codex/GG-340-announcement-icon、F:/goodgood-worktrees/GG-340-announcement-icon；只修改共享入口的iconOnly选项/圆点定位与画布调用，保留大厅标签/接收提醒/阅读面板与所有后端。ADR0137及设计说明同步；不构建检查/测试/浏览器验收，不启用迁移/Web。972303e已精确接入d4c1e80；该后续隔离创建1/退役1、正常移除并保留分支，累计创建2/退役2。未运行自动验证或操作后台。
 
 - 日期：2026-10-03；用户调用Impeccable，要求右上角公告、站长发布活动/重要信息、实时显眼提醒、X式简洁帖子流、点赞/观看统计暂不展示。
 - 基线：核验c09d623；根agent独立codex/GG-340-announcements、F:/goodgood-worktrees/GG-337-announcements，不启用子agent，保留并行GG-332–336及其他源码。
