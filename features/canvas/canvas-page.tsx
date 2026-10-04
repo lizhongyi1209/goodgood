@@ -2624,14 +2624,15 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
                   data-sort-dragging={referenceReorder.draggingKey === item.orderKey || undefined}
                   data-sort-target={referenceReorder.targetKey === item.orderKey && referenceReorder.draggingKey !== item.orderKey || undefined}
                 >
-                  <Tooltip open={referenceReorder.draggingKey ? false : undefined}>
+                  <Tooltip>
                     <TooltipTrigger asChild>
                       <span className={styles.referenceImageTrigger} tabIndex={0} {...referenceReorder.bind(item.orderKey)}
                         aria-label={`预览参考图 ${index + 1}：${item.reference.name}${item.reference.status === "uploading" ? "，上传中" : item.reference.status === "failed" ? "，上传失败" : ""}，Alt加左右方向键调整顺序`}>
                         <PrivateObjectImage src={item.previewUrl} alt={item.reference.name} />
                       </span>
                     </TooltipTrigger>
-                    <TooltipContent side="top" align="center" sideOffset={8} hideArrow className={styles.referencePreview}>
+                    <TooltipContent side="top" align="center" sideOffset={8} hideArrow className={styles.referencePreview}
+                      style={referenceReorder.draggingKey ? { display: "none" } : undefined}>
                       <PrivateObjectImage src={item.previewUrl} alt={item.reference.name} loading="eager" />
                     </TooltipContent>
                   </Tooltip>
