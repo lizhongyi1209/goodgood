@@ -1,6 +1,8 @@
 import { PRIVATE_IMAGE_UPLOAD_MAX_BYTES } from "@/shared/contracts/upload-limits.mjs";
 import { loadCanvasCropImage, type CanvasCropImage } from "./canvas-image-crop-image";
 import { paintStickerComposition, type StickerPlacement } from "./canvas-image-placement-model.mjs";
+import { paintRegionAnnotation } from "./canvas-image-region-model.mjs";
+import type { PlacementRegion } from "./canvas-image-placement-model.mjs";
 
 export type PlacementImage = Awaited<ReturnType<typeof loadCanvasCropImage>>;
 
@@ -65,6 +67,25 @@ export async function exportStickerComposition(base: HTMLImageElement, layers: r
     return new File([blob], `${basename}_贴图.png`, { type: "image/png" });
   } catch (cause) {
     if (cause instanceof DOMException && cause.name === "SecurityError") throw new Error("图片无法保存，请关闭后重新打开贴图。");
+    throw cause;
+  } finally { canvas.width = 0; canvas.height = 0; }
+}
+
+export async function exportRegionAnnotation(base: HTMLImageElement, region: PlacementRegion, name: string, signal: AbortSignal): Promise<File> {
+  signal.throwIfAborted(); checkPlacementImageSize(base);
+  const canvas = document.createElement("canvas");
+  canvas.width = base.naturalWidth; canvas.height = base.naturalHeight;
+  try {
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("当前浏览器无法保存图片，请重试。");
+    paintRegionAnnotation(context, base, region, { width: canvas.width, height: canvas.height });
+    const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob((value) => value ? resolve(value) : reject(new Error("框选图片保存失败，请重试。")), "image/png"));
+    signal.throwIfAborted();
+    if (blob.size > PRIVATE_IMAGE_UPLOAD_MAX_BYTES) throw new Error("框选副本超过 20 MB，请使用较小的原图。");
+    const basename = name.replace(/\.[^.]+$/, "").replace(/[\\/:*?"<>|\u0000-\u001f]/g, "_").slice(0, 100).trim() || "GoodGood图片";
+    return new File([blob], `${basename}_框选.png`, { type: "image/png" });
+  } catch (cause) {
+    if (cause instanceof DOMException && cause.name === "SecurityError") throw new Error("图片无法保存，请关闭后重新打开框选。");
     throw cause;
   } finally { canvas.width = 0; canvas.height = 0; }
 }

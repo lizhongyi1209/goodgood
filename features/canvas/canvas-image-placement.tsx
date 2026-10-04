@@ -33,7 +33,7 @@ export function CanvasImagePlacementProvider({ children, enabled, libraryEnabled
     if (enabled) setRequest({ ...image, mode, trigger, ownerKey, pageId: pageKey, sessionId: crypto.randomUUID() });
   } }}>
     {children}
-    {visible?.mode === "region" && <CanvasImageRegionEditor key={visible.sessionId} request={visible} onClose={() => setRequest(null)} />}
+    {visible?.mode === "region" && <CanvasImageRegionEditor key={visible.sessionId} request={visible} onCommit={onCommit} onClose={() => setRequest(null)} />}
     {visible?.mode === "sticker" && <PlacementDialog key={visible.sessionId} request={visible} libraryEnabled={libraryEnabled} onCommit={onCommit} onClose={() => setRequest(null)} />}
   </CanvasImagePlacementContext.Provider>;
 }
