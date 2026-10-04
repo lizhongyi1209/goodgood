@@ -1,5 +1,7 @@
 # 当前任务与优先级
 
+> [GG-359](tasks/GG-359-image-region-copy.md) 红框编辑/确认副本开发中：用户替换bbox复制为原图红框标注副本。独立managed工作区、根agent，无子agent/依赖副本；保留当前GG-358运行与GG-356源码。按GG-276不自动检查或测试，完成后用户刷新手验。
+
 > [GG-358](tasks/GG-358-local-runtime-recovery.md) 2026-10-04连接拒绝再恢复：原应用进程已停止，Docker依赖healthy，日志无明确退出原因。必要构建verified 3b7393a16fc013d867c9be35904b1f61eb5bc0ee；通过Windows CIM/隐藏launcher独立启动Web7704/32131、唯一Worker15844/32142、Vite35552/5173（启动器23288）。launcher父进程为WmiPrvSE，跨命令仍运行；首页/原画布200、API代理verified、readiness五项ok。原66迁移/外部cloud-development/local-mailpit保留，启动前任务/outbox/预留/队列均0，无迁移/重置/fixture/真实请求/扣费或生产操作。创建0/退役0，未测试/lint/typecheck/浏览器验收；用户刷新手验。未确认前次退出根因，不声称根治，若再退出查本次退出日志；下方旧PID为历史。
 
 > [GG-357](tasks/GG-357-local-restart-after-reboot.md) 电脑重启恢复完成：复用原E盘healthy依赖及当前GG-116，必要构建verified d066a241f385c52ef0032d3aca91f2e1bf614079，Web31140/32131、唯一Worker2624/32142、Vite28824/5173（启动器13756）可用；首页/原画布200，API代理verified，两角色readiness五项ok。启动前任务/outbox/预留/队列均0，本地66迁移保留，无迁移/重置/fixture/真实请求/扣费或生产操作。GG-350原因采集已随当前Worker启用，GG-356修复保留，用户手验；创建0/退役0，未测试/lint/typecheck/浏览器验收。下方Worker待启用及旧PID为历史交付状态。
