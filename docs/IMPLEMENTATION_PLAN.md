@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-04
-- Current phase: GG-358连接拒绝恢复完成，当前版本Web/唯一Worker/5173已独立后台运行，66迁移及全部既有源码保持，未部署生产。
-- Current objective: 用户刷新原画布继续手验Seedream及图片工具，不自动重放；如服务再退出先读取GG-358独立launcher退出日志。GG-350及GG-356启用保持，前次退出根因仍未确定。
+- Current phase: GG-359红框编辑/确认副本源码已接入，用户手验待办；当前本地运行沿GG-358独立后台恢复receipt，未部署生产。
+- Current objective: 用户刷新原画布手验框选编辑状态、重画/调整及确认PNG副本，继续Seedream和既有工具手验，不自动重放/检查或重启。GG-350/GG-356启用保持；若连接再次退出查GG-358退出日志。
 - Previous objective: GG-313模板名称格式/示例参考、GG-312画布300%高清门槛、GG-311模板保存/成功动效及类型筛选、GG-310前景色已交付源码；GG-309私有2K接口、批量校验及文本资产API/本地0063已启用。
 
 ## Current checkpoint
+
+- 当前应用源码检查点：34709d4a78f7c881fd23fc8720d96cc5ab5ee7ab；[GG-359](tasks/GG-359-image-region-copy.md) 红框编辑/副本源码完成：隔离7522b6beeb889169d0349a5b697dff06393d3c88精确接入34709d4a78f7c881fd23fc8720d96cc5ab5ee7ab。原图默认居中红框/四角柄、图内编辑提示/浅遮罩，支持重画/移动/调节及画布缩放；bbox/复制移除，右侧正常仅取消/确认。确认共同标注几何导出原尺寸PNG并走已有旁置副本/上传/资产/项目保存，原图保留，提示/遮罩/柄不导出。selected/来源ID/页/身份/取消和资源释放保持，贴图原流程保持。ADR0141及AGENTS标注红色例外、产品/交互/设计/手验说明同步。沿GG-276合成回归仅写来源，未构建/lint/typecheck/代码检查/测试/浏览器验收，无HTTP/SQL/Provider/扣费/后台/服务或生产操作；GG-358运行receipt未重查。创建1/退役1，managed辅助归档，无子agent/依赖缓存。用户刷新5173手验。 下方旧框选bbox/复制验收为历史，现行按GG-359；下一任务以当前HEAD核验祖先，不改写GG-358运行身份。
 
 - 最新运行恢复：[GG-358](tasks/GG-358-local-runtime-recovery.md) 2026-10-04连接拒绝再恢复：原应用进程已停止，Docker依赖healthy，日志无明确退出原因。必要构建verified 3b7393a16fc013d867c9be35904b1f61eb5bc0ee；通过Windows CIM/隐藏launcher独立启动Web7704/32131、唯一Worker15844/32142、Vite35552/5173（启动器23288）。launcher父进程为WmiPrvSE，跨命令仍运行；首页/原画布200、API代理verified、readiness五项ok。原66迁移/外部cloud-development/local-mailpit保留，启动前任务/outbox/预留/队列均0，无迁移/重置/fixture/真实请求/扣费或生产操作。创建0/退役0，未测试/lint/typecheck/浏览器验收；用户刷新手验。未确认前次退出根因，不声称根治，若再退出查本次退出日志；下方旧PID为历史。 当前应用源码仍6ba2d0d；运行receipt严格绑定3b7393a，纯文档提交不改写身份，未来启动按届时HEAD构建。
 
@@ -13,7 +15,7 @@
 
 - Seedream诊断历史（已按GG-356修复）：[GG-355](tasks/GG-355-seedream-diagnosis.md) GG-355只读诊断完成：2026-10-03 22:14:49/22:14:52两次POST /api/generations返回503，Web日志均为generation_batches_model_check约束失败。已验证127.0.0.1:54449/goodgood（连接/事务只读）：Seedream目录启用且1K30/2K60报价存在，但generation_batches/projects/creation_drafts模型约束只含五个原有模型、缺seedream-5.0-pro；源码0054只加目录/价格未扩展约束。Seedream任务未落库，未到Worker/上游；按事务代码在预留积分前失败并回滚。当前请求仅诊断，未改代码/迁移/真实数据/服务或触发生成；后续修复应新增迁移放行三处约束，不重写已应用0054。GG-354源码检查点cc31fcce862f127400ac5a65ef26bf55743ea969及现有功能/运行保持；GG-350Worker原因采集待办继续。 另已确认db/schema.ts三处采用模型ID格式约束，与已应用SQL的五模型枚举不一致。
 
-- 当前应用源码检查点：6ba2d0d57ae15a4a77a6f3e01810dc0e72f96151；[GG-356](tasks/GG-356-seedream-constraints.md) GG-356已修复并本地启用：隔离4dbdaa4c7a53ffaff3cffb9440fe7e285e8b85b5精确接入6ba2d0d57ae15a4a77a6f3e01810dc0e72f96151。新增0066仅对齐generation_batches/projects/creation_drafts模型ID约束至既有schema，修复Seedream提交前503。2026-10-04 00:15:02通过直接迁移模块只应用0066到127.0.0.1:54449/goodgood；历史65条内容校验和匹配，迁移总数66，新校验和记录匹配，三处约束validated。迁移前后账户/资产/参考图/任务/项目/草稿及积分流水数量、个人/工作区可用及预留余额、Seedream目录/全部报价均不变，开始活动任务0。未改旧迁移/运行JS，不需构建或重启；Web/唯一Worker/Vite沿既有运行，GG-350Worker更新待办保持。专用数据库回归仅写来源，沿GG-276未构建/lint/typecheck/代码检查/测试/浏览器验收；无合成任务/Provider/扣费/自动重放或生产操作。创建1/退役1，managed辅助确认归档，无子agent/缓存。用户现在可自行重试Seedream，真实生成效果待手验。
+- 历史应用源码检查点：6ba2d0d57ae15a4a77a6f3e01810dc0e72f96151；[GG-356](tasks/GG-356-seedream-constraints.md) GG-356已修复并本地启用：隔离4dbdaa4c7a53ffaff3cffb9440fe7e285e8b85b5精确接入6ba2d0d57ae15a4a77a6f3e01810dc0e72f96151。新增0066仅对齐generation_batches/projects/creation_drafts模型ID约束至既有schema，修复Seedream提交前503。2026-10-04 00:15:02通过直接迁移模块只应用0066到127.0.0.1:54449/goodgood；历史65条内容校验和匹配，迁移总数66，新校验和记录匹配，三处约束validated。迁移前后账户/资产/参考图/任务/项目/草稿及积分流水数量、个人/工作区可用及预留余额、Seedream目录/全部报价均不变，开始活动任务0。未改旧迁移/运行JS，不需构建或重启；Web/唯一Worker/Vite沿既有运行，GG-350Worker更新待办保持。专用数据库回归仅写来源，沿GG-276未构建/lint/typecheck/代码检查/测试/浏览器验收；无合成任务/Provider/扣费/自动重放或生产操作。创建1/退役1，managed辅助确认归档，无子agent/缓存。用户现在可自行重试Seedream，真实生成效果待手验。
 
 - 历史应用源码检查点：cc31fcce862f127400ac5a65ef26bf55743ea969；[GG-354](tasks/GG-354-inline-bbox.md) GG-354源码完成：隔离f6362fa868c019653695ba7a801f1753fec4aad1精确接入cc31fcce862f127400ac5a65ef26bf55743ea969；框选直接在画布原图拖框/移动/四角调整，无遮罩或独立弹框，右侧正常只显示原图像素bbox与取消/复制，复制仅一行坐标。浮层随原图/画布缩放移动，原图滚轮交现有画布；取消/Escape、空/加载/失败、切页/身份/源图守卫、键盘/触屏与资源释放已写。旧弹框框选状态/UI移除，贴图保留。保留GG-353连续工具栏008562243cd64a3d2f7fe57f618b9c4c36668ae2、GG-351顶部工具区及GG-346/350/349。GG-354合成回归仅写来源，沿GG-276未构建/lint/typecheck/代码检查/测试/浏览器验收，无应用HTTP/SQL/Provider/扣费/运行/后台或生产操作，既有receipt未重查。创建1/退役1，managed辅助确认归档，无子agent/依赖缓存。用户刷新5173手验原图框选/坐标复制/取消/画布缩放及原有贴图；GG-350仍待独立委托更新唯一Worker。
 
