@@ -1,5 +1,7 @@
 # Development and deployment
 
+- GG-357本地重启完成：[任务卡](tasks/GG-357-local-restart-after-reboot.md)。GG-116必要构建verified d066a241f385c52ef0032d3aca91f2e1bf614079，Web31140/32131、唯一Worker2624/32142、Vite28824/5173（启动器13756）可用。原E盘依赖healthy，66迁移保留；API代理verified、首页/原画布200及readiness五项ok。GG-350原因采集随Worker启用，当前运行身份以本条为准。未迁移/重置/写fixture/发真实请求/扣费或生产部署；测试和浏览器验收未做，用户刷新手验。
+
 - GG-356本地应用完成：GG-356已修复并本地启用：隔离4dbdaa4c7a53ffaff3cffb9440fe7e285e8b85b5精确接入6ba2d0d57ae15a4a77a6f3e01810dc0e72f96151。新增0066仅对齐generation_batches/projects/creation_drafts模型ID约束至既有schema，修复Seedream提交前503。2026-10-04 00:15:02通过直接迁移模块只应用0066到127.0.0.1:54449/goodgood；历史65条内容校验和匹配，迁移总数66，新校验和记录匹配，三处约束validated。迁移前后账户/资产/参考图/任务/项目/草稿及积分流水数量、个人/工作区可用及预留余额、Seedream目录/全部报价均不变，开始活动任务0。未改旧迁移/运行JS，不需构建或重启；Web/唯一Worker/Vite沿既有运行，GG-350Worker更新待办保持。专用数据库回归仅写来源，沿GG-276未构建/lint/typecheck/代码检查/测试/浏览器验收；无合成任务/Provider/扣费/自动重放或生产操作。创建1/退役1，managed辅助确认归档，无子agent/缓存。用户现在可自行重试Seedream，真实生成效果待手验。
 
 ## GG-356 · Seedream本地约束修复

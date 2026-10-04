@@ -271,3 +271,5 @@ node dist/local-checkpoint-portfix.mjs start workspace --cloud-env-file "$taskCl
 ## 下一步
 
 用户刷新5173手动测试文本生成、可编辑结果/停止/保存与每次20积分；构建及本地0061/Web已启用，实际提供商响应/视觉效果尚未验收。后续仍默认仅开发代码，不自动编译/代码检查；GG-294辅助目录已退役。免费政策待用户明确后再开发quota/升级Web与Worker，新需求以当前HEAD核对祖先，生产另获授权。
+- 最新重启恢复：[GG-357](tasks/GG-357-local-restart-after-reboot.md) 2026-10-04已恢复GG-116本地项目；verified构建d066a241f385c52ef0032d3aca91f2e1bf614079，Web31140/32131、唯一Worker2624/32142、Vite28824/5173（启动器13756）。原E盘healthy依赖/66迁移/外部cloud-development/local-mailpit保留，启动前活动任务/outbox/预留/队列均0，首页/原画布200、API代理verified、readiness五项ok。GG-350随当前Worker启用，下面Worker待启用/旧运行身份为历史。创建0/退役0，无测试/lint/typecheck/浏览器验收、迁移/fixture/真实生成/扣费或生产操作；用户刷新原画布。纯文档提交不改变运行receipt，下次重启仍按届时HEAD构建；适配器/日志备份见任务卡。
+

@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-04
-- Current phase: GG-356 Seedream模型约束源码修复及本地0066已完成，真实生成待用户手验；保留GG-354框选和既有画布工具，未部署生产。
-- Current objective: 用户自行重试Seedream确认生成/保存及正常积分结算，不自动重放。0066本地已应用/三处约束和数据保留已核对，无待办后台重启；GG-354/352/353/351/346手验继续，GG-350唯一Worker更新仍待独立委托。
+- Current phase: GG-357电脑重启恢复完成，当前版本Web/唯一Worker及5173可用；GG-356本地0066和GG-354框选等保留，真实生成待用户手验，未部署生产。
+- Current objective: 用户刷新原画布，自行重试Seedream确认生成/保存及正常积分结算，不自动重放；GG-354/352/353/351/346手验继续。GG-350原因采集已随当前唯一Worker恢复启用，无待办后台启动。
 - Previous objective: GG-313模板名称格式/示例参考、GG-312画布300%高清门槛、GG-311模板保存/成功动效及类型筛选、GG-310前景色已交付源码；GG-309私有2K接口、批量校验及文本资产API/本地0063已启用。
 
 ## Current checkpoint
+
+- 最新运行恢复：[GG-357](tasks/GG-357-local-restart-after-reboot.md) 2026-10-04按用户要求，复用原E盘healthy依赖及GG-116必要构建verified d066a241f385c52ef0032d3aca91f2e1bf614079；Web31140/32131、唯一Worker2624/32142、Vite28824/5173（启动器13756）可用，首页及原画布200，API代理verified，readiness五项ok。启动前活动任务/outbox/预留/两队列均0，66迁移及既有数据保留，无迁移/重置/fixture/真实请求/扣费/生产操作。GG-350随当前Worker启用，下面待启用和旧运行receipt是历史。当前应用源码仍6ba2d0d57ae15a4a77a6f3e01810dc0e72f96151；纯文档交接不改写运行receipt，未来启动按届时HEAD构建。创建0/退役0，未测试/lint/typecheck/浏览器验收。
 
 - Seedream诊断历史（已按GG-356修复）：[GG-355](tasks/GG-355-seedream-diagnosis.md) GG-355只读诊断完成：2026-10-03 22:14:49/22:14:52两次POST /api/generations返回503，Web日志均为generation_batches_model_check约束失败。已验证127.0.0.1:54449/goodgood（连接/事务只读）：Seedream目录启用且1K30/2K60报价存在，但generation_batches/projects/creation_drafts模型约束只含五个原有模型、缺seedream-5.0-pro；源码0054只加目录/价格未扩展约束。Seedream任务未落库，未到Worker/上游；按事务代码在预留积分前失败并回滚。当前请求仅诊断，未改代码/迁移/真实数据/服务或触发生成；后续修复应新增迁移放行三处约束，不重写已应用0054。GG-354源码检查点cc31fcce862f127400ac5a65ef26bf55743ea969及现有功能/运行保持；GG-350Worker原因采集待办继续。 另已确认db/schema.ts三处采用模型ID格式约束，与已应用SQL的五模型枚举不一致。
 
