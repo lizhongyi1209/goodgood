@@ -301,3 +301,7 @@ user's code-only agreement, no compilation, checks or browser acceptance run.
 ## GG-363 · One gesture for multiple references (2026-10-04)
 
 Two or more selected image sources expose a common output. A successful drop into an image generator retains a reusable reference group and one visible connection. The tray lists each independent member and supports target-local exclusions. Keep the existing ten-reference total, owner-scoped generated-image imports, pending/failed generation gates and explicit Generate action. Source order, group persistence and reversible cloud compatibility follow ADR0135 GG-363; no generation or provider request occurs merely by connecting.
+
+## GG-365 · Target-local reference tray order (2026-10-04)
+
+The user may drag chat reference thumbnails to reorder all direct and linked image inputs, including group members. This target-local order overrides the default direct/edge/group reading order for that generator without changing the source group or another target. Thumbnail numbering and subsequent frozen generation inputs follow the same order; already submitted jobs remain unchanged. New inputs append. Keep the current cursor, previews, removal/retry and edit locks. Pointer cancellation/Escape or releasing outside images makes no edit; Alt+Left/Right provides keyboard movement. Browser draft order persists through history/copy; the reversible cloud adapter uses existing direct-ID order and ranked edge IDs, stripping the browser-only field so the current backend remains compatible. No generation is triggered by sorting.
