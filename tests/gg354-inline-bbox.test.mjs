@@ -30,9 +30,11 @@ test("reverse dragging from client coordinates clamps to the original image", ()
 test("right action panel stays within the available canvas and narrower screens", () => {
   const available = { left: 240, top: 80, width: 1000, height: 700 };
   const image = { left: 300, top: 200, width: 400, height: 350 };
-  assert.deepEqual(regionPanelPosition(image, available, 120), { left: 712, top: 200, width: 156, maxHeight: 676 });
+  assert.deepEqual(regionPanelPosition(image, available, 120), { left: 712, top: 200, width: 116, maxHeight: 676 });
   const overflow = regionPanelPosition({ ...image, left: 1100, top: 900 }, available, 150);
-  assert.equal(overflow.left, 1072); assert.equal(overflow.top, 618);
+  assert.equal(overflow.left, 1112); assert.equal(overflow.top, 618);
+  const busy = regionPanelPosition({ ...image, left: 1100 }, available, 48, 144);
+  assert.equal(busy.left, 1084); assert.equal(busy.width, 144);
   const narrow = regionPanelPosition(image, { left: 0, top: 60, width: 140, height: 240 }, 120);
   assert.equal(narrow.left, 12); assert.equal(narrow.width, 116); assert.equal(narrow.top, 168);
 });

@@ -46,8 +46,8 @@ export function regionPointFromClient(point, frame, size) {
   return { x: (point.x - frame.left) / frame.width * size.width, y: (point.y - frame.top) / frame.height * size.height };
 }
 
-export function regionPanelPosition(frame, available, panelHeight = 54) {
-  const width = Math.max(0, Math.min(156, available.width - 24));
+export function regionPanelPosition(frame, available, panelHeight = 48, panelWidth = 116) {
+  const width = Math.max(0, Math.min(156, panelWidth, available.width - 24));
   const left = Math.max(available.left + 12, Math.min(frame.left + frame.width + 12, available.left + available.width - width - 12));
   const maxHeight = Math.max(0, available.height - 24);
   const top = Math.max(available.top + 12, Math.min(frame.top, available.top + available.height - Math.min(panelHeight, maxHeight) - 12));

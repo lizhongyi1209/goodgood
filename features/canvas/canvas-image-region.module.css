@@ -4,8 +4,6 @@
 .surface[aria-busy=true] { cursor: progress; }
 .annotation { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .shade { fill: #000; fill-opacity: 0.14; }
-.editHint { position: absolute; top: 8px; left: 8px; display: flex; align-items: center; gap: 5px; max-width: calc(100% - 16px); padding: 5px 7px; border: 1px solid #e9e9e9; border-radius: 6px; background: #fff; color: #242424; font-size: 11px; line-height: 15px; pointer-events: none; }
-.editHint svg { flex-shrink: 0; }
 .selection { position: absolute; cursor: move; outline: none; }
 .selection:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
 .corner { position: absolute; display: grid; place-items: center; width: 24px; height: 24px; padding: 0; transform: translate(-50%, -50%); border: 0; background: transparent; touch-action: none; }
@@ -13,8 +11,8 @@
 .corner[data-region-corner=nw], .corner[data-region-corner=se] { cursor: nwse-resize; }
 .corner[data-region-corner=ne], .corner[data-region-corner=sw] { cursor: nesw-resize; }
 .corner:focus-visible { outline: 2px solid #18181b; outline-offset: -2px; border-radius: 6px; }
-.panel { position: fixed; z-index: 9; overflow: auto; padding: 12px; border: 1px solid #e9e9e9; border-radius: 12px; background: #fff; color: #242424; box-shadow: 0 2px 6px #0000000a; outline: none; }
-.actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 6px; }
+.panel { position: fixed; z-index: 9; overflow: auto; padding: 8px; border: 1px solid #e9e9e9; border-radius: 12px; background: #fff; color: #242424; box-shadow: 0 2px 6px #0000000a; outline: none; }
+.actions { display: flex; justify-content: flex-start; flex-wrap: wrap; gap: 6px; }
 .actions [data-slot=button] { height: 30px; gap: 5px; padding-inline: 11px; border-radius: 7px; font-size: 12px; }
 .actions [data-variant=default] { background: #242424; color: #fff; }
 .actions [data-slot=button]:focus-visible { outline: 2px solid #18181b; outline-offset: 2px; }

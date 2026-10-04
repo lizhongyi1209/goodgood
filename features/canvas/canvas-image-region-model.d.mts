@@ -6,4 +6,4 @@ export function regionMarkRects(region: PlacementRegion | null, size: PlacementS
 export function paintRegionAnnotation(context: CanvasRenderingContext2D, base: CanvasImageSource, region: PlacementRegion, size: PlacementSize): void;
 export function regionImageFrame(bounds: RegionScreenRect, size: PlacementSize): RegionScreenRect | null;
 export function regionPointFromClient(point: PlacementPoint, frame: RegionScreenRect, size: PlacementSize): PlacementPoint;
-export function regionPanelPosition(frame: RegionScreenRect, available: RegionScreenRect, panelHeight?: number): Readonly<{ left: number; top: number; width: number; maxHeight: number }>;
+export function regionPanelPosition(frame: RegionScreenRect, available: RegionScreenRect, panelHeight?: number, panelWidth?: number): Readonly<{ left: number; top: number; width: number; maxHeight: number }>;

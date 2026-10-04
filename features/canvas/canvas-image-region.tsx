@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent } from "react";
 import { createPortal } from "react-dom";
 import { useReactFlow, useStore } from "@xyflow/react";
-import { LoaderCircle, Scan } from "lucide-react";
+import { LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { canvasCropImageForNode, type CanvasCropCommit, type CanvasCropRequest } from "./canvas-image-crop-image";
 import { exportRegionAnnotation, loadPlacementImage, type PlacementImage } from "./canvas-image-placement-image";
@@ -84,7 +84,7 @@ export function CanvasImageRegionEditor({ request, onCommit, onClose }: Readonly
       const top = Math.max(bounds.top + 60, 0);
       const layer = { left, top, width: Math.max(0, Math.min(bounds.right, window.innerWidth) - left), height: Math.max(0, Math.min(bounds.bottom - 48, window.innerHeight) - top) };
       const frame = regionImageFrame(image.getBoundingClientRect(), natural ?? { width: image.naturalWidth, height: image.naturalHeight });
-      setLayout({ image: frame, layer, panel: regionPanelPosition(frame ?? layer, layer, panelRef.current?.offsetHeight) });
+      setLayout({ image: frame, layer, panel: regionPanelPosition(frame ?? layer, layer, panelRef.current?.offsetHeight, panelRef.current?.offsetWidth) });
     };
     measure();
     const observer = new ResizeObserver(measure);
@@ -180,7 +180,6 @@ export function CanvasImageRegionEditor({ request, onCommit, onClose }: Readonly
           {region && <path className={styles.shade} fillRule="evenodd" d={`M0 0H${natural.width}V${natural.height}H0Z M${region.x} ${region.y}H${region.x + region.width}V${region.y + region.height}H${region.x}Z`} />}
           {marks.map((mark, index) => <rect key={index} {...mark} fill={REGION_MARK_COLOR} />)}
         </svg>
-        <div className={styles.editHint} aria-hidden="true"><Scan size={13} />框选中 · 拖动画框</div>
         {region && <div className={styles.selection} data-region-selection role="group" tabIndex={0} aria-label="红色选框，拖动或方向键移动"
           style={{ left: percent(region.x, "width"), top: percent(region.y, "height"), width: percent(region.width, "width"), height: percent(region.height, "height") }}>
           {PLACEMENT_CORNERS.map((corner) => <button key={corner} type="button" className={styles.corner} data-region-corner={corner}
@@ -193,7 +192,7 @@ export function CanvasImageRegionEditor({ request, onCommit, onClose }: Readonly
         </div>}
       </div>
     </div>}
-    <section ref={panelRef} className={`${styles.panel} nodrag nopan nowheel nokey`} style={layout?.panel ?? { left: 12, top: 76, width: 156 }} tabIndex={-1} aria-label="框选操作" aria-busy={saving}
+    <section ref={panelRef} className={`${styles.panel} nodrag nopan nowheel nokey`} style={{ ...(layout?.panel ?? { left: 12, top: 76 }), width: "max-content", maxWidth: layout ? Math.min(156, Math.max(0, layout.layer.width - 24)) : 156 }} tabIndex={-1} aria-label="框选操作" aria-busy={saving}
       onPointerDown={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()} onWheel={(event) => event.stopPropagation()} onContextMenu={(event) => event.stopPropagation()}>
       {!natural && !sourceError && <p className={styles.status} role="status"><LoaderCircle size={13} className={styles.spinner} aria-hidden="true" />正在读取原图…</p>}
       {sourceError && <div role="alert"><p className={styles.error}>{sourceError}</p><Button variant="ghost" size="sm" className={styles.retry} onClick={() => setAttempt((value) => value + 1)}>重试读取</Button></div>}
