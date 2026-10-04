@@ -2386,8 +2386,8 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
             {saveState === "saved" ? "已保存" : saveState === "saving" ? "保存中…" : "未同步 · 重试"}
           </button>
         )}
-        {session?.access.status === "active" && <button type="button" className={styles.balance} aria-label={`打开账户管理，当前余额 ${billing?.account.availableCredits ?? (billingLoading ? "读取中" : "暂不可用")}`} onClick={() => setCreditUsageOpen(true)}><CreditIcon className="size-[1em]" />{billing?.account.availableCredits ?? "--"}</button>}
         <AnnouncementCenter session={session} iconOnly />
+        {session?.access.status === "active" && <button type="button" className={styles.balance} aria-label={`打开账户管理，当前余额 ${billing?.account.availableCredits ?? (billingLoading ? "读取中" : "暂不可用")}`} onClick={() => setCreditUsageOpen(true)}><CreditIcon className="size-[1em]" />{billing?.account.availableCredits ?? "--"}</button>}
         </div>}
       </header>
 
