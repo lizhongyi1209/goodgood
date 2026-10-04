@@ -1,0 +1,16 @@
+import type { Connection, Edge } from "@xyflow/react";
+import type { CanvasNode } from "./canvas-workspace";
+import type { GenerationReference } from "@/shared/contracts/generation";
+export const CANVAS_BATCH_REFERENCE_HANDLE: "selection-reference";
+export type CanvasReferenceAsset = { assetId?: string; generated: boolean; name: string; previewUrl: string };
+export type CanvasReferenceInput = { edgeId: string; key: string; sourceId: string; grouped: boolean; node: CanvasNode; asset: CanvasReferenceAsset | null };
+export function imageSourceAsset(node: CanvasNode | undefined): CanvasReferenceAsset | null;
+export function canConnectCanvasImage(node: CanvasNode): boolean;
+export function canvasReferenceGroupMembers(group: CanvasNode, nodes: readonly CanvasNode[]): CanvasNode[];
+export function canvasReferenceSelection(nodes: readonly CanvasNode[]): CanvasNode[];
+export function canvasReferenceInputKey(edge: Pick<Edge, "id">, sourceId: string, grouped?: boolean): string;
+export function canvasReferenceInputKeys(nodes: readonly CanvasNode[], edges: readonly Edge[]): Set<string>;
+export function canvasReferenceInputs(nodes: readonly CanvasNode[], edges: readonly Edge[], targetId?: string | null): CanvasReferenceInput[];
+export function uniqueCanvasReferenceInputs(inputs: readonly CanvasReferenceInput[], direct?: readonly GenerationReference[], converted?: Record<string, GenerationReference>): CanvasReferenceInput[];
+export function planCanvasReferenceConnection(nodes: readonly CanvasNode[], edges: readonly Edge[], connection: Connection | Edge, members: readonly CanvasNode[], direct?: readonly GenerationReference[], converted?: Record<string, GenerationReference>, limit?: number): { valid: boolean; message?: string; excludedSourceIds?: string[] };
+export function expandCanvasGroupReferences<E extends Edge>(nodes: readonly CanvasNode[], edges: readonly E[], groupIds: readonly string[], converted?: Record<string, GenerationReference>): { edges: E[]; converted: Record<string, GenerationReference> };

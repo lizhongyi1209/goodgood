@@ -1010,3 +1010,7 @@ Canvas edits write to IndexedDB before remote autosave. An unreachable API or of
 ## GG-346 · 调色错误与取消
 
 当前图片读取/解码失败在图面重试；参考失败/无可用颜色在面板重新匹配或显式换图/仅手动，不选另一参考冒充成功。黑白/全透明当前图仍可手动预览，自动匹配给出明确提示。WebGL不可用用CPU预览，上下文丢失提示重开；导出失败保留参数，沿原图实际JPEG/PNG格式保存，超过20MiB提示暂不能保存，不切换格式或压缩，超过4000万像素/16384边不静默降分辨率。取消/Escape和身份/页/源节点失效取消任务，迟到结果不提交；双击保存由进行中锁合并。保存成功仅表示新File通过现有副本提交，实际上传失败仍由原上传状态/重试处理，不提前宣称云端已持久化。
+
+## GG-363 · Batch reference failures
+
+Preflight each whole connection before grouping: reject mixed/unavailable sources, duplicate-only groups, cycles and total unique inputs above ten. An invalid generator drop uses the existing brief error notification, including required reduction; never silently load a partial batch or mutate existing refs. Uploading inputs stay placeholders and failed inputs retain per-image retry; both prevent Generate. Group members removed during dragging invalidate the frozen selection. Escape blocks even a late native pointer-up callback. Removed/excluded members and deleted pages cancel their own import consumers; other targets retain independent subscriptions.

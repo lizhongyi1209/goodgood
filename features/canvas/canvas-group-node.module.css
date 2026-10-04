@@ -32,3 +32,5 @@ header.header { gap: 4px; pointer-events: auto; cursor: grab; }
 .clearEmoji { margin: 4px 8px 8px; width: calc(100% - 16px); height: 30px; color: #52525b; font-size: 12px; }
 @media (hover: none) { .toolbar > button, .toolbar > .emojiTrigger { width: 32px; height: 32px; } }
 @media (prefers-reduced-motion: reduce) { .frame { transition: none; } }
+.referenceHandle { pointer-events: auto; z-index: 3; }
+.referenceHandle[data-connected="true"]:global(.react-flow__handle) { opacity: 1; --handle-breath-state: running; }

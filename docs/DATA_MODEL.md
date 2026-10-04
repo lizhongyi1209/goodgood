@@ -1061,3 +1061,7 @@ GG-268（ADR0124）在现有JSON文档新增`textEditor`节点，保存`markdown
 ## GG-308 私有文本模板资产补充
 
 迁移`0063_gg308_text_template_assets.sql`新增text_assets：UUID主键、workspace/owner外键、名称、完整Markdown/纯文本和created_at。内容边界沿编辑器的纯文本16000/Markdown100000，名称255；列表只投影最多2000字预览，完整数据按同一受权ID读取。客户端冻结保存尝试的UUID，重复同内容返回已有资产，冲突409不覆盖。删除资产及其text类型整理记录在同一事务，模板移动通过共享行锁与删除串行；asset_organization的类型约束仅增text，原媒体数据不重写。拖入画布是现有textEditor内容副本，无新图字段/依赖ID，删除资产不会删除已插入文本。此迁移仅写源码、未执行，本地0062及生产状态保持。见[ADR0133](decisions/0133-canvas-text-template-assets.md)。
+
+## GG-363 · Browser reference groups
+
+Browser page JSON carries optional group referenceOrder (member node IDs) and edge excludedSourceIds (target-local member omissions). Runtime edge data holds exclusions; composite edgeId:memberId keys isolate converted imports. History/copy remap both member lists and conversion keys; deleting pages aborts all member imports, pending imports block page deletion. Cloud documents strip these browser fields, encode active members as ordinary child edges and retain child-array order; omitted members infer exclusions on restore. Existing project schemaVersion, tables and server validator stay unchanged.

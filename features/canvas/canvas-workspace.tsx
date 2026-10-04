@@ -16,6 +16,8 @@ import {
   type EdgeChange,
   type Connection,
   type ReactFlowInstance,
+  type OnConnectStart,
+  type OnConnectEnd,
 } from "@xyflow/react";
 
 import { ZoomSelect } from "@/components/ui/zoom-select";
@@ -36,10 +38,11 @@ import { CanvasTextGenerationContext, type CanvasTextGenerationContextValue } fr
 import { CanvasGeneratorHostContext } from "./canvas-generator-host";
 import { CanvasImagePreviewProvider } from "./canvas-adaptive-image";
 import { CanvasSelectionControls } from "./canvas-selection-controls";
+import { CanvasBatchReferenceProvider, CanvasReferenceConnectionKeyboard } from "./canvas-batch-reference-handle";
 import { CanvasGroupNode, type CanvasGroupNodeType } from "./canvas-group-node";
 import { CanvasGroupActionsContext } from "./canvas-group-context";
 import { CanvasGroupBounds } from "./canvas-group-bounds";
-import { canGroupCanvasSelection, createCanvasGroup, ungroupCanvasNodes } from "./canvas-groups.mjs";
+import { canGroupCanvasSelection } from "./canvas-groups.mjs";
 import { CanvasImageCropContext, CanvasImageCropEditor } from "./canvas-image-crop";
 import { CanvasImageCompareProvider } from "./canvas-image-compare";
 import { CanvasImageColorProvider } from "./canvas-image-color";
@@ -173,6 +176,12 @@ export function CanvasWorkspace({
   onRedo,
   onBeforeGraphEdit,
   onConnect,
+  onReferenceConnectStart,
+  onReferenceConnectEnd,
+  onReferenceConnectCancel,
+  onGroupSelection,
+  onUngroup,
+  onInspectReferenceGroup,
   isValidConnection,
   onCreateGenerator,
   onCreateText,
@@ -209,6 +218,12 @@ export function CanvasWorkspace({
   onRedo: () => void;
   onBeforeGraphEdit: () => void;
   onConnect: (connection: Connection) => void;
+  onReferenceConnectStart: OnConnectStart;
+  onReferenceConnectEnd: OnConnectEnd;
+  onReferenceConnectCancel: () => void;
+  onGroupSelection: (footprints?: Parameters<typeof import("./canvas-selection-layout.mjs").arrangeCanvasSelection>[0]) => void;
+  onUngroup: (ids: string[], discardedEdgeIds?: string[]) => void;
+  onInspectReferenceGroup: (targetId: string) => void;
   isValidConnection: (connection: Connection | Edge) => boolean;
   onCreateGenerator: (point: { x: number; y: number }) => void;
   onCreateText: (point: { x: number; y: number }) => void;
@@ -292,9 +307,9 @@ export function CanvasWorkspace({
       const nodes = flow.getNodes();
       if (event.shiftKey) {
         const groups = nodes.filter((node) => node.selected && node.type === "group").map((node) => node.id);
-        if (groups.length) { onBeforeGraphEdit(); flow.setNodes(ungroupCanvasNodes(nodes, groups)); onProjectGraphChange(true); }
+        if (groups.length) onUngroup(groups);
       } else if (canGroupCanvasSelection(nodes)) {
-        onBeforeGraphEdit(); flow.setNodes(createCanvasGroup(nodes, `group-${crypto.randomUUID()}`)); onProjectGraphChange(true);
+        onGroupSelection();
       }
       return;
     }
@@ -326,7 +341,7 @@ export function CanvasWorkspace({
       event.stopPropagation();
       onBeforeGraphEdit();
       const groupIds = nodes.filter((node) => node.type === "group").map((node) => node.id);
-      if (groupIds.length) flow.setNodes((current) => ungroupCanvasNodes(current, groupIds));
+      if (groupIds.length) onUngroup(groupIds, edges.map((edge) => edge.id));
       // React Flow also removes connected edges and dispatches onEdgesChange/onNodesChange.
       void flow.deleteElements({ nodes: nodes.filter((node) => node.type !== "group"), edges }).finally(() => {
         onProjectGraphChange(true); canvasRef.current?.focus({ preventScroll: true });
@@ -508,7 +523,8 @@ export function CanvasWorkspace({
         onMouseLeave={hideEdgeDelete}>
       <ReactFlowProvider defaultNodes={initialNodes} initialEdges={edges} initialMinZoom={0.1} initialMaxZoom={8}>
       <CanvasGeneratorHostContext.Provider value={onComposerHostChange}>
-      <CanvasGroupActionsContext.Provider value={{ onBeforeGraphEdit, onProjectGraphChange }}>
+      <CanvasGroupActionsContext.Provider value={{ onBeforeGraphEdit, onProjectGraphChange, onUngroup }}>
+      <CanvasBatchReferenceProvider>
       <CanvasTextGenerationContext.Provider value={textGenerationContext}>
       <CanvasImagePreviewProvider ownerKey={textGenerationContext.ownerKey}>
       <CanvasImageCompareProvider enabled={cropEnabled} libraryEnabled={assetLibraryEnabled} pageKey={cropPageId} ownerKey={textGenerationContext.ownerKey}>
@@ -529,8 +545,13 @@ export function CanvasWorkspace({
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
-        onConnectStart={() => setConnectionActive(true)}
-        onConnectEnd={() => setConnectionActive(false)}
+        onConnectStart={(...args) => { setConnectionActive(true); onReferenceConnectStart(...args); }}
+        onConnectEnd={(...args) => { setConnectionActive(false); onReferenceConnectEnd(...args); }}
+        onClickConnectStart={(...args) => { setConnectionActive(true); onReferenceConnectStart(...args); }}
+        onClickConnectEnd={(...args) => { setConnectionActive(false); onReferenceConnectEnd(...args); }}
+        onEdgeClick={(_event, edge) => {
+          if (flowRef.current?.getNode(edge.source)?.type === "group") onInspectReferenceGroup(edge.target);
+        }}
         onEdgeMouseEnter={(event, edge) => {
           if (edgeDeleteVisibleRef.current === edge.id) {
             edgeHoverElementRef.current = event.currentTarget;
@@ -584,7 +605,8 @@ export function CanvasWorkspace({
       >
         <CanvasProjectChangeObserver onChange={onProjectGraphChange} />
         <CanvasGroupBounds />
-        <CanvasSelectionControls onBeforeGraphEdit={onBeforeGraphEdit} onProjectGraphChange={onProjectGraphChange} />
+        <CanvasReferenceConnectionKeyboard onCancel={() => { setConnectionActive(false); onReferenceConnectCancel(); }} />
+        <CanvasSelectionControls onBeforeGraphEdit={onBeforeGraphEdit} onProjectGraphChange={onProjectGraphChange} onGroupSelection={onGroupSelection} />
         {visibleCropRequest && <CanvasImageCropEditor key={visibleCropRequest.sessionId} request={visibleCropRequest} onClose={() => { setCropRequest(null); canvasRef.current?.focus({ preventScroll: true }); }} onCommit={onCropCommit} />}
         {miniMapOpen && (
           <MiniMap<CanvasNode>
@@ -653,6 +675,7 @@ export function CanvasWorkspace({
       </CanvasImageCompareProvider>
       </CanvasImagePreviewProvider>
       </CanvasTextGenerationContext.Provider>
+      </CanvasBatchReferenceProvider>
       </CanvasGroupActionsContext.Provider>
       </CanvasGeneratorHostContext.Provider>
       </ReactFlowProvider>

@@ -90,3 +90,13 @@ shows no icon or background. Empty labeled buttons preserve keyboard resizing
 and show an outline only on keyboard focus. Title/edge dragging, stable native
 callbacks, member containment, saved manual geometry and GG-333 automatic
 centering remain unchanged. No runtime or persistence change is required.
+
+## GG-363 · Reusable reference groups (2026-10-04)
+
+The user accepts GG-362: at least two selected sourceImage/imageResult nodes expose a single right-center output on the selection envelope. Keep this handle inside the leading image's React Flow node context, at the common bounds; freeze member IDs at connect-start. Cancelled/invalid drops never create a group. A valid image-generator drop groups the same nodes without moving them and retains one visible group edge. Existing pure-image groups reuse their own reference handle. Mixed groups and generator batches are not implicit reference sources.
+
+This supersedes the original blanket group-connection prohibition in the browser graph. Group member order is fixed at creation; later additions append and movement does not reorder it. Group edges retain target-local excluded member IDs; tray removal excludes only that member, removing the last input disconnects the edge. Reconnecting starts a fresh relationship. Ungrouping expands active inputs into ordinary image edges, preserving inputs and positions. Regrouping that deletes an old group similarly preserves its active references; moving only some members out updates the remaining group's future inputs.
+
+Cloud persistence uses a reversible compatibility adapter: encode each active member as an ordinary same-page reference edge with a reserved batchref ID, and order group children in the document by reference order. On restore collapse these edges to one group edge and infer target exclusions from omitted members. Browser-only order/exclusion fields never reach existing Web validation. Converted reference IDs follow each encoded member edge. All-excluded/empty edges disappear. No SQL migration, new Web validator or runtime update is needed; existing ownership checks remain. History and clipboard retain the native group edge and remap member IDs.
+
+Deduplicate actual images against direct and connected inputs before checking the ten-image capacity; an oversized batch changes nothing and explains how many to remove. Invalid or failed members block generation, pending members remain placeholders. Resolve groups to independent references; never form a collage or submit generation during connect/restore. Frozen generation input snapshots remain unchanged when group membership changes.

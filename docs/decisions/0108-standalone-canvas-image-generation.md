@@ -297,3 +297,7 @@ Completed edges retain GG-257's default gray solid/hover flow states and scissor
 behavior. This supersedes the earlier gray/static drag-preview presentation only;
 no connection validation, graph/persistence, backend or runtime change. Per the
 user's code-only agreement, no compilation, checks or browser acceptance run.
+
+## GG-363 · One gesture for multiple references (2026-10-04)
+
+Two or more selected image sources expose a common output. A successful drop into an image generator retains a reusable reference group and one visible connection. The tray lists each independent member and supports target-local exclusions. Keep the existing ten-reference total, owner-scoped generated-image imports, pending/failed generation gates and explicit Generate action. Source order, group persistence and reversible cloud compatibility follow ADR0135 GG-363; no generation or provider request occurs merely by connecting.

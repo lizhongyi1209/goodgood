@@ -1,13 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { NodeResizeControl, NodeToolbar, Position, useReactFlow, useStore, useStoreApi, type Node, type NodeProps, type OnResizeEnd } from "@xyflow/react";
+import { Handle, NodeResizeControl, NodeToolbar, Position, useReactFlow, useStore, useStoreApi, type Node, type NodeProps, type OnResizeEnd } from "@xyflow/react";
 import { Group, Scan, SmilePlus, Ungroup } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CANVAS_GROUP_NAME_LIMIT, canvasGroupContentBounds, canvasGroupFrameContainsContent,
-  fitCanvasGroups, resizeCanvasGroup, ungroupCanvasNodes } from "./canvas-groups.mjs";
+  fitCanvasGroups, resizeCanvasGroup } from "./canvas-groups.mjs";
+import { canConnectCanvasImage, canvasReferenceGroupMembers } from "./canvas-reference-sources.mjs";
 import { useCanvasGroupActions } from "./canvas-group-context";
 import { CanvasGroupEmojiPicker } from "./canvas-group-emoji-picker";
 import { measureCanvasGroupFootprints } from "./canvas-group-footprints";
@@ -15,7 +16,7 @@ import type { CanvasNode } from "./canvas-workspace";
 import workspaceStyles from "./canvas-workspace.module.css";
 import styles from "./canvas-group-node.module.css";
 
-export type CanvasGroupNodeData = { name: string; emoji?: string; sizing?: "auto" | "manual" };
+export type CanvasGroupNodeData = { name: string; emoji?: string; sizing?: "auto" | "manual"; referenceOrder?: string[] };
 export type CanvasGroupNodeType = Node<CanvasGroupNodeData, "group">;
 const corners = [
   { position: "top-left", label: "左上角" }, { position: "top-right", label: "右上角" },
@@ -26,6 +27,10 @@ export function CanvasGroupNode({ id, data, selected }: NodeProps<CanvasGroupNod
   const flow = useReactFlow<CanvasNode>();
   const store = useStoreApi<CanvasNode>();
   const zoom = useStore((state) => state.transform[2]);
+  const nodes = useStore((state) => state.nodes) as CanvasNode[];
+  const connected = useStore((state) => state.edges.some((edge) => edge.source === id && edge.sourceHandle === "reference"));
+  const referenceMembers = canvasReferenceGroupMembers({ id, type: "group", position: { x: 0, y: 0 }, data }, nodes);
+  const referenceCount = referenceMembers.length && referenceMembers.every(canConnectCanvasImage) ? referenceMembers.length : 0;
   const actions = useCanvasGroupActions();
   const actionsRef = useRef(actions);
   actionsRef.current = actions;
@@ -110,7 +115,7 @@ export function CanvasGroupNode({ id, data, selected }: NodeProps<CanvasGroupNod
         }}><Scan size={14} className="size-3.5" aria-hidden="true" /></Button>}
       <Button type="button" variant="ghost" size="icon-xs"
         aria-label="解散组" title="解散组，保留节点" onClick={() => {
-          actions.onBeforeGraphEdit(); flow.setNodes((nodes) => ungroupCanvasNodes(nodes, [id])); actions.onProjectGraphChange(true);
+          actions.onUngroup([id]);
         }}><Ungroup size={14} className="size-3.5" aria-hidden="true" /></Button>
       </div>
     </NodeToolbar>
@@ -142,6 +147,14 @@ export function CanvasGroupNode({ id, data, selected }: NodeProps<CanvasGroupNod
           {data.name}
         </button>}
       </header>
+      {(referenceCount > 0 || connected) && <Handle type="source" id="reference" position={Position.Right}
+        className={`${workspaceStyles.referenceOutputHandle} ${styles.referenceHandle} nodrag nopan`}
+        data-connected={connected || undefined} isConnectableStart={referenceCount > 0}
+        role="button" tabIndex={referenceCount > 0 ? 0 : -1}
+        aria-label={`连接${referenceCount}张参考图`} title={`连接${referenceCount}张参考图`} isConnectableEnd={false}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); event.currentTarget.click(); }
+        }} />}
     </div>
   </>;
 }

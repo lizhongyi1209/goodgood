@@ -5,9 +5,9 @@ import type { CanvasNode } from "./canvas-workspace";
 import styles from "./canvas-workspace.module.css";
 
 /** Layout reads shared by automatic fitting and a user-initiated resize. */
-export function measureCanvasGroupFootprints(state: Pick<ReactFlowState<CanvasNode>, "nodes" | "nodeLookup" | "domNode" | "transform">) {
+export function measureCanvasGroupFootprints(state: Pick<ReactFlowState<CanvasNode>, "nodes" | "nodeLookup" | "domNode" | "transform">, includeUngrouped = false) {
   const zoom = state.transform[2];
-  return state.nodes.filter((node) => node.parentId).flatMap((node) => {
+  return state.nodes.filter((node) => includeUngrouped || node.parentId).flatMap((node) => {
     const internal = state.nodeLookup.get(node.id);
     if (!internal?.measured.width || !internal.measured.height) return [];
     const position = canvasNodeAbsolutePosition(node, state.nodes);

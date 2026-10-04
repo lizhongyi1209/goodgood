@@ -9,6 +9,8 @@ export type CanvasProjectNode = Readonly<{
   parentId?: string;
   emoji?: string;
   groupSizing?: "auto" | "manual";
+  // Browser graph only; cloud compatibility encodes this in child order.
+  referenceOrder?: readonly string[];
   size?: Readonly<{ width: number; height: number }>;
   asset?: Readonly<{ id: string; kind: "reference" | "generated" | "video" | "audio" }>;
   jobId?: string;
@@ -44,6 +46,8 @@ export type CanvasProjectEdge = Readonly<{
   target: string;
   sourceHandle: string | null;
   targetHandle: string | null;
+  // Browser graph only; cloud compatibility encodes active child edges.
+  excludedSourceIds?: readonly string[];
 }>;
 
 export type CanvasProjectGenerator = Readonly<{

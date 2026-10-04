@@ -13,8 +13,9 @@ import {
   type CSSProperties,
   type DragEvent,
 } from "react";
-import { addEdge, applyEdgeChanges, useNodesState, type BuiltInEdge, type Connection, type Edge, type EdgeChange, type NodeChange, type ReactFlowInstance } from "@xyflow/react";
+import { addEdge, applyEdgeChanges, useNodesState, type BuiltInEdge, type Connection, type Edge, type EdgeChange, type NodeChange, type ReactFlowInstance, type OnConnectStart, type OnConnectEnd } from "@xyflow/react";
 import { ChevronDown, FileText, ImageIcon, LoaderCircle, Maximize2, Minimize2, X } from "lucide-react";
+import { toast } from "sonner";
 
 import { Attachment, AttachmentGroup } from "@/components/ui/attachment";
 import { Button } from "@/components/ui/button";
@@ -83,7 +84,7 @@ import { createCanvasGeneratedReferenceImporter } from "./canvas-generated-refer
 import { CANVAS_ASSET_LIBRARY_UPDATED_EVENT } from "./canvas-asset-upload";
 import { canvasCropImageForNode, type CanvasCropCommit } from "./canvas-image-crop-image";
 import type { CanvasImageCleanupCommit } from "./canvas-image-cleanup";
-import { CANVAS_PROMPT_MAX_LENGTH, collectCanvasTextInputs, combineCanvasPrompt, isCanvasTextConnection, isCanvasTextGenerationConnection, canvasConnectionCreatesCycle, normalizeCanvasInputEdge } from "./canvas-text-input.mjs";
+import { CANVAS_PROMPT_MAX_LENGTH, collectCanvasTextInputs, combineCanvasPrompt, isCanvasTextConnection, isCanvasTextGenerationConnection, normalizeCanvasInputEdge } from "./canvas-text-input.mjs";
 import { canvasGeneratorJobs, canvasGeneratorOutputs, canvasImageBatchCreditAmount, canvasImageJobIsActive, parseCanvasImagePrompts, recoverCanvasImageJob } from "./canvas-image-prompt-batch.mjs";
 import { pendingCanvasImageJob, pendingCanvasImageSlots, retryCanvasImageSlot, runCanvasGeneratorSlots } from "./canvas-generator-batch";
 import { canvasGeneratorSlots, canvasGeneratorResultSlots, canvasImageSlotCanRetry, recoverCanvasImageSlot, type CanvasImageSlot } from "./canvas-image-slots.mjs";
@@ -103,7 +104,11 @@ import {
   type LocalCanvasProject,
 } from "./canvas-project-local";
 import { CanvasProjectSync, localCanvasProjectFromRemote, type CanvasSaveState } from "./canvas-project-sync";
-import { CANVAS_GROUP_DRAG_HANDLE, canvasNodeAbsolutePosition, canvasPastedNodeGeometry, canvasSelectionWithMembers } from "./canvas-groups.mjs";
+import { CANVAS_GROUP_DRAG_HANDLE, canvasNodeAbsolutePosition, canvasPastedNodeGeometry, canvasSelectionWithMembers, createCanvasGroup, ungroupCanvasNodes } from "./canvas-groups.mjs";
+import { CANVAS_BATCH_REFERENCE_HANDLE, imageSourceAsset, canvasReferenceGroupMembers, canvasReferenceSelection,
+  canvasReferenceInputs, canvasReferenceInputKeys, uniqueCanvasReferenceInputs, planCanvasReferenceConnection, expandCanvasGroupReferences } from "./canvas-reference-sources.mjs";
+import { decodeCanvasReferenceDocument } from "./canvas-reference-document.mjs";
+import { measureCanvasGroupFootprints } from "./canvas-group-footprints";
 import { snapshotCanvasProject } from "./canvas-project-snapshot";
 import { readCanvasViewport, saveCanvasViewport, readCanvasActivePage, saveCanvasActivePage } from "./canvas-project-session";
 import { CANVAS_PROJECT_DEFAULT_PAGE_ID, CANVAS_PROJECT_MAX_PAGES, getCanvasProjectPages } from "@/shared/contracts/canvas-project";
@@ -210,24 +215,12 @@ function defaultCanvasResolutionForModel(modelId: GenerationModelId): Generation
 
 type LinkedCanvasReference = {
   edgeId: string;
+  sourceId: string;
+  key: string;
+  grouped: boolean;
   reference: GenerationReference;
   previewUrl: string;
 };
-
-function imageSourceAsset(node: CanvasNode | undefined) {
-  if (node?.type === "sourceImage") return {
-    assetId: node.data.assetId,
-    generated: node.data.assetKind === "generated",
-    name: node.data.name,
-    previewUrl: node.data.previewUrl,
-  };
-  if (node?.type === "imageResult") {
-    const output = node.data.job.outputs[node.data.index];
-    if (!output?.id) return null;
-    return { assetId: output.id, generated: true, name: `生成图片 ${node.data.index + 1}`, previewUrl: output.previewUrl };
-  }
-  return null;
-}
 
 function redundantGeneratorBatchNodeIds(nodes: readonly CanvasNode[]) {
   const nodeById = new Map(nodes.map((node) => [node.id, node]));
@@ -351,7 +344,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
   const [edges, setEdges] = useState<Edge[]>([]);
   const [convertedReferences, setConvertedReferences] = useState<Record<string, GenerationReference>>({});
   const [mediaRevision, setMediaRevision] = useState(0);
-  const [, setTextRevision] = useState(0);
+  const [graphRevision, setTextRevision] = useState(0);
   const [submittingGeneratorIds, setSubmittingGeneratorIds] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
   const [dropActive, setDropActive] = useState(false);
@@ -370,6 +363,9 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
   const localUploadsRef = useRef(new Map<string, LocalCanvasUpload>());
   const referenceUploadsRef = useRef(new Map<string, AbortController>());
   const convertedUploadsRef = useRef(new Map<string, AbortController>());
+  const referenceDragRef = useRef<{ sourceId: string; pageId: string; memberIds: string[] } | null>(null);
+  const referenceConnectionCancelledRef = useRef(false);
+  const referenceImportRef = useRef<(key: string, assetId: string, name: string) => void>(() => {});
   const generatedReferenceImportsRef = useRef<ReturnType<typeof createCanvasGeneratedReferenceImporter> | null>(null);
   const draggedAssetRef = useRef<CanvasLibraryAsset | null>(null);
   const mountedRef = useRef(true);
@@ -498,7 +494,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     if (nodes.some((node) => node.dragging || node.resizing)) return;
     const current = latestProjectStateRef.current;
     const nodeIds = new Set(nodes.map((node) => node.id));
-    const edgeIds = new Set(current.edges.map((edge) => edge.id));
+    const edgeIds = canvasReferenceInputKeys(nodes, current.edges);
     const references = Object.fromEntries(Object.entries(current.referencesByGenerator).filter(([id]) => nodeIds.has(id)));
     const converted = Object.fromEntries(Object.entries(current.convertedReferences).filter(([id]) => edgeIds.has(id)));
     if (!canvasGraphIsStable(nodes, references, converted)) {
@@ -777,18 +773,27 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
   const selectedResolution = shownResolutions.includes(resolution) ? resolution : shownResolutions[0];
   const linkedReferences = useMemo<LinkedCanvasReference[]>(() => {
     if (!activeGeneratorId || !flow) return [];
-    return edges.filter((edge) => edge.target === activeGeneratorId && edge.sourceHandle !== "text").map((edge) => {
-      const node = flow.getNode(edge.source);
-      const asset = imageSourceAsset(node);
-      const converted = convertedReferences[edge.id];
+    return uniqueCanvasReferenceInputs(canvasReferenceInputs(flow.getNodes(), edges, activeGeneratorId),
+      (referencesByGenerator[activeGeneratorId] ?? []).map((item) => item.reference), convertedReferences).map((input) => {
+      const { node, asset, key } = input;
+      const converted = convertedReferences[key];
       const reference: GenerationReference = asset?.generated
-        ? converted ?? { id: edge.id, name: asset.name, url: "", status: "uploading" }
-        : asset?.assetId && node?.type === "sourceImage" && node.data.uploadState !== "uploading" && node.data.uploadState !== "failed"
+        ? converted ?? { id: key, name: asset.name, url: "", status: "uploading" }
+        : asset?.assetId && node.type === "sourceImage" && node.data.uploadState !== "uploading" && node.data.uploadState !== "failed"
           ? { id: asset.assetId, name: asset.name, url: "", status: "ready" }
-          : { id: edge.id, name: asset?.name ?? "图片", url: "", status: node?.type === "sourceImage" && node.data.uploadState === "failed" ? "failed" : "uploading", errorMessage: node?.type === "sourceImage" ? node.data.uploadError : undefined };
-      return { edgeId: edge.id, reference, previewUrl: asset?.previewUrl ?? "" };
+          : { id: key, name: asset?.name ?? "图片不可用", url: "", status: !asset || node.type === "sourceImage" && node.data.uploadState === "failed" ? "failed" : "uploading",
+            errorMessage: !asset ? "这张图片不可用，请移除后重新连接。" : node.type === "sourceImage" ? node.data.uploadError : undefined };
+      return { ...input, reference, previewUrl: asset?.previewUrl ?? "" };
     });
-  }, [activeGeneratorId, flow, edges, convertedReferences, mediaRevision]);
+  }, [activeGeneratorId, flow, edges, convertedReferences, referencesByGenerator, mediaRevision, graphRevision]);
+  const visibleEdges = useMemo(() => edges.map((edge) => {
+    if (flow?.getNode(edge.source)?.type !== "group") return edge;
+    const inputs = uniqueCanvasReferenceInputs(canvasReferenceInputs(flow.getNodes(), edges, edge.target),
+      (referencesByGenerator[edge.target] ?? []).map((item) => item.reference), convertedReferences).filter((input) => input.edgeId === edge.id);
+    return { ...edge, label: inputs.length + "张", labelStyle: { fill: "#71717a", fontSize: 11 },
+      labelBgStyle: { fill: "#fff" }, labelBgPadding: [5, 3] as [number, number], labelBgBorderRadius: 4,
+      ariaLabel: inputs.length + "张参考图，点击查看" };
+  }), [edges, flow, mediaRevision, referencesByGenerator, convertedReferences, graphRevision]);
   const linkedTextInputs = collectCanvasTextInputs(flow?.getNodes() ?? [], edges, activeGeneratorId);
   useEffect(() => {
     if (edges.some((edge) => edge.sourceHandle === "text" && edge.targetHandle === "text")) {
@@ -801,7 +806,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
   const promptTooLong = oversizedPromptIndex >= 0;
   const displayReferences = [
     ...references.map((item) => ({ key: item.clientId, kind: "direct" as const, reference: item.reference, previewUrl: item.previewUrl })),
-    ...linkedReferences.map((item) => ({ key: item.edgeId, kind: "linked" as const, reference: item.reference, previewUrl: item.previewUrl })),
+    ...linkedReferences.map((item) => ({ key: item.key, kind: "linked" as const, reference: item.reference, previewUrl: item.previewUrl })),
   ];
   const referenceCount = new Set(displayReferences.map((item) => item.reference.id)).size;
   const quote = model && selectedResolution
@@ -939,9 +944,8 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       node.type === "textGenerator" && Boolean(node.data.generating || node.data.textGeneration.pendingRequestId) ||
       node.type === "imageGenerator" && (canvasGeneratorJobs(node.data).some((job) => job.state !== "succeeded") ||
         (current.referencesByGenerator[node.id] ?? []).some((item) => item.reference.status !== "ready")) ||
-      selectedEdges.some((edge) => edge.source === node.id && imageSourceAsset(node)?.generated &&
-        instance.getNode(edge.target)?.type !== "textGenerator" &&
-        current.convertedReferences[edge.id]?.status !== "ready"));
+      canvasReferenceInputs(selected, selectedEdges).some((input) => input.sourceId === node.id && input.asset?.generated &&
+        current.convertedReferences[input.key]?.status !== "ready"));
     if (unavailable) {
       setFormError("请等待选中素材或参考图准备完成后再复制。");
       return false;
@@ -950,8 +954,8 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       .map((node) => [node.id, current.draftsByGenerator[node.id] ?? DEFAULT_GENERATOR_DRAFT]));
     const references = Object.fromEntries(selected.filter((node) => node.type === "imageGenerator")
       .map((node) => [node.id, current.referencesByGenerator[node.id] ?? []]));
-    const converted = Object.fromEntries(selectedEdges.flatMap((edge) => current.convertedReferences[edge.id]
-      ? [[edge.id, current.convertedReferences[edge.id]] as const] : []));
+    const selectedReferenceKeys = canvasReferenceInputKeys(selected, selectedEdges);
+    const converted = Object.fromEntries(Object.entries(current.convertedReferences).filter(([key]) => selectedReferenceKeys.has(key)));
     const frame = canvasGraphFrame(selected, selectedEdges, drafts, references, converted);
     clipboardRef.current = { nodes: frame.nodes, edges: frame.edges, drafts: frame.drafts,
       references: frame.references, converted: frame.converted, pasteCount: 0 };
@@ -975,7 +979,8 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       const id = ids.get(node.id)!;
       const geometry = canvasPastedNodeGeometry(node, clipboard.nodes, ids, offset);
       const base = { ...node, id, ...geometry, selected: !geometry.parentId };
-      if (node.type === "group") return { ...base, type: "group", data: { ...node.data } };
+      if (node.type === "group") return { ...base, type: "group", data: { ...node.data,
+        referenceOrder: node.data.referenceOrder?.flatMap((memberId) => ids.has(memberId) ? [ids.get(memberId)!] : []) } };
       if (node.type === "sourceVideo") return { ...base, type: "sourceVideo", data: {
         ...node.data, onRefreshSource: node.data.assetId
           ? () => refreshUploadedVideoSource(id, node.data.assetId!) : undefined,
@@ -994,12 +999,16 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     const pastedEdges = clipboard.edges.map((edge) => ({ ...edge,
       id: `${edge.sourceHandle === "text" ? "text" : "reference"}-${ids.get(edge.source)}-${ids.get(edge.target)}`,
       source: ids.get(edge.source)!, target: ids.get(edge.target)!, selected: false,
+      ...(Array.isArray(edge.data?.excludedSourceIds) ? { data: { ...edge.data,
+        excludedSourceIds: (edge.data.excludedSourceIds as string[]).flatMap((memberId) => ids.has(memberId) ? [ids.get(memberId)!] : []) } } : {}),
     }));
     const pastedDrafts = Object.fromEntries(Object.entries(clipboard.drafts).map(([id, draft]) => [ids.get(id)!, { ...draft }]));
     const pastedReferences = Object.fromEntries(Object.entries(clipboard.references).map(([id, items]) => [ids.get(id)!,
       items.map((item) => ({ ...item, clientId: crypto.randomUUID(), reference: { ...item.reference } }))]));
-    const pastedConverted = Object.fromEntries(clipboard.edges.flatMap((edge, index) => clipboard.converted[edge.id]
-      ? [[pastedEdges[index].id, { ...clipboard.converted[edge.id] }] as const] : []));
+    const pastedConverted = Object.fromEntries(clipboard.edges.flatMap((edge, index) =>
+      canvasReferenceInputs(clipboard.nodes, [edge]).flatMap((input) => clipboard.converted[input.key]
+        ? [[input.grouped ? pastedEdges[index].id + ":" + ids.get(input.sourceId)! : pastedEdges[index].id,
+          { ...clipboard.converted[input.key] }] as const] : [])));
     instance.setNodes((current) => [...current.map((node) => node.selected ? { ...node, selected: false } : node), ...pastedNodes]);
     setEdges((current) => [...current.map((edge) => edge.selected ? { ...edge, selected: false } : edge), ...pastedEdges]);
     if (Object.keys(pastedDrafts).length) setDraftsByGenerator((current) => ({ ...current, ...pastedDrafts }));
@@ -1033,8 +1042,9 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     setEdges(target.edges.map((edge) => ({ ...edge, selected: false })));
     const retainedDrafts = Object.fromEntries(Object.entries(live.draftsByGenerator).filter(([id]) => !currentIds.has(id)));
     const retainedReferences = Object.fromEntries(Object.entries(live.referencesByGenerator).filter(([id]) => !currentIds.has(id)));
-    const currentEdgeIds = new Set(live.edges.map((edge) => edge.id));
-    const retainedConverted = Object.fromEntries(Object.entries(live.convertedReferences).filter(([id]) => !currentEdgeIds.has(id)));
+    const currentEdgeIds = live.edges.map((edge) => edge.id);
+    const retainedConverted = Object.fromEntries(Object.entries(live.convertedReferences)
+      .filter(([key]) => !currentEdgeIds.some((id) => key === id || key.startsWith(id + ":"))));
     setDraftsByGenerator({ ...retainedDrafts, ...Object.fromEntries(generators.map((id) => [id,
       currentIds.has(id) ? live.draftsByGenerator[id] ?? target.drafts[id] ?? DEFAULT_GENERATOR_DRAFT
         : target.drafts[id] ?? DEFAULT_GENERATOR_DRAFT])) });
@@ -1333,54 +1343,161 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     })();
   };
 
+  referenceImportRef.current = startGeneratedReferenceImport;
+
   const forgetConvertedReference = (edgeId: string) => {
-    convertedUploadsRef.current.get(edgeId)?.abort();
-    convertedUploadsRef.current.delete(edgeId);
-    setConvertedReferences((current) => {
-      if (!current[edgeId]) return current;
-      const next = { ...current };
-      delete next[edgeId];
-      return next;
-    });
+    for (const [key, controller] of convertedUploadsRef.current) {
+      if (key !== edgeId && !key.startsWith(edgeId + ":")) continue;
+      controller.abort(); convertedUploadsRef.current.delete(key);
+    }
+    setConvertedReferences((current) => Object.fromEntries(Object.entries(current)
+      .filter(([key]) => key !== edgeId && !key.startsWith(edgeId + ":"))));
+  };
+
+  useEffect(() => {
+    if (!projectReady || !flow || projectHydratingRef.current) return;
+    const graphNodes = pagesRef.current.flatMap((page) => page.id === activePageIdRef.current ? flow.getNodes() : page.nodes);
+    const graphEdges = pagesRef.current.flatMap((page) => page.id === activePageIdRef.current ? edges : page.edges);
+    const emptyGroups = new Set(edges.filter((edge) => graphNodes.some((node) => node.id === edge.source && node.type === "group") &&
+      !graphNodes.some((node) => node.parentId === edge.source)).map((edge) => edge.id));
+    if (emptyGroups.size) setEdges((current) => current.filter((edge) => !emptyGroups.has(edge.id)));
+    const inputs = canvasReferenceInputs(graphNodes, graphEdges);
+    const keys = new Set(inputs.map((input) => input.key));
+    // Node insertion is queued by React Flow; retain keys while their source is being materialized.
+    const isLive = (key: string) => keys.has(key) || graphEdges.some((edge) =>
+      !graphNodes.some((node) => node.id === edge.source) && (key === edge.id || key.startsWith(edge.id + ":")));
+    for (const [key, controller] of convertedUploadsRef.current) if (!isLive(key)) {
+      controller.abort(); convertedUploadsRef.current.delete(key);
+    }
+    const stale = Object.keys(convertedReferences).filter((key) => !isLive(key));
+    if (stale.length) setConvertedReferences((current) => Object.fromEntries(Object.entries(current)
+      .filter(([key]) => !stale.includes(key))));
+    for (const input of inputs) if (input.asset?.generated && input.asset.assetId &&
+        !convertedUploadsRef.current.has(input.key) && (!convertedReferences[input.key] || convertedReferences[input.key].status === "uploading")) {
+      referenceImportRef.current(input.key, input.asset.assetId, input.asset.name);
+    }
+  }, [projectReady, flow, edges, convertedReferences, mediaRevision, activePageId, graphRevision]);
+
+  const connectionMembers = (connection: Connection | Edge) => {
+    const instance = flowRef.current;
+    if (!instance) return [];
+    const graph = instance.getNodes();
+    if (connection.sourceHandle === CANVAS_BATCH_REFERENCE_HANDLE) {
+      const drag = referenceDragRef.current;
+      if (!drag || drag.sourceId !== connection.source || drag.pageId !== activePageIdRef.current) return [];
+      return drag.memberIds.flatMap((id) => { const node = instance.getNode(id); return node ? [node] : []; });
+    }
+    const source = instance.getNode(connection.source);
+    return source?.type === "group" ? canvasReferenceGroupMembers(source, graph) : source ? [source] : [];
+  };
+
+  const referenceConnectionPlan = (connection: Connection | Edge) => {
+    const instance = flowRef.current;
+    if (!instance || !projectReady || pageSwitching) return { valid: false, message: "请等待画布加载完成。" };
+    const members = connectionMembers(connection);
+    if (connection.sourceHandle === CANVAS_BATCH_REFERENCE_HANDLE && members.length !== referenceDragRef.current?.memberIds.length) {
+      return { valid: false, message: "选中的图片已发生变化，请重新框选连接。" };
+    }
+    return planCanvasReferenceConnection(instance.getNodes(), edges, connection, members,
+      (referencesByGenerator[connection.target] ?? []).map((item) => item.reference), convertedReferences, MAX_GENERATION_REFERENCES);
   };
 
   const isValidReferenceConnection = (connection: Connection | Edge) => {
     const instance = flowRef.current;
-    if (instance && isCanvasTextGenerationConnection(connection, instance.getNodes(), instance.getEdges())) return true;
-    if (instance && isCanvasTextConnection(connection, instance.getNodes(), instance.getEdges())) return true;
-    if (!instance || !connection.source || !connection.target || connection.source === connection.target ||
-        connection.sourceHandle !== "reference" || connection.targetHandle !== "reference" || canvasConnectionCreatesCycle(connection, instance.getEdges())) return false;
-    const source = instance.getNode(connection.source);
-    const target = instance.getNode(connection.target);
-    const asset = imageSourceAsset(source);
-    if (target?.type !== "imageGenerator" || !asset || (!asset.assetId && source?.type !== "sourceImage")) return false;
-    if (source?.type === "sourceImage" && !asset.assetId && !source.data.uploadState) return false;
-    const existing = instance.getEdges().filter((edge) => edge.target === target.id && edge.sourceHandle !== "text");
-    if (existing.length + (referencesByGenerator[target.id]?.length ?? 0) >= MAX_GENERATION_REFERENCES) return false;
-    if (asset.assetId && !asset.generated && referencesByGenerator[target.id]?.some((item) =>
-      item.reference.status === "ready" && item.reference.id === asset.assetId)) return false;
-    return !existing.some((edge) => edge.source === connection.source ||
-      Boolean(asset.assetId && imageSourceAsset(instance.getNode(edge.source))?.assetId === asset.assetId));
+    if (!projectReady || pageSwitching || !instance || referenceConnectionCancelledRef.current) return false;
+    if (isCanvasTextGenerationConnection(connection, instance.getNodes(), instance.getEdges()) ||
+        isCanvasTextConnection(connection, instance.getNodes(), instance.getEdges())) return true;
+    return referenceConnectionPlan(connection).valid;
+  };
+
+  const onReferenceConnectStart: OnConnectStart = (_event, { nodeId, handleId }) => {
+    referenceConnectionCancelledRef.current = false;
+    toast.dismiss("canvas-reference-connection");
+    referenceDragRef.current = null;
+    if (handleId !== CANVAS_BATCH_REFERENCE_HANDLE || !nodeId || !flowRef.current) return;
+    const selected = canvasReferenceSelection(flowRef.current.getNodes());
+    if (selected.length < 2 || selected[0].id !== nodeId) return;
+    referenceDragRef.current = { sourceId: nodeId, pageId: activePageIdRef.current, memberIds: selected.map((node) => node.id) };
+  };
+  const onReferenceConnectEnd: OnConnectEnd = (_event, connection) => {
+    if (!referenceConnectionCancelledRef.current && !connection.isValid && connection.fromHandle && connection.toHandle && connection.toNode?.type === "imageGenerator") {
+      const attempt = { source: connection.fromHandle.nodeId, sourceHandle: connection.fromHandle.id,
+        target: connection.toHandle.nodeId, targetHandle: connection.toHandle.id };
+      const plan = referenceConnectionPlan(attempt);
+      if (plan.message) toast.error(plan.message, { id: "canvas-reference-connection" });
+    }
+    referenceDragRef.current = null;
+  };
+
+  const commitGroupNodes = (before: CanvasNode[], after: CanvasNode[], discardedEdgeIds: string[] = []) => {
+    const removed = before.filter((node) => node.type === "group" && !after.some((next) => next.id === node.id)).map((node) => node.id);
+    const expanded = expandCanvasGroupReferences(before, edges.filter((edge) => !discardedEdgeIds.includes(edge.id)), removed, convertedReferences);
+    for (const edge of edges) if (removed.includes(edge.source) || discardedEdgeIds.includes(edge.id)) forgetConvertedReference(edge.id);
+    for (const key of Object.keys(expanded.converted)) if (discardedEdgeIds.some((id) => key === id || key.startsWith(id + ":"))) delete expanded.converted[key];
+    flowRef.current?.setNodes(after);
+    setEdges(expanded.edges);
+    setConvertedReferences(expanded.converted);
+    scheduleProjectSnapshot(true); scheduleCanvasHistory();
+    return expanded.edges;
+  };
+
+  const groupCanvasSelection = (footprints?: Parameters<typeof createCanvasGroup>[2]) => {
+    const instance = flowRef.current;
+    if (!instance) return;
+    captureCanvasHistory();
+    const before = instance.getNodes();
+    commitGroupNodes(before, createCanvasGroup(before, "group-" + crypto.randomUUID(), footprints));
+  };
+  const ungroupCanvasSelection = (ids: string[], discardedEdgeIds: string[] = []) => {
+    const instance = flowRef.current;
+    if (!instance || !ids.length) return;
+    captureCanvasHistory();
+    const before = instance.getNodes();
+    commitGroupNodes(before, ungroupCanvasNodes(before, ids), discardedEdgeIds);
   };
 
   const connectReference = (connection: Connection) => {
-    if (!isValidReferenceConnection(connection)) return;
+    const instance = flowRef.current;
+    if (!instance || !isValidReferenceConnection(connection)) return;
     captureCanvasHistory();
-    const source = flowRef.current?.getNode(connection.source);
-    const target = flowRef.current?.getNode(connection.target);
-    const asset = imageSourceAsset(source);
-    if (!asset && source?.type !== "textEditor" && source?.type !== "textGenerator" && !(source?.type === "sourceVideo" && target?.type === "textGenerator")) return;
-    const id = `${connection.sourceHandle === "text" ? "text" : "reference"}-${connection.source}-${connection.target}`;
+    let nextConnection = connection;
+    let nextEdges = edges;
+    let excludedSourceIds: string[] = [];
+    const target = instance.getNode(connection.target);
+    if (target?.type === "imageGenerator" && connection.sourceHandle !== "text") {
+      const plan = referenceConnectionPlan(connection);
+      if (!plan.valid) { setFormError(plan.message ?? "连接失败，请重试。"); return; }
+      excludedSourceIds = plan.excludedSourceIds ?? [];
+      const members = connectionMembers(connection);
+      if (connection.sourceHandle === CANVAS_BATCH_REFERENCE_HANDLE) {
+        const before = instance.getNodes();
+        const chosen = new Set(members.map((node) => node.id));
+        const groupId = "group-" + crypto.randomUUID();
+        const viewport = instance.getViewport();
+        const footprints = measureCanvasGroupFootprints({ nodes: before,
+          nodeLookup: new Map(before.flatMap((node) => { const internal = instance.getInternalNode(node.id); return internal ? [[node.id, internal] as const] : []; })),
+          domNode: document.getElementById("canvas-workspace-surface")?.querySelector<HTMLElement>(".react-flow") ?? null,
+          transform: [viewport.x, viewport.y, viewport.zoom],
+        }, true);
+        const grouped = createCanvasGroup(before.map((node) => ({ ...node, selected: chosen.has(node.id) })), groupId, footprints)
+          .map((node) => node.id === groupId && node.type === "group"
+            ? { ...node, data: { ...node.data, name: "参考图组", referenceOrder: members.map((member) => member.id) } } : node);
+        if (!grouped.some((node) => node.id === groupId)) return;
+        nextEdges = commitGroupNodes(before, grouped);
+        nextConnection = { ...connection, source: groupId, sourceHandle: "reference" };
+      } else if (instance.getNode(connection.source)?.type === "group") {
+        instance.updateNodeData(connection.source, { referenceOrder: members.map((node) => node.id) });
+      }
+    }
+    const id = (nextConnection.sourceHandle === "text" ? "text" : "reference") + "-" + nextConnection.source + "-" + nextConnection.target;
     const referenceEdge: BuiltInEdge = {
-      ...connection,
-      id,
-      type: "default",
-      animated: true,
-      pathOptions: { curvature: canvasReferenceEdgeCurvature },
-      style: canvasReferenceEdgeStyle,
+      ...nextConnection, id, type: "default", animated: true,
+      pathOptions: { curvature: canvasReferenceEdgeCurvature }, style: canvasReferenceEdgeStyle,
+      ...(excludedSourceIds.length ? { data: { excludedSourceIds } } : {}),
     };
-    setEdges((current) => addEdge(referenceEdge, current));
-    if (target?.type === "imageGenerator" && asset?.generated && asset.assetId) startGeneratedReferenceImport(id, asset.assetId, asset.name);
+    setEdges(addEdge(referenceEdge, nextEdges));
+    setFormError(null);
+    scheduleProjectSnapshot(true); scheduleCanvasHistory();
   };
 
   const changeEdges = (changes: EdgeChange[]) => {
@@ -1547,19 +1664,29 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     upload(generatorId, [item]);
   };
 
-  const removeLinkedReference = (edgeId: string) => {
+  const removeLinkedReference = (key: string) => {
+    const instance = flowRef.current;
+    if (!instance) return;
+    const input = canvasReferenceInputs(instance.getNodes(), edges).find((item) => item.key === key);
+    const edgeId = input?.edgeId ?? key;
     captureCanvasHistory();
-    forgetConvertedReference(edgeId);
-    setEdges((current) => current.filter((edge) => edge.id !== edgeId));
+    forgetConvertedReference(input?.key ?? edgeId);
+    setEdges((current) => current.flatMap((edge) => {
+      if (edge.id !== edgeId) return [edge];
+      if (!input?.grouped) return [];
+      const remaining = canvasReferenceInputs(instance.getNodes(), [edge]).filter((member) => member.sourceId !== input.sourceId);
+      if (!remaining.length) return [];
+      return [{ ...edge, data: { ...edge.data, excludedSourceIds: [...new Set([
+        ...(Array.isArray(edge.data?.excludedSourceIds) ? edge.data.excludedSourceIds as string[] : []), input.sourceId,
+      ])] } }];
+    }));
   };
-
-  const retryLinkedReference = (edgeId: string) => {
-    const edge = edges.find((item) => item.id === edgeId);
-    const node = edge ? flowRef.current?.getNode(edge.source) : undefined;
-    const source = imageSourceAsset(node);
-    if (!source) return;
-    if (source.generated && source.assetId) startGeneratedReferenceImport(edgeId, source.assetId, source.name);
-    else if (node?.type === "sourceImage") node.data.onRetryUpload?.();
+  const retryLinkedReference = (key: string) => {
+    const instance = flowRef.current;
+    if (!instance) return;
+    const input = canvasReferenceInputs(instance.getNodes(), edges).find((item) => item.key === key);
+    if (input?.asset?.generated && input.asset.assetId) startGeneratedReferenceImport(input.key, input.asset.assetId, input.asset.name);
+    else if (input?.node.type === "sourceImage") input.node.data.onRetryUpload?.();
   };
 
   const runJob = async (snapshot: GenerationInputSnapshot, previous?: { runKey: string; job: GenerationJob }) => {
@@ -1863,7 +1990,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       pagesRef.current = pagesRef.current.filter((page) => page.id !== pageId);
       pageHistoryRef.current.delete(pageId);
       const nodeIds = new Set(deleted.nodes.map((node) => node.id));
-      const edgeIds = new Set(deleted.edges.map((edge) => edge.id));
+      const edgeIds = canvasReferenceInputKeys(deleted.nodes, deleted.edges);
       const removedFiles = [...nodeIds];
       for (const id of nodeIds) {
         releaseLocalPreview(id);
@@ -1933,6 +2060,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     if (!initialProjectId) window.history.replaceState(window.history.state, "", `/canvas/${id}`);
 
     const restore = async (entry: LocalCanvasProject) => {
+      entry = { ...entry, document: decodeCanvasReferenceDocument(entry.document) };
       const savedPages = getCanvasProjectPages(entry.document);
       const preferredPageId = readCanvasActivePage(ownerKey, entry.id);
       const activeSavedPage = savedPages.find((page) => page.id === preferredPageId) ?? savedPages[0];
@@ -1957,7 +2085,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
           ...(saved.parentId ? { parentId: saved.parentId } : {}) };
         if (saved.type === "group") return { ...base, type: "group", zIndex: -1, dragHandle: CANVAS_GROUP_DRAG_HANDLE,
           width: saved.size?.width ?? 200, height: saved.size?.height ?? 120,
-          style: style ?? { width: 200, height: 120 }, data: { name: saved.name ?? "组", emoji: saved.emoji, sizing: saved.groupSizing } };
+          style: style ?? { width: 200, height: 120 }, data: { name: saved.name ?? "组", emoji: saved.emoji, sizing: saved.groupSizing, referenceOrder: saved.referenceOrder ? [...saved.referenceOrder] : undefined } };
         if (saved.type === "textEditor") return {
           ...base, type: "textEditor", style: style ?? { width: 360, height: 260 },
           data: { markdown: saved.markdown ?? "", text: saved.text ?? "" },
@@ -2093,6 +2221,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       const allNodes = [...availableNodes.filter((node) => node.type === "group"), ...availableNodes.filter((node) => node.type !== "group")];
       const allEdges = document.edges.map((edge) => ({
         ...normalizeCanvasInputEdge(edge),
+        ...(edge.excludedSourceIds ? { data: { excludedSourceIds: [...edge.excludedSourceIds] } } : {}),
         type: "default", animated: true,
         pathOptions: { curvature: canvasReferenceEdgeCurvature },
         style: canvasReferenceEdgeStyle,
@@ -2259,8 +2388,14 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       <CanvasWorkspace assetsOpen={assetsOpen} onAssetsOpenChange={setAssetsOpen} assetSidebarWidth={assetSidebarWidth} onAssetSidebarWidthChange={setAssetSidebarWidth} assetLibraryEnabled={Boolean(session && session.access.status === "active" && !session.preview)} assetRevision={assetRevision}
         cropPageId={activePageId} cropEnabled={Boolean(projectReady && !pageSwitching && session?.access.status === "active" && !session.preview)} onCropCommit={commitCanvasCrop}
         onImageCleanupCommit={commitCanvasImageCleanup} onImageCleanupChanged={() => { void refreshBilling(); setAssetRevision((value) => value + 1); }}
-        edges={edges} onEdgesChange={changeEdges} onConnect={connectReference} isValidConnection={isValidReferenceConnection}
+        edges={visibleEdges} onEdgesChange={changeEdges} onConnect={connectReference} isValidConnection={isValidReferenceConnection}
         onDeleteEdge={removeLinkedReference}
+        onReferenceConnectStart={onReferenceConnectStart} onReferenceConnectEnd={onReferenceConnectEnd}
+        onReferenceConnectCancel={() => { referenceConnectionCancelledRef.current = true; referenceDragRef.current = null; }}
+        onGroupSelection={groupCanvasSelection} onUngroup={ungroupCanvasSelection}
+        onInspectReferenceGroup={(targetId) => {
+          flowRef.current?.setNodes((current) => current.map((node) => ({ ...node, selected: node.id === targetId })));
+        }}
         onSelectAll={() => {
           const instance = flowRef.current;
           if (!instance) return;

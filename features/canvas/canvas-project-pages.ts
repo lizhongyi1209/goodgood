@@ -36,7 +36,7 @@ export function canvasPageHasActiveWork(page: CanvasRuntimePage, options: {
       canvasGeneratorJobs(node.data).some((job) => canvasImageJobIsActive(job) ||
         job.id.startsWith("pending_") && job.error?.code === "SUBMISSION_UNKNOWN") ||
     (options.referenceStatuses[node.id] ?? []).some((item) => item.reference.status === "uploading")) ||
-    page.edges.some((edge) => options.convertingEdgeIds.has(edge.id));
+    page.edges.some((edge) => [...options.convertingEdgeIds].some((key) => key === edge.id || key.startsWith(edge.id + ":")));
 }
 
 export function pagedCanvasProjectDocument(pages: readonly import("@/shared/contracts/canvas-project").CanvasProjectPage[]): CanvasProjectDocument {

@@ -8,6 +8,8 @@ import type { CanvasNode } from "./canvas-workspace";
 import { normalizeCanvasInputEdge } from "./canvas-text-input.mjs";
 import { canvasGeneratorJobs } from "./canvas-image-prompt-batch.mjs";
 import { canvasGeneratorSlots, canvasImageSlotFrozenInput } from "./canvas-image-slots.mjs";
+import { canvasReferenceInputKeys } from "./canvas-reference-sources.mjs";
+import { encodeCanvasReferencePage } from "./canvas-reference-document.mjs";
 
 export type SnapshotGeneratorDraft = CanvasPageDocument["generators"][string]["draft"];
 export type SnapshotDirectReference = Readonly<{
@@ -69,6 +71,7 @@ function persistNode(node: CanvasNode): CanvasProjectNode | null {
   const base = { id: node.id, position: { ...node.position }, size: nodeGeometry(node),
     ...(node.parentId ? { parentId: node.parentId } : {}) };
   if (node.type === "group") return { ...base, type: "group", name: node.data.name,
+    ...(node.data.referenceOrder ? { referenceOrder: [...node.data.referenceOrder] } : {}),
     ...(node.data.sizing === "manual" ? { groupSizing: "manual" as const } : {}),
     ...(node.data.emoji ? { emoji: node.data.emoji } : {}) };
   if (node.type === "textEditor") return {
@@ -145,6 +148,7 @@ export function snapshotCanvasProject(input: {
       target: edge.target,
       sourceHandle: edge.sourceHandle ?? null,
       targetHandle: edge.targetHandle ?? null,
+      ...(Array.isArray(edge.data?.excludedSourceIds) ? { excludedSourceIds: [...edge.data.excludedSourceIds] as string[] } : {}),
     }));
   const generators: Record<string, CanvasPageDocument["generators"][string]> = {};
   for (const node of nodes) {
@@ -163,7 +167,7 @@ export function snapshotCanvasProject(input: {
     };
   }
   const convertedReferences: Record<string, string> = {};
-  const edgeIds = new Set(edges.map((edge) => edge.id));
+  const edgeIds = canvasReferenceInputKeys(input.nodes, input.edges);
   for (const [edgeId, reference] of Object.entries(input.convertedReferences)) {
     if (edgeIds.has(edgeId) && reference.status === "ready") convertedReferences[edgeId] = reference.id;
   }
@@ -180,7 +184,7 @@ export function snapshotCanvasProject(input: {
   };
 }
 
-function remoteCanvasPageDocument(document: CanvasPageDocument): CanvasPageDocument {
+function remoteCanvasPageDocument(document: CanvasPageDocument, pageIndex = 0): CanvasPageDocument {
   const nodes = document.nodes.filter((node) =>
     node.type === "group" ||
     node.type === "textEditor" || node.type === "textGenerator" ||
@@ -201,15 +205,18 @@ function remoteCanvasPageDocument(document: CanvasPageDocument): CanvasPageDocum
   const generators = Object.fromEntries(Object.entries(document.generators)
     .filter(([id]) => ids.has(id))
     .map(([id, { pendingReferences: _pendingReferences, ...generator }]) => [id, generator]));
-  const edgeIds = new Set(edges.map((edge) => edge.id));
+  const edgeIds = new Set(edges.flatMap((edge) => {
+    const group = nodes.find((node) => node.id === edge.source && node.type === "group");
+    return group ? [edge.id, ...nodes.filter((node) => node.parentId === group.id).map((node) => `${edge.id}:${node.id}`)] : [edge.id];
+  }));
   const convertedReferences = Object.fromEntries(Object.entries(document.convertedReferences ?? {})
     .filter(([edgeId]) => edgeIds.has(edgeId)));
-  return { ...document, nodes, edges, generators, convertedReferences };
+  return encodeCanvasReferencePage({ ...document, nodes, edges, generators, convertedReferences }, pageIndex);
 }
 
 export function remoteCanvasProjectDocument(document: CanvasProjectDocument): CanvasProjectDocument {
   if (document.schemaVersion === 1) return { ...remoteCanvasPageDocument(document), schemaVersion: 1 };
-  return { schemaVersion: 2, pages: document.pages.map((page) => ({
-    ...remoteCanvasPageDocument(page), id: page.id, name: page.name,
+  return { schemaVersion: 2, pages: document.pages.map((page, pageIndex) => ({
+    ...remoteCanvasPageDocument(page, pageIndex), id: page.id, name: page.name,
   })) };
 }

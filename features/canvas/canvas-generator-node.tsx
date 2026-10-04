@@ -190,7 +190,10 @@ export function CanvasGeneratorNode({ id, data, selected }: NodeProps<CanvasGene
           {expanded ? <ChevronsLeft size={14} aria-hidden="true" /> : <ChevronsRight size={14} aria-hidden="true" />}
         </button>}
       </div>
-      <Handle type="target" id="reference" position={Position.Left} className={styles.generatorInputHandle} aria-label="连接图片或文本" title="图片或文本" />
+      <Handle type="target" id="reference" position={Position.Left} className={styles.generatorInputHandle} aria-label="连接图片或文本" title="图片或文本"
+        role="button" tabIndex={0} onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); event.currentTarget.click(); }
+        }} />
       <NodeToolbar isVisible={cropRequest?.nodeId === id ? false : undefined} position={Position.Bottom} offset={12} align={align} style={{ width: toolbarWidth }} className={`${styles.generatorToolbar} nodrag nopan nowheel`}>
         <div ref={setHost} className={styles.generatorComposerHost} />
       </NodeToolbar>

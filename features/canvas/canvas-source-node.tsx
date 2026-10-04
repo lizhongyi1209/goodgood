@@ -12,6 +12,7 @@ import { CanvasImageResizeControls } from "./canvas-image-resize-controls";
 import { CanvasImageCropToolbar, useCanvasImageCrop } from "./canvas-image-crop";
 import { canvasCropImageForNode } from "./canvas-image-crop-image";
 import type { CanvasNode, CanvasSourceNode as CanvasSourceNodeType } from "./canvas-workspace";
+import { CanvasBatchReferenceHandle } from "./canvas-batch-reference-handle";
 import styles from "./canvas-workspace.module.css";
 import assetStyles from "./canvas-asset-panel.module.css";
 
@@ -99,6 +100,7 @@ export function CanvasSourceNode({ id, data, selected, width }: NodeProps<Canvas
         <CanvasImageResizeControls />
       )}
       {(data.assetId || data.uploadState) && <Handle type="source" id="reference" position={Position.Right} className={styles.referenceOutputHandle} aria-label="连接到图片生成器" />}
+      <CanvasBatchReferenceHandle nodeId={id} />
     </>
   );
 }

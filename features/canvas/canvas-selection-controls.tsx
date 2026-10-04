@@ -7,7 +7,9 @@ import { useReactFlow, useStoreApi } from "@xyflow/react";
 import { Button } from "@/components/ui/button";
 import { CanvasArrangementIcon } from "./canvas-arrangement-icon";
 import { arrangeCanvasSelection, generatorStackInsets, unionCanvasBounds } from "./canvas-selection-layout.mjs";
-import { canGroupCanvasSelection, createCanvasGroup } from "./canvas-groups.mjs";
+import { canGroupCanvasSelection } from "./canvas-groups.mjs";
+import { canvasReferenceSelection } from "./canvas-reference-sources.mjs";
+import { useCanvasReferenceSelection } from "./canvas-batch-reference-handle";
 import type { CanvasNode } from "./canvas-workspace";
 import styles from "./canvas-workspace.module.css";
 
@@ -29,12 +31,14 @@ const actions = [
   { action: "bottom", label: "底部对齐" },
 ] as const;
 
-export function CanvasSelectionControls({ onBeforeGraphEdit, onProjectGraphChange }: Readonly<{
+export function CanvasSelectionControls({ onBeforeGraphEdit, onProjectGraphChange, onGroupSelection }: Readonly<{
   onBeforeGraphEdit: () => void;
   onProjectGraphChange: (settled?: boolean) => void;
+  onGroupSelection: (footprints: SelectionItem[]) => void;
 }>) {
   const store = useStoreApi<CanvasNode>();
   const flow = useReactFlow<CanvasNode>();
+  const { publish } = useCanvasReferenceSelection();
   const toolbarRef = useRef<HTMLDivElement | null>(null);
   const itemsRef = useRef<SelectionItem[]>([]);
   const refreshRef = useRef<() => void>(() => {});
@@ -153,6 +157,13 @@ export function CanvasSelectionControls({ onBeforeGraphEdit, onProjectGraphChang
       if (show) surface.setAttribute("data-canvas-selection-visible", "true");
       else surface.removeAttribute("data-canvas-selection-visible");
       disabledRef.current = !show || selected.some((node) => node.dragging || node.resizing);
+      const referenceNodes = !disabledRef.current && visible ? canvasReferenceSelection(state.nodes) : [];
+      const batchSelection = referenceNodes.length >= 2 && visible ? {
+        sourceId: referenceNodes[0].id, memberIds: referenceNodes.map((node) => node.id),
+        x: visible.x + visible.width + 11, y: visible.y + visible.height / 2,
+      } : null;
+      if (!state.connection.inProgress && !state.connectionClickStartHandle) publish(batchSelection);
+      surface.toggleAttribute("data-canvas-batch-reference", Boolean(batchSelection));
       for (const button of toolbar.querySelectorAll<HTMLButtonElement>("button")) button.disabled = disabledRef.current;
       if (groupButtonRef.current) groupButtonRef.current.disabled = disabledRef.current || !canGroupCanvasSelection(state.nodes);
       if (!show || !visible || !body) {
@@ -191,10 +202,12 @@ export function CanvasSelectionControls({ onBeforeGraphEdit, onProjectGraphChang
       surface.removeEventListener("canvas-visible-bounds-change", invalidate);
       surface.removeEventListener("load", invalidate, true);
       surface.removeAttribute("data-canvas-selection-visible");
+      surface.removeAttribute("data-canvas-batch-reference");
+      publish(null);
       for (const property of ["left", "top", "width", "height"]) surface.style.removeProperty(`--canvas-selection-${property}`);
       refreshRef.current = () => {};
     };
-  }, [store]);
+  }, [store, publish]);
 
   const arrange = (action: Arrangement) => {
     refreshRef.current();
@@ -217,9 +230,7 @@ export function CanvasSelectionControls({ onBeforeGraphEdit, onProjectGraphChang
         onClick={(event) => {
           event.stopPropagation(); refreshRef.current();
           if (disabledRef.current || !canGroupCanvasSelection(flow.getNodes())) return;
-          onBeforeGraphEdit();
-          flow.setNodes((nodes) => createCanvasGroup(nodes, `group-${crypto.randomUUID()}`, itemsRef.current));
-          onProjectGraphChange(true);
+          onGroupSelection(itemsRef.current);
         }}><Group size={15} aria-hidden="true" />建组</Button>
       {actions.map(({ action, label }) => <Button key={action} type="button" variant="ghost" size="icon-sm"
         data-group-start={action === "top" || action === "tidy" || undefined}

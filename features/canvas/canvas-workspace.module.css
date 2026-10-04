@@ -255,6 +255,18 @@
 }
 .referenceOutputHandle:global(.react-flow__handle) { right: -11px; }
 .generatorInputHandle:global(.react-flow__handle) { left: -11px; }
+.referenceOutputHandle:focus-visible,
+.generatorInputHandle:focus-visible { opacity: 1; outline: 2px solid #18181b; outline-offset: 2px; }
+
+.batchReferenceHandle:global(.react-flow__handle) {
+  opacity: 1;
+  z-index: 12;
+  --handle-breath-state: running;
+}
+.canvas :global(.react-flow[data-canvas-batch-reference] .react-flow__node.selected) .referenceOutputHandle:not(.batchReferenceHandle) {
+  opacity: 0;
+  pointer-events: none;
+}
 
 .assetsSidebar { position: absolute; z-index: 7; inset: 0 auto 0 0; width: var(--canvas-sidebar-width); overflow: hidden; border-right: 1px solid #ededee; background: #fff; }
 .assetsResizeHandle { position: absolute; z-index: 1; top: 0; right: 0; width: 10px; height: 100%; cursor: col-resize; touch-action: none; }
