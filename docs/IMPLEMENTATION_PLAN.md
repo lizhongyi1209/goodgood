@@ -1,13 +1,15 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-04
-- Current phase: GG-359红框编辑/确认副本源码已接入，用户手验待办；当前本地运行沿GG-358独立后台恢复receipt，未部署生产。
-- Current objective: 用户刷新原画布手验框选编辑状态、重画/调整及确认PNG副本，继续Seedream和既有工具手验，不自动重放/检查或重启。GG-350/GG-356启用保持；若连接再次退出查GG-358退出日志。
+- Current phase: GG-360公告入口移至积分左侧源码完成；GG-359紅框副本及GG-358独立本地运行保持，用户手验待办，未部署生产。
+- Current objective: 用户刷新5173手验右上公告/积分顺序及红框副本、Seedream和图片工具；不自动重放。若服务再退出先查GG-358日志，运行身份保持。
 - Previous objective: GG-313模板名称格式/示例参考、GG-312画布300%高清门槛、GG-311模板保存/成功动效及类型筛选、GG-310前景色已交付源码；GG-309私有2K接口、批量校验及文本资产API/本地0063已启用。
 
 ## Current checkpoint
 
-- 当前应用源码检查点：34709d4a78f7c881fd23fc8720d96cc5ab5ee7ab；[GG-359](tasks/GG-359-image-region-copy.md) 红框编辑/副本源码完成：隔离7522b6beeb889169d0349a5b697dff06393d3c88精确接入34709d4a78f7c881fd23fc8720d96cc5ab5ee7ab。原图默认居中红框/四角柄、图内编辑提示/浅遮罩，支持重画/移动/调节及画布缩放；bbox/复制移除，右侧正常仅取消/确认。确认共同标注几何导出原尺寸PNG并走已有旁置副本/上传/资产/项目保存，原图保留，提示/遮罩/柄不导出。selected/来源ID/页/身份/取消和资源释放保持，贴图原流程保持。ADR0141及AGENTS标注红色例外、产品/交互/设计/手验说明同步。沿GG-276合成回归仅写来源，未构建/lint/typecheck/代码检查/测试/浏览器验收，无HTTP/SQL/Provider/扣费/后台/服务或生产操作；GG-358运行receipt未重查。创建1/退役1，managed辅助归档，无子agent/依赖缓存。用户刷新5173手验。 下方旧框选bbox/复制验收为历史，现行按GG-359；下一任务以当前HEAD核验祖先，不改写GG-358运行身份。
+- 当前应用源码检查点：35ed5209501c331994af7f2fbeb72d6689048aca；[GG-360](tasks/GG-360-canvas-announcement-order.md) GG-360源码35ed5209501c331994af7f2fbeb72d6689048aca：画布右上顺序为保存状态/公告/积分，公告仅图标及原未读/弹层保持，积分事件和会话条件不变。保留GG-359及GG-358运行receipt，未重查/重启。当前集成目录小改创建0/退役0，无子agent/缓存；未编译/检查/测试/浏览器验收，无后台/数据/Provider或生产操作，用户刷新手验。
+
+- 历史应用源码检查点：34709d4a78f7c881fd23fc8720d96cc5ab5ee7ab；[GG-359](tasks/GG-359-image-region-copy.md) 红框编辑/副本源码完成：隔离7522b6beeb889169d0349a5b697dff06393d3c88精确接入34709d4a78f7c881fd23fc8720d96cc5ab5ee7ab。原图默认居中红框/四角柄、图内编辑提示/浅遮罩，支持重画/移动/调节及画布缩放；bbox/复制移除，右侧正常仅取消/确认。确认共同标注几何导出原尺寸PNG并走已有旁置副本/上传/资产/项目保存，原图保留，提示/遮罩/柄不导出。selected/来源ID/页/身份/取消和资源释放保持，贴图原流程保持。ADR0141及AGENTS标注红色例外、产品/交互/设计/手验说明同步。沿GG-276合成回归仅写来源，未构建/lint/typecheck/代码检查/测试/浏览器验收，无HTTP/SQL/Provider/扣费/后台/服务或生产操作；GG-358运行receipt未重查。创建1/退役1，managed辅助归档，无子agent/依赖缓存。用户刷新5173手验。 下方旧框选bbox/复制验收为历史，现行按GG-359；下一任务以当前HEAD核验祖先，不改写GG-358运行身份。
 
 - 最新运行恢复：[GG-358](tasks/GG-358-local-runtime-recovery.md) 2026-10-04连接拒绝再恢复：原应用进程已停止，Docker依赖healthy，日志无明确退出原因。必要构建verified 3b7393a16fc013d867c9be35904b1f61eb5bc0ee；通过Windows CIM/隐藏launcher独立启动Web7704/32131、唯一Worker15844/32142、Vite35552/5173（启动器23288）。launcher父进程为WmiPrvSE，跨命令仍运行；首页/原画布200、API代理verified、readiness五项ok。原66迁移/外部cloud-development/local-mailpit保留，启动前任务/outbox/预留/队列均0，无迁移/重置/fixture/真实请求/扣费或生产操作。创建0/退役0，未测试/lint/typecheck/浏览器验收；用户刷新手验。未确认前次退出根因，不声称根治，若再退出查本次退出日志；下方旧PID为历史。 当前应用源码仍6ba2d0d；运行receipt严格绑定3b7393a，纯文档提交不改写身份，未来启动按届时HEAD构建。
 
