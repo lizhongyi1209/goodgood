@@ -1,5 +1,7 @@
 # 当前开发版本与跨窗口交接
 
+- 最新重启恢复：[GG-357](tasks/GG-357-local-restart-after-reboot.md) 2026-10-04已恢复GG-116本地项目；verified构建d066a241f385c52ef0032d3aca91f2e1bf614079，Web31140/32131、唯一Worker2624/32142、Vite28824/5173（启动器13756）。原E盘healthy依赖/66迁移/外部cloud-development/local-mailpit保留，启动前活动任务/outbox/预留/队列均0，首页/原画布200、API代理verified、readiness五项ok。GG-350随当前Worker启用，下面Worker待启用/旧运行身份为历史。创建0/退役0，无测试/lint/typecheck/浏览器验收、迁移/fixture/真实生成/扣费或生产操作；用户刷新原画布。纯文档提交不改变运行receipt，下次重启仍按届时HEAD构建；适配器/日志备份见任务卡。
+
 - Seedream本地修复：[GG-356](tasks/GG-356-seedream-constraints.md) GG-356已修复并本地启用：隔离4dbdaa4c7a53ffaff3cffb9440fe7e285e8b85b5精确接入6ba2d0d57ae15a4a77a6f3e01810dc0e72f96151。新增0066仅对齐generation_batches/projects/creation_drafts模型ID约束至既有schema，修复Seedream提交前503。2026-10-04 00:15:02通过直接迁移模块只应用0066到127.0.0.1:54449/goodgood；历史65条内容校验和匹配，迁移总数66，新校验和记录匹配，三处约束validated。迁移前后账户/资产/参考图/任务/项目/草稿及积分流水数量、个人/工作区可用及预留余额、Seedream目录/全部报价均不变，开始活动任务0。未改旧迁移/运行JS，不需构建或重启；Web/唯一Worker/Vite沿既有运行，GG-350Worker更新待办保持。专用数据库回归仅写来源，沿GG-276未构建/lint/typecheck/代码检查/测试/浏览器验收；无合成任务/Provider/扣费/自动重放或生产操作。创建1/退役1，managed辅助确认归档，无子agent/缓存。用户现在可自行重试Seedream，真实生成效果待手验。
 
 - Seedream诊断历史（已按GG-356修复）：[GG-355](tasks/GG-355-seedream-diagnosis.md) GG-355只读诊断完成：2026-10-03 22:14:49/22:14:52两次POST /api/generations返回503，Web日志均为generation_batches_model_check约束失败。已验证127.0.0.1:54449/goodgood（连接/事务只读）：Seedream目录启用且1K30/2K60报价存在，但generation_batches/projects/creation_drafts模型约束只含五个原有模型、缺seedream-5.0-pro；源码0054只加目录/价格未扩展约束。Seedream任务未落库，未到Worker/上游；按事务代码在预留积分前失败并回滚。当前请求仅诊断，未改代码/迁移/真实数据/服务或触发生成；后续修复应新增迁移放行三处约束，不重写已应用0054。GG-354源码检查点cc31fcce862f127400ac5a65ef26bf55743ea969及现有功能/运行保持；GG-350Worker原因采集待办继续。 另已确认db/schema.ts三处采用模型ID格式约束，与已应用SQL的五模型枚举不一致。
@@ -271,5 +273,4 @@ node dist/local-checkpoint-portfix.mjs start workspace --cloud-env-file "$taskCl
 ## 下一步
 
 用户刷新5173手动测试文本生成、可编辑结果/停止/保存与每次20积分；构建及本地0061/Web已启用，实际提供商响应/视觉效果尚未验收。后续仍默认仅开发代码，不自动编译/代码检查；GG-294辅助目录已退役。免费政策待用户明确后再开发quota/升级Web与Worker，新需求以当前HEAD核对祖先，生产另获授权。
-- 最新重启恢复：[GG-357](tasks/GG-357-local-restart-after-reboot.md) 2026-10-04已恢复GG-116本地项目；verified构建d066a241f385c52ef0032d3aca91f2e1bf614079，Web31140/32131、唯一Worker2624/32142、Vite28824/5173（启动器13756）。原E盘healthy依赖/66迁移/外部cloud-development/local-mailpit保留，启动前活动任务/outbox/预留/队列均0，首页/原画布200、API代理verified、readiness五项ok。GG-350随当前Worker启用，下面Worker待启用/旧运行身份为历史。创建0/退役0，无测试/lint/typecheck/浏览器验收、迁移/fixture/真实生成/扣费或生产操作；用户刷新原画布。纯文档提交不改变运行receipt，下次重启仍按届时HEAD构建；适配器/日志备份见任务卡。
 
