@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-04
-- Current phase: GG-357电脑重启恢复完成，当前版本Web/唯一Worker及5173可用；GG-356本地0066和GG-354框选等保留，真实生成待用户手验，未部署生产。
-- Current objective: 用户刷新原画布，自行重试Seedream确认生成/保存及正常积分结算，不自动重放；GG-354/352/353/351/346手验继续。GG-350原因采集已随当前唯一Worker恢复启用，无待办后台启动。
+- Current phase: GG-358连接拒绝恢复完成，当前版本Web/唯一Worker/5173已独立后台运行，66迁移及全部既有源码保持，未部署生产。
+- Current objective: 用户刷新原画布继续手验Seedream及图片工具，不自动重放；如服务再退出先读取GG-358独立launcher退出日志。GG-350及GG-356启用保持，前次退出根因仍未确定。
 - Previous objective: GG-313模板名称格式/示例参考、GG-312画布300%高清门槛、GG-311模板保存/成功动效及类型筛选、GG-310前景色已交付源码；GG-309私有2K接口、批量校验及文本资产API/本地0063已启用。
 
 ## Current checkpoint
+
+- 最新运行恢复：[GG-358](tasks/GG-358-local-runtime-recovery.md) 2026-10-04连接拒绝再恢复：原应用进程已停止，Docker依赖healthy，日志无明确退出原因。必要构建verified 3b7393a16fc013d867c9be35904b1f61eb5bc0ee；通过Windows CIM/隐藏launcher独立启动Web7704/32131、唯一Worker15844/32142、Vite35552/5173（启动器23288）。launcher父进程为WmiPrvSE，跨命令仍运行；首页/原画布200、API代理verified、readiness五项ok。原66迁移/外部cloud-development/local-mailpit保留，启动前任务/outbox/预留/队列均0，无迁移/重置/fixture/真实请求/扣费或生产操作。创建0/退役0，未测试/lint/typecheck/浏览器验收；用户刷新手验。未确认前次退出根因，不声称根治，若再退出查本次退出日志；下方旧PID为历史。 当前应用源码仍6ba2d0d；运行receipt严格绑定3b7393a，纯文档提交不改写身份，未来启动按届时HEAD构建。
 
 - 最新运行恢复：[GG-357](tasks/GG-357-local-restart-after-reboot.md) 2026-10-04按用户要求，复用原E盘healthy依赖及GG-116必要构建verified d066a241f385c52ef0032d3aca91f2e1bf614079；Web31140/32131、唯一Worker2624/32142、Vite28824/5173（启动器13756）可用，首页及原画布200，API代理verified，readiness五项ok。启动前活动任务/outbox/预留/两队列均0，66迁移及既有数据保留，无迁移/重置/fixture/真实请求/扣费/生产操作。GG-350随当前Worker启用，下面待启用和旧运行receipt是历史。当前应用源码仍6ba2d0d57ae15a4a77a6f3e01810dc0e72f96151；纯文档交接不改写运行receipt，未来启动按届时HEAD构建。创建0/退役0，未测试/lint/typecheck/浏览器验收。
 
