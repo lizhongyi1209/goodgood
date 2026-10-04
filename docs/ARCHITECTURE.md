@@ -1162,3 +1162,7 @@ canvas-reference-document reversibly encodes browser-native group edges as exist
 ## GG-364 · Stable controlled reference edges
 
 canvas-reference-edge-view caches presentation by original edge identity and current group count, then reuses the displayed array when every entry remains the same. Unlabelled/empty graphs retain their original array. This breaks the graphRevision → projected edges → React Flow StoreUpdater → graph observer feedback without suppressing real node/edge, save or history notifications. Actual count or edge changes still update; caches belong to the mounted canvas and retain only current entries.
+
+## GG-365 · Reference tray sorting
+
+use-canvas-reference-reorder handles pointer capture, cancellation, edge scrolling and keyboard movement independently from native canvas/media dragging; it commits one target-local order on release. canvas-reference-order owns insertion, default append/identity remapping and reversible rank compatibility. Display and generation snapshot consume the same sorted items. The reference document adapter encodes ordering after group flattening and decodes it before group collapse. No backend update is required; GG-364 stable controlled edge projection remains unchanged.

@@ -109,6 +109,8 @@ import { CANVAS_BATCH_REFERENCE_HANDLE, imageSourceAsset, canvasReferenceGroupMe
   canvasReferenceInputs, canvasReferenceInputKeys, uniqueCanvasReferenceInputs, planCanvasReferenceConnection, expandCanvasGroupReferences } from "./canvas-reference-sources.mjs";
 import { decodeCanvasReferenceDocument } from "./canvas-reference-document.mjs";
 import { createCanvasReferenceEdgeView } from "./canvas-reference-edge-view.mjs";
+import { directReferenceOrderKey, linkedReferenceOrderKey, orderCanvasReferences, moveCanvasReference, remapCanvasReferenceOrder } from "./canvas-reference-order.mjs";
+import { useCanvasReferenceReorder } from "./use-canvas-reference-reorder";
 import { measureCanvasGroupFootprints } from "./canvas-group-footprints";
 import { snapshotCanvasProject } from "./canvas-project-snapshot";
 import { readCanvasViewport, saveCanvasViewport, readCanvasActivePage, saveCanvasActivePage } from "./canvas-project-session";
@@ -159,6 +161,7 @@ type CanvasGeneratorDraft = {
   quality?: GptImageQuality;
   background?: GptImageBackground;
   outputFormat?: GptImageOutputFormat;
+  referenceOrder?: readonly string[];
 };
 
 type CanvasGraphFrame = {
@@ -202,7 +205,9 @@ function canvasGraphFrame(nodes: readonly CanvasNode[], edges: readonly Edge[], 
   const cleanReferences = Object.fromEntries(Object.entries(references).map(([id, items]) => [id, items.map(cleanCanvasReference)]));
   const document = snapshotCanvasProject({ nodes: cleanNodes, edges: cleanEdges, draftsByGenerator: drafts,
     referencesByGenerator: cleanReferences, convertedReferences: converted, viewport: { x: 0, y: 0, zoom: 1 } });
-  return { key: JSON.stringify({ nodes: document.nodes, edges: document.edges }), nodes: cleanNodes, edges: cleanEdges,
+  return { key: JSON.stringify({ nodes: document.nodes, edges: document.edges,
+    referenceOrders: Object.fromEntries(Object.entries(drafts).filter(([, draft]) => draft.referenceOrder)
+      .map(([id, draft]) => [id, draft.referenceOrder])) }), nodes: cleanNodes, edges: cleanEdges,
     drafts: { ...drafts }, references: cleanReferences, converted: { ...converted } };
 }
 
@@ -438,7 +443,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
   const activeGeneratorJobs = activeGeneratorNode?.type === "imageGenerator" ? canvasGeneratorJobs(activeGeneratorNode.data) : [];
   const activeGeneratorSlots = activeGeneratorNode?.type === "imageGenerator" ? canvasGeneratorSlots(activeGeneratorNode.data) : [];
   const generatorEditingLocked = submitting || activeGeneratorJobs.some(canvasImageJobIsActive);
-  const { prompt, modelKey, ratio, resolution, count, quality, background, outputFormat } = activeGeneratorId
+  const { prompt, modelKey, ratio, resolution, count, quality, background, outputFormat, referenceOrder } = activeGeneratorId
     ? draftsByGenerator[activeGeneratorId] ?? DEFAULT_GENERATOR_DRAFT
     : DEFAULT_GENERATOR_DRAFT;
   const references = activeGeneratorId ? referencesByGenerator[activeGeneratorId] ?? [] : [];
@@ -811,10 +816,25 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
   const promptBatch = parseCanvasImagePrompts(combinedPrompt);
   const oversizedPromptIndex = promptBatch.prompts.findIndex((item) => item.length > CANVAS_PROMPT_MAX_LENGTH);
   const promptTooLong = oversizedPromptIndex >= 0;
-  const displayReferences = [
-    ...references.map((item) => ({ key: item.clientId, kind: "direct" as const, reference: item.reference, previewUrl: item.previewUrl })),
-    ...linkedReferences.map((item) => ({ key: item.key, kind: "linked" as const, reference: item.reference, previewUrl: item.previewUrl })),
-  ];
+  const displayReferences = orderCanvasReferences([
+    ...references.map((item) => ({ key: item.clientId, orderKey: directReferenceOrderKey(item.reference.id),
+      kind: "direct" as const, reference: item.reference, previewUrl: item.previewUrl })),
+    ...linkedReferences.map((item) => ({ key: item.key, orderKey: linkedReferenceOrderKey(item.sourceId),
+      kind: "linked" as const, reference: item.reference, previewUrl: item.previewUrl })),
+  ], referenceOrder);
+  const referenceReorder = useCanvasReferenceReorder({
+    scope: `${projectOwnerKeyRef.current}:${projectId}:${activePageId}:${activeGeneratorId}`,
+    keys: displayReferences.map((item) => item.orderKey),
+    disabled: generatorEditingLocked || !activeGeneratorId,
+    onMove: (source, target) => {
+      if (!activeGeneratorId || generatorEditingLocked || busyGeneratorIdsRef.current.has(activeGeneratorId)) return;
+      const keys = displayReferences.map((item) => item.orderKey);
+      const moved = moveCanvasReference(keys, source, target);
+      if (moved === keys) return;
+      captureCanvasHistory();
+      updateGeneratorDraft({ referenceOrder: moved });
+    },
+  });
   const referenceCount = new Set(displayReferences.map((item) => item.reference.id)).size;
   const quote = model && selectedResolution
     ? findBillingQuote(billing, {
@@ -857,6 +877,13 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
         }
         return uploadReferenceFiles([{ clientId: item.clientId, file }], (clientId, reference) => {
         if (controller.signal.aborted) return;
+        if (reference.id !== clientId) setDraftsByGenerator((current) => {
+          const draft = current[generatorId];
+          const pendingKey = directReferenceOrderKey(clientId);
+          if (!draft?.referenceOrder?.includes(pendingKey)) return current;
+          return { ...current, [generatorId]: { ...draft, referenceOrder: draft.referenceOrder.map((key) =>
+            key === pendingKey ? directReferenceOrderKey(reference.id) : key) } };
+        });
         setReferencesByGenerator((current) => current[generatorId]
           ? { ...current, [generatorId]: current[generatorId].map((value) => value.clientId === clientId
               ? { ...value, reference: { ...reference, url: value.previewUrl } }
@@ -1009,7 +1036,8 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       ...(Array.isArray(edge.data?.excludedSourceIds) ? { data: { ...edge.data,
         excludedSourceIds: (edge.data.excludedSourceIds as string[]).flatMap((memberId) => ids.has(memberId) ? [ids.get(memberId)!] : []) } } : {}),
     }));
-    const pastedDrafts = Object.fromEntries(Object.entries(clipboard.drafts).map(([id, draft]) => [ids.get(id)!, { ...draft }]));
+    const pastedDrafts = Object.fromEntries(Object.entries(clipboard.drafts).map(([id, draft]) => [ids.get(id)!,
+      { ...draft, referenceOrder: remapCanvasReferenceOrder(draft.referenceOrder, ids) }]));
     const pastedReferences = Object.fromEntries(Object.entries(clipboard.references).map(([id, items]) => [ids.get(id)!,
       items.map((item) => ({ ...item, clientId: crypto.randomUUID(), reference: { ...item.reference } }))]));
     const pastedConverted = Object.fromEntries(clipboard.edges.flatMap((edge, index) =>
@@ -1053,7 +1081,8 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     const retainedConverted = Object.fromEntries(Object.entries(live.convertedReferences)
       .filter(([key]) => !currentEdgeIds.some((id) => key === id || key.startsWith(id + ":"))));
     setDraftsByGenerator({ ...retainedDrafts, ...Object.fromEntries(generators.map((id) => [id,
-      currentIds.has(id) ? live.draftsByGenerator[id] ?? target.drafts[id] ?? DEFAULT_GENERATOR_DRAFT
+      currentIds.has(id) ? { ...(live.draftsByGenerator[id] ?? target.drafts[id] ?? DEFAULT_GENERATOR_DRAFT),
+        referenceOrder: target.drafts[id]?.referenceOrder }
         : target.drafts[id] ?? DEFAULT_GENERATOR_DRAFT])) });
     setReferencesByGenerator({ ...retainedReferences, ...Object.fromEntries(generators.map((id) => [id,
       currentIds.has(id) ? live.referencesByGenerator[id] ?? target.references[id] ?? [] : target.references[id] ?? []])) });
@@ -1652,6 +1681,12 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       objectUrlsRef.current.delete(removed.previewUrl);
     }
     setReferencesByGenerator((current) => ({ ...current, [generatorId]: (current[generatorId] ?? []).filter((item) => item.clientId !== clientId) }));
+    if (removed) setDraftsByGenerator((current) => {
+      const draft = current[generatorId];
+      if (!draft?.referenceOrder) return current;
+      return { ...current, [generatorId]: { ...draft, referenceOrder: draft.referenceOrder
+        .filter((key) => key !== directReferenceOrderKey(removed.reference.id)) } };
+    });
     if (projectOwnerKeyRef.current) {
       const ownerKey = projectOwnerKeyRef.current;
       setTimeout(() => {
@@ -1677,6 +1712,13 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     const input = canvasReferenceInputs(instance.getNodes(), edges).find((item) => item.key === key);
     const edgeId = input?.edgeId ?? key;
     captureCanvasHistory();
+    const generatorId = edges.find((edge) => edge.id === edgeId)?.target;
+    if (input && generatorId) setDraftsByGenerator((current) => {
+      const draft = current[generatorId];
+      if (!draft?.referenceOrder) return current;
+      return { ...current, [generatorId]: { ...draft, referenceOrder: draft.referenceOrder
+        .filter((item) => item !== linkedReferenceOrderKey(input.sourceId)) } };
+    });
     forgetConvertedReference(input?.key ?? edgeId);
     setEdges((current) => current.flatMap((edge) => {
       if (edge.id !== edgeId) return [edge];
@@ -1858,6 +1900,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       canvasProjectId: projectSync.id,
     }));
     setDraftsByGenerator((current) => ({ ...current, [activeGeneratorId]: {
+      ...current[activeGeneratorId],
       prompt, modelKey: model.catalogId ?? model.id, ratio: selectedRatio,
       resolution: selectedResolution, count: selectedCount,
       ...gptOptions,
@@ -2577,10 +2620,14 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
                   size="xs"
                   state={item.reference.status === "uploading" ? "uploading" : item.reference.status === "failed" ? "error" : "done"}
                   aria-busy={item.reference.status === "uploading" || undefined}
+                  data-reference-order-key={item.orderKey}
+                  data-sort-dragging={referenceReorder.draggingKey === item.orderKey || undefined}
+                  data-sort-target={referenceReorder.targetKey === item.orderKey && referenceReorder.draggingKey !== item.orderKey || undefined}
                 >
-                  <Tooltip>
+                  <Tooltip open={referenceReorder.draggingKey ? false : undefined}>
                     <TooltipTrigger asChild>
-                      <span className={styles.referenceImageTrigger} tabIndex={0} aria-label={`预览参考图 ${index + 1}：${item.reference.name}${item.reference.status === "uploading" ? "，上传中" : item.reference.status === "failed" ? "，上传失败" : ""}`}>
+                      <span className={styles.referenceImageTrigger} tabIndex={0} {...referenceReorder.bind(item.orderKey)}
+                        aria-label={`预览参考图 ${index + 1}：${item.reference.name}${item.reference.status === "uploading" ? "，上传中" : item.reference.status === "failed" ? "，上传失败" : ""}，Alt加左右方向键调整顺序`}>
                         <PrivateObjectImage src={item.previewUrl} alt={item.reference.name} />
                       </span>
                     </TooltipTrigger>

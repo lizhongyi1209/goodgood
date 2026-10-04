@@ -1018,3 +1018,7 @@ Preflight each whole connection before grouping: reject mixed/unavailable source
 ## GG-364 · Controlled-edge update loop
 
 GG-363 rebuilt visibleEdges on every graphRevision, including empty/ordinary graphs. React Flow wrote that new array to its store and the project observer advanced graphRevision again, causing Maximum update depth exceeded. The fix keeps unchanged projected edges/arrays stable and allows real changes through. This is a source-level cause/fix; no browser reproduction or automatic acceptance was run under GG-276.
+
+## GG-365 · Reference reorder cancellation
+
+Sorting makes no generation or upload request. Single/empty lists and busy generators do not start; outside drops, Escape, pointer cancellation/capture loss, window blur and source/scope invalidation leave order intact. Commit validates live source/target IDs and the current target lock. Loading/failed references keep their status, retry and generation gate; upload completion remaps a sorted pending direct ID instead of losing its position. Existing IndexedDB/CAS save errors remain authoritative.

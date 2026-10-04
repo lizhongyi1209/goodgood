@@ -1,3 +1,5 @@
+import { encodeCanvasReferenceOrderPage, decodeCanvasReferenceOrderPage } from "./canvas-reference-order.mjs";
+
 const BATCH_EDGE_ID = /^batchref-\d+-\d+-\d+$/;
 const groupKey = (groupId, targetId) => `reference-${groupId}-${targetId}`;
 const memberKey = (edgeId, memberId) => `${edgeId}:${memberId}`;
@@ -43,11 +45,12 @@ export function encodeCanvasReferencePage(page, pageIndex = 0) {
       return { ...saved, id, source: node.id, sourceHandle: "reference" };
     });
   });
-  return { ...page, nodes, edges, convertedReferences };
+  return encodeCanvasReferenceOrderPage({ ...page, nodes, edges, convertedReferences }, pageIndex);
 }
 
 /** Infer per-target omissions from encoded child edges; never collapse ordinary connections. */
 export function decodeCanvasReferencePage(page) {
+  page = decodeCanvasReferenceOrderPage(page);
   const byId = new Map(page.nodes.map((node) => [node.id, node]));
   const grouped = new Map();
   for (const edge of page.edges) {

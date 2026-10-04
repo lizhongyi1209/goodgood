@@ -60,6 +60,8 @@ export type CanvasProjectGenerator = Readonly<{
     quality?: GptImageQuality;
     background?: GptImageBackground;
     outputFormat?: GptImageOutputFormat;
+    // Browser-only target order; cloud compatibility uses ranked edge IDs.
+    referenceOrder?: readonly string[];
   }>;
   directReferenceIds: readonly string[];
   // Browser recovery only. Files are stored separately in IndexedDB.

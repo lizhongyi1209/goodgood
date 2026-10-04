@@ -1065,3 +1065,7 @@ GG-268（ADR0124）在现有JSON文档新增`textEditor`节点，保存`markdown
 ## GG-363 · Browser reference groups
 
 Browser page JSON carries optional group referenceOrder (member node IDs) and edge excludedSourceIds (target-local member omissions). Runtime edge data holds exclusions; composite edgeId:memberId keys isolate converted imports. History/copy remap both member lists and conversion keys; deleting pages aborts all member imports, pending imports block page deletion. Cloud documents strip these browser fields, encode active members as ordinary child edges and retain child-array order; omitted members infer exclusions on restore. Existing project schemaVersion, tables and server validator stay unchanged.
+
+## GG-365 · Target reference order
+
+Browser generator draft.referenceOrder optionally stores direct:referenceId and linked:sourceNodeId tokens. Pending direct upload IDs remap when confirmed; linked tokens survive conversion keys/ungrouping. Target history restores only this draft field and copying remaps only copied linked sources. Source group referenceOrder remains independent. Cloud encoding strips draft.referenceOrder, reorders existing directReferenceIds and records linked positions 0–9 in reserved reforder-N: edge IDs. Decode ranks before collapsing GG-363 group edges and restores converted IDs; direct slots fill the remaining positions. Long legacy IDs normalize to a compact unique ID with the same relation/import. No server fields, schema version or migration changes.
