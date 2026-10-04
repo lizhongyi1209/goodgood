@@ -1158,3 +1158,7 @@ canvas-image-color-context独立稳定上下文，Provider在ReactFlowProvider�
 canvas-reference-sources owns source eligibility, frozen selection order, group expansion, actual-image deduplication, capacity/cycle preflight and ungroup preservation. CanvasBatchReferenceHandle remains inside the leading image node context, offset to selection bounds; this avoids ephemeral graph nodes or premature persistence. Group edges flatten into per-member cancellable imports and the existing reference tray/generation snapshot.
 
 canvas-reference-document reversibly encodes browser-native group edges as existing validated child edges for cloud storage (reserved batchref-pageIndex-edgeIndex-memberIndex IDs), preserving group child order, target omissions and converted reference mappings. Restore collapses only reserved edges; ordinary member edges remain independent. Page indices keep cloud edge IDs globally unique. Existing Web/private reference ownership boundaries remain; no backend activation or SQL migration.
+
+## GG-364 · Stable controlled reference edges
+
+canvas-reference-edge-view caches presentation by original edge identity and current group count, then reuses the displayed array when every entry remains the same. Unlabelled/empty graphs retain their original array. This breaks the graphRevision → projected edges → React Flow StoreUpdater → graph observer feedback without suppressing real node/edge, save or history notifications. Actual count or edge changes still update; caches belong to the mounted canvas and retain only current entries.

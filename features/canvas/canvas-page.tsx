@@ -108,6 +108,7 @@ import { CANVAS_GROUP_DRAG_HANDLE, canvasNodeAbsolutePosition, canvasPastedNodeG
 import { CANVAS_BATCH_REFERENCE_HANDLE, imageSourceAsset, canvasReferenceGroupMembers, canvasReferenceSelection,
   canvasReferenceInputs, canvasReferenceInputKeys, uniqueCanvasReferenceInputs, planCanvasReferenceConnection, expandCanvasGroupReferences } from "./canvas-reference-sources.mjs";
 import { decodeCanvasReferenceDocument } from "./canvas-reference-document.mjs";
+import { createCanvasReferenceEdgeView } from "./canvas-reference-edge-view.mjs";
 import { measureCanvasGroupFootprints } from "./canvas-group-footprints";
 import { snapshotCanvasProject } from "./canvas-project-snapshot";
 import { readCanvasViewport, saveCanvasViewport, readCanvasActivePage, saveCanvasActivePage } from "./canvas-project-session";
@@ -786,14 +787,20 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       return { ...input, reference, previewUrl: asset?.previewUrl ?? "" };
     });
   }, [activeGeneratorId, flow, edges, convertedReferences, referencesByGenerator, mediaRevision, graphRevision]);
-  const visibleEdges = useMemo(() => edges.map((edge) => {
-    if (flow?.getNode(edge.source)?.type !== "group") return edge;
-    const inputs = uniqueCanvasReferenceInputs(canvasReferenceInputs(flow.getNodes(), edges, edge.target),
-      (referencesByGenerator[edge.target] ?? []).map((item) => item.reference), convertedReferences).filter((input) => input.edgeId === edge.id);
-    return { ...edge, label: inputs.length + "张", labelStyle: { fill: "#71717a", fontSize: 11 },
-      labelBgStyle: { fill: "#fff" }, labelBgPadding: [5, 3] as [number, number], labelBgBorderRadius: 4,
-      ariaLabel: inputs.length + "张参考图，点击查看" };
-  }), [edges, flow, mediaRevision, referencesByGenerator, convertedReferences, graphRevision]);
+  const projectReferenceEdges = useMemo(createCanvasReferenceEdgeView, []);
+  const visibleEdges = useMemo(() => {
+    const counts = new Map<string, number>();
+    if (flow) {
+      const currentNodes = flow.getNodes();
+      for (const edge of edges) {
+        if (flow.getNode(edge.source)?.type !== "group") continue;
+        const inputs = uniqueCanvasReferenceInputs(canvasReferenceInputs(currentNodes, edges, edge.target),
+          (referencesByGenerator[edge.target] ?? []).map((item) => item.reference), convertedReferences);
+        counts.set(edge.id, inputs.filter((input) => input.edgeId === edge.id).length);
+      }
+    }
+    return projectReferenceEdges(edges, counts);
+  }, [edges, flow, mediaRevision, referencesByGenerator, convertedReferences, graphRevision, projectReferenceEdges]);
   const linkedTextInputs = collectCanvasTextInputs(flow?.getNodes() ?? [], edges, activeGeneratorId);
   useEffect(() => {
     if (edges.some((edge) => edge.sourceHandle === "text" && edge.targetHandle === "text")) {

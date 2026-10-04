@@ -1014,3 +1014,7 @@ Canvas edits write to IndexedDB before remote autosave. An unreachable API or of
 ## GG-363 · Batch reference failures
 
 Preflight each whole connection before grouping: reject mixed/unavailable sources, duplicate-only groups, cycles and total unique inputs above ten. An invalid generator drop uses the existing brief error notification, including required reduction; never silently load a partial batch or mutate existing refs. Uploading inputs stay placeholders and failed inputs retain per-image retry; both prevent Generate. Group members removed during dragging invalidate the frozen selection. Escape blocks even a late native pointer-up callback. Removed/excluded members and deleted pages cancel their own import consumers; other targets retain independent subscriptions.
+
+## GG-364 · Controlled-edge update loop
+
+GG-363 rebuilt visibleEdges on every graphRevision, including empty/ordinary graphs. React Flow wrote that new array to its store and the project observer advanced graphRevision again, causing Maximum update depth exceeded. The fix keeps unchanged projected edges/arrays stable and allows real changes through. This is a source-level cause/fix; no browser reproduction or automatic acceptance was run under GG-276.
