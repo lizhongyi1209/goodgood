@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-05
-- Current phase: GG-386视频chat对齐图片chat源码实施中，基线9a34a1a；GG-385本地运行和临时价格保持。
-- Current objective: 在隔离辅助实现一致宽度/附件/工具排/参数Popover/长文本展开，精确集成到5173源码供用户手验；不自动编译/检查/测试/重启或生成。
+- Current phase: GG-386视频chat一致性源码已接入a63f5dabd5213c24a9756fb30b123f4dea7445f9；UI待用户手验，GG-385后台运行和临时价格保持，未部署生产.
+- Current objective: 用户刷新5173，对比图片/视频chat布局、素材/菜单/参数Popover/长输入及窄屏状态；不自动构建/检查/测试或重启、生成。
 - Previous objective: GG-383上传复用源码交付；GG-382设计/官方对照已获用户接受，按其O1Key附件实现，不再等待设计反馈。
 
 ## Current checkpoint
+
+- 当前源码交接：[GG-386](tasks/GG-386-video-chat-consistency.md) GG-386视频chat源码已精确接入a63f5dabd5213c24a9756fb30b123f4dea7445f9（隔离c09431148406ee19033fd0c88c3a4e820300c91e，基线298d8ec/9a34a1a）。以图片chat实际实现为准：660px视口受限宽度/12px节点间距，空托盘隐藏、工具行添加素材，54px Attachment/编号/移除/180ms预览；左侧参数与类型、右侧同款模型Select和CreditIcon积分生成按钮。参数采用同款Portal/胶囊/比例卡，保留紧凑时长及手动分镜滚动；长输入八行滚动/展开收起、菜单互斥/输入关闭，空描述不显示冗余校验，真实错误保留。图片chat及视频六类型/素材用途/计价/持久任务与后台保持。用户刷新5173手验；未自动构建/lint/typecheck/代码或diff检查/测试/浏览器/HTTP/SQL/Provider/生成/扣费/迁移/重启或生产操作，运行仍GG-385/5fd584d。创建1/退役1，辅助已提交并归档；无子agent/依赖或构建缓存。
 
 - 当前激活任务：[GG-385](tasks/GG-385-local-kling-video-activation.md) GG-385已本地启用：用户授权临时定价及更新；Omni720p/1080p/4k每秒10/20/40积分，动作模仿720p/1080p每秒10/20积分，默认Omni720p五秒50积分。配置在仓库外LOCALAPPDATA/GoodGood/local-video-generation/video-pricing.env，以Node --env-file传给Web/唯一Worker。0067/0068已顺序应用到127.0.0.1:54449/goodgood，历史校验和匹配、总68迁移、原用户/画布/资产/任务/流水及余额聚合保持，视频任务0。必要checkpoint构建5fd584da7c1dad3ed5154fad05bdd94cf32c10a1；Web20564/32131、唯一Worker16116/32142，隐藏启动器35248/26392，Vite17388/5173保持。两角色readiness五项ok、API代理同构建身份、画布HTTP200；未登录探测新视频能力接口401符合保护规则，不创建登录或任务。默认报价读取50积分，真实生成、扣费、代码检查/测试及浏览器交互验收未执行，生产未操作；UI由用户刷新手验。创建0/退役0，无子agent/新依赖缓存。
 
