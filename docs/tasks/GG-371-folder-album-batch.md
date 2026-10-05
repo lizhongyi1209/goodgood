@@ -8,8 +8,8 @@
 - batch_persistence：独立album-model辅助；拥有NEW canvas-folder-album.mjs/.d.mts与回归来源，canvas-asset-panel.tsx文件夹拖放回调/类型、canvas-groups.mjs/group-bounds.tsx相册隐藏子节点边界、canvas-reference-sources.mjs相册仅候选门控；不改root/preview文件。实际路径见下方。
 - batch_planner：独立preview辅助；拥有canvas-batch-reference-panel.tsx、canvas-batch-generator.module.css最小改动、NEW canvas-batch-combination-preview.tsx/.module.css、NEW canvas-batch-reference-page.mjs/.d.mts与回归来源；根保留控制器props接入，实际路径见下方。
 - 验证：沿GG-276仅开发/补有意义回归来源/精确集成；不自动构建/lint/typecheck/代码或diff检查/测试/浏览器验收/HTTP/SQL/Provider/生成/扣费/运行或生产更新。
-- 状态：相册模型、拖入/恢复/复制/删除、相册预览及紧凑组合分页源码已在隔离controller完成；待精确接入当前开发目录。未自动验证/未部署。
-- 下一动作：精确接入当前开发目录、归档3个辅助并同步当前检查点；用户刷新5173手验50图相册/连线/批量输入/紧凑组合分页。
+- 状态：源码已精确接入F:/goodgood-worktrees/GG-116，d433fbf4633a1b162af926a787be0dd79cc47136；未自动验证/未部署。
+- 下一动作：用户刷新5173手验50图相册/连线/批量输入/紧凑组合分页；修复仅针对具体反馈，后续从当前检查点隔离。
 
 ## 实际辅助目录
 
@@ -25,3 +25,8 @@
 - 相册整体移动/复制/删除与云恢复，禁止通用解组/嵌套组合使成员泄漏；候选端口一次扩展全部成员，公共/普通端口拒绝，原10图实际请求上限和生成冻结保持。
 - chat仅保留查看组合按钮，Dialog每页12组，完整总数/图序、前后翻页及跳页；巨量组合按混合进位直接定位目标页，保留配对单图复用。
 - 回归来源tests/gg371-folder-album.test.mjs与tests/gg371-batch-reference-page.test.mjs仅写未运行；未执行自动代码或diff检查、测试或真实请求。
+
+## 当前交付
+
+- 实际源码：GG-371文件夹相册与紧凑组合查看源码已精确接入d433fbf4633a1b162af926a787be0dd79cc47136（前置67dd0f5/b3a2d24；隔离bedcaf0/cdcd881/085ce0e，子agent原始e7c62e7/2ed7c38）。资产文件夹完整授权图片集可一次拖入一个360×300相册，5列内部滚动预览全部图/大图查看/失败重试；只接批量候选端口，整集合参与候选，保持公共参考及单请求10图边界。使用album组wire+隐藏真实sourceImage成员，拖入时快照；整体移动/复制/删除/历史/刷新恢复及普通组尺寸保持。chat仅显示查看组合入口，独立有界Dialog每页12组、翻页/跳页/真实图序，巨大组合直接定位目标页。沿GG-276回归只写来源，未自动构建/lint/typecheck/代码或diff检查/测试/浏览器验收，无HTTP/SQL/Provider/生成/扣费、运行更新或生产操作；GG-366运行receipt保持未重查。创建3/退役3，全部managed辅助已确认归档；两个写入子agent完成，未建立依赖缓存。未验收/未部署，用户刷新5173手验。
+- 本轮创建3/退役3；list_artifacts确认controller、album-model、combination-preview均为archived_worktree，源提交可恢复，无未完成辅助或依赖缓存。
