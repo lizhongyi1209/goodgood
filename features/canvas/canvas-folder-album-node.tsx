@@ -60,6 +60,36 @@ function CanvasFolderAlbumNode({ id, data, selected }: NodeProps<CanvasGroupNode
       height: node.type === "sourceImage" ? node.data.pixelHeight : undefined }];
   }), [id, data, nodes]);
   const viewerKey = selectedKey && items.some((item) => item.key === selectedKey) ? selectedKey : null;
+  // Stable callbacks preserve the native drag gesture across geometry changes.
+  const startResize = useCallback(() => {
+    actionsRef.current.onBeforeGraphEdit();
+    flow.updateNodeData(id, { sizing: "manual" });
+  }, [flow, id]);
+  const finishResize = useCallback<OnResizeEnd>((_event, frame) => {
+    const width = Math.round(frame.width); const height = Math.round(frame.height);
+    flow.setNodes((current) => current.map((node) => node.id === id
+      ? { ...node, width, height, style: { ...node.style, width, height } } : node));
+    actionsRef.current.onProjectGraphChange(true);
+  }, [flow, id]);
+  const resizeWithKeyboard = (event: KeyboardEvent<HTMLButtonElement>, corner: string) => {
+    if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return;
+    event.preventDefault(); event.stopPropagation();
+    const state = store.getState(); const album = flow.getNode(id);
+    if (!album) return;
+    const step = event.shiftKey ? 50 : 10;
+    const dx = event.key === "ArrowLeft" ? -step : event.key === "ArrowRight" ? step : 0;
+    const dy = event.key === "ArrowUp" ? -step : event.key === "ArrowDown" ? step : 0;
+    const left = corner.endsWith("left"); const top = corner.startsWith("top");
+    const next = resizeCanvasGroup(state.nodes, id, {
+      x: album.position.x + (left ? dx : 0), y: album.position.y + (top ? dy : 0),
+      width: Number(album.width ?? album.measured?.width ?? album.style?.width) + (left ? -dx : dx),
+      height: Number(album.height ?? album.measured?.height ?? album.style?.height) + (top ? -dy : dy),
+    });
+    if (next === state.nodes) return;
+    actionsRef.current.onBeforeGraphEdit(); flow.setNodes(next);
+    actionsRef.current.onProjectGraphChange(true);
+  };
+
   return <>
     <header className={`${workspaceStyles.imageMetadata} ${styles.header} canvas-album-drag-handle`}>
       <span className={workspaceStyles.imageMetadataName}>

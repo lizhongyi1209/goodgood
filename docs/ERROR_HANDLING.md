@@ -1037,3 +1037,7 @@ GG-367 preview is isolated from the saved order. An altered reference list, resi
 ## GG-372 · 右键移动门控与恢复
 
 移动至只读取当前已授权素材/文件夹，kind必须与media匹配；不存在/同目录/缺数据直接拒绝。读取失败/编辑/管理请求或移动pending时禁用且选择处理再读实时ref门控，避免重复提交。复用原mover保留名称/标签、成功后更新归属并刷新、失败保留原位置及重试、卸载后不回写；菜单不改文件内容、原资产身份或已建立相册快照。
+
+## GG-378 · 相册选中时报伸缩回调未定义
+
+GG-377相册渲染选中角点时引用了未声明的startResize，finishResize及resizeWithKeyboard也遗漏。补齐组件内回调，沿普通组捕获历史、标记manual、结束同步width/height/style并提交既有保存；方向键使用既有resizeCanvasGroup。属于渲染引用缺陷，不增加错误吞噬、重试请求或改写相册素材。用户刷新后手验，沿GG-276未自动验收。
