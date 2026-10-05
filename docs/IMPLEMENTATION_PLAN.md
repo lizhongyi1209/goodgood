@@ -1,17 +1,19 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-05
-- Current phase: GG-369批量组合HTML演示已交付，GG-368真实功能未实施；GG-367源码/GG-366运行身份保持，用户手验待办，未部署生产。
-- Current objective: 用户打开GG-369独立HTML试用四类场景/参考组合与共用chat，选择布局交互后再另立真实功能实施任务；沿GG-276不自动运行检查/测试或浏览器验收，既有应用不变。
+- Current phase: GG-370独立画布批量生成源码已接入，用户手验待办；GG-367保留，GG-366运行身份保持；未自动验收/未部署生产。
+- Current objective: 用户刷新5173，在画布右键批量生成，手验公共参考+1–5候选组/两组合模式/报价/每请求10图及并发恢复；沿GG-276不自动检查、测试或更新运行。
 - Previous objective: GG-313模板名称格式/示例参考、GG-312画布300%高清门槛、GG-311模板保存/成功动效及类型筛选、GG-310前景色已交付源码；GG-309私有2K接口、批量校验及文本资产API/本地0063已启用。
 
 ## Current checkpoint
+
+- 当前源码交接：[GG-370](tasks/GG-370-batch-reference-generator.md) GG-370独立画布「批量生成」源码已精确接入8e3e45b4d14fdec3d02044f9bb693826c9ff2bd7（前置aa68728/0aa2a23/23310e2；隔离c000b4a/4d90638/613c521/ae5fbb3）。公共参考+1–5候选组，画布源图/多选共用端点/参考组接入，全部组合或顺序配对，实际单请求去重≤10；chat共享提示词/模型/参数、实际总额与折叠前6图序预览。逐组合冻结输入复用并发slot/恢复/独立失败重试，逐实际引用数报价；沿1MiB文档容量预检及保存后门控，超额不静默截断或提交。独立组件+既有imageGenerator wire/批量ID/handle适配，不新增后台未知字段；本机batchConfiguration保存空组/空模式并在远端剥离，云按有效端口恢复。普通节点原路径保持。沿GG-276只写回归来源，未自动构建/lint/typecheck/代码或diff检查/测试/浏览器验收，无HTTP/SQL/Provider/生成/扣费、运行更新或生产操作；GG-366运行receipt保持未重查。创建4/退役4，全部managed辅助确认归档，两个写入子agent完成，无依赖缓存。用户刷新5173手验；未验收/未部署。 下一任务从当前HEAD核验8e3e45b祖先后隔离，不从obsolete F:/goodgood或main推断基线。
 
 - 最新演示交接：[GG-369](tasks/GG-369-batch-reference-html-demo.md) 独立完整HTML已交付，位于本线程visualizations目录（任务卡给出绝对路径）。四场景、候选选择、两种组合规则/校验、组合与真实图序预览、可收起组合区、共用chat/参数、数量计算及并发流程本地模拟/取消，离线绘图和品牌内嵌。仅演示输入组合，不生成真实输出或扣积分。浏览器打开请求queued，未执行自动检查/编译/测试或浏览器验收，也无HTTP/SQL/Provider/服务/生产操作；应用源码d8197c1和GG-366运行receipt保持。创建0/退役0，1个纯文案子agent完成，无依赖缓存。下一步用户试用/选择交互后再单独实施真实功能。
 
 - 最新设计分析：[GG-368](tasks/GG-368-batch-reference-composition-design.md) 批量参考组合建议已交付，未实施/未改变accepted ADR。批量节点复用chat、公共参考+素材组、全部组合/按序配对；数量/报价和组合预览清楚，执行可复用多snapshot并发，但候选池、引用顺序/报价、组配置及云白名单保存需要专门适配。本次仅只读分析/文档记录，无自动检查/测试、HTTP/SQL/Provider/生成/扣费、服务或生产操作；应用源码检查点d8197c1及GG-366运行receipt保持。创建0/退役0，2个只读子agent完成，无依赖缓存。下一步用户选定后单独实施。
 
-- 当前应用源码检查点：d8197c137a834bacb40ba65ea2b300efdf6e94b4；[GG-367](tasks/GG-367-reference-sort-motion.md) 隔离52b800e7f022d51eeab5db3a185c45837f3ffb7e精确接入。源图跟随指针，邻图160ms平滑移位；固定未缩放槽位/中点及滚动差计算，避免动画命中反复换位。行内有效释放只提交一次排序，行外/取消/列表或尺寸/缩放变化不改草稿；cursor、Tooltip、Alt方向键、既有目标独立顺序和生成/保存边界保持。纯几何回归只写未运行；未构建/lint/typecheck/代码检查/测试/浏览器验收，未HTTP/SQL/Provider/生成/扣费、服务更新或生产操作。GG-366运行receipt保持未重查，创建1/退役1，辅助已归档，无子agent或依赖缓存。用户刷新5173手验；下方GG-365源码为历史检查点，下一任务从当前HEAD核验祖先。
+- 历史应用源码检查点：d8197c137a834bacb40ba65ea2b300efdf6e94b4；[GG-367](tasks/GG-367-reference-sort-motion.md) 隔离52b800e7f022d51eeab5db3a185c45837f3ffb7e精确接入。源图跟随指针，邻图160ms平滑移位；固定未缩放槽位/中点及滚动差计算，避免动画命中反复换位。行内有效释放只提交一次排序，行外/取消/列表或尺寸/缩放变化不改草稿；cursor、Tooltip、Alt方向键、既有目标独立顺序和生成/保存边界保持。纯几何回归只写未运行；未构建/lint/typecheck/代码检查/测试/浏览器验收，未HTTP/SQL/Provider/生成/扣费、服务更新或生产操作。GG-366运行receipt保持未重查，创建1/退役1，辅助已归档，无子agent或依赖缓存。用户刷新5173手验；下方GG-365源码为历史检查点，下一任务从当前HEAD核验祖先。
 
 - 当前本地运行：[GG-366](tasks/GG-366-local-restart-after-reboot.md) GG-366电脑重启恢复完成：原PG54449落入Windows54385–54484保留范围、发布映射缺失；经Windows管理员授权短停WinNAT、重连原网络/别名并启动同一PG，原卷及54449映射恢复、WinNAT Running。必要构建verified 1dde20e6c08346d26c3d3d4dd97431605d057fe8；Web34716/32131、唯一Worker32420/32142、Vite30460/5173（启动器8232）通过独立隐藏launcher恢复。首页/原画布200、API代理同revision/verified，两角色readiness五项ok、cloud-development/local-mailpit保持。启动前活动图片/文本任务、未派发outbox、个人/工作区预留及两队列均0，原66迁移保留。未迁移/重置/写fixture/发真实生成/扣费或生产操作；仅必要构建和运行核对，未lint/typecheck/代码检查/测试/浏览器验收。GG-365/364源码保持，创建0/退役0，无子agent/新依赖副本。 GG-366恢复时应用源码检查点为c905455，运行receipt绑定1dde20e；后续纯交接提交不改变运行身份，下次重启按届时HEAD构建。下方GG-358/357旧PID为历史。
 
