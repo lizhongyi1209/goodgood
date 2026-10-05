@@ -1,13 +1,15 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-06
-- Current phase: GG-389视频数量1/2/4源码已提交4e3f6d60ff77a4ea1bf34f6c28619e659f03fb35，Web尚未更新，旧后台数量能力保护保持；GG-116分支codex/gg-389-video-generation-count，未自动验收或部署。
-- Current objective: 完成数量源码交接；用户另行授权必要Web构建更新后刷新5173手验数量/总积分/独立视频结果与单项重试，Worker无需更新。
+- Current phase: GG-390智能分镜弹框源码完成；GG-116分支codex/gg-390-video-storyboard-dialog，未自动验收/构建/服务更新或部署。
+- Current objective: 用户刷新5173手验类型右侧分镜入口/模式/镜头编辑/时长和长度引导/取消确认；GG-389数量Web启用授权仍待用户回复，不擅自运行。
 - Previous objective: GG-383上传复用源码交付；GG-382设计/官方对照已获用户接受，按其O1Key附件实现，不再等待设计反馈。
 
 ## Current checkpoint
 
-- 当前源码交接：[GG-389](tasks/GG-389-video-generation-count.md) GG-389视频生成数量1/2/4源码已提交4e3f6d60ff77a4ea1bf34f6c28619e659f03fb35，默认1，分支codex/gg-389-video-generation-count，基线3b7460e/GG-388。复用数量胶囊，按钮显示单价×数量；预建相邻独立视频卡片/冻结ID，再并发调用旧单视频API。失败位置保留并单项重试；确定未受理与网络不明分离，后者只查原ID。数量/有界拒绝说明随草稿保存，复制清理提交状态；新Web能力声明后才允许选择数量，旧后台继续单条兼容。四项纯合成来源仅写未执行，无自动构建、检查、测试、浏览器/HTTP/SQL/Provider/生成/扣费/服务或生产操作。GG-385运行保持，新字段尚未启用，需要用户单独授权Web构建更新；Worker/DB不变。创建0/退役0，无子agent或新缓存。
+- 当前源码交接：[GG-390](tasks/GG-390-video-storyboard-dialog.md) GG-390智能分镜弹框源码完成，分支codex/gg-390-video-storyboard-dialog，基线da34445/GG-389。生成类型右侧同款入口，参数内旧镜头/编辑移到独立Dialog；单镜头/自动/手动、镜头增删排序/秒数/描述/合计与字符引导，确认应用、取消/外部点击/Escape丢弃本轮草稿。参考视频固定自动，Motion/视频编辑隐藏，任务中禁用。手动生成将连接文本合入首镜头、主描述保留用于切回；子结果冻结有效分镜，沿旧API/费用/保存字段。三项纯合成来源仅写，未自动构建、检查、测试、浏览器/接口/数据库/Provider/生成/扣费/服务或生产操作，GG-385运行保持。GG-389数量Web授权继续待答复，本次不重复请求；用户刷新5173手验分镜。创建0/退役0，无子agent/新缓存。
+
+- 前次源码交接：[GG-389](tasks/GG-389-video-generation-count.md) GG-389视频生成数量1/2/4源码已提交4e3f6d60ff77a4ea1bf34f6c28619e659f03fb35，默认1，分支codex/gg-389-video-generation-count，基线3b7460e/GG-388。复用数量胶囊，按钮显示单价×数量；预建相邻独立视频卡片/冻结ID，再并发调用旧单视频API。失败位置保留并单项重试；确定未受理与网络不明分离，后者只查原ID。数量/有界拒绝说明随草稿保存，复制清理提交状态；新Web能力声明后才允许选择数量，旧后台继续单条兼容。四项纯合成来源仅写未执行，无自动构建、检查、测试、浏览器/HTTP/SQL/Provider/生成/扣费/服务或生产操作。GG-385运行保持，新字段尚未启用，需要用户单独授权Web构建更新；Worker/DB不变。创建0/退役0，无子agent或新缓存。
 
 - 前次源码交接：[GG-388](tasks/GG-388-video-settings-resize.md) GG-388视频参数尺寸循环修复与时长简化源码已提交66c204c99ec52a2abae1109f1f96f2d5ebae01bc，分支codex/gg-388-video-settings-resize，基线edb031b/GG-387。弹层高度从按钮位置/可视窗口独立计算、动画帧按变化写入并卸载取消，解除Radix观察结果反向控制被观察元素高度的反馈；保留定位翻转和内部滚动。秒数只在时长行显示，去掉端点和摘要中的重复值，3–15秒/报价/保存/锁定/Motion保持。只源码开发，未自动构建、检查、测试或浏览器验收，未调用HTTP/SQL/Provider或操作服务/生产。GG-385运行身份保持，用户刷新5173手验。创建0/退役0，无子agent或新增缓存。
 

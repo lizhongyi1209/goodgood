@@ -4,6 +4,10 @@
 - Date: 2026-10-05
 - Related tasks: GG-382, GG-384
 
+## Storyboard dialog · 2026-10-06 · GG-390
+
+Move shot controls out of the video parameter popover into a focused Dialog, opened by 智能分镜 immediately after the generation-type control. Offer single, automatic and editable manual shots for supported Omni types; motion control and video editing remain excluded, and feature-video references force automatic shots. Stage edits locally and apply only on confirmation; cancel, outside dismissal and Escape discard them. Preserve the existing multiShot/shots contract and pricing. Manual generation uses only the effective shot prompts, incorporating connected text into the first shot without exceeding existing limits; retain the ordinary composer draft for returning to single/automatic mode. No new planning-provider call, backend protocol or charge is introduced.
+
 ## Generation quantity · 2026-10-06 · GG-389
 
 Offer 1, 2 and 4 videos in the existing parameter controls, with a legacy-compatible default of 1. Persist this optional composer count in the canvas draft. Each video uses the unchanged single-video API, its own frozen input, request ID, result node and server-authoritative quote/reservation. Preallocate every result node before submission, show the total estimated credits, and retain failed nodes for individual retries of exactly one video. Keep ambiguous submissions on their original ID for query recovery; confirmed pre-acceptance failures retain a bounded message and frozen input in the draft. Do not invent an upstream count parameter or change provider pricing. Web needs the new draft validator before cloud persistence accepts these optional fields; Worker and database remain unchanged. Build/restart still require separate user authorization under the source-only agreement.

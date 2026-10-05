@@ -1,12 +1,12 @@
 "use client";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Handle, NodeToolbar, Position, useReactFlow, useStore, type NodeProps } from "@xyflow/react";
-import { ChevronDown, Download, FileText, Film, LoaderCircle, Maximize2, Play, Plus, RotateCcw, Upload, X } from "lucide-react";
+import { ChevronDown, Clapperboard, Download, FileText, Film, LoaderCircle, Maximize2, Play, Plus, RotateCcw, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Attachment, AttachmentGroup } from "@/components/ui/attachment";
 import { CreditIcon } from "@/components/ui/credit-icon";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -25,6 +25,8 @@ import { uploadCanvasAssetFile, CANVAS_ASSET_LIBRARY_UPDATED_EVENT } from "./can
 import { CanvasVideoMaterialPicker, type VideoPickerMaterial } from "./canvas-video-material-picker";
 import { CanvasVideoGeneratorPrompt } from "./canvas-video-generator-prompt";
 import { CanvasVideoGeneratorSettings } from "./canvas-video-generator-settings";
+import { CanvasVideoStoryboardDialog } from "./canvas-video-storyboard-dialog";
+import { canvasVideoStoryboardShots } from "./canvas-video-storyboard.mjs";
 import { canvasVideoGenerationBatchInputs } from "./canvas-video-generation-batch.mjs";
 import { CanvasVideoGenerationError, quoteCanvasVideo, readCanvasVideoCapabilities, submitCanvasVideo, readCanvasVideo, downloadCanvasVideo, retryCanvasVideoSave, retryCanvasVideo, type VideoCreditQuote } from "./http-video-generation";
 import type { CanvasNode, CanvasVideoGeneratorNodeType } from "./canvas-workspace";
@@ -59,6 +61,8 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
   const zoom = useStore((state) => state.transform[2]); const viewportWidth = useStore((state) => state.width);
   const screenLeft = useStore((state) => (state.nodeLookup.get(id)?.internals.positionAbsolute.x ?? 0) * state.transform[2] + state.transform[0]);
   const [modelOpen, setModelOpen] = useState(false); const [typeOpen, setTypeOpen] = useState(false); const [parametersOpen, setParametersOpen] = useState(false);
+  const [storyboardOpen, setStoryboardOpen] = useState(false);
+  const [storyboardSession, setStoryboardSession] = useState(0);
   const [pickerOpen, setPickerOpen] = useState(false); const [viewerOpen, setViewerOpen] = useState(false); const [priceRevision, setPriceRevision] = useState(0);
   const [uploading, setUploading] = useState(false); const [posting, setPosting] = useState(false); const [message, setMessage] = useState("");
   const [quote, setQuote] = useState<VideoCreditQuote | null>(null); const [retryQuote, setRetryQuote] = useState<VideoCreditQuote | null>(null); const [quoteError, setQuoteError] = useState(""); const [pollRevision, setPollRevision] = useState(0);
@@ -80,7 +84,9 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
   const sequence = Math.max(1, nodes.filter((node) => node.type === "videoGenerator").findIndex((node) => node.id === id) + 1);
   const title = `视频生成 ${sequence}`;
   const connected = canvasTextGenerationInputs(nodes, edges, id);
-  const combinedPrompt = [...connected.filter((item) => item.kind === "text").map((item) => item.text ?? ""), draft.prompt].map((text) => text.trim()).filter(Boolean).join("\n\n");
+  const connectedText = connected.filter((item) => item.kind === "text").map((item) => (item.text ?? "").trim()).filter(Boolean).join("\n\n");
+  const manualShots = draft.shots.length > 0 && !["motion_control", "video_edit"].includes(draft.type);
+  const combinedPrompt = manualShots ? "" : [connectedText, draft.prompt].map((text) => text.trim()).filter(Boolean).join("\n\n");
   let imageIndex = 0;
   const views: InputView[] = [
     ...connected.map((item): InputView => {
@@ -99,7 +105,8 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
   const media: VideoGenerationMedia[] = views.flatMap((view) => view.material && view.role ? [{ ...view.material, role: view.role }] : []);
   const hasFeatureVideo = media.some((item) => item.role === "feature_video");
   const fields = { modelId: draft.modelId, type: draft.type, prompt: combinedPrompt, resolution: draft.resolution, duration: draft.duration, aspectRatio: draft.aspectRatio,
-    audio: hasFeatureVideo ? "off" as const : draft.audio, multiShot: hasFeatureVideo || draft.multiShot, characterOrientation: draft.characterOrientation, shots: draft.shots };
+    audio: hasFeatureVideo ? "off" as const : draft.audio, multiShot: hasFeatureVideo || draft.multiShot, characterOrientation: draft.characterOrientation,
+    shots: manualShots ? canvasVideoStoryboardShots(draft.shots, connectedText) : [] };
   const problem = views.some((view) => view.unavailable) ? "连接素材尚未就绪。" : views.some((view) => view.kind !== "text" && !view.role) ? "当前生成类型不支持这份素材，请切换类型或移除素材。" : videoGenerationProblem({ ...fields, media });
   const motionVideoId = media.find((item) => item.kind === "video")?.assetId;
   const quoteInput = useMemo(() => ({ modelId: draft.modelId, type: draft.type, resolution: draft.resolution, duration: draft.duration, characterOrientation: draft.characterOrientation,
@@ -171,7 +178,8 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
   }, [draft.requestId, draft.submissionError, context.enabled, context.workspaceId, scope, pollRevision]);
   useEffect(() => {
     if (!selected || locked) { setModelOpen(false); setTypeOpen(false); if (!selected) setParametersOpen(false); }
-  }, [selected, locked]);
+    if (!selected || locked || ["motion_control", "video_edit"].includes(draft.type)) setStoryboardOpen(false);
+  }, [selected, locked, draft.type]);
   useEffect(() => {
     const video = videoRef.current; if (!video || !data.previewUrl) return;
     const playback = attachCanvasVideoPreviewPlayback(video, { page: document, reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)") });
@@ -248,7 +256,8 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
         position: { x: current.position.x + (index + 1) * (resultWidth + 24), y: current.position.y },
         style: { width: resultWidth, height: Number(current.style?.height ?? current.height ?? 180) },
         data: resultData({ ...draft, count: 1, prompt: item.input.prompt,
-          materials: item.input.media.map((material) => ({ ...material })), roles: {}, requestId: item.input.requestId, lastInput: item.input, submissionError: undefined }),
+          shots: item.input.shots.map((shot) => ({ ...shot })), materials: item.input.media.map((material) => ({ ...material })),
+          roles: {}, requestId: item.input.requestId, lastInput: item.input, submissionError: undefined }),
       }));
       // Publish all slots together, before the first paid request can start.
       flow.setNodes((currentNodes) => [...currentNodes.map((node) => node.id === id && node.type === "videoGenerator"
@@ -369,8 +378,8 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
             </DropdownMenu>}
           </div>)}
         </AttachmentGroup>
-        <CanvasVideoGeneratorPrompt id={`video-prompt-${id}`} value={draft.prompt} readOnly={locked} maxLength={motion ? 2500 : 3072} width={toolbarWidth}
-          placeholder={connected.some((item) => item.kind === "text") ? "补充视频描述（追加在连接文本之后）…" : `${type.hint}…`} canGenerate={ready}
+        <CanvasVideoGeneratorPrompt id={`video-prompt-${id}`} value={manualShots ? "" : draft.prompt} readOnly={locked || manualShots} maxLength={motion ? 2500 : 3072} width={toolbarWidth}
+          placeholder={manualShots ? "分镜描述请在智能分镜中编辑…" : connected.some((item) => item.kind === "text") ? "补充视频描述（追加在连接文本之后）…" : `${type.hint}…`} canGenerate={ready}
           onInteract={() => { setModelOpen(false); setTypeOpen(false); setParametersOpen(false); }}
           onChange={(prompt) => { setMessage(""); updateDraft({ prompt }); }} onGenerate={() => void generate()} />
         <div className={`${composerStyles.tools} ${styles.footer}`}>
@@ -401,6 +410,7 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
               </PopoverTrigger>
               <CanvasVideoGeneratorSettings id={`video-parameters-${id}`} draft={draft} media={media} disabled={locked} countEnabled={countEnabled} onChange={updateDraft} />
             </Popover>
+            <div className={styles.typeAndStoryboard}>
             <Select open={typeOpen} onOpenChange={(open) => { setTypeOpen(open); if (open) { setModelOpen(false); setParametersOpen(false); } }} value={draft.type}
               onValueChange={(value) => changeType(value as VideoGenerationType)} disabled={locked}>
               <SelectTrigger size="sm" className={`${composerStyles.modelSelect} ${styles.typeSelect}`} aria-label="生成类型"><SelectValue /></SelectTrigger>
@@ -408,6 +418,21 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
                 {VIDEO_GENERATION_TYPES.filter((item) => item.modelId === draft.modelId).map((item) => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}
               </SelectContent>
             </Select>
+            {!motion && draft.type !== "video_edit" && <Dialog open={storyboardOpen && selected && !locked} onOpenChange={(open) => {
+              setStoryboardOpen(open);
+              if (open) { setStoryboardSession((session) => session + 1); setModelOpen(false); setTypeOpen(false); setParametersOpen(false); }
+            }}>
+              <DialogTrigger asChild>
+                <Button type="button" variant="ghost" size="sm" disabled={locked}
+                  className={`${composerStyles.settingsTrigger} ${styles.storyboardTrigger}`} data-active={draft.multiShot || draft.shots.length > 0 || hasFeatureVideo || undefined}>
+                  <Clapperboard size={14} strokeWidth={1.5} aria-hidden="true" />智能分镜
+                </Button>
+              </DialogTrigger>
+              <CanvasVideoStoryboardDialog key={storyboardSession} id={`video-storyboard-${id}`} draft={draft}
+                connectedText={connectedText} automaticOnly={hasFeatureVideo} onCancel={() => setStoryboardOpen(false)}
+                onApply={(patch) => { updateDraft(patch); setMessage(""); setStoryboardOpen(false); }} />
+            </Dialog>}
+            </div>
           </div>
           <span className={composerStyles.toolSpacer} />
           <div className={styles.actions}>

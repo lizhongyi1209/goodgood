@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, X } from "lucide-react";
 import { PopoverContent } from "@/components/ui/popover";
 import { Slider } from "@/components/ui/slider";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -98,20 +97,5 @@ export function CanvasVideoGeneratorSettings({ id, draft, media, disabled, count
     <Options name="音频" value={referenceVideo ? "off" : draft.audio}
       choices={[{ value: "off", label: "静音" }, ...(motion || draft.type === "video_edit" ? [{ value: "original", label: "保留原声" }] : [{ value: "native", label: "生成音频" }])]}
       disabled={disabled || referenceVideo} onChange={(audio) => onChange({ audio: audio as CanvasVideoGenerationDraft["audio"] })} />
-    {!motion && <Options name="镜头" value={draft.shots.length ? "manual" : referenceVideo || draft.multiShot ? "multi" : "single"}
-      choices={[{ value: "single", label: "单镜头" }, { value: "multi", label: "自动多镜头" }, { value: "manual", label: "手动分镜" }]}
-      disabled={disabled || referenceVideo || draft.type === "video_edit"}
-      onChange={(value) => onChange({ multiShot: value !== "single", shots: value === "manual" ? [{ seconds: draft.duration, text: "" }] : [] })} />}
-    {draft.shots.length > 0 && <section className={`${composerStyles.settingsSection} ${styles.shots}`} aria-label="手动分镜">
-      {draft.shots.map((shot, index) => <div className={styles.shot} key={index}>
-        <label>镜头 {index + 1}<input type="number" aria-label={`镜头 ${index + 1} 时长`} min={1} max={15} value={shot.seconds} disabled={disabled}
-          onChange={(event) => onChange({ shots: draft.shots.map((item, position) => position === index ? { ...item, seconds: Math.max(1, Math.min(15, Number(event.target.value) || 1)) } : item) })} /></label>
-        <textarea aria-label={`镜头 ${index + 1} 描述`} placeholder="描述画面和动作" maxLength={512} value={shot.text} readOnly={disabled}
-          onChange={(event) => onChange({ shots: draft.shots.map((item, position) => position === index ? { ...item, text: event.target.value } : item) })} />
-        <button type="button" disabled={disabled} aria-label={`移除镜头 ${index + 1}`} onClick={() => onChange({ shots: draft.shots.filter((_, position) => position !== index) })}><X size={13} /></button>
-      </div>)}
-      <button type="button" disabled={disabled || draft.shots.length >= 6} className={styles.shotAdd}
-        onClick={() => onChange({ shots: [...draft.shots, { seconds: 1, text: "" }] })}><Plus size={13} />添加镜头</button>
-    </section>}
   </PopoverContent>;
 }
