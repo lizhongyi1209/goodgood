@@ -1,6 +1,6 @@
 # 当前开发版本与跨窗口交接
 
-> [GG-388](tasks/GG-388-video-settings-resize.md) GG-388视频参数尺寸循环修复与时长简化源码完成，分支codex/gg-388-video-settings-resize，基线edb031b/GG-387。弹层高度从按钮位置/可视窗口独立计算、动画帧按变化写入并卸载取消，解除Radix观察结果反向控制被观察元素高度的反馈；保留定位翻转和内部滚动。秒数只在时长行显示，去掉端点和摘要中的重复值，3–15秒/报价/保存/锁定/Motion保持。只源码开发，未自动构建、检查、测试或浏览器验收，未调用HTTP/SQL/Provider或操作服务/生产。GG-385运行身份保持，用户刷新5173手验。创建0/退役0，无子agent或新增缓存。
+> [GG-388](tasks/GG-388-video-settings-resize.md) GG-388视频参数尺寸循环修复与时长简化源码已提交66c204c99ec52a2abae1109f1f96f2d5ebae01bc，分支codex/gg-388-video-settings-resize，基线edb031b/GG-387。弹层高度从按钮位置/可视窗口独立计算、动画帧按变化写入并卸载取消，解除Radix观察结果反向控制被观察元素高度的反馈；保留定位翻转和内部滚动。秒数只在时长行显示，去掉端点和摘要中的重复值，3–15秒/报价/保存/锁定/Motion保持。只源码开发，未自动构建、检查、测试或浏览器验收，未调用HTTP/SQL/Provider或操作服务/生产。GG-385运行身份保持，用户刷新5173手验。创建0/退役0，无子agent或新增缓存。
 
 > [GG-387](tasks/GG-387-video-duration-slider.md) GG-387视频时长滑块源码已提交7bd8698596cff3e8f7179cecf0f84b9436a4f5c9，GG-116当前分支codex/gg-387-video-duration-slider，基线9da08ad/GG-386。复用Shadcn Slider，3–15秒/1秒步长/当前秒数及端点提示，原duration/摘要/报价联动、锁定与Motion来源时长保持。未自动编译/lint/typecheck/检查/测试/浏览器/HTTP/SQL/Provider/生成/扣费/服务或生产操作，GG-385后台运行5fd584d保持。用户刷新5173手验；复用小改集成目录，创建0/退役0，无子agent或额外依赖缓存。
 
