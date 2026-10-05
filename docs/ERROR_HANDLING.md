@@ -1022,3 +1022,5 @@ GG-363 rebuilt visibleEdges on every graphRevision, including empty/ordinary gra
 ## GG-365 · Reference reorder cancellation
 
 Sorting makes no generation or upload request. Single/empty lists and busy generators do not start; outside drops, Escape, pointer cancellation/capture loss, window blur and source/scope invalidation leave order intact. Commit validates live source/target IDs and the current target lock. Loading/failed references keep their status, retry and generation gate; upload completion remaps a sorted pending direct ID instead of losing its position. Existing IndexedDB/CAS save errors remain authoritative.
+
+GG-367 preview is isolated from the saved order. An altered reference list, resized tray or changed canvas zoom cancels measured-slot displacement rather than submitting stale geometry. Release within the image row (including gaps) commits once; outside/text-item drops and cancellation clear transforms with no draft/history edit. Animated thumbnails never serve as insertion hit targets.

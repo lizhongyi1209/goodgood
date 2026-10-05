@@ -2621,8 +2621,9 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
                   state={item.reference.status === "uploading" ? "uploading" : item.reference.status === "failed" ? "error" : "done"}
                   aria-busy={item.reference.status === "uploading" || undefined}
                   data-reference-order-key={item.orderKey}
+                  data-sort-preview={Boolean(referenceReorder.draggingKey) || undefined}
                   data-sort-dragging={referenceReorder.draggingKey === item.orderKey || undefined}
-                  data-sort-target={referenceReorder.targetKey === item.orderKey && referenceReorder.draggingKey !== item.orderKey || undefined}
+                  style={referenceReorder.style(item.orderKey)}
                 >
                   <Tooltip>
                     <TooltipTrigger asChild>
