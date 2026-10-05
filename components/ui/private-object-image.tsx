@@ -4,6 +4,7 @@ type PrivateObjectImageProps = Readonly<{
   alt: string;
   className?: string;
   loading?: ImgHTMLAttributes<HTMLImageElement>["loading"];
+  draggable?: ImgHTMLAttributes<HTMLImageElement>["draggable"];
   onLoad?: ImgHTMLAttributes<HTMLImageElement>["onLoad"];
   onError?: ImgHTMLAttributes<HTMLImageElement>["onError"];
   src: string | undefined;
@@ -20,6 +21,7 @@ export function PrivateObjectImage({
   alt,
   className,
   loading = "lazy",
+  draggable,
   onLoad,
   onError,
   src,
@@ -35,6 +37,7 @@ export function PrivateObjectImage({
       className={className}
       decoding="async"
       loading={loading}
+      draggable={draggable}
       onLoad={onLoad}
       onError={onError}
       src={src}

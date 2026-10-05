@@ -16,7 +16,7 @@ type Props = {
   total: number;
   count: number;
   error: string | null;
-  // Retained during controller integration; combinations now open in a paginated dialog.
+  // The first planner combination is the inline sample in actual input order.
   preview?: readonly { key: string; index: number; items: readonly CanvasBatchPanelItem[] }[];
   onMode: (mode: "all" | "paired") => void;
   onAddGroup: () => void;
@@ -35,9 +35,9 @@ export function CanvasBatchReferencePanel(props: Props) {
     <div className={styles.materials}>
       {items.map((item, itemIndex) => <div className={styles.material} key={item.key} aria-busy={item.reference.status === "uploading" || undefined}>
         <PrivateObjectImage src={item.previewUrl} alt={item.reference.name} />
-        <span className={styles.ordinal}>{itemIndex + 1}</span>
+        <span className={styles.ordinal} aria-hidden="true">{itemIndex + 1}</span>
         <button type="button" disabled={props.disabled} onClick={() => props.onRemove(item)} className={styles.remove}
-          aria-label={`移除 ${name}：${item.reference.name}`}><X size={10} /></button>
+          aria-label={`移除 ${name}：${item.reference.name}`}><X size={12} aria-hidden="true" /></button>
         {item.reference.status !== "ready" && <span className={styles.status}>
           {item.reference.status === "failed" ? <button type="button" disabled={props.disabled} onClick={() => props.onRetry(item)}>重试</button> : "载入中"}
         </span>}
@@ -56,8 +56,8 @@ export function CanvasBatchReferencePanel(props: Props) {
     <div className={styles.footer}>
       <button type="button" className={styles.addGroup} disabled={props.disabled || props.groups.length >= 5} onClick={props.onAddGroup}><Plus size={12} />添加素材组</button>
       <span aria-live="polite">{props.total > 0 ? props.total.toLocaleString("zh-CN") + " 组 · 共 " + (BigInt(props.total) * BigInt(props.count)).toLocaleString("zh-CN") + " 个任务" : "连接素材后开始"}</span>
-      <CanvasBatchCombinationPreview common={props.common} groups={props.groups} mode={props.mode} total={props.total} count={props.count} />
     </div>
+    <CanvasBatchCombinationPreview combination={props.preview?.[0]} />
     {props.error && <p className={styles.error} role="status">{props.error}</p>}
   </section>;
 }

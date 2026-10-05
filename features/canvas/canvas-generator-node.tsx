@@ -30,7 +30,7 @@ export type CanvasGeneratorNodeData = Record<string, unknown> & {
 };
 
 export function CanvasGeneratorNode({ id, data, selected }: NodeProps<CanvasGeneratorNodeType>) {
-  const generatorLabel = isCanvasBatchGeneratorId(id) ? "批量生成" : "图片生成";
+  const generatorLabel = isCanvasBatchGeneratorId(id) ? "图片批量生成" : "图片生成";
   const { request: cropRequest } = useCanvasImageCrop();
   const [selectedSlotKey, setSelectedSlotKey] = useState<string | null>(null);
   const [readyOutputs, setReadyOutputs] = useState<ReadonlySet<string>>(new Set());

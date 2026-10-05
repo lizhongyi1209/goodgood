@@ -322,3 +322,9 @@ The user accepts a dedicated in-canvas batch generator with common references an
 ### GG-371 · Compact combination inspection (2026-10-05)
 
 The user replaces inline combination listings with a compact count/entry in the attached chat. Inspect complete combinations in a bounded, independently scrollable paged dialog (12 per page), retaining common→group image order. Use random-access mixed-radix expansion rather than enumerate an enormous product just to reach a later page. Candidate folder albums supply image pools; shared parameters, frozen slots, quote and ten-reference gates remain GG-370.
+
+### GG-376 · Inline sample and unified batch presentation (2026-10-05)
+
+The user renames the dedicated node to “图片批量生成” in the canvas menu, node label/accessibility text and connection guidance. Reuse the ordinary image-generator target handle's visual geometry, hit area and focus/connection states, preserving all public/candidate port IDs. Candidate thumbnails and the preview use the same white numbers on black circles; retain the existing upper-right material removal action with the normal circular image-removal treatment, as explicitly confirmed by the user.
+
+Show exactly one representative row directly in the attached chat, taking the first actual deduplicated combination from the existing planner preview in public→candidate order. Keep its full image sequence in a horizontal scroll area. Remove the “查看组合” button and the complete paged dialog, including pagination, jump controls and close action. This supersedes GG-371's inspection presentation only: all combinations still run, with original counts, pricing, frozen inputs, concurrency, recovery and ten-image capacity. No provider, persistence or runtime change.

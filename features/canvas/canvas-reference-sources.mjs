@@ -94,7 +94,7 @@ export function planCanvasReferenceConnection(nodes, edges, connection, members,
   const source = nodes.find((node) => node.id === connection.source);
   const batchPort = isCanvasBatchGeneratorId(connection.target) && parseCanvasBatchReferenceHandle(connection.targetHandle);
   if ((isCanvasAlbumId(source?.id) || isCanvasAlbumId(source?.parentId)) && !batchPort) {
-    return { valid: false, message: "请将相册连接到批量生成的素材组。" };
+    return { valid: false, message: "请将相册连接到图片批量生成的素材组。" };
   }
   if (target?.type !== "imageGenerator" || (connection.targetHandle !== "reference" && !batchPort) ||
       !["reference", CANVAS_BATCH_REFERENCE_HANDLE].includes(connection.sourceHandle) || !members.length ||

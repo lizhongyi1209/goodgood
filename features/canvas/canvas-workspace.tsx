@@ -747,7 +747,7 @@ export function CanvasWorkspace({
         <ContextMenuItem onSelect={() => {
           if (contextPointRef.current) { onBeforeGraphEdit(); onCreateBatchGenerator(contextPointRef.current); }
           contextPointRef.current = null;
-        }}><ImageIcon size={12} className="size-3" aria-hidden="true" /><span>批量生成</span></ContextMenuItem>
+        }}><ImageIcon size={12} className="size-3" aria-hidden="true" /><span>图片批量生成</span></ContextMenuItem>
         </>}
       </ContextMenuContent>
       </ContextMenu>

@@ -1,5 +1,6 @@
-.port { width: 10px; height: 10px; border: 2px solid white; background: #71717a; }
-.portLabel { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); white-space: nowrap; padding: 3px 5px; font-size: 10px; color: #71717a; background: rgba(255,255,255,.94); border-radius: 4px; pointer-events: none; }
+.port { z-index: 3; }
+.port[data-connected="true"]:global(.react-flow__handle) { opacity: 1; --handle-breath-state: running; }
+.portLabel { position: absolute; right: 32px; top: 50%; transform: translateY(-50%); white-space: nowrap; padding: 3px 5px; font-size: 10px; color: #71717a; background: rgba(255,255,255,.94); border-radius: 4px; pointer-events: none; }
 .panel { padding: 12px 14px 4px; color: #27272a; font-size: 12px; }
 .heading, .rowHeading, .footer { display: flex; align-items: center; gap: 8px; }
 .heading { justify-content: space-between; margin-bottom: 10px; }
@@ -12,8 +13,11 @@
 .materials { display: flex; align-items: center; gap: 6px; overflow-x: auto; min-height: 44px; padding: 3px 0; }
 .material { flex: 0 0 44px; width: 44px; height: 44px; position: relative; border-radius: 7px; overflow: hidden; background: #f4f4f5; }
 .material img { width: 100%; height: 100%; object-fit: cover; }
-.ordinal { position: absolute; left: 3px; bottom: 2px; font-size: 9px; color: white; text-shadow: 0 1px 2px #27272a; }
-.remove { position: absolute; right: 2px; top: 2px; border: 0; padding: 2px; border-radius: 4px; background: rgba(255,255,255,.9); }
+.ordinal { position: absolute; z-index: 1; left: 4px; bottom: 4px; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: #18181b; color: #fff; font-size: 10px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; pointer-events: none; }
+.remove { position: absolute; z-index: 2; right: 4px; top: 4px; display: grid; place-items: center; width: 18px; height: 18px; border: 0; padding: 0; border-radius: 50%; background: rgb(24 24 27 / 86%); color: #fff; opacity: 0; pointer-events: none; }
+.material:hover .remove, .material:focus-within .remove { opacity: 1; pointer-events: auto; }
+.panel .remove:hover:not(:disabled) { background: #18181b; }
+@media (hover: none) { .remove { opacity: 1; pointer-events: auto; } }
 .status { position: absolute; inset: auto 0 0; background: rgba(255,255,255,.9); text-align: center; font-size: 10px; }
 .status button { border: 0; background: transparent; font-size: inherit; padding: 2px; }
 .empty { font-size: 11px; color: #a1a1aa; white-space: nowrap; }
@@ -28,5 +32,4 @@
 .panel button:disabled { opacity: .45; }
 @media (max-width: 480px) { .panel { padding: 10px; } .row { grid-template-columns: 70px minmax(0,1fr); gap: 6px; } .heading { flex-wrap: wrap; } }
 
-.port:focus-visible { outline: 2px solid #18181b; outline-offset: 3px; }
-.port::before { content: ""; position: absolute; inset: -7px; }
+
