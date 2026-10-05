@@ -1078,3 +1078,7 @@ imageGenerator节点ID的batch-generator-前缀保存独立节点身份；已有
 ## GG-371 · 文件夹快照保存
 
 album-UUID为相册group节点，名称沿原folder.name，尺寸及groupSizing=manual沿旧字段；隐藏sourceImage成员保留真实generated/reference资产和稳定member顺序。相册保存的是拖入时图片集合，不在ID/name塞入文件夹配置、外部URL或凭证；不存在云实时文件夹同步承诺。hidden/selectable/draggable/connectable等呈现属性根据parentId重建，不写服务端未知字段。云参考组成员边适配保持实际ID授权与目标独立排除，复制映射相册/成员/边与converted输入键。删除仅删画布节点与连线，不删除真实素材。
+
+## GG-379 · 空状态保存保护与恢复
+
+不新增数据库字段或迁移。同步控制器在更新IndexedDB前比较同页节点数，非空→空仅接受调用方按页给出的显式清空授权；授权不持久化、不来自自动观察或热更新。恢复数据来自原localhost5173浏览器保存日志的170快照，以独立UUID/同owner/workspace新画布保存，原171空记录保持。临时证据保存在仓库外，真实快照/素材不进入Git。

@@ -6,6 +6,7 @@ import {
   type LocalCanvasProject,
 } from "./canvas-project-local";
 import { pendingCanvasProjectContent, remoteCanvasProjectDocument } from "./canvas-project-snapshot";
+import { unapprovedEmptyCanvasPages } from "./canvas-empty-save-guard.mjs";
 
 export type CanvasSaveState = "saving" | "saved" | "offline" | "local-error";
 
@@ -76,8 +77,14 @@ export class CanvasProjectSync {
     this.onState(state, detail);
   }
 
-  update(name: string, document: CanvasProjectDocument): Promise<void> {
+  update(name: string, document: CanvasProjectDocument, approvedEmptyPageIds?: ReadonlySet<string>): Promise<void> {
     if (this.closed) return Promise.resolve();
+    // Store resets during refresh/unmount are not an instruction to delete content.
+    if (unapprovedEmptyCanvasPages(this.current.document, document, approvedEmptyPageIds).length) {
+      const message = "检测到画布暂时为空，已暂停保存并保留原内容。请刷新后重试。";
+      this.report("offline", message);
+      return Promise.reject(new Error(message));
+    }
     const signature = contentSignature(name, document);
     if (signature === this.localContentSignature) return Promise.resolve();
     this.localContentSignature = signature;

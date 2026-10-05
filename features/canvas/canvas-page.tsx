@@ -392,6 +392,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
   const projectOwnerKeyRef = useRef<string | null>(null);
   const projectSnapshotRef = useRef<(() => Promise<void>) | null>(null);
   const projectSnapshotTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const approvedEmptyPageIdsRef = useRef(new Set<string>());
   const viewportTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const generatedProjectIdRef = useRef<string | null>(null);
   const clipboardRef = useRef<CanvasClipboard | null>(null);
@@ -1105,6 +1106,8 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     const live = latestProjectStateRef.current;
     const currentIds = new Set(instance.getNodes().map((node) => node.id));
     const generators = target.nodes.filter((node) => node.type === "imageGenerator").map((node) => node.id);
+    if (target.nodes.length === 0) approvedEmptyPageIdsRef.current.add(activePageIdRef.current);
+    else approvedEmptyPageIdsRef.current.delete(activePageIdRef.current);
     instance.setNodes(target.nodes.map(cleanCanvasNode));
     setEdges(target.edges.map((edge) => ({ ...edge, selected: false })));
     const retainedDrafts = Object.fromEntries(Object.entries(live.draftsByGenerator).filter(([id]) => !currentIds.has(id)));
@@ -1669,6 +1672,10 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
   const handleNodesChange = (changes: NodeChange<CanvasNode>[]) => {
     const removed = new Set(changes.filter((change) => change.type === "remove").map((change) => change.id));
     const removedFiles = new Set(removed);
+    if (removed.size && flowRef.current &&
+        flowRef.current.getNodes().every((node) => removed.has(node.id))) {
+      approvedEmptyPageIdsRef.current.add(activePageIdRef.current);
+    }
     if (removed.size) {
       const discardedEdges = edges.filter((edge) => removed.has(edge.source) || removed.has(edge.target));
       for (const edge of discardedEdges) forgetConvertedReference(edge.id);
@@ -2070,8 +2077,10 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       });
       return { ...document, id: page.id, name: page.name };
     });
-    await sync.update(current.canvasName, pagedCanvasProjectDocument(pages));
+    const approvedEmptyPageIds = new Set(approvedEmptyPageIdsRef.current);
+    await sync.update(current.canvasName, pagedCanvasProjectDocument(pages), approvedEmptyPageIds);
     await sync.flushLocal();
+    for (const id of approvedEmptyPageIds) approvedEmptyPageIdsRef.current.delete(id);
   };
 
   const pageDeletionDisabled = (pageId: string) => {
@@ -2247,6 +2256,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     if (viewportTimerRef.current) saveCurrentViewport();
     projectSyncRef.current?.close();
     projectSyncRef.current = null;
+    approvedEmptyPageIdsRef.current.clear();
     projectHydratingRef.current = true;
     projectOwnerKeyRef.current = ownerKey;
     setProjectReady(false);

@@ -1041,3 +1041,7 @@ GG-367 preview is isolated from the saved order. An altered reference list, resi
 ## GG-378 · 相册选中时报伸缩回调未定义
 
 GG-377相册渲染选中角点时引用了未声明的startResize，finishResize及resizeWithKeyboard也遗漏。补齐组件内回调，沿普通组捕获历史、标记manual、结束同步width/height/style并提交既有保存；方向键使用既有resizeCanvasGroup。属于渲染引用缺陷，不增加错误吞噬、重试请求或改写相册素材。用户刷新后手验，沿GG-276未自动验收。
+
+## GG-379 · 临时空图不得覆盖已保存画布
+
+热更新/卸载时React Flow StoreUpdater.reset会清空内部节点；CanvasProjectSync在写本机队列前检查同页从非空变空，未有显式删除末个节点或撤销/重做到空页的授权则拒绝更新并提示暂停保存，旧本机/服务器快照保持。授权按pageId限定，只在保存成功后消费并在项目恢复时清理；新增空页/初始空图、部分删除及删页保持。不得用仅重新渲染或视口变动授权清空。GG-379现场原171空记录保留，170恢复快照单独保存及新建副本，不覆盖用户当前内容或直接改浏览器LevelDB。
