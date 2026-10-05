@@ -1082,3 +1082,7 @@ album-UUID为相册group节点，名称沿原folder.name，尺寸及groupSizing=
 ## GG-379 · 空状态保存保护与恢复
 
 不新增数据库字段或迁移。同步控制器在更新IndexedDB前比较同页节点数，非空→空仅接受调用方按页给出的显式清空授权；授权不持久化、不来自自动观察或热更新。恢复数据来自原localhost5173浏览器保存日志的170快照，以独立UUID/同owner/workspace新画布保存，原171空记录保持。临时证据保存在仓库外，真实快照/素材不进入Git。
+
+## GG-380 · 空候选组收缩
+
+不新增字段/迁移。显式参考移除后比较前后实际候选桶，只收缩从有输入变空的组；原batchGroupCount/batchMode与剩余edge.targetHandle同次编辑更新。前移端口保持edge.id/成员转换键、source/排除数据和冻结slots，沿原本机batchConfiguration、历史与云handle适配保存。默认下限1和新加未连接空组保持。

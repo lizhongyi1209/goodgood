@@ -115,6 +115,7 @@ import { measureCanvasGroupFootprints } from "./canvas-group-footprints";
 import { isCanvasAlbumId, CANVAS_FOLDER_DRAG_TYPE, CANVAS_ALBUM_DRAG_HANDLE, CANVAS_ALBUM_INITIAL_SIZE, canvasAlbumChildFlags, createCanvasFolderAlbumNodes } from "./canvas-folder-album.mjs";
 import { CanvasBatchReferencePanel } from "./canvas-batch-reference-panel";
 import { isCanvasBatchGeneratorId, parseCanvasBatchReferenceHandle, canvasBatchReferenceHandle, canvasBatchModeFromEdges, canvasBatchGroupCountFromEdges, canvasReferenceGroupEdgeId } from "./canvas-batch-reference-model.mjs";
+import { canvasBatchEdgesWithConfiguration, compactCanvasBatchGroupsAfterRemoval } from "./canvas-batch-reference-removal.mjs";
 import { createCanvasBatchDocumentBudget, CANVAS_BATCH_DOCUMENT_BYTE_LIMIT as CANVAS_BATCH_DOCUMENT_LIMIT } from "./canvas-batch-document-budget.mjs";
 import { planCanvasBatchReferences, validateCanvasBatchReferenceCapacity } from "./canvas-batch-reference-plan.mjs";
 import { snapshotCanvasProject, remoteCanvasProjectDocument } from "./canvas-project-snapshot";
@@ -785,8 +786,10 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
   const shownResolutions = seedreamModel ? resolutionOptions : pricedResolutions;
   const selectedResolution = shownResolutions.includes(resolution) ? resolution : shownResolutions[0];
   const activeBatchGenerator = isCanvasBatchGeneratorId(activeGeneratorId);
-  const batchMode = canvasBatchModeFromEdges(edges, activeGeneratorId ?? "", activeGeneratorNode?.type === "imageGenerator" ? activeGeneratorNode.data.batchMode : "all");
-  const batchGroupCount = canvasBatchGroupCountFromEdges(edges, activeGeneratorId ?? "", activeGeneratorNode?.type === "imageGenerator" ? activeGeneratorNode.data.batchGroupCount : 1);
+  // Native nodes own live configuration; the outer nodes list is a restore seed.
+  const activeBatchNode = activeBatchGenerator && activeGeneratorId ? flow?.getNode(activeGeneratorId) ?? activeGeneratorNode : undefined;
+  const batchMode = canvasBatchModeFromEdges(edges, activeGeneratorId ?? "", activeBatchNode?.type === "imageGenerator" ? activeBatchNode.data.batchMode : "all");
+  const batchGroupCount = canvasBatchGroupCountFromEdges(edges, activeGeneratorId ?? "", activeBatchNode?.type === "imageGenerator" ? activeBatchNode.data.batchGroupCount : 1);
   const referenceBucket = (edgeId: string) => parseCanvasBatchReferenceHandle(edges.find((edge) => edge.id === edgeId)?.targetHandle)?.index ?? 0;
   const linkedReferences = useMemo<LinkedCanvasReference[]>(() => {
     if (!activeGeneratorId || !flow) return [];
@@ -1618,9 +1621,24 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     scheduleProjectSnapshot(true); scheduleCanvasHistory();
   };
 
+  const applyReferenceEdgeRemoval = (nextEdges: Edge[]) => {
+    const instance = flowRef.current;
+    if (!instance) { setEdges(nextEdges); return; }
+    const result = compactCanvasBatchGroupsAfterRemoval(instance.getNodes(), edges, nextEdges);
+    for (const configuration of result.configurations) instance.updateNodeData(configuration.id, {
+      batchMode: configuration.mode, batchGroupCount: configuration.groupCount,
+    });
+    setEdges(result.edges);
+    scheduleProjectSnapshot(true); scheduleCanvasHistory();
+  };
+
   const changeEdges = (changes: EdgeChange[]) => {
+    const removing = changes.some((change) => change.type === "remove");
+    if (removing) captureCanvasHistory();
     for (const change of changes) if (change.type === "remove") forgetConvertedReference(change.id);
-    setEdges((current) => applyEdgeChanges(changes, current));
+    const nextEdges = applyEdgeChanges(changes, edges);
+    if (removing) applyReferenceEdgeRemoval(nextEdges);
+    else setEdges(nextEdges);
   };
 
   const createGenerator = (screenPoint: { x: number; y: number }, batch = false) => {
@@ -1819,8 +1837,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       return { ...current, [generatorId]: { ...draft, referenceOrder: draft.referenceOrder
         .filter((item) => item !== linkedReferenceOrderKey(input.sourceId)) } };
     });
-    forgetConvertedReference(input?.key ?? edgeId);
-    setEdges((current) => current.flatMap((edge) => {
+    const nextEdges = edges.flatMap((edge) => {
       if (edge.id !== edgeId) return [edge];
       if (!input?.grouped) return [];
       const remaining = canvasReferenceInputs(instance.getNodes(), [edge]).filter((member) => member.sourceId !== input.sourceId);
@@ -1828,7 +1845,9 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       return [{ ...edge, data: { ...edge.data, excludedSourceIds: [...new Set([
         ...(Array.isArray(edge.data?.excludedSourceIds) ? edge.data.excludedSourceIds as string[] : []), input.sourceId,
       ])] } }];
-    }));
+    });
+    forgetConvertedReference(nextEdges.some((edge) => edge.id === edgeId) ? input?.key ?? edgeId : edgeId);
+    applyReferenceEdgeRemoval(nextEdges);
   };
   const updateBatchConfiguration = (mode: "all" | "paired", count: number, removedIndex?: number) => {
     if (!activeGeneratorId || !activeBatchGenerator || generatorEditingLocked) return;
@@ -1837,14 +1856,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     if (removedIndex) for (const edge of edges) {
       if (edge.target === activeGeneratorId && parseCanvasBatchReferenceHandle(edge.targetHandle)?.index === removedIndex) forgetConvertedReference(edge.id);
     }
-    setEdges((current) => current.flatMap((edge) => {
-      if (edge.target !== activeGeneratorId) return [edge];
-      const port = parseCanvasBatchReferenceHandle(edge.targetHandle);
-      if (!port) return [edge];
-      if (port.index === removedIndex) return [];
-      const index = removedIndex && port.index > removedIndex ? port.index - 1 : port.index;
-      return [{ ...edge, targetHandle: canvasBatchReferenceHandle(index, mode) }];
-    }));
+    setEdges((current) => canvasBatchEdgesWithConfiguration(current, activeGeneratorId, mode, removedIndex ? [removedIndex] : []));
     scheduleProjectSnapshot(true); scheduleCanvasHistory();
   };
   const retryLinkedReference = (key: string) => {
