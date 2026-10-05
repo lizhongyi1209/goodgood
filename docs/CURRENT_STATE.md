@@ -1,5 +1,7 @@
 # GoodGood 当前状态
 
+> [GG-388](tasks/GG-388-video-settings-resize.md) GG-388视频参数尺寸循环修复与时长简化源码完成，分支codex/gg-388-video-settings-resize，基线edb031b/GG-387。弹层高度从按钮位置/可视窗口独立计算、动画帧按变化写入并卸载取消，解除Radix观察结果反向控制被观察元素高度的反馈；保留定位翻转和内部滚动。秒数只在时长行显示，去掉端点和摘要中的重复值，3–15秒/报价/保存/锁定/Motion保持。只源码开发，未自动构建、检查、测试或浏览器验收，未调用HTTP/SQL/Provider或操作服务/生产。GG-385运行身份保持，用户刷新5173手验。创建0/退役0，无子agent或新增缓存。
+
 > [GG-387](tasks/GG-387-video-duration-slider.md) GG-387视频时长滑块源码已提交7bd8698596cff3e8f7179cecf0f84b9436a4f5c9，GG-116当前分支codex/gg-387-video-duration-slider，基线9da08ad/GG-386。复用Shadcn Slider，3–15秒/1秒步长/当前秒数及端点提示，原duration/摘要/报价联动、锁定与Motion来源时长保持。未自动编译/lint/typecheck/检查/测试/浏览器/HTTP/SQL/Provider/生成/扣费/服务或生产操作，GG-385后台运行5fd584d保持。用户刷新5173手验；复用小改集成目录，创建0/退役0，无子agent或额外依赖缓存。
 
 > [GG-386](tasks/GG-386-video-chat-consistency.md) GG-386视频chat源码已精确接入a63f5dabd5213c24a9756fb30b123f4dea7445f9（隔离c09431148406ee19033fd0c88c3a4e820300c91e，基线298d8ec/9a34a1a）。以图片chat实际实现为准：660px视口受限宽度/12px节点间距，空托盘隐藏、工具行添加素材，54px Attachment/编号/移除/180ms预览；左侧参数与类型、右侧同款模型Select和CreditIcon积分生成按钮。参数采用同款Portal/胶囊/比例卡，保留紧凑时长及手动分镜滚动；长输入八行滚动/展开收起、菜单互斥/输入关闭，空描述不显示冗余校验，真实错误保留。图片chat及视频六类型/素材用途/计价/持久任务与后台保持。用户刷新5173手验；未自动构建/lint/typecheck/代码或diff检查/测试/浏览器/HTTP/SQL/Provider/生成/扣费/迁移/重启或生产操作，运行仍GG-385/5fd584d。创建1/退役1，辅助已提交并归档；无子agent/依赖或构建缓存。

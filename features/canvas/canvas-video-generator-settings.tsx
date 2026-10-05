@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Plus, X } from "lucide-react";
 import { PopoverContent } from "@/components/ui/popover";
 import { Slider } from "@/components/ui/slider";
@@ -31,12 +32,36 @@ export function CanvasVideoGeneratorSettings({ id, draft, media, disabled, onCha
   disabled: boolean;
   onChange: (patch: Partial<CanvasVideoGenerationDraft>) => void;
 }>) {
+  const [panel, setPanel] = useState<HTMLDivElement | null>(null);
   const motion = draft.type === "motion_control";
   const referenceVideo = media.some((item) => item.role === "feature_video");
   const inheritedRatio = media.some((item) => ["first_frame", "feature_video", "base_video"].includes(item.role));
   const model = VIDEO_GENERATION_MODELS.find((item) => item.id === draft.modelId)!;
 
-  return <PopoverContent id={id} side="bottom" align="start" sideOffset={12} collisionPadding={12}
+  useEffect(() => {
+    if (!panel) return;
+    const trigger = document.getElementById(`${id}-trigger`);
+    if (!trigger) return;
+    let frame = 0;
+    let previousHeight = -1;
+    const fit = () => {
+      const rect = trigger.getBoundingClientRect();
+      const viewportTop = window.visualViewport?.offsetTop ?? 0;
+      const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+      // Size from the anchor, never from Popper's observed content height.
+      const availableHeight = Math.max(rect.top - viewportTop - 24, viewportTop + viewportHeight - rect.bottom - 24);
+      const height = Math.max(0, Math.floor(Math.min(560, viewportHeight - 24, availableHeight)));
+      if (height !== previousHeight) {
+        panel.style.setProperty("--video-settings-available-height", `${height}px`);
+        previousHeight = height;
+      }
+      frame = window.requestAnimationFrame(fit);
+    };
+    frame = window.requestAnimationFrame(fit);
+    return () => window.cancelAnimationFrame(frame);
+  }, [id, panel]);
+
+  return <PopoverContent ref={setPanel} id={id} side="bottom" align="start" sideOffset={12} collisionPadding={12}
     className={`${composerStyles.settingsPanel} ${styles.settingsPopover} nodrag nopan nowheel`} aria-label="视频参数"
     onPointerDown={(event) => event.stopPropagation()} onWheel={(event) => event.stopPropagation()}>
     <h2 className={composerStyles.settingsTitle}>视频参数</h2>
@@ -63,7 +88,6 @@ export function CanvasVideoGeneratorSettings({ id, draft, media, disabled, onCha
         <Slider className={`${styles.durationSlider} nodrag nopan nowheel`} aria-label="视频时长"
           value={[draft.duration]} min={3} max={15} step={1} disabled={disabled}
           onValueChange={([duration]) => { if (duration !== undefined) onChange({ duration }); }} />
-        <div className={styles.durationBounds} aria-hidden="true"><span>3 秒</span><span>15 秒</span></div>
       </section>
     </>}
     {motion && <Options name="角色朝向" value={draft.characterOrientation} choices={[{ value: "video", label: "跟随视频" }, { value: "image", label: "保持图片" }]}

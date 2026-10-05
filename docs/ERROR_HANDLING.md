@@ -1,5 +1,9 @@
 # GG-063 quality pricing errors
 
+## GG-388 · 视频参数ResizeObserver反馈
+
+截图的ResizeObserver通知循环属于前端布局，堆栈只指开发错误叠层。源码中Radix Popper size在观察回调写入可用高度，而弹层max-height读取它并改变观察尺寸，构成反馈。改为独立读取触发按钮/可视窗口、动画帧按变化写入自己的高度上限；关闭卸载取消帧。不屏蔽全局错误或改开发叠层，保留实际业务错误。未执行浏览器复现，用户手验仍待完成。
+
 ## GG-384 · 视频失败与恢复
 
 VIDEO_UNPRICED/VIDEO_PRICE_CHANGED在任务创建/积分预留前拦截；授权、素材格式/尺寸/时长、重复用途与描述错误不提交Provider。queued素材准备失败或上游明确4xx拒绝关闭任务并释放预留；上游FAILURE同样释放。超时、网络断开、5xx、缺失回执或提交中断不得认定未扣上游资源，转submission_unknown并保留预留，不自动POST。已知task_id的查询短暂失败仅延后查询。上游SUCCESS先保留结果再保存，下载/存储/结算暂失败变save_failed，retry-save不走生成调用。失败详情仅owner/workspace读取脱敏HTTP状态、模板路径、上游请求/任务标识等，不保留提示词/素材数据/认证/带签名URL；前端卡片提供恢复动作和折叠错误详情。旧Web/0068未应用时创建入口能力检查保护画布保存；源代码不等于接口已生效。

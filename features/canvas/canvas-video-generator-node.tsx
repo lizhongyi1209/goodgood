@@ -339,10 +339,10 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
             </DropdownMenu>
             <Popover open={parametersOpen} onOpenChange={(open) => { setParametersOpen(open); if (open) { setModelOpen(false); setTypeOpen(false); } }}>
               <PopoverTrigger asChild data-slot="button">
-                <Button type="button" variant="ghost" size="sm" className={composerStyles.settingsTrigger} disabled={locked} aria-label="视频参数"
+                <Button id={`video-parameters-${id}-trigger`} type="button" variant="ghost" size="sm" className={composerStyles.settingsTrigger} disabled={locked} aria-label="视频参数"
                   aria-controls={`video-parameters-${id}`}>
                   {!motion && <>{media.some((item) => ["first_frame", "feature_video", "base_video"].includes(item.role)) ? "跟随素材" : draft.aspectRatio} · </>}
-                  {draft.resolution === "4k" ? "4K" : draft.resolution}{!motion && <> · {draft.duration}s</>}
+                  {draft.resolution === "4k" ? "4K" : draft.resolution}
                   <ChevronDown size={13} aria-hidden="true" />
                 </Button>
               </PopoverTrigger>
