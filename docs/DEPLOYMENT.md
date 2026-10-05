@@ -1,5 +1,12 @@
 # Development and deployment
 
+## GG-384 · 视频源码启用条件（未执行）
+
+0068为增量迁移，需先保证0067上传复用已应用，再应用0068；不能只更新Web而遗漏新账本列。Kling复用服务端O1Key配置和现有私有对象存储，另在Web环境配置`GOODGOOD_VIDEO_CREDIT_RATES_JSON`，结构为模型ID映射分辨率映射正整数每秒积分：kling-3.0-omni下720p/1080p/4k，kling-3.0下720p/1080p。未收到数值，不填默认价，不将中转cost换算为积分；未配置/非法配置禁止提交。Omni按所选秒数，Motion按源视频实际时长向上取整报价，提交时再核价，报价变化要求再次确认。必要视频素材桥接需要既有本机私有云桶配置，凭据仍在受保护外部文件。
+
+启用需另行委托迁移、构建和重启Web/唯一Worker；若当前Vite代理旧Worker，视频任务不会被处理。当前仅源码，未应用迁移/写配置/更新构建/重启/调用接口或部署。保持GG-374运行身份，生产仍是ADR0091单槽。
+
+
 - 最新本地恢复：[GG-374](tasks/GG-374-local-restart-after-reboot.md) GG-374按用户要求完成本地重启：原PG54449/Valkey56549/对象存储58049/Mailpit及原卷均健康，三个应用角色原本已停。必要构建verified d183b918ea139c429630a7177905fd2c60cbee93，复用原外部cloud-development/local-mailpit配置，独立隐藏CIM启动Web29548/32131、唯一Worker28916/32142、Vite17388/5173（启动器33100/27976/13896，父WMI7984）。跨命令仍监听；首页/原画布HTTP200，前端API代理同revision/verified，Web与Worker readiness五项均ok。启动前活动图片/文本任务、未派发outbox、个人/工作区/成员预留及两队列均0；原66迁移保持。未迁移/重置/写fixture、发起或重放真实生成/扣费或操作生产；仅必要启动构建与运行核对，未lint/typecheck/代码或diff检查/测试/浏览器交互验收。GG-373及既有应用源码保持，创建0/退役0，无子agent或新依赖副本。用户刷新原画布继续使用，下次重启按届时HEAD构建；纯交付文档提交不改写此运行receipt。
 
 - 历史本地恢复：[GG-366](tasks/GG-366-local-restart-after-reboot.md) GG-366电脑重启恢复完成：原PG54449落入Windows54385–54484保留范围、发布映射缺失；经Windows管理员授权短停WinNAT、重连原网络/别名并启动同一PG，原卷及54449映射恢复、WinNAT Running。必要构建verified 1dde20e6c08346d26c3d3d4dd97431605d057fe8；Web34716/32131、唯一Worker32420/32142、Vite30460/5173（启动器8232）通过独立隐藏launcher恢复。首页/原画布200、API代理同revision/verified，两角色readiness五项ok、cloud-development/local-mailpit保持。启动前活动图片/文本任务、未派发outbox、个人/工作区预留及两队列均0，原66迁移保留。未迁移/重置/写fixture/发真实生成/扣费或生产操作；仅必要构建和运行核对，未lint/typecheck/代码检查/测试/浏览器验收。GG-365/364源码保持，创建0/退役0，无子agent/新依赖副本。 只恢复本地；不增加自启或计划任务，运行receipt保留，后续重启按届时HEAD构建。

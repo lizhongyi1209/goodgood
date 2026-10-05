@@ -158,12 +158,13 @@ export async function listVideoMaterials({ ownerContext, workspaceId = /** @type
   const resources = resourcesOverride ?? await getGenerationResources();
   const workspace = await resolveWorkspaceAccess(resources.pool, { ownerId, workspaceId });
   const result = await resources.pool.query(`SELECT id, object_key, original_file_name, declared_mime_type,
-      declared_byte_size, uploaded_at FROM video_materials
+      declared_byte_size, uploaded_at, pixel_width, pixel_height, duration_seconds FROM video_materials
       WHERE workspace_id=$1 AND owner_id=$2 AND upload_state='ready'
       ORDER BY uploaded_at DESC, id DESC`, [workspace.id, ownerId]);
   return { materials: await Promise.all(result.rows.map(async (row) => ({
     id: row.id, mediaType: "video", name: row.original_file_name,
     mimeType: row.declared_mime_type, size: Number(row.declared_byte_size),
+    pixelWidth: row.pixel_width ?? undefined, pixelHeight: row.pixel_height ?? undefined, durationSeconds: row.duration_seconds ?? undefined,
     uploadedAt: new Date(row.uploaded_at).toISOString(),
     url: await signAssetRead({ bucket: resources.config.objectStorage.bucket,
       key: row.object_key, publicStorage: resources.publicStorage }),

@@ -1,5 +1,12 @@
 # Architecture
 
+## GG-384 · 独立视频边界
+
+`shared/contracts/video-generation.mjs/d.mts`分离模型/类型/用途/UI与O1Key输入；`server/video-generation`独立负责严格输入、授权原始素材/MP4元数据、积分报价、持久任务、附件Omni/Motion适配与有界私有结果入库。Web和Next API统一`/api/video-generation`（capabilities/quote/提交/读取/原输入retry/retry-save/download），浏览器不接触模型凭据或持久化上游URL。
+
+现有唯一Worker增加独立、最大2并发的Postgres租约轮询，不新建Worker服务/Redis队列，也不阻塞图片runner。提交前落库submitted_at；租约中断且无回执转submission_unknown，已知task_id继续GET，不重复付费POST。成功URL先落库为saving，再限制200MiB下载/解析/写私有video_materials/结算。下载逐跳拒绝私网并固定公共DNS，凭据/签名URL不进错误详情。已有在线私有图片使用限时签名原图URL；本地图片可直接Base64，不再次上传参考接口。本机视频仅在必要时桥接到配置的私有云桶，记录任务专属键、完成/明确失败后清理。前端`canvas-video-generator-node`复用图片composer样式和现有flow内上下文，`canvas-video-generation-input`管混合连接，snapshot/恢复/云校验明确承认videoGenerator与冻结输入。
+
+
 GG-354将框选从placement弹框分离为`canvas-image-region.tsx/module.css`：在document.body放置非模态透明原图操作浮层和右侧坐标框，用当前原图DOM边界、解码原图尺寸和ReactFlow视图变换校准，观察尺寸/滚动变化并裁去侧栏/顶部/底部覆盖区域。`canvas-image-region-model.mjs/d.mts`处理预览信箱区域、屏幕到原图坐标及面板位置/文本。原图只读取尺寸即释放解码资源；沿现有受权、身份/页/节点/实际图片校验和取消，不产生文件/后台请求。PlacementProvider按mode挂载原图框选或贴图弹框，context的regionKey隐藏当前图快捷栏；旧弹框框选状态/UI已移除，贴图加载/变换/输出保持。
 
 GG-345：添加数据Provider不再收集/读取生成参考图，不依赖ReactFlow来组装弹框请求；编辑器只保留当前图读取及单一确认保存分支。容器解析/普通编辑的凭证保留仍在内部实现，界面移除C2PA状态与技术说明，相关底层错误返回普通图片处理提示。无后端接口或持久化变化。

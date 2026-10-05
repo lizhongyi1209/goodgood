@@ -188,6 +188,10 @@
 .generatedGenerator:hover,
 .canvas :global(.react-flow__node-imageGenerator.selected) .generatedGenerator { outline: 1px solid #3b82f6; outline-offset: 0; }
 .generatorToolbar { max-height: max(180px, calc(100dvh - 210px)); overflow-y: auto; border-radius: 22px; background: #fff; box-shadow: 0 10px 30px rgb(0 0 0 / 7%); pointer-events: auto; }
+.canvas :global(.react-flow__node-videoGenerator.selected) .generatorNode { outline: 1px solid #71717a; outline-offset: 0; }
+.canvas :global(.react-flow__node-videoGenerator),
+.canvas :global(.react-flow__node-videoGenerator.draggable),
+.canvas :global(.react-flow__node-videoGenerator.draggable.dragging) { padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 .generatorComposerHost { width: 100%; }
 .referenceOutputHandle:global(.react-flow__handle),
 .generatorInputHandle:global(.react-flow__handle) {

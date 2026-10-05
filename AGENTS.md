@@ -85,6 +85,8 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
   exposes real Seedance by default; durable video jobs/billing/assets remain
   unconnected. Never send video through the image API or submit without a user
   action.
+  ADR 0143/GG-384 separately adds durable canvas Kling video generation source;
+  activation needs its migration, pricing and updated Web/Worker. Seedance remains transient.
 - Resolution UI and domain values use `1K / 2K / 4K`. Asset metadata pairs the
   requested value with decoded pixel dimensions when available. Generation count defaults to 1.
 - New generation batches appear first. Generated assets enter the asset library

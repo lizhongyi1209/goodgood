@@ -1,10 +1,11 @@
 import type { GenerationAspectRatio, GenerationCount, GenerationResolution, GptImageQuality, GptImageBackground, GptImageOutputFormat } from "@/shared/contracts/generation";
 import type { GenerationJob, GenerationInputSnapshot, GenerationError } from "@/shared/contracts/generation";
 import type { CanvasTextGenerationDraft } from "@/shared/contracts/text-generation.mjs";
+import type { CanvasVideoGenerationDraft } from "@/shared/contracts/video-generation.mjs";
 
 export type CanvasProjectNode = Readonly<{
   id: string;
-  type: "sourceImage" | "sourceVideo" | "sourceAudio" | "imageGenerator" | "imageResult" | "textEditor" | "textGenerator" | "group";
+  type: "sourceImage" | "sourceVideo" | "sourceAudio" | "imageGenerator" | "imageResult" | "textEditor" | "textGenerator" | "videoGenerator" | "group";
   position: Readonly<{ x: number; y: number }>;
   parentId?: string;
   emoji?: string;
@@ -22,6 +23,7 @@ export type CanvasProjectNode = Readonly<{
   markdown?: string;
   text?: string;
   textGeneration?: CanvasTextGenerationDraft;
+  videoGeneration?: CanvasVideoGenerationDraft;
   metadata?: Readonly<{ pixelWidth?: number; pixelHeight?: number; durationSeconds?: number }>;
   // Browser recovery only. Never send this field to the server.
   pendingFileId?: string;

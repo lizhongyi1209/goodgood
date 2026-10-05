@@ -67,7 +67,7 @@ function localJobWithoutEphemeralUrls(job: GenerationJob): GenerationJob {
   };
 }
 
-function persistNode(node: CanvasNode): CanvasProjectNode | null {
+function persistNode(node: CanvasNode, edges: readonly Edge[]): CanvasProjectNode | null {
   if (!Number.isFinite(node.position.x) || !Number.isFinite(node.position.y)) return null;
   const base = { id: node.id, position: { ...node.position }, size: nodeGeometry(node),
     ...(node.parentId ? { parentId: node.parentId } : {}) };
@@ -81,6 +81,14 @@ function persistNode(node: CanvasNode): CanvasProjectNode | null {
   if (node.type === "textGenerator") return {
     ...base, type: "textGenerator", markdown: node.data.markdown, text: node.data.text,
     textGeneration: node.data.textGeneration,
+  };
+  if (node.type === "videoGenerator") return {
+    ...base, type: "videoGenerator", videoGeneration: { ...node.data.videoGeneration,
+      roles: Object.fromEntries(Object.entries(node.data.videoGeneration.roles).filter(([key]) =>
+        edges.some((edge) => edge.target === node.id && `edge:${edge.id}` === key) ||
+        node.data.videoGeneration.materials.some((item) => `direct:${item.assetKind}:${item.assetId}` === key))) },
+    ...(node.data.outputAssetId ? { asset: { id: node.data.outputAssetId, kind: "video" as const } } : {}),
+    metadata: { pixelWidth: finiteMetadata(node.data.pixelWidth), pixelHeight: finiteMetadata(node.data.pixelHeight), durationSeconds: finiteMetadata(node.data.durationSeconds) },
   };
   if (node.type === "imageGenerator") {
     const jobs = canvasGeneratorJobs(node.data);
@@ -141,7 +149,7 @@ export function snapshotCanvasProject(input: {
   convertedReferences: Record<string, GenerationReference>;
   viewport: Viewport;
 }): LegacyCanvasProjectDocument {
-  const nodes = input.nodes.map(persistNode).filter((item): item is CanvasProjectNode => item !== null);
+  const nodes = input.nodes.map((node) => persistNode(node, input.edges)).filter((item): item is CanvasProjectNode => item !== null);
   const ids = new Set(nodes.map((node) => node.id));
   const edges = input.edges
     .filter((edge) => ids.has(edge.source) && ids.has(edge.target))
@@ -191,7 +199,7 @@ function remoteCanvasPageDocument(document: CanvasPageDocument, pageIndex = 0): 
   const nodes = document.nodes.filter((node) =>
     node.type === "group" ||
     node.type === "textEditor" || node.type === "textGenerator" ||
-    node.type === "imageGenerator" ||
+    node.type === "imageGenerator" || node.type === "videoGenerator" ||
     node.type === "imageResult" && node.jobId && !node.jobId.startsWith("pending_") ||
     Boolean(node.asset?.id),
   ).map(({ pendingFileId: _pendingFileId, batchConfiguration: _batchConfiguration, localJob: _localJob, localJobs: _localJobs, ...node }) => {

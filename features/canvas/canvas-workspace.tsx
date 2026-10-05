@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
-import { Download, ImageIcon, Keyboard, LibraryBig, Scissors, Type } from "lucide-react";
+import { Download, Film, ImageIcon, Keyboard, LibraryBig, Scissors, Type } from "lucide-react";
 import {
   ConnectionLineType,
   MiniMap,
@@ -35,6 +35,7 @@ import { type CanvasGeneratorNodeData } from "./canvas-generator-node";
 import { CanvasImageGeneratorNode } from "./canvas-batch-generator-node";
 import { CanvasTextNode, type CanvasTextNodeData } from "./canvas-text-node";
 import { CanvasTextGeneratorNode, type CanvasTextGeneratorNodeData } from "./canvas-text-generator-node";
+import { CanvasVideoGeneratorNode, type CanvasVideoGeneratorNodeData } from "./canvas-video-generator-node";
 import { CanvasTextGenerationContext, type CanvasTextGenerationContextValue } from "./canvas-text-generation-context";
 import { CanvasGeneratorHostContext } from "./canvas-generator-host";
 import { CanvasImagePreviewProvider } from "./canvas-adaptive-image";
@@ -64,12 +65,13 @@ export type CanvasAudioNodeType = Node<CanvasAudioNodeData, "sourceAudio">;
 export type CanvasGeneratorNodeType = Node<CanvasGeneratorNodeData, "imageGenerator">;
 export type CanvasTextNodeType = Node<CanvasTextNodeData, "textEditor">;
 export type CanvasTextGeneratorNodeType = Node<CanvasTextGeneratorNodeData, "textGenerator">;
-export type CanvasNode = CanvasResultNodeType | CanvasSourceNode | CanvasVideoNode | CanvasAudioNodeType | CanvasGeneratorNodeType | CanvasTextNodeType | CanvasTextGeneratorNodeType | CanvasGroupNodeType;
+export type CanvasVideoGeneratorNodeType = Node<CanvasVideoGeneratorNodeData, "videoGenerator">;
+export type CanvasNode = CanvasResultNodeType | CanvasSourceNode | CanvasVideoNode | CanvasAudioNodeType | CanvasGeneratorNodeType | CanvasTextNodeType | CanvasTextGeneratorNodeType | CanvasVideoGeneratorNodeType | CanvasGroupNodeType;
 
 export const canvasReferenceEdgeStyle = { stroke: "#a1a1aa", strokeWidth: 1.2 } as const;
 export const canvasReferenceEdgeCurvature = 0.18;
 
-const nodeTypes = { imageResult: CanvasResultNode, sourceImage: CanvasSourceImageNode, sourceVideo: CanvasSourceVideoNode, sourceAudio: CanvasAudioNode, imageGenerator: CanvasImageGeneratorNode, textEditor: CanvasTextNode, textGenerator: CanvasTextGeneratorNode, group: CanvasGroupDisplayNode };
+const nodeTypes = { imageResult: CanvasResultNode, sourceImage: CanvasSourceImageNode, sourceVideo: CanvasSourceVideoNode, sourceAudio: CanvasAudioNode, imageGenerator: CanvasImageGeneratorNode, textEditor: CanvasTextNode, textGenerator: CanvasTextGeneratorNode, videoGenerator: CanvasVideoGeneratorNode, group: CanvasGroupDisplayNode };
 const initialNodes: CanvasNode[] = [];
 
 function CanvasProjectChangeObserver({ onChange }: Readonly<{ onChange: () => void }>) {
@@ -191,6 +193,7 @@ export function CanvasWorkspace({
   onCreateBatchGenerator,
   onCreateText,
   onCreateTextGenerator,
+  onCreateVideoGenerator,
   textGenerationContext,
   onComposerHostChange,
   onProjectGraphChange,
@@ -235,6 +238,7 @@ export function CanvasWorkspace({
   onCreateBatchGenerator: (point: { x: number; y: number }) => void;
   onCreateText: (point: { x: number; y: number }) => void;
   onCreateTextGenerator: (point: { x: number; y: number }) => void;
+  onCreateVideoGenerator: (point: { x: number; y: number }) => void;
   textGenerationContext: CanvasTextGenerationContextValue;
   onComposerHostChange: (id: string, element: HTMLDivElement | null) => void;
   onProjectGraphChange: (settled?: boolean) => void;
@@ -748,6 +752,10 @@ export function CanvasWorkspace({
           if (contextPointRef.current) { onBeforeGraphEdit(); onCreateBatchGenerator(contextPointRef.current); }
           contextPointRef.current = null;
         }}><ImageIcon size={12} className="size-3" aria-hidden="true" /><span>图片批量生成</span></ContextMenuItem>
+        <ContextMenuItem onSelect={() => {
+          if (contextPointRef.current) { onBeforeGraphEdit(); onCreateVideoGenerator(contextPointRef.current); }
+          contextPointRef.current = null;
+        }}><Film size={14} aria-hidden="true" /><span>视频生成</span></ContextMenuItem>
         </>}
       </ContextMenuContent>
       </ContextMenu>

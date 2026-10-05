@@ -58,7 +58,7 @@ export function sanitizeFailureDiagnostic(input, { secrets = [] } = {}) {
     try {
       const url = new URL(input.endpoint);
       // Only public API path templates survive; output object paths are private.
-      const path = ["/async/v1/generateImage", "/async/v1/tasks/{taskId}", "/v1/o1key/uploads", "/v1/generations"].includes(decodeURI(url.pathname))
+      const path = ["/async/v1/generateImage", "/async/v1/tasks/{taskId}", "/v1/o1key/uploads", "/v1/generations", "/kling/omni-video/kling-3.0-omni", "/kling/omni-video/kling-3.0-omni/{taskId}", "/kling/motion-control/kling-3.0", "/kling/motion-control/kling-3.0/{taskId}"].includes(decodeURI(url.pathname))
         ? decodeURI(url.pathname) : "/[resource]";
       if (["https:", "http:"].includes(url.protocol)) result.endpoint = `${url.protocol}//${url.host}${path}`;
     } catch { /* Invalid endpoints are omitted, never printed. */ }
@@ -81,7 +81,7 @@ export function requestFailureContext({ url, method = "GET", response, durationM
   let endpoint;
   try {
     const parsed = new URL(url);
-    const path = parsed.pathname.startsWith("/async/v1/tasks/") ? "/async/v1/tasks/{taskId}" : parsed.pathname;
+    const path = parsed.pathname.startsWith("/async/v1/tasks/") ? "/async/v1/tasks/{taskId}" : parsed.pathname.replace(/^(\/kling\/(?:omni-video\/kling-3\.0-omni|motion-control\/kling-3\.0))\/[^/]+$/, "$1/{taskId}");
     endpoint = `${parsed.protocol}//${parsed.host}${path}`;
   } catch { /* Omit invalid URL. */ }
   let upstreamRequestId;

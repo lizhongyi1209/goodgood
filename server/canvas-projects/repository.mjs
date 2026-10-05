@@ -37,6 +37,7 @@ function documentResourceIds(document) {
   for (const page of pages) {
     for (const node of page.nodes) {
       if (node.asset) ids[node.asset.kind].add(node.asset.id);
+      for (const material of [...(node.videoGeneration?.materials ?? []), ...(node.videoGeneration?.lastInput?.media ?? [])]) ids[material.assetKind].add(material.assetId);
       if (node.jobId) ids.job.add(node.jobId);
       for (const id of node.jobIds ?? []) ids.job.add(id);
       for (const slot of node.imageSlots ?? []) {

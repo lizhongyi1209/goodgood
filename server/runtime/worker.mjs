@@ -18,6 +18,7 @@ import {
   processGenerationJob,
 } from "../generation/worker-service.mjs";
 import { createConcurrentJobRunner } from "../generation/concurrent-job-runner.mjs";
+import { startVideoGenerationWorker } from "../video-generation/worker.mjs";
 
 const host = process.env.WORKER_HEALTH_HOST ?? "0.0.0.0";
 const port = parseRuntimePort(
@@ -121,6 +122,8 @@ const loop = (async () => {
   }
 })();
 
+const videoJobs = startVideoGenerationWorker(resources, workerId);
+
 async function stop(signal) {
   if (stopping) return;
   stopping = true;
@@ -137,6 +140,7 @@ async function stop(signal) {
   await loop;
   jobs.stopAccepting();
   await jobs.drain();
+  await videoJobs.stop();
   await closeGenerationResources();
   await health.close();
 }

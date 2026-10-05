@@ -86,6 +86,8 @@ import { CANVAS_ASSET_LIBRARY_UPDATED_EVENT } from "./canvas-asset-upload";
 import { canvasCropImageForNode, type CanvasCropCommit } from "./canvas-image-crop-image";
 import type { CanvasImageCleanupCommit } from "./canvas-image-cleanup";
 import { CANVAS_PROMPT_MAX_LENGTH, collectCanvasTextInputs, combineCanvasPrompt, isCanvasTextConnection, isCanvasTextGenerationConnection, normalizeCanvasInputEdge } from "./canvas-text-input.mjs";
+import { isCanvasVideoGenerationConnection } from "./canvas-video-generation-input.mjs";
+import { defaultVideoGenerationDraft, VIDEO_ACTIVE_STATES } from "@/shared/contracts/video-generation.mjs";
 import { canvasGeneratorJobs, canvasGeneratorOutputs, canvasImageBatchCreditAmount, canvasImageJobIsActive, parseCanvasImagePrompts, recoverCanvasImageJob } from "./canvas-image-prompt-batch.mjs";
 import { pendingCanvasImageJob, pendingCanvasImageSlots, retryCanvasImageSlot, runCanvasGeneratorSlots } from "./canvas-generator-batch";
 import { canvasGeneratorSlots, canvasGeneratorResultSlots, canvasImageSlotCanRetry, recoverCanvasImageSlot, type CanvasImageSlot } from "./canvas-image-slots.mjs";
@@ -187,6 +189,7 @@ function canvasGraphIsStable(nodes: readonly CanvasNode[], references: Record<st
     (node.type !== "sourceImage" && node.type !== "sourceVideo" || !node.data.uploadState) &&
     (node.type !== "imageResult" || !node.data.job.id.startsWith("pending_")) &&
     (node.type !== "textGenerator" || !node.data.generating && !node.data.textGeneration.pendingRequestId) &&
+    (node.type !== "videoGenerator" || !node.data.videoGeneration.requestId || Boolean(node.data.job && ["succeeded", "failed"].includes(node.data.job.state))) &&
     (node.type !== "imageGenerator" || !canvasGeneratorJobs(node.data).some(canvasImageJobIsActive))) &&
     Object.values(references).every((items) => items.every((item) => item.reference.status === "ready")) &&
     Object.values(converted).every((item) => item.status === "ready");
@@ -1024,6 +1027,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       (node.type === "sourceImage" || node.type === "sourceVideo") && Boolean(node.data.uploadState) ||
       node.type === "imageResult" && (node.data.job.state !== "succeeded" || !node.data.job.outputs[node.data.index]?.id) ||
       node.type === "textGenerator" && Boolean(node.data.generating || node.data.textGeneration.pendingRequestId) ||
+      node.type === "videoGenerator" && Boolean(node.data.videoGeneration.requestId && (!node.data.job || VIDEO_ACTIVE_STATES.includes(node.data.job.state) || ["submission_unknown", "save_failed"].includes(node.data.job.state))) ||
       node.type === "imageGenerator" && (canvasGeneratorJobs(node.data).some((job) => job.state !== "succeeded") ||
         (current.referencesByGenerator[node.id] ?? []).some((item) => item.reference.status !== "ready")) ||
       canvasReferenceInputs(selected, selectedEdges).some((input) => input.sourceId === node.id && input.asset?.generated &&
@@ -1070,6 +1074,16 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       if (node.type === "sourceImage") return { ...base, type: "sourceImage", data: { ...node.data } };
       if (node.type === "sourceAudio") return { ...base, type: "sourceAudio", data: { ...node.data } };
       if (node.type === "textEditor") return { ...base, type: "textEditor", data: { ...node.data } };
+      if (node.type === "videoGenerator") return { ...base, type: "videoGenerator", data: { ...node.data, job: undefined,
+        videoGeneration: { ...node.data.videoGeneration, requestId: undefined, lastInput: undefined,
+          materials: node.data.videoGeneration.materials.map((item) => ({ ...item })), shots: node.data.videoGeneration.shots.map((shot) => ({ ...shot })),
+          roles: Object.fromEntries(Object.entries(node.data.videoGeneration.roles).flatMap(([key, role]) => {
+            if (!key.startsWith("edge:")) return [[key, role]];
+            const edge = clipboard.edges.find((item) => `edge:${item.id}` === key); if (!edge) return [];
+            const edgeId = edge.sourceHandle === "text" ? `text-${ids.get(edge.source)}-${ids.get(edge.target)}`
+              : canvasReferenceGroupEdgeId(ids.get(edge.source)!, ids.get(edge.target)!, edge.targetHandle ?? "reference");
+            return [[`edge:${edgeId}`, role]];
+          })) } } };
       if (node.type === "textGenerator") return { ...base, type: "textGenerator", data: { ...node.data, generating: false,
         textGeneration: { ...node.data.textGeneration, history: node.data.textGeneration.history?.map((message) => ({ ...message })), pendingRequestId: undefined } } };
       if (node.type === "imageResult") return { ...base, type: "imageResult", data: {
@@ -1538,7 +1552,8 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
   const isValidReferenceConnection = (connection: Connection | Edge) => {
     const instance = flowRef.current;
     if (!projectReady || pageSwitching || !instance || referenceConnectionCancelledRef.current) return false;
-    if (isCanvasTextGenerationConnection(connection, instance.getNodes(), instance.getEdges()) ||
+    if (isCanvasVideoGenerationConnection(connection, instance.getNodes(), instance.getEdges()) ||
+      isCanvasTextGenerationConnection(connection, instance.getNodes(), instance.getEdges()) ||
         isCanvasTextConnection(connection, instance.getNodes(), instance.getEdges())) return true;
     return referenceConnectionPlan(connection).valid;
   };
@@ -1698,6 +1713,24 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       id: `text-generator-${crypto.randomUUID()}`, type: "textGenerator", selected: true,
       position: { x: position.x - 119, y: position.y - 119 }, style: { width: 238, height: 238 },
       data: { markdown: "", text: "", textGeneration: { modelId: DEFAULT_TEXT_GENERATION_MODEL, prompt: "", history: [] } },
+    }]);
+  };
+
+  const createVideoGenerator = async (screenPoint: { x: number; y: number }) => {
+    const instance = flowRef.current; if (!instance || !projectReady) return;
+    const pageId = activePageIdRef.current; const ownerKey = projectOwnerKeyRef.current;
+    try {
+      const response = await goodGoodApiFetch("/api/video-generation/capabilities", { cache: "no-store", signal: AbortSignal.timeout(10_000) });
+      const capabilities = response.ok ? await response.json() as { enabled?: boolean } : null;
+      if (!capabilities?.enabled) { setFormError("视频功能尚未启用，请更新后端后重试。"); return; }
+    } catch { setFormError("暂时无法连接视频服务，请稍后重试。"); return; }
+    if (flowRef.current !== instance || activePageIdRef.current !== pageId || projectOwnerKeyRef.current !== ownerKey) return;
+    const position = instance.screenToFlowPosition(screenPoint);
+    if (!Number.isFinite(position.x) || !Number.isFinite(position.y)) return;
+    instance.setNodes((current) => [...current.map((node) => node.selected ? { ...node, selected: false } : node), {
+      id: `video-generator-${crypto.randomUUID()}`, type: "videoGenerator", selected: true,
+      position: { x: position.x - 160, y: position.y - 90 }, style: { width: 320, height: 180 },
+      data: { videoGeneration: defaultVideoGenerationDraft() },
     }]);
   };
 
@@ -2302,7 +2335,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
         generators: Object.assign({}, ...savedPages.map((page) => page.generators)),
         convertedReferences: Object.assign({}, ...savedPages.map((page) => page.convertedReferences ?? {})),
       } as Pick<import("@/shared/contracts/canvas-project").CanvasPageDocument, "nodes" | "edges" | "generators" | "convertedReferences">;
-      const hasVideo = document.nodes.some((node) => node.type === "sourceVideo" && node.asset);
+      const hasVideo = document.nodes.some((node) => ["sourceVideo", "videoGenerator"].includes(node.type) && node.asset);
       const hasAudio = document.nodes.some((node) => node.type === "sourceAudio" && node.asset);
       const hasReferences = Object.values(document.generators).some((generator) => generator.directReferenceIds.length > 0);
       const [videoMaterials, audioMaterials, referenceMaterials] = await Promise.all([
@@ -2327,6 +2360,10 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
           data: { markdown: saved.markdown ?? "", text: saved.text ?? "",
             textGeneration: saved.textGeneration ?? { modelId: DEFAULT_TEXT_GENERATION_MODEL, prompt: "", history: [] } },
         };
+        if (saved.type === "videoGenerator") return { ...base, type: "videoGenerator", style: style ?? { width: 320, height: 180 },
+          data: { videoGeneration: saved.videoGeneration ?? defaultVideoGenerationDraft(), outputAssetId: saved.asset?.id,
+            previewUrl: saved.asset ? videoMaterials.find((video) => video.id === saved.asset?.id)?.url : undefined,
+            pixelWidth: saved.metadata?.pixelWidth, pixelHeight: saved.metadata?.pixelHeight, durationSeconds: saved.metadata?.durationSeconds } };
         if (saved.type === "imageGenerator") {
           const batchConfiguration = isCanvasBatchGeneratorId(saved.id) ? {
             batchMode: saved.batchConfiguration?.mode ?? "all",
@@ -2661,7 +2698,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
         onUndo={() => navigateCanvasHistory("undo")}
         onRedo={() => navigateCanvasHistory("redo")}
         onBeforeGraphEdit={captureCanvasHistory}
-        onCreateGenerator={createGenerator} onCreateBatchGenerator={(point) => createGenerator(point, true)} onCreateText={createText} onCreateTextGenerator={createTextGenerator} onComposerHostChange={handleComposerHostChange}
+        onCreateGenerator={createGenerator} onCreateBatchGenerator={(point) => createGenerator(point, true)} onCreateText={createText} onCreateTextGenerator={createTextGenerator} onCreateVideoGenerator={createVideoGenerator} onComposerHostChange={handleComposerHostChange}
         textGenerationContext={{ enabled: Boolean(projectReady && !pageSwitching && session?.access.status === "active" && !session.preview),
           ownerKey: projectOwnerKeyRef.current ?? "", pageId: activePageId, workspaceId: null,
           beforeGenerate: () => {

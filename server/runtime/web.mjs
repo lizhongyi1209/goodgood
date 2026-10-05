@@ -23,6 +23,7 @@ import {
 } from "../auth/request-authenticator.mjs";
 import { createGenerationNodeApiHandler } from "../generation/node-api.mjs";
 import { createTextGenerationNodeApiHandler } from "../text-generation/node-api.mjs";
+import { createVideoGenerationNodeApiHandler } from "../video-generation/node-api.mjs";
 import { createTextAssetNodeApiHandler } from "../text-assets/node-api.mjs";
 import { createImageCleanupNodeApiHandler } from "../image-cleanup/node-api.mjs";
 import { recoverExpiredTextGenerations } from "../text-generation/repository.mjs";
@@ -83,6 +84,7 @@ const handleGenerationNodeApi = createGenerationNodeApiHandler({
   authenticate,
 });
 const handleTextGenerationNodeApi = createTextGenerationNodeApiHandler({ authenticate });
+const handleVideoGenerationNodeApi = createVideoGenerationNodeApiHandler({ authenticate });
 const handleTextAssetNodeApi = createTextAssetNodeApiHandler({ authenticate });
 const handleImageCleanupNodeApi = createImageCleanupNodeApiHandler({ authenticate });
 const textRecoveryTimer = setInterval(() => {
@@ -187,6 +189,7 @@ server.on("request", (request, response) => {
     .then((handled) =>
       handled ? true : handleTextGenerationNodeApi(request, response),
     )
+    .then((handled) => handled ? true : handleVideoGenerationNodeApi(request, response))
     .then((handled) =>
       handled ? true : handleGenerationNodeApi(request, response),
     )

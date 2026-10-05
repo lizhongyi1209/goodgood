@@ -118,6 +118,7 @@ function entryFromRow(row) {
     reason: row.reason,
     relatedJobId: row.related_job_id ?? null,
     ...(row.related_text_job_id ? { relatedTextJobId: row.related_text_job_id } : {}),
+    ...(row.related_video_job_id ? { relatedVideoJobId: row.related_video_job_id } : {}),
     ...(row.related_image_cleanup_id ? { relatedImageCleanupId: row.related_image_cleanup_id } : {}),
     relatedPaymentRef: row.related_payment_ref ?? null,
   };
@@ -353,6 +354,7 @@ export async function appendCreditEntryInTransaction(
     reason,
     relatedJobId = null,
     relatedTextJobId = null,
+    relatedVideoJobId = null,
     relatedImageCleanupId = null,
     relatedPaymentRef = null,
     verifyBeforeApply = async () => {},
@@ -372,6 +374,7 @@ export async function appendCreditEntryInTransaction(
     reason,
     relatedJobId,
     ...(relatedTextJobId ? { relatedTextJobId } : {}),
+    ...(relatedVideoJobId ? { relatedVideoJobId } : {}),
     ...(relatedImageCleanupId ? { relatedImageCleanupId } : {}),
     relatedPaymentRef,
   };
@@ -465,8 +468,8 @@ export async function appendCreditEntryInTransaction(
     `INSERT INTO credit_ledger_entries (
        id, account_id, owner_id, entry_type, amount, payment_funded_amount, idempotency_key,
        operation_hash, reason, related_job_id, related_payment_ref,
-       prior_entry_id, actor, metadata, related_text_job_id, related_image_cleanup_id
-     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14::jsonb, $15, $16)
+       prior_entry_id, actor, metadata, related_text_job_id, related_image_cleanup_id, related_video_job_id
+     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14::jsonb, $15, $16, $17)
      RETURNING *`,
     [
       entryId,
@@ -485,6 +488,7 @@ export async function appendCreditEntryInTransaction(
       JSON.stringify(metadata),
       relatedTextJobId,
       relatedImageCleanupId,
+      relatedVideoJobId,
     ],
   );
   return {

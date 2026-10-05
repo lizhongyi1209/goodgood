@@ -24,6 +24,8 @@ export function canvasTextGenerationInputs(nodes: readonly CanvasNode[], edges: 
     }
     if (source.type === "sourceVideo") return [{ ...base, kind: "video", name: source.data.name, previewUrl: source.data.previewUrl,
       videoAssetId: source.data.assetId, unavailable: !source.data.assetId || Boolean(source.data.uploadState) || !source.data.previewUrl }];
+    if (source.type === "videoGenerator") return [{ ...base, kind: "video", name: "视频生成", previewUrl: source.data.previewUrl,
+      videoAssetId: source.data.outputAssetId, unavailable: !source.data.outputAssetId || !source.data.previewUrl || Boolean(source.data.job && source.data.job.state !== "succeeded") }];
     if (source.type === "sourceImage") return [{ ...base, kind: "image", name: source.data.name, previewUrl: source.data.previewUrl,
       media: source.data.assetId ? { kind: "image", assetKind: source.data.assetKind === "generated" ? "generated" : "reference", assetId: source.data.assetId } : undefined,
       unavailable: !source.data.assetId || Boolean(source.data.uploadState) }];

@@ -69,6 +69,11 @@ function activityTrace(row) {
     taskId: row.metadata.textGenerationJobId ?? null, projectId: row.metadata.projectId ?? null,
     projectName: row.metadata.projectName ?? null, modelName: row.metadata.modelName ?? null,
   };
+  if (metadataActivityCategory(row.metadata) === "video_generation") return {
+    batchReference: metadataBatchReference(row.metadata), category: "video_generation",
+    taskId: row.metadata.videoGenerationJobId ?? null, projectId: row.metadata.projectId ?? null,
+    projectName: row.metadata.projectName ?? null, modelName: row.metadata.modelName ?? null,
+  };
   if (metadataActivityCategory(row.metadata) === "image_cleanup") return {
     batchReference: metadataBatchReference(row.metadata), category: "image_cleanup",
     taskId: row.metadata.imageCleanupId ?? null, projectId: row.metadata.projectId ?? null,

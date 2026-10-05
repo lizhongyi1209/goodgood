@@ -1,10 +1,11 @@
 import { CanvasProjectError } from "./errors.mjs";
+import { validateVideoDraft } from "../video-generation/validation.mjs";
 import { getTextGenerationModel, getTextGenerationPreset, DEFAULT_TEXT_GENERATION_MODEL, TEXT_GENERATION_MAX_PROMPT, TEXT_GENERATION_MAX_HISTORY } from "../../shared/contracts/text-generation.mjs";
 import { validateM3GenerationInput, validateIdempotencyKey } from "../generation/api.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const NODE_ID = /^[A-Za-z0-9][A-Za-z0-9_:.\-]{0,159}$/;
-const NODE_TYPES = new Set(["sourceImage", "sourceVideo", "sourceAudio", "imageGenerator", "imageResult", "textEditor", "textGenerator", "group"]);
+const NODE_TYPES = new Set(["sourceImage", "sourceVideo", "sourceAudio", "imageGenerator", "imageResult", "textEditor", "textGenerator", "videoGenerator", "group"]);
 const ASSET_KINDS = new Set(["reference", "generated", "video", "audio"]);
 const RESOLUTIONS = new Set(["1K", "2K", "4K"]);
 const MAX_DOCUMENT_BYTES = 1024 * 1024;
@@ -48,7 +49,7 @@ function position(value) {
 }
 
 function node(value) {
-  record(value, ["id", "type", "position", "size", "asset", "jobId", "jobIds", "imageSlots", "index", "sequence", "name", "metadata", "markdown", "text", "textGeneration", "parentId", "emoji", "groupSizing"]);
+  record(value, ["id", "type", "position", "size", "asset", "jobId", "jobIds", "imageSlots", "index", "sequence", "name", "metadata", "markdown", "text", "textGeneration", "videoGeneration", "parentId", "emoji", "groupSizing"]);
   const type = value.type;
   if (!NODE_TYPES.has(type)) throw invalid();
   const result = { id: nodeId(value.id), type, position: position(value.position) };
@@ -93,6 +94,9 @@ function node(value) {
         return { role: message.role, content: string(message.content, message.role === "assistant" ? 16_000 : TEXT_GENERATION_MAX_PROMPT, { empty: true, multiline: true }) };
       }), ...(draft.pendingRequestId ? { pendingRequestId: uuid(draft.pendingRequestId) } : {}) };
   } else if (value.textGeneration !== undefined) throw invalid();
+  if (type === "videoGenerator") {
+    try { result.videoGeneration = validateVideoDraft(value.videoGeneration); } catch { throw invalid("视频节点参数无效，请重新选择参数。"); }
+  } else if (value.videoGeneration !== undefined) throw invalid();
   if (value.size !== undefined) {
     record(value.size, ["width", "height"]);
     result.size = { width: finite(value.size.width, 1, 100_000), height: finite(value.size.height, 1, 100_000) };
@@ -103,6 +107,7 @@ function node(value) {
     if (type === "imageGenerator" || type === "imageResult" ||
       type === "sourceImage" && !["reference", "generated"].includes(value.asset.kind) ||
       type === "sourceVideo" && value.asset.kind !== "video" ||
+      type === "videoGenerator" && value.asset.kind !== "video" ||
       type === "sourceAudio" && value.asset.kind !== "audio") throw invalid();
     result.asset = { id: uuid(value.asset.id), kind: value.asset.kind };
   } else if (type.startsWith("source")) {
@@ -261,11 +266,11 @@ function pageContent(source) {
     const targetType = byId.get(item.target)?.type;
     if (sourceType === "group" || targetType === "group") throw invalid("请连接组内节点。");
     if (item.source === item.target) throw invalid();
-    if (targetType === "textGenerator") {
+    if (targetType === "textGenerator" || targetType === "videoGenerator") {
       if (item.targetHandle !== "reference" || !(
         ["textEditor", "textGenerator"].includes(sourceType) && item.sourceHandle === "text" ||
         ["sourceImage", "imageResult", "imageGenerator"].includes(sourceType) && item.sourceHandle === "reference" ||
-        sourceType === "sourceVideo" && item.sourceHandle === "video")) throw invalid();
+        ["sourceVideo", "videoGenerator"].includes(sourceType) && item.sourceHandle === "video")) throw invalid();
     } else if (item.sourceHandle === "text" || item.targetHandle === "text" || sourceType === "textEditor" || sourceType === "textGenerator" || targetType === "textEditor") {
       if (item.sourceHandle !== "text" || !["reference", "text"].includes(item.targetHandle) ||
           !["textEditor", "textGenerator"].includes(sourceType) || targetType !== "imageGenerator") throw invalid();

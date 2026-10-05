@@ -1888,6 +1888,9 @@ export const creditLedgerEntries = pgTable(
       onDelete: "restrict",
     }),
     relatedPaymentRef: text("related_payment_ref"),
+    relatedVideoJobId: uuid("related_video_job_id").references(
+      (): AnyPgColumn => videoGenerationJobs.id, { onDelete: "restrict" },
+    ),
     relatedImageCleanupId: uuid("related_image_cleanup_id").references(
       (): AnyPgColumn => imageCleanupOperations.id, { onDelete: "restrict" },
     ),
@@ -1967,13 +1970,41 @@ export const creditLedgerEntries = pgTable(
     ),
     check(
       "credit_ledger_entries_relation_check",
-      sql`(${table.entryType} in ('settle', 'release', 'refund') and ${table.priorEntryId} is not null and num_nonnulls(${table.relatedJobId}, related_text_job_id, ${table.relatedImageCleanupId}) = 1)
-        or (${table.entryType} = 'reserve' and ${table.priorEntryId} is null and num_nonnulls(${table.relatedJobId}, related_text_job_id, ${table.relatedImageCleanupId}) = 1)
-        or (${table.entryType} in ('transfer_out', 'transfer_in') and ${table.priorEntryId} is null and ${table.relatedJobId} is null and related_text_job_id is null and ${table.relatedImageCleanupId} is null and ${table.relatedPaymentRef} is null)
+      sql`(${table.entryType} in ('settle', 'release', 'refund') and ${table.priorEntryId} is not null and num_nonnulls(${table.relatedJobId}, related_text_job_id, ${table.relatedImageCleanupId}, ${table.relatedVideoJobId}) = 1)
+        or (${table.entryType} = 'reserve' and ${table.priorEntryId} is null and num_nonnulls(${table.relatedJobId}, related_text_job_id, ${table.relatedImageCleanupId}, ${table.relatedVideoJobId}) = 1)
+        or (${table.entryType} in ('transfer_out', 'transfer_in') and ${table.priorEntryId} is null and ${table.relatedJobId} is null and related_text_job_id is null and ${table.relatedImageCleanupId} is null and ${table.relatedVideoJobId} is null and ${table.relatedPaymentRef} is null)
         or (${table.entryType} in ('grant', 'expire', 'adjust'))`,
     ),
   ],
 );
+
+export const videoGenerationJobs = pgTable("video_generation_jobs", {
+  id: uuid("id").primaryKey(),
+  ownerId: uuid("owner_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, { onDelete: "restrict" }),
+  canvasProjectId: uuid("canvas_project_id").notNull().references(() => canvasProjects.id, { onDelete: "restrict" }),
+  sourceProjectName: text("source_project_name"), modelId: text("model_id").notNull(),
+  inputHash: text("input_hash").notNull(), inputSnapshot: jsonb("input_snapshot").notNull(), priceSnapshot: jsonb("price_snapshot").notNull(),
+  reservedCreditAmount: bigint("reserved_credit_amount", { mode: "bigint" }).notNull(),
+  chargedCreditAmount: bigint("charged_credit_amount", { mode: "bigint" }).default(sql`0`).notNull(),
+  creditReservationEntryId: uuid("credit_reservation_entry_id").references((): AnyPgColumn => creditLedgerEntries.id, { onDelete: "restrict" }),
+  organizationReservationEntryId: uuid("organization_reservation_entry_id"),
+  state: text("state").default("queued").notNull(), providerTaskId: text("provider_task_id"), providerResultUrl: text("provider_result_url"), providerCost: text("provider_cost"),
+  progress: integer("progress"), outputAssetId: uuid("output_asset_id"), outputMetadata: jsonb("output_metadata"), errorCode: text("error_code"), failureDiagnostics: jsonb("failure_diagnostics"),
+  submittedAt: timestamp("submitted_at", { withTimezone: true }), nextPollAt: timestamp("next_poll_at", { withTimezone: true }).defaultNow().notNull(),
+  leaseOwner: text("lease_owner"), leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true }), bridgeKeys: jsonb("bridge_keys").default(sql`'[]'::jsonb`).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(), updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index("video_generation_jobs_owner_idx").on(table.workspaceId, table.ownerId, table.createdAt),
+  index("video_generation_jobs_pending_idx").on(table.nextPollAt, table.createdAt).where(sql`${table.state} in ('queued','submitting','running','saving')`),
+  uniqueIndex("video_generation_jobs_provider_idx").on(table.modelId, table.providerTaskId).where(sql`${table.providerTaskId} is not null`),
+  check("video_generation_jobs_model_id_check", sql`${table.modelId} in ('kling-3.0-omni','kling-3.0')`),
+  check("video_generation_jobs_input_hash_check", sql`length(${table.inputHash})=64`),
+  check("video_generation_jobs_reserved_credit_amount_check", sql`${table.reservedCreditAmount}>0`),
+  check("video_generation_jobs_charged_credit_amount_check", sql`${table.chargedCreditAmount}>=0`),
+  check("video_generation_jobs_state_check", sql`${table.state} in ('queued','submitting','submission_unknown','running','saving','save_failed','succeeded','failed')`),
+  check("video_generation_jobs_progress_check", sql`${table.progress} between 0 and 100`),
+]);
 
 export const creditTransfers = pgTable(
   "credit_transfers",
