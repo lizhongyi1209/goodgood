@@ -318,3 +318,7 @@ The user accepts a dedicated in-canvas batch generator with common references an
 ### GG-370 实施载体补充（2026-10-05）
 
 独立节点使用单独渲染/面板与ID前缀，复用imageGenerator已授权wire类型及结果runner。候选组/模式由已有边handle保存，公共参考与普通节点不改契约；空组数量/空模式的batchConfiguration仅浏览器保存，远端剥离，云按有效边恢复。执行沿原1MiB保存边界预检，不新增批量数量/并发硬上限。
+
+### GG-371 · Compact combination inspection (2026-10-05)
+
+The user replaces inline combination listings with a compact count/entry in the attached chat. Inspect complete combinations in a bounded, independently scrollable paged dialog (12 per page), retaining common→group image order. Use random-access mixed-radix expansion rather than enumerate an enormous product just to reach a later page. Candidate folder albums supply image pools; shared parameters, frozen slots, quote and ten-reference gates remain GG-370.

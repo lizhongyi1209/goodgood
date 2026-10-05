@@ -104,3 +104,7 @@ Deduplicate actual images against direct and connected inputs before checking th
 ## GG-370 · Candidate pools at dedicated batch targets (2026-10-05)
 
 Group connections to ordinary targets still supply all members. At a dedicated batch target, a group connected to a candidate input supplies independent candidates, one per combination; common input supplies all active members. Keep source group ordering and target-local exclusions, preserve handles through reversible cloud flattening, and validate ten images per expanded request rather than aggregate candidates. No grouping/connect/restore action submits generation. See ADR0108 GG-370.
+
+## GG-371 · Asset folder albums (2026-10-05)
+
+An asset-library folder can be dragged into the canvas as one album, previewing all its authorized image members without placing dozens of independent visible nodes. Album membership is a snapshot at drop, using a reserved album ID and existing group wire with hidden sourceImage children. It can connect once to a dedicated batch candidate port, providing all members as candidates. Do not load album pools into ordinary/common inputs implicitly. All actual asset IDs remain authorized and persisted; reconstruct hidden child presentation on restore/copy, keep album bounds independent of unmounted children, and move/delete/copy albums as units. No new server fields or runtime activation.
