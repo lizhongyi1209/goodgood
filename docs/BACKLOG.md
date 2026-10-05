@@ -238,4 +238,4 @@
 
 ## GG-375 · 相册节点拖动与样式统一
 
-用户要求已登记，更新ADR0135相册外置标签/拖动呈现；根agent单独在codex/GG-375-album-node-polish实现。仅相册组件/CSS及文档，沿GG-276不自动验证或更新运行；GG-374运行receipt保持。见[tasks/GG-375-album-node-polish.md](tasks/GG-375-album-node-polish.md)。
+GG-375相册节点源码已精确接入8d06014f1de118007359ded030f18d62d7ccd977（隔离5964debffd59c892ffd859f92803ea6229e18048）。仅相册接收鼠标事件，整框/缩略图/外置标题使用原生拖动，点击预览和内部滚轮浏览保持。左上文件夹图标/名称、右上数量直接复用图片元信息；右侧复用媒体圆点及已连接/键盘焦点样式；左下黑底圆形编号，底部精确为「连接到节点，一次性载入所有图片」。ADR0135和设计/交互/手验资料同步，快照/候选端口/请求上限/保存模型保持。沿GG-276未自动构建/lint/typecheck/代码或diff检查/测试/浏览器/HTTP/SQL/Provider验收，无生成/扣费、服务/后台或生产更新，GG-374运行receipt保持未重查。创建1/退役1，managed辅助已确认归档，无子agent/依赖缓存。已实现、未自动验收、未部署；用户刷新5173手验旧/新相册移动及外观。下一源码任务从当前HEAD核验8d06014祖先后隔离。 见[tasks/GG-375-album-node-polish.md](tasks/GG-375-album-node-polish.md)。

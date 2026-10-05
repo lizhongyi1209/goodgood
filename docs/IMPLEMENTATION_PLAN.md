@@ -1,15 +1,17 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-05
-- Current phase: GG-374本地项目恢复完成，GG-373及既有源码保持；用户继续手验，未部署生产。
-- Current objective: 用户刷新5173继续使用原画布，手验资产移动菜单/相册及批量生成；GG-276源码工作不自动验收，后续重启按届时HEAD构建。
+- Current phase: GG-375相册移动与样式统一源码已交付，GG-374本地恢复receipt保持；用户手验，未部署生产。
+- Current objective: 用户刷新5173手验旧/新相册整体移动、外置标签、圆点及编号；沿GG-276后续源码工作不自动验收。
 - Previous objective: GG-313模板名称格式/示例参考、GG-312画布300%高清门槛、GG-311模板保存/成功动效及类型筛选、GG-310前景色已交付源码；GG-309私有2K接口、批量校验及文本资产API/本地0063已启用。
 
 ## Current checkpoint
 
-- 当前运行交接：[GG-374](tasks/GG-374-local-restart-after-reboot.md) GG-374按用户要求完成本地重启：原PG54449/Valkey56549/对象存储58049/Mailpit及原卷均健康，三个应用角色原本已停。必要构建verified d183b918ea139c429630a7177905fd2c60cbee93，复用原外部cloud-development/local-mailpit配置，独立隐藏CIM启动Web29548/32131、唯一Worker28916/32142、Vite17388/5173（启动器33100/27976/13896，父WMI7984）。跨命令仍监听；首页/原画布HTTP200，前端API代理同revision/verified，Web与Worker readiness五项均ok。启动前活动图片/文本任务、未派发outbox、个人/工作区/成员预留及两队列均0；原66迁移保持。未迁移/重置/写fixture、发起或重放真实生成/扣费或操作生产；仅必要启动构建与运行核对，未lint/typecheck/代码或diff检查/测试/浏览器交互验收。GG-373及既有应用源码保持，创建0/退役0，无子agent或新依赖副本。用户刷新原画布继续使用，下次重启按届时HEAD构建；纯交付文档提交不改写此运行receipt。 应用源码检查点仍0b5d1a8；下一源码任务从当前HEAD核验该祖先后隔离，本次无产品/源码决定变更。
+- 当前源码交接：[GG-375](tasks/GG-375-album-node-polish.md) GG-375相册节点源码已精确接入8d06014f1de118007359ded030f18d62d7ccd977（隔离5964debffd59c892ffd859f92803ea6229e18048）。仅相册接收鼠标事件，整框/缩略图/外置标题使用原生拖动，点击预览和内部滚轮浏览保持。左上文件夹图标/名称、右上数量直接复用图片元信息；右侧复用媒体圆点及已连接/键盘焦点样式；左下黑底圆形编号，底部精确为「连接到节点，一次性载入所有图片」。ADR0135和设计/交互/手验资料同步，快照/候选端口/请求上限/保存模型保持。沿GG-276未自动构建/lint/typecheck/代码或diff检查/测试/浏览器/HTTP/SQL/Provider验收，无生成/扣费、服务/后台或生产更新，GG-374运行receipt保持未重查。创建1/退役1，managed辅助已确认归档，无子agent/依赖缓存。已实现、未自动验收、未部署；用户刷新5173手验旧/新相册移动及外观。下一源码任务从当前HEAD核验8d06014祖先后隔离。
 
-- 当前源码交接：[GG-373](tasks/GG-373-asset-menu-spacing.md) GG-373资产右键菜单排版源码已精确接入0b5d1a8ac913eeafeca6a0b0400bcafd3a581d8c（隔离4330226a6f6918d6c8e1aae8ded1c2459057583a）。两级菜单统一12px常规字重/20px行高/36px行与8px图标文字间距，目录名显式继承；移动至目录列表按内容宽度、140–260px及视口上限夹取，移除固定260px留白，原滚动/长名省略/触控44px保持。仅改局部CSS、设计与手验记录，不改功能决定/文案/归档或API。已按用户指定Impeccable读取SKILL、polish及craft-floor，沿GG-276未运行引擎、构建/lint/typecheck/代码或diff检查/测试/浏览器验收或HTTP/SQL/Provider；纯样式无新测试。GG-372/371源码和GG-366运行receipt保持，无服务/后台/生产更新。创建1/退役1，managed辅助确认归档，无子agent/依赖缓存；未自动验收/未部署，用户刷新5173手验菜单。 下一任务从当前HEAD核验0b5d1a8祖先后隔离；F:/goodgood为旧目录。
+- 当前运行交接：[GG-374](tasks/GG-374-local-restart-after-reboot.md) GG-374按用户要求完成本地重启：原PG54449/Valkey56549/对象存储58049/Mailpit及原卷均健康，三个应用角色原本已停。必要构建verified d183b918ea139c429630a7177905fd2c60cbee93，复用原外部cloud-development/local-mailpit配置，独立隐藏CIM启动Web29548/32131、唯一Worker28916/32142、Vite17388/5173（启动器33100/27976/13896，父WMI7984）。跨命令仍监听；首页/原画布HTTP200，前端API代理同revision/verified，Web与Worker readiness五项均ok。启动前活动图片/文本任务、未派发outbox、个人/工作区/成员预留及两队列均0；原66迁移保持。未迁移/重置/写fixture、发起或重放真实生成/扣费或操作生产；仅必要启动构建与运行核对，未lint/typecheck/代码或diff检查/测试/浏览器交互验收。GG-373及既有应用源码保持，创建0/退役0，无子agent或新依赖副本。用户刷新原画布继续使用，下次重启按届时HEAD构建；纯交付文档提交不改写此运行receipt。 GG-374恢复时应用源码检查点为0b5d1a8；下一源码任务从当前HEAD核验该祖先后隔离，本次无产品/源码决定变更。
+
+- 历史源码交接：[GG-373](tasks/GG-373-asset-menu-spacing.md) GG-373资产右键菜单排版源码已精确接入0b5d1a8ac913eeafeca6a0b0400bcafd3a581d8c（隔离4330226a6f6918d6c8e1aae8ded1c2459057583a）。两级菜单统一12px常规字重/20px行高/36px行与8px图标文字间距，目录名显式继承；移动至目录列表按内容宽度、140–260px及视口上限夹取，移除固定260px留白，原滚动/长名省略/触控44px保持。仅改局部CSS、设计与手验记录，不改功能决定/文案/归档或API。已按用户指定Impeccable读取SKILL、polish及craft-floor，沿GG-276未运行引擎、构建/lint/typecheck/代码或diff检查/测试/浏览器验收或HTTP/SQL/Provider；纯样式无新测试。GG-372/371源码和GG-366运行receipt保持，无服务/后台/生产更新。创建1/退役1，managed辅助确认归档，无子agent/依赖缓存；未自动验收/未部署，用户刷新5173手验菜单。 下一任务从当前HEAD核验0b5d1a8祖先后隔离；F:/goodgood为旧目录。
 
 - 历史源码交接：[GG-372](tasks/GG-372-asset-move-menu.md) GG-372画布资产右键移动至源码已精确接入59a6dec0d4b87431759af85cf838bd17561ca291（隔离b9dc2eefe425d5acf8962ed8759b0e290b1ffafe）。素材右键有界子菜单列出现有文件夹，当前位置禁用、无目录提示；复用原确认后归档/刷新/失败重试及提交门控，保持名称/标签/真实素材。生成/上传图、视频、音频与提示词模板均支持，拖放类型同步；已拖入相册快照保持。ADR0120与产品/交互/设计/错误/手验文档同步，既有gg256回归仅更新来源未运行。沿GG-276未自动构建/lint/typecheck/代码或diff检查/测试/浏览器验收，无HTTP/SQL/Provider/生成/扣费/运行或生产更新；GG-371源码及GG-366运行receipt保持未重查。创建1/退役1，managed辅助确认归档，无子agent/新依赖缓存；未验收/未部署，用户刷新5173先整理素材再手验相册。 下一任务从当前HEAD核验59a6dec祖先后隔离；旧目录F:/goodgood不是当前开发源码。
 
