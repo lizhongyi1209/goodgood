@@ -4,6 +4,7 @@ import { Plus, X } from "lucide-react";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import type { GenerationReference } from "@/shared/contracts/generation";
+import { CanvasBatchCombinationPreview } from "./canvas-batch-combination-preview";
 import styles from "./canvas-batch-generator.module.css";
 
 export type CanvasBatchPanelItem = { key: string; reference: GenerationReference; previewUrl: string; kind: "direct" | "linked" };
@@ -15,7 +16,8 @@ type Props = {
   total: number;
   count: number;
   error: string | null;
-  preview: readonly { key: string; index: number; items: readonly CanvasBatchPanelItem[] }[];
+  // Retained during controller integration; combinations now open in a paginated dialog.
+  preview?: readonly { key: string; index: number; items: readonly CanvasBatchPanelItem[] }[];
   onMode: (mode: "all" | "paired") => void;
   onAddGroup: () => void;
   onRemoveGroup: (index: number) => void;
@@ -53,17 +55,9 @@ export function CanvasBatchReferencePanel(props: Props) {
     <div className={styles.rows}>{row("公共参考", props.common, 0)}{props.groups.map((group, index) => row(group.name, group.items, index + 1))}</div>
     <div className={styles.footer}>
       <button type="button" className={styles.addGroup} disabled={props.disabled || props.groups.length >= 5} onClick={props.onAddGroup}><Plus size={12} />添加素材组</button>
-      <span aria-live="polite">{props.total > 0 ? `${props.total} 组 · 共 ${props.total * props.count} 个任务` : "连接素材后开始"}</span>
+      <span aria-live="polite">{props.total > 0 ? props.total.toLocaleString("zh-CN") + " 组 · 共 " + (BigInt(props.total) * BigInt(props.count)).toLocaleString("zh-CN") + " 个任务" : "连接素材后开始"}</span>
+      <CanvasBatchCombinationPreview common={props.common} groups={props.groups} mode={props.mode} total={props.total} count={props.count} />
     </div>
-    {props.preview.length > 0 && <details className={styles.preview}>
-      <summary>查看组合{props.total > props.preview.length ? " · 前6组" : ""}</summary>
-      <div className={styles.previewRows}>{props.preview.map((combination) => <div className={styles.previewRow} key={combination.key}>
-        <span>组合 {combination.index + 1}</span>
-        <div>{combination.items.map((item, index) => <span className={styles.previewImage} key={item.reference.id} title={`图 ${index + 1}：${item.reference.name}`}>
-          <PrivateObjectImage src={item.previewUrl} alt={`图 ${index + 1}：${item.reference.name}`} /><small>{index + 1}</small>
-        </span>)}</div>
-      </div>)}</div>
-    </details>}
     {props.error && <p className={styles.error} role="status">{props.error}</p>}
   </section>;
 }

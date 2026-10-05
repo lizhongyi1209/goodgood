@@ -21,7 +21,7 @@
 .addMaterial { flex: 0 0 32px; height: 32px; background: #f4f4f5; }
 .addGroup { padding: 5px 3px; font-size: 11px; }
 .iconButton { padding: 2px; }
-.footer { justify-content: space-between; margin-top: 6px; color: #71717a; font-size: 11px; }
+.footer { flex-wrap: wrap; justify-content: space-between; margin-top: 6px; color: #71717a; font-size: 11px; }
 .error { margin: 4px 0; color: #71717a; font-size: 11px; }
 .panel button:hover:not(:disabled) { background: #f4f4f5; }
 .panel button:focus-visible { outline: 2px solid #71717a; outline-offset: 2px; }
@@ -30,11 +30,3 @@
 
 .port:focus-visible { outline: 2px solid #18181b; outline-offset: 3px; }
 .port::before { content: ""; position: absolute; inset: -7px; }
-.preview { margin-top: 4px; font-size: 11px; color: #71717a; }
-.preview summary { padding: 5px 0; }
-.previewRows { max-height: 150px; overflow-y: auto; padding-bottom: 4px; }
-.previewRow { display: grid; grid-template-columns: 66px minmax(0,1fr); gap: 6px; align-items: center; padding: 4px 0; }
-.previewRow > div { display: flex; gap: 4px; overflow-x: auto; }
-.previewImage { width: 28px; height: 28px; flex: 0 0 28px; position: relative; border-radius: 4px; overflow: hidden; }
-.previewImage img { width: 100%; height: 100%; object-fit: cover; }
-.previewImage small { position: absolute; bottom: 1px; left: 2px; color: white; font-size: 8px; text-shadow: 0 1px 2px #27272a; }
