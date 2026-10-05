@@ -2,7 +2,7 @@
 
 import { Plus, X } from "lucide-react";
 import { PopoverContent } from "@/components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { VIDEO_GENERATION_MODELS, type CanvasVideoGenerationDraft, type VideoGenerationMedia } from "@/shared/contracts/video-generation.mjs";
 import composerStyles from "./canvas-page.module.css";
@@ -55,14 +55,15 @@ export function CanvasVideoGeneratorSettings({ id, draft, media, disabled, onCha
             </ToggleGroupItem>)}
         </ToggleGroup>
       </section>
-      <section className={`${composerStyles.settingsSection} ${styles.durationRow}`}>
-        <span className={composerStyles.settingsLabel}>时长</span>
-        <Select value={String(draft.duration)} disabled={disabled} onValueChange={(duration) => onChange({ duration: Number(duration) })}>
-          <SelectTrigger size="sm" className={`${composerStyles.modelSelect} ${styles.durationSelect}`} aria-label="视频时长"><SelectValue /></SelectTrigger>
-          <SelectContent position="popper" className={`${composerStyles.modelMenu} nodrag nopan nowheel`}>
-            {Array.from({ length: 13 }, (_, index) => index + 3).map((seconds) => <SelectItem key={seconds} value={String(seconds)}>{seconds} 秒</SelectItem>)}
-          </SelectContent>
-        </Select>
+      <section className={composerStyles.settingsSection}>
+        <div className={styles.durationRow}>
+          <span className={composerStyles.settingsLabel}>时长</span>
+          <output className={styles.durationValue}>{draft.duration} 秒</output>
+        </div>
+        <Slider className={`${styles.durationSlider} nodrag nopan nowheel`} aria-label="视频时长"
+          value={[draft.duration]} min={3} max={15} step={1} disabled={disabled}
+          onValueChange={([duration]) => { if (duration !== undefined) onChange({ duration }); }} />
+        <div className={styles.durationBounds} aria-hidden="true"><span>3 秒</span><span>15 秒</span></div>
       </section>
     </>}
     {motion && <Options name="角色朝向" value={draft.characterOrientation} choices={[{ value: "video", label: "跟随视频" }, { value: "image", label: "保持图片" }]}

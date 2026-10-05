@@ -23,3 +23,7 @@ The user now authorizes the agent to pick temporary rates and activate the local
 ## Composer alignment · 2026-10-05 · GG-386
 
 The user requests alignment with the actual image generator composer. Use its660px viewport-clamped width and12px node offset, shared Attachment and image/text/video preview styling, parameter/type controls on the left and the model/credit generation action on the right. Replace the bespoke inline parameter form with the same Radix Popover surface and toggle/ratio vocabulary as the image settings; the portal prevents node-toolbar clipping and keeps composer height stable. Retain a compact duration Select and bounded scrolling for manual shots. Empty attachments do not create an extra row: add media from the small toolbar control. Long prompts receive the image composer expand/collapse and scroll affordances. Actual image source currently sends with CreditIcon/credit amount, so video uses that actual action rather than outdated ArrowUp notes. No image composer code, video contract, billing, provider, durable job behavior or runtime changes. UI acceptance remains manual.
+
+## Duration slider · 2026-10-06 · GG-387
+
+The user replaces the compact duration Select with a horizontal slider. Keep the existing integer3–15second domain, show the current seconds, preserve disabled states and source-derived motion duration. Quote and persistence contracts stay unchanged. This supersedes GG-386's duration-control presentation only.
