@@ -101,8 +101,8 @@ button.folderCard[data-move-state="succeeded"] { background: #e4e4e7; box-shadow
 .addMenu[data-slot="dropdown-menu-content"], .linkMenu[data-slot="dropdown-menu-sub-content"] { min-width: 0; padding: 5px; border: 1px solid #e4e4e7; border-radius: 12px; background: #fff; color: #27272a; box-shadow: 0 4px 14px rgb(0 0 0 / 8%); }
 .addMenu[data-slot="dropdown-menu-content"] { width: 160px; }
 .assetContextMenu[data-slot="context-menu-content"], .assetContextMenu[data-slot="context-menu-sub-content"] { min-width: 140px; padding: 5px; border: 1px solid #e4e4e7; border-radius: 12px; background: #fff; color: #27272a; box-shadow: 0 4px 14px rgb(0 0 0 / 8%); }
-.folderMoveMenu[data-slot] { width: min(260px, calc(100vw - 24px)); max-height: min(320px, var(--radix-context-menu-content-available-height, calc(100vh - 24px))); overflow-x: hidden; overflow-y: auto; }
-.folderMoveName { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.folderMoveMenu[data-slot] { width: max-content; min-width: 140px; max-width: min(260px, calc(100vw - 24px)); max-height: min(320px, var(--radix-context-menu-content-available-height, calc(100vh - 24px))); overflow-x: hidden; overflow-y: auto; }
+.folderMoveName { font: inherit; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .folderMoveCurrent { flex: none; color: #71717a; font-size: 10px; }
 .addMenuItem[data-disabled] { opacity: 0.5; }
 .folderNameOverlay[data-slot="dialog-overlay"] { z-index: 70; background: rgb(0 0 0 / 28%); }
@@ -123,7 +123,7 @@ button.folderCard[data-move-state="succeeded"] { background: #e4e4e7; box-shadow
 .folderNameActions [data-slot="button"][data-variant="default"]:hover { background: #27272a; }
 .folderNameActions [data-slot="button"]:focus-visible { outline: 1px solid #a1a1aa; outline-offset: 2px; }
 .assetCard:focus-visible { outline: 1px solid #a1a1aa; outline-offset: 3px; border-radius: 10px; }
-.addMenuItem[data-slot] { min-height: 36px; padding: 8px; border-radius: 7px; color: #27272a; font-size: 12px; }
+.addMenuItem[data-slot] { display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 8px; border-radius: 7px; color: #27272a; font-family: inherit; font-size: 12px; font-weight: 400; line-height: 20px; letter-spacing: normal; }
 .addMenuItem[data-slot]:focus, .addMenuItem[data-state="open"] { background: #f4f4f5; color: #18181b; }
 .addMenuItem[data-slot] svg { color: #52525b; }
 .linkMenu[data-slot="dropdown-menu-sub-content"] { width: min(280px, calc(100vw - 24px)); padding: 8px; }
