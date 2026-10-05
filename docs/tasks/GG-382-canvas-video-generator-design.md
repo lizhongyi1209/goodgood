@@ -24,3 +24,5 @@
 - 官方支持element输入，附件未开放；首版不自动扩展角色/声音素材库。Motion图片50MB与附件一致；保留参考视频朝向3–30秒、参考图片朝向3–10秒限制。复杂动作可能导致输出比输入短，UI应展示真实输出时长。
 - 官方创建为/omni-video/kling-3.0-omni和/motion-control/kling-3.0，查询为/tasks?task_ids=...或external_task_ids=...；官方状态submitted/processing/succeeded/failed，结果在outputs里。O1Key的查询路由、状态/错误/结果层级均按附件处理，不能直接复用官方响应解析；外部ID恢复是否可用需单独确认中转支持。
 - 提案修正：模型栏建议明确Kling 3.0 Omni和Kling 3.0动作模仿身份，保持生成类型与真实模型/路由匹配；不将普通Kling 3.0及Omni能力混为一个无区分型号。默认单镜头依旧是产品建议，官方multi_shot默认true。设计尚未用户确认，无产品ADR/代码变更；应用源码仍5f5e7fb，GG-374运行receipt保持。
+
+- 跨窗口交接：以上5f5e7fb为本次分析起始源码。另一窗口同步接入GG-383时，已将本轮官方对照文档携入a4caee5fd08c5e285044961de3b766cec220e31f，当前应用源码因此已前进；本任务不修改或回退GG-383及其后续交接，也不改变GG-374运行身份。未来实施从届时HEAD/IMPLEMENTATION_PLAN核验，不能再把本分析旧基线当最新源码。
