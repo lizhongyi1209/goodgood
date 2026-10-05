@@ -1,15 +1,17 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-05
-- Current phase: GG-366重启恢复完成，GG-365参考排序/GG-364循环修复及既有源码保持；用户功能手验待办，未部署生产。
-- Current objective: 用户刷新5173原画布继续使用及手验GG-365排序/取消/保存恢复；本次受权恢复和必要运行核对完成，不自动生成或功能测试，运行身份以GG-366为准。
+- Current phase: GG-367缩略图移位动效源码完成并精确接入，GG-366运行身份及GG-365排序/GG-364修复保持；用户手验待办，未部署生产。
+- Current objective: 用户刷新5173手验GG-367拖动跟随/邻图让位、滚动/缩放、释放/取消与保存恢复；沿GG-276不自动构建/检查/测试或浏览器验收，运行身份保持GG-366。
 - Previous objective: GG-313模板名称格式/示例参考、GG-312画布300%高清门槛、GG-311模板保存/成功动效及类型筛选、GG-310前景色已交付源码；GG-309私有2K接口、批量校验及文本资产API/本地0063已启用。
 
 ## Current checkpoint
 
-- 当前本地运行：[GG-366](tasks/GG-366-local-restart-after-reboot.md) GG-366电脑重启恢复完成：原PG54449落入Windows54385–54484保留范围、发布映射缺失；经Windows管理员授权短停WinNAT、重连原网络/别名并启动同一PG，原卷及54449映射恢复、WinNAT Running。必要构建verified 1dde20e6c08346d26c3d3d4dd97431605d057fe8；Web34716/32131、唯一Worker32420/32142、Vite30460/5173（启动器8232）通过独立隐藏launcher恢复。首页/原画布200、API代理同revision/verified，两角色readiness五项ok、cloud-development/local-mailpit保持。启动前活动图片/文本任务、未派发outbox、个人/工作区预留及两队列均0，原66迁移保留。未迁移/重置/写fixture/发真实生成/扣费或生产操作；仅必要构建和运行核对，未lint/typecheck/代码检查/测试/浏览器验收。GG-365/364源码保持，创建0/退役0，无子agent/新依赖副本。 应用源码检查点仍c905455，当前运行receipt绑定1dde20e；后续纯交接提交不改变运行身份，下次重启按届时HEAD构建。下方GG-358/357旧PID为历史。
+- 当前应用源码检查点：d8197c137a834bacb40ba65ea2b300efdf6e94b4；[GG-367](tasks/GG-367-reference-sort-motion.md) 隔离52b800e7f022d51eeab5db3a185c45837f3ffb7e精确接入。源图跟随指针，邻图160ms平滑移位；固定未缩放槽位/中点及滚动差计算，避免动画命中反复换位。行内有效释放只提交一次排序，行外/取消/列表或尺寸/缩放变化不改草稿；cursor、Tooltip、Alt方向键、既有目标独立顺序和生成/保存边界保持。纯几何回归只写未运行；未构建/lint/typecheck/代码检查/测试/浏览器验收，未HTTP/SQL/Provider/生成/扣费、服务更新或生产操作。GG-366运行receipt保持未重查，创建1/退役1，辅助已归档，无子agent或依赖缓存。用户刷新5173手验；下方GG-365源码为历史检查点，下一任务从当前HEAD核验祖先。
 
-- 当前应用源码检查点：c90545528347ecb729b19a5a9e3cacabc25e089c；[GG-365](tasks/GG-365-reference-tray-reorder.md) GG-365拖动排序源码已接入c90545528347ecb729b19a5a9e3cacabc25e089c；隔离3378aee15c17a6e071718570eedf3258df152ec4精确接入023d76c5a49cb0f8fbfd47e6a1c0a2eae3517cb6，随后小修Tooltip仅隐藏内容，避免切换受控模式。chat直接/连线/组成员缩略图统一拖动插入排序，源淡化/目标灰边、横向滚动、取消/Escape及Alt方向键；cursor保持。只改当前目标，编号/新提交顺序一致，上传ID替换、移除、保存恢复、历史及复制保持。云层按已有直接数组和排名边ID可逆适配，无后台更新或迁移。GG-364稳定edges修复及既有功能保持。沿GG-276仅写回归来源，未构建/lint/typecheck/代码检查/测试/浏览器验收，无HTTP/SQL/Provider/生成/扣费、服务更新或生产操作；GG-358运行receipt未重查。 创建1/退役1，辅助已归档。下一任务从当前HEAD核验祖先，旧GG-364/363为历史来源，不改写GG-358运行身份。
+- 当前本地运行：[GG-366](tasks/GG-366-local-restart-after-reboot.md) GG-366电脑重启恢复完成：原PG54449落入Windows54385–54484保留范围、发布映射缺失；经Windows管理员授权短停WinNAT、重连原网络/别名并启动同一PG，原卷及54449映射恢复、WinNAT Running。必要构建verified 1dde20e6c08346d26c3d3d4dd97431605d057fe8；Web34716/32131、唯一Worker32420/32142、Vite30460/5173（启动器8232）通过独立隐藏launcher恢复。首页/原画布200、API代理同revision/verified，两角色readiness五项ok、cloud-development/local-mailpit保持。启动前活动图片/文本任务、未派发outbox、个人/工作区预留及两队列均0，原66迁移保留。未迁移/重置/写fixture/发真实生成/扣费或生产操作；仅必要构建和运行核对，未lint/typecheck/代码检查/测试/浏览器验收。GG-365/364源码保持，创建0/退役0，无子agent/新依赖副本。 GG-366恢复时应用源码检查点为c905455，运行receipt绑定1dde20e；后续纯交接提交不改变运行身份，下次重启按届时HEAD构建。下方GG-358/357旧PID为历史。
+
+- 历史应用源码检查点：c90545528347ecb729b19a5a9e3cacabc25e089c；[GG-365](tasks/GG-365-reference-tray-reorder.md) GG-365拖动排序源码已接入c90545528347ecb729b19a5a9e3cacabc25e089c；隔离3378aee15c17a6e071718570eedf3258df152ec4精确接入023d76c5a49cb0f8fbfd47e6a1c0a2eae3517cb6，随后小修Tooltip仅隐藏内容，避免切换受控模式。chat直接/连线/组成员缩略图统一拖动插入排序，源淡化/目标灰边、横向滚动、取消/Escape及Alt方向键；cursor保持。只改当前目标，编号/新提交顺序一致，上传ID替换、移除、保存恢复、历史及复制保持。云层按已有直接数组和排名边ID可逆适配，无后台更新或迁移。GG-364稳定edges修复及既有功能保持。沿GG-276仅写回归来源，未构建/lint/typecheck/代码检查/测试/浏览器验收，无HTTP/SQL/Provider/生成/扣费、服务更新或生产操作；GG-358运行receipt未重查。 创建1/退役1，辅助已归档。下一任务从当前HEAD核验祖先，旧GG-364/363为历史来源，不改写GG-358运行身份。
 
 - 历史应用源码检查点：56960a87115073a169c0800957a9ac7d0e076236；[GG-364](tasks/GG-364-reference-update-loop.md) GG-364源码已精确接入56960a87115073a169c0800957a9ac7d0e076236（隔离a9a4f6818a712c3380506863b1f565fc4f28ae6e）。修复GG-363的graphRevision/受控edges引用反馈循环：空/普通边保留原数组，组边按实际原边/计数缓存并复用显示数组，计数和真实边变化仍正常更新，保存/历史观察保持。源码反馈链已定位，未做浏览器复现或自动验收。沿GG-276只写纯回归来源，未构建/lint/typecheck/代码检查/测试/浏览器验收，无HTTP/SQL/Provider/扣费、服务重启或生产操作，GG-358运行receipt未重查。用户刷新5173手验原画布/空画布、多图接入、移除计数/目标独立排除与保存刷新。 下一任务从当前HEAD核验祖先，GG-363为历史来源，不改写GG-358运行身份。
 

@@ -1,6 +1,6 @@
 # 当前任务与优先级
 
-> [GG-367](tasks/GG-367-reference-sort-motion.md) 用户要求参考缩略图拖动时实时移位/相邻图让位，取代GG-365淡化/灰边；已登记并扩展ADR0108，隔离实现中。保持cursor、取消/滚动、目标独立顺序与释放后单次提交；沿GG-276不自动检查/测试或浏览器验收，不更改GG-366运行身份。
+> [GG-367](tasks/GG-367-reference-sort-motion.md) 移位动效源码已精确接入d8197c137a834bacb40ba65ea2b300efdf6e94b4（隔离52b800e7f022d51eeab5db3a185c45837f3ffb7e）。拖动源图跟随，邻图160ms让位，固定槽位中点/缩放与滚动计算；有效释放提交一次，取消/列表和几何变化不改顺序，cursor保持。沿GG-276回归只写未运行，未构建/lint/typecheck/代码检查/测试/浏览器验收，无HTTP/SQL/Provider/生成/扣费、服务或生产操作。GG-366运行身份保持；创建1/退役1，辅助归档。用户刷新5173手验。
 
 > [GG-366](tasks/GG-366-local-restart-after-reboot.md) GG-366电脑重启恢复完成：原PG54449落入Windows54385–54484保留范围、发布映射缺失；经Windows管理员授权短停WinNAT、重连原网络/别名并启动同一PG，原卷及54449映射恢复、WinNAT Running。必要构建verified 1dde20e6c08346d26c3d3d4dd97431605d057fe8；Web34716/32131、唯一Worker32420/32142、Vite30460/5173（启动器8232）通过独立隐藏launcher恢复。首页/原画布200、API代理同revision/verified，两角色readiness五项ok、cloud-development/local-mailpit保持。启动前活动图片/文本任务、未派发outbox、个人/工作区预留及两队列均0，原66迁移保留。未迁移/重置/写fixture/发真实生成/扣费或生产操作；仅必要构建和运行核对，未lint/typecheck/代码检查/测试/浏览器验收。GG-365/364源码保持，创建0/退役0，无子agent/新依赖副本。
 
