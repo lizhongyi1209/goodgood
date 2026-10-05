@@ -1,8 +1,8 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-05
-- Current phase: GG-373资产菜单排版修复源码已接入；GG-372移动至、GG-371相册和GG-370批量生成保持，用户手验待办；GG-366运行身份保持，未自动验收/未部署生产。
-- Current objective: 用户刷新5173手验右键菜单字体/间距与内容宽度，再整理文件夹测试相册和批量；沿GG-276不自动检查、测试或更新运行。
+- Current phase: GG-374按用户要求恢复本地项目中；GG-373及既有源码保持，不部署生产。
+- Current objective: 复用原本地依赖和数据，必要当前checkpoint构建后恢复Web/唯一Worker/Vite并核对HTTP可用性；不发起真实生成或浏览器交互验收。
 - Previous objective: GG-313模板名称格式/示例参考、GG-312画布300%高清门槛、GG-311模板保存/成功动效及类型筛选、GG-310前景色已交付源码；GG-309私有2K接口、批量校验及文本资产API/本地0063已启用。
 
 ## Current checkpoint
