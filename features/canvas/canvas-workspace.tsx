@@ -31,7 +31,8 @@ import { CanvasResultNode, type CanvasResultNodeData } from "./canvas-result-nod
 import { CanvasSourceNode as CanvasSourceImageNode, type CanvasSourceNodeData } from "./canvas-source-node";
 import { CanvasVideoNode as CanvasSourceVideoNode, type CanvasVideoNodeData } from "./canvas-video-node";
 import { CanvasAudioNode, type CanvasAudioNodeData } from "./canvas-audio-node";
-import { CanvasGeneratorNode, type CanvasGeneratorNodeData } from "./canvas-generator-node";
+import { type CanvasGeneratorNodeData } from "./canvas-generator-node";
+import { CanvasImageGeneratorNode } from "./canvas-batch-generator-node";
 import { CanvasTextNode, type CanvasTextNodeData } from "./canvas-text-node";
 import { CanvasTextGeneratorNode, type CanvasTextGeneratorNodeData } from "./canvas-text-generator-node";
 import { CanvasTextGenerationContext, type CanvasTextGenerationContextValue } from "./canvas-text-generation-context";
@@ -66,7 +67,7 @@ export type CanvasNode = CanvasResultNodeType | CanvasSourceNode | CanvasVideoNo
 export const canvasReferenceEdgeStyle = { stroke: "#a1a1aa", strokeWidth: 1.2 } as const;
 export const canvasReferenceEdgeCurvature = 0.18;
 
-const nodeTypes = { imageResult: CanvasResultNode, sourceImage: CanvasSourceImageNode, sourceVideo: CanvasSourceVideoNode, sourceAudio: CanvasAudioNode, imageGenerator: CanvasGeneratorNode, textEditor: CanvasTextNode, textGenerator: CanvasTextGeneratorNode, group: CanvasGroupNode };
+const nodeTypes = { imageResult: CanvasResultNode, sourceImage: CanvasSourceImageNode, sourceVideo: CanvasSourceVideoNode, sourceAudio: CanvasAudioNode, imageGenerator: CanvasImageGeneratorNode, textEditor: CanvasTextNode, textGenerator: CanvasTextGeneratorNode, group: CanvasGroupNode };
 const initialNodes: CanvasNode[] = [];
 
 function CanvasProjectChangeObserver({ onChange }: Readonly<{ onChange: () => void }>) {
@@ -184,6 +185,7 @@ export function CanvasWorkspace({
   onInspectReferenceGroup,
   isValidConnection,
   onCreateGenerator,
+  onCreateBatchGenerator,
   onCreateText,
   onCreateTextGenerator,
   textGenerationContext,
@@ -226,6 +228,7 @@ export function CanvasWorkspace({
   onInspectReferenceGroup: (targetId: string) => void;
   isValidConnection: (connection: Connection | Edge) => boolean;
   onCreateGenerator: (point: { x: number; y: number }) => void;
+  onCreateBatchGenerator: (point: { x: number; y: number }) => void;
   onCreateText: (point: { x: number; y: number }) => void;
   onCreateTextGenerator: (point: { x: number; y: number }) => void;
   textGenerationContext: CanvasTextGenerationContextValue;
@@ -734,6 +737,10 @@ export function CanvasWorkspace({
           </span>
           <span>图片生成</span>
         </ContextMenuItem>
+        <ContextMenuItem onSelect={() => {
+          if (contextPointRef.current) { onBeforeGraphEdit(); onCreateBatchGenerator(contextPointRef.current); }
+          contextPointRef.current = null;
+        }}><ImageIcon size={12} className="size-3" aria-hidden="true" /><span>批量生成</span></ContextMenuItem>
         </>}
       </ContextMenuContent>
       </ContextMenu>

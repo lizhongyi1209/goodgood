@@ -112,7 +112,11 @@ import { createCanvasReferenceEdgeView } from "./canvas-reference-edge-view.mjs"
 import { directReferenceOrderKey, linkedReferenceOrderKey, orderCanvasReferences, moveCanvasReference, remapCanvasReferenceOrder } from "./canvas-reference-order.mjs";
 import { useCanvasReferenceReorder } from "./use-canvas-reference-reorder";
 import { measureCanvasGroupFootprints } from "./canvas-group-footprints";
-import { snapshotCanvasProject } from "./canvas-project-snapshot";
+import { CanvasBatchReferencePanel } from "./canvas-batch-reference-panel";
+import { isCanvasBatchGeneratorId, parseCanvasBatchReferenceHandle, canvasBatchReferenceHandle, canvasBatchModeFromEdges, canvasBatchGroupCountFromEdges, canvasReferenceGroupEdgeId } from "./canvas-batch-reference-model.mjs";
+import { createCanvasBatchDocumentBudget, CANVAS_BATCH_DOCUMENT_BYTE_LIMIT as CANVAS_BATCH_DOCUMENT_LIMIT } from "./canvas-batch-document-budget.mjs";
+import { planCanvasBatchReferences, validateCanvasBatchReferenceCapacity } from "./canvas-batch-reference-plan.mjs";
+import { snapshotCanvasProject, remoteCanvasProjectDocument } from "./canvas-project-snapshot";
 import { readCanvasViewport, saveCanvasViewport, readCanvasActivePage, saveCanvasActivePage } from "./canvas-project-session";
 import { CANVAS_PROJECT_DEFAULT_PAGE_ID, CANVAS_PROJECT_MAX_PAGES, getCanvasProjectPages } from "@/shared/contracts/canvas-project";
 import { canvasPageHasActiveWork, emptyCanvasRuntimePage, nextCanvasPageName, pagedCanvasProjectDocument, type CanvasRuntimePage } from "./canvas-project-pages";
@@ -777,10 +781,20 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     : [];
   const shownResolutions = seedreamModel ? resolutionOptions : pricedResolutions;
   const selectedResolution = shownResolutions.includes(resolution) ? resolution : shownResolutions[0];
+  const activeBatchGenerator = isCanvasBatchGeneratorId(activeGeneratorId);
+  const batchMode = canvasBatchModeFromEdges(edges, activeGeneratorId ?? "", activeGeneratorNode?.type === "imageGenerator" ? activeGeneratorNode.data.batchMode : "all");
+  const batchGroupCount = canvasBatchGroupCountFromEdges(edges, activeGeneratorId ?? "", activeGeneratorNode?.type === "imageGenerator" ? activeGeneratorNode.data.batchGroupCount : 1);
+  const referenceBucket = (edgeId: string) => parseCanvasBatchReferenceHandle(edges.find((edge) => edge.id === edgeId)?.targetHandle)?.index ?? 0;
   const linkedReferences = useMemo<LinkedCanvasReference[]>(() => {
     if (!activeGeneratorId || !flow) return [];
-    return uniqueCanvasReferenceInputs(canvasReferenceInputs(flow.getNodes(), edges, activeGeneratorId),
-      (referencesByGenerator[activeGeneratorId] ?? []).map((item) => item.reference), convertedReferences).map((input) => {
+    const rawInputs = canvasReferenceInputs(flow.getNodes(), edges, activeGeneratorId);
+    const direct = (referencesByGenerator[activeGeneratorId] ?? []).map((item) => item.reference);
+    const buckets = isCanvasBatchGeneratorId(activeGeneratorId) ? [0, 1, 2, 3, 4, 5] : [0];
+    const inputs = buckets.flatMap((bucket) => uniqueCanvasReferenceInputs(
+      isCanvasBatchGeneratorId(activeGeneratorId) ? rawInputs.filter((input) =>
+        (parseCanvasBatchReferenceHandle(edges.find((edge) => edge.id === input.edgeId)?.targetHandle)?.index ?? 0) === bucket) : rawInputs,
+      bucket === 0 ? direct : [], convertedReferences));
+    return inputs.map((input) => {
       const { node, asset, key } = input;
       const converted = convertedReferences[key];
       const reference: GenerationReference = asset?.generated
@@ -799,8 +813,11 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       const currentNodes = flow.getNodes();
       for (const edge of edges) {
         if (flow.getNode(edge.source)?.type !== "group") continue;
-        const inputs = uniqueCanvasReferenceInputs(canvasReferenceInputs(currentNodes, edges, edge.target),
-          (referencesByGenerator[edge.target] ?? []).map((item) => item.reference), convertedReferences);
+        const batchTarget = isCanvasBatchGeneratorId(edge.target);
+        const bucket = parseCanvasBatchReferenceHandle(edge.targetHandle)?.index ?? 0;
+        const inputs = uniqueCanvasReferenceInputs(canvasReferenceInputs(currentNodes, batchTarget ? edges.filter((candidate) =>
+          candidate.target !== edge.target || (parseCanvasBatchReferenceHandle(candidate.targetHandle)?.index ?? 0) === bucket) : edges, edge.target),
+          bucket === 0 ? (referencesByGenerator[edge.target] ?? []).map((item) => item.reference) : [], convertedReferences);
         counts.set(edge.id, inputs.filter((input) => input.edgeId === edge.id).length);
       }
     }
@@ -813,19 +830,24 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     }
   }, [edges]);
   const combinedPrompt = combineCanvasPrompt(linkedTextInputs, prompt);
-  const promptBatch = parseCanvasImagePrompts(combinedPrompt);
+  const promptBatch = activeBatchGenerator ? { prompts: combinedPrompt.trim() ? [combinedPrompt.trim()] : [] } : parseCanvasImagePrompts(combinedPrompt);
   const oversizedPromptIndex = promptBatch.prompts.findIndex((item) => item.length > CANVAS_PROMPT_MAX_LENGTH);
   const promptTooLong = oversizedPromptIndex >= 0;
   const displayReferences = orderCanvasReferences([
     ...references.map((item) => ({ key: item.clientId, orderKey: directReferenceOrderKey(item.reference.id),
-      kind: "direct" as const, reference: item.reference, previewUrl: item.previewUrl })),
+      kind: "direct" as const, bucket: 0, reference: item.reference, previewUrl: item.previewUrl })),
     ...linkedReferences.map((item) => ({ key: item.key, orderKey: linkedReferenceOrderKey(item.sourceId),
-      kind: "linked" as const, reference: item.reference, previewUrl: item.previewUrl })),
-  ], referenceOrder);
+      kind: "linked" as const, bucket: activeBatchGenerator ? referenceBucket(item.edgeId) : 0, reference: item.reference, previewUrl: item.previewUrl })),
+  ], activeBatchGenerator ? undefined : referenceOrder);
+  const commonBatchReferences = displayReferences.filter((item) => item.bucket === 0);
+  const batchReferenceGroups = Array.from({ length: batchGroupCount }, (_, index) => ({
+    id: String(index + 1), name: `素材组 ${index + 1}`, items: displayReferences.filter((item) => item.bucket === index + 1),
+  }));
+  const batchPlan = activeBatchGenerator ? planCanvasBatchReferences(commonBatchReferences, batchReferenceGroups, batchMode) : null;
   const referenceReorder = useCanvasReferenceReorder({
     scope: `${projectOwnerKeyRef.current}:${projectId}:${activePageId}:${activeGeneratorId}`,
     keys: displayReferences.map((item) => item.orderKey),
-    disabled: generatorEditingLocked || !activeGeneratorId,
+    disabled: generatorEditingLocked || !activeGeneratorId || activeBatchGenerator,
     onMove: (source, target) => {
       if (!activeGeneratorId || generatorEditingLocked || busyGeneratorIdsRef.current.has(activeGeneratorId)) return;
       const keys = displayReferences.map((item) => item.orderKey);
@@ -835,7 +857,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       updateGeneratorDraft({ referenceOrder: moved });
     },
   });
-  const referenceCount = new Set(displayReferences.map((item) => item.reference.id)).size;
+  const referenceCount = activeBatchGenerator ? batchPlan?.referenceCounts.keys().next().value ?? 0 : new Set(displayReferences.map((item) => item.reference.id)).size;
   const quote = model && selectedResolution
     ? findBillingQuote(billing, {
         modelId: model.id,
@@ -848,13 +870,20 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     : null;
   const referencesBusy = displayReferences.some((item) => item.reference.status === "uploading");
   const referencesFailed = displayReferences.some((item) => item.reference.status === "failed");
-  const batchCreditAmount = quote ? canvasImageBatchCreditAmount(quote.creditAmount,
-    Math.max(1, promptBatch.prompts.length) * (seedreamModel ? 1 : selectedCount)) : null;
+  const batchCombinationQuotes = new Map([...(batchPlan?.referenceCounts.keys() ?? [])].map((count) => [count, model && selectedResolution
+    ? findBillingQuote(billing, { modelId: model.id, catalogModelId: model.catalogId, count: 1,
+      resolution: selectedResolution, quality: gptOptions.quality, referenceCount: count }) : null] as const));
+  const batchQuotesReady = !activeBatchGenerator || Boolean(batchPlan?.valid && batchPlan.total > 0 &&
+    [...batchCombinationQuotes.values()].every(Boolean));
+  const batchCreditAmount = activeBatchGenerator
+    ? batchQuotesReady && batchPlan ? [...batchPlan.referenceCounts].reduce((total, [count, combinations]) =>
+      total + BigInt(batchCombinationQuotes.get(count)!.creditAmount) * BigInt(combinations) * BigInt(seedreamModel ? 1 : selectedCount), 0n).toString() : null
+    : quote ? canvasImageBatchCreditAmount(quote.creditAmount, Math.max(1, promptBatch.prompts.length) * (seedreamModel ? 1 : selectedCount)) : null;
   const insufficientCredits = Boolean(
     batchCreditAmount && billing && BigInt(billing.account.availableCredits) < BigInt(batchCreditAmount),
   );
   const canGenerate = Boolean(
-    session?.access.status === "active" && !session.preview && quote &&
+    session?.access.status === "active" && !session.preview && quote && batchQuotesReady && (!activeBatchGenerator || batchPlan?.ready) &&
     promptBatch.prompts.length && !promptTooLong && !referencesBusy && !referencesFailed && !insufficientCredits &&
     !billingLoading && !billingError && !generatorEditingLocked,
   );
@@ -911,7 +940,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     const { accepted: validFiles, errors } = selectCanvasImageFiles(files);
     setFormError(errors[0] ?? null);
     for (const file of validFiles) {
-      if (references.length + linkedReferences.length + accepted.length >= MAX_GENERATION_REFERENCES) {
+      if (references.length + linkedReferences.filter((item) => !activeBatchGenerator || referenceBucket(item.edgeId) === 0).length + accepted.length >= MAX_GENERATION_REFERENCES) {
         setFormError(`最多可添加 ${MAX_GENERATION_REFERENCES} 张参考图。`);
         break;
       }
@@ -1005,7 +1034,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     clipboard.pasteCount += 1;
     const offset = 32 * clipboard.pasteCount;
     const ids = new Map(clipboard.nodes.map((node) => [node.id, node.type === "imageGenerator"
-      ? `generator-${crypto.randomUUID()}` : node.type === "imageResult"
+      ? `${isCanvasBatchGeneratorId(node.id) ? "batch-generator" : "generator"}-${crypto.randomUUID()}` : node.type === "imageResult"
         ? `canvas-${crypto.randomUUID()}-0` : node.type === "group" ? `group-${crypto.randomUUID()}` : node.type === "textEditor" ? `text-${crypto.randomUUID()}` : node.type === "textGenerator" ? `text-generator-${crypto.randomUUID()}` : `asset-${crypto.randomUUID()}`] as const));
     let nextSequence = Math.max(0, ...instance.getNodes().filter((node) => node.type === "imageGenerator")
       .map((node) => node.data.sequence ?? 0));
@@ -1031,7 +1060,8 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
         onRetrySlot: (index: number) => retryImageSlotRef.current(id, index) } };
     });
     const pastedEdges = clipboard.edges.map((edge) => ({ ...edge,
-      id: `${edge.sourceHandle === "text" ? "text" : "reference"}-${ids.get(edge.source)}-${ids.get(edge.target)}`,
+      id: edge.sourceHandle === "text" ? `text-${ids.get(edge.source)}-${ids.get(edge.target)}`
+        : canvasReferenceGroupEdgeId(ids.get(edge.source)!, ids.get(edge.target)!, edge.targetHandle ?? "reference"),
       source: ids.get(edge.source)!, target: ids.get(edge.target)!, selected: false,
       ...(Array.isArray(edge.data?.excludedSourceIds) ? { data: { ...edge.data,
         excludedSourceIds: (edge.data.excludedSourceIds as string[]).flatMap((memberId) => ids.has(memberId) ? [ids.get(memberId)!] : []) } } : {}),
@@ -1434,8 +1464,36 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     if (connection.sourceHandle === CANVAS_BATCH_REFERENCE_HANDLE && members.length !== referenceDragRef.current?.memberIds.length) {
       return { valid: false, message: "选中的图片已发生变化，请重新框选连接。" };
     }
-    return planCanvasReferenceConnection(instance.getNodes(), edges, connection, members,
+    if (!isCanvasBatchGeneratorId(connection.target)) return planCanvasReferenceConnection(instance.getNodes(), edges, connection, members,
       (referencesByGenerator[connection.target] ?? []).map((item) => item.reference), convertedReferences, MAX_GENERATION_REFERENCES);
+    const port = parseCanvasBatchReferenceHandle(connection.targetHandle);
+    if (connection.targetHandle !== "reference" && !port) return { valid: false, message: "请连接公共参考或素材组端口。" };
+    const bucket = port?.index ?? 0;
+    const bucketEdges = edges.filter((edge) => edge.target !== connection.target ||
+      (parseCanvasBatchReferenceHandle(edge.targetHandle)?.index ?? 0) === bucket);
+    const direct = bucket === 0 ? (referencesByGenerator[connection.target] ?? []).map((item) => item.reference) : [];
+    const preflight = planCanvasReferenceConnection(instance.getNodes(), bucketEdges, { ...connection, targetHandle: "reference" },
+      members, direct, convertedReferences, Number.MAX_SAFE_INTEGER);
+    if (!preflight.valid) return preflight;
+    const allInputs = canvasReferenceInputs(instance.getNodes(), edges);
+    const wrapper = (node: CanvasNode, key?: string) => {
+      const asset = imageSourceAsset(node);
+      const existing = allInputs.find((input) => input.asset?.assetId === asset?.assetId && input.asset?.generated === asset?.generated &&
+        convertedReferences[input.key]?.status === "ready");
+      const reference = (key ? convertedReferences[key] : undefined) ?? (existing ? convertedReferences[existing.key] : undefined) ??
+        { id: asset?.assetId ? `${asset.generated ? "generated:" : ""}${asset.assetId}` : node.id, name: asset?.name ?? "图片", url: "", status: "ready" as const };
+      return { reference };
+    };
+    const common = [...(referencesByGenerator[connection.target] ?? []).map((item) => ({ reference: item.reference })),
+      ...allInputs.filter((input) => edges.find((edge) => edge.id === input.edgeId)?.target === connection.target &&
+        !parseCanvasBatchReferenceHandle(edges.find((edge) => edge.id === input.edgeId)?.targetHandle)).map((input) => wrapper(input.node, input.key))];
+    const groups = [1, 2, 3, 4, 5].map((index) => ({ id: String(index), name: `素材组 ${index}`,
+      items: allInputs.filter((input) => edges.find((edge) => edge.id === input.edgeId)?.target === connection.target &&
+        parseCanvasBatchReferenceHandle(edges.find((edge) => edge.id === input.edgeId)?.targetHandle)?.index === index).map((input) => wrapper(input.node, input.key)) }));
+    const added = members.filter((member) => !preflight.excludedSourceIds?.includes(member.id)).map((member) => wrapper(member));
+    if (bucket) groups[bucket - 1].items.push(...added); else common.push(...added);
+    const capacity = validateCanvasBatchReferenceCapacity(common, groups.filter((group) => group.items.length), port?.mode ?? canvasBatchModeFromEdges(edges, connection.target));
+    return capacity.valid ? preflight : { valid: false, message: capacity.error ?? "每次请求最多使用10张参考图。" };
   };
 
   const isValidReferenceConnection = (connection: Connection | Edge) => {
@@ -1525,7 +1583,8 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
         instance.updateNodeData(connection.source, { referenceOrder: members.map((node) => node.id) });
       }
     }
-    const id = (nextConnection.sourceHandle === "text" ? "text" : "reference") + "-" + nextConnection.source + "-" + nextConnection.target;
+    const id = nextConnection.sourceHandle === "text" ? "text-" + nextConnection.source + "-" + nextConnection.target
+      : canvasReferenceGroupEdgeId(nextConnection.source, nextConnection.target, nextConnection.targetHandle ?? "reference");
     const referenceEdge: BuiltInEdge = {
       ...nextConnection, id, type: "default", animated: true,
       pathOptions: { curvature: canvasReferenceEdgeCurvature }, style: canvasReferenceEdgeStyle,
@@ -1541,18 +1600,18 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     setEdges((current) => applyEdgeChanges(changes, current));
   };
 
-  const createGenerator = (screenPoint: { x: number; y: number }) => {
+  const createGenerator = (screenPoint: { x: number; y: number }, batch = false) => {
     const instance = flowRef.current;
     if (!instance) return;
     const position = instance.screenToFlowPosition(screenPoint);
     if (!Number.isFinite(position.x) || !Number.isFinite(position.y)) return;
     const size = initialCanvasImageSize(238, 238) ?? { width: 238, height: 238 };
-    const id = `generator-${globalThis.crypto.randomUUID()}`;
+    const id = `${batch ? "batch-generator" : "generator"}-${globalThis.crypto.randomUUID()}`;
     const sequence = Math.max(0, ...instance.getNodes().filter((node) => node.type === "imageGenerator")
       .map((node) => node.data.sequence ?? 0)) + 1;
     const generator: CanvasGeneratorNodeType = {
       id, type: "imageGenerator", position: { x: position.x - size.width / 2, y: position.y - size.height / 2 },
-      style: size, data: { sequence, onRetrySlot: (index: number) => retryImageSlotRef.current(id, index) },
+      style: size, selected: batch || undefined, data: { sequence, ...(batch ? { batchMode: "all" as const, batchGroupCount: 1 } : {}), onRetrySlot: (index: number) => retryImageSlotRef.current(id, index) },
     };
     instance.setNodes((current) => [...current.map((node) => node.selected ? { ...node, selected: false } : node), generator]);
     automaticResolutionGeneratorIdsRef.current.add(id);
@@ -1730,6 +1789,23 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       ])] } }];
     }));
   };
+  const updateBatchConfiguration = (mode: "all" | "paired", count: number, removedIndex?: number) => {
+    if (!activeGeneratorId || !activeBatchGenerator || generatorEditingLocked) return;
+    captureCanvasHistory();
+    flowRef.current?.updateNodeData(activeGeneratorId, { batchMode: mode, batchGroupCount: Math.max(1, Math.min(5, count)) });
+    if (removedIndex) for (const edge of edges) {
+      if (edge.target === activeGeneratorId && parseCanvasBatchReferenceHandle(edge.targetHandle)?.index === removedIndex) forgetConvertedReference(edge.id);
+    }
+    setEdges((current) => current.flatMap((edge) => {
+      if (edge.target !== activeGeneratorId) return [edge];
+      const port = parseCanvasBatchReferenceHandle(edge.targetHandle);
+      if (!port) return [edge];
+      if (port.index === removedIndex) return [];
+      const index = removedIndex && port.index > removedIndex ? port.index - 1 : port.index;
+      return [{ ...edge, targetHandle: canvasBatchReferenceHandle(index, mode) }];
+    }));
+    scheduleProjectSnapshot(true); scheduleCanvasHistory();
+  };
   const retryLinkedReference = (key: string) => {
     const instance = flowRef.current;
     if (!instance) return;
@@ -1850,6 +1926,16 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     try {
       // Save frozen inputs and request keys before the first potentially paid POST.
       await projectSnapshotRef.current?.();
+      if (isCanvasBatchGeneratorId(generatorId)) {
+        const saved = projectSyncRef.current?.snapshot;
+        if (!saved || new TextEncoder().encode(JSON.stringify({ name: saved.name,
+          document: remoteCanvasProjectDocument(saved.document) })).length > CANVAS_BATCH_DOCUMENT_LIMIT) {
+          for (const slot of runningSlots) observe({ ...slot.job, state: "failed", error: {
+            code: "INTERNAL_ERROR", title: "请求尚未提交", message: "本次批量任务超过画布保存容量，请减少素材或生成数量后重试。", retryable: false,
+          } }, slot);
+          return;
+        }
+      }
       await runCanvasGeneratorSlots({ slots: runningSlots, resume: mode === "resume", boundary: generationBoundary, observe, settled });
     } catch {
       for (const slot of runningSlots) observe({ ...slot.job, state: "failed", error: {
@@ -1875,8 +1961,9 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     })) { setFormError("连接的文本仍在生成，请稍候。"); return; }
     if (referencesBusy) { setFormError("参考图仍在上传，请稍候。"); return; }
     if (referencesFailed) { setFormError("请重试或移除上传失败的参考图。"); return; }
-    if (displayReferences.length > MAX_GENERATION_REFERENCES) { setFormError(`最多可添加 ${MAX_GENERATION_REFERENCES} 张参考图。`); return; }
-    if (billingLoading || billingError || !model || !selectedResolution || !quote) { setFormError("当前模型报价不可用，请刷新后重试。"); return; }
+    if (!activeBatchGenerator && displayReferences.length > MAX_GENERATION_REFERENCES) { setFormError(`最多可添加 ${MAX_GENERATION_REFERENCES} 张参考图。`); return; }
+    if (activeBatchGenerator && (!batchPlan?.valid || !batchPlan.ready)) { setFormError(batchPlan?.error ?? "请连接至少一组批量素材。"); return; }
+    if (billingLoading || billingError || !model || !selectedResolution || !quote || !batchQuotesReady) { setFormError("当前模型报价不可用，请刷新后重试。"); return; }
     if (insufficientCredits) { setFormError("可用积分不足，请先补充积分。"); return; }
     const projectSync = projectSyncRef.current;
     if (!projectSync || projectSync.snapshot.version === null) {
@@ -1884,21 +1971,45 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       setFormError("项目正在同步，请稍后重试生成。");
       return;
     }
-    const snapshots = promptBatch.prompts.map((segment) => createGenerationInputSnapshot({
-      prompt: segment,
-      references: displayReferences.filter((item, index, all) =>
-        all.findIndex((candidate) => candidate.reference.id === item.reference.id) === index).map((item) => item.reference),
-      modelId: model.id,
-      catalogModelId: model.catalogId,
-      expectedPriceVersion: quote.priceVersion,
-      routingPolicy: "canvas-image-v1",
-      ...gptOptions,
-      aspectRatio: selectedRatio,
-      resolution: selectedResolution,
-      count: selectedCount,
-      projectId: null,
-      canvasProjectId: projectSync.id,
-    }));
+    const snapshotFor = (segment: string, items: typeof displayReferences, priceVersion = quote.priceVersion) => createGenerationInputSnapshot({
+      prompt: segment, references: items.map((item) => item.reference),
+      modelId: model.id, catalogModelId: model.catalogId, expectedPriceVersion: priceVersion,
+      routingPolicy: "canvas-image-v1", ...gptOptions, aspectRatio: selectedRatio,
+      resolution: selectedResolution, count: selectedCount, projectId: null, canvasProjectId: projectSync.id,
+    });
+    const snapshots: GenerationInputSnapshot[] = [];
+    if (activeBatchGenerator && batchPlan) {
+      const instance = flowRef.current;
+      if (!instance) return;
+      const current = latestProjectStateRef.current;
+      const pages = pagesRef.current.map((page) => {
+        const pageNodes = page.id === activePageIdRef.current ? instance.getNodes() : page.nodes;
+        const { schemaVersion: _schemaVersion, ...document } = snapshotCanvasProject({
+          nodes: pageNodes.map((node) => node.id === activeGeneratorId && node.type === "imageGenerator"
+            ? { ...node, data: { ...node.data, slots: [], job: undefined, jobs: undefined } } : node),
+          edges: page.id === activePageIdRef.current ? current.edges : page.edges,
+          draftsByGenerator: { ...current.draftsByGenerator, [activeGeneratorId]: { ...current.draftsByGenerator[activeGeneratorId],
+            prompt, modelKey: model.catalogId ?? model.id, ratio: selectedRatio, resolution: selectedResolution, count: selectedCount, ...gptOptions } },
+          referencesByGenerator: current.referencesByGenerator, convertedReferences: current.convertedReferences, viewport: page.viewport,
+        });
+        return { ...document, id: page.id, name: page.name };
+      });
+      const baseBytes = new TextEncoder().encode(JSON.stringify({ name: current.canvasName,
+        document: remoteCanvasProjectDocument(pagedCanvasProjectDocument(pages)) })).length;
+      const budget = createCanvasBatchDocumentBudget(baseBytes);
+      for (const combination of batchPlan.combinations()) {
+        const singleQuote = batchCombinationQuotes.get(combination.items.length);
+        if (!singleQuote) { setFormError("当前组合报价不可用，请刷新后重试。"); return; }
+        const snapshot = snapshotFor(combinedPrompt.trim(), combination.items, singleQuote.priceVersion);
+        if (!budget.append(snapshot, seedreamModel ? 1 : selectedCount)) {
+          setFormError("本次批量任务超过画布保存容量，请减少候选素材或每组生成数量后重试。"); return;
+        }
+        snapshots.push(snapshot);
+      }
+    } else {
+      snapshots.push(...promptBatch.prompts.map((segment) => snapshotFor(segment, displayReferences.filter((item, index, all) =>
+        all.findIndex((candidate) => candidate.reference.id === item.reference.id) === index))));
+    }
     setDraftsByGenerator((current) => ({ ...current, [activeGeneratorId]: {
       ...current[activeGeneratorId],
       prompt, modelKey: model.catalogId ?? model.id, ratio: selectedRatio,
@@ -2146,6 +2257,10 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
             textGeneration: saved.textGeneration ?? { modelId: DEFAULT_TEXT_GENERATION_MODEL, prompt: "", history: [] } },
         };
         if (saved.type === "imageGenerator") {
+          const batchConfiguration = isCanvasBatchGeneratorId(saved.id) ? {
+            batchMode: saved.batchConfiguration?.mode ?? "all",
+            batchGroupCount: saved.batchConfiguration?.groupCount ?? 1,
+          } : {};
           if (saved.imageSlots) {
             const loaded = new Map<string, Promise<GenerationJob>>();
             const slots = await Promise.all(saved.imageSlots.map(async (slot): Promise<CanvasImageSlot> => {
@@ -2165,7 +2280,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
                 outputIndex: slot.outputIndex, job });
             }));
             const jobs = canvasGeneratorJobs({ slots });
-            return { ...base, type: "imageGenerator", data: { sequence: saved.sequence ?? 1, job: jobs[0], jobs, slots,
+            return { ...base, type: "imageGenerator", data: { ...batchConfiguration, sequence: saved.sequence ?? 1, job: jobs[0], jobs, slots,
               onRetrySlot: (index: number) => retryImageSlotRef.current(saved.id, index),
               imageSized: Boolean(style && canvasGeneratorOutputs({ slots })[0]) } };
           }
@@ -2181,7 +2296,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
           const sequence = saved.sequence ?? document.nodes.filter((item) => item.type === "imageGenerator")
             .findIndex((item) => item.id === saved.id) + 1;
           return { ...base, type: "imageGenerator",
-            data: { sequence, job: jobs[0], jobs, onRetrySlot: (index: number) => retryImageSlotRef.current(saved.id, index),
+            data: { ...batchConfiguration, sequence, job: jobs[0], jobs, onRetrySlot: (index: number) => retryImageSlotRef.current(saved.id, index),
               imageSized: Boolean(style && canvasGeneratorOutputs({ jobs })[0]) } };
         }
         if (saved.type === "sourceImage" || saved.type === "sourceVideo") {
@@ -2475,7 +2590,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
         onUndo={() => navigateCanvasHistory("undo")}
         onRedo={() => navigateCanvasHistory("redo")}
         onBeforeGraphEdit={captureCanvasHistory}
-        onCreateGenerator={createGenerator} onCreateText={createText} onCreateTextGenerator={createTextGenerator} onComposerHostChange={handleComposerHostChange}
+        onCreateGenerator={createGenerator} onCreateBatchGenerator={(point) => createGenerator(point, true)} onCreateText={createText} onCreateTextGenerator={createTextGenerator} onComposerHostChange={handleComposerHostChange}
         textGenerationContext={{ enabled: Boolean(projectReady && !pageSwitching && session?.access.status === "active" && !session.preview),
           ownerKey: projectOwnerKeyRef.current ?? "", pageId: activePageId, workspaceId: null,
           beforeGenerate: () => {
@@ -2611,9 +2726,18 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
           </div>}
         {promptTooLong && <p role="alert" className={styles.message}>第 {oversizedPromptIndex + 1} 段提示词 {promptBatch.prompts[oversizedPromptIndex].length} 个字符，最多 {CANVAS_PROMPT_MAX_LENGTH} 个字符。</p>}
         <input ref={inputRef} className={styles.srOnly} type="file" accept="image/jpeg,image/png" multiple onChange={addReferences} aria-label="选择参考图" />
+        {activeBatchGenerator && <CanvasBatchReferencePanel common={commonBatchReferences} groups={batchReferenceGroups}
+          mode={batchMode} disabled={generatorEditingLocked} total={batchPlan?.valid ? batchPlan.total : 0}
+          count={seedreamModel ? 1 : selectedCount} error={batchPlan?.error ?? null} preview={batchPlan?.preview ?? []}
+          onMode={(mode) => updateBatchConfiguration(mode, batchGroupCount)}
+          onAddGroup={() => updateBatchConfiguration(batchMode, batchGroupCount + 1)}
+          onRemoveGroup={(index) => updateBatchConfiguration(batchMode, batchGroupCount - 1, index)}
+          onRemove={(item) => item.kind === "direct" ? removeReference(composerHost.id, item.key) : removeLinkedReference(item.key)}
+          onRetry={(item) => item.kind === "direct" ? retryReference(composerHost.id, item.key) : retryLinkedReference(item.key)}
+          onAddCommon={() => inputRef.current?.click()} />}
         <TooltipProvider delayDuration={180}>
           <AttachmentGroup className={styles.referenceTray} role="group" aria-label="输入附件">
-            {displayReferences.map((item, index) => (
+            {!activeBatchGenerator && displayReferences.map((item, index) => (
                 <Attachment
                   className={`${styles.reference} ${item.reference.status === "uploading" ? canvasWorkspaceStyles.mediaUploading : ""}`}
                   key={item.key}
@@ -2659,7 +2783,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
                 </button>
               </Attachment>
             ))}
-            {SHOW_CANVAS_REFERENCE_ADD_BUTTON && displayReferences.length < MAX_GENERATION_REFERENCES && (
+            {!activeBatchGenerator && SHOW_CANVAS_REFERENCE_ADD_BUTTON && displayReferences.length < MAX_GENERATION_REFERENCES && (
               <button type="button" className={styles.referenceAdd} aria-label="添加参考图" onClick={() => inputRef.current?.click()}>
                 <ImageIcon size={14} strokeWidth={1.5} aria-hidden="true" />
               </button>

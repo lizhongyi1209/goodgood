@@ -1168,3 +1168,8 @@ canvas-reference-edge-view caches presentation by original edge identity and cur
 use-canvas-reference-reorder handles pointer capture, cancellation, edge scrolling and keyboard movement independently from native canvas/media dragging; it commits one target-local order on release. canvas-reference-order owns insertion, default append/identity remapping and reversible rank compatibility. Display and generation snapshot consume the same sorted items. The reference document adapter encodes ordering after group flattening and decodes it before group collapse. No backend update is required; GG-364 stable controlled edge projection remains unchanged.
 
 GG-367 adds canvas-reference-drag-layout for transient transforms from frozen unscaled slot positions. The pointer hook converts screen movement using canvas scale and tray scroll delta; it does not hit-test animated items or mutate draft/DOM order during preview. Neighbor transforms animate only while preview is active; clearing them together with final DOM reordering avoids a second transition after release. List, scope, lock, width or zoom invalidation cancels; no provider/store/cloud changes are introduced.
+
+
+## GG-370 · 批量参考执行边界
+
+新增独立节点路由/组件、参考面板、纯组合planner与文档预算helper。浏览器用batch-generator-前缀辨别独立节点，云wire仍为imageGenerator；公共端口reference、候选端口batch-all-N/batch-paired-N编码1–5组及模式，服务端既有handle白名单字符串契约接收，不扩展模型provider/API。云参考组展开/折叠按目标端口区分，解组、复制及转换键保留端口。引用沿源资产与既有授权转换，不放入提示词/名称躲避校验。按桶去重后planner按实际单请求去重，惰性组合及精确引用数分布供报价；逐组合快照输入接现有slot runner、幂等/冻结保存/失败重试。GG-276本轮不更新Web/Worker/生产。

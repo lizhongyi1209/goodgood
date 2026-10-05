@@ -25,6 +25,7 @@ export type CanvasProjectNode = Readonly<{
   metadata?: Readonly<{ pixelWidth?: number; pixelHeight?: number; durationSeconds?: number }>;
   // Browser recovery only. Never send this field to the server.
   pendingFileId?: string;
+  batchConfiguration?: Readonly<{ mode: "all" | "paired"; groupCount: number }>;
   localJob?: GenerationJob;
   localJobs?: readonly GenerationJob[];
 }>;

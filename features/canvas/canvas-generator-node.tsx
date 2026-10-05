@@ -14,6 +14,7 @@ import { canvasCropImageForNode } from "./canvas-image-crop-image";
 import { canvasGeneratorJobs, canvasGeneratorOutputs, canvasImageJobIsActive } from "./canvas-image-prompt-batch.mjs";
 import { canvasGeneratorSlots, canvasGeneratorResultSlots, canvasImageSlotCanRetry, type CanvasImageSlot } from "./canvas-image-slots.mjs";
 import type { CanvasGeneratorNodeType, CanvasNode } from "./canvas-workspace";
+import { isCanvasBatchGeneratorId } from "./canvas-batch-reference-model.mjs";
 import styles from "./canvas-workspace.module.css";
 import assetStyles from "./canvas-asset-panel.module.css";
 
@@ -24,9 +25,12 @@ export type CanvasGeneratorNodeData = Record<string, unknown> & {
   slots?: readonly CanvasImageSlot[];
   onRetrySlot?: (index: number) => void;
   imageSized?: boolean;
+  batchMode?: "all" | "paired";
+  batchGroupCount?: number;
 };
 
 export function CanvasGeneratorNode({ id, data, selected }: NodeProps<CanvasGeneratorNodeType>) {
+  const generatorLabel = isCanvasBatchGeneratorId(id) ? "批量生成" : "图片生成";
   const { request: cropRequest } = useCanvasImageCrop();
   const [selectedSlotKey, setSelectedSlotKey] = useState<string | null>(null);
   const [readyOutputs, setReadyOutputs] = useState<ReadonlySet<string>>(new Set());
@@ -127,7 +131,7 @@ export function CanvasGeneratorNode({ id, data, selected }: NodeProps<CanvasGene
               <path d="M4 0.5 4.65 3.35 7.5 4 4.65 4.65 4 7.5 3.35 4.65 0.5 4 3.35 3.35Z" />
             </svg>
           </span>
-          <span className={styles.imageMetadataNameText}>图片生成 {data.sequence ?? 1}</span>
+          <span className={styles.imageMetadataNameText}>{generatorLabel} {data.sequence ?? 1}</span>
         </span>
         {dimensions && <span className={styles.imageMetadataSize} aria-label={`原始尺寸 ${dimensions} 像素`}>{dimensions}</span>}
       </div>
@@ -137,7 +141,7 @@ export function CanvasGeneratorNode({ id, data, selected }: NodeProps<CanvasGene
         data-canvas-stack-count={stackCount}
         data-canvas-stack-expanded={expanded}
         role={stackCount ? "group" : "img"}
-        aria-label={`图片生成 ${data.sequence ?? 1}${stackCount ? `，${stackCount} 个结果位置，已生成 ${outputs.length} 张` : ""}${generating ? "，生成中" : ""}`}
+        aria-label={`${generatorLabel} ${data.sequence ?? 1}${stackCount ? `，${stackCount} 个结果位置，已生成 ${outputs.length} 张` : ""}${generating ? "，生成中" : ""}`}
         aria-busy={generating || undefined}>
         {stackCount ? resultSlots.map((slot, index) => {
           const item = slot.output;
@@ -156,7 +160,7 @@ export function CanvasGeneratorNode({ id, data, selected }: NodeProps<CanvasGene
               style={{ position: "absolute", "--canvas-stack-x": `${expanded ? index * (nodeWidth + 12) : previewDepth * stackOffset}px`,
                 "--canvas-stack-y": `${expanded ? 0 : previewDepth * 4}px`,
                 zIndex: expanded ? 1 : Math.max(0, 3 - index) } as CSSProperties}>
-              {item ? <CanvasAdaptiveImage src={item.previewUrl} assetId={item.id} detailEnabled={expanded || index === 0} alt={`图片生成 ${data.sequence ?? 1} 的第 ${index + 1} 张结果`}
+              {item ? <CanvasAdaptiveImage src={item.previewUrl} assetId={item.id} detailEnabled={expanded || index === 0} alt={`${generatorLabel} ${data.sequence ?? 1} 的第 ${index + 1} 张结果`}
                 className={styles.generatorImage} loading="eager"
                 onLoad={(event) => markOutputReady(item, event.currentTarget)}
                 onError={() => setReadyOutputs((current) => { const next = new Set(current); next.delete(`${item.id}:${item.previewUrl}`); return next; })} />
@@ -190,10 +194,10 @@ export function CanvasGeneratorNode({ id, data, selected }: NodeProps<CanvasGene
           {expanded ? <ChevronsLeft size={14} aria-hidden="true" /> : <ChevronsRight size={14} aria-hidden="true" />}
         </button>}
       </div>
-      <Handle type="target" id="reference" position={Position.Left} className={styles.generatorInputHandle} aria-label="连接图片或文本" title="图片或文本"
+      {!isCanvasBatchGeneratorId(id) && <Handle type="target" id="reference" position={Position.Left} className={styles.generatorInputHandle} aria-label="连接图片或文本" title="图片或文本"
         role="button" tabIndex={0} onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); event.currentTarget.click(); }
-        }} />
+        }} />}
       <NodeToolbar isVisible={cropRequest?.nodeId === id ? false : undefined} position={Position.Bottom} offset={12} align={align} style={{ width: toolbarWidth }} className={`${styles.generatorToolbar} nodrag nopan nowheel`}>
         <div ref={setHost} className={styles.generatorComposerHost} />
       </NodeToolbar>

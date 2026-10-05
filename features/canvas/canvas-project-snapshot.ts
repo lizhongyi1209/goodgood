@@ -6,6 +6,7 @@ import type { GenerationJob } from "@/shared/contracts/generation";
 import { privateImageUrls } from "@/shared/private-image-urls.mjs";
 import type { CanvasNode } from "./canvas-workspace";
 import { normalizeCanvasInputEdge } from "./canvas-text-input.mjs";
+import { isCanvasBatchGeneratorId } from "./canvas-batch-reference-model.mjs";
 import { canvasGeneratorJobs } from "./canvas-image-prompt-batch.mjs";
 import { canvasGeneratorSlots, canvasImageSlotFrozenInput } from "./canvas-image-slots.mjs";
 import { canvasReferenceInputKeys } from "./canvas-reference-sources.mjs";
@@ -85,6 +86,8 @@ function persistNode(node: CanvasNode): CanvasProjectNode | null {
     const jobs = canvasGeneratorJobs(node.data);
     return {
       ...base, type: "imageGenerator", sequence: node.data.sequence,
+      ...(isCanvasBatchGeneratorId(node.id) ? { batchConfiguration: { mode: node.data.batchMode === "paired" ? "paired" as const : "all" as const,
+        groupCount: typeof node.data.batchGroupCount === "number" ? Math.max(1, Math.min(5, node.data.batchGroupCount)) : 1 } } : {}),
       ...(node.data.slots ? { imageSlots: canvasGeneratorSlots(node.data).map((slot) => ({
         id: slot.id, requestKey: slot.requestKey, retryOfJobId: slot.retryOfJobId,
         outputIndex: slot.outputIndex,
@@ -191,7 +194,7 @@ function remoteCanvasPageDocument(document: CanvasPageDocument, pageIndex = 0): 
     node.type === "imageGenerator" ||
     node.type === "imageResult" && node.jobId && !node.jobId.startsWith("pending_") ||
     Boolean(node.asset?.id),
-  ).map(({ pendingFileId: _pendingFileId, localJob: _localJob, localJobs: _localJobs, ...node }) => {
+  ).map(({ pendingFileId: _pendingFileId, batchConfiguration: _batchConfiguration, localJob: _localJob, localJobs: _localJobs, ...node }) => {
     if (node.type !== "imageGenerator") return node;
     if (!node.jobIds && !node.jobId?.startsWith("pending_")) return node;
     const jobIds = node.jobIds?.filter((id) => !id.startsWith("pending_"));

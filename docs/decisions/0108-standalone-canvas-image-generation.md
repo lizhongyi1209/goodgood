@@ -313,3 +313,8 @@ The operator replaces GG-365's dimmed source and gray target border with live di
 ## GG-370 · Independent batch-reference generator (2026-10-05)
 
 The user accepts a dedicated in-canvas batch generator with common references and one to five candidate groups. Common images enter every request; one image is selected from each active candidate group. The ten-reference limit applies to each actual deduplicated request, not the size of candidate pools. Reuse the existing chat settings, frozen inputs and concurrent independent task runner; keep ordinary generators unchanged. Offer Cartesian combinations and ordered pairing, with singleton groups reusable and incompatible multi-item counts blocking submission. Persist stable grouping/order/mode, preserve owner-checked image reads, and retry only the selected frozen failed task. No connection or restore submits generation. Reuse the current cloud image-generator/edge envelope through a documented reversible adapter if fully representable; do not send unknown fields to the current Web or bypass reference authorization. New pricing follows actual reference counts. The user's GG-276 code-only agreement remains: source integration and regression sources, no automatic checks/build/runtime activation or paid requests.
+
+
+### GG-370 实施载体补充（2026-10-05）
+
+独立节点使用单独渲染/面板与ID前缀，复用imageGenerator已授权wire类型及结果runner。候选组/模式由已有边handle保存，公共参考与普通节点不改契约；空组数量/空模式的batchConfiguration仅浏览器保存，远端剥离，云按有效边恢复。执行沿原1MiB保存边界预检，不新增批量数量/并发硬上限。

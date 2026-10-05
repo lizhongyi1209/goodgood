@@ -1069,3 +1069,8 @@ Browser page JSON carries optional group referenceOrder (member node IDs) and ed
 ## GG-365 · Target reference order
 
 Browser generator draft.referenceOrder optionally stores direct:referenceId and linked:sourceNodeId tokens. Pending direct upload IDs remap when confirmed; linked tokens survive conversion keys/ungrouping. Target history restores only this draft field and copying remaps only copied linked sources. Source group referenceOrder remains independent. Cloud encoding strips draft.referenceOrder, reorders existing directReferenceIds and records linked positions 0–9 in reserved reforder-N: edge IDs. Decode ranks before collapsing GG-363 group edges and restores converted IDs; direct slots fill the remaining positions. Long legacy IDs normalize to a compact unique ID with the same relation/import. No server fields, schema version or migration changes.
+
+
+## GG-370 · 批量节点保存
+
+imageGenerator节点ID的batch-generator-前缀保存独立节点身份；已有edge.targetHandle保存候选组索引和all/paired模式，云兼容适配对同一源组的不同端口分别展开和折叠。公共直接参考沿directReferenceIds，候选池沿图源节点/边/目标排除；实际任务沿imageSlots的冻结输入和requestKey，不增加未经服务端接受字段。batchConfiguration={mode,groupCount}仅浏览器保存/历史/复制与空行恢复，remoteCanvasProjectDocument显式剥离；云恢复根据有效候选端口重建组数/模式，未连接的末尾空组或完全空节点模式仅本机恢复，不作为云内容承诺。预提交用实际远端文档空slots基线+准确冻结记录UTF-8/逗号预算沿1MiB；保存后真实文档再次判断，超容量不发送收费请求。

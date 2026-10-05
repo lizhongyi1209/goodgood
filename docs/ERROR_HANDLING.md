@@ -1024,3 +1024,8 @@ GG-363 rebuilt visibleEdges on every graphRevision, including empty/ordinary gra
 Sorting makes no generation or upload request. Single/empty lists and busy generators do not start; outside drops, Escape, pointer cancellation/capture loss, window blur and source/scope invalidation leave order intact. Commit validates live source/target IDs and the current target lock. Loading/failed references keep their status, retry and generation gate; upload completion remaps a sorted pending direct ID instead of losing its position. Existing IndexedDB/CAS save errors remain authoritative.
 
 GG-367 preview is isolated from the saved order. An altered reference list, resized tray or changed canvas zoom cancels measured-slot displacement rather than submitting stale geometry. Release within the image row (including gaps) commits once; outside/text-item drops and cancellation clear transforms with no draft/history edit. Animated thumbnails never serve as insertion hit targets.
+
+
+## GG-370 · 批量生成边界
+
+空组/素材未完成/失败、配对多图组数量不一致、实际单请求超10张、报价缺失/余额不足或画布容量超1MiB时不提交，保留素材/提示词/参数。容量门控作用于整次批量，不静默截断候选组合，也不新增人为总任务上限。每次请求保持原单图slot幂等：未知提交沿原key查询，已确认失败按原冻结组合独立重试，成功结果不重复。总额为各实际参考数量档报价累加，提交并非跨任务资金原子事务，后台仍按每任务预留/结算/释放。
