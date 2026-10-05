@@ -89,7 +89,7 @@ import { canvasGeneratorJobs, canvasGeneratorOutputs, canvasImageBatchCreditAmou
 import { pendingCanvasImageJob, pendingCanvasImageSlots, retryCanvasImageSlot, runCanvasGeneratorSlots } from "./canvas-generator-batch";
 import { canvasGeneratorSlots, canvasGeneratorResultSlots, canvasImageSlotCanRetry, recoverCanvasImageSlot, type CanvasImageSlot } from "./canvas-image-slots.mjs";
 import { DEFAULT_TEXT_GENERATION_MODEL } from "@/shared/contracts/text-generation.mjs";
-import type { CanvasLibraryAsset } from "./canvas-asset-panel";
+import type { CanvasLibraryAsset, CanvasLibraryFolder } from "./canvas-asset-panel";
 import { upsertCanvasJobNodes } from "./canvas-job-nodes.mjs";
 import { initialCanvasImageSize } from "./canvas-image-size.mjs";
 import { canvasImagePositions, selectCanvasImageFiles, selectCanvasMediaFiles } from "./canvas-local-images.mjs";
@@ -112,6 +112,7 @@ import { createCanvasReferenceEdgeView } from "./canvas-reference-edge-view.mjs"
 import { directReferenceOrderKey, linkedReferenceOrderKey, orderCanvasReferences, moveCanvasReference, remapCanvasReferenceOrder } from "./canvas-reference-order.mjs";
 import { useCanvasReferenceReorder } from "./use-canvas-reference-reorder";
 import { measureCanvasGroupFootprints } from "./canvas-group-footprints";
+import { isCanvasAlbumId, CANVAS_FOLDER_DRAG_TYPE, CANVAS_ALBUM_DRAG_HANDLE, CANVAS_ALBUM_INITIAL_SIZE, canvasAlbumChildFlags, createCanvasFolderAlbumNodes } from "./canvas-folder-album.mjs";
 import { CanvasBatchReferencePanel } from "./canvas-batch-reference-panel";
 import { isCanvasBatchGeneratorId, parseCanvasBatchReferenceHandle, canvasBatchReferenceHandle, canvasBatchModeFromEdges, canvasBatchGroupCountFromEdges, canvasReferenceGroupEdgeId } from "./canvas-batch-reference-model.mjs";
 import { createCanvasBatchDocumentBudget, CANVAS_BATCH_DOCUMENT_BYTE_LIMIT as CANVAS_BATCH_DOCUMENT_LIMIT } from "./canvas-batch-document-budget.mjs";
@@ -378,6 +379,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
   const referenceImportRef = useRef<(key: string, assetId: string, name: string) => void>(() => {});
   const generatedReferenceImportsRef = useRef<ReturnType<typeof createCanvasGeneratedReferenceImporter> | null>(null);
   const draggedAssetRef = useRef<CanvasLibraryAsset | null>(null);
+  const draggedFolderRef = useRef<{ folder: CanvasLibraryFolder; ownerKey: string | null; pageId: string } | null>(null);
   const mountedRef = useRef(true);
   const busyRef = useRef(false);
   const busyGeneratorIdsRef = useRef(new Set<string>());
@@ -1035,7 +1037,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     const offset = 32 * clipboard.pasteCount;
     const ids = new Map(clipboard.nodes.map((node) => [node.id, node.type === "imageGenerator"
       ? `${isCanvasBatchGeneratorId(node.id) ? "batch-generator" : "generator"}-${crypto.randomUUID()}` : node.type === "imageResult"
-        ? `canvas-${crypto.randomUUID()}-0` : node.type === "group" ? `group-${crypto.randomUUID()}` : node.type === "textEditor" ? `text-${crypto.randomUUID()}` : node.type === "textGenerator" ? `text-generator-${crypto.randomUUID()}` : `asset-${crypto.randomUUID()}`] as const));
+        ? `canvas-${crypto.randomUUID()}-0` : node.type === "group" ? `${isCanvasAlbumId(node.id) ? "album" : "group"}-${crypto.randomUUID()}` : node.type === "textEditor" ? `text-${crypto.randomUUID()}` : node.type === "textGenerator" ? `text-generator-${crypto.randomUUID()}` : `asset-${crypto.randomUUID()}`] as const));
     let nextSequence = Math.max(0, ...instance.getNodes().filter((node) => node.type === "imageGenerator")
       .map((node) => node.data.sequence ?? 0));
     const pastedNodes: CanvasNode[] = clipboard.nodes.map((node) => {
@@ -1342,6 +1344,23 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     scheduleProjectSnapshot(true); return true;
   };
 
+  const addLibraryFolder = (folder: CanvasLibraryFolder, screenPoint: { x: number; y: number }) => {
+    const instance = flowRef.current;
+    if (!instance || !projectReady || pageSwitchingRef.current || session?.access.status !== "active" || session.preview) return;
+    const point = instance.screenToFlowPosition(screenPoint);
+    if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) return;
+    const albumId = `album-${crypto.randomUUID()}`;
+    let albumNodes: CanvasNode[];
+    try {
+      albumNodes = createCanvasFolderAlbumNodes(folder,
+        { x: point.x - CANVAS_ALBUM_INITIAL_SIZE.width / 2, y: point.y - CANVAS_ALBUM_INITIAL_SIZE.height / 2 },
+        albumId, folder.images.map(() => `album-image-${crypto.randomUUID()}`));
+    } catch (error) { setFormError(error instanceof Error ? error.message : "文件夹暂时无法载入，请刷新资产后重试。"); return; }
+    captureCanvasHistory();
+    instance.setNodes((current) => [...current.map((node) => node.selected ? { ...node, selected: false } : node), ...albumNodes]);
+    scheduleProjectSnapshot(true); scheduleCanvasHistory(); setFormError(null);
+  };
+
   const addLibraryAsset = async (item: CanvasLibraryAsset, screenPoint: { x: number; y: number }) => {
     const pageId = activePageIdRef.current;
     if (!flow) return;
@@ -1472,7 +1491,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     const bucketEdges = edges.filter((edge) => edge.target !== connection.target ||
       (parseCanvasBatchReferenceHandle(edge.targetHandle)?.index ?? 0) === bucket);
     const direct = bucket === 0 ? (referencesByGenerator[connection.target] ?? []).map((item) => item.reference) : [];
-    const preflight = planCanvasReferenceConnection(instance.getNodes(), bucketEdges, { ...connection, targetHandle: "reference" },
+    const preflight = planCanvasReferenceConnection(instance.getNodes(), bucketEdges, connection,
       members, direct, convertedReferences, Number.MAX_SAFE_INTEGER);
     if (!preflight.valid) return preflight;
     const allInputs = canvasReferenceInputs(instance.getNodes(), edges);
@@ -1543,6 +1562,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     commitGroupNodes(before, createCanvasGroup(before, "group-" + crypto.randomUUID(), footprints));
   };
   const ungroupCanvasSelection = (ids: string[], discardedEdgeIds: string[] = []) => {
+    ids = ids.filter((id) => !isCanvasAlbumId(id));
     const instance = flowRef.current;
     if (!instance || !ids.length) return;
     captureCanvasHistory();
@@ -1699,6 +1719,12 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
   };
 
   const onCanvasDragOver = (event: DragEvent<HTMLElement>) => {
+    if (draggedFolderRef.current && Array.from(event.dataTransfer.types).includes(CANVAS_FOLDER_DRAG_TYPE)) {
+      event.preventDefault();
+      const sidebar = document.getElementById("canvas-asset-sidebar")?.getBoundingClientRect();
+      const allowed = !pageSwitchingRef.current && projectReady && !(sidebar && event.clientX < sidebar.right);
+      event.dataTransfer.dropEffect = allowed ? "copy" : "none"; setDropActive(allowed); return;
+    }
     if (draggedAssetRef.current && Array.from(event.dataTransfer.types).includes("application/x-goodgood-canvas-asset")) {
       event.preventDefault();
       const sidebar = document.getElementById("canvas-asset-sidebar")?.getBoundingClientRect();
@@ -1714,6 +1740,14 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
   };
 
   const onCanvasDrop = (event: DragEvent<HTMLElement>) => {
+    const folderDrag = draggedFolderRef.current;
+    if (folderDrag && Array.from(event.dataTransfer.types).includes(CANVAS_FOLDER_DRAG_TYPE)) {
+      event.preventDefault(); draggedFolderRef.current = null; setDropActive(false);
+      const sidebar = document.getElementById("canvas-asset-sidebar")?.getBoundingClientRect();
+      if (sidebar && event.clientX < sidebar.right || folderDrag.ownerKey !== projectOwnerKeyRef.current ||
+          folderDrag.pageId !== activePageIdRef.current || pageSwitchingRef.current) return;
+      addLibraryFolder(folderDrag.folder, { x: event.clientX, y: event.clientY }); return;
+    }
     const draggedAsset = draggedAssetRef.current;
     if (draggedAsset && Array.from(event.dataTransfer.types).includes("application/x-goodgood-canvas-asset")) {
       event.preventDefault();
@@ -2242,9 +2276,10 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       ]);
       const restoredNodes = await Promise.all(document.nodes.map(async (saved): Promise<CanvasNode | null> => {
         const style = saved.size ? { width: saved.size.width, height: saved.size.height } : undefined;
-        const base = { id: saved.id, position: saved.position, ...(style ? { style } : {}),
+        const base = { id: saved.id, position: saved.position, ...canvasAlbumChildFlags(saved.parentId), ...(style ? { style } : {}),
           ...(saved.parentId ? { parentId: saved.parentId } : {}) };
-        if (saved.type === "group") return { ...base, type: "group", zIndex: -1, dragHandle: CANVAS_GROUP_DRAG_HANDLE,
+        if (saved.type === "group") return { ...base, type: "group", zIndex: isCanvasAlbumId(saved.id) ? 0 : -1,
+          dragHandle: isCanvasAlbumId(saved.id) ? CANVAS_ALBUM_DRAG_HANDLE : CANVAS_GROUP_DRAG_HANDLE,
           width: saved.size?.width ?? 200, height: saved.size?.height ?? 120,
           style: style ?? { width: 200, height: 120 }, data: { name: saved.name ?? "组", emoji: saved.emoji, sizing: saved.groupSizing, referenceOrder: saved.referenceOrder ? [...saved.referenceOrder] : undefined } };
         if (saved.type === "textEditor") return {
@@ -2602,8 +2637,10 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
         }}
         onProjectGraphChange={(settled) => { setTextRevision((value) => value + 1); scheduleProjectSnapshot(settled); scheduleCanvasHistory(); }}
         onViewportSettled={scheduleViewportPreference}
-        onAssetDragStart={(item) => { draggedAssetRef.current = item; }}
-        onAssetDragEnd={() => { draggedAssetRef.current = null; setDropActive(false); }}
+        onAssetDragStart={(item) => { draggedFolderRef.current = null; draggedAssetRef.current = item; }}
+        onFolderDragStart={(folder) => { draggedAssetRef.current = null;
+          draggedFolderRef.current = { folder, ownerKey: projectOwnerKeyRef.current, pageId: activePageIdRef.current }; }}
+        onAssetDragEnd={() => { draggedFolderRef.current = null; draggedAssetRef.current = null; setDropActive(false); }}
         onInit={(instance) => {
         flowRef.current = instance;
         setFlow(instance);

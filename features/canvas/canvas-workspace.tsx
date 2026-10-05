@@ -26,7 +26,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { isTextAssetId, TEXT_ASSETS_UPDATED_EVENT, type TextAssetsUpdatedDetail } from "@/shared/contracts/text-assets.mjs";
-import { CanvasAssetPanel, type CanvasLibraryAsset } from "./canvas-asset-panel";
+import { CanvasAssetPanel, type CanvasLibraryAsset, type CanvasLibraryFolder } from "./canvas-asset-panel";
 import { CanvasResultNode, type CanvasResultNodeData } from "./canvas-result-node";
 import { CanvasSourceNode as CanvasSourceImageNode, type CanvasSourceNodeData } from "./canvas-source-node";
 import { CanvasVideoNode as CanvasSourceVideoNode, type CanvasVideoNodeData } from "./canvas-video-node";
@@ -40,7 +40,9 @@ import { CanvasGeneratorHostContext } from "./canvas-generator-host";
 import { CanvasImagePreviewProvider } from "./canvas-adaptive-image";
 import { CanvasSelectionControls } from "./canvas-selection-controls";
 import { CanvasBatchReferenceProvider, CanvasReferenceConnectionKeyboard } from "./canvas-batch-reference-handle";
-import { CanvasGroupNode, type CanvasGroupNodeType } from "./canvas-group-node";
+import { type CanvasGroupNodeType } from "./canvas-group-node";
+import { CanvasGroupDisplayNode } from "./canvas-folder-album-node";
+import { isCanvasAlbumId } from "./canvas-folder-album.mjs";
 import { CanvasGroupActionsContext } from "./canvas-group-context";
 import { CanvasGroupBounds } from "./canvas-group-bounds";
 import { canGroupCanvasSelection } from "./canvas-groups.mjs";
@@ -67,7 +69,7 @@ export type CanvasNode = CanvasResultNodeType | CanvasSourceNode | CanvasVideoNo
 export const canvasReferenceEdgeStyle = { stroke: "#a1a1aa", strokeWidth: 1.2 } as const;
 export const canvasReferenceEdgeCurvature = 0.18;
 
-const nodeTypes = { imageResult: CanvasResultNode, sourceImage: CanvasSourceImageNode, sourceVideo: CanvasSourceVideoNode, sourceAudio: CanvasAudioNode, imageGenerator: CanvasImageGeneratorNode, textEditor: CanvasTextNode, textGenerator: CanvasTextGeneratorNode, group: CanvasGroupNode };
+const nodeTypes = { imageResult: CanvasResultNode, sourceImage: CanvasSourceImageNode, sourceVideo: CanvasSourceVideoNode, sourceAudio: CanvasAudioNode, imageGenerator: CanvasImageGeneratorNode, textEditor: CanvasTextNode, textGenerator: CanvasTextGeneratorNode, group: CanvasGroupDisplayNode };
 const initialNodes: CanvasNode[] = [];
 
 function CanvasProjectChangeObserver({ onChange }: Readonly<{ onChange: () => void }>) {
@@ -164,6 +166,7 @@ export function CanvasWorkspace({
   assetSidebarWidth,
   onAssetSidebarWidthChange,
   onAssetDragStart,
+  onFolderDragStart,
   onAssetDragEnd,
   edges,
   onEdgesChange,
@@ -207,6 +210,7 @@ export function CanvasWorkspace({
   assetSidebarWidth: number | null;
   onAssetSidebarWidthChange: (width: number) => void;
   onAssetDragStart: (item: CanvasLibraryAsset) => void;
+  onFolderDragStart: (folder: CanvasLibraryFolder) => void;
   onAssetDragEnd: () => void;
   edges: Edge[];
   onEdgesChange: (changes: EdgeChange[]) => void;
@@ -309,7 +313,7 @@ export function CanvasWorkspace({
       event.preventDefault(); event.stopPropagation();
       const nodes = flow.getNodes();
       if (event.shiftKey) {
-        const groups = nodes.filter((node) => node.selected && node.type === "group").map((node) => node.id);
+        const groups = nodes.filter((node) => node.selected && node.type === "group" && !isCanvasAlbumId(node.id)).map((node) => node.id);
         if (groups.length) onUngroup(groups);
       } else if (canGroupCanvasSelection(nodes)) {
         onGroupSelection();
@@ -343,10 +347,13 @@ export function CanvasWorkspace({
       if (!nodes.length && !edges.length) return;
       event.stopPropagation();
       onBeforeGraphEdit();
-      const groupIds = nodes.filter((node) => node.type === "group").map((node) => node.id);
+      const groupIds = nodes.filter((node) => node.type === "group" && !isCanvasAlbumId(node.id)).map((node) => node.id);
       if (groupIds.length) onUngroup(groupIds, edges.map((edge) => edge.id));
       // React Flow also removes connected edges and dispatches onEdgesChange/onNodesChange.
-      void flow.deleteElements({ nodes: nodes.filter((node) => node.type !== "group"), edges }).finally(() => {
+      const albumIds = new Set(nodes.filter((node) => isCanvasAlbumId(node.id)).map((node) => node.id));
+      const deleteNodes = [...nodes.filter((node) => node.type !== "group" || albumIds.has(node.id)),
+        ...flow.getNodes().filter((node) => node.parentId && albumIds.has(node.parentId) && !nodes.some((selected) => selected.id === node.id))];
+      void flow.deleteElements({ nodes: deleteNodes, edges }).finally(() => {
         onProjectGraphChange(true); canvasRef.current?.focus({ preventScroll: true });
       });
     }
@@ -446,7 +453,7 @@ export function CanvasWorkspace({
       {assetsOpen && (
         <aside id="canvas-asset-sidebar" className={styles.assetsSidebar} aria-label="资产列表">
           <CanvasAssetPanel enabled={assetLibraryEnabled} assetRevision={assetRevision} downloadScopeKey={downloadScopeKey}
-            onAssetDragStart={onAssetDragStart} onAssetDragEnd={onAssetDragEnd} />
+            onAssetDragStart={onAssetDragStart} onFolderDragStart={onFolderDragStart} onAssetDragEnd={onAssetDragEnd} />
           <div className={styles.assetsResizeHandle} role="separator" aria-label="调整资产栏宽度"
             aria-orientation="vertical" aria-controls="canvas-asset-sidebar"
             aria-valuemin={248} aria-valuemax={400} aria-valuenow={assetSidebarWidth ?? 248} tabIndex={0}

@@ -1074,3 +1074,7 @@ Browser generator draft.referenceOrder optionally stores direct:referenceId and 
 ## GG-370 · 批量节点保存
 
 imageGenerator节点ID的batch-generator-前缀保存独立节点身份；已有edge.targetHandle保存候选组索引和all/paired模式，云兼容适配对同一源组的不同端口分别展开和折叠。公共直接参考沿directReferenceIds，候选池沿图源节点/边/目标排除；实际任务沿imageSlots的冻结输入和requestKey，不增加未经服务端接受字段。batchConfiguration={mode,groupCount}仅浏览器保存/历史/复制与空行恢复，remoteCanvasProjectDocument显式剥离；云恢复根据有效候选端口重建组数/模式，未连接的末尾空组或完全空节点模式仅本机恢复，不作为云内容承诺。预提交用实际远端文档空slots基线+准确冻结记录UTF-8/逗号预算沿1MiB；保存后真实文档再次判断，超容量不发送收费请求。
+
+## GG-371 · 文件夹快照保存
+
+album-UUID为相册group节点，名称沿原folder.name，尺寸及groupSizing=manual沿旧字段；隐藏sourceImage成员保留真实generated/reference资产和稳定member顺序。相册保存的是拖入时图片集合，不在ID/name塞入文件夹配置、外部URL或凭证；不存在云实时文件夹同步承诺。hidden/selectable/draggable/connectable等呈现属性根据parentId重建，不写服务端未知字段。云参考组成员边适配保持实际ID授权与目标独立排除，复制映射相册/成员/边与converted输入键。删除仅删画布节点与连线，不删除真实素材。

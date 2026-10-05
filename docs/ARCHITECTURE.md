@@ -1173,3 +1173,7 @@ GG-367 adds canvas-reference-drag-layout for transient transforms from frozen un
 ## GG-370 · 批量参考执行边界
 
 新增独立节点路由/组件、参考面板、纯组合planner与文档预算helper。浏览器用batch-generator-前缀辨别独立节点，云wire仍为imageGenerator；公共端口reference、候选端口batch-all-N/batch-paired-N编码1–5组及模式，服务端既有handle白名单字符串契约接收，不扩展模型provider/API。云参考组展开/折叠按目标端口区分，解组、复制及转换键保留端口。引用沿源资产与既有授权转换，不放入提示词/名称躲避校验。按桶去重后planner按实际单请求去重，惰性组合及精确引用数分布供报价；逐组合快照输入接现有slot runner、幂等/冻结保存/失败重试。GG-276本轮不更新Web/Worker/生产。
+
+## GG-371 · 相册兼容载体
+
+文件夹拖放从侧栏完整、当前授权的数据集合读取arrangements归属和图片项，不从外部拖放文本解析URL或资产身份。新相册由group wire及album-ID辨识，sourceImage隐藏子节点保持每张真实资产ID/kind/name/metadata；原快照/云参考组适配保存完整成员，恢复按相册父ID重建隐藏/不可单选/不可拖/不可连的子节点。专用gallery渲染所有图片，普通组路由保持。相册排除普通组尺寸计算与解散，删除/复制作整体；连接边按GG-370候选端口已有分桶/所有权转换展开，不新增后台类型/API或数据迁移。组合预览以随机索引分页，在庞大笛卡尔积中直接定位最多12行，不遍历之前组合，不创建全量DOM。
