@@ -1,0 +1,10 @@
+import type { CanvasNode } from "./canvas-workspace";
+import type { CanvasLibraryAsset, CanvasLibraryFolder } from "./canvas-asset-panel";
+import type { AssetFolder, AssetArrangement } from "../assets/http-asset-organization";
+export const CANVAS_FOLDER_DRAG_TYPE: "application/x-goodgood-canvas-folder";
+export const CANVAS_ALBUM_DRAG_HANDLE: ".canvas-album-drag-handle";
+export const CANVAS_ALBUM_INITIAL_SIZE: Readonly<{ width: 360; height: 300 }>;
+export function isCanvasAlbumId(id: string | null | undefined): boolean;
+export function canvasAlbumChildFlags(parentId: string | null | undefined): Partial<Pick<CanvasNode, "hidden" | "selectable" | "draggable" | "connectable">>;
+export function selectCanvasFolderAlbum(data: Readonly<{ folders: readonly AssetFolder[]; arrangements: readonly AssetArrangement[]; items: readonly CanvasLibraryAsset[] }> | null, folderId: string | null | undefined): CanvasLibraryFolder | null;
+export function createCanvasFolderAlbumNodes(folder: CanvasLibraryFolder, position: Readonly<{ x: number; y: number }>, id: string, memberIds: readonly string[]): CanvasNode[];

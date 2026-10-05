@@ -1,3 +1,4 @@
+import { isCanvasAlbumId } from "./canvas-folder-album.mjs";
 import { unionCanvasBounds } from "./canvas-selection-layout.mjs";
 
 export const CANVAS_GROUP_DRAG_HANDLE = ".canvas-group-drag-handle";
@@ -15,6 +16,7 @@ export function canvasSelectionWithMembers(nodes) {
 }
 
 export function canGroupCanvasSelection(nodes) {
+  if (nodes.some((node) => node.selected && (isCanvasAlbumId(node.id) || isCanvasAlbumId(node.parentId)))) return false;
   const ids = new Set(nodes.filter((node) => node.selected).map((node) => node.id));
   const roots = nodes.filter((node) => ids.has(node.id) && !ids.has(node.parentId));
   return roots.length >= 2 && canvasSelectionWithMembers(nodes).filter((node) => node.type !== "group").length >= 2;
@@ -46,6 +48,7 @@ function groupFrame(bounds) {
 
 /** Required visible-content envelope, also used by native resize constraints. */
 export function canvasGroupContentBounds(nodes, groupId, footprints = []) {
+  if (isCanvasAlbumId(groupId)) return null;
   const byId = new Map(footprints.map((item) => [item.id, item.bounds]));
   const members = nodes.filter((node) => node.parentId === groupId);
   const bounds = unionCanvasBounds(members.map((node) => byId.get(node.id) ?? fallbackFootprint(node, nodes)));
@@ -104,7 +107,7 @@ export function createCanvasGroup(nodes, id, footprints = []) {
 }
 
 export function ungroupCanvasNodes(nodes, groupIds) {
-  const ids = new Set(groupIds);
+  const ids = new Set(groupIds.filter((id) => !isCanvasAlbumId(id)));
   if (!nodes.some((node) => node.type === "group" && ids.has(node.id))) return nodes;
   return nodes.filter((node) => node.type !== "group" || !ids.has(node.id)).map((node) => {
     if (!ids.has(node.parentId)) return node;
@@ -117,7 +120,7 @@ export function ungroupCanvasNodes(nodes, groupIds) {
 export function fitCanvasGroups(nodes, footprints = []) {
   const byId = new Map(footprints.map((item) => [item.id, item.bounds]));
   const frames = new Map();
-  for (const group of nodes.filter((node) => node.type === "group")) {
+  for (const group of nodes.filter((node) => node.type === "group" && !isCanvasAlbumId(node.id))) {
     const members = nodes.filter((node) => node.parentId === group.id);
     if (!members.length) continue;
     const bounds = unionCanvasBounds(members.map((node) => byId.get(node.id) ?? fallbackFootprint(node, nodes)));

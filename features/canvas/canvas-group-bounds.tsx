@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useReactFlow, useStoreApi } from "@xyflow/react";
+import { isCanvasAlbumId } from "./canvas-folder-album.mjs";
 import { fitCanvasGroups } from "./canvas-groups.mjs";
 import { measureCanvasGroupFootprints } from "./canvas-group-footprints";
 import type { CanvasNode } from "./canvas-workspace";
@@ -23,7 +24,7 @@ export function CanvasGroupBounds() {
       if (state.nodes.some((node) => node.dragging || node.resizing)) return;
       if (!dirty && lastNodes === state.nodes) return;
       dirty = false; lastNodes = state.nodes;
-      const members = state.nodes.filter((node) => node.parentId);
+      const members = state.nodes.filter((node) => node.parentId && !isCanvasAlbumId(node.parentId));
       const key = members.map((node) => `${node.id}:${node.parentId}`).join("|");
       if (key !== memberKey) {
         memberKey = key; observer.disconnect();

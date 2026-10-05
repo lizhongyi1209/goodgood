@@ -1,4 +1,5 @@
-import { canvasReferenceGroupEdgeId } from "./canvas-batch-reference-model.mjs";
+import { isCanvasAlbumId } from "./canvas-folder-album.mjs";
+import { isCanvasBatchGeneratorId, parseCanvasBatchReferenceHandle, canvasReferenceGroupEdgeId } from "./canvas-batch-reference-model.mjs";
 import { canvasNodeAbsolutePosition } from "./canvas-groups.mjs";
 import { canvasConnectionCreatesCycle } from "./canvas-text-input.mjs";
 
@@ -58,6 +59,8 @@ export function canvasReferenceInputs(nodes, edges, targetId) {
     if (edge.sourceHandle !== "reference" || targetId && edge.target !== targetId ||
         byId.get(edge.target)?.type !== "imageGenerator") return [];
     const source = byId.get(edge.source);
+    if ((isCanvasAlbumId(source?.id) || isCanvasAlbumId(source?.parentId)) &&
+        !(isCanvasBatchGeneratorId(edge.target) && parseCanvasBatchReferenceHandle(edge.targetHandle))) return [];
     const grouped = source?.type === "group";
     const excluded = new Set(edge.data?.excludedSourceIds ?? edge.excludedSourceIds ?? []);
     const members = grouped ? canvasReferenceGroupMembers(source, nodes) : source ? [source] : [];
@@ -89,7 +92,11 @@ export function uniqueCanvasReferenceInputs(inputs, direct = [], converted = {})
 export function planCanvasReferenceConnection(nodes, edges, connection, members, direct = [], converted = {}, limit = 10) {
   const target = nodes.find((node) => node.id === connection.target);
   const source = nodes.find((node) => node.id === connection.source);
-  if (target?.type !== "imageGenerator" || connection.targetHandle !== "reference" ||
+  const batchPort = isCanvasBatchGeneratorId(connection.target) && parseCanvasBatchReferenceHandle(connection.targetHandle);
+  if ((isCanvasAlbumId(source?.id) || isCanvasAlbumId(source?.parentId)) && !batchPort) {
+    return { valid: false, message: "请将相册连接到批量生成的素材组。" };
+  }
+  if (target?.type !== "imageGenerator" || (connection.targetHandle !== "reference" && !batchPort) ||
       !["reference", CANVAS_BATCH_REFERENCE_HANDLE].includes(connection.sourceHandle) || !members.length ||
       members.some((node) => !canConnectCanvasImage(node))) return { valid: false, message: "请选择可用的图片，连接到图片生成器。" };
   if (connection.sourceHandle !== CANVAS_BATCH_REFERENCE_HANDLE &&
@@ -119,7 +126,7 @@ export function planCanvasReferenceConnection(nodes, edges, connection, members,
 }
 
 export function expandCanvasGroupReferences(nodes, edges, groupIds, converted = {}) {
-  const removed = new Set(groupIds), nextConverted = { ...converted };
+  const removed = new Set(groupIds.filter((id) => !isCanvasAlbumId(id))), nextConverted = { ...converted };
   const nextEdges = edges.flatMap((edge) => {
     if (!removed.has(edge.source)) return [edge];
     const inputs = canvasReferenceInputs(nodes, [edge]);

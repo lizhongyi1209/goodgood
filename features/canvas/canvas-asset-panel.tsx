@@ -22,6 +22,7 @@ import { imageDownloadFilename } from "@/features/assets/image-download";
 import { listPrivateVideoMaterials } from "@/features/creation/http-video-materials";
 import { listReferenceMaterials } from "@/features/references/http-reference-library";
 import { privateImageUrls } from "@/shared/private-image-urls.mjs";
+import { CANVAS_FOLDER_DRAG_TYPE, selectCanvasFolderAlbum } from "./canvas-folder-album.mjs";
 import { CanvasAssetAddCard } from "./canvas-asset-add-card";
 import { canvasImageDownloadForAsset, useCanvasImageDownload } from "./canvas-image-download";
 import { canvasAssetDeleteNotice, canvasFolderNameError, deleteCanvasLibraryEntry, nextCanvasFolderName, removeCanvasLibraryEntry, type CanvasLibraryDeleteTarget } from "./canvas-asset-management.mjs";
@@ -42,6 +43,8 @@ export type CanvasLibraryAsset = Readonly<{
   height?: number;
   previewText?: string;
 }>;
+
+export type CanvasLibraryFolder = Readonly<{ id: string; name: string; images: readonly CanvasLibraryAsset[] }>;
 
 type AssetPanelData = Readonly<{
   folders: readonly AssetFolder[];
@@ -301,11 +304,12 @@ function VideoViewer({ item, mediaRevision, refreshVideo, returnFocusTo, onClose
   </Dialog>;
 }
 
-export function CanvasAssetPanel({ enabled, assetRevision, downloadScopeKey, onAssetDragStart, onAssetDragEnd }: Readonly<{
+export function CanvasAssetPanel({ enabled, assetRevision, downloadScopeKey, onAssetDragStart, onFolderDragStart, onAssetDragEnd }: Readonly<{
   enabled: boolean;
   assetRevision: number;
   downloadScopeKey: string;
   onAssetDragStart: (item: CanvasLibraryAsset) => void;
+  onFolderDragStart: (folder: CanvasLibraryFolder) => void;
   onAssetDragEnd: () => void;
 }>) {
   const { download: downloadImage, pendingKey: downloadPendingKey } = useCanvasImageDownload(downloadScopeKey, enabled);
@@ -753,6 +757,19 @@ export function CanvasAssetPanel({ enabled, assetRevision, downloadScopeKey, onA
                 }} type="button" variant="ghost" className={styles.folderCard} data-canvas-asset-context-menu
                 data-drop-available={available || undefined} data-drop-hover={hovering || undefined} data-move-state={phase ?? undefined}
                 aria-busy={phase === "pending"} onClick={() => setFolderId(folder.id)} aria-label={`打开文件夹 ${folder.name}`}
+                draggable={enabled && !managementBlocked && !loading && !error}
+                onDragStart={(event) => {
+                  if (!enabled || managementBlocked || loading || error || managementPendingRef.current || renamePendingRef.current || moverRef.current?.isPending()) {
+                    event.preventDefault(); return;
+                  }
+                  const album = selectCanvasFolderAlbum(data, folder.id);
+                  if (!album) { event.preventDefault(); return; }
+                  event.stopPropagation();
+                  event.dataTransfer.effectAllowed = "copy";
+                  event.dataTransfer.setData(CANVAS_FOLDER_DRAG_TYPE, folder.id);
+                  onFolderDragStart(album);
+                }}
+                onDragEnd={finishAssetDrag}
                 onDragEnter={(event) => folderDragOver(event, folder)} onDragOver={(event) => folderDragOver(event, folder)}
                 onDragLeave={(event) => {
                   if (!(event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget))) setHoveredFolderId((current) => current === folder.id ? null : current);
