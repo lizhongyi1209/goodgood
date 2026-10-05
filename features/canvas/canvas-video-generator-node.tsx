@@ -1,8 +1,11 @@
 "use client";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Handle, NodeToolbar, Position, useReactFlow, useStore, type NodeProps } from "@xyflow/react";
-import { ArrowUp, ChevronDown, Download, FileText, Film, LoaderCircle, Maximize2, Play, Plus, RotateCcw, SlidersHorizontal, Upload, X } from "lucide-react";
+import { ChevronDown, Download, FileText, Film, LoaderCircle, Maximize2, Play, Plus, RotateCcw, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Attachment, AttachmentGroup } from "@/components/ui/attachment";
+import { CreditIcon } from "@/components/ui/credit-icon";
+import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -20,6 +23,8 @@ import { fittedCanvasVideoSize } from "./canvas-video-size";
 import { attachCanvasVideoPreviewPlayback } from "./canvas-video-preview-playback.mjs";
 import { uploadCanvasAssetFile, CANVAS_ASSET_LIBRARY_UPDATED_EVENT } from "./canvas-asset-upload";
 import { CanvasVideoMaterialPicker, type VideoPickerMaterial } from "./canvas-video-material-picker";
+import { CanvasVideoGeneratorPrompt } from "./canvas-video-generator-prompt";
+import { CanvasVideoGeneratorSettings } from "./canvas-video-generator-settings";
 import { CanvasVideoGenerationError, quoteCanvasVideo, submitCanvasVideo, readCanvasVideo, downloadCanvasVideo, retryCanvasVideoSave, retryCanvasVideo, type VideoCreditQuote } from "./http-video-generation";
 import type { CanvasNode, CanvasVideoGeneratorNodeType } from "./canvas-workspace";
 import workspaceStyles from "./canvas-workspace.module.css";
@@ -33,12 +38,6 @@ export type CanvasVideoGeneratorNodeData = Record<string, unknown> & {
 type InputView = { key: string; kind: "image" | "video" | "text"; name: string; edgeId?: string; previewUrl?: string; text?: string;
   material?: VideoMaterial; role?: VideoRole; unavailable?: boolean };
 const phaseLabels = { queued: "排队中", submitting: "提交中", submission_unknown: "提交结果待确认", running: "生成中", saving: "保存中", save_failed: "保存暂未完成", succeeded: "已完成", failed: "生成未完成" };
-function Parameter({ name, value, choices, disabled, onChange }: Readonly<{ name: string; value: string; choices: readonly { value: string; label: string }[]; disabled?: boolean; onChange: (value: string) => void }>) {
-  return <label className={styles.parameter}><span>{name}</span><Select value={value} onValueChange={onChange} disabled={disabled}>
-    <SelectTrigger className={styles.parameterSelect} aria-label={name}><SelectValue /></SelectTrigger>
-    <SelectContent className="nodrag nopan nowheel">{choices.map((choice) => <SelectItem key={choice.value} value={choice.value}>{choice.label}</SelectItem>)}</SelectContent>
-  </Select></label>;
-}
 function VideoPreview({ url, className, label, controls = false }: Readonly<{ url: string; className?: string; label: string; controls?: boolean }>) {
   const ref = useRef<HTMLVideoElement>(null);
   useEffect(() => {
@@ -59,7 +58,7 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
   const [uploading, setUploading] = useState(false); const [posting, setPosting] = useState(false); const [message, setMessage] = useState("");
   const [quote, setQuote] = useState<VideoCreditQuote | null>(null); const [retryQuote, setRetryQuote] = useState<VideoCreditQuote | null>(null); const [quoteError, setQuoteError] = useState(""); const [pollRevision, setPollRevision] = useState(0);
   const [directPreviews, setDirectPreviews] = useState<Record<string, string>>({}); const [playing, setPlaying] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null); const promptRef = useRef<HTMLTextAreaElement>(null); const videoRef = useRef<HTMLVideoElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null); const videoRef = useRef<HTMLVideoElement>(null);
   const playbackRef = useRef<ReturnType<typeof attachCanvasVideoPreviewPlayback> | null>(null);
   const scope = `${context.ownerKey}:${context.workspaceId ?? "personal"}:${context.pageId}`;
   const scopeRef = useRef(scope); scopeRef.current = scope;
@@ -155,15 +154,30 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
     if (!selected || locked) { setModelOpen(false); setTypeOpen(false); if (!selected) setParametersOpen(false); }
   }, [selected, locked]);
   useEffect(() => {
-    const prompt = promptRef.current; if (!prompt) return;
-    prompt.style.height = "auto"; prompt.style.height = `${Math.min(188, Math.max(70, prompt.scrollHeight))}px`;
-  }, [draft.prompt, selected]);
-  useEffect(() => {
     const video = videoRef.current; if (!video || !data.previewUrl) return;
     const playback = attachCanvasVideoPreviewPlayback(video, { page: document, reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)") });
     playback.setEnabled(true); playbackRef.current = playback;
     return () => { playbackRef.current = null; playback.dispose(); };
   }, [data.previewUrl]);
+  useEffect(() => {
+    if (!selected) return;
+    let first = 0;
+    let second = 0;
+    first = requestAnimationFrame(() => {
+      second = requestAnimationFrame(() => {
+        const surface = document.getElementById("canvas-workspace-surface");
+        const toolbar = Array.from(document.querySelectorAll<HTMLElement>(".react-flow__node-toolbar"))
+          .find((element) => element.dataset.id === id && element.classList.contains(workspaceStyles.generatorToolbar));
+        if (!surface || !toolbar) return;
+        const overflow = toolbar.getBoundingClientRect().bottom - surface.getBoundingClientRect().bottom + 14;
+        if (overflow > 0) {
+          const viewport = flow.getViewport();
+          void flow.setViewport({ ...viewport, y: viewport.y - overflow }, { duration: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 180 });
+        }
+      });
+    });
+    return () => { cancelAnimationFrame(first); cancelAnimationFrame(second); };
+  }, [flow, id, selected]);
   const changeType = (type: VideoGenerationType) => {
     const motion = type === "motion_control";
     updateDraft({ type, modelId: motion ? "kling-3.0" : "kling-3.0-omni", resolution: motion && draft.resolution === "4k" ? "1080p" : draft.resolution,
@@ -223,14 +237,16 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
     finally { actionRef.current = false; }
   };
   const nodeWidth = width ?? 320; const visibleLeft = typeof document === "undefined" ? 0 : document.getElementById("canvas-asset-sidebar")?.getBoundingClientRect().right ?? 0;
-  const desiredWidth = Math.min(660, Math.max(520, nodeWidth * zoom), Math.max(120, viewportWidth - visibleLeft - 30));
+  const desiredWidth = Math.min(660, Math.max(120, viewportWidth - visibleLeft - 30));
   const center = screenLeft + nodeWidth * zoom / 2; let align: "start" | "center" | "end" = "center"; let toolbarWidth = desiredWidth;
   if (center - desiredWidth / 2 < visibleLeft + 15) { align = "start"; toolbarWidth = Math.min(desiredWidth, Math.max(120, viewportWidth - screenLeft - 15)); }
   else if (center + desiredWidth / 2 > viewportWidth - 15) { align = "end"; toolbarWidth = Math.min(desiredWidth, Math.max(120, screenLeft + nodeWidth * zoom - visibleLeft - 15)); }
   const ready = !locked && !problem && Boolean(quote); const motion = draft.type === "motion_control";
-  const model = VIDEO_GENERATION_MODELS.find((item) => item.id === draft.modelId)!; const type = VIDEO_GENERATION_TYPES.find((item) => item.id === draft.type)!;
-  const sendHint = !context.enabled ? "画布准备好后可生成" : locked ? "当前任务进行中" : problem ?? quoteError ?? "生成视频";
-  return <TooltipProvider delayDuration={240}>
+  const type = VIDEO_GENERATION_TYPES.find((item) => item.id === draft.type)!;
+  const sendHint = !context.enabled ? "画布准备好后可生成" : locked ? "当前任务进行中" : problem || quoteError || "生成视频（Ctrl/⌘ + Enter）";
+  const validationNotice = problem === "请输入视频描述。" ? "" : problem;
+  const inlineNotice = message || job?.error?.message || (!active && (validationNotice || quoteError));
+  return <TooltipProvider delayDuration={180}>
     <CanvasMediaMetadata kind="video" name={title} nodeWidth={width} pixelWidth={data.pixelWidth} pixelHeight={data.pixelHeight} />
     <article className={`${workspaceStyles.generatorNode} ${styles.result} ${active && job?.state !== "save_failed" && job?.state !== "submission_unknown" ? workspaceStyles.generatorShimmering : ""}`}
       aria-label={title} aria-busy={active || undefined} onMouseEnter={() => playbackRef.current?.setHovering(true)} onMouseLeave={() => playbackRef.current?.setHovering(false)}>
@@ -264,60 +280,105 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
     {selected && <CanvasImageResizeControls />}
     <Handle type="target" position={Position.Left} id="reference" className={workspaceStyles.generatorInputHandle} aria-label="接收文本、图片或视频" />
     <Handle type="source" position={Position.Right} id="video" className={workspaceStyles.referenceOutputHandle} aria-label="输出视频" />
-    <NodeToolbar isVisible={selected} position={Position.Bottom} offset={16} align={align} className={`${workspaceStyles.generatorToolbar} ${styles.toolbar} nodrag nopan nowheel`} style={{ width: toolbarWidth }}>
-      <section className={`${composerStyles.composer} ${composerStyles.composerAttached}`} aria-label="视频生成设置" onPointerDown={(event) => event.stopPropagation()} onWheel={(event) => event.stopPropagation()}>
+    <NodeToolbar isVisible={selected} position={Position.Bottom} offset={12} align={align} className={`${workspaceStyles.generatorToolbar} nodrag nopan nowheel`} style={{ width: toolbarWidth }}>
+      <section className={`${composerStyles.composer} ${composerStyles.composerAttached}`} aria-label="视频生成工具" onPointerDown={(event) => event.stopPropagation()} onWheel={(event) => event.stopPropagation()}>
         <input ref={fileRef} type="file" accept="image/jpeg,image/png,video/mp4" multiple hidden onChange={(event) => void upload(Array.from(event.target.files ?? []))} />
-        <div className={styles.tray}>
-          {views.map((view) => <div key={view.key} className={styles.material} data-unavailable={view.unavailable || undefined} data-invalid={view.kind !== "text" && (!view.role || !videoRolesForType(draft.type, view.kind).includes(view.role)) || undefined}>
-            <Tooltip><TooltipTrigger asChild><button type="button" className={`${styles.thumb} ${view.kind === "text" ? styles.textThumb : ""}`} aria-label={`预览 ${view.name}`}>
-              {view.kind === "image" && view.previewUrl ? <PrivateObjectImage src={view.previewUrl} alt="" /> : view.kind === "video" && view.previewUrl ? <video src={view.previewUrl} muted playsInline preload="metadata" /> : view.kind === "text" ? <FileText size={18} /> : <Film size={18} />}
-            </button></TooltipTrigger><TooltipContent side="top" className={composerStyles.referencePreview}>
-              {view.kind === "image" && view.previewUrl ? <PrivateObjectImage src={view.previewUrl} alt={view.name} /> : view.kind === "video" && view.previewUrl ? <VideoPreview url={view.previewUrl} label={view.name} className={styles.previewVideo} /> : <p className={composerStyles.referenceTextPreview}>{view.text || view.name}</p>}
-            </TooltipContent></Tooltip>
-            <button type="button" className={styles.remove} disabled={locked} aria-label={`移除 ${view.name}`} onClick={() => {
-              if (view.edgeId) context.onRemoveInput(view.edgeId); else updateDraft({ materials: draft.materials.filter((item) => `direct:${item.assetKind}:${item.assetId}` !== view.key) });
-            }}><X size={11} /></button>
-            {view.kind !== "text" && <DropdownMenu modal={false}><DropdownMenuTrigger asChild><button type="button" className={styles.role} disabled={locked || !videoRolesForType(draft.type, view.kind).length} aria-label={`设置 ${view.name} 的用途`}>{view.role ? VIDEO_ROLE_LABELS[view.role] : "不支持"}<ChevronDown size={9} /></button></DropdownMenuTrigger>
+        <AttachmentGroup className={`${composerStyles.referenceTray} ${styles.tray}`} role="group" aria-label="输入附件">
+          {views.map((view) => <div key={view.key} className={styles.material} data-unavailable={view.unavailable || undefined}
+            data-invalid={view.kind !== "text" && (!view.role || !videoRolesForType(draft.type, view.kind).includes(view.role)) || undefined}>
+            <Attachment className={composerStyles.reference} size="xs" state={view.unavailable ? "error" : "done"}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button type="button" className={view.kind === "text" || !view.previewUrl ? composerStyles.referenceTextTrigger : composerStyles.referenceImageTrigger} aria-label={`预览 ${view.name}`}>
+                    {view.kind === "image" && view.previewUrl ? <PrivateObjectImage src={view.previewUrl} alt="" />
+                      : view.kind === "video" && view.previewUrl ? <video src={view.previewUrl} className={styles.referenceVideo} muted playsInline preload="metadata" />
+                      : view.kind === "text" ? <FileText size={20} strokeWidth={1.5} aria-hidden="true" /> : <Film size={20} strokeWidth={1.5} aria-hidden="true" />}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" align="center" sideOffset={8} hideArrow className={composerStyles.referencePreview}>
+                  {view.kind === "image" && view.previewUrl ? <PrivateObjectImage src={view.previewUrl} alt={view.name} loading="eager" />
+                    : view.kind === "video" && view.previewUrl ? <VideoPreview url={view.previewUrl} label={view.name} className={styles.previewVideo} />
+                    : <p className={composerStyles.referenceTextPreview}>{view.text || view.name}</p>}
+                </TooltipContent>
+              </Tooltip>
+              {view.kind !== "text" && <span className={composerStyles.referenceNumber} aria-hidden="true">{views.filter((item) => item.kind !== "text").findIndex((item) => item.key === view.key) + 1}</span>}
+              <button type="button" className={composerStyles.referenceRemove} disabled={locked} aria-label={`移除 ${view.name}`} onClick={() => {
+                if (view.edgeId) context.onRemoveInput(view.edgeId);
+                else updateDraft({ materials: draft.materials.filter((item) => `direct:${item.assetKind}:${item.assetId}` !== view.key) });
+              }}><X size={12} aria-hidden="true" /></button>
+            </Attachment>
+            {view.kind !== "text" && <DropdownMenu modal={false}>
+              <DropdownMenuTrigger asChild><button type="button" className={styles.role} disabled={locked || !videoRolesForType(draft.type, view.kind).length}
+                aria-label={`设置 ${view.name} 的用途`}>{view.role ? VIDEO_ROLE_LABELS[view.role] : "不支持"}<ChevronDown size={9} aria-hidden="true" /></button></DropdownMenuTrigger>
               <DropdownMenuContent className="nodrag nopan nowheel"><DropdownMenuRadioGroup value={view.role ?? ""} onValueChange={(role) => updateDraft({ roles: { ...draft.roles, [view.key]: role as VideoRole } })}>
                 {videoRolesForType(draft.type, view.kind).map((role) => <DropdownMenuRadioItem key={role} value={role}>{VIDEO_ROLE_LABELS[role]}</DropdownMenuRadioItem>)}
-              </DropdownMenuRadioGroup></DropdownMenuContent></DropdownMenu>}
+              </DropdownMenuRadioGroup></DropdownMenuContent>
+            </DropdownMenu>}
           </div>)}
-          <DropdownMenu modal={false}><DropdownMenuTrigger asChild><button type="button" className={styles.add} disabled={locked || views.filter((view) => view.kind !== "text").length >= 8} aria-label="添加素材">{uploading ? <LoaderCircle size={17} className={styles.spinner} /> : <Plus size={19} />}</button></DropdownMenuTrigger>
-            <DropdownMenuContent className="nodrag nopan nowheel"><DropdownMenuItem onSelect={() => fileRef.current?.click()}><Upload size={14} />本地上传</DropdownMenuItem><DropdownMenuItem onSelect={() => setPickerOpen(true)}><Film size={14} />从资产选择</DropdownMenuItem></DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-        <div className={composerStyles.promptArea}><textarea ref={promptRef} className={`${composerStyles.prompt} nodrag nopan nowheel`} value={draft.prompt} readOnly={locked} maxLength={motion ? 2500 : 3072} aria-label="视频提示词" placeholder={type.hint}
-          onPointerDown={() => { setModelOpen(false); setTypeOpen(false); }} onChange={(event) => { setMessage(""); updateDraft({ prompt: event.target.value }); }}
-          onKeyDown={(event) => { if ((event.ctrlKey || event.metaKey) && event.key === "Enter") { event.preventDefault(); if (ready) void generate(); } }} /></div>
+        </AttachmentGroup>
+        <CanvasVideoGeneratorPrompt id={`video-prompt-${id}`} value={draft.prompt} readOnly={locked} maxLength={motion ? 2500 : 3072} width={toolbarWidth}
+          placeholder={connected.some((item) => item.kind === "text") ? "补充视频描述（追加在连接文本之后）…" : `${type.hint}…`} canGenerate={ready}
+          onInteract={() => { setModelOpen(false); setTypeOpen(false); setParametersOpen(false); }}
+          onChange={(prompt) => { setMessage(""); updateDraft({ prompt }); }} onGenerate={() => void generate()} />
         <div className={`${composerStyles.tools} ${styles.footer}`}>
-          <DropdownMenu open={modelOpen} onOpenChange={setModelOpen} modal={false}><DropdownMenuTrigger asChild><button type="button" className={styles.control} disabled={locked} aria-label="选择视频模型"><Film size={14} /><span className={styles.modelLabel}>{model.name}</span><ChevronDown size={11} /></button></DropdownMenuTrigger>
-            <DropdownMenuContent className="nodrag nopan nowheel"><DropdownMenuRadioGroup value={draft.modelId} onValueChange={(value) => changeType(value === "kling-3.0" ? "motion_control" : "text_to_video")}>
-              {VIDEO_GENERATION_MODELS.map((item) => <DropdownMenuRadioItem key={item.id} value={item.id}>{item.name}</DropdownMenuRadioItem>)}
-            </DropdownMenuRadioGroup></DropdownMenuContent></DropdownMenu>
-          <DropdownMenu open={typeOpen} onOpenChange={setTypeOpen} modal={false}><DropdownMenuTrigger asChild><button type="button" className={styles.control} disabled={locked} aria-label="选择生成类型">{type.name}<ChevronDown size={11} /></button></DropdownMenuTrigger>
-            <DropdownMenuContent className="nodrag nopan nowheel"><DropdownMenuRadioGroup value={draft.type} onValueChange={(value) => changeType(value as VideoGenerationType)}>
-              {VIDEO_GENERATION_TYPES.filter((item) => item.modelId === draft.modelId).map((item) => <DropdownMenuRadioItem key={item.id} value={item.id}>{item.name}</DropdownMenuRadioItem>)}
-            </DropdownMenuRadioGroup></DropdownMenuContent></DropdownMenu>
-          <button type="button" className={styles.control} aria-label="视频参数" aria-expanded={parametersOpen} aria-controls={`video-parameters-${id}`} onClick={() => { setParametersOpen(!parametersOpen); setModelOpen(false); setTypeOpen(false); }}><SlidersHorizontal size={13} /><span>{draft.resolution === "4k" ? "4K" : draft.resolution}{!motion ? ` · ${draft.duration}s` : ""}</span></button>
-          <span className={composerStyles.toolSpacer} /><Tooltip><TooltipTrigger asChild><span><Button type="button" className={composerStyles.generate} disabled={!ready} aria-label={quote ? `生成视频，${quote.credits}积分` : "生成视频"} onClick={() => void generate()}>
-            {posting ? <LoaderCircle size={15} className={styles.spinner} /> : <ArrowUp size={16} />}{quote && <span className={composerStyles.generateCost}>{quote.credits}</span>}
-          </Button></span></TooltipTrigger><TooltipContent>{sendHint}</TooltipContent></Tooltip>
+          <div className={styles.controls}>
+            <DropdownMenu modal={false}>
+              <Tooltip>
+                <TooltipTrigger asChild><DropdownMenuTrigger asChild data-slot="button">
+                  <Button type="button" variant="ghost" size="sm" className={`${composerStyles.settingsTrigger} ${styles.materialAdd}`}
+                    disabled={locked || views.filter((view) => view.kind !== "text").length >= 8} aria-label="添加素材">
+                    {uploading ? <LoaderCircle size={15} className={styles.spinner} /> : <Plus size={16} strokeWidth={1.5} aria-hidden="true" />}
+                  </Button>
+                </DropdownMenuTrigger></TooltipTrigger>
+                <TooltipContent>添加素材</TooltipContent>
+              </Tooltip>
+              <DropdownMenuContent className="nodrag nopan nowheel">
+                <DropdownMenuItem onSelect={() => fileRef.current?.click()}><Upload size={14} />本地上传</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setPickerOpen(true)}><Film size={14} />从资产选择</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Popover open={parametersOpen} onOpenChange={(open) => { setParametersOpen(open); if (open) { setModelOpen(false); setTypeOpen(false); } }}>
+              <PopoverTrigger asChild data-slot="button">
+                <Button type="button" variant="ghost" size="sm" className={composerStyles.settingsTrigger} disabled={locked} aria-label="视频参数"
+                  aria-controls={`video-parameters-${id}`}>
+                  {!motion && <>{media.some((item) => ["first_frame", "feature_video", "base_video"].includes(item.role)) ? "跟随素材" : draft.aspectRatio} · </>}
+                  {draft.resolution === "4k" ? "4K" : draft.resolution}{!motion && <> · {draft.duration}s</>}
+                  <ChevronDown size={13} aria-hidden="true" />
+                </Button>
+              </PopoverTrigger>
+              <CanvasVideoGeneratorSettings id={`video-parameters-${id}`} draft={draft} media={media} disabled={locked} onChange={updateDraft} />
+            </Popover>
+            <Select open={typeOpen} onOpenChange={(open) => { setTypeOpen(open); if (open) { setModelOpen(false); setParametersOpen(false); } }} value={draft.type}
+              onValueChange={(value) => changeType(value as VideoGenerationType)} disabled={locked}>
+              <SelectTrigger size="sm" className={`${composerStyles.modelSelect} ${styles.typeSelect}`} aria-label="生成类型"><SelectValue /></SelectTrigger>
+              <SelectContent position="popper" align="start" className={`${composerStyles.modelMenu} nodrag nopan nowheel`}>
+                {VIDEO_GENERATION_TYPES.filter((item) => item.modelId === draft.modelId).map((item) => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <span className={composerStyles.toolSpacer} />
+          <div className={styles.actions}>
+            <Select open={modelOpen} onOpenChange={(open) => { setModelOpen(open); if (open) { setTypeOpen(false); setParametersOpen(false); } }} value={draft.modelId}
+              onValueChange={(value) => changeType(value === "kling-3.0" ? "motion_control" : "text_to_video")} disabled={locked}>
+              <SelectTrigger size="sm" className={composerStyles.modelSelect} aria-label="视频模型"><SelectValue /></SelectTrigger>
+              <SelectContent position="popper" align="end" className={`${composerStyles.modelMenu} nodrag nopan nowheel`}>
+                {VIDEO_GENERATION_MODELS.map((item) => <SelectItem key={item.id} value={item.id}><Film size={16} strokeWidth={1.5} aria-hidden="true" />{item.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Tooltip><TooltipTrigger asChild><span>
+              <Button type="button" className={composerStyles.generate} disabled={!ready} aria-busy={posting}
+                aria-label={quote ? `生成视频，本次 ${quote.credits} 积分` : "生成视频，当前规格暂无报价"} onClick={() => void generate()}>
+                <span className={composerStyles.generateCost}>
+                  {posting ? <LoaderCircle className={`size-[1em] ${composerStyles.loadingIcon}`} /> : <CreditIcon className="size-[1em]" />}
+                  {quote?.credits ?? "—"}
+                </span>
+              </Button>
+            </span></TooltipTrigger><TooltipContent>{sendHint}</TooltipContent></Tooltip>
+          </div>
         </div>
-        {(message || job?.error || !active && (problem || quoteError)) && <div className={styles.notice} role={message || job?.error ? "alert" : "status"}><span>{message || job?.error?.message || problem || quoteError}</span>
+        {inlineNotice && <div className={composerStyles.message} role={message || job?.error ? "alert" : "status"}><span>{inlineNotice}</span>
           {job?.state === "submission_unknown" && <button type="button" onClick={() => setPollRevision((value) => value + 1)}>重新查询</button>}</div>}
         {job?.error && <details className={styles.diagnostics}><summary>错误详情</summary><pre>{JSON.stringify({ requestId: job.requestId, ...job.error.diagnostics }, null, 2)}</pre></details>}
-        {parametersOpen && <section id={`video-parameters-${id}`} className={styles.drawer} aria-label="视频参数">
-          <Parameter name="分辨率" value={draft.resolution} choices={model.resolutions.map((value) => ({ value, label: value === "4k" ? "4K" : value }))} disabled={locked} onChange={(resolution) => updateDraft({ resolution: resolution as CanvasVideoGenerationDraft["resolution"] })} />
-          {!motion && <><Parameter name="画面比例" value={draft.aspectRatio} choices={["16:9", "9:16", "1:1"].map((value) => ({ value, label: value }))} disabled={locked || media.some((item) => ["first_frame", "feature_video", "base_video"].includes(item.role))} onChange={(aspectRatio) => updateDraft({ aspectRatio: aspectRatio as CanvasVideoGenerationDraft["aspectRatio"] })} />
-            <Parameter name="时长" value={String(draft.duration)} choices={Array.from({ length: 13 }, (_, i) => ({ value: String(i + 3), label: `${i + 3} 秒` }))} disabled={locked} onChange={(duration) => updateDraft({ duration: Number(duration) })} /></>}
-          {motion && <Parameter name="角色朝向" value={draft.characterOrientation} choices={[{ value: "video", label: "跟随视频" }, { value: "image", label: "保持图片" }]} disabled={locked} onChange={(characterOrientation) => updateDraft({ characterOrientation: characterOrientation as "video" | "image" })} />}
-          <Parameter name="音频" value={hasFeatureVideo ? "off" : draft.audio} choices={[{ value: "off", label: "静音" }, ...(motion || draft.type === "video_edit" ? [{ value: "original", label: "保留原声" }] : [{ value: "native", label: "生成音频" }])]} disabled={locked || hasFeatureVideo} onChange={(audio) => updateDraft({ audio: audio as CanvasVideoGenerationDraft["audio"] })} />
-          {!motion && <Parameter name="镜头" value={draft.shots.length ? "manual" : hasFeatureVideo || draft.multiShot ? "multi" : "single"} choices={[{ value: "single", label: "单镜头" }, { value: "multi", label: "自动多镜头" }, { value: "manual", label: "手动分镜" }]} disabled={locked || hasFeatureVideo || draft.type === "video_edit"} onChange={(value) => updateDraft({ multiShot: value !== "single", shots: value === "manual" ? [{ seconds: draft.duration, text: "" }] : [] })} />}
-          {draft.shots.length > 0 && <div className={styles.shots}>{draft.shots.map((shot, index) => <div className={styles.shot} key={index}><label>镜头 {index + 1}<input type="number" aria-label={`镜头 ${index + 1} 时长`} min={1} max={15} value={shot.seconds} disabled={locked} onChange={(event) => updateDraft({ shots: draft.shots.map((item, i) => i === index ? { ...item, seconds: Math.max(1, Math.min(15, Number(event.target.value) || 1)) } : item) })} /></label>
-            <textarea aria-label={`镜头 ${index + 1} 描述`} placeholder="描述这个镜头的画面和动作" maxLength={512} value={shot.text} readOnly={locked} onChange={(event) => updateDraft({ shots: draft.shots.map((item, i) => i === index ? { ...item, text: event.target.value } : item) })} />
-            <button type="button" disabled={locked} aria-label={`移除镜头 ${index + 1}`} onClick={() => updateDraft({ shots: draft.shots.filter((_, i) => i !== index) })}><X size={13} /></button></div>)}
-            <button type="button" disabled={locked || draft.shots.length >= 6} className={styles.shotAdd} onClick={() => updateDraft({ shots: [...draft.shots, { seconds: 1, text: "" }] })}>添加镜头</button></div>}
-        </section>}
       </section>
     </NodeToolbar>
     <CanvasVideoMaterialPicker open={pickerOpen && !locked} onOpenChange={setPickerOpen} workspaceId={context.workspaceId} ownerKey={context.ownerKey} onSelect={addMaterial} selectedKeys={media.map((item) => `${item.assetKind}:${item.assetId}`)} />

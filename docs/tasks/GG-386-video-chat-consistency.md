@@ -9,4 +9,13 @@
 - 工作区计划：根agent独占codex/gg-386-video-chat-consistency managed辅助目录，文件边界为视频节点TSX/CSS、视频提示词组件、相关设计/交互/手验/ADR/任务文档；不改图片chat或服务。精确集成后提交并归档辅助，不创建子agent/新依赖缓存。
 - 验收：用户刷新5173手验两类chat默认宽度/留白、附件/鼠标预览/移除、左参数类型/右模型与积分、灰阶选项与比例卡、长文本展开、窄屏/资产侧栏/键盘，视频任务输入及重试保持。
 - 验证边界：本轮只源码开发和集成，遵GG-276不自动构建/lint/typecheck/检查/测试/浏览器/HTTP/SQL/Provider或重启，保留GG-385运行receipt和临时价格。
-- 状态：执行中；先登记再创建辅助。创建0/退役0，下一步隔离实现并精确接入运行目录供用户手验。
+- 状态：隔离源码完成，待精确集成/归档；未自动验收或部署。创建1/退役0，无依赖缓存。
+
+## 实现记录
+
+- 隔离工作区：C:/Users/Admin/.codex/worktrees/gg-386-video-chat/goodgood，分支codex/gg-386-video-chat-consistency，基线298d8ec1d81b73b79d0f0a2f4e7227fc5575ce84。无子agent。
+- 所有者文件：canvas-video-generator-node.tsx/CSS、canvas-video-generator-prompt.tsx及canvas-video-generator-settings.tsx；设计/交互/手验/ADR0143及本卡。图片chat不改、后台与GG-385运行receipt不改。
+- 改用660px/12px定位、Attachment及共享模型/积分按钮；加号移工具行，参数类型左/模型发送右；图片同款Portal参数、灰阶选项/比例卡，长输入展开/收起。角色/六类型/源输入冻结及报价保持。
+- 初始空提示词不展示校验文字，真实失败/缺失素材不隐藏；菜单互斥，输入和取消选中关闭。工具区可见空间沿图片让位，减少动效模式无平移动画。
+- 验证：仅源码实现；未执行自动编译、lint/typecheck/代码或diff检查、测试、浏览器、应用HTTP/SQL/Provider/生成/扣费/重启或生产操作。
+- 下一步：精确提交及接入当前GG-116，再归档辅助；用户刷新5173手验。
