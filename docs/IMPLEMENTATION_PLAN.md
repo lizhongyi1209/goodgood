@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-05
-- Current phase: GG-384画布Kling视频节点源码已精确接入6181bdf306cc85a2c59313e41b34d4d760fbf941，价格数值/迁移与后台启用待后续委托；未自动验证、未部署。
-- Current objective: 用户给出Omni 720p/1080p/4k、Motion 720p/1080p五档每秒积分后，再明确委托0067/0068与Web/唯一Worker更新和手验。当前只交付代码，保持GG-383/380/379、原数据及GG-374运行receipt。
+- Current phase: GG-385用户授权临时视频定价与本地启用，基于GG-384已接入源码6181bdf，执行中；尚未自动验收或部署。
+- Current objective: 临时配置五档每秒积分10/20/40及10/20，应用本地0067/0068并必要构建更新Web与唯一Worker，保留Vite和原数据，交用户在画布手验UI。
 - Previous objective: GG-383上传复用源码交付；GG-382设计/官方对照已获用户接受，按其O1Key附件实现，不再等待设计反馈。
 
 ## Current checkpoint
+
+- 当前激活任务：[GG-385](tasks/GG-385-local-kling-video-activation.md)，基线b05a21e、源码6181bdf；价格及本地更新已明确授权。66历史迁移核对匹配，当前执行中；无自动功能验收或真实生成请求。
 
 - 当前源码交接：[GG-384](tasks/GG-384-canvas-kling-video-generation.md) 6181bdf306cc85a2c59313e41b34d4d760fbf941（隔离a401316f40a7e6056107df759d58b370d146f635，基线b993e3c，接入前1bb3b1e）。编号视频节点与图片chat共享视觉，模型/类型/参数三块、六类型素材用途/上传/资产/混合输入、原生视频输出及连线、私有资产/保存刷新/冻结重试/下载完整源码；独立PG持久任务及现有唯一Worker2并发租约，未知付费提交不重发、保存失败只保存。ADR0143及0068源码，用户选择模型/分辨率/时长计价、五档整数每秒积分待给，未定价禁止生成。十四项合成来源仅写；未构建/代码或diff检查/测试/浏览器验收、迁移/配置写入/接口/扣费/服务或生产操作。源码已实现并接入，运行保持GG-374历史receipt。创建1/退役1，managed辅助归档已确认；无子agent/安装依赖或构建缓存。下一步只在用户后续明确委托时启用后台和手验。
 
