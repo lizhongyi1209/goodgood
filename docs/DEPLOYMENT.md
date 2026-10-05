@@ -1,6 +1,8 @@
 # Development and deployment
 
-- 最新本地恢复：[GG-358](tasks/GG-358-local-runtime-recovery.md) 2026-10-04连接拒绝再恢复：原应用进程已停止，Docker依赖healthy，日志无明确退出原因。必要构建verified 3b7393a16fc013d867c9be35904b1f61eb5bc0ee；通过Windows CIM/隐藏launcher独立启动Web7704/32131、唯一Worker15844/32142、Vite35552/5173（启动器23288）。launcher父进程为WmiPrvSE，跨命令仍运行；首页/原画布200、API代理verified、readiness五项ok。原66迁移/外部cloud-development/local-mailpit保留，启动前任务/outbox/预留/队列均0，无迁移/重置/fixture/真实请求/扣费或生产操作。创建0/退役0，未测试/lint/typecheck/浏览器验收；用户刷新手验。未确认前次退出根因，不声称根治，若再退出查本次退出日志；下方旧PID为历史。
+- 最新本地恢复：[GG-366](tasks/GG-366-local-restart-after-reboot.md) GG-366电脑重启恢复完成：原PG54449落入Windows54385–54484保留范围、发布映射缺失；经Windows管理员授权短停WinNAT、重连原网络/别名并启动同一PG，原卷及54449映射恢复、WinNAT Running。必要构建verified 1dde20e6c08346d26c3d3d4dd97431605d057fe8；Web34716/32131、唯一Worker32420/32142、Vite30460/5173（启动器8232）通过独立隐藏launcher恢复。首页/原画布200、API代理同revision/verified，两角色readiness五项ok、cloud-development/local-mailpit保持。启动前活动图片/文本任务、未派发outbox、个人/工作区预留及两队列均0，原66迁移保留。未迁移/重置/写fixture/发真实生成/扣费或生产操作；仅必要构建和运行核对，未lint/typecheck/代码检查/测试/浏览器验收。GG-365/364源码保持，创建0/退役0，无子agent/新依赖副本。 只恢复本地；不增加自启或计划任务，运行receipt保留，后续重启按届时HEAD构建。
+
+- 历史本地恢复：[GG-358](tasks/GG-358-local-runtime-recovery.md) 2026-10-04连接拒绝再恢复：原应用进程已停止，Docker依赖healthy，日志无明确退出原因。必要构建verified 3b7393a16fc013d867c9be35904b1f61eb5bc0ee；通过Windows CIM/隐藏launcher独立启动Web7704/32131、唯一Worker15844/32142、Vite35552/5173（启动器23288）。launcher父进程为WmiPrvSE，跨命令仍运行；首页/原画布200、API代理verified、readiness五项ok。原66迁移/外部cloud-development/local-mailpit保留，启动前任务/outbox/预留/队列均0，无迁移/重置/fixture/真实请求/扣费或生产操作。创建0/退役0，未测试/lint/typecheck/浏览器验收；用户刷新手验。未确认前次退出根因，不声称根治，若再退出查本次退出日志；下方旧PID为历史。
 
 - GG-357本地重启完成：[任务卡](tasks/GG-357-local-restart-after-reboot.md)。GG-116必要构建verified d066a241f385c52ef0032d3aca91f2e1bf614079，Web31140/32131、唯一Worker2624/32142、Vite28824/5173（启动器13756）可用。原E盘依赖healthy，66迁移保留；API代理verified、首页/原画布200及readiness五项ok。GG-350原因采集随Worker启用，当前运行身份以本条为准。未迁移/重置/写fixture/发真实请求/扣费或生产部署；测试和浏览器验收未做，用户刷新手验。
 

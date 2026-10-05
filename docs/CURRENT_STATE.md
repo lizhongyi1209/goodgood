@@ -1,5 +1,7 @@
 # GoodGood 当前状态
 
+- 最新本地运行恢复（2026-10-05）：[GG-366](tasks/GG-366-local-restart-after-reboot.md) GG-366电脑重启恢复完成：原PG54449落入Windows54385–54484保留范围、发布映射缺失；经Windows管理员授权短停WinNAT、重连原网络/别名并启动同一PG，原卷及54449映射恢复、WinNAT Running。必要构建verified 1dde20e6c08346d26c3d3d4dd97431605d057fe8；Web34716/32131、唯一Worker32420/32142、Vite30460/5173（启动器8232）通过独立隐藏launcher恢复。首页/原画布200、API代理同revision/verified，两角色readiness五项ok、cloud-development/local-mailpit保持。启动前活动图片/文本任务、未派发outbox、个人/工作区预留及两队列均0，原66迁移保留。未迁移/重置/写fixture/发真实生成/扣费或生产操作；仅必要构建和运行核对，未lint/typecheck/代码检查/测试/浏览器验收。GG-365/364源码保持，创建0/退役0，无子agent/新依赖副本。 实际交互仍由用户手验；旧GG-358运行receipt/PID为历史，不更改生产状态。
+
 - 最新源码功能（未自动验收/未部署）：[GG-365](tasks/GG-365-reference-tray-reorder.md) GG-365拖动排序源码已接入c90545528347ecb729b19a5a9e3cacabc25e089c；隔离3378aee15c17a6e071718570eedf3258df152ec4精确接入023d76c5a49cb0f8fbfd47e6a1c0a2eae3517cb6，随后小修Tooltip仅隐藏内容，避免切换受控模式。chat直接/连线/组成员缩略图统一拖动插入排序，源淡化/目标灰边、横向滚动、取消/Escape及Alt方向键；cursor保持。只改当前目标，编号/新提交顺序一致，上传ID替换、移除、保存恢复、历史及复制保持。云层按已有直接数组和排名边ID可逆适配，无后台更新或迁移。GG-364稳定edges修复及既有功能保持。沿GG-276仅写回归来源，未构建/lint/typecheck/代码检查/测试/浏览器验收，无HTTP/SQL/Provider/生成/扣费、服务更新或生产操作；GG-358运行receipt未重查。
 
 - 最新源码修复（未自动验收/未部署）：[GG-364](tasks/GG-364-reference-update-loop.md) GG-364源码已精确接入56960a87115073a169c0800957a9ac7d0e076236（隔离a9a4f6818a712c3380506863b1f565fc4f28ae6e）。修复GG-363的graphRevision/受控edges引用反馈循环：空/普通边保留原数组，组边按实际原边/计数缓存并复用显示数组，计数和真实边变化仍正常更新，保存/历史观察保持。源码反馈链已定位，未做浏览器复现或自动验收。沿GG-276只写纯回归来源，未构建/lint/typecheck/代码检查/测试/浏览器验收，无HTTP/SQL/Provider/扣费、服务重启或生产操作，GG-358运行receipt未重查。用户刷新5173手验原画布/空画布、多图接入、移除计数/目标独立排除与保存刷新。
