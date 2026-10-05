@@ -235,3 +235,7 @@
 [GG-231-canvas-selection-border.md](tasks/GG-231-canvas-selection-border.md) · [GG-232-project-card-interaction.md](tasks/GG-232-project-card-interaction.md) · [GG-233-canvas-asset-cards-and-add.md](tasks/GG-233-canvas-asset-cards-and-add.md) · [GG-234-canvas-asset-card-default-hover.md](tasks/GG-234-canvas-asset-card-default-hover.md) · [GG-235-asset-media-masonry.md](tasks/GG-235-asset-media-masonry.md) · [GG-236-project-card-default-frame.md](tasks/GG-236-project-card-default-frame.md) · [GG-237-project-four-column-grid.md](tasks/GG-237-project-four-column-grid.md) · [GG-238-canvas-asset-viewer.md](tasks/GG-238-canvas-asset-viewer.md)
 
 [GG-239-current-5173-checkpoint.md](tasks/GG-239-current-5173-checkpoint.md) · [GG-240-subagent-worktree-hygiene.md](tasks/GG-240-subagent-worktree-hygiene.md) · [GG-241-local-startup.md](tasks/GG-241-local-startup.md) · [GG-242-canvas-image-preview.md](tasks/GG-242-canvas-image-preview.md) · [GG-243-project-create-card.md](tasks/GG-243-project-create-card.md) · [GG-244-canvas-asset-hover.md](tasks/GG-244-canvas-asset-hover.md) · [GG-900-deferred-c6.md](tasks/GG-900-deferred-c6.md)
+
+## GG-375 · 相册节点拖动与样式统一
+
+用户要求已登记，更新ADR0135相册外置标签/拖动呈现；根agent单独在codex/GG-375-album-node-polish实现。仅相册组件/CSS及文档，沿GG-276不自动验证或更新运行；GG-374运行receipt保持。见[tasks/GG-375-album-node-polish.md](tasks/GG-375-album-node-polish.md)。

@@ -1,16 +1,14 @@
-.album { width: 100%; height: 100%; display: flex; flex-direction: column; gap: 10px; border: 1px solid #e4e4e7; border-radius: 12px; padding: 12px; background: white; color: #27272a; overflow: hidden; }
+/* Album pointer targets opt in without changing ordinary groups' pass-through center. */
+.album { width: 100%; height: 100%; display: flex; flex-direction: column; gap: 10px; border: 1px solid #e4e4e7; border-radius: 12px; padding: 12px; background: white; color: #27272a; overflow: hidden; pointer-events: auto; cursor: default; }
 .album[data-selected] { border-color: #a1a1aa; }
-.header { display: flex; align-items: center; gap: 7px; font-size: 12px; min-height: 20px; }
-.header > span { min-width: 0; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.header small { color: #71717a; font-size: 10px; white-space: nowrap; }
+header.header { pointer-events: auto; cursor: default; }
 .grid { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); align-content: start; gap: 5px; overflow-y: auto; overscroll-behavior: contain; }
 .thumbnail { position: relative; width: 100%; aspect-ratio: 1; overflow: hidden; border: 0; border-radius: 5px; padding: 0; background: #f4f4f5; }
 .thumbnail img { width: 100%; height: 100%; object-fit: cover; }
-.number { position: absolute; left: 3px; bottom: 2px; color: white; font-size: 9px; text-shadow: 0 1px 2px #27272a; }
+.number { position: absolute; z-index: 1; left: 4px; bottom: 4px; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: #18181b; color: #fff; font-size: 10px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; pointer-events: none; }
 .imageState { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 3px; align-items: center; justify-content: center; background: #f4f4f5; color: #a1a1aa; font-size: 9px; }
 .thumbnail:focus-visible, .grid:focus-visible { outline: 2px solid #71717a; outline-offset: -2px; }
-.caption { color: #a1a1aa; font-size: 10px; min-height: 15px; }
+.caption { color: #71717a; font-size: 10px; line-height: 15px; min-height: 15px; }
 .empty { flex: 1; display: flex; flex-direction: column; gap: 10px; align-items: center; justify-content: center; color: #a1a1aa; font-size: 12px; }
-.handle { width: 12px; height: 12px; border: 2px solid white; background: #71717a; right: -6px; }
-.handle::before { content: ""; position: absolute; inset: -7px; }
-.handle:focus-visible { outline: 2px solid #18181b; outline-offset: 2px; }
+.handle { pointer-events: auto; z-index: 3; }
+.handle[data-connected="true"]:global(.react-flow__handle) { opacity: 1; --handle-breath-state: running; }

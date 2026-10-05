@@ -108,3 +108,9 @@ Group connections to ordinary targets still supply all members. At a dedicated b
 ## GG-371 · Asset folder albums (2026-10-05)
 
 An asset-library folder can be dragged into the canvas as one album, previewing all its authorized image members without placing dozens of independent visible nodes. Album membership is a snapshot at drop, using a reserved album ID and existing group wire with hidden sourceImage children. It can connect once to a dedicated batch candidate port, providing all members as candidates. Do not load album pools into ordinary/common inputs implicitly. All actual asset IDs remain authorized and persisted; reconstruct hidden child presentation on restore/copy, keep album bounds independent of unmounted children, and move/delete/copy albums as units. No new server fields or runtime activation.
+
+## GG-375 · Album movement and media-node presentation (2026-10-05)
+
+The user refines album presentation: place the folder icon and name above the frame at the upper-left, and the image count at the upper-right, using existing image-node metadata typography and spacing. Album chrome and thumbnails form the same native whole-album drag surface; a click still opens the existing image preview, and the scroll area retains wheel browsing. Explicit album pointer targets override the ordinary group's transparent center without changing ordinary groups. Use the existing media reference output handle, including its hit area, hover/focus and connected visibility. Thumbnail numbers remain lower-left, with white numerals on a black circular background. The bottom copy is exactly “连接到节点，一次性载入所有图片”.
+
+This supersedes GG-371's inner header and title/footer-only drag presentation. Snapshot membership, hidden children, whole-album movement/history, candidate-only connection validation and persistence remain unchanged. No new data fields, server behavior, runtime activation or provider request.
