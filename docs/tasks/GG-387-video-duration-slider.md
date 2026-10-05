@@ -9,3 +9,5 @@
 - 状态：源码修改完成，未自动验收或部署；遵GG-276不自动构建/lint/typecheck/检查/测试或浏览器/HTTP/SQL/Provider/生成/扣费/重启/生产操作，GG-385运行receipt保持。
 
 - 下一步：用户刷新5173手验时长滑块；UI源码无需后台更新。
+
+- 交付：GG-387视频时长滑块源码已提交7bd8698596cff3e8f7179cecf0f84b9436a4f5c9，GG-116当前分支codex/gg-387-video-duration-slider，基线9da08ad/GG-386。复用Shadcn Slider，3–15秒/1秒步长/当前秒数及端点提示，原duration/摘要/报价联动、锁定与Motion来源时长保持。未自动编译/lint/typecheck/检查/测试/浏览器/HTTP/SQL/Provider/生成/扣费/服务或生产操作，GG-385后台运行5fd584d保持。用户刷新5173手验；复用小改集成目录，创建0/退役0，无子agent或额外依赖缓存。

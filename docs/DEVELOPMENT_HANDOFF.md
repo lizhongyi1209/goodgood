@@ -1,5 +1,7 @@
 # 当前开发版本与跨窗口交接
 
+> [GG-387](tasks/GG-387-video-duration-slider.md) GG-387视频时长滑块源码已提交7bd8698596cff3e8f7179cecf0f84b9436a4f5c9，GG-116当前分支codex/gg-387-video-duration-slider，基线9da08ad/GG-386。复用Shadcn Slider，3–15秒/1秒步长/当前秒数及端点提示，原duration/摘要/报价联动、锁定与Motion来源时长保持。未自动编译/lint/typecheck/检查/测试/浏览器/HTTP/SQL/Provider/生成/扣费/服务或生产操作，GG-385后台运行5fd584d保持。用户刷新5173手验；复用小改集成目录，创建0/退役0，无子agent或额外依赖缓存。
+
 > [GG-386](tasks/GG-386-video-chat-consistency.md) GG-386视频chat源码已精确接入a63f5dabd5213c24a9756fb30b123f4dea7445f9（隔离c09431148406ee19033fd0c88c3a4e820300c91e，基线298d8ec/9a34a1a）。以图片chat实际实现为准：660px视口受限宽度/12px节点间距，空托盘隐藏、工具行添加素材，54px Attachment/编号/移除/180ms预览；左侧参数与类型、右侧同款模型Select和CreditIcon积分生成按钮。参数采用同款Portal/胶囊/比例卡，保留紧凑时长及手动分镜滚动；长输入八行滚动/展开收起、菜单互斥/输入关闭，空描述不显示冗余校验，真实错误保留。图片chat及视频六类型/素材用途/计价/持久任务与后台保持。用户刷新5173手验；未自动构建/lint/typecheck/代码或diff检查/测试/浏览器/HTTP/SQL/Provider/生成/扣费/迁移/重启或生产操作，运行仍GG-385/5fd584d。创建1/退役1，辅助已提交并归档；无子agent/依赖或构建缓存。
 
 > [GG-385](tasks/GG-385-local-kling-video-activation.md) GG-385已本地启用：用户授权临时定价及更新；Omni720p/1080p/4k每秒10/20/40积分，动作模仿720p/1080p每秒10/20积分，默认Omni720p五秒50积分。配置在仓库外LOCALAPPDATA/GoodGood/local-video-generation/video-pricing.env，以Node --env-file传给Web/唯一Worker。0067/0068已顺序应用到127.0.0.1:54449/goodgood，历史校验和匹配、总68迁移、原用户/画布/资产/任务/流水及余额聚合保持，视频任务0。必要checkpoint构建5fd584da7c1dad3ed5154fad05bdd94cf32c10a1；Web20564/32131、唯一Worker16116/32142，隐藏启动器35248/26392，Vite17388/5173保持。两角色readiness五项ok、API代理同构建身份、画布HTTP200；未登录探测新视频能力接口401符合保护规则，不创建登录或任务。默认报价读取50积分，真实生成、扣费、代码检查/测试及浏览器交互验收未执行，生产未操作；UI由用户刷新手验。创建0/退役0，无子agent/新依赖缓存。
