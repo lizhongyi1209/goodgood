@@ -1,5 +1,7 @@
 # 当前任务与优先级
 
+> [GG-378](tasks/GG-378-album-resize-callbacks.md) GG-378相册伸缩回调修复已精确接入28431236bb8800a26fe5b7f26b8f5802908e103f（隔离440879109a385c491adfb746a88e4074a3085109）。用户手验发现GG-377选中相册即startResize未定义，源码确认开始/结束/键盘三项回调均遗漏声明；本次补齐稳定原生回调、历史捕获、manual标记和结束宽高/style同步保存，方向键仍复用既有相册几何10px/Shift50px。不改变ADR0135决定或外观、素材及候选边界，无新后台字段。GG-377任务补缺陷更正，错误和用户手验记录同步。沿GG-276未自动构建/lint/typecheck/代码或diff检查/测试/浏览器/HTTP/SQL/Provider验收，无生成/扣费、服务或生产操作，GG-374运行receipt保持未重查。创建1/退役1，managed辅助已确认归档，无子agent/依赖缓存。源码已补齐、未自动验收、未部署；用户刷新5173手验相册选中、四角持续伸缩、键盘及保存恢复。下一源码任务从当时HEAD核验2843123祖先后隔离。
+
 > [GG-374](tasks/GG-374-local-restart-after-reboot.md) GG-374按用户要求完成本地重启：原PG54449/Valkey56549/对象存储58049/Mailpit及原卷均健康，三个应用角色原本已停。必要构建verified d183b918ea139c429630a7177905fd2c60cbee93，复用原外部cloud-development/local-mailpit配置，独立隐藏CIM启动Web29548/32131、唯一Worker28916/32142、Vite17388/5173（启动器33100/27976/13896，父WMI7984）。跨命令仍监听；首页/原画布HTTP200，前端API代理同revision/verified，Web与Worker readiness五项均ok。启动前活动图片/文本任务、未派发outbox、个人/工作区/成员预留及两队列均0；原66迁移保持。未迁移/重置/写fixture、发起或重放真实生成/扣费或操作生产；仅必要启动构建与运行核对，未lint/typecheck/代码或diff检查/测试/浏览器交互验收。GG-373及既有应用源码保持，创建0/退役0，无子agent或新依赖副本。用户刷新原画布继续使用，下次重启按届时HEAD构建；纯交付文档提交不改写此运行receipt。
 
 > [GG-373](tasks/GG-373-asset-menu-spacing.md) GG-373资产右键菜单排版源码已精确接入0b5d1a8ac913eeafeca6a0b0400bcafd3a581d8c（隔离4330226a6f6918d6c8e1aae8ded1c2459057583a）。两级菜单统一12px常规字重/20px行高/36px行与8px图标文字间距，目录名显式继承；移动至目录列表按内容宽度、140–260px及视口上限夹取，移除固定260px留白，原滚动/长名省略/触控44px保持。仅改局部CSS、设计与手验记录，不改功能决定/文案/归档或API。已按用户指定Impeccable读取SKILL、polish及craft-floor，沿GG-276未运行引擎、构建/lint/typecheck/代码或diff检查/测试/浏览器验收或HTTP/SQL/Provider；纯样式无新测试。GG-372/371源码和GG-366运行receipt保持，无服务/后台/生产更新。创建1/退役1，managed辅助确认归档，无子agent/依赖缓存；未自动验收/未部署，用户刷新5173手验菜单。
@@ -250,4 +252,4 @@ GG-377文件夹相册手动伸缩源码已精确接入f1119dd16fc756f91ee58ea97c
 
 ## GG-378 · 相册伸缩回调缺失修复
 
-用户报告startResize未定义。补齐GG-377遗漏的开始、结束及键盘伸缩回调，沿原历史/手动尺寸保存；未改变产品决定。隔离实现中，沿GG-276不自动检查或运行验收。见[任务卡](tasks/GG-378-album-resize-callbacks.md)。
+GG-378相册伸缩回调修复已精确接入28431236bb8800a26fe5b7f26b8f5802908e103f（隔离440879109a385c491adfb746a88e4074a3085109）。用户手验发现GG-377选中相册即startResize未定义，源码确认开始/结束/键盘三项回调均遗漏声明；本次补齐稳定原生回调、历史捕获、manual标记和结束宽高/style同步保存，方向键仍复用既有相册几何10px/Shift50px。不改变ADR0135决定或外观、素材及候选边界，无新后台字段。GG-377任务补缺陷更正，错误和用户手验记录同步。沿GG-276未自动构建/lint/typecheck/代码或diff检查/测试/浏览器/HTTP/SQL/Provider验收，无生成/扣费、服务或生产操作，GG-374运行receipt保持未重查。创建1/退役1，managed辅助已确认归档，无子agent/依赖缓存。源码已补齐、未自动验收、未部署；用户刷新5173手验相册选中、四角持续伸缩、键盘及保存恢复。下一源码任务从当时HEAD核验2843123祖先后隔离。 见[任务卡](tasks/GG-378-album-resize-callbacks.md)。
