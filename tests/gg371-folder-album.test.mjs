@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { CANVAS_FOLDER_DRAG_TYPE, CANVAS_ALBUM_DRAG_HANDLE, CANVAS_ALBUM_INITIAL_SIZE,
   isCanvasAlbumId, canvasAlbumChildFlags, selectCanvasFolderAlbum, createCanvasFolderAlbumNodes } from "../features/canvas/canvas-folder-album.mjs";
 import { canGroupCanvasSelection, createCanvasGroup, canvasSelectionWithMembers, canvasGroupContentBounds,
-  fitCanvasGroups, ungroupCanvasNodes } from "../features/canvas/canvas-groups.mjs";
+  fitCanvasGroups, ungroupCanvasNodes, resizeCanvasGroup, canvasNodeAbsolutePosition } from "../features/canvas/canvas-groups.mjs";
 import { canvasReferenceInputs, planCanvasReferenceConnection, expandCanvasGroupReferences } from "../features/canvas/canvas-reference-sources.mjs";
 import { canvasBatchReferenceHandle, canvasReferenceGroupEdgeId } from "../features/canvas/canvas-batch-reference-model.mjs";
 import { encodeCanvasReferencePage, decodeCanvasReferencePage } from "../features/canvas/canvas-reference-document.mjs";
@@ -134,4 +134,60 @@ test("an album never prevents ordinary groups from fitting or ungrouping normall
   assert.ok(!ungrouped.some((node) => node.id === "ordinary-group"));
   assert.ok(ungrouped.filter((node) => node.id.startsWith("ordinary-")).every((node) => !node.parentId));
   assert.ok(ungrouped.filter((node) => node.parentId === albumId).every((node) => node.hidden));
+});
+
+test("manual album height can shrink independently while all real images and references remain intact", () => {
+  const nodes = albumNodes();
+  const resized = resizeCanvasGroup(nodes, albumId, { x: 300, y: 200, width: 360, height: 120 });
+  const frame = resized.find((node) => node.id === albumId);
+  assert.deepEqual({ width: frame.width, height: frame.height }, { width: 360, height: 120 });
+  assert.deepEqual(frame.style, { width: 360, height: 120 });
+  assert.equal(frame.data.sizing, "manual");
+  assert.deepEqual(frame.data.referenceOrder, nodes[0].data.referenceOrder);
+  const members = resized.filter((node) => node.parentId === albumId);
+  assert.equal(members.length, 50);
+  members.forEach((node) => {
+    const original = nodes.find((entry) => entry.id === node.id);
+    assert.strictEqual(node.data, original.data);
+    assert.deepEqual(canvasNodeAbsolutePosition(node, resized), canvasNodeAbsolutePosition(original, nodes));
+    assert.equal(node.hidden, true);
+    assert.equal(node.data.pixelWidth, 1200);
+    assert.equal(node.data.pixelHeight, 1600);
+  });
+  assert.strictEqual(fitCanvasGroups(resized), resized);
+  assert.equal(canvasReferenceInputs([...resized, ...generators()], [edge()]).length, 50);
+});
+
+test("top-left album resizing preserves the opposite corner and resized geometry through the current cloud wire", () => {
+  const nodes = albumNodes();
+  const resized = resizeCanvasGroup(nodes, albumId, { x: 460, y: 380, width: 200, height: 120 });
+  const frame = resized.find((node) => node.id === albumId);
+  assert.equal(frame.position.x + frame.width, 660);
+  assert.equal(frame.position.y + frame.height, 500);
+  for (const member of resized.filter((node) => node.parentId === albumId)) {
+    assert.deepEqual(canvasNodeAbsolutePosition(member, resized), { x: 300, y: 200 });
+  }
+  const original = wirePage([...resized, ...generators()], [edge()]);
+  const encoded = encodeCanvasReferencePage(original);
+  const accepted = validateCanvasProjectSave({ expectedVersion: null, name: "可调整相册",
+    document: { ...encoded, schemaVersion: 1 } }).document;
+  const restored = decodeCanvasReferencePage(accepted);
+  const saved = restored.nodes.find((node) => node.id === albumId);
+  assert.deepEqual(saved.size, { width: 200, height: 120 });
+  assert.deepEqual(saved.position, { x: 460, y: 380 });
+  assert.equal(saved.groupSizing, "manual");
+  assert.deepEqual(restored.edges, original.edges);
+  assert.equal(restored.nodes.filter((node) => node.parentId === albumId).length, 50);
+});
+
+test("empty albums resize while below-minimum, non-finite and missing frames leave the graph unchanged", () => {
+  const nodes = albumNodes(0);
+  const valid = resizeCanvasGroup(nodes, albumId, { x: 300, y: 200, width: 200, height: 120 });
+  assert.equal(valid.length, 1);
+  assert.equal(valid[0].width, 200);
+  assert.equal(valid[0].height, 120);
+  for (const patch of [{ width: 199 }, { height: 119 }, { width: NaN }, { x: Infinity }]) {
+    assert.strictEqual(resizeCanvasGroup(nodes, albumId, { x: 300, y: 200, width: 360, height: 300, ...patch }), nodes);
+  }
+  assert.strictEqual(resizeCanvasGroup(nodes, "missing", { x: 0, y: 0, width: 360, height: 300 }), nodes);
 });

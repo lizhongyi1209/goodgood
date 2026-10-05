@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
-import { Handle, Position, useStore, type NodeProps } from "@xyflow/react";
+import { useCallback, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { Handle, NodeResizeControl, Position, useReactFlow, useStore, useStoreApi, type NodeProps, type OnResizeEnd } from "@xyflow/react";
 import { FolderOpen, ImageOff } from "lucide-react";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import { ImageViewer, type ImageViewerItem } from "@/features/assets/image-viewer";
@@ -9,9 +9,16 @@ import { privateImageUrls } from "@/shared/private-image-urls.mjs";
 import { CanvasGroupNode, type CanvasGroupNodeType } from "./canvas-group-node";
 import { canvasReferenceGroupMembers, imageSourceAsset } from "./canvas-reference-sources.mjs";
 import { isCanvasAlbumId } from "./canvas-folder-album.mjs";
+import { resizeCanvasGroup } from "./canvas-groups.mjs";
+import { useCanvasGroupActions } from "./canvas-group-context";
 import type { CanvasNode } from "./canvas-workspace";
 import styles from "./canvas-folder-album-node.module.css";
 import workspaceStyles from "./canvas-workspace.module.css";
+
+const albumCorners = [
+  { position: "top-left", label: "左上角" }, { position: "top-right", label: "右上角" },
+  { position: "bottom-left", label: "左下角" }, { position: "bottom-right", label: "右下角" },
+] as const;
 
 export function CanvasGroupDisplayNode(props: NodeProps<CanvasGroupNodeType>) {
   return isCanvasAlbumId(props.id) ? <CanvasFolderAlbumNode {...props} /> : <CanvasGroupNode {...props} />;
@@ -35,6 +42,11 @@ function AlbumThumbnail({ item, index, onOpen }: { item: ImageViewerItem; index:
 }
 
 function CanvasFolderAlbumNode({ id, data, selected }: NodeProps<CanvasGroupNodeType>) {
+  const flow = useReactFlow<CanvasNode>();
+  const store = useStoreApi<CanvasNode>();
+  const actions = useCanvasGroupActions();
+  const actionsRef = useRef(actions);
+  actionsRef.current = actions;
   const nodes = useStore((state) => state.nodes) as CanvasNode[];
   const connected = useStore((state) => state.edges.some((edge) => edge.source === id && edge.sourceHandle === "reference"));
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
@@ -70,6 +82,14 @@ function CanvasFolderAlbumNode({ id, data, selected }: NodeProps<CanvasGroupNode
       role="button" tabIndex={items.length ? 0 : -1} onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); event.currentTarget.click(); }
       }} />
+    {selected && albumCorners.map(({ position, label }) => <NodeResizeControl key={position} position={position}
+      minWidth={200} minHeight={120} keepAspectRatio={false}
+      className={`${workspaceStyles.resizeControl} ${styles.resizeControl} nodrag nopan nowheel`}
+      onResizeStart={startResize} onResizeEnd={finishResize}>
+      <button type="button" className={`${workspaceStyles.resizeHotspot} nodrag nopan nowheel nokey`}
+        aria-label={`调整相册${label}，方向键调整大小`} title="拖动调整尺寸，或使用方向键（Shift 加快）"
+        onKeyDown={(event) => resizeWithKeyboard(event, position)} />
+    </NodeResizeControl>)}
     {viewerKey && <ImageViewer items={items} selectedKey={viewerKey} returnFocusTo={returnFocusRef.current}
       onSelect={setSelectedKey} onClose={() => setSelectedKey(null)} mode="canvas" />}
   </>;
