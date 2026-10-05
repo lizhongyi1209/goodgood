@@ -52,3 +52,7 @@ changing gallery creation or video separators. Relevant source and regression
 tests are edited only. Per the user's standing request, no compilation, checks,
 provider requests or browser acceptance run. New cloud validation needs a later
 explicitly delegated Web build/activation; current runtime and production remain.
+
+## GG-370 · Shared prompt, variable reference sets (2026-10-05)
+
+The dedicated batch generator shares one prompt and parameter set while each expanded combination owns its reference snapshot. Unlike ordinary generators, it does not multiply combinations by delimiter-separated prompts. Per-output slots, explicit submission, independent billing/recovery/retry, and stable results ordering remain; no new total/concurrency cap. See ADR0108 GG-370.
