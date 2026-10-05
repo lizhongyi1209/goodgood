@@ -1,8 +1,8 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-05
-- Current phase: GG-385临时视频价格及本地0067/0068/Web/唯一Worker更新已启用，运行5fd584da7c1dad3ed5154fad05bdd94cf32c10a1；UI/真实生成待用户手验，未部署生产。
-- Current objective: 用户刷新5173画布，右键→视频生成，手验模型/类型/参数三块chat。默认Omni720p/5秒50积分，价格可后续调整；不自动生成、代码检查/测试或浏览器验收。
+- Current phase: GG-386视频chat对齐图片chat源码实施中，基线9a34a1a；GG-385本地运行和临时价格保持。
+- Current objective: 在隔离辅助实现一致宽度/附件/工具排/参数Popover/长文本展开，精确集成到5173源码供用户手验；不自动编译/检查/测试/重启或生成。
 - Previous objective: GG-383上传复用源码交付；GG-382设计/官方对照已获用户接受，按其O1Key附件实现，不再等待设计反馈。
 
 ## Current checkpoint
