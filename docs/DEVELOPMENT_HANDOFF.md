@@ -1,6 +1,6 @@
 # 当前开发版本与跨窗口交接
 
-> [GG-385](tasks/GG-385-local-kling-video-activation.md) 用户已授权代理选择临时价格并启用本地更新供画布UI手验。Omni720p/1080p/4k每秒10/20/40积分，动作模仿720p/1080p每秒10/20积分，默认5秒50积分。核验本地66历史迁移匹配，仅0067/0068待应用；准备必要构建与Web/唯一Worker替换，保留Vite及数据。执行中，尚未宣称启用成功；不运行自动代码检查/测试/浏览器验收或生成/扣费/生产操作。
+> [GG-385](tasks/GG-385-local-kling-video-activation.md) GG-385已本地启用：用户授权临时定价及更新；Omni720p/1080p/4k每秒10/20/40积分，动作模仿720p/1080p每秒10/20积分，默认Omni720p五秒50积分。配置在仓库外LOCALAPPDATA/GoodGood/local-video-generation/video-pricing.env，以Node --env-file传给Web/唯一Worker。0067/0068已顺序应用到127.0.0.1:54449/goodgood，历史校验和匹配、总68迁移、原用户/画布/资产/任务/流水及余额聚合保持，视频任务0。必要checkpoint构建5fd584da7c1dad3ed5154fad05bdd94cf32c10a1；Web20564/32131、唯一Worker16116/32142，隐藏启动器35248/26392，Vite17388/5173保持。两角色readiness五项ok、API代理同构建身份、画布HTTP200；未登录探测新视频能力接口401符合保护规则，不创建登录或任务。默认报价读取50积分，真实生成、扣费、代码检查/测试及浏览器交互验收未执行，生产未操作；UI由用户刷新手验。创建0/退役0，无子agent/新依赖缓存。
 
 > [GG-384](tasks/GG-384-canvas-kling-video-generation.md) 最新源码checkpoint为6181bdf306cc85a2c59313e41b34d4d760fbf941（GG-116/fix/GG-275-text-editor-layout），从b993e3c隔离a401316、保留并行1bb3b1e GG-383文档。按用户O1Key附件完成视频节点/一致三块chat/六类型/私有素材与结果/持久队列、预留结算释放/刷新恢复/原输入单卡重试、保存失败不再生成，ADR0143/0068。用户选择模型+分辨率+时长，五档每秒整数积分尚未提供；GOODGOOD_VIDEO_CREDIT_RATES_JSON未配置会闭锁。不读取或改变现有外部凭据/价格文件；需后续明确委托确认0067/0068与Web/唯一Worker更新，旧后台能力探测会阻止创建不支持的视频节点。十四项合成来源仅写，未自动构建/检查/测试/浏览器、SQL/应用请求/Provider/扣费/迁移/重启/生产操作；本轮不要自动执行验证。GG-374实际运行receipt沿用、未重查，源码不代表运行版本。独立managed工作区已提交并确认归档，创建1/退役1，无子agent/依赖或构建缓存。
 
@@ -316,8 +316,11 @@ checkpoint 构建会清空 dist 中忽略的启动器。构建后从 scripts 对
 
 ~~~powershell
 $taskCloudEnvironment = Join-Path $env:LOCALAPPDATA 'GoodGood/local-cloud-upload/cloud-upload.env'
-node dist/local-checkpoint-portfix.mjs start workspace --cloud-env-file "$taskCloudEnvironment"
+$taskVideoPricing = Join-Path $env:LOCALAPPDATA 'GoodGood/local-video-generation/video-pricing.env'
+node --env-file="$taskVideoPricing" dist/local-checkpoint-portfix.mjs start workspace --cloud-env-file "$taskCloudEnvironment"
 ~~~
+
+GG-385后Web和唯一Worker都须保留Node `--env-file`外部视频价格参数；Worker入口仅将上例workspace换为worker。外部文件只配置五档临时积分，不能扩充仅允许六项的cloud-upload.env。启动器及环境/价格文件保持忽略或仓库外。
 
 核对角色 banner 的 `referenceStorage=cloud-development`；readiness 200 只覆盖基础依赖，仍须只读核对现有云参考图预览。缺少配置时保留数据并恢复原文件，禁止重传、改对象键或回退假图片。
 

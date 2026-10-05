@@ -18,3 +18,7 @@ GG-383参考图上传复用源码已接入a4caee5fd08c5e285044961de3b766cec220e3
 - 集成边界：应用源码按隔离提交接入。挑选期间另一窗口暂存了GG-382官方对照的任务卡/IMPLEMENTATION_PLAN/DEVELOPMENT_HANDOFF三份文档，因此a4caee5一并保留；BACKLOG任务登记冲突仅合并两条记录。没有回退或重写其历史，后续b993e3c已记录跨窗口来源。
 - 回归来源：tests/gg383-reference-file-identity.test.mjs（8项）；tests/gg383-reference-upload-reuse-sql.test.mjs（1项具名隔离库），均未执行。SQL opt-in仅接受goodgood_gg383_reference_upload_reuse_test；必须另行受权并核实无真实Provider Worker。
 - 后台待办：migrations/0067_gg383_reference_upload_reuse.sql及新Web代码尚未启用。本轮未运行数据库、构建或启动命令，不改变当前Worker和生产。
+
+## 后续本地启用 · 2026-10-05
+
+[GG-385](GG-385-local-kling-video-activation.md)按用户后续明确授权，设置临时价格、应用0067/0068并构建更新Web/唯一Worker，运行5fd584d。本卡原先未启用记录仅代表交付当时；后续运行事实以GG-385为准，功能/UI仍待用户手验，无真实生成或自动测试。

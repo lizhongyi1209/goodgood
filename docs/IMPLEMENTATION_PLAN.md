@@ -1,13 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-05
-- Current phase: GG-385用户授权临时视频定价与本地启用，基于GG-384已接入源码6181bdf，执行中；尚未自动验收或部署。
-- Current objective: 临时配置五档每秒积分10/20/40及10/20，应用本地0067/0068并必要构建更新Web与唯一Worker，保留Vite和原数据，交用户在画布手验UI。
+- Current phase: GG-385临时视频价格及本地0067/0068/Web/唯一Worker更新已启用，运行5fd584da7c1dad3ed5154fad05bdd94cf32c10a1；UI/真实生成待用户手验，未部署生产。
+- Current objective: 用户刷新5173画布，右键→视频生成，手验模型/类型/参数三块chat。默认Omni720p/5秒50积分，价格可后续调整；不自动生成、代码检查/测试或浏览器验收。
 - Previous objective: GG-383上传复用源码交付；GG-382设计/官方对照已获用户接受，按其O1Key附件实现，不再等待设计反馈。
 
 ## Current checkpoint
 
-- 当前激活任务：[GG-385](tasks/GG-385-local-kling-video-activation.md)，基线b05a21e、源码6181bdf；价格及本地更新已明确授权。66历史迁移核对匹配，当前执行中；无自动功能验收或真实生成请求。
+- 当前激活任务：[GG-385](tasks/GG-385-local-kling-video-activation.md) GG-385已本地启用：用户授权临时定价及更新；Omni720p/1080p/4k每秒10/20/40积分，动作模仿720p/1080p每秒10/20积分，默认Omni720p五秒50积分。配置在仓库外LOCALAPPDATA/GoodGood/local-video-generation/video-pricing.env，以Node --env-file传给Web/唯一Worker。0067/0068已顺序应用到127.0.0.1:54449/goodgood，历史校验和匹配、总68迁移、原用户/画布/资产/任务/流水及余额聚合保持，视频任务0。必要checkpoint构建5fd584da7c1dad3ed5154fad05bdd94cf32c10a1；Web20564/32131、唯一Worker16116/32142，隐藏启动器35248/26392，Vite17388/5173保持。两角色readiness五项ok、API代理同构建身份、画布HTTP200；未登录探测新视频能力接口401符合保护规则，不创建登录或任务。默认报价读取50积分，真实生成、扣费、代码检查/测试及浏览器交互验收未执行，生产未操作；UI由用户刷新手验。创建0/退役0，无子agent/新依赖缓存。
 
 - 当前源码交接：[GG-384](tasks/GG-384-canvas-kling-video-generation.md) 6181bdf306cc85a2c59313e41b34d4d760fbf941（隔离a401316f40a7e6056107df759d58b370d146f635，基线b993e3c，接入前1bb3b1e）。编号视频节点与图片chat共享视觉，模型/类型/参数三块、六类型素材用途/上传/资产/混合输入、原生视频输出及连线、私有资产/保存刷新/冻结重试/下载完整源码；独立PG持久任务及现有唯一Worker2并发租约，未知付费提交不重发、保存失败只保存。ADR0143及0068源码，用户选择模型/分辨率/时长计价、五档整数每秒积分待给，未定价禁止生成。十四项合成来源仅写；未构建/代码或diff检查/测试/浏览器验收、迁移/配置写入/接口/扣费/服务或生产操作。源码已实现并接入，运行保持GG-374历史receipt。创建1/退役1，managed辅助归档已确认；无子agent/安装依赖或构建缓存。下一步只在用户后续明确委托时启用后台和手验。
 
