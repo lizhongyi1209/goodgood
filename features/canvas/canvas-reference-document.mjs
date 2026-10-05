@@ -1,7 +1,9 @@
 import { encodeCanvasReferenceOrderPage, decodeCanvasReferenceOrderPage } from "./canvas-reference-order.mjs";
 
+import { isCanvasBatchGeneratorId, parseCanvasBatchReferenceHandle, canvasReferenceGroupEdgeId } from "./canvas-batch-reference-model.mjs";
+
 const BATCH_EDGE_ID = /^batchref-\d+-\d+-\d+$/;
-const groupKey = (groupId, targetId) => `reference-${groupId}-${targetId}`;
+const groupKey = canvasReferenceGroupEdgeId;
 const memberKey = (edgeId, memberId) => `${edgeId}:${memberId}`;
 
 function orderedMembers(group, nodes) {
@@ -55,9 +57,11 @@ export function decodeCanvasReferencePage(page) {
   const grouped = new Map();
   for (const edge of page.edges) {
     const source = byId.get(edge.source);
-    if (!BATCH_EDGE_ID.test(edge.id) || edge.sourceHandle !== "reference" || edge.targetHandle !== "reference" ||
+    const referencePort = edge.targetHandle === "reference" ||
+      isCanvasBatchGeneratorId(edge.target) && parseCanvasBatchReferenceHandle(edge.targetHandle);
+    if (!BATCH_EDGE_ID.test(edge.id) || edge.sourceHandle !== "reference" || !referencePort ||
         !source?.parentId || byId.get(source.parentId)?.type !== "group" || byId.get(edge.target)?.type !== "imageGenerator") continue;
-    const key = groupKey(source.parentId, edge.target);
+    const key = groupKey(source.parentId, edge.target, edge.targetHandle);
     if (!grouped.has(key)) grouped.set(key, []);
     grouped.get(key).push(edge);
   }
@@ -66,7 +70,7 @@ export function decodeCanvasReferencePage(page) {
   const emitted = new Set();
   const edges = page.edges.flatMap((edge) => {
     const source = byId.get(edge.source);
-    const key = source?.parentId ? groupKey(source.parentId, edge.target) : "";
+    const key = source?.parentId ? groupKey(source.parentId, edge.target, edge.targetHandle) : "";
     const batch = grouped.get(key);
     if (!batch?.includes(edge)) return [edge];
     const reference = convertedReferences[edge.id];
@@ -77,7 +81,7 @@ export function decodeCanvasReferencePage(page) {
     const group = byId.get(source.parentId);
     const included = new Set(batch.map((item) => item.source));
     const excludedSourceIds = orderedMembers(group, page.nodes).filter((node) => !included.has(node.id)).map((node) => node.id);
-    return [{ id: key, source: group.id, target: edge.target, sourceHandle: "reference", targetHandle: "reference",
+    return [{ id: key, source: group.id, target: edge.target, sourceHandle: "reference", targetHandle: edge.targetHandle,
       ...(excludedSourceIds.length ? { excludedSourceIds } : {}) }];
   });
   const nodes = page.nodes.map((node) => node.type === "group" && !node.referenceOrder

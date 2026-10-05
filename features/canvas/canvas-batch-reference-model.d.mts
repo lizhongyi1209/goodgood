@@ -1,0 +1,10 @@
+export type CanvasBatchReferenceMode = "all" | "paired";
+export type CanvasBatchReferenceGroup = Readonly<{ index: number; mode: CanvasBatchReferenceMode }>;
+export type CanvasBatchReferenceEdge = Readonly<{ target: string; sourceHandle?: string | null; targetHandle?: string | null }>;
+export const CANVAS_BATCH_REFERENCE_GROUP_LIMIT: 5;
+export function isCanvasBatchGeneratorId(id: string | null | undefined): boolean;
+export function canvasBatchReferenceHandle(index: number, mode?: CanvasBatchReferenceMode): string;
+export function parseCanvasBatchReferenceHandle(handle: string | null | undefined): CanvasBatchReferenceGroup | null;
+export function canvasBatchModeFromEdges(edges: readonly CanvasBatchReferenceEdge[], targetId: string, fallback?: CanvasBatchReferenceMode): CanvasBatchReferenceMode;
+export function canvasBatchGroupCountFromEdges(edges: readonly CanvasBatchReferenceEdge[], targetId: string, min?: number): number;
+export function canvasReferenceGroupEdgeId(groupId: string, targetId: string, targetHandle?: string | null): string;

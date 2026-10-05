@@ -1,3 +1,5 @@
+import { isCanvasBatchGeneratorId } from "./canvas-batch-reference-model.mjs";
+
 export const directReferenceOrderKey = (id) => `direct:${id}`;
 export const linkedReferenceOrderKey = (id) => `linked:${id}`;
 
@@ -36,7 +38,8 @@ export function encodeCanvasReferenceOrderPage(page, pageIndex = 0) {
     const items = generator.directReferenceIds.map((referenceId) => ({ orderKey: directReferenceOrderKey(referenceId) }));
     const seen = new Set(generator.directReferenceIds.map((referenceId) => `reference:${referenceId}`));
     for (const edge of page.edges) {
-      if (edge.target !== id || edge.sourceHandle !== "reference") continue;
+      if (edge.target !== id || edge.sourceHandle !== "reference" ||
+          isCanvasBatchGeneratorId(id) && edge.targetHandle !== "reference") continue;
       const source = byId.get(edge.source);
       const referenceId = page.convertedReferences?.[edge.id] ?? (source?.asset?.kind === "reference" ? source.asset.id : undefined);
       const identities = [referenceId ? `reference:${referenceId}` : `node:${edge.source}`,
@@ -53,7 +56,8 @@ export function encodeCanvasReferenceOrderPage(page, pageIndex = 0) {
   const occupied = new Set(page.edges.map((edge) => edge.id));
   const convertedReferences = { ...page.convertedReferences };
   const edges = page.edges.map((edge, index) => {
-    const rank = edge.sourceHandle === "reference" ? ranks.get(edge.target)?.get(linkedReferenceOrderKey(edge.source)) : undefined;
+    const rank = edge.sourceHandle === "reference" && (!isCanvasBatchGeneratorId(edge.target) || edge.targetHandle === "reference")
+      ? ranks.get(edge.target)?.get(linkedReferenceOrderKey(edge.source)) : undefined;
     if (rank === undefined || rank > 9) return edge;
     const prefix = `reforder-${rank}:`;
     // Very long legacy IDs are normalized once, keeping the graph/import mapping.
@@ -77,7 +81,8 @@ export function decodeCanvasReferenceOrderPage(page) {
   const convertedReferences = { ...page.convertedReferences };
   const edges = page.edges.map((edge) => {
     const match = ORDERED_EDGE.exec(edge.id);
-    if (!match || edge.sourceHandle !== "reference" || !page.generators[edge.target]) return edge;
+    if (!match || edge.sourceHandle !== "reference" || !page.generators[edge.target] ||
+        isCanvasBatchGeneratorId(edge.target) && edge.targetHandle !== "reference") return edge;
     const rank = Number(match[1]);
     if (!orders.has(edge.target)) orders.set(edge.target, new Map());
     orders.get(edge.target).set(rank, linkedReferenceOrderKey(edge.source));

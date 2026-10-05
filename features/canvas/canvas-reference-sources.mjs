@@ -1,3 +1,4 @@
+import { canvasReferenceGroupEdgeId } from "./canvas-batch-reference-model.mjs";
 import { canvasNodeAbsolutePosition } from "./canvas-groups.mjs";
 import { canvasConnectionCreatesCycle } from "./canvas-text-input.mjs";
 
@@ -124,7 +125,7 @@ export function expandCanvasGroupReferences(nodes, edges, groupIds, converted = 
     const inputs = canvasReferenceInputs(nodes, [edge]);
     for (const key of Object.keys(nextConverted)) if (key === edge.id || key.startsWith(`${edge.id}:`)) delete nextConverted[key];
     return inputs.map((input) => {
-      const id = `reference-${input.sourceId}-${edge.target}`;
+      const id = canvasReferenceGroupEdgeId(input.sourceId, edge.target, edge.targetHandle);
       if (converted[input.key]?.status === "ready") nextConverted[id] = converted[input.key];
       return { ...edge, id, source: input.sourceId, data: undefined, label: undefined };
     });
