@@ -100,7 +100,11 @@ button.folderCard[data-move-state="succeeded"] { background: #e4e4e7; box-shadow
 .nameError { color: #52525b; font-size: 10px; line-height: 1.4; }
 .addMenu[data-slot="dropdown-menu-content"], .linkMenu[data-slot="dropdown-menu-sub-content"] { min-width: 0; padding: 5px; border: 1px solid #e4e4e7; border-radius: 12px; background: #fff; color: #27272a; box-shadow: 0 4px 14px rgb(0 0 0 / 8%); }
 .addMenu[data-slot="dropdown-menu-content"] { width: 160px; }
-.assetContextMenu[data-slot="context-menu-content"] { min-width: 140px; padding: 5px; border: 1px solid #e4e4e7; border-radius: 12px; background: #fff; color: #27272a; box-shadow: 0 4px 14px rgb(0 0 0 / 8%); }
+.assetContextMenu[data-slot="context-menu-content"], .assetContextMenu[data-slot="context-menu-sub-content"] { min-width: 140px; padding: 5px; border: 1px solid #e4e4e7; border-radius: 12px; background: #fff; color: #27272a; box-shadow: 0 4px 14px rgb(0 0 0 / 8%); }
+.folderMoveMenu[data-slot] { width: min(260px, calc(100vw - 24px)); max-height: min(320px, var(--radix-context-menu-content-available-height, calc(100vh - 24px))); overflow-x: hidden; overflow-y: auto; }
+.folderMoveName { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.folderMoveCurrent { flex: none; color: #71717a; font-size: 10px; }
+.addMenuItem[data-disabled] { opacity: 0.5; }
 .folderNameOverlay[data-slot="dialog-overlay"] { z-index: 70; background: rgb(0 0 0 / 28%); }
 .folderNameDialog[data-slot="dialog-content"] { z-index: 71; width: min(360px, calc(100vw - 32px)); max-width: none; max-height: calc(100dvh - 32px); gap: 18px; overflow-y: auto; border: 1px solid #e4e4e7; border-radius: 14px; padding: 20px; background: #fff; color: #18181b; box-shadow: none; }
 .folderNameHeader[data-slot="dialog-header"] { gap: 0; text-align: left; }
@@ -151,4 +155,4 @@ button.folderCard[data-move-state="succeeded"] { background: #e4e4e7; box-shadow
 .moveFeedback [data-slot="button"]:focus-visible { outline: 1px solid #71717a; outline-offset: 1px; }
 .empty { grid-column: 1 / -1; margin: 0; padding: 16px 8px; color: #71717a; font-size: 12px; text-align: center; }
 @media (pointer: coarse) { .addMenuItem[data-slot] { min-height: 44px; } .linkField [data-slot="input"] { height: 44px; font-size: 16px; } .linkField [data-slot="button"] { width: 40px; height: 40px; } }
-@media (prefers-reduced-motion: reduce) { .pendingVisual[data-uploading]::after, .folderCard[data-move-state]::after, .folderCard[data-move-state] .folderIcon { animation: none; } button.folderCard, .folderCard .folderIcon, .visualTrigger { transition: none; } button.folderCard[data-drop-hover], button.folderCard[data-drop-hover] .folderIcon, .assetCard[data-move-state="pending"] .visualTrigger { transform: none; } .addMenu[data-slot], .linkMenu[data-slot], .videoDialog[data-slot], .videoOverlay[data-slot] { animation: none; } .videoDialog button, .expand[data-slot], .videoPlay[data-slot] { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .pendingVisual[data-uploading]::after, .folderCard[data-move-state]::after, .folderCard[data-move-state] .folderIcon { animation: none; } button.folderCard, .folderCard .folderIcon, .visualTrigger { transition: none; } button.folderCard[data-drop-hover], button.folderCard[data-drop-hover] .folderIcon, .assetCard[data-move-state="pending"] .visualTrigger { transform: none; } .addMenu[data-slot], .linkMenu[data-slot], .assetContextMenu[data-slot], .videoDialog[data-slot], .videoOverlay[data-slot] { animation: none; } .videoDialog button, .expand[data-slot], .videoPlay[data-slot] { transition: none; } }

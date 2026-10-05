@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type DragEven
 import { AudioLines, Check, ChevronLeft, Download, Folder, FolderOpen, ImageOff, ListFilter, Maximize2, Pause, Pencil, Play, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuPortal, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -615,6 +615,11 @@ export function CanvasAssetPanel({ enabled, assetRevision, downloadScopeKey, onA
   };
 
   const managementBlocked = managing || renaming || moving || Boolean(editingKey) || Boolean(editingFolder);
+  const moveAssetToFolder = (key: string, destinationId: string) => {
+    if (!enabled || loading || error || managementBlocked || managementPendingRef.current || renamePendingRef.current
+      || moverRef.current?.isPending() || !planCanvasFolderMove(dataRef.current, key, destinationId)) return;
+    void moverRef.current?.move(key, destinationId);
+  };
   const restoreMenuFocus = (event: Event) => {
     if (!renameFromMenuRef.current) return;
     renameFromMenuRef.current = false;
@@ -799,7 +804,7 @@ export function CanvasAssetPanel({ enabled, assetRevision, downloadScopeKey, onA
                   onDragStart={(event) => {
                     if (editing || editingKey || editingFolder || managementPendingRef.current || renamePendingRef.current || moverRef.current?.isPending() || assetDragBlockedRef.current
                       || (event.target instanceof Element && event.target.closest("[data-asset-media-control]"))) { event.preventDefault(); return; }
-                    event.dataTransfer.effectAllowed = item.media === "image" || item.media === "text" ? "copyMove" : "copy";
+                    event.dataTransfer.effectAllowed = "copyMove";
                     event.dataTransfer.setData(CANVAS_ASSET_DRAG_TYPE, key);
                     draggedKeyRef.current = key;
                     setDraggedKey(key);
@@ -831,6 +836,24 @@ export function CanvasAssetPanel({ enabled, assetRevision, downloadScopeKey, onA
                 </div></ContextMenuTrigger>
                   <ContextMenuContent className={styles.assetContextMenu} onCloseAutoFocus={restoreMenuFocus}>
                     {downloadTarget && <ContextMenuItem className={styles.addMenuItem} disabled={managementBlocked || downloadPendingKey !== null} onSelect={() => void downloadImage(downloadTarget)}><Download size={14} aria-hidden="true" />{downloadPendingKey === downloadTarget.key ? "正在下载…" : "下载"}</ContextMenuItem>}
+                    <ContextMenuSub>
+                      <ContextMenuSubTrigger className={styles.addMenuItem} disabled={!enabled || managementBlocked || loading || Boolean(error) || !data}>
+                        <Folder size={14} aria-hidden="true" />移动至
+                      </ContextMenuSubTrigger>
+                      <ContextMenuPortal>
+                        <ContextMenuSubContent className={`${styles.assetContextMenu} ${styles.folderMoveMenu}`} aria-label="选择目标文件夹">
+                          {data?.folders.length ? data.folders.map((folder) => {
+                            const current = data.arrangements.some((entry) => entry.kind === item.kind && entry.id === item.id && entry.folderId === folder.id);
+                            return <ContextMenuItem key={folder.id} className={styles.addMenuItem} title={folder.name}
+                              disabled={managementBlocked || loading || Boolean(error) || !planCanvasFolderMove(data, key, folder.id)}
+                              onSelect={() => moveAssetToFolder(key, folder.id)}>
+                              <Folder size={14} aria-hidden="true" /><span className={styles.folderMoveName}>{folder.name}</span>
+                              {current && <span className={styles.folderMoveCurrent}>当前位置</span>}
+                            </ContextMenuItem>;
+                          }) : <ContextMenuItem className={styles.addMenuItem} disabled>暂无文件夹</ContextMenuItem>}
+                        </ContextMenuSubContent>
+                      </ContextMenuPortal>
+                    </ContextMenuSub>
                     <ContextMenuItem className={styles.addMenuItem} disabled={managementBlocked} onSelect={() => { renameFromMenuRef.current = true; beginRename(item); }}><Pencil size={14} aria-hidden="true" />重命名</ContextMenuItem>
                     <ContextMenuItem className={styles.addMenuItem} disabled={managementBlocked} onSelect={() => void deleteEntry(item)}><Trash2 size={14} aria-hidden="true" />删除</ContextMenuItem>
                   </ContextMenuContent>

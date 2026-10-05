@@ -50,7 +50,7 @@ test("GG-256 moves generated and reference identity with current tags only", () 
   assert.equal(data.arrangements[0].displayName, "我的图");
 });
 
-test("GG-256 rejects absent/loading collections, unknown identities, same folders and non-image media", () => {
+test("GG-256 rejects absent/loading collections, unknown identities, same folders and mismatched media", () => {
   const data = collection();
   for (const [current, key, folder] of [
     [null, "reference:image-b", "people"],
@@ -58,7 +58,6 @@ test("GG-256 rejects absent/loading collections, unknown identities, same folder
     [data, null, "people"], [data, "", "people"],
     [data, "generated:other-owner", "people"], [data, "reference:image-a", "people"],
     [data, "generated:image-a", "people"], [data, "reference:image-b", "unknown"],
-    [data, "video:video-a", "people"], [data, "audio:audio-a", "people"],
     [{ ...data, items: [{ kind: "external", id: "image", media: "image" }] }, "external:image", "people"],
     [{ ...data, items: [{ kind: "generated", id: "image-a", media: "video" }] }, "generated:image-a", "places"],
   ]) assert.equal(planCanvasFolderMove(current, key, folder), null);
@@ -108,7 +107,7 @@ test("GG-256 failure leaves original organization intact and retry resolves late
 
 test("GG-256 invalid/no-op moves never call save or expose a pending state", async () => {
   const h = harness(async () => { throw new Error("unexpected write"); });
-  for (const [key, folder] of [["generated:image-a", "people"], ["unknown", "people"], ["reference:image-b", "missing"], ["video:video-a", "people"]]) {
+  for (const [key, folder] of [["generated:image-a", "people"], ["unknown", "people"], ["reference:image-b", "missing"], ["video:unknown", "people"]]) {
     assert.equal(await h.mover.move(key, folder), false);
   }
   h.setData(null);
@@ -149,4 +148,19 @@ test("GG-256 non-Error failure remains recoverable without hiding the source ass
   assert.equal(h.states.at(-1).phase, "failed");
   assert.equal(h.states.at(-1).error, "移动失败，请重试。");
   assert.equal(h.getData().items.length, 4);
+});
+
+test("GG-372 moves video, audio and text through the same confirmed organization path", async () => {
+  for (const [kind, id, media] of [["video", "video-a", "video"], ["audio", "audio-a", "audio"], ["text", "text-a", "text"]]) {
+    const initial = collection();
+    if (kind === "text") initial.items.push({ kind, id, media });
+    initial.arrangements.push({ kind, id, folderId: "people", tags: ["保留标签"], displayName: "保留名称" });
+    const h = harness(async (nextKind, nextId, value) => ({ kind: nextKind, id: nextId, ...value, displayName: "保留名称" }), initial);
+    assert.equal(await h.mover.move(`${kind}:${id}`, "places"), true);
+    assert.deepEqual(h.requests, [[kind, id, { folderId: "places", tags: ["保留标签"] }]]);
+    assert.equal(h.getData().arrangements.find((entry) => entry.kind === kind && entry.id === id).displayName, "保留名称");
+    assert.deepEqual(h.states.map((state) => state.phase), ["pending", "succeeded"]);
+    assert.equal(await h.mover.move(`${kind}:${id}`, "places"), false);
+    assert.equal(h.requests.length, 1);
+  }
 });
