@@ -25,7 +25,8 @@ import { uploadCanvasAssetFile, CANVAS_ASSET_LIBRARY_UPDATED_EVENT } from "./can
 import { CanvasVideoMaterialPicker, type VideoPickerMaterial } from "./canvas-video-material-picker";
 import { CanvasVideoGeneratorPrompt } from "./canvas-video-generator-prompt";
 import { CanvasVideoGeneratorSettings } from "./canvas-video-generator-settings";
-import { CanvasVideoGenerationError, quoteCanvasVideo, submitCanvasVideo, readCanvasVideo, downloadCanvasVideo, retryCanvasVideoSave, retryCanvasVideo, type VideoCreditQuote } from "./http-video-generation";
+import { canvasVideoGenerationBatchInputs } from "./canvas-video-generation-batch.mjs";
+import { CanvasVideoGenerationError, quoteCanvasVideo, readCanvasVideoCapabilities, submitCanvasVideo, readCanvasVideo, downloadCanvasVideo, retryCanvasVideoSave, retryCanvasVideo, type VideoCreditQuote } from "./http-video-generation";
 import type { CanvasNode, CanvasVideoGeneratorNodeType } from "./canvas-workspace";
 import workspaceStyles from "./canvas-workspace.module.css";
 import composerStyles from "./canvas-page.module.css";
@@ -38,6 +39,10 @@ export type CanvasVideoGeneratorNodeData = Record<string, unknown> & {
 type InputView = { key: string; kind: "image" | "video" | "text"; name: string; edgeId?: string; previewUrl?: string; text?: string;
   material?: VideoMaterial; role?: VideoRole; unavailable?: boolean };
 const phaseLabels = { queued: "排队中", submitting: "提交中", submission_unknown: "提交结果待确认", running: "生成中", saving: "保存中", save_failed: "保存暂未完成", succeeded: "已完成", failed: "生成未完成" };
+function rejectedVideoStatus(requestId: string, message: string): VideoGenerationStatus {
+  return { requestId, state: "failed", progress: null, reservedCredits: 0, chargedCredits: 0, output: null,
+    error: { code: "VIDEO_SUBMISSION_REJECTED", message } };
+}
 function VideoPreview({ url, className, label, controls = false }: Readonly<{ url: string; className?: string; label: string; controls?: boolean }>) {
   const ref = useRef<HTMLVideoElement>(null);
   useEffect(() => {
@@ -58,6 +63,7 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
   const [uploading, setUploading] = useState(false); const [posting, setPosting] = useState(false); const [message, setMessage] = useState("");
   const [quote, setQuote] = useState<VideoCreditQuote | null>(null); const [retryQuote, setRetryQuote] = useState<VideoCreditQuote | null>(null); const [quoteError, setQuoteError] = useState(""); const [pollRevision, setPollRevision] = useState(0);
   const [directPreviews, setDirectPreviews] = useState<Record<string, string>>({}); const [playing, setPlaying] = useState(false);
+  const [countEnabled, setCountEnabled] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null); const videoRef = useRef<HTMLVideoElement>(null);
   const playbackRef = useRef<ReturnType<typeof attachCanvasVideoPreviewPlayback> | null>(null);
   const scope = `${context.ownerKey}:${context.workspaceId ?? "personal"}:${context.pageId}`;
@@ -66,7 +72,9 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
   const noticesRef = useRef(new Set<string>()); const actionRef = useRef(false);
   const previewRefreshAttempted = useRef(false);
   useEffect(() => { previewRefreshAttempted.current = false; }, [data.outputAssetId]);
-  const draft = data.videoGeneration; const job = data.job;
+  const draft = data.videoGeneration; const count = draft.count ?? 1;
+  const job = draft.submissionError && draft.requestId ? rejectedVideoStatus(draft.requestId, draft.submissionError) : data.job;
+  const totalCredits = quote ? quote.credits * count : null;
   const active = Boolean(draft.requestId && (!job || VIDEO_ACTIVE_STATES.includes(job.state) || ["submission_unknown", "save_failed"].includes(job.state)));
   const locked = active || posting || uploading || !context.enabled;
   const sequence = Math.max(1, nodes.filter((node) => node.type === "videoGenerator").findIndex((node) => node.id === id) + 1);
@@ -97,17 +105,28 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
   const quoteInput = useMemo(() => ({ modelId: draft.modelId, type: draft.type, resolution: draft.resolution, duration: draft.duration, characterOrientation: draft.characterOrientation,
     ...(draft.type === "motion_control" && motionVideoId ? { videoAssetId: motionVideoId } : {}) }), [draft.modelId, draft.type, draft.resolution, draft.duration, draft.characterOrientation, motionVideoId]);
   const updateDraft = (patch: Partial<CanvasVideoGenerationDraft>) => { flow.updateNodeData(id, (node) => node.type === "videoGenerator" ? { videoGeneration: { ...node.data.videoGeneration, ...patch } } : {}); };
-  const validScope = (expected: string) => mounted.current && scopeRef.current === expected && flow.getNode(id)?.type === "videoGenerator";
-  const receive = (status: VideoGenerationStatus, expectedScope: string) => {
-    if (!validScope(expectedScope)) return;
-    const node = flow.getNode(id); if (node?.type !== "videoGenerator" || node.data.videoGeneration.requestId !== status.requestId) return;
-    if (JSON.stringify(node.data.job) !== JSON.stringify(status)) flow.updateNodeData(id, { job: status,
+  const validScope = (expected: string, nodeId = id) => mounted.current && scopeRef.current === expected && flow.getNode(nodeId)?.type === "videoGenerator";
+  const receive = (status: VideoGenerationStatus, expectedScope: string, nodeId = id) => {
+    if (!validScope(expectedScope, nodeId)) return;
+    const node = flow.getNode(nodeId); if (node?.type !== "videoGenerator" || node.data.videoGeneration.requestId !== status.requestId) return;
+    if (JSON.stringify(node.data.job) !== JSON.stringify(status)) flow.updateNodeData(nodeId, { job: status,
+      videoGeneration: { ...node.data.videoGeneration, submissionError: undefined },
       ...(status.output ? { outputAssetId: status.output.id, previewUrl: status.output.url, pixelWidth: status.output.pixelWidth, pixelHeight: status.output.pixelHeight, durationSeconds: status.output.durationSeconds } : {}) });
     if (["succeeded", "failed"].includes(status.state) && !noticesRef.current.has(status.requestId)) {
       noticesRef.current.add(status.requestId); context.onBillingChanged();
       if (status.output) window.dispatchEvent(new CustomEvent(CANVAS_ASSET_LIBRARY_UPDATED_EVENT, { detail: { ownerKey: context.ownerKey } }));
     }
   };
+  useEffect(() => {
+    setCountEnabled(false);
+    if (!context.enabled) return;
+    const controller = new AbortController();
+    void readCanvasVideoCapabilities(context.workspaceId, controller.signal).then((capabilities) => {
+      if (!controller.signal.aborted) setCountEnabled(capabilities.enabled && Array.isArray(capabilities.counts) &&
+        [1, 2, 4].every((value) => capabilities.counts!.includes(value as 1 | 2 | 4)));
+    }).catch(() => {});
+    return () => controller.abort();
+  }, [context.enabled, context.workspaceId, scope]);
   useEffect(() => {
     setQuote(null); setQuoteError(""); if (!context.enabled || !selected) return;
     if (quoteInput.type === "motion_control" && !quoteInput.videoAssetId) { setQuoteError("添加动作视频后显示积分"); return; }
@@ -133,7 +152,7 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
     return () => controller.abort();
   }, [directVideoIds, scope, context.enabled, context.workspaceId]);
   useEffect(() => {
-    const requestId = draft.requestId; if (!requestId || !context.enabled) return;
+    const requestId = draft.requestId; if (!requestId || draft.submissionError || !context.enabled) return;
     const controller = new AbortController(); let timer: number | undefined;
     const poll = async () => {
       try {
@@ -149,7 +168,7 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
     void poll(); return () => { controller.abort(); window.clearTimeout(timer); };
     // Task identity and scope own this recovery loop; edits do not create a new paid request.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draft.requestId, context.enabled, context.workspaceId, scope, pollRevision]);
+  }, [draft.requestId, draft.submissionError, context.enabled, context.workspaceId, scope, pollRevision]);
   useEffect(() => {
     if (!selected || locked) { setModelOpen(false); setTypeOpen(false); if (!selected) setParametersOpen(false); }
   }, [selected, locked]);
@@ -210,24 +229,58 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
   };
   const generate = async (retry = false) => {
     const acceptedQuote = retry ? retryQuote : quote;
-    if (actionRef.current || locked || !acceptedQuote || !retry && problem) return;
+    if (actionRef.current || locked || !acceptedQuote || !retry && (problem || count > 1 && !countEnabled)) return;
     const expected = scope; const previousId = draft.requestId; const requestId = crypto.randomUUID();
     actionRef.current = true; setPosting(true); setMessage("");
     try {
       const projectId = context.beforeGenerate();
       const input: VideoGenerationInput = retry && draft.lastInput ? { ...draft.lastInput, requestId, quotedCredits: acceptedQuote.credits }
         : { ...fields, requestId, projectId, media, quotedCredits: acceptedQuote.credits };
-      flow.updateNodeData(id, { videoGeneration: { ...draft, requestId, lastInput: input }, job: undefined, outputAssetId: undefined, previewUrl: undefined, pixelWidth: undefined, pixelHeight: undefined, durationSeconds: undefined });
-      const status = retry && previousId ? await retryCanvasVideo(previousId, { requestId, quotedCredits: acceptedQuote.credits }, context.workspaceId, AbortSignal.timeout(120_000))
-        : await submitCanvasVideo(input, context.workspaceId, AbortSignal.timeout(120_000));
-      receive(status, expected); if (validScope(expected)) context.onBillingChanged();
+      const current = flow.getNode(id); if (current?.type !== "videoGenerator") return;
+      const inputs = canvasVideoGenerationBatchInputs(input, retry ? 1 : count, () => crypto.randomUUID());
+      const plan = inputs.map((frozen, index) => ({ input: frozen, nodeId: index === 0 ? id : `video-generator-${crypto.randomUUID()}` }));
+      const resultData = (videoGeneration: CanvasVideoGenerationDraft): CanvasVideoGeneratorNodeData => ({ videoGeneration,
+        job: undefined, outputAssetId: undefined, previewUrl: undefined, pixelWidth: undefined, pixelHeight: undefined, durationSeconds: undefined });
+      const originalData = resultData({ ...draft, requestId, lastInput: inputs[0], submissionError: undefined });
+      const resultWidth = Number(current.style?.width ?? current.width ?? 320);
+      const siblings: CanvasVideoGeneratorNodeType[] = plan.slice(1).map((item, index) => ({
+        id: item.nodeId, type: "videoGenerator", selected: false, ...(current.parentId ? { parentId: current.parentId } : {}),
+        position: { x: current.position.x + (index + 1) * (resultWidth + 24), y: current.position.y },
+        style: { width: resultWidth, height: Number(current.style?.height ?? current.height ?? 180) },
+        data: resultData({ ...draft, count: 1, prompt: item.input.prompt,
+          materials: item.input.media.map((material) => ({ ...material })), roles: {}, requestId: item.input.requestId, lastInput: item.input, submissionError: undefined }),
+      }));
+      // Publish all slots together, before the first paid request can start.
+      flow.setNodes((currentNodes) => [...currentNodes.map((node) => node.id === id && node.type === "videoGenerator"
+        ? { ...node, data: { ...node.data, ...originalData } } : node), ...siblings]);
+      const submissions = await Promise.allSettled(plan.map(async (item) => {
+        try {
+          const status = retry && previousId && !draft.submissionError
+            ? await retryCanvasVideo(previousId, { requestId: item.input.requestId, quotedCredits: acceptedQuote.credits }, context.workspaceId, AbortSignal.timeout(120_000))
+            : await submitCanvasVideo(item.input, context.workspaceId, AbortSignal.timeout(120_000));
+          receive(status, expected, item.nodeId);
+        } catch (error) {
+          if (!validScope(expected, item.nodeId)) return;
+          const errorMessage = (error instanceof Error ? error.message : "提交连接中断，正在确认任务状态。")
+            .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "").slice(0, 1000) || "视频请求未被接收，请重试。";
+          if (item.nodeId === id) setMessage(errorMessage);
+          if (error instanceof CanvasVideoGenerationError && ((error.status ?? 0) >= 400 && (error.status ?? 0) < 500 || error.code === "VIDEO_PROVIDER_UNAVAILABLE")) {
+            const target = flow.getNode(item.nodeId);
+            if (target?.type === "videoGenerator" && target.data.videoGeneration.requestId === item.input.requestId) {
+              if (!countEnabled && item.nodeId === id) flow.updateNodeData(id, current.data);
+              else flow.updateNodeData(item.nodeId, { videoGeneration: { ...target.data.videoGeneration, submissionError: errorMessage },
+                  job: rejectedVideoStatus(item.input.requestId, errorMessage) });
+            }
+            if (error.code === "VIDEO_PRICE_CHANGED") setPriceRevision((value) => value + 1);
+          }
+        }
+      }));
+      const unexpectedFailure = submissions.find((result) => result.status === "rejected");
+      if (unexpectedFailure?.status === "rejected") throw unexpectedFailure.reason;
+      if (validScope(expected)) context.onBillingChanged();
     } catch (error) {
       if (!validScope(expected)) return;
       setMessage(error instanceof Error ? error.message : "提交连接中断，正在确认任务状态。");
-      if (error instanceof CanvasVideoGenerationError && ((error.status ?? 0) >= 400 && (error.status ?? 0) < 500 || ["VIDEO_PROVIDER_UNAVAILABLE"].includes(error.code))) {
-        const current = flow.getNode(id); if (current?.type === "videoGenerator" && current.data.videoGeneration.requestId === requestId) flow.updateNodeData(id, { videoGeneration: { ...current.data.videoGeneration, requestId: previousId, lastInput: draft.lastInput }, job });
-        if (error.code === "VIDEO_PRICE_CHANGED") setPriceRevision((value) => value + 1);
-      }
     } finally { actionRef.current = false; if (validScope(expected)) setPosting(false); }
   };
   const retrySave = async () => {
@@ -241,7 +294,7 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
   const center = screenLeft + nodeWidth * zoom / 2; let align: "start" | "center" | "end" = "center"; let toolbarWidth = desiredWidth;
   if (center - desiredWidth / 2 < visibleLeft + 15) { align = "start"; toolbarWidth = Math.min(desiredWidth, Math.max(120, viewportWidth - screenLeft - 15)); }
   else if (center + desiredWidth / 2 > viewportWidth - 15) { align = "end"; toolbarWidth = Math.min(desiredWidth, Math.max(120, screenLeft + nodeWidth * zoom - visibleLeft - 15)); }
-  const ready = !locked && !problem && Boolean(quote); const motion = draft.type === "motion_control";
+  const ready = !locked && !problem && Boolean(quote) && (count === 1 || countEnabled); const motion = draft.type === "motion_control";
   const type = VIDEO_GENERATION_TYPES.find((item) => item.id === draft.type)!;
   const sendHint = !context.enabled ? "画布准备好后可生成" : locked ? "当前任务进行中" : problem || quoteError || "生成视频（Ctrl/⌘ + Enter）";
   const validationNotice = problem === "请输入视频描述。" ? "" : problem;
@@ -346,7 +399,7 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
                   <ChevronDown size={13} aria-hidden="true" />
                 </Button>
               </PopoverTrigger>
-              <CanvasVideoGeneratorSettings id={`video-parameters-${id}`} draft={draft} media={media} disabled={locked} onChange={updateDraft} />
+              <CanvasVideoGeneratorSettings id={`video-parameters-${id}`} draft={draft} media={media} disabled={locked} countEnabled={countEnabled} onChange={updateDraft} />
             </Popover>
             <Select open={typeOpen} onOpenChange={(open) => { setTypeOpen(open); if (open) { setModelOpen(false); setParametersOpen(false); } }} value={draft.type}
               onValueChange={(value) => changeType(value as VideoGenerationType)} disabled={locked}>
@@ -367,10 +420,10 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
             </Select>
             <Tooltip><TooltipTrigger asChild><span>
               <Button type="button" className={composerStyles.generate} disabled={!ready} aria-busy={posting}
-                aria-label={quote ? `生成视频，本次 ${quote.credits} 积分` : "生成视频，当前规格暂无报价"} onClick={() => void generate()}>
+                aria-label={totalCredits !== null ? `生成 ${count} 个视频，本次 ${totalCredits} 积分` : "生成视频，当前规格暂无报价"} onClick={() => void generate()}>
                 <span className={composerStyles.generateCost}>
                   {posting ? <LoaderCircle className={`size-[1em] ${composerStyles.loadingIcon}`} /> : <CreditIcon className="size-[1em]" />}
-                  {quote?.credits ?? "—"}
+                  {totalCredits ?? "—"}
                 </span>
               </Button>
             </span></TooltipTrigger><TooltipContent>{sendHint}</TooltipContent></Tooltip>

@@ -5,7 +5,7 @@ import { Plus, X } from "lucide-react";
 import { PopoverContent } from "@/components/ui/popover";
 import { Slider } from "@/components/ui/slider";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { VIDEO_GENERATION_MODELS, type CanvasVideoGenerationDraft, type VideoGenerationMedia } from "@/shared/contracts/video-generation.mjs";
+import { VIDEO_GENERATION_MODELS, VIDEO_GENERATION_COUNTS, type CanvasVideoGenerationDraft, type VideoGenerationCount, type VideoGenerationMedia } from "@/shared/contracts/video-generation.mjs";
 import composerStyles from "./canvas-page.module.css";
 import styles from "./canvas-video-generator-node.module.css";
 
@@ -25,11 +25,12 @@ function Options({ name, value, choices, disabled, onChange }: Readonly<{
   </section>;
 }
 
-export function CanvasVideoGeneratorSettings({ id, draft, media, disabled, onChange }: Readonly<{
+export function CanvasVideoGeneratorSettings({ id, draft, media, disabled, countEnabled, onChange }: Readonly<{
   id: string;
   draft: CanvasVideoGenerationDraft;
   media: readonly VideoGenerationMedia[];
   disabled: boolean;
+  countEnabled: boolean;
   onChange: (patch: Partial<CanvasVideoGenerationDraft>) => void;
 }>) {
   const [panel, setPanel] = useState<HTMLDivElement | null>(null);
@@ -92,6 +93,8 @@ export function CanvasVideoGeneratorSettings({ id, draft, media, disabled, onCha
     </>}
     {motion && <Options name="角色朝向" value={draft.characterOrientation} choices={[{ value: "video", label: "跟随视频" }, { value: "image", label: "保持图片" }]}
       disabled={disabled} onChange={(characterOrientation) => onChange({ characterOrientation: characterOrientation as "video" | "image" })} />}
+    <Options name="生成数量" value={String(draft.count ?? 1)} choices={VIDEO_GENERATION_COUNTS.map((count) => ({ value: String(count), label: String(count) }))}
+      disabled={disabled || !countEnabled} onChange={(count) => onChange({ count: Number(count) as VideoGenerationCount })} />
     <Options name="音频" value={referenceVideo ? "off" : draft.audio}
       choices={[{ value: "off", label: "静音" }, ...(motion || draft.type === "video_edit" ? [{ value: "original", label: "保留原声" }] : [{ value: "native", label: "生成音频" }])]}
       disabled={disabled || referenceVideo} onChange={(audio) => onChange({ audio: audio as CanvasVideoGenerationDraft["audio"] })} />

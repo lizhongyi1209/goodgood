@@ -5,7 +5,7 @@ import { cloudReferenceReadClient } from "../generation/local-cloud-reference.mj
 import { getGenerationResources } from "../generation/resources.mjs";
 import { signAssetRead } from "../generation/storage.mjs";
 import { resolveWorkspaceAccess } from "../organizations/workspace-access.mjs";
-import { defaultVideoGenerationDraft, videoModelForType, VIDEO_GENERATION_MODELS } from "../../shared/contracts/video-generation.mjs";
+import { defaultVideoGenerationDraft, videoModelForType, VIDEO_GENERATION_MODELS, VIDEO_GENERATION_COUNTS } from "../../shared/contracts/video-generation.mjs";
 import { validateVideoGeneration, validateVideoDraft, videoGenerationId } from "./validation.mjs";
 import { readVideoInputs } from "./media.mjs";
 import { quoteVideoCredits } from "./pricing.mjs";
@@ -46,7 +46,7 @@ export async function getVideoGenerationCapabilities({ ownerContext, workspaceId
   const resources = await getGenerationResources();
   await resolveWorkspaceAccess(resources.pool, { ownerId: owner(ownerContext), workspaceId });
   const ready = (await resources.pool.query("SELECT to_regclass('public.video_generation_jobs') IS NOT NULL AS ready")).rows[0]?.ready;
-  return { enabled: Boolean(ready), models: VIDEO_GENERATION_MODELS.map((model) => ({ id: model.id, name: model.name, resolutions: model.resolutions })) };
+  return { enabled: Boolean(ready), counts: VIDEO_GENERATION_COUNTS, models: VIDEO_GENERATION_MODELS.map((model) => ({ id: model.id, name: model.name, resolutions: model.resolutions })) };
 }
 export async function submitVideoGeneration({ ownerContext, workspaceId, input: raw }) {
   const ownerId = owner(ownerContext); const input = validateVideoGeneration(raw); const resources = await getGenerationResources();

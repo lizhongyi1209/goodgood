@@ -1,4 +1,4 @@
-import { defaultVideoGenerationDraft, VIDEO_IMAGE_ROLES, VIDEO_VIDEO_ROLES, videoGenerationProblem } from "../../shared/contracts/video-generation.mjs";
+import { defaultVideoGenerationDraft, VIDEO_IMAGE_ROLES, VIDEO_VIDEO_ROLES, VIDEO_GENERATION_COUNTS, videoGenerationProblem } from "../../shared/contracts/video-generation.mjs";
 import { VideoGenerationError } from "./errors.mjs";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export function videoGenerationId(value) {
@@ -9,8 +9,9 @@ function invalid(message = "视频参数无效。") { throw new VideoGenerationE
 function record(value, keys) { if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).some((key) => !keys.includes(key))) invalid(); }
 export function validateVideoDraft(raw) {
   const defaults = defaultVideoGenerationDraft();
-  record(raw, [...Object.keys(defaults), "requestId", "lastInput"]);
+  record(raw, [...Object.keys(defaults), "requestId", "lastInput", "count", "submissionError"]);
   const draft = { ...defaults, ...raw };
+  if (draft.count !== undefined && !VIDEO_GENERATION_COUNTS.includes(draft.count)) invalid("生成数量请选择 1、2 或 4。");
   if (!/^(text_to_video|image_to_video|first_last_frame|reference_to_video|video_edit|motion_control)$/.test(draft.type) ||
       !["kling-3.0-omni", "kling-3.0"].includes(draft.modelId) || !["720p", "1080p", "4k"].includes(draft.resolution) ||
       !Number.isInteger(draft.duration) || draft.duration < 3 || draft.duration > 15 || !["16:9", "9:16", "1:1"].includes(draft.aspectRatio) ||
@@ -28,6 +29,8 @@ export function validateVideoDraft(raw) {
     draft.lastInput = validateVideoGeneration(draft.lastInput);
     if (draft.requestId !== draft.lastInput.requestId) invalid();
   }
+  if (draft.submissionError !== undefined && (!draft.requestId || !draft.lastInput || typeof draft.submissionError !== "string" ||
+      !draft.submissionError.trim() || draft.submissionError.length > 1000 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(draft.submissionError))) invalid();
   return draft;
 }
 function validateMaterial(item, requiredRole) {
@@ -37,7 +40,7 @@ function validateMaterial(item, requiredRole) {
   return { kind: item.kind, assetKind: item.assetKind, assetId: videoGenerationId(item.assetId), name: item.name, ...(item.role ? { role: item.role } : {}) };
 }
 export function validateVideoGeneration(raw) {
-  if (!raw || raw.lastInput !== undefined || raw.materials !== undefined || raw.roles !== undefined) invalid();
+  if (!raw || raw.lastInput !== undefined || raw.materials !== undefined || raw.roles !== undefined || raw.count !== undefined || raw.submissionError !== undefined) invalid();
   const { media, projectId, requestId, quotedCredits, ...draft } = raw ?? {};
   const normalized = validateVideoDraft({ ...draft, materials: [], roles: {} });
   if (draft.materials !== undefined || draft.roles !== undefined || !Array.isArray(media) || media.length > 8) invalid();

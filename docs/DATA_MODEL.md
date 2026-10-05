@@ -1,5 +1,9 @@
 # GG-063 quality pricing
 
+## GG-389 · 视频数量草稿
+
+videoGeneration可选count仅允许数字1/2/4，缺失视作1；每条仍用原requestId/lastInput/asset，未改变任务表或Worker。可选submissionError保留最多1000字符的确定拒绝说明，必须伴随匹配requestId的lastInput；复制时清理这三项、保留count。生成API禁止count/submissionError，单视频冻结输入与单位报价保持。新版Web校验启用前，能力保护禁止提交数量字段。
+
 ## GG-384 · 视频任务（0068源码，未应用）
 
 `video_generation_jobs`保存owner/workspace/canvas、输入哈希与无URL冻结快照、整数积分报价快照和预留、上游task_id、租约/下次查询、真实进度、提交时刻、服务端结果URL/成本及脱敏错误、私有输出资产。状态queued/submitting/submission_unknown/running/saving/save_failed/succeeded/failed；新UUID只用于用户明确重新生成，原UUID重传同输入返回同一任务。video_materials新增来源视频任务及解码宽高/时长，输出命名MP4并复用现有私有素材资产组织/删除，不新建另一套视频库。credit_ledger_entries新增related_video_job_id及单一任务关系/唯一预留约束，组织复用既有预留预算账本。画布videoGeneration保存草稿/用途/直接素材ID/requestId/lastInput，输出使用asset.kind=video；签名URL和运行态job不入云快照。既有schemaVersion保持1/2。

@@ -14,6 +14,7 @@ export const VIDEO_IMAGE_ROLES = Object.freeze(["first_frame", "last_frame", "re
 export const VIDEO_VIDEO_ROLES = Object.freeze(["feature_video", "base_video", "video"]);
 export const VIDEO_ROLE_LABELS = Object.freeze({ first_frame: "首帧", last_frame: "尾帧", refer_image: "参考图", image: "角色", feature_video: "参考视频", base_video: "原视频", video: "动作视频" });
 export const VIDEO_ACTIVE_STATES = Object.freeze(["queued", "submitting", "running", "saving"]);
+export const VIDEO_GENERATION_COUNTS = Object.freeze([1, 2, 4]);
 export function defaultVideoGenerationDraft() {
   return { modelId: "kling-3.0-omni", type: "text_to_video", prompt: "", resolution: "720p", duration: 5,
     aspectRatio: "16:9", audio: "off", multiShot: false, characterOrientation: "video", shots: [], materials: [], roles: {} };

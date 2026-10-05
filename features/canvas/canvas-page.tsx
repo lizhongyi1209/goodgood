@@ -189,7 +189,7 @@ function canvasGraphIsStable(nodes: readonly CanvasNode[], references: Record<st
     (node.type !== "sourceImage" && node.type !== "sourceVideo" || !node.data.uploadState) &&
     (node.type !== "imageResult" || !node.data.job.id.startsWith("pending_")) &&
     (node.type !== "textGenerator" || !node.data.generating && !node.data.textGeneration.pendingRequestId) &&
-    (node.type !== "videoGenerator" || !node.data.videoGeneration.requestId || Boolean(node.data.job && ["succeeded", "failed"].includes(node.data.job.state))) &&
+    (node.type !== "videoGenerator" || !node.data.videoGeneration.requestId || Boolean(node.data.videoGeneration.submissionError) || Boolean(node.data.job && ["succeeded", "failed"].includes(node.data.job.state))) &&
     (node.type !== "imageGenerator" || !canvasGeneratorJobs(node.data).some(canvasImageJobIsActive))) &&
     Object.values(references).every((items) => items.every((item) => item.reference.status === "ready")) &&
     Object.values(converted).every((item) => item.status === "ready");
@@ -1027,7 +1027,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       (node.type === "sourceImage" || node.type === "sourceVideo") && Boolean(node.data.uploadState) ||
       node.type === "imageResult" && (node.data.job.state !== "succeeded" || !node.data.job.outputs[node.data.index]?.id) ||
       node.type === "textGenerator" && Boolean(node.data.generating || node.data.textGeneration.pendingRequestId) ||
-      node.type === "videoGenerator" && Boolean(node.data.videoGeneration.requestId && (!node.data.job || VIDEO_ACTIVE_STATES.includes(node.data.job.state) || ["submission_unknown", "save_failed"].includes(node.data.job.state))) ||
+      node.type === "videoGenerator" && Boolean(node.data.videoGeneration.requestId && !node.data.videoGeneration.submissionError && (!node.data.job || VIDEO_ACTIVE_STATES.includes(node.data.job.state) || ["submission_unknown", "save_failed"].includes(node.data.job.state))) ||
       node.type === "imageGenerator" && (canvasGeneratorJobs(node.data).some((job) => job.state !== "succeeded") ||
         (current.referencesByGenerator[node.id] ?? []).some((item) => item.reference.status !== "ready")) ||
       canvasReferenceInputs(selected, selectedEdges).some((input) => input.sourceId === node.id && input.asset?.generated &&
@@ -1075,7 +1075,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       if (node.type === "sourceAudio") return { ...base, type: "sourceAudio", data: { ...node.data } };
       if (node.type === "textEditor") return { ...base, type: "textEditor", data: { ...node.data } };
       if (node.type === "videoGenerator") return { ...base, type: "videoGenerator", data: { ...node.data, job: undefined,
-        videoGeneration: { ...node.data.videoGeneration, requestId: undefined, lastInput: undefined,
+        videoGeneration: { ...node.data.videoGeneration, requestId: undefined, lastInput: undefined, submissionError: undefined,
           materials: node.data.videoGeneration.materials.map((item) => ({ ...item })), shots: node.data.videoGeneration.shots.map((shot) => ({ ...shot })),
           roles: Object.fromEntries(Object.entries(node.data.videoGeneration.roles).flatMap(([key, role]) => {
             if (!key.startsWith("edge:")) return [[key, role]];

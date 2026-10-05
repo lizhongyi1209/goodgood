@@ -4,6 +4,10 @@
 - Date: 2026-10-05
 - Related tasks: GG-382, GG-384
 
+## Generation quantity · 2026-10-06 · GG-389
+
+Offer 1, 2 and 4 videos in the existing parameter controls, with a legacy-compatible default of 1. Persist this optional composer count in the canvas draft. Each video uses the unchanged single-video API, its own frozen input, request ID, result node and server-authoritative quote/reservation. Preallocate every result node before submission, show the total estimated credits, and retain failed nodes for individual retries of exactly one video. Keep ambiguous submissions on their original ID for query recovery; confirmed pre-acceptance failures retain a bounded message and frozen input in the draft. Do not invent an upstream count parameter or change provider pricing. Web needs the new draft validator before cloud persistence accepts these optional fields; Worker and database remain unchanged. Build/restart still require separate user authorization under the source-only agreement.
+
 ## Parameter resize recovery and duration copy · 2026-10-06 · GG-388
 
 Keep the existing integer duration slider, but show the selected seconds only beside its label. Remove endpoint labels and duration from the collapsed parameter summary. Preserve the stored duration, range, pricing and motion-control behavior. The parameter panel must not size itself from the available-height variable written by Popper's size observer. Instead, compute its height cap from the trigger position and viewport in animation frames, write only changed caps and cancel on unmount; positioning, collision flipping and internal scrolling remain Radix behavior. Do not suppress global ResizeObserver errors. Source inspection identifies this feedback path, while manual reproduction and acceptance remain with the user.
