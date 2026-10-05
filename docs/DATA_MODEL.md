@@ -1086,3 +1086,7 @@ album-UUID为相册group节点，名称沿原folder.name，尺寸及groupSizing=
 ## GG-380 · 空候选组收缩
 
 不新增字段/迁移。显式参考移除后比较前后实际候选桶，只收缩从有输入变空的组；原batchGroupCount/batchMode与剩余edge.targetHandle同次编辑更新。前移端口保持edge.id/成员转换键、source/排除数据和冻结slots，沿原本机batchConfiguration、历史与云handle适配保存。默认下限1和新加未连接空组保持。
+
+## GG-383 · 上传复用字段
+
+0067仅给reference_assets增加declared_checksum、upload_client_key及upload_reuse_existing，建立creator/workspace范围的操作、ready实际checksum和pending声明索引。client key绑定clientId/指纹/MIME/字节数/复制策略；checksum必须64位小写十六进制，完成核实实际bytes。旧行不回填/合并/删除，已验证旧checksum可被普通新上传复用。浏览器旧File直接记录兼容，独立编辑文件在原FILES store保存{file,reuseExisting:false}信封，读取还原File和弱标记；无需IndexedDB版本升级或云项目字段。已有节点/引用/任务wire保持，旧pending无副本标记按普通上传处理。

@@ -1,17 +1,18 @@
+import { referenceFileFingerprint, referenceFileCanReuse } from "./reference-file-identity.mjs";
 import type { GenerationReference } from "@/shared/contracts/generation";
 import { goodGoodApiFetch } from "@/features/auth/http-auth-boundary";
 import { workspaceRequestHeaders } from "@/features/organizations/workspace-request";
 
 type UploadIntent = Readonly<{
   clientId: string;
-  expiresAt: string;
-  headers: Readonly<Record<string, string>>;
+  expiresAt?: string;
+  headers?: Readonly<Record<string, string>>;
   reference: Readonly<{
     id: string;
     name: string;
-    status: "uploading";
+    status: "uploading" | "ready";
   }>;
-  uploadUrl: string;
+  uploadUrl?: string;
 }>;
 
 type ReferenceApiError = Readonly<{
@@ -93,10 +94,12 @@ function pause(milliseconds: number, signal?: AbortSignal): Promise<void> {
 }
 
 async function putWithRetry(intent: UploadIntent, file: File, signal?: AbortSignal): Promise<void> {
+  const uploadUrl = intent.uploadUrl;
+  if (!uploadUrl) throw new Error("上传服务返回了不完整的请求。");
   for (let attempt = 0; attempt < 3; attempt += 1) {
     signal?.throwIfAborted();
     try {
-      const response = await fetch(intent.uploadUrl, {
+      const response = await fetch(uploadUrl, {
         body: file,
         headers: intent.headers,
         method: "PUT",
@@ -165,10 +168,14 @@ async function uploadOne(
   let intent: UploadIntent | undefined;
   try {
     signal?.throwIfAborted();
+    const checksum = await referenceFileFingerprint(item.file);
+    signal?.throwIfAborted();
     const response = await goodGoodApiFetch("/api/references", {
       body: JSON.stringify({ files: [{
         byteSize: item.file.size,
         clientId: item.clientId,
+        checksum,
+        reuseExisting: referenceFileCanReuse(item.file),
         mimeType: item.file.type,
         name: item.file.name,
       }] }),
@@ -181,7 +188,13 @@ async function uploadOne(
     });
     const payload = await parseJson<Readonly<{ uploads: readonly UploadIntent[] }>>(response);
     intent = payload.uploads?.find((value) => value.clientId === item.clientId);
-    if (!intent) throw new Error("上传服务返回了不完整的请求。");
+    if (!intent?.reference?.id) throw new Error("上传服务返回了不完整的请求。");
+    if (intent.reference.status === "ready") {
+      const reference: GenerationReference = Object.freeze({ id: intent.reference.id,
+        name: intent.reference.name, status: "ready", url: "" });
+      onUpdate(item.clientId, reference);
+      return { clientId: item.clientId, reference };
+    }
 
     await putWithRetry(intent, item.file, signal);
     let completed: Readonly<{ id: string; name: string; status: "ready" }>;
@@ -210,7 +223,7 @@ async function uploadOne(
     return { clientId: item.clientId, reference };
   } catch (error) {
     if (signal?.aborted) throw error;
-    const reference = intent
+    const reference = intent?.reference?.id
       ? Object.freeze({
           errorMessage: error instanceof Error ? error.message : "参考图上传失败。",
           id: intent.reference.id,

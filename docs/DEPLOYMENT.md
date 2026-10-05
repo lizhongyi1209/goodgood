@@ -1912,3 +1912,7 @@ separately reviewed host/state-service and executable release change.
 ## GG-308 待启用的文本模板资产
 
 GG-308只交付源码：新的私有文本资产API及`0063_gg308_text_template_assets.sql`未构建、迁移或重启。持久保存需后续明确委托对隔离本地状态应用0063并更新Web；不需要新Worker、provider或凭据，不动生产。可与GG-303批量项目校验/GG-306高清接口一起按后续明确任务启用。旧Web的媒体资产仍可读，文本保存明确失败而不假报成功。当前GG-300原Web/本地0062/唯一Worker的运行事实保持；不能把代码集成写成后端已启用。
+
+## GG-383 · 上传复用后台激活待委托
+
+本轮只交付0067_gg383_reference_upload_reuse.sql及Web/浏览器源码，未应用迁移/构建/重启或部署。完整生效需要用户另行委托：核对本地隔离目标和届时HEAD，先应用0067（不得重置/合并真实素材），再必要构建和仅更新Web。Worker/队列/已有素材及GG-374运行身份本轮不改；新客户端在旧Web沿原uploading路径兼容，但不能声明已有后台复用。激活后由用户手验文件身份/重试/副本和旧画布恢复，不发自动真实生成或扣费。

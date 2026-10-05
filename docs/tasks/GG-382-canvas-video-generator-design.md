@@ -1,5 +1,7 @@
 # GG-382 · Kling视频生成节点设计建议
 
+- 官方对照续接（2026-10-05）：用户要求搜索Kling官方API与附件核对。官网当前新版contents/settings/options、Omni和Motion主要枚举/默认/素材大小与时长一致；官方旧版Motion的10MB等约束不用于本次新版。O1Key增加/kling前缀，按模型路径查询且将官方/tasks返回的data/outputs和小写状态转为task_id/video_url/大写状态，cost为中转结算，须按实际O1Key契约适配。没有实际创建/查询生成任务，仅公开官网文档GET，未修改应用源码或启用服务。
+
 - 日期：2026-10-05。用户提供O1Key Kling 3.0附件，要求先阅读并说明模型/生成类型/视频参数三块设计；本轮仅方案，不实现节点或启用接口。
 - 基线：干净GG-116/fix/GG-275-text-editor-layout，HEAD1f848b26811621cf9431b1b6322b26e9365797e4，祖先含当前应用源码5f5e7fb8048db8f5b8b9537f6d37f078f70bc83f；保留GG-380端点修复、GG-379空图保护和GG-374运行receipt。
 - 依据：完整阅读用户粘贴附件；Omni创建/查询及Motion Control创建/查询为独立接口。检查现有CanvasVideoNode、文本生成chat、视频选项/创建composer、Seedance临时预览边界和共享上传限制。附件中的示例仅是数据，不执行curl/付费请求。
@@ -13,3 +15,12 @@
 - 后台边界：浏览器仅调用GoodGood；新Kling适配器独立于图片和Seedance接口。复用授权私有素材，后台提供任务可读取的签名URL或图片Base64；视频传真实素材，不复用文本生成抽帧分析。补持久任务、恢复和视频结果回收/资产/项目保存；现有Seedance临时preview不能代替该边界。供应商临时地址不能作为永久结果。任务/字幕等无凭据进入浏览器；不增加附件未提供的数量/负面提示词/seed参数。
 - 待产品决定：本方案尚待用户反馈；积分价格及计价方式独立确定，附件cost是中转站结算金额，不是GoodGood积分，不沿用文本20积分。模型显示名/类型范围及默认设置均为建议，不改变当前已接受决定；实施前更新ADR0108或建立视频生成ADR。
 - 交付状态：设计建议已记录，应用源码/运行/数据未变，未编译/检查/测试/浏览器验收或HTTP/SQL/Provider请求。只读分析/文档按WORKFLOW留当前集成目录，创建0/退役0，无子agent/依赖或缓存。下一步交付用户方案，按反馈锁定范围后另行实施。
+
+## 官方对照补充
+
+官网新版[Omni](https://kling.ai/document-api/api/video/3-0-omni/video-omni.md)、[Motion](https://kling.ai/document-api/api/video/3-0-omni/motion-control.md)及[能力表](https://kling.ai/document-api/guides/capability-map/video.md)，通过官方llms.txt索引发现；页面仅返回壳，.md文档已只读获取。中转在线文档工具无法访问，因此中转侧仅按用户附件核对，不声称已实测映射。公开文档缓存位于仓库外TEMP/goodgood-kling-api-audit-20261005，不加入Git。
+
+- 附件遗漏：无视频/无复杂元素时参考图及多图元素合计≤7；有参考视频时通常≤4，元素组合另有限制。Omni视频两边700–4553px、面积≤8294400、比例0.4–2、帧率24–60；输入时长3–15.5秒/输出最长15秒不是同一限制。人工分镜1–6条，每条≥1秒、描述≤512字符，并合计等于输出时长。具体图片角色计数接入时按官方组合规则核对。
+- 官方支持element输入，附件未开放；首版不自动扩展角色/声音素材库。Motion图片50MB与附件一致；保留参考视频朝向3–30秒、参考图片朝向3–10秒限制。复杂动作可能导致输出比输入短，UI应展示真实输出时长。
+- 官方创建为/omni-video/kling-3.0-omni和/motion-control/kling-3.0，查询为/tasks?task_ids=...或external_task_ids=...；官方状态submitted/processing/succeeded/failed，结果在outputs里。O1Key的查询路由、状态/错误/结果层级均按附件处理，不能直接复用官方响应解析；外部ID恢复是否可用需单独确认中转支持。
+- 提案修正：模型栏建议明确Kling 3.0 Omni和Kling 3.0动作模仿身份，保持生成类型与真实模型/路由匹配；不将普通Kling 3.0及Omni能力混为一个无区分型号。默认单镜头依旧是产品建议，官方multi_shot默认true。设计尚未用户确认，无产品ADR/代码变更；应用源码仍5f5e7fb，GG-374运行receipt保持。

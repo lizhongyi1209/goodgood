@@ -1,3 +1,4 @@
+import { storedReferenceFile, restoredReferenceFile } from "@/features/references/reference-file-identity.mjs";
 import type { CanvasProjectDocument } from "@/shared/contracts/canvas-project";
 
 export type LocalCanvasProject = Readonly<{
@@ -97,11 +98,11 @@ export function removeLocalCanvasProject(ownerKey: string, projectId: string) {
 }
 
 export function writeLocalCanvasFile(ownerKey: string, fileId: string, file: File) {
-  return write(FILES, key(ownerKey, fileId), file);
+  return write(FILES, key(ownerKey, fileId), storedReferenceFile(file));
 }
 
-export function readLocalCanvasFile(ownerKey: string, fileId: string) {
-  return read<File>(FILES, key(ownerKey, fileId));
+export async function readLocalCanvasFile(ownerKey: string, fileId: string) {
+  return restoredReferenceFile(await read<File | { file: File; reuseExisting?: boolean }>(FILES, key(ownerKey, fileId)));
 }
 
 export function removeLocalCanvasFile(ownerKey: string, fileId: string) {

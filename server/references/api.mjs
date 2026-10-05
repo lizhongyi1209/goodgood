@@ -34,6 +34,7 @@ import {
   validateReferenceUploadRequest,
 } from "./validation.mjs";
 import { readPublicImageLink } from "./image-link.mjs";
+import { assertReferenceUploadChecksum } from "./upload-reuse.mjs";
 
 const DEFAULT_WORKSPACE_ID = /** @type {string | null} */ (null);
 
@@ -297,7 +298,9 @@ export async function createReferenceUploads({
 
   return {
     uploads: await Promise.all(
-      rows.map(async (row) => ({
+      rows.map(async (row) => row.upload_state === "ready" ? {
+        clientId: row.client_id, reference: { id: row.id, name: row.original_file_name, status: "ready" },
+      } : ({
         clientId: row.client_id,
         expiresAt: new Date(row.expires_at).toISOString(),
         headers: { "content-type": row.declared_mime_type },
@@ -375,6 +378,7 @@ export async function completeReferenceUpload({
       declaredMimeType: row.declared_mime_type,
     });
     const checksum = createHash("sha256").update(object.bytes).digest("hex");
+    assertReferenceUploadChecksum(row, checksum);
     return publicReference(
       await markReferenceReady(resources.pool, {
         byteSize: object.bytes.length,

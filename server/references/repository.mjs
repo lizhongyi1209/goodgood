@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { createReusableReferenceUpload, lockReferenceUpload } from "./upload-reuse.mjs";
 import { resolveWorkspaceAccess } from "../organizations/workspace-access.mjs";
 import { ReferencePersistenceError, ReferenceRequestError } from "./errors.mjs";
 
@@ -14,8 +15,16 @@ export async function createPendingReferenceAssets(
       workspaceId,
       write: true,
     });
+    // Acquire all content locks in order for multi-file requests, avoiding lock inversions.
+    for (const checksum of [...new Set(files.map((file) => file.checksum).filter(Boolean))].sort()) {
+      await lockReferenceUpload(client, workspace.id, ownerId, checksum);
+    }
     const assets = [];
     for (const file of files) {
+      if (file.checksum) {
+        assets.push(await createReusableReferenceUpload(client, { file, ownerId, workspaceId: workspace.id, uploadTtlSeconds, newKey }));
+        continue;
+      }
       const id = randomUUID();
       const objectKey = newKey(`references/${workspace.id}/${ownerId}/${id}/original`);
       const result = await client.query(
@@ -190,7 +199,7 @@ export async function markReferenceReady(
             pixel_height = $7, checksum = $8, uploaded_at = now(),
             validated_at = now(), error_code = NULL, updated_at = now()
       WHERE id = $1 AND workspace_id = $2 AND creator_owner_id = $3
-        AND upload_state = 'pending'
+        AND upload_state = 'pending' AND expires_at > now()
       RETURNING *`,
     [
       referenceId,
@@ -204,6 +213,10 @@ export async function markReferenceReady(
     ],
   );
   if (!result.rowCount) {
+    // Two consumers may complete the same shared pending original concurrently.
+    const ready = await findReferenceAsset(pool, { ownerId, referenceId, workspaceId });
+    if (ready?.upload_state === "ready" && ready.moderation_state === "accepted" && !ready.object_deleted_at &&
+        ready.checksum === checksum && Number(ready.byte_size) === byteSize && ready.detected_mime_type === detectedMimeType) return ready;
     throw new ReferencePersistenceError(
       "REFERENCE_STATE_CONFLICT",
       "参考图上传状态已发生变化，请刷新后重试。",

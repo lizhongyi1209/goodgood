@@ -78,7 +78,14 @@ export function validateReferenceUploadRequest(payload) {
         "单张参考图不能超过 20 MB。",
       );
     }
-    return { byteSize, clientId, mimeType, name };
+    if (file.checksum !== undefined && (typeof file.checksum !== "string" || !/^[0-9a-f]{64}$/i.test(file.checksum))) {
+      throw new ReferenceRequestError("INVALID_UPLOAD_REQUEST", "图片文件标识无效，请重新选择文件。", 400);
+    }
+    if (file.reuseExisting !== undefined && (typeof file.reuseExisting !== "boolean" || file.checksum === undefined)) {
+      throw new ReferenceRequestError("INVALID_UPLOAD_REQUEST", "图片上传方式无效，请重新选择文件。", 400);
+    }
+    return { byteSize, clientId, mimeType, name,
+      ...(file.checksum !== undefined ? { checksum: file.checksum.toLowerCase(), reuseExisting: file.reuseExisting !== false } : {}) };
   });
 }
 

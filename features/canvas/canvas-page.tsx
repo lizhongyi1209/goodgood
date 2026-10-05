@@ -57,6 +57,7 @@ import {
 import { createGenerationInputSnapshot } from "@/features/creation/generation-snapshot";
 import { GENERATION_MODEL_CATALOG, getGenerationModel } from "@/features/models/catalog";
 import { uploadReferenceFiles } from "@/features/references/http-reference-upload";
+import { markReferenceFileAsCopy, uniqueReadyReferenceItems } from "@/features/references/reference-file-identity.mjs";
 import { listReferenceMaterials } from "@/features/references/http-reference-library";
 import { listPrivateVideoMaterials, uploadPrivateVideoMaterial } from "@/features/creation/http-video-materials";
 import { listPrivateAudioMaterials } from "@/features/assets/http-audio-materials";
@@ -920,10 +921,22 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
             key === pendingKey ? directReferenceOrderKey(reference.id) : key) } };
         });
         setReferencesByGenerator((current) => current[generatorId]
-          ? { ...current, [generatorId]: current[generatorId].map((value) => value.clientId === clientId
+          ? { ...current, [generatorId]: uniqueReadyReferenceItems(current[generatorId].map((value) => value.clientId === clientId
               ? { ...value, reference: { ...reference, url: value.previewUrl } }
-              : value) }
+              : value)) }
           : current);
+        if (reference.status === "ready") {
+          const candidates = [item, ...(latestProjectStateRef.current.referencesByGenerator[generatorId] ?? [])
+            .filter((entry) => entry.reference.id === reference.id)];
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            const used = new Set(Object.values(latestProjectStateRef.current.referencesByGenerator)
+              .flatMap((entries) => entries.map((entry) => entry.previewUrl)));
+            for (const candidate of candidates) if (!used.has(candidate.previewUrl) && objectUrlsRef.current.has(candidate.previewUrl)) {
+              URL.revokeObjectURL(candidate.previewUrl); objectUrlsRef.current.delete(candidate.previewUrl);
+            }
+          }, 0);
+        }
         if (reference.status === "ready" && projectOwnerKeyRef.current) {
           const ownerKey = projectOwnerKeyRef.current;
           setTimeout(() => {
@@ -1296,6 +1309,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     const previewUrl = URL.createObjectURL(file);
     objectUrlsRef.current.add(previewUrl);
     localNodeUrlsRef.current.set(nodeId, previewUrl);
+    markReferenceFileAsCopy(file);
     localUploadsRef.current.set(nodeId, { file, pageId: request.pageId, controller: null });
     const cropped: CanvasSourceNode = {
       ...(!createAdjacent ? source : {}),

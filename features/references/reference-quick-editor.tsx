@@ -30,6 +30,7 @@ import {
   X,
 } from "lucide-react";
 import { Dialog as DialogPrimitive } from "radix-ui";
+import { markReferenceFileAsCopy } from "./reference-file-identity.mjs";
 import { privateImageUrls } from "@/shared/private-image-urls.mjs";
 
 import {
@@ -397,7 +398,7 @@ async function exportEditedReference(
   if (blob.size > MAX_EDITED_REFERENCE_BYTES) {
     throw new Error("编辑后的图片超过 20MB，请缩小裁剪范围后重试。" );
   }
-  return new File([blob], editedFilename(name), { type: blob.type });
+  return markReferenceFileAsCopy(new File([blob], editedFilename(name), { type: blob.type }));
 }
 
 export type ReferenceQuickEditorProps = Readonly<{

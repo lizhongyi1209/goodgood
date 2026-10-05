@@ -1177,3 +1177,7 @@ GG-367 adds canvas-reference-drag-layout for transient transforms from frozen un
 ## GG-371 · 相册兼容载体
 
 文件夹拖放从侧栏完整、当前授权的数据集合读取arrangements归属和图片项，不从外部拖放文本解析URL或资产身份。新相册由group wire及album-ID辨识，sourceImage隐藏子节点保持每张真实资产ID/kind/name/metadata；原快照/云参考组适配保存完整成员，恢复按相册父ID重建隐藏/不可单选/不可拖/不可连的子节点。专用gallery渲染所有图片，普通组路由保持。相册排除普通组尺寸计算与解散，删除/复制作整体；连接边按GG-370候选端口已有分桶/所有权转换展开，不新增后台类型/API或数据迁移。组合预览以随机索引分页，在庞大笛卡尔积中直接定位最多12行，不遍历之前组合，不创建全量DOM。
+
+## GG-383 · 上传指纹与创建复用
+
+reference-file-identity模块只缓存File的SHA-256计算，不缓存跨身份ready资产；copy弱标记和本机File信封保留版本意图。原共享HTTP上传边界携带checksum/reuseExisting，支持ready意向直接完成和旧uploading响应。后台先沿原workspace写授权，按workspace/creator/checksum事务锁及多文件有序锁做同操作/同内容查询后插入；返回匹配clientId。完成按实际读入字节验证指纹，并发第二次完成只接受匹配且未删除的ready记录，过期pending不能跨过截止时间变ready。无新provider/队列或计费路径；0067/Web激活独立委托。
