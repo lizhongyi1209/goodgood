@@ -242,4 +242,4 @@ GG-375相册节点源码已精确接入8d06014f1de118007359ded030f18d62d7ccd977�
 
 ## GG-376 · 图片批量生成节点名称与样式
 
-已登记，用户确认保留素材移除功能并统一样式。更新ADR0108，以第一组图序直接预览取代查看组合Dialog；只改名称/样式/展示及已暴露的相册图片拖动属性转发。沿GG-276不自动验收或运行更新，GG-374运行receipt保持。根agent单独隔离实现，见[tasks/GG-376-batch-node-polish.md](tasks/GG-376-batch-node-polish.md)。
+GG-376图片批量生成节点源码已精确接入93780cefc17d4446bfd5b0979a31e661e9fc0aee（隔离0717805f0acc4fe5d215eac7456067a01c258166）。节点/右键入口/连接提示统一名称，接收端复用媒体输入圆点，素材和组合预览共用18px黑圆白字编号；用户确认保留右上移除，以圆形黑底X/hover/键盘/触控统一。chat直接显示现有计划首组实际图序的一行横向预览，移除查看组合按钮/分页Dialog/关闭入口；完整执行/任务数/报价/公共参考/1–5组/10图及持久化保持。顺带补足PrivateObjectImage可选draggable转发，修正GG-375已有拖动设置未传达的问题。ADR0108及产品/设计/交互/手验资料同步。沿GG-276未自动构建/lint/typecheck/代码或diff检查/测试/浏览器/HTTP/SQL/Provider验收，无生成/扣费或后台/服务/生产更新，GG-374运行receipt保持未重查。创建1/退役1，managed辅助确认归档，无子agent/依赖缓存。已实现、未自动验收、未部署；用户刷新5173手验。下一源码任务从当前HEAD核验93780ce祖先后隔离。 见[tasks/GG-376-batch-node-polish.md](tasks/GG-376-batch-node-polish.md)。
