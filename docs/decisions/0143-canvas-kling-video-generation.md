@@ -4,6 +4,10 @@
 - Date: 2026-10-05
 - Related tasks: GG-382, GG-384
 
+## Draggable frame and a single action set · 2026-10-06 · GG-411
+
+The user reports that GG-410 prevents dragging the video picture and that native player tools duplicate existing view/download actions, including inside the viewer. Replace native controls on both generated results and the detail player with a shared compact manual bar for play/pause, seeking, time and mute. Only the bar consumes drag/pan/key events; the picture remains a canvas drag surface. Keep one existing node view action and one download action, with no nested viewer/fullscreen/download tools in the detail player. Reuse the playback lifecycle with an explicit manual-only option; default reference-hover behavior remains unchanged. Keep source refresh, metadata, pause/cleanup and generation/billing behavior.
+
 ## Manual result playback · 2026-10-06 · GG-410
 
 The user replaces automatic hover playback of generated canvas video results with manual inspection. Results start paused and expose native playback, pause and seeking controls; entering/leaving the card no longer changes playback and results do not loop automatically. Isolate player interaction from canvas dragging and panning. Pause when the page becomes hidden, the result viewer opens, or the source/scope unmounts; do not automatically resume. Keep reference-hover previews, the asset page, generation states, billing and persisted job data unchanged.

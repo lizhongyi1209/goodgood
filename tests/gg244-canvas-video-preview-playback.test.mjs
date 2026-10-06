@@ -20,11 +20,11 @@ class PreviewVideo extends EventTarget {
   pause() { this.pauseCalls += 1; this.paused = true; }
 }
 
-function surface({ reduced = false, visibility = "visible" } = {}) {
+function surface({ reduced = false, visibility = "visible", manualOnly = false } = {}) {
   const page = Object.assign(new EventTarget(), { visibilityState: visibility });
   const reducedMotion = Object.assign(new EventTarget(), { matches: reduced });
   const video = new PreviewVideo();
-  const playback = attachCanvasVideoPreviewPlayback(video, { page, reducedMotion });
+  const playback = attachCanvasVideoPreviewPlayback(video, { page, reducedMotion, manualOnly });
   return { page, reducedMotion, video, playback };
 }
 
@@ -196,4 +196,65 @@ test("source replacement and disposal stop the old surface, detach listeners, an
   old.playback.dispose();
   assert.equal(old.video.pauseCalls, pauses);
   current.playback.dispose();
+});
+
+test("manual result playback ignores hover while preserving explicit playback and pause", async () => {
+  const { video, playback } = surface({ manualOnly: true, reduced: true });
+  playback.setHovering(true);
+  video.dispatchEvent(new Event("canplay"));
+  assert.equal(video.playCalls, 0);
+  playback.play();
+  await setImmediate();
+  assert.equal(video.paused, false);
+  playback.setHovering(false);
+  assert.equal(video.paused, false);
+  video.dispatchEvent(new Event("canplay"));
+  assert.equal(video.playCalls, 1);
+  playback.pause();
+  playback.setHovering(true);
+  video.dispatchEvent(new Event("canplay"));
+  assert.equal(video.paused, true);
+  assert.equal(video.playCalls, 1);
+  playback.dispose();
+});
+
+test("manual result playback stays paused after hiding or closing a viewer", async () => {
+  const { video, playback, page } = surface({ manualOnly: true });
+  playback.play();
+  await setImmediate();
+  page.visibilityState = "hidden";
+  page.dispatchEvent(new Event("visibilitychange"));
+  assert.equal(video.paused, true);
+  page.visibilityState = "visible";
+  page.dispatchEvent(new Event("visibilitychange"));
+  assert.equal(video.playCalls, 1);
+  playback.play();
+  await setImmediate();
+  playback.setEnabled(false);
+  playback.play();
+  assert.equal(video.paused, true);
+  playback.setEnabled(true);
+  video.dispatchEvent(new Event("canplay"));
+  assert.equal(video.playCalls, 2);
+  assert.equal(video.paused, true);
+  playback.dispose();
+});
+
+test("manual mode contains rejected and late plays without starting an automatic retry", async () => {
+  const { video, playback } = surface({ manualOnly: true });
+  video.playResult = () => Promise.reject(new Error("Not ready"));
+  playback.play();
+  await setImmediate();
+  playback.setHovering(true);
+  video.dispatchEvent(new Event("canplay"));
+  assert.equal(video.playCalls, 1);
+  assert.equal(video.paused, true);
+  let finish;
+  video.playResult = () => new Promise((resolve) => { finish = resolve; });
+  playback.play();
+  playback.dispose();
+  finish();
+  await setImmediate();
+  assert.equal(video.playCalls, 2);
+  assert.equal(video.paused, true);
 });

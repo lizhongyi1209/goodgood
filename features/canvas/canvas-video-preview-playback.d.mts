@@ -8,5 +8,5 @@ export type CanvasVideoPreviewPlayback = Readonly<{
 
 export function attachCanvasVideoPreviewPlayback(
   video: HTMLVideoElement,
-  environment: Readonly<{ page: Document; reducedMotion: MediaQueryList }>,
+  environment: Readonly<{ page: Document; reducedMotion: MediaQueryList; manualOnly?: boolean }>,
 ): CanvasVideoPreviewPlayback;

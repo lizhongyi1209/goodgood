@@ -1,5 +1,5 @@
 // Keep media playback tied to its current surface, including pending play() calls.
-export function attachCanvasVideoPreviewPlayback(video, { page, reducedMotion }) {
+export function attachCanvasVideoPreviewPlayback(video, { page, reducedMotion, manualOnly = false }) {
   let hovering = false;
   let enabled = true;
   let explicit = false;
@@ -10,7 +10,7 @@ export function attachCanvasVideoPreviewPlayback(video, { page, reducedMotion })
   let pending = null;
 
   const shouldPlay = () => !disposed && enabled && !rejected && page.visibilityState === "visible"
-    && (explicit || (hovering && !pausedByUser && !reducedMotion.matches));
+    && (explicit || (!manualOnly && hovering && !pausedByUser && !reducedMotion.matches));
 
   const sync = () => {
     if (!shouldPlay()) {
@@ -53,9 +53,9 @@ export function attachCanvasVideoPreviewPlayback(video, { page, reducedMotion })
   return {
     setHovering(value) {
       if (disposed) return;
-      if (value && !hovering) { pausedByUser = false; rejected = false; }
+      if (!manualOnly && value && !hovering) { pausedByUser = false; rejected = false; }
       hovering = value;
-      if (!value) explicit = false;
+      if (!value && !manualOnly) explicit = false;
       sync();
     },
     setEnabled(value) {

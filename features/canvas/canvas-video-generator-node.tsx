@@ -20,6 +20,7 @@ import { canvasTextGenerationInputs } from "./canvas-text-generation-input";
 import { CanvasImageResizeControls } from "./canvas-image-resize-controls";
 import { CanvasMediaMetadata } from "./canvas-media-metadata";
 import { CanvasVideoGenerationProgress } from "./canvas-video-generation-feedback";
+import { CanvasVideoResultPlayer } from "./canvas-video-result-player";
 import { fittedCanvasVideoSize } from "./canvas-video-size";
 import { attachCanvasVideoPreviewPlayback } from "./canvas-video-preview-playback.mjs";
 import { CANVAS_ASSET_LIBRARY_UPDATED_EVENT } from "./canvas-asset-upload";
@@ -46,15 +47,15 @@ function rejectedVideoStatus(requestId: string, message: string): VideoGeneratio
   return { requestId, state: "failed", progress: null, reservedCredits: 0, chargedCredits: 0, output: null,
     error: { code: "VIDEO_SUBMISSION_REJECTED", message } };
 }
-function VideoPreview({ url, className, label, controls = false }: Readonly<{ url: string; className?: string; label: string; controls?: boolean }>) {
+function VideoPreview({ url, className, label }: Readonly<{ url: string; className?: string; label: string }>) {
   const ref = useRef<HTMLVideoElement>(null);
   useEffect(() => {
-    if (!ref.current || controls) return;
+    if (!ref.current) return;
     const video = ref.current; const playback = attachCanvasVideoPreviewPlayback(video, { page: document, reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)") });
     playback.setEnabled(true); playback.setHovering(true);
     return () => playback.dispose();
-  }, [url, controls]);
-  return <video ref={ref} src={url} className={className} controls={controls} muted={!controls} playsInline loop={!controls} preload="metadata" aria-label={label} />;
+  }, [url]);
+  return <video ref={ref} src={url} className={className} muted playsInline loop preload="metadata" aria-label={label} />;
 }
 export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProps<CanvasVideoGeneratorNodeType>) {
   const flow = useReactFlow<CanvasNode>(); const context = useContext(CanvasGenerationContext);
@@ -68,7 +69,6 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
   const [quote, setQuote] = useState<VideoCreditQuote | null>(null); const [retryQuote, setRetryQuote] = useState<VideoCreditQuote | null>(null); const [quoteError, setQuoteError] = useState(""); const [pollRevision, setPollRevision] = useState(0);
   const [directPreviews, setDirectPreviews] = useState<Record<string, string>>({});
   const [countEnabled, setCountEnabled] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
   const scope = `${context.ownerKey}:${context.workspaceId ?? "personal"}:${context.pageId}`;
   const scopeRef = useRef(scope); scopeRef.current = scope;
   const mounted = useRef(true); useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
@@ -194,14 +194,6 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
     if (!selected || locked || !parameterVisibility.storyboard) setStoryboardMenuOpen(false);
   }, [selected, locked, parameterVisibility.storyboard]);
   useEffect(() => {
-    const video = videoRef.current; if (!video || !data.previewUrl) return;
-    const pauseWhenHidden = () => { if (document.visibilityState !== "visible") video.pause(); };
-    if (viewerOpen) video.pause();
-    pauseWhenHidden();
-    document.addEventListener("visibilitychange", pauseWhenHidden);
-    return () => { document.removeEventListener("visibilitychange", pauseWhenHidden); video.pause(); };
-  }, [data.previewUrl, scope, viewerOpen]);
-  useEffect(() => {
     if (!selected) return;
     let first = 0;
     let second = 0;
@@ -321,8 +313,8 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
     <article className={`${workspaceStyles.generatorNode} ${styles.result} ${active && job?.state !== "save_failed" && job?.state !== "submission_unknown" ? workspaceStyles.generatorShimmering : ""}`}
       aria-label={title} aria-busy={active || undefined}>
       {data.previewUrl ? <>
-        <video ref={videoRef} src={data.previewUrl} className={`${styles.video} nodrag nopan nowheel`} controls muted playsInline preload="metadata" aria-label={`${title}预览`}
-          onPointerDown={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()} onError={() => {
+        <CanvasVideoResultPlayer key={`${scope}:${data.previewUrl}`} url={data.previewUrl} label={`${title}预览`}
+          canvas className={styles.video} scopeKey={scope} suspended={viewerOpen} onError={() => {
             if (previewRefreshAttempted.current) { setMessage("视频预览暂不可用，请重新打开画布。"); return; }
             previewRefreshAttempted.current = true;
             if (draft.requestId) void readCanvasVideo(draft.requestId, context.workspaceId, AbortSignal.timeout(15_000)).then((status) => receive(status, scope)).catch(() => { if (validScope(scope)) setMessage("视频预览暂不可用，请重新查询任务。"); });
@@ -441,6 +433,6 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
         {job?.error && <details className={styles.diagnostics}><summary>错误详情</summary><pre>{JSON.stringify({ requestId: job.requestId, ...job.error.diagnostics }, null, 2)}</pre></details>}
       </section>
     </NodeToolbar>
-    <Dialog open={viewerOpen && Boolean(data.previewUrl)} onOpenChange={setViewerOpen}><DialogContent className="nodrag nopan nowheel sm:max-w-4xl"><DialogTitle>{title}</DialogTitle><DialogDescription className="sr-only">播放生成的视频</DialogDescription>{data.previewUrl && <VideoPreview url={data.previewUrl} label={title} controls className={styles.viewerVideo} />}</DialogContent></Dialog>
+    <Dialog open={viewerOpen && Boolean(data.previewUrl)} onOpenChange={setViewerOpen}><DialogContent className="nodrag nopan nowheel sm:max-w-4xl"><DialogTitle>{title}</DialogTitle><DialogDescription className="sr-only">播放生成的视频</DialogDescription>{data.previewUrl && <CanvasVideoResultPlayer key={`${scope}:${data.previewUrl}`} url={data.previewUrl} label={title} scopeKey={scope} className={styles.viewerVideo} />}</DialogContent></Dialog>
   </TooltipProvider>;
 }
