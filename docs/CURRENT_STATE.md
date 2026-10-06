@@ -1,5 +1,7 @@
 # GoodGood 当前状态
 
+> [GG-402](tasks/GG-402-frontend-github-snapshot.md) 当前前端已按用户授权推送GitHub独立设计分支[design/gg-402-frontend-snapshot](https://github.com/lizhongyi1209/goodgood/tree/design/gg-402-frontend-snapshot)，首次上传提交41584264baaf7da5cebbbfddf11a3fb73db4486e经ls-remote确认；包含最新应用源码GG-401 e401e86及[重构交接说明](FRONTEND_DESIGN_HANDOFF.md)。其他AI从该快照创建设计分支，原会话从本地codex/gg-402-frontend-handoff继续功能需求。源码保持，未运行构建/检查/测试/浏览器或main CI/部署；无数据/Provider/迁移/服务操作，GG-391运行receipt保持。创建0/退役0，无子agent/缓存。
+
 > [GG-401](tasks/GG-401-storyboard-scene-editor.md) 默认自动分镜与场景编辑源码已提交e401e8658bb899a13418899f891973ec136ad5c8，分支codex/gg-401-storyboard-scene-editor，基线0c9d936（GG-399源码1b4b98f祖先已核验）。新节点默认自动且无重复选择项，单镜头可取消；官方六类运镜词汇（变焦分拉近/拉远）作为可见可编辑提示词参考，未添加camera_control参数。自定义按截图采用开关/场景卡/卡内秒数/底部总长滑块/取消确定，3–15秒、1–6场景，整数分配始终合计一致；关闭丢弃本轮编辑，主chat展示已应用摘要，手动时隐藏外部时长避免冲突。无新持久字段，旧显式选项及缺省旧字段/冻结请求保持兼容；计价和生成仍沿原接口。纯回归来源仅写，未自动编译/代码或diff检查/测试/浏览器验收；仅官方公开GET，无应用HTTP/SQL/Provider生成/扣费/迁移/服务/生产操作，GG-391运行receipt保持。创建0/退役0，无子agent/依赖缓存；用户刷新5173手验。
 
 > [GG-399](tasks/GG-399-video-remove-add.md) 视频chat加号移除源码已提交1b4b98f6002094e2fc2982f1aa4b2772614780cc，基线496591b，GG-116分支codex/gg-399-video-remove-add。删除加号/专属菜单及无入口控件，参数摘要置首、不留空槽；已有素材恢复/预览/删除和生成保持。纯UI，无自动构建/检查/测试/浏览器或HTTP/SQL/Provider/服务/生产操作，GG-391运行receipt保持。创建0/退役0，无子agent/依赖缓存，用户刷新5173手验。
