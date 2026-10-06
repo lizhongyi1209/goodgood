@@ -369,10 +369,7 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
             </Attachment>
           </div>)}
         </AttachmentGroup>
-        <CanvasVideoGeneratorPrompt id={`video-prompt-${id}`} value={manualShots ? draft.shots.map((shot, index) => `场景 ${index + 1} · ${shot.seconds}s
-${shot.text}`).join("
-
-") : draft.prompt} readOnly={locked || manualShots} maxLength={motion ? 2500 : 3072} width={toolbarWidth}
+        <CanvasVideoGeneratorPrompt id={`video-prompt-${id}`} value={manualShots ? draft.shots.map((shot, index) => `场景 ${index + 1} · ${shot.seconds}s\n${shot.text}`).join("\n\n") : draft.prompt} readOnly={locked || manualShots} maxLength={motion ? 2500 : 3072} width={toolbarWidth}
           placeholder={manualShots ? "点击分镜编辑场景…" : connected.some((item) => item.kind === "text") ? "补充视频描述（追加在连接文本之后）…" : `${type.hint}…`} canGenerate={ready}
           onInteract={() => { setModelOpen(false); setTypeOpen(false); setParametersOpen(false); setStoryboardMenuOpen(false); }}
           onChange={(prompt) => { setMessage(""); updateDraft({ prompt }); }} onGenerate={() => void generate()} />
