@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-06
-- Current phase: GG-399源码已提交1b4b98f6002094e2fc2982f1aa4b2772614780cc；GG-391运行receipt保持，未自动验收/服务更新。
-- Current objective: 用户刷新5173手验视频chat无加号、参数摘要左侧置首及已有素材操作；不自动检查或重启。
+- Current phase: GG-400分镜简化方案已交付、待反馈；应用源码仍GG-399 1b4b98f，GG-391运行receipt保持。
+- Current objective: 用户评估GG-400交互方案；仅后续委托实施才改变分镜UI/草稿与时长规则，不自动检查或重启。
 - Previous objective: GG-383上传复用源码交付；GG-382设计/官方对照已获用户接受，按其O1Key附件实现，不再等待设计反馈。
 
 ## Current checkpoint
+
+- 最新设计分析：[GG-400](tasks/GG-400-storyboard-simplification.md) 智能分镜简化方案已记录，待用户反馈，尚未实施/改变accepted决定。建议轻量模式选择＋按需编辑、紧凑镜头卡、合计驱动手动时长/报价、主chat镜头摘要及切换保留草稿。现自动分镜只是任务multi_shot，无预先AI脚本调用。核对官方与O1Key契约；仅公开GET，无自动构建/检查/测试/浏览器或应用/数据/服务/生产操作。应用源码GG-399 1b4b98f和GG-391运行receipt保持；创建0/退役0，无子agent/缓存。
 
 - 当前源码交接：[GG-399](tasks/GG-399-video-remove-add.md) 视频chat加号移除源码已提交1b4b98f6002094e2fc2982f1aa4b2772614780cc，基线496591b，GG-116分支codex/gg-399-video-remove-add。删除加号/专属菜单及无入口控件，参数摘要置首、不留空槽；已有素材恢复/预览/删除和生成保持。纯UI，无自动构建/检查/测试/浏览器或HTTP/SQL/Provider/服务/生产操作，GG-391运行receipt保持。创建0/退役0，无子agent/依赖缓存，用户刷新5173手验。
 
