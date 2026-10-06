@@ -1,5 +1,7 @@
 # Project map
 
+GG-407在canvas-video-material-modes.mjs/d.mts负责所选模型内适配与显式切换保留/移除计划；canvas-video-generator-node.tsx接自由模型Select/草稿与报价清除，context提供一次移除多个输入边，canvas-page沿现有历史/快照流程实施。无新server/API/持久字段；不逐条用旧闭包删除边。
+
 GG-354将原图直接框选放在`canvas-image-region.tsx/module.css`与`canvas-image-region-model.mjs/d.mts`：浮层定位/指针/复制及纯坐标模型；PlacementProvider按mode分流，context提供当前框选key供快捷栏隐藏。贴图仍在原placement编辑器，canvas-page/workspace及服务端不扩展。
 
 GG-352将图片框选/贴图放在`features/canvas/canvas-image-placement-*`与`canvas-image-placement.tsx/module.css`：纯几何/绘制模型、独立context、受权/本地图片加载及PNG导出、资产选择与编辑状态。`canvas-image-crop.tsx`仅新增快捷按钮，`canvas-workspace.tsx`仅挂载provider；沿现有副本提交上传，不扩展canvas-page业务或新增服务器。

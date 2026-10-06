@@ -6,5 +6,6 @@ export function canvasVideoParameterVisibility(type: VideoGenerationType, inputs
 export function canvasVideoTypeAvailability(inputs: readonly CanvasVideoModeInput[]): CanvasVideoTypeOption[];
 export function canvasVideoDraftForType(draft: CanvasVideoGenerationDraft, type: VideoGenerationType, inputs: readonly CanvasVideoModeInput[]): CanvasVideoGenerationDraft;
 export function canvasVideoDraftForMaterials(draft: CanvasVideoGenerationDraft, inputs: readonly CanvasVideoModeInput[]): CanvasVideoGenerationDraft;
+export function canvasVideoDraftForModel(draft: CanvasVideoGenerationDraft, modelId: VideoModelId, inputs: readonly CanvasVideoModeInput[]): { draft: CanvasVideoGenerationDraft; removedKeys: string[] };
 export function canvasVideoSubmissionType(type: VideoGenerationType, media: readonly { role: VideoRole }[]): VideoGenerationType;
 export function canvasVideoUiRolesForType(type: VideoGenerationType, kind: "image" | "video"): VideoRole[];

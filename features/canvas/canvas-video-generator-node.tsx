@@ -13,7 +13,7 @@ import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import { KlingModelIcon } from "@/features/models/kling-model-icon";
 import { privateImageUrls } from "@/shared/private-image-urls.mjs";
 import { VIDEO_GENERATION_MODELS, VIDEO_GENERATION_TYPES, VIDEO_ACTIVE_STATES, defaultVideoRole, videoGenerationProblem,
-  type CanvasVideoGenerationDraft, type VideoGenerationInput, type VideoGenerationMedia, type VideoGenerationStatus, type VideoGenerationType, type VideoMaterial, type VideoRole } from "@/shared/contracts/video-generation.mjs";
+  type CanvasVideoGenerationDraft, type VideoGenerationInput, type VideoGenerationMedia, type VideoGenerationStatus, type VideoGenerationType, type VideoMaterial, type VideoModelId, type VideoRole } from "@/shared/contracts/video-generation.mjs";
 import { listPrivateVideoMaterials } from "@/features/creation/http-video-materials";
 import { CanvasTextGenerationContext as CanvasGenerationContext } from "./canvas-text-generation-context";
 import { canvasTextGenerationInputs } from "./canvas-text-generation-input";
@@ -28,7 +28,7 @@ import { CanvasVideoTypeSelect } from "./canvas-video-type-select";
 import { CanvasVideoStoryboardControl } from "./canvas-video-storyboard-control";
 import { canvasVideoStoryboardShots } from "./canvas-video-storyboard.mjs";
 import { canvasVideoGenerationBatchInputs } from "./canvas-video-generation-batch.mjs";
-import { canvasVideoDraftForMaterials, canvasVideoDraftForType, canvasVideoParameterVisibility, canvasVideoSubmissionType, canvasVideoTypeAvailability, canvasVideoUiRolesForType } from "./canvas-video-material-modes.mjs";
+import { canvasVideoDraftForMaterials, canvasVideoDraftForModel, canvasVideoDraftForType, canvasVideoParameterVisibility, canvasVideoSubmissionType, canvasVideoTypeAvailability, canvasVideoUiRolesForType } from "./canvas-video-material-modes.mjs";
 import { CanvasVideoGenerationError, quoteCanvasVideo, readCanvasVideoCapabilities, submitCanvasVideo, readCanvasVideo, downloadCanvasVideo, retryCanvasVideoSave, retryCanvasVideo, type VideoCreditQuote } from "./http-video-generation";
 import type { CanvasNode, CanvasVideoGeneratorNodeType } from "./canvas-workspace";
 import workspaceStyles from "./canvas-workspace.module.css";
@@ -224,6 +224,17 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
     updateDraft(canvasVideoDraftForType(draft, type, inputs));
     setMessage("");
   };
+  const changeModel = (modelId: VideoModelId) => {
+    if (locked) return;
+    const plan = canvasVideoDraftForModel(draft, modelId, inputs);
+    if (plan.draft === draft) return;
+    const removed = new Set(plan.removedKeys);
+    const edgeIds = inputs.flatMap((item) => item.edgeId && removed.has(item.key) ? [item.edgeId] : []);
+    if (edgeIds.length) context.onRemoveInputs(edgeIds);
+    updateDraft(plan.draft);
+    setQuote(null); setQuoteError("");
+    setMessage(removed.size ? `已移除 ${removed.size} 个多余参考。` : "");
+  };
   const generate = async (retry = false) => {
     const acceptedQuote = retry ? retryQuote : quote;
     if (actionRef.current || locked || !acceptedQuote || !retry && (problem || count > 1 && !countEnabled)) return;
@@ -404,15 +415,10 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
           <span className={composerStyles.toolSpacer} />
           <div className={styles.actions}>
             <Select open={modelOpen} onOpenChange={(open) => { setModelOpen(open); if (open) { setTypeOpen(false); setParametersOpen(false); setStoryboardMenuOpen(false); } }} value={draft.modelId}
-              onValueChange={(value) => {
-                const option = typeOptions.find((item) => item.modelId === value && item.id === draft.type && item.enabled)
-                  ?? typeOptions.find((item) => item.modelId === value && item.enabled);
-                if (option) changeType(option.id);
-              }} disabled={locked}>
+              onValueChange={(value) => changeModel(value as VideoModelId)} disabled={locked}>
               <SelectTrigger size="sm" className={composerStyles.modelSelect} aria-label="视频模型"><SelectValue /></SelectTrigger>
               <SelectContent position="popper" align="end" className={`${composerStyles.modelMenu} nodrag nopan nowheel`}>
-                {VIDEO_GENERATION_MODELS.map((item) => <SelectItem key={item.id} value={item.id}
-                  disabled={!typeOptions.some((option) => option.modelId === item.id && option.enabled)}>
+                {VIDEO_GENERATION_MODELS.map((item) => <SelectItem key={item.id} value={item.id}>
                   <KlingModelIcon />{item.name}
                 </SelectItem>)}
               </SelectContent>

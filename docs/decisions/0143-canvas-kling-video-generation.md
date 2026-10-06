@@ -4,6 +4,10 @@
 - Date: 2026-10-05
 - Related tasks: GG-382, GG-384
 
+## Free model selection and compatible references · 2026-10-06 · GG-407
+
+The user makes model selection independent of the attached media. Keep the selected model authoritative during later material reconciliation; missing media disables submission, not model selection, and must not silently switch back to Omni. On an explicit model change preserve text and as much compatible media as the configured contract allows, in tray order: Motion retains the first image and first video; Omni retains the first video and up to four images with video, or up to seven images without video. Remove only excess references/connections, preserving source nodes and assets. Reconcile the generation type and model-specific resolution, audio, roles and shot settings; Motion can remain selected with incomplete inputs, and returning to Omni starts with smart shots where permitted. Clear the displayed quote while new pricing loads. Batch edge removals as one state update, preserve existing frozen retry inputs and keep the active-task lock. No new provider or persistence fields, prices or automatic generation requests.
+
 ## Remove unspecified camera · 2026-10-06 · GG-406
 
 The user removes 不指定运镜 from the single-shot submenu. Show only the seven existing camera references; preserve old single-shot drafts without forcing a new reference. This supersedes that one GG-405 option, with smart default and custom scenes unchanged.

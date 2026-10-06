@@ -61,7 +61,10 @@ test("video inputs enable reference/editing, and motion needs exactly one image 
   assert.deepEqual(motion.roles, { character: "image", video: "video" });
   assert.equal(videoGenerationProblem(request(motion, inputs)), null);
   assert.equal(canvasVideoDraftForMaterials(motion, inputs), motion);
-  assert.equal(canvasVideoDraftForMaterials(motion, [inputs[0]]).modelId, "kling-3.0-omni");
+  const missingVideo = canvasVideoDraftForMaterials(motion, [inputs[0]]);
+  assert.equal(missingVideo.modelId, "kling-3.0");
+  assert.equal(missingVideo.type, "motion_control");
+  assert.match(videoGenerationProblem(request(missingVideo, [inputs[0]])), /一个动作视频/);
   assert.ok(!enabled([...inputs, image("extra")]).includes("motion_control"));
   const edit = canvasVideoDraftForType(reference, "video_edit", [video()]);
   assert.equal(edit.roles.video, "base_video");

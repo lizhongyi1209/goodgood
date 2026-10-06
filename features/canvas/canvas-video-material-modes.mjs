@@ -1,4 +1,4 @@
-import { VIDEO_GENERATION_TYPES, videoModelForType, videoRolesForType } from "../../shared/contracts/video-generation.mjs";
+import { VIDEO_GENERATION_MODELS, VIDEO_GENERATION_TYPES, videoModelForType, videoRolesForType } from "../../shared/contracts/video-generation.mjs";
 
 const typeRules = {
   text_to_video: "仅提示词，不接入图片或视频",
@@ -40,10 +40,9 @@ export function canvasVideoTypeAvailability(inputs) {
   });
 }
 
-/** The selected mode owns roles; frame positions follow the visible image order. */
-export function canvasVideoDraftForType(draft, type, inputs) {
+/** Normalize even incomplete drafts; readiness is a separate submission check. */
+function draftForType(draft, type, inputs) {
   const modelId = videoModelForType(type);
-  if (!modelId || !canvasVideoTypeAvailability(inputs).some((item) => item.id === type && item.enabled)) return draft;
   const images = inputs.filter((item) => item.kind === "image");
   const [first, last] = images;
   const roles = Object.fromEntries(inputs.filter((item) => item.kind !== "text").map((item) => {
@@ -69,14 +68,36 @@ export function canvasVideoDraftForType(draft, type, inputs) {
     ? draft : next;
 }
 
-/** Keep a compatible choice; otherwise prefer the current model, then Omni. */
+/** The selected mode owns roles; frame positions follow the visible image order. */
+export function canvasVideoDraftForType(draft, type, inputs) {
+  return canvasVideoTypeAvailability(inputs).some((item) => item.id === type && item.enabled)
+    ? draftForType(draft, type, inputs) : draft;
+}
+
+/** Reconcile within the chosen model; missing inputs must never change it. */
 export function canvasVideoDraftForMaterials(draft, inputs) {
-  const available = canvasVideoTypeAvailability(inputs);
+  const available = canvasVideoTypeAvailability(inputs).filter((item) => item.modelId === draft.modelId);
   const preferred = [...available].sort((a, b) => automaticTypeOrder.indexOf(a.id) - automaticTypeOrder.indexOf(b.id));
   const type = available.find((item) => item.id === draft.type && item.enabled)
-    ?? preferred.find((item) => item.modelId === draft.modelId && item.enabled)
-    ?? preferred.find((item) => item.enabled);
-  return type ? canvasVideoDraftForType(draft, type.id, inputs) : draft;
+    ?? preferred.find((item) => item.enabled)
+    ?? available.find((item) => item.id === draft.type)
+    ?? preferred[0];
+  return type ? draftForType(draft, type.id, inputs) : draft;
+}
+
+/** Plan one explicit model switch without mutating media, edges or frozen inputs. */
+export function canvasVideoDraftForModel(draft, modelId, inputs) {
+  if (modelId === draft.modelId || !VIDEO_GENERATION_MODELS.some((item) => item.id === modelId)) return { draft, removedKeys: [] };
+  const motion = modelId === "kling-3.0";
+  const imageLimit = motion ? 1 : inputs.some((item) => item.kind === "video") ? 4 : 7;
+  let images = 0; let videos = 0;
+  const retained = inputs.filter((item) => item.kind === "text" || (item.kind === "image" ? ++images <= imageLimit : ++videos <= 1));
+  const keys = new Set(retained.map((item) => item.key));
+  const next = { ...draft, modelId,
+    materials: draft.materials.filter((item) => keys.has(`direct:${item.assetKind}:${item.assetId}`)),
+    ...(!motion ? { multiShot: true } : {}),
+  };
+  return { draft: canvasVideoDraftForMaterials(next, retained), removedKeys: inputs.filter((item) => !keys.has(item.key)).map((item) => item.key) };
 }
 
 /** A first-frame-only composition uses the existing compatible single-frame request. */

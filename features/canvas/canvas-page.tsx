@@ -1871,6 +1871,13 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     upload(generatorId, [item]);
   };
 
+  const removeLinkedInputs = (edgeIds: string[]) => {
+    const removed = new Set(edgeIds);
+    if (!edges.some((edge) => removed.has(edge.id))) return;
+    captureCanvasHistory();
+    for (const edgeId of removed) forgetConvertedReference(edgeId);
+    applyReferenceEdgeRemoval(edges.filter((edge) => !removed.has(edge.id)));
+  };
   const removeLinkedReference = (key: string) => {
     const instance = flowRef.current;
     if (!instance) return;
@@ -2707,6 +2714,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
             return sync.id;
           }, onBillingChanged: () => { void refreshBilling(); },
           onRemoveInput: removeLinkedReference,
+          onRemoveInputs: removeLinkedInputs,
         }}
         onProjectGraphChange={(settled) => { setTextRevision((value) => value + 1); scheduleProjectSnapshot(settled); scheduleCanvasHistory(); }}
         onViewportSettled={scheduleViewportPreference}
