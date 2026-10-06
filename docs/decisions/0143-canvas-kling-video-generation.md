@@ -4,6 +4,10 @@
 - Date: 2026-10-05
 - Related tasks: GG-382, GG-384
 
+## Explicit smart default and single-shot submenu · 2026-10-06 · GG-405
+
+The user replaces the GG-401 hidden automatic choice with a visible 智能分镜 choice, retaining automatic multi-shot as the new-node default. Put camera references directly inside 单镜头, remove the separate 运镜参考 entry and 添加到提示词 label. Keep an unspecified-camera single-shot choice, selected mode indicators, the existing custom-scene dialog and provider restrictions. Selecting smart clears only exact inserted camera-reference lines, so an earlier generated single-shot instruction does not override the new mode; preserve all other user text and frozen inputs. Existing saved explicit choices remain intact. This is a frontend mode presentation change, with no new provider or persistence fields.
+
 ## Automatic default and custom scenes · 2026-10-06 · GG-401
 
 The user makes automatic multi-shot the quiet default for new nodes, removes its explicit selection, and requests a screenshot-inspired custom-scene editor. Preserve restored/duplicated choices and frozen requests. Single-shot remains an explicit reversible choice. Official camera guidance supplies reference vocabulary; the configured Omni contract exposes no camera_control preset parameter, so references may only insert visible editable prompt text. Custom scenes use description cards with in-card duration controls, a top switch and a bottom total-duration popover, cancel and confirm. Distribute whole seconds so scene totals stay equal to the selected 3–15-second total, with at least one second each and at most six scenes. Only confirm applies the existing fields; switching custom off returns to automatic. Keep provider restrictions, pricing and task locks. This supersedes the old three-mode dialog and single-shot new-node default; unapproved GG-400 persistence extensions remain out of scope.

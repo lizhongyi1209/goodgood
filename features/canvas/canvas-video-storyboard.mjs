@@ -34,12 +34,17 @@ export const CANVAS_VIDEO_CAMERA_REFERENCES = [
   { id: "roll", name: "旋转镜头", text: "运镜：单镜头连续拍摄，镜头围绕光轴缓慢旋转。" },
 ];
 
+/** Remove only our exact reference line when selecting another shot mode. */
+export function canvasVideoCameraDescription(prompt) {
+  const existing = new Set(CANVAS_VIDEO_CAMERA_REFERENCES.map((item) => item.text));
+  return prompt.split(/\r?\n/).filter((line) => !existing.has(line.trim())).join("\n").trim();
+}
+
 /** Replace only our exact reference line, preserving the user's remaining prompt. */
 export function canvasVideoCameraPrompt(prompt, referenceId, connectedText = "") {
   const reference = CANVAS_VIDEO_CAMERA_REFERENCES.find((item) => item.id === referenceId);
   if (!reference) return null;
-  const existing = new Set(CANVAS_VIDEO_CAMERA_REFERENCES.map((item) => item.text));
-  const description = prompt.split(/\r?\n/).filter((line) => !existing.has(line.trim())).join("\n").trim();
+  const description = canvasVideoCameraDescription(prompt);
   const next = [description, reference.text].filter(Boolean).join("\n\n");
   return [connectedText.trim(), next].filter(Boolean).join("\n\n").length <= 3072 ? next : null;
 }

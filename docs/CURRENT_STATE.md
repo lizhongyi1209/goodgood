@@ -1,5 +1,7 @@
 # GoodGood 当前状态
 
+> [GG-405](tasks/GG-405-storyboard-menu-options.md) 分镜菜单源码已完成：新增可选且新节点默认的「智能分镜」，触发按钮直接显示当前方式；将运镜列表并入「单镜头」子菜单，移除独立运镜参考入口及添加到提示词标题，子菜单保留不指定运镜及7个参考。模式/参考有选中标记；回智能或不指定运镜只清理完整匹配的插入参考行，保留其他文字，自定义确认/取消与素材/锁定限制保持。ADR0143替代GG-401隐藏自动展示的决定，无新API字段或后台变化。按用户要求未构建/检查/测试/浏览器/HTTP/生成/服务操作；新UI仅本地功能分支，已交付GitHub设计快照保持GG-404修复基线供其他AI。创建0/退役0，无子agent/缓存。
+
 > [GG-404](tasks/GG-404-storyboard-menu-state.md) 修复源码b3233fec00a94075e3f405a92ca45ed59035ca77已提交并同步GitHub设计快照，修复视频节点storyboardMenuOpen未定义：GG-401将菜单引用改名但useState声明仍保留旧storyboardOpen/session，统一为storyboardMenuOpen/setStoryboardMenuOpen并移除已迁入独立控件的旧session。仅声明修正，菜单打开/互斥关闭/取消选中及任务锁定沿既有引用；后台/价格/保存/数据不变。按用户要求仅修改源码，无构建/代码或diff检查/测试/浏览器验收及服务/数据/生成操作。修复同步授权GitHub设计快照，正常fast-forward不覆盖其他AI。创建0/退役0，无子agent/缓存。
 
 > [GG-403](tasks/GG-403-canvas-load-recovery.md) 画布加载已恢复，修复源码5156fb7b03390a79d32af285485e882880a92378已提交并推送GitHub设计快照：GG-401分镜摘要join字符串被写入实际换行导致Vite解析失败，修正为显式\n分隔。原画布GET500恢复200，视频节点模块GET200；Vite26448/5173、Web30256/32131及唯一Worker24668/32142均原进程健康，不需重启/构建。Web/Worker readiness五项ok，backend仍GG-391 verified4ecd1db，数据/价格/原卷保持。修复同时同步已授权GitHub设计快照，仅fast-forward、main不变。仅必要只读HTTP运行核对，无自动编译命令/检查/测试/浏览器验收或SQL/生成/迁移/生产操作。创建0/退役0，无子agent/依赖缓存。
