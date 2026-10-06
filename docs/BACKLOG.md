@@ -1,6 +1,6 @@
 # 当前任务与优先级
 
-> [GG-393](tasks/GG-393-video-first-frame-options.md) 视频类型列表/单首帧源码完成待提交，基线d2b8eb0，GG-116分支codex/gg-393-video-first-frame-options。菜单只保留名称；一图启用首尾帧，移除尾帧保留类型；首帧必需、尾帧可选。2026-10-06已只读获取Kling官方Omni.md，明确支持first-only/first+last，不支持last-only；不实测付费接口。只有首帧的冻结新请求沿image_to_video兼容现有Web/Worker，实际同Omni first_frame内容、路由与价格。三项纯回归来源及GG-392预期更新只写未执行，无自动构建/检查/测试/浏览器或数据/生成/扣费/服务/生产操作。GG-391运行receipt保持，用户刷新5173手验，创建0/退役0，无子agent/缓存副本。
+> [GG-393](tasks/GG-393-video-first-frame-options.md) 视频类型列表/单首帧源码已提交41c6fe88fcab8a7fc5c92e248162c79df65b0bf8，基线d2b8eb0，GG-116分支codex/gg-393-video-first-frame-options。菜单只保留名称；一图启用首尾帧，移除尾帧保留类型；首帧必需、尾帧可选。2026-10-06已只读获取Kling官方Omni.md，明确支持first-only/first+last，不支持last-only；不实测付费接口。只有首帧的冻结新请求沿image_to_video兼容现有Web/Worker，实际同Omni first_frame内容、路由与价格。三项纯回归来源及GG-392预期更新只写未执行，无自动构建/检查/测试/浏览器或数据/生成/扣费/服务/生产操作。GG-391运行receipt保持，用户刷新5173手验，创建0/退役0，无子agent/缓存副本。
 
 > [GG-392](tasks/GG-392-video-material-modes.md) 源码已精确接入31a666c69587700707681b3964fe3ce1d23588d0（隔离717d17c，基线4bb862c），GG-116分支codex/gg-392-video-material-modes。Kling O3 / Kling 3.0与用户黑色可灵SVG；类型/模型按连接或直接素材启用，空媒体仅文生，有图图生/参考、两图首尾、有视频参考/编辑、一图一视频动作模仿。当前选择失效时自动适配类型/用途，保留有效选择；未就绪和超量禁止生成，任务/冻结重试保持。沿impeccable及图片chat样式，只写五项纯回归来源，未自动构建/代码检查/测试/浏览器验收或HTTP/SQL/Provider/生成/扣费/迁移/服务/生产操作。GG-391运行receipt保持，用户刷新5173手验。创建1/退役1，辅助已干净归档，无子agent/新依赖缓存。
 
