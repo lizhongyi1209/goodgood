@@ -11,4 +11,6 @@
 
 - 结果：原画布页面500→200且不再包含加载失败提示；视频节点源码模块HTTP200。原Vite26448/5173、Web30256/32131、唯一Worker24668/32142保持，未启动任何新进程。
 - 修复：canvas-video-generator-node.tsx中的实际换行改为源代码显式\n及\n\n，分镜展示语义保持。没有调整其他业务逻辑或增加测试。
-- 快照：更新前ls-remote仍fc345f850eab1483e7c1deb6c153e066ff08ea8d，尚无其他AI对该分支改动；本提交正常fast-forward同步修复，待记录push成功回执。
+- 快照：更新前ls-remote仍fc345f850eab1483e7c1deb6c153e066ff08ea8d，尚无其他AI对该分支改动；本提交正常fast-forward同步修复，git push已成功，远端快照fc345f8→5156fb7，未force或覆盖其他AI改动。
+
+- 修复源码及首次同步回执：5156fb7b03390a79d32af285485e882880a92378；后继只补回执文档，源码/服务身份不再变化。其他AI可使用设计快照最新HEAD，原会话继续fix/gg-403-canvas-load-recovery的当前检查点。
