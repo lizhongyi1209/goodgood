@@ -1,101 +1,127 @@
 "use client";
 
-import { useState } from "react";
-import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
+import { useRef, useState } from "react";
+import { Clock3, GripVertical, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import type { CanvasVideoGenerationDraft } from "@/shared/contracts/video-generation.mjs";
-import { canvasVideoStoryboardProblem, canvasVideoStoryboardShots } from "./canvas-video-storyboard.mjs";
-import composerStyles from "./canvas-page.module.css";
+import { canvasVideoStoryboardProblem, canvasVideoStoryboardResize, canvasVideoStoryboardSceneSeconds, canvasVideoStoryboardShots } from "./canvas-video-storyboard.mjs";
 import styles from "./canvas-video-generator-node.module.css";
 
-type Mode = "single" | "auto" | "manual";
-
-/** Mounted per opening so dismissing never applies the editor's local draft. */
-export function CanvasVideoStoryboardDialog({ id, draft, connectedText, automaticOnly, onApply, onCancel }: Readonly<{
-  id: string;
-  draft: CanvasVideoGenerationDraft;
-  connectedText: string;
-  automaticOnly: boolean;
-  onApply: (patch: Partial<CanvasVideoGenerationDraft>) => void;
-  onCancel: () => void;
+function DurationControl({ value, min, max, disabled, label, total = false, onChange }: Readonly<{
+  value: number; min: number; max: number; disabled: boolean; label: string; total?: boolean; onChange: (value: number) => void;
 }>) {
-  const [mode, setMode] = useState<Mode>(automaticOnly ? "auto" : draft.shots.length ? "manual" : draft.multiShot ? "auto" : "single");
-  const [shots, setShots] = useState(() => draft.shots.length ? draft.shots.map((shot) => ({ ...shot })) : [{ seconds: draft.duration, text: draft.prompt }]);
-  const total = shots.reduce((sum, shot) => sum + shot.seconds, 0);
+  return <Popover>
+    <PopoverTrigger asChild>
+      <Button type="button" variant="ghost" size="sm" className={total ? styles.totalDuration : styles.sceneDuration}
+        disabled={disabled} aria-label={label + "，" + value + "秒"}>
+        {total && <Clock3 size={14} strokeWidth={1.5} aria-hidden="true" />}{value}s
+      </Button>
+    </PopoverTrigger>
+    <PopoverContent side="top" align="start" sideOffset={8} collisionPadding={16} className={styles.durationPopover}
+      onPointerDown={(event) => event.stopPropagation()} onWheel={(event) => event.stopPropagation()}>
+      <h3>时长设置</h3>
+      <div className={styles.durationRow}><span>{label}</span><output className={styles.durationValue}>{value}s</output></div>
+      <Slider className={styles.durationSlider} aria-label={label} value={[value]} min={min} max={max} step={1}
+        disabled={disabled || min === max} onValueChange={([seconds]) => { if (seconds !== undefined) onChange(seconds); }} />
+    </PopoverContent>
+  </Popover>;
+}
+
+/** Local edits apply only on confirmation; closing discards this opening's draft. */
+export function CanvasVideoStoryboardDialog({ id, draft, connectedText, onApply, onCancel }: Readonly<{
+  id: string; draft: CanvasVideoGenerationDraft; connectedText: string;
+  onApply: (patch: Partial<CanvasVideoGenerationDraft>) => void; onCancel: () => void;
+}>) {
+  const [enabled, setEnabled] = useState(true);
+  const [duration, setDuration] = useState(Math.min(15, Math.max(3, draft.duration, draft.shots.length)));
+  const [shots, setShots] = useState(() => draft.shots.length ? canvasVideoStoryboardResize(draft.shots, duration)
+    : [{ seconds: Math.floor(duration / 2), text: draft.prompt }, { seconds: duration - Math.floor(duration / 2), text: "" }]);
+  const [interacted, setInteracted] = useState(false);
+  const dragIndex = useRef<number | null>(null);
   const effective = canvasVideoStoryboardShots(shots, connectedText);
-  const problem = mode === "manual" ? canvasVideoStoryboardProblem(shots, draft.duration, connectedText) : null;
-  const addShot = () => setShots((current) => {
-    if (current.length >= Math.min(6, draft.duration)) return current;
+  const problem = enabled ? canvasVideoStoryboardProblem(shots, duration, connectedText) : null;
+  const resize = (seconds: number) => { setDuration(seconds); setShots((current) => canvasVideoStoryboardResize(current, seconds)); };
+  const sceneSeconds = (index: number, seconds: number) => {
+    if (shots.length === 1) resize(seconds);
+    else setShots((current) => canvasVideoStoryboardSceneSeconds(current, index, seconds, duration));
+  };
+  const add = () => setShots((current) => {
+    if (current.length >= Math.min(6, duration)) return current;
     const donor = current.findIndex((shot) => shot.seconds > 1);
     return [...current.map((shot, index) => index === donor ? { ...shot, seconds: shot.seconds - 1 } : shot), { seconds: 1, text: "" }];
   });
-  const removeShot = (index: number) => setShots((current) => {
+  const remove = (index: number) => setShots((current) => {
     if (current.length <= 1 || !current[index]) return current;
-    const removed = current[index];
     const remaining = current.filter((_, position) => position !== index);
     const recipient = Math.max(0, index - 1);
-    return remaining.map((shot, position) => position === recipient ? { ...shot, seconds: Math.min(15, shot.seconds + removed.seconds) } : shot);
+    return remaining.map((shot, position) => position === recipient ? { ...shot, seconds: shot.seconds + current[index].seconds } : shot);
   });
-  const moveShot = (index: number, direction: -1 | 1) => setShots((current) => {
-    if (index < 0 || index >= current.length || index + direction < 0 || index + direction >= current.length) return current;
-    const next = [...current];
-    [next[index], next[index + direction]] = [next[index + direction], next[index]];
-    return next;
+  const move = (from: number, to: number) => setShots((current) => {
+    if (from === to || from < 0 || to < 0 || from >= current.length || to >= current.length) return current;
+    const next = [...current]; const [scene] = next.splice(from, 1); next.splice(to, 0, scene); return next;
   });
 
-  return <DialogContent className={`${styles.storyboardDialog} nodrag nopan nowheel`}
-    overlayClassName={styles.storyboardOverlay} onPointerDown={(event) => event.stopPropagation()} onWheel={(event) => event.stopPropagation()}>
+  return <DialogContent className={styles.storyboardDialog + " nodrag nopan nowheel"} overlayClassName={styles.storyboardOverlay} showCloseButton={false}
+    onPointerDown={(event) => event.stopPropagation()} onWheel={(event) => event.stopPropagation()}
+    onCloseAutoFocus={(event) => { event.preventDefault(); document.getElementById(id + "-trigger")?.focus(); }}>
     <header className={styles.storyboardHeader}>
-      <DialogTitle>智能分镜</DialogTitle>
-      <DialogDescription>设置每个镜头的时长和画面描述。</DialogDescription>
+      <DialogTitle>自定义分镜</DialogTitle>
+      <DialogDescription className="sr-only">设置场景描述和时长，确定后应用。</DialogDescription>
+      <Switch checked={enabled} onCheckedChange={setEnabled} aria-label="启用自定义分镜" />
     </header>
-    <ToggleGroup type="single" value={mode} spacing={8} aria-label="分镜方式" className={composerStyles.resolutionGroup}
-      onValueChange={(value) => { if (value) setMode(value as Mode); }}>
-      {[{ value: "single", label: "单镜头" }, { value: "auto", label: "自动分镜" }, { value: "manual", label: "手动分镜" }].map((item) =>
-        <ToggleGroupItem key={item.value} value={item.value} disabled={automaticOnly && item.value !== "auto"}
-          className={composerStyles.resolutionOption}>{item.label}</ToggleGroupItem>)}
-    </ToggleGroup>
-    {mode === "manual" ? <>
-      <div className={styles.storyboardSummary}>
-        <span>{shots.length} 个镜头</span><output data-invalid={total !== draft.duration || undefined}>时长合计 {total} / {draft.duration} 秒</output>
-      </div>
-      <div className={styles.storyboardBody}>
-        {connectedText.trim() && <section className={styles.storyboardContext}>
-          <span>连接文本 · 合入首个镜头</span><p>{connectedText}</p>
-        </section>}
-        <div className={styles.shots}>
-          {shots.map((shot, index) => <section className={styles.shot} key={index} aria-label={`镜头 ${index + 1}`}>
-            <div className={styles.shotHeader}>
-              <label htmlFor={`${id}-shot-${index}`}>镜头 {index + 1}</label>
-              <div className={styles.shotActions}>
-                <label className={styles.shotDuration}><input type="number" aria-label={`镜头 ${index + 1} 时长`} min={1} max={15} step={1} value={shot.seconds}
-                  onChange={(event) => setShots((current) => current.map((item, position) => position === index
-                    ? { ...item, seconds: Math.max(1, Math.min(15, Math.trunc(Number(event.target.value)) || 1)) } : item))} /><span>秒</span></label>
-                <button type="button" disabled={index === 0} aria-label={`上移镜头 ${index + 1}`} onClick={() => moveShot(index, -1)}><ArrowUp size={14} /></button>
-                <button type="button" disabled={index === shots.length - 1} aria-label={`下移镜头 ${index + 1}`} onClick={() => moveShot(index, 1)}><ArrowDown size={14} /></button>
-                <button type="button" disabled={shots.length === 1} aria-label={`删除镜头 ${index + 1}`} onClick={() => removeShot(index)}><Trash2 size={14} /></button>
-              </div>
+    <div className={styles.storyboardBody} data-disabled={!enabled || undefined}>
+      {connectedText.trim() && <details className={styles.storyboardContext}>
+        <summary>连接文本 · 场景1</summary><p>{connectedText}</p>
+      </details>}
+      <div className={styles.shots}>
+        {shots.map((shot, index) => <section className={styles.scene} key={index} aria-label={"场景 " + (index + 1)}
+          onDragOver={(event) => { if (enabled && dragIndex.current !== null) event.preventDefault(); }}
+          onDrop={(event) => { if (enabled && dragIndex.current !== null) { event.preventDefault(); move(dragIndex.current, index); dragIndex.current = null; } }}>
+          <div className={styles.sceneHeader}>
+            <div className={styles.sceneName}>
+              <button type="button" id={id + "-move-" + index} className={styles.sceneMove} disabled={!enabled} draggable={enabled} aria-label={"移动场景 " + (index + 1)}
+                title="拖动排序；Alt＋方向键移动" onDragStart={(event) => { dragIndex.current = index; event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", String(index)); }}
+                onDragEnd={() => { dragIndex.current = null; }} onKeyDown={(event) => {
+                  if (event.altKey && ["ArrowUp", "ArrowDown"].includes(event.key)) {
+                    event.preventDefault(); const next = index + (event.key === "ArrowUp" ? -1 : 1);
+                    if (next >= 0 && next < shots.length) { move(index, next); requestAnimationFrame(() => document.getElementById(id + "-move-" + next)?.focus()); }
+                  }
+                }}><GripVertical size={13} aria-hidden="true" /></button>
+              <label htmlFor={id + "-scene-" + index}>场景 {index + 1}</label>
             </div>
-            <textarea id={`${id}-shot-${index}`} placeholder="描述画面、动作和镜头变化…" maxLength={512} value={shot.text} rows={3}
-              onChange={(event) => setShots((current) => current.map((item, position) => position === index ? { ...item, text: event.target.value } : item))} />
-            <span className={styles.shotLength} data-invalid={(effective[index]?.text.length ?? 0) > 512 || undefined}>{effective[index]?.text.length ?? 0} / 512</span>
-          </section>)}
-        </div>
-        <Button type="button" variant="ghost" size="sm" className={styles.shotAdd} disabled={shots.length >= Math.min(6, draft.duration)} onClick={addShot}>
-          <Plus size={14} />添加镜头
-        </Button>
+            <button type="button" className={styles.sceneRemove} disabled={!enabled || shots.length === 1}
+              aria-label={"删除场景 " + (index + 1)} onClick={() => remove(index)}><Trash2 size={14} strokeWidth={1.5} aria-hidden="true" /></button>
+          </div>
+          <div className={styles.sceneCard}>
+            <textarea id={id + "-scene-" + index} disabled={!enabled} placeholder="描述这个场景…" value={shot.text} maxLength={512} rows={3}
+              onBlur={() => setInteracted(true)} onChange={(event) => setShots((current) => current.map((item, position) => position === index ? { ...item, text: event.target.value } : item))} />
+            <div className={styles.sceneCardFooter}>
+              <DurationControl value={shot.seconds} min={shots.length === 1 ? 3 : 1} max={shots.length === 1 ? 15 : duration - shots.length + 1}
+                disabled={!enabled} label={"场景 " + (index + 1) + " 时长"} onChange={(seconds) => sceneSeconds(index, seconds)} />
+              {(effective[index]?.text.length ?? 0) >= 450 && <span className={styles.shotLength} data-invalid={(effective[index]?.text.length ?? 0) > 512 || undefined}>
+                {effective[index]?.text.length ?? 0} / 512
+              </span>}
+            </div>
+          </div>
+        </section>)}
       </div>
-      {problem && <p className={styles.storyboardNotice} role="status">{problem}</p>}
-    </> : <p className={styles.storyboardModeHint}>
-      {mode === "auto" ? automaticOnly ? "参考视频将自动使用多镜头，继续在输入框描述画面和动作。" : "根据输入描述自动安排镜头，继续在输入框描述画面和动作。" : "保持一个连续镜头，在输入框描述画面和动作。"}
-    </p>}
+      <Button type="button" variant="ghost" className={styles.shotAdd} disabled={!enabled || shots.length >= Math.min(6, duration)} onClick={add}>
+        <Plus size={15} strokeWidth={1.5} aria-hidden="true" />添加场景 {shots.length + 1}
+      </Button>
+    </div>
+    {problem && interacted && <p className={styles.storyboardNotice} role="status">{problem}</p>}
     <footer className={styles.storyboardFooter}>
-      <Button type="button" variant="ghost" size="sm" onClick={onCancel}>取消</Button>
-      <Button type="button" size="sm" className={styles.storyboardConfirm} disabled={Boolean(problem)} onClick={() => onApply({
-        multiShot: mode !== "single", shots: mode === "manual" ? shots.map((shot) => ({ ...shot, text: shot.text.trim() })) : [],
-      })}>确定</Button>
+      <DurationControl value={duration} min={Math.max(3, shots.length)} max={15} disabled={!enabled} label="总时长" total onChange={resize} />
+      <div className={styles.storyboardActions}>
+        <Button type="button" variant="outline" size="sm" onClick={onCancel}>取消</Button>
+        <Button type="button" size="sm" className={styles.storyboardConfirm} disabled={Boolean(problem)} onClick={() => onApply({
+          duration, multiShot: true, shots: enabled ? shots.map((shot) => ({ ...shot, text: shot.text.trim() })) : [],
+        })}>确定</Button>
+      </div>
     </footer>
   </DialogContent>;
 }

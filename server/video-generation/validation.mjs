@@ -8,7 +8,9 @@ export function videoGenerationId(value) {
 function invalid(message = "视频参数无效。") { throw new VideoGenerationError("VIDEO_INPUT_INVALID", message); }
 function record(value, keys) { if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).some((key) => !keys.includes(key))) invalid(); }
 export function validateVideoDraft(raw) {
-  const defaults = defaultVideoGenerationDraft();
+  // The automatic default is for newly created nodes. Historical drafts and
+  // frozen requests that omitted the field retain their original single-shot default.
+  const defaults = { ...defaultVideoGenerationDraft(), multiShot: false };
   record(raw, [...Object.keys(defaults), "requestId", "lastInput", "count", "submissionError"]);
   const draft = { ...defaults, ...raw };
   if (draft.count !== undefined && !VIDEO_GENERATION_COUNTS.includes(draft.count)) invalid("生成数量请选择 1、2 或 4。");

@@ -1,12 +1,12 @@
 "use client";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Handle, NodeToolbar, Position, useReactFlow, useStore, type NodeProps } from "@xyflow/react";
-import { ChevronDown, Clapperboard, Download, FileText, Film, LoaderCircle, Maximize2, Play, RotateCcw, Volume2, VolumeX, X } from "lucide-react";
+import { ChevronDown, Download, FileText, Film, LoaderCircle, Maximize2, Play, RotateCcw, Volume2, VolumeX, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Attachment, AttachmentGroup } from "@/components/ui/attachment";
 import { CreditIcon } from "@/components/ui/credit-icon";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
-import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
@@ -25,7 +25,7 @@ import { CANVAS_ASSET_LIBRARY_UPDATED_EVENT } from "./canvas-asset-upload";
 import { CanvasVideoGeneratorPrompt } from "./canvas-video-generator-prompt";
 import { CanvasVideoGeneratorSettings } from "./canvas-video-generator-settings";
 import { CanvasVideoTypeSelect } from "./canvas-video-type-select";
-import { CanvasVideoStoryboardDialog } from "./canvas-video-storyboard-dialog";
+import { CanvasVideoStoryboardControl } from "./canvas-video-storyboard-control";
 import { canvasVideoStoryboardShots } from "./canvas-video-storyboard.mjs";
 import { canvasVideoGenerationBatchInputs } from "./canvas-video-generation-batch.mjs";
 import { canvasVideoDraftForMaterials, canvasVideoDraftForType, canvasVideoParameterVisibility, canvasVideoSubmissionType, canvasVideoTypeAvailability, canvasVideoUiRolesForType } from "./canvas-video-material-modes.mjs";
@@ -111,7 +111,7 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
   const combinedPrompt = manualShots ? "" : [connectedText, draft.prompt].map((text) => text.trim()).filter(Boolean).join("\n\n");
   const media: VideoGenerationMedia[] = views.flatMap((view) => view.material && view.role ? [{ ...view.material, role: view.role }] : []);
   const hasFeatureVideo = media.some((item) => item.role === "feature_video");
-  const parameterVisibility = canvasVideoParameterVisibility(draft.type, views);
+  const parameterVisibility = { ...canvasVideoParameterVisibility(draft.type, views), duration: draft.type !== "motion_control" && !manualShots };
   const fields = { modelId: draft.modelId, type: canvasVideoSubmissionType(draft.type, media), prompt: combinedPrompt, resolution: draft.resolution, duration: draft.duration, aspectRatio: draft.aspectRatio,
     audio: hasFeatureVideo ? "off" as const : draft.audio, multiShot: hasFeatureVideo || draft.multiShot, characterOrientation: draft.characterOrientation,
     shots: manualShots ? canvasVideoStoryboardShots(draft.shots, connectedText) : [] };
@@ -193,7 +193,7 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
   }, [draft.requestId, draft.submissionError, context.enabled, context.workspaceId, scope, pollRevision]);
   useEffect(() => {
     if (!selected || locked) { setModelOpen(false); setTypeOpen(false); if (!selected) setParametersOpen(false); }
-    if (!selected || locked || !parameterVisibility.storyboard) setStoryboardOpen(false);
+    if (!selected || locked || !parameterVisibility.storyboard) setStoryboardMenuOpen(false);
   }, [selected, locked, parameterVisibility.storyboard]);
   useEffect(() => {
     const video = videoRef.current; if (!video || !data.previewUrl) return;
@@ -299,7 +299,7 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
   const AudioIcon = previewAudio === "off" ? VolumeX : Volume2;
   const parameterPreview = [parameterVisibility.aspectRatio ? draft.aspectRatio : null,
     draft.resolution === "4k" ? "4K" : draft.resolution,
-    parameterVisibility.duration ? `${draft.duration}s` : "随视频", `${count}个`].filter(Boolean).join(" · ");
+    motion ? "随视频" : `${draft.duration}s`, `${count}个`].filter(Boolean).join(" · ");
   const type = VIDEO_GENERATION_TYPES.find((item) => item.id === draft.type)!;
   const sendHint = !context.enabled ? "画布准备好后可生成" : locked ? "当前任务进行中" : problem || quoteError || "生成视频（Ctrl/⌘ + Enter）";
   const validationNotice = problem === "请输入视频描述。" ? "" : problem;
@@ -369,13 +369,16 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
             </Attachment>
           </div>)}
         </AttachmentGroup>
-        <CanvasVideoGeneratorPrompt id={`video-prompt-${id}`} value={manualShots ? "" : draft.prompt} readOnly={locked || manualShots} maxLength={motion ? 2500 : 3072} width={toolbarWidth}
-          placeholder={manualShots ? "分镜描述请在智能分镜中编辑…" : connected.some((item) => item.kind === "text") ? "补充视频描述（追加在连接文本之后）…" : `${type.hint}…`} canGenerate={ready}
-          onInteract={() => { setModelOpen(false); setTypeOpen(false); setParametersOpen(false); }}
+        <CanvasVideoGeneratorPrompt id={`video-prompt-${id}`} value={manualShots ? draft.shots.map((shot, index) => `场景 ${index + 1} · ${shot.seconds}s
+${shot.text}`).join("
+
+") : draft.prompt} readOnly={locked || manualShots} maxLength={motion ? 2500 : 3072} width={toolbarWidth}
+          placeholder={manualShots ? "点击分镜编辑场景…" : connected.some((item) => item.kind === "text") ? "补充视频描述（追加在连接文本之后）…" : `${type.hint}…`} canGenerate={ready}
+          onInteract={() => { setModelOpen(false); setTypeOpen(false); setParametersOpen(false); setStoryboardMenuOpen(false); }}
           onChange={(prompt) => { setMessage(""); updateDraft({ prompt }); }} onGenerate={() => void generate()} />
         <div className={`${composerStyles.tools} ${styles.footer}`}>
           <div className={styles.controls}>
-            <Popover open={parametersOpen} onOpenChange={(open) => { setParametersOpen(open); if (open) { setModelOpen(false); setTypeOpen(false); } }}>
+            <Popover open={parametersOpen} onOpenChange={(open) => { setParametersOpen(open); if (open) { setModelOpen(false); setTypeOpen(false); setStoryboardMenuOpen(false); } }}>
               <PopoverTrigger asChild data-slot="button">
                 <Button id={`video-parameters-${id}-trigger`} type="button" variant="ghost" size="sm" className={composerStyles.settingsTrigger} disabled={locked} aria-label={`视频参数：${parameterPreview}，${audioLabel}`}
                   aria-controls={`video-parameters-${id}`}>
@@ -395,26 +398,16 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
             </Popover>
             <div className={styles.typeAndStoryboard}>
             <CanvasVideoTypeSelect value={draft.type} modelId={draft.modelId} options={typeOptions} open={typeOpen} disabled={locked}
-              onOpenChange={(open) => { setTypeOpen(open); if (open) { setModelOpen(false); setParametersOpen(false); } }} onValueChange={changeType} />
-            {parameterVisibility.storyboard && <Dialog open={storyboardOpen && selected && !locked} onOpenChange={(open) => {
-              setStoryboardOpen(open);
-              if (open) { setStoryboardSession((session) => session + 1); setModelOpen(false); setTypeOpen(false); setParametersOpen(false); }
-            }}>
-              <DialogTrigger asChild>
-                <Button type="button" variant="ghost" size="sm" disabled={locked}
-                  className={`${composerStyles.settingsTrigger} ${styles.storyboardTrigger}`} data-active={draft.multiShot || draft.shots.length > 0 || hasFeatureVideo || undefined}>
-                  <Clapperboard size={14} strokeWidth={1.5} aria-hidden="true" />智能分镜
-                </Button>
-              </DialogTrigger>
-              <CanvasVideoStoryboardDialog key={storyboardSession} id={`video-storyboard-${id}`} draft={draft}
-                connectedText={connectedText} automaticOnly={hasFeatureVideo} onCancel={() => setStoryboardOpen(false)}
-                onApply={(patch) => { updateDraft(patch); setMessage(""); setStoryboardOpen(false); }} />
-            </Dialog>}
+              onOpenChange={(open) => { setTypeOpen(open); if (open) { setModelOpen(false); setParametersOpen(false); setStoryboardMenuOpen(false); } }} onValueChange={changeType} />
+            {parameterVisibility.storyboard && <CanvasVideoStoryboardControl id={`video-storyboard-${id}`} draft={draft}
+              connectedText={connectedText} disabled={locked || !selected} open={storyboardMenuOpen}
+              onOpenChange={(open) => { setStoryboardMenuOpen(open); if (open) { setModelOpen(false); setTypeOpen(false); setParametersOpen(false); } }}
+              onApply={(patch) => { updateDraft(patch); setMessage(""); }} />}
             </div>
           </div>
           <span className={composerStyles.toolSpacer} />
           <div className={styles.actions}>
-            <Select open={modelOpen} onOpenChange={(open) => { setModelOpen(open); if (open) { setTypeOpen(false); setParametersOpen(false); } }} value={draft.modelId}
+            <Select open={modelOpen} onOpenChange={(open) => { setModelOpen(open); if (open) { setTypeOpen(false); setParametersOpen(false); setStoryboardMenuOpen(false); } }} value={draft.modelId}
               onValueChange={(value) => {
                 const option = typeOptions.find((item) => item.modelId === value && item.id === draft.type && item.enabled)
                   ?? typeOptions.find((item) => item.modelId === value && item.enabled);

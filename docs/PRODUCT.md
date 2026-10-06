@@ -1,5 +1,9 @@
 # Product definition
 
+## GG-401 · 视频分镜默认与运镜参考
+
+视频新节点默认自动分镜，由原有生成任务multi_shot决定镜头，UI不要求用户再选择自动，也不预先发起AI写脚本调用。单镜头是可取消的明确选择；自定义允许按截图逐场景描述和滑块设置整数秒，合计始终等于总长。运镜参考基于[Kling官方运镜指南](https://kling.ai/quickstart/ai-camera-control-guide)的六类基本运镜词汇（变焦提供拉近/拉远），作为可见且可编辑的提示词，不宣称当前O1Key O3接口支持camera_control参数或保证效果。恢复/复制的旧选择与冻结任务不自动改变；不新增成本项、持久字段或提前调用。
+
 ## GG-397 · 全能参考与输出参数
 
 「参考生成」更名「全能参考」，仅显示名及菜单位置变化，reference_to_video内部身份保持。首尾帧字体与编号同为10px。用户提议隐藏随素材参数；核对实际接口后，自动决定的是宽高比，清晰度仍是独立输出选项。按此事实隐藏无效比例以及视频参考的固定静音/分镜控件，保留仍有效的清晰度/时长与价格。依据为用户O1Key附件及[Kling Omni官方接口](https://kling.ai/document-api/api/video/3-0-omni/video-omni.md)、[Motion官方接口](https://kling.ai/document-api/api/video/3-0-omni/motion-control.md)，2026-10-06公开只读获取；未实测付费接口。

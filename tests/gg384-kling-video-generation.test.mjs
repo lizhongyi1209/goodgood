@@ -43,10 +43,10 @@ test("motion has no Omni-only parameters and enforces exactly one image/video", 
   assert.throws(() => validateVideoGeneration({ ...draft, media: [image("image")] }), /角色图片/);
 });
 test("reference-video and base-video impose opposite multi-shot/audio rules", () => {
-  assert.throws(() => validateVideoGeneration(input({ type: "reference_to_video", media: [video("feature_video")] })), /多镜头/);
+  assert.throws(() => validateVideoGeneration(input({ type: "reference_to_video", multiShot: false, media: [video("feature_video")] })), /多镜头/);
   assert.doesNotThrow(() => validateVideoGeneration(input({ type: "reference_to_video", multiShot: true, media: [video("feature_video")] })));
   assert.throws(() => validateVideoGeneration(input({ type: "video_edit", multiShot: true, media: [video("base_video")] })), /单镜头/);
-  assert.doesNotThrow(() => validateVideoGeneration(input({ type: "video_edit", audio: "original", media: [video("base_video")] })));
+  assert.doesNotThrow(() => validateVideoGeneration(input({ type: "video_edit", multiShot: false, audio: "original", media: [video("base_video")] })));
 });
 test("manual shots validate totals; incomplete drafts can be saved without submitting", () => {
   const draft = input({ prompt: "", multiShot: true, shots: [{ seconds: 2, text: "人物抬头" }, { seconds: 3, text: "镜头拉远" }] });

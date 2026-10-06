@@ -17,7 +17,7 @@ export const VIDEO_ACTIVE_STATES = Object.freeze(["queued", "submitting", "runni
 export const VIDEO_GENERATION_COUNTS = Object.freeze([1, 2, 4]);
 export function defaultVideoGenerationDraft() {
   return { modelId: "kling-3.0-omni", type: "text_to_video", prompt: "", resolution: "720p", duration: 5,
-    aspectRatio: "16:9", audio: "off", multiShot: false, characterOrientation: "video", shots: [], materials: [], roles: {} };
+    aspectRatio: "16:9", audio: "off", multiShot: true, characterOrientation: "video", shots: [], materials: [], roles: {} };
 }
 export function videoModelForType(type) { return VIDEO_GENERATION_TYPES.find((item) => item.id === type)?.modelId; }
 export function videoRolesForType(type, kind) {
