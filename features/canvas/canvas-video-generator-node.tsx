@@ -62,8 +62,7 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
   const zoom = useStore((state) => state.transform[2]); const viewportWidth = useStore((state) => state.width);
   const screenLeft = useStore((state) => (state.nodeLookup.get(id)?.internals.positionAbsolute.x ?? 0) * state.transform[2] + state.transform[0]);
   const [modelOpen, setModelOpen] = useState(false); const [typeOpen, setTypeOpen] = useState(false); const [parametersOpen, setParametersOpen] = useState(false);
-  const [storyboardOpen, setStoryboardOpen] = useState(false);
-  const [storyboardSession, setStoryboardSession] = useState(0);
+  const [storyboardMenuOpen, setStoryboardMenuOpen] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false); const [priceRevision, setPriceRevision] = useState(0);
   const [posting, setPosting] = useState(false); const [message, setMessage] = useState("");
   const [quote, setQuote] = useState<VideoCreditQuote | null>(null); const [retryQuote, setRetryQuote] = useState<VideoCreditQuote | null>(null); const [quoteError, setQuoteError] = useState(""); const [pollRevision, setPollRevision] = useState(0);

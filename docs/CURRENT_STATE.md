@@ -1,5 +1,7 @@
 # GoodGood 当前状态
 
+> [GG-404](tasks/GG-404-storyboard-menu-state.md) 修复视频节点storyboardMenuOpen未定义：GG-401将菜单引用改名但useState声明仍保留旧storyboardOpen/session，统一为storyboardMenuOpen/setStoryboardMenuOpen并移除已迁入独立控件的旧session。仅声明修正，菜单打开/互斥关闭/取消选中及任务锁定沿既有引用；后台/价格/保存/数据不变。按用户要求仅修改源码，无构建/代码或diff检查/测试/浏览器验收及服务/数据/生成操作。修复同步授权GitHub设计快照，正常fast-forward不覆盖其他AI。创建0/退役0，无子agent/缓存。
+
 > [GG-403](tasks/GG-403-canvas-load-recovery.md) 画布加载已恢复，修复源码5156fb7b03390a79d32af285485e882880a92378已提交并推送GitHub设计快照：GG-401分镜摘要join字符串被写入实际换行导致Vite解析失败，修正为显式\n分隔。原画布GET500恢复200，视频节点模块GET200；Vite26448/5173、Web30256/32131及唯一Worker24668/32142均原进程健康，不需重启/构建。Web/Worker readiness五项ok，backend仍GG-391 verified4ecd1db，数据/价格/原卷保持。修复同时同步已授权GitHub设计快照，仅fast-forward、main不变。仅必要只读HTTP运行核对，无自动编译命令/检查/测试/浏览器验收或SQL/生成/迁移/生产操作。创建0/退役0，无子agent/依赖缓存。
 
 > [GG-402](tasks/GG-402-frontend-github-snapshot.md) 当前前端已按用户授权推送GitHub独立设计分支[design/gg-402-frontend-snapshot](https://github.com/lizhongyi1209/goodgood/tree/design/gg-402-frontend-snapshot)，首次上传提交41584264baaf7da5cebbbfddf11a3fb73db4486e经ls-remote确认；包含最新应用源码GG-401 e401e86及[重构交接说明](FRONTEND_DESIGN_HANDOFF.md)。其他AI从该快照创建设计分支，原会话从本地codex/gg-402-frontend-handoff继续功能需求。源码保持，未运行构建/检查/测试/浏览器或main CI/部署；无数据/Provider/迁移/服务操作，GG-391运行receipt保持。创建0/退役0，无子agent/缓存。

@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-06
-- Current phase: GG-403画布页面解析故障已修复、HTTP200，GitHub设计快照同步修复；后台仍GG-391原进程。
-- Current objective: 用户刷新原画布继续手验与功能开发；其他AI使用更新后的设计快照，不自动扩大验证/重启或接入设计改动。
+- Current phase: GG-404分镜菜单状态未定义源码修复，GG-403页面恢复及原后台运行保持。
+- Current objective: 用户刷新5173手验视频节点/分镜；后续继续功能，其他AI使用修正后的GitHub设计快照。
 - Previous objective: GG-383上传复用源码交付；GG-382设计/官方对照已获用户接受，按其O1Key附件实现，不再等待设计反馈。
 
 ## Current checkpoint
+
+- 当前修复：[GG-404](tasks/GG-404-storyboard-menu-state.md) 修复视频节点storyboardMenuOpen未定义：GG-401将菜单引用改名但useState声明仍保留旧storyboardOpen/session，统一为storyboardMenuOpen/setStoryboardMenuOpen并移除已迁入独立控件的旧session。仅声明修正，菜单打开/互斥关闭/取消选中及任务锁定沿既有引用；后台/价格/保存/数据不变。按用户要求仅修改源码，无构建/代码或diff检查/测试/浏览器验收及服务/数据/生成操作。修复同步授权GitHub设计快照，正常fast-forward不覆盖其他AI。创建0/退役0，无子agent/缓存。
 
 - 当前恢复：[GG-403](tasks/GG-403-canvas-load-recovery.md) 画布加载已恢复，修复源码5156fb7b03390a79d32af285485e882880a92378已提交并推送GitHub设计快照：GG-401分镜摘要join字符串被写入实际换行导致Vite解析失败，修正为显式\n分隔。原画布GET500恢复200，视频节点模块GET200；Vite26448/5173、Web30256/32131及唯一Worker24668/32142均原进程健康，不需重启/构建。Web/Worker readiness五项ok，backend仍GG-391 verified4ecd1db，数据/价格/原卷保持。修复同时同步已授权GitHub设计快照，仅fast-forward、main不变。仅必要只读HTTP运行核对，无自动编译命令/检查/测试/浏览器验收或SQL/生成/迁移/生产操作。创建0/退役0，无子agent/依赖缓存。
 
