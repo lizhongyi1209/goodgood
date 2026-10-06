@@ -11,6 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuRadioG
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
+import { KlingModelIcon } from "@/features/models/kling-model-icon";
 import { privateImageUrls } from "@/shared/private-image-urls.mjs";
 import { VIDEO_GENERATION_MODELS, VIDEO_GENERATION_TYPES, VIDEO_ROLE_LABELS, VIDEO_ACTIVE_STATES, defaultVideoRole, videoRolesForType, videoGenerationProblem,
   type CanvasVideoGenerationDraft, type VideoGenerationInput, type VideoGenerationMedia, type VideoGenerationStatus, type VideoGenerationType, type VideoMaterial, type VideoRole } from "@/shared/contracts/video-generation.mjs";
@@ -28,6 +29,7 @@ import { CanvasVideoGeneratorSettings } from "./canvas-video-generator-settings"
 import { CanvasVideoStoryboardDialog } from "./canvas-video-storyboard-dialog";
 import { canvasVideoStoryboardShots } from "./canvas-video-storyboard.mjs";
 import { canvasVideoGenerationBatchInputs } from "./canvas-video-generation-batch.mjs";
+import { canvasVideoDraftForMaterials, canvasVideoDraftForType, canvasVideoTypeAvailability } from "./canvas-video-material-modes.mjs";
 import { CanvasVideoGenerationError, quoteCanvasVideo, readCanvasVideoCapabilities, submitCanvasVideo, readCanvasVideo, downloadCanvasVideo, retryCanvasVideoSave, retryCanvasVideo, type VideoCreditQuote } from "./http-video-generation";
 import type { CanvasNode, CanvasVideoGeneratorNodeType } from "./canvas-workspace";
 import workspaceStyles from "./canvas-workspace.module.css";
@@ -76,42 +78,55 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
   const noticesRef = useRef(new Set<string>()); const actionRef = useRef(false);
   const previewRefreshAttempted = useRef(false);
   useEffect(() => { previewRefreshAttempted.current = false; }, [data.outputAssetId]);
-  const draft = data.videoGeneration; const count = draft.count ?? 1;
-  const job = draft.submissionError && draft.requestId ? rejectedVideoStatus(draft.requestId, draft.submissionError) : data.job;
+  const storedDraft = data.videoGeneration; const count = storedDraft.count ?? 1;
+  const job = storedDraft.submissionError && storedDraft.requestId ? rejectedVideoStatus(storedDraft.requestId, storedDraft.submissionError) : data.job;
   const totalCredits = quote ? quote.credits * count : null;
-  const active = Boolean(draft.requestId && (!job || VIDEO_ACTIVE_STATES.includes(job.state) || ["submission_unknown", "save_failed"].includes(job.state)));
+  const active = Boolean(storedDraft.requestId && (!job || VIDEO_ACTIVE_STATES.includes(job.state) || ["submission_unknown", "save_failed"].includes(job.state)));
   const locked = active || posting || uploading || !context.enabled;
   const sequence = Math.max(1, nodes.filter((node) => node.type === "videoGenerator").findIndex((node) => node.id === id) + 1);
   const title = `视频生成 ${sequence}`;
   const connected = canvasTextGenerationInputs(nodes, edges, id);
   const connectedText = connected.filter((item) => item.kind === "text").map((item) => (item.text ?? "").trim()).filter(Boolean).join("\n\n");
-  const manualShots = draft.shots.length > 0 && !["motion_control", "video_edit"].includes(draft.type);
-  const combinedPrompt = manualShots ? "" : [connectedText, draft.prompt].map((text) => text.trim()).filter(Boolean).join("\n\n");
-  let imageIndex = 0;
-  const views: InputView[] = [
+  const inputs: InputView[] = [
     ...connected.map((item): InputView => {
       const material: VideoMaterial | undefined = item.kind === "image" && item.media ? { kind: "image", assetKind: item.media.assetKind, assetId: item.media.assetId, name: item.name }
         : item.kind === "video" && item.videoAssetId ? { kind: "video", assetKind: "video", assetId: item.videoAssetId, name: item.name } : undefined;
-      const key = `edge:${item.edgeId}`; const role = item.kind !== "text" ? draft.roles[key] ?? defaultVideoRole(draft.type, item.kind, item.kind === "image" ? imageIndex++ : 0) : undefined;
+      const key = `edge:${item.edgeId}`; const role = item.kind !== "text" ? storedDraft.roles[key] : undefined;
       return { key, edgeId: item.edgeId, kind: item.kind, name: item.name, material, role, previewUrl: item.previewUrl, text: item.text, unavailable: item.unavailable };
     }),
-    ...draft.materials.map((item): InputView => {
+    ...storedDraft.materials.map((item): InputView => {
       const key = `direct:${item.assetKind}:${item.assetId}`;
-      return { key, kind: item.kind, name: item.name, material: item, role: draft.roles[key] ?? item.role ?? defaultVideoRole(draft.type, item.kind, item.kind === "image" ? imageIndex++ : 0),
+      return { key, kind: item.kind, name: item.name, material: item, role: storedDraft.roles[key] ?? item.role,
         previewUrl: item.kind === "image" ? privateImageUrls(item.assetKind === "generated" ? "asset" : "reference", item.assetId).previewUrl : directPreviews[item.assetId],
         unavailable: item.kind === "video" && !directPreviews[item.assetId] };
     }),
   ];
+  const typeOptions = canvasVideoTypeAvailability(inputs);
+  const draft = locked ? storedDraft : canvasVideoDraftForMaterials(storedDraft, inputs);
+  let imageIndex = 0;
+  const views: InputView[] = inputs.map((item) => {
+    const index = item.kind === "image" ? imageIndex++ : 0;
+    return { ...item, role: item.kind === "text" ? undefined : draft.roles[item.key] ?? item.role ?? defaultVideoRole(draft.type, item.kind, index) };
+  });
+  const manualShots = draft.shots.length > 0 && !["motion_control", "video_edit"].includes(draft.type);
+  const combinedPrompt = manualShots ? "" : [connectedText, draft.prompt].map((text) => text.trim()).filter(Boolean).join("\n\n");
   const media: VideoGenerationMedia[] = views.flatMap((view) => view.material && view.role ? [{ ...view.material, role: view.role }] : []);
   const hasFeatureVideo = media.some((item) => item.role === "feature_video");
   const fields = { modelId: draft.modelId, type: draft.type, prompt: combinedPrompt, resolution: draft.resolution, duration: draft.duration, aspectRatio: draft.aspectRatio,
     audio: hasFeatureVideo ? "off" as const : draft.audio, multiShot: hasFeatureVideo || draft.multiShot, characterOrientation: draft.characterOrientation,
     shots: manualShots ? canvasVideoStoryboardShots(draft.shots, connectedText) : [] };
-  const problem = views.some((view) => view.unavailable) ? "连接素材尚未就绪。" : views.some((view) => view.kind !== "text" && !view.role) ? "当前生成类型不支持这份素材，请切换类型或移除素材。" : videoGenerationProblem({ ...fields, media });
+  const problem = views.some((view) => view.unavailable) ? "连接素材尚未就绪。"
+    : typeOptions.find((item) => item.id === draft.type)?.reason || videoGenerationProblem({ ...fields, media });
   const motionVideoId = media.find((item) => item.kind === "video")?.assetId;
   const quoteInput = useMemo(() => ({ modelId: draft.modelId, type: draft.type, resolution: draft.resolution, duration: draft.duration, characterOrientation: draft.characterOrientation,
     ...(draft.type === "motion_control" && motionVideoId ? { videoAssetId: motionVideoId } : {}) }), [draft.modelId, draft.type, draft.resolution, draft.duration, draft.characterOrientation, motionVideoId]);
   const updateDraft = (patch: Partial<CanvasVideoGenerationDraft>) => { flow.updateNodeData(id, (node) => node.type === "videoGenerator" ? { videoGeneration: { ...node.data.videoGeneration, ...patch } } : {}); };
+  useEffect(() => {
+    if (locked || draft === storedDraft) return;
+    // Only reconcile this editable draft. Frozen requests and retries retain their original inputs.
+    flow.updateNodeData(id, (node) => node.type === "videoGenerator" && node.data.videoGeneration === storedDraft
+      ? { videoGeneration: draft } : {});
+  }, [draft, storedDraft, flow, id, locked]);
   const validScope = (expected: string, nodeId = id) => mounted.current && scopeRef.current === expected && flow.getNode(nodeId)?.type === "videoGenerator";
   const receive = (status: VideoGenerationStatus, expectedScope: string, nodeId = id) => {
     if (!validScope(expectedScope, nodeId)) return;
@@ -206,10 +221,9 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
     return () => { cancelAnimationFrame(first); cancelAnimationFrame(second); };
   }, [flow, id, selected]);
   const changeType = (type: VideoGenerationType) => {
-    const motion = type === "motion_control";
-    updateDraft({ type, modelId: motion ? "kling-3.0" : "kling-3.0-omni", resolution: motion && draft.resolution === "4k" ? "1080p" : draft.resolution,
-      audio: motion ? "original" : type === "video_edit" ? "off" : draft.audio === "original" ? "off" : draft.audio,
-      multiShot: type === "video_edit" || motion ? false : draft.multiShot, shots: type === "video_edit" || motion ? [] : draft.shots });
+    if (locked || !typeOptions.some((item) => item.id === type && item.enabled)) return;
+    updateDraft(canvasVideoDraftForType(draft, type, inputs));
+    setMessage("");
   };
   const addMaterial = (item: VideoPickerMaterial) => {
     const current = flow.getNode(id); if (current?.type !== "videoGenerator" || locked) return;
@@ -372,7 +386,14 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
             {view.kind !== "text" && <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild><button type="button" className={styles.role} disabled={locked || !videoRolesForType(draft.type, view.kind).length}
                 aria-label={`设置 ${view.name} 的用途`}>{view.role ? VIDEO_ROLE_LABELS[view.role] : "不支持"}<ChevronDown size={9} aria-hidden="true" /></button></DropdownMenuTrigger>
-              <DropdownMenuContent className="nodrag nopan nowheel"><DropdownMenuRadioGroup value={view.role ?? ""} onValueChange={(role) => updateDraft({ roles: { ...draft.roles, [view.key]: role as VideoRole } })}>
+              <DropdownMenuContent className="nodrag nopan nowheel"><DropdownMenuRadioGroup value={view.role ?? ""} onValueChange={(role) => {
+                const roles = { ...draft.roles };
+                if (role === "first_frame" || role === "last_frame") {
+                  for (const key of Object.keys(roles)) if (key !== view.key && roles[key] === role) roles[key] = "refer_image";
+                }
+                roles[view.key] = role as VideoRole;
+                updateDraft({ roles });
+              }}>
                 {videoRolesForType(draft.type, view.kind).map((role) => <DropdownMenuRadioItem key={role} value={role}>{VIDEO_ROLE_LABELS[role]}</DropdownMenuRadioItem>)}
               </DropdownMenuRadioGroup></DropdownMenuContent>
             </DropdownMenu>}
@@ -415,7 +436,9 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
               onValueChange={(value) => changeType(value as VideoGenerationType)} disabled={locked}>
               <SelectTrigger size="sm" className={`${composerStyles.modelSelect} ${styles.typeSelect}`} aria-label="生成类型"><SelectValue /></SelectTrigger>
               <SelectContent position="popper" align="start" className={`${composerStyles.modelMenu} nodrag nopan nowheel`}>
-                {VIDEO_GENERATION_TYPES.filter((item) => item.modelId === draft.modelId).map((item) => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}
+                {typeOptions.filter((item) => item.modelId === draft.modelId).map((item) => <SelectItem key={item.id} value={item.id} disabled={!item.enabled}>
+                  <span className={styles.typeOption}><span>{item.name}</span>{!item.enabled && <span className={styles.typeRequirement}>{item.reason}</span>}</span>
+                </SelectItem>)}
               </SelectContent>
             </Select>
             {!motion && draft.type !== "video_edit" && <Dialog open={storyboardOpen && selected && !locked} onOpenChange={(open) => {
@@ -437,10 +460,17 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
           <span className={composerStyles.toolSpacer} />
           <div className={styles.actions}>
             <Select open={modelOpen} onOpenChange={(open) => { setModelOpen(open); if (open) { setTypeOpen(false); setParametersOpen(false); } }} value={draft.modelId}
-              onValueChange={(value) => changeType(value === "kling-3.0" ? "motion_control" : "text_to_video")} disabled={locked}>
+              onValueChange={(value) => {
+                const option = typeOptions.find((item) => item.modelId === value && item.id === draft.type && item.enabled)
+                  ?? typeOptions.find((item) => item.modelId === value && item.enabled);
+                if (option) changeType(option.id);
+              }} disabled={locked}>
               <SelectTrigger size="sm" className={composerStyles.modelSelect} aria-label="视频模型"><SelectValue /></SelectTrigger>
               <SelectContent position="popper" align="end" className={`${composerStyles.modelMenu} nodrag nopan nowheel`}>
-                {VIDEO_GENERATION_MODELS.map((item) => <SelectItem key={item.id} value={item.id}><Film size={16} strokeWidth={1.5} aria-hidden="true" />{item.name}</SelectItem>)}
+                {VIDEO_GENERATION_MODELS.map((item) => <SelectItem key={item.id} value={item.id}
+                  disabled={!typeOptions.some((option) => option.modelId === item.id && option.enabled)}>
+                  <KlingModelIcon />{item.name}
+                </SelectItem>)}
               </SelectContent>
             </Select>
             <Tooltip><TooltipTrigger asChild><span>

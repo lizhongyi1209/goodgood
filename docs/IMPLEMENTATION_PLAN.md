@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-06
-- Current phase: GG-391本地恢复完成；运行revision 4ecd1db987725dda0ad238648453a776e8f73ae6，最新GG-389/390源码启用，未自动功能验收或部署。
-- Current objective: 用户刷新5173继续手验；保持原本地数据与外部开发配置，下一次恢复按届时HEAD构建。
+- Current phase: GG-392视频素材驱动类型源码完成待接入；GG-391运行receipt保持，未自动检查/验收。
+- Current objective: 精确接入本轮视频标识/交互源码，退役辅助；用户刷新5173手验。
 - Previous objective: GG-383上传复用源码交付；GG-382设计/官方对照已获用户接受，按其O1Key附件实现，不再等待设计反馈。
 
 ## Current checkpoint
+
+- 当前源码交接：[GG-392](tasks/GG-392-video-material-modes.md) 视频模型标识/素材驱动类型源码完成待精确接入：Kling O3 / Kling 3.0及用户kling.svg，保留Provider ID/路由。空媒体仅文生，图片图生/参考、两图首尾帧、视频参考/编辑、恰好一图一视频动作模仿；类型/模型禁用不匹配选项并引导，素材变化自动选择兼容类型/用途，保留有效选择。待上传阻止生成，超量不忽略，运行任务和冻结重试不改写。沿impeccable Operate/现有图片chat；只写五项纯回归来源，未编译/检查/测试/浏览器或生成/扣费/数据/服务/生产操作。GG-391运行receipt保持，用户刷新5173手验。辅助GG-392无依赖缓存，创建1待退役1，无子agent。
 
 - 当前本地运行：[GG-391](tasks/GG-391-local-restart-after-reboot.md) 电脑重启恢复完成：原PG54449被Windows54411–54510保留范围覆盖；系统管理员授权后沿GG-366短停WinNAT并重连原网络，原容器/卷/54449映射恢复、WinNAT Running。必要当前checkpoint构建4ecd1db987725dda0ad238648453a776e8f73ae6；Web30256/32131、唯一Worker24668/32142、Vite26448/5173（入口31156；隐藏启动器29680/32256/31188）恢复。Web/Worker readiness五项ok，5173 API代理同revision/verified，首页及原画布HTTP200。最新GG-389数量与GG-390智能分镜源码已随本次重启启用；原68迁移、数据、cloud-development/local-mailpit和外部临时视频价格保持。启动前图片/文本任务仅终态，视频任务0、未派发outbox/预留/两队列均0。未迁移/重置/写fixture/发真实生成或生产操作，未代码检查/测试/浏览器交互验收。创建0/退役0，无子agent/新依赖副本；用户刷新5173手验。
 

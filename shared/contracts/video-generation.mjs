@@ -1,6 +1,6 @@
 export const VIDEO_GENERATION_MODELS = Object.freeze([
-  { id: "kling-3.0-omni", name: "Kling 3.0 Omni", resolutions: ["720p", "1080p", "4k"] },
-  { id: "kling-3.0", name: "Kling 3.0 动作模仿", resolutions: ["720p", "1080p"] },
+  { id: "kling-3.0-omni", name: "Kling O3", resolutions: ["720p", "1080p", "4k"] },
+  { id: "kling-3.0", name: "Kling 3.0", resolutions: ["720p", "1080p"] },
 ]);
 export const VIDEO_GENERATION_TYPES = Object.freeze([
   { id: "text_to_video", name: "文生视频", modelId: "kling-3.0-omni", hint: "描述画面、动作和镜头变化" },

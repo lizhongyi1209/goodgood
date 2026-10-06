@@ -4,6 +4,10 @@
 - Date: 2026-10-05
 - Related tasks: GG-382, GG-384
 
+## Material-driven types and model identity · 2026-10-06 · GG-392
+
+Display the existing provider models as Kling O3 and Kling 3.0 with the user's monochrome Kling mark; retain their provider IDs and routes. Media is connected or selected before choosing a generation type. With no image/video only text-to-video is available; images allow image/reference generation and at least two images allow first/last frames. One video allows reference generation/video editing, and exactly one image plus one video enables motion control. Preserve provider image/video limits and reject excess materials rather than ignoring them. Disable incompatible types and models with concise requirements. When materials invalidate the current choice, choose a deterministic compatible type and redistribute roles without discarding materials. Retain a compatible user choice and explicit valid first/last roles. Pending uploads still block submission. Do not adapt active jobs, frozen inputs or independent retries, and never submit automatically due to this UI change. This supersedes the former choose-type-then-supply-material interaction only.
+
 ## Storyboard dialog · 2026-10-06 · GG-390
 
 Move shot controls out of the video parameter popover into a focused Dialog, opened by 智能分镜 immediately after the generation-type control. Offer single, automatic and editable manual shots for supported Omni types; motion control and video editing remain excluded, and feature-video references force automatic shots. Stage edits locally and apply only on confirmation; cancel, outside dismissal and Escape discard them. Preserve the existing multiShot/shots contract and pricing. Manual generation uses only the effective shot prompts, incorporating connected text into the first shot without exceeding existing limits; retain the ordinary composer draft for returning to single/automatic mode. No new planning-provider call, backend protocol or charge is introduced.
