@@ -1,5 +1,7 @@
 # 当前开发版本与跨窗口交接
 
+> [GG-402](tasks/GG-402-frontend-github-snapshot.md) 按用户授权准备当前前端GitHub快照，设计分支design/gg-402-frontend-snapshot（origin lizhongyi1209/goodgood），应用源码GG-401 e401e86保持；新增[设计交接](FRONTEND_DESIGN_HANDOFF.md)供其他AI从快照分支继续，不混入功能分支。目标为上传源码，非验证/部署；未运行检查/构建/测试/浏览器，无数据/Provider/服务操作，GG-391运行receipt保持。创建0/退役0，无子agent/缓存。
+
 > [GG-401](tasks/GG-401-storyboard-scene-editor.md) 默认自动分镜与场景编辑源码已提交e401e8658bb899a13418899f891973ec136ad5c8，分支codex/gg-401-storyboard-scene-editor，基线0c9d936（GG-399源码1b4b98f祖先已核验）。新节点默认自动且无重复选择项，单镜头可取消；官方六类运镜词汇（变焦分拉近/拉远）作为可见可编辑提示词参考，未添加camera_control参数。自定义按截图采用开关/场景卡/卡内秒数/底部总长滑块/取消确定，3–15秒、1–6场景，整数分配始终合计一致；关闭丢弃本轮编辑，主chat展示已应用摘要，手动时隐藏外部时长避免冲突。无新持久字段，旧显式选项及缺省旧字段/冻结请求保持兼容；计价和生成仍沿原接口。纯回归来源仅写，未自动编译/代码或diff检查/测试/浏览器验收；仅官方公开GET，无应用HTTP/SQL/Provider生成/扣费/迁移/服务/生产操作，GG-391运行receipt保持。创建0/退役0，无子agent/依赖缓存；用户刷新5173手验。
 
 > [GG-400](tasks/GG-400-storyboard-simplification.md) 智能分镜简化方案已记录，待用户反馈，尚未实施/改变accepted决定。建议轻量模式选择＋按需编辑、紧凑镜头卡、合计驱动手动时长/报价、主chat镜头摘要及切换保留草稿。现自动分镜只是任务multi_shot，无预先AI脚本调用。核对官方与O1Key契约；仅公开GET，无自动构建/检查/测试/浏览器或应用/数据/服务/生产操作。应用源码GG-399 1b4b98f和GG-391运行receipt保持；创建0/退役0，无子agent/缓存。
