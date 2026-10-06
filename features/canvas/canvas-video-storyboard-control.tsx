@@ -24,7 +24,7 @@ export function CanvasVideoStoryboardControl({ id, draft, connectedText, disable
   const single = !draft.multiShot && !custom;
   const mode = custom ? "custom" : single ? "single" : "smart";
   const promptLines = draft.prompt.split(/\r?\n/).map((line) => line.trim());
-  const camera = single ? CANVAS_VIDEO_CAMERA_REFERENCES.find((item) => promptLines.includes(item.text))?.id ?? "none" : "";
+  const camera = single ? CANVAS_VIDEO_CAMERA_REFERENCES.find((item) => promptLines.includes(item.text))?.id ?? "" : "";
   useEffect(() => { if (disabled) setDialogOpen(false); }, [disabled]);
   const chooseReference = (referenceId: string) => {
     const prompt = canvasVideoCameraPrompt(draft.prompt, referenceId, connectedText);
@@ -57,10 +57,8 @@ export function CanvasVideoStoryboardControl({ id, draft, connectedText, disable
             <DropdownMenuSubContent sideOffset={6} collisionPadding={16} className={styles.storyboardMenu + " nodrag nopan nowheel"}>
               <DropdownMenuRadioGroup value={camera} onValueChange={(value) => {
                 if (disabled) return;
-                if (value === "none") onApply({ prompt: canvasVideoCameraDescription(draft.prompt), multiShot: false, shots: [] });
-                else chooseReference(value);
+                chooseReference(value);
               }}>
-                <DropdownMenuRadioItem value="none" disabled={disabled}>不指定运镜</DropdownMenuRadioItem>
                 {CANVAS_VIDEO_CAMERA_REFERENCES.map((item) => <DropdownMenuRadioItem key={item.id} value={item.id}
                   disabled={disabled || canvasVideoCameraPrompt(draft.prompt, item.id, connectedText) === null}>{item.name}</DropdownMenuRadioItem>)}
               </DropdownMenuRadioGroup>

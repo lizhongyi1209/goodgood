@@ -1,5 +1,7 @@
 # GoodGood 当前状态
 
+> [GG-406](tasks/GG-406-remove-unspecified-camera.md) 已移除单镜头子菜单「不指定运镜」及其无入口处理分支，仅保留7项运镜参考。无匹配参考的历史单镜头不显示虚假选项，仍可选参考或切智能；智能默认/自定义/旧保存与冻结输入保持。仅本地源码，未构建/检查/测试/浏览器或HTTP/服务/数据操作，不更新其他AI设计快照。
+
 > [GG-405](tasks/GG-405-storyboard-menu-options.md) 分镜菜单源码已提交f00738bc518da4c8fc35542917e802b05f0afd78，功能分支codex/gg-405-storyboard-menu-options：新增可选且新节点默认的「智能分镜」，触发按钮直接显示当前方式；将运镜列表并入「单镜头」子菜单，移除独立运镜参考入口及添加到提示词标题，子菜单保留不指定运镜及7个参考。模式/参考有选中标记；回智能或不指定运镜只清理完整匹配的插入参考行，保留其他文字，自定义确认/取消与素材/锁定限制保持。ADR0143替代GG-401隐藏自动展示的决定，无新API字段或后台变化。按用户要求未构建/检查/测试/浏览器/HTTP/生成/服务操作；新UI仅本地功能分支，已交付GitHub设计快照保持GG-404修复基线供其他AI。创建0/退役0，无子agent/缓存。
 
 > [GG-404](tasks/GG-404-storyboard-menu-state.md) 修复源码b3233fec00a94075e3f405a92ca45ed59035ca77已提交并同步GitHub设计快照，修复视频节点storyboardMenuOpen未定义：GG-401将菜单引用改名但useState声明仍保留旧storyboardOpen/session，统一为storyboardMenuOpen/setStoryboardMenuOpen并移除已迁入独立控件的旧session。仅声明修正，菜单打开/互斥关闭/取消选中及任务锁定沿既有引用；后台/价格/保存/数据不变。按用户要求仅修改源码，无构建/代码或diff检查/测试/浏览器验收及服务/数据/生成操作。修复同步授权GitHub设计快照，正常fast-forward不覆盖其他AI。创建0/退役0，无子agent/缓存。

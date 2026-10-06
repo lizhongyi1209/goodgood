@@ -4,6 +4,10 @@
 - Date: 2026-10-05
 - Related tasks: GG-382, GG-384
 
+## Remove unspecified camera · 2026-10-06 · GG-406
+
+The user removes 不指定运镜 from the single-shot submenu. Show only the seven existing camera references; preserve old single-shot drafts without forcing a new reference. This supersedes that one GG-405 option, with smart default and custom scenes unchanged.
+
 ## Explicit smart default and single-shot submenu · 2026-10-06 · GG-405
 
 The user replaces the GG-401 hidden automatic choice with a visible 智能分镜 choice, retaining automatic multi-shot as the new-node default. Put camera references directly inside 单镜头, remove the separate 运镜参考 entry and 添加到提示词 label. Keep an unspecified-camera single-shot choice, selected mode indicators, the existing custom-scene dialog and provider restrictions. Selecting smart clears only exact inserted camera-reference lines, so an earlier generated single-shot instruction does not override the new mode; preserve all other user text and frozen inputs. Existing saved explicit choices remain intact. This is a frontend mode presentation change, with no new provider or persistence fields.
