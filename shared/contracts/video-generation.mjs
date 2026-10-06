@@ -5,7 +5,7 @@ export const VIDEO_GENERATION_MODELS = Object.freeze([
 export const VIDEO_GENERATION_TYPES = Object.freeze([
   { id: "text_to_video", name: "文生视频", modelId: "kling-3.0-omni", hint: "描述画面、动作和镜头变化" },
   { id: "image_to_video", name: "图生视频", modelId: "kling-3.0-omni", hint: "选择首帧，可添加参考图" },
-  { id: "first_last_frame", name: "首尾帧", modelId: "kling-3.0-omni", hint: "分别选择首帧和尾帧" },
+  { id: "first_last_frame", name: "首尾帧", modelId: "kling-3.0-omni", hint: "描述首帧后的画面变化" },
   { id: "reference_to_video", name: "参考生成", modelId: "kling-3.0-omni", hint: "添加参考图或参考视频" },
   { id: "video_edit", name: "视频编辑", modelId: "kling-3.0-omni", hint: "选择原视频，可添加参考图" },
   { id: "motion_control", name: "动作模仿", modelId: "kling-3.0", hint: "选择角色图片和动作视频" },
@@ -42,7 +42,6 @@ export function videoGenerationProblem(input) {
   const count = (role) => media.filter((item) => item.role === role).length;
   if (["first_frame", "last_frame", "image", "video", "feature_video", "base_video"].some((role) => count(role) > 1)) return "同一用途只能选择一份素材。";
   if (["image_to_video", "first_last_frame"].includes(input.type) && !count("first_frame")) return "请选择首帧。";
-  if (input.type === "first_last_frame" && !count("last_frame")) return "请选择尾帧。";
   if (input.type === "reference_to_video" && !media.length) return "请添加参考图片或视频。";
   if (input.type === "video_edit" && !count("base_video")) return "请选择需要编辑的原视频。";
   if (input.type === "motion_control" && (count("image") !== 1 || count("video") !== 1 || media.length !== 2)) return "动作模仿需要一张角色图片和一个动作视频。";

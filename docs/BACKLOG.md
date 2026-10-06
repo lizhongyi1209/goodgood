@@ -1,5 +1,7 @@
 # 当前任务与优先级
 
+> [GG-393](tasks/GG-393-video-first-frame-options.md) 视频类型列表/单首帧源码完成待提交，基线d2b8eb0，GG-116分支codex/gg-393-video-first-frame-options。菜单只保留名称；一图启用首尾帧，移除尾帧保留类型；首帧必需、尾帧可选。2026-10-06已只读获取Kling官方Omni.md，明确支持first-only/first+last，不支持last-only；不实测付费接口。只有首帧的冻结新请求沿image_to_video兼容现有Web/Worker，实际同Omni first_frame内容、路由与价格。三项纯回归来源及GG-392预期更新只写未执行，无自动构建/检查/测试/浏览器或数据/生成/扣费/服务/生产操作。GG-391运行receipt保持，用户刷新5173手验，创建0/退役0，无子agent/缓存副本。
+
 > [GG-392](tasks/GG-392-video-material-modes.md) 源码已精确接入31a666c69587700707681b3964fe3ce1d23588d0（隔离717d17c，基线4bb862c），GG-116分支codex/gg-392-video-material-modes。Kling O3 / Kling 3.0与用户黑色可灵SVG；类型/模型按连接或直接素材启用，空媒体仅文生，有图图生/参考、两图首尾、有视频参考/编辑、一图一视频动作模仿。当前选择失效时自动适配类型/用途，保留有效选择；未就绪和超量禁止生成，任务/冻结重试保持。沿impeccable及图片chat样式，只写五项纯回归来源，未自动构建/代码检查/测试/浏览器验收或HTTP/SQL/Provider/生成/扣费/迁移/服务/生产操作。GG-391运行receipt保持，用户刷新5173手验。创建1/退役1，辅助已干净归档，无子agent/新依赖缓存。
 
 > [GG-391](tasks/GG-391-local-restart-after-reboot.md) 电脑重启恢复完成：原PG54449被Windows54411–54510保留范围覆盖；系统管理员授权后沿GG-366短停WinNAT并重连原网络，原容器/卷/54449映射恢复、WinNAT Running。必要当前checkpoint构建4ecd1db987725dda0ad238648453a776e8f73ae6；Web30256/32131、唯一Worker24668/32142、Vite26448/5173（入口31156；隐藏启动器29680/32256/31188）恢复。Web/Worker readiness五项ok，5173 API代理同revision/verified，首页及原画布HTTP200。最新GG-389数量与GG-390智能分镜源码已随本次重启启用；原68迁移、数据、cloud-development/local-mailpit和外部临时视频价格保持。启动前图片/文本任务仅终态，视频任务0、未派发outbox/预留/两队列均0。未迁移/重置/写fixture/发真实生成或生产操作，未代码检查/测试/浏览器交互验收。创建0/退役0，无子agent/新依赖副本；用户刷新5173手验。

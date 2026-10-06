@@ -4,3 +4,4 @@ export type CanvasVideoTypeOption = { id: VideoGenerationType; modelId: VideoMod
 export function canvasVideoTypeAvailability(inputs: readonly CanvasVideoModeInput[]): CanvasVideoTypeOption[];
 export function canvasVideoDraftForType(draft: CanvasVideoGenerationDraft, type: VideoGenerationType, inputs: readonly CanvasVideoModeInput[]): CanvasVideoGenerationDraft;
 export function canvasVideoDraftForMaterials(draft: CanvasVideoGenerationDraft, inputs: readonly CanvasVideoModeInput[]): CanvasVideoGenerationDraft;
+export function canvasVideoSubmissionType(type: VideoGenerationType, media: readonly { role: VideoRole }[]): VideoGenerationType;

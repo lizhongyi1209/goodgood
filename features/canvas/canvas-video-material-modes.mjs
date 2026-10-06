@@ -8,7 +8,7 @@ export function canvasVideoTypeAvailability(inputs) {
   const requirements = {
     text_to_video: images || videos ? "移除图片和视频后可用" : "",
     image_to_video: videos ? "仅支持图片素材" : !images ? "需要图片" : "",
-    first_last_frame: videos ? "仅支持图片素材" : images < 2 ? "需要至少两张图片" : "",
+    first_last_frame: videos ? "仅支持图片素材" : !images ? "需要图片" : "",
     reference_to_video: !images && !videos ? "需要图片或视频" : "",
     video_edit: !videos ? "需要原视频" : "",
     motion_control: images !== 1 || videos !== 1 ? "需要一张图片和一个视频" : "",
@@ -57,4 +57,9 @@ export function canvasVideoDraftForMaterials(draft, inputs) {
     ?? available.find((item) => item.modelId === draft.modelId && item.enabled)
     ?? available.find((item) => item.enabled);
   return type ? canvasVideoDraftForType(draft, type.id, inputs) : draft;
+}
+
+/** A first-frame-only composition uses the existing compatible single-frame request. */
+export function canvasVideoSubmissionType(type, media) {
+  return type === "first_last_frame" && !media.some((item) => item.role === "last_frame") ? "image_to_video" : type;
 }

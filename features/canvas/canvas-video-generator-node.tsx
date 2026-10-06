@@ -29,7 +29,7 @@ import { CanvasVideoGeneratorSettings } from "./canvas-video-generator-settings"
 import { CanvasVideoStoryboardDialog } from "./canvas-video-storyboard-dialog";
 import { canvasVideoStoryboardShots } from "./canvas-video-storyboard.mjs";
 import { canvasVideoGenerationBatchInputs } from "./canvas-video-generation-batch.mjs";
-import { canvasVideoDraftForMaterials, canvasVideoDraftForType, canvasVideoTypeAvailability } from "./canvas-video-material-modes.mjs";
+import { canvasVideoDraftForMaterials, canvasVideoDraftForType, canvasVideoSubmissionType, canvasVideoTypeAvailability } from "./canvas-video-material-modes.mjs";
 import { CanvasVideoGenerationError, quoteCanvasVideo, readCanvasVideoCapabilities, submitCanvasVideo, readCanvasVideo, downloadCanvasVideo, retryCanvasVideoSave, retryCanvasVideo, type VideoCreditQuote } from "./http-video-generation";
 import type { CanvasNode, CanvasVideoGeneratorNodeType } from "./canvas-workspace";
 import workspaceStyles from "./canvas-workspace.module.css";
@@ -112,7 +112,7 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
   const combinedPrompt = manualShots ? "" : [connectedText, draft.prompt].map((text) => text.trim()).filter(Boolean).join("\n\n");
   const media: VideoGenerationMedia[] = views.flatMap((view) => view.material && view.role ? [{ ...view.material, role: view.role }] : []);
   const hasFeatureVideo = media.some((item) => item.role === "feature_video");
-  const fields = { modelId: draft.modelId, type: draft.type, prompt: combinedPrompt, resolution: draft.resolution, duration: draft.duration, aspectRatio: draft.aspectRatio,
+  const fields = { modelId: draft.modelId, type: canvasVideoSubmissionType(draft.type, media), prompt: combinedPrompt, resolution: draft.resolution, duration: draft.duration, aspectRatio: draft.aspectRatio,
     audio: hasFeatureVideo ? "off" as const : draft.audio, multiShot: hasFeatureVideo || draft.multiShot, characterOrientation: draft.characterOrientation,
     shots: manualShots ? canvasVideoStoryboardShots(draft.shots, connectedText) : [] };
   const problem = views.some((view) => view.unavailable) ? "连接素材尚未就绪。"
@@ -436,9 +436,8 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
               onValueChange={(value) => changeType(value as VideoGenerationType)} disabled={locked}>
               <SelectTrigger size="sm" className={`${composerStyles.modelSelect} ${styles.typeSelect}`} aria-label="生成类型"><SelectValue /></SelectTrigger>
               <SelectContent position="popper" align="start" className={`${composerStyles.modelMenu} nodrag nopan nowheel`}>
-                {typeOptions.filter((item) => item.modelId === draft.modelId).map((item) => <SelectItem key={item.id} value={item.id} disabled={!item.enabled}>
-                  <span className={styles.typeOption}><span>{item.name}</span>{!item.enabled && <span className={styles.typeRequirement}>{item.reason}</span>}</span>
-                </SelectItem>)}
+                {typeOptions.filter((item) => item.modelId === draft.modelId).map((item) =>
+                  <SelectItem key={item.id} value={item.id} disabled={!item.enabled}>{item.name}</SelectItem>)}
               </SelectContent>
             </Select>
             {!motion && draft.type !== "video_edit" && <Dialog open={storyboardOpen && selected && !locked} onOpenChange={(open) => {

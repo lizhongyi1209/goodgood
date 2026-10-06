@@ -15,7 +15,7 @@ test("empty/text-only inputs allow only text; attaching and removing images chan
   assert.deepEqual(enabled([]), ["text_to_video"]);
   assert.deepEqual(enabled([{ key: "prompt", kind: "text" }]), ["text_to_video"]);
   const inputs = [image("edge:image")];
-  assert.deepEqual(enabled(inputs), ["image_to_video", "reference_to_video"]);
+  assert.deepEqual(enabled(inputs), ["image_to_video", "first_last_frame", "reference_to_video"]);
   const value = canvasVideoDraftForMaterials(draft(), inputs);
   assert.equal(value.type, "image_to_video");
   assert.equal(value.roles[inputs[0].key], "first_frame");
@@ -39,7 +39,9 @@ test("two images enable first/last frames and switching types redistributes ever
   const reference = canvasVideoDraftForType(frames, "reference_to_video", inputs);
   assert.ok(Object.values(reference.roles).every((role) => role === "refer_image"));
   assert.equal(canvasVideoDraftForMaterials(reference, inputs), reference);
-  assert.equal(canvasVideoDraftForMaterials(frames, [inputs[0]]).type, "image_to_video");
+  const firstOnly = canvasVideoDraftForMaterials(frames, [inputs[0]]);
+  assert.equal(firstOnly.type, "first_last_frame");
+  assert.deepEqual(firstOnly.roles, { first: "first_frame" });
 });
 
 test("video inputs enable reference/editing, and motion needs exactly one image plus one video", () => {

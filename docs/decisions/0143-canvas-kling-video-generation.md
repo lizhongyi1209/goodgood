@@ -4,6 +4,10 @@
 - Date: 2026-10-05
 - Related tasks: GG-382, GG-384
 
+## Optional last frame and concise type menu · 2026-10-06 · GG-393
+
+The user removes supplementary descriptions from video-type options and enables first/last-frame mode with one image. The official Omni API documentation fetched on this date explicitly permits first-frame-only and first-plus-last inputs, while excluding last-frame-only. Require the first frame, make the last optional, and keep the selected UI mode when the last image is removed. For a first-frame-only composition, freeze and submit the existing image_to_video type with the original first_frame content so the running legacy Web/Worker remain compatible; both modes use the same Omni provider route. Preserve first_last_frame when an actual last-frame input exists. This supersedes GG-392's two-image availability threshold and the former mandatory-last-frame check; prices, frozen retries and remaining limits are unchanged. No runtime update or real generation is performed.
+
 ## Material-driven types and model identity · 2026-10-06 · GG-392
 
 Display the existing provider models as Kling O3 and Kling 3.0 with the user's monochrome Kling mark; retain their provider IDs and routes. Media is connected or selected before choosing a generation type. With no image/video only text-to-video is available; images allow image/reference generation and at least two images allow first/last frames. One video allows reference generation/video editing, and exactly one image plus one video enables motion control. Preserve provider image/video limits and reject excess materials rather than ignoring them. Disable incompatible types and models with concise requirements. When materials invalidate the current choice, choose a deterministic compatible type and redistribute roles without discarding materials. Retain a compatible user choice and explicit valid first/last roles. Pending uploads still block submission. Do not adapt active jobs, frozen inputs or independent retries, and never submit automatically due to this UI change. This supersedes the former choose-type-then-supply-material interaction only.
