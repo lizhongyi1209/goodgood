@@ -4,6 +4,10 @@
 - Date: 2026-10-05
 - Related tasks: GG-382, GG-384
 
+## Generation feedback and progress · 2026-10-06 · GG-409
+
+The user keeps the visible label 生成中 through queued, submitting, running and saving, while backend states remain distinct. Reuse the actual provider progress already forwarded by the Worker and status API. Show a percentage only for reported progress and retain the latest known real progress if a later response omits it. Until real progress arrives, use a slow, bounded visual estimate with conservative phase caps; do not present an estimate as a reported percentage, and only successful delivery permits 100%. Keep each attempt independent, suspend simulated ticks in hidden tabs or reduced motion, and stop them on unmount/terminal recovery states. Do not change requests, polling, persistence, billing or automatic retries.
+
 ## Free model selection and compatible references · 2026-10-06 · GG-407
 
 The user makes model selection independent of the attached media. Keep the selected model authoritative during later material reconciliation; missing media disables submission, not model selection, and must not silently switch back to Omni. On an explicit model change preserve text and as much compatible media as the configured contract allows, in tray order: Motion retains the first image and first video; Omni retains the first video and up to four images with video, or up to seven images without video. Remove only excess references/connections, preserving source nodes and assets. Reconcile the generation type and model-specific resolution, audio, roles and shot settings; Motion can remain selected with incomplete inputs, and returning to Omni starts with smart shots where permitted. Clear the displayed quote while new pricing loads. Batch edge removals as one state update, preserve existing frozen retry inputs and keep the active-task lock. No new provider or persistence fields, prices or automatic generation requests.

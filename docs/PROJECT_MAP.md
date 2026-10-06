@@ -1,5 +1,9 @@
 # Project map
 
+## GG-409 · 视频进度反馈
+
+features/canvas/canvas-video-generation-feedback.tsx负责任务局部UI、可见性/减少动态和时钟清理；canvas-video-generation-progress.mjs/d.mts仅计算隔离且有界的展示帧。视频生成节点传递既有状态与真实进度，沿原请求/轮询；估算帧不进入节点数据或持久化。
+
 GG-407在canvas-video-material-modes.mjs/d.mts负责所选模型内适配与显式切换保留/移除计划；canvas-video-generator-node.tsx接自由模型Select/草稿与报价清除，context提供一次移除多个输入边，canvas-page沿现有历史/快照流程实施。无新server/API/持久字段；不逐条用旧闭包删除边。
 
 GG-354将原图直接框选放在`canvas-image-region.tsx/module.css`与`canvas-image-region-model.mjs/d.mts`：浮层定位/指针/复制及纯坐标模型；PlacementProvider按mode分流，context提供当前框选key供快捷栏隐藏。贴图仍在原placement编辑器，canvas-page/workspace及服务端不扩展。

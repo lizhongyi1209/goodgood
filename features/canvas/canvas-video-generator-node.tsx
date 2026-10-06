@@ -19,6 +19,7 @@ import { CanvasTextGenerationContext as CanvasGenerationContext } from "./canvas
 import { canvasTextGenerationInputs } from "./canvas-text-generation-input";
 import { CanvasImageResizeControls } from "./canvas-image-resize-controls";
 import { CanvasMediaMetadata } from "./canvas-media-metadata";
+import { CanvasVideoGenerationProgress } from "./canvas-video-generation-feedback";
 import { fittedCanvasVideoSize } from "./canvas-video-size";
 import { attachCanvasVideoPreviewPlayback } from "./canvas-video-preview-playback.mjs";
 import { CANVAS_ASSET_LIBRARY_UPDATED_EVENT } from "./canvas-asset-upload";
@@ -41,7 +42,6 @@ export type CanvasVideoGeneratorNodeData = Record<string, unknown> & {
 };
 type InputView = { key: string; kind: "image" | "video" | "text"; name: string; edgeId?: string; previewUrl?: string; text?: string;
   material?: VideoMaterial; role?: VideoRole; unavailable?: boolean };
-const phaseLabels = { queued: "排队中", submitting: "提交中", submission_unknown: "提交结果待确认", running: "生成中", saving: "保存中", save_failed: "保存暂未完成", succeeded: "已完成", failed: "生成未完成" };
 function rejectedVideoStatus(requestId: string, message: string): VideoGenerationStatus {
   return { requestId, state: "failed", progress: null, reservedCredits: 0, chargedCredits: 0, output: null,
     error: { code: "VIDEO_SUBMISSION_REJECTED", message } };
@@ -342,7 +342,8 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
           : job?.state === "save_failed" ? <button type="button" className={`${workspaceStyles.generatorSlotRetry} nodrag nopan`} disabled={!context.enabled} onClick={() => void retrySave()}><RotateCcw size={18} /><span>重试保存</span></button>
           : job?.state === "submission_unknown" ? <button type="button" className={`${workspaceStyles.generatorSlotRetry} nodrag nopan`} onClick={() => setPollRevision((value) => value + 1)}><RotateCcw size={18} /><span>查询状态</span></button>
           : job?.state === "succeeded" ? <><Film size={24} /><span>视频已从资产移除</span></>
-          : <><LoaderCircle size={22} className={styles.spinner} /><span>{job ? phaseLabels[job.state] : "确认任务中"}</span>{job?.progress !== null && job?.progress !== undefined && <progress aria-label="视频生成进度" value={job.progress} max={100} />}</>}
+          : <CanvasVideoGenerationProgress key={`${scope}:${draft.requestId}`} attemptKey={`${scope}:${draft.requestId}`}
+              state={job?.state ?? "queued"} progress={job?.progress ?? null} />}
       </div> : <Film size={28} aria-hidden="true" />}
     </article>
     {selected && <CanvasImageResizeControls />}

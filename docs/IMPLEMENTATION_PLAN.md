@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-06
-- Current phase: GG-408视频尺寸按结果显示源码完成，未自动验证；后台及设计快照保持。
-- Current objective: 用户刷新5173手验视频尺寸与视频生成；继续功能开发，不自动检查、更新服务或设计分支。
+- Current phase: GG-409视频生成中与真实优先进度源码完成，未自动验证；后台及设计快照保持。
+- Current objective: 用户刷新5173手验视频生成状态及真实/估算进度、并发/重试和恢复入口；继续仅源码开发。
 - Previous objective: GG-383上传复用源码交付；GG-382设计/官方对照已获用户接受，按其O1Key附件实现，不再等待设计反馈。
 
 ## Current checkpoint
+
+- 当前功能：[GG-409](tasks/GG-409-video-generation-progress.md) 视频生成进度源码完成：待处理/提交/生成/保存均显示生成中，优先既有API真实进度并显示百分比；缺失时仅缓慢推进估算条，阶段上限14/22/90/99%，不伪造百分比、未成功不100%。后续缺值保持最新真实数值、低回包不回退；请求/身份/页面隔离，失败/未知受理保留原入口，隐藏页及减少动态暂停估算时钟，卸载清理。分支codex/gg-409-video-generation-progress，基线781d10c；五项纯回归只写未运行，未构建/检查/测试/浏览器或HTTP/生成，未修改后台/费用/轮询/数据/服务。GG-391运行receipt及GG-404设计快照保持；创建0/退役0，无子agent/缓存。用户刷新5173手验真实生成与状态反馈。
 
 - 当前功能：[GG-408](tasks/GG-408-video-dimension-visibility.md) 视频尺寸展示源码de79e960dcd508c77976512e13c827357edc0510已提交：去掉视频未知尺寸的「—」，生成节点仅有视频预览且实际宽高已知时显示尺寸；名称/图片元信息/生成逻辑保持。分支codex/gg-408-video-dimension-visibility，基线25af663；未自动构建/检查/测试/浏览器或HTTP验收，无服务/Provider/数据操作。GG-391本地运行与临时定价沿既有receipt，用户刷新手验空节点/生成中/结果尺寸及实际视频生成；设计快照仍GG-404。创建0/退役0，无子agent/缓存。
 
