@@ -315,7 +315,7 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
   const validationNotice = problem === "请输入视频描述。" ? "" : problem;
   const inlineNotice = message || job?.error?.message || (!active && (validationNotice || quoteError));
   return <TooltipProvider delayDuration={180}>
-    <CanvasMediaMetadata kind="video" name={title} nodeWidth={width} pixelWidth={data.pixelWidth} pixelHeight={data.pixelHeight} />
+    <CanvasMediaMetadata kind="video" name={title} nodeWidth={width} pixelWidth={data.previewUrl ? data.pixelWidth : undefined} pixelHeight={data.previewUrl ? data.pixelHeight : undefined} />
     <article className={`${workspaceStyles.generatorNode} ${styles.result} ${active && job?.state !== "save_failed" && job?.state !== "submission_unknown" ? workspaceStyles.generatorShimmering : ""}`}
       aria-label={title} aria-busy={active || undefined} onMouseEnter={() => playbackRef.current?.setHovering(true)} onMouseLeave={() => playbackRef.current?.setHovering(false)}>
       {data.previewUrl ? <>

@@ -19,7 +19,7 @@ export function CanvasMediaMetadata({
 }>) {
   const dimensions = pixelWidth && pixelHeight
     ? `${Math.round(pixelWidth)}×${Math.round(pixelHeight)}`
-    : "—";
+    : kind === "video" ? null : "—";
   const compact = nodeWidth !== undefined && nodeWidth < 110;
   const iconOnly = nodeWidth !== undefined && nodeWidth < 90;
 
@@ -31,7 +31,7 @@ export function CanvasMediaMetadata({
           : <ImageIcon size={12} aria-hidden="true" />}
         <span className={styles.imageMetadataNameText}>{name}</span>
       </span>
-      <span className={styles.imageMetadataSize} aria-label={pixelWidth && pixelHeight ? `原始尺寸 ${dimensions} 像素` : "原始尺寸暂不可用"}>{dimensions}</span>
+      {dimensions && <span className={styles.imageMetadataSize} aria-label={pixelWidth && pixelHeight ? `原始尺寸 ${dimensions} 像素` : "原始尺寸暂不可用"}>{dimensions}</span>}
     </div>
   );
 }

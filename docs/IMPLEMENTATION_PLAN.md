@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-06
-- Current phase: GG-407模型自由切换及素材适配源码完成，未自动验证；后台及设计快照保持。
-- Current objective: 用户刷新5173手验空/混合/多余素材下自由选模型、补料及生成模式/报价；继续功能开发，不自动检查/更新服务或设计分支。
+- Current phase: GG-408视频尺寸按结果显示源码完成，未自动验证；后台及设计快照保持。
+- Current objective: 用户刷新5173手验视频尺寸与视频生成；继续功能开发，不自动检查、更新服务或设计分支。
 - Previous objective: GG-383上传复用源码交付；GG-382设计/官方对照已获用户接受，按其O1Key附件实现，不再等待设计反馈。
 
 ## Current checkpoint
+
+- 当前功能：[GG-408](tasks/GG-408-video-dimension-visibility.md) 视频尺寸展示源码完成：去掉视频未知尺寸的「—」，生成节点仅有视频预览且实际宽高已知时显示尺寸；名称/图片元信息/生成逻辑保持。分支codex/gg-408-video-dimension-visibility，基线25af663；未自动构建/检查/测试/浏览器或HTTP验收，无服务/Provider/数据操作。GG-391本地运行与临时定价沿既有receipt，用户刷新手验空节点/生成中/结果尺寸及实际视频生成；设计快照仍GG-404。创建0/退役0，无子agent/缓存。
 
 - 当前功能：[GG-407](tasks/GG-407-free-video-model-selection.md) 视频模型自由切换源码e381dd6ad8dc73b0a7433c1fef303008d18d60ff已提交，分支codex/gg-407-free-video-model-selection：模型项不按素材禁用，后续素材适配只在所选模型内进行，缺料保留Kling3.0而非跳回O3。显式换模型按托盘顺序保留文字/兼容媒体：3.0首图+首视频，O3首视频+最多4图或无视频7图；只删除超量直接引用/连接，不删源节点或资产。模式/角色/清晰度/音频/分镜随模型适配，O3返回智能，报价清除后重读；批量边移除一次进入原历史/保存流程。冻结任务/数量/提示词和生成中锁定保持。五项纯回归来源和一处旧预期只写未运行，未构建/检查/测试/浏览器/HTTP/Provider/数据/迁移/服务或生产操作。功能仅本地分支，GitHub设计快照保持GG-404；创建0/退役0，无子agent/缓存。
 
