@@ -13,7 +13,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import { KlingModelIcon } from "@/features/models/kling-model-icon";
 import { privateImageUrls } from "@/shared/private-image-urls.mjs";
-import { VIDEO_GENERATION_MODELS, VIDEO_GENERATION_TYPES, VIDEO_ROLE_LABELS, VIDEO_ACTIVE_STATES, defaultVideoRole, videoRolesForType, videoGenerationProblem,
+import { VIDEO_GENERATION_MODELS, VIDEO_GENERATION_TYPES, VIDEO_ROLE_LABELS, VIDEO_ACTIVE_STATES, defaultVideoRole, videoGenerationProblem,
   type CanvasVideoGenerationDraft, type VideoGenerationInput, type VideoGenerationMedia, type VideoGenerationStatus, type VideoGenerationType, type VideoMaterial, type VideoRole } from "@/shared/contracts/video-generation.mjs";
 import { listPrivateVideoMaterials } from "@/features/creation/http-video-materials";
 import { CanvasTextGenerationContext as CanvasGenerationContext } from "./canvas-text-generation-context";
@@ -26,10 +26,11 @@ import { uploadCanvasAssetFile, CANVAS_ASSET_LIBRARY_UPDATED_EVENT } from "./can
 import { CanvasVideoMaterialPicker, type VideoPickerMaterial } from "./canvas-video-material-picker";
 import { CanvasVideoGeneratorPrompt } from "./canvas-video-generator-prompt";
 import { CanvasVideoGeneratorSettings } from "./canvas-video-generator-settings";
+import { CanvasVideoTypeSelect } from "./canvas-video-type-select";
 import { CanvasVideoStoryboardDialog } from "./canvas-video-storyboard-dialog";
 import { canvasVideoStoryboardShots } from "./canvas-video-storyboard.mjs";
 import { canvasVideoGenerationBatchInputs } from "./canvas-video-generation-batch.mjs";
-import { canvasVideoDraftForMaterials, canvasVideoDraftForType, canvasVideoSubmissionType, canvasVideoTypeAvailability } from "./canvas-video-material-modes.mjs";
+import { canvasVideoDraftForMaterials, canvasVideoDraftForType, canvasVideoSubmissionType, canvasVideoTypeAvailability, canvasVideoUiRolesForType } from "./canvas-video-material-modes.mjs";
 import { CanvasVideoGenerationError, quoteCanvasVideo, readCanvasVideoCapabilities, submitCanvasVideo, readCanvasVideo, downloadCanvasVideo, retryCanvasVideoSave, retryCanvasVideo, type VideoCreditQuote } from "./http-video-generation";
 import type { CanvasNode, CanvasVideoGeneratorNodeType } from "./canvas-workspace";
 import workspaceStyles from "./canvas-workspace.module.css";
@@ -361,7 +362,7 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
         <input ref={fileRef} type="file" accept="image/jpeg,image/png,video/mp4" multiple hidden onChange={(event) => void upload(Array.from(event.target.files ?? []))} />
         <AttachmentGroup className={`${composerStyles.referenceTray} ${styles.tray}`} role="group" aria-label="输入附件">
           {views.map((view) => <div key={view.key} className={styles.material} data-unavailable={view.unavailable || undefined}
-            data-invalid={view.kind !== "text" && (!view.role || !videoRolesForType(draft.type, view.kind).includes(view.role)) || undefined}>
+            data-invalid={view.kind !== "text" && (!view.role || !canvasVideoUiRolesForType(draft.type, view.kind).includes(view.role)) || undefined}>
             <Attachment className={composerStyles.reference} size="xs" state={view.unavailable ? "error" : "done"}>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -384,7 +385,7 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
               }}><X size={12} aria-hidden="true" /></button>
             </Attachment>
             {view.kind !== "text" && <DropdownMenu modal={false}>
-              <DropdownMenuTrigger asChild><button type="button" className={styles.role} disabled={locked || !videoRolesForType(draft.type, view.kind).length}
+              <DropdownMenuTrigger asChild><button type="button" className={styles.role} disabled={locked || !canvasVideoUiRolesForType(draft.type, view.kind).length}
                 aria-label={`设置 ${view.name} 的用途`}>{view.role ? VIDEO_ROLE_LABELS[view.role] : "不支持"}<ChevronDown size={9} aria-hidden="true" /></button></DropdownMenuTrigger>
               <DropdownMenuContent className="nodrag nopan nowheel"><DropdownMenuRadioGroup value={view.role ?? ""} onValueChange={(role) => {
                 const roles = { ...draft.roles };
@@ -394,7 +395,7 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
                 roles[view.key] = role as VideoRole;
                 updateDraft({ roles });
               }}>
-                {videoRolesForType(draft.type, view.kind).map((role) => <DropdownMenuRadioItem key={role} value={role}>{VIDEO_ROLE_LABELS[role]}</DropdownMenuRadioItem>)}
+                {canvasVideoUiRolesForType(draft.type, view.kind).map((role) => <DropdownMenuRadioItem key={role} value={role}>{VIDEO_ROLE_LABELS[role]}</DropdownMenuRadioItem>)}
               </DropdownMenuRadioGroup></DropdownMenuContent>
             </DropdownMenu>}
           </div>)}
@@ -432,14 +433,8 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
               <CanvasVideoGeneratorSettings id={`video-parameters-${id}`} draft={draft} media={media} disabled={locked} countEnabled={countEnabled} onChange={updateDraft} />
             </Popover>
             <div className={styles.typeAndStoryboard}>
-            <Select open={typeOpen} onOpenChange={(open) => { setTypeOpen(open); if (open) { setModelOpen(false); setParametersOpen(false); } }} value={draft.type}
-              onValueChange={(value) => changeType(value as VideoGenerationType)} disabled={locked}>
-              <SelectTrigger size="sm" className={`${composerStyles.modelSelect} ${styles.typeSelect}`} aria-label="生成类型"><SelectValue /></SelectTrigger>
-              <SelectContent position="popper" align="start" className={`${composerStyles.modelMenu} nodrag nopan nowheel`}>
-                {typeOptions.filter((item) => item.modelId === draft.modelId).map((item) =>
-                  <SelectItem key={item.id} value={item.id} disabled={!item.enabled}>{item.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <CanvasVideoTypeSelect value={draft.type} modelId={draft.modelId} options={typeOptions} open={typeOpen} disabled={locked}
+              onOpenChange={(open) => { setTypeOpen(open); if (open) { setModelOpen(false); setParametersOpen(false); } }} onValueChange={changeType} />
             {!motion && draft.type !== "video_edit" && <Dialog open={storyboardOpen && selected && !locked} onOpenChange={(open) => {
               setStoryboardOpen(open);
               if (open) { setStoryboardSession((session) => session + 1); setModelOpen(false); setTypeOpen(false); setParametersOpen(false); }

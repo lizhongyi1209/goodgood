@@ -4,6 +4,10 @@
 - Date: 2026-10-05
 - Related tasks: GG-382, GG-384
 
+## Rule tooltips and single-image UI mode · 2026-10-06 · GG-394
+
+Keep the type list compact with icons and names. Show concise material rules on hover/focus, including disabled options; disabled hover must not select an option. The user now defines image_to_video as exactly one image used as first_frame, with no extra references in that UI mode. Multiple images must use another compatible mode without losing materials; first/last-frame mode still permits an optional last frame. This is an explicit product boundary: the currently integrated Omni API documents first_frame plus refer_image combinations, so it must not be misreported as a universal upstream single-image restriction. Do not switch model routes or billing. Keep the historical shared provider contract permissive enough to restore and retry existing multi-image frozen records; enforce the new restriction for editable UI and new submissions. Persist this distinction and cite the exact official source in factual answers, rather than inferring from a UI label.
+
 ## Optional last frame and concise type menu · 2026-10-06 · GG-393
 
 The user removes supplementary descriptions from video-type options and enables first/last-frame mode with one image. The official Omni API documentation fetched on this date explicitly permits first-frame-only and first-plus-last inputs, while excluding last-frame-only. Require the first frame, make the last optional, and keep the selected UI mode when the last image is removed. For a first-frame-only composition, freeze and submit the existing image_to_video type with the original first_frame content so the running legacy Web/Worker remain compatible; both modes use the same Omni provider route. Preserve first_last_frame when an actual last-frame input exists. This supersedes GG-392's two-image availability threshold and the former mandatory-last-frame check; prices, frozen retries and remaining limits are unchanged. No runtime update or real generation is performed.

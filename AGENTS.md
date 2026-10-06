@@ -128,6 +128,9 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
 - Never expose upstream model credentials to the browser. Browser calls the
   GoodGood backend; the backend calls generation providers.
 - Keep provider models, UI labels, job states, and persisted records separated.
+- Explain provider capabilities from the configured model/endpoint's official
+  documentation and supplied integration contract. Distinguish verified API facts,
+  product limits and untested behavior; never infer capabilities from UI names.
 - Do not commit `.env*`, API keys, database data, user uploads, generated user
   assets, logs, build output, or SSH material.
 - Prefer feature boundaries over extending `app/page.tsx`. The current monolith

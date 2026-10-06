@@ -1,4 +1,13 @@
-import { VIDEO_GENERATION_TYPES, videoModelForType } from "../../shared/contracts/video-generation.mjs";
+import { VIDEO_GENERATION_TYPES, videoModelForType, videoRolesForType } from "../../shared/contracts/video-generation.mjs";
+
+const typeRules = {
+  text_to_video: "仅使用提示词，不接入图片或视频",
+  image_to_video: "仅 1 张图片，作为视频首帧",
+  first_last_frame: "需要首帧，尾帧可选；不支持仅尾帧",
+  reference_to_video: "参考内容，不固定首帧；1–7 张图，或 1 个视频＋0–4 张图",
+  video_edit: "需要 1 个原视频，可添加最多 4 张参考图",
+  motion_control: "需要 1 张角色图和 1 个动作视频",
+};
 
 /** Count the connected/selected media, including uploads that are not ready yet. */
 export function canvasVideoTypeAvailability(inputs) {
@@ -7,7 +16,7 @@ export function canvasVideoTypeAvailability(inputs) {
   const overflow = videos > 1 ? "最多一个视频" : images > (videos ? 4 : 7) ? "请移除多余图片" : "";
   const requirements = {
     text_to_video: images || videos ? "移除图片和视频后可用" : "",
-    image_to_video: videos ? "仅支持图片素材" : !images ? "需要图片" : "",
+    image_to_video: videos ? "仅支持图片素材" : images !== 1 ? "需要且仅支持一张首帧图片" : "",
     first_last_frame: videos ? "仅支持图片素材" : !images ? "需要图片" : "",
     reference_to_video: !images && !videos ? "需要图片或视频" : "",
     video_edit: !videos ? "需要原视频" : "",
@@ -15,7 +24,7 @@ export function canvasVideoTypeAvailability(inputs) {
   };
   return VIDEO_GENERATION_TYPES.map((item) => {
     const reason = overflow || requirements[item.id];
-    return { ...item, enabled: !reason, reason };
+    return { ...item, enabled: !reason, reason, rule: typeRules[item.id] };
   });
 }
 
@@ -62,4 +71,10 @@ export function canvasVideoDraftForMaterials(draft, inputs) {
 /** A first-frame-only composition uses the existing compatible single-frame request. */
 export function canvasVideoSubmissionType(type, media) {
   return type === "first_last_frame" && !media.some((item) => item.role === "last_frame") ? "image_to_video" : type;
+}
+
+/** Restrict the editable single-image entry without invalidating historical provider inputs. */
+export function canvasVideoUiRolesForType(type, kind) {
+  if (type === "image_to_video") return kind === "image" ? ["first_frame"] : [];
+  return videoRolesForType(type, kind);
 }

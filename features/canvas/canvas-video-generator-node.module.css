@@ -14,6 +14,8 @@
 .actions > span { flex: none; }
 .materialAdd[data-slot="button"] { width: 32px; padding: 0; }
 .typeSelect[data-slot="select-trigger"] { width: auto; }
+.typeHintRow { display: block; width: 100%; }
+.typeRuleTooltip[data-slot="tooltip-content"] { max-width: min(280px, calc(100vw - 24px)); padding: 7px 10px; border-radius: 7px; background: #18181b; color: #fff; font-size: 12px; line-height: 1.5; font-weight: 400; pointer-events: none; }
 .typeAndStoryboard { display: flex; align-items: center; gap: 6px; }
 .storyboardTrigger[data-slot="button"] { color: #18181b; }
 .storyboardTrigger[data-active="true"] { background: #f4f4f5; }
@@ -93,4 +95,4 @@
 .shot textarea::selection, .search input::selection { background: #e4e4e7; color: #18181b; }
 @media (max-width: 560px) { .controls { gap: 4px; } .search input { width: 115px; } }
 @media (hover: none) { .material [data-slot="attachment"] button:last-child, .resultTools { opacity: 1; pointer-events: auto; } }
-@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .spinner, .typeRuleTooltip[data-slot="tooltip-content"] { animation: none; } }
