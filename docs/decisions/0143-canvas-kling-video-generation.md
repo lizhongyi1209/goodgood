@@ -4,6 +4,10 @@
 - Date: 2026-10-05
 - Related tasks: GG-382, GG-384
 
+## Mode-owned material roles · 2026-10-06 · GG-395
+
+The user removes redundant material-role controls because the selected generation type already classifies inputs. Remove all editable role menus beneath thumbnails. Single-image/reference/edit/motion modes show no repeated role control. First/last-frame mode shows only noninteractive first/last labels. Derive first and optional last from the existing image tray order in editable drafts; text/video do not consume image positions and extra images retain the existing reference role. This supersedes editable explicit role selection, while active jobs, frozen submission/retry inputs and historical requests remain unchanged. Preserve preview/removal, existing material limits and pricing. Future interaction work should begin from the real user task and remove redundant choices rather than expose backend classifications as controls.
+
 ## Rule tooltips and single-image UI mode · 2026-10-06 · GG-394
 
 Keep the type list compact with icons and names. Show concise material rules on hover/focus, including disabled options; disabled hover must not select an option. The user now defines image_to_video as exactly one image used as first_frame, with no extra references in that UI mode. Multiple images must use another compatible mode without losing materials; first/last-frame mode still permits an optional last frame. This is an explicit product boundary: the currently integrated Omni API documents first_frame plus refer_image combinations, so it must not be misreported as a universal upstream single-image restriction. Do not switch model routes or billing. Keep the historical shared provider contract permissive enough to restore and retry existing multi-image frozen records; enforce the new restriction for editable UI and new submissions. Persist this distinction and cite the exact official source in factual answers, rather than inferring from a UI label.

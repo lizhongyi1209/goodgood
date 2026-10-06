@@ -61,6 +61,9 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
 - Match effort to the requested outcome. Start with the smallest behaviorally
   complete change and targeted inspection; add refactors or hardening only when
   acceptance requires them or the current change exposes a concrete defect.
+- Start UI decisions from the actual user task and favor simplicity. When an
+  earlier choice already determines a value, derive it instead of adding a second
+  control; show a label only when it helps distinguish meaningful user choices.
 - Follow repository workflows, not personal/external business skills. Tool
   availability or legacy hosting metadata does not change the deployment target.
 

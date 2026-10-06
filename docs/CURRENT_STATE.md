@@ -1,5 +1,7 @@
 # GoodGood 当前状态
 
+> [GG-395](tasks/GG-395-video-material-labels.md) 素材用途简化源码已实现，待记录提交，基线02429cb，GG-116分支codex/gg-395-video-material-labels。移除所有用途菜单，仅首尾帧展示纯文字；可编辑草稿按托盘图片顺序自动分配，额外参考及冻结任务/重试保持。简洁交互原则已写入AGENTS/ADR/产品及设计。三项纯回归来源与旧预期只写未执行；未自动构建/检查/测试/浏览器或HTTP/SQL/Provider/服务/生产操作，GG-391运行receipt保持。创建0/退役0，无子agent/依赖或缓存副本；用户刷新5173手验。
+
 > [GG-394](tasks/GG-394-video-type-rule-hints.md) 视频类型规则Tooltip及单图首帧入口源码已提交d0b05ea5dc4d1bf78e5e4b54f4eb4972c548b659，基线c11cb8d，GG-116分支codex/gg-394-video-type-rule-hints。菜单图标/名称、150ms右侧灰阶Tooltip，可选/禁用均可hover，保留ARIA规则与选择保护。图生仅1图/无视频/首帧用途，多图转兼容类型不丢素材；首尾/参考/编辑/动作既有规则保持。核对官方Omni实际组合能力，不将当前UI入口限制伪称为上游唯一能力；已将资料依据规则写入AGENTS/PRODUCT/ADR。四项纯回归来源仅写未执行，无自动构建/检查/测试/浏览器或应用HTTP/SQL/Provider/生成/扣费/迁移/服务/生产操作，GG-391运行receipt保持。创建0/退役0，无子agent或缓存副本，用户刷新5173手验。
 
 > [GG-393](tasks/GG-393-video-first-frame-options.md) 视频类型列表/单首帧源码已提交41c6fe88fcab8a7fc5c92e248162c79df65b0bf8，基线d2b8eb0，GG-116分支codex/gg-393-video-first-frame-options。菜单只保留名称；一图启用首尾帧，移除尾帧保留类型；首帧必需、尾帧可选。2026-10-06已只读获取Kling官方Omni.md，明确支持first-only/first+last，不支持last-only；不实测付费接口。只有首帧的冻结新请求沿image_to_video兼容现有Web/Worker，实际同Omni first_frame内容、路由与价格。三项纯回归来源及GG-392预期更新只写未执行，无自动构建/检查/测试/浏览器或数据/生成/扣费/服务/生产操作。GG-391运行receipt保持，用户刷新5173手验，创建0/退役0，无子agent/缓存副本。

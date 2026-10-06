@@ -34,8 +34,8 @@ test("two images enable first/last frames and switching types redistributes ever
   assert.deepEqual(frames.roles, { first: "first_frame", last: "last_frame", reference: "refer_image" });
   assert.equal(videoGenerationProblem(request(frames, inputs)), null);
   const swapped = canvasVideoDraftForType({ ...frames, roles: { first: "last_frame", last: "first_frame", reference: "refer_image" } }, "first_last_frame", inputs);
-  assert.equal(swapped.roles.last, "first_frame");
-  assert.equal(swapped.roles.first, "last_frame");
+  assert.equal(swapped.roles.first, "first_frame");
+  assert.equal(swapped.roles.last, "last_frame");
   const reference = canvasVideoDraftForType(frames, "reference_to_video", inputs);
   assert.ok(Object.values(reference.roles).every((role) => role === "refer_image"));
   assert.equal(canvasVideoDraftForMaterials(reference, inputs), reference);

@@ -28,14 +28,12 @@ export function canvasVideoTypeAvailability(inputs) {
   });
 }
 
-/** Reassign incompatible roles, preserving valid explicit first/last choices. */
+/** The selected mode owns roles; frame positions follow the visible image order. */
 export function canvasVideoDraftForType(draft, type, inputs) {
   const modelId = videoModelForType(type);
   if (!modelId || !canvasVideoTypeAvailability(inputs).some((item) => item.id === type && item.enabled)) return draft;
   const images = inputs.filter((item) => item.kind === "image");
-  const previousRole = (item) => draft.roles[item.key] ?? item.role;
-  const first = images.find((item) => previousRole(item) === "first_frame") ?? images[0];
-  const last = images.find((item) => item !== first && previousRole(item) === "last_frame") ?? images.find((item) => item !== first);
+  const [first, last] = images;
   const roles = Object.fromEntries(inputs.filter((item) => item.kind !== "text").map((item) => {
     const role = item.kind === "video"
       ? type === "motion_control" ? "video" : type === "video_edit" ? "base_video" : "feature_video"

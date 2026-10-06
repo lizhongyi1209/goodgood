@@ -2,10 +2,8 @@
 .material { position: relative; flex: 0 0 54px; width: 54px; scroll-snap-align: start; }
 .material button { padding: 0; border: 0; }
 .referenceVideo { display: block; width: 100%; height: 100%; object-fit: cover; }
-.role { display: flex; align-items: center; justify-content: center; gap: 2px; width: 54px; height: 23px; border-radius: 5px; background: transparent; color: #52525b; font-size: 10px; white-space: nowrap; }
-.role:hover, .role[data-state="open"] { background: #f4f4f5; color: #18181b; }
+.frameLabel { display: block; width: 54px; padding-top: 4px; color: #18181b; font-size: 11px; line-height: 16px; text-align: center; white-space: nowrap; cursor: default; }
 .material[data-unavailable="true"] [data-slot="attachment"] { opacity: .5; }
-.material[data-invalid="true"] .role { text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; }
 .footer { flex-wrap: wrap; row-gap: 8px; }
 .controls, .actions { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .controls { flex-wrap: wrap; }
@@ -90,7 +88,7 @@
 .pickerEmpty { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 180px; color: #52525b; font-size: 12px; }
 .pickerClose { align-self: end; }
 .viewerVideo { display: block; width: 100%; max-height: calc(100dvh - 160px); background: #f4f4f5; }
-.role:focus-visible, .play:focus-visible, .resultTools button:focus-visible, .shot button:focus-visible, .shotAdd:focus-visible, .pickerItem:focus-visible { outline: 2px solid #18181b; outline-offset: 2px; }
+.play:focus-visible, .resultTools button:focus-visible, .shot button:focus-visible, .shotAdd:focus-visible, .pickerItem:focus-visible { outline: 2px solid #18181b; outline-offset: 2px; }
 .shot textarea:focus-visible, .shot input:focus-visible, .search input:focus-visible { outline: 1px solid #18181b; outline-offset: 1px; }
 .shot textarea::selection, .search input::selection { background: #e4e4e7; color: #18181b; }
 @media (max-width: 560px) { .controls { gap: 4px; } .search input { width: 115px; } }

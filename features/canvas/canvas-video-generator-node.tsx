@@ -7,13 +7,13 @@ import { Attachment, AttachmentGroup } from "@/components/ui/attachment";
 import { CreditIcon } from "@/components/ui/credit-icon";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import { KlingModelIcon } from "@/features/models/kling-model-icon";
 import { privateImageUrls } from "@/shared/private-image-urls.mjs";
-import { VIDEO_GENERATION_MODELS, VIDEO_GENERATION_TYPES, VIDEO_ROLE_LABELS, VIDEO_ACTIVE_STATES, defaultVideoRole, videoGenerationProblem,
+import { VIDEO_GENERATION_MODELS, VIDEO_GENERATION_TYPES, VIDEO_ACTIVE_STATES, defaultVideoRole, videoGenerationProblem,
   type CanvasVideoGenerationDraft, type VideoGenerationInput, type VideoGenerationMedia, type VideoGenerationStatus, type VideoGenerationType, type VideoMaterial, type VideoRole } from "@/shared/contracts/video-generation.mjs";
 import { listPrivateVideoMaterials } from "@/features/creation/http-video-materials";
 import { CanvasTextGenerationContext as CanvasGenerationContext } from "./canvas-text-generation-context";
@@ -384,20 +384,9 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
                 else updateDraft({ materials: draft.materials.filter((item) => `direct:${item.assetKind}:${item.assetId}` !== view.key) });
               }}><X size={12} aria-hidden="true" /></button>
             </Attachment>
-            {view.kind !== "text" && <DropdownMenu modal={false}>
-              <DropdownMenuTrigger asChild><button type="button" className={styles.role} disabled={locked || !canvasVideoUiRolesForType(draft.type, view.kind).length}
-                aria-label={`设置 ${view.name} 的用途`}>{view.role ? VIDEO_ROLE_LABELS[view.role] : "不支持"}<ChevronDown size={9} aria-hidden="true" /></button></DropdownMenuTrigger>
-              <DropdownMenuContent className="nodrag nopan nowheel"><DropdownMenuRadioGroup value={view.role ?? ""} onValueChange={(role) => {
-                const roles = { ...draft.roles };
-                if (role === "first_frame" || role === "last_frame") {
-                  for (const key of Object.keys(roles)) if (key !== view.key && roles[key] === role) roles[key] = "refer_image";
-                }
-                roles[view.key] = role as VideoRole;
-                updateDraft({ roles });
-              }}>
-                {canvasVideoUiRolesForType(draft.type, view.kind).map((role) => <DropdownMenuRadioItem key={role} value={role}>{VIDEO_ROLE_LABELS[role]}</DropdownMenuRadioItem>)}
-              </DropdownMenuRadioGroup></DropdownMenuContent>
-            </DropdownMenu>}
+            {draft.type === "first_last_frame" && view.kind === "image" &&
+              (view.role === "first_frame" || view.role === "last_frame") &&
+              <span className={styles.frameLabel}>{view.role === "first_frame" ? "首帧" : "尾帧"}</span>}
           </div>)}
         </AttachmentGroup>
         <CanvasVideoGeneratorPrompt id={`video-prompt-${id}`} value={manualShots ? "" : draft.prompt} readOnly={locked || manualShots} maxLength={motion ? 2500 : 3072} width={toolbarWidth}
