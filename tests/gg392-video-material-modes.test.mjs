@@ -15,7 +15,7 @@ test("empty/text-only inputs allow only text; attaching and removing images chan
   assert.deepEqual(enabled([]), ["text_to_video"]);
   assert.deepEqual(enabled([{ key: "prompt", kind: "text" }]), ["text_to_video"]);
   const inputs = [image("edge:image")];
-  assert.deepEqual(enabled(inputs), ["image_to_video", "first_last_frame", "reference_to_video"]);
+  assert.deepEqual(enabled(inputs), ["image_to_video", "reference_to_video", "first_last_frame"]);
   const value = canvasVideoDraftForMaterials(draft(), inputs);
   assert.equal(value.type, "image_to_video");
   assert.equal(value.roles[inputs[0].key], "first_frame");

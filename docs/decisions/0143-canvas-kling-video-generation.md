@@ -4,6 +4,10 @@
 - Date: 2026-10-05
 - Related tasks: GG-382, GG-384
 
+## Compact modes and meaningful settings · 2026-10-06 · GG-397
+
+Rename reference_to_video to 全能参考 and place it above first/last frames in the menu, retaining internal IDs, routes and the existing automatic mode preference. Shorten hover rules, and size frame labels at 10px like thumbnail numbers. Hide settings already decided by input: aspect ratio for first-frame/reference-video/base-video inputs, and fixed audio/automatic storyboard controls for feature-video references. Motion continues to hide ratio, duration and storyboard. Determine UI visibility from all tray inputs, including pending media. The official Omni and Motion documents and supplied O1Key contract distinguish inherited aspect ratio from independently selectable output resolution; retain the resolution choice and do not assert it follows the source. Preserve editable duration unless the configured API documents inheritance, billing and frozen requests.
+
 ## In-image frame labels · 2026-10-06 · GG-396
 
 Move the noninteractive first/last labels into the thumbnail's lower-left corner. Use compact semibold white text on a near-black backing for contrast across images, and exclude the overlay from pointer events. This replaces the external label placement without changing automatic role assignment, previews, removal, task snapshots or pricing.

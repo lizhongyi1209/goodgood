@@ -1,13 +1,25 @@
 import { VIDEO_GENERATION_TYPES, videoModelForType, videoRolesForType } from "../../shared/contracts/video-generation.mjs";
 
 const typeRules = {
-  text_to_video: "仅使用提示词，不接入图片或视频",
-  image_to_video: "仅 1 张图片，作为视频首帧",
-  first_last_frame: "需要首帧，尾帧可选；不支持仅尾帧",
-  reference_to_video: "参考内容，不固定首帧；1–7 张图，或 1 个视频＋0–4 张图",
-  video_edit: "需要 1 个原视频，可添加最多 4 张参考图",
-  motion_control: "需要 1 张角色图和 1 个动作视频",
+  text_to_video: "仅提示词，不接入图片或视频",
+  image_to_video: "1 张图片，作为首帧",
+  first_last_frame: "首帧必需，尾帧可选",
+  reference_to_video: "1–7 张图片\n或 1 个视频＋最多 4 张图片",
+  video_edit: "1 个原视频，可配最多 4 张图",
+  motion_control: "1 张角色图＋1 个动作视频",
 };
+
+// Display order must not change the mode selected when added media invalidate a draft.
+const automaticTypeOrder = ["text_to_video", "image_to_video", "first_last_frame", "reference_to_video", "video_edit", "motion_control"];
+
+/** Show only controls accepted as user choices by the configured provider contract. */
+export function canvasVideoParameterVisibility(type, inputs) {
+  const motion = type === "motion_control";
+  const referenceVideo = inputs.some((item) => item.role === "feature_video");
+  const inheritedRatio = inputs.some((item) => ["first_frame", "feature_video", "base_video"].includes(item.role));
+  return { aspectRatio: !motion && !inheritedRatio, duration: !motion,
+    audio: !referenceVideo, storyboard: !motion && type !== "video_edit" && !referenceVideo };
+}
 
 /** Count the connected/selected media, including uploads that are not ready yet. */
 export function canvasVideoTypeAvailability(inputs) {
@@ -60,9 +72,10 @@ export function canvasVideoDraftForType(draft, type, inputs) {
 /** Keep a compatible choice; otherwise prefer the current model, then Omni. */
 export function canvasVideoDraftForMaterials(draft, inputs) {
   const available = canvasVideoTypeAvailability(inputs);
+  const preferred = [...available].sort((a, b) => automaticTypeOrder.indexOf(a.id) - automaticTypeOrder.indexOf(b.id));
   const type = available.find((item) => item.id === draft.type && item.enabled)
-    ?? available.find((item) => item.modelId === draft.modelId && item.enabled)
-    ?? available.find((item) => item.enabled);
+    ?? preferred.find((item) => item.modelId === draft.modelId && item.enabled)
+    ?? preferred.find((item) => item.enabled);
   return type ? canvasVideoDraftForType(draft, type.id, inputs) : draft;
 }
 

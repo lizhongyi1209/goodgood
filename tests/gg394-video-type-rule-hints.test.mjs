@@ -34,7 +34,7 @@ test("all visible choices have concise rules, including disabled choices and med
     assert.ok(choices.every((item) => typeof item.rule === "string" && item.rule.length > 0));
     assert.match(choices.find((item) => item.id === "image_to_video").rule, /1.*首帧/);
     assert.match(choices.find((item) => item.id === "first_last_frame").rule, /尾帧可选/);
-    assert.match(choices.find((item) => item.id === "reference_to_video").rule, /1–7.*4/);
+    assert.match(choices.find((item) => item.id === "reference_to_video").rule, /1–7.*4/s);
   }
   assert.equal(option([video, ...Array.from({ length: 4 }, (_, index) => image(String(index)))], "reference_to_video").enabled, true);
   assert.equal(option([video, ...Array.from({ length: 5 }, (_, index) => image(String(index)))], "reference_to_video").enabled, false);

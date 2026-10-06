@@ -5,8 +5,8 @@ export const VIDEO_GENERATION_MODELS = Object.freeze([
 export const VIDEO_GENERATION_TYPES = Object.freeze([
   { id: "text_to_video", name: "文生视频", modelId: "kling-3.0-omni", hint: "描述画面、动作和镜头变化" },
   { id: "image_to_video", name: "图生视频", modelId: "kling-3.0-omni", hint: "描述这张首帧图片如何动起来" },
+  { id: "reference_to_video", name: "全能参考", modelId: "kling-3.0-omni", hint: "添加参考图或参考视频" },
   { id: "first_last_frame", name: "首尾帧", modelId: "kling-3.0-omni", hint: "描述首帧后的画面变化" },
-  { id: "reference_to_video", name: "参考生成", modelId: "kling-3.0-omni", hint: "添加参考图或参考视频" },
   { id: "video_edit", name: "视频编辑", modelId: "kling-3.0-omni", hint: "选择原视频，可添加参考图" },
   { id: "motion_control", name: "动作模仿", modelId: "kling-3.0", hint: "选择角色图片和动作视频" },
 ]);
