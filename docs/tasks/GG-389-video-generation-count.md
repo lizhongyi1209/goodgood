@@ -13,3 +13,7 @@
 - 旧后台保护：capabilities新声明counts后才启用数量控件；旧Web保留单条路径和旧拒绝回滚，不发送不支持的新草稿字段。UI可以显示选项，但未更新后台前不能选择。无需Worker更新或数据库迁移。
 
 - 交付：源码提交4e3f6d60ff77a4ea1bf34f6c28619e659f03fb35，GG-116当前分支codex/gg-389-video-generation-count。必要Web构建/重启授权问题已向用户提出，仍待明确答复；未运行自动检查或后台操作。
+
+## 后续本地启用
+
+2026-10-06，用户电脑重启后明确要求重启项目；[GG-391](GG-391-local-restart-after-reboot.md)按当前HEAD必要构建并恢复Web/唯一Worker/Vite，运行revision 4ecd1db987725dda0ad238648453a776e8f73ae6，本卡源码已启用，旧待答复Web激活事项由本次重启授权覆盖。未执行自动功能验收、真实生成或部署，用户刷新5173手验。

@@ -1,5 +1,7 @@
 # GoodGood 当前状态
 
+> [GG-391](tasks/GG-391-local-restart-after-reboot.md) 电脑重启恢复完成：原PG54449被Windows54411–54510保留范围覆盖；系统管理员授权后沿GG-366短停WinNAT并重连原网络，原容器/卷/54449映射恢复、WinNAT Running。必要当前checkpoint构建4ecd1db987725dda0ad238648453a776e8f73ae6；Web30256/32131、唯一Worker24668/32142、Vite26448/5173（入口31156；隐藏启动器29680/32256/31188）恢复。Web/Worker readiness五项ok，5173 API代理同revision/verified，首页及原画布HTTP200。最新GG-389数量与GG-390智能分镜源码已随本次重启启用；原68迁移、数据、cloud-development/local-mailpit和外部临时视频价格保持。启动前图片/文本任务仅终态，视频任务0、未派发outbox/预留/两队列均0。未迁移/重置/写fixture/发真实生成或生产操作，未代码检查/测试/浏览器交互验收。创建0/退役0，无子agent/新依赖副本；用户刷新5173手验。
+
 > [GG-390](tasks/GG-390-video-storyboard-dialog.md) GG-390智能分镜弹框源码已提交a61c381360501f1a38f1ac5627a2005aaef8d5ad，分支codex/gg-390-video-storyboard-dialog，基线da34445/GG-389。生成类型右侧同款入口，参数内旧镜头/编辑移到独立Dialog；单镜头/自动/手动、镜头增删排序/秒数/描述/合计与字符引导，确认应用、取消/外部点击/Escape丢弃本轮草稿。参考视频固定自动，Motion/视频编辑隐藏，任务中禁用。手动生成将连接文本合入首镜头、主描述保留用于切回；子结果冻结有效分镜，沿旧API/费用/保存字段。三项纯合成来源仅写，未自动构建、检查、测试、浏览器/接口/数据库/Provider/生成/扣费/服务或生产操作，GG-385运行保持。GG-389数量Web授权继续待答复，本次不重复请求；用户刷新5173手验分镜。创建0/退役0，无子agent/新缓存。
 
 > [GG-389](tasks/GG-389-video-generation-count.md) GG-389视频生成数量1/2/4源码已提交4e3f6d60ff77a4ea1bf34f6c28619e659f03fb35，默认1，分支codex/gg-389-video-generation-count，基线3b7460e/GG-388。复用数量胶囊，按钮显示单价×数量；预建相邻独立视频卡片/冻结ID，再并发调用旧单视频API。失败位置保留并单项重试；确定未受理与网络不明分离，后者只查原ID。数量/有界拒绝说明随草稿保存，复制清理提交状态；新Web能力声明后才允许选择数量，旧后台继续单条兼容。四项纯合成来源仅写未执行，无自动构建、检查、测试、浏览器/HTTP/SQL/Provider/生成/扣费/服务或生产操作。GG-385运行保持，新字段尚未启用，需要用户单独授权Web构建更新；Worker/DB不变。创建0/退役0，无子agent或新缓存。
