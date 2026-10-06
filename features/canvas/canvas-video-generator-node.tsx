@@ -1,7 +1,7 @@
 "use client";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Handle, NodeToolbar, Position, useReactFlow, useStore, type NodeProps } from "@xyflow/react";
-import { ChevronDown, Download, FileText, Film, LoaderCircle, Maximize2, Play, RotateCcw, Volume2, VolumeX, X } from "lucide-react";
+import { ChevronDown, Download, FileText, Film, LoaderCircle, Maximize2, RotateCcw, Volume2, VolumeX, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Attachment, AttachmentGroup } from "@/components/ui/attachment";
 import { CreditIcon } from "@/components/ui/credit-icon";
@@ -66,10 +66,9 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
   const [viewerOpen, setViewerOpen] = useState(false); const [priceRevision, setPriceRevision] = useState(0);
   const [posting, setPosting] = useState(false); const [message, setMessage] = useState("");
   const [quote, setQuote] = useState<VideoCreditQuote | null>(null); const [retryQuote, setRetryQuote] = useState<VideoCreditQuote | null>(null); const [quoteError, setQuoteError] = useState(""); const [pollRevision, setPollRevision] = useState(0);
-  const [directPreviews, setDirectPreviews] = useState<Record<string, string>>({}); const [playing, setPlaying] = useState(false);
+  const [directPreviews, setDirectPreviews] = useState<Record<string, string>>({});
   const [countEnabled, setCountEnabled] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const playbackRef = useRef<ReturnType<typeof attachCanvasVideoPreviewPlayback> | null>(null);
   const scope = `${context.ownerKey}:${context.workspaceId ?? "personal"}:${context.pageId}`;
   const scopeRef = useRef(scope); scopeRef.current = scope;
   const mounted = useRef(true); useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
@@ -196,10 +195,12 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
   }, [selected, locked, parameterVisibility.storyboard]);
   useEffect(() => {
     const video = videoRef.current; if (!video || !data.previewUrl) return;
-    const playback = attachCanvasVideoPreviewPlayback(video, { page: document, reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)") });
-    playback.setEnabled(true); playbackRef.current = playback;
-    return () => { playbackRef.current = null; playback.dispose(); };
-  }, [data.previewUrl]);
+    const pauseWhenHidden = () => { if (document.visibilityState !== "visible") video.pause(); };
+    if (viewerOpen) video.pause();
+    pauseWhenHidden();
+    document.addEventListener("visibilitychange", pauseWhenHidden);
+    return () => { document.removeEventListener("visibilitychange", pauseWhenHidden); video.pause(); };
+  }, [data.previewUrl, scope, viewerOpen]);
   useEffect(() => {
     if (!selected) return;
     let first = 0;
@@ -315,12 +316,13 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
   const validationNotice = problem === "请输入视频描述。" ? "" : problem;
   const inlineNotice = message || job?.error?.message || (!active && (validationNotice || quoteError));
   return <TooltipProvider delayDuration={180}>
-    <CanvasMediaMetadata kind="video" name={title} nodeWidth={width} pixelWidth={data.previewUrl ? data.pixelWidth : undefined} pixelHeight={data.previewUrl ? data.pixelHeight : undefined} />
+    <CanvasMediaMetadata kind="video" name={title} nodeWidth={width} pixelWidth={data.previewUrl ? data.pixelWidth : undefined} pixelHeight={data.previewUrl ? data.pixelHeight : undefined}
+      className={data.previewUrl ? styles.resultMetadata : undefined} />
     <article className={`${workspaceStyles.generatorNode} ${styles.result} ${active && job?.state !== "save_failed" && job?.state !== "submission_unknown" ? workspaceStyles.generatorShimmering : ""}`}
-      aria-label={title} aria-busy={active || undefined} onMouseEnter={() => playbackRef.current?.setHovering(true)} onMouseLeave={() => playbackRef.current?.setHovering(false)}>
+      aria-label={title} aria-busy={active || undefined}>
       {data.previewUrl ? <>
-        <video ref={videoRef} src={data.previewUrl} className={styles.video} muted playsInline loop preload="metadata" aria-label={`${title}预览`}
-          onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onError={() => {
+        <video ref={videoRef} src={data.previewUrl} className={`${styles.video} nodrag nopan nowheel`} controls muted playsInline preload="metadata" aria-label={`${title}预览`}
+          onPointerDown={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()} onError={() => {
             if (previewRefreshAttempted.current) { setMessage("视频预览暂不可用，请重新打开画布。"); return; }
             previewRefreshAttempted.current = true;
             if (draft.requestId) void readCanvasVideo(draft.requestId, context.workspaceId, AbortSignal.timeout(15_000)).then((status) => receive(status, scope)).catch(() => { if (validScope(scope)) setMessage("视频预览暂不可用，请重新查询任务。"); });
@@ -332,7 +334,6 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
             const size = fittedCanvasVideoSize({ width: Number(current.style?.width ?? current.width ?? 320), height: Number(current.style?.height ?? current.height ?? 180) }, video.videoWidth, video.videoHeight);
             if (size && (current.data.pixelWidth !== video.videoWidth || current.data.pixelHeight !== video.videoHeight || Math.abs(Number(current.style?.width) / Number(current.style?.height) - video.videoWidth / video.videoHeight) > .01)) flow.updateNode(id, { style: { ...current.style, ...size }, data: { ...current.data, pixelWidth: video.videoWidth, pixelHeight: video.videoHeight, durationSeconds: video.duration } });
           }} />
-        {!playing && <button type="button" className={`${styles.play} nodrag nopan`} aria-label="播放视频" onClick={(event) => { event.stopPropagation(); void videoRef.current?.play().catch(() => {}); }}><Play size={17} fill="currentColor" /></button>}
         <div className={`${styles.resultTools} nodrag nopan`}><button type="button" aria-label="查看视频" onClick={() => setViewerOpen(true)}><Maximize2 size={14} /></button>
           {draft.requestId && <button type="button" aria-label="下载视频" onClick={() => { if (draft.requestId) void downloadCanvasVideo(draft.requestId, context.workspaceId, AbortSignal.timeout(15_000)).then(({ url }) => {
             if (!validScope(scope)) return; const anchor = document.createElement("a"); anchor.href = url; anchor.download = `${title}.mp4`; anchor.rel = "noopener"; document.body.append(anchor); anchor.click(); anchor.remove();

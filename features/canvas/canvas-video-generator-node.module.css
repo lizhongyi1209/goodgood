@@ -85,7 +85,8 @@
 .progressTrack { width: 100px; max-width: 100%; height: 3px; overflow: hidden; border-radius: 2px; background: #d4d4d8; }
 .progressFill { display: block; width: 100%; height: 100%; border-radius: inherit; background: #18181b; transform-origin: left; transition: transform 1.2s ease-out; }
 .video { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: contain; }
-.play { position: absolute; display: grid; place-items: center; width: 38px; height: 38px; border: 0; border-radius: 50%; background: #fff; color: #18181b; }
+.resultMetadata { pointer-events: auto; cursor: grab; }
+.resultMetadata:active { cursor: grabbing; }
 .resultTools { position: absolute; top: 7px; right: 7px; display: flex; gap: 5px; opacity: 0; }
 .resultTools button { display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 8px; background: #fff; color: #18181b; }
 .result:hover .resultTools, .result:focus-within .resultTools { opacity: 1; }
@@ -109,7 +110,7 @@
 .pickerEmpty { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 180px; color: #52525b; font-size: 12px; }
 .pickerClose { align-self: end; }
 .viewerVideo { display: block; width: 100%; max-height: calc(100dvh - 160px); background: #f4f4f5; }
-.play:focus-visible, .resultTools button:focus-visible, .sceneMove:focus-visible, .sceneRemove:focus-visible, .shotAdd:focus-visible, .pickerItem:focus-visible { outline: 2px solid #18181b; outline-offset: 2px; }
+.resultTools button:focus-visible, .sceneMove:focus-visible, .sceneRemove:focus-visible, .shotAdd:focus-visible, .pickerItem:focus-visible { outline: 2px solid #18181b; outline-offset: 2px; }
 .search input:focus-visible { outline: 1px solid #18181b; outline-offset: 1px; }
 .sceneCard textarea::selection, .search input::selection { background: #e4e4e7; color: #18181b; }
 @media (max-width: 560px) { .controls { gap: 4px; } .search input { width: 115px; } }

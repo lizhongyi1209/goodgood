@@ -4,6 +4,10 @@
 - Date: 2026-10-05
 - Related tasks: GG-382, GG-384
 
+## Manual result playback · 2026-10-06 · GG-410
+
+The user replaces automatic hover playback of generated canvas video results with manual inspection. Results start paused and expose native playback, pause and seeking controls; entering/leaving the card no longer changes playback and results do not loop automatically. Isolate player interaction from canvas dragging and panning. Pause when the page becomes hidden, the result viewer opens, or the source/scope unmounts; do not automatically resume. Keep reference-hover previews, the asset page, generation states, billing and persisted job data unchanged.
+
 ## Generation feedback and progress · 2026-10-06 · GG-409
 
 The user keeps the visible label 生成中 through queued, submitting, running and saving, while backend states remain distinct. Reuse the actual provider progress already forwarded by the Worker and status API. Show a percentage only for reported progress and retain the latest known real progress if a later response omits it. Until real progress arrives, use a slow, bounded visual estimate with conservative phase caps; do not present an estimate as a reported percentage, and only successful delivery permits 100%. Keep each attempt independent, suspend simulated ticks in hidden tabs or reduced motion, and stop them on unmount/terminal recovery states. Do not change requests, polling, persistence, billing or automatic retries.
