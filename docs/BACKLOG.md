@@ -1,6 +1,6 @@
 # 当前任务与优先级
 
-> [GG-399](tasks/GG-399-video-remove-add.md) 视频chat加号移除源码已实现，待记录提交，基线496591b，GG-116分支codex/gg-399-video-remove-add。删除加号/专属菜单及无入口控件，参数摘要置首、不留空槽；已有素材恢复/预览/删除和生成保持。纯UI，无自动构建/检查/测试/浏览器或HTTP/SQL/Provider/服务/生产操作，GG-391运行receipt保持。创建0/退役0，无子agent/依赖缓存，用户刷新5173手验。
+> [GG-399](tasks/GG-399-video-remove-add.md) 视频chat加号移除源码已提交1b4b98f6002094e2fc2982f1aa4b2772614780cc，基线496591b，GG-116分支codex/gg-399-video-remove-add。删除加号/专属菜单及无入口控件，参数摘要置首、不留空槽；已有素材恢复/预览/删除和生成保持。纯UI，无自动构建/检查/测试/浏览器或HTTP/SQL/Provider/服务/生产操作，GG-391运行receipt保持。创建0/退役0，无子agent/依赖缓存，用户刷新5173手验。
 
 > [GG-398](tasks/GG-398-video-parameter-preview.md) 完整参数摘要源码已提交9687ffe085228f68cc16b502465249e47554eada，基线c02eba7，GG-116分支codex/gg-398-video-parameter-preview。补时长/数量/音频图标与hover说明，固定静音和动作随视频准确展示；已有比例隐藏/设置/计价/提交保持。纯UI，无自动构建/检查/测试/浏览器或HTTP/SQL/Provider/服务/生产操作；GG-391运行receipt保持。创建0/退役0，无子agent/依赖缓存，用户刷新5173手验。
 
