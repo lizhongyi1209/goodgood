@@ -4,6 +4,10 @@
 - Date: 2026-10-05
 - Related tasks: GG-382, GG-384
 
+## In-image frame labels · 2026-10-06 · GG-396
+
+Move the noninteractive first/last labels into the thumbnail's lower-left corner. Use compact semibold white text on a near-black backing for contrast across images, and exclude the overlay from pointer events. This replaces the external label placement without changing automatic role assignment, previews, removal, task snapshots or pricing.
+
 ## Mode-owned material roles · 2026-10-06 · GG-395
 
 The user removes redundant material-role controls because the selected generation type already classifies inputs. Remove all editable role menus beneath thumbnails. Single-image/reference/edit/motion modes show no repeated role control. First/last-frame mode shows only noninteractive first/last labels. Derive first and optional last from the existing image tray order in editable drafts; text/video do not consume image positions and extra images retain the existing reference role. This supersedes editable explicit role selection, while active jobs, frozen submission/retry inputs and historical requests remain unchanged. Preserve preview/removal, existing material limits and pricing. Future interaction work should begin from the real user task and remove redundant choices rather than expose backend classifications as controls.

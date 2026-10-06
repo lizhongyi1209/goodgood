@@ -383,10 +383,10 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
                 if (view.edgeId) context.onRemoveInput(view.edgeId);
                 else updateDraft({ materials: draft.materials.filter((item) => `direct:${item.assetKind}:${item.assetId}` !== view.key) });
               }}><X size={12} aria-hidden="true" /></button>
+              {draft.type === "first_last_frame" && view.kind === "image" &&
+                (view.role === "first_frame" || view.role === "last_frame") &&
+                <span className={styles.frameLabel}>{view.role === "first_frame" ? "首帧" : "尾帧"}</span>}
             </Attachment>
-            {draft.type === "first_last_frame" && view.kind === "image" &&
-              (view.role === "first_frame" || view.role === "last_frame") &&
-              <span className={styles.frameLabel}>{view.role === "first_frame" ? "首帧" : "尾帧"}</span>}
           </div>)}
         </AttachmentGroup>
         <CanvasVideoGeneratorPrompt id={`video-prompt-${id}`} value={manualShots ? "" : draft.prompt} readOnly={locked || manualShots} maxLength={motion ? 2500 : 3072} width={toolbarWidth}

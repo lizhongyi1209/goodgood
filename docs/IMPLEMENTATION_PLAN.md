@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-06
-- Current phase: GG-395源码已提交d4a8a72a0fe32bc7f1bbdb5b4d84faee1ecbf653；GG-391运行receipt保持，未自动验收/服务更新。
-- Current objective: 用户刷新5173手验无重复用途菜单、首尾纯文字和按顺序自动分配；不自动检查或重启。
+- Current phase: GG-396源码已实现，待记录提交；GG-391运行receipt保持，未自动验收/服务更新。
+- Current objective: 用户刷新5173手验缩略图内左下角首尾标记与文字清晰度；不自动检查或重启。
 - Previous objective: GG-383上传复用源码交付；GG-382设计/官方对照已获用户接受，按其O1Key附件实现，不再等待设计反馈。
 
 ## Current checkpoint
+
+- 当前源码交接：[GG-396](tasks/GG-396-video-frame-overlay.md) 首尾帧标签源码已实现，待记录提交，基线4d96581，GG-116分支codex/gg-396-video-frame-overlay。标签移至缩略图内左下角，近黑底白字/半粗体、不占外部高度、不拦截预览。纯样式调整，无自动构建/检查/测试/浏览器或数据/Provider/服务/生产操作；GG-391运行receipt保持。创建0/退役0，无子agent/依赖缓存，用户刷新5173手验。
 
 - 当前源码交接：[GG-395](tasks/GG-395-video-material-labels.md) 素材用途简化源码已提交d4a8a72a0fe32bc7f1bbdb5b4d84faee1ecbf653，基线02429cb，GG-116分支codex/gg-395-video-material-labels。移除所有用途菜单，仅首尾帧展示纯文字；可编辑草稿按托盘图片顺序自动分配，额外参考及冻结任务/重试保持。简洁交互原则已写入AGENTS/ADR/产品及设计。三项纯回归来源与旧预期只写未执行；未自动构建/检查/测试/浏览器或HTTP/SQL/Provider/服务/生产操作，GG-391运行receipt保持。创建0/退役0，无子agent/依赖或缓存副本；用户刷新5173手验。
 
