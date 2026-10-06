@@ -1,5 +1,7 @@
 # GoodGood 当前状态
 
+> [GG-398](tasks/GG-398-video-parameter-preview.md) 完整参数摘要源码已实现，待记录提交，基线c02eba7，GG-116分支codex/gg-398-video-parameter-preview。补时长/数量/音频图标与hover说明，固定静音和动作随视频准确展示；已有比例隐藏/设置/计价/提交保持。纯UI，无自动构建/检查/测试/浏览器或HTTP/SQL/Provider/服务/生产操作；GG-391运行receipt保持。创建0/退役0，无子agent/依赖缓存，用户刷新5173手验。
+
 > [GG-397](tasks/GG-397-video-mode-parameters.md) 全能参考/参数简化源码已提交c232385a4916652574cedb7f22cba3b7c75e5ca6，基线f9e512d，GG-116分支codex/gg-397-video-mode-parameters。更名排序/短规则/10px标记；隐藏继承宽高比和参考视频固定音频/分镜，保留独立清晰度和既有自动模式偏好。按官方及O1Key附件纠正宽高比与分辨率区分；仅公开文档GET。三项纯回归来源及旧预期仅写未执行，无自动构建/检查/测试/浏览器或应用HTTP/SQL/Provider/服务/生产操作，GG-391运行receipt保持。创建0/退役0，无子agent/依赖缓存，用户刷新5173手验。
 
 > [GG-396](tasks/GG-396-video-frame-overlay.md) 首尾帧标签源码已提交dc71b6584a413275c3c1aa09fc09e103f97f145d，基线4d96581，GG-116分支codex/gg-396-video-frame-overlay。标签移至缩略图内左下角，近黑底白字/半粗体、不占外部高度、不拦截预览。纯样式调整，无自动构建/检查/测试/浏览器或数据/Provider/服务/生产操作；GG-391运行receipt保持。创建0/退役0，无子agent/依赖缓存，用户刷新5173手验。

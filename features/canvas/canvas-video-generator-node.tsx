@@ -1,7 +1,7 @@
 "use client";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Handle, NodeToolbar, Position, useReactFlow, useStore, type NodeProps } from "@xyflow/react";
-import { ChevronDown, Clapperboard, Download, FileText, Film, LoaderCircle, Maximize2, Play, Plus, RotateCcw, Upload, X } from "lucide-react";
+import { ChevronDown, Clapperboard, Download, FileText, Film, LoaderCircle, Maximize2, Play, Plus, RotateCcw, Upload, Volume2, VolumeX, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Attachment, AttachmentGroup } from "@/components/ui/attachment";
 import { CreditIcon } from "@/components/ui/credit-icon";
@@ -320,6 +320,12 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
   if (center - desiredWidth / 2 < visibleLeft + 15) { align = "start"; toolbarWidth = Math.min(desiredWidth, Math.max(120, viewportWidth - screenLeft - 15)); }
   else if (center + desiredWidth / 2 > viewportWidth - 15) { align = "end"; toolbarWidth = Math.min(desiredWidth, Math.max(120, screenLeft + nodeWidth * zoom - visibleLeft - 15)); }
   const ready = !locked && !problem && Boolean(quote) && (count === 1 || countEnabled); const motion = draft.type === "motion_control";
+  const previewAudio = parameterVisibility.audio ? draft.audio : "off";
+  const audioLabel = previewAudio === "off" ? "静音" : previewAudio === "original" ? "保留原声" : "生成音频";
+  const AudioIcon = previewAudio === "off" ? VolumeX : Volume2;
+  const parameterPreview = [parameterVisibility.aspectRatio ? draft.aspectRatio : null,
+    draft.resolution === "4k" ? "4K" : draft.resolution,
+    parameterVisibility.duration ? `${draft.duration}s` : "随视频", `${count}个`].filter(Boolean).join(" · ");
   const type = VIDEO_GENERATION_TYPES.find((item) => item.id === draft.type)!;
   const sendHint = !context.enabled ? "画布准备好后可生成" : locked ? "当前任务进行中" : problem || quoteError || "生成视频（Ctrl/⌘ + Enter）";
   const validationNotice = problem === "请输入视频描述。" ? "" : problem;
@@ -413,10 +419,17 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
             </DropdownMenu>
             <Popover open={parametersOpen} onOpenChange={(open) => { setParametersOpen(open); if (open) { setModelOpen(false); setTypeOpen(false); } }}>
               <PopoverTrigger asChild data-slot="button">
-                <Button id={`video-parameters-${id}-trigger`} type="button" variant="ghost" size="sm" className={composerStyles.settingsTrigger} disabled={locked} aria-label="视频参数"
+                <Button id={`video-parameters-${id}-trigger`} type="button" variant="ghost" size="sm" className={composerStyles.settingsTrigger} disabled={locked} aria-label={`视频参数：${parameterPreview}，${audioLabel}`}
                   aria-controls={`video-parameters-${id}`}>
-                  {parameterVisibility.aspectRatio && <>{draft.aspectRatio} · </>}
-                  {draft.resolution === "4k" ? "4K" : draft.resolution}
+                  <span className={styles.parameterPreview}>
+                    <span>{parameterPreview}</span><span aria-hidden="true">·</span>
+                    <Tooltip>
+                      <TooltipTrigger asChild><span className={styles.parameterAudio} aria-label={audioLabel}>
+                        <AudioIcon size={14} strokeWidth={1.5} aria-hidden="true" />
+                      </span></TooltipTrigger>
+                      <TooltipContent side="top">{audioLabel}</TooltipContent>
+                    </Tooltip>
+                  </span>
                   <ChevronDown size={13} aria-hidden="true" />
                 </Button>
               </PopoverTrigger>

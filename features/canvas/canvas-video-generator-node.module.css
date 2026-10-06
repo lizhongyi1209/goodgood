@@ -11,6 +11,8 @@
 .actions > [data-slot="select-trigger"] { flex: 0 1 auto; }
 .actions > span { flex: none; }
 .materialAdd[data-slot="button"] { width: 32px; padding: 0; }
+.parameterPreview { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.parameterAudio { display: inline-flex; align-items: center; color: #18181b; }
 .typeSelect[data-slot="select-trigger"] { width: auto; }
 .typeHintRow { display: block; width: 100%; }
 .typeRuleTooltip[data-slot="tooltip-content"] { max-width: min(280px, calc(100vw - 24px)); padding: 7px 10px; border-radius: 7px; background: #18181b; color: #fff; font-size: 12px; line-height: 1.5; font-weight: 400; white-space: pre-line; pointer-events: none; }
