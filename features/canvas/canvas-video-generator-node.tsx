@@ -1,13 +1,12 @@
 "use client";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Handle, NodeToolbar, Position, useReactFlow, useStore, type NodeProps } from "@xyflow/react";
-import { ChevronDown, Clapperboard, Download, FileText, Film, LoaderCircle, Maximize2, Play, Plus, RotateCcw, Upload, Volume2, VolumeX, X } from "lucide-react";
+import { ChevronDown, Clapperboard, Download, FileText, Film, LoaderCircle, Maximize2, Play, RotateCcw, Volume2, VolumeX, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Attachment, AttachmentGroup } from "@/components/ui/attachment";
 import { CreditIcon } from "@/components/ui/credit-icon";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
@@ -22,8 +21,7 @@ import { CanvasImageResizeControls } from "./canvas-image-resize-controls";
 import { CanvasMediaMetadata } from "./canvas-media-metadata";
 import { fittedCanvasVideoSize } from "./canvas-video-size";
 import { attachCanvasVideoPreviewPlayback } from "./canvas-video-preview-playback.mjs";
-import { uploadCanvasAssetFile, CANVAS_ASSET_LIBRARY_UPDATED_EVENT } from "./canvas-asset-upload";
-import { CanvasVideoMaterialPicker, type VideoPickerMaterial } from "./canvas-video-material-picker";
+import { CANVAS_ASSET_LIBRARY_UPDATED_EVENT } from "./canvas-asset-upload";
 import { CanvasVideoGeneratorPrompt } from "./canvas-video-generator-prompt";
 import { CanvasVideoGeneratorSettings } from "./canvas-video-generator-settings";
 import { CanvasVideoTypeSelect } from "./canvas-video-type-select";
@@ -66,12 +64,12 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
   const [modelOpen, setModelOpen] = useState(false); const [typeOpen, setTypeOpen] = useState(false); const [parametersOpen, setParametersOpen] = useState(false);
   const [storyboardOpen, setStoryboardOpen] = useState(false);
   const [storyboardSession, setStoryboardSession] = useState(0);
-  const [pickerOpen, setPickerOpen] = useState(false); const [viewerOpen, setViewerOpen] = useState(false); const [priceRevision, setPriceRevision] = useState(0);
-  const [uploading, setUploading] = useState(false); const [posting, setPosting] = useState(false); const [message, setMessage] = useState("");
+  const [viewerOpen, setViewerOpen] = useState(false); const [priceRevision, setPriceRevision] = useState(0);
+  const [posting, setPosting] = useState(false); const [message, setMessage] = useState("");
   const [quote, setQuote] = useState<VideoCreditQuote | null>(null); const [retryQuote, setRetryQuote] = useState<VideoCreditQuote | null>(null); const [quoteError, setQuoteError] = useState(""); const [pollRevision, setPollRevision] = useState(0);
   const [directPreviews, setDirectPreviews] = useState<Record<string, string>>({}); const [playing, setPlaying] = useState(false);
   const [countEnabled, setCountEnabled] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null); const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const playbackRef = useRef<ReturnType<typeof attachCanvasVideoPreviewPlayback> | null>(null);
   const scope = `${context.ownerKey}:${context.workspaceId ?? "personal"}:${context.pageId}`;
   const scopeRef = useRef(scope); scopeRef.current = scope;
@@ -83,7 +81,7 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
   const job = storedDraft.submissionError && storedDraft.requestId ? rejectedVideoStatus(storedDraft.requestId, storedDraft.submissionError) : data.job;
   const totalCredits = quote ? quote.credits * count : null;
   const active = Boolean(storedDraft.requestId && (!job || VIDEO_ACTIVE_STATES.includes(job.state) || ["submission_unknown", "save_failed"].includes(job.state)));
-  const locked = active || posting || uploading || !context.enabled;
+  const locked = active || posting || !context.enabled;
   const sequence = Math.max(1, nodes.filter((node) => node.type === "videoGenerator").findIndex((node) => node.id === id) + 1);
   const title = `视频生成 ${sequence}`;
   const connected = canvasTextGenerationInputs(nodes, edges, id);
@@ -227,30 +225,6 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
     updateDraft(canvasVideoDraftForType(draft, type, inputs));
     setMessage("");
   };
-  const addMaterial = (item: VideoPickerMaterial) => {
-    const current = flow.getNode(id); if (current?.type !== "videoGenerator" || locked) return;
-    if (current.data.videoGeneration.materials.some((material) => material.assetId === item.assetId && material.assetKind === item.assetKind)) return;
-    if (views.filter((view) => view.kind !== "text").length >= 8) { setMessage("一次最多添加八份图片或视频素材。"); return; }
-    setDirectPreviews((value) => ({ ...value, [item.assetId]: item.previewUrl }));
-    const { previewUrl: _preview, ...material } = item;
-    updateDraft({ materials: [...current.data.videoGeneration.materials, material] });
-  };
-  const upload = async (files: File[]) => {
-    if (locked || actionRef.current || !files.length) return;
-    const expected = scope; setUploading(true); setMessage("");
-    try {
-      const capacity = Math.max(0, 8 - views.filter((view) => view.kind !== "text").length);
-      for (const file of files.slice(0, capacity)) {
-        if (!["image/jpeg", "image/png", "video/mp4"].includes(file.type)) throw new Error("支持 JPG、PNG 图片和 MP4 视频。");
-        const asset = await uploadCanvasAssetFile(file, crypto.randomUUID()); if (!validScope(expected)) return;
-        const current = flow.getNode(id); if (current?.type !== "videoGenerator" || asset.kind === "audio") continue;
-        const material: VideoMaterial = { kind: asset.kind === "video" ? "video" : "image", assetKind: asset.kind, assetId: asset.id, name: file.name.slice(0, 255) };
-        if (!current.data.videoGeneration.materials.some((item) => item.assetKind === material.assetKind && item.assetId === material.assetId)) flow.updateNodeData(id, { videoGeneration: { ...current.data.videoGeneration, materials: [...current.data.videoGeneration.materials, material] } });
-      }
-      if (validScope(expected)) window.dispatchEvent(new CustomEvent(CANVAS_ASSET_LIBRARY_UPDATED_EVENT, { detail: { ownerKey: context.ownerKey } }));
-    } catch (error) { if (validScope(expected)) setMessage(error instanceof Error ? error.message : "素材上传失败，请重试。"); }
-    finally { if (validScope(expected)) setUploading(false); if (fileRef.current) fileRef.current.value = ""; }
-  };
   const generate = async (retry = false) => {
     const acceptedQuote = retry ? retryQuote : quote;
     if (actionRef.current || locked || !acceptedQuote || !retry && (problem || count > 1 && !countEnabled)) return;
@@ -366,7 +340,6 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
     <Handle type="source" position={Position.Right} id="video" className={workspaceStyles.referenceOutputHandle} aria-label="输出视频" />
     <NodeToolbar isVisible={selected} position={Position.Bottom} offset={12} align={align} className={`${workspaceStyles.generatorToolbar} nodrag nopan nowheel`} style={{ width: toolbarWidth }}>
       <section className={`${composerStyles.composer} ${composerStyles.composerAttached}`} aria-label="视频生成工具" onPointerDown={(event) => event.stopPropagation()} onWheel={(event) => event.stopPropagation()}>
-        <input ref={fileRef} type="file" accept="image/jpeg,image/png,video/mp4" multiple hidden onChange={(event) => void upload(Array.from(event.target.files ?? []))} />
         <AttachmentGroup className={`${composerStyles.referenceTray} ${styles.tray}`} role="group" aria-label="输入附件">
           {views.map((view) => <div key={view.key} className={styles.material} data-unavailable={view.unavailable || undefined}
             data-invalid={view.kind !== "text" && (!view.role || !canvasVideoUiRolesForType(draft.type, view.kind).includes(view.role)) || undefined}>
@@ -402,21 +375,6 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
           onChange={(prompt) => { setMessage(""); updateDraft({ prompt }); }} onGenerate={() => void generate()} />
         <div className={`${composerStyles.tools} ${styles.footer}`}>
           <div className={styles.controls}>
-            <DropdownMenu modal={false}>
-              <Tooltip>
-                <TooltipTrigger asChild><DropdownMenuTrigger asChild data-slot="button">
-                  <Button type="button" variant="ghost" size="sm" className={`${composerStyles.settingsTrigger} ${styles.materialAdd}`}
-                    disabled={locked || views.filter((view) => view.kind !== "text").length >= 8} aria-label="添加素材">
-                    {uploading ? <LoaderCircle size={15} className={styles.spinner} /> : <Plus size={16} strokeWidth={1.5} aria-hidden="true" />}
-                  </Button>
-                </DropdownMenuTrigger></TooltipTrigger>
-                <TooltipContent>添加素材</TooltipContent>
-              </Tooltip>
-              <DropdownMenuContent className="nodrag nopan nowheel">
-                <DropdownMenuItem onSelect={() => fileRef.current?.click()}><Upload size={14} />本地上传</DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => setPickerOpen(true)}><Film size={14} />从资产选择</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
             <Popover open={parametersOpen} onOpenChange={(open) => { setParametersOpen(open); if (open) { setModelOpen(false); setTypeOpen(false); } }}>
               <PopoverTrigger asChild data-slot="button">
                 <Button id={`video-parameters-${id}-trigger`} type="button" variant="ghost" size="sm" className={composerStyles.settingsTrigger} disabled={locked} aria-label={`视频参数：${parameterPreview}，${audioLabel}`}
@@ -486,7 +444,6 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
         {job?.error && <details className={styles.diagnostics}><summary>错误详情</summary><pre>{JSON.stringify({ requestId: job.requestId, ...job.error.diagnostics }, null, 2)}</pre></details>}
       </section>
     </NodeToolbar>
-    <CanvasVideoMaterialPicker open={pickerOpen && !locked} onOpenChange={setPickerOpen} workspaceId={context.workspaceId} ownerKey={context.ownerKey} onSelect={addMaterial} selectedKeys={media.map((item) => `${item.assetKind}:${item.assetId}`)} />
     <Dialog open={viewerOpen && Boolean(data.previewUrl)} onOpenChange={setViewerOpen}><DialogContent className="nodrag nopan nowheel sm:max-w-4xl"><DialogTitle>{title}</DialogTitle><DialogDescription className="sr-only">播放生成的视频</DialogDescription>{data.previewUrl && <VideoPreview url={data.previewUrl} label={title} controls className={styles.viewerVideo} />}</DialogContent></Dialog>
   </TooltipProvider>;
 }

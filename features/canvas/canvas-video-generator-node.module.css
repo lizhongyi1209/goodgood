@@ -10,7 +10,6 @@
 .actions { max-width: 100%; margin-left: auto; }
 .actions > [data-slot="select-trigger"] { flex: 0 1 auto; }
 .actions > span { flex: none; }
-.materialAdd[data-slot="button"] { width: 32px; padding: 0; }
 .parameterPreview { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .parameterAudio { display: inline-flex; align-items: center; color: #18181b; }
 .typeSelect[data-slot="select-trigger"] { width: auto; }

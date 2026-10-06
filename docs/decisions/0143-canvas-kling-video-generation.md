@@ -4,6 +4,10 @@
 - Date: 2026-10-05
 - Related tasks: GG-382, GG-384
 
+## Remove the composer add shortcut · 2026-10-06 · GG-399
+
+Remove the left-hand plus button and its dedicated upload/asset-picker entry from the video composer. The parameter summary becomes the first toolbar control, without an empty slot. Remove unreachable composer-only handlers and controls; retain canvas connections and restoration, preview and removal of existing direct materials, as well as parameters, billing and generation. This replaces the GG-386 add-shortcut presentation only.
+
 ## Complete parameter summary · 2026-10-06 · GG-398
 
 The user restores a complete collapsed summary: applicable ratio, resolution, duration, count and audio state. This supersedes the earlier duration-only-in-settings presentation. Use a mute/speaker icon with a short tooltip and an accessible complete button name, including fixed mute for feature-video input. Motion duration reads as following the video rather than displaying an ignored draft duration. Read the effective draft without changing settings, pricing, requests or task locks.
