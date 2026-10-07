@@ -1,6 +1,6 @@
 # GoodGood 当前状态
 
-> [GG-416](tasks/GG-416-video-progress-zero.md) 视频进度源码完成：最近有效0/未知继续有界预计条，不展示估算百分比；每次最新有效正数即采用，允许低于旧值，新的0恢复估算、缺值保持最近有效报告。frame estimated只在前端，成功才100%；请求隔离、隐藏页/减少动态/卸载清理保持。分支fix/gg-416-video-progress-zero，基线1b325e9；ADR0143覆盖GG-409零值/最大值规则，七项纯回归来源更新但未运行。未构建/检查/测试/浏览器/HTTP/SQL/Provider/生成/扣费或服务操作，后台仍GG-414/1dc37ee及69迁移；不改Provider/API/计费/轮询/图片链路。创建0/退役0，无子agent/依赖副本；用户刷新5173手验。
+> [GG-416](tasks/GG-416-video-progress-zero.md) 视频进度源码 d7d31fb0890d924194588f00bede608b7b374b32 已提交：最近有效0/未知继续有界预计条，不展示估算百分比；每次最新有效正数即采用，允许低于旧值，新的0恢复估算、缺值保持最近有效报告。frame estimated只在前端，成功才100%；请求隔离、隐藏页/减少动态/卸载清理保持。分支fix/gg-416-video-progress-zero，基线1b325e9；ADR0143覆盖GG-409零值/最大值规则，七项纯回归来源更新但未运行。未构建/检查/测试/浏览器/HTTP/SQL/Provider/生成/扣费或服务操作，后台仍GG-414/1dc37ee及69迁移；不改Provider/API/计费/轮询/图片链路。创建0/退役0，无子agent/依赖副本；用户刷新5173手验。
 
 > [GG-414](tasks/GG-414-nano-banana-21-activation.md) Nano Banana 2.1 已本地启用：用户明确授权更新，GG-413 源码556ec9e随必要checkpoint构建1dc37ee3a7a9d0ee839bf9ca78e004409d96f500启用；Web38980/32131、唯一Worker37240/32142（隐藏启动器34140/37308）替换，Vite14404/5173保持。仅0069应用到127.0.0.1:54449/goodgood，历史68迁移匹配，总69；新目录enabled、仅special线路，1K/2K/4K均20积分每张，1–12数量36条报价及6处约束validated。原用户/画布/资产/任务/流水计数、余额聚合、旧目录及旧报价指纹保持。两角色readiness五项ok，前端代理同verified新revision、原画布HTTP200；运行事件确认两角色一致。启动前活动生成/预留/outbox/两队列均0；原云开发/Mailpit/视频价格配置保持。未发生成/扣费、fixture、lint/typecheck/测试/浏览器验收、GitHub/生产操作。创建0/退役0，无子agent/新依赖副本；用户刷新5173手验新默认及本人实际生成。
 
