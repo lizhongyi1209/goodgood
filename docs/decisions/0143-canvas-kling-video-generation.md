@@ -4,6 +4,19 @@
 - Date: 2026-10-05
 - Related tasks: GG-382, GG-384
 
+## Latest queried progress and zero waiting · 2026-10-07 · GG-416
+
+The user changes GG-409 feedback: adopt each latest valid queried number rather
+than the highest number ever observed. Zero remains a recorded real value but
+does not stop the bounded visual waiting estimate. With unknown or zero progress,
+show the estimated bar without a fake percentage; a positive report immediately
+controls the number and bar, including a lower report. A later valid zero resumes
+the estimate; a missing/invalid value retains the latest valid report. Preserve
+phase caps, successful-delivery-only 100%, per-attempt isolation and timer cleanup
+for hidden tabs, reduced motion and unmounts. The supplied response already uses
+the supported top-level numeric progress contract; do not add speculative parser
+fields or change Worker/API/database polling, billing, retries or image behavior.
+
 ## Draggable frame and a single action set · 2026-10-06 · GG-411
 
 The user reports that GG-410 prevents dragging the video picture and that native player tools duplicate existing view/download actions, including inside the viewer. Replace native controls on both generated results and the detail player with a shared compact manual bar for play/pause, seeking, time and mute. Only the bar consumes drag/pan/key events; the picture remains a canvas drag surface. Keep one existing node view action and one download action, with no nested viewer/fullscreen/download tools in the detail player. Reuse the playback lifecycle with an explicit manual-only option; default reference-hover behavior remains unchanged. Keep source refresh, metadata, pause/cleanup and generation/billing behavior.

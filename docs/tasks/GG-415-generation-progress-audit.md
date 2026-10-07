@@ -18,3 +18,5 @@
 - 仅源码阅读及BEGIN READ ONLY读取具名127.0.0.1:54449/goodgood最近任务的model/state/progress/时间，无prompt、素材URL、用户信息或凭据输出。外部聚合证据TEMP/goodgood-local-services/gg415-progress-audit.json。
 - 未构建/编译/lint/typecheck/测试/代码或diff检查、浏览器/HTTP/Provider请求、生成/扣费、SQL写入/迁移/服务/生产或GitHub操作；未修复或宣称上游不支持进度。
 - 下一步：根据用户确认的节点范围决定修复；视频需按实际回包补字段解析并处理零值等待展示，图片若需要真实进度则补Worker持久化/API契约/前端展示，保留未知进度与真实0的区别，不把估算包装为真实进度。
+
+- 后继GG-416：用户提供顶层progress:0视频示例并要求按最新查询数值展示、零值继续估算；前端对应源码已修改。此处原零值停止/最大值结论为历史，图片传递及视频字符串/嵌套解析未在GG-416改动。

@@ -3,7 +3,7 @@ import type { VideoGenerationState } from "../../shared/contracts/video-generati
 export type CanvasVideoProgressInput = { attemptKey: string; state: VideoGenerationState; progress: number | null };
 export type CanvasVideoProgressFrame = {
   attemptKey: string; state: VideoGenerationState;
-  value: number; reported: number | null; elapsedMs: number; startValue: number;
+  value: number; reported: number | null; estimated: boolean; elapsedMs: number; startValue: number;
 };
 export function advanceCanvasVideoGenerationProgress(
   previous: CanvasVideoProgressFrame | null,

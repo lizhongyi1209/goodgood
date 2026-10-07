@@ -18,20 +18,30 @@ test("unreported waiting progresses conservatively without declaring a real perc
     assert.ok(frame.value <= cap);
     assert.ok(frame.value < 100);
     assert.equal(frame.reported, null);
+    assert.equal(frame.estimated, true);
   }
 });
 
-test("reported progress takes authority, stays stable when omitted, and ignores older lower reports", () => {
+test("the latest valid report takes authority, including a lower value, and missing values retain it", () => {
   let frame = advance(null, status("running"));
   frame = advance(frame, status("running"), 600_000);
   assert.ok(frame.value > 80);
   frame = advance(frame, status("running", 36));
   assert.equal(frame.value, 36);
   assert.equal(frame.reported, 36);
+  assert.equal(frame.estimated, false);
   frame = advance(frame, status("running"), 600_000);
   assert.equal(frame.value, 36);
   frame = advance(frame, status("running", 24));
-  assert.equal(frame.value, 36);
+  assert.equal(frame.value, 24);
+  assert.equal(frame.reported, 24);
+  assert.equal(frame.estimated, false);
+  for (const missing of [null, undefined, Number.NaN, Number.POSITIVE_INFINITY, -1, 101, "50"]) {
+    frame = advance(frame, status("running", missing), 600_000);
+    assert.equal(frame.value, 24);
+    assert.equal(frame.reported, 24);
+    assert.equal(frame.estimated, false);
+  }
   frame = advance(frame, status("running", 72));
   assert.equal(frame.value, 72);
   frame = advance(frame, status("saving"));
@@ -39,15 +49,51 @@ test("reported progress takes authority, stays stable when omitted, and ignores 
   assert.equal(frame.reported, 72);
 });
 
-test("a reported zero is real and upstream 100 cannot imply delivery before success", () => {
+test("repeated zero reports and missing updates continue a bounded visual estimate", () => {
+  for (const [state, cap] of [["queued", 14], ["submitting", 22], ["running", 90], ["saving", 99]]) {
+    let frame = advance(null, status(state, 0));
+    const initial = frame.value;
+    frame = advance(frame, status(state, 0), 60_000);
+    assert.ok(frame.value > initial);
+    const withZero = frame.value;
+    frame = advance(frame, status(state), 60_000);
+    assert.ok(frame.value > withZero);
+    assert.ok(frame.value <= cap);
+    assert.equal(frame.reported, 0);
+    assert.equal(frame.estimated, true);
+    frame = advance(frame, status(state, 0), 86_400_000);
+    assert.ok(frame.value <= cap);
+    assert.ok(frame.value < 100);
+  }
+});
+
+test("zero to positive uses the reported number and a new zero resumes estimation", () => {
   let frame = advance(null, status("running", 0));
-  frame = advance(frame, status("running"), 600_000);
-  assert.equal(frame.value, 0);
+  frame = advance(frame, status("running", 0), 600_000);
+  assert.ok(frame.value > 80);
+  frame = advance(frame, status("running", 36));
+  assert.equal(frame.value, 36);
+  assert.equal(frame.reported, 36);
+  assert.equal(frame.estimated, false);
+  frame = advance(frame, status("running", 0));
   assert.equal(frame.reported, 0);
+  assert.equal(frame.estimated, true);
+  assert.equal(frame.elapsedMs, 0);
+  const resumed = frame.value;
+  frame = advance(frame, status("running", 0), 60_000);
+  assert.ok(frame.value > resumed);
+  assert.ok(frame.value <= 90);
+});
+
+test("upstream 100 cannot imply delivery before success", () => {
+  let frame = advance(null, status("running", 100));
+  assert.equal(frame.value, 99);
+  assert.equal(frame.estimated, false);
   frame = advance(frame, status("saving", 100));
   assert.equal(frame.value, 99);
   frame = advance(frame, status("succeeded"));
   assert.equal(frame.value, 100);
+  assert.equal(frame.estimated, false);
 });
 
 test("concurrent tasks, another page and retries start with their own progress and leave old frames intact", () => {
@@ -55,6 +101,7 @@ test("concurrent tasks, another page and retries start with their own progress a
   for (const attemptKey of ["owner:page:request-2", "owner:other-page:request-1", "other-owner:page:request-1", "owner:page:retry-1"]) {
     const frame = advance(previous, status("queued", null, attemptKey), 600_000);
     assert.equal(frame.reported, null);
+    assert.equal(frame.estimated, true);
     assert.ok(frame.value <= 14);
     assert.equal(frame.elapsedMs, 0);
     assert.equal(frame.attemptKey, attemptKey);
