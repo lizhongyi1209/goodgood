@@ -1,5 +1,7 @@
 # GoodGood 当前状态
 
+> [GG-412](tasks/GG-412-local-restart-after-reboot.md) 2026-10-07电脑重启恢复完成：原PG54449被Windows54358–54457保留范围覆盖，经管理员执行原方法重连同一容器网络，原卷/54449映射恢复、WinNAT Running。必要当前checkpoint构建verified e6fa39fa648c3991edb71a845b8b2f5e0a50cf63；Web33512/32131、唯一Worker37036/32142、Vite14404/5173（入口35068；隐藏启动器40168/40720/14832）恢复并跨命令保持。Web与Worker readiness五项ok，5173版本代理同revision/verified，首页及原画布HTTP200。最新GG-411及既有源码启用，原68迁移、云开发/Mailpit与外部视频临时价格保持；启动前图片/文本活动、未派发outbox、两队列均0，原视频1成功/0活动。无迁移/重置/fixture、主动生成/扣费或生产操作，仅必要启动构建/运行核对，无lint/typecheck/测试/浏览器验收。创建0/退役0，无子agent/依赖副本或自启；用户打开5173手验。
+
 > [GG-411](tasks/GG-411-video-player-controls.md) 视频画面拖动及唯一操作入口源码f4ebfc71f1efbcfab0f59ba275cab0cc4bdbc94a已提交：画布/详情共用轻量手动播放器，画面不再nodrag或拦Pointer，只有底部播放/暂停/进度/时间/静音控制条及原操作按钮隔离拖拽。关闭原生controls和画中画/远程播放，节点保留唯一查看/下载，详情没有嵌套查看或额外下载。复用播放器manualOnly模式，hover无影响、暂停后可拖时间轴、隐藏页/大图/换源和卸载停止，参考hover默认保持。分支codex/gg-411-video-player-controls，基线d4e2c64；三项生命周期回归来源仅写未运行，未自动构建/检查/测试/浏览器或HTTP、SQL/Provider/生成/服务操作。原私有源刷新/尺寸/下载/生成进度/计费保持，GG-391运行receipt及GG-404设计快照保持；创建0/退役0，无子agent/缓存。用户刷新5173手验画面拖节点、控制条拖进度、单一入口及生命周期。
 
 > [GG-410](tasks/GG-410-video-result-playback.md) 生成视频手动播放源码276a5cc194a7a8fe29736b2e791c4fd660eb792f已提交：结果默认暂停，鼠标移入/移出不再播放或暂停，开放原生播放/暂停/进度拖动/音量控制，不再循环或叠加中央播放按钮。播放器隔离画布拖拽与按键，标题仍可拖动节点；隐藏页/大图打开/换源或scope及卸载暂停，不自动恢复。参考素材hover预览及资产页保持。分支codex/gg-410-video-result-playback，基线f3cbb29；低影响展示未新增测试，未自动构建/检查/测试/浏览器或HTTP、Provider/数据/服务操作。GG-409生成进度、后台及计费保持；设计快照仍GG-404，创建0/退役0，无子agent/缓存。用户刷新5173手验播放/暂停/拖动进度、离开保持播放和标题拖动。
