@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-07
-- Current phase: GG-417 Seedance 官方/O1Key 参数对照完成；仅调研，未开发；GG-416 前端及 GG-414 后台保持。
-- Current objective: 向用户交付 Doubao MAX/Dreamina HC 的参数差异与封装不确定项；后续按明确范围接入持久画布视频链路。
+- Current phase: GG-417 Seedance 官方参数同步已获用户确认，接入方案已记录；尚未实施，既有运行保持。
+- Current objective: 按官方能力与双线路映射向用户交付 Seedance 接入规划；后续明确范围后接入持久画布、报价与恢复链路。
 - Previous objective: GG-383上传复用源码交付；GG-382设计/官方对照已获用户接受，按其O1Key附件实现，不再等待设计反馈。
 
 ## Current checkpoint
+
+- 当前调研：[GG-417](tasks/GG-417-seedance-api-research.md) Seedance 调研与方案完成；用户确认HC/MAX完全同步官方参数，旧封装文档陈旧，替代只按旧范围限制的建议。计划复用视频chat，4个系列×Doubao/Dreamina共8个映射；按官方能力做素材/模式/参数联动，接持久任务、插槽重试、资产和独立积分报价。2.5开放1080p、30/10/10、纯音频与-1，特殊比例/编辑时长准确处理；封装端点/别名/回执仍独立适配。方案未实施、无应用/价格/accepted UI默认改动；应用仍GG-416 d7d31fb，后台GG-414/1dc37ee及69迁移。仅公开官方文档GET/检索和源码阅读，无构建/检查/测试/浏览器、生成/扣费、数据/服务/GitHub/生产操作；创建0/退役0、无子agent/缓存副本。下一步用户反馈方案后开发源码，正式调用前配置Seedance价格。
 
 - 当前功能：[GG-416](tasks/GG-416-video-progress-zero.md) 视频进度源码 d7d31fb0890d924194588f00bede608b7b374b32 已提交：最近有效0/未知继续有界预计条，不展示估算百分比；每次最新有效正数即采用，允许低于旧值，新的0恢复估算、缺值保持最近有效报告。frame estimated只在前端，成功才100%；请求隔离、隐藏页/减少动态/卸载清理保持。分支fix/gg-416-video-progress-zero，基线1b325e9；ADR0143覆盖GG-409零值/最大值规则，七项纯回归来源更新但未运行。未构建/检查/测试/浏览器/HTTP/SQL/Provider/生成/扣费或服务操作，后台仍GG-414/1dc37ee及69迁移；不改Provider/API/计费/轮询/图片链路。创建0/退役0，无子agent/依赖副本；用户刷新5173手验。
 
