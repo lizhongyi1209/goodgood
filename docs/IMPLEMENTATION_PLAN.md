@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-07
-- Current phase: GG-414 默认图片模型已本地启用，必要构建/0069和Web/唯一Worker更新完成；用户手验。
-- Current objective: 用户刷新5173测试Nano Banana 2.1；后续继续源码功能开发，不自动检查或操作生产。
+- Current phase: GG-415生成进度链路分析完成，应用未修改；GG-414本地新模型运行保持。
+- Current objective: 按用户确认的节点范围处理进度问题；继续源码功能开发，运行更新/真实生成及验收另行委托。
 - Previous objective: GG-383上传复用源码交付；GG-382设计/官方对照已获用户接受，按其O1Key附件实现，不再等待设计反馈。
 
 ## Current checkpoint
+
+- 当前检查：[GG-415](tasks/GG-415-generation-progress-audit.md) 进度源码检查完成，未改应用：图片adapter解析顶层progress，但router只通知refining，Worker/API/GenerationJob未向前端转交真实进度；视频只识别顶层number，字符串/嵌套不识别，0被记为真实值后关闭估算且后续缺值保留旧0。最近O3任务成功而最终progress为null，仅归一化结果，不能断言上游是否给进度/字段格式或还原中间回包。已询问节点范围；仅源码及具名本地READ ONLY近期任务元信息，无HTTP/Provider/新生成、构建/检查/测试/浏览器、写数据/迁移/服务/生产操作。应用源码仍556ec9e、运行仍GG-414/1dc37ee，创建0/退役0、无子agent。下一步按用户确认的节点范围修复，先核对实际字段，保留真实0/未知/估算区别。
 
 - 当前启用：[GG-414](tasks/GG-414-nano-banana-21-activation.md) Nano Banana 2.1 已本地启用：用户明确授权更新，GG-413 源码556ec9e随必要checkpoint构建1dc37ee3a7a9d0ee839bf9ca78e004409d96f500启用；Web38980/32131、唯一Worker37240/32142（隐藏启动器34140/37308）替换，Vite14404/5173保持。仅0069应用到127.0.0.1:54449/goodgood，历史68迁移匹配，总69；新目录enabled、仅special线路，1K/2K/4K均20积分每张，1–12数量36条报价及6处约束validated。原用户/画布/资产/任务/流水计数、余额聚合、旧目录及旧报价指纹保持。两角色readiness五项ok，前端代理同verified新revision、原画布HTTP200；运行事件确认两角色一致。启动前活动生成/预留/outbox/两队列均0；原云开发/Mailpit/视频价格配置保持。未发生成/扣费、fixture、lint/typecheck/测试/浏览器验收、GitHub/生产操作。创建0/退役0，无子agent/新依赖副本；用户刷新5173手验新默认及本人实际生成。
 
