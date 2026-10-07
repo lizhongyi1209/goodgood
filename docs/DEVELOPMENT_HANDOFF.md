@@ -1,5 +1,7 @@
 # 当前开发版本与跨窗口交接
 
+> [GG-417](tasks/GG-417-seedance-api-research.md) Seedance 调研完成，分支 chore/gg-417-seedance-api-research，基线干净2c6099b/GG-416源码祖先已核验。公开O1Key HTML、火山方舟及BytePlus官方文档确认8个MAX/HC模型；主体/角色相近，HC2.5清晰度比官方少1080p、MAX多项清晰度未列，2.5素材上限/纯音频/-1及编辑adaptive特例未充分描述。4K为官方2.0支持；封装任务状态/进度/结果需独立映射。旧creation临时适配器已有双线路，持久画布仍Kling，未实施/改变accepted决定。仅公开文档GET及源码阅读，无应用HTTP/付费Provider/数据/服务/GitHub/生产操作、构建/检查/测试/浏览器；应用仍d7d31fb，后台GG-414/1dc37ee及69迁移。创建0/退役0，无子agent/缓存副本；下一步用户获知差异后确定开发范围。
+
 > [GG-416](tasks/GG-416-video-progress-zero.md) 视频进度源码 d7d31fb0890d924194588f00bede608b7b374b32 已提交：最近有效0/未知继续有界预计条，不展示估算百分比；每次最新有效正数即采用，允许低于旧值，新的0恢复估算、缺值保持最近有效报告。frame estimated只在前端，成功才100%；请求隔离、隐藏页/减少动态/卸载清理保持。分支fix/gg-416-video-progress-zero，基线1b325e9；ADR0143覆盖GG-409零值/最大值规则，七项纯回归来源更新但未运行。未构建/检查/测试/浏览器/HTTP/SQL/Provider/生成/扣费或服务操作，后台仍GG-414/1dc37ee及69迁移；不改Provider/API/计费/轮询/图片链路。创建0/退役0，无子agent/依赖副本；用户刷新5173手验。
 
 > [GG-415](tasks/GG-415-generation-progress-audit.md) 进度源码检查完成，未改应用：图片adapter解析顶层progress，但router只通知refining，Worker/API/GenerationJob未向前端转交真实进度；视频只识别顶层number，字符串/嵌套不识别，0被记为真实值后关闭估算且后续缺值保留旧0。最近O3任务成功而最终progress为null，仅归一化结果，不能断言上游是否给进度/字段格式或还原中间回包。已询问节点范围；仅源码及具名本地READ ONLY近期任务元信息，无HTTP/Provider/新生成、构建/检查/测试/浏览器、写数据/迁移/服务/生产操作。应用源码仍556ec9e、运行仍GG-414/1dc37ee，创建0/退役0、无子agent。下一步按用户确认的节点范围修复，先核对实际字段，保留真实0/未知/估算区别。
