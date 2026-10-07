@@ -1,6 +1,6 @@
 # GG-413 · Nano Banana 2.1 默认图片模型
 
-- 日期：2026-10-07；状态：源码完成，未编译/自动验收/运行启用。
+- 日期：2026-10-07；状态：源码完成；后继GG-414已本地启用，真实生成与浏览器验收待用户。
 - 用户决定：新增 Nano Banana 2.1，并设为默认图片模型；实际中转模型 ID 为 `gemini-nano-banana-2.1-sp`。
 - 基线：GG-116 干净 af1f755，包含 GG-411 源码 f4ebfc71；分支 feature/gg-413-nano-banana-21。根 agent 负责，创建/退役 worktree 均 0，无子 agent。
 - 决策：[ADR0108 GG-413](../decisions/0108-standalone-canvas-image-generation.md) 更新原默认模型决定；产品 ID 独立为 nano-banana-2.1，旧 Nano Banana 2/Pro 及已保存模型选择不替换。
@@ -18,3 +18,5 @@
 - 根单窗口开发，创建 0/退役 0，无子 agent、依赖/构建缓存副本或 GitHub 推送。
 
 - 源码提交：556ec9e89385f007fe3dd1d037774cc4100f0ed6；交付文档后续提交不改变 GG-412 实际运行身份。下一源码任务从届时干净 HEAD 核验本提交祖先后隔离。
+
+- 2026-10-07后继GG-414：用户授权更新，0069已应用，本地Web/唯一Worker运行新构建1dc37ee；新目录及36条继承报价启用，默认2.1。既有源码交付记录为历史，实际启用证据见GG-414。

@@ -2,7 +2,7 @@
 
 ## GG-413 · 默认图片模型
 
-新增 Nano Banana 2.1，作为新图片/批量节点及空创作的默认模型，复用 Nano 图标。产品 ID nano-banana-2.1，实际调用 gemini-nano-banana-2.1-sp，仅 special 线路。显式恢复的模型、历史任务和旧模型入口保持；首版独立价格初始化继承 Nano Banana 2 当前 special 单价。按现有 Banana 请求协议兼容接入，能力尚未上游实测。见 ADR0108；0069 和后台更新尚未启用。
+新增 Nano Banana 2.1，作为新图片/批量节点及空创作的默认模型，复用 Nano 图标。产品 ID nano-banana-2.1，实际调用 gemini-nano-banana-2.1-sp，仅 special 线路。显式恢复的模型、历史任务和旧模型入口保持；首版独立价格初始化继承 Nano Banana 2 当前 special 单价。按现有 Banana 请求协议兼容接入，能力尚未上游实测。见 ADR0108；后继 GG-414 已应用本地 0069 并启用新版 Web/唯一 Worker，实际生图由用户手验。
 
 ## GG-407 · 模型选择不受素材限制
 

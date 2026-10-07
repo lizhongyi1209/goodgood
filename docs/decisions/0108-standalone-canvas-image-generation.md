@@ -12,7 +12,9 @@ choice, not a claim of verified upstream support. Only the special line is ready
 Initialize the separate managed model and 1–12 output quotes from the current
 Banana 2 special single-output prices; missing prices fail closed. Existing
 catalog, prices, balances and user records are preserved. Migration 0069 and
-backend activation remain pending in this source-only task.
+backend activation remained pending in the source-only task; GG-414 applied
+0069 and activated the verified local Web/Worker on 2026-10-07. Real generation
+acceptance remains with the user.
 
 - Status: Accepted for GG-125 local implementation
 - Date: 2026-09-26

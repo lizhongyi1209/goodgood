@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-07
-- Current phase: GG-413 默认图片模型源码完成，0069/后台激活待用户委托；GG-412 本地运行保持。
-- Current objective: 用户另行委托新模型必要激活后手验；后续继续源码功能开发，不自动检查或操作生产。
+- Current phase: GG-414 默认图片模型已本地启用，必要构建/0069和Web/唯一Worker更新完成；用户手验。
+- Current objective: 用户刷新5173测试Nano Banana 2.1；后续继续源码功能开发，不自动检查或操作生产。
 - Previous objective: GG-383上传复用源码交付；GG-382设计/官方对照已获用户接受，按其O1Key附件实现，不再等待设计反馈。
 
 ## Current checkpoint
+
+- 当前启用：[GG-414](tasks/GG-414-nano-banana-21-activation.md) Nano Banana 2.1 已本地启用：用户明确授权更新，GG-413 源码556ec9e随必要checkpoint构建1dc37ee3a7a9d0ee839bf9ca78e004409d96f500启用；Web38980/32131、唯一Worker37240/32142（隐藏启动器34140/37308）替换，Vite14404/5173保持。仅0069应用到127.0.0.1:54449/goodgood，历史68迁移匹配，总69；新目录enabled、仅special线路，1K/2K/4K均20积分每张，1–12数量36条报价及6处约束validated。原用户/画布/资产/任务/流水计数、余额聚合、旧目录及旧报价指纹保持。两角色readiness五项ok，前端代理同verified新revision、原画布HTTP200；运行事件确认两角色一致。启动前活动生成/预留/outbox/两队列均0；原云开发/Mailpit/视频价格配置保持。未发生成/扣费、fixture、lint/typecheck/测试/浏览器验收、GitHub/生产操作。创建0/退役0，无子agent/新依赖副本；用户刷新5173手验新默认及本人实际生成。
 
 - 当前功能：[GG-413](tasks/GG-413-nano-banana-21.md) Nano Banana 2.1 默认图片模型源码 556ec9e89385f007fe3dd1d037774cc4100f0ed6 已提交：产品 nano-banana-2.1/唯一 special 调用 gemini-nano-banana-2.1-sp，复用 Nano 图标，画布/批量及空创作默认同步，显式旧选择与冻结任务保持。补齐能力/选项/目录/报价模板、项目/草稿/生成持久化；新增 0069 从原 2 当前 special cent 单图价初始化独立目录及 1–12 数量报价，完整三档才启用，原配置/价格/用户记录不变，schema 约束同步。分支 feature/gg-413-nano-banana-21，基线 af1f755；四项合成回归仅写未运行。未构建/检查/测试/浏览器或 HTTP/SQL/Provider/生成/扣费、迁移应用/服务/发布操作。源码完成、未运行启用，GG-412 e6fa39f 及已应用 68 迁移保持；下一步用户另行委托 0069 和必要 Web/Worker 更新后手验。创建 0/退役 0，无子 agent 或缓存副本，不更新 GitHub 设计快照。
 
