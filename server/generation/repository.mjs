@@ -3,7 +3,7 @@ import { sanitizeFailureDiagnostic } from "./failure-diagnostics.mjs";
 import { isSeedreamModel, seedreamQuoteCreditAmount } from "../../shared/contracts/seedream-pricing.mjs";
 import { privateImageUrls } from "../../shared/private-image-urls.mjs";
 import { createHash, randomUUID } from "node:crypto";
-import { supportsImageLines } from "../../shared/contracts/banana-lines.mjs";
+import { isBananaFlashModel, supportsImageLines } from "../../shared/contracts/banana-lines.mjs";
 import { requireEnabledImageModel } from "../admin/models.mjs";
 import { promptContextForRetry } from "../../shared/contracts/prompt-batch.mjs";
 import {
@@ -129,7 +129,7 @@ export function generationInputFromRow(row, referenceUrls = new Map()) {
     quality: row.quality ?? "auto",
     thinkingLevel:
       row.thinking_level ??
-      (row.model_id === "nano-banana-2" ? "high" : "low"),
+      (isBananaFlashModel(row.model_id) ? "high" : "low"),
   };
 }
 
@@ -157,7 +157,7 @@ export function persistedGenerationInputFromRow(row) {
     quality: row.quality ?? "auto",
     thinkingLevel:
       row.thinking_level ??
-      (row.model_id === "nano-banana-2" ? "high" : "low"),
+      (isBananaFlashModel(row.model_id) ? "high" : "low"),
   };
 }
 

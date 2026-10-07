@@ -55,7 +55,7 @@ import {
   resolveCanvasGenerationCountForModel,
 } from "@/features/creation/generation-options";
 import { createGenerationInputSnapshot } from "@/features/creation/generation-snapshot";
-import { GENERATION_MODEL_CATALOG, getGenerationModel } from "@/features/models/catalog";
+import { DEFAULT_GENERATION_MODEL_ID, GENERATION_MODEL_CATALOG, getGenerationModel } from "@/features/models/catalog";
 import { uploadReferenceFiles } from "@/features/references/http-reference-upload";
 import { markReferenceFileAsCopy, uniqueReadyReferenceItems } from "@/features/references/reference-file-identity.mjs";
 import { listReferenceMaterials } from "@/features/references/http-reference-library";
@@ -226,7 +226,7 @@ const DEFAULT_GENERATOR_DRAFT: CanvasGeneratorDraft = {
 };
 
 function defaultCanvasResolutionForModel(modelId: GenerationModelId): GenerationResolution {
-  return modelId === "nano-banana-2" || modelId === "nano-banana-pro" ? "2K" : "1K";
+  return modelId === "nano-banana-2.1" || modelId === "nano-banana-2" || modelId === "nano-banana-pro" ? "2K" : "1K";
 }
 
 type LinkedCanvasReference = {
@@ -258,6 +258,7 @@ function redundantGeneratorBatchNodeIds(nodes: readonly CanvasNode[]) {
 }
 
 const CANVAS_MODEL_ORDER: readonly GenerationModelId[] = [
+  DEFAULT_GENERATION_MODEL_ID,
   "nano-banana-pro",
   "nano-banana-2",
   "gpt-image-2.5-sunburst",
@@ -774,7 +775,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
   const model = models.find((item) => (item.catalogId ?? item.id) === modelKey) ?? models[0];
   const selectedRatio = model ? resolveCanvasGenerationAspectRatioForModel(model.id, ratio) : ratio;
   const selectedCount = model ? resolveCanvasGenerationCountForModel(model.id, count) : count;
-  const gptOptions = resolveGptImageOptionsForModel(model?.id ?? "nano-banana-2", { quality, background, outputFormat });
+  const gptOptions = resolveGptImageOptionsForModel(model?.id ?? DEFAULT_GENERATION_MODEL_ID, { quality, background, outputFormat });
   const gptModel = Boolean(model && isGptImageModelId(model.id));
   const seedreamModel = model?.id === "seedream-5.0-pro";
   const resolutionOptions = model ? getCanvasGenerationResolutionOptions(model.id) : [];

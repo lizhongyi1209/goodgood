@@ -1,5 +1,9 @@
 # Architecture
 
+## GG-413 · Nano Banana 2.1 路由边界
+
+前端默认与模型目录使用 nano-banana-2.1，后台唯一 special 路由映射 gemini-nano-banana-2.1-sp，保留 Nano Banana 2 原路由及冻结任务。共享 Flash Banana 判断统一默认 high 与原请求协议；复用参考 URL、单项任务和原不确定受理规则，不新增上传/自动回退或虚构 quality/dedicated 路由。能力按旧 2 兼容包络配置，未真实验证。新目录/报价需 0069 和新版 Web/Worker，当前 GG-412 运行身份保持。
+
 ## GG-384 · 独立视频边界
 
 `shared/contracts/video-generation.mjs/d.mts`分离模型/类型/用途/UI与O1Key输入；`server/video-generation`独立负责严格输入、授权原始素材/MP4元数据、积分报价、持久任务、附件Omni/Motion适配与有界私有结果入库。Web和Next API统一`/api/video-generation`（capabilities/quote/提交/读取/原输入retry/retry-save/download），浏览器不接触模型凭据或持久化上游URL。

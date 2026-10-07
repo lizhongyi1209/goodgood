@@ -16,6 +16,7 @@ export function currentCreditAmount(value, unit) {
 
 export const MODEL_TEMPLATES = Object.freeze([
   ...[
+    "nano-banana-2.1",
     "nano-banana-2",
     "nano-banana-pro",
     "gpt-image-2.5-sunburst",

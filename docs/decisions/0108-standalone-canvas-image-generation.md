@@ -1,5 +1,19 @@
 # ADR 0108: Standalone canvas image generation
 
+## GG-413 addendum · Nano Banana 2.1 default (2026-10-07)
+
+Accepted user decision: add Nano Banana 2.1 (`nano-banana-2.1`) as the first and
+default image model for new canvas generators and empty creation drafts. Reuse
+the existing Nano icon; keep explicit saved choices and frozen jobs unchanged.
+The backend route is exclusively `gemini-nano-banana-2.1-sp`. Do not invent
+quality/dedicated route IDs or replace historical Nano Banana 2 routes. Reuse
+the Banana 2 request protocol/capability envelope as an integration compatibility
+choice, not a claim of verified upstream support. Only the special line is ready.
+Initialize the separate managed model and 1–12 output quotes from the current
+Banana 2 special single-output prices; missing prices fail closed. Existing
+catalog, prices, balances and user records are preserved. Migration 0069 and
+backend activation remain pending in this source-only task.
+
 - Status: Accepted for GG-125 local implementation
 - Date: 2026-09-26
 - Task: GG-125

@@ -11,6 +11,7 @@ import {
 } from "./policy.mjs";
 
 const PRODUCT_MODELS = new Set([
+  "nano-banana-2.1",
   "nano-banana-2",
   "nano-banana-pro",
   "gpt-image-2.5-sunburst",

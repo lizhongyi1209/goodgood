@@ -1,5 +1,9 @@
 # GG-063 quality pricing
 
+## GG-413 · 0069 默认模型目录（仅源码，未应用）
+
+0069 新增独立 nano-banana-2.1 目录和 special 1–12 数量报价，来自 canonical nano-banana-2 当前生效、cent 单位的 special 单图价；三档价完整才启用，缺价禁用不猜价。已有同 ID 目录及报价不覆盖，旧模型/价格/任务/余额/用户素材不更新。批次/项目/草稿的 Banana options 放行 2.1；image_line 仅允许 null/special，schema 同步。model_id/count 格式沿 0066/既有规则，无新字段或文档版本，历史迁移不改。
+
 ## GG-389 · 视频数量草稿
 
 videoGeneration可选count仅允许数字1/2/4，缺失视作1；每条仍用原requestId/lastInput/asset，未改变任务表或Worker。可选submissionError保留最多1000字符的确定拒绝说明，必须伴随匹配requestId的lastInput；复制时清理这三项、保留count。生成API禁止count/submissionError，单视频冻结输入与单位报价保持。新版Web校验启用前，能力保护禁止提交数量字段。

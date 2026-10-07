@@ -82,6 +82,7 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
 - Parameter groups read as aspect ratio, model, then output; aspect ratio starts
   at the left on wide screens and remains first through responsive reflow.
 - Models and copy are fixed until a product decision changes them:
+  `Nano Banana 2.1` is the default for new image creation (ADR 0108 / GG-413);
   `Nano Banana 2 — 快速，批量`; `Nano Banana Pro — 高质量资产，视觉优先`;
   `GPT IMAGE 2.5 sunburst`; `GPT IMAGE 2`; `GPT IMAGE 2.5 flare`.
 - Creation exposes attached `图片 / 视频` modes below the prompt. Configured local development

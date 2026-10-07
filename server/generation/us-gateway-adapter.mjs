@@ -2,7 +2,7 @@ import { gptPricingQualities } from "../../shared/contracts/gpt-quality-pricing.
 import { NormalizedProviderError } from "./provider.mjs";
 import { providerErrorFields, requestFailureContext, sanitizeFailureDiagnostic } from "./failure-diagnostics.mjs";
 import { PROVIDER_REFERENCE_LIMITS } from "./reference-inputs.mjs";
-import { BANANA_LINES, isBananaModel, isValidImageLine } from "../../shared/contracts/banana-lines.mjs";
+import { BANANA_LINES, isBananaFlashModel, isBananaModel, isValidImageLine } from "../../shared/contracts/banana-lines.mjs";
 import {
   DEFAULT_GPT_IMAGE_OUTPUT_FORMAT,
   SUPPORTED_GENERATION_MODEL_IDS,
@@ -88,6 +88,9 @@ function bananaRoute(productModelId, imageLine, providerModel) {
   });
 }
 const BANANA_PROVIDER_ROUTES = Object.freeze({
+  "nano-banana-2.1": Object.freeze({
+    special: bananaRoute("nano-banana-2.1", "special", "gemini-nano-banana-2.1-sp"),
+  }),
   "nano-banana-2": Object.freeze({
     special: US_GATEWAY_NANO_BANANA_2_ROUTE,
     quality: bananaRoute("nano-banana-2", "quality", "gemini-3.1-flash-image-c-sd"),
@@ -494,7 +497,7 @@ function normalizeTemporaryUpload(payload, expectedMimeType, nowSeconds, allowIn
 function validateJob(job, route) {
   const thinkingLevel =
     job?.thinking_level ??
-    (route.productModelId === "nano-banana-2" ? "high" : "low");
+    (isBananaFlashModel(route.productModelId) ? "high" : "low");
   const googleSearch = job?.google_search ?? false;
   const quality = job?.quality ?? "auto";
   const background = job?.background ?? "auto";
@@ -522,7 +525,7 @@ function validateJob(job, route) {
     !SUPPORTED_GPT_IMAGE_BACKGROUNDS.includes(background) ||
     !SUPPORTED_GPT_IMAGE_OUTPUT_FORMATS.includes(outputFormat) ||
     (background === "transparent" && outputFormat === "jpeg") ||
-    (route.productModelId !== "nano-banana-2" &&
+    (!isBananaFlashModel(route.productModelId) &&
       (thinkingLevel !== "low" || googleSearch)) ||
     (!isGptImageModelId(route.productModelId) &&
       (quality !== "auto" || background !== "auto" || outputFormat !== "png"))

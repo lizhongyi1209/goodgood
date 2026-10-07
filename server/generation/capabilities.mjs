@@ -1,5 +1,5 @@
 import { gptPricingQualities } from "../../shared/contracts/gpt-quality-pricing.mjs";
-import { isValidImageLine } from "../../shared/contracts/banana-lines.mjs";
+import { isBananaFlashModel, isValidImageLine } from "../../shared/contracts/banana-lines.mjs";
 import {
   SEEDREAM_MODEL_ID, SEEDREAM_PROVIDER_MODEL_ID, SEEDREAM_RESOLUTIONS, SEEDREAM_PIXEL_SIZES,
   SEEDREAM_MAX_OUTPUTS, SEEDREAM_ASPECT_RATIOS as SEEDREAM_FIXED_ASPECT_RATIOS,
@@ -101,6 +101,11 @@ const GPT_IMAGE_CAPABILITY = Object.freeze({
 });
 
 export const GENERATION_MODEL_CAPABILITIES = Object.freeze({
+  "nano-banana-2.1": Object.freeze({
+    aspectRatios: NANO_BANANA_2_ASPECT_RATIOS,
+    outputCounts: SUPPORTED_NANO_BANANA_2_OUTPUT_COUNTS,
+    resolutions: SUPPORTED_GENERATION_RESOLUTIONS,
+  }),
   "nano-banana-2": Object.freeze({
     aspectRatios: NANO_BANANA_2_ASPECT_RATIOS,
     outputCounts: SUPPORTED_NANO_BANANA_2_OUTPUT_COUNTS,
@@ -161,7 +166,7 @@ export function normalizeGenerationModelOptions({
   thinkingLevel,
 }) {
   const normalizedThinkingLevel =
-    thinkingLevel ?? (modelId === "nano-banana-2" ? "high" : "low");
+    thinkingLevel ?? (isBananaFlashModel(modelId) ? "high" : "low");
   const normalizedGoogleSearch = googleSearch ?? false;
   const normalizedQuality = quality ?? "auto";
   const normalizedBackground = background ?? "auto";
@@ -179,7 +184,7 @@ export function normalizeGenerationModelOptions({
     return null;
   }
   if (
-    modelId !== "nano-banana-2" &&
+    !isBananaFlashModel(modelId) &&
     (normalizedThinkingLevel !== "low" || normalizedGoogleSearch)
   ) {
     return null;

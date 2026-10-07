@@ -4,8 +4,11 @@ export const BANANA_LINES = Object.freeze([
   Object.freeze({ id: "dedicated", name: "专线" }),
 ]);
 export const DEFAULT_BANANA_LINE = "special";
+export function isBananaFlashModel(modelId) {
+  return modelId === "nano-banana-2" || modelId === "nano-banana-2.1";
+}
 export function isBananaModel(modelId) {
-  return modelId === "nano-banana-2" || modelId === "nano-banana-pro";
+  return isBananaFlashModel(modelId) || modelId === "nano-banana-pro";
 }
 export function supportsImageLines(modelId) {
   return isBananaModel(modelId) || ["gpt-image-2", "gpt-image-2.5-sunburst", "gpt-image-2.5-flare"].includes(modelId);
@@ -13,12 +16,14 @@ export function supportsImageLines(modelId) {
 export function isValidImageLine(modelId, line) {
   return (
     line === undefined ||
-    (supportsImageLines(modelId) && BANANA_LINES.some((item) => item.id === line))
+    (supportsImageLines(modelId) && BANANA_LINES.some((item) => item.id === line) &&
+      (modelId !== "nano-banana-2.1" || line === "special"))
   );
 }
 export function isBananaLineReady(modelId, line = DEFAULT_BANANA_LINE) {
   return (
-    supportsImageLines(modelId) && BANANA_LINES.some((item) => item.id === line)
+    supportsImageLines(modelId) && BANANA_LINES.some((item) => item.id === line) &&
+      isValidImageLine(modelId, line)
   );
 }
 export function imageLineName(line = DEFAULT_BANANA_LINE) {

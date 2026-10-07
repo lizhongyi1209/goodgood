@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import {ProfileAvatar,usePersonalProfile} from "@/features/profile/personal-profile";
 import {DEFAULT_PROFILE_NAME} from "@/shared/profile-policy.mjs";
 import { CreationComposer } from "@/features/creation/creation-composer";
-import { supportsImageLines, imageLineName } from "@/shared/contracts/banana-lines.mjs";
+import { isBananaFlashModel, supportsImageLines, imageLineName } from "@/shared/contracts/banana-lines.mjs";
 import type { BananaLine } from "@/shared/contracts/generation";
 import { VideoCreationComposer } from "@/features/creation/video-creation-composer";
 import { MixedMediaStylePreview } from "@/features/creation/mixed-media-style-preview";
@@ -1629,7 +1629,7 @@ export default function Home({
   };
 
   const handleGoogleSearchChange = (enabled: boolean) => {
-    if (selectedModel !== "nano-banana-2") return;
+    if (!isBananaFlashModel(selectedModel)) return;
     composerEditRevisionRef.current += 1;
     setGoogleSearch(enabled);
   };
@@ -3731,7 +3731,7 @@ export default function Home({
                     <div><dt>批次</dt><dd>{activeDetail.batch.count} 张</dd></div>
                     <div><dt>参考图</dt><dd>{activeDetail.batch.referenceCount ? `${activeDetail.batch.referenceCount} 张` : "无"}</dd></div>
                     {supportsImageLines(activeDetail.batch.modelId) && (activeDetail.batch.imageLine || activeDetail.batch.modelId.startsWith("nano-banana-")) && <div><dt>线路</dt><dd>{imageLineName(activeDetail.batch.imageLine)}</dd></div>}
-                    {activeDetail.batch.modelId === "nano-banana-2" && (
+                    {isBananaFlashModel(activeDetail.batch.modelId) && (
                       <div><dt>谷歌搜索</dt><dd>{activeDetail.batch.googleSearch ? "开启" : "关闭"}</dd></div>
                     )}
                     {isGptImageModelId(activeDetail.batch.modelId) && (

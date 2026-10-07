@@ -3,6 +3,7 @@ import { normalizeGenerationModelOptions } from "../generation/capabilities.mjs"
 import { DraftRequestError } from "./errors.mjs";
 
 const MODEL_IDS = new Set([
+  "nano-banana-2.1",
   "nano-banana-2",
   "nano-banana-pro",
   "gpt-image-2.5-sunburst",

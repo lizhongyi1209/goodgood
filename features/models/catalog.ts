@@ -10,15 +10,22 @@ export type GenerationModelPresentation = Readonly<{
   recommended: boolean;
 }>;
 
-export const DEFAULT_GENERATION_MODEL_ID: GenerationModelId = "nano-banana-2";
+export const DEFAULT_GENERATION_MODEL_ID: GenerationModelId = "nano-banana-2.1";
 
 export const GENERATION_MODEL_CATALOG = [
+  {
+    id: "nano-banana-2.1",
+    name: "Nano Banana 2.1",
+    description: "",
+    icon: "nano",
+    recommended: true,
+  },
   {
     id: "nano-banana-2",
     name: "Nano Banana 2",
     description: "快速，批量",
     icon: "nano",
-    recommended: true,
+    recommended: false,
   },
   {
     id: "nano-banana-pro",

@@ -13,6 +13,7 @@ import { Slider } from "@/components/ui/slider";
 import type { ReferenceMaterial } from "@/features/references/http-reference-library";
 import { ReferenceQuickEditor } from "@/features/references/reference-quick-editor";
 import { CreationModeSwitch } from "@/features/creation/creation-mode-switch";
+import { isBananaFlashModel } from "@/shared/contracts/banana-lines.mjs";
 import { CreationPromptTextarea } from "@/features/creation/creation-prompt-textarea";
 import { ParameterChoiceGroup } from "@/features/creation/parameter-choice-group";
 import { useParameterDrawerViewport } from "@/features/creation/use-parameter-drawer-viewport";
@@ -536,7 +537,7 @@ export function CreationComposer({
                 </div>
               </div>
               {supportsImageLines(modelId) && <BananaLineSelector modelId={modelId} model={managedModel} resolution={resolution} value={imageLine} onChange={onImageLineChange} />}
-              {modelId === "nano-banana-2" && (
+              {isBananaFlashModel(modelId) && (
                 <div className="banana-model-options">
                   <div className="google-search-option">
                     <span>

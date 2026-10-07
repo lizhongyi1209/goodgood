@@ -1,6 +1,7 @@
 import { AuthenticationError, sessionExpiredError } from "../auth/errors.mjs";
 import { findProjectGenerationJobs } from "../generation/repository.mjs";
 import { isGptImageModelId } from "../generation/capabilities.mjs";
+import { isBananaFlashModel } from "../../shared/contracts/banana-lines.mjs";
 import { presentGenerationJob } from "../generation/presenter.mjs";
 import { getGenerationResources } from "../generation/resources.mjs";
 import { signAssetRead } from "../generation/storage.mjs";
@@ -103,7 +104,7 @@ async function presentProject(resources, row) {
       quality: row.quality ?? "auto",
       thinkingLevel:
         row.thinking_level ??
-        (row.model_id === "nano-banana-2" ? "high" : "low"),
+        (isBananaFlashModel(row.model_id) ? "high" : "low"),
     },
     updatedAt: new Date(row.updated_at).toISOString(),
   };

@@ -1,3 +1,5 @@
+import { isBananaFlashModel } from "../../shared/contracts/banana-lines.mjs";
+
 /**
  * @param {{
  *   aspectRatio: string,
@@ -39,7 +41,7 @@ export function createComposerCheckpoint(draft) {
     quality: draft.quality ?? "auto",
     thinkingLevel:
       draft.thinkingLevel ??
-      (draft.modelId === "nano-banana-2" ? "high" : "low"),
+      (isBananaFlashModel(draft.modelId) ? "high" : "low"),
   });
 }
 

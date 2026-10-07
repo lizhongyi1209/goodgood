@@ -1,6 +1,7 @@
 import { AuthenticationError, sessionExpiredError } from "../auth/errors.mjs";
 import { getGenerationResources } from "../generation/resources.mjs";
 import { isGptImageModelId } from "../generation/capabilities.mjs";
+import { isBananaFlashModel } from "../../shared/contracts/banana-lines.mjs";
 import { signAssetRead } from "../generation/storage.mjs";
 import { newRequestId } from "../observability/http.mjs";
 import { OrganizationError } from "../organizations/errors.mjs";
@@ -62,7 +63,7 @@ async function presentCreationDraft(resources, row) {
       quality: row.quality ?? "auto",
       thinkingLevel:
         row.thinking_level ??
-        (row.model_id === "nano-banana-2" ? "high" : "low"),
+        (isBananaFlashModel(row.model_id) ? "high" : "low"),
     },
     updatedAt: new Date(row.updated_at).toISOString(),
     version: row.version,

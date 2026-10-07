@@ -30,6 +30,7 @@ import {
 } from "../../shared/contracts/gpt-quality-pricing.mjs";
 
 const LAUNCH_PRICES = Object.freeze([
+  "nano-banana-2.1",
   "nano-banana-2",
   "nano-banana-pro",
   "gpt-image-2.5-sunburst",

@@ -1,7 +1,7 @@
 import { formatGenerationResolution, getGenerationRatio, getGptImageQualityOptions,
   GPT_IMAGE_BACKGROUND_OPTIONS, GPT_IMAGE_OUTPUT_FORMAT_OPTIONS } from "@/features/creation/generation-options";
 import { getGenerationModel } from "@/features/models/catalog";
-import { imageLineName, isValidImageLine } from "@/shared/contracts/banana-lines.mjs";
+import { imageLineName, isBananaFlashModel, isValidImageLine } from "@/shared/contracts/banana-lines.mjs";
 import { isGptImageModelId, type GenerationInputSnapshot } from "@/shared/contracts/generation";
 import styles from "./image-viewer.module.css";
 
@@ -22,7 +22,7 @@ export function describeViewerGeneration(input: GenerationInputSnapshot, dimensi
     parameters.push({ label: "线路", value: imageLineName(input.imageLine) });
   }
   // Repository defaults span all models; only show options used in this model's provider request.
-  if (input.modelId === "nano-banana-2") {
+  if (isBananaFlashModel(input.modelId)) {
     if (input.googleSearch === true) parameters.push({ label: "谷歌搜索", value: "开启" });
   }
   if (isGptImageModelId(input.modelId)) {

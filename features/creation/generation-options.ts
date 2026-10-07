@@ -1,4 +1,5 @@
 import { gptPricingQualities } from "@/shared/contracts/gpt-quality-pricing.mjs";
+import { isBananaFlashModel, isBananaModel } from "@/shared/contracts/banana-lines.mjs";
 import { SEEDREAM_ASPECT_RATIOS, SEEDREAM_PIXEL_SIZES } from "@/shared/contracts/seedream-models.mjs";
 import {
   CANVAS_GENERATION_COUNTS,
@@ -362,7 +363,7 @@ export function getCanvasGenerationResolutionOptions(modelId: GenerationModelId)
 export function getGenerationCountOptions(
   modelId: GenerationModelId,
 ): readonly GenerationCount[] {
-  return modelId === "nano-banana-2" || modelId === "nano-banana-pro" || isGptImageModelId(modelId)
+  return isBananaModel(modelId) || isGptImageModelId(modelId)
     ? GENERATION_COUNTS
     : [1];
 }
@@ -370,7 +371,7 @@ export function getGenerationCountOptions(
 export function getCanvasGenerationCountOptions(
   modelId: GenerationModelId,
 ): readonly GenerationCount[] {
-  return modelId === "nano-banana-2" || modelId === "nano-banana-pro" || isGptImageModelId(modelId)
+  return isBananaModel(modelId) || isGptImageModelId(modelId)
     ? CANVAS_GENERATION_COUNTS
     : [1];
 }
@@ -399,14 +400,14 @@ export function resolveGenerationCountForModel(
 export function resolveGenerationThinkingLevelForModel(
   modelId: GenerationModelId,
 ): GenerationThinkingLevel {
-  return modelId === "nano-banana-2" ? "high" : "low";
+  return isBananaFlashModel(modelId) ? "high" : "low";
 }
 
 export function resolveGoogleSearchForModel(
   modelId: GenerationModelId,
   googleSearch: boolean | undefined,
 ): boolean {
-  return modelId === "nano-banana-2" && googleSearch === true;
+  return isBananaFlashModel(modelId) && googleSearch === true;
 }
 
 export type GptImageOptions = Readonly<{
@@ -504,7 +505,7 @@ export function resolveGenerationAspectRatioForModel(
   ratio: GenerationAspectRatio,
 ): GenerationAspectRatio {
   if (ratio === "adaptive") {
-    return modelId === "nano-banana-2" || modelId === "nano-banana-pro" ? ratio : "1:1";
+    return isBananaModel(modelId) ? ratio : "1:1";
   }
   const options = getGenerationRatioOptions(modelId);
   if (options.some((option) => option.id === ratio)) return ratio;

@@ -1,4 +1,5 @@
 export const GENERATION_MODEL_IDS = [
+  "nano-banana-2.1",
   "nano-banana-2",
   "nano-banana-pro",
   "gpt-image-2.5-sunburst",

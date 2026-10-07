@@ -1356,7 +1356,7 @@ export const creationDrafts = pgTable(
   (table) => [
     primaryKey({ columns: [table.workspaceId, table.creatorOwnerId] }),
     index("creation_drafts_expiry_idx").on(table.expiresAt, table.ownerId),
-    check("creation_drafts_image_line_check", sql`${table.imageLine} is null or (${table.modelId} in ('nano-banana-2','nano-banana-pro','gpt-image-2','gpt-image-2.5-sunburst','gpt-image-2.5-flare') and ${table.imageLine} in ('special','quality','dedicated'))`),
+    check("creation_drafts_image_line_check", sql`${table.imageLine} is null or (${table.modelId} = 'nano-banana-2.1' and ${table.imageLine} = 'special') or (${table.modelId} in ('nano-banana-2','nano-banana-pro','gpt-image-2','gpt-image-2.5-sunburst','gpt-image-2.5-flare') and ${table.imageLine} in ('special','quality','dedicated'))`),
     check("creation_drafts_prompt_check", sql`length(${table.prompt}) <= 4000`),
     check(
       "creation_drafts_model_check",
@@ -1376,7 +1376,7 @@ export const creationDrafts = pgTable(
     ),
     check(
       "creation_drafts_banana_options_check",
-      sql`${table.modelId} = 'nano-banana-2' or (${table.thinkingLevel} = 'low' and ${table.googleSearch} = false)`,
+      sql`${table.modelId} in ('nano-banana-2','nano-banana-2.1') or (${table.thinkingLevel} = 'low' and ${table.googleSearch} = false)`,
     ),
     check(
       "creation_drafts_gpt_quality_check",
@@ -1484,7 +1484,7 @@ export const projects = pgTable(
       table.updatedAt,
       table.id,
     ),
-    check("projects_image_line_check", sql`${table.imageLine} is null or (${table.modelId} in ('nano-banana-2','nano-banana-pro','gpt-image-2','gpt-image-2.5-sunburst','gpt-image-2.5-flare') and ${table.imageLine} in ('special','quality','dedicated'))`),
+    check("projects_image_line_check", sql`${table.imageLine} is null or (${table.modelId} = 'nano-banana-2.1' and ${table.imageLine} = 'special') or (${table.modelId} in ('nano-banana-2','nano-banana-pro','gpt-image-2','gpt-image-2.5-sunburst','gpt-image-2.5-flare') and ${table.imageLine} in ('special','quality','dedicated'))`),
     check("projects_name_check", sql`length(${table.name}) between 1 and 32`),
     check("projects_prompt_check", sql`length(${table.prompt}) <= 4000`),
     check(
@@ -1505,7 +1505,7 @@ export const projects = pgTable(
     ),
     check(
       "projects_banana_options_check",
-      sql`${table.modelId} = 'nano-banana-2' or (${table.thinkingLevel} = 'low' and ${table.googleSearch} = false)`,
+      sql`${table.modelId} in ('nano-banana-2','nano-banana-2.1') or (${table.thinkingLevel} = 'low' and ${table.googleSearch} = false)`,
     ),
     check(
       "projects_gpt_quality_check",
@@ -1678,7 +1678,7 @@ export const generationBatches = pgTable(
       table.submittedAt,
       table.id,
     ),
-    check("generation_batches_image_line_check", sql`${table.imageLine} is null or (${table.modelId} in ('nano-banana-2','nano-banana-pro','gpt-image-2','gpt-image-2.5-sunburst','gpt-image-2.5-flare') and ${table.imageLine} in ('special','quality','dedicated'))`),
+    check("generation_batches_image_line_check", sql`${table.imageLine} is null or (${table.modelId} = 'nano-banana-2.1' and ${table.imageLine} = 'special') or (${table.modelId} in ('nano-banana-2','nano-banana-pro','gpt-image-2','gpt-image-2.5-sunburst','gpt-image-2.5-flare') and ${table.imageLine} in ('special','quality','dedicated'))`),
     check(
       "generation_batches_model_check",
       sql`${table.modelId} ~ '^[a-z0-9][a-z0-9._-]{1,79}$'`,
@@ -1701,7 +1701,7 @@ export const generationBatches = pgTable(
     ),
     check(
       "generation_batches_banana_options_check",
-      sql`${table.modelId} = 'nano-banana-2' or (${table.thinkingLevel} = 'low' and ${table.googleSearch} = false)`,
+      sql`${table.modelId} in ('nano-banana-2','nano-banana-2.1') or (${table.thinkingLevel} = 'low' and ${table.googleSearch} = false)`,
     ),
     check(
       "generation_batches_gpt_quality_check",

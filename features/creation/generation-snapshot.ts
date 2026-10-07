@@ -2,7 +2,7 @@ import type {
   GenerationInputDraft,
   GenerationInputSnapshot,
 } from "@/shared/contracts/generation";
-import { supportsImageLines } from "@/shared/contracts/banana-lines.mjs";
+import { isBananaFlashModel, supportsImageLines } from "@/shared/contracts/banana-lines.mjs";
 import {
   resolveGenerationThinkingLevelForModel,
   resolveGptImageOptionsForModel,
@@ -45,7 +45,7 @@ export function createGenerationInputSnapshot(
     count: draft.count,
     thinkingLevel: resolveGenerationThinkingLevelForModel(draft.modelId),
     googleSearch:
-      draft.modelId === "nano-banana-2" && draft.googleSearch === true,
+      isBananaFlashModel(draft.modelId) && draft.googleSearch === true,
     ...gptImageOptions,
     projectId: draft.projectId ?? null,
   });
