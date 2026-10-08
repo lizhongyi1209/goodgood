@@ -1,5 +1,7 @@
 # GoodGood 当前状态
 
+> [GG-419](tasks/GG-419-local-seedance-activation.md) 用户授权的本地更新已应用：必要构建009194d65fe32a9b35c0c5ef283c159e651291ee，0070增量迁移已应用、总70且历史69校验匹配，原用户/画布/资产/任务/账本聚合和余额保持。Web30012/32131及Vite30048/5173（入口23488）隐藏恢复并跨命令在线，版本代理同verified构建、首页及原画布HTTP200。生成尚未恢复：既有外部开发O1Key密钥在无任务readiness GET被拒401 Invalid token，Webready503、Worker14160退出且32142未监听；已请求用户更新外部密钥文件或提供有效开发文件路径，未绕过保护。启动前活动任务/预留/outbox/两队列均0，无生成/扣费或fixture/测试/浏览器/GitHub/生产操作；外部云上传/原Kling价格/Mailpit及容器卷保持。下一步收到有效密钥后更新Web/唯一Worker并确认readiness；不宣称实际生成已可用。
+
 > [GG-418](tasks/GG-418-canvas-seedance.md) 持久画布 Seedance 源码 90a46ea19b31b9b341883616b9f67f5f7c9df5d1 已提交：2.5/2.0/Fast/Mini×Doubao MAX/Dreamina HC，复用三块chat、1/2/4独立插槽、冻结输入/失败重试、实际进度与0估算及手动播放器。型号可自由切换，保留兼容素材/移除超量引用；模式按图/视频/音频点亮，单条合并文本和显式角色，2.5特殊 -1/adaptive 按官方有效约束。音频Handle、WAV和MOV输入/私有原始URL，实际fps/尺寸/时长及合计在POST前检查，不重复O1Key素材预上传。临时每秒价格经用户确认，支持线路/规格覆盖，自动时长预留上限、实际秒数向上取整在原结算事务退差，个人/企业及付费来源保持；0070和Drizzle声明同步。旧后台未报告的新型号禁用，防止旧保存接口拒绝新草稿。分支feature/gg-418-canvas-seedance，基线d4d1b3e，原F:/goodgood-worktrees/GG-116；十三项新回归来源和GG-035预期仅写未运行，未构建/检查/测试/浏览器/HTTP/SQL/Provider/生成/扣费或迁移/服务/GitHub/生产操作。未确认当下进程健康；上次已确认运行仍GG-414/1dc37ee及69迁移，本轮未改变。创建0/退役0、无子agent/缓存副本。下一步用户另行委托仅本地0070及必要Web/唯一Worker更新后手验；不宣称功能已运行验收。
 
 
