@@ -270,7 +270,8 @@ function pageContent(source) {
       if (item.targetHandle !== "reference" || !(
         ["textEditor", "textGenerator"].includes(sourceType) && item.sourceHandle === "text" ||
         ["sourceImage", "imageResult", "imageGenerator"].includes(sourceType) && item.sourceHandle === "reference" ||
-        ["sourceVideo", "videoGenerator"].includes(sourceType) && item.sourceHandle === "video")) throw invalid();
+        ["sourceVideo", "videoGenerator"].includes(sourceType) && item.sourceHandle === "video" ||
+        targetType === "videoGenerator" && sourceType === "sourceAudio" && item.sourceHandle === "audio")) throw invalid();
     } else if (item.sourceHandle === "text" || item.targetHandle === "text" || sourceType === "textEditor" || sourceType === "textGenerator" || targetType === "textEditor") {
       if (item.sourceHandle !== "text" || !["reference", "text"].includes(item.targetHandle) ||
           !["textEditor", "textGenerator"].includes(sourceType) || targetType !== "imageGenerator") throw invalid();

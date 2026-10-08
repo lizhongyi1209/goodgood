@@ -11,9 +11,9 @@ function boxes(bytes, start = 0, end = bytes.length) {
   return result;
 }
 /** Inspect bounded MP4 metadata without decoding frames or invoking a process. */
-export function readMp4Metadata(bytes) {
+export function readMp4Metadata(bytes, { allowMov = false } = {}) {
   const bad = () => { throw new VideoGenerationError("VIDEO_CONTENT_INVALID", "无法读取视频尺寸和时长，请使用完整的 MP4 视频。", 409); };
-  if (!Buffer.isBuffer(bytes) || bytes.length < 32 || bytes.toString("ascii", 4, 8) !== "ftyp" || bytes.toString("ascii", 8, 12) === "qt  ") bad();
+  if (!Buffer.isBuffer(bytes) || bytes.length < 32 || bytes.toString("ascii", 4, 8) !== "ftyp" || !allowMov && bytes.toString("ascii", 8, 12) === "qt  ") bad();
   const moov = boxes(bytes).find((box) => box.type === "moov"); if (!moov) bad();
   for (const track of boxes(bytes, moov.start, moov.end).filter((box) => box.type === "trak")) {
     const children = boxes(bytes, track.start, track.end);
@@ -29,7 +29,22 @@ export function readMp4Metadata(bytes) {
     if (matrix + 36 <= tkhd.end && bytes.readInt32BE(matrix) === 0 && Math.abs(bytes.readInt32BE(matrix + 4)) === 65536) [pixelWidth, pixelHeight] = [pixelHeight, pixelWidth];
     const durationSeconds = duration / scale;
     if (!pixelWidth || !pixelHeight || !scale || !Number.isFinite(durationSeconds) || durationSeconds <= 0 || durationSeconds > 3600) bad();
-    return { pixelWidth, pixelHeight, durationSeconds };
+    const minf = headers.find((box) => box.type === "minf");
+    const stbl = minf && boxes(bytes, minf.start, minf.end).find((box) => box.type === "stbl");
+    const stts = stbl && boxes(bytes, stbl.start, stbl.end).find((box) => box.type === "stts");
+    let frameRate = null;
+    if (stts && stts.start + 8 <= stts.end) {
+      const entries = bytes.readUInt32BE(stts.start + 4);
+      if (entries > 100_000 || stts.start + 8 + entries * 8 > stts.end) bad();
+      let samples = 0; let ticks = 0;
+      for (let index = 0; index < entries; index += 1) {
+        const offset = stts.start + 8 + index * 8;
+        const count = bytes.readUInt32BE(offset); const delta = bytes.readUInt32BE(offset + 4);
+        samples += count; ticks += count * delta;
+      }
+      if (Number.isSafeInteger(samples) && Number.isSafeInteger(ticks) && samples > 0 && ticks > 0) frameRate = samples * scale / ticks;
+    }
+    return { pixelWidth, pixelHeight, durationSeconds, ...(frameRate ? { frameRate } : {}) };
   }
   bad();
 }

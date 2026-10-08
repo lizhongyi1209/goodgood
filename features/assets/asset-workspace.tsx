@@ -108,11 +108,14 @@ function uploadError(file: File): string | null {
     "image/jpeg": { extensions: ["jpg", "jpeg"], max: PRIVATE_IMAGE_UPLOAD_MAX_BYTES },
     "image/png": { extensions: ["png"], max: PRIVATE_IMAGE_UPLOAD_MAX_BYTES },
     "video/mp4": { extensions: ["mp4"], max: PRIVATE_VIDEO_UPLOAD_MAX_BYTES },
+    "video/quicktime": { extensions: ["mov"], max: PRIVATE_VIDEO_UPLOAD_MAX_BYTES },
+    "audio/wav": { extensions: ["wav"], max: PRIVATE_AUDIO_UPLOAD_MAX_BYTES },
+    "audio/x-wav": { extensions: ["wav"], max: PRIVATE_AUDIO_UPLOAD_MAX_BYTES },
     "audio/mpeg": { extensions: ["mp3"], max: PRIVATE_AUDIO_UPLOAD_MAX_BYTES },
   };
   const extension = file.name.split(".").pop()?.toLowerCase();
   const format = allowed[file.type];
-  if (!format || !extension || !format.extensions.includes(extension)) return "仅支持 JPG/JPEG、PNG、MP4、MP3。";
+  if (!format || !extension || !format.extensions.includes(extension)) return "仅支持 JPG/JPEG、PNG、MP4/MOV、MP3/WAV。";
   if (file.size < 1 || file.size > format.max) return "单个文件须在 20 MB 以内。";
   return null;
 }
@@ -457,7 +460,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
       const [result] = await uploadReferenceFiles([{ clientId: row.id, file: row.file }], () => {}, workspaceId);
       if (result?.reference.status !== "ready") throw new Error(result?.reference.errorMessage ?? "图片上传失败，请重试。");
       kind = "reference"; id = result.reference.id;
-    } else if (row.file.type === "video/mp4") {
+    } else if (row.file.type.startsWith("video/")) {
       const result = await uploadPrivateVideoMaterial(row.id, row.file, workspaceId);
       kind = "video"; id = result.id;
     } else {
@@ -565,7 +568,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
   }
 
   return <section className={styles.workspace} aria-label="资产">
-    <input ref={quickFileInput} type="file" accept=".jpg,.jpeg,.png,.mp4,.mp3,image/jpeg,image/png,video/mp4,audio/mpeg" multiple hidden onChange={(event) => { chooseQuickFiles(event.target.files); event.target.value = ""; }}/>
+    <input ref={quickFileInput} type="file" accept=".jpg,.jpeg,.png,.mp4,.mov,.mp3,.wav,image/jpeg,image/png,video/mp4,video/quicktime,audio/mpeg,audio/wav" multiple hidden onChange={(event) => { chooseQuickFiles(event.target.files); event.target.value = ""; }}/>
     <header className={styles.header}>
       {activeFolder ? <h1 className={styles.folderBreadcrumb}><button aria-label="返回全部资产" onClick={() => { setFolderId(null); setSearch(""); setSelectedKeys([]); setSelectedFolderIds([]); }}>资产</button><ChevronRight size={18} aria-hidden="true"/><span>{activeFolder.name}</span></h1> : <h1>资产</h1>}
       <div className={styles.headerTools}>
@@ -614,7 +617,7 @@ export function AssetWorkspace({ workspaceId, enabled, generated, references, vi
       </div>}
       {visible.length || (viewMode === "list" && rootFolders.length) ? <div ref={fileGrid} className={viewMode === "grid" ? styles.fileGrid : styles.fileList}>
         {viewMode === "list" && rootFolders.map(renderFolderRow)}{visible.map(renderFile)}
-      </div> : activeFolder && !search.trim() && filter === "all" && sourceFilter === "all" ? <div className={`${styles.folderUploadEmpty} ${draggingFolderFiles ? styles.folderUploadDragging : ""}`} aria-label={`上传文件到${activeFolder.name}`} onDragOver={(event) => { event.preventDefault(); if (!busy) setDraggingFolderFiles(true); }} onDragLeave={() => setDraggingFolderFiles(false)} onDrop={(event) => { event.preventDefault(); setDraggingFolderFiles(false); chooseQuickFiles(event.dataTransfer.files); }}><Upload size={27} strokeWidth={1.7}/><button disabled={busy} onClick={() => quickFileInput.current?.click()}>上传文件</button></div> : <div className={styles.state}><ImagePlus size={22}/><strong>{folderId ? "没有匹配的资产" : search || filter !== "all" || sourceFilter !== "all" ? "没有匹配的资产" : "还没有资产"}</strong><span>生成结果会自动保存，也可以上传 JPG/JPEG、PNG、MP4 或 MP3。</span></div>}
+      </div> : activeFolder && !search.trim() && filter === "all" && sourceFilter === "all" ? <div className={`${styles.folderUploadEmpty} ${draggingFolderFiles ? styles.folderUploadDragging : ""}`} aria-label={`上传文件到${activeFolder.name}`} onDragOver={(event) => { event.preventDefault(); if (!busy) setDraggingFolderFiles(true); }} onDragLeave={() => setDraggingFolderFiles(false)} onDrop={(event) => { event.preventDefault(); setDraggingFolderFiles(false); chooseQuickFiles(event.dataTransfer.files); }}><Upload size={27} strokeWidth={1.7}/><button disabled={busy} onClick={() => quickFileInput.current?.click()}>上传文件</button></div> : <div className={styles.state}><ImagePlus size={22}/><strong>{folderId ? "没有匹配的资产" : search || filter !== "all" || sourceFilter !== "all" ? "没有匹配的资产" : "还没有资产"}</strong><span>生成结果会自动保存，也可以上传 JPG/JPEG、PNG、MP4/MOV 或 MP3/WAV。</span></div>}
     </section>}
     {quickRows.length > 0 && <aside className={styles.uploadTray} aria-label="文件上传进度" aria-live="polite">
       <div className={styles.uploadTrayHead}><strong>{quickUploading ? `正在上传 ${quickRows.length} 个文件` : quickFailedRows.length > 0 ? `${quickFailedRows.length} 个文件上传失败` : quickRows.some((row) => row.message) ? "上传完成，部分文件未归档" : "上传完成"}</strong><span>{quickReadyCount}/{quickRows.length}</span><button aria-label={quickTrayCollapsed ? "展开上传详情" : "收起上传详情"} aria-expanded={!quickTrayCollapsed} onClick={() => setQuickTrayCollapsed((current) => !current)}><ChevronDown size={16}/></button>{!quickUploading && <button aria-label="关闭上传进度" onClick={() => { setQuickRows([]); setQuickRefreshError(null); }}><X size={15}/></button>}</div>

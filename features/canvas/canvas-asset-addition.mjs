@@ -6,10 +6,13 @@ export function canvasAssetFileError(file) {
     "image/jpeg": { extension: /\.jpe?g$/i, maximum: PRIVATE_IMAGE_UPLOAD_MAX_BYTES },
     "image/png": { extension: /\.png$/i, maximum: PRIVATE_IMAGE_UPLOAD_MAX_BYTES },
     "video/mp4": { extension: /\.mp4$/i, maximum: PRIVATE_VIDEO_UPLOAD_MAX_BYTES },
+    "video/quicktime": { extension: /\.mov$/i, maximum: PRIVATE_VIDEO_UPLOAD_MAX_BYTES },
+    "audio/wav": { extension: /\.wav$/i, maximum: PRIVATE_AUDIO_UPLOAD_MAX_BYTES },
+    "audio/x-wav": { extension: /\.wav$/i, maximum: PRIVATE_AUDIO_UPLOAD_MAX_BYTES },
     "audio/mpeg": { extension: /\.mp3$/i, maximum: PRIVATE_AUDIO_UPLOAD_MAX_BYTES },
   });
   const format = formats[file.type];
-  if (!format || !format.extension.test(file.name)) return "仅支持 JPG/JPEG、PNG、MP4、MP3 文件。";
+  if (!format || !format.extension.test(file.name)) return "仅支持 JPG/JPEG、PNG、MP4/MOV、MP3/WAV 文件。";
   if (file.size < 1 || file.size > format.maximum) return "单个文件须在 20 MB 以内，且不能为空。";
   return null;
 }

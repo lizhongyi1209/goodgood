@@ -1,5 +1,14 @@
 # Architecture
 
+## GG-418 · 持久画布 Seedance 双线路（源码，未启用）
+
+shared/contracts/seedance-video-generation.mjs 定义四个产品型号、两条线路和官方能力；video-generation 对外复用已有类型，服务端统一映射 /v1/video/generations、task_ 查询以及 queued/in_progress/completed/failed 回包。只发送一条合并文本和显式素材角色；2.5 编辑 -1/adaptive、延长 adaptive，Kling 镜头字段不进入 Seedance 请求。旧首页预览路线和 token 定价不用于持久画布。
+
+原始私有对象先授权再解码尺寸/时长/fps，签名 URL 优先，不重复调用 O1Key 素材预上传；仅本机不可达对象经现有云存储桥接，桥接键在上传前归属任务、任务关闭后清理。音频引用和输出沿既有资产所有权/工作区边界，项目保存接收 audio 连接及冻结输入。完成的视频转存私有 MP4，保留单一手动播放器及独立失败插槽。新增 provider_usage/provider_duration_seconds 仅服务端审计，不暴露上游凭据或 URL。
+
+价格快照与上游 usage 分离。自动时长按模型最大秒数预留；编辑原视频已知时按其秒数向上取整预留。成功解码后按冻结每秒价、实际秒数向上取整结算，最多原预留，事务内退差；失败完整释放、存储失败只重试存储、未知受理不重复 POST。临时价格表经用户确认，支持 model/line/resolution 外部覆盖。
+
+
 ## GG-413 · Nano Banana 2.1 路由边界
 
 前端默认与模型目录使用 nano-banana-2.1，后台唯一 special 路由映射 gemini-nano-banana-2.1-sp，保留 Nano Banana 2 原路由及冻结任务。共享 Flash Banana 判断统一默认 high 与原请求协议；复用参考 URL、单项任务和原不确定受理规则，不新增上传/自动回退或虚构 quality/dedicated 路由。能力按旧 2 兼容包络配置，未真实验证。后继 GG-414 已启用 0069 和新版 Web/唯一 Worker；当前运行 1dc37ee，原 Vite 和外部配置保持。

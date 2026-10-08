@@ -58,7 +58,7 @@ export async function uploadPrivateVideoMaterial(
   const intent = await parseJson<UploadIntent>(await goodGoodApiFetch("/api/video-materials", {
     method: "POST",
     headers: { "content-type": "application/json", ...workspaceRequestHeaders(workspaceId) },
-    body: JSON.stringify({ file: { clientId, name: file.name, mimeType: file.type, byteSize: file.size } }),
+    body: JSON.stringify({ file: { clientId, name: file.name, mimeType: /\.mov$/i.test(file.name) ? "video/quicktime" : "video/mp4", byteSize: file.size } }),
     signal,
   }));
   for (let attempt = 0; attempt < 3; attempt += 1) {

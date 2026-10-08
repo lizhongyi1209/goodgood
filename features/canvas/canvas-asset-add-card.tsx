@@ -78,7 +78,7 @@ export function CanvasAssetAddCard({ folderId, readyAssetKeys, onCreateFolder, f
   function makeRow(file: File, destinationFolderId: string | null) {
     const row: UploadRow = {
       clientId: crypto.randomUUID(), file, folderId: destinationFolderId, state: "uploading",
-      previewUrl: file.type.startsWith("image/") || file.type === "video/mp4" ? URL.createObjectURL(file) : undefined,
+      previewUrl: file.type.startsWith("image/") || file.type.startsWith("video/") ? URL.createObjectURL(file) : undefined,
     };
     storeRow(row);
     return row;
@@ -169,7 +169,7 @@ export function CanvasAssetAddCard({ folderId, readyAssetKeys, onCreateFolder, f
   }
 
   return <>
-    <input ref={inputRef} type="file" accept=".jpg,.jpeg,.png,.mp4,.mp3,image/jpeg,image/png,video/mp4,audio/mpeg" multiple hidden
+    <input ref={inputRef} type="file" accept=".jpg,.jpeg,.png,.mp4,.mov,.mp3,.wav,image/jpeg,image/png,video/mp4,video/quicktime,audio/mpeg,audio/wav" multiple hidden
       onChange={(event) => {
         const files = Array.from(event.currentTarget.files ?? []);
         event.currentTarget.value = "";
@@ -205,7 +205,7 @@ export function CanvasAssetAddCard({ folderId, readyAssetKeys, onCreateFolder, f
     {rows.map((row) => <div key={row.clientId} className={styles.pendingCard} aria-label={`添加 ${row.file.name}`}>
       <div className={styles.pendingVisual} data-uploading={row.state === "uploading" || undefined}>
         {row.file.type.startsWith("image/") && row.previewUrl ? <PrivateObjectImage src={row.previewUrl} alt="" />
-          : row.file.type === "video/mp4" && row.previewUrl ? <video src={row.previewUrl} muted playsInline preload="metadata" aria-hidden="true" />
+          : row.file.type.startsWith("video/") && row.previewUrl ? <video src={row.previewUrl} muted playsInline preload="metadata" aria-hidden="true" />
           : <AudioLines size={28} strokeWidth={1.6} aria-hidden="true" />}
       </div>
       {row.state === "uploading" ? <span className={styles.uploadStatus} role="status">{row.asset ? "正在放入文件夹…" : "正在上传…"}</span>

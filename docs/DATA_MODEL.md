@@ -1,5 +1,12 @@
 # GG-063 quality pricing
 
+## GG-418 · 0070 持久 Seedance（文件待应用）
+
+0070 扩展 video_generation_jobs.model_id 至四个 Seedance 产品 ID，加入可空 provider_usage JSONB 与 provider_duration_seconds double precision；Provider ID 唯一索引包含 input_snapshot.seedanceLine（缺失按 standard）。不重写旧任务或金额。输入/草稿新增可选 standard/backup 线路和 audio/reference_audio；冻结输入与请求 ID 绑定，数量仍拆为独立任务。Drizzle 的视频任务声明同步。
+
+WAV 扩展 audio_materials 的 MIME 约束；MOV 输入沿原 video_materials_type_check 已有能力，无须重建该表。平台上传仍 20 MB；Seedance 生成输入音频另限 15 MB，视频按实际尺寸、24–60 fps、单段与总时长检查。自动时长价格快照保存 automaticDuration、perSecond、seconds、line；charged_credit_amount 写实际结算值，个人退款与原结算流水关联并保留付费积分来源，企业同步返还额度/消耗。迁移尚未应用。
+
+
 ## GG-413 / GG-414 · 0069 默认模型目录（2026-10-07本地已应用）
 
 0069 新增独立 nano-banana-2.1 目录和 special 1–12 数量报价，来自 canonical nano-banana-2 当前生效、cent 单位的 special 单图价；三档价完整才启用，缺价禁用不猜价。已有同 ID 目录及报价不覆盖，旧模型/价格/任务/余额/用户素材不更新。批次/项目/草稿的 Banana options 放行 2.1；image_line 仅允许 null/special，schema 同步。model_id/count 格式沿 0066/既有规则，无新字段或文档版本，历史迁移不改。

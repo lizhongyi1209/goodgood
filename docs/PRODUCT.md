@@ -1,5 +1,10 @@
 # Product definition
 
+## GG-418 · 持久画布 Seedance（源码）
+
+既有视频节点新增 Seedance 2.5、2.0、Fast、Mini，各有 Doubao MAX 和 Dreamina HC；产品型号与上游 ID、线路、参数/素材规则分离。2.5 编辑及延长为首版显式模式，音频沿既有私有资产节点输入。按官方有效参数及 GG-417 最新封装映射实现，不沿用有冲突的示例参数。临时积分按用户确认的型号/清晰度/秒数配置，自动时长成功按实际秒数退差。Draft、MOV输出、联网工具不在首版 UI；MOV输入支持，平台通用上传20 MB保留。此为画布持久链路，尚未构建/激活/真实生成验收。
+
+
 ## GG-413 · 默认图片模型
 
 新增 Nano Banana 2.1，作为新图片/批量节点及空创作的默认模型，复用 Nano 图标。产品 ID nano-banana-2.1，实际调用 gemini-nano-banana-2.1-sp，仅 special 线路。显式恢复的模型、历史任务和旧模型入口保持；首版独立价格初始化继承 Nano Banana 2 当前 special 单价。按现有 Banana 请求协议兼容接入，能力尚未上游实测。见 ADR0108；后继 GG-414 已应用本地 0069 并启用新版 Web/唯一 Worker，实际生图由用户手验。

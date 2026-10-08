@@ -33,14 +33,14 @@ export function selectCanvasMediaFiles(files) {
       const image = selectCanvasImageFiles([file]);
       accepted.push(...image.accepted);
       errors.push(...image.errors);
-    } else if (PRIVATE_VIDEO_MIME_TYPES.includes(file.type) && /\.mp4$/i.test(file.name)) {
+    } else if (PRIVATE_VIDEO_MIME_TYPES.includes(file.type) && /\.(mp4|mov)$/i.test(file.name)) {
       if (file.size < 1 || file.size > PRIVATE_VIDEO_UPLOAD_MAX_BYTES) {
-        errors.push(`${file.name} 无法添加。请选择 20 MB 以内的 MP4 视频。`);
+        errors.push(`${file.name} 无法添加。请选择 20 MB 以内的 MP4 或 MOV 视频。`);
       } else {
         accepted.push(file);
       }
     } else {
-      errors.push(`${file.name} 无法添加。画布仅支持 20 MB 以内的 JPEG、PNG 图片或 MP4 视频。`);
+      errors.push(`${file.name} 无法添加。画布仅支持 20 MB 以内的 JPEG、PNG 图片或 MP4 或 MOV 视频。`);
     }
   }
   return { accepted, errors };

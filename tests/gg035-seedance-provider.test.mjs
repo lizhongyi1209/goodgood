@@ -82,7 +82,6 @@ test("GG-035 builds exact Doubao and HC material payloads", () => {
       url: "https://assets.goodgood.invalid/reference.mp4",
       name: "角色视频",
       asset_type: "video",
-      model: "doubao-seedance-2-5-260628-max",
     },
   );
 

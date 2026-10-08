@@ -1,5 +1,12 @@
 > [GG-414](tasks/GG-414-nano-banana-21-activation.md) Nano Banana 2.1 已本地启用：用户明确授权更新，GG-413 源码556ec9e随必要checkpoint构建1dc37ee3a7a9d0ee839bf9ca78e004409d96f500启用；Web38980/32131、唯一Worker37240/32142（隐藏启动器34140/37308）替换，Vite14404/5173保持。仅0069应用到127.0.0.1:54449/goodgood，历史68迁移匹配，总69；新目录enabled、仅special线路，1K/2K/4K均20积分每张，1–12数量36条报价及6处约束validated。原用户/画布/资产/任务/流水计数、余额聚合、旧目录及旧报价指纹保持。两角色readiness五项ok，前端代理同verified新revision、原画布HTTP200；运行事件确认两角色一致。启动前活动生成/预留/outbox/两队列均0；原云开发/Mailpit/视频价格配置保持。未发生成/扣费、fixture、lint/typecheck/测试/浏览器验收、GitHub/生产操作。创建0/退役0，无子agent/新依赖副本；用户刷新5173手验新默认及本人实际生成。
 
+## GG-418 · Seedance 本地启用前置（尚未执行）
+
+当前任务仅源码。启用需要另行授权应用本地 0070 并构建/更新 Web 与唯一 Worker；旧 GG-414 构建和已应用 69 迁移均未动，不能只靠 Vite 刷新宣称 Seedance 后端已启用。保持原 PG/Valkey/RustFS/开发云上传及外部凭据，不重置用户资产/账本，不发合成任务至真实 Provider Worker。
+
+临时每秒积分源码默认：2.5 的 480p/720p/1080p=8/16/24；2.0 的 480p/720p/1080p/4K=6/12/20/32；Fast 的 480p/720p=4/8；Mini=3/6。两线路初始同价，GOODGOOD_VIDEO_CREDIT_RATES_JSON 支持 model→line→resolution 覆盖（或原 model→resolution），0 可关闭规格；原 Kling 配置保持。本任务未写外部价格文件或凭据。正式价目、上游实际调用和浏览器体验尚未验收；生产部署/GitHub 设计快照不在范围。
+
+
 #> [GG-385](tasks/GG-385-local-kling-video-activation.md) GG-385已本地启用：用户授权临时定价及更新；Omni720p/1080p/4k每秒10/20/40积分，动作模仿720p/1080p每秒10/20积分，默认Omni720p五秒50积分。配置在仓库外LOCALAPPDATA/GoodGood/local-video-generation/video-pricing.env，以Node --env-file传给Web/唯一Worker。0067/0068已顺序应用到127.0.0.1:54449/goodgood，历史校验和匹配、总68迁移、原用户/画布/资产/任务/流水及余额聚合保持，视频任务0。必要checkpoint构建5fd584da7c1dad3ed5154fad05bdd94cf32c10a1；Web20564/32131、唯一Worker16116/32142，隐藏启动器35248/26392，Vite17388/5173保持。两角色readiness五项ok、API代理同构建身份、画布HTTP200；未登录探测新视频能力接口401符合保护规则，不创建登录或任务。默认报价读取50积分，真实生成、扣费、代码检查/测试及浏览器交互验收未执行，生产未操作；UI由用户刷新手验。创建0/退役0，无子agent/新依赖缓存。
 
 > [GG-412](tasks/GG-412-local-restart-after-reboot.md) 2026-10-07电脑重启恢复完成：原PG54449被Windows54358–54457保留范围覆盖，经管理员执行原方法重连同一容器网络，原卷/54449映射恢复、WinNAT Running。必要当前checkpoint构建verified e6fa39fa648c3991edb71a845b8b2f5e0a50cf63；Web33512/32131、唯一Worker37036/32142、Vite14404/5173（入口35068；隐藏启动器40168/40720/14832）恢复并跨命令保持。Web与Worker readiness五项ok，5173版本代理同revision/verified，首页及原画布HTTP200。最新GG-411及既有源码启用，原68迁移、云开发/Mailpit与外部视频临时价格保持；启动前图片/文本活动、未派发outbox、两队列均0，原视频1成功/0活动。无迁移/重置/fixture、主动生成/扣费或生产操作，仅必要启动构建/运行核对，无lint/typecheck/测试/浏览器验收。创建0/退役0，无子agent/依赖副本或自启；用户打开5173手验。

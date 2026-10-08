@@ -1181,7 +1181,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
         }
         let assetId = upload.uploadedId;
         if (!assetId) {
-          if (upload.file.type === "video/mp4") {
+          if (upload.file.type.startsWith("video/")) {
             const result = await uploadPrivateVideoMaterial(id, upload.file, null, controller.signal);
             assetId = result.id;
           } else {
@@ -1194,7 +1194,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
         controller.signal.throwIfAborted();
         if (!assetId) throw new Error("上传结果缺少素材标识，请重试。");
         const readyAssetId = assetId;
-        const isVideo = upload.file.type === "video/mp4";
+        const isVideo = upload.file.type.startsWith("video/");
         const material = isVideo ? (await listPrivateVideoMaterials(null, controller.signal)).find((item) => item.id === readyAssetId) : null;
         if (isVideo && !material) throw new Error("视频已上传，但暂时无法读取，请点击重试。");
         const previewUrl = isVideo ? material!.url : privateImageUrls("reference", readyAssetId).previewUrl;
@@ -1256,7 +1256,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     const finishPageOperation = beginPageOperation(pageId);
     try {
     const sizes = await Promise.all(accepted.map((file) =>
-      file.type === "video/mp4" ? Promise.resolve(null) : readCanvasImageSize(file)));
+      file.type.startsWith("video/") ? Promise.resolve(null) : readCanvasImageSize(file)));
     if (!mountedRef.current) return;
     const added: Array<CanvasSourceNode | CanvasVideoNode> = accepted.map((file, index) => {
       const id = `local-${globalThis.crypto.randomUUID()}`;
@@ -1264,7 +1264,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
       objectUrlsRef.current.add(previewUrl);
       localNodeUrlsRef.current.set(id, previewUrl);
       localUploadsRef.current.set(id, { file, pageId, controller: null });
-      if (file.type === "video/mp4") {
+      if (file.type.startsWith("video/")) {
         return {
           id,
           type: "sourceVideo",

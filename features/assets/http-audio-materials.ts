@@ -14,9 +14,9 @@ async function parse<T>(response: Response): Promise<T> {
   return value as T;
 }
 
-export async function listPrivateAudioMaterials(workspaceId: string | null): Promise<readonly PrivateAudioMaterial[]> {
+export async function listPrivateAudioMaterials(workspaceId: string | null, signal?: AbortSignal): Promise<readonly PrivateAudioMaterial[]> {
   const value = await parse<{ materials: readonly PrivateAudioMaterial[] }>(await goodGoodApiFetch("/api/audio-materials", {
-    cache: "no-store", headers: workspaceRequestHeaders(workspaceId),
+    cache: "no-store", headers: workspaceRequestHeaders(workspaceId), signal,
   }));
   return value.materials;
 }
@@ -25,7 +25,7 @@ export async function uploadPrivateAudioMaterial(clientId: string, file: File,
   workspaceId: string | null): Promise<Readonly<{ id: string; name: string; status: "ready" }>> {
   const intent = await parse<UploadIntent>(await goodGoodApiFetch("/api/audio-materials", {
     method: "POST", headers: { "content-type": "application/json", ...workspaceRequestHeaders(workspaceId) },
-    body: JSON.stringify({ file: { clientId, name: file.name, mimeType: "audio/mpeg", byteSize: file.size } }),
+    body: JSON.stringify({ file: { clientId, name: file.name, mimeType: /\.wav$/i.test(file.name) ? "audio/wav" : "audio/mpeg", byteSize: file.size } }),
   }));
   for (let attempt = 0; attempt < 3; attempt += 1) {
     let response: Response;

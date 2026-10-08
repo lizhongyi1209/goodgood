@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { isSeedanceVideoModel } from "../../shared/contracts/seedance-video-generation.mjs";
 import { storeGeneratedAsset } from "../generation/storage.mjs";
 import { sanitizeFailureDiagnostic } from "../generation/failure-diagnostics.mjs";
 import { claimVideoJob, markVideoSubmitting, persistVideoReceipt, updateVideoJob, closeVideoJob } from "./repository.mjs";
@@ -10,7 +11,7 @@ import { readMp4Metadata } from "./mp4.mjs";
 async function discardBridges(resources, job) {
   for (const key of job.bridge_keys ?? []) {
     if (typeof key !== "string" || !key.startsWith(`local-dev/references/video-generation-bridge/${job.id}/`)) continue;
-    try { await resources.storage.send(new DeleteObjectCommand({ Bucket: resources.config.objectStorage.bucket, Key: key })); } catch { /* Cleanup never changes a paid result. */ }
+    try { await (resources.publicStorage.cloudReferenceClient ?? resources.storage).send(new DeleteObjectCommand({ Bucket: resources.publicStorage.cloudReferenceBucketEndpoint ?? resources.config.objectStorage.bucket, Key: key })); } catch { /* Cleanup never changes a paid result. */ }
   }
 }
 export async function processVideoGeneration(resources, job, leaseOwner, dependencies = {}) {
@@ -31,25 +32,25 @@ export async function processVideoGeneration(resources, job, leaseOwner, depende
         return;
       }
       await updateVideoJob(resources.pool, job.id, leaseOwner, { provider_task_id: task.taskId, state: task.state === "succeeded" ? "saving" : "running", provider_result_url: task.videoUrl,
-        provider_cost: task.providerCost, progress: task.progress, error_code: null });
+        provider_cost: task.providerCost, ...(task.providerUsage ? { provider_usage: task.providerUsage } : {}), ...(task.durationSeconds ? { provider_duration_seconds: task.durationSeconds } : {}), progress: task.progress, error_code: null });
     } else if (job.state === "running") {
       const task = await (dependencies.queryTask ?? queryVideoProviderTask)(provider, job.input_snapshot, job.provider_task_id);
       if (task.state === "failed") {
         const closed = await closeVideoJob(resources.pool, { jobId: job.id, leaseOwner, succeeded: false, errorCode: "VIDEO_PROVIDER_FAILED", diagnostics: task.diagnostics });
         if (closed) await discardBridges(resources, job);
       } else await updateVideoJob(resources.pool, job.id, leaseOwner, { state: task.state === "succeeded" ? "saving" : "running", provider_result_url: task.videoUrl,
-        provider_cost: task.providerCost, progress: task.progress, error_code: null, failure_diagnostics: null });
+        provider_cost: task.providerCost, ...(task.providerUsage ? { provider_usage: task.providerUsage } : {}), ...(task.durationSeconds ? { provider_duration_seconds: task.durationSeconds } : {}), progress: task.progress, error_code: null, failure_diagnostics: null });
     } else if (job.state === "saving") {
       const bytes = await (dependencies.download ?? downloadVideo)(job.provider_result_url); const metadata = readMp4Metadata(bytes);
       const key = `video-materials/${job.workspace_id}/${job.owner_id}/${job.id}/original`;
       await storeGeneratedAsset({ bucket: resources.config.objectStorage.bucket, bytes, checksum: createHash("sha256").update(bytes).digest("hex"), contentType: "video/mp4", key, storage: resources.storage });
-      const closed = await closeVideoJob(resources.pool, { jobId: job.id, leaseOwner, succeeded: true, output: { key, byteSize: bytes.length, name: `Kling_${job.id.slice(0, 8)}.mp4`, ...metadata } });
+      const closed = await closeVideoJob(resources.pool, { jobId: job.id, leaseOwner, succeeded: true, output: { key, byteSize: bytes.length, name: `${isSeedanceVideoModel(job.model_id) ? "Seedance" : "Kling"}_${job.id.slice(0, 8)}.mp4`, ...metadata } });
       if (closed) await discardBridges(resources, job);
     }
   } catch (error) {
     if (job.state === "saving") await updateVideoJob(resources.pool, job.id, leaseOwner, { state: "save_failed", error_code: "VIDEO_SAVE_FAILED", failure_diagnostics: diagnostics(error) });
     else if (job.state === "running") await updateVideoJob(resources.pool, job.id, leaseOwner, { state: "running", error_code: "VIDEO_POLL_UNAVAILABLE", failure_diagnostics: diagnostics(error) });
-    else if (receipt) await updateVideoJob(resources.pool, job.id, leaseOwner, { state: receipt.state === "succeeded" ? "saving" : "running", provider_task_id: receipt.taskId, provider_result_url: receipt.videoUrl, error_code: "VIDEO_POLL_UNAVAILABLE", failure_diagnostics: diagnostics(error) });
+    else if (receipt) await updateVideoJob(resources.pool, job.id, leaseOwner, { state: receipt.state === "succeeded" ? "saving" : "running", provider_task_id: receipt.taskId, provider_result_url: receipt.videoUrl, ...(receipt.providerUsage ? { provider_usage: receipt.providerUsage } : {}), ...(receipt.durationSeconds ? { provider_duration_seconds: receipt.durationSeconds } : {}), error_code: "VIDEO_POLL_UNAVAILABLE", failure_diagnostics: diagnostics(error) });
     else if (posted && error?.code !== "VIDEO_SUBMISSION_REJECTED") await updateVideoJob(resources.pool, job.id, leaseOwner, { state: "submission_unknown", error_code: "VIDEO_SUBMISSION_UNKNOWN", failure_diagnostics: diagnostics(error) });
     else {
       const closed = await closeVideoJob(resources.pool, { jobId: job.id, leaseOwner, succeeded: false, errorCode: error?.code ?? "VIDEO_MATERIAL_UNAVAILABLE", diagnostics: diagnostics(error) });

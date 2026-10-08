@@ -161,7 +161,6 @@ export function buildO1KeySeedanceAssetPayload({
     url: publicMaterialUrl(url, line),
     ...(normalizedName ? { name: normalizedName } : {}),
     asset_type: assetType,
-    ...(route.providerType === "doubao" ? { model: route.providerModel } : {}),
   });
 }
 

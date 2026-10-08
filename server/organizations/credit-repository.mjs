@@ -774,6 +774,7 @@ async function closeOrganizationReservationInTransaction(
     operationHash,
     reason,
     refundAmount = 0n,
+    refundReason = "text_generation_cancellation_refund",
     workspaceId,
   },
 ) {
@@ -938,7 +939,7 @@ async function closeOrganizationReservationInTransaction(
   if (settlementRefund > 0n) {
     const refunded = await refundOrganizationSettlementInTransaction(client, {
       reservation, settlementEntry: entry.rows[0], budgetEventId, amount: settlementRefund,
-      workspaceId, closedBudget, key: `${key}:refund`, fingerprint, serverActor, metadata,
+      workspaceId, closedBudget, key: `${key}:refund`, fingerprint, serverActor, metadata, refundReason,
     });
     return { ...refunded, created: true, entry: ledgerEntryFromRow(entry.rows[0]) };
   }
@@ -951,7 +952,7 @@ async function closeOrganizationReservationInTransaction(
 }
 
 async function refundOrganizationSettlementInTransaction(client, {
-  reservation, settlementEntry, budgetEventId, amount, workspaceId, closedBudget, key, fingerprint, serverActor, metadata,
+  reservation, settlementEntry, budgetEventId, amount, workspaceId, closedBudget, key, fingerprint, serverActor, metadata, refundReason,
 }) {
   const account = await client.query(`UPDATE workspace_credit_accounts
     SET available_balance=available_balance+$2, allocated_balance=allocated_balance+$3,
@@ -965,7 +966,7 @@ async function refundOrganizationSettlementInTransaction(client, {
   if (!account.rowCount || !budget.rowCount) {
     throw new OrganizationError("ORGANIZATION_CREDIT_RESERVATION_INCONSISTENT", "企业积分返还状态不一致。", 409);
   }
-  const reason = "text_generation_cancellation_refund";
+  const reason = requireText(refundReason, "refundReason", 2, 200);
   const refund = await client.query(`INSERT INTO workspace_credit_ledger_entries
     (id,account_id,workspace_id,member_budget_id,entry_type,amount,idempotency_key,operation_hash,reason,related_job_id,prior_entry_id,actor,metadata)
     VALUES($1,$2,$3,$4,'refund',$5,$6,$7,$8,$9,$10,$11,$12::jsonb) RETURNING *`,
@@ -989,6 +990,7 @@ export function settleOrganizationGenerationCreditsInTransaction(client, input) 
     operationHash: input.operationHash,
     reason: input.reason ?? "organization generation settlement",
     refundAmount: input.refundAmount ?? 0n,
+    refundReason: input.refundReason ?? "text_generation_cancellation_refund",
     workspaceId: input.workspaceId,
   });
 }

@@ -10,7 +10,7 @@ import styles from "./canvas-video-generator-node.module.css";
 
 const icons: Record<VideoGenerationType, LucideIcon> = {
   text_to_video: Type, image_to_video: Image, first_last_frame: GalleryHorizontal,
-  reference_to_video: Layers, video_edit: Film, motion_control: PersonStanding,
+  reference_to_video: Layers, video_edit: Film, video_extend: Film, motion_control: PersonStanding,
 };
 
 export function CanvasVideoTypeSelect({ value, modelId, options, open, disabled, onOpenChange, onValueChange }: Readonly<{

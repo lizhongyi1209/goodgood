@@ -17,11 +17,11 @@ export async function uploadCanvasAssetFile(file: File, clientId: string): Promi
     }
     return { kind: "reference", id: result.reference.id };
   }
-  const result = file.type === "video/mp4"
+  const result = file.type.startsWith("video/")
     ? await uploadPrivateVideoMaterial(clientId, file, null)
     : await uploadPrivateAudioMaterial(clientId, file, null);
   if (result.status !== "ready" || !result.id) throw new Error("素材上传尚未确认，请重试。");
-  return { kind: file.type === "video/mp4" ? "video" : "audio", id: result.id };
+  return { kind: file.type.startsWith("video/") ? "video" : "audio", id: result.id };
 }
 
 export async function archiveCanvasAssetUpload(asset: UploadedCanvasAsset, folderId: string | null): Promise<void> {

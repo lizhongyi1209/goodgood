@@ -1,0 +1,10 @@
+import type { VideoModelId, VideoGenerationType, VideoGenerationInput, VideoGenerationMedia, VideoResolution, VideoAspectRatio, SeedanceVideoLine } from "./video-generation.mjs";
+export const CANVAS_SEEDANCE_MODELS: readonly { id: VideoModelId; name: string; resolutions: readonly VideoResolution[] }[];
+export const CANVAS_SEEDANCE_LINES: readonly { id: SeedanceVideoLine; name: string }[];
+export function isSeedanceVideoModel(modelId: unknown): boolean;
+export function seedanceVideoCapabilities(modelId: string): null | { id: VideoModelId; name: string; resolutions: readonly VideoResolution[]; minDuration: number; maxDuration: number; maxImages: number; maxVideos: number; maxAudios: number; maxReferenceDuration: number; ratios: readonly VideoAspectRatio[]; soloAudio: boolean };
+export function seedanceVideoProviderModel(modelId: string, line?: string): string | undefined;
+export function seedanceVideoTypes(modelId: string): VideoGenerationType[];
+export function seedanceInheritedRatio(input: { modelId: string; type: string }): boolean;
+export function seedanceVideoProblem(input: Partial<VideoGenerationInput>): string | null;
+export function seedanceVideoBody(input: VideoGenerationInput, media: (VideoGenerationMedia & { url: string })[]): unknown;

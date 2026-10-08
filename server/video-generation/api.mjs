@@ -5,7 +5,7 @@ import { cloudReferenceReadClient } from "../generation/local-cloud-reference.mj
 import { getGenerationResources } from "../generation/resources.mjs";
 import { signAssetRead } from "../generation/storage.mjs";
 import { resolveWorkspaceAccess } from "../organizations/workspace-access.mjs";
-import { defaultVideoGenerationDraft, videoModelForType, VIDEO_GENERATION_MODELS, VIDEO_GENERATION_COUNTS } from "../../shared/contracts/video-generation.mjs";
+import { defaultVideoGenerationDraft, videoTypeSupported, VIDEO_GENERATION_MODELS, VIDEO_GENERATION_COUNTS } from "../../shared/contracts/video-generation.mjs";
 import { validateVideoGeneration, validateVideoDraft, videoGenerationId } from "./validation.mjs";
 import { readVideoInputs } from "./media.mjs";
 import { quoteVideoCredits } from "./pricing.mjs";
@@ -32,13 +32,13 @@ async function publicJob(resources, job) {
 }
 export async function quoteVideoGeneration({ ownerContext, workspaceId, input: raw }) {
   const ownerId = owner(ownerContext); const resources = await getGenerationResources();
-  if (!raw || Object.keys(raw).some((key) => !["modelId", "type", "resolution", "duration", "characterOrientation", "videoAssetId"].includes(key))) throw new VideoGenerationError("VIDEO_INPUT_INVALID", "视频价格参数无效。");
+  if (!raw || Object.keys(raw).some((key) => !["modelId", "type", "resolution", "duration", "characterOrientation", "videoAssetId", "seedanceLine"].includes(key))) throw new VideoGenerationError("VIDEO_INPUT_INVALID", "视频价格参数无效。");
   const { videoAssetId, ...fields } = raw;
   const draft = validateVideoDraft({ ...defaultVideoGenerationDraft(), ...fields });
-  if (videoModelForType(draft.type) !== draft.modelId) throw new VideoGenerationError("VIDEO_INPUT_INVALID", "模型与生成类型不匹配。");
+  if (!videoTypeSupported(draft.modelId, draft.type)) throw new VideoGenerationError("VIDEO_INPUT_INVALID", "模型与生成类型不匹配。");
   if (!VIDEO_GENERATION_MODELS.find((model) => model.id === draft.modelId)?.resolutions.includes(draft.resolution)) throw new VideoGenerationError("VIDEO_INPUT_INVALID", "当前模型不支持该分辨率。");
   const workspace = await resolveWorkspaceAccess(resources.pool, { ownerId, workspaceId });
-  const media = draft.type === "motion_control" ? [{ kind: "video", assetKind: "video", assetId: videoGenerationId(videoAssetId), name: "动作视频", role: "video" }] : [];
+  const media = (draft.type === "motion_control" || draft.type === "video_edit" && draft.modelId.startsWith("seedance-") && videoAssetId) ? [{ kind: "video", assetKind: "video", assetId: videoGenerationId(videoAssetId), name: "原视频", role: draft.type === "motion_control" ? "video" : "base_video" }] : [];
   const metadata = media.length ? await readVideoInputs(resources, { input: { ...draft, media }, ownerId, workspaceId: workspace.id }) : [];
   return quoteVideoCredits(draft, metadata);
 }
@@ -73,7 +73,7 @@ export async function getVideoGenerationDownload({ ownerContext, workspaceId, re
   if (!asset) throw new VideoGenerationError("VIDEO_NOT_FOUND", "该视频已移除。", 404);
   const cloud = cloudReferenceReadClient(resources.publicStorage, asset.object_key);
   return { url: await getSignedUrl(cloud ?? resources.publicStorage, new GetObjectCommand({ Bucket: cloud ? resources.publicStorage.cloudReferenceBucketEndpoint : resources.config.objectStorage.bucket,
-    Key: asset.object_key, ResponseContentDisposition: `attachment; filename="Kling_${job.id.slice(0, 8)}.mp4"`, ResponseContentType: "video/mp4" }), { expiresIn: 15 * 60 }) };
+    Key: asset.object_key, ResponseContentDisposition: `attachment; filename="${job.model_id.startsWith("seedance-") ? "Seedance" : "Kling"}_${job.id.slice(0, 8)}.mp4"`, ResponseContentType: "video/mp4" }), { expiresIn: 15 * 60 }) };
 }
 export async function retryVideoSave({ ownerContext, workspaceId, requestId }) {
   const resources = await getGenerationResources(); const ownerId = owner(ownerContext);

@@ -1,6 +1,8 @@
+import { CANVAS_SEEDANCE_MODELS, isSeedanceVideoModel, seedanceVideoTypes, seedanceVideoProblem, seedanceVideoBody } from "./seedance-video-generation.mjs";
 export const VIDEO_GENERATION_MODELS = Object.freeze([
   { id: "kling-3.0-omni", name: "Kling O3", resolutions: ["720p", "1080p", "4k"] },
   { id: "kling-3.0", name: "Kling 3.0", resolutions: ["720p", "1080p"] },
+  ...CANVAS_SEEDANCE_MODELS,
 ]);
 export const VIDEO_GENERATION_TYPES = Object.freeze([
   { id: "text_to_video", name: "文生视频", modelId: "kling-3.0-omni", hint: "描述画面、动作和镜头变化" },
@@ -9,10 +11,12 @@ export const VIDEO_GENERATION_TYPES = Object.freeze([
   { id: "first_last_frame", name: "首尾帧", modelId: "kling-3.0-omni", hint: "描述首帧后的画面变化" },
   { id: "video_edit", name: "视频编辑", modelId: "kling-3.0-omni", hint: "选择原视频，可添加参考图" },
   { id: "motion_control", name: "动作模仿", modelId: "kling-3.0", hint: "选择角色图片和动作视频" },
+  { id: "video_extend", name: "视频延长", modelId: "seedance-2-5", hint: "描述视频后续的动作和镜头" },
 ]);
 export const VIDEO_IMAGE_ROLES = Object.freeze(["first_frame", "last_frame", "refer_image", "image"]);
 export const VIDEO_VIDEO_ROLES = Object.freeze(["feature_video", "base_video", "video"]);
-export const VIDEO_ROLE_LABELS = Object.freeze({ first_frame: "首帧", last_frame: "尾帧", refer_image: "参考图", image: "角色", feature_video: "参考视频", base_video: "原视频", video: "动作视频" });
+export const VIDEO_AUDIO_ROLES = Object.freeze(["reference_audio"]);
+export const VIDEO_ROLE_LABELS = Object.freeze({ first_frame: "首帧", last_frame: "尾帧", refer_image: "参考图", image: "角色", feature_video: "参考视频", base_video: "原视频", video: "动作视频", reference_audio: "参考音频" });
 export const VIDEO_ACTIVE_STATES = Object.freeze(["queued", "submitting", "running", "saving"]);
 export const VIDEO_GENERATION_COUNTS = Object.freeze([1, 2, 4]);
 export function defaultVideoGenerationDraft() {
@@ -20,12 +24,14 @@ export function defaultVideoGenerationDraft() {
     aspectRatio: "16:9", audio: "off", multiShot: true, characterOrientation: "video", shots: [], materials: [], roles: {} };
 }
 export function videoModelForType(type) { return VIDEO_GENERATION_TYPES.find((item) => item.id === type)?.modelId; }
+export function videoTypeSupported(modelId, type) { return isSeedanceVideoModel(modelId) ? seedanceVideoTypes(modelId).includes(type) : videoModelForType(type) === modelId; }
 export function videoRolesForType(type, kind) {
-  if (kind === "video") return type === "motion_control" ? ["video"] : type === "video_edit" ? ["base_video"] : type === "reference_to_video" ? ["feature_video"] : [];
+  if (kind === "audio") return ["reference_to_video", "video_edit", "video_extend"].includes(type) ? ["reference_audio"] : [];
+  if (kind === "video") return type === "motion_control" ? ["video"] : ["video_edit", "video_extend"].includes(type) ? ["base_video", "feature_video"] : type === "reference_to_video" ? ["feature_video"] : [];
   if (type === "motion_control") return ["image"];
   if (type === "first_last_frame") return ["first_frame", "last_frame", "refer_image"];
   if (type === "image_to_video") return ["first_frame", "refer_image"];
-  return type === "reference_to_video" || type === "video_edit" ? ["refer_image"] : [];
+  return ["reference_to_video", "video_edit", "video_extend"].includes(type) ? ["refer_image"] : [];
 }
 export function defaultVideoRole(type, kind, index = 0) {
   const roles = videoRolesForType(type, kind);
@@ -33,12 +39,16 @@ export function defaultVideoRole(type, kind, index = 0) {
 }
 /** Shared guidance; backend repeats this against authorized, decoded media. */
 export function videoGenerationProblem(input) {
+  if (isSeedanceVideoModel(input.modelId)) {
+    if (new Set((input.media ?? []).map((item) => `${item.assetKind}:${item.assetId}`)).size !== (input.media ?? []).length) return "同一素材无需重复添加。";
+    return seedanceVideoProblem(input);
+  }
   if (videoModelForType(input.type) !== input.modelId) return "模型与生成类型不匹配。";
   const model = VIDEO_GENERATION_MODELS.find((item) => item.id === input.modelId);
   if (!model?.resolutions.includes(input.resolution)) return "当前模型不支持该分辨率。";
   const media = input.media ?? [];
   if (new Set(media.map((item) => `${item.assetKind}:${item.assetId}`)).size !== media.length) return "同一素材无需重复添加。";
-  if (media.some((item) => !videoRolesForType(input.type, item.kind).includes(item.role))) return "素材用途与生成类型不匹配，请调整用途或移除素材。";
+  if (media.some((item) => item.kind === "audio" || !videoRolesForType(input.type, item.kind).includes(item.role))) return "素材用途与生成类型不匹配，请调整用途或移除素材。";
   const count = (role) => media.filter((item) => item.role === role).length;
   if (["first_frame", "last_frame", "image", "video", "feature_video", "base_video"].some((role) => count(role) > 1)) return "同一用途只能选择一份素材。";
   if (["image_to_video", "first_last_frame"].includes(input.type) && !count("first_frame")) return "请选择首帧。";
@@ -68,6 +78,7 @@ export function videoGenerationProblem(input) {
   return null;
 }
 export function videoProviderBody(input, media) {
+  if (isSeedanceVideoModel(input.modelId)) return seedanceVideoBody(input, media);
   const prompt = input.shots?.length ? input.shots.map((shot, i) => `shot ${i + 1}, ${shot.seconds}s, ${shot.text.trim()}`).join("; ") : input.prompt.trim();
   const contents = [...(prompt ? [{ type: "prompt", text: prompt }] : []), ...media.map((item, index) => ({ type: item.role, url: item.url, ...(input.type !== "motion_control" ? { id: `input${index + 1}` } : {}) }))];
   const settings = input.type === "motion_control"

@@ -33,7 +33,7 @@ export function validateAudioUploadRequest(file) {
     throw new ReferenceRequestError("INVALID_UPLOAD_REQUEST", "音频上传文件信息无效。", 400);
   }
   if (!PRIVATE_AUDIO_MIME_TYPES.includes(mimeType)) {
-    throw new ReferenceRequestError("UPLOAD_TYPE_INVALID", "仅支持 MP3 音频。", 400);
+    throw new ReferenceRequestError("UPLOAD_TYPE_INVALID", "仅支持 WAV 或 MP3 音频。", 400);
   }
   if (!Number.isInteger(byteSize) || byteSize < 1) {
     throw new ReferenceRequestError("UPLOAD_SIZE_INVALID", "音频文件大小无效。", 400);
@@ -47,7 +47,8 @@ export function validateAudioUploadRequest(file) {
 export function validateAudioObjectHeader(bytes, mimeType) {
   const mp3 = bytes.length >= 3 && (bytes.toString("ascii", 0, 3) === "ID3" ||
     (bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0));
-  if (mimeType !== "audio/mpeg" || !mp3) {
+  const wav = bytes.length >= 12 && bytes.toString("ascii", 0, 4) === "RIFF" && bytes.toString("ascii", 8, 12) === "WAVE";
+  if (!(mimeType === "audio/mpeg" && mp3 || mimeType === "audio/wav" && wav)) {
     throw new ReferenceRequestError("UPLOAD_CONTENT_INVALID", "音频文件内容与所选格式不符。", 400);
   }
 }

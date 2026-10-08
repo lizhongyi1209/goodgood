@@ -116,3 +116,23 @@
 @media (max-width: 560px) { .controls { gap: 4px; } .search input { width: 115px; } }
 @media (hover: none) { .material [data-slot="attachment"] button:last-child, .resultTools { opacity: 1; pointer-events: auto; } }
 @media (prefers-reduced-motion: reduce) { .spinner, .typeRuleTooltip[data-slot="tooltip-content"] { animation: none; } .progressFill { transition: none; } }
+
+.modelTrigger[data-slot="button"] { display: inline-flex; align-items: center; gap: 6px; height: 32px; min-width: 0; padding: 0 8px; border: 0; border-radius: var(--canvas-action-radius); background: transparent; color: #18181b; font-size: 12px; font-weight: 400; box-shadow: none; }
+.modelTrigger[data-slot="button"]:hover, .modelTrigger[data-state="open"] { background: #f4f4f5; }
+.modelLine { font-size: 10px; line-height: 16px; padding: 0 4px; border-radius: 4px; background: #f4f4f5; }
+.modelPopover[data-slot="popover-content"] { width: min(264px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); overflow-y: auto; padding: 6px; border: 1px solid #e4e4e7; border-radius: 13px; background: #fff; color: #18181b; box-shadow: 0 8px 24px rgb(0 0 0 / 8%); }
+.modelOption { display: flex; align-items: center; gap: 8px; width: 100%; height: 34px; padding: 0 8px; border: 0; border-radius: 7px; background: transparent; color: #18181b; font-size: 12px; text-align: left; }
+.modelOption > span:nth-child(2) { flex: 1; }
+.modelOption:hover, .modelOption[aria-pressed="true"] { background: #f4f4f5; }
+.modelOption:focus-visible { outline: 2px solid #18181b; outline-offset: -2px; }
+.modelLineSection { margin: 6px 0; padding-top: 8px; border-top: 1px solid #f0f0f1; }
+.modelLines { display: flex; width: 100%; }
+.modelLines [data-slot="toggle-group-item"] { flex: 1; min-width: 0; height: 28px; padding: 0 5px; border: 0; border-radius: 6px; background: transparent; color: #18181b; font-size: 11px; }
+.modelLines [data-state="on"], .modelLines [data-slot="toggle-group-item"]:hover { background: #f4f4f5; }
+.automaticDuration { display: inline-flex; gap: 10px; align-items: center; }
+.automaticDuration button { padding: 2px 6px; border: 0; border-radius: 5px; background: transparent; color: #18181b; font-size: 11px; }
+.automaticDuration button[aria-pressed="true"], .automaticDuration button:hover { background: #f4f4f5; }
+.previewAudio { display: block; width: min(260px, calc(100vw - 40px)); height: 40px; }
+
+.modelOption:disabled { opacity: .45; cursor: default; }
+.modelOption:disabled:hover { background: transparent; }

@@ -1,11 +1,11 @@
 import type { CanvasVideoGenerationDraft, VideoGenerationType, VideoModelId, VideoRole } from "../../shared/contracts/video-generation.mjs";
-export type CanvasVideoModeInput = { key: string; kind: "image" | "video" | "text"; role?: VideoRole };
+export type CanvasVideoModeInput = { key: string; kind: "image" | "video" | "audio" | "text"; role?: VideoRole };
 export type CanvasVideoTypeOption = { id: VideoGenerationType; modelId: VideoModelId; name: string; hint: string; enabled: boolean; reason: string; rule: string };
 export type CanvasVideoParameterVisibility = { aspectRatio: boolean; duration: boolean; audio: boolean; storyboard: boolean };
-export function canvasVideoParameterVisibility(type: VideoGenerationType, inputs: readonly { role?: VideoRole }[]): CanvasVideoParameterVisibility;
-export function canvasVideoTypeAvailability(inputs: readonly CanvasVideoModeInput[]): CanvasVideoTypeOption[];
+export function canvasVideoParameterVisibility(type: VideoGenerationType, inputs: readonly { role?: VideoRole }[], modelId?: VideoModelId): CanvasVideoParameterVisibility;
+export function canvasVideoTypeAvailability(inputs: readonly CanvasVideoModeInput[], modelId?: VideoModelId): CanvasVideoTypeOption[];
 export function canvasVideoDraftForType(draft: CanvasVideoGenerationDraft, type: VideoGenerationType, inputs: readonly CanvasVideoModeInput[]): CanvasVideoGenerationDraft;
 export function canvasVideoDraftForMaterials(draft: CanvasVideoGenerationDraft, inputs: readonly CanvasVideoModeInput[]): CanvasVideoGenerationDraft;
 export function canvasVideoDraftForModel(draft: CanvasVideoGenerationDraft, modelId: VideoModelId, inputs: readonly CanvasVideoModeInput[]): { draft: CanvasVideoGenerationDraft; removedKeys: string[] };
 export function canvasVideoSubmissionType(type: VideoGenerationType, media: readonly { role: VideoRole }[]): VideoGenerationType;
-export function canvasVideoUiRolesForType(type: VideoGenerationType, kind: "image" | "video"): VideoRole[];
+export function canvasVideoUiRolesForType(type: VideoGenerationType, kind: "image" | "video" | "audio"): VideoRole[];

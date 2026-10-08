@@ -4,11 +4,13 @@ import { paymentFundedPortionForReservation } from "../billing/policy.mjs";
 import { reserveOrganizationGenerationCreditsInTransaction, settleOrganizationGenerationCreditsInTransaction, releaseOrganizationGenerationCreditsInTransaction } from "../organizations/credit-repository.mjs";
 import { resolveWorkspaceAccess } from "../organizations/workspace-access.mjs";
 import { CREDIT_UNIT } from "../../shared/contracts/model-pricing.mjs";
+import { VIDEO_GENERATION_MODELS } from "../../shared/contracts/video-generation.mjs";
+import { settledVideoCredits } from "./pricing.mjs";
 import { VideoGenerationError } from "./errors.mjs";
 const hash = (value) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 export function videoInputHash({ quotedCredits: _quote, ...input }) { return hash(input); }
 function metadata(job) { return { activityCategory: "video_generation", videoGenerationJobId: job.id, batchReference: job.id,
-  projectId: job.canvas_project_id, projectName: job.source_project_name, modelName: job.model_id === "kling-3.0-omni" ? "Kling 3.0 Omni" : "Kling 3.0 动作模仿",
+  projectId: job.canvas_project_id, projectName: job.source_project_name, modelName: VIDEO_GENERATION_MODELS.find((model) => model.id === job.model_id)?.name ?? job.model_id,
   resolution: job.input_snapshot.resolution, durationSeconds: job.price_snapshot.seconds, fixedCreditAmount: Number(job.reserved_credit_amount) }; }
 export async function findVideoJob(pool, { requestId, ownerId, workspaceId }) {
   const workspace = await resolveWorkspaceAccess(pool, { ownerId, workspaceId });
@@ -59,10 +61,10 @@ export async function claimVideoJob(pool, leaseOwner) {
   return rows.rows[0] ?? null;
 }
 export async function updateVideoJob(pool, jobId, leaseOwner, patch) {
-  const allowed = new Set(["state", "provider_task_id", "provider_result_url", "provider_cost", "progress", "error_code", "failure_diagnostics", "bridge_keys"]);
+  const allowed = new Set(["state", "provider_task_id", "provider_result_url", "provider_cost", "progress", "error_code", "failure_diagnostics", "bridge_keys", "provider_usage", "provider_duration_seconds"]);
   const fields = Object.entries(patch).filter(([key]) => allowed.has(key));
-  const args = [jobId, leaseOwner, ...fields.map(([key, value]) => ["failure_diagnostics", "bridge_keys"].includes(key) ? JSON.stringify(value) : value)];
-  const assignments = fields.map(([key], i) => `${key}=$${i + 3}${["failure_diagnostics", "bridge_keys"].includes(key) ? "::jsonb" : ""}`);
+  const args = [jobId, leaseOwner, ...fields.map(([key, value]) => ["failure_diagnostics", "bridge_keys", "provider_usage"].includes(key) ? JSON.stringify(value) : value)];
+  const assignments = fields.map(([key], i) => `${key}=$${i + 3}${["failure_diagnostics", "bridge_keys", "provider_usage"].includes(key) ? "::jsonb" : ""}`);
   const rows = await pool.query(`UPDATE video_generation_jobs SET ${assignments.length ? assignments.join(",") + "," : ""}updated_at=now(),next_poll_at=now()+interval '12 seconds',lease_owner=NULL,lease_expires_at=NULL WHERE id=$1 AND lease_owner=$2 RETURNING *`, args);
   return rows.rows[0] ?? null;
 }
@@ -70,13 +72,16 @@ export async function markVideoSubmitting(pool, jobId, leaseOwner, bridgeKeys) {
   return (await pool.query("UPDATE video_generation_jobs SET state='submitting',submitted_at=now(),bridge_keys=$3::jsonb,updated_at=now() WHERE id=$1 AND state='queued' AND lease_owner=$2 AND lease_expires_at>now() RETURNING *", [jobId, leaseOwner, JSON.stringify(bridgeKeys)])).rowCount > 0;
 }
 export async function persistVideoReceipt(pool, jobId, leaseOwner, task) {
-  return (await pool.query("UPDATE video_generation_jobs SET provider_task_id=$3,provider_cost=$4,updated_at=now() WHERE id=$1 AND lease_owner=$2 RETURNING id", [jobId, leaseOwner, task.taskId, task.providerCost])).rowCount > 0;
+  return (await pool.query("UPDATE video_generation_jobs SET provider_task_id=$3,provider_cost=$4,provider_usage=$5::jsonb,provider_duration_seconds=$6,updated_at=now() WHERE id=$1 AND lease_owner=$2 RETURNING id", [jobId, leaseOwner, task.taskId, task.providerCost, JSON.stringify(task.providerUsage ?? null), task.durationSeconds ?? null])).rowCount > 0;
 }
 export async function closeVideoJob(pool, { jobId, leaseOwner, succeeded, errorCode = null, diagnostics = null, output = null }) {
   return runCreditTransaction(pool, async (client) => {
     await client.query("SELECT w.id FROM workspaces w JOIN video_generation_jobs j ON j.workspace_id=w.id WHERE j.id=$1 FOR UPDATE OF w", [jobId]);
     const job = (await client.query("SELECT * FROM video_generation_jobs WHERE id=$1 FOR UPDATE", [jobId])).rows[0];
     if (!job || ["succeeded", "failed"].includes(job.state) || job.lease_owner !== leaseOwner) return null;
+    const charged = succeeded ? settledVideoCredits(job.price_snapshot, output?.durationSeconds ?? job.provider_duration_seconds) : 0;
+    const refund = succeeded ? BigInt(job.reserved_credit_amount) - BigInt(charged) : 0n;
+    const settlementMetadata = { ...metadata(job), fixedCreditAmount: charged, reservedCreditAmount: Number(job.reserved_credit_amount), actualDurationSeconds: output?.durationSeconds ?? null };
     const type = succeeded ? "settle" : "release"; const key = `video:${job.id}:${type}`;
     if (output) {
       await client.query(`INSERT INTO video_materials(id,owner_id,workspace_id,object_key,original_file_name,declared_mime_type,declared_byte_size,upload_state,expires_at,uploaded_at,source_video_job_id,pixel_width,pixel_height,duration_seconds)
@@ -84,17 +89,24 @@ export async function closeVideoJob(pool, { jobId, leaseOwner, succeeded, errorC
     }
     if (job.organization_reservation_entry_id) {
       await (succeeded ? settleOrganizationGenerationCreditsInTransaction : releaseOrganizationGenerationCreditsInTransaction)(client, { jobId: job.id, workspaceId: job.workspace_id, actor: "worker", idempotencyKey: key,
-        refundAmount: 0n, metadata: metadata(job), operationHash: hash({ jobId: job.id, type }), reason: `video_generation_${type}` });
+        refundAmount: refund, refundReason: "video_generation_duration_refund", metadata: settlementMetadata, operationHash: hash({ jobId: job.id, type, charged }), reason: `video_generation_${type}` });
     } else {
       const entry = (await client.query("SELECT * FROM credit_ledger_entries WHERE id=$1", [job.credit_reservation_entry_id])).rows[0];
       if (!entry) throw new VideoGenerationError("VIDEO_RESERVATION_MISSING", "视频积分预留记录暂不可用。", 503);
       const account = (await client.query("SELECT * FROM credit_accounts WHERE id=$1 FOR UPDATE", [entry.account_id])).rows[0];
-      await appendCreditEntryInTransaction(client, { accountRow: account, actor: "worker", amount: succeeded ? BigInt(entry.amount) : -BigInt(entry.amount),
+      const settled = await appendCreditEntryInTransaction(client, { accountRow: account, actor: "worker", amount: succeeded ? BigInt(entry.amount) : -BigInt(entry.amount),
         paymentFundedAmount: (succeeded ? 1n : -1n) * BigInt(entry.payment_funded_amount ?? 0), entryType: type, idempotencyKey: key,
-        priorEntryId: entry.id, relatedVideoJobId: job.id, metadata: metadata(job), reason: `video_generation_${type}` });
+        priorEntryId: entry.id, relatedVideoJobId: job.id, metadata: settlementMetadata, reason: `video_generation_${type}` });
+      if (refund > 0n) {
+        const fresh = (await client.query("SELECT * FROM credit_accounts WHERE id=$1 FOR UPDATE", [entry.account_id])).rows[0];
+        const funded = -BigInt(entry.payment_funded_amount ?? 0);
+        await appendCreditEntryInTransaction(client, { accountRow: fresh, actor: "worker", amount: refund,
+          paymentFundedAmount: refund < funded ? refund : funded, entryType: "refund", idempotencyKey: `${key}:duration-refund`,
+          priorEntryId: settled.entry.id, relatedVideoJobId: job.id, metadata: settlementMetadata, reason: "video_generation_duration_refund" });
+      }
     }
     return (await client.query(`UPDATE video_generation_jobs SET state=$2,charged_credit_amount=$3,error_code=$4,failure_diagnostics=$5::jsonb,
       output_asset_id=$6,output_metadata=$7::jsonb,provider_result_url=NULL,lease_owner=NULL,lease_expires_at=NULL,updated_at=now() WHERE id=$1 RETURNING *`,
-      [job.id, succeeded ? "succeeded" : "failed", succeeded ? job.reserved_credit_amount : 0, errorCode, JSON.stringify(diagnostics), output ? job.id : null, JSON.stringify(output ? { pixelWidth: output.pixelWidth, pixelHeight: output.pixelHeight, durationSeconds: output.durationSeconds } : null)])).rows[0];
+      [job.id, succeeded ? "succeeded" : "failed", charged, errorCode, JSON.stringify(diagnostics), output ? job.id : null, JSON.stringify(output ? { pixelWidth: output.pixelWidth, pixelHeight: output.pixelHeight, durationSeconds: output.durationSeconds } : null)])).rows[0];
   });
 }
