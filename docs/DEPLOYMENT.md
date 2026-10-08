@@ -1,12 +1,12 @@
 ## GG-419 · 本地更新与启动回执
 
-[GG-419](tasks/GG-419-local-seedance-activation.md) 用户授权的本地更新已应用：必要构建009194d65fe32a9b35c0c5ef283c159e651291ee，0070增量迁移已应用、总70且历史69校验匹配，原用户/画布/资产/任务/账本聚合和余额保持。Web30012/32131及Vite30048/5173（入口23488）隐藏恢复并跨命令在线，版本代理同verified构建、首页及原画布HTTP200。生成尚未恢复：既有外部开发O1Key密钥在无任务readiness GET被拒401 Invalid token，Webready503、Worker14160退出且32142未监听；已请求用户更新外部密钥文件或提供有效开发文件路径，未绕过保护。启动前活动任务/预留/outbox/两队列均0，无生成/扣费或fixture/测试/浏览器/GitHub/生产操作；外部云上传/原Kling价格/Mailpit及容器卷保持。下一步收到有效密钥后更新Web/唯一Worker并确认readiness；不宣称实际生成已可用。
+[GG-419](tasks/GG-419-local-seedance-activation.md) Seedance已本地启用、项目启动完成：用户授权0070增量迁移/必要构建及恢复服务，最终verified构建90e0605fb620e2ee0a052efc5a125bcdf4273ac8（含GG-418源码90a46ea及GG-416进度），总70迁移，历史69校验和匹配，原用户/画布/资产/任务/账本计数和余额保持。Web32320/32131、唯一Worker35040/32142（隐藏启动器33768/19948）和Vite30048/5173（入口23488、启动器32000）跨命令在线；Web/Worker readiness五项ok，5173版本代理同revision/verified，原画布HTTP200。初次开发密钥401已在用户明确授权后从剪贴板仅更新外部专用开发文件解决，密钥无输出/入库/入Git；随后无任务readiness认证通过。原容器/卷/云开发上传/Mailpit/Kling价格保持，Seedance沿已接受的临时每秒默认价；启动前活动任务/预留/outbox/两队列均0。只做启动必需构建/迁移/运行核对，未生成/扣费、fixture、lint/typecheck/check:local/测试/浏览器验收、GitHub或生产操作。创建0/退役0，无子agent/新依赖/自启；用户打开5173手验UI及实际生成，后续纯文档提交不改写实际运行revision。
 
 > [GG-414](tasks/GG-414-nano-banana-21-activation.md) Nano Banana 2.1 已本地启用：用户明确授权更新，GG-413 源码556ec9e随必要checkpoint构建1dc37ee3a7a9d0ee839bf9ca78e004409d96f500启用；Web38980/32131、唯一Worker37240/32142（隐藏启动器34140/37308）替换，Vite14404/5173保持。仅0069应用到127.0.0.1:54449/goodgood，历史68迁移匹配，总69；新目录enabled、仅special线路，1K/2K/4K均20积分每张，1–12数量36条报价及6处约束validated。原用户/画布/资产/任务/流水计数、余额聚合、旧目录及旧报价指纹保持。两角色readiness五项ok，前端代理同verified新revision、原画布HTTP200；运行事件确认两角色一致。启动前活动生成/预留/outbox/两队列均0；原云开发/Mailpit/视频价格配置保持。未发生成/扣费、fixture、lint/typecheck/测试/浏览器验收、GitHub/生产操作。创建0/退役0，无子agent/新依赖副本；用户刷新5173手验新默认及本人实际生成。
 
-## GG-418 · Seedance 本地启用前置（已在GG-419应用迁移/构建，生成待有效密钥）
+## GG-418 · Seedance 本地启用前置（已由GG-419完成）
 
-GG-418交付时仅源码；GG-419已获用户更新/启动授权，应用本地0070和必要构建，总70迁移，Web/Vite已在线。既有开发密钥401导致Worker未就绪，生成待有效外部密钥恢复，不能只靠页面可访问宣称生成已启用。保持原 PG/Valkey/RustFS/开发云上传及外部凭据，不重置用户资产/账本，不发合成任务至真实 Provider Worker。
+GG-418交付时仅源码；GG-419已获用户更新/启动授权，应用本地0070和必要构建，总70迁移，Web/Vite已在线。初次开发密钥401已获用户授权更新并恢复，Web/唯一Worker五项ready正常；当前运行90e0605，实际生成验收由用户执行。保持原 PG/Valkey/RustFS/开发云上传及外部凭据，不重置用户资产/账本，不发合成任务至真实 Provider Worker。
 
 临时每秒积分源码默认：2.5 的 480p/720p/1080p=8/16/24；2.0 的 480p/720p/1080p/4K=6/12/20/32；Fast 的 480p/720p=4/8；Mini=3/6。两线路初始同价，GOODGOOD_VIDEO_CREDIT_RATES_JSON 支持 model→line→resolution 覆盖（或原 model→resolution），0 可关闭规格；原 Kling 配置保持。本任务未写外部价格文件或凭据。正式价目、上游实际调用和浏览器体验尚未验收；生产部署/GitHub 设计快照不在范围。
 
