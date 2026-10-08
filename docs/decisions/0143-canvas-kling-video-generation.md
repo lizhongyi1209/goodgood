@@ -121,3 +121,5 @@ The user replaces the compact duration Select with a horizontal slider. Keep the
 ## GG-420 · 线路作为独立参数 · accepted 2026-10-08
 
 用户要求将模型菜单内的HC/MAX线路改为左侧视频参数「线路」，值为Doubao/Dreamina。仅Seedance显示该参数，当前值进入左侧参数摘要；模型菜单所有型号沿Kling的图标、名称和选中标记行样式，不嵌入线路切换或HC/MAX标签。内部standard/backup与实际MAX/HC上游型号保持，切线路只更新可编辑草稿和既有报价/保存；冻结任务和Kling参数不改变。本条取代GG-418的线路展示位置与名称，未改变接口、定价或生成能力。
+
+GG-421（2026-10-08）：用户指定以doubao.svg替换Seedance图标；使用与Kling一致的16px固定图标及黑色mask样式，取代此前26px彩色ByteDance图标。

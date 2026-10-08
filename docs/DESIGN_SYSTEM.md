@@ -1,5 +1,7 @@
 # Design system
 
+GG-421：Seedance模型标识改用用户提供的public/model-icons/doubao.svg，默认16px固定尺寸及黑色mask与Kling一致，按钮和列表不再使用26px彩色ByteDance图标。
+
 ## GG-420 · 视频线路参数与统一模型行
 
 Seedance线路放在左侧视频参数面板首组，使用现有Options/ToggleGroup，标签「线路」，值Doubao/Dreamina；当前线路进入左侧摘要。Kling不显示线路。模型菜单统一复用既有Kling行的图标、字号、间距、浅灰hover/选中填充和右侧勾选，仅型号决定选中，不再展示HC/MAX或嵌套分组。保留现有黑灰、Radix焦点/关闭行为与生成时禁用。此条取代GG-418线路菜单展示。
