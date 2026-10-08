@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-08
-- Current phase: GG-418 持久画布 Seedance 双线路源码完成，未构建/检查/运行验收或启用。
-- Current objective: 交付 GG-418 源码与临时价格；另行委托本地0070及必要Web/唯一Worker更新后由用户手验。
+- Current phase: GG-419 本地Seedance更新/启动进行中。
+- Current objective: 按用户授权应用0070、必要构建并恢复Web/唯一Worker/Vite，保留本地数据。
 - Previous objective: GG-383上传复用源码交付；GG-382设计/官方对照已获用户接受，按其O1Key附件实现，不再等待设计反馈。
 
 ## Current checkpoint
+
+- [GG-419](tasks/GG-419-local-seedance-activation.md) 用户已授权本地更新/启动，分支chore/gg-419-local-seedance-activation，从干净7812fd9核验90a46ea祖先。应用角色均已停止，原Docker依赖及PG54449正常；仅必要构建、0070增量迁移和Web/唯一Worker/Vite恢复，数据/外部配置保留，不发生成或运行检查/测试/浏览器验收。状态进行中，下一步确认迁移历史和无在途任务后启用。
 
 - 当前源码：[GG-418](tasks/GG-418-canvas-seedance.md) 持久画布 Seedance 源码 90a46ea19b31b9b341883616b9f67f5f7c9df5d1 已提交：2.5/2.0/Fast/Mini×Doubao MAX/Dreamina HC，复用三块chat、1/2/4独立插槽、冻结输入/失败重试、实际进度与0估算及手动播放器。型号可自由切换，保留兼容素材/移除超量引用；模式按图/视频/音频点亮，单条合并文本和显式角色，2.5特殊 -1/adaptive 按官方有效约束。音频Handle、WAV和MOV输入/私有原始URL，实际fps/尺寸/时长及合计在POST前检查，不重复O1Key素材预上传。临时每秒价格经用户确认，支持线路/规格覆盖，自动时长预留上限、实际秒数向上取整在原结算事务退差，个人/企业及付费来源保持；0070和Drizzle声明同步。旧后台未报告的新型号禁用，防止旧保存接口拒绝新草稿。分支feature/gg-418-canvas-seedance，基线d4d1b3e，原F:/goodgood-worktrees/GG-116；十三项新回归来源和GG-035预期仅写未运行，未构建/检查/测试/浏览器/HTTP/SQL/Provider/生成/扣费或迁移/服务/GitHub/生产操作。未确认当下进程健康；上次已确认运行仍GG-414/1dc37ee及69迁移，本轮未改变。创建0/退役0、无子agent/缓存副本。下一步用户另行委托仅本地0070及必要Web/唯一Worker更新后手验；不宣称功能已运行验收。
 
