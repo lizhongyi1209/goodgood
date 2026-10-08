@@ -117,3 +117,7 @@ The user replaces the compact duration Select with a horizontal slider. Keep the
 ## GG-418 · 官方 Seedance 双线路 · accepted 2026-10-07
 
 用户接受GG-417规划并要求按官方实现。持久视频范围扩展为Seedance 2.5/2.0/Fast/Mini及Doubao MAX/Dreamina HC，沿既有chat/结果插槽/手动播放器，不重置Kling默认和冻结请求。官方能力驱动共享UI与后台校验；2.5首尾/首帧/编辑/延长固定adaptive，编辑-1，2.5支持纯音频及30/10/10，2.0按9/3/3。封装单条文本/角色/型号/端点/回执独立映射，-1报价先预留上限，成功按实际时长安全退差；平台价格独立，临时价格经用户确认后以源码默认表实现，外部配置可覆盖。音频沿现有私有资产/画布节点接入，不复制用户资产；参考顺序稳定、成功转存、失败单项重试、未知受理不自动POST。首版无Draft/MOV输出/工具UI（MOV输入沿私有视频资产支持），不发送Kling专属镜头字段。依据docs/tasks/GG-417-seedance-api-research.md所引官方及最新封装文档。任务GG-418仅源码，尚未运行验证或启用。
+
+## GG-420 · 线路作为独立参数 · accepted 2026-10-08
+
+用户要求将模型菜单内的HC/MAX线路改为左侧视频参数「线路」，值为Doubao/Dreamina。仅Seedance显示该参数，当前值进入左侧参数摘要；模型菜单所有型号沿Kling的图标、名称和选中标记行样式，不嵌入线路切换或HC/MAX标签。内部standard/backup与实际MAX/HC上游型号保持，切线路只更新可编辑草稿和既有报价/保存；冻结任务和Kling参数不改变。本条取代GG-418的线路展示位置与名称，未改变接口、定价或生成能力。

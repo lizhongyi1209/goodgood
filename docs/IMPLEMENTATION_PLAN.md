@@ -1,11 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-08
-- Current phase: GG-419 Seedance本地启用与项目启动完成，实际生成/浏览器验收由用户执行。
-- Current objective: 用户在5173手验Seedance；保持70迁移及Web/唯一Worker/Vite，后续源码任务从届时HEAD核验隔离。
+- Current phase: GG-420 Seedance线路参数与模型菜单UI源码完成，待用户手验。
+- Current objective: 用户刷新5173手验线路参数与统一模型列表；服务保持GG-419，无新增运行验证。
 - Previous objective: GG-383上传复用源码交付；GG-382设计/官方对照已获用户接受，按其O1Key附件实现，不再等待设计反馈。
 
 ## Current checkpoint
+
+- [GG-420](tasks/GG-420-seedance-line-settings.md) Seedance线路UI源码完成：左侧视频参数新增「线路」Doubao/Dreamina，并在参数摘要及无障碍名称显示当前值；Kling隐藏此参数。模型菜单全部统一图标/型号/选中标记行，去掉HC/MAX标签及内嵌线路切换；同一后台能力禁用规则覆盖各型号，换型号沿现有草稿保留线路。standard/backup、Provider ID、报价/保存/冻结任务和既有素材处理不变。分支feature/gg-420-seedance-line-settings，基线干净2e14ad6含90a46ea祖先，ADR0143已记录该显示决定。仅源码及文档，按用户要求未运行构建/检查/测试/浏览器/HTTP/SQL/Provider或生成/扣费、重启、GitHub/生产；原GG-419构建90e0605和70迁移未更新或重新探测。创建0/退役0、无子agent/依赖变动。用户刷新5173手验，运行验收未声明通过。
 
 - [GG-419](tasks/GG-419-local-seedance-activation.md) Seedance已本地启用、项目启动完成：用户授权0070增量迁移/必要构建及恢复服务，最终verified构建90e0605fb620e2ee0a052efc5a125bcdf4273ac8（含GG-418源码90a46ea及GG-416进度），总70迁移，历史69校验和匹配，原用户/画布/资产/任务/账本计数和余额保持。Web32320/32131、唯一Worker35040/32142（隐藏启动器33768/19948）和Vite30048/5173（入口23488、启动器32000）跨命令在线；Web/Worker readiness五项ok，5173版本代理同revision/verified，原画布HTTP200。初次开发密钥401已在用户明确授权后从剪贴板仅更新外部专用开发文件解决，密钥无输出/入库/入Git；随后无任务readiness认证通过。原容器/卷/云开发上传/Mailpit/Kling价格保持，Seedance沿已接受的临时每秒默认价；启动前活动任务/预留/outbox/两队列均0。只做启动必需构建/迁移/运行核对，未生成/扣费、fixture、lint/typecheck/check:local/测试/浏览器验收、GitHub或生产操作。创建0/退役0，无子agent/新依赖/自启；用户打开5173手验UI及实际生成，后续纯文档提交不改写实际运行revision。
 

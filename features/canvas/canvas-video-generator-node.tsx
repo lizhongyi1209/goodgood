@@ -9,11 +9,11 @@ import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
-import { isSeedanceVideoModel } from "@/shared/contracts/seedance-video-generation.mjs";
+import { CANVAS_SEEDANCE_LINES, isSeedanceVideoModel } from "@/shared/contracts/seedance-video-generation.mjs";
 import { listPrivateAudioMaterials } from "@/features/assets/http-audio-materials";
 import { privateImageUrls } from "@/shared/private-image-urls.mjs";
 import { VIDEO_GENERATION_TYPES, VIDEO_ACTIVE_STATES, defaultVideoRole, videoGenerationProblem,
-  type CanvasVideoGenerationDraft, type VideoGenerationInput, type VideoGenerationMedia, type VideoGenerationStatus, type VideoGenerationType, type VideoMaterial, type VideoModelId, type VideoRole, type SeedanceVideoLine } from "@/shared/contracts/video-generation.mjs";
+  type CanvasVideoGenerationDraft, type VideoGenerationInput, type VideoGenerationMedia, type VideoGenerationStatus, type VideoGenerationType, type VideoMaterial, type VideoModelId, type VideoRole } from "@/shared/contracts/video-generation.mjs";
 import { listPrivateVideoMaterials } from "@/features/creation/http-video-materials";
 import { CanvasTextGenerationContext as CanvasGenerationContext } from "./canvas-text-generation-context";
 import { canvasVideoInputs } from "./canvas-video-inputs";
@@ -227,19 +227,20 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
     });
     return () => { cancelAnimationFrame(first); cancelAnimationFrame(second); };
   }, [flow, id, selected]);
+  const lineName = seedance ? CANVAS_SEEDANCE_LINES.find((item) => item.id === (draft.seedanceLine ?? "standard"))?.name : undefined;
   const changeType = (type: VideoGenerationType) => {
     if (locked || !typeOptions.some((item) => item.id === type && item.enabled)) return;
     updateDraft(canvasVideoDraftForType(draft, type, inputs));
     setMessage("");
   };
-  const changeModel = (modelId: VideoModelId, line?: SeedanceVideoLine) => {
+  const changeModel = (modelId: VideoModelId) => {
     if (locked) return;
     const plan = canvasVideoDraftForModel(draft, modelId, inputs);
-    if (plan.draft === draft && (!isSeedanceVideoModel(modelId) || line === undefined || line === draft.seedanceLine)) return;
+    if (plan.draft === draft) return;
     const removed = new Set(plan.removedKeys);
     const edgeIds = inputs.flatMap((item) => item.edgeId && removed.has(item.key) ? [item.edgeId] : []);
     if (edgeIds.length) context.onRemoveInputs(edgeIds);
-    updateDraft(isSeedanceVideoModel(modelId) ? { ...plan.draft, seedanceLine: line ?? draft.seedanceLine ?? "standard" } : plan.draft);
+    updateDraft(isSeedanceVideoModel(modelId) ? { ...plan.draft, seedanceLine: draft.seedanceLine ?? "standard" } : plan.draft);
     setQuote(null); setQuoteError("");
     setMessage(removed.size ? `已移除 ${removed.size} 个多余参考。` : "");
   };
@@ -397,9 +398,10 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
           <div className={styles.controls}>
             <Popover open={parametersOpen} onOpenChange={(open) => { setParametersOpen(open); if (open) { setModelOpen(false); setTypeOpen(false); setStoryboardMenuOpen(false); } }}>
               <PopoverTrigger asChild data-slot="button">
-                <Button id={`video-parameters-${id}-trigger`} type="button" variant="ghost" size="sm" className={composerStyles.settingsTrigger} disabled={locked} aria-label={`视频参数：${parameterPreview}，${audioLabel}`}
+                <Button id={`video-parameters-${id}-trigger`} type="button" variant="ghost" size="sm" className={composerStyles.settingsTrigger} disabled={locked} aria-label={`视频参数：${lineName ? `${lineName}，` : ""}${parameterPreview}，${audioLabel}`}
                   aria-controls={`video-parameters-${id}`}>
                   <span className={styles.parameterPreview}>
+                    {lineName && <><span>{lineName}</span><span aria-hidden="true">·</span></>}
                     <span>{parameterPreview}</span><span aria-hidden="true">·</span>
                     <Tooltip>
                       <TooltipTrigger asChild><span className={styles.parameterAudio} aria-label={audioLabel}>
@@ -424,7 +426,7 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
           </div>
           <span className={composerStyles.toolSpacer} />
           <div className={styles.actions}>
-            <CanvasVideoModelSelect modelId={draft.modelId} line={draft.seedanceLine} open={modelOpen} disabled={locked} availableModels={availableModels}
+            <CanvasVideoModelSelect modelId={draft.modelId} open={modelOpen} disabled={locked} availableModels={availableModels}
               onOpenChange={(open) => { setModelOpen(open); if (open) { setTypeOpen(false); setParametersOpen(false); setStoryboardMenuOpen(false); } }} onChange={changeModel} />
 
             <Tooltip><TooltipTrigger asChild><span>

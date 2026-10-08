@@ -5,7 +5,7 @@ import { PopoverContent } from "@/components/ui/popover";
 import { Slider } from "@/components/ui/slider";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { VIDEO_GENERATION_MODELS, VIDEO_GENERATION_COUNTS, type CanvasVideoGenerationDraft, type VideoGenerationCount } from "@/shared/contracts/video-generation.mjs";
-import { seedanceVideoCapabilities } from "@/shared/contracts/seedance-video-generation.mjs";
+import { CANVAS_SEEDANCE_LINES, seedanceVideoCapabilities } from "@/shared/contracts/seedance-video-generation.mjs";
 import type { CanvasVideoParameterVisibility } from "./canvas-video-material-modes.mjs";
 import composerStyles from "./canvas-page.module.css";
 import styles from "./canvas-video-generator-node.module.css";
@@ -67,6 +67,9 @@ export function CanvasVideoGeneratorSettings({ id, draft, visibility, disabled, 
     className={`${composerStyles.settingsPanel} ${styles.settingsPopover} nodrag nopan nowheel`} aria-label="视频参数"
     onPointerDown={(event) => event.stopPropagation()} onWheel={(event) => event.stopPropagation()}>
     <h2 className={composerStyles.settingsTitle}>视频参数</h2>
+    {seedance && <Options name="线路" value={draft.seedanceLine ?? "standard"}
+      choices={CANVAS_SEEDANCE_LINES.map(({ id, name }) => ({ value: id, label: name }))}
+      disabled={disabled} onChange={(seedanceLine) => onChange({ seedanceLine: seedanceLine as CanvasVideoGenerationDraft["seedanceLine"] })} />}
     <Options name="清晰度" value={draft.resolution} choices={model.resolutions.map((value) => ({ value, label: value === "4k" ? "4K" : value }))}
       disabled={disabled} onChange={(resolution) => onChange({ resolution: resolution as CanvasVideoGenerationDraft["resolution"] })} />
     {visibility.aspectRatio && <section className={composerStyles.settingsSection}>

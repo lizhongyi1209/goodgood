@@ -5,7 +5,7 @@ export const CANVAS_SEEDANCE_MODELS = Object.freeze([
   { id: "seedance-2-0-mini", name: "Seedance 2.0 Mini", resolutions: ["480p", "720p"] },
 ]);
 export const CANVAS_SEEDANCE_LINES = Object.freeze([
-  { id: "standard", name: "Doubao MAX" }, { id: "backup", name: "Dreamina HC" },
+  { id: "standard", name: "Doubao" }, { id: "backup", name: "Dreamina" },
 ]);
 const providerModels = {
   standard: { "seedance-2-5": "doubao-seedance-2-5-260628-max", "seedance-2-0": "doubao-seedance-2-0-260128-max",
