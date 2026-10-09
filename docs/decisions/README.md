@@ -1,5 +1,6 @@
 # Decision records
 
+- `0144-design-system-v3.md` — proposed GG-405 target design system: neutral interface, near-black primary action, blue reserved for credits; `docs/design/` and coexisting `--ds-*` tokens, page-by-page migration.
 - `0091-single-slot-compose-release.md` — future production releases use one fixed Compose project; supersedes ADR 0017's blue/green procedure.
 - `0097-private-oss-object-storage.md` — private OSS application objects, ESA authorized reads, direct uploads, and retained historical R2 storage; application deployment pending.
 - `0098-emergency-dual-read-r2-write-recovery.md` — incident-only R2 writes on the GG-106 dual-read application; normal OSS preflight rejects the override.

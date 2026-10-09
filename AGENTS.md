@@ -27,7 +27,7 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
 3. Read the task-specific source of truth:
    - Product scope and terms: `docs/PRODUCT.md`
    - Historical rationale and rejected directions: `docs/PRODUCT_JOURNEY.md`
-   - Visual/UI work: `docs/DESIGN_SYSTEM.md`
+   - Visual/UI work: `docs/DESIGN_SYSTEM.md`; proposed target: `docs/design/` (ADR 0144)
    - Interaction/state work: `docs/UX_FLOWS.md`
    - Navigation and URLs: `docs/ROUTES.md`
    - Boundaries/integrations: `docs/ARCHITECTURE.md`
