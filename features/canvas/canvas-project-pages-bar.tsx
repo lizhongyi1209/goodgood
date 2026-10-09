@@ -31,17 +31,17 @@ export function CanvasProjectPagesBar({ pages, activePageId, busy, onSwitch, onA
           aria-controls="canvas-active-page" aria-selected={page.id === activePageId}
           tabIndex={page.id === activePageId ? 0 : -1}
           disabled={busy} className={styles.pageTab} onClick={() => onSwitch(page.id)}>
-          <Scan aria-hidden="true" className={styles.pageTabIcon} viewBox="3 3 18 18" strokeWidth={1.6} />
+          <Scan aria-hidden="true" className={styles.pageTabIcon} viewBox="2 2 20 20" strokeWidth={1.6} />
           <span>{page.name}</span>
         </button>
         {pages.length > 1 && <button type="button" className={styles.pageTabDelete}
           disabled={busy || page.deletingDisabled} aria-label={`删除${page.name}`}
           title={page.deletingDisabled ? "请等待上传或生成完成后再删除页面" : `删除${page.name}`}
-          onClick={() => onDeleteRequest(page.id)}><X aria-hidden="true" size={11} strokeWidth={1.5} /></button>}
+          onClick={() => onDeleteRequest(page.id)}><X aria-hidden="true" className={styles.pageTabIcon} viewBox="5 5 14 14" strokeWidth={1.6} /></button>}
       </div>)}
     </div>
     <button type="button" className={styles.pageAdd} aria-label="添加页面" title={pages.length >= CANVAS_PROJECT_MAX_PAGES ? "每个项目最多 10 个页面" : "添加页面"}
-      disabled={busy || pages.length >= CANVAS_PROJECT_MAX_PAGES} onClick={onAdd}><Plus aria-hidden="true" size={14} strokeWidth={1.6} /></button>
+      disabled={busy || pages.length >= CANVAS_PROJECT_MAX_PAGES} onClick={onAdd}><Plus aria-hidden="true" className={styles.pageTabIcon} viewBox="4 4 16 16" strokeWidth={1.6} /></button>
   </div>;
 }
 

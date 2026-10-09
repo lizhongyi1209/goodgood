@@ -2013,7 +2013,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button type="button" variant="ghost" size="icon" className={styles.brandTrigger} aria-label="GoodGood 菜单">
-              <Image src="/goodgood-g-icon.svg" alt="" width={26} height={26} className={styles.brandIcon} />
+              <Image src="/goodgood-g-icon.svg" alt="" width={20} height={20} className={styles.brandIcon} />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent side="bottom" align="start" sideOffset={8} className={styles.brandMenu}>

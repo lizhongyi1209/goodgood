@@ -1,11 +1,13 @@
 # Production implementation plan
 
-- Last synchronized: 2026-09-30
-- Current phase: GG-217平台币退役源码已精确合入当前UI，专项通过；GG-218已升级运行ba9a947/55迁移，GG-217接续串行整合。
-- Current objective: 删除平台币功能并验证积分独立性；与画布会话串行协调Web/唯一Worker切换。
-- Previous objective: GG-135 尝试拖动时对齐提示和落点吸附，站长未验收并决定暂缓图片对齐；选中后点击预设排列仅是未来可能方向。
+- Last synchronized: 2026-10-09
+- Current phase: GG-219 现有画布工具栏改动保存范围已确认，40 个无关换行项已恢复；准备仅提交/推送 6 个指定文件。
+- Current objective: 在现有 `fix/GG-219-canvas-header-scale` 分支保存 3 个画布文件及任务交接文档，推送 GitHub；不改功能代码、不开 PR、不合并、不部署。
+- Previous objective: GG-217 平台币退役与 GG-218 多页运行串行整合；历史进度见对应任务，本轮不接续运行操作。
 
 ## Current checkpoint
+
+- Task [GG-219](tasks/GG-219-canvas-header-scale.md)：**已有实现待提交/推送；范围已确认，未部署**。实际工作树 `F:/goodgood-worktrees/GG-219`，分支 `fix/GG-219-canvas-header-scale`，提交前基线 `adea1e801737aa598c0d4f4f6d7baf259a6b247f`；`05e90d2` 与 `ba9a947` 祖先核验通过。保存 Logo 20px、工具栏文字/图标 12px、控件 26px 的已有差异及 3 个交接文档；40 个仅换行状态项已按用户要求恢复，3 个源码 SHA-256 保持原值，其他工作树不操作。diff 检查通过；遵循任务卡既有不复测要求，本次未运行 `check:local`，不宣称通过。此检查点仅描述 GG-219 存档分支，当前主画布源码在 GG-116 工作树 `fix/gg-421-seedance-model-icon` / `547022e`，该开发线另有 33 个提交尚未推送。
 
 - Task [GG-217](tasks/GG-217-remove-jcoin.md)：入口/模块/奖励timer移除，旧API410，历史表保持；全门禁577通过/15基线失败/22跳过，类型/构建/专项通过。前端已精确合入GG-116；GG-218运行ba9a947后接续隔离退役候选，不覆盖画布、不并行抢服务。
 
@@ -90,8 +92,8 @@
 - **2026-09-17 首次生产恢复演练通过**：快照 `ce191630`、59 表 / 2403 行 / 43 迁移；
   维护窗口约 66 秒。「备份 timer disabled、无自动备份」的旧结论**已更正为错误**。
 - 独立缺口（已记录未处理）：**仅剩无告警通道**。
-- Next action: 从GG-218 verified ba9a947接续最小平台币退役候选，核验零活跃与唯一Worker后串行替换并记录运行证据。
-- Blockers: 当前16项继承模型/计费等失败见GG-215；共享服务变更须与GG-218串行，不能用旧runtime覆盖多页契约。
+- Next action: 只暂存 GG-219 的 3 个画布源码和任务卡/BACKLOG/本页，复核暂存差异并提交、普通推送同名 GitHub 分支并核对远端；随后仍待站长视觉验收。
+- Blockers: 保存范围无阻塞；代码门禁未运行。最新画布分支与 GitHub main 已分叉（main 独有 5、画布独有 547 个提交），不在本轮整合；共享服务与生产状态不做操作。
 - 参考图校验最长近 6 分钟、超过 nginx 70s 读超时的服务端性能根因仍待排查；
   GG-103 前端通过 owner-scoped 状态查询避免把已入库素材误报为失败。
 
