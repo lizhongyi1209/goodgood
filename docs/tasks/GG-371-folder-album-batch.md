@@ -30,3 +30,5 @@
 
 - 实际源码：GG-371文件夹相册与紧凑组合查看源码已精确接入d433fbf4633a1b162af926a787be0dd79cc47136（前置67dd0f5/b3a2d24；隔离bedcaf0/cdcd881/085ce0e，子agent原始e7c62e7/2ed7c38）。资产文件夹完整授权图片集可一次拖入一个360×300相册，5列内部滚动预览全部图/大图查看/失败重试；只接批量候选端口，整集合参与候选，保持公共参考及单请求10图边界。使用album组wire+隐藏真实sourceImage成员，拖入时快照；整体移动/复制/删除/历史/刷新恢复及普通组尺寸保持。chat仅显示查看组合入口，独立有界Dialog每页12组、翻页/跳页/真实图序，巨大组合直接定位目标页。沿GG-276回归只写来源，未自动构建/lint/typecheck/代码或diff检查/测试/浏览器验收，无HTTP/SQL/Provider/生成/扣费、运行更新或生产操作；GG-366运行receipt保持未重查。创建3/退役3，全部managed辅助已确认归档；两个写入子agent完成，未建立依赖缓存。未验收/未部署，用户刷新5173手验。
 - 本轮创建3/退役3；list_artifacts确认controller、album-model、combination-preview均为archived_worktree，源提交可恢复，无未完成辅助或依赖缓存。
+
+- 下一步：按本卡原有状态和当前 IMPLEMENTATION_PLAN 接续；未授权的手验/运行操作仍由用户决定，已撤回或被取代内容不自动恢复。

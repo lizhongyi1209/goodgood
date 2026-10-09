@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 @import "../vendor/shadcn-tailwind-4.13.0.css";
 @import "@xyflow/react/dist/style.css";
+@import "./design-tokens.css";
 
 @theme inline {
   --color-background: var(--white);

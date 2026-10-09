@@ -13,3 +13,5 @@
 - 快照地址：https://github.com/lizhongyi1209/goodgood/tree/design/gg-402-frontend-snapshot
 - 交接地址：https://github.com/lizhongyi1209/goodgood/blob/design/gg-402-frontend-snapshot/docs/FRONTEND_DESIGN_HANDOFF.md
 - 发布说明：本回执文档随后追加到同一设计分支，应用源码仍固定GG-401；功能分支从本地最新handoff继续，其他AI另建自己的设计分支。未创建PR/发消息/合并/修改仓库权限或触发main工作流。
+
+- 下一步：按本卡原有状态和当前 IMPLEMENTATION_PLAN 接续；未授权的手验/运行操作仍由用户决定，已撤回或被取代内容不自动恢复。

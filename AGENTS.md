@@ -8,14 +8,11 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
 ## Product identity
 
 - Product: **GoodGood**, a premium, image-first AI visual creation workspace.
-- Primary task: let creators generate repeatedly, inspect results, collect
-  assets, and preserve a coherent creative session as a resumable project.
+- Primary task: let creators generate repeatedly, inspect results, collect assets, and preserve a coherent creative session as a resumable project.
 - Live stage: publicly open controlled alpha; deployed access rules are recorded below. Read
   `docs/CURRENT_STATE.md` for actual deployed capabilities and release identity;
   never infer production from a branch name or old chat.
-- Primary language today: Simplified Chinese. Keep the information architecture
-  ready for later internationalization; do not hard-code backend enums from UI
-  labels.
+- Primary language today: Simplified Chinese. Keep the information architecture ready for later internationalization; do not hard-code backend enums from UI labels.
 
 ## Read before changing code
 
@@ -27,7 +24,7 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
 3. Read the task-specific source of truth:
    - Product scope and terms: `docs/PRODUCT.md`
    - Historical rationale and rejected directions: `docs/PRODUCT_JOURNEY.md`
-   - Visual/UI work: `docs/DESIGN_SYSTEM.md`
+   - Visual/UI work: `docs/DESIGN_SYSTEM.md`; proposed target: `docs/design/` (ADR 0144 / GG-422)
    - Interaction/state work: `docs/UX_FLOWS.md`
    - Navigation and URLs: `docs/ROUTES.md`
    - Boundaries/integrations: `docs/ARCHITECTURE.md`
@@ -42,36 +39,19 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
 
 ## Session and delivery contract
 
-- A concise natural-language request is enough. The agent restores context,
-  records scope/acceptance, allocates a task ID, and maintains its task card.
-  Do not require the user to repeat earlier decisions or write a handoff essay.
-- New requests start isolated branches from the verified IMPLEMENTATION_PLAN
-  checkpoint; use main only when it contains that baseline. Verify ancestry.
-  Parallel windows/subagents use registered worktrees and WORKFLOW's
-  create/own/integrate/retire gate. Never force-remove dirty worktrees or leave
-  child caches behind. Never bulk-merge parked C6 without explicit scope.
-- Save material decisions and resumable next steps during work, before waits,
-  compaction, or handoff. Chat memory is not the project's source of truth.
-- Local implementation, tests, CI, image publication, and production deployment
-  are separate states. Existing real production data must not be reset by old
-  conversion scripts. Production authority is specific to the approved task.
-- Proceed through approved in-scope steps without repeated confirmations;
-  ask when a missing choice changes product direction, data safety, cost, or
-  external authority. Do not silently grow alpha work into full-seed readiness.
-- Match effort to the requested outcome. Start with the smallest behaviorally
-  complete change and targeted inspection; add refactors or hardening only when
-  acceptance requires them or the current change exposes a concrete defect.
-- Start UI decisions from the actual user task and favor simplicity. When an
-  earlier choice already determines a value, derive it instead of adding a second
-  control; show a label only when it helps distinguish meaningful user choices.
-- Follow repository workflows, not personal/external business skills. Tool
-  availability or legacy hosting metadata does not change the deployment target.
+- A concise natural-language request is enough. The agent restores context, records scope/acceptance, allocates a task ID, and maintains its task card. Do not require the user to repeat earlier decisions or write a handoff essay.
+- New requests start isolated branches from the verified IMPLEMENTATION_PLAN checkpoint; use main only when it contains that baseline. Verify ancestry. Parallel windows/subagents use registered worktrees and WORKFLOW's create/own/integrate/retire gate. Never force-remove dirty worktrees or leave child caches behind. Never bulk-merge parked C6 without explicit scope.
+- Save material decisions and resumable next steps during work, before waits, compaction, or handoff. Chat memory is not the project's source of truth.
+- Local implementation, tests, CI, image publication, and production deployment are separate states. Existing real production data must not be reset by old conversion scripts. Production authority is specific to the approved task.
+- Proceed through approved in-scope steps without repeated confirmations; ask when a missing choice changes product direction, data safety, cost, or external authority. Do not silently grow alpha work into full-seed readiness.
+- Match effort to the requested outcome. Start with the smallest behaviorally complete change and targeted inspection; add refactors or hardening only when acceptance requires them or the current change exposes a concrete defect.
+- Start UI decisions from the actual user task and favor simplicity. When an earlier choice already determines a value, derive it instead of adding a second control; show a label only when it helps distinguish meaningful user choices.
+- Follow repository workflows, not personal/external business skills. Tool availability or legacy hosting metadata does not change the deployment target.
 
 ## Product invariants
 
 - The creation surface is a working tool, never a marketing or editorial hero.
-- The empty creation state stays quiet: small brand mark, one primary sentence,
-  one secondary sentence; no fake examples or parameter explanation.
+- The empty creation state stays quiet: small brand mark, one primary sentence, one secondary sentence; no fake examples or parameter explanation.
 - The composer shows prompt, reference upload, settings, and upward-arrow send by
   default. Parameters expand downward as one attached drawer.
 - Prompt textarea auto-grows to eight lines, then scrolls. Tool positions remain

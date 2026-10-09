@@ -30,3 +30,5 @@
 
 - GG-370独立画布「批量生成」源码已精确接入8e3e45b4d14fdec3d02044f9bb693826c9ff2bd7（前置aa68728/0aa2a23/23310e2；隔离c000b4a/4d90638/613c521/ae5fbb3）。公共参考+1–5候选组，画布源图/多选共用端点/参考组接入，全部组合或顺序配对，实际单请求去重≤10；chat共享提示词/模型/参数、实际总额与折叠前6图序预览。逐组合冻结输入复用并发slot/恢复/独立失败重试，逐实际引用数报价；沿1MiB文档容量预检及保存后门控，超额不静默截断或提交。独立组件+既有imageGenerator wire/批量ID/handle适配，不新增后台未知字段；本机batchConfiguration保存空组/空模式并在远端剥离，云按有效端口恢复。普通节点原路径保持。沿GG-276只写回归来源，未自动构建/lint/typecheck/代码或diff检查/测试/浏览器验收，无HTTP/SQL/Provider/生成/扣费、运行更新或生产操作；GG-366运行receipt保持未重查。创建4/退役4，全部managed辅助确认归档，两个写入子agent完成，无依赖缓存。用户刷新5173手验；未验收/未部署。
 - 预建UI辅助已归档，其余controller/planner/persistence辅助在精确集成后由archive_worktree归档；list_artifacts四项均archived_worktree，无新依赖缓存/运行句柄。下一任务仍从GG-116当前HEAD核验源码祖先，保持受保护生产与其他窗口状态。
+
+- 下一步：按本卡原有状态和当前 IMPLEMENTATION_PLAN 接续；未授权的手验/运行操作仍由用户决定，已撤回或被取代内容不自动恢复。

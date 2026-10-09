@@ -1,5 +1,10 @@
 # 当前开发版本与跨窗口交接
 
+## GG-422（2026-10-09 · 设计文档接入）
+
+GG-421 最新源码 547022e 已完整备份 GitHub，远端 HEAD 核对一致。新分支 `design/GG-422-design-system` / `F:/goodgood-worktrees/GG-422-design-system` 从该提交接续，按 cherry-pick 接入来源 336f24a；来源 GG-405 任务编号改为 GG-422，ADR 0144 保持提议中。本轮明确授权文档测试和 build:local，只定义并存 --ds token，不迁移页面或修改业务组件；5173 的 GG-116 源码分支和现有服务/数据保持。验证和推送结果见 [GG-422 任务卡](tasks/GG-422-design-system-docs.md)。下方是各任务当时记录，不以旧 PID 或旧“当前”作为新的启动依据。
+
+
 > [GG-421](tasks/GG-421-seedance-model-icon.md) 用户指定doubao.svg已加入静态模型图标，Seedance共享图标替换为与Kling一致的16px固定黑色mask，按钮和列表同步，去掉原26px彩色图标。源码完成，分支fix/gg-421-seedance-model-icon，基线干净a00272c祖先核验；仅源码/静态SVG/文档，未构建/检查/测试/浏览器、HTTP/SQL/Provider、生成/扣费、重启或GitHub/生产。原GG-419运行receipt保持且本轮未重新探测，创建0/退役0，无子agent/依赖变动；用户刷新5173手验。
 
 > [GG-420](tasks/GG-420-seedance-line-settings.md) Seedance线路UI源码完成：左侧视频参数新增「线路」Doubao/Dreamina，并在参数摘要及无障碍名称显示当前值；Kling隐藏此参数。模型菜单全部统一图标/型号/选中标记行，去掉HC/MAX标签及内嵌线路切换；同一后台能力禁用规则覆盖各型号，换型号沿现有草稿保留线路。standard/backup、Provider ID、报价/保存/冻结任务和既有素材处理不变。分支feature/gg-420-seedance-line-settings，基线干净2e14ad6含90a46ea祖先，ADR0143已记录该显示决定。仅源码及文档，按用户要求未运行构建/检查/测试/浏览器/HTTP/SQL/Provider或生成/扣费、重启、GitHub/生产；原GG-419构建90e0605和70迁移未更新或重新探测。创建0/退役0、无子agent/依赖变动。用户刷新5173手验，运行验收未声明通过。

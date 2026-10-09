@@ -17,3 +17,5 @@
 - 编号协调：接入前另一窗口提交GG-351顶部工具区设计任务，本任务改编号GG-352；managed创建路径仍为gg-351-image-region-sticker，归档使用原identityKey。接入保留最新GG-346的6cd79e2操作排布及GG-351方案文档。
 
 - ADR协调：并行顶部工具区后续实现正在登记0140，本任务接入前改为ADR0141，保留对方未提交canvas-page.tsx/module.css与任务卡，不等待或覆盖其源码。
+
+- 下一步：按本卡原有状态和当前 IMPLEMENTATION_PLAN 接续；未授权的手验/运行操作仍由用户决定，已撤回或被取代内容不自动恢复。

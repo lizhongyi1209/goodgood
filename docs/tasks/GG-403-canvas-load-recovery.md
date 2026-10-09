@@ -14,3 +14,5 @@
 - 快照：更新前ls-remote仍fc345f850eab1483e7c1deb6c153e066ff08ea8d，尚无其他AI对该分支改动；本提交正常fast-forward同步修复，git push已成功，远端快照fc345f8→5156fb7，未force或覆盖其他AI改动。
 
 - 修复源码及首次同步回执：5156fb7b03390a79d32af285485e882880a92378；后继只补回执文档，源码/服务身份不再变化。其他AI可使用设计快照最新HEAD，原会话继续fix/gg-403-canvas-load-recovery的当前检查点。
+
+- 下一步：按本卡原有状态和当前 IMPLEMENTATION_PLAN 接续；未授权的手验/运行操作仍由用户决定，已撤回或被取代内容不自动恢复。

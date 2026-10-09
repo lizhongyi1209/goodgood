@@ -1,5 +1,7 @@
 # Design system
 
+> GG-422 的目标规范（提议中，ADR 0144）见 [docs/design/](design/README.md)；本文件继续记录现行画布界面，新 token 暂不应用于页面。
+
 GG-421：Seedance模型标识改用用户提供的public/model-icons/doubao.svg，默认16px固定尺寸及黑色mask与Kling一致，按钮和列表不再使用26px彩色ByteDance图标。
 
 ## GG-420 · 视频线路参数与统一模型行

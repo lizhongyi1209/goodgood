@@ -10,4 +10,4 @@
 - 生命周期：根agent，无子agent，创建/退役worktree均0，无依赖变动；现有GG-419运行receipt保持，不宣称新的构建已启用。
 - 下一步：用户刷新5173原画布，切换Seedance后在左侧参数中选择Doubao/Dreamina并手验模型菜单；不需要因UI改动更新后端。
 
-- 完成回执：[GG-420](tasks/GG-420-seedance-line-settings.md) Seedance线路UI源码完成：左侧视频参数新增「线路」Doubao/Dreamina，并在参数摘要及无障碍名称显示当前值；Kling隐藏此参数。模型菜单全部统一图标/型号/选中标记行，去掉HC/MAX标签及内嵌线路切换；同一后台能力禁用规则覆盖各型号，换型号沿现有草稿保留线路。standard/backup、Provider ID、报价/保存/冻结任务和既有素材处理不变。分支feature/gg-420-seedance-line-settings，基线干净2e14ad6含90a46ea祖先，ADR0143已记录该显示决定。仅源码及文档，按用户要求未运行构建/检查/测试/浏览器/HTTP/SQL/Provider或生成/扣费、重启、GitHub/生产；原GG-419构建90e0605和70迁移未更新或重新探测。创建0/退役0、无子agent/依赖变动。用户刷新5173手验，运行验收未声明通过。
+- 完成回执：[GG-420](GG-420-seedance-line-settings.md) Seedance线路UI源码完成：左侧视频参数新增「线路」Doubao/Dreamina，并在参数摘要及无障碍名称显示当前值；Kling隐藏此参数。模型菜单全部统一图标/型号/选中标记行，去掉HC/MAX标签及内嵌线路切换；同一后台能力禁用规则覆盖各型号，换型号沿现有草稿保留线路。standard/backup、Provider ID、报价/保存/冻结任务和既有素材处理不变。分支feature/gg-420-seedance-line-settings，基线干净2e14ad6含90a46ea祖先，ADR0143已记录该显示决定。仅源码及文档，按用户要求未运行构建/检查/测试/浏览器/HTTP/SQL/Provider或生成/扣费、重启、GitHub/生产；原GG-419构建90e0605和70迁移未更新或重新探测。创建0/退役0、无子agent/依赖变动。用户刷新5173手验，运行验收未声明通过。

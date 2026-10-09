@@ -19,3 +19,5 @@
 - GG-350原因采集随本次当前版本唯一Worker恢复启用；GG-356数据库修复保留。并未自动重试生成或扣费；实际生图/保存、图片工具及界面效果仍由用户手验。
 - 原两份忽略适配器及六份日志备份在%TEMP%/goodgood-local-services/gg357-startup-backup，构建后适配器原样恢复，现行日志仍复用current-{web,worker,vite}.{out,err}.log，全部仓库外或Git忽略。没有删除已有恢复备份。
 - 创建0/退役0，无子agent/新依赖缓存。未运行lint/typecheck/代码检查/测试或生产操作；交接文档提交不改写当前运行receipt，后续重启仍先按届时HEAD构建。
+
+- 下一步：按本卡原有状态和当前 IMPLEMENTATION_PLAN 接续；未授权的手验/运行操作仍由用户决定，已撤回或被取代内容不自动恢复。

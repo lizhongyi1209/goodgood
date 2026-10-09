@@ -1,5 +1,7 @@
 # Decision records
 
+- `0144-design-system-v3.md` — proposed GG-422 target design system and coexisting `--ds-*` tokens; current canvas rules and page styles remain effective.
+
 - `0136-image-metadata-copies.md` — EXIF/XMP 参数提取、添加与清除，使用新图片副本，源资产和真实生成记录保持。
 
 - `0118-expanded-desktop-sidebar-home.md` — expanded PC navigation and labelled Home entry; supersedes ADR0111 desktop icon-only presentation.
@@ -188,3 +190,21 @@ ADR 0053 adds standalone-delimited concurrent prompt batches for GG-040.
 - `0125-canvas-reference-thumbnail-restoration.md` — 图片生成器参考图恢复真实缩略与悬停预览，仅取代GG-273图片文件卡展示，文本/视频和混合端口保持。
 - `0126-canvas-image-crop.md` — 图片名行上方快捷裁剪、图上选区和右侧预设面板；新增国内/电商分组、无LinkedIn，真实裁剪素材沿用私有上传与项目保存。
 - `0141-image-region-and-stickers.md` — 图片快捷栏框选原图bbox与可复制区域提示词、上层贴图移动/缩放/旋转/层序，视图缩放不改变原尺寸，确认保存PNG旁置副本。
+
+## 画布后续记录（补齐既有索引）
+
+- `0127-canvas-text-generation.md` — ADR 0127 · 画布文本生成与双击编辑
+- `0128-model-prompt-limits-and-composition-preview.md` — ADR 0128: Model prompt limits and final composition preview
+- `0129-text-generation-interruption-billing.md` — ADR 0129 · 文本生成中断半价
+- `0130-text-generation-presets.md` — ADR 0130 · 文本生成预设
+- `0131-canvas-concurrent-prompt-batches.md` — ADR 0131: Concurrent prompt batches inside canvas image generators
+- `0132-canvas-adaptive-image-previews.md` — ADR 0132 · 画布按需最高2K图片预览
+- `0133-canvas-text-template-assets.md` — ADR 0133 · 文本节点快捷栏与私有文本模板资产
+- `0134-canvas-image-result-slots.md` — ADR 0134: Stable canvas image result slots and individual retries
+- `0135-canvas-node-groups.md` — ADR 0135 · Canvas node groups
+- `0137-platform-announcements.md` — ADR 0137 · 平台公告与阅读通知
+- `0138-paid-image-metadata-cleanup.md` — ADR 0138 · 去除AI与固定积分结算
+- `0139-reference-first-color-grade.md` — ADR 0139 · 参考图优先的自动校色
+- `0140-canvas-header-floating-groups.md` — ADR 0140 · 画布顶部白色悬浮分组
+- `0142-reference-upload-idempotency-and-reuse.md` — ADR 0142: Idempotent image uploads and reuse of identical original files
+- `0143-canvas-kling-video-generation.md` — ADR 0143: Durable Kling video generation in the canvas
