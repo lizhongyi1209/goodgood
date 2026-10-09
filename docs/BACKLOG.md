@@ -5,7 +5,7 @@
 
 | ID | 事项 | 当前状态 | 入口 |
 | --- | --- | --- | --- |
-| GG-422 | 设计系统文档与并存 token | 文档测试 16/16、build:local 通过；页面不迁移，ADR 0144 提议中；推送待完成 | [任务](tasks/GG-422-design-system-docs.md) / [ADR](decisions/0144-design-system-v3.md) |
+| GG-422 | 设计系统文档与并存 token | 接入 a411892 已推送；文档测试 16/16、build:local 通过；页面不迁移，ADR 0144 提议中 | [任务](tasks/GG-422-design-system-docs.md) / [ADR](decisions/0144-design-system-v3.md) |
 | GG-421 | Seedance 模型图标 | 547022e 已完整备份 GitHub；图标手验沿原任务 | [任务](tasks/GG-421-seedance-model-icon.md) |
 | GG-420 | Seedance 线路参数 | 源码已交付，当前 UI/模型规则保留 | [任务](tasks/GG-420-seedance-line-settings.md) |
 | GG-419 | 本地 Seedance 启用 | 最近运行收据 90e0605 / 70 迁移，本轮未重启或探测 | [任务](tasks/GG-419-local-seedance-activation.md) |
