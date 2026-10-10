@@ -1,6 +1,6 @@
 # 当前开发版本与跨窗口交接
 
-GG-424 当前检查点：PR #8 已合并到 design/GG-422-design-system / ce86e66；独立分支 fix/GG-424-existing-check-errors 在 F:/goodgood-worktrees/GG-424，交付 PR #9。307198c 初次重生成 package-lock；CI npm 11.19.0 的精确补锁在 3d65ef0，同版本 npm ci 成功。16d35c0 以最小改动清零 27 文件 / 63 lint 错误、15 类型诊断及 26 个陈旧测试失败。最终锁文件下 npm run check:local 通过：lint 0 错误 / 173 警告、typecheck 0、build 通过、1197 测试为 1171 通过 / 0 失败 / 26 跳过。下一步等待 CI，不合并/部署；原 5173 / Web / Worker / 数据与凭据未操作。
+GG-424 当前检查点：PR #8 已合并到 design/GG-422-design-system / ce86e66；独立分支 fix/GG-424-existing-check-errors 在 F:/goodgood-worktrees/GG-424，交付 PR #9。307198c 初次重生成 package-lock；CI npm 11.19.0 的精确补锁在 3d65ef0，同版本 npm ci 成功。16d35c0 以最小改动清零 27 文件 / 63 lint 错误、15 类型诊断及 26 个陈旧测试失败。PR 第二轮安装与质量门禁已通过，随后 Trivy 报告 8 个有修复版本的 HIGH/CRITICAL 项；4986aa4 将相关依赖提升到扫描给出的最低安全版本并同步锁文件与固定值测试，不改业务代码。最新 npm run check:local 通过：lint 0 错误 / 173 警告、typecheck 0、build 通过、1197 测试为 1171 通过 / 0 失败 / 26 跳过。下一步等待 CI 复核，不合并/部署；原 5173 / Web / Worker / 数据与凭据未操作。
 
 GG-423 第 6 个追加提交（从 5f6f66e，前五提交保持）：完整侧栏字标 logo-height=18px，中屏图标栏 / 手机 G 使用 icon-lg=20px；CSS、JSON 用途和首页文档同步。GG-423 源码 lint 0 / 18，CSS / JSON 解析及 token 契约通过，全量 63→63 / 172→172、27 文件错误明细相同；docs 16/16、build、首页 / SSR 10/10。demo on 1440/1024 整页重截并查看，文件使用 home-logo- 前缀；本轮唯一 55124 预览已停止。上一提交 5f6f66e 的全量类型 15 / 测试失败 26 已另行复核且列表与 5e404e2 完全一致，结果补进 PR，本轮不重复该全量门禁。正常推送并更新 PR #8，不合并 / 部署，原真实运行栈保持。以下为此前各轮交付历史。
 

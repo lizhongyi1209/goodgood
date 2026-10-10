@@ -5,7 +5,7 @@
 
 | ID | 事项 | 当前状态 | 入口 |
 | --- | --- | --- | --- |
-| GG-424 | 存量检查错误 | 已实现；lint 63→0、typecheck 15→0、测试失败 26→0，check:local 通过；待 PR / CI，不合并 | [任务](tasks/GG-424-existing-check-errors.md) |
+| GG-424 | 存量检查错误 | 已实现；lint 63→0、typecheck 15→0、测试失败 26→0，check:local 通过；PR #9 依赖扫描修复待 CI 复核，不合并 | [任务](tasks/GG-424-existing-check-errors.md) |
 | GG-423 | 首页设计系统 | PR #8 已合并到 design/GG-422-design-system / ce86e66；GG-424 从此检查点接续 | [任务](tasks/GG-423-home-design-system.md) |
 | GG-422 | 设计系统文档与并存 token | 接入 a411892 已推送；当时文档测试 16/16、build:local 通过；ADR 0144 后由 GG-423 接受 | [任务](tasks/GG-422-design-system-docs.md) / [ADR](decisions/0144-design-system-v3.md) |
 | GG-421 | Seedance 模型图标 | 547022e 已完整备份 GitHub；图标手验沿原任务 | [任务](tasks/GG-421-seedance-model-icon.md) |

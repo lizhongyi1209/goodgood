@@ -1,6 +1,6 @@
 # GG-424 — 画布线存量检查错误清理
 
-- 状态：已实现并完成本地门禁；待 PR 审阅与 GitHub CI，不合并、不部署。
+- 状态：已实现并完成本地门禁；PR #9 的依赖扫描修复待 GitHub CI 复核，不合并、不部署。
 - 最后更新：2026-10-10。
 - 来源：[GG-423](GG-423-home-design-system.md) 验证与用户选择 1。
 - 基线：design/GG-422-design-system / ce86e66447324956c7eb50e41bf011425ad07d1b（已合并 PR #8）。
@@ -50,6 +50,7 @@ ce86e66 同一锁定依赖和 ESLint 配置下为 63 错误 / 172 警告。下�
 - 代码与测试提交：16d35c0。63 个 lint 错误清零；15 个类型诊断通过 unknown 响应收窄、可选签名和等价 DOM/BigInt 类型写法清零。
 - 原 26 个失败均为已实现能力后的陈旧夹具或断言：Nano Banana 2.1 默认、MOV/WAV、四角缩放、恢复轮询冻结 job、公告运行依赖、首页账户文案等。只同步测试契约，未为测试改变产品行为；全量失败 26 → 0。
 - 锁文件提交：307198c 先按本机 npm 11.6.2 执行 lock-only，本机 npm ci 成功；PR CI 的 npm 11.19.0 仍报告缺失两个 1.10.0 节点。随后用 CI 精确版本重跑，同步提交 3d65ef0，明确新增 `@rolldown/binding-wasm32-wasi` 下的 `@emnapi/core@1.10.0` 与 `@emnapi/runtime@1.10.0`，并完成同版本 npm ci。
+- CI 依赖扫描修复：1dd180b 对应的第二轮 CI 已通过 `npm ci` 与仓库质量门禁，Trivy 随后报告 8 个已提供修复版本的 HIGH/CRITICAL 项。4986aa4 仅将 `next` / `eslint-config-next` 提升到 16.3.8、`nodemailer` 到 10.0.5、`sharp` 到 0.35.5、`fast-uri` 到 3.1.7，并覆盖 `source-map-js` 1.2.2；同步安全版本固定测试与 npm 11.19.0 锁文件，未改业务代码。
 - npm run check:local：最终锁文件下复跑通过。lint 0 错误 / 173 警告；typecheck 0 诊断；build:local 通过；测试 1197 项，1171 通过 / 0 失败 / 26 跳过。
 - 本地证据在忽略的 outputs/gg424-* 日志中，不提交构建、测试输出或凭据；未操作运行服务、数据库、Provider 或生产。
-- 下一步：推送分支并向 design/GG-422-design-system 开 PR，等待 Verify source and image 绿灯；不合并。
+- 下一步：推送 4986aa4 及本任务记录，等待 PR #9 的 Verify source and image 复核依赖扫描；不合并。
