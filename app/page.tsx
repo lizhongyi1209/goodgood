@@ -8,6 +8,9 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties, type Whee
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { HomePage } from "@/features/home/home-page";
+import { homeDemoEnabled } from "@/features/home/home-feature-flag.mjs";
+import { ImageCreatePage } from "@/features/create";
+import { WorkspaceShell } from "@/features/workspace-shell";
 import { downloadCanvasImageLink } from "@/features/canvas/canvas-asset-addition.mjs";
 import { Button } from "@/components/ui/button";
 import { CreditIcon } from "@/components/ui/credit-icon";
@@ -298,6 +301,7 @@ const videoAssetMediaFilters = [
 }>[];
 
 const ASSET_DETAIL_HISTORY_KEY = "goodgoodAssetDetail";
+const homeDemoNavigationEnabled = homeDemoEnabled(import.meta.env.DEV, import.meta.env.VITE_GG_HOME_DEMO);
 
 function readAssetDetailNavigationState(state: unknown): AssetDetailNavigationState | null {
   if (!state || typeof state !== "object") return null;
@@ -3086,9 +3090,12 @@ export default function Home({
   const homeReferences = creationMode === "video" ? videoReferences : referenceImages;
   const homePendingReference = homeReferences.some(reference => reference.status !== "ready");
   const homeInsufficientCredits = creationMode === "image" && displayedAvailableCredits != null && imageBatchCredits != null && BigInt(displayedAvailableCredits) < BigInt(imageBatchCredits);
+  const designCreateReady = activeView === "create" && (!workspaceId || workspaceAccessReady) && !(routeProjectId && (projectRestoringId === routeProjectId || projectRouteError));
+  const showImageCreate = !showHome && designCreateReady && creationMode === "image";
+  const workspaceAccountActions = { onAccount: handleCreditsNav, onFeedback: handleFeedbackNav, onLogout: () => void handleLogout(), onLogin: handleLogin, onManagement: handleOrganizationNav, onDistribution: handleDistributionNav, enterpriseVisible: organizationNavigationVisible };
 
   return (
-    <main className={showHome ? undefined : "app-shell"}>
+    <main className={showHome || showImageCreate ? undefined : "app-shell"}>
       {showHome ? <HomePage
         session={authenticationSession}
         name={authenticationSession ? personalProfile.profile?.displayName ?? DEFAULT_PROFILE_NAME : "登录 GoodGood"}
@@ -3099,7 +3106,7 @@ export default function Home({
         onProjects={handleProjectsNav}
         onAssets={handleAssetNav}
         onCreation={openHomeGeneration}
-        accountActions={{ onAccount: handleCreditsNav, onFeedback: handleFeedbackNav, onLogout: () => void handleLogout(), onLogin: handleLogin, onManagement: handleOrganizationNav, onDistribution: handleDistributionNav, enterpriseVisible: organizationNavigationVisible }}
+        accountActions={workspaceAccountActions}
         composer={{
           mode: creationMode,
           prompt: creationMode === "video" ? videoPrompt : prompt,
@@ -3119,7 +3126,64 @@ export default function Home({
           disabled: !authenticationSession || authenticationSession.access.status !== "active" || homePendingReference || homeInsufficientCredits || (creationMode === "image" ? !activeBillingQuote : videoInterfaceAvailability !== "available"),
           notice: homePendingReference ? "请等待素材上传完成，或重试失败的素材。" : homeInsufficientCredits ? "积分不足，请补充积分后生成。" : billingError ? "积分暂时无法读取，请稍后重试。" : undefined,
         }}
-      /> : <>
+      /> : showImageCreate ? <WorkspaceShell
+        session={authenticationSession}
+        name={authenticationSession ? personalProfile.profile?.displayName ?? DEFAULT_PROFILE_NAME : "登录 GoodGood"}
+        avatarUrl={personalProfile.profile?.avatarUrl}
+        balance={displayedAvailableCredits ?? "—"}
+        billingLoading={billingLoading}
+        billingError={!!billingError}
+        activeArea="image"
+        showDemoNavigation={homeDemoNavigationEnabled}
+        accountActions={workspaceAccountActions}
+        onHome={handleCreateNav}
+        onProjects={handleProjectsNav}
+        onAssets={handleAssetNav}
+        onCreation={openHomeGeneration}
+        onBatch={handleCreateNav}
+        onChat={handleCreateNav}
+      >
+        <ImageCreatePage
+          prompt={prompt}
+          references={referenceImages}
+          modelId={selectedModel}
+          catalogModelId={selectedCatalogModelId}
+          modelOptions={(billingSummary?.models ?? []).filter((model) => model.mediaType === "image" && ["nano-banana-2.1", "gpt-image-2.5-sunburst", "gpt-image-2.5-flare"].includes(model.adapterId)).map((model) => ({ id: model.adapterId as GenerationModelId, catalogId: model.id, name: model.name, description: model.description }))}
+          aspectRatio={selectedRatio}
+          resolution={resolution}
+          count={generationCount}
+          quality={quality}
+          billingLabel={composerBillingLabel}
+          requiredCredits={imageBatchCredits}
+          availableCredits={displayedAvailableCredits}
+          billingUnavailable={!activeBillingQuote || !!billingError}
+          isGenerating={isGenerating}
+          stageText={stageText}
+          batches={creationBatches}
+          runs={generationRuns}
+          recentReferences={referenceMaterials.map((material) => ({ id: material.id, name: material.name, url: material.previewUrl ?? material.url }))}
+          projectName={currentProject?.name}
+          onPromptChange={handlePromptChange}
+          onReferenceFiles={handleReferenceFiles}
+          onOpenReferenceLibrary={() => openReferenceLibrary("image")}
+          onAddRecentReference={(id) => { const material = referenceMaterials.find((item) => item.id === id); if (material) addMaterialsToReferences([material]); }}
+          onRemoveReference={removeReference}
+          onRetryReference={retryReferenceUpload}
+          onModelChange={(catalogId, modelId) => { handleModelChange(modelId); setSelectedCatalogModelId(catalogId); }}
+          onAspectRatioChange={handleAspectRatioChange}
+          onResolutionChange={handleResolutionChange}
+          onCountChange={handleGenerationCountChange}
+          onQualityChange={handleQualityChange}
+          onGenerate={handleGenerate}
+          onRetryRun={(run) => { void retryFailedGeneration(run); }}
+          onRestoreRun={restoreFailedGenerationSettings}
+          onDownload={(batch, image, index) => { const source = creationBatches.find((item) => item.id === batch.id); if (source) void downloadImage(source, image, index); }}
+          isDownloading={(batch, image) => downloadingImageKeys.includes(`${batch.id}-${image.id}`)}
+          onCredits={handleCreditsNav}
+          onSaveProject={openProjectDrawer}
+          onNewCreation={requestNewCreation}
+        />
+      </WorkspaceShell> : <>
       <aside className="sidebar">
         <button className="sidebar-brand" type="button" aria-label="Good Good，返回首页" onClick={handleCreateNav}>
           <Image className="brand-wordmark" src="/goodgood-wordmark.svg" alt="" width={108} height={14} />
