@@ -49,7 +49,7 @@ ce86e66 同一锁定依赖和 ESLint 配置下为 63 错误 / 172 警告。下�
 
 - 代码与测试提交：16d35c0。63 个 lint 错误清零；15 个类型诊断通过 unknown 响应收窄、可选签名和等价 DOM/BigInt 类型写法清零。
 - 原 26 个失败均为已实现能力后的陈旧夹具或断言：Nano Banana 2.1 默认、MOV/WAV、四角缩放、恢复轮询冻结 job、公告运行依赖、首页账户文案等。只同步测试契约，未为测试改变产品行为；全量失败 26 → 0。
-- 锁文件单独提交：307198c。按要求执行 npm install --package-lock-only；npm 11 对锁文件实际规范化为补充 @emoji-mart/react 的 peer 标记，@emnapi/core/runtime 1.10.0 的嵌套声明保留。随后 npm ci 成功。
-- npm run check:local：通过。lint 0 错误 / 173 警告；typecheck 0 诊断；build:local 通过；测试 1197 项，1171 通过 / 0 失败 / 26 跳过。
+- 锁文件提交：307198c 先按本机 npm 11.6.2 执行 lock-only，本机 npm ci 成功；PR CI 的 npm 11.19.0 仍报告缺失两个 1.10.0 节点。随后用 CI 精确版本重跑，同步提交 3d65ef0，明确新增 `@rolldown/binding-wasm32-wasi` 下的 `@emnapi/core@1.10.0` 与 `@emnapi/runtime@1.10.0`，并完成同版本 npm ci。
+- npm run check:local：最终锁文件下复跑通过。lint 0 错误 / 173 警告；typecheck 0 诊断；build:local 通过；测试 1197 项，1171 通过 / 0 失败 / 26 跳过。
 - 本地证据在忽略的 outputs/gg424-* 日志中，不提交构建、测试输出或凭据；未操作运行服务、数据库、Provider 或生产。
 - 下一步：推送分支并向 design/GG-422-design-system 开 PR，等待 Verify source and image 绿灯；不合并。
