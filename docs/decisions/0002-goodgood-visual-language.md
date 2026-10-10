@@ -1,6 +1,6 @@
 # ADR 0002: GoodGood visual language
 
-- Status: Accepted; send symbol superseded by ADR 0098
+- Status: Superseded by ADR 0144 for interface styling (Palace Red retired); send symbol superseded by ADR 0098. Existing brand assets remain in use.
 - Date: 2026-08-27
 
 ## Context

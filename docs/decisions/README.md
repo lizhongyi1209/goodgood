@@ -1,6 +1,6 @@
 # Decision records
 
-- `0144-design-system-v3.md` — proposed GG-422 target design system and coexisting `--ds-*` tokens; current canvas rules and page styles remain effective.
+- `0144-design-system-v3.md` — accepted GG-423 design system: neutral controls, black primary action, blue only for credits; Palace Red retired; homepage first, other pages migrate separately.
 
 - `0136-image-metadata-copies.md` — EXIF/XMP 参数提取、添加与清除，使用新图片副本，源资产和真实生成记录保持。
 
