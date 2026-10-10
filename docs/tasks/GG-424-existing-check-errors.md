@@ -5,6 +5,7 @@
 - 来源：[GG-423](GG-423-home-design-system.md) 验证与用户选择 1。
 - 基线：design/GG-422-design-system / ce86e66447324956c7eb50e41bf011425ad07d1b（已合并 PR #8）。
 - 分支 / worktree：fix/GG-424-existing-check-errors / F:/goodgood-worktrees/GG-424。
+- 交付：[PR #9](https://github.com/lizhongyi1209/goodgood/pull/9)，目标 design/GG-422-design-system；不合并。
 
 ## 63 个 lint 错误 / 27 个文件
 
