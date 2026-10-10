@@ -1,6 +1,6 @@
 # GG-423 新增 token
 
-来源为已接受的 ADR 0144 组件规格；累计新增 33 个 token，既有 token 数值全部保留。合并前第 4 个提交补充 space-14 和 control-check，其余 31 个只重新分组并补充用途。
+来源为已接受的 ADR 0144 组件规格；累计新增 33 个 token，设计基线的既有 token 数值全部保留。合并前第 4 个提交补充 space-14 和 control-check，其余 31 个只重新分组并补充用途；第 6 个提交将本任务新增的 logo-height 从 22px 调整为 18px，仅用于完整侧栏 Good Good 字标。
 
 tokens.json 不再使用 homepage 分组，按语义归入 spacing、border、motion、state、control、icon、layout、type；Tooltip 从 motion 读取 preview-duration。prompt-line-height 必须等于 prompt 文字样式的行高，当前均为 24px。
 
@@ -27,7 +27,7 @@ tokens.json 不再使用 homepage 分组，按语义归入 spacing、border、mo
 | control | `--ds-credit-height` | `24px` | 积分胶囊高度。 |
 | icon | `--ds-icon-rail` | `18px` | 中屏图标侧栏的导航图标边长。 |
 | icon | `--ds-icon-send-stroke` | `2px` | 向上箭头发送图标的线条厚度。 |
-| layout | `--ds-logo-height` | `22px` | 桌面及中屏侧栏品牌标志高度。 |
+| layout | `--ds-logo-height` | `18px` | 完整侧栏 Good Good 字标高度。 |
 | layout | `--ds-add-reference-menu-width` | `264px` | 添加参考素材菜单宽度。 |
 | layout | `--ds-empty-icon-size` | `48px` | 空状态图标容器边长。 |
 | layout | `--ds-preview-max-height` | `70dvh` | 首页媒体预览弹窗中媒体的最大高度。 |
@@ -42,4 +42,6 @@ tokens.json 不再使用 homepage 分组，按语义归入 spacing、border、mo
 
 首页中屏和手机的标题、常用模板、灵感上间距使用 space-14，不借用 reference-slot；媒体选择控件使用 control-check，不借用 logo-height。手机底栏按实际子项自动均分列宽，不依赖作品列数；无障碍隐藏标签的 1px 尺寸直接定义，不借用描边 token。
 
-后续截图审查修正沿用这 33 个 token，不增加或修改数值。手机模板卡片采用 `(100% - space-3) / 2.3`，home-columns-narrow 只表示手机灵感的两列布局；菜单与底栏继续使用 white / shadow-md / line / ink / muted / fill-hover。
+第 5 个截图审查修正沿用这 33 个 token，当时不增加或修改数值。手机模板卡片采用 `(100% - space-3) / 2.3`，home-columns-narrow 只表示手机灵感的两列布局；菜单与底栏继续使用 white / shadow-md / line / ink / muted / fill-hover。
+
+第 6 个提交明确区分字标与 G 标志：完整侧栏使用 logo-height（18px）；中屏图标栏和手机顶栏使用既有 icon-lg（20px），不借用 logo-height。不新增 token，除 logo-height 外数值保持。

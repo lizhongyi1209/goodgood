@@ -1,14 +1,16 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-10
-- Current phase: GG-423 首页与两轮合并前修正已实现；最新七张截图与定向验证完成，完整门禁仍有存量错误。
-- Current objective: 从 GG-423 已推送 6828d06 追加截图审查修正，核对菜单 / 触屏 / 底栏 / 字体，完成指定验证和七张新截图并更新 PR #8；不合并/部署。
+- Current phase: GG-423 第 6 个字标尺寸修正与指定验证已完成；前五提交与既有证据保留，完整门禁仍有存量错误。
+- Current objective: 从 GG-423 已推送 5f6f66e 追加第 6 提交：完整侧栏字标 18px、图标栏与手机 G 标志 20px；完成指定检查与 demo on 1440/1024 截图，推送并更新 PR #8，不合并/部署。
 - Previous objective: GG-420 Seedance 线路参数与 GG-421 图标源码交付；最近运行收据仍是 GG-419，本轮不操作服务或数据。
 
 ## Current checkpoint
 
-- [GG-423](tasks/GG-423-home-design-system.md)：F:/goodgood-worktrees/GG-423-home-design-system / feature/GG-423-home-design-system 从 5e404e2 建立；① 8b9601e、② 0dc2a22、③ f890c3c、④ 6828d06 保留；第 5 个截图审查修正提交为本分支 HEAD，PR #8 是交付入口。其他页面不迁移，原运行栈保持。
-- 最新修正验证：本轮 lint 0 / 18，全量 63 / 63 错误、172 / 172 警告，明细相同；docs 16/16、build 与首页 / 生产 SSR 10/10 通过，六张整页和菜单首屏图完成。菜单透底原因是继承淡入，现停用；八个侧栏项 500 / PingFangSC-Medium，字体栈保持。以下旧轮结果保留。
+- [GG-423](tasks/GG-423-home-design-system.md)：F:/goodgood-worktrees/GG-423-home-design-system / feature/GG-423-home-design-system 从 5e404e2 建立；① 8b9601e、② 0dc2a22、③ f890c3c、④ 6828d06、⑤ 5f6f66e 保留；第 6 个字标尺寸修正为本提交，PR #8 是交付入口。其他页面不迁移，原运行栈保持。
+- 第 6 提交验证：GG-423 源码 lint 0 / 18，CSS / JSON 解析及 token 契约通过；全量仍 63 / 172、27 文件错误明细相同；docs 16/16、build 与首页 / SSR 10/10。demo on 1440/1024 新整页已查看，字标 18px、图标栏 / 手机 G 20px，本轮 55124 预览已停止。详见验证记录。
+- 第 5 提交追加全量复核已补进 PR：typecheck 15 个诊断的完整文本与 5e404e2 一致；test:local 1197 项，1145 通过 / 26 相同失败 / 26 跳过。本轮只重跑用户指定的尺寸修正检查。
+- 第 5 提交修正验证：本轮 lint 0 / 18，全量 63 / 63 错误、172 / 172 警告，明细相同；docs 16/16、build 与首页 / 生产 SSR 10/10 通过，六张整页和菜单首屏图完成。菜单透底原因是继承淡入，现停用；八个侧栏项 500 / PingFangSC-Medium，字体栈保持。以下旧轮结果保留。
 - 第 4 提交验证：本轮 lint 0 / 18，全量修正前后 63 / 63 错误、172 / 172 警告；文档 16/16、首页及生产 SSR 10/10、build 通过。390 截图及「我的」键盘 / 焦点核对完成；typecheck、全量测试与完整 check:local 本轮未重复，以下首次交付结果保留。
 - 首次交付验证：lint 0 错误，全量 63→63；typecheck 15 个相同存量诊断；构建通过，测试 1145 通过 / 26 相同存量失败 / 26 跳过。详细证据与历史六截图见 [验证记录](design/home-verification.md)；[GG-424](tasks/GG-424-existing-check-errors.md) 只登记、暂不修。
 
@@ -20,7 +22,7 @@
 - 更早的实施证据继续保留在 [2026-09-07 历史实施记录](history/2026-09-07-implementation-log.md)；其中旧发布/转换指令仅供追溯，不构成本轮授权。
 - 最新本地运行证据查 [GG-419](tasks/GG-419-local-seedance-activation.md) / [DEVELOPMENT_HANDOFF](DEVELOPMENT_HANDOFF.md)；本轮不更新生产或伪造运行 revision。
 - 保留的部署边界：生产 `goodgood.o1key.com` 与历史预生产 `staging-goodgood.o1key.com` 分开；本地状态隔离，禁止复制生产数据或执行旧转换流程，具体以 DEPLOYMENT 和 ADR 0091 为准。
-- Next action: 推送第 5 提交并更新说明后，审阅 PR #8 和七张最新截图；GG-424 后续单独安排，不合并/部署。
+- Next action: 正常推送第 6 个字标尺寸提交并更新 PR #8；审阅两张最新 demo on 整页和保留的手机截图，GG-424 后续单独安排，不合并/部署。
 - Blockers: 完整门禁仍因基线 lint 未通过；类型和全量测试也有既有失败。用户明确允许维持首页范围交付；不得当成发布绿灯。
 
 ## Verification sequence

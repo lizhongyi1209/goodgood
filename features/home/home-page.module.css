@@ -31,6 +31,7 @@
 .previewDialog img, .previewDialog video, .previewDialog audio { max-width: 100%; max-height: var(--ds-preview-max-height); margin: 0 auto; }
 .homeShell[data-home-layout="rail"] .sidebar { width: var(--ds-rail-width); padding: var(--ds-space-4) var(--ds-space-3) var(--ds-space-3); }
 .homeShell[data-home-layout="rail"] .brand { margin: 0 auto var(--ds-space-6); }
+.homeShell[data-home-layout="rail"] .brand img { height: var(--ds-icon-lg); }
 .homeShell[data-home-layout="rail"] .navigationGroup + .navigationGroup::before { content: ""; display: block; height: var(--ds-border-width); width: var(--ds-space-6); margin: 0 auto var(--ds-space-4); background: var(--ds-line); }
 .homeShell[data-home-layout="rail"] .start, .homeShell[data-home-layout="rail"] .templates, .homeShell[data-home-layout="rail"] .discovery { margin-top: var(--ds-space-14); }
 .homeShell[data-home-layout="rail"] .discoveryGrid { columns: var(--ds-home-columns-medium); }

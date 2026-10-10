@@ -2,6 +2,28 @@
 
 2026-10-10；从 design/GG-422-design-system / 5e404e2 接续。完整 check:local 未通过，用户确认保持首页范围，将存量错误登记 [GG-424](../tasks/GG-424-existing-check-errors.md) 先不修。
 
+## 字标尺寸修正（追加第 6 个提交）
+
+从已推送的 5f6f66e 接续，前五个提交保留。完整侧栏 Good Good 字标使用 logo-height=18px；中屏图标栏新增 icon-lg 覆盖，手机顶栏原已使用 icon-lg=20px。仅修改 CSS、token JSON 用途及相关文档，不新增 token 或功能行为。
+
+| 检查 | 本轮结果 |
+| --- | --- |
+| GG-423 相关源码 ESLint | 0 错误 / 18 个既有警告；本次 CSS / JSON / Markdown 不在 ESLint 解析范围，另用 CSS / JSON 解析、token 契约和文档测试核验 |
+| npm run lint:local | 63 → 63 错误、172 → 172 警告；27 文件的错误明细完全一致 |
+| CSS / JSON | 两个改动 CSS 文件解析通过，JSON 解析及 token 对应测试通过；唯一 token 数值变化为 logo-height：22px → 18px |
+| npm run build:local | 通过，构建时 VITE_GG_HOME_DEMO=true；生产演示开关仍关闭 |
+| 首页及生产 SSR | 10/10 通过：gg423-design-system、gg423-home、rendered-html |
+| 文档测试 | documentation-continuity + m8-production-release，16/16 通过 |
+| demo on 整页截图 | 1440 / 1024 两张完成且逐张查看；无横向溢出、破图或页面运行异常 |
+
+浏览器计算值：1440 完整字标高 18px、宽 139.5px；1024 图标栏 G 为 20px × 20px；另核对 390 手机顶栏 G 仍高 20px。等待图片、字体、有限动画和两帧布局稳定后采集 fullPage=true。
+
+最新两张文件为 outputs/gg423/screenshots/home-logo-demo-on-1440.png 和 home-logo-demo-on-1024.png；本轮审阅桌面字标与图标栏时以这两张为准，旧截图保留。证据使用 logo- 前缀，全部 API 由命名的本地浏览器验证拦截，没有写请求或真实 Provider 请求。唯一新启的 55124 隔离 UI 预览已停止，原运行栈保持。
+
+本轮未重复全量 typecheck、全量测试或完整 check:local。此前在 5f6f66e 上另行复核：15 个类型诊断的文件、行列、TS 编号及完整文本与独立基线 5e404e2 一致；全量测试 1197 项，1145 通过 / 26 失败 / 26 跳过，失败用例列表一致，新增/移除均为 0。该复核已写入 PR #8，日志为 latest-typecheck.log、latest-full-tests.log，比较证据为 latest-verification-comparison.json（均在 outputs/gg423/，未提交）。这些历史结果绑定 5f6f66e，不冒充第 6 提交的全量复核。
+
+本提交正常推送后更新 PR #8，目标 design/GG-422-design-system，不合并、不部署。
+
 ## 第二轮截图审查修正（追加第 5 个提交）
 
 从 6828d06 接续，所有已有提交保持。本轮用户再次委托定向门禁、六张整页与手机菜单首屏截图，不改变其他页面或后端。
