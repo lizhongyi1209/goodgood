@@ -9,7 +9,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { HomePage } from "@/features/home/home-page";
 import { homeDemoEnabled } from "@/features/home/home-feature-flag.mjs";
-import { ImageCreatePage } from "@/features/create";
+import { ImageCreatePage, VideoCreatePage } from "@/features/create";
 import { WorkspaceShell } from "@/features/workspace-shell";
 import { downloadCanvasImageLink } from "@/features/canvas/canvas-asset-addition.mjs";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,7 @@ import { VideoCreationComposer } from "@/features/creation/video-creation-compos
 import { MixedMediaStylePreview } from "@/features/creation/mixed-media-style-preview";
 import { VideoPreviewCard, getVideoPreviewRatio } from "@/features/creation/video-preview-card";
 import { VideoPreviewDetail } from "@/features/creation/video-preview-detail";
-import { isVideoPreviewRunActive, resumeVideoPreviewRun, submitVideoPreviewRuns, updateVideoPreviewRun, type VideoPreviewRun } from "@/features/creation/video-preview-runs";
+import { createVideoPreviewRuns, isVideoPreviewRunActive, resumeVideoPreviewRun, submitVideoPreviewRuns, updateVideoPreviewRun, type VideoPreviewRun } from "@/features/creation/video-preview-runs";
 import { createImagePromptBatch, createImagePromptRuns, createVideoPromptBatch, submitPromptBatch } from "@/features/creation/prompt-batch";
 import { parsePromptBatch, promptContextForRetry } from "@/shared/contracts/prompt-batch.mjs";
 import {
@@ -99,7 +99,7 @@ import {
 } from "@/features/creation/http-video-preview-boundary";
 import { uploadReferenceFiles } from "@/features/references/http-reference-upload";
 import { listPrivateVideoMaterials, uploadPrivateVideoMaterial, type PrivateVideoMaterial } from "@/features/creation/http-video-materials";
-import { listPrivateAudioMaterials, type PrivateAudioMaterial } from "@/features/assets/http-audio-materials";
+import { listPrivateAudioMaterials, uploadPrivateAudioMaterial, type PrivateAudioMaterial } from "@/features/assets/http-audio-materials";
 import { AssetWorkspace, type GeneratedAssetCard } from "@/features/assets/asset-workspace";
 import { PRIVATE_IMAGE_MIME_TYPES, PRIVATE_IMAGE_UPLOAD_MAX_BYTES } from "@/shared/contracts/upload-limits.mjs";
 import {
@@ -1732,7 +1732,6 @@ export default function Home({
   };
 
   const uploadVideoReferenceFile = (clientId: string, file: File, mediaType: VideoReferenceMediaType, previewUrl: string) => {
-    if (mediaType === "audio") return;
     if (mediaType === "image") {
       void uploadReferenceFiles([{ clientId, file }], (_id, reference) => {
         if (!videoReferenceObjectUrlsRef.current.has(previewUrl)) return;
@@ -1745,6 +1744,24 @@ export default function Home({
       }, workspaceId).then(([result]) => {
         if (result?.reference.status === "ready") void reloadReferenceMaterials();
       });
+      return;
+    }
+    if (mediaType === "audio") {
+      void uploadPrivateAudioMaterial(clientId, file, workspaceId)
+        .then((material) => {
+          if (!videoReferenceObjectUrlsRef.current.has(previewUrl)) return;
+          videoReferenceFilesRef.current.delete(clientId);
+          setVideoReferences((current) => current.map((item) => item.id === clientId
+            ? { ...item, id: material.id, status: "ready", errorMessage: undefined }
+            : item));
+          void reloadPrivateAudioMaterials();
+        })
+        .catch((error) => {
+          if (!videoReferenceObjectUrlsRef.current.has(previewUrl)) return;
+          setVideoReferences((current) => current.map((item) => item.id === clientId
+            ? { ...item, status: "failed", errorMessage: error instanceof Error ? error.message : "音频上传失败，请重试。" }
+            : item));
+        });
       return;
     }
     void uploadPrivateVideoMaterial(clientId, file, workspaceId)
@@ -1776,8 +1793,8 @@ export default function Home({
         toast.error(file.type.startsWith("image/")
           ? `${file.name} 格式不受支持，请使用 JPG/JPEG 或 PNG 图片（20 MB 以内）。`
           : file.type.startsWith("video/")
-            ? `${file.name} 格式不受支持，请使用 MP4 视频（20 MB 以内）。`
-            : `${file.name} 的文件格式不受支持，请使用 JPG/JPEG、PNG、MP4 或 MP3（20 MB 以内）。`);
+            ? `${file.name} 格式不受支持，请使用 MP4 或 MOV 视频（20 MB 以内）。`
+            : `${file.name} 的文件格式不受支持，请使用 JPG/JPEG、PNG、MP4/MOV 或 MP3/WAV（20 MB 以内）。`);
         continue;
       }
       const fileError = videoReferenceFileError(file, mediaType);
@@ -1815,9 +1832,9 @@ export default function Home({
       }
       const url = URL.createObjectURL(file);
       videoReferenceObjectUrlsRef.current.add(url);
-      if (mediaType !== "audio") videoReferenceFilesRef.current.set(candidate.id, file);
-      nextReferences.push({ ...candidate, url, status: mediaType === "audio" ? "ready" : "uploading" });
-      if (mediaType !== "audio") pendingUploads.push({ id: candidate.id, file, mediaType, url });
+      videoReferenceFilesRef.current.set(candidate.id, file);
+      nextReferences.push({ ...candidate, url, status: "uploading" });
+      pendingUploads.push({ id: candidate.id, file, mediaType, url });
     }
     if (nextReferences.length !== videoReferences.length) {
       setVideoReferences([...normalizeVideoReferencesForMode(
@@ -1880,6 +1897,12 @@ export default function Home({
       }, videoGenerationCount, globalThis.crypto.randomUUID());
     setVideoPreviewRuns((current) => [...runs, ...current]);
     await submitVideoPreviewRuns(runs, (run) => setVideoPreviewRuns((current) => updateVideoPreviewRun(current, run)));
+  };
+
+  const retryVideoPreviewRun = async (source: VideoPreviewRun) => {
+    const [retry] = createVideoPreviewRuns(source.input, 1, globalThis.crypto.randomUUID());
+    setVideoPreviewRuns((current) => [retry, ...current]);
+    await submitVideoPreviewRuns([retry], (run) => setVideoPreviewRuns((current) => updateVideoPreviewRun(current, run)));
   };
 
   const handleReferenceFiles = (files: readonly File[]) => {
@@ -3082,6 +3105,15 @@ export default function Home({
     setActiveView("create");
     window.scrollTo({ top: 0, behavior: "auto" });
   };
+  const openWorkspaceHome = () => {
+    if (currentProject) {
+      requestNewCreation();
+      return;
+    }
+    if (window.location.pathname !== "/") window.history.pushState(window.history.state, "", "/");
+    window.dispatchEvent(new Event(WORKSPACE_NAVIGATION_EVENT));
+    window.scrollTo({ top: 0, behavior: "auto" });
+  };
   const submitHomeCreation = () => {
     openHomeGeneration(creationMode);
     if (creationMode === "video") void handleVideoGenerate();
@@ -3092,10 +3124,11 @@ export default function Home({
   const homeInsufficientCredits = creationMode === "image" && displayedAvailableCredits != null && imageBatchCredits != null && BigInt(displayedAvailableCredits) < BigInt(imageBatchCredits);
   const designCreateReady = activeView === "create" && (!workspaceId || workspaceAccessReady) && !(routeProjectId && (projectRestoringId === routeProjectId || projectRouteError));
   const showImageCreate = !showHome && designCreateReady && creationMode === "image";
+  const showVideoCreate = !showHome && designCreateReady && creationMode === "video";
   const workspaceAccountActions = { onAccount: handleCreditsNav, onFeedback: handleFeedbackNav, onLogout: () => void handleLogout(), onLogin: handleLogin, onManagement: handleOrganizationNav, onDistribution: handleDistributionNav, enterpriseVisible: organizationNavigationVisible };
 
   return (
-    <main className={showHome || showImageCreate ? undefined : "app-shell"}>
+    <main className={showHome || showImageCreate || showVideoCreate ? undefined : "app-shell"}>
       {showHome ? <HomePage
         session={authenticationSession}
         name={authenticationSession ? personalProfile.profile?.displayName ?? DEFAULT_PROFILE_NAME : "登录 GoodGood"}
@@ -3136,12 +3169,12 @@ export default function Home({
         activeArea="image"
         showDemoNavigation={homeDemoNavigationEnabled}
         accountActions={workspaceAccountActions}
-        onHome={handleCreateNav}
+        onHome={openWorkspaceHome}
         onProjects={handleProjectsNav}
         onAssets={handleAssetNav}
         onCreation={openHomeGeneration}
-        onBatch={handleCreateNav}
-        onChat={handleCreateNav}
+        onBatch={openWorkspaceHome}
+        onChat={openWorkspaceHome}
       >
         <ImageCreatePage
           prompt={prompt}
@@ -3165,10 +3198,14 @@ export default function Home({
           projectName={currentProject?.name}
           onPromptChange={handlePromptChange}
           onReferenceFiles={handleReferenceFiles}
+          onDropFiles={handleComposerDropFiles}
           onOpenReferenceLibrary={() => openReferenceLibrary("image")}
           onAddRecentReference={(id) => { const material = referenceMaterials.find((item) => item.id === id); if (material) addMaterialsToReferences([material]); }}
           onRemoveReference={removeReference}
           onRetryReference={retryReferenceUpload}
+          onReorderReference={reorderReference}
+          referenceEditorMaterials={referenceMaterials}
+          onSaveReferenceEdit={handleSaveReferenceEdit}
           onModelChange={(catalogId, modelId) => { handleModelChange(modelId); setSelectedCatalogModelId(catalogId); }}
           onAspectRatioChange={handleAspectRatioChange}
           onResolutionChange={handleResolutionChange}
@@ -3182,6 +3219,56 @@ export default function Home({
           onCredits={handleCreditsNav}
           onSaveProject={openProjectDrawer}
           onNewCreation={requestNewCreation}
+        />
+      </WorkspaceShell> : showVideoCreate ? <WorkspaceShell
+        session={authenticationSession}
+        name={authenticationSession ? personalProfile.profile?.displayName ?? DEFAULT_PROFILE_NAME : "登录 GoodGood"}
+        avatarUrl={personalProfile.profile?.avatarUrl}
+        balance={displayedAvailableCredits ?? "—"}
+        billingLoading={billingLoading}
+        billingError={!!billingError}
+        activeArea="video"
+        showDemoNavigation={homeDemoNavigationEnabled}
+        accountActions={workspaceAccountActions}
+        onHome={openWorkspaceHome}
+        onProjects={handleProjectsNav}
+        onAssets={handleAssetNav}
+        onCreation={openHomeGeneration}
+        onBatch={openWorkspaceHome}
+        onChat={openWorkspaceHome}
+      >
+        <VideoCreatePage
+          prompt={videoPrompt}
+          references={videoReferences}
+          generationMode={videoGenerationMode}
+          modelId={videoModelId}
+          catalogModelId={videoCatalogModelId}
+          modelOptions={(billingSummary?.models ?? []).filter((model) => model.mediaType === "video").map((model) => { const presentation = getVideoGenerationModel(model.adapterId as VideoGenerationModelId); return { id: presentation.id, catalogId: model.id, name: model.name, description: model.description, resolutions: presentation.capabilities.resolutions, duration: presentation.capabilities.duration }; })}
+          aspectRatio={videoAspectRatio}
+          resolution={videoResolution}
+          durationSeconds={videoDurationSeconds}
+          generateAudio={videoGenerateAudio}
+          availability={videoInterfaceAvailability}
+          isGenerating={isVideoGenerating}
+          runs={videoPreviewRuns}
+          recentReferences={videoAssetMaterials.filter((material) => material.mediaType === "image").map((material) => ({ id: material.id, name: material.name, url: material.previewUrl ?? material.url }))}
+          onPromptChange={setVideoPrompt}
+          onReferenceFiles={handleVideoReferenceFiles}
+          onDropFiles={handleComposerDropFiles}
+          onOpenReferenceLibrary={() => openReferenceLibrary("video")}
+          onAddRecentReference={(id) => { const material = videoAssetMaterials.find((item) => item.id === id); if (material) addMaterialsToVideoReferences([material]); }}
+          onRemoveReference={removeVideoReference}
+          onRetryReference={retryVideoReferenceUpload}
+          onModelChange={(catalogId, modelId) => { handleVideoModelChange(modelId); setVideoCatalogModelId(catalogId); }}
+          onGenerationModeChange={handleVideoGenerationModeChange}
+          onAspectRatioChange={setVideoAspectRatio}
+          onResolutionChange={setVideoResolution}
+          onDurationChange={setVideoDurationSeconds}
+          onGenerateAudioChange={setVideoGenerateAudio}
+          onGenerate={() => void handleVideoGenerate()}
+          onRetryRun={(run) => { void retryVideoPreviewRun(run); }}
+          onResumeRun={(run) => { void resumeVideoPreviewRun(run, (update) => setVideoPreviewRuns((current) => updateVideoPreviewRun(current, update))); }}
+          onDimensions={(run, width, height) => setVideoPreviewRuns((current) => current.map((item) => item.key === run.key ? { ...item, outputRatio: width / height } : item))}
         />
       </WorkspaceShell> : <>
       <aside className="sidebar">
