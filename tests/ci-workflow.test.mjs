@@ -95,7 +95,7 @@ test("runtime build dependencies exclude the vulnerable image-size release", asy
     await readFile(new URL("../package-lock.json", import.meta.url), "utf8"),
   );
 
-  assert.equal(manifest.dependencies.next, "16.3.3");
+  assert.equal(manifest.dependencies.next, "16.3.8");
   assert.equal(manifest.dependencies.react, "19.2.8");
   assert.equal(manifest.dependencies["react-dom"], "19.2.8");
   assert.equal(manifest.devDependencies.vinext, "1.0.0-beta.9");
@@ -104,13 +104,14 @@ test("runtime build dependencies exclude the vulnerable image-size release", asy
     "19.2.8",
   );
   assert.equal(manifest.devDependencies["@vitejs/plugin-rsc"], "0.5.34");
-  assert.equal(manifest.devDependencies["eslint-config-next"], "16.3.3");
-  assert.equal(manifest.dependencies.sharp, "0.35.4");
+  assert.equal(manifest.devDependencies["eslint-config-next"], "16.3.8");
+  assert.equal(manifest.dependencies.sharp, "0.35.5");
   assert.deepEqual(manifest.overrides, {
-    "fast-uri": "3.1.6",
+    "fast-uri": "3.1.7",
     nanoid: "3.3.18",
     postcss: "8.5.28",
     sharp: "$sharp",
+    "source-map-js": "1.2.2",
   });
   assert.equal(lock.packages["node_modules/vinext"].version, "1.0.0-beta.9");
   assert.equal(lock.packages["node_modules/react"].version, "19.2.8");
@@ -119,7 +120,7 @@ test("runtime build dependencies exclude the vulnerable image-size release", asy
     lock.packages["node_modules/react-server-dom-webpack"].version,
     "19.2.8",
   );
-  assert.equal(lock.packages["node_modules/sharp"].version, "0.35.4");
+  assert.equal(lock.packages["node_modules/sharp"].version, "0.35.5");
   assert.equal(lock.packages["node_modules/image-size"], undefined);
 
   for (const dependency of Object.values(lock.packages)) {
