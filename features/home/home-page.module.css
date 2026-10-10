@@ -43,9 +43,9 @@
 .homeShell[data-home-layout="mobile"] .start h1 { font: var(--ds-text-display-mobile); }
 .homeShell[data-home-layout="mobile"] .templates, .homeShell[data-home-layout="mobile"] .discovery { margin-top: var(--ds-space-14); }
 .homeShell[data-home-layout="mobile"] .templateGrid { display: flex; overflow-x: auto; padding-bottom: var(--ds-space-2); scrollbar-width: none; }
-.homeShell[data-home-layout="mobile"] .templateGrid > button { flex: 0 0 calc((100% - var(--ds-space-3)) / var(--ds-home-columns-narrow)); }
+.homeShell[data-home-layout="mobile"] .templateGrid > button { flex: 0 0 calc((100% - var(--ds-space-3)) / 2.3); }
 .homeShell[data-home-layout="mobile"] .discoveryGrid { columns: var(--ds-home-columns-narrow); }
-.tabbar { position: fixed; bottom: 0; left: 0; right: 0; z-index: var(--ds-layer-tabbar); display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 0 var(--ds-space-2) env(safe-area-inset-bottom); background: var(--ds-white); }
+.tabbar { position: fixed; bottom: 0; left: 0; right: 0; z-index: var(--ds-layer-tabbar); display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 0 var(--ds-space-2) env(safe-area-inset-bottom); border-top: var(--ds-border-width) solid var(--ds-line); background: var(--ds-white); }
 .myTab, .tabbar > :global(button) { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--ds-space-1); width: 100%; height: var(--ds-tabbar-height); padding: 0; border: 0; border-radius: var(--ds-radius-sm); color: var(--ds-muted); background: transparent; font: var(--ds-text-tab); }
-.tabbar > :global(button[aria-current]) { color: var(--ds-ink); background: var(--ds-fill-selected); }
+.tabbar > :global(button[aria-current]) { color: var(--ds-ink); background: transparent; }
 .tabbar svg { width: var(--ds-icon-lg); height: var(--ds-icon-lg); stroke-width: var(--ds-icon-stroke); }

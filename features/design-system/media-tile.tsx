@@ -13,7 +13,7 @@ export function MediaTile({ item, onOpen, onAction, actionLabel, onRetry, select
       {onSelect && <button className={styles.mediaSelect} type="button" aria-label={`选择 ${item.title}`} aria-pressed={selected} onClick={onSelect}>{selected && <Check aria-hidden="true" />}</button>}
       {item.duration && <span className={styles.duration}>{item.duration}</span>}
       {onAction && <button className={styles.mediaAction} type="button" aria-label={actionLabel} onClick={onAction}>{actionLabel}<ArrowUpRight aria-hidden="true" /></button>}
-      {item.state === "failed" && onRetry && <button type="button" className={styles.mediaAction} onClick={onRetry}><RotateCcw aria-hidden="true" />重试</button>}
+      {item.state === "failed" && onRetry && <button type="button" className={`${styles.mediaAction} ${styles.mediaRetry}`} onClick={onRetry}><RotateCcw aria-hidden="true" />重试</button>}
     </div>{item.caption && <p className={styles.mediaCaption}>{item.caption}</p>}
   </article>;
 }

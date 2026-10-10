@@ -6,6 +6,7 @@
 - `white`、1px `line`、`radius-popover`、`shadow-md`，内边距 8px。
 - 菜单项 36px 高、`radius-item`，16px 图标 + `nav` 文字；带说明时第二行 `caption`、`muted`。
 - 悬停 `fill-hover`；单选的当前项 `fill-selected` + 右侧对勾；不可用 40% 不透明度。
+- 键盘高亮用 `fill-hover`，不画外框；保持方向键与 Escape 焦点返回。菜单使用不透明 `white` 与 `shadow-md`，不继承会造成透底的淡入淡出。
 - 分组用 1px `line` 分隔线，可选顶部 `caption` 标题。
 
 ## 规则

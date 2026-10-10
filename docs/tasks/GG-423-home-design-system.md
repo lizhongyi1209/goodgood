@@ -25,12 +25,12 @@
 
 ## 提交与验收
 
-- 原三个提交：① ADR / AGENTS / 任务卡等文档；② features/design-system 组件与 token；③ 首页、现有功能接线、相关测试及最终验收记录。用户随后明确要求追加第 4 个合并前修正提交，不修改前三个提交。
+- 原三个提交：① ADR / AGENTS / 任务卡等文档；② features/design-system 组件与 token；③ 首页、现有功能接线、相关测试及最终验收记录。用户随后要求追加第 4 个 token 修正及第 5 个截图审查修正提交，所有已有提交保持。
 - npm run check:local；新增验证开关默认/开发/生产组合、IME/Enter/Shift+Enter、素材状态与权限菜单，现有业务回归保留。
 - 六张截图：demo on/off × 1440/1024/390；键盘 Tab、方向键、Escape、焦点返回、名称和 reduced motion 核对。
 - 截图与合成验证不连接真实 Provider Worker 的数据库/队列、不提交计费请求；不修改生产数据或服务。
 - 完成后推送，开 PR 目标 design/GG-422-design-system，不合并、不部署；完成汇报逐条列出新增/修改 token 名称和值。
-- 提交 ① 8b9601e（决策文档）；② 0dc2a22（共享组件及 token）；③ f890c3c（首页/接线/最终记录）；④ 本分支最新 HEAD（合并前 token 与手机底栏修正）。只追加，不 amend 或重写历史。
+- 提交 ① 8b9601e（决策文档）；② 0dc2a22（共享组件及 token）；③ f890c3c（首页/接线/首次记录）；④ 6828d06（token 与手机底栏修正）；⑤ 本分支最新 HEAD（截图审查修正）。只追加，不 amend 或重写历史。
 - 交付分支 feature/GG-423-home-design-system；[PR #8](https://github.com/lizhongyi1209/goodgood/pull/8) 目标 design/GG-422-design-system，只更新说明，不合并。
 - 累计新增 33 个 token，既有值无修改：[逐项分组、名称、值与用途](../design/home-token-changes.md)。
 
@@ -51,6 +51,10 @@
 - 库存 lint、类型与测试失败分别记录，不把构建成功或用户的例外交付确认写成完整门禁通过。
 
 ## worktree 与恢复
+
+- 第二轮截图审查修正（从 6828d06 追加，不重写历史）：手机菜单透底已复现为继承的 150ms 淡入动画中途 opacity<1，白底与 shadow-md 原本正确；本轮停用设计系统菜单淡入淡出，菜单键盘高亮改为 fill-hover、无外框，添加素材使用 Plus。底栏补顶部 line、当前项无底色块；触屏隐藏卡片悬停动作、保留格子预览/整卡使用及失败重试，模板宽按 2.3 张视区。上一轮 token 修正已在基线，全部核对保留，不重复新增。
+- DevTools 最终记录：八个侧栏导航项均为 500、14px / 22px；CSS.getPlatformFontsForNode 报告实际中文字体 PingFangSC-Medium（本机安装字体、非 Web font）。Medium 字形和 Windows 栅格化差异是视觉偏粗的候选原因，尚未做跨平台字体对照；建议后续单独统一中文 500 字面并比对 Windows / macOS。本轮不改字体栈或字重。
+- 第二轮验证：GG-423 lint 0 错误 / 18 警告；全量前后 63 / 63 错误、172 / 172 警告，27 文件错误明细完全一致；docs 16/16、build 与首页 / 生产 SSR 10/10 通过，七张新截图和点按 / 菜单键盘检查完成。精确记录见 [验证记录](../design/home-verification.md)。推送后更新 PR #8，不合并；不重复全量 typecheck、全量测试或完整 check:local，存量失败记录保留。
 
 - 合并前修正（2026-10-10）：新增 space-14=56px、control-check=22px，移除 JSON 的 homepage 分组并逐项说明用途；Tooltip 同步从 motion 读取延迟，prompt-line-height 保持与 prompt 行高一致。rail/mobile 的三个区块上间距使用 space-14，媒体选择使用 control-check，隐藏标签直接使用 1px；底栏自动均分列并补齐 myTab。未改变已接受的 ADR 或功能行为，不新增 ADR。
 - 修正验证由用户明确委托并已完成：GG-423 文件 lint 0 错误 / 18 警告；全量修正前后 63 / 63 错误、172 / 172 警告，27 文件错误明细一致；文档测试 16/16、build 通过、首页及生产 SSR 回归 10/10，390 截图与「我的」Enter/Escape/焦点返回通过，中屏/手机三个区块间距均为 56px。详见 [验证记录](../design/home-verification.md)。本轮不重复全量 typecheck、全量测试或完整 check:local，上一轮存量失败记录保留。第 4 提交正常推送后更新 PR #8 说明，SHA 和远端核对随最终交付回报。

@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useRef, useState, type ReactNode } from "react";
-import { ArrowUp, ImagePlus, Link, LoaderCircle, Upload } from "lucide-react";
+import { ArrowUp, ImagePlus, Link, LoaderCircle, Plus, Upload } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
 import styles from "./design-system.module.css";
@@ -19,7 +19,7 @@ export function AddReferenceMenu({ disabled, accept, onFiles, onLibrary, onLink,
     finally { setBusy(false); }
   };
   return <><input ref={input} hidden type="file" multiple accept={accept} onChange={event => { const files = Array.from(event.target.files ?? []); if (files.length) onFiles(files); event.target.value = ""; }} />
-    <Popover open={open} onOpenChange={setOpen}><PopoverTrigger asChild><button className={styles.addReference} type="button" aria-label="添加参考素材" disabled={disabled}><ImagePlus aria-hidden="true" /></button></PopoverTrigger>
+    <Popover open={open} onOpenChange={setOpen}><PopoverTrigger asChild><button className={styles.addReference} type="button" aria-label="添加参考素材" disabled={disabled}><Plus aria-hidden="true" /></button></PopoverTrigger>
       <PopoverContent align="start" className={`${styles.menu} ${styles.addMenu}`} aria-label="添加参考素材">
         {recent.length > 0 && <><span className={styles.menuCaption}>最近使用</span><div className={styles.recent}>{recent.slice(0, 4).map(item => <button key={item.id} type="button" aria-label={`添加 ${item.name}`} onClick={() => { onRecent?.(item.id); setOpen(false); }}><PrivateObjectImage src={item.url} alt={item.name} /></button>)}</div></>}
         <button className={styles.menuItem} type="button" onClick={() => { input.current?.click(); setOpen(false); }}><Upload aria-hidden="true" /><span>上传图片或视频</span></button>

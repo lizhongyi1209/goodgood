@@ -2,6 +2,41 @@
 
 2026-10-10；从 design/GG-422-design-system / 5e404e2 接续。完整 check:local 未通过，用户确认保持首页范围，将存量错误登记 [GG-424](../tasks/GG-424-existing-check-errors.md) 先不修。
 
+## 第二轮截图审查修正（追加第 5 个提交）
+
+从 6828d06 接续，所有已有提交保持。本轮用户再次委托定向门禁、六张整页与手机菜单首屏截图，不改变其他页面或后端。
+
+- 透底诊断：修改前菜单计算背景 rgb(255,255,255)、阴影 rgba(0,0,0,0.06) 0px 8px 24px，均已正确；继承 DropdownMenuContent 的 enter / fade-in-0，持续 0.15s，采样时 opacity 从 0.610395 过渡到 1。旧截图只等待 visible，未等待动画结束。
+- 修正：设计系统菜单 opacity=1、animation=none，停用这段淡入淡出；菜单项 focus-visible 不画 outline，data-highlighted 和普通菜单按钮的键盘焦点都用 fill-hover。其余控件的焦点环保留。
+- 添加素材按钮为 lucide Plus。手机底栏白底、顶部 line / 1px、固定底部且保留安全区；四项等宽，20px 图标、11px / 16px tab 文字，当前 ink，其余 muted，所有项背景透明；myTab 与其他项共用布局。
+- 触屏隐藏 MediaTile 的做同款 / 放大按钮与 TemplateCard 的使用模板覆盖文字；点按格子仍打开预览、预览内保留做同款，整卡使用仍填提示词；失败重试仍显示。390 模板宽 150.42px，按 (358 - 12) / 2.3 计算，下一张部分可见，横向滚动通过。
+- 上一轮 token 修正全部保留；33 个新增 token 的名称 / 数值没有变化。home-columns-narrow 的用途更新为手机灵感列数，模板宽独立计算；prompt 行高与 prompt-line-height 仍均为 24px。
+
+| 检查 | 最新结果 |
+| --- | --- |
+| GG-423 代码 ESLint | 0 错误 / 18 警告 |
+| 全量 npm run lint:local | 修正前 / 后均 63 错误、172 警告；27 文件的错误明细完全一致 |
+| npm run build:local | 通过，构建时 VITE_GG_HOME_DEMO=true；生产演示区块仍关闭 |
+| 首页 / 生产 SSR | 10/10 通过（6 个组件、3 个首页、1 个 SSR） |
+| 浏览器与截图 | 六整页 + 一菜单首屏；无页面运行异常、破图或横向溢出；触屏预览 / 整卡使用 / 横滑、菜单 Enter / ArrowDown / Escape / 焦点返回通过 |
+| 文档 / diff | documentation-continuity + m8-production-release，16/16 通过；diff 检查通过 |
+
+菜单首屏使用 no-preference 动效环境，等待 document.getAnimations() 中实际有限动画完成及两帧布局稳定，再采集 fullPage=false；菜单及父级 opacity 均为 1，菜单无运行中动画，键盘高亮背景 rgb(239,239,239)、outline-style=none。全部 API 仍在命名的本地浏览器验证中拦截，没有真实生成 / 上传请求，未连接真实数据库或 Worker。
+
+Windows Chrome DevTools（DOM / CSS 协议）逐个核对首页、项目、资产、图片、视频、批量、对话、站长管理：计算 font-weight=500、font-size=14px、line-height=22px；实际中文字体均为 PingFang SC / PingFangSC-Medium，isCustomFont=false，来自本机安装字体。测量符合设计 500；Medium 字形与平台栅格化是视觉偏粗的候选原因（视觉推断，未完成跨平台对照）。建议另行统一包含中文 500 字面的字体资产并比较 Windows / macOS，不在本轮调整字体栈或字重。
+
+最新文件在 outputs/gg423/screenshots/，旧截图保留为历史：
+
+| 宽度 | 开关关闭整页 | 开关开启整页 |
+| --- | --- | --- |
+| 1440 | home-review-demo-off-1440.png | home-review-demo-on-1440.png |
+| 1024 | home-review-demo-off-1024.png | home-review-demo-on-1024.png |
+| 390 | home-review-demo-off-390.png | home-review-demo-on-390.png |
+
+手机菜单首屏：home-review-my-menu-first-screen-390.png（390 × 1000）。证据使用 review- 前缀，诊断原始采样为 review-diagnosis-before.json。截图是忽略的本地产物，不提交图片或日志。
+
+本轮没有重复全量 typecheck、全量测试或完整 check:local，首次交付的存量失败记录继续保留。完整门禁仍被 63 个 lint 错误阻止；推送后更新 PR #8，目标 design/GG-422-design-system，不合并。
+
 ## 合并前修正（追加第 4 个提交）
 
 2026-10-10，修正前 HEAD 为 f890c3c。原三个提交保留，在同一功能分支追加；不改变功能行为或其他页面。

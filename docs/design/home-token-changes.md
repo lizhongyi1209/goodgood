@@ -34,10 +34,12 @@ tokens.json 不再使用 homepage 分组，按语义归入 spacing、border、mo
 | layout | `--ds-template-aspect` | `4 / 3` | 常用模板封面的裁切比例，不用于灵感作品原始比例。 |
 | layout | `--ds-home-columns-wide` | `4` | 桌面常用模板网格与灵感瀑布流的列数。 |
 | layout | `--ds-home-columns-medium` | `3` | 中屏灵感瀑布流的列数。 |
-| layout | `--ds-home-columns-narrow` | `2` | 手机灵感瀑布流列数与模板滑动视区内的卡片数量。 |
+| layout | `--ds-home-columns-narrow` | `2` | 手机灵感瀑布流的列数；模板滑动卡片宽度独立按 2.3 张视区计算。 |
 | layout | `--ds-composer-lines-min` | `2` | 提示词输入框的最小可见文字行数。 |
 | layout | `--ds-composer-lines-max` | `8` | 提示词输入框自动增高的最大文字行数，超出后滚动。 |
 | type | `--ds-weight-semibold` | `600` | 积分数值与空状态标题的半粗字重。 |
 | type | `--ds-prompt-line-height` | `24px` | 计算提示词输入框行数的行高；必须等于 prompt 文字样式的行高。 |
 
 首页中屏和手机的标题、常用模板、灵感上间距使用 space-14，不借用 reference-slot；媒体选择控件使用 control-check，不借用 logo-height。手机底栏按实际子项自动均分列宽，不依赖作品列数；无障碍隐藏标签的 1px 尺寸直接定义，不借用描边 token。
+
+后续截图审查修正沿用这 33 个 token，不增加或修改数值。手机模板卡片采用 `(100% - space-3) / 2.3`，home-columns-narrow 只表示手机灵感的两列布局；菜单与底栏继续使用 white / shadow-md / line / ink / muted / fill-hover。
