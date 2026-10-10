@@ -25,14 +25,14 @@
 
 ## 提交与验收
 
-- 三个提交：① ADR / AGENTS / 任务卡等文档；② features/design-system 组件与 token；③ 首页、现有功能接线、相关测试及最终验收记录。
+- 原三个提交：① ADR / AGENTS / 任务卡等文档；② features/design-system 组件与 token；③ 首页、现有功能接线、相关测试及最终验收记录。用户随后明确要求追加第 4 个合并前修正提交，不修改前三个提交。
 - npm run check:local；新增验证开关默认/开发/生产组合、IME/Enter/Shift+Enter、素材状态与权限菜单，现有业务回归保留。
 - 六张截图：demo on/off × 1440/1024/390；键盘 Tab、方向键、Escape、焦点返回、名称和 reduced motion 核对。
 - 截图与合成验证不连接真实 Provider Worker 的数据库/队列、不提交计费请求；不修改生产数据或服务。
 - 完成后推送，开 PR 目标 design/GG-422-design-system，不合并、不部署；完成汇报逐条列出新增/修改 token 名称和值。
-- 提交 ① 8b9601e（决策文档）；② 0dc2a22（共享组件及 token）；③ 首页/接线/最终记录，最终 SHA 以本分支 HEAD 与 GitHub PR 提交列表为准，保持恰好三提交。
-- 交付分支 feature/GG-423-home-design-system；PR 目标 design/GG-422-design-system。[分支对比](https://github.com/lizhongyi1209/goodgood/compare/design/GG-422-design-system...feature/GG-423-home-design-system)，实际推送和 PR 链接随本次交付回报核对。
-- 新增 31 个 token，既有值无修改：[逐项名称和值](../design/home-token-changes.md)。
+- 提交 ① 8b9601e（决策文档）；② 0dc2a22（共享组件及 token）；③ f890c3c（首页/接线/最终记录）；④ 本分支最新 HEAD（合并前 token 与手机底栏修正）。只追加，不 amend 或重写历史。
+- 交付分支 feature/GG-423-home-design-system；[PR #8](https://github.com/lizhongyi1209/goodgood/pull/8) 目标 design/GG-422-design-system，只更新说明，不合并。
+- 累计新增 33 个 token，既有值无修改：[逐项分组、名称、值与用途](../design/home-token-changes.md)。
 
 ## 验证结果（2026-10-10）
 
@@ -51,6 +51,9 @@
 - 库存 lint、类型与测试失败分别记录，不把构建成功或用户的例外交付确认写成完整门禁通过。
 
 ## worktree 与恢复
+
+- 合并前修正（2026-10-10）：新增 space-14=56px、control-check=22px，移除 JSON 的 homepage 分组并逐项说明用途；Tooltip 同步从 motion 读取延迟，prompt-line-height 保持与 prompt 行高一致。rail/mobile 的三个区块上间距使用 space-14，媒体选择使用 control-check，隐藏标签直接使用 1px；底栏自动均分列并补齐 myTab。未改变已接受的 ADR 或功能行为，不新增 ADR。
+- 修正验证由用户明确委托并已完成：GG-423 文件 lint 0 错误 / 18 警告；全量修正前后 63 / 63 错误、172 / 172 警告，27 文件错误明细一致；文档测试 16/16、build 通过、首页及生产 SSR 回归 10/10，390 截图与「我的」Enter/Escape/焦点返回通过，中屏/手机三个区块间距均为 56px。详见 [验证记录](../design/home-verification.md)。本轮不重复全量 typecheck、全量测试或完整 check:local，上一轮存量失败记录保留。第 4 提交正常推送后更新 PR #8 说明，SHA 和远端核对随最终交付回报。
 
 - 根 agent 单独拥有上述目录，创建 1、退役 0；无子 agent，根 skills/配置、GG-116 运行目录及其他未提交路径不动。
 - 本根集成目录 npm ci 安装锁定依赖，用于用户要求的完整门禁与截图；保留这个当前集成目录及依赖供 PR 审阅。基线归档只用于独立对照检查，临时目录和依赖 junction 验证后清理，不保留备份副本。

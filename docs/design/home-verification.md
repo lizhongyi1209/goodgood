@@ -2,7 +2,26 @@
 
 2026-10-10；从 design/GG-422-design-system / 5e404e2 接续。完整 check:local 未通过，用户确认保持首页范围，将存量错误登记 [GG-424](../tasks/GG-424-existing-check-errors.md) 先不修。
 
-## 分项结果
+## 合并前修正（追加第 4 个提交）
+
+2026-10-10，修正前 HEAD 为 f890c3c。原三个提交保留，在同一功能分支追加；不改变功能行为或其他页面。
+
+| 检查 | 本次修正结果 |
+| --- | --- |
+| GG-423 改动文件 ESLint | 0 错误 / 18 警告；检查首页、共享组件及既有 GG-423 测试，无规则变更 |
+| 全量 npm run lint:local | 修正前 / 后均 63 错误、172 警告；27 个文件的规则、行号和错误消息完全一致 |
+| 文档测试 | documentation-continuity + m8-production-release，16/16 通过 |
+| npm run build:local | 通过，构建时 VITE_GG_HOME_DEMO=true；生产 SSR 仍不显示演示区块 |
+| 首页及 SSR 测试 | gg423-design-system 6/6、gg423-home 3/3、rendered-html 1/1，共 10/10 |
+| 390 手机截图与键盘 | 四个底栏按钮等宽、高 56px、同字体和布局；myTab 样式生效，2px 焦点 / 2px 偏移保留，Enter 打开账户菜单、Escape 恢复焦点 |
+| 响应间距 | 手机 390 与中屏 1024 的 start、templates、discovery 上间距均为 56px，无横向溢出或破图 |
+| JSON / CSS token | 新增 2 个、累计 33 个；全部既有值保留，无重复名称；prompt-line-height 与 prompt 文字样式均为 24px |
+
+新截图在同一忽略的本地 outputs/gg423/screenshots/：home-correction-on-390.png（带「我的」键盘焦点）、home-correction-my-menu-390.png（账户菜单打开）。使用全新浏览器上下文与隔离 Vite 55124，全部 API 本地拦截，未请求真实生成或上传；原始六截图仍保留。证据文件使用 correction- 前缀，与首次交付记录分开保存。
+
+本轮只重跑用户指定的 lint、文档、build、首页测试与截图，不重复全量 typecheck、全量测试或完整 check:local。完整门禁仍因存量 lint 未通过；以下首次交付的类型与全量测试失败记录继续有效，不将其写成通过。正常推送第 4 提交后更新 PR #8 说明，目标 design/GG-422-design-system，不合并。
+
+## 首次交付分项结果
 
 - 改动代码单独 ESLint：0 错误 / 18 警告。全量：改前 63 错误 / 165 警告，改后 63 / 172。27 文件的错误规则、行号与源码均相同；没有忽略文件、禁用规则或降低阈值。
 - npm run typecheck：15 个诊断，和独立基线检查逐字相同；本轮无新增诊断。

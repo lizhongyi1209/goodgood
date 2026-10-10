@@ -32,20 +32,20 @@
 .homeShell[data-home-layout="rail"] .sidebar { width: var(--ds-rail-width); padding: var(--ds-space-4) var(--ds-space-3) var(--ds-space-3); }
 .homeShell[data-home-layout="rail"] .brand { margin: 0 auto var(--ds-space-6); }
 .homeShell[data-home-layout="rail"] .navigationGroup + .navigationGroup::before { content: ""; display: block; height: var(--ds-border-width); width: var(--ds-space-6); margin: 0 auto var(--ds-space-4); background: var(--ds-line); }
-.homeShell[data-home-layout="rail"] .start, .homeShell[data-home-layout="rail"] .templates { margin-top: var(--ds-reference-slot); }
+.homeShell[data-home-layout="rail"] .start, .homeShell[data-home-layout="rail"] .templates, .homeShell[data-home-layout="rail"] .discovery { margin-top: var(--ds-space-14); }
 .homeShell[data-home-layout="rail"] .discoveryGrid { columns: var(--ds-home-columns-medium); }
 .homeShell[data-home-layout="mobile"] .main { padding-bottom: calc(var(--ds-tabbar-height) + var(--ds-space-6) + env(safe-area-inset-bottom)); }
 .homeShell[data-home-layout="mobile"] .topbar { justify-content: space-between; padding: 0 var(--ds-space-4); }
 .mobileBrand { display: flex; align-items: center; min-width: var(--ds-control-field); min-height: var(--ds-control-field); padding: 0; border: 0; background: transparent; }
 .mobileBrand img { height: var(--ds-icon-lg); width: auto; }
 .homeShell[data-home-layout="mobile"] .content { padding: 0 var(--ds-space-4); }
-.homeShell[data-home-layout="mobile"] .start { margin-top: var(--ds-reference-slot); }
+.homeShell[data-home-layout="mobile"] .start { margin-top: var(--ds-space-14); }
 .homeShell[data-home-layout="mobile"] .start h1 { font: var(--ds-text-display-mobile); }
-.homeShell[data-home-layout="mobile"] .templates, .homeShell[data-home-layout="mobile"] .discovery { margin-top: var(--ds-reference-slot); }
+.homeShell[data-home-layout="mobile"] .templates, .homeShell[data-home-layout="mobile"] .discovery { margin-top: var(--ds-space-14); }
 .homeShell[data-home-layout="mobile"] .templateGrid { display: flex; overflow-x: auto; padding-bottom: var(--ds-space-2); scrollbar-width: none; }
 .homeShell[data-home-layout="mobile"] .templateGrid > button { flex: 0 0 calc((100% - var(--ds-space-3)) / var(--ds-home-columns-narrow)); }
 .homeShell[data-home-layout="mobile"] .discoveryGrid { columns: var(--ds-home-columns-narrow); }
-.tabbar { position: fixed; bottom: 0; left: 0; right: 0; z-index: var(--ds-layer-tabbar); display: grid; grid-template-columns: repeat(var(--ds-home-columns-wide), minmax(0, 1fr)); padding: 0 var(--ds-space-2) env(safe-area-inset-bottom); background: var(--ds-white); }
-.tabbar > :global(button) { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--ds-space-1); width: 100%; height: var(--ds-tabbar-height); padding: 0; border: 0; border-radius: var(--ds-radius-sm); color: var(--ds-muted); background: transparent; font: var(--ds-text-tab); }
+.tabbar { position: fixed; bottom: 0; left: 0; right: 0; z-index: var(--ds-layer-tabbar); display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 0 var(--ds-space-2) env(safe-area-inset-bottom); background: var(--ds-white); }
+.myTab, .tabbar > :global(button) { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--ds-space-1); width: 100%; height: var(--ds-tabbar-height); padding: 0; border: 0; border-radius: var(--ds-radius-sm); color: var(--ds-muted); background: transparent; font: var(--ds-text-tab); }
 .tabbar > :global(button[aria-current]) { color: var(--ds-ink); background: var(--ds-fill-selected); }
 .tabbar svg { width: var(--ds-icon-lg); height: var(--ds-icon-lg); stroke-width: var(--ds-icon-stroke); }

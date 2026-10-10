@@ -87,14 +87,14 @@
 .mediaView:focus-visible { outline: var(--ds-focus-width) solid var(--ds-focus); outline-offset: var(--ds-focus-offset); }
 .mediaTile:hover .mediaView, .mediaTile:focus-within .mediaView { opacity: 1; }
 @media (hover: none) { .mediaView { opacity: 1; } }
-.mediaSelect { position: absolute; top: var(--ds-space-2); left: var(--ds-space-2); width: var(--ds-logo-height); height: var(--ds-logo-height); padding: 0; border: var(--ds-border-width) solid var(--ds-line); border-radius: var(--ds-radius-pill); background: var(--ds-white); }
+.mediaSelect { position: absolute; top: var(--ds-space-2); left: var(--ds-space-2); width: var(--ds-control-check); height: var(--ds-control-check); padding: 0; border: var(--ds-border-width) solid var(--ds-line); border-radius: var(--ds-radius-pill); background: var(--ds-white); }
 .mediaTile[data-selected] .mediaFrame { outline: var(--ds-focus-width) solid var(--ds-ink); outline-offset: calc(0px - var(--ds-focus-width)); }
 .mediaCaption { margin: var(--ds-space-2) 0 0; color: var(--ds-muted); font: var(--ds-text-caption); }
 .emptyState { display: flex; flex-direction: column; align-items: center; gap: var(--ds-space-3); padding: var(--ds-space-8); text-align: center; }
 .emptyIcon { display: grid; place-items: center; width: var(--ds-empty-icon-size); height: var(--ds-empty-icon-size); border-radius: var(--ds-radius-md); background: var(--ds-soft); }
 .emptyState h3 { margin: 0; color: var(--ds-ink); font: var(--ds-text-subheading); font-weight: var(--ds-weight-semibold); }
 .emptyState p { margin: 0; color: var(--ds-muted); font: var(--ds-text-label); }
-.visuallyHidden { position: absolute; width: var(--ds-border-width); height: var(--ds-border-width); overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.visuallyHidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .spin { animation: spin var(--ds-spinner-duration) linear infinite; }
 @keyframes spin { to { transform: rotate(1turn); } }
 @media (hover: none) { .removeReference, .templateUse, .mediaAction { opacity: 1; } }

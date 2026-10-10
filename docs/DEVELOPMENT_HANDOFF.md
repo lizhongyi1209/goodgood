@@ -1,6 +1,6 @@
 # 当前开发版本与跨窗口交接
 
-GG-423 当前检查点：feature/GG-423-home-design-system 从 5e404e2 接续，首页已实现并完成六截图/分项验证；本轮 lint 0、全量 63→63、typecheck 15 个相同存量诊断，构建通过，测试 1145 通过 / 26 相同存量失败 / 26 跳过。用户确认只交付首页，GG-424 单独登记先不修；完整 check:local 未通过。三提交后 PR 目标 design/GG-422-design-system，不合并/部署。详见 [任务卡](tasks/GG-423-home-design-system.md) / [验证记录](design/home-verification.md)。本轮 55123/55124 的独立 UI 预览交付前停止，原 5173 与真实 Web/Worker 栈保持；下方为此前记录。
+GG-423 当前检查点：feature/GG-423-home-design-system 从 5e404e2 接续，原三提交 8b9601e / 0dc2a22 / f890c3c 保留，按用户要求追加第 4 个 token 与手机底栏修正提交（本分支 HEAD）。修正验证：GG-423 文件 lint 0 错误 / 18 警告，全量 63→63 错误、172→172 警告；docs 16/16、首页及生产 SSR 10/10、build 与 390 截图通过。首次交付的六截图、typecheck 15 个相同存量诊断及全量测试 1145 通过 / 26 相同存量失败 / 26 跳过记录保留，本轮未重复完整门禁。用户确认 GG-424 单独登记先不修；完整 check:local 未通过。推送后更新 PR #8，目标 design/GG-422-design-system，不合并/部署。详见 [任务卡](tasks/GG-423-home-design-system.md) / [验证记录](design/home-verification.md)。本轮独立 55124 UI 预览交付前停止，原 5173 与真实 Web/Worker 栈保持；下方为此前记录。
 
 ## GG-422（2026-10-09 · 设计文档接入）
 
