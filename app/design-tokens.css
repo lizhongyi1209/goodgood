@@ -1,4 +1,4 @@
-/* GoodGood 设计系统 v3 token（由 docs/design/tokens.json 生成，见 ADR 0144 / GG-422）。
+/* GoodGood 设计系统 v3 token（由 docs/design/tokens.json 生成，见 ADR 0144 / GG-422 / GG-423）。
    使用 --ds- 前缀，与现有变量并存；页面迁移时把旧变量改为引用这里的值。 */
 :root {
   /* color */
@@ -89,4 +89,36 @@
   --ds-text-caption: 400 12px/18px var(--ds-font-sans);
   --ds-text-micro: 500 11px/16px var(--ds-font-sans);
   --ds-text-tab: 500 11px/16px var(--ds-font-sans);
+  /* GG-423 implementation */
+  --ds-space-half: 2px;
+  --ds-space-1-5: 6px;
+  --ds-space-2-5: 10px;
+  --ds-border-width: 1px;
+  --ds-border-strong: 1.5px;
+  --ds-focus-width: 2px;
+  --ds-focus-offset: 2px;
+  --ds-control-toggle: 28px;
+  --ds-credit-height: 24px;
+  --ds-icon-rail: 18px;
+  --ds-logo-height: 22px;
+  --ds-icon-send-stroke: 2px;
+  --ds-opacity-disabled: 0.5;
+  --ds-opacity-menu-disabled: 0.4;
+  --ds-motion-duration: 160ms;
+  --ds-preview-duration: 180ms;
+  --ds-motion-easing: ease;
+  --ds-composer-lines-min: 2;
+  --ds-composer-lines-max: 8;
+  --ds-prompt-line-height: 24px;
+  --ds-add-reference-menu-width: 264px;
+  --ds-empty-icon-size: 48px;
+  --ds-spinner-duration: 1s;
+  --ds-home-columns-wide: 4;
+  --ds-home-columns-medium: 3;
+  --ds-home-columns-narrow: 2;
+  --ds-weight-semibold: 600;
+  --ds-template-aspect: 4 / 3;
+  --ds-preview-max-height: 70dvh;
+  --ds-layer-tabbar: 20;
+  --ds-layer-control: 1;
 }
