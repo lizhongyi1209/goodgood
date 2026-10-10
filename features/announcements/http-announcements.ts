@@ -13,7 +13,14 @@ async function request<T>(url: string, signal?: AbortSignal, input?: unknown): P
     let payload;
     try { payload = await response.json(); }
     catch { throw new AnnouncementRequestError("公告暂时不可用，请稍后重试。", "ANNOUNCEMENTS_UNAVAILABLE", response.status); }
-    if (!response.ok) throw new AnnouncementRequestError(payload.error?.message ?? "公告暂时不可用，请稍后重试。", payload.error?.code ?? "ANNOUNCEMENTS_UNAVAILABLE", response.status);
+    const error = payload && typeof payload === "object" && "error" in payload && payload.error && typeof payload.error === "object"
+      ? payload.error as { code?: unknown; message?: unknown }
+      : null;
+    if (!response.ok) throw new AnnouncementRequestError(
+      typeof error?.message === "string" ? error.message : "公告暂时不可用，请稍后重试。",
+      typeof error?.code === "string" ? error.code : "ANNOUNCEMENTS_UNAVAILABLE",
+      response.status,
+    );
     return payload as T;
   } finally { clearTimeout(timer); }
 }

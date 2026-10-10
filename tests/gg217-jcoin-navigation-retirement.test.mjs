@@ -32,7 +32,7 @@ test("GG-217 normal credits, creation and other workspace routes remain availabl
   assert.equal(workspaceRouteHref({ kind: "credits" }), "/credits");
 });
 
-test("GG-217 owner navigation retains seven ordered functions without platform coins", async () => {
+test("GG-217 owner navigation retains ordered functions without platform coins", async () => {
   const { SiteOwnerManagementView } = await vite.ssrLoadModule("/features/admin/site-owner-management-view.tsx");
   const html = renderToStaticMarkup(React.createElement(SiteOwnerManagementView, {
     session: { account: { role: "site_owner" }, access: { status: "active" }, preview: false },
@@ -41,7 +41,7 @@ test("GG-217 owner navigation retains seven ordered functions without platform c
   const navigation = html.match(/<nav[^>]*aria-label="站长管理功能"[^>]*>([\s\S]*?)<\/nav>/)?.[1];
   assert.ok(navigation, "owner management navigation must be rendered");
   assert.deepEqual([...navigation.matchAll(/href="([^"]+)"/g)].map((match) => match[1]), [
-    "/admin/operations", "/admin/users", "/admin/logs", "/organizations", "/admin/models", "/admin/feedback", "/admin/audit",
+    "/admin/operations", "/admin/users", "/admin/logs", "/organizations", "/admin/models", "/admin/feedback", "/admin/announcements", "/admin/audit",
   ]);
   assert.doesNotMatch(html, /jcoin|平台币/i);
   assert.equal((navigation.match(/aria-current="page"/g) ?? []).length, 1);
@@ -60,7 +60,7 @@ test("GG-217 the shared shell keeps credit activity and removes coin entry pages
     "normal credits must retain a labelled desktop action in the sidebar or account menu");
   const mobileEntry = creditEntries.find((entry) => entry.includes('className="mobile-credit-balance"'));
   assert.ok(mobileEntry, "mobile credit balance must still open normal credit activity");
-  assert.match(mobileEntry, /aria-label=[^\n]*查看积分(?:记录|用量)/);
+  assert.match(mobileEntry, /aria-label=[^\n]*打开账户管理/);
   for (const file of ["app/jcoin/page.tsx", "app/admin/jcoin/page.tsx"]) {
     await assert.rejects(access(new URL(`../${file}`, import.meta.url)), { code: "ENOENT" });
   }

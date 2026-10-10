@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { Handle, NodeResizeControl, Position, useReactFlow, useStore, useStoreApi, type NodeProps, type OnResizeEnd } from "@xyflow/react";
 import { FolderOpen, ImageOff } from "lucide-react";
 import { PrivateObjectImage } from "@/components/ui/private-object-image";
@@ -46,11 +46,11 @@ function CanvasFolderAlbumNode({ id, data, selected }: NodeProps<CanvasGroupNode
   const store = useStoreApi<CanvasNode>();
   const actions = useCanvasGroupActions();
   const actionsRef = useRef(actions);
-  actionsRef.current = actions;
+  useEffect(() => { actionsRef.current = actions; }, [actions]);
   const nodes = useStore((state) => state.nodes) as CanvasNode[];
   const connected = useStore((state) => state.edges.some((edge) => edge.source === id && edge.sourceHandle === "reference"));
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const returnFocusRef = useRef<HTMLButtonElement | null>(null);
+  const [returnFocusTo, setReturnFocusTo] = useState<HTMLButtonElement | null>(null);
   const items = useMemo<ImageViewerItem[]>(() => canvasReferenceGroupMembers({ id, type: "group", position: { x: 0, y: 0 }, data }, nodes).flatMap((node) => {
     const asset = imageSourceAsset(node);
     if (!asset?.assetId) return [];
@@ -101,7 +101,7 @@ function CanvasFolderAlbumNode({ id, data, selected }: NodeProps<CanvasGroupNode
     <section className={`${styles.album} canvas-album-drag-handle`} data-selected={selected || undefined} aria-label={`相册：${data.name}，${items.length} 张图片`}>
       {items.length ? <div className={`${styles.grid} nopan nowheel nokey`} role="group" aria-label="相册图片" tabIndex={0}>
         {items.map((item, index) => <AlbumThumbnail key={item.key} item={item} index={index} onOpen={(button) => {
-          returnFocusRef.current = button; setSelectedKey(item.key);
+          setReturnFocusTo(button); setSelectedKey(item.key);
         }} />)}
       </div> : <div className={styles.empty} role="status"><FolderOpen size={24} strokeWidth={1.4} aria-hidden="true" /><span>文件夹中暂无图片</span></div>}
       <div className={`${styles.caption} canvas-album-drag-handle`}>连接到节点，一次性载入所有图片</div>
@@ -120,7 +120,7 @@ function CanvasFolderAlbumNode({ id, data, selected }: NodeProps<CanvasGroupNode
         aria-label={`调整相册${label}，方向键调整大小`} title="拖动调整尺寸，或使用方向键（Shift 加快）"
         onKeyDown={(event) => resizeWithKeyboard(event, position)} />
     </NodeResizeControl>)}
-    {viewerKey && <ImageViewer items={items} selectedKey={viewerKey} returnFocusTo={returnFocusRef.current}
+    {viewerKey && <ImageViewer items={items} selectedKey={viewerKey} returnFocusTo={returnFocusTo}
       onSelect={setSelectedKey} onClose={() => setSelectedKey(null)} mode="canvas" />}
   </>;
 }

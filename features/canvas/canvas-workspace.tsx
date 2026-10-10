@@ -251,7 +251,7 @@ export function CanvasWorkspace({
 }>) {
   const [cropRequest, setCropRequest] = useState<CanvasCropRequest | null>(null);
   const visibleCropRequest = cropEnabled && cropRequest?.pageId === cropPageId ? cropRequest : null;
-  useEffect(() => { setCropRequest(null); }, [cropPageId, cropEnabled]);
+  useEffect(() => { Promise.resolve().then(() => setCropRequest(null)); }, [cropPageId, cropEnabled]);
   const [miniMapOpen, setMiniMapOpen] = useState(true);
   const [connectionActive, setConnectionActive] = useState(false);
   const [miniMapWidth, setMiniMapWidth] = useState(200);
@@ -274,7 +274,7 @@ export function CanvasWorkspace({
   const assetArrivalSequenceRef = useRef(0);
 
   useEffect(() => {
-    setAssetArrival(null);
+    Promise.resolve().then(() => setAssetArrival(null));
     if (!assetLibraryEnabled || textGenerationContext.workspaceId !== null) return;
     const received = (event: Event) => {
       if (!(event instanceof CustomEvent)) return;

@@ -205,23 +205,22 @@ test("O1Key worker route reads private reference bytes, uploads, and resumes pol
     /does not match/,
   );
 
+  const job = {
+    aspect_ratio: "4:5",
+    model_id: "nano-banana-2",
+    prompt: "keep the subject and simplify the background",
+    reference_snapshot: [{
+      name: "reference.png",
+      objectKey: "references/owner/reference/original",
+      ordinal: 1,
+    }],
+    requested_count: 1,
+    resolution: "2K",
+  };
   let submissionStartCount = 0;
   const taskId = await provider.createTask({
     attempt,
-    job: {
-      aspect_ratio: "4:5",
-      model_id: "nano-banana-2",
-      prompt: "keep the subject and simplify the background",
-      reference_snapshot: [
-        {
-          name: "reference.png",
-          objectKey: "references/owner/reference/original",
-          ordinal: 1,
-        },
-      ],
-      requested_count: 1,
-      resolution: "2K",
-    },
+    job,
     onSubmissionStart: async () => {
       submissionStartCount += 1;
       assert.deepEqual(
@@ -257,6 +256,7 @@ test("O1Key worker route reads private reference bytes, uploads, and resumes pol
       refiningCount += 1;
     },
     taskId,
+    job,
   });
   assert.equal(refiningCount, 1);
   assert.equal(outputs[0].url, "https://assetcache.o1key.invalid/result.png");
@@ -354,6 +354,7 @@ test("Nano Banana 2 fans four outputs into durable single-image O1Key tasks", as
       refiningCount += 1;
     },
     taskId,
+    job,
   });
   assert.equal(refiningCount, 1);
   assert.equal(outputs.length, 4);
@@ -396,7 +397,7 @@ test("both Nano adapters fan eight outputs into one recoverable task set", async
     assert.equal(submissions.length, 8);
     assert.ok(submissions.every((request) => request.body.n === undefined));
     assert.equal(provider.isTaskSubmissionComplete({ job, taskId }), true);
-    const outputs = await provider.pollTask({ expectedOutputCount: 8, taskId, onRefining: async () => {} });
+    const outputs = await provider.pollTask({ expectedOutputCount: 8, taskId, job, onRefining: async () => {} });
     assert.equal(outputs.length, 8);
   }
 });

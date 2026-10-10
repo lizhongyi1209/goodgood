@@ -28,7 +28,7 @@ export function CanvasImagePlacementProvider({ children, enabled, libraryEnabled
 }>) {
   const [request, setRequest] = useState<PlacementRequest | null>(null);
   const visible = enabled && request?.ownerKey === ownerKey && request.pageId === pageKey ? request : null;
-  useEffect(() => { setRequest(null); }, [enabled, ownerKey, pageKey]);
+  useEffect(() => { Promise.resolve().then(() => setRequest(null)); }, [enabled, ownerKey, pageKey]);
   return <CanvasImagePlacementContext.Provider value={{ enabled, regionKey: visible?.mode === "region" ? visible.key : null, openPlacement: (image, mode, trigger) => {
     if (enabled) setRequest({ ...image, mode, trigger, ownerKey, pageId: pageKey, sessionId: crypto.randomUUID() });
   } }}>
@@ -62,7 +62,8 @@ function PlacementDialog({ request, libraryEnabled, onCommit, onClose }: Readonl
   const dragRef = useRef<Drag | null>(null);
   const busyRef = useRef(false);
   const spaceRef = useRef(false);
-  const closeRef = useRef(onClose); closeRef.current = onClose;
+  const closeRef = useRef(onClose);
+  useEffect(() => { closeRef.current = onClose; }, [onClose]);
   const title = "贴图";
   const size = base ? { width: base.image.naturalWidth, height: base.image.naturalHeight } : null;
   const selected = layers.find((layer) => layer.id === selectedId) ?? null;
@@ -86,7 +87,7 @@ function PlacementDialog({ request, libraryEnabled, onCommit, onClose }: Readonl
   }, [flow, liveNode, request]);
   useEffect(() => {
     const controller = new AbortController(); let resource: PlacementImage | null = null;
-    setBase(null); setSourceError(null); setError(null);
+    Promise.resolve().then(() => { if (!controller.signal.aborted) { setBase(null); setSourceError(null); setError(null); } });
     void loadPlacementImage(request, controller.signal).then((loaded) => {
       resource = loaded;
       if (controller.signal.aborted) { loaded.dispose(); return; }

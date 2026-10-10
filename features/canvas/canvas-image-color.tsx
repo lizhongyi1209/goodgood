@@ -36,7 +36,7 @@ export function CanvasImageColorProvider({ children, enabled, libraryEnabled, ow
 }>) {
   const [request, setRequest] = useState<ColorRequest | null>(null);
   const visible = enabled && request?.ownerKey === ownerKey && request.pageId === pageKey ? request : null;
-  useEffect(() => { setRequest(null); }, [enabled, ownerKey, pageKey]);
+  useEffect(() => { Promise.resolve().then(() => setRequest(null)); }, [enabled, ownerKey, pageKey]);
   return <CanvasImageColorContext.Provider value={{ enabled, openColor: (image, references, trigger) => {
     if (!enabled) return;
     const seen = new Set([image.key]);
@@ -65,7 +65,7 @@ function ReferencePicker({ request, selected, libraryEnabled, disabled, onSelect
   const [search, setSearch] = useState("");
   useEffect(() => {
     if (!open || source !== "assets" || !libraryEnabled) return;
-    let active = true; setLoading(true); setError(null);
+    let active = true; Promise.resolve().then(() => { if (active) { setLoading(true); setError(null); } });
     void Promise.allSettled([listAssets(), listReferenceMaterials(), listAssetOrganization(null)]).then(([generated, uploaded, organization]) => {
       if (!active) return;
       const names = new Map(organization.status === "fulfilled" ? organization.value.arrangements.map((item) => [`${item.kind}:${item.id}`, item.displayName] as const) : []);
@@ -142,8 +142,9 @@ function ColorDialog({ request, libraryEnabled, onClose, onCommit }: Readonly<{
   const lifecycleRef = useRef<AbortController | null>(null);
   const savingRef = useRef(false);
   const frameRef = useRef<number | null>(null);
-  const parametersRef = useRef(parameters); parametersRef.current = parameters;
-  const closeRef = useRef(onClose); closeRef.current = onClose;
+  const parametersRef = useRef(parameters);
+  const closeRef = useRef(onClose);
+  useEffect(() => { parametersRef.current = parameters; closeRef.current = onClose; }, [onClose, parameters]);
   const parametersKey = JSON.stringify(parameters);
   useEffect(() => {
     const controller = new AbortController(); lifecycleRef.current = controller;
@@ -155,7 +156,7 @@ function ColorDialog({ request, libraryEnabled, onClose, onCommit }: Readonly<{
   }, [flow, liveNode, request]);
   useEffect(() => {
     const controller = new AbortController(); let loaded: LoadedImage | null = null;
-    setImage(null); setSourceError(null); setPreviewError(null); setSaveError(null);
+    Promise.resolve().then(() => { if (!controller.signal.aborted) { setImage(null); setSourceError(null); setPreviewError(null); setSaveError(null); } });
     void loadCanvasCropImage(request, controller.signal).then((resource) => {
       loaded = resource; controller.signal.throwIfAborted();
       const pixels = readColorPixels(resource.image);
@@ -169,11 +170,11 @@ function ColorDialog({ request, libraryEnabled, onClose, onCommit }: Readonly<{
   }, [request, sourceAttempt]);
   useEffect(() => {
     const controller = new AbortController(); let resource: LoadedImage | null = null;
-    setMatch(null); setMatchError(null); setSaveError(null);
-    if (!image || !reference) { setMatching(false); return () => controller.abort(); }
-    if (!image.statistics) { setMatching(false); setMatchError("当前图片缺少可匹配的颜色，可以手动调整。"); return () => controller.abort(); }
+    Promise.resolve().then(() => { if (!controller.signal.aborted) { setMatch(null); setMatchError(null); setSaveError(null); } });
+    if (!image || !reference) { Promise.resolve().then(() => { if (!controller.signal.aborted) setMatching(false); }); return () => controller.abort(); }
+    if (!image.statistics) { Promise.resolve().then(() => { if (!controller.signal.aborted) { setMatching(false); setMatchError("当前图片缺少可匹配的颜色，可以手动调整。"); } }); return () => controller.abort(); }
     const sourceStatistics = image.statistics;
-    setMatching(true);
+    Promise.resolve().then(() => { if (!controller.signal.aborted) setMatching(true); });
     void loadCanvasCropImage(reference, controller.signal).then((loaded) => {
       resource = loaded; controller.signal.throwIfAborted();
       try {
@@ -187,7 +188,7 @@ function ColorDialog({ request, libraryEnabled, onClose, onCommit }: Readonly<{
     return () => { controller.abort(); resource?.dispose(); };
   }, [image, reference, matchAttempt]);
   useEffect(() => {
-    setPreviewReady(false); if (!image || !surfaceRef.current) return;
+    Promise.resolve().then(() => setPreviewReady(false)); if (!image || !surfaceRef.current) return;
     const preview = createColorPreview(image.pixels); previewRef.current = preview;
     surfaceRef.current.appendChild(preview.canvas);
     return () => { previewRef.current = null; preview.dispose(); };

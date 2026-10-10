@@ -31,14 +31,15 @@ export function CanvasImageCleanupProvider({ children, enabled, ownerKey, worksp
 }>) {
   const flow = useReactFlow<CanvasNode>();
   const identity = `${ownerKey}:${workspaceId ?? "personal"}:${pageId}:${enabled}`;
-  const identityRef = useRef(identity); identityRef.current = identity;
+  const identityRef = useRef(identity);
   const activeRef = useRef<AbortController | null>(null);
   const toastRef = useRef<string | number | null>(null);
   const [pending, setPending] = useState<{ identity: string; key: string } | null>(null);
-  const commitRef = useRef(onCommit); commitRef.current = onCommit;
-  const changedRef = useRef(onChanged); changedRef.current = onChanged;
+  const commitRef = useRef(onCommit);
+  const changedRef = useRef(onChanged);
+  useEffect(() => { identityRef.current = identity; commitRef.current = onCommit; changedRef.current = onChanged; }, [identity, onChanged, onCommit]);
   useEffect(() => {
-    setPending(null);
+    Promise.resolve().then(() => setPending(null));
     return () => {
       activeRef.current?.abort(); activeRef.current = null;
       if (toastRef.current !== null) { toast.dismiss(toastRef.current); toastRef.current = null; }

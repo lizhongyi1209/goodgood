@@ -466,7 +466,7 @@ export function CanvasAssetPanel({ enabled, assetRevision, downloadScopeKey, onA
   useEffect(() => {
     readEpochRef.current += 1;
     const epoch = readEpochRef.current;
-    setTextReadError(null);
+    Promise.resolve().then(() => setTextReadError(null));
     if (!enabled) return;
     let active = true;
     void Promise.all([

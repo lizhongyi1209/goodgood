@@ -39,16 +39,17 @@ test("generator renders exactly one receiving handle for image and text", () => 
   assert.doesNotMatch(html, /data-handleid="text"/);
   assert.match(html, /连接图片或文本/);
 });
-test("text editor renders external metadata, a quiet writing area and an accessible corner grip", () => {
+test("text editor renders external metadata, a quiet writing area and accessible corner grips", () => {
   const html = renderToStaticMarkup(withFlow(CanvasTextNode, nodes[0]));
   assert.match(html, /<header[^>]*>.*文本编辑 1/s);
   assert.match(html, /<header[^>]*imageMetadata/);
   assert.doesNotMatch(html, /<footer/);
-  assert.match(html, /aria-label="调整文本编辑 1尺寸"/);
+  for (const corner of ["左上角", "右上角", "左下角", "右下角"]) {
+    assert.match(html, new RegExp(`aria-label="调整文本编辑 1${corner}，方向键调整大小"`));
+  }
   assert.match(html, /双击或按 Enter 编辑/);
   assert.match(html, /react-flow__resize-control nodrag bottom right handle/);
-  assert.match(html, /M7 17 17 7M13 19 19 13/);
-  assert.equal((html.match(/react-flow__resize-control/g) ?? []).length, 1);
+  assert.equal((html.match(/react-flow__resize-control/g) ?? []).length, 4);
   assert.match(html, /data-handleid="text"/);
   assert.match(html, /referenceOutputHandle/);
 });
@@ -56,7 +57,7 @@ test("text-node resizing keeps the same body font at minimum, default and large 
   for (const size of [{ width: 180, height: 140 }, { width: 360, height: 260 }, { width: 720, height: 520 }]) {
     const html = renderToStaticMarkup(withFlow(CanvasTextNode, nodes[0], size));
     assert.match(html, /style="font-size:14px"/);
-    assert.match(html, /aria-label="调整文本编辑 1尺寸"/);
+    assert.match(html, /aria-label="调整文本编辑 1右下角，方向键调整大小"/);
   }
 });
 test("editor toolbar exposes retained formatting while removed controls are absent", () => {

@@ -15,7 +15,8 @@ const date = new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", month
 export function announcementTime(value: string | null) { return value ? date.format(new Date(value)) : "草稿"; }
 function AnnouncementPost({ item, root, active, busy, onView, onLike }: { item: Announcement; root: RefObject<HTMLDivElement | null>; active: boolean; busy: boolean; onView: (item: Announcement) => Promise<boolean>; onLike: (item: Announcement) => void }) {
   const element = useRef<HTMLElement | null>(null), viewed = useRef("");
-  const view = useRef(onView); view.current = onView;
+  const view = useRef(onView);
+  useEffect(() => { view.current = onView; }, [onView]);
   useEffect(() => {
     const node = element.current, revision = `${item.id}:${item.publicationVersion}`;
     if (!active || !node || viewed.current === revision) return;
@@ -61,7 +62,7 @@ function ConnectedAnnouncementCenter({ owner, administrator, className, iconOnly
   const announcements = useAnnouncements(owner, readingAway);
   const { feed, notice, pending, loading, error, syncing, moreBusy, busyLikes, refresh, more, like, view, showLatest, setNotice } = announcements;
   const [arrival, setArrival] = useState(false);
-  useEffect(() => { if (!notice) return; setArrival(true); const timer = setTimeout(() => setArrival(false), 2800); return () => clearTimeout(timer); }, [notice?.id, notice?.publicationVersion]);
+  useEffect(() => { if (!notice) return; Promise.resolve().then(() => setArrival(true)); const timer = setTimeout(() => setArrival(false), 2800); return () => clearTimeout(timer); }, [notice?.id, notice?.publicationVersion]);
   useEffect(() => { if (!notice || paused) return; const timer = setTimeout(() => setNotice(null), 6000); return () => clearTimeout(timer); }, [notice, paused, setNotice]);
   const latest = () => { readingAway.current = false; scroll.current?.scrollTo({ top: 0, behavior: "auto" }); showLatest(); };
   const changeOpen = (value: boolean) => {

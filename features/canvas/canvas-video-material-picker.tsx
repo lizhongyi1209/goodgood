@@ -20,7 +20,7 @@ export function CanvasVideoMaterialPicker({ open, onOpenChange, workspaceId, own
   const [kind, setKind] = useState<"image" | "video">("image");
   useEffect(() => {
     if (!open) return;
-    let live = true; const controller = new AbortController(); setLoading(true); setError(""); setItems([]);
+    let live = true; const controller = new AbortController(); Promise.resolve().then(() => { if (live) { setLoading(true); setError(""); setItems([]); } });
     void Promise.allSettled([listReferenceMaterials(workspaceId), listAssets(workspaceId), listPrivateVideoMaterials(workspaceId, controller.signal)]).then((results) => {
       if (!live) return;
       const next: VideoPickerMaterial[] = [];

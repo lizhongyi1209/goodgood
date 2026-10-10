@@ -25,7 +25,7 @@ export function CanvasVideoStoryboardControl({ id, draft, connectedText, disable
   const mode = custom ? "custom" : single ? "single" : "smart";
   const promptLines = draft.prompt.split(/\r?\n/).map((line) => line.trim());
   const camera = single ? CANVAS_VIDEO_CAMERA_REFERENCES.find((item) => promptLines.includes(item.text))?.id ?? "" : "";
-  useEffect(() => { if (disabled) setDialogOpen(false); }, [disabled]);
+  useEffect(() => { if (disabled) Promise.resolve().then(() => setDialogOpen(false)); }, [disabled]);
   const chooseReference = (referenceId: string) => {
     const prompt = canvasVideoCameraPrompt(draft.prompt, referenceId, connectedText);
     if (!disabled && prompt !== null) onApply({ prompt, multiShot: false, shots: [] });

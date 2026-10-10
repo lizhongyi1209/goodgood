@@ -17,7 +17,7 @@ export function TextAssetViewer({ asset, workspaceId, onClose }: Readonly<{
   const { content, error } = read.key === key ? read : { content: null, error: null };
   const [revision, setRevision] = useState(0);
   useEffect(() => {
-    setRead({ key, content: null, error: null });
+    Promise.resolve().then(() => setRead({ key, content: null, error: null }));
     if (!assetId) return;
     const controller = new AbortController();
     void readPrivateTextAsset(assetId, workspaceId, controller.signal).then((value) => {

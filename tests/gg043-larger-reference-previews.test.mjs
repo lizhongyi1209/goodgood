@@ -54,9 +54,9 @@ test("GG-043 preserves image editor and adds isolated click/keyboard/close/focus
   const video = await read("features/creation/video-creation-composer.tsx");
   const dialog = await read("features/creation/video-reference-preview-dialog.tsx");
   assert.match(image, /previewReference\?\.status === "ready"[\s\S]*<ReferenceQuickEditor/);
-  assert.match(video, /<button\s+type="button"\s+className="video-reference-preview-trigger"[\s\S]*aria-haspopup="dialog"/);
+  assert.match(video, /<InputAttachment[\s\S]*onPreview=\{\(trigger\) => \{ previewTriggerRef\.current = trigger; setPreviewReferenceId\(reference\.id\); \}\}/);
   assert.match(video, /useRef<HTMLButtonElement \| null>/);
-  assert.match(video, /event.stopPropagation\(\); onRemoveReference\(reference\)/);
+  assert.match(video, /onRemove=\{\(\) => onRemoveReference\(reference\)\}/);
   assert.match(video, /onReturnFocus=\{\(\) => previewTriggerRef.current\?\.focus\(\)\}/);
   assert.match(dialog, /<Dialog open onOpenChange=/);
   assert.match(dialog, /onCloseAutoFocus=[\s\S]*onReturnFocus\(\)/);

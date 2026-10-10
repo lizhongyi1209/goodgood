@@ -33,14 +33,14 @@ export function CanvasGroupNode({ id, data, selected }: NodeProps<CanvasGroupNod
   const referenceCount = referenceMembers.length && referenceMembers.every(canConnectCanvasImage) ? referenceMembers.length : 0;
   const actions = useCanvasGroupActions();
   const actionsRef = useRef(actions);
-  actionsRef.current = actions;
+  useEffect(() => { actionsRef.current = actions; }, [actions]);
   const resizeContentRef = useRef<ReturnType<typeof canvasGroupContentBounds>>(null);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(data.name);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const titleRef = useRef<HTMLButtonElement>(null);
   const cancelledRef = useRef(false);
-  useEffect(() => { if (!selected) setEmojiOpen(false); }, [selected]);
+  useEffect(() => { if (!selected) Promise.resolve().then(() => setEmojiOpen(false)); }, [selected]);
   const update = (patch: Partial<CanvasGroupNodeData>) => {
     actions.onBeforeGraphEdit();
     flow.updateNodeData(id, patch);

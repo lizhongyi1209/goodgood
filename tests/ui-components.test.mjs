@@ -186,7 +186,7 @@ test("hides fixed Nano thinking and shows only the Google Search control", async
   );
   const page = await readFile(path.join(root, "app/page.tsx"), "utf8");
 
-  assert.match(composer, /modelId === "nano-banana-2"/);
+  assert.match(composer, /isBananaFlashModel\(modelId\)/);
   assert.doesNotMatch(composer, /思考程度|banana-thinking|thinkingLevel/);
   assert.match(composer, />谷歌搜索</);
   assert.match(composer, /<ParameterChoiceGroup[^>]*label="谷歌搜索"[^>]*value=\{googleSearch\}/);
@@ -550,11 +550,7 @@ test("uploads references directly and reports both ready and failed states", asy
     "/features/references/http-reference-upload.ts",
   );
   const originalFetch = globalThis.fetch;
-  const file = {
-    name: "服装.png",
-    size: 128,
-    type: "image/png",
-  };
+  const file = new File([new Uint8Array(128)], "服装.png", { type: "image/png" });
   const updates = [];
   const calls = [];
   try {
@@ -619,7 +615,7 @@ test("reference upload retries transient transfer failure and reconciles timed-o
     "/features/references/http-reference-upload.ts",
   );
   const originalFetch = globalThis.fetch;
-  const file = { name: "大图.png", size: 8_000_000, type: "image/png" };
+  const file = new File([new Uint8Array(8_000_000)], "大图.png", { type: "image/png" });
   const updates = [];
   let putCalls = 0;
   let statusCalls = 0;
@@ -666,9 +662,8 @@ test("one invalid reference does not block other files and direct uploads stay b
     "/features/references/http-reference-upload.ts",
   );
   const originalFetch = globalThis.fetch;
-  const files = ["invalid", "first", "second", "third"].map((name) => ({
-    name: `${name}.png`, size: 128, type: "image/png",
-  }));
+  const files = ["invalid", "first", "second", "third"].map((name) =>
+    new File([new Uint8Array(128)], `${name}.png`, { type: "image/png" }));
   let inFlight = 0;
   let maxInFlight = 0;
   const completed = [];
@@ -1161,7 +1156,7 @@ test("billing HTTP boundary covers balance, quote, zero capacity, and retryable 
     const activityCall = calls.at(-1);
     assert.equal(
       activityCall.input,
-      "/api/billing/activities?filter=spend&limit=12&cursor=cursor-token",
+      "/api/billing/activities?filter=spend&limit=12&view=usage&cursor=cursor-token",
     );
     assert.equal(activityCall.options.cache, "no-store");
     const quote = findBillingQuote(summary, {

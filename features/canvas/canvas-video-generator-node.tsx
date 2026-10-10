@@ -1,5 +1,5 @@
 "use client";
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { Handle, NodeToolbar, Position, useReactFlow, useStore, type NodeProps } from "@xyflow/react";
 import { AudioLines, ChevronDown, Download, FileText, Film, LoaderCircle, Maximize2, RotateCcw, Volume2, VolumeX, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -72,7 +72,7 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
   const [countEnabled, setCountEnabled] = useState(false);
   const [availableModels, setAvailableModels] = useState<readonly VideoModelId[]>(["kling-3.0-omni", "kling-3.0"]);
   const scope = `${context.ownerKey}:${context.workspaceId ?? "personal"}:${context.pageId}`;
-  const scopeRef = useRef(scope); scopeRef.current = scope;
+  const scopeRef = useRef(scope); useEffect(() => { scopeRef.current = scope; }, [scope]);
   const mounted = useRef(true); useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const noticesRef = useRef(new Set<string>()); const actionRef = useRef(false);
   const previewRefreshAttempted = useRef(false);
@@ -121,8 +121,8 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
   const problem = views.some((view) => view.unavailable) ? "连接素材尚未就绪。"
     : typeOptions.find((item) => item.id === draft.type)?.reason || videoGenerationProblem({ ...fields, media });
   const motionVideoId = media.find((item) => item.kind === "video")?.assetId;
-  const quoteInput = useMemo(() => ({ ...(seedance ? { seedanceLine: draft.seedanceLine ?? "standard" as const } : {}), modelId: draft.modelId, type: draft.type, resolution: draft.resolution, duration: draft.duration, characterOrientation: draft.characterOrientation,
-    ...((draft.type === "motion_control" || seedance && draft.type === "video_edit") && motionVideoId ? { videoAssetId: motionVideoId } : {}) }), [draft.modelId, draft.seedanceLine, draft.type, draft.resolution, draft.duration, draft.characterOrientation, motionVideoId, seedance]);
+  const quoteModelId = draft.modelId, quoteSeedanceLine = draft.seedanceLine, quoteType = draft.type;
+  const quoteResolution = draft.resolution, quoteDuration = draft.duration, quoteOrientation = draft.characterOrientation;
   const updateDraft = (patch: Partial<CanvasVideoGenerationDraft>) => { flow.updateNodeData(id, (node) => node.type === "videoGenerator" ? { videoGeneration: { ...node.data.videoGeneration, ...patch } } : {}); };
   useEffect(() => {
     if (locked || draft === storedDraft) return;
@@ -143,7 +143,7 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
     }
   };
   useEffect(() => {
-    setCountEnabled(false);
+    Promise.resolve().then(() => setCountEnabled(false));
     if (!context.enabled) return;
     const controller = new AbortController();
     void readCanvasVideoCapabilities(context.workspaceId, controller.signal).then((capabilities) => {
@@ -156,18 +156,20 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
     return () => controller.abort();
   }, [context.enabled, context.workspaceId, scope]);
   useEffect(() => {
-    setQuote(null); setQuoteError(""); if (!context.enabled || !selected) return;
-    if (quoteInput.type === "motion_control" && !quoteInput.videoAssetId) { setQuoteError("添加动作视频后显示积分"); return; }
+    Promise.resolve().then(() => { setQuote(null); setQuoteError(""); }); if (!context.enabled || !selected) return;
+    const quoteInput = { ...(seedance ? { seedanceLine: quoteSeedanceLine ?? "standard" as const } : {}), modelId: quoteModelId, type: quoteType, resolution: quoteResolution, duration: quoteDuration, characterOrientation: quoteOrientation,
+      ...((quoteType === "motion_control" || seedance && quoteType === "video_edit") && motionVideoId ? { videoAssetId: motionVideoId } : {}) };
+    if (quoteInput.type === "motion_control" && !quoteInput.videoAssetId) { Promise.resolve().then(() => setQuoteError("添加动作视频后显示积分")); return; }
     const controller = new AbortController();
     const timer = window.setTimeout(() => { void quoteCanvasVideo(quoteInput, context.workspaceId, controller.signal).then(setQuote).catch((error: unknown) => {
       if (!controller.signal.aborted) setQuoteError(error instanceof Error ? error.message : "暂时无法读取视频价格。");
     }); }, 180);
     return () => { window.clearTimeout(timer); controller.abort(); };
-  }, [context.enabled, context.workspaceId, scope, selected, quoteInput, priceRevision]);
+  }, [context.enabled, context.workspaceId, motionVideoId, priceRevision, quoteDuration, quoteModelId, quoteOrientation, quoteResolution, quoteSeedanceLine, quoteType, scope, seedance, selected]);
   const directAudioIds = draft.materials.filter((item) => item.kind === "audio").map((item) => item.assetId).join(",");
   const directVideoIds = draft.materials.filter((item) => item.kind === "video").map((item) => item.assetId).join(",");
   useEffect(() => {
-    setRetryQuote(null); const frozen = draft.lastInput;
+    Promise.resolve().then(() => setRetryQuote(null)); const frozen = draft.lastInput;
     if (job?.state !== "failed" || !frozen || !context.enabled) return;
     const controller = new AbortController();
     void quoteCanvasVideo({ ...(isSeedanceVideoModel(frozen.modelId) ? { seedanceLine: frozen.seedanceLine ?? "standard" as const } : {}), modelId: frozen.modelId, type: frozen.type, resolution: frozen.resolution, duration: frozen.duration, characterOrientation: frozen.characterOrientation,
@@ -205,8 +207,10 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft.requestId, draft.submissionError, context.enabled, context.workspaceId, scope, pollRevision]);
   useEffect(() => {
-    if (!selected || locked) { setModelOpen(false); setTypeOpen(false); if (!selected) setParametersOpen(false); }
-    if (!selected || locked || !parameterVisibility.storyboard) setStoryboardMenuOpen(false);
+    Promise.resolve().then(() => {
+      if (!selected || locked) { setModelOpen(false); setTypeOpen(false); if (!selected) setParametersOpen(false); }
+      if (!selected || locked || !parameterVisibility.storyboard) setStoryboardMenuOpen(false);
+    });
   }, [selected, locked, parameterVisibility.storyboard]);
   useEffect(() => {
     if (!selected) return;
@@ -344,7 +348,7 @@ export function CanvasVideoGeneratorNode({ id, data, selected, width }: NodeProp
           }} />
         <div className={`${styles.resultTools} nodrag nopan`}><button type="button" aria-label="查看视频" onClick={() => setViewerOpen(true)}><Maximize2 size={14} /></button>
           {draft.requestId && <button type="button" aria-label="下载视频" onClick={() => { if (draft.requestId) void downloadCanvasVideo(draft.requestId, context.workspaceId, AbortSignal.timeout(15_000)).then(({ url }) => {
-            if (!validScope(scope)) return; const anchor = document.createElement("a"); anchor.href = url; anchor.download = `${title}.mp4`; anchor.rel = "noopener"; document.body.append(anchor); anchor.click(); anchor.remove();
+            if (!validScope(scope)) return; const anchor = document.createElement("a"); anchor.href = url; anchor.download = `${title}.mp4`; anchor.rel = "noopener"; document.body.appendChild(anchor); anchor.click(); anchor.remove();
           }).catch((error: unknown) => setMessage(error instanceof Error ? error.message : "视频暂时无法下载。")); }}><Download size={14} /></button>}</div>
       </> : job || draft.requestId ? <div className={styles.phase} aria-live="polite">
         {job?.state === "failed" ? <button type="button" className={`${workspaceStyles.generatorSlotRetry} nodrag nopan`} disabled={locked || !retryQuote} onClick={() => void generate(true)}><RotateCcw size={18} /><span>重试{retryQuote ? ` · ${retryQuote.credits} 积分` : ""}</span></button>

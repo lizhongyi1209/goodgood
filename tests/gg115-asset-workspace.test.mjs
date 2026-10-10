@@ -74,10 +74,11 @@ test("GG-115 MP3 validates size and magic before becoming visible, and isolates 
   assert.equal(PRIVATE_AUDIO_UPLOAD_MAX_BYTES, 20 * 1024 * 1024);
   assert.throws(() => validateAudioUploadRequest({ ...valid, byteSize: PRIVATE_AUDIO_UPLOAD_MAX_BYTES + 1 }),
     (error) => error.code === "UPLOAD_TOO_LARGE");
-  assert.throws(() => validateAudioUploadRequest({ ...valid, mimeType: "audio/wav" }),
-    (error) => error.code === "UPLOAD_TYPE_INVALID");
+  assert.deepEqual(validateAudioUploadRequest({ ...valid, name: "voice.wav", mimeType: "audio/wav" }),
+    { ...valid, name: "voice.wav", mimeType: "audio/wav" });
   assert.doesNotThrow(() => validateAudioObjectHeader(Buffer.from("ID3some mp3 bytes"), "audio/mpeg"));
-  assert.throws(() => validateAudioObjectHeader(Buffer.from("RIFFWAVE"), "audio/mpeg"),
+  assert.doesNotThrow(() => validateAudioObjectHeader(Buffer.from("RIFF0000WAVE"), "audio/wav"));
+  assert.throws(() => validateAudioObjectHeader(Buffer.from("RIFF0000WAVE"), "audio/mpeg"),
     (error) => error.code === "UPLOAD_CONTENT_INVALID");
   let row = null;
   const publicStorage = new S3Client({ credentials: { accessKeyId: "disposable", secretAccessKey: "disposable-secret" },

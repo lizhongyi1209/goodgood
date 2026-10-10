@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useStore } from "@xyflow/react";
 import { Maximize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -29,24 +29,24 @@ export function CanvasImageViewButton({ items, imageKey, disabled = false }: Rea
   imageKey: string;
   disabled?: boolean;
 }>) {
-  const triggerRef = useRef<HTMLButtonElement>(null);
+  const [returnFocusTo, setReturnFocusTo] = useState<HTMLButtonElement | null>(null);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const zoom = useStore((state) => state.transform[2]);
   const image = items.find((item) => item.key === imageKey);
   if (!image) return null;
 
   return <>
-    <Button ref={triggerRef} type="button" variant="ghost" size="icon-sm"
+    <Button type="button" variant="ghost" size="icon-sm"
       className={`${assetStyles.expand} nodrag nopan nowheel`} disabled={disabled}
       style={{ transform: `scale(${1 / zoom})`, transformOrigin: "top right", top: 5 / zoom, right: 5 / zoom }}
       aria-label={`查看大图 ${image.name}`} title="查看大图" aria-haspopup="dialog"
       onPointerDown={(event) => event.stopPropagation()}
       onKeyDown={(event) => event.stopPropagation()}
       onDoubleClick={(event) => event.stopPropagation()}
-      onClick={(event) => { event.stopPropagation(); setSelectedKey(imageKey); }}>
+      onClick={(event) => { event.stopPropagation(); setReturnFocusTo(event.currentTarget); setSelectedKey(imageKey); }}>
       <Maximize2 size={14} aria-hidden="true" />
     </Button>
     {selectedKey && <ImageViewer mode="canvas" items={items} selectedKey={selectedKey}
-      returnFocusTo={triggerRef.current} onSelect={setSelectedKey} onClose={() => setSelectedKey(null)} />}
+      returnFocusTo={returnFocusTo} onSelect={setSelectedKey} onClose={() => setSelectedKey(null)} />}
   </>;
 }
