@@ -9,9 +9,15 @@ export type TextGenerationStatus = { requestId: string; state: "running" | "succ
 export class CanvasTextGenerationError extends Error {
   constructor(public code: string, message: string) { super(message); }
 }
-async function failure(response: Response) {
+async function failure(response: Response): Promise<never> {
   const body = await response.json().catch(() => null);
-  throw new CanvasTextGenerationError(body?.error?.code ?? "TEXT_GENERATION_UNAVAILABLE", body?.error?.message ?? "文本生成暂不可用，请稍后重试。");
+  const error = body && typeof body === "object" && "error" in body && body.error && typeof body.error === "object"
+    ? body.error as { code?: unknown; message?: unknown }
+    : null;
+  throw new CanvasTextGenerationError(
+    typeof error?.code === "string" ? error.code : "TEXT_GENERATION_UNAVAILABLE",
+    typeof error?.message === "string" ? error.message : "文本生成暂不可用，请稍后重试。",
+  );
 }
 export async function readCanvasTextGeneration(requestId: string, workspaceId: string | null, signal: AbortSignal): Promise<TextGenerationStatus> {
   const response = await goodGoodApiFetch(`/api/text-generation/${encodeURIComponent(requestId)}`, { signal, cache: "no-store", headers: workspaceRequestHeaders(workspaceId) });

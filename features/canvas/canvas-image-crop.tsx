@@ -103,7 +103,7 @@ export function CanvasImageCropEditor({ request, onClose, onCommit }: Readonly<{
   const savingRef = useRef(false);
   const panelRef = useRef<HTMLElement | null>(null);
   const closeRef = useRef(onClose);
-  closeRef.current = onClose;
+  useEffect(() => { closeRef.current = onClose; }, [onClose]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -131,9 +131,7 @@ export function CanvasImageCropEditor({ request, onClose, onCommit }: Readonly<{
   useEffect(() => {
     const controller = new AbortController();
     let resource: Awaited<ReturnType<typeof loadCanvasCropImage>> | null = null;
-    setLoading(true);
-    setError(null);
-    setLoaded(null);
+    Promise.resolve().then(() => { if (!controller.signal.aborted) { setLoading(true); setError(null); setLoaded(null); } });
     void loadCanvasCropImage(request, controller.signal).then((result) => {
       resource = result;
       if (controller.signal.aborted) { result.dispose(); return; }

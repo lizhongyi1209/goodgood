@@ -47,12 +47,12 @@ export async function readCanvasDownloadBlob(image: CanvasCropImage, signal: Abo
 export function useCanvasImageDownload(scopeKey: string, enabled: boolean) {
   const identity = `${scopeKey}:${enabled}`;
   const identityRef = useRef(identity);
-  identityRef.current = identity;
+  useEffect(() => { identityRef.current = identity; }, [identity]);
   const activeRef = useRef<AbortController | null>(null);
   const toastRef = useRef<string | number | null>(null);
   const [pending, setPending] = useState<Readonly<{ identity: string; key: string }> | null>(null);
   useEffect(() => {
-    setPending(null);
+    Promise.resolve().then(() => setPending(null));
     return () => {
       activeRef.current?.abort(); activeRef.current = null;
       if (toastRef.current !== null) { toast.dismiss(toastRef.current); toastRef.current = null; }

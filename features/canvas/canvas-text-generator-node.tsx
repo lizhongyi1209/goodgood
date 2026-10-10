@@ -78,7 +78,7 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
     align = "end"; toolbarWidth = Math.min(desiredWidth, Math.max(120, screenLeft + nodeWidth * zoom - visibleLeft - 15));
   }
   useEffect(() => {
-    if (!selected || editingLocked) setModelMenuOpen(false);
+    if (!selected || editingLocked) Promise.resolve().then(() => setModelMenuOpen(false));
   }, [selected, editingLocked]);
 
   const updateDraft = (patch: Partial<CanvasTextGenerationDraft>) => {
@@ -113,14 +113,16 @@ export function CanvasTextGeneratorNode({ id, data, selected, width, height }: N
 
   useEffect(() => {
     mountedRef.current = true;
-    if (!context.enabled) { setBusy(false); flow.updateNodeData(id, { generating: false }); }
+    if (!context.enabled) { Promise.resolve().then(() => setBusy(false)); flow.updateNodeData(id, { generating: false }); }
     const node = flow.getNode(id);
     const pending = node?.type === "textGenerator" ? node.data.textGeneration.pendingRequestId : undefined;
     if (context.enabled && pending) {
       latestRequestRef.current = pending;
       const controller = new AbortController();
       controllerRef.current = controller;
-      startBusy();
+      Promise.resolve().then(() => {
+        if (live(controller)) startBusy();
+      });
       void recover(pending, controller.signal).then((result) => {
         if (!live(controller)) return;
         const current = flow.getNode(id);

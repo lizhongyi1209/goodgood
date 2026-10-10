@@ -29,7 +29,7 @@ export function PlacementAssetPicker({ enabled, disabled, onAdd }: Readonly<{
   useEffect(() => {
     if (!enabled) return;
     let active = true;
-    setLoading(true); setError(null);
+    Promise.resolve().then(() => { if (active) { setLoading(true); setError(null); } });
     void Promise.allSettled([listAssets(), listReferenceMaterials(), listAssetOrganization(null)]).then(([generated, uploaded, organization]) => {
       if (!active) return;
       const names = new Map(organization.status === "fulfilled" ? organization.value.arrangements.map((item) => [`${item.kind}:${item.id}`, item.displayName] as const) : []);

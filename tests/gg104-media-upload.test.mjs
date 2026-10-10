@@ -35,13 +35,12 @@ test("GG-104 validates video type, size and container header before readiness", 
     (error) => error.code === "UPLOAD_TOO_LARGE");
   assert.throws(() => validateVideoUploadRequest({ ...valid, mimeType: "video/webm" }),
     (error) => error.code === "UPLOAD_TYPE_INVALID");
-  assert.throws(() => validateVideoUploadRequest({ ...valid, mimeType: "video/quicktime" }),
-    (error) => error.code === "UPLOAD_TYPE_INVALID");
+  assert.deepEqual(validateVideoUploadRequest({ ...valid, name: "镜头.mov", mimeType: "video/quicktime" }),
+    { ...valid, name: "镜头.mov", mimeType: "video/quicktime" });
   assert.throws(() => validateVideoUploadRequest({ ...valid, byteSize: 0 }),
     (error) => error.code === "UPLOAD_SIZE_INVALID");
   const mov = Buffer.from([0, 0, 0, 20, 102, 116, 121, 112, 113, 116, 32, 32]);
-  assert.throws(() => validateVideoObjectHeader(mov, "video/quicktime"),
-    (error) => error.code === "UPLOAD_TYPE_MISMATCH");
+  assert.doesNotThrow(() => validateVideoObjectHeader(mov, "video/quicktime"));
   assert.throws(() => validateVideoObjectHeader(mov, "video/mp4"),
     (error) => error.code === "UPLOAD_TYPE_MISMATCH");
   assert.throws(() => validateVideoObjectHeader(Buffer.from("not a video file"), "video/mp4"),

@@ -168,7 +168,7 @@ test("maps stable model IDs to fixed presentation copy", async () => {
     getGenerationModel,
   } = await vite.ssrLoadModule("/features/models/catalog.ts");
 
-  assert.equal(DEFAULT_GENERATION_MODEL_ID, "nano-banana-2");
+  assert.equal(DEFAULT_GENERATION_MODEL_ID, "nano-banana-2.1");
   assert.deepEqual(
     GENERATION_MODEL_CATALOG.map(({ id, name, description }) => ({
       id,
@@ -176,6 +176,7 @@ test("maps stable model IDs to fixed presentation copy", async () => {
       description,
     })),
     [
+      { id: "nano-banana-2.1", name: "Nano Banana 2.1", description: "" },
       { id: "nano-banana-2", name: "Nano Banana 2", description: "快速，批量" },
       { id: "nano-banana-pro", name: "Nano Banana Pro", description: "高质量资产，视觉优先" },
       { id: "gpt-image-2.5-sunburst", name: "GPT IMAGE 2.5 sunburst", description: "高真实感，提示词遵循" },

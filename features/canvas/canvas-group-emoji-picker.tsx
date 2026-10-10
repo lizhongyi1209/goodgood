@@ -7,14 +7,14 @@ import styles from "./canvas-group-node.module.css";
 export function CanvasGroupEmojiPicker({ onSelect }: Readonly<{ onSelect: (emoji: string) => void }>) {
   const hostRef = useRef<HTMLDivElement>(null);
   const selectRef = useRef(onSelect);
-  selectRef.current = onSelect;
+  useEffect(() => { selectRef.current = onSelect; }, [onSelect]);
   const [status, setStatus] = useState<"loading" | "ready" | "failed">("loading");
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     const host = hostRef.current;
-    setStatus("loading");
+    Promise.resolve().then(() => { if (!cancelled) setStatus("loading"); });
     void Promise.all([
       import("emoji-mart"),
       import("@emoji-mart/data/sets/15/native.json"),

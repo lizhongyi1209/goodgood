@@ -26,7 +26,8 @@ const DETAIL_MIN_ZOOM = 3;
 export function CanvasAdaptiveImage({ src, assetId, kind = "asset", detailEnabled = true, onError, ...props }: Props) {
   const scope = useContext(PreviewContext);
   const imageRef = useRef<HTMLImageElement>(null);
-  const errorRef = useRef(onError); errorRef.current = onError;
+  const errorRef = useRef(onError);
+  useEffect(() => { errorRef.current = onError; }, [onError]);
   const zoom = useStore((state) => state.transform[2]);
   const [visible, setVisible] = useState(false);
   const [readyIdentity, setReadyIdentity] = useState<string | null>(null);
@@ -49,7 +50,7 @@ export function CanvasAdaptiveImage({ src, assetId, kind = "asset", detailEnable
 
   useEffect(() => {
     const desired = detailEnabled && visible && readyIdentity === identity && zoom >= DETAIL_MIN_ZOOM;
-    if (!desired) { setDetail(false); return; }
+    if (!desired) { Promise.resolve().then(() => setDetail(false)); return; }
     const timer = setTimeout(() => setDetail(true), 180);
     return () => clearTimeout(timer);
   }, [detailEnabled, visible, zoom, readyIdentity, identity]);
@@ -64,7 +65,7 @@ export function CanvasAdaptiveImage({ src, assetId, kind = "asset", detailEnable
   }, [scope, local, src, identity, visible]);
 
   useEffect(() => {
-    setHighPreview(null);
+    Promise.resolve().then(() => setHighPreview(null));
     if (!scope || !detail || !visible || !detailEnabled || readyIdentity !== identity || (!assetId && !local)) return;
     let cancelled = false;
     const handle: Handle = scope.pool.acquire(urls.detailPreviewUrl, 2048);

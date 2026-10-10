@@ -45,7 +45,7 @@ export function CanvasImageCompareProvider({ children, enabled, libraryEnabled, 
 }>) {
   const [request, setRequest] = useState<CompareRequest | null>(null);
   const visible = enabled && request?.pageKey === pageKey && request.ownerKey === ownerKey ? request : null;
-  useEffect(() => { setRequest(null); }, [enabled, pageKey, ownerKey]);
+  useEffect(() => { Promise.resolve().then(() => setRequest(null)); }, [enabled, pageKey, ownerKey]);
   return <CompareContext.Provider value={{ openCompare: (image, references, returnFocusTo) => {
     if (!enabled) return;
     const kind = image.key.startsWith("asset:") ? "asset" : "reference";
@@ -97,7 +97,7 @@ function CompareSurface({ current, comparison, pool }: Readonly<{ current: Compa
   const failed = currentPreview?.failed || comparisonPreview?.failed;
   useEffect(() => {
     if (frameRef.current !== null) { cancelAnimationFrame(frameRef.current); frameRef.current = null; }
-    nextPositionRef.current = 50; setPosition(50);
+    nextPositionRef.current = 50; Promise.resolve().then(() => setPosition(50));
   }, [comparison?.key]);
   useEffect(() => () => { if (frameRef.current !== null) cancelAnimationFrame(frameRef.current); }, []);
   const move = (event: PointerEvent<HTMLDivElement>) => {

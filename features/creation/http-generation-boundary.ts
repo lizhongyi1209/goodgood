@@ -189,7 +189,7 @@ export function createHttpGenerationBoundary(
       });
     },
     service: {
-      submit(input, observer, request) {
+      submit(input: GenerationInputSnapshot, observer?: GenerationJobObserver, request?: Readonly<{ idempotencyKey: string }>) {
         return postAndPoll({
           endpoint: "/api/generations",
           input,

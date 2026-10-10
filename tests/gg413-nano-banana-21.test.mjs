@@ -38,7 +38,7 @@ test("2.1 options, saved projects and independent prices retain the model identi
   assert.equal(normalizeGenerationModelOptions({ modelId }).thinkingLevel, "high");
   assert.equal(MODEL_TEMPLATES.find((item) => item.id === modelId).ready, true);
   const state = { prompt: "", references: [], modelId, aspectRatio: "1:1", resolution: "2K", count: 4 };
-  const saved = validateProjectSaveRequest({ name: "fixture", state, batchIds: [] });
+  const saved = validateProjectSaveRequest({ name: "fixture", state, batchIds: ["00000000-0000-4000-8000-000000000001"] });
   assert.equal(saved.state.modelId, modelId);
   assert.equal(saved.state.thinkingLevel, "high");
   const model = { id: modelId, adapterId: modelId, mediaType: "image", prices: { "2K": { output: 27 } } };

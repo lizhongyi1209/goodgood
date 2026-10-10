@@ -13,6 +13,7 @@ export function useAnnouncements(owner: string, readingAway: RefObject<boolean>)
   const [error, setError] = useState(""), [syncing, setSyncing] = useState(false), [moreBusy, setMoreBusy] = useState(false);
   const [busyLikes, setBusyLikes] = useState<ReadonlySet<string>>(new Set());
   const state = useRef({ active: true, feed: empty, refreshing: false, refreshAgain: false, moreBusy: false, initialized: false, interactions: 0, dataRevision: 0, controllers: new Set<AbortController>(), likes: new Set<string>(), seen: new Set<string>() });
+  const refreshRef = useRef<() => Promise<void>>(async () => {});
   const commit = useCallback((value: AnnouncementFeed) => { state.current.feed = value; setFeed(value); }, []);
   const run = useCallback(async <T,>(action: (signal: AbortSignal) => Promise<T>) => {
     const controller = new AbortController(); state.current.controllers.add(controller);
@@ -59,9 +60,10 @@ export function useAnnouncements(owner: string, readingAway: RefObject<boolean>)
     } catch (failure) { if (current.active) setError(announcementFailure(failure)); }
     finally {
       current.refreshing = false;
-      if (current.active) { setLoading(false); setSyncing(false); if (current.refreshAgain) { current.refreshAgain = false; void refresh(); } }
+      if (current.active) { setLoading(false); setSyncing(false); if (current.refreshAgain) { current.refreshAgain = false; void refreshRef.current(); } }
     }
   }, [announce, commit, readingAway, run]);
+  useEffect(() => { refreshRef.current = refresh; }, [refresh]);
   useEffect(() => {
     const current = state.current; current.active = true;
     try {

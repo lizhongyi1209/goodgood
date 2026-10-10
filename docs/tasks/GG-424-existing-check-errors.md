@@ -1,13 +1,15 @@
 # GG-424 — 画布线存量检查错误清理
 
-- 状态：已登记，尚未实施；GG-423 范围外，用户明确要求先不修。
+- 状态：已实现；本地门禁与 PR #9 `Verify source and image` 均通过，不合并、不部署。
 - 最后更新：2026-10-10。
 - 来源：[GG-423](GG-423-home-design-system.md) 验证与用户选择 1。
-- 基线：design/GG-422-design-system / 5e404e2；未来实施需从当时已验证画布检查点另建分支。
+- 基线：design/GG-422-design-system / ce86e66447324956c7eb50e41bf011425ad07d1b（已合并 PR #8）。
+- 分支 / worktree：fix/GG-424-existing-check-errors / F:/goodgood-worktrees/GG-424。
+- 交付：[PR #9](https://github.com/lizhongyi1209/goodgood/pull/9)，目标 design/GG-422-design-system；不合并。
 
 ## 63 个 lint 错误 / 27 个文件
 
-同一锁定依赖和 ESLint 配置：改动前 63 错误 / 165 警告；GG-423 后 63 错误 / 172 警告。63 个错误的文件、规则及行号完全相同，下列文件源码均未修改。新增警告为展示图片使用普通 img 的 Next 提示；没有压低门禁或禁用规则。
+ce86e66 同一锁定依赖和 ESLint 配置下为 63 错误 / 172 警告。下列 27 个文件以最小改动修复渲染期 ref、effect 同步状态更新和无法保留的手写 memo；未加入 eslint-disable、未跳过文件、未降低门禁。完成后全量为 0 错误 / 173 警告。
 
 | 文件 | 错误数 | 错误类型 |
 | --- | --- | --- |
@@ -43,11 +45,14 @@
 - `react-hooks/set-state-in-effect`：effect 中同步 setState 导致级联渲染。
 - `react-hooks/preserve-manual-memoization`：手写 memo/callback 的依赖与编译器推断不一致。
 
-## 待处理范围与验收
+## 实施与验收
 
-- 单独任务修复以上存量问题，保持公告、资产与画布行为；不得为通过检查禁用规则、跳过文件或改生产数据。
-- GG-423 单独 typecheck 同时发现 15 个存量类型诊断，位于公告 HTTP、画布页/文本与视频生成器、文本/视频 HTTP 和 creation/http-generation-boundary；本轮不修。实施前按当时基线复核，和测试失败分别记录。
-- 同一锁定依赖的独立基线与本轮全量测试都有 26 个相同失败项；GG-423 没有新增失败。完整清单和两边输出在本地 baseline-tests.log / all-tests-final.log；后续复核这些存量测试，不能通过降低检查阈值掩盖。
-- 未来验收：针对性行为回归、全量 lint、typecheck、测试与 check:local，分别保存真实结果。
-- 本轮证据：outputs/gg423/lint-before.json、lint-after.json、typecheck.log（忽略的本地验证产物，不提交日志）。
-- 下一步：用户启动 GG-424 后，从新的确认检查点建立隔离分支，先评估 27 文件的最小修复方案再实施。
+- 代码与测试提交：16d35c0。63 个 lint 错误清零；15 个类型诊断通过 unknown 响应收窄、可选签名和等价 DOM/BigInt 类型写法清零。
+- 原 26 个失败均为已实现能力后的陈旧夹具或断言：Nano Banana 2.1 默认、MOV/WAV、四角缩放、恢复轮询冻结 job、公告运行依赖、首页账户文案等。只同步测试契约，未为测试改变产品行为；全量失败 26 → 0。
+- 锁文件提交：307198c 先按本机 npm 11.6.2 执行 lock-only，本机 npm ci 成功；PR CI 的 npm 11.19.0 仍报告缺失两个 1.10.0 节点。随后用 CI 精确版本重跑，同步提交 3d65ef0，明确新增 `@rolldown/binding-wasm32-wasi` 下的 `@emnapi/core@1.10.0` 与 `@emnapi/runtime@1.10.0`，并完成同版本 npm ci。
+- CI 依赖扫描修复：1dd180b 对应的第二轮 CI 已通过 `npm ci` 与仓库质量门禁，Trivy 随后报告 8 个已提供修复版本的 HIGH/CRITICAL 项。4986aa4 将 `next` / `eslint-config-next` 提升到 16.3.8、`sharp` 到 0.35.5、`fast-uri` 到 3.1.7，并覆盖 `source-map-js` 1.2.2；同步安全版本固定测试与 npm 11.19.0 锁文件。该提交按当轮报告将 `nodemailer` 提升到 10.0.5，下一轮漏洞库新增 10.0.6 修复要求后再提升一个补丁版本；全程未改业务代码。
+- 镜像扫描修复：a2ff46c 对应 CI 的锁文件扫描、镜像构建和运行时导入均通过；最终镜像扫描只报告固定基础镜像中的 `perl-base 5.36.0-7+deb12u3`，修复版为 `5.36.0-7+deb12u4`。Dockerfile 沿用现有“固定基础镜像 + 只升级已报告系统包”的策略，将 `perl-base` 加入原 `libpcre2-8-0` 的定向升级，不做全量系统升级。
+- GitHub 收据：2aa1129 对应 Actions run 38061183335 全绿；锁定安装、仓库质量门禁、锁文件扫描、验证镜像构建、运行时导入冒烟与最终镜像扫描全部通过。PR 事件不发布不可变镜像，`Publish immutable image` 按工作流条件跳过。
+- npm run check:local：最终锁文件下复跑通过。lint 0 错误 / 173 警告；typecheck 0 诊断；build:local 通过；测试 1197 项，1171 通过 / 0 失败 / 26 跳过。
+- 本地证据在忽略的 outputs/gg424-* 日志中，不提交构建、测试输出或凭据；未操作运行服务、数据库、Provider 或生产。
+- 下一步：等待 PR #9 审阅；不合并、不部署。

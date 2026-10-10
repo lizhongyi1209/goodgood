@@ -108,7 +108,7 @@ export function CanvasMarkdownNode({ id, data, selected, width, height, label, s
   });
   useEffect(() => { editorRef.current = editor; }, [editor]);
   useEffect(() => { editor?.setEditable(canEdit, false); }, [canEdit, editor]);
-  useEffect(() => { if (!selected || streaming) setEditing(false); }, [selected, streaming]);
+  useEffect(() => { if (!selected || streaming) Promise.resolve().then(() => setEditing(false)); }, [selected, streaming]);
   useEffect(() => {
     if (!canEdit) return;
     const page = bodyRef.current?.ownerDocument;

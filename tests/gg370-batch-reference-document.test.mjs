@@ -91,7 +91,7 @@ for (const mode of ["all", "paired"]) test(mode + " groups survive existing clou
   assert.equal(canvasBatchModeFromEdges(restored.edges, target), mode);
   assert.equal(canvasBatchGroupCountFromEdges(restored.edges, target), 4);
   assert.deepEqual(restored.nodes.find((node) => node.id === "group").referenceOrder, ["b", "a", "c"]);
-  assert.deepEqual(encodeCanvasReferencePage(restored), encoded);
+  assert.deepEqual(encodeCanvasReferencePage(restored), { ...encoded, schemaVersion: 1 });
 });
 
 test("public rank encoding never ranks or removes matching sources in candidate buckets", () => {

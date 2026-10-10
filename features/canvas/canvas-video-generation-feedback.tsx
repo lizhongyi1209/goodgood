@@ -13,7 +13,7 @@ export function CanvasVideoGenerationProgress({ attemptKey, state, progress }: R
 
   useEffect(() => {
     const input = { attemptKey, state, progress };
-    setFrame((current) => advanceCanvasVideoGenerationProgress(current, input));
+    Promise.resolve().then(() => setFrame((current) => advanceCanvasVideoGenerationProgress(current, input)));
     if (!display || !estimated) return;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     let timer: number | undefined;

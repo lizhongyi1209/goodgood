@@ -224,14 +224,16 @@ test("mock provider serves the O1Key contract and exposes success, rejection, an
       route_version: provider.route.routeVersion,
     };
     provider.assertAttempt(attempt);
+    const job = jobFor(prompt, count);
     const taskId = await provider.createTask({
       attempt,
-      job: jobFor(prompt, count),
+      job,
     });
     return provider.pollTask({
       expectedOutputCount,
       onRefining: async () => {},
       taskId,
+      job,
     });
   }
 

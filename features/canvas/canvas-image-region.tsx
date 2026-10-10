@@ -34,7 +34,7 @@ export function CanvasImageRegionEditor({ request, onCommit, onClose }: Readonly
   const lifecycle = useRef<AbortController | null>(null);
   const busyRef = useRef(false);
   const baseRef = useRef<PlacementImage | null>(null);
-  const closeRef = useRef(onClose); closeRef.current = onClose;
+  const closeRef = useRef(onClose);
   const surfaceReady = Boolean(natural && layout?.image);
   const marks = natural ? regionMarkRects(region, natural) : [];
 
@@ -44,7 +44,8 @@ export function CanvasImageRegionEditor({ request, onCommit, onClose }: Readonly
     const node = Array.from(document.querySelectorAll<HTMLElement>(".react-flow__node")).find((element) => element.dataset.id === request.nodeId);
     (request.trigger.isConnected ? request.trigger : node)?.focus({ preventScroll: true });
   };
-  const cancelRef = useRef(cancel); cancelRef.current = cancel;
+  const cancelRef = useRef(cancel);
+  useEffect(() => { closeRef.current = onClose; cancelRef.current = cancel; }, [cancel, onClose]);
 
   useEffect(() => {
     const controller = new AbortController(); lifecycle.current = controller;
@@ -62,7 +63,7 @@ export function CanvasImageRegionEditor({ request, onCommit, onClose }: Readonly
   }, [flow, liveNode, request]);
   useEffect(() => {
     const controller = new AbortController(); let resource: PlacementImage | null = null;
-    setNatural(null); setRegion(null); setSourceError(null); setSaveError(null);
+    Promise.resolve().then(() => { if (!controller.signal.aborted) { setNatural(null); setRegion(null); setSourceError(null); setSaveError(null); } });
     void loadPlacementImage(request, controller.signal).then((loaded) => {
       resource = loaded;
       if (controller.signal.aborted) { loaded.dispose(); return; }

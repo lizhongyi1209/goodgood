@@ -127,7 +127,7 @@ test("billing repository reads exact account state and all launch resolution pri
 });
 
 test("preview billing publishes every canvas model/resolution/count quote through twelve", () => {
-  assert.equal(previewBillingSummary.quotes.length, 182);
+  assert.equal(previewBillingSummary.quotes.length, 218);
   for (const modelId of imageModelIds) {
     assert.deepEqual(
       previewBillingSummary.quotes

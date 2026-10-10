@@ -7,7 +7,14 @@ async function request<T>(path: string, workspaceId: string | null, signal: Abor
   const response = await goodGoodApiFetch(`/api/video-generation${path}`, { method: input === undefined ? "GET" : "POST", signal, cache: "no-store",
     headers: { ...workspaceRequestHeaders(workspaceId), ...(input === undefined ? {} : { "content-type": "application/json" }) }, ...(input === undefined ? {} : { body: JSON.stringify(input) }) });
   const payload = await response.json().catch(() => null);
-  if (!response.ok) throw new CanvasVideoGenerationError(payload?.error?.code ?? "VIDEO_GENERATION_UNAVAILABLE", payload?.error?.message ?? (response.status === 404 ? "视频功能尚未启用，请更新后端。" : "视频服务暂不可用，请重试。"), response.status);
+  const error = payload && typeof payload === "object" && "error" in payload && payload.error && typeof payload.error === "object"
+    ? payload.error as { code?: unknown; message?: unknown }
+    : null;
+  if (!response.ok) throw new CanvasVideoGenerationError(
+    typeof error?.code === "string" ? error.code : "VIDEO_GENERATION_UNAVAILABLE",
+    typeof error?.message === "string" ? error.message : (response.status === 404 ? "视频功能尚未启用，请更新后端。" : "视频服务暂不可用，请重试。"),
+    response.status,
+  );
   if (!payload || typeof payload !== "object") throw new CanvasVideoGenerationError("VIDEO_RESPONSE_INVALID", "视频回执暂不可用。");
   return payload as T;
 }

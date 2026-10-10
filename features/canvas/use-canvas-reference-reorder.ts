@@ -17,7 +17,7 @@ export function useCanvasReferenceReorder(options: {
   onMove: (source: string, target: string) => void;
 }) {
   const latest = useRef(options);
-  latest.current = options;
+  useEffect(() => { latest.current = options; }, [options]);
   const gesture = useRef<Gesture | null>(null);
   const [preview, setPreview] = useState<Preview | null>(null);
 

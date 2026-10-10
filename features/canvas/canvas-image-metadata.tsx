@@ -28,7 +28,7 @@ export function CanvasImageMetadataProvider({ children, enabled, ownerKey, pageK
 }>) {
   const [request, setRequest] = useState<Readonly<{ value: MetadataRequest; ownerKey: string }> | null>(null);
   const visible = enabled && request?.ownerKey === ownerKey && request.value.pageId === pageKey ? request.value : null;
-  useEffect(() => { setRequest(null); }, [enabled, ownerKey, pageKey]);
+  useEffect(() => { Promise.resolve().then(() => setRequest(null)); }, [enabled, ownerKey, pageKey]);
   return <CanvasImageMetadataContext.Provider value={{ enabled, openMetadata: (image, trigger) => {
     if (!enabled) return;
     setRequest({ ownerKey, value: { ...image, trigger, pageId: pageKey, sessionId: crypto.randomUUID() } });
@@ -85,7 +85,7 @@ function CanvasImageMetadataDialog({ request, onClose, onCommit }: Readonly<{
   useEffect(() => {
     const controller = new AbortController();
     lifecycle.current = controller;
-    setLoading(true); setError(null); setOriginal(null); setNotice("");
+    Promise.resolve().then(() => { if (!controller.signal.aborted) { setLoading(true); setError(null); setOriginal(null); setNotice(""); } });
     void (async () => {
       const blob = await readCanvasCropImageBlob(request, controller.signal);
       if (blob.size > PRIVATE_IMAGE_UPLOAD_MAX_BYTES) throw new Error("请选择 20 MB 以内的 JPEG 或 PNG 原图。");

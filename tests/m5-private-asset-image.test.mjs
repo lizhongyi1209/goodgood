@@ -49,6 +49,7 @@ test("workspace, composer, and canvas route private previews through the direct 
     ...[
       "canvas-asset-add-card.tsx",
       "canvas-asset-panel.tsx",
+      "canvas-adaptive-image.tsx",
       "canvas-generator-node.tsx",
       "canvas-page.tsx",
       "canvas-result-node.tsx",
@@ -57,8 +58,8 @@ test("workspace, composer, and canvas route private previews through the direct 
   ]);
 
   assert.match(source, /import \{ PrivateObjectImage \}/);
-  assert.ok(((source + workspace + canvasSources.join("\n")).match(/<PrivateObjectImage/g) ?? []).length >= 13);
-  assert.ok(canvasSources.every((text) => /import \{ PrivateObjectImage \}/.test(text)));
+  assert.ok(((source + workspace + canvasSources.join("\n")).match(/<PrivateObjectImage/g) ?? []).length >= 12);
+  assert.ok(canvasSources.every((text) => /import \{ (?:PrivateObjectImage|CanvasAdaptiveImage) \}/.test(text)));
   assert.match(workspace, /src=\{item\.previewUrl/);
   assert.doesNotMatch(
     source,

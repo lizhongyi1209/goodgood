@@ -82,6 +82,8 @@ test("GG-217 Node Web intercepts retired reads and actions before authentication
       localSessionCookie: () => null,
     },
     "../observability/http.mjs": { observeHttpRequest() {} },
+    "../announcements/realtime.mjs": { closeAnnouncementStreams: async () => {} },
+    "../text-generation/repository.mjs": { recoverExpiredTextGenerations: async () => {} },
     "../generation/resources.mjs": {
       getGenerationResources: async () => { resourceInitializations++; return resources; },
       prepareObjectStorage: async () => {},
@@ -98,8 +100,13 @@ test("GG-217 Node Web intercepts retired reads and actions before authentication
     ["../admin/node-api.mjs", "createAdminNodeApiHandler"],
     ["../billing/node-api.mjs", "createBillingNodeApiHandler", "/api/billing/summary"],
     ["../feedback/http.mjs", "createFeedbackNodeApiHandler"],
+    ["../announcements/http.mjs", "createAnnouncementsNodeApiHandler"],
     ["../auth/node-api.mjs", "createAuthenticationNodeApiHandler"],
     ["../generation/node-api.mjs", "createGenerationNodeApiHandler", "/api/generations"],
+    ["../text-generation/node-api.mjs", "createTextGenerationNodeApiHandler"],
+    ["../video-generation/node-api.mjs", "createVideoGenerationNodeApiHandler"],
+    ["../text-assets/node-api.mjs", "createTextAssetNodeApiHandler"],
+    ["../image-cleanup/node-api.mjs", "createImageCleanupNodeApiHandler"],
     ["../drafts/node-api.mjs", "createCreationDraftNodeApiHandler"],
     ["../distribution/node-api.mjs", "createDistributionNodeApiHandler"],
     ["../references/node-api.mjs", "createReferenceNodeApiHandler"],
@@ -119,6 +126,8 @@ test("GG-217 Node Web intercepts retired reads and actions before authentication
   await runIsolated("server/runtime/web.mjs", dependencies, {
     process: { env: {}, cwd: () => "/isolated", once() {} },
     console: { log() {}, error(entry) { assert.fail(entry); } },
+    setInterval: () => ({ unref() {} }),
+    clearInterval() {},
   });
   async function request(url, method, headers = {}) {
     return new Promise((resolve) => {
@@ -193,6 +202,7 @@ test("GG-217 Worker retains generation recovery, success/failure acknowledgement
       },
     },
     "../generation/concurrent-job-runner.mjs": { createConcurrentJobRunner },
+    "../video-generation/worker.mjs": { startVideoGenerationWorker: () => ({ stop: async () => {} }) },
   };
   await runIsolated("server/runtime/worker.mjs", dependencies, {
     process: { env: {}, once: (signal, handler) => signals.set(signal, handler) },

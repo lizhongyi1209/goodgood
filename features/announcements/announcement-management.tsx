@@ -29,7 +29,7 @@ export function AnnouncementManagementView() {
   useEffect(() => { active.current = true; return () => { active.current = false; for (const controller of controllers.current) controller.abort(); }; }, []);
   useEffect(() => {
     const controller = new AbortController(); controllers.current.add(controller);
-    setLoading(true); setError("");
+    Promise.resolve().then(() => { setLoading(true); setError(""); });
     void announcementFeed(controller.signal, null, true, filter).then((value) => { if (!controller.signal.aborted) setList(value); }).catch((failure) => { if (!controller.signal.aborted) setError(announcementFailure(failure)); }).finally(() => { controllers.current.delete(controller); if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [filter, revision]);

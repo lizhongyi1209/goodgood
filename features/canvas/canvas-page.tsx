@@ -888,7 +888,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
     [...batchCombinationQuotes.values()].every(Boolean));
   const batchCreditAmount = activeBatchGenerator
     ? batchQuotesReady && batchPlan ? [...batchPlan.referenceCounts].reduce((total, [count, combinations]) =>
-      total + BigInt(batchCombinationQuotes.get(count)!.creditAmount) * BigInt(combinations) * BigInt(seedreamModel ? 1 : selectedCount), 0n).toString() : null
+      total + BigInt(batchCombinationQuotes.get(count)!.creditAmount) * BigInt(combinations) * BigInt(seedreamModel ? 1 : selectedCount), BigInt(0)).toString() : null
     : quote ? canvasImageBatchCreditAmount(quote.creditAmount, Math.max(1, promptBatch.prompts.length) * (seedreamModel ? 1 : selectedCount)) : null;
   const insufficientCredits = Boolean(
     batchCreditAmount && billing && BigInt(billing.account.availableCredits) < BigInt(batchCreditAmount),
@@ -1570,8 +1570,8 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
   };
   const onReferenceConnectEnd: OnConnectEnd = (_event, connection) => {
     if (!referenceConnectionCancelledRef.current && !connection.isValid && connection.fromHandle && connection.toHandle && connection.toNode?.type === "imageGenerator") {
-      const attempt = { source: connection.fromHandle.nodeId, sourceHandle: connection.fromHandle.id,
-        target: connection.toHandle.nodeId, targetHandle: connection.toHandle.id };
+      const attempt = { source: connection.fromHandle.nodeId, sourceHandle: connection.fromHandle.id ?? null,
+        target: connection.toHandle.nodeId, targetHandle: connection.toHandle.id ?? null };
       const plan = referenceConnectionPlan(attempt);
       if (plan.message) toast.error(plan.message, { id: "canvas-reference-connection" });
     }
@@ -1626,7 +1626,7 @@ export function CanvasPage({ initialProjectId }: Readonly<{ initialProjectId?: s
         const viewport = instance.getViewport();
         const footprints = measureCanvasGroupFootprints({ nodes: before,
           nodeLookup: new Map(before.flatMap((node) => { const internal = instance.getInternalNode(node.id); return internal ? [[node.id, internal] as const] : []; })),
-          domNode: document.getElementById("canvas-workspace-surface")?.querySelector<HTMLElement>(".react-flow") ?? null,
+          domNode: document.getElementById("canvas-workspace-surface")?.querySelector<HTMLDivElement>(".react-flow") ?? null,
           transform: [viewport.x, viewport.y, viewport.zoom],
         }, true);
         const grouped = createCanvasGroup(before.map((node) => ({ ...node, selected: chosen.has(node.id) })), groupId, footprints)
