@@ -12,7 +12,7 @@
 
 - 右上角只放「公告」GhostButton。
 - 标题「今天想创作什么？」：`display`，居中，距顶栏 `space-24`。
-- Composer：宽不超过 `composer-max`，与标题间距 `space-6`。Enter 后图片 / 视频进入创作页并立即生成，对话进入对话页。
+- Composer：宽不超过 `composer-max`，与标题间距 `space-6`，不展示参数/抽屉。Enter 后图片 / 视频使用现有默认或上次参数进入现有生成视图并立即生成；对话当前只做开发开关下的本地界面，不调用未实现接口。
 - 常用模板：距输入面板 `space-18`，一行四张 TemplateCard，间距 `space-3`。
 - 灵感：CategoryTabs 按内容分类（服装、摄影、广告…），下方四列 MediaTile 瀑布流，滚动到底自动加载。
 

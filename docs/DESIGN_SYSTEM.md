@@ -1,6 +1,6 @@
 # Design system
 
-> GG-422 的目标规范（提议中，ADR 0144）见 [docs/design/](design/README.md)；本文件继续记录现行画布界面，新 token 暂不应用于页面。
+> ADR 0144 已于 2026-10-10 接受：中性界面、黑色主操作、积分蓝色、停用宫廷红；规范见 [docs/design/](design/README.md)。GG-423 先迁移首页，其他页面暂保留既有样式。下方旧记录按当时范围追溯，不恢复旧配色。
 
 GG-421：Seedance模型标识改用用户提供的public/model-icons/doubao.svg，默认16px固定尺寸及黑色mask与Kling一致，按钮和列表不再使用26px彩色ByteDance图标。
 

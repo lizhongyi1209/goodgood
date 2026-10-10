@@ -1,8 +1,8 @@
 # GoodGood 设计系统
 
-> 状态：**目标规范（提议中）**，见 [ADR 0144](../decisions/0144-design-system-v3.md)。本分支从 GG-421 白色、无彩色画布接续（任务 GG-422）；新增规范只用于后续评审，接受前现行 ADR 0105 及画布范围例外继续有效，页面保持现状。旧的逐任务视觉记录在 [DESIGN_SYSTEM.md](../DESIGN_SYSTEM.md)。
+> 状态：**已接受**（2026-10-10），见 [ADR 0144](../decisions/0144-design-system-v3.md)。GG-423 从 5e404e2 先迁移首页，先界面、后接已有功能；其他页面保持原样，画布范围例外继续有效。历史视觉记录见 [DESIGN_SYSTEM.md](../DESIGN_SYSTEM.md)。
 
-- 数值：[tokens.json](tokens.json)；代码里对应 `app/design-tokens.css` 的 `--ds-*` 变量（已加载，暂未被页面使用）。
+- 数值：[tokens.json](tokens.json)；代码里对应 `app/design-tokens.css` 的 `--ds-*` 变量（首页按 GG-423 接入，其他页面逐页迁移）。
 - 页面：[首页](home.md)、[创作页（图片 / 视频 / 批量）](create.md)、[对话](chat.md)、[资产](assets.md)、[画布](canvas.md)、[迁移对照](migration.md)
 - 组件：
   - 基础：[ConfirmDialog](components/ConfirmDialog.md)、[EmptyState](components/EmptyState.md)、[GhostButton](components/GhostButton.md)、[InlineNotice](components/InlineNotice.md)、[Menu](components/Menu.md)、[ScrollArea](components/ScrollArea.md)、[Toast](components/Toast.md)、[Tooltip](components/Tooltip.md)

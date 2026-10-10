@@ -1,8 +1,8 @@
 # GoodGood 当前状态
 
-- 最后同步：2026-10-09，仅分支备份与设计文档集成；本轮未探测或修改生产、本地 Web/Worker、数据库或队列。
+- 最后同步：2026-10-10，ADR 0144 已接受、GG-423 首页实施中；本轮未修改生产、本地 Web/Worker、数据库或队列。
 - 最新累计画布源码：GG-421 `547022e`，`fix/gg-421-seedance-model-icon` 已完整推送 GitHub，远端 HEAD 精确一致。
-- 当前文档任务：[GG-422](tasks/GG-422-design-system-docs.md)，`design/GG-422-design-system` 从 547022e 建立，接入 336f24a 的文档/并存 --ds token；[ADR 0144](decisions/0144-design-system-v3.md) 保持提议中，页面不迁移。
+- 当前文档任务：[GG-422](tasks/GG-422-design-system-docs.md)，`design/GG-422-design-system` 从 547022e 建立，接入 336f24a 的文档/并存 --ds token；[ADR 0144](decisions/0144-design-system-v3.md) 已接受；[GG-423](tasks/GG-423-home-design-system.md) 从设计分支 5e404e2 开始迁移首页，其他页面暂不迁移。
 - 最近本地运行记录仍是 [GG-419](tasks/GG-419-local-seedance-activation.md) 的 verified `90e0605fb620e2ee0a052efc5a125bcdf4273ac8` 与 70 条迁移；本轮仅按用户委托执行文档测试和 build:local，不启动或重启服务，不以源码 HEAD 冒充运行 revision。
 - GG-420/421 的 UI 手验仍由用户完成；分支备份或构建不等于生产部署、真实生成或手动视觉验收。
 - 原入口全文、全部任务进度和当时的生产/运行记录保留在 [2026-10-09 画布状态归档](history/2026-10-09-gg422-context/canvas-current-state.md)。历史“当前”不是本轮重新核验的事实。
@@ -28,7 +28,7 @@
 
 ## 当前开发与数据边界
 
-- 现行白色、无彩色界面与画布例外继续有效；设计目标仅在 docs/design 中登记，未接受新配色方案。
+- ADR 0144 的中性界面、黑色操作、积分蓝色已接受；GG-423 只迁移首页，其他页保留原样及已接受画布例外。
 - 本地真实 O1Key 开发 Worker 可能计费。文档/构建不提交任务、上传或调用 Provider；fixture 与合成任务不得进入真实 Worker 共用数据库/队列。
 - 当前 5173 使用 GG-116 工作树；本轮独立 GG-422 集成目录不替换该预览或实际运行构建。
 - 生产数据、密钥、用户资产与日志不进入 Git；本轮只推送明确授权的两条分支，不开 PR、不合并、不部署。

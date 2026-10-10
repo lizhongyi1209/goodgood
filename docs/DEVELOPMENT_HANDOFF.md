@@ -1,5 +1,7 @@
 # 当前开发版本与跨窗口交接
 
+GG-423 当前任务：从已推送 5e404e2 新建 feature/GG-423-home-design-system，用户接受 ADR 0144 并确认首页计划；先界面后接现有功能，完整门禁/六截图后开 PR 到 design/GG-422-design-system、不合并。详见 [任务卡](tasks/GG-423-home-design-system.md)。下方为此前交付记录。
+
 ## GG-422（2026-10-09 · 设计文档接入）
 
 GG-421 最新源码 547022e 已完整备份 GitHub，远端 HEAD 核对一致。新分支 `design/GG-422-design-system` / `F:/goodgood-worktrees/GG-422-design-system` 从该提交接续，按 cherry-pick 接入来源 336f24a；来源 GG-405 任务编号改为 GG-422，ADR 0144 保持提议中。本轮明确授权文档测试和 build:local，只定义并存 --ds token，不迁移页面或修改业务组件；5173 的 GG-116 源码分支和现有服务/数据保持。验证和推送结果见 [GG-422 任务卡](tasks/GG-422-design-system-docs.md)。下方是各任务当时记录，不以旧 PID 或旧“当前”作为新的启动依据。

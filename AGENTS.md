@@ -24,7 +24,7 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
 3. Read the task-specific source of truth:
    - Product scope and terms: `docs/PRODUCT.md`
    - Historical rationale and rejected directions: `docs/PRODUCT_JOURNEY.md`
-   - Visual/UI work: `docs/DESIGN_SYSTEM.md`; proposed target: `docs/design/` (ADR 0144 / GG-422)
+   - Visual/UI work: `docs/DESIGN_SYSTEM.md`; accepted design system: `docs/design/` (ADR 0144 / GG-423)
    - Interaction/state work: `docs/UX_FLOWS.md`
    - Navigation and URLs: `docs/ROUTES.md`
    - Boundaries/integrations: `docs/ARCHITECTURE.md`
@@ -52,13 +52,12 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
 
 - The creation surface is a working tool, never a marketing or editorial hero.
 - The empty creation state stays quiet: small brand mark, one primary sentence, one secondary sentence; no fake examples or parameter explanation.
-- The composer shows prompt, reference upload, settings, and upward-arrow send by
-  default. Parameters expand downward as one attached drawer.
+- Homepage composer (ADR 0144): references above prompt, mode switch and upward-arrow send below; no parameters/drawer or Feihong send. Submission uses existing defaults/last settings and opens the existing generation view.
+- Existing generation views keep their settings/drawer until their separate migration.
 - Prompt textarea auto-grows to eight lines, then scrolls. Tool positions remain
   stable while it grows.
 - Reference images live in a tray above the prompt, never inside its text area.
-  Use moderately enlarged responsive 1:1 centered previews and horizontal
-  overflow. Maximum: 10. At the limit, the add control is disabled.
+  Homepage previews use the design-system reference-slot; unmigrated views keep their current previews. Horizontal overflow remains. Images: maximum 10; video limits follow model contracts. Disable add at the limit.
 - Parameter groups read as aspect ratio, model, then output; aspect ratio starts
   at the left on wide screens and remains first through responsive reflow.
 - Models and copy are fixed until a product decision changes them:
@@ -90,17 +89,16 @@ and follow `docs/DEVELOPMENT_HANDOFF.md`; never assume main is the latest local 
 
 - Light, white, image-first canvas inspired by Midjourney's spatial continuity,
   not a visual copy.
-- Achromatic interface palette in `app/globals.css` and `DESIGN_SYSTEM.md`
-  (ADR 0105): black type and icons, gray state fills, near-black primary action.
+- Accepted ADR 0144 uses `--ds-*`: black type/icons, gray state fills, black primary action; blue only represents credits. Palace Red is retired. Homepage migrates first; other pages keep current styling.
 - Use rounded geometry, minimal borders, transparent/default icon buttons, and
   shallow hover fills. Avoid heavy shadows and navigation shadows.
-- Do not introduce chromatic accents, neon/Neo-Tech styling, magazine rules,
+- Beyond the credit accent, do not introduce chromatic accents, neon/Neo-Tech styling, magazine rules,
   warm ivory/limestone palettes, large editorial type, or strong panels. ADR 0110
   permits blue on canvas media outlines, and ADR 0108/GG-200 permits bright blue
   on a connected edge while hovered and on a dragged connection preview (GG-304);
   media resize handles remain invisible.
   ADR 0141 / GG-359 permits red only for image-region annotations and their
-  edit handles; ordinary interface controls remain achromatic.
+  edit handles; ordinary controls are neutral, with blue reserved for credits.
   Text and selected group nodes use invisible four-corner resize targets
   (ADR 0124 / ADR 0135 / GG-334); image crop mode alone shows circular selection
   handles (ADR 0126 / GG-280).
