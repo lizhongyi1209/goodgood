@@ -1,6 +1,6 @@
 # 当前开发版本与跨窗口交接
 
-GG-423 当前任务：从已推送 5e404e2 新建 feature/GG-423-home-design-system，用户接受 ADR 0144 并确认首页计划；先界面后接现有功能，完整门禁/六截图后开 PR 到 design/GG-422-design-system、不合并。详见 [任务卡](tasks/GG-423-home-design-system.md)。下方为此前交付记录。
+GG-423 当前检查点：feature/GG-423-home-design-system 从 5e404e2 接续，首页已实现并完成六截图/分项验证；本轮 lint 0、全量 63→63、typecheck 15 个相同存量诊断，构建通过，测试 1145 通过 / 26 相同存量失败 / 26 跳过。用户确认只交付首页，GG-424 单独登记先不修；完整 check:local 未通过。三提交后 PR 目标 design/GG-422-design-system，不合并/部署。详见 [任务卡](tasks/GG-423-home-design-system.md) / [验证记录](design/home-verification.md)。本轮 55123/55124 的独立 UI 预览交付前停止，原 5173 与真实 Web/Worker 栈保持；下方为此前记录。
 
 ## GG-422（2026-10-09 · 设计文档接入）
 

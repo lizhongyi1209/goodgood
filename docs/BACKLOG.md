@@ -5,8 +5,9 @@
 
 | ID | 事项 | 当前状态 | 入口 |
 | --- | --- | --- | --- |
-| GG-423 | 首页设计系统 | 已确认；先界面后接已有功能，ADR 0144 已接受，实施中 | [任务](tasks/GG-423-home-design-system.md) |
-| GG-422 | 设计系统文档与并存 token | 接入 a411892 已推送；文档测试 16/16、build:local 通过；页面不迁移，ADR 0144 提议中 | [任务](tasks/GG-422-design-system-docs.md) / [ADR](decisions/0144-design-system-v3.md) |
+| GG-424 | 存量检查错误 | 已登记；27 文件 / 63 lint 错误，用户要求先不修 | [任务](tasks/GG-424-existing-check-errors.md) |
+| GG-423 | 首页设计系统 | 已实现、六截图/分项验证完成；完整门禁因存量失败未通过，按用户例外交付；PR 到设计分支，不合并 | [任务](tasks/GG-423-home-design-system.md) |
+| GG-422 | 设计系统文档与并存 token | 接入 a411892 已推送；当时文档测试 16/16、build:local 通过；ADR 0144 后由 GG-423 接受 | [任务](tasks/GG-422-design-system-docs.md) / [ADR](decisions/0144-design-system-v3.md) |
 | GG-421 | Seedance 模型图标 | 547022e 已完整备份 GitHub；图标手验沿原任务 | [任务](tasks/GG-421-seedance-model-icon.md) |
 | GG-420 | Seedance 线路参数 | 源码已交付，当前 UI/模型规则保留 | [任务](tasks/GG-420-seedance-line-settings.md) |
 | GG-419 | 本地 Seedance 启用 | 最近运行收据 90e0605 / 70 迁移，本轮未重启或探测 | [任务](tasks/GG-419-local-seedance-activation.md) |

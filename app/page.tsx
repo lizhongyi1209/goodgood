@@ -6,6 +6,9 @@ import "@/features/profile/profile.css";
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type WheelEvent as ReactWheelEvent } from "react";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
+import { HomePage } from "@/features/home/home-page";
+import { downloadCanvasImageLink } from "@/features/canvas/canvas-asset-addition.mjs";
 import { Button } from "@/components/ui/button";
 import { CreditIcon } from "@/components/ui/credit-icon";
 import { Input } from "@/components/ui/input";
@@ -454,6 +457,8 @@ function accountIdentityLabel(session: AuthenticationSession) {
 export default function Home({
   workspaceId = null,
 }: Readonly<{ workspaceId?: string | null }> = {}) {
+  const entryPath = usePathname();
+  const [homeActive, setHomeActive] = useState(entryPath === "/");
   const referenceObjectUrlsRef = useRef(new Set<string>());
   const referenceUploadFilesRef = useRef(new Map<string, File>());
   const videoReferenceObjectUrlsRef = useRef(new Set<string>());
@@ -865,6 +870,7 @@ export default function Home({
 
   useEffect(() => {
     const applyWorkspaceRoute = (event?: Event) => {
+      setHomeActive(window.location.pathname === "/");
       if (event?.type === "popstate") {
         projectRestoreAnnouncementRef.current = false;
       }
@@ -3064,8 +3070,56 @@ export default function Home({
     </div>
   ));
 
+  const showHome = homeActive && activeView === "create" && !workspaceId && !currentProject && !routeProjectId;
+  const openHomeGeneration = (mode: CreationMode) => {
+    setHomeActive(false);
+    handleCreationModeChange(mode);
+    navigateWorkspace({ kind: "create" });
+    setActiveView("create");
+    window.scrollTo({ top: 0, behavior: "auto" });
+  };
+  const submitHomeCreation = () => {
+    openHomeGeneration(creationMode);
+    if (creationMode === "video") void handleVideoGenerate();
+    else handleGenerate();
+  };
+  const homeReferences = creationMode === "video" ? videoReferences : referenceImages;
+  const homePendingReference = homeReferences.some(reference => reference.status !== "ready");
+  const homeInsufficientCredits = creationMode === "image" && displayedAvailableCredits != null && imageBatchCredits != null && BigInt(displayedAvailableCredits) < BigInt(imageBatchCredits);
+
   return (
-    <main className="app-shell">
+    <main className={showHome ? undefined : "app-shell"}>
+      {showHome ? <HomePage
+        session={authenticationSession}
+        name={authenticationSession ? personalProfile.profile?.displayName ?? DEFAULT_PROFILE_NAME : "登录 GoodGood"}
+        avatarUrl={personalProfile.profile?.avatarUrl}
+        balance={displayedAvailableCredits ?? "—"}
+        billingLoading={billingLoading}
+        billingError={!!billingError}
+        onProjects={handleProjectsNav}
+        onAssets={handleAssetNav}
+        onCreation={openHomeGeneration}
+        accountActions={{ onAccount: handleCreditsNav, onFeedback: handleFeedbackNav, onLogout: () => void handleLogout(), onLogin: handleLogin, onManagement: handleOrganizationNav, onDistribution: handleDistributionNav, enterpriseVisible: organizationNavigationVisible }}
+        composer={{
+          mode: creationMode,
+          prompt: creationMode === "video" ? videoPrompt : prompt,
+          onPromptChange: creationMode === "video" ? setVideoPrompt : handlePromptChange,
+          onModeChange: mode => { if (mode !== "chat") handleCreationModeChange(mode); },
+          onSubmit: submitHomeCreation,
+          references: homeReferences,
+          referenceLimit: creationMode === "video" ? activeVideoReferenceLimits.totalLimit : MAX_GENERATION_REFERENCES,
+          onFiles: handleComposerDropFiles,
+          onLibrary: () => openReferenceLibrary(creationMode),
+          onLink: creationMode === "image" ? async value => { const file = await downloadCanvasImageLink(value); handleReferenceFiles([file]); } : undefined,
+          onRemove: id => { if (creationMode === "video") { const item = videoReferences.find(reference => reference.id === id); if (item) removeVideoReference(item); } else { const item = referenceImages.find(reference => reference.id === id); if (item) removeReference(item); } },
+          onRetry: id => { if (creationMode === "video") { const item = videoReferences.find(reference => reference.id === id); if (item) retryVideoReferenceUpload(item); } else { const item = referenceImages.find(reference => reference.id === id); if (item) retryReferenceUpload(item); } },
+          recent: referenceMaterials.map(material => ({ id: material.id, name: material.name, url: material.previewUrl ?? material.url })),
+          onRecent: id => { if (creationMode === "video") { const material = videoAssetMaterials.find(item => item.id === id); if (material) addMaterialsToVideoReferences([material]); } else { const material = referenceMaterials.find(item => item.id === id); if (material) addMaterialsToReferences([material]); } },
+          busy: creationMode === "video" ? isVideoGenerating : isGenerating,
+          disabled: !authenticationSession || authenticationSession.access.status !== "active" || homePendingReference || homeInsufficientCredits || (creationMode === "image" ? !activeBillingQuote : videoInterfaceAvailability !== "available"),
+          notice: homePendingReference ? "请等待素材上传完成，或重试失败的素材。" : homeInsufficientCredits ? "积分不足，请补充积分后生成。" : billingError ? "积分暂时无法读取，请稍后重试。" : undefined,
+        }}
+      /> : <>
       <aside className="sidebar">
         <button className="sidebar-brand" type="button" aria-label="Good Good，返回首页" onClick={handleCreateNav}>
           <Image className="brand-wordmark" src="/goodgood-wordmark.svg" alt="" width={108} height={14} />
@@ -3518,6 +3572,7 @@ export default function Home({
           )}
         </div>
       </section>
+      </>}
       <CreditUsageDialog
         open={creditUsageOpen && authenticationSession?.access.status === "active"}
         onOpenChange={setCreditUsageOpen}

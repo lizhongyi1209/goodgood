@@ -1,5 +1,9 @@
 # Project map
 
+## GG-423 · 首页与共享设计组件
+
+features/design-system 提供 14 个 Radix/React 展示组件及仅 --ds-* 的样式；features/home 负责首页导航/账户/Composer 适配、响应布局、默认关闭的开发演示开关和独立示例数据。app/page.tsx 只接原处理函数，在 / 显示新首页，/create 与其他页面保留原视图；不新增后端或持久化边界。见 [任务](tasks/GG-423-home-design-system.md)。
+
 ## GG-411 · 共用结果播放器
 
 features/canvas/canvas-video-result-player.tsx/module.css负责画布/详情的手动播放、时间轴/静音及控制区域；canvas-video-preview-playback.mjs/d.mts提供可选manualOnly生命周期，默认参考预览不变。生成节点保留唯一查看/下载、受权源刷新与尺寸回调，组件无ReactFlow Hook或持久化字段。

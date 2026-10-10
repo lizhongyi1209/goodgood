@@ -1,0 +1,50 @@
+[
+  {
+    "file": "fashion.jpg",
+    "origin": "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=max&w=800&q=80&fm=jpg",
+    "license": "https://unsplash.com/license",
+    "use": "GG-423 development-only local sample; not a generated user asset"
+  },
+  {
+    "file": "still-life.jpg",
+    "origin": "https://images.unsplash.com/photo-1490312278390-ab64016e0aa9?auto=format&fit=max&w=800&q=80&fm=jpg",
+    "license": "https://unsplash.com/license",
+    "use": "GG-423 development-only local sample; not a generated user asset"
+  },
+  {
+    "file": "architecture.jpg",
+    "origin": "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=max&w=800&q=80&fm=jpg",
+    "license": "https://unsplash.com/license",
+    "use": "GG-423 development-only local sample; not a generated user asset"
+  },
+  {
+    "file": "landscape.jpg",
+    "origin": "https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=max&w=800&q=80&fm=jpg",
+    "license": "https://unsplash.com/license",
+    "use": "GG-423 development-only local sample; not a generated user asset"
+  },
+  {
+    "file": "leaves.jpg",
+    "origin": "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=max&w=800&q=80&fm=jpg",
+    "license": "https://unsplash.com/license",
+    "use": "GG-423 development-only local sample; not a generated user asset"
+  },
+  {
+    "file": "flowers.jpg",
+    "origin": "https://images.unsplash.com/photo-1490750967868-88aa4486c946?auto=format&fit=max&w=800&q=80&fm=jpg",
+    "license": "https://unsplash.com/license",
+    "use": "GG-423 development-only local sample; not a generated user asset"
+  },
+  {
+    "file": "coffee.jpg",
+    "origin": "https://images.unsplash.com/photo-1442512595331-e89e73853f31?auto=format&fit=max&w=800&q=80&fm=jpg",
+    "license": "https://unsplash.com/license",
+    "use": "GG-423 development-only local sample; not a generated user asset"
+  },
+  {
+    "file": "street.jpg",
+    "origin": "https://images.unsplash.com/photo-1511818966892-d7d671e672a2?auto=format&fit=max&w=800&q=80&fm=jpg",
+    "license": "https://unsplash.com/license",
+    "use": "GG-423 development-only local sample; not a generated user asset"
+  }
+]
