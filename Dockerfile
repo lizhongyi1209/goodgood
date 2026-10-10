@@ -35,11 +35,11 @@ WORKDIR /app
 RUN rm -rf /usr/local/lib/node_modules/npm \
     && rm -f /usr/local/bin/npm /usr/local/bin/npx
 
-# The pinned base image predates Debian's fixed libpcre2 build, and the release
+# The pinned base image predates fixed Debian library builds, and the release
 # gate fails closed on any fixable HIGH/CRITICAL library, including OS packages.
-# Take only that security update so the runtime keeps the reviewed base.
+# Take only the reported security updates so the runtime keeps the reviewed base.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends --only-upgrade libpcre2-8-0 \
+    && apt-get install -y --no-install-recommends --only-upgrade libpcre2-8-0 perl-base \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build --chown=node:node /app/dist/standalone/ ./

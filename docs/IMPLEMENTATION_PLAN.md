@@ -9,6 +9,7 @@
 
 - [GG-424](tasks/GG-424-existing-check-errors.md)：F:/goodgood-worktrees/GG-424 / fix/GG-424-existing-check-errors 从 ce86e66 建立。307198c 初次重生成锁文件，CI 精确 npm 11.19.0 修正在 3d65ef0；同版本 npm ci 通过。16d35c0 将 27 文件 / 63 lint 错误、15 类型诊断和 26 陈旧测试失败清零，不改变产品行为或禁用规则。
 - PR #9 第二轮 CI 已通过安装与质量门禁；Trivy 新漏洞库报告 8 个有修复版本的 HIGH/CRITICAL 依赖项。4986aa4 按当轮扫描给出的最低安全版本更新 5 个依赖及 1 个传递覆盖、锁文件和固定值测试；下一轮仅剩漏洞库新增的 Nodemailer 10.0.6 补丁要求，继续以单一补丁更新处理，不改业务代码。
+- a2ff46c 对应 CI 的应用依赖扫描已清零，镜像构建与运行时导入通过；镜像扫描只剩固定 Debian 基础镜像中的 `perl-base` u3，按既有定向系统安全更新策略升级到仓库提供的 u4，不做全量系统升级。
 - 完整 npm run check:local 通过：lint 0 错误 / 173 警告，typecheck 0，build:local 通过，测试 1197 项为 1171 通过 / 0 失败 / 26 跳过。忽略的本地日志不提交。
 - [GG-423](tasks/GG-423-home-design-system.md)：F:/goodgood-worktrees/GG-423-home-design-system / feature/GG-423-home-design-system 从 5e404e2 建立；① 8b9601e、② 0dc2a22、③ f890c3c、④ 6828d06、⑤ 5f6f66e 保留；第 6 个字标尺寸修正为本提交，PR #8 是交付入口。其他页面不迁移，原运行栈保持。
 - 第 6 提交验证：GG-423 源码 lint 0 / 18，CSS / JSON 解析及 token 契约通过；全量仍 63 / 172、27 文件错误明细相同；docs 16/16、build 与首页 / SSR 10/10。demo on 1440/1024 新整页已查看，字标 18px、图标栏 / 手机 G 20px，本轮 55124 预览已停止。详见验证记录。
