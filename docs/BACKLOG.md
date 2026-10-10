@@ -5,6 +5,7 @@
 
 | ID | 事项 | 当前状态 | 入口 |
 | --- | --- | --- | --- |
+| GG-425 | 图片 / 视频创作页设计系统改版 | 实施中；从 9db744d 建立隔离分支，先抽共用外壳，再分别接现有图片与 Seedance 功能；不改后端与计价 | [任务](tasks/GG-425-create-pages.md) |
 | GG-424 | 存量检查错误 | 已实现；lint 63→0、typecheck 15→0、测试失败 26→0，check:local 与 PR #9 Verify source and image 通过；待审阅，不合并 | [任务](tasks/GG-424-existing-check-errors.md) |
 | GG-423 | 首页设计系统 | PR #8 已合并到 design/GG-422-design-system / ce86e66；GG-424 从此检查点接续 | [任务](tasks/GG-423-home-design-system.md) |
 | GG-422 | 设计系统文档与并存 token | 接入 a411892 已推送；当时文档测试 16/16、build:local 通过；ADR 0144 后由 GG-423 接受 | [任务](tasks/GG-422-design-system-docs.md) / [ADR](decisions/0144-design-system-v3.md) |

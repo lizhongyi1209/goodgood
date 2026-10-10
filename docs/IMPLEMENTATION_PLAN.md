@@ -1,12 +1,13 @@
 # Production implementation plan
 
-- Last synchronized: 2026-10-10
-- Current phase: GG-424 已从 PR #8 合并检查点 ce86e66 完成存量门禁与安全扫描修复；完整 check:local 和 PR #9 Verify source and image 均通过。
-- Current objective: 等待 PR #9 审阅；不合并、不部署。
-- Previous objective: GG-423 首页设计系统已由 PR #8 合并到 design/GG-422-design-system；最近运行收据仍是 GG-419，本轮不操作服务或数据。
+- Last synchronized: 2026-10-11
+- Current phase: PR #9 已合并到 design/GG-422-design-system / 9db744d；GG-425 正在把已接受的设计系统接到图片与视频创作页。
+- Current objective: 完成共用外壳、图片页、视频页、门禁与截图，推送并向 design/GG-422-design-system 开 PR；不合并、不部署。
+- Previous objective: GG-424 清零存量 lint / 类型 / 测试失败并让 Verify source and image 全绿。
 
 ## Current checkpoint
 
+- [GG-425](tasks/GG-425-create-pages.md)：F:/goodgood-worktrees/GG-425 / feature/GG-425-create-pages 从 PR #9 合并提交 9db744d 建立。设计截图只读提取自 design/create-page-references / 23684e8，未合并；文字规格优先。按文档、共用外壳、图片页、视频页四笔提交实施，项目/资产/画布等旧页面暂不迁移。
 - [GG-424](tasks/GG-424-existing-check-errors.md)：F:/goodgood-worktrees/GG-424 / fix/GG-424-existing-check-errors 从 ce86e66 建立。307198c 初次重生成锁文件，CI 精确 npm 11.19.0 修正在 3d65ef0；同版本 npm ci 通过。16d35c0 将 27 文件 / 63 lint 错误、15 类型诊断和 26 陈旧测试失败清零，不改变产品行为或禁用规则。
 - PR #9 第二轮 CI 已通过安装与质量门禁；Trivy 新漏洞库报告 8 个有修复版本的 HIGH/CRITICAL 依赖项。4986aa4 按当轮扫描给出的最低安全版本更新 5 个依赖及 1 个传递覆盖、锁文件和固定值测试；下一轮仅剩漏洞库新增的 Nodemailer 10.0.6 补丁要求，继续以单一补丁更新处理，不改业务代码。
 - a2ff46c 对应 CI 的应用依赖扫描已清零，镜像构建与运行时导入通过；镜像扫描只剩固定 Debian 基础镜像中的 `perl-base` u3，按既有定向系统安全更新策略升级到仓库提供的 u4，不做全量系统升级。
@@ -27,8 +28,8 @@
 - 更早的实施证据继续保留在 [2026-09-07 历史实施记录](history/2026-09-07-implementation-log.md)；其中旧发布/转换指令仅供追溯，不构成本轮授权。
 - 最新本地运行证据查 [GG-419](tasks/GG-419-local-seedance-activation.md) / [DEVELOPMENT_HANDOFF](DEVELOPMENT_HANDOFF.md)；本轮不更新生产或伪造运行 revision。
 - 保留的部署边界：生产 `goodgood.o1key.com` 与历史预生产 `staging-goodgood.o1key.com` 分开；本地状态隔离，禁止复制生产数据或执行旧转换流程，具体以 DEPLOYMENT 和 ADR 0091 为准。
-- Next action: 等待 PR #9 审阅；不合并/部署。
-- Blockers: 本地无阻塞；等待远端 PR 检查。
+- Next action: 先提交 GG-425 文档，再抽共用外壳并接图片 / 视频现有功能；最终跑完整门禁、截图、推送和开 PR，不合并/部署。
+- Blockers: 当前无阻塞；远端 CI 在新 PR 建立后核对。
 
 ## Verification sequence
 
