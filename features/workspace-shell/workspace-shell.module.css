@@ -8,6 +8,7 @@
 .groupLabel { padding: 0 var(--ds-space-2-5) var(--ds-space-1); font: var(--ds-text-caption); color: var(--ds-muted); }
 .accountFooter { margin-top: auto; }
 .main { flex: 1; min-width: 0; min-height: 100dvh; padding-bottom: var(--ds-space-8); }
+.shell[data-creation-area][data-workspace-layout="desktop"] .main, .shell[data-creation-area][data-workspace-layout="rail"] .main { padding-bottom: 0; }
 .topbar { display: flex; align-items: center; justify-content: flex-end; height: var(--ds-topbar-height); padding: 0 var(--ds-space-8); }
 .headerActions { display: flex; align-items: center; gap: var(--ds-space-3); }
 .announcements :global(button[data-slot="button"]) { border: 0; box-shadow: none; background: transparent; color: var(--ds-ink); font: var(--ds-text-label); }

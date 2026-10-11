@@ -3126,6 +3126,41 @@ export default function Home({
   const showImageCreate = !showHome && designCreateReady && creationMode === "image";
   const showVideoCreate = !showHome && designCreateReady && creationMode === "video";
   const workspaceAccountActions = { onAccount: handleCreditsNav, onFeedback: handleFeedbackNav, onLogout: () => void handleLogout(), onLogin: handleLogin, onManagement: handleOrganizationNav, onDistribution: handleDistributionNav, enterpriseVisible: organizationNavigationVisible };
+  const clearImageCreateSettings = () => {
+    composerEditRevisionRef.current += 1;
+    referenceObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    referenceObjectUrlsRef.current.clear();
+    referenceUploadFilesRef.current.clear();
+    setPrompt("");
+    setReferenceImages([]);
+    setSelectedCatalogModelId(undefined);
+    setSelectedModel(DEFAULT_GENERATION_MODEL_ID);
+    setImageLine("special");
+    setSelectedRatio("1:1");
+    setResolution("1K");
+    setGenerationCount(1);
+    setThinkingLevel("high");
+    setGoogleSearch(false);
+    setQuality("auto");
+    setBackground("auto");
+    setOutputFormat("png");
+  };
+  const clearVideoCreateSettings = () => {
+    videoReferenceObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    videoReferenceObjectUrlsRef.current.clear();
+    videoReferenceFilesRef.current.clear();
+    setVideoPrompt("");
+    setVideoReferences([]);
+    setVideoCatalogModelId(undefined);
+    setVideoGenerationMode(DEFAULT_VIDEO_GENERATION_MODE);
+    setVideoModelId(DEFAULT_VIDEO_MODEL_ID);
+    setVideoProviderLine(DEFAULT_VIDEO_PROVIDER_LINE);
+    setVideoAspectRatio(DEFAULT_VIDEO_RATIO);
+    setVideoResolution(DEFAULT_VIDEO_RESOLUTION);
+    setVideoDurationSeconds(DEFAULT_VIDEO_DURATION_SECONDS);
+    setVideoGenerationCount(DEFAULT_VIDEO_GENERATION_COUNT);
+    setVideoGenerateAudio(true);
+  };
 
   return (
     <main className={showHome || showImageCreate || showVideoCreate ? undefined : "app-shell"}>
@@ -3219,6 +3254,7 @@ export default function Home({
           onCredits={handleCreditsNav}
           onSaveProject={openProjectDrawer}
           onNewCreation={requestNewCreation}
+          onClear={clearImageCreateSettings}
         />
       </WorkspaceShell> : showVideoCreate ? <WorkspaceShell
         session={authenticationSession}
@@ -3269,6 +3305,7 @@ export default function Home({
           onRetryRun={(run) => { void retryVideoPreviewRun(run); }}
           onResumeRun={(run) => { void resumeVideoPreviewRun(run, (update) => setVideoPreviewRuns((current) => updateVideoPreviewRun(current, update))); }}
           onDimensions={(run, width, height) => setVideoPreviewRuns((current) => current.map((item) => item.key === run.key ? { ...item, outputRatio: width / height } : item))}
+          onClear={clearVideoCreateSettings}
         />
       </WorkspaceShell> : <>
       <aside className="sidebar">

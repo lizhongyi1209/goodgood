@@ -39,24 +39,45 @@ test("GG-425 create page styling only uses design-system colors", async () => {
 
 test("GG-425 video settings expose only the currently submit-capable mode", async () => {
   const source = await readFile(new URL("../features/create/video-create-page.tsx", import.meta.url), "utf8");
-  for (const label of ["模型", "生成方式", "素材", "提示词", "画面比例", "分辨率", "时长", "生成音频"]) assert.match(source, new RegExp(label));
-  assert.match(source, />文生视频</);
+  for (const label of ["模型", "提示词", "画面比例", "分辨率", "时长", "生成音频"]) assert.match(source, new RegExp(label));
+  assert.doesNotMatch(source, />生成方式<|>素材</);
   assert.doesNotMatch(source, />视频编辑<|>视频延长</);
-  assert.match(source, /\.mov,\.mp3,\.wav/);
+  assert.match(source, /SwitchPrimitive\.Root/);
+  assert.doesNotMatch(source, /接口可用|暂不可用<\/strong>/);
 });
 
-test("GG-425 preserves reference intake, preview, ordering, and accessible select names", async () => {
+test("GG-425 preserves image reference intake and makes video text-only", async () => {
   const image = await readFile(new URL("../features/create/image-create-page.tsx", import.meta.url), "utf8");
   const video = await readFile(new URL("../features/create/video-create-page.tsx", import.meta.url), "utf8");
+  const home = await readFile(new URL("../features/home/home-composer.tsx", import.meta.url), "utf8");
   assert.match(image, /useComposerFileDrop\(props\.onDropFiles\)/);
   assert.match(image, /onPaste=\{handlePaste\}/);
   assert.match(image, /onReorderReference\(sourceId, reference\.id\)/);
   assert.match(image, /<ReferenceQuickEditor/);
-  assert.match(video, /useComposerFileDrop\(props\.onDropFiles\)/);
-  assert.match(video, /onPaste=\{handlePaste\}/);
-  assert.match(video, /<VideoReferencePreviewDialog/);
+  assert.doesNotMatch(video, /useComposerFileDrop|AddReferenceMenu|VideoReferencePreviewDialog/);
+  assert.match(home, /视频暂只支持文字描述/);
+  assert.match(home, /videoTextOnly/);
   assert.match(image, /aria-label=\{`\$\{label\}：\$\{value\}`\}/);
   assert.match(video, /aria-label=\{`\$\{label\}：\$\{value\}`\}/);
+});
+
+test("GG-425 correction follows panel, action, menu, and viewer specifications", async () => {
+  const [image, video, css, shell] = await Promise.all([
+    readFile(new URL("../features/create/image-create-page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../features/create/video-create-page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../features/create/create-page.module.css", import.meta.url), "utf8"),
+    readFile(new URL("../features/workspace-shell/workspace-shell.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.match(css, /\.selectTrigger[^}]*height:\s*var\(--ds-control-field\)[^}]*border:\s*0[^}]*background:\s*var\(--ds-soft\)/s);
+  assert.match(css, /\.field textarea[^}]*resize:\s*none[^}]*background:\s*var\(--ds-soft\)/s);
+  assert.match(css, /\.generateButton[^}]*border-radius:\s*var\(--ds-radius-pill\)/s);
+  assert.match(image, /<span>生成<\/span><span className=\{styles\.generatePrice\}>/);
+  assert.match(video, /<span>生成<\/span><\/button>/);
+  assert.match(image, /showCloseButton=\{false\}/);
+  assert.match(video, /showCloseButton=\{false\}/);
+  assert.match(image, />做同款<\/button>/);
+  assert.match(video, />做同款<\/button>/);
+  assert.match(shell, /!creationArea \|\| layout !== "desktop"/);
 });
 
 test("GG-425 media tiles preserve result aspect ratios and image detail keeps wheel navigation", async () => {

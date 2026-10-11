@@ -16,6 +16,7 @@
 .creditPill { display: inline-flex; align-items: center; justify-content: center; gap: var(--ds-space-1); height: var(--ds-credit-height); padding: 0 var(--ds-space-2); border: 0; border-radius: var(--ds-radius-pill); background: var(--ds-accent-soft); color: var(--ds-accent); white-space: nowrap; font: var(--ds-text-caption); font-weight: var(--ds-weight-semibold); font-variant-numeric: tabular-nums; }
 .creditPill svg { width: var(--ds-icon-sm); height: var(--ds-icon-sm); }
 .menu { min-width: var(--ds-sidebar-width); padding: var(--ds-space-2); border: var(--ds-border-width) solid var(--ds-line); border-radius: var(--ds-radius-popover); background: var(--ds-white); color: var(--ds-ink); box-shadow: var(--ds-shadow-md); font: var(--ds-text-nav); opacity: 1; animation: none; }
+.menuMatchTrigger { width: var(--radix-dropdown-menu-trigger-width); min-width: var(--radix-dropdown-menu-trigger-width); max-height: min(var(--radix-dropdown-menu-content-available-height), calc(100dvh - var(--ds-space-6))); overflow-y: auto; }
 .menuItem { display: flex; align-items: center; gap: var(--ds-space-2); width: 100%; min-height: var(--ds-control-md); padding: var(--ds-space-2); border: 0; border-radius: var(--ds-radius-item); background: transparent; color: var(--ds-ink); font: var(--ds-text-nav); text-align: left; }
 .menuItem:focus-visible { outline: none; background: var(--ds-fill-hover); }
 .menuItem[data-disabled], .menuItem:disabled { opacity: var(--ds-opacity-menu-disabled); pointer-events: none; }

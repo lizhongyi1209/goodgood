@@ -62,6 +62,7 @@ export function WorkspaceShell({
 }: WorkspaceShellProps) {
   const layout = useWorkspaceLayout();
   const compact = layout === "rail";
+  const creationArea = activeArea === "image" || activeArea === "video";
   const credits = <CreditPill balance={balance} loading={billingLoading} unavailable={billingError} />;
   const management = <>
     {session?.account.role === "site_owner" && <NavItem label="站长管理" icon={<UserCog />} compact={compact} onClick={accountActions.onManagement} />}
@@ -69,7 +70,7 @@ export function WorkspaceShell({
     {session?.account.businessRole === "distributor" && <NavItem label="分销管理" icon={<Network />} compact={compact} onClick={accountActions.onDistribution} />}
   </>;
 
-  return <div className={styles.shell} data-workspace-layout={layout}>
+  return <div className={styles.shell} data-workspace-layout={layout} data-creation-area={creationArea || undefined}>
     {layout !== "mobile" && <aside className={styles.sidebar} aria-label="工作区侧栏">
       <button className={styles.brand} type="button" onClick={onHome} aria-label="GoodGood 首页">
         <img src={compact ? "/goodgood-g-icon.svg" : "/goodgood-wordmark.svg"} alt="" />
@@ -99,13 +100,13 @@ export function WorkspaceShell({
       </div>
     </aside>}
     <div className={styles.main}>
-      <header className={styles.topbar}>
+      {(!creationArea || layout !== "desktop") && <header className={styles.topbar}>
         {layout === "mobile" && <button type="button" onClick={onHome} className={styles.mobileBrand} aria-label="GoodGood 首页"><img src="/goodgood-g-icon.svg" alt="" /></button>}
         <div className={styles.headerActions}>
           {layout !== "desktop" && <CreditPill balance={balance} loading={billingLoading} unavailable={billingError} onClick={accountActions.onAccount} />}
           <AnnouncementCenter session={session} iconOnly={layout === "mobile"} className={styles.announcements} />
         </div>
-      </header>
+      </header>}
       {children}
     </div>
     {layout === "mobile" && <nav className={styles.tabbar} aria-label="底部导航">

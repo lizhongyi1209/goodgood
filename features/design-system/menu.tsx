@@ -4,10 +4,10 @@ import type { ComponentProps, ReactNode } from "react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import styles from "./design-system.module.css";
 
-export function Menu({ trigger, children, align = "end", open, onOpenChange, label }: { trigger: ReactNode; children: ReactNode; align?: "start" | "center" | "end"; open?: boolean; onOpenChange?: (open: boolean) => void; label?: string }) {
+export function Menu({ trigger, children, align = "end", open, onOpenChange, label, matchTriggerWidth = false }: { trigger: ReactNode; children: ReactNode; align?: "start" | "center" | "end"; open?: boolean; onOpenChange?: (open: boolean) => void; label?: string; matchTriggerWidth?: boolean }) {
   return <DropdownMenu open={open} onOpenChange={onOpenChange}>
     <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
-    <DropdownMenuContent align={align} className={styles.menu} aria-label={label} {...(label ? { "aria-labelledby": undefined } : {})}>{children}</DropdownMenuContent>
+    <DropdownMenuContent align={align} collisionPadding={12} className={`${styles.menu} ${matchTriggerWidth ? styles.menuMatchTrigger : ""}`} aria-label={label} {...(label ? { "aria-labelledby": undefined } : {})}>{children}</DropdownMenuContent>
   </DropdownMenu>;
 }
 

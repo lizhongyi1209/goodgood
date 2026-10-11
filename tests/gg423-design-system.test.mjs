@@ -44,7 +44,7 @@ test("GG-423 all styled custom properties exist and every token agrees with JSON
   const css = await readFile(new URL("../app/design-tokens.css", import.meta.url), "utf8");
   const rules = await readFile(new URL("../features/design-system/design-system.module.css", import.meta.url), "utf8");
   const defined = new Set([...css.matchAll(/(--ds-[\w-]+):/g)].map(match => match[1]));
-  for (const match of rules.matchAll(/var\((--[\w-]+)/g)) assert.ok(defined.has(match[1]), match[1]);
+  for (const match of rules.matchAll(/var\((--ds-[\w-]+)/g)) assert.ok(defined.has(match[1]), match[1]);
   assert.doesNotMatch(rules, /#[\da-f]{3,8}\b|rgba?\(/i);
   const json = JSON.parse(await readFile(new URL("../docs/design/tokens.json", import.meta.url), "utf8"));
   for (const group of Object.values(json)) if (Array.isArray(group?.tokens)) for (const token of group.tokens) {
