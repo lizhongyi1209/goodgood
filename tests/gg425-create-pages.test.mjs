@@ -62,10 +62,11 @@ test("GG-425 preserves image reference intake and makes video text-only", async 
 });
 
 test("GG-425 correction follows panel, action, menu, and viewer specifications", async () => {
-  const [image, video, css, shell] = await Promise.all([
+  const [image, video, css, systemCss, shell] = await Promise.all([
     readFile(new URL("../features/create/image-create-page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../features/create/video-create-page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../features/create/create-page.module.css", import.meta.url), "utf8"),
+    readFile(new URL("../features/design-system/design-system.module.css", import.meta.url), "utf8"),
     readFile(new URL("../features/workspace-shell/workspace-shell.tsx", import.meta.url), "utf8"),
   ]);
   assert.match(css, /\.selectTrigger[^}]*height:\s*var\(--ds-control-field\)[^}]*border:\s*0[^}]*background:\s*var\(--ds-soft\)/s);
@@ -78,6 +79,8 @@ test("GG-425 correction follows panel, action, menu, and viewer specifications",
   assert.match(image, />做同款<\/button>/);
   assert.match(video, />做同款<\/button>/);
   assert.match(shell, /!creationArea \|\| layout !== "desktop"/);
+  assert.match(systemCss, /\.navItem\[aria-current\][^}]*background:\s*var\(--ds-fill-active\)/s);
+  assert.match(css, /\.viewerStage[^}]*background:\s*var\(--ds-white\)/s);
 });
 
 test("GG-425 media tiles preserve result aspect ratios and image detail keeps wheel navigation", async () => {

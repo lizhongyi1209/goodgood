@@ -1,13 +1,13 @@
 # Production implementation plan
 
 - Last synchronized: 2026-10-11
-- Current phase: PR #10 已打开；GG-425 合并前控件、创作页顶栏、MediaViewer 与视频纯文字输入修正已实现，本地门禁与截图复核通过。
-- Current objective: 追加提交并推送 GG-425 合并前修正，等待 PR #10 CI 全绿；不合并、不部署。
+- Current phase: PR #10 已打开；GG-425 最后两处 NavItem 当前态与 MediaViewer 白色舞台修正已实现，本地门禁与指定截图复核通过。
+- Current objective: 追加并推送 GG-425 最后一笔视觉修正，等待 PR #10 CI 全绿；不合并、不部署。
 - Previous objective: GG-424 清零存量 lint / 类型 / 测试失败并让 Verify source and image 全绿。
 
 ## Current checkpoint
 
-- [GG-425](tasks/GG-425-create-pages.md)：F:/goodgood-worktrees/GG-425 / feature/GG-425-create-pages 从 PR #9 合并提交 9db744d 建立，PR #10 目标为 design/GG-422-design-system。既有四笔提交保持不改，当前追加合并前修正：soft 无描边控件、规范生成按钮与清空、同宽分组菜单、桌面创作页隐藏顶栏、MediaViewer 顶栏与“做同款”、视频页和首页视频模式只接文字、Radix 音频 Switch、审核失败聚焦提示词。项目/资产/画布等旧页面暂不迁移；后端与计价不变。十张更新截图已检查且未触发 Provider；`npm run check:local` 已通过，测试 1204 项为 1178 通过 / 0 失败 / 26 跳过。
+- [GG-425](tasks/GG-425-create-pages.md)：F:/goodgood-worktrees/GG-425 / feature/GG-425-create-pages 从 PR #9 合并提交 9db744d 建立，PR #10 目标为 design/GG-422-design-system。前五笔提交保持不改；最后一笔把 NavItem 当前态统一为 `fill-active`、保留其他项 `fill-hover` 悬停，并把 MediaViewer 舞台改为白底。项目/资产/画布等旧页面暂不迁移；后端与计价不变。视频页 1440 悬停图与大图预览已用本地拦截数据重截并检查，未触发 Provider；`npm run check:local` 已通过，测试 1204 项为 1178 通过 / 0 失败 / 26 跳过。
 - [GG-424](tasks/GG-424-existing-check-errors.md)：F:/goodgood-worktrees/GG-424 / fix/GG-424-existing-check-errors 从 ce86e66 建立。307198c 初次重生成锁文件，CI 精确 npm 11.19.0 修正在 3d65ef0；同版本 npm ci 通过。16d35c0 将 27 文件 / 63 lint 错误、15 类型诊断和 26 陈旧测试失败清零，不改变产品行为或禁用规则。
 - PR #9 第二轮 CI 已通过安装与质量门禁；Trivy 新漏洞库报告 8 个有修复版本的 HIGH/CRITICAL 依赖项。4986aa4 按当轮扫描给出的最低安全版本更新 5 个依赖及 1 个传递覆盖、锁文件和固定值测试；下一轮仅剩漏洞库新增的 Nodemailer 10.0.6 补丁要求，继续以单一补丁更新处理，不改业务代码。
 - a2ff46c 对应 CI 的应用依赖扫描已清零，镜像构建与运行时导入通过；镜像扫描只剩固定 Debian 基础镜像中的 `perl-base` u3，按既有定向系统安全更新策略升级到仓库提供的 u4，不做全量系统升级。

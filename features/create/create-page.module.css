@@ -105,7 +105,7 @@
 .viewerToolbar button svg { width: var(--ds-icon-md); height: var(--ds-icon-md); }
 .viewerToolbar .viewerPrimary { padding: 0 var(--ds-space-4); border-radius: var(--ds-radius-pill); background: var(--ds-action); color: var(--ds-action-fg); }
 .viewerToolbar .viewerPrimary:hover { background: var(--ds-action-hover); }
-.viewerStage { position: relative; grid-column: 1; grid-row: 2; display: grid; place-items: center; min-width: 0; padding: var(--ds-space-8); background: var(--ds-soft); }
+.viewerStage { position: relative; grid-column: 1; grid-row: 2; display: grid; place-items: center; min-width: 0; padding: var(--ds-space-8); background: var(--ds-white); }
 .viewerStage > img { max-width: 100%; max-height: 100%; object-fit: contain; }
 .viewerStage > video { max-width: 100%; max-height: 100%; }
 .viewerInfo { grid-column: 3; grid-row: 2; display: flex; min-width: 0; flex-direction: column; overflow-y: auto; padding: var(--ds-space-6); }

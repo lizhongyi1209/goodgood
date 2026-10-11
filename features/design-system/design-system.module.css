@@ -4,7 +4,8 @@
 .navItem svg, .accountRow svg, .menuItem svg, .modeToggle svg, .addReference svg, .mediaAction svg, .templateMark svg, .emptyIcon svg, .sectionHeading svg { width: var(--ds-icon-md); height: var(--ds-icon-md); stroke-width: var(--ds-icon-stroke); flex-shrink: 0; }
 .navItem { display: flex; align-items: center; gap: var(--ds-space-2-5); width: 100%; min-height: var(--ds-control-md); padding: 0 var(--ds-space-2-5); border: 0; border-radius: var(--ds-radius-sm); background: transparent; color: var(--ds-ink); font: var(--ds-text-nav); text-decoration: none; text-align: left; }
 .navItem:hover, .accountRow:hover, .menuItem:hover, .menuItem[data-highlighted] { background: var(--ds-fill-hover); }
-.navItem[aria-current], .menuItem[data-state="checked"] { background: var(--ds-fill-selected); }
+.navItem[aria-current] { background: var(--ds-fill-active); }
+.menuItem[data-state="checked"] { background: var(--ds-fill-selected); }
 .navItem[data-compact] { justify-content: center; width: var(--ds-control-field); height: var(--ds-control-field); padding: 0; }
 .navItem[data-compact] svg { width: var(--ds-icon-rail); height: var(--ds-icon-rail); }
 .navIcon { display: flex; }
