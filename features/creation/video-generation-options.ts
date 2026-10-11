@@ -294,12 +294,14 @@ export function videoReferenceFileError(
 }
 
 export function videoReferenceMediaTypeForFile(
-  file: Pick<File, "type">,
+  file: Pick<File, "type"> & Partial<Pick<File, "name">>,
 ): VideoReferenceMediaType | null {
-  if (["image/jpeg", "image/png"].includes(file.type)) {
+  const extension = file.name?.split(".").pop()?.toLowerCase();
+  const extensionFallback = file.type === "" || file.type === "application/octet-stream";
+  if (["image/jpeg", "image/png"].includes(file.type) || (extensionFallback && ["jpg", "jpeg", "png"].includes(extension ?? ""))) {
     return "image";
   }
-  if (file.type === "video/mp4") return "video";
-  if (file.type === "audio/mpeg") return "audio";
+  if (["video/mp4", "video/quicktime"].includes(file.type) || (extensionFallback && ["mp4", "mov"].includes(extension ?? ""))) return "video";
+  if (["audio/mpeg", "audio/wav", "audio/x-wav"].includes(file.type) || (extensionFallback && ["mp3", "wav"].includes(extension ?? ""))) return "audio";
   return null;
 }

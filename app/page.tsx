@@ -8,6 +8,9 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties, type Whee
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { HomePage } from "@/features/home/home-page";
+import { homeDemoEnabled } from "@/features/home/home-feature-flag.mjs";
+import { ImageCreatePage, VideoCreatePage } from "@/features/create";
+import { WorkspaceShell } from "@/features/workspace-shell";
 import { downloadCanvasImageLink } from "@/features/canvas/canvas-asset-addition.mjs";
 import { Button } from "@/components/ui/button";
 import { CreditIcon } from "@/components/ui/credit-icon";
@@ -21,7 +24,7 @@ import { VideoCreationComposer } from "@/features/creation/video-creation-compos
 import { MixedMediaStylePreview } from "@/features/creation/mixed-media-style-preview";
 import { VideoPreviewCard, getVideoPreviewRatio } from "@/features/creation/video-preview-card";
 import { VideoPreviewDetail } from "@/features/creation/video-preview-detail";
-import { isVideoPreviewRunActive, resumeVideoPreviewRun, submitVideoPreviewRuns, updateVideoPreviewRun, type VideoPreviewRun } from "@/features/creation/video-preview-runs";
+import { createVideoPreviewRuns, isVideoPreviewRunActive, resumeVideoPreviewRun, submitVideoPreviewRuns, updateVideoPreviewRun, type VideoPreviewRun } from "@/features/creation/video-preview-runs";
 import { createImagePromptBatch, createImagePromptRuns, createVideoPromptBatch, submitPromptBatch } from "@/features/creation/prompt-batch";
 import { parsePromptBatch, promptContextForRetry } from "@/shared/contracts/prompt-batch.mjs";
 import {
@@ -96,7 +99,7 @@ import {
 } from "@/features/creation/http-video-preview-boundary";
 import { uploadReferenceFiles } from "@/features/references/http-reference-upload";
 import { listPrivateVideoMaterials, uploadPrivateVideoMaterial, type PrivateVideoMaterial } from "@/features/creation/http-video-materials";
-import { listPrivateAudioMaterials, type PrivateAudioMaterial } from "@/features/assets/http-audio-materials";
+import { listPrivateAudioMaterials, uploadPrivateAudioMaterial, type PrivateAudioMaterial } from "@/features/assets/http-audio-materials";
 import { AssetWorkspace, type GeneratedAssetCard } from "@/features/assets/asset-workspace";
 import { PRIVATE_IMAGE_MIME_TYPES, PRIVATE_IMAGE_UPLOAD_MAX_BYTES } from "@/shared/contracts/upload-limits.mjs";
 import {
@@ -298,6 +301,7 @@ const videoAssetMediaFilters = [
 }>[];
 
 const ASSET_DETAIL_HISTORY_KEY = "goodgoodAssetDetail";
+const homeDemoNavigationEnabled = homeDemoEnabled(import.meta.env.DEV, import.meta.env.VITE_GG_HOME_DEMO);
 
 function readAssetDetailNavigationState(state: unknown): AssetDetailNavigationState | null {
   if (!state || typeof state !== "object") return null;
@@ -1728,7 +1732,6 @@ export default function Home({
   };
 
   const uploadVideoReferenceFile = (clientId: string, file: File, mediaType: VideoReferenceMediaType, previewUrl: string) => {
-    if (mediaType === "audio") return;
     if (mediaType === "image") {
       void uploadReferenceFiles([{ clientId, file }], (_id, reference) => {
         if (!videoReferenceObjectUrlsRef.current.has(previewUrl)) return;
@@ -1741,6 +1744,24 @@ export default function Home({
       }, workspaceId).then(([result]) => {
         if (result?.reference.status === "ready") void reloadReferenceMaterials();
       });
+      return;
+    }
+    if (mediaType === "audio") {
+      void uploadPrivateAudioMaterial(clientId, file, workspaceId)
+        .then((material) => {
+          if (!videoReferenceObjectUrlsRef.current.has(previewUrl)) return;
+          videoReferenceFilesRef.current.delete(clientId);
+          setVideoReferences((current) => current.map((item) => item.id === clientId
+            ? { ...item, id: material.id, status: "ready", errorMessage: undefined }
+            : item));
+          void reloadPrivateAudioMaterials();
+        })
+        .catch((error) => {
+          if (!videoReferenceObjectUrlsRef.current.has(previewUrl)) return;
+          setVideoReferences((current) => current.map((item) => item.id === clientId
+            ? { ...item, status: "failed", errorMessage: error instanceof Error ? error.message : "音频上传失败，请重试。" }
+            : item));
+        });
       return;
     }
     void uploadPrivateVideoMaterial(clientId, file, workspaceId)
@@ -1772,8 +1793,8 @@ export default function Home({
         toast.error(file.type.startsWith("image/")
           ? `${file.name} 格式不受支持，请使用 JPG/JPEG 或 PNG 图片（20 MB 以内）。`
           : file.type.startsWith("video/")
-            ? `${file.name} 格式不受支持，请使用 MP4 视频（20 MB 以内）。`
-            : `${file.name} 的文件格式不受支持，请使用 JPG/JPEG、PNG、MP4 或 MP3（20 MB 以内）。`);
+            ? `${file.name} 格式不受支持，请使用 MP4 或 MOV 视频（20 MB 以内）。`
+            : `${file.name} 的文件格式不受支持，请使用 JPG/JPEG、PNG、MP4/MOV 或 MP3/WAV（20 MB 以内）。`);
         continue;
       }
       const fileError = videoReferenceFileError(file, mediaType);
@@ -1811,9 +1832,9 @@ export default function Home({
       }
       const url = URL.createObjectURL(file);
       videoReferenceObjectUrlsRef.current.add(url);
-      if (mediaType !== "audio") videoReferenceFilesRef.current.set(candidate.id, file);
-      nextReferences.push({ ...candidate, url, status: mediaType === "audio" ? "ready" : "uploading" });
-      if (mediaType !== "audio") pendingUploads.push({ id: candidate.id, file, mediaType, url });
+      videoReferenceFilesRef.current.set(candidate.id, file);
+      nextReferences.push({ ...candidate, url, status: "uploading" });
+      pendingUploads.push({ id: candidate.id, file, mediaType, url });
     }
     if (nextReferences.length !== videoReferences.length) {
       setVideoReferences([...normalizeVideoReferencesForMode(
@@ -1876,6 +1897,12 @@ export default function Home({
       }, videoGenerationCount, globalThis.crypto.randomUUID());
     setVideoPreviewRuns((current) => [...runs, ...current]);
     await submitVideoPreviewRuns(runs, (run) => setVideoPreviewRuns((current) => updateVideoPreviewRun(current, run)));
+  };
+
+  const retryVideoPreviewRun = async (source: VideoPreviewRun) => {
+    const [retry] = createVideoPreviewRuns(source.input, 1, globalThis.crypto.randomUUID());
+    setVideoPreviewRuns((current) => [retry, ...current]);
+    await submitVideoPreviewRuns([retry], (run) => setVideoPreviewRuns((current) => updateVideoPreviewRun(current, run)));
   };
 
   const handleReferenceFiles = (files: readonly File[]) => {
@@ -3078,6 +3105,15 @@ export default function Home({
     setActiveView("create");
     window.scrollTo({ top: 0, behavior: "auto" });
   };
+  const openWorkspaceHome = () => {
+    if (currentProject) {
+      requestNewCreation();
+      return;
+    }
+    if (window.location.pathname !== "/") window.history.pushState(window.history.state, "", "/");
+    window.dispatchEvent(new Event(WORKSPACE_NAVIGATION_EVENT));
+    window.scrollTo({ top: 0, behavior: "auto" });
+  };
   const submitHomeCreation = () => {
     openHomeGeneration(creationMode);
     if (creationMode === "video") void handleVideoGenerate();
@@ -3086,9 +3122,48 @@ export default function Home({
   const homeReferences = creationMode === "video" ? videoReferences : referenceImages;
   const homePendingReference = homeReferences.some(reference => reference.status !== "ready");
   const homeInsufficientCredits = creationMode === "image" && displayedAvailableCredits != null && imageBatchCredits != null && BigInt(displayedAvailableCredits) < BigInt(imageBatchCredits);
+  const designCreateReady = activeView === "create" && (!workspaceId || workspaceAccessReady) && !(routeProjectId && (projectRestoringId === routeProjectId || projectRouteError));
+  const showImageCreate = !showHome && designCreateReady && creationMode === "image";
+  const showVideoCreate = !showHome && designCreateReady && creationMode === "video";
+  const workspaceAccountActions = { onAccount: handleCreditsNav, onFeedback: handleFeedbackNav, onLogout: () => void handleLogout(), onLogin: handleLogin, onManagement: handleOrganizationNav, onDistribution: handleDistributionNav, enterpriseVisible: organizationNavigationVisible };
+  const clearImageCreateSettings = () => {
+    composerEditRevisionRef.current += 1;
+    referenceObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    referenceObjectUrlsRef.current.clear();
+    referenceUploadFilesRef.current.clear();
+    setPrompt("");
+    setReferenceImages([]);
+    setSelectedCatalogModelId(undefined);
+    setSelectedModel(DEFAULT_GENERATION_MODEL_ID);
+    setImageLine("special");
+    setSelectedRatio("1:1");
+    setResolution("1K");
+    setGenerationCount(1);
+    setThinkingLevel("high");
+    setGoogleSearch(false);
+    setQuality("auto");
+    setBackground("auto");
+    setOutputFormat("png");
+  };
+  const clearVideoCreateSettings = () => {
+    videoReferenceObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    videoReferenceObjectUrlsRef.current.clear();
+    videoReferenceFilesRef.current.clear();
+    setVideoPrompt("");
+    setVideoReferences([]);
+    setVideoCatalogModelId(undefined);
+    setVideoGenerationMode(DEFAULT_VIDEO_GENERATION_MODE);
+    setVideoModelId(DEFAULT_VIDEO_MODEL_ID);
+    setVideoProviderLine(DEFAULT_VIDEO_PROVIDER_LINE);
+    setVideoAspectRatio(DEFAULT_VIDEO_RATIO);
+    setVideoResolution(DEFAULT_VIDEO_RESOLUTION);
+    setVideoDurationSeconds(DEFAULT_VIDEO_DURATION_SECONDS);
+    setVideoGenerationCount(DEFAULT_VIDEO_GENERATION_COUNT);
+    setVideoGenerateAudio(true);
+  };
 
   return (
-    <main className={showHome ? undefined : "app-shell"}>
+    <main className={showHome || showImageCreate || showVideoCreate ? undefined : "app-shell"}>
       {showHome ? <HomePage
         session={authenticationSession}
         name={authenticationSession ? personalProfile.profile?.displayName ?? DEFAULT_PROFILE_NAME : "登录 GoodGood"}
@@ -3099,7 +3174,7 @@ export default function Home({
         onProjects={handleProjectsNav}
         onAssets={handleAssetNav}
         onCreation={openHomeGeneration}
-        accountActions={{ onAccount: handleCreditsNav, onFeedback: handleFeedbackNav, onLogout: () => void handleLogout(), onLogin: handleLogin, onManagement: handleOrganizationNav, onDistribution: handleDistributionNav, enterpriseVisible: organizationNavigationVisible }}
+        accountActions={workspaceAccountActions}
         composer={{
           mode: creationMode,
           prompt: creationMode === "video" ? videoPrompt : prompt,
@@ -3119,7 +3194,120 @@ export default function Home({
           disabled: !authenticationSession || authenticationSession.access.status !== "active" || homePendingReference || homeInsufficientCredits || (creationMode === "image" ? !activeBillingQuote : videoInterfaceAvailability !== "available"),
           notice: homePendingReference ? "请等待素材上传完成，或重试失败的素材。" : homeInsufficientCredits ? "积分不足，请补充积分后生成。" : billingError ? "积分暂时无法读取，请稍后重试。" : undefined,
         }}
-      /> : <>
+      /> : showImageCreate ? <WorkspaceShell
+        session={authenticationSession}
+        name={authenticationSession ? personalProfile.profile?.displayName ?? DEFAULT_PROFILE_NAME : "登录 GoodGood"}
+        avatarUrl={personalProfile.profile?.avatarUrl}
+        balance={displayedAvailableCredits ?? "—"}
+        billingLoading={billingLoading}
+        billingError={!!billingError}
+        activeArea="image"
+        showDemoNavigation={homeDemoNavigationEnabled}
+        accountActions={workspaceAccountActions}
+        onHome={openWorkspaceHome}
+        onProjects={handleProjectsNav}
+        onAssets={handleAssetNav}
+        onCreation={openHomeGeneration}
+        onBatch={openWorkspaceHome}
+        onChat={openWorkspaceHome}
+      >
+        <ImageCreatePage
+          prompt={prompt}
+          references={referenceImages}
+          modelId={selectedModel}
+          catalogModelId={selectedCatalogModelId}
+          modelOptions={(billingSummary?.models ?? []).filter((model) => model.mediaType === "image" && ["nano-banana-2.1", "gpt-image-2.5-sunburst", "gpt-image-2.5-flare"].includes(model.adapterId)).map((model) => ({ id: model.adapterId as GenerationModelId, catalogId: model.id, name: model.name, description: model.description }))}
+          aspectRatio={selectedRatio}
+          resolution={resolution}
+          count={generationCount}
+          quality={quality}
+          billingLabel={composerBillingLabel}
+          requiredCredits={imageBatchCredits}
+          availableCredits={displayedAvailableCredits}
+          billingUnavailable={!activeBillingQuote || !!billingError}
+          isGenerating={isGenerating}
+          stageText={stageText}
+          batches={creationBatches}
+          runs={generationRuns}
+          recentReferences={referenceMaterials.map((material) => ({ id: material.id, name: material.name, url: material.previewUrl ?? material.url }))}
+          projectName={currentProject?.name}
+          onPromptChange={handlePromptChange}
+          onReferenceFiles={handleReferenceFiles}
+          onDropFiles={handleComposerDropFiles}
+          onOpenReferenceLibrary={() => openReferenceLibrary("image")}
+          onAddRecentReference={(id) => { const material = referenceMaterials.find((item) => item.id === id); if (material) addMaterialsToReferences([material]); }}
+          onRemoveReference={removeReference}
+          onRetryReference={retryReferenceUpload}
+          onReorderReference={reorderReference}
+          referenceEditorMaterials={referenceMaterials}
+          onSaveReferenceEdit={handleSaveReferenceEdit}
+          onModelChange={(catalogId, modelId) => { handleModelChange(modelId); setSelectedCatalogModelId(catalogId); }}
+          onAspectRatioChange={handleAspectRatioChange}
+          onResolutionChange={handleResolutionChange}
+          onCountChange={handleGenerationCountChange}
+          onQualityChange={handleQualityChange}
+          onGenerate={handleGenerate}
+          onRetryRun={(run) => { void retryFailedGeneration(run); }}
+          onRestoreRun={restoreFailedGenerationSettings}
+          onDownload={(batch, image, index) => { const source = creationBatches.find((item) => item.id === batch.id); if (source) void downloadImage(source, image, index); }}
+          isDownloading={(batch, image) => downloadingImageKeys.includes(`${batch.id}-${image.id}`)}
+          onCredits={handleCreditsNav}
+          onSaveProject={openProjectDrawer}
+          onNewCreation={requestNewCreation}
+          onClear={clearImageCreateSettings}
+        />
+      </WorkspaceShell> : showVideoCreate ? <WorkspaceShell
+        session={authenticationSession}
+        name={authenticationSession ? personalProfile.profile?.displayName ?? DEFAULT_PROFILE_NAME : "登录 GoodGood"}
+        avatarUrl={personalProfile.profile?.avatarUrl}
+        balance={displayedAvailableCredits ?? "—"}
+        billingLoading={billingLoading}
+        billingError={!!billingError}
+        activeArea="video"
+        showDemoNavigation={homeDemoNavigationEnabled}
+        accountActions={workspaceAccountActions}
+        onHome={openWorkspaceHome}
+        onProjects={handleProjectsNav}
+        onAssets={handleAssetNav}
+        onCreation={openHomeGeneration}
+        onBatch={openWorkspaceHome}
+        onChat={openWorkspaceHome}
+      >
+        <VideoCreatePage
+          prompt={videoPrompt}
+          references={videoReferences}
+          generationMode={videoGenerationMode}
+          modelId={videoModelId}
+          catalogModelId={videoCatalogModelId}
+          modelOptions={(billingSummary?.models ?? []).filter((model) => model.mediaType === "video").map((model) => { const presentation = getVideoGenerationModel(model.adapterId as VideoGenerationModelId); return { id: presentation.id, catalogId: model.id, name: model.name, description: model.description, resolutions: presentation.capabilities.resolutions, duration: presentation.capabilities.duration }; })}
+          aspectRatio={videoAspectRatio}
+          resolution={videoResolution}
+          durationSeconds={videoDurationSeconds}
+          generateAudio={videoGenerateAudio}
+          availability={videoInterfaceAvailability}
+          isGenerating={isVideoGenerating}
+          runs={videoPreviewRuns}
+          recentReferences={videoAssetMaterials.filter((material) => material.mediaType === "image").map((material) => ({ id: material.id, name: material.name, url: material.previewUrl ?? material.url }))}
+          onPromptChange={setVideoPrompt}
+          onReferenceFiles={handleVideoReferenceFiles}
+          onDropFiles={handleComposerDropFiles}
+          onOpenReferenceLibrary={() => openReferenceLibrary("video")}
+          onAddRecentReference={(id) => { const material = videoAssetMaterials.find((item) => item.id === id); if (material) addMaterialsToVideoReferences([material]); }}
+          onRemoveReference={removeVideoReference}
+          onRetryReference={retryVideoReferenceUpload}
+          onModelChange={(catalogId, modelId) => { handleVideoModelChange(modelId); setVideoCatalogModelId(catalogId); }}
+          onGenerationModeChange={handleVideoGenerationModeChange}
+          onAspectRatioChange={setVideoAspectRatio}
+          onResolutionChange={setVideoResolution}
+          onDurationChange={setVideoDurationSeconds}
+          onGenerateAudioChange={setVideoGenerateAudio}
+          onGenerate={() => void handleVideoGenerate()}
+          onRetryRun={(run) => { void retryVideoPreviewRun(run); }}
+          onResumeRun={(run) => { void resumeVideoPreviewRun(run, (update) => setVideoPreviewRuns((current) => updateVideoPreviewRun(current, update))); }}
+          onDimensions={(run, width, height) => setVideoPreviewRuns((current) => current.map((item) => item.key === run.key ? { ...item, outputRatio: width / height } : item))}
+          onClear={clearVideoCreateSettings}
+        />
+      </WorkspaceShell> : <>
       <aside className="sidebar">
         <button className="sidebar-brand" type="button" aria-label="Good Good，返回首页" onClick={handleCreateNav}>
           <Image className="brand-wordmark" src="/goodgood-wordmark.svg" alt="" width={108} height={14} />

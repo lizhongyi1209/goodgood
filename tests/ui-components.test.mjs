@@ -1026,7 +1026,11 @@ test("video asset selection preserves mixed-media identity, roles, deduplication
 
   assert.equal(videoReferenceMediaTypeForFile({ type: "image/png" }), "image");
   assert.equal(videoReferenceMediaTypeForFile({ type: "video/mp4" }), "video");
+  assert.equal(videoReferenceMediaTypeForFile({ type: "video/quicktime", name: "clip.mov" }), "video");
   assert.equal(videoReferenceMediaTypeForFile({ type: "audio/mpeg" }), "audio");
+  assert.equal(videoReferenceMediaTypeForFile({ type: "audio/wav", name: "sound.wav" }), "audio");
+  assert.equal(videoReferenceMediaTypeForFile({ type: "", name: "browser-export.MOV" }), "video");
+  assert.equal(videoReferenceMediaTypeForFile({ type: "application/pdf", name: "renamed.mov" }), null);
   assert.equal(videoReferenceMediaTypeForFile({ type: "application/pdf" }), null);
 
   assert.equal(mixed.addedCount, 3);

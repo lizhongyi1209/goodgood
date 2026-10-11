@@ -43,8 +43,8 @@ test("renders the new GoodGood home and preserves the existing creation surface"
   assert.equal(creationResponse.status, 200);
   const creationHtml = await creationResponse.text();
   assert.match(creationHtml, /aria-label="图像生成区域"/);
-  assert.match(creationHtml, /添加参考图片，最多 10 张/);
-  assert.match(creationHtml, />Nano Banana 2</);
+  assert.match(creationHtml, /aria-label="添加参考素材"/);
+  assert.match(creationHtml, />Nano Banana 2\.1</);
   assert.match(creationHtml, />描述你想创作的画面</);
   assert.doesNotMatch(creationHtml, /data-home-demo/);
 
